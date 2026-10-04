@@ -1,9 +1,4 @@
-# moonwell Specification
-
-## Purpose
-Moonwell is side-scrolling pinball across an endless row of moonlit islands: the player flips a pearl over ridge after ridge for as long as its pearls last.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: An endless row of islands
 Moonwell SHALL build its level from a seed as the pearl travels right, with no last island. Between two islands, a pair of gold flippers SHALL guard a gap over the water. Each bowl SHALL be 40 to 140 units lower than the one before it, so the ridge behind a bowl is taller than the ridge ahead of the bowl before it. Moonwell SHALL keep the 40 islands behind the pearl, and a wall SHALL stand on the ridge beyond them. The same seed SHALL always give the same islands.
@@ -49,25 +44,6 @@ The camera SHALL follow the pearl to the right and to the left, and look ahead i
 #### Scenario: Phone in portrait
 - **WHEN** the game runs at 390 by 844 and the pearl has rolled down to the flippers
 - **THEN** both flippers of the bowl and the next ridge are on the screen together
-
-### Requirement: Features and a director
-Each bowl SHALL get features from a director that varies them and makes the run harder with distance: stars, bumpers, lanterns, rotating mills, gold rails, moon portals and, every 10 islands, a big pearl. The first island SHALL be gentle and teach the shot.
-
-#### Scenario: A gold rail
-- **WHEN** the pearl enters a rail mouth
-- **THEN** it rides the rail over two or three islands, each island it passes counts as cleared, and it drops into a later bowl
-
-#### Scenario: A moon portal
-- **WHEN** the pearl enters a moon portal
-- **THEN** it comes out of the paired portal two islands ahead
-
-#### Scenario: Lanterns
-- **WHEN** the pearl lights the third lantern in a bowl
-- **THEN** the player gets the lantern bonus and moon light
-
-#### Scenario: Harder with distance
-- **WHEN** the run is past island 30
-- **THEN** ridges are taller, the gap between the flippers is wider and mills appear more often than on the first islands
 
 ### Requirement: Score, streak and Moonrise
 Each ridge the pearl crosses for the first time SHALL score and add to a streak, and the streak SHALL raise the score multiplier up to x8. Crossing a ridge again, either way, SHALL NOT score or change the streak. A drain SHALL reset the streak. A rail or a portal SHALL pay its bonus only the first time. Stars, bumpers, lanterns, ridges, rails and portals SHALL fill the moon meter. A full meter SHALL start Moonrise for 12 seconds: points count double, the flippers are stronger and a drain bounces the pearl back.
@@ -121,23 +97,7 @@ Moonwell SHALL save the best score and the furthest island in this browser. A fl
 - **WHEN** the save holds a score of 12345 at island 17
 - **THEN** the Moonwell machine shows BEST 12,345 · ISLAND 17
 
-### Requirement: Controls on every screen
-Moonwell SHALL play with Z, A or Left for the left flipper and X, D or Right for the right flipper. Space SHALL start and drop a pearl, C or Up SHALL pulse, and Escape or P SHALL pause. On a touch screen, a touch on the left half SHALL hold the left flipper, and a touch on the right half SHALL hold the right one, with several touches at once. A gamepad SHALL use its shoulder buttons for the flippers. The first island SHALL show how to flip.
-
-#### Scenario: Touch both flippers
-- **WHEN** a player holds one thumb on each half of a phone screen
-- **THEN** both flippers stay up until each thumb lifts
-
-#### Scenario: Pause on blur
-- **WHEN** the page loses focus during play
-- **THEN** the game pauses and the flippers drop
-
-### Requirement: Feel and comfort
-Moonwell SHALL give feedback for each hit with sound, light and particles, and a short pause on big moments. With reduced motion, it SHALL NOT shake the screen. The sound button and M SHALL mute all sound. The page SHALL load `/arcade/quiet.js` first, so its sound stops while it is hidden.
-
-#### Scenario: Reduced motion
-- **WHEN** the system asks for reduced motion
-- **THEN** the screen does not shake and the camera does not punch in
+## ADDED Requirements
 
 ### Requirement: A brisk pace
 Play SHALL run at 1.22 times real time from the first island, rising to 1.55 times at island 60, as a time scale on the physics so every shot keeps its shape. Rails, portals and the camera SHALL keep up with it.
@@ -145,3 +105,9 @@ Play SHALL run at 1.22 times real time from the first island, rising to 1.55 tim
 #### Scenario: From the start
 - **WHEN** a run starts
 - **THEN** the pace is at least 1.2, and it is at least 1.5 from island 61
+
+## REMOVED Requirements
+
+### Requirement: Progress goes one way
+**Reason**: The user asked that the pearl can go back.
+**Migration**: The pearl crosses ridges both ways. The taller ridge behind each bowl and the softer right flipper keep going back a choice, and the requirements above say what pays only once.

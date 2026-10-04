@@ -36,7 +36,8 @@ const hints = { seen: !!store.get(SEEN, false), shown: '', until: 0, tried: fals
 /* ---------------- layout ---------------- */
 function layout() {
   const w = innerWidth, h = innerHeight;
-  const dpr = Math.min(devicePixelRatio || 1, 2, Math.sqrt(3.4e6 / (w * h)));
+  // at most about 2.4 million pixels, so a large high-density screen still draws quickly
+  const dpr = Math.min(devicePixelRatio || 1, 2, Math.sqrt(2.4e6 / (w * h)));
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
   // about 900 world units tall, and at least 760 wide, so a phone in portrait still shows a whole bowl
@@ -72,7 +73,7 @@ function begin(seed) {
 }
 
 function save() {
-  const island = run.at + 1;
+  const island = run.far + 1;
   const next = { score: Math.max(best.score, run.score), island: Math.max(best.island, island) };
   if (next.score !== best.score || next.island !== best.island) { best = next; store.set(SAVE, best); }
 }
@@ -276,7 +277,7 @@ function gameOver() {
   const before = { ...best };
   save();
   audio?.duck(true);
-  const island = run.at + 1;
+  const island = run.far + 1;
   const newScore = run.score > before.score, newIsland = island > before.island;
   dialog({
     eyebrow: newScore || newIsland ? 'NEW BEST' : 'THE RUN ENDS',
@@ -284,7 +285,7 @@ function gameOver() {
     copy: newIsland && before.island ? `You passed your best flag at island ${before.island}.` : '',
     stats: [
       ['SCORE', run.score.toLocaleString(), newScore],
-      ['ISLAND', island, newIsland],
+      ['FURTHEST ISLAND', island, newIsland],
       ['BEST STREAK', run.bestStreak],
       ['STARS', run.stats.stars],
       ['LONG SHOTS', run.stats.long],
@@ -351,6 +352,8 @@ function handle(e) {
       if (!attract && e.mult > 1 && e.streak % 2 === 0) banner(`×${e.mult}`, `${e.streak} ridges in a row`, { rank: 1, time: 1000 });
       if (!attract && run.at + 1 >= 4 && !hints.seen) { hints.seen = true; store.set(SEEN, true); }
       break;
+    case 'back': a('back'); ring(fx, e.x, e.y - 30, '#cfe3ff', 16, 60, 0.5); if (!attract) banner(`Back to island ${e.island}`, '', { rank: 1, time: 900 }); break;
+    case 'return': a('back', { up: true }); ring(fx, e.x, e.y - 30, '#cfe3ff', 16, 60, 0.5); break;
     case 'region': a('region'); if (!attract) banner(e.name.toUpperCase(), `Island ${e.island}`, { rank: 4, big: true, time: 2400 }); break;
     case 'best': a('best'); if (!attract) banner('NEW BEST', `Past island ${e.island - 1}`, { rank: 5, time: 2000 }); burst(fx, e.x, e.y - 40, { n: 40, color: '#9fe3b0', speed: 420 }); break;
     case 'rail': a('rail'); stop(0.05); shake(3); if (!attract) banner('GOLD RAIL', '', { rank: 2, time: 1000 }); break;
@@ -414,7 +417,8 @@ function hud(force) {
   if (!run) return;
   const s = station(run.world, run.at);
   set('score', run.score, (v) => { $('score').textContent = v.toLocaleString(); });
-  set('island', run.at + 1, (v) => { $('island').textContent = 'ISLAND ' + v; });
+  // behind the furthest island, the label says how far ahead it is
+  set('island', run.at + ':' + run.far, () => { $('island').textContent = 'ISLAND ' + (run.at + 1) + (run.at < run.far ? ' · FURTHEST ' + (run.far + 1) : ''); });
   set('region', s.biome.name, (v) => { $('region').textContent = v; });
   set('lives', run.lives, (v) => { $('lives').replaceChildren(...Array.from({ length: v }, () => document.createElement('i'))); $('lives').setAttribute('aria-label', v + ' pearls'); });
   set('mult', run.mult + (run.moonrise > 0 ? 'm' : ''), () => {
@@ -446,9 +450,10 @@ function target() {
   const span = s.x1 + 60 - (s.x0 - 40);
   let x = span <= Wz ? s.x0 - 40 + Wz / 2 : (s.cx - s.P - 150 + s.x1 + 60) / 2;
   if (b.mode !== 'gone') {
-    const lead = travel ? Wz * 0.2 : Math.max(0, Math.min(Wz * 0.15, b.vx * 0.2));
-    x = Math.max(x, b.x + lead - Wz * 0.3);
-    x = Math.min(x, b.x + Wz * 0.38);
+    // look ahead the way the pearl moves, left or right
+    const lead = travel ? Wz * 0.2 : Math.max(-Wz * 0.15, Math.min(Wz * 0.15, b.vx * 0.2));
+    x = Math.max(x, b.x + lead - Wz * 0.36);
+    x = Math.min(x, b.x + lead + Wz * 0.36);
   }
   return { x, bottom, zoom };
 }
@@ -456,7 +461,7 @@ function target() {
 function snapCamera() { const t = target(); Object.assign(view.cam, t, { scale: view.base * t.zoom, y: t.bottom - view.h / view.base / t.zoom / 2 }); }
 function camera(dt) {
   const t = target(), c = view.cam;
-  const k = 1 - Math.exp(-dt * 5), kz = 1 - Math.exp(-dt * (t.zoom < c.zoom ? 9 : 2));
+  const k = 1 - Math.exp(-dt * 7), kz = 1 - Math.exp(-dt * (t.zoom < c.zoom ? 12 : 2.5));
   c.x += (t.x - c.x) * k;
   c.bottom += (t.bottom - c.bottom) * k;
   c.zoom += (t.zoom - c.zoom) * kz;
@@ -466,7 +471,7 @@ function camera(dt) {
   const b = run.ball, half = view.w / 2 / c.scale;
   if (b.mode !== 'gone') {
     if (b.x > c.x + half - 60 / c.scale * 1.5) c.x = b.x - half + 90 / c.scale;
-    if (b.x < c.x - half + 40) c.x = b.x + half - 40;
+    if (b.x < c.x - half + 90 / c.scale) c.x = b.x + half - 90 / c.scale;
   }
 }
 
@@ -528,7 +533,7 @@ window.moonwell = {
   get snapshot() {
     const b = run.ball;
     return {
-      mode, attract, phase: run.phase, island: run.at + 1, score: run.score, lives: run.lives, mult: run.mult, streak: run.streak,
+      mode, attract, phase: run.phase, island: run.at + 1, far: run.far + 1, score: run.score, lives: run.lives, mult: run.mult, streak: run.streak,
       meter: run.meter, moonrise: run.moonrise, ball: { x: b.x, y: b.y, vx: b.vx, vy: b.vy, mode: b.mode }, cam: { ...view.cam },
       view: { w: view.w, h: view.h }, frames, best: { ...best }, muted, artReady: art.sheet.naturalWidth > 0 && art.far.naturalWidth > 0,
       offer: run.offer ? run.offer.map((c) => c.id) : null, saver: run.saver, maxShake, charms: { ...run.charms },

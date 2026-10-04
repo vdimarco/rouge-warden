@@ -1,11 +1,12 @@
 // Moonwell: the world. An endless row of islands, made from a seed as the pearl travels right.
 // Between two islands is a gap over the water, and a pair of gold flippers guards it. Station k is the bowl around
 // gap k: from the ridge of island k on its left to the ridge of island k+1 on its right. World units: the pearl is
-// 30 across, y points down, and the water lies at WATER. No DOM here, so the node checks in qa/moonwell/ import it.
+// 30 across and y points down. The islands step down as they go right, so the ridge behind a bowl is taller than the
+// one ahead: the pearl can go back, but only with a strong shot. No DOM here, so the node checks in qa/moonwell/ use it.
 
 export const BALL_R = 15;
+export const KEEP = 40;           // islands kept behind the pearl, so it can travel back; a wall stands beyond them
 export const REGION = 8;          // every eighth island is a shrine, and the next region starts after it
-export const WATER = 470;
 export const FLIP = { len: 84, r0: 15, r1: 8, rest: 0.46, up: -0.72 };
 const INLANE = 0.55, INLANE_RUN = 72;
 
@@ -72,9 +73,10 @@ export function ensure(world, k) {
   while (world.decorated < k) dress(world, ++world.decorated);
 }
 
-// Drop the islands far behind the pearl. The pearl never goes back past a closed gate.
+// Drop the islands more than KEEP behind the pearl, and wall off the ridge of the oldest one that stays.
 export function trim(world, k) {
-  while (world.first < k - 2) { world.list.shift(); world.first++; }
+  while (world.first < k - KEEP) { world.list.shift(); world.first++; }
+  world.list[0].gate = 1;
 }
 
 // The stations whose span holds x (with a margin), for collisions and drawing
@@ -89,9 +91,8 @@ function build(world, k) {
   const r = rng(hash(world.seed, k, 1));
   const d = difficulty(k);
   const x0 = prev ? prev.x1 : 0, y0 = prev ? prev.y1 : -320;
-  // the floor wanders, but it is pulled back toward 0, and the bowl is always at least 140 below its left ridge
-  let fy = k === 0 ? 0 : clamp(prev.fy + r.range(-90, 130) - 0.3 * prev.fy, -200, 200);
-  fy = Math.max(fy, y0 + 140);
+  // each bowl is 40 to 140 lower than the one before, so its left ridge is that much taller than its right one was
+  const fy = k === 0 ? 0 : prev.fy + r.range(40, 140);
   const shrine = isShrine(k);
   const Hr = k === 0 ? 210 : k === 1 ? 240 : clamp(240 + 190 * d + r.range(-40, 45), 210, 470);
   const P = 106 + 12 * d + r.range(0, 4);
@@ -119,8 +120,9 @@ function build(world, k) {
   const lc = span([x0, y0], L.top), rc = span(R.top, [x1, y1]);
   const left = hermite([x0, y0], [lc, 0], L.top, [-L.dir[0] * lc, -L.dir[1] * lc], 12).concat([L.foot]);
   const right = [R.foot].concat(hermite(R.top, [R.dir[0] * rc, R.dir[1] * rc], [x1, y1], [rc, 0], 12));
-  const cliffL = [[cx - P - 4, fy + 12], [cx - P - 44, WATER + 80]];
-  const cliffR = [[cx + P + 4, fy + 12], [cx + P + 44, WATER + 80]];
+  const deep = fy + 390;
+  const cliffL = [[cx - P - 4, fy + 12], [cx - P - 44, deep - 10]];
+  const cliffR = [[cx + P + 4, fy + 12], [cx + P + 44, deep - 10]];
   const segs = [];
   const chain = (pts) => { for (let i = 0; i < pts.length - 1; i++) segs.push([pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]]); };
   chain(left); chain(right); chain(cliffL); chain(cliffR);
@@ -129,9 +131,10 @@ function build(world, k) {
     k, seed: hash(world.seed, k, 2), biome: biomeOf(k), d, shrine,
     x0, y0, x1, y1, cx, fy, P, Wl, Wr, Hl, Hr,
     left, right, cliffL, cliffR, segs, flippers,
-    // the gate on this station's left ridge closes once the pearl is past it; station 0 starts with a wall
+    // a wall on the left ridge: at the start of the world, and beyond the oldest island kept. A shrine's right ridge
+    // stays sealed until the pearl goes through its moonwell.
     gate: k === 0 ? 1 : 0, sealed: shrine,
-    drainY: fy + 150,
+    drainY: fy + 150, deep,
     stars: [], bumpers: [], lanterns: [], mills: [], rail: null, portal: null, exit: null, well: null, pearl: null,
     deco: [],
     // the first three islands have a moon post between the flippers, so a new player's pearl cannot drain there
@@ -233,7 +236,8 @@ function dress(world, k) {
     // bumpers: more of them further on, off to the sides and high, so the flipper shot stays readable
     const nb = r.int(d < 0.15 ? 0 : 1, 1 + Math.round(2 * d + r()));
     for (let i = 0; i < nb; i++) {
-      const p = pick(s.x0 + 90, s.x1 - 80, top - 330, s.fy - 230, 110);
+      // most bumpers stand on the forward half, so a bounce sends the pearl on more often than back
+      const p = pick(r.chance(0.75) ? s.cx - 60 : s.x0 + 90, s.x1 - 80, top - 330, s.fy - 230, 110);
       if (p) s.bumpers.push({ x: p[0], y: p[1], r: 30, flash: 0 });
     }
     if (shape === 'ring' && s.bumpers.length) {

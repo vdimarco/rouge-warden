@@ -1,11 +1,11 @@
 // Moonwell: the rules of a run. Pearls, the streak and its multiplier, the moon meter and Moonrise, gold rails, moon
 // portals, shrines and charms. Fixed ticks of 1/120 s. No DOM here: game.js draws and plays what run.events says.
-import { BALL_R as R, REGION, WATER, createWorld, ensure, trim, near, station, pathAt, rng } from './world.js';
+import { BALL_R as R, REGION, createWorld, ensure, trim, near, station, pathAt, rng } from './world.js';
 import { step, animate, moveFlippers } from './physics.js';
 
 export const TICK = 1 / 120;
 export const START_PEARLS = 3, MAX_PEARLS = 5;
-export const MOONRISE = 12, SAVER = 3, READY_WAIT = 3, SWIFT = 4.5;
+export const MOONRISE = 12, SAVER = 3, READY_WAIT = 1.6, SWIFT = 3.5;
 export const POINTS = { star: 100, bumper: 50, lantern: 250, lanterns: 1500, ridge: 500, long: 2000, swift: 300, rail: 2500, portal: 1500, clutch: 250, pearl: 5000, shrine: 3000 };
 const MOON = { star: 0.014, bumper: 0.005, lantern: 0.02, lanterns: 0.06, ridge: 0.02, long: 0.04, swift: 0.012, rail: 0.08, portal: 0.05, clutch: 0.03, shrine: 0.05 };
 
@@ -24,7 +24,7 @@ export const CHARMS = [
 
 export function createRun({ seed = (Math.random() * 2 ** 32) >>> 0, best = 0 } = {}) {
   const run = {
-    seed, world: createWorld(seed), phase: 'ready', clock: 0, score: 0, lives: START_PEARLS, at: 0, islands: 0,
+    seed, world: createWorld(seed), phase: 'ready', clock: 0, score: 0, lives: START_PEARLS, at: 0, far: 0, islands: 0,
     ball: { x: 0, y: 0, vx: 0, vy: 0, mode: 'held', touch: null },
     streak: 0, bestStreak: 0, mult: 1, meter: 0, moonrise: 0, saver: 0, bridges: 0,
     pulse: { charges: 1, max: 1, cool: 0, rate: 10 },
@@ -86,8 +86,11 @@ function drop(run) {
 }
 
 const power = (run) => run.mods.power * (run.moonrise > 0 ? 1.12 : 1);
-// The endless-runner ramp: play runs a little faster with distance, up to 28% at island 60. Shots keep their shape.
-export const pace = (run) => 1 + 0.28 * Math.min(1, run.at / 60);
+// Play runs brisk from the start and faster with distance: 1.22 times real time at first, 1.55 from island 60.
+// It is a time scale, so every shot keeps its shape and only gets quicker.
+export const pace = (run) => 1.22 + 0.33 * Math.min(1, run.far / 60);
+// the stations whose flippers move: those near the pearl, so a long world behind it costs nothing
+const active = (run) => near(run.world, run.ball.x - 2400, run.ball.x + 2400);
 const mods = (run) => ({ power: power(run), g: run.mods.g });
 
 // One tick. input: { left, right, drop, pulse } as held now; presses are found against the last tick.
@@ -97,16 +100,16 @@ export function tick(run, input) {
   const press = { left: input.left && !run.prev.left, right: input.right && !run.prev.right };
   run.prev = { left: !!input.left, right: !!input.right };
   run.clock += TICK;
-  ensure(world, run.at + 3);
+  ensure(world, run.far + 3);
   trim(world, run.at);
   animate(world, TICK);
   timers(run);
 
   if (run.phase === 'ready') {
     run.readyT += TICK;
-    for (const s of world.list) moveFlippers(s, input, TICK, power(run));
+    for (const s of active(run)) moveFlippers(s, input, TICK, power(run));
     holdOnBeam(run);
-    if (input.drop || run.readyT > READY_WAIT || (run.readyT > 0.35 && (press.left || press.right))) drop(run);
+    if (input.drop || run.readyT > READY_WAIT || (run.readyT > 0.2 && (press.left || press.right))) drop(run);
     return;
   }
   if (input.pulse) pulse(run);
@@ -115,7 +118,7 @@ export function tick(run, input) {
 
   const ev = [];
   const stations = near(world, ball.x - 300, ball.x + 300);
-  step(world, stations, ball, input, TICK * pace(run), mods(run), ev);
+  step(world, stations, ball, input, TICK * pace(run), mods(run), ev, active(run));
   contacts(run, ev, input);
   if (ball.touch) run.flight = 0;
   for (const s of stations) if (pickups(run, s)) return;
@@ -210,7 +213,7 @@ function pickups(run, s) {
   }
   if (s.rail && dist(s.rail.mouth) < R + s.rail.mouth.r) { startRide(run, s.rail); return true; }
   if (s.portal && dist(s.portal) < R + s.portal.r) { startWarp(run, s); return true; }
-  if (s.well) {
+  if (s.well && !s.well.spent) {
     const w = s.well, d = dist(w);
     if (d < w.pull) {
       // the moonwell draws a passing pearl in
@@ -224,34 +227,44 @@ function pickups(run, s) {
   return false;
 }
 
-// Count each ridge the pearl has crossed, close its gate behind the pearl, and score it
+// Follow the pearl over ridges both ways. A ridge pays, and adds to the streak, only the first time it is crossed.
 function crossRidges(run, carried = false) {
   const { world, ball } = run;
   let s = station(world, run.at);
+  while (ball.x < s.x0 - R - 2 && run.at > world.first) {
+    run.at--;
+    run.enteredAt = run.clock;
+    s = station(world, run.at);
+    push(run, { type: 'back', island: run.at + 1, x: s.x1, y: s.y1 });
+  }
   while (ball.x > s.x1 + R + 2) {
     ensure(world, run.at + 4);
     const next = station(world, run.at + 1);
-    next.gate = 1;
     run.at++;
-    run.islands++;
-    run.streak++;
-    run.flight++;
-    run.bestStreak = Math.max(run.bestStreak, run.streak);
-    run.mult = mult(run);
-    award(run, POINTS.ridge + 25 * run.at, 'ridge', s.x1, s.y1 - 50, MOON.ridge);
-    if (!carried && run.at > 1 && run.clock - run.enteredAt < SWIFT) { run.stats.swift++; award(run, POINTS.swift, 'swift', s.x1, s.y1 - 100, MOON.swift); }
-    if (!carried && run.flight >= 2) { run.stats.long++; award(run, POINTS.long * (run.flight - 1), 'long', s.x1, s.y1 - 150, MOON.long); }
+    if (run.at <= run.far) {
+      push(run, { type: 'return', island: run.at + 1, x: s.x1, y: s.y1 });
+    } else {
+      run.far = run.at;
+      run.islands++;
+      run.streak++;
+      run.flight++;
+      run.bestStreak = Math.max(run.bestStreak, run.streak);
+      run.mult = mult(run);
+      award(run, POINTS.ridge + 25 * run.at, 'ridge', s.x1, s.y1 - 50, MOON.ridge);
+      if (!carried && run.at > 1 && run.clock - run.enteredAt < SWIFT) { run.stats.swift++; award(run, POINTS.swift, 'swift', s.x1, s.y1 - 100, MOON.swift); }
+      if (!carried && run.flight >= 2) { run.stats.long++; award(run, POINTS.long * (run.flight - 1), 'long', s.x1, s.y1 - 150, MOON.long); }
+      push(run, { type: 'ridge', island: run.at + 1, x: s.x1, y: s.y1, streak: run.streak, mult: run.mult });
+      if (!run.newBest && run.best > 0 && run.at + 1 > run.best) { run.newBest = true; push(run, { type: 'best', island: run.at + 1, x: s.x1, y: s.y1 }); }
+      if (next.k % REGION === 0) push(run, { type: 'region', name: next.biome.name, island: run.at + 1 });
+    }
     run.enteredAt = run.clock;
-    push(run, { type: 'ridge', island: run.at + 1, x: s.x1, y: s.y1, streak: run.streak, mult: run.mult });
-    if (!run.newBest && run.best > 0 && run.at + 1 > run.best) { run.newBest = true; push(run, { type: 'best', island: run.at + 1, x: s.x1, y: s.y1 }); }
-    if (next.k % REGION === 0) push(run, { type: 'region', name: next.biome.name, island: run.at + 1 });
     s = next;
   }
 }
 
 function drain(run) {
   const b = run.ball, s = station(run.world, run.at);
-  if (b.y < s.drainY && b.y < WATER) return;
+  if (b.y < s.drainY && b.y < s.deep) return;
   if (run.moonrise > 0 || run.saver > 0 || run.bridges > 0) {
     const bridge = !(run.moonrise > 0 || run.saver > 0);
     if (bridge) run.bridges--;
@@ -282,7 +295,7 @@ function unstick(run, input) {
   const cradled = b.touch && b.touch.side && (b.touch.side < 0 ? input.left : input.right);
   if (Math.hypot(b.vx, b.vy) < 35 && !cradled) run.still += TICK;
   else run.still = 0;
-  if (run.still > 1.6) {
+  if (run.still > 1) {
     run.still = 0;
     b.vy = -420;
     b.vx = b.x < s.cx ? 170 : -170;
@@ -292,7 +305,7 @@ function unstick(run, input) {
 
 function startRide(run, rail) {
   const b = run.ball;
-  run.ride = { rail, u: 0, v: Math.max(820, Math.hypot(b.vx, b.vy) * 0.7) };
+  run.ride = { rail, u: 0, v: Math.max(1050, Math.hypot(b.vx, b.vy) * 0.8) };
   b.mode = 'rail';
   run.stats.rails++;
   push(run, { type: 'rail', x: b.x, y: b.y });
@@ -300,9 +313,9 @@ function startRide(run, rail) {
 
 function ride(run, input) {
   const b = run.ball, r = run.ride;
-  for (const s of run.world.list) moveFlippers(s, input, TICK, power(run));
+  for (const s of active(run)) moveFlippers(s, input, TICK, power(run));
   const here = pathAt(r.rail.pts, r.u);
-  r.v = Math.max(720, Math.min(1500, r.v + here.dy * 1400 * TICK));
+  r.v = Math.max(950, Math.min(1900, r.v + here.dy * 1800 * TICK));
   r.u += r.v * TICK;
   const p = pathAt(r.rail.pts, Math.min(r.u, r.rail.length));
   Object.assign(b, { x: p.x, y: p.y, vx: p.dx * r.v, vy: p.dy * r.v });
@@ -312,14 +325,15 @@ function ride(run, input) {
     b.vx = p.dx * 380; b.vy = p.dy * 380;
     run.ride = null;
     run.flight = 0;
-    award(run, POINTS.rail * run.mods.gold, 'rail', b.x, b.y - 60, MOON.rail);
+    // a rail pays its bonus once: riding it again after going back is only for fun
+    if (!r.rail.paid) { r.rail.paid = true; award(run, POINTS.rail * run.mods.gold, 'rail', b.x, b.y - 60, MOON.rail); }
     push(run, { type: 'railEnd', x: b.x, y: b.y });
   }
 }
 
 function startWarp(run, s) {
   const b = run.ball, to = station(run.world, s.portal.to);
-  run.warp = { t: 0, dur: 0.75, from: { x: s.portal.x, y: s.portal.y }, to: { x: to.exit.x, y: to.exit.y } };
+  run.warp = { t: 0, dur: 0.5, portal: s.portal, from: { x: s.portal.x, y: s.portal.y }, to: { x: to.exit.x, y: to.exit.y } };
   b.mode = 'warp';
   run.stats.portals++;
   push(run, { type: 'portal', x: b.x, y: b.y, to: run.warp.to });
@@ -327,7 +341,7 @@ function startWarp(run, s) {
 
 function warp(run, input) {
   const b = run.ball, w = run.warp;
-  for (const s of run.world.list) moveFlippers(s, input, TICK, power(run));
+  for (const s of active(run)) moveFlippers(s, input, TICK, power(run));
   w.t += TICK;
   const f = Math.min(1, w.t / w.dur), e = f * f * (3 - 2 * f);
   b.x = w.from.x + (w.to.x - w.from.x) * e;
@@ -337,7 +351,7 @@ function warp(run, input) {
     Object.assign(b, { x: w.to.x, y: w.to.y, vx: 170, vy: -90, mode: 'free' });
     run.warp = null;
     run.flight = 0;
-    award(run, POINTS.portal * run.mods.gold, 'portal', b.x, b.y - 60, MOON.portal);
+    if (!w.portal.paid) { w.portal.paid = true; award(run, POINTS.portal * run.mods.gold, 'portal', b.x, b.y - 60, MOON.portal); }
     push(run, { type: 'warpEnd', x: b.x, y: b.y });
   }
 }
@@ -375,6 +389,10 @@ export function choose(run, i) {
   if (c.id === 'feather') m.g *= 0.92;
   if (c.id === 'steady') m.steady = true;
   run.offer = null;
+  // the well is spent and the seal opens, so the pearl can come back this way
+  const shrine = station(run.world, run.at);
+  shrine.sealed = false;
+  if (shrine.well) shrine.well.spent = true;
   ensure(run.world, run.at + 4);
   const next = station(run.world, run.at + 1);
   Object.assign(run.ball, { x: next.x0 + 150, y: Math.min(next.y0, next.fy - 280) - 60, vx: 170, vy: -120, mode: 'free' });

@@ -1,7 +1,7 @@
 // Moonwell: drawing. The sky and the moon, the painted islands far behind, the islands of the run, their features,
 // the flippers and the pearl, then particles and score popups. The camera is a world point at the screen centre and
 // a scale in CSS pixels per world unit. Nothing here changes the run.
-import { BALL_R as R, WATER, BIOMES, REGION, near, station, pathAt } from './world.js';
+import { BALL_R as R, BIOMES, REGION, near, station, pathAt } from './world.js';
 
 const sheet = new Image();
 sheet.src = './assets/sprites.webp';
@@ -109,6 +109,9 @@ export function draw(ctx, view, run, fx, now) {
     ctx.globalAlpha = 1;
   }
   // twinkling stars, barely moving with the camera
+  // the far layers move with the camera's height over the bowl, not with the world's height, which grows as the
+  // islands step down; the stars drift up slowly as the pearl descends
+  const rel = cam.y - (cam.bottom ?? cam.y) + 150;
   const sx = cam.x * 0.03 * S, sy = cam.y * 0.02 * S;
   ctx.fillStyle = '#fff6dc';
   for (const st of SKY) {
@@ -122,11 +125,9 @@ export function draw(ctx, view, run, fx, now) {
 
   // the painting of the islands, far away and misted
   if (ready(far)) {
-    const ih = Math.min(h * 0.46, 420), iw = (far.naturalWidth / far.naturalHeight) * ih;
-    const px = -((cam.x * 0.1 * S) % iw), py = h * 0.5 - (cam.y * 0.05 * S) - ih * 0.15;
-    ctx.globalAlpha = 0.42;
-    for (let x = px - iw; x < w; x += iw) ctx.drawImage(far, x, py, iw + 1, ih);
-    ctx.globalAlpha = 1;
+    const tile = farTile(Math.round(Math.min(h * 0.46, 420))), iw = tile.width, ih = tile.height;
+    const px = -((cam.x * 0.1 * S) % iw), py = h * 0.5 - (rel * 0.05 * S) - ih * 0.15;
+    for (let x = px - iw; x < w; x += iw) ctx.drawImage(tile, x, py);
     const fog = ctx.createLinearGradient(0, py, 0, py + ih);
     fog.addColorStop(0, 'rgba(0,0,0,0)');
     fog.addColorStop(1, mix(B.sky[1], sky.b.sky[1], sky.t));
@@ -135,7 +136,7 @@ export function draw(ctx, view, run, fx, now) {
     ctx.fillStyle = mix(B.sky[1], sky.b.sky[1], sky.t);
     ctx.fillRect(0, py + ih, w, h);
   }
-  hills(ctx, w, h, cam, S, mix(B.haze, sky.b.haze, sky.t), mix(B.sky[1], sky.b.sky[1], sky.t));
+  hills(ctx, w, h, { ...cam, y: rel }, S, mix(B.haze, sky.b.haze, sky.t), mix(B.sky[1], sky.b.sky[1], sky.t));
 
   // the world
   ctx.setTransform(dpr * S, 0, 0, dpr * S, dpr * (w / 2 - cam.x * S), dpr * (h / 2 - cam.y * S));
@@ -167,6 +168,20 @@ export function draw(ctx, view, run, fx, now) {
     ctx.fillText(Math.round((top - b.y) / 10) + ' m', x, 96);
     ctx.globalAlpha = 1;
   }
+}
+
+// the far painting, scaled and faded once per screen height, so each frame copies it without scaling
+let farCache = null;
+function farTile(ih) {
+  if (farCache && farCache.height === ih) return farCache;
+  const c = document.createElement('canvas');
+  c.height = ih;
+  c.width = Math.round((far.naturalWidth / far.naturalHeight) * ih);
+  const g = c.getContext('2d');
+  g.globalAlpha = 0.42;
+  g.drawImage(far, 0, 0, c.width, c.height);
+  farCache = c;
+  return c;
 }
 
 let vig = null;
@@ -255,7 +270,7 @@ function beams(ctx, s, run, now, top) {
 
 function land(ctx, s, run, now) {
   const B = s.biome;
-  const deep = WATER + 90;
+  const deep = s.deep;
   const rock = ctx.createLinearGradient(0, Math.min(s.y0, s.y1), 0, deep);
   rock.addColorStop(0, B.rock);
   rock.addColorStop(0.55, mix(B.rock, B.rockDark, 0.6));
@@ -326,7 +341,7 @@ function land(ctx, s, run, now) {
 // The water in a gap: a dark drop under the flippers, then a pool with a moonlit surface and mist
 export const POOL = 190;
 function gapWater(ctx, s, now) {
-  const x0 = s.cx - s.P - 70, x1 = s.cx + s.P + 70, wy = s.fy + POOL, deep = WATER + 90;
+  const x0 = s.cx - s.P - 70, x1 = s.cx + s.P + 70, wy = s.fy + POOL, deep = s.deep;
   const drop = ctx.createLinearGradient(0, s.fy, 0, wy);
   drop.addColorStop(0, 'rgba(6,12,30,0.25)');
   drop.addColorStop(1, 'rgba(6,12,30,0.85)');
@@ -498,7 +513,8 @@ function features(ctx, s, run, now) {
     glow(ctx, p.x, p.y, p.r * 2.4, '120,170,255', 0.45 + 0.1 * Math.sin(now * 0.004));
     sprite('portal', p.x, p.y, p.r * 2.6, now * 0.0006 * (p === s.exit ? -1 : 1));
   }
-  if (s.well) {
+  if (s.well && s.well.spent) sprite('portal', s.well.x, s.well.y, s.well.r * 2.4, now * 0.0002, 0.35);
+  else if (s.well) {
     const wl = s.well, pulse = 0.5 + 0.5 * Math.sin(now * 0.003);
     glow(ctx, wl.x, wl.y, wl.pull, '150,190,255', 0.16 + 0.08 * pulse);
     ctx.strokeStyle = `rgba(200,225,255,${0.25 + 0.2 * pulse})`;
