@@ -18,11 +18,16 @@ import { manaCost, canAfford, canReturn } from './combat-rules.js';
 import { cursorSkillAim, dragSkillAim, skillAimPreview } from './skill-aim.js';
 import { followUpFeedback } from './combat-feedback.js';
 import { spellBlocked } from './combat-state.js';
+import { draftPlan, runDraft } from './draft.js';
+import { Announcer } from './announcer.js';
+import { TeamChat } from './team-chat.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
 let selectedIdentity=0;
 let state = assignIdentities(createMatch(1),selectedIdentity), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, screenMovementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
+let plan = null, draft = null, rallyQueue = null, rallyReadyAt = 0;
+const announcer = new Announcer(sound, $('hud')), teamChat = new TeamChat(sound, $('hud'));
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
@@ -41,10 +46,10 @@ function closeSheet() { $('sheet').close(); paused = false; resetInput(); last =
 function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet'))paginatePanel($('sheet-content'));}); }
 function pause() {
   if (!running || resultShown) return;
-  sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button><button id="sound" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · M map · B return · Esc pause</p>');
-  $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('quit').onclick = menu;
+  sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button> <button id="sound" class="row-btn"></button><button id="voice" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc pause</p>');
+  $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('voice').textContent = sound.voiceOn ? 'Announcer voice on' : 'Announcer voice off'; $('voice').onclick = () => { $('voice').textContent = sound.toggleVoice() ? 'Announcer voice on' : 'Announcer voice off'; }; $('quit').onclick = menu;
 }
-function menu() { closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
+function menu() { sound.silence(); draft?.cancel(); autoPaused = false; autoPauseNote.hidden = true; closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
 function updateSound() { if($('sound-menu'))$('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off'; }
 function choose(identityId) {
   const h=HERO_IDENTITIES[identityId];if(!h)return;
@@ -68,8 +73,19 @@ function choose(identityId) {
   });
   explainSkill(1);
 }
+// Play opens the draft board; the finished draft starts the match with that lineup.
+function startDraft() {
+  if ($('play').disabled) return;
+  sound.start(); draft?.cancel(); $('menu').hidden = true; $('hud').hidden = true; $('draft').hidden = false;
+  plan = draftPlan(selectedIdentity, Date.now() >>> 0);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  draft = runDraft($('draft'), plan, { sound, reduced, onDone: () => { $('draft').hidden = true; draft = null; start(); }, onBack: () => { $('draft').hidden = true; draft = null; $('menu').hidden = false; } });
+  $('draft-go').focus({ preventScroll: true });
+}
 function start() {
-  sound.start(); sound.next = 0; state = assignIdentities(createMatch(selected, Date.now() >>> 0),selectedIdentity); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
+  sound.start(); sound.next = 0; plan ||= draftPlan(selectedIdentity, Date.now() >>> 0);
+  state = assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks); rallyReadyAt = 0; rallyQueue = null;
+  announcer.reset(state); teamChat.reset(state, plan); sound.horn(); setTimeout(() => sound.say('Battle begins. Defend the shore.'), 500); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
@@ -116,27 +132,28 @@ upgradeButtons.forEach(b=>pointerAction(b,()=>trainFromHUD(+b.dataset.upgrade),(
 
 function how() {
   const h = {...HEROES[selected],...HERO_IDENTITIES[selectedIdentity],descriptions:[0,1,2,3].map(i=>identitySkill(selectedIdentity,i).description)};
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Drag anywhere on the battlefield to move. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. When a skill point is ready, tap the point pill, then tap the full ability icon to learn or upgrade it without stopping movement. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Drag anywhere on the battlefield to move. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. When a skill point is ready, tap the point pill, then tap the full ability icon to learn or upgrade it without stopping movement. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Your two teammates and the enemy three are drafted before each match. Teammates call fights in chat and rotate to help. Press G or Rally to call them to you, or use Call team here on the map. Pings and hero markers show on the minimap; a red pulse marks a ward under attack.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · G rally team · M map · B return · Esc pause</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
-  sheet('<h2>The shifting grounds</h2><p class="map-help">Choose a destination. Your hero will follow the route.</p><canvas id="tactical-map" width="640" height="640" aria-label="Arena map: green allies, red enemies, cyan rift gates"></canvas><p class="map-legend">● Allies &nbsp; <em>● Enemies in sight</em> &nbsp; ◯ Rift gates</p><div class="map-destinations"><button data-destination="ward">Next tower</button><button data-destination="hunt">Wild Hunt</button><button data-destination="spirit">Spirit camp</button><button data-destination="gate">Nearest gate</button></div><button id="back-map" class="primary">Back to the hunt</button>');
+  sheet('<h2>The shifting grounds</h2><p class="map-help">Choose a destination. Your hero will follow the route.</p><canvas id="tactical-map" width="640" height="640" aria-label="Arena map: green allies, red enemies, cyan rift gates"></canvas><p class="map-legend">● Allies &nbsp; <em>● Enemies in sight</em> &nbsp; ◌ Last seen &nbsp; ◯ Rift gates &nbsp; ! Fight or ward alarm</p><div class="map-destinations"><button data-destination="ward">Next tower</button><button data-destination="hunt">Wild Hunt</button><button data-destination="spirit">Spirit camp</button><button data-destination="gate">Nearest gate</button><button data-destination="rally">Call team here</button></div><button id="back-map" class="primary">Back to the hunt</button>');
   const mark = (point, enemy) => { waypoint = point; closeSheet(); if(player(state).hp>0)orderQueue=enemy?{type:'attack',target:enemy.id}:{type:'move',...point}; };
   $('tactical-map').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); mark({ x: (e.clientX - r.left) / r.width * SIZE, y: (e.clientY - r.top) / r.height * SIZE }); };
   document.querySelectorAll('[data-destination]').forEach(b => b.onclick = () => {
     const kind=b.dataset.destination, p=player(state), ward=nextObjective(state,1,p.lane);
+    if(kind==='rally'){closeSheet();callRally(waypoint||{x:p.x,y:p.y});return;}
     const destination=kind==='ward'?ward:kind==='hunt'?CENTER:kind==='spirit'?state.units.filter(e=>e.kind==='camp'&&e.hp>0).sort((a,b)=>distance(p,a)-distance(p,b))[0]||CAMPS[0]:[...PORTALS].sort((a,b)=>distance(p,a)-distance(p,b))[0];
     if(destination)mark({x:destination.x,y:destination.y},kind==='ward'?ward:null);
   });
   $('back-map').onclick = closeSheet;
   renderer.drawMap(state, $('tactical-map'), waypoint);
 }
-function shop() { market(state, { sheet, close: closeSheet, changed: () => { try { localStorage.setItem('monster-mash.build.' + selected, player(state).build); } catch {} sound.tone(660, .16); updateUI(); } }); }
+function shop() { market(state, { sheet, close: closeSheet, changed: () => { try { localStorage.setItem('monster-mash.build.' + selected, player(state).build); } catch {} sound.coin(); updateUI(); } }); }
 function result() {
   resultShown = true; resetInput(); const p = player(state), victory = state.winner === 0;
   try { const saved = JSON.parse(localStorage.getItem('monster-mash.record') || '{"wins":0,"matches":0}'); saved.matches++; if (victory) saved.wins++; localStorage.setItem('monster-mash.record', JSON.stringify(saved)); } catch {}
   sheet(`<h2>${state.winner === -1 ? 'The veil holds' : victory ? 'Legends never die' : 'Lost to the veil'}</h2><div class="result-score">${state.score[0]} : ${state.score[1]}</div><p>${state.reason}</p><dl><dt>Your kills / deaths</dt><dd>${p.kills} / ${p.deaths}</dd><dt>Wisps finished</dt><dd>${p.lastHits}</dd><dt>Damage dealt</dt><dd>${Math.round(state.stats.damage).toLocaleString()}</dd><dt>Ambush strikes</dt><dd>${state.stats.ambushes}</dd><dt>Spirit camps</dt><dd>${state.stats.camps}</dd><dt>Final level</dt><dd>${p.level}</dd><dt>Wild Hunts claimed</dt><dd>${state.stats.leviathans}</dd></dl><button id="again" class="primary">Battle again</button><button id="change-hero" class="row-btn">Choose another creature</button>`);
-  $('close-sheet').hidden = true; $('again').onclick = () => { closeSheet(); start(); }; $('change-hero').onclick = () => { $('close-sheet').hidden = false; menu(); };
+  $('close-sheet').hidden = true; $('again').onclick = () => { closeSheet(); $('close-sheet').hidden = false; plan = null; $('hud').hidden = true; running = false; resultShown = false; startDraft(); }; $('change-hero').onclick = () => { $('close-sheet').hidden = false; menu(); };
 }
 function updateUI() {
   const p = player(state), remain = Math.max(0, Math.ceil(LIMIT - state.time));
@@ -193,12 +210,17 @@ function updateUI() {
   if (waypoint && distance(p, waypoint) < 110) waypoint = null;
   const towerThreat=state.units.find(t=>t.kind==='tower'&&t.team!==p.team&&t.towerTarget===p.id&&t.towerUntil>state.time&&t.hp>0);
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : towerThreat?'Tower fire is growing. Leave its range.':concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : objectiveText(state,p.lane);
+  const rallyWait=Math.ceil(rallyReadyAt-state.time);$('rally').disabled=p.hp<=0||rallyWait>0;$('rally').querySelector('small').textContent=rallyWait>0?`${rallyWait}s`:'Call team';
   if (state.time > 18) $('coach').hidden = true;
 }
 const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);
-pointerAction($('quick-buy'),()=>{const id=$('quick-buy').dataset.item;if(id&&buy(state,id)){sound.tone(660,.16);updateUI();}},()=>hudReady()&&!$('quick-buy').disabled);
-for(const [id,action] of [['map-button',map],['shop',shop],['recall',()=>{recallQueue=true;}],['portal',()=>{portalQueue=true;}],['pause',pause],['coach-close',()=>{$('coach').hidden=true;}]])pointerAction($(id),action,()=>hudReady()&&!$(id).disabled);
+pointerAction($('quick-buy'),()=>{const id=$('quick-buy').dataset.item;if(id&&buy(state,id)){sound.coin();updateUI();}},()=>hudReady()&&!$('quick-buy').disabled);
+function callRally(point){
+  const p=player(state);if(!running||paused||p.hp<=0||state.time<rallyReadyAt)return false;
+  rallyQueue=point||true;rallyReadyAt=state.time+8;return true;
+}
+for(const [id,action] of [['rally',()=>callRally()],['map-button',map],['shop',shop],['recall',()=>{recallQueue=true;}],['portal',()=>{portalQueue=true;}],['pause',pause],['coach-close',()=>{$('coach').hidden=true;}]])pointerAction($(id),action,()=>hudReady()&&!$(id).disabled);
 function heroDetails(){
   const h=HERO_IDENTITIES[selectedIdentity];
   sheet(`<h2>${h.name}</h2><p>${h.subtitle}</p><p>${h.note}</p>${[0,1,2,3].map(i=>{const a=identitySkill(selectedIdentity,i);return `<h3>${SELECTION_KEYS[i]} · ${a.name}</h3><p>${a.description}</p><p class="keyhint">${a.cooldown}s cooldown · ${manaCost({hero:h.kit,skillRanks:[1,1,1,1]},i)} mana${i===3?' · Unlocks at level 6':''}</p>`;}).join('')}<button id="details-back" class="primary">Back to heroes</button>`);
@@ -206,19 +228,19 @@ function heroDetails(){
 }
 function selectionPanel(title,copy){sheet(`<h2>${title}</h2>${copy}<button id="selection-back" class="primary">Back to heroes</button>`);$('selection-back').onclick=closeSheet;}
 function matchRecord(){let record={wins:0,matches:0};try{record=JSON.parse(localStorage.getItem('monster-mash.record'))||record;}catch{}selectionPanel('Tidecaller',`<p>Your match record on this device.</p><dl><dt>Matches played</dt><dd>${Number(record.matches)||0}</dd><dt>Victories</dt><dd>${Number(record.wins)||0}</dd></dl>`);}
-function gameSettings(){sheet('<h2>Game settings</h2><button id="selection-sound" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>');const b=$('selection-sound');b.textContent=sound.on?'Sound on':'Sound off';b.onclick=()=>{sound.start();b.textContent=sound.toggle()?'Sound on':'Sound off';updateSound();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
-$('play').onclick=start;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
+function gameSettings(){sheet('<h2>Game settings</h2><button id="selection-sound" class="row-btn"></button><button id="selection-voice" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>');const b=$('selection-sound');b.textContent=sound.on?'Sound on':'Sound off';b.onclick=()=>{sound.start();b.textContent=sound.toggle()?'Sound on':'Sound off';updateSound();};const v=$('selection-voice');v.textContent=sound.voiceOn?'Announcer voice on':'Announcer voice off';v.onclick=()=>{v.textContent=sound.toggleVoice()?'Announcer voice on':'Announcer voice off';};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
+$('play').onclick=startDraft;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
 $('hero-profile').onclick=matchRecord;$('tidecaller-profile').onclick=matchRecord;$('hero-settings').onclick=gameSettings;
 document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
   const tab=b.dataset.menuTab;
-  if(tab==='play'){if(!$('play').disabled)start();return;}
+  if(tab==='play'){startDraft();return;}
   if(tab==='heroes'){document.querySelector(`[data-hero="${selectedIdentity}"]`)?.focus();return;}
   if(tab==='lore'){heroDetails();return;}
   if(tab==='realms'){selectionPanel('The shifting realms','<p>Midnight Town and Deep Woods alternate every 40 seconds. Buildings and trees change the paths and block sight.</p><p>Use glowing brush for concealment. Rift gates cross the map. Clear spirit camps for embers, healing and haste, then contest the Wild Hunt in the center.</p>');return;}
   selectionPanel('The Night Market','<p>Earn embers in battle and spend them in the Night Market. Combine components into six items, choose a build and forge one relic.</p><p>Open the market during a match to inspect items and buy upgrades.</p>');
 });
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
-$('select-key').onclick=()=>{if(!$('play').disabled)start();};updateSound();
+$('select-key').onclick=startDraft;updateSound();
 let rosterFilter='All';
 const lineup=mountLineup({track:$('hero-picks'),previous:$('hero-prev'),next:$('hero-next'),position:$('lineup-position'),selected:()=>selectedIdentity,choose});
 function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selectedIdentity,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'hero':'heroes'}`;lineup.refresh(); }
@@ -250,11 +272,12 @@ $('battle').addEventListener('pointerdown',e=>{
 $('battle').addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cursor={x:e.clientX,y:e.clientY};if(renderer&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
 window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+  if (!$('draft').hidden && draft) { if (e.key === 'Enter') { e.preventDefault(); draft.skip(); } else if (e.key === 'Escape') { e.preventDefault(); $('draft-back').click(); } return; }
   if (e.key === 'Escape') { if ($('sheet').open) { if (!resultShown) closeSheet(); } else if(!running)window.GameSwitch?.open();else pause();return; }
   if(!running&&!$('sheet').open&&!window.GameSwitch?.isOpen&&!e.repeat){
     const inRoster=e.target instanceof Element&&e.target.closest('#hero-picks');
     if(e.key==='Enter'&&(inRoster||e.target===document.body||e.target===document.documentElement)){
-      e.preventDefault();if(!$('play').disabled)start();return;
+      e.preventDefault();startDraft();return;
     }
     if(e.key.toLowerCase()==='f'){e.preventDefault();heroDetails();return;}
   }
@@ -264,11 +287,30 @@ window.addEventListener('keydown', e => {
   if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){cancelOrder(player(state));orderQueue=undefined;target=0;}
   if(key===' '){cancelOrder(player(state));orderQueue={type:'stop'};target=0;}
   const slot = ['q', 'e', 'c', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, worldPoint:cursor&&renderer?renderer.world(cursor.x,cursor.y):null, aim:null };
+  if (key === 'g') callRally();
   if (key === 'b') recallQueue = true; if (key === 'f') portalQueue = true; if (key === 'm') map();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { resetInput(); if (running && !paused && !resultShown) pause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { resetInput(); if (running && !paused && !resultShown) pause(); } });
+// Leaving the window holds the match; a returning mouse resumes it. Touch players tap to resume.
+let autoPaused = false, lastPointer = 'mouse';
+const autoPauseNote = document.createElement('button'); autoPauseNote.id = 'auto-pause'; autoPauseNote.hidden = true; $('hud').append(autoPauseNote);
+function autoPause() {
+  if (!running || resultShown || $('sheet').open || autoPaused) return;
+  resetInput(); paused = true; autoPaused = true; autoPauseNote.hidden = false;
+  autoPauseNote.innerHTML = lastPointer === 'mouse' ? '<b>Paused</b><small>Move the mouse back to keep playing</small>' : '<b>Paused</b><small>Tap to keep playing</small>';
+}
+function autoResume() {
+  if (!autoPaused || document.hidden) return;
+  autoPaused = false; autoPauseNote.hidden = true; if (!$('sheet').open) { paused = false; last = performance.now(); }
+}
+window.addEventListener('pointerdown', e => { lastPointer = e.pointerType; }, true);
+window.addEventListener('mouseout', e => { if (!e.relatedTarget && lastPointer === 'mouse') autoPause(); });
+document.documentElement.addEventListener('mouseenter', () => { if (lastPointer === 'mouse') autoResume(); });
+window.addEventListener('mousemove', () => { if (autoPaused && lastPointer === 'mouse' && document.hasFocus()) autoResume(); }, { passive: true });
+autoPauseNote.addEventListener('click', autoResume);
+window.addEventListener('blur', autoPause);
+window.addEventListener('focus', () => { if (lastPointer === 'mouse') autoResume(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
 window.addEventListener('resize', () => { resetInput(); renderer?.resize(); });
 window.addEventListener('contextmenu', e => e.preventDefault());
 function frame(now) {
@@ -278,7 +320,7 @@ function frame(now) {
     while (accumulator >= 1 / 60) {
       const p = player(state), command = castQueue; castQueue = undefined;
       const castAim=command?.worldPoint?cursorSkillAim(p,command.slot,command.worldPoint):command?.aim?dragSkillAim(p,command.slot,command.aim,(x,y)=>renderer.screenDirection(x,y)):null;
-      const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, order: orderQueue, cast: command?.slot, aim:castAim, recall: recallQueue, portal: portalQueue }; recallQueue = portalQueue = false; orderQueue=undefined;
+      const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, order: orderQueue, cast: command?.slot, aim:castAim, recall: recallQueue, portal: portalQueue, rally: rallyQueue }; recallQueue = portalQueue = false; rallyQueue = null; orderQueue=undefined;
       const direction = renderer.screenDirection(input.x, input.y); input.x = direction.x; input.y = direction.y;
       if(command&&p.skillRanks[command.slot]&&!canAfford(p,command.slot)&&!(command.slot===0&&canReturn(state,p))&&state.time>(state.manaTip||-2)+1){announce(state,`Need ${manaCost(p,command.slot)} mana`,'Mana returns over time. Your home court restores it faster.');state.manaTip=state.time;}
       step(state, input);
@@ -287,6 +329,8 @@ function frame(now) {
       if (p.lastBasicHit > lastAttack) { sound.hit(p.lastBasicVariant,p.hero); lastAttack = p.lastBasicHit; }
       accumulator -= 1 / 60;
     }
+    if (renderer) { const span = Math.abs(renderer.world(renderer.width, 0).x - renderer.world(0, 0).x) / 2 || 1400; sound.setListener(renderer.cam.x, renderer.cam.y, span); }
+    announcer.update(state, { playerId: state.playerId, visible: renderer?.visible }); teamChat.update(state);
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
@@ -298,3 +342,5 @@ document.addEventListener('error',e=>{if(e.target.tagName!=='IMG')return;const p
 choose(selectedIdentity);
 // A read-only snapshot supports the existing arcade's QA tooling.
 export const snapshot = () => ({ running, paused, time: state.time, winner: state.winner, player: { ...player(state), cd: [...player(state).cd], inventory: [...player(state).inventory] }, phase: state.phase, stats: { ...state.stats }, waypoint: waypoint ? { ...waypoint } : null, units: state.units.length, score: [...state.score], assetReady: !!renderer, graphics: renderer?.stats() });
+// QA scripts read the live match to stage events; gameplay never uses this.
+export const qaState = () => state;

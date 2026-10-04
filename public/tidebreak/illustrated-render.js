@@ -72,6 +72,7 @@ export class Renderer {
     c.fillStyle = '#142932'; c.fillRect(0, 0, this.width, this.height);
     const origin = this.project(0, 0); c.drawImage(this.grounds[s.phase], origin.x, origin.y, SIZE * this.scale, SIZE * this.scale * .88);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.hitBoxes = [];
+    this.rememberHeroes(s);
     for (const b of this.bridges) this.drawAsset('bridge', b.x + b.dx * b.span * .43, b.y + b.dy * b.span * .43, b.span, { tilt: -Math.atan2(b.dx, b.dy * .88) });
     for (const gate of PORTALS) { this.ring(gate.x, gate.y, 95, '#79e1d2', .65 + Math.sin(time * 3) * .15, 3); this.ring(gate.x, gate.y, 70, '#88e8bf', .45); }
     if (s.phase) for (const b of BRUSH) { this.ring(b.x, b.y, b.radius, '#a7c794', .4); }
@@ -233,6 +234,32 @@ export class Renderer {
     }
     c.restore();
   }
+  // Enemy heroes leave a last-seen marker on the maps for a few seconds after they vanish.
+  rememberHeroes(s) {
+    if (this.seenState !== s) { this.seenState = s; this.lastSeen = new Map(); }
+    for (const e of s.units) if (e.kind === 'hero' && e.team !== 0) { if (e.hp <= 0) this.lastSeen.delete(e.id); else if (this.visible.has(e.id)) this.lastSeen.set(e.id, { x: e.x, y: e.y, time: s.time }); }
+  }
+  drawHeroMarker(m, s, e, x, y, full, ghost = false) {
+    const identity = HERO_IDENTITIES[e.identity], color = identity?.color || TEAM[e.team], r = (e.player ? 1.2 : 1) * (full ? 21 : 7.5), art = identity && this.art['reference-' + identity.slug];
+    m.save(); m.globalAlpha = ghost ? .42 : 1;
+    m.beginPath(); m.arc(x, y, r, 0, TAU); m.fillStyle = '#0d1820'; m.fill();
+    if (full && art) { m.save(); m.clip(); const w = art.width * .36; m.drawImage(art, art.width * .32, art.height * .015, w, w, x - r, y - r, r * 2, r * 2); m.restore(); }
+    else { m.beginPath(); m.arc(x, y, r - (full ? 3 : 2), 0, TAU); m.fillStyle = color; m.fill(); m.fillStyle = '#0d1820'; m.font = `800 ${full ? 13 : 8}px Barlow`; m.textAlign = 'center'; m.textBaseline = 'middle'; m.fillText(ghost ? '?' : (identity?.name || e.name)[0], x, y + .5); }
+    m.beginPath(); m.arc(x, y, r, 0, TAU); m.lineWidth = full ? 3 : 1.6; m.strokeStyle = e.team ? '#ff6f62' : e.player ? '#f4f8c2' : '#7ff0c2'; if (ghost) m.setLineDash([3, 3]); m.stroke();
+    if (!ghost && e.hp < e.maxHp) { m.beginPath(); m.arc(x, y, r + (full ? 3 : 1.5), -Math.PI / 2, -Math.PI / 2 + TAU * e.hp / e.maxHp); m.strokeStyle = e.team ? '#ffb1a4' : '#c9f59c'; m.lineWidth = full ? 2.5 : 1.2; m.setLineDash([]); m.stroke(); }
+    m.restore();
+  }
+  drawPings(m, s, size, full) {
+    const colors = { fight: '#ff9a5c', defend: '#ff5a4f', rally: '#ffe27a', onmyway: '#7fe6ff', retreat: '#b9c4c8' };
+    for (const p of s.pings || []) {
+      const age = s.time - p.time; if (p.team !== 0 || age < 0 || age > (p.type === 'rally' ? 6 : 4)) continue;
+      const x = p.x / SIZE * size, y = p.y / SIZE * size, pulse = (age * 1.4) % 1;
+      m.save(); m.strokeStyle = colors[p.type] || '#fff'; m.lineWidth = full ? 3 : 1.5;
+      for (const k of [0, .5]) { const t = (pulse + k) % 1; m.globalAlpha = (1 - t) * .9; m.beginPath(); m.arc(x, y, (full ? 10 : 5) + t * (full ? 34 : 16), 0, TAU); m.stroke(); }
+      if (p.type === 'defend' || p.type === 'fight') { m.globalAlpha = .95; m.fillStyle = colors[p.type]; m.font = `900 ${full ? 20 : 11}px Barlow`; m.textAlign = 'center'; m.textBaseline = 'middle'; m.fillText('!', x, y); }
+      m.restore();
+    }
+  }
   drawMap(s, canvas, waypoint = null) {
     const m = canvas.getContext('2d'), size = canvas.width, full = size > 250; m.clearRect(0, 0, size, size); m.fillStyle = '#1c353a'; m.fillRect(0, 0, size, size);
     m.save(); m.scale(size / SIZE, size / SIZE); riverOutline(m, riverGeometry(s.seed)); m.fillStyle = '#448e92'; m.fill(); m.restore();
@@ -244,8 +271,13 @@ export class Renderer {
       if (e.hp <= 0 || !this.visible.has(e.id)) continue;
       const x = e.x / SIZE * size, y = e.y / SIZE * size, scale = full ? 2 : 1;
       if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,(e.tier===1?10:7)*scale,0,TAU);m.stroke();} m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
-      else { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (e.player ? 4 : e.kind === 'hero' ? 2.5 : 1) * scale, 0, TAU); m.fill(); if (e.player) { m.strokeStyle = '#8de7b9'; m.lineWidth = 2; m.beginPath(); m.arc(x, y, 7 * scale, 0, TAU); m.stroke(); } }
+      else if (e.kind !== 'hero') { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (['boss', 'leviathan'].includes(e.kind) ? 3.5 : 1) * scale, 0, TAU); m.fill(); }
     }
+    // Heroes draw last so they stay readable above wisps; a structure under attack pulses red.
+    for (const e of s.units) if (['tower', 'core'].includes(e.kind) && e.team === 0 && e.hp > 0 && e.alarmAt - 14 + 5 > s.time) { const t = (s.time * 1.5) % 1; m.save(); m.globalAlpha = 1 - t; m.strokeStyle = '#ff5a4f'; m.lineWidth = full ? 3 : 1.5; m.beginPath(); m.arc(e.x / SIZE * size, e.y / SIZE * size, (full ? 12 : 6) + t * (full ? 18 : 9), 0, TAU); m.stroke(); m.restore(); }
+    for (const [id, seen] of this.lastSeen || []) { const e = s.units.find(u => u.id === id); if (e && !this.visible.has(id) && s.time - seen.time < 8) this.drawHeroMarker(m, s, e, seen.x / SIZE * size, seen.y / SIZE * size, full, true); }
+    for (const e of [...s.units].sort((a, b) => Number(!!a.player) - Number(!!b.player))) if (e.kind === 'hero' && e.hp > 0 && this.visible.has(e.id)) this.drawHeroMarker(m, s, e, e.x / SIZE * size, e.y / SIZE * size, full);
+    this.drawPings(m, s, size, full);
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
     if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
