@@ -1,32 +1,41 @@
 ## ADDED Requirements
 
 ### Requirement: The game picks one swing target
-In flat play, the game SHALL pick one target for each swing. A target SHALL be a wall or an underside of a building or of another city structure, such as the Needle, the Dome or the expressway. It SHALL be 9 to 80 m from the head and more than 4 m above the chest. A target SHALL NOT be a roof, a floor, the street, the water or a roof antenna. The game SHALL search for a target at most 20 times a second and SHALL keep the last target between searches.
+In flat play, the game SHALL pick one target for each swing. A target SHALL be a wall or the underside of a building or of another city structure, such as the Needle, the Dome or the expressway. A target SHALL NOT be a roof, a floor, the street, the water or a roof antenna. The picker SHALL work in three tiers. Tier 1 is a fan of rays in front of the view: its targets are 9 to 80 m from the head and more than 4 m above the chest. Tier 2 runs only when tier 1 finds nothing: its targets are 9 to 88 m from the head and more than 3 m above the chest. Tier 3 is the exact ray through the screen centre, with the tier 2 bounds. The game SHALL search the fan at most 20 times a second and tier 2 at most 5 times a second, and SHALL keep the last target between searches.
 
 #### Scenario: Swing from the start roof
-- **WHEN** a player stands on the start roof in the default view, holds the swing input and does not touch the look input
-- **THEN** a rope attaches within 0.6 s to a building point at least 10 m above the roof
+- **WHEN** a player stands on the start roof in the default view with tutorial step 0 running, holds the swing input and does not touch the look input
+- **THEN** a rope attaches within 0.6 s to the tower face at the gold ring, at least 10 m above the roof
 
-#### Scenario: Reach rules
-- **WHEN** the picker runs from 5,000 sampled states (roofs and air, random views)
-- **THEN** every target is 9 to 80 m from the head and more than 4 m above the chest
-- **AND** no target is a roof, a floor or a roof antenna
+#### Scenario: Reach rules of tier 1
+- **WHEN** the picker runs from 5,000 sampled states (roofs and air, random views) and returns a tier 1 target
+- **THEN** the target is 9 to 80 m from the head and more than 4 m above the chest
+- **AND** it is not a roof, a floor or a roof antenna
+
+#### Scenario: Reach rules of tier 2 and tier 3
+- **WHEN** the picker returns a tier 2 or tier 3 target in the same 5,000 states
+- **THEN** the target is 9 to 88 m from the head and more than 3 m above the chest
+- **AND** it is not a roof, a floor or a roof antenna
 
 #### Scenario: Cost of one search
 - **WHEN** the picker runs one search
-- **THEN** it casts at most 66 rays in the first tier and at most 28 rays in the second tier
+- **THEN** it casts at most 66 rays in tier 1, at most 700 rays in tier 2 and one ray in tier 3
 - **AND** the held target costs one ray each frame
 
 ### Requirement: The target stays inside the width of the view
-The search fan SHALL NOT reach past the horizontal field of view. A narrow view, such as a phone in portrait, SHALL narrow the fan with it.
+A tier 1 target SHALL be in front of the camera, and its screen x SHALL lie within 0.92 of the half-width of the screen. A target above the top edge MAY pass. The fan width SHALL follow the Aim assist setting: 21, 28 or 35 degrees each side for Low, Medium and High.
 
 #### Scenario: Phone in portrait
-- **WHEN** the view is 390 by 844 with a vertical field of view of 75 degrees and the picker finds a target in its first tier
-- **THEN** the target lies within 0.92 of the half-width of the screen
+- **WHEN** the view is 390 by 844 with a vertical field of view of 75 degrees and the picker returns a tier 1 target, at the default pitch and at +8 degrees
+- **THEN** the target's screen x lies within 0.92 of the half-width of the screen
 
 #### Scenario: Computer in landscape
-- **WHEN** the view is 960 by 540 and the picker finds a target in its first tier
-- **THEN** the target lies within 35 degrees of the view bearing
+- **WHEN** the view is 960 by 540 and the picker returns a tier 1 target
+- **THEN** the target's screen x lies within 0.92 of the half-width of the screen
+
+#### Scenario: Aim assist Low
+- **WHEN** the Aim assist setting is Low and a building stands 30 degrees to the side of the view bearing
+- **THEN** the fan does not find it in tier 1
 
 ### Requirement: Higher anchors when the view looks up or the body falls
 The preferred elevation SHALL be the camera pitch plus 35 degrees, held between 35 and 60 degrees. While the body falls faster than 3 m/s, the preferred elevation SHALL rise by up to 12 degrees (all of it at 15 m/s), to a top of 72 degrees. A body at rest SHALL use the same rule.
@@ -44,7 +53,7 @@ The preferred elevation SHALL be the camera pitch plus 35 degrees, held between 
 - **THEN** the preferred elevation is 47 degrees
 
 ### Requirement: Clogs, pipes and the gold ring come first
-A clog, a pipe or the gold ring SHALL win over every building when three things are true. It is within 60 m (80 m for the ring). It is within 22 degrees of the camera forward, measured at the camera (35 degrees for the ring). It is in line of sight from the head. A pipe SHALL count only from within 60 degrees of its outward normal. The gold ring SHALL count only while tutorial step 0 runs. Among specials, the one nearest the view axis SHALL win.
+A clog or a pipe SHALL win over every building when it is within 60 m, within 22 degrees of the camera forward measured at the camera, and in line of sight from the head. Once it is the target, it SHALL stay the target until it is more than 28 degrees from the camera forward. A pipe SHALL count only from within 60 degrees of its outward normal. The gold ring SHALL win while tutorial step 0 runs, when it is within 80 m and in line of sight. It SHALL be within 35 degrees of the view bearing, measured around the vertical axis, at any elevation. After step 0 the ring SHALL have no special rank. Among specials, the one nearest the view axis SHALL win.
 
 #### Scenario: A clog in view
 - **WHEN** a clog is 30 m away and 5 degrees from the camera forward, with no wall between
@@ -59,13 +68,19 @@ A clog, a pipe or the gold ring SHALL win over every building when three things 
 - **WHEN** a clog is 40 degrees from the camera forward
 - **THEN** the target is a building and not the clog
 
+#### Scenario: A clog on the edge of the cone
+- **WHEN** the view turns so that a clog moves from 20 to 26 degrees and back to 20 degrees from the camera forward
+- **THEN** the clog stays the target for the whole turn
+- **WHEN** the clog moves beyond 28 degrees
+- **THEN** a building replaces it
+
 #### Scenario: A pipe seen from behind
 - **WHEN** the head is outside 60 degrees of the outward normal of a pipe
 - **THEN** the pipe is not the target
 
-#### Scenario: The gold ring in the tutorial
-- **WHEN** tutorial step 0 runs and the ring is within 35 degrees of the view bearing, in line of sight
-- **THEN** the target is the centre of the ring
+#### Scenario: The gold ring from the start roof
+- **WHEN** tutorial step 0 runs, the player stands on the start roof in the default view, and the screen is 16 by 9 or 390 by 844
+- **THEN** the target is the point on the tower face at the centre of the ring, although the ring is above the top edge of the screen
 - **AND** after step 0 the ring has no special rank
 
 ### Requirement: The target does not flicker
@@ -80,8 +95,19 @@ The picker SHALL keep the held target while it is valid. A new candidate SHALL r
 - **WHEN** a wall moves between the head and the held target
 - **THEN** the next search replaces the target in the same frame
 
+### Requirement: The next swing goes to a new building
+The score of a building that held one of the last two ropes SHALL fall by 0.6 for 8 s after the rope let go. A building that holds a rope SHALL NOT be the target of the second rope while another building qualifies. The picker SHALL still return a building that is the only one that qualifies.
+
+#### Scenario: Two towers
+- **WHEN** a rope has just let go of tower A and a tower B scores 0.4 lower than A before the penalty
+- **THEN** the target is tower B
+
+#### Scenario: Only one tower
+- **WHEN** a rope has just let go of tower A and no other building qualifies
+- **THEN** the target is tower A
+
 ### Requirement: The hand follows the target
-The hand that fires SHALL be the hand on the side of the target. A target more than 6 degrees left of the view axis SHALL pick the left hand. A target more than 6 degrees right SHALL pick the right hand. Otherwise the hand that did not fire last SHALL fire. On a phone the hand SHALL be the right hand.
+The hand that fires SHALL be the hand on the side of the target. A target more than 6 degrees left of the view axis SHALL pick the left hand. A target more than 6 degrees right SHALL pick the right hand. Otherwise the hand that did not fire last SHALL fire. On a phone the hand SHALL be the right hand. In the opening the hand SHALL follow the old mapping: the left button or E fires the left hand, and the right button or Q fires the right hand.
 
 #### Scenario: Target on the left
 - **WHEN** the target is 20 degrees left of the view axis and the player presses the swing input
@@ -100,30 +126,65 @@ The hand that fires SHALL be the hand on the side of the target. A target more t
 - **THEN** the idle hand fires at a different building when one qualifies
 - **AND** the marker before the press shows that other building
 
+### Requirement: The picker decides a flat swing
+In flat play with state "play" and no test aim override on the hand, the picker SHALL decide whether a swing fires. The game SHALL fire at the picker's point and SHALL NOT let `ropes.aim` choose again. With no target, no rope SHALL fire, even when the view ray hits a roof or a wall in reach. With a test aim override on a hand, the old decision by `ropes.aim` SHALL hold for that hand. In the opening and in a pause the picker SHALL be off.
+
+#### Scenario: No target, a roof in view
+- **WHEN** the picker returns no target, the view ray hits the roof 6 m ahead, and the player presses the swing input
+- **THEN** the cup dry-fires along the view and no rope attaches to the roof
+
+#### Scenario: The rope goes to the pick
+- **WHEN** the picker returns a building point and the player presses the swing input
+- **THEN** the rope attaches to that point, with the same normal, and no other building is chosen
+
+#### Scenario: A test override
+- **WHEN** a test aims the right hand at a point with `G.test.aimAt` and presses
+- **THEN** the old path decides and the rope attaches as it did before this change
+
 ### Requirement: A building the player points at gets the rope
-When the player points at a building point that can hold a swing, the rope SHALL go to that exact point. A point can hold a swing when it is 9 to 88 m from the head, is not a roof or a floor, and is more than 3 m above the chest. Otherwise the rope SHALL go to the auto target. The exact ray SHALL be the tapped pixel on a phone, and the screen centre in first person.
+In first person, when the exact ray through the crosshair hits a point that passes the tier 3 test, the rope SHALL go to that exact point, and the marker SHALL sit there. Otherwise the rope SHALL go to the auto target. In third person the exact ray SHALL be the last resort after tiers 1 and 2. A phone tap SHALL follow the tap rules in `swing-phone-aim`.
 
 #### Scenario: First person, crosshair on a building
 - **WHEN** the player is in first person and the crosshair rests on a building 40 m away and 15 m above the chest
-- **THEN** the swing input attaches the rope within 8 m of the crosshair point
+- **THEN** the lock-on ring sits on the crosshair point
+- **AND** the swing input attaches the rope within 8 m of the crosshair point
 
 #### Scenario: First person, crosshair on the roof
 - **WHEN** the player is in first person and the crosshair rests on the roof at the hero's feet
 - **THEN** the swing input attaches the rope to the auto target, a building more than 5 m above the roof
 
-#### Scenario: Third person has no centre aim
+#### Scenario: Third person looks at a building
+- **WHEN** the camera looks level at a building 40 m ahead in third person and tiers 1 and 2 find nothing
+- **THEN** the swing input attaches the rope to the point the centre ray hits
+
+#### Scenario: Third person, hero's feet
 - **WHEN** the camera looks down at the hero in third person and the player presses the swing input
 - **THEN** the rope goes to the auto target and never to the roof at the hero's feet
 
-#### Scenario: Tap at the sky
-- **WHEN** a phone player taps where no building is in reach
-- **THEN** the rope goes to the auto target, with the bearing of the tap as the preferred bearing
+### Requirement: The opening keeps its aim
+In the opening, the picker, the hand choice, the kick, the hop and the lock-on ring SHALL be off. The aim SHALL be the exact ray through the screen centre. The crack SHALL take a rope from a real press.
+
+#### Scenario: Hit the crack with the mouse
+- **WHEN** the opening runs, the crosshair rests on the crack, and the player holds the left mouse button
+- **THEN** the rope attaches to the crack
+- **WHEN** the player presses F
+- **THEN** the crack takes a pump
+
+#### Scenario: Hit the crack with a pad
+- **WHEN** the opening runs, the crosshair rests on the crack, and the player holds the right trigger
+- **THEN** the rope attaches to the crack
+- **WHEN** the player presses the right bumper
+- **THEN** the crack takes a pump
+
+#### Scenario: The crosshair is on the sky
+- **WHEN** the opening runs and the crosshair rests on the sky
+- **THEN** the swing input does not bend the aim toward a building
 
 ### Requirement: A marker shows the next target
-In play, a marker SHALL show the target of the next swing. The marker SHALL show while a rope is attached too, and then it SHALL mark the next building and not the one the rope holds. It SHALL hide when both ropes are out, in the intro, when paused, and when there is no target. The marker SHALL be a world reticle on the surface and a lock-on ring in screen space. A target outside the screen SHALL show as an arrow on the screen edge.
+In play, a marker SHALL show the point the next swing will use. The marker SHALL show while a rope is attached too, and then it SHALL mark the next building and not the one the rope holds. It SHALL hide when both ropes are out, in the opening, when paused, and when there is no target. The marker SHALL be a world reticle on the surface and a lock-on ring in screen space. The ring SHALL stay inside a safe window that excludes the score pills, the top buttons, the spoken line, the SWING panel and the climb pad. When the projected target lies outside the safe window, the ring SHALL become an arrow on the border of the window, pointing at the target. A target behind the camera SHALL show an arrow on the bottom border, pointing down. A catch SHALL pop the ring for 120 ms.
 
 #### Scenario: Computer, target on screen
-- **WHEN** a target exists inside the screen at 960 by 540
+- **WHEN** a target exists inside the safe window at 960 by 540
 - **THEN** the lock-on ring is 44 px across and its centre is within 3 px of the projected target
 - **AND** the world reticle of `rope.js` sits on the same point
 
@@ -132,14 +193,18 @@ In play, a marker SHALL show the target of the next swing. The marker SHALL show
 - **THEN** the lock-on ring and the world reticle show as for the mouse
 
 #### Scenario: Phone
-- **WHEN** a target exists inside the screen on a phone
+- **WHEN** a target exists inside the safe window on a phone
 - **THEN** the lock-on ring is 56 px across and its centre is within 3 px of the projected target
 - **AND** the SWING button is not dimmed
 
 #### Scenario: Target above the screen
 - **WHEN** the best target is above the top edge of the screen
-- **THEN** an arrow sits on the top edge at the target's horizontal position and points up
-- **AND** on a phone the arrow stays clear of the top buttons and the SWING panel
+- **THEN** an arrow sits on the top border of the safe window at the target's side and points at the target
+- **AND** the arrow overlaps no score pill, no top button and no spoken line, at 390 by 844, 844 by 390 and 960 by 540
+
+#### Scenario: Target behind the camera
+- **WHEN** the target lies behind the camera plane, as on a wall in third person
+- **THEN** an arrow sits on the bottom border of the safe window and points down
 
 #### Scenario: A rope is attached
 - **WHEN** the right rope holds building A and a second target exists
@@ -147,8 +212,33 @@ In play, a marker SHALL show the target of the next swing. The marker SHALL show
 - **WHEN** both ropes are attached
 - **THEN** no marker shows
 
+#### Scenario: The catch pop
+- **WHEN** a rope attaches, a yank fires or a pump fires
+- **THEN** the ring pops for 120 ms
+- **WHEN** the player prefers reduced motion
+- **THEN** the ring does not change size and flips to its brighter colour for 120 ms
+
+### Requirement: A cue tells the player when to let go
+On a computer or a pad, while a rope is attached to a building and the swing is in its release window, the ring SHALL pulse and a caption SHALL read LET GO. The window SHALL open when the body is in the air, rising and moving away from the point under the anchor, 25 to 60 degrees from straight down. It SHALL also open when the body has dragged along a roof or a street for 0.5 s with the rope attached. The cue SHALL NOT show on a clog, a pipe or the crack, on a phone, or in a headset. The player SHALL be able to turn it off in the Comfort menu.
+
+#### Scenario: Past the bottom of the arc
+- **WHEN** a rope holds a building and the body rises 40 degrees past straight down, moving away from the anchor
+- **THEN** the caption LET GO shows and the ring pulses
+
+#### Scenario: Before the bottom of the arc
+- **WHEN** the body is 10 degrees from straight down and falling
+- **THEN** no cue shows
+
+#### Scenario: Dragged along a roof
+- **WHEN** the rope holds a building and the body drags along a roof for 0.6 s
+- **THEN** the cue shows
+
+#### Scenario: Cue off
+- **WHEN** the Release cue setting is Off
+- **THEN** no cue shows in the same states
+
 ### Requirement: No target is clear to the player
-When no target exists, no marker SHALL show. A swing input SHALL wait 0.3 s for a target and then dry-fire: the cup flies 6 m and drops. A computer or a pad player SHALL read the line "No building to swing from. Look up at one." at most once every 10 s. A phone SHALL dim the SWING button and show its hint line.
+When no target exists, no marker SHALL show. A swing input SHALL wait 0.3 s for a target and then dry-fire: the cup flies 6 m along the view and drops. A computer or a pad player SHALL read the line "No building to swing from here. Face the city, or step off the edge." at most once every 10 s. A phone SHALL dim the SWING button and show its hint line.
 
 #### Scenario: Nothing in reach
 - **WHEN** no building is in reach in any direction and the player holds the swing input
@@ -164,23 +254,24 @@ When no target exists, no marker SHALL show. A swing input SHALL wait 0.3 s for 
 - **THEN** the SWING button is dimmed and still works, and a tap is a dry fire that leaves the hero on the roof
 
 ### Requirement: A wall gives a way out
-A player who holds a wall and uses the swing input SHALL get a target away from the wall. The picker SHALL use the view bearing when the view faces away from the wall. Otherwise it SHALL use the outward normal of the wall.
+A player who holds a wall and uses the swing input SHALL get a target away from the wall. The picker SHALL use the view bearing when the view faces away from the wall. Otherwise it SHALL use the outward normal of the wall, and it SHALL NOT limit the target to the screen. The marker SHALL show for a target behind the camera.
 
 #### Scenario: Swing off a wall
 - **WHEN** a player holds a wall in third person with the view toward the wall and presses the swing input
-- **THEN** the rope attaches to a building on the side the wall faces, more than 9 m away
-- **AND** the player leaves the wall
+- **THEN** the marker shows an arrow on the bottom border before the press
+- **AND** the rope attaches to a building on the side the wall faces, more than 9 m away
+- **AND** the player leaves the wall and the view turns to face the swing
 
 #### Scenario: Look away from the wall
 - **WHEN** the player turns the view away from the wall and presses the swing input
 - **THEN** the target lies within 35 degrees of the new view bearing, if a building qualifies
 
 ### Requirement: The picker is never narrower than the old phone assist
-The second tier of the picker SHALL include every ray of the old phone assist. Those rays use the yaw offsets 0, 22, 45 and 75 degrees to both sides, and the pitches 16, 28, 42 and 56 degrees. A state where the old assist found a building SHALL give a target.
+Tier 2 SHALL port the old phone assist. It SHALL use the 28 directions of the old assist, in the old order. The yaw offsets are 0, -22, 22, -45, 45, -75 and 75 degrees from the velocity heading (above 4 m/s) or the view yaw. Each has the pitches 28, 42, 56 and 16 degrees. For each direction it SHALL cast the exact ray. When that ray misses or hits beyond 88 m, it SHALL also cast the 24-ray cone of 24 degrees that `rope.js` casts. Take a state where the old assist found a building 9 to 88 m away, more than 3 m above the chest and more than 2 m ahead, and not a roof, a floor or an antenna. That state SHALL give a target.
 
-#### Scenario: Compare with the old fan
-- **WHEN** 5,000 sampled states run through the old fan and through the picker
-- **THEN** no state exists where the old fan finds a swingable point and the picker finds none
+#### Scenario: Compare with the old assist and its cone
+- **WHEN** 5,000 sampled states run through a reference copy of the old assist (with the cone) and through the picker, in views that differ from the velocity heading as well as views that match it
+- **THEN** no state exists where the reference finds a point that meets the tier 2 bounds and the picker finds none
 
 #### Scenario: Sky tap on a phone
 - **WHEN** a phone player taps straight up at the sky from the start roof
@@ -198,7 +289,7 @@ The second tier of the picker SHALL include every ray of the old phone assist. T
 - **THEN** the picker finds no target
 
 ### Requirement: The headset does not change
-In a VR or AR session no picker SHALL run, and no lock-on ring or hint strip SHALL show.
+In a VR or AR session no picker SHALL run, and no lock-on ring, cue, hint strip or pad rumble SHALL show or play.
 
 #### Scenario: Quest session
 - **WHEN** the player enters VR on a Quest or its emulator
