@@ -551,6 +551,9 @@ async function swing() {
   await page.evaluate(() => { window.__lock.refuse = true; document.exitPointerLock(); });
   await page.waitForFunction(() => G.state === "paused", null, { timeout: 5000 });
   await step(page, 2);
+  // an Esc within 250 ms of the browser's own unlock is that same press, and a refusal within 1.3 s of it is asked once more
+  // (desktop.js, ESC_GAP and RETRY_MS): wait both out, so each Esc here is a new press and each resume asks once
+  await sleep(1400);
   const req0 = await page.evaluate(() => window.__lock.requests);
   for (let i = 0; i < 3; i++) { await page.keyboard.press("Escape"); await step(page, 3); } // resume (asks, refused), pause, resume (asks, refused)
   const esc = await page.evaluate(() => ({ state: G.state, locked: G.desktop.locked, asked: window.__lock.requests }));
@@ -896,9 +899,13 @@ async function markerExtra() {
   // the pop (and reduced motion), and the LET GO cue, on one page
   const page = await playPage(960, 540);
   await lock(page);
-  await page.evaluate(() => { __f.roof(); G.test.look(0, 0.45); __f.step(40); });
-  const ring = await page.evaluate(() => __f.vis("#lockRing"));
-  check(ring, "(the ring shows for the pop check)");
+  // no spoken line: one under the score row closes the top of the safe window, and the ring high on the wall shows as an arrow
+  // (the marker reads the HUD at most 10 times a second in real time: let it see the line gone)
+  await page.evaluate(() => { __f.roof(); G.ui.say("", 0); __f.step(3); });
+  await sleep(160);
+  await page.evaluate(() => { G.test.look(0, 0.45); __f.step(40); });
+  const ring = await page.evaluate(() => ({ vis: __f.vis("#lockRing"), arrow: __f.vis("#lockArrow"), a: __f.rect("#lockArrow"), sub: __f.vis(".fs-sub.on"), pitch: G.test.flat().pitch, ndc: G.test.target().ndc }));
+  check(ring.vis, "(the ring shows for the pop check)", ring);
   const pop = await page.evaluate(async () => {
     const r = document.querySelector("#lockRing"), svg = r.querySelector("svg");
     svg.style.transition = "none";
@@ -960,7 +967,9 @@ async function markerExtra() {
   await open(page2, "nosw&skipintro");
   await enterXR(page2, "desktop");
   await waitState(page2, { mode: "desktop", state: "play" }, 240000);
-  await page2.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); __f.roof(); G.test.look(0, 0.45); __f.step(40); });
+  await page2.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); __f.roof(); G.ui.say("", 0); __f.step(3); });
+  await sleep(160);
+  await page2.evaluate(() => { G.test.look(0, 0.45); __f.step(40); });
   const rp = await page2.evaluate(async () => {
     const r = document.querySelector("#lockRing"), svg = r.querySelector("svg");
     if (!__f.vis("#lockRing")) return null;
@@ -1005,11 +1014,11 @@ async function cameraPart() {
   await page.keyboard.down("KeyW"); await page.mouse.down();
   const rise = await page.evaluate(() => { const out = []; for (let i = 0; i < 6; i++) { __f.step(15); out.push(G.test.flat()); } return out.map((f) => ({ pitch: +f.pitch.toFixed(3), lifting: f.lifting, hold: +f.hold.toFixed(2) })); });
   const maxP = Math.max(...rise.map((r) => r.pitch));
-  check(maxP >= 0.12, "a swing with no look input raises the pitch from -0.27 to at least +0.12 rad within 1.5 s (" + maxP + ")", rise);
+  check(maxP >= 0.12, "a swing with no look input raises the pitch from the default (-0.35) to at least +0.12 rad within 1.5 s (" + maxP + ")", rise);
   check(rise.every((r, i) => i === 0 || r.pitch >= rise[i - 1].pitch - 1e-6), "the lift only raises the pitch (it never lowers)", rise.map((r) => r.pitch));
-  // never lowers: a high pitch stays
-  const hi = await page.evaluate(() => { G.flatcam.setPitch(0.52); __f.step(30); return G.test.flat().pitch; });
-  check(hi >= 0.52 - 1e-6, "with the pitch at +30 degrees the lift leaves it there (" + hi.toFixed(3) + ")", hi);
+  // never lowers: a high pitch stays (inside the third-person range, which stops at 25 degrees)
+  const hi = await page.evaluate(() => { G.flatcam.setPitch(0.4); __f.step(30); return G.test.flat().pitch; });
+  check(hi >= 0.4 - 1e-6, "with the pitch at +23 degrees the lift leaves it there (" + hi.toFixed(3) + ")", hi);
   // a look input pauses the lift for 0.7 s
   const look = await page.evaluate(() => { G.flatcam.setPitch(-0.1); G.test.look(0, 0); G.test.look(0.01, 0); __f.step(1); const p0 = G.test.flat().pitch; __f.step(36); const p1 = G.test.flat(); __f.step(40); const p2 = G.test.flat(); return { p0, p1: p1.pitch, l1: p1.lifting, p2: p2.pitch, l2: p2.lifting }; });
   check(look.p1 - look.p0 < 0.02 && look.p2 > look.p1 + 0.03, "after a look input the lift waits 0.7 s (pitch " + look.p0.toFixed(3) + " then " + look.p1.toFixed(3) + "), then raises the pitch again (" + look.p2.toFixed(3) + ")", look);
@@ -1105,7 +1114,8 @@ async function exactAim() {
     __f.roof(); G.flatcam.setFirstPerson(true); __f.step(40);
     const C = G.city, S = C.start, out = [];
     for (let yaw = -0.6; yaw <= 0.61; yaw += 0.2) for (let pitch = 0.1; pitch <= 0.7; pitch += 0.1) {
-      G.rigYaw = S.yaw + yaw; G.flatcam.reset(S.yaw + yaw, pitch); G.flatcam.setFirstPerson(true); __f.step(20);
+      // 60 frames: the camera ends its move to the eye (it starts from the chase position, which is off the eye's line of sight)
+      G.rigYaw = S.yaw + yaw; G.flatcam.reset(S.yaw + yaw, pitch); G.flatcam.setFirstPerson(true); __f.step(60);
       const c = G.camera.position, d = new c.constructor(0, 0, -1).applyQuaternion(G.camera.quaternion);
       const h = C.raycast(c.x, c.y, c.z, d.x, d.y, d.z, 400, {});
       if (!h || h.ny > 0.7 || h.collider.tag === "antenna") continue;

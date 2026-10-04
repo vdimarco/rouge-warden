@@ -2,18 +2,31 @@
 // The camera is the head at standing height; the mouse turns the rig (main adds input.turn to rigYaw) and tilts the head.
 // Two logical swing inputs (swing 1: the left button, E, the right trigger; swing 2: the right button, Q, the left trigger) fire
 // the free hand that main picks (D.chooseHand). It also draws the lock-on ring, the LET GO caption and the first-minute key strip.
+// The look wants the pointer lock (raw mouse where the browser has it). Without it the free cursor still turns the view, and
+// resting it near an edge keeps turning, so a lost or refused lock never leaves the mouse stuck at the edge of the screen.
 import * as THREE from "three";
 import { createMobile } from "./mobile.js";
 import { COMFORT, PAD, DESKTOP } from "./config.js";
 import { createInput, clearEdges } from "./xr.js";
 
 const SENS = 0.0022; // radians of look per pixel of mouse travel
-const MOVE_MAX = 200;
+const MOVE_MAX = 200; // one event never turns more than this many pixels' worth (a stray jump would spin the view)
+const SKIP_MS = 500, SKIP_MIN = 40; // Chromium's made-up jump: one big move made this soon after a lock is asked for or taken
+const EDGE = 0.06, EDGE_MIN = 24, EDGE_IN = 0.35; // the edge band: part of the shorter side (at least px), speed at its inner side
+const EDGE_YAW = 2.2, EDGE_PITCH = 1.2; // rad/s of turn with the free cursor at the very edge
+const ESC_GAP = 250; // ms: an Esc that comes with the browser's own unlock is the same press
+const RETRY_MS = 1300; // Chrome refuses a new lock for about a second after the user's own Esc
+const PENDING_MS = 2000; // a lock request with no answer by then is over
+const RELOCK_MS = 3000; // our own let-go (see relock) answers within this, even on a slow machine
+const RAW = { unadjustedMovement: true };
 const PITCH_MAX = (85 * Math.PI) / 180;
 const YANK_F = 3.5; // m/s of synthetic pull for F (and the pad's X and right bumper)
 // muzzles sit at camera-local (∓0.22, −0.2, −0.35); a launcher's muzzle is 0.1 m ahead of its grip
 const GRIP_OFF = [new THREE.Vector3(-0.22, -0.2, -0.25), new THREE.Vector3(0.22, -0.2, -0.25)];
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+// -1…1: how deep v sits in the band of width z at either end of 0…size (negative at the 0 end)
+const band = (t) => EDGE_IN + (1 - EDGE_IN) * clamp(t, 0, 1);
+const edgeOf = (v, size, z) => (v < z ? -band(1 - v / z) : v > size - 1 - z ? band((v - (size - 1 - z)) / z) : 0);
 const padButton = (gp, i) => !!gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5);
 // a trigger goes down at 0.5 and up below 0.3, so a value near the threshold never flutters
 const padTrigger = (gp, i, was) => {
@@ -53,9 +66,22 @@ export function createDesktop(canvas, camera, settings) {
   const Q = { jump: false, menu: false, map: false, yank: false, mute: false };
   const pad = { a: false, x: false, y: false, rb: false, start: false };
   const E = new THREE.Euler(0, 0, 0, "YXZ");
-  let dx = 0, dy = 0, pitch = 0, wheel = 0, skipMove = false, usingPad = false, gt = 0, lockFails = 0, skipClick = 0;
-  const asks = []; // for each pointer lock request still unanswered: did a click make it? Only a refused click counts toward lockFails
+  // armed: Chromium's made-up jump may still come, until SKIP_MS after lockAt (the request, then the lock itself)
+  let dx = 0, dy = 0, pitch = 0, wheel = 0, armed = false, lockAt = 0, usingPad = false, gt = 0, skipClick = 0;
+  // the lock: raw movement until the system says it has none; the request in flight and whether a click made it; refused click
+  // requests in a row (only those count); a browser that answers with events only; our own let-go after a change to full screen;
+  // when the lock was last lost by the user (Esc, alt-tab)
+  let raw = true, reqId = 0, pendingAt = 0, clickReq = false, events = false, lockFails = 0, relockAt = 0, lostAt = -1e9, retryT = 0;
+  let granted = false; // the lock has been granted since the last request: the next move ends the watch for the made-up jump
+  // the free cursor (no lock): where it is, and whether it is over the page
+  let cx = 0, cy = 0, inside = false;
   const unlockFns = [];
+  // the lock holds the cursor: Chromium sets pointerLockElement at once but sends pointerlockchange with the next frame, which
+  // can be long in coming while the opening compiles its shaders, so the look goes by either
+  const locked = () => D.locked || document.pointerLockElement === canvas;
+  const free = () => !locked();
+  const asking = () => pendingAt > 0 && performance.now() - pendingAt < PENDING_MS;
+  const looking = () => D.active && !mobile.enabled && (window.G?.state === "play" || window.G?.state === "intro");
   const wlog = { t: new Float32Array(48), a: new Float32Array(48), n: 0 }; // the wheel's grants in the last DESKTOP.wheel.per s
 
   const D = {
@@ -71,15 +97,22 @@ export function createDesktop(canvas, camera, settings) {
       // the pause menu lets go of the lock, but a slow release can leave it held at the click that resumes: that click swings nothing too
       if (document.pointerLockElement === canvas) { if (fromClick) skipClick = performance.now() + 200; return; }
       const api = !!canvas.requestPointerLock;
-      try {
-        const p = api && canvas.requestPointerLock();
-        if (api) { asks.push(!!fromClick); if (asks.length > 4) asks.shift(); } // (a request that is never answered must not pile up)
-        if (p && p.catch) p.catch(() => { /* no pointer lock here (a test browser): the buttons still work */ });
-        // With no pointer lock API there is nothing to ask for (no grant and no error will come), so only the click that resumes a
-        // pause is swallowed: swallowing every click would leave the buttons dead for ever. (G.state flips to play on the next tick.)
-        if (fromClick && lockFails < 2 && (api || window.G?.state === "paused")) skipClick = performance.now() + 200;
-      } catch (e) { /* same */ }
+      // With no pointer lock API there is nothing to ask for (no grant and no error will come), so only the click that resumes a
+      // pause is swallowed: swallowing every click would leave the buttons dead for ever. (G.state flips to play on the next tick.)
+      if (fromClick && lockFails < 2 && (api || window.G?.state === "paused")) skipClick = performance.now() + 200;
+      if (api && !asking()) request(!!fromClick); // one request at a time
     },
+    // Full screen just came on. With no lock, ask for one. On a Mac a lock taken while the screen changed may not hold the
+    // cursor (it runs to the edge), so let go and take it straight back (a lock the page let go of needs no click).
+    relock() {
+      if (mobile.enabled) return;
+      if (document.pointerLockElement !== canvas) { D.lock(); return; }
+      if (!/Mac/.test(navigator.platform || "")) return;
+      relockAt = performance.now();
+      try { document.exitPointerLock(); } catch (e) { relockAt = 0; }
+    },
+    // no lock, and none on the way: the page says how to get the mouse look back
+    get free() { return free() && !asking(); },
     unlock() { if (document.pointerLockElement === canvas) document.exitPointerLock(); },
     onUnlock: (fn) => unlockFns.push(fn),
     // For tests and resets: look straight ahead.
@@ -93,24 +126,55 @@ export function createDesktop(canvas, camera, settings) {
 
   const mobile = D.mobile = createMobile(canvas, () => D.active && window.G?.state !== "paused");
 
-  /* ---------------- events ---------------- */
+  /* ---------------- the pointer lock ---------------- */
+  // Raw mouse (no system acceleration) where the browser has it; a system without it says NotSupportedError, and then a
+  // plain lock. An older browser returns no promise and answers with the events only.
+  function request(click) {
+    const id = ++reqId;
+    pendingAt = lockAt = performance.now(); clickReq = click; armed = true; granted = false;
+    inside = false; // the free cursor's place is learnt again from the next move with no lock on the way
+    let p = null;
+    try { p = canvas.requestPointerLock(raw ? RAW : undefined); }
+    catch (e) { if (raw) { raw = false; request(click); } else refused(); return; }
+    if (!p || !p.then) { events = true; return; }
+    // (a refusal comes as a pointerlockerror, below: the promise only says when raw movement is not to be had)
+    p.then(
+      () => { if (armed) lockAt = performance.now(); }, // taken: the jump comes now, if it has not come yet
+      (e) => { if (id === reqId && raw && e && e.name === "NotSupportedError") { raw = false; request(click); } });
+  }
+  // a refused request: only a click's counts (a request no click made, a resume by Esc or Start, never does)
+  function refused() {
+    pendingAt = 0;
+    if (clickReq) lockFails++;
+    // refused just after the user's own Esc (Chrome waits about a second): ask once more when that is over
+    const wait = lostAt + RETRY_MS - performance.now();
+    if (wait > 0 && !retryT) retryT = setTimeout(() => { retryT = 0; if (looking() && free()) D.lock(); }, wait + 30);
+  }
+  // A refusal. A raw request the system cannot do is asked again plainly (a new request id) before this runs: that is no refusal.
+  document.addEventListener("pointerlockerror", () => { const id = reqId; setTimeout(() => { if (id === reqId && pendingAt) refused(); }, 0); });
   document.addEventListener("pointerlockchange", () => {
-    const now = document.pointerLockElement === canvas;
-    const was = D.locked;
+    const now = document.pointerLockElement === canvas, was = D.locked, t = performance.now();
     D.locked = now;
-    // Chromium sends one mousemove with a large made-up movement right after the lock starts: skip it
+    pendingAt = 0;
     if (now && !was) {
-      skipMove = true; lockFails = 0; asks.length = 0;
+      lockFails = 0; inside = false; granted = true;
+      // an older browser tells of the lock only here, so its made-up jump (see the mousemove) is timed from now
+      if (events && armed) lockAt = t;
       // a button that is already down when the lock starts does nothing until it goes up
       for (let b = 0; b < 2; b++) if (mouse[b]) { mouse[b] = false; skip[b] = true; }
     }
     if (was && !now) {
+      // our own let-go after the change to full screen: take the lock straight back, and play on
+      if (relockAt && t - relockAt < RELOCK_MS) { relockAt = 0; D.lock(); return; }
+      // lost by the user (the game's own pause lets go of it too): that Esc is not a second press of the menu key
+      if (window.G?.state !== "paused") { lostAt = t; Q.menu = false; }
       // a lost lock (Esc, alt-tab) lets go of both mouse ropes and pauses
       mouse[0] = mouse[1] = false;
       for (const f of unlockFns) f();
     }
   });
-  document.addEventListener("pointerlockerror", () => { if (asks.shift()) lockFails++; }); // (the oldest request is the one that failed)
+
+  /* ---------------- events ---------------- */
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   canvas.addEventListener("mousedown", (e) => {
     if (!D.active || mobile.enabled) return;
@@ -126,12 +190,30 @@ export function createDesktop(canvas, camera, settings) {
   // the end of the click also ends its skip: a click whose mousedown never reached the canvas (the pause card) must not eat the next press
   addEventListener("mouseup", (e) => { const b = e.button === 0 ? 0 : e.button === 2 ? 1 : -1; if (b >= 0) { mouse[b] = false; skip[b] = false; } skipClick = 0; });
   addEventListener("mousemove", (e) => {
-    if (!D.active || !D.locked) return;
-    if (skipMove) { skipMove = false; return; }
+    if (!D.active) return;
+    const mx = e.movementX || 0, my = e.movementY || 0;
+    // Chromium's made-up jump: one big move made (by its own time stamp, so a busy page that hands it over late still knows
+    // it) within SKIP_MS of the lock; it can come before the lock is told of. A small move is the player's.
+    // The first move after the grant ends the watch: a big one is the jump and is dropped, a small one is the player's.
+    if (armed && e.timeStamp - lockAt < SKIP_MS) {
+      if (Math.abs(mx) + Math.abs(my) > SKIP_MIN) { armed = false; return; }
+      if (granted) armed = false;
+    }
+    if (!locked() || (!mx && !my)) return; // the free cursor turns the view in the pointermove
     usingPad = false;
-    // one event never turns more than MOVE_MAX pixels' worth (a stray jump would spin the view)
-    dx += clamp(e.movementX || 0, -MOVE_MAX, MOVE_MAX); dy += clamp(e.movementY || 0, -MOVE_MAX, MOVE_MAX);
+    dx += clamp(mx, -MOVE_MAX, MOVE_MAX); dy += clamp(my, -MOVE_MAX, MOVE_MAX);
   });
+  // The free cursor (a mouse, never a touch): its travel turns the view in play, and its place drives the edge turn. Not
+  // while a lock is on the way: Chromium's made-up jump can come before the lock does, with the cursor at 0, 0.
+  addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse" || !D.active || mobile.enabled || !free() || asking()) return;
+    const back = inside, mx = e.clientX - cx, my = e.clientY - cy;
+    cx = e.clientX; cy = e.clientY; inside = true;
+    if (!back || !looking()) return; // the first move over the page jumps from wherever the cursor was
+    usingPad = false;
+    dx += clamp(mx, -MOVE_MAX, MOVE_MAX); dy += clamp(my, -MOVE_MAX, MOVE_MAX);
+  });
+  addEventListener("mouseout", (e) => { if (!e.relatedTarget) inside = false; }); // the cursor left the window
   // The wheel reels. A pinch on a trackpad is a wheel event with Ctrl held, and scroll momentum is a long stream of events:
   // those never reel, and a stream reels at most DESKTOP.wheel.cap s in any DESKTOP.wheel.per s.
   canvas.addEventListener("wheel", (e) => {
@@ -174,12 +256,12 @@ export function createDesktop(canvas, camera, settings) {
     // letter; a punctuation key in that place (AZERTY's comma under KeyM) is not M
     const key = e.key || "", byPlace = key.length !== 1 || /\p{L}/u.test(key);
     if (!e.repeat && (/^m$/i.test(key) || (byPlace && k === "KeyM"))) Q.mute = true;
-    if (k === "Escape" && !e.repeat) Q.menu = true;
+    if (k === "Escape" && !e.repeat && performance.now() - lostAt > ESC_GAP) Q.menu = true;
     if (k.startsWith("Arrow") && !page) e.preventDefault(); // the arrows move you, never the page
     keys.add(k);
   });
   addEventListener("keyup", (e) => keys.delete(e.code));
-  addEventListener("blur", () => { keys.clear(); mouse[0] = mouse[1] = false; edge[0] = edge[1] = false; });
+  addEventListener("blur", () => { keys.clear(); mouse[0] = mouse[1] = false; edge[0] = edge[1] = false; inside = false; });
 
   /* ---------------- per frame ---------------- */
   D.update = (dt) => {
@@ -192,9 +274,15 @@ export function createDesktop(canvas, camera, settings) {
     inp.easySwing = mobile.enabled;
     inp.phoneFire = phone.fire;
     inp.phoneAim = phone.aim; // a tap's screen position (NDC x and y) for the frame it fires, else null: main aims through it
-    // look: the mouse (only while the pointer is locked) and the pad's right stick
+    // look: the mouse (locked, or the free cursor in play) and the pad's right stick
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
+    // the free cursor resting near an edge keeps turning that way (the top and the bottom tilt)
+    if (inside && free() && !asking() && looking()) {
+      const w = innerWidth, h = innerHeight, z = Math.max(EDGE_MIN, EDGE * Math.min(w, h));
+      turn -= edgeOf(cx, w, z) * EDGE_YAW * dt;
+      dp -= edgeOf(cy, h, z) * EDGE_PITCH * dt;
+    }
     // WASD or the arrow keys: walk, steer in the air, and climb on a wall
     let mx = (either("KeyD", "ArrowRight") ? 1 : 0) - (either("KeyA", "ArrowLeft") ? 1 : 0), my = (either("KeyW", "ArrowUp") ? 1 : 0) - (either("KeyS", "ArrowDown") ? 1 : 0);
     mx += phone.moveX; my += phone.moveY;
@@ -354,20 +442,23 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   probe.id = "lockProbe";
   document.body.append(ringEl, arrowEl, cueEl, hintEl, probe);
   const show = { ring: false, arrow: false, kind: "", go: false, cue: false, hints: "" };
-  const WIN = { l: 0, t: 0, r: 0, b: 0, at: -1e9, w: 0, h: 0 };
+  const WIN = { l: 0, t: 0, r: 0, b: 0, at: -1e9, w: 0, h: 0, sub: false };
   const rect = (sel) => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r : null; };
   // The safe window: the ring and the arrow stay clear of the score pills and the spoken line (and the key strip), and 8 px inside
-  // the edges and the safe-area insets. It is read from the page at most 10 times a second, and when the screen changes size.
+  // the edges and the safe-area insets. It is read from the page at most 10 times a second, and when the screen changes size or a spoken line comes or goes.
   function safeWindow() {
-    const now = performance.now(), W = innerWidth, H = innerHeight;
-    if (now - WIN.at < 100 && WIN.w === W && WIN.h === H) return WIN;
-    WIN.at = now; WIN.w = W; WIN.h = H;
+    const now = performance.now(), W = innerWidth, H = innerHeight, subOn = !!document.querySelector(".fs-sub.on");
+    if (now - WIN.at < 100 && WIN.w === W && WIN.h === H && WIN.sub === subOn) return WIN; // at once when a spoken line comes or goes
+    WIN.at = now; WIN.w = W; WIN.h = H; WIN.sub = subOn;
     const cs = getComputedStyle(probe), pad = 8 + 24; // 24 px: half of the ring, and the arrow
-    const top = rect(".fs-top"), sub = document.querySelector(".fs-sub.on") ? rect(".fs-sub") : null, strip = hintEl.hidden ? null : rect("#keyHints");
+    const top = rect(".fs-top"), sub = subOn ? rect(".fs-sub") : null, strip = hintEl.hidden ? null : rect("#keyHints");
     WIN.l = (parseFloat(cs.paddingLeft) || 0) + pad; WIN.r = W - (parseFloat(cs.paddingRight) || 0) - pad;
     WIN.t = Math.max((parseFloat(cs.paddingTop) || 0) + pad, top ? top.bottom + pad : 0);
     WIN.b = H - (parseFloat(cs.paddingBottom) || 0) - pad;
-    if (sub) WIN.b = Math.min(WIN.b, sub.top - pad);
+    // a spoken line in the upper half sits under the score row (ui.js puts it there) and its tail hangs 27 px lower; one lower down
+    // closes the window from below
+    if (sub && sub.top < H / 2) WIN.t = Math.max(WIN.t, sub.bottom + 27 + pad);
+    else if (sub) WIN.b = Math.min(WIN.b, sub.top - pad);
     if (strip) WIN.b = Math.min(WIN.b, strip.top - pad);
     if (WIN.b < WIN.t + 40) WIN.b = WIN.t + 40;
     return WIN;
@@ -396,19 +487,21 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
       place(ringEl, px, py);
       cueX = px; cueY = py - 52;
     } else {
-      // an arrow on the border of the window, where the line from the screen centre to the target crosses it
+      // an arrow on the border of the window, where the line from the screen centre to the target crosses it. A spoken line under
+      // the score row can push the top of a small window below the centre: the line then starts from the middle of the window.
       let ax, ay, rot;
+      const ox = clamp(cx, w.l, w.r), oy = cy > w.t && cy < w.b ? cy : (w.t + w.b) / 2;
       if (m.behind) { ax = clamp(cx + m.x * (w.r - w.l) * 0.4, w.l, w.r); ay = w.b; rot = 180; }
       else {
-        const ddx = px - cx, ddy = py - cy;
-        const tx = ddx > 0 ? (w.r - cx) / ddx : ddx < 0 ? (w.l - cx) / ddx : Infinity, ty = ddy > 0 ? (w.b - cy) / ddy : ddy < 0 ? (w.t - cy) / ddy : Infinity;
+        const ddx = px - ox, ddy = py - oy;
+        const tx = ddx > 0 ? (w.r - ox) / ddx : ddx < 0 ? (w.l - ox) / ddx : Infinity, ty = ddy > 0 ? (w.b - oy) / ddy : ddy < 0 ? (w.t - oy) / ddy : Infinity;
         const t = Math.min(tx, ty);
-        ax = cx + ddx * t; ay = cy + ddy * t; rot = (Math.atan2(ddx, -ddy) * 180) / Math.PI;
+        ax = ox + ddx * t; ay = oy + ddy * t; rot = (Math.atan2(ddx, -ddy) * 180) / Math.PI;
       }
       if (show.ring) { ringEl.hidden = true; show.ring = false; }
       if (!show.arrow) { arrowEl.hidden = false; show.arrow = true; }
       place(arrowEl, ax, ay, rot);
-      cueX = ax; cueY = ay > cy ? ay - 50 : ay + 28;
+      cueX = ax; cueY = ay > oy ? ay - 50 : ay + 28;
     }
     const go = !!m.go;
     setClass(ringEl, "go", go); setClass(arrowEl, "go", go);

@@ -246,6 +246,7 @@ const isXR = () => G.mode === "ar" || G.mode === "vr";
 
 function beginIntro(mode) {
   G.state = "intro";
+  introYaw = 0;
   release(P, 0); release(P, 1);
   P.frozen = true;
   P.events.length = 0;
@@ -270,6 +271,8 @@ function handOff() {
     G.rigYaw = Math.atan2(-(city.goldRing.x - P.pos.x), -(city.goldRing.z - P.pos.z));
     D.mobile.reset();
   }
+  // the turn you looked around with in the opening becomes the rig's, so the view keeps facing where you look
+  if (introYaw) { G.rigYaw += introYaw; introYaw = 0; }
   if (flatOn) { flatcam.settle(); hero.setYaw(G.rigYaw); } // the camera pulls out of the eyes and tips down to the chase view
   syncRig();
   // stepped off the roof in the real room: fade and start on the roof proper
@@ -316,7 +319,7 @@ function onResume() {
   Promise.resolve(ui.fade(1, 0, look)).then(() => ui.fade(0, 0.4, look)).catch(() => {});
   resumeGrace = 0.3;
   audio.duck(false);
-  if (G.mode === "desktop") { if (wantFs) goFullscreen(); D.lock(); }
+  if (G.mode === "desktop") takeLook(false);
 }
 
 /* ---------------- entering and leaving play ---------------- */
@@ -381,10 +384,21 @@ function onSessionEnd() {
 // flat play asked for it, so the click or key that resumes asks again. Leaving to the title leaves it. A browser without the
 // API (an iPhone) plays in the page as before.
 let wantFs = false;
+// The pointer lock first, then full screen: full screen uses up the click's permission, and a lock asked for after it may be
+// refused (Firefox, Safari). When full screen has come on, D.relock makes sure the lock holds the cursor. click: in a click.
+function takeLook(click = true) { D.lock(click); if (wantFs) goFullscreen(); }
+function onFullscreen() {
+  fsAt = 0;
+  const on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if (on && G.mode === "desktop" && D.active && (G.state === "play" || G.state === "intro")) D.relock();
+}
+// one request at a time: the change animates, and the frame that resumes after a click asks again
+let fsAt = 0;
 function goFullscreen() {
   const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
-  if (!fs || document.fullscreenElement || document.webkitFullscreenElement) return;
-  try { const p = fs.call(el, { navigationUI: "hide" }); if (p && p.catch) p.catch(() => { /* refused: play in the page */ }); } catch (e) { /* same */ }
+  if (!fs || document.fullscreenElement || document.webkitFullscreenElement || performance.now() - fsAt < 1500) return;
+  fsAt = performance.now();
+  try { const p = fs.call(el, { navigationUI: "hide" }); if (p && p.catch) p.catch(() => { fsAt = 0; /* refused: play in the page */ }); } catch (e) { fsAt = 0; }
 }
 function leaveFullscreen() {
   const exit = document.exitFullscreen || document.webkitExitFullscreen;
@@ -399,8 +413,7 @@ function startDesktop() {
   D.active = true;
   settings.easySwing = D.mobile.enabled;
   D.level();
-  D.lock();
-  picker.reset();
+  picker.reset(); // (the PLAY click took the pointer lock before full screen: see takeLook)
   flatCamera(75);
   enterPlay("desktop");
   flatView(true);
@@ -437,7 +450,7 @@ function flatCamera(fov) {
 // Flat play shows the hero and a chase camera (flatcam.js). The camera is a child of the scene there, placed in world
 // coordinates; the rig still carries the body and the yaw, so the physics, the input and every G.test hook work as before.
 // The intro stays first person (the cottage room is small); the camera pulls out at the hand-off. V (or input.viewDown) toggles.
-let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "";
+let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "", introYaw = 0; // introYaw: the head's turn in the desktop opening
 const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, lift: false, forceFirst: false }, FLAT_VIEW = { pos: null, quat: null };
 const FLAT_E = new THREE.Euler(0, 0, 0, "YXZ");
 function flatView(on) {
@@ -541,7 +554,12 @@ function flatInput(inp) {
   // the input follows the view, so its own pitch limits never hold the camera back
   D.setPitch(p);
   lastPitchIn = inp.pitch = p;
-  inp.head.local.quat.setFromEuler(FLAT_E.set(p, 0, 0));
+  inp.head.local.quat.setFromEuler(FLAT_E.set(p, introYaw, 0));
+  // in the opening the mouse turns the head inside the room (the room hangs from the rig), so the muzzles turn with it
+  if (introYaw) {
+    FLAT_Q.setFromAxisAngle(YAXIS, introYaw);
+    for (const h of inp.hands) { h.gripLocal.pos.sub(hp).applyQuaternion(FLAT_Q).add(hp); h.gripLocal.quat.premultiply(FLAT_Q); }
+  }
   const c = Math.cos(G.rigYaw), s = Math.sin(G.rigYaw), R = rig.position;
   const hx = R.x + hp.x * c + hp.z * s, hy = R.y + hp.y, hz = R.z - hp.x * s + hp.z * c; // the head in the world (toWorld, which runs next)
   viewAim(0, 0, hx, hy, hz);
@@ -560,7 +578,7 @@ function flatFrame(dt, inp, yawDelta) {
   const play = G.state === "play";
   const key = flatcam.takeKey();
   if (play && (inp.viewDown || key)) flatcam.toggle();
-  flatcam.setYaw(G.rigYaw - (play ? yawDelta : 0));
+  flatcam.setYaw(G.rigYaw + introYaw - (play ? yawDelta : 0));
   FLAT_LOOK.dx = (play ? yawDelta : 0) + ov.lookX;
   FLAT_LOOK.dy = (G.state === "paused" ? 0 : flatDy) + ov.lookY;
   ov.lookX = ov.lookY = 0; flatDy = 0;
@@ -689,6 +707,7 @@ function tick(dt, frame, time) {
   }
   syncPauseState();
   const paused = G.state === "paused";
+  lookHint(G.mode === "desktop" && !paused && D.active && !D.mobile.enabled && D.free && !shot);
   if (resumeGrace > 0 && !paused) resumeGrace -= dt;
   // 8. the opening (it may place the rig: then the world poses follow at once)
   if (G.state === "intro") { portal.update(dt, G.time, G.frame, inp); toWorld(inp); }
@@ -710,6 +729,10 @@ function tick(dt, frame, time) {
     G.rigYaw += yawDelta;
     syncRig();
     toWorld(inp);
+  } else if (G.state === "intro" && flatOn && !isXR() && inp.mode === "desktop" && inp.turn) {
+    // a flat screen looks around the room in the opening: the turn goes to the head, as a headset's would
+    const a = introYaw + inp.turn;
+    introYaw = Math.atan2(Math.sin(a), Math.cos(a));
   }
   G.prevHeadLocal.copy(hl);
   // 13. the rest of the world
@@ -1211,8 +1234,12 @@ function setShot(name) {
 }
 
 /* ---------------- the 2D page ---------------- */
+// Flat play with no pointer lock (refused, or lost without a pause): how to get the mouse look back
+let hintOn = false;
+function lookHint(on) { if (on !== hintOn) $("#lookHint").hidden = !(hintOn = on); }
 function showTitle(reenter) {
   G.titleShows++;
+  lookHint(false);
   document.documentElement.removeAttribute("data-pwa");
   document.body.dataset.mode = "title";
   const t = $("#title");
@@ -1254,7 +1281,7 @@ function wireTitle() {
     // a click you can hear, or a word on how to turn the sound on (it may be off from the arcade's speaker button); a toast,
     // so the opening's own lines do not cover it
     if (audio.isOn) audio.sfx("ui"); else setTimeout(() => ui.toast(mode === "desktop" && !D.mobile.enabled ? "Sound is off. Press M to turn it on." : "Sound is off. Turn it on in the pause menu."), 900);
-    if (mode === "desktop") { wantFs = true; goFullscreen(); if (!mouse) D.mobile.start(); startDesktop(); } else startXR(mode);
+    if (mode === "desktop") { wantFs = true; if (!mouse) D.mobile.start(); takeLook(false); startDesktop(); } else startXR(mode);
   };
   $("#enterAR").addEventListener("click", () => enter("ar"));
   $("#enterVR").addEventListener("click", () => enter("vr"));
@@ -1306,13 +1333,21 @@ function wireTitle() {
     document.body.dataset.xr = ar ? "ar" : vr ? "vr" : "none";
     G.supported = { vr, ar };
   });
-  // flat play: a click on the city while paused goes back to play
+  // flat play: a click on the city while paused goes back to play (the menu closes first, so the city takes the lock), and a
+  // click with no lock takes it back (desktop.js fires no rope with it)
   renderer.domElement.addEventListener("pointerdown", () => {
     if (G.mode !== "desktop") return;
-    // the click that resumes, or that asks for the lock, starts no swing (D.lock(true) tells desktop.js)
-    if (G.state === "paused") { if (wantFs) goFullscreen(); ui.closePause(); D.lock(true); }
-    else if (!D.locked) { if (wantFs) goFullscreen(); D.lock(true); }
+    // the click that resumes, or that asks for the lock, starts no swing (D.lock(true) tells desktop.js); the lock comes before
+    // full screen (takeLook)
+    if (G.state === "paused") { ui.closePause(); takeLook(); }
+    else if (!D.locked) takeLook();
   });
+  // a pause-menu button that ends the pause (RESUME) takes the lock inside its own click: the frame that resumes is too
+  // late for a browser that allows it only in the click
+  document.addEventListener("click", (e) => {
+    if (G.mode === "desktop" && G.state === "paused" && !ui.paused && e.target.closest && e.target.closest("#fsMenu button")) takeLook();
+  });
+  document.addEventListener("onfullscreenchange" in document ? "fullscreenchange" : "webkitfullscreenchange", onFullscreen);
   D.onUnlock(() => { if (G.mode === "desktop" && (G.state === "play" || G.state === "intro")) { ui.openPause(); syncPauseState(); } });
   $("#version").textContent = "v" + VERSION;
   setBusy(false);

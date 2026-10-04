@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.7.0";
+export const VERSION = "1.7.1";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -118,7 +118,7 @@ export const DESKTOP = { attachSpeed: 10, hop: 0, wheel: { reel: 0.15, cap: 0.3,
 export const PAD = { dead: 0.15, curve: 1.5, lookRate: Math.PI, trigger: { on: 0.5, off: 0.3 }, rumble: { attach: [0.3, 30], yank: [0.4, 40], pump: [0.6, 60] } };
 export const HINT = { seconds: 60 }; // the key hint strip shows for the first minute of an unfinished tutorial
 // The chase camera. They live here so the first-time bots and the game share them.
-export const FLATCAM = { followTau: 1.2, holdLook: 1.5, pitch0: -Math.asin(1.2 / 4.5), arm: 4.5, lift: 0.14, liftHold: 0.7, liftRate: 3, turnSecs: 0.4 };
+export const FLATCAM = { followTau: 1.2, holdLook: 1.5, pitch0: (-20 * Math.PI) / 180, arm: 4.5, lift: 0.14, liftHold: 0.7, liftRate: 3, turnSecs: 0.4 }; // pitch0: the chase view looks down 20 degrees, over the head
 
 /* ---------------- comfort ---------------- */
 export const COMFORT = {

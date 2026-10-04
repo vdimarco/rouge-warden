@@ -1,6 +1,7 @@
 // Checks the third-person hero and the chase camera in flat play (js/hero.js, js/flatcam.js and their wiring in main.js): third
-// person by default, the camera behind and above, the pull-in near walls, V and first person, ropes from the hero's hands, the
-// poses, the model and the built-in fallback, the draw budget, the intro, and that the headset is untouched.
+// person by default, the camera behind and above (never below the head), the pull-in near walls, V and first person, ropes
+// from the hero's hands, the poses, the model and the built-in fallback, the draw budget, the intro, and that the headset is
+// untouched.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/hero.mjs
 import { start, newPage, open, close, enterXR, waitState, waitFor, state, checker, watchdog, shot, sleep } from "./lib.mjs";
 
@@ -20,6 +21,18 @@ async function install(page) {
         __h.draw();
         const gl = G.renderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, b = new Uint8Array(4);
         return points.map(([x, y]) => { gl.readPixels(Math.min(w - 1, Math.max(0, Math.floor(w * x))), Math.min(h - 1, Math.max(0, Math.floor(h * (1 - y)))), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, b); return [b[0], b[1], b[2], b[3]]; });
+      },
+      // screen points (0-1, y down) on the hero's back: a grid 0.3 m across the view and from 1.0 to 1.45 m up, so it covers the
+      // jersey however far and high the camera sits
+      torso() {
+        const c = G.camera, h = G.test.state().pos, T = c.position.constructor, out = [];
+        c.updateMatrixWorld(true);
+        const r = new T().setFromMatrixColumn(c.matrixWorld, 0).setY(0).normalize();
+        for (let i = -2; i <= 2; i++) for (let k = 0; k < 6; k++) {
+          const v = new T(h.x + r.x * i * 0.08, h.y + 1.0 + k * 0.09, h.z + r.z * i * 0.08).project(c);
+          out.push([(v.x + 1) / 2, (1 - v.y) / 2]);
+        }
+        return out;
       },
       // a spot on a lower roof, gap metres from the wall of the tier above it: { x, y, z, dx, dz } with (dx, dz) toward the wall
       wall(gap = 1.2) {
@@ -90,26 +103,21 @@ try {
   check(f.on && !f.firstPerson, "flat play starts in third person", { on: f.on, fp: f.firstPerson });
   {
     const yaw = f.yaw, fw = { x: -Math.sin(yaw), z: -Math.cos(yaw) };
-    const rel = { x: f.camera.x - s.pos.x, y: f.camera.y - (s.pos.y + 1.25), z: f.camera.z - s.pos.z };
+    const rel = { x: f.camera.x - s.pos.x, y: f.camera.y - (s.pos.y + 1.65), z: f.camera.z - s.pos.z };
     const behind = -(rel.x * fw.x + rel.z * fw.z), side = Math.abs(rel.x * fw.z - rel.z * fw.x);
-    check(behind > 3.8 && behind < 4.8 && side < 0.05, "the camera sits 4.5 m behind the hero", { behind, side });
-    check(rel.y > 0.9 && rel.y < 2.2, "and about 1.2 m above the chest", rel);
+    check(behind > 3.8 && behind < 4.8 && side < 0.05, "the camera sits about 4.2 m behind the hero", { behind, side });
+    // above the hero, looking down at it (the player asked for a view from above, not from below)
+    check(rel.y > 1.5 && rel.y < 2.3, "and about 1.9 m above the eyes", rel);
+    check(Math.abs(f.pitch - (-20 * Math.PI) / 180) < 0.02, "the default view looks down 20 degrees", f.pitch);
     check(Math.abs(f.dist - 4.5) < 0.15, "the spring arm is 4.5 m long at rest", f.dist);
   }
   // the hero draws: red jersey pixels near the hero's chest on screen
-  const px = await page.evaluate(async () => {
-    const T = G.camera.position.constructor, h = G.test.state().pos, c = G.camera;
-    const grid = [];
-    for (let a = -3; a <= 3; a++) for (let b = -3; b <= 3; b++) {
-      const v = new T(h.x, h.y + 1.3, h.z).project(c);
-      grid.push([(v.x + 1) / 2 + a * 0.008, (1 - v.y) / 2 + b * 0.012]);
-    }
-    const on = __h.px(grid);
-    return on.filter(([r, g, b]) => r > 120 && r > g * 1.6 && r > b * 1.6).length;
-  });
-  check(px >= 6, "the hero is drawn (red jersey pixels at the chest)", px);
+  // the hero draws: red jersey pixels on its back
+  const px = await page.evaluate(() => __h.px(__h.torso()).filter(([r, g, b]) => r > 120 && r > g * 1.6 && r > b * 1.6).length);
+  check(px >= 6, "the hero is drawn (red jersey pixels on its back: " + px + " of 30)", px);
   const head = await page.evaluate(() => { const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
-  check(Math.abs(head.x) < 0.2 && head.y > -0.3 && head.y < 0.6 && head.z < 1, "the camera looks at the hero (the head is near the middle of the view)", head);
+  // the hero stands in the lower middle of the view and the aim (the middle of the screen) is over its head
+  check(Math.abs(head.x) < 0.2 && head.y > -0.35 && head.y < -0.03 && head.z < 1, "the hero's head is a little below the middle of the view, under the aim", head);
   // the chase view looks down at the hero's feet: the auto target must not take the roof under them but a building up and ahead
   const da = await page.evaluate(() => { __h.step(2); const a = G.test.aim(1), h = G.test.state().head; return a && { valid: a.valid, ny: a.ny, x: a.x, y: a.y, z: a.z, dist: a.dist, headY: h.y }; });
   check(da && da.valid && !(da.ny > 0.7 && da.y < da.headY - 0.3) && da.y > da.headY, "the auto target from the chase view is a building up and ahead, not the roof under the hero", da);
@@ -124,10 +132,14 @@ try {
     const dy = wrapA(a.yaw - b.yaw), dp = a.pitch - b.pitch;
     check(Math.abs(dy - 0.44) < 0.03 && Math.abs(dp - 0.22) < 0.03, "a mouse move turns the view like a mouse (0.0022 rad per pixel)", { dy, dp });
     check(Math.abs(a.forward.y - Math.sin(a.pitch)) < 1e-6, "the camera looks along its yaw and pitch", a.forward);
-    // the pitch is limited to -60 to +70 degrees
+    // the pitch is limited to -60 to +25 degrees: the camera stays over the head, so looking further up would lose the hero
     await page.evaluate(() => { G.test.look(0, 3); });
     let c = await step(page, 3);
-    check(Math.abs(c.pitch - (70 * Math.PI) / 180) < 0.01, "the pitch stops at +70 degrees", c.pitch);
+    check(Math.abs(c.pitch - (25 * Math.PI) / 180) < 0.01, "the pitch stops at +25 degrees", c.pitch);
+    {
+      const s2 = await S(page), hd = await page.evaluate(() => { G.camera.updateMatrixWorld(true); const v = G.hero.head.clone().project(G.camera); return { x: v.x, y: v.y, z: v.z }; });
+      check(c.camera.y - (s2.pos.y + 1.65) > 0.45 && hd.y > -0.9 && Math.abs(hd.x) < 0.2 && hd.z < 1, "looking up as far as it goes, the camera is still over the head and the head is still in the view", { over: c.camera.y - (s2.pos.y + 1.65), head: hd, dist: c.dist });
+    }
     await page.evaluate(() => { G.test.look(0, -6); });
     c = await step(page, 3);
     check(Math.abs(c.pitch - (-60 * Math.PI) / 180) < 0.01, "and at -60 degrees", c.pitch);
@@ -195,7 +207,7 @@ try {
     const THREE = await import("three");
     const c = G.city, cam = new THREE.PerspectiveCamera(70, 1.78, 0.1, 4000), fc = createFlatCam(cam, c);
     const P = { pos: { x: 0, y: 0, z: 0 }, vel: { x: 0, y: 0, z: 0 }, chest: 1.25 };
-    let n = 0, bad = 0, low = 0, minD = 99, first = null;
+    let n = 0, bad = 0, low = 0, under = 0, minD = 99, first = null;
     const spots = [];
     for (let i = 0; i < c.buildings.length; i += Math.max(1, Math.floor(c.buildings.length / 40))) {
       const b = c.buildings[i];
@@ -212,16 +224,44 @@ try {
         const q = cam.position;
         if (c.collideSphere(q.x, q.y, q.z, 0.12, {})) { bad++; if (!first) first = { x, y, z, k, p, cam: q.toArray() }; }
         if (q.y < 0.3 - 1e-6 && y < 5) low++;
+        if (q.y < y + 1.65 + 0.3) under++; // under the pivot over the head: the arm points down
         minD = Math.min(minD, fc.dist);
       }
     }
-    return { n, bad, low, minD, first };
+    return { n, bad, low, under, minD, first };
   });
   check(sweep.n > 3000 && sweep.bad === 0 && sweep.low === 0 && sweep.minD >= 0.34, "the camera is never inside a building or below the street (" + sweep.n + " views)", sweep);
+  check(sweep.under === 0, "and never below the hero's head, near a wall or not (" + sweep.n + " views)", sweep);
+  // in the open, every pitch the mouse allows: the camera stays over the head, follows the look down, comes down toward
+  // the head as you look up (and in, past level), and the head stays on the screen
+  const arc = await page.evaluate(async () => {
+    const { createFlatCam } = await import("/vr/js/flatcam.js");
+    const THREE = await import("three");
+    const cam = new THREE.PerspectiveCamera(70, 16 / 9, 0.1, 4000), fc = createFlatCam(cam, { raycast: () => null, collideSphere: () => false });
+    const P = { pos: { x: 0, y: 40, z: 0 }, vel: { x: 0, y: 0, z: 0 }, chest: 1.25 }, head = new THREE.Vector3(0, 41.65, 0), out = []; // G.hero.head stands about 1.65 m over the feet
+    for (let d = -60; d <= 24; d += 2) {
+      fc.reset(0, (d * Math.PI) / 180, false);
+      fc.update(0.016, P, null, { dx: 0, dy: 0 }, {});
+      cam.updateMatrixWorld(true);
+      const v = head.clone().project(cam);
+      out.push({ d, over: +(cam.position.y - 41.65).toFixed(3), arm: +fc.info().dist.toFixed(3), ny: +v.y.toFixed(2), y: cam.position.y, z: cam.position.z });
+    }
+    return out;
+  });
+  {
+    const bad = arc.filter((a) => a.over < 0.45 || a.ny < -0.9 || a.ny > -0.02), at = (d) => arc.find((a) => a.d === d);
+    const down = arc.filter((a) => a.d <= -20), up = arc.filter((a) => a.d >= -20);
+    const fallsUp = up.every((a, i) => i === 0 || (a.over < up[i - 1].over && a.arm <= up[i - 1].arm));
+    check(!bad.length && fallsUp && at(24).over < 0.6 && at(0).arm === 4.5 && at(24).arm < 4.2 && at(-60).over > 3.5 && down.every((a) => a.arm === 4.5 && a.ny > -0.2),
+      "at every pitch the camera is over the head and the head is on screen, under the middle; looking up brings it down toward the head and in", { bad, arc });
+    // no jerk at the default: 2 degrees either side of it move the camera about as far
+    const move = (a, b) => Math.hypot(a.y - b.y, a.z - b.z), below = move(at(-22), at(-20)), above = move(at(-20), at(-18));
+    check(above / below > 0.8 && above / below < 1.25, "the camera moves smoothly through the default pitch", { below, above });
+  }
 
   /* ---- V and first person ---- */
   await reset(page);
-  await step(page, 30);
+  const armTP = (await step(page, 30)).dist; // the arm at this pitch (looking up past level shortens it)
   await page.keyboard.press("KeyV");
   f = await step(page, 90);
   s = await S(page);
@@ -237,11 +277,19 @@ try {
   f = await step(page, 3);
   await page.evaluate(() => { G.desktop.locked = false; });
   check(Math.abs(f.pitch - (85 * Math.PI) / 180) < 0.01, "in first person the mouse looks up to 85 degrees", f.pitch);
+  // V from that high first-person look: the view eases back down to the third-person limit, with no snap
+  await page.keyboard.press("KeyV");
+  {
+    const e1 = await step(page, 2), e2 = await step(page, 90);
+    check(e1.pitch > (60 * Math.PI) / 180 && Math.abs(e2.pitch - (25 * Math.PI) / 180) < 0.01, "V from a high first-person look eases back down to +25 degrees, with no snap", { after2: e1.pitch, after92: e2.pitch });
+  }
+  await page.keyboard.press("KeyV");
+  f = await step(page, 90);
   await page.evaluate((d) => G.test.look(0, d), pitch0 - f.pitch); // back to the pitch it had
   await step(page, 3);
   await page.keyboard.press("KeyV");
   f = await step(page, 90);
-  check(!f.firstPerson && f.blend === 1 && Math.abs(f.dist - 4.5) < 0.15, "V again returns to third person", { fp: f.firstPerson, blend: f.blend, dist: f.dist });
+  check(!f.firstPerson && f.blend === 1 && Math.abs(f.dist - armTP) < 0.15, "V again returns to third person", { fp: f.firstPerson, blend: f.blend, dist: f.dist, armTP });
   check(await page.evaluate(() => G.hero.root.visible), "and the hero shows again");
   check((await page.evaluate(() => document.body.dataset.view)) === "third", "body[data-view] says third");
   // the input edge (pad Y, the touch eye button) toggles too, and an edge together with the V key is one toggle
@@ -449,7 +497,8 @@ try {
   });
   check(lo.length >= 2 && lo.every((o) => o.tag === "clog" && o.id === "clog:" + o.clog && o.valid), "pointing the chase view at a clog on a lower roof further away makes that clog the auto target (" + lo.length + " views)", lo);
   // A clog on the hero's own roof, 14 to 24 m away, aimed low with nothing behind it: the centre ray runs a little down past the roof edge
-  // and hits nothing within 400 m. The auto target must stay on the clog.
+  // and hits nothing within 400 m. The auto target must stay on the clog. The ray aims 1.2 m up the clog (its middle is about 2.5 m
+  // up): the camera sits over the hero's head, and a ray to 0.8 m drops on to the roof behind.
   const same = await page.evaluate(() => {
     const C = G.city, out = [];
     for (const c of C.clogs) {
@@ -462,7 +511,7 @@ try {
         G.test.teleport(x, c.y, z);
         let yaw = Math.atan2(-(c.x - x), -(c.z - z)); G.rigYaw = yaw; G.flatcam.reset(yaw); __h.step(30);
         for (let j = 0; j < 4; j++) {
-          const p = G.camera.position, ux = c.x - p.x, uy = c.y + 0.8 - p.y, uz = c.z - p.z;
+          const p = G.camera.position, ux = c.x - p.x, uy = c.y + 1.2 - p.y, uz = c.z - p.z;
           yaw = Math.atan2(-ux, -uz); G.rigYaw = yaw; G.flatcam.reset(yaw, Math.asin(uy / Math.hypot(ux, uy, uz))); __h.step(2);
         }
         const p = G.camera.position, f = new p.constructor(0, 0, -1).applyQuaternion(G.camera.quaternion);
@@ -486,6 +535,10 @@ try {
     G.test.teleport(B.maxX + 3, B.maxY / 2, z); G.rigYaw = Math.PI / 2; G.flatcam.reset(Math.PI / 2); G.P.vel.x = -8; __h.step(30);
     const face = () => { const w = G.P.wall; return w ? Math.abs(wrap(G.hero.info().yaw - Math.atan2(w.nx, w.nz))) : null; };
     const held = { wall: !!G.P.wall, pose: G.hero.info().pose, off: face(), air: G.hero.info().weights.air };
+    // where the palms, the ankles and the knees are: the wall face is x = B.maxX, along it is z
+    const hi = G.hero.info(), bone = (n) => G.hero.root.getObjectByName(n).getWorldPosition(G.camera.position.clone());
+    held.palms = hi.hands.map((p) => p[0] - B.maxX); held.ankles = hi.feet.map((p) => p[0] - B.maxX);
+    held.knees = Math.abs(bone("LeftLeg").z - bone("RightLeg").z); held.hipJoints = Math.abs(bone("LeftUpLeg").z - bone("RightUpLeg").z);
     key("KeyW", true); __h.step(30); const up = { pose: G.hero.info().pose, off: face() }; key("KeyW", false);
     key("KeyD", true); __h.step(30); const along = { pose: G.hero.info().pose, off: face(), wall: !!G.P.wall }; key("KeyD", false);
     __h.step(2);
@@ -494,6 +547,8 @@ try {
   });
   check(cl && cl.held.wall && cl.held.pose === "cling" && cl.held.off < 0.2 && cl.held.air < 0.1, "holding a wall the hero faces it in the cling pose, with no air pose", cl);
   check(cl && cl.up.pose === "cling" && cl.up.off < 0.2 && cl.along.wall && cl.along.pose === "cling" && cl.along.off < 0.2, "climbing up and along, the hero keeps facing the wall", cl);
+  check(cl && cl.held.palms.every((d) => d > 0 && d < 0.09) && cl.held.ankles.every((d) => d > 0.03 && d < 0.22), "on the wall both palms and both feet are on its face", cl && cl.held);
+  check(cl && cl.held.knees > cl.held.hipJoints + 0.25, "on the wall the knees are out wide (a frog crouch)", cl && cl.held);
 
   /* ---- the draw budget ---- */
   await reset(page);
@@ -535,12 +590,8 @@ try {
   await step(page, 90);
   const fb = await page.evaluate(() => ({ model: G.hero.model, tris: G.hero.tris, vis: G.hero.root.visible }));
   check(fb.model === "built" && fb.vis && fb.tris > 500, "with no model file a code-built figure takes its place", fb);
-  const px2 = await page.evaluate(async () => {
-    const T = G.camera.position.constructor, h = G.test.state().pos, c = G.camera, grid = [];
-    for (let a = -3; a <= 3; a++) for (let b = -3; b <= 3; b++) { const v = new T(h.x, h.y + 1.3, h.z).project(c); grid.push([(v.x + 1) / 2 + a * 0.008, (1 - v.y) / 2 + b * 0.012]); }
-    return __h.px(grid).filter(([r, g, b]) => r > 100 && r > g * 1.5 && r > b * 1.5).length;
-  });
-  check(px2 >= 6, "the built-in figure draws (red jersey)", px2);
+  const px2 = await page.evaluate(() => __h.px(__h.torso()).filter(([r, g, b]) => r > 100 && r > g * 1.5 && r > b * 1.5).length);
+  check(px2 >= 6, "the built-in figure draws (red jersey: " + px2 + " of 30)", px2);
   await shot(page, "hero-fallback");
   // the same poses drive it
   const t5 = await page.evaluate(() => { const s = G.city.start; G.test.teleport(s.x, s.y + 25, s.z); G.P.onGround = false; return __h.target(s.x, s.y + 25, s.z); });
@@ -550,6 +601,35 @@ try {
   check(f.hero.pose === "swing" && f.hero.weights.reach[1] > 0.9 && rp3 < 0.02, "the built-in figure swings and holds the rope in its hand", { pose: f.hero.pose, rp3 });
   await page.evaluate(() => { const i = G.hero.info(); window.__hi = i; });
   await page.evaluate(() => { G.test.press(1, false); G.test.aimAt(1, null); });
+  // and the same climb: hands and feet on holds that stay put, stepping in diagonal pairs
+  const fc = await page.evaluate(() => {
+    const C = G.city, B = C.colliders.find((c) => c.type === "box" && c.tag === "building" && c.minY === 0 && c.maxY > 25 && c.maxY < 90 &&
+      !C.colliders.some((d) => d !== c && d.bid === c.bid) && !C.collideSphere(c.maxX + 2, c.maxY / 2, (c.minZ + c.maxZ) / 2, 1.6));
+    if (!B) return null;
+    const key = (code, on) => window.dispatchEvent(new KeyboardEvent(on ? "keydown" : "keyup", { code }));
+    __h.step(5);
+    G.test.teleport(B.maxX + 3, B.maxY / 2, (B.minZ + B.maxZ) / 2); G.rigYaw = Math.PI / 2; G.flatcam.reset(Math.PI / 2); G.P.vel.x = -8; __h.step(40);
+    key("KeyW", true);
+    let maxMoving = 0, planted = 0, off = 0, steps = 0, prev = null;
+    for (let i = 0; i < 60; i++) {
+      __h.step(1);
+      const h = G.hero.info(), c = h.climb, pts = [h.hands[0], h.hands[1], h.feet[0], h.feet[1]], mv = c.limbs.map((l) => l.moving);
+      maxMoving = Math.max(maxMoving, mv.filter(Boolean).length);
+      if (prev) for (let j = 0; j < 4; j++) {
+        if (!prev.mv[j] && mv[j]) steps++;
+        if (prev.mv[j] || mv[j]) continue;
+        const a = prev.pts[j], b = pts[j], o = c.limbs[j].hold;
+        planted = Math.max(planted, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) * 60);
+        off = Math.max(off, Math.hypot(b[0] - o[0], b[1] - o[1], b[2] - o[2]) - (j < 2 ? 0.06 : 0.17));
+      }
+      prev = { mv, pts };
+    }
+    key("KeyW", false);
+    const out = { wall: !!G.P.wall, pose: G.hero.info().pose, maxMoving, planted, off, steps };
+    G.test.teleport(G.city.start.x, G.city.start.y, G.city.start.z); G.rigYaw = G.city.start.yaw; __h.step(10);
+    return out;
+  });
+  check(fc && fc.wall && fc.pose === "cling" && fc.maxMoving <= 2 && fc.planted < 0.05 && fc.off < 0.03 && fc.steps >= 8, "the built-in figure climbs the same way: hands and feet on planted holds, two limbs at most stepping", fc);
   const ri2 = await page.evaluate(() => __h.draw());
   check(ri2.calls <= 120, "the built-in figure is within the draw budget (" + ri2.calls + " calls)", ri2);
   const errs2 = page.errors.filter((e) => !/Failed to load resource|crew5/i.test(e));
@@ -574,7 +654,7 @@ try {
   for (let i = 0; i < 60 && st !== "play"; i++) { await step(page, 20); st = (await S(page)).state; }
   check(st === "play", "the intro ends", st);
   g = await page.evaluate(() => { __h.step(150); return { f: G.test.flat(), vis: G.hero.root.visible }; });
-  check(g.f.blend === 1 && Math.abs(g.f.dist - 4.5) < 0.2 && g.vis && Math.abs(g.f.pitch - -0.27) < 0.05, "at the hand-off the camera pulls out to the chase view", { blend: g.f.blend, dist: g.f.dist, vis: g.vis, pitch: g.f.pitch });
+  check(g.f.blend === 1 && Math.abs(g.f.dist - 4.5) < 0.2 && g.vis && Math.abs(g.f.pitch - (-20 * Math.PI) / 180) < 0.05, "at the hand-off the camera pulls out to the chase view", { blend: g.f.blend, dist: g.f.dist, vis: g.vis, pitch: g.f.pitch });
   const errs3 = page.errors.filter((e) => !/Failed to load resource/i.test(e));
   check(errs3.length === 0, "no page errors in the intro", errs3);
   await page.context().close();

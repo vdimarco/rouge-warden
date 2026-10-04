@@ -178,6 +178,12 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 @media (max-width: 420px) { .btn { padding: 9px 16px 6px; letter-spacing: 0.06em; } .kicker { letter-spacing: 0.06em; } dialog { padding: 18px 16px 16px; } }
 @media (prefers-reduced-motion: reduce) { .stage .art.drift { animation: none; will-change: auto; } .logo { animation: none; } .btn, .preset span, .load, .load .track i { transition: none; } }
 
+/* flat play with no pointer lock: how to get the mouse look back, a caption box over the hero's head, clear of the spoken
+   lines at the bottom (main.js shows it) */
+.look-hint { position: fixed; left: 50%; bottom: calc(50% + 44px); z-index: 13; margin: 0; max-width: calc(100vw - 32px); padding: 7px 18px 5px; transform: translateX(-50%) rotate(-1deg); pointer-events: none; text-align: center; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); border-radius: 3px; box-shadow: 5px 5px 0 var(--ink); }
+.look-hint b { display: block; font: 400 clamp(22px, 2.6vw, 30px) / 1.05 var(--comic); letter-spacing: 0.06em; text-transform: uppercase; }
+.look-hint small { display: block; margin-top: 2px; font: 700 17px / 1.2 var(--ui); letter-spacing: 0.03em; }
+
 /* ---------------- the phone panel: comic buttons, the lock-on ring and its arrow ---------------- */
 #phoneControls { position:fixed; inset:0; z-index:20; pointer-events:none; font-family:var(--ui); }
 #phoneControls[hidden] { display:none; }
@@ -200,7 +206,6 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 .phone-climb [data-climb="up"] { grid-column:2; grid-row:1; } .phone-climb [data-climb="left"] { grid-column:1; grid-row:2; } .phone-climb [data-climb="right"] { grid-column:3; grid-row:2; } .phone-climb [data-climb="down"] { grid-column:2; grid-row:3; }
 #phoneControls .phone-climb [data-action="hop"] { grid-column:2; grid-row:2; font:400 18px/1 var(--comic); background:var(--red); color:var(--paper); }
 /* on a wall in portrait the pad needs that space: the hint over SWING says what to do, so the spoken lines wait */
-@media (min-height:481px) { body:has(.phone-climb:not([hidden])) .fs-sub, body:has(.phone-climb:not([hidden])) .fs-toast { visibility:hidden; } }
 @media (max-height:480px) { .phone-climb { bottom:max(12px,env(safe-area-inset-bottom)); grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); } }
 /* the centre ring is the exact aim of the first-person view. In the chase view it would sit on the hero, so the lock-on ring shows instead. */
 .phone-crosshair { display:none; position:absolute; left:50%; top:50%; width:24px; height:24px; border:3px solid var(--yellow); border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink); }
@@ -232,11 +237,10 @@ body[data-view="first"] .phone-crosshair { display:block; }
 #view canvas { touch-action:none; }
 /* a narrow phone (360 px): the four top buttons stay on one line */
 @media (max-width:380px) { #phoneControls .phone-top button { padding:3px 6px 0; font-size:17px; } .phone-top { gap:5px; padding-left:max(4px,env(safe-area-inset-left)); padding-right:max(4px,env(safe-area-inset-right)); } }
-/* phone play: the score pills sit under the top buttons, and the spoken lines sit over the SWING panel, never under it */
+/* phone play: the score pills sit under the top buttons; ui.js puts the spoken lines and toasts under the pills, clear of the hero */
 body:has(#phoneControls:not([hidden])) .fs-top { top:calc(env(safe-area-inset-top,0px) + 74px); }
-body:has(#phoneControls:not([hidden])) .fs-sub { bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:max-content; max-width:calc(100vw - 16px); padding:5px 16px 2px; font-size:19px; }
+body:has(#phoneControls:not([hidden])) .fs-sub { max-width:calc(100vw - 16px); padding:5px 16px 2px; font-size:19px; }
 @media (max-width:380px) { body:has(#phoneControls:not([hidden])) .fs-sub { padding:4px 12px 0; font-size:18px; } }
-body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-inset-bottom,0px) + 230px); width:max-content; }
 /* a small screen: the score pills stay one row and shrink. A narrow portrait screen also drops the /80 and /12. */
 @media (max-width:479px), (max-height:480px) {
   body:has(#phoneControls:not([hidden])) .fs-top { flex-wrap:nowrap; gap:8px; max-width:calc(100vw - 16px); }
@@ -250,8 +254,7 @@ body:has(#phoneControls:not([hidden])) .fs-toast { bottom:calc(env(safe-area-ins
   body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) .fs-pill em { display:none; }
 }
 @media (max-height:480px) {
-  body:has(#phoneControls:not([hidden])) .fs-sub { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 118px); max-width:calc(100vw - 320px); }
-  body:has(#phoneControls:not([hidden])) .fs-toast { bottom:auto; top:calc(env(safe-area-inset-top,0px) + 200px); max-width:calc(100vw - 320px); }
+  body:has(#phoneControls:not([hidden])) .fs-sub, body:has(#phoneControls:not([hidden])) .fs-toast { max-width:calc(100vw - 320px); }
   .phone-bottom { left:auto; width:260px; bottom:12px; }
   .phone-hint { font-size:14px; }
   #phoneControls [data-action="throw"] { width:220px; min-height:64px; font-size:30px; }
@@ -262,6 +265,7 @@ body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mou
 </head>
 <body data-mode="title">
 <div id="view" aria-hidden="true"></div>
+<p class="look-hint" id="lookHint" role="status" hidden><b>Click to look around</b><small>Or hold the pointer at an edge to turn.</small></p>
 
 <main id="title">
   <!-- The art replaces the live city behind the title: main.js stops drawing the city once data-art is set on <html> -->
