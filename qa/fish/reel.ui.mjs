@@ -32,7 +32,8 @@ for (let i = 0; i < 50; i++) { try { const r = await fetch(BASE + "/fish/js/reel
 
 /* ---------- the harness page ---------- */
 const indexHtml = readFileSync(path.join(root, "public/fish/index.html"), "utf8");
-const css = indexHtml.match(/<style>([\s\S]*?)<\/style>/)[1];
+// every style block (the first one is the boot screen's; the game's own CSS comes after it)
+const css = [...indexHtml.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
 const HARNESS = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <style>${css}
@@ -86,7 +87,7 @@ const EV = [], PT = [], RATES = [], LAT = [];
 addEventListener("pointerdown", (e) => LAT.push(Math.round(performance.now() - e.timeStamp)), true);
 const FR = []; (function fr(t) { FR.push(t); if (FR.length > 4000) FR.splice(0, 2000); requestAnimationFrame(fr); })(0);
 const panel = new ReelPanel($("#reelBox"), { toLocal, hand: "right", area: game });
-for (const t of ["bail", "pin", "pinmove", "unpin"]) panel.on(t, (e) => EV.push(Object.assign({ type: t, at: performance.now() }, e)));
+for (const t of ["bail", "pin", "pinmove", "unpin", "aim"]) panel.on(t, (e) => EV.push(Object.assign({ type: t, at: performance.now() }, e)));
 const crank = new Crank($("#crankBox"), { toLocal, hand: "right" });
 crank.on("turn", (e) => EV.push(Object.assign({ type: "turn", at: performance.now() }, e)));
 const pad = new RodPad($("#padBox"), { toLocal });
@@ -284,6 +285,25 @@ async function panelChecks(P, tag) {
   early = await EVS(page, "pin");
   await P.touch("touchEnd", []); await sleep(30);
   check(early.length === 0, `${tag}: grab "panel": a 160 ms rest on the lake does not pin`);
+  // grab "lock" (touch play's ready step): a press waits for the drag. Down takes the line where it pressed, with no bail
+  // swipe; sideways aims ("aim" events, dx from the press) and takes nothing
+  await page.evaluate(() => { T.panel.set({ grab: "lock" }); T.clear(); });
+  await P.touch("touchStart", [{ ...lake, id: 20 }]); await sleep(160);
+  early = await EVS(page, "pin");
+  await P.touch("touchEnd", []); await sleep(30);
+  check(early.length === 0, `${tag}: grab "lock": a press that does not move takes nothing`);
+  const gw = await page.evaluate(() => document.querySelector("#game").clientWidth);
+  const want = await page.evaluate((x) => { const g = document.querySelector("#game"), c = T.toClient(x, 300, g); return T.toLocal(c.x, c.y, document.querySelector("#reelBox")); }, gw * 0.4);
+  await page.evaluate(() => T.clear());
+  await swipe(P, "#game", gw * 0.4, 300, 3, 80, { n: 6, ms: 16, id: 21 });
+  ev = await EVS(page);
+  const lp = ev.find((e) => e.type === "pin");
+  check(!!lp && Math.abs(lp.y - want.y) < 1 && Math.abs(lp.x - want.x) < 1 && !ev.some((e) => e.type === "aim" || e.type === "bail") && ev.some((e) => e.type === "unpin"), `${tag}: grab "lock": a drag down takes the line where it pressed (${lp ? lp.y.toFixed(1) : "none"}, want ${want.y.toFixed(1)}), with no bail swipe`);
+  await page.evaluate(() => T.clear());
+  await swipe(P, "#game", gw * 0.3, 300, 90, 6, { n: 6, ms: 16, id: 22 });
+  ev = await EVS(page);
+  const aims = ev.filter((e) => e.type === "aim");
+  check(!ev.some((e) => e.type === "pin") && aims.length >= 3 && aims[0].start && !aims[1].start && Math.abs(aims[aims.length - 1].dx - 90) < 2, `${tag}: grab "lock": a drag sideways aims (${aims.length} aim events, dx ${aims.length ? aims[aims.length - 1].dx.toFixed(1) : "-"}) and takes nothing`);
   await page.evaluate(() => T.panel.set({ bail: "closed", glow: "", grab: "" }));
 }
 

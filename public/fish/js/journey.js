@@ -1,6 +1,6 @@
 // The trail of places: the order they open in, the goal that opens the next one, the clock, the derby ranks, and the
 // words for each place. Data and small pure helpers only (no DOM, no three.js), so node can test it.
-// places.js holds the maps, fishing.js the fish and gear of each place, save.js what the player has done.
+// places.js holds the maps, fishing.js the fish and gear of each place, goals.js the goals, save.js what the player has done.
 //
 // name: the place's name. short: its journal chip (10 characters or fewer). level: how hard it is.
 // goalKg: land one fish this heavy here to open the next place (null at the last place).
@@ -15,6 +15,7 @@
 //   and a fight tip.
 import { SPECIES, JUNK } from "./species.js";
 import { fishingOf, ecology, placeSpecies } from "./fishing.js";
+import { getPlace } from "./places.js";
 
 // the trail order: each place opens the next one
 export const ORDER = ["loon", "stumps", "river", "sea"];
@@ -71,6 +72,12 @@ export function rankFor(id, kg) {
   for (const [k, name] of R) if (kg >= k) rank = name;
   return rank;
 }
+// the next rank above a derby total here: { name, kg }, or null at the top rank. The rank for any fish at all is never
+// the next one, so a skunked derby points at the first real rank: "Next rank: WEEKEND ANGLER at 4 kg."
+export function nextRank(id, kg) {
+  for (const [k, name] of journeyOf(id).ranks.slice(2)) if (kg < k) return { name, kg: k };
+  return null;
+}
 // The goal of this place, in words. "" at the last place, which opens nothing.
 // kind: "title" (the start screen), "remind" (the toast at mode start and the pause summary), "close" (a fish of 70% to
 // 100% of the goal), "card" (the locked card of the next place), "next" (the start screen, when the goal is at another
@@ -119,6 +126,20 @@ export function foundHere(save, id) {
 export function foundAll(save) {
   const all = [...SPECIES, ...JUNK];
   return { n: all.filter((s) => save.journal[s.id] && save.journal[s.id].n > 0).length, m: all.length };
+}
+// Where and when a fish bites at place pid, from that place's own table: "Try the rocky point at dusk." The time comes
+// from its best hours, cut to the hours the place's clock runs (Stump Bay only runs 19:00 to 24:00): a window that starts
+// at 20:30 or later is night; else by its middle, before 11:00 morning, from 16:30 dusk, and midday between.
+// "" for a fish that does not live there
+export function zoneHint(sp, pid) {
+  const eco = ecology(pid).find(([s]) => s.id === (sp && sp.id)), E = eco && eco[1];
+  if (!E) return "";
+  const z = Object.entries(E.zones || {}).sort((a, b) => b[1] - a[1])[0];
+  const c = journeyOf(pid).clock, lo = Math.min(c.free, c.derby, c.wrap);
+  const best = (E.hours || []).filter((h) => h[1] > lo && h[0] < c.end).reduce((a, h) => (h[2] > (a ? a[2] : 1) ? h : a), null);
+  const a = best ? Math.max(best[0], lo) : 0, mid = best ? (a + Math.min(best[1], c.end)) / 2 : 0;
+  const when = !best ? "" : a >= 20.5 ? " at night" : mid < 11 ? " in the morning" : mid >= 16.5 ? " at dusk" : " at midday";
+  return z ? "Try " + (getPlace(pid).zoneNames[z[0]] || z[0]).toLowerCase() + when + "." : "";
 }
 // open places the player has not been to yet (the NEW badge on Places). The ?open switch does not count
 export const newPlaces = (save) => ORDER.filter((id) => id !== "loon" && isOpen(save, id) && !save.seen["at." + id]);

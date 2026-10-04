@@ -1,6 +1,6 @@
-// The game on a computer, with no sensors: a press on the reel opens the bail and holds the line, a drag down and
-// a flick up casts, the reel starts when the lure lands, the mouse wheel reels (its first turn closes the bail),
-// Space sets the hook, and W and S work the rod.
+// The game on a computer, with no sensors: a press on the reel and a drag down opens the bail and holds the line (the
+// drag decides: down holds the line, sideways aims), a flick up casts, the reel starts when the lure lands, the mouse
+// wheel reels (its first turn closes the bail), Space sets the hook, and W and S work the rod.
 // Serve public/ first (cd public && python3 -m http.server 8765), then: node qa/fish/desk.mjs
 // Exits with code 1 when something fails. Set SHOTS to a folder to save screenshots.
 import { open, until, center, shot, sleep } from "./lib.mjs";
@@ -25,15 +25,17 @@ try {
   const x = rb.x, y0 = rb.y - rb.h * 0.15;
   await page.mouse.move(x, y0);
   await page.mouse.down();
-  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open", null, 3000).then(() => check(true, "pressing on the reel opens the bail and holds the line"), () => check(false, "pressing on the reel opens the bail and holds the line"));
-  for (let i = 1; i <= 12; i++) { await page.mouse.move(x, y0 + i * 22); await sleep(25); }
+  await page.mouse.move(x, y0 + 22);
+  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open", null, 3000).then(() => check(true, "pressing on the reel and dragging down opens the bail and holds the line"), () => check(false, "pressing on the reel and dragging down opens the bail and holds the line"));
+  for (let i = 2; i <= 12; i++) { await page.mouse.move(x, y0 + i * 22); await sleep(25); }
   await sleep(200);
   const loaded = await page.evaluate(() => FISH.G.step);
   check(loaded === "loaded", "dragging down loads the rod (" + loaded + ")");
   // the flick: up fast, let go part way. Played inside the page, because a slow software renderer holds back
   // each CDP mouse move by hundreds of ms, and a flick is all about speed
   await page.evaluate(async ({ x, y }) => {
-    const el = document.elementFromPoint(x, y);
+    // (the drag can end below the window: the reel listens on the window, so any element will do)
+    const el = document.elementFromPoint(x, y) || document.body;
     const fire = (type, yy) => el.dispatchEvent(new PointerEvent(type, { pointerId: 1, pointerType: "mouse", isPrimary: true, clientX: x, clientY: yy, bubbles: true, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
     for (let i = 1; i <= 6; i++) { fire("pointermove", y - i * 36); await new Promise((r) => setTimeout(r, 8)); }
     fire("pointerup", y - 216);
@@ -107,9 +109,10 @@ try {
   check(await page.isVisible("#pause"), "Esc pauses");
   await page.click("#pJournal");
   check(await page.isVisible("#journal"), "the journal opens from the pause menu");
-  // Loon Lake lists its own 13 (9 fish, the legend, 3 junk), not all 29 kinds of the game
-  const rows = await page.evaluate(() => ({ n: document.querySelectorAll("#jlist .jfish").length, sum: document.querySelector("#jsum").textContent, tabs: document.querySelectorAll("#jtabs button").length }));
-  check(rows.n === 13 && /^\d+ of 13 found here · \d+ of 29 in all/.test(rows.sum) && rows.tabs === 4, "the journal shows Loon Lake's 13 rows and a chip for each of the 4 places (" + rows.n + " rows, " + rows.tabs + " chips: " + rows.sum + ")");
+  // Loon Lake counts its own 13 (9 fish, the legend, 3 junk), not all 29 kinds of the game. The list is short: the fish
+  // caught, the next 3 to find, and how many more
+  const rows = await page.evaluate(() => ({ n: document.querySelectorAll("#jlist .jfish").length, got: document.querySelectorAll("#jlist .jfish:not(.none)").length, note: (document.querySelector("#jlist .jnote") || {}).textContent, sum: document.querySelector("#jsum").textContent, tabs: document.querySelectorAll("#jtabs button").length }));
+  check(rows.n === rows.got + 3 && rows.note === 10 - rows.got + " more to find here." && /^\d+ of 13 found here · \d+ of 29 in all/.test(rows.sum) && rows.tabs === 4, "the journal shows Loon Lake's fish caught, the next 3, how many more, and a chip for each of the 4 places (" + JSON.stringify(rows) + ")");
   await page.click("#journal [data-close]");
   check(await page.isVisible("#pause"), "closing the journal returns to the pause menu");
   await page.click("#quitBtn");

@@ -546,6 +546,14 @@ section("13. virtual(): touch and mouse feed the same pose");
   check(M.status === "virtual" && M.pose.yaw === 5 && M.pose.roll === 0.2 && calls === 21, `status ${M.status}, yaw/roll passed through, on() called ${calls}×`);
   const pk = M.peak(T0 + 20 * 16.7 - 450, T0 + 20 * 16.7);
   check(near(pk.minOmega, -600, 30), `peak() over the touch flick: minω ${f1(pk.minOmega)}`);
+  // the finger stays where it lifted: at() never carries a virtual sample on past its time (a touch cast is graded there),
+  // however long the finger rests before the lift
+  {
+    const V = await fresh(), gaps = [10, 40, 80, 120];
+    for (let i = 0; i <= 6; i++) V.virtual({ t: T0 + i * 16.7, theta: 100 - i * 10 });   // still moving at 600 deg/s
+    const last = T0 + 6 * 16.7, got = gaps.map((g) => V.at(last + g).theta);
+    check(got.every((th) => th === 40), `a moving virtual sample is not carried on: at(+${gaps.join(", +")} ms) θ ${got.map(f1).join(", ")} (want 40)`);
+  }
   // a pinmove timestamp older than the last frame: no NaN, and the newest θ wins
   M.virtual({ t: T0 + 20 * 16.7 - 5, theta: 30 });
   check(Number.isFinite(M.pose.omega) && M.at(T0 + 20 * 16.7).theta === 30, `out-of-order touch sample: ω ${f1(M.pose.omega)}, at(last) θ ${f1(M.at(T0 + 20 * 16.7).theta)}`);

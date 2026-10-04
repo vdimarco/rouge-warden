@@ -20,22 +20,22 @@
 - [x] 2.8 Update the stale `screens.mjs` and `reel.ui.mjs` checks; rerun the fight and place sims.
 
 ## 3. Casting
-- [ ] 3.1 Grade touch and mouse releases at the finger.
-- [ ] 3.2 Forgive a touch flick that ends above the press point.
-- [ ] 3.3 Grow the touch area; decide between a cast and an aim after 12 px.
-- [ ] 3.4 Smooth the motion window on the early side; grade a held thumb as late.
-- [ ] 3.5 Instant release feedback, the distance preview, the right back-swing tip, and the touch rail.
-- [ ] 3.6 Offer touch when the sensors stop; a hook set anywhere on the lake in touch mode.
-- [ ] 3.7 Tests: release grading in node, the gap and overshoot sweeps, the miss-press check.
+- [x] 3.1 Grade touch and mouse releases at the finger.
+- [x] 3.2 Forgive a touch flick that ends above the press point.
+- [x] 3.3 Grow the touch area; decide between a cast and an aim after 12 px.
+- [x] 3.4 Smooth the motion window on the early side; grade a held thumb as late.
+- [x] 3.5 Instant release feedback, the distance preview, the right back-swing tip, and the touch rail.
+- [x] 3.6 Offer touch when the sensors stop; a hook set anywhere on the lake in touch mode.
+- [x] 3.7 Tests: release grading in node, the gap and overshoot sweeps, the miss-press check.
 
 ## 4. Goals
-- [ ] 4.1 Six goals at each place, on the Places card, with the toast and the sting.
-- [ ] 4.2 Today's goal and the run of days, with `?day=` for QA.
-- [ ] 4.3 The next-goal line, the rank ladder, and the old best on the results.
-- [ ] 4.4 Help for short casters, and the short-caster case in `journey.sim.mjs`.
-- [ ] 4.5 The sweet-cast streak in free fishing.
-- [ ] 4.6 The derby unlock on the catch card; fix the small progression bugs.
-- [ ] 4.7 Tests: save fuzz for the new fields, the goal predicates, the daily goal over 60 days, and the screens checks.
+- [x] 4.1 Six goals at each place, on the Places card, with the toast and the sting.
+- [x] 4.2 Today's goal and the run of days, with `?day=` for QA.
+- [x] 4.3 The next-goal line, the rank ladder, and the old best on the results.
+- [x] 4.4 Help for short casters, and the short-caster case in `journey.sim.mjs`.
+- [x] 4.5 The sweet-cast streak in free fishing.
+- [x] 4.6 The derby unlock on the catch card; fix the small progression bugs.
+- [x] 4.7 Tests: save fuzz for the new fields, the goal predicates, the daily goal over 60 days, and the screens checks.
 
 ## 5. Feedback
 - [ ] 5.1 The hook-set hit.
@@ -59,8 +59,15 @@
 - [x] 7.4 The privacy policy page, the store listing, the data safety and age answers, and the release README.
 - [x] 7.5 An Android debug build on this machine.
 
-## 8. Finish
-- [ ] 8.1 Update the Reel It In part of `README.md`.
-- [ ] 8.2 Run every Reel It In check and the review.
-- [ ] 8.3 Record the checks that need a real iPhone, an Android phone, or a Mac.
-- [ ] 8.4 Archive the change and review the canonical specs.
+## 8. Cutscenes
+- [ ] 8.1 A cutscene player: a scripted camera over the live scene, letterbox bars, a caption, a sound, skip by tap, Space, Escape, or back, and a calm version with still shots and fades.
+- [ ] 8.2 The opening, the four arrivals, the four legend reveals, the legend landed shot, and the finale.
+- [ ] 8.3 Hold the fish, the clock, and the derby while a cutscene plays; never start one in a fight; remember the seen ones in the save.
+- [ ] 8.4 "Watch" on the Places card for seen arrivals and reveals.
+- [ ] 8.5 Tests: skip timing, the derby clock, seen once, old saves, calm, and screenshots at the four sizes.
+
+## 9. Finish
+- [ ] 9.1 Update the Reel It In part of `README.md`.
+- [ ] 9.2 Run every Reel It In check and the review.
+- [ ] 9.3 Record the checks that need a real iPhone, an Android phone, or a Mac.
+- [ ] 9.4 Archive the change and review the canonical specs.

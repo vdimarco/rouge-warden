@@ -1,7 +1,7 @@
 // Travel between the places, in the real game on a phone (plan section 6, WP5):
 //   1. a fresh save: no NEW badge on Places, and the locked cards show the goal
-//   2. Places -> Stump Bay: the travel card, the arrival card, and the title reads "STUMP BAY"; the low quality budget is met
-//      at every place
+//   2. Places -> Stump Bay: the travel card, the arrival card, its Start goes to the water, and the title reads "STUMP BAY";
+//      the low quality budget is met at every place
 //   3. back to Loon Lake: the geometry and texture counts come back to within 5% (no leak)
 //   4. the arrival card shows only once
 //   5. a place that does not load: "did not load", and Loon Lake is back
@@ -83,6 +83,19 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
       return { secs, arrival: seen };
     };
     const NAME = { stumps: "STUMP BAY", river: "CEDAR RIVER", sea: "GULL ROCK", loon: "LOON LAKE" };
+    // Start on the arrival card goes to the water: free fishing at the new place (the first time after Use touch, as the
+    // test has not picked motion or touch). Returns what it started; then back to the title, where the checks go on
+    const start = async () => {
+      await sleep(350);
+      await page.click("#aStart");
+      await page.waitForFunction(() => FISH.G.phase === "cast" || !document.querySelector("#setup").hidden, null, { timeout: 30000, polling: 50 });
+      if (await page.isVisible("#setup")) { await sleep(350); await page.click("#useTouch"); }
+      await page.waitForFunction(() => FISH.G.phase === "cast", null, { timeout: 30000, polling: 50 });
+      const at = await page.evaluate(() => ({ phase: FISH.G.phase, mode: FISH.G.mode, place: FISH.place.id, hud: !document.querySelector("#hud").hidden }));
+      await page.evaluate(() => FISH.toTitle());
+      await page.waitForSelector("#title:not([hidden])");
+      return at;
+    };
 
     check(await page.evaluate(() => document.querySelector("#placesNew").hidden), "?open shows no NEW badge (nothing was earned)");
     const base = await info();
@@ -100,10 +113,9 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
     check(t.secs >= 1.15 && t.arrival, `Places -> Stump Bay: the travel card (up ${t.secs.toFixed(2)} s; the code keeps it 1.2 s) gives way to the arrival card`);
     const ar = await page.evaluate(() => ({ kick: document.querySelector("#akick").textContent, name: document.querySelector("#aname").textContent, blurb: document.querySelector("#ablurb").textContent, gear: document.querySelector("#agear").textContent, tip: document.querySelector("#atip").textContent, tipHidden: document.querySelector("#atip").hidden, go: document.querySelector("#aStart").textContent }));
     check(ar.name === "Stump Bay" && /^Dead trees stand in the water/.test(ar.blurb) && ar.gear === "New gear: a heavy rod and 20 lb braid." && ar.tip === "Fish run for the stumps. Steer them out." && ar.go === "Start", "the arrival card: name, blurb, new gear, tip, Start (" + JSON.stringify(ar) + ")");
-    await sleep(350);
-    await page.click("#aStart");
-    await page.waitForSelector("#title:not([hidden])");
-    check((await kicker()) === "GET PLUNGER'D · STUMP BAY", "the title kicker reads STUMP BAY (" + (await kicker()) + ")");
+    const st = await start();
+    check(st.phase === "cast" && st.mode === "free" && st.place === "stumps" && st.hud, "Start goes to the water: free fishing at Stump Bay (" + JSON.stringify(st) + ")");
+    check((await kicker()) === "GET PLUNGER'D · STUMP BAY", "back at the title, the kicker reads STUMP BAY (" + (await kicker()) + ")");
     check(await page.evaluate(async () => (await import("/fish/js/lake.js")).currentPlace().id === "stumps" && FISH.place.id === "stumps"), "the map and the game are at Stump Bay");
     check(await page.evaluate(() => FISH.save.place === "loon"), "?open does not save the place");
     await settle();
@@ -123,9 +135,8 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
       // the tip says only what happens: the river runs left, to the logjam; at the wall some fish dive for the rocks
       const tip = await page.textContent("#atip");
       check(tip === TIP[id], `${NAME[id]}: the arrival tip (${tip})`);
-      await sleep(350);
-      await page.click("#aStart");
-      await page.waitForSelector("#title:not([hidden])");
+      const s2 = await start();
+      check(s2.phase === "cast" && s2.mode === "free" && s2.place === id, `${NAME[id]}: Start goes to the water (${JSON.stringify(s2)})`);
       check((await kicker()) === "GET PLUNGER'D · " + NAME[id], `the title kicker reads ${NAME[id]}`);
       await settle();
       await budget(NAME[id]);
