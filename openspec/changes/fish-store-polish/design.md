@@ -51,9 +51,21 @@ These come from the audit's sandbox runs. The sims set the final values.
 
 ## Goals and the save
 
-- `journey.js` holds the pure tables: `PLACE_GOALS`, `goalMet(goal, ctx)`, `dailyGoal(day, save)`, `nextGoal(save, id)`, and `nextRank(id, kg)`.
+- `goals.js` holds the pure tables and helpers: `PLACE_GOALS`, `goalMet(goal, ctx)`, `DAILY` and `dailyGoal(day, save)`, `nextGoal(save, id)`, and `progressNote()`. `journey.js` holds `nextRank(id, kg)`.
 - New save fields: `places[id].g` (a bitmask from 0 to 63), `today: { d, k, n, done }`, `days: { n, run, best, last }`, and `bestRun`. `loadSave` cleans each one and keeps old saves working.
 - `?day=YYYY-MM-DD` sets the day for QA. Like `?open`, it is never saved.
+
+### What round 2 settled
+
+- Touch and mouse: the cast is graded at the finger's angle when it lifts, and virtual samples are never projected forward. Above the press point the rod turns against a fixed 240 px span on every screen, so the slam edge is 200 px above the press point at any size. A press anywhere decides after 12 px: up and down takes the line, sideways aims. A swipe that never tipped the rod back casts nothing and spends no derby cast.
+- Motion: every lift is graded by time; an early lift waits up to 100 ms for the samples. A thumb held through the swing casts at a fixed 30 degrees. Easy mode pulls the release toward the ideal over -15 to 95 degrees.
+- The keyboard: holding Space tips the rod back, then swings it forward at 240 degrees a second; letting go grades the cast like a finger.
+- The sensor stall is timed from the last real sample, 3 s.
+- The report line comes from `reportNote()`: the sweet streak first, then a ring hit, a near miss, the goal hint, the back-swing tip, the Loon "farther out" hint, the longest cast, and the zone.
+- The short-caster help: after 20 water casts with the unlock goal open, one big ring at a time rises within reach, stays at least 90 s, and returns after a lost fish, until a big ring's fish is landed. Measured with real rings: median 23 casts and p90 34 to open Stump Bay.
+- Every derby cast onto land is given back, and the report says so.
+- A catch's news (first fish of the day, goals done, today's goal) shows in one toast with one line each.
+- `?day` progress stays in that page load; `persist()` writes the loaded `today` and `days`.
 
 ## Feedback
 
