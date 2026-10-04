@@ -1503,7 +1503,7 @@ dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.f
     if (subOn !== dh.subOn || innerWidth !== dh.vw || innerHeight !== dh.vh) { dh.subOn = subOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.lay = 0; } // at once on a new line or a new screen size
     if ((dh.lay = (dh.lay || 0) - dt) <= 0) {
       dh.lay = 0.1;
-      const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + 10;
+      const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + (innerWidth <= 480 ? 6 : 10);
       const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 14 : 0);
       if (dh.subTop !== top) { dh.subTop = top; dom.hud.style.setProperty("--fs-sub-top", top + "px"); }
       if (dh.toastTop !== toastTop) { dh.toastTop = toastTop; dom.hud.style.setProperty("--fs-toast-top", toastTop + "px"); }

@@ -72,6 +72,7 @@ export function createDesktop(canvas, camera, settings) {
   // requests in a row (only those count); a browser that answers with events only; our own let-go after a change to full screen;
   // when the lock was last lost by the user (Esc, alt-tab)
   let raw = true, reqId = 0, pendingAt = 0, clickReq = false, events = false, lockFails = 0, relockAt = 0, lostAt = -1e9, retryT = 0;
+  let granted = false; // the lock has been granted since the last request: the next move ends the watch for the made-up jump
   // the free cursor (no lock): where it is, and whether it is over the page
   let cx = 0, cy = 0, inside = false;
   const unlockFns = [];
@@ -130,18 +131,16 @@ export function createDesktop(canvas, camera, settings) {
   // plain lock. An older browser returns no promise and answers with the events only.
   function request(click) {
     const id = ++reqId;
-    pendingAt = lockAt = performance.now(); clickReq = click; armed = true;
+    pendingAt = lockAt = performance.now(); clickReq = click; armed = true; granted = false;
     inside = false; // the free cursor's place is learnt again from the next move with no lock on the way
     let p = null;
     try { p = canvas.requestPointerLock(raw ? RAW : undefined); }
     catch (e) { if (raw) { raw = false; request(click); } else refused(); return; }
     if (!p || !p.then) { events = true; return; }
+    // (a refusal comes as a pointerlockerror, below: the promise only says when raw movement is not to be had)
     p.then(
       () => { if (armed) lockAt = performance.now(); }, // taken: the jump comes now, if it has not come yet
-      (e) => {
-        if (id !== reqId) return; // a newer request owns the answer
-        if (raw && e && e.name === "NotSupportedError") { raw = false; request(click); } else refused();
-      });
+      (e) => { if (id === reqId && raw && e && e.name === "NotSupportedError") { raw = false; request(click); } });
   }
   // a refused request: only a click's counts (a request no click made, a resume by Esc or Start, never does)
   function refused() {
@@ -151,13 +150,14 @@ export function createDesktop(canvas, camera, settings) {
     const wait = lostAt + RETRY_MS - performance.now();
     if (wait > 0 && !retryT) retryT = setTimeout(() => { retryT = 0; if (looking() && free()) D.lock(); }, wait + 30);
   }
-  document.addEventListener("pointerlockerror", () => { if (events) refused(); });
+  // A refusal. A raw request the system cannot do is asked again plainly (a new request id) before this runs: that is no refusal.
+  document.addEventListener("pointerlockerror", () => { const id = reqId; setTimeout(() => { if (id === reqId && pendingAt) refused(); }, 0); });
   document.addEventListener("pointerlockchange", () => {
     const now = document.pointerLockElement === canvas, was = D.locked, t = performance.now();
     D.locked = now;
     pendingAt = 0;
     if (now && !was) {
-      lockFails = 0; inside = false;
+      lockFails = 0; inside = false; granted = true;
       // an older browser tells of the lock only here, so its made-up jump (see the mousemove) is timed from now
       if (events && armed) lockAt = t;
       // a button that is already down when the lock starts does nothing until it goes up
@@ -194,7 +194,11 @@ export function createDesktop(canvas, camera, settings) {
     const mx = e.movementX || 0, my = e.movementY || 0;
     // Chromium's made-up jump: one big move made (by its own time stamp, so a busy page that hands it over late still knows
     // it) within SKIP_MS of the lock; it can come before the lock is told of. A small move is the player's.
-    if (armed && e.timeStamp - lockAt < SKIP_MS && Math.abs(mx) + Math.abs(my) > SKIP_MIN) { armed = false; return; }
+    // The first move after the grant ends the watch: a big one is the jump and is dropped, a small one is the player's.
+    if (armed && e.timeStamp - lockAt < SKIP_MS) {
+      if (Math.abs(mx) + Math.abs(my) > SKIP_MIN) { armed = false; return; }
+      if (granted) armed = false;
+    }
     if (!locked() || (!mx && !my)) return; // the free cursor turns the view in the pointermove
     usingPad = false;
     dx += clamp(mx, -MOVE_MAX, MOVE_MAX); dy += clamp(my, -MOVE_MAX, MOVE_MAX);

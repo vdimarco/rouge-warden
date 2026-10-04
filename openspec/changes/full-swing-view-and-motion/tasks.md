@@ -6,7 +6,7 @@
 - [x] Walk and run: motion capture baked (credits), speed-matched blend with the code-built layers on top; measured foot slide and pops
 - [x] Opening: the mouse turns the head in the cottage room; the turn carries into play
 - [x] Music from the first minute; subtitles and toasts at the top, clear of the hero; phone layout check extended
-- [x] Version 1.6.1, APK code 6, motion file precached
+- [x] Version 1.7.1, APK code 7, motion file precached; merged with main (#191)
 - [x] Validate with the OpenSpec CLI
 - [x] qa/vr run: physics, city, mobile, hero, climb, phone-swing, mobile.e2e, rings-map, mouse-look, sound, ui, play, boot, fx, swing, pwa
 - [ ] Device checks not possible here: a real macOS cursor, Safari, Firefox, a phone, a Quest, sound by ear

@@ -20,7 +20,7 @@ The chase camera orbited with the mouse pitch, so looking up put it at chest hei
 - **Walk and run:** motion capture (CMU walk, jog and run; Quaternius idle; see public/vr/anim/CREDITS.md) baked onto the hero's rig, blended by ground speed with one shared phase and a rate matched to the speed, so a planted foot keeps still. The air, swing, landing, rope arm and head look stay on top.
 - **Opening:** the mouse turns the head inside the cottage room, as a headset would; the turn carries into play.
 - **Sound:** the music starts with play instead of after the tutorial. Subtitles and toasts move to the top of the screen, clear of the hero.
-- Version 1.6.1 (Quest APK code 6). The motion file is in the offline cache.
+- Version 1.7.1 (Quest APK code 7), after main's 1.7.0 (the auto target, #191). The motion file is in the offline cache.
 
 ## Out of scope
 
