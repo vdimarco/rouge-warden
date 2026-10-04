@@ -36,12 +36,12 @@ In this order, for every slot:
 
 ## Way 1: render them with Playwright (Linux or a Mac)
 
-This is the quickest way, and it gives exact sizes. The game draws WebGL in software (SwiftShader) here, so it can lower its render scale; force full quality while you capture.
+This is the quickest way, and it gives exact sizes. The game draws WebGL in software (SwiftShader) here, so it can lower its render scale. The `?shot` flag stops that: it sets Graphics High, draws the lake at up to 3x, and turns off the automatic render scale.
 
-1. Build and serve the bundle: `npm run build:www`, then serve `apps/fish/www` on a free port, for example `python3 -m http.server 8790 --directory www`.
-2. Open it in Chromium with Playwright at the CSS viewport from the table, `deviceScaleFactor: 3`, `isMobile: true`, `hasTouch: true`, and a fake `window.Capacitor` (see `qa/fish/app-bundle.e2e.mjs`), so the store build shows.
-3. Use the game's QA hooks (`window.FISH` and the URL flags such as `?open` and `?day=`) to reach each scene. The game needs a screenshot flag that forces Graphics High and the full device pixel ratio while it captures; until that lands, check by eye that the lake is not blurry.
-4. Take each shot with `page.screenshot({ type: "png" })`, then flatten it and check its size:
+1. From the repository root, serve `public/`, for example `python3 -m http.server 8765 --directory public`. On another port, set `FISH_URL`, for example `FISH_URL=http://127.0.0.1:8790/fish/`.
+2. Run `SHOTS=<dir> SCALE=3 SIZES=440x956,428x926,360x640 NODE_PATH=qa/browser/node_modules node qa/fish/shots.mjs`. It opens the game with `?shot` at each CSS viewport from the table, with touch and a device pixel ratio of 3, and saves each screen of the store build in `<dir>/<size>/`. The first picture, `01-title-web.png`, shows the web build: do not upload it. Use the pictures that show a scene from the table.
+3. For a scene that the script does not show as the table asks (for example a cast in flight, the strike, or a journal with fish found), open the page with `?shot` in Chromium with Playwright at the CSS viewport from the table, `deviceScaleFactor: 3`, `isMobile: true` and `hasTouch: true`. Set `document.documentElement.dataset.build = "store"` and call `FISH.toTitle()`, as the script does, so the store build shows. Use the game's QA hooks (`window.FISH` and the URL flags such as `?open` and `?day=`) to reach the scene, and take the shot with `page.screenshot({ type: "png" })`.
+4. Flatten each file and check its size:
 
 ```sh
 node -e "const s=require('./node_modules/sharp');s('in.png').flatten({background:'#0d2f38'}).removeAlpha().png().toFile('out.png')"

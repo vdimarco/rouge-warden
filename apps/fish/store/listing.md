@@ -62,7 +62,7 @@ Google Play tags (pick up to five in the Console): Fishing, Casual, Offline, Sin
 
 ## What's new
 
-Version 1.0:
+Version 1.0.0:
 
 ```
 The first release of Reel It In.

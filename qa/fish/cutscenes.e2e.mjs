@@ -12,6 +12,9 @@
 //   F. the bars, the caption and the Skip hint at 390x844, 360x640, 844x390 and 1280x800, clear of the safe areas
 //      (screenshots in SHOTS, or <tmp>/fish-cuts, to check by eye)
 //   G. a desktop mouse held on the crank and let go over the hero shot lets go of the crank; the card keeps the key focus
+//   H. a press held into a reveal casts nothing, under it or after it (a mouse let go in it or after it, a finger that drags
+//      and flicks in it), and the derby casts left stay the same; Space on the beat or on the catch card plays the first
+//      reveal in place of the cast, and Space held through it casts nothing; a legend hooked or landed marks its reveal seen
 // Run: serve public/ (cd public && python3 -m http.server 8765), then node qa/fish/cutscenes.e2e.mjs (FISH_URL for another
 // address). The script scripts themselves are checked in node by qa/fish/cutscenes.test.mjs.
 import os from "os";
@@ -533,6 +536,222 @@ function capStub() {
     check(!sk.playing && sk.ms != null && sk.ms <= 300 && f.focus === "catchGo" && f.card && ph.phase === "cast" && !ph.card, "Space skips the hero shot, the card comes with the focus on its button, and Space casts again (" + JSON.stringify({ ...sk, ...f, after: ph }) + ")");
   } catch (e) { check(false, "exception in part G: " + (e && e.stack)); }
   check(errors.length === 0, "part G: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+
+/* ---------- H. a press held into a reveal, a Space chain, and a legend met before its reveal ---------- */
+// play starts with none of the game's own gold rings, then or later: the test raises the legend's ring itself
+const startNoGold = (page, mode) => page.evaluate((mode) => { FISH.startMode(mode); const R = FISH.rises, sp = R.spawn.bind(R); R.spawn = () => { const g = sp(); return g && g.gold ? null : g; }; }, mode);
+// In the page: pointers and Space with exact timing (a slow software renderer would stretch CDP input), the legend's ring, a
+// cast that comes home with nothing on it (then the beat after it; a derby cast is used up), and the cast as it is now
+function pressKit(kind) {
+  const G = FISH.G, wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  let target = null;
+  window.__wait = wait;
+  window.__ptr = (type, x, y, id = 7) => {
+    // (a finger's events go to where it came down)
+    const el = kind === "touch" && type !== "pointerdown" && target ? target : document.elementFromPoint(x, y) || document.body;
+    if (type === "pointerdown") target = el;
+    el.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: kind, isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
+    return el.id || el.tagName;
+  };
+  window.__key = (type, repeat = false) => window.dispatchEvent(new KeyboardEvent(type, { code: "Space", key: " ", repeat, bubbles: true, cancelable: true }));
+  window.__gold = (x = 6, z = -44) => FISH.rises.list.push({ x, z, ttl: 90, species: "golden", gold: true, pulse: 0.2 });
+  window.__home = async () => {
+    FISH.newCast(); FISH.enterReel();
+    G.lastEvent = {}; G.hold = null; G.bail = "closed";
+    G.casts++; if (G.mode === "derby") G.castsLeft--;
+    G.sim = { fake: true, events: [], step() {}, state: { phase: "home", lure: { x: 0, y: -0.2, z: -1, speed: 0 }, tfrac: 0, slip: 0, dragN: 18, breakN: 45, lineOut: 1, slack: false, bend: 0, fish: null } };
+    const t0 = performance.now();
+    while (G.phase === "reel" && performance.now() - t0 < 8000) await wait(2);
+    return G.phase;
+  };
+  window.__cast = () => ({ phase: G.phase, step: G.step, pin: !!G.pin, casts: G.casts, left: G.castsLeft, cut: FISH.cuts.id });
+  window.__cutNow = async () => { const t0 = performance.now(); while (!FISH.cuts.playing && performance.now() - t0 < 5000) await wait(2); return FISH.cuts.id; };
+}
+// the reveal at Loon Lake not seen again, in the game and in the saved copy, and no gold ring on the water (so it plays only
+// when the check raises one)
+const unseen = (page) => page.evaluate(() => {
+  FISH.rises.list = FISH.rises.list.filter((g) => !g.gold);
+  delete FISH.save.cuts["reveal.loon"];
+  const s = JSON.parse(localStorage.getItem("fish.v1"));
+  delete s.cuts["reveal.loon"];
+  localStorage.setItem("fish.v1", JSON.stringify(s));
+});
+const castNow = (page) => page.evaluate(() => window.__cast());
+{
+  const save = { v: 1, casts: 24, caught: 3, input: "touch", journal: { perch: { n: 3, kg: 0.4, cm: 26 } }, places: { loon: { open: 1 }, stumps: { open: 1 } }, cuts: except("reveal.loon") };
+  const { browser, page, errors } = await open({ cuts: true, save, touch: false, phone: false, width: 960, height: 600 });
+  try {
+    await watchCuts(page);
+    await page.evaluate(pressKit, "mouse");
+    await startNoGold(page, "free");
+    await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready" && FISH.reelPanel.s.grab === "lock", null, 30000);
+    await sleep(500);
+    // The mouse button comes down on the lake just before the reveal starts, while its hold timer still runs. The hold time
+    // is longer here (1.2 s), so the reveal surely starts first, and the button stays down past it. A busy page that drew no
+    // frame before the timer took the line is tried again. hold: the button stays down through the whole reveal
+    const pressReveal = async (hold) => {
+      let r;
+      for (let i = 0; i < 3; i++) {
+        await unseen(page);
+        await page.evaluate(() => FISH.newCast());
+        await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready" && FISH.reelPanel.s.grab === "lock", null, 10000);
+        r = await page.evaluate(async (hold) => {
+          const RU = (await import("/fish/js/reel.js")).REEL_UI, ms = RU.holdMs, c0 = window.__cast();
+          RU.holdMs = 1200;
+          try {
+            const on = window.__ptr("pointerdown", 480, 380);
+            window.__gold();
+            const cut = await window.__cutNow();
+            if (cut !== "reveal.loon" || hold) { if (cut !== "reveal.loon") window.__ptr("pointerup", 480, 380); return { on, cut, c0 }; }
+            await window.__wait(1600);
+            const during = window.__cast();
+            window.__ptr("pointerup", 480, 380);
+            await window.__wait(100);
+            return { on, cut, c0, during, up: window.__cast() };
+          } finally { RU.holdMs = ms; }
+        }, hold);
+        if (r.cut === "reveal.loon") break;
+        console.log("     (the page was busy: " + JSON.stringify(r) + ")");
+        await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore" || FISH.G.step === "ready", null, 30000).catch(() => {});
+      }
+      return r;
+    };
+    // let go 1.6 s into the reveal
+    const m1 = await pressReveal(false);
+    await ff(page);
+    await sleep(300);
+    const m1e = await castNow(page);
+    check(m1.cut === "reveal.loon" && !m1.during.pin && m1.during.step === "ready" && m1.up.step === "ready" && m1.up.casts === m1.c0.casts && m1e.step === "ready" && !m1e.pin && m1e.casts === m1.c0.casts, "a mouse button pressed just before the reveal and let go in it takes no line and casts nothing, under it or after it (" + JSON.stringify({ ...m1, end: m1e }) + ")");
+    // held through the whole reveal as it plays (its hold timer would end in it), and let go after it
+    const m2 = await pressReveal(true);
+    await until(page, () => !FISH.cuts.playing, null, 90000);
+    await sleep(300);
+    const m2e = await page.evaluate(async () => { const held = window.__cast(); window.__ptr("pointerup", 480, 380); await window.__wait(150); return { held, up: window.__cast() }; });
+    check(m2.cut === "reveal.loon" && m2e.held.step === "ready" && !m2e.held.pin && m2e.up.step === "ready" && m2e.up.casts === m2.c0.casts, "a mouse button held through the whole reveal casts nothing as it ends, nor when it lets go after it (" + JSON.stringify({ ...m2, ...m2e }) + ")");
+    // the player presses again: the hold takes the line as before (let go in the back swing, nothing flies)
+    const m3 = await page.evaluate(async () => {
+      const G = FISH.G, t0 = performance.now();
+      window.__ptr("pointerdown", 480, 380);
+      while (!(G.pin && G.pin.key) && performance.now() - t0 < 3000) await window.__wait(2);
+      const out = { pin: !!(G.pin && G.pin.key), step: G.step };
+      window.__ptr("pointerup", 480, 380);
+      await window.__wait(100);
+      return { ...out, after: window.__cast() };
+    });
+    check(m3.pin && m3.step === "pinned" && m3.after.step === "ready", "after it, a new press takes the line as before (" + JSON.stringify(m3) + ")");
+
+    // a derby: a click that ends the beat, with the legend's ring on the water, plays the reveal at once (no cast), and the
+    // casts left are the same after it
+    await unseen(page);
+    await startNoGold(page, "derby");
+    await until(page, () => FISH.G.mode === "derby" && FISH.G.phase === "cast" && FISH.G.step === "ready", null, 30000);
+    await sleep(500);
+    const d = await page.evaluate(async () => {
+      const beat = await window.__home();
+      window.__gold();
+      await window.__wait(450);
+      const c0 = window.__cast();
+      window.__ptr("pointerdown", 480, 380);
+      const cut = FISH.cuts.id;
+      await window.__wait(1500);
+      const during = window.__cast();
+      window.__ptr("pointerup", 480, 380);
+      return { beat, c0, cut, during };
+    });
+    await ff(page);
+    await sleep(300);
+    const de = await castNow(page);
+    check(d.beat === "lost" && d.cut === "reveal.loon" && d.during.left === d.c0.left && !d.during.pin && de.left === d.c0.left && de.casts === d.c0.casts && de.step === "ready" && !de.pin, "a derby: a click that ends the beat with the legend's ring on the water plays the reveal, and the casts left are the same after it (" + JSON.stringify({ ...d, end: de }) + ")");
+
+    // a Space chain: Space that ends the beat plays the reveal in place of the Space cast; held through it, it casts nothing
+    await unseen(page);
+    await startNoGold(page, "free");
+    await until(page, () => FISH.G.mode === "free" && FISH.G.phase === "cast" && FISH.G.step === "ready", null, 30000);
+    await sleep(500);
+    const s = await page.evaluate(async () => { const beat = await window.__home(); window.__gold(); await window.__wait(450); const c0 = window.__cast(); window.__key("keydown"); return { beat, c0, at: window.__cast() }; });
+    await ff(page);
+    const se = await page.evaluate(async () => {
+      await window.__wait(300);
+      // (the key still held: its repeats, then it lets go)
+      for (let i = 0; i < 3; i++) { window.__key("keydown", true); await window.__wait(40); }
+      const held = window.__cast();
+      window.__key("keyup");
+      await window.__wait(150);
+      return { held, up: window.__cast() };
+    });
+    check(s.beat === "lost" && s.at.phase === "cast" && s.at.cut === "reveal.loon" && !s.at.pin, "Space that ends the beat with the legend's ring on the water plays the reveal in place of the Space cast (" + JSON.stringify(s) + ")");
+    check(se.held.step === "ready" && !se.held.pin && se.up.step === "ready" && se.up.casts === s.c0.casts, "Space held through the reveal casts nothing after it: the player presses again (" + JSON.stringify(se) + ")");
+    // Space on the catch card, with the legend's ring on the water: the reveal in place of the Space cast
+    await unseen(page);
+    await landFish(page, { id: "perch", kg: 0.4, cm: 26 });
+    await until(page, () => FISH.G.phase === "catch" && !document.getElementById("catch").hidden && !FISH.G.cardWait, null, 20000);
+    await sleep(500);
+    const cc = await page.evaluate(() => { window.__gold(); window.__key("keydown"); const at = window.__cast(); window.__key("keyup"); return at; });
+    await ff(page);
+    check(cc.phase === "cast" && cc.cut === "reveal.loon" && !cc.pin, "Space on the catch card with the legend's ring on the water plays the reveal in place of the Space cast (" + JSON.stringify(cc) + ")");
+
+    // the legend landed before its reveal: the reveal is marked seen, and its next gold ring (in a new place: one ring has its
+    // toast once) has the toast and no reveal
+    await unseen(page);
+    await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 20000);
+    await landFish(page, { id: "golden", kg: 4.6, cm: 58 });
+    await until(page, () => FISH.G.phase === "catch" && !FISH.G.cardWait, null, 30000);
+    const ls = await page.evaluate(() => ({ seen: FISH.save.cuts["reveal.loon"], kept: JSON.parse(localStorage.getItem("fish.v1")).cuts["reveal.loon"] }));
+    await sleep(500);
+    await page.click("#catchGo");
+    await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 20000);
+    const n0 = (await cutsSeen(page)).length;
+    await page.evaluate(() => { window.__toasts = []; const t = document.getElementById("toast"); new MutationObserver(() => window.__toasts.push(t.textContent)).observe(t, { childList: true, characterData: true, subtree: true }); window.__gold(-10, -46); });
+    await until(page, () => window.__toasts.some((t) => /gold ring/.test(t)), null, 15000).catch(() => {});
+    const after = (await cutsSeen(page)).slice(n0), toasted = await page.evaluate(() => window.__toasts.some((t) => /gold ring/.test(t)));
+    check(ls.seen === 1 && ls.kept === 1 && !after.length && toasted, "a legend landed before its reveal marks the reveal seen, and its next gold ring has the toast and no reveal (" + JSON.stringify({ ...ls, after, toasted }) + ")");
+    // the legend hooked: its reveal is marked seen too
+    await unseen(page);
+    const hk = await page.evaluate(async () => {
+      const G = FISH.G;
+      G.sim = { fake: true, events: [{ type: "hooked", id: "golden" }], step() {}, state: { phase: "fight", lure: { x: 0, y: -0.2, z: -20, speed: 0 }, tfrac: 0.3, slip: 0, dragN: 18, breakN: 45, lineOut: 20, slack: false, bend: 0.3,
+        fish: { id: "golden", kg: 4, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "swim", jump: 0, near: 0.5, known: true } } };
+      G.bail = "closed";
+      FISH.enterReel();
+      const t0 = performance.now();
+      while (G.sim.events.length && performance.now() - t0 < 10000) await window.__wait(5);
+      return { seen: FISH.save.cuts["reveal.loon"], kept: JSON.parse(localStorage.getItem("fish.v1")).cuts["reveal.loon"] };
+    });
+    check(hk.seen === 1 && hk.kept === 1, "a legend hooked marks its reveal seen (" + JSON.stringify(hk) + ")");
+  } catch (e) { check(false, "exception in part H (mouse and keys): " + (e && e.stack)); }
+  check(errors.length === 0, "part H (mouse and keys): no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
+  await browser.close();
+}
+{
+  const save = { v: 1, casts: 24, caught: 3, input: "touch", journal: { perch: { n: 3, kg: 0.4, cm: 26 } }, cuts: except("reveal.loon") };
+  const { browser, page, errors } = await open({ cuts: true, save, width: 390, height: 844 });
+  try {
+    await page.evaluate(pressKit, "touch");
+    await startNoGold(page, "derby");
+    await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 30000);
+    await sleep(500);
+    // a phone in a derby: the tap that ends the beat plays the reveal, and the same finger drags down, flicks up and lifts
+    // in it
+    const t = await page.evaluate(async () => {
+      const beat = await window.__home(), x = 200, y = 520;
+      window.__gold();
+      await window.__wait(450);
+      const c0 = window.__cast();
+      window.__ptr("pointerdown", x, y, 11);
+      const cut = FISH.cuts.id;
+      for (let i = 1; i <= 12; i++) { window.__ptr("pointermove", x, y + i * 15, 11); await window.__wait(30); }
+      for (let i = 11; i >= -8; i--) { window.__ptr("pointermove", x, y + i * 15, 11); await window.__wait(6); }
+      window.__ptr("pointerup", x, y - 120, 11);
+      return { beat, c0, cut, during: window.__cast() };
+    });
+    await ff(page);
+    await sleep(300);
+    const te = await castNow(page);
+    check(t.beat === "lost" && t.cut === "reveal.loon" && !t.during.pin && t.during.step === "ready" && t.during.left === t.c0.left && te.left === t.c0.left && te.casts === t.c0.casts && te.step === "ready", "a phone in a derby: a finger that ends the beat, then drags and flicks in the reveal, casts nothing, and the casts left are the same after it (" + JSON.stringify({ ...t, end: te }) + ")");
+  } catch (e) { check(false, "exception in part H (touch): " + (e && e.stack)); }
+  check(errors.length === 0, "part H (touch): no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
 

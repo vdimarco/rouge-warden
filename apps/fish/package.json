@@ -12,6 +12,7 @@
     "check:www": "node scripts/check-www.mjs --strict",
     "check:native": "node scripts/native-check.mjs",
     "test:check": "node scripts/check-www.test.mjs",
+    "test:native": "node scripts/native-check.test.mjs",
     "sync": "npm run build:www && cap sync",
     "android:debug": "npm run build:www && cap sync android && cd android && ./gradlew assembleDebug",
     "android:bundle": "npm run build:www && cap sync android && cd android && ./gradlew bundleRelease",

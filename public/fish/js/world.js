@@ -482,8 +482,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (!m) return;
     const u = m.userData.fx, len = f.len || 0.4;
     m.visible = true;
-    // a leap far out is drawn larger (up to 2x from 30 m), so the moment reads on a phone
-    const far = (f.jump || 0) > 0 ? 1 + smooth(8, 30, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1;
+    // a leap far out is drawn larger (up to 2x from 30 m), so the moment reads on a phone. Not in a cutscene: its camera
+    // is near the fish and frames it at its own size
+    const far = (f.jump || 0) > 0 && !cutFn ? 1 + smooth(8, 30, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1;
     m.scale.setScalar((len / unitLen(m)) * far);
     const j = clamp(f.jump || 0, 0, 1), heading = f.heading || 0;
     let y = f.y, pitch = 0, roll = f.roll || 0;   // roll: the body turns about its length (radians): a thrashing or beaten fish lies over
