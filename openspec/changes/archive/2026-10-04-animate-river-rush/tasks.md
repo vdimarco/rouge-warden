@@ -7,5 +7,5 @@
 - [x] Add Surge and near-miss combo rewards with keyboard/touch controls.
 - [x] Rebuild and verify visual motion, actions, pause and both layouts.
 - [x] Validate OpenSpec structure.
-- [ ] Archive animation requirements and review canonical specs.
-- [ ] Publish and verify Warden production.
+- [x] Archive animation requirements and review canonical specs.
+- [x] Publish and verify Warden production.

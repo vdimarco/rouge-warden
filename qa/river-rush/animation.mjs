@@ -18,7 +18,8 @@ await page.goto(new URL('river-rush/', base).href, { waitUntil: 'networkidle' })
 await page.waitForFunction(() => document.querySelector('video')?.currentTime > 0.2);
 const start = await page.locator('video').evaluate(v => v.currentTime);
 await page.waitForTimeout(350);
-assert.ok(await page.locator('video').evaluate(v => v.currentTime) > start);
+const playback = await page.locator('video').evaluate(v => ({ time: v.currentTime, duration: v.duration }));
+assert.ok((playback.time - start + playback.duration) % playback.duration > 0.1);
 assert.equal(await page.locator('video').evaluate(v => v.muted), true);
 await page.screenshot({ path: `${out}/living-menu-desktop.png` });
 await page.getByRole('button', { name: 'How to play' }).click();

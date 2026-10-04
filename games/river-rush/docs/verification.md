@@ -45,6 +45,8 @@ Ten engine/presentation tests passed, including held versus tapped Surge, balanc
 
 The existing game browser checks and arcade integration checks also passed. Shared audio checks passed 15/15. A missed very fast touch tap was fixed by queuing a one-shot Surge input for the simulation, so both short Shift presses and touch clicks work reliably. Run the new check with `NODE_PATH=games/river-rush/node_modules node qa/river-rush/animation.mjs` against the static server.
 
+Upgrade release `ec4b7b72791043ca2b5347835f8c8e22ef8a42a4` preserved the concurrent Primordia update before publishing. Vercel production deployment `dpl_2kjeSERfvDecWNvZRYVowrBfJ3Pp` reported READY. The animation browser check also passed against `https://warden-alpha-wheat.vercel.app/`: video, Shift and touch Surge, pause, live reduced motion, poster fallback and action rendering. Short production-browser samples averaged 16.7 ms per frame on both viewports, with no page errors.
+
 Run the static server from the repository root, then:
 
 ```sh
