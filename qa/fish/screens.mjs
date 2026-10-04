@@ -53,7 +53,7 @@ const logClear = (page) => page.evaluate(() => { window.__log.length = 0; });
 async function spy(page) {
   await page.evaluate(() => {
     const log = (window.__log = []);
-    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "land", "hookset", "splash"], "H"]]) {
+    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash"], "H"]]) {
       for (const n of names) { const f = obj[n]; obj[n] = function (...a) { log.push([tag + "." + n, ...a]); return f.apply(this, a); }; }
     }
   });
@@ -222,7 +222,8 @@ const stand = async (page) => {
       ["thrash", [{ type: "thrash" }], (l) => has(l, "H.thrash") && has(l, "S.sfx", "splash")],
       ["spool", [{ type: "spool" }], (l) => has(l, "S.sfx", "slip") && l.some((x) => x[0] === "H.bump" && x[1] === 0.8)],
       ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "record") && has(l, "H.phase")],
-      ["lastrun", [{ type: "lastrun" }], (l) => has(l, "H.jolt")],
+      // its own warning, not the snap buzz (which would also silence the drag)
+      ["lastrun", [{ type: "lastrun" }], (l) => has(l, "H.surge") && !has(l, "H.jolt")],
     ];
     for (const [name, ev, ok] of FEEL) {
       await stage(page, {});
