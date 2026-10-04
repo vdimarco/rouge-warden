@@ -1,5 +1,10 @@
 # Monster Mash bases and basic attacks
 
+## Purpose
+In Shore of the Ancients, two teams of three heroes fight across a large arena to destroy the enemy core. A click on an enemy sends the player's hero to chase it and hit it with a repeating chain of three attacks. Both towers in one lane must fall before the core takes damage.
+
+## Requirements
+
 ### Requirement: Larger distinct bases
 Each team SHALL have a paved court larger than the old base ring and a core building distinct from lane towers and the opposing base. The visible inner court SHALL match the healing area.
 
