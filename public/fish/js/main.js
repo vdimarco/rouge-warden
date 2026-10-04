@@ -13,7 +13,8 @@ import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
 import { HangingLure } from "./line-motion.js";
-import { CAST, castParams, Flight } from "./cast.js";
+import { CAST, castParams, Flight, castLanding, touchTheta, touchSpan, gradeRelease, liftError, RELEASE } from "./cast.js";
+import { createCastRail } from "./cast-rail.js";
 import { Rises, LakeSim, rodTip, sizeRank, firstBite } from "./fish.js";
 import { ReelPanel, Crank, RodPad, Gauge, REEL_UI } from "./reel.js";
 import * as LAKE from "./lake.js";
@@ -141,6 +142,7 @@ const G = {
 };
 let world = null, rises = null, reelPanel = null, crank = null, rodPad = null, gauge = null, crankPad = null;
 const rodCues = createRodCues(game);
+const castRail = createCastRail(game);
 let cardT = 0, countT = 0;   // the catch card: the timer of the photo beat, the timer of the count-up
 
 /* ---------------- icons for the prompts and the help ---------------- */
@@ -235,7 +237,8 @@ function prompt(text, sub = "", icon = "", tone = "") {
 // kind "photo" is the white camera flash of a trophy; the strike and the loss flash red
 function flash(kind = "") { const f = $("#flash"); f.classList.remove("go"); f.classList.toggle("photo", kind === "photo"); void f.offsetWidth; f.classList.add("go"); }
 let reportT = 0;
-function report(dist, verdict, zoneName, sweet) {
+// cue: the short word at the release itself ("Sweet!"), before the lure lands; ms: how long it stays
+function report(dist, verdict, zoneName, sweet, cue = false, ms = 2600) {
   const r = $("#report");
   r.hidden = false;
   r.querySelector(".dist").innerHTML = dist == null ? "" : dist.toFixed(1) + "<small> m</small>";
@@ -243,9 +246,31 @@ function report(dist, verdict, zoneName, sweet) {
   v.textContent = verdict;
   v.className = "verdict" + (sweet ? " sweet" : "");
   r.querySelector(".zone").textContent = zoneName || "";
+  r.classList.toggle("cue", cue);
   r.classList.remove("show"); void r.offsetWidth; r.classList.add("show");
   clearTimeout(reportT);
-  reportT = setTimeout(() => { r.hidden = true; }, 2600);
+  reportT = setTimeout(() => { r.hidden = true; }, ms);
+}
+// The report's second line: the first that has something to say. ctx: { dist, verdict, ring, nearMiss (its line), zone
+// (its name), best (the longest cast yet), farther (a short cast by a new player), stroke (castParams), motion, key }
+function reportNote(c) {
+  if (c.ring) return c.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!";
+  if (c.nearMiss) return c.nearMiss;
+  // (P4, the goals, puts its lines here, after the near miss)
+  // at Loon the big fish live farther out; a new player with short casts is told so
+  if (c.farther) return "Farther out, the fish are bigger.";
+  // a good release with a short back cast: the distance was in the back cast
+  if (c.verdict === "sweet" && c.stroke < 0.85) return c.motion ? "Tip back farther for more distance." : c.key ? "Hold Space longer for more distance." : "Drag down farther for more distance.";
+  if (c.best) return "Your longest cast yet!";
+  return c.zone || "";
+}
+// a ring missed by up to 12 m: how far, and which way, along the cast's own heading
+function nearMissText(g, x, z, yaw) {
+  const a = yaw * Math.PI / 180, dx = g.x - x, dz = g.z - z;
+  const along = dx * Math.sin(a) - dz * Math.cos(a), side = dx * Math.cos(a) + dz * Math.sin(a);
+  const ring = g.gold ? "the gold ring" : "the ring", n = (v) => Math.max(1, Math.round(Math.abs(v))) + " m ";
+  if (Math.abs(along) >= Math.abs(side)) return n(along) + (along > 0 ? "short of " : "past ") + ring + ".";
+  return n(side) + (side > 0 ? "left of " : "right of ") + ring + ".";
 }
 const hideReport = () => { $("#report").hidden = true; };
 const fmtHour = (h) => { const hh = Math.floor(h), mm = Math.floor((h - hh) * 60); return ((hh + 11) % 12 + 1) + ":" + String(mm).padStart(2, "0") + (hh < 12 ? " AM" : " PM"); };
@@ -682,7 +707,7 @@ function closeBail() {
 }
 // the line came off the thumb with no cast: the bail snaps shut and the lure hangs ready again
 function resetCast(msg) {
-  G.pin = null; G.step = "ready"; G.drop = 0; G.strokeAt = 0;
+  G.pin = null; G.lift = null; G.step = "ready"; G.drop = 0; G.strokeAt = 0;
   if (G.bail === "open") { G.bail = "closed"; Sound.sfx("bailClose"); Haptics.bail(false); }
   if (msg) toast(msg, 3000);
 }
@@ -692,8 +717,9 @@ function pinLine(e) {
   if (G.pin || (G.step !== "ready" && G.step !== "open")) return;
   // one press does both: the thumb flips the bail open and holds the line
   if (G.bail !== "open") openBail("pin");
-  // 80: the rod angle pinmove gives a finger that has not moved, so a small wobble is no flick
-  G.pin = { id: e.id, y0: e.y, theta: 80 };
+  // 80: the rod angle pinmove gives a finger that has not moved, so a small wobble is no flick.
+  // x0: where the finger came down (the touch rail stands beside it); turn: which way the screen faced
+  G.pin = { id: e.id, x0: e.x, y0: e.y, theta: 80, turn: screenAngle() };
   G.step = "pinned";
   G.strokeAt = 0;
   G.backMax = Motion.pose.theta;
@@ -704,15 +730,19 @@ function pinLine(e) {
 }
 function unpinLine(e) {
   if (!G.pin || (e.id != null && G.pin.id != null && e.id !== G.pin.id)) return;
-  const wasFeather = G.pin.feather;
+  const pin = G.pin;
   G.pin = null;
-  if (wasFeather || G.phase !== "cast") return;
+  if (pin.feather || G.phase !== "cast") return;
   Haptics.mute(0);
   if (G.step !== "pinned" && G.step !== "loaded") return;
-  // the browser took the touch away (often the page turning mid-swing): a fumble, not a cast
-  if (e.cancel) { Sound.sfx("slip"); resetCast(touchDevice ? "The screen turned. Turn on the rotation lock." : "The line slipped."); return; }
-  // with sensors, the exact input time of the lift matters; with a finger, the finger's own clock is the rod's clock
-  release(sensing() ? e.t || now() : now());
+  // the browser took the touch away: a fumble, not a cast. The page turning is one cause; a system gesture is another
+  if (e.cancel) { Sound.sfx("slip"); resetCast(touchDevice && pin.turn !== screenAngle() ? "The screen turned. Turn on the rotation lock." : "The line slipped. Try again."); return; }
+  // with sensors, the exact input time of the lift matters
+  if (sensing()) { release(e.t || now()); return; }
+  // with a finger, the cast is graded where the finger lifts: its rod angle, however long it rested before the lift
+  const theta = e.y != null ? touchTheta(e.y - pin.y0, touchSpan(game.clientHeight)) : pin.theta, t = now();
+  Motion.virtual({ t, theta, yaw: G.aimYaw, roll: 0 });
+  release(t, false, { theta });
 }
 // A forward stroke that ends with the thumb still down: the rod swung past the water, or stopped at 10 o'clock
 // and stayed there. It casts anyway, late and low, so a throw is never lost to a thumb that forgot to lift
@@ -727,45 +757,67 @@ function strokeEnded(pose, t) {
 }
 // the rod loads over the shoulder, where the player cannot see the screen: a short tap gets through the mute
 function loadTap() { if (sensing()) { Haptics.mute(0); Haptics.load(); Haptics.mute(3000); } else Haptics.load(); }
+// The rod tips back: past LOAD_THETA it loads (a creak and a tap), and when it is back far enough for full power (BACK_FULL
+// past the ideal release) it creaks and taps again
+function loadCheck(theta) {
+  if (G.step === "pinned" && theta >= CAST.LOAD_THETA) { G.step = "loaded"; Sound.sfx("load"); loadTap(); }
+  if (G.step === "loaded" && G.pin && !G.pin.full && theta >= CAST.IDEAL_RELEASE + CAST.BACK_FULL) { G.pin.full = true; Sound.sfx("load"); loadTap(); }
+}
 // the finger comes off the line: was it a cast, or did the line just slip?
-// late: the rod swung through with the thumb still down. It still casts, low, so the throw is never lost
-function release(t, late = false) {
+// held: the rod swung through with the thumb still down. It still casts, low, so the throw is never lost.
+// finger: touch, mouse and keys grade the release at the finger: { theta } (the rod angle there), and fwd for the keys
+function release(t, held = false, finger = null) {
   Haptics.mute(0);
-  const s = Motion.at(t);
-  const pk = Motion.peak(t - 450, t);
+  // a motion lift before the rod reached 11 o'clock: the launch waits for the samples that show when it got there
+  // (up to RELEASE.WAIT_MS; frameLift() finishes it). The line still leaves the thumb now
+  if (sensing() && !held && Motion.at(t).theta >= CAST.IDEAL_RELEASE) { G.lift = { t }; Sound.sfx("release"); return; }
+  launch(t, t, held, finger);
+}
+// a lift that is waiting for the crossing: launch on the first sample past it, or when the wait is over
+function frameLift(sampleT) {
+  const L = G.lift;
+  if (!L) return;
+  if (G.phase !== "cast" || now() - L.t > 400) { G.lift = null; resetCast(); return; }   // stale: a pause came between
+  const end = L.t + RELEASE.WAIT_MS;
+  if (sampleT != null && Motion.at(sampleT).theta < CAST.IDEAL_RELEASE) launch(L.t, Math.min(sampleT, end), false, null, true);
+  else if (now() >= end) launch(L.t, end, false, null, true);
+}
+function launch(t, tEnd, held, finger, sounded = false) {
+  G.lift = null;
+  const m = sensing();
+  const s = Motion.at(tEnd);
+  const pk = Motion.peak(t - RELEASE.LOOK_MS, tEnd);
   // the swing square to the rod: a thumb grip rolls the screen, and the pitch rate alone reads it short
-  const fwd = Math.max(0, -(pk.minSwing != null ? pk.minSwing : pk.minOmega), -s.omega);
-  G.lastRelease = { t, theta: s.theta, omega: s.omega, minOmega: pk.minOmega, maxTheta: pk.maxTheta, fwd };
+  const fwd = finger && finger.fwd ? finger.fwd : Math.max(0, -(pk.minSwing != null ? pk.minSwing : pk.minOmega), -s.omega);
+  const back = Math.max(G.backMax, pk.maxTheta);
   // hand tremor alone reaches 20 to 40 deg/s: a motion release needs a real swing
-  const minSpeed = sensing() ? Math.max(150, CAST.MIN_STROKE_SPEED || 0) : (CAST.MIN_STROKE_SPEED || 150);
-  const forwardTravel = Math.max(G.backMax, pk.maxTheta) - s.theta;
-  if (fwd < minSpeed || (sensing() && (forwardTravel < 8 || s.omega > 60))) {
+  const minSpeed = m ? Math.max(150, CAST.MIN_STROKE_SPEED || 0) : (CAST.MIN_STROKE_SPEED || 150);
+  if (fwd < minSpeed || (m && (back - s.theta < 8 || s.omega > 60))) {
     // no swing: nothing flies. Start again with no fuss
     resetCast(G.input === "motion" ? "Swing the phone forward. Lift your thumb as it tips." : "Drag down. Then flick up and let go.");
     return;
   }
-  // grade the release by time, not angle: a fast whip sweeps the sweet band in 30 ms, so measure how far
-  // the lift was from the moment the rod crossed the ideal angle, and map ±90 ms onto that band
-  let thRel = s.theta;
-  if (sensing() && s.theta < 110 && fwd > 0) {
-    const I = CAST.IDEAL_RELEASE || 68;
-    let tc = null;
-    for (let q = t; q >= t - 450; q -= 2) if (Motion.at(q - 2).theta >= I && Motion.at(q).theta < I) { tc = q; break; }
-    const errMs = tc != null ? t - tc : -((s.theta - I) / fwd) * 1000;
-    thRel = I - clamp(errMs, -400, 400) * 0.22;
-  }
-  // the thumb never lifted: always the same low line drive (the time grade would call it a slam)
-  if (late) thRel = 40;
-  const params = castParams({ thetaRelease: thRel, omegaPeak: fwd, thetaBack: Math.max(G.backMax, pk.maxTheta), yaw: G.input === "motion" ? clamp(s.yaw, -75, 75) : G.aimYaw, assist: save.assist });
+  // motion: graded by the time of the lift against the moment the rod crossed 11 o'clock (cast.js); a finger: by its angle
+  const errMs = m && !held ? liftError((q) => Motion.at(q).theta, t, fwd, tEnd) : null;
+  const g = held ? gradeRelease({ held }) : m ? gradeRelease({ errMs }) : { thetaRelease: finger ? finger.theta : s.theta, assist: true };
+  const rod = finger ? finger.theta : s.theta;
+  G.lastRelease = { t, theta: rod, thetaRelease: g.thetaRelease, errMs, omega: s.omega, minOmega: pk.minOmega, maxTheta: pk.maxTheta, fwd };
+  const params = castParams({ thetaRelease: g.thetaRelease, omegaPeak: fwd, thetaBack: back, yaw: m ? clamp(s.yaw, -75, 75) : G.aimYaw, assist: save.assist && g.assist });
   G.cast = params;
-  G.cast.late = late;
+  G.cast.late = held;
+  G.cast.key = !!(finger && finger.fwd);
   // physics uses the real rod geometry; world.tip() is the drawn, camera-held rod
-  G.flight = new Flight(rodTip(clamp(s.theta, 0, 85), params.yaw, 0, G.place.stand.rod), params);
+  G.flight = new Flight(rodTip(clamp(rod, 0, 85), params.yaw, 0, G.place.stand.rod), params);
+  // what the aim line shows next time: where a cast like this one lands
+  G.lastCast = { v0: params.v0, pitch: params.pitch, theta: clamp(rod, 0, 85) };
+  G.aimTo = null;
   G.step = "flight";
   G.casts++;
   if (G.mode === "derby") G.castsLeft--;
   save.casts++;
-  Sound.sfx("release");
+  if (!sounded) Sound.sfx("release");
+  // a sweet release says so at once, before the lure lands (the grade is fixed, so the buzz cannot spoil it)
+  if (params.verdict === "sweet" && !held) { report(null, "Sweet!", "", true, true, 900); Sound.sfx("ui"); Haptics.bump(0.6); }
   seen("cast");
   updateHud();
   relayout();
@@ -775,19 +827,20 @@ const STAND_HIT = { dock: "You hooked the dock.", road: "You hit the road.", bar
 const VERDICT = {
   sweet: "Sweet cast!", high: "Too high. Let go a little later.", low: "Too low. Let go a little sooner.",
   slam: "Too late. Let go sooner.", behind: "Far too early. It went behind you.", weak: "Flick it faster.",
-  late: "You held on. Let go during the flick.",
+  late: "You held on. Let go during the flick.", short: "Drag down first.",
 };
 const VERDICT_M = {
   sweet: "Sweet cast!", high: "Too high. Lift your thumb a little later.", low: "Too low. Lift your thumb a little sooner.",
   slam: "Too late. Lift your thumb sooner.", behind: "Far too early. It went behind you.", weak: "Too slow. Whip it faster.",
-  late: "You kept your thumb down. Lift it as the phone tips.",
+  late: "You kept your thumb down. Lift it as the phone tips.", short: "Tip the phone back first.",
 };
 function landed(r) {
   const dist = Math.hypot(r.x, r.z);
   G.step = r.land === "water" ? "landed" : "ashore";
   const zone = G.place.zone(r.x, r.z);
   const v = G.cast ? (G.cast.late ? "late" : G.cast.verdict) : "";
-  const VV = G.input === "motion" ? VERDICT_M : VERDICT;
+  // the keys: Space tips the rod back while it is held
+  const VV = G.input === "motion" ? VERDICT_M : G.cast && G.cast.key ? { ...VERDICT, short: "Hold Space longer." } : VERDICT;
   if (r.land === "water") {
     world.splash(r.x, r.z, 0.5);
     Sound.sfx("splash", 0.5); Haptics.splash(0.5);
@@ -805,9 +858,9 @@ function landed(r) {
     const best = dist > save.longest && dist > 12;
     if (dist > save.longest) save.longest = dist;
     persist();
-    // at Loon the big fish live farther out; a new player with short casts is told so
-    const hint = G.place.id === "loon" && dist < 15 && save.casts <= 12 ? "Farther out, the fish are bigger." : "";
-    report(dist, VV[v] || "", G.ring ? (G.ring.gold ? "Right in the gold ring!" : "Right on the rising fish!") : hint || (best ? "Your longest cast yet!" : G.place.zoneNames[zone] || ""), v === "sweet");
+    const miss = !G.ring && rises ? rises.near(r.x, r.z, 12) : null;
+    report(dist, VV[v] || "", reportNote({ dist, verdict: v, ring: G.ring, nearMiss: miss ? nearMissText(miss, r.x, r.z, G.cast ? G.cast.yaw : 0) : "", zone: G.place.zoneNames[zone] || "", best,
+      farther: G.place.id === "loon" && dist < 15 && save.casts <= 12, stroke: G.cast ? G.cast.stroke : 1, motion: G.input === "motion", key: !!(G.cast && G.cast.key) }), v === "sweet");
     if (G.ring) Sound.sfx("ui");
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
@@ -1248,14 +1301,36 @@ addEventListener("keydown", (e) => {
   if (G.paused) return;
   if (e.code === "KeyE" && G.phase === "cast") { if (G.bail === "closed" && G.step === "ready") openBail("key"); else if (G.bail === "open" && G.step === "open") closeBail(); }
   if (e.code === "Space" && (G.phase === "reel")) { G.hookReq = true; e.preventDefault(); }
+  // a cast from the keys: hold Space to tip the rod back, let go to cast. The arrow keys aim
+  if (e.code === "Space" && G.phase === "cast" && !sensing() && !G.pin && (G.step === "ready" || G.step === "open")) {
+    e.preventDefault();
+    pinLine({ id: "key", x: null, y: 0, t: now() });
+    if (G.pin) G.pin.key = now();
+  }
   if (e.code === "BracketLeft") setDrag(G.drag - 1);
   if (e.code === "BracketRight") setDrag(G.drag + 1);
   // the unlock card shows while the phase is still "catch": there Enter must press the button that has the focus
   if (e.code === "Enter" && G.phase === "catch" && !$("#catch").hidden) { e.preventDefault(); $("#catchGo").click(); }
   syncPadKeys();
 });
-addEventListener("keyup", (e) => { keys[e.code] = false; syncPadKeys(); });
-addEventListener("blur", () => { for (const k in keys) keys[k] = false; syncPadKeys(); });
+addEventListener("keyup", (e) => {
+  keys[e.code] = false; syncPadKeys();
+  if (e.code === "Space" && G.pin && G.pin.id === "key") keyCast();
+});
+addEventListener("blur", () => { for (const k in keys) keys[k] = false; syncPadKeys(); if (G.pin && G.pin.id === "key") resetCast(); });
+// Space came up: the rod swings through at a steady speed and lets go at 11 o'clock. How long Space was held sets how
+// far back the rod went, and so the power (a short hold is a "short" cast)
+const KEY_CAST = { BACK_MS: 600, BACK_TO: 135, FWD: 600 };
+// the rod angle Space has tipped the rod back to, at time t
+const keyTheta = (t) => 80 + clamp((t - G.pin.key) / KEY_CAST.BACK_MS, 0, 1) * (KEY_CAST.BACK_TO - 80);
+function keyCast() {
+  const back = keyTheta(now());
+  G.pin = null;
+  if (G.phase !== "cast" || (G.step !== "pinned" && G.step !== "loaded")) return;
+  // the hold counts in full, even when no frame drew the rod going back
+  G.backMax = Math.max(G.backMax, back);
+  release(now(), false, { theta: CAST.IDEAL_RELEASE, fwd: KEY_CAST.FWD });
+}
 function syncPadKeys() {
   if (crank) crank.keyHold(!!keys.KeyR);
   if (rodPad) rodPad.keys({ up: keys.KeyW || keys.ArrowUp, down: keys.KeyS || keys.ArrowDown, left: keys.KeyA || keys.ArrowLeft, right: keys.KeyD || keys.ArrowRight });
@@ -1270,23 +1345,7 @@ $("#dragDown").addEventListener("click", () => setDrag(G.drag - 1));
 $("#dragUp").addEventListener("click", () => setDrag(G.drag + 1));
 // the mouse wheel turns the crank
 addEventListener("wheel", (e) => { if (G.phase === "reel" && crank && !G.paused) { crank.wheel(e.deltaY); e.preventDefault(); } }, { passive: false });
-// aim with touch or mouse: drag the lake left or right before you open the bail
-{
-  let drag = null;
-  const view = $("#view");
-  view.addEventListener("pointerdown", (e) => {
-    if (G.phase !== "cast" || G.input === "motion" || G.bail !== "closed") return;
-    drag = { id: e.pointerId, x: toLocal(e.clientX, e.clientY).x, yaw: G.aimYaw };
-  });
-  addEventListener("pointermove", (e) => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const x = toLocal(e.clientX, e.clientY).x;
-    G.aimYaw = clamp(drag.yaw + (x - drag.x) * 0.2, -60, 60);
-  });
-  const end = (e) => { if (drag && e.pointerId === drag.id) drag = null; };
-  addEventListener("pointerup", end);
-  addEventListener("pointercancel", end);
-}
+// (aiming with touch or the mouse: a sideways drag before the cast, which the reel panel tells apart from a cast; see boot)
 
 /* ---------------- per-frame: the cast ---------------- */
 const hangingLure = new HangingLure();
@@ -1294,12 +1353,21 @@ let castFlex = 0, castFlexVelocity = 0;
 function castUpdate(dt) {
   const t = now();
   const p = Motion.pose;
+  // the sensors went quiet after the player chose motion (a call, a system sheet): after STALL_S the game offers touch
+  G.quiet = G.input === "motion" && !Motion.live ? (G.quiet || 0) + dt : 0;
+  // a motion lift that waits for the rod to reach 11 o'clock, and no sample came: the wait ends here
+  if (G.lift) frameLift();
   // touch mode: the finger on the rod is the rod. Drag down = rod back; flick up = forward
   if (!sensing()) {
     let th = 75;
+    // the keys: Space held tips the rod back, all the way in KEY_CAST.BACK_MS
+    if (G.pin && G.pin.key) G.pin.theta = keyTheta(t);
     if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) th = G.pin.theta;
     else if (G.step === "flight" || G.step === "landed" || G.step === "ashore") th = lerp(p.theta || 60, 60, 1 - Math.exp(-dt * 4));
     Motion.virtual({ t, theta: th, yaw: G.aimYaw, roll: 0 });
+    // the arrow keys (or A and D) aim before the cast
+    const k = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+    if (k && (G.step === "ready" || G.step === "open")) G.aimYaw = clamp(G.aimYaw + k * 40 * dt, -60, 60);
   }
   const yaw = sensing() ? clamp(p.yaw, -75, 75) : G.aimYaw;
   const theta = p.theta;
@@ -1314,7 +1382,7 @@ function castUpdate(dt) {
   if (G.step === "pinned" || G.step === "loaded") {
     G.backMax = Math.max(G.backMax, theta);
     Sound.setSwish(clamp(Math.abs(p.omega) / 900, 0, 1));
-    if (G.step === "pinned" && theta >= (CAST.LOAD_THETA || 100)) { G.step = "loaded"; Sound.sfx("load"); loadTap(); }
+    loadCheck(theta);
     // touch: the finger's own stroke (with the sensors on, the sensor callback watches every sample instead)
     if (!sensing() && strokeEnded(p, t)) { Sound.setSwish(0); G.pin = null; release(t, true); return; }
   } else Sound.setSwish(0);
@@ -1357,15 +1425,30 @@ function castUpdate(dt) {
   world.setLure({ ...hanging, visible: true, spin: 0 });
   world.setLine({ from: tip, to: hanging, slack: 0, visible: true });
   world.setView({ mode: "cast", yaw, portrait: G.layout === "tall-cast" });
-  world.setAim({ yaw, visible: G.step === "ready" || G.step === "open" || G.step === "pinned" || G.step === "loaded" });
+  const aiming = G.step === "ready" || G.step === "open" || G.step === "pinned" || G.step === "loaded";
+  world.setAim({ yaw, visible: aiming, to: aiming ? aimPreview(yaw) : null });
   castPrompt();
 }
+// The aim line runs out to where a cast like the last one would land at this heading, and turns amber when that is not
+// the water. Before the first cast it is the short line. Worked out again only when the heading moves a degree
+function aimPreview(yaw) {
+  const c = G.lastCast, key = Math.round(yaw) + ":" + G.place.id;
+  if (!c) return null;
+  if (G.aimTo && G.aimTo.key === key) return G.aimTo;
+  const r = castLanding(rodTip(c.theta, yaw, 0, G.place.stand.rod), { v0: c.v0, pitch: c.pitch, yaw });
+  return (G.aimTo = { key, x: r.x, z: r.z, warn: r.land !== "water" });
+}
+// the sensors stopped: STALL_S without a sample after the player chose motion
+const STALL_S = 3;
+const stalled = () => G.phase === "cast" && !G.paused && G.input === "motion" && G.quiet >= STALL_S;
 function castPrompt() {
   const m = G.input === "motion";
+  if (stalled()) return prompt("The motion sensors stopped. Play with touch?", "Tap the screen to switch.", "stop");
   // held sideways: say so here, without a card in the way (the picture already stays upright on the phone)
   if (m && sensing() && G.step === "ready" && Motion.pose.orient === "landscape") return prompt("Hold the phone upright.", "Like the handle of a rod.", "turn");
   switch (G.step) {
-    case "ready": prompt(m ? "Hold your thumb on the rod." : "Press and hold on the rod.", m ? "Turn to aim." : "Drag the lake to aim.", "thumb"); break;
+    // touch: a drag down from the press takes the line, a drag sideways aims (the keys: Space and the arrows)
+    case "ready": prompt(m ? "Hold your thumb on the rod." : "Press the rod and drag down.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
     case "open": prompt(m ? "Hold your thumb on the rod." : "Press and hold on the rod.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
     case "pinned": prompt(m ? "Tip the phone back over your shoulder." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
     case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;
@@ -1666,6 +1749,9 @@ function frame() {
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(),
     paused: still, cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
     held: !!G.pin || !!rodPad?.drag });
+  // the touch rail beside the finger while it holds the line (not for the keys: they have no finger)
+  const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && !G.pin.key && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;
+  castRail.update(railPin && { x: railPin.x0, y0: railPin.y0, theta: railPin.theta, span: touchSpan(game.clientHeight) });
   if (!$("#reelUI").hidden) { crank.draw(dt); gauge.draw(dt); if (!rodPad.hidden) rodPad.draw && rodPad.draw(dt); }
   if (DEBUG) debug();
 }
@@ -1697,10 +1783,11 @@ function step(dt) {
     case "cast": {
       castUpdate(dt);
       if (G.phase !== "cast") break;
-      // before the cast, a press takes the line at once: anywhere with the sensors, on the rod face with touch
-      // (the lake is for aiming then). The press itself opens the bail
+      // before the cast, with the sensors a press anywhere takes the line at once. With touch the press waits for the
+      // drag: up and down takes the line where it pressed, sideways aims. The thumb on the line opens the bail.
+      // Stalled sensors: a tap switches to touch, so a press takes nothing
       const waiting = G.step === "ready" || G.step === "open";
-      reelPanel.set({ bail: G.bail, pinned: !!G.pin, line: 0.85, hint: "", glow: waiting ? "pin" : "", touchCast: !sensing(), grab: waiting ? (sensing() ? "all" : "panel") : "" });
+      reelPanel.set({ bail: G.bail, pinned: !!G.pin, line: 0.85, hint: "", glow: waiting ? "pin" : "", touchCast: !sensing(), grab: waiting && !stalled() ? (sensing() ? "all" : "lock") : "" });
       // a thumb that stayed down from the last cast (it never lifted) holds the line now
       if (waiting && !G.pin && reelPanel.pinId != null && reelPanel.thumb) pinLine({ id: reelPanel.pinId, x: reelPanel.thumb.x, y: reelPanel.thumb.y, t: now() });
       if (G.step !== "flight") reelPanel.set({ spool: G.drop > 0 && G.drop < 1.2 && G.bail === "open" && !G.pin ? 1.2 : 0 });
@@ -1740,6 +1827,8 @@ function debug() {
     "roll " + (p.roll || 0).toFixed(2) + "  twist " + (p.twist || 0).toFixed(0) + "  " + p.orient + " side " + p.side,
     "phase " + G.phase + " · " + G.step + " · bail " + G.bail + " · rot " + G.rot + " · " + G.layout,
     G.cast ? "cast v0 " + G.cast.v0.toFixed(1) + " pitch " + G.cast.pitch.toFixed(0) + " " + G.cast.verdict + " " + G.cast.clock : "",
+    // for the calibration on a real phone: the last lift against the 11 o'clock crossing, and the swing it read
+    G.lastRelease && G.lastRelease.errMs != null ? "lift " + G.lastRelease.errMs.toFixed(0) + " ms  swing " + G.lastRelease.fwd.toFixed(0) + " °/s" : "",
     s ? "sim " + s.phase + " T " + (s.tension || 0).toFixed(1) + "N slip " + (s.slip || 0).toFixed(2) + " line " + (s.lineOut || 0).toFixed(1) : "",
     "fps " + G.fps.toFixed(0) + (world && world.info ? " · " + JSON.stringify(world.info()) : ""),
   ].filter(Boolean).join("\n");
@@ -1795,13 +1884,29 @@ async function boot() {
   reelPanel.on("pin", (e) => { if (!G.paused) pinLine(e); });
   reelPanel.on("pinmove", (e) => {
     if (!G.pin || G.pin.feather || e.id !== G.pin.id) return;
-    // touch casting: finger height is the rod angle. Drag down to tip it back, flick up to cast
-    const h = Math.max(160, Math.min(240, game.clientHeight * 0.3));
-    G.pin.theta = clamp(80 + ((e.y - G.pin.y0) / h) * 150, 5, 170);
+    // touch casting: finger height is the rod angle. Drag down to tip it back, flick up to cast (touchTheta in cast.js)
+    G.pin.theta = touchTheta(e.y - G.pin.y0, touchSpan(game.clientHeight));
     // one clock for the finger: pointer times are input times and can run behind the frame's own samples
     if (!sensing()) Motion.virtual({ t: now(), theta: G.pin.theta, yaw: G.aimYaw, roll: 0 });
   });
   reelPanel.on("unpin", (e) => unpinLine(e));
+  // a sideways drag before the cast aims: a fifth of a degree for each pixel
+  let aimFrom = 0;
+  reelPanel.on("aim", (e) => {
+    if (G.paused || G.phase !== "cast" || sensing()) return;
+    if (e.start) aimFrom = G.aimYaw;
+    G.aimYaw = clamp(aimFrom + e.dx * 0.2, -60, 60);
+  });
+  // stalled sensors: a tap on the lake switches this session to touch (the saved choice stays motion)
+  game.addEventListener("pointerdown", (e) => {
+    if (!stalled() || (e.target.closest && e.target.closest("button, a, input, select, label, .screen, #hud"))) return;
+    e.stopPropagation();
+    G.input = "touch"; G.quiet = 0;
+    resetCast();
+    relayout(true);
+    Sound.sfx("ui");
+    toast("Touch play is on.", 2200);
+  }, true);
   // every sensor sample: catch quick moves that a slow frame could miss
   Motion.on((pose) => {
     if (G.input !== "motion" || G.paused) return;
@@ -1812,16 +1917,21 @@ async function boot() {
       return;
     }
     if (G.phase !== "cast") return;
+    // an early lift waits for this: the first sample past 11 o'clock launches the lure
+    if (G.lift) { frameLift(t); return; }
     // the rod loads the moment it passes back over the shoulder, even between two frames
     if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) {
       G.backMax = Math.max(G.backMax, pose.theta);
-      if (G.step === "pinned" && pose.theta >= (CAST.LOAD_THETA || 100)) { G.step = "loaded"; Sound.sfx("load"); loadTap(); }
+      loadCheck(pose.theta);
       if (strokeEnded(pose, t)) { Sound.setSwish(0); G.pin = null; release(t, true); }  // release() lifts the buzz mute
     }
   });
   crank = new Crank($("#crankBox"), { toLocal, hand: "right" });
-  rodPad = new RodPad($("#padBox"), { toLocal, direct: true });
+  // touch play: the crank sits on the left, so a fast fling up on the open lake (not on the crank) sets the hook in a
+  // strike. The rod's own swipe up works as before, at any time
+  rodPad = new RodPad($("#padBox"), { toLocal, direct: true, area: game, skip: [$("#crankBox"), $("#dragBar")] });
   rodPad.on("yank", () => { if (G.phase === "reel") G.hookReq = true; });
+  rodPad.on("fling", () => { if (G.phase === "reel" && !sensing() && G.sim && G.sim.state.phase === "strike") G.hookReq = true; });
   gauge = new Gauge($("#gaugeBox"));
   $("#view").addEventListener("transitionend", (e) => { if (e.target.id === "view") resizeView(); });
   // iPhone: only a real finger on a switch control can tick. The reel face and the crank carry hidden switches
@@ -1831,6 +1941,7 @@ async function boot() {
   window.FISH = {
     G, Motion, get world() { return world; }, get crank() { return crank; }, get sim() { return G.sim; }, get save() { return save; },
     startMode, newCast, toTitle, release, openBail, closeBail, enterReel, relayout, toLocal, pinLine, unpinLine, get rises() { return rises; },
+    get reelPanel() { return reelPanel; }, get rodPad() { return rodPad; },
     // go to an open place, with no cards (a Promise: true when it loaded). The player's way is the Places screen
     async setPlace(id) {
       if (!openNow(id) || traveling) return false;

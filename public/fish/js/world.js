@@ -625,8 +625,10 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     drawTrophy(dt);
     // the aim line fades in and out; it only belongs to the cast view
     S.aim.a += ((S.aim.visible && S.view.mode === "cast" ? 0.75 : 0) - S.aim.a) * (1 - Math.exp(-dt * 6));
-    const ay = (S.aim.yaw || 0) * DEG;
-    WU.uAim.value.set(Math.sin(ay), -Math.cos(ay), S.aim.a, PL.stand.dock.z0);
+    const ay = (S.aim.yaw || 0) * DEG, z0 = PL.stand.dock.z0, to = S.aim.to;
+    WU.uAim.value.set(Math.sin(ay), -Math.cos(ay), S.aim.a, z0);
+    // the preview: how far along the line a cast like the last one lands, and whether that is dry land (amber)
+    WU.uAimTo.value.set(to ? Math.max(4, to.x * Math.sin(ay) - (to.z - z0) * Math.cos(ay)) : 0, to && to.warn ? 1 : 0);
     // gold rings glow and throw up sparkles
     halos.forEach((h, i) => {
       const r = S.rings[i];
@@ -777,7 +779,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
         if (r) WU.uRing.value[i].set(r.x, r.z, r.gold ? 1 : 0, 1); else WU.uRing.value[i].set(0, 0, 0, 0);
       }
     },
-    setAim({ yaw = 0, visible = true } = {}) { S.aim.yaw = yaw; S.aim.visible = visible; },
+    // to: where a cast like the last one would land ({ x, z, warn: not in the water }), or null for the short line
+    setAim({ yaw = 0, visible = true, to = null } = {}) { S.aim.yaw = yaw; S.aim.visible = visible; S.aim.to = to; },
     ripple, splash: splashAt, rise,
     setHour,
     showCatch, hideCatch,

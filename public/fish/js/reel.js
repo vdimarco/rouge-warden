@@ -47,6 +47,7 @@ export const REEL_UI = {
   rodMin: 10, rodMax: 110, rodStart: 55,
   rodKeyDps: 120,      // W/S held
   yankPxs: 900,        // an upward swipe faster than this sets the hook
+  flingPx: 40,         // ...and a fling on the open lake must also travel this far up
   steerDead: 0.1,      // no steer this close to the pad centre
 };
 const T = REEL_UI;
@@ -269,7 +270,8 @@ export class ReelPanel extends Widget {
     this.toLocal = toLocal || offsetLocal;
     this.mx = hand === "left" ? -1 : 1;
     // grab: a press takes the line at once even with the bail shut (the game opens the bail on the pin).
-    // "all": anywhere the panel listens; "panel": only on the reel face itself (the lake is for aiming then)
+    // "all": anywhere the panel listens; "panel": only on the reel face itself (the lake is for aiming then);
+    // "lock": anywhere, once the drag shows which: up and down takes the line where it pressed, sideways aims ("aim")
     this.s = { bail: "closed", pinned: false, spool: 0, line: 0.85, hint: "", glow: "", touchCast: false, grab: "" };
     this.fx = { bail: 0, bailV: 0, spin: 0, glow: 0, clack: 0, thumbA: 0, guide: 0, wasOpen: false };
     this.ptrs = new Map();
@@ -300,14 +302,17 @@ export class ReelPanel extends Widget {
     const open = this.s.bail === "open";
     const hit = this.direct ? this.toLocal(e.clientX, e.clientY, this.el) : q;
     const inFace = hit.x >= 0 && hit.y >= 0 && hit.x <= this.w && hit.y <= this.h;
-    if (this.direct && !inFace && this.s.grab !== "all") return;
+    const lock = this.s.grab === "lock";
+    if (this.direct && !inFace && this.s.grab !== "all" && !lock) return;
     const grab = this.s.grab === "all" || (this.s.grab === "panel" && inFace);
     // a grab press is never a bail swipe: the press itself opens the bail
-    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !this.direct && !grab && this._onBail(q.x, q.y), open: open || grab, state: "wait", timer: 0, swiped: false };
+    const p = { id: e.pointerId, x0: q.x, y0: q.y, x: q.x, y: q.y, onBail: !this.direct && !grab && !lock && this._onBail(q.x, q.y), open: open || grab, lock, state: "wait", timer: 0, swiped: false };
     this.ptrs.set(p.id, p);
     if (open || grab) {
       // the bail is open and the line runs free (or the game grabs it on a press): any press holds it, at once
       if (this.pinId == null) this._pin(p, e.timeStamp); else p.state = "extra";
+    } else if (lock) {
+      // the drag says what this press is (_move), so a sideways aim never clacks the bail
     } else if (this.s.grab !== "panel") {
       // (with grab "panel" the lake is for aiming: a rest there before the drag is never a pin)
       p.timer = setTimeout(() => {
@@ -317,11 +322,12 @@ export class ReelPanel extends Widget {
       }, T.pinHoldMs);
     }
   }
-  _pin(p, t) {
+  // at: where the thumb took the line (a locked press takes it where it came down, not where the drag decided)
+  _pin(p, t, at = p) {
     p.state = "pin";
     this.pinId = p.id;
-    this.thumb = { x: p.x, y: p.y, x0: p.x, y0: p.y };
-    this.emit("pin", { id: p.id, x: p.x, y: p.y, t });
+    this.thumb = { x: at.x, y: at.y, x0: at.x, y0: at.y };
+    this.emit("pin", { id: p.id, x: at.x, y: at.y, t });
   }
   // cancel: the browser took the touch away (pointercancel, the page lost focus), or a hold turned into a bail swipe.
   // That is not a thumb lifting off the line, so it must not count as a cast.
@@ -338,8 +344,12 @@ export class ReelPanel extends Widget {
     const dx = p.x - p.x0, dy = p.y - p.y0;
     if (p.state === "wait" && Math.hypot(dx, dy) > T.pinSlopPx) {
       clearTimeout(p.timer); p.timer = 0;
-      p.state = p.onBail ? "swipe" : "drag";
-    }
+      if (!p.lock) p.state = p.onBail ? "swipe" : "drag";
+      // locked: mostly up and down takes the line at the press point; mostly sideways aims
+      else if (Math.abs(dy) >= Math.abs(dx) && this.pinId == null) this._pin(p, e.timeStamp, { x: p.x0, y: p.y0 });
+      else if (Math.abs(dy) >= Math.abs(dx)) p.state = "extra";
+      else { p.state = "aim"; this.emit("aim", { id: p.id, dx, dy, start: true }); }
+    } else if (p.state === "aim") this.emit("aim", { id: p.id, dx, dy, start: false });
     // the bail swipe: long enough, mostly vertical, and it started on the bail arm
     if (p.onBail && !p.swiped && Math.abs(dy) > T.bailSwipePx && Math.abs(dy) > T.bailVertical * Math.abs(dx)) {
       p.swiped = true;
@@ -1187,8 +1197,10 @@ export class Crank extends Widget {
 }
 
 /* ---------------- the rod pad ---------------- */
+// area: where a fast fling up also counts ("fling"; main.js takes it as a hook set in a strike). Presses on the pad itself,
+// on the skip elements (the crank) and on controls are not flings
 export class RodPad extends Widget {
-  constructor(container, { toLocal, direct = false } = {}) {
+  constructor(container, { toLocal, direct = false, area = null, skip = [] } = {}) {
     super(container, "rodpad");
     this.direct = direct;
     if (direct) this.cv.hidden = true;
@@ -1196,14 +1208,17 @@ export class RodPad extends Widget {
     this._theta = T.rodStart;
     this._steer = 0;
     this.drag = null;
+    this.fl = null;
+    this.skip = skip.filter(Boolean);
     this.k = { up: false, down: false, left: false, right: false };
     this.yankA = 0;
     this.last = now();
     this.listen(container, "pointerdown", (e) => this._down(e));
+    if (area) this.listen(area, "pointerdown", (e) => this._flingDown(e, area));
     this.listen(window, "pointermove", (e) => this._move(e));
     this.listen(window, "pointerup", (e) => this._up(e));
     this.listen(window, "pointercancel", (e) => this._up(e, true));
-    this.listen(window, "blur", () => { this.drag = null; this.keys({}); });
+    this.listen(window, "blur", () => { this.drag = null; this.fl = null; this.keys({}); });
     this.resize();
   }
   get theta() { this._update(); return this._theta; }
@@ -1214,8 +1229,9 @@ export class RodPad extends Widget {
     this.k = { up: !!st.up, down: !!st.down, left: !!st.left, right: !!st.right };
   }
   _degPerPx() { return (T.rodMax - T.rodMin) / Math.max(120, this.el.clientHeight * 0.8); }
+  // full steer a little inside the pad's edge: the pad is small, and a thumb near its side means all the way
   _steerAt(x) {
-    const half = Math.max(30, this.el.clientWidth * 0.42), o = clamp((x - this.el.clientWidth / 2) / half, -1, 1);
+    const half = Math.max(30, this.el.clientWidth * 0.36), o = clamp((x - this.el.clientWidth / 2) / half, -1, 1);
     return Math.sign(o) * Math.max(0, Math.abs(o) - T.steerDead) / (1 - T.steerDead);
   }
   _down(e) {
@@ -1230,7 +1246,23 @@ export class RodPad extends Widget {
     }
     this._steer = this._steerAt(q.x);
   }
+  // a press on the open lake: watched only for a fling up
+  _flingDown(e, area) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (this.fl || this.el.contains(e.target) || this.skip.some((s) => s.contains(e.target)) || blocked(e.target, area)) return;
+    const q = this.toLocal(e.clientX, e.clientY);
+    this.fl = { id: e.pointerId, y0: q.y, hist: [{ t: e.timeStamp, y: q.y }], armed: true };
+  }
+  _flingMove(e, end = false) {
+    const f = this.fl;
+    f.hist.push({ t: e.timeStamp, y: this.toLocal(e.clientX, e.clientY).y });
+    while (f.hist.length > 2 && f.hist[0].t < e.timeStamp - 150) f.hist.shift();
+    const v = this._upSpeed(f.hist, e.timeStamp), B = f.hist[f.hist.length - 1];
+    if (v > T.yankPxs && f.armed && f.y0 - B.y > T.flingPx) { f.armed = false; this.emit("fling", { v }); }
+    if (end) this.fl = null;
+  }
   _move(e) {
+    if (this.fl && e.pointerId === this.fl.id) this._flingMove(e);
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
     const q = this._dragLocal(e);
@@ -1243,18 +1275,22 @@ export class RodPad extends Widget {
     while (d.hist.length > 2 && d.hist[0].t < e.timeStamp - 150) d.hist.shift();
     this._yankCheck(e.timeStamp);
   }
-  // an upward swipe faster than yankPxs sets the hook, once per stroke
-  _yankCheck(t) {
-    const d = this.drag, h = d.hist;
+  // px/s up (+) over the last 70 ms of a history; null when it spans too little time to say
+  _upSpeed(h, t) {
     let i = h.length - 1;
     while (i > 0 && h[i].t > t - 70) i--;
     const A = h[i], B = h[h.length - 1], span = (B.t - A.t) / 1000;
-    if (span < 0.012) return;
-    const v = (A.y - B.y) / span;   // + = up
+    return span < 0.012 ? null : (A.y - B.y) / span;
+  }
+  // an upward swipe faster than yankPxs sets the hook, once per stroke
+  _yankCheck(t) {
+    const d = this.drag, v = this._upSpeed(d.hist, t);
+    if (v == null) return;
     if (v > T.yankPxs && d.armed) { d.armed = false; this.yankA = 1; this.emit("yank", { v }); }
     else if (v < T.yankPxs * 0.35) d.armed = true;
   }
   _up(e, cancel = false) {
+    if (this.fl && e.pointerId === this.fl.id) { if (cancel) this.fl = null; else this._flingMove(e, true); }
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
     // a flick that lets go mid-stroke: the lift point still counts toward the speed

@@ -1,6 +1,6 @@
-// The game on a computer, with no sensors: a press on the reel opens the bail and holds the line, a drag down and
-// a flick up casts, the reel starts when the lure lands, the mouse wheel reels (its first turn closes the bail),
-// Space sets the hook, and W and S work the rod.
+// The game on a computer, with no sensors: a press on the reel and a drag down opens the bail and holds the line (the
+// drag decides: down holds the line, sideways aims), a flick up casts, the reel starts when the lure lands, the mouse
+// wheel reels (its first turn closes the bail), Space sets the hook, and W and S work the rod.
 // Serve public/ first (cd public && python3 -m http.server 8765), then: node qa/fish/desk.mjs
 // Exits with code 1 when something fails. Set SHOTS to a folder to save screenshots.
 import { open, until, center, shot, sleep } from "./lib.mjs";
@@ -25,8 +25,9 @@ try {
   const x = rb.x, y0 = rb.y - rb.h * 0.15;
   await page.mouse.move(x, y0);
   await page.mouse.down();
-  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open", null, 3000).then(() => check(true, "pressing on the reel opens the bail and holds the line"), () => check(false, "pressing on the reel opens the bail and holds the line"));
-  for (let i = 1; i <= 12; i++) { await page.mouse.move(x, y0 + i * 22); await sleep(25); }
+  await page.mouse.move(x, y0 + 22);
+  await until(page, () => FISH.G.step === "pinned" && FISH.G.bail === "open", null, 3000).then(() => check(true, "pressing on the reel and dragging down opens the bail and holds the line"), () => check(false, "pressing on the reel and dragging down opens the bail and holds the line"));
+  for (let i = 2; i <= 12; i++) { await page.mouse.move(x, y0 + i * 22); await sleep(25); }
   await sleep(200);
   const loaded = await page.evaluate(() => FISH.G.step);
   check(loaded === "loaded", "dragging down loads the rod (" + loaded + ")");

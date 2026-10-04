@@ -94,10 +94,27 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #reelBox, #padBox { position: absolute; left: calc(75% - 64px); top: calc(70% - 80px); width: 128px; height: 160px; cursor: grab; }
 #reelBox:active, #padBox:active { cursor: grabbing; }
 #reelBox canvas, #padBox canvas { display: none; }
+/* the touch cast rail beside the finger (cast-rail.js): the bead is the rod. Drag it down past LOAD, flick up, let go in the green */
+#castRail { position: absolute; width: 12px; margin-left: -6px; pointer-events: none; z-index: 4; }
+#castRail i, #castRail b, #castRail span { position: absolute; }
+#castRail .track { left: 4px; top: 0; bottom: 0; width: 4px; border-radius: 2px; background: rgba(6, 22, 27, 0.6); box-shadow: 0 0 0 1px rgba(246, 239, 217, 0.3); }
+#castRail .band { left: 1px; width: 10px; border-radius: 5px; background: rgba(122, 200, 74, 0.8); }
+#castRail .mark { left: -3px; width: 18px; height: 3px; margin-top: -1.5px; border-radius: 2px; background: var(--brass); }
+#castRail .press { height: 2px; margin-top: -1px; background: rgba(246, 239, 217, 0.85); }
+#castRail .full { opacity: 0.6; }
+#castRail .bead { left: -3px; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; background: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55); }
+#castRail.loaded .bead { background: var(--brass); }
+#castRail.go .bead { background: var(--green); }
+#castRail span { left: 20px; transform: translateY(-50%); font-size: 11px; letter-spacing: 0.08em; white-space: nowrap; text-shadow: 0 1px 3px #000, 0 0 6px #000; }
+#castRail .t-load { color: var(--brass); }
+#castRail .t-go { color: #c4f5a0; }
+#castRail.flip span { left: auto; right: 20px; }
 
 #crankBox { position: absolute; right: calc(var(--sar) + 16px); bottom: calc(var(--sab) + 12px); width: min(34vmin, 160px); height: min(34vmin, 160px); }
 
-#game[data-reel-side="left"] #crankBox { left: calc(var(--sal) + 16px); right: auto; }
+/* touch play: the crank goes on the left, so the left thumb reels and the right thumb works the rod (the reel side
+   setting is for motion play) */
+#game[data-reel-side="left"] #crankBox, #game.touch #crankBox { left: calc(var(--sal) + 16px); right: auto; }
 
 #gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: min(46vmin, 240px); height: min(30vmin, 150px); }
 #pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40vw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
@@ -106,7 +123,9 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.motion #padBox { display: none; }
 #dragBar { position: absolute; left: calc(var(--sal) + 10px); display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.06em; }
 #game.l-reel #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
-#game.l-reel.touch #dragBar { top: calc(var(--sat) + min(30vmin, 150px) + 64px); }
+/* the wide reel in touch play: the crank is on the left too, so the drag bar sits just above it (on a short screen the
+   place under the gauge would be on the crank) */
+#game.l-reel.touch #dragBar { top: auto; bottom: calc(var(--sab) + 22px + min(34vmin, 160px)); }
 #dragBar button { position: relative; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--glass); font-size: 18px; line-height: 1; padding: 0; }
 #dragBar button::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
 #dragBar b { min-width: 64px; text-align: center; padding: 6px 8px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); }
@@ -166,6 +185,9 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #report .verdict.sweet { background: #2d7a45; }
 #report .zone { margin-top: 6px; font-size: 13px; color: #e8f2ef; text-shadow: 0 1px 3px #000; }
 #report.show { animation: pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
+/* the cue at the release itself ("Sweet!"): the word alone, a little larger */
+#report.cue .verdict { font-size: 20px; padding: 6px 16px; }
+#report.cue .dist, #report.cue .zone { display: none; }
 @keyframes pop { from { transform: translate(-50%, -50%) scale(0.6); opacity: 0; } }
 
 /* the strike flash */
@@ -542,7 +564,7 @@ body[data-screen="title"] #toast { bottom: auto; top: calc(var(--sat) + 8px); z-
         <label><span>Buzz and taps<small id="hapticNote"></small></span><input type="checkbox" id="optHaptics"></label>
         <label><span>Easy mode<small>Softens bad casts. Gives you more time to set the hook.</small></span><input type="checkbox" id="optAssist"></label>
         <label><span>Controls<small id="inputNote"></small></span><select id="optInput"><option value="motion">Motion</option><option value="touch">Touch</option></select></label>
-        <label><span>Reel side<small>Choose which hand turns the reel.</small></span><select id="optReelSide"><option value="right">Right</option><option value="left">Left</option></select></label>
+        <label><span>Reel side<small>For motion play. With touch, the crank is on the left.</small></span><select id="optReelSide"><option value="right">Right</option><option value="left">Left</option></select></label>
         <label><span>Art style</span><select id="optArtStyle"><option value="original">Original</option><option value="ghibli">Ghibli</option></select></label>
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
       </div>
