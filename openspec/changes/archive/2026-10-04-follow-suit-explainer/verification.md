@@ -17,6 +17,7 @@ Run with `public/` served at http://127.0.0.1:8765/ and Playwright 1.56.1 from `
 - `npm run qa:arcade` passes 9 checks. It now also fails when the start screen hides part of itself. With the old styles, the title of the arcade copy started 2 px above the window on a 375 by 667 phone.
 - `node qa/arcade/quiet.mjs --only=follow-suit --skip=unit` passes 31 checks on the new arcade copy: the sound stops while the page is hidden.
 - `openspec validate follow-suit-explainer --type change --strict` reports the change as valid.
+- After the merge, `node qa/explainer.e2e.mjs` with `BASE_URL=https://warden-alpha-wheat.vercel.app/follow-suit/` passes 15 checks on the production arcade. In the first run, one page load at 390 by 844 got 502 Bad Gateway. Each file of the page then returned 200 in 3 of 3 requests, and the second run passed.
 
 ## Not checked
 
