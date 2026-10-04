@@ -3,10 +3,13 @@
 // 1. The Capacitor CLI writes ios/App/CapApp-SPM/Package.swift again on each sync, with only the major iOS version
 //    (.iOS(.v16)). This script sets it back to iOS 16.4, the first version with import maps, like the Xcode project.
 // 2. It checks the store settings of both native projects, so a sync or a hand edit cannot drop them quietly.
+// 3. It checks that the game (js/version.js and its copy in www/), package.json, the Android versionName and the iOS
+//    MARKETING_VERSION have the same version.
 // Usage: node scripts/native-check.mjs   (exit code 1 when a setting is wrong)
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { versionProblems } from "./lib/versions.mjs";
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const IOS_MIN = "16.4";
@@ -68,6 +71,7 @@ if (config) {
   need(config.plugins?.SystemBars?.hidden !== true, 'capacitor.config.json: SystemBars "hidden" must not be true (it auto-hides the iOS home indicator and cancels the bottom-edge deferral)');
   need(config.android?.webContentsDebuggingEnabled !== false, "capacitor.config.json: do not set android.webContentsDebuggingEnabled to false (it turns off chrome://inspect in debug builds; release builds are off already)");
 }
+problems.push(...versionProblems(APP, path.resolve(APP, "../../public/fish")));
 
 // --- Android ---
 const manifest = read("android/app/src/main/AndroidManifest.xml");
@@ -88,4 +92,4 @@ if (problems.length) {
   for (const p of problems) console.log("  " + p);
   process.exit(1);
 }
-console.log("native-check: the iOS and Android store settings are in place");
+console.log("native-check: the iOS and Android store settings are in place, and the versions are the same");

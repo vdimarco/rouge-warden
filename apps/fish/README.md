@@ -12,7 +12,7 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `capacitor.config.json` | The app ID, the name, the splash and system bar settings, and the web view settings. |
 | `scripts/build-www.mjs` | Makes `www/` from `public/fish` and runs the bundle check. |
 | `scripts/check-www.mjs` | The bundle check. `scripts/check-www.test.mjs` tests it. |
-| `scripts/native-check.mjs` | Runs after each `cap sync`. It keeps the iOS package at 16.4 and fails when a store setting is missing. |
+| `scripts/native-check.mjs` | Runs after each `cap sync`. It keeps the iOS package at 16.4. It fails when a store setting is missing, or when the versions differ (see the release steps). `scripts/native-check.test.mjs` tests the version rule. |
 | `scripts/render-art.mjs` | Paints the icon, the adaptive icon layers, the splash and the Play graphics. |
 | `scripts/adaptive-icons.mjs` | Writes the Android adaptive icon layers at full size after `@capacitor/assets`. |
 | `resources/` | The icon and splash sources (`icon-only.png` is the 1024 px icon). |
@@ -98,7 +98,7 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
    ```
 
    Keep the file and both passwords in a password manager. If you lose the upload key, Play support can reset it, but it takes days.
-2. Set the version in `android/app/build.gradle`: `versionCode` goes up by 1 for every upload, and `versionName` is the version people see (for example `1.0.0`).
+2. Set the version in `android/app/build.gradle`: `versionCode` goes up by 1 for every upload, and `versionName` is the version people see (for example `1.0.0`). Set the same version in `public/fish/js/version.js` (`VERSION`, which Settings > About shows), in `package.json` and in the iOS project. `npm run check:native` fails when they differ.
 3. Build and sign. The passwords come from the environment, never from a file in git:
 
    ```sh
@@ -125,7 +125,7 @@ npm run ios:open   # build:www, cap sync ios (with the native check), then opens
 In Xcode, on the App target:
 
 1. Signing & Capabilities: pick your team. Keep "Automatically manage signing" on.
-2. General: set Version (`MARKETING_VERSION`, for example 1.0.0) and Build (`CURRENT_PROJECT_VERSION`, up by 1 for every upload).
+2. General: set Version (`MARKETING_VERSION`, for example 1.0.0) and Build (`CURRENT_PROJECT_VERSION`, up by 1 for every upload). Version must be the same as `VERSION` in `public/fish/js/version.js` (Settings > About shows it), `version` in `package.json` and `versionName` on Android. If you change it, change `version.js` too, then run `npm run ios:open` again so the bundle has the new version. `npm run check:native` fails when the versions differ.
 3. Choose "Any iOS Device (arm64)", then Product > Archive.
 4. In the Organizer, pick the archive, then Distribute App > App Store Connect > Upload. Before the first upload, use Generate Privacy Report on the archive and check that it lists only the UserDefaults reason (see `store/data-safety.md`).
 5. In App Store Connect, add the build to TestFlight, test it on an iPhone, then submit it for review with the text in `store/`.
