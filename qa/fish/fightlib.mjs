@@ -1,13 +1,18 @@
 // Scripted anglers and one-cast runner for the fight tests: fight.sim.mjs (Loon Lake) and places.sim.mjs (all four places).
 // A player sees the game with a short delay, moves the rod at a human speed, and follows one policy:
-//   skilled (also "good"): reads every tell. Rod low for jumps and tail walks, rod up for head shakes, reels fast when a fish
+//   skilled (also "good"): reads every tell. Rod low for jumps and tail walks, rod up and a slow crank for head shakes, reels fast when a fish
 //     charges, pumps a fish off the bottom, steers a cover run away from its cover, steers off a rub (rubSide) with the rod up,
 //     lets a last run go, rests the arm at 60° while a legend rests, tightens the drag when the spool empties
 //   casual: a slower human (reacts in 0.45-0.6 s) who ignores one warning in four
+//   novice: a first-time player, for a measurement (places.sim prints its table): reacts in 0.6-0.8 s (so it is still
+//     cranking 0.6 s or more after the drag starts to slip), sets the hook 0.15 s after it sees the strike, ignores two
+//     warnings in five, and never puts side pressure on a run (it steers only a cover run or a rub it noticed)
 //   flaws: skilled, but with one mistake. nosteer: never steers, and ignores the rub and cover warnings. rodlow: rod low for head shakes. rodhigh: rod up for jumps.
 //     slowcrank: reels slowly when a fish charges. nopump: does not pump. lightdrag: never tightens the drag.
 //     grinder: keeps cranking while the drag slips. late: hook set 1.5 s late. early: yanks at the first nibble.
 //   brute force: greedy (flat out from the first turn), horse (a good retrieve, then flat out), idle (does nothing)
+// runCast's rps: the player cranks the retrieve at this many turns a second and does not slow down for a follower (a new
+// player who holds the crank key or spins the crank fast); left out, the retrieve is 1.1 turns a second
 import { LakeSim, rodTip } from "../../public/fish/js/fish.js";
 import { rng } from "../../public/fish/js/lake.js";
 
@@ -19,17 +24,20 @@ export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const FLAWS = new Set(["nosteer", "rodlow", "rodhigh", "slowcrank", "nopump", "lightdrag", "grinder"]);
 // the warnings a casual player can miss
 const TELLS = ["charge", "sulk", "thrash", "cover", "walk", "turn", "rub", "spool", "lastrun"];
+// the moves a beaten fish must not start (fish.js)
+const TRICKS = ["jump", "walk", "charge", "shake", "thrash"];
 
 export class Player {
-  constructor(policy, r) {
-    this.pol = policy; this.r = r;
+  constructor(policy, r, rps = 0) {
+    this.pol = policy; this.r = r; this.rps = rps;
     this.flaw = FLAWS.has(policy) ? policy : "";
     this.casual = policy === "casual";
+    this.novice = policy === "novice";
     // reads the tells (everyone except the brute force players)
-    this.tech = this.casual || this.flaw !== "" || ["good", "skilled", "late", "early"].includes(policy);
+    this.tech = this.casual || this.novice || this.flaw !== "" || ["good", "skilled", "late", "early"].includes(policy);
     this.t = 0; this.theta = 40; this.target = 40; this.rate = 150; this.steer = 0; this.drag = policy === "lightdrag" ? 0 : 1; // the light setting, and never tightens it
     this.seen = []; this.hist = [];
-    this.react = this.casual ? 0.45 + r() * 0.15 : 0.22 + r() * 0.08;
+    this.react = this.novice ? 0.6 + r() * 0.2 : this.casual ? 0.45 + r() * 0.15 : 0.22 + r() * 0.08;
     this.strikeAt = null; this.nibbleAt = null; this.yanked = false; this.didSet = false;
     this.jumpUntil = -1; this.pump = "up"; this.hooked = false;
     this.walking = false; this.charge = false; this.calmUntil = -1; this.lastUntil = -1; this.sulk = false; this.spump = "up";
@@ -58,8 +66,8 @@ export class Player {
       if (e.type === "jump") this.jumpUntil = Infinity;
       if (e.type === "walkEnd") { this.walking = false; this.jumpUntil = this.t + 0.3; }
       if (e.type === "splash" && !(sk && this.walking)) this.jumpUntil = this.t + 0.3;
-      // a casual player misses one warning in four
-      const miss = this.casual && TELLS.includes(e.type) && this.r() < 0.25;
+      // a casual player misses one warning in four, a novice two in five
+      const miss = (this.casual || this.novice) && TELLS.includes(e.type) && this.r() < (this.novice ? 0.4 : 0.25);
       if (sk && !miss) {
         if (e.type === "walk") this.walking = true;
         if (e.type === "charge") this.charge = true;
@@ -85,11 +93,11 @@ export class Player {
     if (this.coverUntil > this.t && v.move !== "run" && v.move !== "surge") this.coverUntil = -1;
     if (v.rub < 0.03) this.rubAware = false;
     const fighting = S.phase === "fight" || S.phase === "land";
-    const setDelay = P === "late" ? 1.5 : 0.25;
+    const setDelay = P === "late" ? 1.5 : this.novice ? this.react + 0.15 : 0.25;
     if (!fighting) {
       // the retrieve: a steady crank with the rod at 40° (slow when a fish follows but the lure is too fast), then the hook set
       this.target = P === "greedy" ? 15 : 40; this.rate = 150;
-      crank = S.t < 0.6 ? 0 : P === "greedy" ? 3 : S.tooFast ? 0.4 : 1.1;
+      crank = S.t < 0.6 ? 0 : P === "greedy" ? 3 : this.rps || (S.tooFast ? 0.4 : 1.1);
       if (P === "early" && this.nibbleAt !== null && !this.yanked && this.t >= this.nibbleAt + 0.15 - this.react) { this.yanked = true; hookset = true; }
       // the strike was noticed `react` s after it came; the hook set lands `setDelay` s after the strike
       if (this.strikeAt !== null && !this.didSet && this.t >= this.strikeAt - this.react + setDelay) {
@@ -119,9 +127,10 @@ export class Player {
         // it turned: stop reeling, rod up, let the drag take the run
         this.target = 70; this.rate = 200; crank = v.slack ? 2.5 : 0;
       } else if (this.thrash) {
-        // head shakes: rod up, stop reeling
+        // head shakes: rod up, and keep reeling slowly ("Hold the rod up. Keep reeling slowly."): the fish swims in as it
+        // shakes, and a line left slack lets it throw the hook. Faster when the line goes slack, and no reeling into a hard pull
         if (flaw === "rodlow") { this.target = 22; this.rate = 200; crank = v.slack ? 2 : 1; }
-        else { this.target = 75; this.rate = 250; crank = v.slack ? 2.5 : v.tfrac < 0.12 ? 1.2 : 0; }
+        else { this.target = 75; this.rate = 250; crank = v.slack ? 2.5 : v.tfrac < 0.5 ? 1.2 : 0; }
       } else if (this.charge) {
         // it swims at you: reel fast, rod up
         if (flaw === "slowcrank") { crank = 1; this.target = 50; this.rate = 90; }
@@ -156,7 +165,7 @@ export class Player {
       let want = 0;
       if (this.coverUntil > this.t) want = this.coverSteer;
       else if (this.letGo) want = 0;
-      else if (f && (v.move === "run" || v.move === "surge" || v.move === "dive") && this.hist.length > 20) {
+      else if (f && !this.novice && (v.move === "run" || v.move === "surge" || v.move === "dive") && this.hist.length > 20) {
         const a = this.hist[this.hist.length - 1], b = this.hist[this.hist.length - 16];
         const dx = a.x - b.x, dz = a.z - b.z, ln = Math.hypot(a.x, a.z) || 1;
         const lat = (dx * (-a.z / ln) + dz * (a.x / ln)) / (a.t - b.t); // + = the fish moves to the angler's right
@@ -164,7 +173,7 @@ export class Player {
       }
       // the line rubs on a snag, on the rocks or in the weeds: do what the prompt says. Steer off a stump, a log or the weeds;
       // hold the rod up on the rocks (a high rod lifts the line off them)
-      if (v.rub > 0.1 && v.phase === "fight" && flaw !== "nosteer" && (!this.casual || this.rubAware)) {
+      if (v.rub > 0.1 && v.phase === "fight" && flaw !== "nosteer" && (!(this.casual || this.novice) || this.rubAware)) {
         want = v.rubSide || want;
         if (v.rubKind === "rocks") { this.target = Math.max(this.target, 72); crank = Math.min(crank, v.slack ? 2 : 0.6); }
       }
@@ -172,7 +181,7 @@ export class Player {
       this.steer += clamp(want - this.steer, -3 * DT, 3 * DT);
       // the spool is emptying: tighten the drag; loosen it again when the line is back
       if (flaw !== "lightdrag") {
-        if (this.casual ? this.spoolAware : v.spoolFrac > 0.6 && v.slip > 0.15) this.drag = 2;
+        if (this.casual || this.novice ? this.spoolAware : v.spoolFrac > 0.6 && v.slip > 0.15) this.drag = 2;
         else if (v.spoolFrac < 0.4) { this.drag = 1; this.spoolAware = false; }
       }
     }
@@ -201,12 +210,12 @@ function spark(S, f, ev, t) {
 
 // One cast: the lure lands at `spot`, a player fishes it until the fish is landed, lost, or LIMIT s pass.
 // place: a place from places.js (Loon Lake if left out). Returns what happened.
-export function runCast({ place, policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, kg, trace = false, easy = true }) {
+export function runCast({ place, policy, seed, spot, species = null, hour = 12, ring = null, bite = undefined, kg, trace = false, easy = true, eager = false, rps = 0 }) {
   const r = rng(seed * 7919 + 13);
-  const pl = new Player(policy, rng(seed * 104729 + 7));
+  const pl = new Player(policy, rng(seed * 104729 + 7), rps);
   const rod = place ? place.stand.rod : undefined;
   const tip = rodTip(40, headingDeg(spot.x, spot.z), 0, rod);
-  const o = { place, lure: spot, tip, lineOut: Math.hypot(spot.x - tip.x, tip.y, spot.z - tip.z) * 1.03 + 0.3, hour, ring, rng: r, easy, species, bite };
+  const o = { place, lure: spot, tip, lineOut: Math.hypot(spot.x - tip.x, tip.y, spot.z - tip.z) * 1.03 + 0.3, hour, ring, rng: r, easy, species, bite, eager };
   if (kg != null) o.kg = kg;
   const sim = new LakeSim(o);
   const out = {
@@ -214,14 +223,21 @@ export function runCast({ place, policy, seed, spot, species = null, hour = 12, 
     fightT: 0, maxT: 0, minT: Infinity, maxLine: 0, maxRub: 0, outcome: "", moves: {}, events: {}, zeroStamT: 0, phases: [], holdT: [], lightT: 0,
     dryT: 0, sunkT: 0, // s the fish is where it cannot be: over land or behind the angler, and below the bed
     noSideT: 0,        // s the rub prompt is up on a log and says no way to steer
+    slipFor: null,     // a snap: how long the drag had been slipping (s; 0 if it never slipped first)
+    beatenTricks: 0,   // trick moves a beaten fish started (it should start none)
+    endT: 0,           // s from the lure landing to the end of the cast
   };
-  let events = [], holdStart = null;
+  let events = [], holdStart = null, slipStart = null;
   for (let t = 0; t < LIMIT; t += DT) {
     const inp = pl.act(sim, events);
     if (inp.hookset && sim.state.phase !== "strike" && out.nibbled && !out.struck) out.yankedEarly = true;
+    const wasBeaten = sim.state.beaten;
     sim.step(DT, inp);
     events = sim.events.splice(0);
     const S = sim.state, f = S.fish;
+    // the slip before a snap, timed as a player sees it: from the first slip of this run of the drag
+    if (S.phase === "fight") { if (S.slip > 0.15) { if (slipStart === null) slipStart = t; } else if (S.slip < 0.02) slipStart = null; }
+    if (wasBeaten && S.beaten) out.beatenTricks += events.filter((e) => TRICKS.includes(e.type)).length;
     if (trace) {
       const ev = events.map((e) => e.type + (e.name ? "(" + e.name + ")" : "") + (e.kind ? "[" + e.kind + "]" : "")).join(",");
       if (process.env.SPARK) spark(S, f, ev, t);
@@ -234,6 +250,7 @@ export function runCast({ place, policy, seed, spot, species = null, hour = 12, 
       if (e.type === "nibble") out.nibbled = true;
       if (e.type === "hooked") out.hooked = true;
       if (e.type === "phase") out.phases.push(e.n);
+      if (e.type === "snap" && e.reason === "snap") out.slipFor = slipStart === null ? 0 : t - slipStart;
       if (["run", "shake", "jump", "dive", "surge", "charge", "sulk", "walk", "thrash", "cover", "lastrun", "rest", "turn"].includes(e.type)) out.moves[e.type] = (out.moves[e.type] || 0) + 1;
     }
     if (S.phase === "fight" || S.phase === "land") {
@@ -255,13 +272,13 @@ export function runCast({ place, policy, seed, spot, species = null, hour = 12, 
     const ph = S.phase;
     if (ph === "caught" || ph === "lost" || ph === "home") {
       out.outcome = ph === "lost" ? S.reason : ph;
-      out.fightT = S.fightT;
+      out.fightT = S.fightT; out.endT = S.t;
       if (holdStart !== null) out.holdT.push(t - holdStart);
       return out;
     }
   }
   out.outcome = "timeout";
-  out.fightT = sim.state.fightT;
+  out.fightT = sim.state.fightT; out.endT = sim.state.t;
   return out;
 }
 
