@@ -442,16 +442,16 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   probe.id = "lockProbe";
   document.body.append(ringEl, arrowEl, cueEl, hintEl, probe);
   const show = { ring: false, arrow: false, kind: "", go: false, cue: false, hints: "" };
-  const WIN = { l: 0, t: 0, r: 0, b: 0, at: -1e9, w: 0, h: 0 };
+  const WIN = { l: 0, t: 0, r: 0, b: 0, at: -1e9, w: 0, h: 0, sub: false };
   const rect = (sel) => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r : null; };
   // The safe window: the ring and the arrow stay clear of the score pills and the spoken line (and the key strip), and 8 px inside
-  // the edges and the safe-area insets. It is read from the page at most 10 times a second, and when the screen changes size.
+  // the edges and the safe-area insets. It is read from the page at most 10 times a second, and when the screen changes size or a spoken line comes or goes.
   function safeWindow() {
-    const now = performance.now(), W = innerWidth, H = innerHeight;
-    if (now - WIN.at < 100 && WIN.w === W && WIN.h === H) return WIN;
-    WIN.at = now; WIN.w = W; WIN.h = H;
+    const now = performance.now(), W = innerWidth, H = innerHeight, subOn = !!document.querySelector(".fs-sub.on");
+    if (now - WIN.at < 100 && WIN.w === W && WIN.h === H && WIN.sub === subOn) return WIN; // at once when a spoken line comes or goes
+    WIN.at = now; WIN.w = W; WIN.h = H; WIN.sub = subOn;
     const cs = getComputedStyle(probe), pad = 8 + 24; // 24 px: half of the ring, and the arrow
-    const top = rect(".fs-top"), sub = document.querySelector(".fs-sub.on") ? rect(".fs-sub") : null, strip = hintEl.hidden ? null : rect("#keyHints");
+    const top = rect(".fs-top"), sub = subOn ? rect(".fs-sub") : null, strip = hintEl.hidden ? null : rect("#keyHints");
     WIN.l = (parseFloat(cs.paddingLeft) || 0) + pad; WIN.r = W - (parseFloat(cs.paddingRight) || 0) - pad;
     WIN.t = Math.max((parseFloat(cs.paddingTop) || 0) + pad, top ? top.bottom + pad : 0);
     WIN.b = H - (parseFloat(cs.paddingBottom) || 0) - pad;
@@ -487,19 +487,21 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
       place(ringEl, px, py);
       cueX = px; cueY = py - 52;
     } else {
-      // an arrow on the border of the window, where the line from the screen centre to the target crosses it
+      // an arrow on the border of the window, where the line from the screen centre to the target crosses it. A spoken line under
+      // the score row can push the top of a small window below the centre: the line then starts from the middle of the window.
       let ax, ay, rot;
+      const ox = clamp(cx, w.l, w.r), oy = cy > w.t && cy < w.b ? cy : (w.t + w.b) / 2;
       if (m.behind) { ax = clamp(cx + m.x * (w.r - w.l) * 0.4, w.l, w.r); ay = w.b; rot = 180; }
       else {
-        const ddx = px - cx, ddy = py - cy;
-        const tx = ddx > 0 ? (w.r - cx) / ddx : ddx < 0 ? (w.l - cx) / ddx : Infinity, ty = ddy > 0 ? (w.b - cy) / ddy : ddy < 0 ? (w.t - cy) / ddy : Infinity;
+        const ddx = px - ox, ddy = py - oy;
+        const tx = ddx > 0 ? (w.r - ox) / ddx : ddx < 0 ? (w.l - ox) / ddx : Infinity, ty = ddy > 0 ? (w.b - oy) / ddy : ddy < 0 ? (w.t - oy) / ddy : Infinity;
         const t = Math.min(tx, ty);
-        ax = cx + ddx * t; ay = cy + ddy * t; rot = (Math.atan2(ddx, -ddy) * 180) / Math.PI;
+        ax = ox + ddx * t; ay = oy + ddy * t; rot = (Math.atan2(ddx, -ddy) * 180) / Math.PI;
       }
       if (show.ring) { ringEl.hidden = true; show.ring = false; }
       if (!show.arrow) { arrowEl.hidden = false; show.arrow = true; }
       place(arrowEl, ax, ay, rot);
-      cueX = ax; cueY = ay > cy ? ay - 50 : ay + 28;
+      cueX = ax; cueY = ay > oy ? ay - 50 : ay + 28;
     }
     const go = !!m.go;
     setClass(ringEl, "go", go); setClass(arrowEl, "go", go);
