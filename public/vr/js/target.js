@@ -91,6 +91,7 @@ export function createTarget(city, cfg = TARGET) {
   const NDC = { x: 0, y: 0, depth: 0, behind: false, inView: false };
   const S = {
     has: false, ctx: null, tFan: -1e9, tWide: -1e9, lastHand: 1, pref: 35, specialNear: false, tier: 0, side: 0,
+    bearing: 0, // the bearing the last fan was cast around: heldScore must score the held point against the same one
     rays: 0, picks: 0, specials: null, avoid: null, avoid2: null, better: 0, ratioMin: Infinity, ageMin: Infinity, // changes by the 20 percent rule
     recent: [{ bid: -1, t: -1e9 }, { bid: -1, t: -1e9 }],
   };
@@ -231,6 +232,7 @@ export function createTarget(city, cfg = TARGET) {
     let bearing = ctx.yaw;
     if (bias != null) bearing = bias;
     else if (wall && -Math.sin(ctx.yaw) * wall.nx - Math.cos(ctx.yaw) * wall.nz < 0.2) bearing = Math.atan2(-wall.nx, -wall.nz); // the way out of the wall
+    S.bearing = bearing;
     const nAz = Math.floor((2 * w) / F.azStep + 1e-6) + 1, nEl = Math.floor((2 * F.elSpan) / F.elStep + 1e-6) + 1;
     let best = -1;
     for (let a = 0; a < nAz; a++) {
@@ -341,7 +343,8 @@ export function createTarget(city, cfg = TARGET) {
   // the score of the held target now, as tier 1 would see it
   function heldScore(ctx) {
     const head = ctx.head, dx = H.x - head.x, dy = H.y - head.y, dz = H.z - head.z, dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
-    return score(ctx, H.x, H.y, H.z, H.ny, H.bid, dist, angN(ctx, dx, dy, dz, ctx.yaw));
+    // against the bearing of this run's fan (set by tier1, which always runs first): on a wall the view points into the wall, not out
+    return score(ctx, H.x, H.y, H.z, H.ny, H.bid, dist, angN(ctx, dx, dy, dz, S.bearing));
   }
   function hold(r, ctx) { copy(H, r); H.t0 = ctx.time; S.has = true; }
   function publish(ctx) { copy(R, H); R.same = false; cur = R; S.tier = R.tier; return cur; }
@@ -387,12 +390,14 @@ export function createTarget(city, cfg = TARGET) {
     }
     if (keep) return publish(ctx);
     // 4. tier 2 (at most 5 times a second, at once on a press), then the exact ray in third person
-    if (force || time - S.tWide >= cfg.rateWide) { S.tWide = time; c = tier2(ctx, false); }
+    const wide = force || time - S.tWide >= cfg.rateWide;
+    if (wide) { S.tWide = time; c = tier2(ctx, false); }
     if (!c) c = tier3(ctx, false);
     if (c) { hold(c, ctx); return publish(ctx); }
-    // 5. only the building that holds a rope qualifies: the result says so, and nothing is held
+    // 5. only the building that holds a rope qualifies: the result says so, and nothing is held. The relaxed tier 2 runs on the same
+    // clock as the strict one (not on every fan search); between those runs the last answer of tier 2 stands, so `same` does not flicker
     if (ctx.avoidBid != null || ctx.avoidBid2 != null) {
-      c = tier1(ctx, true, bias) || tier2(ctx, true) || tier3(ctx, true);
+      c = tier1(ctx, true, bias) || (wide ? tier2(ctx, true) : cur && cur.same && cur.tier === 2 ? cur : null) || tier3(ctx, true);
       if (c && avoids(c.bid, ctx)) { copy(R, c); R.same = true; S.has = false; cur = R; S.tier = c.tier; return cur; }
     }
     return none();

@@ -2,9 +2,9 @@
 // with the exact aim, the swing input (left button, E, right trigger; right button, Q, left trigger), a quick click, the second rope,
 // the hand, the kick and the latch, Space, F, Shift and the wheel, modifier keys, Tab and the map, the Rope trigger setting, the resume
 // click and the lock click, page keys in a pause, the lock-on ring and its arrow, the LET GO cue, the key strip, the view lift and the
-// turn from a wall, the fake pad for every button and axis, a title for a touch device with a fine pointer, and a first-time bot with
-// real inputs. SHOTS=<dir> saves pictures. Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/flat.mjs
-// ONLY=<part,part> (opening, swing, pad, marker = sizes + extras, camera, title, bot, vr) runs some of the parts. SIZE=640x360 limits sizes.
+// turn from a wall, the fake pad for every button and axis, a browser with no pointer lock, a title for a touch device with a fine
+// pointer, and a first-time bot with real inputs. SHOTS=<dir> saves pictures. Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/flat.mjs
+// ONLY=<part,part> (opening, swing, pad, marker = sizes + extras, camera, lock, title, bot, vr) runs some of the parts. SIZE=640x360 limits sizes.
 import { newPage, open, close, enterXR, waitState, waitFor, checker, watchdog, shot, sleep } from "./lib.mjs";
 import { WORLD, TARGET, PAD, DESKTOP, FLATCAM, HINT, LINES_PAD, LINES_DESKTOP } from "../../public/vr/js/config.js";
 import { generate } from "../../public/vr/js/city.js";
@@ -263,6 +263,15 @@ async function swing() {
   s = await st(page);
   check(s.ropes[1].state === "idle" && s.ropes[0].state === "attached", "letting go of the right button lets go of the second rope only");
   await page.mouse.up(); await step(page, 3);
+  /* ---- both swing inputs go down in the same frame ---- */
+  // The picker only learns of the first rope on the next frame, so the second input must ask again: two ropes on one point is a bug
+  // when another building qualifies. E and Q (the loop is held, so both keys arrive before the next frame).
+  f0 = await R();
+  await page.keyboard.down("KeyE"); await page.keyboard.down("KeyQ"); await step(page, 80);
+  s = await st(page);
+  const sb = await page.evaluate(() => [__f.bid(0), __f.bid(1)]);
+  check(s.ropes[0].state === "attached" && s.ropes[1].state === "attached" && sb[0] != null && sb[1] != null && sb[0] !== sb[1], "E and Q pressed in the same frame put the two ropes on two different buildings", { sb, ropes: s.ropes.map((r) => r.state) });
+  await page.keyboard.up("KeyE"); await page.keyboard.up("KeyQ"); await step(page, 3);
   /* ---- the hand follows the side of the target ---- */
   const sides = [];
   for (const yawOff of [0.5, -0.5, 0]) {
@@ -363,7 +372,7 @@ async function swing() {
   /* ---- keys with Ctrl, Meta or Alt do nothing ---- */
   await R();
   await page.mouse.down(); await step(page, 36);
-  const f4 = await frame(page), pos0 = (await st(page)).pos;
+  const f4 = await frame(page);
   await page.keyboard.down("Control"); await page.keyboard.press("KeyF"); await page.keyboard.press("KeyW"); await page.keyboard.press("Space"); await page.keyboard.up("Control");
   await page.keyboard.down("Meta"); await page.keyboard.press("KeyF"); await page.keyboard.press("KeyV"); await page.keyboard.up("Meta");
   await page.keyboard.down("Alt"); await page.keyboard.press("KeyF"); await page.keyboard.press("Tab"); await page.keyboard.up("Alt");
@@ -371,8 +380,18 @@ async function swing() {
   e = await ev(page, f4);
   const ui0 = await page.evaluate(() => ({ view: G.test.flat().firstPerson, panel: G.test.ui().panel, state: G.state }));
   check(!has(e, "yank") && ui0.view === false && ui0.panel === null && ui0.state === "play", "Ctrl, Meta and Alt keys do nothing: no yank, no jump, no view switch, no map", { e, ui0 });
-  await page.keyboard.down("Control"); await page.keyboard.down("KeyW"); await step(page, 30); await page.keyboard.up("KeyW"); await page.keyboard.up("Control");
   await page.mouse.up(); await step(page, 3);
+  // Ctrl+W (close the tab) must not walk the hero either: on the roof with no rope, 0.5 s of it moves him nowhere, and plain W does move him
+  await R();
+  const ctrl0 = (await st(page)).pos;
+  await page.keyboard.down("Control"); await page.keyboard.down("KeyW"); await step(page, 30); await page.keyboard.up("KeyW"); await page.keyboard.up("Control"); await step(page, 3);
+  const ctrl1 = (await st(page)).pos;
+  check(near(ctrl0.x, ctrl1.x, 1e-6) && near(ctrl0.z, ctrl1.z, 1e-6), "Ctrl+W held for 0.5 s on the roof does not walk the hero", { ctrl0, ctrl1 });
+  await R();
+  const plain0 = (await st(page)).pos;
+  await page.keyboard.down("KeyW"); await step(page, 30); await page.keyboard.up("KeyW"); await step(page, 3);
+  const plain1 = (await st(page)).pos;
+  check(Math.hypot(plain1.x - plain0.x, plain1.z - plain0.z) > 1, "(and plain W held for 0.5 s does walk him, so the check above can fail: " + Math.hypot(plain1.x - plain0.x, plain1.z - plain0.z).toFixed(1) + " m)", { plain0, plain1 });
   /* ---- the kick, the latch and a test hook ---- */
   f0 = await R();
   await page.evaluate(() => { const T = G.test.target().target; G.test.aimAt(1, T.x, T.y, T.z); G.test.press(1, true); __f.step(30); });
@@ -522,8 +541,25 @@ async function swing() {
     fired.push(has(ei, "fire") || has(ei, "dry"));
     await page.mouse.up(); await step(page, 3);
   }
-  // every refused request counts (the resume asks once itself), so the clicks lost are two at most, and the click that resumes is one
+  // every refused request of a click counts (a resume that asks with no click does not), so the clicks lost are two at most, and the click that resumes is one
   check(!fired[0] && fired.filter((f) => !f).length <= 2 && fired[2], "a browser that refuses the pointer lock: the click that resumes swings nothing, at most two clicks are lost, then clicks swing again", fired);
+  await page.evaluate(() => { window.__lock.refuse = false; });
+  await page.mouse.click(40, m.y); await step(page, 3); await held(page); // the lock comes back with a click
+  // Esc closes a pause, and every resume asks for the lock with no click. A browser may refuse that (after Esc it does). Those refusals are
+  // no clicks, so they must not count against the click rule: after two of them the next click still re-locks and fires nothing
+  await R(); await held(page);
+  await page.evaluate(() => { window.__lock.refuse = true; document.exitPointerLock(); });
+  await page.waitForFunction(() => G.state === "paused", null, { timeout: 5000 });
+  await step(page, 2);
+  const req0 = await page.evaluate(() => window.__lock.requests);
+  for (let i = 0; i < 3; i++) { await page.keyboard.press("Escape"); await step(page, 3); } // resume (asks, refused), pause, resume (asks, refused)
+  const esc = await page.evaluate(() => ({ state: G.state, locked: G.desktop.locked, asked: window.__lock.requests }));
+  check(esc.state === "play" && !esc.locked && esc.asked - req0 === 2, "Esc, Esc, Esc in a browser that refuses the lock: play goes on unlocked after two resumes that asked once each", { esc, req0 });
+  const fe2 = await frame(page);
+  await page.mouse.move(40, m.y); await page.mouse.down(); await step(page, 12);
+  const ee2 = await ev(page, fe2);
+  await page.mouse.up(); await step(page, 3);
+  check(!has(ee2, "fire") && !has(ee2, "dry"), "after two refused Esc resumes the next click is still the click that asks for the lock: it fires no rope", ee2);
   await page.evaluate(() => { window.__lock.refuse = false; });
   check(page.errors.length === 0, "no page errors in the swing checks", page.errors);
   await page.context().close();
@@ -601,13 +637,29 @@ async function padPart() {
   await press(5, 2); await page.evaluate(() => __f.step(30));
   const ey = await ev(page, fy);
   const lenR2 = await page.evaluate(() => G.P.ropes[0].lenTarget);
-  check(has(ey, "yank") && lenR2 < lenR - 0.5, "RB yanks and does not reel", { ey, lenR, lenR2 });
+  check(has(ey, "yank") && lenR2 < lenR - 0.5, "RB yanks the rope (a yank event, and the rope is shorter)", { ey, lenR, lenR2 });
+  // A yank alone shortens the rope, so the length cannot show a reel: read the grip input and the reel flag with RB down and LB up
+  const rbReel = await page.evaluate(() => {
+    __f.btn(5, 1); __f.step(1);
+    const o = { grips: G.test.input().hands.map((h) => h.grip), reeling: G.P.ropes[0].reeling || G.P.ropes[1].reeling };
+    __f.btn(5, 0); __f.step(30); // (past the yank cooldown, so X below can yank)
+    return o;
+  });
+  check(rbReel.grips.every((g) => g === 0) && !rbReel.reeling, "RB does not reel: with RB down and LB up the grip input stays 0 and no rope reels", rbReel);
   const fx = await frame(page);
   await press(2, 2); await page.evaluate(() => __f.step(30));
   const ex = await ev(page, fx);
   check(has(ex, "yank"), "X yanks too", ex);
   await page.evaluate(() => { __f.btn(7, 0); __f.btn(6, 0); __f.step(3); });
   // A: jump on a roof, yank in the air with a rope, jump off a wall
+  await R();
+  await page.evaluate(() => { const s = G.city.start; G.test.teleport(s.x, s.y + 30, s.z); G.P.vel.y = -5; G.P.onGround = false; __f.step(2); __f.btn(7, 1); __f.step(40); });
+  const airA = await page.evaluate(() => ({ rope: G.test.state().ropes.some((r) => r.state === "attached"), air: !G.P.onGround }));
+  const fa = await frame(page);
+  await press(0, 2);
+  const ea = await ev(page, fa);
+  check(airA.rope && airA.air && has(ea, "yank"), "A in the air with a rope out yanks the rope", { airA, ea });
+  await page.evaluate(() => { __f.btn(7, 0); __f.step(3); });
   await R();
   await press(0, 2);
   s = await st(page);
@@ -820,6 +872,23 @@ async function markerAt(width, height) {
   // a window under 80 px high (a 640 by 360 screen with the pills in two rows and a spoken line) may show arrows only
   check(sweep.nbad === 0 && (sweep.winH < 80 || sweep.rings > 5) && sweep.arrows > 20, "[" + tag + "] a marker at every NDC y from 0.3 to 1.5 and x from -1.5 to 1.5 stays clear of the score pills, the spoken line and the strip (" + sweep.n + " places: " + sweep.rings + " rings, " + sweep.arrows + " arrows, window " + Math.round(sweep.winH) + " px high)", sweep.bad);
   check(sweep.behind && sweep.behind.b >= sweep.h * 0.4, "[" + tag + "] a target behind the camera shows its arrow on the bottom border", sweep.behind);
+  // the LET GO caption: centred on the ring where it fits, and always inside the screen (at the right limit of the ring a box that starts at
+  // the ring's x ran 70 px off the right edge)
+  const capBox = await page.evaluate(() => {
+    const bad = []; let n = 0, centred = 0, ringed = 0; // (the marker is a ring, or an arrow where the window is thin: the caption follows either)
+    for (const y of [0.35, 0.7]) for (let x = -1.2; x <= 1.201; x += 0.1) {
+      G.desktop.marker({ x, y, kind: "swing", dist: 30, behind: false, go: true });
+      G.desktop.cue(true);
+      const c = __f.rect("#lockCue"), r = __f.vis("#lockRing") ? __f.rect("#lockRing") : __f.vis("#lockArrow") ? __f.rect("#lockArrow") : null;
+      n++;
+      if (!c) { bad.push({ x, y, none: true }); continue; }
+      if (c.l < -0.5 || c.r > innerWidth + 0.5 || c.t < -0.5 || c.b > innerHeight + 0.5) bad.push({ x: +x.toFixed(1), y, l: c.l, r: c.r, t: c.t, b: c.b, w: innerWidth });
+      if (r) { ringed++; if (Math.abs(c.cx - r.cx) <= 1.5) centred++; }
+    }
+    G.desktop.cue(false); G.desktop.marker(null);
+    return { n, ringed, centred, nbad: bad.length, bad: bad.slice(0, 3) };
+  });
+  check(capBox.nbad === 0 && capBox.ringed >= 20 && capBox.centred >= capBox.ringed * 0.5, "[" + tag + "] the LET GO caption lies inside the screen at every marker position, and it is centred on the ring or arrow where it fits (" + capBox.centred + " of " + capBox.ringed + ")", capBox);
   check(page.errors.length === 0, "[" + tag + "] no page errors", page.errors);
   await page.context().close();
 }
@@ -1068,7 +1137,24 @@ async function exactAim() {
   // third person, the camera looks down at the hero: the target is never the roof at the hero's feet
   const down = await page.evaluate(() => { __f.roof(); G.flatcam.reset(G.city.start.yaw, -0.9); __f.step(40); const t = G.test.target(); return { t: t.target, y: G.city.start.y }; });
   check(down.t && down.t.y > down.y + 5, "third person with the camera looking down at the hero: the target is a building, never the roof at the feet", down);
-  // a picker that finds nothing: a real roof in view fires nothing, and the line shows once
+  // The picker decides: it answers none while a real building is in the hands' aim. The real city and the real picker.update stay (the
+  // hands still point at the real target, so ropes.aim sees a valid swing point), and only picker.result is stubbed to none. A regression
+  // that lets ropes.aim decide again (a = ropes.aim(...) in aimAndFire) attaches a rope here.
+  await page.evaluate(() => { __f.roof(); G.flatcam.reset(G.city.start.yaw, -0.9); __f.step(30); });
+  const decide = await page.evaluate(() => {
+    const h = G.input.hands[1], a = G.ropes.aim(1, h.aimPos, h.aimDir, G.P.vel);
+    return { valid: !!(a && a.valid), tag: a && a.tag, picked: !!G.test.target().target };
+  });
+  check(decide.valid && decide.picked, "set-up: with the real city and the real picker, ropes.aim also sees a swing point (the old decision would attach)", decide);
+  const fdc = await frame(page);
+  await page.evaluate(() => { window.__res = G.picker.result; G.picker.result = () => null; });
+  await page.mouse.move(480, 270); await page.mouse.down(); await step(page, 30);
+  const sdc = await st(page), edc = await ev(page, fdc);
+  await page.mouse.up(); await step(page, 3);
+  await page.evaluate(() => { G.picker.result = window.__res; });
+  check(sdc.ropes.every((r) => r.state === "idle") && has(edc, "dry") && !has(edc, "fire") && !has(edc, "attach"), "the picker decides: with a picker that answers none and a real swing point in the aim of the hands, the cup dry-fires and no rope attaches", { edc, ropes: sdc.ropes.map((r) => r.state) });
+  await page.evaluate(() => { G.ui.say("", 0); __f.step(12, 1); }); // (that dry fire said the "No building" line: past the 10 s it waits before it may say it again)
+  // a picker that finds nothing: a city that answers no ray gives no target, and the line shows once
   await page.evaluate(() => { __f.roof(); });
   const none = await page.evaluate(() => {
     const rc = G.city.raycast; window.__rc = rc; G.city.raycast = () => null;
@@ -1089,7 +1175,8 @@ async function exactAim() {
   const f1 = await frame(page);
   await page.mouse.down(); await step(page, 30); await page.mouse.up(); await step(page, 3);
   e = await ev(page, f1);
-  const line2 = await page.evaluate(() => document.querySelector(".fs-sub").textContent);
+  // (the text of the box stays after the line is gone, so read it only while the box shows)
+  const line2 = await page.evaluate(() => { const b = document.querySelector(".fs-sub"); return b.classList.contains("on") ? b.textContent : ""; });
   check(has(e, "dry") && line2 !== "No building to swing from here. Face the city, or step off the edge.", "a second press 3 s later shows no new line (at most once every 10 s)", { line2 });
   // a target that shows up within 0.3 s is fired at
   await page.evaluate(() => { __f.step(12, 1); }); // past the 10 s that the line waits
@@ -1101,6 +1188,42 @@ async function exactAim() {
   check(has(e, "attach"), "a held press that sees a target within 0.3 s fires at it", { e, ropes: s.ropes.map((r) => r.state) });
   await page.mouse.up(); await step(page, 3);
   check(page.errors.length === 0, "no page errors in the exact aim checks", page.errors);
+  await page.context().close();
+}
+
+/* ================= a browser with no pointer lock at all ================= */
+async function noLockApi() {
+  // (an iPad with a trackpad, after PLAY WITH MOUSE AND KEYBOARD) The lock never comes and no error event comes either. A click that
+  // asks for the lock starts no swing only when there is a lock to ask for, so these clicks must fire; the click that resumes a pause
+  // still starts none.
+  const page = await playPage(960, 540, { init: () => { Element.prototype.requestPointerLock = undefined; } });
+  const m = await mid(page); await page.mouse.move(m.x, m.y);
+  const has0 = await page.evaluate(() => ({ api: !!document.querySelector("#view canvas").requestPointerLock, locked: G.desktop.locked }));
+  const f0 = await frame(page);
+  await page.mouse.down(); await step(page, 40);
+  let s = await st(page), e = await ev(page, f0);
+  check(!has0.api && !has0.locked && has(e, "fire") && s.ropes.some((r) => r.state === "attached"), "with no pointer lock API the first click on the canvas swings (it is not swallowed as a click that asks for the lock)", { has0, e, ropes: s.ropes.map((r) => r.state) });
+  await page.mouse.up(); await step(page, 3);
+  for (let i = 0; i < 3; i++) {
+    await page.evaluate(() => __f.roof());
+    const fi = await frame(page);
+    await page.mouse.down(); await step(page, 40);
+    e = await ev(page, fi);
+    check(has(e, "fire"), "with no pointer lock API click " + (i + 2) + " swings too", e);
+    await page.mouse.up(); await step(page, 3);
+  }
+  // a pause, and the click that resumes it: no swing; the next click swings
+  await page.evaluate(() => { __f.roof(); G.ui.openPause(); __f.step(3); });
+  const fr = await frame(page);
+  await page.mouse.click(40, m.y); await step(page, 5);
+  s = await st(page); e = await ev(page, fr);
+  check(s.state === "play" && s.ropes.every((r) => r.state === "idle") && !has(e, "fire") && !has(e, "dry"), "with no pointer lock API the click that resumes from a pause still starts no swing", { state: s.state, e });
+  const fn = await frame(page);
+  await page.mouse.down(); await step(page, 40);
+  e = await ev(page, fn);
+  check(has(e, "fire"), "and the next click swings", e);
+  await page.mouse.up(); await step(page, 3);
+  check(page.errors.length === 0, "no page errors with no pointer lock API", page.errors);
   await page.context().close();
 }
 
@@ -1163,6 +1286,14 @@ async function titles() {
   await step(page, 30);
   const v2 = await page.evaluate(() => G.test.flat().firstPerson);
   check(v1 === true && v2 === true, "the real VIEW button switches the view once (it stays switched on the frames after the press)", { v1, v2 });
+  // E and Q pressed in the touch scheme (a touch laptop with a keyboard) must leave nothing behind for the mouse scheme that may follow
+  const f8 = await frame(page);
+  await page.keyboard.press("KeyE"); await page.keyboard.press("KeyQ"); await step(page, 2);
+  await page.evaluate(() => { G.desktop.mobile.use(false); __f.step(1); }); // what PLAY WITH MOUSE AND KEYBOARD does, in play
+  const stale = await page.evaluate(() => G.test.input().hands.map((h) => ({ swing: h.swingDown, trigger: h.triggerDown })));
+  await step(page, 6);
+  const e8 = await ev(page, f8);
+  check(stale.every((h) => !h.swing && !h.trigger) && !has(e8, "fire") && !has(e8, "dry"), "E and Q pressed in the touch scheme fire nothing on the first frame of the mouse scheme", { stale, e8 });
   check(page.errors.length === 0, "no page errors on the touch title", page.errors);
   await page.context().close();
 }
@@ -1239,6 +1370,7 @@ if (want("pad")) await padPart();
 if (want("marker") || want("sizes")) for (const [w, h] of [[640, 360], [960, 540], [1280, 720]]) if (!process.env.SIZE || process.env.SIZE === w + "x" + h) await markerAt(w, h);
 if (want("marker") || want("extras")) { await markerExtra(); await stripGone(); await exactAim(); }
 if (want("camera")) await cameraPart();
+if (want("lock")) await noLockApi();
 if (want("title")) await titles();
 if (want("bot")) await botPart();
 if (want("vr")) await vrPart();

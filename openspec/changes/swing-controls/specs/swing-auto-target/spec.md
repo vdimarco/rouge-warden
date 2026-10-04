@@ -22,6 +22,15 @@ In flat play, the game SHALL pick one target for each swing. A target SHALL be a
 - **THEN** it casts at most 66 rays in tier 1, at most 700 rays in tier 2 and one ray in tier 3
 - **AND** the held target costs one ray each frame
 
+#### Scenario: Tier 2 rate
+- **WHEN** the picker runs for 2 s of frames in a city where tier 1 finds nothing
+- **THEN** tier 2 runs at most 10 times, which is 5 times a second
+
+#### Scenario: A rope holds the only building that qualifies
+- **WHEN** a rope holds the one building that qualifies, which only tier 2 can see, for 2 s of frames
+- **THEN** tier 2 runs at most 5 times a second (the pass that may return the held building shares the clock of the strict pass)
+- **AND** the result says `same` on every frame, so a second rope of a computer or a pad may still take that building
+
 ### Requirement: The target stays inside the width of the view
 A tier 1 target SHALL be in front of the camera, and its screen x SHALL lie within 0.92 of the half-width of the screen. A target above the top edge MAY pass. The fan width SHALL follow the Aim assist setting: 21, 28 or 35 degrees each side for Low, Medium and High.
 
@@ -95,6 +104,11 @@ The picker SHALL keep the held target while it is valid. A new candidate SHALL r
 - **WHEN** a wall moves between the head and the held target
 - **THEN** the next search replaces the target in the same frame
 
+#### Scenario: Climbing a wall
+- **WHEN** a player holds a wall with the view into it and climbs 20 m up and down for 30 s
+- **THEN** a held target is replaced by the 20 percent rule at most 10 times
+- **AND** each replacement goes to a candidate that scores more than 20 percent higher than the held target, both scored against the bearing the fan was cast around (the way out of the wall), not against the view
+
 ### Requirement: The next swing goes to a new building
 The score of a building that held one of the last two ropes SHALL fall by 0.6 for 8 s after the rope let go. A building that holds a rope SHALL NOT be the target of the second rope while another building qualifies. The picker SHALL still return a building that is the only one that qualifies.
 
@@ -125,6 +139,10 @@ The hand that fires SHALL be the hand on the side of the target. A target more t
 - **WHEN** a rope is attached to building A and the player presses the second-rope input
 - **THEN** the idle hand fires at a different building when one qualifies
 - **AND** the marker before the press shows that other building
+
+#### Scenario: Two inputs in one frame
+- **WHEN** both swing inputs go down in the same frame, so the first rope is still flying when the second is chosen
+- **THEN** the second rope fires at a different building when one qualifies (the picker is asked again for the frame)
 
 ### Requirement: The picker decides a flat swing
 In flat play with state "play" and no test aim override on the hand, the picker SHALL decide whether a swing fires. The game SHALL fire at the picker's point and SHALL NOT let `ropes.aim` choose again. With no target, no rope SHALL fire, even when the view ray hits a roof or a wall in reach. With a test aim override on a hand, the old decision by `ropes.aim` SHALL hold for that hand. In the opening and in a pause the picker SHALL be off.
@@ -240,6 +258,11 @@ On a computer or a pad, while a rope is attached to a building and the swing is 
 #### Scenario: Cue off
 - **WHEN** the Release cue setting is Off
 - **THEN** no cue shows in the same states
+
+#### Scenario: The caption stays on the screen
+- **WHEN** the cue shows with the marker (ring or arrow) at any place from NDC x -1.2 to 1.2 at 640 by 360, 960 by 540 or 1280 by 720
+- **THEN** the whole LET GO caption lies inside the screen
+- **AND** it is centred on the marker wherever it fits there
 
 ### Requirement: No target is clear to the player
 When no target exists, no marker SHALL show. A swing input SHALL wait 0.3 s for a target and then dry-fire: the cup flies 6 m along the view and drops. A computer or a pad player SHALL read the line "No building to swing from here. Face the city, or step off the edge." at most once every 10 s. A phone SHALL dim the SWING button and show its hint line.

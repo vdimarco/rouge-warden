@@ -54,6 +54,7 @@ export function createDesktop(canvas, camera, settings) {
   const pad = { a: false, x: false, y: false, rb: false, start: false };
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   let dx = 0, dy = 0, pitch = 0, wheel = 0, skipMove = false, usingPad = false, gt = 0, lockFails = 0, skipClick = 0;
+  const asks = []; // for each pointer lock request still unanswered: did a click make it? Only a refused click counts toward lockFails
   const unlockFns = [];
   const wlog = { t: new Float32Array(48), a: new Float32Array(48), n: 0 }; // the wheel's grants in the last DESKTOP.wheel.per s
 
@@ -63,15 +64,20 @@ export function createDesktop(canvas, camera, settings) {
     // none (the press is ignored), or undefined to use the old mapping (swing 1 is the left hand, swing 2 the right hand)
     chooseHand: null,
     // Ask for the pointer lock. A click that asks (fromClick) starts no swing: it re-locks. A browser that refuses the lock every
-    // time (no pointer lock here, or an iframe) loses two clicks at most, then clicks fire again.
+    // time (an iframe) loses two clicks at most, then clicks fire again. A request that no click made (a resume by Esc or Start) may be
+    // refused too, and that never counts: it is no click.
     lock(fromClick) {
       if (mobile.enabled) return;
       // the pause menu lets go of the lock, but a slow release can leave it held at the click that resumes: that click swings nothing too
       if (document.pointerLockElement === canvas) { if (fromClick) skipClick = performance.now() + 200; return; }
+      const api = !!canvas.requestPointerLock;
       try {
-        const p = canvas.requestPointerLock && canvas.requestPointerLock();
+        const p = api && canvas.requestPointerLock();
+        if (api) { asks.push(!!fromClick); if (asks.length > 4) asks.shift(); } // (a request that is never answered must not pile up)
         if (p && p.catch) p.catch(() => { /* no pointer lock here (a test browser): the buttons still work */ });
-        if (fromClick && lockFails < 2) skipClick = performance.now() + 200;
+        // With no pointer lock API there is nothing to ask for (no grant and no error will come), so only the click that resumes a
+        // pause is swallowed: swallowing every click would leave the buttons dead for ever. (G.state flips to play on the next tick.)
+        if (fromClick && lockFails < 2 && (api || window.G?.state === "paused")) skipClick = performance.now() + 200;
       } catch (e) { /* same */ }
     },
     unlock() { if (document.pointerLockElement === canvas) document.exitPointerLock(); },
@@ -94,7 +100,7 @@ export function createDesktop(canvas, camera, settings) {
     D.locked = now;
     // Chromium sends one mousemove with a large made-up movement right after the lock starts: skip it
     if (now && !was) {
-      skipMove = true; lockFails = 0;
+      skipMove = true; lockFails = 0; asks.length = 0;
       // a button that is already down when the lock starts does nothing until it goes up
       for (let b = 0; b < 2; b++) if (mouse[b]) { mouse[b] = false; skip[b] = true; }
     }
@@ -104,7 +110,7 @@ export function createDesktop(canvas, camera, settings) {
       for (const f of unlockFns) f();
     }
   });
-  document.addEventListener("pointerlockerror", () => { lockFails++; });
+  document.addEventListener("pointerlockerror", () => { if (asks.shift()) lockFails++; }); // (the oldest request is the one that failed)
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   canvas.addEventListener("mousedown", (e) => {
     if (!D.active || mobile.enabled) return;
@@ -162,7 +168,8 @@ export function createDesktop(canvas, camera, settings) {
     }
     if (k === "Space" && !page) { e.preventDefault(); if (!e.repeat) Q.jump = true; }
     if (k === "KeyF" && !e.repeat) Q.yank = true;
-    if (!e.repeat && !page) { if (k === "KeyE") edge[0] = true; else if (k === "KeyQ") edge[1] = true; }
+    // (not in the touch scheme: D.update reads the edges only in the mouse scheme, so one left here would fire a rope after a switch)
+    if (!e.repeat && !page && !mobile.enabled) { if (k === "KeyE") edge[0] = true; else if (k === "KeyQ") edge[1] = true; }
     // M (the sound) by the letter on the key (AZERTY puts M where QWERTY has ;), or by its place when the key has no Latin
     // letter; a punctuation key in that place (AZERTY's comma under KeyM) is not M
     const key = e.key || "", byPlace = key.length !== 1 || /\p{L}/u.test(key);
@@ -323,7 +330,7 @@ export function createDesktop(canvas, camera, settings) {
 #lockRing.pop.still svg{transform:none;filter:brightness(1.45) saturate(1.3)}
 #lockRing.go svg,#lockArrow.go svg{animation:lockpulse .32s ease-in-out infinite alternate}
 @keyframes lockpulse{from{transform:scale(1)}to{transform:scale(1.25)}}
-#lockCue{position:fixed;left:0;top:0;z-index:11;pointer-events:none;padding:4px 14px 1px;background:#ffd84a;border:3px solid #140a18;border-radius:3px;box-shadow:3px 3px 0 #140a18;font:400 22px/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.08em;color:#140a18;white-space:nowrap;transform:translate(-50%,0)}
+#lockCue{position:fixed;left:0;top:0;z-index:11;pointer-events:none;padding:4px 14px 1px;background:#ffd84a;border:3px solid #140a18;border-radius:3px;box-shadow:3px 3px 0 #140a18;font:400 22px/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.08em;color:#140a18;white-space:nowrap}
 #keyHints{position:fixed;left:50%;bottom:10px;z-index:12;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:0 12px;box-sizing:border-box;height:34px;max-width:96vw;padding:0 14px;overflow:hidden;white-space:nowrap;pointer-events:none;background:#fffdf5;border:3px solid #140a18;border-radius:3px;box-shadow:3px 3px 0 #140a18;font:400 clamp(11px,1.65vw,19px)/1 var(--comic,"Bangers",Impact,"Arial Black",system-ui,sans-serif);letter-spacing:.05em;color:#140a18;text-transform:uppercase}
 #keyHints b{font-weight:400;color:#b32016}
 body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
@@ -367,7 +374,7 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   }
   const place = (el, x, y, rot) => { el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)${rot ? ` rotate(${rot.toFixed(1)}deg)` : ""}`; };
   const setClass = (el, name, on) => { if (el.classList.contains(name) !== on) el.classList.toggle(name, on); };
-  let cueX = 0, cueY = 0;
+  let cueX = 0, cueY = 0, cueHalf = 52; // the caption is centred on cueX: its half width is measured each time it shows
   // m: null, or { x, y (NDC, y up; they may lie off the screen), kind, dist, behind, go }
   D.marker = (m) => {
     if (!m) {
@@ -418,10 +425,11 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   // the LET GO caption: next to the ring, or at the top of the safe window when there is no ring
   D.cue = (on) => {
     on = !!on;
-    if (on !== show.cue) { show.cue = on; cueEl.hidden = !on; }
+    if (on !== show.cue) { show.cue = on; cueEl.hidden = !on; if (on) cueHalf = cueEl.offsetWidth / 2 || cueHalf; }
     if (on) {
       const w = safeWindow();
-      place(cueEl, clamp(cueX || innerWidth / 2, w.l, w.r), clamp(cueY || w.t, w.t - 24, w.b - 20));
+      // place() sets the whole transform, so the box is centred here: its middle stays 8 px plus half its width inside the safe-area insets
+      place(cueEl, clamp(cueX || innerWidth / 2, w.l - 24 + cueHalf, w.r + 24 - cueHalf) - cueHalf, clamp(cueY || w.t, w.t - 24, w.b - 20));
     }
   };
   // the first-minute strip at the bottom of the screen, for a mouse or a pad. It lifts the spoken line and the toast with it.

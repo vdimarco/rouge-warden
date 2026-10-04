@@ -35,6 +35,10 @@ With both ropes idle, the right mouse button or Q SHALL fire the right hand at t
 - **WHEN** the player lets go of the right button
 - **THEN** the second rope lets go and the first rope stays
 
+#### Scenario: Both inputs in one frame
+- **WHEN** the player presses E and Q (or both mouse buttons, or both triggers) in the same frame, with two buildings in reach
+- **THEN** the two ropes fire at two different buildings
+
 ### Requirement: Space has one job in each state
 Space SHALL jump on the ground, jump off a wall, and yank every attached rope in the air. In the air with no rope, Space SHALL do nothing.
 
@@ -86,7 +90,7 @@ W A S D and the arrow keys SHALL walk on the ground and steer in the air. On a w
 - **THEN** the player climbs 3 m and then moves 3 m to the right along the wall
 
 ### Requirement: V, Tab and Esc
-V SHALL switch the view. Tab SHALL open the map, and Tab SHALL close it. M SHALL stay the mute key of `full-swing-rings-map-sound`. Esc SHALL pause, and SHALL close the pause or the map. Tab SHALL ask for the pointer lock again when it closes the map. Esc SHALL NOT, because a browser may refuse a lock request after Esc until the next click. While the game is paused, or while a dialog has focus, Tab, Space and the arrow keys SHALL keep their page meaning.
+V SHALL switch the view. Tab SHALL open the map, and Tab SHALL close it. M SHALL stay the mute key of `full-swing-rings-map-sound`. Esc SHALL pause, and SHALL close the pause or the map. Tab SHALL ask for the pointer lock again when it closes the map, and every resume (Esc, the pad's Start, the Resume button, a click) SHALL ask once. A browser may refuse a request that no click made, for example after Esc: that refusal SHALL NOT count against the click rule below, and the next click SHALL re-lock. While the game is paused, or while a dialog has focus, Tab, Space and the arrow keys SHALL keep their page meaning.
 
 #### Scenario: View
 - **WHEN** the player presses V, and holds it so that the key repeats
@@ -114,6 +118,8 @@ A key pressed with Ctrl, Meta or Alt held SHALL NOT swing, yank, jump, move, ree
 #### Scenario: Browser shortcuts
 - **WHEN** the player presses Ctrl+F or Cmd+W while a rope is attached
 - **THEN** no yank event fires and the hero does not move
+- **WHEN** the player holds Ctrl+W for 0.5 s on a roof with no rope
+- **THEN** the hero does not move (plain W moves him more than 1 m)
 
 ### Requirement: The Rope trigger setting works in flat play
 The "Rope trigger" setting SHALL work in flat play on a computer and a pad. With "Hold", a rope lasts while its swing input is down. With "Toggle", a press fires the rope and the next press of that input lets go. E, Q and the triggers SHALL follow the setting. The flat Comfort menu SHALL show the row for a mouse and a pad. The phone SHALL ignore the setting, so its Comfort page SHALL show neither the Rope trigger row nor the Release cue row.
@@ -148,6 +154,16 @@ A click that resumes play from a pause, and a click that asks for the pointer lo
 #### Scenario: Lost lock
 - **WHEN** the pointer lock is lost and the player clicks the city
 - **THEN** the lock returns and no rope fires
+
+#### Scenario: Refused Esc resumes
+- **WHEN** the browser refuses every lock request, the player closes the pause with Esc twice (pausing again in between), and then clicks the city
+- **THEN** each resume asked for the lock once, and the click fires no rope (the refusals of the resumes were no clicks)
+
+#### Scenario: No pointer lock in the browser
+- **WHEN** the browser has no pointer lock API (a tablet with a trackpad, after PLAY WITH MOUSE AND KEYBOARD) and the player clicks the canvas in play
+- **THEN** every click swings (no click is swallowed as a click that asks for a lock)
+- **WHEN** the game is paused and the player clicks the city to resume
+- **THEN** that click starts no swing, and the next click swings
 
 ### Requirement: A real swing gets a kick, and a hop only when tuned
 A rope that a real swing input fired (left or right mouse button, E, Q, RT, LT) SHALL get a kick on attach. The body SHALL gain speed across the rope toward the view until that speed is `DESKTOP.attachSpeed`, which starts at 10 m/s. The kick SHALL NOT apply when the anchor is straight ahead, when the other rope is attached, or on a clog, a pipe or the crack. From the ground the body SHALL hop toward the target at `DESKTOP.hop` m/s, which starts at 0. A clog, a pipe or the crack SHALL never get a hop. A rope that a test hook fired SHALL get neither.
@@ -224,6 +240,10 @@ A device that reports touch points and has a fine pointer SHALL show two buttons
 #### Scenario: Mouse chosen, then touch
 - **WHEN** a player pressed PLAY WITH MOUSE AND KEYBOARD, leaves to the title with Exit, and presses PLAY WITH TOUCH
 - **THEN** `G.test.input().kind` is "touch", the phone panel shows and `body[data-device]` is "touch"
+
+#### Scenario: Keys pressed in the touch scheme
+- **WHEN** a player in the touch scheme presses E and Q, and the scheme then changes to mouse and keyboard
+- **THEN** the first frame of the mouse scheme fires no rope (a key pressed while the touch scheme was on leaves no press behind)
 
 #### Scenario: A computer
 - **WHEN** the title loads on a device with no touch point

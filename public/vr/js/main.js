@@ -758,6 +758,7 @@ function couple(inp) {
 // wins: for that hand ropes.aim decides, as before.
 const latch = [false, false], realWait = [false, false];
 let noneAt = -99;
+const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 function aimAndFire(dt, inp) {
   for (let i = 0; i < 2; i++) {
@@ -791,7 +792,13 @@ function aimAndFire(dt, inp) {
     const blocked = ui.blocking(i), ok = !!a && a.valid && !blocked && !(inp.easySwing && a.same);
     if (inp.easySwing && i === 1) D.mobile.target(ok, false);
     if (h.triggerDown && !blocked) {
-      if (ok) shoot(i, h, a); else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
+      if (ok) {
+        const bid = a.bid;
+        shoot(i, h, a);
+        // The other hand fires in this same frame (two swing inputs went down together). The picker learns of this rope only next
+        // frame, so ask it again for a building that does not hold it. pick() rewrites the result in place: after shoot, never in it.
+        if (pk && i === 0 && bid >= 0 && inp.hands[1].triggerDown && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
+      } else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
     } else if (fireWait[i] > 0) {
       if (blocked) fireWait[i] = 0;
       else if (ok && h.holding) { shoot(i, h, a); fireWait[i] = 0; }

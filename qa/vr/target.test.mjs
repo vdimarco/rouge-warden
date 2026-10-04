@@ -2,7 +2,8 @@
 // It runs the picker against the real city (city.js): the reach rules of each tier over 5,000 sampled states, the screen limit,
 // the preferred elevation, the clogs, the pipes and the gold ring, the hold on a target (hysteresis), the variety rule, the hand,
 // the phone tap rules, the superset of the old phone assist (a reference copy with its cone), the release cue, the kick, the ray
-// budget and the import with no three. Then two first-time bots play the real physics with only the swing input and W:
+// budget (tier 2 at most 5 times a second, also with a rope on the only building that qualifies), a held target on a wall and the
+// import with no three. Then two first-time bots play the real physics with only the swing input and W:
 // the gates are in openspec/changes/swing-controls/design.md. Exit code 1 on failure.
 import { readFile } from "node:fs/promises";
 import { generate } from "../../public/vr/js/city.js";
@@ -587,6 +588,32 @@ section("The ray budget, and a city that answers no ray");
   for (let f = 0; f < 120; f++) pk2.update({ ...c, time: f / 60 });
   check(pk2.info().picks <= 41, "at most 20 fan searches a second (" + pk2.info().picks + " in 2 s of frames)");
   check(count < 120 + 41 * 70, "and 2 s of frames cost " + count + " rays (about 1 for each frame, and the searches)");
+  // Tier 2 at most 5 times a second. The start roof never reaches it (tier 1 finds a target there), so use a city that answers no ray:
+  // each search then falls through to tier 2, which casts 700 rays. 2 s of frames hold 9 due searches at 0.2 s (a rate of 0.15 s gives 11, and 0.05 s gives 33).
+  const pkw = createTarget(none);
+  let wide = 0, wideRays = 0;
+  for (let f = 0; f < 120; f++) { count = 0; pkw.update({ ...c, time: f / 60 }); if (count > 600) { wide++; wideRays += count; } }
+  check(wide >= 8 && wide <= 10, "tier 2 runs at most 5 times a second: " + wide + " searches of more than 600 rays in 2 s of frames (" + wideRays + " rays; at most 10 are allowed)", wide);
+  // The same with a rope on the one building that qualifies (it lies off to the side of the view, so only tier 2 sees it). The relaxed
+  // pass that finds it must keep to the same clock (before the fix it ran on every fan search: 33 searches of more than 300 rays in 2 s),
+  // and the result must stay `same` on every frame, so a second rope may still take that building.
+  let loneN = 0, loneWorst = 0, loneSame = 0;
+  for (const st of sampleStates(3000, 5)) {
+    if (loneN >= 12) break;
+    const cl = ctxAt({ ...st, vel: { x: 0, y: 0, z: 0 } }), a0 = createTarget(city).pick(cl);
+    if (!a0 || a0.tier !== 2) continue;
+    const lone = { ...city, raycast: (ox, oy, oz, dx, dy, dz, max, out) => { count++; const h = city.raycast(ox, oy, oz, dx, dy, dz, max, out); return h && bidOf(h.collider) === a0.bid ? h : null; } };
+    const pl = createTarget(lone);
+    let big = 0, same = 0;
+    for (let f = 0; f < 120; f++) {
+      count = 0;
+      const r = pl.update({ ...cl, avoidBid: a0.bid, time: f / 60 });
+      if (count > 300) big++;
+      if (r && r.same && r.bid === a0.bid) same++;
+    }
+    loneN++; loneWorst = Math.max(loneWorst, big); loneSame += same;
+  }
+  check(loneN >= 10 && loneWorst <= 10 && loneSame === loneN * 120, "a rope on the only building that qualifies: tier 2 still keeps to 5 times a second (at most " + loneWorst + " searches of more than 300 rays in 2 s, of " + loneN + " views) and the result stays `same` on every frame (" + loneSame + " of " + loneN * 120 + ")", { loneN, loneWorst, loneSame });
   const pk3 = createTarget(none), a = pk3.update(c);
   check(a === null && pk3.tap(c, { x: 0, y: 0, z: 0, dx: 0, dy: 1, dz: 0 }, null) === null, "a city whose raycast returns null gives no target");
   const pk4 = createTarget(city), x1 = pk4.update(ctxAt(start({ time: 0 }))), x2 = pk4.update(ctxAt(start({ time: 0.5 })));
@@ -612,6 +639,19 @@ section("A wall gives a way out");
   const away = ctxAt({ x, y, z, yaw: -Math.PI / 2, wall: { nx: 1, nz: 0 }, onGround: false }), ra = createTarget(city).update(away);
   const az = ra ? Math.abs(wrap(Math.atan2(-(ra.x - away.head.x), -(ra.z - away.head.z)) - away.yaw)) / DEG : 999;
   check(ra && az <= TARGET.fan.az.high + 1, "with the view turned away from the wall the target lies within the fan of the new view bearing (" + az.toFixed(1) + " degrees)");
+  // The hold rule on a wall. The fan is cast about the way out of the wall, while the view points into it, so the held point must be
+  // scored against the bearing of the fan and not against the view. A hero who climbs 20 m up and down for 30 s (20 searches a second)
+  // keeps his target: before the fix the held point scored near zero on the angle and any fan point replaced it after 0.2 s (84 to 88
+  // replacements by the rule in this run, against 2 to 4 now).
+  for (const aw of [TARGET.fan.az.low, TARGET.fan.az.med, TARGET.fan.az.high]) {
+    const pkw = createTarget(city), y0 = B.maxY / 2;
+    for (let f = 0; f < 600; f++) {
+      const t = f / 20, ph = (t * CLIMB.speed) % 40, up = ph < 20, cw = ctxAt({ x, y: y0 + (up ? ph : 40 - ph), z, yaw: Math.PI / 2, wall: { nx: 1, nz: 0 }, onGround: false, vel: { x: 0, y: up ? CLIMB.speed : -CLIMB.speed, z: 0 }, time: t, aimWidth: aw });
+      pkw.update(cw);
+    }
+    const sw = pkw.info().switches;
+    check(sw.better <= 10 && (sw.ratioMin === Infinity || sw.ratioMin > 1 + TARGET.hold.margin), "climbing a wall with the view into it, a held target is replaced by the 20 percent rule at most 10 times in 30 s, and only by a point that scores more than 20 percent higher against the bearing of the fan (aim width " + aw + ": " + sw.better + " times, lowest ratio " + (sw.ratioMin === Infinity ? "none" : sw.ratioMin.toFixed(3)) + ")", sw);
+  }
 }
 
 /* ---------------- the first-time bots ---------------- */

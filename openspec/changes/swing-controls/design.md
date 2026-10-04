@@ -131,7 +131,7 @@ The left mouse button, when a rope is out: the button that holds a rope is down,
 | Keys with Ctrl, Meta or Alt | Count as the plain key | Do nothing | Ctrl+F, Ctrl+R and Cmd+W must not yank, steer or close |
 | Rope trigger setting | Honoured in flat play, but only a headset menu shows it | Honoured in flat play on a computer and a pad. The flat Comfort menu shows "Rope trigger" for a mouse and a pad, and not for a phone | A player who cannot hold a button needs it. E, Q and the triggers follow it. The phone auto releases and ignores it, so its Comfort page has neither this row nor "Release cue" |
 | Resume click | The click that resumes from a pause also fires a rope | That click starts no swing. A click that asks for the pointer lock starts no swing | A stray rope, and with a kick a stray jump, is a bug |
-| Closing the map | Nothing closes it from the keyboard, and the pointer stays unlocked | Tab and Esc close it. Tab asks for the lock again | Mouse look needs the lock |
+| Closing the map | Nothing closes it from the keyboard, and the pointer stays unlocked | Tab and Esc close it. Both ask for the lock again (the browser may refuse it after Esc, and that is no failed click) | Mouse look needs the lock |
 | Page keys in a pause | Tab, Space and the arrows are swallowed whenever flat play is on | They keep their page meaning while paused or while a dialog has focus | A key player must reach the menu buttons |
 | Pad RB | Reel | Yank | A yank is a quick press that a player repeats. A bumper is reachable with both thumbs on the sticks |
 | Pad LB | Reel | Reel | Kept. RB moved to the yank |
@@ -270,12 +270,13 @@ The gold ring counts only while tutorial step 0 runs. Its target point is the fi
 
 ### Hysteresis
 
-The picker keeps the held target. Each search first re-casts a ray from the head to the held point. The target stays valid when the same collider is hit within 2 m of the old distance and the reach rules still hold. A challenger replaces a valid held target only when its score is more than 20 percent higher (`SWING.targetSwitchMargin`) and the held target is at least 0.2 s old. An invalid held target is replaced at once. A special replaces a building at once. The fan search runs at most every 50 ms. The held target costs one ray every frame.
+The picker keeps the held target. Each search first re-casts a ray from the head to the held point. The target stays valid when the same collider is hit within 2 m of the old distance and the reach rules still hold. A challenger replaces a valid held target only when its score is more than 20 percent higher (`SWING.targetSwitchMargin`) and the held target is at least 0.2 s old. Both are scored against the bearing the fan was cast around (`S.bearing`, set by tier 1). On a wall that is the way out of the wall while the view points into it, so scoring the held point against the view would give it no angle credit and let any fan point replace it after 0.2 s. An invalid held target is replaced at once. A special replaces a building at once. The fan search runs at most every 50 ms. The held target costs one ray every frame.
 
 ### Hand choice and the second rope
 
 - The hand follows the side of the target. The side is the angle from the view axis to the target, seen from above. A target more than 6 degrees to the left picks the left hand. More than 6 degrees to the right picks the right hand. Otherwise the hand that did not fire last fires.
 - With both ropes idle, the right mouse button, Q and LT fire the right hand at the same target.
+- When both swing inputs go down in the same frame, `aimAndFire` asks the picker again after the first rope fires (`pick` with `avoidBid` of that building), because `avoidBid` is filled once a frame and both ropes were still idle then. The second rope gets another building, or `same` when only that one qualifies.
 - If a rope is attached, the picker sets `avoidBid` to its building. The result is the next target. It is also the target of the second rope. When no other building qualifies, a computer or pad second rope may take the same building. A phone has one rope: the result carries `same: true`, and `main.js` keeps the rope and calls `mobile.miss(true)`. A tap never re-fires a rope at its own anchor.
 - On a phone the hand is always the right hand (index 1), because `phoneRelease` and `phoneBoost` read rope 1.
 - In the opening the hand follows the old mapping and `chooseHand` is not set.
@@ -347,7 +348,7 @@ When the projected centre of the target lies inside the window, the ring sits on
 - The swing case: the body is in the air, rising, and moving away from the point under the anchor, and the angle from straight down is 25 to 60 degrees (`TARGET.cue`).
 - The drag case: the body is on a roof or a street and has been dragged along it for 0.5 s with the rope attached. The drag time starts again from 0 whenever the body is off the ground, and the drag case holds only on the ground. A body that walks off the roof edge with the rope on gets no cue on its first frame in the air.
 
-While the window is open, `m.go` is true. The ring pulses and a caption reads LET GO. With no ring, the caption sits at the top of the safe window. The flat Comfort menu has "Release cue: On / Off" (`settings.cue`, default on). The phone does not show the cue, because it lets go by itself.
+While the window is open, `m.go` is true. The ring pulses and a caption reads LET GO. With no ring, the caption sits at the top of the safe window. The caption is centred on the ring by its own half width (`place` writes the whole transform, so the box has no CSS shift), and that half width also limits the middle of the box, so the box stays 8 px inside the screen at both edges. The flat Comfort menu has "Release cue: On / Off" (`settings.cue`, default on). The phone does not show the cue, because it lets go by itself.
 
 ### No target
 
@@ -374,7 +375,7 @@ The lift never lowers the pitch by itself and it does not reset the follow timer
 ### Budget
 
 - Tier 1: at most 66 rays a search, at most 20 searches a second.
-- Tier 2: at most 700 rays a search (28 directions, each up to 25 rays), at most 5 searches a second without a press. About 0.9 ms in Node per search.
+- Tier 2: at most 700 rays a search (28 directions, each up to 25 rays), at most 5 searches a second without a press. About 0.9 ms in Node per search. With a rope out, the relaxed pass (step 5 of `run()`, which may return the building that holds the rope as `same`) runs only in a search where the strict pass ran, on the same clock (`S.tWide`), and between those runs the last tier 2 `same` answer stands. A due search can still cast both passes (up to 1,400 rays).
 - Tier 3: one ray. The held target: one ray each frame.
 - `ropes.targets()` copies its list. The picker calls it once per search, not once per frame. No other allocation in `update`. The result and the context are reused objects.
 - `target.test.mjs` counts the calls to `city.raycast`.
@@ -385,7 +386,7 @@ Two assists run only for a rope that a real swing input fired. A rope fired by `
 
 - `desktop.js` marks the frame of a real press with `hands[i].swingDown`. `main.js` then sets a latch for that rope in `shoot`. The latch lasts until the rope detaches or goes idle. The kick reads the latch, not `swingDown`, because the kick runs at the attach event, a few frames later. A held press that waits up to 0.3 s for a target sets the latch when it fires.
 - **Latch of the cup.** While the latched rope is flying, `main.js` keeps `holding` true for physics. Without it, `ropeInput` would cancel a cup when a short click ends. After the cup lands, the rope follows the button.
-- **Kick:** on attach, `phoneBoost` is generalised. It adds speed across the rope toward the view until the speed along that direction is `DESKTOP.attachSpeed` (start value 10 m/s). It does nothing when the anchor is straight ahead, when the other rope is attached, or on a special or sticky target. A swing off a wall gets the kick, because `fire` has already left the wall. The pure function `kick` in `target.js` holds the maths. The phone keeps `PHONE.attachSpeed` (17 m/s).
+- **Kick:** on attach, `phoneBoost` is generalised. It adds speed across the rope toward the view until the speed along that direction is `DESKTOP.attachSpeed` (start value 10 m/s). It does nothing when the anchor is straight ahead, when the other rope is attached, or on a special or sticky target. A swing off a wall gets the kick, because `fire` has already left the wall. The view is still turning toward the swing when the cup lands (the turn takes 0.4 s, the cup 0.13 to 0.3 s), so the kick of such a swing goes along the half-turned view: mostly along the wall, not toward the target. A review found this (open, see "Open after the third review" in `tasks.md`): aiming the kick at the anchor makes the first-time bots worse, so the code keeps the half-turned view for now. The pure function `kick` in `target.js` holds the maths. The phone keeps `PHONE.attachSpeed` (17 m/s).
 - **Hop:** from the ground, if `DESKTOP.hop` is above 0, `shoot` adds `jumpDown` and that many m/s toward the target. The start value is 0. A clog, a pipe or the crack never gets a hop.
 - Both assists push a ring event (`hop` and `kick`, as the phone pushes `fling`), so a test can see them.
 
@@ -408,7 +409,7 @@ Measured by `flat.mjs` on this build, in game time from the press: with W and th
 - `inp.mapDown` from Tab. M stays `inp.muteDown` (#182). `main.js` closes an open map on the next press with `ui.closePause()`.
 - `inp.kind` is "mouse", "pad" or "touch". It follows the device in use, as today.
 
-**The lock and the resume click.** A mouse button that is already down when the lock starts, or the click that resumes a pause, starts no swing. `D.lock()` marks the click that asked for the lock, and the `mousedown` that follows is dropped. The next press works. A browser may refuse a lock request after Esc until the next click, so the first click after Esc re-locks and fires nothing. Tab, M and a key that closes a pause call `D.lock()` in the same tick. The key press is the user activation. A pad press may not count as one. Then the next click re-locks.
+**The lock and the resume click.** A mouse button that is already down when the lock starts, or the click that resumes a pause, starts no swing. `D.lock()` marks the click that asked for the lock, and the `mousedown` that follows is dropped. The next press works. A browser may refuse a lock request after Esc until the next click, so the first click after Esc re-locks and fires nothing. Tab, when it closes the map, and every resume (Esc, the pad's Start, the Resume button) call `D.lock()` in the same tick (`onResume` asks, with no click). M does not: it is the mute key. The key press is the user activation, except after Esc, and a pad press may not count as one. Then the next click re-locks. Only a refusal of a request that a click made counts toward the two clicks that are lost (`lockFails`), because the refusals of the no-click resumes would otherwise use up the count and let the next click fire a rope. `desktop.js` keeps one entry for each unanswered request (`asks`) and counts an error only when the oldest entry came from a click. A browser with no pointer lock API sends no grant and no error, so a click that asks for the lock there is swallowed only when it resumes a pause (the game is still "paused" at that pointerdown). Any other click swings. Keys: E and Q set their press edge only in the mouse scheme, so a key pressed in the touch scheme leaves no press for a later switch to the mouse.
 
 **The wheel.** An event with `ctrlKey` or `metaKey` does nothing. A stream of events reels at most 0.3 s in any 0.5 s (`DESKTOP.wheel`).
 
@@ -603,12 +604,17 @@ Agent A owns the auto target and the desktop and pad input. Agent B owns the pho
 | Auto target | Hand by side, second rope, `same` on a phone | `flat.mjs`, `target.test.mjs` (`hand`, `avoidBid`, `same`) |
 | Auto target | Exact aim first in first person; tier 3 in third person | `flat.mjs` |
 | Auto target | A phone tap: the special on the tapped ray, the exact point, the marked target, the bias, a vertical ray | `target.test.mjs` (`tap`), `mobile.e2e.mjs` (tap off centre, tap on the hero), `phone-controls.e2e.mjs` (tap on a clog on a lower roof) |
-| Auto target | The picker decides: a pick of none with a real roof in view does not fire | `flat.mjs` (stubbed picker result of none, real city) |
+| Auto target | The picker decides: a pick of none with a real roof in view does not fire | `flat.mjs` (the real city and the real `picker.update`, only `picker.result` stubbed to none, and a check before the press that `ropes.aim` still sees the roof) |
 | Auto target | A test aim override still wins | `hero.mjs`, `boot.mjs`, `play.mjs` (unchanged) |
 | Auto target | The opening keeps its aim | `flat.mjs` (real left button and fake pad RT at the crack, then F and RB pump it) |
 | Auto target | Marker on every device, safe window, arrow, `behind`, pop, cue | `flat.mjs` (ring and reticle on the target), `phone-controls.e2e.mjs` (ring, arrow, dim, safe window) |
-| Auto target | No target | `flat.mjs` (replaced `city.raycast`), `mobile.e2e.mjs` (miss stays on the roof) |
-| Auto target | On a wall | `flat.mjs` (cling, swing, marker visible, view faces the swing), `climb.e2e.mjs` (phone tap off a wall) |
+| Auto target | No target | `flat.mjs` (replaced `city.raycast`: no ray at all), `mobile.e2e.mjs` (miss stays on the roof) |
+| Auto target | On a wall | `flat.mjs` (cling, swing, marker visible, view faces the swing), `climb.e2e.mjs` (phone tap off a wall), `target.test.mjs` (a hero who climbs 20 m up and down keeps his target: at most 10 replacements in 30 s) |
+| Auto target | Tier 2 rate, also with a rope on the only building that qualifies | `target.test.mjs` (a city that answers no ray: at most 10 tier 2 searches in 2 s of frames; a lone building held by a rope: at most 10 searches over 300 rays and `same` on every frame) |
+| Desktop | Both swing inputs in one frame fire at two buildings | `flat.mjs` (E and Q down together) |
+| Desktop | Refused Esc resumes are no clicks; no pointer lock API | `flat.mjs` (swing part: Esc three times with a refusing lock, then a click; lock part: a page with no `requestPointerLock`) |
+| Desktop | The LET GO caption lies inside the screen and sits on the ring or arrow | `flat.mjs` (every marker place from NDC x -1.2 to 1.2, three sizes) |
+| Desktop | A key pressed in the touch scheme leaves no press behind | `flat.mjs` (title part: E and Q, then `mobile.use(false)`) |
 | Auto target | Superset of the old assist, with its cone | `target.test.mjs` (a reference copy of `assistAim` and the cone, 5,000 states, views that differ from the velocity heading) |
 | Auto target | Budget, no `three` import | `target.test.mjs` (ray count, import in Node) |
 | Desktop | Swing input, release lets go, E and Q | `flat.mjs` |
