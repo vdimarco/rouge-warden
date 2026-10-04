@@ -483,8 +483,9 @@ check("no two named events share a pattern (but the strengths of bump and splash
     assert.deepEqual(words(), ["impact:LIGHT", "impact:MEDIUM", "impact:LIGHT", "impact:MEDIUM", "impact:MEDIUM", "impact:HEAVY", "impact:LIGHT"]);
   });
 
-  check("the iPhone app: the new patterns: a soft strike, it turned, a big one, the shutter", () => {
-    nfresh(); H.thump(0.3); wait(300); assert.deepEqual(steps(), [[0, "MEDIUM"], [70, "HEAVY"]]);
+  check("the iPhone app: the new patterns: a soft strike (still two heavy impacts), it turned, a big one, the shutter", () => {
+    nfresh(); H.thump(0.3); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [70, "HEAVY"]]);
+    nfresh(); H.thump(0); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [70, "HEAVY"]]);
     nfresh(); H.thump(1); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [70, "HEAVY"]]);
     nfresh(); H.turn(); wait(300); assert.deepEqual(steps(), [[0, "LIGHT"], [80, "MEDIUM"], [160, "MEDIUM"]]);
     nfresh(); H.big(); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [90, "LIGHT"]]);
@@ -492,6 +493,17 @@ check("no two named events share a pattern (but the strengths of bump and splash
     // the hook set spans longer than the strike, with more impacts
     nfresh(); H.thump(1); wait(300); const strike = steps(); nfresh(); H.hookset(); wait(300); const set = steps();
     assert.ok(set.length > strike.length && set.at(-1)[0] > strike.at(-1)[0], "the hook set is not longer than the strike on the iPhone");
+  });
+
+  check("the iPhone app: a quick hook set cuts the strike, and the strike's second impact does not come in the middle of it", () => {
+    nfresh(); H.thump(1); T += 20; assert.equal(H.hookset(), true); wait(300);
+    assert.deepEqual(steps(), [[0, "HEAVY"], [20, "HEAVY"], [60, "MEDIUM"], [130, "HEAVY"]]);
+    // the snap cuts the strike the same way: nothing heavy comes in its silence
+    nfresh(); H.thump(1); T += 20; assert.equal(H.jolt(), true); wait(300);
+    assert.deepEqual(words(), ["impact:HEAVY", "notification:ERROR"]);
+    // a pattern that has played out leaves nothing to drop: the next one plays in full, and so did it
+    nfresh(); H.land(2); wait(1000); H.thump(1); wait(300);
+    assert.deepEqual(words(), ["notification:SUCCESS", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY"]);
   });
 
   check("the iPhone app: the same gates as the web buzz (priority, the snap silence)", () => {
