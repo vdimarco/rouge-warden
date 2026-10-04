@@ -53,6 +53,21 @@ if (pbx !== null) {
 }
 const story = read("ios/App/App/Base.lproj/Main.storyboard");
 if (story !== null) need(/customClass="MainViewController"/.test(story), "Main.storyboard: the root view controller must be MainViewController");
+const mvc = read("ios/App/App/MainViewController.swift");
+if (mvc !== null) {
+  need(/preferredScreenEdgesDeferringSystemGestures[\s\S]*?\.bottom/.test(mvc), "MainViewController.swift: it must defer the system gesture at the bottom edge");
+  need(/override var prefersStatusBarHidden[\s\S]*?return true/.test(mvc), "MainViewController.swift: it must hide the status bar (prefersStatusBarHidden)");
+}
+
+// --- Both ---
+let config = null;
+try { config = JSON.parse(read("capacitor.config.json") || "null"); } catch (e) { problems.push(`capacitor.config.json: not valid JSON (${e.message})`); }
+if (config) {
+  // With "hidden": true, Capacitor's SystemBars auto-hides the iOS home indicator, and iOS can then ignore the
+  // bottom-edge deferral that keeps a crank stroke from leaving the app. MainActivity and MainViewController hide the bars.
+  need(config.plugins?.SystemBars?.hidden !== true, 'capacitor.config.json: SystemBars "hidden" must not be true (it auto-hides the iOS home indicator and cancels the bottom-edge deferral)');
+  need(config.android?.webContentsDebuggingEnabled !== false, "capacitor.config.json: do not set android.webContentsDebuggingEnabled to false (it turns off chrome://inspect in debug builds; release builds are off already)");
+}
 
 // --- Android ---
 const manifest = read("android/app/src/main/AndroidManifest.xml");

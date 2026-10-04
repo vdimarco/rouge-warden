@@ -74,7 +74,9 @@ npm run android:debug
 # the same steps: npm run build:www && npx cap sync android && (cd android && ./gradlew assembleDebug)
 ```
 
-The APK is `android/app/build/outputs/apk/debug/app-debug.apk`. Install it on a phone with USB debugging on: `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`. In a debug build, `chrome://inspect` on a computer shows the web view. A release build turns this off.
+The APK is `android/app/build/outputs/apk/debug/app-debug.apk`. Install it on a phone with USB debugging on: `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`. In a debug build, `chrome://inspect` on a computer shows the web view (Capacitor turns web view inspection on for debuggable builds only). A release build turns this off.
+
+To use the game's debug overlay in the app, open the web view in the inspector and type `location.replace("./?debug")` in its console. The page loads again with the overlay. On iOS, a debug build from Xcode works the same way in Safari > Develop > the iPhone.
 
 Check the manifest of the APK:
 
@@ -137,7 +139,7 @@ xcodebuild -exportArchive -archivePath build/ReelItIn.xcarchive -exportPath buil
 
 (`ExportOptions.plist` with `method` = `app-store-connect` and your team ID. It is not in git.)
 
-What the iOS project already sets: iPhone only (`TARGETED_DEVICE_FAMILY = 1`) from iOS 16.4 (the first version with import maps), in the project and in the Swift package; portrait only; the status bar hidden; `UIRequiresFullScreen`; `ITSAppUsesNonExemptEncryption = NO`; no `NSMotionUsageDescription`; `PrivacyInfo.xcprivacy` in the App target; no Mac or Vision Pro builds; and `MainViewController`, which defers the system gesture at the bottom edge so a crank stroke does not leave the app. Capacitor's SystemBars plugin (`"hidden": true`) hides the home indicator.
+What the iOS project already sets: iPhone only (`TARGETED_DEVICE_FAMILY = 1`) from iOS 16.4 (the first version with import maps), in the project and in the Swift package; portrait only; the status bar hidden; `UIRequiresFullScreen`; `ITSAppUsesNonExemptEncryption = NO`; no `NSMotionUsageDescription`; `PrivacyInfo.xcprivacy` in the App target; no Mac or Vision Pro builds; and `MainViewController`, which hides the status bar and defers the system gesture at the bottom edge so a crank stroke does not leave the app. The home indicator stays on (dimmed by the deferral). It does not auto-hide, because developers report that iOS ignores the deferred edge when the home indicator auto-hides. For this reason SystemBars has `"hidden": false`.
 
 ## Icons and splash
 
@@ -163,9 +165,9 @@ Then run `npx cap sync` and build both apps again.
 ## How the app is set up, and why
 
 - **Splash.** The splash shows until the game calls `SplashScreen.hide()` when the title is ready. `launchAutoHide` is true with `launchShowDuration` 6000 ms, so the splash also goes away after 6 s if the game never calls it, and the player sees the loading screen or the error card. (With `launchAutoHide` false, Capacitor ignores `launchShowDuration` and would keep the splash up forever.)
-- **System bars.** Capacitor 8's built-in SystemBars plugin hides the status bar and the navigation bar at launch and puts `--safe-area-inset-*` CSS variables on the page for Android web views older than version 140. On Android, `MainActivity` hides the bars again whenever the app gets focus, so a swipe from an edge shows them only for a moment. `@capacitor/status-bar` is not installed: SystemBars does the same job, and the two would fight over the bars.
+- **System bars.** Capacitor 8's built-in SystemBars plugin puts `--safe-area-inset-*` CSS variables on the page for Android web views older than version 140. Its `"hidden"` setting is `false`: on iOS, `"hidden": true` would also auto-hide the home indicator and cancel the bottom-edge deferral (see the iOS section). The native code hides the bars instead. On Android, `MainActivity` hides the status bar and the navigation bar at launch, after SystemBars starts, and again whenever the app gets focus, so a swipe from an edge shows them only for a moment. On iOS, `MainViewController` hides the status bar and leaves the home indicator on. The game must not call `SystemBars.hide()` on iOS. `@capacitor/status-bar` is not installed: SystemBars does the same job, and the two would fight over the bars.
 - **Back gesture.** `MainActivity` keeps the Android back gesture out of the bottom 200 dp of both side edges, where the crank sits. Android allows 200 dp of exclusion on each side edge. It cannot exclude the home gesture at the bottom edge.
-- **Text zoom.** The Android web view ignores the system font size (`setTextZoom(100)`), so the fixed game layout does not break. The game's own Text size setting does this job.
+- **Text zoom.** The Android web view follows the system font size, up to 130% (`MAX_TEXT_SCALE` in `MainActivity`). Above that, the text stops at 130%, so the fixed game layout does not break. Look at this limit again when the game's own Text size setting ships.
 - **Old web views.** `minWebViewVersion` is 105 (the game uses import maps and container query units). On an older Android web view, the app shows `webview-update.html`, which tells the player to update Android System WebView.
 - **No mixed content, no remote code.** The app loads only its own files from `https://localhost` (Android) and `capacitor://localhost` (iOS). These origins are secure contexts, which the motion sensors need.
 - **Save.** `android:allowBackup` stays on, so the save copy in Preferences comes back on a new Android phone.
@@ -188,15 +190,17 @@ Then run `npx cap sync` and build both apps again.
 None of these can run on this Linux machine. Do them on a real iPhone (TestFlight) and a mid-range Android phone (debug APK or an internal test track) before the first release.
 
 - [ ] **Offline first start.** Airplane mode on, install, open. The title shows with no network. The splash hides when the title is ready.
-- [ ] **Motion timing.** 20 casts with `?debug` style logging on each phone (the cast numbers in the debug overlay). The release timing feels right, and the mean timing error is within about 15 ms of the web build on the same phone.
+- [ ] **Motion timing.** 20 casts with the debug overlay on, on each phone (a debug build, then `location.replace("./?debug")` in the web inspector, see "Debug APK"). Read the cast numbers in the overlay. The release timing feels right, and the mean timing error is within about 15 ms of the web build on the same phone.
 - [ ] **Haptics feel.** iPhone: taps for nibbles, a strong hit on the strike and the hook set, a buzz for the drag and a pattern for the catch. Android: the same patterns through vibration. Turn "Buzz and taps" off: nothing buzzes.
 - [ ] **Back button on every screen (Android).** Help, Settings, the Journal and the Places close. In a cast, a reel or a fight the game pauses, and a second back resumes. On the catch card and the results the main button runs. On the title the app goes to the background. While a place loads nothing happens.
-- [ ] **Edge gestures while cranking.** 50 fast crank turns near the bottom corners, in touch play and in motion play with each reel side. No Android back, no Android home, no iOS home (a first swipe up only shows the home indicator).
+- [ ] **Edge gestures while cranking.** 50 fast crank turns near the bottom corners, in touch play and in motion play with each reel side. No Android back, no Android home, no iOS home (a first swipe up only lights the home indicator). If a single swipe leaves the app on iPhone, the bottom-edge deferral does not work: check that the home indicator does not auto-hide (`SystemBars` `"hidden"` is `false`, and the game calls no `SystemBars.hide()` on iOS).
 - [ ] **Audio interruption by a call.** Take a call in a fight. The game pauses. After the call, the sound comes back after Resume.
 - [ ] **Audio interruption by Control Center (iOS) and the notification shade (Android).** Pull it down in a fight. The game pauses, and nothing snaps the line while it is open.
 - [ ] **Keep awake.** Wait 5 minutes for a bite with no touch. The screen stays on. On the title and the pause screen the screen can sleep again.
 - [ ] **Safe areas on a notch or punch-hole phone.** The pause button, the clock and the HUD clear the camera cutout. The crank and the bottom buttons clear the home indicator and the gesture bar. Check an iPhone with a Dynamic Island and an Android phone with a punch-hole camera, and an older Android phone with a web view before version 140.
 - [ ] **Portrait lock.** Turn the phone and a tablet or an unfolded foldable. The game stays in portrait.
+- [ ] **iPad.** The app is for iPhone, but an iPad runs it in iPhone compatibility mode, and App Review can test it there. Install it from TestFlight on an iPad, play one cast and one fight, and open Settings.
+- [ ] **Large system font (Android).** Set the largest font size in the phone's display settings. The menus, the HUD and the cards show all their text, and nothing covers a button. (The web view follows the font size up to 130%.)
 - [ ] **Save.** Land a fish, close the app from the app switcher, open it again: the fish is in the journal. On Android, clear the app's web storage only (not the app data) if you can: the save comes back from Preferences.
 - [ ] **Secure context.** In the debug overlay or the web inspector, `window.isSecureContext` is true and the motion sensors report data.
 - [ ] **Performance.** 3 minutes at each place on a 2020-class Android phone and an iPhone 11. The frame rate holds, and the render scale stays at 0.85 or more.

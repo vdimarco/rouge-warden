@@ -23,6 +23,13 @@ public class MainActivity extends BridgeActivity {
     /** Android honours at most 200 dp of gesture exclusion on each side edge. The crank is at most 160 CSS px tall. */
     private static final int CORNER_DP = 200;
 
+    /**
+     * The largest system font scale that the web view follows. Up to 1.3 (the largest setting before Android 14) the
+     * page text grows with the system font size. Above it, the text stops at 130%, so the fixed game layout does not
+     * break. Look at this value again when the game's own Text size setting ships.
+     */
+    private static final float MAX_TEXT_SCALE = 1.3f;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,8 +46,12 @@ public class MainActivity extends BridgeActivity {
         Bridge bridge = getBridge();
         WebView webView = bridge != null ? bridge.getWebView() : null;
         if (webView == null) return;
-        // The game has its own text size setting. The system font scale must not break its fixed layout.
-        webView.getSettings().setTextZoom(100);
+        // SystemBars ("hidden": false, so that iOS keeps its bottom-edge deferral) shows the bars from a task that
+        // it queued while the plugins loaded. This task runs after it and hides them again.
+        bridge.executeOnMainThread(this::hideSystemBars);
+        // The web view follows the system font size by default. Keep that, up to MAX_TEXT_SCALE.
+        float fontScale = getResources().getConfiguration().fontScale;
+        if (fontScale > MAX_TEXT_SCALE) webView.getSettings().setTextZoom(Math.round(MAX_TEXT_SCALE * 100));
         webView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> excludeCrankCorners(v));
     }
 
