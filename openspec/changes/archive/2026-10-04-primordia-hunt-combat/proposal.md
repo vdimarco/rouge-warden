@@ -1,10 +1,12 @@
 # Primordia: The Hunt (combat overhaul)
 
-The user found Primordia "a bit boring" and asked to reference the mechanics of games with fun combat and apply them. They also asked for Primordia on the arcade cabinets; it already has one, so its screen now runs a live Lenia dish. After trying the new build, the user said they did not understand the game and asked for a motion graphics intro, so the change adds How to play scenes on the real dish.
+## Why
+
+The user found Primordia "a bit boring" and asked to reference the mechanics of games with fun combat and apply them. They also asked for Primordia on the arcade cabinets; it already has one, so its screen now runs a live Lenia dish. Later the user said they did not understand the game and asked for a motion graphics intro, so the change adds How to play scenes on the real dish. They still called it boring, so a fun pass makes the first epochs busier and removes fake attacks (see design.md).
 
 A design workflow diagnosed the problem with bot runs. Hunters moved at 8-9 cells/s against the player's 31 and only stung on contact. About 70% of them dissolved on their own. The player had no attack outside Frenzy, and a bot that never fought scored as well as one that did.
 
-## Change
+## What Changes
 
 Hunters become opponents that stay until killed, wind up, show their lane, glint and lunge faster than the player can swim. One DASH button now cuts, dodges and parries. The mouth finishes staggered hunters. Frenzy becomes Burst, charged only by fighting.
 

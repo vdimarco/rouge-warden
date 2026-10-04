@@ -41,6 +41,14 @@ Hunters SHALL stalk the player, then attack with a telegraphed lunge that is fas
 - **WHEN** a hunter is 6 to 26 cells from the player and holds an attack token
 - **THEN** it stops and heats up, a lane outline shows the area its body will sweep, the lane locks halfway through the windup, the hunter glints white for the last 0.2 seconds, and then it lunges about 18 cells along the lane
 
+#### Scenario: Blocked path
+- **WHEN** another body lies in the path a hunter would lunge along
+- **THEN** the hunter does not wind up; it circles around the player faster for about a second and attacks once its path is clear, and while a lane is locked, swarm bodies in or beside it swim out of it
+
+#### Scenario: Attackers at once
+- **WHEN** several hunters are in range
+- **THEN** at most one winds up at a time in epoch I, two in epochs II and III, and three from epoch IV, and from epoch III a lane locks where the player will be a quarter second later
+
 #### Scenario: Lunge hit
 - **WHEN** a lunge reaches the player outside dash i-frames
 - **THEN** the player loses 18 light (at most 30 per second from lunges), is shoved along the lane, and the combo multiplier halves
@@ -159,11 +167,15 @@ A director SHALL send scripted waves of distinct hunter roles each epoch, with r
 
 #### Scenario: Waves
 - **WHEN** an epoch starts
-- **THEN** three waves arrive (about 2, 15 and 28 seconds in, or 5 seconds after the previous wave is cleared), a WAVE label shows, and clearing a wave fills a wave dot, pays 500 x epoch points and starts a 5-second relax beat with extra prey
+- **THEN** three waves arrive (about 2, 12-15 and 24-28 seconds in, or 5 seconds after the previous wave is cleared; waves held back by a living Leviathan keep 8 seconds apart), a WAVE label shows, and clearing a wave fills a wave dot, pays 500 x epoch points and starts a 5-second relax beat with extra prey
 
 #### Scenario: Roster
 - **WHEN** waves arrive across epochs I to VI
-- **THEN** they mix lancers (Paraptera, Pentapteryx), heavy lancers (Hexapteryx), Discutium swarms that rush the player, and Circium eggs that hatch a Discutium after 8 seconds unless a dash or Burst pops them
+- **THEN** they mix lancers (Paraptera, Pentapteryx), heavy lancers (Hexapteryx), Discutium swarms that rush in to sting and then peel away for 1.6 seconds, and Circium eggs that hatch a Discutium after 8 seconds unless a dash or Burst pops them
+
+#### Scenario: Busy from the start
+- **WHEN** epoch I starts
+- **THEN** a lancer and a swarm arrive at once, the second wave brings three bodies about 12 seconds in, and the third arrives about 24 seconds in
 
 #### Scenario: Caps
 - **WHEN** a wave would exceed 4 gliders, 4 swarm bodies, 4 eggs or 8 bodies (3, 3, 3 and 6 on touch or portrait)

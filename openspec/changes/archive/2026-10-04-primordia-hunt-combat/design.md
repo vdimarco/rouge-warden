@@ -70,6 +70,24 @@ The reference bot (`qa/primordia/bot.mjs 160 <seed> ref`, 0.15 s reactions) afte
 
 The bot reads every lane and dodges with spare dash charges, so lunges never land. The two damage targets stay missed on purpose: after this build the user said the game was hard to understand, so the tuning keeps its current difficulty and the intro teaches the moves instead. A human-tested pass can raise pressure later through `TUNE` (lunge speed, windup steps, dash i-frames).
 
+## Fun pass
+
+After the review fixes the user still called the game boring (most likely about the build on main, which predates this change). The acceptance table showed why a run feels flat:
+
+- Epoch I was mostly empty: 54-85% of it with no hunter within 25 cells. It sent one Paraptera, then nothing for 13 seconds.
+- Many attacks were fake. 20-60% of all windups were cancelled at lane lock, because a swarm near the player sat in the lancer's path. Anti-merge separation also kept swarms hovering 10-20 cells off the player, so they rarely stung.
+- With one attack token in epochs I-II and 3 s cooldowns, the dash sat at full charges 60-68% of the time.
+
+Changes:
+- **No fake windups.** Before a windup, a hunter checks the lane it would lock. When a body blocks it, the hunter circles around (orbit x3 for 1 s) and attacks once the path is clear. The lock-time check stays as a backstop.
+- **Hit and run swarms.** A Discutium rushes for up to 3 s (or until it touches you), then peels away for 1.6 s. Its chase rose from 0.20 to 0.30 cells/step and its speed limit to 0.40, so it can beat its own glide. While another hunter's lane is locked, a swarm in or beside it swims sideways out of it: in the first acceptance run after the pace change, a swarm rushed into a lunge, the two fused and a red tide started.
+- **Pace.** Epoch I waves: PD at 2 s, PDD at 12 s, PEE at 24 s. Epoch II: PPD (pincer), DDDEE, QPD. Tokens per epoch: 1, 2, 2, 3, 3, 3. Cooldown 50 steps (min 32). Lancer chase 0.13 (+0.012 per epoch, max 0.22). Lanes lead the player from epoch III.
+- **Rule leaks closed.** A Glory Bite cannot land on the last frame of the staggering dash. A Leviathan torn under 35% of its mass collapses at once instead of bleeding out; a husk that dies in its collapse, or a boss that falls apart under recent cuts, counts as devoured.
+
+Result in the acceptance table (3 seeds, landscape and portrait, after these changes): the emptiest full epoch has 45-51% idle time (was up to 85%), the reference bot's lowest light is 38-68% (was 54-76%), 0 red tides, 0 Glory Bites in a staggering dash, and the Leviathan dies by Glory Bite (one boss per run in two runs fell apart in phase 2 under cuts and counts as devoured). Small misses remain: one cap overrun episode on 3 of 6 seeds, one blind bot that lived into epoch IV, Burst uptime 10-17% (target 12%), and 2-4 Stasis per minute (target 3-8).
+
+Tried and dropped: swarms at 0.45 cells/step with a smaller separation room (more swarms died on their own: 3-14% of named deaths) and a later lane lock with shorter i-frames (the reference bot reads every lane exactly, so it still took no lunge hits; the change would only punish people). The bot dodges every telegraph with 0.15 s reactions, so its damage share stays far under the 30-50% target; human play is the real check.
+
 ## How to play intro
 
 `intro.js` holds eight scenes and no DOM code: title, eat, dodge, cut, bite, parry, Burst, and an end card. Each scene builds a small situation on a seeded 256x128 `Game` (stamped prey and hunters, director and prey spawner off, the player kept at full light) and then steers the player with the same input object a person makes. So every lane, cut, Glory Bite, parry and Burst in the intro is the game's own rule at work. Two small helps keep the lesson readable: the dodge and parry windups run at half speed, and a cut that tears less than 20% still shows the gold state. The reel is held while the caption changes.

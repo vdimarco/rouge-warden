@@ -20,5 +20,7 @@
 - [x] Keep moves to each body's own tissue and keep a real tissue gap between bodies.
 - [x] How to play intro: scene script with a Node check, captions and callouts, first-PLAY and replay flow, phone layouts.
 - [x] Browser smoke with the intro on desktop, phone portrait and phone landscape.
+- [x] Fun pass: busier early waves, more attackers, path checks and flanking, hit and run swarms; close the last-frame bite and boss bleed leaks.
+- [x] Re-run the acceptance table and the browser smoke after the fun pass.
+- [x] Validate and archive the specification.
 - [x] Measure balance with the bot against the acceptance targets; record the two misses and why the difficulty stays.
-- [ ] Validate and archive the specification.

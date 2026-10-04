@@ -19,16 +19,16 @@ export const TUNE = {
   speed: 31, dashSpeed: 92, dashTime: 0.24, dashIframes: 0.32, charges: 2, chargeTime: 1.4,
   cutR: 4, cutRate: 0.5, cutSpacing: 1.5, cutCap: 0.22, kick: 5, kickBoss: 3,
   assist: { cone: 20, range: 26, bend: 12 },
-  chase: { base: 0.10, perEpoch: 0.014, max: 0.20 }, swarmChase: 0.20, broodChase: 0.15, stalkClamp: 0.30, orbit: 0.06,
-  sepK: 0.30, sepRoom: 1.0, sepGap: 16, sepHard: 0.5,
+  chase: { base: 0.13, perEpoch: 0.012, max: 0.22 }, swarmChase: 0.30, swarm: { rush: 3.0, retreat: 1.6 }, broodChase: 0.15, stalkClamp: 0.30, swarmClamp: 0.40, orbit: 0.06,
+  sepK: 0.30, sepRoom: 1.0, swarmRoom: 1.0, flank: { time: 1.0, orbit: 3 }, sepGap: 16, sepHard: 0.5,
   trigger: { min: 6, max: 26 }, windupFloor: 0.45, glint: 0.20, lockAt: 0.5,
   crouch: { steps: 4, v: 0.2 }, holdGlide: 0.35,
-  recoverSteps: 22, cooldown: { base: 70, perEpoch: 3, min: 45 },
-  tokens: [0, 1, 1, 2, 2, 2, 3], leadFromEpoch: 5, lead: 0.25,
+  recoverSteps: 22, cooldown: { base: 50, perEpoch: 3, min: 32 },
+  tokens: [0, 1, 2, 2, 3, 3, 3], leadFromEpoch: 3, lead: 0.25,
   lungeHit: 18, lungeIframes: 0.6, lungeShove: 50, lungeCapPerSec: 30, contactSting: 28,
   spawnGrace: 1.2, epochGrace: 3,
   stagger: 0.20, gloryReel: 0.25, tearHold: 1.2, tearDecay: 0.15, exposed: 1.5, staggerSteps: 36, staggerFloor: 1.2,
-  killCredit: 6, bleedSteps: 3, rupture: 1.3, ruptureWindow: 3, localCap: 1.35, trim: { r: 6, rate: 0.03 },
+  killCredit: 6, bleedSteps: 3, bossFloor: 0.35, rupture: 1.3, ruptureWindow: 3, localCap: 1.35, trim: { r: 6, rate: 0.03 },
   stasisScale: 0.3, stasisLadder: [1.5, 1.1, 0.8], stasisChain: 6, stasisHunger: 0.3,
   burst: { r: 20, rate: 0.45, catch: 20, push: 40, kick: 6, kickSmall: 4, time: 4, perKill: 0.75, max: 8, score: 300, bossBite: 0.5 },
   meter: { cut: 0.4, parry: 0.15, glory: 0.15, graze: 0.04, pop: 0.03, golden: 0.5 },
@@ -83,8 +83,8 @@ export const MUTATIONS = [
 
 // Scripted waves for epochs I-VI. P Paraptera, Q Pentapteryx, H Hexapteryx, D Discutium, E egg, L Leviathan.
 export const WAVES = {
-  1: [{ at: 2, units: "P" }, { at: 15, units: "DD" }, { at: 28, units: "PEE" }],
-  2: [{ at: 2, units: "PP", pincer: true }, { at: 15, units: "DDDEE" }, { at: 28, units: "QP" }],
+  1: [{ at: 2, units: "PD" }, { at: 12, units: "PDD" }, { at: 24, units: "PEE" }],
+  2: [{ at: 2, units: "PPD", pincer: true }, { at: 14, units: "DDDEE" }, { at: 26, units: "QPD" }],
   3: [{ at: 2, units: "PDD" }, { at: 12, units: "L" }, { at: 28, units: "Q", afterBoss: true }],
   4: [{ at: 2, units: "QDD" }, { at: 15, units: "HEEE" }, { at: 28, units: "PPDD" }],
   5: [{ at: 2, units: "HPEE" }, { at: 15, units: "DDDD" }, { at: 28, units: "QHDD" }],
@@ -356,6 +356,7 @@ export class Game {
 
   endDash() {
     const P = this.player;
+    P.dashEndAt = this.time;
     for (const [id, c] of P.cutLog) {
       const e = this.hunters.find((x) => x.id === id);
       if (c.frac >= 0.08) this.addCombo(1);
@@ -620,7 +621,8 @@ export class Game {
     const P = this.player;
     if (!this.canGlory(e)) return false;
     if (e.staggerDash !== P.dashId) return true;
-    return P.dashT <= 0 && this.time - e.stateAt >= TUNE.gloryReel;
+    // not even on the dash's last frame
+    return P.dashT <= 0 && this.time > (P.dashEndAt ?? -1) && this.time - e.stateAt >= TUNE.gloryReel;
   }
 
   tryGlory(mx, my, maw) {
@@ -834,6 +836,8 @@ export class Game {
         if (this.isNamed(e) && !e.parent && !e.egg && !list.some((o) => o.parent === e.id)) { this.stats.selfDeaths++; this.emit("selfDeath", { id: e.id, x: e.x, y: e.y }); }
       } else if (kind === "hunter" && e.egg && now - e.bitAt < 0.5) this.creditEgg(e, "burst");
       else if (now - e.bitAt < 0.5 && !e.boss) this.devour(e, kind, { how: "burst" });
+      // a Leviathan that falls apart under your attacks is your kill in full
+      else if (e.boss && now - (e.cutAt ?? -99) < TUNE.killCredit) { this.devour(e, kind, { how: "glory" }); this.addCharge(); }
       else if (kind === "hunter" && this.isNamed(e) && now - (e.cutAt ?? -99) < TUNE.killCredit) this.devour(e, kind, { how: "bleed" });
       else {
         if (kind === "hunter" && this.isNamed(e) && !e.egg) { this.stats.selfDeaths++; this.emit("selfDeath", { id: e.id, x: e.x, y: e.y }); }
@@ -899,6 +903,12 @@ export class Game {
       // a cut can split a body for a step or two; only a body that stays small has bled out
       e.lowSteps = e.mass < e.peak * 0.5 ? (e.lowSteps || 0) + 1 : 0;
       if (e.boss) {
+        // a Leviathan torn down to a husk does not bleed out: it collapses at once, and a husk that
+        // is already collapsing counts as devoured
+        if (e.mass < base * TUNE.bossFloor && sinceCut < TUNE.killCredit) {
+          if (e.state === "collapse") { this.glory(e); continue; }
+          if (e.state !== "stagger" || now - e.stateAt > 0.5) { e.phase = Math.max(e.phase || 1, 3); this.bossGate(e); }
+        }
         // the Leviathan is never wiped by these rules; a swollen boss is trimmed at its densest cell
         if (e.mass > base * TUNE.localCap && e.maxI !== undefined) W.drain(W.B, e.maxI % this.w, (e.maxI / this.w) | 0, TUNE.trim.r, e.mass > base * 1.8 ? 0.2 : TUNE.trim.rate);
         continue;
@@ -968,7 +978,8 @@ export class Game {
         for (const o of list) {
           if (o === e) continue;
           const dx = wdelta(e.x - o.x, this.w), dy = wdelta(e.y - o.y, this.h), d = Math.hypot(dx, dy) || 1;
-          const room = (this.reachOf(e) + this.reachOf(o)) * TUNE.sepRoom;
+          const swarmPair = this.motionOf(e) === "roll" || this.motionOf(o) === "roll";
+          const room = (this.reachOf(e) + this.reachOf(o)) * TUNE.sepRoom * (swarmPair ? TUNE.swarmRoom : 1);
           if (d >= room) continue;
           // count the creature's own glide too: Lenia gliders drift 0.3 cells/step by themselves
           const nx = dx / d, ny = dy / d, closing = (v.x + (e.glideX || 0)) * nx + (v.y + (e.glideY || 0)) * ny;
@@ -1091,11 +1102,27 @@ export class Game {
         }
         const role = sp ? sp.role : "brood";
         const c = role === "swarm" ? TUNE.swarmChase : role === "brood" ? TUNE.broodChase : e.boss ? this.chase() * 0.7 : this.chase();
-        if (e.nd < 10 && role !== "swarm" && role !== "brood") { v.x -= u.x * 0.05; v.y -= u.y * 0.05; }
+        const way = role === "swarm" ? this.laneToLeave(e) : null;
+        if (way) {
+          // a lancer has locked its lane through here: swim out of it sideways
+          v.x += way.x * TUNE.swarmClamp; v.y += way.y * TUNE.swarmClamp;
+        } else if (role === "swarm") {
+          // hit and run: rush in to sting, then peel away, so lancers get clear lanes between passes
+          const now = this.time;
+          if (e.rushAt === undefined) e.rushAt = now;
+          if (now < (e.retreatUntil ?? -1)) { v.x -= u.x * c; v.y -= u.y * c; }
+          else {
+            v.x += u.x * c; v.y += u.y * c;
+            if (e.nd < 2 || now - e.rushAt > TUNE.swarm.rush) { e.retreatUntil = now + TUNE.swarm.retreat; e.rushAt = e.retreatUntil; }
+          }
+        } else if (e.nd < 10 && role !== "brood") { v.x -= u.x * 0.05; v.y -= u.y * 0.05; }
         else { v.x += u.x * c; v.y += u.y * c; }
-        if (role !== "swarm") { const side = e.id % 2 ? 1 : -1; v.x += -u.y * TUNE.orbit * side; v.y += u.x * TUNE.orbit * side; }
-        const l = Math.hypot(v.x, v.y);
-        if (l > TUNE.stalkClamp) { v.x *= TUNE.stalkClamp / l; v.y *= TUNE.stalkClamp / l; }
+        if (role !== "swarm") {
+          const side = e.id % 2 ? 1 : -1, orbit = TUNE.orbit * (this.time < (e.flankUntil ?? -1) ? TUNE.flank.orbit : 1);
+          v.x += -u.y * orbit * side; v.y += u.x * orbit * side;
+        }
+        const l = Math.hypot(v.x, v.y), clamp = role === "swarm" ? TUNE.swarmClamp : TUNE.stalkClamp;
+        if (l > clamp) { v.x *= clamp / l; v.y *= clamp / l; }
         if (this.canLunge(e)) this.beginWindup(e);
         break;
       }
@@ -1162,6 +1189,8 @@ export class Game {
     if (this.mode !== "play" || !P.alive || !sp || !sp.lunge || e.state !== "stalk" || e.cool > 0) return false;
     if (this.time - e.born < TUNE.spawnGrace || this.epochTime < TUNE.epochGrace) return false;
     if (!(e.nd >= TUNE.trigger.min && e.nd <= TUNE.trigger.max)) return false;
+    // no windup into a blocked path: circle round to a clear angle instead of faking an attack
+    if (!this.pathClear(e)) { e.flankUntil = this.time + TUNE.flank.time; return false; }
     if (e.boss) return true;
     const used = this.hunters.filter((o) => o.token && !o.boss).length;
     if (used >= this.tokensMax()) return false;
@@ -1203,9 +1232,31 @@ export class Game {
     this.emit("lock", { id: e.id, lane: e.lane });
   }
 
+  // A swarm body in or beside another hunter's locked lane: the sideways way out, else null.
+  laneToLeave(e) {
+    for (const o of this.hunters) {
+      const L = o.lane;
+      if (o === e || !L || !(o.state === "windup" || o.state === "lunge" || o.state === "reaim")) continue;
+      const dx = wdelta(e.x - L.x0, this.w), dy = wdelta(e.y - L.y0, this.h);
+      const a = dx * L.ux + dy * L.uy, b = -dx * L.uy + dy * L.ux, r = this.reachOf(e);
+      if (a < L.back - r || a > L.front + L.L + r) continue;
+      if (Math.abs(b) > Math.max(Math.abs(L.left), Math.abs(L.right)) + r + 6) continue;
+      const side = Math.sign(b) || 1;
+      return { x: -L.uy * side, y: L.ux * side };
+    }
+    return null;
+  }
+
+  // the lane a hunter would lock now, sized from its reach, to check before it winds up
+  pathClear(e) {
+    const P = this.player, lv = this.lungeOf(e), r = this.reachOf(e) - 7;
+    const dx = wdelta(P.x - e.x, this.w), dy = wdelta(P.y - e.y, this.h), d = Math.hypot(dx, dy) || 1;
+    return this.laneClear(e, { ux: dx / d, uy: dy / d, L: lv.v * lv.steps * 0.92, front: r * 0.5, left: -r * 0.7, right: r * 0.7 });
+  }
+
   // a lunge must not run into another body, or the two would merge into a red tide
-  laneClear(e) {
-    const L = e.lane, half = Math.max(Math.abs(L.left), Math.abs(L.right));
+  laneClear(e, L = e.lane) {
+    const half = Math.max(Math.abs(L.left), Math.abs(L.right));
     for (const o of this.hunters) {
       if (o === e) continue;
       const dx = wdelta(o.x - e.x, this.w), dy = wdelta(o.y - e.y, this.h);
