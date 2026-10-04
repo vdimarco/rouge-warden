@@ -1,5 +1,6 @@
 // Small motion lessons, driven by the existing game clock. Each scene can be
 // scrubbed with seek(t), including during frame-by-frame video export.
+import { isCalm } from "./calm.js";
 const KEY = "reel-it-in-guide-v1";
 export const INTRO = ["hold", "back", "cast", "reel", "hook", "pump", "land"];
 export const LENGTH = 2.6;
@@ -147,7 +148,10 @@ export function activeLesson({ phase, step, fishPhase, cue, motion, pullAvailabl
   return fishPhase === "fight" ? "pump" : "reel";
 }
 
-export function createGuide(game, button) {
+// The guide shows on the cast and the reel. A new player sees it until the first fish is landed (caught() gives the fish
+// landed), unless they turned it off; after that it stays off unless they turned it on. A tap on the button is the
+// player's choice, kept in storage ("shown" or "hidden")
+export function createGuide(game, button, { caught = () => 0 } = {}) {
   const panel = document.createElement("aside");
   panel.id = "fishGuide";
   panel.hidden = true;
@@ -162,24 +166,30 @@ export function createGuide(game, button) {
   video.className = "guide-video";
   art.before(video);
   const count = panel.querySelector(".guide-count"), kicker = panel.querySelector(".guide-kicker");
-  let dismissed = true;
-  try { dismissed = localStorage.getItem(KEY) !== "shown"; } catch (_) { /* storage may be disabled */ }
+  let choice = null;
+  try { choice = localStorage.getItem(KEY); } catch (_) { /* storage may be disabled */ }
+  if (choice !== "shown" && choice !== "hidden") choice = null;
+  const off = () => (choice ? choice === "hidden" : caught() > 0);
+  let dismissed = off();
   let state = null, key = "", started = 0, lastDraw = -Infinity, layoutKey = "", nextLayout = 0, kindNow = "hold", parts = [];
   let videoMode = "", videoFailed = false, playPending = false;
   video.addEventListener("error", () => { videoFailed = true; });
   let lastPhase = "", lastStep = "", now = 0;
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   let buttonState = "";
   const title = () => {
     const next = `${dismissed}:${panel.hidden}`;
     if (next === buttonState) return;
     buttonState = next;
+    // the button says what a tap does (the panel may be away a moment, on a screen with no room for it)
+    const label = dismissed ? "Show the moves guide" : "Hide the moves guide";
     button.setAttribute("aria-expanded", String(!panel.hidden));
-    button.setAttribute("aria-label", dismissed ? "Show animated guide" : panel.hidden ? "Guide hidden while screen is busy" : "Hide animated guide");
+    button.setAttribute("aria-label", label);
+    button.title = label;
   };
   button.addEventListener("click", () => {
-    dismissed = !dismissed;
-    try { localStorage.setItem(KEY, dismissed ? "hidden" : "shown"); } catch (_) { /* storage may be disabled */ }
+    choice = dismissed ? "shown" : "hidden";
+    dismissed = off();
+    try { localStorage.setItem(KEY, choice); } catch (_) { /* storage may be disabled */ }
     started = now; key = ""; layoutKey = "";
     if (dismissed) { panel.hidden = true; video.pause(); }
     else if (video.readyState >= 1) video.currentTime = 0;
@@ -202,10 +212,13 @@ export function createGuide(game, button) {
     panel.hidden = false;
     const view = game.querySelector("#view"), W = game.clientWidth, H = game.clientHeight;
     const blocks = ["hud", "prompt", "report", "toast", "gaugeBox", "dragBar", "padBox", "crankBox", "reelBox", "pullStrength"]
-      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on"))).map(rect);
+      // (a toast counts while it fades out too, so the panel never slides under it)
+      .map(id => game.querySelector("#" + id)).filter(el => el && el.getClientRects().length && (el.id !== "toast" || el.classList.contains("on") || +getComputedStyle(el).opacity > 0.05)).map(rect);
     // Stay in the lake and on the left. A short landscape screen can use the
     // space immediately beside the gauge; the controls keep their hit areas.
-    const xs = [10 + (parseFloat(getComputedStyle(game).getPropertyValue("--sal")) || 0)];
+    // the left edge: the HUD's own inset, which is 10 px past the safe area
+    const hud = game.querySelector("#hud");
+    const xs = [hud && parseFloat(getComputedStyle(hud).paddingLeft) || 10];
     if (W > H * 1.15 && state.phase === "reel") xs.push(Math.min(W * .38, game.querySelector("#gaugeBox").offsetWidth + 24));
     let found = null;
     for (const compact of [false, true, "tiny"]) {
@@ -227,12 +240,14 @@ export function createGuide(game, button) {
   }
 
   function seek(t) {
-    const pose = poseAt(kindNow, reduced.matches ? 1.3 : t);
+    const pose = poseAt(kindNow, isCalm() ? 1.3 : t);
     for (const [el, cls] of parts) for (const [name, value] of Object.entries(pose[cls])) el.setAttribute(name, value);
   }
   function update(s, t) {
     state = s; now = t;
-    const visible = !s.paused && !document.body.dataset.screen && !document.hidden && ["cast", "reel"].includes(s.phase);
+    // the first fish landed turns off a guide the player never chose
+    dismissed = off();
+    const visible =!s.paused && !document.body.dataset.screen && !document.hidden && ["cast", "reel"].includes(s.phase);
     if (!visible || dismissed) { if (!panel.hidden) panel.hidden = true; video.pause(); title(); return; }
     if (s.phase !== lastPhase || s.step !== lastStep) { started = t; lastPhase = s.phase; lastStep = s.step; }
     const intro = s.phase === "cast" && (s.step === "ready" || s.step === "open");
@@ -241,7 +256,9 @@ export function createGuide(game, button) {
       videoMode = mode; videoFailed = false;
       video.src = new URL(`../clips/guide-${mode}.mp4`, import.meta.url).href;
     }
-    const useVideo = intro && !reduced.matches && !videoFailed;
+    // calm effects (the setting, or the phone's reduced motion): a still pose, with no clip and no cycling steps
+    const calm = isCalm();
+    const useVideo = intro && !calm && !videoFailed;
     video.hidden = !useVideo || video.readyState < 2; art.hidden = useVideo && video.readyState >= 2;
     if (useVideo && video.paused && !playPending) {
       playPending = true;
@@ -249,7 +266,7 @@ export function createGuide(game, button) {
     }
     if (!useVideo) video.pause();
     const elapsed = useVideo && video.readyState >= 2 ? video.currentTime : Math.max(0, t - started);
-    const index = intro ? reduced.matches ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
+    const index = intro ? calm ? 0 : Math.floor(elapsed / LENGTH) % INTRO.length : INTRO.indexOf(activeLesson(s));
     const kind = intro ? INTRO[index] : activeLesson(s);
     const nextKey = kind + ":" + s.motion + ":" + s.touch + ":" + intro + ":" + s.cue.text + ":" + (s.cue.pace || "");
     if (nextKey !== key) {

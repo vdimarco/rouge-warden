@@ -31,7 +31,8 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
     check(/To open: land a fish of 3\.5 kg or more at Loon Lake\./.test(cards[1].text) && /Your best there: none yet\./.test(cards[1].text), "the next locked card shows the goal and your best (" + cards[1].text + ")");
     check(/Open Stump Bay first\./.test(cards[2].text) && /Open Cedar River first\./.test(cards[3].text), "the later locked cards say which place to open first");
     check(cards[1].buttons.length === 0 && cards[2].buttons.length === 0 && cards[3].buttons.length === 0, "locked cards have no button");
-    check(/Line: 10 lb line/.test(cards[0].text) && /Top fish: Muskellunge/.test(cards[0].text) && /0 of 13 found/.test(cards[0].text) && /Legend: not seen/.test(cards[0].text) && cards[0].buttons.join() === "You are here (off)", "the open card shows the line, the top fish, the count, the legend and 'You are here' (" + cards[0].text + ")");
+    // (Watch: lib.mjs starts the page with every cutscene seen, the opening at Loon Lake too)
+    check(/Line: 10 lb line/.test(cards[0].text) && /Top fish: Muskellunge/.test(cards[0].text) && /0 of 13 found/.test(cards[0].text) && /Legend: not seen/.test(cards[0].text) && cards[0].buttons.join() === "You are here (off),Watch", "the open card shows the line, the top fish, the count, the legend, 'You are here' and Watch (" + cards[0].text + ")");
     check(/Easy/.test(cards[0].text) && /Medium/.test(cards[1].text) && /Hard/.test(cards[2].text) && /Very hard/.test(cards[3].text), "the four levels: Easy, Medium, Hard, Very hard");
     check((await page.textContent("#pfoot")) === "Legends landed: 0 of 4", "the footer counts the legends");
     const fit = await page.evaluate(() => { const c = document.querySelector("#places .card").getBoundingClientRect(); return { top: c.top, bottom: c.bottom, h: innerHeight }; });
@@ -112,7 +113,7 @@ const skip = (msg) => { skipped.push(msg); console.log("SKIP " + msg); };
     const t = await go("stumps");
     check(t.secs >= 1.15 && t.arrival, `Places -> Stump Bay: the travel card (up ${t.secs.toFixed(2)} s; the code keeps it 1.2 s) gives way to the arrival card`);
     const ar = await page.evaluate(() => ({ kick: document.querySelector("#akick").textContent, name: document.querySelector("#aname").textContent, blurb: document.querySelector("#ablurb").textContent, gear: document.querySelector("#agear").textContent, tip: document.querySelector("#atip").textContent, tipHidden: document.querySelector("#atip").hidden, go: document.querySelector("#aStart").textContent }));
-    check(ar.name === "Stump Bay" && /^Dead trees stand in the water/.test(ar.blurb) && ar.gear === "New gear: a heavy rod and 20 lb braid." && ar.tip === "Fish run for the stumps. Steer them out." && ar.go === "Start", "the arrival card: name, blurb, new gear, tip, Start (" + JSON.stringify(ar) + ")");
+    check(ar.kick === "NEW PLACE · MEDIUM" && ar.name === "Stump Bay" && /^Dead trees stand in the water/.test(ar.blurb) && ar.gear === "New gear: a heavy rod and 20 lb braid." && ar.tip === "Fish run for the stumps. Steer them out." && ar.go === "Start", "the arrival card: what kind of place, name, blurb, new gear, tip, Start (" + JSON.stringify(ar) + ")");
     const st = await start();
     check(st.phase === "cast" && st.mode === "free" && st.place === "stumps" && st.hud, "Start goes to the water: free fishing at Stump Bay (" + JSON.stringify(st) + ")");
     check((await kicker()) === "GET PLUNGER'D · STUMP BAY", "back at the title, the kicker reads STUMP BAY (" + (await kicker()) + ")");

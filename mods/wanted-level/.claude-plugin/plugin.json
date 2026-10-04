@@ -1,0 +1,10 @@
+{
+  "name": "wanted-level",
+  "version": "0.1.0",
+  "description": "Crimson Rogue stars for risky moves: force pushes, rm -rf, hard resets, secrets, the paid Jev endpoint, and project deletes. Stars fade with time; at five stars the next risky call is blocked until they fade or you run /lay-low.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "fadeMinutes": { "type": "number", "title": "Fade minutes", "description": "Minutes with no risky move before one star fades.", "default": 10, "min": 1, "max": 120 }
+  }
+}

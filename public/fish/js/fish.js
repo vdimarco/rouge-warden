@@ -136,8 +136,9 @@ export const BITE = {
   SINK: 0.35,            // m/s the lure sinks when slow
   RISE: 0.5,             // m/s it rises when fast
   NEUTRAL: 0.55,         // m/s: the retrieve speed that holds the lure's depth
-  EMPTY_T: 5,            // s: with no fish coming, the lure skips home after this...
+  EMPTY_T: 3,            // s: with no fish coming, the lure skips home after this...
   EMPTY_MUL: 4,          // ...this many times faster, so a dead cast costs seconds, not half a minute
+  EMPTY_CRANK: 1.5,      // rev/s: a crank faster than this runs that clock faster, up to 3 times at 3.5 rev/s
   HOME_R: 3,             // m: the lure is home this close to the dock
   TROPHY: 1 / 25,        // share of fish above the usual range (at no boost)
   FAR0: 15, FAR1: 45,    // m: casts past FAR0 find bigger fish, fully at FAR1...
@@ -488,9 +489,10 @@ export class LakeSim {
   retrieve(h, I) {
     const S = this.state, L = S.lure, B = BITE, R = this.R;
     if (S.phase === "sink" && I.crank > 0.05) S.phase = "retrieve";
-    // no fish on its way: after a few seconds the retrieve speeds up
+    // no fish on its way (none was chosen, or it turned away): after a few seconds the retrieve speeds up, and sooner for a
+    // player who cranks it home fast. Nothing can bite now, so only the lure's speed changes
     const empty = !this.ap || this.ap.stage === "gone";
-    this.emptyT = empty && S.phase === "retrieve" ? (this.emptyT || 0) + h : 0;
+    this.emptyT = empty && S.phase === "retrieve" ? (this.emptyT || 0) + h * (1 + clamp(I.crank - B.EMPTY_CRANK, 0, 2)) : 0;
     const fast = 1 + (B.EMPTY_MUL - 1) * clamp(this.emptyT - B.EMPTY_T, 0, 1);
     S.empty = fast > 1;
     const c = I.crank * R.LINE_PER_TURN * fast;

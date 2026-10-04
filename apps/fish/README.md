@@ -57,7 +57,7 @@ It warns about "ghibli", and about arcade text in a script: the check cannot tel
 
 The check reads the files. It cannot see a web address that the code builds at run time from parts, or a root path that the code keeps in a variable. The browser check below blocks and counts every request that leaves the app's origin, and it fails on arcade text that the page shows.
 
-While the boot work is not in `public/fish`, the build prints warnings: it borrows three.js from `public/crimson/lib`, and the app has no game fonts and no native bridge. The warnings go away when those files land.
+`public/fish` holds three.js (`lib/`), the game fonts (`fonts/`) and the native bridge (`js/native.js`), so the bundle needs nothing from another folder. If `public/fish/lib` is missing, the build copies three.js from `public/crimson/lib` and prints a warning.
 
 Browser check of the bundle, with the network blocked and a fake Capacitor bridge (from the repository root):
 

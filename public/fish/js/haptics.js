@@ -39,10 +39,15 @@ const TUNE = {
   LAND_TAPS: [2, 3, 5],             // the same on an iPhone: taps 120 ms apart
   SURGE: [30, 40, 30, 40, 60],      // the fish's last run: a rising triple, not the snap
   NATIVE_DRAG_GAP: 50,              // ms: the iPhone app's drag ratchet, at most 20 impacts a second
+  HOOKSET: [70, 30, 100],           // the hook goes in: longer than the hardest strike (at most 150 ms on)
+  TURN: [20, 60, 20, 60, 20],       // it turned: three quick taps (stop reeling)
+  BIG: [60],                        // it is a big one: one firm buzz
+  SHUTTER: [10, 50, 10],            // the photo of a big catch: two light ticks
 };
 
 // A pattern may cut one of the same or a lower priority, never a higher one.
-const PRIO = { tick: 0, tension: 1, throb: 1, drag: 2, rub: 2, bail: 3, bump: 3, splash: 3, load: 3, hookset: 4, thump: 5, land: 5, jolt: 6 };
+// The hook set may cut the strike's buzz: a quick set must be felt in full.
+const PRIO = { tick: 0, tension: 1, throb: 1, drag: 2, rub: 2, bail: 3, bump: 3, splash: 3, load: 3, shutter: 3, turn: 4, big: 4, hookset: 5, thump: 5, land: 5, jolt: 6 };
 
 const HAS_DOM = typeof window !== "undefined" && typeof document !== "undefined";
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -159,6 +164,8 @@ function emit(pattern, prio, cont = false, nat = null) {
   if (cont && t - S.lastCont < TUNE.CONT_GAP) return false;
   // [on, off, on ...]: keep it short (the spec allows 10 entries) and odd, since Chrome drops a trailing pause
   const p = pattern.slice(0, 9).map((v, i) => (i % 2 ? Math.max(1, Math.round(v)) : Math.max(TUNE.MIN_PULSE, Math.round(v))));
+  // a new vibrate() replaces the pattern still playing; in the iPhone app its steps still to come are dropped the same way
+  if (S.kind === "native" && t < S.playingUntil) { for (const id of S.timers) S.clear(id); S.timers = []; }
   if (!play(p, nat)) return false;
   S.calls.push(t);
   if (cont) S.lastCont = t;
@@ -275,8 +282,20 @@ export const Haptics = {
     const w = 6 + 12 * s;
     return emit(s > 0.55 ? [w, 90, w * 0.6] : [w], PRIO.bump, false, [hit(0, s > 0.5 ? "MEDIUM" : "LIGHT")]);
   },
-  thump() { return emit([45, 25, 90], PRIO.thump, false, [hit(0, "HEAVY"), hit(70, "HEAVY")]); },
-  hookset() { return emit([34], PRIO.hookset, false, [hit(0, "HEAVY"), hit(40, "MEDIUM")]); },
+  // the strike, and only the strike: s is how hard it hit (a soft biter 0.3, a slammer 1). Left out: [45, 25, 90].
+  // The web buzz grows with s; the iPhone app always gets its two heavy impacts
+  thump(s = 0.75) {
+    s = clamp(num(s, 0.75), 0, 1);
+    return emit([30 + 20 * s, 25, 60 + 40 * s], PRIO.thump, false, [hit(0, "HEAVY"), hit(70, "HEAVY")]);
+  },
+  // the hook set: the longest buzz of the fight before the catch
+  hookset() { return emit(TUNE.HOOKSET, PRIO.hookset, false, [hit(0, "HEAVY"), hit(40, "MEDIUM"), hit(110, "HEAVY")]); },
+  // it turned: three quick taps
+  turn() { return emit(TUNE.TURN, PRIO.turn, false, [hit(0, "LIGHT"), hit(80, "MEDIUM"), hit(160, "MEDIUM")]); },
+  // it is a big one: one firm buzz
+  big() { return emit(TUNE.BIG, PRIO.big, false, [hit(0, "HEAVY"), hit(90, "LIGHT")]); },
+  // the camera shutter of a big catch: two light ticks
+  shutter() { return emit(TUNE.SHUTTER, PRIO.shutter, false, [hit(0, "LIGHT"), hit(60, "LIGHT")]); },
   jolt() {
     // the snap cuts everything, then a hard silence
     resetTrains();

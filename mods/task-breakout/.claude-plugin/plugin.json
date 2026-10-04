@@ -1,0 +1,7 @@
+{
+  "name": "task-breakout",
+  "version": "0.1.0",
+  "description": "/breakout shows the active OpenSpec change as a brick wall: a brick for each open task, a gap for each done one. Check a box and the ball breaks its brick; check the last and it is STAGE CLEAR.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts"
+}

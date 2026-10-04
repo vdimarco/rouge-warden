@@ -1,0 +1,7 @@
+{
+  "name": "loon-chicks",
+  "version": "0.1.0",
+  "description": "Subagents swim as Loon Echo chicks behind the loon above the prompt. A chick that answers reaches the nest; one that fails or is stopped goes to the eel. /chicks lists them.",
+  "author": { "name": "Cottage Arcade" },
+  "types": "./types/index.d.ts"
+}

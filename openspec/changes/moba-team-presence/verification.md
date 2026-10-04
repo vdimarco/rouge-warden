@@ -20,5 +20,15 @@ In local Chromium the menu played A Legend Will Rise, the draft played Prepare t
 ## Camera and skills
 At 1440x900 the left edge scrolled the view and showed "Back to hero". A minimap click moved the view to the enemy base without opening the tactical map, and Space returned it. The skill arc was checked at all three sizes. The shared `browser` check passes on all six viewports.
 
+## Desktop camera, menu, sound and large screens
+`NODE_PATH=qa/browser/node_modules node qa/tidebreak/desktop.e2e.mjs` passes in local Chromium (software GL, the desktop autoplay rule):
+- The Menu button sits in the top left and reads "Menu Esc".
+- A centred mouse leaves the push near 0; the right edge pushes it to +475 and the left edge to -593 world units; "Back to hero" stays hidden.
+- With the mouse outside the window, the clock keeps running and the push holds.
+- Esc opens the menu and it stays open; Esc closes it; the Menu button and Keep playing do the same.
+- The match measures 0.107 RMS at the output; the speaker button turns sound off and on and saves it.
+- At 3440x1440 the canvas has 3,685,014 backing pixels (pixel ratio 0.86), inside the 2560x1440 budget.
+All 20 `qa/tidebreak/*.test.mjs` suites pass. Screenshots at 1440x900, 390x844 and 844x390 show the Menu and speaker buttons clear of the score and the objective.
+
 ## Not checked
-Speech was checked with a stubbed speech engine, so the real voice and the sound mix have not been heard. The headless browser cannot play audio to a listener. Physical phone touch and performance were not tested. OpenSpec CLI is not installed, so the change was checked by hand against the existing delta format.
+Speech was checked with a stubbed speech engine, so the real voice and the sound mix have not been heard. The headless browser cannot play audio to a listener. Physical phone touch and performance were not tested. The frame rate on a real ultra-wide monitor with a GPU was not measured; the test browser renders in software at about 3 frames per second, so only the pixel budget was checked there. Keyboard lock and the full-screen exit path need a check in a real Chrome, Firefox and Safari window. OpenSpec CLI is not installed, so the change was checked by hand against the existing delta format.

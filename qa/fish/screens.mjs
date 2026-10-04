@@ -59,7 +59,7 @@ const logClear = (page) => page.evaluate(() => { window.__log.length = 0; });
 async function spy(page) {
   await page.evaluate(() => {
     const log = (window.__log = []);
-    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash"], "H"]]) {
+    for (const [obj, names, tag] of [[FISH.Sound, ["sfx", "setGrind"], "S"], [FISH.Haptics, ["bump", "thump", "throb", "rub", "thrash", "charge", "phase", "jolt", "surge", "land", "hookset", "splash", "turn", "big", "shutter"], "H"]]) {
       for (const n of names) { const f = obj[n]; obj[n] = function (...a) { log.push([tag + "." + n, ...a]); return f.apply(this, a); }; }
     }
   });
@@ -256,7 +256,7 @@ if (part("A")) {
       await sleep(300);
       return page.evaluate(() => ({ sub: document.querySelector("#prompt .p2").textContent, guide: document.querySelector("#fishGuide").hidden ? null : document.querySelector("#fishGuide .guide-caption").textContent, cue: document.querySelector("#rodCue span").textContent }));
     };
-    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show animated guide") document.querySelector("#guideToggle").click(); });
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show the moves guide") document.querySelector("#guideToggle").click(); });
     // the phone held at 60°: the rod is up
     await page.evaluate(() => { FISH.Motion.mode = "portrait"; window.__phone.pose(60); });
     let mw = await words({ fish: { move: "sulk" } }, "It holds on the bottom.");
@@ -282,7 +282,7 @@ if (part("A")) {
     check(mw.guide === "Reel fast." && mw.cue === "Reel fast.", `slack line: the guide and the rod cue say "Reel fast." (${JSON.stringify(mw)})`);
     mw = await reelWords({ beaten: true, fish: { stamina: 0.05 } }, "It is tired. Reel steadily.");
     check(mw.guide === "Reel steadily." && mw.cue === "Reel steadily.", `a tired fish: the guide and the rod cue say "Reel steadily." (${JSON.stringify(mw)})`);
-    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show animated guide") document.querySelector("#guideToggle").click(); });
+    await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show the moves guide") document.querySelector("#guideToggle").click(); });
     await page.evaluate(() => { FISH.G.input = "touch"; });
 
     // ---- the gauge follows the state ----
@@ -298,16 +298,16 @@ if (part("A")) {
     console.log("     the feel of each move");
     const FEEL = [
       ["charge", [{ type: "charge" }], (l) => has(l, "S.sfx", "slip") && has(l, "H.charge")],
-      ["turn", [{ type: "turn" }], (l) => has(l, "H.thump")],
+      ["turn", [{ type: "turn" }], (l) => has(l, "H.turn") && !has(l, "H.thump")],
       ["sulk", [{ type: "sulk" }], (l) => has(l, "S.sfx", "creak") && has(l, "H.throb")],
       ["pump", [{ type: "pump", n: 1, need: 2 }], (l) => l.some((x) => x[0] === "H.bump" && x[1] === 0.4)],
       ["unstuck", [{ type: "unstuck" }], (l) => l.some((x) => x[0] === "S.sfx" && x[1] === "splash")],
       ["thrash", [{ type: "thrash" }], (l) => has(l, "H.thrash") && has(l, "S.sfx", "splash")],
       ["spool", [{ type: "spool" }], (l) => has(l, "S.sfx", "slip") && l.some((x) => x[0] === "H.bump" && x[1] === 0.8)],
-      ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "record") && has(l, "H.phase")],
+      ["phase", [{ type: "phase", n: 2, of: 3, name: "It runs for the lily pads!" }], (l) => has(l, "S.sfx", "stage") && !has(l, "S.sfx", "record") && has(l, "H.phase")],
       // its own warning, not the snap buzz (which would also silence the drag)
       ["lastrun", [{ type: "lastrun" }], (l) => has(l, "H.surge") && !has(l, "H.jolt")],
-      ["run", [{ type: "run" }], (l) => has(l, "S.sfx", "tick") && l.some((x) => x[0] === "H.bump" && x[1] === 0.5)],
+      ["run", [{ type: "run" }], (l) => has(l, "S.sfx", "ratchet") && l.some((x) => x[0] === "H.bump" && x[1] === 0.5)],
     ];
     for (const [name, ev, ok] of FEEL) {
       await stage(page, {});
@@ -389,7 +389,7 @@ if (part("A")) {
     check((await toastIs(page, "It is a big one!")) === "It is a big one!", "the first run of the drag says \"It is a big one!\"");
     await wait(page, () => FISH.gauge.s.label === "Big fish on!", null, 5000).catch(() => {});
     check(await page.evaluate(() => FISH.gauge.s.label === "Big fish on!"), "and the gauge says \"Big fish on!\"");
-    check(has(await logNow(page), "H.thump"), "with a thump");
+    check(has(await logNow(page), "H.big") && !has(await logNow(page), "H.thump"), "with its own buzz, not the strike's");
     await stage(page, { fish: { known: true } }, [{ type: "reveal", id: "walleye" }], false);
     check((await toastIs(page, "It is a huge Walleye!")) === "It is a huge Walleye!", "the reveal says \"It is a huge Walleye!\" (" + (await toastNow()) + ")");
     await wait(page, () => FISH.gauge.s.label === "", null, 5000).catch(() => {});
@@ -561,7 +561,7 @@ if (part("A")) {
     await page.evaluate(() => FISH.startMode("derby"));
     await wait(page, () => FISH.G.phase === "cast");
     check(await page.evaluate(() => FISH.G.hour >= 20 && FISH.G.hour < 20.1) && (await toastIs(page, "Goal: land a fish of 6 kg or more. It opens Cedar River.")) === "Goal: land a fish of 6 kg or more. It opens Cedar River.", "a derby at Stump Bay starts at 20:00 with its own goal (" + (await page.textContent("#toast")) + ")");
-    check((await page.textContent("#modeChip")).startsWith("Derby 1/10"), "the HUD chip (" + (await page.textContent("#modeChip")) + ")");
+    check((await page.textContent("#modeChip")).startsWith("1/10 · "), "the HUD chip (" + (await page.textContent("#modeChip")) + ")");
     // the reload keeps the place
     await page.reload();
     await page.waitForSelector("#title:not([hidden])", { timeout: 120000 });
@@ -585,6 +585,8 @@ if (part("B")) {
     check(c.btn === "See the results" && c.photo, "the last catch of a derby: See the results, and the photo for the place it opens (" + c.btn + ")");
     await click(page, "#catchGo");
     await page.waitForSelector("#results:not([hidden])");
+    // the total counts up first, then the rank shows
+    await wait(page, () => !document.querySelector("#rrank").classList.contains("held"), null, 8000);
     const r = await page.evaluate(() => ({ kick: document.querySelector("#rkick").textContent, total: document.querySelector("#rtotal").textContent, rank: document.querySelector("#rrank").textContent, best: document.querySelector("#rbest").textContent, line: document.querySelector("#runlock").textContent, lineHidden: document.querySelector("#runlock").hidden, go: document.querySelector("#rGo").hidden, list: [...document.querySelectorAll("#rlist li")].map((l) => l.textContent) }));
     check(r.kick === "LOON LAKE" && r.total === "3.6 kg" && r.rank === rankFor("loon", 3.6) && r.best === "A new best derby here!" && r.list.join() === "Walleye3.6 kg", "the results: the place, the total, the rank, the new best (" + JSON.stringify(r) + ")");
     check(!r.lineHidden && r.line === "Your 3.6 kg Walleye opened Stump Bay." && !r.go, "the results say which fish opened Stump Bay, with Go there (" + r.line + ")");
@@ -783,6 +785,8 @@ if (part("F")) {
     await page.evaluate(() => FISH.newCast());
     await wait(page, () => FISH.G.phase === "cast");
     await page.evaluate(() => {
+      // only the staged rings: a real gold ring at golden hour, or a real ring's one-time tip, would change the count
+      window.__spawn = FISH.rises.spawn; FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]);
       window.__toasts = [];
       const el = document.querySelector("#toast"), d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent");
       Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__toasts.push(v); d.set.call(this, v); } });
@@ -809,7 +813,7 @@ if (part("F")) {
     await frames(6);
     await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 3, null, 5000).catch(() => {});
     check((await golds()) === 3, "it is said after the fight");
-    await page.evaluate(() => { window.__gold = null; FISH.startMode("free"); });
+    await page.evaluate(() => { window.__gold = null; FISH.rises.spawn = window.__spawn; FISH.startMode("free"); });
     check(await page.evaluate(() => FISH.G.goldAt === null), "a new mode forgets the last ring");
 
     // ---- the flash ----
@@ -836,15 +840,16 @@ if (part("F")) {
     await click(page, "#catchGo");
     await wait(page, () => FISH.G.phase === "cast");
 
-    // ---- the chip: whole kg from 100 kg ----
+    // ---- the chip: the count, then the weight (whole kg from 100 kg) ----
     console.log("     the HUD chip");
     const chip = async (kgs, mode) => {
       await page.evaluate(([kgs, mode]) => { FISH.G.mode = mode; FISH.G.bag = kgs.map((kg) => ({ id: "perch", kg })); FISH.G.casts = 0; FISH.newCast(); }, [kgs, mode]);
       return page.textContent("#modeChip");
     };
-    check((await chip([160], "free")) === "Free · 1 fish · 160 kg", "160 kg shows in whole kg (" + (await page.textContent("#modeChip")) + ")");
-    check((await chip([99.5], "free")) === "Free · 1 fish · 99.5 kg" && (await chip([12.34], "free")) === "Free · 1 fish · 12.3 kg", "under 100 kg it keeps the decimal (" + (await page.textContent("#modeChip")) + ")");
-    check((await chip([112.4, 100.4], "derby")) === "Derby 1/10 · 213 kg", "the derby chip too (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([160], "free")) === "1 fish · 160 kg", "160 kg shows in whole kg (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([99.5], "free")) === "1 fish · 99.5 kg" && (await chip([12.34], "free")) === "1 fish · 12.3 kg", "under 100 kg it keeps the decimal (" + (await page.textContent("#modeChip")) + ")");
+    check((await chip([112.4, 100.4], "derby")) === "1/10 · 213 kg", "the derby chip too (" + (await page.textContent("#modeChip")) + ")");
+    check(await page.evaluate(() => document.querySelector("#modeChip b").textContent === "213 kg"), "the weight is a part of its own, which the chip never cuts");
     await page.evaluate(() => { FISH.G.bag = []; });
 
     // ---- the report on a short cast ----
@@ -979,11 +984,12 @@ if (part("H")) {
     });
     await page.evaluate(() => { delete FISH.save.seen.run; });
     await sleep(2500);   // the toasts before have gone
-    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "run" }, { type: "drag" }]);
+    // ("Fish on!" is the hook set's banner now, not a toast: the big fish's warning comes first, so the run tip waits)
+    await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "drag" }, { type: "run" }]);
     const early = await page.evaluate(() => !!FISH.save.seen.run);
     await sleep(4200);
     const tq = await page.evaluate(() => window.__tq.slice());
-    const want = ["Fish on!", "It is running! Let the drag work.", "It is a big one!"], got = tq.map((x) => x[0]);
+    const want = ["It is a big one!", "It is running! Let the drag work."], got = tq.map((x) => x[0]);
     const gaps = tq.slice(1).map((x, i) => Math.round(x[1] - tq[i][1]));
     check(want.every((w) => got.includes(w)) && gaps.every((g) => g >= 1150), `the hook set, a run and a drag in one frame: each toast is up 1.2 s before the next (${JSON.stringify(got)}, gaps ${gaps.join(", ")} ms)`);
     check(!early && (await page.evaluate(() => !!FISH.save.seen.run)), `the one-time run tip is marked seen when it shows, not before (${early} at once)`);
@@ -1304,7 +1310,7 @@ if (part("K")) {
       await wait(page, () => FISH.G.step === "ready", null, 10000);
       backs.push({ zone: r.zone, left: await page.evaluate(() => FISH.G.castsLeft), chip: await page.textContent("#modeChip") });
     }
-    check(chip0.startsWith("Derby 1/10") && backs.every((b) => b.zone === "You cast onto the shore. You get that cast back." && b.left === 10 && b.chip.startsWith("Derby 1/10")), "four casts onto the shore: each says \"You get that cast back.\", and the chip keeps cast 1 of 10 (" + JSON.stringify(backs) + ")");
+    check(chip0.startsWith("1/10 · ") && backs.every((b) => b.zone === "You cast onto the shore. You get that cast back." && b.left === 10 && b.chip.startsWith("1/10 · ")), "four casts onto the shore: each says \"You get that cast back.\", and the chip keeps cast 1 of 10 (" + JSON.stringify(backs) + ")");
 
     // ---- a derby catch that opens a place: NEW PLACE first, "It opens Stump Bay.", and after the card where to go ----
     console.log("     the unlock on the catch card");
