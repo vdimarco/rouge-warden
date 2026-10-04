@@ -39,6 +39,7 @@
 - `npm run qa` passes 24 checks against the local build: 11 table checks, 10 feel checks and 3 run checks.
 - PR #159 merged milestones 1 and 2 into `main`. The commits for milestones 3 to 5 moved onto the new `main` with no change to the Follow Suit files.
 - The Vercel preview `follow-suit-kgtmr0v9j-vdimarcos-projects.vercel.app` builds commit 614448d from that branch. Vercel Authentication protects it. With a share link in `BASE_URL`, `npm run qa:url` passes 23 checks against it. The build file check runs only on a local build.
+- On 4 October 2026, a production deploy of `main` at 5349084 replaced the milestone 2 build at https://follow-suit.vercel.app. The page serves the same JavaScript and CSS files as a local build of that commit. `npm run qa:url` passes 38 checks against it: 10 table, 10 feel, 15 explainer and 3 run checks. The build file check runs only on a local build.
 - `openspec validate follow-suit-prototype --type change --strict` reports the change as valid. OpenSpec 1.14.0 ran through npx without `openspec init`.
 
 ## Not checked yet

@@ -5,7 +5,7 @@ The brief is the source of truth. Where a rule was unclear, the simplest reading
 ## Project
 
 1. **Repository.** The brief asks for a new folder and a new git repo. This work happens on the branch `claude/follow-suit-prototype-0fyikv` of `vdimarco/rouge-warden`, and a repo inside a repo does not push with its parent. So `follow-suit/` is a folder at the root of that repo, and the branch history is its history. To split it out later, run `git subtree split --prefix follow-suit`.
-2. **Deploys.** The Vercel CLI is not installed in the build container, so the Vercel connector deploys instead. It made the project `follow-suit` in the `vdimarcos-projects` team, with `follow-suit/` as its root directory and no Git link. Each deploy builds a pushed commit of this branch. Vercel made the first deploy the project's production deploy, so `follow-suit.vercel.app` is public, like the arcade's own production domain. Each deployment URL needs a Vercel login. `README.md` gives the steps to deploy with the CLI.
+2. **Deploys.** The Vercel CLI is not installed in the build container, so the Vercel connector deploys instead. It made the project `follow-suit` in the `vdimarcos-projects` team, with `follow-suit/` as its root directory and no Git link. Each deploy builds a pushed commit. Vercel made the first deploy the project's production deploy, so `follow-suit.vercel.app` is public, like the arcade's own production domain. Later deploys are previews unless they target production. Each deployment URL needs a Vercel login. `README.md` gives the steps to deploy with the CLI.
 
 ## Chains
 
