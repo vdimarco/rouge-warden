@@ -100,6 +100,7 @@ These come from the audit's sandbox runs. The sims set the final values.
 - `apps/fish/` holds `package.json` (Capacitor 8.5 and the plugins), `capacitor.config.json`, `scripts/build-www.mjs`, `resources/` (icon and splash sources), the generated `ios/` and `android/` projects, `store/` (listing and data safety), and `README.md`.
 - The web bundle `www/` and the copies inside the native projects are made by the build and are not in git.
 - The privacy policy is `public/fish/privacy.html`, so the web serves it and the app shows it offline.
+- The support email in the policy is an element with `data-placeholder` until the owner fills it in. The bundle check warns about it. With `--release` (or `WWW_RELEASE=1`) the check is strict, and it fails on the placeholder and on a missing `privacy.html`. `npm run android:bundle` and `npm run ios:release` use it.
 
 ## Order of work
 

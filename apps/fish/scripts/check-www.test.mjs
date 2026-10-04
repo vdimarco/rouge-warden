@@ -32,9 +32,9 @@ function bundle(files) {
   return dir;
 }
 
-function expect(name, files, { ok, error, warn, strict = false }) {
+function expect(name, files, { ok, error, warn, strict = false, release = false }) {
   const dir = bundle(files);
-  const res = checkWww(dir, { strict, quiet: true });
+  const res = checkWww(dir, { strict, release, quiet: true });
   const problems = [];
   if (res.ok !== ok) problems.push(`ok was ${res.ok}, wanted ${ok}`);
   if (error && !res.errors.some((e) => error.test(e.msg))) problems.push(`no error matched ${error}`);
@@ -105,6 +105,16 @@ expect("arcade text in a script is an error with --strict", { "js/main.js": T + 
 expect('arcade text on a line marked "web only" is allowed', { "js/main.js": T + `const kick = store ? "" : "GET PLUNGER'D · "; // web only` }, { ok: true, strict: true });
 expect("arcade text in an inline script", { "index.html": `${GOOD_HEAD}<body><script>document.title = "Switch game";</script><script type="module" src="js/main.js"></script></body></html>` }, { ok: true, warn: /a script holds arcade text "Switch game"/ });
 
+// The release mode: a placeholder that the owner must fill in (data-placeholder) stops a store upload.
+const HOLD = `<!doctype html><html lang="en"><body><p>Questions: <span class="placeholder" data-placeholder="support-email">[support email: the owner adds it before release]</span></p><a href="./">Back</a></body></html>`;
+expect("a placeholder in the privacy page is a warning by default", { "privacy.html": HOLD }, { ok: true, warn: /placeholder is still in the page \(data-placeholder="support-email"\)/ });
+expect("a placeholder in the privacy page is still a warning with --strict", { "privacy.html": HOLD }, { ok: true, warn: /placeholder is still in the page/, strict: true });
+expect("a placeholder in the privacy page fails a release", { "privacy.html": HOLD }, { ok: false, error: /placeholder is still in the page \(data-placeholder="support-email"\): "\[support email: the owner adds it before release\]"/, release: true });
+expect("a placeholder in another page fails a release", { "index.html": `${GOOD_HEAD}<body><p data-placeholder="studio">[studio name]</p><script type="module" src="js/main.js"></script></body></html>` }, { ok: false, error: /data-placeholder="studio"/, release: true });
+expect("a placeholder named only in a comment is allowed in a release", { "privacy.html": `<!doctype html><html lang="en"><body><!-- the data-placeholder span went here --><p>Questions: <a href="mailto:help@example.com">help@example.com</a></p></body></html>` }, { ok: true, release: true });
+expect("a release with no privacy page fails", { "privacy.html": null }, { ok: false, error: /no privacy policy page/, release: true });
+expect("a release is strict", { "art/ghibli-sky.webp": "x", "js/main.js": `import * as THREE from "three"; const s = new URL("../art/ghibli-sky.webp", import.meta.url);` }, { ok: false, error: /ghibli/, release: true });
+
 // WWW_STRICT=1 does what --strict does, on the command line of check-www.
 {
   const dir = bundle({ "art/ghibli-sky.webp": "x", "js/main.js": T + `const s = new URL("../art/ghibli-sky.webp", import.meta.url);` });
@@ -115,6 +125,18 @@ expect("arcade text in an inline script", { "index.html": `${GOOD_HEAD}<body><sc
   fs.rmSync(dir, { recursive: true, force: true });
   if (plain.status === 0 && env.status === 1 && flag.status === 1) { passed++; console.log("ok   WWW_STRICT=1 and --strict both fail on ghibli, and the plain check passes"); }
   else { failed++; console.log(`FAIL WWW_STRICT: exit codes plain ${plain.status}, WWW_STRICT=1 ${env.status}, --strict ${flag.status} (wanted 0, 1, 1)`); }
+}
+
+// WWW_RELEASE=1 does what --release does, and --strict alone does not stop on a placeholder.
+{
+  const dir = bundle({ "privacy.html": HOLD });
+  const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), "check-www.mjs");
+  const strict = spawnSync(process.execPath, [cli, "--strict", dir], { encoding: "utf8" });
+  const env = spawnSync(process.execPath, [cli, dir], { encoding: "utf8", env: { ...process.env, WWW_RELEASE: "1" } });
+  const flag = spawnSync(process.execPath, [cli, "--release", dir], { encoding: "utf8" });
+  fs.rmSync(dir, { recursive: true, force: true });
+  if (strict.status === 0 && env.status === 1 && flag.status === 1) { passed++; console.log("ok   WWW_RELEASE=1 and --release both fail on a placeholder, and --strict passes"); }
+  else { failed++; console.log(`FAIL WWW_RELEASE: exit codes --strict ${strict.status}, WWW_RELEASE=1 ${env.status}, --release ${flag.status} (wanted 0, 1, 1)`); }
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);
