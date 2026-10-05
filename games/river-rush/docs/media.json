@@ -9,5 +9,36 @@
     "sourceDurationSeconds": 5.041667,
     "productionEncoding": "1920x1080, 24fps, H.264 CRF21, silent, faststart",
     "direction": "Locked camera; flowing rapids and waterfall, wind in flags, foliage and long hair, gentle raft and body motion. Preserve approved face, modest loincloth and composition; no generated text."
+  },
+  "runner-river.png": {
+    "provider": "Higgsfield",
+    "model": "GPT Image 2.5",
+    "jobId": "0300c341-fa4f-4beb-80ef-d372783f88ca",
+    "date": "2026-10-05",
+    "direction": "Empty cinematic turquoise river and jungle banks, forward perspective; no sprites or UI."
+  },
+  "runner-portrait.png": {
+    "provider": "OpenAI ImageGen",
+    "source": "exec-457e28f3-50d6-4de6-9294-3a0a6c7ef693.png",
+    "date": "2026-10-05",
+    "reference": "New runner concept, environment cleaned for portrait play."
+  },
+  "runner-sprites.png": {
+    "provider": "OpenAI ImageGen",
+    "source": "exec-dddd0df0-0c3d-4c9f-8dae-3856fc047485.png",
+    "date": "2026-10-05",
+    "reference": "Approved menu likeness and new runner concept",
+    "format": "1254x1254 RGBA; custom atlas regions in renderer preserve unequal generated rows",
+    "items": [
+      "ride",
+      "jump",
+      "duck",
+      "boulder",
+      "log",
+      "branch gate",
+      "coin",
+      "magnet",
+      "shield"
+    ]
   }
 }

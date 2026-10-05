@@ -1,42 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, emptyInput, updateGame, releaseReach, COURSE_LENGTH, RUN_SECONDS } from '../src/game/engine.js';
+import {createGame,emptyInput,queueAction,applyAction,updateGame,generateAhead,jumpHeight,speedAt,validBest,JUMP_SECONDS} from '../src/game/engine.js';
+const clean=()=>Object.assign(createGame(1),{entities:[],nextRow:1e9,shield:false});
+const hazard=(type,lane=1)=>({id:999,type,lane,d:1,done:false});
+const advance=(g,seconds,input=emptyInput())=>{for(let t=0;t<seconds;t+=1/60)updateGame(g,input,Math.min(1/60,seconds-t));};
+test('discrete input survives a short tap, clamps lanes and is consumed once',()=>{const g=clean(),i=emptyInput();queueAction(i,'left');updateGame(g,i,.016);assert.equal(g.lane,0);updateGame(g,i,.016);assert.equal(g.lane,0);applyAction(g,'left');assert.equal(g.lane,0);queueAction(i,'right');queueAction(i,'right');updateGame(g,i,.016);assert.equal(g.lane,2);assert.equal(i.actions.length,0);});
+test('jump clears logs and earns trick score and charge; duck clears branches',()=>{for(const [type,action] of [['log','jump'],['branch','duck']]){const g=clean();g.entities=[hazard(type)];applyAction(g,action);g.actionTime=.3;updateGame(g,emptyInput(),.05);assert.equal(g.phase,'playing');assert.ok(g.charge>=12);assert.ok(g.bonus>=100);assert.equal(g[action==='jump'?'jumps':'ducks'],1);}});
+test('wrong actions and boulders end unprotected runs with useful cause',()=>{for(const [type,action] of [['rock','jump'],['branch','jump'],['log','duck']]){const g=clean();g.entities=[hazard(type)];applyAction(g,action);g.actionTime=.3;updateGame(g,emptyInput(),.05);assert.equal(g.phase,'lost');assert.match(g.reason,/Switch lanes|Jump|Duck/);const d=g.distance;updateGame(g,emptyInput(),.05);assert.equal(g.distance,d);}});
+test('shield grants one rescue, breaks streak and supplies grace',()=>{const g=clean();g.shield=true;g.streak=16;g.multiplier=3;g.entities=[hazard('rock'),{...hazard('log'),id:1000,d:1.5}];advance(g,.1);assert.equal(g.phase,'playing');assert.equal(g.shield,false);assert.equal(g.shieldsUsed,1);assert.equal(g.multiplier,1);assert.ok(g.grace>0);advance(g,1.2);g.entities=[{...hazard('rock'),d:g.distance+1}];advance(g,.1);assert.equal(g.phase,'lost');});
+test('opposite action cancels immediately and same-action input buffers near landing',()=>{const g=clean();applyAction(g,'jump');advance(g,.2);assert.ok(jumpHeight(g)>.2);applyAction(g,'duck');assert.equal(g.action,'duck');applyAction(g,'jump');advance(g,JUMP_SECONDS-.1);applyAction(g,'jump');advance(g,.15);assert.equal(g.action,'jump');assert.ok(g.actionTime<.15);});
+test('coins increase multiplier once and expire after a collection gap',()=>{const g=clean();g.entities=Array.from({length:16},(_,i)=>({id:i,type:'coin',lane:1,d:(i+1)*.1,done:false}));advance(g,.12);assert.equal(g.coins,16);assert.equal(g.multiplier,3);assert.equal(g.charge,32);advance(g,3);assert.equal(g.multiplier,1);assert.equal(g.streak,0);});
+test('magnet crosses lanes for eight seconds, high coins require jumping normally',()=>{const g=clean();g.entities=[{id:0,type:'magnet',lane:1,d:.2},{id:1,type:'coin',lane:0,d:.5},{id:2,type:'coin',lane:2,d:1,high:true}];advance(g,.1);assert.equal(g.coins,2);assert.ok(g.magnet>7.8);advance(g,8);g.entities=[{id:3,type:'coin',lane:0,d:g.distance+1},{id:4,type:'coin',lane:1,d:g.distance+1,high:true}];advance(g,.1);assert.equal(g.coins,2);});
+test('Rush spends once, speeds up and clears every hazard before expiring',()=>{const g=clean(),i=emptyInput();g.charge=100;queueAction(i,'rush');queueAction(i,'rush');g.entities=[hazard('rock')];updateGame(g,i,.05);assert.equal(g.charge,0);assert.equal(g.phase,'playing');assert.ok(g.speed>speedAt(g.time));assert.ok(g.rush>3.9);advance(g,4.1);assert.equal(g.rush,0);assert.equal(g.speed,speedAt(g.time));});
+test('seeded generation is deterministic, every row has a legal route and maximum speed stays bounded',()=>{for(let seed=0;seed<100;seed++){const g=createGame(seed);g.time=100;g.distance=4000;generateAhead(g);const rows=new Map();for(const e of g.entities.filter(e=>['rock','log','branch'].includes(e.type))){if(!rows.has(e.row))rows.set(e.row,[]);rows.get(e.row).push(e);}for(const row of rows.values())assert.ok(new Set(row.map(e=>e.lane)).size<=2 || row.every(e=>e.type==='log') || row.every(e=>e.type==='branch'));assert.deepEqual(createGame(seed).entities,createGame(seed).entities);}assert.equal(speedAt(99999),42);});
+test('best scores reject malformed, non-finite and legacy race records',()=>{for(const x of [null,{}, {score:2000},{version:2,score:Infinity},{version:2,score:NaN},{version:2,score:-1}])assert.equal(validBest(x),null);assert.equal(validBest({version:2,score:2500}).score,2500);});
 
-function advance(g, input, seconds) { for (let i = 0; i < seconds * 60; i++) updateGame(g, input, 1 / 60); }
-
-test('steering moves raft and a fresh run resets progress', () => {
-  const g = createGame(4); advance(g, { ...emptyInput(), right: true }, 0.8);
-  assert.ok(g.x > 600); assert.ok(g.distance > 90);
-  const clean = createGame(4); assert.equal(clean.x, 500); assert.equal(clean.hasKey, false); assert.equal(clean.time, 0);
-});
-test('a timed release catches the nearby key, early release does not', () => {
-  const g = createGame(2); g.x = g.keys[0].x; g.distance = g.keys[0].d - 80;
-  advance(g, { ...emptyInput(), reach: true }, 0.35); releaseReach(g);
-  assert.equal(g.hasKey, true); assert.equal(g.score, 300);
-  const early = createGame(2); advance(early, { ...emptyInput(), reach: true }, 0.4); releaseReach(early);
-  assert.equal(early.hasKey, false); assert.equal(early.keys[0].consumed, false);
-});
-test('opening requires a key and sustained action; reaching reduces steering', () => {
-  const g = createGame(3); advance(g, { ...emptyInput(), unlock: true }, 2.1); assert.equal(g.unlocked, false);
-  g.hasKey = true; advance(g, { ...emptyInput(), unlock: true }, 2.1); assert.equal(g.unlocked, true);
-  const paddle = createGame(6), reach = createGame(6);
-  advance(paddle, { ...emptyInput(), right: true }, 0.7);
-  advance(reach, { ...emptyInput(), right: true, reach: true }, 0.7);
-  assert.ok(paddle.x - 500 > (reach.x - 500) * 2);
-});
-test('collision drains balance and overboard recovery restores it', () => {
-  const g = createGame(7); g.rocks = [{ x: 500, d: 5, radius: 52, hit: false }]; g.balance = 20;
-  advance(g, emptyInput(), 0.1); assert.ok(g.falling > 0); assert.equal(g.falls, 1);
-  advance(g, emptyInput(), 3); assert.equal(g.falling, 0); assert.ok(g.balance > 60);
-});
-test('finish requires treasure, the escape lane and beating the rival', () => {
-  const make = () => { const g = createGame(8); g.distance = COURSE_LENGTH - 1; g.x = 350; g.hasKey = true; g.unlocked = true; g.rivalDistance = COURSE_LENGTH - 100; g.rocks = []; return g; };
-  const winner = make(); updateGame(winner, emptyInput(), 0.02); assert.equal(winner.phase, 'won'); assert.ok(winner.score > 0);
-  const wrongLane = make(); wrongLane.x = 650; updateGame(wrongLane, emptyInput(), 0.02); assert.equal(wrongLane.phase, 'lost');
-  const noChest = make(); noChest.unlocked = false; updateGame(noChest, emptyInput(), 0.02); assert.equal(noChest.phase, 'lost');
-  const late = make(); late.rivalDistance = COURSE_LENGTH + 3; updateGame(late, emptyInput(), 0.02); assert.equal(late.phase, 'lost');
-});
-test('waterfall deadline ends the run and terminal states stop simulation', () => {
-  const g = createGame(9); g.time = RUN_SECONDS - 0.01; updateGame(g, emptyInput(), 0.02);
-  assert.equal(g.phase, 'lost'); const d = g.distance; advance(g, emptyInput(), 5); assert.equal(g.distance, d);
-});
+test('trick challenges pay once and rotate to an active coin goal',()=>{const g=clean();g.jumps=3;updateGame(g,emptyInput(),.016);assert.equal(g.goalsCleared,1);assert.equal(g.bonus,500);assert.equal(g.goal.kind,'coins');updateGame(g,emptyInput(),.016);assert.equal(g.bonus,500);g.coins=40;updateGame(g,emptyInput(),.016);assert.equal(g.goalsCleared,2);assert.equal(g.goal.kind,'distance');});
+test('Rush never recharges from coins or avoided hazards',()=>{const g=clean();g.rush=3;g.entities=[{id:1,type:'coin',lane:0,d:.2},{id:2,type:'rock',lane:0,d:.4}];advance(g,.1);assert.equal(g.coins,1);assert.equal(g.charge,0);});
