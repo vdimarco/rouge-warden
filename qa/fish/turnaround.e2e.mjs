@@ -13,8 +13,11 @@
 // - a player still working the reel when the beat starts (a fresh press on the crank, one more pump on the rod pad, a thumb
 //   on the crank in motion play): the press may end the beat, but it throws no cast, holds no line and uses up no derby cast
 // - the catch card: Space presses Cast again once the photo beat is done, and not during it
-// The automatic waits are timed by the game's frames: a check allows the one frame that ended the wait (a software renderer
-// on a busy machine can draw a frame a second). The retrieve times are game seconds. A fresh save, free fishing.
+// - "Nothing this time." on a phone: a finger on the drawn rod (the rod pad stays up there) drags down and flicks, and the
+//   lure flies. No fish was on, so that press is no pump
+// The automatic waits are timed by the clock the game reads as each frame begins: a check counts to the start of the last
+// frame that did not end the wait, so a slow frame (a software renderer on a busy machine can draw a frame a second) does
+// not count against the game. The retrieve times are game seconds. A fresh save, free fishing.
 // Exits with code 1 when something fails.
 import { open, until, sleep } from "./lib.mjs";
 
@@ -24,7 +27,7 @@ const gaps = [];
 const note = (name, v, unit = "ms") => { gaps.push([name, v, unit]); return v; };
 // unit "r": a wait the game ended in a frame (__ready): the time, and the gap before that frame it allows
 const fmt = (v, unit = "ms") => (v == null ? "none" : unit === "r" ? fmtR(v) : unit === "s" ? v.toFixed(1) + " s" : Math.round(v) + " ms");
-const fmtR = (r) => (r && r.ms != null ? Math.round(r.ms) + " ms" + (r.gap > 40 ? " (the frame before it came " + Math.round(r.gap) + " ms earlier)" : "") : "none");
+const fmtR = (r) => (r && r.ms != null ? Math.round(r.ms) + " ms" + (r.gap > 40 ? " (the frame before it began " + Math.round(r.gap) + " ms earlier)" : "") : "none");
 const within = (r, lo, hi) => !!r && r.ms != null && r.ms >= lo && r.ms - r.gap < hi;
 // a tip that a press which only ended the beat must not get
 const TIP = /Hold Space until|Keep holding until|Drag down|Swing the phone|flick up and let go/i;
@@ -34,22 +37,25 @@ function helpers() {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const G = FISH.G;
   window.__wait = wait;
-  // the times the frames ran, and the moment the game made the next cast ready (G.step turned "ready": inside the frame or
-  // the press, before that frame draws the new layout)
-  const frames = (window.__frames = []);
-  const rec = () => { frames.push(performance.now()); if (frames.length > 600) frames.splice(0, 300); requestAnimationFrame(rec); };
-  requestAnimationFrame(rec);
-  let step = G.step, readyAt = 0;
-  Object.defineProperty(G, "step", { get: () => step, set: (v) => { if (v === "ready") readyAt = performance.now(); step = v; }, configurable: true, enumerable: true });
-  // ms from t0 until the next cast is ready (phase cast, step ready; null if not), and the gap since the frame before: a
-  // wait the game ends in a frame ends somewhere in that gap
+  // the clock as each frame began (the game reads the clock there, and ends a wait when it has run out), and the moment the
+  // game made the next cast ready (G.step turned "ready": inside a frame or a press, before that frame draws the new
+  // layout). before: the start of the last frame that did not end the wait. A slow frame (its draw can take a second on a
+  // software renderer) only moves the next frame later, so a wait counts to the clock the game read, not to the machine
+  let frameAt = 0, prevAt = 0, frameTs = null, inFrame = false, step = G.step, readyAt = 0, before = 0;
+  const raf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (fn) => raf((ts) => {
+    if (ts !== frameTs) { frameTs = ts; prevAt = frameAt; frameAt = performance.now(); }
+    inFrame = true;
+    try { fn(ts); } finally { inFrame = false; }
+  });
+  Object.defineProperty(G, "step", { get: () => step, set: (v) => { if (v === "ready") { readyAt = performance.now(); before = inFrame ? prevAt : frameAt; } step = v; }, configurable: true, enumerable: true });
+  // ms from t0 until the next cast is ready (phase cast, step ready; null if not), and the gap from the start of the frame
+  // before: a wait the game ends in a frame ran out somewhere in that gap
   window.__ready = async (t0, limit = 9000) => {
     const ok = () => G.phase === "cast" && G.step === "ready";
     while (!ok() && performance.now() - t0 < limit) await wait(2);
     if (!ok()) return { ms: null, gap: 0 };
-    let gap = 0;
-    for (let i = frames.length - 1; i >= 0; i--) if (frames[i] < readyAt) { gap = readyAt - frames[i]; break; }
-    return { ms: readyAt - t0, gap };
+    return { ms: readyAt - t0, gap: before ? readyAt - before : 0 };
   };
   // a stand-in for the sim, in a state the reel reads on its next frame ("home", "lost", "caught"). Resolves to outcomeAt
   window.__stage = async (state) => {
@@ -357,6 +363,28 @@ function helpers() {
       return { ready, step, after: G.step, verdict: G.cast && G.cast.verdict };
     });
     check(drag.ready && drag.step === "loaded" && drag.after === "flight", `the finger that ends a loss drags down and flicks, and the lure flies (${JSON.stringify(drag)})`);
+    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    // the press that ends "Nothing this time." 500 ms in on the drawn rod (the rod pad is still up over it): it drags down
+    // and flicks, and the lure flies. No fish was on, so this press is no pump
+    const rodCast = await page.evaluate(async () => {
+      const G = FISH.G, wait = window.__wait, id = 9;
+      const t0 = await window.__stage({ phase: "home" });
+      const b = document.querySelector("#padBox").getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height * 0.4;
+      while (performance.now() - t0 < 500) await wait(1);
+      const casts = G.casts, on = window.__fire("pointerdown", x, y, "touch", id);
+      const out = { on: !!on.closest("#padBox"), ready: G.phase === "cast" && G.step === "ready" };
+      for (let i = 1; i <= 16; i++) { window.__fire("pointermove", x, y + 5 * i, "touch", id); await wait(12); }
+      const tr = performance.now();
+      while (G.step !== "loaded" && performance.now() - tr < 3000) await wait(20);
+      out.step = G.step;
+      const tf = performance.now();
+      let k = 0;
+      while (k < 1) { k = Math.min(1, (performance.now() - tf) / 90); window.__fire("pointermove", x, y + 80 - 130 * k, "touch", id); await wait(8); }
+      window.__fire("pointerup", x, y - 50, "touch", id);
+      await wait(30);
+      return { ...out, after: G.step, casts: G.casts - casts, verdict: G.cast && G.cast.verdict };
+    });
+    check(rodCast.on && rodCast.ready && rodCast.step === "loaded" && rodCast.after === "flight" && rodCast.casts === 1, `a finger on the drawn rod 500 ms into "Nothing this time." drags down and flicks, and the lure flies (${JSON.stringify(rodCast)})`);
     await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
     // a derby, and a player still working the reel controls when the beat starts: a fresh press on the crank 420 ms into
     // "Nothing this time.", then circles at 2 turns a second; one more pump on the rod pad 900 ms into a loss (down, then a

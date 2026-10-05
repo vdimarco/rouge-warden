@@ -39,6 +39,10 @@ The repo SHALL hold a privacy policy page that the game shows offline and the we
 - **WHEN** a reviewer reads the privacy policy
 - **THEN** it says the game collects no personal data, sends nothing off the phone, and keeps progress on the phone only.
 
+#### Scenario: Placeholder before a release
+- **WHEN** a developer builds the bundle for a store upload (`--release`) while the privacy policy still shows the support email placeholder
+- **THEN** the build fails and names the placeholder. A debug build and the browser checks still pass, and the bundle check prints a warning.
+
 ### Requirement: Release steps
 A README in `apps/fish/` SHALL list the steps to build, sign, and upload both apps, the owner's accounts and decisions they need, and the checks that need a real phone.
 

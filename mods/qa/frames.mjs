@@ -46,11 +46,12 @@ function png(p, scale = 8) {
 
 const scenes = [];
 
-// Task Breakout: the Reel It In store polish list, three boxes checked mid-run
+// Task Breakout: the Reel It In store polish list, three boxes checked mid-run. The list is a copy from before the change
+// was archived (fixtures/fish-tasks.md), so it still has open boxes
 scenes.push(async () => {
   const { parseTasks } = await import(path.join(MODS, "task-breakout/hooks/tasks.ts"));
   const { makeWall, knock, stepWall, drawWall, wallCells, wallSvg } = await import(path.join(MODS, "task-breakout/hooks/wall.ts"));
-  const tasks = parseTasks(fs.readFileSync(path.join(ROOT, "openspec/changes/fish-store-polish/tasks.md"), "utf8"));
+  const tasks = parseTasks(fs.readFileSync(path.join(ROOT, "mods/qa/fixtures/fish-tasks.md"), "utf8"));
   const wall = makeWall(tasks, 60, 32, 7);
   const open = tasks.map((t, i) => (t.done ? -1 : i)).filter((i) => i >= 0);
   return {

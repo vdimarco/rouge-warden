@@ -52,8 +52,8 @@ export function createRodCues(game) {
     if (phase === 'reel' && nibble && ['sink', 'retrieve'].includes(fish?.phase)) kind = 'nibble';
     const tight = phase === 'reel' && (fish?.tfrac || 0) > .85;
     // the crank goes at the pace the prompt gives with the cue (fast for slack line or a charge, slowly when the lure runs
-    // away from a fish, steadily for a tired fish), the same words as the guide; with no pace it is the reel move. A steer
-    // the prompt gives a side to ("Drag the rod right.") says the same side here
+    // away from a fish, steadily for a tired fish, a little faster when its line is slack), the same words as the guide;
+    // with no pace it is the reel move. A steer the prompt gives a side to ("Drag the rod right.") says the same side here
     const text = (motion && MOTION_LABELS[kind]) || (hold && HOLD_WORDS[kind]) || (!motion && !touchDevice && DESK_LABELS[kind]) || LABELS[kind] ||
       (kind === 'turn' && /^((Tilt the phone|Drag the rod) (left|right)|Hold [AD])\.$/.test(cue.sub) ? cue.sub :
       moveWords(kind, inputOf(motion, touchDevice, desk), 0, phase === 'reel' ? cue.pace : '') || LABELS.hold);

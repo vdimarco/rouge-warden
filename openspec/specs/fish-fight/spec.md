@@ -1,4 +1,9 @@
-## ADDED Requirements
+# fish-fight Specification
+
+## Purpose
+The fight in Reel It In: the drag, jumps and tail walks, slack line, the fight prompts and toasts, the gauge, the loss lines that teach the move that would have saved the fish, and an easy first fish.
+
+## Requirements
 
 ### Requirement: The drag gives before the line breaks
 When the spool starts to slip, the crank's extra pull SHALL drop to nothing and build back over 0.6 s, so a player who stops reeling in that time does not snap the line by cranking. A run SHALL start with a ratchet click and a buzz, so the player has time to stop.
@@ -33,7 +38,7 @@ The gauge SHALL show SLACK when the line has been slack for 0.3 s. During a head
 
 #### Scenario: Tired fish swims in
 - **WHEN** a beaten fish swims in faster than the crank and the line goes slack
-- **THEN** the prompt stays green and says "It is tired. Reel a little faster." with "Keep the line tight.", not the red slack prompt.
+- **THEN** the prompt stays green and says "It is tired. Reel a little faster." with "Keep the line tight.", not the red slack prompt, and the guide caption and the rod cue say "Reel a little faster."
 
 #### Scenario: Shake with slack
 - **WHEN** a fish shakes its head and the line goes slack
@@ -59,6 +64,10 @@ The loss screen SHALL show for at least 3.2 s and SHALL name the one move that w
 #### Scenario: Lost to the weeds
 - **WHEN** a fish wraps the line in the weeds in touch mode
 - **THEN** the loss line names the weeds and says to drag the rod sideways to steer.
+
+#### Scenario: Lost to the weeds with the keys
+- **WHEN** a fish wraps the line in the weeds on a computer and the player used the keys last
+- **THEN** the loss line says "Hold A or D to steer it.", the keys that the fight named.
 
 ### Requirement: Each reel starts with the rod at the same angle
 In touch, mouse, and keys play, each reel SHALL start with the rod at 55 degrees, whatever angle the last fight left it at.

@@ -20,7 +20,8 @@ body[data-art-style="painted"] {
   --glass: rgba(20, 52, 44, .94); --line: rgba(241, 230, 193, .3);
   --red: #b45038; --brass: #f4d280;
 }
-body[data-art-style="painted"] #title {
+/* The picture is of Loon Lake. At another place the live lake shows behind the title, as in the Original style. */
+body[data-art-style="painted"][data-place="loon"] #title {
   background: linear-gradient(rgba(15, 43, 39, .10), transparent 38%, rgba(13, 38, 31, .60)), url("./art/film-lake.webp") center 50% / cover;
 }
 body[data-art-style="painted"] #title h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -.045em; text-shadow: 0 2px 1px #426b50, 0 5px 16px rgba(15, 36, 29, .45); }

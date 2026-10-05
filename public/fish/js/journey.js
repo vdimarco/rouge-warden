@@ -163,15 +163,16 @@ export function revealText(sp, big = false) {
 
 /* ---------------- the loss lines ---------------- */
 // what went wrong, and the one move that would have saved the fish: [headline, tip]. reason: the sim's state.reason.
-// o: input ("motion" | "touch" | "keys"), by (how it threw the hook: "jump" | "thrash" | "shake" | "charge" | "slack"),
+// o: input ("motion" | "touch" | "mouse" | "keys"), by (how it threw the hook: "jump" | "thrash" | "shake" | "charge" | "slack"),
 //   cause (why the line snapped: fish.js state.cause), hook (the hook-set words, guide.js MOVE_WORDS: "Snap it up!"),
+//   turn (the steer words of the input, guide.js MOVE_WORDS: "Hold A or D."),
 //   legend (the place id when the fish was the place's legend: it gets its own line, and when to look for it again)
 const SNAP_TIP = { grind: "Stop reeling when the drag slips.", rodlow: "Keep the rod up. It bends and saves the line.",
   drag: "Set the drag lighter with the − button.", shake: "Hold the rod up when it shakes its head." };
 const THROWN = { jump: ["It threw the hook.", "Lower the rod as soon as it jumps."], thrash: ["It shook the hook out.", "Hold the rod up when it shakes its head."],
   shake: ["It shook the hook out.", "Keep reeling slowly when it shakes its head."], charge: ["It threw the hook.", "Reel fast when it swims at you."] };
 export function lossText(reason, o = {}) {
-  const steer = o.input === "motion" ? "Tilt the phone left or right to steer it away." : "Drag the rod sideways to steer it.";
+  const steer = o.input === "motion" ? "Tilt the phone left or right to steer it away." : String(o.turn || "Drag the rod sideways.").replace(/\.$/, "") + " to steer it.";
   const hook = String(o.hook || "Swipe it up!").replace(/!$/, "");
   const line = ({
     snap: ["SNAP! The line broke.", SNAP_TIP[o.cause] || SNAP_TIP.grind],

@@ -2,7 +2,7 @@
 // Builds the app's web bundle: apps/fish/www, from the web game in public/fish.
 // It copies only the files that the pages load, sets the store build flag, removes the web arcade parts,
 // and then runs the bundle check (scripts/check-www.mjs). Never edit www/ by hand: it is made again on each build.
-// Usage: node scripts/build-www.mjs [--strict]
+// Usage: node scripts/build-www.mjs [--strict] [--release]  (--release: for a store upload, see check-www.mjs)
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,6 +20,7 @@ const THREE_FALLBACK = path.join(REPO, "public/crimson/lib/three.module.min.js")
 const SKIP = [/(^|\/)README\.md$/i, /(^|\/)\.DS_Store$/];
 
 const strict = process.argv.includes("--strict") || process.env.WWW_STRICT === "1";
+const release = process.argv.includes("--release") || process.env.WWW_RELEASE === "1";
 const notes = [];
 const warn = (msg) => { notes.push(msg); console.log("warning: " + msg); };
 
@@ -135,6 +136,6 @@ const show = (p) => { const r = path.relative(REPO, p); return r.startsWith(".."
 console.log(`build:www: copied ${picked.length} files from ${show(SRC)} to ${show(OUT)}`);
 for (const d of [...new Set(done)]) console.log("  index.html: " + d);
 if (left.length) console.log(`  left out ${left.length} files that nothing loads: ${left.join(", ")}`);
-const res = checkWww(OUT, { strict });
+const res = checkWww(OUT, { strict, release });
 if (notes.length) console.log(`\n${notes.length} build warning${notes.length === 1 ? "" : "s"} above. They clear when the missing files land in public/fish.`);
 process.exit(res.ok ? 0 : 1);
