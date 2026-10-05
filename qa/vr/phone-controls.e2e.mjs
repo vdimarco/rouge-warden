@@ -195,7 +195,7 @@ async function hintStates() {
   M.miss(true); read("the rope is kept"); M.miss(false); read("nothing in reach");
   const center = document.querySelector("[data-action=center]"); center.hidden = false; center.click(); read("centered"); center.hidden = true;
   M.released(); read("flying");
-  btn.onclick(); read("swinging"); btn.onclick(); read("let go");
+  btn.onclick(); read("swinging"); btn.onclick(); read("swinging on (SWING never lets go)");
   M.reset(); G.ui.say("", 0);
   return out;
 }
@@ -481,7 +481,7 @@ try {
 
   /* ---------------- a tap with the only building held keeps the rope ---------------- */
   // SWING catches a building. Then the city is changed so that the held building is the only one any ray can hit, and the player taps
-  // the sky with a finger (a real click on the canvas: a second press of the SWING button would be LET GO, not a tap).
+  // the sky with a finger (a real click on the canvas: SWING aims at the next building ahead, not at the finger).
   const hold = await main.evaluate(() => {
     const s = G.city.start, R = G.city.goldRing, C = G.city, M = G.desktop.mobile;
     G.test.press(1, false); G.test.aimAt(1, null); M.reset(); G.test.teleport(s.x, s.y, s.z); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z)); G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 30);

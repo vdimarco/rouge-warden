@@ -442,7 +442,7 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   probe.id = "lockProbe";
   document.body.append(ringEl, arrowEl, cueEl, hintEl, probe);
   const show = { ring: false, arrow: false, kind: "", go: false, cue: false, hints: "" };
-  const WIN = { l: 0, t: 0, r: 0, b: 0, at: -1e9, w: 0, h: 0, sub: false };
+  const WIN = { l: 0, t: 0, r: 0, b: 0, at: -1e9, w: 0, h: 0, sub: false, cr: 0, ct: 0 };
   const rect = (sel) => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r : null; };
   // The safe window: the ring and the arrow stay clear of the score pills and the spoken line (and the key strip), and 8 px inside
   // the edges and the safe-area insets. It is read from the page at most 10 times a second, and when the screen changes size or a spoken line comes or goes.
@@ -461,6 +461,9 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
     else if (sub) WIN.b = Math.min(WIN.b, sub.top - pad);
     if (strip) WIN.b = Math.min(WIN.b, strip.top - pad);
     if (WIN.b < WIN.t + 40) WIN.b = WIN.t + 40;
+    // the training card at the lower left (game.js, ui.js): a corner of the window the marker keeps out of while it shows
+    const card = rect(".fs-train");
+    WIN.cr = card && card.left < W / 3 ? card.right + pad : 0; WIN.ct = card ? card.top - pad : 0;
     return WIN;
   }
   const place = (el, x, y, rot) => { el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)${rot ? ` rotate(${rot.toFixed(1)}deg)` : ""}`; };
@@ -477,7 +480,7 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
     }
     const w = safeWindow(), W = innerWidth, H = innerHeight, cx = W / 2, cy = H / 2;
     let px = (m.x * 0.5 + 0.5) * W, py = (0.5 - m.y * 0.5) * H;
-    const inside = !m.behind && px >= w.l && px <= w.r && py >= w.t && py <= w.b;
+    const inWin = !m.behind && px >= w.l && px <= w.r && py >= w.t && py <= w.b, inCard = inWin && px < w.cr && py > w.ct, inside = inWin && !inCard;
     const kind = m.kind || "swing";
     // only the kind class changes: the catch pop, "go" and "still" stay on the element
     if (show.kind !== kind) { for (const el of [ringEl, arrowEl]) { el.classList.remove("k-" + show.kind); el.classList.add("k-" + kind); } show.kind = kind; }
@@ -492,7 +495,10 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
       let ax, ay, rot;
       const ox = clamp(cx, w.l, w.r), oy = cy > w.t && cy < w.b ? cy : (w.t + w.b) / 2;
       if (m.behind) { ax = clamp(cx + m.x * (w.r - w.l) * 0.4, w.l, w.r); ay = w.b; rot = 180; }
-      else {
+      else if (inCard) { // behind the training card: on the card's nearer edge, pointing at the target
+        if (w.cr - px < py - w.ct) { ax = w.cr; ay = py; } else { ax = px; ay = w.ct; }
+        rot = (Math.atan2(px - ax, -(py - ay)) * 180) / Math.PI;
+      } else {
         const ddx = px - ox, ddy = py - oy;
         const tx = ddx > 0 ? (w.r - ox) / ddx : ddx < 0 ? (w.l - ox) / ddx : Infinity, ty = ddy > 0 ? (w.b - oy) / ddy : ddy < 0 ? (w.t - oy) / ddy : Infinity;
         const t = Math.min(tx, ty);

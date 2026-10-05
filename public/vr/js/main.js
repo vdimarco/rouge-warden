@@ -18,6 +18,7 @@ import { createAudio } from "./audio.js";
 import { createFX } from "./fx.js";
 import { createHero } from "./hero.js";
 import { createFlatCam } from "./flatcam.js";
+import { createCutscenes } from "./cutscene.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
 
 const $ = (s) => document.querySelector(s);
@@ -26,7 +27,7 @@ const DEG = Math.PI / 180;
 const QS = new URLSearchParams(location.search);
 const ROOMS = ["office_small", "living_room", "meeting_room", "music_room", "office_large"];
 const FLAGS = {
-  god: QS.has("god"), skipintro: QS.has("skipintro"), nomv: QS.has("nomv"), debug: QS.has("debug"), nosw: QS.has("nosw"),
+  god: QS.has("god"), skipintro: QS.has("skipintro"), nocut: QS.has("nocut"), nomv: QS.has("nomv"), debug: QS.has("debug"), nosw: QS.has("nosw"),
   emulate: QS.has("emulate") ? (QS.get("emulate") === "ar" ? "ar" : "vr") : null,
   room: ROOMS.includes(QS.get("room")) ? QS.get("room") : "office_small",
   pwa: QS.get("source") === "pwa",
@@ -44,7 +45,8 @@ function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
   return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
 }
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, settings: defaultSettings() }; }
+// seen: the comic scenes already played (cutscene.js), so each plays once
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, districts: [] }, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
@@ -53,6 +55,10 @@ function loadSave() {
   s.clogs = ints(raw.clogs); s.loonies = ints(raw.loonies); s.pipes = ints(raw.pipes);
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
+  if (raw.seen && typeof raw.seen === "object") {
+    for (const k of ["opening", "king", "finale"]) s.seen[k] = raw.seen[k] === true;
+    s.seen.districts = ints(raw.seen.districts).filter((d) => d < 6);
+  }
   if (raw.best && typeof raw.best === "object") for (const [k, v] of Object.entries(raw.best)) if (Number.isFinite(v) && v > 0) s.best[k] = v;
   const r = raw.settings && typeof raw.settings === "object" ? raw.settings : {}, t = s.settings;
   if (COMFORT.presets[r.preset] && r.preset !== "desktop" && r.preset !== "phone") t.preset = r.preset;
@@ -109,7 +115,7 @@ async function installEmulator() {
 
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
-let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker;
+let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes;
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -155,10 +161,12 @@ function createWorld() {
   fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
   hero = G.hero = createHero(scene, renderer); // flat play: the hero and the chase camera (hidden and unused in XR)
   flatcam = G.flatcam = createFlatCam(camera, city);
+  cutscenes = G.cutscenes = createCutscenes({ camera });
   picker = G.picker = createTarget(city); // flat play: the auto target (js/target.js)
   TCTX.specials = () => ropes.targets();
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
+  game.onStory(story);
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
   portal.onDone(handOff);
   ui.onExit(exitPlay);
@@ -285,6 +293,37 @@ function handOff() {
   if (!worldVisible && game.root) game.root.visible = false;
   resumable = true;
   saveNow();
+  if (first) story("opening"); // why the King sits on the Needle, and the first mission
+}
+// A comic scene (cutscene.js) in flat play, once per save: the opening after the hand-off, a district's briefing the first
+// time you come near its clogs, the King waking, the finale. The game holds still while it plays (G.state "cutscene"); a
+// headset plays none and shows the mission as a toast. ?skipintro and ?nocut (the tests) play none.
+const STORY_TOAST = { king: () => "Mission 2: rip off the King's three pipes, then flush him.", finale: () => "All clear! Free roam: trials and Loonies." };
+function story(name, arg, force) {
+  if (!force && (FLAGS.nocut || FLAGS.skipintro || !save.seen)) return;
+  const seen = save.seen;
+  if (!force && (name === "district" ? !arg || seen.districts.includes(arg.id) : seen[name])) return;
+  if (name === "district") seen.districts.push(arg.id); else seen[name] = true;
+  saveNow();
+  if (isXR() || !flatOn || G.state !== "play" || cutscenes.playing) { const t = STORY_TOAST[name]; if (t) ui.toast(t(arg)); return; }
+  const king = game.targets().find((t) => t.kind === "king") || { x: city.needle.x, y: 230, z: city.needle.z };
+  let clog = arg && arg.clog;
+  if (!clog) { let bd = Infinity; for (const t of game.targets()) if (t.kind === "clog" && !t.done) { const d = Math.hypot(t.x - P.pos.x, t.z - P.pos.z); if (d < bd) { bd = d; clog = t; } } }
+  if (!clog) clog = city.clogs[0];
+  const head = hero.head && Number.isFinite(hero.head.x) ? hero.head : { x: P.pos.x, y: P.pos.y + COMFORT.standingHead, z: P.pos.z };
+  const ctx = { city, king, clog, start: city.start, hero: { x: head.x, y: head.y, z: head.z }, district: arg || null };
+  G.state = "cutscene";
+  ropes.meshes.reticles.visible = false; // the aim marks of play (rope.js shows them again on its next frame)
+  cutscenes.play(name, ctx, () => { if (G.state === "cutscene") G.state = "play"; flatcam.restore(); game.resay(); });
+}
+// The frame of a scene: the scene moves the camera; the city keeps its clock and the hero breathes; the game holds still.
+function cutsceneFrame(dt, inp) {
+  cutscenes.update(dt);
+  if (!cutscenes.playing) { if (G.state === "cutscene") G.state = "play"; return; }
+  buildView();
+  if (flatOn) hero.update(dt, P, ropes, inp);
+  view.update(dt, G.time, camera.position);
+  fx.update(dt, camera.position, camera.quaternion);
 }
 // Fade out, move the body and the rig, fade in. Used by respawns, travel and the hand-off check.
 function fadeMove(x, y, z) {
@@ -411,6 +450,7 @@ function startDesktop() {
   lastMode = "desktop";
   hideTitle();
   D.active = true;
+  if (!FLAGS.nocut) cutscenes.preload(); // the comic scenes' pictures, ready by the time the opening ends
   settings.easySwing = D.mobile.enabled;
   D.level();
   picker.reset(); // (the PLAY click took the pointer lock before full screen: see takeLook)
@@ -502,7 +542,7 @@ function viewAim(nx, ny, hx, hy, hz) {
 let pickerOn = false; // true in flat play with the state "play"; false in the opening, in a pause and in a headset
 const TCTX = {
   head: { x: 0, y: 0, z: 0 }, cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1, vel: null, chestY: 0, onGround: false, wall: null, time: 0,
-  specials: null, ring: null, avoidBid: null, avoidBid2: null, exact: null, first: false, aimWidth: TARGET.fan.az.med,
+  specials: null, ring: null, avoidBid: null, avoidBid2: null, exact: null, first: false, aimWidth: TARGET.fan.az.med, high: null,
 };
 const ropeBid = (r) => (r.state !== "idle" && r.target && !SPECIAL_TAGS[r.target.tag] && typeof r.target.id === "number" ? bidOf(city.colliders[r.target.id]) : null);
 function fillContext(hx, hy, hz) {
@@ -518,6 +558,7 @@ function fillContext(hx, hy, hz) {
   c.exact = AIM_HAS ? AIM_HIT : null;
   c.first = flatcam.opacity <= 0.5;
   c.aimWidth = TARGET.fan.az[settings.aim] || TARGET.fan.az.med;
+  c.high = G.input.easySwing ? PHONE.high : null;
   return c;
 }
 // A phone tap: the ray from the camera through the tapped pixel (NDC), or toward a point a test aims at. TAPR is a unit direction.
@@ -661,6 +702,8 @@ function tick(dt, frame, time) {
   if (flatOn && !isXR()) flatInput(inp);
   // 3. test overrides
   applyOverrides(inp);
+  // a comic scene holds the game still
+  if (G.state === "cutscene") { cutsceneFrame(dt, inp); return; }
   // the raw edges go in the event ring before the UI can claim them, so a test sees each edge even when the test
   // clock releases several frames at once
   for (const h of inp.hands) {
@@ -786,8 +829,11 @@ const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: fa
 function aimAndFire(dt, inp) {
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
-    // phone: a tap with a rope out moves it to the tapped building, and a tap with a rope idle swings from what the tap rules find
+    // phone: a tap (or SWING) with a rope out moves it to the tapped building, or the next one ahead: one tap, one swing, with
+    // no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does nothing:
+    // a new shot would cancel the cup before it lands.
     if (inp.easySwing && i === 1 && inp.phoneFire && r.state !== "idle") {
+      if (r.state === "flying") continue;
       const next = phoneAim(i, h, inp);
       if (next?.valid && !next.same && !ui.blocking(i)) shoot(i, h, next);
       else D.mobile.miss(true);
@@ -975,6 +1021,25 @@ function boost(i, speed) {
   const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
   if (kick(P, P.ropes[i], yaw, speed)) pushRing({ type: "kick", side: i, speed });
 }
+// Phone: a rope that catches keeps your speed. The part that flies away from the anchor (the rope would stop it) turns into swing
+// across the rope, toward where you look. The rope is also short enough that the lowest point of its arc stays PHONE.catch.clear m
+// over the street (the length moves there at PHONE.catch.rate: it pulls you up fast, with no pop).
+function phoneCatch(r) {
+  const A = r.anchor, v = P.vel, cx = P.pos.x - A.x, cy = P.pos.y + P.chest - A.y, cz = P.pos.z - A.z, d = Math.hypot(cx, cy, cz);
+  if (d < 1e-3) return;
+  const nx = cx / d, ny = cy / d, nz = cz / d, out = v.x * nx + v.y * ny + v.z * nz;
+  if (out > 0) {
+    const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
+    let tx = -Math.sin(yaw), ty = 0, tz = -Math.cos(yaw);
+    const k = tx * nx + tz * nz;
+    tx -= k * nx; ty -= k * ny; tz -= k * nz;
+    const tl = Math.hypot(tx, ty, tz);
+    v.x -= nx * out; v.y -= ny * out; v.z -= nz * out;
+    if (tl > 0.3) { v.x += (tx / tl) * out; v.y += (ty / tl) * out; v.z += (tz / tl) * out; }
+  }
+  const most = A.y - P.chest - PHONE.catch.clear;
+  if (most > PHONE.catch.min && r.lenTarget > most) { r.lenTarget = most; r.rate = PHONE.catch.rate; } // (a low point cannot keep you off the street: no change)
+}
 const SPECIAL_TAGS = { clog: true, pipe: true, crack: true };
 
 // 11. One drain per frame: the portal hears them in the intro, the game in play; main plays the feedback.
@@ -998,7 +1063,7 @@ function feedback(ev) {
       audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
       if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
-        if (G.input.easySwing && i === 1) { phoneRopeT = 0; boost(1, PHONE.attachSpeed); }
+        if (G.input.easySwing && i === 1) { phoneRopeT = 0; phoneCatch(r); boost(1, PHONE.attachSpeed); }
         else if (latch[i] && flatOn) boost(i, DESKTOP.attachSpeed); // a real press only: a test hook gets no kick
       }
       catchFeedback(i, "attach");
@@ -1428,6 +1493,10 @@ G.test = {
   events: () => JSON.parse(JSON.stringify(ring.length < 128 ? ring : ring.slice(ringAt).concat(ring.slice(0, ringAt)))),
   input: () => inputSnapshot(),
   skipIntro() { if (portal && (G.state === "intro" || G.pausedFrom === "intro")) portal.skip(); },
+  // a comic scene now, whatever the flags and the save say (arg: a district's { id, name, left, clog })
+  story(name, arg) { story(name, arg, true); },
+  cutscene: () => cutscenes.info(),
+  cutsceneArt: () => cutscenes.preload(), // resolves when every picture has loaded or failed
   wakeKing() { if (game && game.wakeKing) game.wakeKing(); },
   clearClog(id) { if (game && game.clearClog) game.clearClog(id); },
   portal: () => (portal ? portal.info() : null),

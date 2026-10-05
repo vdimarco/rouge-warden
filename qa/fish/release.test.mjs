@@ -2,7 +2,7 @@
 // The pure helpers in cast.js that main.js calls (touchTheta, touchSpan, touchDy, gradeRelease, liftError), and touch
 // flicks played through motion.js's virtual samples the way main.js feeds them: a sample for each pointer move and each
 // frame, and one at the lift. Exit code 1 on failure.
-import { CAST, RELEASE, TOUCH, castParams, castLanding, gradeRelease, liftError, touchTheta, touchSpan, touchDy } from "../../public/fish/js/cast.js";
+import { CAST, RELEASE, TOUCH, castParams, castLanding, gradeRelease, liftError, touchTheta, touchSpan, touchSpanAt, touchDy } from "../../public/fish/js/cast.js";
 import { rodTip } from "../../public/fish/js/fish.js";
 import { setPlace, currentPlace } from "../../public/fish/js/lake.js";
 
@@ -29,6 +29,13 @@ section("1. The touch mapping: the rod follows the finger below the press point,
   for (const h of [160, 192, 240]) for (let dy = -300; dy <= 140; dy += 7) { const th = touchTheta(dy, h); if (th > 5 && th < 170) worst = Math.max(worst, Math.abs(touchDy(th, h) - dy)); }
   check(worst < 1e-9, `touchDy undoes touchTheta (the touch rail draws its marks with it): worst ${worst.toExponential(1)} px`);
   check(near(touchDy(CAST.LOAD_THETA, 240), 32, 1e-9), `LOAD is ${touchDy(CAST.LOAD_THETA, 240)} px below the press point at 390x844`);
+  // a press low on the screen: the drag shrinks so the finger can still pass full power before the bottom edge
+  const full = CAST.IDEAL_RELEASE + CAST.BACK_FULL;
+  check(touchSpanAt(844, 400) === 240 && touchSpanAt(844, 700) === 240 && touchSpanAt(390, 200) === 160, `touchSpanAt keeps touchSpan with room below: ${touchSpanAt(844, 400)}, ${touchSpanAt(844, 700)}, ${touchSpanAt(390, 200)}`);
+  const low = [[844, 780], [844, 810], [844, 825], [640, 600], [390, 360], [390, 370]].map(([H, y]) => ({ H, y, h: touchSpanAt(H, y) }));
+  check(low.every(({ H, y, h }) => h < touchSpan(H) && h >= TOUCH.SPAN_EDGE && y + touchDy(full, h) <= H - TOUCH.EDGE),
+    `a press low on the screen reaches full power on the screen: ${low.map(({ H, y, h }) => `${H}@${y}: span ${h.toFixed(0)}, full at ${(y + touchDy(full, h)).toFixed(0)}`).join("; ")}`);
+  check(touchSpanAt(844, 844) === TOUCH.SPAN_EDGE && touchSpanAt(844, NaN) === 240, `touchSpanAt at the very edge is SPAN_EDGE (${touchSpanAt(844, 844)}), NaN keeps touchSpan`);
 }
 
 section("2. gradeRelease: the time of the lift sets the release angle; a held thumb is the low line drive");

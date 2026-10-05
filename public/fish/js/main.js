@@ -14,7 +14,7 @@ import { Sound } from "./audio.js";
 import { createWorld } from "./world.js";
 import { createCutscenes, opening as openingCut, arrival as arrivalCut, reveal as revealCut, landed as landedCut, finale as finaleCut, ringSpot, arriveId, revealId, landedId } from "./cutscenes.js";
 import { HangingLure } from "./line-motion.js";
-import { CAST, castParams, Flight, castLanding, touchTheta, touchSpan, gradeRelease, liftError, RELEASE, TOUCH } from "./cast.js";
+import { CAST, castParams, Flight, castLanding, touchTheta, touchSpan, touchSpanAt, gradeRelease, liftError, RELEASE, TOUCH } from "./cast.js";
 import { createCastRail } from "./cast-rail.js";
 import { Rises, LakeSim, rodTip, sizeRank, firstBite } from "./fish.js";
 import { ReelPanel, Crank, RodPad, Gauge, REEL_UI, blocked } from "./reel.js";
@@ -809,8 +809,10 @@ function pinLine(e) {
   // one press does both: the thumb flips the bail open and holds the line
   if (G.bail !== "open") openBail("pin");
   // 80: the rod angle pinmove gives a finger that has not moved, so a small wobble is no flick.
-  // x0: where the finger came down (the touch rail stands beside it); turn: which way the screen faced
-  G.pin = { id: e.id, x0: e.x, y0: e.y, theta: 80, turn: screenAngle() };
+  // x0: where the finger came down (the touch rail stands beside it); turn: which way the screen faced; span: the drag
+  // that turns the rod, shorter for a finger low on the screen (touchSpanAt), so a press anywhere can load the rod. A hold
+  // cast (the mouse, Space) keeps the full span: the clock moves its rod
+  G.pin = { id: e.id, x0: e.x, y0: e.y, theta: 80, turn: screenAngle(), span: e.hold || e.id === "key" ? touchSpan(game.clientHeight) : touchSpanAt(game.clientHeight, e.y) };
   // a mouse button held still: the hold cast, timed from now like Space (keyTheta)
   if (e.hold) G.pin.key = e.t || now();
   // the press that ended the beat before this cast, gone on to take the line
@@ -839,7 +841,7 @@ function unpinLine(e) {
   // a press that only went up (a stray swipe) never tipped the rod back: nothing flies, and no derby cast is used up
   if (!(pin.back >= TOUCH.REST + 4)) { resetCast("Drag down first."); return; }
   // with a finger, the cast is graded where the finger lifts: its rod angle, however long it rested before the lift
-  const theta = e.y != null ? touchTheta(e.y - pin.y0, touchSpan(game.clientHeight)) : pin.theta, t = now();
+  const theta = e.y != null ? touchTheta(e.y - pin.y0, pin.span) : pin.theta, t = now();
   Motion.virtual({ t, theta, yaw: G.aimYaw, roll: 0 });
   release(t, false, { theta });
 }
@@ -1359,7 +1361,7 @@ function helpRows(input) {
     ["flick", "<b>Whip it forward.</b> Lift your thumb."],
   ] : [
     ["turn", keys ? "Move the mouse sideways as you hold to <b>aim</b>, or use the arrow keys." : "Drag the lake sideways to <b>aim</b>."],
-    ["thumb", keys ? "<b>Hold the mouse button</b> or <b>Space</b>. The rod tips back, then swings forward." : "<b>Press the rod</b> and drag down."],
+    ["thumb", keys ? "<b>Hold the mouse button</b> or <b>Space</b>. The rod tips back, then swings forward." : "<b>Press anywhere</b> and drag down."],
     ["flick", keys ? "<b>Let go in the green.</b> You can also drag down and flick up." : "<b>Flick up</b> and let go in the green."],
   ];
   // a computer: the next cast comes at once with a click or Space (the phone tabs keep their room)
@@ -1840,8 +1842,8 @@ function castPrompt() {
   switch (G.step) {
     // touch: a drag down from the press takes the line, a drag sideways aims. A computer: the mouse button held (the hold
     // cast), or Space; a drag sideways or the arrows aim
-    case "ready": prompt(m ? "Hold your thumb on the rod." : touchDevice ? "Press the rod and drag down." : "Hold the mouse button. Let go in the green.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
-    case "open": prompt(m ? "Hold your thumb on the rod." : touchDevice ? "Press and hold on the rod." : "Hold the mouse button. Let go in the green.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
+    case "ready": prompt(m ? "Hold your thumb on the rod." : touchDevice ? "Press anywhere and drag down." : "Hold the mouse button. Let go in the green.", m ? "Turn to aim." : touchDevice ? "Drag sideways to aim." : "Drag sideways to aim. Or hold Space.", "thumb"); break;
+    case "open": prompt(m ? "Hold your thumb on the rod." : touchDevice ? "Press and hold anywhere." : "Hold the mouse button. Let go in the green.", G.drop > 0.3 ? "The line is slipping! Hold it." : "Your thumb holds the line.", "thumb"); break;
     case "pinned": prompt(m ? "Tip the phone back over your shoulder." : space ? "Keep holding Space." : key ? "Keep holding." : "Drag down to tip the rod back.", m ? "Keep your thumb down." : "", "back"); break;
     case "loaded": prompt(m ? "Whip it forward. Lift your thumb!" : space ? "Let go of Space in the green." : key ? "Let go in the green." : "Flick up and let go!", m ? "Lift it as the phone tips forward." : "", "flick", "hot"); break;
     default: prompt("");
@@ -2271,7 +2273,7 @@ function frame() {
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A
   // hold cast (Space, the mouse button) moves the rod by the clock: its rail stands where all of it shows
   const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;
-  castRail.update(railPin && { x: railPin.x0, y0: railPin.y0, theta: railPin.theta, span: touchSpan(game.clientHeight), fit: !!railPin.key });
+  castRail.update(railPin && { x: railPin.x0, y0: railPin.y0, theta: railPin.theta, span: railPin.span, fit: !!railPin.key });
   if (!$("#reelUI").hidden) { crank.draw(dt); gauge.draw(dt); if (!rodPad.hidden) rodPad.draw && rodPad.draw(dt); }
   if (DEBUG) debug();
 }
@@ -2406,7 +2408,7 @@ async function boot() {
   reelPanel.on("pinmove", (e) => {
     if (!G.pin || G.pin.feather || e.id !== G.pin.id) return;
     // touch casting: finger height is the rod angle. Drag down to tip it back, flick up to cast (touchTheta in cast.js)
-    G.pin.theta = touchTheta(e.y - G.pin.y0, touchSpan(game.clientHeight));
+    G.pin.theta = touchTheta(e.y - G.pin.y0, G.pin.span);
     G.pin.back = Math.max(G.pin.back || 0, G.pin.theta);
     // one clock for the finger: pointer times are input times and can run behind the frame's own samples
     if (!sensing()) Motion.virtual({ t: now(), theta: G.pin.theta, yaw: G.aimYaw, roll: 0 });

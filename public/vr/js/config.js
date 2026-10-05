@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.7.1";
+export const VERSION = "1.9.1";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -83,6 +83,11 @@ export const PHONE = {
   // The rope lets go with a fling this many degrees past the bottom of the arc, this close under the anchor, or (a vault up and
   // over, with vault m/s up) this close to it. It lets go with no fling after ground s on roofs or stall s under stallSpeed.
   release: { minT: 0.35, angle: 32, overTop: 1.5, close: 5, vault: 10, ground: 0.01, stall: 2.5, stallSpeed: 4 },
+  // A rope that catches keeps your speed: the part that flies away from the anchor turns into swing, toward where you look. It is
+  // also short enough that the lowest point of its arc stays clear m over the street, so a chain of taps never drags you along it.
+  catch: { clear: 6, min: 8, rate: 30 }, // (min: no change when that would leave a rope shorter than this; rate: m/s it shortens)
+  // The marker prefers a building point at least y m up and up m over the chest: it wins over any lower one (bonus to the score)
+  high: { y: 22, up: 8, bonus: 1 },
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
   buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
   follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly
@@ -170,6 +175,41 @@ export const GAME = {
 };
 
 /* ---------------- colours ---------------- */
+// The training checklist in flat play: each row's words and keys, and what is said while it is the next row: a line of the
+// tutorial tables (line: its index there, so each input hears its own words) or its own words (say). The rows tick in any
+// order; the first is the gold ring, as in the spoken tutorial. A headset keeps the spoken tutorial. "of": a live count.
+export const TRAINING = {
+  mouse: [
+    { id: "rope", text: "Swing at the gold ring", keys: ["HOLD W", "+ LEFT MOUSE"], line: 0 },
+    { id: "swing", text: "Let go when the ring says GO", keys: ["RELEASE"], line: 1 },
+    { id: "again", text: "Swing again before you land", keys: ["LEFT MOUSE", "OR E"], line: 2 },
+    { id: "reel", text: "Reel in", keys: ["HOLD SHIFT"], line: 3 },
+    { id: "yank", text: "Yank for speed", keys: ["F"], line: 4 },
+    { id: "look", text: "Look around", keys: ["MOUSE"], line: 5 },
+    { id: "climb", text: "Climb a wall", keys: ["W", "A", "S", "D"], say: "Fly into a wall, then climb with W, A, S and D. Space jumps off." },
+    { id: "plunge", text: "Plunge a clog: rope it, then pump", keys: ["F", "F", "F"], of: 3, line: 7 },
+  ],
+  pad: [
+    { id: "rope", text: "Swing at the gold ring", keys: ["LEFT STICK UP", "+ RT"], line: 0 },
+    { id: "swing", text: "Let go when the ring says GO", keys: ["RELEASE RT"], line: 1 },
+    { id: "again", text: "Swing again before you land", keys: ["RT"], line: 2 },
+    { id: "reel", text: "Reel in", keys: ["HOLD LB"], line: 3 },
+    { id: "yank", text: "Yank for speed", keys: ["RB"], line: 4 },
+    { id: "look", text: "Look around", keys: ["RIGHT STICK"], line: 5 },
+    { id: "climb", text: "Climb a wall", keys: ["LEFT STICK"], say: "Fly into a wall, then climb with the left stick." },
+    { id: "plunge", text: "Plunge a clog: rope it, then pump", keys: ["RB", "RB", "RB"], of: 3, line: 7 },
+  ],
+  touch: [
+    { id: "rope", text: "Swing at the gold ring", keys: ["SWING"], line: 0 },
+    { id: "swing", text: "Swing out", keys: ["IT LETS GO"], line: 1 },
+    { id: "again", text: "Tap again before you land", keys: ["TAP"], line: 2 },
+    { id: "fast", text: "Fly fast", keys: ["TAP", "TAP"], line: 4 },
+    { id: "look", text: "Look around", keys: ["DRAG"], line: 5 },
+    { id: "climb", text: "Climb a wall", keys: ["ARROWS"], say: "Fly into a wall, then hold the arrows to climb." },
+    { id: "plunge", text: "Plunge a clog: tap it, hold on", keys: ["TAP"], of: 3, line: 7 },
+  ],
+};
+
 export const COLORS = {
   sludge: 0x7a8a2a, sludgeGlow: 0x9cff3a, porcelain: 0xf4f1ea, gold: 0xf2c14e,
   rope: 0xd8b872, cup: 0xd2202a, wood: 0xb07a3a, brass: 0xc9a44a,

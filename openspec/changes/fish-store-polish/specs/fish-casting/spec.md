@@ -19,11 +19,19 @@ A touch flick that ends above the press point SHALL still cast well. A lift belo
 - **THEN** the cast grades high.
 
 ### Requirement: Touch area covers what the player sees
-In touch mode before a cast, a press anywhere outside the HUD, the menus, and the drag bar SHALL start a cast when the drag is mostly up and down, and SHALL aim when the drag is mostly sideways. The bail SHALL open only when the drag is up and down.
+In touch mode before a cast, a press anywhere outside the HUD, the menus, and the drag bar SHALL start a cast when the drag is mostly up and down, and SHALL aim when the drag is mostly sideways. The bail SHALL open only when the drag is up and down. A press low on the screen SHALL have a shorter drag down, so that the finger can load the rod to full power before it reaches the bottom edge. The prompt and How to play SHALL tell the player to press anywhere.
 
 #### Scenario: Press the visible reel
 - **WHEN** a touch player at 390x844 or 360x640 presses the reel, drags down, and flicks up
 - **THEN** the lure flies.
+
+#### Scenario: Press near the bottom edge
+- **WHEN** a touch player at 390x844 presses the lake 20 px above the bottom edge, drags down 14 px, and flicks up
+- **THEN** the rod loads and the lure flies.
+
+#### Scenario: The prompt says anywhere
+- **WHEN** a touch player waits to cast
+- **THEN** the prompt says "Press anywhere and drag down."
 
 #### Scenario: Aim on the lake
 - **WHEN** a touch player drags sideways on the lake
