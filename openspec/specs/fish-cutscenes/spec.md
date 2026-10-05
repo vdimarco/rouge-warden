@@ -45,7 +45,7 @@ A cutscene SHALL play once for each event, SHALL never start during a fight, and
 
 #### Scenario: Press held into a reveal
 - **WHEN** the player presses the lake with the mouse or a finger just before a legend's reveal starts, and holds, drags, or lets go during it or after it
-- **THEN** no cast flies, the derby cast count stays the same, and the next press after the reveal casts as usual.
+- **THEN** no cast flies, the derby cast count stays the same, and the next press after the reveal casts as usual, also when it comes before the game draws its next frame.
 
 #### Scenario: Seen once
 - **WHEN** the player opens Stump Bay a second time
