@@ -2,7 +2,7 @@
 // Every rule here uses only what the bot's team can see. All randomness is a
 // seeded hash, so replays stay deterministic.
 import { SIZE } from './arena.js';
-import { BASES, PATHS, PORTALS, CAMPS, CENTER, closestTrack, distance, visibleTo, canSee, inWater, lineOfSight, inBrush } from './world.js';
+import { BASES, PATHS, PORTALS, CAMPS, CENTER, closestTrack, distance, visibleTo, canSee, lineOfSight, inBrush } from './world.js';
 import { callRally } from './team-events.js';
 import { structureProtected } from './objectives.js';
 
@@ -23,13 +23,13 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, sprint: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
   apprentice: { ...OFF, retreatAt: .2, engage: false, reaction: [.45, .65], busy: .12, dodge: .5, aimError: 70, castLock: 1.8, failLock: 1.8, waveGate: true },
-  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, sprint: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
-  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, sprint: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
+  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
+  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
 };
 // Allied bots stay at one competent level, whatever the enemy difficulty is: Veteran with full retreat discipline.
 PROFILES.ally = { ...PROFILES.veteran, retreatRules: true, tradeRetreat: .75 };
@@ -89,11 +89,6 @@ export function punishes(s, e, t) {
   return s.time - seen[t.id].at >= P.reaction[0];
 }
 
-// Movement multipliers the player also has: sprint out of combat, frenzy, hunt and water.
-export function botStride(s, e) {
-  if (!botProfile(s, e).sprint) return 1;
-  return (s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
-}
 export const castLock = (s, e, started) => { const P = botProfile(s, e); return started ? P.castLock : P.failLock; };
 
 // The dodge step. A failed roll steps short, so a careless bot can still be hit.
@@ -210,7 +205,9 @@ export function routeTo(s, e, dest) {
   const direct = distance(e, dest);
   if (e.portalCd > 0) return { move: dest };
   let best = null, cost = direct - 3 * e.speed;
+  // Base gates choose their exit by facing; the sim's lane start uses them. Bots route through river gates.
   for (const gate of PORTALS) {
+    if (gate.choices) continue;
     const via = distance(e, gate) + distance(PORTALS[gate.to], dest);
     if (via < cost) { cost = via; best = gate; }
   }

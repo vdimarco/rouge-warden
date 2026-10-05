@@ -4,7 +4,7 @@ A mobile folklore MOBA in the Warden arcade. The existing `/tidebreak/` route an
 
 ## What changed
 
-The original 1600 × 1600 reef was too cramped and its three characters played too similarly. The new 4800 × 4800 arena has nine times the area, three lanes, side spirit camps, a winding traversable river, and four paired rift gates. First waves and creatures start near the front, so the enlarged world does not add a long opening walk. Movement outside combat is 35% faster, and rift gates cross the map with a ten-second cooldown.
+The original 1600 × 1600 reef was too cramped and its three characters played too similarly. The arena is now 9600 × 9600 units (2.25 times the area of the 6400 map before it). It has three lanes with three wards each, two guardians per base, eight spirit camps, a winding traversable river and six rift gates. Every hero moves 35% faster outside combat (keyboard, click orders and bots alike), and rift gates have a 15-second cooldown. See "Arena and pacing" below.
 
 Every 40 seconds, the town becomes deep woods or returns. Town blocks have broad collision and line-of-sight footprints. Forest groves have smaller footprints, opening flanking passages. Vision shrinks from 950 to 620 world units. Marked brush hides creatures beyond 125 units unless they attack or take damage. A basic attack from concealment deals 75% extra damage to a creature. Attacking reveals the attacker for 2.6 seconds. Both bot targeting and player targeting enforce line of sight. Hidden enemy units are culled from the battlefield and minimap; allied vision is shared. The woods also add atmospheric distance fog.
 
@@ -17,15 +17,36 @@ Every 40 seconds, the town becomes deep woods or returns. Town blocks have broad
 
 ## Match and controls
 
-Escort wisp waves into wardstone range. Wardstones prioritize wisps; attacking a creature under its ward draws its fire. Break any enemy wardstone to expose their elder rift, then destroy the rift. Matches end at six minutes if neither rift falls; combined remaining ward and rift health decides the result. Damage rises after four minutes.
+Escort wisp waves into ward range. Wards prioritize wisps; attacking a creature under its ward draws its fire. Each lane has an outer, a middle and an inner ward, and each ward is protected while the previous one on its lane stands. Any fallen inner ward opens the two rift guardians; both guardians must fall before the elder rift can be damaged. Wards and rifts take 75% less hero damage unless a wisp of the attacking team is at them. At 14:00 sudden death opens every structure; at 17:00 the team that broke more structures wins.
 
-The central Wild Hunt spawns after 26 seconds. The team that slays it recruits a siege beast in the killer's lane. Side spirit camps award embers, healing and temporary haste. Team kills, camps and waves share experience and embers. Start with 360 embers and earn 3.2 per second in addition to combat rewards. Spend them on recipe components and completed items in the Night Market. Both teams use the same economy. Death leads to respawn at the healing rift.
+The Wild Hunt rises in the central ford after two minutes and returns 150 seconds after each kill. The team that slays it recruits a siege beast in the killer's lane. Spirit camps award embers, healing and temporary haste. Team kills, camps and waves share experience and embers. Start with 360 embers and earn 1.3 per second in addition to combat rewards. Spend them on recipe components and completed items in the Night Market. Both teams use the same economy. Death leads to respawn at the healing rift.
 
 - Touch: left movement pad; tap a skill for aim assist, or drag and release to aim. Basic attacks are automatic. Tap an enemy or Attack to change target.
 - Tap the minimap for a large tactical map. Tap a position or a named destination to place a navigation marker.
-- Near a gate, Rift Jump activates the paired gate. Return channels a trip home and cancels on movement or damage.
+- Near a river gate, Rift Jump crosses to the paired gate on the other side of the map. A gate near each base sends a hero to the team's own river gate on the side the hero faces. Return channels a trip home and cancels on movement or damage.
 - Keyboard: WASD/arrows move; Q/E/R skills; F gate; M map; B return; Esc or the top-left Menu button opens the menu. The view follows the hero, and moving the mouse left or right pushes the view that way. Skill buttons also support keyboard and assistive activation.
 - Pause, help, shop, map, focus loss and the arcade game switcher pause the simulation. Pointer cancellation, resize and dialogs clear held input.
+
+## Arena and pacing
+
+`arena.js` holds `SIZE` and the scales derived from it. `layout.js` writes team 0's half of the map as fractions of `SIZE` (lane knots, guardians, gates, camps, brush, cover, river knots, districts, landmarks and groves); `world.js` mirrors it across the river (y′ = SIZE − y), so both teams get the same map. Footprints (cover, brush radius, river width and bridges) use the fixed `FEATURE_SCALE`; scattered scenery counts follow `AREA_SCALE` and river details follow `LENGTH_SCALE`. A change to 12800 is one constant plus a pacing retune.
+
+- Lanes: the side lanes run about 11500 units base to base. The middle lane swings west, back across the centre line and east of the Wild Hunt ford, so it is about 9500 units. Each lane crosses the river once, at the axis.
+- Wards stand by walking distance from their own base (`TOWER_ARC`): side lanes 1250 / 2450 / 3700, middle 1100 / 2180 / 3250. Consecutive wards are at least 2.5 tower ranges apart in a straight line.
+- Guardians flank each court. A guardian slam marks a 230-unit circle 0.8 s before impact; afterwards the guardian is exposed for 1.4 s and takes 25% more damage.
+- Outer wards take half damage for the first 3:30. Waves (two melee wisps, a caster and a siege wisp every third wave) leave the base every 20 s from 0:23 and grow 6% stronger per minute after 5:00. An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
+- Sudden death (14:00): all protection is lifted, structures take 50% more damage and no longer need a wave, home heals only 2% per second, respawns take 50% longer and basic attacks of heroes and wisps grow stronger. Hard limit (17:00): structures broken, then structure health, then kills, else a draw.
+- Respawn is 6 + 1.2 × level seconds (at most 28). Bots walk with their wave, join the push on any enemy lane that is open to its base, never into an enemy ward that no wisp of theirs tanks, and side-lane bots use their base gate when their wave has passed the river gate.
+
+| Structure | Health | Range | Damage | Rewards (XP / embers, whole team) |
+| --- | --- | --- | --- | --- |
+| Outer ward | 3600 | 360 | 210 | 120 / 110 |
+| Middle ward | 5200 | 385 | 225 | 150 / 130 |
+| Inner ward | 6000 | 410 | 240 | 180 / 160 |
+| Guardian (×2 per base) | 5000 | 420 | 240, slam 380 | 200 / 180 |
+| Elder rift (armor 80; heals 1.5% per second while no enemy wisp is at it) | 24000 | 420 | 260 | win |
+
+Measured pacing (72 seeded bot matches, each with its own draft; medians): first skirmish 0:39, first blood 0:58, first outer ward 3:15, first middle ward 5:36, first inner ward 8:41, rift exposed 10:38, match end 11:33 (p25 9:28, p75 13:03). 12 of 72 matches reached sudden death and all ended by a rift kill. Before this change (6400 map, two tiers, the same method) the matches ran: first skirmish 0:05, first blood 0:20, first outer ward 1:10, rift exposed 3:14, end 5:36, with 15 of 36 at the six-minute limit. Mirrored drafts (both teams use the same kits, lane for lane) split 16–20 over 36 matches, so the layout favours neither side.
 
 ## Items and builds
 
@@ -54,7 +75,7 @@ Models use 5–6K target polygons and embedded textures resized to 1024 pixels. 
 
 ## Verification
 
-Run `node qa/tidebreak/sim.test.mjs`. It verifies the ninefold map area, open lanes in both realms, collision recovery on a shift, blocked LOS, concealment and reveal, ambush damage, wall-blocked attacks, four distinct kits, portal transit/cooldown, completed-item uniqueness, respawn, return interruption, objective rewards, deterministic replay and 12 full bot matches. Those matches completed in 85–250 seconds, produced 13–26 creature kills, and peaked at 50 units.
+Run `node qa/tidebreak/sim.test.mjs`. It verifies the 9600 map, open lanes in both realms, collision recovery on a shift, blocked LOS, concealment and reveal, ambush damage, wall-blocked attacks, four distinct kits, portal and base gate transit and cooldown, completed-item uniqueness, respawn, return interruption, objective rewards, wave content and elder wisps, sprint parity, wave-gated bots, sudden death, the hard-limit tiebreak, deterministic replay and six full bot matches. `towers.test.mjs` checks the mirrored ward distances and spacing, the protection chain on every lane, guardian and core gating, backdoor protection, fortification and the guardian slam. `river.test.mjs` checks that every lane crosses the river once. With the server running, `ground.e2e.mjs` checks that the 2D ground paints water at every river sample.
 
 Browser flow: choose a creature → start → move with one thumb while aiming a skill with the other → release → pause/resume → Night Market purchases / build change / sale → map destination → realm shift → full result → replay. Local Chromium loads checked-in files through request routing because Cloud Browser rejected loopback navigation with `ERR_BLOCKED_BY_CLIENT`. The rendered checks cover 390 × 844, 320 × 568, 844 × 390 and 1440 × 900. The public preview is checked separately in Cloud Browser after publishing.
 

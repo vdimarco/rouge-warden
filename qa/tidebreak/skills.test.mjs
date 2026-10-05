@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { createMatch, player, cast, step, damage, trainSkill, HEROES } from '../../public/tidebreak/sim.js';
+import { createMatch, player, cast, step, damage, trainSkill, HEROES, respawnTime } from '../../public/tidebreak/sim.js';
 import { canLearn, rankGate, trainBot, xpForLevel, cooldownFor, KITS } from '../../public/tidebreak/abilities.js';
-const isolated=(hero=0)=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,gold:0,nextShop:Infinity});return {s,p};};
-const foe=(s,x,y)=>{const t={id:200+s.units.length,kind:'minion',team:1,x,y,radius:16,hp:10000,maxHp:10000,damage:0,speed:0,attackCd:100,lane:1,shield:0,stun:0,slow:0,fear:0,armor:0,lastHit:0};s.units.push(t);return t;};
+import { near } from './open-ground.mjs';
+const isolated=(hero=0)=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{...near(2400,2800),gold:0,nextShop:Infinity});return {s,p};};
+// Positions are written as on the 6400 map and moved to open ground.
+const foe=(s,x,y)=>{const t={id:200+s.units.length,kind:'minion',team:1,...near(x,y),radius:16,hp:10000,maxHp:10000,damage:0,speed:0,attackCd:100,lane:1,shield:0,stun:0,slow:0,fear:0,armor:0,lastHit:0};s.units.push(t);return t;};
 const advance=(s,t)=>{for(let i=0;i<t*20;i++)step(s,{attack:false},.05);};
 for(let hero=0;hero<HEROES.length;hero++){
  const {s,p}=isolated(hero);assert.equal(KITS[hero].length,4);assert.deepEqual(p.skillRanks,[0,0,0,0]);assert.equal(p.skillPoints,1);
@@ -11,10 +13,10 @@ for(let hero=0;hero<HEROES.length;hero++){
  assert.equal(trainSkill(p,0),true);assert.equal(p.skillPoints,0);assert.deepEqual(p.skillRanks,[1,0,0,0]);assert.equal(trainSkill(p,1),false);
  p.skillPoints=10;assert.equal(trainSkill(p,0),false,'second rank requires level 3');p.level=3;const old=cooldownFor(p,0);assert(trainSkill(p,0));assert(cooldownFor(p,0)<old);
  p.level=5;assert.equal(trainSkill(p,3),false);p.level=6;assert(trainSkill(p,3));p.level=11;assert.equal(trainSkill(p,3),false);p.level=12;assert(trainSkill(p,3));p.level=17;assert.equal(trainSkill(p,3),false);p.level=18;assert(trainSkill(p,3));assert.equal(trainSkill(p,3),false,'max ultimate rank is 3');
- const ranks=[...p.skillRanks];damage(s,{team:1,kind:'minion',power:0,x:p.x,y:p.y},p,99999);advance(s,25);assert(p.hp>0);assert.deepEqual(p.skillRanks,ranks,'training survives death');assert.equal(p.cd.length,4);
+ const ranks=[...p.skillRanks];damage(s,{team:1,kind:'minion',power:0,x:p.x,y:p.y},p,99999);advance(s,respawnTime(p.level)+1);assert(p.hp>0);assert.deepEqual(p.skillRanks,ranks,'training survives death');assert.equal(p.cd.length,4);
 }
 {
- const {s,p}=isolated();p.xp=xpForLevel(1)-18;const t=foe(s,p.x,p.y-90);t.hp=1;damage(s,p,t,1);assert.equal(p.level,2);assert.equal(p.skillPoints,2,'level up grants exactly one point');
+ const {s,p}=isolated();p.xp=xpForLevel(1)-18;const t=foe(s,2400,2710);t.hp=1;damage(s,p,t,1);assert.equal(p.level,2);assert.equal(p.skillPoints,2,'level up grants exactly one point');
 }
 for(let hero=0;hero<HEROES.length;hero++){
  const {p}=isolated(hero);for(let level=1;level<=18;level++){if(level>1)p.skillPoints++;p.level=level;trainBot(p);p.skillRanks.forEach((rank,slot)=>{if(rank)assert(rankGate(slot,rank-1)<=level);});}assert.deepEqual(p.skillRanks,[4,4,4,3]);

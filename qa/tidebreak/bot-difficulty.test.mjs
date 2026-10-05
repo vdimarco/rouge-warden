@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { createMatch, player, step, HEROES } from '../../public/tidebreak/sim.js';
+import { createMatch, player, step, HEROES, heroSpeed } from '../../public/tidebreak/sim.js';
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
-import { CENTER, LANES, distance, visibleTo } from '../../public/tidebreak/world.js';
-import { PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, botStride, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
+import { CENTER, LANES, PORTALS, SIZE, distance, visibleTo } from '../../public/tidebreak/world.js';
+import { PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
 
 const advance = (s, seconds) => { for (let i = 0; i < seconds * 20; i++) step(s, {}, .05); };
 // One enemy bot and the idle player. No waves, boss or camps unless a test adds them.
@@ -63,12 +63,12 @@ for (const id of DIFFICULTIES) {
 
 // Wave-gated lane walking: a bot with no wave does not walk into a tower.
 const towerTime = level => {
-  const { s, p, bot, towers } = scene(level); let inside = 0; Object.assign(p, { x: 6100, y: 6100 });
+  const { s, p, bot, towers } = scene(level); let inside = 0; Object.assign(p, { x: SIZE - 300, y: SIZE - 300 });
   for (let i = 0; i < 60 * 20; i++) { step(s, {}, .05); if (towers.some(t => t.hp > 0 && distance(t, bot) < t.range)) inside += .05; }
   return { inside, bot };
 };
 for (const id of DIFFICULTIES) { const { inside, bot } = towerTime(id); assert.ok(inside <= .5, `${id} bot spends ${inside.toFixed(2)} s in tower range without a wave`); assert.ok(bot.hp > 0); }
-assert.ok(towerTime('legacy').inside > 2, 'the old bots walked into the tower');
+{ const { inside } = towerTime('legacy'); assert.ok(inside <= .5, 'the lane walk waits for the wave for every bot, the old profile too'); }
 
 // Tower-dive guard: a hurt player under their own tower is not worth a dive.
 const dive = level => {
@@ -101,9 +101,10 @@ assert.equal(trade('legacy'), Infinity, 'the old bots stayed in a losing trade')
 // Sprint parity and cast lock.
 {
   const { s, bot } = scene('veteran', { keep: [] }); s.time = 20; bot.lastHit = 0; bot.revealedUntil = 0;
-  assert.equal(botStride(s, bot), 1.35, 'bots sprint out of combat like the player');
-  bot.lastHit = 19; assert.equal(botStride(s, bot), 1, 'no sprint right after a hit');
-  setDifficulty(s, 'apprentice'); bot.lastHit = 0; assert.equal(botStride(s, bot), 1);
+  // Sprint parity: bots move with the same heroSpeed() as the player.
+  assert.equal(heroSpeed(s, bot), bot.speed * 1.35, 'bots sprint out of combat like the player');
+  bot.lastHit = 19; assert.equal(heroSpeed(s, bot), bot.speed, 'no sprint right after a hit');
+  setDifficulty(s, 'apprentice'); bot.lastHit = 0;
   assert.equal(castLock(s, bot, false), PROFILES.apprentice.failLock); setDifficulty(s, 'mythic'); assert.ok(castLock(s, bot, false) < castLock(s, bot, true), 'a cast that did not start does not lock Mythic bots for long');
 }
 
@@ -121,9 +122,10 @@ assert.equal(trade('legacy'), Infinity, 'the old bots stayed in a losing trade')
 }
 // Rift gates: a far trip uses a gate when it saves time.
 {
-  const { s, bot } = scene('veteran', { keep: [] }); Object.assign(bot, { x: 1700, y: 4360 }); bot.portalCd = 0;
-  const route = routeTo(s, bot, { x: 4700, y: 2050 });
-  assert.ok(route.move.to !== undefined, 'the route goes through a gate'); bot.portalCd = 5; assert.ok(routeTo(s, bot, { x: 4700, y: 2050 }).move.to === undefined, 'a gate on cooldown is not used');
+  const { s, bot } = scene('veteran', { keep: [] }), gate = PORTALS.find(g => !g.choices), exit = PORTALS[gate.to], goal = { x: exit.x + 60, y: exit.y };
+  Object.assign(bot, { x: gate.x + 60, y: gate.y }); bot.portalCd = 0;
+  assert.equal(routeTo(s, bot, goal).move, gate, 'the route goes through a gate');
+  bot.portalCd = 5; assert.equal(routeTo(s, bot, goal).move, goal, 'a gate on cooldown is not used');
 }
 // Punish windows: a recovering or exposed hero becomes the target.
 for (const [id, expected] of [['veteran', 'far'], ['legacy', 'near']]) {

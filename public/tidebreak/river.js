@@ -1,4 +1,7 @@
-import { SIZE, MAP_SCALE } from './arena.js';
+import { SIZE, FEATURE_SCALE, LENGTH_SCALE } from './arena.js';
+import { RIVER_KNOTS, RIVER_POOLS, LANE_KNOTS } from './layout.js';
+// Knots near a lane crossing stay close to the axis, so each bridge sits at the lane's halfway point.
+const CROSSINGS = LANE_KNOTS.map(lane => lane.at(-1)[0]);
 const LENGTH = SIZE, STEP = 12, cache = new Map();
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const random = seed => () => {
@@ -16,14 +19,10 @@ function spline(knots, x, key) {
 export function riverGeometry(seed = 49) {
   seed >>>= 0; if (cache.has(seed)) return cache.get(seed);
   const rand = random(seed ^ 0x42a67d), phase = rand() * Math.PI * 2;
-  const knots = [[0, 2330], [570, 2400], [1160, 2180], [1660, 2070], [1990, 1985], [2420, 2150], [2960, 2110], [3540, 2340], [4110, 2110], [4620, 1810], [4800, 1840]]
-    .map(([x, y]) => ({ x: x * MAP_SCALE, y: (y + (rand() - .5) * (x > 1700 && x < 2600 ? 90 : 210)) * MAP_SCALE, width: (65 + rand() * 47) * MAP_SCALE }));
-  const pools = [
-    { x: 1000 + rand() * 340, radius: 210 + rand() * 110, extra: 45 + rand() * 34 },
-    { x: 3070 + rand() * 430, radius: 250 + rand() * 100, extra: 44 + rand() * 35 },
-  ].map(p => ({ x: p.x * MAP_SCALE, radius: p.radius * MAP_SCALE, extra: p.extra * MAP_SCALE }));
+  const knots = RIVER_KNOTS.map(([x, y]) => ({ x: x * SIZE, y: (y + (rand() - .5) * (CROSSINGS.some(c => Math.abs(c - x) < .03) ? .008 : .024)) * SIZE, width: (65 + rand() * 47) * FEATURE_SCALE }));
+  const pools = RIVER_POOLS.map(([x, spread], i) => ({ x: (x + (rand() - .5) * spread) * SIZE, radius: (i ? 250 + rand() * 100 : 210 + rand() * 110) * FEATURE_SCALE, extra: (i ? 44 + rand() * 35 : 45 + rand() * 34) * FEATURE_SCALE }));
   // Local erosion pockets have independent sizes and positions on each bank.
-  const pockets = Array.from({ length: 18 }, (_, i) => ({
+  const pockets = Array.from({ length: Math.round(18 * LENGTH_SCALE) }, (_, i) => ({
     x: 140 + rand() * (LENGTH - 280), radius: 65 + rand() * 160,
     depth: (i % 4 === 0 ? -1 : 1) * (14 + rand() * 42), side: i % 2,
   }));

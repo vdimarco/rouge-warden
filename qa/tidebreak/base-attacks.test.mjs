@@ -3,10 +3,11 @@ import { createMatch, player, step, damage } from '../../public/tidebreak/sim.js
 import { BASES } from '../../public/tidebreak/world.js';
 import { BASE_HEAL_RADIUS, BASE_STYLES } from '../../public/tidebreak/bases.js';
 import { attackPose } from '../../public/tidebreak/combat-motion.js';
+import { near } from './open-ground.mjs';
 function duel(kind) {
   const s = createMatch(kind), p = player(s), foe = s.units.find(u => u.kind === 'hero' && u.team === 1);
   s.units = [p, foe]; s.nextWave = s.objectiveAt = Infinity; s.campTimers = [Infinity, Infinity];
-  Object.assign(p, { x: 2400, y: 3100 }); Object.assign(foe, { x: 2400, y: 3000, stun: 100, nextShop: Infinity, hp: 100000, maxHp: 100000 });
+  Object.assign(p, near(2400, 3100)); Object.assign(foe, { ...near(2400, 3000), stun: 100, nextShop: Infinity, hp: 100000, maxHp: 100000 });
   return { s, p, foe };
 }
 for (let kind = 0; kind < 4; kind++) {
@@ -25,11 +26,11 @@ for (let kind = 0; kind < 4; kind++) {
   // A pause and a missed attack each start a fresh sequence.
   for(let i=0;i<270;i++)step(s,{attack:false},1/120);
   step(s,{},1/120); assert.equal(p.pendingAttack.variant,0);
-  foe.y = 2000; while(p.pendingAttack)step(s,{attack:false},1/120);
+  foe.y = near(0, 2000).y; while(p.pendingAttack)step(s,{attack:false},1/120);
   assert.equal(p.comboNext,0);
-  foe.y=3000; while(p.attackCd>0)step(s,{attack:false},1/120);step(s,{},1/120);
+  foe.y=near(0, 3000).y; while(p.attackCd>0)step(s,{attack:false},1/120);step(s,{},1/120);
   while(p.pendingAttack)step(s,{attack:false},1/120);
-  const second={...foe,id:999,y:3000};s.units.push(second);while(p.attackCd>0)step(s,{attack:false},1/120);
+  const second={...foe,id:999,y:near(0, 3000).y};s.units.push(second);while(p.attackCd>0)step(s,{attack:false},1/120);
   step(s,{target:999},1/120);assert.equal(p.pendingAttack.variant,0,'target switch resets the sequence');
   p.stun=1;while(p.pendingAttack)step(s,{attack:false},1/120);assert.equal(p.comboNext,0,'stun cancels hit and sequence');
   p.stun=0;p.hp=1;damage(s,foe,p,9999);assert.equal(p.comboNext,0,'death resets sequence');

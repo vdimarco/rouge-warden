@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { createMatch,player,step,commandOrder,cancelOrder,HEROES } from '../../public/tidebreak/sim.js';
-import { distance,OBSTACLES } from '../../public/tidebreak/world.js';
+import { distance,OBSTACLES,CAMPS } from '../../public/tidebreak/world.js';
 import { route } from '../../public/tidebreak/navigation.js';
-function setup(hero=1){const s=createMatch(hero,49),p=player(s),foe=s.units.find(e=>e.kind==='hero'&&e.team===1);s.units=[p,foe];s.nextWave=s.objectiveAt=Infinity;s.campTimers=[Infinity,Infinity];Object.assign(p,{x:2400,y:3100});Object.assign(foe,{x:2400,y:2700,stun:100,hp:100000,maxHp:100000,nextShop:Infinity});return {s,p,foe};}
+import { near } from './open-ground.mjs';
+function setup(hero=1){const s=createMatch(hero,49),p=player(s),foe=s.units.find(e=>e.kind==='hero'&&e.team===1);s.units=[p,foe];s.nextWave=s.objectiveAt=Infinity;s.campTimers=[Infinity,Infinity];Object.assign(p,near(2400,3100));Object.assign(foe,{...near(2400,2700),stun:100,hp:100000,maxHp:100000,nextShop:Infinity});return {s,p,foe};}
 for(let hero=0;hero<HEROES.length;hero++){
  const {s,p,foe}=setup(hero);foe.y=p.y-p.range-180;const start=distance(p,foe);assert(commandOrder(s,p,{type:'attack',target:foe.id}));
  for(let i=0;i<180;i++)step(s,{},1/60);
@@ -27,4 +28,5 @@ for(let hero=0;hero<HEROES.length;hero++){
 }
 console.log('PASS: mouse-order rules for all 12 heroes, range and damage, movement override, recall, concealment, death, neutral focus and obstacle routing.');
 
-{const s=createMatch(1);step(s,{attack:false},.01);assert.deepEqual(s.units.filter(e=>e.kind==='camp').map(e=>e.marketplaceSprite),['possessed-ogre','undead-knight','undead-mage','undead-archer']);}
+// Each camp starts with its own sprite; the first four keep the original order and the list repeats for more camps.
+{const s=createMatch(1);step(s,{attack:false},.01);const names=s.units.filter(e=>e.kind==='camp').map(e=>e.marketplaceSprite),first=['possessed-ogre','undead-knight','undead-mage','undead-archer'];assert.deepEqual(names.slice(0,4),first);assert.equal(names.length,CAMPS.length);assert(names.every(n=>first.includes(n)));}

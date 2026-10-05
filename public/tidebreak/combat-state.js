@@ -1,3 +1,4 @@
+import { isEngage } from './combat-tells.js';
 // Shared action rules. Roots restrain voluntary movement, not the whole hero.
 export const rooted = (s,e) => (e.snaredUntil || 0) > s.time;
 export const movementSpell = (e,slot) => slot === 0 && [0,1,2,3,6,7,8,9].includes(e.hero);
@@ -10,8 +11,9 @@ const WINDUPS = [
  [0,.3,0,.36], [0,0,.2,0], [0,0,0,.34], [0,0,.38,.34],
 ];
 export function castTiming(e,slot,bot=false) {
- const defensive = slot===0 || slot===2&&[7,10].includes(e.hero) || slot===3&&[3,9].includes(e.hero);
- const windup = defensive ? 0 : bot ? (slot===3?.7:.5) : WINDUPS[e.hero]?.[slot] || 0;
+ // Engages that stun on contact (leap, charge) get a path tell. Other slot 0 spells are escapes.
+ const engage = isEngage(e,slot), defensive = !engage && (slot===0 || slot===2&&[7,10].includes(e.hero) || slot===3&&[3,9].includes(e.hero));
+ const windup = defensive ? 0 : engage ? (bot?.45:.3) : bot ? (slot===3?.7:.5) : WINDUPS[e.hero]?.[slot] || 0;
  // Major attacks should create a real answer window. The tell gives the defender
  // time to dodge; the recovery gives them time to punish a miss instead of
  // immediately resetting into another action.

@@ -1,13 +1,15 @@
 // Team facts recorded by the deterministic simulation. Presentation reads them;
 // bots read pings and skirmishes to rotate like teammates.
 import { distance } from './world.js';
+import { ROTATION_SCALE } from './arena.js';
 
 export const MULTI_KILL_WINDOW = 12;
 export const ALARM_COOLDOWN = 14;
 export const RALLY_TIME = 12;
 const FIGHT_PING_COOLDOWN = 7;
-const ASSIST_RANGE = 1900;
-const RALLY_RANGE = 3200;
+// Assist and rally reach follow the map size, so rotations still happen on the bigger shore.
+const ASSIST_RANGE = 1900 * ROTATION_SCALE;
+const RALLY_RANGE = 3200 * ROTATION_SCALE;
 
 export function pushPing(s, ping) {
   s.pings ||= [];

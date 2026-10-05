@@ -1,16 +1,18 @@
 // Geometry is shared by movement, targeting, fog, the minimap and the renderer.
 import { creekCenter, insideRiver } from './river.js';
-import { SIZE, MAP_SCALE, CENTER, arenaPoint } from './arena.js';
-export { SIZE, MAP_SCALE, CENTER } from './arena.js';
-export const LIMIT = 360;
+import { SIZE, CENTER, FEATURE_SCALE, at, mirror } from './arena.js';
+import { BASE, LANE_KNOTS, TOWER_ARC, GUARDIANS, RIVER_GATES, BASE_GATE, CAMP_SPOTS, BRUSH_SPOTS, COVER_SPOTS } from './layout.js';
+export { SIZE, MAP_SCALE, CENTER, FEATURE_SCALE } from './arena.js';
+export { TOWER_ARC } from './layout.js';
+// The soft limit starts sudden death. The hard limit ends the match with a tiebreak.
+export const SUDDEN_DEATH = 840, LIMIT = 1020;
 export const SHIFT = 40;
-export const BASES = [arenaPoint(2400, 4000), arenaPoint(2400, 800)];
-// Strategic anchors remain stable; the shared sampled tracks wind between them.
-export const LANES = [
-  [BASES[0], arenaPoint(1060, 3530), arenaPoint(690, 2410), arenaPoint(1110, 1280), BASES[1]],
-  [BASES[0], arenaPoint(2400, 3260), arenaPoint(2400, 2400), arenaPoint(2400, 1540), BASES[1]],
-  [BASES[0], arenaPoint(3630, 3500), arenaPoint(4060, 2580), arenaPoint(3750, 1250), BASES[1]],
-];
+export const BASES = [at(...BASE), mirror(at(...BASE))];
+// Each lane is team 0's half, the knot on the axis, then the same half mirrored to team 1's base.
+export const LANES = LANE_KNOTS.map(knots => {
+  const south = knots.map(k => at(...k)), axis = south.pop();
+  return [BASES[0], ...south, axis, ...[...south].reverse().map(mirror), BASES[1]];
+});
 // Catmull-Rom centerlines are consumed by movement, terrain and the minimap.
 function track(knots) {
   const result = [];
@@ -24,47 +26,45 @@ function track(knots) {
   }
   result.push(knots.at(-1)); return result;
 }
-export const PATHS = LANES.map((lane, i) => track(i === 1 ? [lane[0], arenaPoint(2250, 3850), lane[1], arenaPoint(2550, 2820), lane[2], arenaPoint(2260, 1960), lane[3], arenaPoint(2530, 1030), lane[4]] : lane));
+export const PATHS = LANES.map(track);
 export function closestTrack(p, path) {
   let best = Infinity, index = 0;
   for (let i = 0; i < path.length; i++) { const d = Math.hypot(p.x - path[i].x, p.y - path[i].y); if (d < best) { best = d; index = i; } }
   return index;
 }
-export const TOWER_POSITIONS = [0, 1].map(team => LANES.map((lane, laneIndex) => {
-  const path = team ? [...PATHS[laneIndex]].reverse() : PATHS[laneIndex];
-  const outer = lane[team ? 3 : 1], index = closestTrack(outer, path);
-  return [outer, path[Math.max(1, Math.round(index * .48))]];
-}));
-export const PORTALS = [{ x: 1300, y: 3270, to: 3 }, { x: 3500, y: 3270, to: 2 }, { x: 1300, y: 1530, to: 1 }, { x: 3500, y: 1530, to: 0 }].map(p => ({ ...p, ...arenaPoint(p.x, p.y) }));
-export const CAMPS = [{ x: 1480, y: 2440 }, { x: 3320, y: 2360 }, { x: 1220, y: 2970 }, { x: 3580, y: 1830 }].map(p => arenaPoint(p.x, p.y));
+// Distance walked along a path; stations are placed by it, so both teams get the same spacing.
+export const arcLength = path => path.reduce((n, p, i) => i ? n + Math.hypot(p.x - path[i - 1].x, p.y - path[i - 1].y) : 0, 0);
+export function pointAtArc(path, d) {
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1], b = path[i], step = Math.hypot(b.x - a.x, b.y - a.y);
+    if (d <= step) { const t = step ? Math.max(0, d) / step : 0; return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+    d -= step;
+  }
+  return { ...path.at(-1) };
+}
+export const laneFrom = (team, lane) => team ? [...PATHS[lane]].reverse() : PATHS[lane];
+// The lane's halfway point lies on the river axis.
+export const laneMid = lane => pointAtArc(PATHS[lane], arcLength(PATHS[lane]) / 2);
+// [team][lane] = [outer, middle, inner]; tier 0 is outer.
+export const TOWER_POSITIONS = [0, 1].map(team => TOWER_ARC.map((arcs, lane) => arcs.map(d => pointAtArc(laneFrom(team, lane), d))));
+export const GUARDIAN_POSITIONS = [GUARDIANS.map(g => at(...g)), GUARDIANS.map(g => mirror(at(...g)))];
+// River gates pair across the map. Base gates send a hero to the team's own river gate on the side it faces.
+const gate = (p, to, more = {}) => ({ ...p, to, ...more });
+const [sw, se] = RIVER_GATES.map(g => at(...g)), home = at(...BASE_GATE);
+export const PORTALS = [gate(sw, 3), gate(se, 2), gate(mirror(sw), 1), gate(mirror(se), 0), gate(home, 0, { base: 0, choices: [0, 1] }), gate(mirror(home), 2, { base: 1, choices: [2, 3] })];
+export const CAMPS = [...CAMP_SPOTS.map(c => at(...c)), ...CAMP_SPOTS.map(c => mirror(at(...c)))];
+// The Wild Hunt rises in the shallow ford at the centre.
+export const HUNT = CENTER;
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 // Broad town blocks become smaller groves. Lanes stay open in both realms.
-// Unequal islands of cover follow places rather than a rectangular street grid.
-// Each anchor has an illustrated structure or natural landform at its footprint.
-export const COVER = [
-  { x: 1430, y: 1850, w: 470, h: 330, town: 'ruin-yard', woods: 'ruin-yard', height: 620, biome: 'ruins' },
-  { x: 3160, y: 3060, w: 390, h: 270, town: 'root-arch', woods: 'root-arch', height: 640, biome: 'grove' },
-  { x: 1580, y: 1420, w: 560, h: 260, town: 'cliff-ridge', woods: 'cliff-ridge', height: 520, biome: 'ruins' },
-  { x: 3390, y: 1880, w: 540, h: 240, town: 'rock-shelf', woods: 'rock-shelf', height: 510, biome: 'heath' },
-  { x: 1750, y: 2630, w: 390, h: 240, town: 'mill-yard', woods: 'mill-yard', height: 550, biome: 'village' },
-  { x: 3220, y: 3400, w: 340, h: 260, town: 'forest-island', woods: 'forest-island', height: 650, biome: 'grove' },
-  { x: 1950, y: 3430, w: 250, h: 190, town: 'house-a', woods: 'willow', height: 410, biome: 'village' },
-  { x: 2940, y: 1330, w: 270, h: 200, town: 'observatory', woods: 'oak', height: 430, biome: 'ruins' },
-  { x: 2950, y: 2570, w: 260, h: 250, town: 'greenhouse', woods: 'forest-island', height: 480, biome: 'grove' },
-  { x: 1790, y: 3090, w: 290, h: 200, town: 'market', woods: 'hollow-log', height: 280, biome: 'village' },
-  { x: 4540, y: 3070, w: 260, h: 350, town: 'forest-island', woods: 'forest-island', height: 590, biome: 'grove' },
-  { x: 390, y: 3100, w: 220, h: 310, town: 'cliff-ridge', woods: 'cliff-ridge', height: 450, biome: 'heath' },
-  { x: 2890, y: 3510, w: 260, h: 190, town: 'house-b', woods: 'juniper', height: 390, biome: 'village' },
-];
-COVER.forEach(b => Object.assign(b, { ...arenaPoint(b.x, b.y), w: b.w * MAP_SCALE, h: b.h * MAP_SCALE }));
+// Each block has an illustrated structure or natural landform at its footprint; the north half mirrors the south.
+const block = b => ({ ...b, ...at(b.x, b.y), w: b.w * FEATURE_SCALE, h: b.h * FEATURE_SCALE });
+export const COVER = [...COVER_SPOTS.map(block), ...COVER_SPOTS.map(b => mirror(block(b)))];
 export const OBSTACLES = [0, 1].map(phase => COVER.map((b, id) => ({ ...b, w: b.w * (phase ? .58 : 1), h: b.h * (phase ? .58 : 1), id })));
-export const BRUSH = [
-  [1110, 2190], [1120, 2700], [3690, 2610], [3680, 2100],
-  [2160, 1900], [2640, 2900], [2140, 2820], [2660, 1980],
-  [1550, 3270], [3250, 1530], [1550, 1530], [3250, 3270],
-].map(([x, y]) => ({ ...arenaPoint(x, y), radius: 150 * MAP_SCALE }));
-export const RIVER = y => CENTER.x + Math.sin((y - 500 * MAP_SCALE) / (480 * MAP_SCALE)) * 430 * MAP_SCALE;
+export const BRUSH = [...BRUSH_SPOTS.map(b => at(...b)), ...BRUSH_SPOTS.map(b => mirror(at(...b)))].map(p => ({ ...p, radius: 150 * FEATURE_SCALE }));
+// The old sine river feeds only the retired WebGL files.
+export const RIVER = y => CENTER.x + Math.sin((y - SIZE * .104) / (SIZE * .1)) * SIZE * .09;
 export const CREEK = creekCenter;
 export function inWater(e, s) { return insideRiver(e, s?.seed ?? 49); }
 export function inBrush(s, e) { return s.phase === 1 && BRUSH.some(b => distance(b, e) < b.radius); }
@@ -100,6 +100,8 @@ export function resolveBody(s, e) {
       if (side === 0) e.x = x0; if (side === 1) e.x = x1; if (side === 2) e.y = y0; if (side === 3) e.y = y1;
     }
   }
+  // An obstacle near the edge must not push a body off the map.
+  e.x = clamp(e.x, 200, SIZE - 200); e.y = clamp(e.y, 180, SIZE - 180);
 }
 export function move(s, e, x, y, dt, speed = e.speed) {
   if(e.snaredUntil>s.time || e.castIntent)return;
