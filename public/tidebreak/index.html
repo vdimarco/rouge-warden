@@ -22,10 +22,12 @@
   <link rel="preload" as="image" href="./art/portraits/tidewarden-full.webp">
   <link rel="stylesheet" href="./selection-reference.css">
   <link rel="stylesheet" href="./team.css">
+  <link rel="stylesheet" href="./difficulty.css">
 </head>
 <body>
   <canvas id="battle" aria-label="Shore of the Ancients battlefield"></canvas>
   <div id="hud" hidden>
+    <span id="difficulty-badge" class="difficulty-badge" hidden></span>
     <header><span class="wordmark">SHORE OF<br>THE ANCIENTS</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">06:00</time></div><div id="lineup" class="hud-lineup" aria-label="Heroes in this match"></div><div class="hud-corner"><button id="pause" class="pause" aria-label="Open menu (Esc)" title="Menu (Esc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span><kbd>Esc</kbd></button><button id="hud-sound" class="hud-sound" aria-pressed="true" aria-label="Sound on" title="Sound on"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="M16 9l5 6M21 9l-5 6"/></svg></button><button id="muted-chip" class="muted-chip" hidden aria-label="Sound is off. Turn it on" title="Sound is off. Turn it on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><span>Sound is off · Turn on</span></button></div></header>
     <div id="perf" hidden><pre></pre><button>Copy</button></div>
     <div id="gpu-note" role="status" hidden><span>This browser draws the game without the graphics card, so it can lag. Turn on graphics acceleration in the browser settings.</span><button id="gpu-note-close" aria-label="Close this note">×</button></div>
@@ -68,7 +70,8 @@
       <p class="shore-secret">Some secrets<br>should stay beneath<br>the waves.<span></span></p><p class="shore-memory">“The ocean<br>remembers<br>all things.”</p>
       <div class="roster-footer">
       <a class="arcade-brand" href="/" aria-label="Cottage Arcade"><span class="brand-source" aria-hidden="true"></span><span class="arcade-motto">Play together.<br>Somewhere brighter.</span></a>
-      <div class="start-action"><button id="play" class="primary" disabled><i class="play-sigil" aria-hidden="true"></i><span>Opening the shore…</span><img src="./art/ui/chevron-right.svg" alt=""></button><span id="ready-legend" class="sr-only">Tidewarden</span></div>
+      <div class="start-action"><button id="play" class="primary" disabled><i class="play-sigil" aria-hidden="true"></i><span>Opening the shore…</span><img src="./art/ui/chevron-right.svg" alt=""></button><span id="ready-legend" class="sr-only">Tidewarden</span>
+      <div id="difficulty-picker" class="difficulty-picker" role="radiogroup"></div></div>
       <p id="load-error" role="alert" hidden>Art could not load. Check your connection and <button onclick="location.reload()">try again</button>.</p>
       <div class="menu-links"><button data-switch><kbd>Esc</kbd> Back</button><button id="select-key"><kbd>Enter</kbd> Select</button><button id="how"><kbd>F</kbd> Hero details</button></div>
       </div>

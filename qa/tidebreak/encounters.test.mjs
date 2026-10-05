@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { createMatch, player } from '../../public/tidebreak/sim.js';
 import { tickEncounter, encounterPattern } from '../../public/tidebreak/encounters.js';
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
+import { botProfile } from '../../public/tidebreak/bot-difficulty.js';
+// The reaction window comes from the bot's difficulty profile (allied bots here).
+const inWindow=(s,p,at)=>{const [low,high]=botProfile(s,p).reaction;return at>=low&&at<=high+.12;};
 import { CENTER, OBSTACLES } from '../../public/tidebreak/world.js';
 
 const setup=(kind='camp',camp=0)=>{
@@ -63,7 +66,7 @@ for(const interruption of ['stun','leash']){
  const {s,p,e}=setup('boss');
  e.specialIntent=encounterPattern(e,p,0);
  let decision=combatDecision(s,p);assert.notEqual(decision.mode,'evade','new warning permits a short human-like perception delay');
- const at=p.warningReaction.at;assert(at>=.18&&at<=.3);
+ const at=p.warningReaction.at;assert(inWindow(s,p,at));
  s.time=at-.001;assert.notEqual(combatDecision(s,p).mode,'evade');
  s.time=at+.001;decision=combatDecision(s,p);assert.equal(decision.mode,'evade');assert(decision.move);
  s.time+=.02;assert.equal(p.warningReaction.at,at,'the same warning does not restart its response timer');
@@ -76,7 +79,7 @@ for(const interruption of ['stun','leash']){
  const pending={x:p.x,y:p.y,team:1,source:e.id,type:'worldbreaker',armed:.8,amount:370,radius:190,life:2};
  s.zones=[pending];
  assert.notEqual(combatDecision(s,p).mode,'evade','pre-arm ground gives the same perception delay as a caster warning');
- const at=p.warningReaction.at;assert(at>=.18&&at<=.3);
+ const at=p.warningReaction.at;assert(inWindow(s,p,at));
  s.time=at-.001;assert.notEqual(combatDecision(s,p).mode,'evade');assert.equal(p.warningReaction.at,at);
  s.time=at+.001;assert.equal(combatDecision(s,p).mode,'evade','the bot answers the warning before its delayed hit');
  s.time=0;p.warningReaction=null;pending.armed=.1;combatDecision(s,p);

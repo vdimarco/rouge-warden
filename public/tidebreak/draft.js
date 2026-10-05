@@ -1,5 +1,6 @@
 // The draft board: five bots pick one by one, so the player sees who they fight with and against.
 import { HERO_IDENTITIES } from './hero-identities.js';
+import { draftValue } from './bot-difficulty.js';
 
 export const HANDLES = ['kelpie77', 'mossbright', 'tidepool_jo', 'brinewolf', 'Lantern_Fish', 'saltmarsh', 'gullwing', 'Nix', 'driftwood_k', 'oarsome', 'Mirelight', 'wavecrest', 'deepcurrent', 'Fen_Witch', 'barnacle_b', 'rook_of_reefs', 'quietkeel', 'Sorrel', 'harborghost', 'lowtide_lu'];
 // Hero creation order in the match: player, west ally, east ally, enemies west, middle, east.
@@ -31,7 +32,8 @@ const ALLY_LINES = [
   (h, lane) => `Taking ${h.name}. ${lane} is mine, feed me kills.`,
 ];
 
-export function draftPlan(playerIdentity, seed = 1) {
+// levels: each team's bot profile id. A profile with draft skill weighs kit strength by lane.
+export function draftPlan(playerIdentity, seed = 1, levels = ['ally', 'veteran']) {
   const random = rng(seed >>> 0), taken = new Set([playerIdentity]);
   const handles = [...HANDLES];
   for (let i = handles.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [handles[i], handles[j]] = [handles[j], handles[i]]; }
@@ -40,7 +42,7 @@ export function draftPlan(playerIdentity, seed = 1) {
   for (const slot of PICK_ORDER) {
     if (slot === 0) continue;
     const team = SLOTS[slot].team, mates = picks.map((id, i) => id !== null && SLOTS[i].team === team ? HERO_IDENTITIES[id] : null).filter(Boolean);
-    const ranked = HERO_IDENTITIES.filter(h => !taken.has(h.id)).map(h => ({ h, value: score(h, mates) + random() * 2.2 })).sort((a, b) => b.value - a.value);
+    const ranked = HERO_IDENTITIES.filter(h => !taken.has(h.id)).map(h => ({ h, value: score(h, mates) + random() * 2.2 + draftValue(levels[team], h.kit, SLOTS[slot].lane) })).sort((a, b) => b.value - a.value);
     const choice = ranked[0].h;
     picks[slot] = choice.id; taken.add(choice.id);
     considered[slot] = [ranked[2]?.h.id, ranked[1]?.h.id].filter(id => id !== undefined);
