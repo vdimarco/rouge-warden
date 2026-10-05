@@ -9,8 +9,8 @@
 - [x] Name the live address and the origin rule in the root README.
 - [x] Validate the change with the OpenSpec CLI.
 - [x] After the record: check DNS, the certificate, the pages, and `assetlinks.json` and its header.
-- [ ] After the merge: a call to `/api/warden` from `https://arcade.uptick.systems` passes the origin check on the live site.
-- [ ] Archive the change.
+- [x] After the merge: a call to `/api/warden` from `https://arcade.uptick.systems` passes the origin check on the live site.
+- [x] Archive the change.
 
 ## Checks
 
@@ -26,4 +26,4 @@
 - Pages: `/`, `/fish/`, `/vr/`, `/brawl/` and `/fish/privacy.html` answer 200 over HTTPS from Vercel. The arcade page is the same file, byte for byte, on both hosts. `http://` answers 308 to `https://`.
 - `/.well-known/assetlinks.json` answers 200 with `Content-Type: application/json`.
 - `https://warden-alpha-wheat.vercel.app/` still answers 200, with no redirect.
-- Jev: before the merge, the live site still has the old rule. A call with `Origin: https://arcade.uptick.systems` gets 403, and a call from the old host gets past the check (400 for an empty body). The branch preview needs a Vercel login, so the new rule was not called there. The check runs again after the merge.
+- Jev: before the merge (#220), the live site still had the old rule, and a call with `Origin: https://arcade.uptick.systems` got 403. After the merge, the same call gets past the origin check (400 for an empty body, so no gateway call is made), as does a call from the old host. `https://arcade.uptick.systems.example.com` still gets 403.

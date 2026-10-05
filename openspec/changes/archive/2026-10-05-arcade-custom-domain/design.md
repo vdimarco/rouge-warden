@@ -18,4 +18,4 @@ Vercel needs no TXT record. It marked the domain verified when the domain was ad
 
 **The Quest app.** The next APK from `quest/build-apk.sh` opens the new host. A service worker cache belongs to one origin, so that APK starts with an empty offline cache. It needs the network for its first start, as every new install does.
 
-**Package names stay.** `com.cottagearcade.fullswing` and `com.cottagearcade.reelitin` do not change in this change.
+**Package names.** This change leaves the app IDs alone. The Quest app keeps `com.cottagearcade.fullswing`.
