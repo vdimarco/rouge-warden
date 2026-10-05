@@ -27,11 +27,11 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/vr/lib/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from '/tidebreak/lib/meshopt_decoder.mjs';
 import { retarget, skinnedMeshOf } from '/tidebreak/hero-rig.js';
-const YAW = -0.42, IDLE_FRAME = 0.22, SUPER = 2;
+const YAW = -0.42, IDLE_FRAME = 0.45, SUPER = 2;
 const clips = await (await fetch('/tidebreak/models/clips.json')).json();
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const gl = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-gl.setPixelRatio(1); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.08;
+gl.setPixelRatio(1); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.15;
 gl.shadowMap.enabled = true; gl.shadowMap.type = THREE.PCFSoftShadowMap; gl.setClearColor(0x000000, 0);
 // Reflections come from a small light room: a warm softbox up left, a cool strip behind on the right, a dark floor.
 function studioEnvironment() {
@@ -43,10 +43,10 @@ function studioEnvironment() {
 const environment = studioEnvironment();
 function stage() {
   const scene = new THREE.Scene(); scene.environment = environment; scene.environmentIntensity = 0.55;
-  const key = new THREE.DirectionalLight(0xffcf98, 3.4); key.position.set(-3.2, 4.4, 3.6); key.castShadow = true;
+  const key = new THREE.DirectionalLight(0xffcf98, 3.8); key.position.set(-3.2, 4.4, 3.6); key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 4;
   key.target.position.set(0, 1, 0); Object.assign(key.shadow.camera, { left: -1.8, right: 1.8, top: 1.8, bottom: -1.8, near: 0.5, far: 14 }); key.shadow.camera.updateProjectionMatrix();
-  const rim = new THREE.DirectionalLight(0x9fc6ff, 3.2); rim.position.set(3.4, 2.6, -3.4);
+  const rim = new THREE.DirectionalLight(0x9fc6ff, 5.2); rim.position.set(3.4, 2.6, -3.4);
   const kick = new THREE.DirectionalLight(0xffb27a, 0.9); kick.position.set(-3.5, 1.2, -2.5);
   const fill = new THREE.HemisphereLight(0x6f7d8c, 0x2b1d12, 0.55);
   scene.add(key, key.target, rim, kick, fill); return scene;
@@ -70,8 +70,8 @@ function shot(scene, width, height, fov, centerX, centerY, halfHeight, lookDown 
   gl.render(scene, camera); const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; return { canvas, ctx: canvas.getContext('2d'), image: gl.domElement };
 }
 function bust(scene, p) {
-  const h = Math.max(0.16, p.top - p.neck.y), frameTop = p.top + 0.34 * h, frameBottom = p.neck.y - 1.65 * h, half = (frameTop - frameBottom) / 2;
-  const { canvas, ctx, image } = shot(scene, 512, 512, 24, p.head.x + 0.08 * h, (frameTop + frameBottom) / 2, half, 0.06);
+  const h = Math.max(0.16, p.top - p.neck.y), frameTop = p.top + 0.3 * h, frameBottom = p.neck.y - 1.25 * h, half = (frameTop - frameBottom) / 2;
+  const { canvas, ctx, image } = shot(scene, 512, 512, 24, p.head.x - 0.1 * h, (frameTop + frameBottom) / 2, half, 0.06);
   // Backdrop: umber light behind the head, darker toward the edges, a cool edge on the rim side.
   let g = ctx.createRadialGradient(205, 190, 20, 240, 250, 420); g.addColorStop(0, '#5a3f28'); g.addColorStop(.42, '#2e2117'); g.addColorStop(1, '#0c0907');
   ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
