@@ -1,0 +1,34 @@
+{
+  "note": "3D models for the Shore of the Ancients 3D renderer, made on Higgsfield on 2026-10-05. Pipeline: a GPT Image 2.5 reference image (A-pose, weapons standing apart), Tripo H3.1 image-to-3D (PBR), turned to face +Z, weapons split off, Meshy auto-rigging with one animation clip per hero, then the weapons fixed rigidly to hand or forearm bones, Tripo PBR maps restored as WebP, quantized and meshopt-compressed (decoder: ../lib/meshopt_decoder.mjs). Each rig bought a different clip; clips.json keeps every clip with its source bind pose, and hero-rig.js retargets any clip to any hero. Scenery props (pine, oak, boulders, arch) were lifted from one prop sheet with SAM 3 3D and simplified.",
+  "style": "Grounded mythic painterly realism (Dota 2, The Witcher 3): weathered natural materials, muted colours with one accent each.",
+  "heroes": {
+    "tidewarden": { "image": "2146ac9f-f0a5-485f-9e56-90cb1c5bc566", "mesh": "e3b114ec-e9cc-4efb-96c5-cd7bc2c02e23", "rig": "02e5e6d7-49df-4be4-9ab8-d0a67a6f89e3", "clip": "thrust (Thrust_Slash 240)" },
+    "embersong": { "image": "e9e55a60-a299-4015-818d-fc3d0375e5f9", "mesh": "4f5a386d-eae6-4c50-9281-01690d0fa138", "rig": "0d686e1a-987f-43a4-be41-23f2383996e6", "clip": "cast (mage_soell_cast 129)" },
+    "voidcaller": { "image": "dc20eb43-618f-4fda-a218-8db35c034de0", "mesh": "aa5a9470-861d-4cee-9ddf-ac56e542132d", "rig": "fc7958c9-dc8a-47ac-85cd-ed1879dd2d9e", "clip": "charge (Charged_Spell_Cast 125)" },
+    "stoneheart": { "image": "3b3b4997-2b95-4246-be68-e8fcda577010", "mesh": "fd979248-c77c-478b-8e6d-4c5f9ba872b2", "rig": "fde12c80-8e1f-4b51-a884-cb135a40c702", "clip": "hammer (Heavy_Hammer_Swing 128)" },
+    "skyreaver": { "image": "b7cd73c3-411f-4abb-9377-2c66a810756a", "mesh": "6623e752-1c06-4736-99bc-f7b0c4fbd23f", "rig": "ae35efa5-d15c-44bb-84ca-3baa7dcf9517", "clip": "bow (Archery_Shot 224)" },
+    "irontide": { "image": "fb0f0b6b-a9f5-460e-9e19-37c22b0c6ac2", "mesh": "348663a4-e20a-460e-96e0-33be64ae0d2b", "rig": "2aa3b728-8398-4f8c-b4b1-7290b3983fac", "clip": "slam (Charged_Ground_Slam 127)" },
+    "moonweaver": { "image": "6a75855c-4a86-42a8-b64f-002256eac2b6", "mesh": "92f5a323-43f5-407a-b0ce-d3dfd62c2d8e", "rig": "c2f7858a-3c60-41b9-9979-07c5fe885638", "clip": "weave (mage_soell_cast_3 132)" },
+    "dredge": { "image": "aca77539-c83e-4a6f-89e2-0b6c9238f9b6", "mesh": "e15a84c9-d431-42c3-9ae2-5deae93762fd", "rig": "ce88efb1-dd9e-426d-9b49-9dcc74bade92", "clip": "maul (Attack 4)" },
+    "glasshand": { "image": "6502e542-e1af-4c89-ab8f-ba0b08c9409a", "mesh": "655fe524-97c2-444e-b92c-7aed322c6626", "rig": "2572ad63-a81c-4cf6-9403-8d6412943053", "clip": "throw (Crouch_Pull_and_Throw 239)" },
+    "salt-priestess": { "image": "9efabca6-7a18-46d2-9313-9e768539f15c", "mesh": "32d1ee5e-7f81-445e-ab93-b65040f754e0", "rig": "696e4fb8-def2-4e08-b036-9fdd129c7ef9", "clip": "idle (Idle 0)" },
+    "riftblade": { "image": "b7565e79-865f-48ab-b49f-d17d422523e3", "mesh": "215ff235-9e3c-40b8-b7e9-653430b58715", "rig": "8da08d75-b2b2-498c-956b-5247cffaa08f", "clip": "combo (Double_Combo_Attack 92)" },
+    "coral-sage": { "image": "0c2beea9-2f63-4493-9f09-8a6bba54e020", "mesh": "337cdb62-9d1f-4478-8458-e1b71b7dd880", "rig": "e6aa3f3b-15c3-4469-9b70-18caf4df6570", "clip": "hit (Hit_Reaction 178)" },
+    "nightcurrent": { "image": "1542679e-cc56-4229-880e-957054e25f70", "mesh": "a6b23f02-ccd2-41f5-9221-f68beb9965f9", "rig": "711e6239-0ee0-4b54-843c-e5c1e869e0d1", "clip": "death (Dead 8)" },
+    "the-marrow": { "image": "62922b92-87c3-41d4-b66d-86dfee6f0ac3", "mesh": "1771af4e-2f7a-4230-96ca-2f0fb87f644e", "rig": "6584cd31-29a5-4a00-80a6-b9103f2fd5c0", "clip": "slash (Left_Slash 97)" },
+    "bloodwake": { "image": "6991ff4a-86ba-4b7f-833a-6b34fff48966", "mesh": "c474a980-529b-426f-ba38-4831abf35857", "rig": "b5c1f73b-bfae-4ad4-b629-bb107c7c704b", "clip": "chop (Charged_Axe_Chop 237)" },
+    "zephyrs": { "image": "6fdfc5c7-e025-4213-abfb-2cfacf01d35a", "mesh": "9d476067-5a12-4c01-a499-26faed745a8a", "rig": "f17646ab-3cbb-4ea2-80d1-57de12a2a1ae", "clip": "run (Run_02 14)" }
+  },
+  "world": {
+    "minion": { "image": "c114dde2-6ea9-4b66-8e39-69ab9dfcab65", "mesh": "20942160-bc07-4f3d-86b5-08c04b6791b5", "rig": "5429957a-40a7-424c-85d9-97fca1ada303", "clip": "march (Walk_Fight_Forward 21)" },
+    "tower": { "image": "a3a34edb-2cc5-4204-b7d4-f28b6268a086", "mesh": "2fb5fc31-da3b-45c9-9edd-831dd726a441" },
+    "core": { "image": "83e51792-d74c-4571-b788-93bfa872d940", "mesh": "2aba0154-4e21-4107-b2c1-2fa0e79f1c26" },
+    "wildhunt": { "image": "0d8a8ea5-9261-4599-af7b-bcc903c9a009", "mesh": "5a15e403-f41c-4c99-8971-4bd421db29a6", "facing": "-z" },
+    "beast": { "image": "ef8f7560-ccf0-4bcb-9c24-1e723412d01b", "mesh": "e57a82ab-18eb-4295-b8f5-4c9c78cb8075", "facing": "-z" },
+    "pine": { "image": "da5d27ea-6e72-4570-b835-643ef47f43d0", "mesh": "faa88263-942e-4b27-a9a5-80a096d20feb" },
+    "oak": { "image": "da5d27ea-6e72-4570-b835-643ef47f43d0", "mesh": "067c46cc-191a-4bca-8f77-c892eca85a49" },
+    "boulders": { "image": "da5d27ea-6e72-4570-b835-643ef47f43d0", "mesh": "ce75bb03-9393-484c-bad2-af2eec44d78f" },
+    "arch": { "image": "da5d27ea-6e72-4570-b835-643ef47f43d0", "mesh": "c2c9a5da-0187-4551-8e09-702e1d6a3522" }
+  },
+  "units": "Heroes and the minion: metres, about 1.7 to 2 m tall, feet at y = 0, facing +Z. World models: height 1, feet at y = 0, centred; the renderer scales them."
+}

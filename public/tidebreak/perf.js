@@ -35,7 +35,7 @@ export class PerfMeter {
     this.el.hidden = !(this.on && visible);
     const now = performance.now(); if (this.el.hidden || now - this.shownAt < 500) return; this.shownAt = now;
     const r = this.report(renderer);
-    this.el.querySelector('pre').textContent = `frame ${r.medianMs} ms median · ${r.p95Ms} ms p95 · ${r.fps} fps\nslow frames ${r.slowPercent}% · draw ${r.drawMs} ms · steps/frame ${r.stepsPerFrame.join('/')}\ncanvas ${r.canvas} · quality ${r.quality} · pixel ratio ${r.pixelRatio} · screen ${r.screen}\ngraphics ${r.gpu}${this.software ? '\nThis browser draws the game without the graphics card. Turn on graphics acceleration in the browser settings.' : ''}`;
+    this.el.querySelector('pre').textContent = `frame ${r.medianMs} ms median · ${r.p95Ms} ms p95 · ${r.fps} fps\nslow frames ${r.slowPercent}% · draw ${r.drawMs} ms · steps/frame ${r.stepsPerFrame.join('/')}\ncanvas ${r.canvas} · quality ${r.quality} · pixel ratio ${r.pixelRatio} · screen ${r.screen}\n${r.renderer ? `${r.renderer}${r.drawCalls != null ? ` · ${r.drawCalls} draw calls · ${Math.round(r.triangles / 1000)}k triangles` : ''}\n` : ''}graphics ${r.gpu}${this.software ? '\nThis browser draws the game without the graphics card. Turn on graphics acceleration in the browser settings.' : ''}`;
   }
   report(renderer) {
     const m = median(this.frames), refresh = Math.min(m || 16.7, renderer?.refreshMs ?? 16.7), counts = [0, 0, 0, 0], total = this.stepLog.length || 1;
@@ -46,6 +46,8 @@ export class PerfMeter {
       drawMs: +median(this.draws).toFixed(1), stepsPerFrame: counts.map(n => Math.round(100 * n / total)),
       canvas: renderer ? `${renderer.canvas.width}x${renderer.canvas.height}` : 'none', quality: +(renderer?.quality ?? 1).toFixed(2),
       pixelRatio: +(renderer?.dpr ?? 1).toFixed(2), screen: `${innerWidth}x${innerHeight} @${devicePixelRatio}`, gpu: this.gpu, software: this.software,
+      // The 3D renderer counts its draw calls and triangles each frame.
+      renderer: renderer?.stats ? renderer.stats().renderer : undefined, drawCalls: renderer?.drawCalls, triangles: renderer?.triangles,
     };
   }
 }

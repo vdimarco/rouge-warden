@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { createMatch, player, cast, castTarget } from '../../public/tidebreak/sim.js';
 import { Renderer } from '../../public/tidebreak/illustrated-render.js';
 import { cursorSkillAim, dragSkillAim, skillAimPreview, skillAimRange, AIM_DRAG_RANGE } from '../../public/tidebreak/skill-aim.js';
+import { near } from './open-ground.mjs';
 
 const close=(a,b,message)=>assert(Math.abs(a-b)<1e-7,`${message}: ${a} vs ${b}`);
-function setup(hero){const s=createMatch(hero,49),p=player(s);s.units=[p];Object.assign(p,{x:2400,y:3100,level:18,skillRanks:[4,4,4,3],mana:3000,maxMana:3000});return {s,p};}
+function setup(hero){const s=createMatch(hero,49),p=player(s);s.units=[p];Object.assign(p,{...near(2400,3100),level:18,skillRanks:[4,4,4,3],mana:3000,maxMana:3000});return {s,p};}
 const screenDirection=(x,y)=>Renderer.prototype.screenDirection(x,y);
 
 for(const [width,height] of [[1440,900],[390,844],[844,390]]){

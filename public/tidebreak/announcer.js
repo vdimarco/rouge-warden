@@ -1,6 +1,7 @@
 // Turns recorded match facts into announcer calls, banners, a kill feed and spatial battle sound.
 import { HERO_IDENTITIES } from './hero-identities.js';
-import { LANE_NAMES } from './objectives.js';
+import { LANE_NAMES, TIER_NAMES } from './objectives.js';
+import { insideWarning } from './combat-rules.js';
 
 // Names follow the recorded announcer lines in audio/announcer.
 const MULTI = [null, null, 'Double kill', 'Triple kill', 'Mayhem', 'Rampage'];
@@ -29,13 +30,16 @@ export function killCall(entry, s, playerId) {
 
 export function defendCall(ping) {
   if (ping.structure === 'core') return { title: 'Our rift is under attack', voice: 'Your elder rift is under attack!' };
-  const where = `${LANE_NAMES[ping.lane] || ''} ${ping.tier ? 'inner' : 'outer'} ward`.trim();
+  const where = ping.tier > 2 ? `${LANE_NAMES[ping.lane] || ''} guardian`.trim() : `${LANE_NAMES[ping.lane] || ''} ${TIER_NAMES[ping.tier] || 'outer'} ward`.trim();
   return { title: `${where} under attack`, voice: `Your ${where} is under attack.` };
 }
 
 const MESSAGE_CALLS = {
   'Enemy ward broken': { voice: 'Enemy ward destroyed.', kind: 'ward-break', banner: true },
   'Our ward has fallen': { voice: 'Our ward has fallen.', kind: 'ward-fall', banner: true },
+  'Enemy guardian down': { voice: 'Enemy guardian destroyed.', kind: 'ward-break', banner: true },
+  'Our guardian has fallen': { voice: 'Our guardian has fallen.', kind: 'ward-fall', banner: true },
+  'Sudden death': { voice: 'Sudden death. Every structure is open.', kind: 'ward-fall', banner: true },
   'The Wild Hunt awakens': { voice: 'The Wild Hunt awakens.', sound: 'roar', banner: true },
   'The Wild Hunt rides with us': { voice: 'The Wild Hunt rides with us.', kind: 'ward-break', banner: true },
   'Enemy claimed the Wild Hunt': { voice: 'The enemy has claimed the Wild Hunt.', kind: 'ward-fall', banner: true },
@@ -70,7 +74,9 @@ export class Announcer {
     li.className = entry.killerTeam === 0 ? 'ally' : 'enemy'; li.dataset.time = s.time;
     const name = (unit, fallback) => { const b = document.createElement('b'); b.textContent = unit?.name || fallback; b.style.color = unit?.kind === 'hero' ? heroColor(unit) : ''; return b; };
     const blade = document.createElement('span'); blade.textContent = '⚔'; blade.setAttribute('aria-label', 'banished');
-    li.append(name(killer, 'Ward'), blade, name(victim, 'Hero'));
+    // Hero portraits sit beside the names, as in the team lineup at the top of the screen.
+    const face = unit => { const slug = unit?.kind === 'hero' && HERO_IDENTITIES[unit.identity]?.slug; return slug ? [Object.assign(document.createElement('img'), { src: `./art/portraits/${slug}-bust.webp`, alt: '' })] : []; };
+    li.append(...face(killer), name(killer, 'Ward'), blade, ...face(victim), name(victim, 'Hero'));
     if (entry.multi >= 2 || entry.streak >= 3) { const tag = document.createElement('em'); tag.textContent = multiName(entry.multi) || streakName(entry.streak); li.append(tag); }
     this.feed.append(li); while (this.feed.children.length > 4) this.feed.firstChild.remove();
   }
@@ -118,10 +124,14 @@ export class Announcer {
     const player = s.units.find(u => u.id === playerId);
     for (const u of s.units) {
       const before = this.prev.get(u.id), seen = u.team === 0 || visible?.has(u.id);
-      this.prev.set(u.id, { hp: u.hp, hit: u.lastBasicHit, cast: u.castStarted, attack: u.attackStarted });
+      const intent = u.castIntent || u.specialIntent;
+      this.prev.set(u.id, { hp: u.hp, hit: u.lastBasicHit, cast: u.castStarted, attack: u.attackStarted, intent: intent?.start, lock: u.lockStart });
       if (!before || u.id === playerId) continue;
       if (before.hp > 0 && u.hp <= 0) { if (u.kind === 'minion') sound.minionPop(u.x, u.y); else if (u.kind === 'hero') sound.death(u.x, u.y, u.team === 0); continue; }
       if (u.hp <= 0 || !seen) continue;
+      // Tells: a swell when an enemy or neutral windup starts, beeps when a tower locks on to you.
+      if (intent && u.team !== 0 && intent.start !== before.intent) sound.windup(u.x, u.y, { ult: intent.slot === 3, neutral: !!u.specialIntent, aimed: !!player && player.hp > 0 && insideWarning(player, intent.shape, 25), duration: intent.at - intent.start });
+      if (u.lockTarget === playerId && u.lockStart !== before.lock && s.time < u.lockAt) sound.lockOn(u.x, u.y);
       if (u.kind === 'hero') {
         if (u.lastBasicHit !== before.hit && sound.throttle(`hit${u.id}`, .06)) sound.worldHit(u.x, u.y, u.lastBasicVariant === 2);
         if (u.castStarted !== before.cast && Number.isFinite(u.castStarted)) sound.worldCast(u.x, u.y, u.castSlot === 3);

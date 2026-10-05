@@ -30,10 +30,8 @@ export function paintBaseCourt(c, p, team) {
 }
 export function drawBaseCore(r, e, time) {
   const style = BASE_STYLES[e.team], pulse = r.reducedMotion ? 0 : Math.sin(time * 1.4) * 6;
-  for (const side of [-1, 1]) {
-    r.drawAsset(style.accent, e.x + side * 310, e.y - 100, e.team ? 190 : 280, { flip: side < 0 });
-    r.drawAsset(e.team ? 'tower-enemy' : 'tower-ally', e.x + side * 210, e.y + 60, 180);
-  }
+  // The real guardians stand beside the court, so the core keeps only its natural accents.
+  for (const side of [-1, 1]) r.drawAsset(style.accent, e.x + side * 310, e.y - 100, e.team ? 190 : 280, { flip: side < 0 });
   const box = r.drawAsset(style.asset, e.x, e.y, style.height);
   const c = r.ctx, p = r.project(e.x, e.y, 285 + pulse), scale = r.scale;
   c.save(); c.translate(p.x, p.y); c.scale(scale, scale);

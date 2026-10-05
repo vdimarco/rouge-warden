@@ -222,13 +222,14 @@ export class Sound {
     else if (event.type === 'interrupt') { this.tone(390, .16, .03, 'triangle', 90); }
     else if (event.type === 'kill') { this.tone(330, .28, .03, 'triangle', 440); this.tone(660, .28, .022, 'sine', 880, .09, { reverb: .4 }); }
     else if (event.type === 'exposed') { this.tone(250, .18, .025, 'triangle', 120); this.tone(500, .13, .018, 'sine', 270, .025); }
+    else if (event.type === 'dodge') { this.noise(.22, .04, { freq: 900, end: 3600, q: 1.4 }); this.tone(660, .12, .016, 'sine', 990, .04); }
   }
   syncFeedback(state, p) {
     if (this.feedbackState !== state) { this.feedbackState = state; this.feedbackSeen = new Set(); this.feedbackAt = -1; }
     const events = (state.combatFeedback || []).filter(e => !this.feedbackSeen.has(e.id));
     for (const e of events) this.feedbackSeen.add(e.id);
     // One result sound per update keeps a group hit from masking the next warning.
-    const priority = { kill: 5, interrupt: 4, 'shield-break': 3, combo: 2, exposed: 1 };
+    const priority = { kill: 5, interrupt: 4, 'shield-break': 3, combo: 2, dodge: 2, exposed: 1 };
     const event = events.filter(e => state.time - e.time <= .3 && (e.source === p.id || e.target === p.id)).sort((a, b) => (priority[b.type] || 0) - (priority[a.type] || 0))[0];
     if (event && state.time >= this.feedbackAt + .09) { this.feedback(event); this.feedbackAt = state.time; }
     if (this.feedbackSeen.size > 128) this.feedbackSeen = new Set((state.combatFeedback || []).map(e => e.id));
@@ -237,6 +238,27 @@ export class Sound {
   // ---- Battlefield sounds at a world position.
   worldHit(x, y, heavy = false) { const s = this.spatial(x, y); if (s.gain < .08) return; this.clip(heavy ? 'punch-heavy-1' : Math.random() < .5 ? 'punch-1' : 'punch-2', { gain: .22 * s.gain, pan: s.pan, rate: .9 + Math.random() * .2 }); this.noise(heavy ? .12 : .06, (heavy ? .045 : .028) * s.gain, { freq: heavy ? 1400 : 2400, end: 500, q: 1.2, pan: s.pan }); this.tone(heavy ? 160 : 260, .1, .012 * s.gain, 'triangle', 90, 0, { pan: s.pan }); }
   worldCast(x, y, ultimate = false) { const s = this.spatial(x, y); if (s.gain < .08) return; this.noise(ultimate ? .5 : .28, .035 * s.gain, { freq: 500, end: ultimate ? 3200 : 2000, q: 2.2, pan: s.pan, reverb: .35 }); if (ultimate) this.tone(62, .6, .05 * s.gain, 'sine', 38, 0, { pan: s.pan }); }
+  // ---- Combat feel: tells, commits, impacts and damage taken.
+  // A rising swell as long as the enemy windup, panned to the caster. Brighter when it is aimed at you.
+  windup(x, y, { ult = false, neutral = false, aimed = false, duration = .5 } = {}) {
+    const s = this.spatial(x, y), g = (aimed ? Math.max(.55, s.gain) * 1.25 : s.gain * .8), d = Math.max(.3, Math.min(.9, duration));
+    if (g < .12 || !this.throttle('windup', .1)) return;
+    const root = neutral ? 110 : ult ? 147 : 196;
+    this.tone(root, d, .03 * g, 'sawtooth', root * (aimed ? 2.6 : 2), 0, { pan: s.pan, attack: d * .8, reverb: .25 });
+    this.noise(d, .035 * g, { freq: 500, end: aimed ? 4200 : 2600, q: 3, pan: s.pan, attack: d * .85 });
+    if (ult || neutral) this.tone(root / 2, d, .04 * g, 'sine', root, 0, { pan: s.pan, attack: d * .7 });
+  }
+  // Two short beeps: a tower has locked on to you and fires when the line turns solid.
+  lockOn(x, y) { const s = this.spatial(x, y); if (!this.throttle('lock', .3)) return; this.tone(1760, .07, .03, 'square', null, 0, { pan: s.pan }); this.tone(1760, .07, .03, 'square', null, .12, { pan: s.pan }); this.tone(2093, .1, .025, 'square', null, .24, { pan: s.pan, reverb: .2 }); }
+  // A quiet click when your own cast starts its windup.
+  commit() { this.noise(.035, .05, { freq: 3400, q: 4 }); this.tone(1900, .04, .012, 'triangle', 1200); }
+  // Damage you take: a thud scaled by the share of health lost.
+  hurt(share) { if (!this.throttle('hurt', .14)) return; const v = Math.min(1, share * 5); this.tone(120, .16, .02 + .05 * v, 'sine', 55); this.noise(.12, .02 + .05 * v, { type: 'lowpass', freq: 900, end: 200 }); if (v > .5) this.clip('punch-heavy-2', { gain: .35 * v, rate: .7 }); }
+  // A heavy contact at a hitstop moment.
+  impact(weight, x, y) { const s = this.spatial(x, y), w = Math.max(1, Math.min(3, weight)); this.tone(70 - w * 8, .18 + w * .05, .04 + w * .015, 'sine', 32, 0, { pan: s.pan }); this.noise(.08 + w * .03, .04 + w * .015, { freq: 1600, end: 300, q: 1, pan: s.pan }); }
+  // A gold chime for a last hit.
+  lastHit() { this.tone(1568, .12, .022, 'triangle', null, 0, { reverb: .2 }); this.tone(2349, .2, .018, 'sine', null, .06, { reverb: .35 }); }
+  heartbeat() { if (!this.throttle('heart', .85)) return; this.tone(62, .12, .06, 'sine', 45); this.tone(58, .12, .045, 'sine', 42, .2); }
   towerShot(x, y) { const s = this.spatial(x, y); if (s.gain < .1) return; this.tone(1180, .22, .02 * s.gain, 'sawtooth', 240, 0, { pan: s.pan, reverb: .3 }); this.noise(.16, .03 * s.gain, { freq: 3800, end: 900, q: 4, pan: s.pan }); }
   death(x, y, ally) {
     const s = this.spatial(x, y); this.clip('body-fall', { gain: .7 * Math.max(.3, s.gain), pan: s.pan, rate: .8, reverb: .3 });

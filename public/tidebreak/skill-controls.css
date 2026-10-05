@@ -1,8 +1,8 @@
 /* A short status above the thumb fan keeps aim instructions clear in both layouts. */
-#skill-aim-status{position:absolute;right:0;bottom:calc(100% + 51px);width:220px;max-width:calc(100vw - 32px);padding:6px 9px;border:1px solid #e2f3a1;border-radius:6px;background:#10222cf2;color:#e2f3a1;font:12px/1.3 Barlow,Arial,sans-serif;text-align:center;pointer-events:none}
+#skill-aim-status{position:absolute;right:0;bottom:calc(100% + 51px);width:220px;max-width:calc(100vw - 32px);padding:6px 9px;border:1px solid #e6d2ae;border-radius:6px;background:#211d18f2;color:#e6d2ae;font:12px/1.3 Barlow,sans-serif;text-align:center;pointer-events:none}
 #skill-aim-status[hidden]{display:none}
-#skill-aim-status.cancelled{border-color:#ffad90;color:#ffad90}
-.abilities .ability.aiming{outline:3px solid #e2f3a1;outline-offset:4px}
-.abilities .ability.aim-cancelled{outline-color:#ffad90}
+#skill-aim-status.cancelled{border-color:#e8b8a7;color:#e8b8a7}
+.abilities .ability.aiming{outline:3px solid #e6d2ae;outline-offset:4px}
+.abilities .ability.aim-cancelled{outline-color:#e8b8a7}
 .abilities .ability.control-blocked b{font-size:11px}
 @media(max-height:520px) and (min-width:600px){#skill-aim-status{bottom:calc(100% + 44px);width:205px;font-size:11px;padding:4px 7px}}

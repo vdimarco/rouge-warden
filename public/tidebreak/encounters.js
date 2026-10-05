@@ -1,14 +1,16 @@
 import { distance, canSee, lineOfSight } from './world.js';
 import { insideWarning } from './combat-rules.js';
 
+const CAMP_ART={'possessed-ogre':{line:false,label:'Club cleave'},'undead-knight':{line:false,label:'Blade sweep'},'undead-mage':{line:true,label:'Soul bolt'},'undead-archer':{line:true,label:'Arrow volley'}};
 // The warning is also the hit shape. Moving a target never changes locked aim.
 export function encounterPattern(e, target, time) {
  const boss=e.kind==='boss',fury=boss&&e.hp/e.maxHp<.5,index=e.specialCount||0;
- const line=boss?index%2===1:(e.camp||0)%2===1;
+ // Camps fight like their art: the mage and the archer shoot a line, the ogre and the knight cleave.
+ const art=CAMP_ART[e.marketplaceSprite],line=boss?index%2===1:art?art.line:(e.camp||0)%2===1;
  return {
   shape:{x:e.x,y:e.y,angle:Math.atan2(target.y-e.y,target.x-e.x),radius:line?(boss?600:500):(boss?(fury?450:400):320),width:line?(boss?.19:.21):(boss?1.1:1),shape:'cone'},
   start:time,at:time+(line?(boss?.85:.8):(boss?.8:.7)),
-  label:boss?(line?'Wild Hunt · Piercing cry':fury?'Wild Hunt · Furious sweep':'Wild Hunt · Sweeping antlers'):(line?'Guardian · Thorn line':'Guardian · Cleave'),
+  label:boss?(line?'Wild Hunt · Piercing cry':fury?'Wild Hunt · Furious sweep':'Wild Hunt · Sweeping antlers'):art?`${e.name} · ${art.label}`:(line?'Guardian · Thorn line':'Guardian · Cleave'),
   amount:boss?(fury?235:185):(line?145:125),recovery:boss?1.4:1.15,
   cooldown:boss?(fury?4.8:6.2):6.5,
  };
@@ -29,7 +31,9 @@ export function tickEncounter(s,e,dt,{damage}) {
   e.specialIntent=null;e.specialCount=(e.specialCount||0)+1;
   e.exposedUntil=s.time+intent.recovery;e.nextSpecial=s.time+intent.cooldown;
   e.attackCd=Math.max(e.attackCd||0,intent.recovery);
-  for(const t of s.units)if(t.hp>0&&t.team>=0&&!['tower','core'].includes(t.kind)&&insideWarning(t,intent.shape)&&lineOfSight(s,intent.shape,t))damage(s,e,t,intent.amount,'spell');
+  const context=s.hitContext;s.hitContext={source:e.id,label:intent.label,telegraphed:true,dodgeable:true};
+ for(const t of s.units)if(t.hp>0&&t.team>=0&&!['tower','core'].includes(t.kind)&&insideWarning(t,intent.shape)&&lineOfSight(s,intent.shape,t))damage(s,e,t,intent.amount,'spell');
+ s.hitContext=context;
   s.effects.push({...intent.shape,type:'neutral-impact',source:e.id,life:.45,maxLife:.45,color:'#ffbb78'});
   return true;
  }

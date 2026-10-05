@@ -4,6 +4,7 @@ import { OBSTACLES, PATHS, BASES, lineOfSight, resolveBody } from '../../public/
 import { outsideRiver } from '../../public/tidebreak/river.js';
 import { attackPose } from '../../public/tidebreak/combat-motion.js';
 import { createMatch, player, step } from '../../public/tidebreak/sim.js';
+import { near } from './open-ground.mjs';
 
 for (const seed of [1, 49, 91822]) for (const phase of [0, 1]) {
   const a = makeScenery(seed, phase), b = makeScenery(seed, phase);
@@ -24,7 +25,7 @@ for (let hero = 0; hero < 4; hero++) {
   // before damage, then contact pose with the exact same impact timestamp.
   const foe = s.units.find(e => e.kind === 'hero' && e.team === 1);
   s.units = [p, foe]; s.nextWave = s.objectiveAt = Infinity; s.campTimers = [Infinity, Infinity];
-  p.x = foe.x = 2400; p.y = 3100; foe.y = 3000; foe.stun = 5; p.facing = -Math.PI / 2;
+  Object.assign(p, near(2400, 3100)); Object.assign(foe, near(2400, 3000)); foe.stun = 5; p.facing = -Math.PI / 2;
   const hp = foe.hp; step(s, {}, 1 / 60);
   assert.equal(attackPose(p, s.time).stage, 0); assert.equal(foe.hp, hp);
   const impactAt = p.pendingAttack.at;
