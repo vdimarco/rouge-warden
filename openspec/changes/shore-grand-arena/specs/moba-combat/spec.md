@@ -281,17 +281,22 @@ length at every difficulty.
 - **THEN** the warning shape shows for at least 0.5 s before the damage.
 
 ### Requirement: Bots judge trades
-A bot on Veteran or Mythic SHALL leave a fight when its side's health and damage are clearly lower than the visible enemy side's, counting
-enemy wards, or when it is below half health and the enemy is clearly healthier.
+Mythic enemy bots and allied bots SHALL leave a fight when their side's health and damage are clearly lower than the visible enemy side's,
+counting enemy wards, or when they are below half health and the enemy is clearly healthier. Veteran and Apprentice bots SHALL go home at a
+fixed health floor (28% and 20%).
 
-#### Scenario: A hurt bot leaves
-- **WHEN** a Veteran bot at 40% health faces the player at full health
+#### Scenario: A hurt Mythic bot leaves
+- **WHEN** a Mythic bot at 40% health faces the player at full health
 - **THEN** the bot retreats within 1.5 s.
+
+#### Scenario: A Veteran bot holds until its floor
+- **WHEN** a Veteran bot at 40% health faces the player at full health
+- **THEN** the bot keeps fighting until its health falls below 28%, which gives the player a chance to finish it.
 
 ### Requirement: Bots play the map with what their team can see
 Veteran and Mythic bots SHALL gank from a pushed lane, use rift gates when a gate saves time, answer their team's defend calls, take spirit
-camps when no enemy hero is near, gather before the Wild Hunt wakes, and push an open ward after a won fight. They SHALL use only what their
-team can see, the public kill feed, and their team's own calls.
+camps when no enemy hero is near, gather before the Wild Hunt wakes, and push a ward with their wave after a won fight. They SHALL use only
+what their team can see, the public kill feed, and their team's own calls.
 
 #### Scenario: A gank from a pushed lane
 - **WHEN** the player is seen at low health in another lane and an enemy bot's lane has no wave in front
@@ -309,3 +314,13 @@ SHALL keep normal spells for heroes instead of the wave unless their mana is ful
 #### Scenario: A missed cast is punished
 - **WHEN** the player misses a spell and is in its recovery near a Veteran bot
 - **THEN** the bot attacks the player before a healthier, closer hero.
+
+### Requirement: Bot strength is measured
+Seeded six-bot matches with sides swapped SHALL be run for each difficulty against the previous bots on the current map. The report SHALL
+give the win rate, kills, wards taken, dive deaths and the number of seeds that the lineup decided (the same side won both games). Veteran and
+Mythic enemies SHALL get more kills and fewer dive deaths than the previous bots, and Apprentice enemies SHALL get fewer kills.
+
+#### Scenario: Measured fights
+- **WHEN** `node qa/tidebreak/bot-ab.mjs <difficulty> legacy 30` runs for each difficulty on the 9600-unit map
+- **THEN** Veteran and Mythic get more kills and fewer dive deaths per match than the previous bots, Apprentice gets fewer kills, and the
+  report states the win rate and how many of the 30 seeds the lineup decided.

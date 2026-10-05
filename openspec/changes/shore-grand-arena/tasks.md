@@ -47,13 +47,17 @@
 - [ ] Merge the branch.
 
 ## Bots (cloud session, branch `claude/quirky-cerf-vwf0qw-bots`)
-- [ ] Difficulty setting (Apprentice, Veteran, Mythic) saved and shown in the match.
-- [ ] Wave gating, dive guard, trade-aware retreat, ganks, camps, focus fire, objective timing and dodges with reaction delays.
-- [ ] Measure win rates per difficulty with seeded matches.
-- [ ] Merge the branch.
+- [x] Difficulty setting (Apprentice, Veteran, Mythic) saved and shown in the match.
+- [x] Wave gating, dive guard, trade-aware retreat, ganks, camps, focus fire, objective timing and dodges with reaction delays.
+- [x] Measure win rates per difficulty with seeded matches (on the 9600 map: Veteran 38%, Mythic 33%, Apprentice 30% against the previous
+  bots over 60 matches each; Veteran and Mythic win fights and die less under wards, but take fewer wards).
+- [ ] Fix the bot review findings: bots that freeze when a route grazes a ward, the dive exception path, sieges without a wave, the double
+  move, the difficulty badge over the HUD, the picker on small landscape phones and with blocked storage, and the test gaps.
+- [ ] Retune Veteran and Mythic so they turn won fights into wards on the 9600 map, then measure again.
+- [x] Merge the branch.
 
 ## Verification
-- [ ] Merge the cloud session notes into the capability specs (combat done; bots and render polish to come).
+- [ ] Merge the cloud session notes into the capability specs (combat and bots done; render polish to come).
 - [ ] Run all `qa/tidebreak` Node suites and the browser checks.
 - [ ] Take 3D and HUD screenshots at the supported screen sizes.
 - [x] Update the test commands in `AGENTS.md`.
