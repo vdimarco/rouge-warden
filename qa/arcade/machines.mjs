@@ -107,6 +107,12 @@ for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|wo
   const b = fs.readFileSync(path.join(PUB, "arcade", f));
   check(b.length < 60 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/${f} is a WebP under 60 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
+// the painted art from Higgsfield (higgsfield/arcade-key-art.json): one WebP for each entry, each under 100 KB
+for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
+  const f = path.join(PUB, "arcade", "key", id + ".webp");
+  const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
+  check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
+}
 check(/^\s*<script src="\/arcade\/quiet\.js"><\/script>/m.test(html.slice(html.indexOf("<head>"), html.indexOf("</head>"))) && html.indexOf("/arcade/quiet.js") < html.search(/<script(?![^>]*quiet)/), "quiet.js is the first script on the arcade page");
 
 /* ---------------- the page ---------------- */

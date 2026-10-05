@@ -27,7 +27,7 @@ Nothing glows past its edge. A fall shows the hero with arms and legs flailing.
 - **Crowd sound.** A murmur rises when people are close. A cheer or a gasp comes from the people who see the hero land.
 - **The dive.** A fall with no rope turns into a head-first dive: the body pitches down along the flight, the arms sweep
   back, the legs stay together and the toes point. Near the ground, or when a rope catches, the hero flips back upright.
-- Version 1.10.0 (Quest APK code 11). The new files are in the offline cache.
+- Version 1.10.0 (Quest APK code 12). The new files are in the offline cache.
 
 ## Out of scope
 

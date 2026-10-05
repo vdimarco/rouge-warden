@@ -398,7 +398,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     if (name === "pause") {
       const rows = [row(btn("resume", "Resume", "primary"))];
       rows.push(intro ? row(btn("comfort", "Comfort")) : row(btn("map", "Map"), btn("comfort", "Comfort")));
-      rows.push(row(btn("sound", "Sound: " + (audio.isOn ? "on" : "off")), btn("music", "Music: " + (audio.musicOn ? "on" : "off"))));
+      rows.push(row(btn("sound", "Sound: " + (!audio.isOn ? "off" : audio.running ? "on" : "on, not playing")), btn("music", "Music: " + (audio.musicOn ? "on" : "off"))));
       const extra = [];
       if (ar) extra.push(btn("scan", "Scan your room"));
       if (canSkip()) extra.push(btn("skip", skipLabel()));
@@ -839,7 +839,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "map": openMap(); audio.sfx("ui"); return;
       case "comfort": showPage("comfort"); audio.sfx("ui"); return;
       case "back": if (map.on) closeMap(); showPage("pause"); audio.sfx("uiBack"); return;
-      case "sound": audio.toggle(); saveNow(); audio.sfx("ui"); if (G().soundLabel) G().soundLabel(); showPage(modal); return;
+      // on but not playing: a press starts it again (the press's own retry may have done it) and does not turn it off
+      case "sound": if (audio.isOn && (audio.stalled || audio.restarted)) audio.resume(); else audio.toggle(); saveNow(); audio.sfx("ui"); if (G().soundLabel) G().soundLabel(); showPage(modal); return;
       case "music": audio.music(!audio.musicOn); settings.music = audio.musicOn; saveNow(); audio.sfx("ui"); showPage(modal); return;
       case "scan": scanRoom(); return;
       case "skip": audio.sfx("ui"); closePause(); if (skipFn) skipFn(); else emit(fns.skip); return;

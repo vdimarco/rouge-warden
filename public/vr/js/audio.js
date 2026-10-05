@@ -7,6 +7,8 @@ import { WORLD } from "./config.js";
 const VOL = 0.9; // master level when the sound is on
 const MAX_VOICES = 24; // one-shots at once: a new one takes the place of the one closest to its end
 const MAX_LOOPS = 8; // live loop handles; more wait, silent, for a free slot
+const WAKE = 1500; // ms a resume() may take before the sound counts as stalled
+const FROZEN = 3000; // ms a running context clock may stand still before it counts as no output (a slow Bluetooth start fits)
 const AHEAD = 0.3; // the live scheduler books music and loop events this far ahead of the audio clock
 const DUCK = 0.3; // the mix level while ducked
 const CITY = 0.45; // the city bed at street level, under the game
@@ -1024,7 +1026,11 @@ function tick(e, t, dt, ahead) {
 export function createAudio(settings) {
   const S = settings && typeof settings === "object" ? settings : {};
   let on = typeof S.sound === "boolean" ? S.sound : arcadeSound();
-  let E = null, held = false, offFor = 0;
+  // wanted: init() ran with Web Audio there (a click asked for sound). frozenAt: the wall clock when the context clock last
+  // moved (a running context whose clock stands still has no output device). restartedAt: when resume() last rebuilt or woke a
+  // stalled engine
+  let E = null, held = false, offFor = 0, wanted = false, lastT = -1, frozenAt = 0, restartedAt = -1e9, wokeAt = -1e9;
+  const wall = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const st = newState(on);
   const now = () => E.ctx.currentTime;
   // wake the context unless the sound is off or someone asked for quiet (suspend, a hidden session)
@@ -1032,6 +1038,7 @@ export function createAudio(settings) {
     if (!E || !on || held) return;
     const s = E.ctx.state;
     if (s === "running" || s === "closed") return;
+    wokeAt = wall();
     try { quiet(E.ctx.resume()); } catch (err) { /* ignore */ }
   };
   // the context was closed under us (the browser, a test): forget it; init() makes a new one
@@ -1042,6 +1049,21 @@ export function createAudio(settings) {
     for (const h of st.handles) h.n = null;
     return false;
   };
+  // running, but the clock has not moved for FROZEN ms of wall time (each call notes a move, so any two calls can tell)
+  const frozen = () => {
+    if (!E || E.ctx.state !== "running") { lastT = -1; return false; }
+    const t = E.ctx.currentTime;
+    if (t !== lastT) { lastT = t; frozenAt = wall(); return false; }
+    return wall() - frozenAt > FROZEN;
+  };
+  // forget an engine whose clock stopped, so the next init() builds a new context on the device the system has now
+  const drop = () => {
+    if (!E) return;
+    const c = E.ctx;
+    E = null; lastT = -1;
+    for (const h of st.handles) h.n = null;
+    try { quiet(c.close()); } catch (err) { /* ignore */ }
+  };
   const A = {
     // create or wake the AudioContext. Call it inside a user gesture (the Enter click)
     init() {
@@ -1050,9 +1072,13 @@ export function createAudio(settings) {
       if (alive()) { wake(); return true; }
       if (typeof window === "undefined") return false;
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return false;
+      if (!AC) return false; // no Web Audio at all: nothing to retry, so the sound never counts as stalled
+      wanted = true;
       let ctx;
-      try { ctx = new AC({ latencyHint: "interactive" }); } catch (err) { try { ctx = new AC(); } catch (err2) { return false; } }
+      try { ctx = new AC({ latencyHint: "interactive" }); } catch (err) {
+        try { ctx = new AC(); } catch (err2) { console.warn("In Full Swing: the sound did not start", err2); return false; }
+      }
+      lastT = -1; frozenAt = wall();
       try {
         E = makeEngine(ctx, { st });
         E.out.gain.value = on ? VOL : 0;
@@ -1072,6 +1098,8 @@ export function createAudio(settings) {
         drive(E, "ropeL", st.ropes[0], t); drive(E, "ropeR", st.ropes[1], t);
         if (on) wake(); else quiet(ctx.suspend());
       } catch (err) {
+        // the next tap or key tries again (stalled), and the menus say the sound is not playing (running)
+        console.warn("In Full Swing: the sound did not start", err);
         E = null;
         try { quiet(ctx.close()); } catch (err2) { /* ignore */ }
         return false;
@@ -1079,9 +1107,21 @@ export function createAudio(settings) {
       return true;
     },
     // the PWA starts with no click: main calls this on the first selectstart / squeezestart
-    resume() { held = false; if (!alive()) A.init(); else { if (on) playbackSession(); wake(); } },
-    // the context exists but is not running (a browser stopped it): for main.js to retry inside a tap or a key
-    get stalled() { return !!E && on && !held && E.ctx.state !== "running" && E.ctx.state !== "closed"; },
+    resume() {
+      const was = A.stalled;
+      held = false;
+      if (frozen()) drop();
+      if (!alive()) A.init(); else { if (on) playbackSession(); wake(); }
+      if (was) restartedAt = wall();
+    },
+    // the sound is on and a click asked for it, but nothing plays: the engine failed to start or the browser closed it, the
+    // browser stopped the context, or its clock stands still (no output device). main.js retries inside the next tap or key
+    // (a resume() still on its way, up to WAKE ms, is not a stall: the click that turned the sound on has not landed yet)
+    get stalled() { if (!wanted || !on || held) return false; if (!alive()) return true; return E.ctx.state === "running" ? frozen() : wall() - wokeAt > WAKE; },
+    // the sound plays (or will at the first click, before any click asked for it): what the menus show as "on"
+    get running() { return on && !A.stalled; },
+    // resume() rebuilt or woke a stalled engine in the last second: the press that did it is not also a press of Sound
+    get restarted() { return wall() - restartedAt < 1000; },
     // a hidden session: stop the clock (nothing plays, nothing is booked) until resume()
     suspend() {
       held = true;
@@ -1095,6 +1135,7 @@ export function createAudio(settings) {
       st.on = on;
       offFor = 0;
       try { S.sound = on; } catch (err) { /* frozen settings */ }
+      if (on && wanted && (!alive() || frozen())) { drop(); A.init(); } // an engine that failed or died starts again here
       if (alive()) {
         try {
           const g = E.out.gain, t = now();
@@ -1168,7 +1209,7 @@ export function createAudio(settings) {
           if (offFor > 0.25 && c.state === "running") quiet(c.suspend());
           return;
         }
-        if (c.state !== "running") return;
+        if (c.state !== "running" || frozen()) return;
         tick(E, c.currentTime, dt, AHEAD);
       } catch (err) { /* never let a sound break the game */ }
     },

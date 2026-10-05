@@ -1,5 +1,6 @@
 import { structureProtected } from './objectives.js';
 import { CreatureBank } from '../arcade/creatures/player.js';
+import { CREATURES } from '../arcade/creatures/catalog.js';
 import { player, HEROES } from './sim.js';
 import { SIZE, BASES, LANES, PATHS, PORTALS, BRUSH, CENTER, visibleTo, concealed, distance, clamp } from './world.js';
 import { LANDMARKS, PLANTS, LANDFORMS, makeScenery } from './scenery.js';
@@ -10,7 +11,7 @@ import { BASE_STYLES, drawBaseCore } from './bases.js';
 import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
 import { HERO_IDENTITIES, identityFor, identitySkill } from './hero-identities.js';
-const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440;
+const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440, QUALITY_FLOOR = .5;
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
 export async function loadArt() {
@@ -24,7 +25,11 @@ export async function loadArt() {
 // tracking and world-space effects. The concept screenshot is never a backdrop.
 export class Renderer {
   constructor(canvas, mini, art) {
-    this.creatures = new CreatureBank();
+    // Every creature sheet stays loaded (2 MB in all) and decodes off the main thread, so a creature that walks back
+    // into view never makes the frame wait for a fetch and an image decode.
+    const bitmap = globalThis.createImageBitmap && globalThis.fetch && (src => fetch(src).then(r => r.ok ? r.blob() : Promise.reject(new Error(`Creature page unavailable: ${src}`))).then(b => createImageBitmap(b)));
+    this.creatures = new CreatureBank({ limit: CREATURES.length, ...(bitmap ? { imageLoader: bitmap } : {}) });
+    for (const c of CREATURES) this.creatures.load(c.id);
     this.canvas = canvas; this.ctx = canvas.getContext('2d', { alpha: false }); this.mini = mini; this.art = art;
     this.cam = { x: CENTER.x, y: CENTER.y + 600 }; this.visible = new Set(); this.frames = 0; this.menuTime = 0; this.hitBoxes = [];
     this.tiles = Array.from({ length: 4 }, (_, i) => { const tileSize = i === 3 ? 220 : 300, c = surface(tileSize), size = art.ground.width / 2; c.getContext('2d').drawImage(art.ground, i % 2 * size + 12, Math.floor(i / 2) * size + 12, size - 24, size - 24, 0, 0, tileSize, tileSize); return c; });
@@ -34,6 +39,7 @@ export class Renderer {
     if (seed === this.sceneSeed) return;
     this.sceneSeed = seed; this.scenes = [0, 1].map(phase => makeScenery(seed, phase)); this.bridges = riverCrossings(PATHS, seed);
     this.grounds = this.scenes.map(scene => paintGround(this.tiles, scene, this.art.surfaces));
+    this.restartTiming();
   }
   // The canvas has a pixel budget: a wide or sharp screen draws fewer backing pixels and the browser scales them up.
   // quality drops when frames are slow (see adapt), so an ultra-wide full screen keeps a smooth frame rate.
@@ -44,6 +50,7 @@ export class Renderer {
     this.scale = Math.min(this.width / 1200, this.height / 1680);
     this.anchor = this.height < 520 ? .70 : .78;
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); this.ctx.imageSmoothingEnabled = true;
+    this.restartTiming();
   }
   project(x, y, height = 0) { return { x: (x - this.cam.x) * this.scale + this.width / 2 + this.shakeX, y: (y - this.cam.y) * this.scale * .88 + this.height * this.anchor - height * this.scale + this.shakeY }; }
   world(x, y) { return { x: (x - this.width / 2 - this.shakeX) / this.scale + this.cam.x, y: (y - this.height * this.anchor - this.shakeY) / (this.scale * .88) + this.cam.y }; }
@@ -61,21 +68,36 @@ export class Renderer {
   }
   // Screen-space pan in pixels; world motion follows the projection's squash.
   panBy(px, py) { const f = this.freeCam ||= { x: this.cam.x, y: this.cam.y }; f.x += px / this.scale; f.y += py / (this.scale * .88); }
-  lookAt(x, y) { this.freeCam = { x, y }; }
+  // The minimap look lands at once and lasts only while the minimap is held (main.js recenters on release).
+  lookAt(x, y) { this.freeCam = { x, y }; this.cam = { x, y }; }
   // Mouse look: -1 at the left edge, 1 at the right edge. The view keeps following the hero, pushed toward the pointer.
   setLook(n) { this.look = clamp(n, -1, 1); }
-  // Called with each frame's interval while a match runs. Frames well behind the screen's refresh step the pixel budget
-  // down; frames back at the refresh rate step it up again after a hold, which grows with each drop so it cannot flicker.
+  // Called with each frame's interval while a match runs. Each 1.5 s window is judged by its median interval against
+  // the screen's refresh interval (the shortest window median seen). A slow window starts a descent: the pixel budget
+  // steps down by 20% per window, up to three steps, until frames get faster. Frames land on whole refresh intervals,
+  // so one step can show no change; a descent that never speeds the frames up is undone and not tried again for a
+  // minute (doubling after each failed descent), since then the cost is not in the pixels. A window at the refresh rate steps back up after a hold that
+  // grows with each descent.
   adapt(ms) {
     if (!(ms > 0 && ms < 500)) return; // a longer gap is a hidden tab or a stall, not the frame rate
-    this.frameMs = (this.frameMs ?? ms) * .93 + ms * .07; this.clock = (this.clock ?? 0) + ms;
-    this.refreshMs = Math.max(4, Math.min(this.refreshMs ?? 16.7, this.frameMs));
-    if (this.clock < (this.nextAdapt ?? 1500)) return; this.nextAdapt = this.clock + 1500;
-    const q = this.quality ?? 1;
-    if (this.frameMs > Math.max(20, this.refreshMs * 1.5) && q > .35) {
-      this.hold = Math.min(60000, (this.hold ?? 5000) * 2); this.raiseAt = this.clock + this.hold; this.quality = Math.max(.35, q * .8); this.resize();
-    } else if (this.frameMs < this.refreshMs * 1.15 && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
+    this.clock = (this.clock ?? 0) + ms; (this.window ||= []).push(ms);
+    if (this.clock < (this.nextAdapt ?? 1500)) return;
+    const sorted = this.window.sort((a, b) => a - b), median = sorted[sorted.length >> 1]; this.window = []; this.nextAdapt = this.clock + 1500;
+    if (sorted.length < 8) return;
+    this.refreshMs = Math.max(4, Math.min(this.refreshMs ?? 16.7, median)); this.frameMs = median;
+    const q = this.quality ?? 1, refresh = this.refreshMs, slow = median > Math.max(20, refresh * 1.5), d = this.descent;
+    if (d) {
+      if (median < d.median * .97) this.descent = null; // fewer pixels helped: keep this resolution
+      else if (d.steps < 3 && q > QUALITY_FLOOR) { d.steps++; this.quality = Math.max(QUALITY_FLOOR, q * .8); this.resize(); return; }
+      else { this.descent = null; this.quality = d.quality; this.failedDescents = (this.failedDescents ?? 0) + 1; this.noDropUntil = this.clock + Math.min(600000, 60000 * 2 ** (this.failedDescents - 1)); this.resize(); return; }
+    }
+    if (slow && q > QUALITY_FLOOR && this.clock > (this.noDropUntil ?? 0)) {
+      this.hold = Math.min(60000, (this.hold ?? 5000) * 2); this.raiseAt = this.clock + this.hold;
+      this.descent = { quality: q, median, steps: 1 }; this.quality = Math.max(QUALITY_FLOOR, q * .8); this.resize();
+    } else if (!this.descent && median < Math.max(refresh * 1.15, 17.5) && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
   }
+  // A resize or a scene repaint disturbs a few frames, so the next judgement starts from fresh samples.
+  restartTiming() { this.window = []; this.nextAdapt = (this.clock ?? 0) + 1500; }
   recenter() { this.freeCam = null; }
   ring(x, y, radius, color, alpha = 1, line = 2) {
     const c = this.ctx, p = this.project(x, y); c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = line; c.beginPath(); c.ellipse(p.x, p.y, radius * this.scale, radius * this.scale * .55, 0, 0, TAU); c.stroke(); c.restore();
@@ -87,10 +109,13 @@ export class Renderer {
     // A free camera (edge scroll or minimap) holds its own target until the player recenters.
     if (this.freeCam && !menu) { const k = 1 - Math.exp(-dt * 14); this.cam.x += (this.freeCam.x - this.cam.x) * k; this.cam.y += (this.freeCam.y - this.cam.y) * k; }
     else {
-      // Past a small dead zone, the pointer pushes the view up to a third of the screen width toward its side.
-      const look = this.look || 0, reach = Math.max(0, Math.abs(look) - .12) / .88, goal = menu ? 0 : Math.sign(look) * reach * reach * this.width * .34 / this.scale;
+      // Past a small dead zone, the pointer pushes the view up to a third of the screen width toward its side; the
+      // push is full at 90% of the way to the edge. The move-order lead and the push share that cap, so the hero
+      // never leaves the middle two thirds of the screen.
+      const look = this.look || 0, reach = clamp((Math.abs(look) - .12) / .78, 0, 1), cap = this.width * .34 / this.scale;
+      const goal = menu ? 0 : Math.sign(look) * reach * (2 - reach) * cap;
       this.push = (this.push || 0) + (goal - (this.push || 0)) * (1 - Math.exp(-dt * 5));
-      this.cam.x += (p.x + dx / length * lead + this.push - this.cam.x) * damping; this.cam.y += (p.y + dy / length * lead - this.cam.y) * damping;
+      this.cam.x += (p.x + clamp(dx / length * lead + this.push, -cap, cap) - this.cam.x) * damping; this.cam.y += (p.y + dy / length * lead - this.cam.y) * damping;
     }
     // Keep the complete camera footprint inside the landscape at each viewport.
     const halfW = Math.min(SIZE / 2, this.width / this.scale / 2), top = this.height * this.anchor / (this.scale * .88), bottom = this.height * (1 - this.anchor) / (this.scale * .88);
@@ -98,6 +123,7 @@ export class Renderer {
     if (this.freeCam) { this.freeCam.x = clamp(this.freeCam.x, halfW, SIZE - halfW); this.freeCam.y = clamp(this.freeCam.y, top, SIZE - bottom); }
     const impact = this.reducedMotion ? 0 : Math.min(1, s.effects.filter(f => (f.type === 'strike' || f.type === 'spell') && (f.source === p.id || distance(p, f) < 250)).reduce((n, f) => Math.max(n, Math.max(0, f.life / f.maxLife - .55)), 0));
     this.shakeX = Math.sin(time * 103) * impact * 3; this.shakeY = Math.cos(time * 127) * impact * 2;
+    if (!menu) this.heroScreen = this.project(p.x, p.y); // read by QA to measure motion smoothness
     c.fillStyle = '#142932'; c.fillRect(0, 0, this.width, this.height);
     const origin = this.project(0, 0); c.drawImage(this.grounds[s.phase], origin.x, origin.y, SIZE * this.scale, SIZE * this.scale * .88);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.hitBoxes = [];
@@ -165,7 +191,7 @@ export class Renderer {
     if (identityAsset&&this.art[identityAsset]) name=identityAsset;
     if (pose) this.lastPoses.push({ id: e.id, hero: e.hero, identity: identity?.id, stage: pose.stage, asset: baseAsset, renderAsset: name });
     let x = e.x, y = e.y, jump = 0;
-    if (e.motion) { const t = Math.min(1, (s.time - e.motion.start) / e.motion.duration), ease = t * t * (3 - 2 * t); x = e.motion.x + (e.x - e.motion.x) * ease; y = e.motion.y + (e.y - e.motion.y) * ease; jump = Math.sin(t * Math.PI) * e.motion.arc; }
+    if (e.motion) { const t = Math.max(0, Math.min(1, (s.time - e.motion.start) / e.motion.duration)), ease = t * t * (3 - 2 * t); x = e.motion.x + (e.x - e.motion.x) * ease; y = e.motion.y + (e.y - e.motion.y) * ease; jump = Math.sin(t * Math.PI) * e.motion.arc; }
     const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
     x += Math.cos(direction) * swing * (hero && e.hero === 1 ? 42 : 28) + Math.cos(e.hitAngle || 0) * recoil;
     y += Math.sin(direction) * swing * 24 + Math.sin(e.hitAngle || 0) * recoil;
@@ -310,5 +336,5 @@ export class Renderer {
     if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
     if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
-  stats() { return { renderer: 'Illustrated 2.5D', pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0, creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(LANES[1][3].x,LANES[1][3].y).x - this.project(LANES[1][1].x,LANES[1][1].y).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
+  stats() { return { renderer: 'Illustrated 2.5D', heroScreen: this.heroScreen, freeCam: !!this.freeCam, pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0, creatures: this.creatures.stats(), artStyle: 'reference-illustrated', cameraYaw: 0, laneScreenDelta: this.project(LANES[1][3].x,LANES[1][3].y).x - this.project(LANES[1][1].x,LANES[1][1].y).x, depthSorted: true, models: 4, textures: Object.keys(this.art).length, scenerySeed: this.sceneSeed, sceneryCount: this.scenes[0]?.props.length || 0, mapLayout: 'winding-districts', districts: this.scenes[0]?.districts.map(d => d.name), curvedTrackPoints: PATHS.map(p => p.length), sceneryVariants: new Set(this.scenes[0]?.props.map(p => p.name)).size, riverSeed: this.sceneSeed, crossings: this.bridges?.length || 0, attackPoses: this.lastPoses.map(p => ({ ...p })) }; }
 }

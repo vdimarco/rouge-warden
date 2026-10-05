@@ -20,6 +20,16 @@
 - [x] Wake stopped audio on any click or key, and say when a match starts with sound off.
 - [x] Cap the canvas at 2560x1440 backing pixels and step the resolution down when frames are slow.
 - [x] Add `qa/tidebreak/desktop.e2e.mjs` for the camera, menu, sound and pixel budget.
+- [x] Draw units and missiles between 60 Hz sim steps, so 100-175 Hz screens do not judder.
+- [x] Ignore a held Esc's key repeats in the game and in the arcade switcher.
+- [x] End the minimap look on release; hold Space to centre the view; cap lead and push together.
+- [x] Keep the hero's order and held keys on resize; offer windowed play when full screen ends, never force it back.
+- [x] Label sound controls with their action; show a muted chip; do not mute on a click that wakes audio; add Test sound.
+- [x] Retry refused music, unlock all tracks in the first gesture, rebuild audio after a lost output device.
+- [x] Fix adapt(): window medians, undo a step-down that does not help, a .5 floor, fresh timing after resize.
+- [x] Keep all creature sheets loaded and decode them off the main thread.
+- [x] Add the performance readout and the note for a browser drawing without the graphics card.
+- [x] Add `qa/tidebreak/adapt.test.mjs` and rewrite `qa/tidebreak/desktop.e2e.mjs` with a clean audio harness.
 - [ ] Play full screen on an ultra-wide monitor with a real GPU and confirm a smooth frame rate.
 - [ ] Listen to the mix and the announcer voice on a real device with speakers.
 - [ ] Check real multitouch and phone performance on a physical phone.

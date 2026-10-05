@@ -118,6 +118,20 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
 
 `.gitignore` keeps `*.jks`, `*.keystore`, `keystore.properties` and `local.properties` out of git. Never commit a key.
 
+### Build in GitHub Actions
+
+`.github/workflows/fish-android.yml` runs on each pull request and each push to `main` that changes `public/fish/` or `apps/fish/`. It runs the check tests, builds `www/`, runs the browser check of the bundle, and builds the debug APK. The APK is in the run's artifacts as `reelitin-debug-apk` for 7 days.
+
+To build a signed bundle in Actions, do steps 1 and 2 above once. Then add these repository secrets (Settings > Secrets and variables > Actions):
+
+| Secret | Value |
+| --- | --- |
+| `REELITIN_UPLOAD_KEYSTORE_BASE64` | The upload key file as base64: `base64 -w0 ~/keys/reelitin-upload.jks` (on a Mac: `base64 -i ~/keys/reelitin-upload.jks`) |
+| `REELITIN_STORE_PASS` | The keystore password |
+| `REELITIN_KEY_PASS` | The password of the `upload` key |
+
+Open Actions > Reel It In Android app > Run workflow, turn on **Signed bundle**, and run it. The signed AAB is in the run's artifacts as `reelitin-release-aab` for 7 days. The run summary shows the commit, `versionCode` and `versionName`. Upload the AAB as in step 4.
+
 ## iOS (on a Mac)
 
 ```sh
