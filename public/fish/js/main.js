@@ -225,18 +225,20 @@ for (const b of $$("[data-close]")) b.addEventListener("click", () => { Sound.sf
 // is full the oldest waiting toast is dropped (the newest wins), and one that waited TOAST_STALE ms is no news any more.
 // The toast that shows, asked for again, shows again from the start.
 // onShow runs when the toast is on screen (a one-time tip is marked seen then, not when it was asked for)
+// keep: news that must show (a catch's news). The queue never drops it, and slow frames that hold the queue up do not
+// make it stale
 const TOAST_MIN = 1200, TOAST_QUEUE = 2, TOAST_STALE = 3000;
 let toastT = 0, toastNextT = 0, toastAt = -1e9;
 const toastQ = [];
-function toast(msg, ms = 2200, onShow = null) {
-  if (cuts && cuts.playing) { heldToasts.push([msg, ms, onShow]); return; }
+function toast(msg, ms = 2200, onShow = null, keep = false) {
+  if (cuts && cuts.playing) { heldToasts.push([msg, ms, onShow, keep]); return; }
   const t = $("#toast"), up = now() - toastAt;
   if (t.classList.contains("on") && up < TOAST_MIN) {
     // the same news again (a second gold ring) keeps the shown toast up for its full time; it is not news to queue
     if (t.textContent === msg) { showToast(msg, ms, onShow); return; }
     if (toastQ.some((q) => q.msg === msg)) return;
-    toastQ.push({ msg, ms, onShow, at: now() });
-    if (toastQ.length > TOAST_QUEUE) toastQ.shift();
+    toastQ.push({ msg, ms, onShow, keep, at: now() });
+    if (toastQ.length > TOAST_QUEUE) { const i = toastQ.findIndex((q) => !q.keep); if (i >= 0) toastQ.splice(i, 1); }
     if (!toastNextT) toastNextT = setTimeout(nextToast, TOAST_MIN - up);
     return;
   }
@@ -256,7 +258,7 @@ function nextToast() {
   // the shown toast was asked for again: it keeps its full TOAST_MIN
   const up = now() - toastAt;
   if (up < TOAST_MIN - 5) { toastNextT = setTimeout(nextToast, TOAST_MIN - up); return; }
-  while (toastQ.length && now() - toastQ[0].at > TOAST_STALE) toastQ.shift();
+  while (toastQ.length && !toastQ[0].keep && now() - toastQ[0].at > TOAST_STALE) toastQ.shift();
   const q = toastQ.shift();
   if (!q) return;
   showToast(q.msg, q.ms, q.onShow);
@@ -1119,11 +1121,11 @@ function caught(c) {
   // a legend landed: its reveal never plays after this
   if (sp && sp.legend) save.cuts[revealId(at)] = 1;
   persist();
-  // The news comes over the card in one toast, a line each, so the queue never drops any of it: the first fish of the
-  // day ("Your first fish!" in its place for a new player's first fish), the goals done, today's goal done. A goal done
-  // brings the record sting
+  // The news comes over the card in one toast, a line each, and the queue keeps it, so none of it is lost: the first fish
+  // of the day ("Your first fish!" in its place for a new player's first fish), the goals done, today's goal done. A goal
+  // done brings the record sting
   const goals = noteGoals(ctx), news = [!junk && save.caught === 1 ? "Your first fish!" : day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
-  if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null);
+  if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null, true);
   G.phase = "catch";
   prompt("");
   G.big = null; G.walk = false;
@@ -2144,15 +2146,20 @@ function playCut(script, then, mark = true) {
   if (mark && script.id && !save.cuts[script.id]) { save.cuts[script.id] = 1; persist(); }
   prompt(""); hideReport();
   // a press in progress (a mouse button held, a finger that has not dragged yet) is dropped: it never casts under the
-  // cutscene, and the player presses again after it. step() sets no grab while one plays, so the grab goes off here
+  // cutscene, and the player presses again after it. step() sets no grab while one plays, so the grab goes off here, and
+  // comes back as it ends (below)
   if (reelPanel) { reelPanel._cancelAll(); reelPanel.set({ grab: "" }); }
-  // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line
+  // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line.
+  // The cutscene cut it short, so it is kept: no newer toast or slow frame drops it
   const T = $("#toast");
-  if (T.classList.contains("on")) { heldToasts.push([T.textContent, 1800 + 1200 * T.textContent.split("\n").length, null]); T.classList.remove("on"); }
-  for (const q of toastQ.splice(0)) heldToasts.push([q.msg, q.ms, q.onShow]);
+  if (T.classList.contains("on")) { heldToasts.push([T.textContent, 1800 + 1200 * T.textContent.split("\n").length, null, true]); T.classList.remove("on"); }
+  for (const q of toastQ.splice(0)) heldToasts.push([q.msg, q.ms, q.onShow, q.keep]);
   clearTimeout(toastNextT); toastNextT = 0;
   cuts.play(script, (skipped) => {
     then(skipped);
+    // the cast grab at once, not on the next frame: a press that comes before a slow frame takes the line (none while
+    // another cutscene plays, one that then() started)
+    if (G.phase === "cast" && !cuts.playing) castGrab();
     for (const a of heldToasts.splice(0)) toast(...a);
   });
 }

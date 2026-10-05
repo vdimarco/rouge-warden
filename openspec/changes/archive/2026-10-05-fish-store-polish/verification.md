@@ -16,6 +16,13 @@ On the fix branch (`daee906`, before main's #201 and the last two small fixes), 
 
 Then main's #201 (a press anywhere loads the rod) was merged in, with the two small fixes below. On that merged tree, all Node tests, sims and app script tests, `tilt.sim`, `boot.e2e`, `flow`, `mouse.e2e` and `turnaround.e2e` passed with no rerun. The other browser checks were still running on the merged tree when this change was archived.
 
+## After the archive
+
+The run on the merged tree ended after the archive. Of its 36 checks, 34 passed, and 2 passed only on the rerun: `cutscenes.e2e` (a press just after a reveal did not take the line) and `screens` (the Stump Bay goal toast did not show). Both were faults in the game, and a follow-up fixed them:
+
+- A press in the frame after a cutscene ended was lost. The cutscene had turned off the cast grab, and only the next frame turned it on again. Now the grab comes back as the cutscene ends.
+- A catch's goal toast could be dropped. The toast queue drops a toast that waited more than 3 s, and on slow frames the goal toast waited longer than that behind other toasts. Now a catch's news, and a toast that a cutscene cuts short, wait in the queue until they show. `screens` has a new check with a 3.5 s stall at the catch.
+
 ## How the scenarios were checked
 
 | Capability | Main checks |
