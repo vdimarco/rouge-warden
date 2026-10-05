@@ -142,7 +142,12 @@ export async function waitState(page, want, timeout = 120000) {
       await page.clock.runFor(16);
     }
   }
-  await page.waitForFunction((w) => (!w.mode || G.mode === w.mode) && (!w.state || G.state === w.state), want, { timeout, polling: 50 });
+  try { await page.waitForFunction((w) => (!w.mode || G.mode === w.mode) && (!w.state || G.state === w.state), want, { timeout, polling: 50 }); }
+  catch (e) {
+    // say where the game stands: a timeout alone does not tell a pause from a slow opening
+    const s = await state(page).catch(() => null);
+    throw new Error("waitState timed out: " + JSON.stringify(want) + " now " + (s ? s.mode + "/" + s.state + " frame " + s.frame + " time " + s.time.toFixed(2) : "unknown"));
+  }
   return state(page);
 }
 
@@ -185,6 +190,30 @@ export async function frames(page, n = 1) {
     throw new Error("frames(" + n + "): the XR loop did not advance");
   }
   await page.waitForFunction((t) => G.frame >= t, f0 + n, { timeout: 120000, polling: 16 });
+}
+
+// Pixels from the first frame that the game draws after change(arg) ran. The page runs change and queues the read in one task,
+// so no frame can draw between them, and the frame that answers the read shows the new state. A wait of a set time cannot promise
+// this. Under load a frame can draw before the read is queued, and the vignette and the speed lines draw only on the first frame
+// after a comfort.update. change runs in the page, so it must not use variables of the test.
+// Under a frozen clock this steps 16 ms at a time until that frame has drawn. Otherwise it waits for the frame.
+export async function sampleAfter(page, points, change, arg) {
+  await page.evaluate(`(() => {
+    const q = (window.__sampleAfter = { done: false });
+    (${change})(${JSON.stringify(arg)});
+    G.test.sample(${JSON.stringify(points)}).then((px) => { q.px = px; q.done = true; }, (e) => { q.error = String(e); q.done = true; });
+  })()`);
+  const done = () => page.evaluate(() => window.__sampleAfter);
+  let q = await done();
+  if (page.clock_ && page.clock_.paused) {
+    for (let i = 0; i < 40 && !q.done; i++) { await page.clock.runFor(16); q = await done(); }
+  } else {
+    await page.waitForFunction(() => window.__sampleAfter.done, null, { timeout: 120000, polling: 16 });
+    q = await done();
+  }
+  if (!q.done) throw new Error("sampleAfter: the game drew no frame in 40 steps");
+  if (q.error) throw new Error("sampleAfter: " + q.error);
+  return q.px;
 }
 
 /* ---------------- IWER (window.xrDevice) ---------------- */

@@ -3,7 +3,7 @@
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/boot.mjs
 import { readFile } from "fs/promises";
 import path from "path";
-import { PUB, checker, watchdog, newPage, open, close, state, waitFor, waitState, enterXR, shot } from "./lib.mjs";
+import { PUB, checker, watchdog, newPage, open, close, state, waitFor, waitState, enterXR, frames, shot } from "./lib.mjs";
 
 const { check, done } = checker("boot");
 watchdog(12 * 60 * 1000, "boot");
@@ -48,17 +48,21 @@ try {
   await waitFor(page, () => document.querySelector("#load").getAttribute("aria-valuenow") === "100" && G.viewDone, null, 180000);
   check(true, "the city builds and the loading bar reaches 100 %");
 
-  // the attract camera moves while the title shows
-  const c0 = await page.evaluate(() => G.camera.position.toArray());
-  await page.waitForTimeout(600);
-  const c1 = await page.evaluate(() => G.camera.position.toArray());
-  check(Math.hypot(c1[0] - c0[0], c1[1] - c0[1], c1[2] - c0[2]) > 0.01, "the attract camera flies over the city behind the title");
+  // the attract camera moves while the title shows. The check counts game frames. A wait of a set time can see no frame at all: until the key
+  // art has loaded, the title draws the whole city, and on a busy machine each frame takes longer than the wait.
+  const attract = () => page.evaluate(() => ({ frame: G.frame, time: G.time, cam: G.camera.position.toArray() }));
+  const a0 = await attract();
+  await frames(page, 5);
+  const a1 = await attract();
+  const flown = Math.hypot(a1.cam[0] - a0.cam[0], a1.cam[1] - a0.cam[1], a1.cam[2] - a0.cam[2]);
+  check(a1.frame - a0.frame >= 5 && a1.time > a0.time && flown > 0.01, "the attract camera flies over the city behind the title", { a0, a1, flown });
   await shot(page, "boot-title");
 
   /* ---------------- flat play ---------------- */
   await enterXR(page, "desktop");
   await page.evaluate(() => G.test.skipIntro());
-  const s = await waitState(page, { mode: "desktop", state: "play" }, 60000);
+  // On a busy machine a frame of flat play can take a second (one run with six busy loops drew 78 frames in 60 s): the wait has a long limit.
+  const s = await waitState(page, { mode: "desktop", state: "play" }, 180000);
   const hidden = await page.evaluate(() => document.querySelector("#title").hidden);
   const S = await page.evaluate(() => G.city.start);
   check(hidden && s.onGround && Math.hypot(s.pos.x - S.x, s.pos.z - S.z) < 1 && Math.abs(s.pos.y - S.y) < 0.01, "PLAY ON THIS SCREEN starts play on the start roof and hides the title", s);
