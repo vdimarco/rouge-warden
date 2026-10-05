@@ -38,22 +38,36 @@ over a bright scene. Enemy units outside the player's team vision SHALL stay hid
 - **WHEN** an enemy prepares a warned spell
 - **THEN** its area shows on the ground with a filling progress mark, and moving out of it before the fill completes avoids the hit.
 
+#### Scenario: A tower locks on in 3D
+- **WHEN** an enemy tower switches its fire to the player's hero in the 3D view
+- **THEN** a red beam joins the tower and the hero and grows until the first shot, and TOWER LOCK shows over the hero.
+
 #### Scenario: Read a protected tower
 - **WHEN** the player approaches a tower that is still protected
 - **THEN** its label and ward show that it is protected and why.
 
 ### Requirement: 2D fallback and graphics choice
-When WebGL2 is not available, or when the address has `?renderer=2d`, the game SHALL use the painted 2D renderer with the same controls,
-camera behaviour, minimap and HUD. The pause menu SHALL let the player switch between 3D and 2D, and the choice SHALL be remembered.
+When WebGL2 is not available, when the browser draws WebGL in software without a graphics card, or when the address has `?renderer=2d`,
+the game SHALL use the painted 2D renderer with the same controls, camera behaviour, minimap and HUD. `?renderer=3d` SHALL force the 3D view.
+The pause menu and the game settings SHALL let the player switch between 3D and 2D during play, and the choice SHALL be remembered.
 
 #### Scenario: Play without WebGL2
 - **WHEN** the browser cannot create a WebGL2 context
 - **THEN** the match starts in the 2D view and remains fully playable.
 
+#### Scenario: Play on a browser that draws in software
+- **WHEN** WebGL2 works only through a software renderer
+- **THEN** the match starts in the 2D view, and the Graphics choice can still switch it to 3D.
+
+#### Scenario: Switch the view during a match
+- **WHEN** the player changes Graphics from 3D to 2D in the pause menu and resumes
+- **THEN** the same match continues in the 2D view with the same controls, and the next match starts in 2D.
+
 ### Requirement: 3D performance
 The 3D view SHALL keep a smooth frame rate on a mid-range desktop GPU at 1440x900 and on a 3440x1440 ultra-wide screen. It SHALL lower its
-render resolution when frames are slow, by the same rule the 2D renderer uses, and raise it again when frames recover. Models SHALL load in the
-background; a hero whose model is still loading SHALL show a placeholder and the match SHALL not wait for it.
+render resolution when frames are slow, by the same rule the 2D renderer uses, and raise it again when frames recover. World models and
+animations SHALL load before the Play button is ready, and the button SHALL show the progress. Hero models SHALL load in the background; a
+hero whose model is still loading SHALL show a stand-in and the match SHALL not wait for it.
 
 #### Scenario: Slow frames on a wide screen
 - **WHEN** frames are slower than the screen's refresh rate for more than a moment
