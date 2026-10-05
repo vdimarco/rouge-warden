@@ -19,6 +19,7 @@ import { cursorSkillAim, dragSkillAim, skillAimPreview } from './skill-aim.js';
 import { followUpFeedback } from './combat-feedback.js';
 import { spellBlocked } from './combat-state.js';
 import { draftPlan, runDraft } from './draft.js';
+import { mountDifficulty, applyDifficulty } from './difficulty-ui.js';
 import { Announcer } from './announcer.js';
 import { PerfMeter } from './perf.js';
 import { TeamChat } from './team-chat.js';
@@ -161,7 +162,7 @@ function startDraft() {
 }
 function start() {
   sound.start(); sound.next = 0; plan ||= draftPlan(selectedIdentity, Date.now() >>> 0);
-  state = assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks); rallyReadyAt = 0; rallyQueue = null;
+  state = applyDifficulty(assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks), $('difficulty-badge')); rallyReadyAt = 0; rallyQueue = null;
   announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} perf.reset(); updateSound(); $('gpu-note').hidden = !perf.software || gpuNoteClosed; if (!$('gpu-note').hidden) setTimeout(() => { $('gpu-note').hidden = true; }, 20000); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
@@ -332,6 +333,7 @@ document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
 $('select-key').onclick=startDraft;$('menu-muted-chip').onclick=turnSoundOn;updateSound();
 let rosterFilter='All';
+mountDifficulty($('difficulty-picker'));
 const lineup=mountLineup({track:$('hero-picks'),previous:$('hero-prev'),next:$('hero-next'),position:$('lineup-position'),selected:()=>selectedIdentity,choose});
 function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selectedIdentity,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'hero':'heroes'}`;lineup.refresh(); }
 $('role-filters').innerHTML=ROLES.map((role,i)=>`<button data-role="${role}" aria-pressed="${role==='All'}"><span class="role-icon" style="--role-x:${[42,117,194,272,347,429][i]}" aria-hidden="true"></span>${role}</button>`).join('');

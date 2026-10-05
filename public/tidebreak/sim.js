@@ -13,6 +13,7 @@ import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
+import { botStride, castLock } from './bot-difficulty.js';
 import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
 import { followOrder } from './navigation.js';
 import { structureProtected, LANE_NAMES } from './objectives.js';
@@ -350,13 +351,13 @@ function bot(s, e, dt) {
   }else e.botRecall=0;
   if(intent.target)e.target=intent.target.id;
   if(intent.slot!==undefined){
-    requestCast(s,e,intent.slot,intent.aim,{bot:true});
-    e.thinkAt=s.time+1.1;
+    e.thinkAt=s.time+castLock(s,e,requestCast(s,e,intent.slot,intent.aim,{bot:true}));
   }
   if(e.castIntent)return;
-  if(intent.move)move(s,e,intent.move.x,intent.move.y,dt,e.speed*(e.slow>0?.52:1)*(e.pursuitUntil>s.time?1.3:1));
+  if(intent.move)move(s,e,intent.move.x,intent.move.y,dt,e.speed*(e.slow>0?.52:1)*(e.pursuitUntil>s.time?1.3:1)*botStride(s,e));
+  if(intent.portal)portal(s,e);
   if(intent.target)attack(s,e,intent.target);
-  if(intent.mode==='lane')followLane(s,e,dt);
+  if(intent.mode==='lane'&&!intent.move)followLane(s,e,dt);
 }
 function resolveIntent(s,e){
  const intent=e.castIntent;if(!intent)return;
