@@ -17,6 +17,8 @@ import { Props } from './render3d/props.js';
 import { Units, TEAM3D, NEUTRAL, PLAYER, HERO_HEIGHT, TOWER_HEIGHT } from './render3d/units.js';
 import { Effects } from './render3d/effects.js';
 import { fow } from './render3d/materials.js';
+import { drawTells3D, overlayTells } from './render3d/tells.js';
+import { drawUnitMarks } from './combat-tells-draw.js';
 export { preload };
 
 const { clamp, distance, visibleTo, concealed } = world;
@@ -119,6 +121,7 @@ export class ThreeRenderer {
     this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
     this.units.rimPower = this.sky.rim;
     const inView = e => e.x > rect.x0 - 450 && e.x < rect.x1 + 250 && e.y > rect.y0 - 250 && e.y < rect.y1 + 450;
+    this.units.frozen = !menu && !this.reducedMotion && this.feel?.hitstop > 0 ? this.feel.frozen : null;
     this.units.sync(s, time, dt, e => inView(e) && (menu || this.visible.has(e.id)), this.cam);
     for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') v.concealed = v.unit.team === 0 && concealed(s, v.unit);
     this.lastPoses = this.units.poses;
@@ -150,7 +153,8 @@ export class ThreeRenderer {
     if (this.freeCam) { this.freeCam.x = cx(-f.minX, S - f.maxX, this.freeCam.x); this.freeCam.y = cx(-f.minY, S - f.maxY, this.freeCam.y); }
     // A big hit near the hero shakes the view a little (never with reduced motion).
     const impact = this.reducedMotion || menu ? 0 : Math.min(1, s.effects.reduce((n, f) => (f.type === 'strike' || f.type === 'spell') && (f.source === p.id || distance(p, f) < 250) ? Math.max(n, Math.max(0, f.life / f.maxLife - .55)) : n, 0));
-    this.shake.x = Math.sin(time * 103) * impact * 7; this.shake.y = Math.cos(time * 127) * impact * 5;
+    const weighted = this.reducedMotion || menu ? 0 : (this.feel?.shake || 0) / (this.scale || 1);
+    this.shake.x = Math.sin(time * 103) * Math.max(impact * 7, weighted); this.shake.y = Math.cos(time * 127) * Math.max(impact * 5, weighted * .7);
     this.camTarget = this.cam; this.placeCamera(this.cam.x, this.cam.y, this.shake.x, this.shake.y);
   }
   // Team 0's sight, painted small and soft; the ground and scenery outside it darken.
@@ -193,6 +197,7 @@ export class ThreeRenderer {
       const intent = e.castIntent || e.specialIntent;
       if (intent?.shape) this.telegraph(intent, s.time, e.specialIntent ? '#ffc17a' : e.team === p.team ? '#9be3cf' : '#ff8f75', false);
     }
+    if (!menu) drawTells3D(this, s, p, time, near);
     if (!menu && p.hp > 0) {
       if (p.recall) d.circle(p.x, p.y, 85 + Math.sin(time * 8) * 10, { color: '#d6ffec', alpha: .8, line: 5 });
       if (aim && !aim.cancelled) {
@@ -293,7 +298,7 @@ export class ThreeRenderer {
         const tier = e.kind === 'core' ? 'ELDER RIFT' : e.guardian || e.tier >= 3 ? 'GUARDIAN' : ['OUTER WARD', 'MIDDLE WARD', 'INNER WARD'][e.tier] || 'WARD';
         this.label(prot ? `${tier} · PROTECTED` : tier, a.x, a.y - 7, prot ? '#d9d0e6' : '#ecd9a6', '700 10px Barlow');
       } else if (hero) this.label(`${e.level ?? ''} ${identityFor(e)?.name || e.name}`.trim(), a.x, a.y - 6, e.team === 0 ? (e.player ? '#f4e6b0' : '#cdeee2') : '#ffc6bd', '700 10px Barlow');
-      this.drawBadges(e, s.time, { x: a.x, y: a.y - (tower || hero ? 14 : 2) });
+      this.drawBadges(e, s.time, { x: a.x, y: a.y - (tower || hero ? 14 : 2) }); drawUnitMarks(this, s, e, { x: a.x, y: a.y - (tower || hero ? 14 : 2) }, p);
       const intent = e.castIntent || e.specialIntent;
       if (intent) {
         const identity = identityFor(e), label = identity && Number.isInteger(intent.slot) ? identitySkill(identity.id, intent.slot).name : intent.label || HEROES[e.hero]?.skills?.[intent.slot];
@@ -303,7 +308,8 @@ export class ThreeRenderer {
       if (exposed || recovery) { const f = this.project(e.x, e.y, 0); this.label(`${exposed ? 'EXPOSED' : 'RECOVERY'} ${Math.max(0, (exposed ? e.exposedUntil : e.recoveryUntil) - s.time).toFixed(1)}s`, f.x, f.y + 22, exposed ? '#ffd09a' : '#c6cbd1', '700 10px Barlow'); }
     }
     if (!menu) {
-      for (const f of s.floaters) { const a = this.project(f.x, f.y + 55, 250 + (.8 - f.life) * 70); c.globalAlpha = Math.min(1, f.life * 2); this.label(String(f.text), a.x, a.y, f.color, '700 17px Barlow'); } c.globalAlpha = 1;
+      for (const f of s.floaters) { const a = this.project(f.x, f.y + 55, 250 + (.8 - f.life) * 70); c.globalAlpha = Math.min(1, f.life * 2); this.label(String(f.text), a.x, a.y, f.color, `700 ${f.size || 17}px Barlow`); } c.globalAlpha = 1;
+      overlayTells(this, s, p);
       this.drawResults(s, p);
       const waiting = this.units.stats().placeholders; if (waiting) this.label(`Heroes are still loading · ${assets.heroes.size} of ${HERO_IDENTITIES.length}`, this.width / 2, this.height - 12, '#e9dcc0', '600 11px Barlow');
     }

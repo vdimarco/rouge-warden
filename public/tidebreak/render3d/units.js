@@ -292,6 +292,7 @@ export class Units {
       if (v && v.kindKey !== e.kind) { this.release(v); v = null; }
       if (!v) { v = this.make(e); v.kindKey = e.kind; this.views.set(e.id, v); }
       v.unit = e; alive.add(e.id);
+      if (this.frozen?.has(e.id) && v.root?.visible) continue; // hitstop: hold the pose of the units in the hit
       v.update(e, s, time, dt, visible(e), false);
     }
     // Units the simulation removed keep their view for the death; then it returns to the pool.

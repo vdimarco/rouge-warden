@@ -34,9 +34,28 @@ Every claim from the audit was checked in the code before it was used; where the
 No map geometry, tower stats, wave, economy, respawn or time-limit constants were changed. Distances this branch adds are written as
 a multiple of `SIZE / 6400` (`combat-tells.js`), so they scale with the bigger map.
 
-## 2. Data the 3D renderer must draw
+## 2. Data the 3D renderer draws
 
-All of this is sim or presentation data, drawn today in `illustrated-render.js` and `combat-tells-draw.js`.
+All of this is sim or presentation data. Both renderers draw it: the 2D one in `illustrated-render.js` and
+`combat-tells-draw.js`, the 3D one in `three-render.js` and `render3d/tells.js`.
+
+**What the 3D renderer draws, and where:**
+
+| Tell | 3D drawing | Code |
+|---|---|---|
+| Cast, special and engage warnings | Ground disc, cone or path to a landing circle, with a progress ring | `three-render.js` `telegraph()` (the base branch's own code; it already handled `shape: 'path'`) |
+| Windup | A ground ring that grows and brightens from the first cue to the hit | `render3d/tells.js` `drawTells3D` |
+| Tower lock-on | A light beam from the crystal to the target that thickens over the lock, a closing ring on the target, and TOWER LOCK over the player | `drawTells3D`, `overlayTells` |
+| Warned third strike | A dashed reach ring around the attacker and a line to its target | `drawTells3D` |
+| EXPOSED and RECOVERY | Dashed ring and countdown label | `three-render.js` (base code) |
+| Hitstop | The views of the units in the hit are not updated while it lasts, so their pose holds; a white ring flashes on them | `render3d/units.js` `sync()` (one line), `drawTells3D` |
+| Weighted shake | The camera shake takes the larger of the old effect shake and `feel.shake`, converted from pixels to world units | `three-render.js` `follow()` |
+| Finishable wisps, healing summons | The 2D marks, drawn on the 3D overlay canvas | `drawUnitMarks` from `combat-tells-draw.js` |
+| Damage numbers | The overlay label takes `floater.size` | `three-render.js` `drawOverlay()` |
+
+All new ground marks go into the existing instanced decal and ribbon meshes, so they add no draw calls (56 with the tells
+against 57 on the base in the same SwiftShader scene). The pose lean during a windup is drawn in 2D only; the 3D rig has no
+windup clip yet.
 
 **Read from a unit (sim state):**
 
@@ -141,11 +160,16 @@ one-sided trades).
   clock and QUEUED read correctly; the engage tell and tower lock draw with no page error. 24 checks passed at all three sizes.
 - Changed, with the reason in each file: `combat-decisions.test.mjs` (a missed cast now exposes and locks for 0.5 s),
   `tactical-combat.test.mjs` (a tower locks on before its first shot), `sim.test.mjs` (the kill floor above).
-- Whole suite before the base merge: all 22 files in `qa/tidebreak/` passed. After merging `claude/quirky-cerf-vwf0qw` into this
-  branch, six suites fail (`creatures`, `sim`, `skills`, `tactical-combat`, `targeting`, `towers`). They fail identically on the
-  base branch itself, checked in a separate worktree at its head: the map work in progress moved the arena to 9600 and changed
-  mana capacity, tower counts and camp sprites while those tests still assert the old values. This branch adds no failure of its
-  own, and `team-presence` passes here while it fails on the base. `qa/tidebreak/desktop.e2e.mjs`: 17 checks passed on the merge.
+- New: `qa/tidebreak/combat-feel-3d.e2e.mjs`. Chromium with SwiftShader and `?renderer=3d`: the windup, third-strike and lock-on
+  tells add ground decals and a beam and clear with their state; the lock beam changes the screen pixels at its midpoint; TOWER
+  LOCK shows over the player; hitstop holds the views of the units in the hit while the others update; shake follows the weight;
+  damage numbers keep their size; no page or console errors. 6 checks passed.
+- Whole suite on the current merge of `claude/quirky-cerf-vwf0qw`: all 22 files in `qa/tidebreak/` pass. (After the first merge,
+  six suites failed on the base branch's map work in progress; the base's later commits fixed them.)
+- `qa/tidebreak/desktop.e2e.mjs`: 17 checks passed. `qa/tidebreak/combat-feel.e2e.mjs`: 24 checks passed.
+- `qa/tidebreak/render3d.e2e.mjs` stops at its pick check ("pick finds the enemy hero under the cursor") on this branch and on
+  the base branch alike, with the same result. With only that assert turned into a log, its other seven checks pass on both
+  trees, with the same draw-call counts and the 2D/3D switch working.
 
 ## 5. Not checked, and open issues
 
@@ -156,12 +180,10 @@ one-sided trades).
 - Bots do not use any of this yet: they never punish an exposed hero, never dodge a warned basic strike, and never read
   `exposedUntil` or `recoveryUntil`. That is the bot session's work. The hooks are `exposedUntil`, `exposeReason`, `recoveryUntil`
   and `pendingAttack.telegraph`.
-- The 3D renderer draws none of the new tells yet. Section 2 lists what it needs.
 - The audit's rule 6 proposals for wisp roles and tower roles, and its rule 8 match clock, belong to the map branch and are not here.
-- The base branch makes the three.js renderer the default wherever WebGL2 runs on a real graphics card. It already draws the cast
-  and special warnings (the engage path tell among them) and the EXPOSED and RECOVERY rings, but not the tower lock-on tether,
-  the third-strike reach ring, the target marks, the hitstop or the weighted shake, so those players get the sim-side rules
-  without their tells. Section 2 lists every field it needs; `renderer.feel` is already set on whichever renderer is active.
+- The 3D tells were checked in SwiftShader only. Their colours pass through the 3D colour grade, so the reds read paler than in
+  2D; that matches the existing 3D telegraphs, but it should be judged on a real screen.
+- The 3D renderer has no windup lean; the 2D one does. A windup clip in the rig would close that gap.
 - `qa/tidebreak/sim.test.mjs` had a per-match floor of more than 4 kills. Longer punish windows, less mana and a tighter basic
   attack reach lower the kill rate, so the floor is now 2 per match with an average of at least 8. The map branch owns match
   pacing, so the right floor should be set once its waves and timings settle.
