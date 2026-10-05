@@ -33,8 +33,8 @@ export const TIERS = [
   { name: 'Inner ward', hp: 5800, range: 410, damage: 240, rate: 1.05, xp: 180, gold: 160 },
   { name: 'Guardian', hp: 2600, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
 ];
-// The core's armor makes the final siege take more than one push.
-export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1, armor: 0 };
+// The core's armor and its regeneration (while no enemy wisp is at it) make the final siege take more than one push.
+export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1, armor: 0, regen: 0 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
@@ -572,6 +572,7 @@ export function step(s, input = {}, dt = 1 / 60) {
       if (e.hp <= 0 || e.stun > 0) {e.specialIntent=null;e.exposedUntil=0;continue;}
       if (e.fear > 0) {e.specialIntent=null;e.exposedUntil=0;e.nextSpecial=Math.max(e.nextSpecial||0,s.time+1.5);if(e.speed>0)move(s, e, e.x + e.x - e.fearX, e.y + e.y - e.fearY, dt);continue;}
       if (e.kind === 'tower' || e.kind === 'core') {
+        if (e.kind === 'core' && !s.suddenDeath && !escorted(s, 1 - e.team, e)) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * CORE.regen * dt);
         if (e.guardian && guardianSlam(s, e)) continue;
         const tracked=s.units.find(t=>t.id===e.towerTarget);
         if(!tracked||tracked.hp<=0||distance(e,tracked)>e.range||!canSee(s,e,tracked)){e.towerTarget=0;e.towerHits=0;e.towerUntil=0;}

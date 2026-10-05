@@ -73,7 +73,7 @@ export function unitMaterial(source, uniforms = unitUniforms(), key = 'unit') {
         // Judged in a rough sRGB space (square root), where 'pale' and 'greyish' mean what an artist means.
         vec3 g = sqrt( max( c, vec3( 0. ) ) ); float gh = max( g.r, max( g.g, g.b ) ), gl = min( g.r, min( g.g, g.b ) );
         tintMask = smoothstep( uTintRange.x, uTintRange.y, gh ) * ( 1. - smoothstep( .1, .26, gh - gl ) );
-        diffuseColor.rgb = mix( c, uTint * ( .45 + hi * .75 ), tintMask * .8 ); }`)
+        diffuseColor.rgb = mix( c, uTint * ( .35 + hi * .6 ), tintMask * .85 ); }`)
       .replace('#include <tonemapping_fragment>', `
       { vec3 vd = normalize( vViewPosition ); float rim = pow( 1. - clamp( dot( normal, vd ), 0., 1. ), 2.6 );
         gl_FragColor.rgb += uRim * rim * uRimPower + vec3( uFlash ) + uTint * tintMask * uTintGlow; }

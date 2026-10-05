@@ -211,7 +211,7 @@ export class ThreeRenderer {
   // A cast warning on the ground: fill, dashed edge and a ring that fills until the cast lands.
   telegraph(intent, time, color, preview) {
     const w = intent.shape, d = this.effects.decals, progress = preview ? -1 : clamp((time - intent.start) / Math.max(.001, intent.at - intent.start), 0, 1), r = Math.max(10, w.radius || 0);
-    const o = { color, alpha: preview ? .7 : .85, line: preview ? 3 : 5, fill: preview ? .1 : .2, dash: preview ? 24 : 0 };
+    const o = { color, alpha: preview ? .75 : .9, line: preview ? 4 : 8, fill: preview ? .12 : .26, dash: preview ? 24 : 0 };
     if (w.shape === 'path' || w.shape === 'line') {
       const pts = [{ x: w.x, y: w.y }, ...(w.points?.length ? w.points : [w.tx != null ? { x: w.tx, y: w.ty } : { x: w.x + Math.cos(w.angle || 0) * r, y: w.y + Math.sin(w.angle || 0) * r }])];
       for (let i = 1; i < pts.length; i++) d.capsule(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y, w.shape === 'line' ? Math.max(30, (w.width || 60) / 2) : 26, o);
