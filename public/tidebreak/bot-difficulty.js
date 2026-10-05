@@ -57,12 +57,16 @@ export function reactionDelay(s, e, source, key) {
 
 const STRUCTURE = ['tower', 'core'], ESCORT = ['minion', 'leviathan', 'summon'];
 const enemyStructures = (s, team) => s.units.filter(t => STRUCTURE.includes(t.kind) && t.team !== team && t.team >= 0 && t.hp > 0);
-// A tower is tanked when an allied wave unit stands in its range. It shoots those first.
-export const escorted = (s, team, tower) => s.units.some(a => a.team === team && a.hp > 0 && ESCORT.includes(a.kind) && distance(a, tower) < tower.range);
+// A tower is tanked when an allied wave unit stands in its range or at its edge. It shoots those first.
+export const escorted = (s, team, tower) => s.units.some(a => a.team === team && a.hp > 0 && ESCORT.includes(a.kind) && distance(a, tower) < tower.range + 20);
 const inTowerRange = (s, team, p, margin = 0) => enemyStructures(s, team).find(t => distance(t, p) < t.range + margin);
-// Enemy heroes the kill feed reports down in the last 5 s. Every player sees the feed,
-// and a respawn takes at least 6 s, so these heroes are still down.
-export const enemiesDown = (s, team) => new Set((s.killFeed || []).filter(k => k.victimTeam !== team && s.time - k.time < 5).map(k => k.victim)).size;
+// Enemy heroes still down by the public kill feed and the hero level above each head.
+// A respawn takes 5 s plus the level, so the bot needs no hidden timer.
+export function enemiesDown(s, team) {
+  const down = new Set();
+  for (const k of s.killFeed || []) { const v = s.units.find(u => u.id === k.victim); if (k.victimTeam !== team && v && s.time - k.time < 4 + (v.level || 1)) down.add(k.victim); }
+  return down.size;
+}
 // After a won fight (enough enemy heroes down), a healthy group may hit a ward without a wave.
 export function siegeOpen(s, e, ward) {
   const P = botProfile(s, e);
@@ -276,7 +280,7 @@ export function strategy(s, e, { target, hurt, holding }) {
     }
   }
   // Spirit camps: only when safe and the team saw the camp up, or its respawn is due.
-  if (P.camps && s.time > 30 && (holding || !target && hurt > .6) && quiet(s, e, 1300 * K)) {
+  if (P.camps && s.time > 30 && holding && quiet(s, e, 1300 * K)) {
     let best = null, score = 1800 * K;
     for (let i = 0; i < CAMPS.length; i++) {
       const known = campKnown(s, e.team, i), d = distance(e, CAMPS[i]);

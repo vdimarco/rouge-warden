@@ -91,7 +91,7 @@ const dive = level => {
 // Trade-aware retreat: a hurt bot leaves a fight it is losing.
 const trade = level => {
   const { s, p, bot } = scene(level, { keep: [] }); Object.assign(p, LANES[0][2]); Object.assign(bot, { x: p.x, y: p.y - 260, hp: bot.maxHp * .4 });
-  for (let t = 0; t < 1.5; t += .05) { s.time += .05; if (['retreat', 'disengage'].includes(combatDecision(s, bot).mode)) return t; }
+  for (let t = 0; t < 1.5; t += .05) { s.time += .05; if (combatDecision(s, bot).mode === 'retreat') return t; }
   return Infinity;
 };
 for (const id of ['veteran', 'mythic']) assert.ok(trade(id) <= 1.5, `${id} bot at 40% leaves a full-health enemy`);

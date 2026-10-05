@@ -30,12 +30,10 @@ export function combatDecision(s,e){
   return {mode:'evade',move:evadePoint(s,e,a,danger===zone)};
  }
  const outnumbered=heroes.length>allies.length, hurt=e.hp/e.maxHp;
- // A lost trade backs off without the full retreat, so the bot does not recall at once.
- const fleeing=hurt<P.retreatAt||(outnumbered&&hurt<.65)||e.retreat&&hurt<.82;
- if(fleeing||tradeRetreat(s,e,heroes,hurt)){
+ if(hurt<P.retreatAt||(outnumbered&&hurt<.65)||e.retreat&&hurt<.82||tradeRetreat(s,e,heroes,hurt)){
   const home=BASES[e.team],aim={x:home.x-e.x,y:home.y-e.y};
   const slot=e.hero===9&&ready(3)?3:e.hero===6&&canReturn(s,e)?0:escapeHeroes.includes(e.hero)&&ready(0)?0:e.hero===7&&ready(2)?2:e.hero===11&&ready(0)?0:e.hero===9&&ready(3)?3:undefined;
-  return {mode:fleeing?'retreat':'disengage',move:home,slot:heroes.length?slot:undefined,aim};
+  return {mode:'retreat',move:home,slot:heroes.length?slot:undefined,aim};
  }
  // Towers are approached with a wave. Finishing a weak wisp takes priority over a full-health hero.
  // Higher profiles also count the Wild Hunt and summons as escorts, and weigh tower damage before a dive.
