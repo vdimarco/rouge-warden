@@ -55,7 +55,9 @@ document.addEventListener('fullscreenchange', () => {
   if (document.fullscreenElement) { fullscreenLeft = false; lockEscape(); return; }
   try { navigator.keyboard?.unlock?.(); } catch {}
   if (leavingFullscreen) { leavingFullscreen = false; return; }
-  if (running && !resultShown && !paused) { fullscreenLeft = true; pause(); }
+  // Chrome leaves full screen about two seconds into a held Esc, after the first press has opened the menu: the open
+  // menu is drawn again with the windowed choice.
+  if (running && !resultShown) { fullscreenLeft = true; if (!paused || $('screen-mode') || $('resume')) pause(); }
 });
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
@@ -77,7 +79,8 @@ function pause() {
   if (!running || resultShown) return;
   // After full screen ended during play, the menu asks how to go on. Nothing returns to full screen without a choice.
   const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
-  const screen = fullscreenLeft ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
+  const canFullscreen = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+  const screen = fullscreenLeft || !canFullscreen ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
   sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
   $('resume').onclick = () => { if (fullscreenLeft) playWindowed(); closeSheet(); };
   if ($('fullscreen-back')) $('fullscreen-back').onclick = () => { requestFullscreen(); closeSheet(); };
@@ -91,30 +94,32 @@ const SOUND_LABELS = {
   voice: on => on ? 'Mute the announcer voice' : 'Announcer voice is off · Turn it on',
   music: on => on ? 'Mute the music' : 'Music is off · Turn it on',
 };
-function soundRowsHTML(id) { return `<button id="${id}-sound" class="row-btn"></button><button id="${id}-voice" class="row-btn"></button><button id="${id}-music" class="row-btn"></button><button id="${id}-test" class="row-btn">Test sound</button><output id="${id}-test-result" class="sound-test" hidden></output>`; }
+function soundRowsHTML(id) { return `<button id="${id}-sound" class="row-btn"></button><button id="${id}-voice" class="row-btn"></button><button id="${id}-music" class="row-btn"></button><button id="${id}-test" class="row-btn">Test sound</button>`; }
 function wireSoundRows(id) {
   const state = { sound: () => sound.on, voice: () => sound.voiceOn, music: () => sound.musicOn }, toggle = { sound: () => sound.toggle(), voice: () => sound.toggleVoice(), music: () => sound.toggleMusic() };
   for (const kind of Object.keys(state)) {
     const b = $(`${id}-${kind}`), label = () => { b.textContent = SOUND_LABELS[kind](state[kind]()); }; label();
     b.onclick = () => { sound.start(); const on = toggle[kind](); label(); updateSound(); if (on) confirmSound(); };
   }
-  $(`${id}-test`).onclick = () => testSound($(`${id}-test-result`), id);
+  $(`${id}-test`).onclick = () => soundTestPanel(id === 'pause' ? pause : gameSettings, $(`${id}-test`));
 }
 function confirmSound() { if (!sound.clip('ui-confirmation', { gain: .9 })) sound.tone(880, .15, .05); }
 function turnSoundOn() { sound.start(); if (!sound.on) sound.toggle(); updateSound(); confirmSound(); }
 // The game measures its own output while it plays a chime. If the level is there and the player still hears nothing,
-// the sound is stopped outside the game, and the result says where to look.
-async function testSound(out, id) {
-  out.hidden = false; out.classList.remove('silent'); out.textContent = 'Playing a test chime…';
+// the sound is stopped outside the game, and the panel says where to look. The panel opens after the measurement, so
+// the menu pager lays it out with its full text.
+async function soundTestPanel(back, button) {
+  if (button) { button.disabled = true; button.textContent = 'Playing a test chime…'; }
   const result = await sound.test();
-  if (result.state === 'muted') {
-    out.classList.add('silent'); out.innerHTML = 'Sound is off in this game. <button class="row-btn" id="test-turn-on">Turn sound on</button>';
-    $('test-turn-on').onclick = () => { turnSoundOn(); wireSoundRows(id); testSound(out, id); };
-  } else if (result.peak > .01) {
-    out.textContent = `The game is playing sound now (level ${Math.round(result.peak * 100)}%). If you heard nothing, the sound stops outside the game. Check the speaker icon on this browser tab (leave full screen, right-click the tab, choose Unmute site), this site's sound setting next to the address bar, your system volume mixer, and your output device. A monitor connected by DisplayPort or HDMI often becomes the default output.`;
-  } else {
-    out.classList.add('silent'); out.textContent = `The game could not start its sound (audio state: ${result.state}). Click anywhere in the game, then press Test sound again.`;
-  }
+  if (!$('sheet').open) return; // the player closed the menu meanwhile
+  const muted = result.state === 'muted', heard = result.peak > .01;
+  const message = muted ? 'Sound is off in this game.'
+    : heard ? `The game is playing sound now (level ${Math.round(result.peak * 100)}%). If you heard nothing, the sound stops outside the game. Check the speaker icon on this browser tab (leave full screen, right-click the tab, choose Unmute site), this site's sound setting next to the address bar, your system volume mixer, and your output device. A monitor connected by DisplayPort or HDMI often becomes the default output.`
+    : `The game could not start its sound (audio state: ${result.state}). Click anywhere in the game, then press Test again.`;
+  sheet(`<h2>Test sound</h2><p id="sound-test-result" class="sound-test${heard ? '' : ' silent'}">${message}</p>${muted ? '<button id="sound-test-on" class="primary">Turn sound on</button>' : ''}<button id="sound-test-again" class="row-btn">Test again</button><button id="sound-test-back" class="${muted ? 'row-btn' : 'primary'}">Back</button>`);
+  if (muted) $('sound-test-on').onclick = () => { turnSoundOn(); soundTestPanel(back); };
+  $('sound-test-again').onclick = () => soundTestPanel(back, $('sound-test-again'));
+  $('sound-test-back').onclick = back;
 }
 function wirePerfRow(b) { const label = () => { b.textContent = perf.on ? 'Hide the performance readout' : 'Show the performance readout'; }; label(); b.onclick = () => { perf.toggle(); label(); }; }
 function menu() { fullscreenLeft = false; sound.silence(); sound.setScene('menu'); draft?.cancel(); autoPaused = false; autoPauseNote.hidden = true; closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
@@ -157,7 +162,7 @@ function startDraft() {
 function start() {
   sound.start(); sound.next = 0; plan ||= draftPlan(selectedIdentity, Date.now() >>> 0);
   state = assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks); rallyReadyAt = 0; rallyQueue = null;
-  announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} updateSound(); $('gpu-note').hidden = !perf.software || gpuNoteClosed; if (!$('gpu-note').hidden) setTimeout(() => { $('gpu-note').hidden = true; }, 20000); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; resetInput();
+  announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} perf.reset(); updateSound(); $('gpu-note').hidden = !perf.software || gpuNoteClosed; if (!$('gpu-note').hidden) setTimeout(() => { $('gpu-note').hidden = true; }, 20000); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
@@ -438,7 +443,7 @@ function frame(now) {
   }
   const drawStart = performance.now();
   if (running && renderer) drawBetweenSteps(dt);
-  perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running);
+  perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running, running && !paused && !window.GameSwitch?.isOpen);
   requestAnimationFrame(frame);
 }
 // The simulation steps at 60 Hz, but a 100-175 Hz screen draws two or three frames per step. Units and missiles are

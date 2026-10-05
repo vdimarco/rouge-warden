@@ -70,7 +70,8 @@ try {
     // Test sound: the game plays a chime and reports its own level.
     await t.page.keyboard.press('Escape'); await t.page.waitForTimeout(200);
     const test = await centre(t.read, '#pause-test'); await t.page.mouse.click(test.x, test.y);
-    const report = await until(() => t.read(`document.getElementById('pause-test-result').textContent`), s => /playing sound now|could not/.test(s), 40);
+    const report = await until(() => t.read(`document.getElementById('sound-test-result')?.textContent || ''`), s => /playing sound now|could not/.test(s), 40);
+    assert.equal(await t.read(`!!document.getElementById('sound-test-back')`), true, 'the result panel has a way back');
     assert.match(report, /playing sound now/); assert.match(report, /Unmute site/);
     pass('Test sound reports the level and where to look outside the game');
 
@@ -186,6 +187,18 @@ try {
     assert(['move', 'attack'].includes(ordered), 'the clicks order the hero: ' + ordered);
     assert.equal(await read(`localStorage.getItem('tidebreak.fullscreen')`), 'off', 'the windowed choice is saved');
     pass('leaving full screen offers windowed play and keeps it');
+
+    // Chrome's hold-Esc order: the menu is already open when full screen ends; the open menu then offers the choice.
+    await page.evaluate(() => document.documentElement.requestFullscreen().catch(() => {})); await page.waitForTimeout(300);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+    assert.equal(await read(`!!document.getElementById('resume') && !document.getElementById('fullscreen-back')`), true, 'the normal menu is open first');
+    await read('document.exitFullscreen()'); await page.waitForTimeout(300);
+    assert.equal(await read(`!!document.getElementById('fullscreen-back')`), true, 'the open menu now offers Back to full screen');
+    // Closing that menu with Esc, without a choice, still never forces full screen back.
+    await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+    for (let i = 0; i < 3; i++) { await page.mouse.click(1440 * (.3 + i * .2), 900 * .5); await page.waitForTimeout(150); }
+    assert.equal(await read('!!document.fullscreenElement'), false, 'clicks after closing the menu with Esc do not return to full screen');
+    pass('a full-screen exit with the menu open offers the choice, and Esc never forces full screen back');
     assert.deepEqual(t.errors, []); await page.close();
   }
 
@@ -200,17 +213,39 @@ try {
     };
     const t = await open(1280, 720, { init: [VIRTUAL_RAF] });
     await toMatch(t);
+    // Each window starts the hero at the same open spot and walks it right for one second (about 500 units, short of
+    // the first obstacle), after a quarter second for the camera to settle. A hero that does not move fails the check.
     await t.page.keyboard.down('d');
     const measure = hz => t.read(`(async () => {
-      const m = await import('/tidebreak/main.js'); window.__auto = false; let ts = performance.now(); const xs = [];
-      for (let i = 0; i < 2 * ${hz}; i++) { ts += 1000 / ${hz}; window.__pump(ts); xs.push(m.snapshot().graphics.heroScreen.x); }
-      window.__auto = true; return xs; })()`);
-    const jitter = xs => { const d = xs.slice(1).map((x, i) => x - xs[i]).slice(10), hp = d.map((v, i) => { const w = d.slice(Math.max(0, i - 4), i + 5); return v - w.reduce((a, b) => a + b, 0) / w.length; }); return Math.sqrt(hp.reduce((a, v) => a + v * v, 0) / hp.length); };
-    const j144 = jitter(await measure(144)), j60 = jitter(await measure(60));
+      const m = await import('/tidebreak/main.js'), s = m.qaState(), p = s.units.find(u => u.player);
+      window.__spawn ||= { x: p.x, y: p.y }; Object.assign(p, { x: window.__spawn.x, y: window.__spawn.y, px: undefined, py: undefined, order: null });
+      window.__auto = false; let ts = performance.now(); const xs = [];
+      for (let i = 0; i < ${Math.round(hz / 4)}; i++) { ts += 1000 / ${hz}; window.__pump(ts); }
+      const from = p.x;
+      for (let i = 0; i < ${hz}; i++) { ts += 1000 / ${hz}; window.__pump(ts); xs.push(m.snapshot().graphics.heroScreen.x); }
+      window.__auto = true; return { xs, moved: p.x - from }; })()`);
+    const jitter = xs => { const d = xs.slice(1).map((x, i) => x - xs[i]), hp = d.map((v, i) => { const w = d.slice(Math.max(0, i - 4), i + 5); return v - w.reduce((a, b) => a + b, 0) / w.length; }); return Math.sqrt(hp.reduce((a, v) => a + v * v, 0) / hp.length); };
+    const result = {};
+    for (const hz of [144, 75, 60]) {
+      const { xs, moved } = await measure(hz);
+      assert(moved > 250, `the hero walks during the ${hz} Hz window: ${moved} units`);
+      result[hz] = +jitter(xs).toFixed(3);
+      assert(result[hz] < .3, `the hero moves smoothly at ${hz} Hz: jitter ${result[hz]} px`);
+    }
     await t.page.keyboard.up('d');
-    assert(j144 < .3, 'the hero moves smoothly at 144 Hz: jitter ' + j144 + ' px');
-    assert(j60 < .3, 'the hero moves smoothly at 60 Hz: jitter ' + j60 + ' px');
-    pass('the hero moves smoothly at 144 Hz and 60 Hz', { jitter144: +j144.toFixed(3), jitter60: +j60.toFixed(3) });
+    pass('the hero moves smoothly at 144, 75 and 60 Hz', result);
+    assert.deepEqual(t.errors, []); await t.page.close();
+  }
+
+  /* ---------------- a phone with sound saved off ---------------- */
+  {
+    const t = await open(390, 844, { init: [() => localStorage.setItem('tidebreak.sound', 'off')] });
+    await toMatch(t);
+    // The header ignores pointer events, so compare boxes: no shown top-left control may overlap the score.
+    const overlaps = await t.read(`(() => { const s = document.querySelector('.score').getBoundingClientRect(); return [...document.querySelectorAll('.hud-corner > *')].filter(e => getComputedStyle(e).display !== 'none').map(e => [e.id, e.getBoundingClientRect()]).filter(([, r]) => r.right > s.left && r.left < s.right && r.bottom > s.top && r.top < s.bottom).map(([id]) => id); })()`);
+    assert.deepEqual(overlaps, [], 'nothing in the top left covers the score on a phone');
+    assert.equal(await t.read(`document.getElementById('hud-sound').getAttribute('aria-pressed')`), 'false', 'the speaker shows the saved mute');
+    pass('on a phone with sound off, the score stays visible and the speaker shows the mute');
     assert.deepEqual(t.errors, []); await t.page.close();
   }
 
@@ -222,6 +257,8 @@ try {
     assert(size <= 2560 * 1440 * 1.01, 'an ultra-wide canvas stays inside the pixel budget: ' + size);
     const readout = await t.read(`document.getElementById('perf').hidden ? '' : document.querySelector('#perf pre').textContent`);
     assert.match(readout, /frame .* ms median/); assert.match(readout, /canvas \d+x\d+/);
+    const zeroSteps = +readout.match(/steps\/frame (\d+)/)[1];
+    assert(zeroSteps < 50, 'the readout counts match frames only (frames without a step: ' + zeroSteps + '%)');
     pass('an ultra-wide screen stays inside the pixel budget, and ?perf shows the frame timing', { pixels: size });
     assert.deepEqual(t.errors, []); await t.page.close();
   }

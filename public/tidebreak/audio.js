@@ -56,6 +56,8 @@ export class Sound {
     try { this.context?.close(); } catch {}
     for (const t of this.tracks.values()) t.el.pause();
     this.context = null; this.loading = false; this.unlocked = false; this.tracks.clear(); this.buffers.clear();
+    // Times kept from the old context's clock would hold the new one silent (throttle) or the battle music up.
+    this.lastAt = {}; this.fightAt = -99; this.battleMix = 0;
   }
   // Safari, and Chrome on a site without earlier engagement, let a media element start only from a user gesture. The
   // first gesture starts and at once pauses every track that is not playing yet, so later scenes can start them from
