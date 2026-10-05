@@ -74,7 +74,8 @@ The first release of Reel It In.
 | --- | --- |
 | Price | Free. No ads. No in-app purchases. |
 | Privacy policy URL | `https://arcade.uptick.systems/fish/privacy.html` |
-| Support URL | Owner decision. A page or a mail link with the support email. |
+| Support URL (App Store) | `https://arcade.uptick.systems/fish/privacy.html`. The page gives the support email. |
+| Contact email (Play Store settings) | `support@uptick.systems` |
 | Marketing URL | Optional. The web game at `https://arcade.uptick.systems/fish/` is a good choice. |
 | Copyright | `2026 <owner name>` |
 | Age rating | 4+ (Apple), Everyone and PEGI 3 (IARC). See `age-rating.md`. |
