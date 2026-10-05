@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { Renderer as Renderer2D, backingRatio } from './illustrated-render.js';
 import * as world from './world.js';
-import { player, HEROES } from './sim.js';
+import { player, HEROES, fortified } from './sim.js';
 import { makeScenery } from './scenery.js';
 import { identityFor, identitySkill, HERO_IDENTITIES } from './hero-identities.js';
 import { structureProtected } from './objectives.js';
@@ -71,7 +71,7 @@ export class ThreeRenderer {
   setScene(s) {
     if (s.seed !== this.sceneSeed) {
       this.sceneSeed = s.seed; this.scenery = [0, 1].map(phase => makeScenery(s.seed, phase));
-      this.terrain.build(world, s); this.props.ground = this.terrain.mask; this.props.build(world, s, this.scenery);
+      this.terrain.build(world, s); this.bridges = this.terrain.bridges; this.props.ground = this.terrain.mask; this.props.build(world, s, this.scenery); // bridges: for the shared drawMap
       this.restartTiming(); this.compiled = false;
     }
     if (this.stateRef !== s) { this.stateRef = s; this.units.clear(); this.effects.clear(); this.props.setPhase(s.phase, true); this.sky.blend = s.phase ? 1 : 0; this.seenEffects = new WeakSet(); }
@@ -319,7 +319,7 @@ export class ThreeRenderer {
       c.textAlign = 'center'; c.lineJoin = 'round';
       if (tower) {
         const tier = e.kind === 'core' ? 'ELDER RIFT' : e.guardian || e.tier >= 3 ? 'GUARDIAN' : ['OUTER WARD', 'MIDDLE WARD', 'INNER WARD'][e.tier] || 'WARD';
-        this.label(prot ? `${tier} · PROTECTED` : tier, a.x, a.y - 7, prot ? '#d9d0e6' : '#ecd9a6', '700 10px Barlow');
+        this.label(prot ? `${tier} · PROTECTED` : fortified(s, e) ? `${tier} · FORTIFIED` : tier, a.x, a.y - 7, prot ? '#d9d0e6' : '#ecd9a6', '700 10px Barlow');
       } else if (hero) this.label(`${e.level ?? ''} ${identityFor(e)?.name || e.name}`.trim(), a.x, a.y - 6, e.team === 0 ? (e.player ? '#f4e6b0' : '#cdeee2') : '#ffc6bd', '700 10px Barlow');
       this.drawBadges(e, s.time, { x: a.x, y: a.y - (tower || hero ? 14 : 2) }); drawUnitMarks(this, s, e, { x: a.x, y: a.y - (tower || hero ? 14 : 2) }, p);
       const intent = e.castIntent || e.specialIntent;

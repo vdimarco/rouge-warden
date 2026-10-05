@@ -29,9 +29,9 @@ export function drawTells3D(r, s, p, time, near) {
       if (t && t.hp > 0) { const color = e.team === p.team ? FRIENDLY : HOSTILE, pulse = .85 + Math.sin(time * 14) * .15; d.circle(e.x, e.y, e.range + t.radius + DODGE_SLACK, { color, alpha: .95 * pulse, line: 8, dash: 24, outline: 1 }); d.circle(e.x, e.y, e.range + t.radius + DODGE_SLACK, { color, alpha: .1, fill: 1, inner: 0 }); d.capsule(e.x, e.y, t.x, t.y, 8, { color, alpha: .6, fill: .7, inner: 0, outline: .8 }); }
     }
   }
-  // Hitstop: a short white ring on the units in the hit.
+  // Hitstop: a short white ring on the units in the hit that team 0 can see (a hidden attacker stays hidden).
   const feel = r.feel;
-  if (feel?.hitstop > 0) for (const id of feel.frozen) { const u = s.units.find(v => v.id === id); if (u && u.hp > 0 && near(u.x, u.y)) d.circle(u.x, u.y, (u.radius || 22) + 40, { color: '#fffbe8', alpha: Math.min(1, feel.hitstop * 14), line: 8 }); }
+  if (feel?.hitstop > 0) for (const id of feel.frozen) { const u = s.units.find(v => v.id === id); if (u && u.hp > 0 && r.visible.has(id) && near(u.x, u.y)) d.circle(u.x, u.y, (u.radius || 22) + 40, { color: '#fffbe8', alpha: Math.min(1, feel.hitstop * 14), line: 8 }); }
 }
 // Overlay text: TOWER LOCK over the player while a tower locks on.
 export function overlayTells(r, s, p) {

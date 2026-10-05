@@ -111,6 +111,29 @@ Contact sheets: `render-polish/` (before on the left, after on the right, one ro
   the water mask, so it costs one extra texture read.
 - The river already spans the 9600-unit map, and its bridges match the lanes. Its shape is unchanged.
 
+### Review fixes from the main session
+A review on the main branch reported five 3D renderer bugs and one flaky check. Each was reproduced there and is fixed
+here:
+1. **Bridges missing from the maps.** The minimap and tactical map lost the river bridges in 3D, because the shared
+   `drawMap` reads `this.bridges` and only the 2D renderer set it. `setScene` now copies `terrain.bridges`.
+2. **No FORTIFIED label.** A fortified outer ward now reads `OUTER WARD · FORTIFIED` in 3D, as in 2D.
+3. **Endless loading notice.** A hero model that fails to load no longer keeps "Heroes are still loading" on screen.
+   It is not counted as a stand-in and is not retried.
+4. **Wrong texture mapping on built props.** Walls, pillars, logs and timber had lost their world-space texture
+   mapping: the scenery patch replaced the `worldMapped` patch instead of chaining it. The patch now runs the
+   material's own patch first. The program key carries each texture scale, so walls and pillars no longer share one
+   program.
+5. **Hitstop ring gives away hidden units.** The hitstop ring is drawn only on units that team 0 can see, so a hidden
+   attacker stays hidden.
+6. **Flaky windup check.** The engage-crouch check in `combat-feel-3d.e2e.mjs` compared two frames 12 frames apart, so
+   it was flaky. It now compares one frame with the windup clip's weight at zero and at its value, at the same clip
+   times.
+   - How a hero splits the move depends on the model the draft picks. One leans forward about 5% of its height and
+     drops 0.5%; another leans 2% and drops 3%.
+   - So the check asks the head to move both forward and down, by more than 3% of the height together.
+   - The lock-beam pixel screenshot also gets a 120 s timeout, because a SwiftShader frame of the full scene can take
+     longer than 30 s.
+
 ### Not done
 - The 3D arena behind the hero select is not drawn. It needs a change in `main.js`, which another session owns.
 
@@ -178,7 +201,7 @@ All runs used SwiftShader in headless Chromium, with the static server on port 8
 
 | Suite | Result |
 |---|---|
-| `qa/tidebreak/render3d.e2e.mjs` | 8 of 8 pass, after the merge. New check: trees, bushes and grass are leaf-card meshes, heroes have outlines, the see-through points include the player, towers take the see-through. Tower heights 440/490/540/600. |
+| `qa/tidebreak/render3d.e2e.mjs` | 8 of 8 pass, after the merge. Also checks the FORTIFIED label and the minimap bridges. New check: trees, bushes and grass are leaf-card meshes, heroes have outlines, the see-through points include the player, towers take the see-through. Tower heights 440/490/540/600. |
 | `qa/tidebreak/combat-feel-3d.e2e.mjs` | 8 of 8 pass, after merging the base branch. This includes the windup-clip check from the combat feel branch. New check: the death dissolve is 0.54, with no screen-door fade and the outline hidden. |
 | `qa/tidebreak/desktop.e2e.mjs` | 17 of 17 pass, after the merge |
 | `qa/tidebreak/*.test.mjs` (22 suites) | all pass |

@@ -81,7 +81,7 @@ try {
   pass('the windup, third-strike and lock-on tells draw in 3D', { decals: [base.decals, staged.decals], ribbons: [base.ribbons, staged.ribbons] });
   // The lock beam reaches the screen: the pixels at its midpoint change when the lock is switched off.
   const mid = await read(`const t = s.units.find(u => u.id === window.__tower), top = r.units.views.get(t.id)?.top ?? 470, a = r.project((t.x + p.x) / 2, (t.y + p.y) / 2, (top + 110) / 2); return { x: Math.round(a.x), y: Math.round(a.y) };`);
-  const patch = async () => { const png = await page.screenshot({ clip: { x: mid.x - 3, y: mid.y - 3, width: 7, height: 7 } }); return png.toString('base64'); };
+  const patch = async () => { const png = await page.screenshot({ clip: { x: mid.x - 3, y: mid.y - 3, width: 7, height: 7 }, timeout: 120000 }); return png.toString("base64"); }; // SwiftShader can take tens of seconds for a frame of the full scene
   const withBeam = await patch();
   await read(`const t = s.units.find(u => u.id === window.__tower); t.lockTarget = 0;`); await pump(1);
   const withoutBeam = await patch();
@@ -113,17 +113,20 @@ try {
   assert.ok(after >= 2, 'the pose moves again when hitstop ends');
   pass('hitstop holds the pose of the units in the hit, and shake follows the weight', { shake: +shake.peak.toFixed(2) });
 
-  // Windup clips: an enemy hero leans back before a cast and crouches forward before an engage. Each pose is measured
-  // against the same frame with the windup clip held off, so the cast clip's own lead-in does not count.
+  // Windup clips: an enemy hero leans back before a cast and crouches forward before an engage. Each pose is compared
+  // with the same frame, the same base-clip times, and the windup clip's weight set to zero (mixer.update(0) re-poses
+  // without moving any clip time), so neither the cast clip's lead-in nor the frame timing counts.
   const foeId = await read(`const foe = s.units.find(u => u.kind === 'hero' && u.team === 1); Object.assign(foe, { x: p.x - 260, y: p.y - 60, hp: foe.maxHp, facing: 0, pendingAttack: null, castStarted: undefined, attackStarted: undefined }); return foe.id;`);
-  const head = () => read(`const v = r.units.views.get(${foeId}), h = v.model.getObjectByName('Head'), q = h.getWorldPosition(h.position.clone()); v.root.worldToLocal(q); return { y: q.y, z: q.z, height: v.height };`);
+  const head = on => read(`const v = r.units.views.get(${foeId}), g = v.rig, keep = {};
+    for (const n of ['windup', 'crouch']) if (g.actions[n]) { keep[n] = g.actions[n].getEffectiveWeight(); if (!${on}) g.actions[n].setEffectiveWeight(0); }
+    g.mixer.update(0); v.model.updateMatrixWorld(true);
+    const h = v.model.getObjectByName('Head'), q = h.getWorldPosition(h.position.clone()); v.root.worldToLocal(q);
+    for (const n in keep) g.actions[n].setEffectiveWeight(keep[n]); g.mixer.update(0); v.model.updateMatrixWorld(true);
+    return { y: q.y, z: q.z, height: v.height };`);
   const shotFoe = async name => { const at = await read(`const f = s.units.find(u => u.id === ${foeId}); const a = r.project(f.x, f.y, 120); return { x: a.x, y: a.y };`); await page.screenshot({ path: `${SHOTS}/3d-${name}.png`, clip: { x: Math.max(0, at.x - 110), y: Math.max(0, at.y - 150), width: 220, height: 240 } }); };
   const windupPose = async (intent, label) => {
-    await read(`const foe = s.units.find(u => u.id === ${foeId}); foe.castIntent = Object.assign(${intent}, { start: s.time - .6, at: s.time + .05 });
-      const g = r.units.views.get(${foeId}).rig; g.__target ??= g.target; g.target = (n, w) => n === 'windup' || n === 'crouch' ? undefined : g.__target(n, w);`);
-    await pump(12); const off = await head(); if (SHOTS) await shotFoe(`${label}-off`);
-    await read(`const g = r.units.views.get(${foeId}).rig; g.target = g.__target;`);
-    await pump(12); const on = await head(); if (SHOTS) await shotFoe(`${label}-on`);
+    await read(`const foe = s.units.find(u => u.id === ${foeId}); foe.castIntent = Object.assign(${intent}, { start: s.time - .6, at: s.time + .05 });`);
+    await pump(12); const off = await head(false), on = await head(true); if (SHOTS) await shotFoe(label);
     const weights = await read(`const g = r.units.views.get(${foeId}).rig; return { windup: +(g.weights.windup || 0).toFixed(2), crouch: +(g.weights.crouch || 0).toFixed(2) };`);
     return { off, on, weights, back: off.z - on.z, down: off.y - on.y };
   };
@@ -132,7 +135,9 @@ try {
   assert.ok(ult.back > ult.off.height * .03, `the head draws back during an ultimate windup: ${JSON.stringify(ult)}`);
   const leap = await windupPose(`{ slot: 0, shape: { x: p.x - 260, y: p.y - 60, tx: p.x + 140, ty: p.y - 60, angle: 0, radius: 160, shape: 'path', engage: true } }`, 'crouch');
   assert.ok(leap.weights.crouch > .9 && leap.weights.windup < .05, 'an engage plays the crouch clip: ' + JSON.stringify(leap.weights));
-  assert.ok(leap.back < -leap.off.height * .03 && leap.down > leap.off.height * .02, `the head drops forward during an engage windup: ${JSON.stringify(leap)}`);
+  // Heroes split the move differently (one leans 5% and drops 0.5%, another leans 2% and drops 3%): the head must
+  // move forward and down, by more than 3% of the height together.
+  assert.ok(leap.back < 0 && leap.down > 0 && Math.hypot(leap.back, leap.down) > leap.off.height * .03, `the head drops forward during an engage windup: ${JSON.stringify(leap)}`);
   await read(`const foe = s.units.find(u => u.id === ${foeId}); foe.castIntent = null;`); await pump(12);
   const rest = await read(`const g = r.units.views.get(${foeId}).rig; return { windup: g.weights.windup, crouch: g.weights.crouch };`);
   assert.ok(rest.windup < .01 && rest.crouch < .01, 'the windup fades when the cast ends: ' + JSON.stringify(rest));

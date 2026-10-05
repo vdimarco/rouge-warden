@@ -108,7 +108,7 @@ class HeroView {
     this.root.add(model); this.model = model; return true;
   }
   update(e, s, time, dt, vis) {
-    if (!this.model) this.tryModel(); // a map lookup until the model is parsed
+    if (!this.model && !assets.failed.has(this.slug)) this.tryModel(); // a map lookup until the model is parsed; a failed one keeps its stand-in
     const r = this.root, u = this.uniforms, dead = e.hp <= 0;
     // Smoothed ground speed from the drawn positions (they are interpolated between sim steps).
     const moved = Math.hypot(e.x - this.lx, e.y - this.ly); this.lx = e.x; this.ly = e.y;
@@ -340,5 +340,5 @@ export class Units {
     for (const [id, v] of this.views) if (!alive.has(id)) { if (v.update(v.unit, s, time, dt, v.root.visible, true)) { this.release(v); this.views.delete(id); } }
   }
   clear() { for (const v of this.views.values()) this.release(v); this.views.clear(); }
-  stats() { let heroes = 0, placeholders = 0; for (const v of this.views.values()) if (v instanceof HeroView) { heroes++; if (!v.model) placeholders++; } return { views: this.views.size, heroes, placeholders }; }
+  stats() { let heroes = 0, placeholders = 0; for (const v of this.views.values()) if (v instanceof HeroView) { heroes++; if (!v.model && !assets.failed.has(v.slug)) placeholders++; } return { views: this.views.size, heroes, placeholders }; }
 }

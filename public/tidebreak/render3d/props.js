@@ -52,8 +52,12 @@ function reedGeometry() {
 export const propUniforms = { uTime: { value: 0 }, uSway: { value: 1 } };
 function patch(material, grow, { sway = 0, see = true, key, foliage = false }) {
   const uniforms = { ...propUniforms, ...seeUniforms, uGrow: grow };
-  material.onBeforeCompile = shader => {
-    withWorld(shader); fowAtEnd(shader); Object.assign(shader.uniforms, uniforms);
+  // A material that already has its own patch (worldMapped: world-space texture mapping) keeps it; that patch also adds
+  // the world position and the fog of war.
+  const base = Object.hasOwn(material, 'onBeforeCompile') ? material.onBeforeCompile : null, baseKey = base ? material.customProgramCacheKey() : '';
+  material.onBeforeCompile = (shader, renderer) => {
+    if (base) base(shader, renderer); else { withWorld(shader); fowAtEnd(shader); }
+    Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime, uSway, uGrow;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         { float g = uGrow; transformed.y *= g; transformed.xz *= .55 + .45 * g;
@@ -67,7 +71,7 @@ function patch(material, grow, { sway = 0, see = true, key, foliage = false }) {
     if (see) shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + SEE_GLSL)
       .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nseeThrough( vWorldP );');
   };
-  material.customProgramCacheKey = () => key + (see ? '-see' : '') + sway + (foliage ? '-leaf' : '');
+  material.customProgramCacheKey = () => key + baseKey + (see ? '-see' : '') + sway + (foliage ? '-leaf' : '');
   return material;
 }
 // Names from scenery.js -> what to build. Unknown names fall back to a boulder, so new scenery never breaks the scene.
@@ -87,7 +91,7 @@ export class Props {
     this.atlas = foliageAtlas();
     const leafy = sway => set => patch(new THREE.MeshStandardMaterial({ map: this.atlas, alphaTest: coverage ? .42 : .5, alphaToCoverage: coverage, side: THREE.DoubleSide, roughness: .8, metalness: 0 }), this.grow[set], { sway, key: 'foliage', foliage: true });
     const solid = (m, sway = 0) => set => patch(m.clone(), this.grow[set], { sway, key: 'tree' });
-    const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: 'built' }), this.grow[set], { key: 'built' });
+    const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: `built-${scale}` }), this.grow[set], { key: 'built' });
     const plain = (color, rough) => set => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[set], { see: false, key: 'plain' });
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {

@@ -3,7 +3,7 @@
 // - heroes animate (bone rotations change while the hero runs) and attack poses report their clip;
 // - every tower tier (outer, middle, inner, guardian) and both cores have a visible 3D view;
 // - trees, bushes and grass are built in code (leaf cards), heroes have outlines, and the see-through points follow the
-//   heroes in view; towers take the see-through too;
+//   heroes in view; towers take the see-through too; a fortified outer ward says so; the minimap gets the bridges;
 // - world(project(x, y)) returns the same ground point, and pick() finds an enemy under the cursor;
 // - the WebGL canvas stays inside the 2D renderer's pixel budget; the menu's Graphics row switches to 2D and back;
 // - ?renderer=2d keeps the 2D renderer and never makes a WebGL canvas.
@@ -78,7 +78,8 @@ try {
     // Scenery is built in code: tree, bush and grass meshes carry leaf cards (aLeaf); heroes have outline copies; the
     // player's hero is a see-through point, and the towers take the see-through.
     const built = await page.evaluate(id => {
-      const r = window.__renderer, kinds = {}; r.props.root.traverse(o => { if (o.isInstancedMesh && ['pine', 'oak', 'bush', 'grass'].includes(o.name)) kinds[o.name] = (kinds[o.name] || 0) + (o.geometry.attributes.aLeaf ? o.count : -1e6); });
+      // Counts in the whole match (the start view may hold no tree); the grass is counted in view.
+      const r = window.__renderer, kinds = {}; r.props.root.traverse(o => { if (o.isInstancedMesh && ['pine', 'oak', 'bush', 'grass'].includes(o.name)) kinds[o.name] = (kinds[o.name] || 0) + (o.geometry.attributes.aLeaf ? (o.name === 'grass' ? o.count : o.instanceMatrix.count) : -1e6); });
       const v = r.units.views.get(id), tower = [...r.units.views.values()].find(x => x.unit?.kind === 'tower');
       return { kinds, outlines: v.outlines, see: r.stats().seeThrough, towerSee: tower.mesh.material.customProgramCacheKey().includes('see') };
     }, id);
@@ -95,7 +96,15 @@ try {
       const seen = await page.evaluate(id => { const r = window.__renderer, v = r.stats().structures.find(x => x.id === id), u = r.units.views.get(id)?.unit, a = u && r.project(u.x, u.y, 200); return { visible: v?.visible, onScreen: !!a && a.x > 0 && a.x < r.width && a.y > 0 && a.y < r.height }; }, u.id);
       assert(seen.visible && seen.onScreen, `${key} renders on screen: ${JSON.stringify(seen)}`);
     }
+    // An enemy outer ward early in the match is fortified, and its label says so, as in the 2D view.
+    const outer = [...kinds.values()].find(u => u.kind === 'tower' && u.tier === 0 && !u.guardian);
+    await page.evaluate(([x, y]) => { const r = window.__renderer; r.lookAt(x, y); window.__labels = []; r.__label ??= r.label; r.label = (text, ...rest) => { window.__labels.push(String(text)); return r.__label(text, ...rest); }; }, [outer.x, outer.y]); await pump(2, 16);
+    const labels = await page.evaluate(() => { const r = window.__renderer; r.label = r.__label; return window.__labels; });
+    assert(labels.some(t => /OUTER WARD · FORTIFIED/.test(t)), 'a fortified outer ward says so: ' + JSON.stringify(labels.filter(t => /WARD/.test(t))));
     await read('const r = window.__renderer; r.recenter(); r.cam = { x: p.x, y: p.y };'); await pump(2, 16);
+    // The shared minimap draws the river bridges, so the 3D renderer must hand them over.
+    const bridges = await page.evaluate(() => { const r = window.__renderer; return { drawn: r.bridges?.length || 0, built: r.terrain.bridges?.length || 0 }; });
+    assert(bridges.drawn > 0 && bridges.drawn === bridges.built, 'the minimap gets the river bridges: ' + JSON.stringify(bridges));
     g = await t.graphics();
     const tiers = [...kinds.keys()].sort();
     assert(tiers.includes('core0') && tiers.includes('core1') && tiers.filter(k => k.startsWith('tier')).length >= 2, 'cores and several tower tiers exist: ' + tiers);
