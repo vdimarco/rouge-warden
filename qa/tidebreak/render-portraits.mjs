@@ -27,6 +27,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/vr/lib/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from '/tidebreak/lib/meshopt_decoder.mjs';
 import { retarget, skinnedMeshOf } from '/tidebreak/hero-rig.js';
+// YAW turns the hero toward the key light for a 3/4 view. The idle clip looks around: near 12% of its length every hero
+// faces forward with the weapon low; later frames turn away or lift the weapon across the face. SUPER is supersampling.
 const YAW = -0.42, IDLE_FRAME = 0.12, SUPER = 2;
 const clips = await (await fetch('/tidebreak/models/clips.json')).json();
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);

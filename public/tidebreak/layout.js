@@ -14,8 +14,8 @@ export const LANE_KNOTS = [
 // Tower stations by path distance from the team's own base, in world units [outer, middle, inner].
 // Distances are fixed (not fractions) so tower spacing stays a fixed number of tower ranges.
 export const TOWER_ARC = [[3700, 2450, 1250], [3250, 2180, 1100], [3700, 2450, 1250]];
-// Base guardians flank the court and stand over the side-lane entrances.
-export const GUARDIANS = [[.442, .871], [.558, .871]];
+// Base guardians flank the court where the three lanes meet it.
+export const GUARDIANS = [[.462, .862], [.538, .862]];
 // Rift gates. Each river gate pairs with the gate across the river on the other side
 // of the map. A base gate sends a hero to the team's own river gate on the side the hero faces.
 export const RIVER_GATES = [[.215, .585], [.745, .58]];

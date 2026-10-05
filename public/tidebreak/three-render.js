@@ -56,10 +56,11 @@ export class ThreeRenderer {
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; this.units.reduced = this.reducedMotion; this.shake = { x: 0, y: 0 };
     this.sceneSeed = null; this.drawCalls = 0; this.triangles = 0;
     this.lost = false; glCanvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; }); glCanvas.addEventListener('webglcontextrestored', () => { this.lost = false; });
+    canvas.__shore3d = this; // QA handle (qa/tidebreak/render3d.e2e.mjs); gameplay never reads it
     this.resize();
   }
   // Removes the 3D canvases and frees the GPU context (switching to the 2D renderer).
-  dispose() { this.units.clear(); this.gl.dispose(); this.gl.forceContextLoss(); this.canvas.remove(); this.overlay.remove(); }
+  dispose() { if (this.events.__shore3d === this) delete this.events.__shore3d; this.units.clear(); this.gl.dispose(); this.gl.forceContextLoss(); this.canvas.remove(); this.overlay.remove(); }
   setScene(s) {
     if (s.seed !== this.sceneSeed) {
       this.sceneSeed = s.seed; this.scenery = [0, 1].map(phase => makeScenery(s.seed, phase));

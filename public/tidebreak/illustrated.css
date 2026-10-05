@@ -1,6 +1,6 @@
 /* Composition measured against the selected 9:16 Higgsfield reference. */
 #hud header{height:44px;background:none;border:0;box-shadow:none;justify-content:flex-start;padding-left:60px;pointer-events:none}
-#hud header .wordmark{display:none}.score{background:linear-gradient(180deg,#26211bf0,#15120fe6);border:1px solid #6e573a;border-top:0;border-radius:0 0 3px 3px;box-shadow:var(--mr-bevel),0 4px 14px #0009;clip-path:none;height:34px;gap:8px;font-size:17px;padding:4px 12px;margin:0;font-variant-numeric:tabular-nums}.score time{font-size:13px;margin-left:5px;position:static;display:inline;color:var(--mr-text);letter-spacing:.6px}.score i{font-size:12px}
+#hud header .wordmark{display:none}.score{background:linear-gradient(180deg,#26211bf0,#15120fe6);border:1px solid #6e573a;border-top:0;border-radius:0 0 3px 3px;box-shadow:var(--mr-bevel),0 4px 14px #0009;clip-path:none;height:34px;gap:8px;font-size:17px;line-height:26px;padding:4px 12px;margin:0;font-variant-numeric:tabular-nums}.score time{font-size:13px;margin-left:5px;position:static;display:inline;color:var(--mr-text);letter-spacing:.6px}.score i{font-size:12px}
 /* The six heroes of the match flank the score, portraits from the 3D models: your team on the left, the other shore on
    the right. A fallen hero turns grey and shows the seconds until it returns. Phones keep the plain score. */
 .hud-lineup{position:absolute;left:0;right:0;top:env(safe-area-inset-top);height:0;pointer-events:none}

@@ -28,16 +28,16 @@ export const HEROES = [
 ].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, attribute:heroClass(i), attackType:h.range>250?'Ranged':'Melee', height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
 // Structures by tier: 0 outer, 1 middle, 2 inner, 3 base guardian. Rewards go to the whole team.
 export const TIERS = [
-  { name: 'Outer ward', hp: 3000, range: 360, damage: 175, rate: 1.05, xp: 120, gold: 150 },
-  { name: 'Middle ward', hp: 3800, range: 385, damage: 195, rate: 1.05, xp: 150, gold: 180 },
-  { name: 'Inner ward', hp: 4500, range: 410, damage: 215, rate: 1.05, xp: 180, gold: 220 },
-  { name: 'Guardian', hp: 4200, range: 420, damage: 230, rate: 1.2, xp: 200, gold: 250 },
+  { name: 'Outer ward', hp: 3600, range: 360, damage: 210, rate: 1.05, xp: 120, gold: 110 },
+  { name: 'Middle ward', hp: 4800, range: 385, damage: 225, rate: 1.05, xp: 150, gold: 130 },
+  { name: 'Inner ward', hp: 5800, range: 410, damage: 240, rate: 1.05, xp: 180, gold: 160 },
+  { name: 'Guardian', hp: 3200, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
 ];
-export const CORE = { hp: 7000, range: 380, damage: 160, rate: 1.1 };
+export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
-export const PACE = { startGold: 360, killGold: 100, campGold: 110, firstWave: 20, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 2.4, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
+export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 20, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.6, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
 // Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
 // An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 export const MINIONS = {
@@ -395,7 +395,12 @@ function followLane(s, e, dt) {
   // Rejoin the closest piece of the curved lane after a chase or teleport.
   const index = closestTrack(e, path);
   e.waypoint = index;
-  if (e.kind !== 'hero') { const ahead = path[Math.min(path.length - 1, index + 2)]; move(s, e, ahead.x, ahead.y, dt, e.speed * (e.slow > 0 ? .52 : 1)); return; }
+  if (e.kind !== 'hero') {
+    // At the enemy base the lane ends: wisps march on the nearest structure they can damage.
+    const goal = index >= path.length - 8 && s.units.filter(t => (t.kind === 'tower' || t.kind === 'core') && t.team !== e.team && t.hp > 0 && !structureProtected(s, t)).sort((a, b) => distance(e, a) - distance(e, b))[0];
+    const ahead = goal || path[Math.min(path.length - 1, index + 2)];
+    move(s, e, ahead.x, ahead.y, dt, e.speed * (e.slow > 0 ? .52 : 1)); return;
+  }
   // A hero walks with its wave: never more than a few steps past the leading wisp, and never into an
   // enemy structure's range that no wisp of its own team tanks. Without a wave it waits at its front ward.
   let limit = -1;
