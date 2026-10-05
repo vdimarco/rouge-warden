@@ -8,8 +8,9 @@ import { unitMaterial, unitUniforms, worldMapped } from './materials.js';
 import { skinnedMeshOf } from '../hero-rig.js';
 import { HERO_IDENTITIES } from '../hero-identities.js';
 import { attackPose } from '../combat-motion.js';
-import { windupState } from '../combat-tells.js';
 import { structureProtected } from '../objectives.js';
+import { windupState } from '../combat-tells.js';
+import { windupClips, windupClipFor, WINDUP_WEIGHT } from './windup.js';
 
 // Team colours: teal for allies, crimson for enemies; warm and a little muted, not neon.
 export const TEAM3D = ['#58c4ad', '#d65a6c'], NEUTRAL = '#d9b26a', PLAYER = '#f2d68a';
@@ -24,9 +25,6 @@ const TAU = Math.PI * 2, angleTo = (a, b) => Math.atan2(Math.sin(b - a), Math.co
 // Sim facing (x right, y down the map) to a model yaw: models face +Z.
 const yawOf = facing => Math.PI / 2 - facing;
 const ease = t => t * t * (3 - 2 * t);
-// The cast clip during a windup: a quick wind-back to about 70% of the lead-in, a slow hold while the warning fills,
-// then the last part just before the release.
-const windupClip = k => k < .3 ? ease(k / .3) * .7 : k < .92 ? .7 + (k - .3) / .62 * .18 : .88 + (k - .92) / .08 * .12;
 // Hero outlines: a thin team-coloured line around the body, the same width in pixels on every screen. The back faces of
 // a copy of the body are pushed out along their screen-space normal; the body hides the inside.
 export const OUTLINE = { uWidth: { value: 1.5 }, uResolution: { value: new THREE.Vector2(1280, 720) } };
@@ -51,7 +49,6 @@ function outlineMaterial(color) {
       #include <colorspace_fragment>
       }` });
 }
-const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _q3 = new THREE.Quaternion(), _axis = new THREE.Vector3();
 // The clip time for an attack: the lead-in plays during the sim windup and the strike lands on the hit; the follow-through
 // fills the rest of the attack. The lead-in is never played more than about three times faster than authored.
 function strikeTime(timing, variant, age, windup, duration) {
@@ -105,9 +102,8 @@ class HeroView {
     const outline = outlineMaterial(this.outlineColor), parts = []; model.traverse(o => { if (o.isMesh) parts.push(o); });
     for (const o of parts) { const copy = o.isSkinnedMesh ? new THREE.SkinnedMesh(o.geometry, outline) : new THREE.Mesh(o.geometry, outline); if (o.isSkinnedMesh) { copy.bind(o.skeleton, o.bindMatrix); copy.bindMode = o.bindMode; } copy.frustumCulled = false; copy.name = 'outline'; o.add(copy); }
     this.outline = outline; this.outlines = parts.length;
-    model.traverse(o => { if (!this.spine && (o.name === 'Spine02' || o.name === 'Spine01')) this.spine = o; });
-    const clips = clipsFor(this.slug, skinnedMeshOf(model), []);
-    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips]);
+    const mesh = skinnedMeshOf(model), clips = { ...clipsFor(this.slug, mesh, []), ...windupClips(this.slug, mesh) };
+    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips, 'windup', 'crouch']);
     this.root.remove(this.stand); this.stand.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); this.stand = null;
     this.root.add(model); this.model = model; return true;
   }
@@ -145,10 +141,13 @@ class HeroView {
       const timing = CLIP_TIMING[castClip];
       if (timing) {
         g.target(castClip, 1);
-        if (cast) { const k = Math.max(0, Math.min(1, (s.time - cast.start) / Math.max(.05, cast.at - cast.start))); g.time(castClip, timing.from + (timing.strikes[0] - .04 - timing.from) * windupClip(k)); this.fromIntent = true; }
+        if (cast) { const k = Math.max(0, Math.min(1, (s.time - cast.start) / Math.max(.05, cast.at - cast.start))); g.time(castClip, timing.from + (timing.strikes[0] - .04 - timing.from) * k); this.fromIntent = true; }
         else { const t = this.fromIntent ? timing.strikes[0] + pose.age / pose.duration * (timing.to - timing.strikes[0]) : strikeTime(timing, 0, pose.age, .12, pose.duration); g.time(castClip, t); }
         if (casting) this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: pose.stage, clip: castClip, model: this.slug });
       }
+      // The anticipation pose layers on top while the cast winds up; it fades out as the strike plays.
+      const wind = cast && windupState(e, s.time);
+      if (wind) { const clip = windupClipFor(wind.kind); g.target(clip, WINDUP_WEIGHT[wind.kind] ?? .75); g.time(clip, ease(wind.progress)); }
     } else {
       this.fromIntent = false;
       const running = this.speed > 40 || lift > 0;
@@ -156,14 +155,6 @@ class HeroView {
       if (e.hit > 0) { g.target('hit', .5 * e.hit / .16); g.time('hit', .1 + (.16 - e.hit) / .16 * .45); }
     }
     g.update(dt, dead ? .12 : .14);
-    // Windup lean: the chest tips back while a warning fills and snaps forward at the release, as in the 2D view.
-    const wind = dead ? null : windupState(e, s.time), goal = wind ? ease(Math.min(1, wind.progress / .8)) * (wind.kind === 'ultimate' ? .34 : .24) : 0;
-    this.lean = (this.lean || 0) + (goal - (this.lean || 0)) * (1 - Math.exp(-dt * (goal > (this.lean || 0) ? 9 : 22)));
-    if (this.spine && this.lean > .003 && !this.units.reduced) {
-      const bone = this.spine; bone.parent.updateWorldMatrix(true, false); bone.parent.getWorldQuaternion(_q);
-      _q2.setFromAxisAngle(_axis.set(1, 0, 0).applyQuaternion(r.quaternion), -this.lean);
-      bone.quaternion.premultiply(_q3.copy(_q).invert().multiply(_q2).multiply(_q));
-    }
   }
   dispose() { this.units.group.remove(this.root); this.root.traverse(o => { if (o.isMesh && o.material?.userData?.uniforms) o.material.dispose(); }); this.outline?.dispose(); this.rig?.mixer.stopAllAction(); }
 }

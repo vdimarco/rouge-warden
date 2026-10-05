@@ -12,7 +12,7 @@ Every claim from the audit was checked in the code before it was used; where the
 | 10 | Wisp kills no longer post a DEFEATED result label, so the four result slots carry hero events. | `sim.js` |
 | 2 Readable threat | Audio cue when an enemy or neutral windup starts: a rising swell as long as the tell, panned to the caster, brighter when the shape covers you. | `audio.js` (`windup`), `announcer.js` |
 | 2 | Windup pose data for both renderers (`windupState`): progress from the first cue to the hit, with a kind (cast, engage, ultimate, neutral, lock). The 2D renderer leans the unit back and grows a ring. | `combat-tells.js`, `combat-tells-draw.js`, `illustrated-render.js` |
-| 2 | Engage tells: Jersey Devil's leap and Stone Golem's charge are no longer instant. They cast with a 0.3 s windup for players, 0.45 s for bots, and draw a path tell to the landing circle. The stun now lands after the tell. | `combat-state.js`, `combat-tells.js` (`ENGAGES`, `engageShape`), `combat-rules.js` (`insideWarning` for a path), `sim.js` |
+| 2 | Engage tells: Jersey Devil's leap and Stone Golem's charge are no longer instant. They cast with a 0.3 s windup for players, 0.45 s for bots, and draw a path tell to the landing circle. The stun now lands after the tell. The tell and the moves read one set of numbers (`ENGAGES`), and the charge keeps full speed during its cast recovery, so the path shows the real reach. | `combat-state.js`, `combat-tells.js` (`ENGAGES`, `engageShape`), `combat-rules.js` (`insideWarning` for a path), `sim.js` |
 | 2 | Kraken's ink arms 0.35 s before its first tick, so its first damage is warned. | `legend-rules.js` |
 | 2 | Tower target lock: a tower holds fire 0.35 s after it picks a hero, draws a tether that turns solid, and beeps twice when the target is you. | `combat-tells.js` (`towerLock`), `sim.js`, `combat-tells-draw.js`, `audio.js` (`lockOn`), `announcer.js` |
 | 4 Punish window | A committed cast that hits nothing is a miss: recovery grows to 0.5 s (0.7 s for an ultimate) and the caster is EXPOSED for that time. A cast that hits keeps the short recovery. An ultimate that hits is exposed for its own recovery. | `combat-tells.js` (`openCommit`/`closeCommit`/`judgeCommit`), `sim.js` |
@@ -32,7 +32,8 @@ Every claim from the audit was checked in the code before it was used; where the
 | - | Bug found while testing: an obstacle beside the map edge could push a body past the edge clamp, so `resolveBody` clamps again at the end. | `world.js` |
 
 No map geometry, tower stats, wave, economy, respawn or time-limit constants were changed. Distances this branch adds are written as
-a multiple of `SIZE / 6400` (`combat-tells.js`), so they scale with the bigger map.
+a multiple of `SIZE / 6400` (`combat-tells.js`), so they scale with the bigger map. The engage tells are the exception: they copy the
+leap and the charge, which keep their fixed sizes.
 
 ## 2. Data the 3D renderer draws
 
@@ -45,6 +46,7 @@ All of this is sim or presentation data. Both renderers draw it: the 2D one in `
 |---|---|---|
 | Cast, special and engage warnings | Ground disc, cone or path to a landing circle, with a progress ring | `three-render.js` `telegraph()` (the base branch's own code; it already handled `shape: 'path'`) |
 | Windup | A ground ring that grows and brightens from the first cue to the hit | `render3d/tells.js` `drawTells3D` |
+| Windup pose | An additive `windup` clip (torso leans back and coils, arms draw back and out) before a cast or ultimate, and a `crouch` clip (torso drops forward, head up, arms back) before a leap or charge. The clip time is the windup progress; it layers on the cast clip's lead-in and fades as the strike plays | `render3d/windup.js`, `render3d/units.js` `HeroView.update()` |
 | Tower lock-on | A light beam from the crystal to the target that thickens over the lock, a closing ring on the target, and TOWER LOCK over the player | `drawTells3D`, `overlayTells` |
 | Warned third strike | A dashed reach ring around the attacker and a line to its target | `drawTells3D` |
 | EXPOSED and RECOVERY | Dashed ring and countdown label | `three-render.js` (base code) |
@@ -54,8 +56,14 @@ All of this is sim or presentation data. Both renderers draw it: the 2D one in `
 | Damage numbers | The overlay label takes `floater.size` | `three-render.js` `drawOverlay()` |
 
 All new ground marks go into the existing instanced decal and ribbon meshes, so they add no draw calls (56 with the tells
-against 57 on the base in the same SwiftShader scene). The pose lean during a windup is drawn in 2D only; the 3D rig has no
-windup clip yet.
+against 57 on the base in the same SwiftShader scene).
+
+The windup clips are built in code, not loaded: each pose is a few bone turns given in the rig's model space (+Y up, +Z
+forward, +X the hero's left, read from the bind poses in `models/clips.json`). `windupClips()` moves each turn into the
+bone's own frame from that hero's bind pose (`W^-1 * R * W`), so the same numbers bend every skeleton the same way. The
+clips are additive (`THREE.AdditiveAnimationBlendMode`), so they add to whatever the hero plays and need no weapon-specific
+version. A cast winds up to 75% of the pose, an ultimate and an engage to the full pose. Measured on a 230-unit hero at
+the end of the windup: the head moves 12 units back before an ultimate, and 9.5 units forward and 6 down before a leap.
 
 **Read from a unit (sim state):**
 
@@ -163,7 +171,9 @@ one-sided trades).
 - New: `qa/tidebreak/combat-feel-3d.e2e.mjs`. Chromium with SwiftShader and `?renderer=3d`: the windup, third-strike and lock-on
   tells add ground decals and a beam and clear with their state; the lock beam changes the screen pixels at its midpoint; TOWER
   LOCK shows over the player; hitstop holds the views of the units in the hit while the others update; shake follows the weight;
-  damage numbers keep their size; no page or console errors. 6 checks passed.
+  the windup clip draws an enemy hero's head back before an ultimate and the crouch clip drops it forward before a leap, each
+  measured against the same frame with the clip held off, and both fade when the cast ends; damage numbers keep their size;
+  no page or console errors. 7 checks passed.
 - Whole suite on the merge of `claude/quirky-cerf-vwf0qw` at `103db12`: 20 of the 22 files in `qa/tidebreak/` pass.
   `sim.test.mjs` (line 19) and `towers.test.mjs` (line 61) fail with the same assertions on the base head itself, checked in a
   separate worktree: the base's latest map work in progress. (The base has moved several times during this work; at `4299c58`
@@ -185,7 +195,8 @@ one-sided trades).
 - The audit's rule 6 proposals for wisp roles and tower roles, and its rule 8 match clock, belong to the map branch and are not here.
 - The 3D tells were checked in SwiftShader only. Their colours pass through the 3D colour grade, so the reds read paler than in
   2D; that matches the existing 3D telegraphs, but it should be judged on a real screen.
-- The 3D renderer has no windup lean; the 2D one does. A windup clip in the rig would close that gap.
+- The windup poses were judged in SwiftShader screenshots at the game camera, where the arm spread reads more than the
+  lean. They should be checked on a real screen; the angles are in `WINDUP_POSES` in `render3d/windup.js`.
 - `qa/tidebreak/sim.test.mjs` had a per-match floor of more than 4 kills. Longer punish windows, less mana and a tighter basic
   attack reach lower the kill rate, so the floor is now 2 per match with an average of at least 8. The map branch owns match
   pacing, so the right floor should be set once its waves and timings settle.

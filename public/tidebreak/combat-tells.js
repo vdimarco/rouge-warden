@@ -2,6 +2,8 @@
 // tower lock-on, engage tells, impact weights and the cast input buffer.
 // Everything here is deterministic. Presentation (hitstop, shake, sound) reads the data.
 import { SIZE } from './arena.js';
+import { resolveBody, SUDDEN_DEATH } from './world.js';
+import { ATTACK_TIMINGS } from './basic-attacks.js';
 const SCALE = SIZE / 6400;
 export const RECAP_SECONDS = 8, RECAP_LIMIT = 48;
 // A tower holds fire this long after it picks a new hero target.
@@ -17,11 +19,24 @@ export const EXPOSED_BONUS = 1.15;
 // Lane mana regeneration per second. A lower rate makes spells compete for mana.
 export const manaRegen = level => 3.5 + level * .25;
 // Engage spells that stun or knock back on contact. They get a windup with a path tell.
+// The leap (sim.js) and the charge (legend-rules.js) read these same numbers, so the tell
+// shows the real reach. They do not scale with the map, because the moves do not.
 export const ENGAGES = { 3: { length: 460, radius: 160, step: 25 }, 7: { length: 460, radius: 110, step: 0 } };
 export const isEngage = (e, slot) => slot === 0 && !!ENGAGES[e.hero];
-export function engageShape(e, angle, rank = 1) {
-  const g = ENGAGES[e.hero], length = (g.length + (rank - 1) * g.step) * SCALE;
-  return { x: e.x, y: e.y, tx: e.x + Math.cos(angle) * length, ty: e.y + Math.sin(angle) * length, angle, radius: g.radius * SCALE, shape: 'path', engage: true };
+export const engageLength = (hero, rank = 1) => ENGAGES[hero].length + (rank - 1) * ENGAGES[hero].step;
+// Given the match state, the end is pushed out of cover, as the leap and the aim preview (skill-aim.js) push the hero.
+export function engageShape(e, angle, rank = 1, s = null) {
+  const length = engageLength(e.hero, rank), end = { x: e.x + Math.cos(angle) * length, y: e.y + Math.sin(angle) * length, radius: e.radius };
+  if (s) resolveBody(s, end);
+  return { x: e.x, y: e.y, tx: end.x, ty: end.y, angle, radius: ENGAGES[e.hero].radius, shape: 'path', engage: true };
+}
+
+// ---- The damage of a hero's next basic attack on t, worked out as attack() in sim.js does it:
+// the chain strike on the same target, an ambush on a hero, and the sudden-death rise. Armor comes later.
+export function strikeDamage(s, e, t) {
+  const variant = e.comboTarget === t.id && s.time <= (e.comboUntil || 0) ? e.comboNext || 0 : 0;
+  const rise = s.suddenDeath ? 1 + (s.time - SUDDEN_DEATH) / 150 : 1;
+  return e.damage * rise * (e.ambushReady && t.kind === 'hero' ? 1.75 : 1) * ATTACK_TIMINGS[variant].damage;
 }
 
 // ---- Hit history for the death recap. The caller sets s.hitContext around a damage source.

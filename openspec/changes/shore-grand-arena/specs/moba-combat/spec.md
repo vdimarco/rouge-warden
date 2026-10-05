@@ -21,7 +21,7 @@ paired with the gate across the river on the other side of the map, and one gate
 river gate on the side the hero faces. World paths, river, terrain, camps, gates, scenery, the 2D and 3D views and both maps SHALL use
 the same dimensions, and the 2D ground SHALL show water along the whole river.
 
-#### Scenario: Break a lane in order
+#### Scenario: Break a lane
 - **WHEN** a player attacks a lane's middle ward while its outer ward stands
 - **THEN** the middle ward takes no damage, attack orders on it are refused, and a tip names the outer ward that must fall first.
 - **WHEN** the outer ward falls, then the middle ward
@@ -60,6 +60,20 @@ The match clock SHALL count down to sudden death and then to the hard limit.
 - **THEN** the map closes and the hero moves to it or pursues the selected vulnerable structure, while manual movement can cancel the
   route.
 
+### Requirement: Spell resources
+Every hero SHALL have mana, distinct spell costs and regeneration. A failed cast SHALL spend neither mana nor cooldown. Respawn and the home
+court SHALL restore mana. Lane regeneration SHALL be low enough that a player who casts every spell on cooldown in fights runs short of mana
+for part of the match, so spells compete for mana; a player who spends with care SHALL rarely run short.
+
+#### Scenario: Plan a combination
+- **WHEN** a trained hero casts skills in sequence
+- **THEN** each successful cast spends its shown cost; insufficient mana blocks casting while basic attacks and training remain available.
+
+#### Scenario: Cast on cooldown in a long fight
+- **WHEN** a player presses every ready spell whenever an enemy is near, for a whole match
+- **THEN** the hero lacks the mana for its cheapest learned spell for about a tenth to a fifth of its living time, and the home court refills
+  it quickly.
+
 ## ADDED Requirements
 
 ### Requirement: Base guardians
@@ -81,7 +95,7 @@ guardian SHALL then be exposed for a recovery window in which it does not attack
 
 ### Requirement: Match pacing and finish
 A match on the grand arena SHALL have a laning phase, a middle game of tower sieges and a decisive end:
-- The first wave SHALL leave each base at 0:23 and later waves every 20 seconds. A wave SHALL have two melee wisps and a caster wisp that
+- The first wave SHALL leave each base at 0:24 and later waves every 20 seconds. A wave SHALL have two melee wisps and a caster wisp that
   attacks from range, a siege wisp on every third wave, and an elder wisp on a lane where the enemy inner ward is down. Waves SHALL grow
   stronger over time after five minutes.
 - Outer wards SHALL take reduced damage for the first three and a half minutes, and the 2D view SHALL label them as fortified.
@@ -108,11 +122,11 @@ A match on the grand arena SHALL have a laning phase, a middle game of tower sie
   damage lands.
 
 #### Scenario: Sudden death
-- **WHEN** the clock reaches 14:00 and both cores stand
+- **WHEN** 14 minutes have passed (the match clock runs out) and both cores stand
 - **THEN** a sudden death banner appears, every structure can be damaged, deaths last longer and home heals slowly.
 
 #### Scenario: Hard limit
-- **WHEN** the clock reaches 17:00 and both cores stand
+- **WHEN** 17 minutes have passed (the final countdown runs out) and both cores stand
 - **THEN** the match ends, the team that broke more structures wins, and the result screen states that reason (or the next tiebreak).
 
 ### Requirement: Bots on the grand arena
@@ -124,3 +138,106 @@ size. A side-lane bot leaving its base SHALL take its base gate when its wave ha
 #### Scenario: A bot without a wave
 - **WHEN** a bot's lane has no allied wisps and the bot stands just outside an enemy ward's range
 - **THEN** the bot falls back toward its own ward and never enters the enemy ward's range.
+
+### Requirement: Every heavy attack warns in two senses
+Heavy attacks SHALL give the defender at least 0.3 s of warning in both sight and sound before they can hit.
+
+#### Scenario: An enemy starts a committed cast
+- **WHEN** an enemy hero or neutral guardian starts a cast that is not instant
+- **THEN** a red shape appears over the ground it will hit, the caster leans into a windup, and a rising sound plays from that direction, at
+  least 0.3 s before the hit, and the sound is brighter when the shape covers the player.
+
+#### Scenario: An engage that stuns
+- **WHEN** an enemy begins a leap or a charge that stuns on contact
+- **THEN** a path to its landing point is drawn for at least 0.3 s before the stun can land, and a player who leaves that path before the hit
+  takes no stun and no damage from it.
+
+#### Scenario: A tower chooses a new hero target
+- **WHEN** an enemy tower switches its fire to a hero
+- **THEN** a lock-on line from the tower to that hero appears, a warning tone plays when that hero is the player, and the tower's first shot at
+  that hero lands no earlier than 0.35 s after the lock-on appears.
+
+### Requirement: A missed commitment can be punished
+A committed cast that hits nothing SHALL leave its caster open for a window the enemy can see and use.
+
+#### Scenario: A cast that hits nothing
+- **WHEN** a hero resolves a committed cast and it hits no enemy
+- **THEN** the caster cannot cast or attack for 0.5 s (0.7 s after an ultimate), and an EXPOSED ring and countdown show over the caster for
+  that time.
+
+#### Scenario: Hitting an exposed enemy
+- **WHEN** a hero hits an enemy hero who is exposed
+- **THEN** the hit deals 15% more damage and shows OPENING HIT, and a hit that kills an exposed hero shows FINISHER.
+
+#### Scenario: A cast that lands
+- **WHEN** a committed cast that is not an ultimate hits what it was aimed at
+- **THEN** the caster keeps the short recovery and is not exposed; an ultimate that lands is exposed for its own recovery.
+
+#### Scenario: An interrupted cast
+- **WHEN** a hero's pending cast is cancelled by a stun, fear, silence or death
+- **THEN** the caster staggers and is exposed for 0.4 s, and the cast spends no mana and no cooldown.
+
+### Requirement: Heavy hits are felt
+Important hits SHALL be reported through at least two channels beyond the health bar.
+
+#### Scenario: A heavy hit on the player or by the player
+- **WHEN** a heavy strike, an ambush, an opening hit, an ultimate or a hero kill involves the player
+- **THEN** the picture of the units in the hit holds for 60 to 90 ms by the weight of the event, the view shakes by 4 to 8 pixels, and a low
+  impact sound plays, while the match simulation keeps its fixed rate so a seeded replay is unchanged.
+
+#### Scenario: The player takes damage
+- **WHEN** the player loses health
+- **THEN** a thud plays, scaled by the share of health lost, the screen edge flashes red, and below 30% health a heartbeat plays until the
+  player heals.
+
+#### Scenario: A last hit and a big number
+- **WHEN** the player lands the finishing hit on a wisp, or deals a large hit
+- **THEN** a gold chime confirms the last hit, and damage numbers grow with the amount and take the colour of the damage type.
+
+#### Scenario: Reduced motion
+- **WHEN** the player's system asks for reduced motion
+- **THEN** no hitstop and no extra shake are applied, and the sounds and the edge flash remain.
+
+### Requirement: The player can read a death
+After a death the player SHALL be able to explain it without replaying the match.
+
+#### Scenario: A hero dies
+- **WHEN** the player's hero dies
+- **THEN** a recap appears during the respawn that names the killer, lists the damage by source and by type over the last 8 seconds, names
+  the warned hits that landed and whether they were dodgeable, names the time spent stunned or feared, and gives one tip drawn from the main
+  cause, and its totals match the health and shield the hero lost.
+
+#### Scenario: The recap never blocks play
+- **WHEN** the recap is shown at 1440x900, 390x844 or 844x390
+- **THEN** it covers no control, stays inside the screen, carries the respawn countdown, and closes with its own button.
+
+### Requirement: Skill is rewarded in the small moments
+Timing and spacing SHALL change the result of ordinary exchanges.
+
+#### Scenario: A press during a cast
+- **WHEN** the player presses a spell in the last 0.12 s of a cast or a recovery
+- **THEN** the button reads QUEUED and that spell is cast on the first step the hero is free, and a press earlier than that is dropped.
+
+#### Scenario: Your own cast begins
+- **WHEN** the player's cast starts its windup
+- **THEN** a short click confirms the commitment.
+
+#### Scenario: The third basic strike
+- **WHEN** a hero's third chain strike is aimed at another hero
+- **THEN** an arc shows where it will reach, and a target who steps out of that reach before contact takes no damage and sees DODGED.
+
+### Requirement: Targets and timers guide the next decision
+The player SHALL be able to see which enemy matters next and when the next peak comes.
+
+#### Scenario: Marks on priority targets
+- **WHEN** an enemy wisp can be finished by the player's next basic attack, or an enemy summon heals its team
+- **THEN** that unit carries a visible mark.
+
+#### Scenario: Camps fight like their art
+- **WHEN** a spirit camp uses its special
+- **THEN** a mage or archer camp warns a line and an ogre or knight camp warns a cleave, each named after the creature.
+
+#### Scenario: The objective clock
+- **WHEN** a match is running
+- **THEN** the HUD shows the time to the next Wild Hunt, which turns gold and sounds a horn in its last 10 seconds, and when the player is out
+  of combat with no peak within 20 seconds, the clock shows a quiet phase.

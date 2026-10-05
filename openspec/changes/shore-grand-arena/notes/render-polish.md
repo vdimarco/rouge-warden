@@ -83,10 +83,11 @@ Contact sheets: `render-polish/` (before on the left, after on the right, one ro
   with reduced motion.
 
 ### Motion (`units.js`)
-- **Windup pose.** While a cast warning fills, the cast clip moves quickly to about 70% of its lead-in. It holds there
-  slowly and then plays the last part before the release.
-- The chest (Spine02) leans back up to 0.24 rad (0.34 rad for an ultimate) and snaps forward at the release. The 2D
-  view does the same. This uses `windupState()` from `combat-tells.js`; no sim field was added.
+- **Windup pose.** The lean-back and crouch come from the windup clips (`render3d/windup.js`). They arrived from the
+  combat feel branch during this work.
+- This branch had its own procedural chest lean and a slowed cast clip. Both were removed in the merge: they doubled
+  the lean and weakened the engage crouch that the combat-feel test measures.
+- No sim field was added.
 - **Death.** The death clip plays and holds. The body then burns away from the head down in soft world-space blobs,
   with an ember edge and a few ember sparks, and sinks a little. This replaces the screen-door dot fade, which looked
   dotted.
@@ -177,9 +178,9 @@ All runs used SwiftShader in headless Chromium, with the static server on port 8
 
 | Suite | Result |
 |---|---|
-| `qa/tidebreak/render3d.e2e.mjs` | 8 of 8 pass. New check: trees, bushes and grass are leaf-card meshes, heroes have outlines, the see-through points include the player, towers take the see-through. Tower heights 440/490/540/600. |
-| `qa/tidebreak/combat-feel-3d.e2e.mjs` | 7 of 7 pass. New check: the windup lean is 0.155 rad, the death dissolve is 0.54 with no screen-door fade and the outline hidden. |
-| `qa/tidebreak/desktop.e2e.mjs` | 17 of 17 pass |
+| `qa/tidebreak/render3d.e2e.mjs` | 8 of 8 pass, after the merge. New check: trees, bushes and grass are leaf-card meshes, heroes have outlines, the see-through points include the player, towers take the see-through. Tower heights 440/490/540/600. |
+| `qa/tidebreak/combat-feel-3d.e2e.mjs` | 8 of 8 pass, after merging the base branch. This includes the windup-clip check from the combat feel branch. New check: the death dissolve is 0.54, with no screen-door fade and the outline hidden. |
+| `qa/tidebreak/desktop.e2e.mjs` | 17 of 17 pass, after the merge |
 | `qa/tidebreak/*.test.mjs` (22 suites) | all pass |
 
 Found and fixed while testing:
@@ -281,7 +282,8 @@ A 3D hero SHALL lean back while its cast warning fills and SHALL burn away clean
 
 #### Scenario: An enemy winds up
 - **WHEN** an enemy hero starts a cast with a warning
-- **THEN** it holds a wind-back pose and leans back until the release, then strikes
+- **THEN** it leans back until the release, then strikes
+- **AND** before an engage it crouches forward instead
 
 #### Scenario: A hero dies
 - **WHEN** a hero dies in 3D

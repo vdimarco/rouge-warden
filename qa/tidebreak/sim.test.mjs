@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
 import { createMatch, player, step, cast, damage, buy, portal, commandOrder, heroSpeed, respawnTime, HEROES, SIZE, LIMIT, SUDDEN_DEATH, PACE } from '../../public/tidebreak/sim.js';
 import { LANES, PATHS, PORTALS, OBSTACLES, BRUSH, BASES, canSee, visibleTo, lineOfSight, resolveBody, shiftWorld, distance, laneFrom, closestTrack } from '../../public/tidebreak/world.js';
 import { structureProtected, INNER } from '../../public/tidebreak/objectives.js';
@@ -74,6 +75,16 @@ for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.l
   s.units = s.units.filter(e => e.kind !== 'minion'); s.nextWave = s.time; step(s, { attack: false }, .05);
   assert(wave(0, 0).some(e => e.elder) && !wave(0, 1).some(e => e.elder) && !wave(1, 0).some(e => e.elder), 'an elder wisp joins only the lane with a broken enemy inner ward');
 }
+// The first wave leaves at the time the combat spec states, and the next one follows after the stated gap.
+{
+  const specs = ['../../openspec/changes/shore-grand-arena/specs/moba-combat/spec.md', '../../openspec/specs/moba-combat/spec.md'].map(f => new URL(f, import.meta.url)).filter(existsSync);
+  const stated = specs.map(f => readFileSync(f, 'utf8')).join('\n').match(/first wave SHALL leave each base at (\d+):(\d\d) and later waves every (\d+) seconds/);
+  assert(stated, 'the combat spec states when the first wave leaves');
+  const s = createMatch(0, 7), times = []; s.units = s.units.filter(e => e.kind !== 'hero'); s.objectiveAt = Infinity; s.campTimers = s.campTimers.map(() => Infinity);
+  while (times.length < 2 && s.time < 90) { step(s, { attack: false }, 1 / 60); if (s.wave > times.length) times.push(s.time); }
+  assert.equal(Math.floor(times[0]), +stated[1] * 60 + +stated[2], `the first wave leaves at ${times[0].toFixed(2)} s, as the spec states (${stated[1]}:${stated[2]})`);
+  assert.equal(Math.round(times[1] - times[0]), +stated[3], 'the next wave follows after the stated gap');
+}
 // Every hero moves by the same rules: out of combat, player orders and bots sprint alike.
 {
   const s = createMatch(0, 7), p = player(s), bot = s.units.find(e => e.kind === 'hero' && !e.player); s.time = 20;
@@ -124,9 +135,11 @@ for (let seed = 1; seed <= 6; seed++) {
     step(s, { autopilot: true }, .05); max = Math.max(max, s.units.length); phases.add(s.phase);
     if (tick % 10 === 0) assert.ok(s.units.every(e => Number.isFinite(e.x + e.y + e.hp) && e.hp >= 0 && e.hp <= e.maxHp && e.x >= 180 && e.x <= SIZE - 180), JSON.stringify({seed,kind,time:s.time,invalid:s.units.filter(e=>!Number.isFinite(e.x+e.y+e.hp)||e.hp<0||e.hp>e.maxHp||e.x<180||e.x>SIZE-180)}));
   }
-  assert.notEqual(s.winner, null); assert.equal(phases.size, 2); assert.ok(max < 150); assert.ok(s.score[0] + s.score[1] > 4, 'matches produce creature fights'); assert.ok(s.towers.some(t => t < 9), 'waves reach and break the wards');
+  assert.notEqual(s.winner, null); assert.equal(phases.size, 2); assert.ok(max < 150); assert.ok(s.score[0] + s.score[1] >= 2, 'matches produce creature fights'); assert.ok(s.towers.some(t => t < 9), 'waves reach and break the wards');
   assert.ok(s.time <= LIMIT + .05);
   summaries.push({ seed, creature: HEROES[kind].name, winner: s.winner, seconds: Math.round(s.time), kills: s.score.reduce((a,b)=>a+b,0), wards: s.towers.join('/'), maxUnits: max });
 }
+// Bots that judge trades feed fewer kills, and a fast push can end a match early, so the main kill check is an average.
+assert.ok(summaries.reduce((v, m) => v + m.kills, 0) / summaries.length > 6, 'bot matches average more than six kills');
 const a = createMatch(0, 42), b = createMatch(0, 42); advance(a, 85, { autopilot: true }); advance(b, 85, { autopilot: true }); assert.deepEqual(a.units, b.units);
 console.log(`PASS: realm geometry, collision recovery, fog, ambush and reveal, wall blocking, items, portals and base gates, respawn, interrupted return, objectives, waves and elder wisps, sprint parity, wave-gated bots, sudden death, the hard-limit tiebreak, deterministic replay and ${summaries.length} complete matches.`);console.table(summaries);

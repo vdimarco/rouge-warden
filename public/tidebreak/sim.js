@@ -13,13 +13,14 @@ import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
+import { castLock, guardMove } from './bot-difficulty.js';
 import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
 import { followOrder } from './navigation.js';
 import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
 import { rooted, spellBlocked, castTiming, emitCombatFeedback } from './combat-state.js';
 import { tickEncounter } from './encounters.js';
-import { recordHit, noteControl, withContext, openCommit, closeCommit, judgeCommit, noteCommitHit, expose, heroOpening, EXPOSED_BONUS, INTERRUPT_EXPOSE, towerLock, pushImpact, bufferCast, lockRemaining, isEngage, engageShape, manaRegen, DODGE_SLACK } from './combat-tells.js';
+import { recordHit, noteControl, withContext, openCommit, closeCommit, judgeCommit, noteCommitHit, expose, heroOpening, EXPOSED_BONUS, INTERRUPT_EXPOSE, towerLock, pushImpact, bufferCast, lockRemaining, isEngage, engageShape, engageLength, ENGAGES, manaRegen, DODGE_SLACK } from './combat-tells.js';
 import { buildRecap } from './death-recap.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 export const HEROES = [
@@ -134,7 +135,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if(absorbed>0&&target.shield<=0)emitCombatFeedback(s,source,target,'shield-break','SHIELD BROKEN');
   const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.hitAngle = Math.atan2(target.y - source.y, target.x - source.x); target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (credit?.player) s.stats.damage += actual;
-  recordHit(s, source, credit, target, actual, absorbed / shieldMultiplier, kind); if (actual > 0 || absorbed > 0) noteCommitHit(s, credit, target);
+  recordHit(s, source, credit, target, actual, absorbed, kind); if (actual > 0 || absorbed > 0) noteCommitHit(s, credit, target);
   if (opening && (credit.player || target.player)) pushImpact(s, credit, target, 1, 'opening');
   if(source.hp>0&&target.soulThread?.source===source.id&&target.soulThread.until>s.time)heal(s,source,actual*.25);
   if(target.hp>0&&target.guardUntil>s.time&&kind==='attack'&&source.hp>0&&source.id!==target.id)damage(s,target,source,(actual+absorbed/shieldMultiplier)*.2,'reflect');
@@ -173,7 +174,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (target.guardian) s.guardians[target.team]--; else s.towers[target.team]--;
     reward(s, source.team, tier.xp, tier.gold); if (source.team === 0) s.stats.towers++;
     if (target.guardian) announce(s, ours ? 'Our guardian has fallen' : 'Enemy guardian down', s.guardians[target.team] ? 'One guardian still protects the rift.' : ours ? 'Our elder rift is exposed. Defend it!' : 'The enemy elder rift is exposed.');
-    else announce(s, ours ? 'Our ward has fallen' : 'Enemy ward broken', target.tier < INNER ? `${LANE_NAMES[target.lane]} ${TIER_NAMES[target.tier + 1]} ward is now vulnerable.` : 'The rift guardians are now vulnerable.');
+    else announce(s, ours ? 'Our ward has fallen' : 'Enemy ward broken', wardFallText(s, target));
   } else if (target.kind === 'core') finish(s, 1 - target.team, 'The enemy elder rift was destroyed.');
   else if (target.kind === 'boss') {
     reward(s, source.team, 190, 160); s.objectiveAt = s.time + PACE.bossEvery; s.objective = null;
@@ -195,6 +196,17 @@ export function lockTip(t) {
   if (t.kind === 'core') return ['Rift protected', 'Break both rift guardians first.'];
   if (t.guardian) return ['Guardian protected', 'Break an inner ward first.'];
   return [`${TIERS[t.tier].name} protected`, `Break this lane’s ${TIER_NAMES[t.tier - 1]} ward first.`];
+}
+// The ward-fall banner names a structure only when this fall opened it: the structure still stands,
+// it was protected while the ward stood, and it is open now. Otherwise the line stays neutral.
+// The fallen ward stands again for a moment, only to see what it protected.
+export function wardFallText(s, ward) {
+  const hp = ward.hp; ward.hp = 1;
+  const guarded = s.units.filter(e => e !== ward && e.team === ward.team && e.hp > 0 && structureProtected(s, e)); ward.hp = hp;
+  const opened = guarded.filter(e => !structureProtected(s, e)), next = opened.find(e => e.kind === 'tower' && !e.guardian);
+  if (next) return `${LANE_NAMES[next.lane]} ${TIER_NAMES[next.tier]} ward is now vulnerable.`;
+  if (opened.some(e => e.guardian)) return 'The rift guardians are now vulnerable.';
+  return `${LANE_NAMES[ward.lane]} ${TIER_NAMES[ward.tier]} ward destroyed.`;
 }
 // A wisp or the Wild Hunt of this team stands at the structure, so heroes may siege it.
 export const escorted = (s, team, t) => s.units.some(a => a.team === team && a.hp > 0 && (a.kind === 'minion' || a.kind === 'leviathan') && distance(a, t) < t.range + 150);
@@ -308,7 +320,7 @@ export function requestCast(s,e,slot,aim,{bot=false}={}) {
   if(!timing.windup)return cast(s,e,slot,aim);
   const angle=aim&&Math.hypot(aim.x,aim.y)>.1?Math.atan2(aim.y,aim.x):target?Math.atan2(target.y-e.y,target.x-e.x):e.facing;
   const locked={x:Math.cos(angle),y:Math.sin(angle),distance:aim?.distance??(target?distance(e,target):undefined)};
-  const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:isEngage(e,slot)?engageShape(e,angle,e.skillRanks[slot]):spellShape(e,slot,locked);
+  const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:isEngage(e,slot)?engageShape(e,angle,e.skillRanks[slot],s):spellShape(e,slot,locked);
   e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape,heroAim:target?.kind==='hero'&&insideWarning(target,shape,20)};
   e.pendingAttack=null;e.facing=angle;e.revealedUntil=s.time+timing.windup+1;e.recall=0;
   return true;
@@ -335,14 +347,15 @@ export function cast(s, e, slot, aim, {lockedTarget}={}) {
   }};
   if(e.hero>=4) return castLegend({s,e,slot,aim,target,angle,rank,strength,origin,color,fx,cone,damage,heal,area,hostile,spawn:data=>add(s,{...data,creatureId:chooseCreature(s.seed,`sentinel:${e.id}`,'neutral').id})});
   if (slot === 0) {
-    const length=[490,410,330,460][e.hero]+(rank-1)*25;
+    // Jersey Devil's leap is an engage. Its length and stun radius come from ENGAGES, so they match its tell.
+    const length=e.hero===3?engageLength(3,rank):[490,410,330][e.hero]+(rank-1)*25;
     e.x+=Math.cos(angle)*length; e.y+=Math.sin(angle)*length; resolveBody(s,e);
     e.motion={...origin,start:s.time,duration:.38,arc:[95,30,160,130][e.hero]};
     s.effects.push({...origin,tx:e.x,ty:e.y,color,type:'beam',hero:e.hero,life:.45,maxLife:.45}); fx(e,160);
     if(e.hero===0) {e.cloak=s.time+2+(rank-1)*.35;e.revealedUntil=-1;e.ambushReady=true;}
     if(e.hero===1) {heal(s,e,190*strength);s.zones.push({...origin,team:e.team,source:e.id,rank,radius:180,life:5,tick:0,type:'water',amount:30*strength});}
     if(e.hero===2) e.shield=Math.max(e.shield,380*strength);
-    if(e.hero===3) area(s,e,e,160,180*strength,{stun:.65});
+    if(e.hero===3) area(s,e,e,ENGAGES[3].radius,180*strength,{stun:.65});
   } else if(slot===1) {
     fx(origin,e.hero===1?440:300);
     if(e.hero===0) cone(360,1.05,t=>{damage(s,e,t,205*strength);if(!['core','tower'].includes(t.kind))t.slow=2+rank*.3;});
@@ -446,13 +459,14 @@ function bot(s, e, dt) {
   }else e.botRecall=0;
   if(intent.target)e.target=intent.target.id;
   if(intent.slot!==undefined){
-    requestCast(s,e,intent.slot,intent.aim,{bot:true});
-    e.thinkAt=s.time+1.1;
+    e.thinkAt=s.time+castLock(s,e,requestCast(s,e,intent.slot,intent.aim,{bot:true}));
   }
   if(e.castIntent)return;
-  if(intent.move)move(s,e,intent.move.x,intent.move.y,dt,heroSpeed(s,e));
+  const to=guardMove(s,e,intent);
+  if(to)move(s,e,to.x,to.y,dt,heroSpeed(s,e));
+  if(intent.portal)portal(s,e);
   if(intent.target)attack(s,e,intent.target);
-  if(intent.mode==='lane'&&!baseGate(s,e,dt))followLane(s,e,dt);
+  if(intent.mode==='lane'&&!intent.move&&!baseGate(s,e,dt))followLane(s,e,dt);
 }
 // A side-lane bot leaving its base takes the base gate when its wave has already passed the river gate.
 function baseGate(s,e,dt){
