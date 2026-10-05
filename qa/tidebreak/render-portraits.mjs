@@ -27,7 +27,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/vr/lib/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from '/tidebreak/lib/meshopt_decoder.mjs';
 import { retarget, skinnedMeshOf } from '/tidebreak/hero-rig.js';
-const YAW = -0.42, IDLE_FRAME = 0.45, SUPER = 2;
+const YAW = -0.42, IDLE_FRAME = 0.12, SUPER = 2;
 const clips = await (await fetch('/tidebreak/models/clips.json')).json();
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const gl = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
