@@ -72,7 +72,7 @@
     box.innerHTML = "<div class='gsw-card'><h2>SWITCH GAME</h2><p>Pick a cabinet. Your current run ends.</p><div class='gsw-list'></div><div class='gsw-row'><a href='/'>◀ Back to the arcade</a><button type='button' class='gsw-close'>Keep playing</button></div></div>";
     // keep the game from seeing clicks and keys meant for the switcher
     for (const ev of ["pointerdown", "mousedown", "click", "touchstart", "keydown", "keyup"]) box.addEventListener(ev, (e) => e.stopPropagation());
-    box.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    box.addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.repeat) close(); }); // a held Esc must not reopen what it closed
     box.addEventListener("click", (e) => { if (e.target === box) close(); });
     box.querySelector(".gsw-close").onclick = close;
     // a game that turns its own frame (Reel It In keeps itself upright on the phone) marks a host, so the list turns with it
