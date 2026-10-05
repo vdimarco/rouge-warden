@@ -6,6 +6,7 @@ import { Logo, Icon } from './components/Icons.jsx';
 import { createGame, emptyInput, queueAction, snapshot, updateGame, validBest } from './game/engine.js';
 import { loadArt, renderGame } from './game/render.js';
 import { RiverAudio } from './game/audio.js';
+import { pauseWater } from './game/water.js';
 const readBest=()=>{try{return validBest(JSON.parse(localStorage.getItem('river-rush-best')));}catch{return null;}};
 export default function App() {
   const [mode,setMode]=useState('menu'),[art,setArt]=useState(null),[error,setError]=useState('');
@@ -20,7 +21,12 @@ export default function App() {
   function switchGames(){home();requestAnimationFrame(()=>window.GameSwitch?.open('river-rush'));}
   function toggleSound(){const enabled=!sound;setSound(enabled);audio.current.setEnabled(enabled);}
   actions.current={start,pause,resume,ready:!!art};
-  useEffect(()=>{window.GameSwitch?.wire();},[mode]);
+  useEffect(()=>{window.GameSwitch?.wire();if(art&&mode!=='playing')pauseWater(art);},[mode,art]);
+  useEffect(()=>{
+    if(!art)return;
+    const measure=()=>{const r=document.querySelector('.coin-stat svg')?.getBoundingClientRect();if(r)art.coinTarget={x:r.left+r.width/2,y:r.top+r.height/2};};
+    measure();window.addEventListener('resize',measure);return()=>window.removeEventListener('resize',measure);
+  },[art,mode]);
   useEffect(()=>{
     const context=document.modelContext;if(!context?.registerTool)return;
     const lifecycle=new AbortController();
@@ -38,7 +44,7 @@ export default function App() {
         const g=model.current,before=g.eventId;
         if(modeRef.current==='playing')updateGame(g,input.current,dt);
         if(g.eventId!==before)audio.current.tone(g.event);
-        const canvas=canvasRef.current;if(canvas){const w=window.innerWidth,h=window.innerHeight,dpr=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==w*dpr||canvas.height!==h*dpr){canvas.width=w*dpr;canvas.height=h*dpr;}const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);renderGame(ctx,g,art,w,h,reduce);}
+        const canvas=canvasRef.current;if(canvas){const w=window.innerWidth,h=window.innerHeight,dpr=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==w*dpr||canvas.height!==h*dpr){canvas.width=w*dpr;canvas.height=h*dpr;}const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);renderGame(ctx,g,art,w,h,reduce,modeRef.current==='playing');}
         if(now-uiAt>55||g.phase!=='playing'){setGame(snapshot(g));uiAt=now;}
         if(g.phase==='lost'&&modeRef.current==='playing'){
           modeRef.current='result';setMode('result');

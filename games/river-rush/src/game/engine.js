@@ -21,9 +21,9 @@ export function createGame(seed = Date.now()) {
 }
 function random(g) { g.rng = (Math.imul(g.rng, 1664525) + 1013904223) >>> 0; return g.rng / 4294967296; }
 function add(g, type, lane, d, extra = {}) { g.entities.push({ id: g.nextId++, type, lane, d, done: false, ...extra }); }
-function emit(g, type, text = '', lane = g.lane) {
+function emit(g, type, text = '', lane = g.lane, detail = {}) {
   g.event = type; g.eventId++;
-  g.effects.push({ type, time: g.time, lane, id: g.eventId });
+  g.effects.push({ type, time: g.time, lane, id: g.eventId, distance: g.distance, playerLane: g.lane, ...detail });
   if (g.effects.length > 24) g.effects.shift();
   if (text) { g.notice = text; g.noticeUntil = g.time + 1.35; }
 }
@@ -82,7 +82,7 @@ export function applyAction(g, action) {
   }
 }
 function collide(g, obstacle) {
-  if (g.rush > 0 || g.grace > 0) { emit(g, 'smash'); return; }
+  if (g.rush > 0 || g.grace > 0) { emit(g, 'smash', '', g.lane, { obstacle: obstacle.type }); return; }
   if (g.shield) {
     g.shield = false; g.shieldsUsed++; g.grace = 1.1;
     g.streak = 0; g.multiplier = 1;
@@ -101,6 +101,7 @@ export function updateGame(g, input, dt) {
   if (g.action) {
     g.actionTime += dt;
     if (g.actionTime >= (g.action === 'jump' ? JUMP_SECONDS : DUCK_SECONDS)) {
+      if (g.action === 'jump') emit(g, 'land');
       g.action = ''; g.actionTime = 0;
       if (g.bufferTime > 0) beginAction(g, g.buffered);
     }
@@ -121,7 +122,7 @@ export function updateGame(g, input, dt) {
         g.coins++; g.streak++; g.lastCoin = g.time;
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
         g.bonus += 10 * g.multiplier; if (!g.rush) g.charge = Math.min(100, g.charge + 2);
-        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane);
+        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { high: !!e.high, attracted: (g.magnet > 0 || g.rush > 0) && e.lane !== g.lane });
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
       if (e.lane === g.lane) {

@@ -22,3 +22,14 @@ Implementation commit `98034315674f6107c295491fd33e1c5a523b0dd6` deployed READY 
 The final documentation commit archives this completed change; it does not change the verified game bundle.
 
 OpenSpec archive completed as `2026-10-05-river-rush-endless-runner`; canonical River Rush specification passed strict validation and its purpose was updated to the runner. All task checkboxes reflect completed work.
+
+## Living motion verification — 2026-10-05
+
+- `npm test --prefix games/river-rush`: 19/19 pass. Five additional motion tests verify simulation-time freezing, real pose interpolation, pickup source lanes and expiry, bounded buffers, live reduced-motion presentation and exactly one non-scoring landing per completed jump. The unchanged 40-seed delayed-input playtest retains the same 2,719 tricks, 939 Rush uses and 404,283 metres.
+- `node qa/river-rush/runner.mjs`: all four viewports pass with real keyboard, touch buttons and directional touch swipes, hazard clearance, shield/Rush, retry, storage, cabinet/switcher, live preferences and identical paused canvas pixels. Thirty-three seconds of active keyboard play: ten tricks, two goals and 141 coins. Warm active-play frame sample: mean 19.44 ms, p95 33.3 ms in headless Chromium, within the 55 ms regression budget. This is not a physical-device measurement.
+- Native inspection compared the new phone and 1024×1536 game captures to the accepted concept and inspected both fal.ai video frames plus generated paddle frames. The eight-frame cycle preserves the approved likeness and loincloth; river clips preserve the existing environment without added hazards. All controls and HUD remain readable; flying coins briefly pass in front of the character as collected.
+- fal.ai MiniMax H3 Max produced both five-second 768P loops. Published rate was $0.03/second, estimated $0.30 for both requests. Production copies are silent H.264/24fps with faststart: portrait 768×1152, 3,442,472 bytes; landscape 1152×768, 2,659,873 bytes; actual encoded duration 5.166667 seconds. Original endpoints, request IDs and CDN URLs are preserved in media.json.
+
+- `node qa/river-rush/motion.mjs`: pass. Portrait and landscape verify lazy silent gameplay video, visible water/character motion, action poses, paused state and identical pixels, live reduced-motion toggles and menu playback stop. Independent cases verify video-error GPU fallback, forced WebGL context loss, combined unavailable video/WebGL, data-saving mode without gameplay-video downloads, and hidden-page pause. No page errors.
+- `node qa/river-rush/lifecycle.mjs`: pass; visibility events suspend Web Audio, freeze pixels and preserve mute control. Physical phone switching and hardware audio remain untested.
+- Production rebuild and strict OpenSpec change validation pass. Vite warnings remain the expected external quiet/switch scripts.
