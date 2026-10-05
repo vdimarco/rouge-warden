@@ -11,6 +11,7 @@ const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t
 const ease = (dt, rate) => 1 - Math.exp(-dt * rate);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const TAU = Math.PI * 2;
+const DIVE_G = 9.8; // the fall's gravity for the time to the floor (the dive leaves a second before it)
 
 // The bones the poses drive. Both rigs (the model and the code-built figure) have them under these names.
 const BONES = ["Hips", "Spine02", "Spine01", "Spine", "neck", "Head",
@@ -254,7 +255,7 @@ export function createHero(scene, renderer) {
   /* ---- state ---- */
   const S = {
     yaw: 0, inited: false, time: 0, phase: 0,
-    run: 0, air: 0, rise: 0, swing: 0, land: 0, crouch: 0,
+    run: 0, air: 0, rise: 0, swing: 0, land: 0, crouch: 0, dive: 0,
     reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
   };
@@ -712,6 +713,18 @@ export function createHero(scene, renderer) {
     S.run += ((ground ? smooth(0.35, 1.6, hs) : 0) - S.run) * ease(dt, 10);
     S.swing += (((!ground && !cling && nAtt) ? 1 : 0) - S.swing) * ease(dt, 6);
     S.rise += (fall - S.rise) * ease(dt, 12);
+    // the dive: no rope, not on a wall, falling fast with time to spare before the floor below. It comes in over a fifth of a
+    // second and leaves fast, so the hero is upright again a second before the landing (or the moment a rope catches)
+    let diveWant = 0;
+    if (!ground && !cling && !nAtt && vel.y < (S.dive > 0.5 ? -5 : -8)) {
+      const c = P.city;
+      let floor = 0;
+      if (c && c.topBelow) { const tb = c.topBelow(pos.x, pos.y - 0.05, pos.z, 0.3); floor = tb ? tb.y : c.isWater(pos.x, pos.z) ? 0 : c.groundY(pos.x, pos.z); }
+      const v = -vel.y, drop = Math.max(0, pos.y - floor), g = (P.cfg && P.cfg.gravity) || DIVE_G, tt = (-v + Math.sqrt(v * v + 2 * g * drop)) / g;
+      diveWant = tt > (S.dive > 0.5 ? 1.0 : 1.3) ? 1 : 0;
+    }
+    S.dive += (diveWant - S.dive) * ease(dt, diveWant ? 5 : 16);
+    if (S.dive < 0.001) S.dive = 0;
     const freq = clamp(0.7 + 0.25 * (cling ? speed : hs), 0.7, 2.4); // on a wall the climb speed sets the hands' pace
     S.phase = (S.phase + dt * freq * TAU) % (TAU * 100);
 
@@ -726,6 +739,11 @@ export function createHero(scene, renderer) {
       if (hs > 0.1) { V.u.x += (vel.x / hs) * lean * (nAtt ? 0.5 : 0.28); V.u.z += (vel.z / hs) * lean * (nAtt ? 0.5 : 0.28); }
     }
     V.u.normalize();
+    if (S.dive > 0.001 && speed > 0.1) {
+      // head first along the flight; a little of the facing direction makes a straight drop pitch forward through face-down
+      V.n.set(vel.x / speed - Math.sin(S.yaw) * 0.35, vel.y / speed, vel.z / speed - Math.cos(S.yaw) * 0.35).normalize();
+      V.u.lerp(V.n, S.dive).normalize();
+    }
     // into the root's frame (root turns about y by S.yaw), then the shortest turn from up
     const c = Math.cos(S.yaw), s = Math.sin(S.yaw);
     V.a.set(V.u.x * c - V.u.z * s, V.u.y, V.u.x * s + V.u.z * c); // Ry(−yaw) · u
@@ -787,6 +805,24 @@ export function createHero(scene, renderer) {
       }
       hipsDy = hipsDy * (1 - wA) + (-0.03) * wA;
       lean = lean * (1 - wA) + 0.05 * wA;
+    }
+    // dive: the arms from a wide swan spread to tucked back along the hips as the speed builds, the legs straight and together,
+    // the toes pointed, the back a little arched
+    const wD = S.dive;
+    if (wD > 0.001) {
+      const tuck = smooth(10, 30, speed);
+      for (let sd = 0; sd < 2; sd++) {
+        const sx = sd === 0 ? 1 : -1, fl = 0.04 * Math.sin(t * 13 + sd * 1.3) * (1 - tuck); // a flutter in the spread
+        V.a.set(sx * 0.8, -0.45 + fl, -0.35); V.b.set(sx * 0.75, -0.4 + fl, -0.5);
+        V.c.set(sx * 0.28, -0.82, -0.5); V.n.set(sx * 0.2, -0.78, -0.6);
+        V.a.lerp(V.c, tuck).normalize(); V.b.lerp(V.n, tuck).normalize();
+        arm[sd].up.lerp(V.a, wD).normalize(); arm[sd].fore.lerp(V.b, wD).normalize();
+        V.k.set(sx * 0.07, ay - 0.02, az - 0.1);
+        foot[sd].p.lerp(V.k, wD);
+        foot[sd].pitch += (1.0 - foot[sd].pitch) * wD;
+      }
+      hipsDy = hipsDy * (1 - wD) + 0.01 * wD;
+      lean = lean * (1 - wD) - 0.14 * wD;
     }
     // swing: legs trail, the hero hangs a little lower, the free arm goes out for balance
     if (wS > 0.001) {
@@ -868,6 +904,7 @@ export function createHero(scene, renderer) {
     /* -- the head looks where the camera looks -- */
     let lookY = clamp(wrap(camYaw - S.yaw), -0.9, 0.9) * 0.55, lookP = clamp(-camPitch * 0.45, -0.5, 0.5) - lean * 0.5;
     if (wC > 0.001) { const k = wC * CL.look; lookY += (CL.lookYaw - lookY) * k; lookP += (CL.lookPitch - lookP) * k; } // on a wall: along the climb
+    if (wD > 0.001) { lookY *= 1 - wD; lookP += (-0.55 - lookP) * wD; } // diving: along the dive, up in the body's frame
     S.headYaw += (lookY - S.headYaw) * ease(dt, 8);
     S.headPitch += (lookP - S.headPitch) * ease(dt, 8);
 
@@ -935,7 +972,7 @@ export function createHero(scene, renderer) {
 
     /* -- a name for the tests -- */
     const yk = Math.max(S.yank[0], S.yank[1]);
-    H.pose = yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : vel.y > 1 ? "jump" : "fall";
+    H.pose = yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? "dive" : vel.y > 1 ? "jump" : "fall";
     H.yaw = S.yaw;
   };
 
@@ -945,7 +982,7 @@ export function createHero(scene, renderer) {
   H.setYaw = (y) => { S.yaw = y; S.inited = true; };
   H.info = () => ({
     model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris,
-    weights: { run: S.run, air: S.air, swing: S.swing, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
+    weights: { run: S.run, air: S.air, swing: S.swing, dive: S.dive, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
     // the motion capture: how much it shows, the loop weights (idle, walk, jog, run) and the moving loops' phase
     clips: { loaded: !!MC.data, on: MC.on, w: MC.w.slice(), phase: MC.phase },
     hands: [handPos[0].toArray(), handPos[1].toArray()], head: headPos.toArray(), feet: [footPos[0].toArray(), footPos[1].toArray()],

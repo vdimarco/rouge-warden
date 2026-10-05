@@ -2,14 +2,14 @@
 // index.html registers it with scope "./". A plain classic worker (no modules, no importScripts), so every browser runs it.
 // VERSION must equal VERSION in js/config.js (qa/vr/pwa.mjs checks it). A new VERSION makes a new cache and drops the old one.
 
-const VERSION = "1.9.1";
+const VERSION = "1.10.0";
 const PREFIX = "fullswing-";
 const CACHE = PREFIX + VERSION;
 
 /* ---------------- the app shell ---------------- */
 // Paths are relative to this file (/vr/). Keep JS in step with the files in js/: pwa.mjs fails when one is missing on
 // disk or when a file in js/ is not listed here.
-const JS = ["config.js", "main.js", "xr.js", "desktop.js", "mobile.js", "city.js", "physics.js", "cityview.js", "rope.js", "hands.js", "comfort.js", "game.js", "audio.js", "ui.js", "portal.js", "comic.js", "fx.js", "hero.js", "flatcam.js", "target.js", "cutscene.js"];
+const JS = ["config.js", "main.js", "xr.js", "desktop.js", "mobile.js", "city.js", "physics.js", "cityview.js", "rope.js", "hands.js", "comfort.js", "game.js", "audio.js", "ui.js", "portal.js", "comic.js", "fx.js", "hero.js", "flatcam.js", "target.js", "cutscene.js", "street.js", "streetview.js", "bloom.js"];
 const LIB = ["three.module.min.js", "three.core.min.js", "addons/loaders/GLTFLoader.js", "addons/utils/BufferGeometryUtils.js", "addons/utils/SkeletonUtils.js"];
 const PRECACHE = [
   "./index.html",

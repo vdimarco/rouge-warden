@@ -419,6 +419,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
         rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
         rows.push(seg("cue", "Release cue", [["on", "On"], ["off", "Off"]], settings.cue === false ? "off" : "on"));
       }
+      // the glow round the neon, the lamps and the sun (flat play only; main.js picks Low or Off when nothing is saved)
+      if (desk) rows.push(seg("bloom", "Bloom", [["off", "Off"], ["low", "Low"], ["high", "High"]], settings.bloom || (inp && inp.easySwing ? "off" : "low")));
       if (!desk) {
         rows.push(seg("hand", "Dominant hand", [["left", "Left"], ["right", "Right"]], settings.hand));
         rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
@@ -857,6 +859,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "hand": if (v === "left" || v === "right") { settings.hand = v; hud.init = false; } break;
       case "hold": if (v === "hold" || v === "toggle") settings.hold = v; break;
       case "cue": if (v === "on" || v === "off") settings.cue = v === "on"; break;
+      case "bloom": if (v === "off" || v === "low" || v === "high") settings.bloom = v; break;
       case "hz": settings.hz = +v === 90 ? 90 : 72; if (xr && xr.setFrameRate) Promise.resolve(xr.setFrameRate(settings.hz)).catch(() => {}); break;
       case "seated": {
         settings.seated = v === "on";
