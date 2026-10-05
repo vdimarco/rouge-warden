@@ -21,7 +21,9 @@ try{
   await p.goto(new URL('river-rush/',base).href,{waitUntil:'networkidle'});
   const before=await videos(p);assert.equal(before.length,0);
   await p.getByRole('button',{name:'Start run',exact:true}).click();
+  await p.keyboard.press('ArrowLeft');
   await p.waitForFunction(()=>window.__clips.some(v=>v.src.includes('/art/river-')&&v.currentTime>.3&&!v.paused));
+  await p.keyboard.press('Escape');await p.getByRole('button',{name:'Restart run'}).click();await p.keyboard.press('ArrowLeft');
   assert.ok((await videos(p)).every(v=>v.muted));const a=await pixel(p);await p.waitForTimeout(180);assert.notEqual(await pixel(p),a);
   await p.screenshot({path:`${out}/paddle-${name}.png`});
   await p.keyboard.press('Space');await p.waitForTimeout(200);await p.screenshot({path:`${out}/jump-${name}.png`});
@@ -33,12 +35,18 @@ try{
   await frozen(p);await p.getByRole('button',{name:'Back to river'}).click();assert.ok((await videos(p)).every(v=>v.paused));
   results.push({viewport:name,videoStartsLazily:true,silent:true,paddlingAndWaterMotion:true,poseActions:true,pausedPixels:true,liveReducedMotion:true,menuPausesWater:true});await p.close();
  }
- for(const type of ['video-error','gpu-lost','no-gpu','save-data','hidden']){
+ for(const type of ['early-pause','video-error','gpu-lost','no-gpu','save-data','hidden']){
   const p=await browser.newPage({viewport:{width:390,height:844}});p.on('pageerror',e=>errors.push(e.message));await p.addInitScript(shim);
+  if(type==='early-pause')await p.route('**/river-*-loop.mp4',async r=>{await new Promise(done=>setTimeout(done,250));await r.continue();});
   if(type==='video-error'||type==='gpu-lost'||type==='no-gpu')await p.route('**/river-*-loop.mp4',r=>r.abort());
   if(type==='no-gpu')await p.addInitScript(()=>{const orig=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(name,...args){return name==='webgl'?null:orig.call(this,name,...args);};});
   if(type==='save-data')await p.addInitScript(()=>Object.defineProperty(navigator,'connection',{value:Object.assign(new EventTarget(),{saveData:true})}));
-  await p.goto(new URL('river-rush/',base).href,{waitUntil:'networkidle'});await p.getByRole('button',{name:'Start run',exact:true}).click();await p.waitForTimeout(650);
+  await p.goto(new URL('river-rush/',base).href,{waitUntil:'networkidle'});await p.getByRole('button',{name:'Start run',exact:true}).click();
+  if(type==='early-pause'){
+   await p.waitForFunction(()=>window.__clips.some(v=>v.src.includes('/art/river-')));
+   await frozen(p);await p.getByRole('button',{name:'Resume run'}).click();
+   await p.waitForFunction(()=>window.__clips.some(v=>v.src.includes('/art/river-')&&!v.failed&&!v.paused&&v.currentTime>.2));
+  }else await p.waitForTimeout(650);
   assert.equal((await status(p)).screen,'playing');await p.keyboard.press('ArrowLeft');await p.waitForTimeout(100);assert.equal((await status(p)).run.lane,0);
   if(type==='video-error')assert.equal(await p.evaluate(()=>window.__waterGL.length),1);
   if(type==='gpu-lost'){await p.evaluate(()=>window.__waterGL[0].getExtension('WEBGL_lose_context').loseContext());await p.waitForTimeout(100);assert.equal(await p.evaluate(()=>window.__waterGL[0].isContextLost()),true);await p.keyboard.press('ArrowRight');await p.waitForTimeout(100);assert.equal((await status(p)).run.lane,1);}

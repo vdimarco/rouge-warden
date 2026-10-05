@@ -53,7 +53,7 @@ function videoWater(ctx,g,art,width,height,active,disabled){
   }
   if(!active){if(state.key===key&&state.frame.width===width&&state.frame.height===height){ctx.drawImage(state.frame,0,0,width,height);return true;}return false;}
   const clip=state.clips[key];if(!clip||clip.failed)return false;
-  if(active&&clip.paused&&!clip.starting){clip.starting=true;clip.play().catch(()=>{clip.failed=true;}).finally(()=>{clip.starting=false;});}
+  if(active&&clip.paused&&!clip.starting){clip.starting=true;clip.play().catch(error=>{if(error.name!=='AbortError')clip.failed=true;}).finally(()=>{clip.starting=false;});}
   if(clip.readyState<2)return false;
   // Decode runs independently, but only simulation ticks capture a frame.
   // Late video frames cannot alter a paused canvas.
