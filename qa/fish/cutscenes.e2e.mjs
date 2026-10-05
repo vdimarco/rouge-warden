@@ -64,6 +64,25 @@ async function skipBy(page, how) {
   return page.evaluate(() => ({ ms: window.__end && window.__in ? window.__end - window.__in : null, playing: FISH.cuts.playing }));
 }
 const at = (page) => page.evaluate(() => ({ phase: FISH.G.phase, step: FISH.G.step, mode: FISH.G.mode, paused: FISH.G.paused, pin: !!FISH.G.pin, place: FISH.place.id, hud: !document.getElementById("hud").hidden, screen: document.body.dataset.screen || "" }));
+// until, but a timeout fails with what the check waited for and the state of play then
+async function need(page, fn, arg, ms, what) {
+  try { return await until(page, fn, arg, ms); }
+  catch (e) { throw new Error(`${what}: not so after ${ms / 1000} s (${JSON.stringify(await at(page).catch(() => null))}, cut ${JSON.stringify(await page.evaluate(() => FISH.cuts.id).catch(() => null))})`); }
+}
+// The catch card when a tap can press its button: the photo beat is over, the weight has counted up, and nothing on the
+// card moves (its 0.4 s slide up, the badges' stamp, the weight's pop). Then the middle of the button, read just before
+// the tap, and whether that point is on the button. (Under load the slide can start late: read during it, the point is
+// 36 px low, under the button)
+async function cardButton(page, ms = 20000) {
+  await need(page, () => {
+    const card = document.querySelector("#catch .card");
+    return !FISH.G.cardWait && !document.getElementById("catch").hidden && !!document.getElementById("ckg").dataset.kg && !card.getAnimations({ subtree: true }).some((a) => a.playState === "running" || a.pending);
+  }, null, ms, "the catch card is still and ready for a tap");
+  return page.evaluate(() => {
+    const b = document.getElementById("catchGo"), r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    return { x, y, hit: b.contains(document.elementFromPoint(x, y)) };
+  });
+}
 // the camera on the first frame drawn after the cutscene that plays now ends: how far it is from the eye on the stand.
 // camAfter arms it while the cutscene plays; camRead waits for that frame
 const camAfter = (page) => page.evaluate(() => {
@@ -315,20 +334,23 @@ function capStub() {
     await waitCut(page, "landed.loon", 30000);
     await waitT(page, 1);
     const b1 = await skipBy(page, "back");
-    await until(page, () => !FISH.G.cardWait, null, 5000).catch(() => {});
+    await need(page, () => !FISH.G.cardWait, null, 10000, "the card comes after the hero shot");
     const c1 = await at(page);
     check(!b1.playing && b1.ms != null && b1.ms <= 300 && c1.phase === "catch" && !c1.paused, "the back button skips the hero shot within 0.3 s, to the card, with no pause (" + JSON.stringify({ ...b1, ...c1 }) + ")");
-    await sleep(500);
     // a quick double tap on the card's button: the first tap plays the finale, and the second, in its first moment, does not
-    // skip it (it plays once)
-    const go = await page.evaluate(() => { const r = document.getElementById("catchGo").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-    await page.touchscreen.tap(go.x, go.y);
-    await sleep(120);
-    await page.touchscreen.tap(go.x, go.y);
-    await sleep(400);
-    const dbl = await page.evaluate(() => ({ playing: FISH.cuts.playing, id: FISH.cuts.id }));
-    check(dbl.playing && dbl.id === "finale", "a double tap on the fourth legend's card plays the finale, and the second tap does not skip it (" + JSON.stringify(dbl) + ")");
-    await waitCut(page, "finale", 20000);
+    // skip it (it plays once). Both taps go to the point where the button is when the card is still
+    const go = await cardButton(page);
+    await page.evaluate(() => { window.__downs = []; addEventListener("pointerdown", (e) => window.__downs.push(e.timeStamp), true); });
+    // (the taps carry their own times, like a phone's: the second press goes down 120 ms after the first, however long the
+    // page takes to handle the first. page.touchscreen sends a press only after the page has handled the one before it, so
+    // under load its two presses can be more than 1 s apart)
+    const cdp = await page.context().newCDPSession(page), t0 = Date.now(), pt = [{ x: go.x, y: go.y, id: 1 }];
+    for (const [type, ms] of [["touchStart", 0], ["touchEnd", 50], ["touchStart", 120], ["touchEnd", 170]]) await cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : pt, timestamp: (t0 + ms) / 1000 });
+    // (the page has handled both presses: the second went down on the finale, or on the card if the first did nothing)
+    await need(page, () => window.__downs.length >= 2, null, 20000, "the page handles both taps");
+    const dbl = await page.evaluate(() => ({ playing: FISH.cuts.playing, id: FISH.cuts.id, gap: Math.round(window.__downs[1] - window.__downs[0]) }));
+    check(go.hit && dbl.playing && dbl.id === "finale", "a double tap on the fourth legend's card plays the finale, and the second tap does not skip it (" + JSON.stringify({ ...dbl, ...go }) + ")");
+    await need(page, () => FISH.cuts.playing && FISH.cuts.id === "finale", null, 20000, "the finale plays after the fourth legend's card");
     await waitT(page, 1.5);
     const fi = await page.evaluate(() => ({ cap: document.querySelector("#cut .cap").innerText.replace(/\s+/g, " ").trim(), catch: document.getElementById("catch").hidden, seen: FISH.save.cuts.finale, sfx: window.__sfx.includes("swell") }));
     check(fi.cap === "You fished them all. Every legend is in your journal." && fi.catch && fi.seen === 1 && fi.sfx, "after the fourth legend's card: the finale, \"You fished them all.\", and its sound (" + JSON.stringify(fi) + ")");

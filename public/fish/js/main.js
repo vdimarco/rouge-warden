@@ -699,12 +699,17 @@ async function switchPlace(id) {
     try { await world.setPlace(PLACES.loon); } catch (err2) { console.error(err2); }
     Sound.setPlace("loon");
     G.stillDrawn = false;
+    markPlace();
     return null;
   }
   // the dimmed screens over the lake draw it once: draw the new place
   G.stillDrawn = false;
+  markPlace();
   return p;
 }
+// the painted title's picture is of Loon Lake, so the title shows it only there (style.css). At another place the live
+// lake shows behind the title, as in the Original style
+const markPlace = () => { document.body.dataset.place = G.place.id; };
 let traveling = false;
 // A trip from the places screen, the unlock card or the results. A card covers the load, and it stays up for 1.2 s at
 // least, so the wait reads as a trip and not as a glitch.
@@ -1115,8 +1120,9 @@ function caught(c) {
   if (sp && sp.legend) save.cuts[revealId(at)] = 1;
   persist();
   // The news comes over the card in one toast, a line each, so the queue never drops any of it: the first fish of the
-  // day, the goals done, today's goal done. A goal done brings the record sting
-  const goals = noteGoals(ctx), news = [day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
+  // day ("Your first fish!" in its place for a new player's first fish), the goals done, today's goal done. A goal done
+  // brings the record sting
+  const goals = noteGoals(ctx), news = [!junk && save.caught === 1 ? "Your first fish!" : day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
   if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null);
   G.phase = "catch";
   prompt("");
@@ -1312,7 +1318,7 @@ function renderJournal(pid) {
   // the counts; then the best sweet run and the days whose goal was done, once there are any
   const all = foundAll(save), D = save.days;
   const more = [save.bestRun > 0 ? "Best sweet run: " + save.bestRun : "", D.n > 0 ? "Goal days: " + D.n + (D.best >= 2 ? " (best " + D.best + " in a row)" : "") : ""].filter(Boolean).join(" · ");
-  const tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + " casts" + (more ? "\n" + more : "");
+  const tail = all.n + " of " + all.m + " in all · " + save.caught + " fish landed · " + save.casts + (save.casts === 1 ? " cast" : " casts") + (more ? "\n" + more : "");
   if (!openNow(pid)) {
     const d = document.createElement("div");
     d.className = "jnote"; d.textContent = "Open " + JOURNEY[pid].name + " to see its fish.";
@@ -1352,7 +1358,7 @@ function renderJournal(pid) {
 // How to play: a short tab for each input, in the words the game uses in play (moveWords in guide.js), with the rising
 // rings, and the fish moves behind a row that opens. input: "motion", "touch", or "keys" (a computer with no touch screen)
 function helpRows(input) {
-  // (a computer: the moves in the mouse's words, which are the drag words, and the strike with Space)
+  // (a computer: the moves in the mouse's words, which are the drag words, and the strike with the mouse or Space)
   const m = input === "motion", keys = input === "keys", w = (k, pace) => moveWords(k, keys ? "mouse" : input, 0, pace);
   const steps = m ? [
     ["upright", "Hold the phone <b>upright</b>. Grip it tight. Keep 2 m clear around you."],
@@ -1368,7 +1374,7 @@ function helpRows(input) {
   if (keys) steps.push(["thumb", "No fish? <b>Click or press Space</b> to cast again at once."]);
   steps.push(
     ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "Turn the <b>crank</b>, or use the mouse wheel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
-    [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + moveWords("hook", input)],
+    [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + (keys ? moveWords("hook", "mouse").replace(/!$/, "") + ", or press <b>Space</b>." : moveWords("hook", input))],
   );
   if (!m) steps.push(["pull", keys ? "Drag the <b>rod</b> up, down and sideways, or use <b>W&nbsp;A&nbsp;S&nbsp;D</b>." : "Your right thumb works the <b>rod</b>: drag it up, down and sideways."]);
   steps.push(
@@ -1447,6 +1453,7 @@ function setArtStyle(style) {
 }
 $("#optArtStyle").addEventListener("change", (event) => setArtStyle(event.target.value));
 syncArtStyle();
+markPlace();
 
 /* ---------------- settings ---------------- */
 function syncSettings() {
@@ -1648,7 +1655,9 @@ addEventListener("keydown", (e) => {
   if (e.repeat && !["KeyR", "KeyW", "KeyS", "KeyA", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) return;
   if (window.GameSwitch && GameSwitch.isOpen) return;
   keys[e.code] = true;
-  if (/^(Space|Key[WASDRE]|Arrow|Bracket)/.test(e.code)) G.desk = "keys";
+  // only a rod input picks the fight words on a computer: a new press of W, A, S, D or an arrow key (or a Space cast,
+  // below) names the keys. A key that repeats, Space in the reel, R, E, the brackets and the wheel keep the words
+  if (!e.repeat && /^(Key[WASD]|Arrow)/.test(e.code)) G.desk = "keys";
   if (e.code === "Escape" && (!$("#about").hidden || !$("#privacy").hidden)) { closeSub(); return; }
   if (e.code === "Escape" && ["help", "journal", "settings", "places"].some((s) => !$("#" + s).hidden)) { Sound.sfx("uiBack"); closeOverlay(); return; }
   if (e.code === "Escape" || e.code === "KeyP") { if (G.paused) resume(); else pause(); return; }
@@ -1670,7 +1679,7 @@ addEventListener("keydown", (e) => {
     e.preventDefault();
     const rb = $("#reelBox");
     pinLine({ id: "key", x: rb.offsetLeft + rb.offsetWidth / 2, y: rb.offsetTop + rb.offsetHeight / 2, t: now() });
-    if (G.pin) G.pin.key = now();
+    if (G.pin) { G.pin.key = now(); G.desk = "keys"; }
   }
   if (e.code === "BracketLeft") setDrag(G.drag - 1);
   if (e.code === "BracketRight") setDrag(G.drag + 1);
@@ -1718,9 +1727,9 @@ function setDrag(d) {
 }
 $("#dragDown").addEventListener("click", () => setDrag(G.drag - 1));
 $("#dragUp").addEventListener("click", () => setDrag(G.drag + 1));
-// the mouse wheel turns the crank
-addEventListener("wheel", (e) => { G.desk = "mouse"; if (G.phase === "reel" && crank && !G.paused) { crank.wheel(e.deltaY); e.preventDefault(); } }, { passive: false });
-// a mouse press: the fight words on a computer name the mouse moves (a key press names the keys, see keydown)
+// the mouse wheel turns the crank (like R, it keeps the fight words: a keys player may reel with it)
+addEventListener("wheel", (e) => { if (G.phase === "reel" && crank && !G.paused) { crank.wheel(e.deltaY); e.preventDefault(); } }, { passive: false });
+// a mouse press: the fight words on a computer name the mouse moves (a rod key names the keys, see keydown)
 addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") G.desk = "mouse"; }, true);
 // (aiming with touch or the mouse: a sideways drag before the cast, which the reel panel tells apart from a cast; see boot)
 // What a press takes in the cast (the reel panel's grab). Before the cast, with the sensors a press anywhere takes the line
@@ -1796,8 +1805,8 @@ function castUpdate(dt) {
     world.setLure({ x: r.x, y: r.y, z: r.z, visible: true, spin: 1 });
     world.setLine({ from: tip, to: { x: r.x, y: r.y, z: r.z }, slack: 0.15, visible: true, flying: true });
     world.setView({ mode: "flight", look: { x: r.x, y: Math.max(r.y, 0), z: r.z }, portrait: G.layout === "tall-cast" });
-    // feathering: a finger on the rod slows the line, so the lure drops short onto a target
-    if (G.pin && G.pin.feather) { G.feathered = true; prompt("Your thumb slows the line.", "", "thumb"); }
+    // feathering: a finger on the rod (on a computer, the mouse button) slows the line, so the lure drops short onto a target
+    if (G.pin && G.pin.feather) { G.feathered = true; prompt(touchDevice ? "Your thumb slows the line." : "The mouse button slows the line.", "", "thumb"); }
     else prompt(save.casts >= 3 && save.casts < 9 ? (touchDevice ? "To stop the lure short, touch the rod." : "To stop the lure short, click the lake.") : "", "", "thumb");
     if (r.done) { Sound.setSpool(0); prompt(""); landed(r); }
     return;
@@ -1954,7 +1963,7 @@ function reelPrompt(s, crankRate, theta) {
 }
 // what the reel prompt should say now: { text, sub, icon, tone, urgent, pace }. The subs that teach a move use the one set
 // of words that the guide and the rod cue use (MOVE_WORDS in guide.js). pace: how fast to crank when the prompt says so
-// ("slow", "fast" or "steady", REEL_PACE in guide.js), "" for a plain turn of the crank
+// ("slow", "fast", "faster" or "steady", REEL_PACE in guide.js), "" for a plain turn of the crank
 function fightCue(s, crankRate, theta) {
   const m = sensing();
   const t = now();
@@ -2023,7 +2032,7 @@ function fightCue(s, crankRate, theta) {
       if (s.cover) return say("It swims to the " + (COVER_NAME[s.cover.kind] || s.cover.kind) + "!", steerSub(s.cover.steer != null ? s.cover.steer : -s.cover.side), "turn", "hot");
       if (slipRecent) return say("It is running. Let it go.", "Keep the rod up. Reel when it stops.", "pull");
       // a tired fish swims in faster than a steady crank: the line goes slack, and the words stay green
-      if (slack && s.beaten) return say("It is tired. Reel a little faster.", "Keep the line tight.", "crank", "good", false, "fast");
+      if (slack && s.beaten) return say("It is tired. Reel a little faster.", "Keep the line tight.", "crank", "good", false, "faster");
       if (slack) return say("Slack line! Reel it in.", "", "crank", "hot", false, "fast");
       if (s.beaten) return say("It is tired. Reel steadily.", "Slow down if the gauge says TOO TIGHT.", "crank", "good", false, "steady");
       if (theta < 28) return say("Your rod is too low.", words("raise"), "pull");
@@ -2117,7 +2126,7 @@ function handleEvent(e) {
 // what went wrong, and the one move that would have saved it (journey.js has the lines)
 function reasonText(r) {
   const s = G.sim && G.sim.state, sp = s && s.fish && byId(s.fish.id), input = inputOf(sensing(), touchDevice, G.desk);
-  return lossText(r, { input, by: G.thrownBy, cause: s && s.cause, hook: moveWords("hook", input), legend: sp && sp.legend ? G.place.id : null });
+  return lossText(r, { input, by: G.thrownBy, cause: s && s.cause, hook: moveWords("hook", input), turn: moveWords("turn", input), legend: sp && sp.legend ? G.place.id : null });
 }
 
 /* ---------------- the cutscenes ---------------- */
@@ -2224,14 +2233,15 @@ async function watch(id) {
 
 /* ---------------- the loop ---------------- */
 let last = now(), fpsAcc = 0, fpsN = 0, drew = false, drawAt = 0, menuDt = 0;
-// the title over the live lake (the Original style) is a menu: the lake draws there at 15 frames a second at most
+// the title over the live lake (the Original style, and the Painted one away from Loon Lake) is a menu: the lake draws
+// there at 15 frames a second at most
 const MENU_MS = 66;
 // An opaque screen covers the lake: a dimmed card, or the title with its painted picture. Read again only when the
-// screen or the art style changes
+// screen, the art style or the place changes
 let coverKey = "", coverTitle = false;
 function covered() {
   if (document.querySelector(".screen.dim:not([hidden])")) return true;
-  const key = (document.body.dataset.screen || "") + "|" + (document.body.dataset.artStyle || "");
+  const key = (document.body.dataset.screen || "") + "|" + (document.body.dataset.artStyle || "") + "|" + (document.body.dataset.place || "");
   if (key !== coverKey) { coverKey = key; const t = $("#title"); coverTitle = !t.hidden && /url\(/.test(getComputedStyle(t).backgroundImage); }
   return coverTitle;
 }
@@ -2434,10 +2444,13 @@ async function boot() {
   }, true);
   // the beat after a cast: a press on the lake ends it (skipBeat), and the reel panel, which hears the press after this,
   // takes it into the new cast. A press on the crank, the rod pad or the gauge ends it too, but goes no further: a player
-  // still cranking or pumping the rod never meant to cast. A press on a button, a screen or the drag bar does nothing
+  // still cranking or pumping the rod never meant to cast. "Nothing this time." had no fish on, so nobody pumps: there a
+  // press on the rod pad (over the drawn rod) casts like a press on the lake. A press on a button, a screen or the drag
+  // bar does nothing
   game.addEventListener("pointerdown", (e) => {
     if ((e.pointerType === "mouse" && e.button !== 0) || blocked(e.target, game) || (e.target.closest && e.target.closest("#dragBar"))) return;
-    const fight = !!(e.target.closest && e.target.closest("#reelUI"));
+    const rod = G.phase === "lost" && G.beat === "home" && !!(e.target.closest && e.target.closest("#padBox"));
+    const fight = !rod && !!(e.target.closest && e.target.closest("#reelUI"));
     if (!skipBeat(fight ? null : e.pointerId)) return;
     if (fight) e.stopPropagation();
     else if (G.phase === "cast" && !cuts.playing) castGrab();

@@ -5,8 +5,10 @@
 // first (the E key) the button held still is the same hold cast, and a press that moves down is the drag. The drag and
 // flick still casts, a press on a HUD button never casts, a click during the flight feathers the line, and a click during
 // the reel starts no cast. The moves guide holds its first step still (no touch clip), and during the hold it says the
-// hold's words with MOUSE. The flight's words say to click the lake. In a fight the words name the mouse after a mouse
-// press, and the keys (W, S, A, D, R, Space) after a key press, with KEYS on the guide. Exits with code 1 when something fails.
+// hold's words with MOUSE. The flight's tip (on the third to the eighth cast) says to click the lake, and the click names the
+// mouse button. In a fight the words name the mouse after a mouse press, and the keys (W, S, A, D, R, Space) after a press
+// of a rod key, with KEYS on the guide. A key that repeats, Space, R and the wheel keep the words. Exits with code 1 when
+// something fails.
 import { open, until, sleep } from "./lib.mjs";
 
 const fails = [];
@@ -98,7 +100,7 @@ try {
   const g0 = await guideNow();
   await sleep(3000);
   const g1 = await guideNow();
-  check(g0.shown && g0.count === "1 / 7" && g1.count === "1 / 7" && !g0.clip && !g1.clip, `on a computer the guide holds its first step still, with no touch clip (${JSON.stringify({ g0, g1 })})`);
+  check(g0.shown && g0.count === "1 / 3" && g1.count === "1 / 3" && !g0.clip && !g1.clip, `on a computer the guide holds its first step still, with no touch clip (${JSON.stringify({ g0, g1 })})`);
   await page.evaluate(() => window.__fresh());
   const hg = await page.evaluate(async () => {
     const G = FISH.G, wait = window.__wait, out = {};
@@ -238,6 +240,8 @@ try {
       await page.evaluate(() => window.__fresh());
       r = await page.evaluate(async (feather) => {
         const G = FISH.G, wait = window.__wait, x = 520, y = 520;
+        // the player's fourth cast: the flight's tip shows on the third to the eighth
+        FISH.save.casts = 3;
         window.__fire("pointerdown", x, y);
         const tp = performance.now();
         while (!(G.pin && G.pin.key) && performance.now() - tp < 1500) await wait(1);
@@ -254,6 +258,10 @@ try {
           out.flightCue = document.querySelector("#rodCue span").textContent; out.flightSaid = document.querySelector("#prompt").hidden ? "" : document.querySelector("#prompt .p1 span").textContent;
           window.__fire("pointerdown", 300, 360);
           out.pin = !!(G.pin && G.pin.feather);
+          // the words of the feather name the mouse button, not a thumb (once a frame has taken the press)
+          const tw = performance.now();
+          while (G.step === "flight" && !G.feathered && performance.now() - tw < 5000) await wait(2);
+          out.featherSaid = document.querySelector("#prompt").hidden ? "" : document.querySelector("#prompt .p1 span").textContent;
         }
         const tl = performance.now();
         while (G.step === "flight" && performance.now() - tl < 60000) await wait(5);
@@ -269,7 +277,8 @@ try {
   };
   const plain = await fly(false), slowed = await fly(true);
   check(slowed.pin && slowed.feathered && plain.dist && slowed.dist && slowed.dist < plain.dist - 4, `a mouse click on the lake during the flight feathers the line: ${(slowed.dist || 0).toFixed(1)} m against ${(plain.dist || 0).toFixed(1)} m (${JSON.stringify(slowed)})`);
-  check(slowed.flightCue === "Click to slow" && (!slowed.flightSaid || slowed.flightSaid === "To stop the lure short, click the lake."), `in the flight the rod cue says "${slowed.flightCue}", and the prompt "${slowed.flightSaid}" (a click, not a touch)`);
+  check(slowed.flightCue === "Click to slow" && slowed.flightSaid === "To stop the lure short, click the lake.", `in the flight of the fourth cast the rod cue says "${slowed.flightCue}", and the tip "${slowed.flightSaid}" (a click, not a touch)`);
+  check(slowed.featherSaid === "The mouse button slows the line.", `the click on the lake says "${slowed.featherSaid}" (the mouse button, not a thumb)`);
 
   // ---- a click during the reel starts no cast ----
   const reel = await page.evaluate(async () => {
@@ -308,12 +317,35 @@ try {
     key("keydown", "KeyW"); key("keyup", "KeyW");
     out.keys = { strike: await say({ phase: "strike", fish: null }, "PRESS SPACE! Set the hook!"), jump: await say({ fish: fish("jump") }, "It jumped! Lower the rod!"),
       sulk: await say({ fish: fish("sulk") }, "It holds on the bottom."), cover: await say({ cover: { side: -1, steer: 1, kind: "stumps" } }, "It swims to the stumps!"), reel: await say({ phase: "retrieve", fish: null }, "Hold R to reel.") };
+    // only a rod input picks the words. S held down (the key repeats) while the wheel turns the crank: the keys words stay
+    // up in every frame. After a mouse press, Space, R and the wheel keep the mouse words
+    const view = document.querySelector("#view") || document.body, wheel = () => view.dispatchEvent(new WheelEvent("wheel", { deltaY: 60, bubbles: true, cancelable: true }));
+    const look = () => { const r = read(); return r.sub + " | " + r.guide + " | " + r.cue; };
+    await say({ fish: fish("jump") }, "It jumped! Lower the rod!");
+    key("keydown", "KeyS");
+    const held = new Set(), f0 = G.frame, t0 = performance.now();
+    while (G.frame < f0 + 10 && performance.now() - t0 < 15000) {
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyS", key: "KeyS", repeat: true, bubbles: true, cancelable: true }));
+      wheel();
+      await new Promise((r) => requestAnimationFrame(r));
+      held.add(look());
+    }
+    key("keyup", "KeyS");
+    window.__fire("pointerdown", 520, 420); window.__fire("pointerup", 520, 420);
+    for (const code of ["Space", "KeyR"]) { key("keydown", code); key("keyup", code); }
+    wheel();
+    await say({ fish: fish("jump") }, "It jumped! Lower the rod!");
+    out.mixed = { held: [...held], mouse: look() };
+    // the loss line names the steer of the keys, as the fight does (last: the loss beat goes on to the next cast)
+    key("keydown", "KeyA"); key("keyup", "KeyA");
+    out.keys.lost = await say({ phase: "lost", reason: "weeds" }, "It wrapped the line in the weeds.");
     return out;
   });
   const same = (r, w, label) => !!r && r.cue === w && r.guide === label + " " + w;
   check(fw.mouse.strike.h === "DRAG THE ROD UP FAST! Set the hook!" && same(fw.mouse.strike, "Drag the rod up fast!", "MOUSE") && fw.mouse.jump.sub === "Drag the rod down." && same(fw.mouse.jump, "Drag the rod down.", "MOUSE"), `after a mouse press the fight words are the mouse's, with MOUSE (${JSON.stringify(fw.mouse)})`);
+  check(fw.mixed.held.length === 1 && fw.mixed.held[0] === "Hold S. | KEYS Hold S. | Hold S." && fw.mixed.mouse === "Drag the rod down. | MOUSE Drag the rod down. | Drag the rod down.", `S held with the wheel keeps the keys words in every frame; after a mouse press, Space, R and the wheel keep the mouse words (${JSON.stringify(fw.mixed)})`);
   const K = fw.keys;
-  check(K.strike.h === "PRESS SPACE! Set the hook!" && same(K.strike, "Press Space!", "KEYS") && K.jump.sub === "Hold S." && same(K.jump, "Hold S.", "KEYS") && K.sulk.sub === "Hold W. Then hold S and R." && same(K.sulk, K.sulk.sub, "KEYS") && K.cover.sub === "Hold D." && K.cover.cue === "Hold D." && K.reel.h === "Hold R to reel." && same(K.reel, "Hold R to reel.", "KEYS"), `after a key press the fight words name the keys, with KEYS (${JSON.stringify(K)})`);
+  check(K.strike.h === "PRESS SPACE! Set the hook!" && same(K.strike, "Press Space!", "KEYS") && K.jump.sub === "Hold S." && same(K.jump, "Hold S.", "KEYS") && K.sulk.sub === "Hold W. Then hold S and R." && same(K.sulk, K.sulk.sub, "KEYS") && K.cover.sub === "Hold D." && K.cover.cue === "Hold D." && K.reel.h === "Hold R to reel." && same(K.reel, "Hold R to reel.", "KEYS") && K.lost.sub === "Hold A or D to steer it.", `after a key press the fight words name the keys, with KEYS, and so does the loss line (${JSON.stringify(K)})`);
 } catch (e) {
   check(false, "exception: " + (e && e.stack));
 }

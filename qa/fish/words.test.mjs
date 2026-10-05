@@ -15,7 +15,7 @@ const plain = (t) => !/—|\b(red|green|amber|yellow)\b/i.test(t);
 
 // the table: every move has touch words, and the words are plain sentences
 for (const [kind, w] of Object.entries(MOVE_WORDS)) check(typeof w.touch === "string" && Object.values(w).every((t) => /[.!]$/.test(t) && plain(t)), `${kind}: touch words, and plain sentences (${Object.values(w).join(" / ")})`);
-check(Object.values(REEL_PACE).every((t) => /^Reel \w+\.$/.test(t)), "the crank paces: Reel slowly. / Reel fast. / Reel steadily.");
+check(Object.values(REEL_PACE).every((t) => /^Reel (a little )?\w+\.$/.test(t)) && REEL_PACE.faster === "Reel a little faster.", "the crank paces: Reel slowly. / Reel fast. / Reel a little faster. / Reel steadily.");
 // the reel move with a pace (the prompt gives it with the cue): the guide caption and the rod cue both say it; with none,
 // the reel move's own words
 check(moveWords("reel", "touch", 0, "fast") === "Reel fast." && lesson("reel", false, true, "slow")[0] === "Reel slowly." && lesson("reel", true, true, "steady")[0] === "Reel steadily." && lesson("reel", false, true)[0] === MOVE_WORDS.reel.touch && moveWords("pump", "touch", 0, "fast") === MOVE_WORDS.pump.touch, "the reel with a pace says the pace (Reel fast.), with none \"Turn the crank to reel.\"");
@@ -65,7 +65,7 @@ for (let i = main.indexOf("say("); i >= 0; i = main.indexOf("say(", i + 4)) {
   }
   says.push(args);
 }
-const PACE = [[/Reel slower|Reel slowly/, "slow"], [/Reel it in|Reel fast/, "fast"], [/Reel steadily/, "steady"]];
+const PACE = [[/Reel slower|Reel slowly/, "slow"], [/Reel a little faster/, "faster"], [/Reel it in|Reel fast/, "fast"], [/Reel steadily/, "steady"]];
 const paced = says.filter((a) => PACE.some(([re]) => re.test(a[0] + " " + (a[1] || ""))));
 const wrong = paced.filter((a) => { const want = PACE.find(([re]) => re.test(a[0] + " " + (a[1] || "")))[1]; return a[5] !== JSON.stringify(want); });
 check(paced.length >= 6 && !wrong.length, `the prompts that ask for a crank pace give it with the cue (${paced.length} of them${wrong.length ? "; wrong: " + wrong.map((a) => a[0]).join(" | ") : ""})`);
@@ -80,6 +80,8 @@ const L = (r, o) => lossText(r, o);
 check(L("snap", { cause: "grind" })[1] === "Stop reeling when the drag slips." && L("snap", { cause: "rodlow" })[1] === "Keep the rod up. It bends and saves the line." && L("snap", { cause: "drag" })[1] === "Set the drag lighter with the − button." && L("snap", {})[1] === "Stop reeling when the drag slips.", "a snap: the tip follows the cause");
 check(L("thrown", { by: "jump" })[1] === "Lower the rod as soon as it jumps." && L("thrown", { by: "shake" })[1] === "Keep reeling slowly when it shakes its head." && L("thrown", { by: "charge" })[1] === "Reel fast when it swims at you.", "a thrown hook: the tip follows the move");
 check(L("weeds", { input: "touch" })[1] === "Drag the rod sideways to steer it." && L("weeds", { input: "motion" })[1] === "Tilt the phone left or right to steer it away.", "the weeds: drag the rod sideways, or tilt the phone");
+// the weeds tip names the steer of the input, as the fight does ("Hold A or D." in the fight, "Hold A or D to steer it.")
+check(INPUTS.slice(1).every(([, , input]) => L("weeds", { input, turn: moveWords("turn", input) })[1] === moveWords("turn", input).replace(/\.$/, "") + " to steer it.") && L("weeds", { input: "keys", turn: moveWords("turn", "keys") })[1] === "Hold A or D to steer it." && L("weeds", { input: "mouse", turn: moveWords("turn", "mouse") })[1] === "Drag the rod sideways to steer it.", `the weeds: the steer words of the input ("${L("weeds", { input: "keys", turn: moveWords("turn", "keys") })[1]}" for the keys)`);
 check(INPUTS.every(([, , input]) => L("spat", { input, hook: moveWords("hook", input) })[1] === moveWords("hook", input).replace(/!$/, "") + " as soon as it strikes."), `a missed strike: the hook-set words of the input ("${L("spat", { hook: moveWords("hook", "keys") })[1]}")`);
 for (const id of ORDER) {
   const [h, sub] = L("thrown", { by: "jump", legend: id });

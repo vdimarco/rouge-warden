@@ -242,11 +242,18 @@ if (part("A")) {
     await stage(page, { fish: { move: "jump" } }, [{ type: "hooked" }, { type: "walk", n: 3 }, { type: "jump" }]);
     await sleep(150);
     const w0 = { ...(await promptNow(page)), ...(await shown()) };
+    // the last leap alone keeps the jump words for 900 ms of the game clock (recent("jump", 900) in main.js). Wait until
+    // two frames have run past that, so that only the walk can keep them (a fixed sleep can see no frame on a busy machine)
+    const pastJump = async () => {
+      await wait(page, () => performance.now() - (FISH.G.lastEvent.jump || -1e9) > 900);
+      const f = await page.evaluate(() => FISH.G.frame);
+      await wait(page, (f) => FISH.G.frame >= f + 2, f);
+    };
     await stage(page, { fish: { move: "swim" }, slack: true, slackT: 1 }, [], false);
-    await sleep(1300);
+    await pastJump();
     const w1 = await promptNow(page);
     await stage(page, { fish: { move: "swim" }, slack: true, slackT: 1 }, [{ type: "walkEnd" }], false);
-    await sleep(1300);
+    await pastJump();
     const w2 = await promptNow(page);
     check(w0.h === "It jumps again and again!" && w0.prompt === "visible" && !w0.banner, `a tail walk at the hook set: the jump words show at once, and the banner gives way (${JSON.stringify(w0)})`);
     check(w1 && w1.h === "It jumps again and again!", `between two leaps of the walk, with slack line, the jump words stay (${JSON.stringify(w1)})`);
@@ -303,6 +310,8 @@ if (part("A")) {
     check(mw.guide === "Reel fast." && mw.cue === "Reel fast.", `slack line: the guide and the rod cue say "Reel fast." (${JSON.stringify(mw)})`);
     mw = await reelWords({ beaten: true, fish: { stamina: 0.05 } }, "It is tired. Reel steadily.");
     check(mw.guide === "Reel steadily." && mw.cue === "Reel steadily.", `a tired fish: the guide and the rod cue say "Reel steadily." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ beaten: true, slack: true, slackT: 1, fish: { stamina: 0.05 } }, "It is tired. Reel a little faster.");
+    check(mw.guide === "Reel a little faster." && mw.cue === "Reel a little faster.", `a tired fish with slack line: the guide and the rod cue say "Reel a little faster." (${JSON.stringify(mw)})`);
     await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show the moves guide") document.querySelector("#guideToggle").click(); });
     await page.evaluate(() => { FISH.G.input = "touch"; });
 
@@ -513,7 +522,11 @@ if (part("A")) {
     check(names.join() === "Yellow Perch,Smallmouth Bass,Walleye,Not caught yet,Not caught yet,Not caught yet", "the fish caught small to big, then the ones to find (" + names.join(", ") + ")");
     check(jr.rows[2][1] === "Best 3.6 kg · 62 cm · caught 1" && jr.rows[0][1] === "Best 0.60 kg · 35 cm · caught 3", "a caught fish shows its best and the count (" + jr.rows[2][1] + " / " + jr.rows[0][1] + ")");
     check(jr.rows[3][1] === "Try the lily pads." && jr.rows[4][1] === "Try the rocky point at dusk." && jr.rows[5][1] === "Try the lily pads at dusk.", "a fish not caught yet says where to try (" + jr.rows.slice(3).map((r) => r[1]).join(" / ") + ")");
-    check(jr.sum === "3 of 13 found here · 3 of 29 in all · 5 fish landed · 0 casts", "the summary line (" + jr.sum + ")");
+    // (the first line only: on a day whose goal these catches meet, a second line says "Goal days: 1")
+    check(jr.sum.split("\n")[0] === "3 of 13 found here · 3 of 29 in all · 5 fish landed · 0 casts", "the summary line (" + jr.sum + ")");
+    // one cast is "1 cast", not "1 casts" (the Loon chip draws the journal again)
+    const sum1 = await page.evaluate(() => { const n = FISH.save.casts; FISH.save.casts = 1; document.querySelector("#jtabs button").click(); const t = document.querySelector("#jsum").textContent; FISH.save.casts = n; document.querySelector("#jtabs button").click(); return t; });
+    check(sum1.split("\n")[0].endsWith(" · 1 cast"), "one cast in the summary line: \"1 cast\" (" + sum1 + ")");
     // the legend row, by step: once every other fish here is caught, the legend is among the next 3
     const keep = await page.evaluate(() => JSON.stringify(FISH.save.journal));
     await page.evaluate(() => { for (const id of ["pumpkinseed", "rockbass", "largemouth", "pike", "laketrout", "muskie"]) FISH.save.journal[id] = { n: 1, kg: 1, cm: 30 }; });
@@ -672,8 +685,22 @@ if (part("D")) {
     await stand(page);
     await spy(page);
     const toastNow = () => page.evaluate(() => document.querySelector("#toast").textContent);
+    // ---- the painted title: its picture is of Loon Lake. At another place the live place shows behind the title, as in
+    // the Original style, and the lake draws there. Counted over frames, not a fixed time: a busy machine draws slowly ----
+    const titleArt = (frames) => page.evaluate(async (frames) => {
+      const t = document.querySelector("#title"), w = FISH.world, r = w.render;
+      let n = 0;
+      w.render = function (...a) { n++; return r.apply(this, a); };
+      for (let i = 0; i < frames && n < 3; i++) await new Promise((res) => requestAnimationFrame(res));
+      w.render = r;
+      return { style: document.body.dataset.artStyle, shown: !t.hidden, pic: /film-lake\.webp/.test(getComputedStyle(t).backgroundImage), draws: n, kick: document.querySelector("#tkick").textContent };
+    }, frames);
+    const loonArt = await titleArt(12);
+    check(loonArt.style === "painted" && loonArt.shown && loonArt.pic && loonArt.draws <= 1 && /LOON LAKE$/.test(loonArt.kick), "the painted title at Loon Lake shows its picture, and the lake under it stands still (" + JSON.stringify(loonArt) + ")");
     // ---- Cedar River: the current, and the swing said once ----
     check(await page.evaluate(async () => await FISH.setPlace("river")), "at Cedar River");
+    const riverArt = await titleArt(60);
+    check(riverArt.style === "painted" && riverArt.shown && !riverArt.pic && riverArt.draws >= 3 && /CEDAR RIVER$/.test(riverArt.kick), "the painted title at Cedar River shows the live river behind it, not the picture of Loon Lake (" + JSON.stringify(riverArt) + ")");
     await page.evaluate(() => FISH.startMode("free"));
     await wait(page, () => FISH.G.phase === "cast");
     check(await page.evaluate(() => Math.abs(FISH.G.hour - 5.2) < 0.1), "free fishing at Cedar River starts at 5:12 (" + (await page.textContent("#clock")) + ")");
@@ -1247,12 +1274,13 @@ if (part("J")) {
     await sleep(1500);
     check((await count("Goal done: Cast 40 m.")) === 1, "a second 40 m cast is not news");
 
-    // ---- the first fish of the day, from a ring and a cast stopped short: all the news in one toast, a line each ----
+    // ---- the first fish of the day, from a ring and a cast stopped short: all the news in one toast, a line each. It is
+    // the first fish of this new player too: that line says "Your first fish!" in place of the day's line ----
     await page.evaluate(() => { FISH.newCast(); window.__toasts.length = 0; window.__log.length = 0; FISH.G.landing = { x: 6, z: -14, dist: 15.2, ring: true, feather: true }; });
     let c = await catchCard(page, { id: "perch", name: "Yellow Perch", kg: 0.35, cm: 27, junk: false });
     await sleep(1600);
-    const t1 = await toastsNow(page), NEWS1 = "Your first fish today.\nGoal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.";
-    check(t1.includes(NEWS1) && has(await logNow(page), "S.sfx", "record"), "the first fish of the day does two goals: one toast says \"Your first fish today.\" and both goals, a line each, with the record sting (" + JSON.stringify(t1) + ")");
+    const t1 = await toastsNow(page), NEWS1 = "Your first fish!\nGoal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.";
+    check(t1.includes(NEWS1) && has(await logNow(page), "S.sfx", "record"), "a new player's first fish does two goals: one toast says \"Your first fish!\" (not the day's line) and both goals, a line each, with the record sting (" + JSON.stringify(t1) + ")");
     const shown = await page.evaluate(() => { const t = document.querySelector("#toast"), r = t.getBoundingClientRect(), card = document.querySelector("#catch .card").getBoundingClientRect(); return { on: t.classList.contains("on"), lines: Math.round(r.height / parseFloat(getComputedStyle(t).lineHeight)), clear: r.bottom <= card.top, top: r.top >= 0 }; });
     check(shown.on && shown.lines >= 3 && shown.clear && shown.top, "the news shows over the catch screen, three lines, clear of the card (" + JSON.stringify(shown) + ")");
     check(c.badges.join() === "NEW SPECIES" && c.found === "1 of 13 found here.", "a new find says how much of the place is found, the journal's count: \"" + c.found + "\"");
@@ -1262,7 +1290,7 @@ if (part("J")) {
     await wait(page, () => FISH.G.phase === "cast");
     await page.evaluate(() => { FISH.G.landing = { x: 0, z: -20, dist: 20, ring: false, feather: false }; window.__toasts.length = 0; });
     c = await catchCard(page, { id: "walleye", name: "Walleye", kg: 2.1, cm: 50, junk: false });
-    check(c.found === "2 of 13 found here." && !(await toastsNow(page)).some((t) => t.includes("Your first fish today.")), "the next new kind: \"" + c.found + "\", and no first-fish toast");
+    check(c.found === "2 of 13 found here." && !(await toastsNow(page)).some((t) => t.includes("Your first fish")), "the next new kind: \"" + c.found + "\", and no first-fish toast");
     c = await (async () => { await click(page, "#catchGo"); await wait(page, () => FISH.G.phase === "cast"); return catchCard(page, { id: "walleye", name: "Walleye", kg: 1.5, cm: 45, junk: false }); })();
     check(c.found === "" && c.badges.indexOf("NEW SPECIES") < 0, "a kind already found has no count line");
     await click(page, "#catchGo");

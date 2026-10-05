@@ -10,8 +10,13 @@ try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePl
 try { document.documentElement.dataset.bootArt = (JSON.parse(localStorage.getItem("fish.v1")) || {}).artStyle === "original" ? "original" : "painted"; } catch (e) { document.documentElement.dataset.bootArt = "painted"; }
 // Calm effects (Settings) from the first frame: main.js keeps html data-calm in step with the setting
 try { if (localStorage.getItem("fish.calm") === "1") document.documentElement.dataset.calm = "1"; } catch (e) { /* storage off */ }
-// the painted title's picture loads during the boot, so the title shows whole
-if (document.documentElement.dataset.bootArt === "painted") document.head.appendChild(Object.assign(document.createElement("link"), { rel: "preload", as: "image", href: "art/film-lake.webp" }));
+// the painted title's picture loads during the boot, so the title shows whole. It is of Loon Lake, and the title shows it
+// only there
+(function () {
+  var place = "loon";
+  try { place = (JSON.parse(localStorage.getItem("fish.v1")) || {}).place || "loon"; } catch (e) { /* storage off */ }
+  if (document.documentElement.dataset.bootArt === "painted" && place === "loon") document.head.appendChild(Object.assign(document.createElement("link"), { rel: "preload", as: "image", href: "art/film-lake.webp" }));
+})();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d2f38">

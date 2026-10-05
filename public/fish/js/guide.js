@@ -2,7 +2,9 @@
 // scrubbed with seek(t), including during frame-by-frame video export.
 import { isCalm } from "./calm.js";
 const KEY = "reel-it-in-guide-v1";
-export const INTRO = ["hold", "back", "cast", "reel", "hook", "pump", "land"];
+// the preview on the cast screen (WATCH + TRY) and its clips: the cast moves only. The reel moves show live (YOUR MOVE)
+// once the lure lands. After a change here, make the clips again with scripts/render-fish-guide.mjs
+export const INTRO = ["hold", "back", "cast"];
 export const LENGTH = 2.6;
 const PHONE = `<rect x="36" y="9" width="34" height="61" rx="7" fill="#174a55" stroke="#f6efd9" stroke-width="2.5"/><rect x="41" y="17" width="24" height="40" rx="3" fill="#0a2933"/><path d="M48 13h10M49 64h8" stroke="#b9c9c4" stroke-width="2" stroke-linecap="round"/>`;
 const HAND = `<path d="M38 65l-7-16q-3-8 2-9q3 0 6 7l3 6V43q0-6 5-6q5 0 5 6v5q13-4 18 5l-2 21H44Z" fill="#d6b796" stroke="#f6efd9" stroke-width="1.5"/>`;
@@ -106,10 +108,10 @@ export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " }
 const STEER_KEYS = { left: "Hold A.", right: "Hold D." };
 // the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
 // the cue), so the guide caption and the rod cue say "Reel fast." together. With no pace the reel move is MOVE_WORDS.reel
-export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", steady: "Reel steadily." };
+export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", faster: "Reel a little faster.", steady: "Reel steadily." };
 // the input of a player: "motion", "touch", or on a computer desk: "mouse" or "keys" (main.js keeps the last one used)
 export const inputOf = (motion, touch = true, desk = "keys") => (motion ? "motion" : touch ? "touch" : desk === "mouse" ? "mouse" : "keys");
-// the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "steady" for the reel
+// the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "faster" | "steady" for the reel
 export function moveWords(kind, input = "touch", side = 0, pace = "") {
   if (kind === "turn" && side && input === "keys") return STEER_KEYS[side > 0 ? "right" : "left"];
   if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
@@ -294,6 +296,8 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       kicker.textContent = intro ? "WATCH + TRY" : "YOUR MOVE";
       count.textContent = intro ? (index + 1) + " / " + INTRO.length : { motion: "MOTION", touch: "TOUCH", mouse: "MOUSE", keys: "KEYS" }[input];
       [...panel.querySelectorAll(".guide-track i")].forEach((el, i) => el.classList.toggle("on", i === index));
+      // the bars are the steps of the cast: a reel move (or the flight) has no step, so the bars hide
+      panel.dataset.track = String(index >= 0);
       panel.hidden = false;
       parts = Object.keys(poseAt(kind, 0)).flatMap(cls => [...art.querySelectorAll("." + cls)].map(el => [el, cls]));
       layoutKey = "";
