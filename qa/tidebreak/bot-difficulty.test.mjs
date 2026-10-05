@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createMatch, player, step, HEROES, heroSpeed } from '../../public/tidebreak/sim.js';
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
-import { CENTER, LANES, PORTALS, SIZE, BASES, distance, visibleTo } from '../../public/tidebreak/world.js';
+import { CENTER, LANES, PATHS, PORTALS, SIZE, BASES, distance, visibleTo } from '../../public/tidebreak/world.js';
 import { draftPlan } from '../../public/tidebreak/draft.js';
 import { KIT_POWER, guardMove, wardOpen, PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
 
@@ -210,6 +210,62 @@ for (const id of ['veteran', 'mythic']) {
   const e = { id: 30, team: 1, x: tower.x, y: tower.y - tower.range - 150, warningReaction: { key: 'w' } };
   const p = evadePoint(s, e, Math.PI / 2, true);
   assert.ok(distance(p, tower) >= tower.range, 'the dodge avoids the ward');
+}
+// Review #15: team focus never picks a hero the team cannot see, even within focus reach.
+{
+  const { s, p, bot } = scene('veteran', { keep: [] }); Object.assign(bot, LANES[0][2]); Object.assign(p, PATHS[0].find(q => Math.abs(distance(q, bot) - 1100) < 40)); s.time = 30; s.botFocus = null;
+  assert.equal(visibleTo(s, 1, p), false, 'the player is beyond sight');
+  assert.equal(teamFocus(s, 1).id, 0, 'no focus on a hidden hero in reach');
+  s.units.push({ id: 701, kind: 'minion', team: 1, lane: 0, x: p.x, y: p.y + 30, hp: 300, maxHp: 300, radius: 16 }); s.botFocus = null;
+  assert.equal(visibleTo(s, 1, p), true);
+  assert.equal(teamFocus(s, 1).id, p.id, 'a seen hero in reach becomes the focus');
+}
+// Review #16: allies never use the enemy profile, and difficulty never changes a hero's numbers in play.
+{
+  for (const id of DIFFICULTIES) assert.equal(botProfile(setDifficulty(createMatch(2, 9), id), { team: 0 }), PROFILES.ally, `${id}: allies use the ally profile`);
+  const pick = id => { const s = setDifficulty(createMatch(2, 9), id), ally = s.units.find(u => u.kind === 'hero' && u.team === 0 && !u.player); return combatDecision(s, ally); };
+  assert.deepEqual(pick('apprentice'), pick('mythic'), 'an allied bot decides the same at every enemy difficulty');
+  const play = id => { const s = setDifficulty(createMatch(2, 9), id); for (let i = 0; i < 40 * 20; i++) step(s, { autopilot: true }, .05); return s; };
+  const a = play('apprentice'), m = play('mythic'); let compared = 0;
+  for (const u of a.units.filter(u => u.kind === 'hero')) {
+    const v = m.units.find(x => x.id === u.id);
+    if (u.level !== v.level || JSON.stringify(u.inventory) !== JSON.stringify(v.inventory)) continue;
+    for (const key of ['maxHp', 'damage', 'speed', 'range', 'rate', 'armor', 'power', 'maxMana', 'lifesteal']) assert.equal(u[key], v[key], `hero ${u.id} ${key} is the same at the same level and items`);
+    compared++;
+  }
+  assert.ok(compared >= 3, 'enough heroes compared');
+}
+{
+  // The same bot's first hit on the player does the same damage at every difficulty.
+  const firstHit = id => { const { s, p, bot } = scene(id, { keep: [] }); Object.assign(bot, LANES[0][2]); Object.assign(p, { x: bot.x, y: bot.y + 120 }); bot.skillRanks = [0, 0, 0, 0]; const hp = p.hp;
+    for (let i = 0; i < 4 * 20 && p.hp === hp; i++) step(s, {}, .05); return hp - p.hp; };
+  const hits = DIFFICULTIES.map(firstHit);
+  assert.ok(hits[0] > 0 && hits.every(h => h === hits[0]), `equal first-hit damage (${hits})`);
+}
+// Review #17: gank, cast lock and the failed dodge, through the decision and the step.
+{
+  const { s, p, bot, towers } = scene('mythic', { keep: ['tower', 'core'] }); s.time = 120;
+  const ward = towers.find(t => t.lane === 1 && t.tier === 0), home = BASES[1], d = distance(ward, home);
+  Object.assign(bot, { x: ward.x + (home.x - ward.x) / d * (ward.range + 150), y: ward.y + (home.y - ward.y) / d * (ward.range + 150) });
+  Object.assign(p, LANES[2][2]); p.hp = p.maxHp * .5;
+  s.units.push({ id: 702, kind: 'minion', team: 1, lane: 2, x: p.x + 150, y: p.y, hp: 300, maxHp: 300, radius: 16 });
+  assert.equal(combatDecision(s, bot).mode, 'gank', 'a held lane and a seen, hurt hero elsewhere start a gank');
+}
+{
+  const { s, p, bot } = scene('veteran', { keep: [] }); Object.assign(bot, LANES[0][2]); Object.assign(p, { x: bot.x, y: bot.y + 220 }); bot.mana = bot.maxMana;
+  let checked = false;
+  for (let i = 0; i < 6 * 20 && !checked; i++) { const had = bot.thinkAt; step(s, {}, .05); if (bot.thinkAt !== had && bot.castIntent) { assert.ok(Math.abs(bot.thinkAt - s.time - castLock(s, bot, true)) < 1e-9, 'after a cast the bot waits its cast lock'); checked = true; } }
+  assert.ok(checked, 'the bot cast a spell');
+}
+{
+  const { s, bot } = scene('veteran', { keep: [] }); Object.assign(bot, LANES[0][2]); const lengths = new Set();
+  for (let n = 0; n < 40; n++) {
+    s.time = 10 + n * 5; bot.warningReaction = null; const origin = { x: bot.x, y: bot.y };
+    s.zones = [{ x: bot.x + 20, y: bot.y, team: 0, source: 600 + n, type: 'pending', armed: s.time + 3, amount: 200, radius: 180, life: 4 }];
+    let move = null; for (let t = 0; t < 60 && !move; t++, s.time += 1 / 60) { const pick = combatDecision(s, bot); if (pick.mode === 'evade') move = pick.move; }
+    lengths.add(Math.round(distance(origin, move)));
+  }
+  assert.ok(lengths.has(120) && lengths.has(320), `Veteran dodges fail as a short step sometimes (${[...lengths]})`);
 }
 // Draft skill: Mythic picks measured stronger kits for its lanes. Other profiles draft by role and chance, as before.
 {
