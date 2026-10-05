@@ -19,6 +19,9 @@ import { createFX } from "./fx.js";
 import { createHero } from "./hero.js";
 import { createFlatCam } from "./flatcam.js";
 import { createCutscenes } from "./cutscene.js";
+import { createStreet, STREET } from "./street.js";
+import { createStreetView } from "./streetview.js";
+import { createBloom } from "./bloom.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
 
 const $ = (s) => document.querySelector(s);
@@ -73,6 +76,7 @@ function loadSave() {
   if (r.hold === "hold" || r.hold === "toggle") t.hold = r.hold;
   if (typeof r.cue === "boolean") t.cue = r.cue;
   if (r.hz === 72 || r.hz === 90) t.hz = r.hz;
+  if (r.bloom === "off" || r.bloom === "low" || r.bloom === "high") t.bloom = r.bloom;
   if (Number.isFinite(r.foveation)) t.foveation = clamp(r.foveation, 0, 1);
   for (const k of ["sound", "music", "stance", "speedLines"]) if (k in r && (typeof r[k] === "boolean" || typeof r[k] === "string")) t[k] = r[k];
   return s;
@@ -115,7 +119,7 @@ async function installEmulator() {
 
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
-let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes;
+let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes, street, streetView, bloom;
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -149,12 +153,15 @@ function createStage() {
   D.chooseHand = chooseHand;
   G.input = D.input;
   audio = G.audio = createAudio(settings);
+  bloom = G.bloom = createBloom(renderer); // flat play: the glow round the neon, the lamps and the sun
 }
 // Everything that needs the city. Normal boot does it before the title; the PWA does it after the session starts.
 function createWorld() {
   city = G.city = generate(WORLD.seed);
   P = G.P = createPlayer(city);
   view = G.view = createCityView(renderer, scene, city, { low: false });
+  street = G.street = createStreet(city); // people on the sidewalks and the shop signs (js/street.js)
+  streetView = G.streetView = createStreetView(scene, street);
   ropes = G.ropes = createRopes(scene, city, settings);
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
@@ -222,6 +229,7 @@ let worldVisible = true, handsVisible = false;
 function setWorldVisible(v) {
   worldVisible = !!v;
   if (view) view.root.visible = worldVisible;
+  if (streetView) streetView.setVisible(worldVisible);
   if (game && game.root && gameStarted) game.root.visible = worldVisible;
   if (ropes) ropes.setVisible(worldVisible);
   if (fx) fx.setVisible(worldVisible);
@@ -323,12 +331,29 @@ function cutsceneFrame(dt, inp) {
   buildView();
   if (flatOn) hero.update(dt, P, ropes, inp);
   view.update(dt, G.time, camera.position);
+  streetFrame(dt, false);
   fx.update(dt, camera.position, camera.quaternion);
   // the music and the city go on under a scene (play() is not running): the ear follows the scene's camera
   audio.setListener(camera.position, camera.quaternion);
   audio.setWind(0, P.pos.y);
   audio.setRope(0, 0); audio.setRope(1, 0);
   audio.update(dt);
+}
+// The people on the sidewalks: they walk on round the player, and see the hero (in play only). The murmur follows them.
+const CAMW = new THREE.Vector3();
+const HERO_SEEN = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onGround: false };
+function streetFrame(dt, inPlay) {
+  street.limit = isXR() ? STREET.maxXR : STREET.max;
+  HERO_SEEN.x = P.pos.x; HERO_SEEN.y = P.pos.y; HERO_SEEN.z = P.pos.z;
+  HERO_SEEN.vx = P.vel.x; HERO_SEEN.vy = P.vel.y; HERO_SEEN.vz = P.vel.z; HERO_SEEN.onGround = !!P.onGround;
+  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null);
+  streetView.update(dt, G.time, camera.getWorldPosition(CAMW));
+  audio.setCrowd(inPlay ? street.crowd : 0);
+}
+// The glow of flat play: the saved choice, else Low with a mouse or a pad and Off on a phone. A headset has none.
+function bloomLevel() {
+  if (G.mode !== "desktop" || renderer.xr.isPresenting) return "off";
+  return settings.bloom || (G.input && G.input.easySwing ? "off" : "low");
 }
 // Fade out, move the body and the rig, fade in. Used by respawns, travel and the hand-off check.
 function fadeMove(x, y, z) {
@@ -1081,7 +1106,14 @@ function feedback(ev) {
       if (ev.pump) fx.word("SPLORT", r.anchor, { dir: FX_UP, scale: 1.2 }); else wordAtHand("YANK", i);
       catchFeedback(i, ev.pump ? "pump" : "yank");
       break;
-    case "land": audio.sfx("land", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); break;
+    case "land": {
+      audio.sfx("land", { vol: clamp(ev.speed / 10, 0.3, 1.5) });
+      // the people near see it: a cheer, and a gasp first from the ones a hard landing made jump back
+      const re = G.state === "play" ? street.land(P.pos.x, P.pos.y, P.pos.z, -ev.speed) : null;
+      if (re && re.gasp) audio.sfx("gasp", { pos: re });
+      if (re && re.cheer) audio.sfx("cheer", { pos: re, vol: clamp(re.n / 6, 0.4, 1.2) });
+      break;
+    }
     case "splash": audio.sfx("splash"); wordAhead("KASPLASH", P.pos, 2.6, 1, 1.5); respawn(); break;
     case "oob": respawn(); break;
     case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); wordAtBump(ev); break;
@@ -1155,6 +1187,7 @@ function after(dt, inp, yawDelta) {
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
   view.update(dt, G.time, vh.pos);
+  streetFrame(dt, inPlay);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
   const speed = Math.sqrt(P.vel.x * P.vel.x + P.vel.y * P.vel.y + P.vel.z * P.vel.z);
   // WHOOSH: once as you cross 20 m/s, 14 m ahead along your path, at most every 4 s
@@ -1243,8 +1276,8 @@ function render(frame) {
     if (G.viewDone && !titleCompiled) { titleCompiled = true; renderer.compile(scene, camera); }
     return;
   }
-  renderer.render(scene, camera);
-  const info = renderer.info.render;
+  if (!xr) bloom.render(scene, camera, bloomLevel()); else renderer.render(scene, camera);
+  const info = xr ? renderer.info.render : bloom.last;
   lastInfo.calls = info.calls; lastInfo.tris = info.triangles;
   lastInfo.views = xr ? renderer.xr.getCamera().cameras.length || 1 : 1;
   if (samples.length) readSamples();
@@ -1530,6 +1563,11 @@ G.test = {
     return JSON.parse(JSON.stringify(o));
   },
   renderInfo: () => ({ ...lastInfo }),
+  // one frame through the real render path (the bloom passes included) while the loop is off; pixels can be read after it
+  render() { render(null); return { ...lastInfo }; },
+  // the people and the signs (js/street.js): counts, states, reactions; people: every person out, for the scenario checks
+  street: (all) => ({ ...street.info(), view: streetView.info(), people: all ? street.people.filter((p) => p.on).map((p) => ({ id: p.id, x: p.x, z: p.z, yaw: p.yaw, state: p.state, pose: p.pose, onWalk: street.onWalk(p) })) : undefined }),
+  bloom: () => ({ ...bloom.info(), want: bloomLevel() }),
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
 };
 
