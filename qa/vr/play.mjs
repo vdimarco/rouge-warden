@@ -159,16 +159,23 @@ try {
   const t4 = await ev(page, () => { G.test.yank(0, 3); __b.step(2); return { p: __b.prog().tutorial }; });
   check(t4.p === 5, "step 4 is done by the first yank on a normal target", t4);
   const p4 = await ev(page, () => ({ t: G.game.info().tutorial.t }));
-  // step 5: turn
-  const t5 = await ev(page, () => { const before = __b.prog().tutorial; G.rigYaw += 0.5; __b.step(3); return { before, p: __b.prog().tutorial }; });
-  check(t5.before === 5 && t5.p === 6, "step 5 is done by the first turn", t5);
-  // step 6: the HUD (in flat play it is on the screen: two seconds)
-  const t6 = await ev(page, () => { const n = __b.until(() => __b.prog().tutorial !== 6, 400); return { n, p: __b.prog().tutorial, says: __spy.says.slice(-1)[0] }; });
-  check(t6.p === 7 && t6.n < GAME.tutorialTimeout * 60 - 60, "step 6 is done by the HUD being shown, not by the timeout", t6);
+  // step 5: look around with the mouse (flat play teaches with the training checklist, game.js: its look row counts the turn
+  // input, about 1 rad in all; the pointer lock is faked, as the mouse tests do)
+  const t5 = await ev(page, () => {
+    const before = __b.prog().tutorial, was = G.desktop.locked;
+    G.desktop.locked = true;
+    for (let i = 0; i < 4; i++) { window.dispatchEvent(new MouseEvent("mousemove", { movementX: 150, movementY: 0 })); __b.step(1); }
+    G.desktop.locked = was; __b.step(2);
+    return { before, p: __b.prog().tutorial };
+  });
+  check(t5.before === 5 && t5.p === 6, "step 5 is done by the first look around with the mouse", t5);
+  // after the look the training's next row is the climb, which says its own words (the score is on the screen: no HUD row)
+  const t6 = await ev(page, () => { __b.step(3); const tr = G.game.progress.training; return { p: __b.prog().tutorial, row: tr && tr.items[tr.now] && tr.items[tr.now].id, says: __spy.says.slice(-1)[0] }; });
+  check(t6.p === 6 && t6.row === "climb" && /wall/i.test(t6.says || ""), "after the look the next training row is the climb, and it says its own line", t6);
   const lines = await ev(page, () => __spy.lines.filter((l) => l[0] === "tutorial").map((l) => l[1]));
   // (the spies start after the hand-off, so step 0's line was said before them)
   const seq = [...new Set(lines)];
-  check(seq.slice(-7).join(",") === "1,2,3,4,5,6,7", "every tutorial step said its line, in order, by input kind", { seq, kind: await ev(page, () => __spy.lines.find((l) => l[0] === "tutorial")[2]) });
+  check(seq.slice(-5).join(",") === "1,2,3,4,5", "every training row said its tutorial line, in order, by input kind", { seq, kind: await ev(page, () => __spy.lines.find((l) => l[0] === "tutorial")[2]) });
   await ev(page, () => { __b.let(0); __b.let(1); });
 
   /* ---------------- the first clog: pumps, the flush, the bank ---------------- */
@@ -200,7 +207,9 @@ try {
   });
   check(post.c.done && post.p.clogs === 1 && post.ropeState === "idle" && !post.target, "the third pump flushes: the rope lets go and the target is removed", { c: post.c, rope: post.ropeState, target: post.target });
   check(post.p.bank === GAME.looniesPerFlush && post.p.loonies === 0 && post.save.bonus === GAME.looniesPerFlush && post.save.loonies.length === 0, "the flush bonus goes to the bank and not to the x/80 Loonie count", { p: post.p, save: post.save });
-  check(post.save.clogs.includes(6) && post.save.tutorial === true && post.p.tutorial === -1, "the flush autosaves, and the first flush ends the tutorial (save.tutorial)", { clogs: post.save.clogs, tutorial: post.save.tutorial, step: post.p.tutorial });
+  // the training ends when every row is ticked: the flush ticks its plunge row, and the climb row is still open
+  const plunge = post.p.training && post.p.training.items.find((r) => r.id === "plunge");
+  check(post.save.clogs.includes(6) && plunge && plunge.done && !post.p.training.done && post.save.tutorial !== true && post.p.tutorial === 6, "the flush autosaves and ticks the plunge row; the training stays open while the climb row is left", { clogs: post.save.clogs, tutorial: post.save.tutorial, step: post.p.tutorial, training: post.p.training && post.p.training.items.map((r) => r.id + (r.done ? "+" : "-")).join(" ") });
   check(post.spy && post.spy[0] === c6.district && post.spy[1] === 0.5, "view.setDistrictClog gets the district's clean share (1 of 2 left)", post.spy);
 
   /* ---------------- 11 clogs, one by one, with real yanks (the 12th wakes the King, so it waits) ---------------- */
