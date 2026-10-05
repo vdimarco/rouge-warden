@@ -7,5 +7,5 @@
 - [x] 5. Add readable HUD reward animation and update design/build notes.
 ## Verification and release
 - [x] 6. Pass deterministic motion and unchanged engine tests; verify real browser motion, input, paused pixels, preferences, fallbacks and performance.
-- [ ] 7. Rebuild and publish; verify exact production deployment and live play.
-- [ ] 8. Archive completed change and validate canonical requirements.
+- [x] 7. Rebuild and publish; verify exact production deployment and live play.
+- [x] 8. Archive completed change and validate canonical requirements.
