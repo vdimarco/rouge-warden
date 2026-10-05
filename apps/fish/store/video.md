@@ -15,13 +15,13 @@ The game plays in phone panels on the painted water of the store art, and short 
 
 | Time | Scene | Titles |
 | --- | --- | --- |
-| 0 to 5.8 s | A motion cast at Loon Lake at golden hour. The panel leans back and whips forward with the phone, and the lure flies out. | Your phone is the rod. Tip it back. Whip it forward. |
-| 5.8 to 9.5 s | A bass follows the lure, nibbles it and strikes. The phone snaps up: "Fish on!" | Wait for the bite. Snap it up! |
-| 9.5 to 14.3 s | The fight: a run against the drag, a leap, then the rod pumps the fish in. | Fight every run. Raise the rod. Reel as you lower it. |
-| 14.3 to 19.5 s | The trophy photo: the push-in, the flash, gold sparks, and the card with NEW RECORD and TROPHY. | Land a trophy. |
-| 19.5 to 24.9 s | Four phones, each casting at its place. | Fish four places. Loon Lake, Stump Bay, Cedar River, Gull Rock. |
-| 24.9 to 27.9 s | Motion play beside touch play, with a finger on the crank. | Play with motion or touch. |
-| 27.9 to 31.3 s | The end card: the bobber of the feature graphic, its rings, and the title. | REEL IT IN. Your phone is the rod and the reel. No ads · No accounts · Plays offline. |
+| 0 to 5.7 s | A motion cast at Loon Lake at golden hour. The panel leans back and whips forward with the phone, and the lure flies out. | Your phone is the rod. Tip it back. Whip it forward. |
+| 5.7 to 9.4 s | A bass follows the lure, nibbles it and strikes. The phone snaps up: "Fish on!" | Wait for the bite. Snap it up! |
+| 9.4 to 14.2 s | The fight: a run against the drag, a leap, then the rod pumps the fish in. | Fight every run. Raise the rod. Reel as you lower it. |
+| 14.2 to 19.4 s | The trophy photo: the push-in, the flash, gold sparks, and the card with NEW RECORD and TROPHY. | Land a trophy. |
+| 19.4 to 24.8 s | Four phones, each casting at its place. | Fish four places. Loon Lake, Stump Bay, Cedar River, Gull Rock. |
+| 24.8 to 27.8 s | Motion play beside touch play, with a finger on the crank. | Play with motion or touch. |
+| 27.8 to 31.2 s | The end card: the bobber of the feature graphic, its rings, and the title. | REEL IT IN. Your phone is the rod and the reel. No ads · No accounts · Plays offline. |
 
 "REEL IT IN" stays in the top left corner until the four places come up.
 

@@ -9,4 +9,4 @@
 
 #### Scenario: App Store app preview
 - **WHEN** a developer runs the script with `FORMAT=appstore`
-- **THEN** it writes an MP4 of 15 to 30 s at 886 x 1920 and 30 fps, H.264 High Profile at Level 4.0 or lower at no more than 12 Mbps, with stereo AAC at 256 kbps. Each picture is a full-screen capture of the game with text over it, and no other art.
+- **THEN** it writes an MP4 of 15 to 30 s at 886 x 1920 and 30 fps, H.264 High Profile at Level 4.0 or lower at no more than 12 Mbps, with stereo AAC at 256 kbps. Each picture is a full-screen capture of the game. Only text, and a ring where a finger touches, go over it.
