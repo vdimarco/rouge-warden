@@ -521,6 +521,20 @@ export function buildBoard({ prev = {}, sessions = null, git, now, repo, prs = n
     }
   }
 
+  /* history stays: a branch or session that has left the repo and the session list keeps its place, marked finished */
+  const ownTrees = new Set(trees.map((t) => t.branch));
+  for (const p of (prev.worktrees && prev.worktrees.items) || []) {
+    if (!p || ownTrees.has(p.branch) || p.state === "local") continue;
+    const pr = prs && prs.get(p.branch);
+    const merged = p.state === "merged" || (pr && pr.state === "merged") || (git.merged.get(p.branch) || []).length > 0;
+    trees.push({ ...p, state: merged ? "merged" : "even", unpushed: 0, ahead: 0, pr: pr ? pick(pr, ["number", "state", "draft"]) : p.pr || null });
+  }
+  const ownAgents = new Set(agents.map((a) => a.id));
+  for (const p of (prev.agents && prev.agents.items) || []) {
+    if (!p || ownAgents.has(p.id)) continue;
+    agents.push({ ...p, state: "done" });
+  }
+
   /* the fingerprint covers what the refresh owns; the hand-kept parts are not in it */
   const fingerprint = createHash("sha1").update(JSON.stringify({
     a: agents.map((a) => [a.id, a.state, a.title, a.summary, a.branch, a.games, a.pr]),
