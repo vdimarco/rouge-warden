@@ -58,7 +58,7 @@ bass,cast,motion,trout,salmon,tuna,catfish,pike,walleye,derby,angler,rod,lure,of
 
 Reason: both stores put most fishing games in Sports. Reel It In is a short-session skill game with a score and a derby, not a full simulation with gear and boats. Simulation is a good second choice on the App Store, where a game can have two game subcategories.
 
-Google Play tags (pick up to five in the Console): Fishing, Casual, Offline, Single player, Stylized.
+Google Play tags: pick up to five with Manage tags in the Console. Pick Casual and Arcade, and Fishing if the list has it. Google gives the tags Offline, Single player and Stylized to a game by itself, so the Console does not show them.
 
 ## What's new
 
