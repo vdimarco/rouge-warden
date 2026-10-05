@@ -1,6 +1,6 @@
 // Turns recorded match facts into announcer calls, banners, a kill feed and spatial battle sound.
 import { HERO_IDENTITIES } from './hero-identities.js';
-import { LANE_NAMES } from './objectives.js';
+import { LANE_NAMES, TIER_NAMES } from './objectives.js';
 
 // Names follow the recorded announcer lines in audio/announcer.
 const MULTI = [null, null, 'Double kill', 'Triple kill', 'Mayhem', 'Rampage'];
@@ -29,13 +29,16 @@ export function killCall(entry, s, playerId) {
 
 export function defendCall(ping) {
   if (ping.structure === 'core') return { title: 'Our rift is under attack', voice: 'Your elder rift is under attack!' };
-  const where = `${LANE_NAMES[ping.lane] || ''} ${ping.tier ? 'inner' : 'outer'} ward`.trim();
+  const where = ping.tier > 2 ? `${LANE_NAMES[ping.lane] || ''} guardian`.trim() : `${LANE_NAMES[ping.lane] || ''} ${TIER_NAMES[ping.tier] || 'outer'} ward`.trim();
   return { title: `${where} under attack`, voice: `Your ${where} is under attack.` };
 }
 
 const MESSAGE_CALLS = {
   'Enemy ward broken': { voice: 'Enemy ward destroyed.', kind: 'ward-break', banner: true },
   'Our ward has fallen': { voice: 'Our ward has fallen.', kind: 'ward-fall', banner: true },
+  'Enemy guardian down': { voice: 'Enemy guardian destroyed.', kind: 'ward-break', banner: true },
+  'Our guardian has fallen': { voice: 'Our guardian has fallen.', kind: 'ward-fall', banner: true },
+  'Sudden death': { voice: 'Sudden death. Every structure is open.', kind: 'ward-fall', banner: true },
   'The Wild Hunt awakens': { voice: 'The Wild Hunt awakens.', sound: 'roar', banner: true },
   'The Wild Hunt rides with us': { voice: 'The Wild Hunt rides with us.', kind: 'ward-break', banner: true },
   'Enemy claimed the Wild Hunt': { voice: 'The enemy has claimed the Wild Hunt.', kind: 'ward-fall', banner: true },

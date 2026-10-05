@@ -55,7 +55,7 @@ export function worldMapped(texture, { color = '#ffffff', roughness = .92, scale
 }
 // Heroes, minions and creatures: a team-coloured rim from the side away from the camera (dark armour stays readable on
 // grass), a short white flash when hit, and screen-door fading (no transparency sort, shadows stay right).
-export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 }, uTintRange: { value: new THREE.Vector2(.58, .76) }, uTintGlow: { value: 0 } });
+export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 }, uTintRange: { value: new THREE.Vector2(.45, .62) }, uTintGlow: { value: 0 } });
 // One uniforms object can drive every material of a unit (body and weapons).
 export function unitMaterial(source, uniforms = unitUniforms(), key = 'unit') {
   const m = source.clone();

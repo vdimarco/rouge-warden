@@ -37,7 +37,7 @@ export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
-export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 23, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .06, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.6, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5, suddenStructures: 1.5 };
+export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 23, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .06, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.3, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5, suddenStructures: 1.5 };
 // Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
 // An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 export const MINIONS = {
@@ -183,7 +183,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   }
 }
 // The tip names the structure that must fall first.
-function lockTip(t) {
+export function lockTip(t) {
   if (t.kind === 'core') return ['Rift protected', 'Break both rift guardians first.'];
   if (t.guardian) return ['Guardian protected', 'Break an inner ward first.'];
   return [`${TIERS[t.tier].name} protected`, `Break this lane’s ${TIER_NAMES[t.tier - 1]} ward first.`];

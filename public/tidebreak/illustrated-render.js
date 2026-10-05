@@ -1,4 +1,5 @@
 import { structureProtected } from './objectives.js';
+import { fortified } from './sim.js';
 import { CreatureBank } from '../arcade/creatures/player.js';
 import { CREATURES } from '../arcade/creatures/catalog.js';
 import { player, HEROES } from './sim.js';
@@ -12,6 +13,8 @@ import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprite
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
 import { HERO_IDENTITIES, identityFor, identitySkill } from './hero-identities.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440, QUALITY_FLOOR = .5;
+// Tower art grows with its tier (outer, middle, inner, guardian), so the chain reads at a glance.
+const TOWER_HEIGHT = [245, 285, 325, 360], TOWER_LABEL = ['OUTER WARD', 'MIDDLE WARD', 'INNER WARD', 'GUARDIAN'];
 // Backing pixels per CSS pixel: the screen's own ratio (at most 2), limited by the pixel budget, then scaled so the
 // backing pixel count is in proportion to quality on every screen (a step from 1 to .8 removes 20% of the pixels).
 export const backingRatio = (width, height, deviceRatio = 1, quality = 1) => Math.max(.35, Math.min(deviceRatio || 1, 2, Math.sqrt(PIXEL_BUDGET / (width * height))) * Math.sqrt(quality));
@@ -182,7 +185,7 @@ export class Renderer {
   drawUnit(s, e, time) {
     const c = this.ctx, hero = e.kind === 'hero', tower = e.kind === 'tower' || e.kind === 'core';
     let name = tower ? e.team ? 'tower-enemy' : 'tower-ally' : e.team === 1 ? 'wisp-enemy' : 'wisp-ally';
-    let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : e.tier === 1 ? 315 : 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : 120;
+    let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : TOWER_HEIGHT[e.tier] || 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : e.elder ? 165 : 120;
     if (e.creatureId) {
       const screen = this.project(e.x, e.y), extent = height * this.scale * 3;
       if (screen.x + extent < 0 || screen.x - extent > this.width || screen.y + extent < 0 || screen.y - extent > this.height) return;
@@ -202,7 +205,7 @@ export class Renderer {
     if (hero && e.hero === 3 && pose) jump += Math.max(0, swing) * 27;
     // Contact shadows establish height during leaps and keep feet on the path.
     const shadow = this.project(x, y); c.save(); c.globalAlpha = .27; c.fillStyle = '#0d2425'; c.beginPath(); c.ellipse(shadow.x, shadow.y, height * this.scale * (hero ? .18 : .24) * (1 - Math.min(.4, jump / 400)), height * this.scale * .055, 0, 0, TAU); c.fill(); c.restore();
-    if (e.kind === 'tower' && e.tier === 1) { this.ring(x,y,78,structureProtected(s,e)?'#b9b4ce':'#e8c48f',.65,2); }
+    if (e.kind === 'tower' && e.tier > 0) { this.ring(x,y,64+e.tier*10,structureProtected(s,e)?'#b9b4ce':'#e8c48f',.65,2); }
     if(e.kind==='tower'&&e.team!==player(s).team&&!structureProtected(s,e)&&distance(e,player(s))<e.range+250)this.ring(x,y,e.range,e.towerTarget===player(s).id?'#ff8f75':'#dcb075',.65,2);
     if (e.shield > 0) this.ring(x, y, 68, '#c3e9ec', .75);
     if (e.kind === 'camp') this.ring(x, y, e.radius + 18, e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', .55);
@@ -222,7 +225,7 @@ export class Renderer {
       c.fillStyle = '#08151be8'; c.beginPath(); c.roundRect(a.x - width / 2 - 2, a.y - 1, width + 4, 6, 3); c.fill();
       c.fillStyle = structureProtected(s,e) ? '#9693aa' : TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
       if(hero){c.fillStyle='#407caf';c.fillRect(a.x-width/2,a.y+6,width*e.mana/e.maxMana,2);}
-      if (e.kind === 'tower') { c.textAlign='center';c.font='700 10px Barlow';c.fillStyle=structureProtected(s,e)?'#ddd2ec':'#ead7a8';c.fillText(structureProtected(s,e)?'INNER · PROTECTED':e.tier===1?'INNER WARD':'OUTER WARD',a.x,a.y-6); }
+      if (e.kind === 'tower') { const name=TOWER_LABEL[e.tier]||'WARD';c.textAlign='center';c.font='700 10px Barlow';c.fillStyle=structureProtected(s,e)?'#ddd2ec':'#ead7a8';c.fillText(structureProtected(s,e)?`${name} · PROTECTED`:fortified(s,e)?`${name} · FORTIFIED`:name,a.x,a.y-6); }
       this.drawBadges(e,s.time,a);
     }
   }
@@ -284,7 +287,7 @@ export class Renderer {
     c.restore();
     c.save(); c.strokeStyle = '#b8eee459'; c.lineWidth = 1.5;
     const left = Math.max(0, this.world(0, 0).x), right = Math.min(SIZE, this.world(this.width, 0).x);
-    for (let i = 0; i < 34; i++) {
+    for (let i = 0, glints = Math.ceil(SIZE / 143); i < glints; i++) {
       const x = (i * 143 + (this.reducedMotion ? 0 : time * 16)) % SIZE; if (x < left - 40 || x > right + 40) continue;
       const water = riverSample(x, s.seed), offset = Math.sin(i * 2.399) * Math.min(water.y - water.north, water.south - water.y) * .7;
       const a = this.project(x, water.y + offset), next = riverSample(Math.min(SIZE, x + 38), s.seed), b = this.project(x + 38, next.y + offset);
@@ -324,12 +327,12 @@ export class Renderer {
     m.save(); m.scale(size / SIZE, size / SIZE); riverOutline(m, riverGeometry(s.seed)); m.fillStyle = '#448e92'; m.fill(); m.restore();
     m.strokeStyle = '#56675a'; m.lineWidth = full ? 18 : 6; m.lineJoin = 'round';
     for (const lane of PATHS) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); }
-    for (const b of riverCrossings(PATHS, s.seed)) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
+    for (const b of this.bridges || []) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
     for (const gate of PORTALS) { m.strokeStyle = '#79d7bd'; m.lineWidth = 2; m.beginPath(); m.arc(gate.x / SIZE * size, gate.y / SIZE * size, full ? 7 : 3, 0, TAU); m.stroke(); }
     for (const e of s.units) {
       if (e.hp <= 0 || !this.visible.has(e.id)) continue;
       const x = e.x / SIZE * size, y = e.y / SIZE * size, scale = full ? 2 : 1;
-      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,(e.tier===1?10:7)*scale,0,TAU);m.stroke();} m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
+      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,[6,7.5,9,10.5][e.tier]*scale,0,TAU);m.stroke();} m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
       else if (e.kind !== 'hero') { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (['boss', 'leviathan'].includes(e.kind) ? 3.5 : 1) * scale, 0, TAU); m.fill(); }
     }
     // Heroes draw last so they stay readable above wisps; a structure under attack pulses red.

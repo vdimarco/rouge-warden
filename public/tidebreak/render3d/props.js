@@ -40,6 +40,21 @@ function simplify(source, cells) {
   const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); out.setAttribute('uv', new THREE.Float32BufferAttribute(t, 2)); out.setIndex(index); out.computeVertexNormals();
   return out;
 }
+// Laplacian smoothing of the crown: rounds the sharp shards of a generated canopy into soft leaf masses.
+function smooth(g, iterations, from, k = .6) {
+  const p = g.attributes.position, n = p.count, idx = g.index.array, adj = Array.from({ length: n }, () => new Set());
+  for (let i = 0; i < idx.length; i += 3) { const a = idx[i], b = idx[i + 1], c = idx[i + 2]; adj[a].add(b).add(c); adj[b].add(a).add(c); adj[c].add(a).add(b); }
+  const next = new Float32Array(n * 3);
+  for (let it = 0; it < iterations; it++) {
+    for (let i = 0; i < n; i++) {
+      let x = 0, y = 0, z = 0; for (const j of adj[i]) { x += p.getX(j); y += p.getY(j); z += p.getZ(j); }
+      const m = adj[i].size || 1, w = p.getY(i) > from ? k : 0;
+      next[i * 3] = p.getX(i) + (x / m - p.getX(i)) * w; next[i * 3 + 1] = p.getY(i) + (y / m - p.getY(i)) * w; next[i * 3 + 2] = p.getZ(i) + (z / m - p.getZ(i)) * w;
+    }
+    p.array.set(next);
+  }
+  p.needsUpdate = true; g.computeVertexNormals(); return g;
+}
 // Foliage shades as one soft volume: canopy normals lean out from the crown's centre, the way a painter lights a tree.
 function softCanopy(g, centre, from, amount = .7) {
   const p = g.attributes.position, n = g.attributes.normal, v = new THREE.Vector3(), m = new THREE.Vector3();
@@ -69,7 +84,12 @@ function reedGeometry() {
 // The scenery material patch: wind sway, the realm grow, fog of war, and a see-through tube from the camera to the
 // player's hero (screen-door, so no sorting and the shadows stay whole).
 export const propUniforms = { uTime: { value: 0 }, uSway: { value: 1 }, uHero: { value: new THREE.Vector3(0, -9999, 0) }, uSee: { value: 1 } };
-function patch(material, grow, { sway = 0, see = true, key, bias = 0 }) {
+// Value noise in world space, for leaf masses that do not follow a generated model's scattered texture islands.
+const NOISE = `float pHash( vec3 p ) { p = fract( p * .3183099 + .1 ); p *= 17.; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
+float pNoise( vec3 x ) { vec3 i = floor( x ), f = fract( x ); f = f * f * ( 3. - 2. * f );
+  return mix( mix( mix( pHash( i ), pHash( i + vec3( 1, 0, 0 ) ), f.x ), mix( pHash( i + vec3( 0, 1, 0 ) ), pHash( i + vec3( 1, 1, 0 ) ), f.x ), f.y ),
+              mix( mix( pHash( i + vec3( 0, 0, 1 ) ), pHash( i + vec3( 1, 0, 1 ) ), f.x ), mix( pHash( i + vec3( 0, 1, 1 ) ), pHash( i + vec3( 1, 1, 1 ) ), f.x ), f.y ), f.z ); }`;
+function patch(material, grow, { sway = 0, see = true, key, bias = 0, leaves = null }) {
   const uniforms = { ...propUniforms, uGrow: grow };
   material.onBeforeCompile = shader => {
     withWorld(shader); fowAtEnd(shader); Object.assign(shader.uniforms, uniforms);
@@ -84,19 +104,26 @@ function patch(material, grow, { sway = 0, see = true, key, bias = 0 }) {
           float hy = max( position.y, 0. ); transformed.xz += vec2( sin( uTime * 1.25 + ph.x + ph.y ), cos( uTime * .9 + ph.y * 1.3 ) ) * hy * hy * ${sway.toFixed(3)} * uSway; }`);
     // Leaf maps are sampled a little blurred: from this far the leaf detail is noise, the mass of the crown is what reads.
     if (bias) shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', THREE.ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', `texture2D( map, vMapUv, ${bias.toFixed(1)} )`));
+    // Procedural leaves: the model's own map gives only a faint grain; the colour comes from soft world-space clumps,
+    // darker toward the crown's underside. The instance colour then tints it.
+    if (leaves) shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + NOISE).replace(/#include <map_fragment>|vec4 sampledDiffuseColor[^;]*;\n[^]*?diffuseColor \*= sampledDiffuseColor;/, `
+      float grain = dot( texture2D( map, vMapUv, 2. ).rgb, vec3( .33 ) );
+      float clump = pNoise( vWorldP / 46. ) * .6 + pNoise( vWorldP / 15. ) * .4;
+      diffuseColor.rgb *= vec3( ${leaves} ) * ( .55 + clump * .75 ) * ( .75 + grain * .5 );`);
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uHero; uniform float uSee;')
       .replace('#include <clipping_planes_fragment>', see ? `#include <clipping_planes_fragment>
         if ( uSee > .5 ) { vec3 ab = uHero - cameraPosition; float t = clamp( dot( vWorldP - cameraPosition, ab ) / dot( ab, ab ), 0., 1. );
           float d = length( vWorldP - cameraPosition - ab * t ), k = fract( dot( floor( gl_FragCoord.xy ), vec2( .7548777, .5698403 ) ) );
           if ( t < .97 && k < .72 * ( 1. - smoothstep( 90., 170., d ) ) ) discard; }` : '#include <clipping_planes_fragment>');
   };
-  material.customProgramCacheKey = () => key + (see ? '-see' : '') + sway + bias;
+  material.customProgramCacheKey = () => key + (see ? '-see' : '') + sway + bias + (leaves || '');
   return material;
 }
 // Names from scenery.js -> what to build. Unknown names fall back to a boulder, so new scenery never breaks the scene.
 // [kind, height factor, width factor]; the oak model is an autumn oak, so tints move it toward summer or birch.
 const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pine', 1.05, .9], oak: ['oak', 1.45, .56], willow: ['oak', 1.35, .66], birches: ['oak', 1.55, .4] };
-const TINTS = { oak: '#e2d996', willow: '#a9bc8e', birches: '#efe8c8', juniper: '#d4dcc0', pines: '#ffffff', pine: '#ffffff' };
+// Late-summer crowns: some still green, some turning gold.
+const TINTS = { oak: ['#e2d996', '#b7c27c', '#d9b874', '#c8cf8a'], willow: ['#a9bc8e', '#9fb486'], birches: ['#efe8c8', '#dfe4b0'], juniper: ['#d4dcc0'], pines: ['#ffffff', '#e6eedc'], pine: ['#ffffff'] };
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
 const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .6, juniper: .6, willow: .7, oak: .7, pines: .8 };
 export class Props {
@@ -104,16 +131,16 @@ export class Props {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
     const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
     // Leaves glow a little with their own colour (light through the canopy), so a crown never turns to a black blob.
-    const tree = (m, sway, glow = 0, bias = 0) => set => { const c = m.clone(); if (glow) { c.emissive = new THREE.Color(glow, glow, glow * .8); c.emissiveMap = c.map; } return patch(c, this.grow[set], { sway, key: 'tree', bias }); };
+    const tree = (m, sway, glow = 0, bias = 0, leaves = null) => set => { const c = m.clone(); if (glow) { c.emissive = new THREE.Color(glow, glow, glow * .8); c.emissiveMap = leaves ? null : c.map; } return patch(c, this.grow[set], { sway, key: 'tree', bias, leaves }); };
     const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: 'built' }), this.grow[set], { key: 'built' });
     const plain = (color, rough) => set => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[set], { see: false, key: 'plain' });
     const leaves = materialOf(w.pine), autumn = materialOf(w.oak);
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
       pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .75), material: tree(leaves, .035, .16, 1.2), shadow: true, selfShadow: false },
-      oak: { geometry: softCanopy(simplify(geometryOf(w.oak), 22), .62, .3, .85), material: tree(autumn, .03, .16, 3), shadow: true, selfShadow: false },
-      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .14, 2), shadow: false },
-      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .1, 2.5), shadow: false },
+      oak: { geometry: softCanopy(smooth(simplify(geometryOf(w.oak), 22), 4, .32), .62, .3, .85), material: tree(autumn, .03, .07, 0, '.42, .36, .1'), shadow: true, selfShadow: false },
+      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .06, 0, '.13, .2, .07'), shadow: false },
+      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .06, 0, '.36, .3, .1'), shadow: false },
       boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true },
       arch: { geometry: simplify(geometryOf(w.arch), 28), material: tree(materialOf(w.arch), 0), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
@@ -185,7 +212,7 @@ export class Props {
     const tree = TREE[p.name], r = rand() * Math.PI * 2;
     if (p.solid) { const b = obstacles.find(o => o.id === p.id) || { x: p.x, y: p.y, w: 300, h: 220, biome: p.biome }; this.cover(put, b, p.name, p.height, rand); return; }
     if ((KEEP[p.name] ?? 1) < rand()) return;
-    if (tree) { const [kind, k, wide] = tree, h = p.height * k; put(kind, p.x, p.y, h * wide, h, h * wide, r, TINTS[p.name]); return; }
+    if (tree) { const [kind, k, wide] = tree, h = p.height * k, tints = TINTS[p.name]; put(kind, p.x, p.y, h * wide, h, h * wide, r, tints[Math.floor(rand() * tints.length)]); return; }
     switch (p.name) {
       case 'forest-island': for (let i = 0; i < 3; i++) { const h = p.height * (1.25 + rand() * .45), a = rand() * 6.3; put('pine', p.x + Math.cos(a) * 75 * i, p.y + Math.sin(a) * 65 * i, h * .6, h, h * .6, rand() * 6.3, '#f0f2e6'); } return;
       case 'boulders': { const h = p.height * .7; put('boulder', p.x, p.y, h * 1.15, h, h * 1.15, r, '#d6d0c4'); return; }
@@ -219,7 +246,7 @@ export class Props {
     const step = 125, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
       const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .3;
-      put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? '#b4c49a' : rand() < .5 ? '#ffffff' : '#d8d6a8') : '#e6eadb');
+      put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? '#b4c49a' : TINTS.oak[Math.floor(rand() * 4)]) : '#e6eadb');
     }
     for (let i = 0; i < nx + ny; i++) { const a = rand() * 6.3, h = 80 + rand() * 60; put('bush', b.x + Math.cos(a) * b.w * .52, b.y + Math.sin(a) * b.h * .52, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
     if (name === 'hollow-log') put('log', b.x, b.y + b.h * .3, b.w * .7, 70, 70, .2, '#ffffff');
