@@ -38,7 +38,7 @@ export function preload(onProgress = () => {}) {
   const world = Promise.all(WORLD_MODELS.map(name => loader.loadAsync(url(`world/${name}.glb`)).then(g => { assets.world[name] = g; prepare(g.scene, { metal: name === 'tower' || name === 'core' }); tick(); })));
   // Hero bytes: a failed hero keeps its placeholder; it never blocks the match.
   Promise.all(slugs.map(slug => fetch(url(`heroes/${slug}.glb`)).then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error(slug))).then(b => { assets.heroBytes.set(slug, b); tick(); }).catch(() => { assets.failed.add(slug); tick(); }))).then(() => { assets.heroesDownloaded = true; });
-  started = Promise.all([clips, world]).then(() => { assets.worldReady = true; return assets; });
+  started = Promise.all([clips, world]).then(() => { assets.worldReady = true; parseInIdle(slugs); return assets; });
   return started;
 }
 // The clip names each hero plays. attack follows the hero's own weapon; cast is the skill motion.
@@ -78,3 +78,14 @@ export function heroModel(slug) {
   return null;
 }
 export const heroesReady = () => assets.heroes.size;
+// Heroes are parsed one at a time in idle moments after the world is ready, so a match rarely waits for one.
+function parseInIdle(slugs) {
+  const idle = globalThis.requestIdleCallback || (f => setTimeout(f, 60));
+  const next = () => {
+    const slug = slugs.find(s => !assets.heroes.has(s) && !assets.failed.has(s));
+    if (!slug) return;
+    if (assets.parsing.size || !assets.heroBytes.has(slug)) { setTimeout(() => idle(next), 120); return; }
+    heroModel(slug); assets.parsing.get(slug)?.then(() => idle(next));
+  };
+  idle(next);
+}

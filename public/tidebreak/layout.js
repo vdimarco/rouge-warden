@@ -18,29 +18,29 @@ export const TOWER_ARC = [[3700, 2450, 1250], [3250, 2180, 1100], [3700, 2450, 1
 export const GUARDIANS = [[.442, .871], [.558, .871]];
 // Rift gates. Each river gate pairs with the gate across the river on the other side
 // of the map. A base gate sends a hero to the team's own river gate on the side the hero faces.
-export const RIVER_GATES = [[.238, .57], [.737, .566]];
+export const RIVER_GATES = [[.215, .585], [.745, .58]];
 export const BASE_GATE = [.536, .826];
 // Spirit camps: two in the wide west jungle near the river, two in the wide east jungle near the base.
-export const CAMP_SPOTS = [[.307, .6], [.292, .728], [.667, .74], [.708, .647]];
+export const CAMP_SPOTS = [[.33, .62], [.29, .735], [.655, .75], [.695, .64]];
 // Brush patches (centre only; radius is fixed).
 export const BRUSH_SPOTS = [
-  [.195, .55], [.07, .62], [.205, .70], [.36, .815], [.415, .57], [.53, .705],
-  [.47, .655], [.64, .56], [.79, .58], [.905, .64], [.80, .70], [.62, .81],
+  [.19, .555], [.07, .62], [.235, .735], [.43, .83], [.395, .64], [.53, .705],
+  [.565, .655], [.64, .56], [.795, .6], [.905, .64], [.745, .745], [.68, .8],
 ];
 // Cover blocks: unequal islands of ruins, groves, hamlets and rock. town/woods name the art
 // for each realm; w and h are in the 4800 grid; height is art height in world units.
 export const COVER_SPOTS = [
-  { x: .25, y: .645, w: 470, h: 330, town: 'ruin-yard', woods: 'ruin-yard', height: 620, biome: 'ruins' },
-  { x: .565, y: .585, w: 390, h: 270, town: 'root-arch', woods: 'root-arch', height: 640, biome: 'grove' },
-  { x: .19, y: .815, w: 560, h: 260, town: 'cliff-ridge', woods: 'cliff-ridge', height: 520, biome: 'ruins' },
+  { x: .25, y: .65, w: 470, h: 330, town: 'ruin-yard', woods: 'ruin-yard', height: 620, biome: 'ruins' },
+  { x: .45, y: .58, w: 390, h: 270, town: 'root-arch', woods: 'root-arch', height: 640, biome: 'grove' },
+  { x: .165, y: .85, w: 560, h: 260, town: 'cliff-ridge', woods: 'cliff-ridge', height: 520, biome: 'ruins' },
   { x: .79, y: .845, w: 540, h: 240, town: 'rock-shelf', woods: 'rock-shelf', height: 510, biome: 'heath' },
-  { x: .375, y: .69, w: 390, h: 240, town: 'mill-yard', woods: 'mill-yard', height: 550, biome: 'village' },
-  { x: .745, y: .69, w: 340, h: 260, town: 'forest-island', woods: 'forest-island', height: 650, biome: 'grove' },
-  { x: .325, y: .53, w: 250, h: 190, town: 'house-a', woods: 'willow', height: 410, biome: 'village' },
-  { x: .66, y: .665, w: 270, h: 200, town: 'observatory', woods: 'oak', height: 430, biome: 'ruins' },
-  { x: .44, y: .80, w: 260, h: 250, town: 'greenhouse', woods: 'forest-island', height: 480, biome: 'grove' },
-  { x: .21, y: .555, w: 290, h: 200, town: 'market', woods: 'hollow-log', height: 280, biome: 'village' },
-  { x: .955, y: .60, w: 260, h: 350, town: 'forest-island', woods: 'forest-island', height: 590, biome: 'grove' },
+  { x: .35, y: .775, w: 390, h: 240, town: 'mill-yard', woods: 'mill-yard', height: 550, biome: 'village' },
+  { x: .75, y: .685, w: 340, h: 260, town: 'forest-island', woods: 'forest-island', height: 650, biome: 'grove' },
+  { x: .37, y: .69, w: 250, h: 190, town: 'house-a', woods: 'willow', height: 410, biome: 'village' },
+  { x: .63, y: .66, w: 270, h: 200, town: 'observatory', woods: 'oak', height: 430, biome: 'ruins' },
+  { x: .59, y: .77, w: 260, h: 250, town: 'greenhouse', woods: 'forest-island', height: 480, biome: 'grove' },
+  { x: .30, y: .58, w: 290, h: 200, town: 'market', woods: 'hollow-log', height: 280, biome: 'village' },
+  { x: .955, y: .6, w: 260, h: 350, town: 'forest-island', woods: 'forest-island', height: 590, biome: 'grove' },
   { x: .055, y: .72, w: 220, h: 310, town: 'cliff-ridge', woods: 'cliff-ridge', height: 450, biome: 'heath' },
   { x: .665, y: .925, w: 260, h: 190, town: 'house-b', woods: 'juniper', height: 390, biome: 'village' },
 ];

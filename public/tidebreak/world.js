@@ -3,6 +3,7 @@ import { creekCenter, insideRiver } from './river.js';
 import { SIZE, CENTER, FEATURE_SCALE, at, mirror } from './arena.js';
 import { BASE, LANE_KNOTS, TOWER_ARC, GUARDIANS, RIVER_GATES, BASE_GATE, CAMP_SPOTS, BRUSH_SPOTS, COVER_SPOTS } from './layout.js';
 export { SIZE, MAP_SCALE, CENTER, FEATURE_SCALE } from './arena.js';
+export { TOWER_ARC } from './layout.js';
 // The soft limit starts sudden death. The hard limit ends the match with a tiebreak.
 export const SUDDEN_DEATH = 960, LIMIT = 1200;
 export const SHIFT = 40;
