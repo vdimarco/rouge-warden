@@ -3,7 +3,7 @@ import { createMatch, player, step, HEROES, heroSpeed } from '../../public/tideb
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
 import { CENTER, LANES, PORTALS, SIZE, BASES, distance, visibleTo } from '../../public/tidebreak/world.js';
 import { draftPlan } from '../../public/tidebreak/draft.js';
-import { KIT_POWER, PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
+import { KIT_POWER, guardMove, wardOpen, PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
 
 const advance = (s, seconds) => { for (let i = 0; i < seconds * 20; i++) step(s, {}, .05); };
 // One enemy bot and the idle player. No waves, boss or camps unless a test adds them.
@@ -162,6 +162,54 @@ for (const [id, expected] of [['veteran', 'far'], ['legacy', 'near']]) {
   const a = setDifficulty(createMatch(0, 42), 'mythic'), b = setDifficulty(createMatch(0, 42), 'mythic');
   for (let i = 0; i < 70 * 20; i++) { step(a, { autopilot: true }, .05); step(b, { autopilot: true }, .05); }
   assert.deepEqual(a.units, b.units);
+}
+// Review #1: a goal past an untanked ward never freezes a bot. It walks around the ward and stays out of range.
+for (const id of ['apprentice', 'veteran', 'mythic', 'ally']) {
+  const { s, p, bot, towers } = scene(id), tower = towers.find(t => t.lane === 1 && t.tier === 0), home = BASES[1], d = distance(tower, home);
+  const u = { x: (home.x - tower.x) / d, y: (home.y - tower.y) / d }, out = tower.range + 260;
+  Object.assign(bot, { x: tower.x + u.x * out, y: tower.y + u.y * out }); Object.assign(p, { x: SIZE - 300, y: 300 });
+  const goal = { x: tower.x - u.x * out, y: tower.y - u.y * out }, start = { x: bot.x, y: bot.y };
+  const moved = guardMove(s, bot, { mode: 'assist', move: goal });
+  assert.ok(moved && distance(moved, bot) > 20, `${id} gets a detour, not a stop`);
+  s.rally = [null, { ...goal, until: 999, source: 0 }];
+  let inside = 0, still = 0, last = { ...start };
+  for (let i = 0; i < 20 * 20; i++) { step(s, {}, .05); if (distance(bot, tower) < tower.range) inside += .05; if (distance(bot, last) < .5) still += .05; last = { x: bot.x, y: bot.y }; }
+  assert.ok(inside <= .3, `${id} walks around the ward (${inside.toFixed(2)} s inside)`);
+  assert.ok(still < 3 && distance(bot, goal) < distance(start, goal) - 600, `${id} keeps walking toward its goal (${still.toFixed(1)} s still, ${Math.round(distance(bot, goal))} left)`);
+}
+// Review #2: an approved dive never walks through a second ward on the way.
+for (const id of ['veteran', 'mythic']) {
+  const { s, p, bot, towers } = scene(id), tower = towers.find(t => t.lane === 1 && t.tier === 0), home = BASES[1], d = distance(tower, home);
+  const u = { x: (home.x - tower.x) / d, y: (home.y - tower.y) / d }, v = { x: -u.y, y: u.x };
+  Object.assign(bot, { x: tower.x + u.x * 300 - v.x * 300, y: tower.y + u.y * 300 - v.y * 300 }); Object.assign(p, { x: tower.x + u.x * 300 + v.x * 420, y: tower.y + u.y * 300 + v.y * 420, hp: p.maxHp * .1 });
+  let inside = 0;
+  for (let i = 0; i < 4 * 20; i++) { step(s, {}, .05); if (distance(bot, tower) < tower.range) inside += .05; }
+  assert.ok(inside <= .3, `${id} reaches a target beside a ward without crossing the ward (${inside.toFixed(2)} s inside)`);
+}
+// Review #3: a won fight does not open an untanked ward. Hero damage to it would be cut to a quarter.
+{
+  const { s, p, bot, towers } = scene('veteran'), tower = towers.find(t => t.lane === 1 && t.tier === 0);
+  const mate = { ...bot, id: 950, player: false, x: tower.x + 300, y: tower.y - 500 }; s.units.push(mate);
+  Object.assign(bot, { x: tower.x, y: tower.y - tower.range - 60 }); Object.assign(p, { x: SIZE - 300, y: 300, hp: 0, respawn: 20, level: 9 });
+  s.killFeed = [{ id: 1, time: s.time, victim: p.id, victimTeam: 0 }, { id: 2, time: s.time, victim: 951, victimTeam: 0 }];
+  s.units.push({ ...p, id: 951, player: false, hp: 0, respawn: 20 });
+  assert.equal(wardOpen(s, bot, tower), false, 'no wave, no open ward');
+  const pick = combatDecision(s, bot);
+  assert.notEqual(pick.target?.id, tower.id, 'the bot does not hit an untanked ward after a won fight');
+}
+// Review #9: a bot steps out of a ward's range once per tick, never twice.
+{
+  const { s, p, bot, towers } = scene('veteran'), tower = towers.find(t => t.lane === 1 && t.tier === 0);
+  Object.assign(p, { x: SIZE - 300, y: 300 }); Object.assign(bot, { x: tower.x, y: tower.y - tower.range + 60 }); bot.lastHit = -99; bot.revealedUntil = -99;
+  const before = { x: bot.x, y: bot.y }; step(s, {}, .05);
+  assert.ok(distance(before, bot) <= heroSpeed(s, bot) * .05 + 1, `one move per tick (${distance(before, bot).toFixed(1)} units)`);
+}
+// Review #10: Apprentice dodges never step into an untanked ward either.
+{
+  const s = setDifficulty(createMatch(0, 5), 'apprentice'), tower = s.units.find(t => t.kind === 'tower' && t.team === 0 && t.lane === 1 && t.tier === 0);
+  const e = { id: 30, team: 1, x: tower.x, y: tower.y - tower.range - 150, warningReaction: { key: 'w' } };
+  const p = evadePoint(s, e, Math.PI / 2, true);
+  assert.ok(distance(p, tower) >= tower.range, 'the dodge avoids the ward');
 }
 // Draft skill: Mythic picks measured stronger kits for its lanes. Other profiles draft by role and chance, as before.
 {

@@ -466,7 +466,7 @@ function bot(s, e, dt) {
   if(to)move(s,e,to.x,to.y,dt,heroSpeed(s,e));
   if(intent.portal)portal(s,e);
   if(intent.target)attack(s,e,intent.target);
-  if(intent.mode==='lane'&&!intent.move&&!baseGate(s,e,dt))followLane(s,e,dt);
+  if(intent.mode==='lane'&&!intent.move&&!to&&!baseGate(s,e,dt))followLane(s,e,dt);
 }
 // A side-lane bot leaving its base takes the base gate when its wave has already passed the river gate.
 function baseGate(s,e,dt){
