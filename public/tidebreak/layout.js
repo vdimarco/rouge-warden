@@ -8,12 +8,12 @@ export const BASE = [.5, .895];
 // so it is not much shorter than the side lanes.
 export const LANE_KNOTS = [
   [[.356, .857], [.232, .775], [.156, .658], [.132, .5]],
-  [[.5, .805], [.43, .695], [.515, .6], [.6, .5]],
+  [[.5, .805], [.425, .7], [.53, .597], [.6, .5]],
   [[.646, .852], [.769, .767], [.846, .65], [.87, .5]],
 ];
 // Tower stations by path distance from the team's own base, in world units [outer, middle, inner].
 // Distances are fixed (not fractions) so tower spacing stays a fixed number of tower ranges.
-export const TOWER_ARC = [[3700, 2450, 1250], [3400, 2260, 1120], [3700, 2450, 1250]];
+export const TOWER_ARC = [[3700, 2450, 1250], [3250, 2180, 1100], [3700, 2450, 1250]];
 // Base guardians flank the court and stand over the side-lane entrances.
 export const GUARDIANS = [[.442, .871], [.558, .871]];
 // Rift gates. Each river gate pairs with the gate across the river on the other side
