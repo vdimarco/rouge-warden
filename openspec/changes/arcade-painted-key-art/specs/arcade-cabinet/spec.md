@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Painted art for every large switcher tile
-The SWITCH GAME list SHALL show painted key art for Down the Drain, Olympus, Moonwell, Primordia, Breakthrough, Follow Suit, River Rush and The Lab. Each picture SHALL be a WebP under 80 KB in `public/arcade/key/`, listed in `higgsfield/arcade-key-art.json`.
+The SWITCH GAME list SHALL show painted key art for Down the Drain, Olympus, Moonwell, Primordia, Breakthrough, Follow Suit, River Rush and The Lab. Each picture SHALL be a WebP under 100 KB in `public/arcade/key/`, listed in `higgsfield/arcade-key-art.json`.
 
 #### Scenario: Open the switcher
 - **WHEN** the player opens SWITCH GAME from any game, on a phone or on a computer
