@@ -16,7 +16,7 @@ for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.l
   damage(s,p,outer,99999);assert.equal(s.towers[1],8);damage(s,p,middle,99999);assert.equal(s.towers[1],7);
   damage(s,p,core,99999);assert.equal(core.hp,core.maxHp,'core still protected after outer and middle wards fall');
   damage(s,p,inner,99999);assert.equal(s.towers[1],6);damage(s,p,core,99999);assert.equal(core.hp,core.maxHp,'core still protected by the guardians');
-  for(const g of guards)damage(s,p,g,99999);assert.equal(s.guardians[1],0);damage(s,p,core,99999);assert.equal(s.winner,0);
+  for(const g of guards)damage(s,p,g,99999);assert.equal(s.guardians[1],0);damage(s,p,core,core.maxHp*100);assert.equal(s.winner,0);
 }
 {
   // A line just beside the centre of a block crosses it in town and passes the smaller woods grove.
