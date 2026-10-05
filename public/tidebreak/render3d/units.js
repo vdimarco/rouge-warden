@@ -15,6 +15,7 @@ export const TEAM3D = ['#58c4ad', '#d65a6c'], NEUTRAL = '#d9b26a', PLAYER = '#f2
 const RIM = [new THREE.Color('#2fa58f'), new THREE.Color('#c23c50'), new THREE.Color('#b08a40')];
 export const HERO_HEIGHT = 230;
 export const TOWER_HEIGHT = [520, 600, 680, 760];
+const SOLDIER = { melee: { height: 170, clip: 'thrust' }, caster: { height: 158, clip: 'cast' }, siege: { height: 215, clip: 'slam' }, elder: { height: 245, clip: 'slam' } };
 const CAMP_HEIGHT = { 'possessed-ogre': 215, 'undead-knight': 165, 'undead-mage': 175, 'undead-archer': 160 };
 const TAU = Math.PI * 2, angleTo = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
 // Sim facing (x right, y down the map) to a model yaw: models face +Z.
@@ -96,7 +97,7 @@ class HeroView {
     const [attackClip, castClip] = this.clips, cast = !dead && e.castIntent, casting = pose?.casting;
     if (dead) { g.target('death', 1); g.time('death', Math.min(2.3, since * 1.1)); }
     else if (pose && !casting) {
-      const timing = CLIP_TIMING[attackClip]; this.lastAttack = { clip: attackClip, t: 0 };
+      const timing = CLIP_TIMING[attackClip];
       if (timing) { g.target(attackClip, 1); g.time(attackClip, strikeTime(timing, pose.variant, pose.age, e.attackWindup || .12, pose.duration)); this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: pose.stage, clip: attackClip, model: this.slug }); }
     } else if (casting || cast) {
       const timing = CLIP_TIMING[castClip];
@@ -118,12 +119,13 @@ class HeroView {
 }
 // --- lane soldiers ------------------------------------------------------------------------------------------------
 class MinionView {
-  constructor(units, team, siege) {
-    this.units = units; this.root = new THREE.Group(); this.root.name = 'minion'; units.group.add(this.root);
-    const src = assets.world.minion, model = cloneSkinned(src.scene), shared = units.minionMaterials(team);
+  constructor(units, team, role, ghost = false) {
+    this.units = units; this.root = new THREE.Group(); this.root.name = ghost ? 'ghost' : 'minion'; units.group.add(this.root); this.ghost = ghost;
+    const src = assets.world.minion, model = cloneSkinned(src.scene), shared = units.minionMaterials(team, ghost);
     model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; o.material = shared.get(o.name) || shared.get('*'); } });
-    this.height = siege ? 215 : 170; model.scale.setScalar(this.height / units.minionHeight); this.root.add(model); this.model = model;
-    this.rig = new Rig(model, units.minionClips, ['idle', 'run', 'thrust', 'slam', 'death', 'hit']); this.team = team; this.siege = siege;
+    // Wave roles read by size and motion: casters are slighter and cast, siege and elder wisps stand taller and slam.
+    this.height = SOLDIER[role]?.height || 170; model.scale.setScalar(this.height / units.minionHeight); this.root.add(model); this.model = model;
+    this.rig = new Rig(model, units.minionClips, ['idle', 'run', 'thrust', 'slam', 'cast', 'death', 'hit']); this.team = team; this.role = role; this.clip = SOLDIER[role]?.clip || 'thrust';
   }
   reset(e) { this.yaw = yawOf(e.facing); this.lx = e.x; this.ly = e.y; this.speed = 0; this.deadAt = null; this.root.visible = true; for (const k in this.rig.weights) this.rig.weights[k] = 0; this.root.position.set(e.x, 0, e.y); }
   update(e, s, time, dt, vis, gone) {
@@ -141,7 +143,7 @@ class MinionView {
     const step = this.acc; this.acc = 0;
     const g = this.rig; g.clearTargets();
     if (dead) { g.target('death', 1); g.time('death', Math.min(2.3, since * 1.25)); }
-    else if (attacking) { const clip = this.siege ? 'slam' : 'thrust', age = s.time - e.attackStarted; g.target(clip, 1); g.time(clip, strikeTime(CLIP_TIMING[clip], 0, age, .12, e.attackDuration || .46)); }
+    else if (attacking) { const clip = this.clip, age = s.time - e.attackStarted; g.target(clip, 1); g.time(clip, strikeTime(CLIP_TIMING[clip], 0, age, .12, e.attackDuration || .46)); }
     else { g.target(this.speed > 30 ? 'run' : 'idle', 1); g.run('run', Math.max(.6, Math.min(1.5, this.speed / 360))); g.run('idle', 1); if (e.hit > 0) { g.target('hit', .45); g.time('hit', .1 + (.16 - e.hit) * 2.5); } }
     g.update(step, .12);
     return false;
@@ -228,22 +230,25 @@ class TotemView {
 export class Units {
   constructor(scene, effects) {
     this.scene = scene; this.effects = effects; this.group = new THREE.Group(); this.group.name = 'units'; scene.add(this.group);
-    this.views = new Map(); this.pool = { minion: [[], []], siege: [[], []] }; this.frame = 0; this.poses = []; this.rimPower = 1; this.reduced = false; this.focus = { x: 0, y: 0 };
+    this.views = new Map(); this.pool = {}; this.frame = 0; this.poses = []; this.rimPower = 1; this.reduced = false; this.focus = { x: 0, y: 0 };
     this.plinth = new THREE.CylinderGeometry(1, 1.12, 1, 24).translate(0, .5, 0); this.totemGeometry = new THREE.CylinderGeometry(.55, .8, 1, 6).translate(0, .5, 0);
     this.wardGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1, true).translate(0, .5, 0);
     this.glows = []; this.wards = []; this.cache = new Map();
   }
   init(textures) {
     this.textures = textures; this.stone = worldMapped(textures.stone, { color: '#c4bcac', scale: 220, key: 'stone-unit' });
+    this.meshMaterial(assets.world.boulders).color.setScalar(1.5); // rubble: the mossy rock texture is dark
     const m = assets.world.minion; this.minionHeight = new THREE.Box3().setFromObject(m.scene).getSize(new THREE.Vector3()).y;
-    this.minionClips = clipsFor('minion', skinnedMeshOf(m.scene), ['idle', 'run', 'thrust', 'slam', 'death', 'hit']);
+    this.minionClips = clipsFor('minion', skinnedMeshOf(m.scene), ['idle', 'run', 'thrust', 'slam', 'cast', 'death', 'hit']);
   }
   meshGeometry(gltf) { let g = null; gltf.scene.traverse(o => { if (!g && o.isMesh) g = o.geometry; }); return g; }
   meshMaterial(gltf) { let g = null; gltf.scene.traverse(o => { if (!g && o.isMesh) g = o.material; }); return g; }
   // Two shared material sets for the lane soldiers: tabards take the team colour.
-  minionMaterials(team) {
-    const key = 'minion' + team; if (this.cache.has(key)) return this.cache.get(key);
-    const map = new Map(), uniforms = unitUniforms(team ? '#8e3443' : '#2f7f78'); uniforms.uRim.value.copy(RIM[team]); uniforms.uRimPower.value = .45;
+  // A ghost set (pale, see-through, strong rim) serves summons that walk and kinds without a model.
+  minionMaterials(team, ghost = false) {
+    const key = (ghost ? 'ghost' : 'minion') + team; if (this.cache.has(key)) return this.cache.get(key);
+    const map = new Map(), uniforms = unitUniforms(ghost ? '#9fc4d8' : team ? '#8e3443' : '#2f7f78'); uniforms.uRim.value.copy(RIM[team] || RIM[2]); uniforms.uRimPower.value = ghost ? 1.6 : .45;
+    if (ghost) { uniforms.uFade.value = .6; uniforms.uTintRange.value.set(0, .05); }
     assets.world.minion.scene.traverse(o => { if (o.isMesh && !map.has(o.name)) map.set(o.name, unitMaterial(o.material, uniforms, 'minion')); });
     map.set('*', [...map.values()][0]); map.uniforms = uniforms; this.cache.set(key, map); return map;
   }
@@ -270,13 +275,12 @@ export class Units {
     if (e.kind === 'camp' || e.kind === 'boss' || e.kind === 'leviathan') return new CreatureView(this, e);
     if (e.kind === 'summon' && !e.speed) return new TotemView(this, e);
     // Lane soldiers come from a pool per team; a summon that walks or an unknown kind is a pale ghost soldier.
-    const siege = !!e.siege, team = e.team === 1 ? 1 : 0, list = this.pool[siege ? 'siege' : 'minion'][team];
-    const v = list.pop() || new MinionView(this, team, siege); v.reset(e);
-    if (e.kind !== 'minion') v.ghost = true;
+    const role = e.role || (e.elder ? 'elder' : e.siege ? 'siege' : e.caster ? 'caster' : 'melee'), team = e.team === 1 ? 1 : 0, list = (this.pool[role] ||= [[], []])[team];
+    const v = e.kind === 'minion' ? list.pop() || new MinionView(this, team, role) : new MinionView(this, team, 'melee', true); v.reset(e);
     return v;
   }
   release(v) {
-    if (v instanceof MinionView && !v.ghost) { v.root.visible = false; this.pool[v.siege ? 'siege' : 'minion'][v.team].push(v); }
+    if (v instanceof MinionView && !v.ghost) { v.root.visible = false; (this.pool[v.role] ||= [[], []])[v.team].push(v); }
     else v.dispose();
   }
   // Brings every view up to date. visible(e) says whether team 0 sees the unit.

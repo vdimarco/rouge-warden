@@ -33,7 +33,8 @@ export const TIERS = [
   { name: 'Inner ward', hp: 5800, range: 410, damage: 240, rate: 1.05, xp: 180, gold: 160 },
   { name: 'Guardian', hp: 2600, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
 ];
-export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1 };
+// The core's armor makes the final siege take more than one push.
+export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1, armor: 0 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
@@ -68,7 +69,7 @@ function hero(s, team, kind, lane, human = false) {
 export function createMatch(kind = 0, seed = 49, lineup = null) {
   const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], missiles: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [9, 9], guardians: [2, 2], suddenDeath: false, wave: 0, nextWave: PACE.firstWave, objectiveAt: PACE.bossFirst, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
   for (let team = 0; team < 2; team++) {
-    add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: CORE.hp, maxHp: CORE.hp, radius: 130, sprite: 7, range: CORE.range, damage: CORE.damage, rate: CORE.rate });
+    add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: CORE.hp, maxHp: CORE.hp, radius: 130, sprite: 7, range: CORE.range, damage: CORE.damage, rate: CORE.rate, armor: CORE.armor });
     for (let lane = 0; lane < 3; lane++) TOWER_POSITIONS[team][lane].forEach((spot, tier) => {
       const t = TIERS[tier];
       add(s, { kind: 'tower', name: `${t.name} · ${LANE_NAMES[lane]}`, team, lane, tier, ...spot, hp: t.hp, maxHp: t.hp, radius: 42, range: t.range, damage: t.damage, rate: t.rate, sprite: 6 });

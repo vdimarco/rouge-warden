@@ -128,7 +128,7 @@ const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pin
 // Late-summer crowns: some still green, some turning gold.
 const TINTS = { oak: ['#e2d996', '#b7c27c', '#d9b874', '#c8cf8a'], willow: ['#a9bc8e', '#9fb486'], birches: ['#efe8c8', '#dfe4b0'], juniper: ['#d4dcc0'], pines: ['#ffffff', '#e6eedc'], pine: ['#ffffff'] };
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
-const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .5, juniper: .6, willow: .6, oak: .5, pines: .8 };
+const KEEP = { ferns: .38, mushrooms: .22, branch: .15, 'hollow-log': .45, boulders: .65, birches: .5, juniper: .6, willow: .6, oak: .5, pines: .8 };
 export class Props {
   constructor(scene, assets, textures) {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
@@ -144,11 +144,11 @@ export class Props {
       oak: { geometry: softCanopy(smooth(simplify(geometryOf(w.oak), 22), 4, .32), .62, .3, .85), material: tree(autumn, .03, .04, 0, '.2, .16, .045'), shadow: true, selfShadow: false },
       bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .04, 0, '.08, .12, .04'), shadow: false },
       shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .04, 0, '.18, .15, .05'), shadow: false },
-      boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true },
+      boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true, bright: 1.55 },
       arch: { geometry: simplify(geometryOf(w.arch), 28), material: tree(materialOf(w.arch), 0), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
       pillar: { geometry: new THREE.CylinderGeometry(.42, .5, 1, 10).translate(0, .5, 0), material: built(textures.stone, '#d3c9b6', 200), shadow: true },
-      log: { geometry: new THREE.CylinderGeometry(.5, .5, 1, 9).rotateZ(Math.PI / 2).translate(0, .45, 0), material: built(textures.dirt, '#7a6450', 120), shadow: false },
+      log: { geometry: new THREE.CylinderGeometry(.5, .5, 1, 9).rotateZ(Math.PI / 2).translate(0, .45, 0), material: built(textures.dirt, '#b09478', 120), shadow: false, bright: 1.3 },
       timber: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.dirt, '#6b5a48', 150), shadow: true },
       reeds: { geometry: reedGeometry(), material: plain('#8a8a52', .9), shadow: false },
     };
@@ -181,7 +181,7 @@ export class Props {
       const def = this.kinds[kind], n = list.length, matrices = new Float32Array(n * 16), colors = new Float32Array(n * 3), spots = new Float32Array(n * 4);
       list.forEach((it, i) => {
         e.set(it.tilt, it.rot, it.tilt * .6); q.setFromEuler(e); m4.compose(v.set(it.x, 0, it.z), q, sc.set(it.sx, it.sy, it.sz)); m4.toArray(matrices, i * 16);
-        col.set(it.color).toArray(colors, i * 3); spots.set([it.x, it.z, Math.max(it.sx, it.sz) * .7, it.sy], i * 4);
+        col.set(it.color).multiplyScalar(def.bright || 1).toArray(colors, i * 3); spots.set([it.x, it.z, Math.max(it.sx, it.sz) * .7, it.sy], i * 4);
       });
       const mesh = new THREE.InstancedMesh(def.geometry, def.materials[set], n); mesh.count = 0; mesh.frustumCulled = false;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.setColorAt(0, col); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
