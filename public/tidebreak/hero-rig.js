@@ -54,7 +54,10 @@ export function retarget(entry, mesh, name) {
   // Hips height: the source's vertical hip motion, in proportion to the target's hip height.
   const hipsTrack = entry.tracks.find(t => t.bone === 'Hips' && t.path === 'translation'), hips = byName.Hips;
   if (hipsTrack && hips && source.Hips && target.Hips) {
-    const ratio = target.Hips.position.y / (source.Hips.position.y || 1), base = hips.position.clone(), restY = source.Hips.position.y / entry.armatureScale;
+    // The rest position is kept on the bone, so a clip retargeted after another clip has moved the hips still starts
+    // from the rest height (userData survives a clone as plain data).
+    hips.userData.restPosition ??= hips.position.toArray();
+    const ratio = target.Hips.position.y / (source.Hips.position.y || 1), base = v3().fromArray(hips.userData.restPosition), restY = source.Hips.position.y / entry.armatureScale;
     const values = new Float32Array(hipsTrack.times.length * 3);
     hipsTrack.times.forEach((_, k) => { values[k * 3] = base.x; values[k * 3 + 1] = base.y + (hipsTrack.values[k * 3 + 1] - restY) * ratio; values[k * 3 + 2] = base.z; });
     tracks.push(new THREE.VectorKeyframeTrack(`Hips.position`, hipsTrack.times, values));
