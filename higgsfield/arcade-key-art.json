@@ -1,0 +1,13 @@
+{
+  "about": "Painted key art for the arcade machines and the SWITCH GAME list. Made with the Higgsfield MCP connector on 2026-10-05: model gpt_image_2_5 (flare), quality high, 1k, 16:9. Each request used the old machine art (a frame of the real game) as an image reference. The prompts are kept in the Higgsfield job history under each job ID. Run node scripts/arcade-key-art.mjs to download them to public/arcade/key/.",
+  "art": [
+    { "id": "drain", "job": "9f9d3d12-b534-4356-8509-e264437605cb", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014553_9f9d3d12-b534-4356-8509-e264437605cb.png" },
+    { "id": "olympus", "job": "b032c2c5-8b32-4328-abd7-e9344ec65969", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014553_b032c2c5-8b32-4328-abd7-e9344ec65969.png" },
+    { "id": "moonwell", "job": "e76555e7-bea9-450f-9b79-d6f26f92871b", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014553_e76555e7-bea9-450f-9b79-d6f26f92871b.png" },
+    { "id": "primordia", "job": "2aa8542f-687b-4734-99cc-2c8a969b9581", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014552_2aa8542f-687b-4734-99cc-2c8a969b9581.png" },
+    { "id": "breakthrough", "job": "341a7e62-d435-47e8-868e-c696999ddb53", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014554_341a7e62-d435-47e8-868e-c696999ddb53.png" },
+    { "id": "follow-suit", "job": "3c007bbe-2d67-43ac-9000-39fc25339f62", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014553_3c007bbe-2d67-43ac-9000-39fc25339f62.png" },
+    { "id": "river-rush", "job": "6e3c9dc8-1037-40ab-859d-e10b6722855e", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014554_6e3c9dc8-1037-40ab-859d-e10b6722855e.png" },
+    { "id": "lab", "job": "879b3d10-0070-44ad-9bb6-164947f020dc", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261005_014552_879b3d10-0070-44ad-9bb6-164947f020dc.png" }
+  ]
+}
