@@ -29,8 +29,8 @@
   <canvas id="battle" aria-label="Shore of the Ancients battlefield"></canvas>
   <div id="hud" hidden>
     <header><span class="wordmark">SHORE OF<br>THE ANCIENTS</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">06:00</time></div><div class="hud-corner"><button id="pause" class="pause" aria-label="Open menu (Esc)" title="Menu (Esc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span><kbd>Esc</kbd></button><button id="hud-sound" class="hud-sound" aria-pressed="true" aria-label="Sound on" title="Sound on"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="M16 9l5 6M21 9l-5 6"/></svg></button><button id="muted-chip" class="muted-chip" hidden>Sound is off · Turn on</button></div></header>
-    <div id="gpu-note" role="status" hidden><span>This browser draws the game without the graphics card, so it can lag. Turn on graphics acceleration in the browser settings.</span><button id="gpu-note-close" aria-label="Close this note">×</button></div>
     <div id="perf" hidden><pre></pre><button>Copy</button></div>
+    <div id="gpu-note" role="status" hidden><span>This browser draws the game without the graphics card, so it can lag. Turn on graphics acceleration in the browser settings.</span><button id="gpu-note-close" aria-label="Close this note">×</button></div>
     <button id="map-button" aria-label="Open arena map"><canvas id="minimap" width="180" height="180"></canvas><small>MAP ↗</small></button>
     <div id="objective"><b id="realm">MIDNIGHT TOWN</b><span id="realm-count">Woods arrive in 40s</span><div class="realm-track"><i id="realm-fill"></i></div><span id="objective-sub">Break the outer ward, then the inner ward.</span></div>
     <button id="recall" class="utility">RETURN <small>Heal at home</small></button>

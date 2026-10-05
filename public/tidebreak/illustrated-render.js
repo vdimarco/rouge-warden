@@ -12,6 +12,9 @@ import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprite
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
 import { HERO_IDENTITIES, identityFor, identitySkill } from './hero-identities.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440, QUALITY_FLOOR = .5;
+// Backing pixels per CSS pixel: the screen's own ratio (at most 2), limited by the pixel budget, then scaled so the
+// backing pixel count is in proportion to quality on every screen (a step from 1 to .8 removes 20% of the pixels).
+export const backingRatio = (width, height, deviceRatio = 1, quality = 1) => Math.max(.35, Math.min(deviceRatio || 1, 2, Math.sqrt(PIXEL_BUDGET / (width * height))) * Math.sqrt(quality));
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
 export async function loadArt() {
@@ -45,7 +48,7 @@ export class Renderer {
   // quality drops when frames are slow (see adapt), so an ultra-wide full screen keeps a smooth frame rate.
   resize() {
     this.width = innerWidth; this.height = innerHeight; this.quality ??= 1;
-    const budget = PIXEL_BUDGET * this.quality; this.dpr = Math.max(.5, Math.min(devicePixelRatio || 1, 2, Math.sqrt(budget / (this.width * this.height))));
+    this.dpr = backingRatio(this.width, this.height, devicePixelRatio, this.quality);
     this.canvas.width = this.width * this.dpr; this.canvas.height = this.height * this.dpr;
     this.scale = Math.min(this.width / 1200, this.height / 1680);
     this.anchor = this.height < 520 ? .70 : .78;
@@ -94,7 +97,7 @@ export class Renderer {
     if (slow && q > QUALITY_FLOOR && this.clock > (this.noDropUntil ?? 0)) {
       this.hold = Math.min(60000, (this.hold ?? 5000) * 2); this.raiseAt = this.clock + this.hold;
       this.descent = { quality: q, median, steps: 1 }; this.quality = Math.max(QUALITY_FLOOR, q * .8); this.resize();
-    } else if (!this.descent && median < Math.max(refresh * 1.15, 17.5) && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
+    } else if (!this.descent && median < Math.max(refresh * 1.15, 21) && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
   }
   // A resize or a scene repaint disturbs a few frames, so the next judgement starts from fresh samples.
   restartTiming() { this.window = []; this.nextAdapt = (this.clock ?? 0) + 1500; }
