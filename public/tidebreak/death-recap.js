@@ -36,7 +36,7 @@ export function recapTip(r) {
   const share = k => r.types[k]?.share || 0, top = r.sources[0];
   const dodgeable = r.warned.filter(w => w.dodgeable), warnedShare = dodgeable.reduce((n, w) => n + w.amount, 0) / Math.max(1, r.total);
   if (share('tower') >= .35) return { cause: 'tower', tip: 'Tower fire grows with each shot. Leave its range when the red lock-on line appears.' };
-  if (warnedShare >= .35) { const n = dodgeable.reduce((a, w) => a + w.count, 0); return { cause: 'warned', tip: `${n} warned ${n === 1 ? 'attack' : 'attacks'} hit you. Step out of the red shape before its ring fills.` }; }
+  if (warnedShare >= .35) { const n = dodgeable.reduce((a, w) => a + w.count, 0); return { cause: 'warned', tip: `${n} warned ${n === 1 ? 'attack' : 'attacks'} hit you. Leave the red shape, or the attacker's reach, before the hit lands.` }; }
   if (r.controlled >= 1.5) return { cause: 'control', tip: `You were stunned or feared for ${r.controlled.toFixed(1)} s. Stay out of stun range, or keep an escape ready.` };
   if (r.heroes >= 3) return { cause: 'outnumbered', tip: 'Three enemies hit you together. Fight near your team, or retreat when enemies are missing from the map.' };
   if (share('neutral') >= .5) return { cause: 'neutral', tip: 'The neutral beast did most of the damage. Dodge its warning, then hit it while it is EXPOSED.' };

@@ -90,7 +90,52 @@ assert.deepEqual(Object.keys({ 3: 1, 7: 1 }).map(Number).filter(h => isEngage({ 
 { // A placed zone is judged by its placement, and a late hero hit ends a miss exposure.
   const { s, p, enemy } = setup(2), t = foeHero(s, enemy, { x: 2400, y: 2420 });
   assert.ok(requestCast(s, p, 2, { x: 0, y: -1, distance: 380 })); advance(s, .4); assert.ok(!(p.exposedUntil > s.time), 'witchfire placement is not a miss');
-  Object.assign(p, { exposedUntil: s.time + .5, exposeReason: 'miss' }); damage(s, p, t, 10); assert.ok(p.exposedUntil <= s.time, 'a late hit ends the miss exposure');
+  p.cd = [0, 0, 0, 0]; p.recoveryUntil = 0; t.x += 3000; assert.ok(requestCast(s, p, 2, { x: 0, y: -1, distance: 380 })); advance(s, .4);
+  assert.ok(!(p.exposedUntil > s.time), 'a placed zone counts as a commitment wherever it lands');
+}
+{ // A miss stays a miss: damage from anything but the cast itself never cancels the window.
+  const { s, p, enemy } = setup(4), t = foeHero(s, enemy);
+  assert.ok(requestCast(s, p, 2, { x: 0, y: -1, distance: 300 })); t.x += 700; advance(s, .45);
+  assert.equal(p.exposeReason, 'miss'); const until = p.exposedUntil;
+  t.x -= 700; damage(s, p, t, 50, 'attack'); damage(s, p, t, 50);
+  assert.equal(p.exposedUntil, until, 'a basic attack or a bleed tick does not end the punish window');
+}
+{ // A charge is judged by what the charge hit, not by other damage in the same window.
+  const { s, p, enemy } = setup(7), far = foeHero(s, enemy, { x: 2400, y: 1000 });
+  far.bleed = { source: p.id, until: s.time + 4, tick: s.time, amount: 10 };
+  assert.ok(requestCast(s, p, 0, { x: 0, y: -1, distance: 400 })); advance(s, 1.3);
+  assert.equal(p.exposeReason, 'miss', 'a bleed tick elsewhere cannot make a missed charge count as a hit');
+}
+{ // A charge that kills what it hit still counts as a hit, although the body is gone by judge time.
+  const { s, p, enemy } = setup(7); foeHero(s, enemy, { x: 2400, y: 1000 });
+  const wisp = { id: 951, kind: 'minion', team: 1, x: p.x, y: p.y - 200, radius: 16, hp: 40, maxHp: 400, shield: 0, armor: 0, speed: 0, damage: 0, range: 0, attackCd: 999, stun: 0, slow: 0, fear: 0, lane: 1, lastHit: 0 };
+  s.units.push(wisp);
+  assert.ok(requestCast(s, p, 0, { x: 0, y: -1, distance: 400 })); advance(s, 1.3);
+  assert.equal(s.units.some(u => u.id === wisp.id), false, 'the charge killed the wisp');
+  assert.ok(!(p.exposedUntil > s.time), 'a charge that kills what it hit is not a miss');
+}
+{ // A hero who dodges out of the locked shape still earns the punish window, wisps or not.
+  const { s, p, enemy } = setup(4), t = foeHero(s, enemy, { x: 2400, y: 2500 });
+  const wisp = { id: 952, kind: 'minion', team: 1, x: 2400, y: 2650, radius: 16, hp: 5000, maxHp: 5000, shield: 0, armor: 0, speed: 0, damage: 0, range: 0, attackCd: 999, stun: 0, slow: 0, fear: 0, lane: 1, lastHit: 0 };
+  s.units.push(wisp); p.target = t.id; // the player aimed at the hero, with a wisp in the way
+  assert.ok(requestCast(s, p, 2, { x: 0, y: -1, distance: 300 })); assert.equal(p.castIntent.heroAim, true, 'the aim is judged when the cast locks');
+  t.x += 900; advance(s, .45);
+  assert.equal(t.hp, 5000, 'the hero stepped out of the lance');
+  assert.equal(p.exposeReason, 'miss', 'a wisp in the cone does not pay for a dodged hero');
+}
+{ // A commit still waiting to be judged is judged before the next cast opens its own.
+  const { s, p, enemy } = setup(7); foeHero(s, enemy, { x: 2400, y: 1000 });
+  assert.ok(requestCast(s, p, 0, { x: 0, y: -1, distance: 400 })); advance(s, .9);
+  assert.ok(p.exposedUntil > s.time && p.exposeReason === 'miss', 'the missed charge is judged, not discarded by the next cast');
+}
+{ // A self-centred ultimate is judged by what its own shape could reach.
+  const { s, p, enemy } = setup(0); foeHero(s, enemy, { x: 2400, y: 2800 - 500 });
+  assert.ok(requestCast(s, p, 3, { x: 0, y: -1, distance: 500 })); advance(s, .4);
+  assert.equal(p.exposeReason, 'miss', 'a hero outside the burst does not make it a hero-aimed cast');
+  const second = setup(0), minion = { id: 950, kind: 'minion', team: 1, x: second.p.x + 80, y: second.p.y, radius: 16, hp: 5000, maxHp: 5000, shield: 0, armor: 0, speed: 0, damage: 0, range: 0, attackCd: 999, stun: 0, slow: 0, fear: 0, lastHit: 0 };
+  second.s.units.push(minion); foeHero(second.s, second.enemy, { x: second.p.x, y: second.p.y - 500 });
+  assert.ok(requestCast(second.s, second.p, 3, { x: 0, y: -1, distance: 500 })); advance(second.s, .4);
+  assert.equal(second.p.exposeReason, 'ultimate', 'hitting what the burst covers counts as a hit');
 }
 { // Interrupting a cast staggers the caster.
   const { s, p, enemy } = setup(4); foeHero(s, enemy); assert.ok(requestCast(s, p, 2, { x: 0, y: -1, distance: 300 })); p.stun = .2; advance(s, .02);
@@ -112,6 +157,11 @@ assert.deepEqual([1, 2, 3].map(w => [IMPACT_FEEL[w].hitstop, IMPACT_FEEL[w].shak
   feel.update(s, p.id, .1); assert.equal(feel.hitstop, 0, 'hitstop lasts its 90 ms only');
   s.impacts.push({ id: 2, time: s.time, x: 0, y: 0, weight: 1, source: p.id, target: t.id }); s.nextImpact = 2; feel.update(s, p.id, .01); assert.equal(feel.hitstop, 0, `at most one hitstop per ${HITSTOP_GAP} s`);
   s.impacts.push({ id: 3, time: s.time, x: 0, y: 0, weight: 3, source: 50, target: 51 }); s.nextImpact = 3; assert.equal(feel.update(s, p.id, .3).impacts.length, 0, 'impacts that do not involve the player are ignored');
+  const hurtPlayer = { ...p, hp: p.maxHp * .2 }; const lowFeel = new ImpactFeel();
+  lowFeel.update({ ...s, units: [hurtPlayer], impacts: [] }, hurtPlayer.id, .016); const lowEdge = lowFeel.edge;
+  lowFeel.idle(.016); assert.ok(lowEdge > .1 && lowFeel.edge > .1, 'a pause keeps the low-health edge');
+  feel.shake = 8; feel.hitstop = .09; feel.hurt = 1; feel.idle(.3); feel.idle(.3);
+  assert.ok(feel.shake === 0 && feel.hitstop === 0 && feel.hurt < .1 && feel.edge < .1, 'a held match keeps fading instead of freezing');
   const quiet = new ImpactFeel(); quiet.update(s, p.id, 0); s.impacts.push({ id: 4, time: s.time, x: 0, y: 0, weight: 3, source: p.id, target: t.id }); s.nextImpact = 4;
   quiet.update(s, p.id, 0, { reducedMotion: true }); assert.equal(quiet.hitstop + quiet.shake, 0, 'reduced motion turns off hitstop and shake');
   p.hp -= p.maxHp * .1; assert.ok(near(feel.update(s, p.id, .016).hurt, .1), 'damage taken reports the share of health lost'); assert.ok(feel.edge > .5, 'and flashes the screen edge');
@@ -132,12 +182,22 @@ assert.deepEqual([1, 2, 3].map(w => [IMPACT_FEEL[w].hitstop, IMPACT_FEEL[w].shak
   let started = null; for (let i = 0; i < 60 && started === null; i++) { step(s, { attack: false }, .01); if (p.castIntent?.slot === 1) started = s.time; }
   assert.ok(started !== null && started - p.recoveryUntil < .011 + 1e-9, 'the buffered cast starts on the first free step'); assert.equal(p.queuedCast, null);
   p.recoveryUntil = s.time + .1; p.castIntent = null; requestCast(s, p, 2, { x: 0, y: -1 }); p.cd[2] = 99; advance(s, .5); assert.equal(p.queuedCast, null, 'a buffered press that cannot cast expires');
+  p.recoveryUntil = s.time + .1; p.cd[1] = 99; requestCast(s, p, 1, { x: 0, y: -1 }); assert.equal(p.queuedCast, null, 'a spell on cooldown is never shown as QUEUED');
+  p.cd[1] = 0; const mana = p.mana; p.mana = 0; requestCast(s, p, 1, { x: 0, y: -1 }); assert.equal(p.queuedCast, null, 'a spell you cannot pay for is never shown as QUEUED'); p.mana = mana;
 }
 { // The third chain strike on a hero has a warned windup; stepping out of range dodges it.
   const { s, p, enemy } = setup(3), t = foeHero(s, enemy, { x: 2400, y: 2800 - 150 }); p.comboNext = 2; p.comboTarget = t.id; p.comboUntil = 99; p.attackCd = 0;
   step(s, { target: t.id }, .01); const pending = p.pendingAttack; assert.ok(pending.telegraph, 'the third strike is warned'); assert.ok(p.attackWindup >= .17 + .08 - 1e-9);
   t.y = p.y - (p.range + t.radius + DODGE_SLACK + 20); const hp = t.hp; advance(s, .4);
-  assert.equal(t.hp, hp, 'stepping out of range dodges the strike'); assert.ok(s.combatFeedback.some(f => f.type === 'dodge' && f.source === t.id), 'the dodge is called out');
+  assert.equal(t.hp, hp, 'stepping out of range dodges the strike');
+  const dodge = (s.combatFeedback || []).find(f => f.type === 'dodge');
+  assert.ok(dodge && dodge.target === t.id && dodge.x === t.x, 'the dodge is called out over the hero who stepped out');
+}
+{ // A stunned attacker is not a dodge by the defender.
+  const { s, p, enemy } = setup(3), t = foeHero(s, enemy, { x: 2400, y: 2800 - 150 }); p.comboNext = 2; p.comboTarget = t.id; p.comboUntil = 99; p.attackCd = 0;
+  step(s, { target: t.id }, .01); assert.ok(p.pendingAttack.telegraph);
+  p.stun = 1; advance(s, .4);
+  assert.equal((s.combatFeedback || []).some(f => f.type === 'dodge'), false, 'a stun on the attacker is not the defender dodging');
 }
 
 // ---- Rule 10: the death recap.
@@ -184,7 +244,9 @@ assert.equal(recapTip({ types: { basic: { share: .9 } }, warned: [], controlled:
   s.time = 31; clock = objectiveClock(s, p); assert.equal(clock.hunt.state, 'soon'); assert.equal(clock.rest, null, 'no rest just before a peak');
   s.units.push({ id: 800, kind: 'boss', hp: 10, x: 0, y: 0 }); assert.equal(objectiveClock(s, p).hunt.state, 'peak');
   p.lastHit = s.time; s.units.pop(); s.time = 5; assert.equal(objectiveClock(s, p).rest, null, 'no rest while fighting');
-  assert.ok(objectiveClock(s, p).realm.seconds > 0, 'the realm countdown is part of the clock');
+  const realmClock = objectiveClock(s, p);
+  assert.ok(realmClock.realm.seconds > 0, 'the realm countdown is reported');
+  assert.equal(realmClock.items.includes(realmClock.realm), false, 'but the HUD keeps its own realm line, so the clock does not repeat it');
 }
 // ---- Rule 7: lane mana regeneration.
 assert.equal(manaRegen(1), 3.75); assert.equal(manaRegen(10), 6);

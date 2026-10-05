@@ -54,20 +54,24 @@ export function noteControl(s, e, dt) {
 // needs a hero hit; a cast aimed at anything else needs any hit. A cast that places a
 // zone, trap or missile is judged by its placement, since its damage comes later.
 const placed = s => s.zones.length + s.traps.length + s.missiles.length;
-export function openCommit(s, e, slot, heroAim) { e.commit = { slot, at: s.time, judgeAt: s.time, hit: false, ult: slot === 3, heroAim, placed: placed(s) }; }
+export function openCommit(s, e, slot, heroAim) { judgeCommit(s, e); e.commit = { slot, at: s.time, judgeAt: s.time, hit: false, ult: slot === 3, heroAim, placed: placed(s) }; }
 export function closeCommit(s, e, cast) {
   if (!e.commit) return;
   if (!cast) { e.commit = null; return; }
   if (placed(s) > e.commit.placed) e.commit.hit = true;
-  if (e.travel && e.travel.start === s.time) e.commit.judgeAt = s.time + e.travel.duration;
+  // A charge is judged when it ends, by what the charge itself hit. Damage from
+  // anything else (a bleed tick, a summon, a basic attack) never counts for it.
+  if (e.travel && e.travel.start === s.time) { e.commit.judgeAt = s.time + e.travel.duration; e.commit.travel = e.travel; }
   judgeCommit(s, e);
 }
 export function noteCommitHit(s, credit, target) {
-  if (credit?.kind !== 'hero' || target.team === credit.team || target.team < 0 && credit.commit?.heroAim) return;
-  if (target.kind !== 'hero' && credit.commit?.heroAim) return;
-  if (credit.commit) credit.commit.hit = true;
-  // A late hero hit from a placed zone or missile ends an exposure that a miss caused.
-  if (target.kind === 'hero' && credit.exposeReason === 'miss' && credit.exposedUntil > s.time) { credit.exposedUntil = s.time; credit.exposeReason = ''; }
+  const c = credit?.kind === 'hero' && credit.commit;
+  if (!c || target.team === credit.team || target.team < 0 && c.heroAim) return;
+  if (target.kind !== 'hero' && c.heroAim) return;
+  // A charge counts only what the charge itself touched. The travel marks each body in
+  // hitIds just before it damages it, so a bleed tick elsewhere never counts for it.
+  if (c.travel && !(credit.travel === c.travel && c.travel.hitIds.includes(target.id))) return;
+  c.hit = true;
 }
 export function judgeCommit(s, e) {
   const c = e.commit; if (!c || s.time < c.judgeAt) return;
@@ -102,9 +106,9 @@ export function lockRemaining(s, e) {
   const i = e.castIntent;
   return Math.max(i ? i.at - s.time + (i.recovery || 0) : 0, (e.recoveryUntil || 0) - s.time, 0);
 }
-export function bufferCast(s, e, slot, aim) {
+export function bufferCast(s, e, slot, aim, ready = true) {
   const left = lockRemaining(s, e);
-  if (left <= 0 || left > CAST_BUFFER + 1e-9) return false;
+  if (!ready || left <= 0 || left > CAST_BUFFER + 1e-9) return false;
   e.queuedCast = { slot, aim, at: s.time, until: s.time + left + .25 };
   return true;
 }

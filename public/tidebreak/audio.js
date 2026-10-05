@@ -241,8 +241,8 @@ export class Sound {
   // ---- Combat feel: tells, commits, impacts and damage taken.
   // A rising swell as long as the enemy windup, panned to the caster. Brighter when it is aimed at you.
   windup(x, y, { ult = false, neutral = false, aimed = false, duration = .5 } = {}) {
-    const s = this.spatial(x, y), g = Math.max(aimed ? .55 : .2, s.gain) * (aimed ? 1.25 : .8), d = Math.max(.3, Math.min(.9, duration));
-    if (g < .1 || !this.throttle('windup', .1)) return;
+    const s = this.spatial(x, y), g = (aimed ? Math.max(.55, s.gain) * 1.25 : s.gain * .8), d = Math.max(.3, Math.min(.9, duration));
+    if (g < .12 || !this.throttle('windup', .1)) return;
     const root = neutral ? 110 : ult ? 147 : 196;
     this.tone(root, d, .03 * g, 'sawtooth', root * (aimed ? 2.6 : 2), 0, { pan: s.pan, attack: d * .8, reverb: .25 });
     this.noise(d, .035 * g, { freq: 500, end: aimed ? 4200 : 2600, q: 3, pan: s.pan, attack: d * .85 });

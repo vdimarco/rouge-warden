@@ -254,7 +254,8 @@ function resolveAttack(s, e) {
   e.pendingAttack = null;
   const t = s.units.find(u => u.id === pending.target);
   const slack = e.kind === 'hero' && t?.kind === 'hero' ? DODGE_SLACK : 90;
-  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > e.range + t.radius + slack || !lineOfSight(s, e, t)) { if (pending.telegraph && t?.hp > 0 && e.hp > 0) emitCombatFeedback(s, t, e, 'dodge', 'DODGED'); e.comboNext = 0; e.comboUntil = 0; return; }
+  const stepped = t && t.hp > 0 && e.hp > 0 && e.stun <= 0 && !(e.disarmedUntil>s.time) && distance(e, t) > e.range + t.radius + slack;
+  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > e.range + t.radius + slack || !lineOfSight(s, e, t)) { if (pending.telegraph && stepped) emitCombatFeedback(s, t.player ? t : e, t, 'dodge', 'DODGED'); e.comboNext = 0; e.comboUntil = 0; return; }
   if (e.kind === 'hero') { e.comboNext = (pending.variant + 1) % 3; e.comboUntil = s.time + 2; e.lastBasicHit = s.time; e.lastBasicVariant = pending.variant; }
   if(e.kind==='tower'&&t.kind==='hero'){e.towerHits=e.towerTarget===t.id&&e.towerUntil>s.time?(e.towerHits||0)+1:1;e.towerTarget=t.id;e.towerUntil=s.time+2;}
   withContext(s, { source: e.id, label: e.kind === 'hero' ? BASIC_ATTACKS[e.hero]?.[pending.variant] || 'Basic attack' : e.kind === 'tower' || e.kind === 'core' ? 'Tower shot' : 'Basic attack', telegraphed: !!pending.telegraph || e.kind === 'tower', dodgeable: !!pending.telegraph }, () => damage(s, e, t, pending.amount, 'attack'));
@@ -297,7 +298,7 @@ export function castTarget(s,e,slot,aim) {
 }
 export function requestCast(s,e,slot,aim,{bot=false}={}) {
   if(e.kind!=='hero'||![0,1,2,3].includes(slot)||!e.skillRanks[slot]||spellBlocked(s,e,slot)||s.winner!==null)return false;
-  if(e.castIntent||e.recoveryUntil>s.time){if(!bot)bufferCast(s,e,slot,aim);return false;}
+  if(e.castIntent||e.recoveryUntil>s.time){if(!bot)bufferCast(s,e,slot,aim,e.cd[slot]<=0&&canAfford(e,slot)||slot===0&&canReturn(s,e));return false;}
   if(slot===0&&canReturn(s,e))return cast(s,e,slot,aim);
   if(e.cd[slot]>0||!canAfford(e,slot))return false;
   const target=castTarget(s,e,slot,aim);
@@ -307,7 +308,7 @@ export function requestCast(s,e,slot,aim,{bot=false}={}) {
   const angle=aim&&Math.hypot(aim.x,aim.y)>.1?Math.atan2(aim.y,aim.x):target?Math.atan2(target.y-e.y,target.x-e.x):e.facing;
   const locked={x:Math.cos(angle),y:Math.sin(angle),distance:aim?.distance??(target?distance(e,target):undefined)};
   const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:isEngage(e,slot)?engageShape(e,angle,e.skillRanks[slot]):spellShape(e,slot,locked);
-  e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape};
+  e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape,heroAim:target?.kind==='hero'&&insideWarning(target,shape,20)};
   e.pendingAttack=null;e.facing=angle;e.revealedUntil=s.time+timing.windup+1;e.recall=0;
   return true;
 }
@@ -467,7 +468,7 @@ function resolveIntent(s,e){
  e.castIntent=null;
  if(intent.slot===2&&[0,8].includes(e.hero)&&(!t||t.hp<=0||!canSee(s,e,t)||!lineOfSight(s,e,t)||distance(e,t)>=540))return;
  // A targeted cast lands on its locked target, so only aimed casts can miss.
- e.target=intent.target||0;if(!intent.shape.targetId)openCommit(s,e,intent.slot,t?.kind==='hero');
+ e.target=intent.target||0;if(!intent.shape.targetId)openCommit(s,e,intent.slot,!!intent.heroAim);
  const done=withContext(s,{source:e.id,label:KITS[e.hero]?.[intent.slot]?.name||'Spell',telegraphed:true,dodgeable:true},()=>cast(s,e,intent.slot,intent.aim,{lockedTarget:intent.shape.targetId?t:undefined}));
  if(done){e.recoveryUntil=s.time+(intent.recovery||0);if(intent.slot===3)pushImpact(s,e,e,2,'ultimate');}
  closeCommit(s,e,done);

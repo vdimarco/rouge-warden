@@ -7,7 +7,8 @@ export const HITSTOP_GAP = .3, LOW_HEALTH = .3;
 export const feelFor = weight => IMPACT_FEEL[Math.max(1, Math.min(3, weight | 0))];
 export class ImpactFeel {
   constructor() { this.reset(null); }
-  reset(s) { this.state = s; this.seen = s?.nextImpact || 0; this.clock = 0; this.hitstop = 0; this.shake = 0; this.frozen = new Set(); this.freezeAt = 0; this.nextStop = 0; this.hurt = 0; this.edge = 0; this.hp = null; this.deaths = null; }
+  lowEdge() { return this.low ? .22 + .12 * Math.sin(this.clock * 7) : 0; }
+  reset(s) { this.state = s; this.low = false; this.seen = s?.nextImpact || 0; this.clock = 0; this.hitstop = 0; this.shake = 0; this.frozen = new Set(); this.freezeAt = 0; this.nextStop = 0; this.hurt = 0; this.edge = 0; this.hp = null; this.deaths = null; }
   // Call once per rendered frame with the real frame time. Returns new impacts and the
   // share of health the player lost since the last frame, for sound.
   update(s, playerId, frameDt, { reducedMotion = false } = {}) {
@@ -26,10 +27,15 @@ export class ImpactFeel {
       if (this.hp !== null && p.deaths === this.deaths && p.hp < this.hp) out.hurt = (this.hp - p.hp) / p.maxHp;
       this.hp = p.hp; this.deaths = p.deaths;
       this.hurt = Math.max(this.hurt * Math.exp(-frameDt * 5), Math.min(1, out.hurt * 6));
-      const low = p.hp > 0 && p.hp < p.maxHp * LOW_HEALTH ? .22 + .12 * Math.sin(this.clock * 7) : 0;
-      this.edge = Math.min(1, Math.max(this.hurt, low));
+      this.low = p.hp > 0 && p.hp < p.maxHp * LOW_HEALTH;
+      this.edge = Math.min(1, Math.max(this.hurt, this.lowEdge()));
     }
     return out;
+  }
+  // Held match (paused, or the arcade switcher open): keep fading, read no new impacts.
+  idle(frameDt) {
+    this.clock += frameDt; this.hitstop = Math.max(0, this.hitstop - frameDt); this.shake *= Math.exp(-frameDt * 11); if (this.shake < .2) this.shake = 0;
+    this.hurt *= Math.exp(-frameDt * 5); this.edge = Math.min(1, Math.max(this.hurt, this.lowEdge())); this.seen = this.state?.nextImpact || this.seen;
   }
   // The time a renderer uses for a unit's pose: frozen at the impact during hitstop.
   poseTime(e, time) { return this.hitstop > 0 && this.frozen.has(e.id) ? Math.min(time, this.freezeAt) : time; }

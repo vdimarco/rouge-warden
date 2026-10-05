@@ -24,7 +24,7 @@ Every claim from the audit was checked in the code before it was used; where the
 | 5 | Damage numbers sized by amount and coloured by type; openings are gold. A gold chime on a last hit. A low impact thud at each hitstop. | `sim.js`, `audio.js` (`lastHit`, `impact`), `main.js` |
 | 9 Skill expression | Visible input buffer: a press in the last 0.12 s of a cast or a recovery is kept and shown as QUEUED on the button, then cast on the first free step. | `combat-tells.js` (`bufferCast`, `lockRemaining`), `sim.js`, `main.js`, `combat-feel.css` |
 | 9 | A quiet commit click when your own cast starts its windup. | `audio.js` (`commit`), `main.js` |
-| 9 | Outplay for basic attacks: the third chain strike on a hero gets +0.08 s windup and an arc tell, and its slack past attack range drops from 90 to 35 units (scaled by map size). Stepping out makes it miss and shows DODGED. | `sim.js`, `combat-tells.js` (`DODGE_SLACK`), `combat-tells-draw.js`, `combat-feedback.js` |
+| 9 | Outplay for basic attacks: the third chain strike on a hero gets +0.08 s windup and a reach ring, and its slack past attack range drops from 90 to 35 units (scaled by map size). Stepping out of that reach makes it miss and shows DODGED over the hero who dodged. | `sim.js`, `combat-tells.js` (`DODGE_SLACK`), `combat-tells-draw.js`, `combat-feedback.js` |
 | 6 Target priority | Camps fight like their art: the mage and the archer shoot a line, the ogre and the knight cleave, each with its own warning label. | `encounters.js` |
 | 6 | Marks in the world: a gold diamond on a wisp your next basic attack can finish, a HEALER cross on a healing summon. | `combat-tells-draw.js`, `illustrated-render.js` |
 | 8 Pressure rhythm | Objective clock under the score: a Wild Hunt countdown that turns gold and sounds a horn in the last 10 s, and a QUIET rest hint when you are out of combat with no peak within 20 s. | `objective-clock.js`, `main.js`, `combat-feel.css` |
@@ -44,7 +44,7 @@ All of this is sim or presentation data, drawn today in `illustrated-render.js` 
 |---|---|---|
 | `castIntent.shape.shape === 'path'` with `tx`, `ty`, `radius`, `engage` | hero | An engage tell. Draw the path from the caster to `tx,ty` and a circle of `radius` at the end. `insideWarning` (combat-rules.js) is the hit test. |
 | `lockTarget`, `lockStart`, `lockAt` | tower, core | Tower target lock. Draw a tether to the unit with id `lockTarget`, dashed to solid over `lockStart..lockAt`, plus a ring on the target. |
-| `pendingAttack.telegraph`, `pendingAttack.at` | hero | A warned third basic strike. Draw the cone at `e.range + target.radius + DODGE_SLACK`, half width 0.3. |
+| `pendingAttack.telegraph`, `pendingAttack.at` | hero | A warned third basic strike. Draw a ring at `e.range + target.radius + DODGE_SLACK` around the attacker, plus a line to the target. It is a ring, not a cone: the rule that makes the strike miss is range alone. |
 | `exposedUntil`, `exposeReason` (`miss`, `ultimate`, `interrupt`) | hero, camp, boss | The punish window. Already drawn as the EXPOSED ring and label. |
 | `recoveryUntil` | hero | The shorter lock after a cast that hit. |
 | `queuedCast.slot` | player | A buffered press. The HUD shows QUEUED. |
@@ -70,33 +70,60 @@ All of this is sim or presentation data, drawn today in `illustrated-render.js` 
 `.recap-warned`, `.recap-control`, `.recap-tip`, `.recap-close`), `#hurt-edge`, `#objective-clock`, and the class `queued` on a
 `[data-skill]` button. All of it is in the new `combat-feel.css`. No existing id or selector changed.
 
+## 2b. Review fixes
+
+An adversarial review of the diff inside this session found these, and each one is fixed with a test:
+
+- A miss's punish window was cancelled by any later hit the exposed hero landed, including a bleed tick or a basic attack.
+  The rollback is gone; a cast that places a zone, trap or missile already counts as a commitment when it is placed.
+- Stone Golem's charge was judged by any damage during its flight (it is the only travelling cast with a windup, so the only
+  one that opens a commit). A hit now counts only while the charge itself is touching that body. A second round found that
+  resolving the ids at judge time lost a body the charge had killed, which read as a miss; the hit is recorded as it happens.
+- The aim of a cast was judged when it resolved, so a hero who dodged out of the shape turned the cast into a non-hero cast and
+  any wisp in the shape paid for the dodge. The aim is decided when the cast locks (`castIntent.heroAim`).
+- A commit still waiting on a charge was discarded by the next cast. `openCommit` judges any open commit first.
+- A pause held the low-health screen edge at zero. `ImpactFeel.idle` keeps it.
+- A self-centred ultimate asked for a hero hit when the auto-target scan found a hero 500 units away that the burst could
+  never reach. The commit now asks for a hero hit only when that hero is inside the locked shape.
+- The third-strike tell drew a cone while the dodge rule was range alone. It now draws a ring at exactly the reach the rule
+  uses, plus a line to the target.
+- A stun on the attacker credited the defender with DODGED. The call now fires only when the target stepped out of reach, and
+  the label is drawn over the hero who dodged.
+- A press for a spell on cooldown or with too little mana was shown as QUEUED and then failed silently. It is no longer buffered.
+- The realm entry never reached the HUD list. It stays in the returned object (the HUD has its own realm line) and the test
+  says so, instead of asserting a feature that does not ship.
+- Hitstop, shake and the red edge froze while the match was paused or the arcade switcher was open. `ImpactFeel.idle(dt)`
+  keeps them fading without reading new impacts.
+- The windup sound had a gain floor that defeated its own distance cutoff, so every visible windup played at near-full volume.
+
 ## 3. Measurements
 
-Seeded autopilot matches, 3 seeds x 12 kits, dt 0.05, to the match limit
+Seeded autopilot matches, 3 seeds x 12 kits, dt 0.05, to the match limit, measured **after merging the map branch**
 (script: `/tmp/claude-0/-home-user-rouge-warden/fc085bc9-d6ef-56de-b04e-e20284e4d207/scratchpad/telemetry.mjs`, not in the repo).
 
 | Measure | Audit target | After |
 |---|---|---|
-| Hero exposures punished (any hero damage inside the window) | - | 29.5% of 1867 |
-| Recovery after a **miss** punished | at least 30% | **30.7%** of 843 |
-| Death recap coverage | 100% | **100%** of 440 deaths |
+| Hero exposures punished (any hero damage inside the window) | - | 29.3% of 3817 |
+| Recovery after a **miss** punished | at least 30% | **35.1%** of 1770 |
+| Death recap coverage | 100% | **100%** of 933 deaths |
 | Recap source totals match the health and shield lost | - | 100% |
-| Sources in a recap (median) | - | 3 |
-| Share of a death from warned hits (median) | - | 40% |
-| Shortest bot cast tell | 0.3 s minimum | **0.45 s** (median 0.5 s), 7655 casts |
+| Sources in a recap (median) | - | 2 |
+| Share of a death from warned hits (median) | - | 37% |
+| Shortest bot cast tell | 0.3 s minimum | **0.45 s** (median 0.5 s), 15877 casts |
 | Wisp DEFEATED labels | 0% | 0% |
-| Dodged warned basic strikes | - | 63 (bots do not yet try to dodge them, so this is a floor) |
+| Dodged warned basic strikes | - | 77 (bots do not yet try to dodge them, so this is a floor) |
 
 Mana (two scripts, `mana.mjs` for the bot autopilot and `mana2.mjs` for a player who presses every ready spell near an enemy;
 share of alive time below the cost of the cheapest learned spell, median over 24 matches):
 
-| Case | Before (`6 + .35 x level`) | After (`3.5 + .25 x level`) |
+| Case (on the merged map) | Before (`6 + .35 x level`) | After (`3.5 + .25 x level`) |
 |---|---|---|
-| Player on autopilot | 0.0% (max 10.5%) | 0.0% (max 33.1%) |
-| Every hero, all matches | 1.8% | 3.0% |
-| Player casting on cooldown in a fight | 3.4% | 6.4% |
+| Player on autopilot | 2.1% | 5.9% |
+| Every hero, all matches | 4.1% | 6.1% |
+| Player casting on cooldown in a fight | 8.7% (quartiles 3.6-21.8%) | **15.1%** (quartiles 7.4-31.5%) |
 
-So the change roughly doubles mana pressure but stays under the audit's 10-20% target. The audit's remaining proposals for rule 7
+On the bigger map a player who casts on cooldown is now mana-starved 15.1% of their alive time, inside the audit's 10-20%
+target. A player who spends more carefully stays near 6%. The audit's remaining proposals for rule 7
 (a higher ultimate cost, gold sinks, shop position) touch economy constants the map branch owns, so they are not in this branch.
 Bot kill counts per match are unchanged by it (mean 11.1 against 11.9 before the whole branch; the floor in `sim.test.mjs` moved
 from "more than 4" to "at least 2 per match, at least 8 on average", because a longer punish window and slower towers mean fewer
@@ -114,7 +141,11 @@ one-sided trades).
   clock and QUEUED read correctly; the engage tell and tower lock draw with no page error. 24 checks passed at all three sizes.
 - Changed, with the reason in each file: `combat-decisions.test.mjs` (a missed cast now exposes and locks for 0.5 s),
   `tactical-combat.test.mjs` (a tower locks on before its first shot), `sim.test.mjs` (the kill floor above).
-- Whole suite: all 22 files in `qa/tidebreak/` pass. `qa/tidebreak/desktop.e2e.mjs`: 17 checks passed.
+- Whole suite before the base merge: all 22 files in `qa/tidebreak/` passed. After merging `claude/quirky-cerf-vwf0qw` into this
+  branch, six suites fail (`creatures`, `sim`, `skills`, `tactical-combat`, `targeting`, `towers`). They fail identically on the
+  base branch itself, checked in a separate worktree at its head: the map work in progress moved the arena to 9600 and changed
+  mana capacity, tower counts and camp sprites while those tests still assert the old values. This branch adds no failure of its
+  own, and `team-presence` passes here while it fails on the base. `qa/tidebreak/desktop.e2e.mjs`: 17 checks passed on the merge.
 
 ## 5. Not checked, and open issues
 
@@ -127,6 +158,13 @@ one-sided trades).
   and `pendingAttack.telegraph`.
 - The 3D renderer draws none of the new tells yet. Section 2 lists what it needs.
 - The audit's rule 6 proposals for wisp roles and tower roles, and its rule 8 match clock, belong to the map branch and are not here.
+- The base branch makes the three.js renderer the default wherever WebGL2 runs on a real graphics card. It already draws the cast
+  and special warnings (the engage path tell among them) and the EXPOSED and RECOVERY rings, but not the tower lock-on tether,
+  the third-strike reach ring, the target marks, the hitstop or the weighted shake, so those players get the sim-side rules
+  without their tells. Section 2 lists every field it needs; `renderer.feel` is already set on whichever renderer is active.
+- `qa/tidebreak/sim.test.mjs` had a per-match floor of more than 4 kills. Longer punish windows, less mana and a tighter basic
+  attack reach lower the kill rate, so the floor is now 2 per match with an average of at least 8. The map branch owns match
+  pacing, so the right floor should be set once its waves and timings settle.
 - `DODGE_SLACK` is tuned at 35 units (times `SIZE / 6400`). On the bigger map it scales, but it was only measured on bot matches.
 
 ## 6. Draft OpenSpec requirements (delta format)
@@ -166,8 +204,9 @@ A committed cast that hits nothing SHALL leave its caster open for a window the 
 - AND a hit that kills an exposed hero shows FINISHER
 
 #### Scenario: A cast that lands
-- WHEN a committed cast hits an enemy hero
+- WHEN a committed cast that is not an ultimate hits what it was aimed at
 - THEN the caster keeps the short recovery and is not exposed
+- AND an ultimate that lands is exposed for its own recovery, because it is the larger commitment
 
 ### Requirement: Heavy hits are felt
 Important hits SHALL be reported through at least two channels beyond the health bar.

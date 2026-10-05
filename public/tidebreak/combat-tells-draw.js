@@ -21,11 +21,17 @@ export function drawTells(r, s, p, visible) {
       r.ring(t.x, t.y, (t.radius || 22) + 30 - wind.progress * 10, HOSTILE, .9, 3);
       if (t.id === p.id) label(c, r.project(t.x, t.y, 200), 'TOWER LOCK', HOSTILE);
     }
-    // A warned third strike: the cone that the target can step out of.
+    // A warned third strike: the reach the target must leave. It is a ring, because the
+    // rule that makes the strike miss is range alone (see DODGE_SLACK in sim.js).
     const pending = e.pendingAttack;
     if (pending?.telegraph && time < pending.at) {
       const t = s.units.find(u => u.id === pending.target);
-      if (t && t.hp > 0) r.drawWarning({ shape: { x: e.x, y: e.y, angle: Math.atan2(t.y - e.y, t.x - e.x), radius: e.range + t.radius + DODGE_SLACK, width: .3, shape: 'cone' }, start: pending.at - (e.attackWindup || .2), at: pending.at }, time, e.team === p.team ? FRIENDLY : HOSTILE);
+      if (t && t.hp > 0) {
+        const color = e.team === p.team ? FRIENDLY : HOSTILE, reach = e.range + t.radius + DODGE_SLACK;
+        r.ring(e.x, e.y, reach, color, .75, 2.5);
+        const a = r.project(e.x, e.y), b = r.project(t.x, t.y);
+        c.save(); c.strokeStyle = color; c.globalAlpha = .7; c.lineWidth = 2; c.setLineDash([5, 5]); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); c.restore();
+      }
     }
   }
   // Hitstop: a short white flash on the units in the hit.

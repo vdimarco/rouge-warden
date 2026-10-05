@@ -463,6 +463,8 @@ function frame(now) {
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
+  // A held match keeps fading the shake, the hitstop and the red edge instead of freezing them.
+  if (running && (paused || window.GameSwitch?.isOpen)) { feel.idle(dt); hurtEdge.style.opacity = hurtEdge.dataset.edge = Math.round(feel.edge * 20) / 20; }
   const drawStart = performance.now();
   if (running && renderer) drawBetweenSteps(dt);
   perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running, running && !paused && !window.GameSwitch?.isOpen);
