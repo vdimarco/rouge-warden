@@ -40,6 +40,7 @@ npm ci
 npm run build:www          # makes www/ and runs the bundle check
 npm run check:www          # the check alone
 npm run check:www -- --strict   # also fails on "ghibli" and on arcade text in a script (or set WWW_STRICT=1)
+npm run build:www -- --release  # for a store upload: also fails on a placeholder in a page (or set WWW_RELEASE=1)
 npm run test:check         # tests for the check itself
 ```
 
@@ -54,6 +55,8 @@ The check reads every HTML, CSS, JavaScript, SVG and JSON file in `www/`, also t
 - the HTML shows arcade text ("Switch game", "Back to the arcade", "GET PLUNGER'D") outside the parts that the store build hides.
 
 It warns about "ghibli", and about arcade text in a script: the check cannot tell if the code shows that string. With `--strict` (or `WWW_STRICT=1`) both are errors. When the code shows the string on the web only (it checks the store flag first), put `// web only` on the same line. It prints the size of the bundle.
+
+It also warns about a placeholder that the owner must fill in: an element with `data-placeholder`, such as the support email in `privacy.html`. Use `--release` (or `WWW_RELEASE=1`) for every build that you upload to a store. The release mode is strict, and it fails on a placeholder and when `privacy.html` is missing. `npm run android:bundle` and `npm run ios:release` use it.
 
 The check reads the files. It cannot see a web address that the code builds at run time from parts, or a root path that the code keeps in a variable. The browser check below blocks and counts every request that leaves the app's origin, and it fails on arcade text that the page shows.
 
@@ -102,7 +105,7 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
 3. Build and sign. The passwords come from the environment, never from a file in git:
 
    ```sh
-   npm run build:www
+   npm run build:www -- --release
    npx cap sync android
    npx cap build android \
      --keystorepath ~/keys/reelitin-upload.jks --keystorealias upload \
@@ -110,7 +113,7 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
      --androidreleasetype AAB --signing-type jarsigner
    ```
 
-   The signed bundle is `android/app/build/outputs/bundle/release/app-release-signed.aab`. Android Studio can do the same: Build > Generate Signed App Bundle.
+   The release build stops while `privacy.html` holds the support email placeholder (see "Owner decisions still open"). The signed bundle is `android/app/build/outputs/bundle/release/app-release-signed.aab`. Android Studio can do the same: Build > Generate Signed App Bundle.
 4. Upload it in the Play Console: Test and release > a testing track first (see the closed test below), then Production.
 
 `.gitignore` keeps `*.jks`, `*.keystore`, `keystore.properties` and `local.properties` out of git. Never commit a key.
@@ -126,13 +129,15 @@ In Xcode, on the App target:
 
 1. Signing & Capabilities: pick your team. Keep "Automatically manage signing" on.
 2. General: set Version (`MARKETING_VERSION`, for example 1.0.0) and Build (`CURRENT_PROJECT_VERSION`, up by 1 for every upload). Version must be the same as `VERSION` in `public/fish/js/version.js` (Settings > About shows it), `version` in `package.json` and `versionName` on Android. If you change it, change `version.js` too, then run `npm run ios:open` again so the bundle has the new version. `npm run check:native` fails when the versions differ.
-3. Choose "Any iOS Device (arm64)", then Product > Archive.
-4. In the Organizer, pick the archive, then Distribute App > App Store Connect > Upload. Before the first upload, use Generate Privacy Report on the archive and check that it lists only the UserDefaults reason (see `store/data-safety.md`).
-5. In App Store Connect, add the build to TestFlight, test it on an iPhone, then submit it for review with the text in `store/`.
+3. Before an archive for upload, run `npm run ios:release`. It builds the bundle with `--release`, so it stops while `privacy.html` holds the support email placeholder. Then it syncs the iOS project and opens Xcode.
+4. Choose "Any iOS Device (arm64)", then Product > Archive.
+5. In the Organizer, pick the archive, then Distribute App > App Store Connect > Upload. Before the first upload, use Generate Privacy Report on the archive and check that it lists only the UserDefaults reason (see `store/data-safety.md`).
+6. In App Store Connect, add the build to TestFlight, test it on an iPhone, then submit it for review with the text in `store/`.
 
 From the command line, the same archive is:
 
 ```sh
+npm run build:www -- --release && npx cap sync ios
 xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination "generic/platform=iOS" -archivePath build/ReelItIn.xcarchive archive
 xcodebuild -exportArchive -archivePath build/ReelItIn.xcarchive -exportPath build/export -exportOptionsPlist ExportOptions.plist
 ```
@@ -178,7 +183,7 @@ Then run `npx cap sync` and build both apps again.
 | --- | --- | --- |
 | Bundle ID and application ID | `com.cottagearcade.reelitin` (placeholder) | Pick a reverse domain you control, and change it before the first upload (see above). |
 | Store name | "Reel It In: Lake Fishing"; "Reel It In" under the icon | Check that the name is free in App Store Connect and the Play Console, and search the USPTO for "Reel It In" in classes 9 and 41. |
-| Support email | A marked placeholder in `public/fish/privacy.html` | Put a real address in the page (text and a `mailto:` link) and in both store forms. |
+| Support email | A marked placeholder in `public/fish/privacy.html` (`data-placeholder="support-email"`) | Put a real address in the page (text and a `mailto:` link) and in both store forms. Remove the placeholder element. The release build (`--release`) fails until you do. |
 | Privacy policy URL | `https://<the site>/fish/privacy.html` | Choose the host (the arcade site or your own domain). Both stores need a public URL. |
 | Google Play account type | Not known | A personal account made after 13 November 2023 must run a closed test with at least 12 testers for 14 days in a row before it can publish to production. Start the closed test as soon as there is a signed build. An organisation account does not need this. |
 | Content rating and audience | 4+, Everyone, PEGI 3; audience 13 and over | Fill in the questionnaires with `store/age-rating.md`. Decide if the Play audience includes children under 13. |

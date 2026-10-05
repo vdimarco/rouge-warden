@@ -14,11 +14,11 @@ In the Painted style, fish have fuller bodies, larger eyes and simplified painte
 
 ## Painted film pass
 
-The 2026-09-29 film pass uses three images made with the built-in image generation tool:
+The 2026-09-29 film pass made three images with the built-in image generation tool:
 
 - `film-lake.webp` (1536 × 1024, 332,520 bytes): the visual concept and title backdrop. Source generation `exec-308f1746-9112-4205-ade9-85ac03bdd9b5`. The brief specified a first-person Canadian lake, honey bamboo rod and jade reel, gouache forest layers, cream clouds and broad turquoise ripples, in the look of a hand-painted storybook. It excluded text, UI, people and new gameplay objects.
 - `painted-forest.webp` (1254 × 1254, 726,220 bytes, alpha): four isolated forest cutouts. Source generation `exec-82ebbda7-00bb-402c-ac31-b5d6f9aca99b`. The brief requested a cedar, birch, windswept pine and willow/alder, arranged in a 2 × 2 transparent atlas with gouache foliage, warm highlights and blue-green shadows. The lake concept supplied the style reference.
-- `painted-water.webp` (1254 × 1254, 194,854 bytes): a repeating gouache water texture. Source generation `exec-e2bf6398-f3a3-48bd-8d16-60110eaeb875`. The brief requested even top-down turquoise water, horizontal cream/mint brush strokes, fine paper texture and no shore, objects or perspective. It supplies moving surface detail in the existing water shader, tinted by depth and time of day. Failed loads keep the shader's procedural paint.
+- `painted-water.webp` (1254 × 1254, 194,854 bytes): the first repeating gouache water texture. Source generation `exec-e2bf6398-f3a3-48bd-8d16-60110eaeb875`. `fal-lake-water.webp` (below) replaced it on 2026-09-30. The game did not load it after that, so the file was removed.
 
 The source images were encoded as WebP without artistic edits. `painted-forest.js` uses the delivered atlas bounds and one quad per tree, drawn in up to three instanced layers. Trees retain the original terrain placement, face the camera around their vertical axis and sway gently. Each layer shares a cached texture; travel and style changes free the instance geometry and material. A failed image load falls back to the existing 3D trees.
 

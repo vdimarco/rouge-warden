@@ -3,10 +3,12 @@
 // It fails when a file loads another host, holds a web address in its code (a string, an attribute, a style sheet,
 // a JSON or SVG file), uses a root path of the web site in a load, a link or a page navigation, names a missing file,
 // or shows arcade text in the HTML of the store build. It warns about "ghibli" and about arcade text in a script
-// (both errors with --strict or WWW_STRICT=1), and about files that nothing loads.
+// (both errors with --strict or WWW_STRICT=1), and about files that nothing loads. With --release (or WWW_RELEASE=1), for a
+// store upload, it is strict and it also fails when privacy.html is missing or a page still holds a placeholder that the
+// owner must fill in (an element with data-placeholder, such as the support email).
 // The check reads the files. It cannot see a web address that the code builds at run time from parts:
 // qa/fish/app-bundle.e2e.mjs blocks and counts every request that leaves the origin.
-// Usage: node scripts/check-www.mjs [--strict] [path/to/www]
+// Usage: node scripts/check-www.mjs [--strict] [--release] [path/to/www]
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -65,7 +67,8 @@ function scriptArcadeText(src, lineOffset = 0) {
   return hits;
 }
 
-export function checkWww(www, { strict = false, quiet = false } = {}) {
+export function checkWww(www, { strict = false, release = false, quiet = false } = {}) {
+  if (release) strict = true;
   const issues = [];
   const add = (level, file, msg) => issues.push({ level, file, msg });
   if (!fs.existsSync(path.join(www, "index.html"))) {
@@ -89,6 +92,7 @@ export function checkWww(www, { strict = false, quiet = false } = {}) {
   if (!htmlEl || attr(htmlEl, "data-build") !== "store") add("error", "index.html", '<html> has no data-build="store".');
   if (!graph.importMaps.three) add("error", "index.html", 'the import map has no "three" entry.');
   else if (graph.importMaps.three !== "./lib/three.module.min.js") add("warn", "index.html", `the import map sends "three" to ${graph.importMaps.three}, not ./lib/three.module.min.js.`);
+  if (release && !all.includes("privacy.html")) add("error", "privacy.html", "the release has no privacy policy page.");
 
   for (const f of all) {
     if (/ghibli/i.test(f)) add(strict ? "error" : "warn", f, 'the file name has "ghibli" in it.');
@@ -102,6 +106,11 @@ export function checkWww(www, { strict = false, quiet = false } = {}) {
       for (const h of hits) add(strict ? "error" : "warn", f, `line ${h.line}: a script holds arcade text "${h.text}". If a player can see it in the app, hide it in a store build. When the code shows it on the web only, put "// web only" on that line.`);
     };
     if (/\.html?$/i.test(f)) {
+      // a placeholder for the owner (data-placeholder): a warning in a test build, an error in a release
+      for (const el of parseHtml(text).elements) {
+        const ph = attr(el, "data-placeholder");
+        if (ph !== null) add(release ? "error" : "warn", f, `a placeholder is still in the page (data-placeholder="${ph}"): "${decodeEntities(text.slice(el.openEnd, el.closeStart)).replace(/\s+/g, " ").trim().slice(0, 80)}". Put the real text in before a store upload.`);
+      }
       for (const h of visibleMatches(text, ARCADE_TEXT)) add("error", f, `a player can see arcade text in ${h.where}: "${h.text}"`);
       // the privacy page serves the web and the app, so it talks about both, and it may show a web address as text
       if (f !== "privacy.html") {
@@ -148,7 +157,8 @@ function report(www, issues, all, { quiet }) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const strict = args.includes("--strict") || process.env.WWW_STRICT === "1";
+  const release = args.includes("--release") || process.env.WWW_RELEASE === "1";
   const dir = args.find((a) => !a.startsWith("--"));
-  const res = checkWww(dir ? path.resolve(dir) : path.join(APP_DIR, "www"), { strict });
+  const res = checkWww(dir ? path.resolve(dir) : path.join(APP_DIR, "www"), { strict, release });
   process.exit(res.ok ? 0 : 1);
 }

@@ -58,6 +58,8 @@ export function loadStorySky() {
   return storySkyLoad;
 }
 
+// The painted water tile. QA blocks this address to check the shader fallback.
+export const WATER_ART = new URL("../art/fal-lake-water.webp", import.meta.url).href;
 let waterPaintLoad = null;
 export function loadPaintedWater() {
   if (U.uWaterPaintReady.value) return Promise.resolve(true);
@@ -66,7 +68,7 @@ export function loadPaintedWater() {
     let settled = false;
     const finish = ok => { if (settled) return; settled = true; clearTimeout(timer); waterPaintLoad = null; resolve(ok); };
     const timer = setTimeout(() => finish(false), 8000);
-    new THREE.TextureLoader().load(new URL("../art/fal-lake-water.webp", import.meta.url).href, texture => {
+    new THREE.TextureLoader().load(WATER_ART, texture => {
       if (settled) { texture.dispose(); return; }
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       texture.colorSpace = THREE.NoColorSpace;
