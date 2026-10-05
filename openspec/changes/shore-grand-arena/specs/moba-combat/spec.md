@@ -139,6 +139,14 @@ size. A side-lane bot leaving its base SHALL take its base gate when its wave ha
 - **WHEN** a bot's lane has no allied wisps and the bot stands just outside an enemy ward's range
 - **THEN** the bot falls back toward its own ward and never enters the enemy ward's range.
 
+#### Scenario: Bait under a ward
+- **WHEN** the player stands under their own ward at 45% health, no enemy wisp is at that ward, and it is not sudden death
+- **THEN** a Veteran enemy bot that chases or fights the player stops outside the ward's range.
+
+#### Scenario: A fight beside an enemy ward
+- **WHEN** a bot fights or assists near an enemy ward that no wisp of its team tanks, outside sudden death
+- **THEN** every move it makes stays outside that ward's range, unless the target is almost dead and the bot can take the shots.
+
 ### Requirement: Every heavy attack warns in two senses
 Heavy attacks SHALL give the defender at least 0.3 s of warning in both sight and sound before they can hit.
 
@@ -241,3 +249,63 @@ The player SHALL be able to see which enemy matters next and when the next peak 
 - **WHEN** a match is running
 - **THEN** the HUD shows the time to the next Wild Hunt, which turns gold and sounds a horn in its last 10 seconds, and when the player is out
   of combat with no peak within 20 seconds, the clock shows a quiet phase.
+
+### Requirement: Enemy difficulty setting
+The game SHALL offer three enemy difficulties, Apprentice, Veteran and Mythic, chosen on the selection screen before a match. Veteran SHALL be
+the default. The choice SHALL be saved on the device and shown during the match. Difficulty SHALL change only how enemy bots perceive and
+decide, never health, damage, speed, range, armour, mana or gold. Allied bots SHALL play at one fixed level for every difficulty.
+
+#### Scenario: Choose and keep a difficulty
+- **WHEN** the player selects Mythic beside Play and reloads the page
+- **THEN** Mythic is still selected, and the next match shows "Enemy · Mythic" in the HUD.
+
+#### Scenario: Difficulty does not change stats
+- **WHEN** the same lineup starts on Apprentice and on Mythic
+- **THEN** every hero has the same health, damage, speed, range, armour, mana and gold in both matches.
+
+#### Scenario: Allies stay the same
+- **WHEN** the player changes the difficulty
+- **THEN** the two allied bots play by the same profile as before.
+
+### Requirement: Bots react at human speed
+A bot SHALL NOT answer a new cast warning or pending ground before the reaction floor of its difficulty (Apprentice 0.45 s, Veteran 0.30 s,
+Mythic 0.24 s). A bot SHALL sometimes fail a dodge with a short step, more often at lower difficulty. Bot spell warnings SHALL keep their
+length at every difficulty.
+
+#### Scenario: A quick cast lands on a slow bot
+- **WHEN** the player starts a spell whose warning covers an Apprentice bot and the spell resolves 0.4 s later
+- **THEN** the bot has not started to dodge.
+
+#### Scenario: Bot spells stay readable
+- **WHEN** a Mythic bot casts an offensive spell
+- **THEN** the warning shape shows for at least 0.5 s before the damage.
+
+### Requirement: Bots judge trades
+A bot on Veteran or Mythic SHALL leave a fight when its side's health and damage are clearly lower than the visible enemy side's, counting
+enemy wards, or when it is below half health and the enemy is clearly healthier.
+
+#### Scenario: A hurt bot leaves
+- **WHEN** a Veteran bot at 40% health faces the player at full health
+- **THEN** the bot retreats within 1.5 s.
+
+### Requirement: Bots play the map with what their team can see
+Veteran and Mythic bots SHALL gank from a pushed lane, use rift gates when a gate saves time, answer their team's defend calls, take spirit
+camps when no enemy hero is near, gather before the Wild Hunt wakes, and push an open ward after a won fight. They SHALL use only what their
+team can see, the public kill feed, and their team's own calls.
+
+#### Scenario: A gank from a pushed lane
+- **WHEN** the player is seen at low health in another lane and an enemy bot's lane has no wave in front
+- **THEN** that bot moves toward the player, through a rift gate when that is faster.
+
+#### Scenario: Fog hides the player
+- **WHEN** no enemy unit can see the player
+- **THEN** no enemy bot starts a gank toward the player or picks the player as its team's focus.
+
+### Requirement: Bots focus and punish
+Veteran and Mythic bots SHALL prefer, among heroes in reach, the one with the least effective health and the team focus target. They SHALL
+prefer a hero that is in cast recovery, EXPOSED, stunned or casting, and they SHALL see that window only after their reaction floor. They
+SHALL keep normal spells for heroes instead of the wave unless their mana is full.
+
+#### Scenario: A missed cast is punished
+- **WHEN** the player misses a spell and is in its recovery near a Veteran bot
+- **THEN** the bot attacks the player before a healthier, closer hero.
