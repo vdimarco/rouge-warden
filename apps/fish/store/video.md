@@ -5,7 +5,7 @@
 | Video | Store | Picture | Length |
 | --- | --- | --- | --- |
 | Promo video | Google Play, as a YouTube link | 1920 x 1080, landscape | 31 s |
-| App preview | App Store, as a file | 886 x 1920, portrait | 29.5 s |
+| App preview | App Store, as a file | 886 x 1920, portrait | 29.4 s |
 
 Both are 30 fps, H.264 with AAC sound. Every picture of the game is the store build of the game itself, filmed frame by frame. Every sound is the game's own (`public/fish/js/audio.js`), at the moment the game played it.
 
@@ -39,23 +39,23 @@ The game plays in phone panels on the painted water of the store art, and short 
 
 ## App Store app preview
 
-The game fills the picture, one shot after another. Short titles sit over the water in the top third, where the game shows only sky and lake. The preview ends on the game's own title screen.
+The game fills the picture, one shot after another, and the preview ends on the game's own title screen. The titles of the cast and the places sit in the band of sky. In the strike, the fight and touch play, the game shows its own prompts in that band, so those titles sit just below them.
 
 | Time | Scene | Titles |
 | --- | --- | --- |
-| 0 to 5.7 s | A motion cast at Loon Lake at golden hour: the thumb holds the line, the rod tips back and whips forward, and the lure flies out. | Your phone is the rod. |
-| 5.7 to 9.4 s | A bass follows the lure, nibbles it and strikes. The rod snaps up: "Fish on!" | Wait for the bite. Snap it up! |
-| 9.4 to 14.2 s | The fight: a run, a leap, then the rod pumps the fish in. | Fight every run. |
-| 14.2 to 18.8 s | The trophy photo: the push-in, the flash and the card. | Land a trophy. |
-| 18.8 to 24.2 s | Four places, one cast each, 1.35 s a place. | Fish four places, and the name of each place. |
-| 24.2 to 26.6 s | Touch play: a ring shows the finger on the crank. | Or play with touch. |
-| 26.6 to 29.5 s | The title screen of Loon Lake in the morning. | No ads · No accounts · Plays offline |
+| 0 to 5.6 s | A motion cast at Loon Lake at golden hour: the thumb holds the line, the rod tips back and whips forward, and the lure flies out. | Your phone is the rod. |
+| 5.6 to 9.3 s | A bass follows the lure, nibbles it and strikes. The rod snaps up: "Fish on!" | Wait for the bite. Snap it up! |
+| 9.3 to 14.1 s | The fight: a run, a leap, then the rod pumps the fish in. | Fight every run. |
+| 14.1 to 18.7 s | The trophy photo: the push-in, the flash and the card. | Land a trophy. |
+| 18.7 to 24.1 s | Four places, 1.35 s each: a lure comes down on the water of each place. | Fish four places, and the name of each place. |
+| 24.1 to 26.5 s | Touch play: a ring shows the finger on the crank. | Or play with touch. |
+| 26.5 to 29.4 s | The title screen of Loon Lake. | No ads · No accounts · Plays offline |
 
 ### Upload it
 
 1. In App Store Connect, open the app, then the version under iOS App.
 2. In Previews and Screenshots, choose iPhone, then the 6.9" display. Drag the MP4 into the well. The preview plays before the screenshots.
-3. Set the poster frame: the picture the App Store shows before the video plays. A frame of the trophy card (about 16 s) works well.
+3. Set the poster frame: the picture the App Store shows before the video plays. The trophy card at about 18 s, with its NEW RECORD and TROPHY badges, works well.
 4. Processing can take up to 24 hours. App Store Connect scales the 6.9" preview down for the smaller iPhones.
 
 Each size and language can have up to three previews.
@@ -80,7 +80,7 @@ NODE_PATH=qa/browser/node_modules node qa/fish/store-video.mjs
 FORMAT=appstore NODE_PATH=qa/browser/node_modules node qa/fish/store-video.mjs
 ```
 
-It needs ffmpeg. With software WebGL the Play video takes about 30 minutes and the app preview about 40. Each writes its MP4 in the work folder (`OUT`, by default `<tmp>/fish-video`): `reel-it-in-promo.mp4` and `reel-it-in-app-preview.mp4`. Each format keeps its own clips, frames and sound there. It runs in four passes:
+It needs ffmpeg. With software WebGL the Play video takes about 30 minutes and the app preview about 45. Each writes its MP4 in the work folder (`OUT`, by default `<tmp>/fish-video`): `reel-it-in-promo.mp4` and `reel-it-in-app-preview.mp4`. Each format keeps its own clips, frames and sound there. It runs in four passes:
 
 1. film: each clip is the game on Playwright's fake clock, one frame each 1/30 s. The Play video films a 360 x 640 phone at 1.5x (1.2x for the four places), and the app preview a 443 x 960 phone at 2x. The casts are real motion casts with the virtual phone. The strike, the fight and the catch are staged with the game's test hooks, as in `store-shots.mjs`.
 2. cut: a page lays out the shots, the titles and the end card, one screenshot a frame.

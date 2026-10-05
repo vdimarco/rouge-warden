@@ -35,8 +35,8 @@ const ONLY = process.env.CLIPS ? process.env.CLIPS.split(",").map((s) => s.trim(
 // preview of a 6.9" iPhone, 886 x 1920, under 30 s. Apple allows only screen captures of the app with text over them, so
 // the game fills that picture, filmed in a 443 x 960 phone at 2x
 const FORMATS = {
-  play: { W: 1920, H: 1080, phone: [360, 640], dpr: 1.5, placeDpr: 1.2, level: "4.1", audio: "192k", file: "reel-it-in-promo.mp4" },
-  appstore: { W: 886, H: 1920, phone: [443, 960], dpr: 2, placeDpr: 2, level: "4.0", audio: "256k", maxrate: "12M", file: "reel-it-in-app-preview.mp4" },
+  play: { W: 1920, H: 1080, phone: [360, 640], dpr: 1.5, placeDpr: 1.2, crf: 17, level: "4.1", audio: "192k", file: "reel-it-in-promo.mp4" },
+  appstore: { W: 886, H: 1920, phone: [443, 960], dpr: 2, placeDpr: 2, crf: 15, level: "4.0", audio: "256k", maxrate: "12M", file: "reel-it-in-app-preview.mp4" },
 };
 const FORMAT = process.env.FORMAT || "play", FMT = FORMATS[FORMAT];
 if (!FMT) { console.error("FORMAT is play or appstore"); process.exit(2); }
@@ -65,6 +65,16 @@ const SAVE = {
 
 // In the page, before the game: the tools the clips use
 function pageTools() {
+  // A synthetic event takes its timeStamp from the real clock, but the page runs on the fake one. The game times the
+  // phone's motion samples and the thumb's lift by timeStamp, and a frame of the big phone takes seconds of real time, so
+  // the samples of a whip fell outside the 450 ms the game looks back. Here a synthetic event reads the page clock when
+  // it is first asked, which is while it is dispatched
+  const stamps = new WeakMap(), realStamp = Object.getOwnPropertyDescriptor(Event.prototype, "timeStamp").get;
+  Object.defineProperty(Event.prototype, "timeStamp", { configurable: true, get() {
+    if (this.isTrusted) return realStamp.call(this);
+    if (!stamps.has(this)) stamps.set(this, performance.now());
+    return stamps.get(this);
+  } });
   // CSS animations and transitions follow the page clock (the fake one while filming): each is paused when first seen,
   // and its time is set from the clock before every frame
   const born = new Map();
@@ -155,7 +165,10 @@ async function startFishing(cam, hour) {
   const { page } = cam;
   await page.click("#freeBtn");
   await page.waitForFunction(() => FISH.G.phase === "cast", null, { timeout: 60000 });
-  await page.evaluate((hour) => { FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); FISH.G.hour = hour; FISH.world.setHour(hour); }, hour);
+  // the hour goes a hair before the next 10 minutes of the game's clock: the clock on the screen is drawn again only when
+  // the hour passes one, and it still shows the hour the place opened at
+  const h = Math.ceil(hour * 6) / 6 - 1e-4;
+  await page.evaluate((h) => { FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); FISH.G.hour = h; FISH.world.setHour(h); }, h);
   await sleep(2500);
   await pauseSoon(page);
   for (let i = 0; i < 30; i++) await page.clock.runFor(33);
@@ -221,7 +234,7 @@ async function motionCast(c, { lead = 15, after = 24, maxFlight = 150 } = {}) {
   c.mark("land");
   await c.shoot(after);
   const cast = await page.evaluate(() => FISH.G.cast && FISH.G.cast.verdict);
-  if (cast !== "sweet") console.log(`  (the cast was "${cast}", not "sweet")`);
+  if (cast !== "sweet") console.log(`  (the cast was "${cast}", not "sweet"; the last release: ${JSON.stringify(await page.evaluate(() => FISH.G.lastRelease || null))})`);
 }
 
 // Loon Lake at golden hour, motion play: the cast, the strike, the fight and the trophy, one after the other
@@ -399,7 +412,9 @@ function timeline(M) {
 }
 
 // The app preview: one shot after another, full screen, each place for placeLen s, then the title screen. Apple takes
-// 15 to 30 s
+// 15 to 30 s. A place's shot ends just after its lure lands: the camera is back on the water, and no prompt is up yet
+const PLACE_LEAD = 1.25;
+const placeFrom = (m) => Math.max(0, m.marks.land - PLACE_LEAD);
 function timelineTall(M) {
   const len = (n) => M[n].frames / FPS;
   const S = { cast: 0, placeLen: 1.35 };
@@ -666,9 +681,10 @@ function director({ W, H, FPS, S, M, PL, MONTAGE }) {
   };
 }
 
-// The page side of the app preview: the game fills the picture, one shot after another, and the titles sit in the band
-// of sky under the game's own prompts. K: picture px per CSS px of the filmed phone
-function directorTall({ W, H, FPS, S, M, PL, K }) {
+// The page side of the app preview: the game fills the picture, one shot after another. The titles of the cast and the
+// places sit in the band of sky; in the strike, the fight and touch play the game's own prompts take that band, so their
+// titles sit lower, over the far water. K: picture px per CSS px of the filmed phone. FROM: each place's first clip time
+function directorTall({ W, H, FPS, S, M, PL, K, FROM }) {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k;
   const win = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
   const out = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
@@ -688,16 +704,16 @@ function directorTall({ W, H, FPS, S, M, PL, K }) {
     if (color) e.style.color = color;
     caps.push({ e, x, y, a, b, tilt, big: cls === "big" });
   };
-  const mid = W / 2, band = Math.round(H * 0.3), shutter = S.trophy + (M.trophy.shutter != null ? M.trophy.shutter : 1.2);
+  const mid = W / 2, band = Math.round(H * 0.3), low = Math.round(H * 0.41), shutter = S.trophy + (M.trophy.shutter != null ? M.trophy.shutter : 1.2);
   cap("Your phone", "big", 86, mid, band - 50, 0.35, S.strike - 0.3);
   cap("is the rod.", "big", 86, mid, band + 50, 0.5, S.strike - 0.3);
-  cap("Wait for the bite.", "big", 70, mid, band, S.strike + 0.3, S.strike + mk("strike", "strike") - 0.1);
-  cap("Snap it up!", "big", 108, mid, band, S.strike + mk("strike", "strike"), S.fight - 0.3, { tilt: -3 });
-  cap("Fight every run.", "big", 76, mid, band, S.fight + 0.3, S.trophy - 0.3);
+  cap("Wait for the bite.", "big", 70, mid, low, S.strike + 0.3, S.strike + mk("strike", "strike") - 0.1);
+  cap("Snap it up!", "big", 100, mid, low, S.strike + mk("strike", "strike"), S.fight - 0.3, { tilt: -3 });
+  cap("Fight every run.", "big", 76, mid, low, S.fight + 0.3, S.trophy - 0.3);
   cap("Land a trophy.", "big", 76, mid, Math.round(H * 0.105), shutter + 0.3, S.places - 0.25);
   cap("Fish four places.", "big", 70, mid, band - 60, S.places + 0.1, S.touch - 0.2);
   PL.forEach(([, name], i) => cap(name, "pill", 44, mid, band + 45, S.places + i * S.placeLen + 0.05, S.places + (i + 1) * S.placeLen - 0.12));
-  cap("Or play with touch.", "big", 70, mid, band, S.touch + 0.2, S.title - 0.2);
+  cap("Or play with touch.", "big", 70, mid, low, S.touch + 0.2, S.title - 0.2);
   cap("No ads · No accounts · Plays offline", "sub", 38, mid, Math.round(H * 0.47), S.title + 0.5, 1e9, { color: "#e8b64a" });
 
   // the shot at t: the clip and its time
@@ -707,9 +723,9 @@ function directorTall({ W, H, FPS, S, M, PL, K }) {
     if (t < S.trophy) return ["fight", t - S.fight];
     if (t < S.places) return ["trophy", t - S.trophy];
     if (t < S.touch) {
-      // each place from just before its back swing: the rod whips in front of the place, and the lure goes out
+      // each place as its lure comes down on the water
       const i = Math.min(PL.length - 1, Math.floor((t - S.places) / S.placeLen)), n = "place-" + PL[i][0];
-      return [n, Math.max(0, mk(n, "back") - 0.35) + (t - S.places - i * S.placeLen)];
+      return [n, FROM[n] + (t - S.places - i * S.placeLen)];
     }
     if (t < S.title) return ["touch", mk("touch", "crank") - 0.2 + (t - S.touch)];
     return ["title", t - S.title];
@@ -775,7 +791,8 @@ async function cut() {
   await page.evaluate(() => document.fonts.ready);
   const slim = Object.fromEntries(Object.entries(M).map(([n, m]) => [n, { frames: m.frames, marks: m.marks, fingers: m.fingers, shutter: m.shutter }]));
   const PL = PLACES.map(([id, name]) => [id, name]);
-  if (tall) await page.evaluate(directorTall, { W: FMT.W, H: FMT.H, FPS, S, M: slim, PL, K: FMT.W / FMT.phone[0] });
+  const FROM = Object.fromEntries(PLACES.map(([id]) => ["place-" + id, placeFrom(M["place-" + id])]));
+  if (tall) await page.evaluate(directorTall, { W: FMT.W, H: FMT.H, FPS, S, M: slim, PL, K: FMT.W / FMT.phone[0], FROM });
   else await page.evaluate(director, { W, H, FPS, S, M: slim, PL, MONTAGE: montageT.toString() });
   await page.waitForFunction(() => [...document.images].every((i) => !i.src || i.complete));
   // STILLS=1.5,6.2 draws only those moments (s), to look at
@@ -860,8 +877,9 @@ async function sound() {
     { clip: "strike", from: 0, to: S.fight - S.strike, at: S.strike, gain: 1, loops: true },
     { clip: "fight", from: 0, to: S.trophy - S.fight, at: S.fight, gain: 1, loops: true },
     { clip: "trophy", from: 0, to: S.places - S.trophy, at: S.trophy, gain: 1, loops: true },
-    // one place after another, each from just before its back swing, as directorTall shows them
-    ...PLACES.map(([id], i) => { const n = "place-" + id, from = Math.max(0, M[n].marks.back - 0.35); return { clip: n, from, to: from + S.placeLen, at: S.places + i * S.placeLen, gain: 0.9, loops: true }; }),
+    // one place after another, each as its lure comes down, as directorTall shows them. Softer: four whirs of the spool
+    // in a row would be the loudest part of the mix, and the fight should be
+    ...PLACES.map(([id], i) => { const n = "place-" + id, from = placeFrom(M[n]); return { clip: n, from, to: from + S.placeLen, at: S.places + i * S.placeLen, gain: 0.6, loops: true }; }),
     { clip: "touch", from: M.touch.marks.crank - 0.2, to: M.touch.marks.crank - 0.2 + (S.title - S.touch), at: S.touch, gain: 0.9, loops: true },
     { clip: "title", from: 0, to: total - S.title, at: S.title, gain: 1, loops: true },
   ] : [
@@ -938,8 +956,8 @@ async function mp4() {
     console.log(`mp4: the mix measured ${j.input_i} LUFS, ${j.input_tp} dBTP`);
     args.push("-i", wav);
   }
-  args.push("-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", FMT.level, "-r", String(FPS), "-movflags", "+faststart");
-  // Apple asks for 10 to 12 Mbps: the quality stays, and the peaks stop at the cap
+  args.push("-c:v", "libx264", "-preset", "slow", "-crf", String(FMT.crf), "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", FMT.level, "-r", String(FPS), "-movflags", "+faststart");
+  // Apple aims at 10 to 12 Mbps: crf 15 comes to about 10 for the app preview, and the peaks stop at the cap
   if (FMT.maxrate) args.push("-maxrate", FMT.maxrate, "-bufsize", parseInt(FMT.maxrate) * 2 + "M");
   if (af) args.push("-af", af, "-ar", "48000", "-c:a", "aac", "-b:a", FMT.audio, "-shortest");
   args.push(file);
