@@ -8,7 +8,7 @@ export function castLegend(c){
  const placement=Math.min(360,c.aim?.distance??360);
  const point={x:clamp(c.aim?e.x+Math.cos(angle)*placement:target?.x??e.x+Math.cos(angle)*360,180,SIZE-180),y:clamp(c.aim?e.y+Math.sin(angle)*placement:target?.y??e.y+Math.sin(angle)*360,180,SIZE-180)};
  if(slot===0){
-  if(e.hero===4){e.shield+=260*strength;zone('ink',origin,290,5,38*strength);fx(origin,290);return true;}
+  if(e.hero===4){e.shield+=260*strength;zone('ink',origin,290,5,38*strength,{armed:s.time+.35});fx(origin,290);return true;}
   if(e.hero===5){e.chaseUntil=s.time+4;e.chaseStrength=strength;e.trailAt=0;fx(origin,150);return true;}
   if(e.hero===10){
    for(const t of s.units)if(t.kind==='summon'&&t.owner===e.id)t.hp=0;

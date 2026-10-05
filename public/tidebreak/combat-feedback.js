@@ -50,8 +50,8 @@ export function followUpFeedback(s, p, { visible, sight = visibleTo, clear = lin
   return null;
 }
 
-export const RESULT_COLORS = { combo:'#fff0b2', 'shield-break':'#bdefff', interrupt:'#ffc1a6', kill:'#e8ce8f', exposed:'#ffc989' };
-export const RESULT_LABELS = { combo:'COMBO', 'shield-break':'SHIELD BREAK', interrupt:'INTERRUPTED', kill:'BANISHED', exposed:'OPENING HIT' };
+export const RESULT_COLORS = { combo:'#fff0b2', 'shield-break':'#bdefff', interrupt:'#ffc1a6', kill:'#e8ce8f', exposed:'#ffc989', dodge:'#c8f3ff' };
+export const RESULT_LABELS = { combo:'COMBO', 'shield-break':'SHIELD BREAK', interrupt:'INTERRUPTED', kill:'BANISHED', exposed:'OPENING HIT', dodge:'DODGED' };
 export function recentCombatFeedback(s, p, { visible, age = .8, radius = 650 } = {}) {
   return (s.combatFeedback || []).filter(event => {
     const elapsed = s.time-event.time;
