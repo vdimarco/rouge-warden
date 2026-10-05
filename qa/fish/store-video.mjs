@@ -1,17 +1,20 @@
-// The Google Play promo video of Reel It In (apps/fish/store/video.md): 30 s at 1920 x 1080 and 30 fps, H.264 with AAC,
-// for YouTube. The game plays in phone panels on the painted water of the store art, with titles that move.
-//  1. film: each clip is the real game on Playwright's fake clock, one frame each 1/30 s, in a 360 x 640 phone. The page's
-//     CSS animations follow that clock, and every sound the game asks for is logged with its time. The casts are real
-//     motion casts with the virtual phone; the strike, the fight and the catch are staged with the game's QA hooks
-//     (window.FISH), as in store-shots.mjs.
+// The store videos of Reel It In (apps/fish/store/video.md), at 30 fps, H.264 with AAC. FORMAT=play: the Google Play
+// promo video, 31 s at 1920 x 1080 for YouTube; the game plays in phone panels on the painted water of the store art,
+// with titles that move. FORMAT=appstore: the App Store app preview, under 30 s at 886 x 1920; the game fills the picture.
+//  1. film: each clip is the real game on Playwright's fake clock, one frame each 1/30 s, in a phone (360 x 640 at 1.5x, or
+//     443 x 960 at 2x for the app preview). The page's CSS animations follow that clock, and every sound the game asks
+//     for is logged with its time. The casts are real motion casts with the virtual phone; the strike, the fight and the
+//     catch are staged with the game's QA hooks (window.FISH), as in store-shots.mjs.
 //  2. cut: a page lays out the clips, the titles and the end card, and each frame of the video is a screenshot of it.
 //  3. sound: the logged sounds, rendered by the game's own audio.js (renderOffline), on the video's timeline, over the
 //     sound of each place.
 //  4. mp4: ffmpeg puts the frames and the sound together, at -16 LUFS.
 // Run (serve public/ first): NODE_PATH=qa/browser/node_modules node qa/fish/store-video.mjs
+//   FORMAT=appstore             the app preview (default play). Its clips, frames and sound have their own names in OUT
 //   OUT=<dir>                   the work folder and the video (default <tmp>/fish-video). The clips stay there between runs
 //   STEPS=film,cut,sound,mp4    only these passes
-//   CLIPS=cast,strike           film only these clips (cast strike fight trophy touch place-loon place-stumps place-river place-sea)
+//   CLIPS=cast,strike           film only these clips (cast strike fight trophy touch place-loon place-stumps place-river place-sea,
+//                               and title for appstore)
 // It needs ffmpeg. Watch the video: a run that ends well says nothing about how it looks.
 import { createRequire } from "module";
 import fs from "fs";
@@ -28,6 +31,17 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const OUT = path.resolve(process.env.OUT || path.join(os.tmpdir(), "fish-video"));
 const STEPS = (process.env.STEPS || "film,cut,sound,mp4").split(",").map((s) => s.trim());
 const ONLY = process.env.CLIPS ? process.env.CLIPS.split(",").map((s) => s.trim()) : null;
+// FORMAT=play (the default): the Google Play promo video, 1920 x 1080 for YouTube. FORMAT=appstore: the App Store app
+// preview of a 6.9" iPhone, 886 x 1920, under 30 s. Apple allows only screen captures of the app with text over them, so
+// the game fills that picture, filmed in a 443 x 960 phone at 2x
+const FORMATS = {
+  play: { W: 1920, H: 1080, phone: [360, 640], dpr: 1.5, placeDpr: 1.2, level: "4.1", audio: "192k", file: "reel-it-in-promo.mp4" },
+  appstore: { W: 886, H: 1920, phone: [443, 960], dpr: 2, placeDpr: 2, level: "4.0", audio: "256k", maxrate: "12M", file: "reel-it-in-app-preview.mp4" },
+};
+const FORMAT = process.env.FORMAT || "play", FMT = FORMATS[FORMAT];
+if (!FMT) { console.error("FORMAT is play or appstore"); process.exit(2); }
+const CLIPS = path.join(OUT, FORMAT === "play" ? "clips" : "clips-" + FORMAT);
+const work = (name, ext) => path.join(OUT, FORMAT === "play" ? name + ext : `${name}-${FORMAT}${ext}`);   // frames, timeline, sound
 const FPS = 30;
 const GL = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -98,9 +112,9 @@ function pageTools() {
   };
 }
 
-async function phone({ place = "loon", input = "motion", dpr = 1.5 } = {}) {
+async function phone({ place = "loon", input = "motion", dpr = FMT.dpr } = {}) {
   const browser = await chromium.launch({ args: GL });
-  const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: dpr, isMobile: true, hasTouch: true });
+  const ctx = await browser.newContext({ viewport: { width: FMT.phone[0], height: FMT.phone[1] }, deviceScaleFactor: dpr, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
   page.setDefaultTimeout(180000);
   const errors = [];
@@ -119,24 +133,39 @@ async function phone({ place = "loon", input = "motion", dpr = 1.5 } = {}) {
     const g = await import("/fish/js/goals.js"), d = g.dayOf(), dg = g.dailyGoal(d, FISH.save);
     FISH.save.today = { d, k: dg.k, n: dg.n, done: 1 };
   });
-  return { browser, page, cdp: await ctx.newCDPSession(page), errors, k: 0, dpr };
+  // A capture from a CDP session of our own puts back that session's screen, and it had none: the page fell to a pixel
+  // ratio of 1 after the first frame, and the game drew the lake at 1x. The same screen here keeps the ratio
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: FMT.phone[0], height: FMT.phone[1], deviceScaleFactor: dpr, mobile: true, screenWidth: FMT.phone[0], screenHeight: FMT.phone[1] });
+  return { browser, page, cdp, errors, k: 0, dpr };
 }
 
-// free fishing at an hour, with no rising rings (their toasts would cover a scene); then the clock stops
+// Stop the page's clock 2 s ahead of its time. In the big phone a frame of software WebGL can take longer than that, so
+// the page's time can pass the mark before the pause comes. The clock stops all the same, and the second ask works
+async function pauseSoon(page) {
+  for (let i = 0; ; i++) {
+    try { return await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 2000); }
+    catch (e) { if (i > 1 || !/fast-forward to the past/.test(e.message)) throw e; }
+  }
+}
+
+// free fishing at an hour, with no rising rings (their toasts would cover a scene); then the clock stops, and a second of
+// the game's time runs unfilmed, so the lake settles (it moves at most 50 ms a frame, and slow frames are few)
 async function startFishing(cam, hour) {
   const { page } = cam;
   await page.click("#freeBtn");
   await page.waitForFunction(() => FISH.G.phase === "cast", null, { timeout: 60000 });
   await page.evaluate((hour) => { FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); FISH.G.hour = hour; FISH.world.setHour(hour); }, hour);
   await sleep(2500);
-  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 2000);
+  await pauseSoon(page);
+  for (let i = 0; i < 30; i++) await page.clock.runFor(33);
 }
 
 // film a clip: script(c) calls c.shoot(n, each) to film n frames (each(i) runs before frame i), and c.mark(name) to note
 // the clip time of the next frame. meta.json keeps the frames, the marks, the sounds (clip time, method, arguments) and
-// the fingers (clip time, x, y in CSS px of the 360 x 640 phone)
+// the fingers (clip time, x, y in CSS px of the phone)
 async function record(cam, name, script) {
-  const dir = path.join(OUT, "clips", name);
+  const dir = path.join(CLIPS, name);
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   let frame = 0;
@@ -153,7 +182,7 @@ async function record(cam, name, script) {
         cam.k++;
         await cam.page.clock.runFor(ms);
         await cam.page.evaluate(() => window.__syncAnims());
-        const r = await cam.cdp.send("Page.captureScreenshot", { format: "jpeg", quality: 92, clip: { x: 0, y: 0, width: 360, height: 640, scale: cam.dpr } });
+        const r = await cam.cdp.send("Page.captureScreenshot", { format: "jpeg", quality: 92, clip: { x: 0, y: 0, width: FMT.phone[0], height: FMT.phone[1], scale: 1 } });
         fs.writeFileSync(path.join(dir, String(frame++).padStart(4, "0") + ".jpg"), Buffer.from(r.data, "base64"));
       }
     },
@@ -312,11 +341,23 @@ async function filmTouch() {
 // The four places, each with a motion cast out over its water, at an hour that shows it well
 const PLACES = [["loon", "Loon Lake", 9], ["stumps", "Stump Bay", 19.4], ["river", "Cedar River", 7.2], ["sea", "Gull Rock", 17.4]];
 async function filmPlace(id, hour) {
-  const cam = await phone({ place: id, dpr: 1.2 });
+  const cam = await phone({ place: id, dpr: FMT.placeDpr });
   try {
     await startFishing(cam, hour);
     await record(cam, "place-" + id, (c) => motionCast(c, { lead: 4, after: 40 }));
     if (cam.errors.length) console.log("  page errors: " + cam.errors.join(" | "));
+  } finally { await cam.browser.close(); }
+}
+
+// The end of the app preview: the title screen of the store build, as the game opens on it. It has a phone of its own,
+// because the clock of a page stops once and does not run again
+async function filmTitle() {
+  const cam = await phone({ place: "loon" });
+  try {
+    await cam.page.evaluate(() => FISH.toTitle());
+    await sleep(2000);
+    await pauseSoon(cam.page);
+    await record(cam, "title", (c) => c.shoot(96));
   } finally { await cam.browser.close(); }
 }
 
@@ -326,6 +367,7 @@ async function film() {
   console.log("film:");
   const jobs = [];
   if (["cast", "strike", "fight", "trophy"].some(want)) jobs.push(filmLoon);
+  if (FORMAT === "appstore" && want("title")) jobs.push(filmTitle);
   if (want("touch")) jobs.push(filmTouch);
   for (const [id, , hour] of PLACES) if (want("place-" + id)) jobs.push(() => filmPlace(id, hour));
   // two phones at a time: each one keeps a core busy with software WebGL
@@ -337,8 +379,8 @@ async function film() {
 /* ================= 2. cut ================= */
 
 const W = 1920, H = 1080;
-const CLIP_NAMES = ["cast", "strike", "fight", "trophy", "touch", ...PLACES.map(([id]) => "place-" + id)];
-const readMeta = (n) => JSON.parse(fs.readFileSync(path.join(OUT, "clips", n, "meta.json"), "utf8"));
+const CLIP_NAMES = ["cast", "strike", "fight", "trophy", "touch", ...PLACES.map(([id]) => "place-" + id), ...(FORMAT === "appstore" ? ["title"] : [])];
+const readMeta = (n) => JSON.parse(fs.readFileSync(path.join(CLIPS, n, "meta.json"), "utf8"));
 const sfxAt = (meta, name) => { const s = meta.sounds.find((x) => x[1] === "sfx" && x[2] === name); return s ? s[0] : null; };
 
 // When each scene starts (s). The scenes follow the clips: the cast ends soon after the lure lands, the strike and the
@@ -353,6 +395,21 @@ function timeline(M) {
   S.touch = S.places + 5.4;
   S.end = S.touch + 3;
   S.total = S.end + 3.4;
+  return S;
+}
+
+// The app preview: one shot after another, full screen, each place for placeLen s, then the title screen. Apple takes
+// 15 to 30 s
+function timelineTall(M) {
+  const len = (n) => M[n].frames / FPS;
+  const S = { cast: 0, placeLen: 1.35 };
+  S.strike = Math.min(len("cast"), M.cast.marks.land + 0.4);
+  S.fight = S.strike + len("strike");
+  S.trophy = S.fight + len("fight");
+  S.places = S.trophy + Math.min(len("trophy"), 4.6);
+  S.touch = S.places + 4 * S.placeLen;
+  S.title = S.touch + 2.4;
+  S.total = Math.min(29.9, S.title + 2.9);
   return S;
 }
 
@@ -371,23 +428,29 @@ function montageU(m, ct) {
   return ct < l ? a + (ct - c0 - a) / 2 : a + (l - c0 - a) / 2 + (ct - l);
 }
 
-const CUT_HTML = `<!doctype html><html><head><meta charset="utf-8"><style>
+// the fonts, the titles, the labels and the finger, shared by both cuts
+const CAP_CSS = `
 @font-face { font-family: "Alfa Slab One"; font-weight: 400; src: url("/fonts/alfa-slab-one-latin.woff2") format("woff2"); }
 @font-face { font-family: "Nunito"; font-weight: 200 1000; src: url("/fonts/nunito-latin.woff2") format("woff2"); }
-html, body { margin: 0; width: ${W}px; height: ${H}px; overflow: hidden; background: ${C.deep}; }
 #stage { position: absolute; inset: 0; overflow: hidden; }
 .layer { position: absolute; left: 0; top: 0; }
-.panel { position: absolute; left: 0; top: 0; box-sizing: border-box; border: 9px solid #0a1d22; border-radius: 46px; overflow: hidden; background: #0a1d22;
-  box-shadow: 0 30px 70px rgba(2, 14, 18, 0.55), 0 0 0 2px rgba(232, 182, 74, 0.45); transform-origin: 50% 82%; }
-.panel img { display: block; width: 100%; height: 100%; }
 .cap { position: absolute; left: 0; top: 0; white-space: nowrap; text-align: center; }
 .big { font-family: "Alfa Slab One", Georgia, serif; font-weight: 400; color: ${C.cream}; line-height: 1; letter-spacing: 0.01em; }
 .sub { font-family: "Nunito", sans-serif; font-weight: 900; color: ${C.ink}; text-shadow: 0 3px 14px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.5); }
-.label { position: absolute; left: 0; top: 0; padding: 8px 26px 10px; border-radius: 999px; background: rgba(9, 34, 41, 0.9); border: 2px solid rgba(232, 182, 74, 0.8);
+.label, .pill { position: absolute; left: 0; top: 0; padding: 8px 26px 10px; border-radius: 999px; background: rgba(9, 34, 41, 0.9); border: 2px solid rgba(232, 182, 74, 0.8);
   font-family: "Nunito", sans-serif; font-weight: 900; font-size: 34px; color: ${C.cream}; white-space: nowrap; }
 .finger { position: absolute; left: 0; top: 0; width: 66px; height: 66px; margin: -33px 0 0 -33px; border-radius: 50%; box-sizing: border-box;
-  border: 5px solid rgba(255, 255, 255, 0.95); background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 24px rgba(255, 255, 255, 0.65); }
+  border: 5px solid rgba(255, 255, 255, 0.95); background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 24px rgba(255, 255, 255, 0.65); }`;
+const CUT_HTML = `<!doctype html><html><head><meta charset="utf-8"><style>${CAP_CSS}
+html, body { margin: 0; width: ${W}px; height: ${H}px; overflow: hidden; background: ${C.deep}; }
+.panel { position: absolute; left: 0; top: 0; box-sizing: border-box; border: 9px solid #0a1d22; border-radius: 46px; overflow: hidden; background: #0a1d22;
+  box-shadow: 0 30px 70px rgba(2, 14, 18, 0.55), 0 0 0 2px rgba(232, 182, 74, 0.45); transform-origin: 50% 82%; }
+.panel img { display: block; width: 100%; height: 100%; }
 #flash { position: absolute; inset: 0; background: #fffdf2; opacity: 0; }
+</style></head><body><div id="stage"></div></body></html>`;
+const TALL_HTML = `<!doctype html><html><head><meta charset="utf-8"><style>${CAP_CSS}
+html, body { margin: 0; width: ${FORMATS.appstore.W}px; height: ${FORMATS.appstore.H}px; overflow: hidden; background: #000; }
+.full { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 </style></head><body><div id="stage"></div></body></html>`;
 
 // The page side of the cut: builds the stage, and window.renderAt(t) draws the frame at t (s) of the video
@@ -603,6 +666,76 @@ function director({ W, H, FPS, S, M, PL, MONTAGE }) {
   };
 }
 
+// The page side of the app preview: the game fills the picture, one shot after another, and the titles sit in the band
+// of sky under the game's own prompts. K: picture px per CSS px of the filmed phone
+function directorTall({ W, H, FPS, S, M, PL, K }) {
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k;
+  const win = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+  const out = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+  const back = (k) => { k = clamp(k, 0, 1); return 1 + 2.70158 * Math.pow(k - 1, 3) + 1.70158 * Math.pow(k - 1, 2); };
+  const mk = (n, k) => M[n].marks[k], len = (n) => M[n].frames / FPS;
+  const stage = document.getElementById("stage");
+  const make = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; stage.appendChild(e); return e; };
+  const slab = (px) => `0 ${0.04 * px}px 0 #e0453a, 0 ${0.08 * px}px 0 #7a1c14, 0 ${0.13 * px}px ${0.25 * px}px rgba(0, 0, 0, 0.45)`;
+  const pic = make("img", "full");
+  let src = "";
+  const finger = make("div", "finger");
+  const caps = [];
+  const cap = (text, cls, px, x, y, a, b, { color, tilt = 0 } = {}) => {
+    const e = make("div", "cap " + cls, text);
+    e.style.fontSize = px + "px";
+    if (cls === "big") e.style.textShadow = slab(px);
+    if (color) e.style.color = color;
+    caps.push({ e, x, y, a, b, tilt, big: cls === "big" });
+  };
+  const mid = W / 2, band = Math.round(H * 0.3), shutter = S.trophy + (M.trophy.shutter != null ? M.trophy.shutter : 1.2);
+  cap("Your phone", "big", 86, mid, band - 50, 0.35, S.strike - 0.3);
+  cap("is the rod.", "big", 86, mid, band + 50, 0.5, S.strike - 0.3);
+  cap("Wait for the bite.", "big", 70, mid, band, S.strike + 0.3, S.strike + mk("strike", "strike") - 0.1);
+  cap("Snap it up!", "big", 108, mid, band, S.strike + mk("strike", "strike"), S.fight - 0.3, { tilt: -3 });
+  cap("Fight every run.", "big", 76, mid, band, S.fight + 0.3, S.trophy - 0.3);
+  cap("Land a trophy.", "big", 76, mid, Math.round(H * 0.105), shutter + 0.3, S.places - 0.25);
+  cap("Fish four places.", "big", 70, mid, band - 60, S.places + 0.1, S.touch - 0.2);
+  PL.forEach(([, name], i) => cap(name, "pill", 44, mid, band + 45, S.places + i * S.placeLen + 0.05, S.places + (i + 1) * S.placeLen - 0.12));
+  cap("Or play with touch.", "big", 70, mid, band, S.touch + 0.2, S.title - 0.2);
+  cap("No ads · No accounts · Plays offline", "sub", 38, mid, Math.round(H * 0.47), S.title + 0.5, 1e9, { color: "#e8b64a" });
+
+  // the shot at t: the clip and its time
+  function shotAt(t) {
+    if (t < S.strike) return ["cast", t];
+    if (t < S.fight) return ["strike", t - S.strike];
+    if (t < S.trophy) return ["fight", t - S.fight];
+    if (t < S.places) return ["trophy", t - S.trophy];
+    if (t < S.touch) {
+      // each place from just before its back swing: the rod whips in front of the place, and the lure goes out
+      const i = Math.min(PL.length - 1, Math.floor((t - S.places) / S.placeLen)), n = "place-" + PL[i][0];
+      return [n, Math.max(0, mk(n, "back") - 0.35) + (t - S.places - i * S.placeLen)];
+    }
+    if (t < S.title) return ["touch", mk("touch", "crank") - 0.2 + (t - S.touch)];
+    return ["title", t - S.title];
+  }
+
+  window.renderAt = async (t) => {
+    const [n, t1] = shotAt(t), ct = clamp(t1, 0, len(n) - 1 / FPS), loads = [];
+    const f = Math.round(ct * FPS), s = `/clips/${n}/${String(f).padStart(4, "0")}.jpg`;
+    if (s !== src) { src = s; pic.src = s; loads.push(pic.decode().catch(() => {})); }
+    // the finger on the crank in touch play, as filmed
+    let fp = null;
+    if (n === "touch") for (const e of M.touch.fingers) if (e[0] <= ct + 1e-6) fp = e;
+    finger.style.display = fp ? "block" : "none";
+    if (fp) finger.style.transform = `translate(${(fp[1] * K).toFixed(1)}px, ${(fp[2] * K).toFixed(1)}px)`;
+    for (const c of caps) {
+      const kin = win(t, c.a, c.a + 0.32), kout = win(t, c.b, c.b + 0.2);
+      if (kin <= 0 || kout >= 1) { c.e.style.display = "none"; continue; }
+      c.e.style.display = "block";
+      const sc = c.big ? lerp(1.35, 1, back(kin)) : 1, dy = c.big ? 0 : 22 * (1 - out(kin));
+      c.e.style.opacity = (Math.min(1, kin * 2.5) * (1 - kout)).toFixed(3);
+      c.e.style.transform = `translate(-50%, -50%) translate(${c.x}px, ${(c.y + dy - 18 * kout).toFixed(1)}px) rotate(${c.tilt}deg) scale(${sc.toFixed(4)})`;
+    }
+    await Promise.all(loads);
+  };
+}
+
 // the painted water of the store art, a little larger than the video so it can drift, and the end card's bobber
 async function drawArt(page) {
   const dir = path.join(OUT, "art");
@@ -623,28 +756,31 @@ async function drawArt(page) {
 async function cut() {
   const M = Object.fromEntries(CLIP_NAMES.map((n) => [n, readMeta(n)]));
   M.trophy.shutter = sfxAt(M.trophy, "shutter");
-  const S = timeline(M), frames = Math.round(S.total * FPS);
-  console.log("cut: " + frames + " frames, scenes " + Object.entries(S).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(", "));
+  const tall = FORMAT === "appstore";
+  const S = tall ? timelineTall(M) : timeline(M), frames = Math.round(S.total * FPS);
+  console.log(`cut (${FORMAT}): ${frames} frames, scenes ` + Object.entries(S).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(", "));
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: FMT.W, height: FMT.H }, deviceScaleFactor: 1 });
   page.on("pageerror", (e) => console.log("  page error: " + e.message));
-  await drawArt(page);
-  await page.setViewportSize({ width: W, height: H });
-  const files = { "/clips/": path.join(OUT, "clips"), "/art/": path.join(OUT, "art"), "/fonts/": path.join(ROOT, "public/fish/fonts") };
+  if (!tall) await drawArt(page);
+  await page.setViewportSize({ width: FMT.W, height: FMT.H });
+  const files = { "/clips/": CLIPS, "/art/": path.join(OUT, "art"), "/fonts/": path.join(ROOT, "public/fish/fonts") };
   await page.route("https://video.local/**", (r) => {
     const p = new globalThis.URL(r.request().url()).pathname;
-    if (p === "/cut.html") return r.fulfill({ body: CUT_HTML, contentType: "text/html" });
+    if (p === "/cut.html") return r.fulfill({ body: tall ? TALL_HTML : CUT_HTML, contentType: "text/html" });
     const k = Object.keys(files).find((d) => p.startsWith(d));
     return k ? r.fulfill({ path: path.join(files[k], decodeURIComponent(p.slice(k.length))) }) : r.fulfill({ status: 404, body: "" });
   });
   await page.goto("https://video.local/cut.html");
   await page.evaluate(() => document.fonts.ready);
   const slim = Object.fromEntries(Object.entries(M).map(([n, m]) => [n, { frames: m.frames, marks: m.marks, fingers: m.fingers, shutter: m.shutter }]));
-  await page.evaluate(director, { W, H, FPS, S, M: slim, PL: PLACES.map(([id, name]) => [id, name]), MONTAGE: montageT.toString() });
+  const PL = PLACES.map(([id, name]) => [id, name]);
+  if (tall) await page.evaluate(directorTall, { W: FMT.W, H: FMT.H, FPS, S, M: slim, PL, K: FMT.W / FMT.phone[0] });
+  else await page.evaluate(director, { W, H, FPS, S, M: slim, PL, MONTAGE: montageT.toString() });
   await page.waitForFunction(() => [...document.images].every((i) => !i.src || i.complete));
   // STILLS=1.5,6.2 draws only those moments (s), to look at
   const stills = process.env.STILLS ? process.env.STILLS.split(",").map(Number) : null;
-  const dir = path.join(OUT, stills ? "stills" : "frames");
+  const dir = stills ? path.join(OUT, "stills") : work("frames", "");
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   const times = stills || Array.from({ length: frames }, (_, f) => f / FPS);
@@ -655,7 +791,7 @@ async function cut() {
     fs.writeFileSync(path.join(dir, name), await page.screenshot({ type: "jpeg", quality: 94 }));
     if (!stills && i % 150 === 0) console.log(`  frame ${i} of ${frames} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   }
-  if (!stills) fs.writeFileSync(path.join(OUT, "timeline.json"), JSON.stringify({ S, frames }));
+  if (!stills) fs.writeFileSync(work("timeline", ".json"), JSON.stringify({ S, frames }));
   await browser.close();
 }
 
@@ -711,14 +847,24 @@ function writeWav(file, mix) {
 }
 
 async function sound() {
-  const { S, frames } = JSON.parse(fs.readFileSync(path.join(OUT, "timeline.json"), "utf8"));
+  const { S, frames } = JSON.parse(fs.readFileSync(work("timeline", ".json"), "utf8"));
   const M = Object.fromEntries(CLIP_NAMES.map((n) => [n, readMeta(n)]));
   const total = frames / FPS, mix = [new Float32Array(Math.ceil(total * SR)), new Float32Array(Math.ceil(total * SR))];
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto(new globalThis.URL("privacy.html", GAME).href);
+  const tall = FORMAT === "appstore";
   // what each phone shows, in clip time from..to, starting at video time `at`; loops: whether its loops sound too
-  const shows = [
+  const shows = tall ? [
+    { clip: "cast", from: 0, to: S.strike, at: 0, gain: 1, loops: true },
+    { clip: "strike", from: 0, to: S.fight - S.strike, at: S.strike, gain: 1, loops: true },
+    { clip: "fight", from: 0, to: S.trophy - S.fight, at: S.fight, gain: 1, loops: true },
+    { clip: "trophy", from: 0, to: S.places - S.trophy, at: S.trophy, gain: 1, loops: true },
+    // one place after another, each from just before its back swing, as directorTall shows them
+    ...PLACES.map(([id], i) => { const n = "place-" + id, from = Math.max(0, M[n].marks.back - 0.35); return { clip: n, from, to: from + S.placeLen, at: S.places + i * S.placeLen, gain: 0.9, loops: true }; }),
+    { clip: "touch", from: M.touch.marks.crank - 0.2, to: M.touch.marks.crank - 0.2 + (S.title - S.touch), at: S.touch, gain: 0.9, loops: true },
+    { clip: "title", from: 0, to: total - S.title, at: S.title, gain: 1, loops: true },
+  ] : [
     { clip: "cast", from: 0, to: S.strike, at: 0, gain: 1, loops: true },
     { clip: "strike", from: 0, to: S.fight - S.strike, at: S.strike, gain: 1, loops: true },
     { clip: "fight", from: 0, to: S.trophy - S.fight, at: S.fight, gain: 1, loops: true },
@@ -751,28 +897,38 @@ async function sound() {
   // and Loon Lake again for the end, with a loon at the title
   const bed = async (place, hour, from, to, loonAt = null, gain = 0.9) =>
     addTo(mix, await renderSound(page, "ambience", to - from + 0.6, { place, hour, loonAt, seed: 11 }), from - 0.3, gain, 0.45, 0.45);
-  await bed("loon", 19.3, 0, S.places + 0.4, S.strike + 0.6);
-  for (let i = 0; i < PLACES.length; i++) {
-    const [id, , hour] = PLACES[i], from = S.places - 0.15 + i * 0.22 + 0.25, to = i < PLACES.length - 1 ? from + 1.5 : S.touch + 0.4;
-    await bed(id, hour, from, to, null, 0.85);
+  if (tall) {
+    // the app preview: each place for its own shot, then the title screen, which shows Loon Lake at its free-fishing
+    // hour, and a loon calls
+    await bed("loon", 19.3, 0, S.places + 0.2, S.strike + 0.6);
+    for (let i = 0; i < PLACES.length; i++) { const [id, , hour] = PLACES[i], from = S.places + i * S.placeLen; await bed(id, hour, from, from + S.placeLen, null, 0.85); }
+    await bed("loon", 19.4, S.touch - 0.2, S.title + 0.15, null, 0.65);
+    const morning = await page.evaluate(async () => (await import("/fish/js/journey.js")).startHour("loon", "free"));
+    await bed("loon", morning, S.title - 0.15, total, 1.1, 0.75);
+  } else {
+    await bed("loon", 19.3, 0, S.places + 0.4, S.strike + 0.6);
+    for (let i = 0; i < PLACES.length; i++) {
+      const [id, , hour] = PLACES[i], from = S.places - 0.15 + i * 0.22 + 0.25, to = i < PLACES.length - 1 ? from + 1.5 : S.touch + 0.4;
+      await bed(id, hour, from, to, null, 0.85);
+    }
+    await bed("loon", 19.4, S.touch - 0.2, total, S.end + 1.3 - (S.touch - 0.2), 0.65);
+    // the end card: a plop as the bobber comes up, and the title stamps
+    addTo(mix, await renderSound(page, "plop", 3, { v: 0.8, at: 0.25 }), S.end + 0.12 - 0.25, 1);
+    for (const at of [S.end + 0.5, S.end + 0.66]) addTo(mix, await renderSound(page, "stamp", 2, { at: 0.25 }), at - 0.25, 0.8);
   }
-  await bed("loon", 19.4, S.touch - 0.2, total, S.end + 1.3 - (S.touch - 0.2), 0.65);
-  // the end card: a plop as the bobber comes up, and the title stamps
-  addTo(mix, await renderSound(page, "plop", 3, { v: 0.8, at: 0.25 }), S.end + 0.12 - 0.25, 1);
-  for (const at of [S.end + 0.5, S.end + 0.66]) addTo(mix, await renderSound(page, "stamp", 2, { at: 0.25 }), at - 0.25, 0.8);
   await browser.close();
   let peak = 0;
   for (const ch of mix) for (const x of ch) peak = Math.max(peak, Math.abs(x));
   if (peak > 0.95) for (const ch of mix) for (let i = 0; i < ch.length; i++) ch[i] *= 0.95 / peak;
-  writeWav(path.join(OUT, "sound.wav"), mix);
+  writeWav(work("sound", ".wav"), mix);
   console.log(`sound: ${n} sounds and loops, peak ${peak.toFixed(2)}, ${total.toFixed(2)} s`);
 }
 
 /* ================= 4. mp4 ================= */
 
 async function mp4() {
-  const wav = path.join(OUT, "sound.wav"), file = path.join(OUT, "reel-it-in-promo.mp4");
-  const args = ["-y", "-hide_banner", "-loglevel", "error", "-framerate", String(FPS), "-i", path.join(OUT, "frames", "%04d.jpg")];
+  const wav = work("sound", ".wav"), file = path.join(OUT, FMT.file);
+  const args = ["-y", "-hide_banner", "-loglevel", "error", "-framerate", String(FPS), "-i", path.join(work("frames", ""), "%04d.jpg")];
   let af = null;
   if (fs.existsSync(wav)) {
     // two passes of loudnorm: measure, then one gain for the whole mix, to -16 LUFS with peaks under -1.5 dBTP
@@ -782,8 +938,10 @@ async function mp4() {
     console.log(`mp4: the mix measured ${j.input_i} LUFS, ${j.input_tp} dBTP`);
     args.push("-i", wav);
   }
-  args.push("-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", "4.1", "-r", String(FPS), "-movflags", "+faststart");
-  if (af) args.push("-af", af, "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "-shortest");
+  args.push("-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", FMT.level, "-r", String(FPS), "-movflags", "+faststart");
+  // Apple asks for 10 to 12 Mbps: the quality stays, and the peaks stop at the cap
+  if (FMT.maxrate) args.push("-maxrate", FMT.maxrate, "-bufsize", parseInt(FMT.maxrate) * 2 + "M");
+  if (af) args.push("-af", af, "-ar", "48000", "-c:a", "aac", "-b:a", FMT.audio, "-shortest");
   args.push(file);
   execFileSync("ffmpeg", args, { stdio: "inherit" });
   console.log(`mp4: ${file} (${(fs.statSync(file).size / 1e6).toFixed(1)} MB)`);
