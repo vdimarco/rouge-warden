@@ -55,24 +55,26 @@ export function worldMapped(texture, { color = '#ffffff', roughness = .92, scale
 }
 // Heroes, minions and creatures: a team-coloured rim from the side away from the camera (dark armour stays readable on
 // grass), a short white flash when hit, and screen-door fading (no transparency sort, shadows stay right).
-export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 } });
+export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 }, uTintRange: { value: new THREE.Vector2(.32, .55) }, uTintGlow: { value: 0 } });
 // One uniforms object can drive every material of a unit (body and weapons).
 export function unitMaterial(source, uniforms = unitUniforms(), key = 'unit') {
   const m = source.clone();
   m.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
-      uniform vec3 uRim; uniform float uRimPower; uniform float uFlash; uniform float uFade; uniform vec3 uTint; uniform float uTintOn;`)
+      uniform vec3 uRim; uniform float uRimPower; uniform float uFlash; uniform float uFade; uniform vec3 uTint; uniform float uTintOn; uniform vec2 uTintRange; uniform float uTintGlow;`)
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
       if ( uFade < .999 ) { float d = fract( dot( floor( gl_FragCoord.xy ), vec2( .7548777, .5698403 ) ) ); if ( d > uFade ) discard; }`)
       // Tabards and cloth: bright, low-saturation texels take the team colour (a minion's off-white tabard).
+      // A tower's pale crystal uses the same rule with a higher threshold, and also glows.
       .replace('#include <map_fragment>', `#include <map_fragment>
+      float tintMask = 0.;
       if ( uTintOn > .5 ) { vec3 c = diffuseColor.rgb; float hi = max( c.r, max( c.g, c.b ) ), lo = min( c.r, min( c.g, c.b ) );
-        float cloth = smoothstep( .32, .55, hi ) * ( 1. - smoothstep( .12, .3, hi - lo ) );
-        diffuseColor.rgb = mix( c, uTint * ( .45 + hi * .75 ), cloth * .9 ); }`)
+        tintMask = smoothstep( uTintRange.x, uTintRange.y, hi ) * ( 1. - smoothstep( .12, .3, hi - lo ) );
+        diffuseColor.rgb = mix( c, uTint * ( .45 + hi * .75 ), tintMask * .9 ); }`)
       .replace('#include <tonemapping_fragment>', `
       { vec3 vd = normalize( vViewPosition ); float rim = pow( 1. - clamp( dot( normal, vd ), 0., 1. ), 2.6 );
-        gl_FragColor.rgb += uRim * rim * uRimPower + vec3( uFlash ); }
+        gl_FragColor.rgb += uRim * rim * uRimPower + vec3( uFlash ) + uTint * tintMask * uTintGlow; }
       #include <tonemapping_fragment>`);
   };
   m.customProgramCacheKey = () => key;

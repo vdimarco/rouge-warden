@@ -157,9 +157,11 @@ class StructureView {
     const mat = unitMaterial(units.meshMaterial(gltf), this.uniforms = unitUniforms(), 'structure');
     const mesh = new THREE.Mesh(units.meshGeometry(gltf), mat); mesh.castShadow = mesh.receiveShadow = true; mesh.scale.setScalar(this.height); this.mesh = mesh; this.root.add(mesh);
     this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]); this.uniforms.uRimPower.value = .18;
+    // The pale crystal takes the team colour and glows.
+    Object.assign(this.uniforms.uTint.value.set(e.team === 0 ? '#6fdcc6' : e.team === 1 ? '#ff6a80' : '#f0c27a'), {}); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.5, .78); this.uniforms.uTintGlow.value = .9;
     if (this.guardian || core) { const ring = new THREE.Mesh(units.plinth, units.stone); ring.scale.set(core ? 520 : 190, core ? 46 : 56, core ? 520 : 190); ring.castShadow = ring.receiveShadow = true; this.root.add(ring); if (!core) mesh.position.y = 50; }
     // The crystal's glow: a sprite in the team colour that breathes.
-    const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 420 : 200); this.glow = glow; this.root.add(glow);
+    const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 420 : 240); this.glow = glow; this.root.add(glow);
     this.ward = new THREE.Mesh(units.wardGeometry, units.wardMaterial(e.team)); this.ward.scale.set(core ? 520 : 170, this.height * 1.05, core ? 520 : 170); this.ward.visible = false; this.root.add(this.ward);
     this.root.position.set(e.x, 0, e.y); this.root.rotation.y = core ? (e.team ? Math.PI : 0) : (e.id * 1.7) % TAU;
   }
@@ -172,7 +174,7 @@ class StructureView {
     // Damage darkens the stone; a low structure smokes; a fallen one sinks to a stump and leaves rubble.
     this.mesh.material.color.setScalar(.55 + .45 * ratio);
     this.mesh.position.y = (this.guardian ? 50 : 0) - fall * this.height * .78; this.mesh.rotation.z = fall * .09; this.mesh.rotation.x = fall * .05;
-    this.glow.visible = !dead; const pulse = this.units.reduced ? 1 : 1 + Math.sin(time * 2.2 + e.id) * .08; this.glow.scale.setScalar((this.core ? 420 : 200) * pulse * (.75 + ratio * .25));
+    this.glow.visible = !dead; const pulse = this.units.reduced ? 1 : 1 + Math.sin(time * 2.2 + e.id) * .08; this.glow.scale.setScalar((this.core ? 420 : 240) * pulse * (.75 + ratio * .25));
     u.uFlash.value = e.hit > 0 ? e.hit / .16 * .12 : 0;
     const prot = !dead && structureProtected(s, e); this.ward.visible = prot && vis; if (prot) this.ward.material.uniforms.uTime.value = time;
     if (dead && !this.rubble) { this.rubble = true; this.units.effects.dust(e.x, e.y, this.core ? 300 : 140, this.core ? 24 : 14, '#9a8c74'); const r = this.units.rubble(e, this.core ? 2.2 : 1); this.root.add(r); }
@@ -246,7 +248,7 @@ export class Units {
     map.set('*', [...map.values()][0]); map.uniforms = uniforms; this.cache.set(key, map); return map;
   }
   glowMaterial(team) {
-    this.glows[team + 1] ||= new THREE.SpriteMaterial({ map: this.textures.glow, color: team === 0 ? '#79e6d2' : team === 1 ? '#ff7088' : '#f3c67a', blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false, opacity: .95 });
+    this.glows[team + 1] ||= new THREE.SpriteMaterial({ map: this.textures.glow, color: team === 0 ? '#79e6d2' : team === 1 ? '#ff7088' : '#f3c67a', blending: THREE.AdditiveBlending, depthWrite: false, depthTest: true, transparent: true, toneMapped: false, opacity: .55 });
     return this.glows[team + 1];
   }
   // The ward shimmer on a protected structure: a faint fresnel wall in the team colour, rising bands.
@@ -254,7 +256,7 @@ export class Units {
     return this.wards[team + 1] ||= new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false,
       uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(team ? '#ff7a8c' : '#86e8d6') } },
       vertexShader: 'varying vec3 vN; varying vec3 vV; varying float vY; void main(){ vY = position.y; vec4 w = modelMatrix * vec4(position,1.); vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - w.xyz); gl_Position = projectionMatrix * viewMatrix * w; }',
-      fragmentShader: 'uniform float uTime; uniform vec3 uColor; varying vec3 vN; varying vec3 vV; varying float vY; void main(){ float f = pow(1. - abs(dot(vN, vV)), 2.5); float band = .5 + .5 * sin(vY * 30. - uTime * 3.); float a = (f * .5 + band * .06) * (1. - vY) * smoothstep(0., .05, vY); gl_FragColor = vec4(uColor * a, 1.); }' });
+      fragmentShader: 'uniform float uTime; uniform vec3 uColor; varying vec3 vN; varying vec3 vV; varying float vY; void main(){ float f = pow(1. - abs(dot(vN, vV)), 2.5); float band = .5 + .5 * sin(vY * 30. - uTime * 3.); float a = (f * .32 + band * .035) * (1. - vY) * smoothstep(0., .05, vY); gl_FragColor = vec4(uColor * a, 1.); }' });
   }
   rubble(e, k) {
     const g = new THREE.Group(), geo = this.meshGeometry(assets.world.boulders), mat = this.meshMaterial(assets.world.boulders);

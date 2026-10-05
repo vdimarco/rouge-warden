@@ -69,7 +69,7 @@ function reedGeometry() {
 // The scenery material patch: wind sway, the realm grow, fog of war, and a see-through tube from the camera to the
 // player's hero (screen-door, so no sorting and the shadows stay whole).
 export const propUniforms = { uTime: { value: 0 }, uSway: { value: 1 }, uHero: { value: new THREE.Vector3(0, -9999, 0) }, uSee: { value: 1 } };
-function patch(material, grow, { sway = 0, see = true, key }) {
+function patch(material, grow, { sway = 0, see = true, key, bias = 0 }) {
   const uniforms = { ...propUniforms, uGrow: grow };
   material.onBeforeCompile = shader => {
     withWorld(shader); fowAtEnd(shader); Object.assign(shader.uniforms, uniforms);
@@ -82,35 +82,38 @@ function patch(material, grow, { sway = 0, see = true, key }) {
             vec2 ph = vec2( 0. );
           #endif
           float hy = max( position.y, 0. ); transformed.xz += vec2( sin( uTime * 1.25 + ph.x + ph.y ), cos( uTime * .9 + ph.y * 1.3 ) ) * hy * hy * ${sway.toFixed(3)} * uSway; }`);
+    // Leaf maps are sampled a little blurred: from this far the leaf detail is noise, the mass of the crown is what reads.
+    if (bias) shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', THREE.ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', `texture2D( map, vMapUv, ${bias.toFixed(1)} )`));
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uHero; uniform float uSee;')
       .replace('#include <clipping_planes_fragment>', see ? `#include <clipping_planes_fragment>
         if ( uSee > .5 ) { vec3 ab = uHero - cameraPosition; float t = clamp( dot( vWorldP - cameraPosition, ab ) / dot( ab, ab ), 0., 1. );
           float d = length( vWorldP - cameraPosition - ab * t ), k = fract( dot( floor( gl_FragCoord.xy ), vec2( .7548777, .5698403 ) ) );
           if ( t < .97 && k < .72 * ( 1. - smoothstep( 90., 170., d ) ) ) discard; }` : '#include <clipping_planes_fragment>');
   };
-  material.customProgramCacheKey = () => key + (see ? '-see' : '') + sway;
+  material.customProgramCacheKey = () => key + (see ? '-see' : '') + sway + bias;
   return material;
 }
 // Names from scenery.js -> what to build. Unknown names fall back to a boulder, so new scenery never breaks the scene.
 // [kind, height factor, width factor]; the oak model is an autumn oak, so tints move it toward summer or birch.
-const TREE = { pines: ['pine', 1.6, .62], pine: ['pine', 1.6, .62], juniper: ['pine', 1.05, .95], oak: ['oak', 1.5, .66], willow: ['oak', 1.4, .8], birches: ['oak', 1.6, .42] };
-const TINTS = { oak: '#ffffff', willow: '#b4c49a', birches: '#f2ecd2', juniper: '#c4cdb0', pines: '#f0f2e6', pine: '#f0f2e6' };
+const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pine', 1.05, .9], oak: ['oak', 1.45, .56], willow: ['oak', 1.35, .66], birches: ['oak', 1.55, .4] };
+const TINTS = { oak: '#d6d8a4', willow: '#a9bc8e', birches: '#efe8c8', juniper: '#d4dcc0', pines: '#ffffff', pine: '#ffffff' };
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
-const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .7, juniper: .7, willow: .8 };
+const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .6, juniper: .6, willow: .7, oak: .7, pines: .8 };
 export class Props {
   constructor(scene, assets, textures) {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
     const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
-    const tree = (m, sway) => set => patch(m.clone(), this.grow[set], { sway, key: 'tree' });
+    // Leaves glow a little with their own colour (light through the canopy), so a crown never turns to a black blob.
+    const tree = (m, sway, glow = 0) => set => { const c = m.clone(); if (glow) { c.emissive = new THREE.Color(glow, glow, glow * .8); c.emissiveMap = c.map; } return patch(c, this.grow[set], { sway, key: 'tree', bias: glow ? 1.6 : 0 }); };
     const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: 'built' }), this.grow[set], { key: 'built' });
     const plain = (color, rough) => set => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[set], { see: false, key: 'plain' });
     const leaves = materialOf(w.pine), autumn = materialOf(w.oak);
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
-      pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .6), material: tree(leaves, .035), shadow: true },
-      oak: { geometry: softCanopy(simplify(geometryOf(w.oak), 22), .62, .3), material: tree(autumn, .03), shadow: true },
-      bush: { geometry: bushGeometry(3), material: tree(leaves, .05), shadow: false },
-      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05), shadow: false },
+      pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .75), material: tree(leaves, .035, .16), shadow: true, selfShadow: false },
+      oak: { geometry: softCanopy(simplify(geometryOf(w.oak), 22), .62, .3, .85), material: tree(autumn, .03, .12), shadow: true, selfShadow: false },
+      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .14), shadow: false },
+      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .1), shadow: false },
       boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true },
       arch: { geometry: simplify(geometryOf(w.arch), 28), material: tree(materialOf(w.arch), 0), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
@@ -152,7 +155,7 @@ export class Props {
       });
       const mesh = new THREE.InstancedMesh(def.geometry, def.materials[set], n); mesh.count = 0; mesh.frustumCulled = false;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.setColorAt(0, col); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
-      mesh.castShadow = def.shadow; mesh.receiveShadow = true; mesh.name = kind;
+      mesh.castShadow = def.shadow; mesh.receiveShadow = def.selfShadow !== false; mesh.name = kind;
       set === 2 ? this.sets[2].group.add(mesh) : this.sets[set].group.add(mesh);
       this.sets[set].kinds.set(kind, { mesh, matrices, colors, spots, n }); this.counts[set] += n;
     }

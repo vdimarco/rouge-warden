@@ -106,7 +106,7 @@ export class Terrain {
     material.customProgramCacheKey = () => 'shore-ground';
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material); this.ground.rotation.x = -Math.PI / 2; this.ground.receiveShadow = true;
     this.ground.name = 'ground'; scene.add(this.ground);
-    this.stone = worldMapped(textures.stone, { color: '#d8d0c0', scale: 240, key: 'stone-built' });
+    this.stone = worldMapped(textures.stone, { color: '#b9b1a1', scale: 240, key: 'stone-built' });
     this.group = new THREE.Group(); scene.add(this.group);
   }
   // Rebuilt for each match seed: masks, river and bridges follow the live geometry.
@@ -148,14 +148,14 @@ function water(river) {
         float e = 2.5, h = waves( vW.xz ), hx = waves( vW.xz + vec2( e, 0 ) ), hz = waves( vW.xz + vec2( 0, e ) );
         vec3 n = normalize( vec3( ( h - hx ) * 9., 1., ( h - hz ) * 9. ) );
         vec3 view = normalize( cameraPosition - vW ); float fres = pow( 1. - max( dot( n, view ), 0. ), 4. );
-        vec3 deep = mix( vec3( .05, .13, .13 ), vec3( .04, .09, .12 ), uRealm ), shallow = mix( vec3( .23, .31, .25 ), vec3( .16, .24, .25 ), uRealm );
+        vec3 deep = mix( vec3( .018, .07, .075 ), vec3( .015, .05, .07 ), uRealm ), shallow = mix( vec3( .1, .16, .12 ), vec3( .07, .13, .13 ), uRealm );
         vec3 col = mix( shallow, deep, depth );
-        col = mix( col, uSky * .85, .18 + fres * .5 );
+        col = mix( col, uSky * .55, .08 + fres * .5 );
         vec3 hv = normalize( uSun + view ); float glint = pow( max( dot( n, hv ), 0. ), 260. ) * 2.4;
         col += vec3( 1., .82, .55 ) * glint * ( .4 + depth );
         float foam = smoothstep( .78, .95, across ) * ( .5 + .5 * noise( vW.xz / 18. + uTime * .6 ) );
-        col = mix( col, vec3( .72, .7, .6 ), foam * .35 );
-        float alpha = mix( .55, .93, depth ) * ( 1. - smoothstep( .9, 1., across ) );
+        col = mix( col, vec3( .55, .55, .48 ), foam * .22 );
+        float alpha = mix( .6, .96, depth ) * ( 1. - smoothstep( .9, 1., across ) );
         gl_FragColor = vec4( col, alpha );
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

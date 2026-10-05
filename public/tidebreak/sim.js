@@ -490,7 +490,7 @@ export function step(s, input = {}, dt = 1 / 60) {
   s.floaters.forEach(e => { e.life -= dt; e.y -= dt * 26; }); s.floaters = s.floaters.filter(e => e.life > 0);
   if (shiftWorld(s)) announce(s, s.phase ? 'The woods swallow the town' : 'The town returns', s.phase ? 'Vision shrinks. Hide in brush for a 75% ambush strike.' : 'Streets reopen. Buildings block sight and movement.');
   if (s.time >= s.nextWave) { spawnWave(s); s.nextWave += PACE.waveEvery; }
-  if (!s.suddenDeath && s.time >= SUDDEN_DEATH) { s.suddenDeath = true; announce(s, 'Sudden death', 'Every ward and both rifts are open and take more damage. Deaths last longer.'); }
+  if (!s.suddenDeath && s.time >= SUDDEN_DEATH) { s.suddenDeath = true; announce(s, 'Sudden death', 'Every ward and both rifts are open and take more damage. Home no longer heals, and deaths last longer.'); }
   if (!s.objective && s.time >= s.objectiveAt) {
     const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, ...HUNT, homeX: HUNT.x, homeY: HUNT.y, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55, creatureId: chooseCreature(s.seed, `boss:${Math.floor(s.time)}`, 'boss').id });
     s.objective = boss.id; announce(s, 'The Wild Hunt awakens', 'Slay the great beast. It will fight for your team.');
@@ -521,7 +521,8 @@ export function step(s, input = {}, dt = 1 / 60) {
         if (e.respawn <= 0) { Object.assign(e, BASES[e.team]); e.hp = e.maxHp;e.mana=e.maxMana; e.shield = 140; e.waypoint = 1; e.cd = [0,0,0,Math.min(6,e.cd[3])]; e.cloak = 0; e.revealedUntil = -1; if (e.player) announce(s, 'A legend returns', 'Leave the rift or take a portal to rejoin the hunt.'); }
         continue;
       }
-      if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * .24 * dt);
+      // The court heals quickly, but not in sudden death: a defended base can still fall.
+      if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * (s.suddenDeath ? .02 : .24) * dt);
       else if (s.time - e.lastHit > 5) heal(s, e, 12 * dt);
       e.mana=Math.min(e.maxMana,e.mana+dt*(distance(e,BASES[e.team])<BASE_HEAL_RADIUS?e.maxMana*.3:6+e.level*.35+(e.manaRegen||0)));
       e.shield = Math.max(0, e.shield - dt * 13);

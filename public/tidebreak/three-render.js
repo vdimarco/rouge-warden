@@ -115,7 +115,7 @@ export class ThreeRenderer {
     this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
     const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1;
     this.props.update(dt, time, p.hp > 0 && !menu ? p : null, this.reducedMotion, { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 }, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
-    this.terrain.update(time, this.sky.blend, this.sky.dir, this.scene.fog.color);
+    this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
     this.units.rimPower = this.sky.rim;
     this.units.sync(s, time, dt, e => menu || this.visible.has(e.id), this.cam);
     for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') v.concealed = v.unit.team === 0 && concealed(s, v.unit);
