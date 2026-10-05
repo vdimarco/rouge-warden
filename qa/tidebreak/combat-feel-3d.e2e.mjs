@@ -1,6 +1,7 @@
 // Combat feel tells in the 3D battlefield (three-render.js), checked in Chromium with SwiftShader (software WebGL):
 // - an enemy windup adds a growing ring, a warned third strike adds its reach ring and a line, and a tower lock-on adds a
 //   beam to the target and a closing ring, with TOWER LOCK over the player;
+// - a windup clip leans an enemy hero back before a cast and crouches it forward before an engage, and fades after;
 // - hitstop holds the pose of the units in the hit (their views are not updated) and lets the others move on;
 // - shake grows with the impact weight, and damage numbers keep their size;
 // - no page or console errors.
@@ -110,6 +111,31 @@ try {
   const after = await page.evaluate(id => window.__counts.get(id) || 0, hold.player);
   assert.ok(after >= 2, 'the pose moves again when hitstop ends');
   pass('hitstop holds the pose of the units in the hit, and shake follows the weight', { shake: +shake.peak.toFixed(2) });
+
+  // Windup clips: an enemy hero leans back before a cast and crouches forward before an engage. Each pose is measured
+  // against the same frame with the windup clip held off, so the cast clip's own lead-in does not count.
+  const foeId = await read(`const foe = s.units.find(u => u.kind === 'hero' && u.team === 1); Object.assign(foe, { x: p.x - 260, y: p.y - 60, hp: foe.maxHp, facing: 0, pendingAttack: null, castStarted: undefined, attackStarted: undefined }); return foe.id;`);
+  const head = () => read(`const v = r.units.views.get(${foeId}), h = v.model.getObjectByName('Head'), q = h.getWorldPosition(h.position.clone()); v.root.worldToLocal(q); return { y: q.y, z: q.z, height: v.height };`);
+  const shotFoe = async name => { const at = await read(`const f = s.units.find(u => u.id === ${foeId}); const a = r.project(f.x, f.y, 120); return { x: a.x, y: a.y };`); await page.screenshot({ path: `${SHOTS}/3d-${name}.png`, clip: { x: Math.max(0, at.x - 110), y: Math.max(0, at.y - 150), width: 220, height: 240 } }); };
+  const windupPose = async (intent, label) => {
+    await read(`const foe = s.units.find(u => u.id === ${foeId}); foe.castIntent = Object.assign(${intent}, { start: s.time - .6, at: s.time + .05 });
+      const g = r.units.views.get(${foeId}).rig; g.__target ??= g.target; g.target = (n, w) => n === 'windup' || n === 'crouch' ? undefined : g.__target(n, w);`);
+    await pump(12); const off = await head(); if (SHOTS) await shotFoe(`${label}-off`);
+    await read(`const g = r.units.views.get(${foeId}).rig; g.target = g.__target;`);
+    await pump(12); const on = await head(); if (SHOTS) await shotFoe(`${label}-on`);
+    const weights = await read(`const g = r.units.views.get(${foeId}).rig; return { windup: +(g.weights.windup || 0).toFixed(2), crouch: +(g.weights.crouch || 0).toFixed(2) };`);
+    return { off, on, weights, back: off.z - on.z, down: off.y - on.y };
+  };
+  const ult = await windupPose(`{ slot: 3, shape: { x: p.x - 260, y: p.y - 60, radius: 380, shape: 'circle' } }`, 'windup');
+  assert.ok(ult.weights.windup > .9 && ult.weights.crouch < .01, 'an ultimate plays the windup clip at full weight: ' + JSON.stringify(ult.weights));
+  assert.ok(ult.back > ult.off.height * .03, `the head draws back during an ultimate windup: ${JSON.stringify(ult)}`);
+  const leap = await windupPose(`{ slot: 0, shape: { x: p.x - 260, y: p.y - 60, tx: p.x + 140, ty: p.y - 60, angle: 0, radius: 160, shape: 'path', engage: true } }`, 'crouch');
+  assert.ok(leap.weights.crouch > .9 && leap.weights.windup < .05, 'an engage plays the crouch clip: ' + JSON.stringify(leap.weights));
+  assert.ok(leap.back < -leap.off.height * .03 && leap.down > leap.off.height * .02, `the head drops forward during an engage windup: ${JSON.stringify(leap)}`);
+  await read(`const foe = s.units.find(u => u.id === ${foeId}); foe.castIntent = null;`); await pump(12);
+  const rest = await read(`const g = r.units.views.get(${foeId}).rig; return { windup: g.weights.windup, crouch: g.weights.crouch };`);
+  assert.ok(rest.windup < .01 && rest.crouch < .01, 'the windup fades when the cast ends: ' + JSON.stringify(rest));
+  pass('the windup clip leans a hero back before a cast and crouches it before an engage', { back: +ult.back.toFixed(1), forward: +(-leap.back).toFixed(1), drop: +leap.down.toFixed(1), height: ult.off.height });
 
   // Damage numbers keep the size the sim gives them.
   await read(`s.floaters.push({ x: p.x, y: p.y, text: 640, color: '#ffd27a', life: .8, size: 30 });`);
