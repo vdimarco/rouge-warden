@@ -184,7 +184,7 @@ try {
     }
     await page.locator('#hero-settings').click();
     assert.equal(await page.locator('#sheet h2').textContent(), 'Game settings');
-    const soundSetting=page.locator('#selection-sound'),originalSound=await soundSetting.innerText();
+    const soundSetting=page.locator('#settings-sound'),originalSound=await soundSetting.innerText();
     await soundSetting.click();
     assert.notEqual(await soundSetting.innerText(), originalSound);
     await soundSetting.click();

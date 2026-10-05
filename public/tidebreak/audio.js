@@ -27,6 +27,7 @@ export class Sound {
   }
   start() {
     try {
+      const wasRunning = this.context?.state === 'running';
       if (!this.context) {
         const c = this.context = new (window.AudioContext || window.webkitAudioContext)();
         const comp = c.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .22;
@@ -37,12 +38,55 @@ export class Sound {
         const n = c.sampleRate * 2, buffer = c.createBuffer(1, n, c.sampleRate), d = buffer.getChannelData(0);
         for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
         this.noiseBuffer = buffer;
+        // A meter on the game's own output, for the Test sound button.
+        this.meter = c.createAnalyser(); this.meter.fftSize = 512; this.master.connect(this.meter);
+        // Chrome reports a lost output device (unplugged, or a monitor turned off) as an error on the context. The next
+        // tap or key then builds a new context on the current default device.
+        c.addEventListener?.('error', () => this.lost());
       }
       const first = !this.loading;
       this.context.resume().catch(() => {});
       this.loadClips();
-      if (first) this.setScene(this.scene);
+      // A context that was not running, or a track the browser refused, gets its scene started again in this gesture.
+      if (first || !wasRunning || this.scoreBlocked()) this.setScene(this.scene);
+      this.unlock();
     } catch {}
+  }
+  lost() {
+    try { this.context?.close(); } catch {}
+    for (const t of this.tracks.values()) t.el.pause();
+    this.context = null; this.loading = false; this.unlocked = false; this.tracks.clear(); this.buffers.clear();
+  }
+  // Safari, and Chrome on a site without earlier engagement, let a media element start only from a user gesture. The
+  // first gesture starts and at once pauses every track that is not playing yet, so later scenes can start them from
+  // timers (the draft ending, a victory).
+  unlock() {
+    if (this.unlocked || !this.context || !this.on || !this.musicOn || navigator.userActivation?.isActive === false) return;
+    const active = SCENES[this.scene] || [];
+    for (const name of Object.keys(TRACKS)) {
+      if (active.includes(name)) continue;
+      const t = this.track(name); if (!t) continue;
+      t.el.play()?.catch?.(() => {}); t.el.pause();
+    }
+    this.unlocked = true;
+  }
+  scoreBlocked() { return (SCENES[this.scene] || []).some(name => this.tracks.get(name)?.blocked); }
+  // Plays a test chime and measures the game's own output. The result says whether the game is making sound, so the
+  // player knows to look outside the game (a muted tab, the system mixer, the output device) when they hear nothing.
+  async test() {
+    this.start();
+    if (!this.context) return { state: 'unavailable', peak: 0 };
+    try { await Promise.race([this.context.resume(), new Promise(resolve => setTimeout(resolve, 500))]); } catch {}
+    if (this.context.state !== 'running') return { state: this.context.state, peak: 0 };
+    if (!this.on) return { state: 'muted', peak: 0 };
+    if (!this.clip('bell', { gain: 1 })) this.chord([523.25, 659.25, 783.99], .7, .07);
+    const m = this.meter, data = new Float32Array(m.fftSize); let peak = 0;
+    for (let i = 0; i < 14; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (m.getFloatTimeDomainData) m.getFloatTimeDomainData(data); else { const b = new Uint8Array(m.fftSize); m.getByteTimeDomainData(b); b.forEach((v, j) => { data[j] = (v - 128) / 128; }); }
+      for (const v of data) peak = Math.max(peak, Math.abs(v));
+    }
+    return { state: 'running', peak };
   }
   loadClips() {
     if (this.loading || !this.context || typeof fetch !== 'function') return; this.loading = true;
@@ -108,7 +152,11 @@ export class Sound {
     const active = SCENES[scene] || [];
     for (const name of Object.keys(TRACKS)) {
       const t = active.includes(name) ? this.track(name) : this.tracks.get(name); if (!t) continue;
-      if (active.includes(name)) { if (changed && !TRACKS[name].loop) t.el.currentTime = 0; if (!this.hidden) t.el.play().catch(() => {}); }
+      if (active.includes(name)) {
+        if (changed && !TRACKS[name].loop) t.el.currentTime = 0;
+        // A refused play() is remembered, so the next tap or key retries it. A finished fanfare is not replayed.
+        if (!this.hidden && !(t.el.ended && !changed)) t.el.play().then(() => { t.blocked = false; }, e => { t.blocked = e?.name === 'NotAllowedError'; });
+      }
       else this.fade(t, 0, () => { if (!(SCENES[this.scene] || []).includes(name)) t.el.pause(); });
     }
     if (changed && scene === 'match') { this.battleMix = 0; this.fightAt = -99; for (const name of active) { const t = this.tracks.get(name); if (t) t.el.currentTime = 0; } }
@@ -143,11 +191,12 @@ export class Sound {
     if (time < this.next) return; this.next = time + .48;
     if (!this.musicOn || this.playingScore()) return;
     const notes = [146.83, 220, 293.66, 349.23, 293.66, 220, 174.61, 130.81];
-    this.tone(notes[this.note++ % notes.length], .9, .009 + this.intensity * .004, 'triangle', null, 0, { bus: this.music, reverb: .2 });
-    const i = this.intensity, b = this.beat++ % 4;
+    // Loud enough to be heard as music while a recorded track cannot play.
+    this.tone(notes[this.note++ % notes.length], .9, .04 + this.intensity * .016, 'triangle', null, 0, { bus: this.music, reverb: .2 });
+    const i = this.intensity, beat = this.beat++, b = beat % 4;
     if (i > .15 && (b === 0 || (i > .55 && b === 2))) { this.tone(92, .32, .05 * i, 'sine', 42, 0, { bus: this.music }); this.noise(.08, .012 * i, { freq: 160, type: 'lowpass', bus: this.music }); }
     if (i > .5 && b % 2) this.noise(.12, .016 * i, { freq: 2300, q: .7, bus: this.music, reverb: .1 });
-    if (b === 0 && this.note % 16 === 0) this.tone(73.4, 3.2, .012 + i * .01, 'sawtooth', null, 0, { bus: this.music, attack: .8, reverb: .4 });
+    if (beat % 16 === 0) this.tone(73.4, 3.2, .012 + i * .01, 'sawtooth', null, 0, { bus: this.music, attack: .8, reverb: .4 });
   }
   setIntensity(target) { this.intensity += (Math.max(0, Math.min(1, target)) - this.intensity) * .08; }
 

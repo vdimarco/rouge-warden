@@ -20,18 +20,21 @@ import { followUpFeedback } from './combat-feedback.js';
 import { spellBlocked } from './combat-state.js';
 import { draftPlan, runDraft } from './draft.js';
 import { Announcer } from './announcer.js';
+import { PerfMeter } from './perf.js';
 import { TeamChat } from './team-chat.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
 let selectedIdentity=0;
 let state = assignIdentities(createMatch(1),selectedIdentity), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, screenMovementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
-let plan = null, draft = null, rallyQueue = null, rallyReadyAt = 0;
+let plan = null, draft = null, rallyQueue = null, rallyReadyAt = 0, soundWokeAt = -1e9, gpuNoteClosed = false;
+const perf = new PerfMeter($('perf'));
 const announcer = new Announcer(sound, $('hud')), teamChat = new TeamChat(sound, $('hud'));
-// Desktop camera: the view follows the hero and the mouse pushes it left or right; click the minimap to look, Space recenters.
+// Desktop camera: the view follows the hero and the mouse pushes it left or right; hold the minimap to look there; hold
+// Space to centre the view on the hero.
 let mouse = null, minimapDrag = null, lookX = 0;
 const recenterButton = Object.assign(document.createElement('button'), { id: 'recenter', hidden: true, innerHTML: '⌖ Back to hero <kbd>Space</kbd>' });
-recenterButton.setAttribute('aria-label', 'Center the view on your hero'); $('hud').append(recenterButton);
+recenterButton.setAttribute('aria-label', 'Return the view to your hero'); $('hud').append(recenterButton);
 function recenter() { renderer?.recenter(); recenterButton.hidden = true; }
 function enterFullscreen() {
   let wanted = true; try { wanted = localStorage.getItem('tidebreak.fullscreen') !== 'off'; } catch {}
@@ -39,13 +42,19 @@ function enterFullscreen() {
   if (wanted && !document.fullscreenElement && root.requestFullscreen) root.requestFullscreen({ navigationUI: 'hide' }).then(lockEscape).catch(() => {});
 }
 // In full screen the browser takes Esc to leave full screen. Where the Keyboard Lock API exists (Chrome, Edge), Esc
-// comes to the game instead and a long press leaves full screen. Elsewhere, leaving full screen opens the menu, and
-// closing the menu goes back to full screen.
-let fullscreenLeft = false;
+// comes to the game instead and a long press leaves full screen. Elsewhere, leaving full screen opens the menu, which
+// offers "Back to full screen" and "Keep playing windowed". Nothing forces full screen back.
+let fullscreenLeft = false, leavingFullscreen = false;
 function lockEscape() { try { navigator.keyboard?.lock?.(['Escape']).catch(() => {}); } catch {} }
+function saveFullscreen(on) { try { localStorage.setItem('tidebreak.fullscreen', on ? 'on' : 'off'); } catch {} }
+// The player's own choice from the menu: it saves the preference for the next match too.
+function requestFullscreen() { saveFullscreen(true); document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).then(lockEscape).catch(() => {}); }
+function playWindowed() { saveFullscreen(false); fullscreenLeft = false; if (document.fullscreenElement) { leavingFullscreen = true; document.exitFullscreen().catch(() => { leavingFullscreen = false; }); } }
 document.addEventListener('fullscreenchange', () => {
+  const mode = $('screen-mode'); if (mode) mode.textContent = document.fullscreenElement ? 'Play windowed' : 'Play full screen';
   if (document.fullscreenElement) { fullscreenLeft = false; lockEscape(); return; }
   try { navigator.keyboard?.unlock?.(); } catch {}
+  if (leavingFullscreen) { leavingFullscreen = false; return; }
   if (running && !resultShown && !paused) { fullscreenLeft = true; pause(); }
 });
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
@@ -62,17 +71,56 @@ function updateAimStatus(status){
   skillButtons.forEach((b,i)=>{b.classList.toggle('aiming',status?.slot===i);b.classList.toggle('aim-cancelled',status?.slot===i&&status.cancelled);});
 }
 function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); castQueue = undefined; recallQueue = portalQueue = false; aim = null; $('thumb').style.transform = ''; }
-function closeSheet() { $('sheet').close(); paused = false; resetInput(); last = performance.now(); if (fullscreenLeft && running) enterFullscreen(); }
+function closeSheet() { $('sheet').close(); paused = false; resetInput(); }
 function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet'))paginatePanel($('sheet-content'));}); }
 function pause() {
   if (!running || resultShown) return;
-  sheet('<h2>The hunt can wait</h2><button id="resume" class="primary">Keep playing</button><button id="return-home" class="row-btn">Return home to heal</button> <button id="sound" class="row-btn"></button><button id="voice" class="row-btn"></button><button id="music" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>');
-  $('resume').onclick = closeSheet; $('return-home').onclick = () => { closeSheet(); recallQueue = true; }; $('sound').textContent = sound.on ? 'Sound on' : 'Sound off'; $('sound').onclick = () => { $('sound').textContent = sound.toggle() ? 'Sound on' : 'Sound off'; updateSound(); }; $('voice').textContent = sound.voiceOn ? 'Announcer voice on' : 'Announcer voice off'; $('voice').onclick = () => { $('voice').textContent = sound.toggleVoice() ? 'Announcer voice on' : 'Announcer voice off'; }; $('music').textContent = sound.musicOn ? 'Music on' : 'Music off'; $('music').onclick = () => { $('music').textContent = sound.toggleMusic() ? 'Music on' : 'Music off'; }; $('quit').onclick = menu;
+  // After full screen ended during play, the menu asks how to go on. Nothing returns to full screen without a choice.
+  const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
+  const screen = fullscreenLeft ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
+  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
+  $('resume').onclick = () => { if (fullscreenLeft) playWindowed(); closeSheet(); };
+  if ($('fullscreen-back')) $('fullscreen-back').onclick = () => { requestFullscreen(); closeSheet(); };
+  if ($('screen-mode')) $('screen-mode').onclick = () => { if (document.fullscreenElement) playWindowed(); else requestFullscreen(); closeSheet(); };
+  $('return-home').onclick = () => { closeSheet(); recallQueue = true; };
+  wireSoundRows('pause'); wirePerfRow($('perf-toggle')); $('quit').onclick = menu;
 }
+// Sound controls name the action, not the state, so a player who hears nothing and presses one does not mute the game.
+const SOUND_LABELS = {
+  sound: on => on ? 'Mute all sound' : 'Sound is off · Turn it on',
+  voice: on => on ? 'Mute the announcer voice' : 'Announcer voice is off · Turn it on',
+  music: on => on ? 'Mute the music' : 'Music is off · Turn it on',
+};
+function soundRowsHTML(id) { return `<button id="${id}-sound" class="row-btn"></button><button id="${id}-voice" class="row-btn"></button><button id="${id}-music" class="row-btn"></button><button id="${id}-test" class="row-btn">Test sound</button><output id="${id}-test-result" class="sound-test" hidden></output>`; }
+function wireSoundRows(id) {
+  const state = { sound: () => sound.on, voice: () => sound.voiceOn, music: () => sound.musicOn }, toggle = { sound: () => sound.toggle(), voice: () => sound.toggleVoice(), music: () => sound.toggleMusic() };
+  for (const kind of Object.keys(state)) {
+    const b = $(`${id}-${kind}`), label = () => { b.textContent = SOUND_LABELS[kind](state[kind]()); }; label();
+    b.onclick = () => { sound.start(); const on = toggle[kind](); label(); updateSound(); if (on) confirmSound(); };
+  }
+  $(`${id}-test`).onclick = () => testSound($(`${id}-test-result`), id);
+}
+function confirmSound() { if (!sound.clip('ui-confirmation', { gain: .9 })) sound.tone(880, .15, .05); }
+function turnSoundOn() { sound.start(); if (!sound.on) sound.toggle(); updateSound(); confirmSound(); }
+// The game measures its own output while it plays a chime. If the level is there and the player still hears nothing,
+// the sound is stopped outside the game, and the result says where to look.
+async function testSound(out, id) {
+  out.hidden = false; out.classList.remove('silent'); out.textContent = 'Playing a test chime…';
+  const result = await sound.test();
+  if (result.state === 'muted') {
+    out.classList.add('silent'); out.innerHTML = 'Sound is off in this game. <button class="row-btn" id="test-turn-on">Turn sound on</button>';
+    $('test-turn-on').onclick = () => { turnSoundOn(); wireSoundRows(id); testSound(out, id); };
+  } else if (result.peak > .01) {
+    out.textContent = `The game is playing sound now (level ${Math.round(result.peak * 100)}%). If you heard nothing, the sound stops outside the game. Check the speaker icon on this browser tab (leave full screen, right-click the tab, choose Unmute site), this site's sound setting next to the address bar, your system volume mixer, and your output device. A monitor connected by DisplayPort or HDMI often becomes the default output.`;
+  } else {
+    out.classList.add('silent'); out.textContent = `The game could not start its sound (audio state: ${result.state}). Click anywhere in the game, then press Test sound again.`;
+  }
+}
+function wirePerfRow(b) { const label = () => { b.textContent = perf.on ? 'Hide the performance readout' : 'Show the performance readout'; }; label(); b.onclick = () => { perf.toggle(); label(); }; }
 function menu() { fullscreenLeft = false; sound.silence(); sound.setScene('menu'); draft?.cancel(); autoPaused = false; autoPauseNote.hidden = true; closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
 function updateSound() {
-  if($('sound-menu'))$('sound-menu').textContent = sound.on ? 'Sound on' : 'Sound off';
-  const b = $('hud-sound'), label = sound.on ? 'Sound on' : 'Sound off'; b.setAttribute('aria-pressed', String(sound.on)); b.setAttribute('aria-label', label); b.title = label;
+  const b = $('hud-sound'); b.setAttribute('aria-pressed', String(sound.on)); b.setAttribute('aria-label', 'Sound'); b.title = sound.on ? 'Sound on. Click to mute' : 'Sound off. Click to turn on';
+  for (const chip of document.querySelectorAll('.muted-chip')) chip.hidden = sound.on;
 }
 function choose(identityId) {
   const h=HERO_IDENTITIES[identityId];if(!h)return;
@@ -99,8 +147,9 @@ function choose(identityId) {
 // Play opens the draft board; the finished draft starts the match with that lineup.
 function startDraft() {
   if ($('play').disabled) return;
-  enterFullscreen(); sound.start(); draft?.cancel(); $('menu').hidden = true; $('hud').hidden = true; $('draft').hidden = false;
-  plan = draftPlan(selectedIdentity, Date.now() >>> 0); sound.setScene('draft'); sound.voiceClip('choose-your-character', .1);
+  // Sound starts in the click before full screen, so the draft music plays under every autoplay rule.
+  sound.start(); sound.setScene('draft'); enterFullscreen(); draft?.cancel(); $('menu').hidden = true; $('hud').hidden = true; $('draft').hidden = false;
+  plan = draftPlan(selectedIdentity, Date.now() >>> 0); sound.voiceClip('choose-your-character', .1);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   draft = runDraft($('draft'), plan, { sound, reduced, onDone: () => { $('draft').hidden = true; draft = null; start(); }, onBack: () => { $('draft').hidden = true; draft = null; $('menu').hidden = false; sound.setScene('menu'); } });
   $('draft-go').focus({ preventScroll: true });
@@ -108,7 +157,7 @@ function startDraft() {
 function start() {
   sound.start(); sound.next = 0; plan ||= draftPlan(selectedIdentity, Date.now() >>> 0);
   state = assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks); rallyReadyAt = 0; rallyQueue = null;
-  announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} if (!sound.on) announce(state, 'Sound is off', 'Press the speaker button at the top left to turn it on.'); updateSound(); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; last = performance.now(); resetInput();
+  announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} updateSound(); $('gpu-note').hidden = !perf.software || gpuNoteClosed; if (!$('gpu-note').hidden) setTimeout(() => { $('gpu-note').hidden = true; }, 20000); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
@@ -246,16 +295,17 @@ $('map-button').addEventListener('pointerdown',e=>{
   const point=minimapPoint(e);
   if(e.button===2){if(player(state).hp>0){cancelOrder(player(state));target=0;orderQueue={type:'move',...point};waypoint=point;}return;}
   if(e.button!==0)return;
-  minimapDrag=e.pointerId;$('map-button').setPointerCapture(e.pointerId);renderer?.lookAt(point.x,point.y);recenterButton.hidden=false;
+  minimapDrag=e.pointerId;$('map-button').setPointerCapture(e.pointerId);renderer?.lookAt(point.x,point.y);
 },{capture:true});
 $('map-button').addEventListener('pointermove',e=>{if(e.pointerId===minimapDrag){const point=minimapPoint(e);renderer?.lookAt(point.x,point.y);}});
-for(const type of ['pointerup','pointercancel','lostpointercapture'])$('map-button').addEventListener(type,e=>{if(e.pointerId===minimapDrag)minimapDrag=null;});
+// Releasing the minimap returns the view to the hero, so the camera never stays detached.
+for(const type of ['pointerup','pointercancel','lostpointercapture'])$('map-button').addEventListener(type,e=>{if(e.pointerId===minimapDrag){minimapDrag=null;recenter();}});
 pointerAction(recenterButton,recenter,()=>hudReady());
 function callRally(point){
   const p=player(state);if(!running||paused||p.hp<=0||state.time<rallyReadyAt)return false;
   rallyQueue=point||true;rallyReadyAt=state.time+8;return true;
 }
-for(const [id,action] of [['rally',()=>callRally()],['map-button',map],['shop',shop],['recall',()=>{recallQueue=true;}],['portal',()=>{portalQueue=true;}],['pause',pause],['hud-sound',()=>{sound.start();sound.toggle();updateSound();}],['coach-close',()=>{$('coach').hidden=true;}]])pointerAction($(id),action,()=>hudReady()&&!$(id).disabled);
+for(const [id,action] of [['rally',()=>callRally()],['map-button',map],['shop',shop],['recall',()=>{recallQueue=true;}],['portal',()=>{portalQueue=true;}],['pause',pause],['hud-sound',()=>{if(sound.on&&performance.now()-soundWokeAt<1500){updateSound();return;}sound.start();if(sound.toggle())confirmSound();updateSound();}],['muted-chip',turnSoundOn],['gpu-note-close',()=>{gpuNoteClosed=true;$('gpu-note').hidden=true;}],['coach-close',()=>{$('coach').hidden=true;}]])pointerAction($(id),action,()=>hudReady()&&!$(id).disabled);
 function heroDetails(){
   const h=HERO_IDENTITIES[selectedIdentity];
   sheet(`<h2>${h.name}</h2><p>${h.subtitle}</p><p>${h.note}</p>${[0,1,2,3].map(i=>{const a=identitySkill(selectedIdentity,i);return `<h3>${SELECTION_KEYS[i]} · ${a.name}</h3><p>${a.description}</p><p class="keyhint">${a.cooldown}s cooldown · ${manaCost({hero:h.kit,skillRanks:[1,1,1,1]},i)} mana${i===3?' · Unlocks at level 6':''}</p>`;}).join('')}<button id="details-back" class="primary">Back to heroes</button>`);
@@ -263,7 +313,7 @@ function heroDetails(){
 }
 function selectionPanel(title,copy){sheet(`<h2>${title}</h2>${copy}<button id="selection-back" class="primary">Back to heroes</button>`);$('selection-back').onclick=closeSheet;}
 function matchRecord(){let record={wins:0,matches:0};try{record=JSON.parse(localStorage.getItem('monster-mash.record'))||record;}catch{}selectionPanel('Tidecaller',`<p>Your match record on this device.</p><dl><dt>Matches played</dt><dd>${Number(record.matches)||0}</dd><dt>Victories</dt><dd>${Number(record.wins)||0}</dd></dl>`);}
-function gameSettings(){sheet('<h2>Game settings</h2><button id="selection-sound" class="row-btn"></button><button id="selection-voice" class="row-btn"></button><button id="selection-music" class="row-btn"></button><button id="selection-fullscreen" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>');const b=$('selection-sound');b.textContent=sound.on?'Sound on':'Sound off';b.onclick=()=>{sound.start();b.textContent=sound.toggle()?'Sound on':'Sound off';updateSound();};const v=$('selection-voice');v.textContent=sound.voiceOn?'Announcer voice on':'Announcer voice off';v.onclick=()=>{v.textContent=sound.toggleVoice()?'Announcer voice on':'Announcer voice off';};const mu=$('selection-music');mu.textContent=sound.musicOn?'Music on':'Music off';mu.onclick=()=>{sound.start();mu.textContent=sound.toggleMusic()?'Music on':'Music off';};const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';localStorage.setItem('tidebreak.fullscreen',on?'off':'on');}catch{}if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
+function gameSettings(){sheet(`<h2>Game settings</h2>${soundRowsHTML('settings')}<button id="selection-fullscreen" class="row-btn"></button><button id="settings-perf" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>`);wireSoundRows('settings');wirePerfRow($('settings-perf'));const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}saveFullscreen(!on);if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
 $('play').onclick=startDraft;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
 $('hero-profile').onclick=matchRecord;$('tidecaller-profile').onclick=matchRecord;$('hero-settings').onclick=gameSettings;
 document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
@@ -275,7 +325,7 @@ document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
   selectionPanel('The Night Market','<p>Earn embers in battle and spend them in the Night Market. Combine components into six items, choose a build and forge one relic.</p><p>Open the market during a match to inspect items and buy upgrades.</p>');
 });
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
-$('select-key').onclick=startDraft;updateSound();
+$('select-key').onclick=startDraft;$('menu-muted-chip').onclick=turnSoundOn;updateSound();
 let rosterFilter='All';
 const lineup=mountLineup({track:$('hero-picks'),previous:$('hero-prev'),next:$('hero-next'),position:$('lineup-position'),selected:()=>selectedIdentity,choose});
 function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selectedIdentity,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'hero':'heroes'}`;lineup.refresh(); }
@@ -305,7 +355,11 @@ $('battle').addEventListener('pointerdown',e=>{
   e.preventDefault();sound.start();$('coach').hidden=true;cursor={x:e.clientX,y:e.clientY};battlefieldTap(e);
 });
 $('battle').addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cursor={x:e.clientX,y:e.clientY};if(renderer&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
+const MOVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
 window.addEventListener('keydown', e => {
+  // A held Esc repeats. Chrome tells the player to hold Esc to leave a keyboard-locked full screen, and each repeat
+  // would open or close the menu again, so only the first press counts.
+  if (e.key === 'Escape' && e.repeat) { e.preventDefault(); return; }
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
   if (!$('draft').hidden && draft) { if (e.key === 'Enter') { e.preventDefault(); draft.skip(); } else if (e.key === 'Escape') { e.preventDefault(); $('draft-back').click(); } return; }
   // preventDefault: the same Esc would otherwise close the menu dialog it has just opened.
@@ -317,10 +371,13 @@ window.addEventListener('keydown', e => {
     }
     if(e.key.toLowerCase()==='f'){e.preventDefault();heroDetails();return;}
   }
+  const key = e.key.toLowerCase();
+  // A movement key still held after a resize or a closed menu comes back with its next repeat.
+  if (running && !paused && MOVE_KEYS.includes(key)) keys.add(key);
   if (!running || paused || e.repeat) return;
-  const key = e.key.toLowerCase(); keys.add(key);
+  keys.add(key);
   if(key==='k'){learnSkills();return;}
-  if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){cancelOrder(player(state));orderQueue=undefined;target=0;}
+  if(MOVE_KEYS.includes(key)){cancelOrder(player(state));orderQueue=undefined;target=0;}
   if(key===' '){cancelOrder(player(state));orderQueue={type:'stop'};target=0;recenter();}
   const slot = ['q', 'e', 'c', 'r'].indexOf(key); if (slot >= 0) castQueue = { slot, worldPoint:cursor&&renderer?renderer.world(cursor.x,cursor.y):null, aim:null };
   if (key === 'g') callRally();
@@ -338,7 +395,7 @@ function autoPause() {
 }
 function autoResume() {
   if (!autoPaused || document.hidden) return;
-  autoPaused = false; autoPauseNote.hidden = true; if (!$('sheet').open) { paused = false; last = performance.now(); }
+  autoPaused = false; autoPauseNote.hidden = true; if (!$('sheet').open) paused = false;
 }
 window.addEventListener('pointerdown', e => { lastPointer = e.pointerType; }, true);
 window.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; mouse = { x: e.clientX, y: e.clientY }; }, { passive: true });
@@ -349,18 +406,22 @@ autoPauseNote.addEventListener('click', autoResume);
 window.addEventListener('blur', autoPause);
 window.addEventListener('focus', () => { if (lastPointer === 'mouse') autoResume(); });
 document.addEventListener('visibilitychange', () => { sound.setHidden(document.hidden); if (document.hidden) autoPause(); });
-window.addEventListener('resize', () => { resetInput(); renderer?.resize(); });
+// A resize (full screen, zoom, devtools) keeps the hero's order and held keys; only pointer gestures in progress end.
+window.addEventListener('resize', () => { movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); aim = null; $('thumb').style.transform = ''; renderer?.resize(); });
 window.addEventListener('contextmenu', e => e.preventDefault());
 function frame(now) {
-  const frameMs = now - last, dt = Math.min(frameMs / 1000, .05); last = now;
+  const frameMs = Math.max(0, now - last), dt = Math.min(frameMs / 1000, .05); last = now;
+  let steps = 0;
   if (running && !paused && !window.GameSwitch?.isOpen) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
+      steps++;
       const p = player(state), command = castQueue; castQueue = undefined;
       const castAim=command?.worldPoint?cursorSkillAim(p,command.slot,command.worldPoint):command?.aim?dragSkillAim(p,command.slot,command.aim,(x,y)=>renderer.screenDirection(x,y)):null;
       const input = { x: movement.x + Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft')), y: movement.y + Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup')), target, order: orderQueue, cast: command?.slot, aim:castAim, recall: recallQueue, portal: portalQueue, rally: rallyQueue }; recallQueue = portalQueue = false; rallyQueue = null; orderQueue=undefined;
       const direction = renderer.screenDirection(input.x, input.y); input.x = direction.x; input.y = direction.y;
       if(command&&p.skillRanks[command.slot]&&!canAfford(p,command.slot)&&!(command.slot===0&&canReturn(state,p))&&state.time>(state.manaTip||-2)+1){announce(state,`Need ${manaCost(p,command.slot)} mana`,'Mana returns over time. Your home court restores it faster.');state.manaTip=state.time;}
+      for (const e of state.units) { e.px = e.x; e.py = e.y; } for (const m of state.missiles) { m.px = m.x; m.py = m.y; }
       step(state, input);
       if(Number.isFinite(p.castStarted)&&p.castStarted>lastCast){sound.skill(p.castSlot,p.hero);lastCast=p.castStarted;}
       sound.syncFeedback(state,p);
@@ -369,14 +430,31 @@ function frame(now) {
     }
     // The last pointer position holds when the mouse leaves the window, so a push to the edge stays pushed.
     if (mouse && !minimapDrag) lookX = mouse.x / innerWidth * 2 - 1;
-    renderer?.setLook(lookX); renderer?.adapt(frameMs);
+    renderer?.setLook(keys.has(' ') ? 0 : lookX); renderer?.adapt(frameMs);
     if (renderer) { const span = Math.abs(renderer.world(renderer.width, 0).x - renderer.world(0, 0).x) / 2 || 1400; sound.setListener(renderer.cam.x, renderer.cam.y, span); }
     announcer.update(state, { playerId: state.playerId, visible: renderer?.visible }); teamChat.update(state);
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
-  if(running)renderer?.draw(state, dt, false, aim&&renderer?skillAimPreview(state,player(state),aim.slot,dragSkillAim(player(state),aim.slot,aim,(x,y)=>renderer.screenDirection(x,y))):null, waypoint);
+  const drawStart = performance.now();
+  if (running && renderer) drawBetweenSteps(dt);
+  perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running);
   requestAnimationFrame(frame);
+}
+// The simulation steps at 60 Hz, but a 100-175 Hz screen draws two or three frames per step. Units and missiles are
+// drawn between their last two positions (by the time left over in the accumulator), so they glide with the camera
+// instead of jumping on some frames and standing still on others. A move longer than 80 units (a recall, a respawn,
+// a rift jump) is drawn at once. The simulation never keeps the drawn positions.
+function drawBetweenSteps(dt) {
+  const a = Math.min(1, Math.max(0, accumulator * 60)), moved = [], time = state.time;
+  for (const list of [state.units, state.missiles]) for (const e of list) {
+    if (e.px === undefined) continue;
+    const dx = e.x - e.px, dy = e.y - e.py; if ((!dx && !dy) || dx * dx + dy * dy >= 6400) continue;
+    moved.push(e, e.x, e.y); e.x = e.px + dx * a; e.y = e.py + dy * a;
+  }
+  state.time = time - (1 - a) / 60;
+  try { renderer.draw(state, dt, false, aim ? skillAimPreview(state, player(state), aim.slot, dragSkillAim(player(state), aim.slot, aim, (x, y) => renderer.screenDirection(x, y))) : null, waypoint); }
+  finally { state.time = time; for (let i = 0; i < moved.length; i += 3) { moved[i].x = moved[i + 1]; moved[i].y = moved[i + 2]; } }
 }
 loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').querySelector('span').textContent = 'Play Shore of the Ancients'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').querySelector('span').textContent = 'Shore unavailable'; });
 document.addEventListener('error',e=>{if(e.target.tagName!=='IMG')return;const picture=e.target.closest('picture');if(picture?.querySelector('source')?.hasAttribute('srcset')){picture.querySelector('source').removeAttribute('srcset');e.target.src=e.target.getAttribute('src');}},true);
@@ -387,7 +465,6 @@ export const snapshot = () => ({ running, paused, time: state.time, winner: stat
 export const qaState = () => state;
 // The first tap or key anywhere opens audio, so recorded clips are ready before the draft starts. A later tap or key
 // also wakes a context that the browser or the system stopped (an output change, a sleep), so sound does not stay lost.
-const wakeSound = () => { if (!sound.context || sound.context.state !== 'running') sound.start(); };
+const wakeSound = () => { if (!sound.context || sound.context.state !== 'running' || sound.scoreBlocked()) { soundWokeAt = performance.now(); sound.start(); } };
 window.addEventListener('pointerdown', wakeSound, { capture: true });
-// A key cannot ask for full screen, so after Esc closed the menu, the next click in the match asks again.
-window.addEventListener('pointerdown', () => { if (fullscreenLeft && running && !paused) enterFullscreen(); }, { capture: true }); window.addEventListener('keydown', wakeSound, { capture: true });
+window.addEventListener('keydown', wakeSound, { capture: true });
