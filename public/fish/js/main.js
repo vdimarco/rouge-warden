@@ -2149,9 +2149,10 @@ function playCut(script, then, mark = true) {
   // cutscene, and the player presses again after it. step() sets no grab while one plays, so the grab goes off here, and
   // comes back as it ends (below)
   if (reelPanel) { reelPanel._cancelAll(); reelPanel.set({ grab: "" }); }
-  // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line
+  // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line.
+  // The cutscene cut it short, so it is kept: no newer toast or slow frame drops it
   const T = $("#toast");
-  if (T.classList.contains("on")) { heldToasts.push([T.textContent, 1800 + 1200 * T.textContent.split("\n").length, null]); T.classList.remove("on"); }
+  if (T.classList.contains("on")) { heldToasts.push([T.textContent, 1800 + 1200 * T.textContent.split("\n").length, null, true]); T.classList.remove("on"); }
   for (const q of toastQ.splice(0)) heldToasts.push([q.msg, q.ms, q.onShow, q.keep]);
   clearTimeout(toastNextT); toastNextT = 0;
   cuts.play(script, (skipped) => {
