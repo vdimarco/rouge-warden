@@ -91,6 +91,13 @@ for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.l
   assert.equal(inside, 0, 'the bot never steps into enemy ward range without a wave');
   assert(closestTrack(bot, path) < closestTrack(enemyOuter, path) - 14, 'the bot falls back toward its own ward');
 }
+// When every ward on an enemy lane is down, all bots of the other team join that push.
+{
+  const s = createMatch(0, 7); s.units.filter(e => e.kind === 'tower' && !e.guardian && e.team === 1 && e.lane === 2).forEach(t => { t.hp = 0; });
+  step(s, { autopilot: true }, .05);
+  assert(s.units.filter(e => e.kind === 'hero' && e.team === 0).every(h => h.lane === 2), 'bots join the push on an open enemy lane');
+  assert.deepEqual(s.units.filter(e => e.kind === 'hero' && e.team === 1).map(h => h.lane), [0, 1, 2], 'the other team keeps its lanes');
+}
 // Sudden death opens every structure, slows respawns and stops home healing; the hard limit has a clear tiebreak.
 {
   const s = createMatch(1, 3), core = s.units.find(e => e.kind === 'core' && e.team === 1); s.time = SUDDEN_DEATH - .01; step(s, { attack: false }, .05);

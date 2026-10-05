@@ -86,7 +86,8 @@ A match on the grand arena SHALL have a laning phase, a middle game of tower sie
   stronger over time after five minutes.
 - Outer wards SHALL take reduced damage for the first three and a half minutes, and the 2D view SHALL label them as fortified.
 - Wards, guardians and cores SHALL take much less damage from heroes unless a wisp or siege beast of the attacking team is at the
-  structure, and the player SHALL see a tip that explains it.
+  structure, and the player SHALL see a tip that explains it. Outside sudden death a core SHALL heal while no enemy wisp is at it,
+  so a failed push does not wear it down.
 - Every hero (keyboard movement, click orders and bots) SHALL get the same out-of-combat sprint and speed effects.
 - Respawn SHALL take 6 + 1.2 seconds per level, at most 28 seconds.
 - At 14:00 sudden death SHALL start: protection is lifted, structures take more damage and no longer need a wave, home heals slowly,
@@ -116,7 +117,8 @@ A match on the grand arena SHALL have a laning phase, a middle game of tower sie
 
 ### Requirement: Bots on the grand arena
 Bots SHALL walk their lane with their wave, SHALL not walk into the range of an enemy ward, guardian or core that no wisp of their team
-tanks, and SHALL wait at their own front ward when they have no wave. Rotation, assist, rally and Wild Hunt reach SHALL scale with the map
+tanks, and SHALL wait at their own front ward when they have no wave. When every ward on an enemy lane is down, bots SHALL
+join the push on that lane, taking a routed path around cover to reach it. Rotation, assist, rally and Wild Hunt reach SHALL scale with the map
 size. A side-lane bot leaving its base SHALL take its base gate when its wave has already passed the river gate.
 
 #### Scenario: A bot without a wave

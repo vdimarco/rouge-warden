@@ -160,10 +160,10 @@ class StructureView {
     const mesh = new THREE.Mesh(units.meshGeometry(gltf), mat); mesh.castShadow = mesh.receiveShadow = true; mesh.scale.setScalar(this.height); this.mesh = mesh; this.root.add(mesh);
     this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]); this.uniforms.uRimPower.value = .18;
     // The pale crystal takes the team colour and glows.
-    this.uniforms.uTint.value.set(e.team === 0 ? '#79cfbf' : e.team === 1 ? '#e27c8c' : '#e8c27e'); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = .45;
+    this.uniforms.uTint.value.set(e.team === 0 ? '#79cfbf' : e.team === 1 ? '#e27c8c' : '#e8c27e'); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = core ? .1 : .25; this.uniforms.uTintLevel.value = core ? .38 : .55; // big lit crystals would read white
     if (this.guardian || core) { const ring = new THREE.Mesh(units.plinth, units.stone); ring.scale.set(core ? 520 : 190, core ? 46 : 56, core ? 520 : 190); ring.castShadow = ring.receiveShadow = true; this.root.add(ring); if (!core) mesh.position.y = 50; }
     // The crystal's glow: a sprite in the team colour that breathes.
-    const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 420 : 240); this.glow = glow; this.root.add(glow);
+    const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 300 : 240); this.glow = glow; this.root.add(glow);
     this.ward = new THREE.Mesh(units.wardGeometry, units.wardMaterial(e.team)); this.ward.scale.set(core ? 520 : 170, this.height * 1.05, core ? 520 : 170); this.ward.visible = false; this.root.add(this.ward);
     this.root.position.set(e.x, 0, e.y); this.root.rotation.y = core ? (e.team ? Math.PI : 0) : (e.id * 1.7) % TAU;
   }
@@ -176,7 +176,7 @@ class StructureView {
     // Damage darkens the stone; a low structure smokes; a fallen one sinks to a stump and leaves rubble.
     this.mesh.material.color.setScalar(.55 + .45 * ratio);
     this.mesh.position.y = (this.guardian ? 50 : 0) - fall * this.height * .78; this.mesh.rotation.z = fall * .09; this.mesh.rotation.x = fall * .05;
-    this.glow.visible = !dead; const pulse = this.units.reduced ? 1 : 1 + Math.sin(time * 2.2 + e.id) * .08; this.glow.scale.setScalar((this.core ? 420 : 240) * pulse * (.75 + ratio * .25));
+    this.glow.visible = !dead; const pulse = this.units.reduced ? 1 : 1 + Math.sin(time * 2.2 + e.id) * .08; this.glow.scale.setScalar((this.core ? 300 : 240) * pulse * (.75 + ratio * .25));
     u.uFlash.value = e.hit > 0 ? e.hit / .16 * .12 : 0;
     const prot = !dead && structureProtected(s, e); this.ward.visible = prot && vis; if (prot) this.ward.material.uniforms.uTime.value = time;
     if (dead && !this.rubble) { this.rubble = true; this.units.effects.dust(e.x, e.y, this.core ? 300 : 140, this.core ? 24 : 14, '#9a8c74'); const r = this.units.rubble(e, this.core ? 2.2 : 1); this.root.add(r); }

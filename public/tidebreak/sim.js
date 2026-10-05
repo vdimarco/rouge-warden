@@ -15,7 +15,7 @@ import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning
 import { combatDecision } from './combat-ai.js';
 import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
 import { followOrder } from './navigation.js';
-import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER, guardians } from './objectives.js';
+import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
 import { rooted, spellBlocked, castTiming, emitCombatFeedback } from './combat-state.js';
 import { tickEncounter } from './encounters.js';
@@ -32,12 +32,12 @@ export const HEROES = [
 // Structures by tier: 0 outer, 1 middle, 2 inner, 3 base guardian. Rewards go to the whole team.
 export const TIERS = [
   { name: 'Outer ward', hp: 3600, range: 360, damage: 210, rate: 1.05, xp: 120, gold: 110 },
-  { name: 'Middle ward', hp: 4800, range: 385, damage: 225, rate: 1.05, xp: 150, gold: 130 },
-  { name: 'Inner ward', hp: 5800, range: 410, damage: 240, rate: 1.05, xp: 180, gold: 160 },
-  { name: 'Guardian', hp: 2600, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
+  { name: 'Middle ward', hp: 5200, range: 385, damage: 225, rate: 1.05, xp: 150, gold: 130 },
+  { name: 'Inner ward', hp: 6000, range: 410, damage: 240, rate: 1.05, xp: 180, gold: 160 },
+  { name: 'Guardian', hp: 5000, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
 ];
-// The core's armor makes the final siege take more than one push.
-export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1, armor: 0 };
+// The core's armor and its regeneration (while no enemy wisp is at it) make the final siege take more than one push.
+export const CORE = { hp: 24000, range: 420, damage: 260, rate: 1.1, armor: 80, regen: .015 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
@@ -114,9 +114,9 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if (kind === 'spell') amount += (source.power || 0) * .55;
   if((['boss','camp'].includes(target.kind)||target.guardian)&&target.exposedUntil>s.time){amount*=1.25;emitCombatFeedback(s,source,target,'exposed','OPENING HIT');}
   const opening=heroOpening(s,credit,target);if(opening){amount*=EXPOSED_BONUS;emitCombatFeedback(s,credit,target,'exposed','OPENING HIT');}
-  // Backdoor protection: structures shrug off most hero damage unless the attacker's wave is at the structure.
   if (fortified(s, target)) amount *= PACE.fortify;
-  // Sudden death: structures take extra damage and no longer need a wave at them.
+  // Sudden death: structures take extra damage and need no wave. Otherwise backdoor protection applies:
+  // structures shrug off most hero damage unless the attacker's wave is at the structure.
   if (s.suddenDeath && ['tower', 'core'].includes(target.kind)) amount *= PACE.suddenStructures;
   else if (['tower', 'core'].includes(target.kind) && credit?.kind === 'hero' && !escorted(s, credit.team, target)) {
     amount *= PACE.backdoor;
@@ -391,7 +391,7 @@ function itemTick(s, e, dt) {
     if (hasItem(e, 'beacon')) for (const t of s.units) if (t.kind === 'hero' && t.team === e.team && t.hp > 0 && distance(e, t) < 300) heal(s, t, 24 + (hasItem(e, 'root') ? e.maxHp * .01 : 0));
   }
 }
-// Every wave leaves the base. Melee wisps lead, the caster follows, and the siege wisp walks last.
+// Every wave leaves the base. An elder wisp (when earned) and the melee wisps lead, the caster follows, and the siege wisp walks last.
 // Waves grow a little stronger every minute after the laning phase, so late pushes can finish.
 function spawnWave(s) {
   s.wave++;
@@ -591,6 +591,7 @@ export function step(s, input = {}, dt = 1 / 60) {
       if (e.hp <= 0 || e.stun > 0) {e.specialIntent=null;e.exposedUntil=0;continue;}
       if (e.fear > 0) {e.specialIntent=null;e.exposedUntil=0;e.nextSpecial=Math.max(e.nextSpecial||0,s.time+1.5);if(e.speed>0)move(s, e, e.x + e.x - e.fearX, e.y + e.y - e.fearY, dt);continue;}
       if (e.kind === 'tower' || e.kind === 'core') {
+        if (e.kind === 'core' && !s.suddenDeath && !escorted(s, 1 - e.team, e)) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * CORE.regen * dt);
         if (e.guardian && guardianSlam(s, e)) continue;
         const tracked=s.units.find(t=>t.id===e.towerTarget);
         if(!tracked||tracked.hp<=0||distance(e,tracked)>e.range||!canSee(s,e,tracked)){e.towerTarget=0;e.towerHits=0;e.towerUntil=0;}

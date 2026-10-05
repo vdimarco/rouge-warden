@@ -45,7 +45,7 @@ export const COVER_SPOTS = [
   { x: .665, y: .925, w: 260, h: 190, town: 'house-b', woods: 'juniper', height: 390, biome: 'village' },
 ];
 // The river crosses the axis at every lane. Knots are [x, y]; y stays near .5 at the three crossings
-// (x .132, .599, .87) and meanders between them. The Wild Hunt pit (the centre) is a shallow ford.
+// (where each lane meets the axis) and meanders between them. The Wild Hunt pit (the centre) is a shallow ford.
 export const RIVER_KNOTS = [[0, .514], [.06, .52], [.132, .5], [.21, .474], [.305, .466], [.405, .488], [.5, .5], [.599, .5], [.675, .528], [.77, .524], [.87, .5], [.94, .472], [1, .478]];
 export const RIVER_POOLS = [[.27, .07], [.735, .08]]; // [x, random x spread]
 // Ground districts (southern half; the north half mirrors the shapes with its own materials).
