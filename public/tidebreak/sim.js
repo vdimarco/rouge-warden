@@ -37,13 +37,17 @@ export const CORE = { hp: 7000, range: 380, damage: 160, rate: 1.1 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
-export const PACE = { firstWave: 8, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 2.4, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
+export const PACE = { firstWave: 15, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 2.4, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
 // Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
+// An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 export const MINIONS = {
-  melee: { hp: 390, damage: 45, range: 95, rate: 1 },
-  caster: { hp: 300, damage: 55, range: 320, rate: 1.2 },
-  siege: { hp: 780, damage: 88, range: 270, rate: 1 },
+  melee: { hp: 390, damage: 45, range: 95, rate: 1, radius: 16 },
+  caster: { hp: 300, damage: 55, range: 320, rate: 1.2, radius: 16 },
+  siege: { hp: 780, damage: 88, range: 270, rate: 1, radius: 18 },
+  elder: { hp: 1500, damage: 110, range: 110, rate: 1.1, radius: 24 },
 };
+// Outer wards take less damage early, so the first towers fall after a real laning phase.
+export const fortified = (s, e) => e.kind === 'tower' && e.tier === 0 && s.time < PACE.fortifyUntil;
 export const respawnTime = (level, sudden = false) => Math.round(Math.min(28, 6 + 1.2 * level) * (sudden ? PACE.suddenRespawn : 1) * 10) / 10;
 // Every hero moves by the same rules: out-of-combat sprint, slows, haste effects and Nessie in water.
 export function heroSpeed(s, e) {
@@ -106,6 +110,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if (kind === 'spell') amount += (source.power || 0) * .55;
   if((['boss','camp'].includes(target.kind)||target.guardian)&&target.exposedUntil>s.time){amount*=1.25;emitCombatFeedback(s,source,target,'exposed','OPENING HIT');}
   // Backdoor protection: structures shrug off most hero damage unless the attacker's wave is at the structure.
+  if (fortified(s, target)) amount *= PACE.fortify;
   if (['tower', 'core'].includes(target.kind) && credit?.kind === 'hero' && !escorted(s, credit.team, target)) {
     amount *= PACE.backdoor;
     if (credit.player && s.time - (s.backdoorTip ?? -10) > 6) { announce(s, 'Ward resists you', 'Structures take little hero damage without your wisps. Push with your wave.'); s.backdoorTip = s.time; }
@@ -371,13 +376,19 @@ function itemTick(s, e, dt) {
   }
 }
 // Every wave leaves the base. Melee wisps lead, the caster follows, and the siege wisp walks last.
+// Waves grow a little stronger every minute after the laning phase, so late pushes can finish.
 function spawnWave(s) {
   s.wave++;
-  const roles = s.wave % 3 === 0 ? ['melee', 'melee', 'caster', 'siege'] : ['melee', 'melee', 'caster'];
-  for (let team = 0; team < 2; team++) for (let lane = 0; lane < 3; lane++) roles.forEach((role, i) => {
-    const path = laneFrom(team, lane), spot = pointAtArc(path, 320 - i * 45), m = MINIONS[role], siege = role === 'siege';
-    add(s, { kind: 'minion', role, team, lane, x: spot.x + (i % 2 ? 18 : -18), y: spot.y, waypoint: closestTrack(spot, path), hp: m.hp, maxHp: m.hp, damage: m.damage, rate: m.rate, range: m.range, speed: PACE.minionSpeed, radius: 16, sprite: team ? 5 : 4, siege, caster: role === 'caster', creatureId: chooseCreature(s.seed, `wave:${s.wave}:lane:${lane}:slot:${i}`, siege ? 'siege' : 'lane').id });
-  });
+  const grow = 1 + Math.max(0, s.time - PACE.growthFrom) / 60 * PACE.growth;
+  for (let team = 0; team < 2; team++) for (let lane = 0; lane < 3; lane++) {
+    const roles = ['melee', 'melee', 'caster'], innerDown = s.units.some(t => t.kind === 'tower' && !t.guardian && t.team !== team && t.lane === lane && t.tier === INNER && t.hp <= 0);
+    if (s.wave % 3 === 0) roles.push('siege');
+    if (innerDown || s.suddenDeath) roles.unshift('elder');
+    roles.forEach((role, i) => {
+      const path = laneFrom(team, lane), spot = pointAtArc(path, 320 - i * 45), m = MINIONS[role], siege = role === 'siege', hp = Math.round(m.hp * grow);
+      add(s, { kind: 'minion', role, team, lane, x: spot.x + (i % 2 ? 18 : -18), y: spot.y, waypoint: closestTrack(spot, path), hp, maxHp: hp, damage: m.damage * grow, rate: m.rate, range: m.range, speed: PACE.minionSpeed, radius: m.radius, sprite: team ? 5 : 4, siege, caster: role === 'caster', elder: role === 'elder', creatureId: chooseCreature(s.seed, `wave:${s.wave}:lane:${lane}:slot:${i}`, siege || role === 'elder' ? 'siege' : 'lane').id });
+    });
+  }
 }
 function followLane(s, e, dt) {
   const path = laneFrom(e.team, e.lane);
@@ -388,7 +399,7 @@ function followLane(s, e, dt) {
   // A hero walks with its wave: never more than a few steps past the leading wisp, and never into an
   // enemy structure's range that no wisp of its own team tanks. Without a wave it waits at its front ward.
   let limit = -1;
-  for (const m of s.units) if (m.team === e.team && m.lane === e.lane && m.hp > 0 && (m.kind === 'minion' || m.kind === 'leviathan')) limit = Math.max(limit, m.waypoint + 3);
+  for (const m of s.units) if (m.team === e.team && m.lane === e.lane && m.hp > 0 && (m.kind === 'minion' || m.kind === 'leviathan')) limit = Math.max(limit, m.waypoint - 1);
   if (limit < 0) limit = Math.max(4, ...s.units.filter(t => t.kind === 'tower' && !t.guardian && t.team === e.team && t.lane === e.lane && t.hp > 0).map(t => closestTrack(t, path) + 4));
   let goal = Math.min(path.length - 1, index + 2, limit);
   const threats = s.units.filter(t => (t.kind === 'tower' || t.kind === 'core') && t.team !== e.team && t.hp > 0 && distance(t, e) < 1500 && !escorted(s, e.team, t));
@@ -577,7 +588,7 @@ export function step(s, input = {}, dt = 1 / 60) {
         else move(s, e, home.x, home.y, dt);
       } else {
         // Wisps fight wisps first; a hero is a target only when no wisp or structure is close.
-        const t = nearest(s, e, e.range + 140, false, 260);
+        const t = nearest(s, e, e.range + 140, false, 400);
         if (t) { if (distance(e, t) > e.range + t.radius) move(s, e, t.x, t.y, dt, e.speed * (e.slow > 0 ? .5 : 1)); attack(s, e, t); } else followLane(s, e, dt);
       }
     }

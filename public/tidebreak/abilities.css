@@ -14,10 +14,10 @@
 .ability b:not(:empty){position:absolute;inset:0;display:grid;place-items:center;background:#15120ec9;font-size:21px;border-radius:50%;color:#e4e0d7}
 .ability b.locked{font-size:12px;letter-spacing:1px;color:#b5b1ab}
 .ability.unlearned svg{opacity:.32;filter:none}.ability[aria-disabled=true]{filter:none;opacity:.85}
-.ability.combo-ready{border-color:#ebdfc6;box-shadow:inset 0 0 0 3px #15110e,0 0 0 2px #ebdfc64d,0 3px 8px #110f0c}
-.ability.combo-ready::after{content:attr(data-combo);position:absolute;top:-22px;left:50%;transform:translateX(-50%);padding:3px 5px;border:1px solid #9e9069;border-radius:4px;background:#201c18f5;color:#ebdfc6;font-size:9px;font-weight:700;line-height:12px;white-space:nowrap;pointer-events:none}
+.ability.combo-ready{border-color:#ebdfc6}
+.ability.combo-ready::after{content:attr(data-combo);position:absolute;top:-22px;left:50%;transform:translateX(-50%);padding:3px 6px;border:1px solid var(--mr-bronze);border-radius:2px;background:var(--mr-panel-solid);box-shadow:var(--mr-frame);color:var(--mr-gold);font-size:9px;font-weight:700;letter-spacing:.4px;line-height:12px;white-space:nowrap;pointer-events:none}
 .ability.trainable{border-color:#dfcb93}.ability kbd{display:block;top:5px;right:7px;font-size:9px;color:#d6cec0;background:#1a1714;border:0}
-.ranks{position:absolute;bottom:4px;left:0;width:100%;display:flex;justify-content:center;gap:3px;pointer-events:none}.ranks i{width:6px;height:3px;background:#100d0a;border:1px solid #79736b;border-radius:1px}.ranks i.filled{background:var(--hero-color);border-color:var(--hero-color)}
+.ranks{position:absolute;bottom:4px;left:0;width:100%;display:flex;justify-content:center;gap:3px;pointer-events:none}.ranks i{width:6px;height:3px;background:#100d0a;border:1px solid #79736b;border-radius:1px}.ranks i.filled{background:var(--mr-gold);border-color:#f0d49a}
 #auto-status{bottom:-39px;font-size:8px;max-width:155px;pointer-events:none}
 #skill-points{position:absolute;right:0;top:-46px;min-height:36px;width:166px;padding:7px 10px;border:1px solid #969187;border-radius:6px;background:#201c18ed;color:#dad3c6;font-size:11px;letter-spacing:1px;font-weight:bold}
 #skill-points.ready{background:#34302cf2;color:#f8e3a8;border-color:#d9c180;box-shadow:0 0 12px #e6c66f40}
@@ -129,8 +129,8 @@
 .ability span{bottom:-14px;max-width:88px;font-size:7px;line-height:9px}
 #skill-points{top:-40px;width:128px;min-height:36px;padding:5px 9px;font-size:9px}
 .abilities.upgrade-mode .ability{opacity:.5;filter:saturate(.7)}
-.abilities.upgrade-mode .ability.upgrade-target{opacity:1;filter:none;border-color:#f8e2a7;box-shadow:0 0 0 3px #f8e2a72f,0 0 18px #f4d27b55,inset 0 0 0 2px #100d0b}
-.abilities.upgrade-mode .ability.upgrade-target::before{content:'+';position:absolute;z-index:8;right:-6px;top:-7px;width:23px;height:23px;display:grid;place-items:center;border:2px solid #f8e4ae;border-radius:50%;background:#c6a459;color:#13100e;font:900 18px/18px Barlow,sans-serif;box-shadow:0 2px 8px #0008;pointer-events:none}
+.abilities.upgrade-mode .ability.upgrade-target{opacity:1;filter:none}.abilities.upgrade-mode .ability.upgrade-target .hud-atlas-crop,.ability.combo-ready .hud-atlas-crop{border-color:var(--mr-gold);box-shadow:inset 0 0 0 1px #000,inset 0 0 14px #000a,0 0 0 2px #dcb46e66,0 4px 10px #000b}
+.abilities.upgrade-mode .ability.upgrade-target::before{content:'+';position:absolute;z-index:8;right:-6px;top:-7px;width:23px;height:23px;display:grid;place-items:center;border:1px solid var(--mr-gold);border-radius:50%;background:radial-gradient(circle at 40% 35%,#3b3125,#17130f 75%);color:var(--mr-gold);font:700 17px/18px Barlow,sans-serif;box-shadow:inset 0 0 0 2px #000a,0 0 0 1px #000,0 2px 6px #000b;pointer-events:none}
 .ability-upgrade{display:none!important}
 #skill-points,.ability{touch-action:none}
 
@@ -172,7 +172,7 @@
 
 /* Direct + overlays: no extra HUD footprint and each control owns its own touch pointer. */
 .ability-upgrade[hidden]{display:none!important}
-.ability-upgrade:not([hidden]){display:grid!important;z-index:10;width:30px;height:30px;padding:0;place-items:center;border:2px solid #ece0c8;border-radius:50%;background:linear-gradient(#ecd187,#af8b3f);box-shadow:0 3px 9px #000b,0 0 10px #f4d2754f;color:#13100d;font:900 21px/1 Barlow,sans-serif;touch-action:manipulation;pointer-events:auto}
+.ability-upgrade:not([hidden]){display:grid!important;z-index:10;width:30px;height:30px;padding:0;place-items:center;border:1px solid var(--mr-gold);border-radius:50%;background:radial-gradient(circle at 40% 35%,#3b3125,#17130f 75%);box-shadow:inset 0 0 0 2px #000a,0 0 0 1px #000,0 3px 8px #000b;color:var(--mr-gold);font:700 20px/1 Barlow,sans-serif;touch-action:manipulation;pointer-events:auto}
 .upgrade-dash{right:-2px;top:1px}
 .upgrade-surge{left:80px;top:22px}
 .upgrade-signature{left:31px;bottom:2px}
@@ -228,28 +228,24 @@
 }
 .ability .hud-spell-art{
   inset:4px;
-  border-radius:15px;
-  border:2px solid #cfba91b8;
-  box-shadow:
-    inset 0 0 0 2px #100d0b,
-    inset 0 0 18px #0005,
-    0 4px 12px #000b,
-    0 0 16px color-mix(in srgb,var(--hero-color) 24%,transparent);
-  filter:saturate(1.22) contrast(1.1);
+  border-radius:6px;
+  border:2px solid #7d6240;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 14px #000a,0 0 0 1px #000,0 4px 10px #000b;
+  filter:saturate(.85) contrast(1.06);
 }
 .ability.ult .hud-spell-art{
   inset:5px;
-  border-radius:20px;
-  border:3px solid var(--hero-color,#dfc99e);
+  border-radius:8px;
+  border:2px solid var(--hero-tone);
 }
 .ability b:not(:empty){
   inset:4px;
-  border-radius:15px;
+  border-radius:6px;
   font-size:17px;
 }
 .ability.ult b:not(:empty){
   inset:5px;
-  border-radius:20px;
+  border-radius:8px;
 }
 .ability kbd{
   top:5px;
@@ -258,7 +254,10 @@
   min-height:20px;
   padding:2px 4px;
   font-size:9px;
-  background:#100d0ae8;
+  border:1px solid #6e573a;
+  border-radius:2px;
+  background:#0f0d0be8;
+  color:var(--mr-parchment);
 }
 .ranks{bottom:6px}
 #skill-points{
@@ -267,17 +266,19 @@
   min-height:44px;
   padding:8px 11px;
   font-size:11px;
-  letter-spacing:.7px;
-  border:2px solid #d0bd96;
-  border-radius:10px;
-  background:#1a1611f3;
-  box-shadow:0 5px 14px #0009;
+  letter-spacing:1.2px;
+  border:1px solid var(--mr-bronze);
+  border-radius:3px;
+  background:var(--mr-plate);
+  box-shadow:var(--mr-bevel),var(--mr-frame);
+  color:var(--mr-parchment);
+  font:600 11px/1.1 Cinzel,serif;
 }
 #skill-points.ready{
-  border-color:#f6dd96;
-  color:#f9e6b2;
-  background:#312c28f3;
-  box-shadow:0 0 0 2px #f6dd962b,0 5px 14px #0009,0 0 20px #f6dd9644;
+  border-color:var(--mr-gold);
+  color:#f3dca6;
+  background:linear-gradient(180deg,#4a3a24,#2a2015 60%,#1d160f);
+  box-shadow:var(--mr-bevel),var(--mr-frame),0 0 0 1px #dcb46e55;
 }
 .ability-upgrade:not([hidden]){
   width:38px!important;
@@ -286,7 +287,7 @@
   min-height:38px!important;
   font-size:24px!important;
   border-width:2px!important;
-  box-shadow:0 3px 10px #000b,0 0 14px #f4d27558!important;
+  box-shadow:inset 0 0 0 2px #000a,0 0 0 1px #000,0 3px 8px #000b!important;
 }
 .upgrade-dash{right:-4px!important;top:-4px!important}
 .upgrade-surge{left:126px!important;top:28px!important}
@@ -342,17 +343,19 @@
   transform:none;
   opacity:1;
   overflow:hidden;
-  border-radius:15px;
-  border:2px solid #cfba91b8;
+  /* A bronze-rimmed tile: dark inner edge, a thin black outline, a soft drop shadow. No glow. */
+  border-radius:6px;
+  border:2px solid #7d6240;
   background:#14110d;
-  box-shadow:inset 0 0 0 2px #100d0b,inset 0 0 18px #0005,0 4px 12px #000b,0 0 16px color-mix(in srgb,var(--hero-color) 24%,transparent);
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 14px #000a,0 0 0 1px #000,0 4px 10px #000b;
   pointer-events:none;
   z-index:1;
 }
 .ability.ult .hud-atlas-crop{
   inset:5px;
-  border-radius:20px;
-  border:3px solid var(--hero-color,#dfc99e);
+  border-radius:8px;
+  border:2px solid var(--hero-tone);
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 16px #000a,0 0 0 1px #000,0 0 0 3px #7d624099,0 4px 12px #000b;
 }
 .ability .hud-atlas-crop img{
   position:absolute;
@@ -362,7 +365,8 @@
   left:calc(var(--hud-col) * -100%);
   top:calc(var(--hud-row) * -100%);
   object-fit:fill;
-  filter:saturate(1.22) contrast(1.1);
+  /* The spell paintings are brighter than the rest of the HUD; tone them toward the warm palette. */
+  filter:saturate(.8) sepia(.12) contrast(1.06);
   pointer-events:none;
 }
 .ability .hud-spell-art:not(.hud-atlas-crop){display:none!important}
@@ -374,11 +378,11 @@
   transform:translateX(50%);
   width:max-content;
   height:auto;
-  padding:2px 6px;
-  border-radius:6px!important;
-  font-size:9px!important;
-  letter-spacing:.8px;
-  line-height:12px;
-  background:#100d0bd9!important;
-  border:1px solid #cfba9166;
+  padding:1px 5px;
+  border-radius:2px!important;
+  font:600 8px/12px Cinzel,serif!important;
+  letter-spacing:1px;
+  color:var(--mr-text)!important;
+  background:#0f0d0be6!important;
+  border:1px solid #6e573a;
 }

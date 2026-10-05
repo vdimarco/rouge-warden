@@ -1,6 +1,7 @@
 // Bot teammates talk like players: short lines from pings, kills and objectives.
 import { SIZE, distance } from './world.js';
 import { HANDLES } from './draft.js';
+import { HERO_IDENTITIES } from './hero-identities.js';
 
 export const laneAt = p => p.x < SIZE * .38 ? 'West' : p.x > SIZE * .62 ? 'East' : 'Middle';
 const pick = (list, n) => list[Math.abs(Math.floor(n)) % list.length];
@@ -63,7 +64,10 @@ export class TeamChat {
     const li = document.createElement('li'), who = document.createElement('b'), text = document.createElement('span');
     li.className = line.all ? 'all' : 'team'; li.dataset.time = s.time;
     who.textContent = `${line.all ? '[All] ' : ''}${this.handles.get(unit.id) || unit.name} (${unit.name}):`; who.style.color = line.all ? '#ff9f8c' : '';
-    text.textContent = ` ${line.text}`; li.append(who, text);
+    text.textContent = ` ${line.text}`;
+    // The speaker's portrait leads the line, so a glance shows who is talking.
+    const slug = HERO_IDENTITIES[unit.identity]?.slug, words = document.createElement('span');
+    words.append(who, text); if (slug) li.append(Object.assign(document.createElement('img'), { src: `./art/portraits/${slug}-bust.webp`, alt: '' })); li.append(words);
     this.el.append(li); while (this.el.children.length > 4) this.el.firstChild.remove();
     this.sound.chat();
   }
