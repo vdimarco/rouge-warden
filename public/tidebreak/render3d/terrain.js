@@ -5,45 +5,55 @@ import * as THREE from 'three';
 import { riverGeometry, riverCrossings, riverOutline, shoreRibbon } from '../river.js';
 import { withWorld, fowAtEnd, worldMapped } from './materials.js';
 
-const MASK = 2048, MARGIN = 5200;
-// Lanes, sand, stone and water as four soft masks. 'lighten' keeps the strongest stroke, so a lane painted twice stays a lane.
+const MASK = 1024, MARGIN = 5200;
+// Box blur of one channel (stride 4) in place, horizontal then vertical, twice: soft edges without canvas filters,
+// which are very slow on some canvases.
+function blur(data, channel, radius) {
+  const n = MASK, line = new Float32Array(n), out = new Float32Array(n);
+  for (let pass = 0; pass < 2; pass++) for (const vertical of [false, true]) for (let a = 0; a < n; a++) {
+    for (let b = 0; b < n; b++) line[b] = data[((vertical ? b * n + a : a * n + b) << 2) + channel];
+    let sum = 0; for (let b = -radius; b <= radius; b++) sum += line[Math.min(n - 1, Math.max(0, b))];
+    for (let b = 0; b < n; b++) { out[b] = sum / (radius * 2 + 1); sum += line[Math.min(n - 1, b + radius + 1)] - line[Math.max(0, b - radius)]; }
+    for (let b = 0; b < n; b++) data[((vertical ? b * n + a : a * n + b) << 2) + channel] = out[b];
+  }
+}
+// Lanes, sand, stone and water as four soft masks, painted on a CPU canvas. 'lighten' keeps the strongest stroke, so a
+// lane painted twice stays a lane.
 function paintMasks(world, s, seed) {
   const { SIZE, PATHS, BASES, OBSTACLES, PORTALS, CAMPS } = world, river = riverGeometry(seed);
   const rgb = document.createElement('canvas'), wet = document.createElement('canvas'); rgb.width = rgb.height = wet.width = wet.height = MASK;
-  const c = rgb.getContext('2d'), w = wet.getContext('2d'), k = MASK / SIZE;
+  const c = rgb.getContext('2d', { willReadFrequently: true }), w = wet.getContext('2d', { willReadFrequently: true }), k = MASK / SIZE;
   c.fillStyle = '#000'; c.fillRect(0, 0, MASK, MASK); w.fillStyle = '#000'; w.fillRect(0, 0, MASK, MASK);
   c.setTransform(k, 0, 0, k, 0, 0); w.setTransform(k, 0, 0, k, 0, 0);
   c.globalCompositeOperation = 'lighten'; c.lineCap = c.lineJoin = 'round';
-  const blur = px => { c.filter = px ? `blur(${px}px)` : 'none'; };
   const stroke = (path, width, color, alpha = 1) => { c.strokeStyle = color; c.globalAlpha = alpha; c.lineWidth = width; c.beginPath(); path.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke(); c.globalAlpha = 1; };
   // Lanes: a worn core and a wide soft verge; the width wanders a little along the track.
   for (const [lane, path] of PATHS.entries()) {
-    blur(10); stroke(path, 330, '#ff0000', .45);
-    blur(4); stroke(path, 210, '#ff0000');
+    stroke(path, 330, '#ff0000', .4); stroke(path, 200, '#ff0000');
     for (let i = 4; i < path.length - 4; i += 3) { const p = path[i], r = 70 + Math.sin(i * .37 + lane * 2.1 + seed) * 40; if (r > 85) { c.fillStyle = '#ff0000'; c.beginPath(); c.arc(p.x + Math.sin(i * 1.7) * 30, p.y + Math.cos(i * 1.3) * 30, r, 0, Math.PI * 2); c.fill(); } }
   }
   // Paths to camps and gates: narrow and faint.
-  blur(5);
   for (const a of [...CAMPS, ...PORTALS]) {
     let best = null, d = Infinity; for (const p of PATHS.flat()) { const e = Math.hypot(a.x - p.x, a.y - p.y); if (e < d) { d = e; best = p; } }
     if (best && d < 2200) stroke([a, { x: (a.x + best.x) / 2 + 60, y: (a.y + best.y) / 2 - 40 }, best], 110, '#ff0000', .6);
   }
   // Sand banks along the river, wider inside the bends (the shelf widths from river.js).
-  blur(6); c.fillStyle = '#00ff00';
-  for (const side of ['north', 'south']) { shoreRibbon(c, river, side, () => -30, w2 => w2 * 1.15 + 40); c.globalAlpha = .9; c.fill(); }
+  c.fillStyle = '#00ff00'; c.globalAlpha = .9;
+  for (const side of ['north', 'south']) { shoreRibbon(c, river, side, () => -30, w2 => w2 * 1.15 + 40); c.fill(); }
   c.globalAlpha = 1;
   // Stone: base plazas, tower footings, gate rings and the ground under ruins and villages.
-  blur(5); c.fillStyle = '#0000ff';
+  c.fillStyle = '#0000ff';
   for (const b of BASES) { c.beginPath(); c.ellipse(b.x, b.y, 660, 560, 0, 0, Math.PI * 2); c.fill(); }
   for (const e of s.units) if (e.kind === 'tower') { c.beginPath(); c.arc(e.x, e.y, e.guardian || e.tier >= 3 ? 230 : 170, 0, Math.PI * 2); c.fill(); }
   for (const g of PORTALS) { c.beginPath(); c.arc(g.x, g.y, 150, 0, Math.PI * 2); c.fill(); }
   c.globalAlpha = .75;
   for (const b of OBSTACLES[0]) if (['ruins', 'village'].includes(b.biome)) { c.beginPath(); c.ellipse(b.x, b.y, b.w * .62, b.h * .62, 0, 0, Math.PI * 2); c.fill(); }
-  c.globalAlpha = 1; blur(0);
-  // Water: the exact bank used by movement, slightly feathered.
-  w.filter = 'blur(3px)'; w.fillStyle = '#fff'; riverOutline(w, river); w.fill();
+  c.globalAlpha = 1;
+  // Water: the exact bank used by movement.
+  w.fillStyle = '#fff'; riverOutline(w, river); w.fill();
   const a = c.getImageData(0, 0, MASK, MASK).data, b = w.getImageData(0, 0, MASK, MASK).data, data = new Uint8Array(MASK * MASK * 4);
   for (let i = 0; i < data.length; i += 4) { data[i] = a[i]; data[i + 1] = a[i + 1]; data[i + 2] = a[i + 2]; data[i + 3] = b[i]; }
+  blur(data, 0, 3); blur(data, 1, 3); blur(data, 2, 2); blur(data, 3, 1);
   const t = new THREE.DataTexture(data, MASK, MASK); t.flipY = false; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;
   return t;
 }

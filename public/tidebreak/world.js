@@ -5,7 +5,7 @@ import { BASE, LANE_KNOTS, TOWER_ARC, GUARDIANS, RIVER_GATES, BASE_GATE, CAMP_SP
 export { SIZE, MAP_SCALE, CENTER, FEATURE_SCALE } from './arena.js';
 export { TOWER_ARC } from './layout.js';
 // The soft limit starts sudden death. The hard limit ends the match with a tiebreak.
-export const SUDDEN_DEATH = 960, LIMIT = 1200;
+export const SUDDEN_DEATH = 900, LIMIT = 1080;
 export const SHIFT = 40;
 export const BASES = [at(...BASE), mirror(at(...BASE))];
 // Each lane is team 0's half, the knot on the axis, then the same half mirrored to team 1's base.

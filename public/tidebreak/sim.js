@@ -37,7 +37,7 @@ export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
-export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 23, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.6, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
+export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 23, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .06, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.6, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5, suddenStructures: 1.5 };
 // Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
 // An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 export const MINIONS = {
@@ -111,7 +111,9 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if((['boss','camp'].includes(target.kind)||target.guardian)&&target.exposedUntil>s.time){amount*=1.25;emitCombatFeedback(s,source,target,'exposed','OPENING HIT');}
   // Backdoor protection: structures shrug off most hero damage unless the attacker's wave is at the structure.
   if (fortified(s, target)) amount *= PACE.fortify;
-  if (['tower', 'core'].includes(target.kind) && credit?.kind === 'hero' && !escorted(s, credit.team, target)) {
+  // Sudden death: structures take extra damage and no longer need a wave at them.
+  if (s.suddenDeath && ['tower', 'core'].includes(target.kind)) amount *= PACE.suddenStructures;
+  else if (['tower', 'core'].includes(target.kind) && credit?.kind === 'hero' && !escorted(s, credit.team, target)) {
     amount *= PACE.backdoor;
     if (credit.player && s.time - (s.backdoorTip ?? -10) > 6) { announce(s, 'Ward resists you', 'Structures take little hero damage without your wisps. Push with your wave.'); s.backdoorTip = s.time; }
   }
@@ -488,7 +490,7 @@ export function step(s, input = {}, dt = 1 / 60) {
   s.floaters.forEach(e => { e.life -= dt; e.y -= dt * 26; }); s.floaters = s.floaters.filter(e => e.life > 0);
   if (shiftWorld(s)) announce(s, s.phase ? 'The woods swallow the town' : 'The town returns', s.phase ? 'Vision shrinks. Hide in brush for a 75% ambush strike.' : 'Streets reopen. Buildings block sight and movement.');
   if (s.time >= s.nextWave) { spawnWave(s); s.nextWave += PACE.waveEvery; }
-  if (!s.suddenDeath && s.time >= SUDDEN_DEATH) { s.suddenDeath = true; announce(s, 'Sudden death', 'Every ward and both rifts are open. Deaths last longer and attacks grow stronger.'); }
+  if (!s.suddenDeath && s.time >= SUDDEN_DEATH) { s.suddenDeath = true; announce(s, 'Sudden death', 'Every ward and both rifts are open and take more damage. Deaths last longer.'); }
   if (!s.objective && s.time >= s.objectiveAt) {
     const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, ...HUNT, homeX: HUNT.x, homeY: HUNT.y, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55, creatureId: chooseCreature(s.seed, `boss:${Math.floor(s.time)}`, 'boss').id });
     s.objective = boss.id; announce(s, 'The Wild Hunt awakens', 'Slay the great beast. It will fight for your team.');

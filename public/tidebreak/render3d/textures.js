@@ -30,7 +30,7 @@ function wrapped(size, draw) { for (const dx of [-size, 0, size]) for (const dy 
 function canvas(size) { const c = document.createElement('canvas'); c.width = c.height = size; return c; }
 // Builds an RGBA DataTexture: colour from a painter on a canvas, height from a second painter in the alpha channel.
 function material(size, paintColor, paintHeight) {
-  const color = canvas(size), height = canvas(size), cc = color.getContext('2d'), hc = height.getContext('2d');
+  const color = canvas(size), height = canvas(size), cc = color.getContext('2d', { willReadFrequently: true }), hc = height.getContext('2d', { willReadFrequently: true });
   paintColor(cc); paintHeight(hc);
   const c = cc.getImageData(0, 0, size, size).data, h = hc.getImageData(0, 0, size, size).data, data = new Uint8Array(size * size * 4);
   for (let i = 0; i < data.length; i += 4) { data[i] = c[i]; data[i + 1] = c[i + 1]; data[i + 2] = c[i + 2]; data[i + 3] = h[i]; }

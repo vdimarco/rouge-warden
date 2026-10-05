@@ -19,6 +19,37 @@ function merge(parts) {
   }
   const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(norm, 3)); out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); out.setIndex(index); return out;
 }
+// Vertex clustering: merges vertices that share a small grid cell. The prop-sheet models carry more triangles than
+// the camera can show; at cell size 1/22 of the model they look the same from the game camera at a third of the cost.
+function simplify(source, cells) {
+  const g = source.index ? source : source.clone(), pos = g.attributes.position, uv = g.attributes.uv; if (!g.index) g.setIndex([...Array(pos.count).keys()]);
+  g.computeBoundingBox(); const box = g.boundingBox, size = Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z) / cells;
+  const map = new Map(), remap = new Int32Array(pos.count), p = [], t = [], n = [];
+  for (let i = 0; i < pos.count; i++) {
+    const key = `${Math.floor((pos.getX(i) - box.min.x) / size)},${Math.floor((pos.getY(i) - box.min.y) / size)},${Math.floor((pos.getZ(i) - box.min.z) / size)}`;
+    let k = map.get(key); if (k === undefined) { k = n.length; map.set(key, k); n.push(0); p.push(0, 0, 0); t.push(uv ? uv.getX(i) : 0, uv ? uv.getY(i) : 0); }
+    p[k * 3] += pos.getX(i); p[k * 3 + 1] += pos.getY(i); p[k * 3 + 2] += pos.getZ(i); n[k]++; remap[i] = k;
+  }
+  for (let k = 0; k < n.length; k++) for (let j = 0; j < 3; j++) p[k * 3 + j] /= n[k];
+  const index = [], seen = new Set(), src = g.index.array;
+  for (let i = 0; i < src.length; i += 3) {
+    const a = remap[src[i]], b = remap[src[i + 1]], c = remap[src[i + 2]]; if (a === b || b === c || a === c) continue;
+    const key = a < b ? (b < c ? `${a},${b},${c}` : a < c ? `${a},${c},${b}` : `${c},${a},${b}`) : (a < c ? `${b},${a},${c}` : b < c ? `${b},${c},${a}` : `${c},${b},${a}`);
+    if (seen.has(key)) continue; seen.add(key); index.push(a, b, c);
+  }
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); out.setAttribute('uv', new THREE.Float32BufferAttribute(t, 2)); out.setIndex(index); out.computeVertexNormals();
+  return out;
+}
+// Foliage shades as one soft volume: canopy normals lean out from the crown's centre, the way a painter lights a tree.
+function softCanopy(g, centre, from, amount = .7) {
+  const p = g.attributes.position, n = g.attributes.normal, v = new THREE.Vector3(), m = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i); if (y < from) continue;
+    v.set(p.getX(i), (y - centre) * .8, p.getZ(i)).normalize(); m.set(n.getX(i), n.getY(i), n.getZ(i));
+    const k = amount * Math.min(1, (y - from) / .12); m.lerp(v, k).normalize(); n.setXYZ(i, m.x, m.y, m.z);
+  }
+  n.needsUpdate = true; return g;
+}
 // A shrub: a few lumpy leaf balls, about 1 wide and 1 high, textured with a tree's leaf map.
 function bushGeometry(seed) {
   const rand = random(seed), parts = [];
@@ -65,7 +96,7 @@ function patch(material, grow, { sway = 0, see = true, key }) {
 const TREE = { pines: ['pine', 1.6, .62], pine: ['pine', 1.6, .62], juniper: ['pine', 1.05, .95], oak: ['oak', 1.5, .66], willow: ['oak', 1.4, .8], birches: ['oak', 1.6, .42] };
 const TINTS = { oak: '#ffffff', willow: '#b4c49a', birches: '#f2ecd2', juniper: '#c4cdb0', pines: '#f0f2e6', pine: '#f0f2e6' };
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
-const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65 };
+const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .7, juniper: .7, willow: .8 };
 export class Props {
   constructor(scene, assets, textures) {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
@@ -76,12 +107,12 @@ export class Props {
     const leaves = materialOf(w.pine), autumn = materialOf(w.oak);
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
-      pine: { geometry: geometryOf(w.pine), material: tree(leaves, .035), shadow: true },
-      oak: { geometry: geometryOf(w.oak), material: tree(autumn, .03), shadow: true },
+      pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .6), material: tree(leaves, .035), shadow: true },
+      oak: { geometry: softCanopy(simplify(geometryOf(w.oak), 22), .62, .3), material: tree(autumn, .03), shadow: true },
       bush: { geometry: bushGeometry(3), material: tree(leaves, .05), shadow: false },
       shrub: { geometry: bushGeometry(9), material: tree(autumn, .05), shadow: false },
-      boulder: { geometry: geometryOf(w.boulders), material: tree(materialOf(w.boulders), 0), shadow: true },
-      arch: { geometry: geometryOf(w.arch), material: tree(materialOf(w.arch), 0), shadow: true },
+      boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true },
+      arch: { geometry: simplify(geometryOf(w.arch), 28), material: tree(materialOf(w.arch), 0), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
       pillar: { geometry: new THREE.CylinderGeometry(.42, .5, 1, 10).translate(0, .5, 0), material: built(textures.stone, '#d3c9b6', 200), shadow: true },
       log: { geometry: new THREE.CylinderGeometry(.5, .5, 1, 9).rotateZ(Math.PI / 2).translate(0, .45, 0), material: built(textures.dirt, '#7a6450', 120), shadow: false },
@@ -135,7 +166,7 @@ export class Props {
         for (let j = 0; j < n; j++) {
           const x = spots[j * 4], z = spots[j * 4 + 1], r = spots[j * 4 + 2], h = spots[j * 4 + 3];
           // A tall caster up to its shadow length toward the sun still darkens the view.
-          const sx = x - sun.x * h * sun.k, sz = z - sun.z * h * sun.k;
+          const reach = Math.min(700, h * sun.k), sx = x - sun.x * reach, sz = z - sun.z * reach;
           const inView = x + r > view.x0 && x - r < view.x1 && z + r > view.y0 && z - r - h * .5 < view.y1;
           const shadowIn = mesh.castShadow && Math.max(x, sx) + r > view.x0 && Math.min(x, sx) - r < view.x1 && Math.max(z, sz) + r > view.y0 && Math.min(z, sz) - r < view.y1;
           if (!inView && !shadowIn) continue;
