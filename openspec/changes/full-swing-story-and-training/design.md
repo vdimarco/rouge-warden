@@ -22,7 +22,7 @@
   - `yank`: a yank on a target that is not a clog or a pipe;
   - `look`: a turn of 1 rad in total;
   - `climb`: 2 m climbed on a wall;
-  - `plunge`: the first clog flushed (the count is the pump count).
+  - `plunge`: the first clog flushed (the count is the pump count). The first flush ends the training whatever rows are still open, so `save.tutorial` is set as it was for the spoken tutorial.
 - The line of the next row is said again every 20 s. The finish shows a toast and a gold flash and sets `save.tutorial`.
 - The pump sticker reads `progress.pump` (`n`, `of`, `kind`), which game.js sets while a rope holds a clog or a pipe.
 - `progress.objective` holds the mission card's text. It is computed twice a second.
