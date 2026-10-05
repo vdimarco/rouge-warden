@@ -35,10 +35,12 @@ async function open(query, width = 960, height = 540) {
   const pump = (n, ms = 33) => page.evaluate(([n, ms]) => { for (let i = 0; i < n; i++) { window.__ts += ms; window.__pump(window.__ts); } }, [n, ms]);
   return { page, errors, read, pump, graphics: () => read('return m.snapshot().graphics;') };
 }
+// Polls an async check from Node (page.waitForFunction would treat a returned promise as already true).
+async function until(check, what, tries = 480, wait = 500) { for (let i = 0; i < tries; i++) { if (await check()) return; await new Promise(r => setTimeout(r, wait)); } throw new Error('timed out: ' + what); }
 async function toMatch(t) {
   await t.page.mouse.move(480, 270); await t.page.click('#play');
   for (let i = 0; i < 120 && !(await t.page.evaluate(() => !document.getElementById('hud').hidden)); i++) { await t.page.keyboard.press('Enter'); await t.page.waitForTimeout(200); }
-  await t.page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running, null, { timeout: 60000 });
+  await until(() => t.read('return m.snapshot().running;'), 'the match starts', 120);
   await t.page.waitForTimeout(400);
   if (await t.page.evaluate(() => document.getElementById('sheet').open)) await t.page.keyboard.press('Escape');
   await t.page.mouse.move(480, 270);
@@ -51,14 +53,14 @@ try {
     assert.equal(g.models.world, g.models.worldTotal); assert.equal(g.models.clips, 17);
     assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d') && !!document.getElementById('battle-overlay')), true, 'the WebGL canvas and the overlay exist');
     await toMatch(t);
-    await page.waitForFunction(async () => { const g = (await import('/tidebreak/main.js')).snapshot().graphics; return g.models.heroes + g.models.failed.length >= g.models.heroesTotal; }, null, { timeout: 240000, polling: 500 });
+    await until(async () => { const g = await t.graphics(); return g.models.heroes + g.models.failed.length >= g.models.heroesTotal; }, 'all hero models load');
     await pump(3);
     g = await t.graphics();
     assert.deepEqual(g.models.failed, [], 'no hero model failed'); assert.equal(g.models.heroes, 16, 'all sixteen heroes are parsed');
     assert.equal(g.units.placeholders, 0, 'no hero is still a stand-in'); assert.equal(g.units.heroes, 6);
     pass('the 3D renderer loads every world model, the clips and all sixteen heroes', g.models);
 
-    // Heroes animate: the player's bones turn while it runs, and differ between two moments of the idle.
+    // Heroes animate: the player's bones turn while it runs.
     await page.evaluate(() => { window.__auto = false; });
     const id = await read('return p.id;');
     // The renderer is not exported; the 3D renderer leaves a QA handle on the event canvas.
@@ -104,9 +106,9 @@ try {
     await page.evaluate(() => { window.__auto = true; });
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     assert.match(await page.evaluate(() => document.getElementById('graphics-mode').textContent), /Graphics: 3D/);
-    await page.click('#graphics-mode'); await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().graphics.renderer === 'Illustrated 2.5D', null, { timeout: 60000 });
+    await page.evaluate(() => document.getElementById('graphics-mode').click()); await until(async () => (await t.graphics()).renderer === 'Illustrated 2.5D', 'the switch to 2D', 120);
     assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d')), false, 'the WebGL canvas is gone in 2D');
-    await page.click('#graphics-mode'); await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().graphics.renderer === 'Mythic 3D', null, { timeout: 60000 });
+    await page.evaluate(() => document.getElementById('graphics-mode').click()); await until(async () => (await t.graphics()).renderer === 'Mythic 3D', 'the switch back to 3D', 120);
     await page.keyboard.press('Escape'); await page.waitForTimeout(1500);
     assert.equal((await t.graphics()).renderer, 'Mythic 3D');
     await page.evaluate(() => localStorage.removeItem('tidebreak.renderer'));

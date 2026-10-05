@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createMatch, player, damage, commandOrder, step, TIERS, SLAM, PACE } from '../../public/tidebreak/sim.js';
-import { SIZE, TOWER_POSITIONS, GUARDIAN_POSITIONS, BASES, resolveBody, distance, laneFrom } from '../../public/tidebreak/world.js';
+import { SIZE, TOWER_POSITIONS, GUARDIAN_POSITIONS, BASES, PATHS, CAMPS, PORTALS, BRUSH, OBSTACLES, resolveBody, distance, laneFrom, arcLength } from '../../public/tidebreak/world.js';
 import { structureProtected, nextObjective, objectiveText } from '../../public/tidebreak/objectives.js';
 
 // Walking distance from a team's own base to a point on the lane (the point is projected onto the path).
@@ -34,6 +34,9 @@ const wisp = (s, team, at) => { const m = { id: 9000 + s.units.length, kind: 'mi
     }
   }
   for (const team of [0, 1]) assert(GUARDIAN_POSITIONS[team].every(g => distance(g, BASES[team]) < 900), 'guardians stand by their base');
+  const [west, middle, east] = PATHS.map(arcLength); assert(middle >= .75 * Math.max(west, east), 'the curved middle lane is not much shorter than the side lanes');
+  assert.equal(CAMPS.length, 8); assert.equal(PORTALS.length, 6); assert(BRUSH.length >= 20 && OBSTACLES[0].length >= 22, 'the larger map has more camps, brush and cover');
+  for (const g of PORTALS) assert(PORTALS[g.to] && (!g.choices || g.choices.every(i => !PORTALS[i].choices)), 'every gate leads to a river gate');
 }
 // The protection chain on every lane: outer, middle, inner, then the guardians, then the core.
 for (let lane = 0; lane < 3; lane++) {

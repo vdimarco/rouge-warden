@@ -86,6 +86,7 @@ export class ThreeRenderer {
     const a = this.project(-500, 0), b = this.project(500, 0), c = this.project(0, 100); this.scale = (b.x - a.x) / 1000; this.squash = (c.y - a.y) / 100 / this.scale;
     this.effects?.setScale(this.height * this.dpr / (2 * Math.tan(half)));
     const q = this.quality, size = q >= .8 ? 2048 : q >= .6 ? 1536 : 1024; this.shadowSize = size;
+    this.placeCamera(this.cam.x, this.cam.y, 0, 0); // input between a resize and the next frame still maps to the ground
     this.restartTiming();
   }
   placeCamera(x, y, sx, sy) {
@@ -169,6 +170,12 @@ export class ThreeRenderer {
     for (const g of world.PORTALS) if (near(g.x, g.y)) {
       d.circle(g.x, g.y, 125, { color: '#8fd9cf', alpha: .55, line: 9 }); d.circle(g.x, g.y, 98, { color: '#c9f2e8', alpha: .35, line: 3, dash: 14 }); d.circle(g.x, g.y, 110, { color: '#5fbfb2', alpha: .12, fill: .9, inner: 0 });
       if (!this.reducedMotion && Math.random() < dt * 9) fx.sparks.emit({ x: g.x + (Math.random() - .5) * 160, y: 10, z: g.y + (Math.random() - .5) * 160, vy: 90 + Math.random() * 60, life: 1.4, size: 22, color: '#9fe8dc', drag: .3 });
+    }
+    // Air: golden motes drift in the town's low sun; in the woods, low mist rolls between the trees.
+    if (!this.reducedMotion) {
+      const f = this.foot, rx = () => this.cam.x + f.minX + Math.random() * (f.maxX - f.minX), rz = () => this.cam.y + f.minY + Math.random() * (f.maxY - f.minY), woods = this.sky.blend;
+      if (Math.random() < dt * 10 * (1 - woods)) fx.sparks.emit({ x: rx(), y: 40 + Math.random() * 220, z: rz(), vx: 12 + Math.random() * 10, vy: 6, vz: -8, life: 4 + Math.random() * 3, size: 9, color: '#ffd9a0', alpha: .7, drag: 0 });
+      if (Math.random() < dt * 5 * woods) fx.smoke.emit({ x: rx(), y: 30 + Math.random() * 60, z: rz(), vx: 18, vy: 2, vz: -6, life: 7, size: 520 + Math.random() * 300, grow: .5, color: '#c4d4dc', alpha: .14, drag: 0 });
     }
     for (const z of s.zones) if (near(z.x, z.y)) this.zone(z, time, dt);
     for (const t of s.traps) if (t.team === 0 || distance(p, t) < 110) d.circle(t.x, t.y, 70, { color: TEAM3D[t.team] || NEUTRAL, alpha: .7, line: 4, dash: 10 });

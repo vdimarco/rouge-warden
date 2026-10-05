@@ -37,7 +37,7 @@ export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
-export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 23, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .06, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.3, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5, suddenStructures: 1.5 };
+export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 24, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .06, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.3, portalCooldown: 15, backdoor: .25, respawnBase: 6, respawnPerLevel: 1.2, respawnMax: 28, suddenRespawn: 1.5, suddenStructures: 1.5 };
 // Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
 // An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 export const MINIONS = {
@@ -48,7 +48,7 @@ export const MINIONS = {
 };
 // Outer wards take less damage early, so the first towers fall after a real laning phase.
 export const fortified = (s, e) => e.kind === 'tower' && e.tier === 0 && s.time < PACE.fortifyUntil;
-export const respawnTime = (level, sudden = false) => Math.round(Math.min(28, 6 + 1.2 * level) * (sudden ? PACE.suddenRespawn : 1) * 10) / 10;
+export const respawnTime = (level, sudden = false) => Math.round(Math.min(PACE.respawnMax, PACE.respawnBase + PACE.respawnPerLevel * level) * (sudden ? PACE.suddenRespawn : 1) * 10) / 10;
 // Every hero moves by the same rules: out-of-combat sprint, slows, haste effects and Nessie in water.
 export function heroSpeed(s, e) {
   const sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
