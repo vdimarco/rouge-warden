@@ -153,10 +153,8 @@ async function runSlot(slot) {
     check(await visible("#gaugeBox") && await visible("#crankBox"), "the gauge and the crank show");
     await snap("04-fight", 300);
 
-    // 5. a trophy: the photo with the TROPHY badge and the ruler. The jump's zoom eases out first (a zoom still in the
-    // view frames the photo too low, behind the card), and the phone is held upright
-    await stage({ fish: { y: -0.6, jump: 0, move: "swim" } }, [], false);
-    await wait(() => FISH.world.feel().zoom < 0.02, null, 30000).catch(() => {});
+    // 5. a trophy: the photo with the TROPHY badge and the ruler, right after the jump (its zoom is still on). In motion
+    // play the view follows the phone, so the phone is held upright first
     await page.evaluate(() => __phone.pose(88));
     await sleep(1200);
     await page.evaluate(() => FISH.newCast());

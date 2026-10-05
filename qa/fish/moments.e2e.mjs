@@ -11,9 +11,11 @@
 // buzzes and words; the cast report and the "Sweet!" cue show without their pop (with reduced motion too).
 // Part C: the jump zoom on the other layouts (844x390 and 360x640 phones, a 1280x800 desktop), 30 and 50 m out: the
 // leaping fish stays in the view, below the HUD and the prompt, and the rod stays drawn where the hand holds it.
+// Part D: the trophy photo, landed while a jump's zoom is still on and on slow frames (each one 150 ms): when the flash
+// comes, the fish is in the middle of the part of the view the card leaves free, and the card comes up under the fish.
 // The fights are staged: a stand-in for the sim goes into G.sim with the same state and events (like screens.mjs).
 // Run: serve public/ (FISH_URL, default http://localhost:8765/fish/), then
-//   NODE_PATH=qa/browser/node_modules node qa/fish/moments.e2e.mjs       (PARTS=A, B or C for one part; SHOTS=dir)
+//   NODE_PATH=qa/browser/node_modules node qa/fish/moments.e2e.mjs       (PARTS=A, B, C or D for one part; SHOTS=dir)
 import { open, sleep, shot } from "./lib.mjs";
 import { CAST } from "../../public/fish/js/cast.js";
 
@@ -561,6 +563,68 @@ if (part("C")) {
       }
     } catch (e) { check(false, `exception in part C at ${sz}: ` + (e && e.stack)); }
     check(errors.length === 0, `part C at ${sz}: no page errors` + (errors.length ? ":\n" + errors.join("\n") : ""));
+    await browser.close();
+  }
+}
+
+/* ================= part D: the trophy photo after a jump, on slow frames ================= */
+if (part("D")) {
+  for (const [width, height] of [[390, 844], [360, 640], [844, 390]]) {
+    const sz = `${width}x${height}`, { browser, page, errors } = await open({ width, height, save: SAVE });
+    try {
+      console.log("     the trophy photo after a jump, on slow frames, at " + sz);
+      const eye = await page.evaluate(() => FISH.place.stand.eye);
+      await page.evaluate(async () => { const g = await import("/fish/js/goals.js"), d = g.dayOf(), dg = g.dailyGoal(d, FISH.save); FISH.save.today = { d, k: dg.k, n: dg.n, done: 1 }; });
+      await page.evaluate(() => FISH.startMode("free"));
+      await wait(page, () => FISH.G.phase === "cast", null, 60000);
+      await sleep(500);
+      // a smallmouth leaps 11 m out, and the view zooms in on it (and looks up at the leap)
+      const jx = eye.x - 0.8, jz = eye.z - 11;
+      await stage(page, { tfrac: 0.6, lineOut: 11.5, fish: { id: "smallmouth", kg: 1.7, cm: 44, len: 0.44, x: jx, z: jz, y: -0.4, heading: Math.PI / 2, move: "swim", jump: 0, known: true } });
+      await sleep(1500);
+      await stage(page, { fish: { y: 0.9, jump: 0.8, move: "jump" } }, [{ type: "jump", size: 0.44, x: jx, z: jz }], false);
+      await wait(page, () => FISH.world.feel().zoom > 0.95, null, 20000);
+      // the trophy on the screen (CSS px in the view): its middle, its box (the board too), and the middle of the part of
+      // the view the card leaves free (above it on a tall view, left of it on a wide one). Taken at the flash. From here on
+      // every frame takes 150 ms: the lake's clock (at most 50 ms a frame) runs at a third of the wall clock, which times
+      // the flash and the card
+      await page.evaluate(async () => {
+        const THREE = await import("/fish/lib/three.module.min.js"), W = FISH.world, fl = document.querySelector("#flash");
+        window.__trophy = () => {
+          const m = W.scene.children.find((o) => o.userData && o.userData.trophy), cam = W.camera;
+          if (!m) return null;
+          const v = document.querySelector("#view"), w = v.clientWidth, h = v.clientHeight, b = new THREE.Box3().setFromObject(m, true), p = new THREE.Vector3(), r = v.getBoundingClientRect();
+          let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+          for (let i = 0; i < 8; i++) {
+            p.set(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(cam);
+            const x = (p.x + 1) / 2 * w, y = (1 - p.y) / 2 * h;
+            x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+          }
+          p.copy(m.position).project(cam);
+          const off = cam.view && cam.view.enabled ? cam.view : { offsetX: 0, offsetY: 0 };
+          return { x: (p.x + 1) / 2 * w, y: (1 - p.y) / 2 * h, x0, x1, y0, y1, w, h, mx: w / 2 - off.offsetX, my: h / 2 - off.offsetY, left: r.left, top: r.top };
+        };
+        new MutationObserver(() => { if (fl.classList.contains("go") && fl.classList.contains("photo") && !window.__photo) window.__photo = window.__trophy(); }).observe(fl, { attributes: true, attributeFilter: ["class"] });
+        const raf = window.requestAnimationFrame.bind(window);
+        let last = performance.now();
+        window.requestAnimationFrame = (cb) => raf(() => { while (performance.now() - last < 150); last = performance.now(); cb(last); });
+      });
+      // a trophy largemouth is landed at once, with the zoom still on
+      await stage(page, { phase: "caught", catch: { id: "largemouth", name: "Largemouth Bass", kg: 3.9, cm: 55, junk: false }, fish: null }, [], false);
+      await wait(page, () => !!window.__photo, null, 30000);
+      const ph = await page.evaluate(() => window.__photo);
+      check(Math.abs(ph.x - ph.mx) <= 0.03 * ph.w && Math.abs(ph.y - ph.my) <= 0.03 * ph.h,
+        `${sz}: at the flash the fish is in the middle of the part of the view the card leaves free (at ${ph.x.toFixed(0)}, ${ph.y.toFixed(0)} px; the middle at ${ph.mx.toFixed(0)}, ${ph.my.toFixed(0)})`);
+      await wait(page, () => !FISH.G.cardWait, null, 30000);
+      await wait(page, () => { const c = document.querySelector("#catch .card"); return !c.getAnimations({ subtree: true }).some((a) => a.playState === "running" || a.pending); }, null, 30000);
+      const up = await page.evaluate(() => { const r = document.querySelector("#catch .card").getBoundingClientRect(); return { fish: window.__trophy(), card: { left: r.left, top: r.top } }; });
+      await shot(page, `moments-trophy-after-jump-${sz}`);
+      // the card covers the bottom of a tall view and the right of a wide one
+      const f = up.fish, tall = height > width, clear = tall ? f.top + f.y1 <= up.card.top : f.left + f.x1 <= up.card.left;
+      check(clear && f.x0 >= 0 && f.y0 >= 0 && f.x1 <= f.w && f.y1 <= f.h,
+        `${sz}: the card comes up beside the fish, not over it (the fish ${(f.left + f.x0).toFixed(0)}..${(f.left + f.x1).toFixed(0)} x ${(f.top + f.y0).toFixed(0)}..${(f.top + f.y1).toFixed(0)} px, the card from ${tall ? "y " + up.card.top.toFixed(0) : "x " + up.card.left.toFixed(0)})`);
+    } catch (e) { check(false, `exception in part D at ${sz}: ` + (e && e.stack)); }
+    check(errors.length === 0, `part D at ${sz}: no page errors` + (errors.length ? ":\n" + errors.join("\n") : ""));
     await browser.close();
   }
 }

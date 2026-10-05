@@ -254,7 +254,12 @@ try {
       await shot(page, `${id}-catch-legend`, catchView, { id: lid, kg: lkg, portrait: false, hour: S.hour, inset: 0.4 });
       if (wanted(`${id}-catch-legend`)) fitsOrFail(`${id} landscape with a card`, lid, await page.evaluate(() => window.fits()), 1 - 2 * 0.4);
       if (wanted(`${id}-photo`)) {
-        const r = await page.evaluate(({ id, kg }) => { W.hideCatch(); W.setView({ mode: "catch", inset: 0 }); W.showCatch(id, kg, { photo: true }); step(2); const a = window.fits(); step(60); const b = window.fits(); return { a, b }; }, { id: lid, kg: lkg });
+        // the photo beat runs on the wall clock (world.js beatT), so the push-in ends after 1.2 s of real time, not of steps
+        const r = await page.evaluate(async ({ id, kg }) => {
+          W.hideCatch(); W.setView({ mode: "catch", inset: 0 }); W.showCatch(id, kg, { photo: true }); step(2); const a = window.fits();
+          await new Promise((done) => setTimeout(done, 1300));
+          step(60); const b = window.fits(); return { a, b };
+        }, { id: lid, kg: lkg });
         if (!(r.a && r.b)) fail(`${id}: photo catch did not show`);
         else {
           const wa = r.a.hi[0] - r.a.lo[0], wb = r.b.hi[0] - r.b.lo[0];
