@@ -40,5 +40,45 @@
       "magnet",
       "shield"
     ]
+  },
+  "river-portrait-loop.mp4": {
+    "provider": "fal.ai",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "requestId": "01a10de6-8d12-7250-9252-c22ebb562a03",
+    "sourceUrl": "https://v3b.fal.media/files/b/0aad3501/KzBtqRsoJJC7e-77ac5aE_minimax-h3.mp4",
+    "date": "2026-10-05",
+    "reference": "runner-portrait.png",
+    "input": {
+      "duration": 5,
+      "resolution": "768P",
+      "prompt_expansion_mode": "disabled",
+      "matchingFirstAndLastFrame": true
+    },
+    "encoding": "H.264, 24fps, CRF23, silent, faststart",
+    "direction": "Locked camera; flowing rapids, foam and eddies; preserve shores and temple; no added characters, rafts, hazards or text."
+  },
+  "river-landscape-loop.mp4": {
+    "provider": "fal.ai",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "requestId": "01a10de6-92df-7020-bcc5-2e4e498cf2f7",
+    "sourceUrl": "https://v3b.fal.media/files/b/0aad3501/NsIz5S2jsuVL7mnqdIdbk_minimax-h3.mp4",
+    "date": "2026-10-05",
+    "reference": "runner-river.png",
+    "input": {
+      "duration": 5,
+      "resolution": "768P",
+      "prompt_expansion_mode": "disabled",
+      "matchingFirstAndLastFrame": true
+    },
+    "encoding": "H.264, 24fps, CRF23, silent, faststart",
+    "direction": "Locked camera; flowing rapids, foam and eddies; preserve shores and temple; no added characters, rafts, hazards or text."
+  },
+  "paddle-frames.png": {
+    "provider": "OpenAI ImageGen",
+    "source": "exec-4497622b-f764-442d-aa6f-b9f8e954301c.png",
+    "date": "2026-10-05",
+    "format": "1774x887 RGBA; eight frames in four columns and two rows",
+    "reference": "Approved menu likeness and runner-sprites.png",
+    "direction": "Seamless paddle stroke and recovery, bare torso, long hair, modest loincloth, same raft and camera."
   }
 }
