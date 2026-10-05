@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <script src="/arcade/quiet.js"></script>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0d1820">
+  <meta name="theme-color" content="#14110d">
   <meta name="description" content="Shore of the Ancients. Choose from sixteen heroes, master four-skill kits, and fight in a shifting 3v3 arena.">
   <meta property="og:title" content="Shore of the Ancients | Cottage Arcade">
   <meta property="og:description" content="Ancient waters. New legends. Choose your hero and fight for the shore.">
@@ -12,23 +12,21 @@
   <title>Shore of the Ancients · Cottage Arcade</title>
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
-  <link rel="stylesheet" href="./toon.css">
   <link rel="stylesheet" href="./illustrated.css">
   <link rel="stylesheet" href="./abilities.css">
   <link rel="stylesheet" href="./legend-ui.css">
   <link rel="stylesheet" href="./spellbook-reference.css">
-  <link rel="preload" as="image" href="./art/illustrated/opening-citadel.webp">
   <link rel="stylesheet" href="./opening.css">
   <link rel="stylesheet" href="./viewport.css">
   <link rel="preload" as="image" href="./art/reference/shore-scene.webp">
-  <link rel="preload" as="image" href="./art/reference/tidewarden.webp">
+  <link rel="preload" as="image" href="./art/portraits/tidewarden-full.webp">
   <link rel="stylesheet" href="./selection-reference.css">
   <link rel="stylesheet" href="./team.css">
 </head>
 <body>
   <canvas id="battle" aria-label="Shore of the Ancients battlefield"></canvas>
   <div id="hud" hidden>
-    <header><span class="wordmark">SHORE OF<br>THE ANCIENTS</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">06:00</time></div><div class="hud-corner"><button id="pause" class="pause" aria-label="Open menu (Esc)" title="Menu (Esc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span><kbd>Esc</kbd></button><button id="hud-sound" class="hud-sound" aria-pressed="true" aria-label="Sound on" title="Sound on"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="M16 9l5 6M21 9l-5 6"/></svg></button><button id="muted-chip" class="muted-chip" hidden>Sound is off · Turn on</button></div></header>
+    <header><span class="wordmark">SHORE OF<br>THE ANCIENTS</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">06:00</time></div><div id="lineup" class="hud-lineup" aria-label="Heroes in this match"></div><div class="hud-corner"><button id="pause" class="pause" aria-label="Open menu (Esc)" title="Menu (Esc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span><kbd>Esc</kbd></button><button id="hud-sound" class="hud-sound" aria-pressed="true" aria-label="Sound on" title="Sound on"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="M16 9l5 6M21 9l-5 6"/></svg></button><button id="muted-chip" class="muted-chip" hidden>Sound is off · Turn on</button></div></header>
     <div id="perf" hidden><pre></pre><button>Copy</button></div>
     <div id="gpu-note" role="status" hidden><span>This browser draws the game without the graphics card, so it can lag. Turn on graphics acceleration in the browser settings.</span><button id="gpu-note-close" aria-label="Close this note">×</button></div>
     <button id="map-button" aria-label="Open arena map"><canvas id="minimap" width="180" height="180"></canvas><small>MAP ↗</small></button>
@@ -54,7 +52,7 @@
         <button class="ability-upgrade upgrade-ult" data-upgrade="3" hidden aria-label="Learn ultimate">+</button>
         <output id="auto-status" aria-label="Automatic attack status">AUTO · READY</output>
       </div>
-      <div class="health"><strong id="level">1</strong><div><i id="health-fill"></i><span id="health-text">1320 / 1320</span><i id="mana-fill"></i><span id="mana-text" aria-label="Mana"></span><i id="xp-fill"></i></div></div>
+      <div class="health"><span id="hero-frame" class="hero-frame" aria-hidden="true"></span><strong id="level">1</strong><div><i id="health-fill"></i><span id="health-text">1320 / 1320</span><i id="mana-fill"></i><span id="mana-text" aria-label="Mana"></span><i id="xp-fill"></i></div></div>
     </div>
   </div>
   <main id="menu" class="overlay reference-selection">
@@ -62,7 +60,7 @@
       <div class="roster-heading"><h1 class="shore-wordmark"><span class="sr-only">Shore of the Ancients</span></h1><p class="ancient-motto">Ancient<br>waters.<br>New<br>legends.</p></div>
       <nav class="selection-nav" aria-label="Shore navigation"><div class="selection-tabs"><button data-menu-tab="play">Play</button><button data-menu-tab="heroes" aria-current="page">Heroes</button><button data-menu-tab="realms">Realms</button><button data-menu-tab="lore">Lore</button><button data-menu-tab="shop">Shop</button></div><div class="selection-account"><button id="menu-muted-chip" class="muted-chip" hidden aria-label="Sound is off. Turn it on">Sound<span class="wide"> is</span> off<span class="wide"> · Turn on</span></button><button id="hero-profile" class="icon-button" aria-label="Your match record"><img src="./art/ui/two-shadows.svg" alt=""></button><button id="hero-settings" class="icon-button" aria-label="Game settings"><img src="./art/ui/cog.svg" alt=""></button><button id="tidecaller-profile"><span class="profile-portrait" aria-hidden="true"></span><span>Tidecaller<small id="profile-record">Ready to play</small></span></button></div></nav>
       <div class="roster-layout"><section class="hero-feature" aria-label="Selected hero">
-      <div class="hero-stage"><picture id="hero-picture"><img id="hero-art" src="./art/reference/tidewarden.webp" alt="Tidewarden, the unyielding deep" decoding="async"></picture></div>
+      <div class="hero-stage"><picture id="hero-picture"><img id="hero-art" src="./art/portraits/tidewarden-full.webp" alt="Tidewarden, the unyielding deep" decoding="async"></picture></div>
       <div class="hero-copy"><div class="hero-title"><span class="hero-sigil" aria-hidden="true"></span><h2 id="hero-name">Tidewarden</h2></div><span id="hero-role">The unyielding deep</span><p id="hero-note">He stands where the world ends, and the next one begins. The tide obeys, and none escape its call.</p><div id="hero-tags"></div></div>
       <div id="hero-preview"></div>
       <div id="hero-spell-note" aria-live="polite"></div>

@@ -4,12 +4,13 @@ import { market, inventoryHTML } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
 import { createMatch, step, player, HEROES, trainSkill, cancelOrder, announce, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
 import { loadArt, Renderer } from './illustrated-render.js';
+import { rendererChoice, saveRendererChoice, graphicsSupport } from './render3d/choice.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
-import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS } from './roster.js';
+import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS, portraitURL, mountMatchPortraits, updateMatchPortraits } from './roster.js';
 import { HERO_IDENTITIES, identitySkill, assignIdentities } from './hero-identities.js';
 import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers, screenMovementPointer } from './pointer-action.js';
@@ -89,12 +90,12 @@ function pause() {
   const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
   const canFullscreen = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
   const screen = fullscreenLeft || !canFullscreen ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
-  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
+  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="graphics-mode" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
   $('resume').onclick = () => { if (fullscreenLeft) playWindowed(); closeSheet(); };
   if ($('fullscreen-back')) $('fullscreen-back').onclick = () => { requestFullscreen(); closeSheet(); };
   if ($('screen-mode')) $('screen-mode').onclick = () => { if (document.fullscreenElement) playWindowed(); else requestFullscreen(); closeSheet(); };
   $('return-home').onclick = () => { closeSheet(); recallQueue = true; };
-  wireSoundRows('pause'); wirePerfRow($('perf-toggle')); $('quit').onclick = menu;
+  wireSoundRows('pause'); wirePerfRow($('perf-toggle')); wireGraphicsRow($('graphics-mode')); $('quit').onclick = menu;
 }
 // Sound controls name the action, not the state, so a player who hears nothing and presses one does not mute the game.
 const SOUND_LABELS = {
@@ -140,7 +141,7 @@ function choose(identityId) {
   selectedIdentity=identityId;selected=h.kit;
   $('hero-name').textContent=h.name;$('ready-legend').textContent=`${h.name} · ${h.subtitle}`;$('hero-role').textContent=h.subtitle;$('hero-note').textContent=h.note;
   $('hero-tags').innerHTML=h.tags.map(tag=>`<span>${tag}</span>`).join('');
-  $('hero-art').src=`./art/reference/${h.slug}.webp`;$('hero-art').alt=`${h.name}, ${h.subtitle}`;
+  $('hero-art').src=portraitURL(h.slug,'full');$('hero-art').alt=`${h.name}, ${h.subtitle}`;
   document.querySelectorAll('[data-hero]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.hero===identityId)));
   $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(identityId);
   const spellNote=$('hero-spell-note');spellNote.hidden=false;
@@ -179,7 +180,7 @@ function start() {
     b.querySelector('svg')?.remove();b.querySelector('.hud-spell-art')?.remove();
     b.insertAdjacentHTML('afterbegin',hudSpellArt(selectedIdentity,i,'hud-spell-art'));
   });
-  updateUI(); learnSkills();
+  mountMatchPortraits(state,selectedIdentity); updateUI(); learnSkills();
 }
 function learnSkills() {
   if (!running || resultShown) return;
@@ -301,6 +302,7 @@ function updateUI() {
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : towerThreat?'Tower fire is growing. Leave its range.':concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : objectiveText(state,p.lane);
   const rallyWait=Math.ceil(rallyReadyAt-state.time);$('rally').disabled=p.hp<=0||rallyWait>0;$('rally').querySelector('small').textContent=rallyWait>0?`${rallyWait}s`:'Call team';
   if (state.time > 18) $('coach').hidden = true;
+  updateMatchPortraits(state);
 }
 const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);
@@ -330,7 +332,7 @@ function heroDetails(){
 }
 function selectionPanel(title,copy){sheet(`<h2>${title}</h2>${copy}<button id="selection-back" class="primary">Back to heroes</button>`);$('selection-back').onclick=closeSheet;}
 function matchRecord(){let record={wins:0,matches:0};try{record=JSON.parse(localStorage.getItem('monster-mash.record'))||record;}catch{}selectionPanel('Tidecaller',`<p>Your match record on this device.</p><dl><dt>Matches played</dt><dd>${Number(record.matches)||0}</dd><dt>Victories</dt><dd>${Number(record.wins)||0}</dd></dl>`);}
-function gameSettings(){sheet(`<h2>Game settings</h2>${soundRowsHTML('settings')}<button id="selection-fullscreen" class="row-btn"></button><button id="settings-perf" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>`);wireSoundRows('settings');wirePerfRow($('settings-perf'));const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}saveFullscreen(!on);if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
+function gameSettings(){sheet(`<h2>Game settings</h2>${soundRowsHTML('settings')}<button id="selection-fullscreen" class="row-btn"></button><button id="settings-perf" class="row-btn"></button><button id="settings-graphics" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>`);wireSoundRows('settings');wirePerfRow($('settings-perf'));wireGraphicsRow($('settings-graphics'));const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}saveFullscreen(!on);if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
 $('play').onclick=startDraft;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
 $('hero-profile').onclick=matchRecord;$('tidecaller-profile').onclick=matchRecord;$('hero-settings').onclick=gameSettings;
 document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
@@ -481,7 +483,28 @@ function drawBetweenSteps(dt) {
   try { renderer.draw(state, dt, false, aim ? skillAimPreview(state, player(state), aim.slot, dragSkillAim(player(state), aim.slot, aim, (x, y) => renderer.screenDirection(x, y))) : null, waypoint); }
   finally { state.time = time; for (let i = 0; i < moved.length; i += 3) { moved[i].x = moved[i + 1]; moved[i].y = moved[i + 2]; } }
 }
-loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').querySelector('span').textContent = 'Play Shore of the Ancients'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').querySelector('span').textContent = 'Shore unavailable'; });
+// The battlefield renderer: 3D where a graphics card draws WebGL2 (render3d/choice.js), otherwise the 2D one. 3D that
+// fails to start falls back to 2D. The models download from page load; Play waits for the world models and clips, and
+// heroes still loading show a stand-in. The menu's Graphics row switches renderers during play.
+let art = null, graphicsMode = rendererChoice(), three = null;
+const loadingText = (done, total) => { if ($('play').disabled) $('play').querySelector('span').textContent = `Opening the shore… ${Math.round(done / total * 100)}%`; };
+const loadThree = () => three ||= import('./three-render.js').then(m => m.preload(loadingText).then(() => m));
+async function makeRenderer(mode) {
+  if (mode === '3d') try { const m = await loadThree(); return new m.ThreeRenderer($('battle'), $('minimap'), art); } catch (error) { console.warn('3D graphics are unavailable; using the 2D battlefield.', error); }
+  return new Renderer($('battle'), $('minimap'), art);
+}
+function wireGraphicsRow(b) {
+  if (!b) return;
+  const label = () => { b.textContent = graphicsMode === '3d' ? 'Graphics: 3D · Switch to 2D' : 'Graphics: 2D · Switch to 3D'; };
+  if (!graphicsSupport().webgl2) { b.textContent = 'Graphics: 2D (no WebGL2 in this browser)'; b.disabled = true; return; }
+  label();
+  b.onclick = async () => {
+    if (!art) return; b.disabled = true; const next = graphicsMode === '3d' ? '2d' : '3d', old = renderer; saveRendererChoice(next);
+    const made = await makeRenderer(next); old?.dispose?.(); renderer = made; graphicsMode = made instanceof Renderer ? '2d' : '3d';
+    if (old) renderer.cam = { ...old.cam }; renderer.resize(); b.disabled = false; label();
+  };
+}
+Promise.all([loadArt(), graphicsMode === '3d' ? loadThree().catch(error => { console.warn('3D models are unavailable; using the 2D battlefield.', error); graphicsMode = '2d'; }) : null]).then(async ([loaded]) => { art = loaded; renderer = await makeRenderer(graphicsMode); graphicsMode = renderer instanceof Renderer ? '2d' : '3d'; $('play').disabled = false; $('play').querySelector('span').textContent = 'Play Shore of the Ancients'; requestAnimationFrame(frame); }).catch(error => { console.error(error); $('load-error').hidden = false; $('play').querySelector('span').textContent = 'Shore unavailable'; });
 document.addEventListener('error',e=>{if(e.target.tagName!=='IMG')return;const picture=e.target.closest('picture');if(picture?.querySelector('source')?.hasAttribute('srcset')){picture.querySelector('source').removeAttribute('srcset');e.target.src=e.target.getAttribute('src');}},true);
 choose(selectedIdentity);
 // A read-only snapshot supports the existing arcade's QA tooling.

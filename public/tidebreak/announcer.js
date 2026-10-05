@@ -71,7 +71,9 @@ export class Announcer {
     li.className = entry.killerTeam === 0 ? 'ally' : 'enemy'; li.dataset.time = s.time;
     const name = (unit, fallback) => { const b = document.createElement('b'); b.textContent = unit?.name || fallback; b.style.color = unit?.kind === 'hero' ? heroColor(unit) : ''; return b; };
     const blade = document.createElement('span'); blade.textContent = '⚔'; blade.setAttribute('aria-label', 'banished');
-    li.append(name(killer, 'Ward'), blade, name(victim, 'Hero'));
+    // Hero portraits sit beside the names, as in the team lineup at the top of the screen.
+    const face = unit => { const slug = unit?.kind === 'hero' && HERO_IDENTITIES[unit.identity]?.slug; return slug ? [Object.assign(document.createElement('img'), { src: `./art/portraits/${slug}-bust.webp`, alt: '' })] : []; };
+    li.append(...face(killer), name(killer, 'Ward'), blade, ...face(victim), name(victim, 'Hero'));
     if (entry.multi >= 2 || entry.streak >= 3) { const tag = document.createElement('em'); tag.textContent = multiName(entry.multi) || streakName(entry.streak); li.append(tag); }
     this.feed.append(li); while (this.feed.children.length > 4) this.feed.firstChild.remove();
   }

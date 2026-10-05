@@ -27,7 +27,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/vr/lib/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from '/tidebreak/lib/meshopt_decoder.mjs';
 import { retarget, skinnedMeshOf } from '/tidebreak/hero-rig.js';
-const YAW = -0.42, IDLE_FRAME = 0.45, SUPER = 2;
+// YAW turns the hero toward the key light for a 3/4 view. The idle clip looks around: near 12% of its length every hero
+// faces forward with the weapon low; later frames turn away or lift the weapon across the face. SUPER is supersampling.
+const YAW = -0.42, IDLE_FRAME = 0.12, SUPER = 2;
 const clips = await (await fetch('/tidebreak/models/clips.json')).json();
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const gl = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -59,7 +61,8 @@ async function pose(slug) {
   const bone = name => body.skeleton.bones.find(b => b.name === name)?.getWorldPosition(new THREE.Vector3());
   const bodyBox = new THREE.Box3().setFromObject(body, true), allBox = new THREE.Box3();
   root.traverse(o => { if (o.isMesh) allBox.union(new THREE.Box3().setFromObject(o, true)); });
-  const head = bone('Head'), neck = bone('neck') || head, top = Math.max(bone('head_end')?.y ?? bodyBox.max.y, Math.min(bodyBox.max.y, head.y + 2.2 * (head.y - neck.y + 0.06)));
+  // The top of the body mesh is the head, hood, crown or horns: the idle pose keeps the hands low.
+  const head = bone('Head'), neck = bone('neck') || head, top = bodyBox.max.y;
   return { root, head, neck, top, bodyBox, allBox };
 }
 // Draws the scene from straight ahead (the hero is turned instead), so the lights stay fixed in the picture.

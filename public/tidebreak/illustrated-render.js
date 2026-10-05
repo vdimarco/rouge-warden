@@ -23,7 +23,8 @@ export async function loadArt() {
   const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...LANDFORMS, ...HEROES.flatMap((h,i) => i>=4?[h.slug+'-front']:[h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
   const images = await Promise.all(names.map(n => load(`./art/illustrated/${n}.webp`)));
   const imported=await Promise.all([...new Set(MARKETPLACE_SPRITES.map(s=>s.file))].map(async file=>['marketplace-'+file,await load('./art/magicpixel/'+file).catch(()=>null)]));
-  const identities=await Promise.all(HERO_IDENTITIES.map(async h=>['reference-'+h.slug,await load(`./art/reference/${h.slug}.webp`).catch(()=>null)]));
+  // Hero sprites and minimap markers use the full-length portraits rendered from the 3D models (head near the top middle).
+  const identities=await Promise.all(HERO_IDENTITIES.map(async h=>['reference-'+h.slug,await load(`./art/portraits/${h.slug}-full.webp`).catch(()=>null)]));
   return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])),...Object.fromEntries(imported),...Object.fromEntries(identities), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
 }
 // An orthographic 2.5D stage: separate illustrated objects, depth sorting, camera

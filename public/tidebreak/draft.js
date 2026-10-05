@@ -72,7 +72,7 @@ export function runDraft(root, plan, { sound, reduced = false, onDone, onBack, p
   const show = (slot, id, state) => {
     const el = cardFor(slot), h = HERO_IDENTITIES[id], img = el.querySelector('img');
     el.dataset.state = state; el.style.setProperty('--hero-color', h.color);
-    img.src = `./art/reference/${h.slug}.webp`; img.alt = h.name;
+    img.src = `./art/portraits/${h.slug}-bust.webp`; img.alt = h.name;
     el.querySelector('.draft-name').textContent = h.name;
     el.querySelector('.draft-role').textContent = `${h.filters.join(' · ')} · ${LANE_NAMES[SLOTS[slot].lane]}`;
     el.querySelector('.draft-status').textContent = state === 'locked' ? 'Locked' : 'Picking';

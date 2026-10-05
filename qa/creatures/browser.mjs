@@ -43,7 +43,7 @@ try {
     assert.equal(await page.locator('#hero-name').textContent(), 'Tidewarden');
     const portraitBackgrounds=await page.locator('#hero-picks .reference-portrait').evaluateAll(portraits=>portraits.map(el=>getComputedStyle(el).backgroundImage));
     assert.equal(portraitBackgrounds.length, 16);
-    assert(portraitBackgrounds.every(background=>/^url\(.+reference-source\.png/.test(background)&&!background.includes('gradient')), 'all sixteen portraits show the source artwork');
+    assert(portraitBackgrounds.every((background,i)=>background.includes(`/art/portraits/${HERO_IDENTITIES[i].slug}-bust.webp`)&&!background.includes('gradient')), 'all sixteen cards show the bust rendered from their 3D model');
     const selectState = await page.evaluate(() => {
       // The stage illustration can overscan. Selection controls must fit the viewport.
       const ids=['hero-picks','role-filters','hero-name','hero-preview','hero-spell-note','play'];
@@ -124,8 +124,8 @@ try {
       assert.equal(await page.locator('#hero-role').textContent(), identity.subtitle);
       assert.equal(await page.locator('#hero-note').textContent(), identity.note);
       assert.equal(await page.locator('#hero-picks [aria-pressed="true"]').getAttribute('data-hero'), String(identity.id));
-      assert.equal(await page.locator('#hero-art').getAttribute('src'), `./art/reference/${identity.slug}.webp`);
-      await page.waitForFunction(slug => { const image=document.querySelector('#hero-art'); return image.src.endsWith(`/reference/${slug}.webp`)&&image.complete&&image.naturalWidth>0; }, identity.slug);
+      assert.equal(await page.locator('#hero-art').getAttribute('src'), `./art/portraits/${identity.slug}-full.webp`);
+      await page.waitForFunction(slug => { const image=document.querySelector('#hero-art'); return image.src.endsWith(`/portraits/${slug}-full.webp`)&&image.complete&&image.naturalWidth>0; }, identity.slug);
       assert.deepEqual(await page.locator('#hero-tags span').allTextContents(), [...identity.tags]);
       for (let slot=0;slot<4;slot++) {
         const button=page.locator(`#hero-preview [data-hero-spell="${slot}"]`), move=identitySkill(identity.id,slot);
@@ -193,9 +193,10 @@ try {
     await page.locator('[data-menu-tab="heroes"]').click();
     assert.equal(await page.locator('#hero-picks [data-hero]:focus').getAttribute('data-hero'), '0');
     await page.waitForFunction(() => document.querySelector('#hero-art').complete&&document.querySelector('#hero-art').naturalWidth>0);
-    assert(loadedAssets.has('/tidebreak/art/reference/reference-source.png'), 'source portrait and logo artwork loads');
+    assert(loadedAssets.has('/tidebreak/art/reference/reference-source.png'), 'source logo and icon artwork loads');
     assert(loadedAssets.has('/tidebreak/art/reference/shore-scene.webp'), 'clean shore scene artwork loads');
-    assert.match(await page.locator('.reference-portrait').first().evaluate(el=>getComputedStyle(el).backgroundImage), /reference-source\.png/);
+    assert.match(await page.locator('.reference-portrait').first().evaluate(el=>getComputedStyle(el).backgroundImage), /portraits\/tidewarden-bust\.webp/);
+    assert(HERO_IDENTITIES.every(h=>loadedAssets.has(`/tidebreak/art/portraits/${h.slug}-bust.webp`)), 'every card portrait loads');
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
     if (width>=1000) { await page.locator('#hero-picks [data-hero="0"]').focus(); await page.keyboard.press('Enter'); }
