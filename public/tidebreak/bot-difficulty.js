@@ -142,6 +142,26 @@ export function tradeRetreat(s, e, heroes, hurt) {
   return !!P.tradeRetreat && hurt < .8 && ours < theirs * P.tradeRetreat;
 }
 
+// Closest distance from c to the walk from a to b.
+const pathGap = (a, b, c) => {
+  const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy, u = l ? Math.max(0, Math.min(1, ((c.x - a.x) * dx + (c.y - a.y) * dy) / l)) : 0;
+  return Math.hypot(a.x + dx * u - c.x, a.y + dy * u - c.y);
+};
+// Move guard for every profile: a bot never steps into the range of an enemy ward or rift that
+// no allied wave unit tanks, in any mode but retreat and evade (evadePoint has its own tower check). An approved dive (diveSafe) and sudden
+// death are the exceptions. Inside such range the bot steps out along the line from the ward.
+export function guardMove(s, e, intent) {
+  const P = botProfile(s, e), point = intent.move;
+  if (P.legacy || s.suddenDeath || intent.mode === 'retreat' || intent.mode === 'evade') return point;
+  const ward = enemyStructures(s, e.team).find(t => (point && pathGap(e, point, t) < t.range + 40 || distance(t, e) < t.range + 10) && !wardOpen(s, e, t));
+  if (!ward) return point;
+  const target = intent.target;
+  if (target?.kind === 'hero' && P.diveGuard && diveSafe(s, e, target, [e])) return point;
+  const d = distance(ward, e);
+  if (d >= ward.range + 10) return null;
+  const out = ward.range + 90, k = out / Math.max(1, d);
+  return { x: ward.x + (e.x - ward.x) * k, y: ward.y + (e.y - ward.y) * k };
+}
 // Wave-gated lane walking. Without a wave in front, the bot waits outside tower range.
 export function laneHold(s, e) {
   if (!botProfile(s, e).waveGate) return null;

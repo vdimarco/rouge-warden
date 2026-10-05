@@ -13,7 +13,7 @@ import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
-import { castLock } from './bot-difficulty.js';
+import { castLock, guardMove } from './bot-difficulty.js';
 import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
 import { followOrder } from './navigation.js';
 import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER } from './objectives.js';
@@ -450,7 +450,8 @@ function bot(s, e, dt) {
     e.thinkAt=s.time+castLock(s,e,requestCast(s,e,intent.slot,intent.aim,{bot:true}));
   }
   if(e.castIntent)return;
-  if(intent.move)move(s,e,intent.move.x,intent.move.y,dt,heroSpeed(s,e));
+  const to=guardMove(s,e,intent);
+  if(to)move(s,e,to.x,to.y,dt,heroSpeed(s,e));
   if(intent.portal)portal(s,e);
   if(intent.target)attack(s,e,intent.target);
   if(intent.mode==='lane'&&!intent.move&&!baseGate(s,e,dt))followLane(s,e,dt);

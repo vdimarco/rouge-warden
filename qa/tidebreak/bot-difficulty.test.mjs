@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createMatch, player, step, HEROES, heroSpeed } from '../../public/tidebreak/sim.js';
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
-import { CENTER, LANES, PORTALS, SIZE, distance, visibleTo } from '../../public/tidebreak/world.js';
+import { CENTER, LANES, PORTALS, SIZE, BASES, distance, visibleTo } from '../../public/tidebreak/world.js';
 import { PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
 
 const advance = (s, seconds) => { for (let i = 0; i < seconds * 20; i++) step(s, {}, .05); };
@@ -81,6 +81,17 @@ const dive = level => {
 { const r = dive('veteran'); assert.ok(r.close < .5 && r.hurt < 300, `veteran keeps out of tower range (${r.close.toFixed(2)} s, ${Math.round(r.hurt)} damage)`); }
 { const r = dive('mythic'); assert.ok(r.close < .5 || r.p.hp <= 0 && r.bot.hp > r.bot.maxHp * .3, `a Mythic dive happens only when its kill check holds (${r.close.toFixed(2)} s, ${Math.round(r.hurt)} damage, player ${Math.round(r.p.hp)})`); }
 { const r = dive('legacy'); assert.ok(r.close > 1, 'the old bots dove the tower'); }
+// Fight and assist moves keep out of an untanked ward too, for every player-facing profile (reported on the main branch:
+// a bot 516 units from a ward walked to 98 units of it after a hero waiting there, or after a wisp under it).
+for (const id of ['apprentice', 'veteran', 'mythic', 'ally']) for (const bait of ['hero', 'wisp']) {
+  const { s, p, bot, towers } = scene(id), tower = towers.find(t => t.lane === 0 && t.tier === 0), home = BASES[1], d = distance(tower, home);
+  Object.assign(bot, { x: tower.x + (home.x - tower.x) / d * 516, y: tower.y + (home.y - tower.y) / d * 516 });
+  if (bait === 'hero') Object.assign(p, { x: tower.x + (home.x - tower.x) / d * 120, y: tower.y + (home.y - tower.y) / d * 120 });
+  else { Object.assign(p, { x: SIZE - 300, y: SIZE - 300 }); s.units.push({ id: 900, kind: 'minion', team: 0, lane: 0, x: tower.x + (home.x - tower.x) / d * 150, y: tower.y + (home.y - tower.y) / d * 150, hp: 390, maxHp: 390, radius: 16, speed: 0, range: 95, damage: 0, rate: 1, attackCd: 9, stun: 0, slow: 0, fear: 0, hit: 0, shield: 0 }); }
+  let inside = 0;
+  for (let i = 0; i < 8 * 20; i++) { step(s, {}, .05); if (distance(bot, tower) < tower.range) inside += .05; }
+  assert.ok(inside <= .3, `${id} bot keeps out of an untanked ward with a ${bait} under it (${inside.toFixed(2)} s inside)`);
+}
 {
   const { s, p, bot, towers } = scene('mythic'), tower = towers.find(t => t.lane === 1 && t.tier === 0);
   Object.assign(p, { x: tower.x, y: tower.y - 140, hp: p.maxHp * .1 }); Object.assign(bot, { x: tower.x, y: tower.y - 420 });
