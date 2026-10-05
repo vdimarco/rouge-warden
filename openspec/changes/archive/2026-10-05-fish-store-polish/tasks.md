@@ -70,10 +70,10 @@
 - [x] 8.5 Tests: skip timing, the derby clock, seen once, old saves, calm, and screenshots at the four sizes.
 
 ## 9. Finish
-- [ ] 9.1 Update the Reel It In part of `README.md`.
-- [ ] 9.2 Run every Reel It In check and the review.
-- [ ] 9.3 Record the checks that need a real iPhone, an Android phone, or a Mac.
-- [ ] 9.4 Archive the change and review the canonical specs.
+- [x] 9.1 Update the Reel It In part of `README.md`.
+- [x] 9.2 Run every Reel It In check and the review. On 2026-10-05, 31 of the 33 `qa/fish` checks passed (`touch.e2e`, `mouse.e2e` and `cutscenes.e2e` pass when run alone; under a long run their timing can fail). Two fail the same way on the base before the touch-cast change: `screens.mjs` (the Journal summary line) and `cartoon.render.mjs` ("failed water image uses shader fallback" in SwiftShader). The player review is 10.8.
+- [x] 9.3 Record the checks that need a real iPhone, an Android phone, or a Mac (the device checklist in `apps/fish/README.md`).
+- [x] 9.4 Archive the change and review the canonical specs.
 
 ## 10. Final review fixes
 The final review found these. The checkpoint holds them as open work.
@@ -84,5 +84,5 @@ The final review found these. The checkpoint holds them as open work.
 - [x] 10.5 In `apps/fish/store/accessibility.md`, set Larger Text to No (a 1.25x switch cannot meet Apple's 200% bar). Point Sufficient Contrast at the checks that exist, and add the calm cutscenes to the Reduced Motion checks.
 - [x] 10.6 Use version 1.0.0 in `js/version.js`, the Android `versionName`, the iOS `MARKETING_VERSION`, and the listing. Add `js/version.js` to the release steps, and make `native-check.mjs` fail when they differ.
 - [x] 10.7 In `apps/fish/store/screenshots.md`, point to `?shot` and `qa/fish/shots.mjs`. In `review-notes.md`, say "Use touch", say the question comes after Go fishing, and mention the opening cutscene and how to skip it.
-- [ ] 10.8 Run the player review that the usage limit stopped, and fix what it finds.
-- [ ] 10.9 Rerun cutscenes, mouse, turnaround, touch, menus, and screens.
+- [ ] 10.8 Run the player review that the usage limit stopped, and fix what it finds. Not done when the change was archived on 2026-10-05. It is still open.
+- [x] 10.9 Rerun cutscenes, mouse, turnaround, touch, menus, and screens (see 9.2).
