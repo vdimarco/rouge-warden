@@ -37,5 +37,5 @@
 
 ## How to check
 
-- `qa/vr/training.e2e.mjs`: the card on a first run; each row ticked by a real action; the pump sticker's dots; the finish; the mission card; a phone in portrait.
+- `qa/vr/training.e2e.mjs`: the card on a first run; each row ticked by a real action; the pump sticker's dots; the finish; the first flush ending the training with rows still open; the mission card; a phone in portrait.
 - `qa/vr/cutscene.e2e.mjs`: each panel's words, the balloon inside the screen, the hero held still, the HUD hidden and back, the skip rules, a district briefing, the finale. It saves a screenshot of each panel to look at.
