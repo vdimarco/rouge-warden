@@ -30,7 +30,7 @@ export function combatDecision(s,e){
   return {mode:'evade',move:evadePoint(s,e,a,danger===zone)};
  }
  const outnumbered=heroes.length>allies.length, hurt=e.hp/e.maxHp;
- if(hurt<.28||(outnumbered&&hurt<.65)||e.retreat&&hurt<.82||tradeRetreat(s,e,heroes,hurt)){
+ if(hurt<P.retreatAt||(outnumbered&&hurt<.65)||e.retreat&&hurt<.82||tradeRetreat(s,e,heroes,hurt)){
   const home=BASES[e.team],aim={x:home.x-e.x,y:home.y-e.y};
   const slot=e.hero===9&&ready(3)?3:e.hero===6&&canReturn(s,e)?0:escapeHeroes.includes(e.hero)&&ready(0)?0:e.hero===7&&ready(2)?2:e.hero===11&&ready(0)?0:e.hero===9&&ready(3)?3:undefined;
   return {mode:'retreat',move:home,slot:heroes.length?slot:undefined,aim};
@@ -80,9 +80,9 @@ export function combatDecision(s,e){
   case 10:choose(2,!!injured&&!injured.bloom);choose(0,d<480&&!s.units.some(t=>t.owner===e.id&&t.hp>0));choose(3,combat&&d<380&&(near>=2||!!injured));choose(1,d<480);break;
   case 11:choose(0,(e.slow>0||e.bleed?.until>s.time||hurt<.65)&&combat);choose(3,combat&&d<350&&target.bleed?.type==='poison');choose(2,d<340);choose(1,d<420);break;
  }
- if(slot===undefined&&combat&&escapeHeroes.includes(e.hero)&&![8,9].includes(e.hero)&&d>330&&d<580&&hurt>.65&&!outnumbered&&(target.hp<target.maxHp*.7||P.punish&&punishable(s,target)))choose(0);
+ if(slot===undefined&&combat&&P.engage&&escapeHeroes.includes(e.hero)&&![8,9].includes(e.hero)&&d>330&&d<580&&hurt>.65&&!outnumbered&&(target.hp<target.maxHp*.7||P.punish&&punishable(s,target)))choose(0);
  // Keep enough mana for a defensive move instead of emptying every cooldown into a healthy target.
- if(slot!==undefined&&slot!==0&&slot!==3&&hurt>.55&&combat&&target.hp>target.maxHp*.7&&!(P.punish&&punishable(s,target))&&e.mana-manaCost(e,slot)<manaCost(e,0))slot=undefined;
+ if(slot!==undefined&&slot!==0&&slot!==3&&hurt>.55&&combat&&target.hp>target.maxHp*.7&&!(P.punish&&punishable(s,target))&&e.mana-manaCost(e,slot)<manaCost(e,0)*P.reserve)slot=undefined;
  // Higher profiles keep spells for heroes when mana is low, so their threats are spells you can read.
  if(slot!==undefined&&!combat&&slot!==3&&e.mana<e.maxMana*P.saveSpells&&!(e.hero===10&&slot===2))slot=undefined;
  let point;

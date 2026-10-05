@@ -15,17 +15,19 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // reaction: seconds from a new warning to the dodge [min, max]. dodge: chance that the step clears the shape.
 // aimLead: share of the target's movement that the bot leads. aimError: units of aim spread.
 // castLock: seconds between spell decisions. failLock: lock after a cast that did not start.
-// saveSpells: below this mana share, spells wait for heroes instead of the wave.
+// reserve: share of the escape spell's mana kept back in a fight with a healthy hero.
+// retreatAt: health share that always sends the bot home. engage: dash in on a weak target.
+// saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, sprint: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, sprint: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
-  apprentice: { ...OFF, reaction: [.45, .65], busy: .12, dodge: .5, aimError: 70, castLock: 1.5, failLock: 1.5, waveGate: true },
-  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: 1, failLock: .35, saveSpells: .75, focus: 160, lowest: 90, punish: 140, tradeRetreat: .75, waveGate: true, diveGuard: true, sprint: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
-  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .85, aimError: 18, castLock: .8, failLock: .25, saveSpells: .8, focus: 320, lowest: 140, punish: 220, tradeRetreat: .85, waveGate: true, diveGuard: true, killCheck: true, sprint: true, gankEvery: 45, camps: true, objectiveLead: 12, defend: true, push: 1 },
+  apprentice: { ...OFF, retreatAt: .2, engage: false, reaction: [.45, .65], busy: .12, dodge: .5, aimError: 70, castLock: 1.8, failLock: 1.8, waveGate: true },
+  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, tradeRetreat: .75, waveGate: true, diveGuard: true, sprint: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
+  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 320, lowest: 140, punish: 220, tradeRetreat: .85, waveGate: true, diveGuard: true, killCheck: true, sprint: true, gankEvery: 45, camps: true, objectiveLead: 12, defend: true, push: 1 },
 };
 // Allied bots stay at one competent level, whatever the enemy difficulty is.
 PROFILES.ally = { ...PROFILES.veteran };
@@ -159,7 +161,8 @@ export function targetBonus(s, e, t, inRange) {
   if (STRUCTURE.includes(t.kind)) return P.push ? -260 : 0;
   if (t.kind !== 'hero') return 0;
   const focus = s.botFocus?.[e.team];
-  return (focus?.id === t.id && focus.until > s.time ? -P.focus : 0) - (punishable(s, t) ? P.punish : 0) - (inRange[0]?.id === t.id ? P.lowest : 0);
+  // The team focus counts only in reach, so a bot does not run past a closer threat.
+  return (focus?.id === t.id && focus.until > s.time && distance(e, t) < e.range + 380 * K ? -P.focus : 0) - (punishable(s, t) ? P.punish : 0) - (inRange[0]?.id === t.id ? P.lowest : 0);
 }
 // Visible enemy heroes in reach, lowest effective health first.
 export const lowestInRange = (e, heroes) => heroes.filter(t => distance(e, t) < e.range + 260 * K).sort((a, b) => effectiveHp(a) - effectiveHp(b) || a.id - b.id);

@@ -103,7 +103,7 @@ assert.equal(trade('legacy'), Infinity, 'the old bots stayed in a losing trade')
   assert.equal(botStride(s, bot), 1.35, 'bots sprint out of combat like the player');
   bot.lastHit = 19; assert.equal(botStride(s, bot), 1, 'no sprint right after a hit');
   setDifficulty(s, 'apprentice'); bot.lastHit = 0; assert.equal(botStride(s, bot), 1);
-  assert.equal(castLock(s, bot, false), 1.5); setDifficulty(s, 'mythic'); assert.ok(castLock(s, bot, false) < castLock(s, bot, true), 'a cast that did not start does not lock Mythic bots for long');
+  assert.equal(castLock(s, bot, false), PROFILES.apprentice.failLock); setDifficulty(s, 'mythic'); assert.ok(castLock(s, bot, false) < castLock(s, bot, true), 'a cast that did not start does not lock Mythic bots for long');
 }
 
 // Fog: a gank and the team focus need a hero the team can see.
