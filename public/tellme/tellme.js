@@ -1,5 +1,7 @@
-// Tell Me — Indian poker against Bram and Fennel. Plain ES, no dependencies.
+// Tell Me. Indian poker against Bram and Fennel. Plain ES, no dependencies.
 // Faces leak the player's card. Chips are play chips only.
+// Dialogue uses createLinePicker (its own mulberry32 per situation) and never draws from rng.
+// Face honesty rolls stay on rng. They are the spec's per-hand draws.
 //
 // Assumptions (also listed on the PR):
 // - Tie odd chip goes to the earliest seat in order player, Bram, Fennel.
@@ -12,6 +14,9 @@
 // - Below 4 reads the rating is "Too few reads". At 4 or more: Sharp is 80%
 //   or higher, Good is 60 to 79%, Rookie is under 60%.
 // - ?fast=1 skips waits. It does not change the deck, tells, or the log.
+
+import { createLinePicker } from "./lines.js";
+import { faceInner, mountCritters } from "./critters.js";
 
 const SEATS = ["player", "bram", "fennel"];
 const STATES = ["smug", "calm", "nervous", "sweating"];
@@ -61,6 +66,9 @@ function mulberry32(a) {
 }
 
 let rng = mulberry32(seed);
+const pickFromBank = createLinePicker(seed);
+const lineLog = [];
+window.__lineLog = lineLog;
 let stack = 100;
 let handsDone = 0;
 let playing = false;
@@ -206,40 +214,10 @@ function mountArt() {
   });
 }
 
-const INK = "#1B1B1B";
-const CREAM = "#F3E9D2";
-function eye(cx, cy, rx, ry, pr) {
-  return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${CREAM}" stroke="${INK}" stroke-width="3.5"/>` +
-    `<circle class="pupil" cx="${cx}" cy="${cy}" r="${pr}" fill="${INK}"/>`;
-}
-function brow(d) {
-  return `<path d="${d}" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`;
-}
-const FACES = {
-  smug:
-    brow("M14 22 L46 36") + brow("M74 44 L108 40") +
-    eye(34, 54, 16, 6, 2.4) + eye(86, 56, 16, 6, 2.4) +
-    `<path d="M36 78 Q58 74 86 60" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`,
-  calm:
-    brow("M16 34 H48") + brow("M72 34 H104") +
-    eye(34, 54, 11, 11, 4) + eye(86, 54, 11, 11, 4) +
-    `<path d="M50 76 H70" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`,
-  nervous:
-    brow("M14 46 L48 26") + brow("M72 26 L106 46") +
-    eye(34, 54, 14, 14, 2) + eye(86, 54, 14, 14, 2) +
-    `<path d="M34 74 Q42 66 50 74 T66 74 T82 74 T90 70" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`,
-  sweating:
-    brow("M12 42 L44 10") + brow("M76 10 L108 42") +
-    eye(34, 52, 16, 16, 3) + eye(86, 52, 16, 16, 3) +
-    `<ellipse cx="60" cy="78" rx="16" ry="11" fill="${INK}"/>` +
-    `<path d="M6 36 C -6 54, -4 70, 8 74 C 18 70, 16 54, 6 36 Z" fill="${CREAM}" stroke="${INK}" stroke-width="2"/>` +
-    `<path d="M112 28 C 100 48, 102 66, 114 72 C 126 66, 124 46, 112 28 Z" fill="${CREAM}" stroke="${INK}" stroke-width="2"/>`,
-};
-
 function applyFace(who, state) {
   const crit = document.querySelector(".critter." + who);
   crit.dataset.face = state;
-  crit.querySelector(".face-svg").innerHTML = FACES[state];
+  crit.querySelector(".face-svg").innerHTML = faceInner(who, state);
   const img = crit.querySelector(".face-img");
   img.classList.remove("ok");
   const url = artUrl(`${who}_face_${state}.webp`);
@@ -255,6 +233,60 @@ function applyFace(who, state) {
     bindArt(img, url);
   });
   crit.classList.add("showface");
+}
+
+let chatOn = true;
+try { chatOn = localStorage.getItem("tellme-chat") !== "0"; } catch (e) { chatOn = true; }
+const bubbleGen = { bram: 0, fennel: 0 };
+const bubbleTimers = { bram: 0, fennel: 0 };
+
+function pickLine(who, situation) {
+  const text = pickFromBank(who, situation);
+  lineLog.push({
+    who,
+    situation,
+    text,
+    revealed: playerCard.classList.contains("revealed"),
+  });
+  return text;
+}
+function hideBubbles() {
+  for (const who of ["bram", "fennel"]) {
+    bubbleGen[who]++;
+    clearTimeout(bubbleTimers[who]);
+    const el = document.querySelector(".critter." + who + " .bubble");
+    el.hidden = true;
+    el.classList.remove("on");
+    el.textContent = "";
+  }
+}
+function showLine(who, situation) {
+  const text = pickLine(who, situation);
+  const gen = ++bubbleGen[who];
+  if (!chatOn) return text;
+  const el = document.querySelector(".critter." + who + " .bubble");
+  el.textContent = text;
+  el.hidden = false;
+  el.classList.remove("on");
+  void el.offsetWidth;
+  el.classList.add("on");
+  clearTimeout(bubbleTimers[who]);
+  bubbleTimers[who] = setTimeout(() => {
+    if (bubbleGen[who] !== gen) return;
+    el.hidden = true;
+    el.classList.remove("on");
+  }, FAST ? 50 : 2400);
+  return text;
+}
+function applyChat() {
+  document.documentElement.classList.toggle("chat-off", !chatOn);
+  const btn = $("#chat");
+  btn.setAttribute("aria-pressed", chatOn ? "true" : "false");
+  btn.textContent = chatOn ? "Chat on" : "Chat off";
+  if (!chatOn) {
+    hideBubbles();
+    $("#end-line").hidden = true;
+  }
 }
 
 function fillCard(el, card) {
@@ -299,7 +331,7 @@ function flyChips(who, n, kind) {
 function clearTable() {
   for (const who of ["bram", "fennel"]) {
     const crit = document.querySelector(".critter." + who);
-    crit.classList.remove("showface", "collapse", "out");
+    crit.classList.remove("showface", "collapse", "out", "react-win", "react-lose", "react-fold");
     crit.dataset.face = "";
     crit.querySelector(".face-svg").innerHTML = "";
     crit.querySelector(".layer-tail").classList.remove("flick");
@@ -401,10 +433,18 @@ function choosePlayer(kind, betKind) {
       setPhase("resolve");
       const serial = Number(document.documentElement.dataset.serial || 0) + 1;
       document.documentElement.dataset.serial = String(serial);
+      const down = Number(btn.dataset.down || performance.now());
+      document.documentElement.dataset.lag = String(Math.round(performance.now() - down));
       sfx("tap");
       resolve(btn.dataset.act);
     };
     for (const act of acts) buttons[act].onclick = onClick;
+  });
+}
+
+for (const btn of Object.values(buttons)) {
+  btn.addEventListener("pointerdown", () => {
+    btn.dataset.down = String(performance.now());
   });
 }
 
@@ -483,6 +523,12 @@ $("#mute").addEventListener("click", () => {
   if (master) master.gain.value = muted ? 0 : 1;
   sfx("tap");
 });
+$("#chat").addEventListener("click", () => {
+  chatOn = !chatOn;
+  try { localStorage.setItem("tellme-chat", chatOn ? "1" : "0"); } catch (e) { /* private mode */ }
+  applyChat();
+  sfx("tap");
+});
 
 function resetGame() {
   rng = mulberry32(seed);
@@ -492,6 +538,8 @@ function resetGame() {
   api.reads.total = 0;
   api.log.length = 0;
   clearTable();
+  hideBubbles();
+  $("#end-line").hidden = true;
   renderPot({ player: 0, bram: 0, fennel: 0 });
   setPhase("deal");
   renderStatus();
@@ -504,6 +552,10 @@ function resetGame() {
 async function playHand(h) {
   const drawn = drawHand();
   const cards = drawn.cards;
+  const forcedRank = window.__playerRankOverride;
+  if (Number.isInteger(forcedRank) && forcedRank >= 2 && forcedRank <= 14) {
+    cards.player = { rank: forcedRank, suit: cards.player.suit };
+  }
   const tells = {
     bram: tellOf(cards.player.rank, drawn.rolls.bram, "bram"),
     fennel: tellOf(cards.player.rank, drawn.rolls.fennel, "fennel"),
@@ -559,6 +611,8 @@ async function playHand(h) {
   await wait(Math.max(0, 700 - elapsed));
   applyFace("bram", tells.bram.face);
   applyFace("fennel", tells.fennel.face);
+  showLine("bram", "deal");
+  showLine("fennel", "deal");
   await wait(T.faceFade);
 
   function startFlick(who) {
@@ -580,10 +634,19 @@ async function playHand(h) {
       await wait(T.think);
     }
   }
+  let idled = false;
+  const playerAct = (kind) => {
+    if (!idled) {
+      idled = true;
+      showLine(h % 2 === 0 ? "bram" : "fennel", "idle");
+    }
+    return choosePlayer(kind, betKind);
+  };
   async function applyAct(who, act) {
     const row = { who, act, chips: 0 };
     actions.push(row);
     const you = who === "player";
+    if (!you) showLine(who, act);
     if (act === "small" || act === "big") {
       betKind = act;
       bettor = who;
@@ -605,7 +668,7 @@ async function playHand(h) {
       say(you ? "You fold" : `${nameOf(who)} folds`);
       sfx("fold");
       if (who === "player") playerCard.classList.add("folded");
-      else document.querySelector(".critter." + who).classList.add("out");
+      else document.querySelector(".critter." + who).classList.add("out", "react-fold");
       await wait(FAST ? 0 : 200);
     } else {
       say(you ? "You check" : `${nameOf(who)} checks`);
@@ -632,7 +695,7 @@ async function playHand(h) {
     if (!seat) break;
     if (betKind === null) {
       let act;
-      if (seat === "player") act = await choosePlayer("open", null);
+      if (seat === "player") act = await playerAct("open");
       else {
         act = critterOpen(seat, E[seat], drawn.rolls[seat].bluff);
         await think(seat);
@@ -641,7 +704,7 @@ async function playHand(h) {
       await applyAct(seat, act);
     } else {
       let act;
-      if (seat === "player") act = await choosePlayer("face", betKind);
+      if (seat === "player") act = await playerAct("face");
       else {
         act = critterFace(E[seat], betKind);
         await think(seat);
@@ -679,6 +742,17 @@ async function playHand(h) {
     if (rem > 0) rem--;
   }
   stack += payouts.player;
+  for (const who of ["bram", "fennel"]) {
+    if (!inHand.has(who)) continue;
+    const el = document.querySelector(".critter." + who);
+    if (winners.includes(who)) {
+      el.classList.add("react-win");
+      showLine(who, "win");
+    } else {
+      el.classList.add("react-lose");
+      showLine(who, "lose");
+    }
+  }
 
   const playerCalled = actions.some((a) => a.who === "player" && a.act === "call");
   const playerFolded = actions.some((a) => a.who === "player" && a.act === "fold");
@@ -765,6 +839,17 @@ function showEnd() {
   $("#end-hands").textContent = handsDone === 1 ? "1 hand" : `${handsDone} hands`;
   $("#end-extra").textContent = stack === 0 && handsDone < handCount ? "Out of chips" : "";
   $("#end").hidden = false;
+  const speaker = handsDone % 2 === 0 ? "fennel" : "bram";
+  const goodbye = pickLine(speaker, "end");
+  const endLine = $("#end-line");
+  if (chatOn) {
+    endLine.hidden = false;
+    endLine.dataset.who = speaker;
+    endLine.querySelector(".who").textContent = speaker === "bram" ? "Bram" : "Fennel";
+    endLine.querySelector(".txt").textContent = goodbye;
+  } else {
+    endLine.hidden = true;
+  }
   const pitch = rate === "Sharp" ? 1.16 : rate === "Rookie" ? 0.86 : 1;
   sfx("end", pitch);
   renderStatus();
@@ -775,6 +860,8 @@ async function launch() {
   playing = true;
   $("#start").hidden = true;
   $("#end").hidden = true;
+  showLine("bram", "start");
+  showLine("fennel", "start");
   try {
     for (let h = 0; h < handCount; h++) {
       if (stack <= 0) break;
@@ -796,6 +883,10 @@ $("#again").addEventListener("click", () => {
   launch();
 });
 
+mountCritters();
+applyFace("bram", "calm");
+applyFace("fennel", "calm");
+applyChat();
 mountArt();
 setupAudio();
 renderStatus();

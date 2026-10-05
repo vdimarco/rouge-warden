@@ -1,6 +1,6 @@
 # quest/: ship In Full Swing to Meta Quest
 
-This folder turns the web game at `/vr/` into an app for Meta Quest 3 and Quest 3S. The app is a Trusted Web Activity (TWA) that Meta's fork of Bubblewrap makes. It opens `https://warden-alpha-wheat.vercel.app/vr/?source=pwa` in the Quest Browser engine and goes straight into mixed reality. The game files are not inside the APK. The service worker (`public/vr/sw.js`) keeps a copy on the headset, so the game also starts without a network after the first start.
+This folder turns the web game at `/vr/` into an app for Meta Quest 3 and Quest 3S. The app is a Trusted Web Activity (TWA) that Meta's fork of Bubblewrap makes. It opens `https://arcade.uptick.systems/vr/?source=pwa` in the Quest Browser engine and goes straight into mixed reality. The game files are not inside the APK. The service worker (`public/vr/sw.js`) keeps a copy on the headset, so the game also starts without a network after the first start.
 
 | File | What it does |
 |---|---|
@@ -60,7 +60,7 @@ The app opens the site only if the site says that it trusts the app. This is Dig
 1. Copy the SHA-256 fingerprint that `build-apk.sh` prints. You can also get it with `keytool -list -v -keystore ~/.android/fullswing.keystore -alias fullswing`.
 2. In `public/.well-known/assetlinks.json`, replace `REPLACE_WITH_YOUR_SHA256_FINGERPRINT` with it. The format is 32 pairs of hex digits with colons, for example `F9:22:44:…:1B:99`. The file is a list, so other apps of the arcade can add their own entries later.
 3. Deploy the site.
-4. Check it: `curl -sI https://warden-alpha-wheat.vercel.app/.well-known/assetlinks.json` must show `content-type: application/json`, and `curl -s` of the same URL must show your fingerprint. `vercel.json` sets the header.
+4. Check it: `curl -sI https://arcade.uptick.systems/.well-known/assetlinks.json` must show `content-type: application/json`, and `curl -s` of the same URL must show your fingerprint. `vercel.json` sets the header.
 5. Install the app again and watch the log: `adb logcat | grep -i "TWA verification"`.
 
 If the check fails, Meta says that an immersive PWA does not start. The log then shows `TWA verification was unsuccessful!`. The same happens when the fingerprint belongs to another key, when the file is not on the same host as `host` in `twa-manifest.json`, or when the host sends the file with the wrong type.
@@ -90,7 +90,7 @@ Do these steps in the order shown. Meta's guide: <https://developers.meta.com/ho
    - Comfort rating: **Intense** (Meta rates the default experience, and the game has rope swinging).
    - Play area: standing and sitting. Supported input: Touch controllers and hand tracking.
    - Internet connection: needed for the first start and for updates.
-   - Privacy policy URL: `https://warden-alpha-wheat.vercel.app/vr/privacy.html`. Website URL: `https://warden-alpha-wheat.vercel.app/vr/`.
+   - Privacy policy URL: `https://arcade.uptick.systems/vr/privacy.html`. Website URL: `https://arcade.uptick.systems/vr/`.
 6. **Store assets.** Use these exact sizes. Covers show the exact title inside the safe area, with no taglines. Screenshots show no text, no HUD and no hardware other than Meta's.
 
    | Asset | Size (px) | Format |
@@ -140,7 +140,7 @@ Headless tests cannot check these. Do them on a Quest 3 with the installed app.
 ## Limits
 
 - **The site must be online for the first start.** The APK has no game files. After that, the service worker cache serves the game.
-- **The domain is fixed.** The host `warden-alpha-wheat.vercel.app`, the package ID and the key are part of the app. Choose the final domain before the first Store upload. If the domain changes, update `host`, the URLs in `twa-manifest.json` and `assetlinks.json` on the new host.
+- **The domain is fixed.** The host `arcade.uptick.systems`, the package ID and the key are part of the app. An APK built from an older `twa-manifest.json` opens `warden-alpha-wheat.vercel.app`. That host serves the same site and the same `assetlinks.json`, so that APK keeps working. If the domain changes again, update `host`, the URLs in `twa-manifest.json` and `assetlinks.json` on the new host.
 - **No achievements, leaderboards or entitlement check from JavaScript.** Only a server can call these Meta APIs, and the server must trust the user ID that the page sends. In-app purchases and the user ID work in JavaScript only when the app comes from the Store.
 - **Bubblewrap regenerates the project.** `bubblewrap update` and a changed `twa-manifest.json` rebuild `quest/android/` and remove the patch. `build-apk.sh` always patches again. If you run Bubblewrap by hand, run `node quest/patch-android.mjs` after it.
 - **Not yet proven on a device:** that a TWA with target SDK 34 still starts in immersive mode, that the Store upload accepts it, and whether bubblewrap issue #24 (a SurfaceSyncGroup timeout seen on Quest 2) also happens on Quest 3.

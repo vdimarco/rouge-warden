@@ -12,6 +12,12 @@ export function Icon({ name, ...props }) {
     left: <path d="m15 5-7 7 7 7"/>,
     right: <path d="m9 5 7 7-7 7"/>,
     close: <path d="m6 6 12 12M6 18 18 6"/>,
+    jump: <path d="m5 13 7-7 7 7M12 6v15"/>,
+    duck: <path d="m5 11 7 7 7-7M12 3v15"/>,
+    coin: <><circle cx="12" cy="12" r="9"/><path d="m7 9 2 5h6l2-5-5 3-5-3Z"/></>,
+    shield: <path d="m12 3 8 4v6c0 4-5 7-8 8-3-1-8-4-8-8V7l8-4Z"/>,
+    magnet: <><path d="M5 4v10a7 7 0 0 0 14 0V4h-5v10a2 2 0 0 1-4 0V4H5ZM5 8h5m4 0h5"/></>,
+    bolt: <path d="m14 2-9 12h7l-2 8 9-12h-7l2-8Z"/>,
     flag: <><path d="M5 21V3m0 0h14l-3 5 3 5H5"/></>,
   };
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[name]}</svg>;

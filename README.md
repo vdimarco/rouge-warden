@@ -23,7 +23,7 @@ Sound stops when a page is hidden. On a phone, a tab you leave, a browser you mi
 
 ## Play
 
-Deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
+The arcade is live at <https://arcade.uptick.systems/>. To run your own copy, deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
 
 - The How to play card, and the How to play chip on the title screen, show a short clip of each move.
 - Move with WASD. Keep moving to break into a sprint.
@@ -337,7 +337,7 @@ Reel It In is a first-person fishing game at `/fish/`. You stand at the end of t
    - Where you face sets the direction.
    - Lift your thumb with no swing and the bail snaps shut, ready for the next try. Swing and keep your thumb down, and the lure still flies, low. The game then says to lift sooner.
 
-**With touch.** Press anywhere: on the rod, the reel or the lake. The game waits for the drag. Up and down takes the line where you pressed, and sideways aims. Drag down to tip the rod back. Then flick up and let go. A rail beside your finger shows the rod as a bead. Drag the bead down past LOAD. The mark below LOAD is full power. Let go while the bead crosses the green band. The game grades the cast where your finger lifts, so a pause before the lift changes nothing. A flick that carries on past the press point still casts far. A swipe up that never tipped the rod back casts nothing and uses no derby cast.
+**With touch.** Press anywhere: on the rod, the reel or the lake. The game waits for the drag. Up and down takes the line where you pressed, and sideways aims. Drag down to tip the rod back. Then flick up and let go. A rail beside your finger shows the rod as a bead. Drag the bead down past LOAD. The mark below LOAD is full power. Let go while the bead crosses the green band. The game grades the cast where your finger lifts, so a pause before the lift changes nothing. A flick that carries on past the press point still casts far. A swipe up that never tipped the rod back casts nothing and uses no derby cast. A press near the bottom edge needs a shorter drag, so it still reaches full power before your finger runs off the screen.
 
 **On a computer.** Hold the mouse button still. The rod tips back by itself, then swings forward. Let go while it passes the green on the rail. Move the mouse sideways while you hold to aim. If you let go before the rod comes forward, nothing flies. You can also drag down and flick up, as with touch. Space works like the mouse button, and the arrow keys (or A and D) aim. A press on a button or a menu never casts. E opens and closes the bail, but you never need it.
 
@@ -773,7 +773,7 @@ Run `node mods/check.mjs` from the repo root. It needs the `claude` CLI. It chec
 
 `api/warden.js` signs in to AI Gateway with the project's Vercel OIDC token, so the repo holds no API key. To use a gateway key instead, set `AI_GATEWAY_API_KEY`. To pin a model, set `JEV_MODEL` (the default is `typesafe-ai/jev`).
 
-`/api/warden` is public and spends AI Gateway credits. It accepts calls only from `*.vercel.app` origins and caps the request size. For stronger protection, add a rate-limit rule in the Vercel Firewall.
+`/api/warden` is public and spends AI Gateway credits. It accepts calls only from `https://arcade.uptick.systems` and `*.vercel.app` origins, and it caps the request size. `node qa/api/warden.test.mjs` checks the origin rule. For stronger protection, add a rate-limit rule in the Vercel Firewall.
 
 ## Cottage Brawl platform fighter
 
@@ -783,8 +783,8 @@ The separate Smash-inspired fighter lives at `/brawl/` and has its own Cottage A
 
 ## River Rush
 
-River Rush is a whitewater treasure race at `/river-rush/`, with an Action cabinet and a shared game-switcher entry. Steer with A/D or the arrows, hold Space and release near the golden key to catch it, and hold E for two seconds to unlock the chest. Beat the rival into the marked left escape channel before the waterfall. Phones support dragging and separate touch buttons. Reaching reduces steering, rocks drain balance, and a rope recovers the player after a fall. Pause with Escape; best winning scores are saved on this browser and shown on the cabinet.
+River Rush is an endless three-lane raft runner at `/river-rush/`, with an Action cabinet and a shared game-switcher entry. Use A/D or ←/→ to change lanes, W/↑/Space to jump logs, and S/↓ to duck branches. Dodge rocks, follow coin trails, build a ×5 streak, and complete rotating trick/coin/distance challenges. Coins and tricks charge Rush: Shift or its touch button grants four seconds of fast invulnerability. Magnet attracts coins across lanes for eight seconds; shields absorb one hit. Speed and obstacle combinations rise gradually, including jump-then-duck barriers. A collision ends an unprotected run; Enter or Ride again retries immediately. Phones support directional swipes and all five actions through touch buttons. Escape pauses; hiding the page pauses simulation and silences audio.
 
-Editable source is in `games/river-rush/`. Run `npm ci --prefix games/river-rush`, `npm test --prefix games/river-rush`, and `npm run build:arcade --prefix games/river-rush` after changes; the static output is committed in `public/river-rush/`. Audio uses the arcade’s shared quieting script.
+Editable source is in `games/river-rush/`. Run `npm ci --prefix games/river-rush`, `npm test --prefix games/river-rush`, and `npm run build:arcade --prefix games/river-rush` after changes; static output is committed in `public/river-rush/`. Browser regression: `node qa/river-rush/runner.mjs` with the static server running; `ARCADE_URL` selects a deployed origin. `arcade.mjs`, `animation.mjs` and the game’s `tests/browser-check.mjs` invoke the same consolidated regression.
 
-The title scene now uses a Higgsfield-generated living version of the approved art, with a still fallback for reduced motion, data-saving and video errors. During play, flowing foam, paddle spray, raft rocking, reaching transitions and short action bursts add motion. Skim rocks for close-call combo points and charge, then press Shift or the touch Surge button for a 1.8-second speed burst that costs balance. Media provenance is in `games/river-rush/docs/media.json`; animation browser checks are in `qa/river-rush/animation.mjs`.
+The approved character keeps his face, long hair and modest loincloth in separate riding, jumping and ducking sprites. Generated portrait/landscape jungle environments, projected hazards, wakes, foam, shield and action bursts support readable play. The Higgsfield living title scene has a still fallback for reduced motion, data-saving and video errors. Runner best scores use version 2 in the existing browser-local storage key, so legacy race scores are not treated as runner records. Media provenance and design/verification records are in `games/river-rush/docs/`.
