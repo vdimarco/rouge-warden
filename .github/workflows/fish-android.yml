@@ -1,0 +1,123 @@
+name: Reel It In Android app
+# Builds the Capacitor app in apps/fish. On a pull request or a push to main it checks the web bundle and builds a debug APK.
+# Run it by hand (Actions > this workflow > Run workflow) with "Signed bundle" on to also build a signed AAB for Google Play.
+# The signed bundle needs three secrets; apps/fish/README.md says how to make them.
+on:
+  pull_request:
+    paths: ['public/fish/**', 'apps/fish/**', 'qa/fish/app-bundle.e2e.mjs', '.github/workflows/fish-android.yml']
+  push:
+    branches: [main]
+    paths: ['public/fish/**', 'apps/fish/**', 'qa/fish/app-bundle.e2e.mjs', '.github/workflows/fish-android.yml']
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Signed bundle (AAB) for Google Play'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/fish/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: apps/fish/android/**/*.gradle*
+      - run: npm ci --prefix apps/fish
+      - name: Tests of the bundle check and the version check
+        run: npm run test:check --prefix apps/fish && npm run test:native --prefix apps/fish
+      - name: Build www/ and copy it into the Android project
+        working-directory: apps/fish
+        run: npm run build:www && npx cap sync android
+      - name: The bundle in a browser, with no network
+        run: |
+          npm ci --prefix qa/browser
+          (cd qa/browser && npx playwright install --with-deps chromium)
+          node qa/fish/app-bundle.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+      - name: Debug APK
+        working-directory: apps/fish/android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reelitin-debug-apk
+          path: apps/fish/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    if: github.event_name == 'workflow_dispatch' && inputs.release
+    needs: debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check that the secrets exist
+        env:
+          KEYSTORE_B64: ${{ secrets.REELITIN_UPLOAD_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.REELITIN_STORE_PASS }}
+          KEY_PASS: ${{ secrets.REELITIN_KEY_PASS }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASS" ] || [ -z "$KEY_PASS" ]; then
+            echo "Add the secrets REELITIN_UPLOAD_KEYSTORE_BASE64, REELITIN_STORE_PASS and REELITIN_KEY_PASS (see apps/fish/README.md)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/fish/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: apps/fish/android/**/*.gradle*
+      - run: npm ci --prefix apps/fish
+      - name: Write the upload key outside the workspace
+        env:
+          KEYSTORE_B64: ${{ secrets.REELITIN_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/reelitin-upload.jks"
+      - name: Build and sign the bundle
+        working-directory: apps/fish
+        env:
+          STORE_PASS: ${{ secrets.REELITIN_STORE_PASS }}
+          KEY_PASS: ${{ secrets.REELITIN_KEY_PASS }}
+        run: |
+          npm run build:www
+          npx cap sync android
+          npx cap build android \
+            --keystorepath "$RUNNER_TEMP/reelitin-upload.jks" --keystorealias upload \
+            --keystorepass "$STORE_PASS" --keystorealiaspass "$KEY_PASS" \
+            --androidreleasetype AAB --signing-type jarsigner
+          {
+            echo "## Reel It In signed bundle"
+            echo
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo
+            grep -E 'versionCode|versionName' android/app/build.gradle | sed 's/^ */- /'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reelitin-release-aab
+          path: apps/fish/android/app/build/outputs/bundle/release/app-release-signed.aab
+          if-no-files-found: error
+          retention-days: 7
+      - name: Delete the upload key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/reelitin-upload.jks"

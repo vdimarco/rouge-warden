@@ -324,6 +324,11 @@ function cutsceneFrame(dt, inp) {
   if (flatOn) hero.update(dt, P, ropes, inp);
   view.update(dt, G.time, camera.position);
   fx.update(dt, camera.position, camera.quaternion);
+  // the music and the city go on under a scene (play() is not running): the ear follows the scene's camera
+  audio.setListener(camera.position, camera.quaternion);
+  audio.setWind(0, P.pos.y);
+  audio.setRope(0, 0); audio.setRope(1, 0);
+  audio.update(dt);
 }
 // Fade out, move the body and the rig, fade in. Used by respawns, travel and the hand-off check.
 function fadeMove(x, y, z) {
@@ -742,7 +747,9 @@ function tick(dt, frame, time) {
   }
   // M: the sound on or off (flat play)
   if (inp.muteDown && G.mode === "desktop") {
-    audio.toggle(); saveNow();
+    // a sound that is on but not playing starts again (the key's own retry may have done it): M does not turn it off then
+    if (audio.isOn && (audio.stalled || audio.restarted)) audio.resume(); else audio.toggle();
+    saveNow();
     ui.say(audio.isOn ? "Sound on." : "Sound off. Press M to turn it on.", 2.5);
     if (audio.isOn) audio.sfx("ui");
     if (G.soundLabel) G.soundLabel();
@@ -1358,12 +1365,18 @@ function wireTitle() {
   $("#reenterBtn").addEventListener("click", () => enter(lastMode || "desktop"));
   // SOUND on the title: the arcade's speaker button (or another game) may have turned it off for every game here
   const soundBtn = $("#soundBtn");
-  const soundLabel = () => { soundBtn.textContent = "SOUND: " + (audio.isOn ? "ON" : "OFF"); soundBtn.setAttribute("aria-pressed", String(audio.isOn)); };
-  soundBtn.addEventListener("click", () => { audio.init(); audioStarted = true; audio.toggle(); saveNow(); soundLabel(); if (audio.isOn) audio.sfx("ui"); });
+  // "ON" only while the sound plays (or will at the first click): a sound that failed to start, or that the browser stopped,
+  // says so, and a press of it starts it again instead of turning it off
+  const soundLabel = () => { soundBtn.textContent = "SOUND: " + (!audio.isOn ? "OFF" : audio.running ? "ON" : "ON, NOT PLAYING"); soundBtn.setAttribute("aria-pressed", String(audio.isOn)); };
+  soundBtn.addEventListener("click", () => {
+    audioStarted = true;
+    if (audio.isOn && (audio.stalled || audio.restarted)) audio.resume(); else { audio.init(); audio.toggle(); }
+    saveNow(); soundLabel(); if (audio.isOn) audio.sfx("ui");
+  });
   soundLabel();
   G.soundLabel = soundLabel;
   // a browser that stopped the sound gets it back on the next tap or key (both count as a user gesture)
-  const retry = () => { if (audioStarted && audio.stalled) audio.resume(); };
+  const retry = () => { if (audioStarted && audio.stalled) { audio.resume(); soundLabel(); } };
   addEventListener("pointerdown", retry, true);
   addEventListener("keydown", retry, true);
   for (const [btn, dlg] of [["#howBtn", "#how"], ["#comfortBtn", "#comfort"]]) {
