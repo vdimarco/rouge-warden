@@ -36,15 +36,15 @@ The Wild Hunt rises in the central ford after two minutes and returns 150 second
 - Guardians flank each court. A guardian slam marks a 230-unit circle 0.8 s before impact; afterwards the guardian is exposed for 1.4 s and takes 25% more damage.
 - Outer wards take half damage for the first 3:30. Waves (two melee wisps, a caster and a siege wisp every third wave) leave the base every 20 s from 0:23 and grow 6% stronger per minute after 5:00. An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 - Sudden death (14:00): all protection is lifted, structures take 50% more damage and no longer need a wave, home heals only 2% per second, respawns take 50% longer and basic attacks of heroes and wisps grow stronger. Hard limit (17:00): structures broken, then structure health, then kills, else a draw.
-- Respawn is 6 + 1.2 × level seconds (at most 28). Bots walk with their wave, never into an enemy ward that no wisp of theirs tanks, and side-lane bots use their base gate when their wave has passed the river gate.
+- Respawn is 6 + 1.2 × level seconds (at most 28). Bots walk with their wave, join the push on any enemy lane that is open to its base, never into an enemy ward that no wisp of theirs tanks, and side-lane bots use their base gate when their wave has passed the river gate.
 
 | Structure | Health | Range | Damage | Rewards (XP / embers, whole team) |
 | --- | --- | --- | --- | --- |
 | Outer ward | 3600 | 360 | 210 | 120 / 110 |
-| Middle ward | 4800 | 385 | 225 | 150 / 130 |
-| Inner ward | 5800 | 410 | 240 | 180 / 160 |
-| Guardian (×2 per base) | 2600 | 420 | 240, slam 380 | 200 / 180 |
-| Elder rift | 9000 | 380 | 180 | win |
+| Middle ward | 5200 | 385 | 225 | 150 / 130 |
+| Inner ward | 6000 | 410 | 240 | 180 / 160 |
+| Guardian (×2 per base) | 5000 | 420 | 240, slam 380 | 200 / 180 |
+| Elder rift (armor 80; heals 1.5% per second while no enemy wisp is at it) | 24000 | 420 | 260 | win |
 
 Measured pacing (36 seeded bot matches, each with its own draft, `scratchpad` script `pace.mjs`): first skirmish 0:38, first blood about 0:58, first outer ward 3:15–3:35, first middle ward 5:15–5:40, first inner ward 8:00–8:45, rift exposed 10:40–11:20, match end median about 12:00 (p25 about 9:30, p75 about 15:00). Mirrored drafts (both teams use the same kits, lane for lane) split 18–18, so the layout favours neither side.
 

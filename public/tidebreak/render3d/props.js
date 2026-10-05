@@ -128,7 +128,7 @@ const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pin
 // Late-summer crowns: some still green, some turning gold.
 const TINTS = { oak: ['#e2d996', '#b7c27c', '#d9b874', '#c8cf8a'], willow: ['#a9bc8e', '#9fb486'], birches: ['#efe8c8', '#dfe4b0'], juniper: ['#d4dcc0'], pines: ['#ffffff', '#e6eedc'], pine: ['#ffffff'] };
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
-const KEEP = { ferns: .38, mushrooms: .22, branch: .15, 'hollow-log': .45, boulders: .65, birches: .5, juniper: .6, willow: .6, oak: .5, pines: .8 };
+const KEEP = { ferns: .38, mushrooms: .22, branch: .15, 'hollow-log': .45, boulders: .65, birches: .35, juniper: .6, willow: .4, oak: .35, pines: .85 };
 export class Props {
   constructor(scene, assets, textures) {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
@@ -141,7 +141,7 @@ export class Props {
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
       pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .75), material: tree(leaves, .035, .16, 1.2), shadow: true, selfShadow: false },
-      oak: { geometry: softCanopy(smooth(simplify(geometryOf(w.oak), 22), 4, .32), .62, .3, .85), material: tree(autumn, .03, .04, 0, '.2, .16, .045'), shadow: true, selfShadow: false },
+      oak: { geometry: softCanopy(smooth(simplify(geometryOf(w.oak), 22), 10, .32), .62, .3, .85), material: tree(autumn, .03, .04, 0, '.2, .16, .045'), shadow: true, selfShadow: false },
       bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .04, 0, '.08, .12, .04'), shadow: false },
       shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .04, 0, '.18, .15, .05'), shadow: false },
       boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true, bright: 1.55 },
@@ -248,7 +248,7 @@ export class Props {
   grove(put, b, height, rand, name) {
     const step = 125, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
-      const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .2;
+      const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .12;
       put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? '#b4c49a' : TINTS.oak[Math.floor(rand() * 4)]) : '#e6eadb');
     }
     for (let i = 0; i < nx + ny; i++) { const a = rand() * 6.3, h = 80 + rand() * 60; put('bush', b.x + Math.cos(a) * b.w * .52, b.y + Math.sin(a) * b.h * .52, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
