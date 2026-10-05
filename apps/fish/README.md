@@ -21,7 +21,7 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `store/` | The store listing, the privacy and age answers, the screenshot list, the review notes and the accessibility labels. |
 | `www/` | Made by the build. Not in git. |
 
-The privacy policy is `public/fish/privacy.html`. The web serves it at `/fish/privacy.html`, and the app shows the same file offline.
+The privacy policy is `public/fish/privacy.html`. The web serves it at `https://arcade.uptick.systems/fish/privacy.html`, the URL to give both stores, and the app shows the same file offline.
 
 ## What you need
 
@@ -198,7 +198,6 @@ Then run `npx cap sync` and build both apps again.
 | Bundle ID and application ID | `com.cottagearcade.reelitin` (placeholder) | Pick a reverse domain you control, and change it before the first upload (see above). |
 | Store name | "Reel It In: Lake Fishing"; "Reel It In" under the icon | Check that the name is free in App Store Connect and the Play Console, and search the USPTO for "Reel It In" in classes 9 and 41. |
 | Support email | A marked placeholder in `public/fish/privacy.html` (`data-placeholder="support-email"`) | Put a real address in the page (text and a `mailto:` link) and in both store forms. Remove the placeholder element. The release build (`--release`) fails until you do. |
-| Privacy policy URL | `https://<the site>/fish/privacy.html` | Choose the host (the arcade site or your own domain). Both stores need a public URL. |
 | Google Play account type | Not known | A personal account made after 13 November 2023 must run a closed test with at least 12 testers for 14 days in a row before it can publish to production. Start the closed test as soon as there is a signed build. An organisation account does not need this. |
 | Content rating and audience | 4+, Everyone, PEGI 3; audience 13 and over | Fill in the questionnaires with `store/age-rating.md`. Decide if the Play audience includes children under 13. |
 | Accessibility labels | Only the labels that pass their checks | See `store/accessibility.md`. |

@@ -13,7 +13,7 @@ const safeKey = (v, i, used) => {
 module.exports = async (req, res) => {
   if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
   const origin = req.headers.origin || "";
-  if (origin && !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) { res.status(403).json({ error: "origin not allowed" }); return; }
+  if (origin && !/^https:\/\/([a-z0-9-]+\.vercel\.app|arcade\.uptick\.systems)$/.test(origin)) { res.status(403).json({ error: "origin not allowed" }); return; }
   const token = req.headers["x-vercel-oidc-token"] || process.env.VERCEL_OIDC_TOKEN || process.env.AI_GATEWAY_API_KEY;
   if (!token) { res.status(503).json({ error: "no gateway credential" }); return; }
   let body = req.body;

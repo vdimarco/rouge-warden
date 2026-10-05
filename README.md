@@ -23,7 +23,7 @@ Sound stops when a page is hidden. On a phone, a tab you leave, a browser you mi
 
 ## Play
 
-Deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
+The arcade is live at <https://arcade.uptick.systems/>. To run your own copy, deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
 
 - The How to play card, and the How to play chip on the title screen, show a short clip of each move.
 - Move with WASD. Keep moving to break into a sprint.
@@ -773,7 +773,7 @@ Run `node mods/check.mjs` from the repo root. It needs the `claude` CLI. It chec
 
 `api/warden.js` signs in to AI Gateway with the project's Vercel OIDC token, so the repo holds no API key. To use a gateway key instead, set `AI_GATEWAY_API_KEY`. To pin a model, set `JEV_MODEL` (the default is `typesafe-ai/jev`).
 
-`/api/warden` is public and spends AI Gateway credits. It accepts calls only from `*.vercel.app` origins and caps the request size. For stronger protection, add a rate-limit rule in the Vercel Firewall.
+`/api/warden` is public and spends AI Gateway credits. It accepts calls only from `https://arcade.uptick.systems` and `*.vercel.app` origins, and it caps the request size. `node qa/api/warden.test.mjs` checks the origin rule. For stronger protection, add a rate-limit rule in the Vercel Firewall.
 
 ## Cottage Brawl platform fighter
 
