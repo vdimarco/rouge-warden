@@ -130,7 +130,7 @@ To build a signed bundle in Actions, do steps 1 and 2 above once. Then add these
 | `REELITIN_STORE_PASS` | The keystore password |
 | `REELITIN_KEY_PASS` | The password of the `upload` key |
 
-Open Actions > Reel It In Android app > Run workflow, turn on **Signed bundle**, and run it. The signed AAB is in the run's artifacts as `reelitin-release-aab` for 7 days. The run summary shows the commit, `versionCode` and `versionName`. Upload the AAB as in step 4.
+Open Actions > Reel It In Android app > Run workflow, turn on **Signed bundle**, and run it. The run builds the bundle with `--release`, as in step 3, so it stops while `privacy.html` holds the support email placeholder. The signed AAB is in the run's artifacts as `reelitin-release-aab` for 7 days. The run summary shows the commit, `versionCode` and `versionName`. Upload the AAB as in step 4.
 
 ## iOS (on a Mac)
 
