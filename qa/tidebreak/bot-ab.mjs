@@ -42,7 +42,7 @@ if (!process.env.AB_CHILD && +jobs > 1) {
   const plan = process.env.AB_DRAFT ? draftPlan(identity, seed, levels) : null;
   const s = plan ? sim.createMatch(HERO_IDENTITIES[identity].kit, seed, plan.lineup) : sim.createMatch(seed % sim.HEROES.length, seed);
   setDifficulty(s, side ? A : B, side ? B : A);
-  const startWards = [...s.towers];
+  const wards = s.towers[0];
   const teamOf = t => (t === side ? 'A' : 'B');
   const stat = { A: { kills: 0, towers: 0, dives: 0, spell: 0, attack: 0, item: 0, heroWard: 0, waveWard: 0 }, B: { kills: 0, towers: 0, dives: 0, spell: 0, attack: 0, item: 0, heroWard: 0, waveWard: 0 } };
   s.hook = (s, src, tgt, actual, kind) => {
@@ -57,7 +57,7 @@ if (!process.env.AB_CHILD && +jobs > 1) {
     if (tgt.kind === 'hero' && tgt.hp <= 0 && actual > 0 && s.time - (tgt.towerHitAt ?? -9) < 2.5) stat[teamOf(tgt.team)].dives++;
   };
   for (let tick = 0; tick < (sim.LIMIT + 1) * 20 && s.winner === null; tick++) sim.step(s, { autopilot: true }, .05);
-  for (const t of [0, 1]) { stat[teamOf(t)].kills = s.score[t]; stat[teamOf(t)].towers = startWards[1 - t] - s.towers[1 - t]; }
+  for (const t of [0, 1]) { stat[teamOf(t)].kills = s.score[t]; stat[teamOf(t)].towers = wards - s.towers[1 - t]; }
   for (const h of s.units.filter(u => u.kind === 'hero')) { const st = stat[teamOf(h.team)]; st.level = (st.level || 0) + h.level / 3; st.lastHits = (st.lastHits || 0) + h.lastHits; st.items = (st.items || 0) + h.inventory.length; }
   rows.push({ seed, side, winner: s.winner === -1 ? 'draw' : teamOf(s.winner), time: s.time, stat });
 }

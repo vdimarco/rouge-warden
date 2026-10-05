@@ -1,4 +1,4 @@
-/* Enemy difficulty: a small segmented control beside Play, and a badge in the match. */
+/* Enemy difficulty: a small segmented control beside Play, and a label in the match score box. */
 #difficulty-picker{position:absolute;right:calc(100% + 14px);top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:4px;padding:3px;border:1px solid #9eedff55;border-radius:6px;background:#06192bd9;font:600 11px/1 Barlow,system-ui,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:#bfd8e4;z-index:2}
 #difficulty-picker .difficulty-title{padding:0 6px;color:#8fb2c4}
 #difficulty-picker button{min-height:28px;padding:4px 9px;border:1px solid transparent;border-radius:4px;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}
@@ -6,8 +6,13 @@
 #difficulty-picker button[aria-checked="true"]{border-color:#9eedff;background:#0b3a5a;color:#e8fbff;box-shadow:inset 0 0 8px #27c7fc55}
 #difficulty-picker button[data-difficulty="mythic"][aria-checked="true"]{border-color:#ffb37a;background:#4a2412;color:#ffe9d6;box-shadow:inset 0 0 8px #ff8a4a55}
 #difficulty-picker button:focus-visible{outline:2px solid #e8fbff;outline-offset:1px}
-#difficulty-badge{position:fixed;top:calc(env(safe-area-inset-top,0px) + 54px);left:50%;transform:translateX(-50%);padding:2px 8px;border-radius:10px;background:#06192bcc;border:1px solid #9eedff44;color:#bfd8e4;font:600 10px/1.4 Barlow,system-ui,sans-serif;letter-spacing:.6px;text-transform:uppercase;pointer-events:none;z-index:5}
+/* The match label sits next to the minimap; difficulty-ui.js places it. */
+#difficulty-badge{position:fixed;z-index:6;white-space:nowrap;padding:0 5px;border:1px solid #9eedff44;border-radius:3px;background:#06192bcc;color:#bfd8e4;font:700 9px/14px Barlow,system-ui,sans-serif;letter-spacing:.5px;text-transform:uppercase;pointer-events:none}
 #difficulty-badge[data-difficulty="mythic"]{border-color:#ffb37a88;color:#ffd9bd}
-@media (max-width:640px){#menu #hero-picks{padding-bottom:48px}#difficulty-picker{left:0;right:0;top:auto;bottom:calc(100% + 6px);transform:none;justify-content:center;background:#06192bf2}#difficulty-picker button{min-height:32px;padding:4px 10px}}
-@media (max-height:480px){#difficulty-picker{font-size:9px;padding:2px;gap:2px;right:calc(100% + 8px)}#difficulty-picker .difficulty-title{display:none}#difficulty-picker button{min-height:26px;padding:2px 7px}#difficulty-badge{top:40px}}
-@media (min-width:900px) and (min-height:481px){#difficulty-badge{top:calc(env(safe-area-inset-top,0px) + 18px);transform:none;left:calc(50% + 66px)}}
+#difficulty-badge[hidden]{display:none}
+/* Phones upright: the picker sits above Play, and the roster ends above the picker. */
+@media (max-width:599px) and (min-height:481px){#menu .roster-browser{height:calc(100% - 48px - 43% - 141px - env(safe-area-inset-bottom))}#difficulty-picker{left:0;right:0;top:auto;bottom:calc(100% + 6px);transform:none;justify-content:center;background:#06192bf2}#difficulty-picker button{min-height:32px;padding:4px 10px}}
+/* Short landscape screens beside a wide Play button: compact, without the title. */
+@media (max-height:480px) and (min-width:600px){#difficulty-picker{font-size:9px;padding:2px;gap:2px;right:calc(100% + 8px)}#difficulty-picker .difficulty-title{display:none}#difficulty-picker button{min-height:26px;padding:2px 7px}}
+/* Small phones on their side: the picker sits under the logo, where it covers no control. */
+@media (max-height:480px) and (max-width:599px){#difficulty-picker{position:fixed;top:calc(116px + env(safe-area-inset-top));left:12px;right:auto;bottom:auto;transform:none;font-size:9px;padding:2px;gap:2px}#difficulty-picker .difficulty-title{display:none}#difficulty-picker button{min-height:26px;padding:2px 7px}}

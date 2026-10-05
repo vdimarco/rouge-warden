@@ -10,7 +10,7 @@ const K = SIZE / 6400;
 export const DIFFICULTIES = ['apprentice', 'veteran', 'mythic'];
 export const DEFAULT_DIFFICULTY = 'veteran';
 export const DIFFICULTY_LABELS = { apprentice: 'Apprentice', veteran: 'Veteran', mythic: 'Mythic' };
-export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.', veteran: 'Good reactions. Team plays.', mythic: 'Fast reactions. Strong team plays.' };
+export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.', veteran: 'Good reactions. Team plays.', mythic: 'Fast reactions. Sharp aim. Leaves losing fights. Drafts strong heroes.' };
 
 // reaction: seconds from a new warning to the dodge [min, max]. dodge: chance that the step clears the shape.
 // aimLead: share of the target's movement that the bot leads. aimError: units of aim spread.
@@ -22,23 +22,38 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // wardBonus: target score bonus for an open enemy ward (ward health decides matches).
+// guard: keep fight and roam moves out of untanked enemy ward range (guardMove).
 // draft: weight of measured kit strength in this team's draft picks (0 = role and chance only).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, draft: 0, wardBonus: 0, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, guard: true, draft: 0, wardBonus: 0, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
   apprentice: { ...OFF, retreatAt: .2, engage: false, reaction: [.45, .65], busy: .12, dodge: .5, aimError: 70, castLock: 1.8, failLock: 1.8, waveGate: true },
-  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2, wardBonus: 260 },
-  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2, wardBonus: 260, draft: 3 },
+  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, gankEvery: 80, camps: false, objectiveLead: 6, defend: true, push: 2, wardBonus: 260 },
+  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, gankEvery: 80, camps: false, objectiveLead: 6, defend: true, push: 2, wardBonus: 260, draft: 3 },
 };
 // Allied bots stay at one competent level, whatever the enemy difficulty is: Veteran with full retreat discipline.
 PROFILES.ally = { ...PROFILES.veteran, retreatRules: true, tradeRetreat: .75 };
 
 // Kit strength by lane, measured by qa/tidebreak/kit-strength.mjs: the share of matches a team
 // won with this kit in this lane, with equal Veteran bots on both sides. Index [kit][lane].
-export const KIT_POWER = Array.from({ length: 12 }, () => [.5, .5, .5]);
+// 600 matches on the grand arena; each lane value is shrunk toward the kit's overall rate (100-game prior).
+export const KIT_POWER = [
+  [.47, .38, .42],
+  [.58, .54, .56],
+  [.48, .46, .45],
+  [.59, .59, .63],
+  [.54, .57, .57],
+  [.55, .55, .55],
+  [.56, .59, .57],
+  [.26, .26, .28],
+  [.36, .36, .34],
+  [.52, .58, .56],
+  [.55, .57, .5],
+  [.55, .56, .57],
+];
 // A drafting profile adds this to a candidate's draft score. The pool and the board are the
 // same for everyone, and the player sees every pick, so a strong draft is a fair edge.
 export function draftValue(level, kit, lane) {
@@ -68,9 +83,10 @@ export function reactionDelay(s, e, source, key) {
   return low + (high - low) * roll(s, e, key) + (e.pendingAttack ? P.busy : 0);
 }
 
-const STRUCTURE = ['tower', 'core'], ESCORT = ['minion', 'leviathan', 'summon'];
+const STRUCTURE = ['tower', 'core'], ESCORT = ['minion', 'leviathan'];
 const enemyStructures = (s, team) => s.units.filter(t => STRUCTURE.includes(t.kind) && t.team !== team && t.team >= 0 && t.hp > 0);
-// A tower is tanked when an allied wave unit stands in its range or at its edge. It shoots those first.
+// A ward is tanked when an allied wisp or the Wild Hunt stands in its range or at its edge: it shoots those
+// first, and hero damage to it is not cut (sim.js escorted() counts the same kinds, out to range + 150).
 export const escorted = (s, team, tower) => s.units.some(a => a.team === team && a.hp > 0 && ESCORT.includes(a.kind) && distance(a, tower) < tower.range + 20);
 const inTowerRange = (s, team, p, margin = 0) => enemyStructures(s, team).find(t => distance(t, p) < t.range + margin);
 // Enemy heroes still down by the public kill feed and the hero level above each head.
@@ -80,13 +96,8 @@ export function enemiesDown(s, team) {
   for (const k of s.killFeed || []) { const v = s.units.find(u => u.id === k.victim); if (k.victimTeam !== team && v && s.time - k.time < 4 + (v.level || 1)) down.add(k.victim); }
   return down.size;
 }
-// After a won fight (enough enemy heroes down), a healthy group may hit a ward without a wave.
-export function siegeOpen(s, e, ward) {
-  const P = botProfile(s, e);
-  if (!P.push || e.hp < e.maxHp * .6 || enemiesDown(s, e.team) < P.push) return false;
-  return s.units.filter(a => a.kind === 'hero' && a.team === e.team && a.hp > a.maxHp * .5 && distance(a, ward) < 800 * K).length >= 2;
-}
-export const wardOpen = (s, e, ward) => escorted(s, e.team, ward) || siegeOpen(s, e, ward);
+// Bots move to, stand at and hit an enemy ward only when their wave tanks it (outside sudden death).
+export const wardOpen = (s, e, ward) => escorted(s, e.team, ward);
 export const effectiveHp = t => (t.hp + (t.shield || 0)) * (1 + Math.max(0, t.armor || 0) / 100);
 const dps = t => t.damage / Math.max(.3, t.rate || 1) * (t.kind === 'hero' ? 1.4 : 1);
 export const punishable = (s, t) => t?.kind === 'hero' && (t.recoveryUntil > s.time || t.exposedUntil > s.time || t.stun > 0 || !!t.castIntent);
@@ -103,13 +114,13 @@ export function punishes(s, e, t) {
 export const castLock = (s, e, started) => { const P = botProfile(s, e); return started ? P.castLock : P.failLock; };
 
 // The dodge step. A failed roll steps short, so a careless bot can still be hit.
-// Higher profiles do not dodge into an enemy tower that nothing tanks.
+// No profile but the old bots dodges into an enemy ward that nothing tanks.
 export function evadePoint(s, e, angle, immediate) {
   const P = botProfile(s, e);
   const key = e.warningReaction?.key || 'zone';
   const length = P.legacy || immediate || roll(s, e, key + ':dodge') < P.dodge ? 320 : 120;
   const point = a => ({ x: e.x + Math.cos(a) * length, y: e.y + Math.sin(a) * length });
-  if (!P.diveGuard) return point(angle);
+  if (P.legacy || s.suddenDeath) return point(angle);
   for (const a of [angle, angle + .9, angle - .9, angle + Math.PI]) {
     const p = point(a), t = inTowerRange(s, e.team, p, 40);
     if (!t || escorted(s, e.team, t)) return p;
@@ -119,20 +130,22 @@ export function evadePoint(s, e, angle, immediate) {
 
 // Tower-dive guard. Attacking t means standing in range of it. If an enemy
 // tower covers that spot, the bot counts the tower damage it will take.
+// The enemy ward that covers the spot where the bot would stand to hit t.
+function standWard(s, e, t) {
+  const d = Math.max(1, distance(e, t)), reach = Math.min(d, e.range + (t.radius || 0));
+  return inTowerRange(s, e.team, { x: t.x + (e.x - t.x) / d * reach, y: t.y + (e.y - t.y) / d * reach }, 10);
+}
 export function diveSafe(s, e, t, allies = []) {
   const P = botProfile(s, e);
   if (!P.diveGuard || STRUCTURE.includes(t.kind)) return true;
-  const d = Math.max(1, distance(e, t)), reach = Math.min(d, e.range + (t.radius || 0));
-  const stand = { x: t.x + (e.x - t.x) / d * reach, y: t.y + (e.y - t.y) / d * reach };
-  const tower = inTowerRange(s, e.team, stand, 10);
+  const tower = standWard(s, e, t);
   if (!tower) return true;
   if (t.kind !== 'hero') return escorted(s, e.team, tower);
   // A hero hit under its tower turns the tower on the attacker, so a wave does not make this safe.
   const team = allies.filter(a => a.hp > 0 && distance(a, t) < 700 * K);
   const time = effectiveHp(t) / Math.max(1, team.reduce((v, a) => v + dps(a), 0) || dps(e));
   const taken = tower.damage / tower.rate * 1.45 * (time + 1.2);
-  if (t.hp < t.maxHp * .15 && taken < e.hp * .5) return true;
-  return P.killCheck && time < 2.6 && taken < e.hp * .55 && e.hp > e.maxHp * .55;
+  return t.hp < t.maxHp * .15 && taken < e.hp * .5;
 }
 
 // Trade-aware retreat. Each side's value is its effective health times its damage.
@@ -162,15 +175,21 @@ const pathGap = (a, b, c) => {
 // death are the exceptions. Inside such range the bot steps out along the line from the ward.
 export function guardMove(s, e, intent) {
   const P = botProfile(s, e), point = intent.move;
-  if (P.legacy || s.suddenDeath || intent.mode === 'retreat' || intent.mode === 'evade') return point;
-  const ward = enemyStructures(s, e.team).find(t => (point && pathGap(e, point, t) < t.range + 40 || distance(t, e) < t.range + 10) && !wardOpen(s, e, t));
+  if (P.legacy || !P.guard || s.suddenDeath || intent.mode === 'retreat' || intent.mode === 'evade') return point;
+  // An approved dive may enter the ward that covers its target, and no other ward.
+  const target = intent.target, allies = s.units.filter(a => a.kind === 'hero' && a.team === e.team && a.hp > 0 && distance(e, a) < 650);
+  const dive = target?.kind === 'hero' && P.diveGuard && diveSafe(s, e, target, allies) ? standWard(s, e, target) : null;
+  const wards = enemyStructures(s, e.team).filter(t => t !== dive && !wardOpen(s, e, t));
+  const inside = wards.find(t => distance(t, e) < t.range + 10);
+  if (inside) { const d = Math.max(1, distance(inside, e)), k = (inside.range + 90) / d; return { x: inside.x + (e.x - inside.x) * k, y: inside.y + (e.y - inside.y) * k }; }
+  const ward = point && wards.find(t => pathGap(e, point, t) < t.range + 40);
   if (!ward) return point;
-  const target = intent.target;
-  if (target?.kind === 'hero' && P.diveGuard && diveSafe(s, e, target, [e])) return point;
-  const d = distance(ward, e);
-  if (d >= ward.range + 10) return null;
-  const out = ward.range + 90, k = out / Math.max(1, d);
-  return { x: ward.x + (e.x - ward.x) * k, y: ward.y + (e.y - ward.y) * k };
+  // Never stand still while a plan is held: wait at the edge for a goal under the ward,
+  // or walk around the ward along its range + 60 circle toward the goal.
+  const r = ward.range + 60, d = Math.max(1, distance(ward, e)), base = Math.atan2(e.y - ward.y, e.x - ward.x);
+  if (distance(ward, point) < ward.range + 40) return { x: ward.x + Math.cos(base) * r, y: ward.y + Math.sin(base) * r };
+  const side = (e.x - ward.x) * (point.y - ward.y) - (e.y - ward.y) * (point.x - ward.x) >= 0 ? 1 : -1, a = base + side * (Math.acos(Math.min(1, r / d)) + .35);
+  return { x: ward.x + Math.cos(a) * r, y: ward.y + Math.sin(a) * r };
 }
 // Wave-gated lane walking. Without a wave in front, the bot waits outside tower range.
 export function laneHold(s, e) {

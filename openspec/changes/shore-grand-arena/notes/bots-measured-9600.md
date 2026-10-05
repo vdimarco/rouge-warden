@@ -1,6 +1,7 @@
 # Bot strength on the 9600-unit map
 
-Measured on main at d0c7a2b (the grand arena with the bots merged, including the move guard), with
+Measured on main at d0c7a2b (the grand arena with the bots merged, including the move guard), before vdimarco/rouge-warden#229 turned
+spirit camps off, removed the siege without a wave and added Mythic drafting. Those changes need a new run. Measured with
 `node qa/tidebreak/bot-ab.mjs <A> <B> 30 1 3`: 30 seeds, sides swapped on every seed, 60 matches per row, 20 Hz steps, up to the 17:00
 limit. Wards taken count from the start count of 9 per team (guardians are not counted).
 

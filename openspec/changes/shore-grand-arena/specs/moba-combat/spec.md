@@ -294,9 +294,9 @@ fixed health floor (28% and 20%).
 - **THEN** the bot keeps fighting until its health falls below 28%, which gives the player a chance to finish it.
 
 ### Requirement: Bots play the map with what their team can see
-Veteran and Mythic bots SHALL gank from a pushed lane, use rift gates when a gate saves time, answer their team's defend calls, take spirit
-camps when no enemy hero is near, gather before the Wild Hunt wakes, and push a ward with their wave after a won fight. They SHALL use only
-what their team can see, the public kill feed, and their team's own calls.
+Veteran and Mythic bots SHALL gank from a pushed lane, use rift gates when a gate saves time, answer their team's defend calls, gather before
+the Wild Hunt wakes, and push a ward with their wave after a won fight. They SHALL leave spirit camps alone. They SHALL use only what their
+team can see, the public kill feed, and their team's own calls.
 
 #### Scenario: A gank from a pushed lane
 - **WHEN** the player is seen at low health in another lane and an enemy bot's lane has no wave in front
@@ -314,6 +314,14 @@ SHALL keep normal spells for heroes instead of the wave unless their mana is ful
 #### Scenario: A missed cast is punished
 - **WHEN** the player misses a spell and is in its recovery near a Veteran bot
 - **THEN** the bot attacks the player before a healthier, closer hero.
+
+### Requirement: Mythic drafts strong heroes
+A Mythic enemy team SHALL weigh measured kit strength by lane when it drafts. Every team SHALL draft from the same pool, and the player SHALL
+see every pick.
+
+#### Scenario: A Mythic draft
+- **WHEN** the same seed is drafted against Veteran and against Mythic
+- **THEN** the Mythic team's picks have at least the same summed kit strength, and every pick shows on the draft board.
 
 ### Requirement: Bot strength is measured
 Seeded six-bot matches with sides swapped SHALL be run for each difficulty against the previous bots on the current map. The report SHALL

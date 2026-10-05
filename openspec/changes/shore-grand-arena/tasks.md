@@ -53,9 +53,12 @@
 - [x] Wave gating, dive guard, trade-aware retreat, ganks, camps, focus fire, objective timing and dodges with reaction delays.
 - [x] Measure win rates per difficulty with seeded matches (on the 9600 map: Veteran 38%, Mythic 33%, Apprentice 30% against the previous
   bots over 60 matches each; Veteran and Mythic win fights and die less under wards, but take fewer wards).
-- [ ] Fix the bot review findings: bots that freeze when a route grazes a ward, the dive exception path, sieges without a wave, the double
-  move, the difficulty badge over the HUD, the picker on small landscape phones and with blocked storage, and the test gaps.
-- [ ] Retune Veteran and Mythic so they turn won fights into wards on the 9600 map, then measure again.
+- [x] Fix the bot review findings: bots that freeze when a route grazes a ward, the dive exception path, sieges without a wave, the double
+  move, the difficulty badge over the HUD, the picker on small landscape phones and with blocked storage (vdimarco/rouge-warden#229).
+- [x] Retune for the 9600 map: spirit camps off, pushes only with the wave, Mythic drafts by measured kit strength (#229).
+- [ ] Measure the retuned levels again with drafted lineups (`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs`).
+- [ ] Test the bot hooks through `step()`, not only the helpers: ganks from a held lane, the cast lock, the short failed dodge
+  (review finding 17).
 - [x] Merge the branch.
 
 ## Verification
