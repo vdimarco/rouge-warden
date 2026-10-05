@@ -5,7 +5,7 @@ import * as THREE from 'three';
 // Town: warm late afternoon. Woods: cooler misty dusk under the canopy.
 export const MOODS = [
   { sun: '#ffd093', sunIntensity: 4.6, elevation: 28, azimuth: 222, sky: '#a9c0dc', ground: '#6b5636', hemi: 1.35, fog: '#c4ad88', fogNear: 3600, fogFar: 11000, env: .7, exposure: 1.18, rim: .55 },
-  { sun: '#ffab78', sunIntensity: 3.3, elevation: 19, azimuth: 236, sky: '#8aa3c0', ground: '#3a4438', hemi: 1.5, fog: '#7d909a', fogNear: 2500, fogFar: 8600, env: .6, exposure: 1.22, rim: .8 },
+  { sun: '#ffab78', sunIntensity: 3.3, elevation: 19, azimuth: 236, sky: '#8aa3c0', ground: '#3a4438', hemi: 1.5, fog: '#74868f', fogNear: 3300, fogFar: 10500, env: .6, exposure: 1.22, rim: .8 },
 ];
 // Golden-hour grade after ACES: shadows lean teal, highlights lean amber, saturation eases off a little. One fixed
 // function in every material's tone mapping, so it costs no extra pass.

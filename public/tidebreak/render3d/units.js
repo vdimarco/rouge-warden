@@ -158,7 +158,7 @@ class StructureView {
     const mesh = new THREE.Mesh(units.meshGeometry(gltf), mat); mesh.castShadow = mesh.receiveShadow = true; mesh.scale.setScalar(this.height); this.mesh = mesh; this.root.add(mesh);
     this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]); this.uniforms.uRimPower.value = .18;
     // The pale crystal takes the team colour and glows.
-    Object.assign(this.uniforms.uTint.value.set(e.team === 0 ? '#6fdcc6' : e.team === 1 ? '#ff6a80' : '#f0c27a'), {}); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = .9;
+    this.uniforms.uTint.value.set(e.team === 0 ? '#79cfbf' : e.team === 1 ? '#e27c8c' : '#e8c27e'); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = .45;
     if (this.guardian || core) { const ring = new THREE.Mesh(units.plinth, units.stone); ring.scale.set(core ? 520 : 190, core ? 46 : 56, core ? 520 : 190); ring.castShadow = ring.receiveShadow = true; this.root.add(ring); if (!core) mesh.position.y = 50; }
     // The crystal's glow: a sprite in the team colour that breathes.
     const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 420 : 240); this.glow = glow; this.root.add(glow);

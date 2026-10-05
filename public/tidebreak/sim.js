@@ -15,7 +15,7 @@ import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning
 import { combatDecision } from './combat-ai.js';
 import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
 import { followOrder } from './navigation.js';
-import { structureProtected, LANE_NAMES, TIER_NAMES, INNER, guardians } from './objectives.js';
+import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER, guardians } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
 import { rooted, spellBlocked, castTiming, emitCombatFeedback } from './combat-state.js';
 import { tickEncounter } from './encounters.js';
@@ -414,10 +414,14 @@ function followLane(s, e, dt) {
   while (goal > 0 && unsafe(path[goal])) goal--;
   const target = path[goal];
   if (unsafe(e)) { const back = path[Math.max(0, index - 3)]; move(s, e, back.x, back.y, dt, heroSpeed(s, e)); }
+  // Far from the lane (after a gate or a lane change) the hero takes the routed path around cover.
+  else if (distance(e, path[index]) > 350) { const next = followOrder(s, e, target); if (next) move(s, e, next.x, next.y, dt, heroSpeed(s, e)); }
   else if (distance(e, target) > 30) move(s, e, target.x, target.y, dt, heroSpeed(s, e));
 }
 function bot(s, e, dt) {
   if(e.castIntent||e.recoveryUntil>s.time)return;
+  // When an enemy lane is open all the way to its base, every bot joins that push, so a won game can end.
+  const open=[0,1,2].find(lane=>laneOpen(s,1-e.team,lane));if(open!==undefined)e.lane=open;
   const intent=combatDecision(s,e),previous=e.botMode;e.botMode=intent.mode;
   // Mode changes become team pings, so teammates can be heard and seen on the map.
   if(intent.mode==='assist'&&previous!=='assist'&&s.time-(e.assistPingAt??-99)>10){e.assistPingAt=s.time;pushPing(s,{team:e.team,type:'onmyway',x:intent.move.x,y:intent.move.y,source:e.id,call:intent.call});}
