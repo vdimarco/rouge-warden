@@ -59,7 +59,8 @@ async function pose(slug) {
   const bone = name => body.skeleton.bones.find(b => b.name === name)?.getWorldPosition(new THREE.Vector3());
   const bodyBox = new THREE.Box3().setFromObject(body, true), allBox = new THREE.Box3();
   root.traverse(o => { if (o.isMesh) allBox.union(new THREE.Box3().setFromObject(o, true)); });
-  const head = bone('Head'), neck = bone('neck') || head, top = Math.max(bone('head_end')?.y ?? bodyBox.max.y, Math.min(bodyBox.max.y, head.y + 2.2 * (head.y - neck.y + 0.06)));
+  // The top of the body mesh is the head, hood, crown or horns: the idle pose keeps the hands low.
+  const head = bone('Head'), neck = bone('neck') || head, top = bodyBox.max.y;
   return { root, head, neck, top, bodyBox, allBox };
 }
 // Draws the scene from straight ahead (the hero is turned instead), so the lights stay fixed in the picture.
