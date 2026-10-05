@@ -1,9 +1,12 @@
 import { BASES, distance, canSee, visibleTo, lineOfSight } from './world.js';
+import { ROTATION_SCALE } from './arena.js';
 import { structureProtected } from './objectives.js';
 import { canAfford, manaCost, canReturn, threateningZones, insideWarning } from './combat-rules.js';
 import { assistPoint } from './team-events.js';
 
 const escapeHeroes=[0,1,2,3,6,8,9];
+// Boss rotations follow the map size; perception and spacing stay tied to sight and the screen.
+const BOSS_FALLBACK=700*ROTATION_SCALE,BOSS_SUPPORT=1600*ROTATION_SCALE,BOSS_TEAMMATE=1700*ROTATION_SCALE,BOSS_RALLY=1900*ROTATION_SCALE;
 export function combatDecision(s,e){
  const enemies=s.units.filter(t=>t.hp>0&&t.team!==e.team&&t.team>=0&&!structureProtected(s,t)&&distance(e,t)<850&&canSee(s,e,t)&&lineOfSight(s,e,t));
  const heroes=enemies.filter(t=>t.kind==='hero'),allies=s.units.filter(t=>t.kind==='hero'&&t.team===e.team&&t.hp>0&&distance(e,t)<650);
@@ -33,11 +36,11 @@ export function combatDecision(s,e){
   const slot=e.hero===9&&ready(3)?3:e.hero===6&&canReturn(s,e)?0:escapeHeroes.includes(e.hero)&&ready(0)?0:e.hero===7&&ready(2)?2:e.hero===11&&ready(0)?0:e.hero===9&&ready(3)?3:undefined;
   return {mode:'retreat',move:home,slot:heroes.length?slot:undefined,aim};
  }
- // Towers are approached with a wave. Finishing a weak wisp takes priority over a full-health hero.
- const candidates=enemies.filter(t=>t.kind!=='tower'&&t.kind!=='core'||s.units.some(a=>a.team===e.team&&a.kind==='minion'&&a.hp>0&&distance(a,t)<t.range));
+ // Towers are approached with a wave (in sudden death structures are open to heroes). Finishing a weak wisp takes priority over a full-health hero.
+ const candidates=enemies.filter(t=>t.kind!=='tower'&&t.kind!=='core'||s.suddenDeath||s.units.some(a=>a.team===e.team&&a.kind==='minion'&&a.hp>0&&distance(a,t)<t.range));
  const score=t=>distance(e,t)+(t.kind==='hero'?-190+(t.hp/t.maxHp)*100:0)+(t.kind==='minion'&&t.hp<=e.damage*1.15?-400:0)+(e.target===t.id?-35:0);
  let target=candidates.sort((a,b)=>score(a)-score(b)||a.id-b.id)[0];
- if(!target){const boss=s.units.find(t=>t.kind==='boss'&&t.hp>0);if(boss&&e.lane===1&&hurt>.6&&distance(e,boss)<700)target=boss;}
+ if(!target){const boss=s.units.find(t=>t.kind==='boss'&&t.hp>0);if(boss&&e.lane===1&&hurt>.6&&distance(e,boss)<BOSS_FALLBACK)target=boss;}
  const injured=allies.filter(t=>t.hp<t.maxHp*.7&&distance(e,t)<480).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id)[0];
  // A nearby injured ally creates a protection opportunity for front-line kits.
  // It changes target choice; each hero still uses its own control/attack rules.
@@ -48,8 +51,8 @@ export function combatDecision(s,e){
  }
  const boss=s.units.find(t=>t.kind==='boss'&&t.hp>0);
  const team=s.units.filter(t=>t.kind==='hero'&&t.team===e.team&&t.hp>0);
- const support=boss&&team.some(t=>t.id!==e.id&&t.hp/t.maxHp>.55&&distance(t,boss)<1600&&distance(t,e)<1700);
- const rally=boss&&hurt>.72&&support&&distance(e,boss)<1900&&visibleTo(s,e.team,boss)&&!heroes.some(t=>distance(e,t)<500)&&!endangered;
+ const support=boss&&team.some(t=>t.id!==e.id&&t.hp/t.maxHp>.55&&distance(t,boss)<BOSS_SUPPORT&&distance(t,e)<BOSS_TEAMMATE);
+ const rally=boss&&hurt>.72&&support&&distance(e,boss)<BOSS_RALLY&&visibleTo(s,e.team,boss)&&!heroes.some(t=>distance(e,t)<500)&&!endangered;
  if(rally)target=boss;
  // Teammates answer calls and fights when nothing in sight needs a hero.
  const call=!rally&&(!target||target.kind!=='hero')&&!endangered?assistPoint(s,e,hurt):null;

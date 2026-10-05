@@ -50,7 +50,7 @@ export class ThreeRenderer {
     this.props = new Props(this.scene, assets, this.textures);
     this.effects = new Effects(this.scene, this.textures);
     this.units = new Units(this.scene, this.effects); this.units.init(this.textures);
-    this.fowCanvas = Object.assign(document.createElement('canvas'), { width: 128, height: 128 }); this.fowCanvas.getContext('2d', { willReadFrequently: true }); this.fowTex = new THREE.CanvasTexture(this.fowCanvas); this.fowTex.colorSpace = THREE.NoColorSpace; fow.uFow.value = this.fowTex;
+    this.fowCanvas = Object.assign(document.createElement('canvas'), { width: 128, height: 128 }); this.fowCanvas.getContext('2d', { willReadFrequently: true }); this.fowTex = new THREE.CanvasTexture(this.fowCanvas); this.fowTex.colorSpace = THREE.NoColorSpace; this.fowTex.flipY = false; fow.uFow.value = this.fowTex;
     this.vignette = vignette();
     this.cam = { x: world.CENTER.x, y: world.CENTER.y + 600 }; this.visible = new Set(); this.hitBoxes = []; this.lastPoses = []; this.frames = 0; this.menuTime = 0;
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; this.units.reduced = this.reducedMotion; this.shake = { x: 0, y: 0 };
@@ -86,6 +86,7 @@ export class ThreeRenderer {
     const a = this.project(-500, 0), b = this.project(500, 0), c = this.project(0, 100); this.scale = (b.x - a.x) / 1000; this.squash = (c.y - a.y) / 100 / this.scale;
     this.effects?.setScale(this.height * this.dpr / (2 * Math.tan(half)));
     const q = this.quality, size = q >= .8 ? 2048 : q >= .6 ? 1536 : 1024; this.shadowSize = size;
+    this.placeCamera(this.cam.x, this.cam.y, 0, 0); // input between a resize and the next frame still maps to the ground
     this.restartTiming();
   }
   placeCamera(x, y, sx, sy) {
@@ -113,11 +114,12 @@ export class ThreeRenderer {
     if (!menu) this.heroScreen = this.project(p.x, p.y);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
     this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
-    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1;
-    this.props.update(dt, time, p.hp > 0 && !menu ? p : null, this.reducedMotion, { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 }, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
-    this.terrain.update(time, this.sky.blend, this.sky.dir, this.scene.fog.color);
+    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, rect = { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
+    this.props.update(dt, time, p.hp > 0 && !menu ? p : null, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
+    this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
     this.units.rimPower = this.sky.rim;
-    this.units.sync(s, time, dt, e => menu || this.visible.has(e.id), this.cam);
+    const inView = e => e.x > rect.x0 - 450 && e.x < rect.x1 + 250 && e.y > rect.y0 - 250 && e.y < rect.y1 + 450;
+    this.units.sync(s, time, dt, e => inView(e) && (menu || this.visible.has(e.id)), this.cam);
     for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') v.concealed = v.unit.team === 0 && concealed(s, v.unit);
     this.lastPoses = this.units.poses;
     this.drawWorldEffects(s, p, time, dt, menu, aim, waypoint);
@@ -169,6 +171,12 @@ export class ThreeRenderer {
     for (const g of world.PORTALS) if (near(g.x, g.y)) {
       d.circle(g.x, g.y, 125, { color: '#8fd9cf', alpha: .55, line: 9 }); d.circle(g.x, g.y, 98, { color: '#c9f2e8', alpha: .35, line: 3, dash: 14 }); d.circle(g.x, g.y, 110, { color: '#5fbfb2', alpha: .12, fill: .9, inner: 0 });
       if (!this.reducedMotion && Math.random() < dt * 9) fx.sparks.emit({ x: g.x + (Math.random() - .5) * 160, y: 10, z: g.y + (Math.random() - .5) * 160, vy: 90 + Math.random() * 60, life: 1.4, size: 22, color: '#9fe8dc', drag: .3 });
+    }
+    // Air: golden motes drift in the town's low sun; in the woods, low mist rolls between the trees.
+    if (!this.reducedMotion) {
+      const f = this.foot, rx = () => this.cam.x + f.minX + Math.random() * (f.maxX - f.minX), rz = () => this.cam.y + f.minY + Math.random() * (f.maxY - f.minY), woods = this.sky.blend;
+      if (Math.random() < dt * 10 * (1 - woods)) fx.sparks.emit({ x: rx(), y: 40 + Math.random() * 220, z: rz(), vx: 12 + Math.random() * 10, vy: 6, vz: -8, life: 4 + Math.random() * 3, size: 9, color: '#ffd9a0', alpha: .7, drag: 0 });
+      if (Math.random() < dt * 2.5 * woods) fx.smoke.emit({ x: rx(), y: 20 + Math.random() * 40, z: rz(), vx: 18, vy: 2, vz: -6, life: 7, size: 380 + Math.random() * 220, grow: .5, color: '#c4d4dc', alpha: .07, drag: 0 });
     }
     for (const z of s.zones) if (near(z.x, z.y)) this.zone(z, time, dt);
     for (const t of s.traps) if (t.team === 0 || distance(p, t) < 110) d.circle(t.x, t.y, 70, { color: TEAM3D[t.team] || NEUTRAL, alpha: .7, line: 4, dash: 10 });

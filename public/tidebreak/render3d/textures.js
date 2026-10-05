@@ -87,7 +87,7 @@ function dirt(size, seed) {
   return material(size, c => {
     base = noiseFill(c, size, ['#3f2f1e', '#5a4429', '#6e5434', '#7f6440', '#8d7552'], seed, { base: 4, detail: .4 });
     // Wheel ruts and foot-worn streaks run along the texture's x axis.
-    const rand = random(seed + 3); c.globalAlpha = .12;
+    const rand = random(seed + 3); c.globalAlpha = .045;
     for (let i = 0; i < 40; i++) { const y = rand() * size, w = 2 + rand() * 6; c.fillStyle = rand() < .5 ? '#2c2014' : '#a48c66'; wrapped(size, (dx, dy) => c.fillRect(dx, y + dy, size, w)); }
     c.globalAlpha = 1; pebbles(c, null, size, seed + 5, 420, ['#8a7c66', '#9a8f7c', '#6f6250', '#a69a86'], 1.2, 4.2);
   }, h => { grayFill(h, size, base, .5, .1); pebbles(null, h, size, seed + 5, 420, [], 1.2, 4.2); });

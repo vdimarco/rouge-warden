@@ -21,7 +21,8 @@ function prepare(root, { metal = true } = {}) {
     if (!o.isMesh) return;
     o.castShadow = true; o.receiveShadow = true;
     if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
-    const m = o.material; m.emissiveMap = null; m.emissive?.set(0);
+    // GLTFLoader turns on flat shading for a mesh without normals; with computed normals it shades smoothly.
+    const m = o.material; m.flatShading = false; m.emissiveMap = null; m.emissive?.set(0);
     if (!m.metalnessMap || !metal) { m.metalness = 0; m.metalnessMap = null; }
     if (!m.roughnessMap) m.roughness = .88;
     m.envMapIntensity = .9; m.needsUpdate = true;
@@ -48,13 +49,14 @@ export const HERO_CLIPS = {
   glasshand: ['throw', 'cast'], 'salt-priestess': ['weave', 'cast'], riftblade: ['combo', 'slash'], 'coral-sage': ['cast', 'weave'],
   nightcurrent: ['charge', 'weave'], 'the-marrow': ['slash', 'maul'], bloodwake: ['chop', 'slam'], zephyrs: ['combo', 'slash'],
 };
-// Strike moments in clip seconds (the hand-speed peak, checked frame by frame) and the usable part of each clip.
+// Strike moments in clip seconds (the hand-speed peak, checked on rendered frames; the bow releases after its hold)
+// and the usable part of each clip.
 // combo and slash carry several strikes: the three basic-attack variants use them in turn.
 export const CLIP_TIMING = {
   thrust: { from: .3, strikes: [.77], to: 1.6 }, slam: { from: .95, strikes: [1.67], to: 2.35 }, combo: { from: .1, strikes: [.67, 1.23, 1.8], to: 2.3 },
-  hammer: { from: .75, strikes: [1.57], to: 1.87 }, cast: { from: .12, strikes: [.63], to: 1.45 }, bow: { from: .35, strikes: [1.2], to: 1.95 },
+  hammer: { from: .75, strikes: [1.57], to: 1.87 }, cast: { from: .12, strikes: [.63], to: 1.45 }, bow: { from: 2.3, strikes: [3.95], to: 4.6 },
   weave: { from: .25, strikes: [.93], to: 1.8 }, throw: { from: 2.55, strikes: [3.48], to: 4.4 }, charge: { from: .7, strikes: [1.78], to: 2.6 },
-  maul: { from: .45, strikes: [1.1], to: 1.85 }, slash: { from: .3, strikes: [.8, 1.3], to: 1.75 }, chop: { from: 3.35, strikes: [4.43], to: 5.1 },
+  maul: { from: .45, strikes: [1.1], to: 1.85 }, slash: { from: .3, strikes: [.8, 1.3], to: 1.75 }, chop: { from: 3.35, strikes: [4.45], to: 5.1 },
 };
 export const ANIMATED = ['idle', 'run', 'hit', 'death', 'march'];
 // Retargeted clips are cached per model: clones of one hero share the bind pose, so they share clips.

@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import {createMatch,player,cast,step,damage,HEROES} from '../../public/tidebreak/sim.js';
+import {createMatch,player,cast,step,damage,HEROES,respawnTime} from '../../public/tidebreak/sim.js';
 import {manaCost,canReturn,insideWarning} from '../../public/tidebreak/combat-rules.js';
 import {combatDecision} from '../../public/tidebreak/combat-ai.js';
 import {BASES,move} from '../../public/tidebreak/world.js';
-const setup=kind=>{const s=createMatch(kind,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,skillRanks:[1,1,1,1],level:6,nextShop:Infinity});return{s,p};};
+import { near } from './open-ground.mjs';
+const setup=kind=>{const s=createMatch(kind,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{...near(2400,2800),skillRanks:[1,1,1,1],level:6,nextShop:Infinity});return{s,p};};
 const foe=(s,p,extra={})=>{const t={id:900+s.units.length,kind:'minion',team:1,x:p.x,y:p.y-160,radius:16,hp:10000,maxHp:10000,shield:0,armor:0,speed:0,damage:0,range:0,attackCd:999,stun:0,slow:0,fear:0,lane:1,lastHit:0,...extra};s.units.push(t);p.target=t.id;return t;};
 const advance=(s,seconds,input={attack:false})=>{for(let i=0;i<seconds*100;i++)step(s,input,.01);};
 
@@ -11,7 +12,7 @@ for(let hero=0;hero<HEROES.length;hero++){
  const {s,p}=setup(hero);foe(s,p);const before=p.mana,cost=manaCost(p,1);assert(cast(s,p,1));assert.equal(p.mana,before-cost);
  p.mana=0;p.cd[1]=0;const hp=s.units[1].hp;assert.equal(cast(s,p,1),false);assert.equal(p.cd[1],0);assert.equal(s.units[1].hp,hp);
  advance(s,1);assert(p.mana>0,'mana regenerates');Object.assign(p,BASES[0]);const mana=p.mana;advance(s,.1);assert(p.mana-mana>10,'home restores mana faster');
- damage(s,s.units[1],p,99999);advance(s,12);assert.equal(p.mana,p.maxMana,'respawn refills mana');
+ damage(s,s.units[1],p,99999);advance(s,respawnTime(p.level)+.5);assert.equal(p.mana,p.maxMana,'respawn refills mana');
 }
 {
  const {s,p}=setup(4),x=p.x,y=p.y;assert(cast(s,p,0));assert.equal(p.x,x);assert.equal(p.y,y);assert(s.zones.some(z=>z.type==='ink'&&z.radius===290));

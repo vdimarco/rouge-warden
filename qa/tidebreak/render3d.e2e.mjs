@@ -35,10 +35,12 @@ async function open(query, width = 960, height = 540) {
   const pump = (n, ms = 33) => page.evaluate(([n, ms]) => { for (let i = 0; i < n; i++) { window.__ts += ms; window.__pump(window.__ts); } }, [n, ms]);
   return { page, errors, read, pump, graphics: () => read('return m.snapshot().graphics;') };
 }
+// Polls an async check from Node (page.waitForFunction would treat a returned promise as already true).
+async function until(check, what, tries = 480, wait = 500) { for (let i = 0; i < tries; i++) { if (await check()) return; await new Promise(r => setTimeout(r, wait)); } throw new Error('timed out: ' + what); }
 async function toMatch(t) {
   await t.page.mouse.move(480, 270); await t.page.click('#play');
   for (let i = 0; i < 120 && !(await t.page.evaluate(() => !document.getElementById('hud').hidden)); i++) { await t.page.keyboard.press('Enter'); await t.page.waitForTimeout(200); }
-  await t.page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running, null, { timeout: 60000 });
+  await until(() => t.read('return m.snapshot().running;'), 'the match starts', 120);
   await t.page.waitForTimeout(400);
   if (await t.page.evaluate(() => document.getElementById('sheet').open)) await t.page.keyboard.press('Escape');
   await t.page.mouse.move(480, 270);
@@ -51,14 +53,14 @@ try {
     assert.equal(g.models.world, g.models.worldTotal); assert.equal(g.models.clips, 17);
     assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d') && !!document.getElementById('battle-overlay')), true, 'the WebGL canvas and the overlay exist');
     await toMatch(t);
-    await page.waitForFunction(async () => { const g = (await import('/tidebreak/main.js')).snapshot().graphics; return g.models.heroes + g.models.failed.length >= g.models.heroesTotal; }, null, { timeout: 240000, polling: 500 });
+    await until(async () => { const g = await t.graphics(); return g.models.heroes + g.models.failed.length >= g.models.heroesTotal; }, 'all hero models load');
     await pump(3);
     g = await t.graphics();
     assert.deepEqual(g.models.failed, [], 'no hero model failed'); assert.equal(g.models.heroes, 16, 'all sixteen heroes are parsed');
     assert.equal(g.units.placeholders, 0, 'no hero is still a stand-in'); assert.equal(g.units.heroes, 6);
     pass('the 3D renderer loads every world model, the clips and all sixteen heroes', g.models);
 
-    // Heroes animate: the player's bones turn while it runs, and differ between two moments of the idle.
+    // Heroes animate: the player's bones turn while it runs.
     await page.evaluate(() => { window.__auto = false; });
     const id = await read('return p.id;');
     // The renderer is not exported; the 3D renderer leaves a QA handle on the event canvas.
@@ -71,16 +73,22 @@ try {
     assert(change > .02, 'bone rotations change while the hero runs: ' + change);
     pass('heroes animate: bone rotations change between frames', { change: +change.toFixed(3) });
 
-    // Every tower tier and both cores have a visible view.
-    const sim = await read(`return s.units.filter(u => u.kind === 'tower' || u.kind === 'core').map(u => ({ id: u.id, kind: u.kind, tier: u.tier ?? null, guardian: !!u.guardian }));`);
+    // Every tower tier and both cores render: the view looks at one structure of each kind in turn (views outside the
+    // screen are culled, so each is checked on screen).
+    const sim = await read(`return s.units.filter(u => u.kind === 'tower' || u.kind === 'core').map(u => ({ id: u.id, kind: u.kind, team: u.team, tier: u.tier ?? null, guardian: !!u.guardian, x: u.x, y: u.y }));`);
+    const kinds = new Map(); for (const u of sim) { const key = u.kind === 'core' ? 'core' + u.team : u.guardian ? 'guardian' : 'tier' + u.tier; if (!kinds.has(key)) kinds.set(key, u); }
+    for (const [key, u] of kinds) {
+      await page.evaluate(([x, y]) => window.__renderer.lookAt(x, y), [u.x, u.y]); await pump(2, 16);
+      const seen = await page.evaluate(id => { const r = window.__renderer, v = r.stats().structures.find(x => x.id === id), u = r.units.views.get(id)?.unit, a = u && r.project(u.x, u.y, 200); return { visible: v?.visible, onScreen: !!a && a.x > 0 && a.x < r.width && a.y > 0 && a.y < r.height }; }, u.id);
+      assert(seen.visible && seen.onScreen, `${key} renders on screen: ${JSON.stringify(seen)}`);
+    }
+    await page.evaluate(() => window.__renderer.recenter()); await pump(2, 16);
     g = await t.graphics();
-    for (const u of sim) { const v = g.structures.find(x => x.id === u.id); assert(v && v.visible, 'structure has a visible view: ' + JSON.stringify(u)); }
-    const tiers = [...new Set(sim.filter(u => u.kind === 'tower').map(u => u.guardian ? 'guardian' : u.tier))].sort();
-    assert(tiers.length >= 2, 'several tower tiers exist: ' + tiers);
-    assert.equal(sim.filter(u => u.kind === 'core').length, 2);
+    const tiers = [...kinds.keys()].sort();
+    assert(tiers.includes('core0') && tiers.includes('core1') && tiers.filter(k => k.startsWith('tier')).length >= 2, 'cores and several tower tiers exist: ' + tiers);
     const heights = Object.fromEntries(g.structures.filter(v => v.kind === 'tower').map(v => [v.guardian ? 'guardian' : v.tier, v.height]));
     for (let i = 1; i < 3; i++) if (heights[i] && heights[i - 1]) assert(heights[i] > heights[i - 1], 'inner tiers stand taller: ' + JSON.stringify(heights));
-    pass('every tower tier and both cores render', { tiers, heights });
+    pass('every tower tier and both cores render', { kinds: tiers, heights });
 
     // world(project(x, y)) is the identity on the ground, and pick() finds an enemy under the cursor.
     const trip = await page.evaluate(() => { const r = window.__renderer, out = []; for (const [dx, dy] of [[0, 0], [400, -300], [-600, 200], [900, -800]]) { const x = r.cam.x + dx, y = r.cam.y + dy, s = r.project(x, y), w = r.world(s.x, s.y); out.push(Math.hypot(w.x - x, w.y - y)); } return out; });
@@ -104,9 +112,9 @@ try {
     await page.evaluate(() => { window.__auto = true; });
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     assert.match(await page.evaluate(() => document.getElementById('graphics-mode').textContent), /Graphics: 3D/);
-    await page.click('#graphics-mode'); await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().graphics.renderer === 'Illustrated 2.5D', null, { timeout: 60000 });
+    await page.evaluate(() => document.getElementById('graphics-mode').click()); await until(async () => (await t.graphics()).renderer === 'Illustrated 2.5D', 'the switch to 2D', 120);
     assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d')), false, 'the WebGL canvas is gone in 2D');
-    await page.click('#graphics-mode'); await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().graphics.renderer === 'Mythic 3D', null, { timeout: 60000 });
+    await page.evaluate(() => document.getElementById('graphics-mode').click()); await until(async () => (await t.graphics()).renderer === 'Mythic 3D', 'the switch back to 3D', 120);
     await page.keyboard.press('Escape'); await page.waitForTimeout(1500);
     assert.equal((await t.graphics()).renderer, 'Mythic 3D');
     await page.evaluate(() => localStorage.removeItem('tidebreak.renderer'));
