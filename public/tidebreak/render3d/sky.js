@@ -16,7 +16,7 @@ export function installGrade() {
     // shoreGrade
     color = ACESFilmicToneMapping( color );
     float l = dot( color, vec3( .2126, .7152, .0722 ) );
-    color = mix( vec3( l ), color, .9 );
+    color = mix( vec3( l ), color, .97 );
     color += vec3( -.012, .006, .02 ) * ( 1. - smoothstep( .0, .45, l ) );
     color *= mix( vec3( 1. ), vec3( 1.035, 1.0, .94 ), smoothstep( .35, 1., l ) );
     return clamp( color, 0., 1. );

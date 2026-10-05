@@ -131,7 +131,7 @@ function water(river) {
   river.samples.forEach((p, i) => {
     const rows = [[p.north - 26, 0], [p.y, .5], [p.south + 26, 1]];
     rows.forEach(([z, v], j) => { const k = i * 3 + j; pos.set([p.x, 3, z], k * 3); uv.set([p.x, v], k * 2); });
-    if (i) for (let j = 0; j < 2; j++) { const a = (i - 1) * 3 + j, b = i * 3 + j; index.push(a, b, a + 1, b, b + 1, a + 1); }
+    if (i) for (let j = 0; j < 2; j++) { const a = (i - 1) * 3 + j, b = i * 3 + j; index.push(a, a + 1, b, b, a + 1, b + 1); } // counter-clockwise seen from above
   });
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(index);
   const m = new THREE.ShaderMaterial({

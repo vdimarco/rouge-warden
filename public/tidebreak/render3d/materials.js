@@ -55,7 +55,7 @@ export function worldMapped(texture, { color = '#ffffff', roughness = .92, scale
 }
 // Heroes, minions and creatures: a team-coloured rim from the side away from the camera (dark armour stays readable on
 // grass), a short white flash when hit, and screen-door fading (no transparency sort, shadows stay right).
-export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 }, uTintRange: { value: new THREE.Vector2(.32, .55) }, uTintGlow: { value: 0 } });
+export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 }, uTintRange: { value: new THREE.Vector2(.58, .76) }, uTintGlow: { value: 0 } });
 // One uniforms object can drive every material of a unit (body and weapons).
 export function unitMaterial(source, uniforms = unitUniforms(), key = 'unit') {
   const m = source.clone();
@@ -70,7 +70,9 @@ export function unitMaterial(source, uniforms = unitUniforms(), key = 'unit') {
       .replace('#include <map_fragment>', `#include <map_fragment>
       float tintMask = 0.;
       if ( uTintOn > .5 ) { vec3 c = diffuseColor.rgb; float hi = max( c.r, max( c.g, c.b ) ), lo = min( c.r, min( c.g, c.b ) );
-        tintMask = smoothstep( uTintRange.x, uTintRange.y, hi ) * ( 1. - smoothstep( .12, .3, hi - lo ) );
+        // Judged in a rough sRGB space (square root), where 'pale' and 'greyish' mean what an artist means.
+        vec3 g = sqrt( max( c, vec3( 0. ) ) ); float gh = max( g.r, max( g.g, g.b ) ), gl = min( g.r, min( g.g, g.b ) );
+        tintMask = smoothstep( uTintRange.x, uTintRange.y, gh ) * ( 1. - smoothstep( .1, .26, gh - gl ) );
         diffuseColor.rgb = mix( c, uTint * ( .45 + hi * .75 ), tintMask * .9 ); }`)
       .replace('#include <tonemapping_fragment>', `
       { vec3 vd = normalize( vViewPosition ); float rim = pow( 1. - clamp( dot( normal, vd ), 0., 1. ), 2.6 );

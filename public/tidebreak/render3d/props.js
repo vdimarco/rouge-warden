@@ -96,7 +96,7 @@ function patch(material, grow, { sway = 0, see = true, key, bias = 0 }) {
 // Names from scenery.js -> what to build. Unknown names fall back to a boulder, so new scenery never breaks the scene.
 // [kind, height factor, width factor]; the oak model is an autumn oak, so tints move it toward summer or birch.
 const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pine', 1.05, .9], oak: ['oak', 1.45, .56], willow: ['oak', 1.35, .66], birches: ['oak', 1.55, .4] };
-const TINTS = { oak: '#d6d8a4', willow: '#a9bc8e', birches: '#efe8c8', juniper: '#d4dcc0', pines: '#ffffff', pine: '#ffffff' };
+const TINTS = { oak: '#e2d996', willow: '#a9bc8e', birches: '#efe8c8', juniper: '#d4dcc0', pines: '#ffffff', pine: '#ffffff' };
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
 const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .6, juniper: .6, willow: .7, oak: .7, pines: .8 };
 export class Props {
@@ -104,16 +104,16 @@ export class Props {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
     const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
     // Leaves glow a little with their own colour (light through the canopy), so a crown never turns to a black blob.
-    const tree = (m, sway, glow = 0) => set => { const c = m.clone(); if (glow) { c.emissive = new THREE.Color(glow, glow, glow * .8); c.emissiveMap = c.map; } return patch(c, this.grow[set], { sway, key: 'tree', bias: glow ? 1.6 : 0 }); };
+    const tree = (m, sway, glow = 0, bias = 0) => set => { const c = m.clone(); if (glow) { c.emissive = new THREE.Color(glow, glow, glow * .8); c.emissiveMap = c.map; } return patch(c, this.grow[set], { sway, key: 'tree', bias }); };
     const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: 'built' }), this.grow[set], { key: 'built' });
     const plain = (color, rough) => set => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[set], { see: false, key: 'plain' });
     const leaves = materialOf(w.pine), autumn = materialOf(w.oak);
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
-      pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .75), material: tree(leaves, .035, .16), shadow: true, selfShadow: false },
-      oak: { geometry: softCanopy(simplify(geometryOf(w.oak), 22), .62, .3, .85), material: tree(autumn, .03, .12), shadow: true, selfShadow: false },
-      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .14), shadow: false },
-      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .1), shadow: false },
+      pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .75), material: tree(leaves, .035, .16, 1.2), shadow: true, selfShadow: false },
+      oak: { geometry: softCanopy(simplify(geometryOf(w.oak), 22), .62, .3, .85), material: tree(autumn, .03, .16, 3), shadow: true, selfShadow: false },
+      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .14, 2), shadow: false },
+      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .1, 2.5), shadow: false },
       boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true },
       arch: { geometry: simplify(geometryOf(w.arch), 28), material: tree(materialOf(w.arch), 0), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
