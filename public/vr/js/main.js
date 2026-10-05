@@ -335,13 +335,14 @@ function cutsceneFrame(dt, inp) {
   fx.update(dt, camera.position, camera.quaternion);
 }
 // The people on the sidewalks: they walk on round the player, and see the hero (in play only). The murmur follows them.
+const CAMW = new THREE.Vector3();
 const HERO_SEEN = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onGround: false };
 function streetFrame(dt, inPlay) {
   street.limit = isXR() ? STREET.maxXR : STREET.max;
   HERO_SEEN.x = P.pos.x; HERO_SEEN.y = P.pos.y; HERO_SEEN.z = P.pos.z;
   HERO_SEEN.vx = P.vel.x; HERO_SEEN.vy = P.vel.y; HERO_SEEN.vz = P.vel.z; HERO_SEEN.onGround = !!P.onGround;
   street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null);
-  streetView.update(dt, G.time);
+  streetView.update(dt, G.time, camera.getWorldPosition(CAMW));
   audio.setCrowd(inPlay ? street.crowd : 0);
 }
 // The glow of flat play: the saved choice, else Low with a mouse or a pad and Off on a phone. A headset has none.

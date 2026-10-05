@@ -24,6 +24,9 @@
   head, two legs, two arms; a part id per vertex. The vertex shader poses each part from per-instance data (position, yaw,
   walk phase, stride, pose code, pose time) so the CPU writes 3 vec4 per person per frame. Colours are per instance. The
   look is the city's cel bands and ink, with a simple distance haze.
+- To keep flat play under the 800k triangle budget (qa/vr/perf.mjs), only people within 110 m of the camera are copied in,
+  and only signs within 320 m of the camera go to the GPU. The sign list is rebuilt after 30 m of camera travel, and a sign
+  shrinks away from 240 to 290 m so none pops at the edge.
 - Signs draw as one instanced box mesh with an emissive shader (neon colour, a bright inner stroke pattern, a flicker from
   time and seed). Colours go over 1.0 so the bloom pass picks them out.
 

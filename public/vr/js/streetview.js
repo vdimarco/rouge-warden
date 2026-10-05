@@ -9,6 +9,8 @@ import { NEON } from "./street.js";
 const hexv = (h) => `vec3(${((h >> 16) & 255) / 255}, ${((h >> 8) & 255) / 255}, ${(h & 255) / 255})`;
 const f5 = (v) => (+v).toFixed(5);
 const SUN = `vec3(${f5(SUN_DIR.x)}, ${f5(SUN_DIR.y)}, ${f5(SUN_DIR.z)})`;
+const PEOPLE_REACH = 110; // people drawn within this of the camera
+const SIGN_REACH = 320, SIGN_STEP = 30; // signs drawn within this of the camera; the list is rebuilt after this much travel
 const FOG = /* glsl */ `
 // distance haze toward the evening fog, like the city's (thinner: these are all near)
 vec3 streetFog(vec3 c, float d) { return mix(c, ${hexv(COLORS.fog)}, smoothstep(${f5(PERF.fogNear)}, ${f5(PERF.fogFar)}, d) * 0.85); }
@@ -114,7 +116,7 @@ void main() {
 function figure() {
   const pos = [], nor = [], part = [], idx = [];
   const box = (x0, y0, z0, x1, y1, z1, k) => {
-    const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0, 1, 2, 1);
+    const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0);
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
     const base = pos.length / 3, P = g.attributes.position.array, N = g.attributes.normal.array;
     for (let i = 0; i < P.length; i++) { pos.push(P[i]); nor.push(N[i]); }
@@ -157,7 +159,7 @@ void main() {
   vec3 l = position * aS.xyz;
   float d = distance(aP.xyz, cameraPosition);
   // far signs shrink away: a sliver of neon a kilometre off would only flicker
-  float keep = 1.0 - smoothstep(420.0, 520.0, d);
+  float keep = 1.0 - smoothstep(240.0, 290.0, d); // gone before the edge of the list (SIGN_REACH - SIGN_STEP)
   float c = cos(aP.w), s = sin(aP.w);
   mat3 Y = mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c);
   vec3 w = aP.xyz + Y * (l * keep);
@@ -268,16 +270,34 @@ export function createStreetView(scene, street, opts = {}) {
   sg.index = sb.index;
   sg.setAttribute("position", sb.attributes.position);
   sg.setAttribute("normal", sb.attributes.normal);
-  const sP = new Float32Array(signs.length * 4), sS = new Float32Array(signs.length * 4), sC = new Float32Array(signs.length * 4), sE = new Float32Array(signs.length);
-  signs.forEach((s, i) => {
-    const c = NEON[s.color];
-    sP.set([s.x, s.y, s.z, s.yaw], i * 4); sS.set([s.w, s.h, s.d, s.kind], i * 4); sC.set([c[0], c[1], c[2], s.flicker], i * 4); sE[i] = s.seed;
-  });
-  sg.setAttribute("aP", new THREE.InstancedBufferAttribute(sP, 4));
-  sg.setAttribute("aS", new THREE.InstancedBufferAttribute(sS, 4));
-  sg.setAttribute("aC", new THREE.InstancedBufferAttribute(sC, 4));
-  sg.setAttribute("aSeed", new THREE.InstancedBufferAttribute(sE, 1));
-  sg.instanceCount = signs.length;
+  // Only the signs near the camera go to the GPU (a far one would be under a pixel anyway): the list is rebuilt when the camera
+  // has moved SIGN_STEP metres, so the triangles stay in the frame budget wherever you are.
+  const sA = {};
+  for (const [k, size] of [["aP", 4], ["aS", 4], ["aC", 4], ["aSeed", 1]]) {
+    const a = new THREE.InstancedBufferAttribute(new Float32Array(signs.length * size), size);
+    a.setUsage(THREE.DynamicDrawUsage);
+    sg.setAttribute(k, a);
+    sA[k] = a;
+  }
+  sg.instanceCount = 0;
+  const signAt = { x: Infinity, z: Infinity };
+  function nearSigns(x, z) {
+    signAt.x = x; signAt.z = z;
+    const P = sA.aP.array, S = sA.aS.array, C = sA.aC.array, E = sA.aSeed.array, R2 = SIGN_REACH * SIGN_REACH;
+    let n = 0;
+    for (const s of signs) {
+      const dx = s.x - x, dz = s.z - z;
+      if (dx * dx + dz * dz > R2) continue;
+      const c = NEON[s.color], o = n * 4;
+      P[o] = s.x; P[o + 1] = s.y; P[o + 2] = s.z; P[o + 3] = s.yaw;
+      S[o] = s.w; S[o + 1] = s.h; S[o + 2] = s.d; S[o + 3] = s.kind;
+      C[o] = c[0]; C[o + 1] = c[1]; C[o + 2] = c[2]; C[o + 3] = s.flicker;
+      E[n] = s.seed;
+      n++;
+    }
+    sg.instanceCount = n;
+    for (const k in sA) sA[k].needsUpdate = true;
+  }
   const signMat = new THREE.ShaderMaterial({ vertexShader: SIGN_VS, fragmentShader: SIGN_FS, uniforms: U, fog: false });
   const signMesh = new THREE.Mesh(sg, signMat);
   signMesh.name = "signs";
@@ -287,12 +307,16 @@ export function createStreetView(scene, street, opts = {}) {
   /* ---- every frame: copy the people in ---- */
   const V = {
     root, people, hull, signs: signMesh,
-    update(dt, time) {
+    // cam: the camera's world position (the signs near it are drawn)
+    update(dt, time, cam) {
       U.uTime.value = time;
+      if (cam && Math.hypot(cam.x - signAt.x, cam.z - signAt.z) > SIGN_STEP) nearSigns(cam.x, cam.z);
       let n = 0;
       const aP = A.aP.array, aA = A.aA.array, c1 = A.aC1.array, c2 = A.aC2.array, c3 = A.aC3.array;
+      const R2 = PEOPLE_REACH * PEOPLE_REACH;
       for (const p of street.people) {
         if (!p.on) continue;
+        if (cam && (p.x - cam.x) ** 2 + (p.z - cam.z) ** 2 + (p.y - cam.y) ** 2 > R2) continue; // a far figure is a few pixels: not drawn
         const o4 = n * 4, o3 = n * 3;
         aP[o4] = p.x; aP[o4 + 1] = p.y; aP[o4 + 2] = p.z; aP[o4 + 3] = p.yaw;
         aA[o4] = p.phase; aA[o4 + 1] = p.delay > 0 && p.state !== "flee" ? 0 : p.stride; aA[o4 + 2] = p.delay > 0 ? 1 : p.pose; aA[o4 + 3] = p.poseT;
@@ -305,7 +329,7 @@ export function createStreetView(scene, street, opts = {}) {
       for (const k in A) A[k].needsUpdate = true;
     },
     setVisible(v) { root.visible = !!v; },
-    info: () => ({ people: g.instanceCount, signs: sg.instanceCount, visible: root.visible }),
+    info: () => ({ people: g.instanceCount, signs: sg.instanceCount, signsAll: signs.length, visible: root.visible }),
   };
   return V;
 }

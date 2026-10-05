@@ -52,10 +52,10 @@ try {
   /* ---- people ---- */
   const ppl = await page.evaluate(() => { QA.street(); QA.step(240); return G.test.street(true); });
   const near = ppl.people.filter((p) => Math.hypot(p.x + 150, p.z - 2) < 80);
-  check(ppl.count >= 100 && ppl.view.people === ppl.count, "people are out and drawn (" + ppl.count + " out, " + ppl.view.people + " drawn)", { count: ppl.count, view: ppl.view });
+  check(ppl.count >= 100 && ppl.view.people >= 40 && ppl.view.people <= ppl.count, "people are out, and the ones near the camera drawn (" + ppl.count + " out, " + ppl.view.people + " drawn)", { count: ppl.count, view: ppl.view });
   check(near.length >= 25, "at least 25 people within 80 m of a Market street (" + near.length + ")");
   check(ppl.people.every((p) => p.onWalk), "every person is on a sidewalk or a zebra", ppl.people.filter((p) => !p.onWalk).slice(0, 3));
-  check(ppl.signs >= 1400 && ppl.view.signs === ppl.signs, "the shop signs are laid out and drawn (" + ppl.signs + ")");
+  check(ppl.signs >= 1400 && ppl.view.signsAll === ppl.signs && ppl.view.signs >= 50 && ppl.view.signs < ppl.signs, "the shop signs are laid out, and the ones near the camera drawn (" + ppl.view.signs + " of " + ppl.signs + ")", ppl.view);
   const ri = await page.evaluate(() => G.test.render());
   check(ri.calls > 0 && ri.calls <= 130, "the draw calls stay in budget with the people and the signs (" + ri.calls + ")", ri);
   await page.screenshot({ path: out + "/street-market.png" });
