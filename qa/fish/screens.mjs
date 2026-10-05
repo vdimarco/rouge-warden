@@ -1407,8 +1407,11 @@ if (part("K")) {
     await page.evaluate(() => { window.__toasts.length = 0; FISH.G.landing = { x: -10, z: -20, dist: 22, ring: false, feather: false }; });
     await stage(page, { fish: { id: "largemouth", kg: 2, known: true } }, [{ type: "hooked", id: "largemouth" }, { type: "cover", kind: "stumps", side: 1, steer: -1 }, { type: "turned" }]);
     c = await catchCard(page, { id: "largemouth", name: "Largemouth Bass", kg: 2, cm: 45, junk: false });
-    await sleep(1600);
-    check((await toastsNow(page)).flatMap((t) => t.split("\n")).includes("Goal done: Turn a fish from the stumps."), "the toast: \"Goal done: Turn a fish from the stumps.\" (" + JSON.stringify(await toastsNow(page)) + ")");
+    // the news waits in the toast queue behind "You turned it!" (and the goal reminder before it): wait until it shows
+    const GOAL = "Goal done: Turn a fish from the stumps.";
+    const goalToast = (ms) => wait(page, (g) => window.__toasts.some((t) => t.split("\n").includes(g)), GOAL, ms).then(() => "", () => "not shown in " + ms / 1000 + " s: ");
+    let late = await goalToast(6000);
+    check(!late, "the toast: \"" + GOAL + "\" (" + late + JSON.stringify(await toastsNow(page)) + ")");
     await click(page, "#catchGo");
     await wait(page, () => FISH.G.phase === "cast");
     await page.evaluate(() => FISH.toTitle());
@@ -1417,6 +1420,21 @@ if (part("K")) {
     const sb = await page.evaluate(() => { const d = document.querySelector('.pcard[data-place="stumps"] details.goals'); return { sum: d.querySelector("summary").textContent, done: [...d.querySelectorAll("li.done")].map((l) => l.textContent) }; });
     check(sb.sum === "Goals: 1 of 6" && sb.done.join() === "Turn a fish from the stumps.", "the Stump Bay card shows the goal checked (" + JSON.stringify(sb) + ")");
     await click(page, "#places [data-close]");
+    // ---- the same goal again, and the frame that lands the fish takes 3.5 s: the news waits in the queue for more than
+    // 3 s, and still shows, with the record sting ----
+    await page.evaluate(() => { FISH.save.places.stumps.g = 0; FISH.startMode("free"); });
+    await wait(page, () => FISH.G.phase === "cast");
+    await page.evaluate(() => {
+      window.__toasts.length = 0; window.__log.length = 0; FISH.G.landing = { x: -10, z: -20, dist: 22, ring: false, feather: false };
+      const el = document.querySelector("#catch"), o = new MutationObserver(() => { if (el.hidden) return; o.disconnect(); const t = performance.now(); while (performance.now() - t < 3500); });
+      o.observe(el, { attributes: true, attributeFilter: ["hidden"] });
+    });
+    // turned and landed in one frame: the news is asked for while another toast is up, so it waits in the queue
+    await stage(page, { phase: "caught", catch: { id: "largemouth", name: "Largemouth Bass", kg: 2, cm: 45, junk: false }, fish: null }, [{ type: "hooked", id: "largemouth" }, { type: "cover", kind: "stumps", side: 1, steer: -1 }, { type: "turned" }]);
+    late = await goalToast(8000);
+    check(!late && has(await logNow(page), "S.sfx", "record"), "a slow frame at the catch: the toast still says \"" + GOAL + "\", with the record sting (" + late + JSON.stringify(await toastsNow(page)) + ")");
+    await click(page, "#catchGo");
+    await wait(page, () => FISH.G.phase === "cast");
   } catch (e) { check(false, "exception in part K: " + (e && e.stack)); }
   check(errors.length === 0, "part K: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
