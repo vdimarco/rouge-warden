@@ -41,10 +41,12 @@
 - [x] Lower lane mana regeneration so spells compete for mana (measured before and after).
 
 ## 3D render polish (cloud session, branch `claude/quirky-cerf-vwf0qw-render`)
-- [ ] Better trees, structures that fade when they hide a hero, crystal exposure, hero silhouettes and clear telegraphs.
-- [ ] Effects per element, a windup pose and a clean death fade.
-- [ ] Brighter full-length portraits for hero select.
-- [ ] Merge the branch.
+- [x] Better trees, structures that fade when they hide a hero, crystal exposure, hero silhouettes and clear telegraphs.
+- [x] Effects per element, a windup pose and a clean death fade.
+- [x] Brighter full-length portraits for hero select.
+- [x] Merge the branch.
+- [ ] Draw the 3D arena behind the hero select (needs a `main.js` change).
+- [ ] Give the core crystal more depth; it reads as a flat crimson block in the low sun.
 
 ## Bots (cloud session, branch `claude/quirky-cerf-vwf0qw-bots`)
 - [x] Difficulty setting (Apprentice, Veteran, Mythic) saved and shown in the match.
@@ -57,11 +59,11 @@
 - [x] Merge the branch.
 
 ## Verification
-- [ ] Merge the cloud session notes into the capability specs (combat and bots done; render polish to come).
-- [ ] Run all `qa/tidebreak` Node suites and the browser checks.
-- [ ] Take 3D and HUD screenshots at the supported screen sizes.
+- [x] Merge the cloud session notes into the capability specs.
+- [x] Run all `qa/tidebreak` Node suites and the browser checks.
+- [x] Take 3D and HUD screenshots at the supported screen sizes (`notes/render-polish/`).
 - [x] Update the test commands in `AGENTS.md`.
-- [ ] Validate the change with the OpenSpec CLI.
+- [x] Validate the change with the OpenSpec CLI.
 - [ ] Play on a real GPU and an ultra-wide screen and confirm a smooth frame rate.
 - [ ] Check phone performance and touch on a physical phone.
 - [ ] Listen to the new cues on a device with speakers.
