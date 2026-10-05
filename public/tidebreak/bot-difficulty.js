@@ -21,9 +21,10 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // tradeRetreat: margin for comparing both sides' health and damage (0 = no comparison).
 // saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
+// defendBase: every healthy bot answers a hit on the base, not only the closest one.
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, retreatRules: false, defendBase: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
@@ -255,7 +256,9 @@ export function strategy(s, e, { target, hurt, holding }) {
     const ward = ping && s.units.find(t => t.id === ping.target && t.hp > 0);
     if (ward && distance(e, ward) < 3400 * K && distance(e, ward) > 300 * K) {
       const bots = team.filter(a => !a.player && a.hp > 0 && a.hp > a.maxHp * .55);
-      if (bots.sort((a, b) => distance(a, ward) - distance(b, ward) || a.id - b.id)[0]?.id === e.id) return { mode: 'assist', call: 'defend', ...routeTo(s, e, ward) };
+      // A hit on the base (inner ward, guardian or rift) calls every healthy bot when the profile defends the base.
+      const base = ping.structure === 'core' || ping.tier >= 2;
+      if (base && P.defendBase || bots.sort((a, b) => distance(a, ward) - distance(b, ward) || a.id - b.id)[0]?.id === e.id) return { mode: 'assist', call: 'defend', ...routeTo(s, e, ward) };
     }
   }
   if (!free) return null;
