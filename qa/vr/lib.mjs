@@ -156,8 +156,9 @@ export async function enterXR(page, mode = "vr") {
   const id = mode === "ar" ? "#enterAR" : mode === "vr" ? "#enterVR" : "#playFlat";
   await page.waitForSelector(id + ":not([hidden]):not([disabled])", { timeout: 120000 });
   await page.click(id);
-  if (mode === "desktop") await page.waitForFunction(() => G.mode === "desktop", null, { timeout: 60000 });
-  else await page.waitForFunction((m) => G.mode === m && G.xr && G.xr.session, mode, { timeout: 60000, polling: 50 });
+  // The limit is long. On a busy machine one shader compile can stall the page for about a minute, so the game can answer the click late.
+  if (mode === "desktop") await page.waitForFunction(() => G.mode === "desktop", null, { timeout: 180000 });
+  else await page.waitForFunction((m) => G.mode === m && G.xr && G.xr.session, mode, { timeout: 180000, polling: 50 });
   return state(page);
 }
 

@@ -6,7 +6,8 @@ import path from "path";
 import { PUB, checker, watchdog, newPage, open, close, state, waitFor, waitState, enterXR, frames, shot } from "./lib.mjs";
 
 const { check, done } = checker("boot");
-watchdog(12 * 60 * 1000, "boot");
+// A quiet run takes 2 minutes. On a busy machine one shader compile can stall the page for a minute, and a run has several.
+watchdog(25 * 60 * 1000, "boot");
 
 /* ---------------- the vendored lib ---------------- */
 const lib = await readFile(path.join(PUB, "vr/lib/three.module.min.js"), "utf8");
