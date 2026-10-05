@@ -19,7 +19,7 @@ export class RiverAudio {
   }
   tone(event) {
     if (!this.ctx || !this.enabled) return;
-    const patterns = { key: [660, 880], chest: [440, 660, 880], win: [523, 659, 784, 1046], hit: [130], miss: [220], fall: [160, 100], lose: [260, 190, 130], recover: [330, 440], near: [740, 988], surge: [220, 330, 660] };
+    const patterns = { coin: [880], land: [160, 110], goal: [523, 659, 784, 1046], perfect: [660, 988], power: [440, 660, 880], rush: [330, 660, 1046], smash: [220, 440], jump: [330], duck: [260], key: [660, 880], chest: [440, 660, 880], win: [523, 659, 784, 1046], hit: [130], miss: [220], fall: [160, 100], lose: [260, 190, 130], recover: [330, 440], near: [740, 988], surge: [220, 330, 660] };
     (patterns[event] || []).forEach((freq, i) => {
       const at = this.ctx.currentTime + i * 0.13;
       const osc = this.ctx.createOscillator(), gain = this.ctx.createGain(); osc.type = 'sine'; osc.frequency.value = freq;

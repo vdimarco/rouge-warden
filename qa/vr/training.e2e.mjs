@@ -128,6 +128,38 @@ try {
   console.log('PASS no runtime errors on desktop');
   await page.context().close();
 
+  /* ---------------- the first flush ends the training, whatever rows are open ---------------- */
+  // a fresh first run that goes straight for a clog: the other rows are open, and the flush still ends the training, as it
+  // ended the spoken tutorial
+  const pg = await newPage({ width: 960, height: 540 });
+  pg.setDefaultTimeout(240000);
+  await pg.addInitScript(quiet);
+  await open(pg, '?nosw&skipintro'); await pg.waitForFunction(() => G.viewDone);
+  await pg.locator('#playFlat').click({ noWaitAfter: true }); await pg.waitForFunction(() => G.state === 'play');
+  await pg.evaluate(() => G.test.hold(true));
+  await pg.evaluate(HELPERS);
+  const f0 = await pg.evaluate(() => { __t.step(3); const t = __t.tr(); return { on: !!t && !t.done, open: t && t.items.filter((r) => !r.done).map((r) => r.id), tutorial: G.save.tutorial }; });
+  assert(f0.on && f0.open.length === 8 && f0.open.includes('climb') && f0.tutorial !== true, 'a fresh first run has all 8 rows open: ' + JSON.stringify(f0));
+  const f1 = await pg.evaluate(() => {
+    const c = G.city.clogs[0];
+    G.test.teleport(c.x + 8, c.y, c.z); __t.step(20);
+    const n = __t.fire(1, c.x, c.y + 2, c.z); __t.step(2);
+    const tag = G.test.state().ropes[1].tag;
+    for (let k = 0; k < 3; k++) { G.test.yank(1, 3.5); __t.step(2); G.test.yank(1, 0); __t.step(20); }
+    const t = __t.tr();
+    __t.step(5);
+    const card = document.querySelector('.fs-train');
+    return { n, tag, clog: G.game.info().clogs[0].done, done: !!t && t.done, tutorial: G.game.progress.tutorial, save: G.save.tutorial, rows: t && t.items.map((r) => r.id + (r.done ? '+' : '-')).join(' '), cardDone: card.classList.contains('done') && !card.hidden, toast: document.querySelector('.fs-toast').textContent };
+  });
+  assert(f1.tag === 'clog' && f1.clog, 'three pumps flush the first clog: ' + JSON.stringify(f1));
+  assert(f1.done && f1.tutorial === -1 && f1.save === true && /plunge\+/.test(f1.rows) && /climb-/.test(f1.rows) && /look-/.test(f1.rows), 'the first flush ends the training while the other rows are open, and the save marks the tutorial done: ' + JSON.stringify(f1));
+  assert(f1.cardDone && /Training complete/i.test(f1.toast), 'the card says complete and a toast cheers: ' + JSON.stringify(f1));
+  const f2 = await pg.evaluate(() => { __t.step(300); return { gone: !__t.tr() && document.querySelector('.fs-train').hidden, again: G.game.progress.tutorial }; });
+  assert(f2.gone && f2.again === -1, 'the card folds away and no training row comes back: ' + JSON.stringify(f2));
+  assert.equal(pg.errors.length, 0, JSON.stringify(pg.errors));
+  console.log('PASS the first flush ends the training with rows still open: the card says complete, the save marks it done, a toast cheers, the card folds away');
+  await pg.context().close();
+
   /* ---------------- a phone in portrait ---------------- */
   const ph = await newPage({ width: 390, height: 844 });
   ph.setDefaultTimeout(240000);

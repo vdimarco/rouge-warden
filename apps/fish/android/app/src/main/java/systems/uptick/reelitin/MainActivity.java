@@ -1,4 +1,4 @@
-package com.cottagearcade.reelitin;
+package systems.uptick.reelitin;
 
 import android.graphics.Rect;
 import android.os.Build;
