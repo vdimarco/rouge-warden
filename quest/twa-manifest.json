@@ -27,9 +27,9 @@
   "isMetaQuest": true,
   "horizonOSAppMode": "immersive",
   "minSdkVersion": 32,
-  "appVersion": "1.10.0",
-  "appVersionName": "1.10.0",
-  "appVersionCode": 12,
+  "appVersion": "1.10.1",
+  "appVersionName": "1.10.1",
+  "appVersionCode": 13,
   "signingKey": {
     "path": "./fullswing.keystore",
     "alias": "fullswing"

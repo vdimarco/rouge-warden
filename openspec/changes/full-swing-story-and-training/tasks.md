@@ -6,6 +6,7 @@
 - [x] Pump sticker by the crosshair with a dot per press
 - [x] Version 1.8.0, APK code 8, cutscene.js precached
 - [x] training.e2e and cutscene.e2e pass; screenshots reviewed
+- [x] The first flush ends the training whatever rows are open (training.e2e and play.mjs check it); version 1.10.1, APK code 13
 - [ ] Validate with the OpenSpec CLI
 - [ ] qa/vr run: the flat, phone, sound, ui, play and boot checks
 - [ ] Device checks not possible here: a phone, a Quest, sound by ear

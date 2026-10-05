@@ -22,7 +22,7 @@
   - `yank`: a yank on a target that is not a clog or a pipe;
   - `look`: a turn of 1 rad in total;
   - `climb`: 2 m climbed on a wall;
-  - `plunge`: the first clog flushed (the count is the pump count).
+  - `plunge`: the first clog flushed (the count is the pump count). The first flush ends the training whatever rows are still open, so `save.tutorial` is set as it was for the spoken tutorial.
 - The line of the next row is said again every 20 s. The finish shows a toast and a gold flash and sets `save.tutorial`.
 - The pump sticker reads `progress.pump` (`n`, `of`, `kind`), which game.js sets while a rope holds a clog or a pipe.
 - `progress.objective` holds the mission card's text. It is computed twice a second.
@@ -37,5 +37,5 @@
 
 ## How to check
 
-- `qa/vr/training.e2e.mjs`: the card on a first run; each row ticked by a real action; the pump sticker's dots; the finish; the mission card; a phone in portrait.
+- `qa/vr/training.e2e.mjs`: the card on a first run; each row ticked by a real action; the pump sticker's dots; the finish; the first flush ending the training with rows still open; the mission card; a phone in portrait.
 - `qa/vr/cutscene.e2e.mjs`: each panel's words, the balloon inside the screen, the hero held still, the HUD hidden and back, the skip rules, a district briefing, the finale. It saves a screenshot of each panel to look at.
