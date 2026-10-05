@@ -1,7 +1,7 @@
 # fish-app-shell Specification
 
 ## Purpose
-The store build of Reel It In runs as a phone app: it hides the web arcade, uses app copy, handles the Android back button, talks to the native plugins, and keeps the save safe.
+Reel It In runs as a phone app as well as a web game. In the app it hides the arcade parts, uses app copy, handles the Android back button, uses the native plugins when they are there, and keeps a second copy of the save in native storage.
 
 ## Requirements
 

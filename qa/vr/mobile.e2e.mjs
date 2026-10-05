@@ -59,9 +59,11 @@ try {
  assert(launch.anchor&&launch.anchor.y>launch.roof+5,'the SWING button anchors on a building above the roof, not on the roof '+JSON.stringify(launch.anchor));
  console.log('PASS one tap attaches, jumps and swings fast',JSON.stringify(launch.v));
  await page.screenshot({path:out+'/phone.png'});
+ const fires0=await page.evaluate(()=>G.test.events().filter(e=>e.type==='fire').length);
  await page.locator('[data-action=throw]').click();
- const release=await page.evaluate(()=>{G.test.step(1/60,1);return {r:G.P.ropes[1].state,s:Math.hypot(G.P.vel.x,G.P.vel.y,G.P.vel.z)};});
- assert.equal(release.r,'idle');assert(release.s>2,'release keeps momentum');console.log('PASS tap to release keeps speed');
+ // A second press swings on: SWING never lets go, so the rope goes straight to the next building and the speed stays.
+ const again=await page.evaluate(()=>{G.test.step(1/60,1);const r=G.P.ropes[1];return {r:r.state,s:Math.hypot(G.P.vel.x,G.P.vel.y,G.P.vel.z),fire:G.test.events().filter(e=>e.type==='fire').length};});
+ assert(again.r!=='idle'&&again.s>10&&again.fire===fires0+1,'a second press swings on to the next building and keeps the speed '+JSON.stringify(again));console.log('PASS a second press swings on with no let-go');
  // Real screen-space targeting: the chase view looks down at the hero, so look up at the gold ring, then tap its pixel. The rope
  // must land on the ring, not on whatever sits at the middle of the screen.
  const target=await page.evaluate(()=>{

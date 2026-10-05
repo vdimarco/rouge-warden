@@ -1,7 +1,7 @@
 # fish-feedback Specification
 
 ## Purpose
-The sounds, the camera moves, the splashes and the buzzes that make the hook set, the jumps, the catches and the results feel strong.
+How Reel It In shows and tells the player what happened: the hook-set hit, jumps and splashes they can see, stingers that grow with the catch, the results count-up, and buzz patterns that each have one meaning.
 
 ## Requirements
 

@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.9.0";
+export const VERSION = "1.9.2";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -83,6 +83,11 @@ export const PHONE = {
   // The rope lets go with a fling this many degrees past the bottom of the arc, this close under the anchor, or (a vault up and
   // over, with vault m/s up) this close to it. It lets go with no fling after ground s on roofs or stall s under stallSpeed.
   release: { minT: 0.35, angle: 32, overTop: 1.5, close: 5, vault: 10, ground: 0.01, stall: 2.5, stallSpeed: 4 },
+  // A rope that catches keeps your speed: the part that flies away from the anchor turns into swing, toward where you look. It is
+  // also short enough that the lowest point of its arc stays clear m over the street, so a chain of taps never drags you along it.
+  catch: { clear: 6, min: 8, rate: 30 }, // (min: no change when that would leave a rope shorter than this; rate: m/s it shortens)
+  // The marker prefers a building point at least y m up and up m over the chest: it wins over any lower one (bonus to the score)
+  high: { y: 22, up: 8, bonus: 1 },
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
   buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
   follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly

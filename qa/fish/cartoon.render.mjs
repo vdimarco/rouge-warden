@@ -51,10 +51,14 @@ try {
   assert.ok(after.geometries<=before.geometries&&after.textures<=before.textures,'no resource growth with rendered switches: '+JSON.stringify({before,after}));
   await page.route('**/cartoon-models.glb',r=>r.abort());
   await page.route('**/painted-forest.webp',r=>r.abort());
-  await page.route('**/painted-water.webp',r=>r.abort());
+  // the water tile that world-env.js loads, by the address it exports, so the check cannot drift from the game
+  const waterArt=await page.evaluate(async()=>(await import('/fish/js/world-env.js')).WATER_ART);
+  let waterBlocked=0;
+  await page.route(u=>u.href===waterArt,r=>{waterBlocked++;return r.abort();});
   await page.reload();await until(page,()=>!!window.FISH);
   assert.equal(await page.evaluate(async()=>(await import('/fish/js/cartoon-models.js')).cartoonModelsReady()),false);
   assert.equal(await page.evaluate(()=>{let n=0;FISH.world.scene.traverse(o=>{if(o.userData.paintedForest)n++;});return n;}),0,'failed forest image uses procedural fallback');
+  assert.ok(waterBlocked>0,'the page asked for the blocked water tile '+waterArt);
   assert.equal(await page.evaluate(async()=>(await import('/fish/js/world-env.js')).U.uWaterPaintReady.value),0,'failed water image uses shader fallback');
   await page.click('#freeBtn');await until(page,()=>FISH.G.phase==='cast');
   assert.deepEqual(errors,[]);

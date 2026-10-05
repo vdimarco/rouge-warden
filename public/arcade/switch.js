@@ -7,21 +7,21 @@
     { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/hero-chaos.webp", color: "#ffca51" },
     { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/arcade/worlds.webp", color: "#c7e5ac" },
     { id: "plungerd", name: "Get Plunger'd", sub: "Cottage Brawl", url: "/plungerd/", art: "/arcade/plungerd.webp", color: "#e6c35c" },
-    { id: "drain", name: "Down the Drain", sub: "Get Plunger'd", url: "/fall/", art: "/arcade/drain.webp", color: "#5fb8d0" },
+    { id: "drain", name: "Down the Drain", sub: "Get Plunger'd", url: "/fall/", art: "/arcade/key/drain.webp", color: "#5fb8d0" },
     { id: "crimson", name: "Crimson Rogue", sub: "紅の月の下で", url: "/crimson/", art: "/crimson/art/keyart2.webp", color: "#d0485f" },
     // still in the works on its own branch: its tile shows only once /wild/ is live
     { id: "wild", name: "Breath of the Lake", sub: "Get Plunger'd", url: "/wild/", art: "/arcade/wild.webp", color: "#8fcf7a", probe: true },
     { id: "fish", name: "Reel It In", sub: "Loon Lake", url: "/fish/", art: "/arcade/fish.webp", color: "#ffb04a" },
     { id: "vr", name: "In Full Swing", sub: "Meta Quest VR", url: "/vr/", art: "/arcade/vr.webp", color: "#ff8a3a" },
-    { id: "olympus", name: "Olympus", sub: "Last Flame", url: "/olympus/", art: "/arcade/olympus.webp", color: "#edc06b" },
-    { id: "moonwell", name: "Moonwell", sub: "Endless pinball islands", url: "/moonwell/", art: "/arcade/moonwell.webp", color: "#edc779" },
-    { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/primordia.webp", color: "#3ff0e0" },
-    { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/breakthrough.webp", color: "#f0c56a" },
-    { id: "follow-suit", name: "Follow Suit", sub: "A card roguelike", url: "/follow-suit/", art: "/arcade/follow-suit.webp", color: "#e9c46a" },
-    { id: "river-rush", name: "River Rush", sub: "The golden key run", url: "/river-rush/", art: "/arcade/river-rush.webp", color: "#f9c65b" },
+    { id: "olympus", name: "Olympus", sub: "Last Flame", url: "/olympus/", art: "/arcade/key/olympus.webp", color: "#edc06b" },
+    { id: "moonwell", name: "Moonwell", sub: "Endless pinball islands", url: "/moonwell/", art: "/arcade/key/moonwell.webp", color: "#edc779" },
+    { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/key/primordia.webp", color: "#3ff0e0" },
+    { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/key/breakthrough.webp", color: "#f0c56a" },
+    { id: "follow-suit", name: "Follow Suit", sub: "A card roguelike", url: "/follow-suit/", art: "/arcade/key/follow-suit.webp", color: "#e9c46a" },
+    { id: "river-rush", name: "River Rush", sub: "The golden key run", url: "/river-rush/", art: "/arcade/key/river-rush.webp", color: "#f9c65b" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.
-    { id: "lab", name: "The Lab", sub: "Early prototypes and toys", url: "/lab/", art: "/arcade/lab.webp", color: "#f0b848" },
+    { id: "lab", name: "The Lab", sub: "Early prototypes and toys", url: "/lab/", art: "/arcade/key/lab.webp", color: "#f0b848" },
     { id: "neon", name: "Neon Ronin", sub: "Gyro sword duels", url: "/neon/", art: "/arcade/neon.webp", color: "#caff54" },
     { id: "echo", name: "Loon Echo", sub: "Rescue the flock", url: "/echo/", art: "/arcade/echo.webp", color: "#9ff2de" },
     { id: "tellme", name: "Tell Me", sub: "A card game with critters", url: "/tellme/", art: "/arcade/tellme.webp", color: "#f4e4bd" },
@@ -72,7 +72,7 @@
     box.innerHTML = "<div class='gsw-card'><h2>SWITCH GAME</h2><p>Pick a cabinet. Your current run ends.</p><div class='gsw-list'></div><div class='gsw-row'><a href='/'>◀ Back to the arcade</a><button type='button' class='gsw-close'>Keep playing</button></div></div>";
     // keep the game from seeing clicks and keys meant for the switcher
     for (const ev of ["pointerdown", "mousedown", "click", "touchstart", "keydown", "keyup"]) box.addEventListener(ev, (e) => e.stopPropagation());
-    box.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    box.addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.repeat) close(); }); // a held Esc must not reopen what it closed
     box.addEventListener("click", (e) => { if (e.target === box) close(); });
     box.querySelector(".gsw-close").onclick = close;
     // a game that turns its own frame (Reel It In keeps itself upright on the phone) marks a host, so the list turns with it

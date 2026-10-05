@@ -15,8 +15,7 @@ const SAY = {
   tap: 'Tap a building to swing. Keep tapping.',
   motion: 'Point the phone and tap to swing.',
   center: 'Aim centered. Tap when the ring is yellow.',
-  swing: 'Swinging. Tap the next building.',
-  letgo: 'Tap the next building to swing again.',
+  swing: 'Swinging. Tap again to swing on.',
   fly: 'Flying. Tap the next building.',
   wall: 'On the wall. Hold the arrows to climb. Tap a building to swing off.',
   kept: 'Keeping this rope. Tap a closer building.',
@@ -57,7 +56,8 @@ export function createMobile(canvas, active) {
   if (pad) pad.querySelector('[data-action="hop"]').onclick = () => { if (active()) state.jump = true; };
   let rushK = -1, rushT = 0;
   function label() {
-    swingBtn.innerHTML = latched ? 'LET GO<span>Or wait: it lets go by itself</span>' : 'SWING<span>Or tap anywhere on the city</span>';
+    // one button for every swing: with a rope out, a press swings on to the next building (the rope lets go by itself)
+    swingBtn.innerHTML = latched ? 'SWING<span>Again: the next building</span>' : 'SWING<span>Or tap anywhere on the city</span>';
     swingBtn.classList.toggle('held', latched);
     swingBtn.setAttribute('aria-pressed', String(latched));
   }
@@ -91,11 +91,8 @@ export function createMobile(canvas, active) {
     latched = true; state.fire = true; state.aim = aim; label();
     hint.textContent = SAY.swing;
   }
-  button('throw').onclick = () => {
-    if (!active()) return;
-    if (latched) { latched = false; state.fire = false; state.aim = null; label(); hint.textContent = SAY.letgo; }
-    else cast();
-  };
+  // SWING never lets go: with a rope out it moves the rope to the next building ahead, so taps chain swings with no gap
+  button('throw').onclick = () => { if (active()) cast(); };
   canvas.addEventListener('pointerdown', ev => {
     if (!on || !active() || drag) return;
     ev.preventDefault(); canvas.setPointerCapture(ev.pointerId);
@@ -209,7 +206,7 @@ export function createMobile(canvas, active) {
     miss(keepRope = false) { latched=keepRope; state.fire=false; label(); hint.textContent=keepRope ? SAY.kept : SAY.none; },
     // Only the dead-latch safety: the ring and the dimmed button belong to marker().
     target(valid, attached) {
-      // A broken rope must never leave the button stuck on LET GO.
+      // A broken rope must never leave the button showing a rope that is not there.
       if(latched && !attached && !state.fire && window.G?.P?.dead) reset();
     },
     // m: null, or { x, y, kind, dist, behind } with x and y in NDC (y up). null hides the ring and dims SWING.

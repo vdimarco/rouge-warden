@@ -153,8 +153,21 @@ if (part("1")) {
     await until(page, () => FISH.G.phase === "cast" && FISH.G.mode === "free" && FISH.G.input === "motion", null, 30000);
     await page.evaluate(() => __phone.pose(88));
     await until(page, () => !document.querySelector("#fishGuide").hidden, null, 10000).catch(() => {});
-    const g = await page.evaluate(() => ({ shown: !document.querySelector("#fishGuide").hidden, kick: document.querySelector("#fishGuide .guide-kicker").textContent, count: document.querySelector("#fishGuide .guide-count").textContent, label: document.querySelector("#guideToggle").getAttribute("aria-label") }));
-    check(g.shown && g.kick === "WATCH + TRY" && /^\d \/ 7$/.test(g.count) && g.label === "Hide the moves guide", "a new player in motion play sees the guide on the first cast screen, and the ? button says it hides the guide (" + JSON.stringify(g) + ")");
+    const g = await page.evaluate(() => ({ shown: !document.querySelector("#fishGuide").hidden, kick: document.querySelector("#fishGuide .guide-kicker").textContent, count: document.querySelector("#fishGuide .guide-count").textContent, label: document.querySelector("#guideToggle").getAttribute("aria-label"), bars: document.querySelector("#fishGuide .guide-track").offsetHeight > 0 }));
+    check(g.shown && g.kick === "WATCH + TRY" && /^\d \/ 3$/.test(g.count) && g.bars && g.label === "Hide the moves guide", "a new player in motion play sees the guide on the first cast screen, with its step bars, and the ? button says it hides the guide (" + JSON.stringify(g) + ")");
+    // the preview goes round the three cast moves only, never a reel move: watch it, frame by frame, until it starts again
+    const loop = await page.evaluate(async () => {
+      const el = document.querySelector("#fishGuide"), lessons = new Set(), captions = new Set(), t0 = performance.now();
+      let top = false, wrapped = false;
+      while (!wrapped && performance.now() - t0 < 40000) {
+        const n = el.querySelector(".guide-count").textContent;
+        lessons.add(el.dataset.lesson); captions.add(el.querySelector(".guide-caption").textContent);
+        if (n === "3 / 3") top = true; else if (top && n === "1 / 3") wrapped = true;
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      return { wrapped, lessons: [...lessons].sort(), captions: [...captions], step: FISH.G.step };
+    });
+    check(loop.wrapped && loop.lessons.join() === "back,cast,hold", "the first cast screen's guide goes round hold, back and cast only, 1 / 3 to 3 / 3 (" + JSON.stringify(loop) + ")");
     // the HUD behind a screen: no focus, no taps; the prompt headline reaches the live region
     await until(page, () => document.querySelector("#say").textContent === "Hold your thumb on the rod.", null, 5000).catch(() => {});
     check((await page.evaluate(() => document.querySelector("#say").textContent)) === "Hold your thumb on the rod.", "the live region says the prompt's headline");
@@ -179,6 +192,10 @@ if (part("1")) {
       check(L.up.w >= 44 && L.down.w >= 44 && d(L.up) < 200 && d(L.down) < 200 && L.up.x > L.down.x && Math.abs(L.up.y - L.down.y) < 1, `the drag buttons are 44 px or more, − and + side by side, within 200 px of the crank's centre (${Math.round(d(L.up))} and ${Math.round(d(L.down))} px)`);
     }
     await page.evaluate(() => { FISH.save.reelSide = "right"; document.querySelector("#game").dataset.reelSide = "right"; FISH.relayout(true); });
+    // in the fight the guide shows the move to make now, with no step bars (the bars are the steps of the cast)
+    await until(page, () => { const g = document.querySelector("#fishGuide"); return !g.hidden && g.querySelector(".guide-kicker").textContent === "YOUR MOVE"; }, null, 10000).catch(() => {});
+    const gf = await page.evaluate(() => { const g = document.querySelector("#fishGuide"); return { shown: !g.hidden, kick: g.querySelector(".guide-kicker").textContent, caption: g.querySelector(".guide-caption").textContent, bars: g.querySelector(".guide-track").offsetHeight }; });
+    check(gf.shown && gf.kick === "YOUR MOVE" && gf.bars === 0, "in a fight the guide shows YOUR MOVE and no step bars (" + JSON.stringify(gf) + ")");
     // a strike with calm effects off: the red flash runs and the hot prompt has its strike look
     await stage(page, { phase: "strike", fish: null, events: [{ type: "strike" }] });
     await until(page, () => document.querySelector("#flash").classList.contains("go") && document.querySelector("#prompt").classList.contains("hot"), null, 10000).catch(() => {});
@@ -251,6 +268,8 @@ if (part("3")) {
     await click(page, "#helpBtn"); await shown(page, "help");
     const t = await page.evaluate(() => ({ tab: document.querySelector("#help [aria-selected='true']").textContent, text: document.querySelector("#helpT").textContent }));
     check(t.tab === "Touch and mouse" && /Hold the mouse button or Space/.test(t.text) && /W\sA\sS\sD/.test(t.text), "a computer opens How to play on Touch and mouse, with the mouse hold cast and the keys (" + t.tab + ")");
+    // the strike in the words of play: the mouse's move first (as the strike prompt says), and Space
+    check(t.text.includes("A fish strikes? Drag the rod up fast, or press Space."), "the strike row names the mouse move and Space (" + (/A fish strikes\?[^.]*\./.exec(t.text) || [""])[0] + ")");
     await click(page, "#help [data-close]");
     await click(page, "#freeBtn");
     await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready", null, 30000);
@@ -264,12 +283,15 @@ if (part("3")) {
     const cueIs = (t) => until(page, (t) => document.querySelector("#rodCue span").textContent === t, t, 15000).then(() => t, () => page.evaluate(() => document.querySelector("#rodCue span").textContent));
     await page.keyboard.down("Space");
     const a = await cueIs("Keep holding");
+    // a Space cast is a rod input: the guide names the keys
+    const ag = await page.evaluate(() => { const g = document.querySelector("#fishGuide"); return { desk: FISH.G.desk, label: g.hidden ? "" : g.querySelector(".guide-count").textContent }; });
     await page.evaluate(() => { window.__c.t += 300; });
     const b = await cueIs("Let go in the green");
     // the clock runs again from where it was (it never goes back)
     await page.evaluate(() => { const C = window.__c; C.off = C.t - C.real(); C.on = false; });
     await page.keyboard.up("Space");
     check(a === "Keep holding" && b === "Let go in the green", `a Space cast: the rod cue says the hold words, not "Pull back" and "Flick up!" ("${a}", then "${b}")`);
+    check(ag.desk === "keys" && ag.label === "KEYS", `and the guide labels the Space cast KEYS (${JSON.stringify(ag)})`);
     // the numbers on the measuring board: none runs into another, and the end one is always there
     const bl = await page.evaluate(async () => {
       const { boardLabels, BOARD_LENGTHS } = await import("/fish/js/world-fx.js");
@@ -288,6 +310,15 @@ if (part("3")) {
 if (part("4")) {
   const { browser, page, errors } = await launch({ width: 360, height: 640, save: { v: 1, input: "touch", caught: 2, casts: 9 } });
   try {
+    // the Fish moves row opens below the part of the list that shows: the list scrolls to bring the moves into view
+    await click(page, "#helpBtn"); await shown(page, "help");
+    await click(page, "#help [data-tab='t']");
+    await click(page, "#helpT summary");
+    const seen = () => { const p = document.querySelector("#helpT"), li = p.querySelector(".moves li"), a = p.getBoundingClientRect(), b = li && li.getBoundingClientRect();
+      return !!b && p.querySelector(".moves").open && b.top >= a.top - 1 && b.bottom <= a.bottom + 1; };
+    const inView = await until(page, seen, null, 5000).then(() => true, () => false);
+    check(inView, "at 360x640 the opened Fish moves row scrolls its first move into view");
+    await click(page, "#help [data-close]");
     await click(page, "#freeBtn");
     await until(page, () => FISH.G.phase === "cast", null, 30000);
     const chip = async (kgs, mode, casts) => {
@@ -382,7 +413,7 @@ if (part("4")) {
     const g0 = await page.evaluate(() => document.querySelector("#fishGuide .guide-count").textContent);
     await sleep(3400);
     const gc = await page.evaluate(() => { const v = document.querySelector("#fishGuide video"); return { reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, shown: !document.querySelector("#fishGuide").hidden, first: document.querySelector("#fishGuide .guide-count").textContent, clip: !!v && (!v.paused || !v.hidden) }; });
-    check(!gc.reduced && gc.shown && g0 === "1 / 7" && gc.first === "1 / 7" && !gc.clip, "Calm effects: the guide holds its first step still after 3 s and plays no clip (" + JSON.stringify({ g0, ...gc }) + ")");
+    check(!gc.reduced && gc.shown && g0 === "1 / 3" && gc.first === "1 / 3" && !gc.clip, "Calm effects: the guide holds its first step still after 3 s and plays no clip (" + JSON.stringify({ g0, ...gc }) + ")");
     await page.evaluate(() => document.querySelector("#guideToggle").click());
     await page.evaluate(() => { window.__sfx = []; const f = FISH.Sound.sfx; FISH.Sound.sfx = function (n, ...a) { window.__sfx.push(n); return f.call(this, n, ...a); }; });
     await stage(page, { phase: "strike", fish: null, events: [{ type: "strike" }] });

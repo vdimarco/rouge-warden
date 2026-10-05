@@ -1,7 +1,7 @@
 # fish-store-package Specification
 
 ## Purpose
-The `apps/fish/` Capacitor project packs Reel It In for the Apple App Store and Google Play, with a self-contained web bundle, icons, a splash, a privacy policy, and release steps.
+The Reel It In app package for the App Store and Google Play: the Capacitor project, a self-contained web bundle, icons and the splash, the crank kept clear of system gestures, the privacy policy and the listing, and the release steps.
 
 ## Requirements
 
@@ -43,6 +43,10 @@ The repo SHALL hold a privacy policy page that the game shows offline and the we
 #### Scenario: Data safety
 - **WHEN** a reviewer reads the privacy policy
 - **THEN** it says the game collects no personal data, sends nothing off the phone, and keeps progress on the phone only.
+
+#### Scenario: Placeholder before a release
+- **WHEN** a developer builds the bundle for a store upload (`--release`) while the privacy policy still shows the support email placeholder
+- **THEN** the build fails and names the placeholder. A debug build and the browser checks still pass, and the bundle check prints a warning.
 
 ### Requirement: Release steps
 A README in `apps/fish/` SHALL list the steps to build, sign, and upload both apps, the owner's accounts and decisions they need, and the checks that need a real phone.

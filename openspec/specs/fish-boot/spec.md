@@ -1,7 +1,7 @@
 # fish-boot Specification
 
 ## Purpose
-Reel It In starts with no network, shows its progress while it loads, and recovers from a slow frame or a lost GL context.
+Reel It In starts with no network and shows a loading screen while the lake loads. It keeps running when the GPU is slow or loses its context, and it draws the lake less often under the menus.
 
 ## Requirements
 

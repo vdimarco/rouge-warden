@@ -1,7 +1,7 @@
 # fish-cutscenes Specification
 
 ## Purpose
-Short, skippable cutscenes in the game's own scene mark the opening, a new place, a legend's reveal, a legend landed, and the finale.
+Reel It In has short cutscenes drawn in its own scene: the opening, the arrival at a new place, a legend's first reveal, a legend landed, and the finale. They play once, never cost the player a fish or a cast, can be skipped, and can be watched again.
 
 ## Requirements
 

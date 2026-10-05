@@ -1,7 +1,7 @@
 # fish-goals Specification
 
 ## Purpose
-Goals at each place, a daily goal, a rank ladder and streaks give the player a next thing to do after every catch.
+What a Reel It In player aims for: six goals at each place, a goal for each day with a run of days, the next goal and the next rank, help for a player who casts short, and the sweet-cast streak.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ Each place SHALL have six goals that reward the skills the game teaches. The Pla
 - **THEN** the game loads with no goals done at that place and no error.
 
 ### Requirement: Today's goal
-The title SHALL show one goal for each local day, picked from the date and the open places. The goal SHALL name only a fish that lives at an open place and bites during that place's hours. A done goal SHALL add to a run of days; a missed day ends the run and takes nothing else away. The first fish of a day SHALL toast "Your first fish today." When one catch brings several pieces of news (the first fish of the day, goals, today's goal), they SHALL show together in one toast, so none is lost. A beginner SHALL be able to finish each daily goal in about 20 casts.
+The title SHALL show one goal for each local day, picked from the date and the open places. The goal SHALL name only a fish that lives at an open place and bites during that place's hours. A done goal SHALL add to a run of days; a missed day ends the run and takes nothing else away. The first fish of a day SHALL toast "Your first fish today." The first fish of a new player SHALL toast "Your first fish!" in place of that line. When one catch brings several pieces of news (the first fish of the day, goals, today's goal), they SHALL show together in one toast, so none is lost. A beginner SHALL be able to finish each daily goal in about 20 casts.
 
 #### Scenario: Same day, same goal
 - **WHEN** the game opens twice on the same day
@@ -26,6 +26,14 @@ The title SHALL show one goal for each local day, picked from the date and the o
 #### Scenario: Goal done
 - **WHEN** the player lands the fifth fish for "Today: land 5 fish at Loon Lake."
 - **THEN** the record sting plays and the toast says "Today's goal is done. 2 days in a row." when yesterday was also done.
+
+#### Scenario: First fish ever
+- **WHEN** a new player lands a fish for the first time
+- **THEN** the toast says "Your first fish!" and not "Your first fish today."
+
+#### Scenario: First fish of a new day
+- **WHEN** a player who has landed fish before lands the first fish of a day
+- **THEN** the toast says "Your first fish today."
 
 ### Requirement: Next goal and rank ladder
 The title and the pause card SHALL name the next thing to aim for. The derby results SHALL show the next rank and its weight, and the old best on a new best.
