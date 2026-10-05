@@ -148,13 +148,18 @@ for (const [id, expected] of [['veteran', 'far'], ['legacy', 'near']]) {
   for (let t = 0; t < .6; t += .05) { s.time += .05; combatDecision(s, bot); }
   assert.equal(combatDecision(s, bot).target.id, expected === 'far' ? far.id : p.id, `${id} target choice with a punish window after the reaction floor`);
 }
-// Spirit camps: taken only when no enemy hero is near.
+// Spirit camps: off for every player choice (camps cost ward damage in measured matches).
+// With the knob on, a bot takes a camp only when no enemy hero is near.
 {
   const { s, p, bot } = scene('veteran', { keep: [] }); s.time = 60; s.campTimers = s.campTimers.map(() => 0); step(s, {}, .05);
   const camp = s.units.find(e => e.kind === 'camp'); Object.assign(bot, { x: camp.x + 500, y: camp.y }); Object.assign(p, { x: 400, y: 6000 });
+  for (const id of DIFFICULTIES) { setDifficulty(s, id); assert.notEqual(strategy(s, bot, { target: null, hurt: 1, holding: true })?.mode, 'camp', `${id} bots skip camps`); }
+  const saved = PROFILES.veteran; PROFILES.veteran = { ...saved, camps: true }; setDifficulty(s, 'veteran');
+  try {
   assert.equal(strategy(s, bot, { target: null, hurt: 1, holding: true })?.mode, 'camp', 'a free bot takes a seen camp');
   Object.assign(p, { x: bot.x + 300, y: bot.y }); p.revealedUntil = s.time + 5;
   assert.notEqual(strategy(s, bot, { target: null, hurt: 1, holding: true })?.mode, 'camp', 'no camp with an enemy hero close');
+  } finally { PROFILES.veteran = saved; }
 }
 // Determinism: seeded rolls only. A replay gives the same match.
 {
