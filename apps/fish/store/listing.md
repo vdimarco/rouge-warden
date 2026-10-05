@@ -91,5 +91,6 @@ The first release of Reel It In.
 | `apps/fish/store/graphics/play-icon-512.png` | 512 x 512, 32-bit RGBA (every pixel opaque), under 1024 KB | The Google Play hi-res icon. Play asks for a 32-bit PNG with alpha. |
 | `apps/fish/store/graphics/feature-graphic-1024x500.png` | 1024 x 500, RGB, no alpha | The Google Play feature graphic. |
 | Screenshots | See `screenshots.md` | Both stores. |
+| Promo video | 1920 x 1080, 30 fps, 31 s, H.264 and AAC. See `video.md` | Google Play, as a YouTube link. |
 
 `npm run art` (with `NODE_PATH=../../qa/browser/node_modules`) renders all three again from `scripts/render-art.mjs`.

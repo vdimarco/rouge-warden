@@ -14,11 +14,12 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `scripts/check-www.mjs` | The bundle check. `scripts/check-www.test.mjs` tests it. |
 | `scripts/native-check.mjs` | Runs after each `cap sync`. It keeps the iOS package at 16.4. It fails when a store setting is missing, or when the versions differ (see the release steps). `scripts/native-check.test.mjs` tests the version rule. |
 | `scripts/render-art.mjs` | Paints the icon, the adaptive icon layers, the splash and the Play graphics. |
+| `scripts/art.mjs` | The parts of the store art as SVG: the painted water, the rings, the glints and the bobber. `render-art.mjs` and the promo video (`qa/fish/store-video.mjs`) draw with them. |
 | `scripts/adaptive-icons.mjs` | Writes the Android adaptive icon layers at full size after `@capacitor/assets`. |
 | `resources/` | The icon and splash sources (`icon-only.png` is the 1024 px icon). |
 | `web/webview-update.html` | The page the app shows when the game page does not load, or when the Android web view is too old (before version 105). |
 | `android/`, `ios/` | The native projects, made by `npx cap add` and then set up for the stores. |
-| `store/` | The store listing, the privacy and age answers, the screenshot list, the review notes and the accessibility labels. |
+| `store/` | The store listing, the privacy and age answers, the screenshot list, the promo video notes, the review notes and the accessibility labels. |
 | `www/` | Made by the build. Not in git. |
 
 The privacy policy is `public/fish/privacy.html`. The web serves it at `https://arcade.uptick.systems/fish/privacy.html`, the URL to give both stores, and the app shows the same file offline. The support email is `support@uptick.systems`: the policy gives it, and it goes in both store forms.
