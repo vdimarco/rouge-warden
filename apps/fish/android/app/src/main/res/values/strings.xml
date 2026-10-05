@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Reel It In</string>
     <string name="title_activity_main">Reel It In</string>
-    <string name="package_name">com.cottagearcade.reelitin</string>
-    <string name="custom_url_scheme">com.cottagearcade.reelitin</string>
+    <string name="package_name">systems.uptick.reelitin</string>
+    <string name="custom_url_scheme">systems.uptick.reelitin</string>
 </resources>

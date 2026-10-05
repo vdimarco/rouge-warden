@@ -1,180 +1,106 @@
-import { COURSE_LENGTH, nearestKey } from './engine.js';
-import { createMotion, advanceMotion } from './motion.js';
-
-const runs = new WeakMap();
-const TAU = Math.PI * 2;
-const fraction = n => n - Math.floor(n);
-
-function current(ctx, g, width, height) {
-  const scale = width / 1000;
-  ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = width < 650 ? 1.2 : 1.8;
-  for (let i = 0; i < (width < 650 ? 32 : 58); i++) {
-    const lane = fraction(i * 0.618034);
-    const x = (265 + lane * 470 + Math.sin(g.time * 1.2 + i) * 7) * scale;
-    const speed = (lane > 0.72 ? 125 : 75) * (g.surge ? 1.35 : 1);
-    const y = fraction(i * 0.381966 + g.time * speed / (height + 100)) * (height + 100) - 50;
-    ctx.strokeStyle = `rgba(218,255,246,${0.12 + fraction(i * 0.73) * 0.22})`;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 5 * scale, y + 10, x - 3 * scale, y + 16 + lane * 24); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function wake(ctx, x, y, size, time, strength = 1, reaching = false) {
-  ctx.save(); ctx.lineWidth = 1.6; ctx.lineCap = 'round';
-  for (let i = 0; i < 7; i++) {
-    const p = fraction(time * (0.65 + strength * 0.25) + i / 7);
-    ctx.strokeStyle = `rgba(233,255,245,${(1 - p) * 0.5})`;
-    ctx.beginPath(); ctx.ellipse(x, y + size * (95 + p * 95), size * (38 + p * 42), size * (9 + p * 15), 0, 0.13, Math.PI - 0.13); ctx.stroke();
-  }
-  // A paddle dip produces rings, followed by spray. The reaching arm stays out of the water.
-  if (!reaching) {
-    const stroke = fraction(time * 1.15);
-    const side = Math.floor(time * 1.15) % 2 ? 1 : -1;
-    const paddleX = x + side * 76 * size, paddleY = y + 20 * size;
-    ctx.strokeStyle = `rgba(239,255,250,${(1 - stroke) * 0.65})`;
-    ctx.beginPath(); ctx.ellipse(paddleX, paddleY + stroke * 25 * size, (8 + stroke * 28) * size, (4 + stroke * 10) * size, 0, 0, TAU); ctx.stroke();
-    for (let i = 0; i < 5; i++) {
-      const p = fraction(stroke + i * 0.075);
-      ctx.fillStyle = `rgba(239,255,250,${(1 - p) * 0.7})`;
-      ctx.beginPath(); ctx.arc(paddleX + side * p * (12 + i * 5) * size, paddleY + (p * p * 50 - Math.sin(p * Math.PI) * 30) * size, (1 - p * 0.5) * 2 * size, 0, TAU); ctx.fill();
-    }
-  }
-  ctx.restore();
-}
-
-function actionEffects(ctx, g, m, art, px, playerY, scale, size, toY) {
-  for (const effect of m.effects) {
-    const age = g.time - effect.time, p = age / 1.3;
-    const gold = ['key', 'chest', 'win', 'near'].includes(effect.type);
-    const x = effect.x * scale, y = toY(effect.distance);
-    ctx.save(); ctx.globalAlpha = Math.max(0, 1 - p);
-    ctx.strokeStyle = gold ? '#ffe395' : '#e6fff8'; ctx.lineWidth = 2 * size;
-    ctx.beginPath(); ctx.ellipse(x, y + 24 * size, (18 + p * 110) * size, (8 + p * 36) * size, 0, 0, TAU); ctx.stroke();
-    for (let i = 0; i < 20; i++) {
-      const angle = i * 2.39996;
-      const radius = age * (45 + (i % 5) * 15) * size;
-      const dx = Math.cos(angle) * radius, dy = Math.sin(angle) * radius * 0.7 + age * age * 30 * size;
-      ctx.fillStyle = gold ? (i % 2 ? '#ffe99f' : '#f9c65b') : '#e6fff8';
-      ctx.beginPath(); ctx.arc(x + dx, y + dy, Math.max(0.5, (3 - p * 2) * size), 0, TAU); ctx.fill();
-    }
-    if (effect.type === 'key' && age < 0.6) {
-      const t = Math.min(1, age / 0.6), ease = 1 - (1 - t) ** 3;
-      const fromX = effect.keyX * scale, fromY = toY(effect.keyDistance);
-      sprite(ctx, art.sprites, 3, fromX + (px - fromX) * ease, fromY + (playerY - fromY) * ease - Math.sin(t * Math.PI) * 65 * size, (90 - t * 48) * size, t * TAU);
-    }
-    ctx.restore();
-  }
-}
-
+import { jumpHeight, VIEW_DISTANCE } from './engine.js';
+const TAU = Math.PI * 2, fract = n => n - Math.floor(n);
+// Generated atlas has unequal row heights; rectangles preserve full silhouettes.
+const regions = [
+  [0,0,435,540],[435,0,415,540],[850,0,404,540],
+  [0,545,430,355],[430,550,420,350],[850,545,404,360],
+  [0,900,425,354],[425,900,425,354],[850,900,404,354]
+];
+const indexes = { rock: 3, log: 4, branch: 5, coin: 6, magnet: 7, shield: 8 };
 export function loadArt() {
-  return Promise.all(['river', 'sprites', 'menu'].map(name => new Promise((resolve, reject) => {
-    const im = new Image(); im.onload = () => resolve([name, im]);
-    im.onerror = () => reject(new Error(`Could not load ${name} art.`));
-    im.src = `${import.meta.env.BASE_URL}art/${name}.png`;
+  return Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu']].map(([key,name]) => new Promise((resolve,reject) => {
+    const image = new Image(); image.onload = () => resolve([key,image]); image.onerror = () => reject(new Error(`Could not load ${name}.`)); image.src = `${import.meta.env.BASE_URL}art/${name}.png`;
   }))).then(entries => Object.fromEntries(entries));
 }
-
-function sprite(ctx, atlas, index, x, y, width, rotation = 0, alpha = 1) {
-  const cw = atlas.width / 3, ch = atlas.height / 2;
-  ctx.save(); ctx.translate(x, y); ctx.rotate(rotation); ctx.globalAlpha *= alpha;
-  ctx.drawImage(atlas, (index % 3) * cw, Math.floor(index / 3) * ch, cw, ch, -width / 2, -width / 2, width, width);
+export function projection(width, height, lane, z) {
+  const horizon = height * .29, foot = height * (height < 500 ? .73 : .8);
+  const corridor = Math.min(width * .99, height * 1.17);
+  const scale = 1 / (1 + Math.max(-14, z) / 29);
+  return { x: width / 2 + (lane - 1) * corridor / 3 * scale, y: horizon + (foot - horizon) * scale, scale, corridor, foot, horizon };
+}
+function sprite(ctx, atlas, index, x, bottom, w, rotation = 0, alpha = 1) {
+  const [sx,sy,sw,sh] = regions[index], h = w * sh / sw;
+  ctx.save();ctx.globalAlpha *= alpha;ctx.translate(x,bottom);ctx.rotate(rotation);
+  ctx.drawImage(atlas,sx,sy,sw,sh,-w/2,-h,w,h);ctx.restore();
+}
+function water(ctx,g,art,w,h,reduce) {
+  ctx.drawImage(w/h<.85?art.portrait:art.environment,0,0,w,h);
+  // The photographic river is an art layer; moving foam and projected objects
+  // communicate forward speed without stretching thin image scanlines.
+  // Lane guidance lives on the water plane, so coins and hazards share it.
+  ctx.save();ctx.lineWidth = 1;ctx.setLineDash([10,20]);ctx.lineDashOffset = -g.distance*3;
+  ctx.strokeStyle = 'rgba(214,255,246,.22)';
+  for(const lane of [.5,1.5]) {
+    const far=projection(w,h,lane,VIEW_DISTANCE), near=projection(w,h,lane,-10);
+    ctx.beginPath();ctx.moveTo(far.x,far.y);ctx.lineTo(near.x,near.y);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  if(!reduce) for(let i=0;i<46;i++) {
+    const z=fract(i*.618+g.distance*.0035)*VIEW_DISTANCE;
+    const lane=fract(i*.381)*3-.5, at=projection(w,h,lane,z);
+    ctx.strokeStyle=`rgba(234,255,250,${.1+at.scale*.45})`;ctx.lineWidth=Math.max(1,at.scale*2.5);
+    ctx.beginPath();ctx.moveTo(at.x,at.y);ctx.lineTo(at.x+(lane-1)*at.scale*6,at.y+at.scale*18);ctx.stroke();
+  }
   ctx.restore();
 }
-
-export function renderGame(ctx, g, art, width, height, reducedMotion = false) {
-  if (!runs.has(g)) runs.set(g, createMotion(g));
-  const motion = advanceMotion(runs.get(g), g, reducedMotion);
-  ctx.clearRect(0, 0, width, height);
-  const scale = width / 1000;
-  const spriteScale = Math.min(1.7, Math.max(0.7, width / 1000));
-  const playerY = height * (width < 650 ? 0.64 : 0.67);
-  const px = g.x * scale;
-  const distScale = Math.max(0.43, Math.min(0.85, height / 1000));
-  const toY = d => playerY - (d - g.distance) * distScale;
-  // Mirrored alternating river tiles avoid abrupt changes at the repeating edges.
-  const tileH = width * art.river.height / art.river.width;
-  const offset = (g.distance * distScale) % (tileH * 2);
-  for (let i = -2; i < Math.ceil(height / tileH) + 2; i++) {
-    const y = i * tileH + offset - tileH * 2;
-    ctx.save();
-    if (i % 2) { ctx.translate(0, y + tileH); ctx.scale(1, -1); ctx.drawImage(art.river, 0, 0, width, tileH); }
-    else ctx.drawImage(art.river, 0, y, width, tileH);
-    ctx.restore();
-  }
-  if (!reducedMotion) current(ctx, g, width, height);
-  // Subtle code-native navigational lines are game guidance, not representational art.
-  if (g.time < 9) {
-    ctx.save(); ctx.strokeStyle = 'rgba(255,241,202,.2)'; ctx.setLineDash([6, 12]);
-    [365, 630].forEach(x => { ctx.beginPath(); ctx.moveTo(x * scale, 110); ctx.lineTo(x * scale, height - 130); ctx.stroke(); });
-    ctx.font = '500 11px system-ui'; ctx.fillStyle = '#fff1ca'; ctx.textAlign = 'center';
-    ctx.fillText('CALM WATER', 305 * scale, height * 0.47);
-    ctx.fillText('FAST CURRENT', 700 * scale, height * 0.47); ctx.restore();
-  }
-  for (const rock of g.rocks) {
-    const y = toY(rock.d);
-    if (y > -120 && y < height + 130) sprite(ctx, art.sprites, 4, rock.x * scale, y, rock.radius * 3 * spriteScale, 0, rock.hit ? 0.8 : 1);
-  }
-  const key = nearestKey(g);
-  if (key && !g.hasKey) {
-    const y = toY(key.d), x = key.x * scale;
-    if (y > -150 && y < height + 150) {
-      const r = (58 + (reducedMotion ? 0 : Math.sin(g.time * 4) * 4)) * spriteScale;
-      ctx.save(); ctx.strokeStyle = '#fbc65b'; ctx.lineWidth = 2.5;
-      ctx.shadowColor = '#ffe6a0'; ctx.shadowBlur = 18;
-      ctx.beginPath(); ctx.arc(x, y, r, -Math.PI / 2, Math.PI * 1.5); ctx.stroke();
-      sprite(ctx, art.sprites, 3, x, y + (reducedMotion ? 0 : Math.sin(g.time * 3) * 7), 98 * spriteScale, reducedMotion ? 0 : Math.sin(g.time * 2) * 0.18);
-      ctx.shadowBlur = 0; ctx.font = '600 11px system-ui'; ctx.textAlign = 'center';
-      const close = Math.abs(key.d - g.distance) < 125 && Math.abs(g.x - key.x) < 120;
-      const label = close && g.wasReaching ? 'RELEASE NOW!' : 'GOLDEN KEY';
-      ctx.fillStyle = close ? '#fbc65b' : '#fff0c9';
-      const tw = ctx.measureText(label).width;
-      ctx.beginPath(); ctx.roundRect(x - tw / 2 - 10, y - r - 34, tw + 20, 24, 5); ctx.fill();
-      ctx.fillStyle = '#092a23'; ctx.fillText(label, x, y - r - 18); ctx.restore();
+export function renderGame(ctx,g,art,width,height,reducedMotion=false) {
+  ctx.clearRect(0,0,width,height);
+  water(ctx,g,art,width,height,reducedMotion);
+  const player=projection(width,height,g.visualLane,0);
+  const heroWidth=Math.min(width*.42,height*.255,width/height<.85?480:245);
+  const shake=!reducedMotion && g.grace>.75 ? Math.sin(g.time*60)*4 : 0;
+  if(g.rush>0) {
+    ctx.fillStyle='rgba(17,224,203,.1)';ctx.fillRect(0,0,width,height);
+    if(!reducedMotion) {
+      ctx.save();ctx.strokeStyle='#c9ffef80';ctx.lineWidth=2;
+      for(let i=0;i<12;i++) { const x=width*fract(i*.618+g.time*.04), y=height*fract(i*.37+g.time*.75);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(x-width/2)*.05,y+50);ctx.stroke(); }ctx.restore();
     }
   }
-  const rivalY = toY(g.rivalDistance);
-  if (rivalY > -120 && rivalY < height + 150) {
-    if (!reducedMotion) wake(ctx, g.rivalX * scale, rivalY, spriteScale * 0.85, g.time + 0.7, 0.8);
-    sprite(ctx, art.sprites, 2, g.rivalX * scale, rivalY + (reducedMotion ? 0 : Math.sin(g.time * 5 + 1) * 3), 185 * spriteScale, reducedMotion ? 0 : Math.sin(g.time * 4 + 1) * 0.045);
-    ctx.font = '600 10px system-ui'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff0c9';
-    ctx.fillText('RIVAL', g.rivalX * scale, rivalY - 96 * spriteScale);
+  // Distant entities draw first. The player is inserted at collision depth.
+  const visible=g.entities.filter(e=>!e.done && e.d-g.distance<VIEW_DISTANCE && e.d-g.distance>-14).sort((a,b)=>b.d-a.d);
+  for(const e of visible) {
+    const z=e.d-g.distance, p=projection(width,height,e.lane,z);
+    let size;
+    if(e.type==='coin') size=heroWidth*.28*p.scale;
+    else if(e.type==='magnet'||e.type==='shield') size=heroWidth*.52*p.scale;
+    else size=p.corridor/3*(e.type==='branch' ? 1.02 : .86)*p.scale;
+    const high=e.high ? heroWidth*.5*p.scale : 0;
+    const bottom=p.y-high;
+    if(e.type==='coin'||e.type==='magnet'||e.type==='shield') {
+      ctx.save();ctx.fillStyle=e.type==='coin'?'#ffcf5f28':'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
+    }
+    sprite(ctx,art.sprites,indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0);
+    if(['log','branch','rock'].includes(e.type)&&z<60&&z>10) {
+      const label=e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
+      const font=Math.max(10,15*p.scale);ctx.font=`800 ${font}px system-ui`;ctx.textAlign='center';
+      const tw=ctx.measureText(label).width;ctx.fillStyle='#042a26dd';ctx.beginPath();ctx.roundRect(p.x-tw/2-7,bottom-size*.9-22,tw+14,20,5);ctx.fill();
+      ctx.fillStyle=e.type==='branch'?'#94ffe3':'#ffe49c';ctx.fillText(label,p.x,bottom-size*.9-8);
+    }
   }
-  if (g.distance > COURSE_LENGTH - 1600) {
-    const gateY = toY(COURSE_LENGTH);
-    ctx.save();
-    ctx.fillStyle = 'rgba(249,198,91,.17)'; ctx.fillRect(275 * scale, gateY - 95, 160 * scale, 150);
-    ctx.strokeStyle = '#f9c65b'; ctx.lineWidth = 3; ctx.setLineDash([9, 8]);
-    ctx.strokeRect(275 * scale, gateY - 95, 160 * scale, 150);
-    ctx.font = '700 12px system-ui'; ctx.fillStyle = '#fff0c9'; ctx.textAlign = 'center';
-    ctx.fillText('ESCAPE', 355 * scale, gateY - 107);
-    ctx.setLineDash([]); ctx.strokeStyle = 'rgba(255,240,200,.65)';
-    ctx.beginPath(); ctx.moveTo(445 * scale, gateY); ctx.lineTo(790 * scale, gateY); ctx.stroke();
-    ctx.font = '600 11px system-ui'; ctx.fillText('WATERFALL', 615 * scale, gateY - 16); ctx.restore();
+  const lift=jumpHeight(g)*heroWidth*.57;
+  const bob=reducedMotion?0:Math.sin(g.time*7)*heroWidth*.013;
+  // Ground shadow remains while the entire raft lifts; landing wakes explain timing.
+  ctx.save();ctx.fillStyle='#053c4670';ctx.beginPath();ctx.ellipse(player.x,player.foot+4,heroWidth*.44*(1-jumpHeight(g)*.18),heroWidth*.095,0,0,TAU);ctx.fill();ctx.restore();
+  if(!reducedMotion) {
+    ctx.save();ctx.strokeStyle='#e9fffaaa';ctx.lineWidth=2;
+    for(let i=0;i<6;i++){const t=fract(g.time*1.6+i/6);ctx.globalAlpha=1-t;ctx.beginPath();ctx.ellipse(player.x,player.foot+t*heroWidth*.4,heroWidth*(.35+t*.23),heroWidth*(.035+t*.06),0,.12,Math.PI-.12);ctx.stroke();}ctx.restore();
   }
-  const fast = g.surge ? 2 : g.x > 630 ? 1.5 : 1;
-  const stroke = Math.sin(g.time * TAU * 1.15);
-  const bob = reducedMotion ? 0 : (Math.sin(g.time * 4.8) * 4 * fast + stroke * 1.5) * spriteScale;
-  const impact = reducedMotion ? 0 : motion.effects.reduce((amount, effect) => {
-    const age = g.time - effect.time;
-    return effect.type === 'hit' && age < 0.45 ? amount + Math.sin(age * 48) * (1 - age / 0.45) * 7 * spriteScale : amount;
-  }, 0);
-  const rotation = reducedMotion ? 0 : g.falling ? Math.sin(g.time * 5) * 0.16 : g.vx * 0.0003 + stroke * 0.028 * (1 - motion.reach) + Math.sin(g.time * 3.3) * 0.025 * fast;
-  if (!reducedMotion) wake(ctx, px, playerY, spriteScale, g.time, fast, g.wasReaching || !!g.falling);
-  const alpha = g.falling ? 0.65 : 1;
-  if (motion.reach < 1) sprite(ctx, art.sprites, 0, px + impact, playerY + bob, 210 * spriteScale, rotation, alpha * (1 - motion.reach));
-  if (motion.reach > 0) sprite(ctx, art.sprites, 1, px + impact, playerY + bob - motion.reach * 3, 210 * spriteScale, rotation - motion.reach * 0.025, alpha * motion.reach);
-  if (!reducedMotion) actionEffects(ctx, g, motion, art, px, playerY, scale, spriteScale, toY);
-  if (g.wasReaching) {
-    ctx.save(); ctx.strokeStyle = g.reach > 1.8 ? '#ef9268' : '#f9c65b'; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.arc(px, playerY, 115 * spriteScale, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, g.reach / 2.3)); ctx.stroke(); ctx.restore();
+  if(g.shield||g.rush>0||g.grace>0) {
+    ctx.save();ctx.strokeStyle=g.rush?'#fff0a4':'#8cfff1';ctx.lineWidth=2.5;ctx.fillStyle='#81ffe918';
+    ctx.beginPath();ctx.ellipse(player.x,player.foot-heroWidth*.58-lift,heroWidth*.54,heroWidth*.68,0,0,TAU);ctx.fill();ctx.stroke();ctx.restore();
   }
-  if (g.unlocked) {
-    ctx.save(); ctx.font = '600 11px system-ui'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff0c9';
-    ctx.fillText('TREASURE ABOARD', px, playerY + 115 * spriteScale); ctx.restore();
+  const pose=g.action==='duck'?2:g.action==='jump'?1:0;
+  const roll=reducedMotion?0:(g.lane-g.visualLane)*-.09+Math.sin(g.time*5)*.013;
+  sprite(ctx,art.sprites,pose,player.x+shake,player.foot-lift+bob,heroWidth,roll,g.grace>0&&Math.floor(g.time*12)%2?.7:1);
+  if(!reducedMotion) for(const e of g.effects) {
+    if(['jump','duck','swap'].includes(e.type))continue;
+    const age=g.time-e.time,t=age/.75,at=projection(width,height,e.lane,0);
+    ctx.save();ctx.globalAlpha=1-t;
+    const gold=['coin','perfect'].includes(e.type);
+    ctx.fillStyle=gold?'#ffe083':'#a8fff2';
+    const count=e.type==='coin'?5:14;
+    for(let i=0;i<count;i++){const angle=i*2.399;const radius=age*(60+i*6);ctx.beginPath();ctx.arc(at.x+Math.cos(angle)*radius,at.foot-heroWidth*.48+Math.sin(angle)*radius*.6-age*35,Math.max(1,3*(1-t)),0,TAU);ctx.fill();}
+    ctx.restore();
   }
-  if (g.falling) {
-    ctx.save(); ctx.fillStyle = 'rgba(3,28,23,.55)'; ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#fff0c9'; ctx.font = '600 20px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText('Climbing back aboard…', width / 2, height / 2); ctx.restore();
-  }
+  if(g.phase==='lost') {ctx.fillStyle='#09292d55';ctx.fillRect(0,0,width,height);}
 }

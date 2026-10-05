@@ -73,9 +73,10 @@ The first release of Reel It In.
 | Field | Value |
 | --- | --- |
 | Price | Free. No ads. No in-app purchases. |
-| Privacy policy URL | `https://<the site>/fish/privacy.html` (the owner sets the host; see the README) |
-| Support URL | Owner decision. A page or a mail link with the support email. |
-| Marketing URL | Optional. The web game at `https://<the site>/fish/` is a good choice. |
+| Privacy policy URL | `https://arcade.uptick.systems/fish/privacy.html` |
+| Support URL (App Store) | `https://arcade.uptick.systems/fish/privacy.html`. The page gives the support email. |
+| Contact email (Play Store settings) | `support@uptick.systems` |
+| Marketing URL | Optional. The web game at `https://arcade.uptick.systems/fish/` is a good choice. |
 | Copyright | `2026 <owner name>` |
 | Age rating | 4+ (Apple), Everyone and PEGI 3 (IARC). See `age-rating.md`. |
 | Contact email for review | Owner decision. |
@@ -90,5 +91,6 @@ The first release of Reel It In.
 | `apps/fish/store/graphics/play-icon-512.png` | 512 x 512, 32-bit RGBA (every pixel opaque), under 1024 KB | The Google Play hi-res icon. Play asks for a 32-bit PNG with alpha. |
 | `apps/fish/store/graphics/feature-graphic-1024x500.png` | 1024 x 500, RGB, no alpha | The Google Play feature graphic. |
 | Screenshots | See `screenshots.md` | Both stores. |
+| Promo video | 1920 x 1080, 30 fps, 31 s, H.264 and AAC. See `video.md` | Google Play, as a YouTube link. |
 
 `npm run art` (with `NODE_PATH=../../qa/browser/node_modules`) renders all three again from `scripts/render-art.mjs`.

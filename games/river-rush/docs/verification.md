@@ -1,57 +1,24 @@
-# Verification
+# River Rush runner verification — 2026-10-05
 
-Chromium via Playwright was used because Browser/IAB tools are unavailable in this session. Both reference concepts and browser captures were inspected with view_image at native desktop 1536×1024; responsive checks also cover 390×844. Captures are temporary QA files, not deploy assets.
+The boring treasure race was replaced by an endless three-lane runner. Verification below applies to the runner build, not the archived race/Surge release.
 
-Comparison ledger:
-- Copy: menu title, tagline, CTA, supporting copy and keyboard legend retained. Intentional functional addition: How to play. Dynamic preparing/error text is only shown during loading/failure.
-- Layout: full-bleed jungle composition, left title/right character, gold rule, lower control legend and best-run footer retained.
-- Typography: high contrast Bodoni serif title, Georgia tagline/buttons and DM Sans controls match the reference roles. Native controls have explicit font sizes.
-- Palette: evergreen, ivory and gold retained; background art has no added desktop wash. Mobile uses an intentional edge fade to make text legible.
-- Assets: clean generated menu image and transparent raft/key/rock atlas loaded successfully. Front-facing sprite preserves facial likeness, an intentional change from rear-facing gameplay concept.
-- HUD: thin gold journey rail, large timer, balance meter, timing ring, instruction strip and control keycaps retained. Real rival distance and context-sensitive feedback are functional additions.
-- Responsive: touch controls, image crop and single-line title were inspected. Fixed a mobile title overflow and missing word spacing.
+- `npm test --prefix games/river-rush`: 14/14 pass. Includes short-tap/lane limits, log/jump and branch/duck outcomes, fatal wrong actions, shield/grace, cancellation/buffering, coin streak expiration, eight-second magnet, Rush duration/invulnerability/no self-recharge, deterministic legal routes, versioned score validation and challenge rewards.
+- Delayed-input playtest: 40 seeds × 240 seconds, 180–288 ms decision delay, all survive without relying on an initial shield. 2,719 successful tricks; 939 Rush activations; 404,283 total metres. At most 58 live entities. The scripted player reads upcoming obstacles; this verifies reachability and timing, not subjective fun or human difficulty.
+- `node qa/river-rush/runner.mjs`: pass at 1536×1024, 390×844, 844×390 and the native concept viewport 1024×1536. Real keyboard and touch-button inputs, CDP directional touch swipes, actual first log/branch collision clearance, protected/unprotected failures, direct Enter retry, saved best, malformed save fallback, cabinet launch, shared switcher, live reduced-motion and video-error fallback. Pause preserves identical simulation state and canvas pixels. No JS errors or failed same-origin asset responses.
+- The real browser play segment ran 32.88 seconds, cleared six perfect actions and three challenges, collected 156 coins and activated Rush. Warm active-play frame sample: mean 16.67 ms, p95 16.8 ms in this headless Chromium environment. This is a browser measurement, not a physical-phone performance guarantee.
+- The test status observer uses a test-only WebMCP shim; a separate page also starts without WebMCP support. State waits explicitly await the actual snapshot, rather than treating a promise as a successful predicate.
+- Native `view_image` inspection compared the concept and final gameplay capture at 1024×1536, plus mobile/desktop/landscape, duck and result states. The five-point comparison ledger is in design.md. Corrected blocky scanline water, HUD darkening, portrait scenery stretching and transition-time result captures. Rounded compact panels and live Rush/challenge copy are intentional concept adaptations.
+- `npm run build:arcade --prefix games/river-rush`: pass. Shared quiet/switch scripts remain unbundled external arcade scripts; their Vite informational warnings are expected. New generated assets and bundle are committed in the existing `/river-rush/` output.
+- OpenSpec change validation: strict/no-interactive pass. Archive/canonical validation and live deployment verification are recorded after publication.
 
-Six engine tests pass: steering/reset, successful and early key releases, key-gated sustained unlocking, steering penalty while reaching, collision/fall recovery, escape/treasure/rival finish rules, deadline and terminal-state stability.
+Browser checks use Playwright Chromium because no callable interactive-browser tool was available. Physical iOS/Android, Safari and listening on audio hardware were not tested. Visibility/audio checks emulate browser visibility events separately from input testing.
 
-Five complete deterministic courses were also simulated through the actual steering/reach/unlock inputs. All won in 94–98 seconds, with collisions and recoverable falls occurring in several runs.
+## Production release
 
-Browser checks pass: menu, instruction dialog, start, keyboard steering/reach, pause freezes timer, resume, sound toggles, restart resets timer, mobile menu without horizontal overflow, mobile game and touch button input. No browser page errors.
+Implementation commit `98034315674f6107c295491fd33e1c5a523b0dd6` deployed READY as `dpl_HY4d5tzwHvp3wLTGBP5NjHLrFMSy`, with aliases `arcade.uptick.systems` and `warden-alpha-wheat.vercel.app`. Published HTML, JS, CSS, all three new gameplay art files and the Higgsfield menu video match the locally verified bytes by SHA-256.
 
-WebMCP context is unsupported in the test browser; optional tool registration is guarded and cannot be fully validated here.
+`node qa/river-rush/live.mjs` passed at https://arcade.uptick.systems/river-rush/ with 390×844, real browser touch events and DPR2: jump and duck clear the opening hazards without losing the shield, pause stops time, touch retry starts a fresh run, title video plays, no overflow, no JavaScript errors or failed same-origin responses. `node qa/river-rush/lifecycle.mjs` also passed visibility-event pause, suspended Web Audio, identical paused pixels and mute control.
 
-The implementation was visually verified against both design concepts with the intentional deviations above. The game is a playable first version, not an exact three-dimensional recreation of the cinematic photograph.
+The final documentation commit archives this completed change; it does not change the verified game bundle.
 
-## Cottage Arcade integration
-
-The committed arcade bundle uses `/river-rush/` as its asset base. Engine tests and the existing browser check were repeated against that bundle, including mobile touch buttons. `qa/river-rush/arcade.mjs` also checks quiet.js ordering, the shared switcher identity, cabinet selection and launch, keyboard inputs, frozen pause time, local score display, and malformed, nonpositive, nonnumeric and infinite score fallback. The real game screen is used for the cabinet's 480×320 WebP (50.5 KB).
-
-The result screen was reached with Playwright's accelerated clock, then its Switch game action was verified to close the native dialog and display the shared switcher with River Rush marked. Desktop, mobile and result captures were inspected against the approved art direction. New Switch game and Arcade links intentionally extend the approved menu footer.
-
-Shared audio lifecycle checks passed 15/15 with both emulated visibility changes and pagehide/pageshow. Phone layouts were checked in Chromium at 390×844, not on a physical phone.
-
-The arcade's existing layout, switcher and saves suite passed, including cabinet selection, swipes and no overflow at seven screen sizes from 360×740 to 1920×1080. Each layout size uses a fresh browser to avoid software GPU degradation during the long swipe sequence.
-
-Release commit `1ac04b483bd11069f25baba6f3b9fb9e88ea2673` was published to `vdimarco/rouge-warden` main. The Git transport rejected the upload; GitHub's Git Data API uploaded identical blobs and tree and preserved the exact local commit SHA. Vercel production deployment `dpl_6psk4jmKKykxyDkGJfEqCeBdJjHA` reported READY for that SHA. The game route is `https://warden-alpha-wheat.vercel.app/river-rush/`.
-
-The focused arcade browser check also passed against that public production origin: game assets, cabinet launch, switcher identity, keyboard controls, paused timer, desktop/mobile layouts and score validation. No page errors or failing same-origin requests occurred.
-
-## Animation and Surge update — 2026-10-04
-
-Higgsfield Seedance 2.5 generated one five-second living title scene from the approved menu image. The source and middle frame were inspected for character identity and composition, then browser captures were checked at 1536×1024 and 390×844. The silent 1920×1080 H.264 asset is about 2.2 MB; provider, job ID and encoding are recorded in `media.json`. Motion affects the water, hair, flags and raft while the live menu remains readable.
-
-Ten engine/presentation tests passed, including held versus tapped Surge, balance cost, falling restrictions, once-only close-call rewards, combo breaking, effect expiry/bounds, frozen simulation time and immediate reduced-motion pose selection. Five complete courses through actual steering/reach/unlock/Surge inputs won in 87.5–89.7 seconds with 4–9 close calls; one included a recoverable fall.
-
-`qa/river-rush/animation.mjs` passed: real video playback, silent media, pause under instructions, live reduced-motion changes, Shift and phone-button Surge, exact paused canvas equality, video-failure poster fallback and rendered key/chest/impact/fall/close-call effects. Canvas decoration changes even with course distance held fixed; reduced-motion frames remain identical. Temporary captures were visually inspected. Short live RAF samples averaged 18.1 ms on desktop (95th percentile 33.4 ms) and 16.7 ms on the phone viewport (95th percentile 16.8 ms) in this Chromium environment. Renderer submission time was 0.22 ms per frame; this measures JavaScript commands, not total GPU time. These are brief browser samples, not physical-device benchmarks.
-
-The existing game browser checks and arcade integration checks also passed. Shared audio checks passed 15/15. A missed very fast touch tap was fixed by queuing a one-shot Surge input for the simulation, so both short Shift presses and touch clicks work reliably. Run the new check with `NODE_PATH=games/river-rush/node_modules node qa/river-rush/animation.mjs` against the static server.
-
-Upgrade release `ec4b7b72791043ca2b5347835f8c8e22ef8a42a4` preserved the concurrent Primordia update before publishing. Vercel production deployment `dpl_2kjeSERfvDecWNvZRYVowrBfJ3Pp` reported READY. The animation browser check also passed against `https://warden-alpha-wheat.vercel.app/`: video, Shift and touch Surge, pause, live reduced motion, poster fallback and action rendering. Short production-browser samples averaged 16.7 ms per frame on both viewports, with no page errors.
-
-Run the static server from the repository root, then:
-
-```sh
-GAME_URL=http://localhost:8765/river-rush/ node games/river-rush/tests/browser-check.mjs
-NODE_PATH=games/river-rush/node_modules node qa/river-rush/arcade.mjs
-QUIET_URL=http://localhost:8765 NODE_PATH=games/river-rush/node_modules node qa/arcade/quiet.mjs --only=river-rush --skip=unit,silent --modes=emulate,pagehide
-PARTS=layout,switcher,saves NODE_PATH=games/river-rush/node_modules node qa/arcade/machines.mjs
-```
+OpenSpec archive completed as `2026-10-05-river-rush-endless-runner`; canonical River Rush specification passed strict validation and its purpose was updated to the runner. All task checkboxes reflect completed work.
