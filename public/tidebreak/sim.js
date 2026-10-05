@@ -408,7 +408,7 @@ function terrainEffects(s, dt) {
   for (const t of s.traps) {
     t.life -= dt; if (s.time < t.armed) continue;
     const source = s.units.find(e => e.id === t.source), enemy = s.units.find(e => e.hp > 0 && e.team !== t.team && e.team >= 0 && !['core', 'tower'].includes(e.kind) && distance(e, t) < 95);
-    if (source && enemy) { area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{snaredUntil:s.time+2.5}); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
+    if (source && enemy) { withContext(s,{source:source.id,label:'Trap',telegraphed:true,dodgeable:true},()=>area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{snaredUntil:s.time+2.5})); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
   }
   s.traps = s.traps.filter(t => t.life > 0);
 }
