@@ -1397,7 +1397,11 @@ $("#helpM").innerHTML = helpRows("motion");
 $("#helpT").innerHTML = helpRows(inputOf(false, touchDevice));
 // the app and a phone have no mouse: the tab says Touch
 if (Native.isStore || touchDevice) $("#tabT").textContent = "Touch";
-for (const d of $$("#help .moves")) d.addEventListener("toggle", fades);
+// an opened list comes into view: on a small phone it opens below the part of the list that shows
+for (const d of $$("#help .moves")) d.addEventListener("toggle", () => {
+  fades();
+  if (d.open) d.lastElementChild?.scrollIntoView({ block: "nearest", behavior: isCalm() ? "auto" : "smooth" });
+});
 // the tab for the input the player uses: motion play, or a phone that can play with motion and has not chosen yet; else
 // touch (a computer opens on Touch and mouse)
 function helpInput() {
@@ -1886,7 +1890,8 @@ function reelUpdate(dt) {
   const pullActive = s.phase === "fight" && s.fish?.move !== "jump" && s.fish?.move !== "sulk" && (s.slip || 0) < 0.15;
   const pull = pullStrength.step(dt, { theta, enabled: G.input === "motion" && Motion.live,
     active: pullActive, crank: crankRate, tension: s.tfrac || 0, session: sim });
-  pullMeter.hidden = G.input !== "motion" || !Motion.live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85;
+  // (no "Tip back as you reel" while the prompt says to stop reeling)
+  pullMeter.hidden = G.input !== "motion" || !Motion.live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85 || guideCue.icon === "stop";
   pullMeter.querySelector("span").textContent = pull > 0.03 ? "Pull strength +" + Math.round(pull * 35) + "%" : "Tip back as you reel";
   pullMeter.querySelector("i").style.transform = "scaleX(" + pull.toFixed(3) + ")";
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;

@@ -310,6 +310,15 @@ if (part("3")) {
 if (part("4")) {
   const { browser, page, errors } = await launch({ width: 360, height: 640, save: { v: 1, input: "touch", caught: 2, casts: 9 } });
   try {
+    // the Fish moves row opens below the part of the list that shows: the list scrolls to bring the moves into view
+    await click(page, "#helpBtn"); await shown(page, "help");
+    await click(page, "#help [data-tab='t']");
+    await click(page, "#helpT summary");
+    const seen = () => { const p = document.querySelector("#helpT"), li = p.querySelector(".moves li"), a = p.getBoundingClientRect(), b = li && li.getBoundingClientRect();
+      return !!b && p.querySelector(".moves").open && b.top >= a.top - 1 && b.bottom <= a.bottom + 1; };
+    const inView = await until(page, seen, null, 5000).then(() => true, () => false);
+    check(inView, "at 360x640 the opened Fish moves row scrolls its first move into view");
+    await click(page, "#help [data-close]");
     await click(page, "#freeBtn");
     await until(page, () => FISH.G.phase === "cast", null, 30000);
     const chip = async (kgs, mode, casts) => {
