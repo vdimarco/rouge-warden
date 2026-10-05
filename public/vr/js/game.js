@@ -1156,7 +1156,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     }
     setBank();
     // the first flush ends the spoken tutorial; the checklist only ticks its row (the other rows stay open)
-    if (train.on) trainTick("plunge");
+    // the first flush ends the training, as it ends the spoken tutorial: rows still open stay unticked
+    if (train.on) { trainTick("plunge"); if (train.on) trainFinish(false); }
     else if (!save.tutorial || tut.step >= 0) tutFinish(false);
     kingOnFlush();
     saveNow();
@@ -1728,10 +1729,10 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   /* ---------------- the training checklist (flat play) ---------------- */
   // The moves as rows with boxes that tick in any order. The first open row is next: its line is said, and said again now and
   // then. On a monitor or a phone it takes the place of the step-by-step spoken tutorial; a headset keeps that.
-  const train = { on: false, items: null, t: 0, look: 0, reel: 0, climb: 0, lt: [-1, -1], wallY: NaN, endT: 0 };
+  const train = { on: false, items: null, t: 0, look: 0, reel: 0, climb: 0, lt: [-1, -1], wallY: NaN, ry: NaN, endT: 0 };
   const flatKind = () => (phonePlay() || kind === "touch" ? "touch" : kind === "pad" ? "pad" : kind === "mouse" || kind === "desktop" ? "mouse" : null);
   function trainBegin(k) {
-    train.on = true; train.t = 0; train.look = train.reel = train.climb = 0; train.lt[0] = train.lt[1] = -1; train.wallY = NaN; train.endT = 0;
+    train.on = true; train.t = 0; train.look = train.reel = train.climb = 0; train.lt[0] = train.lt[1] = -1; train.wallY = NaN; train.ry = NaN; train.endT = 0;
     train.items = TRAINING[k].map((r) => ({ id: r.id, text: r.text, keys: r.keys.slice(), line: r.line, say: r.say, of: r.of || 0, n: 0, done: false }));
     progress.training = { items: train.items, now: 0, done: false, kind: k };
     progress.tutorial = 0; // (main reads 0 as "the gold ring is a target")
@@ -1789,9 +1790,12 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       return;
     }
     train.t += dt;
-    // look: a turn of about 60 degrees in all
-    train.look += Math.abs(input.turn || 0);
-    if (train.look > 1) trainTick("look");
+    // look: about 25 degrees of turning in all, by any means (the mouse, a stick, a drag, a snap): the rig's yaw, as the spoken
+    // tutorial reads it
+    const ry = wrapPi(yawOf(input.head.quat) - yawOf(input.head.local.quat));
+    if (Number.isFinite(train.ry)) train.look += Math.abs(wrapPi(ry - train.ry));
+    train.ry = ry;
+    if (train.look > 0.45) trainTick("look");
     // reel: 8 m of rope taken in
     for (let i = 0; i < 2; i++) {
       const r = P.ropes[i];

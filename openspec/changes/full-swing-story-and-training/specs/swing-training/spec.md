@@ -18,10 +18,10 @@ On a first run in flat play a training card SHALL list the moves to learn, each 
 - **AND** the phone tutorial line is said, and it names the next row
 
 ### Requirement: Training ends with a clog
-The last row SHALL be to plunge a clog. When all rows are done the card SHALL say so, a toast SHALL cheer, the save SHALL mark the tutorial done, and the card SHALL fold away.
+The last row SHALL be to plunge a clog. The first flush SHALL end the training, as it ends the spoken tutorial, whatever rows are still open: the card SHALL say so, a toast SHALL cheer, the save SHALL mark the tutorial done, and the card SHALL fold away.
 
 #### Scenario: Training complete
-- **WHEN** the player flushes the first clog with the other rows done
+- **WHEN** the player flushes the first clog, with or without the other rows done
 - **THEN** a toast says "Training complete! Now flush the clogs." and the card folds away
 - **AND** the next run shows no card
 

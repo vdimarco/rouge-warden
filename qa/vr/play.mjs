@@ -162,13 +162,14 @@ try {
   // step 5: turn
   const t5 = await ev(page, () => { const before = __b.prog().tutorial; G.rigYaw += 0.5; __b.step(3); return { before, p: __b.prog().tutorial }; });
   check(t5.before === 5 && t5.p === 6, "step 5 is done by the first turn", t5);
-  // step 6: the HUD (in flat play it is on the screen: two seconds)
-  const t6 = await ev(page, () => { const n = __b.until(() => __b.prog().tutorial !== 6, 400); return { n, p: __b.prog().tutorial, says: __spy.says.slice(-1)[0] }; });
-  check(t6.p === 7 && t6.n < GAME.tutorialTimeout * 60 - 60, "step 6 is done by the HUD being shown, not by the timeout", t6);
+  // flat play teaches with the training checklist (game.js): after the turn its next row is the climb, which says its own
+  // words; the score is on the screen, so there is no HUD row
+  const t6 = await ev(page, () => { __b.step(3); const tr = G.game.progress.training; return { p: __b.prog().tutorial, row: tr && tr.items[tr.now] && tr.items[tr.now].id, says: __spy.says.slice(-1)[0] }; });
+  check(t6.p === 6 && t6.row === "climb" && /wall/i.test(t6.says || ""), "after the turn the next training row is the climb, and it says its own line", t6);
   const lines = await ev(page, () => __spy.lines.filter((l) => l[0] === "tutorial").map((l) => l[1]));
   // (the spies start after the hand-off, so step 0's line was said before them)
   const seq = [...new Set(lines)];
-  check(seq.slice(-7).join(",") === "1,2,3,4,5,6,7", "every tutorial step said its line, in order, by input kind", { seq, kind: await ev(page, () => __spy.lines.find((l) => l[0] === "tutorial")[2]) });
+  check(seq.slice(-5).join(",") === "1,2,3,4,5", "every training row said its tutorial line, in order, by input kind", { seq, kind: await ev(page, () => __spy.lines.find((l) => l[0] === "tutorial")[2]) });
   await ev(page, () => { __b.let(0); __b.let(1); });
 
   /* ---------------- the first clog: pumps, the flush, the bank ---------------- */
