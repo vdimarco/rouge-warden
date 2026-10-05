@@ -3,6 +3,7 @@
 //   beam to the target and a closing ring, with TOWER LOCK over the player;
 // - hitstop holds the pose of the units in the hit (their views are not updated) and lets the others move on;
 // - shake grows with the impact weight, and damage numbers keep their size;
+// - a hero in a cast windup leans back, and a dead hero burns away cleanly (a dissolve, no screen-door fade);
 // - no page or console errors.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/combat-feel-3d.e2e.mjs
 // SHOTS=<dir> also saves a screenshot of the staged tells there.
@@ -110,6 +111,20 @@ try {
   const after = await page.evaluate(id => window.__counts.get(id) || 0, hold.player);
   assert.ok(after >= 2, 'the pose moves again when hitstop ends');
   pass('hitstop holds the pose of the units in the hit, and shake follows the weight', { shake: +shake.peak.toFixed(2) });
+
+  // Windup lean and the death dissolve.
+  const lean = await read(`
+    const foe = s.units.find(u => u.kind === 'hero' && u.team === 1); Object.assign(foe, { x: p.x - 300, y: p.y + 40, hp: foe.maxHp, respawn: 0, revealedUntil: s.time + 99, castIntent: { slot: 1, start: s.time - .5, at: s.time + .5, shape: { x: p.x, y: p.y, radius: 200, shape: 'circle' } } });
+    window.__foe = foe.id; return foe.id;`);
+  await pump(10);
+  const leaning = await read(`const v = r.units.views.get(window.__foe); return v.lean;`);
+  assert.ok(leaning > .05, `a hero in a cast windup leans back: ${leaning}`);
+  await read(`const foe = s.units.find(u => u.id === window.__foe); foe.castIntent = null; foe.hp = 0; foe.respawn = 30; const v = r.units.views.get(foe.id); v.deadAt = s.time - 2.2;`);
+  await pump(2);
+  const burn = await read(`const v = r.units.views.get(window.__foe), u = v.uniforms; return { dissolve: u.uDissolve.value, fade: u.uFade.value, outline: v.outline?.visible };`);
+  assert.ok(burn.dissolve > 0 && burn.dissolve < 1 && burn.fade === 1 && burn.outline === false, `a dead hero dissolves without the screen-door fade: ${JSON.stringify(burn)}`);
+  await read(`const foe = s.units.find(u => u.id === window.__foe); foe.hp = foe.maxHp; foe.respawn = 0; foe.x += 3000;`); await pump(2);
+  pass('a windup leans the hero back, and a death dissolves cleanly', { lean: +leaning.toFixed(3), dissolve: +burn.dissolve.toFixed(2) });
 
   // Damage numbers keep the size the sim gives them.
   await read(`s.floaters.push({ x: p.x, y: p.y, text: 640, color: '#ffd27a', life: .8, size: 30 });`);

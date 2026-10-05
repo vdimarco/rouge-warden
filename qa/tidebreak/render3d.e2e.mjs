@@ -2,6 +2,8 @@
 // - ?renderer=3d starts the 3D renderer; every world model, the clips and all sixteen heroes load, with no console errors;
 // - heroes animate (bone rotations change while the hero runs) and attack poses report their clip;
 // - every tower tier (outer, middle, inner, guardian) and both cores have a visible 3D view;
+// - trees, bushes and grass are built in code (leaf cards), heroes have outlines, and the see-through points follow the
+//   heroes in view; towers take the see-through too;
 // - world(project(x, y)) returns the same ground point, and pick() finds an enemy under the cursor;
 // - the WebGL canvas stays inside the 2D renderer's pixel budget; the menu's Graphics row switches to 2D and back;
 // - ?renderer=2d keeps the 2D renderer and never makes a WebGL canvas.
@@ -72,6 +74,17 @@ try {
     const change = a.reduce((n, v, i) => n + Math.abs(v - b[i]), 0);
     assert(change > .02, 'bone rotations change while the hero runs: ' + change);
     pass('heroes animate: bone rotations change between frames', { change: +change.toFixed(3) });
+
+    // Scenery is built in code: tree, bush and grass meshes carry leaf cards (aLeaf); heroes have outline copies; the
+    // player's hero is a see-through point, and the towers take the see-through.
+    const built = await page.evaluate(id => {
+      const r = window.__renderer, kinds = {}; r.props.root.traverse(o => { if (o.isInstancedMesh && ['pine', 'oak', 'bush', 'grass'].includes(o.name)) kinds[o.name] = (kinds[o.name] || 0) + (o.geometry.attributes.aLeaf ? o.count : -1e6); });
+      const v = r.units.views.get(id), tower = [...r.units.views.values()].find(x => x.unit?.kind === 'tower');
+      return { kinds, outlines: v.outlines, see: r.stats().seeThrough, towerSee: tower.mesh.material.customProgramCacheKey().includes('see') };
+    }, id);
+    assert(Object.values(built.kinds).every(n => n >= 0) && built.kinds.grass > 0 && (built.kinds.pine > 0 || built.kinds.oak > 0), 'trees and grass are leaf-card meshes in view: ' + JSON.stringify(built.kinds));
+    assert(built.outlines > 0 && built.see >= 1 && built.towerSee, 'heroes have outlines, the player is a see-through point, towers see through: ' + JSON.stringify(built));
+    pass('trees and grass are built in code; outlines and see-through are on', built);
 
     // Every tower tier and both cores render: the view looks at one structure of each kind in turn (views outside the
     // screen are culled, so each is checked on screen).

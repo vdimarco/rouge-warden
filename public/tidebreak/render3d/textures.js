@@ -1,5 +1,5 @@
 // Procedural textures for the 3D battlefield, made once at start: tiling ground materials (colour in RGB, height in
-// alpha for bump and height blending), a macro noise for large patches, and soft sprites for glows, smoke and sparks.
+// alpha for bump and height blending), a macro noise for large patches, a soft glow sprite, and particle atlases for sparks, smoke, dust and debris.
 // Nothing here is a painted 2D sprite, so the ground takes the real light.
 import * as THREE from 'three';
 
@@ -152,12 +152,29 @@ export function glowTexture(size = 128, hardness = 2.2) {
   g.fillStyle = grad; g.fillRect(0, 0, size, size);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-// A lumpy smoke puff for dust and tower smoke.
-export function smokeTexture(size = 128) {
-  const c = canvas(size), g = c.getContext('2d'), rand = random(7);
-  for (let i = 0; i < 26; i++) {
-    const a = rand() * Math.PI * 2, r = rand() * size * .22, x = size / 2 + Math.cos(a) * r, y = size / 2 + Math.sin(a) * r, s = size * (.12 + rand() * .16);
-    const grad = g.createRadialGradient(x, y, 0, x, y, s); grad.addColorStop(0, 'rgba(255,255,255,.22)'); grad.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = grad; g.fillRect(0, 0, size, size);
-  }
+// Particle atlases, 2 x 2 frames of 64 pixels, white with alpha, tinted per particle. Additive sparks: a soft glow, a
+// four-point star, a droplet and a long streak. Soft particles: a smoke puff, a dense dust blob, a curled wisp and a
+// rock shard (opaque, for stone debris).
+export function sparkAtlas() {
+  const c = canvas(128), g = c.getContext('2d');
+  const radial = (x, y, r, power = 2.2) => { const grad = g.createRadialGradient(x, y, 0, x, y, r); for (let i = 0; i <= 8; i++) grad.addColorStop(i / 8, `rgba(255,255,255,${Math.pow(1 - i / 8, power).toFixed(3)})`); return grad; };
+  g.fillStyle = radial(32, 32, 32); g.fillRect(0, 0, 64, 64);
+  // Star: two thin crossed glows and a bright core.
+  g.save(); g.translate(96, 32); for (const a of [0, Math.PI / 2]) { g.save(); g.rotate(a); g.scale(1, .12); g.fillStyle = radial(0, 0, 30, 1.6); g.fillRect(-32, -32 / .12, 64, 64 / .12); g.restore(); } g.fillStyle = radial(0, 0, 10, 1.4); g.fillRect(-12, -12, 24, 24); g.restore();
+  // Droplet: a soft teardrop, round at the bottom.
+  g.save(); g.translate(32, 96); g.scale(.55, 1); g.fillStyle = radial(0, 6, 24, 1.8); g.fillRect(-60, -32, 120, 64); g.restore();
+  // Streak: a long vertical glow.
+  g.save(); g.translate(96, 96); g.scale(.18, 1); g.fillStyle = radial(0, 0, 31, 1.5); g.fillRect(-180, -32, 360, 64); g.restore();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+export function softAtlas() {
+  const c = canvas(128), g = c.getContext('2d'), rand = random(9);
+  const puff = (ox, oy, n, spread, alpha) => { for (let i = 0; i < n; i++) { const a = rand() * Math.PI * 2, r = rand() * spread, x = ox + Math.cos(a) * r, y = oy + Math.sin(a) * r, s = 8 + rand() * 9; const grad = g.createRadialGradient(x, y, 0, x, y, s); grad.addColorStop(0, `rgba(255,255,255,${alpha})`); grad.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = grad; g.fillRect(ox - 32, oy - 32, 64, 64); } };
+  puff(32, 32, 24, 14, .22); puff(96, 32, 30, 9, .4);
+  // Wisp: a curl of soft dots along a spiral.
+  for (let i = 0; i < 40; i++) { const t = i / 40, a = t * 5.5, r = 4 + t * 20, x = 32 + Math.cos(a) * r, y = 96 + Math.sin(a) * r, s = 7 - t * 3; const grad = g.createRadialGradient(x, y, 0, x, y, s); grad.addColorStop(0, 'rgba(255,255,255,.35)'); grad.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = grad; g.fillRect(0, 64, 64, 64); }
+  // Shard: an angular chip, lit on one side.
+  g.fillStyle = '#fff'; g.beginPath(); g.moveTo(96 - 13, 96 + 9); g.lineTo(96 - 4, 96 - 15); g.lineTo(96 + 12, 96 - 6); g.lineTo(96 + 9, 96 + 12); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.moveTo(96 + 12, 96 - 6); g.lineTo(96 + 9, 96 + 12); g.lineTo(96 - 2, 96 + 4); g.closePath(); g.fill();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
