@@ -17,7 +17,12 @@ const source = readFileSync(simFile, 'utf8');
 if (!anchor.test(source)) throw new Error('damage hook anchor not found in sim.js');
 writeFileSync(simFile, source.replace(anchor, '$1\n  s.hook?.(s, source, target, actual, kind);'));
 const sim = await import(pathToFileURL(simFile).href);
-const { setDifficulty, PROFILES } = await import(pathToFileURL(join(work, 'tidebreak/bot-difficulty.js')).href);
+const { setDifficulty, PROFILES, KIT_POWER } = await import(pathToFileURL(join(work, 'tidebreak/bot-difficulty.js')).href);
+const { draftPlan } = await import(pathToFileURL(join(work, 'tidebreak/draft.js')).href);
+const { HERO_IDENTITIES } = await import(pathToFileURL(join(work, 'tidebreak/hero-identities.js')).href);
+// AB_DRAFT=1: lineups come from the draft board, each team drafting with its own profile.
+// AB_POWER='[[w0,w1,w2],...]' replaces the kit strength table for a trial.
+if (process.env.AB_POWER) JSON.parse(process.env.AB_POWER).forEach((row, kit) => { KIT_POWER[kit] = row; });
 // AB_PATCH='{"veteran":{"camps":false}}' tries a profile change without editing the game.
 for (const [id, patch] of Object.entries(JSON.parse(process.env.AB_PATCH || '{}'))) Object.assign(PROFILES[id], patch);
 
@@ -33,7 +38,9 @@ if (!process.env.AB_CHILD && +jobs > 1) {
   }));
   rows = (await Promise.all(parts)).flat();
 } else for (let seed = +first; seed < +first + +seeds; seed++) for (const side of [0, 1]) {
-  const s = sim.createMatch(seed % sim.HEROES.length, seed);
+  const levels = side ? [B, A] : [A, B], identity = seed % HERO_IDENTITIES.length;
+  const plan = process.env.AB_DRAFT ? draftPlan(identity, seed, levels) : null;
+  const s = plan ? sim.createMatch(HERO_IDENTITIES[identity].kit, seed, plan.lineup) : sim.createMatch(seed % sim.HEROES.length, seed);
   setDifficulty(s, side ? A : B, side ? B : A);
   const teamOf = t => (t === side ? 'A' : 'B');
   const stat = { A: { kills: 0, towers: 0, dives: 0, spell: 0, attack: 0, item: 0, heroWard: 0, waveWard: 0 }, B: { kills: 0, towers: 0, dives: 0, spell: 0, attack: 0, item: 0, heroWard: 0, waveWard: 0 } };

@@ -22,19 +22,29 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // wardBonus: target score bonus for an open enemy ward (ward health decides matches).
+// draft: weight of measured kit strength in this team's draft picks (0 = role and chance only).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, wardBonus: 0, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, draft: 0, wardBonus: 0, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
   apprentice: { ...OFF, retreatAt: .2, engage: false, reaction: [.45, .65], busy: .12, dodge: .5, aimError: 70, castLock: 1.8, failLock: 1.8, waveGate: true },
   veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2, wardBonus: 260 },
-  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2, wardBonus: 260 },
+  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2, wardBonus: 260, draft: 3 },
 };
 // Allied bots stay at one competent level, whatever the enemy difficulty is: Veteran with full retreat discipline.
 PROFILES.ally = { ...PROFILES.veteran, retreatRules: true, tradeRetreat: .75 };
 
+// Kit strength by lane, measured by qa/tidebreak/kit-strength.mjs: the share of matches a team
+// won with this kit in this lane, with equal Veteran bots on both sides. Index [kit][lane].
+export const KIT_POWER = Array.from({ length: 12 }, () => [.5, .5, .5]);
+// A drafting profile adds this to a candidate's draft score. The pool and the board are the
+// same for everyone, and the player sees every pick, so a strong draft is a fair edge.
+export function draftValue(level, kit, lane) {
+  const P = PROFILES[level];
+  return P?.draft ? P.draft * ((KIT_POWER[kit]?.[lane] ?? .5) - .5) * 10 : 0;
+}
 export const normalDifficulty = id => DIFFICULTIES.includes(id) ? id : DEFAULT_DIFFICULTY;
 // s.difficulty = [allied profile, enemy profile]. A match without it plays Veteran.
 export function setDifficulty(s, enemy = DEFAULT_DIFFICULTY, ally = 'ally') { s.difficulty = [PROFILES[ally] ? ally : 'ally', PROFILES[enemy] ? enemy : DEFAULT_DIFFICULTY]; return s; }
