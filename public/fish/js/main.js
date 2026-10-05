@@ -2144,7 +2144,8 @@ function playCut(script, then, mark = true) {
   if (mark && script.id && !save.cuts[script.id]) { save.cuts[script.id] = 1; persist(); }
   prompt(""); hideReport();
   // a press in progress (a mouse button held, a finger that has not dragged yet) is dropped: it never casts under the
-  // cutscene, and the player presses again after it. step() sets no grab while one plays, so the grab goes off here
+  // cutscene, and the player presses again after it. step() sets no grab while one plays, so the grab goes off here, and
+  // comes back as it ends (below)
   if (reelPanel) { reelPanel._cancelAll(); reelPanel.set({ grab: "" }); }
   // a toast that is up (a catch's news, over the hero shot) waits too, and shows again after, and so do the ones in line
   const T = $("#toast");
@@ -2153,6 +2154,9 @@ function playCut(script, then, mark = true) {
   clearTimeout(toastNextT); toastNextT = 0;
   cuts.play(script, (skipped) => {
     then(skipped);
+    // the cast grab at once, not on the next frame: a press that comes before a slow frame takes the line (none while
+    // another cutscene plays, one that then() started)
+    if (G.phase === "cast" && !cuts.playing) castGrab();
     for (const a of heldToasts.splice(0)) toast(...a);
   });
 }
