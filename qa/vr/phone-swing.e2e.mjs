@@ -1,6 +1,6 @@
-// One-tap phone swinging: taps alone chain fast swings, the rope lets go by itself, a tap at the sky still swings, a tap
-// on a clog plunges it, the view widens and the speed lines show at speed, the phone tutorial says phone words, and the
-// phone buttons never cover the score or the spoken lines. Run from the repo root (the server is our own, see lib.mjs).
+// One-tap phone swinging: taps alone chain fast swings, the rope lets go by itself, a steady beat of taps keeps a fast swing over
+// the street, a tap at the sky still swings, a tap on a clog plunges it, the view widens and the speed lines show at speed, the
+// phone tutorial says phone words, and the phone buttons never cover the score or the spoken lines. Run from the repo root (the server is our own, see lib.mjs).
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { newPage, open, close, watchdog } from './lib.mjs';
@@ -63,6 +63,35 @@ try {
   assert(run.wide > 85 && run.rush > 0.5, 'the view widens and the speed lines show at speed: ' + JSON.stringify(run));
   assert.equal(run.dead, null);
   console.log('PASS taps alone chain fast swings', JSON.stringify({ mean: +run.mean.toFixed(1), max: +run.max.toFixed(1), dist: Math.round(run.dist), flings: run.flings, fov: Math.round(run.wide), rush: run.rush }));
+
+  // A steady beat: SWING pressed every 0.5, 0.8 or 1.2 s whatever the rope is doing, as a player who just keeps tapping. A press
+  // with a rope out swings on to the next building (no let-go between), the catch keeps the speed, and the rope is short enough
+  // that the arc stays over the street. Low is the time the feet spend under 8 m (the street and the low shops).
+  const beats = [];
+  for (const beat of [0.5, 0.8, 1.2]) beats.push(await page.evaluate((beat) => {
+    const s = G.city.start, R = G.city.goldRing;
+    G.test.teleport(s.x, s.y, s.z); G.desktop.mobile.reset(); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z));
+    if (G.flatcam) { G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 1); }
+    G.desktop.level(0.35); G.test.step(1 / 60, 2);
+    const btn = document.querySelector('[data-action=throw]'), p0 = { ...G.P.pos }, every = Math.round(beat * 60);
+    let sum = 0, low = 0, ground = 0;
+    for (let f = 0; f < 720; f++) {
+      if (f % every === 0) btn.onclick();
+      G.test.step(1 / 60, 1);
+      const v = G.P.vel; sum += Math.hypot(v.x, v.y, v.z);
+      if (G.P.pos.y < 8) low++;
+      if (G.P.onGround) ground++;
+    }
+    const p = G.P.pos;
+    return { beat, mean: +(sum / 720).toFixed(1), dist: Math.round(Math.hypot(p.x - p0.x, p.z - p0.z)), low: +(low / 60).toFixed(1), ground: +(ground / 60).toFixed(1), dead: G.P.dead };
+  }, beat));
+  console.log('INFO steady beat', JSON.stringify(beats));
+  for (const b of beats) {
+    assert(b.mean >= 17 && b.dist >= 120, 'a steady beat of taps keeps a fast swing going: ' + JSON.stringify(b));
+    assert(b.low <= 2.5 && b.ground <= 1.5, 'a steady beat of taps keeps the hero over the street: ' + JSON.stringify(b));
+    assert.equal(b.dead, null);
+  }
+  console.log('PASS a steady beat of taps (0.5, 0.8 and 1.2 s) swings on with no let-go, fast and over the street');
 
   // A tap at the empty sky still swings: the assist picks a building ahead and above.
   const sky = await page.evaluate(() => {

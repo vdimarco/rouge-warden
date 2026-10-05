@@ -542,7 +542,7 @@ function viewAim(nx, ny, hx, hy, hz) {
 let pickerOn = false; // true in flat play with the state "play"; false in the opening, in a pause and in a headset
 const TCTX = {
   head: { x: 0, y: 0, z: 0 }, cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1, vel: null, chestY: 0, onGround: false, wall: null, time: 0,
-  specials: null, ring: null, avoidBid: null, avoidBid2: null, exact: null, first: false, aimWidth: TARGET.fan.az.med,
+  specials: null, ring: null, avoidBid: null, avoidBid2: null, exact: null, first: false, aimWidth: TARGET.fan.az.med, high: null,
 };
 const ropeBid = (r) => (r.state !== "idle" && r.target && !SPECIAL_TAGS[r.target.tag] && typeof r.target.id === "number" ? bidOf(city.colliders[r.target.id]) : null);
 function fillContext(hx, hy, hz) {
@@ -558,6 +558,7 @@ function fillContext(hx, hy, hz) {
   c.exact = AIM_HAS ? AIM_HIT : null;
   c.first = flatcam.opacity <= 0.5;
   c.aimWidth = TARGET.fan.az[settings.aim] || TARGET.fan.az.med;
+  c.high = G.input.easySwing ? PHONE.high : null;
   return c;
 }
 // A phone tap: the ray from the camera through the tapped pixel (NDC), or toward a point a test aims at. TAPR is a unit direction.
@@ -828,8 +829,11 @@ const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: fa
 function aimAndFire(dt, inp) {
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
-    // phone: a tap with a rope out moves it to the tapped building, and a tap with a rope idle swings from what the tap rules find
+    // phone: a tap (or SWING) with a rope out moves it to the tapped building, or the next one ahead: one tap, one swing, with
+    // no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does nothing:
+    // a new shot would cancel the cup before it lands.
     if (inp.easySwing && i === 1 && inp.phoneFire && r.state !== "idle") {
+      if (r.state === "flying") continue;
       const next = phoneAim(i, h, inp);
       if (next?.valid && !next.same && !ui.blocking(i)) shoot(i, h, next);
       else D.mobile.miss(true);
@@ -1017,6 +1021,25 @@ function boost(i, speed) {
   const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
   if (kick(P, P.ropes[i], yaw, speed)) pushRing({ type: "kick", side: i, speed });
 }
+// Phone: a rope that catches keeps your speed. The part that flies away from the anchor (the rope would stop it) turns into swing
+// across the rope, toward where you look. The rope is also short enough that the lowest point of its arc stays PHONE.catch.clear m
+// over the street (the length moves there at PHONE.catch.rate: it pulls you up fast, with no pop).
+function phoneCatch(r) {
+  const A = r.anchor, v = P.vel, cx = P.pos.x - A.x, cy = P.pos.y + P.chest - A.y, cz = P.pos.z - A.z, d = Math.hypot(cx, cy, cz);
+  if (d < 1e-3) return;
+  const nx = cx / d, ny = cy / d, nz = cz / d, out = v.x * nx + v.y * ny + v.z * nz;
+  if (out > 0) {
+    const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
+    let tx = -Math.sin(yaw), ty = 0, tz = -Math.cos(yaw);
+    const k = tx * nx + tz * nz;
+    tx -= k * nx; ty -= k * ny; tz -= k * nz;
+    const tl = Math.hypot(tx, ty, tz);
+    v.x -= nx * out; v.y -= ny * out; v.z -= nz * out;
+    if (tl > 0.3) { v.x += (tx / tl) * out; v.y += (ty / tl) * out; v.z += (tz / tl) * out; }
+  }
+  const most = A.y - P.chest - PHONE.catch.clear;
+  if (most > PHONE.catch.min && r.lenTarget > most) { r.lenTarget = most; r.rate = PHONE.catch.rate; } // (a low point cannot keep you off the street: no change)
+}
 const SPECIAL_TAGS = { clog: true, pipe: true, crack: true };
 
 // 11. One drain per frame: the portal hears them in the intro, the game in play; main plays the feedback.
@@ -1040,7 +1063,7 @@ function feedback(ev) {
       audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
       if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
-        if (G.input.easySwing && i === 1) { phoneRopeT = 0; boost(1, PHONE.attachSpeed); }
+        if (G.input.easySwing && i === 1) { phoneRopeT = 0; phoneCatch(r); boost(1, PHONE.attachSpeed); }
         else if (latch[i] && flatOn) boost(i, DESKTOP.attachSpeed); // a real press only: a test hook gets no kick
       }
       catchFeedback(i, "attach");

@@ -24,12 +24,13 @@ function makeRope(i) {
   return {
     side: i, state: "idle", from: v3(), anchor: v3(), normal: v3(0, 1, 0), target: null,
     len: 0, lenTarget: 0, flyT: 0, flyDur: 0, taut: false, tension: 0, sticky: false, blockedT: 0, reeling: false,
+    rate: 0, // when above 0, the length moves toward lenTarget this fast instead of cfg.lenRate (a phone rope that pulls you up)
     // internal: the catch, the stretch it leaves, how fast the rope pulls in, last step's state
     stretch: 0, catchT: 0, catchV: 0, catchLen: 0, pull: 0, L0: 0, wasTaut: false, acc: 0, _t: { tag: "", id: null },
   };
 }
 function idle(r) {
-  r.state = "idle"; r.target = null; r.len = r.lenTarget = 0; r.flyT = r.flyDur = 0;
+  r.state = "idle"; r.target = null; r.len = r.lenTarget = 0; r.flyT = r.flyDur = 0; r.rate = 0;
   r.taut = r.wasTaut = false; r.tension = 0; r.sticky = false; r.blockedT = 0; r.reeling = false;
   r.stretch = r.catchT = r.catchV = r.pull = r.acc = 0;
 }
@@ -270,7 +271,8 @@ function constrain(P, h) {
     if (r.state !== "attached") continue;
     const L0 = r.len + r.stretch;
     // the length holds still while a catch lasts, so the stretch it measures stays within 1 m
-    if (r.catchT <= 0 && r.len > r.lenTarget) r.len = Math.max(r.lenTarget, r.len - c.lenRate * h);
+    if (r.catchT <= 0 && r.len > r.lenTarget) r.len = Math.max(r.lenTarget, r.len - (r.rate > 0 ? r.rate : c.lenRate) * h);
+    if (r.rate > 0 && r.len <= r.lenTarget) r.rate = 0; // the fast pull ends where it arrives: a later reel or yank moves at lenRate
     if (r.catchT <= 0 && r.stretch > 0) r.stretch = Math.max(0, r.stretch - c.lenRate * h);
     r.pull = Math.max(0, L0 - r.len - r.stretch) / h;
     r.L0 = L0;
