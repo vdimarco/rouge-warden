@@ -22,10 +22,11 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // wardBonus: target score bonus for an open enemy ward (ward health decides matches).
+// guard: keep fight and roam moves out of untanked enemy ward range (guardMove).
 // draft: weight of measured kit strength in this team's draft picks (0 = role and chance only).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, draft: 0, wardBonus: 0, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, guard: true, draft: 0, wardBonus: 0, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
@@ -176,7 +177,7 @@ const pathGap = (a, b, c) => {
 // death are the exceptions. Inside such range the bot steps out along the line from the ward.
 export function guardMove(s, e, intent) {
   const P = botProfile(s, e), point = intent.move;
-  if (P.legacy || s.suddenDeath || intent.mode === 'retreat' || intent.mode === 'evade') return point;
+  if (P.legacy || !P.guard || s.suddenDeath || intent.mode === 'retreat' || intent.mode === 'evade') return point;
   const ward = enemyStructures(s, e.team).find(t => (point && pathGap(e, point, t) < t.range + 40 || distance(t, e) < t.range + 10) && !wardOpen(s, e, t));
   if (!ward) return point;
   const target = intent.target;
