@@ -6,9 +6,15 @@
 
 ## Checks on the final code
 
-These checks ran one at a time on the merged tree (main with #201, plus this change), on Linux with headless Chromium on SwiftShader. A check that failed once was run again one time.
+All checks ran on Linux with headless Chromium on SwiftShader, one at a time. A check that failed once was run again one time.
 
-RESULTS
+On the fix branch (`daee906`, before main's #201 and the last two small fixes), every check passed with no rerun:
+
+- Node: all 10 `qa/fish/*.test.mjs` files (motion 133, save 226, release 27, cutscenes 20, and the rest), the 4 sims (cast, fight, journey, places), `check-www.test` (61) and `native-check.test` (12), and the pinball lab's `tilt.sim`.
+- Browser: `boot.e2e` (twice, 91 checks), `flow`, `mouse.e2e`, `turnaround.e2e`, `moments.e2e`, `travel`, `reel.ui` (163), `desk`, `motion.e2e` (19), `menus.e2e`, `touch.e2e`, `cutscenes.e2e` (twice, 75 checks), `screens` (369), `fish.render` (515), `world.render` (106 shots), `cartoon.render`, `audio.render`, `places.map` and `app-bundle.e2e` (15).
+- `shots.mjs` at 390x844 and 360x640 for the store build: 22 pictures at each size, and the layout scan found no problems.
+
+Then main's #201 (a press anywhere loads the rod) was merged in, with the two small fixes below. On that merged tree, all Node tests, sims and app script tests, `tilt.sim`, `boot.e2e`, `flow`, `mouse.e2e` and `turnaround.e2e` passed with no rerun. The other browser checks were still running on the merged tree when this change was archived.
 
 ## How the scenarios were checked
 
