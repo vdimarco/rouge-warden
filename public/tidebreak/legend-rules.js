@@ -1,6 +1,7 @@
 import { SIZE, clamp, distance, lineOfSight, resolveBody, move } from './world.js';
 import { launchSkill } from './skill-events.js';
 import { emitCombatFeedback } from './combat-state.js';
+import { ENGAGES, engageLength } from './combat-tells.js';
 const body=t=>!['core','tower'].includes(t.kind);
 export function castLegend(c){
  const {s,e,slot,aim,target,angle,rank,strength,origin,fx,cone,damage,heal,area}=c;
@@ -18,7 +19,7 @@ export function castLegend(c){
   }
   if(e.hero===11){e.shield+=300*strength;e.slow=0;e.bleed=null;e.burn=null;e.woundedUntil=0;e.scaleGuardUntil=s.time+3;fx(origin,160);return true;}
   if([7,8,9].includes(e.hero)){
-   e.travel={...origin,angle,start:s.time,duration:e.hero===7?.6:e.hero===8?.9:1.2,length:e.hero===7?460:e.hero===8?460:570,strength,hitIds:[],trailAt:0};
+   e.travel={...origin,angle,start:s.time,duration:e.hero===7?.6:e.hero===8?.9:1.2,length:e.hero===7?engageLength(7,rank):e.hero===8?460:570,strength,hitIds:[],trailAt:0};
    e.shield+=(e.hero===7?250:e.hero===8?160:140)*strength;fx(origin,140);return true;
   }
   // Kitsune is the sole instant blink among these kits.
@@ -79,12 +80,14 @@ export function tickHeroMechanic({s,e,dt,damage,heal,hostile}){
   e.trailAt=s.time+.3;s.zones.push({x:e.x,y:e.y,type:'frost',legend:true,source:e.id,team:e.team,hero:5,rank:e.skillRanks[0],radius:95,life:2.2,amount:25*e.chaseStrength,tick:0,pulses:0});
  }
  const travel=e.travel;if(!travel)return false;
+ // Stone Golem's charge is an engage. Its hit radius comes from ENGAGES, so it matches its tell.
+ const reach=e.hero===7?ENGAGES[7].radius:110;
  if(e.stun>0||e.fear>0||e.snaredUntil>s.time){e.travel=null;return false;}
  const progress=Math.min(1,(s.time-travel.start)/travel.duration),curve=e.hero===9?Math.sin(progress*Math.PI)*150:0;
  const point={x:clamp(travel.x+Math.cos(travel.angle)*travel.length*progress-Math.sin(travel.angle)*curve,180,SIZE-180),y:clamp(travel.y+Math.sin(travel.angle)*travel.length*progress+Math.cos(travel.angle)*curve,180,SIZE-180)};
  if(e.hero===7)move(s,e,point.x,point.y,dt,travel.length/travel.duration*1.1);
  else {e.x=point.x;e.y=point.y;e.facing=travel.angle;e.moving=true;}
- for(const t of s.units)if(hostile(s,e,t)&&body(t)&&!travel.hitIds.includes(t.id)&&distance(e,t)<110+t.radius&&lineOfSight(s,e,t)){
+ for(const t of s.units)if(hostile(s,e,t)&&body(t)&&!travel.hitIds.includes(t.id)&&distance(e,t)<reach+t.radius&&lineOfSight(s,e,t)){
   travel.hitIds.push(t.id);damage(s,e,t,(e.hero===7?210:e.hero===8?140:110)*travel.strength);
   if(e.hero===7){t.stun=.8;t.x+=Math.cos(travel.angle)*110;t.y+=Math.sin(travel.angle)*110;resolveBody(s,t);}
   if(e.hero===8)heal(s,e,100*travel.strength);

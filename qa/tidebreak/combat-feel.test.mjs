@@ -1,10 +1,13 @@
 // Combat feel: tells, punish windows, impact weights, the cast buffer, basic attack dodges,
 // the death recap, camp roles and objective timers. See openspec/changes/shore-grand-arena/notes/combat-feel.md.
 import assert from 'node:assert/strict';
-import { createMatch, player, cast, requestCast, step, damage, HEROES } from '../../public/tidebreak/sim.js';
+import { createMatch, player, cast, requestCast, step, damage, distance, HEROES, SUDDEN_DEATH } from '../../public/tidebreak/sim.js';
 import { castTiming } from '../../public/tidebreak/combat-state.js';
 import { insideWarning } from '../../public/tidebreak/combat-rules.js';
-import { TOWER_LOCK, CAST_BUFFER, MISS_EXPOSE, ULT_MISS_EXPOSE, INTERRUPT_EXPOSE, EXPOSED_BONUS, DODGE_SLACK, RECAP_LIMIT, windupState, lockRemaining, manaRegen, isEngage } from '../../public/tidebreak/combat-tells.js';
+import { TOWER_LOCK, CAST_BUFFER, MISS_EXPOSE, ULT_MISS_EXPOSE, INTERRUPT_EXPOSE, EXPOSED_BONUS, DODGE_SLACK, RECAP_LIMIT, windupState, lockRemaining, manaRegen, isEngage, ENGAGES, engageLength, strikeDamage } from '../../public/tidebreak/combat-tells.js';
+import { drawTells, drawUnitMarks } from '../../public/tidebreak/combat-tells-draw.js';
+import { OBSTACLES, resolveBody, lineOfSight, visibleTo } from '../../public/tidebreak/world.js';
+import { near as open } from './open-ground.mjs';
 import { ImpactFeel, IMPACT_FEEL, HITSTOP_GAP } from '../../public/tidebreak/impact-feel.js';
 import { buildRecap, recapTip } from '../../public/tidebreak/death-recap.js';
 import { encounterPattern } from '../../public/tidebreak/encounters.js';
@@ -39,6 +42,44 @@ assert.deepEqual(Object.keys({ 3: 1, 7: 1 }).map(Number).filter(h => isEngage({ 
   assert.equal(windupState(devil, s.time + .2).kind, 'engage'); assert.ok(near(windupState(devil, intent.start + intent.at - intent.start - .45 / 2).progress, .5), 'windup progress runs from cue to hit');
   advance(s, .4); assert.equal(p.stun, 0, 'no stun before the tell ends');
   advance(s, .1); assert.ok(p.stun > 0, 'the leap stuns after its tell'); assert.ok(s.time - intent.start >= .45);
+}
+{ // The engage tell shows the real reach on the 9600 map: the path ends where the hero lands, its radius is
+  // the move's hit radius, and the charge runs its full length although its cast recovery starts with it.
+  // With bot and player timing, every hit lands inside the tell, at least 0.3 s after it appears. At the
+  // far end, a hero just inside the tell is hit and a hero just outside it is not. (Mid-path, the leap
+  // only stuns at its landing, so a hero on the path may be safe.)
+  for (const hero of [3, 7]) for (const rank of [1, 3]) for (const bot of [true, false]) {
+    const length = engageLength(hero, rank), reach = ENGAGES[hero].radius + 22;
+    for (const [side, along, expect] of [[0, 300], [reach - 4, length, true], [reach + 4, length, false], [0, length + reach - 4, true], [0, length + reach + 4, false], [0, length * 1.5, false]]) {
+      const { s, p, enemy } = setup(0), from = open(2400, 2455), caster = foeHero(s, enemy, { ...from, hero, skillRanks: [rank, 0, 0, 0], cd: [0, 0, 0, 0], mana: 999 });
+      Object.assign(p, { x: from.x + side, y: from.y + along, hp: 99999, maxHp: 99999, shield: 0 });
+      assert.ok(requestCast(s, caster, 0, { x: 0, y: 1, distance: along }, { bot }));
+      const intent = caster.castIntent, w = intent.shape, inside = insideWarning(p, w), where = `hero ${hero} rank ${rank} ${bot ? 'bot' : 'player'}: a hero ${side} to the side and ${along} along`;
+      let hitAt = null; for (let i = 0; i < 150 && hitAt === null; i++) { step(s, { attack: false }, .01); if (p.hp < p.maxHp) hitAt = s.time; }
+      advance(s, 1);
+      if (hitAt !== null) assert.ok(inside, `${where} is hit, so it must be inside the tell`);
+      if (expect !== undefined) assert.deepEqual([inside, hitAt !== null], [expect, expect], `${where} is ${expect ? '' : 'not '}inside the tell and ${expect ? '' : 'not '}hit`);
+      if (hitAt !== null) assert.ok(hitAt - intent.start >= .3 - 1e-9, `${where} is hit ${hitAt - intent.start} s after the tell appears`);
+      assert.ok(Math.abs(distance(from, caster) - Math.hypot(w.tx - w.x, w.ty - w.y)) < 1, `${where}: the tell is ${Math.hypot(w.tx - w.x, w.ty - w.y)} long and the hero moved ${distance(from, caster)}`);
+      assert.ok(Math.abs(distance(w, { x: w.tx, y: w.ty }) - length) < 1e-6 && w.radius === ENGAGES[hero].radius, 'on open ground the tell has the full length');
+    }
+  }
+}
+{ // Next to cover, the tell ends where the leap really lands: both push the hero out of the building.
+  let found = null;
+  for (const r of OBSTACLES[0]) {
+    if (r.w < 100 || r.h < 100) continue;
+    const landing = { x: r.x + r.w / 2 - 12, y: r.y, radius: 22 }, from = { x: landing.x, y: landing.y + 460, radius: 22 }, pushed = { ...landing }; resolveBody({ phase: 0 }, pushed);
+    const foe = { x: pushed.x + 150, y: pushed.y, radius: 22 }, still = q => { const c = { ...q }; resolveBody({ phase: 0 }, c); return distance(c, q) < .01; };
+    if (Math.abs(pushed.x - (r.x + r.w / 2 + 22)) < .01 && still(from) && still(foe) && lineOfSight({ phase: 0 }, pushed, foe)) { found = { from, pushed, foe }; break; }
+  }
+  assert.ok(found, 'a building on the map can push a leap landing to the side');
+  const { s, p, enemy } = setup(0), devil = foeHero(s, enemy, { x: found.from.x, y: found.from.y, hero: 3, skillRanks: [1, 0, 0, 0], cd: [0, 0, 0, 0], mana: 999 });
+  Object.assign(p, { x: found.foe.x, y: found.foe.y, hp: 99999, maxHp: 99999, shield: 0 });
+  assert.ok(requestCast(s, devil, 0, { x: 0, y: -1, distance: 460 }, { bot: true })); const w = devil.castIntent.shape;
+  assert.ok(distance({ x: w.tx, y: w.ty }, found.pushed) < .01, 'the tell ends at the landing pushed out of the building');
+  advance(s, .6); assert.ok(distance(devil, found.pushed) < .01, 'the leap lands where the tell ends');
+  assert.ok(p.hp < p.maxHp && insideWarning(found.foe, w), 'a hero the leap hits beside the building was inside the tell');
 }
 { // Kraken's ink arms before its first tick, so the first damage is warned.
   const { s, p, enemy } = setup(4), t = foeHero(s, enemy, { x: 2400, y: 2700 }); cast(s, p, 0);
@@ -167,6 +208,16 @@ assert.deepEqual([1, 2, 3].map(w => [IMPACT_FEEL[w].hitstop, IMPACT_FEEL[w].shak
   p.hp -= p.maxHp * .1; assert.ok(near(feel.update(s, p.id, .016).hurt, .1), 'damage taken reports the share of health lost'); assert.ok(feel.edge > .5, 'and flashes the screen edge');
   assert.equal(JSON.stringify(s.units.filter(u => u.id !== p.id)), JSON.stringify(JSON.parse(snapshot).filter(u => u.id !== p.id)), 'presentation never writes sim state');
 }
+{ // The hitstop flash skips a unit the player cannot see, so it never shows where a hidden attacker stands.
+  const { s, p, enemy } = setup(0), foe = foeHero(s, enemy, { hero: 3, x: p.x, y: p.y - 1400 }), feel = new ImpactFeel();
+  feel.update(s, p.id, 0);
+  Object.assign(p, { hp: 2000, maxHp: 2000, shield: 0, exposedUntil: s.time + 1, bleed: { source: foe.id, until: s.time + 4, tick: s.time, amount: 60 } });
+  step(s, { attack: false }, .01); feel.update(s, p.id, .01);
+  const visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)), rings = [];
+  assert.ok(feel.hitstop > 0 && feel.frozen.has(foe.id) && !visible.has(foe.id), 'a bleed tick from an unseen hero lands an opening hit with hitstop');
+  drawTells({ ctx: new Proxy({}, { get: () => () => {} }), ring: (x, y) => rings.push({ x, y }), project: (x, y) => ({ x, y }), feel }, s, p, visible);
+  assert.deepEqual(rings, [{ x: p.x, y: p.y }], 'only the player flashes; the hidden attacker gets no ring');
+}
 { // Damage numbers grow with the amount; openings are gold.
   const { s, p, enemy } = setup(4), t = foeHero(s, enemy); damage(s, p, t, 40, 'attack'); damage(s, p, t, 600, 'attack');
   const [small, big] = s.floaters.slice(-2); assert.ok(big.size > small.size, 'a big hit has a bigger number');
@@ -222,6 +273,12 @@ assert.deepEqual([1, 2, 3].map(w => [IMPACT_FEEL[w].hitstop, IMPACT_FEEL[w].shak
   for (let i = 0; i < 200; i++) { damage(s, foe, p, 1, 'attack'); s.time += .1; }
   assert.ok(p.damageLog.length <= RECAP_LIMIT); assert.ok(s.time - p.damageLog[0].time <= 8.1);
 }
+{ // Shield lost to Pale Reaper attacks counts in full, so the recap total still matches health and shield lost.
+  const { s, p, enemy } = setup(0), foe = foeHero(s, enemy, { inventory: ['reaper'] });
+  Object.assign(p, { hp: 600, maxHp: 1000, shield: 400, armor: 0, inventory: [] });
+  for (let i = 0; i < 50 && p.hp > 0; i++) damage(s, foe, p, 150, 'attack');
+  assert.equal(p.deathRecap.total, 1000, 'the recap counts the 400 shield and 600 health that Pale Reaper attacks took');
+}
 const tip = types => recapTip({ types, warned: [], controlled: 0, heroes: 1, total: 100, sources: [{ name: 'Nessie', amount: 100, share: 1, basic: 0 }], ...types.__ });
 assert.equal(tip({ tower: { share: .5 } }).cause, 'tower');
 assert.equal(recapTip({ types: {}, warned: [{ dodgeable: true, amount: 60, count: 2 }], controlled: 0, heroes: 1, total: 100, sources: [] }).cause, 'warned');
@@ -248,6 +305,19 @@ assert.equal(recapTip({ types: { basic: { share: .9 } }, warned: [], controlled:
   assert.ok(realmClock.realm.seconds > 0, 'the realm countdown is reported');
   assert.equal(realmClock.items.includes(realmClock.realm), false, 'but the HUD keeps its own realm line, so the clock does not repeat it');
 }
+// ---- The gold finishable mark: the next strike's damage, with the chain step and sudden death.
+{
+  const marked = (s, p, w) => { let drawn = false; drawUnitMarks({ ctx: new Proxy({ fill() { drawn = true; } }, { get: (o, k) => o[k] || (() => {}) }) }, s, w, { x: 0, y: 0 }, p); return drawn; };
+  for (const [name, factor, extra, time] of [['second strike', .85, { comboNext: 1 }], ['third strike', 1.15, { comboNext: 2 }], ['chain on another target', 1, { comboNext: 1, other: true }], ['sudden death', 1.5, { comboNext: 0 }, SUDDEN_DEATH + 75]]) for (const share of [.94, 1.06]) {
+    const { s, p } = setup(0); Object.assign(p, open(2400, 2800), { attackCd: 0 }); if (time) Object.assign(s, { time, suddenDeath: true });
+    const hp = p.damage * factor * share, wisp = { id: 960, kind: 'minion', team: 1, x: p.x, y: p.y - 100, radius: 16, hp, maxHp: 1000, shield: 0, armor: 0, speed: 0, damage: 0, range: 0, rate: 99, attackCd: 999, hit: 0, stun: 0, slow: 0, fear: 0, lane: 1, lastHit: -100, revealedUntil: -1 };
+    s.units.push(wisp); Object.assign(p, { comboTarget: extra.other ? 999 : wisp.id, comboNext: extra.comboNext, comboUntil: s.time + 2 });
+    assert.equal(marked(s, p, wisp), share < 1, `${name}: a wisp at ${share} of the next strike ${share < 1 ? 'shows' : 'does not show'} the mark`);
+    let checked = false;
+    for (let i = 0; i < 60 && wisp.hp === hp; i++) { step(s, { target: wisp.id }, .01); if (p.pendingAttack && !checked) { checked = true; assert.ok(near(p.pendingAttack.amount, strikeDamage(s, p, wisp), 1e-9), `${name}: the mark uses the damage the strike deals`); } }
+    assert.ok(checked && wisp.hp !== hp, `${name}: the strike lands`); assert.equal(wisp.hp <= 0, share < 1, `${name}: the marked wisp dies and the other survives`);
+  }
+}
 // ---- Rule 7: lane mana regeneration.
 assert.equal(manaRegen(1), 3.75); assert.equal(manaRegen(10), 6);
-console.log('PASS: engage and tower tells, windup and lock sounds, miss/ultimate/interrupt exposure and the opening bonus, impact weights, hitstop and shake values, the hurt channel, damage numbers, the cast buffer, the dodgeable third strike, the death recap and its tips, camp roles, objective timers and mana regeneration.');
+console.log('PASS: engage and tower tells with the real reach, windup and lock sounds, miss/ultimate/interrupt exposure and the opening bonus, impact weights, hitstop and shake values, the hurt channel, damage numbers, the cast buffer, the dodgeable third strike, the death recap and its tips, the finishable mark, camp roles, objective timers and mana regeneration.');

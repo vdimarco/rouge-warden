@@ -12,7 +12,7 @@ Every claim from the audit was checked in the code before it was used; where the
 | 10 | Wisp kills no longer post a DEFEATED result label, so the four result slots carry hero events. | `sim.js` |
 | 2 Readable threat | Audio cue when an enemy or neutral windup starts: a rising swell as long as the tell, panned to the caster, brighter when the shape covers you. | `audio.js` (`windup`), `announcer.js` |
 | 2 | Windup pose data for both renderers (`windupState`): progress from the first cue to the hit, with a kind (cast, engage, ultimate, neutral, lock). The 2D renderer leans the unit back and grows a ring. | `combat-tells.js`, `combat-tells-draw.js`, `illustrated-render.js` |
-| 2 | Engage tells: Jersey Devil's leap and Stone Golem's charge are no longer instant. They cast with a 0.3 s windup for players, 0.45 s for bots, and draw a path tell to the landing circle. The stun now lands after the tell. | `combat-state.js`, `combat-tells.js` (`ENGAGES`, `engageShape`), `combat-rules.js` (`insideWarning` for a path), `sim.js` |
+| 2 | Engage tells: Jersey Devil's leap and Stone Golem's charge are no longer instant. They cast with a 0.3 s windup for players, 0.45 s for bots, and draw a path tell to the landing circle. The stun now lands after the tell. The tell and the moves read one set of numbers (`ENGAGES`), and the charge keeps full speed during its cast recovery, so the path shows the real reach. | `combat-state.js`, `combat-tells.js` (`ENGAGES`, `engageShape`), `combat-rules.js` (`insideWarning` for a path), `sim.js` |
 | 2 | Kraken's ink arms 0.35 s before its first tick, so its first damage is warned. | `legend-rules.js` |
 | 2 | Tower target lock: a tower holds fire 0.35 s after it picks a hero, draws a tether that turns solid, and beeps twice when the target is you. | `combat-tells.js` (`towerLock`), `sim.js`, `combat-tells-draw.js`, `audio.js` (`lockOn`), `announcer.js` |
 | 4 Punish window | A committed cast that hits nothing is a miss: recovery grows to 0.5 s (0.7 s for an ultimate) and the caster is EXPOSED for that time. A cast that hits keeps the short recovery. An ultimate that hits is exposed for its own recovery. | `combat-tells.js` (`openCommit`/`closeCommit`/`judgeCommit`), `sim.js` |
@@ -32,7 +32,8 @@ Every claim from the audit was checked in the code before it was used; where the
 | - | Bug found while testing: an obstacle beside the map edge could push a body past the edge clamp, so `resolveBody` clamps again at the end. | `world.js` |
 
 No map geometry, tower stats, wave, economy, respawn or time-limit constants were changed. Distances this branch adds are written as
-a multiple of `SIZE / 6400` (`combat-tells.js`), so they scale with the bigger map.
+a multiple of `SIZE / 6400` (`combat-tells.js`), so they scale with the bigger map. The engage tells are the exception: they copy the
+leap and the charge, which keep their fixed sizes.
 
 ## 2. Data the 3D renderer draws
 

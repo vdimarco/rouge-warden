@@ -95,7 +95,7 @@ guardian SHALL then be exposed for a recovery window in which it does not attack
 
 ### Requirement: Match pacing and finish
 A match on the grand arena SHALL have a laning phase, a middle game of tower sieges and a decisive end:
-- The first wave SHALL leave each base at 0:23 and later waves every 20 seconds. A wave SHALL have two melee wisps and a caster wisp that
+- The first wave SHALL leave each base at 0:24 and later waves every 20 seconds. A wave SHALL have two melee wisps and a caster wisp that
   attacks from range, a siege wisp on every third wave, and an elder wisp on a lane where the enemy inner ward is down. Waves SHALL grow
   stronger over time after five minutes.
 - Outer wards SHALL take reduced damage for the first three and a half minutes, and the 2D view SHALL label them as fortified.
@@ -122,11 +122,11 @@ A match on the grand arena SHALL have a laning phase, a middle game of tower sie
   damage lands.
 
 #### Scenario: Sudden death
-- **WHEN** the clock reaches 14:00 and both cores stand
+- **WHEN** 14 minutes have passed (the match clock runs out) and both cores stand
 - **THEN** a sudden death banner appears, every structure can be damaged, deaths last longer and home heals slowly.
 
 #### Scenario: Hard limit
-- **WHEN** the clock reaches 17:00 and both cores stand
+- **WHEN** 17 minutes have passed (the final countdown runs out) and both cores stand
 - **THEN** the match ends, the team that broke more structures wins, and the result screen states that reason (or the next tiebreak).
 
 ### Requirement: Bots on the grand arena

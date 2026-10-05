@@ -1,6 +1,6 @@
 // 2D drawing for combat tells: windup glow, tower lock-on, warned third strikes, hitstop
 // flashes and target marks. The 3D renderer reads the same unit fields (see notes/combat-feel.md).
-import { windupState, DODGE_SLACK } from './combat-tells.js';
+import { windupState, strikeDamage, DODGE_SLACK } from './combat-tells.js';
 const TAU = Math.PI * 2, HOSTILE = '#ff8f75', FRIENDLY = '#a3ead3';
 const WINDUP_COLORS = { cast: HOSTILE, engage: '#ff6f5a', ultimate: '#ffd36a', neutral: '#ffc17a' };
 export function drawTells(r, s, p, visible) {
@@ -34,16 +34,17 @@ export function drawTells(r, s, p, visible) {
       }
     }
   }
-  // Hitstop: a short white flash on the units in the hit.
+  // Hitstop: a short white flash on the units in the hit. A unit the player cannot see gets
+  // no flash, so the flash never shows where a hidden attacker stands.
   const feel = r.feel;
-  if (feel?.hitstop > 0) for (const id of feel.frozen) { const u = s.units.find(v => v.id === id); if (u && u.hp > 0) r.ring(u.x, u.y, (u.radius || 22) + 24, '#fffbe8', Math.min(1, feel.hitstop * 14), 4); }
+  if (feel?.hitstop > 0) for (const id of feel.frozen) { const u = s.units.find(v => v.id === id); if (u && u.hp > 0 && visible.has(u.id)) r.ring(u.x, u.y, (u.radius || 22) + 24, '#fffbe8', Math.min(1, feel.hitstop * 14), 4); }
 }
 function label(c, at, text, color) { c.save(); c.font = '700 11px Barlow'; c.textAlign = 'center'; c.strokeStyle = '#101c27'; c.lineWidth = 3; c.strokeText(text, at.x, at.y); c.fillStyle = color; c.fillText(text, at.x, at.y); c.restore(); }
 // Marks over a health bar: a gold diamond on a wisp your next basic attack can finish, a
 // healer cross on a summon that heals its team.
 export function drawUnitMarks(r, s, e, anchor, p) {
   const c = r.ctx;
-  if (e.kind === 'minion' && e.team !== p.team && p.hp > 0 && e.hp <= p.damage) {
+  if (e.kind === 'minion' && e.team !== p.team && p.hp > 0 && e.hp <= strikeDamage(s, p, e)) {
     c.save(); c.fillStyle = '#f3d27a'; c.strokeStyle = '#101c27'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(anchor.x, anchor.y - 13); c.lineTo(anchor.x + 5, anchor.y - 7); c.lineTo(anchor.x, anchor.y - 1); c.lineTo(anchor.x - 5, anchor.y - 7); c.closePath(); c.fill(); c.stroke(); c.restore();
   }
   if (e.kind === 'summon' && e.healing > 0) {

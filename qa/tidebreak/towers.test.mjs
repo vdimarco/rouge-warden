@@ -61,6 +61,25 @@ for (let lane = 0; lane < 3; lane++) {
   // A hit sized from the core's health ends the match through its armor and backdoor protection.
   damage(s, p, core, core.maxHp * 20); assert.equal(s.winner, 0);
 }
+// The ward-fall banner names a structure only when this fall opened it. A structure that was already
+// open, or is already gone, is never announced as newly vulnerable.
+{
+  const s = createMatch(1, 49), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1), last = () => s.messages.at(-1);
+  damage(s, p, ward(s, 1, 0, 0), 99999); assert.deepEqual([last().title, last().detail], ['Enemy ward broken', 'West middle ward is now vulnerable.']);
+  damage(s, p, ward(s, 1, 0, 1), 99999); assert.equal(last().detail, 'West inner ward is now vulnerable.');
+  damage(s, p, ward(s, 1, 0, 2), 99999); assert.equal(last().detail, 'The rift guardians are now vulnerable.', 'the first inner ward opens the guardians');
+  for (const tier of [0, 1, 2]) damage(s, p, ward(s, 1, 2, tier), 99999);
+  assert.equal(last().detail, 'East inner ward destroyed.', 'a second inner ward does not announce guardians that are already open');
+  for (const g of s.units.filter(e => e.guardian && e.team === 1)) damage(s, p, g, 99999);
+  for (const tier of [0, 1, 2]) damage(s, p, ward(s, 1, 1, tier), 99999);
+  assert.equal(last().detail, 'Middle inner ward destroyed.', 'no banner calls fallen guardians vulnerable');
+  damage(s, foe, ward(s, 0, 1, 0), 99999); assert.deepEqual([last().title, last().detail], ['Our ward has fallen', 'Middle middle ward is now vulnerable.'], 'our own fallen ward names our next ward');
+}
+{
+  const s = createMatch(1, 49), p = player(s); s.suddenDeath = true;
+  damage(s, p, ward(s, 1, 2, 1), 99999); assert.equal(s.messages.at(-1).detail, 'East middle ward destroyed.', 'in sudden death every ward is already open');
+  damage(s, p, ward(s, 1, 2, 0), 99999); assert.equal(s.messages.at(-1).detail, 'East outer ward destroyed.', 'a fall never names a destroyed ward as vulnerable');
+}
 // Sudden death lifts every gate.
 {
   const s = createMatch(1, 49); s.suddenDeath = true;
@@ -100,4 +119,4 @@ for (let lane = 0; lane < 3; lane++) {
   s.units = [p]; s.nextWave = s.objectiveAt = Infinity; s.campTimers = s.campTimers.map(() => Infinity);
   const goal = { x: p.x + 280, y: p.y }; commandOrder(s, p, { type: 'move', ...goal }); for (let i = 0; i < 240; i++) step(s, { attack: false }, 1 / 60); assert(distance(p, goal) < 12, 'map-equivalent movement order travels and stops');
 }
-console.log('PASS: 9600-unit arena, 22 tower footprints, mirrored tower distances and spacing, the protection chain on all three lanes, guardians and core gating, sudden death, backdoor and fortification, the guardian slam, safe start and movement orders.');
+console.log('PASS: 9600-unit arena, 22 tower footprints, mirrored tower distances and spacing, the protection chain on all three lanes, guardians and core gating, ward-fall banners from the live state, sudden death, backdoor and fortification, the guardian slam, safe start and movement orders.');
