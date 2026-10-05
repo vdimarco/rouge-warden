@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { createMatch, player, buy, sell, damage, heal, cast, step, HEROES, setBuild, autoTarget } from '../../public/tidebreak/sim.js';
 import { quote, recalculate, nextPurchase, nextItem, ITEMS, hasItem, synergies } from '../../public/tidebreak/items.js';
-const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800, gold: 9999 }); Object.assign(foe, { x: 2400, y: 2660, gold: 0, nextShop: 9999, stun: 100 }); return { s, p, foe }; };
+import { near } from './open-ground.mjs';
+const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { ...near(2400, 2800), gold: 9999 }); Object.assign(foe, { ...near(2400, 2660), gold: 0, nextShop: 9999, stun: 100 }); return { s, p, foe }; };
 {
  const { s, p } = duel(); p.gold = 780; const hp = p.hp;
  assert.ok(buy(s, 'bone')); assert.ok(buy(s, 'feather')); assert.equal(quote(p, 'nightfang').cost, 420);

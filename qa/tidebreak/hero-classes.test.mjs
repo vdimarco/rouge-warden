@@ -4,7 +4,8 @@ import {recalculate} from '../../public/tidebreak/items.js';
 import {KITS} from '../../public/tidebreak/abilities.js';
 import {rosterHTML,heroPreviewHTML,ROLES} from '../../public/tidebreak/roster.js';
 import {HERO_IDENTITIES} from '../../public/tidebreak/hero-identities.js';
-const setup=hero=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,skillRanks:[1,1,1,1],level:6,nextShop:Infinity});return{s,p};};
+import { near } from './open-ground.mjs';
+const setup=hero=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{...near(2400,2800),skillRanks:[1,1,1,1],level:6,nextShop:Infinity});return{s,p};};
 const foe=(s,p,extra={})=>{const t={id:100+s.units.length,kind:'minion',team:1,x:p.x,y:p.y-170,radius:16,hp:10000,maxHp:10000,shield:0,armor:0,speed:0,damage:0,range:0,attackCd:999,stun:0,slow:0,fear:0,lane:1,lastHit:0,itemState:{},inventory:[],hero:0,player:true,level:1,mana:420,maxMana:420,cd:[100,100,100,100],skillRanks:[0,0,0,0],skillPoints:0,gold:0,nextShop:Infinity,portalCd:0,respawn:0,regen:0,haste:1,...extra};s.units.push(t);p.target=t.id;return t;};
 const advance=(s,seconds,input={attack:false})=>{for(let i=0;i<Math.ceil(seconds*100);i++)step(s,input,.01);};
 assert.equal(new Set(KITS.flat().map(a=>a.name)).size,48);
@@ -32,7 +33,7 @@ for(let hero=0;hero<12;hero++){
  cast(s,p,3);const d=Math.hypot(t.x-p.x,t.y-p.y);advance(s,.05);assert(Math.hypot(t.x-p.x,t.y-p.y)<d,'abyss draws enemies inward');
 }
 {
- const {s,p}=setup(5);cast(s,p,3);advance(s,.6,{x:1,attack:false});const z=s.zones.find(z=>z.type==='blizzard');assert(Math.abs(z.x-p.x)<6);assert(p.x>2400);assert.equal(z.y,p.y);
+ const {s,p}=setup(5);cast(s,p,3);advance(s,.6,{x:1,attack:false});const z=s.zones.find(z=>z.type==='blizzard');assert(Math.abs(z.x-p.x)<6);assert(p.x>near(2400,0).x);assert.equal(z.y,p.y);
  damage(s,foe(s,p),p,99999);advance(s,.05);assert(!s.zones.some(z=>z.type==='blizzard'),'storm ends on death');
 }
 {

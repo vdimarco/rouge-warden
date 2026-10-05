@@ -50,7 +50,7 @@ export class ThreeRenderer {
     this.props = new Props(this.scene, assets, this.textures);
     this.effects = new Effects(this.scene, this.textures);
     this.units = new Units(this.scene, this.effects); this.units.init(this.textures);
-    this.fowCanvas = Object.assign(document.createElement('canvas'), { width: 128, height: 128 }); this.fowCanvas.getContext('2d', { willReadFrequently: true }); this.fowTex = new THREE.CanvasTexture(this.fowCanvas); this.fowTex.colorSpace = THREE.NoColorSpace; fow.uFow.value = this.fowTex;
+    this.fowCanvas = Object.assign(document.createElement('canvas'), { width: 128, height: 128 }); this.fowCanvas.getContext('2d', { willReadFrequently: true }); this.fowTex = new THREE.CanvasTexture(this.fowCanvas); this.fowTex.colorSpace = THREE.NoColorSpace; this.fowTex.flipY = false; fow.uFow.value = this.fowTex;
     this.vignette = vignette();
     this.cam = { x: world.CENTER.x, y: world.CENTER.y + 600 }; this.visible = new Set(); this.hitBoxes = []; this.lastPoses = []; this.frames = 0; this.menuTime = 0;
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; this.units.reduced = this.reducedMotion; this.shake = { x: 0, y: 0 };

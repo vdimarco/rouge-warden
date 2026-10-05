@@ -21,7 +21,8 @@ function prepare(root, { metal = true } = {}) {
     if (!o.isMesh) return;
     o.castShadow = true; o.receiveShadow = true;
     if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
-    const m = o.material; m.emissiveMap = null; m.emissive?.set(0);
+    // GLTFLoader turns on flat shading for a mesh without normals; with computed normals it shades smoothly.
+    const m = o.material; m.flatShading = false; m.emissiveMap = null; m.emissive?.set(0);
     if (!m.metalnessMap || !metal) { m.metalness = 0; m.metalnessMap = null; }
     if (!m.roughnessMap) m.roughness = .88;
     m.envMapIntensity = .9; m.needsUpdate = true;

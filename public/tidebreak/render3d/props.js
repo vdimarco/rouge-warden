@@ -70,8 +70,11 @@ function bushGeometry(seed) {
   const rand = random(seed), parts = [];
   for (let i = 0; i < 6; i++) {
     const g = new THREE.IcosahedronGeometry(.3 + rand() * .14, 1), p = g.attributes.position, a = rand() * Math.PI * 2, r = i ? .18 + rand() * .2 : 0;
-    for (let k = 0; k < p.count; k++) { const s = 1 + (rand() - .5) * .28; p.setXYZ(k, p.getX(k) * s, p.getY(k) * s * .85, p.getZ(k) * s); }
-    g.translate(Math.cos(a) * r, .3 + rand() * .25 - (i ? .08 : 0), Math.sin(a) * r); g.computeVertexNormals(); parts.push(g);
+    // Normals point out from the ball's centre, so the facets of the low-detail sphere shade as one soft mass.
+    const nrm = new Float32Array(p.count * 3);
+    for (let k = 0; k < p.count; k++) { const x = p.getX(k), y = p.getY(k), z = p.getZ(k), l = Math.hypot(x, y, z) || 1, s = 1 + (rand() - .5) * .2; nrm.set([x / l, y / l, z / l], k * 3); p.setXYZ(k, x * s, y * s * .85, z * s); }
+    g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+    g.translate(Math.cos(a) * r, .3 + rand() * .25 - (i ? .08 : 0), Math.sin(a) * r); parts.push(g);
   }
   return merge(parts);
 }
@@ -121,11 +124,11 @@ function patch(material, grow, { sway = 0, see = true, key, bias = 0, leaves = n
 }
 // Names from scenery.js -> what to build. Unknown names fall back to a boulder, so new scenery never breaks the scene.
 // [kind, height factor, width factor]; the oak model is an autumn oak, so tints move it toward summer or birch.
-const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pine', 1.05, .9], oak: ['oak', 1.45, .56], willow: ['oak', 1.35, .66], birches: ['oak', 1.55, .4] };
+const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pine', 1.05, .9], oak: ['oak', 1.35, .52], willow: ['oak', 1.3, .6], birches: ['oak', 1.5, .38] };
 // Late-summer crowns: some still green, some turning gold.
 const TINTS = { oak: ['#e2d996', '#b7c27c', '#d9b874', '#c8cf8a'], willow: ['#a9bc8e', '#9fb486'], birches: ['#efe8c8', '#dfe4b0'], juniper: ['#d4dcc0'], pines: ['#ffffff', '#e6eedc'], pine: ['#ffffff'] };
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
-const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .6, juniper: .6, willow: .7, oak: .7, pines: .8 };
+const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65, birches: .5, juniper: .6, willow: .6, oak: .5, pines: .8 };
 export class Props {
   constructor(scene, assets, textures) {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
@@ -138,9 +141,9 @@ export class Props {
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
       pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .75), material: tree(leaves, .035, .16, 1.2), shadow: true, selfShadow: false },
-      oak: { geometry: softCanopy(smooth(simplify(geometryOf(w.oak), 22), 4, .32), .62, .3, .85), material: tree(autumn, .03, .07, 0, '.42, .36, .1'), shadow: true, selfShadow: false },
-      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .06, 0, '.13, .2, .07'), shadow: false },
-      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .06, 0, '.36, .3, .1'), shadow: false },
+      oak: { geometry: softCanopy(smooth(simplify(geometryOf(w.oak), 22), 4, .32), .62, .3, .85), material: tree(autumn, .03, .04, 0, '.2, .16, .045'), shadow: true, selfShadow: false },
+      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .04, 0, '.08, .12, .04'), shadow: false },
+      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .04, 0, '.18, .15, .05'), shadow: false },
       boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true },
       arch: { geometry: simplify(geometryOf(w.arch), 28), material: tree(materialOf(w.arch), 0), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
@@ -245,7 +248,7 @@ export class Props {
   grove(put, b, height, rand, name) {
     const step = 125, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
-      const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .3;
+      const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .2;
       put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? '#b4c49a' : TINTS.oak[Math.floor(rand() * 4)]) : '#e6eadb');
     }
     for (let i = 0; i < nx + ny; i++) { const a = rand() * 6.3, h = 80 + rand() * 60; put('bush', b.x + Math.cos(a) * b.w * .52, b.y + Math.sin(a) * b.h * .52, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
