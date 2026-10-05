@@ -46,7 +46,7 @@ The Wild Hunt rises in the central ford after two minutes and returns 150 second
 | Guardian (×2 per base) | 5000 | 420 | 240, slam 380 | 200 / 180 |
 | Elder rift (armor 80; heals 1.5% per second while no enemy wisp is at it) | 24000 | 420 | 260 | win |
 
-Measured pacing (36 seeded bot matches, each with its own draft, `scratchpad` script `pace.mjs`): first skirmish 0:38, first blood about 0:58, first outer ward 3:15–3:35, first middle ward 5:15–5:40, first inner ward 8:00–8:45, rift exposed 10:40–11:20, match end median about 12:00 (p25 about 9:30, p75 about 15:00). Mirrored drafts (both teams use the same kits, lane for lane) split 18–18, so the layout favours neither side.
+Measured pacing (72 seeded bot matches, each with its own draft; medians): first skirmish 0:39, first blood 0:58, first outer ward 3:15, first middle ward 5:36, first inner ward 8:41, rift exposed 10:38, match end 11:33 (p25 9:28, p75 13:03). 12 of 72 matches reached sudden death and all ended by a rift kill. Before this change (6400 map, two tiers, the same method) the matches ran: first skirmish 0:05, first blood 0:20, first outer ward 1:10, rift exposed 3:14, end 5:36, with 15 of 36 at the six-minute limit. Mirrored drafts (both teams use the same kits, lane for lane) split 16–20 over 36 matches, so the layout favours neither side.
 
 ## Items and builds
 

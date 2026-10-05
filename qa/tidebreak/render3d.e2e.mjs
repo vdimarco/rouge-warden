@@ -82,7 +82,7 @@ try {
       const seen = await page.evaluate(id => { const r = window.__renderer, v = r.stats().structures.find(x => x.id === id), u = r.units.views.get(id)?.unit, a = u && r.project(u.x, u.y, 200); return { visible: v?.visible, onScreen: !!a && a.x > 0 && a.x < r.width && a.y > 0 && a.y < r.height }; }, u.id);
       assert(seen.visible && seen.onScreen, `${key} renders on screen: ${JSON.stringify(seen)}`);
     }
-    await page.evaluate(() => window.__renderer.recenter()); await pump(2, 16);
+    await read('const r = window.__renderer; r.recenter(); r.cam = { x: p.x, y: p.y };'); await pump(2, 16);
     g = await t.graphics();
     const tiers = [...kinds.keys()].sort();
     assert(tiers.includes('core0') && tiers.includes('core1') && tiers.filter(k => k.startsWith('tier')).length >= 2, 'cores and several tower tiers exist: ' + tiers);
@@ -93,9 +93,9 @@ try {
     // world(project(x, y)) is the identity on the ground, and pick() finds an enemy under the cursor.
     const trip = await page.evaluate(() => { const r = window.__renderer, out = []; for (const [dx, dy] of [[0, 0], [400, -300], [-600, 200], [900, -800]]) { const x = r.cam.x + dx, y = r.cam.y + dy, s = r.project(x, y), w = r.world(s.x, s.y); out.push(Math.hypot(w.x - x, w.y - y)); } return out; });
     assert(Math.max(...trip) < 1, 'world(project(x, y)) round-trips: ' + trip);
-    await read(`const e = s.units.find(u => u.kind === 'hero' && u.team === 1); e.x = p.x + 260; e.y = p.y - 60; e.revealedUntil = s.time + 10; e.hp = e.maxHp; e.respawn = 0; return e.id;`);
+    const foe = await read(`const e = s.units.find(u => u.kind === 'hero' && u.team === 1); e.x = p.x + 260; e.y = p.y - 60; e.revealedUntil = s.time + 10; e.hp = e.maxHp; e.respawn = 0; window.__renderer.cam = { x: p.x, y: p.y }; return e.id;`);
     await pump(2, 16);
-    const picked = await page.evaluate(async () => { const m = await import('/tidebreak/main.js'), s = m.qaState(), r = window.__renderer, e = s.units.find(u => u.kind === 'hero' && u.team === 1 && r.visible.has(u.id)); if (!e) return { none: true }; const a = r.project(e.x, e.y, 110); return { id: e.id, got: r.pick(s, a.x, a.y), ground: r.pick(s, a.x, a.y + 400) }; });
+    const picked = await page.evaluate(async foe => { const m = await import('/tidebreak/main.js'), s = m.qaState(), r = window.__renderer, e = s.units.find(u => u.id === foe && r.visible.has(u.id)); if (!e) return { none: true }; const a = r.project(e.x, e.y, 110); return { id: e.id, got: r.pick(s, a.x, a.y), ground: r.pick(s, a.x, a.y + 400) }; }, foe);
     assert.equal(picked.got, picked.id, 'pick finds the enemy hero under the cursor: ' + JSON.stringify(picked));
     pass('world(project()) round-trips and pick finds the unit under the cursor', { error: +Math.max(...trip).toFixed(4) });
 

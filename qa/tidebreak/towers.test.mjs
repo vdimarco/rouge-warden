@@ -58,7 +58,8 @@ for (let lane = 0; lane < 3; lane++) {
   const count = s.towers[1]; damage(s, p, inner, 99999); assert.equal(s.towers[1], count, 'a destroyed ward does not give duplicate rewards');
   damage(s, p, guards[0], 99999); assert(structureProtected(s, core), 'one guardian still protects the core'); assert.equal(s.guardians[1], 1);
   damage(s, p, guards[1], 99999); assert(!structureProtected(s, core)); assert.equal(nextObjective(s, 1, lane), core); assert.match(objectiveText(s, lane), /Rift exposed/);
-  damage(s, p, core, 99999); assert.equal(s.winner, 0);
+  // A hit sized from the core's health ends the match through its armor and backdoor protection.
+  damage(s, p, core, core.maxHp * 20); assert.equal(s.winner, 0);
 }
 // Sudden death lifts every gate.
 {
