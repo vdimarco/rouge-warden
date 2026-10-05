@@ -108,10 +108,10 @@ export const STEER_WORDS = { motion: "Tilt the phone ", touch: "Drag the rod " }
 const STEER_KEYS = { left: "Hold A.", right: "Hold D." };
 // the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
 // the cue), so the guide caption and the rod cue say "Reel fast." together. With no pace the reel move is MOVE_WORDS.reel
-export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", steady: "Reel steadily." };
+export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", faster: "Reel a little faster.", steady: "Reel steadily." };
 // the input of a player: "motion", "touch", or on a computer desk: "mouse" or "keys" (main.js keeps the last one used)
 export const inputOf = (motion, touch = true, desk = "keys") => (motion ? "motion" : touch ? "touch" : desk === "mouse" ? "mouse" : "keys");
-// the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "steady" for the reel
+// the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "faster" | "steady" for the reel
 export function moveWords(kind, input = "touch", side = 0, pace = "") {
   if (kind === "turn" && side && input === "keys") return STEER_KEYS[side > 0 ? "right" : "left"];
   if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
@@ -296,6 +296,8 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
       kicker.textContent = intro ? "WATCH + TRY" : "YOUR MOVE";
       count.textContent = intro ? (index + 1) + " / " + INTRO.length : { motion: "MOTION", touch: "TOUCH", mouse: "MOUSE", keys: "KEYS" }[input];
       [...panel.querySelectorAll(".guide-track i")].forEach((el, i) => el.classList.toggle("on", i === index));
+      // the bars are the steps of the cast: a reel move (or the flight) has no step, so the bars hide
+      panel.dataset.track = String(index >= 0);
       panel.hidden = false;
       parts = Object.keys(poseAt(kind, 0)).flatMap(cls => [...art.querySelectorAll("." + cls)].map(el => [el, cls]));
       layoutKey = "";

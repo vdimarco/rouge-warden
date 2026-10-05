@@ -40,19 +40,23 @@ The animated guide SHALL show on the first cast screen for a player who has not 
 - **WHEN** a new player waits on the first cast screen in motion or touch mode
 - **THEN** the guide counts 1 / 3 to 3 / 3 through hold, back, and cast, and then starts again, with no reel move.
 
+#### Scenario: Reel moves without step bars
+- **WHEN** the lure is in the water and the guide shows a reel move
+- **THEN** the guide shows YOUR MOVE with the move, and no step bars.
+
 ### Requirement: Short help
 How to play SHALL open on the tab for the player's input. Each tab SHALL fit without a scroll at 390x844, and SHALL teach the rising rings. Fish moves SHALL sit behind a "Fish moves" row.
 
 #### Scenario: Desktop help
 - **WHEN** a desktop player opens How to play
-- **THEN** the "Touch and mouse" tab shows first.
+- **THEN** the "Touch and mouse" tab shows first, and its strike row says "A fish strikes? Drag the rod up fast, or press Space."
 
 #### Scenario: Help in the app
 - **WHEN** a player opens How to play in the store build or on a phone
 - **THEN** the tabs are "Motion" and "Touch", with no word of a mouse.
 
 ### Requirement: One word for each move
-The prompt, the guide caption, and the rod cue SHALL use the same words for the same move and input. On a computer the input SHALL be the one the player used last, the mouse or the keys, and the guide SHALL label it MOUSE or KEYS.
+The prompt, the guide caption, and the rod cue SHALL use the same words for the same move and input. On a computer the input SHALL be the one the player used last, the mouse or the keys, and the guide SHALL label it MOUSE or KEYS. Only a rod input SHALL change it: a mouse press picks the mouse, and a new press of W, A, S, D, or an arrow key, or a Space cast, picks the keys. A key that repeats while it is held, Space in the reel, R, E, the drag keys, and the mouse wheel SHALL NOT change it.
 
 #### Scenario: Pump in motion mode
 - **WHEN** a fish holds on the bottom in motion mode
@@ -70,9 +74,17 @@ The prompt, the guide caption, and the rod cue SHALL use the same words for the 
 - **WHEN** a fish jumps and the player used the keys last
 - **THEN** the prompt sub, the guide caption, and the rod cue say "Hold S.", and the guide labels the move KEYS. The other moves name W, A, D, R, and Space.
 
+#### Scenario: Keys and the wheel together
+- **WHEN** a player holds S in a jump and reels with the mouse wheel at the same time
+- **THEN** the prompt sub, the guide caption, and the rod cue say "Hold S." in every frame, and the guide label stays KEYS.
+
+#### Scenario: Mouse player sets the hook with Space
+- **WHEN** a player who drags the rod with the mouse presses Space at the strike, and the fish jumps
+- **THEN** the prompt sub, the guide caption, and the rod cue say "Drag the rod down.", and the guide label stays MOUSE.
+
 #### Scenario: Flight on a computer
 - **WHEN** the lure flies in a game on a computer, on the player's third to eighth cast
-- **THEN** the rod cue says "Click to slow", and the tip says "To stop the lure short, click the lake."
+- **THEN** the rod cue says "Click to slow", and the tip says "To stop the lure short, click the lake." A click on the lake then says "The mouse button slows the line."
 
 ### Requirement: Layouts that fit
 Every screen SHALL fit at 390x844, 360x640, 430x932, 844x390, 820x1180, and 1280x800 with no clipped text, no overlap, and its Close or Done button in view or in a scroll that shows it. The HUD chip SHALL show the full derby weight at 360 px.

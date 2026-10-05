@@ -46,7 +46,7 @@ These come from the audit's sandbox runs. The sims set the final values.
 - Grind ramp: `smooth(0, 0.6, slipT)`, and `slipT` runs down 10 times as fast while the spool holds, so each run starts fresh. Cranking never locks the spool past 0.85 of the line's break. Measured: a steady crank into a run snaps a median 0.78 s after the first slip (p25 0.52 s), and a grinder still snaps 36% of the time.
 - The first fish of a fresh save is "eager": it ignores lure speed and always strikes before the lure gets home. The gift is used up on the strike, not on the cast.
 - The legends kept their original bands and were retuned in `species.js`, so the casual landing rate falls from the first legend (67%) to the last (52%).
-- The fight cue carries an explicit crank pace (slow, fast, or steady), so the prompt, the guide, and the rod cue use the same words.
+- The fight cue carries an explicit crank pace (slow, fast, a little faster, or steady), so the prompt, the guide, and the rod cue use the same words.
 - The toast queue keeps each toast up 1.2 s, holds up to 2, and drops a toast that waited 3 s.
 
 ## Goals and the save

@@ -242,11 +242,18 @@ if (part("A")) {
     await stage(page, { fish: { move: "jump" } }, [{ type: "hooked" }, { type: "walk", n: 3 }, { type: "jump" }]);
     await sleep(150);
     const w0 = { ...(await promptNow(page)), ...(await shown()) };
+    // the last leap alone keeps the jump words for 900 ms of the game clock (recent("jump", 900) in main.js). Wait until
+    // two frames have run past that, so that only the walk can keep them (a fixed sleep can see no frame on a busy machine)
+    const pastJump = async () => {
+      await wait(page, () => performance.now() - (FISH.G.lastEvent.jump || -1e9) > 900);
+      const f = await page.evaluate(() => FISH.G.frame);
+      await wait(page, (f) => FISH.G.frame >= f + 2, f);
+    };
     await stage(page, { fish: { move: "swim" }, slack: true, slackT: 1 }, [], false);
-    await sleep(1300);
+    await pastJump();
     const w1 = await promptNow(page);
     await stage(page, { fish: { move: "swim" }, slack: true, slackT: 1 }, [{ type: "walkEnd" }], false);
-    await sleep(1300);
+    await pastJump();
     const w2 = await promptNow(page);
     check(w0.h === "It jumps again and again!" && w0.prompt === "visible" && !w0.banner, `a tail walk at the hook set: the jump words show at once, and the banner gives way (${JSON.stringify(w0)})`);
     check(w1 && w1.h === "It jumps again and again!", `between two leaps of the walk, with slack line, the jump words stay (${JSON.stringify(w1)})`);
@@ -303,6 +310,8 @@ if (part("A")) {
     check(mw.guide === "Reel fast." && mw.cue === "Reel fast.", `slack line: the guide and the rod cue say "Reel fast." (${JSON.stringify(mw)})`);
     mw = await reelWords({ beaten: true, fish: { stamina: 0.05 } }, "It is tired. Reel steadily.");
     check(mw.guide === "Reel steadily." && mw.cue === "Reel steadily.", `a tired fish: the guide and the rod cue say "Reel steadily." (${JSON.stringify(mw)})`);
+    mw = await reelWords({ beaten: true, slack: true, slackT: 1, fish: { stamina: 0.05 } }, "It is tired. Reel a little faster.");
+    check(mw.guide === "Reel a little faster." && mw.cue === "Reel a little faster.", `a tired fish with slack line: the guide and the rod cue say "Reel a little faster." (${JSON.stringify(mw)})`);
     await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") !== "Show the moves guide") document.querySelector("#guideToggle").click(); });
     await page.evaluate(() => { FISH.G.input = "touch"; });
 
@@ -513,10 +522,11 @@ if (part("A")) {
     check(names.join() === "Yellow Perch,Smallmouth Bass,Walleye,Not caught yet,Not caught yet,Not caught yet", "the fish caught small to big, then the ones to find (" + names.join(", ") + ")");
     check(jr.rows[2][1] === "Best 3.6 kg · 62 cm · caught 1" && jr.rows[0][1] === "Best 0.60 kg · 35 cm · caught 3", "a caught fish shows its best and the count (" + jr.rows[2][1] + " / " + jr.rows[0][1] + ")");
     check(jr.rows[3][1] === "Try the lily pads." && jr.rows[4][1] === "Try the rocky point at dusk." && jr.rows[5][1] === "Try the lily pads at dusk.", "a fish not caught yet says where to try (" + jr.rows.slice(3).map((r) => r[1]).join(" / ") + ")");
-    check(jr.sum === "3 of 13 found here · 3 of 29 in all · 5 fish landed · 0 casts", "the summary line (" + jr.sum + ")");
+    // (the first line only: on a day whose goal these catches meet, a second line says "Goal days: 1")
+    check(jr.sum.split("\n")[0] === "3 of 13 found here · 3 of 29 in all · 5 fish landed · 0 casts", "the summary line (" + jr.sum + ")");
     // one cast is "1 cast", not "1 casts" (the Loon chip draws the journal again)
     const sum1 = await page.evaluate(() => { const n = FISH.save.casts; FISH.save.casts = 1; document.querySelector("#jtabs button").click(); const t = document.querySelector("#jsum").textContent; FISH.save.casts = n; document.querySelector("#jtabs button").click(); return t; });
-    check(sum1.endsWith(" · 1 cast"), "one cast in the summary line: \"1 cast\" (" + sum1 + ")");
+    check(sum1.split("\n")[0].endsWith(" · 1 cast"), "one cast in the summary line: \"1 cast\" (" + sum1 + ")");
     // the legend row, by step: once every other fish here is caught, the legend is among the next 3
     const keep = await page.evaluate(() => JSON.stringify(FISH.save.journal));
     await page.evaluate(() => { for (const id of ["pumpkinseed", "rockbass", "largemouth", "pike", "laketrout", "muskie"]) FISH.save.journal[id] = { n: 1, kg: 1, cm: 30 }; });
