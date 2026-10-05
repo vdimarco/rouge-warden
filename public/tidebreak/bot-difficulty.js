@@ -22,15 +22,16 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // defendBase: every healthy bot answers a hit on the base, not only the closest one.
+// wardBonus: target score bonus for an open enemy ward (ward health decides matches).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, retreatRules: false, defendBase: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, wardBonus: 0, retreatRules: false, defendBase: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
   apprentice: { ...OFF, retreatAt: .2, engage: false, reaction: [.45, .65], busy: .12, dodge: .5, aimError: 70, castLock: 1.8, failLock: 1.8, waveGate: true },
-  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
-  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
+  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2, wardBonus: 260 },
+  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2, wardBonus: 260 },
 };
 // Allied bots stay at one competent level, whatever the enemy difficulty is: Veteran with full retreat discipline.
 PROFILES.ally = { ...PROFILES.veteran, retreatRules: true, tradeRetreat: .75 };
@@ -195,7 +196,7 @@ export function targetBonus(s, e, t, inRange) {
   const P = botProfile(s, e);
   if (P.legacy) return 0;
   // Ward health decides a match at the time limit, so an open ward beats farming.
-  if (STRUCTURE.includes(t.kind)) return P.push ? -260 : 0;
+  if (STRUCTURE.includes(t.kind)) return -P.wardBonus;
   if (t.kind !== 'hero') return 0;
   const focus = s.botFocus?.[e.team];
   // The team focus counts only in reach, so a bot does not run past a closer threat.
