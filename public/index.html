@@ -66,6 +66,7 @@ button { font: inherit; color: inherit; }
 .section-nav button, .section-nav a { min-height: 28px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(20,12,36,.72); color: var(--muted); font: 8px/1 var(--pixel); letter-spacing: .04em; text-decoration: none; cursor: pointer; }
 .section-nav button.on { color: #07050f; background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px rgba(63,240,255,.42); }
 .section-nav a { color: var(--gold); border-color: rgba(255,207,74,.42); }
+.section-nav .all-games { color: var(--pink); border-color: rgba(255,63,164,.5); }
 .section-nav button:hover, .section-nav a:hover { color: #fff; border-color: rgba(255,255,255,.4); }
 
 @keyframes flick { 0%, 100% { opacity: 1; } 71% { opacity: 0.25; text-shadow: none; } 72% { opacity: 1; } 74% { opacity: 0.3; text-shadow: none; } 75% { opacity: 1; } }
@@ -248,6 +249,7 @@ button { font: inherit; color: inherit; }
       <button type="button" data-section="action">ACTION</button>
       <button type="button" data-section="strategy">STRATEGY</button>
       <a href="/lab/">LAB ↗</a>
+      <button type="button" class="all-games" data-switch>ALL GAMES ▦</button>
     </nav>
   </header>
 
@@ -505,6 +507,7 @@ button { font: inherit; color: inherit; }
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/chip.js"></script>
+<script src="/arcade/switch.js"></script>
 <script>
 "use strict";
 const $ = (s, el) => (el || document).querySelector(s);

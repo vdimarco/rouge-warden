@@ -113,6 +113,8 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
   check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
+// the arcade page opens the same grid as ALL GAMES
+check(/<button[^>]*class="all-games"[^>]*data-switch/.test(html) && html.includes('<script src="/arcade/switch.js"></script>'), "the arcade page has an ALL GAMES button that opens the game grid");
 check(/^\s*<script src="\/arcade\/quiet\.js"><\/script>/m.test(html.slice(html.indexOf("<head>"), html.indexOf("</head>"))) && html.indexOf("/arcade/quiet.js") < html.search(/<script(?![^>]*quiet)/), "quiet.js is the first script on the arcade page");
 
 /* ---------------- the page ---------------- */
