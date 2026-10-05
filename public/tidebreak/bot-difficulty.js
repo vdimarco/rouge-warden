@@ -17,20 +17,22 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // castLock: seconds between spell decisions. failLock: lock after a cast that did not start.
 // reserve: share of the escape spell's mana kept back in a fight with a healthy hero.
 // retreatAt: health share that always sends the bot home. engage: dash in on a weak target.
+// retreatRules: leave when a tower targets the bot, or when hurt against a healthier enemy.
+// tradeRetreat: margin for comparing both sides' health and damage (0 = no comparison).
 // saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, sprint: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, retreatRules: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, sprint: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
   apprentice: { ...OFF, retreatAt: .2, engage: false, reaction: [.45, .65], busy: .12, dodge: .5, aimError: 70, castLock: 1.8, failLock: 1.8, waveGate: true },
-  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, tradeRetreat: .75, waveGate: true, diveGuard: true, sprint: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
-  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 320, lowest: 140, punish: 220, tradeRetreat: .85, waveGate: true, diveGuard: true, killCheck: true, sprint: true, gankEvery: 45, camps: true, objectiveLead: 12, defend: true, push: 1 },
+  veteran: { ...OFF, reaction: [.3, .42], dodge: .75, aimLead: .5, aimError: 35, castLock: .7, failLock: .25, saveSpells: 1, focus: 160, lowest: 90, punish: 140, waveGate: true, diveGuard: true, sprint: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
+  mythic: { ...OFF, reaction: [.24, .32], busy: .06, dodge: .9, aimLead: .6, aimError: 18, castLock: .6, failLock: .2, saveSpells: 1, focus: 160, lowest: 90, punish: 140, retreatRules: true, tradeRetreat: .75, waveGate: true, diveGuard: true, sprint: true, gankEvery: 80, camps: true, objectiveLead: 6, defend: true, push: 2 },
 };
-// Allied bots stay at one competent level, whatever the enemy difficulty is.
-PROFILES.ally = { ...PROFILES.veteran };
+// Allied bots stay at one competent level, whatever the enemy difficulty is: Veteran with full retreat discipline.
+PROFILES.ally = { ...PROFILES.veteran, retreatRules: true, tradeRetreat: .75 };
 
 export const normalDifficulty = id => DIFFICULTIES.includes(id) ? id : DEFAULT_DIFFICULTY;
 // s.difficulty = [allied profile, enemy profile]. A match without it plays Veteran.
@@ -130,7 +132,7 @@ export function diveSafe(s, e, t, allies = []) {
 // Trade-aware retreat. Each side's value is its effective health times its damage.
 export function tradeRetreat(s, e, heroes, hurt) {
   const P = botProfile(s, e);
-  if (!P.tradeRetreat) return false;
+  if (!P.tradeRetreat && !P.retreatRules) return false;
   const near = 900 * K, foes = heroes.filter(t => distance(e, t) < near);
   const towerOnMe = enemyStructures(s, e.team).find(t => t.towerTarget === e.id && t.towerUntil > s.time && distance(t, e) < t.range + 30);
   if (towerOnMe && hurt < .6 && !(foes.length && foes.every(t => diveSafe(s, e, t, [e])))) return true;
@@ -140,7 +142,8 @@ export function tradeRetreat(s, e, heroes, hurt) {
   const covering = enemyStructures(s, e.team).filter(t => distance(t, e) < t.range + 60);
   const ours = value(friends), theirs = value(foes) + covering.reduce((v, t) => v + dps(t) * 1.4, 0) * friends.reduce((v, t) => v + effectiveHp(t), 0) * .5;
   if (hurt < .5 && friends.length <= foes.length && foes.some(t => t.hp / t.maxHp - hurt >= .25)) return true;
-  return hurt < .8 && ours < theirs * P.tradeRetreat;
+  // Only profiles with a trade margin weigh both sides.
+  return !!P.tradeRetreat && hurt < .8 && ours < theirs * P.tradeRetreat;
 }
 
 // Wave-gated lane walking. Without a wave in front, the bot waits outside tower range.

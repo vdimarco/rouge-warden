@@ -44,16 +44,18 @@ if (!process.env.AB_CHILD && +jobs > 1) {
       const bucket = kind === 'attack' ? 'attack' : kind === 'spell' ? 'spell' : 'item';
       stat[teamOf(credit.team)][bucket] += actual;
     }
+    if (tgt.kind === 'boss' && tgt.hp <= 0 && actual > 0 && src.team >= 0) stat[teamOf(src.team)].bosses = (stat[teamOf(src.team)].bosses || 0) + 1;
     if (['tower', 'core'].includes(tgt.kind) && src.team >= 0) stat[teamOf(src.team)][credit?.kind === 'hero' ? 'heroWard' : 'waveWard'] += actual;
     if (tgt.kind === 'hero' && tgt.hp <= 0 && actual > 0 && s.time - (tgt.towerHitAt ?? -9) < 2.5) stat[teamOf(tgt.team)].dives++;
   };
   for (let tick = 0; tick < (sim.LIMIT + 1) * 20 && s.winner === null; tick++) sim.step(s, { autopilot: true }, .05);
   for (const t of [0, 1]) { stat[teamOf(t)].kills = s.score[t]; stat[teamOf(t)].towers = 6 - s.towers[1 - t]; }
+  for (const h of s.units.filter(u => u.kind === 'hero')) { const st = stat[teamOf(h.team)]; st.level = (st.level || 0) + h.level / 3; st.lastHits = (st.lastHits || 0) + h.lastHits; st.items = (st.items || 0) + h.inventory.length; }
   rows.push({ seed, side, winner: s.winner === -1 ? 'draw' : teamOf(s.winner), time: s.time, stat });
 }
 if (process.env.AB_CHILD) { console.log(JSON.stringify(rows)); process.exit(0); }
-const sum = (team, key) => rows.reduce((v, r) => v + r.stat[team][key], 0);
+const sum = (team, key) => rows.reduce((v, r) => v + (r.stat[team][key] || 0), 0);
 const n = rows.length, wins = rows.filter(r => r.winner === 'A').length, draws = rows.filter(r => r.winner === 'draw').length;
 const share = team => { const total = sum(team, 'spell') + sum(team, 'attack') + sum(team, 'item'); return { spell: sum(team, 'spell') / total, attack: sum(team, 'attack') / total, item: sum(team, 'item') / total }; };
-const out = { A, B, matches: n, winRateA: wins / n, draws, killsA: sum('A', 'kills') / n, killsB: sum('B', 'kills') / n, towersA: sum('A', 'towers') / n, towersB: sum('B', 'towers') / n, minutes: rows.reduce((v, r) => v + r.time, 0) / n / 60, timeouts: rows.filter(r => r.time >= sim.LIMIT).length, heroWardA: sum('A', 'heroWard') / n, waveWardA: sum('A', 'waveWard') / n, heroWardB: sum('B', 'heroWard') / n, waveWardB: sum('B', 'waveWard') / n, divesA: sum('A', 'dives') / n, divesB: sum('B', 'dives') / n, spellShareA: share('A').spell, attackShareA: share('A').attack, spellShareB: share('B').spell, attackShareB: share('B').attack };
+const out = { A, B, matches: n, winRateA: wins / n, draws, killsA: sum('A', 'kills') / n, killsB: sum('B', 'kills') / n, towersA: sum('A', 'towers') / n, towersB: sum('B', 'towers') / n, minutes: rows.reduce((v, r) => v + r.time, 0) / n / 60, timeouts: rows.filter(r => r.time >= sim.LIMIT).length, bossesA: sum('A', 'bosses') / n, bossesB: sum('B', 'bosses') / n, levelA: sum('A', 'level') / n, levelB: sum('B', 'level') / n, lastHitsA: sum('A', 'lastHits') / n, lastHitsB: sum('B', 'lastHits') / n, itemsA: sum('A', 'items') / n, itemsB: sum('B', 'items') / n, heroWardA: sum('A', 'heroWard') / n, waveWardA: sum('A', 'waveWard') / n, heroWardB: sum('B', 'heroWard') / n, waveWardB: sum('B', 'waveWard') / n, divesA: sum('A', 'dives') / n, divesB: sum('B', 'dives') / n, spellShareA: share('A').spell, attackShareA: share('A').attack, spellShareB: share('B').spell, attackShareB: share('B').attack };
 console.log(JSON.stringify(out));

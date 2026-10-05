@@ -94,7 +94,8 @@ const trade = level => {
   for (let t = 0; t < 1.5; t += .05) { s.time += .05; if (combatDecision(s, bot).mode === 'retreat') return t; }
   return Infinity;
 };
-for (const id of ['veteran', 'mythic']) assert.ok(trade(id) <= 1.5, `${id} bot at 40% leaves a full-health enemy`);
+assert.ok(trade('mythic') <= 1.5, 'a Mythic bot at 40% leaves a full-health enemy');
+assert.equal(trade('veteran'), Infinity, 'a Veteran bot judges trades by fixed health floors only, so Mythic is the harder opponent');
 assert.equal(trade('legacy'), Infinity, 'the old bots stayed in a losing trade');
 
 // Sprint parity and cast lock.
