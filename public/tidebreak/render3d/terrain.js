@@ -54,7 +54,7 @@ function paintMasks(world, s, seed) {
   const a = c.getImageData(0, 0, MASK, MASK).data, b = w.getImageData(0, 0, MASK, MASK).data, data = new Uint8Array(MASK * MASK * 4);
   for (let i = 0; i < data.length; i += 4) { data[i] = a[i]; data[i + 1] = a[i + 1]; data[i + 2] = a[i + 2]; data[i + 3] = b[i]; }
   blur(data, 0, 3); blur(data, 1, 3); blur(data, 2, 2); blur(data, 3, 1);
-  const t = new THREE.DataTexture(data, MASK, MASK); t.flipY = false; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;
+  const t = new THREE.DataTexture(data, MASK, MASK); t.userData.mask = { data, size: MASK, world: SIZE }; t.flipY = false; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;
   return t;
 }
 const GROUND_FRAGMENT = `
@@ -77,6 +77,10 @@ const GROUND_FRAGMENT = `
   LAYER( sand, mask.g, 3., .9 )
   LAYER( dirt, mask.r, 3.2, .93 )
   LAYER( stone, mask.b, 5., .78 )
+  // Wet bank: within about a hundred units of the water (a blurred mip of the water mask) sand and soil darken and turn
+  // glossy, so the shore reads as wet before the foam.
+  float near = texture2D( uMask, clamp( muv, 0., 1. ), 4. ).a * inside, damp = smoothstep( .03, .3, near ) * ( 1. - smoothstep( .3, .7, mask.a ) );
+  col *= 1. - damp * ( .25 + mask.g * .2 ); rough = mix( rough, .55, damp * .7 );
   // The river bed: dark wet silt and pebbles under the water.
   float wet = smoothstep( .05, .9, mask.a );
   col = mix( col, mix( sand.rgb * vec3( .42, .44, .4 ), dirt.rgb * .35, .5 ), wet ); rough = mix( rough, .35, wet );
@@ -112,7 +116,7 @@ export class Terrain {
   // Rebuilt for each match seed: masks, river and bridges follow the live geometry.
   build(world, s) {
     const { SIZE, PATHS } = world, seed = s.seed;
-    this.uniforms.uMask.value?.dispose(); this.uniforms.uMask.value = paintMasks(world, s, seed);
+    this.uniforms.uMask.value?.dispose(); this.uniforms.uMask.value = paintMasks(world, s, seed); this.mask = this.uniforms.uMask.value.userData.mask;
     this.ground.scale.set(SIZE + MARGIN * 2, SIZE + MARGIN * 2, 1); this.ground.position.set(SIZE / 2, 0, SIZE / 2);
     for (const child of [...this.group.children]) { this.group.remove(child); child.geometry?.dispose(); if (child.material !== this.stone) child.material?.dispose?.(); }
     this.water = water(riverGeometry(seed)); this.group.add(this.water);
@@ -153,9 +157,12 @@ function water(river) {
         col = mix( col, uSky * .55, .08 + fres * .5 );
         vec3 hv = normalize( uSun + view ); float glint = pow( max( dot( n, hv ), 0. ), 260. ) * 2.4;
         col += vec3( 1., .82, .55 ) * glint * ( .4 + depth );
-        float foam = smoothstep( .78, .95, across ) * ( .5 + .5 * noise( vW.xz / 18. + uTime * .6 ) );
-        col = mix( col, vec3( .55, .55, .48 ), foam * .22 );
-        float alpha = mix( .6, .96, depth ) * ( 1. - smoothstep( .9, 1., across ) );
+        // Shore foam: a broken white edge, and thin lines that run in toward the bank.
+        float edgeFoam = smoothstep( .74, .93, across ) * smoothstep( .35, .7, noise( vW.xz / 22. + vec2( uTime * .5, 0. ) ) + noise( vW.xz / 7. - uTime * .7 ) * .5 );
+        float lines = smoothstep( .8, .97, sin( across * 34. - uTime * 2.2 + noise( vW.xz / 40. ) * 6. ) ) * smoothstep( .55, .85, across ) * ( 1. - smoothstep( .93, 1., across ) );
+        float foam = clamp( edgeFoam + lines * .5 * noise( vW.xz / 12. + uTime * .3 ), 0., 1. );
+        col = mix( col, vec3( .78, .8, .74 ) * mix( 1., .7, uRealm ), foam * .55 );
+        float alpha = max( mix( .6, .96, depth ), foam * .8 ) * ( 1. - smoothstep( .92, 1., across ) );
         gl_FragColor = vec4( col, alpha );
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

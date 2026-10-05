@@ -5,20 +5,23 @@
 import * as THREE from 'three';
 import { Renderer as Renderer2D, backingRatio } from './illustrated-render.js';
 import * as world from './world.js';
-import { player, HEROES } from './sim.js';
+import { player, HEROES, fortified } from './sim.js';
 import { makeScenery } from './scenery.js';
 import { identityFor, identitySkill, HERO_IDENTITIES } from './hero-identities.js';
 import { structureProtected } from './objectives.js';
 import { assets, preload, WORLD_MODELS, heroModel } from './render3d/assets.js';
-import { groundTextures, macroTexture, glowTexture, smokeTexture } from './render3d/textures.js';
+import { groundTextures, macroTexture, glowTexture, sparkAtlas, softAtlas } from './render3d/textures.js';
 import { Sky, installGrade } from './render3d/sky.js';
 import { Terrain } from './render3d/terrain.js';
 import { Props } from './render3d/props.js';
-import { Units, TEAM3D, NEUTRAL, PLAYER, HERO_HEIGHT, TOWER_HEIGHT } from './render3d/units.js';
+import { Units, TEAM3D, NEUTRAL, PLAYER, TOWER_HEIGHT, OUTLINE } from './render3d/units.js';
 import { Effects } from './render3d/effects.js';
-import { fow } from './render3d/materials.js';
-import { drawTells3D, overlayTells } from './render3d/tells.js';
+import { fow, seeUniforms, SEE_POINTS } from './render3d/materials.js';
+import { foliageUniforms } from './render3d/foliage.js';
+import { drawTells3D, overlayTells, HOSTILE } from './render3d/tells.js';
+import { elementOf, impact, hold, PALETTE } from './render3d/elements.js';
 import { drawUnitMarks } from './combat-tells-draw.js';
+import { graphicsSupport } from './render3d/choice.js';
 export { preload };
 
 const { clamp, distance, visibleTo, concealed } = world;
@@ -47,9 +50,9 @@ export class ThreeRenderer {
     this.gl.shadowMap.enabled = true; this.gl.shadowMap.type = THREE.PCFShadowMap; this.gl.info.autoReset = true;
     this.scene = new THREE.Scene(); this.camera = new THREE.PerspectiveCamera(FOV, 1, 150, 22000);
     this.sky = new Sky(this.gl, this.scene);
-    this.textures = { ...groundTextures(), macro: macroTexture(), glow: glowTexture(), smoke: smokeTexture() };
+    this.textures = { ...groundTextures(), macro: macroTexture(), glow: glowTexture(), sparks: sparkAtlas(), soft: softAtlas() };
     this.terrain = new Terrain(this.scene, this.textures, this.textures.macro);
-    this.props = new Props(this.scene, assets, this.textures);
+    this.props = new Props(this.scene, assets, this.textures, { coverage: !graphicsSupport().software }); // alpha to coverage is slow in software WebGL
     this.effects = new Effects(this.scene, this.textures);
     this.units = new Units(this.scene, this.effects); this.units.init(this.textures);
     this.fowCanvas = Object.assign(document.createElement('canvas'), { width: 128, height: 128 }); this.fowCanvas.getContext('2d', { willReadFrequently: true }); this.fowTex = new THREE.CanvasTexture(this.fowCanvas); this.fowTex.colorSpace = THREE.NoColorSpace; this.fowTex.flipY = false; fow.uFow.value = this.fowTex;
@@ -58,15 +61,17 @@ export class ThreeRenderer {
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; this.units.reduced = this.reducedMotion; this.shake = { x: 0, y: 0 };
     this.sceneSeed = null; this.drawCalls = 0; this.triangles = 0;
     this.lost = false; glCanvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; }); glCanvas.addEventListener('webglcontextrestored', () => { this.lost = false; });
+    // The pointer, for the see-through around soldiers under it (pick() still takes its own point).
+    this.onPointer = e => { this.pointer = { x: e.clientX, y: e.clientY }; }; canvas.addEventListener('pointermove', this.onPointer, { passive: true });
     canvas.__shore3d = this; // QA handle (qa/tidebreak/render3d.e2e.mjs); gameplay never reads it
     this.resize();
   }
   // Removes the 3D canvases and frees the GPU context (switching to the 2D renderer).
-  dispose() { if (this.events.__shore3d === this) delete this.events.__shore3d; this.units.clear(); this.gl.dispose(); this.gl.forceContextLoss(); this.canvas.remove(); this.overlay.remove(); }
+  dispose() { this.events.removeEventListener('pointermove', this.onPointer); if (this.events.__shore3d === this) delete this.events.__shore3d; this.units.clear(); this.gl.dispose(); this.gl.forceContextLoss(); this.canvas.remove(); this.overlay.remove(); }
   setScene(s) {
     if (s.seed !== this.sceneSeed) {
       this.sceneSeed = s.seed; this.scenery = [0, 1].map(phase => makeScenery(s.seed, phase));
-      this.terrain.build(world, s); this.props.build(world, s, this.scenery);
+      this.terrain.build(world, s); this.bridges = this.terrain.bridges; this.props.ground = this.terrain.mask; this.props.build(world, s, this.scenery); // bridges: for the shared drawMap
       this.restartTiming(); this.compiled = false;
     }
     if (this.stateRef !== s) { this.stateRef = s; this.units.clear(); this.effects.clear(); this.props.setPhase(s.phase, true); this.sky.blend = s.phase ? 1 : 0; this.seenEffects = new WeakSet(); }
@@ -87,7 +92,9 @@ export class ThreeRenderer {
     this.foot = { minX: Math.min(...corners.map(c => c.x)), maxX: Math.max(...corners.map(c => c.x)), minY: Math.min(...corners.map(c => c.y)), maxY: Math.max(...corners.map(c => c.y)) };
     const a = this.project(-500, 0), b = this.project(500, 0), c = this.project(0, 100); this.scale = (b.x - a.x) / 1000; this.squash = (c.y - a.y) / 100 / this.scale;
     this.effects?.setScale(this.height * this.dpr / (2 * Math.tan(half)));
+    OUTLINE.uResolution.value.set(this.width * this.dpr, this.height * this.dpr); OUTLINE.uWidth.value = Math.max(1, 1.35 * this.dpr * Math.min(1.4, Math.max(.8, this.height / 900)));
     const q = this.quality, size = q >= .8 ? 2048 : q >= .6 ? 1536 : 1024; this.shadowSize = size;
+    if (this.props) { this.props.detail = q; this.props.view = null; }
     this.placeCamera(this.cam.x, this.cam.y, 0, 0); // input between a resize and the next frame still maps to the ground
     this.restartTiming();
   }
@@ -117,7 +124,8 @@ export class ThreeRenderer {
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
     this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
     const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, rect = { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
-    this.props.update(dt, time, p.hp > 0 && !menu ? p : null, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
+    this.props.update(dt, time, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
+    foliageUniforms.uSunView.value.copy(sd).transformDirection(this.camera.matrixWorldInverse); foliageUniforms.uSunColor.value.copy(this.sky.sun.color).multiplyScalar(this.sky.sun.intensity * .25);
     this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
     this.units.rimPower = this.sky.rim;
     const inView = e => e.x > rect.x0 - 450 && e.x < rect.x1 + 250 && e.y > rect.y0 - 250 && e.y < rect.y1 + 450;
@@ -125,6 +133,7 @@ export class ThreeRenderer {
     this.units.sync(s, time, dt, e => inView(e) && (menu || this.visible.has(e.id)), this.cam);
     for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') v.concealed = v.unit.team === 0 && concealed(s, v.unit);
     this.lastPoses = this.units.poses;
+    this.seeThrough(s, p, menu);
     this.drawWorldEffects(s, p, time, dt, menu, aim, waypoint);
     this.updateFog(s, menu);
     const view = this.camTarget, radius = Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55);
@@ -156,6 +165,19 @@ export class ThreeRenderer {
     const weighted = this.reducedMotion || menu ? 0 : (this.feel?.shake || 0) / (this.scale || 1);
     this.shake.x = Math.sin(time * 103) * Math.max(impact * 7, weighted); this.shake.y = Math.cos(time * 127) * Math.max(impact * 5, weighted * .7);
     this.camTarget = this.cam; this.placeCamera(this.cam.x, this.cam.y, this.shake.x, this.shake.y);
+  }
+  // The see-through points: the player's hero, every other hero in view, then soldiers near the pointer. Scenery and
+  // structures between the camera and one of them thin out around it (materials.js SEE_GLSL).
+  seeThrough(s, p, menu) {
+    const at = seeUniforms.uSeeAt.value; let n = 0;
+    const add = (e, radius) => { if (n >= SEE_POINTS) return; const v = this.units.views.get(e.id); if (!v?.root?.visible) return; at[n++].set(e.x, (v.height || 200) * .5, e.y, radius); };
+    if (!menu) {
+      if (p.hp > 0) add(p, 200);
+      for (const e of s.units) if (e.kind === 'hero' && !e.player && e.hp > 0 && this.visible.has(e.id)) add(e, 165);
+      const ptr = this.pointer && this.world(this.pointer.x, this.pointer.y);
+      if (ptr) for (const e of s.units) if ((e.kind === 'minion' || e.kind === 'camp' || e.kind === 'summon') && e.hp > 0 && this.visible.has(e.id) && distance(e, ptr) < 240) add(e, 130);
+    }
+    for (let i = n; i < SEE_POINTS; i++) at[i].w = 0;
   }
   // Team 0's sight, painted small and soft; the ground and scenery outside it darken.
   updateFog(s, menu) {
@@ -195,7 +217,7 @@ export class ThreeRenderer {
       const exposed = e.exposedUntil > s.time, recovery = e.recoveryUntil > s.time;
       if (exposed || recovery) d.circle(e.x, e.y, e.radius + 24, { color: exposed ? '#ffd09a' : '#c6cbd1', alpha: .75, line: 4, dash: 16 });
       const intent = e.castIntent || e.specialIntent;
-      if (intent?.shape) this.telegraph(intent, s.time, e.specialIntent ? '#ffc17a' : e.team === p.team ? '#9be3cf' : '#ff8f75', false);
+      if (intent?.shape) this.telegraph(intent, s.time, e.specialIntent ? '#ffb45a' : e.team === p.team ? '#9be3cf' : HOSTILE, false);
     }
     if (!menu) drawTells3D(this, s, p, time, near);
     if (!menu && p.hp > 0) {
@@ -216,7 +238,8 @@ export class ThreeRenderer {
   // A cast warning on the ground: fill, dashed edge and a ring that fills until the cast lands.
   telegraph(intent, time, color, preview) {
     const w = intent.shape, d = this.effects.decals, progress = preview ? -1 : clamp((time - intent.start) / Math.max(.001, intent.at - intent.start), 0, 1), r = Math.max(10, w.radius || 0);
-    const o = { color, alpha: preview ? .75 : .9, line: preview ? 4 : 8, fill: preview ? .12 : .26, dash: preview ? 24 : 0 };
+    // A warning fills as its hit comes closer, and a dark outline keeps its edge readable on bright grass and in the woods.
+    const o = { color, alpha: preview ? .75 : .95, line: preview ? 4 : 9, fill: preview ? .12 : .2 + progress * .22, dash: preview ? 24 : 0, outline: preview ? .5 : 1 };
     if (w.shape === 'path' || w.shape === 'line') {
       const pts = [{ x: w.x, y: w.y }, ...(w.points?.length ? w.points : [w.tx != null ? { x: w.tx, y: w.ty } : { x: w.x + Math.cos(w.angle || 0) * r, y: w.y + Math.sin(w.angle || 0) * r }])];
       for (let i = 1; i < pts.length; i++) d.capsule(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y, w.shape === 'line' ? Math.max(30, (w.width || 60) / 2) : 26, o);
@@ -258,11 +281,11 @@ export class ThreeRenderer {
         if (k >= 1 && !f.hitShown) { f.hitShown = true; fx.burst(f.tx, 100, tz, f.color || color, 6, 260); }
       } else if (first) fx.burst(f.tx, 95, tz, f.color || '#f0d8a8', 5, 240, { size: 22 });
     } else if (f.type === 'spell') {
-      const r = Math.max(60, f.radius || 130), big = f.slot === 3;
-      if (first) { fx.burst(f.x, 60, f.y, color, big ? 46 : 22, big ? 700 : 450, { size: big ? 44 : 32, life: big ? .8 : .55, up: 1.3 }); fx.dust(f.x, f.y, r * .5, big ? 10 : 4); if (near(f.x, f.y, 0)) fx.flash(f.x, 140, f.y, color, big ? 26000 : 14000, big ? .35 : .22); }
+      // Each element has its own burst, ground mark and light (elements.js); a big one near the view also flashes the screen.
+      const r = Math.max(60, f.radius || 130), big = f.slot === 3, el = elementOf(source, f.hero), tint = PALETTE[el][1];
+      if (first) { impact(fx, el, f.x, f.y, r, big); if (near(f.x, f.y, 0)) { fx.flash(f.x, 140, f.y, tint, big ? 26000 : 14000, big ? .35 : .22); if (big || f.source === p.id) this.screenFlash(f.x, f.y, tint, big ? 1 : .55); } }
       const k = Math.min(1, age * 1.6), fade = Math.max(0, 1 - age);
-      d.circle(f.x, f.y, r * (.3 + k * .75), { color, alpha: fade * .85, line: 7 * fade + 2 }); d.circle(f.x, f.y, r * (.2 + k * .6), { color, alpha: fade * .25, fill: .7, inner: 0 });
-      if (big) fx.ribbons.add(f.x, 0, f.y, f.x, 520 * (1 - age * .5), f.y, 60 * fade + 8, color, fade * .8);
+      hold(fx, el, f.x, f.y, r, big, age, fade, k);
     } else if (f.type === 'mortar') {
       const t = Math.min(1, age), x = f.x + ((f.tx ?? f.x) - f.x) * t, z = f.y + ((f.ty ?? f.y) - f.y) * t, y = 80 + Math.sin(t * Math.PI) * 260;
       fx.sparks.emit({ x, y, z, life: .05, size: 70, color: '#f1cf91' }); fx.sparks.emit({ x, y, z, life: .4, size: 30, color: '#d58bff', drag: 2 });
@@ -296,7 +319,7 @@ export class ThreeRenderer {
       c.textAlign = 'center'; c.lineJoin = 'round';
       if (tower) {
         const tier = e.kind === 'core' ? 'ELDER RIFT' : e.guardian || e.tier >= 3 ? 'GUARDIAN' : ['OUTER WARD', 'MIDDLE WARD', 'INNER WARD'][e.tier] || 'WARD';
-        this.label(prot ? `${tier} · PROTECTED` : tier, a.x, a.y - 7, prot ? '#d9d0e6' : '#ecd9a6', '700 10px Barlow');
+        this.label(prot ? `${tier} · PROTECTED` : fortified(s, e) ? `${tier} · FORTIFIED` : tier, a.x, a.y - 7, prot ? '#d9d0e6' : '#ecd9a6', '700 10px Barlow');
       } else if (hero) this.label(`${e.level ?? ''} ${identityFor(e)?.name || e.name}`.trim(), a.x, a.y - 6, e.team === 0 ? (e.player ? '#f4e6b0' : '#cdeee2') : '#ffc6bd', '700 10px Barlow');
       this.drawBadges(e, s.time, { x: a.x, y: a.y - (tower || hero ? 14 : 2) }); drawUnitMarks(this, s, e, { x: a.x, y: a.y - (tower || hero ? 14 : 2) }, p);
       const intent = e.castIntent || e.specialIntent;
@@ -313,7 +336,22 @@ export class ThreeRenderer {
       this.drawResults(s, p);
       const waiting = this.units.stats().placeholders; if (waiting) this.label(`Heroes are still loading · ${assets.heroes.size} of ${HERO_IDENTITIES.length}`, this.width / 2, this.height - 12, '#e9dcc0', '600 11px Barlow');
     }
+    this.drawFlashes(c);
     c.globalAlpha = 1; c.drawImage(this.vignette, 0, 0, this.width, this.height);
+  }
+  // Short screen-space flashes: a soft glow of the element's colour over a big impact on the overlay (blended over the
+  // battlefield, so a tint rather than true bloom), gone in a fifth of a second.
+  screenFlash(x, y, color, power) { if (this.reducedMotion) return; const c = new THREE.Color(color), rgb = `${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)}`; (this.flashes ||= []).push({ x, y, rgb, power, max: .2, born: performance.now() }); if (this.flashes.length > 4) this.flashes.shift(); }
+  drawFlashes(c) {
+    if (!this.flashes?.length) return; const now = performance.now();
+    this.flashes = this.flashes.filter(f => (now - f.born) / 1000 < f.max);
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (const f of this.flashes) {
+      const t = (now - f.born) / 1000 / f.max, a = this.project(f.x, f.y, 80), r = Math.max(this.width, this.height) * (.18 + t * .25) * f.power, g = c.createRadialGradient(a.x, a.y, 0, a.x, a.y, r), rgb = f.rgb;
+      g.addColorStop(0, `rgba(${rgb},${(.32 * (1 - t) * f.power).toFixed(3)})`); g.addColorStop(1, `rgba(${rgb},0)`);
+      c.fillStyle = g; c.fillRect(a.x - r, a.y - r, r * 2, r * 2);
+    }
+    c.restore();
   }
   label(text, x, y, color, font) { const c = this.ctx; c.font = font; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#120f0b'; c.strokeText(text, x, y); c.fillStyle = color; c.fillText(text, x, y); }
   heroPose(id) {
@@ -325,7 +363,7 @@ export class ThreeRenderer {
     const structures = [...this.units.views.values()].filter(v => v.unit && (v.unit.kind === 'tower' || v.unit.kind === 'core')).map(v => ({ id: v.unit.id, kind: v.unit.kind, team: v.unit.team, tier: v.unit.tier ?? null, guardian: !!v.unit.guardian, height: v.height, visible: !!v.root.visible, alive: v.unit.hp > 0 }));
     return { renderer: 'Mythic 3D', heroScreen: this.heroScreen, freeCam: !!this.freeCam, pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0,
       models: { world: Object.keys(assets.world).length, worldTotal: WORLD_MODELS.length, clips: assets.clips ? Object.keys(assets.clips).length : 0, heroes: assets.heroes.size, heroesTotal: HERO_IDENTITIES.length, failed: [...assets.failed] },
-      drawCalls: this.drawCalls, triangles: this.triangles, shadowMap: this.shadowSize, units: this.units.stats(), structures, scenerySeed: this.sceneSeed, sceneryCount: this.props.counts, crossings: this.terrain.bridges?.length || 0,
+      drawCalls: this.drawCalls, triangles: this.triangles, shadowMap: this.shadowSize, grassTufts: this.props.grass.count, seeThrough: seeUniforms.uSeeAt.value.filter(v => v.w > 0).length, units: this.units.stats(), structures, scenerySeed: this.sceneSeed, sceneryCount: this.props.counts, crossings: this.terrain.bridges?.length || 0,
       cameraPitch: 55, fov: FOV, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
   }
 }
