@@ -10,7 +10,7 @@ import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
-import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS } from './roster.js';
+import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS, portraitURL, mountMatchPortraits, updateMatchPortraits } from './roster.js';
 import { HERO_IDENTITIES, identitySkill, assignIdentities } from './hero-identities.js';
 import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers, screenMovementPointer } from './pointer-action.js';
@@ -133,7 +133,7 @@ function choose(identityId) {
   selectedIdentity=identityId;selected=h.kit;
   $('hero-name').textContent=h.name;$('ready-legend').textContent=`${h.name} · ${h.subtitle}`;$('hero-role').textContent=h.subtitle;$('hero-note').textContent=h.note;
   $('hero-tags').innerHTML=h.tags.map(tag=>`<span>${tag}</span>`).join('');
-  $('hero-art').src=`./art/reference/${h.slug}.webp`;$('hero-art').alt=`${h.name}, ${h.subtitle}`;
+  $('hero-art').src=portraitURL(h.slug,'full');$('hero-art').alt=`${h.name}, ${h.subtitle}`;
   document.querySelectorAll('[data-hero]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.hero===identityId)));
   $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(identityId);
   const spellNote=$('hero-spell-note');spellNote.hidden=false;
@@ -172,7 +172,7 @@ function start() {
     b.querySelector('svg')?.remove();b.querySelector('.hud-spell-art')?.remove();
     b.insertAdjacentHTML('afterbegin',hudSpellArt(selectedIdentity,i,'hud-spell-art'));
   });
-  updateUI(); learnSkills();
+  mountMatchPortraits(state,selectedIdentity); updateUI(); learnSkills();
 }
 function learnSkills() {
   if (!running || resultShown) return;
@@ -290,6 +290,7 @@ function updateUI() {
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : towerThreat?'Tower fire is growing. Leave its range.':concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : objectiveText(state,p.lane);
   const rallyWait=Math.ceil(rallyReadyAt-state.time);$('rally').disabled=p.hp<=0||rallyWait>0;$('rally').querySelector('small').textContent=rallyWait>0?`${rallyWait}s`:'Call team';
   if (state.time > 18) $('coach').hidden = true;
+  updateMatchPortraits(state);
 }
 const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);

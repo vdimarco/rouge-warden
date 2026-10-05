@@ -31,13 +31,13 @@ export const TIERS = [
   { name: 'Outer ward', hp: 3600, range: 360, damage: 210, rate: 1.05, xp: 120, gold: 110 },
   { name: 'Middle ward', hp: 4800, range: 385, damage: 225, rate: 1.05, xp: 150, gold: 130 },
   { name: 'Inner ward', hp: 5800, range: 410, damage: 240, rate: 1.05, xp: 180, gold: 160 },
-  { name: 'Guardian', hp: 3200, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
+  { name: 'Guardian', hp: 2600, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
 ];
 export const CORE = { hp: 9000, range: 380, damage: 180, rate: 1.1 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
-export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 20, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.6, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
+export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 23, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.6, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
 // Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
 // An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 export const MINIONS = {
