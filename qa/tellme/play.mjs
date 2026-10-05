@@ -303,7 +303,7 @@ async function open(browser, url, opts = {}) {
           const face = { left: s.left, top: s.top, right: s.right, bottom: s.top + s.height * 0.62, width: s.width, height: s.height * 0.62 };
           if (overlap(br, face)) window.__bubbleHits.push("face " + b.textContent);
         }
-        for (const btn of document.querySelectorAll("#actions button, #again, #start-btn, #mute, #chat")) {
+        for (const btn of document.querySelectorAll("#actions button, #again, #start-btn, #mute, #chat, #home")) {
           if (btn.hidden) continue;
           const ar = btn.getBoundingClientRect();
           if (overlap(br, ar)) window.__bubbleHits.push((btn.dataset.act || btn.id) + " :: " + b.textContent);
@@ -438,14 +438,22 @@ try {
     check(hook.seed === expect && hook.score === 100 && hook.hands === 0 && hook.log.length === 0, "hook starts at 100 chips, daily seed, empty log");
     const startBox = await s.page.locator("#start-btn").boundingBox();
     const muteBox = await s.page.locator("#mute").boundingBox();
+    const chatBox = await s.page.locator("#chat").boundingBox();
+    const homeBox = await s.page.locator("#home").boundingBox();
+    const titleBox = await s.page.locator("#topbar h1").boundingBox();
+    const hits = (a, b) => a && b && a.x < b.x + b.width - 0.5 && a.x + a.width > b.x + 0.5 && a.y < b.y + b.height - 0.5 && a.y + a.height > b.y + 0.5;
     check(startBox.height >= 48 && startBox.width >= 48, `start button ${startBox.width.toFixed(0)}x${startBox.height.toFixed(0)}`);
     check(muteBox.height >= 48 && muteBox.width >= 48, `mute button ${muteBox.width.toFixed(0)}x${muteBox.height.toFixed(0)}`);
+    check(homeBox && homeBox.height >= 48 && (await s.page.locator("#home").getAttribute("href")) === "/", "arcade link is tappable and points home");
+    check(!hits(homeBox, chatBox) && !hits(homeBox, muteBox) && !hits(chatBox, muteBox) && !hits(homeBox, titleBox), "arcade link clears the title, chat, and sound");
     const words = await s.page.locator("body").innerText();
     check(!/purchase|cash-?out|withdraw|wager|\$\d|real money|buy chips/i.test(words), "no real-money wording on the start screen");
     const disk = fs.readdirSync(path.join(PUBLIC, "tellme"))
       .filter((f) => /\.(html|css|js)$/.test(f))
       .reduce((n, f) => n + fs.statSync(path.join(PUBLIC, "tellme", f)).size, 0);
     console.log(`  first-load transfer ${s.bytes()} bytes across ${s.files.length} responses; source files ${disk} bytes`);
+    const gameSrc = fs.readFileSync(path.join(PUBLIC, "tellme/tellme.js"), "utf8");
+    check(gameSrc.includes("document.hidden"), "sound stays quiet while the page is hidden");
     check(s.bytes() < 150 * 1024, `first load ${s.bytes()} bytes is under 150 KB`);
     check(s.bytes() < 500 * 1024, `first load ${s.bytes()} bytes is under 500 KB`);
     globalThis.__bytes = s.bytes();
@@ -874,14 +882,22 @@ try {
       const bram = box(".critter.bram .sprite");
       const name = box(".critter.bram .name");
       const note = box("#note");
+      const home = box("#home");
+      const chat = box("#chat");
+      const mute = box("#mute");
+      const title = box("#topbar h1");
       return {
         cardBram: overlap(card, bram),
         cardName: overlap(card, name),
         cardNote: overlap(card, note),
+        homeChat: overlap(home, chat),
+        homeMute: overlap(home, mute),
+        homeTitle: overlap(home, title),
         noteText: document.querySelector("#note").textContent,
       };
     });
     check(!hit.cardBram && !hit.cardName && !hit.cardNote, `landscape overlap card/bram ${hit.cardBram} card/name ${hit.cardName} card/note ${hit.cardNote}`);
+    check(!hit.homeChat && !hit.homeMute && !hit.homeTitle, `landscape header overlap home/chat ${hit.homeChat} home/sound ${hit.homeMute} home/title ${hit.homeTitle}`);
     const landShot = await shoot(land.page, "tellme-landscape");
     check(landShot.w === 844 && landShot.h === 390, `tellme-landscape.png is ${landShot.w}x${landShot.h}`);
     for (const e of land.errors) check(false, e);
