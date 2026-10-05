@@ -8,5 +8,5 @@
 ## 3. Verify and release
 - [x] 3.1 Pass engine and delayed-input playtests including increasing difficulty and bounded runs.
 - [x] 3.2 Pass actual browser keyboard, touch, layouts, video/motion, pause/retry, scores and switcher checks; compare concept/captures.
-- [ ] 3.3 Rebuild committed output, publish to Warden, verify exact deployment and live play.
-- [ ] 3.4 Archive completed change and validate canonical specification.
+- [x] 3.3 Rebuild committed output, publish to Warden, verify exact deployment and live play.
+- [x] 3.4 Archive completed change and validate canonical specification.

@@ -1,44 +1,27 @@
 # River Rush Specification
 
 ## Purpose
-Define River Rush's animated two-minute whitewater treasure race, Higgsfield living title scene, keyboard/touch controls, Surge and close-call rewards, and its cabinet, shared switcher, audio lifecycle and best-score behavior in the Cottage Arcade.
+Define River Rush's endless three-lane raft runner, responsive keyboard/swipe/touch actions, fair escalating hazards, coin streaks, challenges, power-ups, Higgsfield title scene, and Cottage Arcade integration.
 
 ## Requirements
 
 ### Requirement: River Rush arcade cabinet
-The arcade SHALL append a River Rush cabinet with id `river-rush`, name `River Rush`, route `/river-rush/`, a real game picture, and membership in the Action group. The shared switcher SHALL use the same id, name and route.
-
+The arcade SHALL retain the River Rush cabinet id `river-rush`, name `River Rush`, route `/river-rush/`, Action membership, existing art direction and shared switcher entry. Its copy SHALL describe the endless runner.
 #### Scenario: Launch from the arcade
 - **WHEN** a player selects River Rush and starts its cabinet
-- **THEN** the browser opens `/river-rush/` and its approved menu art and Start adventure button load
-
+- **THEN** the runner menu loads at `/river-rush/` with Start run
 #### Scenario: Shared switcher
-- **WHEN** a player opens Switch game from River Rush's menu or result screen
-- **THEN** River Rush is marked as the current game and the player can return to the arcade or another cabinet
-
-### Requirement: A complete treasure race
-River Rush SHALL retain keyboard and touch steering, timed key release, reduced steering while reaching, key-gated sustained chest unlocking, balance damage and recoverable falls, a rival and a marked left escape channel. A win SHALL require unlocked treasure and escape before the rival within two minutes.
-
-#### Scenario: Catch and unlock
-- **WHEN** the player reaches near a key and releases within the catch window, then holds Unlock for two seconds
-- **THEN** the key is secured, treasure is claimed, and the objective progresses to escape
-
-#### Scenario: Pause and restart
-- **WHEN** the player pauses or the page is hidden
-- **THEN** race time stops until resumed, and Restart begins a fresh run
-
-#### Scenario: Desktop and phone
-- **WHEN** the game is played at 1536 by 1024 or 390 by 844
-- **THEN** art loads from the game subpath, controls respond, and no horizontal overflow hides the main actions
+- **WHEN** a player opens Switch game from the menu or results
+- **THEN** the shared switcher marks River Rush as current and allows another game or the arcade
 
 ### Requirement: Validated best score
-The game SHALL save successful best runs in `river-rush-best`. The cabinet SHALL display a positive finite saved score; invalid or absent data SHALL leave the plain cabinet line without errors.
-
+The game SHALL save positive finite best runner scores in `river-rush-best` with a runner version. Legacy race scores SHALL NOT become runner records. The cabinet SHALL display positive finite scores and tolerate malformed storage.
+#### Scenario: End and retry
+- **WHEN** a run ends with a new personal best and the player retries
+- **THEN** the record persists and a fresh run starts with zero distance and coins
 #### Scenario: Saved and invalid scores
-- **WHEN** the save contains a best score of 2102
-- **THEN** the cabinet displays BEST 2,102 PTS
-- **WHEN** that save is malformed or its score is nonpositive or not finite
-- **THEN** the default cabinet line is shown and the arcade remains usable
+- **WHEN** the save is invalid or a legacy race record
+- **THEN** the game starts without a runner record and remains playable
 
 ### Requirement: Shared audio lifecycle
 The arcade build SHALL load `/arcade/quiet.js` before other scripts so audio suspends when the page is hidden.
@@ -47,34 +30,14 @@ The arcade build SHALL load `/arcade/quiet.js` before other scripts so audio sus
 - **WHEN** game audio has started and the page becomes hidden
 - **THEN** the shared lifecycle script silences the game without breaking its own mute control
 
-### Requirement: Animated river adventure
-River Rush SHALL animate current foam, raft wakes, paddle strokes, raft rocking and transitions between paddling and reaching using the approved character art. Motion SHALL remain readable at 1536×1024 and 390×844 without hiding controls.
-
-#### Scenario: Ride and reach
-- **WHEN** the player steers into the fast current and then holds Reach
-- **THEN** wakes and rocking respond to speed and the character smoothly transitions to the reaching pose
-
-### Requirement: Animated action feedback
-Key catches, treasure opening, collisions and falls SHALL have short visual feedback. Effects SHALL expire and be bounded per run, without changing race outcomes or input timing.
-
-#### Scenario: Catch the key and open the chest
-- **WHEN** a key is caught and the chest is unlocked
-- **THEN** the key travels toward the raft and a gold burst marks the treasure reward
-
-#### Scenario: Strike a rock
-- **WHEN** the raft collides with a rock
-- **THEN** a splash and brief raft recoil accompany the balance loss
-
 ### Requirement: Motion lifecycle and accessibility
-Canvas animation SHALL use simulation time so pause and run completion freeze its frame. The game SHALL respond to live prefers-reduced-motion changes by disabling decorative movement and particles while preserving course scrolling, input and objective feedback.
-
+The simulation SHALL stop on pause, page hide and completion; canvas frames SHALL remain unchanged while paused. Live reduced-motion preferences SHALL disable decorative motion/effects while preserving course movement and action feedback. All actions SHALL be available without swipes through keyboard and touch buttons.
 #### Scenario: Pause mid-effect
-- **WHEN** the player pauses during a splash or wake
-- **THEN** the canvas remains unchanged until the run resumes
-
+- **WHEN** the player pauses during a jump
+- **THEN** distance, action timing and canvas frame remain unchanged until resume
 #### Scenario: Reduced motion
-- **WHEN** the player enables reduced motion before or during a run
-- **THEN** decorative water, rocking, pose blending and CSS animation stop, and gameplay remains functional
+- **WHEN** reduced motion changes during play
+- **THEN** decorative particles and rocking stop and lane/jump/duck controls remain functional
 
 ### Requirement: Higgsfield living title scene
 The title scene SHALL use a Higgsfield-generated silent looping video based on the approved character art, with a still-image fallback. It SHALL preserve live readable menu controls, pause while hidden or covered by instructions, and use the still image for reduced motion or data-saving.
@@ -87,13 +50,47 @@ The title scene SHALL use a Higgsfield-generated silent looping video based on t
 - **WHEN** video cannot load or motion/data preferences disable it
 - **THEN** the approved still image and all menu actions remain usable
 
-### Requirement: Surge and close-call rewards
-The player SHALL be able to spend at least 35 charge points on a 1.8-second Surge using Shift or a dedicated touch control. Surge SHALL accelerate the raft and cost balance, and SHALL be blocked while falling. Clear near misses SHALL grant charge and increasing combo points; impacts SHALL break the combo. One held activation SHALL spend charge only once until released.
+### Requirement: Runner perspective art
+River Rush SHALL present a three-lane forward-perspective river with generated environment, approved character likeness, long hair and only a modest loincloth. Lane swaps, raft jumps, ducks and obstacle depth SHALL clearly communicate their gameplay state at 1536×1024, 390×844 and 844×390.
+#### Scenario: Chain actions
+- **WHEN** the player swaps lane, jumps a log and ducks a branch
+- **THEN** the raft and character visibly perform the actions while upcoming hazards remain readable
 
-#### Scenario: Use Surge
-- **WHEN** a player with sufficient charge presses and holds Shift
-- **THEN** one Surge starts, its speed and balance cost apply, and a second charge is not spent without releasing and pressing again
+### Requirement: Runner action feedback
+Coins, successful obstacle actions, power-ups, shield impacts and fatal collisions SHALL provide short readable feedback with bounded effects and no change to control timing.
+#### Scenario: Earn and spend protection
+- **WHEN** a protected player hits a hazard
+- **THEN** a shield burst communicates protection consumed, the streak breaks and the run continues with brief collision grace
 
-#### Scenario: Skim a rock
-- **WHEN** the raft passes close to an unhit rock with sufficient clearance
-- **THEN** a close-call reward increments the combo and adds charge and score once for that rock
+### Requirement: Endless runner controls and retry
+The game SHALL offer three discrete lanes, immediate lane-change input, jump, duck and Rush through keyboard and touch buttons; touch SHALL also support directional swipes. Inputs SHALL consume each tap once. A fatal collision SHALL show score, distance, coins, cause and a one-action retry, without a two-minute finish timer.
+#### Scenario: Keyboard and swipe
+- **WHEN** a player presses A/D or left/right, W/up/Space or S/down, or swipes in those directions
+- **THEN** the player changes lane, jumps or ducks correspondingly, with no missed short taps
+#### Scenario: Restart
+- **WHEN** the player chooses Ride again after a collision
+- **THEN** the next run begins immediately without navigating through the menu
+
+### Requirement: Fair escalating obstacle course
+The seeded course SHALL continuously introduce rocks requiring avoidance, low logs cleared by jumping, and overhead branches cleared by ducking. Speed and pattern complexity SHALL increase gradually. Rows SHALL have a clear lane or a traversable jump/duck barrier and sufficient spacing for an action to complete before the next required action. Course entities SHALL remain bounded during long runs.
+#### Scenario: Choose an action
+- **WHEN** a player meets a log during a jump or a branch while ducking
+- **THEN** the hazard is cleared and rewards action points; the same hazard without the correct action consumes protection or ends the run
+#### Scenario: Long course
+- **WHEN** a player survives for several minutes
+- **THEN** varied harder patterns continue, a reachable legal route remains and passed entities are removed
+
+### Requirement: Coins streaks and power-ups
+The game SHALL reward coin trails and successful actions with points and Rush charge. Coin streaks SHALL increase the score multiplier and expire after a collection gap; the HUD SHALL communicate time remaining. Rush SHALL NOT recharge itself. Magnet SHALL collect nearby coins across lanes for eight seconds; shield SHALL absorb one impact; full Rush charge SHALL grant four seconds of faster invulnerable riding and be activated by Shift or its touch button.
+#### Scenario: Build and use Rush
+- **WHEN** a player fills the Rush meter and activates it
+- **THEN** charge is spent once, speed increases, hazards are safely cleared and the timed state expires
+#### Scenario: Collect magnet
+- **WHEN** a player picks up a magnet and passes coins in other lanes
+- **THEN** those coins are collected while the timer lasts and normal lane collection returns afterward
+
+### Requirement: Active runner challenges
+The runner SHALL offer rotating trick, coin and distance challenges with visible progress, a one-time 500-point reward, and a fresh target relative to the start of each challenge.
+#### Scenario: Complete a trick challenge
+- **WHEN** the player performs the required perfect jumps and ducks
+- **THEN** the challenge pays once, shows completion feedback and advances to a new coin target

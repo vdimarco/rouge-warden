@@ -12,3 +12,13 @@ The boring treasure race was replaced by an endless three-lane runner. Verificat
 - OpenSpec change validation: strict/no-interactive pass. Archive/canonical validation and live deployment verification are recorded after publication.
 
 Browser checks use Playwright Chromium because no callable interactive-browser tool was available. Physical iOS/Android, Safari and listening on audio hardware were not tested. Visibility/audio checks emulate browser visibility events separately from input testing.
+
+## Production release
+
+Implementation commit `98034315674f6107c295491fd33e1c5a523b0dd6` deployed READY as `dpl_HY4d5tzwHvp3wLTGBP5NjHLrFMSy`, with aliases `arcade.uptick.systems` and `warden-alpha-wheat.vercel.app`. Published HTML, JS, CSS, all three new gameplay art files and the Higgsfield menu video match the locally verified bytes by SHA-256.
+
+`node qa/river-rush/live.mjs` passed at https://arcade.uptick.systems/river-rush/ with 390×844, real browser touch events and DPR2: jump and duck clear the opening hazards without losing the shield, pause stops time, touch retry starts a fresh run, title video plays, no overflow, no JavaScript errors or failed same-origin responses. `node qa/river-rush/lifecycle.mjs` also passed visibility-event pause, suspended Web Audio, identical paused pixels and mute control.
+
+The final documentation commit archives this completed change; it does not change the verified game bundle.
+
+OpenSpec archive completed as `2026-10-05-river-rush-endless-runner`; canonical River Rush specification passed strict validation and its purpose was updated to the runner. All task checkboxes reflect completed work.
