@@ -171,11 +171,11 @@ npm run assets                                         # every size for iOS and 
 
 ## Change the app ID
 
-`com.cottagearcade.reelitin` is a placeholder. Neither store lets you change the ID after the first upload, so set the real one first, in all of these places:
+The app ID is `systems.uptick.reelitin`, from the owner's domain `uptick.systems`. Neither store lets you change the ID after the first upload. A change before then goes in all of these places:
 
 - `capacitor.config.json`: `appId`
 - `android/app/build.gradle`: `namespace` and `applicationId`
-- `android/app/src/main/java/com/cottagearcade/reelitin/MainActivity.java`: the `package` line, and move the file to the folders of the new ID
+- `android/app/src/main/java/systems/uptick/reelitin/MainActivity.java`: the `package` line, and move the file to the folders of the new ID
 - `android/app/src/main/res/values/strings.xml`: `package_name` and `custom_url_scheme`
 - `ios/App/App.xcodeproj/project.pbxproj`: `PRODUCT_BUNDLE_IDENTIFIER` (or Xcode > App target > General > Bundle Identifier)
 
@@ -195,7 +195,6 @@ Then run `npx cap sync` and build both apps again.
 
 | Decision | Default in this folder | What to do |
 | --- | --- | --- |
-| Bundle ID and application ID | `com.cottagearcade.reelitin` (placeholder) | Pick a reverse domain you control, and change it before the first upload (see above). |
 | Store name | "Reel It In: Lake Fishing"; "Reel It In" under the icon | Check that the name is free in App Store Connect and the Play Console, and search the USPTO for "Reel It In" in classes 9 and 41. |
 | Support email | A marked placeholder in `public/fish/privacy.html` (`data-placeholder="support-email"`) | Put a real address in the page (text and a `mailto:` link) and in both store forms. Remove the placeholder element. The release build (`--release`) fails until you do. |
 | Google Play account type | Not known | A personal account made after 13 November 2023 must run a closed test with at least 12 testers for 14 days in a row before it can publish to production. Start the closed test as soon as there is a signed build. An organisation account does not need this. |
