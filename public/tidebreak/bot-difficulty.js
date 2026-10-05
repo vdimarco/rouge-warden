@@ -22,10 +22,11 @@ export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.',
 // saveSpells: below this mana share, spells wait for heroes instead of the wave (1 = only at full mana).
 // focus: score bonus for the team focus target. gankEvery: seconds between ganks (0 = never).
 // defendBase: every healthy bot answers a hit on the base, not only the closest one.
+// joinPush: a free bot joins any lane where its wave is at an enemy ward, without a won fight first.
 // wardBonus: target score bonus for an open enemy ward (ward health decides matches).
 // push: enemy heroes down before the team pushes a ward without a wave (0 = never).
 // objectiveLead: seconds before the boss spawns that the team gathers (0 = never).
-const OFF = { legacy: false, wardBonus: 0, retreatRules: false, defendBase: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
+const OFF = { legacy: false, wardBonus: 0, joinPush: false, retreatRules: false, defendBase: false, retreatAt: .28, engage: true, reserve: 1, reaction: [.3, .42], busy: .08, dodge: .75, aimLead: 0, aimError: 0, castLock: 1.1, failLock: 1.1, focus: 0, lowest: 0, punish: 0, saveSpells: 0, tradeRetreat: 0, waveGate: false, diveGuard: false, killCheck: false, gankEvery: 0, camps: false, objectiveLead: 0, defend: false, push: 0 };
 export const PROFILES = {
   // The bots before this change. Measurements compare every profile with it.
   legacy: { ...OFF, legacy: true, reaction: [.18, .3], dodge: 1 },
@@ -284,7 +285,7 @@ export function strategy(s, e, { target, hurt, holding }) {
   }
   if (!free) return null;
   // Push after a won fight: enemies down, walk to the lane where our wave is deepest.
-  if (P.push && enemiesDown(s, e.team) >= P.push && hurt > .6) {
+  if (P.push && (P.joinPush || enemiesDown(s, e.team) >= P.push) && hurt > .6) {
     let best = null, score = Infinity;
     for (const ward of enemyStructures(s, e.team)) if (wardOpen(s, e, ward) && !structureProtected(s, ward)) { const n = distance(e, ward); if (n < score) { score = n; best = ward; } }
     if (best && score > best.range) return { mode: 'push', ...routeTo(s, e, best) };
