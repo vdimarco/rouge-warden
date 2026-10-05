@@ -42,7 +42,7 @@ h2 { margin: 0 0 6px; font-family: var(--slab); font-weight: 700; font-size: 21p
 p { margin: 0 0 8px; }
 p:last-child { margin-bottom: 0; }
 .lead { font-size: 19px; font-weight: 800; }
-.placeholder { padding: 2px 6px; border-radius: 6px; background: rgba(224, 69, 58, 0.22); border: 1px dashed var(--red); color: #ffd6d1; font-weight: 800; }
+.card a { color: var(--brass); font-weight: 800; }
 @media (prefers-reduced-motion: reduce) { .back:active { transform: none; } }
 </style>
 </head>
@@ -87,8 +87,7 @@ p:last-child { margin-bottom: 0; }
   <section class="card">
     <h2>Changes and questions</h2>
     <p>If this policy changes, the new text will be on this page and in the app.</p>
-    <!-- TODO(owner): put the support email here, as text and as a mailto: link, before the first store upload. -->
-    <p>Questions: <span class="placeholder" data-placeholder="support-email">[support email: the owner adds it before release]</span></p>
+    <p>Questions: <a href="mailto:support@uptick.systems">support@uptick.systems</a></p>
   </section>
 </main>
 <script>
