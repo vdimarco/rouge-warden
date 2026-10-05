@@ -10,7 +10,7 @@ const K = SIZE / 6400;
 export const DIFFICULTIES = ['apprentice', 'veteran', 'mythic'];
 export const DEFAULT_DIFFICULTY = 'veteran';
 export const DIFFICULTY_LABELS = { apprentice: 'Apprentice', veteran: 'Veteran', mythic: 'Mythic' };
-export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.', veteran: 'Good reactions. Team plays.', mythic: 'Fast reactions. Strong team plays.' };
+export const DIFFICULTY_HINTS = { apprentice: 'Slow reactions. Few team plays.', veteran: 'Good reactions. Team plays.', mythic: 'Fast reactions. Sharp aim. Leaves losing fights. Drafts strong heroes.' };
 
 // reaction: seconds from a new warning to the dodge [min, max]. dodge: chance that the step clears the shape.
 // aimLead: share of the target's movement that the bot leads. aimError: units of aim spread.
