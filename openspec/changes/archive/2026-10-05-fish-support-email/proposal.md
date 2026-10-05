@@ -10,4 +10,4 @@ The privacy policy held a marked placeholder for the support email, and the rele
 
 ## Player-facing change
 
-The privacy policy ends with "Questions: support@uptick.systems", and the address opens a new mail. The owner makes the address deliver mail (for example with Cloudflare Email Routing for `uptick.systems`).
+The privacy policy ends with "Questions: support@uptick.systems", and the address opens a new mail. The owner makes the address deliver mail. The mail of `uptick.systems` runs on Google Workspace (its MX records point to Google), so the address is an alias or a group there. Cloudflare Email Routing would replace those MX records and stop the domain's mail.
