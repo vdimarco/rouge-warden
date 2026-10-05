@@ -55,14 +55,14 @@ export function worldMapped(texture, { color = '#ffffff', roughness = .92, scale
 }
 // Heroes, minions and creatures: a team-coloured rim from the side away from the camera (dark armour stays readable on
 // grass), a short white flash when hit, and screen-door fading (no transparency sort, shadows stay right).
-export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 }, uTintRange: { value: new THREE.Vector2(.45, .62) }, uTintGlow: { value: 0 } });
+export const unitUniforms = (tint = null) => ({ uRim: { value: new THREE.Color(0, 0, 0) }, uRimPower: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 1 }, uTint: { value: new THREE.Color(tint || '#ffffff') }, uTintOn: { value: tint ? 1 : 0 }, uTintRange: { value: new THREE.Vector2(.45, .62) }, uTintGlow: { value: 0 }, uTintLevel: { value: 1 } });
 // One uniforms object can drive every material of a unit (body and weapons).
 export function unitMaterial(source, uniforms = unitUniforms(), key = 'unit') {
   const m = source.clone();
   m.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
-      uniform vec3 uRim; uniform float uRimPower; uniform float uFlash; uniform float uFade; uniform vec3 uTint; uniform float uTintOn; uniform vec2 uTintRange; uniform float uTintGlow;`)
+      uniform vec3 uRim; uniform float uRimPower; uniform float uFlash; uniform float uFade; uniform vec3 uTint; uniform float uTintOn; uniform vec2 uTintRange; uniform float uTintGlow; uniform float uTintLevel;`)
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
       if ( uFade < .999 ) { float d = fract( dot( floor( gl_FragCoord.xy ), vec2( .7548777, .5698403 ) ) ); if ( d > uFade ) discard; }`)
       // Tabards and cloth: bright, low-saturation texels take the team colour (a minion's off-white tabard).
@@ -73,7 +73,7 @@ export function unitMaterial(source, uniforms = unitUniforms(), key = 'unit') {
         // Judged in a rough sRGB space (square root), where 'pale' and 'greyish' mean what an artist means.
         vec3 g = sqrt( max( c, vec3( 0. ) ) ); float gh = max( g.r, max( g.g, g.b ) ), gl = min( g.r, min( g.g, g.b ) );
         tintMask = smoothstep( uTintRange.x, uTintRange.y, gh ) * ( 1. - smoothstep( .1, .26, gh - gl ) );
-        diffuseColor.rgb = mix( c, uTint * ( .35 + hi * .6 ), tintMask * .85 ); }`)
+        diffuseColor.rgb = mix( c, uTint * ( .35 + hi * .6 ) * uTintLevel, tintMask * .85 ); }`)
       .replace('#include <tonemapping_fragment>', `
       { vec3 vd = normalize( vViewPosition ); float rim = pow( 1. - clamp( dot( normal, vd ), 0., 1. ), 2.6 );
         gl_FragColor.rgb += uRim * rim * uRimPower + vec3( uFlash ) + uTint * tintMask * uTintGlow; }
