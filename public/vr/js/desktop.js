@@ -494,7 +494,10 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
       // the score row can push the top of a small window below the centre: the line then starts from the middle of the window.
       let ax, ay, rot;
       const ox = clamp(cx, w.l, w.r), oy = cy > w.t && cy < w.b ? cy : (w.t + w.b) / 2;
-      if (m.behind) { ax = clamp(cx + m.x * (w.r - w.l) * 0.4, w.l, w.r); ay = w.b; rot = 180; }
+      if (m.behind) { // on the bottom border, and out from under the training card (it draws over the arrow)
+        ax = clamp(cx + m.x * (w.r - w.l) * 0.4, w.l, w.r); ay = w.b; rot = 180;
+        if (ax < w.cr && ay > w.ct) ax = Math.min(w.r, w.cr);
+      }
       else if (inCard) { // behind the training card: on the card's nearer edge, pointing at the target
         if (w.cr - px < py - w.ct) { ax = w.cr; ay = py; } else { ax = px; ay = w.ct; }
         rot = (Math.atan2(px - ax, -(py - ay)) * 180) / Math.PI;
