@@ -164,8 +164,10 @@ one-sided trades).
   tells add ground decals and a beam and clear with their state; the lock beam changes the screen pixels at its midpoint; TOWER
   LOCK shows over the player; hitstop holds the views of the units in the hit while the others update; shake follows the weight;
   damage numbers keep their size; no page or console errors. 6 checks passed.
-- Whole suite on the current merge of `claude/quirky-cerf-vwf0qw`: all 22 files in `qa/tidebreak/` pass. (After the first merge,
-  six suites failed on the base branch's map work in progress; the base's later commits fixed them.)
+- Whole suite on the merge of `claude/quirky-cerf-vwf0qw` at `103db12`: 20 of the 22 files in `qa/tidebreak/` pass.
+  `sim.test.mjs` (line 19) and `towers.test.mjs` (line 61) fail with the same assertions on the base head itself, checked in a
+  separate worktree: the base's latest map work in progress. (The base has moved several times during this work; at `4299c58`
+  all 22 passed.)
 - `qa/tidebreak/desktop.e2e.mjs`: 17 checks passed. `qa/tidebreak/combat-feel.e2e.mjs`: 24 checks passed.
 - `qa/tidebreak/render3d.e2e.mjs` stops at its pick check ("pick finds the enemy hero under the cursor") on this branch and on
   the base branch alike, with the same result. With only that assert turned into a log, its other seven checks pass on both
