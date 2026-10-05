@@ -9,6 +9,8 @@ import { skinnedMeshOf } from '../hero-rig.js';
 import { HERO_IDENTITIES } from '../hero-identities.js';
 import { attackPose } from '../combat-motion.js';
 import { structureProtected } from '../objectives.js';
+import { windupState } from '../combat-tells.js';
+import { windupClips, windupClipFor, WINDUP_WEIGHT } from './windup.js';
 
 // Team colours: teal for allies, crimson for enemies; warm and a little muted, not neon.
 export const TEAM3D = ['#58c4ad', '#d65a6c'], NEUTRAL = '#d9b26a', PLAYER = '#f2d68a';
@@ -69,8 +71,8 @@ class HeroView {
     const model = cloneSkinned(m.scene), mats = new Map();
     model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; let mat = mats.get(o.material); if (!mat) mats.set(o.material, mat = unitMaterial(o.material, this.uniforms, 'hero')); o.material = mat; } });
     model.scale.setScalar(this.height / m.height);
-    const clips = clipsFor(this.slug, skinnedMeshOf(model), []);
-    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips]);
+    const mesh = skinnedMeshOf(model), clips = { ...clipsFor(this.slug, mesh, []), ...windupClips(this.slug, mesh) };
+    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips, 'windup', 'crouch']);
     this.root.remove(this.stand); this.stand.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); this.stand = null;
     this.root.add(model); this.model = model; return true;
   }
@@ -107,6 +109,9 @@ class HeroView {
         else { const t = this.fromIntent ? timing.strikes[0] + pose.age / pose.duration * (timing.to - timing.strikes[0]) : strikeTime(timing, 0, pose.age, .12, pose.duration); g.time(castClip, t); }
         if (casting) this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: pose.stage, clip: castClip, model: this.slug });
       }
+      // The anticipation pose layers on top while the cast winds up; it fades out as the strike plays.
+      const wind = cast && windupState(e, s.time);
+      if (wind) { const clip = windupClipFor(wind.kind); g.target(clip, WINDUP_WEIGHT[wind.kind] ?? .75); g.time(clip, ease(wind.progress)); }
     } else {
       this.fromIntent = false;
       const running = this.speed > 40 || lift > 0;

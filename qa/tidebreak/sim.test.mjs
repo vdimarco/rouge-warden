@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
 import { createMatch, player, step, cast, damage, buy, portal, commandOrder, heroSpeed, respawnTime, HEROES, SIZE, LIMIT, SUDDEN_DEATH, PACE } from '../../public/tidebreak/sim.js';
 import { LANES, PATHS, PORTALS, OBSTACLES, BRUSH, BASES, canSee, visibleTo, lineOfSight, resolveBody, shiftWorld, distance, laneFrom, closestTrack } from '../../public/tidebreak/world.js';
 import { structureProtected, INNER } from '../../public/tidebreak/objectives.js';
@@ -73,6 +74,16 @@ for (const phase of [0, 1]) for (const lane of PATHS) for (let i = 1; i < lane.l
   s.units.find(e => e.kind === 'tower' && e.team === 1 && e.lane === 0 && e.tier === INNER).hp = 0;
   s.units = s.units.filter(e => e.kind !== 'minion'); s.nextWave = s.time; step(s, { attack: false }, .05);
   assert(wave(0, 0).some(e => e.elder) && !wave(0, 1).some(e => e.elder) && !wave(1, 0).some(e => e.elder), 'an elder wisp joins only the lane with a broken enemy inner ward');
+}
+// The first wave leaves at the time the combat spec states, and the next one follows after the stated gap.
+{
+  const specs = ['../../openspec/changes/shore-grand-arena/specs/moba-combat/spec.md', '../../openspec/specs/moba-combat/spec.md'].map(f => new URL(f, import.meta.url)).filter(existsSync);
+  const stated = specs.map(f => readFileSync(f, 'utf8')).join('\n').match(/first wave SHALL leave each base at (\d+):(\d\d) and later waves every (\d+) seconds/);
+  assert(stated, 'the combat spec states when the first wave leaves');
+  const s = createMatch(0, 7), times = []; s.units = s.units.filter(e => e.kind !== 'hero'); s.objectiveAt = Infinity; s.campTimers = s.campTimers.map(() => Infinity);
+  while (times.length < 2 && s.time < 90) { step(s, { attack: false }, 1 / 60); if (s.wave > times.length) times.push(s.time); }
+  assert.equal(Math.floor(times[0]), +stated[1] * 60 + +stated[2], `the first wave leaves at ${times[0].toFixed(2)} s, as the spec states (${stated[1]}:${stated[2]})`);
+  assert.equal(Math.round(times[1] - times[0]), +stated[3], 'the next wave follows after the stated gap');
 }
 // Every hero moves by the same rules: out of combat, player orders and bots sprint alike.
 {

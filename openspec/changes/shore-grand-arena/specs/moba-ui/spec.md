@@ -37,5 +37,12 @@ lines and kill-feed names SHALL carry a small portrait of the hero who spoke or 
 - **THEN** its portrait beside the score darkens and shows the seconds until it returns, and it clears when the hero is back.
 
 #### Scenario: Use the HUD on every supported screen
-- **WHEN** a match runs at 1440x900, 3440x1440, 390x844, 844x390 or 320x568
-- **THEN** the lineup, health frame, skill buttons, market and menu fit the screen without overlap and stay readable over the battlefield.
+- **WHEN** a match runs at 1440x900, 3440x1440, 390x844, 844x390 or 320x568, with sound on or saved off
+- **THEN** the lineup, health frame, skill buttons, objective clock, market and menu fit the screen without overlap and stay readable over
+  the battlefield. On screens narrower than 700 px the lineup is a row of smaller portraits under the score, and the objective clock
+  stays on one line.
+
+#### Scenario: Read the final countdown
+- **WHEN** sudden death starts
+- **THEN** the match clock turns crimson and counts down the last three minutes, and screens at least 700 px wide show a sudden death
+  label under the score.
