@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { createMatch, player, step, HEROES, heroSpeed } from '../../public/tidebreak/sim.js';
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
 import { CENTER, LANES, PORTALS, SIZE, BASES, distance, visibleTo } from '../../public/tidebreak/world.js';
-import { PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
+import { draftPlan } from '../../public/tidebreak/draft.js';
+import { KIT_POWER, PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
 
 const advance = (s, seconds) => { for (let i = 0; i < seconds * 20; i++) step(s, {}, .05); };
 // One enemy bot and the idle player. No waves, boss or camps unless a test adds them.
@@ -161,5 +162,19 @@ for (const [id, expected] of [['veteran', 'far'], ['legacy', 'near']]) {
   const a = setDifficulty(createMatch(0, 42), 'mythic'), b = setDifficulty(createMatch(0, 42), 'mythic');
   for (let i = 0; i < 70 * 20; i++) { step(a, { autopilot: true }, .05); step(b, { autopilot: true }, .05); }
   assert.deepEqual(a.units, b.units);
+}
+// Draft skill: Mythic picks measured stronger kits for its lanes. Other profiles draft by role and chance, as before.
+{
+  const power = plan => plan.lineup.enemies.reduce((v, kit, lane) => v + KIT_POWER[kit][lane], 0) / 3;
+  let veteran = 0, mythic = 0;
+  for (let seed = 1; seed <= 60; seed++) {
+    const base = draftPlan(seed % 16, seed), vet = draftPlan(seed % 16, seed, ['ally', 'veteran']), myth = draftPlan(seed % 16, seed, ['ally', 'mythic']);
+    assert.deepEqual(vet, base, 'Veteran and allied drafts do not change');
+    assert.deepEqual(draftPlan(seed % 16, seed, ['ally', 'apprentice']), base, 'Apprentice drafts do not change');
+    assert.deepEqual(myth, draftPlan(seed % 16, seed, ['ally', 'mythic']), 'a seeded Mythic draft repeats');
+    assert.equal(new Set(myth.picks).size, 6, 'every hero is picked once');
+    veteran += power(vet); mythic += power(myth);
+  }
+  assert.ok(mythic / 60 > veteran / 60 + .04, `Mythic drafts stronger lanes (${(mythic / 60).toFixed(3)} against ${(veteran / 60).toFixed(3)})`);
 }
 console.log(`PASS: ${DIFFICULTIES.length} difficulty profiles with fixed allies and equal stats, reaction floor, dodge rolls, wave gate, dive guard, trade retreat, sprint parity, fog-safe ganks and focus, rift gates, punish windows, camps and deterministic replay.`);

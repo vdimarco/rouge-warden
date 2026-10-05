@@ -38,7 +38,21 @@ PROFILES.ally = { ...PROFILES.veteran, retreatRules: true, tradeRetreat: .75 };
 
 // Kit strength by lane, measured by qa/tidebreak/kit-strength.mjs: the share of matches a team
 // won with this kit in this lane, with equal Veteran bots on both sides. Index [kit][lane].
-export const KIT_POWER = Array.from({ length: 12 }, () => [.5, .5, .5]);
+// 600 matches on the grand arena; each lane value is shrunk toward the kit's overall rate (100-game prior).
+export const KIT_POWER = [
+  [.47, .38, .42],
+  [.58, .54, .56],
+  [.48, .46, .45],
+  [.59, .59, .63],
+  [.54, .57, .57],
+  [.55, .55, .55],
+  [.56, .59, .57],
+  [.26, .26, .28],
+  [.36, .36, .34],
+  [.52, .58, .56],
+  [.55, .57, .5],
+  [.55, .56, .57],
+];
 // A drafting profile adds this to a candidate's draft score. The pool and the board are the
 // same for everyone, and the player sees every pick, so a strong draft is a fair edge.
 export function draftValue(level, kit, lane) {
