@@ -450,6 +450,7 @@ function startDesktop() {
   lastMode = "desktop";
   hideTitle();
   D.active = true;
+  if (!FLAGS.nocut) cutscenes.preload(); // the comic scenes' pictures, ready by the time the opening ends
   settings.easySwing = D.mobile.enabled;
   D.level();
   picker.reset(); // (the PLAY click took the pointer lock before full screen: see takeLook)
@@ -1472,6 +1473,7 @@ G.test = {
   // a comic scene now, whatever the flags and the save say (arg: a district's { id, name, left, clog })
   story(name, arg) { story(name, arg, true); },
   cutscene: () => cutscenes.info(),
+  cutsceneArt: () => cutscenes.preload(), // resolves when every picture has loaded or failed
   wakeKing() { if (game && game.wakeKing) game.wakeKing(); },
   clearClog(id) { if (game && game.clearClog) game.clearClog(id); },
   portal: () => (portal ? portal.info() : null),

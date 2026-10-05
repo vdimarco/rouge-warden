@@ -1,6 +1,7 @@
 // Flat play: the comic scenes (cutscene.js). The opening tells why the Porcelain King sits on the Needle and gives the first
 // mission; a district's briefing, the King waking and the finale follow. Each panel is a shot of the live city in an inked frame
-// with a caption, a balloon pinned to its point or a title card. The game holds still and the HUD hides while a scene plays;
+// with a caption, a balloon pinned to its point or a title card. Most panels show a painted picture (art/cutscene); with no
+// picture a panel shows the live shot. The game holds still and the HUD hides while a scene plays;
 // a press skips it. A screenshot of every panel goes to $SHOTS. Run from the repo root (the server is our own, see lib.mjs).
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
@@ -15,10 +16,13 @@ try {
   await open(page, '?nosw&skipintro&cut'); await page.waitForFunction(() => G.viewDone);
   await page.locator('#playFlat').click({ noWaitAfter: true }); await page.waitForFunction(() => G.state === 'play');
   await page.evaluate(() => { G.test.hold(true); G.test.step(1 / 60, 30); });
+  const loaded = await page.evaluate(async () => { await G.test.cutsceneArt(); return G.test.cutscene().loaded.sort(); });
+  assert.deepEqual(loaded, ['city', 'clogs', 'finale', 'hero', 'king', 'king-awake', 'swing'], 'flat play loads the seven pictures of the comic scenes: ' + loaded);
   const view = () => page.evaluate(() => {
     const r = (s) => { const e = document.querySelector(s); if (!e || e.hidden) return null; const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
-    return { cs: G.test.cutscene(), state: G.state, hud: getComputedStyle(document.querySelector('.fs-hud')).visibility, root: !document.querySelector('#cutscene').hidden, bal: r('#cutscene .cs-bal'), cap: r('#cutscene .cs-cap'), W: innerWidth, H: innerHeight };
+    return { cs: G.test.cutscene(), state: G.state, hud: getComputedStyle(document.querySelector('.fs-hud')).visibility, root: !document.querySelector('#cutscene').hidden, bal: r('#cutscene .cs-bal'), cap: r('#cutscene .cs-cap'), art: r('#cutscene .cs-art'), W: innerWidth, H: innerHeight };
   });
+  const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   const inside = (b, W, H) => !b || (b.l >= 0 && b.t >= 0 && b.r <= W && b.b <= H);
 
   /* ---------------- the opening, panel by panel ---------------- */
@@ -39,6 +43,9 @@ try {
   assert(/twelve rooftop drains/i.test(seen[2].cs.caption), 'panel 3 tells of the twelve clogs: ' + seen[2].cs.caption);
   assert(/plunger/i.test(seen[3].cs.caption) && /go/i.test(seen[3].cs.balloon), 'panel 4 shows the hero: ' + JSON.stringify(seen[3].cs));
   assert(/Mission 1/i.test(seen[4].cs.title) && /clogs/i.test(seen[4].cs.title), 'panel 5 is the first mission card: ' + seen[4].cs.title);
+  assert.deepEqual(seen.map((v) => v.cs.art), ['city', 'king', 'clogs', 'hero', 'swing'], 'each opening panel shows its painted picture');
+  assert(seen.every((v) => v.art && v.art.l >= 0 && v.art.r <= v.W && v.art.t > 0 && v.art.b < v.H), 'the picture fills the inked frame, inside the screen');
+  assert(!hit(s1.bal, s1.cap) && !hit(seen[3].bal, seen[3].cap) && s1.cap.t > s1.H / 2 && seen[3].cap.t > seen[3].H / 2, 'on the King and the hero the caption moves to the foot of the frame and no balloon covers it');
   assert(seen.every((v) => inside(v.cap, v.W, v.H)), 'every caption sits inside the screen');
   const after = await page.evaluate(() => { G.test.step(1 / 60, 40); return { cs: G.test.cutscene(), state: G.state, hud: getComputedStyle(document.querySelector('.fs-hud')).visibility, pos: { ...G.P.pos }, seen: G.save.seen.opening }; });
   assert(!after.cs.playing && after.state === 'play' && after.hud !== 'hidden' && after.seen === true, 'the opening ends by itself and play goes on with the HUD back: ' + JSON.stringify(after));
@@ -54,7 +61,7 @@ try {
   await page.evaluate(() => G.test.step(1 / 60, 40));
   await page.screenshot({ path: `${out}/cutscene-king.png` });
   const kv = await view();
-  assert(/awake/i.test(kv.cs.caption) && /dare/i.test(kv.cs.balloon), 'the King scene: he is awake and dares you: ' + JSON.stringify(kv.cs));
+  assert(/awake/i.test(kv.cs.caption) && /dare/i.test(kv.cs.balloon) && kv.cs.art === 'king-awake' && inside(kv.bal, kv.W, kv.H), 'the King scene: the painted King is awake and dares you: ' + JSON.stringify(kv.cs));
   await page.keyboard.press('Space'); await page.evaluate(() => G.test.step(1 / 60, 2));
   const k2 = await view();
   assert(!k2.cs.playing && k2.state === 'play' && !k2.root, 'Space skips the scene: ' + JSON.stringify(k2));
@@ -89,26 +96,29 @@ try {
     window.DeviceMotionEvent.requestPermission = () => Promise.resolve('denied');
   });
   await open(ph, '?nosw&skipintro&cut'); await ph.waitForFunction(() => G.viewDone);
+  await ph.route('**/art/cutscene/hero.webp', (r) => r.abort()); // a picture that does not load: its panel shows the live shot
   await ph.locator('#playFlat').click(); await ph.waitForFunction(() => G.state === 'play');
+  await ph.evaluate(() => G.test.cutsceneArt());
   await ph.evaluate(() => { G.test.hold(true); G.test.step(1 / 60, 30); G.test.story('opening'); G.test.step(1 / 60, 2); });
   const pv = [];
-  for (let k = 0; k < 2; k++) {
+  for (let k = 0; k < 4; k++) {
     await ph.evaluate(() => G.test.step(1 / 60, 60));
     pv.push(await ph.evaluate(() => {
       const r = (s) => { const e = document.querySelector(s); if (!e || e.hidden) return null; const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
       return { cs: G.test.cutscene(), bal: r('#cutscene .cs-bal'), cap: r('#cutscene .cs-cap'), skip: r('#cutscene .cs-skip'), phone: getComputedStyle(document.querySelector('#phoneControls')).visibility, W: innerWidth, H: innerHeight, wide: document.documentElement.scrollWidth > innerWidth };
     }));
     await ph.screenshot({ path: `${out}/cutscene-phone-${k + 1}.png` });
-    await ph.evaluate((i) => { const c = G.test.cutscene(); const left = [5.5, 6][i] - c.t - 0.05; if (left > 0) G.test.step(1 / 60, Math.round(left * 60)); }, k);
+    await ph.evaluate((i) => { const c = G.test.cutscene(); const left = [5.5, 6, 5.5, 4.5][i] - c.t - 0.05; if (left > 0) G.test.step(1 / 60, Math.round(left * 60)); }, k);
   }
-  const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   assert(pv.every((v) => inside(v.cap, v.W, v.H) && inside(v.bal, v.W, v.H) && !v.wide && v.phone === 'hidden'), 'on a phone held upright each caption and balloon sits inside the screen and the phone buttons hide: ' + JSON.stringify(pv));
   assert(pv[1].bal && !hit(pv[1].bal, pv[1].cap) && !hit(pv[1].bal, pv[1].skip), 'on a phone the King\'s balloon keeps clear of the caption and the SKIP button: ' + JSON.stringify(pv[1]));
+  assert.deepEqual(pv.map((v) => v.cs.art), ['city', 'king', 'clogs', ''], 'on a phone the panels show their pictures, and the panel whose picture did not load shows the live shot');
   const box = pv[1].skip;
   // a pointer press on SKIP, as a tap gives
   await ph.mouse.click((box.l + box.r) / 2, (box.t + box.b) / 2); await ph.evaluate(() => G.test.step(1 / 60, 2));
   const ps = await ph.evaluate(() => ({ cs: G.test.cutscene(), state: G.state }));
   assert(!ps.cs.playing && ps.state === 'play', 'a tap on SKIP ends the scene on a phone: ' + JSON.stringify(ps));
-  assert.equal(ph.errors.length, 0, JSON.stringify(ph.errors));
-  console.log('PASS a phone held upright: the panels fit, the phone buttons hide, a tap skips');
+  const errs = ph.errors.filter((e) => !/Failed to load resource|ERR_FAILED|hero\.webp/.test(e)); // (the picture blocked on purpose)
+  assert.equal(errs.length, 0, JSON.stringify(errs));
+  console.log('PASS a phone held upright: the pictures fit, a missing one falls back to the live shot, the phone buttons hide, a tap skips');
 } finally { await close(); }

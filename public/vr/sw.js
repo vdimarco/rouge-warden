@@ -2,7 +2,7 @@
 // index.html registers it with scope "./". A plain classic worker (no modules, no importScripts), so every browser runs it.
 // VERSION must equal VERSION in js/config.js (qa/vr/pwa.mjs checks it). A new VERSION makes a new cache and drops the old one.
 
-const VERSION = "1.8.0";
+const VERSION = "1.9.0";
 const PREFIX = "fullswing-";
 const CACHE = PREFIX + VERSION;
 
@@ -29,6 +29,13 @@ const PRECACHE = [
   "./art/windows.webp",
   "./art/words.webp",
   "./art/words.json",
+  "./art/cutscene/city.webp",
+  "./art/cutscene/king.webp",
+  "./art/cutscene/clogs.webp",
+  "./art/cutscene/hero.webp",
+  "./art/cutscene/swing.webp",
+  "./art/cutscene/king-awake.webp",
+  "./art/cutscene/finale.webp",
   "./anim/locomotion.json",
   ...JS.map((f) => "./js/" + f),
   ...LIB.map((f) => "./lib/" + f),
