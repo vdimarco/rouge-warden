@@ -100,6 +100,8 @@ export function resolveBody(s, e) {
       if (side === 0) e.x = x0; if (side === 1) e.x = x1; if (side === 2) e.y = y0; if (side === 3) e.y = y1;
     }
   }
+  // An obstacle near the edge must not push a body off the map.
+  e.x = clamp(e.x, 200, SIZE - 200); e.y = clamp(e.y, 180, SIZE - 180);
 }
 export function move(s, e, x, y, dt, speed = e.speed) {
   if(e.snaredUntil>s.time || e.castIntent)return;

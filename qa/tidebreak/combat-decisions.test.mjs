@@ -27,7 +27,7 @@ const advance=(s,seconds,input={attack:false})=>{for(let i=0;i<Math.ceil(seconds
  assert(requestCast(s,p,2,{x:0,y:-1,distance:300}));const intent=p.castIntent;assert.equal(p.mana,mana);assert.equal(p.cd[2],0);assert.equal(t.hp,health);
  const x=p.x;advance(s,.15,{x:1,attack:false});assert.equal(p.x,x,'committed aim holds its origin');assert.equal(p.castIntent.aim.y,-1);
  t.x+=700;advance(s,.28);assert.equal(p.castIntent,null);assert.equal(t.hp,health,'moving outside locked aim avoids the lance');assert(p.cd[2]>0);assert(p.mana<mana);assert(p.recoveryUntil>s.time);
- assert.equal(requestCast(s,p,0),false,'recovery creates a short cost before an escape');advance(s,.2);assert.equal(requestCast(s,p,0),false,'extended punish window remains active');advance(s,.07);assert(requestCast(s,p,0),'quick defense resumes after recovery');
+ assert.equal(requestCast(s,p,0),false,'recovery creates a short cost before an escape');assert(p.exposedUntil>s.time,'a missed cast leaves the caster exposed');advance(s,.2);assert.equal(requestCast(s,p,0),false,'extended punish window remains active');advance(s,.32);assert(requestCast(s,p,0),'quick defense resumes after recovery');
 }
 for(const status of ['stun','fear','silencedUntil']){
  const {s,p}=setup(4);foe(s,p);const mana=p.mana;assert(requestCast(s,p,2,{x:0,y:-1}));p[status]=1;advance(s,.02);

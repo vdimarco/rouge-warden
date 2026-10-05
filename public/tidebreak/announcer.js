@@ -1,6 +1,7 @@
 // Turns recorded match facts into announcer calls, banners, a kill feed and spatial battle sound.
 import { HERO_IDENTITIES } from './hero-identities.js';
 import { LANE_NAMES, TIER_NAMES } from './objectives.js';
+import { insideWarning } from './combat-rules.js';
 
 // Names follow the recorded announcer lines in audio/announcer.
 const MULTI = [null, null, 'Double kill', 'Triple kill', 'Mayhem', 'Rampage'];
@@ -123,10 +124,14 @@ export class Announcer {
     const player = s.units.find(u => u.id === playerId);
     for (const u of s.units) {
       const before = this.prev.get(u.id), seen = u.team === 0 || visible?.has(u.id);
-      this.prev.set(u.id, { hp: u.hp, hit: u.lastBasicHit, cast: u.castStarted, attack: u.attackStarted });
+      const intent = u.castIntent || u.specialIntent;
+      this.prev.set(u.id, { hp: u.hp, hit: u.lastBasicHit, cast: u.castStarted, attack: u.attackStarted, intent: intent?.start, lock: u.lockStart });
       if (!before || u.id === playerId) continue;
       if (before.hp > 0 && u.hp <= 0) { if (u.kind === 'minion') sound.minionPop(u.x, u.y); else if (u.kind === 'hero') sound.death(u.x, u.y, u.team === 0); continue; }
       if (u.hp <= 0 || !seen) continue;
+      // Tells: a swell when an enemy or neutral windup starts, beeps when a tower locks on to you.
+      if (intent && u.team !== 0 && intent.start !== before.intent) sound.windup(u.x, u.y, { ult: intent.slot === 3, neutral: !!u.specialIntent, aimed: !!player && player.hp > 0 && insideWarning(player, intent.shape, 25), duration: intent.at - intent.start });
+      if (u.lockTarget === playerId && u.lockStart !== before.lock && s.time < u.lockAt) sound.lockOn(u.x, u.y);
       if (u.kind === 'hero') {
         if (u.lastBasicHit !== before.hit && sound.throttle(`hit${u.id}`, .06)) sound.worldHit(u.x, u.y, u.lastBasicVariant === 2);
         if (u.castStarted !== before.cast && Number.isFinite(u.castStarted)) sound.worldCast(u.x, u.y, u.castSlot === 3);

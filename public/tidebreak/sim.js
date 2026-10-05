@@ -19,6 +19,9 @@ import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER } from './o
 import { campSprite } from './marketplace-sprites.js';
 import { rooted, spellBlocked, castTiming, emitCombatFeedback } from './combat-state.js';
 import { tickEncounter } from './encounters.js';
+import { recordHit, noteControl, withContext, openCommit, closeCommit, judgeCommit, noteCommitHit, expose, heroOpening, EXPOSED_BONUS, INTERRUPT_EXPOSE, towerLock, pushImpact, bufferCast, lockRemaining, isEngage, engageShape, manaRegen, DODGE_SLACK } from './combat-tells.js';
+import { buildRecap } from './death-recap.js';
+import { BASIC_ATTACKS } from './basic-attacks.js';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
@@ -110,6 +113,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   }
   if (kind === 'spell') amount += (source.power || 0) * .55;
   if((['boss','camp'].includes(target.kind)||target.guardian)&&target.exposedUntil>s.time){amount*=1.25;emitCombatFeedback(s,source,target,'exposed','OPENING HIT');}
+  const opening=heroOpening(s,credit,target);if(opening){amount*=EXPOSED_BONUS;emitCombatFeedback(s,credit,target,'exposed','OPENING HIT');}
   if (fortified(s, target)) amount *= PACE.fortify;
   // Sudden death: structures take extra damage and need no wave. Otherwise backdoor protection applies:
   // structures shrug off most hero damage unless the attacker's wave is at the structure.
@@ -130,10 +134,12 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if(absorbed>0&&target.shield<=0)emitCombatFeedback(s,source,target,'shield-break','SHIELD BROKEN');
   const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.hitAngle = Math.atan2(target.y - source.y, target.x - source.x); target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (credit?.player) s.stats.damage += actual;
+  recordHit(s, source, credit, target, actual, absorbed / shieldMultiplier, kind); if (actual > 0 || absorbed > 0) noteCommitHit(s, credit, target);
+  if (opening && (credit.player || target.player)) pushImpact(s, credit, target, 1, 'opening');
   if(source.hp>0&&target.soulThread?.source===source.id&&target.soulThread.until>s.time)heal(s,source,actual*.25);
   if(target.hp>0&&target.guardUntil>s.time&&kind==='attack'&&source.hp>0&&source.id!==target.id)damage(s,target,source,(actual+absorbed/shieldMultiplier)*.2,'reflect');
   if (source.hp > 0 && source.frenzy > s.time) heal(s, source, actual * .3);
-  if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : '#fff4c9', life: .8 });
+  if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : opening ? '#ffd27a' : kind === 'spell' ? '#e0d2ff' : '#fff4c9', life: .8, size: Math.round(Math.min(30, 14 + Math.sqrt(Math.max(0, amount)) * .55) * (opening ? 1.2 : 1)), emphasis: opening ? 'opening' : undefined });
   if (actual > 0 || absorbed > 0) { noteSkirmish(s, credit, target); noteStructureHit(s, credit || source, target); }
   if (target.kind === 'hero' && source.kind === 'hero') for (const t of s.units) if (['tower', 'core'].includes(t.kind) && t.team === target.team && t.hp > 0 && distance(t, source) < t.range) { t.aggro = source.id; t.aggroUntil = s.time + 3; }
   if (source.hp > 0 && kind === 'attack' && source.lifesteal) heal(s, source, actual * source.lifesteal);
@@ -152,11 +158,12 @@ export function damage(s, source, target, amount, kind = 'spell') {
   }
   if (target.hp > 0) return actual;
   if(target.rebirthUntil>s.time){target.rebirthUntil=0;target.hp=target.maxHp*.35;target.shield=140;target.stun=target.fear=target.slow=0;target.snaredUntil=target.silencedUntil=target.disarmedUntil=0;target.bleed=target.burn=null;area(s,target,target,330,260*(target.rebirthStrength||1));burst(s,target.x,target.y,'#ffc16d',330,'ultimate');return actual;}
-  emitCombatFeedback(s,source,target,'kill',target.kind==='hero'?'BANISHED':'DEFEATED');
+  if(target.kind!=='minion')emitCombatFeedback(s,credit||source,target,'kill',target.kind==='hero'?target.exposedUntil>s.time?'FINISHER':'BANISHED':'DEFEATED');
+  if (target.kind === 'hero') { target.deathRecap = buildRecap(s, target, source); pushImpact(s, credit || source, target, 3, 'kill'); }
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
-    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
+    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, PACE.killGold); if (credit?.kind === 'hero') credit.kills++; }
     recordKill(s, credit, target);
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
@@ -230,8 +237,10 @@ function attack(s, e, t) {
     e.attackVariant = e.comboNext || 0; e.comboTarget = t.id;
   }
   const timing = e.kind==='hero'?attackTiming(e,e.attackVariant||0,s.time):ATTACK_TIMINGS[e.attackVariant||0];
-  e.attackWindup = e.kind === 'hero' ? timing.windup : .12;
-  e.attackDuration = e.kind === 'hero' ? timing.duration : .46;
+  // The third strike on a hero is slower and shows an arc, so stepping out of range dodges it.
+  const telegraph = e.kind === 'hero' && t.kind === 'hero' && (e.attackVariant || 0) === 2;
+  e.attackWindup = e.kind === 'hero' ? timing.windup + (telegraph ? .08 : 0) : .12;
+  e.attackDuration = e.kind === 'hero' ? Math.max(timing.duration, e.attackWindup + .14) : .46;
   e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = e.attackDuration; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
   const ambush = e.ambushReady && t.kind === 'hero';
   if (ambush) { if (e.player) s.stats.ambushes++; s.floaters.push({ x: t.x, y: t.y - 90, text: 'AMBUSH!', color: '#e2fa78', life: 1.2 }); }
@@ -239,16 +248,19 @@ function attack(s, e, t) {
   // Attacks grow stronger only in sudden death, and structures never ramp.
   const multiplier = s.suddenDeath && !['tower', 'core'].includes(e.kind) ? 1 + (s.time - SUDDEN_DEATH) / 150 : 1;
   const towerPressure=e.kind==='tower'&&t.kind==='hero'?(e.towerTarget===t.id&&e.towerUntil>s.time?Math.min(4,e.towerHits||0):0):0;
-  e.pendingAttack = { target: t.id, at: s.time + e.attackWindup, variant: e.attackVariant || 0, amount: e.damage * multiplier * (ambush ? 1.75 : 1) * (e.kind === 'hero' ? timing.damage : 1)*(1+towerPressure*.22) };
+  e.pendingAttack = { target: t.id, at: s.time + e.attackWindup, variant: e.attackVariant || 0, amount: e.damage * multiplier * (ambush ? 1.75 : 1) * (e.kind === 'hero' ? timing.damage : 1)*(1+towerPressure*.22), telegraph, ambush };
 }
 function resolveAttack(s, e) {
   const pending = e.pendingAttack; if (!pending || s.time < pending.at) return;
   e.pendingAttack = null;
   const t = s.units.find(u => u.id === pending.target);
-  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > e.range + t.radius + 90 || !lineOfSight(s, e, t)) { e.comboNext = 0; e.comboUntil = 0; return; }
+  const slack = e.kind === 'hero' && t?.kind === 'hero' ? DODGE_SLACK : 90;
+  const stepped = t && t.hp > 0 && e.hp > 0 && e.stun <= 0 && !(e.disarmedUntil>s.time) && distance(e, t) > e.range + t.radius + slack;
+  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > e.range + t.radius + slack || !lineOfSight(s, e, t)) { if (pending.telegraph && stepped) emitCombatFeedback(s, t.player ? t : e, t, 'dodge', 'DODGED'); e.comboNext = 0; e.comboUntil = 0; return; }
   if (e.kind === 'hero') { e.comboNext = (pending.variant + 1) % 3; e.comboUntil = s.time + 2; e.lastBasicHit = s.time; e.lastBasicVariant = pending.variant; }
   if(e.kind==='tower'&&t.kind==='hero'){e.towerHits=e.towerTarget===t.id&&e.towerUntil>s.time?(e.towerHits||0)+1:1;e.towerTarget=t.id;e.towerUntil=s.time+2;}
-  damage(s, e, t, pending.amount, 'attack');
+  withContext(s, { source: e.id, label: e.kind === 'hero' ? BASIC_ATTACKS[e.hero]?.[pending.variant] || 'Basic attack' : e.kind === 'tower' || e.kind === 'core' ? 'Tower shot' : 'Basic attack', telegraphed: !!pending.telegraph || e.kind === 'tower', dodgeable: !!pending.telegraph }, () => damage(s, e, t, pending.amount, 'attack'));
+  if ((pending.ambush || pending.telegraph) && (e.player || t.player)) pushImpact(s, e, t, 1, pending.ambush ? 'ambush' : 'heavy');
   if (e.hero === 0 && t.omen?.source === e.id && t.omen.until > s.time) {
     const omen = t.omen; t.omen = null; if (t.hp > 0) damage(s,e,t,omen.amount);
     emitCombatFeedback(s,e,t,'combo','OMEN');
@@ -286,7 +298,8 @@ export function castTarget(s,e,slot,aim) {
   return s.units.find(t=>t.id===e.target&&hostile(s,e,t)&&canSee(s,e,t)&&distance(e,t)<540&&lineOfSight(s,e,t))||nearest(s,e,540,true);
 }
 export function requestCast(s,e,slot,aim,{bot=false}={}) {
-  if(e.kind!=='hero'||![0,1,2,3].includes(slot)||!e.skillRanks[slot]||spellBlocked(s,e,slot)||s.winner!==null||e.castIntent||e.recoveryUntil>s.time)return false;
+  if(e.kind!=='hero'||![0,1,2,3].includes(slot)||!e.skillRanks[slot]||spellBlocked(s,e,slot)||s.winner!==null)return false;
+  if(e.castIntent||e.recoveryUntil>s.time){if(!bot)bufferCast(s,e,slot,aim,e.cd[slot]<=0&&canAfford(e,slot)||slot===0&&canReturn(s,e));return false;}
   if(slot===0&&canReturn(s,e))return cast(s,e,slot,aim);
   if(e.cd[slot]>0||!canAfford(e,slot))return false;
   const target=castTarget(s,e,slot,aim);
@@ -295,8 +308,8 @@ export function requestCast(s,e,slot,aim,{bot=false}={}) {
   if(!timing.windup)return cast(s,e,slot,aim);
   const angle=aim&&Math.hypot(aim.x,aim.y)>.1?Math.atan2(aim.y,aim.x):target?Math.atan2(target.y-e.y,target.x-e.x):e.facing;
   const locked={x:Math.cos(angle),y:Math.sin(angle),distance:aim?.distance??(target?distance(e,target):undefined)};
-  const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:spellShape(e,slot,locked);
-  e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape};
+  const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:isEngage(e,slot)?engageShape(e,angle,e.skillRanks[slot]):spellShape(e,slot,locked);
+  e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape,heroAim:target?.kind==='hero'&&insideWarning(target,shape,20)};
   e.pendingAttack=null;e.facing=angle;e.revealedUntil=s.time+timing.windup+1;e.recall=0;
   return true;
 }
@@ -365,7 +378,7 @@ export function setGoal(s, id) { player(s).goal = id; }
 function itemTick(s, e, dt) {
   if (e.burn && e.hp > 0 && e.burn.tick <= s.time) {
     const source = s.units.find(v => v.id === e.burn.source);
-    if (source && s.time <= e.burn.until + dt) damage(s, source, e, e.burn.amount * (e.slow > 0 ? hasItem(source, 'inferno') ? 1.6 : hasItem(source, 'frost') ? 1.35 : 1 : 1), 'item');
+    if (source && s.time <= e.burn.until + dt) withContext(s, { source: source.id, label: 'Burn' }, () => damage(s, source, e, e.burn.amount * (e.slow > 0 ? hasItem(source, 'inferno') ? 1.6 : hasItem(source, 'frost') ? 1.35 : 1 : 1), 'item'));
     if (e.burn) e.burn.tick += 1;
   }
   if (e.burn && e.burn.until < s.time) e.burn = null;
@@ -453,17 +466,22 @@ function baseGate(s,e,dt){
 }
 function resolveIntent(s,e){
  const intent=e.castIntent;if(!intent)return;
- if(spellBlocked(s,e,intent.slot)||intent.origin&&distance(e,intent.origin)>8){e.castIntent=null;if(e.hp>0)emitCombatFeedback(s,e,e,'interrupt','INTERRUPTED');return;}
+ if(spellBlocked(s,e,intent.slot)||intent.origin&&distance(e,intent.origin)>8){e.castIntent=null;if(e.hp>0){emitCombatFeedback(s,e,e,'interrupt','INTERRUPTED');expose(s,e,INTERRUPT_EXPOSE,'interrupt');}return;}
  const t=s.units.find(t=>t.id===intent.target);
  if(intent.shape.targetId&&t){intent.shape.x=t.x;intent.shape.y=t.y;}
  if(s.time<intent.at)return;
  e.castIntent=null;
  if(intent.slot===2&&[0,8].includes(e.hero)&&(!t||t.hp<=0||!canSee(s,e,t)||!lineOfSight(s,e,t)||distance(e,t)>=540))return;
- e.target=intent.target||0;if(cast(s,e,intent.slot,intent.aim,{lockedTarget:intent.shape.targetId?t:undefined}))e.recoveryUntil=s.time+(intent.recovery||0);
+ // A targeted cast lands on its locked target, so only aimed casts can miss.
+ e.target=intent.target||0;if(!intent.shape.targetId)openCommit(s,e,intent.slot,!!intent.heroAim);
+ const done=withContext(s,{source:e.id,label:KITS[e.hero]?.[intent.slot]?.name||'Spell',telegraphed:true,dodgeable:true},()=>cast(s,e,intent.slot,intent.aim,{lockedTarget:intent.shape.targetId?t:undefined}));
+ if(done){e.recoveryUntil=s.time+(intent.recovery||0);if(intent.slot===3)pushImpact(s,e,e,2,'ultimate');}
+ closeCommit(s,e,done);
 }
 function terrainEffects(s, dt) {
   for (const z of s.zones) {
     z.life-=dt;z.tick-=dt;const source=s.units.find(e=>e.id===z.source);
+    s.hitContext={source:z.source,label:z.type[0].toUpperCase()+z.type.slice(1),telegraphed:z.armed!==undefined,dodgeable:true};
     if(z.follow&&source){z.x=source.x;z.y=source.y;if(source.hp<=0||z.type==='sunray'&&(source.stun>0||source.fear>0||source.silencedUntil>s.time))z.life=0;}
     if(!source||z.life<=0||s.time<(z.armed||0)||z.tick>0)continue;
     z.tick=z.type==='stomp'?.8:.6;
@@ -480,11 +498,11 @@ function terrainEffects(s, dt) {
       } else if(z.type==='maelstrom'&&t.kind==='hero'&&t.team===z.team)heal(s,t,45*(1+(z.rank-1)*.28));
     }
   }
-  s.zones = s.zones.filter(z => z.life > 0);
+  s.hitContext = null; s.zones = s.zones.filter(z => z.life > 0);
   for (const t of s.traps) {
     t.life -= dt; if (s.time < t.armed) continue;
     const source = s.units.find(e => e.id === t.source), enemy = s.units.find(e => e.hp > 0 && e.team !== t.team && e.team >= 0 && !['core', 'tower'].includes(e.kind) && distance(e, t) < 95);
-    if (source && enemy) { area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{snaredUntil:s.time+2.5}); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
+    if (source && enemy) { withContext(s,{source:source.id,label:'Trap',telegraphed:true,dodgeable:true},()=>area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{snaredUntil:s.time+2.5})); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
   }
   s.traps = s.traps.filter(t => t.life > 0);
 }
@@ -511,7 +529,7 @@ export function step(s, input = {}, dt = 1 / 60) {
   terrainEffects(s, dt);
   for (const e of [...s.units]) {
     for (const key of ['attackCd', 'attackAnim', 'hit', 'stun', 'slow', 'fear']) e[key] = Math.max(0, (e[key] || 0) - dt);
-    if(e.hp>0 && e.bleed?.until>s.time && s.time>=e.bleed.tick) {const source=s.units.find(t=>t.id===e.bleed.source);e.bleed.tick+=.8;if(source)damage(s,source,e,e.bleed.amount);}
+    if(e.hp>0 && e.bleed?.until>s.time && s.time>=e.bleed.tick) {const source=s.units.find(t=>t.id===e.bleed.source);e.bleed.tick+=.8;if(source)withContext(s,{source:source.id,label:e.bleed.type==='poison'?'Poison':e.bleed.type==='fire'?'Burn':'Bleed'},()=>damage(s,source,e,e.bleed.amount));}
     e.moving = false; itemTick(s, e, dt); resolveAttack(s, e);
     if(e.kind==='summon'){
       e.life-=dt;if(e.life<=0){e.hp=0;continue;}
@@ -529,11 +547,12 @@ export function step(s, input = {}, dt = 1 / 60) {
       // The court heals quickly, but not in sudden death: a defended base can still fall.
       if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * (s.suddenDeath ? .02 : .24) * dt);
       else if (s.time - e.lastHit > 5) heal(s, e, 12 * dt);
-      e.mana=Math.min(e.maxMana,e.mana+dt*(distance(e,BASES[e.team])<BASE_HEAL_RADIUS?e.maxMana*.3:6+e.level*.35+(e.manaRegen||0)));
+      e.mana=Math.min(e.maxMana,e.mana+dt*(distance(e,BASES[e.team])<BASE_HEAL_RADIUS?e.maxMana*.3:manaRegen(e.level)+(e.manaRegen||0)));
       e.shield = Math.max(0, e.shield - dt * 13);
       if (concealed(s, e)) e.ambushReady = true;
       else if (e.cloak <= s.time && !concealed(s, e)) e.ambushReady = false;
-      resolveIntent(s,e);
+      resolveIntent(s,e); judgeCommit(s,e); noteControl(s,e,dt);
+      if (e.queuedCast) { const q = e.queuedCast; if (s.time > q.until || spellBlocked(s,e,q.slot)) e.queuedCast = null; else if (!lockRemaining(s,e)) { e.queuedCast = null; requestCast(s,e,q.slot,q.aim); } }
       if (e.stun > 0) {e.travel=null;continue;}
       if (e.fear > 0) {e.travel=null; move(s, e, e.x + (e.x - e.fearX), e.y + (e.y - e.fearY), dt, e.speed * .8); continue; }
       if(tickHeroMechanic({s,e,dt,damage,heal,hostile})){if(e.player&&input.cast!==undefined)requestCast(s,e,input.cast,input.aim);continue;}
@@ -578,7 +597,7 @@ export function step(s, input = {}, dt = 1 / 60) {
         if(!tracked||tracked.hp<=0||distance(e,tracked)>e.range||!canSee(s,e,tracked)){e.towerTarget=0;e.towerHits=0;e.towerUntil=0;}
         let t = s.units.find(x => x.id === e.aggro && s.time < e.aggroUntil && x.hp > 0 && distance(e, x) < e.range && canSee(s, e, x));
         if (!t) t = s.units.filter(x => x.team !== e.team && x.team !== -1 && x.hp > 0 && distance(e, x) < e.range && canSee(s, e, x) && !['tower', 'core'].includes(x.kind)).sort((a, b) => (a.kind === 'hero') - (b.kind === 'hero') || distance(e, a) - distance(e, b))[0];
-        attack(s, e, t);
+        attack(s, e, towerLock(s, e, t) ? null : t);
       } else if(e.kind==='summon'){
         attack(s,e,nearest(s,e,e.range));
       } else if (e.kind === 'camp') {
@@ -630,7 +649,9 @@ function guardianSlam(s, e) {
     e.pendingAttack = null;
     if (s.time < intent.at) return true;
     e.specialIntent = null; e.exposedUntil = s.time + SLAM.recovery; e.nextSpecial = s.time + SLAM.cooldown; e.attackCd = Math.max(e.attackCd, SLAM.recovery);
+    s.hitContext = { source: e.id, label: intent.label || 'Guardian slam', telegraphed: true, dodgeable: true };
     for (const t of s.units) if (t.hp > 0 && t.team !== e.team && t.team >= 0 && !['tower', 'core'].includes(t.kind) && insideWarning(t, intent.shape)) damage(s, e, t, intent.amount * (t.kind === 'hero' ? 1 : .6), 'spell');
+    s.hitContext = null;
     s.effects.push({ ...intent.shape, type: 'neutral-impact', source: e.id, life: .45, maxLife: .45, color: '#ffbb78' });
     return true;
   }

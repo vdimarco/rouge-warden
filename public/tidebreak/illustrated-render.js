@@ -12,6 +12,8 @@ import { BASE_STYLES, drawBaseCore } from './bases.js';
 import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
 import { HERO_IDENTITIES, identityFor, identitySkill } from './hero-identities.js';
+import { drawTells, drawUnitMarks } from './combat-tells-draw.js';
+import { windupState } from './combat-tells.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440, QUALITY_FLOOR = .5;
 // Tower art grows with its tier (outer, middle, inner, guardian), so the chain reads at a glance.
 const TOWER_HEIGHT = [245, 285, 325, 360], TOWER_LABEL = ['OUTER WARD', 'MIDDLE WARD', 'INNER WARD', 'GUARDIAN'];
@@ -110,7 +112,7 @@ export class Renderer {
     const c = this.ctx, p = this.project(x, y); c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = line; c.beginPath(); c.ellipse(p.x, p.y, radius * this.scale, radius * this.scale * .55, 0, 0, TAU); c.stroke(); c.restore();
   }
   draw(s, dt, menu = false, aim = null, waypoint = null) {
-    const c = this.ctx, p = player(s); this.setScene(s.seed); this.lastPoses = []; this.menuTime += dt; const time = menu ? this.menuTime : s.time;
+    const c = this.ctx, p = player(s); this.setScene(s.seed); this.lastPoses = []; this.menuTime += dt; this.menu = menu; const time = menu ? this.menuTime : s.time;
     const focus = p.order?.type === 'attack' ? s.units.find(e => e.id === p.order.target) : p.order?.type === 'move' ? p.order : null;
     const dx = focus ? focus.x - p.x : 0, dy = focus ? focus.y - p.y : 0, length = Math.hypot(dx,dy) || 1, lead = Math.min(220, length * .16), damping = 1 - Math.exp(-dt * 8);
     // A free camera (edge scroll or minimap) holds its own target until the player recenters.
@@ -129,7 +131,8 @@ export class Renderer {
     this.cam.x = clamp(this.cam.x, halfW, SIZE - halfW); this.cam.y = clamp(this.cam.y, top, SIZE - bottom);
     if (this.freeCam) { this.freeCam.x = clamp(this.freeCam.x, halfW, SIZE - halfW); this.freeCam.y = clamp(this.freeCam.y, top, SIZE - bottom); }
     const impact = this.reducedMotion ? 0 : Math.min(1, s.effects.filter(f => (f.type === 'strike' || f.type === 'spell') && (f.source === p.id || distance(p, f) < 250)).reduce((n, f) => Math.max(n, Math.max(0, f.life / f.maxLife - .55)), 0));
-    this.shakeX = Math.sin(time * 103) * impact * 3; this.shakeY = Math.cos(time * 127) * impact * 2;
+    const weighted = this.reducedMotion || menu ? 0 : this.feel?.shake || 0;
+    this.shakeX = Math.sin(time * 103) * Math.max(impact * 3, weighted); this.shakeY = Math.cos(time * 127) * Math.max(impact * 2, weighted * .7);
     if (!menu) this.heroScreen = this.project(p.x, p.y); // read by QA to measure motion smoothness
     c.fillStyle = '#142932'; c.fillRect(0, 0, this.width, this.height);
     const origin = this.project(0, 0); c.drawImage(this.grounds[s.phase], origin.x, origin.y, SIZE * this.scale, SIZE * this.scale * .88);
@@ -156,7 +159,7 @@ export class Renderer {
     for(const e of s.units)if(e.hp>0&&this.visible.has(e.id)){
       const intent=e.castIntent||e.specialIntent;
       if(intent){
-        if(e.specialIntent)this.drawWarning(intent,s.time,'#ffc17a');else drawCastWarning(this,intent,s.time,e.team===p.team);
+        if(e.specialIntent)this.drawWarning(intent,s.time,'#ffc17a');else if(intent.shape?.shape==='path')this.drawWarning(intent,s.time,e.team===p.team?'#a3ead3':'#ff8f75');else drawCastWarning(this,intent,s.time,e.team===p.team);
         const identity=identityFor(e),a=this.project(e.x,e.y,(HEROES[e.hero]?.height||325)*.77+32),label=identity&&Number.isInteger(intent.slot)?identitySkill(identity.id,intent.slot).name:intent.label||HEROES[e.hero]?.skills[intent.slot];
         if(label){c.save();c.font='700 11px Barlow';c.textAlign='center';c.strokeStyle='#101c27';c.lineWidth=3;c.strokeText(label,a.x,a.y);c.fillStyle=e.specialIntent?'#ffd09a':e.team===p.team?'#bdebd9':'#ffad90';c.fillText(label,a.x,a.y);c.restore();}
       }
@@ -166,6 +169,7 @@ export class Renderer {
         const label=`${exposed?'EXPOSED':'RECOVERY'} ${Math.max(0,(exposed?e.exposedUntil:e.recoveryUntil)-s.time).toFixed(1)}s`;c.strokeText(label,a.x,a.y+15);c.fillStyle=color;c.fillText(label,a.x,a.y+15);c.restore();
       }
     }
+    if (!menu) drawTells(this, s, p, this.visible);
     for (const f of s.effects) drawCombatEffect(this, f);
     for(const m of s.missiles)if(m.team===0||visibleTo(s,0,m))drawSkillMissile(this,m,time);
     this.drawAtmosphere(s, time);
@@ -177,7 +181,7 @@ export class Renderer {
       }
       if (waypoint) { const a = this.project(p.x, p.y), b = this.project(waypoint.x, waypoint.y), angle = Math.atan2(b.y - a.y, b.x - a.x); this.ring(p.x + Math.cos(angle) * 160, p.y + Math.sin(angle) * 160, 20, '#e4efa9'); }
     }
-    for (const f of s.floaters) { const a = this.project(f.x, f.y, 180 + (.8 - f.life) * 50); c.globalAlpha = Math.min(1, f.life * 2); c.font = '700 17px Barlow'; c.textAlign = 'center'; c.strokeStyle = '#101c27'; c.lineWidth = 3; c.strokeText(f.text, a.x, a.y); c.fillStyle = f.color; c.fillText(f.text, a.x, a.y); } c.globalAlpha = 1;
+    for (const f of s.floaters) { const a = this.project(f.x, f.y, 180 + (.8 - f.life) * 50); c.globalAlpha = Math.min(1, f.life * 2); c.font = `700 ${f.size || 17}px Barlow`; c.textAlign = 'center'; c.strokeStyle = '#101c27'; c.lineWidth = 3; c.strokeText(f.text, a.x, a.y); c.fillStyle = f.color; c.fillText(f.text, a.x, a.y); } c.globalAlpha = 1;
     this.drawResults(s,p);
     if (s.phase) { c.fillStyle = '#192c4429'; c.fillRect(0, 0, this.width, this.height); }
     if (this.frames++ % 6 === 0) this.drawMap(s, this.mini, waypoint);
@@ -191,7 +195,7 @@ export class Renderer {
       if (screen.x + extent < 0 || screen.x - extent > this.width || screen.y + extent < 0 || screen.y - extent > this.height) return;
     }
     if (hero) { name = HEROES[e.hero].slug + (e.hero>=4||Math.sin(e.facing)>.2?'-front':'-back'); height = HEROES[e.hero].height*(e.player?1:.77); }
-    const pose = hero ? attackPose(e, s.time) : null;
+    const frozen = !this.menu && this.feel?.hitstop > 0 && this.feel.frozen.has(e.id), pose = hero ? attackPose(e, frozen ? this.feel.poseTime(e, s.time) : s.time) : null;
     const direction = (pose?.angle ?? e.facing) + (pose && !pose.casting ? [0, -.45, .25][pose.variant] : 0);
     if (pose && e.hero<4) name = `${HEROES[e.hero].slug}-attack-${Math.sin(direction) > .2 ? 'front' : 'back'}-${pose.stage}`;
     const baseAsset=name,identity=hero?identityFor(e):null,identityAsset=identity&&`reference-${identity.slug}`;
@@ -199,9 +203,10 @@ export class Renderer {
     if (pose) this.lastPoses.push({ id: e.id, hero: e.hero, identity: identity?.id, stage: pose.stage, asset: baseAsset, renderAsset: name });
     let x = e.x, y = e.y, jump = 0;
     if (e.motion) { const t = Math.max(0, Math.min(1, (s.time - e.motion.start) / e.motion.duration)), ease = t * t * (3 - 2 * t); x = e.motion.x + (e.x - e.motion.x) * ease; y = e.motion.y + (e.y - e.motion.y) * ease; jump = Math.sin(t * Math.PI) * e.motion.arc; }
-    const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
+    const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = frozen && e.hit > 0 ? 13 : e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
     x += Math.cos(direction) * swing * (hero && e.hero === 1 ? 42 : 28) + Math.cos(e.hitAngle || 0) * recoil;
     y += Math.sin(direction) * swing * 24 + Math.sin(e.hitAngle || 0) * recoil;
+    const wind = !pose && !tower ? windupState(e, s.time) : null; if (wind) { x -= Math.cos(e.facing) * wind.progress * 12; y -= Math.sin(e.facing) * wind.progress * 7; }
     if (hero && e.hero === 3 && pose) jump += Math.max(0, swing) * 27;
     // Contact shadows establish height during leaps and keep feet on the path.
     const shadow = this.project(x, y); c.save(); c.globalAlpha = .27; c.fillStyle = '#0d2425'; c.beginPath(); c.ellipse(shadow.x, shadow.y, height * this.scale * (hero ? .18 : .24) * (1 - Math.min(.4, jump / 400)), height * this.scale * .055, 0, 0, TAU); c.fill(); c.restore();
@@ -226,7 +231,7 @@ export class Renderer {
       c.fillStyle = structureProtected(s,e) ? '#9693aa' : TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
       if(hero){c.fillStyle='#407caf';c.fillRect(a.x-width/2,a.y+6,width*e.mana/e.maxMana,2);}
       if (e.kind === 'tower') { const name=TOWER_LABEL[e.tier]||'WARD';c.textAlign='center';c.font='700 10px Barlow';c.fillStyle=structureProtected(s,e)?'#ddd2ec':'#ead7a8';c.fillText(structureProtected(s,e)?`${name} · PROTECTED`:fortified(s,e)?`${name} · FORTIFIED`:name,a.x,a.y-6); }
-      this.drawBadges(e,s.time,a);
+      this.drawBadges(e,s.time,a); drawUnitMarks(this, s, e, a, player(s));
     }
   }
   drawBadges(e,time,anchor) {

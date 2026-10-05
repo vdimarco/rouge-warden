@@ -23,6 +23,9 @@ import { draftPlan, runDraft } from './draft.js';
 import { Announcer } from './announcer.js';
 import { PerfMeter } from './perf.js';
 import { TeamChat } from './team-chat.js';
+import { RecapView } from './death-recap.js';
+import { ImpactFeel } from './impact-feel.js';
+import { objectiveClock, clockText } from './objective-clock.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
 let selectedIdentity=0;
@@ -63,6 +66,11 @@ document.addEventListener('fullscreenchange', () => {
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
+// Combat feel HUD: death recap, objective timers and the edge flash for damage taken.
+const combatFeelStyle=document.createElement('link');combatFeelStyle.rel='stylesheet';combatFeelStyle.href=new URL('./combat-feel.css',import.meta.url).href;document.head.append(combatFeelStyle);
+const recapView=new RecapView($('hud')),feel=new ImpactFeel(),hurtEdge=Object.assign(document.createElement('div'),{id:'hurt-edge'}),objectiveClockEl=Object.assign(document.createElement('div'),{id:'objective-clock'});
+hurtEdge.setAttribute('aria-hidden','true');$('hud').prepend(hurtEdge);$('hud').append(objectiveClockEl);
+let lastIntent,lastHits=0,huntCue=null;
 const skillControlsStyle=document.createElement('link');skillControlsStyle.rel='stylesheet';skillControlsStyle.href=new URL('./skill-controls.css',import.meta.url).href;document.head.append(skillControlsStyle);
 const aimStatus=document.createElement('output');aimStatus.id='skill-aim-status';aimStatus.setAttribute('role','status');aimStatus.setAttribute('aria-live','polite');aimStatus.hidden=true;$('skill-points').before(aimStatus);
 skillButtons.forEach(b=>b.setAttribute('aria-describedby','skill-aim-status'));
@@ -245,12 +253,12 @@ function updateUI() {
   const upgradeMode=abilityCluster.classList.contains('upgrade-mode');
   skillButtons.forEach((b,i)=>{
     const eligible=canLearn(p,i),rank=p.skillRanks[i],locked=!rank,returnReady=i===0&&canReturn(state,p),empty=!canAfford(p,i)&&!returnReady,blocked=spellBlocked(state,p,i)||!!p.castIntent||p.recoveryUntil>state.time;
-    const blockedLabel=p.castIntent?'CAST':p.recoveryUntil>state.time?'WAIT':p.stun>0?'STUN':p.fear>0?'FEAR':p.silencedUntil>state.time?'SILENCE':p.hp<=0?'':blocked?'ROOT':'';
+    const queued=p.queuedCast?.slot===i,blockedLabel=queued?'QUEUED':p.castIntent?'CAST':p.recoveryUntil>state.time?'WAIT':p.stun>0?'STUN':p.fear>0?'FEAR':p.silencedUntil>state.time?'SILENCE':p.hp<=0?'':blocked?'ROOT':'';
     b.querySelector('b').textContent=locked?(i===3&&p.level<6?'LV 6':'LOCK'):blocked?blockedLabel:returnReady?'BACK':p.cd[i]>0?Math.ceil(p.cd[i]):empty?'MANA':'';
     b.querySelector('b').classList.toggle('locked',locked);
     b.classList.toggle('unlearned',locked);b.classList.toggle('trainable',eligible);
     b.classList.toggle('upgrade-target',upgradeMode&&eligible);
-    b.classList.toggle('control-blocked',blocked&&!locked);
+    b.classList.toggle('control-blocked',blocked&&!locked);b.classList.toggle('queued',queued);
     b.classList.toggle('mana-empty',empty&&!locked);b.classList.toggle('return-ready',returnReady);
     b.querySelector('.mana-cost').textContent=`${returnReady?0:manaCost(p,i)} MP`;
     const combatDisabled=locked||!returnReady&&(p.cd[i]>0||empty)||blocked;
@@ -272,6 +280,10 @@ function updateUI() {
   });
 
   dom.respawn.hidden = p.hp > 0; if (p.hp <= 0) dom.respawn.innerHTML = `The veil takes you<strong>${Math.max(1, Math.ceil(p.respawn))}</strong>`;
+  recapView.update(p);
+  const clock=objectiveClock(state,p),clockKey=clock.items.map(i=>i.state+clockText(i)).join('|');
+  if(objectiveClockEl.dataset.key!==clockKey){objectiveClockEl.dataset.key=clockKey;objectiveClockEl.replaceChildren(...clock.items.map(i=>Object.assign(document.createElement('span'),{className:i.state,textContent:clockText(i)})));}
+  if(clock.hunt.state==='soon'&&(huntCue?.state!==state||huntCue.at!==state.objectiveAt)){huntCue={state,at:state.objectiveAt};sound.horn();}
   const msg = state.messages.at(-1), fresh = msg && state.time - msg.time < 3.8;
   const noticeKey = msg && JSON.stringify([msg.time, msg.title, msg.detail]);
   dom.notice.style.opacity = fresh ? '1' : '0'; if (fresh && dom.notice.dataset.message !== noticeKey) { dom.notice.replaceChildren(); const b = document.createElement('b'), small = document.createElement('small'); b.textContent = msg.title; small.textContent = msg.detail; dom.notice.append(b, small); dom.notice.dataset.message = noticeKey; }
@@ -433,6 +445,9 @@ function frame(now) {
       step(state, input);
       if(Number.isFinite(p.castStarted)&&p.castStarted>lastCast){sound.skill(p.castSlot,p.hero);lastCast=p.castStarted;}
       sound.syncFeedback(state,p);
+      // A quiet click when your cast starts, and a gold chime for a last hit.
+      const intentStart=p.castIntent?.start;if(intentStart!==undefined&&intentStart!==lastIntent)sound.commit();lastIntent=intentStart;
+      if(p.lastHits!==lastHits){if(p.lastHits>lastHits)sound.lastHit();lastHits=p.lastHits;}
       if (p.lastBasicHit > lastAttack) { sound.hit(p.lastBasicVariant,p.hero); lastAttack = p.lastBasicHit; }
       accumulator -= 1 / 60;
     }
@@ -441,9 +456,16 @@ function frame(now) {
     renderer?.setLook(keys.has(' ') ? 0 : lookX); renderer?.adapt(frameMs);
     if (renderer) { const span = Math.abs(renderer.world(renderer.width, 0).x - renderer.world(0, 0).x) / 2 || 1400; sound.setListener(renderer.cam.x, renderer.cam.y, span); }
     announcer.update(state, { playerId: state.playerId, visible: renderer?.visible }); teamChat.update(state);
+    // Hitstop and shake are drawn by the renderer; the sim keeps stepping at 60 Hz.
+    const felt = feel.update(state, state.playerId, dt, { reducedMotion: renderer?.reducedMotion }); if (renderer) renderer.feel = feel;
+    for (const i of felt.impacts) sound.impact(i.weight, i.x, i.y); if (felt.hurt > .004) sound.hurt(felt.hurt);
+    const me = player(state); if (me.hp > 0 && me.hp < me.maxHp * .3) sound.heartbeat();
+    const edge = Math.round(feel.edge * 20) / 20; if (hurtEdge.dataset.edge !== String(edge)) { hurtEdge.dataset.edge = edge; hurtEdge.style.opacity = edge; }
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
+  // A held match keeps fading the shake, the hitstop and the red edge instead of freezing them.
+  if (running && (paused || window.GameSwitch?.isOpen)) { feel.idle(dt); hurtEdge.style.opacity = hurtEdge.dataset.edge = Math.round(feel.edge * 20) / 20; }
   const drawStart = performance.now();
   if (running && renderer) drawBetweenSteps(dt);
   perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running, running && !paused && !window.GameSwitch?.isOpen);
