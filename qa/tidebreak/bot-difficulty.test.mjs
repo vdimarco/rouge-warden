@@ -3,6 +3,8 @@ import { createMatch, player, step, HEROES, heroSpeed } from '../../public/tideb
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
 import { CENTER, LANES, PATHS, PORTALS, SIZE, BASES, distance, visibleTo } from '../../public/tidebreak/world.js';
 import { draftPlan } from '../../public/tidebreak/draft.js';
+import { readFileSync } from 'node:fs';
+import { profileTable } from './profile-table.mjs';
 import { KIT_POWER, guardMove, wardOpen, PROFILES, DIFFICULTIES, DEFAULT_DIFFICULTY, setDifficulty, botProfile, profileId, reactionDelay, castLock, evadePoint, diveSafe, strategy, routeTo, teamFocus, roll } from '../../public/tidebreak/bot-difficulty.js';
 
 const advance = (s, seconds) => { for (let i = 0; i < seconds * 20; i++) step(s, {}, .05); };
@@ -16,6 +18,8 @@ function scene(level, { kit = 3, keep = ['tower', 'core'] } = {}) {
   return { s, p, bot, towers: s.units.filter(e => e.kind === 'tower' && e.team === 0) };
 }
 
+// The notes table is the one that PROFILES gives (node qa/tidebreak/profile-table.mjs prints it).
+assert.ok(readFileSync(new URL('../../openspec/changes/shore-grand-arena/notes/bots.md', import.meta.url), 'utf8').includes(profileTable()), 'notes/bots.md has the current difficulty table');
 // Profiles: three player choices, Veteran by default, allies fixed, and no stat changes.
 assert.deepEqual(DIFFICULTIES, ['apprentice', 'veteran', 'mythic']);
 assert.equal(DEFAULT_DIFFICULTY, 'veteran');
