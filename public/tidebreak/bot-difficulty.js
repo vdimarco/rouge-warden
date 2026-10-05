@@ -2,7 +2,7 @@
 // Every rule here uses only what the bot's team can see. All randomness is a
 // seeded hash, so replays stay deterministic.
 import { SIZE } from './arena.js';
-import { BASES, PATHS, PORTALS, CAMPS, CENTER, closestTrack, distance, visibleTo, canSee, inWater } from './world.js';
+import { BASES, PATHS, PORTALS, CAMPS, CENTER, closestTrack, distance, visibleTo, canSee, inWater, lineOfSight, inBrush } from './world.js';
 import { callRally } from './team-events.js';
 import { structureProtected } from './objectives.js';
 
@@ -46,6 +46,8 @@ export function roll(s, e, key) {
 }
 
 // Time from a new warning to the dodge. Never below the profile floor.
+// reactionAt keeps the old bots' exact arithmetic, so the legacy baseline replays the same.
+export const reactionAt = (s, e, source, key) => botProfile(s, e).legacy ? s.time + .18 + ((e.id * 17 + source * 13) % 13) * .01 : s.time + reactionDelay(s, e, source, key);
 export function reactionDelay(s, e, source, key) {
   const P = botProfile(s, e);
   if (P.legacy) return .18 + ((e.id * 17 + source * 13) % 13) * .01;
@@ -56,18 +58,30 @@ export function reactionDelay(s, e, source, key) {
 const STRUCTURE = ['tower', 'core'], ESCORT = ['minion', 'leviathan', 'summon'];
 const enemyStructures = (s, team) => s.units.filter(t => STRUCTURE.includes(t.kind) && t.team !== team && t.team >= 0 && t.hp > 0);
 // A tower is tanked when an allied wave unit stands in its range. It shoots those first.
-export const escorted = (s, team, tower) => s.units.some(a => a.team === team && a.hp > 0 && ESCORT.includes(a.kind) && distance(a, tower) < tower.range + 20);
+export const escorted = (s, team, tower) => s.units.some(a => a.team === team && a.hp > 0 && ESCORT.includes(a.kind) && distance(a, tower) < tower.range);
 const inTowerRange = (s, team, p, margin = 0) => enemyStructures(s, team).find(t => distance(t, p) < t.range + margin);
+// Enemy heroes the kill feed reports down in the last 5 s. Every player sees the feed,
+// and a respawn takes at least 6 s, so these heroes are still down.
+export const enemiesDown = (s, team) => new Set((s.killFeed || []).filter(k => k.victimTeam !== team && s.time - k.time < 5).map(k => k.victim)).size;
 // After a won fight (enough enemy heroes down), a healthy group may hit a ward without a wave.
 export function siegeOpen(s, e, ward) {
   const P = botProfile(s, e);
-  if (!P.push || e.hp < e.maxHp * .6 || s.units.filter(t => t.kind === 'hero' && t.team !== e.team && t.hp <= 0 && t.respawn > 6).length < P.push) return false;
+  if (!P.push || e.hp < e.maxHp * .6 || enemiesDown(s, e.team) < P.push) return false;
   return s.units.filter(a => a.kind === 'hero' && a.team === e.team && a.hp > a.maxHp * .5 && distance(a, ward) < 800 * K).length >= 2;
 }
 export const wardOpen = (s, e, ward) => escorted(s, e.team, ward) || siegeOpen(s, e, ward);
 export const effectiveHp = t => (t.hp + (t.shield || 0)) * (1 + Math.max(0, t.armor || 0) / 100);
 const dps = t => t.damage / Math.max(.3, t.rate || 1) * (t.kind === 'hero' ? 1.4 : 1);
 export const punishable = (s, t) => t?.kind === 'hero' && (t.recoveryUntil > s.time || t.exposedUntil > s.time || t.stun > 0 || !!t.castIntent);
+// A bot answers a punish window only after its reaction floor, like a warning.
+export function punishes(s, e, t) {
+  const P = botProfile(s, e);
+  if (!P.punish || !t) return false;
+  const seen = (e.punishSeen ||= {}), was = seen[t.id];
+  if (!punishable(s, t)) { delete seen[t.id]; return false; }
+  if (!was || s.time - was.last > .25) seen[t.id] = { at: s.time, last: s.time }; else was.last = s.time;
+  return s.time - seen[t.id].at >= P.reaction[0];
+}
 
 // Movement multipliers the player also has: sprint out of combat, frenzy, hunt and water.
 export function botStride(s, e) {
@@ -121,7 +135,7 @@ export function tradeRetreat(s, e, heroes, hurt) {
   const value = list => list.reduce((v, t) => v + effectiveHp(t), 0) * list.reduce((v, t) => v + dps(t), 0);
   const covering = enemyStructures(s, e.team).filter(t => distance(t, e) < t.range + 60);
   const ours = value(friends), theirs = value(foes) + covering.reduce((v, t) => v + dps(t) * 1.4, 0) * friends.reduce((v, t) => v + effectiveHp(t), 0) * .5;
-  if (hurt < .5 && foes.some(t => t.hp / t.maxHp - hurt >= .25)) return true;
+  if (hurt < .5 && friends.length <= foes.length && foes.some(t => t.hp / t.maxHp - hurt >= .25)) return true;
   return hurt < .8 && ours < theirs * P.tradeRetreat;
 }
 
@@ -162,7 +176,7 @@ export function targetBonus(s, e, t, inRange) {
   if (t.kind !== 'hero') return 0;
   const focus = s.botFocus?.[e.team];
   // The team focus counts only in reach, so a bot does not run past a closer threat.
-  return (focus?.id === t.id && focus.until > s.time && distance(e, t) < e.range + 380 * K ? -P.focus : 0) - (punishable(s, t) ? P.punish : 0) - (inRange[0]?.id === t.id ? P.lowest : 0);
+  return (focus?.id === t.id && focus.until > s.time && distance(e, t) < e.range + 380 * K ? -P.focus : 0) - (punishes(s, e, t) ? P.punish : 0) - (inRange[0]?.id === t.id ? P.lowest : 0);
 }
 // Visible enemy heroes in reach, lowest effective health first.
 export const lowestInRange = (e, heroes) => heroes.filter(t => distance(e, t) < e.range + 260 * K).sort((a, b) => effectiveHp(a) - effectiveHp(b) || a.id - b.id);
@@ -178,8 +192,8 @@ export function teamFocus(s, team) {
     if (t.kind !== 'hero' || t.team === team || t.hp <= 0 || !visibleTo(s, team, t)) continue;
     const near = mine.filter(a => distance(a, t) < 900 * K);
     if (!near.length) continue;
-    const n = effectiveHp(t) / near.reduce((v, a) => v + dps(a), 0) - (punishable(s, t) ? 1 : 0);
-    if (n < score || n === score && t.id < best.id) { score = n; best = t; }
+    const n = effectiveHp(t) / Math.max(1, near.reduce((v, a) => v + dps(a), 0));
+    if (n < score || n === score && best && t.id < best.id) { score = n; best = t; }
   }
   return s.botFocus[team] = { id: best?.id ?? 0, until: s.time + 2 };
 }
@@ -202,12 +216,14 @@ function campKnown(s, team, i) {
   s.botCamps ||= [[], []];
   const memory = s.botCamps[team], camp = s.units.find(u => u.kind === 'camp' && u.camp === i && u.hp > 0);
   if (camp && visibleTo(s, team, camp)) return memory[i] = { up: true, camp };
-  const watched = s.units.some(a => a.team === team && a.hp > 0 && a.kind === 'hero' && distance(a, CAMPS[i]) < 500 * K);
+  const watched = s.units.some(a => a.team === team && a.hp > 0 && a.kind === 'hero' && distance(a, CAMPS[i]) < 500 * K && lineOfSight(s, a, CAMPS[i]) && !inBrush(s, CAMPS[i]));
   if (watched && !camp) memory[i] = { up: false, at: s.time };
   const seen = memory[i];
   return { up: !seen || seen.up || s.time - seen.at > 32, camp: seen?.up ? camp : null };
 }
 
+// The lane a unit stands nearest to, from its seen position.
+const laneOf = p => PATHS.map(path => distance(p, path[closestTrack(p, path)])).reduce((best, d, i, all) => d < all[best] ? i : best, 0);
 const quiet = (s, e, radius) => !s.units.some(t => t.kind === 'hero' && t.team !== e.team && t.hp > 0 && distance(e, t) < radius && visibleTo(s, e.team, t));
 const plan = (s, team) => (s.botPlan ||= [{}, {}])[team];
 
@@ -215,8 +231,12 @@ const plan = (s, team) => (s.botPlan ||= [{}, {}])[team];
 // Returns a decision or null. Each choice moves the bot where players can see it.
 export function strategy(s, e, { target, hurt, holding }) {
   const P = botProfile(s, e);
-  if (P.legacy || hurt < .45) return null;
-  const T = plan(s, e.team), team = s.units.filter(a => a.kind === 'hero' && a.team === e.team), foes = s.units.filter(a => a.kind === 'hero' && a.team !== e.team);
+  if (P.legacy) return null;
+  const T = plan(s, e.team), old = T.gank && s.units.find(u => u.id === T.gank.id);
+  // A gank ends on time, or when its bot falls. Then the next gank can start.
+  if (T.gank && (s.time >= T.gank.until || !old || old.hp < old.maxHp * .45)) { T.gank = null; T.gankAt = s.time + P.gankEvery; }
+  if (hurt < .45) return null;
+  const team = s.units.filter(a => a.kind === 'hero' && a.team === e.team), foes = s.units.filter(a => a.kind === 'hero' && a.team !== e.team);
   const free = !target || holding;
   // Gather on our side of the boss pit before it wakes. One bot calls the team.
   const wait = s.objectiveAt - s.time;
@@ -226,7 +246,7 @@ export function strategy(s, e, { target, hurt, holding }) {
     return { mode: 'objective', ...routeTo(s, e, spot) };
   }
   // Answer a defend ping. The closest healthy bot goes.
-  if (P.defend && hurt > .55) {
+  if (P.defend && hurt > .55 && (!target || target.kind !== 'hero')) {
     const ping = (s.pings || []).filter(p => p.team === e.team && p.type === 'defend' && s.time - p.time < 7).at(-1);
     const ward = ping && s.units.find(t => t.id === ping.target && t.hp > 0);
     if (ward && distance(e, ward) < 3400 * K && distance(e, ward) > 300 * K) {
@@ -236,7 +256,7 @@ export function strategy(s, e, { target, hurt, holding }) {
   }
   if (!free) return null;
   // Push after a won fight: enemies down, walk to the lane where our wave is deepest.
-  if (P.push && foes.filter(t => t.hp <= 0 && t.respawn > 6).length >= P.push && hurt > .6) {
+  if (P.push && enemiesDown(s, e.team) >= P.push && hurt > .6) {
     let best = null, score = Infinity;
     for (const ward of enemyStructures(s, e.team)) if (wardOpen(s, e, ward) && !structureProtected(s, ward)) { const n = distance(e, ward); if (n < score) { score = n; best = ward; } }
     if (best && score > best.range) return { mode: 'push', ...routeTo(s, e, best) };
@@ -248,7 +268,7 @@ export function strategy(s, e, { target, hurt, holding }) {
     if (prey && s.time < gank.until) return { mode: 'gank', ...routeTo(s, e, prey) };
     T.gank = null; T.gankAt = s.time + P.gankEvery;
   } else if (P.gankEvery && !gank && holding && s.time >= (T.gankAt ?? 60) && hurt > .7) {
-    const prey = foes.filter(t => t.hp > 0 && t.lane !== e.lane && visibleTo(s, e.team, t) && (t.hp < t.maxHp * .7 || distance(t, BASES[e.team]) < distance(t, BASES[t.team])) && diveSafe(s, e, t, team))
+    const prey = foes.filter(t => t.hp > 0 && visibleTo(s, e.team, t) && laneOf(t) !== e.lane && (t.hp < t.maxHp * .7 || distance(t, BASES[e.team]) < distance(t, BASES[t.team])) && diveSafe(s, e, t, team))
       .sort((a, b) => distance(e, a) - distance(e, b) || a.id - b.id)[0];
     if (prey) {
       const route = routeTo(s, e, prey), eta = (route.move === prey ? distance(e, prey) : distance(e, route.move) + distance(PORTALS[route.move.to], prey)) / (e.speed * 1.35);
@@ -256,7 +276,7 @@ export function strategy(s, e, { target, hurt, holding }) {
     }
   }
   // Spirit camps: only when safe and the team saw the camp up, or its respawn is due.
-  if (P.camps && s.time > 30 && (holding || !target && hurt < .75) && quiet(s, e, 1300 * K)) {
+  if (P.camps && s.time > 30 && (holding || !target && hurt > .6) && quiet(s, e, 1300 * K)) {
     let best = null, score = 1800 * K;
     for (let i = 0; i < CAMPS.length; i++) {
       const known = campKnown(s, e.team, i), d = distance(e, CAMPS[i]);

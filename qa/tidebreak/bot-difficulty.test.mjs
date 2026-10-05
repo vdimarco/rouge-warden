@@ -91,7 +91,7 @@ const dive = level => {
 // Trade-aware retreat: a hurt bot leaves a fight it is losing.
 const trade = level => {
   const { s, p, bot } = scene(level, { keep: [] }); Object.assign(p, LANES[0][2]); Object.assign(bot, { x: p.x, y: p.y - 260, hp: bot.maxHp * .4 });
-  for (let t = 0; t < 1.5; t += .05) { s.time += .05; if (combatDecision(s, bot).mode === 'retreat') return t; }
+  for (let t = 0; t < 1.5; t += .05) { s.time += .05; if (['retreat', 'disengage'].includes(combatDecision(s, bot).mode)) return t; }
   return Infinity;
 };
 for (const id of ['veteran', 'mythic']) assert.ok(trade(id) <= 1.5, `${id} bot at 40% leaves a full-health enemy`);
@@ -127,9 +127,11 @@ assert.equal(trade('legacy'), Infinity, 'the old bots stayed in a losing trade')
 // Punish windows: a recovering or exposed hero becomes the target.
 for (const [id, expected] of [['veteran', 'far'], ['legacy', 'near']]) {
   const { s, p, bot } = scene(id, { keep: [] }); Object.assign(bot, LANES[0][2]); Object.assign(p, { x: bot.x, y: bot.y + 200 });
-  const far = { ...p, id: 800, player: false, x: bot.x, y: bot.y - 300, recoveryUntil: s.time + .3 };
-  s.units.push(far); p.hp = far.hp = p.maxHp;
-  assert.equal(combatDecision(s, bot).target.id, expected === 'far' ? far.id : p.id, `${id} target choice with a punish window`);
+  const far = { ...p, id: 800, player: false, x: bot.x, y: bot.y - 220, recoveryUntil: s.time + 2 };
+  s.units.push(far); p.hp = far.hp = p.maxHp; s.botFocus = [null, { id: 0, until: 99 }];
+  assert.equal(combatDecision(s, bot).target.id, p.id, `${id} does not see a punish window at once`);
+  for (let t = 0; t < .6; t += .05) { s.time += .05; combatDecision(s, bot); }
+  assert.equal(combatDecision(s, bot).target.id, expected === 'far' ? far.id : p.id, `${id} target choice with a punish window after the reaction floor`);
 }
 // Spirit camps: taken only when no enemy hero is near.
 {

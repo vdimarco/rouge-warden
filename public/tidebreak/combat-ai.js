@@ -2,7 +2,7 @@ import { BASES, distance, canSee, visibleTo, lineOfSight } from './world.js';
 import { structureProtected } from './objectives.js';
 import { canAfford, manaCost, canReturn, threateningZones, insideWarning } from './combat-rules.js';
 import { assistPoint } from './team-events.js';
-import { botProfile, reactionDelay, evadePoint, tradeRetreat, diveSafe, wardOpen, targetBonus, lowestInRange, teamFocus, laneHold, strategy, leadAim, punishable } from './bot-difficulty.js';
+import { botProfile, reactionAt, evadePoint, tradeRetreat, diveSafe, wardOpen, targetBonus, lowestInRange, teamFocus, laneHold, strategy, leadAim, punishes } from './bot-difficulty.js';
 
 const escapeHeroes=[0,1,2,3,6,8,9];
 export function combatDecision(s,e){
@@ -18,7 +18,7 @@ export function combatDecision(s,e){
  if(warningShape){
   const source=armedWarning?.source??caster?.id??0;
   const key=armedWarning?`ground:${source}:${armedWarning.type}:${armedWarning.armed}:${armedWarning.x}:${armedWarning.y}`:`cast:${source}:${warning.start}:${warning.at}`;
-  if(e.warningReaction?.key!==key)e.warningReaction={key,at:s.time+reactionDelay(s,e,source,key)};
+  if(e.warningReaction?.key!==key)e.warningReaction={key,at:reactionAt(s,e,source,key)};
   reacted=s.time>=e.warningReaction.at;
  }else e.warningReaction=null;
  // Active ground remains urgent. Pending ground, casts and neutral specials
@@ -30,10 +30,12 @@ export function combatDecision(s,e){
   return {mode:'evade',move:evadePoint(s,e,a,danger===zone)};
  }
  const outnumbered=heroes.length>allies.length, hurt=e.hp/e.maxHp;
- if(hurt<P.retreatAt||(outnumbered&&hurt<.65)||e.retreat&&hurt<.82||tradeRetreat(s,e,heroes,hurt)){
+ // A lost trade backs off without the full retreat, so the bot does not recall at once.
+ const fleeing=hurt<P.retreatAt||(outnumbered&&hurt<.65)||e.retreat&&hurt<.82;
+ if(fleeing||tradeRetreat(s,e,heroes,hurt)){
   const home=BASES[e.team],aim={x:home.x-e.x,y:home.y-e.y};
   const slot=e.hero===9&&ready(3)?3:e.hero===6&&canReturn(s,e)?0:escapeHeroes.includes(e.hero)&&ready(0)?0:e.hero===7&&ready(2)?2:e.hero===11&&ready(0)?0:e.hero===9&&ready(3)?3:undefined;
-  return {mode:'retreat',move:home,slot:heroes.length?slot:undefined,aim};
+  return {mode:fleeing?'retreat':'disengage',move:home,slot:heroes.length?slot:undefined,aim};
  }
  // Towers are approached with a wave. Finishing a weak wisp takes priority over a full-health hero.
  // Higher profiles also count the Wild Hunt and summons as escorts, and weigh tower damage before a dive.
@@ -80,9 +82,9 @@ export function combatDecision(s,e){
   case 10:choose(2,!!injured&&!injured.bloom);choose(0,d<480&&!s.units.some(t=>t.owner===e.id&&t.hp>0));choose(3,combat&&d<380&&(near>=2||!!injured));choose(1,d<480);break;
   case 11:choose(0,(e.slow>0||e.bleed?.until>s.time||hurt<.65)&&combat);choose(3,combat&&d<350&&target.bleed?.type==='poison');choose(2,d<340);choose(1,d<420);break;
  }
- if(slot===undefined&&combat&&P.engage&&escapeHeroes.includes(e.hero)&&![8,9].includes(e.hero)&&d>330&&d<580&&hurt>.65&&!outnumbered&&(target.hp<target.maxHp*.7||P.punish&&punishable(s,target)))choose(0);
+ if(slot===undefined&&combat&&P.engage&&escapeHeroes.includes(e.hero)&&![8,9].includes(e.hero)&&d>330&&d<580&&hurt>.65&&!outnumbered&&(target.hp<target.maxHp*.7||punishes(s,e,target)))choose(0);
  // Keep enough mana for a defensive move instead of emptying every cooldown into a healthy target.
- if(slot!==undefined&&slot!==0&&slot!==3&&hurt>.55&&combat&&target.hp>target.maxHp*.7&&!(P.punish&&punishable(s,target))&&e.mana-manaCost(e,slot)<manaCost(e,0)*P.reserve)slot=undefined;
+ if(slot!==undefined&&slot!==0&&slot!==3&&hurt>.55&&combat&&target.hp>target.maxHp*.7&&!punishes(s,e,target)&&e.mana-manaCost(e,slot)<manaCost(e,0)*P.reserve)slot=undefined;
  // Higher profiles keep spells for heroes when mana is low, so their threats are spells you can read.
  if(slot!==undefined&&!combat&&slot!==3&&e.mana<e.maxMana*P.saveSpells&&!(e.hero===10&&slot===2))slot=undefined;
  let point;
