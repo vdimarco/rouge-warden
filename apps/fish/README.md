@@ -19,7 +19,7 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `resources/` | The icon and splash sources (`icon-only.png` is the 1024 px icon). |
 | `web/webview-update.html` | The page the app shows when the game page does not load, or when the Android web view is too old (before version 105). |
 | `android/`, `ios/` | The native projects, made by `npx cap add` and then set up for the stores. |
-| `store/` | The store listing, the privacy and age answers, the screenshot list, the promo video notes, the review notes and the accessibility labels. |
+| `store/` | The store listing, the privacy and age answers, the screenshot list, the notes on the two store videos, the review notes and the accessibility labels. |
 | `www/` | Made by the build. Not in git. |
 
 The privacy policy is `public/fish/privacy.html`. The web serves it at `https://arcade.uptick.systems/fish/privacy.html`, the URL to give both stores, and the app shows the same file offline. The support email is `support@uptick.systems`: the policy gives it, and it goes in both store forms.
