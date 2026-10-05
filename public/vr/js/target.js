@@ -151,6 +151,7 @@ export function createTarget(city, cfg = TARGET) {
       if (d > 0) s += W.ahead * d * Math.min(1, vl / 10);
     }
     if (Math.abs(ny) < 0.35) s += W.wall;
+    if (ctx.high && y >= Math.max(ctx.high.y, ctx.chestY + ctx.high.up)) s += ctx.high.bonus; // the phone: a high point first
     if (isRecent(bid, ctx.time)) s -= cfg.recent.penalty;
     return Math.max(0.01, s);
   }

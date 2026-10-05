@@ -232,7 +232,7 @@ body[data-view="first"] .phone-crosshair { display:block; }
 #phoneControls [data-action="throw"]:active { box-shadow:2px 2px 0 var(--ink); }
 #phoneControls [data-action="throw"] span { display:block; margin-top:4px; font:700 14px/1.1 var(--ui); letter-spacing:.04em; text-transform:none; opacity:.85; }
 #phoneControls [data-action="throw"].held { background:var(--red); color:var(--paper); }
-/* no target: SWING still works, but it looks asleep. LET GO never dims. */
+/* no target: SWING still works, but it looks asleep. With a rope out (held) it never dims. */
 #phoneControls [data-action="throw"].no-target:not(.held) { opacity:.6; filter:saturate(.45); }
 #view canvas { touch-action:none; }
 /* a narrow phone (360 px): the four top buttons stay on one line */
@@ -367,7 +367,7 @@ body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mou
       <h3>Phone and touch</h3>
       <ul>
         <li>Tap a building to swing from it. Or press SWING, and the game picks a building. A ring marks the target.</li>
-        <li>The rope lets go by itself and flings you on. Tap again while you fly.</li>
+        <li>Tap again at any time to swing on to the next building. You never need to let go: the rope lets go by itself and flings you on.</li>
         <li>A tap on a clog plunges it.</li>
         <li>Drag to look around. VIEW switches the view.</li>
         <li>Hit a wall to hold on. Hold the arrows to climb. Tap JUMP to jump off.</li>

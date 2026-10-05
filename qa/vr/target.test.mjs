@@ -1,15 +1,15 @@
 // Checks the auto target (js/target.js) with no browser: node qa/vr/target.test.mjs
 // It runs the picker against the real city (city.js): the reach rules of each tier over 5,000 sampled states, the screen limit,
 // the preferred elevation, the clogs, the pipes and the gold ring, the hold on a target (hysteresis), the variety rule, the hand,
-// the phone tap rules, the superset of the old phone assist (a reference copy with its cone), the release cue, the kick, the ray
-// budget (tier 2 at most 5 times a second, also with a rope on the only building that qualifies), a held target on a wall and the
-// import with no three. Then two first-time bots play the real physics with only the swing input and W:
+// the phone's high point, the phone tap rules, the superset of the old phone assist (a reference copy with its cone), the release
+// cue, the kick, the ray budget (tier 2 at most 5 times a second, also with a rope on the only building that qualifies), a held
+// target on a wall and the import with no three. Then two first-time bots play the real physics with only the swing input and W:
 // the gates are in openspec/changes/swing-controls/design.md. Exit code 1 on failure.
 import { readFile } from "node:fs/promises";
 import { generate } from "../../public/vr/js/city.js";
 import { createPlayer, fire, release, step, teleport } from "../../public/vr/js/physics.js";
 import { createTarget, releaseWindow, kick, project, bidOf } from "../../public/vr/js/target.js";
-import { TARGET, SWING, CLIMB, DESKTOP, FLATCAM, COMFORT, WORLD } from "../../public/vr/js/config.js";
+import { TARGET, SWING, CLIMB, DESKTOP, FLATCAM, COMFORT, WORLD, PHONE } from "../../public/vr/js/config.js";
 
 const fails = [];
 let passes = 0;
@@ -40,7 +40,7 @@ function ctxAt(o) {
   return {
     head: { x: o.x, y: o.y + HEAD, z: o.z }, cam: { x: pv.x - dir.x * arm, y: pv.y - dir.y * arm, z: pv.z - dir.z * arm }, yaw, pitch,
     fov: o.fov ?? 70, aspect: o.aspect ?? 16 / 9, vel: o.vel ?? { x: 0, y: 0, z: 0 }, chestY: o.y + CHEST, onGround: o.onGround ?? true, wall: o.wall ?? null,
-    time: o.time ?? 0, specials: o.specials ?? [], ring: o.ring ?? null, avoidBid: o.avoidBid ?? null, avoidBid2: null, exact: o.exact ?? null, first: o.first ?? false, aimWidth: o.aimWidth ?? TARGET.fan.az.high,
+    time: o.time ?? 0, specials: o.specials ?? [], ring: o.ring ?? null, avoidBid: o.avoidBid ?? null, avoidBid2: null, exact: o.exact ?? null, first: o.first ?? false, aimWidth: o.aimWidth ?? TARGET.fan.az.high, high: o.high ?? null,
   };
 }
 // the hit of the exact ray through the screen centre (first person, and the last resort in third person)
@@ -381,6 +381,35 @@ section("The hand follows the target");
   const pk2 = createTarget(lone), r = pk2.update({ ...c2, avoidBid: A.bid });
   const sky = pk2.tap({ ...c2, avoidBid: A.bid }, { x: c2.cam.x, y: c2.cam.y, z: c2.cam.z, dx: 0, dy: 1, dz: 0 }, null);
   check(r && r.same === true && sky && sky.same === true && sky.bid === A.bid, "when only the building that holds the rope qualifies, the result says same and the tap keeps the rope");
+}
+
+/* ---------------- the phone: a high point first ---------------- */
+// 600 spots on a street line, or 10 to 20 m over one and falling, with random bearings. A phone pick (ctx.high) takes a point at
+// least PHONE.high.y m up and PHONE.high.up m over the chest far more often than the plain pick, and never a low one where the
+// plain pick has a high one. Before the bonus a phone took the plain pick: from the street, the shop fronts at 11 m.
+section("The phone prefers a high point");
+{
+  const r = rng(7), S = city.streets, b = city.bounds, PH = { ...PHONE.high };
+  const isHigh = (t, c) => !!t && t.y >= Math.max(PH.y, c.chestY + PH.up);
+  let n = 0, plain = 0, phone = 0, worse = 0, found = 0;
+  for (let k = 0; k < 4000 && n < 600; k++) {
+    const alongX = r() < 0.5, line = alongX ? S.zs[Math.floor(r() * S.zs.length)] : S.xs[Math.floor(r() * S.xs.length)];
+    const t = r(), x = alongX ? b.minX + (b.maxX - b.minX) * t : line, z = alongX ? line : b.minZ + (b.maxZ - b.minZ) * t;
+    if (city.isWater(x, z)) continue;
+    const air = r() < 0.5, y = air ? 10 + r() * 10 : city.groundY(x, z);
+    if (!air && y > 1) continue;
+    const yaw = r() * Math.PI * 2, vel = air ? { x: -Math.sin(yaw) * 15, y: -6, z: -Math.cos(yaw) * 15 } : undefined;
+    const o = { x, y, z, yaw, vel, onGround: !air, aspect: 390 / 844, fov: 75 };
+    const c0 = ctxAt(o), p0 = createTarget(city).pick(c0, {}), c1 = ctxAt({ ...o, high: PH }), p1 = createTarget(city).pick(c1, {});
+    n++;
+    if (p0 || p1) found++;
+    if (isHigh(p0, c0)) plain++;
+    if (isHigh(p1, c1)) phone++;
+    if (isHigh(p0, c0) && !isHigh(p1, c1)) worse++;
+  }
+  check(n === 600 && found >= 0.95 * n, `${n} street spots sampled, a target found at ${found}`);
+  check(phone >= 0.78 * n && phone >= plain + 0.1 * n, `a phone takes a high point at ${phone} of ${n} spots (the plain pick: ${plain})`, { phone, plain, n });
+  check(worse === 0, "a phone never takes a low point where the plain pick has a high one", { worse });
 }
 
 /* ---------------- the phone tap ---------------- */
