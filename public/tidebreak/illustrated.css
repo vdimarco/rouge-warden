@@ -41,7 +41,10 @@
 .selection-account .muted-chip{height:34px;padding:0 12px;font-size:12px;align-self:center;flex:none}
 @media (max-width:520px){.selection-account .muted-chip{padding:0 9px}.selection-account .muted-chip .wide{display:none}}
 #gpu-note{position:absolute;left:50%;top:calc(52px + env(safe-area-inset-top));transform:translateX(-50%);z-index:6;display:flex;gap:10px;align-items:center;max-width:min(92vw,560px);padding:8px 10px 8px 14px;border:1px solid #ffd09a99;border-radius:8px;background:#1d1609ee;color:#ffe6c4;font:600 13px/1.35 Barlow,sans-serif;pointer-events:auto}#gpu-note[hidden]{display:none}
-#gpu-note button{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:#ffd09a22;color:#ffe6c4;font-size:18px;cursor:pointer}
-#perf{position:absolute;right:12px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:6;max-width:min(92vw,520px);padding:8px 10px;border:1px solid #9fc3b066;border-radius:6px;background:#06131ae6;color:#d7eadf;pointer-events:auto}#perf[hidden]{display:none}
-#perf pre{margin:0 0 6px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}#perf button{font:600 12px Barlow,sans-serif;padding:3px 10px;border:1px solid #9fc3b088;border-radius:4px;background:#12262c;color:#d7eadf;cursor:pointer}
+#gpu-note button{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:#ffd09a22;color:#ffe6c4;font-size:18px;cursor:pointer;pointer-events:auto}
+/* The note never blocks a control: clicks pass through it except on its close button. Phones draw with the graphics
+   card, and their small screens need the space, so it shows only on desktop screens. */
+#gpu-note{pointer-events:none}@media (max-width:699px),(hover:none){#gpu-note{display:none!important}}
+#perf{pointer-events:none;position:absolute;right:12px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:6;max-width:min(92vw,520px);padding:8px 10px;border:1px solid #9fc3b066;border-radius:6px;background:#06131ae6;color:#d7eadf}#perf[hidden]{display:none}
+#perf button{pointer-events:auto}#perf pre{margin:0 0 6px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}#perf button{font:600 12px Barlow,sans-serif;padding:3px 10px;border:1px solid #9fc3b088;border-radius:4px;background:#12262c;color:#d7eadf;cursor:pointer}
 .sound-test{display:block;margin:6px 0 10px;padding:10px 12px;border-left:3px solid #d6ea78;background:#0d1f26;color:#e8ecd9;font-size:14px;line-height:1.4;text-align:left}.sound-test[hidden]{display:none}.sound-test.silent{border-color:#ffad90}
