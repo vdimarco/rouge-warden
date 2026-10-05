@@ -442,7 +442,8 @@ try {
   await page.evaluate(() => { G.test.clearClog(0); G.test.step(1 / 60, 3); });
   const clog = await page.evaluate(() => document.querySelector("[data-k=clog]").textContent);
   check(clog === "1", "the HUD counts a flushed clog", clog);
-  await page.evaluate(() => { G.ui.say("Aim high.", 30); G.ui.toast("+5"); G.test.step(1 / 60, 30); });
+  // (the first flush ends the training, which cheers with its own toast first: toasts take turns, so wait for this one)
+  await page.evaluate(() => { G.ui.say("Aim high.", 30); G.ui.toast("+5"); G.test.step(1 / 60, 30); for (let i = 0; i < 900 && document.querySelector("[data-k=toast]").textContent !== "+5"; i++) G.test.step(1 / 60, 1); G.test.step(1 / 60, 5); });
   const subd = await page.evaluate(() => ({ sub: document.querySelector("[data-k=sub]").textContent, on: document.querySelector("[data-k=sub]").classList.contains("on"), toast: document.querySelector("[data-k=toast]").textContent }));
   check(subd.sub === "Aim high." && subd.on && subd.toast === "+5", "subtitles and toasts show in the page", subd);
   await shot(page, "ui-desktop-hud");
