@@ -9,7 +9,7 @@ uniform sampler2D uFow; uniform float uSize; uniform float uFowOn;
 vec3 applyFow(vec3 c, vec2 p) {
   float seen = mix(1., texture2D(uFow, p / uSize).r, uFowOn);
   float l = dot(c, vec3(.299, .587, .114));
-  return mix(mix(vec3(l), c, .55) * vec3(.52, .56, .64), c, seen);
+  return mix(mix(vec3(l), c, .7) * vec3(.7, .73, .8), c, seen);
 }`;
 // Adds a world-position varying and the fog-of-war function to a standard material's shaders.
 export function withWorld(shader) {

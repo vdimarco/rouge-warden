@@ -132,7 +132,7 @@ function stone(size, seed) {
 export function groundTextures() {
   const size = 512;
   return {
-    grass: grass(size, 11, ['#2f3a1b', '#3f4b22', '#4f5a2a', '#626a33', '#7a7a3f'], ['#8b8a4a', '#2a3416', '#6f7b3a', '#a49a5a']),
+    grass: grass(size, 11, ['#3b4822', '#4b5a29', '#5b6930', '#6f7a3a', '#898a47'], ['#9a9852', '#33401c', '#7a8842', '#b0a462']),
     dry: grass(size, 23, ['#4f4626', '#665a32', '#7c6c3e', '#937e4a', '#a58e57'], ['#b8a46a', '#4a4024', '#8a7a48']),
     moss: grass(size, 37, ['#1f2a17', '#2b3a1f', '#38482a', '#475532', '#5a6440'], ['#6c7a4a', '#18220f', '#4e6234']),
     dirt: dirt(size, 41), stone: stone(size, 53), sand: sand(size, 67),

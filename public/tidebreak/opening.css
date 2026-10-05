@@ -4,7 +4,7 @@
 #menu .intro{display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:22px;width:min(1440px,100%);height:100%;max-height:100%;margin:0 auto;min-height:0}
 .roster-heading{margin:0;padding:0 0 18px;border-color:#bfa57155;align-items:center;gap:14px;flex-wrap:nowrap}
 .title-lockup{display:flex;align-items:center;gap:18px}.title-sigil{width:60px;height:60px;flex:none;fill:none;stroke:#d0b986;stroke-width:1;filter:drop-shadow(0 0 12px #e6be7644)}
-#menu .roster-heading h1{font:700 clamp(32px,3.8vw,55px)/1 Cinzel,serif;letter-spacing:-1.5px;transform:none;color:var(--opening-cream);text-shadow:0 4px 24px #0008}
+#menu .roster-heading h1{font:700 clamp(32px,3.8vw,55px)/1 Cinzel,Barlow,serif;letter-spacing:-1.5px;transform:none;color:var(--opening-cream);text-shadow:0 4px 24px #0008}
 .roster-heading p{font:16px/1.35 Barlow,sans-serif;letter-spacing:1px;color:#e4e1db;text-shadow:0 2px 8px #000;margin:8px 0 0}
 .roster-heading .match-format{margin-left:auto;text-align:right;font-size:16px;color:#d2c6ab;max-width:230px;line-height:1.4}
 .roster-layout{min-height:0;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.85fr);gap:clamp(25px,4vw,60px)}
@@ -14,7 +14,7 @@
 #menu .hero-stage::after{content:'';position:absolute;bottom:5%;left:10%;right:10%;height:13%;border:1px solid #d0b87f55;border-radius:50%;background:radial-gradient(ellipse,#83a9a12b,transparent 65%);box-shadow:0 0 25px #b1cac517;pointer-events:none}
 #menu #hero-art{height:92%;max-height:550px;width:100%;position:relative;z-index:1;object-fit:contain;object-position:center bottom;padding:12px 3px 6%;filter:drop-shadow(0 14px 17px #0008) drop-shadow(0 0 18px color-mix(in srgb,var(--hero-color) 14%,transparent));animation:legend-arrive .45s ease-out}
 #menu .hero-copy{grid-column:2;grid-row:1;align-self:end;padding-top:12px}
-#menu .hero-copy h2{font:700 clamp(28px,3vw,44px)/1.04 Cinzel,serif;color:var(--opening-cream);letter-spacing:-.6px;overflow-wrap:anywhere}
+#menu .hero-copy h2{font:700 clamp(28px,3vw,44px)/1.04 Cinzel,Barlow,serif;color:var(--opening-cream);letter-spacing:-.6px;overflow-wrap:anywhere}
 #menu .hero-copy>span{font:700 12px/1.4 Barlow,sans-serif;text-transform:uppercase;letter-spacing:2px;margin-top:9px;color:var(--hero-color)}
 #menu .hero-copy p{font:16px/1.5 Barlow,sans-serif;color:#d5d1cb;margin:13px 0 0}
 #hero-preview{grid-column:2;grid-row:2;align-self:start;min-width:0}
@@ -24,7 +24,7 @@
 .hero-move-preview button[aria-pressed=true]{background:#2f2923df;border-color:#d1b880;box-shadow:0 0 15px #cbbea817}.preview-spell-art{width:44px;height:44px;display:block;flex:none;border:1px solid #c2bbaf75;border-radius:3px;background-size:200% 200%}.hero-move-preview small{font-size:10px;margin-top:4px;color:#c1c5bc}
 #hero-spell-note{grid-column:2;grid-row:3;min-height:0;padding:10px 0 0;border-top:1px solid #bfa57135;margin:0;color:#ddd8ce;font:14px/1.5 Barlow,sans-serif}
 .roster-browser{min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);padding:0 0 0 20px;border-left:1px solid #bfa57165}
-.roster-title{margin:0 0 13px}.roster-title h2{font:700 26px/1.1 Cinzel,serif;color:var(--opening-cream)}.roster-title>span{font:13px Barlow;color:#bfc2bb;white-space:nowrap}
+.roster-title{margin:0 0 13px}.roster-title h2{font:700 26px/1.1 Cinzel,Barlow,serif;color:var(--opening-cream)}.roster-title>span{font:13px Barlow;color:#bfc2bb;white-space:nowrap}
 #role-filters{min-width:0;gap:3px;padding:0 0 10px;margin:0 0 5px;scrollbar-width:thin;overscroll-behavior-x:contain}
 #role-filters button{min-height:38px;padding:7px 11px;font-size:13px;border-color:transparent;border-bottom:1px solid #b1ada636;border-radius:0;background:transparent;color:#c1c5bc}
 #role-filters button[aria-pressed=true]{background:#b2965e33;color:#e5d2a7;border-color:#ceb178}
@@ -42,7 +42,7 @@
 #menu button:focus-visible{outline:2px solid #f7dc9d;outline-offset:2px}
 #load-error{margin:0;font:14px/1.3 Barlow;color:#ebc4b6;max-width:220px}
 /* Panels: an umber slab in a thin bronze frame, lit at the top edge. */
-dialog:not(.spellbook-sheet):not(.market){background:linear-gradient(180deg,#221d17f7,#14110df9);border:1px solid #7d6240;border-radius:3px;box-shadow:inset 0 1px 0 #ffffff12,inset 0 0 0 1px #000,0 0 0 1px #000,0 22px 80px #000b}dialog:not(.spellbook-sheet) h2{font-family:Cinzel,serif;font-weight:600;letter-spacing:.6px;color:var(--mr-parchment)}
+dialog:not(.spellbook-sheet):not(.market){background:linear-gradient(180deg,#221d17f7,#14110df9);border:1px solid #7d6240;border-radius:3px;box-shadow:inset 0 1px 0 #ffffff12,inset 0 0 0 1px #000,0 0 0 1px #000,0 22px 80px #000b}dialog:not(.spellbook-sheet) h2{font-family:Cinzel,Barlow,serif;font-weight:600;letter-spacing:.6px;color:var(--mr-parchment)}
 .map-destinations{flex-wrap:wrap;gap:7px}.map-destinations button{flex:1 1 42%;min-height:44px;background:#2a241e;border-color:#938a7a68;color:#e5dcca}
 @keyframes legend-arrive{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:1000px) and (min-width:701px){.roster-layout{grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:20px}.hero-feature{grid-template-columns:minmax(0,1fr) minmax(160px,.85fr);gap:10px 15px}#menu .hero-stage{min-height:260px}.roster-browser{padding-left:15px}.hero-move-preview button{min-height:90px;font-size:13px}#ready-legend{display:none}}

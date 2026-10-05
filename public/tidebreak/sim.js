@@ -37,7 +37,7 @@ export const CORE = { hp: 7000, range: 380, damage: 160, rate: 1.1 };
 // The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
 export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
 // Match rhythm for the 9600 map. Times are in seconds.
-export const PACE = { firstWave: 15, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 2.4, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
+export const PACE = { startGold: 360, killGold: 100, campGold: 110, firstWave: 20, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .04, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 2.4, portalCooldown: 15, backdoor: .25, suddenRespawn: 1.5 };
 // Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
 // An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
 export const MINIONS = {
@@ -62,7 +62,7 @@ function add(s, data) {
 function hero(s, team, kind, lane, human = false) {
   // Each hero starts on its lane a short walk behind its outer ward.
   const h = HEROES[kind], front = pointAtArc(laneFrom(team, lane), TOWER_ARC[lane][0] - 220);
-  return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
+  return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: PACE.startGold, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 // A drafted lineup replaces the default picks: { allies:[kit,kit], enemies:[kit,kit,kit] }.
 export function createMatch(kind = 0, seed = 49, lineup = null) {
@@ -154,10 +154,10 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
     target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
-    if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (credit?.kind === 'hero') credit.kills++; }
+    if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, PACE.killGold); if (credit?.kind === 'hero') credit.kills++; }
     recordKill(s, credit, target);
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
-    else if (credit?.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
+    else if (credit?.player) announce(s, `${target.name} banished`, `+${PACE.killGold} embers · Team experience`);
   } else if (target.kind === 'tower') {
     const tier = TIERS[target.tier], ours = target.team === 0;
     if (target.guardian) s.guardians[target.team]--; else s.towers[target.team]--;
@@ -172,9 +172,9 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (source.team === 0) s.stats.leviathans++;
     announce(s, source.team === 0 ? 'The Wild Hunt rides with us' : 'Enemy claimed the Wild Hunt', 'Escort the great beast to their wardstone.');
   } else if (target.kind === 'camp') {
-    reward(s, source.team, 90, 110); s.campTimers[target.camp] = s.time + PACE.campRespawn;
+    reward(s, source.team, 90, PACE.campGold); s.campTimers[target.camp] = s.time + PACE.campRespawn;
     if (source.kind === 'hero' && source.hp > 0) { heal(s, source, 430); source.huntUntil = s.time + 18; }
-    if (source.player) { s.stats.camps++; announce(s, 'Spirit feast', '+110 embers · Healing · 18 seconds of haste'); }
+    if (source.player) { s.stats.camps++; announce(s, 'Spirit feast', `+${PACE.campGold} embers · Healing · 18 seconds of haste`); }
   } else if (target.kind!=='summon'&&source.team >= 0) {
     reward(s,source.team,target.kind==='leviathan'?120:18,target.kind==='leviathan'?100:0,target.kind==='minion'?target:null);
     if(target.kind==='minion'&&credit?.kind==='hero'){credit.gold+=target.siege?65:40;credit.lastHits++;if(credit.player)s.floaters.push({x:target.x,y:target.y-80,text:`+${target.siege?65:40} EMBERS`,color:'#f3d27a',life:1});}

@@ -3,14 +3,14 @@
 #menu{background:#13100eeF;padding:32px 30px;align-items:start}
 #menu .intro{width:min(1180px,100%);text-align:left;margin:auto}
 .roster-heading{display:flex;align-items:baseline;gap:24px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid #c9b37c45;padding-bottom:18px}
-.roster-heading h1{font:700 clamp(28px,4vw,42px)/1.1 Cinzel,serif;letter-spacing:-1px;text-shadow:none;color:var(--legend-cream)}
+.roster-heading h1{font:700 clamp(28px,4vw,42px)/1.1 Cinzel,Barlow,serif;letter-spacing:-1px;text-shadow:none;color:var(--legend-cream)}
 .roster-heading p{margin:0;font-size:23px;color:var(--legend-muted)}
 .roster-heading>span{margin-left:auto;font-size:16px;color:#c7b898}
 .roster-layout{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:38px}
 .hero-feature{min-width:0;text-align:center;background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--hero-color) 13%,transparent),transparent 68%)}
 #menu .hero-stage{height:260px;margin:0}
 #menu .hero-stage img{max-width:100%;filter:drop-shadow(0 12px 12px #0008)}
-#menu .hero-copy h2{font:700 32px/1.2 Cinzel,serif;color:var(--legend-cream)}
+#menu .hero-copy h2{font:700 32px/1.2 Cinzel,Barlow,serif;color:var(--legend-cream)}
 #menu .hero-copy>span{font-size:12px;color:var(--hero-color);letter-spacing:1.6px}
 #menu .hero-copy p{font-size:16px;margin:9px 0 14px;color:var(--legend-muted)}
 .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0;padding:12px 0;border-block:1px solid #aeb2a935}
@@ -21,7 +21,7 @@
 .hero-move-preview svg{width:30px;height:30px;flex:none;color:var(--hero-color)}
 .hero-move-preview small{display:block;font-size:11px;color:var(--legend-muted);margin-top:3px}
 #hero-spell-note{min-height:42px;margin:10px 0 0;font-size:14px;color:#c4c8be;line-height:1.4}
-.roster-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.roster-title h2{font:700 25px Cinzel,serif;margin:0;color:var(--legend-cream)}.roster-title>span{font-size:14px;color:var(--legend-muted)}
+.roster-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.roster-title h2{font:700 25px Cinzel,Barlow,serif;margin:0;color:var(--legend-cream)}.roster-title>span{font-size:14px;color:var(--legend-muted)}
 #role-filters{display:flex;gap:5px;margin:0 0 14px;overflow-x:auto;padding:3px 2px 7px;touch-action:pan-x}
 #role-filters button{flex:none;padding:7px 11px;min-height:36px;border:1px solid #808f8c45;border-radius:4px;background:transparent;color:#bdc0b9;font-size:14px}
 #role-filters button[aria-pressed=true]{background:#c9b37c;color:#191715;border-color:#e7d2a7}
@@ -34,7 +34,7 @@
 .roster-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;border-top:1px solid #c9b37c45;padding-top:18px;margin-top:18px}
 .roster-footer .primary{width:300px}.roster-footer .menu-links{margin:0;gap:25px}.roster-footer .menu-links button{font-size:16px;min-height:44px}
 /* The main action: a lit bronze plate with dark lettering. */
-.primary{background:linear-gradient(180deg,#d6b67b,#a9844d 55%,#8c6c3e);border-color:#f0d49a99;border-radius:2px;font-family:Cinzel,serif;font-weight:700;color:#1b130b;letter-spacing:1px;text-shadow:0 1px 0 #f6dfae66;box-shadow:inset 0 1px 0 #fff3cf80,inset 0 -2px 0 #0000004d,0 0 0 1px #000,0 4px 14px #000a}
+.primary{background:linear-gradient(180deg,#d6b67b,#a9844d 55%,#8c6c3e);border-color:#f0d49a99;border-radius:2px;font-family:Cinzel,Barlow,serif;font-weight:700;color:#1b130b;letter-spacing:1px;text-shadow:0 1px 0 #f6dfae66;box-shadow:inset 0 1px 0 #fff3cf80,inset 0 -2px 0 #0000004d,0 0 0 1px #000,0 4px 14px #000a}
 #menu button,.spellbook-sheet button{touch-action:manipulation}
 dialog{background:#1a1612f7;border-color:#7d6240;border-radius:3px;box-shadow:0 18px 70px #000a}
 dialog::backdrop{background:#100d0aa8;backdrop-filter:blur(6px)}
@@ -43,7 +43,7 @@ dialog::backdrop{background:#100d0aa8;backdrop-filter:blur(6px)}
 .spellbook{padding:24px 26px 0;color:var(--legend-cream)}
 .spellbook-heading{display:flex;align-items:center;gap:15px;padding:0 46px 18px 0;border-bottom:1px solid #c9b37c45;margin-bottom:20px}
 .spellbook-heading>img{width:65px;height:72px;object-fit:contain}
-.spellbook-heading h2{font:700 clamp(23px,3vw,34px)/1.15 Cinzel,serif;margin:0;color:var(--legend-cream)}
+.spellbook-heading h2{font:700 clamp(23px,3vw,34px)/1.15 Cinzel,Barlow,serif;margin:0;color:var(--legend-cream)}
 .spellbook-heading p{margin:5px 0 0;font-size:17px;color:#c9b37c;line-height:1.3}
 .point-count{margin-left:auto;display:flex;gap:8px;align-items:center;color:#dec384;font-size:28px;white-space:nowrap}.point-count span{font-size:18px}
 .spellbook-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:32px}
@@ -53,7 +53,7 @@ dialog::backdrop{background:#100d0aa8;backdrop-filter:blur(6px)}
 .spell-row-icon{width:60px;height:60px;display:grid;place-items:center;border:1px solid #78918c88;background:#25201b;border-radius:7px;color:var(--hero-color)}
 .spell-row-icon svg{width:43px;height:43px}
 .spell-row kbd{font:700 13px Barlow,sans-serif;border:1px solid #bfad8280;padding:4px;border-radius:4px;text-align:center;color:#d9cbac}
-.spell-row-copy{min-width:0}.spell-row-copy>b{font:700 19px/1.2 Cinzel,serif;display:block;overflow-wrap:break-word}
+.spell-row-copy{min-width:0}.spell-row-copy>b{font:700 19px/1.2 Cinzel,Barlow,serif;display:block;overflow-wrap:break-word}
 .spell-row>small{color:#babdb5;font-size:12px}.spell-row .row-chevron{width:14px;height:20px;color:#bec2b9}
 .rank-pips{display:flex;gap:6px;margin-top:11px}.rank-pips i{display:block;width:10px;height:10px;border-radius:50%;border:1px solid #b1b5ab;background:#201c18}.rank-pips i.filled{background:var(--mr-gold);border-color:#f0d49a}
 .ultimate-row .spell-row-icon{border-color:#a796676b}.ultimate-row:not([aria-pressed=true]){opacity:.75}
@@ -62,7 +62,7 @@ dialog::backdrop{background:#100d0aa8;backdrop-filter:blur(6px)}
 .spell-visual>img{height:105px;max-width:45%;object-fit:contain;filter:drop-shadow(0 7px 7px #0007);position:relative;z-index:1}
 .spell-visual-glyph{display:grid;place-items:center;width:105px;height:105px;color:var(--hero-color);border:1px solid color-mix(in srgb,var(--hero-color) 70%,transparent);border-radius:50%;margin-left:8px;box-shadow:0 0 0 9px #98bcb508,0 0 30px #dfcca610}
 .spell-visual-glyph svg{width:74px;height:74px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
-.spell-detail h3{font:700 30px/1.15 Cinzel,serif;margin:0 0 8px;color:var(--legend-cream)}
+.spell-detail h3{font:700 30px/1.15 Cinzel,Barlow,serif;margin:0 0 8px;color:var(--legend-cream)}
 .spell-detail h3>small{display:inline-block;vertical-align:middle;font:700 10px Barlow,sans-serif;letter-spacing:1px;color:#dac07f;padding-left:10px}
 .spell-detail .spell-description{font-size:16px;line-height:1.4;margin:0 0 9px;color:#ddd9d2}
 .spell-tags{display:inline-block;padding:3px 9px;border:1px solid #92aba635;background:#2a2520;border-radius:5px;color:var(--hero-color);font-size:13px}
@@ -99,3 +99,5 @@ dialog::backdrop{background:#100d0aa8;backdrop-filter:blur(6px)}
 }
 @media(max-height:520px) and (min-width:761px){#menu{padding:14px 24px}.roster-heading{margin-bottom:10px;padding-bottom:10px}.roster-heading h1{font-size:27px}.roster-heading p{font-size:18px}.roster-layout{gap:22px}#menu .hero-stage{height:130px}.roster-footer{padding-top:10px;margin-top:10px}#menu .hero-picks button{min-height:98px}#menu .hero-picks img{height:53px}.spellbook-heading{margin-bottom:12px;padding-bottom:10px}.spellbook-heading>img{height:45px}.spell-list{gap:8px}.spell-row{min-height:78px}.spell-visual{height:72px}.spell-visual>img{height:70px}.spell-visual-glyph{height:65px;width:65px}.spell-visual-glyph svg{height:45px;width:45px}.spellbook-footer{padding-block:10px}.health{width:166px}.health .hero-frame{flex-basis:36px;height:36px;margin-right:6px}.health strong{left:7px;bottom:-12px}}
 @media(prefers-reduced-motion:reduce){#menu .hero-picks img{transition:none}}
+/* Short landscape screens: the bars stop short of the Rally button beside the joystick. */
+@media(max-height:520px) and (min-width:600px){.health{width:112px}.health .hero-frame{flex-basis:36px;height:36px;margin-right:6px}.health strong{left:7px;bottom:-12px}}

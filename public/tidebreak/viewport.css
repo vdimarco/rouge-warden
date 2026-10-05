@@ -63,7 +63,7 @@ html,body{height:100dvh;overflow:hidden}
 @media(prefers-reduced-motion:reduce){#menu *{animation:none!important;transition:none!important}}
 
 /* Each spell has three short information pages and a persistent learning action. */
-.health #mana-fill{top:auto;bottom:-11px;height:7px;background:#5282b9;width:98%;box-shadow:0 0 0 1px #1b1712}
+.health #mana-fill{top:auto;bottom:-11px;height:7px;background:linear-gradient(180deg,#5d88b5,#3c6491);width:98%;box-shadow:0 0 0 1px #000}
 .health #mana-text{top:calc(100% + 2px);bottom:auto;line-height:8px;font-size:8px;color:#faf7f1;height:9px}
 .health #xp-fill{bottom:-15px}
 .abilities .mana-cost{position:absolute;bottom:9px;left:0;right:0;font:8px Barlow;color:#eee4cf;text-align:center;text-shadow:0 1px 2px #1b1712;pointer-events:none}
@@ -82,7 +82,7 @@ html,body{height:100dvh;overflow:hidden}
 .spell-detail h3{font-size:28px}.spell-detail .spell-description{font-size:17px}
 .spell-detail .primary{min-height:44px;font-size:17px}
 @media(max-width:700px){
- .spellbook-heading{min-height:50px;flex-wrap:nowrap;margin-bottom:7px;padding-bottom:7px}.spellbook-heading>img{width:30px;height:37px}.spellbook-heading h2{font-size:19px}.spellbook-heading p{font-size:12px}.point-count{font-size:13px}.point-count>span:last-child{font-size:0}.point-count>span:last-child::after{content:' points';font-size:11px}
+ .spellbook-heading{min-height:50px;flex-wrap:nowrap;margin-bottom:7px;padding-bottom:7px}.spellbook-heading>img{width:30px;height:37px}.spellbook-heading h2{font-size:19px}.spellbook-heading p{font-size:12px}.point-count{font-size:13px}.point-count>span:last-child{font-size:11px}
  .spellbook-layout{display:grid;grid-template-columns:1fr;grid-template-rows:112px minmax(0,1fr);gap:7px}.spell-list{grid-template-rows:repeat(2,minmax(0,1fr));gap:5px;padding:0}.spell-row{min-height:0;padding:5px;grid-template-columns:35px minmax(0,1fr);gap:5px}.spell-row-icon{width:35px;height:38px}.spell-row-copy>b{font-size:12px}.rank-pips{margin-top:5px}
  .spell-detail{display:flex;flex-direction:column;min-height:0;overflow:hidden;margin:0;padding:7px 0 0}.spell-detail-scroll{min-height:0;flex:1;overflow:hidden}.spell-info-tabs button{min-height:32px;font-size:11px}.spell-visual{width:min(125px,16dvh);margin:0 auto -7px}.spell-detail h3{font-size:23px;margin:4px 0 6px}.spell-detail .spell-description{font-size:14px;line-height:1.3;margin-bottom:7px}.spell-tags{font-size:11px;padding:4px 6px}.spell-stats{font-size:14px}.spell-detail .primary{min-height:42px;font-size:15px}.spellbook-footer{min-height:45px;margin-top:7px;padding-block:7px}.spellbook-footer p{font-size:10px}.spellbook-footer .row-btn{min-height:36px}
 }

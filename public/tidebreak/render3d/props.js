@@ -1,42 +1,39 @@
-// Scenery: trees, rocks, ruins and hamlets as instanced meshes in map chunks, so the camera only draws the chunks it
-// sees. Each realm has its own set; at a realm change the old set sinks and the new one grows in about a second.
-// Cover blocks (they stop movement and sight) are built to fill their whole footprint, so they read as solid.
+// Scenery: trees, rocks, ruins and hamlets as instanced meshes, one per kind and realm. The instances near the view
+// (and the ones whose long golden-hour shadows reach into it) are copied into the meshes when the camera moves, so the
+// GPU only draws what the camera sees. Each realm has its own set; at a realm change the old set sinks and the new one
+// grows in about a second. Cover blocks (they stop movement and sight) fill their whole footprint, so they read solid.
 import * as THREE from 'three';
 import { withWorld, fowAtEnd, worldMapped } from './materials.js';
 
-const CHUNK = 1600;
 const random = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-// Vertex clustering: a cheap low-detail copy for shrubs and small trees, which are many and small on screen.
-function simplify(source, cells) {
-  const g = source.index ? source : source.clone(), pos = g.attributes.position, uv = g.attributes.uv; if (!g.index) g.setIndex([...Array(pos.count).keys()]);
-  g.computeBoundingBox(); const box = g.boundingBox, size = Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z) / cells;
-  const map = new Map(), remap = new Int32Array(pos.count), p = [], t = [], n = [];
-  for (let i = 0; i < pos.count; i++) {
-    const key = `${Math.floor((pos.getX(i) - box.min.x) / size)},${Math.floor((pos.getY(i) - box.min.y) / size)},${Math.floor((pos.getZ(i) - box.min.z) / size)}`;
-    let k = map.get(key); if (k === undefined) { k = n.length; map.set(key, k); n.push(0); p.push(0, 0, 0); t.push(uv ? uv.getX(i) : 0, uv ? uv.getY(i) : 0); }
-    p[k * 3] += pos.getX(i); p[k * 3 + 1] += pos.getY(i); p[k * 3 + 2] += pos.getZ(i); n[k]++; remap[i] = k;
-  }
-  for (let k = 0; k < n.length; k++) for (let j = 0; j < 3; j++) p[k * 3 + j] /= n[k];
-  const index = [], seen = new Set(), src = g.index.array;
-  for (let i = 0; i < src.length; i += 3) {
-    const a = remap[src[i]], b = remap[src[i + 1]], c = remap[src[i + 2]]; if (a === b || b === c || a === c) continue;
-    const key = [a, b, c].sort((x, y) => x - y).join(); if (seen.has(key)) continue; seen.add(key); index.push(a, b, c);
-  }
-  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); out.setAttribute('uv', new THREE.Float32BufferAttribute(t, 2)); out.setIndex(index); out.computeVertexNormals();
-  return out;
-}
 const geometryOf = gltf => { let g = null; gltf.scene.traverse(o => { if (!g && o.isMesh) g = o.geometry; }); return g; };
 const materialOf = gltf => { let m = null; gltf.scene.traverse(o => { if (!m && o.isMesh) m = o.material; }); return m; };
+function merge(parts) {
+  const pos = [], norm = [], uv = [], index = []; let base = 0;
+  for (const g of parts) {
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const p = g.attributes.position, n = g.attributes.normal, u = g.attributes.uv;
+    for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); norm.push(n.getX(i), n.getY(i), n.getZ(i)); uv.push(u ? u.getX(i) : 0, u ? u.getY(i) : 0); }
+    if (g.index) for (const k of g.index.array) index.push(k + base); else for (let i = 0; i < p.count; i++) index.push(i + base);
+    base += p.count;
+  }
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(norm, 3)); out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); out.setIndex(index); return out;
+}
+// A shrub: a few lumpy leaf balls, about 1 wide and 1 high, textured with a tree's leaf map.
+function bushGeometry(seed) {
+  const rand = random(seed), parts = [];
+  for (let i = 0; i < 6; i++) {
+    const g = new THREE.IcosahedronGeometry(.3 + rand() * .14, 1), p = g.attributes.position, a = rand() * Math.PI * 2, r = i ? .18 + rand() * .2 : 0;
+    for (let k = 0; k < p.count; k++) { const s = 1 + (rand() - .5) * .28; p.setXYZ(k, p.getX(k) * s, p.getY(k) * s * .85, p.getZ(k) * s); }
+    g.translate(Math.cos(a) * r, .3 + rand() * .25 - (i ? .08 : 0), Math.sin(a) * r); g.computeVertexNormals(); parts.push(g);
+  }
+  return merge(parts);
+}
 // Reeds: a fan of thin blades, one geometry.
 function reedGeometry() {
   const parts = [], rand = random(5);
-  for (let i = 0; i < 9; i++) { const g = new THREE.ConeGeometry(.035, 1, 3, 1, true); g.translate(0, .5, 0); const a = rand() * Math.PI * 2, r = rand() * .22, lean = (rand() - .5) * .5; g.rotateZ(lean); g.scale(1, .6 + rand() * .5, 1); g.translate(Math.cos(a) * r, 0, Math.sin(a) * r); parts.push(g); }
+  for (let i = 0; i < 9; i++) { const g = new THREE.ConeGeometry(.035, 1, 3, 1, true); g.translate(0, .5, 0); const a = rand() * Math.PI * 2, r = rand() * .22; g.rotateZ((rand() - .5) * .5); g.scale(1, .6 + rand() * .5, 1); g.translate(Math.cos(a) * r, 0, Math.sin(a) * r); parts.push(g); }
   return merge(parts);
-}
-function merge(parts) {
-  const pos = [], norm = [], uv = [], index = []; let base = 0;
-  for (const g of parts) { const n = g.index ? g : g.toNonIndexed(); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); } g.computeVertexNormals(); const nn = g.attributes.normal; for (let i = 0; i < nn.count; i++) norm.push(nn.getX(i), nn.getY(i), nn.getZ(i)); const u = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.push(u ? u.getX(i) : 0, u ? u.getY(i) : 0); if (g.index) for (const k of g.index.array) index.push(k + base); else for (let i = 0; i < p.count; i++) index.push(i + base); base += p.count; void n; }
-  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(norm, 3)); out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); out.setIndex(index); return out;
 }
 // The scenery material patch: wind sway, the realm grow, fog of war, and a see-through tube from the camera to the
 // player's hero (screen-door, so no sorting and the shadows stay whole).
@@ -58,84 +55,108 @@ function patch(material, grow, { sway = 0, see = true, key }) {
       .replace('#include <clipping_planes_fragment>', see ? `#include <clipping_planes_fragment>
         if ( uSee > .5 ) { vec3 ab = uHero - cameraPosition; float t = clamp( dot( vWorldP - cameraPosition, ab ) / dot( ab, ab ), 0., 1. );
           float d = length( vWorldP - cameraPosition - ab * t ), k = fract( dot( floor( gl_FragCoord.xy ), vec2( .7548777, .5698403 ) ) );
-          if ( t < .97 && k < .7 * ( 1. - smoothstep( 95., 165., d ) ) ) discard; }` : '#include <clipping_planes_fragment>');
+          if ( t < .97 && k < .72 * ( 1. - smoothstep( 90., 170., d ) ) ) discard; }` : '#include <clipping_planes_fragment>');
   };
   material.customProgramCacheKey = () => key + (see ? '-see' : '') + sway;
   return material;
 }
 // Names from scenery.js -> what to build. Unknown names fall back to a boulder, so new scenery never breaks the scene.
-const TREE = { pines: ['pine', 1.55, 1], pine: ['pine', 1.55, 1], juniper: ['pine', 1.05, 1.5], oak: ['oak', 1.45, 1.05], willow: ['oak', 1.35, 1.25], birches: ['oak', 1.6, .62] };
-const TINTS = { oak: '#ffffff', willow: '#b9c7b4', birches: '#e6e0b8', juniper: '#c9d0b5', pines: '#ffffff', pine: '#ffffff' };
+// [kind, height factor, width factor]; the oak model is an autumn oak, so tints move it toward summer or birch.
+const TREE = { pines: ['pine', 1.6, .62], pine: ['pine', 1.6, .62], juniper: ['pine', 1.05, .95], oak: ['oak', 1.5, .66], willow: ['oak', 1.4, .8], birches: ['oak', 1.6, .42] };
+const TINTS = { oak: '#ffffff', willow: '#b4c49a', birches: '#f2ecd2', juniper: '#c4cdb0', pines: '#f0f2e6', pine: '#f0f2e6' };
+// Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
+const KEEP = { ferns: .38, mushrooms: .22, branch: .3, 'hollow-log': .45, boulders: .65 };
 export class Props {
   constructor(scene, assets, textures) {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
-    const w = assets.world;
-    this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
-    const pine = geometryOf(w.pine), oak = geometryOf(w.oak), boulder = geometryOf(w.boulders), arch = geometryOf(w.arch);
-    const stoneTex = textures.stone, barkTex = textures.dirt;
-    // kind -> { geometry, material(phase), shadow, sway }
-    const tree = (m, sway) => phase => patch(m.clone(), this.grow[phase], { sway, key: 'tree' });
-    const built = (tex, color, scale) => phase => patch(worldMapped(tex, { color, scale, key: 'built' }), this.grow[phase], { key: 'built' });
-    const plain = (color, rough) => phase => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[phase], { see: false, key: 'plain' });
+    const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
+    const tree = (m, sway) => set => patch(m.clone(), this.grow[set], { sway, key: 'tree' });
+    const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: 'built' }), this.grow[set], { key: 'built' });
+    const plain = (color, rough) => set => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[set], { see: false, key: 'plain' });
+    const leaves = materialOf(w.pine), autumn = materialOf(w.oak);
+    // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
-      pine: { geometry: pine, material: tree(materialOf(w.pine), .035), shadow: true },
-      oak: { geometry: oak, material: tree(materialOf(w.oak), .03), shadow: true },
-      pineLow: { geometry: simplify(pine, 18), material: tree(materialOf(w.pine), .02), shadow: true },
-      oakLow: { geometry: simplify(oak, 18), material: tree(materialOf(w.oak), .02), shadow: false },
-      boulder: { geometry: boulder, material: tree(materialOf(w.boulders), 0), shadow: true },
-      arch: { geometry: arch, material: tree(materialOf(w.arch), 0), shadow: true },
-      wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(stoneTex, '#c9bfae', 230), shadow: true },
-      pillar: { geometry: new THREE.CylinderGeometry(.42, .5, 1, 10).translate(0, .5, 0), material: built(stoneTex, '#d3c9b6', 200), shadow: true },
-      log: { geometry: new THREE.CylinderGeometry(.5, .5, 1, 9).rotateZ(Math.PI / 2).translate(0, .45, 0), material: built(barkTex, '#7a6450', 120), shadow: true },
-      timber: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(barkTex, '#6b5a48', 150), shadow: true },
+      pine: { geometry: geometryOf(w.pine), material: tree(leaves, .035), shadow: true },
+      oak: { geometry: geometryOf(w.oak), material: tree(autumn, .03), shadow: true },
+      bush: { geometry: bushGeometry(3), material: tree(leaves, .05), shadow: false },
+      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05), shadow: false },
+      boulder: { geometry: geometryOf(w.boulders), material: tree(materialOf(w.boulders), 0), shadow: true },
+      arch: { geometry: geometryOf(w.arch), material: tree(materialOf(w.arch), 0), shadow: true },
+      wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
+      pillar: { geometry: new THREE.CylinderGeometry(.42, .5, 1, 10).translate(0, .5, 0), material: built(textures.stone, '#d3c9b6', 200), shadow: true },
+      log: { geometry: new THREE.CylinderGeometry(.5, .5, 1, 9).rotateZ(Math.PI / 2).translate(0, .45, 0), material: built(textures.dirt, '#7a6450', 120), shadow: false },
+      timber: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.dirt, '#6b5a48', 150), shadow: true },
       reeds: { geometry: reedGeometry(), material: plain('#8a8a52', .9), shadow: false },
     };
-    for (const k of Object.values(this.kinds)) k.materials = [0, 1, 2].map(p => k.material(p));
-    this.sets = [new THREE.Group(), new THREE.Group(), new THREE.Group()]; for (const g of this.sets) this.root.add(g);
-    this.phase = 0; this.blend = [1, 0];
+    for (const k of Object.values(this.kinds)) k.materials = [0, 1, 2].map(set => k.material(set));
+    this.sets = [0, 1, 2].map(() => ({ group: new THREE.Group(), kinds: new Map() })); for (const s of this.sets) this.root.add(s.group);
+    this.phase = 0; this.blend = [1, 0]; this.view = null; this.counts = [0, 0, 0];
   }
-  build(world, s, makeScenery, scenery) {
-    for (const g of this.sets) for (const m of [...g.children]) { g.remove(m); m.dispose?.(); }
-    this.counts = [0, 0, 0];
-    const seed = s.seed;
+  build(world, s, scenery) {
+    for (const set of this.sets) { for (const m of [...set.group.children]) { set.group.remove(m); m.dispose(); } set.kinds.clear(); }
+    this.counts = [0, 0, 0]; const seed = s.seed;
     for (const phase of [0, 1]) {
       const rand = random(seed * 31 + phase * 977), put = this.collector();
-      const scene = scenery[phase];
-      for (const p of scene.props) this.place(put, p, rand, world.OBSTACLES[phase]);
+      for (const p of scenery[phase].props) this.place(put, p, rand, world.OBSTACLES[phase]);
       if (phase === 1) for (const b of world.BRUSH || []) this.brush(put, b, rand);
       this.commit(put, phase);
     }
     // Both realms: a forest wall just outside the arena edge, so a wide view never shows bare ground.
     const rand = random(seed + 4242), put = this.collector(), S = world.SIZE;
-    for (let d = 0; d < S; d += 150) for (const [x, y] of [[d, -120 - rand() * 380], [d, S + 120 + rand() * 380], [-120 - rand() * 380, d], [S + 120 + rand() * 380, d]]) {
-      const h = 520 + rand() * 340; put(rand() < .7 ? 'pine' : 'oak', x + (rand() - .5) * 80, y, h * .5, h, h * .5, rand() * 6.3, '#d5dacb');
+    for (let d = -400; d < S + 400; d += 170) for (const [x, y] of [[d, -140 - rand() * 420], [d, S + 140 + rand() * 420], [-140 - rand() * 420, d], [S + 140 + rand() * 420, d]]) {
+      const h = 560 + rand() * 360, oak = rand() < .3; put(oak ? 'oak' : 'pine', x + (rand() - .5) * 80, y, h * .6, h, h * .6, rand() * 6.3, oak ? '#b4c49a' : '#d5dacb');
     }
     this.commit(put, 2);
-    this.setPhase(s.phase, true);
+    this.view = null; this.setPhase(s.phase, true);
   }
   collector() { const lists = new Map(); const put = (kind, x, z, sx, sy, sz, rot = 0, color = '#ffffff', tilt = 0) => { let l = lists.get(kind); if (!l) lists.set(kind, l = []); l.push({ x, z, sx, sy, sz, rot, color, tilt }); }; put.lists = lists; return put; }
-  // One instanced mesh per kind and map chunk.
+  // Keeps every instance's matrix and colour; the mesh holds only the ones in view.
   commit(put, set) {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
     for (const [kind, list] of put.lists) {
-      const def = this.kinds[kind], chunks = new Map();
-      for (const it of list) { const key = Math.floor(it.x / CHUNK) + ',' + Math.floor(it.z / CHUNK); let c = chunks.get(key); if (!c) chunks.set(key, c = []); c.push(it); }
-      for (const items of chunks.values()) {
-        const mesh = new THREE.InstancedMesh(def.geometry, def.materials[set], items.length);
-        items.forEach((it, i) => { e.set(it.tilt, it.rot, it.tilt * .6); q.setFromEuler(e); m4.compose(v.set(it.x, 0, it.z), q, sc.set(it.sx, it.sy, it.sz)); mesh.setMatrixAt(i, m4); mesh.setColorAt(i, col.set(it.color)); });
-        mesh.castShadow = def.shadow; mesh.receiveShadow = true; mesh.computeBoundingSphere(); mesh.name = kind; this.sets[set].add(mesh); this.counts[set] += items.length;
+      const def = this.kinds[kind], n = list.length, matrices = new Float32Array(n * 16), colors = new Float32Array(n * 3), spots = new Float32Array(n * 4);
+      list.forEach((it, i) => {
+        e.set(it.tilt, it.rot, it.tilt * .6); q.setFromEuler(e); m4.compose(v.set(it.x, 0, it.z), q, sc.set(it.sx, it.sy, it.sz)); m4.toArray(matrices, i * 16);
+        col.set(it.color).toArray(colors, i * 3); spots.set([it.x, it.z, Math.max(it.sx, it.sz) * .7, it.sy], i * 4);
+      });
+      const mesh = new THREE.InstancedMesh(def.geometry, def.materials[set], n); mesh.count = 0; mesh.frustumCulled = false;
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.setColorAt(0, col); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+      mesh.castShadow = def.shadow; mesh.receiveShadow = true; mesh.name = kind;
+      set === 2 ? this.sets[2].group.add(mesh) : this.sets[set].group.add(mesh);
+      this.sets[set].kinds.set(kind, { mesh, matrices, colors, spots, n }); this.counts[set] += n;
+    }
+  }
+  // view: { x0, x1, y0, y1 } ground rectangle in view; reach: how far toward the sun a shadow can come from.
+  cull(view, sun) {
+    for (const [i, set] of this.sets.entries()) {
+      if (!set.group.visible) continue;
+      for (const k of set.kinds.values()) {
+        const { mesh, matrices, colors, spots, n } = k, dst = mesh.instanceMatrix.array, cdst = mesh.instanceColor.array; let c = 0;
+        for (let j = 0; j < n; j++) {
+          const x = spots[j * 4], z = spots[j * 4 + 1], r = spots[j * 4 + 2], h = spots[j * 4 + 3];
+          // A tall caster up to its shadow length toward the sun still darkens the view.
+          const sx = x - sun.x * h * sun.k, sz = z - sun.z * h * sun.k;
+          const inView = x + r > view.x0 && x - r < view.x1 && z + r > view.y0 && z - r - h * .5 < view.y1;
+          const shadowIn = mesh.castShadow && Math.max(x, sx) + r > view.x0 && Math.min(x, sx) - r < view.x1 && Math.max(z, sz) + r > view.y0 && Math.min(z, sz) - r < view.y1;
+          if (!inView && !shadowIn) continue;
+          dst.set(matrices.subarray(j * 16, j * 16 + 16), c * 16); cdst[c * 3] = colors[j * 3]; cdst[c * 3 + 1] = colors[j * 3 + 1]; cdst[c * 3 + 2] = colors[j * 3 + 2]; c++;
+        }
+        mesh.count = c; mesh.instanceMatrix.clearUpdateRanges(); mesh.instanceMatrix.addUpdateRange(0, c * 16); mesh.instanceMatrix.needsUpdate = true;
+        mesh.instanceColor.clearUpdateRanges(); mesh.instanceColor.addUpdateRange(0, c * 3); mesh.instanceColor.needsUpdate = true;
+        void i;
       }
     }
   }
   place(put, p, rand, obstacles) {
     const tree = TREE[p.name], r = rand() * Math.PI * 2;
     if (p.solid) { const b = obstacles.find(o => o.id === p.id) || { x: p.x, y: p.y, w: 300, h: 220, biome: p.biome }; this.cover(put, b, p.name, p.height, rand); return; }
-    if (tree) { const [kind, k, wide] = tree, h = p.height * k, low = h < 360; put(low ? kind + 'Low' : kind, p.x, p.y, h * .62 * wide, h, h * .62 * wide, r, TINTS[p.name]); return; }
+    if ((KEEP[p.name] ?? 1) < rand()) return;
+    if (tree) { const [kind, k, wide] = tree, h = p.height * k; put(kind, p.x, p.y, h * wide, h, h * wide, r, TINTS[p.name]); return; }
     switch (p.name) {
-      case 'forest-island': for (let i = 0; i < 3; i++) { const h = p.height * (1.2 + rand() * .5), a = rand() * 6.3; put('pine', p.x + Math.cos(a) * 70 * i, p.y + Math.sin(a) * 60 * i, h * .6, h, h * .6, rand() * 6.3); } return;
-      case 'boulders': { const h = p.height * .75; put('boulder', p.x, p.y, h * 1.1, h, h * 1.1, r, '#d6d0c4'); return; }
-      case 'ferns': case 'mushrooms': { const h = p.height * .85; put('oakLow', p.x, p.y, h * 1.5, h * .75, h * 1.5, r, p.name === 'ferns' ? '#a9b48f' : '#8f9474'); return; }
-      case 'branch': case 'hollow-log': { const l = p.height * (p.name === 'branch' ? 1.1 : 1.6), d = p.name === 'branch' ? 26 : 52; put('log', p.x, p.y, l, d, d, r, '#ffffff'); if (p.name === 'hollow-log') put('oakLow', p.x + 40, p.y + 30, 90, 50, 90, r, '#9aa587'); return; }
+      case 'forest-island': for (let i = 0; i < 3; i++) { const h = p.height * (1.25 + rand() * .45), a = rand() * 6.3; put('pine', p.x + Math.cos(a) * 75 * i, p.y + Math.sin(a) * 65 * i, h * .6, h, h * .6, rand() * 6.3, '#f0f2e6'); } return;
+      case 'boulders': { const h = p.height * .7; put('boulder', p.x, p.y, h * 1.15, h, h * 1.15, r, '#d6d0c4'); return; }
+      case 'ferns': case 'mushrooms': { const h = 60 + p.height * .55; put(p.name === 'ferns' ? 'bush' : 'shrub', p.x, p.y, h * 1.5, h, h * 1.5, r, p.name === 'ferns' ? '#c8d0b0' : '#b8a888'); return; }
+      case 'branch': case 'hollow-log': { const l = p.height * (p.name === 'branch' ? 1.1 : 1.6), d = p.name === 'branch' ? 24 : 48; put('log', p.x, p.y, l, d, d, r, '#ffffff'); if (p.name === 'hollow-log') put('bush', p.x + 40, p.y + 30, 110, 70, 110, r, '#b8c4a0'); return; }
       case 'reeds': { const h = p.height * 1.1; put('reeds', p.x, p.y, h * .8, h, h * .8, r); return; }
       case 'shrine': case 'abbey': case 'ivy-wall': case 'house-b': case 'house-a': case 'pier': case 'market': case 'mill': case 'observatory': case 'greenhouse':
         this.ruin(put, { x: p.x, y: p.y, w: 220 + p.height * .4, h: 160 + p.height * .3 }, p.height * .6, rand); return;
@@ -154,21 +175,22 @@ export class Props {
   rocks(put, b, height, rand) {
     const step = 170, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
-      const u = (i + .5) / nx - .5, v = (j + .5) / ny - .5, centre = 1 - Math.max(Math.abs(u), Math.abs(v)) * 1.2, h = (height * .28 + rand() * height * .22) * (.55 + centre * .7);
+      const u = (i + .5) / nx - .5, v = (j + .5) / ny - .5, centre = 1 - Math.max(Math.abs(u), Math.abs(v)) * 1.2, h = (height * .3 + rand() * height * .22) * (.55 + centre * .7);
       put('boulder', b.x + u * b.w + (rand() - .5) * 60, b.y + v * b.h + (rand() - .5) * 60, step * (1 + rand() * .5), h, step * (1 + rand() * .5), rand() * 6.3, rand() < .5 ? '#cfc8ba' : '#bdb6a6', (rand() - .5) * .25);
     }
     for (let i = 0; i < 2 + Math.floor(b.w * b.h / 120000); i++) { const h = height * (.8 + rand() * .4); put('pine', b.x + (rand() - .5) * b.w * .8, b.y + (rand() - .5) * b.h * .7, h * .55, h, h * .55, rand() * 6.3, '#d5dacb'); }
+    for (let i = 0; i < 4; i++) { const a = rand() * 6.3, h = 70 + rand() * 50; put('bush', b.x + Math.cos(a) * b.w * .55, b.y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
   }
   grove(put, b, height, rand, name) {
-    const step = 120, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
+    const step = 125, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
-      const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.85 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .3;
-      put(oak ? 'oak' : 'pine', x, y, h * (oak ? .7 : .55), h, h * (oak ? .7 : .55), rand() * 6.3, oak ? (name === 'willow' ? '#b9c7b4' : '#ffffff') : '#e6eadb');
+      const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .3;
+      put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? '#b4c49a' : rand() < .5 ? '#ffffff' : '#d8d6a8') : '#e6eadb');
     }
-    for (let i = 0; i < nx + ny; i++) { const a = rand() * 6.3, h = 90 + rand() * 60; put('oakLow', b.x + Math.cos(a) * b.w * .5, b.y + Math.sin(a) * b.h * .5, h * 1.6, h, h * 1.6, rand() * 6.3, '#a9b48f'); }
+    for (let i = 0; i < nx + ny; i++) { const a = rand() * 6.3, h = 80 + rand() * 60; put('bush', b.x + Math.cos(a) * b.w * .52, b.y + Math.sin(a) * b.h * .52, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
     if (name === 'hollow-log') put('log', b.x, b.y + b.h * .3, b.w * .7, 70, 70, .2, '#ffffff');
   }
-  // Broken stone walls around the footprint with gaps, pillars and rubble; `full` also adds an arch.
+  // Broken stone walls around the footprint with gaps, pillars and rubble; `full` also adds an arch and a tree.
   ruin(put, b, height, rand, full = false) {
     const t = 46, edges = [[-1, -1, 1, -1], [1, -1, 1, 1], [1, 1, -1, 1], [-1, 1, -1, -1]];
     for (const [ax, ay, bx, by] of edges) {
@@ -181,7 +203,8 @@ export class Props {
       put('pillar', x0, y0, 62, height * (.55 + rand() * .3), 62, 0, '#ffffff');
     }
     for (let i = 0; i < 3; i++) { const h = 50 + rand() * 60; put('boulder', b.x + (rand() - .5) * b.w * .7, b.y + (rand() - .5) * b.h * .7, h * 1.3, h, h * 1.3, rand() * 6.3, '#cbc4b4'); }
-    if (full) { put('arch', b.x + (rand() - .5) * b.w * .3, b.y, height * .5, height * .78, height * .78, rand() < .5 ? 0 : Math.PI / 2, '#d9d2c3'); put('oak', b.x + b.w * .3, b.y - b.h * .25, height * .5, height * .85, height * .5, rand() * 6.3); }
+    for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', b.x + Math.cos(a) * b.w * .5, b.y + Math.sin(a) * b.h * .5, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
+    if (full) { put('arch', b.x + (rand() - .5) * b.w * .3, b.y, height * .5, height * .78, height * .78, rand() < .5 ? 0 : Math.PI / 2, '#d9d2c3'); put('oak', b.x + b.w * .3, b.y - b.h * .25, height * .55, height * .9, height * .55, rand() * 6.3); }
   }
   // A roofless stone cottage with a doorway and a gable, timber and a tree in the yard.
   hamlet(put, b, height, rand) {
@@ -191,20 +214,24 @@ export class Props {
     put('wall', x, y - h / 2, w * .5, wall * 1.6, t * .9, 0, '#e3dccd');
     for (let i = 0; i < 4; i++) put('timber', x - w * .35 + i * w * .23, y + (rand() - .5) * h * .4, 18, wall * (.9 + rand() * .3), 18, rand() * .3, '#ffffff', (rand() - .5) * .3);
     put('timber', x, y + (rand() - .5) * h * .2, w * .9, 20, 22, (rand() - .5) * .3, '#ffffff', .05);
-    put('oak', x + b.w * .45, y - b.h * .4, height * .45, height * .9, height * .45, rand() * 6.3);
+    put('oak', x + b.w * .45, y - b.h * .4, height * .5, height * .95, height * .5, rand() * 6.3);
     for (let i = 0; i < 2; i++) put('log', x + (rand() - .5) * b.w, y + b.h * .45, 120, 40, 40, rand() * 3, '#ffffff');
+    for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', x + Math.cos(a) * b.w * .55, y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
   }
   brush(put, b, rand) {
-    const n = Math.min(26, Math.round(b.radius * b.radius / 6500));
-    for (let i = 0; i < n; i++) { const a = rand() * 6.3, r = Math.sqrt(rand()) * b.radius * .95, h = 95 + rand() * 55; put(rand() < .7 ? 'oakLow' : 'pineLow', b.x + Math.cos(a) * r, b.y + Math.sin(a) * r, h * 1.5, h, h * 1.5, rand() * 6.3, '#8fa07c'); }
+    const n = Math.min(30, Math.round(b.radius * b.radius / 5200));
+    for (let i = 0; i < n; i++) { const a = rand() * 6.3, r = Math.sqrt(rand()) * b.radius * .95, h = 100 + rand() * 60; put(rand() < .75 ? 'bush' : 'shrub', b.x + Math.cos(a) * r, b.y + Math.sin(a) * r, h * 1.6, h, h * 1.6, rand() * 6.3, rand() < .5 ? '#a8b890' : '#c2c8a4'); }
   }
-  setPhase(phase, instant = false) { this.phase = phase; if (instant) { this.blend = [phase ? 0 : 1, phase ? 1 : 0]; this.apply(); } }
-  update(dt, time, hero, reduced) {
-    propUniforms.uTime.value = time; propUniforms.uSway.value = reduced ? 0 : 1;
+  setPhase(phase, instant = false) { if (this.phase !== phase) this.view = null; this.phase = phase; if (instant) { this.blend = [phase ? 0 : 1, phase ? 1 : 0]; this.apply(); } }
+  update(dt, time, hero, reduced, view, sun) {
+    propUniforms.uTime.value = time; propUniforms.uSway.value = reduced ? 0 : 1; propUniforms.uSee.value = hero ? 1 : 0;
     if (hero) propUniforms.uHero.value.set(hero.x, 120, hero.y);
     const target = this.phase, speed = dt / .9; let changed = false;
     for (const p of [0, 1]) { const goal = p === target ? 1 : 0, b = this.blend[p]; if (b !== goal) { this.blend[p] = goal > b ? Math.min(1, b + speed) : Math.max(0, b - speed * 1.4); changed = true; } }
     if (changed) this.apply();
+    // Re-cull when the view has moved a little, or a set has just appeared.
+    const last = this.view;
+    if (changed || !last || Math.abs(last.x0 - view.x0) > 60 || Math.abs(last.y0 - view.y0) > 60 || Math.abs(last.x1 - view.x1) > 60) { this.view = { ...view }; this.cull(view, sun); }
   }
-  apply() { for (const p of [0, 1]) { const b = this.blend[p], e = b * b * (3 - 2 * b); this.grow[p].value = e; this.sets[p].visible = e > .001; } }
+  apply() { for (const p of [0, 1]) { const b = this.blend[p], e = b * b * (3 - 2 * b); this.grow[p].value = e; this.sets[p].group.visible = e > .001; } }
 }

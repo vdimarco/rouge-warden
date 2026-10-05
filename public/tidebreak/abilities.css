@@ -272,7 +272,7 @@
   background:var(--mr-plate);
   box-shadow:var(--mr-bevel),var(--mr-frame);
   color:var(--mr-parchment);
-  font:600 11px/1.1 Cinzel,serif;
+  font:600 11px/1.1 Cinzel,Barlow,serif;
 }
 #skill-points.ready{
   border-color:var(--mr-gold);
@@ -380,7 +380,7 @@
   height:auto;
   padding:1px 5px;
   border-radius:2px!important;
-  font:600 8px/12px Cinzel,serif!important;
+  font:600 8px/12px Cinzel,Barlow,serif!important;
   letter-spacing:1px;
   color:var(--mr-text)!important;
   background:#0f0d0be6!important;
