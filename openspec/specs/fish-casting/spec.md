@@ -68,11 +68,15 @@ While a finger holds the line in touch play, the rail beside the finger SHALL sh
 - **THEN** the rail, LOAD, and LET GO show beside the finger, clear of the guide.
 
 ### Requirement: Sensors that stop
-When motion samples stop for 3 s after the player said yes to motion, the game SHALL offer touch play.
+When motion samples stop for 3 s after the player said yes to motion, the game SHALL offer touch play. The game SHALL count the 3 s by its clock from the last sample. A slow frame SHALL count in full, also a frame longer than 1 s. A pause, or time in another phase, SHALL count 1 s at most.
 
 #### Scenario: Sensor stall
 - **WHEN** no motion sample arrives for 3 s in the cast phase
 - **THEN** the game says "The motion sensors stopped. Play with touch?" and a tap switches to touch.
+
+#### Scenario: Sensor stall on slow frames
+- **WHEN** no motion sample arrives in the cast phase, and the frames come more than 1 s apart
+- **THEN** the offer comes in the first frame 3 s or more after the last sample, not one frame later.
 
 ### Requirement: Quick turnaround to the next cast
 The next cast SHALL be ready soon after the lure comes home, lands on the shore, or loses a fish. "Nothing this time" SHALL wait about 1 s and a cast onto the shore about 0.9 s. A cast input SHALL skip any of these beats after a short minimum, and the same press SHALL go on into the next cast. After 3 s of an empty retrieve (no fish coming), the lure SHALL skip home: each crank turn SHALL wind in at least 4 times as much line, and any turn of the crank SHALL bring the lure home in about 3 s, however far out it is. A crank faster than 1.5 turns a second SHALL shorten the 3 s wait to as little as 1 s. After the short minimum, a press on the crank or the gauge SHALL end the beat and SHALL NOT cast. After a lost fish, a press on the drawn rod SHALL do the same. After "Nothing this time", a press on the drawn rod SHALL go on into the next cast, as a press on the lake does.

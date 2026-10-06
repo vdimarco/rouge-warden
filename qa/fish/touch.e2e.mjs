@@ -5,14 +5,21 @@
 // too), "Sweet!" and a sound come at the release, the rail beside the finger (under the prompt, however high the press), a
 // cancelled touch, the aim line's preview and the near miss on the report, the crank on the left in a touch fight with the
 // rod pad on the right, and a fling up on the open lake that sets the hook in a strike.
-// Motion play: no back swing says to tip the phone back, and sensors that stop offer touch within 2.5 to 4.5 s (the rod cue
-// hides meanwhile, and the settings show touch after the switch). A computer: a Space cast graded by when Space comes up.
-// Exits with code 1 when something fails. Set SHOTS to a folder to save screenshots.
+// Motion play: no back swing says to tip the phone back, and sensors that stop offer touch in the first frame 3 s after the
+// last sample, on the game's clock (the rod cue hides meanwhile, and the settings show touch after the switch). A computer:
+// a Space cast graded by when Space comes up, with the rail in a frame of the hold.
+// PARTS=A, B, C or D runs some parts only. Exits with code 1 when something fails. Set SHOTS to a folder to save screenshots.
 import { open, until, center, shot, sleep } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (!ok) fails.push(msg); console.log((ok ? "ok   " : "FAIL ") + msg); return ok; };
+// until(), and when the time is up an error that says what did not come
+const waitFor = (page, what, fn, arg, ms = 60000) => until(page, fn, arg, ms).catch(() => { throw new Error(`no ${what} in ${ms / 1000} s`); });
+// n more game frames (a slow software renderer draws a frame in a second or more)
+const frames = async (page, n = 2) => waitFor(page, n + " more game frames", (f) => FISH.G.frame >= f, (await page.evaluate(() => FISH.G.frame)) + n);
 const TOUCH = { v: 1, input: "touch" };
+// PARTS=A,D runs only those parts
+const PARTS = process.env.PARTS ? process.env.PARTS.split(",") : null, part = (p) => !PARTS || PARTS.includes(p);
 
 // In the page: gestures as a finger makes them, with exact timing (a slow software renderer would stretch CDP input).
 // Each event goes to the element under the press point and bubbles, like a real touch.
@@ -21,7 +28,12 @@ function helpers() {
   window.__sfx = [];
   const sfx = FISH.Sound.sfx;
   FISH.Sound.sfx = (n, v) => { window.__sfx.push([n, performance.now()]); return sfx.call(FISH.Sound, n, v); };
-  const fire = (el, type, x, y, id, kind = "touch") => el.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: kind, isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, button: 0, buttons: type === "pointerup" || type === "pointercancel" ? 0 : 1 }));
+  // (at: the event's time, as a real touch carries the time of the finger even when the page takes it late)
+  const fire = (el, type, x, y, id, kind = "touch", at = null) => {
+    const e = new PointerEvent(type, { pointerId: id, pointerType: kind, isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, button: 0, buttons: type === "pointerup" || type === "pointercancel" ? 0 : 1 });
+    if (at != null) Object.defineProperty(e, "timeStamp", { value: at });
+    return el.dispatchEvent(e);
+  };
   // press at (x, y), drag down by `down` px, rest, flick up to `up` px above the press point at pxs px/s, rest `gap` ms, lift
   window.__cast = async ({ x, y, down = 80, up = 60, pxs = 1500, gap = 0, id = 9, kind = "touch", cancel = false, watch = false }) => {
     const el = document.elementFromPoint(x, y) || document.body, out = { target: el.id || el.tagName };
@@ -37,10 +49,10 @@ function helpers() {
     for (let i = 1; i <= 20; i++) { fire(el, "pointermove", x, y + (down * i) / 20, id, kind); await wait(12); }
     // rest at the bottom: long enough for a frame to see the rod past LOAD (a software renderer draws slowly)
     const rest = performance.now();
-    do await wait(50); while (down > 10 && FISH.G.step !== "loaded" && performance.now() - rest < 3000);
+    do await wait(50); while (down > 10 && FISH.G.step !== "loaded" && performance.now() - rest < 60000);
     out.afterDrag = FISH.G.step + "/" + FISH.G.bail;
     out.railBox = window.__railBox();
-    if (cancel) { fire(el, "pointercancel", x, y + down, id, kind); await wait(50); out.toast = document.querySelector("#toast").textContent; return out; }
+    if (cancel) { const said = document.querySelector("#toast").textContent; fire(el, "pointercancel", x, y + down, id, kind); out.toast = await window.__nextToast(said); return out; }
     const t0 = performance.now(), dur = ((down + up) / pxs) * 1000;
     let k = 0;
     while (k < 1) { k = Math.min(1, (performance.now() - t0) / dur); fire(el, "pointermove", x, y + down - (down + up) * k, id, kind); await wait(8); }
@@ -68,15 +80,17 @@ function helpers() {
     fire(el, "pointerup", x + dx, y, id); await wait(50);
     return { yaw: FISH.G.aimYaw - yaw0, bail: FISH.G.bail, step: FISH.G.step, clack: window.__sfx.slice(n0).some((s) => s[0] === "bailOpen") };
   };
-  // a fast fling up from (x, y): 90 px in 60 ms. Says whether the game asked for a hook set (G.hookReq, which the next
-  // frame passes to the fish). The moves are spaced by a spin, not a timer: a busy page would stretch a timer and slow
-  // the fling
+  // a fast fling up from (x, y): a rest of 30 ms, then 90 px in 60 ms. Says whether the game asked for a hook set
+  // (G.hookReq, which the next frame passes to the fish). The rod pad times a fling by the event times: each event
+  // carries the time it is for, so a busy machine that stops the page for a moment does not slow the fling. The moves are
+  // spaced by a spin, not a timer, so no event comes before its time
   window.__fling = async ({ x, y, id = 21 }) => {
     const el = document.elementFromPoint(x, y) || document.body, spin = (ms) => { const t = performance.now(); while (performance.now() - t < ms); };
     FISH.G.hookReq = false;
-    fire(el, "pointerdown", x, y, id); await wait(30);
-    for (let i = 1; i <= 6; i++) { fire(el, "pointermove", x, y - 15 * i, id); spin(10); }
-    fire(el, "pointerup", x, y - 90, id);
+    const t0 = performance.now();
+    fire(el, "pointerdown", x, y, id, "touch", t0); await wait(30);
+    for (let i = 1; i <= 6; i++) { fire(el, "pointermove", x, y - 15 * i, id, "touch", t0 + 30 + 10 * (i - 1)); spin(10); }
+    fire(el, "pointerup", x, y - 90, id, "touch", t0 + 90);
     const hook = FISH.G.hookReq;
     await wait(60);
     return { on: el.id || el.tagName, hook };
@@ -106,7 +120,7 @@ function helpers() {
   // the next toast after one that said `was` (the queue may hold it back behind another for a moment)
   window.__nextToast = async (was) => {
     const t = document.querySelector("#toast"), t0 = performance.now();
-    while (t.textContent === was && performance.now() - t0 < 3000) await wait(20);
+    while (t.textContent === was && performance.now() - t0 < 30000) await wait(20);
     return t.textContent;
   };
   // a quick swipe up from (x, y), with no drag down first: the stray swipe of a hand on the screen
@@ -137,16 +151,18 @@ async function startTouch(page) {
   await until(page, () => window.FISH && FISH.G.phase === "cast" && FISH.G.input === "touch", null, 30000);
   await page.evaluate(helpers);
   await sleep(1200);
+  // (a frame has laid out the cast and lets the reel panel take a press)
+  await waitFor(page, "touch cast ready", () => FISH.reelPanel.s.grab === "lock");
 }
 // a new cast, once a frame has run (the frame hands the press over to the reel panel: a slow renderer can take a while)
 async function fresh(page) {
   await page.evaluate(() => { FISH.newCast(); document.querySelector("#report").hidden = true; });
-  await until(page, () => FISH.G.phase === "cast" && FISH.G.step === "ready" && FISH.reelPanel.s.grab === "lock", null, 10000);
+  await waitFor(page, "new touch cast", () => FISH.G.phase === "cast" && FISH.G.step === "ready" && FISH.reelPanel.s.grab === "lock");
   await sleep(200);
 }
 
 /* ================= A: touch play at 390x844 ================= */
-{
+if (part("A")) {
   const { browser, page, errors } = await open({ touch: true, phone: false, save: TOUCH });
   try {
     await startTouch(page);
@@ -157,7 +173,9 @@ async function fresh(page) {
     const press = await page.evaluate(async ({ x, y }) => {
       const el = document.elementFromPoint(x, y);
       el.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 3, pointerType: "touch", isPrimary: true, clientX: x, clientY: y, bubbles: true, buttons: 1 }));
-      await new Promise((r) => setTimeout(r, 300));
+      // 300 ms and two game frames (a frame hands a held press over to the line)
+      const t0 = performance.now(), f = FISH.G.frame;
+      do await new Promise((r) => setTimeout(r, 20)); while ((performance.now() - t0 < 300 || FISH.G.frame < f + 2) && performance.now() - t0 < 60000);
       const s = FISH.G.step + "/" + FISH.G.bail;
       el.dispatchEvent(new PointerEvent("pointerup", { pointerId: 3, pointerType: "touch", isPrimary: true, clientX: x, clientY: y, bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
@@ -198,10 +216,10 @@ async function fresh(page) {
     await shot(page, "touch-1-cast");
 
     // the aim line runs out to where a cast like the last one lands
-    await until(page, () => FISH.G.phase === "reel", null, 10000).catch(() => {});
+    await waitFor(page, "landing of the last cast", () => FISH.G.phase === "reel");
     const last = gaps[gaps.length - 1];
     await page.evaluate(() => { FISH.G.aimYaw = 0; FISH.newCast(); });
-    await until(page, () => !!FISH.G.aimTo, null, 8000).catch(() => {});
+    await waitFor(page, "aim line", () => !!FISH.G.aimTo);
     const aim = await page.evaluate(() => FISH.G.aimTo && { d: Math.hypot(FISH.G.aimTo.x, FISH.G.aimTo.z), warn: FISH.G.aimTo.warn });
     check(!!aim && Math.abs(aim.d - last.dist) < 1.5 && !aim.warn, `the aim line shows how far a cast like the last one goes (${aim ? aim.d.toFixed(1) : "none"} m, the cast went ${last.dist.toFixed(1)} m)`);
     await shot(page, "touch-2-aim");
@@ -232,14 +250,16 @@ async function fresh(page) {
 
     // the report's line: a near miss says how far and which way; a cast on the ring says so
     const land = async (x, z) => {
-      // one ring 38 m out ahead, one far off to the right; no new ones for now
+      // one ring 38 m out ahead, one far off to the right; no new ones for now. And no run of sweet casts: its line goes
+      // before the ring's (the casts above that the game landed before the next began depend on the frames)
       await page.evaluate(([x, z]) => {
         const R = FISH.rises;
+        FISH.G.streak = 0;
         R.list = [{ x: 0, z: -38, gold: false, ttl: 60, pulse: 9, species: "perch" }, { x: 40, z: -12, gold: false, ttl: 60, pulse: 9, species: "perch" }];
         R.spawnT = 999;
         window.__land(x, z);
       }, [x, z]);
-      await until(page, () => FISH.G.phase === "reel", null, 10000);
+      await waitFor(page, "landing on the lake", () => FISH.G.phase === "reel");
       return page.textContent("#report .zone");
     };
     let z = await land(0, -30);
@@ -253,7 +273,7 @@ async function fresh(page) {
 
     // a touch fight: the crank on the left, the rod pad on the right, apart
     await page.evaluate(() => window.__fight("retrieve"));
-    await sleep(500);
+    await frames(page);
     const box = await page.evaluate(() => ({ pad: window.__rect("#padBox"), crank: window.__rect("#crankBox"), drag: window.__rect("#dragBar"), gauge: window.__rect("#gaugeBox") }));
     check(box.crank && box.pad && box.crank.x + box.crank.w / 2 < vw / 2 && box.pad.x + box.pad.w / 2 > vw / 2 && !overlap(box.pad, box.crank), `390x844 touch fight: the crank is on the left, the rod pad on the right, and they do not overlap (${JSON.stringify(box)})`);
     check(!overlap(box.crank, box.drag) && !overlap(box.crank, box.gauge), "and the crank clears the drag bar and the gauge");
@@ -294,7 +314,7 @@ async function fresh(page) {
     check(spots.length === 3 && hooks === 3, `a fling up on the open lake sets the hook during a strike (${hooks} of ${spots.length} spots)`);
     // ...and the fish gets it on the next frame
     await page.evaluate(() => { window.__hooks = 0; FISH.G.hookReq = true; });
-    await until(page, () => window.__hooks > 0, null, 5000).then(() => check(true, "the hook set reaches the fish on the next frame"), () => check(false, "the hook set reaches the fish on the next frame"));
+    await until(page, () => window.__hooks > 0, null, 60000).then(() => check(true, "the hook set reaches the fish on the next frame"), () => check(false, "the hook set reaches the fish on the next frame"));
     const cr = await center(page, "#crankBox");
     const fc = await page.evaluate((p) => window.__fling(p), { x: cr.x, y: cr.y + 20 });
     check(!fc.hook, `a fling that starts on the crank does not (${fc.on})`);
@@ -317,7 +337,7 @@ async function fresh(page) {
 }
 
 /* ================= B: a small Android phone, 360x640; and the phone on its side, 844x390 ================= */
-for (const [vw, vh] of [[360, 640], [844, 390]]) {
+for (const [vw, vh] of part("B") ? [[360, 640], [844, 390]] : []) {
   const { browser, page, errors } = await open({ width: vw, height: vh, touch: true, phone: false, save: TOUCH });
   try {
     await startTouch(page);
@@ -333,9 +353,9 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
       ev("pointerdown", y);
       for (let i = 1; i <= 12; i++) { ev("pointermove", y + 5 * i); await wait(16); }
       const t0 = performance.now();
-      while (FISH.G.step !== "loaded" && performance.now() - t0 < 3000) await wait(20);
+      while (FISH.G.step !== "loaded" && performance.now() - t0 < 60000) await wait(20);
       const f = FISH.G.frame;
-      while (FISH.G.frame < f + 3 && performance.now() - t0 < 6000) await wait(10);
+      while (FISH.G.frame < f + 3 && performance.now() - t0 < 120000) await wait(10);
       const g = document.querySelector("#fishGuide"), words = [...document.querySelectorAll("#castRail span")].filter((s) => !s.hidden).map((s) => { const b = s.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
       const out = { step: FISH.G.step, rail: window.__rect("#castRail"), words, guide: g.hidden ? null : window.__rect("#fishGuide"), guideOn: document.querySelector("#guideToggle").getAttribute("aria-label") === "Hide the moves guide" };
       ev("pointercancel", y + 60);
@@ -353,7 +373,7 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
     const hi = await page.evaluate((a) => window.__cast(a), { x: rb.x, y: 120, down: 60, up: 40, pxs: 1300 });
     check(railClear(hi.railBox, vh), `${vw}x${vh}: a press 120 px from the top: the rail stays on the screen, under the HUD and the prompt (${JSON.stringify(hi.railBox)})`);
     await page.evaluate(() => window.__fight("retrieve"));
-    await sleep(500);
+    await frames(page);
     const box = await page.evaluate(() => ({ pad: window.__rect("#padBox"), crank: window.__rect("#crankBox"), drag: window.__rect("#dragBar"), gauge: window.__rect("#gaugeBox") }));
     check(box.crank.x + box.crank.w / 2 < vw / 2 && box.pad.x + box.pad.w / 2 > vw / 2 && !overlap(box.pad, box.crank), `${vw}x${vh} touch fight: the crank on the left, the rod pad on the right, apart (${JSON.stringify({ pad: box.pad, crank: box.crank })})`);
     check(!overlap(box.crank, box.drag) && !overlap(box.crank, box.gauge) && !overlap(box.drag, box.gauge), `${vw}x${vh}: the crank, the drag bar and the gauge do not overlap (${JSON.stringify(box)})`);
@@ -366,7 +386,7 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
 }
 
 /* ================= C: motion play: no back swing, and sensors that stop ================= */
-{
+if (part("C")) {
   const { browser, page, errors } = await open({ query: "?debug" });
   try {
     await page.click("#freeBtn");
@@ -377,6 +397,8 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
     await page.evaluate(helpers);
     await page.evaluate(() => __phone.pose(88));
     await sleep(1500);
+    // (a frame lets the reel panel take a press)
+    await waitFor(page, "motion cast ready", () => FISH.reelPanel.s.grab === "all");
     // press, then whip forward from upright with no back swing, and lift at 11 o'clock
     const rb = await center(page, "#reelBox");
     const nb = await page.evaluate(async ({ x, y }) => {
@@ -396,36 +418,45 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
       P.pose(88);
       return { verdict: FISH.G.cast && FISH.G.cast.verdict, stroke: FISH.G.cast && FISH.G.cast.stroke };
     }, rb);
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    if (nb.verdict) await waitFor(page, "landing of the motion cast", () => FISH.G.phase === "reel" || FISH.G.step === "ashore");
     const said = await page.textContent("#report .verdict");
     check(nb.verdict === "short" && said === "Tip the phone back first.", `a motion cast with no back swing says "${said}", not to swing faster (${JSON.stringify(nb)})`);
 
-    // the sensors stop in the cast: after 3 s the game offers touch, and a tap switches to it. Timed in the page, from the
-    // last sample the phone sent (a slow frame may add a little)
+    // the sensors stop in the cast: 3 s after the last sample the game offers touch, and a tap switches to it. Timed by the
+    // game's clock, from the last sample the phone sent (Motion.pose.t) to the frames (G.quietT: when the cast step of each
+    // frame ran), so slow frames do not change the result: the offer comes in the first frame 3 s on
     await page.evaluate(() => { FISH.newCast(); });
     await sleep(600);
-    const st = await page.evaluate(async () => {
+    const ASK = "The motion sensors stopped. Play with touch?";
+    const st = await page.evaluate(async (ask) => {
       const P = window.__phone, wait = (ms) => new Promise((r) => setTimeout(r, ms)), said = () => document.querySelector("#prompt .p1 span").textContent;
       const sent = P.sent;
       while (P.sent === sent) await wait(1);
       P.on = false;
-      const t0 = performance.now();
-      while (said() !== "The motion sensors stopped. Play with touch?" && performance.now() - t0 < 8000) await wait(10);
-      return { s: (performance.now() - t0) / 1000, said: said(), cue: !document.querySelector("#rodCue").hidden };
-    });
-    check(st.said === "The motion sensors stopped. Play with touch?" && st.s >= 2.5 && st.s <= 4.5, `3 s with no motion sample in the cast: the prompt says "${st.said}" (after ${st.s.toFixed(1)} s)`);
-    await sleep(300);
-    check(await page.evaluate(() => document.querySelector("#rodCue").hidden), "while it asks, the rod cue is hidden (no \"Hold rod\" beside \"Tap the screen\")");
+      const last = FISH.Motion.pose.t, t0 = performance.now();
+      // after each game frame (a frame callback asked for now runs after the game's own): the first frame that asks, the
+      // frame before it, and the rod cue in that first frame
+      let at = null, before = null, cue = null;
+      const look = () => { const t = FISH.G.quietT; if (said() === ask) { at = t; cue = !document.querySelector("#rodCue").hidden; } else { before = t; requestAnimationFrame(look); } };
+      requestAnimationFrame(look);
+      while (at == null && performance.now() - t0 < 60000) await wait(10);
+      return { s: at == null ? null : (at - last) / 1000, before: before == null ? null : (before - last) / 1000, said: said(), cue };
+    }, ASK);
+    const secs = (v) => (v == null ? "none" : v.toFixed(2) + " s");
+    check(st.said === ASK && st.s >= 2.5 && (st.before == null || st.before < 3.5), `3 s with no motion sample in the cast: the prompt says "${st.said}" in the first frame from 2.5 s on, and no frame after 3.5 s goes without it (that frame at ${secs(st.s)}, the one before at ${secs(st.before)})`);
+    await frames(page);
+    check(st.cue === false && (await page.evaluate(() => document.querySelector("#rodCue").hidden)), "while it asks, the rod cue is hidden (no \"Hold rod\" beside \"Tap the screen\")");
     await page.evaluate(() => window.__fling({ x: 200, y: 520, id: 31 }));
-    await until(page, () => FISH.G.input === "touch", null, 3000).then(() => check(true, "a tap switches to touch play"), () => check(false, "a tap switches to touch play"));
-    await sleep(400);
+    await until(page, () => FISH.G.input === "touch", null, 60000).then(() => check(true, "a tap switches to touch play"), () => check(false, "a tap switches to touch play"));
+    await fresh(page);
     const rb2 = await center(page, "#reelBox");
     const tc = await page.evaluate((a) => window.__cast(a), { x: rb2.x, y: rb2.y, down: 80, up: 50, pxs: 1400 });
     check(tc.dist > 0, `and a touch cast works after it (${tc.verdict}, ${(tc.dist || 0).toFixed(1)} m)`);
     // the sensors come back: the settings still show touch for this visit, so picking Motion turns them on again
     await page.evaluate(() => { window.__phone.on = true; });
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore" || FISH.G.step === "ready", null, 30000).catch(() => {});
+    await waitFor(page, "landing of the touch cast", () => FISH.G.phase === "reel" || FISH.G.step === "ashore" || FISH.G.step === "ready");
     await page.click("#pauseBtn");
+    await waitFor(page, "pause card", () => FISH.G.paused && !document.querySelector("#pause").hidden);
     await page.click("#pSet");
     const set = await page.evaluate(() => ({ input: FISH.G.input, select: document.querySelector("#optInput").value, note: document.querySelector("#inputNote").textContent }));
     check(set.input === "touch" && set.select === "touch" && /Motion/.test(set.note), `after the switch the settings show touch, and say how to go back (${JSON.stringify(set)})`);
@@ -437,7 +468,7 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
 }
 
 /* ================= D: a computer: cast from the keys ================= */
-{
+if (part("D")) {
   const { browser, page, errors } = await open({ width: 1280, height: 720, touch: false, phone: false });
   try {
     await page.click("#freeBtn");
@@ -447,12 +478,14 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
     // held until the aim moves (a slow software renderer may draw no frame in half a second)
     await page.keyboard.down("ArrowRight");
     await sleep(500);
-    await until(page, () => FISH.G.aimYaw > 8, null, 8000).catch(() => {});
+    await waitFor(page, "aim to the right", () => FISH.G.aimYaw > 8);
     await page.keyboard.up("ArrowRight");
     const yaw = await page.evaluate(() => FISH.G.aimYaw);
     check(yaw > 8, `the right arrow aims right (${yaw.toFixed(1)}°)`);
     // Space held: the rod tips back, then swings forward by itself; Space coming up lets go there. Played inside the page
-    // for the timing; a hold that a busy page stretched by more than 40 ms is tried again
+    // for the timing. The game times the hold by its clock (performance.now): here that clock stops at the time to let go
+    // until a game frame has drawn this hold. So the hold is exact however slow the frames are, and the rail is seen in a
+    // frame of this hold (a frame at 1280x720 on a software renderer can take longer than the hold)
     const hold = (ms) => page.evaluate(async ({ ms, yaw }) => {
       const wait = (m) => new Promise((r) => setTimeout(r, m)), key = (type) => window.dispatchEvent(new KeyboardEvent(type, { code: "Space", key: " " }));
       // (a new cast faces ahead again: keep the aim)
@@ -460,27 +493,33 @@ for (const [vw, vh] of [[360, 640], [844, 390]]) {
       await wait(400);
       const casts = FISH.G.casts, said = document.querySelector("#toast").textContent;
       key("keydown");
-      const t0 = FISH.G.pin && FISH.G.pin.key;
-      let rail = false;
-      while (FISH.G.pin && performance.now() - t0 < ms) { if (!document.querySelector("#castRail").hidden) rail = true; await wait(1); }
-      const held = performance.now() - t0;
-      key("keyup");
+      const pin = FISH.G.pin, t0 = pin && pin.key, real = performance.now.bind(performance);
+      if (!pin) return { held: 0, cast: null, toast: "", error: "Space took no line (" + FISH.G.step + ")" };
+      // each game frame of this hold (a frame callback asked for now runs after the game's own)
+      let drew = 0, rail = false, held = 0;
+      const look = () => { if (FISH.G.pin !== pin) return; drew++; if (!document.querySelector("#castRail").hidden) rail = true; requestAnimationFrame(look); };
+      requestAnimationFrame(look);
+      performance.now = () => Math.min(real(), t0 + ms);
+      try {
+        while (FISH.G.pin === pin && (real() - t0 < ms || !drew) && real() - t0 < 60000) await wait(1);
+        held = performance.now() - t0;
+        key("keyup");
+      } finally { delete performance.now; }
       await wait(30);
       const c = FISH.G.casts > casts ? FISH.G.cast : null;
-      const out = { held: Math.round(held), cast: c && c.verdict, yaw: c && c.yaw, cue: document.querySelector("#report.cue .verdict")?.textContent || "", rail };
+      const out = { held: Math.round(held), frames: drew, cast: c && c.verdict, yaw: c && c.yaw, cue: document.querySelector("#report.cue:not([hidden]) .verdict")?.textContent || "", rail };
       out.toast = c ? "" : await window.__nextToast(said);
       return out;
     }, { ms, yaw });
-    const tryHold = async (ms) => { let r; for (let i = 0; i < 3; i++) { r = await hold(ms); if (Math.abs(r.held - ms) <= 40 || ms > 1100) break; console.log("     (the page was busy: " + JSON.stringify(r) + ")"); } return r; };
-    const tap = await tryHold(250);
+    const tap = await hold(250);
     check(!tap.cast && tap.toast === "Hold Space until the rod comes forward.", `a short tap of Space casts nothing and says "${tap.toast}" (${JSON.stringify(tap)})`);
-    const soon = await tryHold(600);
+    const soon = await hold(600);
     check(soon.cast === "high", `letting go as the rod starts forward is too soon: ${soon.cast} (${JSON.stringify(soon)})`);
-    const good = await tryHold(780);
-    check(good.cast === "sweet" && good.cue === "Sweet!" && Math.abs(good.yaw - yaw) < 1 && good.rail, `letting go as the rod comes through 11 o'clock is sweet, along the aim, with the rail beside the reel (${JSON.stringify(good)})`);
-    const late = await tryHold(900);
+    const good = await hold(780);
+    check(good.cast === "sweet" && good.cue === "Sweet!" && Math.abs(good.yaw - yaw) < 1 && good.rail, `letting go as the rod comes through 11 o'clock is sweet, along the aim, with the rail beside the reel in a frame of the hold (${JSON.stringify(good)})`);
+    const late = await hold(900);
     check(late.cast === "low", `letting go after it is too late: ${late.cast} (${JSON.stringify(late)})`);
-    const end = await tryHold(1500);
+    const end = await hold(1500);
     check(end.cast === "slam", `holding on to the end lets go there, late: ${end.cast} (${JSON.stringify(end)})`);
   } catch (e) {
     check(false, "keys: exception: " + (e && e.stack));
