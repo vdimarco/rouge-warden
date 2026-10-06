@@ -9,6 +9,12 @@ The approved character SHALL use rear-facing generated paddling frames, a distin
 - **WHEN** the player rides in the primary 3D view or 2D fallback
 - **THEN** the rider faces the upcoming course, the wake trails behind and scenery approaches the camera coherently
 
+### Requirement: Continuous steering and character geometry
+Visual steering SHALL preserve position and velocity through repeated lane inputs, settle a single-lane step to 95% within 90 ms and retain immediate logical lane selection. Jump and duck SHALL retain the approved rider identity, with continuous raft lift and distinct registered rider poses. Duck SHALL use a low anatomical crouch with no vertical image compression. Rider art SHALL remain independent of the registered raft geometry.
+#### Scenario: Reverse a dodge and jump
+- **WHEN** the player changes lanes, immediately reverses and jumps or ducks
+- **THEN** steering follows a short continuous trajectory, the rider identity and raft remain consistent, distinct jump/duck silhouettes remain registered and controls are available throughout the action
+
 ## ADDED Requirements
 
 ### Requirement: Rich river presentation with preserved pace
