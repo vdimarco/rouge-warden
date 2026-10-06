@@ -30,7 +30,7 @@ The runner SHALL start at 42 m/s and escalate to a bounded 72 m/s, use .66-secon
 ### Requirement: Bounded frame rendering
 The renderer SHALL composite native decoded video directly behind the gameplay canvas, cap total backing-buffer pixels and avoid full-frame video copies or repeatedly drawing inactive runs. Rendering SHALL preserve exact paused pixels and late-decode freeze, and remain playable through unavailable video/GPU and live motion/data preferences.
 #### Scenario: Warm active rendering
-- **WHEN** a normal-motion run is sampled with 24fps river media
+- **WHEN** a normal-motion run is sampled with 60fps river media
 - **THEN** there are zero full-frame video-to-canvas copies during active native playback, and warmed active frame cost is measured against the prior build
 #### Scenario: Inactive run
 - **WHEN** a run is paused or completed
