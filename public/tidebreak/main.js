@@ -469,9 +469,43 @@ function frame(now) {
   // A held match keeps fading the shake, the hitstop and the red edge instead of freezing them.
   if (running && (paused || window.GameSwitch?.isOpen)) { feel.idle(dt); hurtEdge.style.opacity = hurtEdge.dataset.edge = Math.round(feel.edge * 20) / 20; }
   const drawStart = performance.now();
-  if (running && renderer) drawBetweenSteps(dt);
+  if (running && renderer) drawBetweenSteps(dt); else drawArena(frameMs);
   perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running, running && !paused && !window.GameSwitch?.isOpen);
   requestAnimationFrame(frame);
+}
+// The hero select arena (3D only): the selected hero stands alone near the allied base, with only the structures and no
+// match clock. three-render.js frames it with a low camera in the box of the portrait. The painted stage and portrait
+// stay for the 2D view, until the first hero model is ready, when a model fails and when the WebGL context is lost. A new
+// pick keeps the last hero on stage while its model parses, then swaps. Idle frames parse the nearest other heroes one at
+// a time, so later picks swap at once. It draws at most 30 frames a second. A slow draw waits twice its own time (up to
+// 2 s), so the menu keeps about half of the main thread. It never draws while the tab is hidden, and stops when the draft
+// or a match starts.
+const ARENA = { x: 4250, y: 8950, facing: 1.95 }, ARENA_MS = 1000 / 30;
+let arena = null, arenaClock = ARENA_MS, arenaSince = 0, arenaCost = 0;
+function arenaState(ready) {
+  if (!ready || arena?.identity === selectedIdentity) return arena.state;
+  const s = assignIdentities(createMatch(selected), selectedIdentity), p = Object.assign(player(s), ARENA);
+  // No structure is warded in sudden death, so no ward light stands in the view. The clock never runs here.
+  s.units = s.units.filter(u => u === p || u.kind === 'tower' || u.kind === 'core'); s.suddenDeath = true;
+  // A short ring in the hero's colour marks a new choice (not the first hero, and not with reduced motion).
+  if (arena && !matchMedia('(prefers-reduced-motion: reduce)').matches) s.effects.push({ x: p.x, y: p.y, type: 'arrive', color: HERO_IDENTITIES[selectedIdentity].color, radius: 120, life: .8, maxLife: .8 });
+  arena = { identity: selectedIdentity, state: s }; return s;
+}
+function warmHeroes() { const n = HERO_IDENTITIES.length; for (let k = 1; k < n; k++) for (const i of [(selectedIdentity + k) % n, (selectedIdentity - k + n) % n]) if (renderer.heroStatus(i) === 'loading') return; }
+function drawArena(frameMs) {
+  const menu = $('menu'); if (running || menu.hidden) return;
+  const status = renderer?.lost ? 'lost' : renderer?.heroStatus?.(selectedIdentity);
+  if (status !== 'ready' && !(status === 'loading' && arena && menu.classList.contains('arena-3d'))) { menu.classList.remove('arena-3d'); arenaClock = ARENA_MS; return; }
+  if (document.hidden || window.GameSwitch?.isOpen) return;
+  arenaSince += frameMs; arenaClock += frameMs; const gap = Math.min(2000, Math.max(ARENA_MS, arenaCost * 2)); if (arenaClock < gap) return;
+  const s = arenaState(status === 'ready'), dt = Math.min(arenaSince, 100) / 1000; arenaClock = Math.min(arenaClock - gap, ARENA_MS); arenaSince = 0;
+  for (const f of s.effects) f.life -= dt; s.effects = s.effects.filter(f => f.life > 0);
+  // The hero stands where the portrait stands: feet on the portrait's lower edge (above the footer), head near its top
+  // and below the wordmark where the two share a column (phones).
+  const art = $('hero-art').getBoundingClientRect(), floor = menu.querySelector('.roster-footer').getBoundingClientRect().top, mark = menu.querySelector('.roster-heading').getBoundingClientRect(), x = art.left + art.width / 2;
+  const start = performance.now();
+  renderer.draw(s, dt, { stage: { x, head: Math.max(art.top + art.height * .06, x < mark.right ? mark.bottom + 8 : 0), feet: Math.min(art.bottom, floor) - art.height * .03 } });
+  arenaCost = performance.now() - start; menu.classList.add('arena-3d'); if (status === 'ready') warmHeroes();
 }
 // The simulation steps at 60 Hz, but a 100-175 Hz screen draws two or three frames per step. Units and missiles are
 // drawn between their last two positions (by the time left over in the accumulator), so they glide with the camera
