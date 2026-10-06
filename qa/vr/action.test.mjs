@@ -320,6 +320,80 @@ test("Rooftop Brawl: two waves, then it is cleared", () => {
   assert.ok(r.end && r.end.type === "done" && r.end.why === "cleared", JSON.stringify(r.end));
   assert.ok(r.C.stats.kos >= JOB.brawl.wave1 + JOB.brawl.wave2);
 });
+test("Taxi!: on foot the fare only shouts; driving into the marker takes the job", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  let o = null;
+  for (let k = 0; k < 40 && !o; k++) { J.update(DT, 0, hero(h0.x + k * 700, 0, h0.z)); o = J.offers.find((q) => q.type === "taxi"); }
+  assert.ok(o, "a taxi offer");
+  J.events.length = 0;
+  J.update(DT, 0, hero(o.x, o.y, o.z));
+  assert.ok(!J.active, "on foot: no job");
+  assert.ok(J.events.some((e) => e.type === "say" && /car/.test(e.line)), "the fare says to come back with a car");
+  J.update(DT, 0, hero(o.x, o.y, o.z, { busy: true, driving: true }));
+  assert.ok(J.active && J.active.type === "taxi", "driving in: the taxi job");
+});
+test("driving through any other marker starts nothing, and the marker stays", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C });
+  J.update(DT, 0, hero(city.start.x, city.start.y, city.start.z));
+  const o = J.offers.find((q) => q.type !== "taxi");
+  J.update(DT, 0, hero(o.x, o.y, o.z, { busy: true, driving: true }));
+  assert.ok(!J.active && J.offers.includes(o), "no job from a car at a " + o.type + " marker");
+});
+test("Taxi!: drive the fare to the pin for the fare and a tip; out of the car too long, or too slow, and they leave", () => {
+  const drive = (o) => hero(o.x, 0, o.z, { busy: true, driving: true });
+  const ok = runJob("taxi", (J, C, h, t) => (J.active ? (t > 5 ? drive(J.active.data.drop) : drive(J.active.o)) : h));
+  assert.ok(ok.end && ok.end.type === "done" && ok.end.reward > JOB.taxi.reward, JSON.stringify(ok.end));
+  const walked = runJob("taxi", (J, C, h) => (J.active ? hero(J.active.o.x, 0, J.active.o.z) : h));
+  assert.ok(walked.end && walked.end.type === "failed" && walked.end.why === "walked", JSON.stringify(walked.end));
+  const late = runJob("taxi", (J, C, h) => (J.active ? drive(J.active.o) : h));
+  assert.ok(late.end && late.end.type === "failed" && late.end.why === "late", JSON.stringify(late.end));
+});
+test("Taxi!: the drop is on a street across town, and the clock allows the drive", () => {
+  for (let seed = 1; seed <= 40; seed++) {
+    const C = createCombat(city), J = createJobs({ city, combat: C, seed });
+    const S = city.safe[seed % city.safe.length];
+    J.start("taxi", null, hero(S.x, S.y, S.z));
+    const A = J.active, D = A.data.drop, d = Math.hypot(D.x - A.o.x, D.z - A.o.z);
+    assert.ok(!city.collideSphere(D.x, 1, D.z, 0.8) && !city.isWater(D.x, D.z), "drop in a building or the water at " + D.x + ", " + D.z);
+    assert.ok(A.timer >= d / JOB.taxi.speed + JOB.taxi.spare - 1e-6, "time " + A.timer.toFixed(1) + " for " + d.toFixed(0) + " m");
+  }
+});
+test("Stop, Thief!: run him down and the purse goes back; let him run and he gets away", () => {
+  const ok = runJob("thief", (J, C, h, t) => {
+    const g = J.active && J.active.data.runner;
+    if (!g || t < 3) return h;
+    const nh = hero(g.x + 1.2, g.y, g.z, { safe: true });
+    C.attack(nh);
+    return nh;
+  });
+  assert.ok(ok.end && ok.end.type === "done" && ok.end.why === "caught", JSON.stringify(ok.end));
+  const away = runJob("thief", (J, C, h) => h);
+  assert.ok(away.end && away.end.type === "failed" && away.end.why === "away", JSON.stringify(away.end));
+});
+test("Stop, Thief!: his run keeps to the streets, clear of buildings and water, and turns corners", () => {
+  let turns = 0, runs = 0;
+  for (let seed = 1; seed <= 60; seed++) {
+    const C = createCombat(city), J = createJobs({ city, combat: C, seed });
+    const S = city.safe[seed % city.safe.length];
+    J.update(DT, 0, hero(S.x, S.y, S.z));
+    const o = J.offers.find((q) => q.type === "thief");
+    if (!o) continue;
+    J.start("thief", o, hero(S.x, S.y, S.z));
+    const P = J.active.data.path;
+    assert.ok(P.length >= 3, "a run of " + P.length + " points");
+    runs++;
+    for (let i = 1; i < P.length; i++) {
+      for (let f = 0; f <= 1; f += 0.125) {
+        const x = P[i - 1].x + (P[i].x - P[i - 1].x) * f, z = P[i - 1].z + (P[i].z - P[i - 1].z) * f;
+        assert.ok(!city.collideSphere(x, 1, z, 0.6) && !city.isWater(x, z), "through a building or the water at " + x.toFixed(0) + ", " + z.toFixed(0));
+      }
+      if (i > 1 && (P[i].x - P[i - 1].x) * (P[i - 1].x - P[i - 2].x) === 0 && (P[i].z - P[i - 1].z) * (P[i - 1].z - P[i - 2].z) === 0) turns++;
+    }
+  }
+  assert.ok(runs >= 15, "thief offers " + runs);
+  assert.ok(turns >= runs, "corners " + turns + " in " + runs + " runs");
+});
 test("markers: four offers of different jobs round the player, and walking into one starts it", () => {
   const C = createCombat(city), J = createJobs({ city, combat: C });
   const h = hero(city.start.x, city.start.y, city.start.z);

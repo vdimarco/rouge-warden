@@ -405,7 +405,7 @@ function heroFight() {
   const H = HERO_FIGHT;
   H.x = P.pos.x; H.y = P.pos.y; H.z = P.pos.z; H.yaw = hero.yaw || 0; H.onGround = !!P.onGround;
   H.safe = driving || P.roll > 0 || G.state !== "play" || respawning; H.hidden = driving || respawning;
-  H.vx = P.vel.x; H.vy = P.vel.y; H.vz = P.vel.z; H.busy = driving || G.state !== "play";
+  H.vx = P.vel.x; H.vy = P.vel.y; H.vz = P.vel.z; H.busy = driving || G.state !== "play"; H.driving = driving && G.state === "play";
   return H;
 }
 // a swing press with a goon in reach: the hero punches (or kicks) him
@@ -547,7 +547,7 @@ function actionFrame(dt, inp) {
   if (save.jobs.sludge) guardClogs();
   const hf = heroFight();
   combat.update(dt, hf);
-  jobs.offersOn = save.jobs.sludge && !driving;
+  jobs.offersOn = save.jobs.sludge; // while driving only a taxi marker starts (jobs.js)
   jobs.update(dt, G.time, hf);
   hero.setCarry(jobs.carrying());
   for (const e of combat.events) combatEvent(e);
@@ -595,6 +595,7 @@ const FAIL_LINES = {
   time: "Out of time!", dumpster: "Ouch! A dumpster broke the fall. They are fine, but you missed.",
   drainpipe: "The washer slid down a drainpipe. Safe, but shaken.", cold: "Cold pizza. No tip.", gone: "The balloon is gone. The kid will get over it.",
   knockout: "You were knocked out. The job is lost.", left: "You left the job behind.",
+  walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "The thief got away. Next time!",
 };
 function jobEvent(e) {
   switch (e.type) {
@@ -1895,7 +1896,7 @@ G.test = {
   bloom: () => ({ ...bloom.info(), want: bloomLevel() }),
   // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
   action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds] }),
-  // start a job (type: sludge, catch, washer, pizza, balloon, brawl) at the nearest offer of that type, or at the hero
+  // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
   job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
   jobOffers(on = true) { save.jobs.sludge = !!on; return jobs.info().offers; },
   spawnGoon(x, y, z, aggro = true) { const g = combat.spawn(x, y, z, "test"); g.aggro = aggro; return g.id; },

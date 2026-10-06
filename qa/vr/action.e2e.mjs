@@ -189,6 +189,29 @@ try {
   check(job.active && job.active.type === job.o.type && job.card && job.goal, "walking into a marker starts its job, with its card and a compass goal", job);
   await page.screenshot({ path: out + "/action-job.png" });
 
+  /* ---- a taxi fare: on foot it only shouts; driving into its marker takes the job ---- */
+  const tx = await page.evaluate(() => {
+    G.jobs.cancel(); QA.street(); QA.step(5);
+    const P = G.test.state().pos;
+    G.jobs.offers.push({ id: 9001, type: "taxi", name: "Taxi!", x: P.x, y: 0, z: P.z });
+    const said = [];
+    const say = G.ui.say; G.ui.say = (t, d) => { said.push(t); return say.call(G.ui, t, d); };
+    QA.step(5);
+    const foot = G.test.action().jobs.active;
+    G.ui.say = say;
+    const pc = G.test.action().cars.list.sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z))[0];
+    G.test.enterCar(pc.id);
+    const c = G.test.action().cars.driving;
+    G.jobs.offers.push({ id: 9002, type: "taxi", name: "Taxi!", x: c.x, y: 0, z: c.z });
+    QA.step(5);
+    const a = G.test.action();
+    const r = { foot, said, driving: a.driving, active: a.jobs.active, card: G.game.progress.objective, goal: G.game.progress.goal, pins: a.jobs.offers.length };
+    G.jobs.cancel(); G.test.exitCar(); QA.step(5);
+    return r;
+  });
+  check(!tx.foot && tx.said.some((t) => /car/i.test(t)), "on foot at a taxi marker the fare only shouts for a car", tx);
+  check(tx.driving && tx.active && tx.active.type === "taxi" && tx.goal, "driving into the taxi marker takes the fare, with a card and a goal pin", tx);
+
   /* ---- the map: a pin on each job marker, and travel to one takes its job ---- */
   const mp = await page.evaluate(() => {
     const before = { state: G.state, ui: G.ui.paused, ids: G.jobs.offers.map((o) => o.id), active: !!G.jobs.active };
