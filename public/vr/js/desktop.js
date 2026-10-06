@@ -63,7 +63,7 @@ export function createDesktop(canvas, camera, settings) {
   const either = (a, b) => keys.has(a) || keys.has(b);
   // the two swing inputs: on this frame, on last frame, the hand each one holds (-1 none), the hand of its last press
   const SW = [{ on: false, hand: -1, last: -1 }, { on: false, hand: -1, last: -1 }], BUSY = [false, false];
-  const Q = { jump: false, menu: false, map: false, yank: false, mute: false };
+  const Q = { jump: false, menu: false, map: false, yank: false, mute: false, car: false };
   const pad = { a: false, x: false, y: false, rb: false, start: false };
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   // armed: Chromium's made-up jump may still come, until SKIP_MS after lockAt (the request, then the lock itself)
@@ -251,6 +251,7 @@ export function createDesktop(canvas, camera, settings) {
     }
     if (k === "Space" && !page) { e.preventDefault(); if (!e.repeat) Q.jump = true; }
     if (k === "KeyF" && !e.repeat) Q.yank = true;
+    if (k === "KeyR" && !e.repeat && !page) Q.car = true; // R: into a parked car, and out again
     // (not in the touch scheme: D.update reads the edges only in the mouse scheme, so one left here would fire a rope after a switch)
     if (!e.repeat && !page && !mobile.enabled) { if (k === "KeyE") edge[0] = true; else if (k === "KeyQ") edge[1] = true; }
     // M (the sound) by the letter on the key (AZERTY puts M where QWERTY has ;), or by its place when the key has no Latin
@@ -288,7 +289,9 @@ export function createDesktop(canvas, camera, settings) {
     let mx = (either("KeyD", "ArrowRight") ? 1 : 0) - (either("KeyA", "ArrowLeft") ? 1 : 0), my = (either("KeyW", "ArrowUp") ? 1 : 0) - (either("KeyS", "ArrowDown") ? 1 : 0);
     mx += phone.moveX; my += phone.moveY;
     let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0 || phone.reel, yank = Q.yank;
-    let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map, view = !!phone.view;
+    let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map, view = !!phone.view, car = Q.car || !!phone.car;
+    // Shift: on the ground with no rope out it sprints (main decides); a pad's left stick click does the same
+    let sprint = keys.has("ShiftLeft") || keys.has("ShiftRight");
     // the two swing inputs: a mouse button, E or Q, a trigger
     let s0 = mouse[0] && !skip[0] || keys.has("KeyE"), s1 = mouse[1] && !skip[1] || keys.has("KeyQ");
     if (gp) {
@@ -300,7 +303,10 @@ export function createDesktop(canvas, camera, settings) {
       gamepad.rt = padTrigger(gp, 7, gamepad.rt); gamepad.lt = padTrigger(gp, 6, gamepad.lt);
       s0 = s0 || gamepad.rt; s1 = s1 || gamepad.lt;
       grip = grip || padButton(gp, 4); // the left bumper reels; the right bumper yanks
-      const a = padButton(gp, 0), x = padButton(gp, 2), yb = padButton(gp, 3), rb = padButton(gp, 5), st = padButton(gp, 9);
+      const a = padButton(gp, 0), x = padButton(gp, 2), yb = padButton(gp, 3), rb = padButton(gp, 5), st = padButton(gp, 9), bb = padButton(gp, 1);
+      sprint = sprint || padButton(gp, 10);
+      if (bb && !pad.b) car = true;
+      pad.b = bb;
       if (a && !pad.a) jump = true;
       if ((x && !pad.x) || (rb && !pad.rb)) yank = true;
       if (yb && !pad.y) view = true;
@@ -308,14 +314,14 @@ export function createDesktop(canvas, camera, settings) {
       pad.a = a; pad.x = x; pad.y = yb; pad.rb = rb; pad.start = st;
     } else gamepad.rt = gamepad.lt = false;
     inp.muteDown = Q.mute;
-    Q.jump = Q.menu = Q.map = Q.yank = Q.mute = false;
+    Q.jump = Q.menu = Q.map = Q.yank = Q.mute = Q.car = false;
     wheel = Math.max(0, wheel - dt);
     pitch = clamp(pitch + dp, -PITCH_MAX, PITCH_MAX);
     const ml = Math.hypot(mx, my);
     if (ml > 1) { mx /= ml; my /= ml; }
     inp.move.x = mx; inp.move.y = my;
     inp.turn = turn; inp.pitch = pitch;
-    inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map; inp.viewDown = view;
+    inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map; inp.viewDown = view; inp.carDown = car; inp.sprintHeld = sprint; inp.jumpHeld = keys.has("Space") || (gp ? padButton(gp, 0) : false);
     inp.visible = true;
     // which device the player holds, for the tutorial words: a phone, the pad (once it moves), else the mouse
     const kind = inp.kind = mobile.enabled ? "touch" : usingPad ? "pad" : "mouse";

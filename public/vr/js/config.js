@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.10.3";
+export const VERSION = "1.11.1";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -53,6 +53,15 @@ export const SWING = {
   maxSubsteps: 8, fixedDt: 1 / 120,
   snapBlocked: 0.25, // a rope blocked by a wall for this long snaps
   fireHold: 0.3, // a trigger held on an idle hand still fires if a target shows up within this time
+};
+
+/* ---------------- flat-play moves: the sprint and the landing roll ---------------- */
+// Shift (a pad's left stick click) on the ground with no rope out runs at sprint times the run speed and drains the energy
+// gauge (0..1) at drain a second; it fills again at fill a second, after a pause of wait seconds. A landing from a dive, or one
+// faster than fall m/s down, rolls for time seconds and keeps at least minSpeed along the ground. Headset play has neither.
+export const MOVES = {
+  sprint: 2.2, drain: 0.2, fill: 0.16, wait: 0.8, minEnergy: 0.12,
+  roll: { time: 0.62, minSpeed: 6, friction: 1.4, fall: 13 },
 };
 
 /* ---------------- wall climbing (flat play) ---------------- */

@@ -362,7 +362,7 @@ if (part("4")) {
     const over = Object.keys(L).flatMap((a, i) => Object.keys(L).slice(i + 1).filter((b) => hit(L[a], L[b])).map((b) => a + "/" + b));
     const cueText = await page.evaluate(() => document.querySelector("#rodCue span").textContent);
     check(cueText === PUMP && !!L.cue && !over.length, `Larger text in a fight at 360x640: the prompt, the gauge, the drag, the crank, the HUD and the rod cue's words ("${cueText}") do not overlap (` + (over.join(", ") || "none") + ")");
-    // a cast lands in the water: the report (the distance, the verdict and a note) stands under the prompt and its sub,
+    // a cast lands in the water: the report (the distance, the verdict and a note) stands beside the gauge, clear of the prompt and its sub,
     // which takes two lines here
     await page.evaluate(async () => {
       const G = FISH.G, wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -373,7 +373,7 @@ if (part("4")) {
       await wait(700);
     });
     const RP = { p1: await rect(page, "#prompt .p1"), p2: await rect(page, "#prompt .p2"), dist: await rect(page, "#report .dist"), zone: await rect(page, "#report .zone") };
-    check(!!RP.dist && !!RP.p2 && !!RP.zone && !hit(RP.dist, RP.p1) && !hit(RP.dist, RP.p2), `Larger text at 360x640: the cast report stands clear under the prompt (${JSON.stringify(RP)})`);
+    check(!!RP.dist && !!RP.p2 && !!RP.zone && !hit(RP.dist, RP.p1) && !hit(RP.dist, RP.p2), `Larger text at 360x640: the cast report stands beside the gauge, clear of the prompt (${JSON.stringify(RP)})`);
     await stage(page, { fish: { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "sulk", jump: 0, near: 0.5, known: true } });
     // a long toast (a legend's stage name) beside the bigger gauge, on the taller phones where it sits in the sky
     const LONG = "It runs down the river! Steer it off the logs!";
