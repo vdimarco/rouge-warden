@@ -1,6 +1,6 @@
 import { ITEMS, ITEM, BUILDS, quote, nextItem, statText, hasItem, synergies } from './items.js';
 import { player, buy, sell, setBuild, setGoal } from './sim.js';
-export const icon = id => `<span class="item-icon ${ITEM[id].tier === 3 ? 'relic-icon' : ''}" style="--ix:${ITEM[id].icon % 6};--iy:${Math.floor(ITEM[id].icon / 6)}" aria-hidden="true"></span>`;
+export const icon = id => `<span class="item-icon ${ITEM[id].tier === 3 ? 'relic-icon' : ''}" style="--ix:${ITEM[id].icon % 6};--iy:${Math.floor(ITEM[id].icon / 6)}${ITEM[id].hue ? `;filter:hue-rotate(${ITEM[id].hue}deg) saturate(1.15)` : ''}" aria-hidden="true"></span>`;
 export function inventoryHTML(p, shop = false) {
   return Array.from({ length: 6 }, (_, n) => { const id = p.inventory[n]; return `<button class="inventory-slot ${id ? 'filled' : ''}" ${shop ? `data-slot="${n}"` : ''} aria-label="${id ? ITEM[id].name + '. ' + statText(ITEM[id]) : 'Empty item slot ' + (n + 1)}">${id ? icon(id) : `<span>${n + 1}</span>`}</button>`; }).join('');
 }

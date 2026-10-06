@@ -57,7 +57,7 @@ export const respawnTime = (level, sudden = false) => Math.round(Math.min(PACE.r
 // Every hero moves by the same rules: out-of-combat sprint, slows, haste effects and Nessie in water.
 export function heroSpeed(s, e) {
   const sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
-  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
+  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
 }
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
@@ -103,6 +103,21 @@ function reward(s, team, xp, gold, local=null) {
 }
 function finish(s, winner, reason) { s.winner = winner; s.reason = reason; announce(s, winner === 0 ? 'Legends never die' : 'Lost to the veil', reason); }
 export function heal(s, e, amount) { if (e.hp <= 0) return; e.hp = Math.min(e.maxHp, e.hp + amount * (e.woundedUntil > s.time ? .55 : 1)); }
+// Item damage edges: Duelist's glass, a rally, ward breakers and a Seer's mark.
+function itemEdge(s, source, credit, target, kind) {
+  let k = 1; const structure = t => t && ['tower', 'core'].includes(t.kind);
+  if (credit?.kind === 'hero') {
+    if (target.kind === 'hero' && hasItem(credit, 'glass') && credit.hp > credit.maxHp * .7) k *= 1.15;
+    if (credit.rallyUntil > s.time) k *= 1 + (credit.rallyBonus || .2);
+    if (kind === 'attack' && structure(target)) k *= hasItem(credit, 'titan') ? 1.7 : hasItem(credit, 'siege') ? 1.4 : 1;
+  }
+  if (target.kind === 'hero') {
+    if (hasItem(target, 'glass')) k *= 1.1;
+    if (structure(source)) k *= hasItem(target, 'titan') ? .5 : hasItem(target, 'siege') ? .7 : 1;
+    if (target.seerUntil > s.time && source.team !== target.team) k *= 1.1;
+  }
+  return k;
+}
 export function damage(s, source, target, amount, kind = 'spell') {
   if (!target || target.hp <= 0 || s.winner !== null) return;
   const credit=source.kind==='summon'?s.units.find(e=>e.id===source.owner):source;
@@ -123,6 +138,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     amount *= PACE.backdoor;
     if (credit.player && s.time - (s.backdoorTip ?? -10) > 6) { announce(s, 'Ward resists you', 'Structures take little hero damage without your wisps. Push with your wave.'); s.backdoorTip = s.time; }
   }
+  amount *= itemEdge(s, source, credit, target, kind);
   const armor = target.armor || 0;
   amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
   if(target.scaleGuardUntil>s.time)amount*=.65;
@@ -150,6 +166,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if (target.hp > 0 && kind === 'spell' && source.kind === 'hero' && !['tower', 'core'].includes(target.kind)) {
     if (hasItem(source, 'lantern')) target.burn = { source: source.id, until: s.time + 3, tick: target.burn?.source === source.id ? target.burn.tick : s.time + 1, amount: 28 + source.power * .05 };
     if (hasItem(source, 'frost')) target.slow = Math.max(target.slow, 1.2);
+    if (hasItem(source, 'seer') && target.kind === 'hero') { target.seerUntil = s.time + 5; target.revealedUntil = Math.max(target.revealedUntil, s.time + 5); }
     if (hasItem(source, 'winter')) {
       target.frostMarks ||= {}; const mark = target.frostMarks[source.id] ||= { count: 0, until: 0, ready: 0 };
       if (s.time >= mark.ready) { mark.count = (s.time <= mark.until ? mark.count : 0) + 1; mark.until = s.time + 5;
@@ -164,6 +181,9 @@ export function damage(s, source, target, amount, kind = 'spell') {
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
+    // Drowned doubloon: the banisher gains a stack; the fallen loses half (the hoard keeps them).
+    if (credit?.kind === 'hero' && hasItem(credit, 'tidecoin')) { credit.itemState.coin = Math.min(hasItem(credit, 'hoard') ? 20 : 10, (credit.itemState.coin || 0) + 1); recalculate(credit, HEROES[credit.hero]); }
+    if (hasItem(target, 'tidecoin') && !hasItem(target, 'hoard') && target.itemState.coin) { target.itemState.coin = Math.floor(target.itemState.coin / 2); recalculate(target, HEROES[target.hero]); }
     target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, PACE.killGold); if (credit?.kind === 'hero') credit.kills++; }
     recordKill(s, credit, target);
@@ -336,6 +356,14 @@ export function cast(s, e, slot, aim, {lockedTarget}={}) {
   const rank = e.skillRanks[slot], strength = 1 + (rank-1)*.28;
   e.mana-=manaCost(e,slot);e.recall = 0; e.cd[slot] = cooldownFor(e,slot); e.facing = angle; e.attackAnim = .42; e.attackStarted = s.time; e.castStarted = s.time; e.castSlot = slot; e.castFacing = angle; e.itemState.empowered = s.time+5;
   e.itemState.spells = Math.min(3,(e.itemState.spells||0)+1);
+  if (hasItem(e,'riptide')) e.rushUntil = s.time + 2;
+  // Rallying conch: the ultimate rallies nearby allies; the warhorn also rallies on any skill, every 8s.
+  const warhorn = hasItem(e,'warhorn'), rally = hasItem(e,'horn') && (slot === 3 || warhorn && s.time >= (e.itemState.horn || 0));
+  if (rally) {
+    const big = slot === 3, bonus = big ? (warhorn ? .25 : .2) : .12, until = s.time + (big ? (warhorn ? 5 : 4) : 3); if (!big) e.itemState.horn = s.time + 8;
+    for (const ally of s.units) if (ally.kind === 'hero' && ally.team === e.team && ally.hp > 0 && distance(e,ally) < 500 && !(ally.rallyUntil > s.time && ally.rallyBonus > bonus)) { ally.rallyUntil = until; ally.rallyBonus = bonus; }
+    burst(s, e.x, e.y, '#ffd98a', big ? 500 : 260);
+  }
   if (slot === 3 && hasItem(e,'worldroot') && s.time >= (e.itemState.worldroot||0)) {
     e.itemState.worldroot = s.time+18;
     for (const ally of s.units) if (ally.kind === 'hero' && ally.team === e.team && ally.hp > 0 && distance(e,ally)<450) { ally.shield += e.maxHp*.15; burst(s,ally.x,ally.y,'#c8f9bc',110); }
@@ -391,6 +419,7 @@ export function setGoal(s, id) { player(s).goal = id; }
 function itemTick(s, e, dt) {
   if (e.burn && e.hp > 0 && e.burn.tick <= s.time) {
     const source = s.units.find(v => v.id === e.burn.source);
+    if (source && hasItem(source, 'seer') && e.seerUntil > s.time) e.revealedUntil = Math.max(e.revealedUntil, s.time + 1.2);
     if (source && s.time <= e.burn.until + dt) withContext(s, { source: source.id, label: 'Burn' }, () => damage(s, source, e, e.burn.amount * (e.slow > 0 ? hasItem(source, 'inferno') ? 1.6 : hasItem(source, 'frost') ? 1.35 : 1 : 1), 'item'));
     if (e.burn) e.burn.tick += 1;
   }
@@ -542,7 +571,8 @@ export function step(s, input = {}, dt = 1 / 60) {
   tickSkillEvents(s,dt,{damage,heal,hostile});
   terrainEffects(s, dt);
   for (const e of [...s.units]) {
-    for (const key of ['attackCd', 'attackAnim', 'hit', 'stun', 'slow', 'fear']) e[key] = Math.max(0, (e[key] || 0) - dt);
+    const tenacity = e.kind === 'hero' && hasItem(e, 'charm') ? 1 / .6 : 1; // Moonstone charm: control wears off 40% faster
+    for (const key of ['attackCd', 'attackAnim', 'hit', 'stun', 'slow', 'fear']) e[key] = Math.max(0, (e[key] || 0) - dt * (key === 'stun' || key === 'slow' || key === 'fear' ? tenacity : 1));
     if(e.hp>0 && e.bleed?.until>s.time && s.time>=e.bleed.tick) {const source=s.units.find(t=>t.id===e.bleed.source);e.bleed.tick+=.8;if(source)withContext(s,{source:source.id,label:e.bleed.type==='poison'?'Poison':e.bleed.type==='fire'?'Burn':'Bleed'},()=>damage(s,source,e,e.bleed.amount));}
     e.moving = false; itemTick(s, e, dt); resolveAttack(s, e);
     if(e.kind==='summon'){
