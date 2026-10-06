@@ -296,6 +296,13 @@ export class ThreeRenderer {
     if (!near(f.x, f.y) && !(f.tx !== undefined && near(f.tx, f.ty))) return;
     const fx = this.effects, d = fx.decals, age = 1 - f.life / f.maxLife, first = !seen.has(f); if (first) seen.add(f);
     const source = f.source ? s.units.find(u => u.id === f.source) : null, color = soften(identityColor(source) || SPELL[f.hero] || f.color || '#ffe7b8');
+    if (f.type === 'bolt') {
+      // A ranged basic attack: a bolt flies from the hero and lands as the hit resolves.
+      const t = s.units.find(u => u.id === f.target), tx = t ? t.x : f.tx, tz = (t ? t.y : f.ty + 20) + 0, k = Math.min(1, age), x = f.x + (tx - f.x) * k, z = f.y + 20 + (tz - f.y - 20) * k, y = 130 + Math.sin(k * Math.PI) * 50, b = Math.max(0, k - .3);
+      fx.ribbons.add(f.x + (tx - f.x) * b, 130 + Math.sin(b * Math.PI) * 50, f.y + 20 + (tz - f.y - 20) * b, x, y, z, f.variant === 2 ? 16 : 11, color, .95);
+      if (first) fx.burst(f.x, 140, f.y + 20, color, 4, 200, { size: 20 });
+      return;
+    }
     if (f.type === 'strike') {
       const tx = f.tx, tz = f.ty + 20, hy = 120;
       if (first) { fx.burst(tx, hy, tz, color, 14, 520, { size: 30 }); fx.burst(tx, hy, tz, '#fff3d8', 5, 300, { size: 46, life: .2 }); fx.dust(tx, tz, 50, 2, '#9c8c70'); if (f.source === p.id || distance(p, f) < 900) fx.flash(tx, hy + 40, tz, color, f.variant === 2 ? 14000 : 9000); }

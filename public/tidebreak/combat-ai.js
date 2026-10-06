@@ -1,6 +1,7 @@
 import { BASES, distance, canSee, visibleTo, lineOfSight } from './world.js';
 import { ROTATION_SCALE } from './arena.js';
 import { structureProtected } from './objectives.js';
+import { reach } from './sim.js';
 import { canAfford, manaCost, canReturn, threateningZones, insideWarning } from './combat-rules.js';
 import { assistPoint } from './team-events.js';
 import { botProfile, reactionAt, evadePoint, tradeRetreat, diveSafe, wardOpen, targetBonus, lowestInRange, teamFocus, laneHold, strategy, leadAim, punishes } from './bot-difficulty.js';
@@ -95,6 +96,6 @@ export function combatDecision(s,e){
  if(slot!==undefined&&!combat&&slot!==3&&e.mana<e.maxMana*P.saveSpells&&!(e.hero===10&&slot===2))slot=undefined;
  let point;
  if(e.range>250&&combat&&d<e.range*.7&&e.attackCd>.12){const a=Math.atan2(e.y-target.y,e.x-target.x);point={x:e.x+Math.cos(a)*260,y:e.y+Math.sin(a)*260};}
- else if(d>e.range*.9+target.radius)point=target;
+ else if(d>reach(e,target)*.9+target.radius)point=target;
  return {mode:rally?'objective':'fight',target,move:point,slot,aim:e.hero===10&&slot===2&&injured?{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}:[12,15].includes(e.hero)&&[1,2].includes(slot)?(t=>({x:t.x-e.x,y:t.y-e.y,distance:distance(e,t)}))(endangered||injured||e):aim};
 }
