@@ -154,9 +154,11 @@ try {
     return { names };
   });
   const mp = await page.evaluate(() => {
+    const before = { state: G.state, ui: G.ui.paused, ids: G.jobs.offers.map((o) => o.id), active: !!G.jobs.active };
     G.jobs.cancel(); QA.street(); QA.step(5);
+    const after = { state: G.state, ui: G.ui.paused, ids: G.jobs.offers.map((o) => o.id), on: G.jobs.offersOn, cs: G.test.cutscene && G.test.cutscene() };
     G.ui.openMap(); G.test.step(1 / 60, 4);
-    return { offers: G.test.action().jobs.offers, list: [...document.querySelectorAll("#fsMap button[data-id]")].map((b) => ({ id: b.dataset.id, text: b.textContent })), key: document.querySelector("#fsMap .fs-key").textContent };
+    return { before, after, offers: G.test.action().jobs.offers, list: [...document.querySelectorAll("#fsMap button[data-id]")].map((b) => ({ id: b.dataset.id, text: b.textContent })), key: document.querySelector("#fsMap .fs-key").textContent };
   });
   const jobBtns = mp.list.filter((b) => b.id.startsWith("pin:job:"));
   check(mp.offers.length >= 3 && jobBtns.length === mp.offers.length && /odd job/i.test(mp.key), "the map has a pin and a list entry for each job marker (" + jobBtns.map((b) => b.text) + ")", mp);
@@ -165,7 +167,7 @@ try {
   if (pick) await page.click("#fsMap button[data-id='" + pick.id + "']");
   for (let i = 0; i < 12; i++) await page.evaluate(() => QA.step(8));
   const tv = await page.evaluate(() => ({ state: G.state, active: G.test.action().jobs.active, pos: G.test.state().pos }));
-  check(!!want && tv.state === "play" && tv.active && tv.active.type === want.type, "a click on a job pin travels there and takes the job", { want, tv });
+  check(!!want && tv.state === "play" && tv.active && tv.active.type === want.type, "a click on a job pin travels there and takes the job", { want, tv, before: mp.before, after: mp.after });
   check(now.names.some((n) => /^Your job/.test(n)) && !now.names.some((n) => /^Odd job/.test(n)), "while you are on a job the map pins that job, and no other markers", now.names);
 
   check(page.errors.length === 0, "no errors in flat play", page.errors);
