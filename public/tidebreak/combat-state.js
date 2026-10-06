@@ -1,18 +1,19 @@
 import { isEngage } from './combat-tells.js';
 // Shared action rules. Roots restrain voluntary movement, not the whole hero.
 export const rooted = (s,e) => (e.snaredUntil || 0) > s.time;
-export const movementSpell = (e,slot) => slot === 0 && [0,1,2,3,6,7,8,9].includes(e.hero);
-export const spellBlocked = (s,e,slot) => e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.silencedUntil > s.time || (rooted(s,e) && movementSpell(e,slot));
+export const movementSpell = (e,slot) => slot === 0 && [0,1,2,3,6,7,8,9,13,14,15].includes(e.hero);
+export const spellBlocked = (s,e,slot) => e.hp <= 0 || e.stun > 0 || e.fear > 0 || e.silencedUntil > s.time || e.tauntUntil > s.time || (rooted(s,e) && movementSpell(e,slot));
 
 // These are gameplay commitments. Low-level cast() resolves a legal spell.
 const WINDUPS = [
  [0,.24,0,.36], [0,.32,.3,.4], [0,0,0,.32], [0,.22,.24,0],
  [0,.32,.4,.38], [0,0,.24,.32], [0,0,0,.28], [0,.34,0,0],
  [0,.3,0,.36], [0,0,.2,0], [0,0,0,.34], [0,0,.38,.34],
+ [.22,0,.2,.36], [0,0,0,.3], [0,.26,0,.3], [0,.2,0,.3],
 ];
 export function castTiming(e,slot,bot=false) {
  // Engages that stun on contact (leap, charge) get a path tell. Other slot 0 spells are escapes.
- const engage = isEngage(e,slot), defensive = !engage && (slot===0 || slot===2&&[7,10].includes(e.hero) || slot===3&&[3,9].includes(e.hero));
+ const engage = isEngage(e,slot), defensive = !engage && (slot===0&&e.hero!==12 || slot===2&&[7,10].includes(e.hero) || slot===3&&[3,9].includes(e.hero));
  const windup = defensive ? 0 : engage ? (bot?.45:.3) : bot ? (slot===3?.7:.5) : WINDUPS[e.hero]?.[slot] || 0;
  // Major attacks should create a real answer window. The tell gives the defender
  // time to dodge; the recovery gives them time to punish a miss instead of

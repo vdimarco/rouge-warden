@@ -11,6 +11,7 @@ import { NEW_HEROES } from './legends.js';
 import { heroClass } from './hero-classes.js';
 import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
+import { tideGuard, tickTideUnits, taunter, onBanish } from './tide-kits.js';
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
 import { castLock, guardMove, botProfile, recallStep } from './bot-difficulty.js';
@@ -57,7 +58,7 @@ export const respawnTime = (level, sudden = false) => Math.round(Math.min(PACE.r
 // Every hero moves by the same rules: out-of-combat sprint, slows, haste effects and Nessie in water.
 export function heroSpeed(s, e) {
   const sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
-  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
+  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.windUntil > s.time ? 1.25 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
 }
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
@@ -139,6 +140,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (credit.player && s.time - (s.backdoorTip ?? -10) > 6) { announce(s, 'Ward resists you', 'Structures take little hero damage without your wisps. Push with your wave.'); s.backdoorTip = s.time; }
   }
   amount *= itemEdge(s, source, credit, target, kind);
+  amount = tideGuard(s, source, credit, target, amount, kind, damage); if (amount === null) return 0;
   const armor = target.armor || 0;
   amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
   if(target.scaleGuardUntil>s.time)amount*=.65;
@@ -184,6 +186,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     // Drowned doubloon: the banisher gains a stack; the fallen loses half (the hoard keeps them).
     if (credit?.kind === 'hero' && hasItem(credit, 'tidecoin')) { credit.itemState.coin = Math.min(hasItem(credit, 'hoard') ? 20 : 10, (credit.itemState.coin || 0) + 1); recalculate(credit, HEROES[credit.hero]); }
     if (hasItem(target, 'tidecoin') && !hasItem(target, 'hoard') && target.itemState.coin) { target.itemState.coin = Math.floor(target.itemState.coin / 2); recalculate(target, HEROES[target.hero]); }
+    onBanish(s, target);
     target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, PACE.killGold); if (credit?.kind === 'hero') credit.kills++; }
     recordKill(s, credit, target);
@@ -273,7 +276,7 @@ function attack(s, e, t) {
   const telegraph = e.kind === 'hero' && t.kind === 'hero' && (e.attackVariant || 0) === 2;
   e.attackWindup = e.kind === 'hero' ? timing.windup + (telegraph ? .08 : 0) : .12;
   e.attackDuration = e.kind === 'hero' ? Math.max(timing.duration, e.attackWindup + .14) : .46;
-  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = e.attackDuration; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
+  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1) * (e.bloodUntil > s.time ? .7 : 1); e.attackAnim = e.attackDuration; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
   const ambush = e.ambushReady && t.kind === 'hero';
   if (ambush) { if (e.player) s.stats.ambushes++; s.floaters.push({ x: t.x, y: t.y - 90, text: 'AMBUSH!', color: '#e2fa78', life: 1.2 }); }
   e.ambushReady = false; e.revealedUntil = s.time + 2.6;
@@ -606,6 +609,8 @@ export function step(s, input = {}, dt = 1 / 60) {
       if (e.queuedCast) { const q = e.queuedCast; if (s.time > q.until || spellBlocked(s,e,q.slot)) e.queuedCast = null; else if (!lockRemaining(s,e)) { e.queuedCast = null; requestCast(s,e,q.slot,q.aim); } }
       if (e.stun > 0) {e.travel=null;continue;}
       if (e.fear > 0) {e.travel=null; move(s, e, e.x + (e.x - e.fearX), e.y + (e.y - e.fearY), dt, e.speed * .8); continue; }
+      const taunt = taunter(s, e);
+      if (taunt) { e.travel = null; e.target = taunt.id; if (distance(e, taunt) > e.range + taunt.radius - 8) move(s, e, taunt.x, taunt.y, dt, heroSpeed(s, e)); attack(s, e, taunt); continue; }
       if(tickHeroMechanic({s,e,dt,damage,heal,hostile})){if(e.player&&input.cast!==undefined)requestCast(s,e,input.cast,input.aim);continue;}
       if (!e.player || input.autopilot) { bot(s, e, dt); continue; }
       if(input.order)commandOrder(s,e,input.order);
@@ -671,12 +676,13 @@ export function step(s, input = {}, dt = 1 / 60) {
         else if (t) { attack(s, e, t); if (distance(e, t) > e.range) move(s, e, t.x, t.y, dt); }
         else move(s, e, home.x, home.y, dt);
       } else {
-        // Wisps fight wisps first; a hero is a target only when no wisp or structure is close.
-        const t = nearest(s, e, e.range + 140, false, 400);
+        // Wisps fight wisps first; a hero is a target only when no wisp or structure is close. A taunt overrides both.
+        const t = taunter(s, e) || nearest(s, e, e.range + 140, false, 400);
         if (t) { if (distance(e, t) > e.range + t.radius) move(s, e, t.x, t.y, dt, e.speed * (e.slow > 0 ? .5 : 1)); attack(s, e, t); } else followLane(s, e, dt);
       }
     }
   }
+  tickTideUnits(s, heal);
   const bodies = s.units.filter(e => e.hp > 0 && e.speed > 0);
   for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) {
     const a = bodies[i], b = bodies[j], d = distance(a, b), min = (a.radius + b.radius) * .78;

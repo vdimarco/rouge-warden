@@ -3,24 +3,24 @@ import { KITS } from './abilities.js';
 const profile = (id, name, kit, slug, subtitle, note, tags, filters, color, skills) =>
   Object.freeze({ id, name, kit, slug, subtitle, note, tags: Object.freeze(tags), filters: Object.freeze(filters), color, skills: Object.freeze(skills) });
 
-// Identity controls presentation. The twelve numeric kits retain all combat rules.
+// Identity controls presentation. The sixteen numeric kits retain all combat rules.
 export const HERO_IDENTITIES = Object.freeze([
   profile(0, 'Tidewarden', 1, 'tidewarden', 'The Unyielding Deep', 'He stands where the world ends, and the next one begins. The tide obeys, and none escape its call.', ['Tank', 'Initiator', 'Disruptor'], ['Bruiser', 'Initiator'], '#62ddff', ['Tidal Cleave', 'Rising Current', 'Abyssal Grasp', 'Unmovable']),
   profile(1, 'Embersong', 9, 'embersong', 'Voice of the Last Ember', 'Carry living fire into battle. Rise from the last ember.', ['Mage', 'Support', 'Rebirth'], ['Mage', 'Support'], '#ffb365', ['Ember Flight', 'Cinder Chorus', 'Solar Hymn', 'Last Refrain']),
   profile(2, 'Voidcaller', 4, 'voidcaller', 'Beyond the Drowned Stars', 'Seal their escape in shadow. Draw the fight into the void.', ['Mage', 'Controller', 'Disruptor'], ['Mage', 'Initiator'], '#ab80ff', ['Void Veil', 'Dark Latch', 'Abyss Lance', 'Event Horizon']),
   profile(3, 'Stoneheart', 7, 'stoneheart', 'The Mountain Remembers', 'Hold the front line. Break the ground beneath your foes.', ['Tank', 'Initiator', 'Guardian'], ['Bruiser', 'Initiator'], '#c5d4ac', ['Boulder Charge', 'Earthsplitter', 'Mountain Guard', 'Worldbreaker']),
   profile(4, 'Skyreaver', 0, 'skyreaver', 'Hunter Above the Storm', 'Disappear above the battle. Strike from cover.', ['Carry', 'Assassin', 'Scout'], ['Carry'], '#d4e7ff', ['Storm Flight', 'Razor Gale', 'Hunter Mark', 'Storm Eclipse']),
-  profile(5, 'Irontide', 7, 'irontide', 'The Living Bulwark', 'Drive through the front line. Shield your allies from the next blow.', ['Tank', 'Initiator', 'Guardian'], ['Bruiser', 'Initiator'], '#a9c5d0', ['Iron Charge', 'Rending Fault', 'Steel Guard', 'Anchorfall']),
+  profile(5, 'Irontide', 12, 'irontide', 'The Living Bulwark', 'Hook the reckless. Take the blows meant for your allies.', ['Tank', 'Guardian', 'Taunt'], ['Bruiser', 'Initiator'], '#a9c5d0', ['Anchor Throw', 'Iron Oath', 'Challenge', 'Anchorfall']),
   profile(6, 'Moonweaver', 8, 'moonweaver', 'Keeper of Borrowed Souls', 'Silence their spells. Bind a soul to your own.', ['Mage', 'Drain', 'Controller'], ['Mage'], '#d7c8ff', ['Moon Drift', 'Silent Thread', 'Soul Tether', 'Lunar Requiem']),
   profile(7, 'Dredge', 3, 'dredge', 'Hunger Beneath the Harbor', 'Leap into their ranks. Hunt the wounded through the dark.', ['Bruiser', 'Carry', 'Hunter'], ['Bruiser', 'Carry'], '#b8de79', ['Dredge Leap', 'Deep Roar', 'Rending Maw', 'Feeding Frenzy']),
   profile(8, 'Glasshand', 2, 'glasshand', 'The Alchemist of Broken Tides', 'Prepare the trap. Make the battlefield your weapon.', ['Mage', 'Controller', 'Artillery'], ['Mage'], '#e5b270', ['Vault', 'Glass Snare', 'Fire Flask', 'Shatter Ritual']),
   profile(9, 'Salt Priestess', 10, 'salt-priestess', 'Sanctuary of the White Sea', 'Raise a sanctuary. Keep your allies standing.', ['Support', 'Healer', 'Controller'], ['Support'], '#c4e7e8', ['Salt Sentinel', 'Tidal Bind', 'Sea Blessing', 'White Sanctuary']),
   profile(10, 'Riftblade', 6, 'riftblade', 'A Cut Between Worlds', 'Leave a false trail. Return before the enemy can answer.', ['Carry', 'Assassin', 'Trickster'], ['Carry'], '#bca7ff', ['Rift Step', 'Seeking Blades', 'Rift Bind', 'Nine Cuts']),
-  profile(11, 'Coral Sage', 10, 'coral-sage', 'Voice of the Living Reef', 'Let the reef hold the ground. Restore your team in its shelter.', ['Support', 'Healer', 'Controller'], ['Support'], '#ffa3ae', ['Reef Sentinel', 'Coral Bind', 'Reef Bloom', 'Living Sanctuary']),
+  profile(11, 'Coral Sage', 15, 'coral-sage', 'Voice of the Living Reef', 'Trade places with fate. Mend the whole reef at once.', ['Support', 'Healer', 'Rescuer'], ['Support'], '#ffa3ae', ['Tide Swap', 'Polyp Swarm', 'Coral Armor', 'Spring Tide']),
   profile(12, 'Nightcurrent', 11, 'nightcurrent', 'Poison in the Moonlit Sea', 'Poison the approach. Punish enemies who turn to face you.', ['Mage', 'Controller', 'Disruptor'], ['Mage', 'Initiator'], '#9cabe8', ['Dark Cleanse', 'Venom Current', 'Midnight Gaze', 'Petrifying Tide']),
   profile(13, 'The Marrow', 5, 'the-marrow', 'The Winter That Follows', 'Freeze the path behind you. Feed on chilled, wounded prey.', ['Bruiser', 'Carry', 'Hunter'], ['Bruiser', 'Carry'], '#b4cee5', ['Frost Pursuit', 'Cold Snap', 'Marrow Bite', 'Dead Winter']),
-  profile(14, 'Bloodwake', 3, 'bloodwake', 'The Red Horizon', 'Open the fight with a leap. Bleed your foes and chase them down.', ['Carry', 'Bruiser', 'Duelist'], ['Carry', 'Bruiser'], '#ff908b', ['Wake Leap', 'War Cry', 'Crimson Cut', 'Blood Frenzy']),
-  profile(15, 'Zephyrs', 6, 'zephyrs', 'Where the Wind Returns', 'Slip through the fight. Leave a decoy at your return point.', ['Carry', 'Assassin', 'Trickster'], ['Carry'], '#aeeaff', ['Wind Step', 'Seeking Gusts', 'Gale Bind', 'Nine Winds']),
+  profile(14, 'Bloodwake', 13, 'bloodwake', 'The Red Horizon', 'Pay in blood. Answer every blow with a sharper one.', ['Carry', 'Bruiser', 'Duelist'], ['Carry', 'Bruiser'], '#ff908b', ['Crimson Lunge', 'Blood Price', 'Red Parry', 'Red Horizon']),
+  profile(15, 'Zephyrs', 14, 'zephyrs', 'Where the Wind Returns', 'Bend the wind. Lift your foes and turn their spells aside.', ['Carry', 'Trickster', 'Disruptor'], ['Carry'], '#aeeaff', ['Gust Dash', 'Cyclone', 'Wind Wall', 'Eye of the Storm']),
 ]);
 
 const baseTags = [

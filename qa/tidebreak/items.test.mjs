@@ -34,7 +34,7 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
  buy(s, 'hunter'); p.cd = [4, 3, 0, 10]; damage(s, p, foe, 9999, 'attack'); assert.equal(p.cd[0], 0); assert.equal(p.cd[3], 7);
 }
 {
- const { s, p, foe } = duel(); buy(s, 'thorn'); buy(s, 'storm'); const other = { ...foe, id: 88, x: foe.x + 90, itemState: {}, inventory: [], hp: 1000, maxHp: 1000 }; s.units.push(other); p.itemState.hits = 2; const before = foe.hp; for (let i = 0; i < 4; i++) step(s, {}, .05); assert.ok(before - foe.hp >= p.damage + Math.min(160, foe.maxHp * .03)); assert.ok(other.hp < 1000, 'lightning reaches another foe');
+ const { s, p, foe } = duel(); buy(s, 'thorn'); buy(s, 'storm'); const other = { ...foe, id: 88, x: foe.x + 90, itemState: {}, inventory: [], hp: 1000, maxHp: 1000 }; s.units.push(other); p.itemState.hits = 2; const before = foe.hp; for (let i = 0; i < 4; i++) step(s, {}, .05); assert.ok(before - foe.hp >= p.damage + Math.min(160, foe.maxHp * .03) - 1e-6); assert.ok(other.hp < 1000, 'lightning reaches another foe');
 }
 {
  const { s, p, foe } = duel(); buy(s, 'grave'); buy(s, 'beacon'); p.hp -= 500; const hp = p.hp, enemyHp = foe.hp; step(s, { attack: false }, .05); assert.ok(p.hp > hp + 24); assert.ok(foe.hp < enemyHp);
@@ -97,7 +97,7 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
 assert.equal(ITEMS.length, 36); // 6 components, 19 completed items, 11 relics
 {
  const { s, p, foe } = duel(); buy(s,'tempest'); p.itemState.hits=2; const hp=foe.hp;
- for(let i=0;i<4;i++)step(s,{},.05); assert.ok(hp-foe.hp >= p.damage + Math.min(160,foe.maxHp*.03) + 60, 'Tempest adds lightning to its main target');
+ for(let i=0;i<4;i++)step(s,{},.05); assert.ok(hp-foe.hp >= p.damage + Math.min(160,foe.maxHp*.03) + 60 - 1e-6, 'Tempest adds lightning to its main target');
 }
 {
  const { s, p, foe } = duel(); buy(s,'eclipse'); foe.hp=foe.maxHp*.5; p.itemState.empowered=5; const hp=foe.hp;

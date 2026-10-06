@@ -5,7 +5,7 @@ import { canAfford, manaCost, canReturn, threateningZones, insideWarning } from 
 import { assistPoint } from './team-events.js';
 import { botProfile, reactionAt, evadePoint, tradeRetreat, diveSafe, wardOpen, targetBonus, lowestInRange, teamFocus, laneHold, strategy, leadAim, punishes } from './bot-difficulty.js';
 
-const escapeHeroes=[0,1,2,3,6,8,9];
+const escapeHeroes=[0,1,2,3,6,8,9,13,14,15];
 // Boss rotations follow the map size; perception and spacing stay tied to sight and the screen.
 const BOSS_FALLBACK=700*ROTATION_SCALE,BOSS_SUPPORT=1600*ROTATION_SCALE,BOSS_TEAMMATE=1700*ROTATION_SCALE,BOSS_RALLY=1900*ROTATION_SCALE;
 export function combatDecision(s,e){
@@ -82,9 +82,13 @@ export function combatDecision(s,e){
   case 8:choose(2,combat&&d<500&&!target.soulThread);choose(1,d<520);choose(3,combat&&d<360);break;
   case 9:choose(3,combat&&hurt<.5);choose(2,d<600&&target.bleed?.type==='fire'&&!s.zones.some(z=>z.type==='sunray'&&z.source===e.id&&z.life>0));choose(1,d<400);break;
   case 10:choose(2,!!injured&&!injured.bloom);choose(0,d<480&&!s.units.some(t=>t.owner===e.id&&t.hp>0));choose(3,combat&&d<380&&(near>=2||!!injured));choose(1,d<480);break;
+  case 12:choose(0,combat&&d>200&&d<540);choose(2,combat&&d<300);choose(3,combat&&near>=2&&d<420);choose(1,combat&&allies.some(a=>a.id!==e.id&&a.hp<a.maxHp*.7));break;
+  case 13:choose(2,combat&&d<350&&!!(target.castIntent||target.pendingAttack?.target===e.id));choose(3,combat&&d<500&&(target.hp<target.maxHp*.5||near>=2));choose(0,combat&&d>160&&d<420);choose(1,combat&&d<220&&hurt>.45);break;
+  case 14:choose(2,combat&&s.missiles.some(m=>m.team!==e.team&&distance(m,e)<500));choose(3,combat&&d<380&&(near>=2||hurt<.5));choose(1,d<560);choose(0,combat&&d<300);break;
+  case 15:choose(3,allies.filter(a=>a.hp<a.maxHp*.5||a.stun>0||a.snaredUntil>s.time).length>=2);choose(2,!!endangered||combat&&hurt<.6);choose(1,d<500);choose(0,combat&&target.hp<target.maxHp*.35&&d<480);break;
   case 11:choose(0,(e.slow>0||e.bleed?.until>s.time||hurt<.65)&&combat);choose(3,combat&&d<350&&target.bleed?.type==='poison');choose(2,d<340);choose(1,d<420);break;
  }
- if(slot===undefined&&combat&&P.engage&&escapeHeroes.includes(e.hero)&&![8,9].includes(e.hero)&&d>330&&d<580&&hurt>.65&&!outnumbered&&(target.hp<target.maxHp*.7||punishes(s,e,target)))choose(0);
+ if(slot===undefined&&combat&&P.engage&&escapeHeroes.includes(e.hero)&&![8,9,15].includes(e.hero)&&d>330&&d<580&&hurt>.65&&!outnumbered&&(target.hp<target.maxHp*.7||punishes(s,e,target)))choose(0);
  // Keep enough mana for a defensive move instead of emptying every cooldown into a healthy target.
  if(slot!==undefined&&slot!==0&&slot!==3&&hurt>.55&&combat&&target.hp>target.maxHp*.7&&!punishes(s,e,target)&&e.mana-manaCost(e,slot)<manaCost(e,0)*P.reserve)slot=undefined;
  // Higher profiles keep spells for heroes when mana is low, so their threats are spells you can read.
@@ -92,5 +96,5 @@ export function combatDecision(s,e){
  let point;
  if(e.range>250&&combat&&d<e.range*.7&&e.attackCd>.12){const a=Math.atan2(e.y-target.y,e.x-target.x);point={x:e.x+Math.cos(a)*260,y:e.y+Math.sin(a)*260};}
  else if(d>e.range*.9+target.radius)point=target;
- return {mode:rally?'objective':'fight',target,move:point,slot,aim:e.hero===10&&slot===2&&injured?{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}:aim};
+ return {mode:rally?'objective':'fight',target,move:point,slot,aim:e.hero===10&&slot===2&&injured?{x:injured.x-e.x,y:injured.y-e.y,distance:distance(e,injured)}:[12,15].includes(e.hero)&&[1,2].includes(slot)?(t=>({x:t.x-e.x,y:t.y-e.y,distance:distance(e,t)}))(endangered||injured||e):aim};
 }

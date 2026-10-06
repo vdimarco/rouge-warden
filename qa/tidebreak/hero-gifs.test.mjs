@@ -17,4 +17,4 @@ for(const hero of HEROES){
  }
  assert.equal(frames,source.frames);assert(frames>=24,'A hero must have a real animation');assert(bytes.includes(Buffer.from('NETSCAPE2.0')),'Loop extension is required');
 }
-console.log('All twelve GIFs pass byte counts, dimensions, decoded frame-block counts and loop checks.');
+console.log('All sixteen GIFs pass byte counts, dimensions, decoded frame-block counts and loop checks.');
