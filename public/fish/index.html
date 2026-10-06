@@ -147,9 +147,10 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.l-tall-reel #gaugeBox { top: calc(var(--sat) + 52px); }
 #game.l-tall-reel #pullStrength { top: calc(var(--sat) + 52px); }
 /* the reel's toasts stay clear of the crank and the thumb on it, on either reel side, of the rod cue and of the action
-   card in the corner: in the tall reel they sit in the sky just under the gauge, in the wide reel at the top, between the
-   gauge and the card. (Centred with the usual translateX, so guide.js still finds them) */
-#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 62px + var(--gauge-h)); max-width: min(92%, 420px); }
+   card in the corner: in the tall reel they sit in the sky just under the gauge, and under the card when the pull meter
+   moves it down (main.js sets --card-h then); in the wide reel at the top, between the gauge and the card. (Centred with
+   the usual translateX, so guide.js still finds them) */
+#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + max(62px + var(--gauge-h), 62px + var(--pull-h, 0px) + var(--card-h, 0px))); max-width: min(92%, 420px); }
 #game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 58px); max-width: min(calc(100% - 2 * (var(--sal) + var(--gauge-w) + 20px)), 420px); }
 /* motion play with the reel on the left: the reel controls mirror. The gauge goes top right, the pull meter top left, and
    the toasts to the other side of the gauge (the crank and the drag follow data-reel-side above) */

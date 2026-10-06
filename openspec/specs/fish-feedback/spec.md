@@ -89,7 +89,7 @@ In play, no message SHALL cover the lure on the water: the prompt and its sub, t
 - **THEN** no message is within 22 px of the lure, and the card is clear of the gauge and the HUD.
 
 ### Requirement: Action card in the corner
-In play, the prompt SHALL be a small card in the top corner opposite the gauge: the top right, or the top left when the reel is on the left in motion play. It SHALL be at most 210 px wide. Its picture SHALL move as the player must move: tip back, flick forward, raise, lower, steer, hold upright, or turn the crank. A pulse SHALL show the other actions. With reduced motion or Calm effects the picture SHALL be still. The how-to line under the card SHALL hide when the rod cue over the reel shows the same words. The card SHALL hide while the cast report is up, and it SHALL move down under the pull meter while that shows. The gauge SHALL be at most 190 x 120 px (220 x 140 px with Larger text), and its words SHALL not overlap.
+In play, the prompt SHALL be a small card in the top corner opposite the gauge: the top right, or the top left when the reel is on the left in motion play. It SHALL be at most 210 px wide. Its picture SHALL move as the player must move: tip back, flick forward, raise, lower, steer, hold upright, or turn the crank. A pulse SHALL show the other actions. With reduced motion or Calm effects the picture SHALL be still. The how-to line under the card SHALL hide when the rod cue over the reel shows the same words. The card SHALL hide while the cast report is up, and it SHALL move down under the pull meter while that shows. In the tall reel a toast SHALL then stand under the card as well as under the gauge. The gauge SHALL be at most 190 x 120 px (220 x 140 px with Larger text), and its words SHALL not overlap.
 
 #### Scenario: A jump in motion play
 - **WHEN** a fish jumps in a fight at 360x640 in motion play
@@ -98,3 +98,7 @@ In play, the prompt SHALL be a small card in the top corner opposite the gauge: 
 #### Scenario: The reel on the left
 - **WHEN** the reel is on the left in motion play at 412x915
 - **THEN** the gauge is in the top right and the card is in the top left.
+
+#### Scenario: A toast while the pull meter shows
+- **WHEN** a toast shows in a fight in motion play at 360x640 or 390x844, with the reel on either side, while the pull meter shows
+- **THEN** the toast stands under the gauge and under the card, and it is clear of the crank, the gauge, the rod cue, the card, the drag bar and the pull meter.
