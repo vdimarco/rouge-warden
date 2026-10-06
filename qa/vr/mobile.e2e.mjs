@@ -51,7 +51,8 @@ try {
  assert(first&&first.valid&&!(first.ny>.7&&first.y<first.head-.3),'the first swing aim is not the roof under the hero '+JSON.stringify(first));
  console.log('PASS phone camera settles to the chase view and the first aim is not the floor');
  // a tap on the canvas throws the plunger of its half: the left (0) or the right (1). The checks read the rope of the side tapped.
- const tapAt=async(x,y)=>{await page.evaluate(x=>{window.__side=x<innerWidth/2?0:1;},x);await page.mouse.click(x,y);};
+ // (a tap within 3 px of the middle line moves 3 px off it, so the side the test reads is the side the page sees)
+ const tapAt=async(x,y)=>{const w=await page.evaluate(()=>innerWidth);if(Math.abs(x-w/2)<3)x=w/2+(x<w/2?-3:3);await page.evaluate(x=>{window.__side=x<innerWidth/2?0:1;},x);await page.mouse.click(x,y);};
  // tap(1) is a tap on the right half at the marked target (the old SWING button)
  const tapRight=()=>page.evaluate(()=>{window.__side=1;G.desktop.mobile.tap(1);});
  assert.equal(await page.locator('[data-action=throw]').count(),0,'no SWING button: the city is the control');
@@ -81,10 +82,11 @@ try {
   return {x:(v.x*.5+.5)*innerWidth,y:(.5-v.y*.5)*innerHeight,ndcY:v.y};
  });
  assert(target.y>60&&target.y<600,'target is inside canvas');
+ const before=await page.evaluate(({x,y})=>{const e=document.elementFromPoint(x,y);window.__ev0=G.test.events().length;return {under:e&&(e.id||e.className||e.tagName),w:innerWidth,ropes:G.P.ropes.map(r=>r.state),ground:G.P.onGround,state:G.state};},target);
  await tapAt(target.x,target.y);
  await page.evaluate(()=>G.test.step(1/60,30));
- const ring=await page.evaluate(()=>{const s=G.test.state().ropes[window.__side],R=G.city.goldRing;return {state:s.state,d:Math.hypot(s.anchor.x-R.x,s.anchor.y-R.y,s.anchor.z-R.z)};});
- assert(ring.state==='attached'&&ring.d<6,'tap a visible building to aim and fire: the rope lands on the gold ring '+JSON.stringify({...ring,ndcY:target.ndcY}));console.log('PASS tap a visible building to aim and fire');
+ const ring=await page.evaluate(()=>{const s=G.test.state().ropes[window.__side],R=G.city.goldRing;return {state:s.state,d:Math.hypot(s.anchor.x-R.x,s.anchor.y-R.y,s.anchor.z-R.z),side:window.__side,ropes:G.P.ropes.map(r=>r.state),ev:G.test.events().slice(window.__ev0).map(e=>e.type+(e.side??'')).slice(0,12)};});
+ assert(ring.state==='attached'&&ring.d<6,'tap a visible building to aim and fire: the rope lands on the gold ring '+JSON.stringify({...ring,ndcY:target.ndcY,x:target.x,y:target.y,before}));console.log('PASS tap a visible building to aim and fire');
  await page.evaluate(()=>G.test.look(0,-.45)); // back to the chase pitch
  // A real miss: nothing in reach anywhere (the tap assist would find a building otherwise), so the city answers no ray.
  await page.evaluate(()=>{const s=G.P.pos;G.test.aimAt(1,s.x,s.y+1000,s.z);G.QA_ray=G.city.raycast;G.city.raycast=()=>null;});
