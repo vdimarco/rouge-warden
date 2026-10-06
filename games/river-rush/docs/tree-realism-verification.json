@@ -1,0 +1,584 @@
+{
+  "recordedAt": "2026-10-06T22:09:17.060881+00:00",
+  "unitTests": {
+    "passed": 46,
+    "command": "npm test --prefix games/river-rush"
+  },
+  "build": "npm run build:arcade --prefix games/river-rush",
+  "runtimeFiles": [
+    {
+      "path": "public/river-rush/index.html",
+      "bytes": 752,
+      "sha256": "77513f90ad454ee67e5b48e8be0d6eda54e6a0157c4455f12c4eaaabff6b1240"
+    },
+    {
+      "path": "public/river-rush/assets/index-BHUdth4r.css",
+      "bytes": 18049,
+      "sha256": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540"
+    },
+    {
+      "path": "public/river-rush/assets/index-CCEXKX3N.js",
+      "bytes": 961995,
+      "sha256": "37a72e9ed6db3f2d71fca82aff171406a02a856897992511c5aef381df06ce65"
+    },
+    {
+      "path": "public/river-rush/art/tree-bark-normal.webp",
+      "bytes": 536952,
+      "sha256": "e8533790102db671ca34721c1ca9f2882fd9ebb6eb9df33307574b3cf0fea825"
+    },
+    {
+      "path": "public/river-rush/art/tree-bark.webp",
+      "bytes": 454760,
+      "sha256": "01a05056af68f139e93a17d264bd32a3e3d1d49ba05066902ced22c3b6115a13"
+    },
+    {
+      "path": "public/river-rush/art/tree-foliage.webp",
+      "bytes": 99296,
+      "sha256": "57dc3bed01746f8f5bf502fbd5866a0465e9088cbe8958d2c57ded65b7bea7ce"
+    }
+  ],
+  "localBrowser": {
+    "passed": true,
+    "base": "http://127.0.0.1:8765/",
+    "results": [
+      {
+        "case": "phone",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": true,
+        "drawCalls": 30,
+        "triangles": 112726,
+        "branchBatches": {
+          "trees": 9,
+          "scenery": 7,
+          "woodSegments": 125,
+          "leafClusters": 199,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -16.708267881666764,
+                "y": 0.9259090629028714,
+                "d": 8.943999999999999
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 32,
+              "lane": 2,
+              "course": 248.96350908419518,
+              "side": 1,
+              "root": {
+                "x": 18.66455277138495,
+                "y": 0.7315186392924761,
+                "d": 10.92
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "desktop",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 31,
+        "triangles": 110360,
+        "branchBatches": {
+          "trees": 8,
+          "scenery": 7,
+          "woodSegments": 101,
+          "leafClusters": 173,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": 1,
+              "root": {
+                "x": 20.21446470061752,
+                "y": 0.7702121575419684,
+                "d": 8.528
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "landscape",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 31,
+        "triangles": 114058,
+        "branchBatches": {
+          "trees": 9,
+          "scenery": 7,
+          "woodSegments": 125,
+          "leafClusters": 199,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -18.486441472427614,
+                "y": 0.7040499099615658,
+                "d": 7.272
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 26,
+              "lane": 0,
+              "course": 203.15633381626628,
+              "side": -1,
+              "root": {
+                "x": -18.86739862201337,
+                "y": 0.625144610914887,
+                "d": 5.176
+              },
+              "tip": {
+                "x": -3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "phone-2d",
+        "renderer": "2d",
+        "approach": true,
+        "rootRegistrationChecked": false,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": false,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": false,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false
+      },
+      {
+        "case": "phone-reduced",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": true,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 30,
+        "triangles": 120444,
+        "branchBatches": {
+          "trees": 10,
+          "scenery": 7,
+          "woodSegments": 149,
+          "leafClusters": 225,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 40.65104809523811,
+              "side": 1,
+              "root": {
+                "x": 16.732282073828507,
+                "y": 0.6293134105276551,
+                "d": 8.176
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 26,
+              "lane": 0,
+              "course": 131.1315838162663,
+              "side": -1,
+              "root": {
+                "x": -18.614037901759918,
+                "y": 0.6723707624721132,
+                "d": 4.072
+              },
+              "tip": {
+                "x": -3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 34,
+              "lane": 0,
+              "course": 176.9387590841952,
+              "side": -1,
+              "root": {
+                "x": -18.37511218917977,
+                "y": 0.7505622566255472,
+                "d": 5.016
+              },
+              "tip": {
+                "x": -3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "phone-missing-textures",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": true,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 30,
+        "triangles": 118057,
+        "branchBatches": {
+          "trees": 11,
+          "scenery": 7,
+          "woodSegments": 173,
+          "leafClusters": 251,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fallback",
+          "foliage": "fallback",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": 1,
+              "root": {
+                "x": 19.64785323445348,
+                "y": 0.5872328168894514,
+                "d": 8.128
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 26,
+              "lane": 2,
+              "course": 203.15633381626628,
+              "side": 1,
+              "root": {
+                "x": 18.75897103058634,
+                "y": 0.9601972986512154,
+                "d": 10.024
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 0,
+              "course": 203.15633381626628,
+              "side": -1,
+              "root": {
+                "x": -18.5695978732491,
+                "y": 1.0179818003659935,
+                "d": 4.696
+              },
+              "tip": {
+                "x": -3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 34,
+              "lane": 2,
+              "course": 248.96350908419515,
+              "side": 1,
+              "root": {
+                "x": 20.725711896929475,
+                "y": 0.7634144362628665,
+                "d": 10.968
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "desktop-materials",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": true,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 31,
+        "triangles": 257167,
+        "branchBatches": {
+          "trees": 9,
+          "scenery": 7,
+          "woodSegments": 125,
+          "leafClusters": 199,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -18.236239671252232,
+                "y": 0.6821041308660769,
+                "d": 7.224
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 2,
+              "course": 203.15633381626628,
+              "side": 1,
+              "root": {
+                "x": 18.77124408490837,
+                "y": 0.5312468432678032,
+                "d": 11.8
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "phone-stalled-textures",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": true,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 31,
+        "triangles": 117498,
+        "branchBatches": {
+          "trees": 10,
+          "scenery": 7,
+          "woodSegments": 149,
+          "leafClusters": 225,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fallback",
+          "foliage": "fallback",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -16.748394100448596,
+                "y": 0.8393946329759938,
+                "d": 7.568
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 26,
+              "lane": 0,
+              "course": 203.15633381626628,
+              "side": -1,
+              "root": {
+                "x": -15.683901396103359,
+                "y": 0.756200069314772,
+                "d": 5.4719999999999995
+              },
+              "tip": {
+                "x": -3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 1,
+              "course": 203.15633381626628,
+              "side": 1,
+              "root": {
+                "x": 15.741905016225417,
+                "y": 0.7383493099772327,
+                "d": 7.136
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "screenshots": "/tmp/river-tree-realism/final"
+  },
+  "limitations": [
+    "Emulated viewports and SwiftShader, no physical-device FPS claim.",
+    "OpenSpec CLI absent; Markdown structure validated directly."
+  ],
+  "production": {
+    "status": "pending"
+  }
+}

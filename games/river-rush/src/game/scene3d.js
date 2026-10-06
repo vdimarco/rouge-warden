@@ -163,7 +163,10 @@ export function createScene(canvas,art,onLost){
  const guardianBanks=banks.filter(b=>!templeBanks.includes(b)&&riverHash(b.index+b.side*31,137)>.82);
  const retryTimers=new Set(),retired=[raftModel,bankTemplate],retiredMaterials=new Set();
  const worldDetails=createWorldDetails(scene,mat,waterDetail,rockMat);
- const branchTrees=createBranchTrees(scene,logMat,mat);
+ const treeBark=mat('#ded9ce',.93);treeBark.map=texture(art.treebark??art.surfacewood);
+ if(!software){treeBark.normalMap=texture(art.treebarknormal??art.normalwood,false);treeBark.normalScale=new THREE.Vector2(.8,.8);}
+ const branchTrees=createBranchTrees(scene,treeBark,mat,art,software);
+ const bankTrees=Array.from({length:8},(_,i)=>({id:7000+i,side:i%2?1:-1}));
  let panorama=null;const pendingLoads=new Set();let resolveVista;const vistaDone=new Promise(resolve=>{resolveVista=resolve;});
  function loadVista(attempt=0){if(disposed){resolveVista();return;}new THREE.TextureLoader().load(`${base}art/valley-vista.webp${attempt?`?retry=${attempt}`:''}`,t=>{
    if(disposed||status.background==='fallback'){t.dispose();resolveVista();return;}t.colorSpace=THREE.SRGBColorSpace;t.matrixAutoUpdate=false;surfaceTextures.push(scene.background);scene.background=t;panorama=t;mountains.visible=false;status.background='ready';resolveVista();
@@ -304,6 +307,11 @@ export function createScene(canvas,art,onLost){
  if(e.type==='coin')obj.rotation.y=reduced?0:g.time*4+e.id;
  else if(e.type==='log')obj.rotation.x=reduced?0:Math.sin(e.d*.58-g.time*1.9)*.04;
  if(obj.userData.label)obj.userData.label.visible=z<g.speed*1.6&&z>3;
+ }
+ for(let i=0;i<bankTrees.length;i++){
+  const z=recycleZ(Math.floor(i/2)*48+(i%2)*13,travel,192,24);
+  if(z>18||z< -150)continue;
+  branchTrees.add(bankTrees[i],travel,travel-z,seed,true);
  }
  branchTrees.finish();status.branches=branchTrees.state;
  for(const [id,obj] of entities)if(!alive.has(id)){scene.remove(obj);entities.delete(id);}

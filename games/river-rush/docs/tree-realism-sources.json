@@ -1,0 +1,51 @@
+{
+  "provider": "fal.ai",
+  "model": "fal-ai/nano-banana-pro",
+  "estimatedCostUSD": 0.3,
+  "assets": [
+    {
+      "role": "bark",
+      "requestId": "01a11335-9cc8-7c41-988c-1f81b7eed472",
+      "input": {
+        "prompt": "Photorealistic game-ready seamless PBR albedo texture of mature tropical rainforest hardwood bark. Orthographic front-facing closeup fills the entire square edge to edge. Deep vertical grey-brown fissures, curved branching furrows, naturally weathered rough ridges, fine wrinkles, tiny muted moss flecks in cracks, subtle warm russet and charcoal tones. A flat 2D repeating texture swatch, no trunk silhouette, no perspective, no leaves, no objects, no border, no text. Soft neutral uniform diffuse lighting, no directional shadows or specular highlights, natural realistic color and fine botanical detail. Tileable on both axes with no visible seams.",
+        "num_images": 1,
+        "resolution": "1K",
+        "aspect_ratio": "1:1",
+        "output_format": "png",
+        "seed": 604183
+      },
+      "sourceUrl": "https://v3b.fal.media/files/b/0aad57cc/CW1adGfdrTMfmDZpYZDNZ_QFur3mgK.png"
+    },
+    {
+      "role": "foliage",
+      "requestId": "01a11335-3a48-76e3-8b50-dae3e04d413d",
+      "input": {
+        "prompt": "Photorealistic botanical texture asset for a 3D tropical rainforest canopy leaf card. One airy irregular broadleaf branch spray seen directly from the front, isolated on pure flat white. Around 65 small individual ficus leaves attached to branching fine brown twigs, layered olive, deep forest green and fresh lighter green leaves with lifelike waxy surfaces, delicate veins and occasional curled edges. Foliage forms an asymmetric roughly rounded cluster spanning 80 percent of the square, fully inside the image with a generous white margin. Many small clear white gaps between leaves; thin woody branches visible between clusters. Exact natural photographic detail and neutral evenly diffused light. No ground, no pot, no shadow, no labels, no text, no illustration, no cartoon, no large single leaf, no square filled with solid foliage.",
+        "num_images": 1,
+        "resolution": "1K",
+        "aspect_ratio": "1:1",
+        "output_format": "png",
+        "seed": 604184
+      },
+      "sourceUrl": "https://v3b.fal.media/files/b/0aad57c9/dsi4DmAqLr-oMqatHylvK_po0d8Nia.png"
+    }
+  ],
+  "packing": "scripts/pack-tree-textures.mjs; 1024 bark, 512 derived detail normal and white-keyed foliage alpha. Derived normal is not measured PBR.",
+  "runtimeAssets": [
+    {
+      "file": "public/art/tree-bark-normal.webp",
+      "bytes": 536952,
+      "sha256": "e8533790102db671ca34721c1ca9f2882fd9ebb6eb9df33307574b3cf0fea825"
+    },
+    {
+      "file": "public/art/tree-bark.webp",
+      "bytes": 454760,
+      "sha256": "01a05056af68f139e93a17d264bd32a3e3d1d49ba05066902ced22c3b6115a13"
+    },
+    {
+      "file": "public/art/tree-foliage.webp",
+      "bytes": 99296,
+      "sha256": "57dc3bed01746f8f5bf502fbd5866a0465e9088cbe8958d2c57ded65b7bea7ce"
+    }
+  ]
+}

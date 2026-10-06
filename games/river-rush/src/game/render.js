@@ -15,22 +15,24 @@ const regions = [
 ];
 const indexes = { rock: 3, log: 4, branch: 5, coin: 6, magnet: 7, shield: 8 };
 let artPromise;
-function loadImage(key,name,extension='png'){return new Promise((resolve,reject)=>{
-  let attempt=0;const image=new Image();
-  image.onload=()=>resolve([key,image]);
-  image.onerror=()=>{if(attempt<2){attempt++;setTimeout(()=>{image.src=`${import.meta.env.BASE_URL}art/${name}.${extension}?retry=${attempt}`;},attempt*350);}else reject(new Error(`Could not load ${name}.`));};
+function loadImage(key,name,extension='png',optional=false){return new Promise((resolve,reject)=>{
+  let attempt=0,done=false;const image=new Image();
+  const timer=optional?setTimeout(()=>{done=true;resolve([key,null]);},8000):null;
+  image.onload=()=>{if(done)return;done=true;clearTimeout(timer);resolve([key,image]);};
+  image.onerror=()=>{if(done)return;if(attempt<2){attempt++;setTimeout(()=>{image.src=`${import.meta.env.BASE_URL}art/${name}.${extension}?retry=${attempt}`;},attempt*350);}else{done=true;clearTimeout(timer);if(optional)resolve([key,null]);else reject(new Error(`Could not load ${name}.`));}};
   image.src=`${import.meta.env.BASE_URL}art/${name}.${extension}`;
 });}
 export function loadArt() {
   const sources=[['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames'],['downstream','rider-downstream'],['lowDuck','rider-low-duck']];
   for(const name of ['rock','wood','ground','water'])sources.push([`surface${name}`,`surface-${name}`,'webp']);
   for(const name of ['rock','wood','ground'])sources.push([`normal${name}`,`surface-${name}-normal`]);
-  return artPromise??=Promise.all(sources.map(([key,name,extension])=>loadImage(key,name,extension))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
+  sources.push(['treebark','tree-bark','webp',true],['treebarknormal','tree-bark-normal','webp',true],['treeleaves','tree-foliage','webp',true]);
+  return artPromise??=Promise.all(sources.map(([key,name,extension,optional])=>loadImage(key,name,extension,optional))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
 }
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];
 async function prepareHeroArt(art){
   art.world=prepareWorldArt();
-  art.branchLeaves=branchLeafArt();
+  art.branchLeaves=art.treeleaves??branchLeafArt();
   function frame(source,rect,anchor,raftWidth){
     const canvas=document.createElement('canvas');canvas.width=448;canvas.height=480;
     const scale=300/raftWidth,ctx=canvas.getContext('2d');
@@ -103,10 +105,13 @@ function shorelineTree(ctx,g,e,art,w,h){
   let shape=branchShapes.get(e);if(!shape){shape=shorelineBranch(e,e.d,g.seed);branchShapes.set(e,shape);}
   const locate=n=>{const p=projection(w,h,1+n.x/3.8,e.d+n.d-g.distance),unit=p.corridor/11.4*p.scale;return{x:p.x,y:p.y-n.y*unit,unit};};
   ctx.save();ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-e.d+g.distance)/24);ctx.lineCap='round';
+  const bark=ctx.createPattern(art.treebark??art.surfacewood,'repeat');
   for(const limb of shape.wood){
-    const a=locate(limb.a),b=locate(limb.b),width=Math.max(1,limb.r*(a.unit+b.unit));
-    ctx.strokeStyle='#4c3728';ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-    ctx.strokeStyle='#a18450';ctx.lineWidth=width*.34;ctx.beginPath();ctx.moveTo(a.x-width*.12,a.y);ctx.lineTo(b.x-width*.12,b.y);ctx.stroke();
+    const a=locate(limb.a),b=locate(limb.b),c=locate(limb.c1),d=locate(limb.c2),width=Math.max(1,limb.r*(a.unit+b.unit));
+    const path=()=>{ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.bezierCurveTo(c.x,c.y,d.x,d.y,b.x,b.y);};
+    ctx.strokeStyle='#42382b';ctx.lineWidth=width;path();ctx.stroke();
+    ctx.strokeStyle=bark;ctx.lineWidth=width*.78;path();ctx.stroke();
+    ctx.strokeStyle='#e3cf9b30';ctx.lineWidth=width*.23;path();ctx.stroke();
   }
   for(const leaf of shape.leaves){const p=locate(leaf.p),lw=leaf.size[0]*p.unit*2,lh=leaf.size[1]*p.unit*2;ctx.drawImage(art.branchLeaves,p.x-lw/2,p.y-lh/2,lw,lh);}
   ctx.restore();
