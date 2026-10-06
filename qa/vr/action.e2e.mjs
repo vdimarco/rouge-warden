@@ -46,7 +46,7 @@ try {
   });
   check(sp.run > sp.walk * 1.8 && sp.sprint1, "Shift sprints: " + sp.walk.toFixed(1) + " m/s walking, " + sp.run.toFixed(1) + " m/s sprinting", sp);
   check(sp.e1 < 1 && sp.hud.energy >= 0 && sp.hud.energy < 1, "the energy gauge shows and drains while you sprint", sp);
-  check(sp.e2 <= 0.01 && !sp.sprint2 && sp.tired < sp.walk * 1.2, "an empty gauge ends the sprint", sp);
+  check(sp.e2 < 0.15 && !sp.sprint2 && sp.tired < sp.walk * 1.2, "an empty gauge ends the sprint (back to walking pace; it starts to fill again 0.8 s later)", sp);
   check(sp.e3 > sp.e2 + 0.3, "the gauge fills again after you stop", sp);
 
   /* ---- the dive roll ---- */
