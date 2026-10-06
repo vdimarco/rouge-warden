@@ -152,7 +152,7 @@ try {
  await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>G.camera.aspect<.6);
  const upright=await page.evaluate(()=>({w:innerWidth,h:innerHeight,aspect:G.camera.aspect}));
  assert(upright.w===390&&upright.h===844&&upright.aspect<.5,'the page is upright at 390x844 '+JSON.stringify(upright));
- const standAt=at=>page.evaluate(({roof,turn})=>{const s=G.city.safe[roof];G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;G.test.step(1/60,90);},at);
+ const standAt=at=>page.evaluate(({roof,turn})=>{const s=G.city.safe[roof];G.test.press(1,false);G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;G.test.step(1/60,90);},at);
  const findAt=async()=>{
   const roofs=await page.evaluate(()=>G.city.safe.length);
   for(let roof=0;roof<roofs;roof++)for(let turn=0;turn<8;turn++){
@@ -163,6 +163,9 @@ try {
  };
  const uprightTap=async(label,at)=>{
   await standAt(at);
+  // the first tap starts from no rope: a tap with a rope out is the switch, which the next step checks
+  const rope0=await page.evaluate(()=>G.test.state().ropes[1].state);
+  assert.equal(rope0,'idle',label+': no rope is out before the first tap');
   const t=await pick([]);assert(t,label+': a building well off the screen centre is in view');
   assert(Math.max(Math.abs(t.nx),Math.abs(t.ny))>=.4,label+': the tap is at least 0.4 NDC from the centre');
   await page.mouse.click(t.px,t.py);
