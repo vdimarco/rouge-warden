@@ -24,6 +24,12 @@ export function drawCombatEffect(renderer, f) {
   const a = renderer.project(f.x, f.y, 95), b = renderer.project(f.tx ?? f.x, f.ty ?? f.y, 95);
   const scale = renderer.scale, size = Math.max(18, (f.radius || 130) * scale);
   c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  if (f.type === 'bolt') {
+    // A ranged basic attack: a bolt flies from the hero and lands as the hit resolves.
+    const k = Math.min(1, age), tail = Math.max(0, k - .3), hx = a.x + (b.x - a.x) * k, hy = a.y + (b.y - a.y) * k - Math.sin(k * Math.PI) * 20;
+    c.strokeStyle = color; c.lineWidth = f.variant === 2 ? 7 : 5; c.globalAlpha = .9; c.beginPath(); c.moveTo(a.x + (b.x - a.x) * tail, a.y + (b.y - a.y) * tail - Math.sin(tail * Math.PI) * 20); c.lineTo(hx, hy); c.stroke();
+    c.fillStyle = '#fff8e0'; c.beginPath(); c.arc(hx, hy, f.variant === 2 ? 6 : 4, 0, TAU); c.fill(); c.restore(); return;
+  }
   if (f.type === 'strike') {
     const angle = Math.atan2(b.y - a.y, b.x - a.x), x = b.x, y = b.y;
     // The strike and damage share the same simulation event and world position.

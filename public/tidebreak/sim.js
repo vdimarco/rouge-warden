@@ -24,13 +24,18 @@ import { tickEncounter } from './encounters.js';
 import { recordHit, noteControl, withContext, openCommit, closeCommit, judgeCommit, noteCommitHit, expose, heroOpening, EXPOSED_BONUS, INTERRUPT_EXPOSE, towerLock, pushImpact, bufferCast, lockRemaining, isEngage, engageShape, engageLength, ENGAGES, manaRegen, DODGE_SLACK } from './combat-tells.js';
 import { buildRecap } from './death-recap.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
+// Ranged basic attacks reach 1.5 times their listed range. At the old reach a hero model (340-475 units tall)
+// stood almost on top of its target, so a ranged attack looked like a melee hit.
+export const RANGED_REACH = 1.5;
+// A hero must still step inside a ward's (or the core's) own reach to hit it, so wards keep out-ranging heroes.
+export const reach = (e, t) => e.kind === 'hero' && (t.kind === 'tower' || t.kind === 'core') ? Math.max(120, Math.min(e.range, t.range - t.radius - 30)) : e.range;
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
   { name: 'Baba Yaga', slug: 'baba', role: 'Walking fortress', note: 'Your hut has legs. Your traps have teeth.', hp: 1820, speed: 285, range: 360, damage: 94, rate: .8, color: '#edc47c', sprite: 2 },
   { name: 'Jersey Devil', slug: 'devil', role: 'Relentless chaser', note: 'Leap into a brawl. Feed on the fear.', hp: 1690, speed: 365, range: 140, damage: 143, rate: .68, color: '#f6a086', sprite: 3 },
  ...NEW_HEROES,
-].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, attribute:heroClass(i), attackType:h.range>250?'Ranged':'Melee', height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
+].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, attribute:heroClass(i), attackType:h.range>250?'Ranged':'Melee', height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, range: h.range > 250 ? Math.round(h.range * RANGED_REACH) : h.range, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
 // Structures by tier: 0 outer, 1 middle, 2 inner, 3 base guardian. Rewards go to the whole team.
 export const TIERS = [
   { name: 'Outer ward', hp: 3600, range: 360, damage: 210, rate: 1.05, xp: 120, gold: 110 },
@@ -258,7 +263,7 @@ function nearest(s, a, range, preferHero = false, heroPenalty = 0) {
 }
 // Stable, sight-aware focus. Walking away never causes an automatic chase.
 export function autoTarget(s, e, manual = 0) {
-  const candidates = s.units.filter(t => hostile(s, e, t) && distance(e, t) <= e.range + t.radius && canSee(s, e, t) && lineOfSight(s, e, t));
+  const candidates = s.units.filter(t => hostile(s, e, t) && distance(e, t) <= reach(e, t) + t.radius && canSee(s, e, t) && lineOfSight(s, e, t));
   const chosen = candidates.find(t => t.id === manual); if (chosen) return chosen;
   const active = candidates.filter(t => t.kind !== 'camp' || (!t.leash && t.aggroUntil > s.time));
   const heroes = active.filter(t => t.kind === 'hero'), pool = heroes.length ? heroes : active;
@@ -266,7 +271,7 @@ export function autoTarget(s, e, manual = 0) {
   return pool.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || distance(e, a) - distance(e, b))[0] || null;
 }
 function attack(s, e, t) {
-  if (!t || e.castIntent || e.recoveryUntil>s.time || e.disarmedUntil>s.time || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
+  if (!t || e.castIntent || e.recoveryUntil>s.time || e.disarmedUntil>s.time || e.attackCd > 0 || distance(e, t) > reach(e, t) + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
   if (e.kind === 'hero') {
     if (e.comboTarget !== t.id || s.time > (e.comboUntil || 0)) e.comboNext = 0;
     e.attackVariant = e.comboNext || 0; e.comboTarget = t.id;
@@ -283,6 +288,7 @@ function attack(s, e, t) {
   // Attacks grow stronger only in sudden death, and structures never ramp.
   const multiplier = s.suddenDeath && !['tower', 'core'].includes(e.kind) ? 1 + (s.time - SUDDEN_DEATH) / 150 : 1;
   const towerPressure=e.kind==='tower'&&t.kind==='hero'?(e.towerTarget===t.id&&e.towerUntil>s.time?Math.min(4,e.towerHits||0):0):0;
+  if (e.kind === 'hero' && e.range > 250) s.effects.push({ type: 'bolt', hero: e.hero, source: e.id, target: t.id, variant: e.attackVariant || 0, x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, life: e.attackWindup, maxLife: e.attackWindup });
   e.pendingAttack = { target: t.id, at: s.time + e.attackWindup, variant: e.attackVariant || 0, amount: e.damage * multiplier * (ambush ? 1.75 : 1) * (e.kind === 'hero' ? timing.damage : 1)*(1+towerPressure*.22), telegraph, ambush };
 }
 function resolveAttack(s, e) {
@@ -290,8 +296,8 @@ function resolveAttack(s, e) {
   e.pendingAttack = null;
   const t = s.units.find(u => u.id === pending.target);
   const slack = e.kind === 'hero' && t?.kind === 'hero' ? DODGE_SLACK : 90;
-  const stepped = t && t.hp > 0 && e.hp > 0 && e.stun <= 0 && !(e.disarmedUntil>s.time) && distance(e, t) > e.range + t.radius + slack;
-  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > e.range + t.radius + slack || !lineOfSight(s, e, t)) { if (pending.telegraph && stepped) emitCombatFeedback(s, t.player ? t : e, t, 'dodge', 'DODGED'); e.comboNext = 0; e.comboUntil = 0; return; }
+  const stepped = t && t.hp > 0 && e.hp > 0 && e.stun <= 0 && !(e.disarmedUntil>s.time) && distance(e, t) > reach(e, t) + t.radius + slack;
+  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > reach(e, t) + t.radius + slack || !lineOfSight(s, e, t)) { if (pending.telegraph && stepped) emitCombatFeedback(s, t.player ? t : e, t, 'dodge', 'DODGED'); e.comboNext = 0; e.comboUntil = 0; return; }
   if (e.kind === 'hero') { e.comboNext = (pending.variant + 1) % 3; e.comboUntil = s.time + 2; e.lastBasicHit = s.time; e.lastBasicVariant = pending.variant; }
   if(e.kind==='tower'&&t.kind==='hero'){e.towerHits=e.towerTarget===t.id&&e.towerUntil>s.time?(e.towerHits||0)+1:1;e.towerTarget=t.id;e.towerUntil=s.time+2;}
   withContext(s, { source: e.id, label: e.kind === 'hero' ? BASIC_ATTACKS[e.hero]?.[pending.variant] || 'Basic attack' : e.kind === 'tower' || e.kind === 'core' ? 'Tower shot' : 'Basic attack', telegraphed: !!pending.telegraph || e.kind === 'tower', dodgeable: !!pending.telegraph }, () => damage(s, e, t, pending.amount, 'attack'));
@@ -636,7 +642,7 @@ export function step(s, input = {}, dt = 1 / 60) {
         }
         if(e.order){
           const destination=ordered||e.order;
-          const inRange=ordered&&distance(e,ordered)<=e.range+ordered.radius-8&&lineOfSight(s,e,ordered);
+          const inRange=ordered&&distance(e,ordered)<=reach(e,ordered)+ordered.radius-8&&lineOfSight(s,e,ordered);
           if(!inRange){const next=followOrder(s,e,destination,dt);if(next)move(s,e,next.x,next.y,dt,heroSpeed(s,e));}
           if(e.order.type==='move'&&distance(e,e.order)<10)cancelOrder(e);
         }
