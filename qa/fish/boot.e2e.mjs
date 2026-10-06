@@ -14,7 +14,8 @@
 //   6. the render scale in the page (a new pixel ratio redraws a still lake), and the lake drawn less under opaque
 //      screens and on the title over the live lake
 // Serve public/ first (python3 -m http.server 8765 --directory public), then: node qa/fish/boot.e2e.mjs
-// FISH_URL picks another address. Part 3 waits 15 s on purpose. Exits with code 1 when something fails.
+// FISH_URL picks another address. PARTS=5 runs parts 5 and 6 only. Part 3 waits 15 s on purpose. Exits with code 1
+// when something fails.
 import { createRequire } from "module";
 import { URL as FISH_URL, installPhone, until, sleep } from "./lib.mjs";
 const { chromium } = createRequire(import.meta.url)("playwright");
@@ -25,6 +26,12 @@ const HOST = new URL(FISH_URL).host;
 const ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"];
 const PAUSE = 350;   // the double-tap guard ignores a click in the first 300 ms of a screen
 const click = async (page, sel) => { await sleep(PAUSE); await page.click(sel); };
+// PARTS=1,4 runs only those parts (parts 5 and 6 run together)
+const PARTS = process.env.PARTS ? process.env.PARTS.split(",") : null, part = (p) => !PARTS || PARTS.includes(p);
+// Waits up to 60 s for fn in the page: a loaded machine can take seconds for a frame. wait() fails with what it waited
+// for. note() is for a check that reads the same state after it: it gives "", or a note for the message of that check
+const wait = (page, fn, arg, what, ms = 60000) => until(page, fn, arg, ms).catch(() => { throw new Error("not in " + ms / 1000 + " s: " + what); });
+const note = (page, fn, arg, ms = 60000) => until(page, fn, arg, ms).then(() => "", () => " (not in " + ms / 1000 + " s)");
 
 // A phone page with no help from lib.mjs: nothing is routed, so three.js and the fonts come from the game's own files.
 // offline: abort every request to another host. init: scripts to run before the page (fn, arg). save: a first save.
@@ -86,18 +93,18 @@ const CATCH = { id: "perch", name: "Yellow Perch", kg: 0.35, cm: 27, junk: false
 async function landFish(page, c = CATCH) {
   await stage(page, { phase: "caught", catch: c, fish: null });
   await page.waitForSelector("#catch:not([hidden])");
-  await until(page, () => !FISH.G.cardWait, null, 20000);
+  await wait(page, () => !FISH.G.cardWait, null, "the catch card takes taps");
 }
 
 /* ---------- 1. offline ---------- */
-{
-  const t0 = Date.now();
+if (part("1")) {
   const { browser, page, errors, requests } = await launch({ offline: true, init: [[sampler]], waitTitle: false });
   try {
     await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });
-    const ms = Date.now() - t0;
+    const fr = await page.evaluate(() => ({ frames: window.__frames, boot0: window.__boot0, now: Math.round(performance.now()) }));
+    // on the page clock, from the start of the page to the first frame of the title (the browser start is not part of the boot)
+    const up = fr.frames.find((f) => f[2]), ms = up ? up[0] : fr.now;
     check(ms < 10000, "offline: the title shows in " + (ms / 1000).toFixed(1) + " s (10 s at most)");
-    const fr = await page.evaluate(() => ({ frames: window.__frames, boot0: window.__boot0 }));
     const blank = fr.frames.filter((f) => !f[1] && !f[2]);
     check(fr.frames.length > 0 && fr.frames[0][1] === 1, "the boot screen is up from the first frame (" + fr.frames.length + " frames sampled)");
     check(blank.length === 0, "no frame is blank before the title" + (blank.length ? " (" + blank.length + " blank, first at " + blank[0][0] + " ms)" : ""));
@@ -106,8 +113,9 @@ async function landFish(page, c = CATCH) {
     check((await page.evaluate(() => document.documentElement.dataset.bootArt)) === "painted", "a new player gets the boot screen of the painted style, like the title after it");
     const pic = await page.evaluate(() => { const e = performance.getEntriesByType("resource").find((r) => /film-lake\.webp/.test(r.name)), t = window.__frames.find((f) => f[2]); return { end: e ? Math.round(e.responseEnd) : null, title: t ? t[0] : null }; });
     check(pic.end != null && pic.title != null && pic.end <= pic.title + 100, "the painted title's picture loads during the boot (in at " + pic.end + " ms, the title at " + pic.title + " ms)");
-    await sleep(600);
-    check(await page.evaluate(() => document.getElementById("boot").hidden), "the boot screen is gone once the title shows");
+    // (it fades for 400 ms, and a loaded machine can be late with that timer)
+    const gone = await note(page, () => document.getElementById("boot").hidden);
+    check(await page.evaluate(() => document.getElementById("boot").hidden), "the boot screen is gone once the title shows" + gone);
     // the web build keeps the arcade parts
     const web = await page.evaluate(() => ({ build: document.documentElement.dataset.build || "", kick: document.getElementById("tkick").textContent, sw: !!window.GameSwitch }));
     const tb = await visibleButtons(page, "#tmenu .btn");
@@ -156,7 +164,7 @@ async function landFish(page, c = CATCH) {
 }
 
 /* ---------- 2. slow fonts ---------- */
-{
+if (part("2")) {
   // the Original style: its boot screen and title use the slab font, so both fonts are on the first screen
   const delayFonts = async (ctx) => ctx.route(/\/fonts\/.*\.woff2$/, async (r) => { await sleep(5000); r.continue().catch(() => {}); });
   const { browser, page, errors } = await launch({ route: delayFonts, waitTitle: false, save: { v: 1, artStyle: "original" } });
@@ -167,33 +175,33 @@ async function landFish(page, c = CATCH) {
     const early = await page.evaluate(() => ({ fcp: Math.round(performance.getEntriesByName("first-contentful-paint")[0].startTime), nunito: document.fonts.check("800 16px Nunito"), slab: document.fonts.check("40px 'Alfa Slab One'"), now: Math.round(performance.now()) }));
     check(early.fcp < 3000 && !early.slab, "slow fonts: the boot screen paints at " + early.fcp + " ms, in a system font (the slab font is not in yet: " + !early.slab + ")");
     await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });
-    await until(page, () => document.fonts.check("800 16px Nunito") && document.fonts.check("40px 'Alfa Slab One'"), null, 30000).catch(() => {});
+    const swap = await note(page, () => document.fonts.check("800 16px Nunito") && document.fonts.check("40px 'Alfa Slab One'"));
     const late = await page.evaluate(() => ({ nunito: document.fonts.check("800 16px Nunito"), slab: document.fonts.check("40px 'Alfa Slab One'"), at: Math.round(performance.now()) }));
-    check(late.nunito && late.slab, "slow fonts: the game fonts swap in when they arrive (" + JSON.stringify(late) + ")");
+    check(late.nunito && late.slab, "slow fonts: the game fonts swap in when they arrive (" + JSON.stringify(late) + ")" + swap);
   } catch (e) { check(false, "exception in part 2: " + (e && e.stack)); }
   check(errors.length === 0, "part 2: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
 
 /* ---------- 3. the boot card ---------- */
-{
+if (part("3")) {
   // a module that does not load: three.js is missing
   const noThree = async (ctx) => ctx.route(/three\.module\.min\.js$/, (r) => r.abort("failed"));
   const { browser, page } = await launch({ route: noThree, waitTitle: false });
   try {
     const t0 = Date.now();
-    await page.waitForSelector("#boot[data-state='error']", { timeout: 10000 });
+    await page.waitForSelector("#boot[data-state='error']", { timeout: 60000 });
     const card = await page.evaluate(() => ({ kind: document.getElementById("boot").dataset.kind, msg: document.getElementById("bootMsg").textContent, btn: document.getElementById("bootRetry").textContent, shown: document.getElementById("bootRetry").offsetParent !== null }));
     check(card.kind === "load" && card.msg === "The game did not load." && card.btn === "Try again" && card.shown, "a module that does not load: the card says so in " + ((Date.now() - t0) / 1000).toFixed(1) + " s, with Try again (" + JSON.stringify(card) + ")");
     const origin0 = await page.evaluate(() => performance.timeOrigin);
     await page.click("#bootRetry");
-    await page.waitForFunction((o) => performance.timeOrigin !== o, origin0, { timeout: 15000 });
-    await page.waitForSelector("#boot[data-state='error']", { timeout: 10000 });
+    await page.waitForFunction((o) => performance.timeOrigin !== o, origin0, { timeout: 60000 });
+    await page.waitForSelector("#boot[data-state='error']", { timeout: 60000 });
     check(true, "Try again reloads the game (and the card comes back while three.js is still missing)");
   } catch (e) { check(false, "exception in part 3a: " + (e && e.message)); }
   await browser.close();
 }
-{
+if (part("3")) {
   // no WebGL: the canvas gives no 3D context
   const noGL = () => { const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (k, ...a) { return /webgl/i.test(k) ? null : g.call(this, k, ...a); }; };
   const { browser, page } = await launch({ init: [[noGL]], waitTitle: false });
@@ -204,7 +212,7 @@ async function landFish(page, c = CATCH) {
   } catch (e) { check(false, "exception in part 3b: " + (e && e.message)); }
   await browser.close();
 }
-{
+if (part("3")) {
   // a title that is not ready after 15 s: world.js takes 18 s to arrive. The card shows, then goes when the title comes
   const slowWorld = async (ctx) => ctx.route(/\/js\/world\.js$/, async (r) => { await sleep(18000); r.continue().catch(() => {}); });
   const { browser, page, errors } = await launch({ route: slowWorld, waitTitle: false });
@@ -214,8 +222,8 @@ async function landFish(page, c = CATCH) {
     const s = (Date.now() - t0) / 1000, msg = await page.textContent("#bootMsg");
     check(s >= 12 && msg === "The lake is slow to load.", "a slow boot: the card comes at " + s.toFixed(1) + " s (" + msg + ")");
     await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });
-    await sleep(700);
-    check(await page.evaluate(() => document.getElementById("boot").hidden), "and it goes when the title is ready");
+    const gone = await note(page, () => document.getElementById("boot").hidden);
+    check(await page.evaluate(() => document.getElementById("boot").hidden), "and it goes when the title is ready" + gone);
   } catch (e) { check(false, "exception in part 3c: " + (e && e.message)); }
   check(errors.length === 0, "part 3c: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
@@ -252,7 +260,7 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
   };
   window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", isPluginAvailable: (n) => n in Plugins, Plugins };
 }
-{
+if (part("4")) {
   const { browser, page, errors, requests } = await launch({ init: [[capStub, {}]], save: { v: 1, input: "touch" }, query: "?open" });
   const cap = () => page.evaluate(() => ({ calls: window.__cap.calls.slice(), prefs: { ...window.__cap.prefs } }));
   const count = (name) => page.evaluate((n) => window.__cap.count(n), name);
@@ -328,25 +336,25 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
     const mirror = await page.evaluate(() => ({ set: window.__cap.calls.includes("Preferences.set:fish.v1"), same: window.__cap.prefs["fish.v1"] === localStorage.getItem("fish.v1"), perch: /perch/.test(window.__cap.prefs["fish.v1"] || "") }));
     check(mirror.set && mirror.same && mirror.perch, "store: the save, with the new catch, is mirrored to native storage (" + JSON.stringify(mirror) + ")");
     await back();
-    await until(page, () => FISH.G.phase === "cast", null, 15000).catch(() => {});
-    check(!(await shown("catch")) && (await page.evaluate(() => FISH.G.phase === "cast")), "back on the catch card casts again");
+    const cast = await note(page, () => FISH.G.phase === "cast");
+    check(!(await shown("catch")) && (await page.evaluate(() => FISH.G.phase === "cast")), "back on the catch card casts again" + cast);
     // a walleye of 3.6 kg opens Stump Bay: back on its catch card presses Next, back on the card of the new place stays here
     await landFish(page, { id: "walleye", name: "Walleye", kg: 3.6, cm: 62, junk: false });
     check((await page.textContent("#catchGo")) === "Next", "a catch that opens a place says Next");
     await back();
-    await page.waitForSelector("#unlock:not([hidden])", { timeout: 15000 });
+    await page.waitForSelector("#unlock:not([hidden])", { timeout: 60000 });
     await back();
-    await until(page, () => FISH.G.phase === "cast", null, 15000).catch(() => {});
-    check(!(await shown("unlock")) && (await page.evaluate(() => FISH.G.phase === "cast" && FISH.G.place.id === "loon")), "back on the card of a new place stays here and fishes on");
+    const stay = await note(page, () => FISH.G.phase === "cast");
+    check(!(await shown("unlock")) && (await page.evaluate(() => FISH.G.phase === "cast" && FISH.G.place.id === "loon")), "back on the card of a new place stays here and fishes on" + stay);
     // the results: back on the last catch card shows the results, back on the results fishes again
     await page.evaluate(() => { FISH.startMode("derby"); FISH.G.castsLeft = 0; });
     await landFish(page);
     check((await page.textContent("#catchGo")) === "See the results", "the last derby catch says See the results");
     await back();
-    await page.waitForSelector("#results:not([hidden])", { timeout: 15000 });
+    await page.waitForSelector("#results:not([hidden])", { timeout: 60000 });
     check(true, "back on the catch card shows the results");
     await back();
-    await until(page, () => FISH.G.phase === "cast" && FISH.G.mode === "derby" && FISH.G.castsLeft === 10, null, 15000).then(() => check(true, "back on the results presses Fish again"), () => check(false, "back on the results presses Fish again"));
+    await until(page, () => FISH.G.phase === "cast" && FISH.G.mode === "derby" && FISH.G.castsLeft === 10, null, 60000).then(() => check(true, "back on the results presses Fish again"), () => check(false, "back on the results presses Fish again"));
     // a place that loads: back does nothing; then back on the arrival card presses Start
     await page.evaluate(() => FISH.toTitle());
     await click(page, "#placesBtn");
@@ -372,14 +380,14 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
     check(!!trip && trip.travel && trip.screen === "travel" && trip.minimized === 0, "back while a place loads does nothing (" + JSON.stringify(trip) + ")");
     await back();
     // back presses Start, and Start goes to the water at the new place (after the motion or touch card, the first time)
-    await until(page, () => FISH.G.phase === "cast" || !document.getElementById("setup").hidden, null, 30000).catch(() => {});
+    const start = await note(page, () => FISH.G.phase === "cast" || !document.getElementById("setup").hidden);
     const at = await page.evaluate(() => ({ phase: FISH.G.phase, mode: FISH.G.mode, place: FISH.place.id, setup: !document.getElementById("setup").hidden }));
-    check(at.place === "stumps" && ((at.phase === "cast" && at.mode === "free") || at.setup), "back on the arrival card starts at the new place (" + JSON.stringify(at) + ")");
+    check(at.place === "stumps" && ((at.phase === "cast" && at.mode === "free") || at.setup), "back on the arrival card starts at the new place (" + JSON.stringify(at) + ")" + start);
   } catch (e) { check(false, "exception in part 4: " + (e && e.stack)); }
   check(errors.length === 0, "part 4: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
-{
+if (part("4")) {
   // motion denied in the app: the app copy, and touch play starts
   const denied = () => {
     for (const C of [window.DeviceMotionEvent, window.DeviceOrientationEvent]) if (C) Object.defineProperty(C, "requestPermission", { value: () => Promise.resolve("denied"), configurable: true });
@@ -393,16 +401,16 @@ function capStub({ prefs = {}, delay = 0 } = {}) {
     await click(page, "#useMotion");
     await until(page, () => FISH.G.phase === "cast", null, 30000);
     // the toast queue may show the goal first: the motion line follows within a few seconds
-    await until(page, () => window.__toasts.includes("Motion is off. You can play with touch."), null, 6000).catch(() => {});
+    const line = await note(page, () => window.__toasts.includes("Motion is off. You can play with touch."));
     const r = await page.evaluate(() => ({ toasts: window.__toasts, input: FISH.G.input, setup: !document.getElementById("setup").hidden }));
-    check(r.toasts.includes("Motion is off. You can play with touch.") && r.input === "touch" && !r.setup, "store: motion denied gives the app copy, and touch play starts (" + JSON.stringify(r) + ")");
+    check(r.toasts.includes("Motion is off. You can play with touch.") && r.input === "touch" && !r.setup, "store: motion denied gives the app copy, and touch play starts (" + JSON.stringify(r) + ")" + line);
     const all = await page.evaluate(() => document.getElementById("game").innerText);
     check(!/Safari|site settings|browser/i.test(all), "store: no word of Safari, site settings or a browser on the screen");
   } catch (e) { check(false, "exception in part 4b: " + (e && e.message)); }
   check(errors.length === 0, "part 4b: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
-{
+if (part("4")) {
   // the phone cleared web storage: the save and the two switches come back from native storage
   const kept = { v: 1, input: "touch", casts: 30, caught: 4, journal: { perch: { n: 3, kg: 0.6, cm: 30 } }, place: "stumps", places: { loon: { open: 1, d: 0, kg: 3.8, id: "pike", n: 4, lg: 0 }, stumps: { open: 1, d: 0, kg: 0, id: null, n: 0, lg: 0 } }, seen: { "at.stumps": 1, "opened.stumps": 1 }, quality: "low", reelSide: "left" };
   const prefs = { "fish.v1": JSON.stringify(kept), "fish.haptics": "false", "arcade.sound": "false", "reel-it-in-guide-v1": "shown" };
@@ -427,7 +435,7 @@ async function changeSetting(page) {
   await sleep(300);
   await click(page, "#settings [data-close]");
 }
-{
+if (part("4")) {
   // web storage cleared, and native storage answers after 600 ms (the 400 ms of the boot are over): the game waits for
   // that answer before it writes to native storage, then starts again with the save it held
   const { browser, page, errors } = await launch({ init: [[capStub, { prefs: { "fish.v1": JSON.stringify(kept4) }, delay: 600 }]], waitTitle: false });
@@ -443,7 +451,7 @@ async function changeSetting(page) {
   check(errors.length === 0, "part 4d: no page errors" + (errors.length ? ":\n" + errors.join("\n") : ""));
   await browser.close();
 }
-{
+if (part("4")) {
   // native storage never answers: the game boots, plays and saves to web storage, writes nothing to native storage,
   // and marks the read for the next start
   const { browser, page, errors } = await launch({ init: [[capStub, { prefs: { "fish.v1": JSON.stringify(kept4) }, delay: -1 }]] });
@@ -458,18 +466,26 @@ async function changeSetting(page) {
 }
 
 /* ---------- 5 and 6. the GL context, the render scale, the lake under opaque screens ---------- */
-{
+if (part("5") || part("6")) {
   const { browser, page, errors } = await launch({ save: { v: 1, input: "touch" } });
   try {
-    // count the draws of the lake and the frames of the loop
+    // count the draws of the lake and the frames of the loop, with the time of the last frame on the page clock
     await page.evaluate(() => {
       const w = FISH.world, r = w.render;
-      window.__draws = 0; window.__raf = 0;
+      window.__draws = 0; window.__raf = 0; window.__rafT = performance.now();
       w.render = function (...a) { window.__draws++; return r.apply(this, a); };
-      const tick = () => { window.__raf++; requestAnimationFrame(tick); };
+      const tick = () => { window.__raf++; window.__rafT = performance.now(); requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
     });
     const rate = async (ms) => { const a = await page.evaluate(() => [__draws, __raf]); await sleep(ms); const b = await page.evaluate(() => [__draws, __raf]); return { draws: b[0] - a[0], frames: b[1] - a[1], fps: ((b[0] - a[0]) * 1000) / ms }; };
+    // the draws over the next n loop frames, and the ms they took on the page clock (the clock of the game loop). A loaded
+    // machine can take seconds for a frame: late is a note for the check when the n frames do not come in 60 s
+    const count = async (n) => {
+      const a = await page.evaluate(() => [__draws, __raf, __rafT]);
+      const late = await note(page, (n) => window.__raf >= n, a[1] + n);
+      const b = await page.evaluate(() => [__draws, __raf, __rafT]);
+      return { draws: b[0] - a[0], frames: b[1] - a[1], ms: Math.round(b[2] - a[2]), late };
+    };
     await sleep(800);
     const title = await rate(5000);
     check(title.fps <= 15, "the painted title at rest: the lake draws " + title.draws + " times in 5 s (" + title.frames + " loop frames), 15 a second at most");
@@ -489,19 +505,19 @@ async function changeSetting(page) {
     await sleep(1500);
     const art = await page.evaluate(() => document.body.dataset.artStyle);
     await page.evaluate(() => { const w = FISH.world; window.__render = w.render; w.render = function () { window.__draws++; }; });
-    const og = await rate(3000);
+    // Count over 180 loop frames (3 s at 60 Hz) on the page clock: a loaded machine stalls the loop. At 60 Hz the lake
+    // draws on every 4th frame, and the frame after a stall draws too, so a lake that moves draws on 1 frame in 6 at least
+    const og = await count(180);
     await page.evaluate(() => { FISH.world.render = window.__render; });
-    check(art === "original" && og.draws >= 15 && og.draws <= 46 && og.frames > og.draws, "the Original title: the lake draws " + og.draws + " times in 3 s (" + og.frames + " loop frames, style " + art + "), 15 a second at most");
+    check(art === "original" && !og.late && og.draws >= og.frames / 6 && og.draws <= (og.ms * 15) / 1000 + 1 && og.frames > og.draws,
+      "the Original title: the lake draws " + og.draws + " times in " + og.frames + " loop frames (" + og.ms + " ms, style " + art + "), 15 a second at most" + og.late);
     await click(page, "#freeBtn");
     // (the opening plays first on this fresh save)
     await until(page, () => FISH.G.phase === "cast", null, 60000);
     await sleep(500);
     // count over 30 loop frames, not a fixed time: a loaded machine can stall the page for seconds
-    const p0 = await page.evaluate(() => [__draws, __raf]);
-    await until(page, (n) => window.__raf >= n + 30, p0[1], 20000).catch(() => {});
-    const p1 = await page.evaluate(() => [__draws, __raf]);
-    const play = { draws: p1[0] - p0[0], frames: p1[1] - p0[1] };
-    check(play.frames > 0 && play.draws >= play.frames * 0.9, "play draws at the full rate (" + play.draws + " draws in " + play.frames + " frames)");
+    const play = await count(30);
+    check(!play.late && play.draws >= play.frames * 0.9, "play draws at the full rate (" + play.draws + " draws in " + play.frames + " frames)" + play.late);
     // the render scale steps on the frame after the one draw under the pause screen: the new pixel ratio clears the
     // canvas, and the loop draws the lake again. After that one step the scale holds, so a real step on a slow
     // machine does not add a draw. A loaded machine can take a second for a frame: wait for the step and 4 more frames
@@ -519,10 +535,10 @@ async function changeSetting(page) {
       window.__d0 = window.__draws;
       document.getElementById("pauseBtn").click();
     });
-    await until(page, () => window.__stepRaf !== undefined && window.__raf >= window.__stepRaf + 4, null, 20000).catch(() => {});
+    const step = await note(page, () => window.__stepRaf !== undefined && window.__raf >= window.__stepRaf + 4);
     const ps = await page.evaluate(() => ({ draws: __draws - __d0, stepAt: window.__stepAt - __d0, paused: FISH.G.paused, stillDrawn: FISH.G.stillDrawn }));
     await page.evaluate(() => { FISH.world.frameTime = window.__frameTime; });
-    check(ps.paused && ps.stepAt === 1 && ps.draws === 2 && ps.stillDrawn, "a new pixel ratio under the pause screen draws the still lake again (" + JSON.stringify(ps) + ")");
+    check(ps.paused && ps.stepAt === 1 && ps.draws === 2 && ps.stillDrawn, "a new pixel ratio under the pause screen draws the still lake again (" + JSON.stringify(ps) + ")" + step);
     await click(page, "#resumeBtn");
 
     // the render scale in the page: one hitch changes nothing, a slow stretch lowers the pixel ratio, fast frames bring it back
@@ -548,43 +564,44 @@ async function changeSetting(page) {
     await stage(page);
     await sleep(500);
     await page.evaluate(() => { window.__lc = FISH.world.renderer.getContext().getExtension("WEBGL_lose_context"); window.__lc.loseContext(); });
-    await until(page, () => FISH.G.paused && !document.getElementById("pause").hidden, null, 10000).then(() => check(true, "context lost in a fight: the pause screen shows"), () => check(false, "context lost in a fight: the pause screen shows"));
-    // Resume, Escape and back wait while the lake is not there: the fight does not go on unseen
+    await until(page, () => FISH.G.paused && !document.getElementById("pause").hidden, null, 60000).then(() => check(true, "context lost in a fight: the pause screen shows"), () => check(false, "context lost in a fight: the pause screen shows"));
+    // Resume, Escape and back wait while the lake is not there: the fight does not go on unseen (over 30 loop frames each)
     await sleep(PAUSE);
     const held = () => page.evaluate(() => ({ paused: FISH.G.paused, pause: !document.getElementById("pause").hidden, steps: window.__simSteps - window.__s0, disabled: document.getElementById("resumeBtn").disabled, note: document.getElementById("pauseSum").textContent.split("\n")[0] }));
     await page.evaluate(() => { window.__s0 = window.__simSteps; document.getElementById("resumeBtn").click(); });
-    await sleep(500);
+    const f1 = await count(30);
     const lost = await held();
-    check(lost.paused && lost.pause && lost.steps === 0 && lost.disabled && lost.note === "The lake is coming back.", "while the context is lost, Resume waits and the fight stands still (" + JSON.stringify(lost) + ")");
+    check(!f1.late && lost.paused && lost.pause && lost.steps === 0 && lost.disabled && lost.note === "The lake is coming back.", "while the context is lost, Resume waits and the fight stands still (" + JSON.stringify(lost) + ")" + f1.late);
     await page.evaluate(() => { window.__s0 = window.__simSteps; });
     await page.keyboard.press("Escape");
-    await sleep(500);
+    const f2 = await count(30);
     const esc = await held();
-    check(esc.paused && esc.pause && esc.steps === 0, "and Escape waits too (" + JSON.stringify(esc) + ")");
+    check(!f2.late && esc.paused && esc.pause && esc.steps === 0, "and Escape waits too (" + JSON.stringify(esc) + ")" + f2.late);
     const d0 = await page.evaluate(() => __draws);
     await page.evaluate(() => window.__lc.restoreContext());
-    await until(page, () => !FISH.world.lost && !FISH.G.ctxLost, null, 20000);
-    await sleep(800);
+    // three uploads the scene again, and the game warms every shader before it clears ctxLost. On a software GPU under
+    // load that is one task of many seconds
+    await wait(page, () => !FISH.world.lost && !FISH.G.ctxLost, null, "the context comes back and the shaders are warm");
+    const drawn = await note(page, (d0) => __draws > d0, d0);
     const under = await page.evaluate((d0) => ({ draws: __draws - d0, paused: FISH.G.paused, geo: FISH.world.renderer.info.memory.geometries, calls: FISH.world.info().calls }), d0);
-    check(under.paused && under.draws >= 1 && under.geo > 0 && under.calls > 0, "restored under the pause screen: the lake draws again (" + JSON.stringify(under) + ")");
+    check(under.paused && under.draws >= 1 && under.geo > 0 && under.calls > 0, "restored under the pause screen: the lake draws again (" + JSON.stringify(under) + ")" + drawn);
     const back = await page.evaluate(() => ({ disabled: document.getElementById("resumeBtn").disabled, note: /coming back/.test(document.getElementById("pauseSum").textContent) }));
     check(!back.disabled && !back.note, "and Resume works again (" + JSON.stringify(back) + ")");
     await click(page, "#resumeBtn");
-    await sleep(800);
+    const go = await count(3);
     const after = await page.evaluate(() => {
       const w = FISH.world, gl = w.renderer.getContext(), c = gl.canvas, px = new Uint8Array(4);
       w.update(0.016); w.render();
       gl.readPixels(c.width >> 1, c.height >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
       return { phase: FISH.G.phase, sim: FISH.G.sim && FISH.G.sim.state.phase, px: [...px], paused: FISH.G.paused };
     });
-    const afterRate = await rate(1500);
-    check(after.phase === "reel" && after.sim === "fight" && !after.paused && after.px.some((v) => v > 0) && afterRate.draws > 0, "after Resume the lake draws and the fight goes on (" + JSON.stringify({ ...after, draws: afterRate.draws }) + ")");
+    check(!go.late && after.phase === "reel" && after.sim === "fight" && !after.paused && after.px.some((v) => v > 0) && go.draws > 0, "after Resume the lake draws and the fight goes on (" + JSON.stringify({ ...after, draws: go.draws, frames: go.frames }) + ")" + go.late);
     // a context that never comes back: the card, which goes when it does come back
     await page.evaluate(() => { window.__lc = FISH.world.renderer.getContext().getExtension("WEBGL_lose_context"); window.__lc.loseContext(); });
-    await page.waitForSelector("#boot[data-state='error'][data-kind='gpu']", { timeout: 15000 }).then(() => check(true, "a context that stays lost gets a card with Try again"), () => check(false, "a context that stays lost gets a card with Try again"));
+    await page.waitForSelector("#boot[data-state='error'][data-kind='gpu']", { timeout: 60000 }).then(() => check(true, "a context that stays lost gets a card with Try again"), () => check(false, "a context that stays lost gets a card with Try again"));
     check((await page.textContent("#bootMsg")) === "The lake stopped drawing.", "the card says the lake stopped drawing");
     await page.evaluate(() => window.__lc.restoreContext());
-    await until(page, () => document.getElementById("boot").hidden, null, 20000).then(() => check(true, "the card goes when the context comes back"), () => check(false, "the card goes when the context comes back"));
+    await until(page, () => document.getElementById("boot").hidden, null, 60000).then(() => check(true, "the card goes when the context comes back"), () => check(false, "the card goes when the context comes back"));
   } catch (e) { check(false, "exception in parts 5-6: " + (e && e.stack)); }
   const real = errors.filter((e) => !/Context Lost|Context Restored|CONTEXT_LOST/i.test(e));
   check(real.length === 0, "parts 5-6: no page errors" + (real.length ? ":\n" + real.join("\n") : ""));
