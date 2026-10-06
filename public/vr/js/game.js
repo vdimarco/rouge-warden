@@ -1155,8 +1155,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       if (done.size === 1) later(3, () => say("clog", 3));
     }
     setBank();
-    // the first flush ends the spoken tutorial; the checklist only ticks its row (the other rows stay open)
-    if (train.on) trainTick("plunge");
+    // the first flush ends the training, as it ends the spoken tutorial: rows still open stay unticked
+    if (train.on) { trainTick("plunge"); if (train.on) trainFinish(false); }
     else if (!save.tutorial || tut.step >= 0) tutFinish(false);
     kingOnFlush();
     saveNow();

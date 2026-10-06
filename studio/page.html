@@ -64,6 +64,13 @@ a.pill:hover, a.pill:focus-visible { border-color: var(--ink); color: var(--ink)
 .counter { display: grid; gap: 0; }
 .counter b { font-family: var(--display); font-size: 28px; font-weight: 800; line-height: 1.1; }
 .counter span { font-size: 12px; color: var(--ink-3); }
+button.counter { appearance: none; background: none; border: 0; border-bottom: 3px solid transparent; padding: 0 2px 4px; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+button.counter:hover:not(:disabled) b, button.counter:focus-visible b { color: var(--crimson); }
+button.counter:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+button.counter[aria-pressed="true"] { border-bottom-color: var(--crimson); }
+button.counter:disabled { cursor: default; opacity: 0.55; }
+.filterbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 10px 0 0; font-size: 13px; color: var(--ink-2, var(--ink-3)); }
+.filterbar button { font: inherit; background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 1px 8px; color: inherit; cursor: pointer; }
 
 /* stage map */
 .stages { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 18px 14px; overflow-x: auto; }
@@ -229,6 +236,7 @@ footer { color: var(--ink-3); font-size: 12px; border-top: 1px solid var(--rule)
   </header>
 
   <div class="counters" id="studio-counters" aria-live="polite"></div>
+  <div class="filterbar" id="filterbar" hidden></div>
 
   <div class="main">
     <div class="col">
@@ -312,7 +320,7 @@ footer { color: var(--ink-3); font-size: 12px; border-top: 1px solid var(--rule)
   const KIND_LABEL = { claude: 'Claude', codex: 'Codex', cursor: 'Cursor', copilot: 'Copilot', devin: 'Devin', jules: 'Jules', human: 'Person' };
   const ORIGIN_LABEL = { android: 'phone', ios: 'phone', web_claude_ai: 'web', desktop_app: 'desktop', claude_code_cli: 'terminal', worktree: 'local worktree' };
   const WORKSHOP = { id: 'workshop', name: 'Studio workshop', kanji: '工', status: 'workshop', statusText: 'Tools and this board' };
-  const state = { crew: [], status: null, feed: null, bugs: null, games: null, agents: [], trees: [], auto: null };
+  const state = { crew: [], status: null, feed: null, bugs: null, games: null, agents: [], trees: [], auto: null, filter: null };
   let gameMap = {}, treeMap = {};
 
   function hhmm(iso) {
@@ -440,22 +448,50 @@ footer { color: var(--ink-3); font-size: 12px; border-top: 1px solid var(--rule)
     const count = (s) => agents.filter((a) => a.state === s).length;
     const openTrees = trees.filter((t) => t.state === 'open' || t.state === 'local');
     const openPrs = new Set(trees.filter((t) => t.pr && t.pr.state === 'open').map((t) => t.pr.number));
+    const devIds = new Set(games.filter((g) => g.status === 'dev').map((g) => g.id));
+    const agentIs = (s) => (t) => { const a = agents.find((x) => x.id === t.agent); return !!a && a.state === s; };
+    const FILTERS = {
+      working: { tree: agentIs('working'), agent: (a) => a.state === 'working', say: 'agents working' },
+      review: { tree: agentIs('review'), agent: (a) => a.state === 'review', say: 'agents ready for review' },
+      blocked: { tree: agentIs('blocked'), agent: (a) => a.state === 'blocked', say: 'agents that need you' },
+      open: { tree: (t) => t.state === 'open' || t.state === 'local', say: 'open work trees' },
+      prs: { tree: (t) => !!t.pr && t.pr.state === 'open', say: 'open pull requests' },
+      dev: { tree: (t) => (t.games || []).some((id) => devIds.has(id)), say: 'cabinets in development' },
+    };
+    const fkey = FILTERS[state.filter] ? state.filter : null;
+    const F = fkey ? FILTERS[fkey] : null;
+    const keepTree = (t) => !F || F.tree(t);
+    const treeBranches = new Set(trees.filter(keepTree).map((t) => t.branch));
+    const keepAgent = (a) => !F || (F.agent ? F.agent(a) : treeBranches.has(a.branch));
     const ctr = $('studio-counters'); ctr.replaceChildren();
-    for (const [n, one, many] of [
-      [count('working'), 'agent working', 'agents working'],
-      [count('review'), 'ready for review', 'ready for review'],
-      [count('blocked'), 'needs you', 'need you'],
-      [openTrees.length, 'open work tree', 'open work trees'],
-      [openPrs.size, 'open pull request', 'open pull requests'],
-      [games.filter((g) => g.status === 'dev').length, 'cabinet in development', 'cabinets in development'],
-    ]) { const c = el('div', 'counter'); c.appendChild(el('b', null, String(n))); c.appendChild(el('span', null, n === 1 ? one : many)); ctr.appendChild(c); }
+    for (const [key, n, one, many] of [
+      ['working', count('working'), 'agent working', 'agents working'],
+      ['review', count('review'), 'ready for review', 'ready for review'],
+      ['blocked', count('blocked'), 'needs you', 'need you'],
+      ['open', openTrees.length, 'open work tree', 'open work trees'],
+      ['prs', openPrs.size, 'open pull request', 'open pull requests'],
+      ['dev', devIds.size, 'cabinet in development', 'cabinets in development'],
+    ]) {
+      const c = el('button', 'counter'); c.type = 'button';
+      c.setAttribute('aria-pressed', String(key === fkey));
+      c.disabled = !n && key !== fkey;
+      c.addEventListener('click', () => { state.filter = state.filter === key ? null : key; renderStudio(); });
+      c.appendChild(el('b', null, String(n))); c.appendChild(el('span', null, n === 1 ? one : many)); ctr.appendChild(c);
+    }
+    const fbar = $('filterbar'); fbar.replaceChildren(); fbar.hidden = !F;
+    if (F) {
+      fbar.appendChild(el('span', null, 'Showing ' + F.say + ' in the agent cards and the work tree table.'));
+      const x = el('button', null, 'Show all'); x.type = 'button';
+      x.addEventListener('click', () => { state.filter = null; renderStudio(); });
+      fbar.appendChild(x);
+    }
 
     const box = $('agents'); box.replaceChildren();
-    const floor = agents.filter(onFloor).sort(byAgent);
+    const floor = agents.filter(onFloor).filter(keepAgent).sort(byAgent);
     floor.forEach((a) => box.appendChild(agentCard(a)));
-    if (!floor.length) box.appendChild(el('p', 'empty', 'No agent is at work on this repo right now.'));
+    if (!floor.length) box.appendChild(el('p', 'empty', F ? 'No agent matches this filter.' : 'No agent is at work on this repo right now.'));
     $('agent-count').textContent = plural(floor.length, 'agent', 'agents') + ' on the floor';
-    const done = agents.filter((a) => !onFloor(a)).sort(byAgent).slice(0, 10);
+    const done = agents.filter((a) => !onFloor(a)).filter(keepAgent).sort(byAgent).slice(0, 10);
     const fl = $('finished'); fl.replaceChildren();
     for (const a of done) {
       const li = el('li');
@@ -471,13 +507,16 @@ footer { color: var(--ink-3); font-size: 12px; border-top: 1px solid var(--rule)
 
     const tb = $('trees'); tb.replaceChildren();
     const byDate = (a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0);
-    const inMain = trees.filter((t) => t.state === 'merged' || t.state === 'even').sort(byDate);
+    const inMain = trees.filter((t) => t.state === 'merged' || t.state === 'even').filter(keepTree).sort(byDate);
+    const shownOpen = openTrees.filter(keepTree);
+    const mainCap = F ? Infinity : 8;
     const row = (text, cls) => { const tr = el('tr', cls || null); const td = el('td', cls ? null : 'what', text); td.colSpan = 5; tr.appendChild(td); tb.appendChild(tr); };
     const group = (label, list) => { if (!list.length) return; row(label, 'group'); list.forEach((t) => tb.appendChild(treeRow(t))); };
-    group('Open work', openTrees.slice().sort(byDate));
-    group('In main', inMain.slice(0, 8));
-    if (inMain.length > 8) row('and ' + plural(inMain.length - 8, 'older work tree', 'older work trees') + ' with nothing new');
+    group('Open work', shownOpen.slice().sort(byDate));
+    group('In main', inMain.slice(0, mainCap));
+    if (inMain.length > mainCap) row('and ' + plural(inMain.length - mainCap, 'older work tree', 'older work trees') + ' with nothing new');
     if (!trees.length) row('No branches besides main.');
+    else if (F && !shownOpen.length && !inMain.length) row('No work tree matches this filter.');
     $('tree-count').textContent = openTrees.length + ' open · ' + trees.length + ' in all';
   }
 

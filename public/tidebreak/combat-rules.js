@@ -36,6 +36,7 @@ export function spellShape(e,slot,aim) {
  return {...origin,radius:[340,460,370,0,410,420,330,440,390,0,410,390][e.hero],shape:'circle'};
 }
 export function insideWarning(point,w,margin=0){
+ if(w.shape==='path'){const dx=w.tx-w.x,dy=w.ty-w.y,l=dx*dx+dy*dy||1,u=Math.max(0,Math.min(1,((point.x-w.x)*dx+(point.y-w.y)*dy)/l));return Math.hypot(point.x-w.x-dx*u,point.y-w.y-dy*u)<=w.radius+(point.radius||0)+margin;}
  const d=distance(point,w);if(d>w.radius+(point.radius||0)+margin)return false;
  if(w.shape!=='cone'||d<50)return true;
  const a=Math.atan2(point.y-w.y,point.x-w.x),delta=Math.atan2(Math.sin(a-w.angle),Math.cos(a-w.angle));

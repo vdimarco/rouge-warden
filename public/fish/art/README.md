@@ -37,3 +37,7 @@ The painted look was resolved as a style brief. These are generated Blender mesh
 fal-lake-water.webp: 1024 × 1024 hand-painted jade lake tile. Generated with fal-ai/nano-banana-pro, request 01a0f42d-3fa1-71c3-89a8-e8d803064b81. Source: https://v3b.fal.media/files/b/0aac8c6c/P09Onh1dIlL_XO4xXMKgY_SoKUx32s.webp
 
 Brief: seamless top-down calm lake water, a hand-painted gouache background, jade and turquoise gouache with low-contrast mint ripples and caustics. Two drifting samples blend with live depth, reflections and gameplay ripples. Existing procedural fallback remains.
+
+## Bobber vector, 2026-10-05
+
+`bobber.svg` (585 × 568, about 72 KB) is a hand-built vector copy of a painted bobber illustration: a red and cream float with a gold band on jade water, with ripples, a reflection, sparkles and the line. It has no raster data. The groups `water`, `line`, `sparkles`, `reflection`, `ripples` and `bobber` let you reuse parts. The game does not load it yet.

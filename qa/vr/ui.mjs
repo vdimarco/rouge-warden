@@ -439,7 +439,8 @@ try {
     return { model: h.model, map: !!map, size: map && map.image ? map.image.width : 0, uploaded: !!h0, same: !!h0 && gpu() === h0, newTextures: R.info.memory.textures - n0 };
   });
   check(hm.model === "glb" && hm.map && hm.uploaded && hm.same, "the hero's colour map is on the GPU as soon as the model loads, and the first draw does not upload it again", hm);
-  await page.evaluate(() => { G.test.clearClog(0); G.test.step(1 / 60, 3); });
+  // (a first run flushing its first clog ends the training with a toast that holds the toast slot for a while: skip the training first)
+  await page.evaluate(() => { G.game.skipTutorial(); G.test.clearClog(0); G.test.step(1 / 60, 3); });
   const clog = await page.evaluate(() => document.querySelector("[data-k=clog]").textContent);
   check(clog === "1", "the HUD counts a flushed clog", clog);
   await page.evaluate(() => { G.ui.say("Aim high.", 30); G.ui.toast("+5"); G.test.step(1 / 60, 30); });

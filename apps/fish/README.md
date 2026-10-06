@@ -14,14 +14,15 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `scripts/check-www.mjs` | The bundle check. `scripts/check-www.test.mjs` tests it. |
 | `scripts/native-check.mjs` | Runs after each `cap sync`. It keeps the iOS package at 16.4. It fails when a store setting is missing, or when the versions differ (see the release steps). `scripts/native-check.test.mjs` tests the version rule. |
 | `scripts/render-art.mjs` | Paints the icon, the adaptive icon layers, the splash and the Play graphics. |
+| `scripts/art.mjs` | The parts of the store art as SVG: the painted water, the rings, the glints and the bobber. `render-art.mjs` and the promo video (`qa/fish/store-video.mjs`) draw with them. |
 | `scripts/adaptive-icons.mjs` | Writes the Android adaptive icon layers at full size after `@capacitor/assets`. |
 | `resources/` | The icon and splash sources (`icon-only.png` is the 1024 px icon). |
 | `web/webview-update.html` | The page the app shows when the game page does not load, or when the Android web view is too old (before version 105). |
 | `android/`, `ios/` | The native projects, made by `npx cap add` and then set up for the stores. |
-| `store/` | The store listing, the privacy and age answers, the screenshot list, the review notes and the accessibility labels. |
+| `store/` | The store listing, the privacy and age answers, the screenshot list, the notes on the two store videos, the review notes and the accessibility labels. |
 | `www/` | Made by the build. Not in git. |
 
-The privacy policy is `public/fish/privacy.html`. The web serves it at `/fish/privacy.html`, and the app shows the same file offline.
+The privacy policy is `public/fish/privacy.html`. The web serves it at `https://arcade.uptick.systems/fish/privacy.html`, the URL to give both stores, and the app shows the same file offline. The support email is `support@uptick.systems`: the policy gives it, and it goes in both store forms.
 
 ## What you need
 
@@ -56,7 +57,7 @@ The check reads every HTML, CSS, JavaScript, SVG and JSON file in `www/`, also t
 
 It warns about "ghibli", and about arcade text in a script: the check cannot tell if the code shows that string. With `--strict` (or `WWW_STRICT=1`) both are errors. When the code shows the string on the web only (it checks the store flag first), put `// web only` on the same line. It prints the size of the bundle.
 
-It also warns about a placeholder that the owner must fill in: an element with `data-placeholder`, such as the support email in `privacy.html`. Use `--release` (or `WWW_RELEASE=1`) for every build that you upload to a store. The release mode is strict, and it fails on a placeholder and when `privacy.html` is missing. `npm run android:bundle` and `npm run ios:release` use it.
+It also warns about a placeholder that the owner must fill in: an element with `data-placeholder` in a page. Use `--release` (or `WWW_RELEASE=1`) for every build that you upload to a store. The release mode is strict, and it fails on a placeholder and when `privacy.html` is missing. `npm run android:bundle` and `npm run ios:release` use it.
 
 The check reads the files. It cannot see a web address that the code builds at run time from parts, or a root path that the code keeps in a variable. The browser check below blocks and counts every request that leaves the app's origin, and it fails on arcade text that the page shows.
 
@@ -113,7 +114,7 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
      --androidreleasetype AAB --signing-type jarsigner
    ```
 
-   The release build stops while `privacy.html` holds the support email placeholder (see "Owner decisions still open"). The signed bundle is `android/app/build/outputs/bundle/release/app-release-signed.aab`. Android Studio can do the same: Build > Generate Signed App Bundle.
+   The release build stops if a page still holds a placeholder. The signed bundle is `android/app/build/outputs/bundle/release/app-release-signed.aab`. Android Studio can do the same: Build > Generate Signed App Bundle.
 4. Upload it in the Play Console: Test and release > a testing track first (see the closed test below), then Production.
 
 `.gitignore` keeps `*.jks`, `*.keystore`, `keystore.properties` and `local.properties` out of git. Never commit a key.
@@ -130,7 +131,7 @@ To build a signed bundle in Actions, do steps 1 and 2 above once. Then add these
 | `REELITIN_STORE_PASS` | The keystore password |
 | `REELITIN_KEY_PASS` | The password of the `upload` key |
 
-Open Actions > Reel It In Android app > Run workflow, turn on **Signed bundle**, and run it. The signed AAB is in the run's artifacts as `reelitin-release-aab` for 7 days. The run summary shows the commit, `versionCode` and `versionName`. Upload the AAB as in step 4.
+Open Actions > Reel It In Android app > Run workflow, turn on **Signed bundle**, and run it. The run builds the bundle with `--release`, as in step 3, so it stops if a page still holds a placeholder. The signed AAB is in the run's artifacts as `reelitin-release-aab` for 7 days. The run summary shows the commit, `versionCode` and `versionName`. Upload the AAB as in step 4.
 
 ## iOS (on a Mac)
 
@@ -143,7 +144,7 @@ In Xcode, on the App target:
 
 1. Signing & Capabilities: pick your team. Keep "Automatically manage signing" on.
 2. General: set Version (`MARKETING_VERSION`, for example 1.0.0) and Build (`CURRENT_PROJECT_VERSION`, up by 1 for every upload). Version must be the same as `VERSION` in `public/fish/js/version.js` (Settings > About shows it), `version` in `package.json` and `versionName` on Android. If you change it, change `version.js` too, then run `npm run ios:open` again so the bundle has the new version. `npm run check:native` fails when the versions differ.
-3. Before an archive for upload, run `npm run ios:release`. It builds the bundle with `--release`, so it stops while `privacy.html` holds the support email placeholder. Then it syncs the iOS project and opens Xcode.
+3. Before an archive for upload, run `npm run ios:release`. It builds the bundle with `--release`, so it stops if a page still holds a placeholder. Then it syncs the iOS project and opens Xcode.
 4. Choose "Any iOS Device (arm64)", then Product > Archive.
 5. In the Organizer, pick the archive, then Distribute App > App Store Connect > Upload. Before the first upload, use Generate Privacy Report on the archive and check that it lists only the UserDefaults reason (see `store/data-safety.md`).
 6. In App Store Connect, add the build to TestFlight, test it on an iPhone, then submit it for review with the text in `store/`.
@@ -171,11 +172,11 @@ npm run assets                                         # every size for iOS and 
 
 ## Change the app ID
 
-`com.cottagearcade.reelitin` is a placeholder. Neither store lets you change the ID after the first upload, so set the real one first, in all of these places:
+The app ID is `systems.uptick.reelitin`, from the owner's domain `uptick.systems`. Neither store lets you change the ID after the first upload. A change before then goes in all of these places:
 
 - `capacitor.config.json`: `appId`
 - `android/app/build.gradle`: `namespace` and `applicationId`
-- `android/app/src/main/java/com/cottagearcade/reelitin/MainActivity.java`: the `package` line, and move the file to the folders of the new ID
+- `android/app/src/main/java/systems/uptick/reelitin/MainActivity.java`: the `package` line, and move the file to the folders of the new ID
 - `android/app/src/main/res/values/strings.xml`: `package_name` and `custom_url_scheme`
 - `ios/App/App.xcodeproj/project.pbxproj`: `PRODUCT_BUNDLE_IDENTIFIER` (or Xcode > App target > General > Bundle Identifier)
 
@@ -195,10 +196,7 @@ Then run `npx cap sync` and build both apps again.
 
 | Decision | Default in this folder | What to do |
 | --- | --- | --- |
-| Bundle ID and application ID | `com.cottagearcade.reelitin` (placeholder) | Pick a reverse domain you control, and change it before the first upload (see above). |
 | Store name | "Reel It In: Lake Fishing"; "Reel It In" under the icon | Check that the name is free in App Store Connect and the Play Console, and search the USPTO for "Reel It In" in classes 9 and 41. |
-| Support email | A marked placeholder in `public/fish/privacy.html` (`data-placeholder="support-email"`) | Put a real address in the page (text and a `mailto:` link) and in both store forms. Remove the placeholder element. The release build (`--release`) fails until you do. |
-| Privacy policy URL | `https://<the site>/fish/privacy.html` | Choose the host (the arcade site or your own domain). Both stores need a public URL. |
 | Google Play account type | Not known | A personal account made after 13 November 2023 must run a closed test with at least 12 testers for 14 days in a row before it can publish to production. Start the closed test as soon as there is a signed build. An organisation account does not need this. |
 | Content rating and audience | 4+, Everyone, PEGI 3; audience 13 and over | Fill in the questionnaires with `store/age-rating.md`. Decide if the Play audience includes children under 13. |
 | Accessibility labels | Only the labels that pass their checks | See `store/accessibility.md`. |
@@ -212,6 +210,7 @@ None of these can run on this Linux machine. Do them on a real iPhone (TestFligh
 - [ ] **Motion timing.** 20 casts with the debug overlay on, on each phone (a debug build, then `location.replace("./?debug")` in the web inspector, see "Debug APK"). Read the cast numbers in the overlay. The release timing feels right, and the mean timing error is within about 15 ms of the web build on the same phone.
 - [ ] **Haptics feel.** iPhone: taps for nibbles, a strong hit on the strike and the hook set, a buzz for the drag and a pattern for the catch. Android: the same patterns through vibration. Turn "Buzz and taps" off: nothing buzzes.
 - [ ] **Back button on every screen (Android).** Help, Settings, the Journal and the Places close. In a cast, a reel or a fight the game pauses, and a second back resumes. On the catch card and the results the main button runs. On the title the app goes to the background. While a place loads nothing happens.
+- [ ] **Touch cast from anywhere.** In touch play, cast from the top, the middle and 1 cm above the bottom edge, on the rod, the reel and the open lake. Each press drags down past LOAD and casts. No press near the bottom edge starts an Android back or an iOS home gesture.
 - [ ] **Edge gestures while cranking.** 50 fast crank turns near the bottom corners, in touch play and in motion play with each reel side. No Android back, no Android home, no iOS home (a first swipe up only lights the home indicator). If a single swipe leaves the app on iPhone, the bottom-edge deferral does not work: check that the home indicator does not auto-hide (`SystemBars` `"hidden"` is `false`, and the game calls no `SystemBars.hide()` on iOS).
 - [ ] **Audio interruption by a call.** Take a call in a fight. The game pauses. After the call, the sound comes back after Resume.
 - [ ] **Audio interruption by Control Center (iOS) and the notification shade (Android).** Pull it down in a fight. The game pauses, and nothing snaps the line while it is open.

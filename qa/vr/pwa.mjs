@@ -15,7 +15,7 @@ import { patchGradle, patchManifest, check as checkAndroid } from "../../quest/p
 const { chromium } = createRequire(import.meta.url)("playwright");
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PUB = process.env.PWA_PUBLIC ? path.resolve(process.env.PWA_PUBLIC) : path.join(ROOT, "public");
-const HOST = "warden-alpha-wheat.vercel.app";
+const HOST = "arcade.uptick.systems";
 
 let fails = 0;
 const pass = (name) => console.log("PASS: " + name);

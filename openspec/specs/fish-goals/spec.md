@@ -6,11 +6,15 @@ What a Reel It In player aims for: six goals at each place, a goal for each day 
 ## Requirements
 
 ### Requirement: Place goals
-Each place SHALL have six goals that reward the skills the game teaches. The Places card SHALL show "Goals: N of 6" and the goal list. Finishing a goal SHALL play the record sting and toast "Goal done: <goal>." The save SHALL keep the goals as a small number for each place, and a bad value SHALL be cleaned to none.
+Each place SHALL have six goals that reward the skills the game teaches. The Places card SHALL show "Goals: N of 6" and the goal list. Finishing a goal SHALL play the record sting and toast "Goal done: <goal>." The toast with the news of a catch SHALL wait in the toast queue until it shows. Newer toasts SHALL NOT push it out, and slow frames that hold the queue up SHALL NOT make it stale. The save SHALL keep the goals as a small number for each place, and a bad value SHALL be cleaned to none.
 
 #### Scenario: Turn a fish from cover
 - **WHEN** at Stump Bay the player steers a fish away from the stumps and lands it
 - **THEN** the toast says "Goal done: Turn a fish from the stumps." and the Stump Bay card shows one more goal checked.
+
+#### Scenario: Slow frame at the catch
+- **WHEN** the player lands a fish that finishes a goal while another toast is up, and the frame that lands it takes 3.5 s
+- **THEN** the toast still says "Goal done: <goal>." after the toast before it, and the record sting plays.
 
 #### Scenario: Broken save
 - **WHEN** a save has a goal value that is not a whole number from 0 to 63

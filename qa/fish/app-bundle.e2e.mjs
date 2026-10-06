@@ -63,7 +63,7 @@ const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 function fakeCapacitor(platform) {
   const calls = (window.__capCalls = []);
   const listeners = (window.__capListeners = []);
-  const answers = { get: { value: null }, keys: { keys: [] }, isSupported: { isSupported: true }, isKeptAwake: { isKeptAwake: false }, getInfo: { name: "Reel It In", id: "com.cottagearcade.reelitin", version: "1.0", build: "1" }, getState: { isActive: true } };
+  const answers = { get: { value: null }, keys: { keys: [] }, isSupported: { isSupported: true }, isKeptAwake: { isKeptAwake: false }, getInfo: { name: "Reel It In", id: "systems.uptick.reelitin", version: "1.0", build: "1" }, getState: { isActive: true } };
   const plugin = (name, methods) => {
     const p = {};
     for (const m of methods) p[m] = (...args) => { calls.push({ plugin: name, method: m, args: JSON.parse(JSON.stringify(args.filter((a) => typeof a !== "function"))) }); return Promise.resolve(answers[m]); };

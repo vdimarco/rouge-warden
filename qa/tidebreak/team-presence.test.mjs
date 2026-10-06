@@ -8,6 +8,7 @@ import { killCall, defendCall, multiName, streakName, clipFor } from '../../publ
 import { CLIPS } from '../../public/tidebreak/audio.js';
 import { existsSync } from 'node:fs';
 import { chatFor, laneAt } from '../../public/tidebreak/team-chat.js';
+import { TOWER_POSITIONS } from '../../public/tidebreak/world.js';
 
 // Draft: the player's hero locks, five bots pick distinct heroes, and the plan is seeded.
 for (const identity of HERO_IDENTITIES) for (const seed of [1, 77, 4096]) {
@@ -104,7 +105,8 @@ for (const seed of [3, 11]) {
   const s = createMatch(0, 5), heroes = s.units.filter(u => u.kind === 'hero'), bots = heroes.slice(1, 3);
   const lines = chatFor({ kind: 'ping', team: 0, type: 'onmyway', source: bots[0].id, x: 1000, y: 3000, id: 1, time: 1 }, s, { player: heroes[0], bots });
   assert.equal(lines[0].unitId, bots[0].id); assert.match(lines[0].text, /West/);
-  assert.equal(laneAt({ x: 6000 }), 'East');
+  // Lane names come from the nearest lane, so every ward is named after its own lane.
+  for (const team of [0, 1]) TOWER_POSITIONS[team].forEach((lane, i) => lane.forEach(p => assert.equal(laneAt(p), ['West', 'Middle', 'East'][i])));
   assert.deepEqual(chatFor({ kind: 'ping', team: 1, type: 'fight', source: heroes[3].id, x: 0, y: 0 }, s, { player: heroes[0], bots }), []);
 }
 console.log('team presence ok');

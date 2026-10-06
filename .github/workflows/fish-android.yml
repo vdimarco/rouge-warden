@@ -99,7 +99,7 @@ jobs:
           STORE_PASS: ${{ secrets.REELITIN_STORE_PASS }}
           KEY_PASS: ${{ secrets.REELITIN_KEY_PASS }}
         run: |
-          npm run build:www
+          npm run build:www -- --release
           npx cap sync android
           npx cap build android \
             --keystorepath "$RUNNER_TEMP/reelitin-upload.jks" --keystorealias upload \

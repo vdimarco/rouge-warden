@@ -3,26 +3,26 @@
 #joystick{bottom:calc(87px + env(safe-area-inset-bottom))}
 .health{bottom:calc(65px + env(safe-area-inset-bottom))}
 .abilities{right:14px;bottom:calc(57px + env(safe-area-inset-bottom));width:220px;height:210px;transform:none}
-.abilities .ability{width:62px;height:62px;background:radial-gradient(circle at 38% 25%,#33444b,#132229 70%);border:2px solid #9c9884;box-shadow:inset 0 0 0 3px #07161d,0 3px 8px #071018;filter:none;overflow:visible;color:var(--hero-color,#91f4df)}
+.abilities .ability{width:62px;height:62px;background:radial-gradient(circle at 38% 25%,#403c39,#201d19 70%);border:2px solid #9a9586;box-shadow:inset 0 0 0 3px #15110e,0 3px 8px #110f0c;filter:none;overflow:visible;color:var(--hero-color,#decca7)}
 .abilities .dash{top:0;right:1px;left:auto;bottom:auto}
 .abilities .surge{top:32px;left:75px;right:auto;bottom:auto}
 .abilities .signature{top:auto;bottom:12px;left:0;right:auto}
-.abilities .ult{top:auto;bottom:0;right:0;left:auto;width:88px;height:88px;border:3px solid var(--hero-color,#91f4df);background:radial-gradient(circle at 35% 25%,#35464d,#091721 76%);box-shadow:inset 0 0 0 4px #07151c,0 0 18px #07151c}
+.abilities .ult{top:auto;bottom:0;right:0;left:auto;width:88px;height:88px;border:3px solid var(--hero-color,#decca7);background:radial-gradient(circle at 35% 25%,#423e3b,#181410 76%);box-shadow:inset 0 0 0 4px #14110e,0 0 18px #14110e}
 .ability svg{display:block;position:absolute;inset:11px;width:36px;height:36px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px currentColor)}
 .ability.ult svg{inset:16px;width:50px;height:50px}
-.ability span{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);width:max-content;max-width:100px;color:#f1e8c7;opacity:1;font-size:9px;letter-spacing:.5px;line-height:12px;text-shadow:0 1px 3px #050c12}
-.ability b:not(:empty){position:absolute;inset:0;display:grid;place-items:center;background:#07121ec9;font-size:21px;border-radius:50%;color:#e8e7d3}
-.ability b.locked{font-size:12px;letter-spacing:1px;color:#b7b7a9}
+.ability span{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);width:max-content;max-width:100px;color:#e9e0cf;opacity:1;font-size:9px;letter-spacing:.5px;line-height:12px;text-shadow:0 1px 3px #0d0b09}
+.ability b:not(:empty){position:absolute;inset:0;display:grid;place-items:center;background:#15120ec9;font-size:21px;border-radius:50%;color:#e4e0d7}
+.ability b.locked{font-size:12px;letter-spacing:1px;color:#b5b1ab}
 .ability.unlearned svg{opacity:.32;filter:none}.ability[aria-disabled=true]{filter:none;opacity:.85}
-.ability.combo-ready{border-color:#fff0b2;box-shadow:inset 0 0 0 3px #07161d,0 0 0 2px #fff0b24d,0 3px 8px #071018}
-.ability.combo-ready::after{content:attr(data-combo);position:absolute;top:-22px;left:50%;transform:translateX(-50%);padding:3px 5px;border:1px solid #a39564;border-radius:4px;background:#10232af5;color:#fff0b2;font-size:9px;font-weight:700;line-height:12px;white-space:nowrap;pointer-events:none}
-.ability.trainable{border-color:#e6d58c}.ability kbd{display:block;top:5px;right:7px;font-size:9px;color:#d8dbbb;background:#0d1b23;border:0}
-.ranks{position:absolute;bottom:4px;left:0;width:100%;display:flex;justify-content:center;gap:3px;pointer-events:none}.ranks i{width:6px;height:3px;background:#050f16;border:1px solid #6e776d;border-radius:1px}.ranks i.filled{background:var(--hero-color);border-color:var(--hero-color)}
+.ability.combo-ready{border-color:#ebdfc6}
+.ability.combo-ready::after{content:attr(data-combo);position:absolute;top:-22px;left:50%;transform:translateX(-50%);padding:3px 6px;border:1px solid var(--mr-bronze);border-radius:2px;background:var(--mr-panel-solid);box-shadow:var(--mr-frame);color:var(--mr-gold);font-size:9px;font-weight:700;letter-spacing:.4px;line-height:12px;white-space:nowrap;pointer-events:none}
+.ability.trainable{border-color:#dfcb93}.ability kbd{display:block;top:5px;right:7px;font-size:9px;color:#d6cec0;background:#1a1714;border:0}
+.ranks{position:absolute;bottom:4px;left:0;width:100%;display:flex;justify-content:center;gap:3px;pointer-events:none}.ranks i{width:6px;height:3px;background:#100d0a;border:1px solid #79736b;border-radius:1px}.ranks i.filled{background:var(--mr-gold);border-color:#f0d49a}
 #auto-status{bottom:-39px;font-size:8px;max-width:155px;pointer-events:none}
-#skill-points{position:absolute;right:0;top:-46px;min-height:36px;width:166px;padding:7px 10px;border:1px solid #8c9984;border-radius:6px;background:#112129ed;color:#d4dec2;font-size:11px;letter-spacing:1px;font-weight:bold}
-#skill-points.ready{background:#403c24f2;color:#ffe9a1;border-color:#e1c978;box-shadow:0 0 12px #f0ce6540}
-.ability:focus-visible,#skill-points:focus-visible{outline:3px solid #fff0ac;outline-offset:4px}
-.training-summary{color:#e8d89e}.skill-training{display:grid;gap:12px}.skill-training article{display:flex;align-items:flex-start;gap:13px;padding:14px;background:#192b31;border:1px solid #718473;border-radius:10px}.skill-training h3{margin:0 0 6px;font-size:18px;color:#f1e2b3}.skill-training h3 small{font-size:9px;color:#a0d9c7}.skill-training p{margin:0 0 8px;font-size:13px;line-height:1.5}.skill-training small{font-size:11px;color:#adc6ba}.skill-training button{display:block;min-height:40px;margin-top:10px;padding:8px 18px;border:1px solid #d4c47f;border-radius:5px;background:#b8c679;color:#162420;font-size:13px;font-weight:bold}.skill-training button:disabled{background:#283b3f;color:#9daca5;border-color:#586c68}.training-icon{width:40px;min-width:40px;color:#c5eed0}.training-icon svg{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#skill-points{position:absolute;right:0;top:-46px;min-height:36px;width:166px;padding:7px 10px;border:1px solid #969187;border-radius:6px;background:#201c18ed;color:#dad3c6;font-size:11px;letter-spacing:1px;font-weight:bold}
+#skill-points.ready{background:#34302cf2;color:#f8e3a8;border-color:#d9c180;box-shadow:0 0 12px #e6c66f40}
+.ability:focus-visible,#skill-points:focus-visible{outline:3px solid #f9e6b2;outline-offset:4px}
+.training-summary{color:#e2d2a4}.skill-training{display:grid;gap:12px}.skill-training article{display:flex;align-items:flex-start;gap:13px;padding:14px;background:#272420;border:1px solid #847c71;border-radius:10px}.skill-training h3{margin:0 0 6px;font-size:18px;color:#ecdeb8}.skill-training h3 small{font-size:9px;color:#aecbc5}.skill-training p{margin:0 0 8px;font-size:13px;line-height:1.5}.skill-training small{font-size:11px;color:#b3c0bd}.skill-training button{display:block;min-height:40px;margin-top:10px;padding:8px 18px;border:1px solid #ceba85;border-radius:5px;background:#baa885;color:#1e1c1a;font-size:13px;font-weight:bold}.skill-training button:disabled{background:#35312e;color:#a1a8a7;border-color:#5d6765}.training-icon{width:40px;min-width:40px;color:#e6decd}.training-icon svg{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media(min-width:700px){.abilities{right:24px;bottom:calc(68px + env(safe-area-inset-bottom))}#joystick{bottom:85px}.health{bottom:66px}}
 @media(max-width:370px){.abilities{width:200px;height:196px;right:8px;transform:none}.abilities .ability{width:56px;height:56px}.abilities .surge{left:66px;top:32px}.abilities .ult{width:80px;height:80px}.ability svg{inset:9px;width:34px;height:34px}.ability.ult svg{inset:13px;width:48px;height:48px}.ability span{font-size:8px}.abilities .signature{bottom:10px}#skill-points{width:152px}#joystick{bottom:83px}.health{bottom:64px}}
 @media(max-height:520px) and (min-width:600px){.abilities{right:16px;bottom:42px;height:186px;width:205px;transform:none}.abilities .surge{left:68px;top:22px}.abilities .ult{width:80px;height:80px}.ability.ult svg{inset:12px;width:50px;height:50px}.abilities .signature{bottom:5px}#skill-points{top:-41px;min-height:34px}#joystick{bottom:46px}.health{bottom:29px}#auto-status{bottom:-30px}}
@@ -33,7 +33,7 @@
 
 /* Thumb-first combat controls: large targets for simultaneous move + cast. */
 .abilities{width:252px;height:232px;right:max(12px,env(safe-area-inset-right));}
-.abilities .ability{width:72px;height:72px;padding:0;touch-action:none;overflow:visible;border-width:2px;background:#081925;box-shadow:inset 0 0 0 3px #071018,0 5px 16px #0008}
+.abilities .ability{width:72px;height:72px;padding:0;touch-action:none;overflow:visible;border-width:2px;background:#1a1611;box-shadow:inset 0 0 0 3px #110f0c,0 5px 16px #0008}
 .abilities .dash{top:0;right:2px}
 .abilities .surge{top:39px;left:86px}
 .abilities .signature{left:2px;bottom:17px}
@@ -42,12 +42,12 @@
 .ability.ult .hud-spell-art{inset:6px}
 .ability>svg{display:none!important}
 .ability span{bottom:-18px;max-width:116px;font-size:9px}
-.ability kbd{z-index:5;top:4px;right:6px;padding:2px 4px;border-radius:4px;background:#031018d9;color:#e8fbff;font-size:10px}
-.ability b:not(:empty){z-index:4;background:#05121dcc}
+.ability kbd{z-index:5;top:4px;right:6px;padding:2px 4px;border-radius:4px;background:#100d0ad9;color:#f9f5ee;font-size:10px}
+.ability b:not(:empty){z-index:4;background:#14100dcc}
 .ranks{z-index:5;bottom:5px}
 .mana-cost{z-index:5}
 #skill-points{top:-58px;right:0;width:196px;min-height:48px;padding:9px 12px;border-radius:12px;touch-action:none;font-size:12px;box-shadow:0 5px 16px #0008}
-#skill-points.ready{transform:scale(1.03);box-shadow:0 0 0 2px #f0d58a55,0 6px 18px #0008,0 0 20px #f0ce6545}
+#skill-points.ready{transform:scale(1.03);box-shadow:0 0 0 2px #e8d19255,0 6px 18px #0008,0 0 20px #e6c66f45}
 
 @media(max-width:430px){
  .abilities{width:232px;height:216px;right:8px}
@@ -76,7 +76,7 @@
 
 /* Compact two-thumb HUD. Visual size is small; touch comfort comes from spacing and forgiving pointer slop. */
 .abilities{width:196px;height:176px;right:max(10px,env(safe-area-inset-right));bottom:calc(54px + env(safe-area-inset-bottom))}
-.abilities .ability{width:58px;height:58px;padding:0;touch-action:none;border-width:2px;background:#071722;box-shadow:inset 0 0 0 2px #040c12,0 4px 12px #0008}
+.abilities .ability{width:58px;height:58px;padding:0;touch-action:none;border-width:2px;background:#181410;box-shadow:inset 0 0 0 2px #0d0b08,0 4px 12px #0008}
 .abilities .dash{top:0;right:0}
 .abilities .surge{top:28px;left:68px}
 .abilities .signature{left:0;bottom:12px}
@@ -85,13 +85,13 @@
 .ability.ult .hud-spell-art{inset:5px}
 .ability>svg{display:none!important}
 .ability span{bottom:-16px;max-width:94px;font-size:8px;line-height:10px}
-.ability kbd{z-index:6;top:3px;right:4px;font-size:8px;padding:1px 3px;border-radius:3px;background:#021019df}
+.ability kbd{z-index:6;top:3px;right:4px;font-size:8px;padding:1px 3px;border-radius:3px;background:#100d0adf}
 .ranks{z-index:6;bottom:3px}
 .mana-cost{z-index:6}
 #skill-points{top:-44px;right:0;width:146px;min-height:40px;padding:6px 10px;border-radius:999px;touch-action:manipulation;font-size:10px;box-shadow:0 4px 12px #0007}
-#skill-points.ready{box-shadow:0 0 0 2px #f0d58a48,0 4px 14px #0008,0 0 16px #f0ce6538}
+#skill-points.ready{box-shadow:0 0 0 2px #e8d19248,0 4px 14px #0008,0 0 16px #e6c66f38}
 .abilities:not(.upgrade-mode) .ability-upgrade{opacity:.82}
-.abilities.upgrade-mode .ability-upgrade{opacity:1;transform:scale(1.08);box-shadow:0 0 0 3px #fff3bc42,0 4px 12px #000a,0 0 17px #f0cf7952}
+.abilities.upgrade-mode .ability-upgrade{opacity:1;transform:scale(1.08);box-shadow:0 0 0 3px #eee3cd42,0 4px 12px #000a,0 0 17px #e7cb8252}
 
 @media(max-width:390px){
  .abilities{width:184px;height:166px;right:7px}
@@ -129,8 +129,8 @@
 .ability span{bottom:-14px;max-width:88px;font-size:7px;line-height:9px}
 #skill-points{top:-40px;width:128px;min-height:36px;padding:5px 9px;font-size:9px}
 .abilities.upgrade-mode .ability{opacity:.5;filter:saturate(.7)}
-.abilities.upgrade-mode .ability.upgrade-target{opacity:1;filter:none;border-color:#ffe5a0;box-shadow:0 0 0 3px #ffe5a02f,0 0 18px #ffd77055,inset 0 0 0 2px #041018}
-.abilities.upgrade-mode .ability.upgrade-target::before{content:'+';position:absolute;z-index:8;right:-6px;top:-7px;width:23px;height:23px;display:grid;place-items:center;border:2px solid #ffe8a7;border-radius:50%;background:#d0a84f;color:#08131a;font:900 18px/18px Arial,sans-serif;box-shadow:0 2px 8px #0008;pointer-events:none}
+.abilities.upgrade-mode .ability.upgrade-target{opacity:1;filter:none}.abilities.upgrade-mode .ability.upgrade-target .hud-atlas-crop,.ability.combo-ready .hud-atlas-crop{border-color:var(--mr-gold);box-shadow:inset 0 0 0 1px #000,inset 0 0 14px #000a,0 0 0 2px #dcb46e66,0 4px 10px #000b}
+.abilities.upgrade-mode .ability.upgrade-target::before{content:'+';position:absolute;z-index:8;right:-6px;top:-7px;width:23px;height:23px;display:grid;place-items:center;border:1px solid var(--mr-gold);border-radius:50%;background:radial-gradient(circle at 40% 35%,#3b3125,#17130f 75%);color:var(--mr-gold);font:700 17px/18px Barlow,sans-serif;box-shadow:inset 0 0 0 2px #000a,0 0 0 1px #000,0 2px 6px #000b;pointer-events:none}
 .ability-upgrade{display:none!important}
 #skill-points,.ability{touch-action:none}
 
@@ -159,7 +159,7 @@
 .abilities .surge{top:21px;left:51px}
 .abilities .signature{left:0;bottom:6px}
 .abilities .ult{width:72px;height:72px;right:0;bottom:0;border:0;background:transparent;box-shadow:none}
-.ability .hud-spell-art{inset:7px;border-radius:11px;border:1px solid #77bfd0a8;box-shadow:inset 0 0 0 2px #041018,0 3px 9px #0009,0 0 10px color-mix(in srgb,var(--hero-color) 18%,transparent);filter:saturate(1.18) contrast(1.1)}
+.ability .hud-spell-art{inset:7px;border-radius:11px;border:1px solid #bcac8ba8;box-shadow:inset 0 0 0 2px #100d0b,0 3px 9px #0009,0 0 10px color-mix(in srgb,var(--hero-color) 18%,transparent);filter:saturate(1.18) contrast(1.1)}
 .ability.ult .hud-spell-art{inset:8px;border-radius:14px;border:2px solid var(--hero-color)}
 .ability b:not(:empty){inset:7px;border-radius:11px;font-size:15px}
 .ability.ult b:not(:empty){inset:8px;border-radius:14px}
@@ -172,7 +172,7 @@
 
 /* Direct + overlays: no extra HUD footprint and each control owns its own touch pointer. */
 .ability-upgrade[hidden]{display:none!important}
-.ability-upgrade:not([hidden]){display:grid!important;z-index:10;width:30px;height:30px;padding:0;place-items:center;border:2px solid #fff0b4;border-radius:50%;background:linear-gradient(#f5d77e,#b98e35);box-shadow:0 3px 9px #000b,0 0 10px #ffd86a4f;color:#07131a;font:900 21px/1 Arial,sans-serif;touch-action:manipulation;pointer-events:auto}
+.ability-upgrade:not([hidden]){display:grid!important;z-index:10;width:30px;height:30px;padding:0;place-items:center;border:1px solid var(--mr-gold);border-radius:50%;background:radial-gradient(circle at 40% 35%,#3b3125,#17130f 75%);box-shadow:inset 0 0 0 2px #000a,0 0 0 1px #000,0 3px 8px #000b;color:var(--mr-gold);font:700 20px/1 Barlow,sans-serif;touch-action:manipulation;pointer-events:auto}
 .upgrade-dash{right:-2px;top:1px}
 .upgrade-surge{left:80px;top:22px}
 .upgrade-signature{left:31px;bottom:2px}
@@ -228,28 +228,24 @@
 }
 .ability .hud-spell-art{
   inset:4px;
-  border-radius:15px;
-  border:2px solid #78d9e8b8;
-  box-shadow:
-    inset 0 0 0 2px #031019,
-    inset 0 0 18px #0005,
-    0 4px 12px #000b,
-    0 0 16px color-mix(in srgb,var(--hero-color) 24%,transparent);
-  filter:saturate(1.22) contrast(1.1);
+  border-radius:6px;
+  border:2px solid #7d6240;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 14px #000a,0 0 0 1px #000,0 4px 10px #000b;
+  filter:saturate(.85) contrast(1.06);
 }
 .ability.ult .hud-spell-art{
   inset:5px;
-  border-radius:20px;
-  border:3px solid var(--hero-color,#7eeaff);
+  border-radius:8px;
+  border:2px solid var(--hero-tone);
 }
 .ability b:not(:empty){
   inset:4px;
-  border-radius:15px;
+  border-radius:6px;
   font-size:17px;
 }
 .ability.ult b:not(:empty){
   inset:5px;
-  border-radius:20px;
+  border-radius:8px;
 }
 .ability kbd{
   top:5px;
@@ -258,7 +254,10 @@
   min-height:20px;
   padding:2px 4px;
   font-size:9px;
-  background:#021019e8;
+  border:1px solid #6e573a;
+  border-radius:2px;
+  background:#0f0d0be8;
+  color:var(--mr-parchment);
 }
 .ranks{bottom:6px}
 #skill-points{
@@ -267,17 +266,19 @@
   min-height:44px;
   padding:8px 11px;
   font-size:11px;
-  letter-spacing:.7px;
-  border:2px solid #7ed9e8;
-  border-radius:10px;
-  background:#071b26f3;
-  box-shadow:0 5px 14px #0009;
+  letter-spacing:1.2px;
+  border:1px solid var(--mr-bronze);
+  border-radius:3px;
+  background:var(--mr-plate);
+  box-shadow:var(--mr-bevel),var(--mr-frame);
+  color:var(--mr-parchment);
+  font:600 11px/1.1 Cinzel,Barlow,serif;
 }
 #skill-points.ready{
-  border-color:#ffe58d;
-  color:#fff0ac;
-  background:#3d381ff3;
-  box-shadow:0 0 0 2px #ffe58d2b,0 5px 14px #0009,0 0 20px #ffe58d44;
+  border-color:var(--mr-gold);
+  color:#f3dca6;
+  background:linear-gradient(180deg,#4a3a24,#2a2015 60%,#1d160f);
+  box-shadow:var(--mr-bevel),var(--mr-frame),0 0 0 1px #dcb46e55;
 }
 .ability-upgrade:not([hidden]){
   width:38px!important;
@@ -286,7 +287,7 @@
   min-height:38px!important;
   font-size:24px!important;
   border-width:2px!important;
-  box-shadow:0 3px 10px #000b,0 0 14px #ffd86a58!important;
+  box-shadow:inset 0 0 0 2px #000a,0 0 0 1px #000,0 3px 8px #000b!important;
 }
 .upgrade-dash{right:-4px!important;top:-4px!important}
 .upgrade-surge{left:126px!important;top:28px!important}
@@ -317,13 +318,13 @@
 .ability .hud-spell-art{
   display:block!important;
   opacity:1!important;
-  background-color:#071722;
+  background-color:#181410;
   background-size:200% 200%!important;
   background-repeat:no-repeat!important;
 }
 .ability.unlearned .hud-spell-art{opacity:.92!important;filter:saturate(.55) brightness(.82) contrast(1.05)}
 .ability b:not(:empty){
-  background:linear-gradient(180deg,#03101988,#031019b8)!important;
+  background:linear-gradient(180deg,#100d0b88,#100d0bb8)!important;
   color:#fff!important;
   text-shadow:0 2px 5px #000,0 0 8px #000!important;
 }
@@ -342,17 +343,19 @@
   transform:none;
   opacity:1;
   overflow:hidden;
-  border-radius:15px;
-  border:2px solid #78d9e8b8;
-  background:#06131d;
-  box-shadow:inset 0 0 0 2px #031019,inset 0 0 18px #0005,0 4px 12px #000b,0 0 16px color-mix(in srgb,var(--hero-color) 24%,transparent);
+  /* A bronze-rimmed tile: dark inner edge, a thin black outline, a soft drop shadow. No glow. */
+  border-radius:6px;
+  border:2px solid #7d6240;
+  background:#14110d;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 14px #000a,0 0 0 1px #000,0 4px 10px #000b;
   pointer-events:none;
   z-index:1;
 }
 .ability.ult .hud-atlas-crop{
   inset:5px;
-  border-radius:20px;
-  border:3px solid var(--hero-color,#7eeaff);
+  border-radius:8px;
+  border:2px solid var(--hero-tone);
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 16px #000a,0 0 0 1px #000,0 0 0 3px #7d624099,0 4px 12px #000b;
 }
 .ability .hud-atlas-crop img{
   position:absolute;
@@ -362,7 +365,8 @@
   left:calc(var(--hud-col) * -100%);
   top:calc(var(--hud-row) * -100%);
   object-fit:fill;
-  filter:saturate(1.22) contrast(1.1);
+  /* The spell paintings are brighter than the rest of the HUD; tone them toward the warm palette. */
+  filter:saturate(.8) sepia(.12) contrast(1.06);
   pointer-events:none;
 }
 .ability .hud-spell-art:not(.hud-atlas-crop){display:none!important}
@@ -374,11 +378,11 @@
   transform:translateX(50%);
   width:max-content;
   height:auto;
-  padding:2px 6px;
-  border-radius:6px!important;
-  font-size:9px!important;
-  letter-spacing:.8px;
-  line-height:12px;
-  background:#031019d9!important;
-  border:1px solid #78d9e866;
+  padding:1px 5px;
+  border-radius:2px!important;
+  font:600 8px/12px Cinzel,Barlow,serif!important;
+  letter-spacing:1px;
+  color:var(--mr-text)!important;
+  background:#0f0d0be6!important;
+  border:1px solid #6e573a;
 }

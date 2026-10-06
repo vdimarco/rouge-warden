@@ -1,4 +1,5 @@
 import { SIZE, PATHS, BASES, PORTALS, CAMPS } from './world.js';
+import { LENGTH_SCALE } from './arena.js';
 import { sceneryRandom, laneDistance } from './scenery.js';
 import { riverSample, riverOutline, shoreRibbon } from './river.js';
 import { paintBaseCourt } from './bases.js';
@@ -64,6 +65,8 @@ export function paintGround(tiles, scene, surfaces) {
       if(rand()<.23){c.save();c.translate(p.x+(rand()-.5)*90,p.y+(rand()-.5)*60);c.rotate(a+rand());c.fillStyle='#a7a78a9e';c.strokeStyle='#6f775a99';c.lineWidth=2;c.beginPath();c.moveTo(-7,-4);c.lineTo(5,-5);c.lineTo(8,3);c.lineTo(-3,7);c.closePath();c.fill();c.stroke();c.restore();}
     }
   }
+  // Water and shore fills cover the river's real extent (plus its widest shelf) at any map size.
+  const riverTop = Math.min(...scene.river.samples.map(p => p.north)) - 160, riverHeight = Math.max(...scene.river.samples.map(p => p.south)) + 160 - riverTop;
   // Feather damp soil into the grass without a constant-width river border.
   for (const side of ['north', 'south']) {
     for (let layer = 9; layer >= 0; layer--) {
@@ -75,21 +78,21 @@ export function paintGround(tiles, scene, surfaces) {
       c.fillStyle = '#c3b98b0a'; c.fill();
     }
     c.save(); shoreRibbon(c, scene.river, side, () => 0, w => w); c.clip();
-    c.globalAlpha = .10; c.fillStyle = c.createPattern(materials[1], 'repeat'); c.fillRect(0, 1300, SIZE, 1700); c.restore();
+    c.globalAlpha = .10; c.fillStyle = c.createPattern(materials[1], 'repeat'); c.fillRect(0, riverTop, SIZE, riverHeight); c.restore();
     shoreRibbon(c, scene.river, side, () => 0, w => 3 + w * .09);
     c.fillStyle = '#62736545'; c.fill();
   }
   c.save();riverOutline(c,scene.river);c.clip();
-  const water=c.createLinearGradient(0,1700,4000,2600);water.addColorStop(0,'#659f9c');water.addColorStop(.35,'#3b8e91');water.addColorStop(.65,'#77b5a2');water.addColorStop(1,'#387c8d');c.fillStyle=water;c.fillRect(0,1300,SIZE,1700);
-  c.globalAlpha=.12;c.fillStyle=c.createPattern(tiles[2],'repeat');c.fillRect(0,1300,SIZE,1700);c.globalAlpha=1;
+  const water=c.createLinearGradient(0,riverTop,SIZE*.625,riverTop+riverHeight);water.addColorStop(0,'#659f9c');water.addColorStop(.35,'#3b8e91');water.addColorStop(.65,'#77b5a2');water.addColorStop(1,'#387c8d');c.fillStyle=water;c.fillRect(0,riverTop,SIZE,riverHeight);
+  c.globalAlpha=.12;c.fillStyle=c.createPattern(tiles[2],'repeat');c.fillRect(0,riverTop,SIZE,riverHeight);c.globalAlpha=1;
   // Sand is visible below the shallows, fading into the deeper channel.
   for (const side of ['north', 'south']) for (let layer = 10; layer >= 0; layer--) {
     shoreRibbon(c, scene.river, side, () => 0, w => -(10 + w * .64 + layer * 3));
     c.fillStyle = '#c3d3ac0b'; c.fill();
   }
-  for(let i=0;i<45;i++){const x=rand()*SIZE,bank=riverSample(x,scene.seed),y=i%2?bank.north:bank.south,radius=50+rand()*160,mask=c.createRadialGradient(x,y,0,x,y,radius);mask.addColorStop(0,'#d8d1a975');mask.addColorStop(1,'#9fcbb300');c.fillStyle=mask;c.fillRect(x-radius,y-radius,radius*2,radius*2);}c.restore();
+  for(let i=0,sand=Math.round(45*LENGTH_SCALE);i<sand;i++){const x=rand()*SIZE,bank=riverSample(x,scene.seed),y=i%2?bank.north:bank.south,radius=50+rand()*160,mask=c.createRadialGradient(x,y,0,x,y,radius);mask.addColorStop(0,'#d8d1a975');mask.addColorStop(1,'#9fcbb300');c.fillStyle=mask;c.fillRect(x-radius,y-radius,radius*2,radius*2);}c.restore();
   // Small gravel fans and grass tongues break the waterline in local clusters.
-  for (let i = 0; i < 135; i++) {
+  for (let i = 0, fans = Math.round(135 * LENGTH_SCALE); i < fans; i++) {
     const x = rand() * SIZE, bank = riverSample(x, scene.seed), side = rand() < .5 ? 'north' : 'south';
     const sign = side === 'north' ? -1 : 1, shelf = scene.river.samples[Math.min(scene.river.samples.length - 1, Math.round(x / 12))][side + 'Shelf'];
     const y = bank[side], spread = 15 + rand() * 45;
