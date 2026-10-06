@@ -96,7 +96,7 @@ Every screen SHALL fit at 390x844, 360x640, 430x932, 844x390, 820x1180, and 1280
 
 #### Scenario: Cast report with Larger text
 - **WHEN** a cast lands in the water at 360x640 with Larger text on, and the prompt sub takes two lines
-- **THEN** the cast report stands under the prompt and does not overlap it.
+- **THEN** the cast report stands beside the gauge and does not overlap the prompt, the gauge or the HUD.
 
 #### Scenario: Small Android phone
 - **WHEN** the derby HUD shows 12.4 kg at 360x640

@@ -26,7 +26,7 @@ test('forward foam approaches like hazards and paddle interpolation remains cont
 });
 test('render budget covers retina and large screens; Rush raises river speed within a bound',()=>{
  for(const [w,h,dpr]of [[390,844,2],[1536,1024,2],[3840,2160,2]]){const ratio=renderDpr(w,h,dpr);assert.ok(w*h*ratio*ratio<=1200001);assert.ok(ratio<=dpr);}
- assert.ok(riverRate(39.6)>riverRate(30));assert.ok(riverRate(999)<=2.3);
+ assert.ok(riverRate(55.44)>riverRate(42));assert.ok(riverRate(999)<=1.25);
 });
 
 test('a jump tapped on the collision frame clears a log and its raised coin without spending protection',()=>{

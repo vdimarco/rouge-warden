@@ -541,7 +541,7 @@ async function swing() {
     fired.push(has(ei, "fire") || has(ei, "dry"));
     await page.mouse.up(); await step(page, 3);
   }
-  // every refused request of a click counts (a resume that asks with no click does not), so the clicks lost are two at most, and the click that resumes is one
+  // each click that is swallowed to ask for the lock counts at once (a resume that asks with no click does not), so the clicks lost are two at most, and the click that resumes is one
   check(!fired[0] && fired.filter((f) => !f).length <= 2 && fired[2], "a browser that refuses the pointer lock: the click that resumes swings nothing, at most two clicks are lost, then clicks swing again", fired);
   await page.evaluate(() => { window.__lock.refuse = false; });
   await page.mouse.click(40, m.y); await step(page, 3); await held(page); // the lock comes back with a click

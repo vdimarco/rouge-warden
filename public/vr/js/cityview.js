@@ -182,12 +182,25 @@ varying vec4 vInfo;
 varying vec4 vFace;
 varying vec4 vEdge;
 varying float vClog;
-// window rectangles in a cell (x from, y from, x to, y to) per kind: glass, gold, brick, stone, concrete, loft, condo
+// window rectangles in a cell (x from, y from, x to, y to) per style: glass, gold, brick, stone, concrete, loft, condo
 const vec4 WRECT[7] = vec4[7](vec4(0.13, 0.15, 0.86, 0.87), vec4(0.14, 0.15, 0.85, 0.86), vec4(0.3, 0.19, 0.69, 0.78), vec4(0.3, 0.17, 0.66, 0.79), vec4(0.08, 0.44, 0.9, 0.66), vec4(0.17, 0.15, 0.83, 0.83), vec4(0.14, 0.12, 0.85, 0.82));
-// the wall colour round the windows in the atlas tiles, per kind (the average of their wall strips)
+// the wall colour round the windows in the atlas tiles, per style (the average of their wall strips)
 const vec3 WALLC[7] = vec3[7](vec3(0.16, 0.27, 0.37), vec3(0.18, 0.26, 0.34), vec3(0.56, 0.2, 0.13), vec3(0.69, 0.58, 0.51), vec3(0.42, 0.39, 0.41), vec3(0.34, 0.16, 0.13), vec3(0.26, 0.29, 0.35));
+// the dark tile of each style's pair in the atlas (the lit one is the next)
+const float TILE0[7] = float[7](0.0, 2.0, 4.0, 6.0, 14.0, 8.0, 10.0);
+// four wall paints per style, the first the painted one: glass blue/green/bronze/slate, brick red/brown/oxblood/cream,
+// stone cream/grey/rose/sand, concrete grey/beige/teal/pale, loft and condo likewise
+const vec3 WALLT[28] = vec3[28](
+  vec3(0.16, 0.27, 0.37), vec3(0.12, 0.31, 0.29), vec3(0.33, 0.25, 0.18), vec3(0.23, 0.23, 0.31),
+  vec3(0.18, 0.26, 0.34), vec3(0.31, 0.24, 0.17), vec3(0.13, 0.3, 0.3), vec3(0.25, 0.24, 0.32),
+  vec3(0.56, 0.2, 0.13), vec3(0.43, 0.25, 0.16), vec3(0.4, 0.12, 0.1), vec3(0.72, 0.57, 0.4),
+  vec3(0.69, 0.58, 0.51), vec3(0.6, 0.6, 0.6), vec3(0.73, 0.5, 0.44), vec3(0.75, 0.65, 0.43),
+  vec3(0.42, 0.39, 0.41), vec3(0.56, 0.5, 0.41), vec3(0.29, 0.43, 0.42), vec3(0.6, 0.6, 0.62),
+  vec3(0.34, 0.16, 0.13), vec3(0.52, 0.25, 0.14), vec3(0.37, 0.25, 0.17), vec3(0.35, 0.3, 0.31),
+  vec3(0.26, 0.29, 0.35), vec3(0.19, 0.35, 0.37), vec3(0.41, 0.36, 0.33), vec3(0.6, 0.55, 0.48));
 const vec3 LITMUL = vec3(1.75, 1.3, 0.85);
 const vec3 LITADD = vec3(0.1, 0.045, 0.0);
+const vec3 LUMW = vec3(0.299, 0.587, 0.114);
 // One tile of the window atlas (index = row * 4 + col, row 0 at the top). The gradients come from the cell coordinate before
 // its fract(), so the mip level stays right across the cell edges; the level stops at 6 so tiles never bleed into each other.
 vec4 tileSample(float tile, vec2 f, vec2 gx, vec2 gy) {
@@ -197,6 +210,27 @@ vec4 tileSample(float tile, vec2 f, vec2 gx, vec2 gy) {
   return textureGrad(uWin, uv, gx * (0.25 * s), gy * (0.25 * s));
 }
 float stripe(float t, float w) { float fw = fwidth(t); return (1.0 - smoothstep(w - fw, w + fw, abs(fract(t) - 0.5))) * (1.0 - smoothstep(0.2, 0.5, fw)); }
+// a box mask (x0, y0, x1, y1) with a soft rim aa per axis
+float boxM(vec2 p, vec4 b, vec2 aa) { vec2 m = smoothstep(b.xy - aa, b.xy + aa, p) * (1.0 - smoothstep(b.zw - aa, b.zw + aa, p)); return m.x * m.y; }
+// The window style a building wears: its own kind's, or one that sits well beside it in the same street.
+int styleOf(int kk, float h) {
+  if (kk == 0) return h < 0.6 ? 0 : h < 0.8 ? 1 : 6;
+  if (kk == 1) return h < 0.7 ? 1 : 0;
+  if (kk == 2) return h < 0.55 ? 2 : h < 0.85 ? 5 : 3;
+  if (kk == 3) return h < 0.65 ? 3 : 2;
+  if (kk == 4) return h < 0.5 ? 4 : h < 0.8 ? 6 : 3;
+  if (kk == 5) return h < 0.65 ? 5 : 2;
+  return h < 0.65 ? 6 : h < 0.85 ? 4 : 0;
+}
+// The light in a lit room (c picks it, s is a second hash): half are the painted warm lamps (white = keep), then cool
+// white, deep orange, a flickering TV blue, and the odd pink neon.
+vec3 roomTint(float c, float s) {
+  if (c < 0.5) return vec3(1.0);
+  if (c < 0.68) return vec3(0.84, 0.98, 1.22);
+  if (c < 0.79) return vec3(1.22, 0.7, 0.42);
+  if (c < 0.93) return vec3(0.42, 0.68, 1.4) * (0.82 + 0.18 * step(0.45, fract(uTime * (1.1 + 1.7 * s) + s * 9.0)));
+  return vec3(1.3, 0.48, 1.0);
+}
 vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY) {
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
@@ -204,14 +238,27 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   bool condo = vInfo.x > 15.5;
   int kk = condo ? 6 : k;
   float gH = glassy ? 6.5 : 4.6;
+  // -- what this building wears: a window style, a wall paint, a bay, window groups, corner pilasters, a floor rhythm
+  float hs = hash12(vec2(sd, 11.3)), ht = hash12(vec2(sd, 23.9)), hb = hash12(vec2(sd, 37.1)), hp = hash12(vec2(sd, 41.7));
+  float hr = hash12(vec2(sd, 53.3)), hx = hash12(vec2(sd, 67.9)), hn = hash12(vec2(sd, 71.1));
+  int st = styleOf(kk, hs);
+  bool brickish = st == 2 || st == 5;
+  bool homes = st >= 2 && st <= 5;
+  vec3 wallAlb = WALLT[st * 4 + (ht < 0.4 ? 0 : ht < 0.6 ? 1 : ht < 0.8 ? 2 : 3)];
+  vec3 wallShift = wallAlb - WALLC[st];
   // Light in three bands: facing the sun and clear of other towers' shadows is lit, in a shadow's edge is mid, turned away is shade.
   float L = max(dot(N, uSunDir), 0.0) * sunT(shadowDepthAt(vW + N * 2.5));
   float band = comicBand(L, 0.12, 0.5);
+  float pil = (hx < 0.45 && faceW > bay * 4.0) ? mix(0.45, 1.0, fract(hx * 7.3)) : 0.0;
+  float u2 = u - pil, faceW2 = faceW - 2.0 * pil;
+  float grp = hp < 0.3 ? 2.0 : hp < 0.45 ? 3.0 : 1.0;
+  float bs = mix(0.82, 1.38, hb);
+  if (grp > 1.5) bs = max(bs, 1.22);
   // The grid of window cells: one row per floor, and a tall row for the street floor (id.y = -1).
-  float cols = max(1.0, floor(faceW / bay + 0.5));
-  float cw = faceW / cols;
+  float cols = max(1.0, floor(faceW2 / (bay * bs) + 0.5));
+  float cw = faceW2 / cols;
   bool street = y < gH;
-  vec2 q = vec2(u / cw, street ? y / gH - 1.0 : (y - gH) / fh);
+  vec2 q = vec2(u2 / cw, street ? y / gH - 1.0 : (y - gH) / fh);
   vec2 gx = dFdx(q), gy = dFdy(q);
   vec2 fq = abs(gx) + abs(gy);
   // per axis: 1 while a cell spans several pixels, 0 where it would shimmer (then each axis fades to its own average)
@@ -220,6 +267,13 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float nearD = uHaveWin > 0.5 ? 1.0 - smoothstep(NEAR0, NEAR1, max(fq.x, fq.y)) : 0.0;
   vec2 id = floor(q), f = fract(q);
   float inFloors = street ? step(gH, top) : step((id.y + 1.0) * fh + gH, top - 0.5);
+  // the window keeps its painted width in a wider cell; the rest is pier, gathered between the groups
+  float tw = street ? 1.0 : clamp(bay / cw, 0.6, 1.0);
+  float gpos = mod(id.x, grp);
+  float lx = grp > 1.5 ? (1.0 - tw) * (grp - 1.0 - gpos) / (grp - 1.0) : (1.0 - tw) * 0.5;
+  vec2 ft = vec2((f.x - lx) / tw, f.y);
+  vec2 aa = max(vec2(fq.x / tw, fq.y) * 0.75, vec2(1e-4));
+  float pier = mix(1.0 - tw, 1.0 - boxM(ft, vec4(0.0, -1.0, 1.0, 2.0), aa), det2.x) * step(tw, 0.999);
   // the rooms: dark or lit (offices fewer, homes more); greener in a clogged district; all lit at the finale
   float r = hash13(vec3(id, sd * 0.618 + salt * 7.31));
   float rs = hash12(vec2(id.x, sd * 0.97 + salt * 3.1));
@@ -230,12 +284,19 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   bool shopRow = street && shop > 0.5;
   if (street) lit = step(rs, shopRow ? 0.92 : glassy ? 0.72 : 0.55);
   float litAvg = street ? (shopRow ? 0.92 : glassy ? 0.72 : 0.55) : litP;
-  float baseTile = condo ? 10.0 : k == 0 ? 0.0 : k == 1 ? 2.0 : k == 2 ? 4.0 : k == 3 ? 6.0 : k == 4 ? 14.0 : 8.0;
+  float baseTile = TILE0[st];
   float tile = shopRow && lit > 0.5 ? (rs < 0.62 ? 12.0 : 13.0) : baseTile + lit;
-  vec3 wallAlb = WALLC[kk];
   vec3 celWall = comicCelX(wallAlb, band, LITMUL, LITADD);
   vec3 green = vec3(0.5, 0.9, 0.25);
-  vec3 litWin = mix(mix(vec3(1.0, 0.81, 0.35), vec3(1.0, 0.7, 0.18), fract(r * 13.7)), green, vClog * 0.5) * mix(vec3(1.0), vec3(1.06, 1.0, 0.88), uFinale);
+  vec3 warm = vec3(1.06, 1.0, 0.88);
+  // each lit room its own light (not on the street floor, whose shops keep their painted glow)
+  float tcls = street ? 0.0 : fract(r * 23.17);
+  vec3 tint = roomTint(tcls, fract(r * 3.71));
+  vec3 litPaint = mix(vec3(1.0, 0.81, 0.35), vec3(1.0, 0.7, 0.18), fract(r * 13.7));
+  vec3 litRoom = tcls < 0.5 ? litPaint : vec3(dot(litPaint, LUMW)) * tint * 1.15;
+  vec3 finW = mix(vec3(1.0), warm, uFinale);
+  vec3 litWin = mix(litRoom, green, vClog * 0.5) * finW;
+  vec3 litWinAvg = mix(vec3(1.0, 0.76, 0.27), green, vClog * 0.5) * finW;
   vec3 darkWin = vec3(0.06, 0.17, 0.32);
   // Glass mirrors the painted sky: the sunset side glows orange, the far side stays violet.
   vec3 skyR = vec3(0.0);
@@ -248,15 +309,15 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   }
   #endif
   // -- flat blocks: a window rectangle in each cell, flat lit or dark (also the look without the atlas)
-  vec4 wr = shopRow ? vec4(0.08, 0.06, 0.92, 0.56) : WRECT[kk];
-  vec2 aa = max(fq * 0.75, vec2(1e-4));
-  vec2 wa = smoothstep(wr.xy - aa, wr.xy + aa, f) * (1.0 - smoothstep(wr.zw - aa, wr.zw + aa, f));
+  vec4 wr = shopRow ? vec4(0.08, 0.06, 0.92, 0.56) : WRECT[st];
+  vec2 wa = smoothstep(wr.xy - aa, wr.xy + aa, ft) * (1.0 - smoothstep(wr.zw - aa, wr.zw + aa, ft));
+  vec2 ww = wa;
   wa = mix(wr.zw - wr.xy, wa, det2);
   float wmask = wa.x * wa.y * inFloors;
   vec3 glassDark = mix(darkWin, skyR, mirror);
   vec3 roomDark = comicCelX(glassDark * (0.85 + 0.4 * f.y), band, LITMUL, LITADD);
   vec3 roomNow = lit > 0.5 ? litWin : roomDark;
-  vec3 roomAvg = mix(comicCelX(glassDark, band, LITMUL, LITADD), litWin, litAvg);
+  vec3 roomAvg = mix(comicCelX(glassDark, band, LITMUL, LITADD), litWinAvg, litAvg);
   vec3 room = mix(roomAvg, roomNow, detail);
   float emBlock = wmask * mix(litAvg, lit, detail);
   vec3 col = mix(celWall, room, wmask);
@@ -267,24 +328,107 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 aw = comicCelX(rs < 0.5 ? vec3(0.7, 0.14, 0.1) : vec3(0.1, 0.4, 0.4), band, LITMUL, LITADD);
     col = mix(col, aw, ay * detail);
   }
-  // -- the painted tile: the atlas cell for this window, lit or dark
+  // -- the painted tile: the atlas cell for this window, lit or dark, in the building's own wall paint
   if (nearD > 0.001) {
-    vec2 fx = vec2(mix(f.x, 1.0 - f.x, step(0.5, fract(r * 37.1))), f.y);
-    vec3 tc = tileSample(tile, fx, gx, gy).rgb;
+    vec2 fx = vec2(mix(ft.x, 1.0 - ft.x, step(0.5, fract(r * 37.1))), f.y);
+    vec3 tc = tileSample(tile, fx, vec2(gx.x / tw, gx.y), vec2(gy.x / tw, gy.y)).rgb;
     float yy = min(tc.r, tc.g) - tc.b;
     float e = lit * smoothstep(0.12, 0.34, yy);
     if (tile > 12.5 && tile < 13.5) e = max(e, smoothstep(0.3, 0.55, max(tc.r, max(tc.g, tc.b))));
+    float win = ww.x * ww.y;
+    if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0);
     // dark glass shows the sky, the way the towers in the key art do
-    vec2 ww = smoothstep(wr.xy - aa, wr.xy + aa, f) * (1.0 - smoothstep(wr.zw - aa, wr.zw + aa, f));
-    tc = mix(tc, skyR, (1.0 - lit) * mirror * 0.7 * ww.x * ww.y);
-    vec3 glow = tc * e * (0.94 + 0.12 * fract(r * 5.3)) * mix(vec3(1.0), vec3(1.06, 1.0, 0.9), uFinale);
+    tc = mix(tc, skyR, (1.0 - lit) * mirror * 0.7 * win);
+    vec3 glow = tc * e * (0.94 + 0.12 * fract(r * 5.3));
+    if (tcls >= 0.5) glow = vec3(dot(glow, LUMW)) * tint * 1.15;
+    glow *= finW;
     glow = mix(glow, glow * green * 1.4, vClog * 0.4);
     vec3 tcol = comicCelX(tc * (1.0 - e), band, LITMUL, LITADD) + glow;
     col = mix(col, mix(celWall, tcol, inFloors), nearD);
     em = mix(em, e * inFloors, nearD);
   }
-  // world-anchored Ben-Day dots on the walls that are not fully lit, in face metres so they hold still in both eyes
+  float upper = street ? 0.0 : inFloors * step(y, top);
   #ifndef LOW
+  // -- per window, up close only: a roller shade or blinds pulled part way down; an air-conditioner box in some homes
+  {
+    float wh = wr.w - wr.y;
+    float wy = (ft.y - wr.y) / wh;
+    float sk = fract(r * 41.3);
+    float depth = mix(0.22, 0.6, fract(r * 17.9));
+    float sm = ww.x * ww.y * smoothstep(1.0 - depth - aa.y / wh, 1.0 - depth + aa.y / wh, wy) * step(sk, 0.3) * upper * detail;
+    vec3 fab = fract(r * 7.7) < 0.4 ? vec3(0.92, 0.86, 0.7) : fract(r * 7.7) < 0.7 ? vec3(0.75, 0.25, 0.2) : vec3(0.25, 0.55, 0.5);
+    float slat = sk < 0.12 ? stripe(wy * 9.0, 0.16) : 0.0;
+    vec3 shadeCol = lit > 0.5 ? mix(litWin * 0.85, fab * litWin.r * 1.05, sk < 0.12 ? 0.25 : 0.6) * (1.0 - 0.45 * slat)
+                              : comicCelX(fab * 0.62, band, LITMUL, LITADD) * (1.0 - 0.35 * slat);
+    col = mix(col, shadeCol, sm);
+    em *= 1.0 - sm * 0.4;
+    // the box sits in the bottom of the sash, poking out over the sill
+    float acOn = step(fract(r * 67.1), 0.16) * step(hr, 0.7) * (homes ? 1.0 : 0.0) * upper * detail;
+    float ax0 = wr.x + (wr.z - wr.x) * (fract(r * 29.3) < 0.5 ? 0.12 : 0.5);
+    vec4 acB = vec4(ax0, wr.y - 0.07, ax0 + 0.26, wr.y + 0.08);
+    float acM = boxM(ft, acB, aa) * acOn;
+    float acIn = boxM(ft, acB + vec4(0.02, 0.02, -0.02, -0.02), aa);
+    float grille = stripe((ft.y - acB.y) / 0.035, 0.18) * acIn;
+    vec3 acCol = mix(comicCelX(vec3(0.7, 0.7, 0.66), band, LITMUL, LITADD), INKC, max(1.0 - acIn, grille * 0.6));
+    col = mix(col, acCol, acM);
+    em *= 1.0 - acM;
+  }
+  #endif
+  // -- the building's own structure, which fades to its average tone: piers between window groups, pilasters on the
+  // corners, a spandrel band in a contrasting tone every few floors, balcony rails, and a fire escape on some brick faces
+  vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0), band, LITMUL, LITADD);
+  col = mix(col, pierCol, pier * upper);
+  em *= 1.0 - pier * upper;
+  float wl = dot(wallAlb, LUMW);
+  vec3 accent = wl > 0.42 ? wallAlb * 0.62 : mix(wallAlb, vec3(0.78, 0.74, 0.68), 0.55);
+  vec3 accentCol = comicCelX(accent, band, LITMUL, LITADD);
+  float every = hn < 0.6 ? floor(3.0 + fract(hn * 13.1) * 3.0) : 0.0;
+  if (every > 0.5) {
+    float dB = abs(q.y - every * floor(q.y / every + 0.5));
+    float bw = 0.085;
+    float sb = mix(2.0 * bw / every, 1.0 - smoothstep(bw - aa.y, bw + aa.y, dB), det2.y) * step(0.0, q.y) * step(y, top);
+    col = mix(col, accentCol, sb);
+    em *= 1.0 - sb;
+  }
+  float pw = max(fwidth(u), 1e-4);
+  float pm = pil > 0.0 ? 1.0 - smoothstep(-pw, pw, min(u, faceW - u) - pil) : 0.0;
+  col = mix(col, accentCol, pm * step(y, top));
+  em *= 1.0 - pm;
+  #ifndef LOW
+  // balcony rails under the windows of some homes and condos (a slab, a top bar, thin balusters)
+  if (homes && hr < 0.32) {
+    vec4 rb = vec4(wr.x - 0.06, wr.y - 0.05, wr.z + 0.06, wr.y + 0.24);
+    float inR = boxM(ft, rb, aa);
+    float slab = boxM(ft, vec4(rb.x, rb.y, rb.z, wr.y + 0.01), aa);
+    float bar = boxM(ft, vec4(rb.x, rb.w - 0.035, rb.z, rb.w), aa);
+    float bal = stripe(u / 0.16, 0.09) * inR;
+    float rm = max(max(slab, bar), bal);
+    float rAvg = 0.17 * (rb.z - rb.x) * tw;
+    float rv = mix(rAvg, rm, detail) * upper;
+    vec3 railCol = mix(comicCelX(vec3(0.16, 0.14, 0.18), band, LITMUL, LITADD), comicCelX(vec3(0.66, 0.63, 0.6), band, LITMUL, LITADD), slab * (1.0 - bar));
+    col = mix(col, mix(comicCelX(vec3(0.3, 0.28, 0.32), band, LITMUL, LITADD), railCol, detail), rv);
+    em *= 1.0 - rv;
+  }
+  // a fire escape: a landing at each floor and a stair zigzagging between them, two bays wide
+  if (brickish && hr > 0.55 && fract(salt * 0.618) < 0.5 && cols >= 3.0) {
+    float W = 2.0 * cw;
+    float xm = u2 - floor(cols * 0.5 - 1.0) * cw;
+    float ym = f.y * fh;
+    float px = max(max(fwidth(u), fwidth(y)), 1e-4);
+    float inX = smoothstep(-px, px, xm) * (1.0 - smoothstep(W - px, W + px, xm));
+    float slab = 1.0 - smoothstep(0.16 - px, 0.16 + px, ym);
+    float rail = 1.0 - smoothstep(0.05 - px, 0.05 + px, abs(ym - 1.0));
+    float post = stripe(xm / 0.3, 0.07) * step(ym, 1.0);
+    float run = 0.7 * W;
+    float xl = mod(id.y, 2.0) < 0.5 ? 0.15 * W + run * f.y : 0.85 * W - run * f.y;
+    float dS = abs(xm - xl) * fh / sqrt(fh * fh + run * run);
+    float stair = 1.0 - smoothstep(0.11 - px, 0.11 + px, dS);
+    float feAvg = 0.36 / fh + 0.22 / run + 0.05;
+    float fe = mix(feAvg, max(max(slab, rail), max(post, stair)), detail) * inX * upper;
+    col = mix(col, comicCelX(vec3(0.17, 0.13, 0.17), band, LITMUL, LITADD), fe);
+    em *= 1.0 - fe;
+  }
+  // world-anchored Ben-Day dots on the walls that are not fully lit, in face metres so they hold still in both eyes
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vec2(u, y), 0.22, mix(0.62, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.5 * (1.0 - em));
   #endif

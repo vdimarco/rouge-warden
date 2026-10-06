@@ -62,7 +62,7 @@ export function teleport(P, x, y, z) {
   P.vel.x = P.vel.y = P.vel.z = 0;
   P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
   for (const r of P.ropes) idle(r);
-  P.dead = null; P.quietT = 0; P.airT = 0; P.stepSpeed = 0; P.wall = null; P.wallCool = 0;
+  P.dead = null; P.quietT = 0; P.airT = 0; P.stepSpeed = 0; P.wall = null; P.wallCool = 0; P.roll = 0;
   settle(P);
   P.events.push({ type: "respawn" });
 }
@@ -340,9 +340,19 @@ export function step(P, h, inp) {
   /* ---- forces ---- */
   if (P.onGround) {
     // walk toward the wish at run speed; friction takes the rest away
-    const k = 1 - Math.exp(-c.ground.friction * h);
-    V.x += (mx * c.ground.run - V.x) * k;
-    V.z += (mz * c.ground.run - V.z) * k;
+    const mvs = c.moves;
+    if (mvs && P.roll > 0) {
+      // the landing roll: no walking, only a little friction, never slower than the roll's own speed
+      P.roll = Math.max(0, P.roll - h);
+      const f = Math.exp(-mvs.roll.friction * h), hs = len2(V.x, V.z);
+      V.x *= f; V.z *= f;
+      const want = mvs.roll.minSpeed * (P.roll > 0 ? 1 : 0);
+      if (hs > 1e-3 && hs * f < want) { const k = want / (hs * f); V.x *= k; V.z *= k; }
+    } else {
+      const k = 1 - Math.exp(-c.ground.friction * h), run = c.ground.run * (mvs && inp && inp.sprint ? mvs.sprint : 1);
+      V.x += (mx * run - V.x) * k;
+      V.z += (mz * run - V.z) * k;
+    }
     V.y = 0;
     if (inp && inp.jump) { V.y = c.ground.jump; P.onGround = false; P.ground = null; }
   } else {
@@ -448,8 +458,18 @@ function land(P, top, col, speed) {
   P.pos.y = top;
   V.y = 0; W.y = 0;
   P.onGround = true; P.ground = col;
+  // flat play: a landing from a dive, or a hard one, is a forward roll that keeps the speed along the ground
+  const mvs = P.cfg.moves;
+  if (mvs && P.airT > 0.3 && (P.rollReady || speed >= mvs.roll.fall)) {
+    let hx = V.x, hz = V.z, hs = len2(hx, hz);
+    if (hs < 0.5) { hx = P.face ? P.face.x : 0; hz = P.face ? P.face.z : -1; hs = len2(hx, hz) || 1; }
+    const sp = Math.max(len2(V.x, V.z), mvs.roll.minSpeed);
+    V.x = (hx / hs) * sp; V.z = (hz / hs) * sp;
+    P.roll = mvs.roll.time;
+    P.events.push({ type: "roll", speed, dive: !!P.rollReady });
+  }
   // a hop of a few centimetres on a taut rope is not a landing worth a sound
-  if (P.airT > 0.15 || speed > 2) P.events.push({ type: "land", speed });
+  if (P.airT > 0.15 || speed > 2) P.events.push({ type: "land", speed, roll: P.roll > 0 });
 }
 
 // Push one body sphere out of the city and take away the speed into the wall (10 % comes back).

@@ -80,5 +80,27 @@
     "format": "1774x887 RGBA; eight frames in four columns and two rows",
     "reference": "Approved menu likeness and runner-sprites.png",
     "direction": "Seamless paddle stroke and recovery, bare torso, long hair, modest loincloth, same raft and camera."
+  },
+  "river-portrait-flow.mp4": {
+    "provider": "fal.ai (derived locally)",
+    "source": "river-portrait-loop.mp4",
+    "requestId": "01a10de6-8d12-7250-9252-c22ebb562a03",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "date": "2026-10-06",
+    "encoding": "512x768, 60fps, H.264 CRF23, silent, faststart",
+    "durationSeconds": 3.916667,
+    "derivation": "Scale, setpts=PTS/1.3, optical-flow interpolation (minterpolate fps=60, mci, aobmc, bidir, vsbmc). Browser-native playback rather than video-to-canvas copying. Original fal clips retained.",
+    "bytes": 1242254
+  },
+  "river-landscape-flow.mp4": {
+    "provider": "fal.ai (derived locally)",
+    "source": "river-landscape-loop.mp4",
+    "requestId": "01a10de6-92df-7020-bcc5-2e4e498cf2f7",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "date": "2026-10-06",
+    "encoding": "768x512, 60fps, H.264 CRF23, silent, faststart",
+    "durationSeconds": 3.916667,
+    "derivation": "Scale, setpts=PTS/1.3, optical-flow interpolation (minterpolate fps=60, mci, aobmc, bidir, vsbmc). Browser-native playback rather than video-to-canvas copying. Original fal clips retained.",
+    "bytes": 885435
   }
 }

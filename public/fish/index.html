@@ -161,6 +161,9 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+/* the gauge only fades in: the prompt sits just under it */
+#reelUI:not([hidden]) > #gaugeBox { animation-name: fade-in; }
+@keyframes fade-in { from { opacity: 0; } }
 
 /* ---------- HUD ---------- */
 #hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px); display: flex; align-items: center; gap: 8px; pointer-events: none; z-index: 5; }
@@ -193,8 +196,10 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 
 /* the reel: keep the prompt off the gauge on the left (and so, centred, off the crank on the right) */
 #game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + var(--gauge-w) + 20px)), 560px); }
-/* the tall reel: the prompt goes under the gauge (the toast goes beside it) */
-#game.l-tall-reel #prompt { top: calc(var(--sat) + 110px + var(--gauge-h)); }
+/* the tall reel: the prompt goes just under the gauge (the toast and the cast report go beside it). The lake from the far
+   shore down is the lure's: no message comes down to it */
+#game.l-tall-reel #prompt { top: calc(var(--sat) + 62px + var(--gauge-h) + var(--toast-push, 0px)); transition: top 0.2s; }
+#game.l-tall-reel #prompt .p2 { margin-top: 4px; }
 
 /* the hook set: "Fish on!" in big letters in the prompt's place for about 0.9 s, then the prompt again */
 #banner { position: absolute; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); width: min(92%, 560px); display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; z-index: 5; }
@@ -203,18 +208,43 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #banner span { display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 999px; background: #2d7a45; border: 1px solid #9fe0a8; font-size: 15px; color: #fff; animation: banner-pop 0.45s 0.12s cubic-bezier(.3, 1.6, .5, 1) both; }
 #banner span:empty { display: none; }
 #banner:not([hidden]) + #prompt { visibility: hidden; }
-#game.l-tall-reel #banner { top: calc(var(--sat) + 104px + min(30vmin, 150px)); }
+#game.l-tall-reel #banner { top: calc(var(--sat) + 58px + var(--gauge-h)); }
 #game.l-reel #banner { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
 @keyframes banner-pop { from { transform: scale(0.6); opacity: 0; } }
 
 
 /* the cast report after a landing */
 #report { position: absolute; left: 50%; top: max(36%, calc(var(--sat) + 215px)); transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 4; }
-/* the reel starts the moment the lure lands: in the tall reel the report sits under the prompt, over the lake. Larger text
-   makes the prompt taller, so the gap grows with it */
+/* the reel starts the moment the lure lands: in the tall reel the report sits beside the gauge, in the sky, where the
+   toast goes (a toast waits while the report is up). Nothing covers the lure on the water */
 #report { width: min(92%, 420px); }
-#game.l-tall-reel #report { top: calc(var(--sat) + 110px + var(--gauge-h) + 144px * var(--ui-scale, 1)); }
-#game.l-tall-reel #report .dist { font-size: clamp(34px, 10vmin, 64px); }
+#game.l-tall-reel #report { --col: calc(var(--sal) + var(--gauge-w) + 22px); top: calc(var(--sat) + 54px); transform: translateX(-50%);
+  left: calc((var(--col) + 100% - var(--sar) - 10px) / 2); width: calc(100% - var(--col) - var(--sar) - 10px); }
+#game.l-tall-reel #report .dist { font-size: clamp(30px, 9vmin, 52px); }
+#game.l-tall-reel #report .zone, #game.l-reel #report .zone, #game.l-wide-cast #report .zone { display: table; max-width: 100%; line-height: 1.2; }
+#game.l-tall-reel #report .verdict, #game.l-tall-reel #report .zone { margin-top: 3px; }
+#game.l-tall-reel #report .verdict { padding: 2px 10px; }
+#game.l-tall-reel #report .zone { padding: 2px 8px; }
+#game.l-tall-reel #report:not([hidden]) ~ #toast, #game.l-reel #report:not([hidden]) ~ #toast { opacity: 0; }
+/* a narrow phone: a wider column beside the gauge and smaller digits, so a long note stays above the prompt */
+@media (max-width: 380px) {
+  #game.l-tall-reel #report { --col: calc(var(--sal) + var(--gauge-w) + 14px); left: calc((var(--col) + 100% - var(--sar) - 4px) / 2); width: calc(100% - var(--col) - var(--sar) - 4px); }
+  #game.l-tall-reel.motion[data-reel-side="left"] #report { --col: calc(var(--sar) + var(--gauge-w) + 14px); left: calc((var(--sal) + 4px + 100% - var(--col)) / 2); width: calc(100% - var(--col) - var(--sal) - 4px); }
+  #game.l-tall-reel #report .dist { font-size: 28px; }
+}
+/* the wide cast and reel: the report goes to the top right, opposite the gauge, where the toast goes. The lake in the
+   middle is the lure's */
+#game.l-reel #report, #game.l-wide-cast #report { top: calc(var(--sat) + 58px); transform: translateX(-50%); left: calc(100% - var(--sar) - 16px - var(--gauge-w) / 2); width: var(--gauge-w); }
+#game.l-reel #report .dist, #game.l-wide-cast #report .dist { font-size: clamp(28px, 9vmin, 48px); }
+#game.l-reel #report.show, #game.l-wide-cast #report.show, #game.l-tall-reel #report.show { animation-name: pop-top; }
+@keyframes pop-top { from { transform: translateX(-50%) scale(0.6); opacity: 0; } }
+/* a short wide screen: the prompt a little higher and tighter, so its sub stays above the far water */
+@media (max-height: 400px) {
+  #game.l-reel #prompt { top: calc(var(--sat) + 50px); }
+  #game.l-reel #prompt .p1 { padding: 6px 12px; }
+  #game.l-reel #prompt .p2 { margin-top: 3px; padding: 2px 8px; }
+}
+#game.l-tall-reel.motion[data-reel-side="left"] #report { --col: calc(var(--sar) + var(--gauge-w) + 22px); left: calc((var(--sal) + 10px + 100% - var(--col)) / 2); width: calc(100% - var(--col) - var(--sal) - 10px); }
 #report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff;
   text-shadow: 0 0 2px #092229, 0 0 3px #092229, 0 0 6px rgba(9, 34, 41, 0.9), 0 3px 0 rgba(9, 34, 41, 0.7), 0 0 22px rgba(9, 34, 41, 0.5); }
 #report .dist small { font-size: 0.45em; }
