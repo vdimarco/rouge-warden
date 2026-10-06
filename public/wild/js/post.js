@@ -1,6 +1,8 @@
 // The painted look. The scene is drawn into a texture first, then one full-screen pass turns it into
 // something closer to a hand-painted film frame: soft brush strokes (a Kuwahara filter), thin ink lines
 // where the depth jumps, warm colour grading, a soft glow on bright things, haze around the sun, and paper grain.
+// The watercolour wash (uWash) adds the rest of a painting on paper: strokes that wobble a little, pigment that
+// pools at colour edges and in the paper grain, cream paper showing through, and a ragged unpainted border.
 // The glow is gathered just before, in a small pass at half size.
 import * as THREE from "three";
 
@@ -23,7 +25,7 @@ export class Painter {
       tColor: { value: null }, tDepth: { value: null }, tGlow: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
       uNear: { value: 0.3 }, uFar: { value: 5000 }, uRadius: { value: quality.radius }, uFarR: { value: quality.farR || 0 }, uHaze: { value: new THREE.Color(0.6, 0.75, 0.9) }, uGlow: { value: quality.glow },
       uTime: { value: 0 }, uSun: { value: new THREE.Vector2(-9, -9) }, uSunVis: { value: 0 }, uSunCol: { value: new THREE.Color(1, 0.92, 0.75) },
-      uNight: { value: 0 }, uMood: { value: 0 }, uPunch: { value: 0 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
+      uNight: { value: 0 }, uMood: { value: 0 }, uPunch: { value: 0 }, uWash: { value: 1 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
     };
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
       uniforms: this.uniforms, depthTest: false, depthWrite: false,
@@ -185,7 +187,7 @@ void main() {
 }`;
 
 const frag = (q) => /* glsl */ `
-uniform sampler2D tColor, tDepth, tGlow; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight, uMood, uPunch;
+uniform sampler2D tColor, tDepth, tGlow; uniform vec2 uRes, uSun; uniform float uNear, uFar, uRadius, uFarR, uGlow, uTime, uSunVis, uNight, uMood, uPunch, uWash;
 #define DOF ${q.dof ? "1.0" : "0.0"}
 uniform vec3 uSunCol, uInk, uHaze; varying vec2 vUv;
 float lin(float d) { float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
@@ -194,7 +196,12 @@ float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.545
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
 ${brush(q)}
 void main() {
-  vec2 uv = vUv, px = 1.0 / uRes;
+  vec2 uv = vUv, px = 1.0 / uRes, asp = vec2(uRes.x / uRes.y, 1.0);
+  // the paper is fixed to the screen, so its grain and the wobble of the strokes never crawl across the picture
+  vec2 pp = uv * asp * 760.0;
+  // watercolour strokes never sit exactly on their shapes: the brush reads the picture a pixel or two off,
+  // along slow noise, so edges wobble a little like paint that has bled
+  vec2 wob = (vec2(vnoise(pp * 0.03), vnoise(pp * 0.03 + 17.0)) - 0.5) * px * 3.0 * uWash;
   float d0 = texture2D(tDepth, uv).r;
   float z0 = lin(d0);
   // far away, the brush gets broader, so distant hills turn into soft painted shapes
@@ -202,14 +209,26 @@ void main() {
   float R = uRadius + floor(uFarR * far + 0.5);
   // far hills become a soft wash; with DOF, so does the first few metres in front of the lens
   float soft = max(far * 0.7, DOF * smoothstep(2.8, 1.2, z0));
-  vec3 col = R > 0.5 || ${q.fxaa ? "true" : "false"} ? brush(uv, R, px, d0 >= 1.0, soft) : texture2D(tColor, uv).rgb;
+  vec3 col = R > 0.5 || ${q.fxaa ? "true" : "false"} ? brush(uv + wob, R, px, d0 >= 1.0, soft) : texture2D(tColor, uv + wob).rgb;
   // a big hit: the colours split for a moment, out from the middle of the screen
   if (uPunch > 0.01) { vec2 o = (uv - 0.5) * uPunch * 0.012; col.r = mix(col.r, texture2D(tColor, uv + o).r, 0.8); col.b = mix(col.b, texture2D(tColor, uv - o).b, 0.8); }
   // aerial perspective: the farther away, the more it fades into a clear, cool blue
   float haze = d0 < 1.0 ? (1.0 - exp(-max(z0 - 50.0, 0.0) / 520.0)) : 0.0;
   vec3 hz = uHaze; hz = clamp(mix(vec3(dot(hz, vec3(0.299, 0.587, 0.114))), hz, 1.5) * 0.93, 0.0, 1.0);
+  // in the watercolour, the far distance fades towards warm paper, not cool blue
+  hz = mix(hz, vec3(luma(hz)) * vec3(1.08, 1.0, 0.84), uWash * 0.55);
   col = mix(col, hz * (1.0 - uNight * 0.6), haze * 0.42);
-  col = mix(col, col * vec3(0.9, 0.98, 1.08), haze);
+  col = mix(col, col * mix(vec3(0.9, 0.98, 1.08), vec3(1.0, 0.99, 0.95), uWash), haze);
+  // wet edges: where one colour meets another, the pigment dries darker at the rim of the wash.
+  // Grass writes 0 in alpha and is left out, like the ink lines, so a field does not turn scratchy.
+  if (uWash > 0.01 && d0 < 1.0) {
+    vec2 o = px * 1.5;
+    vec4 a = texture2D(tColor, uv + wob - vec2(o.x, 0.0)), b = texture2D(tColor, uv + wob + vec2(o.x, 0.0));
+    vec4 e = texture2D(tColor, uv + wob - vec2(0.0, o.y)), f = texture2D(tColor, uv + wob + vec2(0.0, o.y));
+    float lc = luma(col), edge = abs(luma(a.rgb) - lc) + abs(luma(b.rgb) - lc) + abs(luma(e.rgb) - lc) + abs(luma(f.rgb) - lc);
+    edge = smoothstep(0.05, 0.3, edge) * min(min(a.a, b.a), min(e.a, f.a));
+    col *= 1.0 - edge * 0.3 * uWash;
+  }
   // ink lines where the depth jumps: silhouettes of hills, trees, people, and buildings
   float zl = lin(texture2D(tDepth, uv - vec2(px.x, 0.0)).r), zr = lin(texture2D(tDepth, uv + vec2(px.x, 0.0)).r);
   float zd = lin(texture2D(tDepth, uv - vec2(0.0, px.y)).r), zu = lin(texture2D(tDepth, uv + vec2(0.0, px.y)).r);
@@ -228,7 +247,6 @@ void main() {
   // glow picture; half a pixel over, each even pixel reads exactly the texel made for it.
   if (uGlow > 0.5) col += texture2D(tGlow, uv + 0.5 * px).rgb;
   // haze around the sun, like light in the air on a summer afternoon
-  vec2 asp = vec2(uRes.x / uRes.y, 1.0);
   float sd = length((uv - uSun) * asp);
   col += uSunCol * uSunVis * (exp(-sd * 3.2) * 0.10 + exp(-sd * 12.0) * 0.15);
   // Keep moonlit surfaces distinct from the dark horizon after the display transform.
@@ -242,12 +260,30 @@ void main() {
   float grain = vnoise(uv * uRes * 0.5) * 0.6 + vnoise(uv * uRes * 0.12) * 0.4;
   col *= 0.993 + 0.01 * grain;
   float v = length((uv - 0.5) * asp);
-  col *= mix(1.0, 0.8 - uMood * 0.18, smoothstep(0.45 - uMood * 0.12, 1.05, v));
+  col *= mix(1.0, 0.8 - uMood * 0.18 + uWash * (1.0 - uMood) * 0.12, smoothstep(0.45 - uMood * 0.12, 1.05, v));
   // the King's storm: a cool purple grade with less colour
   col = mix(col, vec3(luma(col)) * vec3(0.92, 0.86, 1.08), uMood * 0.3);
   col += vec3(1.0, 0.96, 0.9) * uPunch * 0.18;
   // Single display transform: all intermediate buffers remain linear.
   col = col / (1.0 + col * 0.55);
+  // The watercolour, worked out after the display transform so the paper keeps its own colour.
+  if (uWash > 0.01) {
+    // cream paper, dimmed by night
+    vec3 paper = vec3(0.9, 0.83, 0.68) * (1.0 - uNight * 0.86);
+    // granulation: pigment settles in the hollows of the paper, so darker and richer paint shows more grain
+    float fibre = vnoise(pp) * 0.55 + vnoise(pp * 0.37 + 5.0) * 0.3 + vnoise(pp * 0.09 + 11.0) * 0.15;
+    float lw = luma(col);
+    vec3 w = col * (1.0 - (1.0 - fibre) * (0.2 - lw * 0.12));
+    // softer colour, and paint is see-through: the paper tints everything, and shadows stay a warm sepia, never black
+    w = mix(vec3(luma(w)), w, 0.9);
+    w = w * mix(vec3(1.0), paper / 0.9, 0.45) * 0.94 + paper * 0.06;
+    // a ragged border where the wash stops and bare paper shows, with a darker rim where the paint dried
+    vec2 m2 = min(uv, 1.0 - uv) * asp;
+    float rim = min(m2.x, m2.y) + (vnoise(uv * asp * 9.0) - 0.5) * 0.034 + (vnoise(uv * asp * 55.0) - 0.5) * 0.012;
+    float paint = smoothstep(0.006, 0.02, rim);
+    w *= 1.0 - (paint - smoothstep(0.02, 0.05, rim)) * 0.22;
+    col = mix(col, mix(paper * (0.97 + fibre * 0.05), w, paint), uWash);
+  }
   gl_FragColor = vec4(col, 1.0);
   #include <colorspace_fragment>
 }`;

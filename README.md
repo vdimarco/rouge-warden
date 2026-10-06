@@ -300,6 +300,8 @@ Breath of the Lake is a 3D open-world spin-off at `/wild/`, in the style of The 
 
 **The camera.** When a wall or a hill gets between the camera and you, the camera rises over your shoulder instead of moving into you. It moves in fast and eases back out slowly, so it does not jitter.
 
+**Paint.** The world looks like a watercolour on cream paper, after [Susurrus](https://susurrus.vercel.app/). The strokes wobble a little, paint dries darker at colour edges, pigment settles in the paper grain, and a ragged border of bare paper frames the screen. The Paint button in the pause menu switches to the older Bright look and back. The game saves your choice. Add `?paint=bright` or `?paint=watercolor` to the address to choose for one visit.
+
 **Graphics settings.** The pause menu has High, Medium, and Low. The Graphics button steps through them in that order. Phones start on Low. On a phone, High counts only if you picked it on that phone. Computers with built-in graphics (Intel, AMD Radeon Graphics, phone chips) start on Medium. During play the game lowers its resolution in a few steps when frames get slow, and raises it again when there is room. It knows the screen's own frame rate, so an iPhone in Low Power Mode (30 fps) does not count as slow. If a computer is still slow at the lowest step, the game drops one setting for that visit and says so.
 
 **Speed.** How the game was made faster, with the numbers, is in [docs/botl-perf.md](docs/botl-perf.md). In short:
