@@ -36,6 +36,17 @@ try {
  assert.equal(live.say,live.touch,'sayLine reads the touch lines from the live input');
  assert.equal(live.shown,live.touch,'the first tutorial line on a phone is the touch line');
  console.log('PASS phone input kind is touch and the tutorial uses the touch lines');
+ // The phone starts facing the gold ring (the hand-off in main.js). Read the start as the game made it, before the test moves the
+ // hero. Each angle is the gap between a facing and the bearing from the hero to the ring, in the horizontal plane. The code sets
+ // the exact bearing, so 3 degrees is a wide limit. The start roof faces more than 3 degrees away from the ring (roof, below), so a
+ // start that skips the turn is off by more than the limit.
+ const face=await page.evaluate(()=>{
+  const S=G.P.pos,R=G.city.goldRing,f=G.test.flat(),d=G.camera.getWorldDirection(new G.camera.position.constructor()),tx=R.x-S.x,tz=R.z-S.z;
+  const gap=(x,z)=>Math.acos(Math.max(-1,Math.min(1,(x*tx+z*tz)/(Math.hypot(x,z)*Math.hypot(tx,tz)))))*180/Math.PI;
+  return {cam:gap(d.x,d.z),hero:gap(-Math.sin(f.hero.yaw),-Math.cos(f.hero.yaw)),rig:gap(-Math.sin(G.rigYaw),-Math.cos(G.rigYaw)),roof:gap(-Math.sin(G.city.start.yaw),-Math.cos(G.city.start.yaw))};
+ });
+ assert(face.cam<3&&face.hero<3&&face.rig<3,'the phone starts facing the gold ring, within 3 degrees '+JSON.stringify(face));
+ console.log('PASS the phone starts facing the gold ring',JSON.stringify({cam:+face.cam.toFixed(2),hero:+face.hero.toFixed(2),roof:+face.roof.toFixed(1)}));
  await page.evaluate(()=>{G.test.hold(true);const s=G.city.start;G.test.teleport(s.x,s.y,s.z);G.test.step(1/60,1);});
  assert.equal(await page.locator('.phone-stick').count(),0);
  // Aim at the guaranteed clear first-swing building, then press the real action button.
