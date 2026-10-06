@@ -8,7 +8,7 @@ class Control extends EventTarget {
   getAttribute(key){return this.attributes[key]??null;}
   send(type,id,x=50,y=50,extra={}){const e=new Event(type,{cancelable:true});Object.assign(e,{pointerId:id,clientX:x,clientY:y,button:0,pointerType:'touch',isPrimary:id===1,...extra});this.dispatchEvent(e);}
 }
-for(let hero=0;hero<12;hero++){
+for(let hero=0;hero<16;hero++){
  const state=createMatch(hero,42),p=player(state),movement={x:0,y:0},pad=new Control(),thumb=new Control(),plus=new Control(),spell=new Control(),casts=[],statuses=[],previews=[];let upgradeMode=false;
  state.units=[p];state.nextWave=state.objectiveAt=Infinity;state.campTimers=state.campTimers.map(()=>Infinity);
  const controls=movementPointer(pad,{movement,thumb,enabled:()=>true,onStart(){}});
@@ -36,7 +36,7 @@ for(let hero=0;hero<12;hero++){
  pad.send('pointerup',17);assert.equal(movement.x,1,'unrelated pointer cannot release movement');pad.send('pointercancel',1);assert.deepEqual(movement,{x:0,y:0});
  pad.send('pointerdown',8);pad.send('pointermove',8,88,50);controls.reset();skills.reset();assert.deepEqual(movement,{x:0,y:0});
 }
-console.log('All 12 heroes: concurrent movement, full-icon upgrades, aiming, cancellation and keyboard input pass.');
+console.log('All 16 heroes: concurrent movement, full-icon upgrades, aiming, cancellation and keyboard input pass.');
 
 {
  const movement={x:0,y:0},surface=new Control(),taps=[];

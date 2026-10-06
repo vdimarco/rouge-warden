@@ -204,14 +204,14 @@ export class Sound {
 
   // ---- Player combat.
   hit(variant = 0, hero = 0) {
-    const pitch = [1, .6, .85, 1.12, .68, .88, 1.3, .55, 1.2, .95, 1.05, .8][hero] || 1;
+    const pitch = [1, .6, .85, 1.12, .68, .88, 1.3, .55, 1.2, .95, 1.05, .8, .62, 1.16, 1.25, 1.02][hero] || 1;
     this.tone([340, 430, 220][variant] * pitch, [.11, .14, .21][variant], variant === 2 ? .03 : .02, hero === 7 ? 'sine' : 'triangle', [105, 160, 65][variant] * pitch);
     this.noise([.06, .07, .12][variant], variant === 2 ? .07 : .045, { freq: [2600, 2100, 1300][variant] * pitch, end: 500, q: 1.3 });
     if (variant === 2) this.tone(70, .2, .05, 'sine', 40);
     this.clip(variant === 2 ? `punch-heavy-${1 + (hero % 2)}` : `punch-${1 + variant}`, { gain: variant === 2 ? .55 : .38, rate: .85 + pitch * .15 });
   }
   skill(slot, hero = 0) {
-    const roots = [310, 145, 250, 190, 120, 420, 540, 95, 660, 330, 470, 175], root = roots[hero] || 310, interval = [1, 1.5, 1.25, .5][slot] || 1, type = [0, 3, 7, 11].includes(hero) ? 'triangle' : 'sine';
+    const roots = [310, 145, 250, 190, 120, 420, 540, 95, 660, 330, 470, 175, 110, 230, 590, 390], root = roots[hero] || 310, interval = [1, 1.5, 1.25, .5][slot] || 1, type = [0, 3, 7, 11].includes(hero) ? 'triangle' : 'sine';
     this.tone(root * interval, slot === 3 ? .45 : .26, .034, type, root * ([1, 4, 6, 9].includes(hero) ? 2.3 : .55), 0, { reverb: .25 });
     this.noise(slot === 3 ? .55 : .3, .05, { freq: 600, end: slot === 3 ? 3800 : 2400, q: 2, reverb: .3 });
     if (slot === 3) { this.tone(root * 1.5, .32, .024, 'triangle', root * 2, .07, { reverb: .5 }); this.tone(55, .7, .07, 'sine', 35, 0); }

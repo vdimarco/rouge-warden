@@ -7,7 +7,7 @@ import { spellbookHTML } from '../../public/tidebreak/spellbook.js';
 import { loadArt, Renderer } from '../../public/tidebreak/illustrated-render.js';
 
 assert.deepEqual(HERO_IDENTITIES.map(h => h.name), ['Tidewarden', 'Embersong', 'Voidcaller', 'Stoneheart', 'Skyreaver', 'Irontide', 'Moonweaver', 'Dredge', 'Glasshand', 'Salt Priestess', 'Riftblade', 'Coral Sage', 'Nightcurrent', 'The Marrow', 'Bloodwake', 'Zephyrs']);
-assert.deepEqual(HERO_IDENTITIES.map(h => h.kit), [1, 9, 4, 7, 0, 7, 8, 3, 2, 10, 6, 10, 11, 5, 3, 6]);
+assert.deepEqual(HERO_IDENTITIES.map(h => h.kit), [1, 9, 4, 7, 0, 12, 8, 3, 2, 10, 6, 15, 11, 5, 13, 14]);
 assert.equal(new Set(HERO_IDENTITIES.map(h => h.slug)).size, 16);
 assert.equal(new Set(HERO_IDENTITIES.map(h => h.kit)).size, HEROES.length);
 

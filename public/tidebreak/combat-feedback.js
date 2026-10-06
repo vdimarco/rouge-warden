@@ -34,6 +34,8 @@ function combination(s, p, t) {
     case 6: return t.spiritUntil > time && { slot:2, range:550, delay:.45, until:t.spiritUntil, color:'#ffca99', bonus:'Spirit bonus' };
     case 9: return (t.bleed?.type==='fire' && t.bleed.until > time || t.burn?.until > time) && { slot:2, range:650, until:Math.max(t.bleed?.type==='fire'?t.bleed.until:0,t.burn?.until||0), color:'#ffc16d', bonus:'Burn bonus' };
     case 11: return t.bleed?.type==='poison' && t.bleed.until > time && { slot:3, range:390, until:t.bleed.until, color:'#a9dfb7', bonus:'Poison bonus' };
+    case 12: return t.chained?.until > time && { slot:2, range:320, until:t.chained.until, color:'#a9c5d0', bonus:'Chained' };
+    case 13: return t.kind === 'hero' && t.hp < t.maxHp * .5 && { slot:3, range:650, until:time+1, color:'#ff908b', bonus:'Execute' };
     default: return null;
   }
 }

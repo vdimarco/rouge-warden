@@ -235,6 +235,46 @@
       "width": 173,
       "height": 208,
       "uniqueFrames": 30
+    },
+    {
+      "slug": "irontide",
+      "provider": "local",
+      "method": "Pillow breathing and sway loop of illustrated/irontide-front.webp (rendered from the 3D model); no paid generation",
+      "bytes": 368117,
+      "frames": 30,
+      "width": 125,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "bloodwake",
+      "provider": "local",
+      "method": "Pillow breathing and sway loop of illustrated/bloodwake-front.webp (rendered from the 3D model); no paid generation",
+      "bytes": 323469,
+      "frames": 30,
+      "width": 115,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "zephyrs",
+      "provider": "local",
+      "method": "Pillow breathing and sway loop of illustrated/zephyrs-front.webp (rendered from the 3D model); no paid generation",
+      "bytes": 349499,
+      "frames": 30,
+      "width": 155,
+      "height": 208,
+      "uniqueFrames": 30
+    },
+    {
+      "slug": "coral-sage",
+      "provider": "local",
+      "method": "Pillow breathing and sway loop of illustrated/coral-sage-front.webp (rendered from the 3D model); no paid generation",
+      "bytes": 356057,
+      "frames": 30,
+      "width": 102,
+      "height": 208,
+      "uniqueFrames": 30
     }
   ]
 }

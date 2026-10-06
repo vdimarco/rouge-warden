@@ -26,7 +26,7 @@ for(let hero=0;hero<HEROES.length;hero++){
  const {s,p}=setup();s.units=[p];const wall=OBSTACLES[0][0];p.x=wall.x-wall.w/2-100;p.y=wall.y;const goal={x:wall.x+wall.w/2+100,y:wall.y};const path=route(s,p,goal);assert(path.length>1,'blocked segment has a route around cover');
  commandOrder(s,p,{type:'move',...goal});for(let i=0;i<600;i++)step(s,{attack:false},1/60);assert(distance(p,goal)<12,'move order reaches the far side of cover');assert.equal(p.order,null);
 }
-console.log('PASS: mouse-order rules for all 12 heroes, range and damage, movement override, recall, concealment, death, neutral focus and obstacle routing.');
+console.log('PASS: mouse-order rules for all 16 heroes, range and damage, movement override, recall, concealment, death, neutral focus and obstacle routing.');
 
 // Each camp starts with its own sprite; the first four keep the original order and the list repeats for more camps.
 {const s=createMatch(1);step(s,{attack:false},.01);const names=s.units.filter(e=>e.kind==='camp').map(e=>e.marketplaceSprite),first=['possessed-ogre','undead-knight','undead-mage','undead-archer'];assert.deepEqual(names.slice(0,4),first);assert.equal(names.length,CAMPS.length);assert(names.every(n=>first.includes(n)));}

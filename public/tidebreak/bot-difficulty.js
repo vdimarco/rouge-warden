@@ -53,6 +53,11 @@ export const KIT_POWER = [
   [.52, .58, .56],
   [.55, .57, .5],
   [.55, .56, .57],
+  // The shore kits (12-15) start even until kit-strength.mjs measures them.
+  [.5, .5, .5],
+  [.5, .5, .5],
+  [.5, .5, .5],
+  [.5, .5, .5],
 ];
 // A drafting profile adds this to a candidate's draft score. The pool and the board are the
 // same for everyone, and the player sees every pick, so a strong draft is a fair edge.

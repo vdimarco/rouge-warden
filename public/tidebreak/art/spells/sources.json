@@ -67,6 +67,26 @@
       "slug": "gorgon",
       "path": "/workspace/scratch/f26fd0ed0fc9/generated_images/exec-4af8c4f9-7a32-411d-8920-4f6b1433d2d3.png",
       "prompt": "Use case: stylized-concept. Produce a square production game spell art sprite atlas, EXACTLY four square illustrated tiles in a tight 2x2 grid, NO gaps or frames. Painted luminous fantasy illustration with rich layered brush texture, sophisticated soft ink navy/teal shadows and cream rim lights, readable strong silhouette. The HERO in ALL FOUR tiles is a green snake-haired female Gorgon with a coiling snake lower body, poison fangs, stone statues and petrification, NOT a loch monster, NO blue water. Use #a9dfb7 as a magical accent. Tile order and distinct magical action: TOP LEFT: Shed skin, Slide forward, gain a shield and remove slow, poison and bleeding effects.. TOP RIGHT: Venom fang, Spit venom in a cone. It poisons and slows creatures for four seconds.. BOTTOM LEFT: Stone gaze, Damage creatures in front of you. Those facing you are stunned; creatures looking away are slowed.. BOTTOM RIGHT: Petrifying garden, Create a stone field for six seconds. Every third pulse stuns creatures inside. Poisoned creatures take extra damage.. Each tile has a complete illustration of that spell's effect and the named hero on its OWN dark navy/teal background. Distinct compositions matched to the specified action. Exact quadrant boundaries at 50% horizontally and vertically. No text, labels, icons, numbers, branding, watermarks or UI. Do not use Nessie or a generic dragon. Subject must be unmistakably Gorgon."
+    },
+    {
+      "slug": "irontide",
+      "path": "qa/tidebreak/render-shore-spells.mjs",
+      "prompt": "Not generated. Rendered in Chromium from the hero 3D portrait, a glow in the kit colour, a motion motif and the skill glyph from skill-icons.js."
+    },
+    {
+      "slug": "bloodwake",
+      "path": "qa/tidebreak/render-shore-spells.mjs",
+      "prompt": "Not generated. Rendered in Chromium from the hero 3D portrait, a glow in the kit colour, a motion motif and the skill glyph from skill-icons.js."
+    },
+    {
+      "slug": "zephyrs",
+      "path": "qa/tidebreak/render-shore-spells.mjs",
+      "prompt": "Not generated. Rendered in Chromium from the hero 3D portrait, a glow in the kit colour, a motion motif and the skill glyph from skill-icons.js."
+    },
+    {
+      "slug": "coral-sage",
+      "path": "qa/tidebreak/render-shore-spells.mjs",
+      "prompt": "Not generated. Rendered in Chromium from the hero 3D portrait, a glow in the kit colour, a motion motif and the skill glyph from skill-icons.js."
     }
   ],
   "portrait": {

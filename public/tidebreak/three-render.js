@@ -28,7 +28,7 @@ const { clamp, distance, visibleTo, concealed } = world;
 const TAU = Math.PI * 2, PITCH = THREE.MathUtils.degToRad(55), FOV = 34, HERO_ROW = .6;
 // The hero select camera: low, a narrower lens, a slow sway of SHOW_SWAY radians to each side of the hero's front.
 const SHOW_PITCH = THREE.MathUtils.degToRad(15), SHOW_FOV = 30, SHOW_SWAY = .3;
-const SPELL = ['#c7b8ef', '#8fd8c8', '#f0c890', '#ef9a8a', '#b9a0e6', '#a6d4f0', '#f2b98a', '#c6d49a', '#c9c0f2', '#f3c27a', '#9fd6aa', '#acd8bb'];
+const SPELL = ['#c7b8ef', '#8fd8c8', '#f0c890', '#ef9a8a', '#b9a0e6', '#a6d4f0', '#f2b98a', '#c6d49a', '#c9c0f2', '#f3c27a', '#9fd6aa', '#acd8bb', '#b4ccd6', '#f29a92', '#b6e2f5', '#f5aab4'];
 const v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const identityColor = e => HERO_IDENTITIES[e?.identity]?.color;
 // The colour of an effect: the caster's own hero colour where known, softened toward warm white.
@@ -279,7 +279,9 @@ export class ThreeRenderer {
   }
   zone(z, time, dt) {
     const d = this.effects.decals, fx = this.effects, col = z.legend ? SPELL[z.hero] || '#c9c0f2' : z.type === 'water' ? '#8febd9' : z.type === 'maelstrom' ? '#7fd6cf' : z.type === 'witchfire' ? (time < z.armed ? '#e2b6f2' : '#ffb075') : z.type === 'stomp' ? '#e8c890' : '#efd48c';
-    d.circle(z.x, z.y, z.radius, { color: col, alpha: .7, line: 5, fill: .12, dash: time < (z.armed || 0) ? 20 : 0 });
+    // Wind wall is a band across the aim, not a circle.
+    if (z.type === 'windwall') { const ax = Math.cos(z.angle) * z.radius, ay = Math.sin(z.angle) * z.radius; d.capsule(z.x - ax, z.y - ay, z.x + ax, z.y + ay, z.thickness, { color: col, alpha: .8, line: 5, fill: .2 }); }
+    else d.circle(z.x, z.y, z.radius, { color: col, alpha: .7, line: 5, fill: .12, dash: time < (z.armed || 0) ? 20 : 0 });
     const r = Math.random;
     if (this.reducedMotion) return;
     if (z.type === 'maelstrom') { for (let i = 0; i < 2; i++) { const a = time * 2 + r() * TAU, rr = r() * z.radius; fx.sparks.emit({ x: z.x + Math.cos(a) * rr, y: 20, z: z.y + Math.sin(a) * rr, vx: -Math.sin(a) * 160, vz: Math.cos(a) * 160, vy: 20, life: .8, size: 30, color: '#9ee6dc', drag: .5 }); } }

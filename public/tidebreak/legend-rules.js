@@ -2,9 +2,11 @@ import { SIZE, clamp, distance, lineOfSight, resolveBody, move } from './world.j
 import { launchSkill } from './skill-events.js';
 import { emitCombatFeedback } from './combat-state.js';
 import { ENGAGES, engageLength } from './combat-tells.js';
+import { castTide, tickTide, tickTideZone } from './tide-kits.js';
 const body=t=>!['core','tower'].includes(t.kind);
 export function castLegend(c){
  const {s,e,slot,aim,target,angle,rank,strength,origin,fx,cone,damage,heal,area}=c;
+ if(e.hero>=12)return castTide(c);
  const zone=(type,point,radius,life,amount,extra={})=>s.zones.push({...point,type,legend:true,source:e.id,team:e.team,hero:e.hero,rank,strength,radius,life,amount,tick:0,pulses:0,...extra});
  const placement=Math.min(360,c.aim?.distance??360);
  const point={x:clamp(c.aim?e.x+Math.cos(angle)*placement:target?.x??e.x+Math.cos(angle)*360,180,SIZE-180),y:clamp(c.aim?e.y+Math.sin(angle)*placement:target?.y??e.y+Math.sin(angle)*360,180,SIZE-180)};
@@ -76,6 +78,7 @@ export function castLegend(c){
  return true;
 }
 export function tickHeroMechanic({s,e,dt,damage,heal,hostile}){
+ if(tickTide({s,e,damage,hostile}))return true;
  if(e.chaseUntil>s.time&&s.time>=(e.trailAt||0)){
   e.trailAt=s.time+.3;s.zones.push({x:e.x,y:e.y,type:'frost',legend:true,source:e.id,team:e.team,hero:5,rank:e.skillRanks[0],radius:95,life:2.2,amount:25*e.chaseStrength,tick:0,pulses:0});
  }
@@ -97,6 +100,7 @@ export function tickHeroMechanic({s,e,dt,damage,heal,hostile}){
  return true;
 }
 export function tickLegendZone({s,z,source,damage,heal,hostile}){
+ if(tickTideZone({s,z,source,damage,hostile}))return;
  if(z.follow){if(source.hp<=0){z.life=0;return;}z.x=source.x;z.y=source.y;}
  if(z.type==='sunray'&&(source.stun>0||source.fear>0||source.silencedUntil>s.time)){z.life=0;return;}
  if(z.maxPulses&&z.pulses>=z.maxPulses)return;

@@ -11,6 +11,10 @@ export const BASIC_ATTACKS = [
   ['Ember peck','Wing flame','Solar flare'],
   ['Thorn dart','Vine whip','Grove spike'],
   ['Venom dart','Serpent lash','Stone shard'],
+  ['Chain swing','Anchor hook','Iron crash'],
+  ['Red cut','Crimson thrust','Blood reave'],
+  ['Wind dart','Gale slice','Squall burst'],
+  ['Coral dart','Reef lash','Tidal bloom'],
 ];
 export const ATTACK_TIMINGS = [
   { windup: .12, duration: .46, damage: 1 },
@@ -23,6 +27,7 @@ const RHYTHMS = [
  [.09,.12,.19], [.16,.2,.28], [.18,.22,.3], [.08,.11,.17],
  [.19,.24,.3], [.13,.17,.25], [.08,.1,.15], [.2,.27,.36],
  [.17,.21,.27], [.14,.18,.25], [.16,.2,.26], [.12,.16,.23],
+ [.19,.25,.34], [.07,.1,.16], [.09,.12,.18], [.15,.19,.26],
 ];
 export function attackTiming(e,variant=0,time=0) {
  const base=ATTACK_TIMINGS[variant],cadence=e.rate*(e.frenzy>time?.48:1);
