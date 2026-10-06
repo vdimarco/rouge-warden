@@ -1,5 +1,5 @@
 - [x] 1. Define and validate continuous seeded river shape, descent and rapid profiles.
 - [x] 2. Integrate wider winding water, whitewater shading, buoyancy, terrain and organic scenery.
 - [x] 3. Verify camera framing, layouts, action readability, motion, accessibility and rendering budgets.
-- [ ] 4. Publish and verify the live arcade build and cabinet launch.
-- [ ] 5. Validate, archive and review the canonical specification.
+- [x] 4. Publish and verify the live arcade build and cabinet launch.
+- [x] 5. Validate, archive and review the canonical specification.
