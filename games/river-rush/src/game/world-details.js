@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { districtAt } from './districts.js';
+import {riverPoint,riverHalfWidth,riverBankHeight,riverHash} from './river-course.js';
 
 // Shared, bounded decorative resources. Every near object uses course distance;
 // birds move only in the skyline and never resemble lane hazards.
@@ -37,25 +38,25 @@ export function createWorldDetails(scene,material,waterDetail,stoneMaterial) {
   flagMat.onBeforeCompile=shader=>{shader.uniforms.uFlutter=flutter;shader.vertexShader='uniform float uFlutter;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.z+=sin(position.y*3.-uFlutter*4.)*.13*(-position.y/2.9);');};
   const flutter={value:0},flags=new THREE.InstancedMesh(flagGeo,flagMat,16);flags.frustumCulled=false;scene.add(flags);
   const state={falls:0,birds:0,flowers:0,flags:0,motionTime:0};
-  function update(distance,time,reduced,harbors=[]) {
-    const t=reduced?0:time;fallUniforms.uTime.value=t;flutter.value=t;state.motionTime=t;
+  function update(distance,time,reduced,harbors=[],seed=137) {
+    const t=reduced?0:time;const point=(course,cross)=>riverPoint(distance,course,cross,seed);fallUniforms.uTime.value=t;flutter.value=t;state.motionTime=t;
     let count=0;
     const first=Math.floor((distance-20)/96);
     for(let n=first;n<=first+3;n++)for(const side of [-1,1]){
-      const course=n*96+(side>0?37:0),z=distance-course;
+      const course=n*96+(side>0?37:0)+riverHash(n+side*53,seed)*12,z=distance-course;
       if(z>14||z< -205||(districtAt(course).index!==1&&Math.abs(n)%9!==1))continue;
-      const height=.78+(Math.abs(n)%3)*.11;
-      pose.position.set(side*17.5,.1,z-1);pose.rotation.set(0,n*1.7,0);pose.scale.set(1,height,1);pose.updateMatrix();cliffs.setMatrixAt(count,pose.matrix);
-      pose.position.set(side*15.6,.25,z+4.1);pose.rotation.set(0,-side*.22,0);pose.scale.set(1,height,1);pose.updateMatrix();falls.setMatrixAt(count,pose.matrix);
-      pose.position.set(side*13.6,.05,z+4.2);pose.rotation.set(0,0,0);pose.scale.setScalar(1);pose.updateMatrix();mist.setMatrixAt(count++,pose.matrix);
+      const height=.7+riverHash(n+31,seed)*.5,width=riverHalfWidth(course,seed),p=point(course,side*(width+5.6));
+      pose.position.set(p.x,p.y+riverBankHeight(side*(width+5.6),course,seed),z-1);pose.rotation.set(0,n*1.7,0);pose.scale.set(1,height,1);pose.updateMatrix();cliffs.setMatrixAt(count,pose.matrix);
+      pose.position.set(p.x-side*2.7,p.y+.25,z+4.1);pose.rotation.set(0,-side*.22,0);pose.scale.set(1,height,1);pose.updateMatrix();falls.setMatrixAt(count,pose.matrix);
+      pose.position.set(p.x-side*4.8,p.y+.05,z+4.2);pose.rotation.set(0,0,0);pose.scale.setScalar(1);pose.updateMatrix();mist.setMatrixAt(count++,pose.matrix);
     }
     falls.count=mist.count=cliffs.count=count;falls.instanceMatrix.needsUpdate=mist.instanceMatrix.needsUpdate=cliffs.instanceMatrix.needsUpdate=true;state.falls=count;
     let l=0,f=0;const start=Math.floor((distance-16)/12);
     for(let n=start;n<start+18;n++)for(const side of [-1,1]){
-      const z=distance-n*12-(side>0?6:0);if(z>10||z< -145)continue;
-      const x=side*(9.8+Math.sin(n*2.399)*.6);
-      for(let k=0;k<4;k++){pose.position.set(x,.2,z);pose.rotation.set(-.1-k*.07,n*1.7+k*Math.PI/2,side*(.35+k*.06));pose.scale.setScalar(.7+(Math.abs(n)%3)*.13);pose.updateMatrix();leaves.setMatrixAt(l++,pose.matrix);}
-      if(Math.abs(n)%3!==1)for(let k=0;k<2;k++){pose.position.set(x+Math.sin(k*2)*.3,.85+k*.24,z+k*.19);pose.rotation.set(0,0,0);pose.scale.set(1.8,1,1.8);pose.updateMatrix();flowers.setMatrixAt(f++,pose.matrix);}
+      const course=n*12+(side>0?6:0)+riverHash(n+side*67,seed)*5,z=distance-course;if(z>10||z< -145)continue;
+      const cross=side*(riverHalfWidth(course,seed)+.8+riverHash(n+side*37,seed)*1.5),p=point(course,cross),x=p.x,y=p.y+riverBankHeight(cross,course,seed);
+      for(let k=0;k<4;k++){pose.position.set(x,y+.2,z);pose.rotation.set(-.1-k*.07,n*1.7+k*Math.PI/2,side*(.35+k*.06));pose.scale.setScalar(.7+(Math.abs(n)%3)*.13);pose.updateMatrix();leaves.setMatrixAt(l++,pose.matrix);}
+      if(Math.abs(n)%3!==1)for(let k=0;k<2;k++){pose.position.set(x+Math.sin(k*2)*.3,y+.85+k*.24,z+k*.19);pose.rotation.set(0,0,0);pose.scale.set(1.8,1,1.8);pose.updateMatrix();flowers.setMatrixAt(f++,pose.matrix);}
     }
     leaves.count=l;flowers.count=f;leaves.instanceMatrix.needsUpdate=flowers.instanceMatrix.needsUpdate=true;state.flowers=f;
     for(let i=0;i<12;i++){const side=i%2?1:-1,index=Math.floor(i/2),x=side*(19+index*3)+Math.sin(t*.33+i)*5,y=20+Math.sin(t*.8+i)*1.8+index*1.1,z=-65-index*19;

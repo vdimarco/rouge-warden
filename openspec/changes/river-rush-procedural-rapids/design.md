@@ -1,0 +1,10 @@
+## Course coordinates
+Use deterministic continuous noise keyed by the run seed. Centerline and bank width are functions of absolute course distance. Elevation always descends: a gentle baseline plus smoothly accumulated chute drops. A telescoping drop-amplitude sequence keeps cell boundaries continuous without an unbounded history or loop. Render relative to the current elevation and centerline tangent to avoid large-coordinate drift and retain the rear-facing chase direction.
+
+The three logical lanes remain collision coordinates. Rendering maps lane offsets and course depth onto the curved downhill channel. Decorative shoal rocks stay outside the playable corridor. Procedural terrain and props use the same profile so no bank gap, floating prop or uphill hazard path is introduced. Adjacent geometry tiles sample absolute coordinates, rather than repeating one hill.
+
+## Water and motion
+GPU vertices use the same grade, rapid envelope and wave coefficients as CPU buoyancy probes. High-energy chutes have standing-wave crests, directional foam threads and spray; wider pools retain darker eddies and quieter water. Water texture motion follows increasing downstream course distance. Camera framing makes the landscape larger relative to the raft without changing the character rig or physical action windows. Decorative noise and turbulence do not shove the logical player between lanes.
+
+## Bounds and verification
+Seeded profiles must be continuous across chute/scenery boundaries, maintain a safe minimum channel width and a nonpositive elevation derivative. Check CPU gradients numerically and spring stability at 30/60/120 Hz. Inspect actual rendered pool, chute and bend screenshots on phone, desktop and landscape; measure projected raft bounds, downhill elevation ahead, displaced water and shared hazard positions. Preserve pause pixels, reduced motion, model/background failure and WebGL fallback. Retain full <=300000 triangles, software <=125000 and <=65 draw calls, and test production controls/arcade launch after publishing. Software GPU timings are not physical-device FPS measurements.
