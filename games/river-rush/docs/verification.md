@@ -1,5 +1,12 @@
 # River Rush runner verification — 2026-10-05
 
+## Low duck, textures and glide verification — 2026-10-06
+
+- All 35 unit/playtest checks pass. Visual steering is checked at 30/60/120 Hz for immediate logical input, a gradual first step, settling within 150 ms, continuous reversal and refresh-rate-independent paths. The same 40-seed delayed-input playtest produces 737,188 metres, 2,952 tricks, 1,015 Rush uses and at most 49 entities. Engine and hydrodynamics files remain unchanged.
+- Material QA verifies all four 1024 px surface maps have visible detail and near-matching encoded tile borders, with 512 px normal maps. It measures the independent duck silhouette at 448×235 versus a 305×549 jump silhouette: height ratio .428, with both deck anchors at 684. The duck does not use or vertically squash the jumping image.
+- Focused renderer QA passes on phone 390×844, desktop 1536×1024 and landscape 844×390: new duck asset index 8, jump index 4, rear-view orientation, real keyboard/CDP touch input, first log/branch clearance with protection intact, exact paused state/pixels, reduced motion and no overflow. Temporary 503s retry; persistent model/image errors remain recoverable; unavailable or lost WebGL retains playable 2D. No page errors. Full-detail shader captures compile without console/page errors and show the new low brace and textured scenery.
+- Build, scoped strict OpenSpec validation and whitespace checks pass. Shader captures in SwiftShader exercise both renderer paths; they do not establish physical-device frame rates. Physical iOS/Android and Safari remain untested. Production verification is recorded after deployment.
+
 ## Downstream art verification — 2026-10-06
 
 - All 35 unit/playtest checks pass, including immediate real-input jump/duck selection and simulation-time pose freezing. The 40-seed delayed-input playtest still records 737,188 metres, 2,952 tricks, 1,015 Rush activations and at most 49 entities. Engine and hydrodynamics files have no changes.

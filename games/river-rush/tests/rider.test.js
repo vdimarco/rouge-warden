@@ -5,7 +5,7 @@ import {createGame,applyAction,updateGame,emptyInput} from '../src/game/engine.j
 test('chained real inputs select distinct downstream action art immediately',()=>{
  const g=Object.assign(createGame(1),{entities:[],nextRow:1e9});
  applyAction(g,'jump');assert.deepEqual(riderPose(g),{name:'jump',index:4,direction:'downstream'});
- applyAction(g,'duck');assert.deepEqual(riderPose(g),{name:'duck',index:5,direction:'downstream'});
+ applyAction(g,'duck');assert.deepEqual(riderPose(g),{name:'duck',index:8,direction:'downstream'});
  for(let i=0;i<40;i++)updateGame(g,emptyInput(),1/60);
  assert.equal(riderPose(g).name,'paddle');assert.ok([0,1,3].includes(riderPose(g).index));
 });
