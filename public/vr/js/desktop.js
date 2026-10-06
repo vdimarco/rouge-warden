@@ -68,10 +68,10 @@ export function createDesktop(canvas, camera, settings) {
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   // armed: Chromium's made-up jump may still come, until SKIP_MS after lockAt (the request, then the lock itself)
   let dx = 0, dy = 0, pitch = 0, wheel = 0, armed = false, lockAt = 0, usingPad = false, gt = 0, skipClick = 0;
-  // the lock: raw movement until the system says it has none; the request in flight and whether a click made it; refused click
-  // requests in a row (only those count); a browser that answers with events only; our own let-go after a change to full screen;
-  // when the lock was last lost by the user (Esc, alt-tab)
-  let raw = true, reqId = 0, pendingAt = 0, clickReq = false, events = false, lockFails = 0, relockAt = 0, lostAt = -1e9, retryT = 0;
+  // the lock: raw movement until the system says it has none; the request in flight and whether a click made it; clicks swallowed
+  // since the last grant (a browser that refuses every time loses two, then clicks fire again); a browser that answers with events
+  // only; our own let-go after a change to full screen; when the lock was last lost by the user (Esc, alt-tab)
+  let raw = true, reqId = 0, pendingAt = 0, events = false, lostClicks = 0, relockAt = 0, lostAt = -1e9, retryT = 0;
   let granted = false; // the lock has been granted since the last request: the next move ends the watch for the made-up jump
   // the free cursor (no lock): where it is, and whether it is over the page
   let cx = 0, cy = 0, inside = false;
@@ -99,8 +99,10 @@ export function createDesktop(canvas, camera, settings) {
       const api = !!canvas.requestPointerLock;
       // With no pointer lock API there is nothing to ask for (no grant and no error will come), so only the click that resumes a
       // pause is swallowed: swallowing every click would leave the buttons dead for ever. (G.state flips to play on the next tick.)
-      if (fromClick && lockFails < 2 && (api || window.G?.state === "paused")) skipClick = performance.now() + 200;
-      if (api && !asking()) request(!!fromClick); // one request at a time
+      // Every click that is swallowed counts, with no wait for the answer: a refusal is told a timer tick late, and clicks made in
+      // that gap would each be lost. With no API nothing is asked for, so a swallowed resume click is not one that counts.
+      if (fromClick && lostClicks < 2 && (api || window.G?.state === "paused")) { skipClick = performance.now() + 200; if (api) lostClicks++; }
+      if (api && !asking()) request(); // one request at a time
     },
     // Full screen just came on. With no lock, ask for one. On a Mac a lock taken while the screen changed may not hold the
     // cursor (it runs to the edge), so let go and take it straight back (a lock the page let go of needs no click).
@@ -129,23 +131,22 @@ export function createDesktop(canvas, camera, settings) {
   /* ---------------- the pointer lock ---------------- */
   // Raw mouse (no system acceleration) where the browser has it; a system without it says NotSupportedError, and then a
   // plain lock. An older browser returns no promise and answers with the events only.
-  function request(click) {
+  function request() {
     const id = ++reqId;
-    pendingAt = lockAt = performance.now(); clickReq = click; armed = true; granted = false;
+    pendingAt = lockAt = performance.now(); armed = true; granted = false;
     inside = false; // the free cursor's place is learnt again from the next move with no lock on the way
     let p = null;
     try { p = canvas.requestPointerLock(raw ? RAW : undefined); }
-    catch (e) { if (raw) { raw = false; request(click); } else refused(); return; }
+    catch (e) { if (raw) { raw = false; request(); } else refused(); return; }
     if (!p || !p.then) { events = true; return; }
     // (a refusal comes as a pointerlockerror, below: the promise only says when raw movement is not to be had)
     p.then(
       () => { if (armed) lockAt = performance.now(); }, // taken: the jump comes now, if it has not come yet
-      (e) => { if (id === reqId && raw && e && e.name === "NotSupportedError") { raw = false; request(click); } });
+      (e) => { if (id === reqId && raw && e && e.name === "NotSupportedError") { raw = false; request(); } });
   }
-  // a refused request: only a click's counts (a request no click made, a resume by Esc or Start, never does)
+  // a refused request: ask again once if the user's own Esc was just now (the lost clicks are counted when the click is swallowed)
   function refused() {
     pendingAt = 0;
-    if (clickReq) lockFails++;
     // refused just after the user's own Esc (Chrome waits about a second): ask once more when that is over
     const wait = lostAt + RETRY_MS - performance.now();
     if (wait > 0 && !retryT) retryT = setTimeout(() => { retryT = 0; if (looking() && free()) D.lock(); }, wait + 30);
@@ -157,7 +158,7 @@ export function createDesktop(canvas, camera, settings) {
     D.locked = now;
     pendingAt = 0;
     if (now && !was) {
-      lockFails = 0; inside = false; granted = true;
+      lostClicks = 0; inside = false; granted = true;
       // an older browser tells of the lock only here, so its made-up jump (see the mousemove) is timed from now
       if (events && armed) lockAt = t;
       // a button that is already down when the lock starts does nothing until it goes up

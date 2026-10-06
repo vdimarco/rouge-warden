@@ -408,6 +408,22 @@ const readOutlines = (page) => page.evaluate(async () => {
   const C = await import("./js/comic.js"), T = await import("three");
   const up = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
   const box = (o) => { o.updateWorldMatrix(true, false); if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); return o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); };
+  // The bounds of the line at close range: each vertex pushed out along its aOutline direction by the width uInkW (read from the compiled
+  // uniforms), as the hull shader of comic.js does, in world space, against the bounds of the same vertices with no push (a box built from
+  // the corners of the local box is too wide for a curved part that is turned). Returns how far the six sides move: outward is the most
+  // any side moves out, inward the most any side moves in (a rim that tilts inward leaves a side a little inside the part).
+  const pushed = (h, u) => {
+    const pos = h.geometry.getAttribute("position"), dir = h.geometry.getAttribute("aOutline"), e = h.matrixWorld.elements;
+    if (!pos || !dir || !u || !u.uInkW) return null;
+    const sx = Math.max(Math.hypot(e[0], e[1], e[2]), 1e-4), b0 = new T.Box3(), b1 = new T.Box3(), v = new T.Vector3(), d = new T.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      d.fromBufferAttribute(dir, i).normalize().multiplyScalar(u.uInkW.value / sx);
+      b0.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(h.matrixWorld));
+      b1.expandByPoint(v.fromBufferAttribute(pos, i).add(d).applyMatrix4(h.matrixWorld));
+    }
+    const sides = [0, 1, 2].flatMap((k) => [b1.min.getComponent(k) - b0.min.getComponent(k), b0.max.getComponent(k) - b1.max.getComponent(k)]);
+    return { outward: Math.max(...sides.map((x) => -x)), inward: Math.max(...sides) };
+  };
   return window.__ol.map(({ what, lamp, o }) => {
     const hulls = o.children.filter((c) => c.isMesh), h = hulls[0], f = { what, lamp, hulls: hulls.length, draws: o.userData.draws };
     if (!h) return f;
@@ -421,7 +437,7 @@ const readOutlines = (page) => page.evaluate(async () => {
       shown: h.visible && up(h) && up(o),
       onPart: h.geometry === o.geometry && h.position.lengthSq() === 0 && h.quaternion.angleTo(new T.Quaternion()) === 0 && h.scale.x === 1 && h.scale.y === 1 && h.scale.z === 1,
       gap: Math.max(...[0, 1, 2].map((k) => Math.max(Math.abs(b0.min.getComponent(k) - b1.min.getComponent(k)), Math.abs(b0.max.getComponent(k) - b1.max.getComponent(k))))),
-      width: u && u.uInkW ? u.uInkW.value : null, px: u && u.uInkPx ? u.uInkPx.value : null,
+      width: u && u.uInkW ? u.uInkW.value : null, px: u && u.uInkPx ? u.uInkPx.value : null, pushed: pushed(h, u),
       badPush, verts: nor.count,
     });
   });
@@ -447,7 +463,7 @@ async function cottage() {
     check(list.every((f) => f.hulls === 1), at + "every solid part of the toilet and the lamp shade has one outline (an ink twin as its child)", names(list, (f) => f.hulls === 1));
     check(list.every((f) => f.ink), at + "each outline uses the ink material (comic ink: back faces, the ink colour, never pure black)", names(list, (f) => f.ink));
     check(list.every((f) => f.shown && f.masked), at + "each outline shows while its part shows, and draws only where the hole mask is not set", names(list, (f) => f.shown && f.masked));
-    check(list.every((f) => f.onPart && f.gap < 1e-3), at + "each outline sits on its part: the same shape, no offset, turn or scale, and the same bounds", list.map((f) => [f.what, f.onPart, f.gap]));
+    check(list.every((f) => f.onPart && f.gap < 1e-3), at + "each outline is set on its part: the same shape, no offset, turn or scale, so the same bounds before the push", list.map((f) => [f.what, f.onPart, f.gap]));
     check(list.every((f) => f.badPush === 0 && f.verts > 0), at + "each outline pushes out along valid, outward normals (the aOutline attribute)", list.map((f) => [f.what, f.badPush, f.verts]));
   };
   await facts("in the room");
@@ -462,24 +478,35 @@ async function cottage() {
     return readOutlines(page);
   };
   const thin = (f) => f.width > 0 && f.width <= 0.02 && f.px >= 1 && f.px <= 4;
-  let list = await look(mulQuat(axisQuat([0, 1, 0], -0.55), axisQuat([1, 0, 0], -0.35)));
-  let part = list.filter((f) => !f.lamp);
-  check(part.every((f) => f.draws > 0 && f.hullDraws === f.draws), tag + "with the toilet in view each of its parts draws and so does its outline, as often", part.map((f) => [f.what, f.draws, f.hullDraws]));
-  check(part.every(thin), tag + "the outline is a thin line round the toilet: at most 2 cm wide, 1 to 4 px at a distance", part.map((f) => [f.what, f.width, f.px]));
-  await shot(page, "mr-cottage-toilet");
-  list = await look(axisQuat([1, 0, 0], 1.25));
-  part = list.filter((f) => f.lamp);
-  check(part.length === 1 && part.every((f) => f.draws > 0 && f.hullDraws === f.draws), tag + "with the lamp in view the shade draws and so does its outline, as often", part.map((f) => [f.what, f.draws, f.hullDraws]));
-  check(part.every(thin), tag + "the outline is a thin line round the lamp shade: at most 2 cm wide, 1 to 4 px at a distance", part.map((f) => [f.what, f.width, f.px]));
-  await shot(page, "mr-cottage-lamp");
-  await head(page, { quat: [0, 0, 0, 1] });
-  await page.evaluate(() => G.test.hold(false));
-  await frames(page, 3);
-  await page.evaluate(() => G.test.hold(true));
+  // The line at close range, pushed out as the hull shader does, sits close round the part: no side of the bounds of the part moves out or in
+  // by more than 1.5 cm (the game uses 7 mm, which is 9 mm on a part stretched by 1.32), and some side moves out. This is the line itself, not
+  // the growth with distance, which depends on the size of the picture.
+  const snug = (f) => f.pushed && f.pushed.outward > 0 && Math.max(f.pushed.outward, f.pushed.inward) <= 0.015;
+  const views = async (when, pictures) => {
+    const at = tag + when + ": ";
+    let list = await look(mulQuat(axisQuat([0, 1, 0], -0.55), axisQuat([1, 0, 0], -0.35)));
+    let part = list.filter((f) => !f.lamp);
+    check(part.length >= 7 && part.every((f) => f.draws > 0 && f.hullDraws === f.draws), at + "with the toilet in view each of its parts draws and so does its outline, as often", part.map((f) => [f.what, f.draws, f.hullDraws]));
+    check(part.every(thin), at + "the outline is a thin line round the toilet: at most 2 cm wide, 1 to 4 px at a distance", part.map((f) => [f.what, f.width, f.px]));
+    check(part.every(snug), at + "the line lies close round the toilet: its bounds, pushed out by the line width, differ from the bounds of the part by 1.5 cm at most", part.map((f) => [f.what, f.pushed]));
+    if (pictures) await shot(page, "mr-cottage-toilet");
+    list = await look(axisQuat([1, 0, 0], 1.25));
+    part = list.filter((f) => f.lamp);
+    check(part.length === 1 && part.every((f) => f.draws > 0 && f.hullDraws === f.draws), at + "with the lamp in view the shade draws and so does its outline, as often", part.map((f) => [f.what, f.draws, f.hullDraws]));
+    check(part.every(thin), at + "the outline is a thin line round the lamp shade: at most 2 cm wide, 1 to 4 px at a distance", part.map((f) => [f.what, f.width, f.px]));
+    check(part.every(snug), at + "the line lies close round the lamp shade: its bounds, pushed out by the line width, differ from the bounds of the part by 1.5 cm at most", part.map((f) => [f.what, f.pushed]));
+    if (pictures) await shot(page, "mr-cottage-lamp");
+    await head(page, { quat: [0, 0, 0, 1] });
+    await page.evaluate(() => G.test.hold(false));
+    await frames(page, 3);
+    await page.evaluate(() => G.test.hold(true));
+  };
+  await views("in the room", true);
   // the hole opens: the room still shows, and so do the outlines
   p = await step(page, 10.6);
   check(p.phase === "hole" || p.phase === "shoot", tag + "the hole is open", p.phase);
   await facts("with the hole open");
+  await views("with the hole open", false);
   // the room goes at the end of the opening, and its outlines go with it
   await page.evaluate(() => G.test.skipIntro());
   p = await step(page, 0.5, 1 / 60);
