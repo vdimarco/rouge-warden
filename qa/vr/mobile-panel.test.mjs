@@ -1,5 +1,5 @@
 // The phone panel in Node (task B1 of openspec/changes/swing-controls): the VIEW edge, the lock-on ring and its arrow, the safe
-// window, the classes on SWING and on the panel, the vibration, the catch pop, Center with motion aim, use(false) and the stub of a
+// window, the side badges and the classes on the panel, the vibration, the catch pop, Center with motion aim, use(false) and the stub of a
 // device with no touch point. The DOM is a small fake, so this needs no browser. mobile.test.mjs keeps the old checks on a poorer fake.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/mobile-panel.test.mjs
 import assert from "node:assert/strict";
@@ -47,7 +47,7 @@ const send = (target, type, data = {}) => { const ev = new Event(type); Object.a
 const m = createMobile(canvas, () => active);
 const el = (sel) => panel.querySelector(sel);
 const btn = (name) => el(`[data-action="${name}"]`);
-const ring = el(".phone-target"), arrow = el(".pt-arrow"), safe = el(".phone-safe"), swing = btn("throw");
+const ring = el(".phone-target"), arrow = el(".pt-arrow"), safe = el(".phone-safe"), badge = [el('.phone-side[data-side="0"]'), el('.phone-side[data-side="1"]')];
 const centre = (r) => { const t = /translate\(([-\d.]+)px,([-\d.]+)px\)/.exec(r.style.transform || ""); return t ? { x: +t[1] + 28, y: +t[2] + 28 } : null; };
 const near = (a, b, tol, msg) => assert(Math.abs(a - b) <= tol, `${msg}: ${a} is not within ${tol} of ${b}`);
 
@@ -103,7 +103,7 @@ assert.equal(ring.hidden, false, "the ring shows");
 assert.equal(ring.classList.contains("arrow"), false, "a target inside the window gets the ring, not the arrow");
 assert.equal(ring.attrs["data-kind"], "swing");
 assert.equal(panel.classList.contains("target-ready"), true, "the panel has the class target-ready");
-assert.equal(swing.classList.contains("no-target"), false, "SWING is not dimmed");
+assert.equal(btn("throw").onclick, undefined, "no SWING button: the city is the control");
 
 // the ring follows a moving target and does not write when nothing moves
 m.marker({ x: -0.5, y: 0.1, kind: "clog", dist: 30 });
@@ -147,14 +147,12 @@ assert(centre(ring).x > 200, "on the right side when the target is on the right"
 m.marker({ x: 0, y: 0.2, kind: "swing", dist: 40 });
 assert.equal(ring.classList.contains("arrow"), false, "the ring comes back");
 
-// no target: the ring hides, SWING dims, the panel loses target-ready
+// no target: the ring hides, the panel loses target-ready
 m.marker(null);
 assert.equal(ring.hidden, true, "marker(null) hides the ring");
-assert.equal(swing.classList.contains("no-target"), true, "marker(null) dims SWING");
 assert.equal(panel.classList.contains("target-ready"), false, "marker(null) clears target-ready");
 m.marker({ x: 0, y: 0.2, kind: "swing" });
 assert.equal(ring.hidden, false, "the ring shows again");
-assert.equal(swing.classList.contains("no-target"), false, "SWING wakes again");
 m.marker({ x: NaN, y: 0 });
 assert.equal(ring.hidden, true, "a target with no position hides the ring");
 m.marker(undefined);
@@ -235,11 +233,19 @@ now = 7000; m.buzz(15);
 navigator_vibrate = keep;
 
 /* ---------------- the dead-latch safety stays in target() ---------------- */
-active = true; m.reset(); btn("throw").onclick();
+active = true; m.reset();
+/* ---------------- the side badges light while their plunger holds ---------------- */
+m.tap(0); m.sample(0.016);
+assert(badge[0].classList.contains("held") && !badge[1].classList.contains("held"), "the left badge lights while the left plunger holds");
+m.tap(1); m.sample(0.016);
+assert(badge[0].classList.contains("held") && badge[1].classList.contains("held"), "both badges light with both plungers out");
+m.released(0);
+assert(!badge[0].classList.contains("held") && badge[1].classList.contains("held"), "a rope that lets go darkens only its badge");
 m.sample(0.016);
 win.G = { P: { dead: { why: "test" } } };
 m.target(false, false);
-assert.equal(m.sample(0.016).hold, false, "a dead player with no rope leaves no latched button");
+const dead = m.sample(0.016);
+assert(!dead.holds[0] && !dead.holds[1], "a dead player with no rope leaves no plunger held");
 delete win.G;
 assert.equal(typeof m.target(true, true), "undefined", "target() returns nothing");
 
@@ -253,7 +259,7 @@ assert.equal(panel.hidden, true, "and hides the panel");
 assert.equal(ring.hidden, true, "and the ring");
 send(canvas, "pointerdown", { pointerId: 1, clientX: 300, clientY: 200, preventDefault() {} }); send(canvas, "pointerup", { pointerId: 1, clientX: 300, clientY: 200 });
 const off = m.sample(0.016);
-assert(!off.fire && !off.hold && off.aim === null, "a click on the canvas starts no touch swing");
+assert(!off.fires[0] && !off.fires[1] && !off.holds[0] && !off.holds[1] && off.aims[1] === null, "a click on the canvas starts no touch swing");
 // the buzz gap (40 ms) and the pop clock are long over, so only the touch scheme being off can stop them
 now = 8000; vibrated = []; ring.classList.remove("pop");
 m.marker({ x: 0, y: 0.2, kind: "swing" }); m.pop(); m.buzz(15);
@@ -280,12 +286,12 @@ const said2 = () => el(".phone-hint").textContent;
 win.DeviceOrientationEvent.requestPermission = async () => "denied"; win.DeviceMotionEvent.requestPermission = async () => "denied";
 m.reset(); await m.start();
 const resting = said2();
-assert(/^Tap a building to swing\. Keep tapping/.test(resting), "with motion aim off the resting hint says to tap a building: " + resting);
+assert(/^Tap left or right/.test(resting), "with motion aim off the resting hint says to tap left or right: " + resting);
 m.climbing(true);
 assert(/^On the wall/.test(said2()), "on a wall the hint says how to climb: " + said2());
 m.climbing(false);
 assert.equal(said2(), resting, "off the wall the hint goes back to the resting line");
-m.climbing(true); btn("throw").onclick(); m.climbing(false);
+m.climbing(true); m.tap(1); m.climbing(false);
 assert(/^Swinging/.test(said2()), "a tap that swung the hero off the wall keeps the swing line: " + said2());
 win.DeviceOrientationEvent.requestPermission = async () => "granted"; win.DeviceMotionEvent.requestPermission = async () => "granted";
 m.reset(); await m.start();
@@ -295,7 +301,7 @@ m.climbing(true); m.climbing(false);
 assert.equal(said2(), motion, "with motion aim on the hint goes back to the motion line off the wall");
 // On the wall a line that does not come from the wall must not hide the wall line: a tap that finds nothing, a Center press and
 // a Motion press. Off the wall the same calls speak as before. Motion aim is on here, and the Motion press turns it off.
-m.climbing(true); btn("throw").onclick(); m.miss();
+m.climbing(true); m.tap(1); m.miss(1);
 assert(/^On the wall/.test(said2()), "a tap that finds nothing on the wall keeps the wall line: " + said2());
 btn("center").onclick();
 assert(/^On the wall/.test(said2()), "a Center press on the wall keeps the wall line: " + said2());
@@ -303,7 +309,7 @@ btn("motion").onclick();
 assert(/^On the wall/.test(said2()), "a Motion press on the wall keeps the wall line: " + said2());
 m.climbing(false);
 assert.equal(said2(), resting, "after Motion went off on the wall the hint goes back to the tap line");
-m.miss(); assert(/^Nothing in reach/.test(said2()), "off the wall a tap that finds nothing says so: " + said2());
+m.miss(1); assert(/^Nothing in reach/.test(said2()), "off the wall a tap that finds nothing says so: " + said2());
 btn("center").onclick(); assert(/yellow/i.test(said2()), "off the wall a Center press names the yellow ring: " + said2());
 m.reset();
 
@@ -311,7 +317,7 @@ m.reset();
 setTouch(false);
 const stub = createMobile(canvas, () => true);
 assert.equal(stub.enabled, false, "no touch point: the stub is not enabled");
-for (const call of [() => stub.marker({ x: 0, y: 0, kind: "swing" }), () => stub.marker(null), () => stub.pop(), () => stub.buzz(15), () => stub.use(false), () => stub.use(true), () => stub.reset(), () => stub.miss(true), () => stub.target(true, true), () => stub.released(), () => stub.rush(0.5, 0.016), () => stub.climbing(true), () => stub.idle()]) assert.doesNotThrow(call);
+for (const call of [() => stub.marker({ x: 0, y: 0, kind: "swing" }), () => stub.marker(null), () => stub.pop(), () => stub.buzz(15), () => stub.use(false), () => stub.use(true), () => stub.reset(), () => stub.miss(1, true), () => stub.tap(0), () => stub.target(true, true), () => stub.released(), () => stub.rush(0.5, 0.016), () => stub.climbing(true), () => stub.idle()]) assert.doesNotThrow(call);
 await stub.start();
 assert.equal(stub.enabled, false, "use(true) does not enable the stub");
 const s = stub.sample(0.016);
@@ -319,4 +325,4 @@ assert.equal(s.view, false, "the stub's sample has a view field");
 assert.equal(stub.safe(), null, "the stub has no window");
 setTouch(true);
 
-console.log("PASS: mobile panel: view edge, Center with motion aim, safe window, ring and arrow (up, side, behind), hide and dim, class names, box reads at 10 Hz, pop, vibration, dead-latch safety, use(false), the hint off the wall, stub");
+console.log("PASS: mobile panel: view edge, Center with motion aim, safe window, ring and arrow (up, side, behind), hide, side badges, class names, box reads at 10 Hz, pop, vibration, dead-latch safety, use(false), the hint off the wall, stub");
