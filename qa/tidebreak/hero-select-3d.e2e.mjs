@@ -92,7 +92,9 @@ try {
     // Every size: the hero stands in the portrait box, and the roster, a skill preview and Play take the pointer.
     for (const size of SIZES) {
       const [width, height] = size.split('x').map(Number);
-      await page.setViewportSize({ width, height }); await page.waitForTimeout(200); await pump(3);
+      await page.setViewportSize({ width, height });
+      // The renderer takes the new size on the resize event, then the next arena frame sets the hero select lens again.
+      await page.waitForFunction(([w, h]) => { const r = document.getElementById('battle').__shore3d; return r.width === w && r.height === h; }, [width, height], { polling: 100, timeout: 60000 }); await pump(3);
       h = await heroView(page);
       assert(inBox(h), `${size}: the hero stands in the portrait box: ` + JSON.stringify(h));
       const hits = await page.evaluate(() => Object.fromEntries([['card', '#hero-picks [data-hero]'], ['skill', '#hero-preview [data-hero-spell]'], ['play', '#play']].map(([k, sel]) => {
