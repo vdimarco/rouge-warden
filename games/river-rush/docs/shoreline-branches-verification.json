@@ -1,6 +1,6 @@
 {
-  "stage": "local-verified",
-  "checkedAt": "2026-10-06T21:47:53.205767+00:00",
+  "stage": "production-verified",
+  "checkedAt": "2026-10-06T21:49:36.244262+00:00",
   "unitTests": 45,
   "buildAssets": {
     "public/river-rush/index.html": "6338bb7ad9688492da49d51a5c47a69a4d9be22b2a115783745c4c95eba2dde8",
@@ -311,5 +311,83 @@
   },
   "limitations": [
     "Chromium viewport emulation with SwiftShader; no physical phone or hardware GPU frame-rate verification."
-  ]
+  ],
+  "production": {
+    "implementationCommit": "d3e780d8e84b37a82e7a42e1e8ee73423128943a",
+    "deployment": "dpl_FLFjxPLSMMB4fBiEj44zYrAMqChg",
+    "readyState": "READY",
+    "alias": "arcade.uptick.systems",
+    "browser": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "results": [
+        {
+          "case": "phone",
+          "renderer": "webgl",
+          "approach": true,
+          "rootRegistrationChecked": true,
+          "duckCleared": true,
+          "shieldPreserved": true,
+          "passedTreeGeometryChecked": true,
+          "pausePixels": true,
+          "noActiveGpuPreparationChecked": true,
+          "reducedMotion": false,
+          "speedUnchanged": true,
+          "contextLossFallbackChecked": true,
+          "drawCalls": 31,
+          "branchBatches": {
+            "trees": 1,
+            "woodSegments": 24,
+            "leafClusters": 12,
+            "capacity": 32,
+            "drawCalls": 2,
+            "origins": [
+              {
+                "id": 14,
+                "lane": 1,
+                "course": 112.6757980952381,
+                "side": -1,
+                "root": {
+                  "x": -16.26555485536763,
+                  "y": 0.6993143387442478,
+                  "d": 7.552
+                },
+                "tip": {
+                  "x": 0,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              }
+            ]
+          }
+        }
+      ],
+      "errors": [],
+      "screenshots": "/tmp/river-branches/live"
+    },
+    "assets": {
+      "allMatch": true,
+      "assets": [
+        {
+          "url": "https://arcade.uptick.systems/river-rush/index.html",
+          "status": 200,
+          "sha256": "6338bb7ad9688492da49d51a5c47a69a4d9be22b2a115783745c4c95eba2dde8",
+          "matchesLocal": true
+        },
+        {
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-BHUdth4r.css",
+          "status": 200,
+          "sha256": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540",
+          "matchesLocal": true
+        },
+        {
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-Dg6Lp20j.js",
+          "status": 200,
+          "sha256": "880c6b66ebf8bcd32fa9cd296d41dcac85a10427f3fc4584fe9e27b6e1676bf1",
+          "matchesLocal": true
+        }
+      ]
+    }
+  }
 }
