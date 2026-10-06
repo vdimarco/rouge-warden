@@ -11,6 +11,7 @@ import { districtAt,scenerySlots,recycleZ } from './districts.js';
 import { createWorldDetails } from './world-details.js';
 import {COURSE_GLSL,riverSeed,riverHash,riverPoint,riverHalfWidth,riverBankHeight,riverGrade,riverTangent,rapidAt,shoalAt} from './river-course.js';
 import {waterVertex,waterFragment} from './river-water.js';
+import {createBranchTrees} from './branch-trees.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -136,15 +137,15 @@ export function createScene(canvas,art,onLost){
  const logGeo=new THREE.CylinderGeometry(.32,.37,3.3,12,5),bark=logGeo.attributes.position;
  for(let i=0;i<bark.count;i++){const x=bark.getX(i),y=bark.getY(i),z=bark.getZ(i),warp=1+Math.sin(y*7+Math.atan2(z,x)*3)*.08;bark.setXYZ(i,x*warp+Math.sin(y*2)*.07,y,z*warp);}logGeo.computeVertexNormals();
  const coinBatch=new THREE.InstancedMesh(coinGeo,coinMat,64),coinPose=new THREE.Object3D(),coinTarget=new THREE.Vector3();coinBatch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);coinBatch.frustumCulled=false;scene.add(coinBatch);
- const entities=new Map(),labels=new Map(),labelMaterials=new Map(),twigGeo=new THREE.CylinderGeometry(.1,.19,1.2,5),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ff8292',.35)};
+ const entities=new Map(),labels=new Map(),labelMaterials=new Map(),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ff8292',.35)};
  function label(text){if(labels.has(text))return labels.get(text);const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#043b35dd';x.roundRect(0,0,256,64,16);x.fill();x.font='bold 31px sans-serif';x.fillStyle='#fff0b9';x.textAlign='center';x.fillText(text,128,44);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;labels.set(text,t);return t;}
  function makeEntity(e){const g=new THREE.Group();let m;
  if(e.type==='coin'){m=mesh(coinGeo,coinMat,g);m.rotation.x=Math.PI/2;}
  else if(e.type==='rock'){m=mesh(rockGeo,rockMat,g);m.scale.set(1.35,1.4,1);m.rotation.set(.2,e.id*2.4,.1);}
  else if(e.type==='log'){m=mesh(logGeo,logMat,g);m.rotation.z=Math.PI/2;}
  else if(e.type==='branch'){
- m=mesh(logGeo,logMat,g,0,2.42,0);m.rotation.z=Math.PI/2;m.scale.set(1,1.13,1);
- for(const side of [-1,1]){const twig=mesh(twigGeo,logMat,g,side*1.25,2.8,0);twig.rotation.z=-side*.8;}
+ // Low branch wood is part of its connected, bank-rooted tree batch.
+ m=new THREE.Object3D();g.add(m);
  }else{m=mesh(powerGeo,powerMats[e.type],g);}
  m.castShadow=e.type!=='coin';
  g.userData.type=e.type;g.userData.body=m;
@@ -162,6 +163,7 @@ export function createScene(canvas,art,onLost){
  const guardianBanks=banks.filter(b=>!templeBanks.includes(b)&&riverHash(b.index+b.side*31,137)>.82);
  const retryTimers=new Set(),retired=[raftModel,bankTemplate],retiredMaterials=new Set();
  const worldDetails=createWorldDetails(scene,mat,waterDetail,rockMat);
+ const branchTrees=createBranchTrees(scene,logMat,mat);
  let panorama=null;const pendingLoads=new Set();let resolveVista;const vistaDone=new Promise(resolve=>{resolveVista=resolve;});
  function loadVista(attempt=0){if(disposed){resolveVista();return;}new THREE.TextureLoader().load(`${base}art/valley-vista.webp${attempt?`?retry=${attempt}`:''}`,t=>{
    if(disposed||status.background==='fallback'){t.dispose();resolveVista();return;}t.colorSpace=THREE.SRGBColorSpace;t.matrixAutoUpdate=false;surfaceTextures.push(scene.background);scene.background=t;panorama=t;mountains.visible=false;status.background='ready';resolveVista();
@@ -288,18 +290,22 @@ export function createScene(canvas,art,onLost){
  let shoalCount=0;for(let n=Math.floor((travel-15)/34);n<=Math.ceil((travel+210)/34);n++){const rock=shoalAt(n,seed),p=point(rock.d,rock.x);if(p.z>15||p.z< -210||shoalCount>=10)continue;palmTransform.position.set(p.x,p.y+.18,p.z);palmTransform.rotation.set(.1,riverHash(n+83,seed)*TAU,.14);palmTransform.scale.set(rock.size*1.5,rock.size*.85,rock.size*2);palmTransform.updateMatrix();shoals.setMatrixAt(shoalCount++,palmTransform.matrix);}shoals.count=shoalCount;shoals.instanceMatrix.needsUpdate=true;
  const alive=new Set();let visible=0,coinCount=0,guardianCount=0,woodCount=0;
  if(guardianBatches.length)for(const b of guardianBanks){const cross=b.side*(riverHalfWidth(b.course,seed)+3),p=point(b.course,cross);if(p.z>18||p.z< -(software?140:210))continue;guardianTransform.position.set(p.x,p.y+riverBankHeight(cross,b.course,seed),p.z);guardianTransform.rotation.set(0,-b.side*.42+riverHash(b.index+65,seed)*.3,0);guardianTransform.scale.setScalar(1.7+riverHash(b.index+25,seed)*.5);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
- for(const e of g.entities){const z=e.d-g.distance;if(e.done||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
+ branchTrees.begin();
+ for(const e of g.entities){const z=e.d-g.distance;
+ if(e.type==='branch'&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
+ if(e.done||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
  const course=travel+z,cross=(e.lane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
  if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,(e.high?3.1:1.2)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
  let obj=entities.get(e.id);if(!obj){obj=makeEntity(e);entities.set(e.id,obj);}
  const sx=p.x,y=wy;
  obj.position.set(sx,e.type==='coin'?(e.high?3.1:1.2):e.type==='rock'?.5:e.type==='branch'?0:e.type==='log'?.27:1.4,-z);obj.position.y+=y;obj.rotation.y=-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed));
  if(e.type==='rock'&&guardianBatches.length){obj.userData.body.visible=false;guardianTransform.position.set(sx,y-.12,-z);guardianTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.14,0);guardianTransform.scale.setScalar(1);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
- if(['log','branch'].includes(e.type)&&driftwoodBatches.length){obj.userData.body.visible=false;palmTransform.position.set(sx,y+(e.type==='branch'?2.05:-.1),-z);palmTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.035,e.type==='branch'?.055:0);palmTransform.scale.set(1,e.type==='branch'?.72:1,1);palmTransform.updateMatrix();for(const b of driftwoodBatches){instanceMatrix.multiplyMatrices(palmTransform.matrix,b.local);b.mesh.setMatrixAt(woodCount,instanceMatrix);}woodCount++;}
+ if(e.type==='log'&&driftwoodBatches.length){obj.userData.body.visible=false;palmTransform.position.set(sx,y-.1,-z);palmTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.035,0);palmTransform.scale.set(1,1,1);palmTransform.updateMatrix();for(const b of driftwoodBatches){instanceMatrix.multiplyMatrices(palmTransform.matrix,b.local);b.mesh.setMatrixAt(woodCount,instanceMatrix);}woodCount++;}
  if(e.type==='coin')obj.rotation.y=reduced?0:g.time*4+e.id;
  else if(e.type==='log')obj.rotation.x=reduced?0:Math.sin(e.d*.58-g.time*1.9)*.04;
  if(obj.userData.label)obj.userData.label.visible=z<g.speed*1.6&&z>3;
  }
+ branchTrees.finish();status.branches=branchTrees.state;
  for(const [id,obj] of entities)if(!alive.has(id)){scene.remove(obj);entities.delete(id);}
  for(const batch of guardianBatches){batch.mesh.count=guardianCount;batch.mesh.instanceMatrix.needsUpdate=true;}
  for(const batch of driftwoodBatches){batch.mesh.count=woodCount;batch.mesh.instanceMatrix.needsUpdate=true;}
@@ -321,6 +327,6 @@ export function createScene(canvas,art,onLost){
  sprayGeometry.attributes.position.needsUpdate=true;}
  renderer.render(scene,camera);status.frames++;status.readyFrames=Object.values(status.models).every(x=>x==='ready')?(status.readyFrames??0)+1:0;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.templeInstances=templeBatches.length?templeBanks.length:0;status.guardianInstances=guardianCount;status.course={seed:riverSeed(seed),width:riverHalfWidth(travel,seed)*2,rapid:rapidAt(travel,seed),grade:riverGrade(travel,seed),dropAhead:point(travel+100).y,bendAhead:point(travel+100).x,shoals:shoalCount,framing:[-3.8,0,3.8].map(lane=>{const foot=new THREE.Vector3(lane,f.height+.55,0).project(camera),head=new THREE.Vector3(lane,f.height+lift+3.7,0).project(camera),near=point(travel+20,lane),route=new THREE.Vector3(near.x,near.y+1,near.z).project(camera);return{foot:[foot.x,foot.y],head:[head.x,head.y],route:[route.x,route.y]};}),camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,fov:camera.fov}};status.world={district:districtAt(g.distance).name,canopies:canopyCount,harbors:harborCount,woodHazards:woodCount,...worldDetails.state};status.steering={x,velocity:g.laneVelocity,yaw:carve,lean:skeletal?.state.balance??rider.rotation.z};status.surfaceMaps={rock:1024,wood:1024,ground:1024,water:1024,normals:software?0:512};status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:waterHeight(x,travel)};status.reducedMotion=reduced;status.frameBudget={scale:frameBudget.scale,meanMs:frameBudget.meanMs,dpr:renderer.getPixelRatio(),pixels:canvas.width*canvas.height,water:water.material===cheapWaterMaterial?'light':'rich'};
  }
- function dispose(){if(disposed)return;disposed=true;retryTimers.forEach(clearTimeout);pendingLoads.forEach(done=>done());resolveVista();canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,twigGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats),...retiredMaterials,...labelMaterials.values(),waterMaterial,cheapWaterMaterial]),textures=new Set([scene.background,...surfaceTextures]),skeletons=new Set(),instances=new Set();for(const root of [scene,...retired])root.traverse(o=>{if(o.isInstancedMesh)instances.add(o);if(o.skeleton)skeletons.add(o.skeleton);if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});for(const m of retiredMaterials)for(const v of Object.values(m))if(v?.isTexture)textures.add(v);riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));instances.forEach(o=>o.dispose());geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());skeletons.forEach(s=>s.dispose());renderer.forceContextLoss();renderer.dispose();}
+ function dispose(){if(disposed)return;disposed=true;retryTimers.forEach(clearTimeout);pendingLoads.forEach(done=>done());resolveVista();canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats),...retiredMaterials,...labelMaterials.values(),waterMaterial,cheapWaterMaterial]),textures=new Set([scene.background,...surfaceTextures]),skeletons=new Set(),instances=new Set();for(const root of [scene,...retired])root.traverse(o=>{if(o.isInstancedMesh)instances.add(o);if(o.skeleton)skeletons.add(o.skeleton);if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});for(const m of retiredMaterials)for(const v of Object.values(m))if(v?.isTexture)textures.add(v);riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));instances.forEach(o=>o.dispose());geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());skeletons.forEach(s=>s.dispose());renderer.forceContextLoss();renderer.dispose();}
  return {render,prepare,recover,dispose,status};
 }

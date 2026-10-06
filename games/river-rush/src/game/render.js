@@ -3,7 +3,9 @@ import { bankScenery, rapids, prepareWorldArt } from './world.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
 import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
+import {shorelineBranch,branchLeafArt} from './shoreline-branch.js';
 const motions=new WeakMap();
+const branchShapes=new WeakMap();
 const TAU = Math.PI * 2, fract = n => n - Math.floor(n);
 // Generated atlas has unequal row heights; rectangles preserve full silhouettes.
 const regions = [
@@ -28,6 +30,7 @@ export function loadArt() {
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];
 async function prepareHeroArt(art){
   art.world=prepareWorldArt();
+  art.branchLeaves=branchLeafArt();
   function frame(source,rect,anchor,raftWidth){
     const canvas=document.createElement('canvas');canvas.width=448;canvas.height=480;
     const scale=300/raftWidth,ctx=canvas.getContext('2d');
@@ -96,6 +99,18 @@ function water(ctx,g,art,w,h,reduce,active) {
   ctx.setLineDash([]);
   ctx.restore();
 }
+function shorelineTree(ctx,g,e,art,w,h){
+  let shape=branchShapes.get(e);if(!shape){shape=shorelineBranch(e,e.d,g.seed);branchShapes.set(e,shape);}
+  const locate=n=>{const p=projection(w,h,1+n.x/3.8,e.d+n.d-g.distance),unit=p.corridor/11.4*p.scale;return{x:p.x,y:p.y-n.y*unit,unit};};
+  ctx.save();ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-e.d+g.distance)/24);ctx.lineCap='round';
+  for(const limb of shape.wood){
+    const a=locate(limb.a),b=locate(limb.b),width=Math.max(1,limb.r*(a.unit+b.unit));
+    ctx.strokeStyle='#4c3728';ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.strokeStyle='#a18450';ctx.lineWidth=width*.34;ctx.beginPath();ctx.moveTo(a.x-width*.12,a.y);ctx.lineTo(b.x-width*.12,b.y);ctx.stroke();
+  }
+  for(const leaf of shape.leaves){const p=locate(leaf.p),lw=leaf.size[0]*p.unit*2,lh=leaf.size[1]*p.unit*2;ctx.drawImage(art.branchLeaves,p.x-lw/2,p.y-lh/2,lw,lh);}
+  ctx.restore();
+}
 function banks(ctx,g,art,w,h,reduce){
   if(reduce)return;
   ctx.save();
@@ -128,7 +143,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     }
   }
   // Distant entities draw first. The player is inserted at collision depth.
-  const visible=g.entities.filter(e=>!e.done && e.d-g.distance<VIEW_DISTANCE && e.d-g.distance>-14).sort((a,b)=>b.d-a.d);
+  const visible=g.entities.filter(e=>(!e.done||e.type==='branch') && e.d-g.distance<VIEW_DISTANCE && e.d-g.distance>-16).sort((a,b)=>b.d-a.d);
   for(const e of visible) {
     const z=e.d-g.distance, p=projection(width,height,e.lane,z);
     let size;
@@ -140,8 +155,9 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     if(e.type==='coin'||e.type==='magnet'||e.type==='shield') {
       ctx.save();ctx.fillStyle=e.type==='coin'?'#ffcf5f28':'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
     }
-    sprite(ctx,art.sprites,indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
-    if(['log','branch','rock'].includes(e.type)&&z<g.speed*1.65&&z>10) {
+    if(e.type==='branch')shorelineTree(ctx,g,e,art,width,height);
+    else sprite(ctx,art.sprites,indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
+    if(!e.done&&['log','branch','rock'].includes(e.type)&&z<g.speed*1.65&&z>10) {
       const label=e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
       const font=Math.max(10,15*p.scale);ctx.font=`800 ${font}px system-ui`;ctx.textAlign='center';
       const tw=ctx.measureText(label).width;ctx.fillStyle='#042a26dd';ctx.beginPath();ctx.roundRect(p.x-tw/2-7,bottom-size*.9-22,tw+14,20,5);ctx.fill();
