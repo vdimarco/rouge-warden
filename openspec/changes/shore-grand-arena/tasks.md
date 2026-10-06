@@ -48,6 +48,8 @@
 - [x] Draw the 3D arena behind the hero select, with the selected hero in a cinematic camera (`qa/tidebreak/hero-select-3d.e2e.mjs`).
 - [x] Give the crystals depth: facets, a bright heart, rim, glints and a halo (luminance spread 19 to 40, flat share 53% to 7%).
 - [x] Make the skill buttons easy to hit: E and C larger, badges off the discs, a missed press goes to the nearest skill (`qa/tidebreak/skill-targets.e2e.mjs`).
+- [x] Lay out small phones on their side (568x320, 640x360): a 72 px minimap, the point button as a pill beside it, the rally
+  button beside the movement pad.
 
 ## Bots (cloud session, branch `claude/quirky-cerf-vwf0qw-bots`)
 - [x] Difficulty setting (Apprentice, Veteran, Mythic) saved and shown in the match.
