@@ -2,7 +2,8 @@
 // openspec/changes/swing-controls, and "The flat HUD, the toast and the pause menu inside the window" of openspec/changes/swing-hero-comic).
 // On a flat screen and on a phone all of this is DOM (ui.js builds #fsHud and #fsMenu, desktop.js builds the ring, the arrow, the caption and the
 // key strip, mobile.js builds #phoneControls), so the boxes come from getBoundingClientRect. A box counts with its hard shadow. The spoken line
-// counts with its tail, which hangs 27 px under it. Sizes: 640 by 360, 960 by 540 and 1280 by 720 with a mouse, and 844 by 390, 390 by 844 and
+// counts with its tail, which hangs 27 px under it. The toast lies under that tail. On a computer the look hint ("Click to look around") draws
+// under the spoken line, the toast and the edge arrow. Sizes: 640 by 360, 960 by 540 and 1280 by 720 with a mouse, and 844 by 390, 390 by 844 and
 // 360 by 740 as a touch phone with motion aim on (four top buttons). The suite opens one page for each size and plays about two seconds.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/layout.e2e.mjs   (SIZE=960x540 runs one size, SHOTS=dir keeps pictures)
 import { newPage, open, close, watchdog, checker, shot, sleep } from "./lib.mjs";
@@ -137,7 +138,30 @@ function install() {
     G.test.teleport(B.maxX + 3, B.maxY / 2, (B.minZ + B.maxZ) / 2); G.rigYaw = Math.PI / 2; G.desktop.level(0); G.P.vel.x = -8; G.test.step(1 / 60, 30);
     return !!G.P.wall;
   }
-  window.LAY = { scan, lineCount, menuScan, wallSetup };
+  // Does the look hint draw over a part of the HUD? { n, over }: n is how many of 12 by 8 points in the common box of the two lie inside both,
+  // over is how many of those the hint draws on top of. Pointer events are on while the probe runs, so that elementsFromPoint lists the parts
+  // that have none (all of the HUD), from the top down. null when one of the two does not show.
+  function covers(sel) {
+    const hint = document.querySelector("#lookHint"), part = document.querySelector(sel);
+    if (!hint || !part || !seen(hint) || !seen(part)) return null;
+    const a = hint.getBoundingClientRect(), b = part.getBoundingClientRect();
+    const l = Math.max(a.left, b.left), r = Math.min(a.right, b.right), t = Math.max(a.top, b.top), d = Math.min(a.bottom, b.bottom);
+    const out = { n: 0, over: 0, hint: boxOf(hint), part: boxOf(part) };
+    if (l >= r || t >= d) return out;
+    const probe = document.createElement("style");
+    probe.textContent = "* { pointer-events: auto !important; }";
+    document.head.append(probe);
+    for (let i = 0; i < 12; i++) for (let j = 0; j < 8; j++) {
+      const stack = document.elementsFromPoint(l + ((r - l) * (i + 0.5)) / 12, t + ((d - t) * (j + 0.5)) / 8);
+      const h = stack.findIndex((e) => hint.contains(e)), p = stack.findIndex((e) => part.contains(e));
+      if (h < 0 || p < 0) continue;
+      out.n++;
+      if (h < p) out.over++;
+    }
+    probe.remove();
+    return out;
+  }
+  window.LAY = { scan, lineCount, menuScan, wallSetup, covers };
 }
 
 /* ---------------- the checks ---------------- */
@@ -196,8 +220,12 @@ async function run(w, h, touch) {
   check(S.touch === touch, `[${tag}] the phone panel ${touch ? "shows" : "is hidden"}`);
   const must = ["score row", "score pill Loonies", "score pill Clogs", "spoken line with its tail", "toast"];
   if (touch) must.push("top button MOTION", "top button CENTER", "top button VIEW", "top button PAUSE", "SWING button", "SWING panel", "hint over SWING", "phone ring or arrow");
-  else must.push("key strip");
+  else must.push("key strip", "look hint");
   checkBoxes(tag, S, must);
+  // the toast starts under the tail of the spoken line (the tail hangs 27 px under the box of the line, and the toast is tilted a little)
+  const line = S.items["spoken line with its tail"], toast = S.items["toast"];
+  check(!!line && !!toast && !hit(line, toast), `[${tag}] the toast does not overlap the spoken line or its tail`, line && toast && { line: round(line), toast: round(toast), toastCoversTail: Math.round(line.b - toast.t) });
+  if (line && toast) console.log(`INFO: [${tag}] the toast starts ${Math.round(toast.t - line.b)} px under the tail of the spoken line` + (S.items["training card"] && hit(S.items["training card"], toast) ? `, and covers ${Math.round(toast.b - S.items["training card"].t)} px of the training card` : ""));
   if (!touch) check(!!(S.items["lock-on ring"] || S.items["edge arrow"]), `[${tag}] the lock-on ring or the edge arrow shows`);
   if (touch) {
     const row = ["top button MOTION", "top button CENTER", "top button VIEW", "top button PAUSE"].map((n) => S.items[n]);
@@ -206,6 +234,16 @@ async function run(w, h, touch) {
     for (const name of ["spoken line with its tail", "toast"]) check(!!S.items[name] && !!S.items["SWING panel"] && !hit(S.items[name], S.items["SWING panel"]), `[${tag}] the ${name.replace(" with its tail", "")} does not overlap the SWING panel`, { [name]: round(S.items[name]), panel: round(S.items["SWING panel"]) });
   } else {
     check(!!S.items["toast"] && !!S.items["key strip"] && !hit(S.items["toast"], S.items["key strip"]), `[${tag}] the toast does not overlap the key strip`, { toast: round(S.items["toast"]), strip: round(S.items["key strip"]) });
+    // the look hint draws under the spoken line, the toast and the edge arrow (the pointer is free here, so the hint shows). The arrow is shown by hand
+    // at the top of the window, where the lock-on marker puts it for a target above the screen, and read in the same turn.
+    const under = await page.evaluate(() => {
+      G.desktop.marker({ x: 0, y: 2, kind: "swing", dist: 30, behind: false, go: false });
+      const c = { "spoken line": LAY.covers(".fs-sub"), toast: LAY.covers(".fs-toast"), "edge arrow": LAY.covers("#lockArrow") };
+      G.desktop.marker(null);
+      return c;
+    });
+    for (const [name, c] of Object.entries(under)) check(!!c && c.over === 0, `[${tag}] the look hint does not draw over the ${name}`, c && { ...c, hint: round(c.hint), part: round(c.part) });
+    console.log(`INFO: [${tag}] the look hint shares ${Object.entries(under).map(([name, c]) => (c ? c.n : "?") + " of 96 points with the " + name).join(", ")}`);
     // the caption of the release cue: shown by hand and read in the same turn, as flat.mjs does (a game frame would clear it)
     S = await page.evaluate(() => { G.desktop.marker({ x: 0.2, y: 0.4, kind: "swing", dist: 30, behind: false, go: true }); G.desktop.cue(true); const s = LAY.scan(); G.desktop.cue(false); G.desktop.marker(null); return s; });
     checkBoxes(tag + " with the LET GO caption", S, ["LET GO caption"]);
@@ -224,6 +262,8 @@ async function run(w, h, touch) {
     await page.evaluate(() => G.test.step(1 / 60, 3));
     S = await page.evaluate(() => LAY.scan());
     checkBoxes(tag + " on a wall", S, touch ? ["climb pad up", "climb pad down", "climb pad left", "climb pad right", "climb pad hop", "SWING button"] : ["edge arrow"]);
+    const wallLine = S.items["spoken line with its tail"], wallToast = S.items["toast"];
+    check(!!wallLine && !!wallToast && !hit(wallLine, wallToast), `[${tag} on a wall] the toast does not overlap the spoken line or its tail`, wallLine && wallToast && { line: round(wallLine), toast: round(wallToast), toastCoversTail: Math.round(wallLine.b - wallToast.t) });
     const arrow = S.items[touch ? "phone ring or arrow" : "edge arrow"];
     // (the spec keeps the marker clear of the pills, the top buttons, the spoken line, the SWING panel and the climb pad, and the code also keeps it out of the training card and the key strip: the toast is in none of these lists)
     const over = Object.entries(S.items).filter(([name, b]) => /^(score pill|training card|spoken line|key strip|climb pad|SWING panel|hint over SWING|top button)/.test(name) && arrow && hit(b, arrow)).map(([name]) => name);

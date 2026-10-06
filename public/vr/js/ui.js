@@ -1615,7 +1615,8 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     if ((dh.lay = (dh.lay || 0) - dt) <= 0) {
       dh.lay = 0.1;
       const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + (innerWidth <= 480 ? 6 : 10);
-      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 14 : 0);
+      // the tail of the line hangs 27 px under its box (CSS above): the toast keeps 14 px under the tip of the tail, so it never covers it
+      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 27 + 14 : 0);
       if (dh.subTop !== top) { dh.subTop = top; dom.hud.style.setProperty("--fs-sub-top", top + "px"); }
       if (dh.toastTop !== toastTop) { dh.toastTop = toastTop; dom.hud.style.setProperty("--fs-toast-top", toastTop + "px"); }
     }
