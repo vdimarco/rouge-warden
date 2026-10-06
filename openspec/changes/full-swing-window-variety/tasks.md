@@ -11,4 +11,8 @@
 - [x] The LOW path compiles (the facade material cloned with the LOW defines, compiled in SwiftShader, no shader errors)
 - [x] `qa/vr/perf.mjs`, `qa/vr/render.mjs`, `qa/vr/city.test.mjs`
 - [x] Validate with the OpenSpec CLI
+- [x] Rooms behind the glass (interior mapping): walls, floor, ceiling, furniture, people, plants, curtains, lamp pools
+- [x] Stone podiums under some towers, blank bays on some homes, paint patches and rain streaks
+- [x] The painted atlas tile on fewer buildings (about 12 %), so most show the procedural windows
+- [x] Before and after shots compared; `qa/vr/perf.mjs`, `qa/vr/render.mjs`, `qa/vr/city.test.mjs` again
 - [ ] Device checks not possible here: a real phone (touch and its GPU's frame rate) and a headset

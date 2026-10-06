@@ -40,6 +40,42 @@ arched heads, stone sills and lintels, and shutters beside the windows.
 - **WHEN** the player looks at several towers
 - **THEN** some show lit rooms scattered, others whole lit and dark floors or lit columns
 
+### Requirement: Each window looks into its own room
+Up close, the windows of every family but the painted atlas SHALL show a room behind the glass, drawn in the shader with
+no new geometry. The view ray SHALL meet the room's back wall, side walls, floor or ceiling, so the room shifts with the
+view. Each window's hash SHALL pick its own wall paint, floor, depth (2.6 to 6 m) and lamp position.
+
+#### Scenario: Swinging past a row of windows
+- **WHEN** the player swings past a building 10 to 30 m away
+- **THEN** neighbouring windows show different rooms, and each room's walls and furniture shift with the view
+
+#### Scenario: Far away
+- **WHEN** the same building is 150 m or more away
+- **THEN** the rooms fade to the window's average tone and nothing shimmers
+
+### Requirement: Rooms have contents and light
+Each room SHALL show, from its hash: a picture, a bookshelf or a door on the back wall; a sofa, a table or a cabinet
+against it; sometimes a person in a lit room; sometimes a pot plant; and curtains or a valance on about half of them.
+A lit room SHALL take its own lamp colour with a brighter pool under the lamp. A dark room SHALL mostly show the
+building's glass tint and the sky in it.
+
+#### Scenario: Lit and dark rooms
+- **WHEN** the player looks at a building with some rooms lit
+- **THEN** lit rooms glow in their lamp colour with furniture and curtains visible, and dark rooms read as dark glass
+
+### Requirement: The building's shape and wear vary
+Some towers SHALL stand on a podium of one to three floors in stone (limestone, granite or red sandstone) with their own
+window family. Some homes and slabs SHALL have blank bays, where the wall runs on with no window. Walls SHALL show broad
+two-tone patches of paint, and some buildings SHALL show rain streaks under their windows.
+
+#### Scenario: The foot of a tower
+- **WHEN** the player stands in front of a tall tower
+- **THEN** on some towers the lowest floors above the street are stone with different windows from the floors above
+
+#### Scenario: A worn wall
+- **WHEN** the player looks at a home up close
+- **THEN** on some homes dark streaks run down the wall under the windows, and the paint is not one flat tone
+
 ### Requirement: Top floors can differ
 Some homes SHALL show a different top floor from the floors below (arched windows, small attic windows or round
 windows), and some SHALL show a cornice with dentils and an ink line under the top of the wall.

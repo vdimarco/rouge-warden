@@ -60,3 +60,21 @@ The dark glass takes one of five tints, in the flat look and on the painted tile
 
 No new texture fetch per pixel (still one `tileSample` up close), a few more hashes and smoothsteps. The LOW define
 skips joints, sills, shutters and the shades as before; frames, bars, families, tints and light patterns stay.
+
+## Rooms behind the glass
+
+Interior mapping in the facade shader. The face basis is T = (N.z, 0, -N.x) (the direction u runs), up, and N. The view
+ray goes into the wall from the pixel's point in window metres; its first hit with the room box (side walls at the
+window's half width plus 0.35 to 1.2 m, or at the cell edge for ribbons and curtain walls; floor and ceiling at the
+storey's own floor and ceiling; back wall 2.6 to 6 m in) picks the surface. Furniture, a person and a plant sit on
+planes parallel to the glass at their own depths, so they shift against the back wall. Room corners and the outlines
+of things get ink lines sized to a pixel at the hit depth. Lighting is a flat lamp colour with one hard-edged pool,
+so it stays a comic cel look. The whole block runs only where the window resolves (`detail`) and the pixel is glass,
+and the LOW path skips it.
+
+## Podiums, blank bays and wear
+
+A podium is a per-building count of rows (one to three) on towers of more than eight floors; those rows switch family
+and wall paint, and get stone joints. Blank bays are a per-cell hash against a per-building rate (0 or 5 to 16 %); they
+fold into `inFloors`, fading to the rate where cells would shimmer, and the fire escape ignores them. Paint patches are
+a value noise in face metres; rain streaks are a value noise across the window's width, falling off below the sill.
