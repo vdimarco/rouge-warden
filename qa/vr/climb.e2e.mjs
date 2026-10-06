@@ -320,9 +320,35 @@ try {
     assert(/^Point the phone/.test(motion), 'with motion aim on the resting hint says to point the phone: ' + motion);
     assert(await page.evaluate(() => { const ok = QA.flyIn(); G.test.step(1 / 60, 2); return ok; }), 'a phone holds the wall (motion aim on)');
     assert(/^On the wall/.test(await hintOf()), 'with motion aim on the wall still says how to climb');
+    // on the wall a line that does not come from the wall must not hide the wall line: a Center press, and a tap that finds nothing
+    // (the picker finds no target for it, so main.js dry-fires and tells the panel)
+    await page.locator('[data-action=center]').click();
+    await page.evaluate(() => G.test.step(1 / 60, 2));
+    const centred = await hintOf();
+    assert(/^On the wall/.test(centred), 'a Center press on the wall keeps the wall line: ' + centred);
+    console.log('PASS a Center press on the wall keeps the wall line');
+    const dry = await page.evaluate(() => {
+      const tap = G.picker.tap; G.picker.tap = () => null;
+      document.querySelector('[data-action=throw]').onclick(); G.test.step(1 / 60, 6);
+      G.picker.tap = tap;
+      return { wall: !!G.P.wall, dry: G.test.events().slice(-12).some((e) => e.type === 'dry'), hint: document.querySelector('.phone-hint').textContent };
+    });
+    assert(dry.wall && dry.dry, 'a tap with nothing in reach is a dry fire and the hero stays on the wall: ' + JSON.stringify(dry));
+    assert(/^On the wall/.test(dry.hint), 'a tap that finds nothing on the wall keeps the wall line: ' + dry.hint);
+    console.log('PASS a tap that finds nothing on the wall keeps the wall line');
     await page.locator('.phone-climb [data-action=hop]').click();
     await page.evaluate(() => G.test.step(1 / 60, 4));
     await back('JUMP with motion aim on', motion);
+    // the Motion button on the wall: motion aim goes off, the wall line stays, and the line of that moment (the tap line) comes back off the wall
+    assert(await page.evaluate(() => { const ok = QA.flyIn(); G.test.step(1 / 60, 2); return ok; }), 'a phone holds the wall (Motion press)');
+    await page.locator('[data-action=motion]').click();
+    await page.evaluate(() => G.test.step(1 / 60, 2));
+    const toggled = await hintOf();
+    assert(/^On the wall/.test(toggled), 'a Motion press on the wall keeps the wall line: ' + toggled);
+    console.log('PASS a Motion press on the wall keeps the wall line');
+    await page.locator('.phone-climb [data-action=hop]').click();
+    await page.evaluate(() => G.test.step(1 / 60, 4));
+    await back('JUMP after Motion went off on the wall', rest);
     assert.equal(stale.length, 0, 'the wall line "On the wall..." must not stay after the hero leaves the wall: ' + stale.join('; '));
     assert.equal(page.errors.length, 0, JSON.stringify(page.errors));
     console.log('PASS no runtime errors');

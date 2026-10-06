@@ -275,6 +275,7 @@ assert.deepEqual(vibrated, [[9000, 15]], "buzz vibrates again after use(true)");
 /* ---------------- the wall line goes when the hero leaves the wall ---------------- */
 // climbing(true) says how to climb. When the hero leaves the wall (JUMP, over the top, down to the street) the line of before comes
 // back, and with motion aim on that is the motion line. A tap that swung the hero off has said "Swinging" first: that line stays.
+// While the hero holds the wall the wall line stays against a Motion press, a Center press and a tap that finds nothing.
 const said2 = () => el(".phone-hint").textContent;
 win.DeviceOrientationEvent.requestPermission = async () => "denied"; win.DeviceMotionEvent.requestPermission = async () => "denied";
 m.reset(); await m.start();
@@ -292,6 +293,18 @@ const motion = said2();
 assert(/^Point the phone/.test(motion), "with motion aim on the resting hint says to point the phone: " + motion);
 m.climbing(true); m.climbing(false);
 assert.equal(said2(), motion, "with motion aim on the hint goes back to the motion line off the wall");
+// On the wall a line that does not come from the wall must not hide the wall line: a tap that finds nothing, a Center press and
+// a Motion press. Off the wall the same calls speak as before. Motion aim is on here, and the Motion press turns it off.
+m.climbing(true); btn("throw").onclick(); m.miss();
+assert(/^On the wall/.test(said2()), "a tap that finds nothing on the wall keeps the wall line: " + said2());
+btn("center").onclick();
+assert(/^On the wall/.test(said2()), "a Center press on the wall keeps the wall line: " + said2());
+btn("motion").onclick();
+assert(/^On the wall/.test(said2()), "a Motion press on the wall keeps the wall line: " + said2());
+m.climbing(false);
+assert.equal(said2(), resting, "after Motion went off on the wall the hint goes back to the tap line");
+m.miss(); assert(/^Nothing in reach/.test(said2()), "off the wall a tap that finds nothing says so: " + said2());
+btn("center").onclick(); assert(/yellow/i.test(said2()), "off the wall a Center press names the yellow ring: " + said2());
 m.reset();
 
 /* ---------------- the stub of a device with no touch point ---------------- */

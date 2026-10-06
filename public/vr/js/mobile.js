@@ -69,12 +69,15 @@ export function createMobile(canvas, active) {
   }
   // the hint line when no rope is out and nothing else has spoken: it depends on motion aim
   const rest = () => (sensors ? SAY.motion : SAY.tap);
+  // A line that does not come from the wall (a Motion or Center press, a tap that finds nothing) must not hide the wall line:
+  // it stays while the hero holds the wall, and climbing(false) puts the resting line back.
+  const say = line => { hint.textContent = onWall ? SAY.wall : line; };
   // Center does something only while motion aim is on, so it shows only then.
   function motionUi() {
     const b = button('motion');
     b.setAttribute('aria-pressed', String(sensors)); b.classList.toggle('on', sensors);
     button('center').hidden = !sensors;
-    hint.textContent = rest();
+    say(rest());
   }
   async function start() {
     if (!on) return;
@@ -86,7 +89,7 @@ export function createMobile(canvas, active) {
     motionUi();
   }
   button('motion').onclick = () => { if (sensors) { sensors = false; center(); motionUi(); } else start(); };
-  button('center').onclick = () => { center(); hint.textContent = SAY.center; };
+  button('center').onclick = () => { center(); say(SAY.center); };
   button('view').onclick = () => { if (active()) state.view = true; };
   button('menu').onclick = () => { state.menu = true; };
   function cast(aim = null) {
@@ -206,7 +209,7 @@ export function createMobile(canvas, active) {
     released() { latched=false; state.fire=false; state.aim=null; label(); hint.textContent=SAY.fly; },
     // Seconds since the player last dragged or tilted to look. The camera follow waits for this.
     idle() { return (performance.now()-lookAt)/1000; },
-    miss(keepRope = false) { latched=keepRope; state.fire=false; label(); hint.textContent=keepRope ? SAY.kept : SAY.none; },
+    miss(keepRope = false) { latched=keepRope; state.fire=false; label(); say(keepRope ? SAY.kept : SAY.none); },
     // Only the dead-latch safety: the ring and the dimmed button belong to marker().
     target(valid, attached) {
       // A broken rope must never leave the button showing a rope that is not there.
