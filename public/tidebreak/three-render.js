@@ -135,8 +135,9 @@ export class ThreeRenderer {
     const inView = e => e.x > rect.x0 - 450 && e.x < rect.x1 + 250 && e.y > rect.y0 - 250 && e.y < rect.y1 + 450;
     this.units.frozen = !menu && !this.reducedMotion && this.feel?.hitstop > 0 ? this.feel.frozen : null;
     this.units.sync(s, time, dt, e => inView(e) && (menu || this.visible.has(e.id)), this.cam);
-    // The hero select shows the hero as a portrait: no gameplay outline and no ring.
-    for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') { v.concealed = v.unit.team === 0 && concealed(s, v.unit); if (this.showcase && v.outline) v.outline.visible = false; }
+    // The hero select shows the hero as a portrait: no gameplay outline, no ring and only a faint team rim light, so the
+    // golden sun lights the edges. The next match frame sets the full rim again.
+    for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') { v.concealed = v.unit.team === 0 && concealed(s, v.unit); if (this.showcase) { if (v.outline) v.outline.visible = false; v.uniforms.uRimPower.value = this.units.rimPower * .15; } }
     this.lastPoses = this.units.poses;
     this.seeThrough(s, p, menu);
     this.drawWorldEffects(s, p, time, dt, menu, aim, waypoint);
