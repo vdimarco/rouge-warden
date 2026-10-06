@@ -2,7 +2,7 @@
 // index.html registers it with scope "./". A plain classic worker (no modules, no importScripts), so every browser runs it.
 // VERSION must equal VERSION in js/config.js (qa/vr/pwa.mjs checks it). A new VERSION makes a new cache and drops the old one.
 
-const VERSION = "1.11.1";
+const VERSION = "1.12.0";
 const PREFIX = "fullswing-";
 const CACHE = PREFIX + VERSION;
 

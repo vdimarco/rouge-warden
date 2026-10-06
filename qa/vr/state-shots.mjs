@@ -1,6 +1,6 @@
 // In Full Swing: the screens of the flat controls, as PNGs to read against the scenarios (task J3 of openspec/changes/swing-controls). The
 // states: the start roof (the edge arrow, and the key strip or the phone top row), the lock-on ring on the target, the arrow behind the camera on
-// a wall, the LET GO caption (mouse), the green ring on a clog, the dimmed SWING button (phone), and the VIEW button in first person (phone).
+// a wall, the LET GO caption (mouse), the green ring on a clog, the plunger badges with no target (phone), and the VIEW button in first person (phone).
 // Sizes: 640 by 360, 960 by 540 and 1280 by 720 with a mouse, and 844 by 390, 390 by 844 and 360 by 740 as a touch phone with motion aim on.
 // For each state the script checks that the page really shows it (a ring, an arrow, a caption, a class), so a PNG is never of the wrong state.
 // It does not judge the layout: qa/vr/layout.e2e.mjs does that, and a person reads the PNGs. The state has to come from play where it can
@@ -187,16 +187,16 @@ async function mouse(w, h) {
 /* ---------------- a phone with motion aim ---------------- */
 async function phone(w, h) {
   const tag = `${w}x${h}`, page = await playPage(w, h, true);
-  // 1. the start roof: the four top buttons, the arrow, SWING
+  // 1. the start roof: the four top buttons, the arrow, the plunger badges
   await page.evaluate(() => __s.step(60));
   await settle(page);
-  let s = await page.evaluate(() => ({ top: [...document.querySelectorAll(".phone-top button")].filter((b) => !b.hidden && b.getBoundingClientRect().width > 0).map((b) => b.textContent.trim()), arrow: __s.vis(".phone-target.arrow"), swing: __s.vis("[data-action=throw]"), dim: document.querySelector("[data-action=throw]").classList.contains("no-target"), strip: __s.vis("#keyHints"), t: __s.target() }));
-  check(s.top.join() === "Motion,Center,View,Pause" && s.arrow && s.swing && !s.dim && !s.strip && s.t.kind === "ring", `[${tag}] start: the four top buttons (motion aim on), the edge arrow and SWING show, SWING is not dimmed, and no key strip shows`, s);
+  let s = await page.evaluate(() => ({ top: [...document.querySelectorAll(".phone-top button")].filter((b) => !b.hidden && b.getBoundingClientRect().width > 0).map((b) => b.textContent.trim()), arrow: __s.vis(".phone-target.arrow"), badges: __s.vis('.phone-side[data-side="0"]') && __s.vis('.phone-side[data-side="1"]'), swing: !!document.querySelector("[data-action=throw]"), strip: __s.vis("#keyHints"), t: __s.target() }));
+  check(s.top.join() === "Motion,Center,View,Pause" && s.arrow && s.badges && !s.swing && !s.strip && s.t.kind === "ring", `[${tag}] start: the four top buttons (motion aim on), the edge arrow and the two plunger badges show, no SWING button and no key strip`, s);
   await shot(page, w, h, "1-start-top-row");
   // 2. the lock-on ring on the target
   const up = await liftToRing(page, ".phone-target");
-  s = await page.evaluate(() => ({ ring: __s.vis(".phone-target") && !document.querySelector(".phone-target").classList.contains("arrow"), kind: document.querySelector(".phone-target").dataset.kind, t: __s.target(), at: __s.rect(".phone-target"), dim: document.querySelector("[data-action=throw]").classList.contains("no-target") }));
-  check(up !== null && s.ring && !s.dim && !!s.t.kind, `[${tag}] ring: the lock-on ring shows on the target (view lifted ${up} rad)`, s);
+  s = await page.evaluate(() => ({ ring: __s.vis(".phone-target") && !document.querySelector(".phone-target").classList.contains("arrow"), kind: document.querySelector(".phone-target").dataset.kind, t: __s.target(), at: __s.rect(".phone-target"), ready: document.querySelector("#phoneControls").classList.contains("target-ready") }));
+  check(up !== null && s.ring && s.ready && !!s.t.kind, `[${tag}] ring: the lock-on ring shows on the target (view lifted ${up} rad)`, s);
   await shot(page, w, h, "2-ring");
   // 3. a wall: the climb pad, and the arrow on the bottom border
   const held = await page.evaluate(() => __s.flyIn());
@@ -210,7 +210,7 @@ async function phone(w, h) {
   s = await page.evaluate(() => { const r = document.querySelector(".phone-target"); return { t: __s.target(), ring: __s.vis(".phone-target") && !r.classList.contains("arrow"), kind: r.dataset.kind, color: getComputedStyle(r).color, star: getComputedStyle(r.querySelector(".pt-star")).display }; });
   check(!!clog && s.t.kind === "clog" && s.ring && s.kind === "clog" && s.color === "rgb(156, 255, 58)" && s.star !== "none", `[${tag}] clog: the target is a clog and the ring is sludge green with points`, s);
   await shot(page, w, h, "4-clog-ring");
-  // 5. no target: SWING is dimmed and still works. A place where the picker finds nothing is looked for in play (looking down at the roof, then
+  // 5. no target: no ring shows, the panel loses target-ready, and the plunger badges stay dark (a tap still works). A place where the picker finds nothing is looked for in play (looking down at the roof, then
   // away from the city). With none, the state is the marker taken away, as the page draws it with no target.
   const found = await page.evaluate(() => {
     const none = () => { __s.step(30); return G.test.target().on && !G.test.target().target; };
@@ -221,9 +221,9 @@ async function phone(w, h) {
   });
   if (!found) await page.evaluate(() => { G.desktop.mobile.marker(null); });
   await sleep(200);
-  s = await page.evaluate(() => { const b = document.querySelector("[data-action=throw]"), cs = getComputedStyle(b); return { how: null, dim: b.classList.contains("no-target"), opacity: cs.opacity, ring: __s.vis(".phone-target"), pointer: cs.pointerEvents, text: b.firstChild.textContent }; });
-  check(s.dim && !s.ring && Number(s.opacity) < 0.8 && s.pointer === "auto" && s.text === "SWING", `[${tag}] no target (${found || "taken by hand: no place in play had no target"}): SWING is dimmed, still works, and no ring shows`, s);
-  await shot(page, w, h, "5-no-target-dim");
+  s = await page.evaluate(() => { const b = [...document.querySelectorAll(".phone-side")]; return { ring: __s.vis(".phone-target"), ready: document.querySelector("#phoneControls").classList.contains("target-ready"), badges: b.length, lit: b.some((e) => e.classList.contains("held")), swing: !!document.querySelector("[data-action=throw]") }; });
+  check(!s.ring && !s.ready && s.badges === 2 && !s.lit && !s.swing, `[${tag}] no target (${found || "taken by hand: no place in play had no target"}): no ring shows, the panel is not target-ready, and the two plunger badges stay dark`, s);
+  await shot(page, w, h, "5-no-target");
   // 6. the VIEW button in first person: it turns yellow, and the centre ring shows
   await page.evaluate(() => { __s.roof(); G.ui.say("", 0); });
   await page.locator("[data-action=view]").click();

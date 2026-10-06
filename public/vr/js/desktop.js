@@ -274,8 +274,9 @@ export function createDesktop(canvas, camera, settings) {
     const gp = mobile.enabled ? null : standardPad();
     const phone = mobile.sample(dt);
     inp.easySwing = mobile.enabled;
-    inp.phoneFire = phone.fire;
-    inp.phoneAim = phone.aim; // a tap's screen position (NDC x and y) for the frame it fires, else null: main aims through it
+    // per plunger (0 the left, 1 the right): a tap this frame, and its screen point (NDC x and y, else null): main aims through it
+    inp.phoneFire = phone.fires;
+    inp.phoneAim = phone.aims;
     // look: the mouse (locked, or the free cursor in play) and the pad's right stick
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
@@ -359,14 +360,15 @@ export function createDesktop(canvas, camera, settings) {
       h.gripLocal.quat.copy(head.quat);
       h.aimLocal.pos.copy(head.pos);
       h.aimLocal.dir.set(0, 0, -1);
-      if (i === 1 && phone.aim) {
+      const tap = phone.aims[i];
+      if (tap) {
         const f = Math.tan(camera.fov * Math.PI / 360);
-        h.aimLocal.dir.set(phone.aim.x * f * camera.aspect, phone.aim.y * f, -1).normalize();
+        h.aimLocal.dir.set(tap.x * f * camera.aspect, tap.y * f, -1).normalize();
       }
       h.aimLocal.dir.applyQuaternion(head.quat);
-      const was = held[i], on = mobile.enabled ? i === 1 && phone.hold : hold[i];
+      const was = held[i], on = mobile.enabled ? phone.holds[i] : hold[i];
       h.trigger = on ? 1 : 0;
-      if (mobile.enabled ? (on && !was) || (i === 1 && phone.fire) : fire[i]) h.triggerDown = true;
+      if (mobile.enabled ? (on && !was) || phone.fires[i] : fire[i]) h.triggerDown = true;
       if (fire[i]) h.swingDown = true;
       if (!on && was) h.triggerUp = true;
       held[i] = h.holding = on;

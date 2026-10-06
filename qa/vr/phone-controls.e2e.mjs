@@ -71,9 +71,9 @@ function layout() {
   const t = top.map(box), p = pills.map(box);
   const overlaps = [];
   for (const a of t) for (const b of p) if (hit(a, b)) overlaps.push("a top button covers a score pill");
-  if (sub && hit(sub, bottom)) overlaps.push("the spoken line covers the SWING panel");
-  if (tail && hit(tail, bottom)) overlaps.push("the tail of the spoken line pokes into the SWING panel (its hint)");
-  if (pad && hit(pad, bottom)) overlaps.push("the climb pad covers the SWING panel");
+  if (sub && hit(sub, bottom)) overlaps.push("the spoken line covers the hint panel");
+  if (tail && hit(tail, bottom)) overlaps.push("the tail of the spoken line pokes into the hint panel (its hint)");
+  if (pad && hit(pad, bottom)) overlaps.push("the climb pad covers the hint panel");
   for (const a of t) for (const b of t) if (a !== b && hit(a, b)) overlaps.push("two top buttons overlap");
   const hints = document.querySelector("#keyHints");
   return {
@@ -178,12 +178,12 @@ async function lineWindows() {
   return { bad, need, count: new Set(Object.values(C.LINES_PHONE).flat()).size };
 }
 
-// Every line the hint over SWING can say, with a spoken line showing. The tail of the spoken line hangs 27 px under its box and the
-// spoken line has room for one line of hint: a hint that wraps to a second line lifts the SWING panel into the tail. (The wall line
+// Every line the hint at the bottom can say, with a spoken line showing. The tail of the spoken line hangs 27 px under its box and
+// the spoken line has room for one line of hint: a hint that wraps to a second line lifts the hint panel into the tail. (The wall line
 // is not here: on a wall in portrait the spoken lines are hidden, and in landscape they sit at the top.) No game frame runs after a
 // button is pressed, so nothing fires.
 async function hintStates() {
-  const M = G.desktop.mobile, hint = document.querySelector(".phone-hint"), bottom = document.querySelector(".phone-bottom"), sub = document.querySelector(".fs-sub"), btn = document.querySelector("[data-action=throw]");
+  const M = G.desktop.mobile, hint = document.querySelector(".phone-hint"), bottom = document.querySelector(".phone-bottom"), sub = document.querySelector(".fs-sub");
   const out = [];
   G.ui.say("Tap the next building while you fly.", 60); G.test.step(1 / 60, 3);
   const read = (name) => {
@@ -192,10 +192,10 @@ async function hintStates() {
   };
   window.__sensors = "granted"; await M.start(); read("motion aim on");
   window.__sensors = "denied"; await M.start(); read("motion aim off");
-  M.miss(true); read("the rope is kept"); M.miss(false); read("nothing in reach");
+  M.miss(1, true); read("the rope is kept"); M.miss(1, false); read("nothing in reach");
   const center = document.querySelector("[data-action=center]"); center.hidden = false; center.click(); read("centered"); center.hidden = true;
   M.released(); read("flying");
-  btn.onclick(); read("swinging"); btn.onclick(); read("swinging on (SWING never lets go)");
+  M.tap(1); read("swinging"); M.tap(0); read("both plungers out");
   M.reset(); G.ui.say("", 0);
   return out;
 }
@@ -213,7 +213,7 @@ try {
   });
   check(meta.labelTouch === "PLAY WITH TOUCH", "#playFlat carries data-label-touch=\"PLAY WITH TOUCH\"", meta.labelTouch);
   check(meta.mouse && meta.mouse.text === "PLAY WITH MOUSE AND KEYBOARD" && meta.mouse.enter, "#playMouse reads PLAY WITH MOUSE AND KEYBOARD and is an enter button", meta.mouse);
-  check(meta.notes.every((n) => n) && /Tap a building/.test(meta.notes[0]) && /SWING/.test(meta.notes[0]), "#touchNote tells a phone player to tap a building or press SWING", meta.notes[0]);
+  check(meta.notes.every((n) => n) && /left or right side/.test(meta.notes[0]) && /both thumbs/.test(meta.notes[0]) && !/SWING/.test(meta.notes[0]), "#touchNote tells a phone player to tap the left or right side, with both thumbs", meta.notes[0]);
   check(/left mouse button/.test(meta.notes[1]) && /\bW\b/.test(meta.notes[1]) && /game pad/i.test(meta.notes[1]), "#deskNote names the left mouse button, W and the game pad", meta.notes[1]);
   check(/touch/i.test(meta.notes[2]) && /mouse/i.test(meta.notes[2]), "#hybridNote speaks to a device with touch and a mouse", meta.notes[2]);
   check(!meta.em, "no em dash on the page");
@@ -242,7 +242,7 @@ try {
   check(/pinch/i.test(how.text) && /Shift/.test(how.text), "the dialog still has the words pinch and Shift (boot.mjs needs them)");
   check(!/A game pad works too/.test(how.text) && !/<h3>Controllers<\/h3>/.test(how.text) && !how.heads.includes("Controllers"), "the old line A game pad works too is gone, and Controllers is now Headset controllers");
   check(/right trigger/.test(how.padText) && /left bumper/.test(how.padText) && /Triangle/.test(how.padText) && /Options/.test(how.padText), "the game pad section names the triggers, the bumpers, Triangle and Options", how.padText.slice(0, 160));
-  check(/VIEW/.test(how.touchText) && /SWING/.test(how.touchText) && /JUMP/.test(how.touchText) && !/mouse|Shift|trigger|pinch|grip/i.test(how.touchText), "the phone section names SWING, VIEW and JUMP and no mouse, key, trigger, pinch or grip");
+  check(/VIEW/.test(how.touchText) && /left side/.test(how.touchText) && /both thumbs/i.test(how.touchText) && /JUMP/.test(how.touchText) && !/SWING/.test(how.touchText) && !/mouse|Shift|trigger|pinch|grip/i.test(how.touchText), "the phone section names the left and right sides, both thumbs, VIEW and JUMP, and no SWING, mouse, key, trigger, pinch or grip");
   check(how.order.none === "Headset controllers" && how.order.touch === "Phone and touch" && how.order.mouse === "Keyboard and mouse" && how.order.pad === "Game pad", "the section for the device in use comes first (body[data-device])", how.order);
   check(!how.wide, "the dialog does not scroll sideways at 390 px");
   await shot(main, "phone-controls-how-390");
@@ -256,7 +256,7 @@ try {
   // the words: the first line the tutorial speaks is the one in the spec (swing-phone-controls, "Words" in its design), and no phone
   // line names a mouse, Shift, a key, a trigger, a pinch or a grip (read before any frame runs, so the line on the screen is the one
   // the tutorial said first). The text is a constant here: the change documents move when the change is archived.
-  const wantFirst = "Tap SWING to swing at the gold ring.";
+  const wantFirst = "Tap left or right to swing at the gold ring.";
   const words = await main.evaluate(async () => {
     const C = await import("./js/config.js"), sub = document.querySelector(".fs-sub");
     return { spoken: sub.textContent, on: sub.classList.contains("on"), said: G.ui.sayLine("tutorial", 0), table: C.LINES_PHONE.tutorial[0], all: Object.entries(C.LINES_PHONE).flatMap(([k, v]) => v.map((l) => k + ": " + l)) };
@@ -297,12 +297,12 @@ try {
       const missed = tops.filter((b) => !(b.outside.left && b.outside.right && b.outside.top && b.outside.bottom));
       check(tops.length > 0 && missed.length === 0, `${tag}: a touch 1 px outside the box of a top button, on any side, still hits that button (hit area of 48 px or more)`, missed.map((b) => b.name + " " + JSON.stringify(b.outside)));
       const thin = rest.filter((b) => b.box.w < 48 || b.box.h < 48);
-      check(rest.length >= 1 && thin.length === 0, `${tag}: every other visible button box is 48 by 48 or more (${rest.map((b) => b.name).join(", ")})`, thin.map((b) => b.name + " " + Math.round(b.box.w) + "x" + Math.round(b.box.h)));
+      check(thin.length === 0, `${tag}: every other visible button box is 48 by 48 or more (${rest.map((b) => b.name).join(", ") || "none in play: the city is the control"})`, thin.map((b) => b.name + " " + Math.round(b.box.w) + "x" + Math.round(b.box.h)));
       check(L.topCount === (sensors === "granted" ? 4 : 3), `${tag}: the top row has ${sensors === "granted" ? "four buttons" : "three buttons (Center hides)"}`, L.topLabels);
       check(L.topRow && L.topRow.one && L.topRow.left >= 0 && L.topRow.right <= L.w, `${tag}: the top row is one line inside the screen`, L.topRow);
       check(L.topRow && /^(MOTION|Motion)$/i.test(L.topLabels[0]) && L.topLabels.every((s) => s.length <= 6), `${tag}: the labels are six letters or fewer`, L.topLabels);
       check(L.pillRow && L.pillRow.spread < 8 && L.pillRow.left >= 0 && L.pillRow.right <= L.w, `${tag}: the score pills are one row inside the screen`, L.pillRow);
-      check(L.overlaps.length === 0, `${tag}: the top buttons, pills, spoken line and SWING panel do not overlap`, L.overlaps);
+      check(L.overlaps.length === 0, `${tag}: the top buttons, pills, spoken line and hint panel do not overlap`, L.overlaps);
       check(!L.wide, `${tag}: the page does not scroll sideways`);
       check(!L.card, `${tag}: no card asks the player to turn the phone`);
       check(!L.keyHints, `${tag}: #keyHints is not visible on touch in play with an unfinished tutorial`);
@@ -313,7 +313,7 @@ try {
       if (sensors === "granted") await shot(main, `phone-controls-${w}x${h}`);
     }
     const hs = await main.evaluate(hintStates);
-    check(hs.length === 8 && hs.every((q) => q.gap >= 0), `${w}x${h} ${name}: with a spoken line showing, its tail (27 px) clears the SWING panel for each of the ${hs.length} hint lines`, hs.filter((q) => q.gap < 0));
+    check(hs.length === 8 && hs.every((q) => q.gap >= 0), `${w}x${h} ${name}: with a spoken line showing, its tail (27 px) clears the hint panel for each of the ${hs.length} hint lines`, hs.filter((q) => q.gap < 0));
     if (w < h) check(hs.every((q) => q.lines === 1), `${w}x${h} ${name}: each hint line fits on one line`, hs.filter((q) => q.lines !== 1));
     const lw = await main.evaluate(lineWindows);
     check(lw.bad.length === 0, `${w}x${h} ${name}: the safe window keeps ${lw.need * 100} percent of the height or more for each of the ${lw.count} phone spoken lines, the longest too`, lw.bad);
@@ -360,26 +360,33 @@ try {
   const turn1 = await main.evaluate(() => ({ state: G.state, aspect: G.camera.aspect }));
   await main.setViewportSize({ width: 844, height: 390 });
   await main.waitForFunction(() => G.camera.aspect > 2);
-  const turn2 = await main.evaluate(() => { G.test.step(1 / 60, 5); return { state: G.state, aspect: G.camera.aspect, card: /turn (your|the) (phone|device)/i.test(document.body.innerText), pressed: !!document.querySelector("[data-action=throw]") }; });
+  const turn2 = await main.evaluate(() => { G.test.step(1 / 60, 5); return { state: G.state, aspect: G.camera.aspect, card: /turn (your|the) (phone|device)/i.test(document.body.innerText) }; });
   check(turn1.state === "play" && turn2.state === "play" && Math.abs(turn2.aspect - 844 / 390) < 0.01 && !turn2.card, "turning the phone from portrait to landscape during play goes on playing: the camera aspect follows, no card shows", { turn1, turn2 });
   await main.setViewportSize({ width: 390, height: 844 });
   await main.waitForFunction(() => Math.abs(G.camera.aspect - 390 / 844) < 0.01);
   await main.evaluate(async () => { window.__sensors = "denied"; await G.desktop.mobile.start(); G.test.step(1 / 60, 3); });
 
-  /* ---------------- the marker: colours, hiding, the dim, the centre ring ---------------- */
+  /* ---------------- the marker: colours, hiding, the side badges, the centre ring ---------------- */
   const look = await main.evaluate(() => {
-    const M = G.desktop.mobile, ring = document.querySelector(".phone-target"), btn = document.querySelector("[data-action=throw]"), cross = document.querySelector(".phone-crosshair");
+    const M = G.desktop.mobile, ring = document.querySelector(".phone-target"), cross = document.querySelector(".phone-crosshair");
     const css = (e, k) => getComputedStyle(e)[k];
     const out = {};
     M.safe(); M.marker({ x: 0.2, y: 0.4, kind: "swing", dist: 30 });
-    out.swing = { color: css(ring, "color"), star: css(ring.querySelector(".pt-star"), "display"), ringShape: css(ring.querySelector(".pt-ring"), "display"), shown: css(ring, "display"), ready: document.querySelector("#phoneControls").classList.contains("target-ready"), dim: btn.classList.contains("no-target"), opacity: css(btn, "opacity") };
+    out.swing = { color: css(ring, "color"), star: css(ring.querySelector(".pt-star"), "display"), ringShape: css(ring.querySelector(".pt-ring"), "display"), shown: css(ring, "display"), ready: document.querySelector("#phoneControls").classList.contains("target-ready") };
     M.marker({ x: 0.2, y: 0.4, kind: "clog", dist: 30 });
     out.clog = { color: css(ring, "color"), star: css(ring.querySelector(".pt-star"), "display"), ringShape: css(ring.querySelector(".pt-ring"), "display") };
     M.marker({ x: 0.2, y: 0.4, kind: "pipe", dist: 30 }); out.pipe = { color: css(ring, "color") };
     M.marker({ x: 0.2, y: 0.4, kind: "ring", dist: 30 }); out.gold = { color: css(ring, "color") };
     M.marker({ x: 0.2, y: 0.4, kind: "crack", dist: 30 }); out.crack = { color: css(ring, "color") };
     M.marker(null);
-    out.none = { shown: css(ring, "display"), hidden: ring.hidden, dim: btn.classList.contains("no-target"), opacity: css(btn, "opacity"), pointer: css(btn, "pointerEvents"), text: btn.firstChild.textContent, ready: document.querySelector("#phoneControls").classList.contains("target-ready") };
+    out.none = { shown: css(ring, "display"), hidden: ring.hidden, ready: document.querySelector("#phoneControls").classList.contains("target-ready") };
+    // the two plunger badges: one at each side, they take no taps, and each lights while its plunger holds
+    const badges = [0, 1].map((i) => document.querySelector(`.phone-side[data-side="${i}"]`));
+    const rect = (e) => e.getBoundingClientRect();
+    for (const b of badges) b.style.transition = "none"; // read the lit colour, not a frame of its fade
+    M.tap(0); M.sample(0.016);
+    out.badges = { n: badges.filter(Boolean).length, swing: !!document.querySelector("[data-action=throw]"), pointer: badges.map((b) => css(b, "pointerEvents")), left: rect(badges[0]).right < innerWidth / 2, right: rect(badges[1]).left > innerWidth / 2, lit: badges.map((b) => b.classList.contains("held")), litBg: css(badges[0], "backgroundColor"), darkBg: css(badges[1], "backgroundColor") };
+    M.reset();
     out.crossThird = css(cross, "display"); out.viewBtnThird = css(document.querySelector("[data-action=view]"), "backgroundColor");
     G.flatcam.setFirstPerson(true); G.test.step(1 / 60, 40);
     out.crossFirst = css(cross, "display"); out.view = document.body.dataset.view;
@@ -392,8 +399,11 @@ try {
   check(look.clog.color === "rgb(156, 255, 58)" && look.clog.star !== "none" && look.clog.ringShape === "none", "a clog gets the sludge green ring with points", look.clog);
   check(look.pipe.color === "rgb(156, 255, 58)", "a pipe gets the green ring too", look.pipe);
   check(look.gold.color === "rgb(255, 179, 42)" && look.crack.color === "rgb(255, 179, 42)", "the gold ring and the crack get the gold ring", [look.gold, look.crack]);
-  check(look.swing.ready && !look.swing.dim, "with a target the panel has target-ready and SWING is not dimmed");
-  check(look.none.hidden && look.none.shown === "none" && look.none.dim && !look.none.ready && Number(look.none.opacity) < 0.8 && look.none.pointer === "auto" && look.none.text === "SWING", "with no target the ring is hidden and SWING is dimmed but still works", look.none);
+  check(look.swing.ready, "with a target the panel has target-ready");
+  check(look.none.hidden && look.none.shown === "none" && !look.none.ready, "with no target the ring is hidden and the panel loses target-ready", look.none);
+  const B = look.badges;
+  check(B.n === 2 && !B.swing && B.pointer.every((p) => p === "none") && B.left && B.right, "no SWING button: a plunger badge sits on each side, and neither takes a tap", B);
+  check(B.lit[0] && !B.lit[1] && B.litBg !== B.darkBg, "a badge lights while its plunger holds", B);
   check(look.crossThird === "none" && look.crossFirst !== "none" && look.view === "first" && look.viewBack === "third", "the centre ring shows only in first person", look);
   check(look.viewBtn === "rgb(255, 216, 74)" && look.viewBtnThird !== look.viewBtn, "the VIEW button turns yellow in the first-person view", [look.viewBtnThird, look.viewBtn]);
 
@@ -431,7 +441,7 @@ try {
   /* ---------------- words of the hint line ---------------- */
   const hints = await main.evaluate(() => {
     const M = G.desktop.mobile, h = document.querySelector(".phone-hint"), out = {};
-    M.miss(true); out.kept = h.textContent; M.miss(false); out.none = h.textContent;
+    M.miss(1, true); out.kept = h.textContent; M.miss(1, false); out.none = h.textContent;
     document.querySelector("[data-action=center]").hidden = false; document.querySelector("[data-action=center]").click(); out.center = h.textContent;
     M.reset(); return out;
   });
@@ -470,22 +480,23 @@ try {
   });
   if (!check(!!spot, "a roof with a clog on a lower roof in view was found")) throw new Error("no clog on a lower roof");
   await main.mouse.click(spot.px, spot.py);
-  const tapped = await main.evaluate((id) => {
+  const tapped = await main.evaluate(({ id, px }) => {
+    const side = px < innerWidth / 2 ? 0 : 1; // the half of the screen tapped picks the plunger
     let tag = null, att = false;
-    for (let k = 0; k < 90; k++) { G.test.step(1 / 60, 1); const r = G.test.state().ropes[1]; if (r.state === "attached") { att = true; tag = r.tag; if (tag === "clog") break; } }
+    for (let k = 0; k < 90; k++) { G.test.step(1 / 60, 1); const r = G.test.state().ropes[side]; if (r.state === "attached") { att = true; tag = r.tag; if (tag === "clog") break; } }
     for (let k = 0; k < 240 && !G.game.info().clogs[id].done; k++) G.test.step(1 / 60, 1);
     const i = G.game.info().clogs[id];
     return { att, tag, done: i.done, pumps: i.pumps };
-  }, spot.id);
+  }, { id: spot.id, px: spot.px });
   check(tapped.att && tapped.tag === "clog" && tapped.done, "a tap on the pixel of a clog on a lower roof attaches to the clog and plunges it (three pumps)", { spot, tapped });
 
   /* ---------------- a tap with the only building held keeps the rope ---------------- */
-  // SWING catches a building. Then the city is changed so that the held building is the only one any ray can hit, and the player taps
-  // the sky with a finger (a real click on the canvas: SWING aims at the next building ahead, not at the finger).
+  // A tap on the right side catches a building. Then the city is changed so that the held building is the only one any ray can hit,
+  // and the player taps the sky on the same side with a finger (a real click on the canvas, at x = 195 of 390: the right half).
   const hold = await main.evaluate(() => {
     const s = G.city.start, R = G.city.goldRing, C = G.city, M = G.desktop.mobile;
     G.test.press(1, false); G.test.aimAt(1, null); M.reset(); G.test.teleport(s.x, s.y, s.z); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z)); G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 30);
-    document.querySelector("[data-action=throw]").onclick();
+    M.tap(1);
     let held = null;
     for (let k = 0; k < 40 && !held; k++) { G.test.step(1 / 60, 1); const r = G.test.state().ropes[1]; if (r.state === "attached") held = { id: r.id, anchor: { ...r.anchor } }; }
     if (!held) return { held: null };
@@ -538,7 +549,7 @@ try {
     const s = G.city.start, R = G.city.goldRing, M = G.desktop.mobile;
     G.test.aimAt(1, null); M.reset(); G.test.teleport(s.x, s.y, s.z); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z)); G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 30);
     window.__buzz.length = 0;
-    document.querySelector("[data-action=throw]").onclick();
+    M.tap(1);
     for (let k = 0; k < 40 && G.test.state().ropes[1].state !== "attached"; k++) G.test.step(1 / 60, 1);
     const attach = [...window.__buzz], pop = document.querySelector(".phone-target").classList.contains("pop");
     return { attach, attached: G.test.state().ropes[1].state === "attached", pop };
@@ -558,7 +569,7 @@ try {
     if (!sp) return { error: "no spot" };
     G.test.press(1, false); G.desktop.mobile.reset(); G.test.teleport(sp.x, sp.y, sp.z); G.test.step(1 / 60, 3);
     G.test.aimAt(1, T.x, T.y, T.z); window.__buzz.length = 0;
-    document.querySelector("[data-action=throw]").onclick();
+    G.desktop.mobile.tap(1);
     for (let k = 0; k < 160 && !window.__buzz.includes(40); k++) { G.test.step(1 / 60, 1); await new Promise((r) => setTimeout(r, 45)); }
     const buzz = [...window.__buzz];
     G.test.step(1 / 60, 200);
@@ -568,13 +579,13 @@ try {
   join(pumped.done && pumped.buzz.includes(40), "a real pump on a clog vibrates for 40 ms", pumped);
 
   /* ---------------- the first-time bot: it only taps ---------------- */
-  // 30 s of game time from the start roof, facing the gold ring at -10, 0 and +10 degrees. It taps the SWING button every 10 frames
-  // while the rope is idle. Pass: three different buildings (by bid) and no respawn.
+  // 30 s of game time from the start roof, facing the gold ring at -10, 0 and +10 degrees. It taps the right side (at the marked target)
+  // every 10 frames while the right rope is idle. Pass: three different buildings (by bid) and no respawn.
   const botRuns = [];
   for (const deg of [-10, 0, 10]) {
     const run = await main.evaluate((deg) => {
       G.test.press(1, false); G.test.aimAt(1, null); G.desktop.mobile.reset();
-      const C = G.city, s = C.start, R = C.goldRing, btn = document.querySelector("[data-action=throw]");
+      const C = G.city, s = C.start, R = C.goldRing, M = G.desktop.mobile;
       G.test.teleport(s.x, s.y, s.z); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z)) + (deg * Math.PI) / 180;
       G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 2); G.desktop.level(0.35); G.test.step(1 / 60, 2);
       const byId = new Map(C.colliders.map((c) => [c.id, c]));
@@ -582,7 +593,7 @@ try {
       let respawn = false, prev = { ...G.P.pos }, last = null;
       for (let f = 0; f < 1800; f++) {
         const rope = G.P.ropes[1];
-        if (rope.state === "idle" && f % 10 === 0) btn.onclick();
+        if (rope.state === "idle" && f % 10 === 0) M.tap(1);
         G.test.step(1 / 60, 1);
         const p = G.P.pos;
         if (Math.hypot(p.x - prev.x, p.y - prev.y, p.z - prev.z) > 8 || G.P.dead) respawn = true;
@@ -598,7 +609,7 @@ try {
     }, deg);
     botRuns.push(run);
   }
-  join(botRuns.every((r) => r.buildings >= 3 && !r.respawn), "the bot that only taps SWING reaches three different buildings in 30 s at -10, 0 and +10 degrees, with no respawn", botRuns.map((r) => ({ deg: r.deg, n: r.buildings, at: r.at, respawn: r.respawn })));
+  join(botRuns.every((r) => r.buildings >= 3 && !r.respawn), "the bot that only taps reaches three different buildings in 30 s at -10, 0 and +10 degrees, with no respawn", botRuns.map((r) => ({ deg: r.deg, n: r.buildings, at: r.at, respawn: r.respawn })));
   console.log("INFO: bot " + JSON.stringify(botRuns.map((r) => ({ deg: r.deg, buildings: r.buildings, at: r.at }))));
 
   await shot(main, "phone-controls-end");

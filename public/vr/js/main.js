@@ -1096,18 +1096,19 @@ function aimAndFire(dt, inp) {
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
     // a goon in reach: the swing input punches (punch, punch, kick) instead of firing a rope
-    if (actionOn() && G.state === "play" && (inp.easySwing ? i === 1 && inp.phoneFire : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
-    // phone: a tap (or SWING) with a rope out moves it to the tapped building, or the next one ahead: one tap, one swing, with
-    // no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does nothing:
-    // a new shot would cancel the cup before it lands.
-    if (inp.easySwing && i === 1 && inp.phoneFire && r.state !== "idle") {
+    const tap = tapped(inp, i);
+    if (actionOn() && G.state === "play" && (inp.easySwing ? tap : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
+    // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
+    // with no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does
+    // nothing: a new shot would cancel the cup before it lands.
+    if (tap && r.state !== "idle") {
       if (r.state === "flying") continue;
       const next = phoneAim(i, h, inp);
       if (next?.valid && !next.same && !ui.blocking(i)) shoot(i, h, next);
-      else D.mobile.miss(true);
+      else D.mobile.miss(i, true);
       continue;
     }
-    if (inp.easySwing && i === 1 && inp.phoneFire && h.connected && !ui.blocking(i)) {
+    if (tap && h.connected && !ui.blocking(i)) {
       const a = (lastAim[i] = phoneAim(i, h, inp));
       D.mobile.target(!!a?.valid && !a.same, false);
       if (a?.valid && !a.same) shoot(i, h, a); else dryFire(i, h, PHONE_DIR);
@@ -1147,6 +1148,8 @@ function aimAndFire(dt, inp) {
     }
   }
 }
+// a phone tap on side i (0 the left half of the screen, 1 the right) this frame
+const tapped = (inp, i) => !!(inp.easySwing && inp.phoneFire && inp.phoneFire[i]);
 // "No building to swing from here", at most once every 10 s (a mouse or a pad; the phone dims its SWING button)
 function noBuilding() {
   if (G.time - noneAt < TARGET.noneLine) return;
@@ -1157,7 +1160,7 @@ function noBuilding() {
 // leans toward the tap). A test aim override on the hand acts as a tap at that point. The result says same when only the building
 // that holds the rope qualifies: the rope stays. PHONE_DIR is the way a dry fire flies.
 function phoneAim(i, h, inp) {
-  const o = ov.aim[i], ray = o ? pointRay(o, h.aimPos) : inp.phoneAim ? tapRay(inp.phoneAim.x, inp.phoneAim.y) : null;
+  const o = ov.aim[i], ray = o ? pointRay(o, h.aimPos) : inp.phoneAim && inp.phoneAim[i] ? tapRay(inp.phoneAim[i].x, inp.phoneAim[i].y) : null;
   if (ray) PHONE_DIR.set(ray.dx, ray.dy, ray.dz); else PHONE_DIR.copy(flatcam.forward);
   return pickerOn ? picker.tap(TCTX, ray, null) : null;
 }
@@ -1172,6 +1175,7 @@ function shoot(i, h, a) {
   if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
   fire(P, i, h.aimPos, a);
   toggled[i] = true;
+  if (phone) { firedAt[i] = G.time; handoffT[i] = -1; } // a rope thrown again is not the one that lets go
   latch[i] = real; // a real press keeps the cup in flight, and earns the kick
   if (real) picker.fired(i);
   if (phone && P.onGround) {
@@ -1192,7 +1196,7 @@ function shoot(i, h, a) {
   wordAtHand("THWIP", i);
 }
 function dryFire(i, h, dir) {
-  if (G.input.easySwing && i === 1) D.mobile.miss();
+  if (G.input.easySwing) D.mobile.miss(i);
   ropes.dryFire(i, h.aimPos, dir || h.aimDir);
   audio.sfx("dry", { pos: h.aimPos });
   haptic(i, 0.15, 30);
@@ -1225,10 +1229,10 @@ function physics(dt, inp) {
     o.velRel.x = T.x; o.velRel.y = src.velRel.y; o.velRel.z = T.z;
     o.yank = airYank ? Math.max(src.yank, 2.5) : src.yank;
     const r = P.ropes[i];
-    const autoPull = inp.easySwing && i === 1 && src.holding && r.state === "attached" && r.len > 14 && !r.sticky && r.tension < .65;
+    const autoPull = inp.easySwing && src.holding && r.state === "attached" && r.len > 14 && !r.sticky && r.tension < .65;
     o.grip = Math.max(src.grip, autoPull ? .72 : 0);
     // a phone rope on a clog or a pipe pumps by itself (physics lets one yank through per cooldown)
-    if (inp.easySwing && i === 1 && src.holding && r.state === "attached" && SPECIAL_TAGS[r.target.tag]) o.yank = Math.max(o.yank, PHONE.pumpYank);
+    if (inp.easySwing && src.holding && r.state === "attached" && SPECIAL_TAGS[r.target.tag]) o.yank = Math.max(o.yank, PHONE.pumpYank);
     // the cup of a real press always lands: while it flies the rope stays held, and after it lands the rope follows the button
     o.holding = (!inp.easySwing && settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0 || (latch[i] && r.state === "flying");
     o.reeling = false;
@@ -1250,19 +1254,27 @@ function physics(dt, inp) {
   }
 }
 
-// Phone: the rope lets go by itself once you swing past the bottom of the arc, and flings you on.
-let phoneRopeT = 0, phoneGroundT = 0, phoneSlowT = 0, fovKick = 0, climbTold = false;
+// Phone: a rope lets go by itself once you swing past the bottom of the arc, and flings you on. Each plunger keeps its own clock.
+// When a new plunger catches, the other one lets go PHONE.handoff s later (no fling: the new rope carries the swing), so taps on
+// alternate sides chain from building to building. Two plungers thrown within PHONE.pair s of each other hold together.
+const phoneRopeT = [0, 0], phoneGroundT = [0, 0], phoneSlowT = [0, 0], handoffT = [-1, -1], firedAt = [-99, -99];
+let fovKick = 0, climbTold = false;
 function phoneRelease(dt) {
-  const r = P.ropes[1], R = PHONE.release;
-  if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) { phoneRopeT = phoneGroundT = phoneSlowT = 0; return; }
-  phoneRopeT += dt;
-  if (P.onGround) phoneGroundT += dt; // all the time on roofs since the rope caught: a rope that drags you over them lets go
-  phoneSlowT = Math.hypot(P.vel.x, P.vel.y, P.vel.z) < R.stallSpeed ? phoneSlowT + dt : 0;
+  for (let i = 0; i < 2; i++) phoneReleaseRope(i, dt);
+}
+function phoneClear(i) { phoneRopeT[i] = phoneGroundT[i] = phoneSlowT[i] = 0; handoffT[i] = -1; }
+function phoneReleaseRope(i, dt) {
+  const r = P.ropes[i], R = PHONE.release;
+  if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) { phoneClear(i); return; }
+  if (handoffT[i] >= 0 && (handoffT[i] -= dt) <= 0) { release(P, i); phoneClear(i); D.mobile.released(i); return; }
+  phoneRopeT[i] += dt;
+  if (P.onGround) phoneGroundT[i] += dt; // all the time on roofs since the rope caught: a rope that drags you over them lets go
+  phoneSlowT[i] = Math.hypot(P.vel.x, P.vel.y, P.vel.z) < R.stallSpeed ? phoneSlowT[i] + dt : 0;
   // landed on a roof, or hanging still: let go with no fling, so the next tap jumps and swings at once
-  if (phoneRopeT >= R.minT && (phoneGroundT >= R.ground || phoneSlowT >= R.stall)) {
-    release(P, 1); phoneRopeT = phoneGroundT = phoneSlowT = 0; D.mobile.released(); return;
+  if (phoneRopeT[i] >= R.minT && (phoneGroundT[i] >= R.ground || phoneSlowT[i] >= R.stall)) {
+    release(P, i); phoneClear(i); D.mobile.released(i); return;
   }
-  if (phoneRopeT < R.minT || P.onGround) return;
+  if (phoneRopeT[i] < R.minT || P.onGround) return;
   const A = r.anchor, cx = P.pos.x - A.x, cy = P.pos.y + P.chest - A.y, cz = P.pos.z - A.z;
   const d = Math.sqrt(cx * cx + cy * cy + cz * cz), v = P.vel;
   if (d < 1e-3) return;
@@ -1271,7 +1283,11 @@ function phoneRelease(dt) {
   const past = Math.acos(clamp(-cy / d, -1, 1)) / DEG; // degrees from straight down
   const vault = d < R.close;
   if (!vault && !(away && past >= R.angle) && !(cy > -R.overTop && v.y > 0)) return;
-  release(P, 1);
+  release(P, i);
+  phoneClear(i);
+  D.mobile.released(i);
+  // the other plunger still holds (a double swing): it carries you on, and flings when it lets go
+  if (P.ropes[1 - i].state === "attached") return;
   const f = PHONE.fling;
   if (vault) {
     // reeled right up to the anchor (a wall ahead): up and over, on the way you look
@@ -1284,10 +1300,14 @@ function phoneRelease(dt) {
   }
   P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
   fovKick = f.kick;
-  phoneRopeT = phoneGroundT = phoneSlowT = 0;
-  D.mobile.released();
   if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
-  pushRing({ type: "fling", side: 1, speed: Math.hypot(v.x, v.y, v.z) });
+  pushRing({ type: "fling", side: i, speed: Math.hypot(v.x, v.y, v.z) });
+}
+// A new phone plunger on side i caught a building: the other one lets go soon, unless the two were thrown as a pair
+function phoneHandoff(i) {
+  const j = 1 - i, o = P.ropes[j];
+  if (o.state !== "attached" || o.sticky || SPECIAL_TAGS[o.target.tag] || Math.abs(firedAt[i] - firedAt[j]) <= PHONE.pair) return;
+  handoffT[j] = PHONE.handoff;
 }
 // A rope that catches gives at least `speed` across the rope, toward where you look: the phone's PHONE.attachSpeed, or the
 // DESKTOP.attachSpeed of a real mouse or pad swing (target.js holds the maths). A "kick" in the event ring lets a test see it.
@@ -1340,7 +1360,7 @@ function feedback(ev) {
       audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
       if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
-        if (G.input.easySwing && i === 1) { phoneRopeT = 0; phoneCatch(r); boost(1, PHONE.attachSpeed); }
+        if (G.input.easySwing) { phoneRopeT[i] = 0; phoneCatch(r); boost(i, PHONE.attachSpeed); phoneHandoff(i); }
         else if (latch[i] && flatOn) boost(i, DESKTOP.attachSpeed); // a real press only: a test hook gets no kick
       }
       catchFeedback(i, "attach");
@@ -1368,7 +1388,7 @@ function feedback(ev) {
     case "splash": audio.sfx("splash"); wordAhead("KASPLASH", P.pos, 2.6, 1, 1.5); respawn(); break;
     case "oob": respawn(); break;
     case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); wordAtBump(ev); break;
-    case "snap": if (G.input.easySwing && i === 1) D.mobile.miss(); audio.sfx("snap", { pos: r.anchor }); break;
+    case "snap": if (G.input.easySwing) D.mobile.miss(i); audio.sfx("snap", { pos: r.anchor }); break;
     case "cling":
       audio.sfx("land", { vol: 0.5 }); haptic(0, 0.3, 30); haptic(1, 0.3, 30);
       if (G.input.easySwing) D.mobile.released();
