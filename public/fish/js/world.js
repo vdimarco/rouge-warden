@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { artStyle, normalizeStyle } from "./art-style.js";
 import { PLACES, getPlace } from "./places.js";
 import { placeSpecies } from "./fishing.js";
-import { byId, lengthFor } from "./species.js";
+import { byId, lengthFor, showScale } from "./species.js";
 import * as E from "./world-env.js";
 import { lookOf } from "./world-look.js";
 import { isCalm } from "./calm.js";
@@ -489,6 +489,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     }
     return fishCache.get(id);
   }
+  // out in the water a fish is drawn bigger than life, more so the heavier it is (showScale in species.js). It comes back
+  // to its true length as it nears the rod (from 9 m in to 2.5 m), so it meets the hand and the board at its own size
+  const shown = (f) => (f.kg ? 1 + (showScale(f.kg) - 1) * smooth(2.5, 9, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1);
   const unitLen = (m) => (m.userData.kind === "junk" ? JUNK_LEN[m.userData.id] : 1);
   function drawFish(dt) {
     const f = S.fish;
@@ -501,7 +504,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // a leap far out is drawn larger (up to 2x from 30 m), so the moment reads on a phone. Not in a cutscene: its camera
     // is near the fish and frames it at its own size
     const far = (f.jump || 0) > 0 && !cutFn ? 1 + smooth(8, 30, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1;
-    m.scale.setScalar((len / unitLen(m)) * far);
+    m.scale.setScalar((len / unitLen(m)) * far * (m.userData.kind === "junk" ? 1 : shown(f)));
     const j = clamp(f.jump || 0, 0, 1), heading = f.heading || 0;
     let y = f.y, pitch = 0, roll = f.roll || 0;   // roll: the body turns about its length (radians): a thrashing or beaten fish lies over
     const fwd = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading));
@@ -549,7 +552,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (!shadow.visible || !g) return;
     shadow.position.set(g.x, -0.03, g.z);
     shadow.rotation.y = -(g.heading || 0);
-    const len = g.len || 0.4;
+    const len = (g.len || 0.4) * shown(g);
     shadow.scale.set(len * 1.35, 1, len * 1.35);
     shadow.userData.u.uAlpha.value = S.followA * 0.75 * clamp(Math.exp((g.y || -0.5) * 0.3), 0.3, 1);
   }
@@ -878,6 +881,11 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     },
     // the lure on the screen, in CSS px of the view; null while it is hidden or behind the camera. The messages keep
     // clear of it (main.js), and the QA checks read it
+    // the length the hooked fish is drawn at, in m (QA: the Heavy fish look heavy checks); null when none shows
+    fishDrawn() {
+      const f = S.fish, m = f && fishCache.get(f.id);
+      return m && m.visible ? m.scale.x * unitLen(m) : null;
+    },
     lureScreen() {
       const L = S.lure;
       if (!L.visible || !firstPerson() || cutFn) return null;

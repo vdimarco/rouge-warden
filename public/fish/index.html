@@ -127,7 +127,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game[data-reel-side="left"] #crankBox, #game.touch #crankBox { left: calc(var(--sal) + 16px); right: auto; }
 
 /* the gauge's size: the toasts, the prompt and the report in the reel make room for it (Larger text makes it bigger) */
-#game { --gauge-w: min(46vmin, 240px); --gauge-h: min(30vmin, 150px); }
+#game { --gauge-w: min(36vmin, 190px); --gauge-h: min(24vmin, 120px); }
 #gaugeBox { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + 58px); width: var(--gauge-w); height: var(--gauge-h); }
 #pullStrength { position: absolute; right: calc(var(--sar) + 18px); top: calc(var(--sat) + 58px); width: min(40cqw, 210px); padding: 8px 10px; border-radius: 10px; background: var(--glass); font-size: 12px; pointer-events: none; }
 #pullStrength b { display: block; height: 5px; margin-top: 6px; border-radius: 4px; background: #ffffff26; overflow: hidden; }
@@ -145,19 +145,16 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #dragBar b { grid-row: 1; grid-column: 1 / -1; text-align: center; padding: 4px 2px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); white-space: nowrap; }
 /* Compact reel controls float over the lake. The rod stays clear on the right. */
 #game.l-tall-reel #gaugeBox { top: calc(var(--sat) + 52px); }
-/* the reel's toasts stay clear of the crank and the thumb on it, on either reel side, and of the rod cue: in the tall reel
-   they sit in the sky beside the gauge (about 190 px wide), below the pull meter in motion play, in the
-   wide reel in the top right corner, right of the prompt and above the rod. (Centred with the usual translateX, so guide.js
-   still finds them) */
-#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 106px); left: calc((var(--sal) + max(var(--gauge-w) + 22px, 208px) + 100% - var(--sar) - 12px) / 2); max-width: calc(100% - var(--sal) - var(--sar) - max(var(--gauge-w) + 22px, 208px) - 12px); }
-#game.l-tall-reel.motion #toast { top: calc(var(--sat) + 122px); }
-#game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 108px); left: calc(100% - var(--sar) - 16px - var(--gauge-w) / 2); max-width: var(--gauge-w); }
+#game.l-tall-reel #pullStrength { top: calc(var(--sat) + 52px); }
+/* the reel's toasts stay clear of the crank and the thumb on it, on either reel side, of the rod cue and of the action
+   card in the corner: in the tall reel they sit in the sky just under the gauge, in the wide reel at the top, between the
+   gauge and the card. (Centred with the usual translateX, so guide.js still finds them) */
+#game.l-tall-reel #toast { bottom: auto; top: calc(var(--sat) + 62px + var(--gauge-h)); max-width: min(92%, 420px); }
+#game.l-reel #toast { bottom: auto; top: calc(var(--sat) + 58px); max-width: min(calc(100% - 2 * (var(--sal) + var(--gauge-w) + 20px)), 420px); }
 /* motion play with the reel on the left: the reel controls mirror. The gauge goes top right, the pull meter top left, and
    the toasts to the other side of the gauge (the crank and the drag follow data-reel-side above) */
 #game.motion[data-reel-side="left"] #gaugeBox { left: auto; right: calc(var(--sar) + 10px); }
 #game.motion[data-reel-side="left"] #pullStrength { right: auto; left: calc(var(--sal) + 18px); }
-#game.l-tall-reel.motion[data-reel-side="left"] #toast { left: calc((var(--sal) + 12px + 100% - var(--sar) - max(var(--gauge-w) + 22px, 208px)) / 2); }
-#game.l-reel.motion[data-reel-side="left"] #toast { left: calc(var(--sal) + 16px + var(--gauge-w) / 2); }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
@@ -181,25 +178,41 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 /* a narrow phone: the clock has no AM or PM */
 @container (max-width: 399px) { #clock .ampm { display: none; } }
 
-/* the big instruction line */
-#prompt { position: absolute; left: 50%; top: calc(var(--sat) + 58px); transform: translateX(-50%); width: min(92%, 560px); display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; z-index: 4; }
-#prompt .p1 { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); font-size: clamp(16px, 4.6vmin, 22px); line-height: 1.25; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); }
-#prompt .p1 svg { flex: none; width: 34px; height: 34px; }
-#prompt .p2 { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font-size: 14px; color: #eef4f1; }
-#prompt .p2:empty { display: none; }
+/* the action card: a small card in the top corner opposite the gauge (the top right; the top left when the reel is on the
+   left in motion play). Its picture moves as the phone, the rod or the crank must move, and the words beside it say it.
+   The how-to under it is small, and it does not show when the rod cue over the reel says the same. Under the pull meter while that shows (main.js sets --pull-h); hidden while the cast report is up in the corner */
+#prompt { --prompt-top: calc(var(--sat) + 58px); position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--prompt-top) + var(--pull-h, 0px)); width: min(46%, 210px); display: flex; flex-direction: column; align-items: flex-end; text-align: left; pointer-events: none; z-index: 4; }
+#prompt .p1 { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 5px 10px 5px 5px; border-radius: 12px; background: var(--glass); border: 1px solid var(--line); font-size: clamp(12px, 3.5vmin, 15px); line-height: 1.2; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
+#prompt .p1 svg { flex: none; width: 36px; height: 36px; transform-origin: 50% 80%; animation: 1.5s ease-in-out infinite; }
+#prompt .p2 { display: inline-block; max-width: 100%; margin-top: 4px; padding: 3px 8px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line); font-size: 12px; line-height: 1.25; color: #eef4f1; text-align: right; }
+#prompt .p2:empty, #prompt .p2.same { display: none; }
 #prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.6s ease-out; }
 #prompt.good .p1 { background: #2d7a45; border-color: #9fe0a8; }
 /* a new hot prompt glows once (main.js starts it again on each change); the text never grows */
-@keyframes hot { 40% { box-shadow: 0 0 0 7px rgba(255, 90, 74, 0.5), 0 0 26px rgba(255, 90, 74, 0.7); } }
-#game.l-tall-cast #prompt { top: calc(var(--sat) + 54px); }
-
-
-/* the reel: keep the prompt off the gauge on the left (and so, centred, off the crank on the right) */
-#game.l-reel #prompt { width: min(calc(100% - 2 * (var(--sal) + var(--gauge-w) + 20px)), 560px); }
-/* the tall reel: the prompt goes just under the gauge (the toast and the cast report go beside it). The lake from the far
-   shore down is the lure's: no message comes down to it */
-#game.l-tall-reel #prompt { top: calc(var(--sat) + 62px + var(--gauge-h) + var(--toast-push, 0px)); transition: top 0.2s; }
-#game.l-tall-reel #prompt .p2 { margin-top: 4px; }
+@keyframes hot { 40% { box-shadow: 0 0 0 6px rgba(255, 90, 74, 0.5), 0 0 20px rgba(255, 90, 74, 0.7); } }
+/* the tall reel: the card stands in the column beside the gauge */
+#game.l-tall-reel #prompt { --prompt-top: calc(var(--sat) + 52px); width: min(calc(100% - var(--sal) - var(--sar) - var(--gauge-w) - 30px), 210px); }
+#game.motion[data-reel-side="left"] #prompt { right: auto; left: calc(var(--sal) + 10px); align-items: flex-start; }
+#game.motion[data-reel-side="left"] #prompt .p2 { text-align: left; }
+#game:has(#report:not([hidden])) #prompt { visibility: hidden; }
+/* the picture's move, by its icon: tip back, flick forward, raise, lower, steer, hold upright, crank, or a pulse */
+#prompt[data-icon="back"] .p1 svg { animation-name: cue-back; }
+#prompt[data-icon="flick"] .p1 svg { animation-name: cue-flick; animation-duration: 1.1s; }
+#prompt[data-icon="pull"] .p1 svg { animation-name: cue-pull; }
+#prompt[data-icon="low"] .p1 svg { animation-name: cue-low; }
+#prompt[data-icon="turn"] .p1 svg { animation-name: cue-turn; }
+#prompt[data-icon="upright"] .p1 svg { animation-name: cue-bob; }
+#prompt[data-icon="crank"] .p1 svg { animation: cue-spin 1.2s linear infinite; transform-origin: 50% 50%; }
+#prompt[data-icon="thumb"] .p1 svg, #prompt[data-icon="bail"] .p1 svg, #prompt[data-icon="ring"] .p1 svg, #prompt[data-icon="swipe"] .p1 svg,
+#prompt[data-icon="fish"] .p1 svg, #prompt[data-icon="stop"] .p1 svg { animation-name: cue-pulse; transform-origin: 50% 50%; }
+@keyframes cue-back { 0%, 15% { transform: rotate(0); } 55%, 75% { transform: rotate(-24deg); } }
+@keyframes cue-flick { 0%, 20% { transform: rotate(-22deg); } 38%, 70% { transform: rotate(16deg); } }
+@keyframes cue-pull { 0%, 15% { transform: translateY(4px) rotate(8deg); } 55%, 75% { transform: translateY(-5px) rotate(-6deg); } }
+@keyframes cue-low { 0%, 15% { transform: translateY(-5px); } 55%, 75% { transform: translateY(5px); } }
+@keyframes cue-turn { 0%, 100% { transform: translateX(-5px) rotate(-6deg); } 50% { transform: translateX(5px) rotate(6deg); } }
+@keyframes cue-bob { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
+@keyframes cue-spin { to { transform: rotate(360deg); } }
+@keyframes cue-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); } }
 
 /* the hook set: "Fish on!" in big letters in the prompt's place for about 0.9 s, then the prompt again */
 #banner { position: absolute; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); width: min(92%, 560px); display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; z-index: 5; }
@@ -209,7 +222,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #banner span:empty { display: none; }
 #banner:not([hidden]) + #prompt { visibility: hidden; }
 #game.l-tall-reel #banner { top: calc(var(--sat) + 58px + var(--gauge-h)); }
-#game.l-reel #banner { width: min(calc(100% - 2 * (var(--sal) + min(46vmin, 240px) + 20px)), 560px); }
+#game.l-reel #banner { width: min(calc(100% - 2 * (var(--sal) + var(--gauge-w) + 20px)), 560px); }
 @keyframes banner-pop { from { transform: scale(0.6); opacity: 0; } }
 
 
@@ -219,7 +232,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
    toast goes (a toast waits while the report is up). Nothing covers the lure on the water */
 #report { width: min(92%, 420px); }
 #game.l-tall-reel #report { --col: calc(var(--sal) + var(--gauge-w) + 22px); top: calc(var(--sat) + 54px); transform: translateX(-50%);
-  left: calc((var(--col) + 100% - var(--sar) - 10px) / 2); width: calc(100% - var(--col) - var(--sar) - 10px); }
+  left: calc((var(--col) + 100% - var(--sar) - 10px) / 2); width: calc(100% - var(--col) - var(--sar) - 10px - 16px); }
 #game.l-tall-reel #report .dist { font-size: clamp(30px, 9vmin, 52px); }
 #game.l-tall-reel #report .zone, #game.l-reel #report .zone, #game.l-wide-cast #report .zone { display: table; max-width: 100%; line-height: 1.2; }
 #game.l-tall-reel #report .verdict, #game.l-tall-reel #report .zone { margin-top: 3px; }
@@ -228,8 +241,8 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.l-tall-reel #report:not([hidden]) ~ #toast, #game.l-reel #report:not([hidden]) ~ #toast { opacity: 0; }
 /* a narrow phone: a wider column beside the gauge and smaller digits, so a long note stays above the prompt */
 @media (max-width: 380px) {
-  #game.l-tall-reel #report { --col: calc(var(--sal) + var(--gauge-w) + 14px); left: calc((var(--col) + 100% - var(--sar) - 4px) / 2); width: calc(100% - var(--col) - var(--sar) - 4px); }
-  #game.l-tall-reel.motion[data-reel-side="left"] #report { --col: calc(var(--sar) + var(--gauge-w) + 14px); left: calc((var(--sal) + 4px + 100% - var(--col)) / 2); width: calc(100% - var(--col) - var(--sal) - 4px); }
+  #game.l-tall-reel #report { --col: calc(var(--sal) + var(--gauge-w) + 14px); left: calc((var(--col) + 100% - var(--sar) - 4px) / 2); width: calc(100% - var(--col) - var(--sar) - 4px - 16px); }
+  #game.l-tall-reel.motion[data-reel-side="left"] #report { --col: calc(var(--sar) + var(--gauge-w) + 14px); left: calc((var(--sal) + 4px + 100% - var(--col)) / 2); width: calc(100% - var(--col) - var(--sal) - 4px - 16px); }
   #game.l-tall-reel #report .dist { font-size: 28px; }
 }
 /* the wide cast and reel: the report goes to the top right, opposite the gauge, where the toast goes. The lake in the
@@ -238,13 +251,7 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 #game.l-reel #report .dist, #game.l-wide-cast #report .dist { font-size: clamp(28px, 9vmin, 48px); }
 #game.l-reel #report.show, #game.l-wide-cast #report.show, #game.l-tall-reel #report.show { animation-name: pop-top; }
 @keyframes pop-top { from { transform: translateX(-50%) scale(0.6); opacity: 0; } }
-/* a short wide screen: the prompt a little higher and tighter, so its sub stays above the far water */
-@media (max-height: 400px) {
-  #game.l-reel #prompt { top: calc(var(--sat) + 50px); }
-  #game.l-reel #prompt .p1 { padding: 6px 12px; }
-  #game.l-reel #prompt .p2 { margin-top: 3px; padding: 2px 8px; }
-}
-#game.l-tall-reel.motion[data-reel-side="left"] #report { --col: calc(var(--sar) + var(--gauge-w) + 22px); left: calc((var(--sal) + 10px + 100% - var(--col)) / 2); width: calc(100% - var(--col) - var(--sal) - 10px); }
+#game.l-tall-reel.motion[data-reel-side="left"] #report { --col: calc(var(--sar) + var(--gauge-w) + 22px); left: calc((var(--sal) + 10px + 100% - var(--col)) / 2); width: calc(100% - var(--col) - var(--sal) - 10px - 16px); }
 #report .dist { font-family: var(--slab); font-size: clamp(40px, 13vmin, 76px); line-height: 1; color: #fff;
   text-shadow: 0 0 2px #092229, 0 0 3px #092229, 0 0 6px rgba(9, 34, 41, 0.9), 0 3px 0 rgba(9, 34, 41, 0.7), 0 0 22px rgba(9, 34, 41, 0.5); }
 #report .dist small { font-size: 0.45em; }
@@ -494,7 +501,7 @@ body[data-screen="catch"] #game.l-reel #toast { left: calc((100% - var(--sar) - 
 /* Calm effects (html data-calm="1") and reduced motion: the big moments keep their words and sounds, without the motion
    (no glow, pop, rise or stamp; the cast report and the "Sweet!" cue show without their pop) */
 @media (prefers-reduced-motion: reduce) { #banner b, #banner span, #unlock .card, #unlock .badge, #cbadges .badge, #catch .kg, #results .rank, #report.show { animation: none !important; } }
-html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #banner b, html[data-calm="1"] #banner span, html[data-calm="1"] #unlock .card,
+html[data-calm="1"] #prompt.hot .p1, html[data-calm="1"] #prompt .p1 svg, html[data-calm="1"] #reelUI > *, html[data-calm="1"] #banner b, html[data-calm="1"] #banner span, html[data-calm="1"] #unlock .card,
 html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[data-calm="1"] #catch .kg, html[data-calm="1"] #results .rank, html[data-calm="1"] #report.show { animation: none !important; }
 #results .rnext { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--brass); }
 #results .rnext:empty { display: none; }
@@ -507,7 +514,7 @@ html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[da
 
 /* debug */
 #dbg { position: absolute; right: 6px; bottom: 6px; z-index: 50; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.6); font: 11px/1.35 ui-monospace, monospace; white-space: pre; pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { #prompt.hot .p1, #reelUI > * { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #prompt.hot .p1, #prompt .p1 svg, #reelUI > * { animation: none; } }
 </style>
 <link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="./cutscenes.css">

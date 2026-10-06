@@ -1588,20 +1588,20 @@ export class Gauge extends Widget {
     ctx.fillStyle = inkC;
     ctx.fillText(wd, px0 + pw / 2, pillY + pillH / 2 + 0.5, pw - 8);
     spaced(ctx, 0);
-    // the right column: the line out and the depth
-    const x = cx + R + lw / 2 + 12, colW = w - x - 10;
+    // the right column: the line out and the depth, right of the arc and the pill, from the top down to the fish's row
+    const x = Math.max(cx + R + lw / 2 + 12, px0 + pw + 10), colW = w - x - 10, Hc = top - 2;
     if (colW > 30) {
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
       const lo = (+s.lineOut || 0).toFixed(1), lab = GAUGE.LABEL_PX;
       // as big as the column allows: "123.4 m" must fit as well as "8.2 m"
-      let big = Math.max(13, Math.min(24, Math.round(Hr * 0.24)));
+      let big = Math.max(13, Math.min(24, Math.round(Hc * 0.24)));
       for (; big > 13; big--) {
         ctx.font = font(big); const a = ctx.measureText(lo).width;
         ctx.font = font(Math.max(lab, Math.round(big * 0.55)), 800);
         if (a + ctx.measureText(" m").width <= colW) break;
       }
       const unit = Math.max(lab, Math.round(big * 0.55)), dep = Math.max(11, Math.round(big * 0.7));
-      const y0 = Math.max(2, (Hr - (2 * lab + big + dep + 9)) / 2);
+      const y0 = Math.max(2, (Hc - (2 * lab + big + dep + 9)) / 2);
       ctx.font = font(lab); spaced(ctx, 0.14); ctx.fillStyle = spoolWarn ? rgba(DANGER, 0.9) : rgba(INK, 0.8);
       ctx.fillText("LINE OUT", x, y0 + lab / 2, colW);
       spaced(ctx, 0);

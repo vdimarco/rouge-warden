@@ -105,9 +105,9 @@ html[data-calm="1"] #rodCue *, html[data-calm="1"] #crankBox::after { animation:
 /* Larger text (Settings): #game[data-text="large"] sets --ui-scale, and the words in play and on the cards grow with it.
    main.js grows the gauge's words as well. Every screen still fits a 360 x 640 phone: the lists scroll in their cards */
 #game { --ui-scale: 1; }
-#game[data-text="large"] { --ui-scale: 1.25; --gauge-w: min(52vmin, 270px); --gauge-h: min(34vmin, 170px); }
-#game[data-text="large"] #prompt .p1 { font-size: calc(clamp(16px, 4.6vmin, 22px) * var(--ui-scale)); }
-#game[data-text="large"] #prompt .p2 { font-size: calc(14px * var(--ui-scale)); }
+#game[data-text="large"] { --ui-scale: 1.25; --gauge-w: min(42vmin, 220px); --gauge-h: min(28vmin, 140px); }
+#game[data-text="large"] #prompt .p1 { font-size: calc(16px * var(--ui-scale)); }
+#game[data-text="large"] #prompt .p2 { font-size: calc(12px * var(--ui-scale)); }
 #game[data-text="large"] #toast { font-size: calc(14px * var(--ui-scale)); }
 #game[data-text="large"] .chip { font-size: calc(13px * var(--ui-scale)); padding-left: 9px; padding-right: 9px; }
 #game[data-text="large"] #report .verdict { font-size: calc(15px * var(--ui-scale)); }

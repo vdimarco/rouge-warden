@@ -575,7 +575,7 @@ export class LakeSim {
       const away = headingOf(L.x - I.tip.x, L.z - I.tip.z) + (r() * 2 - 1) * 0.7, d = (2 + r() * 2.5) * (0.5 + 0.5 * P.quick) * (P.eager ? 0.4 : 1);
       const fx = L.x + Math.sin(away) * d, fz = L.z - Math.cos(away) * d;
       const bot = this.depthAt(fx, fz);
-      S.follower = { id: P.id, x: fx, y: -clamp(Math.max(-L.y, 0.3) + 0.3, 0.2, Math.max(0.2, bot - 0.1)), z: fz, heading: away + Math.PI, len: P.len };
+      S.follower = { id: P.id, x: fx, y: -clamp(Math.max(-L.y, 0.3) + 0.3, 0.2, Math.max(0.2, bot - 0.1)), z: fz, heading: away + Math.PI, len: P.len, kg: P.junk ? 0 : P.kg };
       this.emit("follow", { id: P.id });
       return;
     }

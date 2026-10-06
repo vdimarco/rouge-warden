@@ -2,9 +2,10 @@
 // 1. The weight mix at each place's derby hour (plan 3.5), with the real bite code: LakeSim chooses the fish and rolls its weight.
 // 2. The rare tail: every species has 3-5% of its fish above its usual range at no boost.
 // 3. sizeRank (the catch card's "Bigger than 9 in 10") matches the weights rollWeight really rolls.
+// 4. Heavy fish look heavy (fish-fight spec): showScale, how much bigger than life a fish is drawn out in the water.
 // Exit code 1 if a target is missed.
 import { LakeSim, BITE, rodTip, rollWeight, sizeRank } from "../../public/fish/js/fish.js";
-import { SPECIES } from "../../public/fish/js/species.js";
+import { SPECIES, showScale, SHOW } from "../../public/fish/js/species.js";
 import { PLACES } from "../../public/fish/js/places.js";
 import { rng } from "../../public/fish/js/lake.js";
 
@@ -113,6 +114,17 @@ console.log("\nsizeRank against the sampled weights: 40000 rolls per species at 
   const sp = SPECIES.find((s) => s.id === "walleye");
   const kgAt = (p) => { let lo = sp.kg[0], hi = sp.trophy; for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (sizeRank(sp, m) < p) lo = m; else hi = m; } return lo.toFixed(2); };
   console.log(`    walleye: 3 in 4 at ${kgAt(0.75)} kg, 9 in 10 at ${kgAt(0.9)} kg, TROPHY (19 in 20) at ${kgAt(0.95)} kg, 99 in 100 at ${kgAt(0.99)} kg`);
+}
+
+// 4. the drawn size out in the water: 1.6x to 3.2x, growing with the weight, about 1.7x at 0.2 kg and 2.7x at 5 kg
+console.log("\n4. Heavy fish look heavy");
+{
+  const near = (a, b) => Math.abs(a - b) < 0.05;
+  check(near(showScale(0.2), 1.7) && near(showScale(1), 2) && near(showScale(5), 2.7), `0.2 kg ${showScale(0.2).toFixed(2)}x, 1 kg ${showScale(1).toFixed(2)}x, 5 kg ${showScale(5).toFixed(2)}x`);
+  let up = true;
+  for (let kg = 0.05; kg < 120; kg *= 1.2) if (showScale(kg * 1.2) < showScale(kg)) up = false;
+  check(up && showScale(0) === SHOW.MIN && showScale(110) === SHOW.MAX && SHOW.MIN >= 1.6 && SHOW.MAX <= 3.2, `it grows with the weight, from ${SHOW.MIN}x to ${SHOW.MAX}x`);
+  check(showScale(NaN) === SHOW.MIN && showScale(-1) === SHOW.MIN, "no weight draws the smallest scale");
 }
 
 console.log(fails.length ? `\n${fails.length} target(s) missed` : "\nAll size targets met");
