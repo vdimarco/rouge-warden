@@ -41,6 +41,19 @@ done SHALL pay Loonies. A failed job SHALL say what happened in a cartoon way, w
 - **WHEN** the player walks into a Pizza Rush marker
 - **THEN** the card shows PIZZA RUSH with the time left, and the compass points at the drop roof
 
+### Requirement: Job pins on the map
+The city map SHALL show a magenta star pin on each job marker that waits, and the map key SHALL name it. On a flat screen, the
+list beside the plan SHALL name each job. Travel to a job pin SHALL put the player on its marker, which starts the job. A player
+who drives SHALL leave the car first. During a job the map SHALL pin that job's goal and SHALL not show the other markers.
+
+#### Scenario: Travel to a job
+- **WHEN** the player opens the map after Mission 1 and clicks "Odd job: Pizza Rush"
+- **THEN** the screen fades, the player stands on the marker, and the Pizza Rush card shows
+
+#### Scenario: On a job
+- **WHEN** the player opens the map during a Balloon Chase
+- **THEN** one pin, "Your job: Balloon Chase", marks the goal, and no other job pins show
+
 ### Requirement: Rescue jobs
 Catch!: someone SHALL slip off a tall roof; reaching them (or roping them) before they hit the street catches them, and a landing
 sets them down. Window Washer: the washer SHALL hang on a tower face for 60 s; reaching him picks him up, and the street sets

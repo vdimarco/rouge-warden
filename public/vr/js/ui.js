@@ -997,6 +997,13 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       }),
       trial: make((c) => { ring(c, C.orange); c.beginPath(); c.arc(64, 64, 22, 0, 7); c.lineWidth = 10; c.strokeStyle = C.orange; c.stroke(); c.beginPath(); c.arc(64, 64, 8, 0, 7); c.fillStyle = C.ink; c.fill(); }),
       start: make((c) => { ring(c, C.magenta); c.beginPath(); c.moveTo(30, 68); c.lineTo(64, 36); c.lineTo(98, 68); c.lineTo(88, 68); c.lineTo(88, 92); c.lineTo(40, 92); c.lineTo(40, 68); c.closePath(); c.fillStyle = C.yellow; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke(); }),
+      // an odd job: a magenta star
+      job: make((c) => {
+        ring(c, C.magenta);
+        c.beginPath();
+        for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + (k * Math.PI) / 5, r = k % 2 ? 13 : 30; c.lineTo(64 + Math.cos(a) * r, 66 + Math.sin(a) * r); }
+        c.closePath(); c.fillStyle = C.magenta; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke();
+      }),
       spot: make((c) => { ring(c, C.gold); c.beginPath(); c.moveTo(64, 34); c.lineTo(88, 64); c.lineTo(64, 94); c.lineTo(40, 64); c.closePath(); c.fillStyle = C.yellow; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke(); }),
     };
     return map.sprites;
@@ -1125,6 +1132,13 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     for (const sPot of spots) {
       const hit = want.find((w) => !w.spot && w.kind !== "drop" && w.kind !== "tick" && Math.hypot(w.x - sPot.x, w.z - sPot.z) < 6 && Math.abs(w.y - sPot.y) < 8);
       if (hit) { hit.spot = sPot; hit.name = sPot.name || hit.name; } else want.push({ kind: sPot.id === "start" ? "start" : "spot", x: sPot.x, y: sPot.y, z: sPot.z, name: sPot.name || "A rooftop", spot: sPot });
+    }
+    // the odd jobs: a pin on each marker you can take (travel there takes the job), and one on the job you are on
+    const jb = G().jobs;
+    if (jb) {
+      if (jb.offersOn && !jb.active) for (const o of jb.offers) want.push({ kind: "job", x: o.x, y: o.y, z: o.z, name: "Odd job: " + o.name, spot: { id: "job:" + o.id, name: "Odd job: " + o.name, x: o.x, y: o.y, z: o.z } });
+      const A = jb.active, goal = jb.card && jb.card.goal;
+      if (A) { const at = goal || A.o; want.push({ kind: "job", x: at.x, y: at.y, z: at.z, name: "Your job: " + A.o.name, spot: null }); }
     }
     const stem = [];
     const size = map.size * 0.052;
@@ -1419,7 +1433,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     side.appendChild(el("h2", null, "City map"));
     side.appendChild(el("p", null, isTouchNow() ? "Tap a pin or a place to go there." : "Click a pin or a place to go there."));
     const key = el("div", "fs-key");
-    for (const [col, txt] of [[C.sludge, "A clog to plunge"], [C.blue, "A clean roof"], [C.coin, "The Porcelain King"], ["#6cff73", "A trial: fly through its green ring"], [C.cream, "The start roof, and you"]]) {
+    for (const [col, txt] of [[C.sludge, "A clog to plunge"], [C.blue, "A clean roof"], [C.coin, "The Porcelain King"], [C.magenta, "An odd job"], ["#6cff73", "A trial: fly through its green ring"], [C.cream, "The start roof, and you"]]) {
       const dot = el("i"); dot.style.color = col; key.append(dot, el("span", null, txt));
     }
     side.appendChild(key);
@@ -1703,7 +1717,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
         subtitle: { text: sub.text, active: sub.t > 0, alpha: sub.a, world: sp, yaw: follow.yaw },
         toast: { text: toast.text, active: toast.t > 0 },
         fade: { value: fade.v, target: fade.to, look: fadeMesh.material === fadeMats.room ? "room" : fadeMesh.material === fadeMats.fog ? "fog" : "black", visible: fadeMesh.visible },
-        map: { open: map.on, pins: map.pins.length, hover: map.hover, table: map.table, size: map.size, world: map.root ? round4(map.root.getWorldPosition(V3)) : null, local: map.root ? round4(map.root.position) : null },
+        map: { open: map.on, pins: map.pins.length, names: map.pins.map((p) => p.name), hover: map.hover, table: map.table, size: map.size, world: map.root ? round4(map.root.getWorldPosition(V3)) : null, local: map.root ? round4(map.root.position) : null },
         stance: { on: stance.on, pre: stance.pre, left: stance.t },
         laser: { visible: !!(laser.mesh && laser.mesh.visible), side: laser.side },
         skip: canSkip(), dim,
