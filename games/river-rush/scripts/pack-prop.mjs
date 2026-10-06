@@ -3,13 +3,23 @@
 // Usage: node scripts/pack-prop.mjs in.glb out.glb <targetTriangles> <turnDegrees> <textureSize>
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, EXTTextureWebP } from '@gltf-transform/extensions';
-import { transformMesh, simplify, weld, prune, dedup, meshopt, textureCompress } from '@gltf-transform/functions';
+import { transformMesh, simplify, weld, prune, dedup, meshopt, compactPrimitive } from '@gltf-transform/functions';
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 const [input, output, target = '4000', turn = '0', texSize = '1024', maxError = '0.01'] = process.argv.slice(2);
 await Promise.all([MeshoptEncoder.ready, MeshoptSimplifier.ready]);
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 const doc = await io.read(input), root = doc.getRoot();
+// Hunyuan exports Z-up geometry with a +90° X node transform. Bake source
+// transforms before measuring or simplifying; resetting them first lays the
+// tree on its side and turns a log's length into its height.
+const baked=new Set();
+for(const node of root.listNodes()){
+  const mesh=node.getMesh();if(!mesh)continue;
+  if(baked.has(mesh))throw new Error('Pack shared mesh instances separately before baking.');
+  transformMesh(mesh,node.getWorldMatrix());baked.add(mesh);
+}
+for(const node of root.listNodes())node.setTranslation([0,0,0]).setRotation([0,0,0,1]).setScale([1,1,1]);
 // Bounds over all meshes (Tripo and SAM put one mesh at the origin).
 let lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9], tris = 0;
 for (const mesh of root.listMeshes()) for (const prim of mesh.listPrimitives()) {
@@ -27,7 +37,19 @@ const M = mul(R, mul(S, T));
 for (const mesh of root.listMeshes()) transformMesh(mesh, M);
 for (const node of root.listNodes()) { node.setTranslation([0, 0, 0]).setRotation([0, 0, 0, 1]).setScale([1, 1, 1]); }
 const ratio = Math.min(1, +target / tris);
-await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio, error: +maxError, lockBorder: false }));
+await doc.transform(weld());
+if(+texSize<=512){
+  // Dense generated UV seams otherwise stop simplification at ~9k faces even
+  // when a 2.8k software LOD is requested. Preserve UV appearance as a weighted
+  // attribute while allowing seam collapse on the distant/cheap variant.
+  for(const mesh of root.listMeshes())for(const prim of mesh.listPrimitives()){
+    const indices=prim.getIndices(),pos=prim.getAttribute('POSITION'),uv=prim.getAttribute('TEXCOORD_0');
+    const target=Math.max(3,Math.floor(indices.getCount()*ratio/3)*3);
+    const args=[new Uint32Array(indices.getArray()),new Float32Array(pos.getArray()),3];
+    const result=uv?MeshoptSimplifier.simplifyWithAttributes(...args,new Float32Array(uv.getArray()),2,[.15,.15],null,target,+maxError,['Permissive','Prune']):MeshoptSimplifier.simplify(...args,target,+maxError,['Permissive','Prune']);
+    indices.setArray(result[0]);compactPrimitive(prim);
+  }
+}else await doc.transform(simplify({ simplifier: MeshoptSimplifier, ratio, error: +maxError, lockBorder: false }));
 // Textures: resize and encode as WebP.
 doc.createExtension(EXTTextureWebP).setRequired(true);
 const detailMaps=new Set(root.listMaterials().flatMap(m=>[m.getNormalTexture(),m.getMetallicRoughnessTexture()]));

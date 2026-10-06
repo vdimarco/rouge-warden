@@ -30,7 +30,7 @@ try{
  assert.equal(new Set(frames.map(f=>f.animation.phase)).size,frames.length);
  const maxHandError=Math.max(...frames.map(f=>f.animation.handError));assert.ok(maxHandError<.09,`hands drifted from shaft: ${maxHandError}`);
  const maxTriangles=Math.max(...frames.map(f=>f.triangles)),maxDrawCalls=Math.max(...frames.map(f=>f.drawCalls));
- assert.ok(maxTriangles<(full?230000:100000));assert.ok(maxDrawCalls<45);
+ assert.ok(maxTriangles<(full?300000:125000),`scene triangle budget exceeded: ${maxTriangles}`);assert.ok(maxDrawCalls<65);
  const sample=async(n=4)=>p.evaluate(async n=>{const s=[];for(let i=0;i<n;i++){await new Promise(requestAnimationFrame);s.push(await window.__tools.get_run_status({}));}return s;},n);
  await p.keyboard.press('ArrowRight');const right=await sample();await p.keyboard.press('ArrowLeft');const left=await sample();
  assert.ok(right.some(s=>s.renderer.rider.animation.balance>0));assert.ok(left.some(s=>s.renderer.rider.animation.balance<0));

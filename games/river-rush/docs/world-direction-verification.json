@@ -1,0 +1,691 @@
+{
+  "stage": "local-verified",
+  "unitTests": 40,
+  "layouts": {
+    "passed": true,
+    "results": [
+      {
+        "viewport": "phone",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 114811,
+        "drawCalls": 32,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": true,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "desktop",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 110902,
+        "drawCalls": 30,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "landscape",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 114843,
+        "drawCalls": 32,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "temporary503": "recovered",
+        "imageAttempts": 2,
+        "modelAttempts": 2
+      },
+      {
+        "missingModel": "playable"
+      },
+      {
+        "missingRig": "playableRegisteredSprite",
+        "distinctPoses": true
+      },
+      {
+        "missingWorld": "playableOriginalSceneryAndProceduralSky",
+        "vistaAttempts": 3,
+        "sceneryAttempts": 9
+      },
+      {
+        "manualRetry": "recovered"
+      },
+      {
+        "noWebGL": "playable2d",
+        "distinctPoses": true
+      },
+      {
+        "contextLoss": "pausedThenPlayable2d"
+      }
+    ],
+    "screenshots": "/tmp/river-world/final-layouts",
+    "errors": []
+  },
+  "fullShaderMotion": {
+    "passed": true,
+    "fullDetailShaderCoverage": true,
+    "renderer": "headless SwiftShader; not a physical device FPS claim",
+    "frames": 28,
+    "uniqueStrokeSamples": 28,
+    "maxHandError": 1.2040972468909903e-07,
+    "maxTriangles": 229285,
+    "maxDrawCalls": 32,
+    "frameTiming": {
+      "meanMs": 758.4607142859271,
+      "p50Ms": 657.6999999880791,
+      "p95Ms": 1575.6000000089407,
+      "fps": 1.3184598505427885
+    },
+    "steeringReversal": true,
+    "distinctAnatomicalPoses": true,
+    "duckHeightRatio": 0.31725318050397006,
+    "pausePixels": true,
+    "reducedMotion": true,
+    "screenshots": "/tmp/river-world/final-native",
+    "errors": []
+  },
+  "softwareMotion": {
+    "passed": true,
+    "fullDetailShaderCoverage": false,
+    "renderer": "headless SwiftShader; not a physical device FPS claim",
+    "frames": 28,
+    "uniqueStrokeSamples": 28,
+    "maxHandError": 1.2038510135062487e-07,
+    "maxTriangles": 115581,
+    "maxDrawCalls": 33,
+    "frameTiming": {
+      "meanMs": 236.903571428465,
+      "p50Ms": 234.19999998807907,
+      "p95Ms": 375.29999999701977,
+      "fps": 4.221126739332245
+    },
+    "steeringReversal": true,
+    "distinctAnatomicalPoses": true,
+    "duckHeightRatio": 0.31725365560872437,
+    "pausePixels": true,
+    "reducedMotion": true,
+    "screenshots": "/tmp/river-world/final-motion",
+    "errors": []
+  },
+  "laneGlide": {
+    "passed": true,
+    "renderer": "2d",
+    "immediateLane": true,
+    "intermediatePositions": [
+      1.5371631129795578,
+      1.6926025672087868,
+      1.801209906761989
+    ],
+    "reversePositions": [
+      1.8300654993242782,
+      1.6329415565621974,
+      1.4444865876223774,
+      1.2978625941305162,
+      1.1926874111488104,
+      1.1220872885565487,
+      1.075792231988534,
+      1.0464077102575253,
+      1.0281889732417342,
+      1.0169180285176216,
+      1.010108862546776,
+      1.0059833326870717,
+      1.0035221366992124,
+      1.0020701613012324
+    ],
+    "noJump": true,
+    "speedPreserved": true,
+    "simulationStart": 0.06670000000000005,
+    "errors": []
+  },
+  "districts": {
+    "passed": true,
+    "results": [
+      {
+        "full": false,
+        "layout": "phone",
+        "district": "canopy",
+        "triangles": 120001,
+        "calls": 29,
+        "world": {
+          "district": "CANOPY TRAIL",
+          "canopies": 11,
+          "harbors": 0,
+          "woodHazards": 8,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 36,
+          "flags": 0,
+          "motionTime": 4
+        }
+      },
+      {
+        "full": false,
+        "layout": "phone",
+        "district": "falls",
+        "triangles": 111739,
+        "calls": 33,
+        "world": {
+          "district": "CASCADE CANYON",
+          "canopies": 8,
+          "harbors": 0,
+          "woodHazards": 7,
+          "falls": 5,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 0,
+          "motionTime": 17.333333333333332
+        }
+      },
+      {
+        "full": false,
+        "layout": "phone",
+        "district": "harbor",
+        "triangles": 112805,
+        "calls": 29,
+        "world": {
+          "district": "SUN TEMPLE HARBOR",
+          "canopies": 6,
+          "harbors": 5,
+          "woodHazards": 5,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 10,
+          "motionTime": 30.666666666666668
+        }
+      },
+      {
+        "full": false,
+        "layout": "desktop",
+        "district": "canopy",
+        "triangles": 120001,
+        "calls": 29,
+        "world": {
+          "district": "CANOPY TRAIL",
+          "canopies": 11,
+          "harbors": 0,
+          "woodHazards": 8,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 36,
+          "flags": 0,
+          "motionTime": 4
+        }
+      },
+      {
+        "full": false,
+        "layout": "desktop",
+        "district": "falls",
+        "triangles": 111739,
+        "calls": 33,
+        "world": {
+          "district": "CASCADE CANYON",
+          "canopies": 8,
+          "harbors": 0,
+          "woodHazards": 7,
+          "falls": 5,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 0,
+          "motionTime": 17.333333333333332
+        }
+      },
+      {
+        "full": false,
+        "layout": "desktop",
+        "district": "harbor",
+        "triangles": 112805,
+        "calls": 29,
+        "world": {
+          "district": "SUN TEMPLE HARBOR",
+          "canopies": 6,
+          "harbors": 5,
+          "woodHazards": 5,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 10,
+          "motionTime": 30.666666666666668
+        }
+      },
+      {
+        "full": false,
+        "layout": "landscape",
+        "district": "canopy",
+        "triangles": 120001,
+        "calls": 29,
+        "world": {
+          "district": "CANOPY TRAIL",
+          "canopies": 11,
+          "harbors": 0,
+          "woodHazards": 8,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 36,
+          "flags": 0,
+          "motionTime": 4
+        }
+      },
+      {
+        "full": false,
+        "layout": "landscape",
+        "district": "falls",
+        "triangles": 111739,
+        "calls": 33,
+        "world": {
+          "district": "CASCADE CANYON",
+          "canopies": 8,
+          "harbors": 0,
+          "woodHazards": 7,
+          "falls": 5,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 0,
+          "motionTime": 17.333333333333332
+        }
+      },
+      {
+        "full": false,
+        "layout": "landscape",
+        "district": "harbor",
+        "triangles": 112805,
+        "calls": 29,
+        "world": {
+          "district": "SUN TEMPLE HARBOR",
+          "canopies": 6,
+          "harbors": 5,
+          "woodHazards": 5,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 10,
+          "motionTime": 30.666666666666668
+        }
+      },
+      {
+        "full": true,
+        "layout": "phone",
+        "district": "canopy",
+        "triangles": 252265,
+        "calls": 30,
+        "world": {
+          "district": "CANOPY TRAIL",
+          "canopies": 14,
+          "harbors": 0,
+          "woodHazards": 8,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 36,
+          "flags": 0,
+          "motionTime": 4
+        }
+      },
+      {
+        "full": true,
+        "layout": "phone",
+        "district": "falls",
+        "triangles": 228623,
+        "calls": 34,
+        "world": {
+          "district": "CASCADE CANYON",
+          "canopies": 10,
+          "harbors": 0,
+          "woodHazards": 7,
+          "falls": 5,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 0,
+          "motionTime": 17.333333333333332
+        }
+      },
+      {
+        "full": true,
+        "layout": "phone",
+        "district": "harbor",
+        "triangles": 228803,
+        "calls": 31,
+        "world": {
+          "district": "SUN TEMPLE HARBOR",
+          "canopies": 8,
+          "harbors": 6,
+          "woodHazards": 5,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 12,
+          "motionTime": 30.666666666666668
+        }
+      },
+      {
+        "full": true,
+        "layout": "desktop",
+        "district": "canopy",
+        "triangles": 252265,
+        "calls": 30,
+        "world": {
+          "district": "CANOPY TRAIL",
+          "canopies": 14,
+          "harbors": 0,
+          "woodHazards": 8,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 36,
+          "flags": 0,
+          "motionTime": 4
+        }
+      },
+      {
+        "full": true,
+        "layout": "desktop",
+        "district": "falls",
+        "triangles": 228623,
+        "calls": 34,
+        "world": {
+          "district": "CASCADE CANYON",
+          "canopies": 10,
+          "harbors": 0,
+          "woodHazards": 7,
+          "falls": 5,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 0,
+          "motionTime": 17.333333333333332
+        }
+      },
+      {
+        "full": true,
+        "layout": "desktop",
+        "district": "harbor",
+        "triangles": 228803,
+        "calls": 31,
+        "world": {
+          "district": "SUN TEMPLE HARBOR",
+          "canopies": 8,
+          "harbors": 6,
+          "woodHazards": 5,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 12,
+          "motionTime": 30.666666666666668
+        }
+      },
+      {
+        "full": true,
+        "layout": "landscape",
+        "district": "canopy",
+        "triangles": 252265,
+        "calls": 30,
+        "world": {
+          "district": "CANOPY TRAIL",
+          "canopies": 14,
+          "harbors": 0,
+          "woodHazards": 8,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 36,
+          "flags": 0,
+          "motionTime": 4
+        }
+      },
+      {
+        "full": true,
+        "layout": "landscape",
+        "district": "falls",
+        "triangles": 228623,
+        "calls": 34,
+        "world": {
+          "district": "CASCADE CANYON",
+          "canopies": 10,
+          "harbors": 0,
+          "woodHazards": 7,
+          "falls": 5,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 0,
+          "motionTime": 17.333333333333332
+        }
+      },
+      {
+        "full": true,
+        "layout": "landscape",
+        "district": "harbor",
+        "triangles": 228803,
+        "calls": 31,
+        "world": {
+          "district": "SUN TEMPLE HARBOR",
+          "canopies": 8,
+          "harbors": 6,
+          "woodHazards": 5,
+          "falls": 0,
+          "birds": 12,
+          "flowers": 34,
+          "flags": 12,
+          "motionTime": 30.666666666666668
+        }
+      }
+    ],
+    "errors": [],
+    "screenshots": "/tmp/river-world/verified-districts",
+    "physicalDeviceFPSMeasured": false
+  },
+  "assets": {
+    "canopy": {
+      "path": "games/river-rush/public/models/fal-canopy.glb",
+      "bytes": 388620,
+      "sha256": "2c0bd26f50344cb0fcd479d8e26dc3dcd84f39eb5ce8041fc4717f9932574c0a",
+      "triangles": 9736,
+      "maps": [
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        }
+      ]
+    },
+    "canopy-lite": {
+      "path": "games/river-rush/public/models/fal-canopy-lite.glb",
+      "bytes": 118724,
+      "sha256": "9adae338e41f3d4e94604948acb3670c62d38ae7e7044133f1a59f86fb36ecdb",
+      "triangles": 2784,
+      "maps": [
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        }
+      ]
+    },
+    "harbor": {
+      "path": "games/river-rush/public/models/fal-harbor.glb",
+      "bytes": 459912,
+      "sha256": "6dc3b0b6a4897db26c339d5ef6c8a9a9a148136110116225eff8c265cb19b377",
+      "triangles": 9172,
+      "maps": [
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        }
+      ]
+    },
+    "harbor-lite": {
+      "path": "games/river-rush/public/models/fal-harbor-lite.glb",
+      "bytes": 158348,
+      "sha256": "319aa17cd57b4f08344465632c135f0e9cf3cc15fe0e721c6ad6e4993084ace9",
+      "triangles": 2740,
+      "maps": [
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        }
+      ]
+    },
+    "driftwood": {
+      "path": "games/river-rush/public/models/fal-driftwood.glb",
+      "bytes": 235600,
+      "sha256": "9ded69c20f75df498d7e11dbd6d5a8729b82a8dce4b7461c0c0852b91dcec2ee",
+      "triangles": 5000,
+      "maps": [
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        }
+      ]
+    },
+    "driftwood-lite": {
+      "path": "games/river-rush/public/models/fal-driftwood-lite.glb",
+      "bytes": 110812,
+      "sha256": "11b29b8ef3863100047cde0bbf381a8a565ff2a0def25c694a99f46e1bec6ad8",
+      "triangles": 1700,
+      "maps": [
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        },
+        {
+          "width": 512,
+          "height": 512,
+          "mime": "image/webp"
+        }
+      ]
+    }
+  },
+  "limits": {
+    "fullTriangles": 300000,
+    "softwareTriangles": 125000,
+    "drawCalls": 65
+  },
+  "physicalDeviceTesting": "Real iOS, Android and Safari GPU frame rates were not measured. SwiftShader timings are shader/behavior diagnostics only.",
+  "sourceResearch": "docs/subway-surfers-study.md",
+  "liveURL": "https://arcade.uptick.systems/river-rush/",
+  "runtimeHashes": {
+    "public/river-rush/assets/index-Co1nv7J0.js": "7c7caad8b0efa738933ef24094af613acaeeb69e183d8f5e909fdd3b5aad8f80",
+    "public/river-rush/assets/index-B7-zVVFN.css": "f44a4b92bb5d0d08f849fba4abd2f8fd7f8850e78aec12ae7336a643f92ecea5",
+    "public/river-rush/models/fal-driftwood-lite.glb": "11b29b8ef3863100047cde0bbf381a8a565ff2a0def25c694a99f46e1bec6ad8",
+    "public/river-rush/models/meshy-palm.glb": "54e5414f8c52927eae66dddcc76d27e62969591dd22b9aa46699b40fde0879ef",
+    "public/river-rush/models/meshy-palm-lite.glb": "a693d8e8aa2135bd3e76379d026e2fc3951fcdb21d2fc36b8ec30c66b5708e68",
+    "public/river-rush/models/meshy-bank.glb": "30cce241291fb9b10a269d633058f8a6bff7da4e9b8ce0bbf26dea21415a7b81",
+    "public/river-rush/models/meshy-bank-lite.glb": "4eae31dfe50076aaa3da4e19d6be61a407e457c42e46ef2414426473b89a8cf6",
+    "public/river-rush/models/fal-harbor-lite.glb": "319aa17cd57b4f08344465632c135f0e9cf3cc15fe0e721c6ad6e4993084ace9",
+    "public/river-rush/models/meshy-temple-lite.glb": "1c169c9b83854db380a6d26de6b31c8b2bf9f37b7daf02159c54bf75b3c20412",
+    "public/river-rush/models/meshy-rider.glb": "5c182182fd13c2f7e4e5fcbdf827ce8ec5dae1535d361e4e52b621aa8eb15177",
+    "public/river-rush/models/fal-canopy-lite.glb": "9adae338e41f3d4e94604948acb3670c62d38ae7e7044133f1a59f86fb36ecdb",
+    "public/river-rush/models/fal-harbor.glb": "6dc3b0b6a4897db26c339d5ef6c8a9a9a148136110116225eff8c265cb19b377",
+    "public/river-rush/models/meshy-temple.glb": "83b0d1c98460d2db9c04b977dfc039f33025ca9a7de966ec4ca9465ccd2b3f86",
+    "public/river-rush/models/meshy-raft.glb": "9c00fb20f45bbe452a2fcfb1147549db0240d68894e6503150713e541d50d1a6",
+    "public/river-rush/models/meshy-guardian.glb": "04b4794a3b06fd474361169c9a2cb44aca7f75da0111a9ccf1f70a4106a4069d",
+    "public/river-rush/models/fal-driftwood.glb": "9ded69c20f75df498d7e11dbd6d5a8729b82a8dce4b7461c0c0852b91dcec2ee",
+    "public/river-rush/models/meshy-guardian-lite.glb": "3765b111d46e260760552047aad7c68678178acb7c8b23fb22b306127529f3e2",
+    "public/river-rush/models/meshy-temple-raft.glb": "ee97a02012a9880640c16dcd022915d926b9b33d1b29d21d60fc1b33275adbb3",
+    "public/river-rush/models/fal-canopy.glb": "2c0bd26f50344cb0fcd479d8e26dc3dcd84f39eb5ce8041fc4717f9932574c0a",
+    "public/river-rush/index.html": "368d75e6317a5a7ca307fa9d86f85a123ff334e8c54dd0549f6597381d428325",
+    "public/river-rush/art/valley-vista.webp": "4a4ce6ab17088d6f8611cd644ad05a9637956a35881d7e5ba4582cdd34691aa4",
+    "public/river-rush/art/surface-ground.webp": "bc40d72d770048b945a347b8ad4b672b2028617880ecf7a404a0d297b8e4f440",
+    "public/river-rush/art/surface-ground-normal.png": "517796858f43811702e54987bdaef69f437fbfef1fb523f59212c8100a6ea633"
+  }
+}
