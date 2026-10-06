@@ -15,6 +15,8 @@ const safe = (fn, d = null) => { try { return fn(); } catch (e) { return d; } };
 const quiet = (p) => { if (p && typeof p.then === "function") p.then(null, () => {}); return p; };
 
 function native() { const C = cap(); return !!(C && typeof C.isNativePlatform === "function" && safe(() => C.isNativePlatform(), false)); }
+// the iOS app on a Mac with Apple silicon ("Designed for iPad"): MainViewController sets this flag before any page script
+function onMac() { return native() && safe(() => (typeof window !== "undefined" ? window : globalThis).__reelItInMac === true, false); }
 
 // plugins found once for each Capacitor object (a test may put in a new one)
 let found = new Map(), foundFor = null;
@@ -47,9 +49,16 @@ function listen(eventName, fn) {
 export const Native = {
   // inside the Capacitor app (iOS or Android)
   get isNative() { return native(); },
+  // the iOS app runs on a Mac: a mouse and a keyboard, no touch screen, no motion sensors, no buzz
+  get onMac() { return onMac(); },
   get platform() { const P = native() && safe(() => cap().getPlatform()); return P === "ios" || P === "android" ? P : "web"; },
   // the store build: the app, or a page the app build marked (html data-build="store"). It hides the arcade parts
   get isStore() { return native() || (typeof document !== "undefined" && document.documentElement && document.documentElement.dataset.build === "store"); },
+  // a touch screen: a phone or a tablet. False on a computer, and in the app on a Mac (its web view can report touch points)
+  get touchScreen() {
+    if (onMac()) return false;
+    return safe(() => matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0, false);
+  },
   plugin,
   // Android back. With a listener, the app no longer closes itself on back: the game decides
   onBack(fn) { listen("backButton", fn); },

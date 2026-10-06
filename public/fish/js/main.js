@@ -132,7 +132,7 @@ const game = $("#game");
 game.dataset.reelSide = save.reelSide;
 const guide = createGuide(game, $("#guideToggle"), { caught: () => save.caught });
 let guideCue = { text: "", sub: "", icon: "", tone: "" };
-const touchDevice = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+const touchDevice = Native.touchScreen;
 const G = {
   phase: "boot",    // boot | title | cast | reel | catch | lost | results
   mode: "free",     // free | derby
@@ -1406,8 +1406,8 @@ function helpRows(input) {
 }
 $("#helpM").innerHTML = helpRows("motion");
 $("#helpT").innerHTML = helpRows(inputOf(false, touchDevice));
-// the app and a phone have no mouse: the tab says Touch
-if (Native.isStore || touchDevice) $("#tabT").textContent = "Touch";
+// the app on a phone or a tablet, and a phone, have no mouse: the tab says Touch (the app on a Mac keeps Touch and mouse)
+if ((Native.isStore && !Native.onMac) || touchDevice) $("#tabT").textContent = "Touch";
 // an opened list comes into view: on a small phone it opens below the part of the list that shows
 for (const d of $$("#help .moves")) d.addEventListener("toggle", () => {
   fades();
@@ -1475,7 +1475,7 @@ function syncSettings() {
   $("#optSound").checked = Sound.isOn();
   $("#optHaptics").checked = Haptics.enabled;
   $("#optHaptics").disabled = Haptics.kind === "none";
-  $("#hapticNote").textContent = Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
+  $("#hapticNote").textContent = Native.onMac ? "This Mac cannot buzz." : Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
   $("#optAssist").checked = !!save.assist;
   // after stalled sensors switched this visit to touch (G.stallTouch), the saved choice is still motion: show touch, so
   // picking Motion turns the sensors back on

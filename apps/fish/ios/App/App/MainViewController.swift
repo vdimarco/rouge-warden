@@ -1,4 +1,5 @@
 import UIKit
+import WebKit
 import Capacitor
 
 /// The root view controller of Reel It In (set in Main.storyboard).
@@ -13,7 +14,19 @@ import Capacitor
 /// SystemBars extension makes prefersHomeIndicatorAutoHidden return true). Do not call SystemBars.hide() on iOS.
 ///
 /// The status bar is hidden here instead, on every screen. UIStatusBarHidden in Info.plist hides it at launch.
+///
+/// On a Mac with Apple silicon the app runs as "Designed for iPad". The web view there can report touch points, so the
+/// game cannot tell a Mac from an iPad. This controller sets window.__reelItInMac before any page script runs, and the
+/// game (public/fish/js/native.js, Native.onMac) then plays with the mouse and the keys, as on a computer.
 class MainViewController: CAPBridgeViewController {
+
+    override func capacitorDidLoad() {
+        super.capacitorDidLoad()
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            let flag = WKUserScript(source: "window.__reelItInMac = true;", injectionTime: .atDocumentStart, forMainFrameOnly: true)
+            webView?.configuration.userContentController.addUserScript(flag)
+        }
+    }
 
     override var prefersStatusBarHidden: Bool {
         return true
