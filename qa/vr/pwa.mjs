@@ -274,6 +274,19 @@ try {
     }
     return false;
   };
+  // Waits until the game page has started: boot is done (G.ready) and the city is built (G.viewDone). The tower model is
+  // requested while the city is built. That is after G.ready, and on a slow machine many seconds after the first fetches.
+  // A calm window alone can end before such a request, and then the next navigation hides it. This covers the start up to
+  // the title screen, not what the game loads after PLAY. Stops at once when a request has failed since `f0` (the game
+  // cannot start without it), and after SETTLE_LIMIT ms. Returns false when it stopped.
+  const gameStarted = async (f0) => {
+    const end = Date.now() + SETTLE_LIMIT;
+    while (Date.now() < end && failed.length === f0) {
+      if (await page.evaluate(() => !!(window.G && window.G.ready && window.G.viewDone))) return true;
+      await page.waitForTimeout(100);
+    }
+    return false;
+  };
 
   await test("privacy.html loads", async (ok) => {
     const res = await page.goto(BASE + "/vr/privacy.html");
@@ -326,7 +339,8 @@ try {
 
   await test("offline start", async (ok) => {
     if (!controlled) return ok(false, "the service worker is not in control, so the game cannot start offline");
-    // The page of the last test can still load. Wait until it is idle, so no request of it crosses the cut.
+    // The page of the last test can still load. Wait until its game has started and it is idle, so no request of it crosses the cut.
+    ok(await gameStarted(failed.length), "the game did not finish its start online after " + SETTLE_LIMIT / 1000 + " s");
     ok(await settle(1500), "the page did not finish its requests online after " + SETTLE_LIMIT / 1000 + " s: " + names(pending));
     // cut the network two ways: the browser goes offline, and the server stops, so only the cache can answer
     await ctx.setOffline(true);
@@ -339,7 +353,7 @@ try {
     }, { cache: SW.CACHE, keep: precachePaths });
     failed.length = 0;
     const e0 = errors.length;
-    for (const [url, what] of [["/vr/", "a reload of /vr/"], ["/vr/?source=pwa", "the PWA start URL"], ["/vr/privacy.html", "privacy.html"], ["/vr/no-such-page.html", "an unknown page (falls back to the game)"]]) {
+    for (const [url, what, game] of [["/vr/", "a reload of /vr/", true], ["/vr/?source=pwa", "the PWA start URL", true], ["/vr/privacy.html", "privacy.html", false], ["/vr/no-such-page.html", "an unknown page (falls back to the game)", true]]) {
       const f0 = failed.length;
       moving = true;
       for (const q of pending) cancelled.add(q);
@@ -347,9 +361,11 @@ try {
       ok(res && res.status() === 200, what + ": status " + (res && res.status()));
       ok(res && res.fromServiceWorker(), what + ": not served by the service worker");
       const title = await page.title();
-      const want = url.includes("privacy") ? /privacy/i : new RegExp("^" + indexTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$");
+      const want = !game ? /privacy/i : new RegExp("^" + indexTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$");
       ok(want.test(title), what + ": title is \"" + title + "\"");
-      // let module scripts and the first fetches run, and wait for them to end: the next navigation cancels what still runs
+      // let the game start (its city build asks for the tower model late), then wait for the requests to end: the next
+      // navigation cancels what still runs
+      if (game) ok((await gameStarted(f0)) || failed.length > f0, what + ": the game did not finish its start after " + SETTLE_LIMIT / 1000 + " s (G.ready and G.viewDone)");
       ok(await settle(1500), what + ": requests still running after " + SETTLE_LIMIT / 1000 + " s: " + names(pending));
       ok(failed.length === f0, what + ": same-origin requests failed offline (not precached?): " + failed.slice(f0).join(", "));
     }
