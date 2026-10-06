@@ -1,0 +1,132 @@
+{
+  "implementationCommit": "5c80583c889d796765923a5a0c99470e080ad10e",
+  "deploymentId": "dpl_8YoKfRSvVGSsqQE3Grib2NXLxzFu",
+  "state": "READY",
+  "url": "https://arcade.uptick.systems/river-rush/",
+  "browser": {
+    "passed": true,
+    "results": [
+      {
+        "viewport": "phone",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready"
+        },
+        "triangles": 92573,
+        "drawCalls": 20,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": true,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "desktop",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready"
+        },
+        "triangles": 32794,
+        "drawCalls": 102,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "landscape",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready"
+        },
+        "triangles": 36581,
+        "drawCalls": 96,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "temporary503": "recovered",
+        "imageAttempts": 2,
+        "modelAttempts": 2
+      },
+      {
+        "missingModel": "playable"
+      },
+      {
+        "manualRetry": "recovered"
+      },
+      {
+        "noWebGL": "playable2d",
+        "distinctPoses": true
+      },
+      {
+        "contextLoss": "pausedThenPlayable2d"
+      }
+    ],
+    "screenshots": "/tmp/river-rush-downstream-live",
+    "errors": []
+  },
+  "assets": [
+    {
+      "file": "index.html",
+      "bytes": 752,
+      "sha256": "f48cb4af573582a29613c8cca60fd2f80d3cc81fab178e72af682c605ac115e4"
+    },
+    {
+      "file": "assets/index-B6jb73Rv.js",
+      "bytes": 892363,
+      "sha256": "224c0f18a76a94c2b9fae7861d098be98093046a2307f0d506bc5aa7e2ef8bca"
+    },
+    {
+      "file": "assets/index-B7-zVVFN.css",
+      "bytes": 17807,
+      "sha256": "f44a4b92bb5d0d08f849fba4abd2f8fd7f8850e78aec12ae7336a643f92ecea5"
+    },
+    {
+      "file": "art/rider-downstream.png",
+      "bytes": 1483496,
+      "sha256": "e89f4f6b84938c6e7196c57c4fd88461f94c6945cbfc242154631b7acf34f36f"
+    },
+    {
+      "file": "models/meshy-palm.glb",
+      "bytes": 177816,
+      "sha256": "54e5414f8c52927eae66dddcc76d27e62969591dd22b9aa46699b40fde0879ef"
+    },
+    {
+      "file": "models/meshy-palm-lite.glb",
+      "bytes": 89424,
+      "sha256": "a693d8e8aa2135bd3e76379d026e2fc3951fcdb21d2fc36b8ec30c66b5708e68"
+    },
+    {
+      "file": "models/meshy-bank.glb",
+      "bytes": 265716,
+      "sha256": "30cce241291fb9b10a269d633058f8a6bff7da4e9b8ce0bbf26dea21415a7b81"
+    },
+    {
+      "file": "models/meshy-bank-lite.glb",
+      "bytes": 93172,
+      "sha256": "4eae31dfe50076aaa3da4e19d6be61a407e457c42e46ef2414426473b89a8cf6"
+    },
+    {
+      "file": "models/meshy-raft.glb",
+      "bytes": 185968,
+      "sha256": "9c00fb20f45bbe452a2fcfb1147549db0240d68894e6503150713e541d50d1a6"
+    }
+  ]
+}
