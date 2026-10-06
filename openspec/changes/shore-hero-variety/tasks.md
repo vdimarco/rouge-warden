@@ -17,4 +17,7 @@
 - [x] 7. Add 16 skill icons. Render the four spell sheets, 2D figures and idle loops, and record their sources.
 - [x] 8. Add `qa/tidebreak/shore-kits.test.mjs` (every new skill) and `qa/tidebreak/shore-kits.e2e.mjs` (each hero casts all four skills in 2D and 3D with no page errors).
 - [x] 9. Update the tests that counted twelve kits. Make three older checks independent of which random enemy kit they meet.
-- [ ] 10. Measure the new kits with `qa/tidebreak/kit-strength.mjs` and record their lane values in `KIT_POWER`.
+- [x] 10. Measure the new kits with `qa/tidebreak/kit-strength.mjs` (240 Veteran matches) and record their lane values in `KIT_POWER`:
+  - Zephyrs won 67%.
+  - Bloodwake won 39%, Coral Sage 37% and Irontide 35%.
+  - These rates are inside the spread of the first twelve kits, which run from 34% (Stone Golem) to 68% (Jersey Devil).
