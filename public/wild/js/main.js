@@ -92,7 +92,7 @@ Object.assign(sun.shadow.camera, { left: -48, right: 48, top: 48, bottom: -48, n
 sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 const painter = new Painter(renderer, Q);
-// Paint style: the watercolour wash (the default) or the older bright look. Saved from the pause menu;
+// Paint style: the bright look (the default) or the watercolour wash. Saved from the pause menu;
 // ?paint=bright or ?paint=watercolor in the address overrides it for one visit.
 const PAINT_KEY = "plungerd.wild.paint";
 const PAINT_NAMES = { watercolor: "Watercolor", bright: "Bright" };
@@ -100,7 +100,7 @@ let paint = (() => {
   const q = new URLSearchParams(location.search).get("paint");
   if (PAINT_NAMES[q]) return q;
   try { const v = localStorage.getItem(PAINT_KEY); if (PAINT_NAMES[v]) return v; } catch (e) { /* storage off */ }
-  return "watercolor";
+  return "bright";
 })();
 painter.uniforms.uWash.value = paint === "watercolor" ? 1 : 0;
 const draw = () => {

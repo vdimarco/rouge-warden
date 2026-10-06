@@ -1,10 +1,10 @@
 ## ADDED Requirements
 
-### Requirement: Watercolour paint by default
-Breath of the Lake SHALL draw the world as a watercolour on cream paper by default, after the Susurrus reference: wobbling strokes, darker wet edges at colour changes, paper granulation, sepia shadows, and a ragged border of bare paper.
+### Requirement: Watercolour paint as an option
+Breath of the Lake SHALL draw the world as a watercolour on cream paper when the player picks Paint: Watercolor, after the Susurrus reference: wobbling strokes, darker wet edges at colour changes, paper granulation, sepia shadows, and a ragged border of bare paper.
 
 #### Scenario: First visit by day
-- **WHEN** a player with no saved Paint choice starts a game and stands by the cottage by day
+- **WHEN** a player picks Paint: Watercolor and stands by the cottage by day
 - **THEN** a cream paper border with a ragged edge frames the screen, colours are softer and warmer than the Bright look, and shapes keep darker rims where their colour changes.
 
 #### Scenario: Night
@@ -25,9 +25,13 @@ The wet-edge stage SHALL leave grass blades out, as the ink lines do.
 ### Requirement: Paint choice
 The pause menu SHALL have a Paint button that switches between Watercolor and Bright. The game SHALL save the choice. The address option `?paint=bright` or `?paint=watercolor` SHALL choose for one visit.
 
-#### Scenario: Switch to Bright
-- **WHEN** the player opens the pause menu and presses Paint: Watercolor
-- **THEN** the button reads Paint: Bright, the picture returns to the older bright look, and the choice is still in effect after a reload.
+#### Scenario: First visit
+- **WHEN** a player with no saved Paint choice starts a game
+- **THEN** the game uses the Bright look and the button reads Paint: Bright.
+
+#### Scenario: Switch to Watercolor
+- **WHEN** the player opens the pause menu and presses Paint: Bright
+- **THEN** the button reads Paint: Watercolor, the picture changes to the watercolour, and the choice is still in effect after a reload.
 
 ### Requirement: No new draw cost
 The watercolour SHALL add no draw calls, triangles or render targets.

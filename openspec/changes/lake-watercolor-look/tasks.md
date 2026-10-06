@@ -7,4 +7,4 @@
 - [x] Compare `PERF_PHONE=1 perf.mjs low` with Bright and Watercolor.
 - [x] Update the README and `docs/botl-look.md`.
 - [ ] Look at the result on a real phone and a real graphics card. Only SwiftShader ran here.
-- [ ] User review of the look against Susurrus.
+- [x] User review: the user found the watercolour grey and worse. Bright is the default again; Watercolor stays in the Paint button.
