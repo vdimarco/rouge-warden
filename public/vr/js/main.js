@@ -401,8 +401,8 @@ const LAKE_DROP = { y: 60, z: WORLD.shoreZ - 20, vy: 5, vz: 12, max: 12 };
 function launchIntoLake() {
   const S = city.start;
   teleport(P, S.x, LAKE_DROP.y, LAKE_DROP.z);
-  P.vel.set(0, LAKE_DROP.vy, LAKE_DROP.vz);
-  P.lastSafe.set(S.x, S.y, S.z);
+  P.vel.x = 0; P.vel.y = LAKE_DROP.vy; P.vel.z = LAKE_DROP.vz;
+  P.lastSafe.x = S.x; P.lastSafe.y = S.y; P.lastSafe.z = S.z;
   G.rigYaw = Math.PI; // facing the lake (+z)
   lakeDrop = { t: 0, sludge: false };
   wordAhead("WHOOOA!", P.pos, 3, 1, 1.2);
