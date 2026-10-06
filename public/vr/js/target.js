@@ -7,7 +7,6 @@ import { TARGET, SWING } from "./config.js";
 
 const DEG = Math.PI / 180;
 const RANGE = SWING.ropeRange * SWING.rangeGrace; // the real reach of a rope (88 m), as in rope.js
-const PIPE_COS = Math.cos(TARGET.special.pipeFacing * DEG);
 const RINGS = [1 / 3, 2 / 3, 1], PER_RING = 8; // the cone of rope.js: three rings of eight rays, the middle one turned half a step
 const CONE = [];
 for (let k = 0; k < RINGS.length; k++) for (let j = 0; j < PER_RING; j++) { const a = ((j + (k === 1 ? 0.5 : 0)) / PER_RING) * Math.PI * 2; CONE.push([RINGS[k], Math.cos(a), Math.sin(a)]); }
@@ -125,8 +124,9 @@ export function createTarget(city, cfg = TARGET) {
     if (fall > L.fallFrom) e += L.fall * clamp((fall - L.fallFrom) / (L.fallTo - L.fallFrom), 0, 1);
     return Math.min(e, L.top);
   }
-  // the swing test: far enough and near enough, high enough over the chest, not a roof or a floor, not a thin pole
-  const reach = (y, ny, col, dist, T, ctx) => dist >= T.min && dist <= T.max && y - ctx.chestY > T.above && ny <= 0.7 && col.tag !== "antenna";
+  // the swing test: far enough and near enough, high enough over the chest, not a roof or a floor. A roof antenna (a thin pole) is
+  // never a search's pick, but the exact ray takes one (pole): the player aimed at it
+  const reach = (y, ny, col, dist, T, ctx, pole) => dist >= T.min && dist <= T.max && y - ctx.chestY > T.above && ny <= 0.7 && (pole || col.tag !== "antenna");
   // in front of the camera and inside 0.92 of its half width (tier 1 only; above the top edge is fine)
   function onScreen(ctx, x, y, z) {
     project(ctx, x, y, z, NDC);
@@ -193,8 +193,6 @@ export function createTarget(city, cfg = TARGET) {
         const ang = Math.acos(clamp((qx * fx + qy * fy + qz * fz) / ql, -1, 1)) / DEG;
         if (!tap && dist <= T.range && ang <= T.near) near = true;
         if (dist > range || ang > (s.id === heldId ? lim.leave : lim.enter)) continue;
-        const n = s.normal;
-        if (s.tag === "pipe" && n && -(px * n.x + py * n.y + pz * n.z) / dist < PIPE_COS) continue;
         if (ray(head.x, head.y, head.z, px, py, pz, dist - 0.6, LOS)) continue;
         if (ang < bestA) { best = s; bestA = ang; }
       }
@@ -312,7 +310,7 @@ export function createTarget(city, cfg = TARGET) {
     const e = ctx.exact;
     if (!e || !e.collider) return null;
     const dx = e.x - ctx.head.x, dy = e.y - ctx.head.y, dz = e.z - ctx.head.z, dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    if (!reach(e.y, e.ny, e.collider, dist, cfg.tier3, ctx)) return null;
+    if (!reach(e.y, e.ny, e.collider, dist, cfg.tier3, ctx, true)) return null;
     if (!allowSame && avoids(bidOf(e.collider), ctx)) return null;
     return fill(T1, e, dist, 3, 1);
   }
@@ -328,7 +326,6 @@ export function createTarget(city, cfg = TARGET) {
       let s = null;
       if (list) for (let k = 0; k < list.length; k++) if (list[k] && list[k].id === H.id) { s = list[k]; break; }
       if (!s || dist > cfg.special.range || angleFrom(ctx, H.x, H.y, H.z) > cfg.special.leave) return false;
-      if (s.tag === "pipe" && s.normal && -(dx * s.normal.x + dy * s.normal.y + dz * s.normal.z) / dist < PIPE_COS) return false;
       H.dist = dist;
       return !ray(head.x, head.y, head.z, dx, dy, dz, Math.max(0.1, dist - 0.6), LOS);
     }
@@ -376,8 +373,8 @@ export function createTarget(city, cfg = TARGET) {
     }
     if (heldOk && H.prio) S.has = false; // a special that is no longer one
     const keep = S.has; // a held building that is still valid
-    // 2. first person: the exact ray
-    if (ctx.first && grabExact(ctx, keep)) return publish(ctx);
+    // 2. first person: the exact ray. In third person too while the screen centre rests on a roof antenna (no search picks one)
+    if ((ctx.first || (ctx.exact && ctx.exact.collider && ctx.exact.collider.tag === "antenna")) && grabExact(ctx, keep)) return publish(ctx);
     // 3. the fan. A challenger replaces a valid held target only when it scores more than 20 percent higher and the held one is old enough
     c = tier1(ctx, false, bias);
     if (c) {
@@ -497,7 +494,7 @@ export function createTarget(city, cfg = TARGET) {
       const h = ray(ray_.x, ray_.y, ray_.z, ray_.dx, ray_.dy, ray_.dz, 400, EX);
       if (h) {
         const dx = h.x - ctx.head.x, dy = h.y - ctx.head.y, dz = h.z - ctx.head.z, dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (reach(h.y, h.ny, h.collider, dist, cfg.tier3, ctx) && (relaxed || !avoids(bidOf(h.collider), ctx))) return fill(TR, h, dist, 3, 1);
+        if (reach(h.y, h.ny, h.collider, dist, cfg.tier3, ctx, true) && (relaxed || !avoids(bidOf(h.collider), ctx))) return fill(TR, h, dist, 3, 1);
       }
     }
     if (cur && cur.valid && (relaxed || (!cur.same && !avoids(cur.bid, ctx)))) return copy(TR, cur);

@@ -112,8 +112,8 @@ try {
   check(deep.length > 0 && up.length === 0, "diving, both hands are down the body from the shoulders", up.slice(0, 3));
   // the last second before the ground: upright again (the dive weight low) before the feet touch
   const last = d.rec.filter((r) => !r.ground).slice(-3);
-  check(last.length && last.every((r) => r.dive < 0.2), "the hero flips upright before the landing", last);
-  check(d.end.ground && (d.end.pose === "land" || d.end.pose === "idle" || d.end.pose === "run"), "the landing plays as before", d.end);
+  check(last.length && last.every((r) => r.dive < 0.6), "the hero tucks out of the dive just before the landing", last);
+  check(d.end.ground && (d.end.pose === "roll" || d.end.pose === "land" || d.end.pose === "idle" || d.end.pose === "run"), "the dive ends on the ground in the landing roll (full-swing-city-action)", d.end);
 
   const c = await page.evaluate(() => {
     // over the z = -370 avenue in the Financial district, between towers taller than the fall

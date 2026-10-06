@@ -15,7 +15,7 @@ const CITY = 0.45; // the city bed at street level, under the game
 const CROWD = 0.32; // the murmur of the people on the sidewalks round you, at its fullest
 const BPM = 84, S16 = 60 / BPM / 4, SWING = 0.16; // the groove: a lazy 84 with a light swing on the 16ths
 // refDistance of the spatial one-shots: loud things (the King, fireworks) carry across the city
-const REF = { cheer: 14, gasp: 8, kingRoar: 50, kingSnore: 30, fireworks: 120, flush: 10, burst: 8, pipeRip: 25, whistle: 8, splash: 8, pump: 5, gurgle: 4, drip: 1.5 };
+const REF = { cheer: 14, gasp: 8, punch: 6, kick: 6, goonDown: 10, door: 5, engine: 8, kingRoar: 50, kingSnore: 30, fireworks: 120, flush: 10, burst: 8, pipeRip: 25, whistle: 8, splash: 8, pump: 5, gurgle: 4, drip: 1.5 };
 
 const NO = {};
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -385,6 +385,43 @@ const SFX = {
     train(e, t, { rate: 40, dur: 0.12, bands: [[2500, 4, 10]], peak: 0.2 });
     hiss(e, t + 0.1, { type: "lowpass", f: 900, dur: 0.05, att: 0.001, peak: 0.25 });
     return ring(e, t + 0.12, [[2093, 0.16, 0.9], [2637, 0.11, 0.7], [4186, 0.05, 0.5], [5870, 0.03, 0.3]], { send: 0.2 });
+  },
+  // a punch landing: a slap of air and a thud
+  punch(e, t) {
+    hiss(e, t, { type: "bandpass", f: 1800, q: 0.9, dur: 0.06, att: 0.001, peak: 0.35 });
+    return tone(e, t + 0.005, { f: 140, f2: 60, dur: 0.12, att: 0.001, peak: 0.42 });
+  },
+  // a kick: a bigger thud and a whoosh before it
+  kick(e, t) {
+    hiss(e, t, { buf: e.pink, type: "bandpass", f: 700, f2: 2200, sweep: 0.08, q: 1, dur: 0.1, att: 0.02, peak: 0.18 });
+    hiss(e, t + 0.08, { type: "lowpass", f: 1200, dur: 0.08, att: 0.001, peak: 0.4 });
+    return tone(e, t + 0.085, { f: 110, f2: 45, dur: 0.2, att: 0.001, peak: 0.5 });
+  },
+  // the hero takes a blow: a dull hit and a grunt
+  hurt(e, t) {
+    tone(e, t, { f: 90, f2: 50, dur: 0.16, att: 0.001, peak: 0.5 });
+    return tone(e, t + 0.03, { type: "sawtooth", f: 180, f2: 120, dur: 0.18, att: 0.01, peak: 0.08, lp: 900 });
+  },
+  // a goon goes down into his own sludge
+  goonDown(e, t) {
+    tone(e, t, { f: 260, f2: 70, dur: 0.45, att: 0.005, peak: 0.16, type: "triangle" });
+    return hiss(e, t + 0.15, { buf: e.brown, type: "bandpass", f: 320, q: 2, dur: 0.5, att: 0.05, peak: 0.25 });
+  },
+  // a car door: a click, a solid shut
+  door(e, t) {
+    hiss(e, t, { type: "highpass", f: 3000, dur: 0.02, att: 0.0005, peak: 0.2 });
+    tone(e, t + 0.04, { f: 85, f2: 60, dur: 0.14, att: 0.001, peak: 0.45 });
+    return hiss(e, t + 0.04, { type: "lowpass", f: 700, dur: 0.1, att: 0.001, peak: 0.3 });
+  },
+  // the engine starts: a starter whirr and a rev that settles
+  engine(e, t) {
+    train(e, t, { rate: 18, rate2: 30, dur: 0.45, bands: [[400, 2, 3]], peak: 0.12 });
+    const s = osc(e, "sawtooth", 38), lp = filt(e, "lowpass", 320, 1.2), g = gain(e, 0);
+    s.frequency.setValueAtTime(30, t + 0.4); s.frequency.linearRampToValueAtTime(70, t + 0.75); s.frequency.exponentialRampToValueAtTime(42, t + 1.4);
+    s.connect(lp); lp.connect(g); route(e, g, { send: 0.1 });
+    const end = env(g.gain, t + 0.4, 0.3, 0.06, 1.2);
+    s.start(t + 0.4); s.stop(end);
+    return end;
   },
   // the people who saw you land: a swell of voices, and a few whoops that rise
   cheer(e, t) {

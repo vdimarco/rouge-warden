@@ -643,6 +643,9 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   function nearestTarget() {
     const g = G().game;
     if (!g || !g.targets || !Pl) return null;
+    // a job's goal (jobs.js) first
+    const jg = g.progress && g.progress.goal;
+    if (jg) return { kind: "job", x: jg.x, y: jg.y, z: jg.z };
     // in a trial the compass points to the next ring
     const tr = g.progress && g.progress.trial;
     if (tr && tr.next) return { kind: "ring", x: tr.next.x, y: tr.next.y, z: tr.next.z };
