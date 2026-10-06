@@ -251,6 +251,8 @@ export class ThreeRenderer {
       if (intent?.shape) this.telegraph(intent, s.time, e.specialIntent ? '#ffb45a' : e.team === p.team ? '#9be3cf' : HOSTILE, false);
     }
     if (!menu) drawTells3D(this, s, p, time, near);
+    // Other heroes show their recall channel too, when the player's team can see them.
+    if (!menu) for (const h of s.units) if (h !== p && h.kind === 'hero' && h.recall > 0 && h.hp > 0 && visibleTo(s, p.team, h)) d.circle(h.x, h.y, 70 + Math.sin(time * 8) * 8, { color: '#d6ffec', alpha: .6, line: 4 });
     if (!menu && p.hp > 0) {
       if (p.recall) d.circle(p.x, p.y, 85 + Math.sin(time * 8) * 10, { color: '#d6ffec', alpha: .8, line: 5 });
       if (aim && !aim.cancelled) {

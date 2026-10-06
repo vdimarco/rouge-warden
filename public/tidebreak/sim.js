@@ -13,7 +13,7 @@ import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
-import { castLock, guardMove } from './bot-difficulty.js';
+import { castLock, guardMove, botProfile, recallStep } from './bot-difficulty.js';
 import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
 import { followOrder } from './navigation.js';
 import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER } from './objectives.js';
@@ -483,9 +483,14 @@ function bot(s, e, dt) {
   if(intent.mode==='assist'&&previous!=='assist'&&s.time-(e.assistPingAt??-99)>10){e.assistPingAt=s.time;pushPing(s,{team:e.team,type:'onmyway',x:intent.move.x,y:intent.move.y,source:e.id,call:intent.call});}
   if(intent.mode==='retreat'&&previous!=='retreat'&&s.time-(e.retreatPingAt??-99)>12){e.retreatPingAt=s.time;pushPing(s,{team:e.team,type:'retreat',x:e.x,y:e.y,source:e.id});}
   e.retreat=intent.mode==='retreat';
-  if(intent.mode==='retreat'){
-    if(s.time-e.lastHit>3){e.botRecall=(e.botRecall||0)+dt;if(e.botRecall>2.5){Object.assign(e,BASES[e.team]);e.botRecall=0;e.waypoint=1;}}
-  }else e.botRecall=0;
+  if(botProfile(s,e).legacy){
+    if(intent.mode==='retreat'){
+      if(s.time-e.lastHit>3){e.botRecall=(e.botRecall||0)+dt;if(e.botRecall>2.5){Object.assign(e,BASES[e.team]);e.botRecall=0;e.waypoint=1;}}
+    }else e.botRecall=0;
+  }else if(intent.mode==='retreat'){
+    // Bots recall like the player: they stand still, and a hit cancels it.
+    const r=recallStep(s,e,dt);if(r==='home'){Object.assign(e,BASES[e.team]);e.waypoint=1;burst(s,e.x,e.y,'#e4f5ac',180);}if(r)return;
+  }else e.recall=0;
   if(intent.target)e.target=intent.target.id;
   if(intent.slot!==undefined){
     e.thinkAt=s.time+castLock(s,e,requestCast(s,e,intent.slot,intent.aim,{bot:true}));

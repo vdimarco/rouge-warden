@@ -49,4 +49,20 @@ for (const level of ['apprentice', 'veteran', 'mythic']) {
   assert.ok(closest < 1000 && start > 3000, `the ganker closes from ${start.toFixed(0)} to ${closest.toFixed(0)} units`);
 }
 
-console.log('PASS: short failed dodges and ganks from a held lane through step()');
+// Recall parity. A hurt bot with no enemy in sight stands still for 2.5 s, then goes home.
+// A hit cancels the recall, as it does for the player.
+for (const level of ['apprentice', 'veteran', 'mythic']) {
+  const { s, p, bot } = scene(level); s.time = 60; bot.lastHit = -99;
+  Object.assign(bot, LANES[1][3]); Object.assign(p, { x: 400, y: 6000 }); bot.hp = bot.maxHp * .15;
+  step(s, {}, .05);
+  assert.ok(bot.recall > 0, `${level} hurt bot starts to recall`);
+  const spot = { x: bot.x, y: bot.y };
+  for (let t = 0; t < 20; t++) { step(s, {}, .05); assert.ok(distance(bot, spot) < 1e-6, `${level} bot stands still while it recalls`); }
+  bot.lastHit = s.time; step(s, {}, .05);
+  assert.equal(bot.recall, 0, `${level} a hit cancels the recall`);
+  bot.lastHit = s.time - 4; let home = false;
+  for (let t = 0; t < 4 * 20 && !home; t++) { step(s, {}, .05); home = distance(bot, BASES[1]) < 50; }
+  assert.ok(home, `${level} bot reaches base after a full recall`);
+}
+
+console.log('PASS: short failed dodges, ganks from a held lane and recall parity through step()');
