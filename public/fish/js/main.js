@@ -2310,8 +2310,10 @@ function frame() {
   if (DEBUG) debug();
 }
 function step(dt) {
-  // a cutscene holds the fish, the clock, the derby and the cast, and moves itself on
-  if (cuts && cuts.playing) { cuts.update(dt); return; }
+  // a cutscene holds the fish, the clock, the derby and the cast, and moves itself on. The step it ends in goes on with no
+  // time, so play sets its view before the frame draws: the last step of a slow frame must not draw the title view first
+  // and fly the camera home from there
+  if (cuts && cuts.playing) { cuts.update(dt); if (cuts.playing) return; dt = 0; }
   const inPlay = G.phase === "cast" || G.phase === "reel" || G.phase === "lost";
   if (inPlay) {
     // the day goes by: an hour every 75 s in free fishing; the derby stays at golden hour (journey.js has the clock)
