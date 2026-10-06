@@ -2,7 +2,8 @@
 // openspec/changes/swing-controls, and "The flat HUD, the toast and the pause menu inside the window" of openspec/changes/swing-hero-comic).
 // On a flat screen and on a phone all of this is DOM (ui.js builds #fsHud and #fsMenu, desktop.js builds the ring, the arrow, the caption and the
 // key strip, mobile.js builds #phoneControls), so the boxes come from getBoundingClientRect. A box counts with its hard shadow. The spoken line
-// counts with its tail, which hangs 27 px under it. Sizes: 640 by 360, 960 by 540 and 1280 by 720 with a mouse, and 844 by 390, 390 by 844 and
+// counts with its tail, which hangs 27 px under it. The toast lies under that tail. On a computer the look hint ("Click to look around") draws
+// under the spoken line, the toast and the edge arrow, and it fades out while the line or the toast is over its place. Sizes: 640 by 360, 960 by 540 and 1280 by 720 with a mouse, and 844 by 390, 390 by 844 and
 // 360 by 740 as a touch phone with motion aim on (four top buttons). The suite opens one page for each size and plays about two seconds.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/layout.e2e.mjs   (SIZE=960x540 runs one size, SHOTS=dir keeps pictures)
 import { newPage, open, close, watchdog, checker, shot, sleep } from "./lib.mjs";
@@ -137,7 +138,36 @@ function install() {
     G.test.teleport(B.maxX + 3, B.maxY / 2, (B.minZ + B.maxZ) / 2); G.rigYaw = Math.PI / 2; G.desktop.level(0); G.P.vel.x = -8; G.test.step(1 / 60, 30);
     return !!G.P.wall;
   }
-  window.LAY = { scan, lineCount, menuScan, wallSetup };
+  // The look hint with its shadow, and its opacity (it fades out while the spoken line or the toast is over its place). null when the game does not show it.
+  function hintNow() {
+    const hint = document.querySelector("#lookHint");
+    return !hint || hint.hidden ? null : { box: grow(hint, boxOf(hint)), opacity: Number(getComputedStyle(hint).opacity) };
+  }
+  // Does the look hint draw over a part of the HUD? { n, over }: n is how many of 12 by 8 points in the common box of the two lie inside both,
+  // over is how many of those the hint draws on top of. This is the order of the layers, so the fade of the hint does not count (a hint with no opacity
+  // still takes the points). Pointer events are on while the probe runs, so that elementsFromPoint lists the parts that have none (all of the HUD),
+  // from the top down. null when the game does not show the hint or the part does not show.
+  function covers(sel) {
+    const hint = document.querySelector("#lookHint"), part = document.querySelector(sel);
+    if (!hint || hint.hidden || !part || !seen(part)) return null;
+    const a = hint.getBoundingClientRect(), b = part.getBoundingClientRect();
+    const l = Math.max(a.left, b.left), r = Math.min(a.right, b.right), t = Math.max(a.top, b.top), d = Math.min(a.bottom, b.bottom);
+    const out = { n: 0, over: 0, hint: boxOf(hint), part: boxOf(part) };
+    if (l >= r || t >= d) return out;
+    const probe = document.createElement("style");
+    probe.textContent = "* { pointer-events: auto !important; }";
+    document.head.append(probe);
+    for (let i = 0; i < 12; i++) for (let j = 0; j < 8; j++) {
+      const stack = document.elementsFromPoint(l + ((r - l) * (i + 0.5)) / 12, t + ((d - t) * (j + 0.5)) / 8);
+      const h = stack.findIndex((e) => hint.contains(e)), p = stack.findIndex((e) => part.contains(e));
+      if (h < 0 || p < 0) continue;
+      out.n++;
+      if (h < p) out.over++;
+    }
+    probe.remove();
+    return out;
+  }
+  window.LAY = { scan, lineCount, menuScan, wallSetup, covers, hintNow };
 }
 
 /* ---------------- the checks ---------------- */
@@ -152,6 +182,25 @@ function checkBoxes(tag, S, must) {
   check(S.sweep.cut.length === 0, `[${tag}] no text runs out of its box in the HUD and the phone panel`, S.sweep.cut);
   check(S.scroll.w <= S.W && S.scroll.h <= S.H, `[${tag}] the page and the HUD layer do not scroll (${S.scroll.w} by ${S.scroll.h} in a window of ${S.W} by ${S.H})`);
 }
+
+// On a computer the look hint shows, unless the spoken line (with its tail) or the toast is over its place: then it is faded out, and nobody reads
+// half of it. The edge arrow is not in this rule: it stays for minutes, and it draws over the hint (a few letters at most). The boxes count with their
+// shadows. tally counts the times a part was over the place of the hint (see the end of the run).
+async function hintState(page, tag, state, tally) {
+  // the marker reads the HUD at most 10 times a second in real time, the game decides about the fade a few times a second (0.2 s of play is enough),
+  // and the fade itself takes 0.25 s of real time
+  await sleep(250);
+  await page.evaluate(() => G.test.step(1 / 60, 12));
+  await page.waitForFunction(() => { const e = document.querySelector("#lookHint"); return getComputedStyle(e).opacity === (e.classList.contains("covered") ? "0" : "1"); });
+  const [H, S] = await page.evaluate(() => [LAY.hintNow(), LAY.scan()]);
+  const line = S.items["spoken line with its tail"], toast = S.items["toast"];
+  const meets = { line: !!(H && line && hit(H.box, line)), toast: !!(H && toast && hit(H.box, toast)) };
+  for (const part of Object.keys(tally)) tally[part] += +meets[part];
+  const covered = meets.line || meets.toast, shows = !!H && H.opacity === 1;
+  check(!!H && shows === !covered, `[${tag}] ${state}: the look hint ${covered ? "is faded out" : "shows"} (the spoken line or the toast ${covered ? "is" : "is not"} over its place)`, { hint: H && { box: round(H.box), opacity: H.opacity }, line: round(line), toast: round(toast), meets });
+  if (shows) check(inside(H.box, S.W, S.H), `[${tag}] ${state}: the look hint lies inside the window (box, border and shadow)`, { box: round(H.box), window: [S.W, S.H] });
+}
+const tally = { line: 0, toast: 0 }, shared = { "spoken line": 0, toast: 0, "edge arrow": 0 };
 
 async function run(w, h, touch) {
   const tag = `${w}x${h}`;
@@ -183,6 +232,20 @@ async function run(w, h, touch) {
     return { longest, toast: text, lines };
   }, touch).catch(() => null);
   if (!words) throw new Error("the words of the page could not be read at " + tag);
+  if (!touch) {
+    // nothing over the place of the hint: it shows. Then the spoken line alone (it reaches the hint on a low window only).
+    // (the game asks for the pointer lock for 2 s first: the hint shows after that, and the first line of the game fades out in real time)
+    await page.evaluate(async () => {
+      G.ui.say("");
+      for (let i = 0; i < 60 && (document.querySelector("#lookHint").hidden || getComputedStyle(document.querySelector(".fs-sub")).opacity !== "0"); i++) { await new Promise((r) => setTimeout(r, 100)); G.test.step(1 / 60, 2); }
+    });
+    await hintState(page, tag, "with no line and no toast", tally);
+    await page.evaluate((longest) => { G.ui.say(longest, 60); G.test.step(1 / 60, 20); }, words.longest);
+    await page.waitForFunction(() => getComputedStyle(document.querySelector(".fs-sub")).opacity === "1");
+    await sleep(160);
+    await page.evaluate(() => G.test.step(1 / 60, 3));
+    await hintState(page, tag, "with the spoken line", tally);
+  }
   await page.evaluate(({ longest, toast }) => { G.ui.say(longest, 60); G.ui.toast(toast); G.test.step(1 / 60, 20); }, words);
   await page.waitForFunction(() => [".fs-sub", ".fs-toast"].every((s) => getComputedStyle(document.querySelector(s)).opacity === "1"));
   await sleep(160); // the marker reads the HUD at most 10 times a second in real time
@@ -198,6 +261,10 @@ async function run(w, h, touch) {
   if (touch) must.push("top button MOTION", "top button CENTER", "top button VIEW", "top button PAUSE", "hint panel", "hint", "plunger badge L", "plunger badge R", "phone ring or arrow");
   else must.push("key strip");
   checkBoxes(tag, S, must);
+  // the toast starts under the tail of the spoken line (the tail hangs 27 px under the box of the line, and the toast is tilted a little)
+  const line = S.items["spoken line with its tail"], toast = S.items["toast"];
+  check(!!line && !!toast && !hit(line, toast), `[${tag}] the toast does not overlap the spoken line or its tail`, line && toast && { line: round(line), toast: round(toast), toastCoversTail: Math.round(line.b - toast.t) });
+  if (line && toast) console.log(`INFO: [${tag}] the toast starts ${Math.round(toast.t - line.b)} px under the tail of the spoken line` + (S.items["training card"] && hit(S.items["training card"], toast) ? `, and covers ${Math.round(toast.b - S.items["training card"].t)} px of the training card` : ""));
   if (!touch) check(!!(S.items["lock-on ring"] || S.items["edge arrow"]), `[${tag}] the lock-on ring or the edge arrow shows`);
   if (touch) {
     const row = ["top button MOTION", "top button CENTER", "top button VIEW", "top button PAUSE"].map((n) => S.items[n]);
@@ -206,6 +273,21 @@ async function run(w, h, touch) {
     for (const name of ["spoken line with its tail", "toast"]) check(!!S.items[name] && !!S.items["hint panel"] && !hit(S.items[name], S.items["hint panel"]), `[${tag}] the ${name.replace(" with its tail", "")} does not overlap the hint panel`, { [name]: round(S.items[name]), panel: round(S.items["hint panel"]) });
   } else {
     check(!!S.items["toast"] && !!S.items["key strip"] && !hit(S.items["toast"], S.items["key strip"]), `[${tag}] the toast does not overlap the key strip`, { toast: round(S.items["toast"]), strip: round(S.items["key strip"]) });
+    // the look hint fades out while the line or the toast is over its place, and it lies under the spoken line, the toast and the edge arrow (the pointer
+    // is free here, so the game shows the hint). The arrow is shown by hand at the top of the window, where the lock-on marker puts it for a target above
+    // the screen, and read in the same turn.
+    await hintState(page, tag, "with the spoken line and the toast", tally);
+    const under = await page.evaluate(() => {
+      G.desktop.marker({ x: 0, y: 2, kind: "swing", dist: 30, behind: false, go: false });
+      const c = { "spoken line": LAY.covers(".fs-sub"), toast: LAY.covers(".fs-toast"), "edge arrow": LAY.covers("#lockArrow") };
+      G.desktop.marker(null);
+      return c;
+    });
+    for (const [name, c] of Object.entries(under)) {
+      shared[name] += c ? c.n : 0;
+      check(!!c && c.over === 0, `[${tag}] the look hint does not draw over the ${name}`, c && { ...c, hint: round(c.hint), part: round(c.part) });
+    }
+    console.log(`INFO: [${tag}] the look hint shares ${Object.entries(under).map(([name, c]) => (c ? c.n : "?") + " of 96 points with the " + name).join(", ")}`);
     // the caption of the release cue: shown by hand and read in the same turn, as flat.mjs does (a game frame would clear it)
     S = await page.evaluate(() => { G.desktop.marker({ x: 0.2, y: 0.4, kind: "swing", dist: 30, behind: false, go: true }); G.desktop.cue(true); const s = LAY.scan(); G.desktop.cue(false); G.desktop.marker(null); return s; });
     checkBoxes(tag + " with the LET GO caption", S, ["LET GO caption"]);
@@ -225,6 +307,8 @@ async function run(w, h, touch) {
     S = await page.evaluate(() => LAY.scan());
     checkBoxes(tag + " on a wall", S, touch ? ["climb pad up", "climb pad down", "climb pad left", "climb pad right", "climb pad hop", "hint panel"] : ["edge arrow"]);
     if (touch) check(!S.items["plunger badge L"] && !S.items["plunger badge R"], `[${tag} on a wall] the plunger badges hide while the climb pad shows`, Object.keys(S.items).filter((n) => /badge/.test(n)));
+    const wallLine = S.items["spoken line with its tail"], wallToast = S.items["toast"];
+    check(!!wallLine && !!wallToast && !hit(wallLine, wallToast), `[${tag} on a wall] the toast does not overlap the spoken line or its tail`, wallLine && wallToast && { line: round(wallLine), toast: round(wallToast), toastCoversTail: Math.round(wallLine.b - wallToast.t) });
     const arrow = S.items[touch ? "phone ring or arrow" : "edge arrow"];
     // (the spec keeps the marker clear of the pills, the top buttons, the spoken line, the hint panel and the climb pad, and the code also keeps it out of the training card and the key strip: the toast is in none of these lists)
     const over = Object.entries(S.items).filter(([name, b]) => /^(score pill|training card|spoken line|key strip|climb pad|hint panel|hint|plunger badge|top button)/.test(name) && arrow && hit(b, arrow)).map(([name]) => name);
@@ -261,6 +345,13 @@ async function run(w, h, touch) {
 
 try {
   for (const [w, h, touch] of SIZES) if (!process.env.SIZE || process.env.SIZE === w + "x" + h) await run(w, h, touch);
+  // The checks of the look hint need a part over its place to be able to fail. A part is over it at some sizes only (the line at 640 by 360, the toast
+  // and the arrow at the two larger ones), so this counts over all three sizes of a computer.
+  if (!process.env.SIZE) {
+    check(tally.line > 0, "[all sizes] the spoken line is over the place of the look hint at one size at least, so the fade check can fail", tally);
+    check(tally.toast > 0, "[all sizes] the toast is over the place of the look hint at one size at least, so the fade check can fail", tally);
+    for (const [name, n] of Object.entries(shared)) check(n > 0, `[all sizes] the ${name} meets the look hint at one size at least, so the check of the order of the layers can fail`, shared);
+  }
 } catch (e) {
   check(false, "the run finished: " + e.message, String(e.stack || "").split("\n").slice(0, 4).join(" | "));
 } finally {

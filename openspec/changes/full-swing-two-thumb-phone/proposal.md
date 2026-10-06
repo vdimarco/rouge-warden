@@ -18,7 +18,7 @@ Phone play used one rope (the right hand) and a big SWING button. A second finge
   chain from building to building. Two plungers thrown within 0.3 s of each other hold together (a double swing). Each plunger
   lets go by itself past the bottom of its arc, as one rope did before.
 - The phone words, the touch note and How to play say "tap left or right" and "use both thumbs". The training rows show L and R.
-- Version 1.12.0 (APK code 17).
+- Version 1.12.0 (APK code 18).
 
 ## Out of scope
 

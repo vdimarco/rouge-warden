@@ -25,7 +25,7 @@ import { graphicsSupport } from './render3d/choice.js';
 export { preload };
 
 const { clamp, distance, visibleTo, concealed } = world;
-const TAU = Math.PI * 2, PITCH = THREE.MathUtils.degToRad(55), FOV = 34, HERO_ROW = .6;
+const TAU = Math.PI * 2, PITCH = THREE.MathUtils.degToRad(55), FOV = 34, HERO_ROW = .6, MENU_REACH = 3000;
 const SPELL = ['#c7b8ef', '#8fd8c8', '#f0c890', '#ef9a8a', '#b9a0e6', '#a6d4f0', '#f2b98a', '#c6d49a', '#c9c0f2', '#f3c27a', '#9fd6aa', '#acd8bb'];
 const v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const identityColor = e => HERO_IDENTITIES[e?.identity]?.color;
@@ -63,6 +63,7 @@ export class ThreeRenderer {
     this.lost = false; glCanvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; }); glCanvas.addEventListener('webglcontextrestored', () => { this.lost = false; });
     // The pointer, for the see-through around soldiers under it (pick() still takes its own point).
     this.onPointer = e => { this.pointer = { x: e.clientX, y: e.clientY }; }; canvas.addEventListener('pointermove', this.onPointer, { passive: true });
+    this.backdrop = true; // main.js draws this renderer behind the hero select
     canvas.__shore3d = this; // QA handle (qa/tidebreak/render3d.e2e.mjs); gameplay never reads it
     this.resize();
   }
@@ -119,11 +120,13 @@ export class ThreeRenderer {
   draw(s, dt, menu = false, aim = null, waypoint = null) {
     if (this.lost) return;
     const p = player(s); this.setScene(s); this.lastPoses = []; this.menuTime += dt; const time = menu ? this.menuTime : s.time;
-    this.follow(s, p, dt, menu, time);
+    if (menu) this.menuCamera(); else this.follow(s, p, dt, menu, time);
     if (!menu) this.heroScreen = this.project(p.x, p.y);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
     this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
-    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, rect = { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
+    // The low menu camera sees far across the map: the scenery is kept in a square ahead of its focus.
+    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, M = MENU_REACH, a = this.menuAhead || this.cam, rect = menu ? { x0: a.x - M, x1: a.x + M, y0: a.y - M, y1: a.y + M } : { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
+    this.props.grass.visible = !menu; // tufts are too small to see from the menu camera
     this.props.update(dt, time, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
     foliageUniforms.uSunView.value.copy(sd).transformDirection(this.camera.matrixWorldInverse); foliageUniforms.uSunColor.value.copy(this.sky.sun.color).multiplyScalar(this.sky.sun.intensity * .25);
     this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
@@ -136,14 +139,23 @@ export class ThreeRenderer {
     this.seeThrough(s, p, menu);
     this.drawWorldEffects(s, p, time, dt, menu, aim, waypoint);
     this.updateFog(s, menu);
-    const view = this.camTarget, radius = Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55);
-    this.sky.fitShadow(v3.set(view.x, 0, view.y + (this.foot.minY + this.foot.maxY) / 2), radius, this.shadowSize);
+    const view = this.camTarget, radius = menu ? 2600 : Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55);
+    this.sky.fitShadow(v3.set(view.x, 0, view.y + (menu ? 0 : (this.foot.minY + this.foot.maxY) / 2)), radius, this.shadowSize);
     this.gl.toneMappingExposure = this.sky.exposure;
     if (!this.compiled) { this.gl.compile(this.scene, this.camera); this.compiled = true; }
     this.gl.render(this.scene, this.camera);
     this.drawCalls = this.gl.info.render.calls; this.triangles = this.gl.info.render.triangles;
     this.drawOverlay(s, p, time, menu);
     if (this.frames++ % 6 === 0) this.drawMap(s, this.mini, waypoint);
+  }
+  // The hero select backdrop: a slow orbit low over the middle bridge, looking across the river in the low sun. With
+  // reduced motion the camera holds still. The game camera takes over again at the next match frame.
+  menuCamera() {
+    const b = this.terrain.bridges?.[Math.floor((this.terrain.bridges.length - 1) / 2)] || world.CENTER, t = this.reducedMotion ? 0 : this.menuTime;
+    const yaw = 2.4 + t * .03, pitch = THREE.MathUtils.degToRad(23), d = 2900, fx = b.x + Math.sin(t * .045) * 260, fz = b.y + Math.cos(t * .037) * 200, c = this.camera;
+    c.position.set(fx + Math.sin(yaw) * Math.cos(pitch) * d, Math.sin(pitch) * d, fz + Math.cos(yaw) * Math.cos(pitch) * d); c.lookAt(fx, 120, fz);
+    c.updateMatrixWorld(); c.matrixWorldInverse.copy(c.matrixWorld).invert();
+    this.cam = { x: fx, y: fz }; this.camTarget = this.cam; this.shake.x = this.shake.y = 0; this.menuAhead = { x: fx - Math.sin(yaw) * 1100, y: fz - Math.cos(yaw) * 1100 };
   }
   // The 2D renderer's camera rule, unchanged: follow the hero, lead toward the order, push toward the pointer within a
   // third of the screen, and keep the whole view inside the map.

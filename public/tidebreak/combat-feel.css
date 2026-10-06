@@ -29,6 +29,8 @@
 #death-recap .recap-tip{margin-top:6px;padding-top:6px;border-top:1px solid #bda46c40;color:#fff1c5;font-weight:600}
 #death-recap .recap-timer{color:#ffd36a;font-weight:700}
 #hud:has(#death-recap:not([hidden])) #respawn{display:none}
+/* The countdown in the recap is large, so the respawn timer reads at a glance without closing the recap. */
+#death-recap .recap-timer{display:block;margin:4px 0 2px;font:700 22px/1.1 Barlow,sans-serif;color:var(--gold,#e8c27a);letter-spacing:.3px}
 @media(max-width:600px){#death-recap{bottom:calc(282px + env(safe-area-inset-bottom));max-height:calc(100% - 282px - 200px - env(safe-area-inset-bottom))}}
 @media(max-height:520px) and (min-width:600px){
   #death-recap{bottom:calc(56px + env(safe-area-inset-bottom));width:min(440px,calc(100vw - 404px));max-height:calc(100% - 56px - 50px);padding:7px 10px;font-size:12px}

@@ -6,6 +6,6 @@
 - [x] config.js: PHONE.handoff and PHONE.pair; the phone tutorial lines and training rows
 - [x] index.html: badge styles, the touch note and How to play
 - [x] Tests: unit tests, phone-swing, mobile, phone-controls and layout browser tests
-- [x] Version 1.12.0 (APK code 17)
+- [x] Version 1.12.0 (APK code 18)
 - [x] Validate with the OpenSpec CLI; run the phone browser suites (mobile, phone-swing, phone-controls, layout, climb, training, state-shots, flat: all pass here except the headset entry in flat, which this container cannot run)
 - [ ] Device checks not possible here: a real phone, real multi-touch

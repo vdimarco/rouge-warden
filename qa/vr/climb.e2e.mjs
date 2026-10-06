@@ -243,18 +243,33 @@ try {
     await page.addInitScript(quiet);
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 });
-      window.DeviceOrientationEvent.requestPermission = () => Promise.resolve('denied');
-      window.DeviceMotionEvent.requestPermission = () => Promise.resolve('denied');
+      window.__sensors = 'denied'; // a test turns motion aim on by setting 'granted' and calling G.desktop.mobile.start()
+      window.DeviceOrientationEvent.requestPermission = () => Promise.resolve(window.__sensors);
+      window.DeviceMotionEvent.requestPermission = () => Promise.resolve(window.__sensors);
     });
     await open(page, '?nosw'); await page.waitForFunction(() => G.viewDone);
     await page.locator('#playFlat').click(); await page.waitForFunction(() => G.state === 'play');
     await page.evaluate(() => G.test.hold(true));
-    await page.evaluate(SETUP);
+    const built = await page.evaluate(SETUP);
+    // the hint over the SWING button: the resting line off the wall, and the wall line on it
+    const hintOf = () => page.evaluate(() => document.querySelector('.phone-hint').textContent);
+    // every way off the wall must put the line of before back. A way that leaves the wall line is named, and the test fails once at the end.
+    const stale = [];
+    const back = async (way, want) => {
+      const got = await hintOf();
+      if (got === want) console.log('PASS ' + way + ' puts the hint over SWING back to the line of before');
+      else stale.push(way + ' leaves "' + got + '"');
+    };
+    await page.evaluate(() => G.test.step(1 / 60, 3));
+    const rest = await hintOf();
+    assert(/^Tap a building to swing\. Keep tapping/.test(rest), 'off the wall the hint over SWING says to tap a building: ' + rest);
     const pad = page.locator('.phone-climb');
     assert(await pad.isHidden(), 'no climb pad off the wall');
     assert(await page.evaluate(() => QA.flyIn()), 'a phone holds the wall too');
     await page.evaluate(() => G.test.step(1 / 60, 1));
     assert(await pad.isVisible(), 'the climb pad shows on the wall');
+    const wallHint = await hintOf();
+    assert(/^On the wall\. Hold the arrows to climb/.test(wallHint), 'on the wall the hint over SWING says how to climb: ' + wallHint);
     const up = page.locator('[data-climb=up]'), box = await up.boundingBox();
     const y0 = await page.evaluate(() => G.P.pos.y);
     await up.dispatchEvent('pointerdown', { pointerId: 7, isPrimary: true });
@@ -271,15 +286,70 @@ try {
     await page.evaluate(() => G.test.step(1 / 60, 2));
     assert(await pad.isHidden(), 'the pad hides off the wall');
     console.log('PASS JUMP leaves the wall and the pad hides');
+    await back('JUMP', rest);
     // a tap swings you off the wall
     const swing = await page.evaluate(() => {
       QA.flyIn(); G.test.step(1 / 60, 1);
       G.desktop.mobile.tap(1); G.test.step(1 / 60, 30);
       const ev = G.test.events().slice(-12).filter((e) => e.type !== 'input').map((e) => e.type);
-      return { wall: !!G.P.wall, rope: G.P.ropes[1].state, ev, fired: ev.includes('fire') && ev.includes('attach') };
+      return { wall: !!G.P.wall, rope: G.P.ropes[1].state, ev, fired: ev.includes('fire') && ev.includes('attach'), hint: document.querySelector('.phone-hint').textContent };
     });
     assert(!swing.wall && swing.fired, 'a tap on a wall swings you off it: ' + JSON.stringify(swing));
     console.log('PASS a tap swings you off the wall');
+    assert(/^Swinging/.test(swing.hint), 'after a tap swung you off the wall the hint says swinging, not the resting line: ' + swing.hint);
+    console.log('PASS after a tap swings you off the wall the hint keeps the swing line');
+    // the other ways off the wall: hold an arrow until the hero is off (over the top, down to the street)
+    const leave = async (arrow, id, y) => {
+      assert(await page.evaluate((y) => { const ok = QA.flyIn(y); G.test.step(1 / 60, 2); return ok; }, y), 'a phone holds the wall (' + arrow + ')');
+      assert(/^On the wall/.test(await hintOf()), 'on the wall again the hint says how to climb (' + arrow + ')');
+      const b = page.locator('[data-climb=' + arrow + ']');
+      await b.dispatchEvent('pointerdown', { pointerId: id, isPrimary: true });
+      const r = await page.evaluate(() => { for (let i = 0; i < 24 && G.P.wall; i++) G.test.step(1 / 60, 10); G.test.step(1 / 60, 2); return { wall: !!G.P.wall, ground: G.P.onGround, y: G.P.pos.y }; });
+      await b.dispatchEvent('pointerup', { pointerId: id, isPrimary: true });
+      return r;
+    };
+    const top = await leave('up', 21, await page.evaluate(() => QA.B.maxY - 3));
+    assert(!top.wall && top.ground && top.y > built.h - 0.5, 'the up arrow takes the hero over the top and on to the roof: ' + JSON.stringify(top));
+    await back('going over the top on to the roof', rest);
+    const down = await leave('down', 22, 4);
+    assert(!down.wall && down.ground && down.y < 1, 'the down arrow takes the hero to the street: ' + JSON.stringify(down));
+    await back('climbing down to the street', rest);
+    // motion aim on: the line of before is the motion line
+    await page.evaluate(() => { window.__sensors = 'granted'; return G.desktop.mobile.start(); });
+    const motion = await hintOf();
+    assert(/^Point the phone/.test(motion), 'with motion aim on the resting hint says to point the phone: ' + motion);
+    assert(await page.evaluate(() => { const ok = QA.flyIn(); G.test.step(1 / 60, 2); return ok; }), 'a phone holds the wall (motion aim on)');
+    assert(/^On the wall/.test(await hintOf()), 'with motion aim on the wall still says how to climb');
+    // on the wall a line that does not come from the wall must not hide the wall line: a Center press, and a tap that finds nothing
+    // (the picker finds no target for it, so main.js dry-fires and tells the panel)
+    await page.locator('[data-action=center]').click();
+    await page.evaluate(() => G.test.step(1 / 60, 2));
+    const centred = await hintOf();
+    assert(/^On the wall/.test(centred), 'a Center press on the wall keeps the wall line: ' + centred);
+    console.log('PASS a Center press on the wall keeps the wall line');
+    const dry = await page.evaluate(() => {
+      const tap = G.picker.tap; G.picker.tap = () => null;
+      document.querySelector('[data-action=throw]').onclick(); G.test.step(1 / 60, 6);
+      G.picker.tap = tap;
+      return { wall: !!G.P.wall, dry: G.test.events().slice(-12).some((e) => e.type === 'dry'), hint: document.querySelector('.phone-hint').textContent };
+    });
+    assert(dry.wall && dry.dry, 'a tap with nothing in reach is a dry fire and the hero stays on the wall: ' + JSON.stringify(dry));
+    assert(/^On the wall/.test(dry.hint), 'a tap that finds nothing on the wall keeps the wall line: ' + dry.hint);
+    console.log('PASS a tap that finds nothing on the wall keeps the wall line');
+    await page.locator('.phone-climb [data-action=hop]').click();
+    await page.evaluate(() => G.test.step(1 / 60, 4));
+    await back('JUMP with motion aim on', motion);
+    // the Motion button on the wall: motion aim goes off, the wall line stays, and the line of that moment (the tap line) comes back off the wall
+    assert(await page.evaluate(() => { const ok = QA.flyIn(); G.test.step(1 / 60, 2); return ok; }), 'a phone holds the wall (Motion press)');
+    await page.locator('[data-action=motion]').click();
+    await page.evaluate(() => G.test.step(1 / 60, 2));
+    const toggled = await hintOf();
+    assert(/^On the wall/.test(toggled), 'a Motion press on the wall keeps the wall line: ' + toggled);
+    console.log('PASS a Motion press on the wall keeps the wall line');
+    await page.locator('.phone-climb [data-action=hop]').click();
+    await page.evaluate(() => G.test.step(1 / 60, 4));
+    await back('JUMP after Motion went off on the wall', rest);
+    assert.equal(stale.length, 0, 'the wall line "On the wall..." must not stay after the hero leaves the wall: ' + stale.join('; '));
     assert.equal(page.errors.length, 0, JSON.stringify(page.errors));
     console.log('PASS no runtime errors');
   }
