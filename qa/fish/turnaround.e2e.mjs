@@ -19,7 +19,8 @@
 // frame that did not end the wait, so a slow frame (a software renderer on a busy machine can draw a frame a second) does
 // not count against the game. The retrieve times are game seconds. A wait for a game state stops after 60 s, and a wait
 // for a flight or a retrieve after 30 s or 60 s of game time; then the check fails and tells what showed. A read of what the
-// game did after a press waits for two frames. A fresh save, free fishing.
+// game did after a press waits for two frames. When a busy machine holds the page past the time of a press in a beat, there
+// is no press, and the beat is staged again (5 times at most). A fresh save, free fishing.
 // Exits with code 1 when something fails.
 import { open, until, sleep } from "./lib.mjs";
 
@@ -109,14 +110,24 @@ function helpers() {
   window.__toasts = [];
   const el = document.querySelector("#toast"), d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent");
   Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__toasts.push(v); d.set.call(this, v); }, configurable: true });
-  // a press (mouse, touch or Space) `at` ms after t0, let go `hold` ms later. next: the press started the next cast at once
-  // (it is ready, or Space holds the line); after: ms from the press until the cast is ready (null when it is not ready in
-  // 60 s: was.not tells what showed); toasts: what it said until 150 ms and two frames after the release
-  window.__press = async ({ t0, at, kind = "mouse", x = 300, y = 450, hold = 60, id = 1 }) => {
+  // a press (mouse, touch or Space) `at` ms after t0, let go `hold` ms later, in the beat after a cast that began at t0. A
+  // busy machine can hold the page past `by` ms, or past the time the beat lasts: then there is no press (missed). next:
+  // the press started the next cast at once (it is ready, or Space holds the line); after: ms from the press until the
+  // cast is ready (null when it is not ready in 60 s: was.not tells what showed); toasts: what it said until 150 ms and two
+  // frames after the release
+  window.__press = async ({ t0, at, by = Infinity, kind = "mouse", x = 300, y = 450, hold = 60, id = 1 }) => {
+    // (the time the beat lasts: a loss or "Nothing this time.", or a cast onto the shore)
+    const len = G.phase === "lost" ? G.lossMs : 900;
     while (performance.now() - t0 < at) await wait(1);
     const tp = performance.now(), n0 = window.__toasts.length, ready = () => G.phase === "cast" && G.step === "ready";
     // (what the press met, for a failure: the phase, how long the beat had been up, and the element under it)
     const was = { at: G.phase + "/" + G.step, ms: Math.round(tp - G.outcomeAt), paused: G.paused };
+    // a beat that ended before its time is no miss: the press goes on, and the check fails
+    const over = !(G.phase === "lost" || (G.phase === "cast" && G.step === "ashore"));
+    if (tp - t0 >= by || (over && tp - t0 >= len)) {
+      was.not = "no press: the page came " + Math.round(tp - t0) + " ms into the beat";
+      return { missed: true, next: false, after: null, toasts: [], was };
+    }
     if (kind === "key") key("keydown"); else was.on = fire("pointerdown", x, y, kind, id).id;
     const next = G.phase === "cast" && (G.step === "ready" || G.step === "pinned");
     let after = ready() ? performance.now() - tp : null;
@@ -125,6 +136,16 @@ function helpers() {
     if (after == null) { const r = await window.__ready(tp); after = r.ms; if (r.not) was.not = r.not; }
     await wait(150); await window.__frames(2);
     return { next, after, toasts: window.__toasts.slice(n0), was };
+  };
+  // a staged beat (stage() resolves to the time it began) and a press in it; with no press, the time until the next cast
+  // is ready. A press that missed its time gets a new beat, up to 5 times
+  window.__beat = async (stage, press) => {
+    for (let i = 1; ; i++) {
+      const t0 = await stage();
+      if (!press) return window.__ready(t0);
+      const r = await window.__press({ t0, ...press });
+      if (!r.missed || i === 5) { r.was.tries = i; return r; }
+    }
   };
   return true;
 }
@@ -194,27 +215,27 @@ function helpers() {
     check(after != null && after < 4, `from 53 m at the guide's slow pace (1 turn a second), the lure is home ${fmt(after, "s")} after "Nothing is biting here." (under 4 s; ${JSON.stringify(far)})`);
 
     // ---- "Nothing this time.": no input, a press too soon, a press after 350 ms ----
-    const home = (press) => page.evaluate(async (press) => { const t0 = await window.__stage({ phase: "home" }); return press ? window.__press({ t0, ...press }) : window.__ready(t0); }, press);
+    const home = (press) => page.evaluate((press) => window.__beat(() => window.__stage({ phase: "home" }), press), press);
     let r = await home(null);
     note("home to ready, no input", r, "r");
     check(within(r, 1000, 1300), `"Nothing this time." to the next cast with no input: about 1 s (${fmtR(r)})`);
     r = await home({ at: 400, kind: "mouse", hold: 60 });
     note("home to ready, a mouse click at 400 ms (after the click)", r.after);
-    check(r.next && r.after != null && r.after < 50 && !r.toasts.some((t) => TIP.test(t)), `a mouse click 400 ms in ends it at once: ready ${fmt(r.after)} after the click, and no tip (${JSON.stringify(r.toasts)})`);
-    r = await home({ at: 150, kind: "mouse", hold: 40 });
+    check(r.next && r.after != null && r.after < 50 && !r.toasts.some((t) => TIP.test(t)), `a mouse click 400 ms in ends it at once: ready ${fmt(r.after)} after the click, and no tip (${JSON.stringify(r.toasts)}; ${JSON.stringify(r.was)})`);
+    r = await home({ at: 150, by: 350, kind: "mouse", hold: 40 });
     check(!r.next && r.after != null && r.after > 600, `a click in the first 350 ms does not end it (ready ${fmt(r.after)} after the click; ${JSON.stringify(r.was)})`);
     r = await home({ at: 400, kind: "key", hold: 60 });
     note("home to ready, Space at 400 ms (after the press)", r.after);
-    check(r.next && r.after != null && r.after < 150 && !r.toasts.some((t) => TIP.test(t)), `Space 400 ms in ends it at once and holds the line; a short tap gets no tip (${fmt(r.after)}, ${JSON.stringify(r.toasts)})`);
+    check(r.next && r.after != null && r.after < 150 && !r.toasts.some((t) => TIP.test(t)), `Space 400 ms in ends it at once and holds the line; a short tap gets no tip (${fmt(r.after)}, ${JSON.stringify(r.toasts)}; ${JSON.stringify(r.was)})`);
 
     // ---- a cast onto the shore ----
-    const shore = (press) => page.evaluate(async (press) => { const t0 = await window.__land(0, 3, "land"); return press ? window.__press({ t0, ...press }) : window.__ready(t0); }, press);
+    const shore = (press) => page.evaluate((press) => window.__beat(() => window.__land(0, 3, "land"), press), press);
     r = await shore(null);
     note("ashore to ready, no input", r, "r");
     check(within(r, 900, 1200), `a cast onto the shore to the next cast with no input: under 1.2 s (${fmtR(r)})`);
     r = await shore({ at: 400, kind: "mouse" });
     note("ashore to ready, a mouse click at 400 ms (after the click)", r.after);
-    check(r.next && r.after != null && r.after < 50, `a click 400 ms after the shore ends it at once (${fmt(r.after)} after the click)`);
+    check(r.next && r.after != null && r.after < 50, `a click 400 ms after the shore ends it at once (${fmt(r.after)} after the click; ${JSON.stringify(r.was)})`);
     // its report stays up over the new cast (a click 400 ms in starts it at once, whatever the frames do), and goes by itself
     // 2.6 s after the landing
     const rep = await page.evaluate(async () => {
@@ -232,14 +253,14 @@ function helpers() {
 
     // ---- a loss: the line keeps its time; a press after 800 ms ends it ----
     const FISHY = { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -14, heading: 0, len: 0.5, stamina: 0.6, move: "swim", jump: 0, near: 0.5, known: true };
-    const loss = (press, fish = FISHY) => page.evaluate(async ([press, fish]) => { const t0 = await window.__stage({ phase: "lost", reason: "thrown", fish }); return press ? window.__press({ t0, ...press }) : window.__ready(t0); }, [press, fish]);
+    const loss = (press, fish = FISHY) => page.evaluate(([press, fish]) => window.__beat(() => window.__stage({ phase: "lost", reason: "thrown", fish }), press), [press, fish]);
     r = await loss(null);
     note("loss to ready, no input", r, "r");
     check(within(r, 3400, 3800), `a loss keeps its line up: the next cast ${fmtR(r)} later with no input`);
     r = await loss(null, { ...FISHY, id: "golden", kg: 4.2 });
     note("legend loss to ready, no input", r, "r");
     check(within(r, 4500, 4900), `a legend's loss line stays longer (${fmtR(r)})`);
-    r = await loss({ at: 500, kind: "mouse" });
+    r = await loss({ at: 500, by: 800, kind: "mouse" });
     check(!r.next && r.after != null && r.after > 2400, `a click 500 ms into a loss does not end it (ready ${fmt(r.after)} after the click; ${JSON.stringify(r.was)})`);
     r = await loss({ at: 900, kind: "mouse" });
     note("loss to ready, a mouse click at 900 ms (after the click)", r.after);
@@ -285,13 +306,20 @@ function helpers() {
     const btn = await page.evaluate(async () => {
       const G = FISH.G, wait = window.__wait, out = [];
       for (const sel of ["#pauseBtn", "#dragName"]) {
-        const t0 = await window.__stage({ phase: "lost", reason: "snap", fish: { id: "perch", kg: 0.3, x: 0, y: -1, z: -12, len: 0.2 } });
-        while (performance.now() - t0 < 900) await wait(1);
-        const b = document.querySelector(sel).getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
-        const el = window.__fire("pointerdown", x, y, "mouse", 1);
-        out.push({ on: el.id, phase: G.phase });
-        window.__fire("pointerup", x, y, "mouse", 1);
-        await window.__ready(t0);
+        // (a busy machine can hold the page past the time the beat lasts: then there is no press, and a new beat, up to 5)
+        let o = null;
+        for (let i = 1; i <= 5 && !o; i++) {
+          const t0 = await window.__stage({ phase: "lost", reason: "snap", fish: { id: "perch", kg: 0.3, x: 0, y: -1, z: -12, len: 0.2 } });
+          const len = G.lossMs;
+          while (performance.now() - t0 < 900) await wait(1);
+          if (G.phase !== "lost" && performance.now() - t0 >= len) continue;
+          const b = document.querySelector(sel).getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+          const el = window.__fire("pointerdown", x, y, "mouse", 1);
+          o = { on: el.id, phase: G.phase, ms: Math.round(performance.now() - t0), tries: i };
+          window.__fire("pointerup", x, y, "mouse", 1);
+          await window.__ready(t0);
+        }
+        out.push(o || { on: sel, missed: "no press in 5 beats: the page came too late each time" });
       }
       return out;
     });
@@ -303,18 +331,17 @@ function helpers() {
       FISH.startMode("derby");
       await wait(300);
       G.castsLeft = 6;
-      let t0 = await window.__stage({ phase: "home" });
-      const mid = await window.__press({ t0, at: 400, kind: "mouse" });
+      const mid = await window.__beat(() => window.__stage({ phase: "home" }), { at: 400, kind: "mouse" });
       const left = G.castsLeft;
       // the last cast is in the water: none left
       FISH.enterReel(); G.castsLeft = 0;
-      t0 = await window.__stage({ phase: "home" });
+      const t0 = await window.__stage({ phase: "home" });
       while (performance.now() - t0 < 400) await wait(1);
       window.__fire("pointerdown", 300, 450, "mouse", 1);
       const results = G.phase === "results" && !document.querySelector("#results").hidden;
       window.__fire("pointerup", 300, 450, "mouse", 1);
       await wait(100); await window.__frames(2);
-      return { mid: mid.after, left, results, still: !document.querySelector("#results").hidden };
+      return { mid: mid.after, was: mid.was, left, results, still: !document.querySelector("#results").hidden };
     });
     check(derby.mid != null && derby.mid < 50 && derby.left === 6, `in a derby a click ends the beat and uses up no cast (${JSON.stringify(derby)})`);
     check(derby.results && derby.still, "a click in the last cast's beat goes to the derby results, and stays there");
@@ -366,7 +393,7 @@ function helpers() {
     await page.evaluate(helpers);
     await sleep(800);
     // a tap ends "Nothing this time." and takes nothing
-    const tap = await page.evaluate(async () => { const t0 = await window.__stage({ phase: "home" }); return window.__press({ t0, at: 400, kind: "touch", x: 200, y: 560, id: 5, hold: 50 }); });
+    const tap = await page.evaluate(() => window.__beat(() => window.__stage({ phase: "home" }), { at: 400, kind: "touch", x: 200, y: 560, id: 5, hold: 50 }));
     note("touch: home to ready, a tap at 400 ms (after the tap)", tap.after);
     check(tap.next && tap.after != null && tap.after < 50 && !tap.toasts.some((t) => TIP.test(t)), `a tap 400 ms in ends "Nothing this time." at once, and gets no tip (${JSON.stringify(tap)})`);
     // the press that ends a loss drags down and flicks: the lure flies, with no second press
