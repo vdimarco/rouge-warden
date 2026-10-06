@@ -2,5 +2,5 @@
 - [x] 2. Generate, inspect and optimize detailed fal props and distant vista with source recipes.
 - [x] 3. Implement layered world scenery, varied stretches and improved readable surface/collectible presentation.
 - [x] 4. Verify supported layouts, animation, fallbacks, pause/reduced motion and bounded render costs.
-- [ ] 5. Publish to GitHub and verify the live arcade deployment and assets.
-- [ ] 6. Validate, archive and review the canonical specification.
+- [x] 5. Publish to GitHub and verify the live arcade deployment and assets.
+- [x] 6. Validate, archive and review the canonical specification.
