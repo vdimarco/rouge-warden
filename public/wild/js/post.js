@@ -279,9 +279,9 @@ void main() {
     w = w * mix(vec3(1.0), paper / 0.9, 0.45) * 0.94 + paper * 0.06;
     // a ragged border where the wash stops and bare paper shows, with a darker rim where the paint dried
     vec2 m2 = min(uv, 1.0 - uv) * asp;
-    float rim = min(m2.x, m2.y) + (vnoise(uv * asp * 9.0) - 0.5) * 0.034 + (vnoise(uv * asp * 55.0) - 0.5) * 0.012;
-    float paint = smoothstep(0.006, 0.02, rim);
-    w *= 1.0 - (paint - smoothstep(0.02, 0.05, rim)) * 0.22;
+    float rim = min(m2.x, m2.y) + (vnoise(uv * asp * 9.0) - 0.5) * 0.016 + (vnoise(uv * asp * 55.0) - 0.5) * 0.006;
+    float paint = smoothstep(0.003, 0.01, rim);
+    w *= 1.0 - (paint - smoothstep(0.01, 0.028, rim)) * 0.22;
     col = mix(col, mix(paper * (0.97 + fibre * 0.05), w, paint), uWash);
   }
   gl_FragColor = vec4(col, 1.0);

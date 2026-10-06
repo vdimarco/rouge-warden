@@ -10,7 +10,7 @@ All watercolour stages live in the existing final pass, behind the uniform `uWas
 2. **Warm haze.** Far haze moves 55% of the way from cool blue to a warm grey.
 3. **Wet edges.** Four colour reads at 1.5 pixels give a luma edge value. Colour edges get up to 30% darker. The grass writes alpha 0, so grass blades get no wet edge, the same rule as the ink lines.
 4. **Softer vignette.** The old dark vignette is 12 points lighter, because the paper border now frames the screen.
-5. **Paper (after the display transform).** Granulation darkens dark paint more in the paper hollows. Saturation drops by 10%. The paper colour tints the paint and lifts shadows to sepia. A ragged border of bare paper, about 1 to 2% of the short side, has a darker rim inside it. At night the paper dims to 14%.
+5. **Paper (after the display transform).** Granulation darkens dark paint more in the paper hollows. Saturation drops by 10%. The paper colour tints the paint and lifts shadows to sepia. A thin ragged border of bare paper, under 1% of the short side on average, has a darker rim inside it. At night the paper dims to 14%.
 
 The paper stages run after the tone curve, so the paper keeps its cream colour (#f3ead6 in display terms) and does not go grey.
 
