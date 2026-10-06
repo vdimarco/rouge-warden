@@ -1,0 +1,311 @@
+{
+  "date": "2026-10-06",
+  "stage": "local checks complete; production pending",
+  "unitChecks": 38,
+  "layouts": {
+    "passed": true,
+    "results": [
+      {
+        "viewport": "phone",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready"
+        },
+        "triangles": 90969,
+        "drawCalls": 29,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": true,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "desktop",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready"
+        },
+        "triangles": 91744,
+        "drawCalls": 24,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "landscape",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready"
+        },
+        "triangles": 90889,
+        "drawCalls": 25,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "temporary503": "recovered",
+        "imageAttempts": 2,
+        "modelAttempts": 2
+      },
+      {
+        "missingModel": "playable"
+      },
+      {
+        "missingRig": "playableRegisteredSprite",
+        "distinctPoses": true
+      },
+      {
+        "manualRetry": "recovered"
+      },
+      {
+        "noWebGL": "playable2d",
+        "distinctPoses": true
+      },
+      {
+        "contextLoss": "pausedThenPlayable2d"
+      }
+    ],
+    "screenshots": "/tmp/river-temple/layouts",
+    "errors": []
+  },
+  "motion": {
+    "passed": true,
+    "fullDetailShaderCoverage": true,
+    "renderer": "headless SwiftShader; not a physical device FPS claim",
+    "frames": 28,
+    "uniqueStrokeSamples": 28,
+    "maxHandError": 1.2040909898447478e-07,
+    "maxTriangles": 196009,
+    "maxDrawCalls": 27,
+    "frameTiming": {
+      "meanMs": 306.2964285713221,
+      "p50Ms": 298.5,
+      "p95Ms": 438.8999999910593,
+      "fps": 3.2648111656553214
+    },
+    "steeringReversal": true,
+    "distinctAnatomicalPoses": true,
+    "duckHeightRatio": 0.3172535145272546,
+    "pausePixels": true,
+    "reducedMotion": true,
+    "screenshots": "/tmp/river-temple/final-native",
+    "errors": []
+  },
+  "softwareMotion": {
+    "passed": true,
+    "fullDetailShaderCoverage": false,
+    "renderer": "headless SwiftShader; not a physical device FPS claim",
+    "frames": 28,
+    "uniqueStrokeSamples": 28,
+    "maxHandError": 1.2040909898447478e-07,
+    "maxTriangles": 97269,
+    "maxDrawCalls": 27,
+    "frameTiming": {
+      "meanMs": 91.13214285724929,
+      "p50Ms": 94.79999999701977,
+      "p95Ms": 110.70000000298023,
+      "fps": 10.97307677233503
+    },
+    "steeringReversal": true,
+    "distinctAnatomicalPoses": true,
+    "duckHeightRatio": 0.3172535145272546,
+    "pausePixels": true,
+    "reducedMotion": true,
+    "screenshots": "/tmp/river-temple/software-motion",
+    "errors": []
+  },
+  "glide": {
+    "passed": true,
+    "renderer": "2d",
+    "immediateLane": true,
+    "intermediatePositions": [
+      1.3369389708254769,
+      1.5371631129795578,
+      1.691820135088228
+    ],
+    "reversePositions": [
+      1.584932736018418,
+      1.415056928269898,
+      1.279273746879049,
+      1.1814566660963666,
+      1.1153395465705176,
+      1.0717794526709292,
+      1.0441666126669877,
+      1.0267900973243045,
+      1.0160993291007787,
+      1.0096300899314443,
+      1.005705240848422,
+      1.0033611205607453,
+      1.0019705533694672,
+      1.0011504079522817
+    ],
+    "noJump": true,
+    "speedPreserved": true,
+    "simulationStart": 0.11670000000000005,
+    "errors": []
+  },
+  "assetAudit": {
+    "temple-raft": {
+      "meshes": 1,
+      "triangles": 4875,
+      "joints": 0,
+      "maps": [
+        {
+          "kind": "color",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "kind": "normal",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "roughness",
+          "width": 512,
+          "height": 512
+        }
+      ]
+    },
+    "temple": {
+      "meshes": 1,
+      "triangles": 5499,
+      "joints": 0,
+      "maps": [
+        {
+          "kind": "color",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "kind": "normal",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "roughness",
+          "width": 512,
+          "height": 512
+        }
+      ]
+    },
+    "temple-lite": {
+      "meshes": 1,
+      "triangles": 2389,
+      "joints": 0,
+      "maps": [
+        {
+          "kind": "color",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "normal",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "roughness",
+          "width": 512,
+          "height": 512
+        }
+      ]
+    },
+    "guardian": {
+      "meshes": 1,
+      "triangles": 2496,
+      "joints": 0,
+      "maps": [
+        {
+          "kind": "color",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "kind": "normal",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "roughness",
+          "width": 512,
+          "height": 512
+        }
+      ]
+    },
+    "guardian-lite": {
+      "meshes": 1,
+      "triangles": 999,
+      "joints": 0,
+      "maps": [
+        {
+          "kind": "color",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "normal",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "roughness",
+          "width": 512,
+          "height": 512
+        }
+      ]
+    },
+    "rider": {
+      "meshes": 1,
+      "triangles": 10398,
+      "joints": 24,
+      "maps": [
+        {
+          "kind": "color",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "kind": "normal",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "kind": "roughness",
+          "width": 1024,
+          "height": 1024
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Headless SwiftShader is not a physical-device frame-rate measurement.",
+    "Physical iOS/Android and Safari were not available."
+  ]
+}

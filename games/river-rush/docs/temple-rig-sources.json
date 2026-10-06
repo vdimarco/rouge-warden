@@ -1,0 +1,590 @@
+{
+  "date": "2026-10-06",
+  "provider": "fal.ai \u2192 Nano Banana Pro \u2192 Meshy 7.1",
+  "prices": {
+    "concept": {
+      "usd": 0.15,
+      "unit": "images"
+    },
+    "mesh": {
+      "usd": 0.8,
+      "unit": "generations"
+    }
+  },
+  "runtimeServiceDependency": false,
+  "assets": {
+    "raft": {
+      "concept": {
+        "endpoint": "fal-ai/nano-banana-pro",
+        "requestId": "01a111c3-1beb-7662-b0b8-0b0014bbca84",
+        "input": {
+          "prompt": "Premium stylized realistic adventure game asset, beautiful sculpted silhouette, crisp textured material detail, coherent lost jungle temple art direction: jade greens, weathered warm sandstone, restrained aged gold accents. Single isolated complete object, pure white studio background, three-quarter view, soft neutral studio lighting, no typography, no scenery, no people. Production concept for image-to-3D conversion. A flat low expedition river raft, seven thick dark cedar logs lashed with detailed hemp rope, two low carved crossbeams with tiny jade inlays and serpentine golden endcaps, worn flat central wooden deck with ample unobstructed space for a standing paddler. Distinct slightly pointed prow carved with a small serpent head. No sails, no tall decorations, no rails, no paddles. Long axis points away from viewer. Rich wet wood grain, moss on log ends.",
+          "aspect_ratio": "1:1",
+          "resolution": "2K",
+          "output_format": "png",
+          "num_images": 1
+        },
+        "url": "https://v3b.fal.media/files/b/0aad4e50/EDhD5wu9wOexxp08zmOKT_8YuN3bZZ.png"
+      },
+      "model": {
+        "endpoint": "meshy/v7.1/image-to-3d",
+        "requestId": "01a111c4-df55-7a90-8215-6f6da8f331d0",
+        "input": {
+          "image_url": "https://v3b.fal.media/files/b/0aad4e50/EDhD5wu9wOexxp08zmOKT_8YuN3bZZ.png",
+          "model_type": "smart-topology",
+          "target_polycount": 5000,
+          "enable_pbr": true,
+          "should_texture": true,
+          "symmetry_mode": "off",
+          "geometry_resolution": "standard"
+        },
+        "output": {
+          "animation_glb": null,
+          "animation_fbx": null,
+          "model_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad4e62/u4__xa2H1LE3Pa-1Mpwfv_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 7963932
+          },
+          "thumbnail": {
+            "url": "https://v3b.fal.media/files/b/0aad4e65/x9xEDnOllsIs6e2vDmeWA_preview.png",
+            "content_type": "image/png",
+            "file_name": "preview.png",
+            "file_size": 64148
+          },
+          "model_urls": {
+            "glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e62/u4__xa2H1LE3Pa-1Mpwfv_model.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "model.glb",
+              "file_size": 7963932
+            },
+            "fbx": {
+              "url": "https://v3b.fal.media/files/b/0aad4e62/3H2IN-CUpS22RmSE9Gq5j_model.fbx",
+              "content_type": "application/octet-stream",
+              "file_name": "model.fbx",
+              "file_size": 8568044
+            },
+            "obj": {
+              "url": "https://v3b.fal.media/files/b/0aad4e63/RPE9Pv-t_4F672TDKNBea_model.obj",
+              "content_type": "text/plain",
+              "file_name": "model.obj",
+              "file_size": 470674
+            },
+            "usdz": {
+              "url": "https://v3b.fal.media/files/b/0aad4e63/FpvI-iA-Sk89zcKrEKKsi_model.usdz",
+              "content_type": "model/vnd.usdz+zip",
+              "file_name": "model.usdz",
+              "file_size": 8582470
+            },
+            "blend": null,
+            "stl": {
+              "url": "https://v3b.fal.media/files/b/0aad4e64/nxRcgz6ruHFKnjfLVWSQU_model.stl",
+              "content_type": "application/octet-stream",
+              "file_name": "model.stl",
+              "file_size": 243834
+            }
+          },
+          "texture_urls": [
+            {
+              "base_color": {
+                "url": "https://v3b.fal.media/files/b/0aad4e65/mLTkcieufuJCrqkvOgeyo_texture_0.png",
+                "content_type": "image/png",
+                "file_name": "texture_0.png",
+                "file_size": 5796630
+              },
+              "metallic": {
+                "url": "https://v3b.fal.media/files/b/0aad4e67/ixfyeOtLkZ2bQnW8ZpRGq_texture_0_metallic.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_metallic.png",
+                "file_size": 518625
+              },
+              "normal": {
+                "url": "https://v3b.fal.media/files/b/0aad4e67/HSGj7m0S6UeYguN5nSBuf_texture_0_normal.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_normal.png",
+                "file_size": 4905737
+              },
+              "roughness": {
+                "url": "https://v3b.fal.media/files/b/0aad4e68/n83CVru8Zxsdiautta5xG_texture_0_roughness.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_roughness.png",
+                "file_size": 1400774
+              }
+            }
+          ],
+          "seed": 1354676760,
+          "rigged_character_glb": null,
+          "rigged_character_fbx": null,
+          "basic_animations": null,
+          "rig_task_id": null
+        }
+      },
+      "local_models": [
+        {
+          "path": "models/meshy-temple-raft.glb",
+          "bytes": 413288,
+          "sha256": "ee97a02012a9880640c16dcd022915d926b9b33d1b29d21d60fc1b33275adbb3"
+        }
+      ]
+    },
+    "temple": {
+      "concept": {
+        "endpoint": "fal-ai/nano-banana-pro",
+        "requestId": "01a111c3-2f1d-7b01-9b0e-5f27800cae79",
+        "input": {
+          "prompt": "Premium stylized realistic adventure game asset, beautiful sculpted silhouette, crisp textured material detail, coherent lost jungle temple art direction: jade greens, weathered warm sandstone, restrained aged gold accents. Single isolated complete object, pure white studio background, three-quarter view, soft neutral studio lighting, no typography, no scenery, no people. Production concept for image-to-3D conversion. A monumental ruined jungle shrine: two enormous intertwined stone cobra serpents arching around a recessed turquoise gemstone eye, angular stepped sandstone base, broken toothlike cornices, beautifully chiseled geometric relief bands, fallen blocks, roots and vines draped over the asymmetrical silhouette, lush moss growing in cracks, a few tiny ferns. Clearly a carved archaeological landmark, ten meters tall. Majestic strong silhouette, not generic rubble. Entire shrine is one self-contained connected object.",
+          "aspect_ratio": "1:1",
+          "resolution": "2K",
+          "output_format": "png",
+          "num_images": 1
+        },
+        "url": "https://v3b.fal.media/files/b/0aad4e50/gp2ibnrap83rCEtHiObVK_GgQwLCgN.png"
+      },
+      "model": {
+        "endpoint": "meshy/v7.1/image-to-3d",
+        "requestId": "01a111c4-e67e-78a0-a2ae-dbd6a8a94987",
+        "input": {
+          "image_url": "https://v3b.fal.media/files/b/0aad4e50/gp2ibnrap83rCEtHiObVK_GgQwLCgN.png",
+          "model_type": "smart-topology",
+          "target_polycount": 7000,
+          "enable_pbr": true,
+          "should_texture": true,
+          "symmetry_mode": "off",
+          "geometry_resolution": "standard"
+        },
+        "output": {
+          "animation_glb": null,
+          "animation_fbx": null,
+          "model_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad4e64/KbyzdqBNe1cBu9K95R6J5_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 8331860
+          },
+          "thumbnail": {
+            "url": "https://v3b.fal.media/files/b/0aad4e68/DC6sRxlMRQ0qGQ2J87pPJ_preview.png",
+            "content_type": "image/png",
+            "file_name": "preview.png",
+            "file_size": 332409
+          },
+          "model_urls": {
+            "glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e64/KbyzdqBNe1cBu9K95R6J5_model.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "model.glb",
+              "file_size": 8331860
+            },
+            "fbx": {
+              "url": "https://v3b.fal.media/files/b/0aad4e64/nygYNCKbEUud79mdwKgWR_model.fbx",
+              "content_type": "application/octet-stream",
+              "file_name": "model.fbx",
+              "file_size": 8654220
+            },
+            "obj": {
+              "url": "https://v3b.fal.media/files/b/0aad4e66/t_rXdNPUNQTOFFxfFrb2p_model.obj",
+              "content_type": "text/plain",
+              "file_name": "model.obj",
+              "file_size": 747091
+            },
+            "usdz": {
+              "url": "https://v3b.fal.media/files/b/0aad4e65/WKdJO-u6Ii9uKgXCsK_oF_model.usdz",
+              "content_type": "model/vnd.usdz+zip",
+              "file_name": "model.usdz",
+              "file_size": 8739898
+            },
+            "blend": null,
+            "stl": {
+              "url": "https://v3b.fal.media/files/b/0aad4e67/s1PozU4PToID9rc9krCmv_model.stl",
+              "content_type": "application/octet-stream",
+              "file_name": "model.stl",
+              "file_size": 359884
+            }
+          },
+          "texture_urls": [
+            {
+              "base_color": {
+                "url": "https://v3b.fal.media/files/b/0aad4e69/IxipLgOeXxvtr760jrKNe_texture_0.png",
+                "content_type": "image/png",
+                "file_name": "texture_0.png",
+                "file_size": 5895398
+              },
+              "metallic": {
+                "url": "https://v3b.fal.media/files/b/0aad4e69/C9ZnfQWUZ3oDlfG4lyCpI_texture_0_metallic.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_metallic.png",
+                "file_size": 57090
+              },
+              "normal": {
+                "url": "https://v3b.fal.media/files/b/0aad4e69/yGY_8qr9Vfwkr-nK-c_Ad_texture_0_normal.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_normal.png",
+                "file_size": 4933509
+              },
+              "roughness": {
+                "url": "https://v3b.fal.media/files/b/0aad4e6a/xXAEZ5Bb64Z8QtBOzUB9u_texture_0_roughness.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_roughness.png",
+                "file_size": 1598698
+              }
+            }
+          ],
+          "seed": 482180209,
+          "rigged_character_glb": null,
+          "rigged_character_fbx": null,
+          "basic_animations": null,
+          "rig_task_id": null
+        }
+      },
+      "local_models": [
+        {
+          "path": "models/meshy-temple.glb",
+          "bytes": 483748,
+          "sha256": "83b0d1c98460d2db9c04b977dfc039f33025ca9a7de966ec4ca9465ccd2b3f86"
+        },
+        {
+          "path": "models/meshy-temple-lite.glb",
+          "bytes": 229088,
+          "sha256": "1c169c9b83854db380a6d26de6b31c8b2bf9f37b7daf02159c54bf75b3c20412"
+        }
+      ]
+    },
+    "guardian": {
+      "concept": {
+        "endpoint": "fal-ai/nano-banana-pro",
+        "requestId": "01a111c3-3f05-7292-a04d-c0c12f7b39ce",
+        "input": {
+          "prompt": "Premium stylized realistic adventure game asset, beautiful sculpted silhouette, crisp textured material detail, coherent lost jungle temple art direction: jade greens, weathered warm sandstone, restrained aged gold accents. Single isolated complete object, pure white studio background, three-quarter view, soft neutral studio lighting, no typography, no scenery, no people. Production concept for image-to-3D conversion. A squat massive carved stone jaguar head resting on a broken square plinth, snarling open mouth with visible sandstone fangs, huge geometric cheekbones, carved brow, turquoise inset eyes, weathered bronze nose ring. Full-bodied solid obstruction, not hollow arch. Mossy crumbling base, intricate cracked facial carvings, chipped asymmetrical ear, silhouette twice as wide as tall. Rear has stone geometric carvings too. Faces toward camera. This is a clearly readable dangerous river obstacle.",
+          "aspect_ratio": "1:1",
+          "resolution": "2K",
+          "output_format": "png",
+          "num_images": 1
+        },
+        "url": "https://v3b.fal.media/files/b/0aad4e51/I9EkGufB4_iyNKhTKGr49_aqsRo5G4.png"
+      },
+      "model": {
+        "endpoint": "meshy/v7.1/image-to-3d",
+        "requestId": "01a111c5-4ada-7280-ba8b-7e8be803451b",
+        "input": {
+          "image_url": "https://v3b.fal.media/files/b/0aad4e51/I9EkGufB4_iyNKhTKGr49_aqsRo5G4.png",
+          "model_type": "smart-topology",
+          "target_polycount": 4000,
+          "enable_pbr": true,
+          "should_texture": true,
+          "symmetry_mode": "off",
+          "geometry_resolution": "standard"
+        },
+        "output": {
+          "animation_glb": null,
+          "animation_fbx": null,
+          "model_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad4e68/0OcudyLX3wiUifSFdB_41_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 7445952
+          },
+          "thumbnail": {
+            "url": "https://v3b.fal.media/files/b/0aad4e6f/xlxhETbQVW02ZBRCOa9H0_preview.png",
+            "content_type": "image/png",
+            "file_name": "preview.png",
+            "file_size": 263576
+          },
+          "model_urls": {
+            "glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e68/0OcudyLX3wiUifSFdB_41_model.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "model.glb",
+              "file_size": 7445952
+            },
+            "fbx": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6a/ux6XPz2yLvAz-WMvb5ULM_model.fbx",
+              "content_type": "application/octet-stream",
+              "file_name": "model.fbx",
+              "file_size": 8012412
+            },
+            "obj": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6c/lGz4n5zdFvzcBSNPc3WuB_model.obj",
+              "content_type": "text/plain",
+              "file_name": "model.obj",
+              "file_size": 395755
+            },
+            "usdz": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6b/kSz-_Tw2h1tAStO45YR6C_model.usdz",
+              "content_type": "model/vnd.usdz+zip",
+              "file_name": "model.usdz",
+              "file_size": 7974164
+            },
+            "blend": null,
+            "stl": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6e/GjdAZ8hHCQyMtMwD0wlxr_model.stl",
+              "content_type": "application/octet-stream",
+              "file_name": "model.stl",
+              "file_size": 211484
+            }
+          },
+          "texture_urls": [
+            {
+              "base_color": {
+                "url": "https://v3b.fal.media/files/b/0aad4e70/Czw6ZDc_ZrZoofwkbtHaY_texture_0.png",
+                "content_type": "image/png",
+                "file_name": "texture_0.png",
+                "file_size": 5863519
+              },
+              "metallic": {
+                "url": "https://v3b.fal.media/files/b/0aad4e70/pIwCyJoYJpedOOhdM7sBK_texture_0_metallic.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_metallic.png",
+                "file_size": 176021
+              },
+              "normal": {
+                "url": "https://v3b.fal.media/files/b/0aad4e71/C1SEzOuDgU6g8BdsDIFwR_texture_0_normal.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_normal.png",
+                "file_size": 4665639
+              },
+              "roughness": {
+                "url": "https://v3b.fal.media/files/b/0aad4e71/hA8LdsEOuaXZzsyGIn4k7_texture_0_roughness.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_roughness.png",
+                "file_size": 1596787
+              }
+            }
+          ],
+          "seed": 1483752432,
+          "rigged_character_glb": null,
+          "rigged_character_fbx": null,
+          "basic_animations": null,
+          "rig_task_id": null
+        }
+      },
+      "local_models": [
+        {
+          "path": "models/meshy-guardian.glb",
+          "bytes": 356280,
+          "sha256": "04b4794a3b06fd474361169c9a2cb44aca7f75da0111a9ccf1f70a4106a4069d"
+        },
+        {
+          "path": "models/meshy-guardian-lite.glb",
+          "bytes": 176980,
+          "sha256": "3765b111d46e260760552047aad7c68678178acb7c8b23fb22b306127529f3e2"
+        }
+      ]
+    },
+    "rider": {
+      "concept": {
+        "endpoint": "fal-ai/nano-banana-pro/edit",
+        "requestId": "01a111c3-44b4-7613-bf05-4ea8aa2ba085",
+        "input": {
+          "image_urls": [
+            "https://arcade.uptick.systems/river-rush/art/paddle-frames.png"
+          ],
+          "prompt": "Create ONE full-body rigging-ready 3D game character concept based faithfully on this same ADULT man. Athletic tan body, shoulder-length loose wavy dark brown hair, dark short beard and mustache, matching face identity. Bare torso, barefoot, ONLY modest brown loincloth fully covering front and back, no other clothing or equipment. Hands empty. Standing upright in symmetrical T POSE: both arms horizontally outstretched, straight elbows, palms down, separated legs straight, all fingers visible, face looking forward. Front view, single entire person centered, no raft, no water, no paddle, no scenery. Pure white studio background with minimal contact shadow. Premium realistic stylized 3D adventure game sculpt, elegant muscular anatomy, richly textured skin and leather, beautiful face. Clean distinct limbs for automatic skeletal rigging. No duplicate views, no atlas, no labels. Whole body and arms fit with empty margin.",
+          "aspect_ratio": "1:1",
+          "resolution": "2K",
+          "output_format": "png",
+          "num_images": 1
+        },
+        "url": "https://v3b.fal.media/files/b/0aad4e51/LKLTriwqvW9eAi6ZXwVq-_ciQBxOFv.png"
+      },
+      "model": {
+        "endpoint": "meshy/v7.1/image-to-3d",
+        "requestId": "01a111c5-4eeb-7161-9f36-75ed2c126f2e",
+        "input": {
+          "image_url": "https://v3b.fal.media/files/b/0aad4e51/LKLTriwqvW9eAi6ZXwVq-_ciQBxOFv.png",
+          "model_type": "standard",
+          "target_polycount": 10000,
+          "enable_pbr": true,
+          "should_texture": true,
+          "symmetry_mode": "auto",
+          "geometry_resolution": "standard",
+          "enable_rigging": true,
+          "rigging_height_meters": 1.8,
+          "pose_mode": "t-pose"
+        },
+        "output": {
+          "animation_glb": null,
+          "animation_fbx": null,
+          "model_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad4e6e/jJcZCUCX9LMPwBB_E9hs8_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 10506940
+          },
+          "thumbnail": {
+            "url": "https://v3b.fal.media/files/b/0aad4e6e/5KTtwykC8OQfrvzcfE7W5_preview.png",
+            "content_type": "image/png",
+            "file_name": "preview.png",
+            "file_size": 79943
+          },
+          "model_urls": {
+            "glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6e/jJcZCUCX9LMPwBB_E9hs8_model.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "model.glb",
+              "file_size": 10506940
+            },
+            "fbx": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6e/aCzZDcnJZGNTP1jDwcrRJ_model.fbx",
+              "content_type": "application/octet-stream",
+              "file_name": "model.fbx",
+              "file_size": 10820732
+            },
+            "obj": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6e/jMPk6yUiH92kI2AhqMD6k_model.obj",
+              "content_type": "text/plain",
+              "file_name": "model.obj",
+              "file_size": 1079212
+            },
+            "usdz": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6e/aXVX1bftQbUzI6JPWP9Eh_model.usdz",
+              "content_type": "model/vnd.usdz+zip",
+              "file_name": "model.usdz",
+              "file_size": 11171717
+            },
+            "blend": null,
+            "stl": {
+              "url": "https://v3b.fal.media/files/b/0aad4e6e/rkma283At-EG6mEZXlt4v_model.stl",
+              "content_type": "application/octet-stream",
+              "file_name": "model.stl",
+              "file_size": 519984
+            }
+          },
+          "texture_urls": [
+            {
+              "base_color": {
+                "url": "https://v3b.fal.media/files/b/0aad4e6e/bXTNNcEHWFWGQK9k5_1Qj_texture_0.png",
+                "content_type": "image/png",
+                "file_name": "texture_0.png",
+                "file_size": 5683817
+              },
+              "metallic": {
+                "url": "https://v3b.fal.media/files/b/0aad4e6f/rZT-LwiajTgaPY-0ZnFct_texture_0_metallic.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_metallic.png",
+                "file_size": 29914
+              },
+              "normal": {
+                "url": "https://v3b.fal.media/files/b/0aad4e6f/iM4By-1XnFCfrx2MvC_w9_texture_0_normal.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_normal.png",
+                "file_size": 5120067
+              },
+              "roughness": {
+                "url": "https://v3b.fal.media/files/b/0aad4e6f/7P-CTjR_ISN_6vtOfJZhL_texture_0_roughness.png",
+                "content_type": "image/png",
+                "file_name": "texture_0_roughness.png",
+                "file_size": 1101640
+              }
+            }
+          ],
+          "seed": 1597686965,
+          "rigged_character_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad4e71/OP-SBVpxkjIAqtBckbvwF_rigged_character.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "rigged_character.glb",
+            "file_size": 11075000
+          },
+          "rigged_character_fbx": {
+            "url": "https://v3b.fal.media/files/b/0aad4e71/tZMGlfr0L-dJiFLOasxvf_rigged_character.fbx",
+            "content_type": "application/octet-stream",
+            "file_name": "rigged_character.fbx",
+            "file_size": 4156908
+          },
+          "basic_animations": {
+            "walking_glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e71/rroqhaJ9-svrHX_XdXdwR_walking.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "walking.glb",
+              "file_size": 11054896
+            },
+            "walking_fbx": {
+              "url": "https://v3b.fal.media/files/b/0aad4e71/LxTzj1GR2oTSFyUlKt43I_walking.fbx",
+              "content_type": "application/octet-stream",
+              "file_name": "walking.fbx",
+              "file_size": 4194812
+            },
+            "walking_armature_glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e71/Cn0dn-BOCWExtTG7Mx58g_walking_armature.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "walking_armature.glb",
+              "file_size": 90276
+            },
+            "running_glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e71/XfcxACMlalJ-2YTC0zXh5_running.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "running.glb",
+              "file_size": 11044276
+            },
+            "running_fbx": {
+              "url": "https://v3b.fal.media/files/b/0aad4e71/WczbrJOFTb_QFWLwMuCPy_running.fbx",
+              "content_type": "application/octet-stream",
+              "file_name": "running.fbx",
+              "file_size": 4177692
+            },
+            "running_armature_glb": {
+              "url": "https://v3b.fal.media/files/b/0aad4e71/1JcJ3YmhYVgICLQS9q0mt_running_armature.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "running_armature.glb",
+              "file_size": 79644
+            }
+          },
+          "rig_task_id": "01a111c7-e3c2-716f-9cc2-ddacfc9b6a17"
+        }
+      },
+      "local_models": [
+        {
+          "path": "models/meshy-rider.glb",
+          "bytes": 741008,
+          "sha256": "5c182182fd13c2f7e4e5fcbdf827ce8ec5dae1535d361e4e52b621aa8eb15177"
+        }
+      ]
+    }
+  },
+  "optimization": {
+    "props": "scripts/pack-prop.mjs; unit-height normalization, raft Y turn90, Meshopt simplification/compression, WebP quality90, 1024 diffuse and 512 normals (software512 maps)",
+    "rig": "scripts/pack-rig.mjs; joint hierarchy and inverse bind matrices preserved, unused animation clips removed, Meshopt compression, WebP quality90, 1024 diffuse and 512 normal",
+    "animation": "Continuous analytic stroke, two-bone arm/leg IK, smooth posture blending; no runtime animation service or still-frame paddle clock in primary WebGL.",
+    "triangles": {
+      "raft": 4875,
+      "temple": 5499,
+      "temple_lite": 2389,
+      "guardian": 2496,
+      "guardian_lite": 999,
+      "rider": 10398
+    },
+    "integration": "src/game/scene3d.js and skeletal-rider.js; fixed scenery pools and instanced guardian hazards, software model variants, registered sprite fallback, existing speed/control/collision rules retained.",
+    "packing_inputs": {
+      "raft": {
+        "targetTriangles": 5000,
+        "turnDegrees": 90,
+        "textureSize": 1024,
+        "maxError": 0.01
+      },
+      "temple": {
+        "targetTriangles": 5500,
+        "turnDegrees": 0,
+        "textureSize": 1024,
+        "maxError": 0.025
+      },
+      "temple_lite": {
+        "targetTriangles": 1800,
+        "turnDegrees": 0,
+        "textureSize": 512,
+        "maxError": 0.08
+      },
+      "guardian": {
+        "targetTriangles": 2500,
+        "turnDegrees": 0,
+        "textureSize": 1024,
+        "maxError": 0.025
+      },
+      "guardian_lite": {
+        "targetTriangles": 1000,
+        "turnDegrees": 0,
+        "textureSize": 512,
+        "maxError": 0.08
+      }
+    }
+  }
+}

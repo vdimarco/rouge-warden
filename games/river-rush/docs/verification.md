@@ -1,5 +1,14 @@
 # River Rush runner verification — 2026-10-05
 
+## Temple models and skeletal motion — 2026-10-06
+
+- Four new fal assets are actually integrated: jade-inlaid expedition raft, serpent temple shrine, carved jaguar guardian and a 24-joint humanoid rider. Source images, Meshy outputs, submitted inputs, request IDs, local hashes and reproducible packing settings are in temple-rig-sources.json. Native diffuse maps are 1024; normal maps are 512; software landmark variants use 512 maps. Repeated scenery still uses 26 bank slots, with six temple and six guardian landmarks replacing ordinary banks.
+- All 38 unit/playtest checks pass, including continuous stroke sampling at 30/60/120 Hz, refresh-rate-independent action blending and adaptive frame-budget behavior. Engine, action windows, buoyancy, logical lanes, scoring and speed are unchanged.
+- The focused browser suite covers phone (390×844), desktop (1536×1024) and landscape (844×390), keyboard, actual CDP swipes, opening jump/duck clearance without losing the shield, exact paused canvas screenshots, reduced motion and no horizontal overflow. Temporary 503s retry; missing raft/rig, missing images, WebGL absence and context loss remain recoverable/playable. No page errors.
+- The final full-detail shader/rig check records 28 unique consecutive stroke samples, hand-grip error below 0.000001 world units, continuous steering reversal, independent raised jump and low anatomical duck, frozen paused pixels and reduced-motion behavior. It records at most 196,009 triangles and 27 draws in this opening-course sample. Counts remain bounded by fixed model pools and entity cleanup; the figures are samples, not universal maxima.
+- Rendering follows display requestAnimationFrame cadence. A non-preserved WebGL drawing buffer, visibility filtering and adaptive backing resolution reduce rendering cost. Chromium software-GPU timing is retained as diagnostic evidence and does not establish physical-device frame rates. Physical iOS/Android and Safari remain untested. Production publication and live verification are pending below.
+
+
 ## Low duck, textures and glide verification — 2026-10-06
 
 - All 35 unit/playtest checks pass. Visual steering is checked at 30/60/120 Hz for immediate logical input, a gradual first step, settling within 150 ms, continuous reversal and refresh-rate-independent paths. The same 40-seed delayed-input playtest produces 737,188 metres, 2,952 tricks, 1,015 Rush uses and at most 49 entities. Engine and hydrodynamics files remain unchanged.

@@ -17,6 +17,11 @@
     "vite": "^7.1.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.0"
+    "@gltf-transform/core": "^4.4.0",
+    "@gltf-transform/extensions": "^4.4.0",
+    "@gltf-transform/functions": "^4.4.0",
+    "@playwright/test": "^1.56.0",
+    "meshoptimizer": "^0.25.0",
+    "sharp": "^0.34.5"
   }
 }

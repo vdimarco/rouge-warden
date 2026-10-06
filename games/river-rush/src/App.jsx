@@ -46,7 +46,7 @@ export default function App() {
   useEffect(()=>{
     if(!art)return;let raf,previous=0,lastTime=-1,lastWidth=0,lastHeight=0,lastReduce=null,lastRun=null,lastCanvas=null,ctx=null;
     const pref=window.matchMedia('(prefers-reduced-motion: reduce)');let reduce=pref.matches;const changed=e=>{reduce=e.matches;};pref.addEventListener('change',changed);
-    function tick(now){const dt=previous?Math.min(.05,(now-previous)/1000):0;previous=now;
+    function tick(now){const frameMs=previous?now-previous:0,dt=Math.min(.05,frameMs/1000);previous=now;
       if(model.current&&!['menu','help'].includes(modeRef.current)){
         const g=model.current,before=g.eventId;
         if(modeRef.current==='playing')updateGame(g,input.current,dt);
@@ -57,7 +57,7 @@ export default function App() {
         }
         const dirty=g!==lastRun||g.time!==lastTime||w!==lastWidth||h!==lastHeight||reduce!==lastReduce;
         if(canvas&&dirty){
-          if(sceneRef.current)sceneRef.current.render(g,w,h,reduce);
+          if(sceneRef.current)sceneRef.current.render(g,w,h,reduce,modeRef.current==='playing'?frameMs:0);
           else if(fallbackRef.current&&fallback){
             const dpr=renderDpr(w,h,window.devicePixelRatio||1),bw=Math.floor(w*dpr),bh=Math.floor(h*dpr);
             if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh;}

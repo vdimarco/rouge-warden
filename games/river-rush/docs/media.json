@@ -116,7 +116,7 @@
       "models/meshy-palm-lite.glb"
     ],
     "runtime_generation_service_dependency": false,
-    "character": "Rear-facing fal photographic rider atlas; separate jump and crouch, source in downstream-art.json"
+    "character": "fal-generated skeletal rider, photographic sprites retained for fallback; see temple-rig-sources.json"
   },
   "rider-downstream.png": {
     "source_manifest": "downstream-art.json",
@@ -150,5 +150,21 @@
     ],
     "runtime_service_dependency": false,
     "diffuse_encoding": "WebP quality90; lossless PNG normals"
+  },
+  "temple_rig_upgrade": {
+    "provider": "fal.ai \u2192 Nano Banana Pro \u2192 Meshy 7.1",
+    "source_manifest": "temple-rig-sources.json",
+    "local_models": [
+      "models/meshy-temple-raft.glb",
+      "models/meshy-temple.glb",
+      "models/meshy-guardian.glb",
+      "models/meshy-rider.glb"
+    ],
+    "software_variants": [
+      "models/meshy-temple-lite.glb",
+      "models/meshy-guardian-lite.glb"
+    ],
+    "character": "Humanoid skeletal rider, coordinated continuous paddling and distinct jump/near-prone duck; rear-facing sprite fallback retained.",
+    "runtime_generation_service_dependency": false
   }
 }
