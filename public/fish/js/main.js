@@ -1896,10 +1896,17 @@ function reelUpdate(dt) {
   if (G.hookReq) { hookset = true; G.hookReq = false; }
   const s = sim.state;
   const pullActive = s.phase === "fight" && s.fish?.move !== "jump" && s.fish?.move !== "sulk" && (s.slip || 0) < 0.15;
-  const pull = pullStrength.step(dt, { theta, enabled: G.input === "motion" && Motion.live,
+  // the sensors are live while a sample came in the last LIVE_MS (Motion.live), or in the last LIVE_MS of game time: the
+  // frames since the last sample count, and a frame moves the game on 0.25 s at most. A slow frame holds the samples back,
+  // and that alone must not hide the pull meter or start the pull strength again from a new rest angle
+  const sampleAt = Motion.lastSample;
+  if (sampleAt > 0 && sampleAt !== G.sampleAt) { G.sampleAt = sampleAt; G.sampleFrame = G.frame; G.sensorQuiet = 0; }
+  else if (G.frame !== G.sampleFrame) G.sensorQuiet = (G.sensorQuiet || 0) + dt;
+  const live = G.input === "motion" && (Motion.live || G.sensorQuiet * 1000 < Motion.tune.LIVE_MS);
+  const pull = pullStrength.step(dt, { theta, enabled: live,
     active: pullActive, crank: crankRate, tension: s.tfrac || 0, session: sim });
   // (no "Tip back as you reel" while the prompt says to stop reeling)
-  pullMeter.hidden = G.input !== "motion" || !Motion.live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85 || guideCue.icon === "stop";
+  pullMeter.hidden = !live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85 || guideCue.icon === "stop";
   pullMeter.querySelector("span").textContent = pull > 0.03 ? "Pull strength +" + Math.round(pull * 35) + "%" : "Tip back as you reel";
   pullMeter.querySelector("i").style.transform = "scaleX(" + pull.toFixed(3) + ")";
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;
@@ -2298,9 +2305,10 @@ function frame() {
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(), desk: G.desk,
     paused: still || stalled(), cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
     held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
-  // the action card stands under the pull meter while it shows
-  const pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6;
+  // the action card stands under the pull meter while it shows, and then the toasts of the tall reel stand under the card
+  const card = $("#prompt .p1"), pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6, cardH = pullH && card.offsetParent ? card.offsetHeight : 0;
   if (pullH !== G.pullH) { G.pullH = pullH; game.style.setProperty("--pull-h", pullH + "px"); }
+  if (cardH !== G.cardH) { G.cardH = cardH; game.style.setProperty("--card-h", cardH + "px"); }
   // the action card's how-to stays away while the rod cue over the reel shows the same words
   { const sub = $("#prompt .p2"), rc = $("#rodCue"); sub.classList.toggle("same", !!rc && !rc.hidden && !!sub.textContent && rc.querySelector("span").textContent === sub.textContent); }
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A
