@@ -36,7 +36,7 @@ export const REEL_UI = {
   bailSwipePx: 40,     // the bail swipe: at least this far...
   bailVertical: 1.4,   // ...and this many times more vertical than sideways
   crankWinMs: 100,     // crank speed = the angle the thumb swept over this window
-  crankStaleMs: 35,    // no new sample for this long: the thumb has stopped, so the window slides on past it
+  crankStaleMs: 35,    // no new sample has come in for this long: the thumb has stopped, so the window slides on past it
                        // (longer when the events come slower: a busy phone delivers touch moves once per frame)
   crankTau: 0.035,     // s, light smoothing on top of the window
   crankMinR: 0.12,     // of the crank size: nearer the hub than this, the angle is noise
@@ -983,7 +983,8 @@ export class Crank extends Widget {
     if (this.drag && this.drag.id !== e.pointerId) return;   // one thumb turns the handle
     if (blocked(e.target, this.el)) return;
     const p = this._polar(e), ok = p.r > T.crankMinR * this._size();
-    this.drag = { id: e.pointerId, raw: ok ? p.a : null, a: 0, x: p.x, y: p.y, lastT: e.timeStamp };
+    // heard: when the last sample got to us, on our own clock (an input time can run behind it by a steady delay)
+    this.drag = { id: e.pointerId, raw: ok ? p.a : null, a: 0, x: p.x, y: p.y, lastT: e.timeStamp, heard: now() };
     this.hist = [{ t: e.timeStamp, a: 0 }];
     this.coast = 0;
     // the handle swings to the thumb
@@ -1012,6 +1013,7 @@ export class Crank extends Widget {
     const t = Math.max(e.timeStamp, d.lastT);
     if (t - d.lastT < 120) this.step = lerp(this.step, t - d.lastT, 0.25);
     d.lastT = t;
+    d.heard = now();
     this.hist.push({ t, a: d.a });
     while (this.hist.length > 2 && this.hist[1].t < t - 400) this.hist.shift();
   }
@@ -1020,21 +1022,23 @@ export class Crank extends Widget {
     if (!d || e.pointerId !== d.id) return;
     if (!cancel) {
       // a fling leaves a little spin on the handle
-      const last = this.hist[this.hist.length - 1];
-      const v = this._thumbRate(e.timeStamp);
-      if (last && e.timeStamp - last.t < Math.max(60, this._stale()) && Math.abs(v) > 0.8) this.coast = v * T.flingKeep;
+      // (the lift and the last sample are both input times)
+      const last = this.hist[this.hist.length - 1], idle = last ? e.timeStamp - last.t : 0;
+      const v = this._thumbRate(idle);
+      if (last && idle < Math.max(60, this._stale()) && Math.abs(v) > 0.8) this.coast = v * T.flingKeep;
     }
     this.drag = null;
     this.hist = [];
   }
   // how long without a sample before we call the thumb stopped
   _stale() { return clamp(Math.max(1.3 * this.gap, 1.5 * this.step), T.crankStaleMs, 150); }
-  // signed rev/s: the angle the thumb swept over the last window
-  _thumbRate(t) {
+  // signed rev/s: the angle the thumb swept over the last window. idle: ms with no new sample. The window ends at the
+  // last sample, and slides on past it only when the thumb is stale
+  _thumbRate(idle) {
     const h = this.hist;
     if (h.length < 2) return 0;
     const last = h[h.length - 1];
-    const tEnd = Math.max(last.t, t - this._stale()), t0 = tEnd - T.crankWinMs;
+    const tEnd = last.t + Math.max(0, idle - this._stale()), t0 = tEnd - T.crankWinMs;
     let a0 = h[0].a;
     if (t0 > h[0].t) {
       for (let i = h.length - 1; i > 0; i--) {
@@ -1059,7 +1063,8 @@ export class Crank extends Widget {
     this.last = t;
     dt = Math.min(dt, 0.1);
     let raw = 0, free = 0;
-    if (this.drag) raw += Math.abs(this._thumbRate(t));
+    // idle on our own clock: a busy phone that gives each touch move to us 50 ms late still has a thumb that turns
+    if (this.drag) raw += Math.abs(this._thumbRate(t - this.drag.heard));
     if (this.bank > 0) {
       let take = this.bank * (1 - Math.exp(-dt / 0.09));
       if (this.bank - take < 0.002) take = this.bank;
@@ -1211,7 +1216,7 @@ export class Crank extends Widget {
     }
   }
   _spinSign() {
-    if (this.drag) { const r = this._thumbRate(now()); return r < 0 ? -1 : 1; }
+    if (this.drag) { const r = this._thumbRate(now() - this.drag.heard); return r < 0 ? -1 : 1; }
     return this.coast < 0 ? -1 : this.dir;
   }
 }
