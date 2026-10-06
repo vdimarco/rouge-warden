@@ -12,6 +12,6 @@ At 1440x900: the Q "+" badge spent the point (ranks 1/0/0/0, points 0). Q and a 
 
 ## Checks
 - `qa/tidebreak/skill-targets.e2e.mjs` passes at ten sizes, with the bar rules for mouse screens from 1040x600.
-- `desktop`, `combat-feel`, `difficulty`, `hunted`, `ground` and `combat-feel-3d` e2e checks: see the PR for results.
+- These e2e checks pass: `desktop` (17), `combat-feel` (33), `difficulty` (6), `hunted` (5), `ground` and `combat-feel-3d` (8). Before a fix, `hunted` found that the Hunted mark stretched across the bar from an older `inset:0` rule. Now the mark sits above the portrait.
 - The OpenSpec CLI is not installed, so the structure was not validated by the CLI.
 - Not checked: a real desktop GPU and a real mouse.
