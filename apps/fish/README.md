@@ -123,6 +123,8 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
 
 `.github/workflows/fish-android.yml` runs on each pull request and each push to `main` that changes `public/fish/` or `apps/fish/`. It runs the check tests, builds `www/`, runs the browser check of the bundle, and builds the debug APK. The APK is in the run's artifacts as `reelitin-debug-apk` for 7 days.
 
+`.github/workflows/fish-ios.yml` runs on the same changes on a Mac (`macos-26`, the newest Xcode 26). It builds `www/`, runs `cap sync ios` (and so the version check), and builds the iPhone app for a device with no code signing. A change that breaks only the iOS build fails here. It makes no file to upload: the signed build and the upload stay on a Mac with Xcode (see the iOS release steps).
+
 To build a signed bundle in Actions, do steps 1 and 2 above once. Then add these repository secrets (Settings > Secrets and variables > Actions):
 
 | Secret | Value |

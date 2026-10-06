@@ -1,9 +1,8 @@
 name: Reel It In iOS app
-# Builds the Capacitor app in apps/fish on a Mac runner, so nobody needs their own Mac.
-# On a pull request or a push to main it builds the app for the iOS Simulator, opens it on an iPhone and an iPad there and
-# takes screenshots, and builds the device app that iPhones, iPads and Macs with Apple silicon run.
-# Run it by hand (Actions > this workflow > Run workflow) with "TestFlight" on to also sign the app and upload it
-# to App Store Connect. The upload needs four secrets; apps/fish/README.md says how to make them.
+# Builds the iPhone app in apps/fish on a Mac, so a change that breaks only the iOS build shows on its pull request. It
+# builds for a device with no code signing: no Apple account or secret is needed. The signed build and the upload to App
+# Store Connect stay on a Mac with Xcode (apps/fish/README.md). A Mac runner uses Actions minutes 10 times as fast as
+# Linux, so this runs only when the game or the app changes.
 on:
   pull_request:
     paths: ['public/fish/**', 'apps/fish/**', '.github/workflows/fish-ios.yml']
@@ -11,168 +10,38 @@ on:
     branches: [main]
     paths: ['public/fish/**', 'apps/fish/**', '.github/workflows/fish-ios.yml']
   workflow_dispatch:
-    inputs:
-      testflight:
-        description: 'Sign the app and upload it to TestFlight'
-        type: boolean
-        default: false
-      build_number:
-        description: 'Build number (CURRENT_PROJECT_VERSION). Empty: the number in the Xcode project'
-        type: string
-        default: ''
 permissions:
   contents: read
-# bash with pipefail: an xcodebuild that fails before | tail fails the step
-defaults:
-  run:
-    shell: bash
+concurrency:
+  group: fish-ios-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  simulator:
+  build:
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - name: Use the newest Xcode 26
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
-          if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE"; fi
-          xcodebuild -version
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: apps/fish/package-lock.json
+      # App Store uploads need Xcode 26 and the iOS 26 SDK: use the newest Xcode 26 on the runner
+      - name: Pick Xcode 26
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XC" ]; then echo "No Xcode 26 on this runner:"; ls -d /Applications/Xcode*.app; exit 1; fi
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
       - run: npm ci --prefix apps/fish
+      # cap sync runs the version and store settings check (native-check.mjs) after it copies www/ into the iOS project
       - name: Build www/ and copy it into the iOS project
         working-directory: apps/fish
         run: npm run build:www && npx cap sync ios
-      - name: Build for the iOS Simulator
-        working-directory: apps/fish/ios/App
-        run: |
-          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/dd" \
-            CODE_SIGNING_ALLOWED=NO build | tail -40
-          test -d "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app"
-      - name: Open the app on an iPhone and an iPad in the Simulator, and take screenshots
-        run: |
-          mkdir -p "$RUNNER_TEMP/shots"
-          for KIND in iPhone iPad; do
-            UDID=$(xcrun simctl list devices available -j | KIND=$KIND node -e '
-              const d = JSON.parse(require("fs").readFileSync(0, "utf8")).devices;
-              const ios = Object.keys(d).filter((k) => k.includes("iOS")).sort().reverse();
-              for (const k of ios) { const p = d[k].find((x) => x.name.startsWith(process.env.KIND + " ")); if (p) { console.log(p.udid); break; } }')
-            test -n "$UDID" || { echo "no $KIND simulator"; exit 1; }
-            xcrun simctl boot "$UDID"
-            xcrun simctl bootstatus "$UDID"
-            xcrun simctl install "$UDID" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app"
-            xcrun simctl launch "$UDID" systems.uptick.reelitin
-            sleep 20
-            # the app must still run after 20 s: a crash at start removes it from the list of running apps
-            xcrun simctl spawn "$UDID" launchctl list | grep -q 'systems.uptick.reelitin' || { echo "the app stopped on the $KIND"; exit 1; }
-            xcrun simctl io "$UDID" screenshot "$RUNNER_TEMP/shots/$(echo $KIND | tr A-Z a-z)-title.png"
-            xcrun simctl shutdown "$UDID"
-          done
-          (cd "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator" && zip -qry "$RUNNER_TEMP/shots/ReelItIn-simulator.app.zip" App.app)
-      # a Mac with Apple silicon runs this same arm64 device build ("Designed for iPad"). Unsigned, it cannot launch here
-      - name: Build for iPhone, iPad and Mac devices, unsigned
+      - name: Build the app for a device, unsigned
         working-directory: apps/fish/ios/App
         run: |
           xcodebuild -project App.xcodeproj -scheme App -configuration Release \
-            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-device" \
-            CODE_SIGNING_ALLOWED=NO build | tail -40
-          PLIST="$RUNNER_TEMP/dd-device/Build/Products/Release-iphoneos/App.app/Info.plist"
-          plutil -extract UIDeviceFamily json -o - "$PLIST" | tee /dev/stderr | grep -q '\[1,2\]'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: reelitin-ios-simulator
-          path: ${{ runner.temp }}/shots/
-          if-no-files-found: error
-          retention-days: 7
-
-  testflight:
-    if: github.event_name == 'workflow_dispatch' && inputs.testflight
-    needs: simulator
-    runs-on: macos-26
-    timeout-minutes: 60
-    steps:
-      - name: Check that the secrets exist
-        env:
-          KEY_ID: ${{ secrets.REELITIN_ASC_KEY_ID }}
-          ISSUER_ID: ${{ secrets.REELITIN_ASC_ISSUER_ID }}
-          KEY_P8: ${{ secrets.REELITIN_ASC_KEY_P8_BASE64 }}
-          TEAM_ID: ${{ secrets.REELITIN_APPLE_TEAM_ID }}
-        run: |
-          if [ -z "$KEY_ID" ] || [ -z "$ISSUER_ID" ] || [ -z "$KEY_P8" ] || [ -z "$TEAM_ID" ]; then
-            echo "Add the secrets REELITIN_ASC_KEY_ID, REELITIN_ASC_ISSUER_ID, REELITIN_ASC_KEY_P8_BASE64 and REELITIN_APPLE_TEAM_ID (see apps/fish/README.md)."
-            exit 1
-          fi
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Use the newest Xcode 26
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
-          if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE"; fi
-          xcodebuild -version
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: apps/fish/package-lock.json
-      - run: npm ci --prefix apps/fish
-      - name: Build www/ for the store and copy it into the iOS project
-        working-directory: apps/fish
-        run: npm run build:www -- --release && npx cap sync ios
-      - name: Write the App Store Connect key and the export options outside the workspace
-        env:
-          KEY_ID: ${{ secrets.REELITIN_ASC_KEY_ID }}
-          KEY_P8: ${{ secrets.REELITIN_ASC_KEY_P8_BASE64 }}
-          TEAM_ID: ${{ secrets.REELITIN_APPLE_TEAM_ID }}
-        run: |
-          umask 077
-          printf '%s' "$KEY_P8" | base64 -d > "$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
-            <key>teamID</key><string>$TEAM_ID</string>
-            <key>signingStyle</key><string>automatic</string>
-            <key>manageAppVersionAndBuildNumber</key><false/>
-            <key>uploadSymbols</key><true/>
-          </dict>
-          </plist>
-          EOF
-      - name: Archive, sign and upload to App Store Connect
-        working-directory: apps/fish/ios/App
-        env:
-          KEY_ID: ${{ secrets.REELITIN_ASC_KEY_ID }}
-          ISSUER_ID: ${{ secrets.REELITIN_ASC_ISSUER_ID }}
-          TEAM_ID: ${{ secrets.REELITIN_APPLE_TEAM_ID }}
-          BUILD_NUMBER: ${{ inputs.build_number }}
-        run: |
-          BUILD=${BUILD_NUMBER:-$(grep -m1 -oE 'CURRENT_PROJECT_VERSION = [0-9]+' App.xcodeproj/project.pbxproj | grep -oE '[0-9]+$')}
-          VERSION=$(grep -m1 -oE 'MARKETING_VERSION = [0-9.]+' App.xcodeproj/project.pbxproj | grep -oE '[0-9.]+$')
-          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
-                -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID")
-          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
-            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/ReelItIn.xcarchive" \
-            "${AUTH[@]}" DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
-            CURRENT_PROJECT_VERSION="$BUILD" archive | tail -40
-          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/ReelItIn.xcarchive" \
-            -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" "${AUTH[@]}"
-          {
-            echo "## Reel It In uploaded to App Store Connect"
-            echo
-            echo "Commit: \`$GITHUB_SHA\`"
-            echo
-            echo "- Version: $VERSION"
-            echo "- Build: $BUILD"
-            echo
-            echo "The build shows in TestFlight after Apple processes it (often 10 to 30 minutes)."
-          } >> "$GITHUB_STEP_SUMMARY"
-      - name: Delete the key
-        if: always()
-        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
