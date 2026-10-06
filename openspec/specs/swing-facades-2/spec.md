@@ -33,13 +33,13 @@ style (towers, brick, stone, concrete, loft, condo).
 
 ### Requirement: Each building varies its window details
 Each building SHALL vary, by its seed: the window width and height in the bay, the number of panes, the frame colour
-(ink, white, cream, green, oxblood, bronze, teal or navy), the dark glass tint (blue, teal, green, bronze or slate) and
+(ink, white, cream, green, oxblood, bronze, teal or navy), the dark glass in close tones of one muted blue-grey, and
 the pattern of lit rooms (scattered, whole floors, vertical stacks or blocks of rooms). Homes SHALL sometimes show
 arched heads, stone sills and lintels, and shutters beside the windows.
 
 #### Scenario: Frames and glass at mid distance
 - **WHEN** the player swings past a row of buildings 30 to 80 m away
-- **THEN** frames of different colours and glass of different tints are visible on different buildings
+- **THEN** frames of different colours are visible on different buildings, and the dark glass reads as one muted tone
 
 #### Scenario: Lights at dusk
 - **WHEN** the player looks at several towers
@@ -60,13 +60,13 @@ view. Each window's hash SHALL pick its own wall paint, floor, depth (2.6 to 6 m
 
 ### Requirement: Rooms have contents and light
 Each room SHALL show, from its hash: a picture, a bookshelf or a door on the back wall; a sofa, a table or a cabinet
-against it; sometimes a person in a lit room; sometimes a pot plant; and curtains or a valance on about half of them.
-A lit room SHALL take its own lamp colour with a brighter pool under the lamp. A dark room SHALL mostly show the
-building's glass tint and the sky in it.
+against it; sometimes a pot plant; and curtains or a valance on about half of them. No room SHALL show a person who
+stands still. A lit room SHALL take a warm lamp light (warm, a warmer orange or a soft white), with a brighter pool
+under the lamp; no lit room SHALL be blue, pink or flicker. A dark room SHALL mostly show the glass and the sky in it.
 
 #### Scenario: Lit and dark rooms
 - **WHEN** the player looks at a building with some rooms lit
-- **THEN** lit rooms glow in their lamp colour with furniture and curtains visible, and dark rooms read as dark glass
+- **THEN** lit rooms glow warm with furniture and curtains visible, and dark rooms read as dark glass
 
 ### Requirement: The building's shape and wear vary
 Some towers SHALL stand on a podium of one to three floors in stone (limestone, granite or red sandstone) with their own
@@ -108,14 +108,14 @@ texture or draw call. The LOW path and the look without the atlas SHALL still dr
 - **THEN** the street, avenue and roof shots show the window families, and they read as comic panels (flat bands, ink, dots)
 
 ### Requirement: Windows show painted rooms
-When the painted room atlas has loaded, each window of the procedural families SHALL show one of 32 painted room
-interiors in the key art's comic style, picked by the window's hash and sometimes mirrored. The painting SHALL sit behind
-the glass and shift against the frame as the view moves. Frames, bars, curtains, shades, the glass tint and sky
-reflections SHALL draw over it. A dark room SHALL show its painting dimmed under the glass.
+When the painted room atlas has loaded, each window of the procedural families SHALL show one of the painted room
+interiors with nobody in them, in the key art's comic style, picked by the window's hash and sometimes mirrored. The
+painting SHALL sit behind the glass and shift against the frame as the view moves. Frames, bars, curtains, shades, the
+glass and sky reflections SHALL draw over it. A dark room SHALL show its painting dimmed under the glass.
 
 #### Scenario: A row of windows up close
 - **WHEN** the player swings past a building 10 to 30 m away
-- **THEN** neighbouring windows show different painted rooms, such as a kitchen, a bar or a party, inside their frames
+- **THEN** neighbouring windows show different painted rooms, such as a kitchen, a bar or a study, inside their frames
 
 #### Scenario: The view moves
 - **WHEN** the player moves sideways in front of a window
@@ -128,3 +128,11 @@ the city SHALL change.
 #### Scenario: No room art
 - **WHEN** `art/rooms.webp` fails to load
 - **THEN** the windows show the procedural rooms, and there are no shader errors
+
+### Requirement: People in the windows move
+About one lit room in eight SHALL have someone walking across it: a backlit silhouette that walks from one side to the
+other, stands a moment, walks back and stands again, on a loop of 9 to 16 s of its own, with swinging legs and arms.
+
+#### Scenario: Watching a lit window
+- **WHEN** the player watches a building with lit rooms for a few seconds
+- **THEN** in some rooms a figure walks across and back, and no figure stands frozen in a window
