@@ -125,7 +125,7 @@ Tuning notes. A code review found nine problems (legacy float grouping, sticky r
 
 Not checked: a real GPU, a real phone, audio by ear, and play against a human (readability and fun need a playtest).
 
-## Open issues
+## Follow-up results
 
 - Missing calls are done. When an enemy hero that the player's team saw in a lane stays out of their sight for 4 s, the nearest allied bot says so in chat ("Hydra missing West!"). A violet "?" ping marks the last seen spot on the minimap. One call per hero every 25 s at most. Only the team's own vision counts.
 - The "Hunted" mark is done. It shows under the health bar while the enemy bots' team focus is the player. That focus needs the enemy team to see the player, so the mark gives away nothing hidden. Apprentice bots have no focus, so it never shows on Apprentice.
