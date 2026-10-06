@@ -956,6 +956,7 @@ export class Crank extends Widget {
     this.snap = 0;     // radians the handle still has to swing to reach the thumb
     this.gap = 16; this.step = 16;   // ms between move events as delivered, and between samples
     this.travel = 0; this.quarters = 0;
+    this.wheelHint = false;   // a computer with a mouse: the hint says to scroll the wheel (main.js sets it)
     this.lit = [0, 0, 0, 0];
     this.last = now();
     this.listen(container, "pointerdown", (e) => this._down(e));
@@ -1094,7 +1095,7 @@ export class Crank extends Widget {
     let lit = 0;
     for (let i = 0; i < 4; i++) { this.lit[i] = Math.max(0, this.lit[i] - dt * 3); lit += this.lit[i]; }
     const hint = this.quarters < 8;
-    const key = [w, h, this.dpr, a.toFixed(3), rate > 0.15 ? rate.toFixed(2) : 0, lit.toFixed(2), this.drag ? Math.round(this.drag.x) + ":" + Math.round(this.drag.y) : "", hint ? this.quarters : 8].join();
+    const key = [w, h, this.dpr, a.toFixed(3), rate > 0.15 ? rate.toFixed(2) : 0, lit.toFixed(2), this.drag ? Math.round(this.drag.x) + ":" + Math.round(this.drag.y) : "", hint ? this.quarters : 8, this.wheelHint].join();
     if (this.same(key)) return;
     // the dial: drawn once, then copied
     const back = this.layer("back");
@@ -1187,7 +1188,8 @@ export class Crank extends Widget {
     if (hint) {
       const fp = Math.max(9, Math.round(s * 0.052)), fade = 0.6 * (1 - this.quarters / 8) + 0.1;
       ctx.font = font(fp); spaced(ctx, 0.12); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      for (const [t, y] of [["TURN", cy - hubR - s * 0.055], ["EITHER WAY", cy + hubR + s * 0.06]]) {
+      const [w1, w2] = this.wheelHint ? ["SCROLL", "TO REEL"] : ["TURN", "EITHER WAY"];
+      for (const [t, y] of [[w1, cy - hubR - s * 0.055], [w2, cy + hubR + s * 0.06]]) {
         const tw = ctx.measureText(t).width + fp * 1.1, th = fp * 1.7;
         ctx.fillStyle = rgba("9,34,41", 0.72 * Math.min(1, fade * 1.6));
         ctx.beginPath(); rrect(ctx, cx - tw / 2, y - th / 2, tw, th, Math.min(10, th / 2)); ctx.fill();
@@ -1218,9 +1220,10 @@ export class Crank extends Widget {
 
 /* ---------------- the rod pad ---------------- */
 // area: where a fast fling up also counts ("fling"; main.js takes it as a hook set in a strike). Presses on the pad itself,
-// on the skip elements (the crank) and on controls are not flings
+// on the skip elements (the crank) and on controls are not flings. anywhere(e): true for a press on the area that takes
+// the rod as a press on the pad does (the mouse on a computer); its sideways move steers from where it pressed
 export class RodPad extends Widget {
-  constructor(container, { toLocal, direct = false, area = null, skip = [] } = {}) {
+  constructor(container, { toLocal, direct = false, area = null, skip = [], anywhere = null } = {}) {
     super(container, "rodpad");
     this.direct = direct;
     if (direct) this.cv.hidden = true;
@@ -1230,6 +1233,7 @@ export class RodPad extends Widget {
     this.drag = null;
     this.fl = null;
     this.skip = skip.filter(Boolean);
+    this.anywhere = anywhere;
     this.k = { up: false, down: false, left: false, right: false };
     this.yankA = 0;
     this.last = now();
@@ -1260,22 +1264,24 @@ export class RodPad extends Widget {
     const half = Math.max(30, this.el.clientWidth * 0.36), o = clamp((x - this.el.clientWidth / 2) / half, -1, 1);
     return Math.sign(o) * Math.max(0, Math.abs(o) - T.steerDead) / (1 - T.steerDead);
   }
-  _down(e) {
+  // free: a press off the pad (anywhere): it steers by how far it moves sideways, not by where it is on the pad
+  _down(e, free = false) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    if (this.drag || blocked(e.target, this.el)) return;
+    if (this.drag || (!free && blocked(e.target, this.el))) return;
     this._update();
     const q = this.toLocal(e.clientX, e.clientY, this.el);
-    this.drag = { id: e.pointerId, y0: q.y, th0: this._theta, x: q.x, y: q.y, hist: [{ t: e.timeStamp, y: q.y }], armed: true };
+    this.drag = { id: e.pointerId, y0: q.y, th0: this._theta, x: q.x, y: q.y, hist: [{ t: e.timeStamp, y: q.y }], armed: true, x0: free ? q.x : null };
     if (this.direct) {
       const p = this.toLocal(e.clientX, e.clientY);
       this.drag.origin = { x: p.x - q.x, y: p.y - q.y };
     }
-    this._steer = this._steerAt(q.x);
+    this._steer = free ? 0 : this._steerAt(q.x);
   }
   // a press on the open lake: watched only for a fling up
   _flingDown(e, area) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if (this.fl || this.el.contains(e.target) || this.skip.some((s) => s.contains(e.target)) || blocked(e.target, area)) return;
+    if (this.anywhere && this.anywhere(e)) { this._down(e, true); if (this.drag && this.drag.id === e.pointerId) return; }
     const q = this.toLocal(e.clientX, e.clientY);
     this.fl = { id: e.pointerId, y0: q.y, hist: [{ t: e.timeStamp, y: q.y }], armed: true };
   }
@@ -1296,7 +1302,7 @@ export class RodPad extends Widget {
     // relative: the rod stays where you leave it, like holding a real one
     this._theta = clamp(d.th0 - (q.y - d.y0) * this._degPerPx(), T.rodMin, T.rodMax);
     if (this._theta === T.rodMin || this._theta === T.rodMax) { d.th0 = this._theta; d.y0 = q.y; }
-    this._steer = this._steerAt(q.x);
+    this._steer = this._steerAt(d.x0 == null ? q.x : this.el.clientWidth / 2 + q.x - d.x0);
     d.hist.push({ t: e.timeStamp, y: q.y });
     while (d.hist.length > 2 && d.hist[0].t < e.timeStamp - 150) d.hist.shift();
     this._yankCheck(e.timeStamp);

@@ -7,8 +7,9 @@
 // the reel starts no cast. The moves guide holds its first step still (no touch clip), and during the hold it says the
 // hold's words with MOUSE. The flight's tip (on the third to the eighth cast) says to click the lake, and the click names the
 // mouse button. In a fight the words name the mouse after a mouse press, and the keys (W, S, A, D, R, Space) after a press
-// of a rod key, with KEYS on the guide. A key that repeats, Space, R and the wheel keep the words. Exits with code 1 when
-// something fails.
+// of a rod key, with KEYS on the guide. A key that repeats, Space, R and the wheel keep the words. In a fight a mouse press
+// anywhere on the lake takes the rod, and the wheel is the crank: the card shows the wheel and the words say to scroll.
+// Exits with code 1 when something fails.
 import { open, until, sleep } from "./lib.mjs";
 
 const fails = [];
@@ -346,6 +347,42 @@ try {
   check(fw.mixed.held.length === 1 && fw.mixed.held[0] === "Hold S. | KEYS Hold S. | Hold S." && fw.mixed.mouse === "Drag the rod down. | MOUSE Drag the rod down. | Drag the rod down.", `S held with the wheel keeps the keys words in every frame; after a mouse press, Space, R and the wheel keep the mouse words (${JSON.stringify(fw.mixed)})`);
   const K = fw.keys;
   check(K.strike.h === "PRESS SPACE! Set the hook!" && same(K.strike, "Press Space!", "KEYS") && K.jump.sub === "Hold S." && same(K.jump, "Hold S.", "KEYS") && K.sulk.sub === "Hold W. Then hold S and R." && same(K.sulk, K.sulk.sub, "KEYS") && K.cover.sub === "Hold D." && K.cover.cue === "Hold D." && K.reel.h === "Hold R to reel." && same(K.reel, "Hold R to reel.", "KEYS") && K.lost.sub === "Hold A or D to steer it.", `after a key press the fight words name the keys, with KEYS, and so does the loss line (${JSON.stringify(K)})`);
+
+  // ---- a fight with the mouse: a press anywhere on the lake takes the rod (up raises it, sideways steers), and the wheel
+  // is the crank: the card shows the wheel rolling, the words say to scroll, and the crank's hint says SCROLL ----
+  const mf = await page.evaluate(async () => {
+    const G = FISH.G, wait = window.__wait, out = {};
+    const fish = (move) => ({ id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move, jump: 0, near: 0.5, known: true });
+    const stage = (patch) => { G.lastEvent = {}; G.hold = null; G.sim = { fake: true, events: [], step() {}, state: Object.assign({ phase: "fight", lure: { x: 0, y: -0.2, z: -20, speed: 0 }, tfrac: 0.3, slip: 0, dragN: 18, breakN: 45, lineOut: 20, slack: false, bend: 0.3, fish: fish("swim") }, patch) }; if (G.phase !== "reel") FISH.enterReel(); };
+    G.bail = "closed"; stage({});
+    await wait(600);
+    // a spot on the open lake, left of the middle, far from the drawn rod and the crank
+    const x = Math.round(innerWidth * 0.3), y = Math.round(innerHeight * 0.55);
+    const at = document.elementFromPoint(x, y);
+    out.spot = at ? (at.id || at.tagName) : "";
+    out.onPad = !!(at && at.closest && at.closest("#padBox, #crankBox, #dragBar"));
+    const th0 = FISH.rodPad.theta;
+    window.__fire("pointerdown", x, y);
+    for (let i = 1; i <= 10; i++) { window.__fire("pointermove", x, y - i * 12); await wait(16); }
+    out.up = FISH.rodPad.theta - th0;
+    for (let i = 1; i <= 8; i++) { window.__fire("pointermove", x + i * 14, y - 120); await wait(16); }
+    out.steer = FISH.rodPad.steer;
+    window.__fire("pointerup", x + 112, y - 120);
+    out.hint = FISH.crank.wheelHint;
+    // the bail still open in the retrieve: the card says to reel, with the wheel
+    G.bail = "open"; stage({ phase: "retrieve", fish: null, tfrac: 0 });
+    const t0 = performance.now();
+    while (performance.now() - t0 < 8000 && !/Scroll/.test(document.querySelector("#prompt .p1").textContent)) await wait(20);
+    const svg = document.querySelector("#prompt .p1 svg .w");
+    out.reel = { text: document.querySelector("#prompt .p1").textContent, icon: document.querySelector("#prompt").dataset.icon, rolls: !!svg && getComputedStyle(svg).animationName === "cue-scroll" };
+    G.bail = "closed"; stage({ fish: fish("sulk") });
+    const t1 = performance.now();
+    while (performance.now() - t1 < 8000 && !/as it comes down/.test(document.querySelector("#rodCue span").textContent)) await wait(20);
+    out.pump = document.querySelector("#rodCue span").textContent;
+    return out;
+  });
+  check(!mf.onPad && mf.up > 10 && Math.abs(mf.steer) > 0.5, `in a fight, a mouse press on the open lake (${mf.spot}) takes the rod: up ${mf.up.toFixed(1)}°, steer ${mf.steer.toFixed(2)}`);
+  check(mf.hint && mf.reel.icon === "wheel" && mf.reel.rolls && /Scroll the mouse wheel to reel/.test(mf.reel.text) && /Scroll as it comes down/.test(mf.pump), `the wheel is the crank: the crank's hint says SCROLL, the card shows the wheel rolling and says "${mf.reel.text}", the pump says "${mf.pump}"`);
 } catch (e) {
   check(false, "exception: " + (e && e.stack));
 }
