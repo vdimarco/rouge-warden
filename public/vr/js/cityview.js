@@ -177,6 +177,8 @@ uniform sampler2D uWin;
 uniform float uHaveWin;
 uniform sampler2D uRooms;
 uniform float uHaveRooms;
+// the painted rooms with nobody in them (the others show people, who would stand still; people walk on their own plane)
+const float EMPTYR[24] = float[24](0.0, 2.0, 3.0, 4.0, 5.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 15.0, 17.0, 18.0, 20.0, 21.0, 23.0, 25.0, 26.0, 27.0, 28.0, 30.0, 31.0);
 uniform float uFinale;
 varying vec3 vW;
 varying vec3 vN;
@@ -241,15 +243,15 @@ int familyOf(int st, float h) {
   if (st == 3) return h < 0.12 ? F_PAINT : h < 0.5 ? F_TALL : h < 0.76 ? F_PAIR : F_PUNCH;
   if (st == 4) return h < 0.12 ? F_PAINT : h < 0.5 ? F_RIBBON : h < 0.76 ? F_PUNCH : F_PAIR;
   if (st == 5) return h < 0.12 ? F_PAINT : h < 0.58 ? F_GRID : h < 0.82 ? F_TALL : F_RIBBON;
-  return h < 0.12 ? F_PAINT : h < 0.48 ? F_RIBBON : h < 0.76 ? F_TALL : F_CURTAIN;
+  return h < 0.48 ? F_RIBBON : h < 0.76 ? F_TALL : F_CURTAIN; // never the painted condo tile: a man stands still in it
 }
 // frame paints: ink, white, cream, green, oxblood, bronze, teal, navy; the towers pick from GFR, homes from HFR
 const vec3 FRAMEC[8] = vec3[8](vec3(0.09, 0.08, 0.11), vec3(0.86, 0.84, 0.78), vec3(0.82, 0.72, 0.52), vec3(0.14, 0.34, 0.22), vec3(0.46, 0.13, 0.11), vec3(0.45, 0.32, 0.16), vec3(0.14, 0.4, 0.44), vec3(0.12, 0.16, 0.3));
 const int GFR[5] = int[5](0, 1, 5, 6, 7);
 const int HFR[6] = int[6](1, 2, 3, 4, 0, 7);
 const int CFR[4] = int[4](1, 5, 6, 2);
-// dark glass tints: blue, teal, green, bronze, slate
-const vec3 GLASSC[5] = vec3[5](vec3(0.06, 0.17, 0.32), vec3(0.04, 0.22, 0.24), vec3(0.07, 0.18, 0.1), vec3(0.2, 0.12, 0.07), vec3(0.13, 0.13, 0.18));
+// dark glass: close tones of a muted blue-grey (bright tints read as coloured windows, which made no sense)
+const vec3 GLASSC[5] = vec3[5](vec3(0.06, 0.13, 0.24), vec3(0.08, 0.13, 0.2), vec3(0.1, 0.12, 0.17), vec3(0.07, 0.14, 0.22), vec3(0.11, 0.13, 0.18));
 // podium stone: limestone, dark granite, red sandstone
 const vec3 PODC[3] = vec3[3](vec3(0.74, 0.68, 0.58), vec3(0.3, 0.3, 0.34), vec3(0.6, 0.33, 0.25));
 // room paints (cream, mint, rose, pale blue, ochre, grey) and floors (wood, dark wood, teal carpet, red carpet)
@@ -261,10 +263,8 @@ const vec3 SHUTC[4] = vec3[4](vec3(0.15, 0.38, 0.22), vec3(0.16, 0.3, 0.5), vec3
 // white, deep orange, a flickering TV blue, and the odd pink neon.
 vec3 roomTint(float c, float s) {
   if (c < 0.5) return vec3(1.0);
-  if (c < 0.68) return vec3(0.84, 0.98, 1.22);
-  if (c < 0.79) return vec3(1.22, 0.7, 0.42);
-  if (c < 0.93) return vec3(0.42, 0.68, 1.4) * (0.82 + 0.18 * step(0.45, fract(uTime * (1.1 + 1.7 * s) + s * 9.0)));
-  return vec3(1.3, 0.48, 1.0);
+  if (c < 0.8) return vec3(1.08, 0.88, 0.66);
+  return vec3(0.94, 0.94, 0.9);
 }
 vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY) {
   float fh = vInfo.z, bay = vInfo.w;
@@ -382,6 +382,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float litAvg = street ? (shopRow ? 0.92 : glassy ? 0.72 : 0.55) : litP;
   float baseTile = TILE0[st];
   float tile = shopRow && lit > 0.5 ? (rs < 0.62 ? 12.0 : 13.0) : baseTile + lit;
+  if (abs(tile - 11.0) < 0.5) tile = 9.0; // the lit condo tile has a man standing still in it: the lit loft window instead
   // the building's wall: brick courses, stone blocks or concrete panel joints where the painted tile does not show its own
   float mort = 0.0;
   #ifndef LOW
@@ -525,7 +526,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float ink = 1.0 - smoothstep(pxw * 0.5, pxw * 1.3, ce);
     // on the back wall: a picture, a bookshelf or a door
     float kd = fract(r * 53.7), cx = mix(-0.5, 0.5, fract(r * 59.3)) * max(Rx - 0.6, 0.0);
-    vec3 fab = fract(r * 7.7) < 0.4 ? vec3(0.92, 0.86, 0.7) : fract(r * 7.7) < 0.7 ? vec3(0.75, 0.25, 0.2) : vec3(0.25, 0.55, 0.5);
+    vec3 fab = fract(r * 7.7) < 0.45 ? vec3(0.92, 0.86, 0.7) : fract(r * 7.7) < 0.8 ? vec3(0.78, 0.68, 0.52) : vec3(0.62, 0.3, 0.24);
     if (back) {
       if (kd < 0.35) {
         vec4 pb = vec4(cx - 0.32, yF + 1.3, cx + 0.32, yF + 1.75);
@@ -555,17 +556,6 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
       c = mix(c, fc2, fm2);
       ink *= 1.0 - fm2;
     }
-    // sometimes someone at home, or a cat on a high shelf of a lit room
-    float tP = mix(0.9, D - 1.3, fract(r * 61.3)) / d.z;
-    if (lit > 0.5 && fract(r * 79.3) < 0.22 && tP < t) {
-      vec2 hp = o.xy + d.xy * tP;
-      float px0 = mix(-0.6, 0.6, fract(r * 71.9)) * Rx;
-      vec2 b = hp - vec2(px0, yF);
-      float head = 1.0 - smoothstep(0.12 - pxw, 0.12 + pxw, length(b - vec2(0.0, 1.6)));
-      vec2 bq = vec2(abs(b.x), b.y - 0.7);
-      float body = 1.0 - smoothstep(-pxw, pxw, length(max(abs(bq) - vec2(0.12, 0.62), 0.0)) - 0.1);
-      c = mix(c, vec3(0.09, 0.07, 0.11), max(head, body) * 0.92);
-    }
     // a pot plant just inside the glass
     if (fract(r * 87.1) < 0.18) {
       vec2 hp = o.xy + d.xy * (0.35 / d.z);
@@ -592,13 +582,38 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
       float flipR = step(0.5, fract(r * 31.7));
       uvc.x = mix(uvc.x, 1.0 - uvc.x, flipR);
       uvc = clamp(uvc, 0.01, 0.99);
-      float ri = floor(fract(r * 113.1 + sd * 0.37) * 31.999);
+      float ri = EMPTYR[int(fract(r * 113.1 + sd * 0.37) * 23.999)];
       vec2 cellR = vec2(mod(ri, 8.0), floor(ri / 8.0));
       vec2 auv = vec2((cellR.x + uvc.x) / 8.0, 1.0 - (cellR.y + 1.0 - uvc.y) / 4.0);
       vec2 gsc = vec2(mix(1.0, -1.0, flipR), 1.0) / (side2 * vec2(8.0, 4.0));
       c = textureGrad(uRooms, auv, pmX * gsc, pmY * gsc).rgb;
+      // Now and then someone walks across a lit room: a backlit silhouette on a plane 1 m in. Each walks out, stands a
+      // moment, walks back and stands again, on a loop of its own, with swinging legs and arms and a bob in the step.
+      if (lit > 0.5 && fract(r * 79.3) < 0.12) {
+        vec2 hp = o.xy + d.xy * (1.0 / d.z);
+        float per = mix(9.0, 16.0, fract(r * 71.9));
+        float ph = fract(uTime / per + fract(r * 53.1));
+        float moving = (ph < 0.4 || (ph >= 0.5 && ph < 0.9)) ? 1.0 : 0.0;
+        float k = ph < 0.4 ? ph / 0.4 : ph < 0.5 ? 1.0 : ph < 0.9 ? 1.0 - (ph - 0.5) / 0.4 : 0.0;
+        k = k * k * (3.0 - 2.0 * k);
+        float span = max(hm.x * 1.3, 0.6);
+        vec2 b = hp - vec2(mix(-span, span, k), yF);
+        float stepT = uTime * 5.5 + r * 20.0;
+        float sw = sin(stepT) * 0.32 * moving;
+        b.y -= abs(cos(stepT)) * 0.035 * moving;
+        float sil = 1.0 - smoothstep(0.11 - pxw, 0.11 + pxw, length(b - vec2(0.0, 1.62)));
+        sil = max(sil, 1.0 - smoothstep(-pxw, pxw, length(max(abs(b - vec2(0.0, 1.17)) - vec2(0.13, 0.26), 0.0)) - 0.06));
+        for (int i = 0; i < 2; i++) {
+          float a = i == 0 ? sw : -sw;
+          vec2 dl = vec2(sin(a), -cos(a)), vl = b - vec2(0.0, 0.86);
+          sil = max(sil, 1.0 - smoothstep(-pxw, pxw, length(vl - dl * clamp(dot(vl, dl), 0.0, 0.84)) - 0.065));
+          vec2 da = vec2(sin(-a * 0.8), -cos(a * 0.8)), va = b - vec2(0.0, 1.38);
+          sil = max(sil, 1.0 - smoothstep(-pxw, pxw, length(va - da * clamp(dot(va, da), 0.0, 0.6)) - 0.045));
+        }
+        c = mix(c, vec3(0.1, 0.07, 0.08), sil * 0.9);
+      }
       // the first 16 rooms are painted at night, darker than the second 16: they get more light when lit
-      litC = c * mix(vec3(1.0), lightC, 0.3) * (ri < 16.0 ? 1.6 : 1.25);
+      litC = c * mix(vec3(1.0), lightC, 0.25) * (ri < 16.0 ? 1.6 : 1.25);
     }
     litC = mix(litC, litC * green * 1.4, vClog * 0.4) * finW;
     vec3 darkC = c * vec3(0.14, 0.16, 0.24);
@@ -626,7 +641,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float sk = fract(r * 41.3);
     float depth = mix(0.22, 0.6, fract(r * 17.9));
     float sm = wSharp * smoothstep(1.0 - depth - aa.y / wh, 1.0 - depth + aa.y / wh, wy) * step(sk, fullR ? 0.18 : 0.3) * upper * detail * (painted || fract(r * 83.3) >= 0.55 ? 1.0 : 0.0);
-    vec3 fab = fract(r * 7.7) < 0.4 ? vec3(0.92, 0.86, 0.7) : fract(r * 7.7) < 0.7 ? vec3(0.75, 0.25, 0.2) : vec3(0.25, 0.55, 0.5);
+    vec3 fab = fract(r * 7.7) < 0.45 ? vec3(0.92, 0.86, 0.7) : fract(r * 7.7) < 0.8 ? vec3(0.78, 0.68, 0.52) : vec3(0.62, 0.3, 0.24);
     float slat = sk < 0.12 ? stripe(wy * 9.0, 0.16) : 0.0;
     vec3 shadeCol = lit > 0.5 ? mix(litWin * 0.85, fab * litWin.r * 1.05, sk < 0.12 ? 0.25 : 0.6) * (1.0 - 0.45 * slat)
                               : comicCelX(fab * 0.62, band, LITMUL, LITADD) * (1.0 - 0.35 * slat);
