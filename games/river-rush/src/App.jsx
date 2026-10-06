@@ -7,6 +7,8 @@ import { createGame, emptyInput, queueAction, snapshot, updateGame, validBest } 
 import { loadArt, renderGame } from './game/render.js';
 import { RiverAudio } from './game/audio.js';
 import { pauseWater } from './game/water.js';
+import { renderDpr } from './game/quality.js';
+import { readSwipe } from './game/input.js';
 const readBest=()=>{try{return validBest(JSON.parse(localStorage.getItem('river-rush-best')));}catch{return null;}};
 export default function App() {
   const [mode,setMode]=useState('menu'),[art,setArt]=useState(null),[error,setError]=useState('');
@@ -14,7 +16,7 @@ export default function App() {
   const canvasRef=useRef(),model=useRef(),input=useRef(emptyInput()),pointer=useRef(null);
   const modeRef=useRef(mode),audio=useRef(new RiverAudio()),actions=useRef();modeRef.current=mode;
   useEffect(()=>{let alive=true;loadArt().then(a=>{if(alive)setArt(a);}).catch(e=>{if(alive)setError(e.message);});return()=>{alive=false;};},[]);
-  function start(){if(!art)return;input.current=emptyInput();model.current=createGame();setGame(snapshot(model.current));modeRef.current='playing';setMode('playing');audio.current.setEnabled(sound);}
+  function start(){if(!art)return;pointer.current=null;input.current=emptyInput();model.current=createGame();setGame(snapshot(model.current));modeRef.current='playing';setMode('playing');audio.current.setEnabled(sound);}
   function pause(){if(modeRef.current==='playing'){input.current=emptyInput();pointer.current=null;modeRef.current='paused';setMode('paused');}}
   function resume(){input.current=emptyInput();modeRef.current='playing';setMode('playing');}
   function home(){input.current=emptyInput();modeRef.current='menu';setMode('menu');}
@@ -37,15 +39,23 @@ export default function App() {
     return()=>lifecycle.abort();
   },[]);
   useEffect(()=>{
-    if(!art)return;let raf,previous=0,uiAt=0;
+    if(!art)return;let raf,previous=0,uiAt=0,lastTime=-1,lastWidth=0,lastHeight=0,lastReduce=null,lastRun=null;
     const pref=window.matchMedia('(prefers-reduced-motion: reduce)');let reduce=pref.matches;const changed=e=>{reduce=e.matches;};pref.addEventListener('change',changed);
     function tick(now){const dt=previous?Math.min(.05,(now-previous)/1000):0;previous=now;
       if(model.current&&!['menu','help'].includes(modeRef.current)){
         const g=model.current,before=g.eventId;
         if(modeRef.current==='playing')updateGame(g,input.current,dt);
         if(g.eventId!==before)audio.current.tone(g.event);
-        const canvas=canvasRef.current;if(canvas){const w=window.innerWidth,h=window.innerHeight,dpr=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==w*dpr||canvas.height!==h*dpr){canvas.width=w*dpr;canvas.height=h*dpr;}const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);renderGame(ctx,g,art,w,h,reduce,modeRef.current==='playing');}
-        if(now-uiAt>55||g.phase!=='playing'){setGame(snapshot(g));uiAt=now;}
+        const canvas=canvasRef.current,w=window.innerWidth,h=window.innerHeight;
+        const dirty=g!==lastRun||g.time!==lastTime||w!==lastWidth||h!==lastHeight||reduce!==lastReduce;
+        if(canvas&&dirty){
+          const dpr=renderDpr(w,h,window.devicePixelRatio||1),bw=Math.floor(w*dpr),bh=Math.floor(h*dpr);
+          if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh;}
+          const ctx=canvas.getContext('2d',{alpha:false});ctx.setTransform(bw/w,0,0,bh/h,0,0);
+          renderGame(ctx,g,art,w,h,reduce,modeRef.current==='playing');
+          lastRun=g;lastTime=g.time;lastWidth=w;lastHeight=h;lastReduce=reduce;
+        }
+        if((modeRef.current==='playing'&&now-uiAt>50)||g.phase==='lost'&&modeRef.current==='playing'){setGame(snapshot(g));uiAt=now;}
         if(g.phase==='lost'&&modeRef.current==='playing'){
           modeRef.current='result';setMode('result');
           setBest(old=>{const value=!old||g.score>old.score?{version:2,score:g.score,distance:Math.floor(g.distance),coins:g.coins}:old;try{localStorage.setItem('river-rush-best',JSON.stringify(value));}catch{}return value;});
@@ -62,7 +72,7 @@ export default function App() {
     const blur=()=>actions.current.pause();window.addEventListener('keydown',down);window.addEventListener('blur',blur);document.addEventListener('visibilitychange',hidden);
     return()=>{window.removeEventListener('keydown',down);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',hidden);};
   },[]);
-  function swipe(e){if(modeRef.current!=='playing'||!pointer.current)return;const dx=e.clientX-pointer.current.x,dy=e.clientY-pointer.current.y;if(Math.max(Math.abs(dx),Math.abs(dy))<26)return;queueAction(input.current,Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'duck':'jump');pointer.current=null;}
+  function swipe(e){if(modeRef.current!=='playing')return;const swipe=readSwipe(pointer.current,e.clientX,e.clientY);if(!swipe)return;queueAction(input.current,swipe.action);pointer.current=swipe.next;}
   const inGame=!['menu','help'].includes(mode);
   return <div className={`app ${inGame?'in-game':''}`} data-paused={inGame&&mode!=='playing'}>
     {inGame&&<canvas ref={canvasRef} className="game-canvas" aria-label="Three-lane river runner. Left and right change lanes, Up or Space jumps, Down ducks, Shift activates Rush." onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pointer.current={x:e.clientX,y:e.clientY};}} onPointerMove={swipe} onPointerUp={e=>{swipe(e);pointer.current=null;}} onPointerCancel={()=>{pointer.current=null;}}/>}

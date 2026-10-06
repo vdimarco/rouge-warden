@@ -1,3 +1,4 @@
+import { riverRate } from './quality.js';
 // Animate the generated water texture. Shorelines remain the original art.
 const scenes = new WeakMap();
 const vertex = `attribute vec2 a_position; varying vec2 v_uv;
@@ -42,33 +43,40 @@ function createScene(art) {
 const videos = new WeakMap();
 function videoWater(ctx,g,art,width,height,active,disabled){
   let state=videos.get(art);
-  if(!state){state={clips:{},frame:document.createElement('canvas'),time:-1,key:''};videos.set(art,state);}
+  if(!state){state={clips:{},frame:document.createElement('canvas'),time:-1,key:'',token:null};videos.set(art,state);}
   const key=width/height<.85?'portrait':'landscape';
   for(const [name,clip] of Object.entries(state.clips))if(!active||disabled||name!==key)clip.pause();
   if(disabled)return false;
   if(!state.clips[key]&&active){
     const clip=document.createElement('video');clip.muted=true;clip.loop=true;clip.playsInline=true;clip.preload='auto';
     clip.src=`${import.meta.env.BASE_URL}art/river-${key}-loop.mp4`;
+    clip.serial=0;clip.decodedWall=-1000;
+    if(clip.requestVideoFrameCallback){const decoded=()=>{clip.serial++;clip.decodedWall=performance.now();clip.requestVideoFrameCallback(decoded);};clip.requestVideoFrameCallback(decoded);}
     clip.addEventListener('error',()=>{clip.failed=true;});state.clips[key]=clip;
   }
-  if(!active){if(state.key===key&&state.frame.width===width&&state.frame.height===height){ctx.drawImage(state.frame,0,0,width,height);return true;}return false;}
+  if(!active){if(state.key===key){ctx.drawImage(state.frame,0,0,width,height);return true;}return false;}
   const clip=state.clips[key];if(!clip||clip.failed)return false;
   if(active&&clip.paused&&!clip.starting){clip.starting=true;clip.play().catch(error=>{if(error.name!=='AbortError')clip.failed=true;}).finally(()=>{clip.starting=false;});}
+  const rate=riverRate(g.speed);if(Math.abs(clip.playbackRate-rate)>.03)clip.playbackRate=rate;
   if(clip.readyState<2)return false;
-  // Decode runs independently, but only simulation ticks capture a frame.
-  // Late video frames cannot alter a paused canvas.
-  if(state.time!==g.time||state.key!==key||state.frame.width!==width||state.frame.height!==height){
-    if(state.frame.width!==width||state.frame.height!==height){state.frame.width=width;state.frame.height=height;}
-    state.frame.getContext('2d').drawImage(clip,0,0,width,height);state.time=g.time;state.key=key;
+  // Capture only a newly decoded frame. Pausing never adopts a late decode.
+  const token=clip.serial>0&&performance.now()-clip.decodedWall<200?`v${clip.serial}`:`t${Math.floor(clip.currentTime*24)}`;
+  const scale=Math.min(1,1024/Math.max(clip.videoWidth,clip.videoHeight));
+  const w=Math.round(clip.videoWidth*scale),h=Math.round(clip.videoHeight*scale);
+  if(state.token!==token||state.key!==key||state.frame.width!==w||state.frame.height!==h){
+    if(state.frame.width!==w||state.frame.height!==h){state.frame.width=w;state.frame.height=h;}
+    state.frame.getContext('2d',{alpha:false}).drawImage(clip,0,0,w,h);state.token=token;state.time=g.time;state.key=key;
   }
   ctx.drawImage(state.frame,0,0,width,height);return true;
 }
 export function drawWater(ctx,g,art,width,height,reducedMotion,active=true) {
   const portrait=width/height<.85,source=portrait?art.portrait:art.environment;
-  ctx.drawImage(source,0,0,width,height);
   const disabled=reducedMotion||navigator.connection?.saveData;
   if(videoWater(ctx,g,art,width,height,active,disabled))return true;
+  ctx.drawImage(source,0,0,width,height);
   if(disabled)return false;
+  const clip=videos.get(art)?.clips[portrait?'portrait':'landscape'];
+  if(!clip?.failed&&g.time<1.2)return false;
   if(!scenes.has(art))scenes.set(art,createScene(art));
   const state=scenes.get(art);if(!state||state.lost)return false;
   try {

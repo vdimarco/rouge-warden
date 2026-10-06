@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,emptyInput,queueAction,updateGame} from '../src/game/engine.js';
+import {createGame,emptyInput,queueAction,updateGame,timeToImpact} from '../src/game/engine.js';
 test('delayed-input player survives varied escalating courses with a legal action route',()=>{
   let tricks=0,powers=0,highestEntities=0,totalDistance=0;
   for(let seed=1;seed<=40;seed++){
@@ -9,7 +9,7 @@ test('delayed-input player survives varied escalating courses with a legal actio
     for(let frame=0;frame<240*60;frame++){
       const obstacles=g.entities.filter(e=>!e.done&&['rock','log','branch'].includes(e.type)&&e.lane===g.lane);
       const next=obstacles[0];
-      if(next&&!handled.has(next.id)&&(next.d-g.distance)/g.speed<.62&&!pending){
+      if(next&&!handled.has(next.id)&&timeToImpact(g,next.d)<.62&&!pending){
         const row=g.entities.filter(e=>e.row===next.row&&['rock','log','branch'].includes(e.type));
         const safe=[0,1,2].find(l=>!row.some(e=>e.lane===l));
         pending={id:next.id,at:g.time+.18+(seed%7)*.018,actions:next.type==='rock'?Array.from({length:Math.abs(safe-g.lane)},()=>safe>g.lane?'right':'left'):[next.type==='log'?'jump':'duck']};

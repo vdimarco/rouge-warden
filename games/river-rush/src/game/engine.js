@@ -1,15 +1,29 @@
 // Distance-based three-lane runner. Presentation never decides collisions.
-export const JUMP_SECONDS = .86;
-export const DUCK_SECONDS = .82;
-export const VIEW_DISTANCE = 115;
+export const JUMP_SECONDS = .66;
+export const DUCK_SECONDS = .60;
+export const VIEW_DISTANCE = 140;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const emptyInput = () => ({ actions: [] });
 export function queueAction(input, action) { if (input.actions.length < 8) input.actions.push(action); }
-export const speedAt = time => Math.min(42, 22 + time * .18);
+export const speedAt = time => Math.min(50, 30 + time * .28);
+
+// Forecast includes Rush ending; a constant current-speed estimate fires
+// short actions too early just before the boost expires.
+function travelTime(distance,time,factor=1){
+  const v=speedAt(time),d=Math.max(0,distance)/factor,capDistance=(50*50-v*v)/(.56);
+  return d<=capDistance?(Math.sqrt(v*v+.56*d)-v)/.28:(50-v)/.28+(d-capDistance)/50;
+}
+export function timeToImpact(g,distance){
+  const d=Math.max(0,distance-g.distance),rush=g.rush;
+  if(!rush)return travelTime(d,g.time);
+  const v=speedAt(g.time),ramp=Math.min(rush,(50-v)/.28);
+  const boosted=((v*ramp+.14*ramp*ramp)+(rush-ramp)*50)*1.32;
+  return d<=boosted?travelTime(d,g.time,1.32):rush+travelTime(d-boosted,g.time+rush);
+}
 
 export function createGame(seed = Date.now()) {
   const g = { seed: seed >>> 0, rng: seed >>> 0, phase: 'playing', time: 0, distance: 0,
-    lane: 1, visualLane: 1, speed: 22, action: '', actionTime: 0, buffered: '', bufferTime: 0,
+    lane: 1, visualLane: 1, speed: 30, action: '', actionTime: 0, buffered: '', bufferTime: 0,
     coins: 0, score: 0, bonus: 0, streak: 0, multiplier: 1, lastCoin: -10,
     charge: 0, rush: 0, magnet: 0, shield: true, grace: 0,
     jumps: 0, ducks: 0, dodges: 0, shieldsUsed: 0, rowsPassed: 0,
@@ -57,14 +71,16 @@ export function generateAhead(g) {
     }
     if (row % 13 === 6) add(g, 'magnet', safe, d - 8);
     if (row % 17 === 11) add(g, 'shield', safe, d - 8);
-    const interval = 1.17 - level * .2;
+    const interval = 1.05 - level * .19;
     g.nextRow += speedAt(predictedTime) * interval;
   }
   g.entities.sort((a, b) => a.d - b.d || a.id - b.id);
 }
 export function jumpHeight(g) {
-  return g.action === 'jump' ? Math.sin(Math.PI * clamp(g.actionTime / JUMP_SECONDS, 0, 1)) : 0;
+  return g.action === 'jump' ? 4 * clamp(g.actionTime / JUMP_SECONDS, 0, 1) * (1 - clamp(g.actionTime / JUMP_SECONDS, 0, 1)) : 0;
 }
+// Reward a timely tap on the launch frame, before the arc reaches full height.
+function jumpClears(g){return g.action==='jump'&&(g.actionTime<=.06||jumpHeight(g)>.28);}
 function beginAction(g, action) {
   g.action = action; g.actionTime = 0; g.buffered = ''; g.bufferTime = 0;
   emit(g, action);
@@ -110,7 +126,7 @@ export function updateGame(g, input, dt) {
   g.magnet = Math.max(0, g.magnet - dt); g.grace = Math.max(0, g.grace - dt);
   g.speed = speedAt(g.time) * (g.rush > 0 ? 1.32 : 1);
   g.rush = Math.max(0, g.rush - dt);
-  g.visualLane += (g.lane - g.visualLane) * (1 - Math.exp(-dt * 24));
+  g.visualLane += (g.lane - g.visualLane) * (1 - Math.exp(-dt * 42));
   const previous = g.distance;
   g.distance += g.speed * dt;
   if (g.time - g.lastCoin > 2.8) { g.streak = 0; g.multiplier = 1; }
@@ -118,7 +134,7 @@ export function updateGame(g, input, dt) {
     if (e.done || e.d > g.distance || e.d <= previous) continue;
     e.done = true;
     if (e.type === 'coin') {
-      if ((e.lane === g.lane && (!e.high || jumpHeight(g) > .28)) || g.magnet > 0 || g.rush > 0) {
+      if ((e.lane === g.lane && (!e.high || jumpClears(g))) || g.magnet > 0 || g.rush > 0) {
         g.coins++; g.streak++; g.lastCoin = g.time;
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
         g.bonus += 10 * g.multiplier; if (!g.rush) g.charge = Math.min(100, g.charge + 2);
@@ -132,7 +148,7 @@ export function updateGame(g, input, dt) {
     } else {
       g.rowsPassed++;
       if (e.lane === g.lane) {
-        const cleared = (e.type === 'log' && jumpHeight(g) > .28) || (e.type === 'branch' && g.action === 'duck');
+        const cleared = (e.type === 'log' && jumpClears(g)) || (e.type === 'branch' && g.action === 'duck');
         if (cleared && !g.rush) {
           const type = e.type === 'log' ? 'jump' : 'duck';
           g[type === 'jump' ? 'jumps' : 'ducks']++;
@@ -160,12 +176,12 @@ export function updateGame(g, input, dt) {
 }
 export function snapshot(g) {
   const next = g.entities.find(e => !e.done && e.lane === g.lane && ['rock', 'log', 'branch'].includes(e.type));
-  return { phase: g.phase, time: g.time, distance: Math.floor(g.distance), lane: g.lane,
+  return { phase: g.phase, time: g.time, distance: Math.floor(g.distance), lane: g.lane, visualLane: g.visualLane, actionTime: g.actionTime,
     action: g.action, coins: g.coins, score: g.score, streak: g.streak, multiplier: g.multiplier,
     charge: g.charge, rush: g.rush, magnet: g.magnet, shield: g.shield, speed: g.speed, streakTime: g.streak ? Math.max(0, 2.8 - (g.time - g.lastCoin)) : 0,
     jumps: g.jumps, ducks: g.ducks, dodges: g.dodges, reason: g.reason,
     goalsCleared: g.goalsCleared, goal: { ...g.goal, progress: Math.min(g.goal.target, Math.floor((g.goal.kind === 'tricks' ? g.jumps + g.ducks : g.goal.kind === 'coins' ? g.coins : g.distance) - g.goal.start)) },
     notice: g.time < g.noticeUntil ? g.notice : '',
-    hint: next && next.d - g.distance < 35 ? { id: next.id, type: next.type, in: (next.d - g.distance) / g.speed, safeLane: [0,1,2].find(lane => !g.entities.some(e => e.row === next.row && e.lane === lane && ['rock','log','branch'].includes(e.type))) } : null };
+    hint: next && next.d - g.distance < 35 ? { id: next.id, type: next.type, in: timeToImpact(g,next.d), safeLane: [0,1,2].find(lane => !g.entities.some(e => e.row === next.row && e.lane === lane && ['rock','log','branch'].includes(e.type))) } : null };
 }
 export function validBest(value) { return value?.version === 2 && Number.isFinite(value.score) && value.score > 0 ? value : null; }
