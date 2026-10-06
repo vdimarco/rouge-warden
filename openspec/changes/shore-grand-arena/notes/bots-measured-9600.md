@@ -2,7 +2,7 @@
 
 Measured on main at d0c7a2b (the grand arena with the bots merged, including the move guard), before vdimarco/rouge-warden#229 turned
 spirit camps off, removed the siege without a wave and added Mythic drafting. The final drafted measurements after #229 are in
-`notes/bots.md` (Mythic 67% against Veteran and 68% against the old bots, Veteran 52%, Apprentice 35%). Measured with
+`notes/bots.md` (after #259: Mythic 63% against Veteran and 87% against the old bots, Veteran 47%, Apprentice 35%). Measured with
 `node qa/tidebreak/bot-ab.mjs <A> <B> 30 1 3`: 30 seeds, sides swapped on every seed, 60 matches per row, 20 Hz steps, up to the 17:00
 limit. Wards taken count from the start count of 9 per team (guardians are not counted).
 
