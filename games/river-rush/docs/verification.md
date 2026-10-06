@@ -1,5 +1,12 @@
 # River Rush runner verification — 2026-10-05
 
+## Downstream art verification — 2026-10-06
+
+- All 35 unit/playtest checks pass, including immediate real-input jump/duck selection and simulation-time pose freezing. The 40-seed delayed-input playtest still records 737,188 metres, 2,952 tricks, 1,015 Rush activations and at most 49 entities. Engine and hydrodynamics files have no changes.
+- Focused Three.js QA passes at 390×844, 1536×1024 and 844×390: rear-facing pose status, distinct jump/duck assets, opening log/branch clearance without losing protection, phone CDP swipes, keyboard controls, exact paused state/pixels, reduced motion and no horizontal overflow. Temporary 503s recover, persistent model failures remain playable, persistent rider-image failures expose a working retry, no-WebGL remains playable in 2D, and context loss pauses then resumes in 2D. No page errors.
+- Full-detail shader captures use a test-only GPU-name override in Chromium/SwiftShader. Actual keyboard actions show an upright rider facing downriver, a raised jump pose and a low anatomical crouch, without changing the raft anchor. Both the full and software paths compile and render. Captures use about 20–24 draws as hazards enter view, retaining fixed bank/palm counts. This verifies renderer behavior, not physical-device frame rates. Physical iOS/Android and Safari remain untested.
+- Production build, strict scoped OpenSpec validation and diff whitespace checks pass. The generated transparent atlas is hosted locally; provenance and the reproducible packing script are retained. Publication/live verification follows below after deployment.
+
 The boring treasure race was replaced by an endless three-lane runner. Verification below applies to the runner build, not the archived race/Surge release.
 
 - `npm test --prefix games/river-rush`: 14/14 pass. Includes short-tap/lane limits, log/jump and branch/duck outcomes, fatal wrong actions, shield/grace, cancellation/buffering, coin streak expiration, eight-second magnet, Rush duration/invulnerability/no self-recharge, deterministic legal routes, versioned score validation and challenge rewards.

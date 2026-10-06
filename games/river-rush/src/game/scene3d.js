@@ -3,8 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { jumpHeight, VIEW_DISTANCE } from './engine.js';
 import { WAVES, surfaceAt, createFloat, advanceFloat } from './hydrodynamics.js';
-import { paddleSample } from './motion.js';
-import { duckCompression } from './world.js';
+import { riderPose, RIDER_SIZE } from './rider.js';
 import { renderDpr } from './quality.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
@@ -26,8 +25,8 @@ void main(){
  vec3 s=vec3(vHeight,0.,0.);vec3 n=normalize(vNormal);
  vec3 view=normalize(cameraPosition-vWorld);float fresnel=pow(1.-max(dot(view,n),0.),3.);
  float turbulence=noise(p*vec2(1.3,.75)+vec2(0.,-uTime*2.1))*uMotion;
- vec3 color=mix(vec3(.015,.24,.29),vec3(.10,.56,.54),.36+turbulence*.55);
- color=mix(color,vec3(.42,.72,.75),fresnel*.65);
+ vec3 color=mix(vec3(.006,.065,.068),vec3(.024,.20,.12),.36+turbulence*.55);
+ color=mix(color,vec3(.38,.65,.59),fresnel*.48);
  float sun=pow(max(dot(reflect(-normalize(vec3(-.5,.8,.35)),n),view),0.),110.);
  color+=vec3(1.,.88,.56)*sun*.85;
  float crest=smoothstep(.12,.26,s.x+turbulence*.13)*(.38+.62*noise(p*3.));
@@ -39,10 +38,10 @@ void main(){
  float ripple=0.;
  for(int i=0;i<4;i++){vec4 r=uRipples[i];float age=uTime-r.z;
  if(age>=0.&&age<1.4){float dist=distance(vec2(vWorld.x,vWorld.z),r.xy);ripple+=exp(-pow((dist-age*5.)*3.,2.))*(1.-age/1.4)*r.w;}}
- float foam=clamp((crest*.68+bank*.65+wake*(.75+uRush*.35)+ripple)*uMotion,0.,.95);
- color=mix(color,vec3(.81,.96,.89),foam);
+ float foam=clamp((crest*.28+bank*.65+wake*(.75+uRush*.35)+ripple)*uMotion,0.,.95);
+ color=mix(color,vec3(.78,.89,.76),foam*.76);
  float fog=1.-exp(-pow(length(vWorld.xz-cameraPosition.xz)*.0065,2.));
- color=mix(color,vec3(.57,.73,.70),fog);
+ color=mix(color,vec3(.63,.73,.64),fog);
  gl_FragColor=vec4(color,1.);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
@@ -52,14 +51,14 @@ void main(){
 const simpleFragment=`varying vec3 vWorld,vNormal;varying float vHeight;
 uniform float uTime,uDistance,uMotion,uRush;uniform vec2 uRaft;uniform vec4 uRipples[4];
 void main(){vec3 n=normalize(vNormal),view=normalize(cameraPosition-vWorld);float facing=1.-max(dot(view,n),0.);
-vec3 color=mix(vec3(.02,.25,.29),vec3(.25,.59,.57),facing*facing*.6);
+vec3 color=mix(vec3(.008,.09,.075),vec3(.07,.28,.17),facing*facing*.6);
 float grain=fract((vWorld.x*1.31+uDistance-vWorld.z)*.31);
-float foam=smoothstep(.09,.24,vHeight)*(.18+.25*grain);
+float foam=smoothstep(.09,.24,vHeight)*(.07+.10*grain);
 float behind=vWorld.z-uRaft.y,side=abs(vWorld.x-uRaft.x),width=1.25+behind*.18;
 if(behind>0.&&behind<20.)foam+= (1.-smoothstep(.02,.3,abs(side-width)))*(1.-behind/20.)*.7;
 for(int i=0;i<4;i++){vec4 r=uRipples[i];float age=uTime-r.z;if(age>=0.&&age<1.4)foam+=(1.-smoothstep(.02,.25,abs(distance(vWorld.xz,r.xy)-age*5.)))*(1.-age/1.4)*r.w;}
-foam+=smoothstep(8.,9.3,abs(vWorld.x))*.3; color=mix(color,vec3(.71,.9,.83),clamp(foam*uMotion,0.,.85));
-color=mix(color,vec3(.57,.73,.70),smoothstep(90.,260.,-vWorld.z));gl_FragColor=vec4(color,1.);
+foam+=smoothstep(8.,9.3,abs(vWorld.x))*.3; color=mix(color,vec3(.75,.87,.75),clamp(foam*uMotion*.76,0.,.85));
+color=mix(color,vec3(.63,.73,.64),smoothstep(90.,260.,-vWorld.z));gl_FragColor=vec4(color,1.);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`;
@@ -79,18 +78,32 @@ function primitiveRaft(){
 }
 function groundTexture(){
  const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d'),data=ctx.createImageData(256,256);
- let seed=8307;for(let i=0;i<data.data.length;i+=4){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const n=seed/4294967296;
-  const x=(i/4)%256,y=Math.floor(i/1024),grain=Math.sin(x*.12)*Math.cos(y*.09)*8+n*26;
-  data.data[i]=48+grain;data.data[i+1]=54+grain;data.data[i+2]=35+grain*.7;data.data[i+3]=255;}
+ const hash=(x,y,period)=>{const a=(x+period)%period,b=(y+period)%period;let seed=Math.imul(a+8307,374761393)^Math.imul(b+127,668265263);seed=Math.imul(seed^(seed>>>13),1274126177);return (seed>>>0)/4294967296;};
+ const noise=(x,y,period)=>{const a=Math.floor(x),b=Math.floor(y),u=x-a,v=y-b,fx=u*u*(3-2*u),fy=v*v*(3-2*v),top=hash(a,b,period)*(1-fx)+hash(a+1,b,period)*fx,bot=hash(a,b+1,period)*(1-fx)+hash(a+1,b+1,period)*fx;return top*(1-fy)+bot*fy;};
+ for(let i=0;i<data.data.length;i+=4){const x=(i/4)%256,y=Math.floor(i/1024),grain=(noise(x/32,y/32,8)-.5)*54+(noise(x/8,y/8,32)-.5)*18+hash(x,y,256)*9;
+  data.data[i]=130+grain;data.data[i+1]=138+grain;data.data[i+2]=98+grain*.65;data.data[i+3]=255;}
  ctx.putImageData(data,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(7,14);t.anisotropy=4;return t;
+}
+function skyTexture(){
+ const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');
+ const sky=x.createLinearGradient(0,0,0,512);sky.addColorStop(0,'#486f81');sky.addColorStop(.55,'#afc4aa');sky.addColorStop(1,'#ebd5a0');x.fillStyle=sky;x.fillRect(0,0,512,512);
+ const glow=x.createRadialGradient(100,240,3,100,240,170);glow.addColorStop(0,'#fff2c9cc');glow.addColorStop(.13,'#ffedbf66');glow.addColorStop(1,'#ffeab000');x.fillStyle=glow;x.fillRect(0,0,512,512);
+ const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+function stoneTexture(){
+ const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),data=x.createImageData(128,128);let seed=191;
+ for(let y=0;y<128;y++)for(let z=0;z<128;z++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const vein=Math.sin(z*.09+Math.sin(y*.08)*2),grain=seed/4294967296*35,shade=110+vein*24+grain,i=(y*128+z)*4;
+ data.data[i]=shade;data.data[i+1]=shade+8;data.data[i+2]=shade-9;data.data[i+3]=255;}
+ x.putImageData(data,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
 }
 function terrain(side,index,material){
  const geo=new THREE.PlaneGeometry(34,64,12,24);geo.rotateX(-Math.PI/2);
  const pos=geo.attributes.position,colors=[];const color=new THREE.Color();
  for(let i=0;i<pos.count;i++){const across=(pos.getX(i)+17)/34,z=pos.getZ(i)+index*64;
- const h=.35+Math.pow(across,.72)*8.5+Math.sin(z*.14)*Math.sin(across*4)*1.8+Math.sin(z*.51+across*19)*.55;
+ // Periodic ridges meet exactly at each recycled tile edge.
+ const h=.24+Math.pow(across,.72)*8.5+Math.sin(z*TAU/64)*Math.sin(across*4)*1.8+Math.sin(z*TAU/16+across*19)*.55*across;
  pos.setX(i,side*(9+across*34));pos.setY(i,h);
- color.setHSL(.25+Math.sin(z)*.015,.15+across*.12,.35+across*.075);colors.push(color.r,color.g,color.b);}
+ color.setHSL(.21+Math.sin(z*TAU/64)*.025,.28+across*.17,.24+Math.min(across*4,1)*.21);colors.push(color.r,color.g,color.b);}
  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.computeVertexNormals();
  const m=new THREE.Mesh(geo,material);m.receiveShadow=true;return m;
 }
@@ -103,34 +116,41 @@ export function createScene(canvas,art,onLost){
  const gl=renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');
  const software=debug&&/swiftshader|llvmpipe|software/i.test(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL));
  softwareMaterials=!!software;
- renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+ renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;
  renderer.shadowMap.enabled=!software;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- const scene=new THREE.Scene();scene.background=new THREE.Color('#a0c5c2');scene.fog=new THREE.FogExp2('#a0c5c2',.0065);
+ const scene=new THREE.Scene();scene.background=skyTexture();scene.fog=new THREE.FogExp2('#b2c3a5',.0065);
  const camera=new THREE.PerspectiveCamera(58,1,.3,350);
- scene.add(new THREE.HemisphereLight('#e4f6ed','#4f6854',1.7));
- const sun=new THREE.DirectionalLight('#ffecd0',2.6);sun.position.set(-25,40,20);sun.castShadow=true;
+ scene.add(new THREE.HemisphereLight('#d8ebd9','#324b29',1.55));
+ const sun=new THREE.DirectionalLight('#ffdda5',2.7);sun.position.set(-25,40,20);sun.castShadow=true;
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:20,bottom:-18,near:1,far:100});sun.shadow.bias=-.001;sun.shadow.normalBias=.07;scene.add(sun);
  const waterGeo=new THREE.PlaneGeometry(19,260,32,160);waterGeo.rotateX(-Math.PI/2);waterGeo.translate(0,0,-100);
  const uniforms={uTime:{value:0},uDistance:{value:0},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))}};
  const waterMaterial=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:software?simpleFragment:fragment});
  const water=mesh(waterGeo,waterMaterial,scene);water.frustumCulled=false;
  const terrainTiles=[],banks=[];
- const ground=groundTexture(),groundMaterial=software?new THREE.MeshLambertMaterial({map:ground,vertexColors:true,side:THREE.DoubleSide}):new THREE.MeshStandardMaterial({map:ground,vertexColors:true,roughness:1,side:THREE.DoubleSide});
+ const ground=groundTexture(),groundMaterial=software?new THREE.MeshLambertMaterial({map:ground,vertexColors:true,side:THREE.DoubleSide}):new THREE.MeshStandardMaterial({map:ground,bumpMap:ground,bumpScale:.24,vertexColors:true,roughness:.93,side:THREE.DoubleSide});
  for(const side of [-1,1]){const t=terrain(side,0,groundMaterial),batch=new THREE.InstancedMesh(t.geometry,groundMaterial,6);batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);batch.frustumCulled=false;scene.add(batch);terrainTiles.push(batch);}
  const bankTemplate=primitiveBank();
  for(const side of [-1,1])for(let i=0;i<13;i++){
  const holder=new THREE.Group();holder.position.x=side*(11.5+Math.sin(i*2.3)*1.8);holder.add(bankTemplate.clone());scene.add(holder);banks.push({holder,side,index:i,rotation:i*2.399,scale: .85+(i%4)*.25});}
  // Distant solid ridges remain visible above the mist; no painted backdrop.
- const mountainMat=mat('#718a77'),mountains=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,2),mountainMat,14),mountainPose=new THREE.Object3D();let mountainIndex=0;
- for(const side of [-1,1])for(let i=0;i<7;i++){mountainPose.position.set(side*(40+i*5),6+i*3,-120-i*20);mountainPose.scale.set(28,15+i*3,45);mountainPose.updateMatrix();mountains.setMatrixAt(mountainIndex++,mountainPose.matrix);}scene.add(mountains);
+ const mountainMat=mat('#667c62'),mountainGeo=new THREE.IcosahedronGeometry(1,2),ridge=mountainGeo.attributes.position;
+ for(let i=0;i<ridge.count;i++){const x=ridge.getX(i),y=ridge.getY(i),z=ridge.getZ(i),r=1+Math.sin(x*4+z*3)*Math.cos(y*5-z)*.16;ridge.setXYZ(i,x*r,y*r,z*r);}mountainGeo.computeVertexNormals();
+ const mountains=new THREE.InstancedMesh(mountainGeo,mountainMat,14),mountainPose=new THREE.Object3D();let mountainIndex=0;
+ for(const side of [-1,1])for(let i=0;i<7;i++){mountainPose.position.set(side*(40+i*5),6+i*3,-120-i*20);mountainPose.rotation.y=i*1.73+side;mountainPose.scale.set(28,15+i*3,45);mountainPose.updateMatrix();mountains.setMatrixAt(mountainIndex++,mountainPose.matrix);}scene.add(mountains);
  const raft=new THREE.Group();scene.add(raft);let raftModel=primitiveRaft();raft.add(raftModel);
- const riderTextures=art.paddleFrames.map(frame=>{const c=document.createElement('canvas');c.width=448;c.height=292;c.getContext('2d').drawImage(frame,0,0,448,292,0,0,448,292);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;});
+ // Canvas supplies Three's normal texture orientation. ImageBitmap ignores
+ // UNPACK_FLIP_Y_WEBGL and would put the rider upside down on this plane.
+ const riderTextures=art.downstreamFrames.map(frame=>{const c=document.createElement('canvas');c.width=RIDER_SIZE.width;c.height=RIDER_SIZE.height;c.getContext('2d').drawImage(frame,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;});
  const riderMat=new THREE.MeshBasicMaterial({map:riderTextures[0],transparent:true,alphaTest:.08,side:THREE.DoubleSide,depthWrite:true,toneMapped:false});
- const rider=mesh(new THREE.PlaneGeometry(4.48,2.92),riderMat,raft,0,1.88,.3);rider.renderOrder=3;
+ const riderWidth=3.2,riderHeight=riderWidth*RIDER_SIZE.height/RIDER_SIZE.width;
+ const rider=mesh(new THREE.PlaneGeometry(riderWidth,riderHeight),riderMat,raft,0,.48+(RIDER_SIZE.foot-RIDER_SIZE.height/2)*riderWidth/RIDER_SIZE.width,.3);rider.renderOrder=3;
  const shield=mesh(new THREE.SphereGeometry(2.05,24,12),new THREE.MeshBasicMaterial({color:'#a0fff0',wireframe:true,transparent:true,opacity:.055,depthWrite:false}),raft,0,1,0);shield.scale.set(1.05,.85,1.15);
  const shadow=mesh(new THREE.PlaneGeometry(3.4,4),new THREE.MeshBasicMaterial({color:'#033c40',transparent:true,opacity:.26,depthWrite:false}),scene,0,.01,0);shadow.rotation.x=-Math.PI/2;
  const coinGeo=new THREE.CylinderGeometry(.34,.34,.12,16),coinMat=new THREE.MeshStandardMaterial({color:'#ffc349',metalness:.75,roughness:.22,emissive:'#885200',emissiveIntensity:.28});
- const rockGeo=new THREE.DodecahedronGeometry(1,1),rockMat=mat('#697368');
+ const rockGeo=new THREE.DodecahedronGeometry(1,1),rockMat=mat('#abb4a4',.68),stone=stoneTexture();rockMat.map=stone;if(!software){rockMat.bumpMap=stone;rockMat.bumpScale=.15;}
+ const rockVertices=rockGeo.attributes.position;
+ for(let i=0;i<rockVertices.count;i++){const x=rockVertices.getX(i),y=rockVertices.getY(i),z=rockVertices.getZ(i),r=1+Math.sin(x*5+y*3-z*4)*.09;rockVertices.setXYZ(i,x*r,y*r,z*r);}rockGeo.computeVertexNormals();
  const logGeo=new THREE.CylinderGeometry(.32,.37,3.3,10),logMat=mat('#795136');
  const coinBatch=new THREE.InstancedMesh(coinGeo,coinMat,64),coinPose=new THREE.Object3D(),coinTarget=new THREE.Vector3();coinBatch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);coinBatch.frustumCulled=false;scene.add(coinBatch);
  const entities=new Map(),labels=new Map(),twigGeo=new THREE.CylinderGeometry(.1,.19,1.2,5),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ff8292',.35)};
@@ -162,7 +182,7 @@ export function createScene(canvas,art,onLost){
  if(key==='raft'){raft.remove(raftModel);raftModel=normalized(gltf.scene,3.15,.48,3.55);raft.add(raftModel);}
  else if(key==='bank'){bankModel=normalized(gltf.scene,7.5,7.5,6.5);bankModel.updateMatrixWorld(true);for(const b of banks)b.holder.clear();
  bankModel.traverse(o=>{if(!o.isMesh)return;const batch=new THREE.InstancedMesh(o.geometry,o.material,banks.length);batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);batch.frustumCulled=false;scene.add(batch);bankBatches.push({mesh:batch,local:o.matrixWorld.clone()});});}
- else{const palm=normalized(gltf.scene,5.8,15,5.8);palm.updateMatrixWorld(true);palm.traverse(o=>{if(!o.isMesh)return;const batch=new THREE.InstancedMesh(o.geometry,o.material,40);batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);batch.frustumCulled=false;scene.add(batch);palmBatches.push({mesh:batch,local:o.matrixWorld.clone()});});}
+ else{const palm=normalized(gltf.scene,5.8,15,5.8);palm.updateMatrixWorld(true);palm.traverse(o=>{if(!o.isMesh)return;const batch=new THREE.InstancedMesh(o.geometry,o.material,40);batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);batch.frustumCulled=false;for(let i=0;i<40;i++)batch.setColorAt(i,new THREE.Color().setHSL(.18+(i%5)*.012,.16,.77+(i%3)*.065));scene.add(batch);palmBatches.push({mesh:batch,local:o.matrixWorld.clone()});});}
  status.models[key]='ready';},undefined,()=>{if(disposed)return;if(attempt<2){status.models[key]='retrying';const timer=setTimeout(()=>{retryTimers.delete(timer);loadModel(key,attempt+1);},(attempt+1)*350);retryTimers.add(timer);}else status.models[key]='fallback';});}
  loadModel('raft');loadModel('bank');loadModel('palm');
  function lost(e){e.preventDefault();status.contextLost=true;onLost?.();}
@@ -176,8 +196,8 @@ export function createScene(canvas,art,onLost){
  camera.position.set(reduced?0:(g.visualLane-1)*.22,portrait?8.2:7.3,portrait?15:14);camera.lookAt(0,portrait?.8:.7,-27);
  const f=advanceFloat(float,g,reduced),x=(g.visualLane-1)*3.8,lift=jumpHeight(g)*2.9;
  raft.position.set(x,f.height+lift,0);raft.rotation.set(f.pitch,0,f.roll);
- const duck=duckCompression(g.action,g.actionTime);rider.scale.y=1-duck*.45;rider.position.y=1.88-duck*.66;
- riderMat.map=riderTextures[paddleSample(g.action?g.distance-g.speed*g.actionTime:g.distance,reduced).index];riderMat.opacity=g.grace>0&&Math.floor(g.time*12)%2?.65:1;
+ const pose=riderPose(g,reduced);riderMat.map=riderTextures[pose.index];status.rider=pose;
+ riderMat.opacity=g.grace>0&&Math.floor(g.time*12)%2?.65:1;
  shield.visible=g.shield||g.rush>0||g.grace>0;shield.material.opacity=g.rush?.11:.045;
  shadow.position.set(x,surfaceAt(x,g.distance,g.time,reduced).height-.03,0);shadow.scale.setScalar(1-jumpHeight(g)*.2);
  uniforms.uTime.value=g.time;uniforms.uDistance.value=g.distance;uniforms.uMotion.value=reduced?0:1;uniforms.uSpeed.value=g.speed;uniforms.uRush.value=g.rush>0?1:0;uniforms.uRaft.value.set(x,0);
@@ -190,7 +210,7 @@ export function createScene(canvas,art,onLost){
  for(const b of banks){const z=24-((b.index*22+travel)%286);b.holder.position.z=z;b.holder.position.y=-.12;b.holder.rotation.y=b.rotation;b.holder.scale.setScalar(b.scale);}
  for(const batch of bankBatches){banks.forEach((b,i)=>{b.holder.updateMatrixWorld(true);instanceMatrix.multiplyMatrices(b.holder.matrixWorld,batch.local);batch.mesh.setMatrixAt(i,instanceMatrix);});batch.mesh.instanceMatrix.needsUpdate=true;}
  for(const batch of palmBatches){for(let i=0;i<40;i++){const side=i%2?1:-1,index=Math.floor(i/2),z=32-((index*16+travel+side*7)%320),size=.65+(index%4)*.15;
- palmTransform.position.set(side*(14+Math.sin(index*2.399)*4),.3,z);palmTransform.rotation.set(0,index*2.399,side*.04);palmTransform.scale.setScalar(size);palmTransform.updateMatrix();instanceMatrix.multiplyMatrices(palmTransform.matrix,batch.local);batch.mesh.setMatrixAt(i,instanceMatrix);}batch.mesh.instanceMatrix.needsUpdate=true;}
+ palmTransform.position.set(side*(15+Math.sin(index*2.399+side*.7)*4),.3,z);palmTransform.rotation.set(Math.sin(index)*.06,index*2.399,side*.04+Math.sin(index*1.7)*.055);palmTransform.scale.set(size*(.8+(index%3)*.13),size*(.85+(index%5)*.07),size);palmTransform.updateMatrix();instanceMatrix.multiplyMatrices(palmTransform.matrix,batch.local);batch.mesh.setMatrixAt(i,instanceMatrix);}batch.mesh.instanceMatrix.needsUpdate=true;}
  const alive=new Set();let visible=0,coinCount=0;
  for(const e of g.entities){const z=e.d-g.distance;if(e.done||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
  if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set((e.lane-1)*3.8,(e.high?3.1:1.2)+surfaceAt((e.lane-1)*3.8,e.d,g.time,reduced).height,-z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
@@ -216,6 +236,6 @@ export function createScene(canvas,art,onLost){
  sprayGeometry.attributes.position.needsUpdate=true;}
  renderer.render(scene,camera);status.frames++;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:surfaceAt(x,g.distance,g.time,reduced).height};status.reducedMotion=reduced;
  }
- function dispose(){disposed=true;retryTimers.forEach(clearTimeout);canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,twigGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats)]),textures=new Set();for(const root of [scene,...retired])root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());renderer.dispose();}
+ function dispose(){disposed=true;retryTimers.forEach(clearTimeout);canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,twigGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats)]),textures=new Set([scene.background]);for(const root of [scene,...retired])root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());renderer.dispose();}
  return {render,dispose,status};
 }

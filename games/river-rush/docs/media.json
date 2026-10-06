@@ -116,6 +116,13 @@
       "models/meshy-palm-lite.glb"
     ],
     "runtime_generation_service_dependency": false,
-    "character": "approved photographic paddle cutout retained; no generated rigged character"
+    "character": "Rear-facing fal photographic rider atlas; separate jump and crouch, source in downstream-art.json"
+  },
+  "rider-downstream.png": {
+    "source_manifest": "downstream-art.json",
+    "provider": "fal.ai Nano Banana Pro + Pixelcut",
+    "date": "2026-10-06",
+    "format": "2048x1408 RGBA; eight registered 512x704 poses",
+    "direction": "Rear view faces downstream. Separate anatomical jump and folded duck silhouettes."
   }
 }

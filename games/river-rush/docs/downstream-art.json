@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-06",
+  "provider": "fal.ai",
+  "reference": "https://arcade.uptick.systems/river-rush/art/paddle-frames.png",
+  "generation": {
+    "endpoint": "fal-ai/nano-banana-pro/edit",
+    "requestId": "01a1116d-9910-7082-8d27-7fdebc1e7649",
+    "source": "https://v3b.fal.media/files/b/0aad4c1f/gBSaL56sLgON2k2B462X0_DXNcZ3Px.png",
+    "recipe": {
+      "endpoint_id": "fal-ai/nano-banana-pro/edit",
+      "input": {
+        "image_urls": [
+          "https://arcade.uptick.systems/river-rush/art/paddle-frames.png"
+        ],
+        "prompt": "Create a new photorealistic game character sprite atlas based on the adult man in the reference: same athletic tan body, long wavy dark brown hair, brown modest loincloth covering front and back, barefoot, no other clothing. EXACTLY eight isolated full-body figures in a precise 4-column by 2-row grid. Camera ALWAYS BEHIND the man, slightly elevated chase-game viewpoint: he faces AWAY from camera toward the TOP of every cell, hair and bare back visible. Match warm detailed photographic quality. NO raft, water, scenery, shadows, labels or grid lines. Pure white background for easy cutout. Equal cell width/height; same body scale and foot baseline in all eight cells; wide empty gutters; do not crop paddle or hair. TOP ROW four consecutive downstream paddling frames: reach paddle forward on his left; plant blade forward; pull blade backward beside left hip; lift blade and recover. Knees bent and body balanced, feet on implied raft deck, but no actual raft. BOTTOM ROW: first cell JUMP pose knees lifted and paddle raised overhead; second cell DUCK pose deeply folded low, knees bent, chest pressed over thighs, head BELOW shoulders, paddle held horizontally close to knees, silhouette less than half standing height; third cell recovering halfway from crouch; fourth cell balanced downstream ride pose with a slight over-left-shoulder glance so a little of his matching profile is visible. Do not repeat the jump in the duck cell. Duck must be a genuinely different anatomical posture, not a squashed image. Keep total figure heights within cell borders and rear-view direction consistent in every cell.",
+        "aspect_ratio": "3:2",
+        "resolution": "2K",
+        "output_format": "png",
+        "num_images": 1
+      },
+      "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+    }
+  },
+  "cutout": {
+    "endpoint": "pixelcut/background-removal",
+    "requestId": "01a11172-3b4a-7eb1-bac0-fe35652ac43b",
+    "source": "https://v3b.fal.media/files/b/0aad4c3e/lwgArLLxyWddoqVgzNn-s_result.png"
+  },
+  "packing": "scripts/pack-rider.mjs; 4×2 cells, each 512×704, uniform 0.72 scale, registered deck baseline y684. No stretching of duck anatomy. Ride uses left paddle frames 0,1,3; jump4 and duck5.",
+  "runtime_generation_service_dependency": false
+}

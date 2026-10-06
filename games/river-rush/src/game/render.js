@@ -1,5 +1,6 @@
 import { jumpHeight, VIEW_DISTANCE } from './engine.js';
-import { bankScenery, rapids, duckCompression, prepareWorldArt } from './world.js';
+import { bankScenery, rapids, prepareWorldArt } from './world.js';
+import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
 import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
 const motions=new WeakMap();
@@ -19,7 +20,7 @@ function loadImage(key,name){return new Promise((resolve,reject)=>{
   image.src=`${import.meta.env.BASE_URL}art/${name}.png`;
 });}
 export function loadArt() {
-  return artPromise??=Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames']].map(([key,name])=>loadImage(key,name))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
+  return artPromise??=Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames'],['downstream','rider-downstream']].map(([key,name])=>loadImage(key,name))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
 }
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];
 async function prepareHeroArt(art){
@@ -39,17 +40,23 @@ async function prepareHeroArt(art){
     canvas.getContext('2d').drawImage(source,0,100,448,380,0,0,448,380);
     try{art.paddleFrames.push(await createImageBitmap(canvas));}catch{art.paddleFrames.push(canvas);}
   }
+  art.downstreamFrames=[];
+  for(let i=0;i<8;i++){
+    const canvas=document.createElement('canvas');canvas.width=RIDER_SIZE.width;canvas.height=RIDER_SIZE.height;
+    canvas.getContext('2d').drawImage(art.downstream,i%4*RIDER_SIZE.width,Math.floor(i/4)*RIDER_SIZE.height,RIDER_SIZE.width,RIDER_SIZE.height,0,0,RIDER_SIZE.width,RIDER_SIZE.height);
+    try{art.downstreamFrames.push(await createImageBitmap(canvas));}catch{art.downstreamFrames.push(canvas);}
+  }
   return art;
 }
-function hero(ctx,frame,raft,x,bottom,width,roll,alpha=1,squash=0,duck=0){
+function hero(ctx,frame,raft,x,bottom,width,roll,alpha=1,squash=0){
   const scale=width/300;ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,bottom);ctx.rotate(roll);ctx.scale(1+squash*.025,1-squash*.05);
-  // The raft stays registered while the torso crouches; actions never replace
-  // the approved face with another whole-body photograph.
-  const split=frame.height-88,head=150,compression=duck*.48,drop=(split-head)*compression;
-  ctx.drawImage(frame,0,0,frame.width,head,-frame.width/2*scale,(-(frame.height-16)+drop)*scale,frame.width*scale,head*scale);
-  ctx.drawImage(frame,0,head,frame.width,split-head,-frame.width/2*scale,(-(frame.height-16)+head+drop)*scale,frame.width*scale,(split-head)*(1-compression)*scale);
-  ctx.drawImage(frame,0,split,frame.width,88,-frame.width/2*scale,(split-frame.height+16)*scale,frame.width*scale,88*scale);
-  ctx.drawImage(raft,74,split,300,88,-150*scale,(split-frame.height+16)*scale,300*scale,88*scale);ctx.restore();
+  const split=raft.height-88;
+  ctx.drawImage(raft,74,split,300,88,-150*scale,(split-raft.height+16)*scale,300*scale,88*scale);ctx.restore();
+  // Draw the independent rider above the deck. A crouch keeps its own anatomy
+  // and the same foot registration; it is never a vertically squashed jump.
+  ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,bottom);ctx.rotate(roll);
+  const riderScale=width/512;
+  ctx.drawImage(frame,-frame.width/2*riderScale,-RIDER_SIZE.foot*riderScale-width*.14,frame.width*riderScale,frame.height*riderScale);ctx.restore();
 }
 export function projection(width, height, lane, z) {
   const horizon = height * .29, foot = height * (height < 500 ? .73 : width/height<.85?.77:.8);
@@ -157,9 +164,9 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
   }
   const bottom=player.foot-lift+bob+landing*heroWidth*.08;
   const alpha=g.grace>0&&Math.floor(g.time*12)%2?.7:1;
-  const sample=paddleSample(motion.paddleDistance,reducedMotion);
-  const frame=art.paddleFrames[sample.index];
-  hero(ctx,frame,art.paddleFrames[0],player.x+shake,bottom,heroWidth,roll,alpha,landing,duckCompression(g.action,g.actionTime));
+  const pose=riderPose(g,reducedMotion);
+  const frame=art.downstreamFrames[pose.index];
+  hero(ctx,frame,art.paddleFrames[0],player.x+shake,bottom,heroWidth,roll,alpha,landing);
   if(!reducedMotion){
     // Paddle-tip spray follows the stroke instead of covering hazards.
     if(motion.weights[0]>.8&&paddleSample(g.distance).index<4){
