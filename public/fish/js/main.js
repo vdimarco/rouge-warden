@@ -178,6 +178,8 @@ const ICON = {
   // the phone stays upright in every picture, as in play: tilted for a steer, tipped back for a pull, forward to lower
   turn: "<svg viewBox='0 0 40 40'><g transform='translate(0 3)'>" + PHONE + "</g><path d='M10 21 H3 m3 -3 l-3 3 l3 3 M30 21 H37 m-3 -3 l3 3 l-3 3' fill='none' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>",
   upright: "<svg viewBox='0 0 40 40'><g transform='translate(0 3)'>" + PHONE + "</g><path d='M33 6 V34 m-3 -25 l3 -3 l3 3 m-6 22 l3 3 l3 -3' fill='none' stroke='#e8b64a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+  // the mouse wheel turns the crank on a computer: a mouse, its wheel rolling down
+  wheel: "<svg viewBox='0 0 40 40'><rect x='11' y='5' width='18' height='30' rx='9' fill='none' stroke='currentColor' stroke-width='2.4'/><path d='M20 5 V17 M11 17 H29' stroke='currentColor' stroke-width='1.6' opacity='0.6'/><rect class='w' x='18' y='9' width='4' height='6' rx='2' fill='#e8b64a'/></svg>",
   crank: "<svg viewBox='0 0 40 40'><circle cx='20' cy='20' r='12' fill='none' stroke='currentColor' stroke-width='2' stroke-dasharray='3 3'/><circle cx='20' cy='20' r='3' fill='currentColor'/><path d='M20 20 L29 12' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><circle cx='29' cy='12' r='4' fill='#e0453a'/></svg>",
   pull: "<svg viewBox='0 0 40 40'><g transform='translate(3 4) rotate(18 20 30)'>" + PHONE + "</g><path d='M8 24 V6 m-4 4 l4 -4 l4 4' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
   low: "<svg viewBox='0 0 40 40'><g transform='translate(-3 4) rotate(-18 20 30)'>" + PHONE + "</g><path d='M32 10 V30 m-4 -4 l4 4 l4 -4' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
@@ -270,6 +272,8 @@ function nextToast() {
 let promptKey = "";
 function prompt(text, sub = "", icon = "", tone = "") {
   guideCue = { text, sub, icon, tone };
+  // on a computer with a mouse the crank is the wheel: the card shows the wheel rolling
+  if (icon === "crank" && inputOf(sensing(), touchDevice, G.desk) === "mouse") icon = "wheel";
   const p = $("#prompt");
   if (!text) { p.hidden = true; promptKey = ""; return; }
   const key = text + "|" + sub + "|" + icon + "|" + tone;
@@ -1380,12 +1384,12 @@ function helpRows(input) {
   // a computer: the next cast comes at once with a click or Space (the phone tabs keep their room)
   if (keys) steps.push(["thumb", "No fish? <b>Click or press Space</b> to cast again at once."]);
   steps.push(
-    ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "Turn the <b>crank</b>, or use the mouse wheel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
+    ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "<b>Scroll the mouse wheel</b> to reel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
     [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + (keys ? moveWords("hook", "mouse").replace(/!$/, "") + ", or press <b>Space</b>." : moveWords("hook", input))],
   );
-  if (!m) steps.push(["pull", keys ? "Drag the <b>rod</b> up, down and sideways, or use <b>W&nbsp;A&nbsp;S&nbsp;D</b>." : "Your right thumb works the <b>rod</b>: drag it up, down and sideways."]);
+  if (!m) steps.push(["pull", keys ? "<b>Drag anywhere</b> up, down and sideways to work the rod, or use <b>W&nbsp;A&nbsp;S&nbsp;D</b>." : "Your right thumb works the <b>rod</b>: drag it up, down and sideways."]);
   steps.push(
-    ["fish", "In a fight, <b>follow the big words</b> at the top. They tell you each move."],
+    ["fish", "In a fight, <b>follow the card</b> in the top corner. It shows each move."],
     ["ring", "<b>Rings</b> on the water are rising fish. Cast into one for a near-sure bite."],
   );
   const moves = [
@@ -2297,6 +2301,8 @@ function frame() {
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(), desk: G.desk,
     paused: still || stalled(), cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
     held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
+  // a computer: the crank's hint says to scroll the mouse wheel
+  if (crank) crank.wheelHint = !touchDevice && !sensing();
   // the action card stands under the pull meter while it shows
   const pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6;
   if (pullH !== G.pullH) { G.pullH = pullH; game.style.setProperty("--pull-h", pullH + "px"); }
@@ -2502,7 +2508,9 @@ async function boot() {
   crank = new Crank($("#crankBox"), { toLocal, hand: "right" });
   // touch play: the crank sits on the left, so a fast fling up on the open lake (not on the crank) sets the hook in a
   // strike. The rod's own swipe up works as before, at any time
-  rodPad = new RodPad($("#padBox"), { toLocal, direct: true, area: game, skip: [$("#crankBox"), $("#dragBar")] });
+  // on a computer the mouse takes the rod from a press anywhere on the lake in a fight, not only on the drawn rod
+  rodPad = new RodPad($("#padBox"), { toLocal, direct: true, area: game, skip: [$("#crankBox"), $("#dragBar")],
+    anywhere: (e) => e.pointerType === "mouse" && G.phase === "reel" && !sensing() && !G.paused });
   rodPad.on("yank", () => { if (G.phase === "reel") G.hookReq = true; });
   rodPad.on("fling", () => { if (G.phase === "reel" && !sensing() && G.sim && G.sim.state.phase === "strike") G.hookReq = true; });
   gauge = new Gauge($("#gaugeBox"));
