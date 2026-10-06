@@ -1,0 +1,256 @@
+{
+  "implementationCommit": "70c53e608a4bf3a705f9c185c7b65b22470e07f9",
+  "deploymentId": "dpl_4RvXC3mj929pPfZ11114G2u7oAan",
+  "state": "READY",
+  "url": "https://arcade.uptick.systems/river-rush/",
+  "browser": {
+    "passed": true,
+    "results": [
+      {
+        "viewport": "phone",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready"
+        },
+        "triangles": 32218,
+        "drawCalls": 98,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": true,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "desktop",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready"
+        },
+        "triangles": 32794,
+        "drawCalls": 102,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "landscape",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready"
+        },
+        "triangles": 89074,
+        "drawCalls": 28,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "temporary503": "recovered",
+        "imageAttempts": 2,
+        "modelAttempts": 2
+      },
+      {
+        "missingModel": "playable"
+      },
+      {
+        "manualRetry": "recovered"
+      },
+      {
+        "noWebGL": "playable2d",
+        "distinctPoses": true
+      },
+      {
+        "contextLoss": "pausedThenPlayable2d"
+      }
+    ],
+    "screenshots": "/tmp/river-rush-low-duck-live",
+    "errors": []
+  },
+  "glide": {
+    "passed": true,
+    "renderer": "2d",
+    "immediateLane": true,
+    "intermediatePositions": [
+      1.3369389708254769,
+      1.5360911195329068,
+      1.691820135088228
+    ],
+    "reversePositions": [
+      1.61398004216827,
+      1.4328604893571666,
+      1.2907928699268756,
+      1.1879366260017101,
+      1.1192134641961793,
+      1.0742881102160615,
+      1.0455217955031753,
+      1.0275843463157504,
+      1.016613940386062,
+      1.0099005080009873,
+      1.0058804950588973,
+      1.003462704044914,
+      1.002029261025153,
+      1.0011880854253257
+    ],
+    "noJump": true,
+    "speedPreserved": true,
+    "simulationStart": 0.11670000000000005,
+    "errors": []
+  },
+  "materialQuality": {
+    "passed": true,
+    "materials": [
+      {
+        "material": "rock",
+        "size": 1024,
+        "seamlessBorders": true,
+        "detailRange": 255
+      },
+      {
+        "material": "wood",
+        "size": 1024,
+        "seamlessBorders": true,
+        "detailRange": 212
+      },
+      {
+        "material": "ground",
+        "size": 1024,
+        "seamlessBorders": true,
+        "detailRange": 255
+      },
+      {
+        "material": "water",
+        "size": 1024,
+        "seamlessBorders": true,
+        "detailRange": 247
+      }
+    ],
+    "duck": {
+      "height": 235,
+      "width": 448,
+      "foot": 684
+    },
+    "jump": {
+      "height": 549,
+      "width": 305,
+      "foot": 684
+    },
+    "duckToJumpHeight": 0.42805100182149364
+  },
+  "fullDetailShader": {
+    "renderer": {
+      "kind": "webgl",
+      "software": false,
+      "models": {
+        "raft": "ready",
+        "bank": "ready",
+        "palm": "ready"
+      },
+      "drawCalls": 26,
+      "triangles": 217629,
+      "frames": 18,
+      "buoyancy": {
+        "height": 0.08934727150311476,
+        "pitch": -0.012144849702564742,
+        "roll": 0.03194146103850262,
+        "lift": 0,
+        "water": -0.1801948336334717
+      },
+      "contextLost": false,
+      "rider": {
+        "name": "duck",
+        "index": 8,
+        "direction": "downstream"
+      },
+      "entities": 27,
+      "bankInstances": 26,
+      "steering": {
+        "x": 0,
+        "velocity": 0,
+        "yaw": 0,
+        "lean": 0
+      },
+      "surfaceMaps": {
+        "rock": 1024,
+        "wood": 1024,
+        "ground": 1024,
+        "water": 1024,
+        "normals": 512
+      },
+      "reducedMotion": false
+    },
+    "errors": []
+  },
+  "assets": [
+    {
+      "file": "index.html",
+      "bytes": 752,
+      "sha256": "1d4597289e9e19d81fd2d07ad8d974962c3d0de1de36a00c417f3ed26f755f7f"
+    },
+    {
+      "file": "assets/index-TWG2RMpz.js",
+      "bytes": 892412,
+      "sha256": "aa38e0d6698f6d53e62f37c10141e466d41597a8a6fc260a42b5600219b80470"
+    },
+    {
+      "file": "assets/index-B7-zVVFN.css",
+      "bytes": 17807,
+      "sha256": "f44a4b92bb5d0d08f849fba4abd2f8fd7f8850e78aec12ae7336a643f92ecea5"
+    },
+    {
+      "file": "art/rider-low-duck.png",
+      "bytes": 149560,
+      "sha256": "9e6f05baf5992df14084c4cb059e742af5246621427e2b23b026dc19566f4603"
+    },
+    {
+      "file": "art/surface-water.webp",
+      "bytes": 116070,
+      "sha256": "0ab3af5bef2efb3c3cc2c7451ffdad7132819ea381042395a9ae6f33a77c471e"
+    },
+    {
+      "file": "art/surface-ground-normal.png",
+      "bytes": 698574,
+      "sha256": "6c86f857e0ef2bb1b60b0963e94f6ad6e5bb4b885918016b7d0bb91a5f6ab0e6"
+    },
+    {
+      "file": "art/surface-wood-normal.png",
+      "bytes": 624055,
+      "sha256": "0e452cb2ddc59970418c101ec64ff63b6b76c44a0fbadda5bfbaf1886727307c"
+    },
+    {
+      "file": "art/surface-wood.webp",
+      "bytes": 321272,
+      "sha256": "6977e9058884efcaa6a41ab29926195ab2e6b664808137d10fbb522945288495"
+    },
+    {
+      "file": "art/surface-ground.webp",
+      "bytes": 492144,
+      "sha256": "e28be9e9693bfc360e7c49b6481045dbc81f1fe90ef0f44134628543228c7efa"
+    },
+    {
+      "file": "art/surface-rock-normal.png",
+      "bytes": 689565,
+      "sha256": "88d8a6fe4dbf6386f70b8e5c0f04d1e78f0321401ce83d22b0c205815b56c90e"
+    },
+    {
+      "file": "art/surface-rock.webp",
+      "bytes": 463754,
+      "sha256": "134892f15a96ef389c81d5d2038b2683d1eff5c285e1f25b6566ac730e9f35e5"
+    }
+  ]
+}

@@ -27,8 +27,17 @@ The runner SHALL start at 42 m/s and escalate to a bounded 72 m/s, use .66-secon
 - **THEN** two lane changes occur without lifting the finger, and a cancelled pointer produces no further action
 
 ### Requirement: Continuous steering and character geometry
-Visual steering SHALL move through a continuous carving glide and preserve position and velocity through repeated lane inputs, settle a single-lane step to 95% within 150 ms and retain immediate logical lane selection. Jump and duck SHALL retain the approved rider identity, with continuous raft lift and distinct registered rider poses. Duck SHALL use a low anatomical crouch with no vertical image compression. Rider art SHALL remain independent of the registered raft geometry.
+Visual steering SHALL move through a continuous carving glide and preserve position and velocity through repeated lane inputs, settle a single-lane step to 95% within 150 ms and retain immediate logical lane selection. Jump and duck SHALL retain the approved rider identity, with continuous raft lift and distinct registered rider poses. Duck SHALL use a near-prone anatomical brace with no vertical image compression. Rider art SHALL remain independent of the registered raft geometry.
 #### Scenario: Reverse a dodge and jump
 - **WHEN** the player changes lanes, immediately reverses and jumps or ducks
 - **THEN** steering follows a short continuous trajectory, the rider identity and raft remain consistent, distinct jump/duck silhouettes remain registered and controls are available throughout the action
 
+
+### Requirement: Runner character animation
+The approved character SHALL use rear-facing generated paddling frames, a distinct raised-knee jump pose and an independent near-prone brace for ducking. His long hair, body, modest loincloth and identity SHALL remain consistent. The chase view SHALL show him facing downstream toward upcoming hazards, with the wake behind the raft and approaching scenery moving toward the camera. Rider feet and raft anchors SHALL remain registered. Visual animation SHALL NOT change action windows, speed, collision outcomes or scores.
+#### Scenario: Paddle and chain actions
+- **WHEN** the player rides, changes lanes, jumps and ducks
+- **THEN** paddling faces downstream, the raft banks, jump and duck use visibly different silhouettes and a landing splash marks a completed jump
+#### Scenario: Direction and fallback
+- **WHEN** the player rides in the primary 3D view or 2D fallback
+- **THEN** the rider faces the upcoming course, the wake trails behind and scenery approaches the camera coherently

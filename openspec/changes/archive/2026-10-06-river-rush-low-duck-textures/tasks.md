@@ -4,5 +4,5 @@
 - [x] Add detailed, bounded local surface textures.
 - [x] Smooth visual lane gliding and carving lean while retaining immediate input.
 - [x] Verify silhouettes, layouts, controls and renderer behavior.
-- [ ] Deploy and verify live assets and actions.
-- [ ] Archive and review canonical requirements.
+- [x] Deploy and verify live assets and actions.
+- [x] Archive and review canonical requirements.
