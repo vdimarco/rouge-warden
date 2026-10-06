@@ -252,12 +252,9 @@ function showToast(msg, ms, onShow) {
   t.classList.add("on");
   toastAt = now();
   clearTimeout(toastT);
-  toastT = setTimeout(() => { t.classList.remove("on"); toastPush(0); }, ms);
-  // in the tall reel the toast stands beside the gauge: a long one (Larger text) moves the prompt down while it is up
-  toastPush(G.layout === "tall-reel" ? Math.max(0, t.getBoundingClientRect().bottom + 6 - ($("#gaugeBox").getBoundingClientRect().bottom + 10)) : 0);
+  toastT = setTimeout(() => { t.classList.remove("on"); }, ms);
   if (onShow) onShow();
 }
-function toastPush(px) { game.style.setProperty("--toast-push", Math.round(px) + "px"); }
 function nextToast() {
   toastNextT = 0;
   // the shown toast was asked for again: it keeps its full TOAST_MIN
@@ -282,6 +279,7 @@ function prompt(text, sub = "", icon = "", tone = "") {
   // a hot prompt glows once when it changes: start its animation again
   if (tone === "hot" && p.classList.contains("hot")) { p.className = ""; void p.querySelector(".p1").offsetWidth; }
   p.className = tone;
+  p.dataset.icon = ICON[icon] ? icon : "";
   p.querySelector(".p1").innerHTML = (ICON[icon] || "") + "<span></span>";
   p.querySelector(".p1 span").textContent = text;
   p.querySelector(".p2").textContent = sub;
@@ -413,7 +411,6 @@ function relayout(force) {
   if (!force && L === G.layout && game.classList.contains("flying") === flying && G.vw === innerWidth && G.vh === innerHeight) return;
   G.vw = innerWidth; G.vh = innerHeight;
   G.layout = L;
-  if (L !== "tall-reel") toastPush(0);
   game.className = "l-" + L + (flying ? " flying" : "") + (G.input === "motion" ? " motion" : " touch");
   const inCast = L === "tall-cast" || L === "wide-cast";
   $("#castUI").hidden = !(inCast && G.phase === "cast");
@@ -1923,7 +1920,7 @@ function reelUpdate(dt) {
   if (s.fish) {
     const f = s.fish;
     // roll: the body turned about its length, in radians
-    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
+    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
     world.setLure({ x: L.x, y: L.y, z: L.z, visible: false });
     world.setLine({ from: tip, to: { x: f.x, y: f.jump ? f.y : Math.max(f.y, -0.25), z: f.z }, slack: s.slack ? 1 : clamp(0.5 - s.tfrac * 2, 0, 0.5), visible: true });
   } else {
@@ -2300,6 +2297,11 @@ function frame() {
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(), desk: G.desk,
     paused: still || stalled(), cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
     held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
+  // the action card stands under the pull meter while it shows
+  const pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6;
+  if (pullH !== G.pullH) { G.pullH = pullH; game.style.setProperty("--pull-h", pullH + "px"); }
+  // the action card's how-to stays away while the rod cue over the reel shows the same words
+  { const sub = $("#prompt .p2"), rc = $("#rodCue"); sub.classList.toggle("same", !!rc && !rc.hidden && !!sub.textContent && rc.querySelector("span").textContent === sub.textContent); }
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A
   // hold cast (Space, the mouse button) moves the rod by the clock: its rail stands where all of it shows
   const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;

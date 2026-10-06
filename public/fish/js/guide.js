@@ -211,8 +211,8 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
   const rect = el => {
     let x = 0, y = 0;
     for (let p = el; p && p !== game; p = p.offsetParent) { x += p.offsetLeft; y += p.offsetTop; }
-    // The game's prompt/report use a translateX(-50%) layout.
-    if (["prompt", "report", "toast"].includes(el.id)) x -= el.offsetWidth / 2;
+    // The game's report and toast use a translateX(-50%) layout (the prompt, the card in the corner, does not).
+    if (["report", "toast"].includes(el.id)) x -= el.offsetWidth / 2;
     if (el.id === "report") y -= el.offsetHeight / 2;
     return { x, y, w: el.offsetWidth, h: el.offsetHeight };
   };

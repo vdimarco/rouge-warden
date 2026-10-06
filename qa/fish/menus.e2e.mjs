@@ -12,6 +12,7 @@ import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
 import { URL as FISH_URL, installPhone, until, sleep, SEEN } from "./lib.mjs";
+import { VERSION } from "../../public/fish/js/version.js";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -126,13 +127,13 @@ if (part("1")) {
       "Settings has the rows, with Larger text and Calm effects under Easier play (" + st.rows.join(" | ") + ")");
     check(st.art === "original:Original,painted:Painted" && st.artNow === "painted", "the art style is Original or Painted, and Painted is chosen (" + st.art + ")");
     check(st.input === "You choose when you start.", "Controls on a phone that has not chosen: \"You choose when you start.\" (" + st.input + ")");
-    check(/About\s*1\.0\.0/.test(st.about) && st.privacy, "an About row with the version, and a Privacy row (" + st.about + ")");
+    check(new RegExp("About\\s*" + VERSION.replace(/\./g, "\\.")).test(st.about) && st.privacy, "an About row with the version, and a Privacy row (" + st.about + ")");
     const ss = await page.evaluate(() => [...document.querySelectorAll("#settings select, #settings .set label, #settings button")].filter((e) => e.offsetParent !== null).map((e) => [e.id || e.textContent.trim().slice(0, 12), Math.round(e.getBoundingClientRect().height)]).filter(([, h]) => h < 44));
     check(!ss.length, "every settings row, list and button is 44 px tall or more (" + JSON.stringify(ss) + ")");
     // About and Privacy
     await click(page, "#aboutBtn"); await shown(page, "about");
     const ab = await page.evaluate(() => document.querySelector("#about .card").textContent.replace(/\s+/g, " "));
-    check(/Version 1\.0\.0/.test(ab) && /Made by Cottage Arcade/.test(ab), "About shows the version and a credit line (" + ab.trim() + ")");
+    check(ab.includes("Version " + VERSION) && /Made by Cottage Arcade/.test(ab), "About shows the version and a credit line (" + ab.trim() + ")");
     await click(page, "#privacyBtn"); await shown(page, "privacy");
     await page.waitForFunction(() => { const d = document.querySelector("#privacyFrame").contentDocument; return d && d.readyState === "complete" && /collects no personal data/.test(d.body.textContent); });
     check(await page.evaluate(() => new URL(document.querySelector("#privacyFrame").src).pathname.endsWith("/fish/privacy.html")), "Privacy shows the game's own privacy.html in a frame");
@@ -362,8 +363,8 @@ if (part("4")) {
     const over = Object.keys(L).flatMap((a, i) => Object.keys(L).slice(i + 1).filter((b) => hit(L[a], L[b])).map((b) => a + "/" + b));
     const cueText = await page.evaluate(() => document.querySelector("#rodCue span").textContent);
     check(cueText === PUMP && !!L.cue && !over.length, `Larger text in a fight at 360x640: the prompt, the gauge, the drag, the crank, the HUD and the rod cue's words ("${cueText}") do not overlap (` + (over.join(", ") || "none") + ")");
-    // a cast lands in the water: the report (the distance, the verdict and a note) stands beside the gauge, clear of the prompt and its sub,
-    // which takes two lines here
+    // a cast lands in the water: the report (the distance, the verdict and a note) stands beside the gauge, and the action card
+    // in that corner hides while it is up
     await page.evaluate(async () => {
       const G = FISH.G, wait = (ms) => new Promise((r) => setTimeout(r, ms));
       FISH.newCast(); G.cast = { verdict: "high", yaw: 0, stroke: 1 };
@@ -373,7 +374,9 @@ if (part("4")) {
       await wait(700);
     });
     const RP = { p1: await rect(page, "#prompt .p1"), p2: await rect(page, "#prompt .p2"), dist: await rect(page, "#report .dist"), zone: await rect(page, "#report .zone") };
-    check(!!RP.dist && !!RP.p2 && !!RP.zone && !hit(RP.dist, RP.p1) && !hit(RP.dist, RP.p2), `Larger text at 360x640: the cast report stands beside the gauge, clear of the prompt (${JSON.stringify(RP)})`);
+    // (the action card shares the corner: it hides while the report is up)
+    RP.cardHidden = await page.evaluate(() => getComputedStyle(document.querySelector("#prompt .p1")).visibility === "hidden");
+    check(!!RP.dist && !!RP.zone && (RP.cardHidden || (!hit(RP.dist, RP.p1) && !hit(RP.dist, RP.p2))), `Larger text at 360x640: the cast report stands beside the gauge, clear of the prompt (${JSON.stringify(RP)})`);
     await stage(page, { fish: { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "sulk", jump: 0, near: 0.5, known: true } });
     // a long toast (a legend's stage name) beside the bigger gauge, on the taller phones where it sits in the sky
     const LONG = "It runs down the river! Steer it off the logs!";
