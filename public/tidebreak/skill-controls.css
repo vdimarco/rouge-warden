@@ -71,5 +71,8 @@
 /* Under 600 px wide the rally button stands beside the movement pad, clear of the objective text, and the objective
    text ends before the timers at the top. */
 @media(max-height:400px) and (min-width:540px) and (max-width:599px){#rally{left:137px;bottom:calc(118px + env(safe-area-inset-bottom))}#objective{max-width:164px}}
+/* On the shortest of these screens the objective text is tighter and keeps to two lines, so it ends above the
+   movement pad. */
+@media(max-height:340px) and (min-width:540px) and (max-width:599px){#objective{top:calc(52px + env(safe-area-inset-top))}#objective .realm-track{margin:3px 0}#objective-sub{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:10px;line-height:1.2}}
 /* From 600 px wide the rally button keeps clear of the health bar and the market button. */
 @media(max-height:400px) and (min-width:600px) and (max-width:699px){#rally{left:138px;width:54px}}

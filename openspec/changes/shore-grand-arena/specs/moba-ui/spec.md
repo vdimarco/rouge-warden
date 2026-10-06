@@ -70,6 +70,7 @@ The skill cluster SHALL place Q, E and C on an arc around the ultimate R in the 
 - **WHEN** the window is 540 to 699 px wide and up to 400 px high, for example 568x320 or 640x360
 - **THEN** the minimap is 72 px wide, the point button is a pill to the left of the minimap, and the minimap, the point button, the objective timers, the difficulty label and every skill and badge do not overlap
 - **AND** under 600 px wide the rally button stands beside the movement pad, clear of the objective text
+- **AND** under 600 px wide and up to 340 px high the objective text keeps to two lines and ends above the movement pad
 
 #### Scenario: A press clear of the cluster reaches the battlefield
 - **WHEN** the player presses 30 px or more outside the cluster
