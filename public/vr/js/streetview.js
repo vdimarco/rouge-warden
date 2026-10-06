@@ -10,7 +10,7 @@ import { NEON } from "./street.js";
 const hexv = (h) => `vec3(${((h >> 16) & 255) / 255}, ${((h >> 8) & 255) / 255}, ${(h & 255) / 255})`;
 const f5 = (v) => (+v).toFixed(5);
 const SUN = `vec3(${f5(SUN_DIR.x)}, ${f5(SUN_DIR.y)}, ${f5(SUN_DIR.z)})`;
-const PEOPLE_REACH = 110; // people drawn within this of the camera
+const PEOPLE_REACH = 95; // people drawn within this of the camera
 const SIGN_REACH = 320, SIGN_STEP = 30; // signs drawn within this of the camera; the list is rebuilt after this much travel
 const FOG = /* glsl */ `
 // distance haze toward the evening fog, like the city's (thinner: these are all near)

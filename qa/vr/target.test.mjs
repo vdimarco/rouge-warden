@@ -75,7 +75,7 @@ function sampleStates(n, seed) {
   return out;
 }
 const T1 = TARGET.tier1, T2 = TARGET.tier2, T3 = TARGET.tier3;
-const inBounds = (res, c, B) => { const d = dist3(res, c.head); return d >= B.min - 1e-6 && d <= B.max + 1e-6 && res.y - c.chestY > B.above - 1e-6 && res.ny <= 0.7 && res.tag !== "antenna"; };
+const inBounds = (res, c, B) => { const d = dist3(res, c.head); return d >= B.min - 1e-6 && d <= B.max + 1e-6 && res.y - c.chestY > B.above - 1e-6 && res.ny <= 0.7 && (res.tag !== "antenna" || res.tier === 3); }; // only the exact ray takes a roof antenna
 
 /* ---------------- the import and the screen maths ---------------- */
 section("The import, with no three and no page");
@@ -134,6 +134,25 @@ section("Reach rules of each tier, over 5,000 sampled states");
   const roof = [];
   for (const st of states.slice(0, 1500)) { const c = ctxAt(st), res = createTarget(city).pick(c); if (res && (res.ny > 0.7 || res.tag === "antenna")) roof.push(res); }
   check(roof.length === 0, "no target is a roof, a floor or a roof antenna", roof.slice(0, 2));
+  // but the screen centre on a roof antenna takes it, in third and in first person
+  let antN = 0, antOk = 0;
+  for (const A of city.colliders.filter((q) => q.tag === "antenna" && q.y1 - q.y0 > 8)) {
+    if (antN >= 12) break;
+    const o = { x: A.x + 15, y: A.y1 - 10, z: A.z };
+    if (city.collideSphere(o.x, o.y + 1, o.z, 2)) continue;
+    antN++;
+    let ok = true;
+    for (const first of [false, true]) {
+      const py = first ? o.y + HEAD : o.y + CHEST + 0.25, dx = A.x + A.r * 0.5 - o.x, dy = A.y1 - 3 - py, dz = A.z - o.z;
+      const c = ctxAt({ ...o, onGround: false, yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)), arm: first ? 0 : undefined });
+      if (first) { c.cam = { ...c.head }; c.first = true; }
+      c.exact = exactOf(c);
+      const r = createTarget(city).pick(c);
+      if (!(c.exact && c.exact.collider.tag === "antenna" && r && r.tag === "antenna" && r.tier === 3)) ok = false;
+    }
+    if (ok) antOk++;
+  }
+  check(antN >= 6 && antOk === antN, "the screen centre on a roof antenna makes it the target, in third and first person (" + antOk + " of " + antN + ")");
 }
 
 /* ---------------- the screen limit ---------------- */
@@ -233,11 +252,30 @@ section("Clogs, pipes and the gold ring come first");
   }
   const expect = ["swing", "swing", "swing", "swing", "clog", "clog", "clog", "clog", "clog", "clog", "clog", "clog", "clog", "clog", "swing", "swing"];
   check(JSON.stringify(kinds.map((k) => (k === "none" ? "swing" : k))) === JSON.stringify(expect), "approaching from outside the clog is taken at 22 degrees; once taken it stays to 28 and a building replaces it beyond", kinds);
-  // a pipe: seen from the front it counts, from behind (more than 60 degrees off its normal) it does not
+  // a pipe: in line of sight it counts from the front and from behind (the pod roof and the deck are behind the pipes)
   const pp = at(c0, 4, 0, 34), pd = { x: pp.x - c0.head.x, z: pp.z - c0.head.z }, pl = Math.hypot(pd.x, pd.z);
   const front = createTarget(city).pick({ ...c0, specials: [{ id: "pipe:1", tag: "pipe", pos: pp, radius: 2.2, normal: { x: -pd.x / pl, y: 0, z: -pd.z / pl } }] });
   const back = createTarget(city).pick({ ...c0, specials: [{ id: "pipe:1", tag: "pipe", pos: pp, radius: 2.2, normal: { x: pd.x / pl, y: 0, z: pd.z / pl } }] });
-  check(front && front.kind === "pipe" && back && back.kind !== "pipe", "a pipe faces the head: from the front it is the target, from behind it is not");
+  check(front && front.kind === "pipe" && back && back.kind === "pipe", "a pipe in line of sight is the target, from the front and from behind");
+  // the King's pipes from where a player stands: the pod roof (third person) and the deck (first person, looking up)
+  {
+    const N = city.needle, roofOk = [], deckOk = [];
+    for (const p of N.pipes) {
+      const l = Math.hypot(p.nx, p.ny, p.nz), k = 5.7 * 1.3 - 2 * 1.3, hl = Math.hypot(p.nx, p.nz);
+      const tip = { x: p.x + (p.nx / l) * k, y: p.y + (p.ny / l) * k, z: p.z + (p.nz / l) * k }, sp = [{ id: "pipe:" + p.id, tag: "pipe", pos: tip, radius: 2.2, normal: { x: p.nx / l, y: p.ny / l, z: p.nz / l } }];
+      const look = (o, first) => {
+        const hy = o.y + HEAD, dx = tip.x - o.x, dy = tip.y - hy, dz = tip.z - o.z, yaw = Math.atan2(-dx, -dz);
+        const pitch = Math.max(first ? -85 * DEG : -60 * DEG, Math.min(first ? 85 * DEG : 25 * DEG, Math.atan2(dy, Math.hypot(dx, dz))));
+        const c = ctxAt({ ...o, yaw, pitch, arm: first ? 0 : undefined });
+        if (first) { c.cam = { ...c.head }; c.first = true; }
+        const r = createTarget(city).pick({ ...c, specials: sp });
+        return !!r && r.id === "pipe:" + p.id;
+      };
+      roofOk.push(look({ x: N.x + (p.nx / hl) * (N.podR - 6), y: N.podY1, z: N.z + (p.nz / hl) * (N.podR - 6) }, false));
+      deckOk.push(look({ x: N.x + (p.nx / hl) * (N.podR + 1.5), y: N.deck.y, z: N.z + (p.nz / hl) * (N.podR + 1.5) }, true));
+    }
+    check(roofOk.every(Boolean) && deckOk.every(Boolean), "each of the King's pipes is the target from the pod roof (third person) and from the deck below it (first person)", { roofOk, deckOk });
+  }
   // the gold ring, from the start roof, in the default view, at 16 by 9 and on a phone upright
   for (const [name, aspect, fov] of [["16 by 9", 16 / 9, 70], ["390 by 844", 390 / 844, 75]]) {
     const c = ctxAt({ ...start(), aspect, fov, ring: city.goldRing }), r3 = createTarget(city).pick(c), g = city.goldRing;

@@ -11,6 +11,8 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 // marker colours (linear, a little over 1 so the bloom picks them out)
 const JOB_COL = { catch: [2.2, 0.5, 0.4], washer: [0.4, 1.4, 2.4], pizza: [2.4, 1.3, 0.3], balloon: [2.3, 0.4, 1.6], brawl: [0.7, 2.2, 0.4], sludge: [0.9, 2.4, 0.4], goal: [2.6, 2.0, 0.4] };
 const MAX_MARK = 8;
+const CAR_REACH = 90; // cars drawn within this of the camera
+const MODEL_N = 3, MODEL_REACH = 50; // the nearest cars show their model (1,200 to 1,900 triangles, twice with its ink); the rest a box car
 
 function carGeometry() {
   const parts = [], paint = [1, 1, 1], glass = [0.14, 0.17, 0.24], tyre = [0.07, 0.07, 0.08], lamp = [1.6, 1.5, 1.1], tail = [1.4, 0.15, 0.1];
@@ -89,7 +91,6 @@ export function createActionView(scene, { cars, jobs }) {
         models[k] = im;
       }));
       modelsOk = true;
-      carMesh.visible = false;
     } catch (e) {
       console.info("the car models did not load, using the built-in cars:", e && e.message);
       for (const im of models) if (im) { root.remove(im); im.geometry.dispose(); }
@@ -97,6 +98,7 @@ export function createActionView(scene, { cars, jobs }) {
     }
   })();
   let modelsOk = false;
+  const near = [];
   const counts = [0, 0, 0];
 
   /* ---- markers: beams and rings ---- */
@@ -149,21 +151,30 @@ export function createActionView(scene, { cars, jobs }) {
       // cars: into their model's mesh (or the built-in box car)
       let n = 0;
       counts[0] = counts[1] = counts[2] = 0;
+      const cam = opts.cam, R2 = CAR_REACH * CAR_REACH;
+      // the nearest MODEL_N cars within MODEL_REACH (and the one you drive) show their model; the others the built-in box car
+      near.length = 0;
+      for (const c of cars.cars) if (c.on && (c === cars.driving || !cam || (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 < MODEL_REACH * MODEL_REACH)) near.push(c);
+      if (cam) near.sort((a, b) => (a === cars.driving ? -1 : b === cars.driving ? 1 : (a.x - cam.x) ** 2 + (a.z - cam.z) ** 2 - (b.x - cam.x) ** 2 - (b.z - cam.z) ** 2));
+      near.length = Math.min(near.length, MODEL_N);
+      let nb = 0;
       for (const c of cars.cars) {
         if (!c.on) continue;
+        if (cam && (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 > R2 && c !== cars.driving) continue; // far cars are not drawn
         Q.setFromAxisAngle(UP, c.yaw);
         M.compose(Pv.set(c.x, c.y, c.z), Q, S1);
-        if (modelsOk) {
+        if (modelsOk && near.includes(c)) {
           const k = c.id % models.length, im = models[k], i = counts[k]++;
           im.setMatrixAt(i, M); im.instanceColor.setXYZ(i, c.paint[0], c.paint[1], c.paint[2]);
         } else {
-          carMesh.setMatrixAt(n, M);
-          carMesh.instanceColor.setXYZ(n, c.paint[0], c.paint[1], c.paint[2]);
+          carMesh.setMatrixAt(nb, M);
+          carMesh.instanceColor.setXYZ(nb, c.paint[0], c.paint[1], c.paint[2]);
+          nb++;
         }
         n++;
       }
       if (modelsOk) for (let k = 0; k < models.length; k++) { const im = models[k]; im.count = counts[k]; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; }
-      else { carMesh.count = n; carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true; }
+      carMesh.count = nb; carMesh.visible = nb > 0; carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true;
       // markers: the offers, or the running job's goal
       let m = 0;
       const put = (x, y, z, col) => {
@@ -186,7 +197,7 @@ export function createActionView(scene, { cars, jobs }) {
       if (b) { balloon.position.set(b.x, b.y, b.z); balloon.rotation.z = Math.sin(time * 1.7) * 0.15; }
     },
     setVisible(v) { root.visible = !!v; },
-    info: () => ({ cars: modelsOk ? counts.reduce((a, b) => a + b, 0) : carMesh.count, models: modelsOk ? MODELS.map((m) => m.src) : null, markers: beams.count, balloon: balloon.visible }),
+    info: () => ({ cars: counts.reduce((a, b) => a + b, 0) + carMesh.count, modelCars: modelsOk ? counts.reduce((a, b) => a + b, 0) : 0, models: modelsOk ? MODELS.map((m) => m.src) : null, markers: beams.count, balloon: balloon.visible }),
   };
   return V;
 }

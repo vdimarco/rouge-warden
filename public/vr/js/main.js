@@ -385,7 +385,7 @@ function streetFrame(dt, inPlay) {
   }
   figures.end();
   actionView.setVisible(act && worldVisible);
-  if (act) actionView.update(dt, G.time, { markers: G.state !== "cutscene" });
+  if (act) actionView.update(dt, G.time, { markers: G.state !== "cutscene", cam: CAMW });
   audio.setCrowd(inPlay ? street.crowd : 0);
 }
 /* ---------------- the city action: sprint, fights, cars and jobs (flat play) ---------------- */

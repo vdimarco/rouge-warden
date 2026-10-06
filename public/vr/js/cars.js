@@ -18,7 +18,7 @@ function rng(seed) {
 }
 
 export const CAR = {
-  max: 10, keep: 170, spawnMin: 20, spawnMax: 120, first: 10, // parked cars round the player
+  max: 8, keep: 170, spawnMin: 20, spawnMax: 120, first: 10, // parked cars round the player
   enter: 3.4, // the hero gets in from this close to the car's middle
   half: { l: 2.2, w: 0.9 }, wheelbase: 2.7,
   accel: 8.5, brake: 20, reverse: 6, top: 28, coast: 0.6, drag: 0.0016, // m/s², m/s
