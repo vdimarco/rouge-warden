@@ -67,12 +67,17 @@ export function createMobile(canvas, active) {
     Object.assign(state, { turn:0, pitch:0, moveX:0, moveY:0, hold:false, reel:0, yank:0, jump:false, menu:false, fire:false, view:false, aim:null });
     label();
   }
+  // the hint line when no rope is out and nothing else has spoken: it depends on motion aim
+  const rest = () => (sensors ? SAY.motion : SAY.tap);
+  // A line that does not come from the wall (a Motion or Center press, a tap that finds nothing) must not hide the wall line:
+  // it stays while the hero holds the wall, and climbing(false) puts the resting line back.
+  const say = line => { hint.textContent = onWall ? SAY.wall : line; };
   // Center does something only while motion aim is on, so it shows only then.
   function motionUi() {
     const b = button('motion');
     b.setAttribute('aria-pressed', String(sensors)); b.classList.toggle('on', sensors);
     button('center').hidden = !sensors;
-    hint.textContent = sensors ? SAY.motion : SAY.tap;
+    say(rest());
   }
   async function start() {
     if (!on) return;
@@ -84,7 +89,7 @@ export function createMobile(canvas, active) {
     motionUi();
   }
   button('motion').onclick = () => { if (sensors) { sensors = false; center(); motionUi(); } else start(); };
-  button('center').onclick = () => { center(); hint.textContent = SAY.center; };
+  button('center').onclick = () => { center(); say(SAY.center); };
   button('view').onclick = () => { if (active()) state.view = true; };
   button('menu').onclick = () => { state.menu = true; };
   function cast(aim = null) {
@@ -191,19 +196,20 @@ export function createMobile(canvas, active) {
       if (k !== rushK) { rushK = k; rushEl.style.opacity = String(k); }
       if (k > 0 && !still && (rushT -= dt) <= 0) { rushT = .06; rushEl.style.transform = `rotate(${(Math.random() * 7).toFixed(1)}deg) scale(${(1.02 + .06 * k).toFixed(3)})`; }
     },
-    // On a wall: show the climb pad (and clear it when you leave, so no arrow stays held).
+    // On a wall: show the climb pad (and clear it when you leave, so no arrow stays held). When you leave, the wall line goes too
+    // (JUMP, over the top, down to the street). A tap that swung you off has set the swing line already: that one stays.
     climbing(wall) {
       wall = !!wall;
       if (wall === onWall || !pad) return;
       onWall = wall; pad.hidden = !wall;
       if (wall) { latched = false; label(); hint.textContent = SAY.wall; }
-      else padClear();
+      else { padClear(); if (!latched) hint.textContent = rest(); }
     },
     // The rope let go by itself: the button goes back to SWING.
     released() { latched=false; state.fire=false; state.aim=null; label(); hint.textContent=SAY.fly; },
     // Seconds since the player last dragged or tilted to look. The camera follow waits for this.
     idle() { return (performance.now()-lookAt)/1000; },
-    miss(keepRope = false) { latched=keepRope; state.fire=false; label(); hint.textContent=keepRope ? SAY.kept : SAY.none; },
+    miss(keepRope = false) { latched=keepRope; state.fire=false; label(); say(keepRope ? SAY.kept : SAY.none); },
     // Only the dead-latch safety: the ring and the dimmed button belong to marker().
     target(valid, attached) {
       // A broken rope must never leave the button showing a rope that is not there.

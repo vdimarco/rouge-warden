@@ -1609,15 +1609,24 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     // the line and the toast sit under the score row, which wraps onto two rows on a narrow phone: place them from its real
     // bottom (the toast under the line while one shows), a few times a second, so they never cover the pills or the hero
     const subOn = sub.a > 0.02;
-    // at once on a new line, a new screen size, the phone panel coming or going, or a change in the score row (the mission, the training)
-    const phone = !!document.querySelector("#phoneControls:not([hidden])"), row = os + "|" + ts;
-    if (subOn !== dh.subOn || innerWidth !== dh.vw || innerHeight !== dh.vh || phone !== dh.phone || row !== dh.row) { dh.subOn = subOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.phone = phone; dh.row = row; dh.lay = 0; }
+    // at once on a new line or toast, a new screen size, the phone panel or the look hint coming or going, or a change in the score row (the mission, the training)
+    const phone = !!document.querySelector("#phoneControls:not([hidden])"), hintUp = !!document.querySelector("#lookHint:not([hidden])"), toastOn = toast.a > 0.02, row = os + "|" + ts;
+    if (subOn !== dh.subOn || toastOn !== dh.toastOn || innerWidth !== dh.vw || innerHeight !== dh.vh || phone !== dh.phone || hintUp !== dh.hintUp || row !== dh.row) { dh.subOn = subOn; dh.toastOn = toastOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.phone = phone; dh.hintUp = hintUp; dh.row = row; dh.lay = 0; }
     if ((dh.lay = (dh.lay || 0) - dt) <= 0) {
       dh.lay = 0.1;
       const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + (innerWidth <= 480 ? 6 : 10);
-      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 14 : 0);
+      // the tail of the line hangs 27 px under its box (CSS above; the 4 px border makes the real tip 23 px): the toast starts 14 px under that, so it never covers the tail
+      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 27 + 14 : 0);
       if (dh.subTop !== top) { dh.subTop = top; dom.hud.style.setProperty("--fs-sub-top", top + "px"); }
       if (dh.toastTop !== toastTop) { dh.toastTop = toastTop; dom.hud.style.setProperty("--fs-toast-top", toastTop + "px"); }
+      // the look hint (main.js) lies in the same band under the score row: it fades out while the line with its tail, or the toast, is over its place (a hint half under one of them is not readable).
+      // The edge arrow (desktop.js) stays over the hint: it can last for minutes, and the hint would be gone for as long.
+      const hint = hintUp && document.querySelector("#lookHint");
+      if (hint) {
+        const box = (e, down, right) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right + right, b: r.bottom + down }; };
+        const h = box(hint, 5, 5), parts = [subOn && box(k.sub, 27, 0), toastOn && box(k.toast, 5, 5)];
+        hint.classList.toggle("covered", parts.some((p) => p && h.l < p.r && p.l < h.r && h.t < p.b && p.t < h.b));
+      }
     }
     if (map.on) { map.root.updateMatrixWorld(true); tipPlace(); }
   }
