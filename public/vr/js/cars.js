@@ -1,7 +1,8 @@
-// In Full Swing: cars you can drive. Parked cars wait at the kerbs round the player (the moving traffic in cityview.js is drawn in
-// a shader and cannot be entered). The hero gets in (R, a pad's B, the phone's CAR button), drives (W/S or the stick, A/D to
-// steer, Space for the handbrake) and gets out at the driver's side. A car stops on walls and the lake edge, and bounces a little.
-// Pure: no three, no DOM; carsview (in streetview.js's style) draws them.
+// In Full Swing: cars you can drive. Parked cars wait at the kerbs round the player. The moving traffic is drawn in a shader
+// (cityview.js CAR_VS); trafficAt mirrors that shader so a street car can be stolen: it becomes one of these cars, stopped, in
+// its colour, and the shader hides its instance. The hero gets in (R, a pad's B, the phone's CAR button), drives (W/S or the
+// stick, A/D to steer, Space for the handbrake) and gets out at the driver's side. A car stops on walls and the lake edge, and
+// bounces a little. Pure: no three, no DOM; actionview.js draws them.
 import { streetsOf } from "./street.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -20,6 +21,8 @@ function rng(seed) {
 export const CAR = {
   max: 8, keep: 170, spawnMin: 20, spawnMax: 120, first: 10, // parked cars round the player
   enter: 3.4, // the hero gets in from this close to the car's middle
+  steal: 3.5, stealUp: 3, stealBuffer: 0.35, // a street car's body this close (m), the hero this high at most, a press kept this long (s)
+  keepStolen: 400, // a stolen car stays out while the player is this close
   half: { l: 2.2, w: 0.9 }, wheelbase: 2.7,
   accel: 8.5, brake: 20, reverse: 6, top: 28, coast: 0.6, drag: 0.0016, // m/s², m/s
   steer: 0.6, steerRate: 3.2, // radians at the wheel, and how fast it turns
@@ -29,6 +32,44 @@ export const CAR = {
 // paint: the city's car colours (cityview.js CAR_COLS), with a few brighter ones for the hero's pick
 export const CAR_PAINT = [[0.9, 0.9, 0.88], [0.12, 0.12, 0.13], [0.6, 0.62, 0.64], [0.7, 0.12, 0.1], [0.14, 0.24, 0.5], [0.95, 0.72, 0.1], [0.25, 0.36, 0.3], [0.8, 0.45, 0.2], [0.85, 0.2, 0.55], [0.1, 0.6, 0.7]];
 
+
+/* ---- the traffic (cityview.js CAR_VS on the CPU) ---- */
+// T: { n, lane, move, color } (the instance arrays: lane = start x, y, z, heading 0 +x, 1 -x, 2 +z, 3 -z; move = length,
+// speed, phase). The car's middle at time t is lane.xyz + f * mod(phase + speed * t, length), front along f.
+const HEAD = [[1, 0, -Math.PI / 2], [-1, 0, Math.PI / 2], [0, 1, Math.PI], [0, -1, 0]]; // fx, fz, the yaw cars.js uses (front -sin, -cos)
+export function trafficAt(T, i, t, out = {}) {
+  const L = T.lane, M = T.move, o = i * 4;
+  const len = M[o], v = M[o + 1];
+  let s = M[o + 2] + v * t;
+  s -= len * Math.floor(s / len); // GLSL mod
+  const h = HEAD[Math.min(3, Math.max(0, Math.round(L[o + 3])))];
+  out.i = i; out.s = s; out.len = len;
+  out.x = L[o] + h[0] * s; out.y = L[o + 1]; out.z = L[o + 2] + h[1] * s; out.yaw = h[2]; out.fx = h[0]; out.fz = h[1]; out.speed = v;
+  out.paint = T.color ? [T.color[i * 3], T.color[i * 3 + 1], T.color[i * 3 + 2]] : CAR_PAINT[0];
+  return out;
+}
+// The street car whose body (a 4.4 m segment) is closest to (x, z) and within reach, or null. Expressway cars (y over 1), hidden
+// (stolen) cars and cars shrinking at the ends of their lane are skipped.
+const TQ = {};
+export function nearTraffic(T, x, z, t, reach = CAR.steal) {
+  if (!T || !T.n) return null;
+  let best = null, bd = reach;
+  const L = T.lane, M = T.move;
+  for (let i = 0; i < T.n; i++) {
+    const o = i * 4;
+    if (Math.abs(L[o + 1]) > 1 || !(M[o] > 20) || !(M[o + 1] > 0)) continue;
+    // quick reject: the lane's line is too far across
+    const h = L[o + 3], alongX = h < 1.5;
+    if (Math.abs(alongX ? z - L[o + 2] : x - L[o]) > reach) continue;
+    trafficAt(T, i, t, TQ);
+    if (TQ.s < 8 || TQ.len - TQ.s < 8) continue;
+    const dx = x - TQ.x, dz = z - TQ.z, along = clamp(dx * TQ.fx + dz * TQ.fz, -CAR.half.l, CAR.half.l);
+    const d = Math.hypot(dx - TQ.fx * along, dz - TQ.fz * along);
+    if (d < bd) { bd = d; best = trafficAt(T, i, t, {}); best.dist = d; }
+  }
+  return best;
+}
+
 export function createCars(city, opts = {}) {
   const r = rng(opts.seed || 777);
   const streets = streetsOf(city);
@@ -36,8 +77,8 @@ export function createCars(city, opts = {}) {
   const kerbs = [];
   for (const s of streets) for (const side of [-1, 1]) kerbs.push({ s, side, line: s.at + side * (s.w / 2 - s.walk - CAR.half.w + 0.1) });
   const cars = [];
-  for (let i = 0; i < (opts.max || CAR.max); i++) cars.push({ id: i, on: false, x: 0, y: 0, z: 0, yaw: 0, speed: 0, side: 0, steer: 0, paint: CAR_PAINT[0], driven: false, bumpT: 9, vx: 0, vz: 0 });
-  const K = { cars, driving: null, first: true, events: [], stats: { spawned: 0, entered: 0, exited: 0, bumps: 0 } };
+  for (let i = 0; i < (opts.max || CAR.max); i++) cars.push({ id: i, on: false, x: 0, y: 0, z: 0, yaw: 0, speed: 0, side: 0, steer: 0, paint: CAR_PAINT[0], driven: false, bumpT: 9, vx: 0, vz: 0, traffic: -1 });
+  const K = { cars, driving: null, first: true, events: [], stats: { spawned: 0, entered: 0, exited: 0, bumps: 0, stolen: 0 } };
   const emit = (e) => { K.events.push(e); if (K.events.length > 32) K.events.shift(); };
 
   // a crossing's road at (along) on a kerb line, so no car parks across a junction
@@ -81,7 +122,7 @@ export function createCars(city, opts = {}) {
     let free = 0;
     for (const c of cars) {
       if (!c.on) { free++; continue; }
-      if (c !== K.driving && Math.hypot(c.x - focus.x, c.z - focus.z) > CAR.keep) { c.on = false; free++; }
+      if (c !== K.driving && Math.hypot(c.x - focus.x, c.z - focus.z) > (c.traffic >= 0 ? CAR.keepStolen : CAR.keep)) { off(c); free++; }
     }
     let n = K.first ? CAR.max : 1;
     for (const c of cars) {
@@ -90,12 +131,17 @@ export function createCars(city, opts = {}) {
       n--;
       const sp = spot(focus.x, focus.z, K.first ? CAR.first : CAR.spawnMin, CAR.spawnMax);
       if (!sp) continue;
-      Object.assign(c, { on: true, x: sp.x, y: 0, z: sp.z, yaw: sp.yaw, speed: 0, side: 0, steer: 0, paint: CAR_PAINT[Math.floor(r() * CAR_PAINT.length)], driven: false, vx: 0, vz: 0 });
+      Object.assign(c, { on: true, x: sp.x, y: 0, z: sp.z, yaw: sp.yaw, speed: 0, side: 0, steer: 0, paint: CAR_PAINT[Math.floor(r() * CAR_PAINT.length)], driven: false, vx: 0, vz: 0, traffic: -1 });
       free--; K.stats.spawned++;
     }
     K.first = false;
     for (const c of cars) if (c.on) step(c, dt, c === K.driving ? drive : null);
   };
+  // a car goes back to the pool; a stolen one gives its traffic car back to the street
+  function off(c) {
+    c.on = false;
+    if (c.traffic >= 0) { emit({ type: "release", traffic: c.traffic, id: c.id }); c.traffic = -1; }
+  }
   // the car model: a bicycle with grip. side: the sideways slide (m/s) the grip takes away
   function step(c, dt, inp) {
     const th = inp ? clamp(inp.throttle || 0, -1, 1) : 0, hb = !!(inp && inp.handbrake);
@@ -132,6 +178,21 @@ export function createCars(city, opts = {}) {
     for (const c of cars) { if (!c.on) continue; const d = Math.hypot(c.x - x, c.z - z); if (d < bd) { bd = d; best = c; } }
     return best;
   };
+  // A street car (trafficAt's { i, x, z, yaw, paint }) becomes a car here, stopped, in its colour: a free slot, else the
+  // farthest car the hero is not in. Returns the car (main.js then gets in), or null while the hero drives.
+  K.steal = function steal(t, from) {
+    if (!t || K.driving) return null;
+    let c = cars.find((q) => !q.on);
+    if (!c) {
+      const fx = from ? from.x : t.x, fz = from ? from.z : t.z;
+      let fd = -1;
+      for (const q of cars) { const d = Math.hypot(q.x - fx, q.z - fz); if (d > fd) { fd = d; c = q; } }
+      off(c);
+    }
+    Object.assign(c, { on: true, x: t.x, y: 0, z: t.z, yaw: t.yaw, speed: 0, side: 0, steer: 0, paint: t.paint.slice(0, 3), driven: false, vx: 0, vz: 0, bumpT: 9, traffic: t.i });
+    K.stats.stolen++; emit({ type: "steal", id: c.id, traffic: t.i, x: c.x, z: c.z });
+    return c;
+  };
   K.enter = function enter(c) {
     if (!c || K.driving) return false;
     K.driving = c; c.driven = true; c.speed = 0; c.side = 0;
@@ -161,6 +222,6 @@ export function createCars(city, opts = {}) {
     return out;
   };
   K.info = () => ({ cars: cars.filter((c) => c.on).length, driving: K.driving ? { id: K.driving.id, x: K.driving.x, z: K.driving.z, yaw: K.driving.yaw, speed: K.driving.speed } : null, stats: { ...K.stats },
-    list: cars.filter((c) => c.on).map((c) => ({ id: c.id, x: c.x, z: c.z, yaw: c.yaw, speed: c.speed })) });
+    list: cars.filter((c) => c.on).map((c) => ({ id: c.id, x: c.x, z: c.z, yaw: c.yaw, speed: c.speed, traffic: c.traffic, paint: c.paint })) });
   return K;
 }

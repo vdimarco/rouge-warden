@@ -28,6 +28,7 @@ export const STREET = {
   pass: { near: 25, up: 30, speed: 12, cool: 6 }, // a swing over: reach across, height, speed, a person's wait before looking again
   aside: 0.8, // the hero walks into a person closer than this
   crowdNear: 25, crowdFull: 12, // the murmur: people within this reach, full at this many
+  bail: { speed: 4.5, flee: 4, reach: 30 }, // a robbed driver: runs to the sidewalk at this pace, then flees this long (s); a sidewalk within this
 };
 // pose codes (streetview.js poses each one)
 export const POSE = { walk: 0, stand: 1, phone: 2, talk: 3, cheer: 4, look: 5, flee: 6, wait: 7 };
@@ -347,6 +348,7 @@ export function createStreet(city, opts = {}) {
       if (p.cool > 0) p.cool -= dt;
       if (p.delay > 0) { p.delay -= dt; if (p.state !== "flee") { p.stride = 0; } continue; }
       // a car coming: run out of its way, along the sidewalk
+      if (p.state === "bail") { stepBail(p, dt); p.phase = (p.phase + dt * p.stride * 2.2) % (Math.PI * 200); continue; }
       if (hazards && p.state !== "flee") for (const q of hazards) {
         const dx = p.x - q.x, dz = p.z - q.z;
         if (dx * dx + dz * dz > q.r * q.r) continue;
@@ -416,6 +418,44 @@ export function createStreet(city, opts = {}) {
     }
     S.crowd = clamp(near / STREET.crowdFull, 0, 1);
   };
+
+  // A robbed driver jumps out at (x, z) and runs off, away from (awayX, awayZ) (the hero): over the road to the nearest sidewalk,
+  // then along it, then walks on. Takes a free person from the pool, else the farthest one. Returns the person, or null.
+  // axis: the car's way ("x" for a car driving along x), so a driver at a corner takes that street's sidewalk.
+  S.bail = function bail(x, z, awayX, awayZ, axis) {
+    let st = null, bd = STREET.bail.reach;
+    const want = axis === "x" ? "z" : axis === "z" ? "x" : null; // strips name the street's axis: a "z" street runs along x
+    for (const q of strips) {
+      if (want && q.axis !== want) continue;
+      const along = q.axis === "x" ? z : x;
+      if (along < q.lo || along > q.hi) continue;
+      const d = Math.abs((q.axis === "x" ? x : z) - q.line);
+      if (d < bd) { bd = d; st = q; }
+    }
+    if (!st) return null;
+    let p = P.find((q) => !q.on);
+    if (!p) { let fd = -1; for (const q of P) { const d = Math.hypot(q.x - x, q.z - z); if (d > fd) { fd = d; p = q; } } drop(p); }
+    p.on = true; S.count++; S.stats.spawned++;
+    p.height = 0.9 + r() * 0.2;
+    p.shirt = SHIRTS[Math.floor(r() * SHIRTS.length)]; p.pants = PANTS[Math.floor(r() * PANTS.length)]; p.skin = SKIN[Math.floor(r() * SKIN.length)];
+    p.strip = st; p.along = clamp(st.axis === "x" ? z : x, st.lo, st.hi); p.off = clamp((st.axis === "x" ? x : z) - st.line, -st.half + 0.4, st.half - 0.4);
+    p.crossing = roadAt(st, p.along); p.decided = false; p.mate = -1; p.delay = 0; p.cool = STREET.pass.cool;
+    p.x = x; p.y = 0; p.z = z;
+    p.bx = xOf(st, p.along, p.off); p.bz = zOf(st, p.along, p.off); // the sidewalk spot it runs to
+    const away = st.axis === "x" ? z - awayZ : x - awayX;
+    p.fleeDir = Math.sign(away) || (r() < 0.5 ? -1 : 1);
+    p.state = "bail"; p.pose = POSE.flee; p.poseT = 0; p.t = 4; p.stride = STREET.bail.speed;
+    S.stats.bails = (S.stats.bails || 0) + 1;
+    return p;
+  };
+  // the run to the sidewalk; there, a flee along it
+  function stepBail(p, dt) {
+    p.t -= dt;
+    const dx = p.bx - p.x, dz = p.bz - p.z, d = Math.hypot(dx, dz), v = STREET.bail.speed * dt;
+    if (d > v && p.t > 0) { p.x += (dx / d) * v; p.z += (dz / d) * v; p.yaw = Math.atan2(-dx, -dz); p.stride = STREET.bail.speed; return; }
+    seat(p); p.fleeThen = "walk";
+    react(p, "flee", STREET.bail.flee, POSE.flee);
+  }
 
   // The hero lands at (x, y, z) at vy (m/s, negative is down). People near react; returns { cheer, gasp, x, y, z } for the sound.
   S.land = function land(x, y, z, vy) {

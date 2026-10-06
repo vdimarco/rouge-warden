@@ -132,6 +132,49 @@ try {
   check(car.out, "R gets out again", car);
   await page.screenshot({ path: out + "/action-car.png" });
 
+  /* ---- steal a street car: STEAL, R, the driver runs, the traffic car is hidden, W drives, R out, it stays ---- */
+  const st = await page.evaluate(() => {
+    QA.street(); QA.step(10);
+    // a street car near the hero, mid-lane (time to spare before its lane ends)
+    const list = G.test.traffic(160).list.filter((t) => t.s > 40 && t.len - t.s > 80);
+    const t = list[0];
+    if (!t) return { none: true };
+    // stand on the road 3 m to its right (the kerb side), a little ahead of where it is
+    const rx = -t.fz, rz = t.fx, lead = t.speed * (4 / 60);
+    G.test.teleport(t.x + t.fx * lead + rx * 3, 0, t.z + t.fz * lead + rz * 3); QA.step(3);
+    const a0 = G.test.action(), tr0 = G.test.traffic(20);
+    QA.tap("KeyR");
+    const a1 = G.test.action(), tr1 = G.test.traffic(20), car = a1.cars.list.find((c) => c.traffic === t.i);
+    const lane = G.view.traffic().lane[t.i * 4 + 1];
+    const bail = G.test.street(true).people.filter((p) => p.state === "bail");
+    QA.step(20);
+    const shout = G.test.action().hud.shout;
+    return { t, prompt: a0.hud.prompt, near: tr0.near && tr0.near.i, in: a1.driving, car, hidden: tr1.hidden, lane, bail, shout, stolen: a1.cars.stats.stolen };
+  });
+  check(!st.none, "a street car drives near the sidewalk of the z = 14 avenue", st);
+  check(/STEAL/.test(st.prompt) && st.near === (st.t && st.t.i), "next to a street car the prompt says R STEAL", { prompt: st.prompt, near: st.near });
+  check(st.in && st.car && st.stolen === 1 && Math.abs(st.car.speed) < 0.5 && st.car.paint.every((v, k) => Math.abs(v - st.t.paint[k]) < 1e-3), "R steals it: the hero is in a stopped car in the traffic car's colour", st.car);
+  check(st.hidden.includes(st.t && st.t.i) && st.lane === -500, "the stolen car's traffic instance is hidden", { hidden: st.hidden, lane: st.lane });
+  check(st.bail.length >= 1 && /HEY|MY CAR/.test(st.shout), "the driver jumps out and runs off shouting (" + st.shout + ")", st.bail);
+  await page.evaluate(() => G.test.render());
+  await page.screenshot({ path: out + "/action-steal.png" });
+  const st2 = await page.evaluate(() => {
+    QA.key("KeyW", true); QA.step(120); QA.key("KeyW", false);
+    const a2 = G.test.action();
+    QA.step(60);
+    QA.tap("KeyR"); QA.step(120);
+    const a3 = G.test.action(), car = a3.cars.list.find((c) => c.traffic >= 0);
+    const people = G.test.street(true).people.filter((p) => p.state === "flee" || p.state === "bail");
+    // back to its door: GET IN
+    const fx = -Math.sin(car.yaw), fz = -Math.cos(car.yaw);
+    G.test.teleport(car.x + fz * 1.7, 0, car.z - fx * 1.7); QA.step(3);
+    const a4 = G.test.action(), tr = G.test.traffic(5);
+    return { speed: a2.cars.driving && a2.cars.driving.speed, out: !a3.driving, car, prompt: a4.hud.prompt, near: tr.near, hidden: tr.hidden, people: people.map((p) => ({ state: p.state, onWalk: p.onWalk })) };
+  });
+  check(st2.speed > 6, "W drives the stolen car (" + (st2.speed || 0).toFixed(1) + " m/s)", st2);
+  check(st2.out && st2.car && Math.abs(st2.car.speed) < 0.5 && st2.hidden.includes(st2.car.traffic), "R gets out; the stolen car stays parked and its traffic car stays hidden", st2.car);
+  check(/GET IN/.test(st2.prompt) && !st2.near, "at the stolen car's door the prompt says R GET IN", st2.prompt);
+
   /* ---- a job from a marker ---- */
   const job = await page.evaluate(() => {
     QA.street();

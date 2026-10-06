@@ -2451,6 +2451,20 @@ export function createCityView(renderer, scene, city, opts = {}) {
     if (part === 2) for (const l of lines.z) street("z", l, B.minX, B.maxX);
     flush(cars); flush(trams);
   }
+  // The street cars on the CPU, for car theft (cars.js trafficAt mirrors CAR_VS): the live lane, move and colour arrays.
+  // A stolen car's instance is hidden by sinking its lane 500 m under the ground; it keeps its slot, so no draw changes.
+  const trafficHidden = new Map(); // slot -> its lane's y
+  function trafficCars() {
+    return cars ? { n: cars.n, lane: cars.attrs.aLane.array, move: cars.attrs.aMove.array, color: cars.attrs.aColor.array } : null;
+  }
+  function hideTraffic(i, on) {
+    if (!cars || !(i >= 0 && i < cars.n)) return false;
+    const a = cars.attrs.aLane, o = i * 4 + 1;
+    if (on) { if (trafficHidden.has(i)) return true; trafficHidden.set(i, a.array[o]); a.array[o] = -500; }
+    else { if (!trafficHidden.has(i)) return false; a.array[o] = trafficHidden.get(i); trafficHidden.delete(i); }
+    a.addUpdateRange(o, 1); a.needsUpdate = true;
+    return true;
+  }
 
   /* ---- one chunk ---- */
   const chunkGroup = [];
@@ -2628,6 +2642,10 @@ export function createCityView(renderer, scene, city, opts = {}) {
     // The sky colour in a direction (a THREE.Vector3 or {x, y, z}), read from the same painted strip (or the same banded ramp).
     skyColorAt(dir, out = new THREE.Color()) { return skyJS(dir, out); },
   };
+  // car theft: the street traffic on the CPU, and hiding a stolen car's instance (see trafficCars above)
+  V.traffic = trafficCars;
+  V.hideTraffic = hideTraffic;
+  V.trafficHidden = () => [...trafficHidden.keys()];
   let kingWant = 0, finaleWant = 0;
   const inkSize = new THREE.Vector2();
 

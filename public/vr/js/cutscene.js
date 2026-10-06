@@ -60,12 +60,12 @@ const lookOut = (c) => {
 export const SCENES = {
   // the cold open (flat play, first run, before the cottage room): who the Porcelain King is, fast, then Mission 1
   opening: [
-    { dur: 3.4, shot: (c) => needleShots(c).wide, art: { src: "city", focus: [0.5, 0.4], low: true }, caption: "Port Loon. Every pipe in the city runs up one tower: the Needle." },
-    { dur: 4.2, shot: (c) => needleShots(c).king, art: { src: "king", focus: [0.36, 0.4], face: [0.36, 0.3], low: true }, caption: "Meet the Porcelain King. He was Royce Flushmore, the plumbing baron who tried to buy every drain in town.", balloon: { text: "Every drain is MINE!", at: kingMouth } },
-    { dur: 3.6, shot: clogShot, art: { src: "clogs", focus: [0.52, 0.45] }, caption: "The city said no. So he flushed himself, crown and all, and came back up a toilet god." },
-    { dur: 3.4, shot: (c) => needleShots(c).glow, art: { src: "king-awake", focus: [0.46, 0.25], face: [0.47, 0.2], low: true }, caption: "Tonight his Sludge Gang is out with a clog bomb. First stop: the Market drain.", balloon: { text: "Flood them all!", beside: true, at: kingMouth } },
-    { dur: 2.8, shot: heroShot, art: { src: "hero", focus: [0.33, 0.25], face: [0.33, 0.12], low: true }, caption: "Not on your watch.", balloon: { text: "Plunger up.", at: (c) => V(c.hero.x, c.hero.y + 0.45, c.hero.z) } },
-    { dur: 2.6, shot: lookOut, art: { src: "swing", focus: [0.4, 0.4] }, title: { big: "Mission 1", small: "Sludge Run: catch the bomb runner" } },
+    { dur: 2.4, shot: (c) => needleShots(c).wide, art: { src: "city", focus: [0.5, 0.4], low: true }, caption: "Port Loon. Every pipe in the city runs up one tower: the Needle." },
+    { dur: 3.2, shot: (c) => needleShots(c).king, art: { src: "king", focus: [0.36, 0.4], face: [0.36, 0.3], low: true }, caption: "Meet the Porcelain King. He was Royce Flushmore, the plumbing baron who tried to buy every drain in town.", balloon: { text: "Every drain is MINE!", at: kingMouth } },
+    { dur: 2.6, shot: clogShot, art: { src: "clogs", focus: [0.52, 0.45] }, caption: "The city said no. So he flushed himself, crown and all, and came back up a toilet god." },
+    { dur: 2.5, shot: (c) => needleShots(c).glow, art: { src: "king-awake", focus: [0.46, 0.25], face: [0.47, 0.2], low: true }, caption: "Tonight his Sludge Gang is out with a clog bomb. First stop: the Market drain.", balloon: { text: "Flood them all!", beside: true, at: kingMouth } },
+    { dur: 1.8, shot: heroShot, art: { src: "hero", focus: [0.33, 0.25], face: [0.33, 0.12], low: true }, caption: "Not on your watch.", balloon: { text: "Plunger up.", at: (c) => V(c.hero.x, c.hero.y + 0.45, c.hero.z) } },
+    { dur: 1.8, shot: lookOut, art: { src: "swing", focus: [0.4, 0.4] }, title: { big: "Mission 1", small: "Sludge Run: catch the bomb runner" } },
   ],
   // the Sludge Run is won: on to the clogs
   mission2: [
