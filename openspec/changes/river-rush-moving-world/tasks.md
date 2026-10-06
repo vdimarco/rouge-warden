@@ -1,0 +1,6 @@
+- [x] 1. Inspect current motion, approved art and existing requirements; define the visual change.
+- [x] 2. Implement coherent scrolling scenery/whitewater and continuous lane/action movement.
+- [x] 3. Remove unnecessary App updates and measure actual frame cadence.
+- [x] 4. Verify controls, fair courses, layouts, animation, pause/preferences and failures.
+- [ ] 5. Publish and verify production bytes and real input.
+- [ ] 6. Record verification, archive and validate canonical requirements.

@@ -1,9 +1,10 @@
 // Presentation state advances only with simulation time, never with wall time.
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export const PADDLE_FRAMES=8;
-export function createMotion(g){return{time:g.time,weights:[1,0,0],lastEvent:0,pickups:[],bursts:[],landAt:-10,hitAt:-10,rushAt:-10};}
+export function createMotion(g){return{time:g.time,paddleDistance:g.distance??0,weights:[1,0,0],lastEvent:0,pickups:[],bursts:[],landAt:-10,hitAt:-10,rushAt:-10};}
 export function advanceMotion(m,g,reduced=false){
   m.time=g.time;
+  if(!g.action)m.paddleDistance=g.distance??0;
   const target=g.action==='jump'?1:g.action==='duck'?2:0;
   m.weights=m.weights.map((_,i)=>i===target?1:0);
   for(const e of g.effects){

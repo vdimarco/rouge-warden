@@ -32,12 +32,14 @@ try{
    await p.getByRole('button',{name:'Left lane',exact:true}).tap();await until(p,g=>g.lane===1);await p.getByRole('button',{name:'Left lane',exact:true}).tap();await until(p,g=>g.lane===0);
   }
   await p.screenshot({path:`${out}/ride-${name}.png`});
-  await p.evaluate(()=>{window.__cost=[];window.__frames=[];window.__copies=0;});
+  await p.evaluate(()=>{window.__cost=[];window.__frames=[];window.__copies=0;window.__sampleAt=performance.now();});
   const end=Date.now()+4000,handled=new Set();while(Date.now()<end){const {screen,run:g}=await state(p);assert.equal(screen,'playing',g.reason);if(g.hint?.in<.38&&!handled.has(g.hint.id)){handled.add(g.hint.id);if(g.hint.type==='rock'){for(let lane=g.lane;lane!==g.hint.safeLane;lane+=g.hint.safeLane>lane?1:-1)await p.keyboard.press(g.hint.safeLane>lane?'ArrowRight':'ArrowLeft');}else await p.keyboard.press(g.hint.type==='log'?'Space':'ArrowDown');}await p.waitForTimeout(20);}
   const performanceResult=await p.evaluate(()=>{
-   const costs=window.__cost.sort((a,b)=>a-b),frames=window.__frames.sort((a,b)=>a-b);return{samples:costs.length,renderMeanMs:costs.reduce((a,b)=>a+b,0)/costs.length,renderP95Ms:costs[Math.floor(costs.length*.95)],frameP95Ms:frames[Math.floor(frames.length*.95)],videoCopies:window.__copies,pixels:document.querySelector('canvas').width*document.querySelector('canvas').height};
+   const costs=window.__cost.sort((a,b)=>a-b),frames=window.__frames.sort((a,b)=>a-b);return{samples:costs.length,fps:costs.length*1000/(performance.now()-window.__sampleAt),renderMeanMs:costs.reduce((a,b)=>a+b,0)/costs.length,renderP95Ms:costs[Math.floor(costs.length*.95)],frameP95Ms:frames[Math.floor(frames.length*.95)],frameP99Ms:frames[Math.floor(frames.length*.99)],slowFrameRatio:frames.filter(t=>t>25).length/frames.length,videoCopies:window.__copies,nativeVideoCount:window.__clips.filter(v=>v.className==='game-river-video'&&v.isConnected&&v.style.display!=='none'&&!v.paused&&v.currentTime>.2).length,pixels:document.querySelector('canvas').width*document.querySelector('canvas').height};
   });
   assert.ok(performanceResult.renderP95Ms<35,JSON.stringify(performanceResult));assert.ok(performanceResult.videoCopies<performanceResult.samples*.8,JSON.stringify(performanceResult));assert.ok(performanceResult.pixels<=1200000);
+  assert.ok(performanceResult.fps>=50,JSON.stringify(performanceResult));assert.ok(performanceResult.frameP95Ms<25,JSON.stringify(performanceResult));assert.ok(performanceResult.slowFrameRatio<.08,JSON.stringify(performanceResult));
+  assert.equal(performanceResult.nativeVideoCount,1);assert.equal(performanceResult.videoCopies,0);
   // A late launch must still clear the opening log on the next frame.
   await p.keyboard.press('Escape');await p.getByRole('button',{name:'Restart run'}).click();
   await until(p,g=>g.hint?.type==='log'&&g.hint.in<.045&&g.hint.in>0);await p.keyboard.press('Space');const late=await until(p,g=>g.jumps===1);assert.equal(late.run.shield,true);

@@ -43,31 +43,30 @@ function createScene(art) {
 const videos = new WeakMap();
 function videoWater(ctx,g,art,width,height,active,disabled){
   let state=videos.get(art);
-  if(!state){state={clips:{},frame:document.createElement('canvas'),time:-1,key:'',token:null};videos.set(art,state);}
+  if(!state){state={clips:{},key:''};videos.set(art,state);}
   const key=width/height<.85?'portrait':'landscape';
-  for(const [name,clip] of Object.entries(state.clips))if(!active||disabled||name!==key)clip.pause();
+  for(const [name,clip] of Object.entries(state.clips)){
+    if(!active||disabled||name!==key)clip.pause();
+    if(disabled||name!==key)clip.style.display='none';
+  }
   if(disabled)return false;
   if(!state.clips[key]&&active){
-    const clip=document.createElement('video');clip.muted=true;clip.loop=true;clip.playsInline=true;clip.preload='auto';
-    clip.src=`${import.meta.env.BASE_URL}art/river-${key}-loop.mp4`;
-    clip.serial=0;clip.decodedWall=-1000;
-    if(clip.requestVideoFrameCallback){const decoded=()=>{clip.serial++;clip.decodedWall=performance.now();clip.requestVideoFrameCallback(decoded);};clip.requestVideoFrameCallback(decoded);}
-    clip.addEventListener('error',()=>{clip.failed=true;});state.clips[key]=clip;
+    const clip=document.createElement('video');clip.muted=true;clip.loop=true;clip.playsInline=true;clip.preload='auto';clip.className='game-river-video';clip.setAttribute('aria-hidden','true');
+    clip.src=`${import.meta.env.BASE_URL}art/river-${key}-flow.mp4`;
+    clip.addEventListener('error',()=>{clip.failed=true;clip.style.display='none';});state.clips[key]=clip;
   }
-  if(!active){if(state.key===key){ctx.drawImage(state.frame,0,0,width,height);return true;}return false;}
   const clip=state.clips[key];if(!clip||clip.failed)return false;
-  if(active&&clip.paused&&!clip.starting){clip.starting=true;clip.play().catch(error=>{if(error.name!=='AbortError')clip.failed=true;}).finally(()=>{clip.starting=false;});}
+  if(!active)return state.key===key&&clip.isConnected&&clip.style.display!=='none'&&clip.readyState>=2;
+  if(clip.paused&&!clip.starting){clip.starting=true;clip.play().catch(error=>{if(error.name!=='AbortError')clip.failed=true;}).finally(()=>{clip.starting=false;});}
   const rate=riverRate(g.speed);if(Math.abs(clip.playbackRate-rate)>.03)clip.playbackRate=rate;
   if(clip.readyState<2)return false;
-  // Capture only a newly decoded frame. Pausing never adopts a late decode.
-  const token=clip.serial>0&&performance.now()-clip.decodedWall<200?`v${clip.serial}`:`t${Math.floor(clip.currentTime*24)}`;
-  const scale=Math.min(1,1024/Math.max(clip.videoWidth,clip.videoHeight));
-  const w=Math.round(clip.videoWidth*scale),h=Math.round(clip.videoHeight*scale);
-  if(state.token!==token||state.key!==key||state.frame.width!==w||state.frame.height!==h){
-    if(state.frame.width!==w||state.frame.height!==h){state.frame.width=w;state.frame.height=h;}
-    state.frame.getContext('2d',{alpha:false}).drawImage(clip,0,0,w,h);state.token=token;state.time=g.time;state.key=key;
-  }
-  ctx.drawImage(state.frame,0,0,width,height);return true;
+  // Let the browser composite decoded video directly. Copying it through a
+  // full canvas texture every frame introduces upload stalls on real devices.
+  const canvas=ctx.canvas,host=canvas.parentElement;
+  if(!host)return false;
+  if(clip.parentElement!==host)host.insertBefore(clip,canvas);
+  clip.style.display='block';state.key=key;
+  return true;
 }
 export function drawWater(ctx,g,art,width,height,reducedMotion,active=true) {
   const portrait=width/height<.85,source=portrait?art.portrait:art.environment;
@@ -93,4 +92,4 @@ export function drawWater(ctx,g,art,width,height,reducedMotion,active=true) {
   }catch{state.lost=true;return false;}
 }
 
-export function pauseWater(art){const state=videos.get(art);if(state)for(const clip of Object.values(state.clips))clip.pause();}
+export function pauseWater(art){const state=videos.get(art);if(state)for(const clip of Object.values(state.clips)){clip.pause();if(!document.querySelector('.game-canvas'))clip.remove();}}

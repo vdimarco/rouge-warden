@@ -39,7 +39,7 @@ export default function App() {
     return()=>lifecycle.abort();
   },[]);
   useEffect(()=>{
-    if(!art)return;let raf,previous=0,uiAt=0,lastTime=-1,lastWidth=0,lastHeight=0,lastReduce=null,lastRun=null;
+    if(!art)return;let raf,previous=0,lastTime=-1,lastWidth=0,lastHeight=0,lastReduce=null,lastRun=null;
     const pref=window.matchMedia('(prefers-reduced-motion: reduce)');let reduce=pref.matches;const changed=e=>{reduce=e.matches;};pref.addEventListener('change',changed);
     function tick(now){const dt=previous?Math.min(.05,(now-previous)/1000):0;previous=now;
       if(model.current&&!['menu','help'].includes(modeRef.current)){
@@ -51,12 +51,12 @@ export default function App() {
         if(canvas&&dirty){
           const dpr=renderDpr(w,h,window.devicePixelRatio||1),bw=Math.floor(w*dpr),bh=Math.floor(h*dpr);
           if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh;}
-          const ctx=canvas.getContext('2d',{alpha:false});ctx.setTransform(bw/w,0,0,bh/h,0,0);
+          const ctx=canvas.getContext('2d',{alpha:true});ctx.setTransform(bw/w,0,0,bh/h,0,0);
           renderGame(ctx,g,art,w,h,reduce,modeRef.current==='playing');
           lastRun=g;lastTime=g.time;lastWidth=w;lastHeight=h;lastReduce=reduce;
         }
-        if((modeRef.current==='playing'&&now-uiAt>50)||g.phase==='lost'&&modeRef.current==='playing'){setGame(snapshot(g));uiAt=now;}
         if(g.phase==='lost'&&modeRef.current==='playing'){
+          setGame(snapshot(g));
           modeRef.current='result';setMode('result');
           setBest(old=>{const value=!old||g.score>old.score?{version:2,score:g.score,distance:Math.floor(g.distance),coins:g.coins}:old;try{localStorage.setItem('river-rush-best',JSON.stringify(value));}catch{}return value;});
         }
@@ -78,7 +78,7 @@ export default function App() {
     {inGame&&<canvas ref={canvasRef} className="game-canvas" aria-label="Three-lane river runner. Left and right change lanes, Up or Space jumps, Down ducks, Shift activates Rush." onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pointer.current={x:e.clientX,y:e.clientY};}} onPointerMove={swipe} onPointerUp={e=>{swipe(e);pointer.current=null;}} onPointerCancel={()=>{pointer.current=null;}}/>}
     <header className="app-header"><button className="brand" aria-label="River Rush home" onClick={()=>inGame?pause():home()}><Logo/><span>RIVER RUSH</span></button><div className="header-actions">{inGame&&<button className="circle-button" aria-label="Pause game" onClick={pause}><Icon name="pause"/></button>}<button className="circle-button" aria-label={sound?'Mute sound':'Enable sound'} aria-pressed={sound} onClick={toggleSound}><Icon name={sound?'sound':'muted'}/></button></div></header>
     {!inGame&&<Menu onStart={start} onHelp={()=>setMode('help')} ready={!!art} error={error} best={best} active={mode==='menu'}/>}
-    {inGame&&game&&<Hud game={game} input={input} disabled={mode!=='playing'}/>}
+    {inGame&&game&&<Hud game={game} model={model} input={input} disabled={mode!=='playing'}/>}
     {mode==='help'&&<Modal label="How to play" onDismiss={home}><button className="modal-close circle-button" aria-label="Close instructions" onClick={home}><Icon name="close"/></button><Icon name="bolt" className="modal-symbol"/><h2>Find your flow.</h2><p>Three lanes. No finish line. How far can you ride?</p><ol className="instructions"><li><b>Dodge · Jump · Duck</b><span>← / → or A / D switch lanes. ↑, W or Space jumps logs. ↓ or S ducks branches. On phones, swipe in any direction or use the buttons.</span></li><li><b>Chase the streak</b><span>Collect eight coins to raise your multiplier, up to ×5. Keep collecting before the streak runs out. Perfect jumps and ducks earn bonus points.</span></li><li><b>Make it a Rush</b><span>Coins and tricks fill your Rush. Press Shift or tap the meter when full: four seconds of speed and invincibility! Magnets pull coins from every lane.</span></li><li><b>Risk. Wipe out. Ride again.</b><span>Your shield absorbs one hit. After that, a collision ends the run. Grab another shield, beat your best, and retry instantly.</span></li></ol><button className="primary" disabled={!art} onClick={start}>Let’s ride<Icon name="arrow"/></button></Modal>}
     {mode==='paused'&&<Modal label="Game paused" onDismiss={resume}><Icon name="pause" className="modal-symbol"/><h2>Catch your breath.</h2><p>Your streak will be here.</p><button className="primary" onClick={resume}>Resume run<Icon name="arrow"/></button><div className="modal-secondary"><button onClick={start}>Restart run</button><button onClick={home}>Back to river</button></div><small>← → Lanes · ↑ Jump · ↓ Duck · Shift Rush</small></Modal>}
     {mode==='result'&&game&&<Modal label="Run complete" onDismiss={home}><div className="result-kicker">{best&&game.score>=best.score?'NEW PERSONAL BEST':'ONE MORE RUN?'}</div><h2>What a ride.</h2><p>{game.reason}</p><div className="result-stats"><div><b>{game.score.toLocaleString()}</b><span>POINTS</span></div><div><b>{game.distance.toLocaleString()}m</b><span>DISTANCE</span></div><div><b>{game.coins}</b><span>COINS</span></div></div><p className="result-tricks">{game.jumps} perfect jumps · {game.ducks} perfect ducks</p><button className="primary" onClick={start}>Ride again<Icon name="arrow"/></button><small className="retry-hint">Enter to retry · Best {best?.score.toLocaleString()??'—'}</small><div className="modal-secondary"><button onClick={home}>Back to river</button><button onClick={switchGames}>Switch game</button><a href="/">Arcade</a></div></Modal>}
