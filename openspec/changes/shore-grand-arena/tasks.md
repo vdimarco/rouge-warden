@@ -45,8 +45,9 @@
 - [x] Effects per element, a windup pose and a clean death fade.
 - [x] Brighter full-length portraits for hero select.
 - [x] Merge the branch.
-- [ ] Draw the 3D arena behind the hero select (needs a `main.js` change).
-- [ ] Give the core crystal more depth; it reads as a flat crimson block in the low sun.
+- [x] Draw the 3D arena behind the hero select, with the selected hero in a cinematic camera (`qa/tidebreak/hero-select-3d.e2e.mjs`).
+- [x] Give the crystals depth: facets, a bright heart, rim, glints and a halo (luminance spread 19 to 40, flat share 53% to 7%).
+- [x] Make the skill buttons easy to hit: E and C larger, badges off the discs, a missed press goes to the nearest skill (`qa/tidebreak/skill-targets.e2e.mjs`).
 
 ## Bots (cloud session, branch `claude/quirky-cerf-vwf0qw-bots`)
 - [x] Difficulty setting (Apprentice, Veteran, Mythic) saved and shown in the match.

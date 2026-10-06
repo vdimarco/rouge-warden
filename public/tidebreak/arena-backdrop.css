@@ -1,5 +1,0 @@
-/* The 3D arena behind the hero select. main.js adds .arena-backdrop while the 3D renderer draws it there. The painted
-   backdrop gives way to dark scrims: the roster on the left, the hero text on the right and the footer stay readable,
-   and the middle stays open for the hero and the arena. */
-#menu.reference-selection.arena-backdrop{background:linear-gradient(180deg,#120f0ca6 0%,transparent 20%),linear-gradient(0deg,#120f0ce0 0%,#120f0c80 14%,transparent 34%),linear-gradient(90deg,#120f0cf0 0%,#120f0cb8 27%,#120f0c2e 45%,#120f0c14 57%,#120f0c8c 72%,#120f0ce0 100%)}
-@media(max-width:599px){#menu.reference-selection.arena-backdrop{background:linear-gradient(180deg,#120f0cb3 0%,#120f0c40 22%,transparent 40%),linear-gradient(0deg,#120f0cf2 0%,#120f0cd9 45%,#120f0c66 62%,transparent 75%)}}

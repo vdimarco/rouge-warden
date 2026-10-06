@@ -118,13 +118,30 @@ that reads on bright grass and in the woods.
 - **WHEN** an enemy hero warns its third basic strike
 - **THEN** a pulsing outlined ring shows the reach to leave, with a line to its target
 
-### Requirement: Crystals glow without white clipping
-Tower, guardian and core crystals SHALL glow in their team colour and SHALL NOT turn flat white in the low sun.
+### Requirement: Crystals read as cut crystal
+In the 3D view, tower, guardian and core crystals SHALL read as faceted magical crystal in their team colour (enemy crimson, ally teal). Each crystal SHALL show:
+- visible facets of different brightness;
+- a brighter heart that fades to darker edges;
+- a light rim on its outline;
+- small glints where a facet faces the sun;
+- a slow shimmer;
+- a soft halo that does not cover the facets.
+
+No crystal area SHALL clip to flat white, in either realm. The check reads a box inside the enemy core crystal from the WebGL canvas in qa/tidebreak/render3d.e2e.mjs: luminance standard deviation above 18, under 30% of pixels within 3% of the most common colour, under 0.5% near-white pixels, and a crimson mean.
 
 #### Scenario: Look at the enemy core
-- **WHEN** the camera shows the enemy core and guardians in the town realm
-- **THEN** their crystals are a saturated crimson
-- **AND** no crystal area is flat white
+- **WHEN** the camera shows the enemy core and guardians in the town realm at golden hour
+- **THEN** each crystal shows facets of different brightness, a bright heart and darker edges
+- **AND** the crystals stay crimson, and no crystal area is flat white or pale blue
+- **AND** the glow shows as a halo around the crystal, not over it
+
+#### Scenario: Look at the allied base
+- **WHEN** the camera shows the allied core and guardians
+- **THEN** their crystals are faceted teal with the same depth, and no area is flat white
+
+#### Scenario: Reduced motion
+- **WHEN** the player asks for reduced motion
+- **THEN** the crystal shimmer does not move
 
 ### Requirement: Elemental spell effects
 Each hero's spells SHALL show the hero's element (water, fire, void, stone, wind or light) with its own particles,
@@ -161,3 +178,34 @@ reads against the bright stage art.
 - **WHEN** the player selects Tidewarden or Voidcaller
 - **THEN** the full-length portrait shows the armour and robe detail in warm light with a clear rim
 - **AND** the card busts keep their dark warm style
+
+### Requirement: 3D arena behind the hero select
+When the battlefield renderer is 3D, the hero select SHALL draw the live arena behind the menu. A low cinematic camera (15° pitch, 30° lens, slow sway) SHALL frame the selected hero's model, playing its idle, in the stage area where the portrait stands, lit by the golden sun with only a faint team rim light. The roster, the skill panel, Play and keyboard focus SHALL stay readable and usable over the scene. The painted stage and portrait SHALL show in the 2D view, in the default 2D view of software rendering, until the first hero model is ready, when the selected model fails to load, and when the WebGL context is lost. The arena SHALL draw at most 30 frames a second, and a slow frame SHALL wait twice its own time (at most 2 s) before the next one. It SHALL NOT draw while the tab is hidden, SHALL stop when the draft or a match starts, and SHALL never start the match clock. qa/tidebreak/hero-select-3d.e2e.mjs checks this in SwiftShader.
+
+#### Scenario: See the selected hero in the arena
+- **WHEN** the player opens the hero select in the 3D view and the selected hero's model has loaded
+- **THEN** the painted stage and portrait step aside, and the hero's 3D model stands in the arena where the portrait stood, at 1440x900, 3440x1440, 390x844, 844x390 and 320x568.
+
+#### Scenario: Choose another hero
+- **WHEN** the player clicks another hero card or moves to it with the arrow keys
+- **THEN** the arena keeps showing the previous hero until the new model is ready, then shows the new hero with a short ring in the hero's colour (no ring with reduced motion), and the painted stage does not come back in between.
+
+#### Scenario: Keep the menu cheap and usable
+- **WHEN** the hero select is open in the 3D view
+- **THEN** the arena draws at most 30 frames a second, a slow frame waits twice its own time before the next one, nothing draws while the tab is hidden, and the roster cards, skill previews and Play take clicks above the scene.
+
+#### Scenario: Lost graphics context
+- **WHEN** the WebGL context is lost while the hero select is open
+- **THEN** the painted stage and portrait come back until the context returns.
+
+#### Scenario: Reduced motion
+- **WHEN** the player prefers reduced motion
+- **THEN** the arena camera holds still.
+
+#### Scenario: Start the draft
+- **WHEN** the player presses Play
+- **THEN** the arena stops drawing during the draft, and the match draws with the gameplay camera.
+
+#### Scenario: 2D view
+- **WHEN** the renderer is 2D (?renderer=2d, no WebGL2, or the software-rendering default)
+- **THEN** the hero select shows the painted stage and the full-length portrait.

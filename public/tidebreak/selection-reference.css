@@ -124,3 +124,12 @@
 @media(min-width:1000px) and (max-width:1199px){#menu .arcade-motto,#menu .shore-memory{display:none}}
 
 #menu .fal-tidewarden-spell,#menu .fal-identity-spell{background-size:200% 200%!important;background-repeat:no-repeat!important}
+
+/* The 3D arena behind the hero select: main.js adds .arena-3d after the selected hero's model draws. The painted stage
+   and portrait step aside, and soft shade at the edges keeps the panels and text readable over the bright ground. */
+#menu.reference-selection.arena-3d{background:radial-gradient(ellipse 70% 80% at 50% 50%,transparent 50%,#120e0b99),linear-gradient(0deg,#120e0bb3,transparent 24%)}
+#menu.arena-3d #hero-art{visibility:hidden}
+#menu.arena-3d .hero-stage::before,#menu.arena-3d .hero-stage::after{content:none}
+#menu.arena-3d .hero-feature::before{inset:0 0 0 42%;background:linear-gradient(90deg,transparent,#120e0be6 42%)}
+@media(max-width:999px) and (min-width:600px){#menu.arena-3d .hero-feature::before{inset:0 0 0 30%}}
+@media(max-width:599px){#menu.arena-3d .hero-feature::before{inset:0 0 0 28%}}

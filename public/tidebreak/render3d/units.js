@@ -197,14 +197,15 @@ class StructureView {
     this.units = units; this.root = new THREE.Group(); this.root.name = e.kind; units.group.add(this.root);
     const core = e.kind === 'core', tier = e.guardian ? 3 : Math.max(0, Math.min(3, e.tier ?? 0)), gltf = assets.world[core ? 'core' : 'tower'];
     this.height = core ? CORE_HEIGHT : TOWER_HEIGHT[tier]; this.core = core; this.guardian = !core && tier === 3;
-    const mat = unitMaterial(units.meshMaterial(gltf), this.uniforms = unitUniforms(), 'structure', { see: true });
+    const mat = unitMaterial(units.meshMaterial(gltf), this.uniforms = unitUniforms(), 'structure', { see: true, crystal: true });
     const mesh = new THREE.Mesh(units.meshGeometry(gltf), mat); mesh.castShadow = mesh.receiveShadow = true; mesh.scale.setScalar(this.height); this.mesh = mesh; this.root.add(mesh);
     this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]); this.uniforms.uRimPower.value = .18;
     // The pale crystal takes the team colour and glows.
-    this.uniforms.uTint.value.set(e.team === 0 ? '#3fd4bc' : e.team === 1 ? '#f04a62' : '#f0b04a'); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = core ? .5 : .6; this.uniforms.uTintLevel.value = core ? .16 : .2; // a lit pale crystal reads white; the colour comes from the glow
+    this.uniforms.uTint.value.set(e.team === 0 ? '#3fd4bc' : e.team === 1 ? '#f04a62' : '#f0b04a'); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = core ? .62 : .72; this.uniforms.uTintLevel.value = core ? .16 : .2; // a lit pale crystal reads white; the colour comes from the glow
+    this.uniforms.uFacet.value = core ? 12 : 26; this.uniforms.uHeart.value = core ? .19 : .075; // about four facets across a crystal
     if (this.guardian || core) { const ring = new THREE.Mesh(units.plinth, units.stone); ring.scale.set(core ? 520 : 190, core ? 46 : 56, core ? 520 : 190); ring.castShadow = ring.receiveShadow = true; this.root.add(ring); if (!core) mesh.position.y = 50; }
-    // The crystal's glow: a sprite in the team colour that breathes.
-    const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 380 : 260); this.glow = glow; this.root.add(glow);
+    // The crystal's glow: a sprite in the team colour that breathes. It is drawn behind the crystal, so it shows as a halo.
+    const glow = new THREE.Sprite(units.glowMaterial(e.team, true)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 380 : 260); this.glow = glow; this.root.add(glow);
     this.ward = new THREE.Mesh(units.wardGeometry, units.wardMaterial(e.team)); this.ward.scale.set(core ? 520 : 170, this.height * 1.05, core ? 520 : 170); this.ward.visible = false; this.root.add(this.ward);
     this.root.position.set(e.x, 0, e.y); this.root.rotation.y = core ? (e.team ? Math.PI : 0) : (e.id * 1.7) % TAU;
   }
@@ -218,7 +219,7 @@ class StructureView {
     this.mesh.material.color.setScalar(.55 + .45 * ratio);
     this.mesh.position.y = (this.guardian ? 50 : 0) - fall * this.height * .78; this.mesh.rotation.z = fall * .09; this.mesh.rotation.x = fall * .05;
     this.glow.visible = !dead; const pulse = this.units.reduced ? 1 : 1 + Math.sin(time * 2.2 + e.id) * .08; this.glow.scale.setScalar((this.core ? 380 : 260) * pulse * (.75 + ratio * .25));
-    u.uFlash.value = e.hit > 0 ? e.hit / .16 * .12 : 0;
+    u.uFlash.value = e.hit > 0 ? e.hit / .16 * .12 : 0; u.uTime.value = this.units.reduced ? 0 : time;
     const prot = !dead && structureProtected(s, e); this.ward.visible = prot && vis; if (prot) this.ward.material.uniforms.uTime.value = time;
     if (dead && !this.rubble) { this.rubble = true; this.units.effects.dust(e.x, e.y, this.core ? 300 : 140, this.core ? 24 : 14, '#9a8c74'); const r = this.units.rubble(e, this.core ? 2.2 : 1); this.root.add(r); }
     if (!dead && ratio < .4 && vis && Math.random() < dt * (ratio < .2 ? 7 : 3.5)) this.units.effects.smoke.emit({ x: e.x + (Math.random() - .5) * 50, y: this.height * (.55 + Math.random() * .3), z: e.y + (Math.random() - .5) * 50, vx: 25, vy: 70 + Math.random() * 30, vz: -15, life: 2.4, size: 110, grow: 2.2, color: '#4a4440', alpha: .45, drag: .4 });
@@ -274,7 +275,7 @@ export class Units {
     this.views = new Map(); this.pool = {}; this.frame = 0; this.poses = []; this.rimPower = 1; this.reduced = false; this.focus = { x: 0, y: 0 };
     this.plinth = new THREE.CylinderGeometry(1, 1.12, 1, 24).translate(0, .5, 0); this.totemGeometry = new THREE.CylinderGeometry(.55, .8, 1, 6).translate(0, .5, 0);
     this.wardGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1, true).translate(0, .5, 0);
-    this.glows = []; this.wards = []; this.cache = new Map();
+    this.glows = {}; this.wards = []; this.cache = new Map();
   }
   init(textures) {
     this.textures = textures; this.stone = worldMapped(textures.stone, { color: '#c4bcac', scale: 220, key: 'stone-unit' });
@@ -293,9 +294,14 @@ export class Units {
     assets.world.minion.scene.traverse(o => { if (o.isMesh && !map.has(o.name)) map.set(o.name, unitMaterial(o.material, uniforms, 'minion')); });
     map.set('*', [...map.values()][0]); map.uniforms = uniforms; this.cache.set(key, map); return map;
   }
-  glowMaterial(team) {
-    this.glows[team + 1] ||= new THREE.SpriteMaterial({ map: this.textures.glow, color: team === 0 ? '#79e6d2' : team === 1 ? '#ff7088' : '#f3c67a', blending: THREE.AdditiveBlending, depthWrite: false, depthTest: true, transparent: true, toneMapped: false, opacity: .3 });
-    return this.glows[team + 1];
+  // behind: the sprite is moved away from the camera along its line of sight by half its size. It covers the same
+  // pixels, but the crystal in front hides it, so the glow does not wash out the facets.
+  glowMaterial(team, behind = false) {
+    const key = (behind ? 'behind' : '') + team;
+    if (this.glows[key]) return this.glows[key];
+    const m = this.glows[key] = new THREE.SpriteMaterial({ map: this.textures.glow, color: team === 0 ? '#79e6d2' : team === 1 ? '#ff7088' : '#f3c67a', blending: THREE.AdditiveBlending, depthWrite: false, depthTest: true, transparent: true, toneMapped: false, opacity: .3 });
+    if (behind) { m.onBeforeCompile = shader => { shader.vertexShader = shader.vertexShader.replace('gl_Position = projectionMatrix * mvPosition;', 'mvPosition.xyz *= 1. + scale.x * .5 / length( mvPosition.xyz );\ngl_Position = projectionMatrix * mvPosition;'); }; m.customProgramCacheKey = () => 'glow-behind'; }
+    return m;
   }
   // The ward shimmer on a protected structure: a faint fresnel wall in the team colour, rising bands.
   wardMaterial(team) {

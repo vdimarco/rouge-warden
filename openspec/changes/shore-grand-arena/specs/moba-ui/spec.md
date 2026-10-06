@@ -46,3 +46,26 @@ lines and kill-feed names SHALL carry a small portrait of the hero who spoke or 
 - **WHEN** sudden death starts
 - **THEN** the match clock turns crimson and counts down the last three minutes, and screens at least 700 px wide show a sudden death
   label under the score.
+
+### Requirement: Skill buttons are easy to hit
+The skill cluster SHALL place Q, E and C on an arc around the ultimate R in the bottom-right corner. E and C, the buttons nearest the middle of the screen, SHALL be at least 80 px wide on desktop and at least 70 px wide in the phone layout (width up to 430 px, or height up to 520 px). Every point of each skill's visible disc SHALL activate that skill, and no other control SHALL cover it. Each "+" upgrade badge SHALL sit on the outer side of its skill, cover no skill disc, and be at least 34 px wide. In upgrade mode no second "+" mark SHALL show on a tile. A press in a gap of the cluster SHALL go to the skill with the nearest disc edge. The cluster SHALL NOT overlap the market bar, the inventory slots, the auto-status label, the minimap, the point button, the health bar, the movement pad or the rally button, and in the phone layout every skill centre SHALL be within 250 px of the bottom-right corner. Drag-to-aim, return-to-centre cancel and the Q/E/C/R keys SHALL work as before. qa/tidebreak/skill-targets.e2e.mjs measures this at seven screen sizes.
+
+#### Scenario: A press on the rim of a skill casts that skill
+- **WHEN** the player presses anywhere on the visible disc of Q, E, C or R at 1440x900, 1920x1080, 3440x1440, 844x390, 600x500, 390x844 or 320x568, with or without skill points to spend
+- **THEN** that skill takes the press
+
+#### Scenario: The upgrade badges do not cover the skills
+- **WHEN** the player has skill points and the four "+" badges show
+- **THEN** each badge sits outside every skill disc, a press on a badge spends a point on its skill, and no tile shows a second "+" mark
+
+#### Scenario: A slightly missed press still casts
+- **WHEN** the player presses in the gap between two skills, or in the middle of the cluster
+- **THEN** the skill with the nearest disc edge takes the press, and a drag from there aims it as usual
+
+#### Scenario: The cluster keeps clear of the market on small landscape windows
+- **WHEN** the window is 600 to 659 px wide and up to 520 px high
+- **THEN** no skill or badge overlaps the market bar or an inventory slot
+
+#### Scenario: A press clear of the cluster reaches the battlefield
+- **WHEN** the player presses 30 px or more outside the cluster
+- **THEN** no skill takes the press

@@ -135,21 +135,11 @@ here:
      longer than 30 s.
 
 ### The arena behind the hero select
-- **What the player sees:** on the hero select, the 3D arena now shows behind the hero.
-  - It is a slow orbit at a 23 degree pitch over the middle bridge, looking across the river in the low sun.
-  - With reduced motion, the camera holds still.
-- **How it works:**
-  - `main.js` calls `draw(state, dt, true)` while the menu is open, no match runs, and the renderer is the 3D one.
-  - The renderer sets `backdrop`. The 2D renderer does not, so it keeps the painted backdrop.
-- **Menu background:** `arena-backdrop.css` swaps the painted backdrop for dark scrims, so the roster, the hero text
-  and the footer stay readable. The phone layouts have their own scrims.
-- **Cost in the menu:**
-  - The scenery is kept in a 6000-unit square ahead of the camera focus.
-  - Grass tufts are hidden, because they are too small to see from that height.
-  - The shadow map covers 2600 units around the focus.
-  - On SwiftShader the menu frame is 99 to 124 draw calls and 0.64 to 0.67 M triangles (1440x900, 390x844,
-    844x390). The busiest match fight is about 0.7 M.
-- **Check:** `render3d.e2e.mjs` checks that the arena draws behind the hero select.
+- A first version (vdimarco/rouge-warden#244) drew a slow orbit over the middle bridge behind the hero select, without
+  the hero. The showcase arena from the main session replaces it: the selected hero stands in the arena in a low
+  cinematic camera, at most 30 frames a second, with a fallback to the painted stage. The capability spec
+  `moba-graphics` holds its requirement, and `qa/tidebreak/hero-select-3d.e2e.mjs` tests it.
+- `render3d.e2e.mjs` still checks that the arena draws behind the hero select (the `.arena-3d` class on the menu).
 
 ## 2. Performance
 

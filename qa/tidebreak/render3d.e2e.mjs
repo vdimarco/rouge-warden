@@ -3,6 +3,8 @@
 // - the 3D arena draws behind the hero select;
 // - heroes animate (bone rotations change while the hero runs) and attack poses report their clip;
 // - every tower tier (outer, middle, inner, guardian) and both cores have a visible 3D view;
+// - the enemy core's crystal is cut crystal, not a flat block: its brightness varies, few of its pixels share one flat
+//   colour, none is clipped to white, and it stays crimson;
 // - trees, bushes and grass are built in code (leaf cards), heroes have outlines, and the see-through points follow the
 //   heroes in view; towers take the see-through too; a fortified outer ward says so; the minimap gets the bridges;
 // - world(project(x, y)) returns the same ground point, and pick() finds an enemy under the cursor;
@@ -56,7 +58,7 @@ try {
     assert.equal(g.models.world, g.models.worldTotal); assert.equal(g.models.clips, 17);
     assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d') && !!document.getElementById('battle-overlay')), true, 'the WebGL canvas and the overlay exist');
     // The hero select shows the 3D arena behind it: the renderer draws and the menu drops its painted backdrop.
-    await until(() => page.evaluate(() => document.getElementById('menu').classList.contains('arena-backdrop') && document.getElementById('battle').__shore3d.drawCalls > 20), 'the arena behind the hero select', 120);
+    await until(() => page.evaluate(() => document.getElementById('menu').classList.contains('arena-3d') && document.getElementById('battle').__shore3d.drawCalls > 20), 'the arena behind the hero select', 120);
     pass('the 3D arena draws behind the hero select', await page.evaluate(() => ({ drawCalls: document.getElementById('battle').__shore3d.drawCalls, background: getComputedStyle(document.getElementById('menu')).backgroundImage.includes('shore-scene') ? 'painted' : 'arena' })));
     await toMatch(t);
     await until(async () => { const g = await t.graphics(); return g.models.heroes + g.models.failed.length >= g.models.heroesTotal; }, 'all hero models load');
@@ -115,6 +117,34 @@ try {
     const heights = Object.fromEntries(g.structures.filter(v => v.kind === 'tower').map(v => [v.guardian ? 'guardian' : v.tier, v.height]));
     for (let i = 1; i < 3; i++) if (heights[i] && heights[i - 1]) assert(heights[i] > heights[i - 1], 'inner tiers stand taller: ' + JSON.stringify(heights));
     pass('every tower tier and both cores render', { kinds: tiers, heights });
+
+    // The enemy core reads as cut crystal, not a flat block: inside a box in the middle of its crystal the brightness
+    // varies (facets, a bright heart, darker edges), few pixels share one flat colour, none is clipped to white, and it
+    // stays crimson. The box is read from the WebGL canvas in the frame it is drawn, so labels and the HUD are not in it.
+    // Measured in this box: the old flat crystal had a brightness spread (standard deviation) of 8 and a flat share of
+    // 0.53; the cut crystal has about 32 and 0.13.
+    const core1 = kinds.get('core1');
+    await page.evaluate(([x, y]) => window.__renderer.lookAt(x, y), [core1.x, core1.y]); await pump(2, 16);
+    const crystal = await page.evaluate(id => {
+      const r = window.__renderer, v = r.units.views.get(id), u = v.unit, h = v.height, w = h * .11, c = r.canvas, k = c.width / r.width;
+      const a = r.project(u.x - w, u.y, h * .55), b = r.project(u.x + w, u.y, h * .15);
+      const x0 = Math.round(Math.min(a.x, b.x) * k), y0 = Math.round(Math.min(a.y, b.y) * k), bw = Math.round(Math.abs(b.x - a.x) * k), bh = Math.round(Math.abs(b.y - a.y) * k);
+      window.__ts += 16; window.__pump(window.__ts);
+      const t = document.createElement('canvas'); t.width = bw; t.height = bh; const g = t.getContext('2d'); g.drawImage(c, x0, y0, bw, bh, 0, 0, bw, bh);
+      const d = g.getImageData(0, 0, bw, bh).data, n = d.length / 4, lum = new Float32Array(n), bins = new Map(); let white = 0, sr = 0, sg = 0, sb = 0;
+      for (let i = 0; i < n; i++) { const R = d[i * 4], G = d[i * 4 + 1], B = d[i * 4 + 2], key = (R >> 3) << 10 | (G >> 3) << 5 | B >> 3; lum[i] = .2126 * R + .7152 * G + .0722 * B; if (Math.min(R, G, B) >= 235) white++; sr += R; sg += G; sb += B; bins.set(key, (bins.get(key) || 0) + 1); }
+      // The flat share: pixels within 3% (per channel) of the most common colour.
+      const mode = [...bins].sort((p, q) => q[1] - p[1])[0][0], m = [0, 0, 0]; let mn = 0;
+      for (let i = 0; i < n; i++) { const R = d[i * 4], G = d[i * 4 + 1], B = d[i * 4 + 2]; if (((R >> 3) << 10 | (G >> 3) << 5 | B >> 3) === mode) { m[0] += R; m[1] += G; m[2] += B; mn++; } }
+      let flat = 0; for (let i = 0; i < n; i++) if (Math.max(Math.abs(d[i * 4] - m[0] / mn), Math.abs(d[i * 4 + 1] - m[1] / mn), Math.abs(d[i * 4 + 2] - m[2] / mn)) <= 255 * .03) flat++;
+      const mean = lum.reduce((s, x) => s + x, 0) / n, std = Math.sqrt(lum.reduce((s, x) => s + (x - mean) ** 2, 0) / n);
+      return { phase: r.stateRef?.phase, box: [x0, y0, bw, bh], pixels: n, lumStd: +std.toFixed(1), flatShare: +(flat / n).toFixed(3), clipped: +(white / n).toFixed(4), rgb: [sr, sg, sb].map(x => Math.round(x / n)) };
+    }, core1.id);
+    assert(crystal.pixels > 400, 'the crystal box is on screen: ' + JSON.stringify(crystal));
+    assert(crystal.lumStd > 18 && crystal.flatShare < .3, 'the core crystal is not one flat colour: ' + JSON.stringify(crystal));
+    assert(crystal.clipped < .005 && crystal.rgb[0] > 1.6 * Math.max(crystal.rgb[1], crystal.rgb[2]), 'the core crystal stays crimson and is not clipped to white: ' + JSON.stringify(crystal));
+    pass('the enemy core reads as cut crystal', crystal);
+    await read('const r = window.__renderer; r.recenter(); r.cam = { x: p.x, y: p.y };'); await pump(2, 16);
 
     // world(project(x, y)) is the identity on the ground, and pick() finds an enemy under the cursor.
     const trip = await page.evaluate(() => { const r = window.__renderer, out = []; for (const [dx, dy] of [[0, 0], [400, -300], [-600, 200], [900, -800]]) { const x = r.cam.x + dx, y = r.cam.y + dy, s = r.project(x, y), w = r.world(s.x, s.y); out.push(Math.hypot(w.x - x, w.y - y)); } return out; });
