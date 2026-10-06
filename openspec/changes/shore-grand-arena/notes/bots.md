@@ -61,15 +61,20 @@ Mythic uses Veteran's map plays. Its own ganks every 45 s, gathering 12 s early 
 
 ## Measurements
 
-### Grand arena (9600 units, merged base)
+### Grand arena (9600 units, final code)
 
-These rows come from code before drafting by kit strength and before camps were turned off. 60 seeded matches per row, sides swapped on every seed, random lineups. Matches last about 13–14 minutes and most reach sudden death.
+`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs <A> <B> 30` on main after #229: 60 seeded matches per row, sides swapped on every seed, lineups drafted as in the game (Mythic drafts by kit strength, the other profiles do not). Matches last about 12–13 minutes. The standard error of a win rate is about 0.065. "Lineup splits" counts seeds where A won both sides, B won both sides, or each side won once.
 
-| A against B | A wins | Kills A–B | Towers taken A / B | Dive deaths A / B |
-|---|---|---|---|---|
-| Mythic vs Veteran | 0.48 | 16.1 – 11.3 | 2.15 / 2.37 | 0.37 / 0.97 |
-| Veteran vs old (before the move guard) | 0.50 | 17.6 – 9.3 | 2.17 / 2.67 | 0.42 / 2.73 |
-| Mythic vs old (before the move guard) | 0.40 | 18.4 – 6.3 | 1.97 / 2.57 | 0.17 / 3.40 |
+| A against B | A wins | Lineup splits (A both / B both / split) | Kills A–B | Wards taken A / B | Bosses A / B | Dive deaths A / B | Spell share A / B |
+|---|---|---|---|---|---|---|---|
+| Mythic vs Veteran | **0.67** | 13 / 3 / 14 | 17.7 – 6.9 | 6.08 / 5.00 | 2.62 / 1.73 | 0.48 / 0.90 | 34.8% / 33.7% |
+| Mythic vs old | **0.68** | 12 / 1 / 17 | 19.1 – 4.3 | 5.75 / 4.82 | 3.45 / 0.52 | 0.37 / 3.20 | 32.6% / 28.8% |
+| Veteran vs old | 0.52 | 6 / 5 / 19 | 15.5 – 9.0 | 5.38 / 5.27 | 3.32 / 0.68 | 0.43 / 2.85 | 29.2% / 26.1% |
+| Apprentice vs old | **0.35** | 2 / 11 / 17 | 8.4 – 14.9 | 4.85 / 5.93 | 1.33 / 2.00 | 0.92 / 1.33 | 22.6% / 24.7% |
+
+- **Mythic is clearly stronger than Veteran:** 0.67, about 2.6 standard errors above even. Mythic won both sides of 13 seeds and Veteran of 3.
+- The order is Apprentice < old ≈ Veteran < Mythic. Veteran wins fights, bosses and kills against the old bots and dies far less under wards, but it is even on wins.
+- Earlier rows (before drafting and with camps on): Mythic vs Veteran 0.48, Veteran vs old 0.50 and Mythic vs old 0.40. A single-play ablation of drafted Mythic against the old bots gave 0.75 with gathering only, 0.72 with defend only, 0.70 with ganks only and 0.60 with camps only, so camps were turned off.
 
 - The base branch gave every bot, the old ones included, the wave-gated lane walk and sprint. That removed most of the old-map gap.
 - **The lineup decides most matches.** Each seed is played twice with sides swapped. In 18–19 of 30 seeds, the same lineup side won both games whatever profile played it. Only about 12 seeds were decided by the bots' play.
