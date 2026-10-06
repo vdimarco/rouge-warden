@@ -598,7 +598,7 @@ function fadeMove(x, y, z) {
   }).catch((e) => { respawning = false; console.error(e); });
 }
 function respawn() { D.mobile.reset(); const L = P.lastSafe, s = city.nearestSafe(L.x, L.y, L.z); fadeMove(s.x, s.y, s.z); }
-function travel(s) { if (s && Number.isFinite(s.x)) fadeMove(s.x, s.y, s.z); }
+function travel(s) { if (!s || !Number.isFinite(s.x)) return; if (driving) exitCar(); fadeMove(s.x, s.y, s.z); }
 
 function syncPauseState() {
   if (ui.paused && (G.state === "play" || G.state === "intro")) { G.pausedFrom = G.state; G.state = "paused"; onPause(); }

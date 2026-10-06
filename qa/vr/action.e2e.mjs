@@ -146,6 +146,31 @@ try {
   check(job.active && job.active.type === job.o.type && job.card && job.goal, "walking into a marker starts its job, with its card and a compass goal", job);
   await page.screenshot({ path: out + "/action-job.png" });
 
+  /* ---- the map: a pin on each job marker, and travel to one takes its job ---- */
+  const mp = await page.evaluate(() => {
+    const before = { state: G.state, ui: G.ui.paused, ids: G.jobs.offers.map((o) => o.id), active: !!G.jobs.active };
+    G.jobs.cancel(); QA.street(); QA.step(5);
+    const after = { state: G.state, ui: G.ui.paused, ids: G.jobs.offers.map((o) => o.id), on: G.jobs.offersOn, cs: G.test.cutscene && G.test.cutscene() };
+    G.ui.openMap(); G.test.step(1 / 60, 4);
+    return { before, after, offers: G.test.action().jobs.offers, list: [...document.querySelectorAll("#fsMap button[data-id]")].map((b) => ({ id: b.dataset.id, text: b.textContent })), key: document.querySelector("#fsMap .fs-key").textContent };
+  });
+  const jobBtns = mp.list.filter((b) => b.id.startsWith("pin:job:"));
+  check(mp.offers.length >= 3 && jobBtns.length === mp.offers.length && /odd job/i.test(mp.key), "the map has a pin and a list entry for each job marker (" + jobBtns.map((b) => b.text) + ")", mp);
+  await page.screenshot({ path: out + "/action-map.png" });
+  const pick = jobBtns[0], want = mp.offers.find((o) => pick && pick.id === "pin:job:" + o.id);
+  if (pick) await page.click("#fsMap button[data-id='" + pick.id + "']");
+  for (let i = 0; i < 12; i++) await page.evaluate(() => QA.step(8));
+  const tv = await page.evaluate(() => ({ state: G.state, active: G.test.action().jobs.active, pos: G.test.state().pos }));
+  check(!!want && tv.state === "play" && tv.active && tv.active.type === want.type, "a click on a job pin travels there and takes the job", { want, tv, before: mp.before, after: mp.after });
+  const now = await page.evaluate(() => {
+    QA.step(5);
+    G.ui.openMap(); G.test.step(1 / 60, 2);
+    const names = G.test.ui().map.names;
+    G.ui.closePause(); G.test.step(1 / 60, 2);
+    return { names };
+  });
+  check(now.names.some((n) => /^Your job/.test(n)) && !now.names.some((n) => /^Odd job/.test(n)), "while you are on a job the map pins that job, and no other markers", now.names);
+
   check(page.errors.length === 0, "no errors in flat play", page.errors);
   await page.context().close();
 } catch (e) { check(false, "the flat-play run threw", e.stack || String(e)); }

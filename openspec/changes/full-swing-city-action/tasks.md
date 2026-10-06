@@ -15,5 +15,5 @@
 - [x] Version 1.11.0 (APK code 15), offline cache
 - [x] Tests: Node tests for combat, cars and jobs; a browser test for the new play; both in CI
 - [x] Run the existing suites (perf, pwa, render, street, cutscene, climb, target); validate with the OpenSpec CLI
-- [ ] Map pins for the job markers
+- [x] Map pins for the job markers: a star pin per marker, travel takes the job, the job you are on (1.11.1, APK code 16)
 - [ ] Device checks not possible here: a real phone, a headset, sound by ear
