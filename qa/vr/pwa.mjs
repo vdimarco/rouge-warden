@@ -241,6 +241,40 @@ try {
   const indexSrc = await readFile(path.join(PUB, "vr/index.html"), "utf8");
   const indexTitle = (indexSrc.match(/<title>([^<]*)<\/title>/) || [])[1] || "";
 
+  // The same-origin requests of the page. A request ends on its own: it finishes, or it fails (offline, that means the
+  // cache has no answer). A navigation of this test cancels a request that still runs (net::ERR_ABORTED). The test
+  // does that, so the cancel does not show a missing file and is not a failure.
+  const failed = [], pending = new Set(), cancelled = new Set();
+  let activeAt = Date.now(), moving = false;
+  const same = (q) => q.url().startsWith(BASE);
+  const names = (qs) => [...qs].map((q) => new URL(q.url()).pathname).join(", ");
+  page.on("request", (q) => {
+    if (!same(q)) return;
+    pending.add(q); activeAt = Date.now();
+    if (moving && !q.isNavigationRequest()) cancelled.add(q); // the old page can start a request until the new page commits
+  });
+  page.on("requestfinished", (q) => { if (pending.delete(q)) activeAt = Date.now(); });
+  page.on("requestfailed", (q) => {
+    if (!same(q)) return;
+    pending.delete(q); activeAt = Date.now();
+    const why = (q.failure() || {}).errorText;
+    if (cancelled.has(q) && why === "net::ERR_ABORTED") return;
+    failed.push(new URL(q.url()).pathname + " " + why);
+  });
+  page.on("framenavigated", (f) => { if (f === page.mainFrame()) moving = false; });
+  // Waits until no request runs and none has started for `calm` ms, which means the page made its first fetches.
+  // Stops after SETTLE_LIMIT ms, so a request that never ends cannot hold the test. Returns false when it stopped.
+  const SETTLE_LIMIT = 60000;
+  const settle = async (calm) => {
+    const end = Date.now() + SETTLE_LIMIT;
+    activeAt = Date.now();
+    while (Date.now() < end) {
+      if (!pending.size && Date.now() - activeAt >= calm) return true;
+      await page.waitForTimeout(100);
+    }
+    return false;
+  };
+
   await test("privacy.html loads", async (ok) => {
     const res = await page.goto(BASE + "/vr/privacy.html");
     ok(res && res.status() === 200, "status " + (res && res.status()));
@@ -292,22 +326,33 @@ try {
 
   await test("offline start", async (ok) => {
     if (!controlled) return ok(false, "the service worker is not in control, so the game cannot start offline");
+    // The page of the last test can still load. Wait until it is idle, so no request of it crosses the cut.
+    ok(await settle(1500), "the page did not finish its requests online after " + SETTLE_LIMIT / 1000 + " s: " + names(pending));
     // cut the network two ways: the browser goes offline, and the server stops, so only the cache can answer
     await ctx.setOffline(true);
     await stopServer();
-    const failed = [];
-    page.on("requestfailed", (q) => { if (q.url().startsWith(BASE)) failed.push(new URL(q.url()).pathname + " " + (q.failure() || {}).errorText); });
+    // The worker also keeps the files that the page fetched while it ran (stale-while-revalidate). Such a copy can hide
+    // a file that the precache list does not have. Delete the copies: the start must work from the precache alone.
+    await page.evaluate(async ({ cache, keep }) => {
+      const c = await caches.open(cache);
+      for (const q of await c.keys()) if (!keep.includes(new URL(q.url).pathname)) await c.delete(q);
+    }, { cache: SW.CACHE, keep: precachePaths });
+    failed.length = 0;
     const e0 = errors.length;
     for (const [url, what] of [["/vr/", "a reload of /vr/"], ["/vr/?source=pwa", "the PWA start URL"], ["/vr/privacy.html", "privacy.html"], ["/vr/no-such-page.html", "an unknown page (falls back to the game)"]]) {
+      const f0 = failed.length;
+      moving = true;
+      for (const q of pending) cancelled.add(q);
       const res = url === "/vr/" ? await page.reload({ waitUntil: "domcontentloaded" }) : await page.goto(BASE + url, { waitUntil: "domcontentloaded" });
       ok(res && res.status() === 200, what + ": status " + (res && res.status()));
       ok(res && res.fromServiceWorker(), what + ": not served by the service worker");
       const title = await page.title();
       const want = url.includes("privacy") ? /privacy/i : new RegExp("^" + indexTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$");
       ok(want.test(title), what + ": title is \"" + title + "\"");
-      await page.waitForTimeout(1500); // let module scripts and the first fetches run
+      // let module scripts and the first fetches run, and wait for them to end: the next navigation cancels what still runs
+      ok(await settle(1500), what + ": requests still running after " + SETTLE_LIMIT / 1000 + " s: " + names(pending));
+      ok(failed.length === f0, what + ": same-origin requests failed offline (not precached?): " + failed.slice(f0).join(", "));
     }
-    ok(failed.length === 0, "same-origin requests failed offline (not precached?): " + failed.join(", "));
     const net = errors.slice(e0).filter((m) => /fetch|import|network|ERR_INTERNET/i.test(m));
     ok(net.length === 0, "network errors offline: " + net.join(" | "));
     const other = errors.slice(e0).filter((m) => !net.includes(m));
