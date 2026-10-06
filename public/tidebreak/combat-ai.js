@@ -30,7 +30,7 @@ export function combatDecision(s,e){
  if(danger){
   const origin=danger.targetId&&caster?caster:danger;
   const a=danger.shape==='cone'?danger.angle+(Math.sin(Math.atan2(e.y-danger.y,e.x-danger.x)-danger.angle)>=0?1:-1)*Math.PI/2:Math.atan2(e.y-origin.y,e.x-origin.x);
-  return {mode:'evade',move:evadePoint(s,e,a,danger===zone)};
+  const move=evadePoint(s,e,a,danger===zone);if(move)return {mode:'evade',move};
  }
  const outnumbered=heroes.length>allies.length, hurt=e.hp/e.maxHp;
  if(hurt<P.retreatAt||(outnumbered&&hurt<.65)||e.retreat&&hurt<.82||tradeRetreat(s,e,heroes,hurt)){

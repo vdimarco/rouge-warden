@@ -115,17 +115,23 @@ export const castLock = (s, e, started) => { const P = botProfile(s, e); return 
 
 // The dodge step. A failed roll steps short, so a careless bot can still be hit.
 // No profile but the old bots dodges into an enemy ward that nothing tanks.
+// A bot keeps one dodge point for each warning. After a short step it goes back to its fight,
+// so the warned attack can still hit it. Returns null when the bot is done dodging.
 export function evadePoint(s, e, angle, immediate) {
-  const P = botProfile(s, e);
-  const key = e.warningReaction?.key || 'zone';
+  const P = botProfile(s, e), W = e.warningReaction;
+  const key = W?.key || 'zone';
   const length = P.legacy || immediate || roll(s, e, key + ':dodge') < P.dodge ? 320 : 120;
   const point = a => ({ x: e.x + Math.cos(a) * length, y: e.y + Math.sin(a) * length });
-  if (P.legacy || s.suddenDeath) return point(angle);
-  for (const a of [angle, angle + .9, angle - .9, angle + Math.PI]) {
+  if (P.legacy) return point(angle);
+  const keep = !immediate && W;
+  if (keep && W.dodge) { if (distance(e, W.dodge) > 12) return W.dodge; if (W.dodge.short) return null; }
+  let pick = point(angle);
+  if (!s.suddenDeath) for (const a of [angle, angle + .9, angle - .9, angle + Math.PI]) {
     const p = point(a), t = inTowerRange(s, e.team, p, 40);
-    if (!t || escorted(s, e.team, t)) return p;
+    if (!t || escorted(s, e.team, t)) { pick = p; break; }
   }
-  return point(angle);
+  if (keep) W.dodge = { ...pick, short: length < 320 };
+  return pick;
 }
 
 // Tower-dive guard. Attacking t means standing in range of it. If an enemy
