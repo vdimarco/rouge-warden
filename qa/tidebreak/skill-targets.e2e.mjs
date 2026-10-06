@@ -1,9 +1,10 @@
-// The skill buttons are easy to hit at nine screen sizes, with skill points to spend and without:
+// The skill buttons are easy to hit at ten screen sizes, with skill points to spend and without:
 // 1. every point of each skill's visible disc reaches that skill, and no other control covers it. The "+" badges
 //    cover no disc and are easy to hit themselves.
-// 2. E and C, the skills nearest the middle of the screen, are at least 80 px wide on desktop and 70 px on phones. The
-//    cluster stays clear of the market, the auto-status label, the minimap and the point button, and on phones it stays
-//    in thumb reach of the bottom-right corner.
+// 2. E and C, the skills nearest the middle of the screen, are at least 80 px wide in the desktop thumb fan and 70 px on
+//    phones. In the desktop command bar (a mouse screen from 1040x600) the four skills sit in a row and are at least
+//    64 px, with badges of at least 24 px. The skills stay clear of the market, the auto-status label, the minimap and
+//    the point button, and on phones they stay in thumb reach of the bottom-right corner.
 // 3. a press in the gap between two skills, inside the cluster, goes to the nearest skill (the nearest disc edge).
 // Real presses check 1 and 3: in upgrade mode a press on a skill spends a point on it, so the rank shows which skill took
 // the press. Mouse on desktop, touch on phones.
@@ -19,7 +20,8 @@ const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browse
 const browser = await chromium.launch({ executablePath });
 // 600x500 is a small landscape window: it gets the phone cluster, and the market bar reaches close under C.
 // 640x360 and 568x320 are small phones on their side: a smaller minimap, and the point button is a pill beside it.
-const SIZES = [[1440, 900], [1920, 1080], [3440, 1440], [844, 390], [600, 500], [640, 360], [568, 320], [390, 844], [320, 568]];
+// 1040x640 is the smallest window with the desktop command bar.
+const SIZES = [[1040, 640], [1440, 900], [1920, 1080], [3440, 1440], [844, 390], [600, 500], [640, 360], [568, 320], [390, 844], [320, 568]];
 const KEYS = ['Q', 'E', 'C', 'R'], CLEAR = ['#skill-points', '#auto-status', '#map-button', '#shop', '#quick-buy', '#loadout', '#inventory', '.inventory-slot', '.health', '#joystick', '#rally'];
 const failures = [];
 const check = (ok, message) => { if (!ok) failures.push(message); };
@@ -50,7 +52,8 @@ const MEASURE = clearList => {
   const clear = Object.fromEntries(clearList.flatMap(s => [...document.querySelectorAll(s)].filter(shown).map((el, i) => [i ? `${s} ${i + 1}` : s, box(el)])));
   const chat = [...document.querySelectorAll('#team-chat li')].filter(shown).map(box);
   const extra = Object.fromEntries(['#map-button', '#objective-clock', '#objective', '#joystick'].map(s => document.querySelector(s)).filter(shown).map(el => ['#' + el.id, box(el)]));
-  return { skills, badges, clear, chat, extra, view: { w: innerWidth, h: innerHeight } };
+  const bar = getComputedStyle(document.getElementById('hud'), '::before').content !== 'none';
+  return { skills, badges, clear, chat, extra, bar, view: { w: innerWidth, h: innerHeight } };
 };
 
 const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -94,12 +97,15 @@ try {
       if (mode === 'points') check(m.badges.length === 4, `${at}: all four "+" badges show (${m.badges.length})`);
       for (const b of m.badges) {
         check(b.share.own === 1, `${at}: only ${Math.round(b.share.own * 100)}% of the ${KEYS[b.slot]} badge reaches it (${JSON.stringify(b.share.others)})`);
-        check(b.disc.r * 2 >= 34, `${at}: the ${KEYS[b.slot]} badge is ${Math.round(b.disc.r * 2)} px, under 34 px`);
+        const least = m.bar ? 24 : 34;
+        check(b.disc.r * 2 >= least, `${at}: the ${KEYS[b.slot]} badge is ${Math.round(b.disc.r * 2)} px, under ${least} px`);
         for (const s of m.skills) check(Math.hypot(b.disc.x - s.disc.x, b.disc.y - s.disc.y) >= b.disc.r + s.disc.r - .5, `${at}: the ${KEYS[b.slot]} badge covers the ${KEYS[s.slot]} disc`);
       }
       // Goal 2: E and C are large; Q is not smaller than before; the cluster keeps clear of the other controls.
-      for (const s of m.skills.filter(s => s.slot === 1 || s.slot === 2)) check(s.size >= (phone ? 70 : 80), `${at}: ${KEYS[s.slot]} is ${Math.round(s.size)} px, under ${phone ? 70 : 80} px`);
-      check(m.skills[0].size >= (phone ? 70 : 80), `${at}: Q is ${Math.round(m.skills[0].size)} px`);
+      const big = m.bar ? 64 : phone ? 70 : 80;
+      check(phone || m.bar === (w >= 1040 && h >= 600), `${at}: the command bar ${m.bar ? 'shows' : 'is missing'}`);
+      for (const s of m.skills.filter(s => s.slot === 1 || s.slot === 2)) check(s.size >= big, `${at}: ${KEYS[s.slot]} is ${Math.round(s.size)} px, under ${big} px`);
+      check(m.skills[0].size >= big, `${at}: Q is ${Math.round(m.skills[0].size)} px`);
       const parts = [...m.skills.map(s => s.hit), ...m.badges.map(b => discBox(b.disc))];
       for (const [sel, r] of Object.entries(m.clear)) check(!parts.some(p => overlap(p, r)), `${at}: the skill cluster overlaps ${sel}`);
       // The point button covers neither the minimap nor the objective timers.
@@ -136,9 +142,10 @@ try {
       const mid = { x: m.skills.reduce((t, s) => t + s.disc.x, 0) / 4, y: m.skills.reduce((t, s) => t + s.disc.y, 0) / 4 }, midWant = nearest(m.skills, mid.x, mid.y), midGot = await press(page, phone, mid.x, mid.y);
       gaps.push(`mid:${KEYS[midGot] || midGot}`);
       check(midGot === midWant.slot, `${at}: a press in the middle of the cluster went to ${KEYS[midGot] || midGot}, not ${KEYS[midWant.slot]}`);
-      // A press well clear of the cluster, left of C, stays with the battlefield.
-      const c = m.skills[2].disc, outside = await page.evaluate(([x, y]) => { const el = document.elementFromPoint(x, y); return el ? !!el.closest('.ability,.skill-reach') : false; }, [c.x - c.r - 30, c.y]);
-      check(!outside, `${at}: a press 30 px left of C still reaches a skill`);
+      // A press well clear of the cluster stays off the skills: left of C in the thumb fan, below C in the command bar,
+      // where E is to its left.
+      const c = m.skills[2].disc, away = m.bar ? [c.x, c.y + c.r + 30] : [c.x - c.r - 30, c.y], outside = await page.evaluate(([x, y]) => { const el = document.elementFromPoint(x, y); return el ? !!el.closest('.ability,.skill-reach') : false; }, away);
+      check(!outside, `${at}: a press 30 px ${m.bar ? 'below' : 'left of'} C still reaches a skill`);
       check(gaps.length >= 3, `${at}: at least three gaps between neighbours were pressed (${gaps.length})`);
       row.gaps = gaps.join(' ');
     }
@@ -167,4 +174,4 @@ try {
   }
 } finally { await browser.close(); }
 if (failures.length) { console.log(failures.map(f => 'FAIL ' + f).join('\n')); assert.fail(`${failures.length} skill target checks failed`); }
-console.log('PASS: at nine sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls, gap presses reach the nearest skill, and the team chat and kill feed cover no HUD part.');
+console.log('PASS: at ten sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls, gap presses reach the nearest skill, and the team chat and kill feed cover no HUD part.');
