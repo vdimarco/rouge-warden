@@ -176,11 +176,13 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 }
 @media (max-height: 560px) { #title { padding-top: calc(var(--sat) + 1.6vh); gap: 8px; } .tag { display: none; } .btn.primary { min-height: 52px; padding-top: 8px; } .logo h1 { font-size: clamp(40px, 9vw, 96px); } .kicker { margin-bottom: 0.2em; } .bottom, .menu { gap: 10px; } }
 @media (max-width: 420px) { .btn { padding: 9px 16px 6px; letter-spacing: 0.06em; } .kicker { letter-spacing: 0.06em; } dialog { padding: 18px 16px 16px; } }
-@media (prefers-reduced-motion: reduce) { .stage .art.drift { animation: none; will-change: auto; } .logo { animation: none; } .btn, .preset span, .load, .load .track i { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .stage .art.drift { animation: none; will-change: auto; } .logo { animation: none; } .btn, .preset span, .load, .load .track i, .look-hint { transition: none; } }
 
 /* flat play with no pointer lock: how to get the mouse look back, a caption box over the hero's head (main.js shows it). It lies
-   under the HUD (z-index 12) and the lock-on marker (11): the spoken line, the toast and the edge arrow draw over it, never the other way. */
-.look-hint { position: fixed; left: 50%; bottom: calc(50% + 44px); z-index: 10; margin: 0; max-width: calc(100vw - 32px); padding: 7px 18px 5px; transform: translateX(-50%) rotate(-1deg); pointer-events: none; text-align: center; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); border-radius: 3px; box-shadow: 5px 5px 0 var(--ink); }
+   under the HUD (z-index 12) and the lock-on marker (11): the spoken line, the toast and the edge arrow draw over it, never the other way.
+   ui.js adds .covered while the line or the toast is over its place: it fades out then, so that nobody reads half of it. The edge arrow stays over it. */
+.look-hint { position: fixed; left: 50%; bottom: calc(50% + 44px); z-index: 10; margin: 0; transition: opacity .25s; max-width: calc(100vw - 32px); padding: 7px 18px 5px; transform: translateX(-50%) rotate(-1deg); pointer-events: none; text-align: center; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); border-radius: 3px; box-shadow: 5px 5px 0 var(--ink); }
+.look-hint.covered { opacity: 0; }
 .look-hint b { display: block; font: 400 clamp(22px, 2.6vw, 30px) / 1.05 var(--comic); letter-spacing: 0.06em; text-transform: uppercase; }
 .look-hint small { display: block; margin-top: 2px; font: 700 17px / 1.2 var(--ui); letter-spacing: 0.03em; }
 
