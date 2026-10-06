@@ -92,6 +92,17 @@ Object.assign(sun.shadow.camera, { left: -48, right: 48, top: 48, bottom: -48, n
 sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 const painter = new Painter(renderer, Q);
+// Paint style: the watercolour wash (the default) or the older bright look. Saved from the pause menu;
+// ?paint=bright or ?paint=watercolor in the address overrides it for one visit.
+const PAINT_KEY = "plungerd.wild.paint";
+const PAINT_NAMES = { watercolor: "Watercolor", bright: "Bright" };
+let paint = (() => {
+  const q = new URLSearchParams(location.search).get("paint");
+  if (PAINT_NAMES[q]) return q;
+  try { const v = localStorage.getItem(PAINT_KEY); if (PAINT_NAMES[v]) return v; } catch (e) { /* storage off */ }
+  return "watercolor";
+})();
+painter.uniforms.uWash.value = paint === "watercolor" ? 1 : 0;
 const draw = () => {
   // On the light setting the sun's shadow map is redrawn every second frame. Still things cast the same shadow,
   // and a moving character's shadow lags one frame at most.
@@ -112,6 +123,11 @@ const G = {
   sfx: A.sfx, pad: false, clock: 0.3, night: false,
 };
 window.G = G;
+G.setPaint = (name, { persist = true } = {}) => {
+  if (!PAINT_NAMES[name]) return;
+  paint = name; painter.uniforms.uWash.value = name === "watercolor" ? 1 : 0;
+  if (persist) try { localStorage.setItem(PAINT_KEY, name); } catch (e) { /* storage off */ }
+};
 G.painter = painter;
 // hooks for the QA scripts in qa/wild
 G.test = { get step() { return step; }, get camera() { return updateCamera; }, get inBox() { return inBox; } };
@@ -895,6 +911,7 @@ function openPause() {
   $("#pstats").textContent = `${PERKS[S.friend].name} · Day ${S.day} · Towers ${S.towers.length}/4 · Trials ${S.shrines.length}/12 · Chests ${S.chests.length}/${G.loot.chests.length} · Quests ${Object.values(S.quests).filter((v) => v === 2).length}/${Object.keys(QUESTS).length} · Loonies ${S.loonies.length}/${G.loonies.length} · Blights ${Math.min(3, S.bosses.filter((b) => b !== "king").length)}/3`;
   $("#soundBtn").textContent = "Sound: " + (A.isOn() ? "on" : "off");
   $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx];
+  $("#paintBtn").textContent = "Paint: " + PAINT_NAMES[paint];
   G.ui.open("pause");
 }
 G.resume = () => { G.paused = false; };
@@ -910,6 +927,7 @@ $("#gfxBtn").onclick = () => {
   if (touchUI) try { localStorage.setItem(GFX_TOUCH_HIGH, next === "high" ? "1" : "0"); } catch (e) { /* storage off */ }
   G.setGraphics(next); $("#gfxBtn").textContent = "Graphics: " + GFX_NAMES[gfx];
 };
+$("#paintBtn").onclick = () => { G.setPaint(paint === "watercolor" ? "bright" : "watercolor"); $("#paintBtn").textContent = "Paint: " + PAINT_NAMES[paint]; };
 $("#pauseBtn").onclick = () => openPause();
 
 /* ---------------- goals and clock ---------------- */

@@ -1,0 +1,10 @@
+- [x] Study the Susurrus reference (the site is blocked here, so from its published write-ups: Kuwahara brush, wet edges, paper grain, ragged vignette, cream and sepia).
+- [x] Take before screenshots with `qa/wild/art.mjs`.
+- [x] Add wobble, warm haze, wet edges, granulation, paper tint and ragged border to `post.js` behind `uWash`.
+- [x] Add the Paint button, saved choice and `?paint=` option.
+- [x] Tune border width, contrast and night dimming from screenshots of the cottage, lake, night and phone portrait.
+- [x] Run `art.mjs`, `render.mjs` and `flows.mjs`, and a Paint button check in the browser.
+- [x] Compare `PERF_PHONE=1 perf.mjs low` with Bright and Watercolor.
+- [x] Update the README and `docs/botl-look.md`.
+- [ ] Look at the result on a real phone and a real graphics card. Only SwiftShader ran here.
+- [ ] User review of the look against Susurrus.
