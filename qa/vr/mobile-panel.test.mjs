@@ -272,6 +272,28 @@ assert.equal(ring.hidden, false, "marker shows the ring again after use(true)");
 assert.equal(ring.classList.contains("pop"), true, "pop adds its class again after use(true)");
 assert.deepEqual(vibrated, [[9000, 15]], "buzz vibrates again after use(true)");
 
+/* ---------------- the wall line goes when the hero leaves the wall ---------------- */
+// climbing(true) says how to climb. When the hero leaves the wall (JUMP, over the top, down to the street) the line of before comes
+// back, and with motion aim on that is the motion line. A tap that swung the hero off has said "Swinging" first: that line stays.
+const said2 = () => el(".phone-hint").textContent;
+win.DeviceOrientationEvent.requestPermission = async () => "denied"; win.DeviceMotionEvent.requestPermission = async () => "denied";
+m.reset(); await m.start();
+const resting = said2();
+assert(/^Tap a building to swing\. Keep tapping/.test(resting), "with motion aim off the resting hint says to tap a building: " + resting);
+m.climbing(true);
+assert(/^On the wall/.test(said2()), "on a wall the hint says how to climb: " + said2());
+m.climbing(false);
+assert.equal(said2(), resting, "off the wall the hint goes back to the resting line");
+m.climbing(true); btn("throw").onclick(); m.climbing(false);
+assert(/^Swinging/.test(said2()), "a tap that swung the hero off the wall keeps the swing line: " + said2());
+win.DeviceOrientationEvent.requestPermission = async () => "granted"; win.DeviceMotionEvent.requestPermission = async () => "granted";
+m.reset(); await m.start();
+const motion = said2();
+assert(/^Point the phone/.test(motion), "with motion aim on the resting hint says to point the phone: " + motion);
+m.climbing(true); m.climbing(false);
+assert.equal(said2(), motion, "with motion aim on the hint goes back to the motion line off the wall");
+m.reset();
+
 /* ---------------- the stub of a device with no touch point ---------------- */
 setTouch(false);
 const stub = createMobile(canvas, () => true);
@@ -284,4 +306,4 @@ assert.equal(s.view, false, "the stub's sample has a view field");
 assert.equal(stub.safe(), null, "the stub has no window");
 setTouch(true);
 
-console.log("PASS: mobile panel: view edge, Center with motion aim, safe window, ring and arrow (up, side, behind), hide and dim, class names, box reads at 10 Hz, pop, vibration, dead-latch safety, use(false), stub");
+console.log("PASS: mobile panel: view edge, Center with motion aim, safe window, ring and arrow (up, side, behind), hide and dim, class names, box reads at 10 Hz, pop, vibration, dead-latch safety, use(false), the hint off the wall, stub");
