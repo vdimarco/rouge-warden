@@ -79,7 +79,7 @@ async function runSlot(slot) {
     await sleep(settle);
     const raw = await page.screenshot({ type: "png" });
     const file = path.join(dir, name + ".png");
-    await sharp(raw).flatten({ background: BG }).removeAlpha().png().toFile(file);
+    await sharp(raw).flatten({ background: BG }).removeAlpha().png({ compressionLevel: 9, adaptiveFiltering: true }).toFile(file);   // lossless
     const m = await sharp(file).metadata();
     check(m.width === W * SCALE && m.height === H * SCALE && m.channels === 3 && !m.hasAlpha, `${name}.png is ${m.width}x${m.height}, ${m.channels} channels`);
   }
@@ -140,6 +140,8 @@ async function runSlot(slot) {
     const L = { x: eye.x + 0.3, y: -0.15, z: eye.z - 7, speed: 0 };
     await stage({ phase: "strike", lure: L, lineOut: 7.5, fish: null, follower: { id: "largemouth", x: L.x + 0.05, y: -0.2, z: L.z + 0.6, heading: Math.PI / 2, len: 0.9 } });
     await sleep(2200);
+    // the prompt changes on the next frame, which a big slot draws slowly (see the jump zoom below)
+    await wait(() => /Set the hook/.test(document.querySelector("#prompt .p1")?.textContent || ""), null, 300000).catch(() => {});
     const strike = await page.evaluate(() => document.querySelector("#prompt .p1")?.textContent || "");
     check(/Set the hook/.test(strike), `the strike prompt says to set the hook ("${strike}")`);
     await snap("03-strike", 0);
@@ -149,7 +151,8 @@ async function runSlot(slot) {
     await stage({ tfrac: 0.62, lineOut: 11.5, fish: { id: "smallmouth", kg: 1.7, cm: 44, len: 0.44, x: jx, z: jz, y: -0.4, heading: Math.PI / 2, move: "swim", jump: 0, stamina: 0.7, known: true } });
     await sleep(1500);
     await stage({ fish: { y: 0.9, jump: 0.8, move: "jump" } }, [{ type: "jump", size: 0.44, x: jx, z: jz }], false);
-    await wait(() => FISH.world.feel().zoom > 0.95, null, 20000).catch(() => {});
+    // the zoom eases in on the game clock, and a big slot (the iPad) draws a frame in seconds here: wait up to 5 min
+    await wait(() => FISH.world.feel().zoom > 0.95, null, 300000).catch(() => {});
     const fight = await page.evaluate(() => ({ prompt: document.querySelector("#prompt .p1")?.textContent || "", zoom: FISH.world.feel().zoom }));
     check(/jump/i.test(fight.prompt) && fight.zoom > 0.9, `the fish jumps, and the view zooms in (${JSON.stringify(fight)})`);
     check(await visible("#gaugeBox") && await visible("#crankBox"), "the gauge and the crank show");
