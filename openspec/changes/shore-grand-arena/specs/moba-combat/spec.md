@@ -322,6 +322,27 @@ team can see, the public kill feed, and their team's own calls.
 - **WHEN** the player's team hits an enemy outer ward and an enemy inner ward at the same time
 - **THEN** the enemy bot that answers goes to the inner ward.
 
+### Requirement: Allied bots call missing enemies
+When an enemy hero that the player's team saw in a lane stays out of the team's sight for 4 s, an allied bot SHALL call it in team chat
+with the hero's name and lane, and the minimap SHALL mark the last seen spot. The call SHALL use only the team's own vision. A hero SHALL
+be called at most once every 25 s.
+
+#### Scenario: An enemy leaves the lane
+- **WHEN** the enemy hero in the player's lane walks into fog and stays unseen for 4 s
+- **THEN** an allied bot says that hero is missing from that lane, and a "?" ping shows where the team last saw it.
+
+#### Scenario: A hero the team never saw
+- **WHEN** an enemy hero stays in fog from the start
+- **THEN** no bot calls it missing.
+
+### Requirement: Bots walk around cover
+Bots SHALL route around cover blocks with the same path search as the player's click orders, when cover blocks the straight line to
+where they go.
+
+#### Scenario: A call from behind cover
+- **WHEN** a bot answers a defend call and a cover block stands between it and the ward
+- **THEN** the bot walks around the block and reaches the ward.
+
 ### Requirement: Bots focus and punish
 Veteran and Mythic bots SHALL prefer, among heroes in reach, the one with the least effective health and the team focus target. They SHALL
 prefer a hero that is in cast recovery, EXPOSED, stunned or casting, and they SHALL see that window only after their reaction floor. They

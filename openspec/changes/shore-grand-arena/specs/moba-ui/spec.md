@@ -74,3 +74,12 @@ The skill cluster SHALL place Q, E and C on an arc around the ultimate R in the 
 #### Scenario: A press clear of the cluster reaches the battlefield
 - **WHEN** the player presses 30 px or more outside the cluster
 - **THEN** no skill takes the press
+
+### Requirement: Hunted mark
+The HUD SHALL show a "Hunted" mark under the player's health bar while the enemy bots' team focus is the player. The mark SHALL be a
+status for screen readers, SHALL stay on screen, and SHALL cover no HUD control at 1440x900, 390x844, 844x390, 320x568 and 568x320. The
+enemy team focus SHALL need the enemy team to see the player.
+
+#### Scenario: The enemy bots pick the player
+- **WHEN** the enemy team focus moves to the player
+- **THEN** "Hunted" shows under the health bar, and it goes away when the focus moves to another hero.

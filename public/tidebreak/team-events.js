@@ -1,12 +1,14 @@
 // Team facts recorded by the deterministic simulation. Presentation reads them;
 // bots read pings and skirmishes to rotate like teammates.
-import { distance } from './world.js';
+import { distance, visibleTo, PATHS, closestTrack } from './world.js';
 import { ROTATION_SCALE } from './arena.js';
 
 export const MULTI_KILL_WINDOW = 12;
 export const ALARM_COOLDOWN = 14;
 export const RALLY_TIME = 12;
 const FIGHT_PING_COOLDOWN = 7;
+export const MISSING_AFTER = 4, MISSING_COOLDOWN = 25;
+const LANE_NEAR = 320 * ROTATION_SCALE;
 // Assist and rally reach follow the map size, so rotations still happen on the bigger shore.
 const ASSIST_RANGE = 1900 * ROTATION_SCALE;
 const RALLY_RANGE = 3200 * ROTATION_SCALE;
@@ -77,4 +79,22 @@ export function assistPoint(s, e, health = e.hp / e.maxHp) {
   const ally = s.units.filter(a => a.kind === 'hero' && a.team === e.team && a.id !== e.id && a.hp > 0 && a.skirmishUntil > s.time && distance(a, e) < ASSIST_RANGE && distance(a, e) > 260)
     .sort((a, b) => distance(a, e) - distance(b, e) || a.id - b.id)[0];
   return ally ? { x: ally.x, y: ally.y, kind: 'assist', ally: ally.id } : null;
+}
+
+// A "missing" call, as players make: an enemy hero the player's team saw in a lane
+// has been out of their sight for 4 s. Only the team's own vision counts.
+export function noteMissing(s) {
+  const seen = (s.sightings ||= {});
+  for (const h of s.units) {
+    if (h.kind !== 'hero' || h.team !== 1) continue;
+    const last = seen[h.id];
+    if (h.hp <= 0) { if (last) last.open = false; continue; }
+    if (visibleTo(s, 0, h)) {
+      const near = PATHS.map(path => distance(h, path[closestTrack(h, path)])), lane = near.indexOf(Math.min(...near));
+      seen[h.id] = { time: s.time, x: h.x, y: h.y, lane: near[lane] < LANE_NEAR ? lane : -1, open: true, calledAt: last?.calledAt ?? -99 };
+    } else if (last?.open && last.lane >= 0 && s.time - last.time > MISSING_AFTER && s.time - last.calledAt > MISSING_COOLDOWN) {
+      last.open = false; last.calledAt = s.time;
+      pushPing(s, { team: 0, type: 'missing', target: h.id, lane: last.lane, x: last.x, y: last.y });
+    }
+  }
 }

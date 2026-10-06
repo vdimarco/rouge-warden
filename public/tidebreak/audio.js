@@ -280,7 +280,7 @@ export class Sound {
   }
   ping(type, x, y) {
     const s = x === undefined ? { pan: 0 } : this.spatial(x, y);
-    const notes = { fight: [880, 660], defend: [740, 554], rally: [660, 880, 1100], onmyway: [990, 1320], retreat: [520, 390] }[type] || [880];
+    const notes = { fight: [880, 660], defend: [740, 554], rally: [660, 880, 1100], onmyway: [990, 1320], retreat: [520, 390], missing: [784, 622] }[type] || [880];
     if (this.clip('ui-glass', { gain: .5, pan: s.pan, rate: type === 'defend' ? .8 : type === 'retreat' ? .9 : 1.1, reverb: .3 })) return;
     notes.forEach((hz, i) => this.tone(hz, .16, .03, 'sine', null, i * .08, { pan: s.pan, reverb: .35 }));
   }

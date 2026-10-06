@@ -2,7 +2,7 @@
 // The cast lock through step() is in bot-difficulty.test.mjs.
 import assert from 'node:assert/strict';
 import { createMatch, player, step } from '../../public/tidebreak/sim.js';
-import { LANES, BASES, distance } from '../../public/tidebreak/world.js';
+import { LANES, BASES, OBSTACLES, SIZE, distance } from '../../public/tidebreak/world.js';
 import { setDifficulty, roll, PROFILES } from '../../public/tidebreak/bot-difficulty.js';
 
 function scene(level, keep = []) {
@@ -65,4 +65,23 @@ for (const level of ['apprentice', 'veteran', 'mythic']) {
   assert.ok(home, `${level} bot reaches base after a full recall`);
 }
 
-console.log('PASS: short failed dodges, ganks from a held lane and recall parity through step()');
+// Routes around cover. A bot answers a defend call from behind a cover block: the straight line to its
+// ward runs through the block. It walks around and arrives, as a player's click order does.
+{
+  const wardOf = s => s.units.filter(t => t.kind === 'tower' && t.team === 1);
+  const blocked = OBSTACLES[0].some.bind(OBSTACLES[0]), inside = p => blocked(r => Math.abs(p.x - r.x) < r.w / 2 + 40 && Math.abs(p.y - r.y) < r.h / 2 + 40);
+  let spot = null;
+  for (const W of wardOf(createMatch(0, 7))) for (const r of OBSTACLES[0]) {
+    const d = distance(r, W); if (spot || d < 400 || d > 1500 || r.w < 150 || r.h < 150) continue;
+    const reach = Math.max(r.w, r.h) / 2 + 90, B = { x: r.x + (r.x - W.x) / d * reach, y: r.y + (r.y - W.y) / d * reach };
+    if (!inside(B) && B.x > 250 && B.y > 250 && B.x < SIZE - 250 && B.y < SIZE - 250) spot = { ward: W.id, B };
+  }
+  assert.ok(spot, 'a ward with a cover block in front of it');
+  const { s, p, bot } = scene('veteran', ['tower', 'core']); s.time = 200;
+  Object.assign(p, { x: 400, y: SIZE - 400 }); Object.assign(bot, spot.B);
+  const ward = s.units.find(t => t.id === spot.ward), start = distance(bot, ward);
+  for (let t = 0; t < 12 * 20; t++) { s.pings = [{ id: 1, team: 1, type: 'defend', target: ward.id, x: ward.x, y: ward.y, time: s.time }]; step(s, {}, .05); }
+  assert.ok(distance(bot, ward) < 520, `the bot walks around the cover to its ward (${start.toFixed(0)} to ${distance(bot, ward).toFixed(0)} units)`);
+}
+
+console.log('PASS: short failed dodges, ganks from a held lane, recall parity and routes around cover through step()');
