@@ -171,6 +171,34 @@ test("Catch! missed: the dumpster breaks the fall and the job fails", () => {
   const r = runJob("catch", (J, C, h) => (J.active ? hero(J.active.o.x + 200, J.active.o.y, J.active.o.z) : h));
   assert.ok(r.end && r.end.type === "failed" && r.end.why === "dumpster", JSON.stringify(r.end));
 });
+test("Catch!: every fall drops clear to the street, with time to get there (no ledge in the way)", () => {
+  let n = 0, worst = Infinity;
+  const bad = [];
+  for (let seed = 1; seed <= 200; seed++) {
+    const C = createCombat(city), J = createJobs({ city, combat: C, seed });
+    const S = city.safe[seed % city.safe.length], h0 = hero(S.x, S.y, S.z);
+    J.update(DT, 0, h0);
+    const o = J.offers.find((q) => q.type === "catch");
+    if (!o) continue;
+    J.start("catch", o, h0);
+    const far = hero(o.x + 300, 0, o.z + 300);
+    let fallT = 0, end = null, landY = null;
+    const P = J.active.data.p;
+    for (let i = 0; i < 60 / DT && J.active; i++) {
+      if (J.active.data.falling) fallT += DT;
+      J.update(DT, i * DT, far);
+      landY = P.y;
+      for (const e of J.events) if (e.type === "failed" || e.type === "done") end = e;
+      J.events.length = 0;
+    }
+    n++;
+    worst = Math.min(worst, fallT);
+    if (!end || end.why !== "dumpster" || landY > JOB.catch.clear || fallT < 2.5) bad.push({ seed, roof: o.y, why: end && end.why, landY, fallT: +fallT.toFixed(2) });
+  }
+  assert.ok(n >= 60, "enough catch offers to judge: " + n);
+  assert.deepEqual(bad, [], "a fall that ends on a ledge or too soon");
+  console.log("  INFO: " + n + " catch jobs, the shortest fall " + worst.toFixed(1) + " s");
+});
 test("Window Washer: reach him, carry him down to the street", () => {
   const r = runJob("washer", (J, C, h) => {
     const A = J.active;

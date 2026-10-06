@@ -34,7 +34,7 @@ try {
     const v = await view();
     seen.push(v);
     await page.screenshot({ path: `${out}/cutscene-opening-${k + 1}.png` });
-    await page.evaluate((i) => { const c = G.test.cutscene(); const left = [3.4, 4.2, 3.6, 3.4, 2.8, 2.6][i] - c.t - 0.05; if (left > 0) G.test.step(1 / 60, Math.round(left * 60)); }, k);
+    await page.evaluate((i) => { const c = G.test.cutscene(); const left = [2.4, 3.2, 2.6, 2.5, 1.8, 1.8][i] - c.t - 0.05; if (left > 0) G.test.step(1 / 60, Math.round(left * 60)); }, k);
   }
   const s0 = seen[0], s1 = seen[1];
   assert(s0.cs.playing && s0.cs.name === 'opening' && s0.state === 'cutscene' && s0.root && s0.hud === 'hidden', 'the opening plays: the game holds still and the HUD hides: ' + JSON.stringify(s0));
@@ -45,7 +45,7 @@ try {
   assert(/watch/i.test(seen[4].cs.caption) && /plunger/i.test(seen[4].cs.balloon), 'panel 5 shows the hero: ' + JSON.stringify(seen[4].cs));
   assert(/Mission 1/i.test(seen[5].cs.title) && /Sludge Run/i.test(seen[5].cs.title), 'panel 6 is the first mission card: ' + seen[5].cs.title);
   assert.deepEqual(seen.map((v) => v.cs.art), ['city', 'king', 'clogs', 'king-awake', 'hero', 'swing'], 'each opening panel shows its painted picture');
-  assert(seen.reduce((s, v, i) => s + [3.4, 4.2, 3.6, 3.4, 2.8, 2.6][i], 0) <= 21, 'the opening is short: about 20 s');
+  assert(seen.reduce((s, v, i) => s + [2.4, 3.2, 2.6, 2.5, 1.8, 1.8][i], 0) <= 15, 'the opening is short: about 14 s');
   assert(seen.every((v) => v.art && v.art.l >= 0 && v.art.r <= v.W && v.art.t > 0 && v.art.b < v.H), 'the picture fills the inked frame, inside the screen');
   assert(!hit(s1.bal, s1.cap) && !hit(seen[4].bal, seen[4].cap) && s1.cap.t > s1.H / 2 && seen[4].cap.t > seen[4].H / 2, 'on the King and the hero the caption moves to the foot of the frame and no balloon covers it');
   assert(seen.every((v) => inside(v.cap, v.W, v.H)), 'every caption sits inside the screen');

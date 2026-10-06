@@ -17,7 +17,7 @@ function rng(seed) {
 
 export const JOB = {
   offers: 4, near: [90, 420], refresh: 650, markerR: 4.5, markerUp: 3, leave: 700, // a job is dropped when you go this far away
-  catch: { fall: 7, fallMax: 22, reach: 2.8, delay: 1.5, reward: 30 },
+  catch: { fall: 7, fallMax: 22, reach: 2.8, delay: 3.5, reward: 30, clear: 3, out: 1.6 }, // clear: the drop under the edge ends this low (no ledge)
   washer: { grip: 60, reach: 2.6, reward: 40 },
   pizza: { speed: 12, spare: 18, reach: 4.5, reward: 25, bonus: 15 },
   balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
@@ -58,14 +58,36 @@ export function createJobs({ city, combat, seed = 4711 }) {
     if (best && (city.collideSphere(best.x, 1, best.z, 0.8) || city.isWater(best.x, best.z))) return null;
     return best;
   }
-  function pickRoof(fx, fz, lo, hi, minY, maxY) {
+  function pickRoof(fx, fz, lo, hi, minY, maxY, ok) {
     for (let k = 0; k < 60; k++) {
       const { b, t } = tops[Math.floor(r() * tops.length)];
       if (b.roofY < minY || b.roofY > maxY || t.maxX - t.minX < 10 || t.maxZ - t.minZ < 10) continue;
       const c = roofCentre(b), d = Math.hypot(c.x - fx, c.z - fz);
       if (d < lo || d > hi) continue;
       if (city.collideSphere(c.x, c.y + 1, c.z, 0.8)) continue;
-      return { b, ...c };
+      const q = { b, ...c };
+      if (ok && !(q.extra = ok(b))) continue;
+      return q;
+    }
+    return null;
+  }
+  // The edge of a roof that someone can fall from with a clear drop to the street: nothing under the fall line (no lower tier, no
+  // ledge, no other building) above JOB.catch.clear m. Tries the middle and the quarters of each side; null when there is none.
+  function clearEdge(b) {
+    const t = b.tiers[b.tiers.length - 1], C = JOB.catch, sides = [];
+    for (const f of [0.5, 0.25, 0.75]) {
+      const mx = t.minX + (t.maxX - t.minX) * f, mz = t.minZ + (t.maxZ - t.minZ) * f;
+      sides.push([t.maxX, mz, 1, 0], [t.minX, mz, -1, 0], [mx, t.maxZ, 0, 1], [mx, t.minZ, 0, -1]);
+    }
+    for (const [ex, ez, nx, nz] of sides) {
+      const ox = ex + nx * C.out, oz = ez + nz * C.out;
+      if (city.isWater(ox, oz)) continue;
+      let blocked = false;
+      for (const w of [0, 0.6, -0.6]) { // the body is a metre wide: the line and either side of it
+        const px = ox + nz * w, pz = oz + nx * w, tb = city.topBelow(px, b.roofY - 0.5, pz, 0.5);
+        if (tb && tb.y > C.clear) { blocked = true; break; }
+      }
+      if (!blocked) return { ex, ez, nx, nz, ox, oz };
     }
     return null;
   }
@@ -74,7 +96,7 @@ export function createJobs({ city, combat, seed = 4711 }) {
   function makeOffer(type, fx, fz) {
     const [lo, hi] = JOB.near;
     let at = null, extra = {};
-    if (type === "catch") { const q = pickRoof(fx, fz, lo, hi, 45, 150); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; } }
+    if (type === "catch") { const q = pickRoof(fx, fz, lo, hi, 45, 150, clearEdge); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; extra.edge = q.extra; } }
     else if (type === "brawl") { const q = pickRoof(fx, fz, lo, hi, 14, 70); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; } }
     else if (type === "washer") {
       const q = pickRoof(fx, fz, lo, hi, 55, 200);
@@ -154,12 +176,10 @@ export function createJobs({ city, combat, seed = 4711 }) {
       A.reward = JOB.sludge.reward;
     },
     catch(A) {
-      // someone slips off the edge of this roof, on the side away from the marker's middle
+      // someone slips off an edge of this roof with a clear drop to the street (clearEdge), so nothing stops the fall before you
       const b = city.buildings.find((q) => q.id === A.o.bid);
-      const t = b.tiers[b.tiers.length - 1], a = r() * Math.PI * 2;
-      const ex = clamp(A.o.x + Math.cos(a) * 99, t.minX, t.maxX), ez = clamp(A.o.z + Math.sin(a) * 99, t.minZ, t.maxZ);
-      const nx = ex === t.minX ? -1 : ex === t.maxX ? 1 : 0, nz = nx ? 0 : ez === t.minZ ? -1 : 1;
-      A.data = { p: person(FALLER, ex - nx * 0.6, b.roofY, ez - nz * 0.6, 14), out: { x: ex + nx * 1.2, z: ez + nz * 1.2 }, vy: 0, falling: false, caught: false };
+      const E = A.o.edge || clearEdge(b) || (() => { const t = b.tiers[b.tiers.length - 1]; return { ex: t.maxX, ez: (t.minZ + t.maxZ) / 2, nx: 1, nz: 0, ox: t.maxX + JOB.catch.out, oz: (t.minZ + t.maxZ) / 2 }; })();
+      A.data = { p: person(FALLER, E.ex - E.nx * 0.6, b.roofY, E.ez - E.nz * 0.6, 14, { yaw: Math.atan2(-E.nx, -E.nz) }), out: { x: E.ox, z: E.oz }, vy: 0, falling: false, caught: false, warned: false };
       A.timer = JOB.catch.delay;
       A.reward = JOB.catch.reward;
     },
@@ -253,6 +273,7 @@ export function createJobs({ city, combat, seed = 4711 }) {
       if (!D.falling && !D.caught) {
         A.timer -= dt;
         p.pose = 14;
+        if (!D.warned && A.timer <= 1.5) { D.warned = true; emit({ type: "say", line: "Whoa, whoa! I'm slipping!" }); }
         if (A.timer <= 0) { D.falling = true; p.x = D.out.x; p.z = D.out.z; p.pose = 12; emit({ type: "say", line: "Aaah! Help!" }); }
       } else if (D.falling && !D.caught) {
         D.vy = Math.max(-C.fallMax, D.vy - C.fall * dt);
@@ -265,7 +286,7 @@ export function createJobs({ city, combat, seed = 4711 }) {
         carry(p, h);
         if (h.onGround) { setDown(p, h); end(true, "safe"); return; }
       }
-      A.card = card("CATCH!", D.caught ? "Land anywhere to set them down" : D.falling ? "Catch them before they hit the street!" : "Get ready...", D.caught ? null : p);
+      A.card = card("CATCH!", D.caught ? "Land anywhere to set them down" : D.falling ? "Catch them before they hit the street!" : "They are on the edge. Get below them: " + Math.ceil(Math.max(0, A.timer)) + " s", D.caught ? null : p);
       J.card = A.card;
     },
     washer(A, dt, h) {
