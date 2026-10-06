@@ -280,6 +280,18 @@ length at every difficulty.
 - **WHEN** a Mythic bot casts an offensive spell
 - **THEN** the warning shape shows for at least 0.5 s before the damage.
 
+#### Scenario: A failed dodge leaves the bot in the zone
+- **WHEN** a bot fails its dodge roll against pending ground
+- **THEN** it steps about 120 units, goes back to its fight, and the ground can still hit it.
+
+### Requirement: Bots recall as the player does
+A bot that recalls SHALL stand still for 2.5 s and SHALL show the recall ring to the player's team when they can see it. A hit SHALL cancel
+the recall. A bot SHALL start a recall only when it has not been hit for 3 s and sees no enemy hero close.
+
+#### Scenario: A recalling bot can be caught
+- **WHEN** the player sees a hurt enemy bot recall and hits it before 2.5 s
+- **THEN** the recall ring goes away and the bot stays on the map.
+
 ### Requirement: Bots judge trades
 Mythic enemy bots and allied bots SHALL leave a fight when their side's health and damage are clearly lower than the visible enemy side's,
 counting enemy wards, or when they are below half health and the enemy is clearly healthier. Veteran and Apprentice bots SHALL go home at a
@@ -294,7 +306,7 @@ fixed health floor (28% and 20%).
 - **THEN** the bot keeps fighting until its health falls below 28%, which gives the player a chance to finish it.
 
 ### Requirement: Bots play the map with what their team can see
-Veteran and Mythic bots SHALL gank from a pushed lane, use rift gates when a gate saves time, answer their team's defend calls, gather before
+Veteran and Mythic bots SHALL gank from a pushed lane, use rift gates when a gate saves time, answer their team's defend calls (the structure nearest the base first), gather before
 the Wild Hunt wakes, and push a ward with their wave after a won fight. They SHALL leave spirit camps alone. They SHALL use only what their
 team can see, the public kill feed, and their team's own calls.
 
@@ -305,6 +317,10 @@ team can see, the public kill feed, and their team's own calls.
 #### Scenario: Fog hides the player
 - **WHEN** no enemy unit can see the player
 - **THEN** no enemy bot starts a gank toward the player or picks the player as its team's focus.
+
+#### Scenario: The inner ward comes first
+- **WHEN** the player's team hits an enemy outer ward and an enemy inner ward at the same time
+- **THEN** the enemy bot that answers goes to the inner ward.
 
 ### Requirement: Bots focus and punish
 Veteran and Mythic bots SHALL prefer, among heroes in reach, the one with the least effective health and the team focus target. They SHALL

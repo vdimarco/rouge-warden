@@ -165,6 +165,20 @@ for (const [id, expected] of [['veteran', 'far'], ['legacy', 'near']]) {
   assert.notEqual(strategy(s, bot, { target: null, hurt: 1, holding: true })?.mode, 'camp', 'no camp with an enemy hero close');
   } finally { PROFILES.veteran = saved; }
 }
+// Defend calls: the bot answers the structure nearest its base first, not only the latest call.
+{
+  const { s, bot } = scene('veteran'); s.time = 200;
+  const ward = tier => s.units.find(t => t.kind === 'tower' && t.team === 1 && t.lane === 1 && t.tier === tier);
+  const inner = ward(2), outer = ward(0), core = s.units.find(t => t.kind === 'core' && t.team === 1);
+  Object.assign(bot, { x: (inner.x + outer.x) / 2, y: (inner.y + outer.y) / 2 });
+  const call = (t, ago) => ({ team: 1, type: 'defend', target: t.id, x: t.x, y: t.y, time: s.time - ago });
+  s.pings = [call(inner, 3), call(outer, 1)];
+  assert.equal(strategy(s, bot, { target: null, hurt: 1, holding: false })?.move?.id, inner.id, 'an inner ward call beats a newer outer ward call');
+  s.pings = [call(outer, 3), call(inner, 2), call(core, 1)];
+  assert.equal(strategy(s, bot, { target: null, hurt: 1, holding: false })?.move?.id, core.id, 'the core comes first');
+  s.pings = [call(outer, 3)];
+  assert.equal(strategy(s, bot, { target: null, hurt: 1, holding: false })?.move?.id, outer.id, 'a single outer call is still answered');
+}
 // Determinism: seeded rolls only. A replay gives the same match.
 {
   assert.equal(roll({ seed: 4 }, { id: 2 }, 'a'), roll({ seed: 4 }, { id: 2 }, 'a'));

@@ -111,6 +111,20 @@ export function punishes(s, e, t) {
   return s.time - seen[t.id].at >= P.reaction[0];
 }
 
+// Recall as the player does: stand still for 2.5 s, and a hit cancels it. A bot starts only
+// when it has not been hit for 3 s and sees no enemy hero close. Returns 'home' when done,
+// true while it stands and channels, false when it should keep walking.
+export function recallStep(s, e, dt) {
+  if (s.time - e.lastHit < .2) { e.recall = 0; return false; }
+  if (!e.recall) {
+    if (s.time - e.lastHit <= 3 || s.units.some(t => t.kind === 'hero' && t.team !== e.team && t.hp > 0 && distance(e, t) < 900 * K && visibleTo(s, e.team, t))) return false;
+    e.recall = 2.5;
+  }
+  e.recall -= dt;
+  if (e.recall > 0) return true;
+  e.recall = 0; return 'home';
+}
+
 export const castLock = (s, e, started) => { const P = botProfile(s, e); return started ? P.castLock : P.failLock; };
 
 // The dodge step. A failed roll steps short, so a careless bot can still be hit.
@@ -283,6 +297,7 @@ function campKnown(s, team, i) {
 }
 
 // The lane a unit stands nearest to, from its seen position.
+const wardRank = t => t.kind === 'core' ? 9 : t.tier ?? 0;
 const laneOf = p => PATHS.map(path => distance(p, path[closestTrack(p, path)])).reduce((best, d, i, all) => d < all[best] ? i : best, 0);
 const quiet = (s, e, radius) => !s.units.some(t => t.kind === 'hero' && t.team !== e.team && t.hp > 0 && distance(e, t) < radius && visibleTo(s, e.team, t));
 const plan = (s, team) => (s.botPlan ||= [{}, {}])[team];
@@ -305,10 +320,11 @@ export function strategy(s, e, { target, hurt, holding }) {
     if (T.rallyFor !== s.objectiveAt) { T.rallyFor = s.objectiveAt; callRally(s, e.team, spot, e); }
     return { mode: 'objective', ...routeTo(s, e, spot) };
   }
-  // Answer a defend ping. The closest healthy bot goes.
+  // Answer a defend ping. The closest healthy bot goes, to the structure nearest the base first:
+  // the core, then guardians, then inner, middle and outer wards. Among equals, the latest call.
   if (P.defend && hurt > .55 && (!target || target.kind !== 'hero')) {
-    const ping = (s.pings || []).filter(p => p.team === e.team && p.type === 'defend' && s.time - p.time < 7).at(-1);
-    const ward = ping && s.units.find(t => t.id === ping.target && t.hp > 0);
+    const calls = (s.pings || []).filter(p => p.team === e.team && p.type === 'defend' && s.time - p.time < 7).reverse();
+    const ward = calls.map(p => s.units.find(t => t.id === p.target && t.hp > 0)).filter(Boolean).sort((a, b) => wardRank(b) - wardRank(a))[0];
     if (ward && distance(e, ward) < 3400 * K && distance(e, ward) > 300 * K) {
       const bots = team.filter(a => !a.player && a.hp > 0 && a.hp > a.maxHp * .55);
       if (bots.sort((a, b) => distance(a, ward) - distance(b, ward) || a.id - b.id)[0]?.id === e.id) return { mode: 'assist', call: 'defend', ...routeTo(s, e, ward) };

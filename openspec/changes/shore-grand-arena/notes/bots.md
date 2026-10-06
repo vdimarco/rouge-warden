@@ -128,10 +128,10 @@ Not checked: a real GPU, a real phone, audio by ear, and play against a human (r
 
 - Allied chat has no "X is missing" call when an enemy bot ganks. `team-chat.js` belongs to the main-branch work. The ganker leaves its lane in view, and a gate use shows the gate burst.
 - There is no "Hunted" mark when the enemy focus is the player. The focus is stored in `s.botFocus[team]` for the HUD session to use.
-- Recall parity (stand still, cancel on a hit) is not in this change.
-- Interrupts (a bot stuns an ult in its windup) are not in this change.
+- Recall parity is done: bots stand still for 2.5 s, a hit cancels the recall, and the player sees their recall ring.
+- Interrupts are not built, on purpose. A bot's control spell winds up for 0.45–0.5 s, and its reaction floor is at least 0.24 s. The player's ults land 0.4 s after the cast starts. A bot could stop one only with a reaction under the floor, and the fairness rules forbid that. Bot ults (0.7 s windup) are only barely in reach for Mythic, so allies and enemy bots do not interrupt each other either.
 - Bots still walk in straight lines. On the 9600-unit map with more cover they need `route()`.
-- Defend and push choose wards through `s.units` generically, so three tiers and new guardians work, but the defend priority does not weigh higher tiers yet.
+- Defend calls go to the structure nearest the base first: the core, then guardians, then the inner, middle and outer wards. Among equals, the latest call.
 
 ## Draft requirements (delta)
 

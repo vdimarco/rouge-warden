@@ -173,6 +173,8 @@ export class Renderer {
     for (const f of s.effects) drawCombatEffect(this, f);
     for(const m of s.missiles)if(m.team===0||visibleTo(s,0,m))drawSkillMissile(this,m,time);
     this.drawAtmosphere(s, time);
+    // Other heroes show their recall channel too, when the player's team can see them.
+    if (!menu) for (const h of s.units) if (h !== p && h.kind === 'hero' && h.recall > 0 && h.hp > 0 && visibleTo(s, p.team, h)) this.ring(h.x, h.y, 70 + Math.sin(time * 8) * 8, '#d6ffec', .6);
     if (!menu && p.hp > 0) {
       if (p.recall) this.ring(p.x, p.y, 85 + Math.sin(time * 8) * 10, '#d6ffec', .8);
       if (aim&&!aim.cancelled) {
