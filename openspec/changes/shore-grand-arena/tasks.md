@@ -59,7 +59,7 @@
 - [x] Retune for the 9600 map: spirit camps off, pushes only with the wave, Mythic drafts by measured kit strength (#229).
 - [x] Measure the retuned levels again with drafted lineups (`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs`): Mythic 67% against Veteran and
   68% against the old bots, Veteran 52%, Apprentice 35% (vdimarco/rouge-warden#236).
-- [ ] Test the bot hooks through `step()`, not only the helpers: ganks from a held lane, the cast lock, the short failed dodge
+- [x] Test the bot hooks through `step()`, not only the helpers: ganks from a held lane, the cast lock, the short failed dodge (`qa/tidebreak/bot-hooks.test.mjs`; the cast lock is in `bot-difficulty.test.mjs`)
   (review finding 17).
 - [x] Merge the branch.
 
