@@ -11,7 +11,9 @@ const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t
 const ease = (dt, rate) => 1 - Math.exp(-dt * rate);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const TAU = Math.PI * 2;
-const DIVE_G = 9.8; // the fall's gravity for the time to the floor (the dive leaves a second before it)
+const DIVE_G = 9.8; // the fall's gravity for the time to the floor, when the physics has none
+const ROLL_PIVOT = 0.55; // the tucked body turns about a point this high over the ground
+const XAX = new THREE.Vector3(1, 0, 0);
 
 // The bones the poses drive. Both rigs (the model and the code-built figure) have them under these names.
 const BONES = ["Hips", "Spine02", "Spine01", "Spine", "neck", "Head",
@@ -255,7 +257,8 @@ export function createHero(scene, renderer) {
   /* ---- state ---- */
   const S = {
     yaw: 0, inited: false, time: 0, phase: 0,
-    run: 0, air: 0, rise: 0, swing: 0, land: 0, crouch: 0, dive: 0,
+    run: 0, air: 0, rise: 0, swing: 0, land: 0, crouch: 0, dive: 0, diveAgo: 9,
+    roll: -1, rollDur: 0.62, atk: null, atkT: 0, hitT: 9, hitX: 0, hitZ: 0, carry: 0, carryOn: false, hidden: false,
     reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
   };
@@ -328,7 +331,7 @@ export function createHero(scene, renderer) {
   }
   loadModel();
 
-  function applyVisible() { root.visible = !!rig && visible && opacity > 0.02; }
+  function applyVisible() { root.visible = !!rig && visible && opacity > 0.02 && !S.hidden; }
 
   /* ---- scratch ---- */
   const E = new THREE.Euler(), EF = new THREE.Euler(0, 0, 0, "YXZ"), QA = new THREE.Quaternion(), QB = new THREE.Quaternion(), QC = new THREE.Quaternion();
@@ -611,7 +614,7 @@ export function createHero(scene, renderer) {
       if (n === "Head") w = g * 0.4; // the head mostly keeps looking where the camera looks
       else if (n === "neck") w = g;
       else if (/UpLeg|Leg|Foot|ToeBase/.test(n)) w = legW;
-      else if (side >= 0) w = bodyW * (1 - S.reach[side]); // a rope arm keeps reaching for its anchor (its yank is part of the reach)
+      else if (side >= 0) w = bodyW * (1 - S.reach[side]) * (side === 0 ? 1 - S.carry : 1); // a rope arm keeps reaching for its anchor (its yank is part of the reach); the carrying arm holds on
       else w = bodyW;
       // a bone the code-built pose leaves alone (the neck, the shoulders, the hands, the toes) has no turn of its own there
       const own = d.q;
@@ -638,7 +641,7 @@ export function createHero(scene, renderer) {
     const wall = P.wall, cling = !!wall; // holding a wall (flat-play climbing): face it, hands on it, no air pose
 
     /* -- events read from the state: a hard landing, a yank -- */
-    if (ground && !S.prevGround && !S.prevWall && S.prevVy < -3) S.land = clamp(-S.prevVy / 13, 0.3, 1);
+    if (ground && !S.prevGround && !S.prevWall && S.prevVy < -3 && S.roll < 0) S.land = clamp(-S.prevVy / 13, 0.3, 1);
     S.land = Math.max(0, S.land - dt * 3.2);
     S.crouch += (S.land - S.crouch) * ease(dt, S.land > S.crouch ? 30 : 12);
     for (let i = 0; i < 2; i++) {
@@ -714,17 +717,24 @@ export function createHero(scene, renderer) {
     S.swing += (((!ground && !cling && nAtt) ? 1 : 0) - S.swing) * ease(dt, 6);
     S.rise += (fall - S.rise) * ease(dt, 12);
     // the dive: no rope, not on a wall, falling fast with time to spare before the floor below. It comes in over a fifth of a
-    // second and leaves fast, so the hero is upright again a second before the landing (or the moment a rope catches)
+    // second and holds until a quarter second before the floor, where the hero tucks for the landing roll (or a rope catches)
     let diveWant = 0;
     if (!ground && !cling && !nAtt && vel.y < (S.dive > 0.5 ? -5 : -8)) {
       const c = P.city;
       let floor = 0;
       if (c && c.topBelow) { const tb = c.topBelow(pos.x, pos.y - 0.05, pos.z, 0.3); floor = tb ? tb.y : c.isWater(pos.x, pos.z) ? 0 : c.groundY(pos.x, pos.z); }
       const v = -vel.y, drop = Math.max(0, pos.y - floor), g = (P.cfg && P.cfg.gravity) || DIVE_G, tt = (-v + Math.sqrt(v * v + 2 * g * drop)) / g;
-      diveWant = tt > (S.dive > 0.5 ? 1.0 : 1.3) ? 1 : 0;
+      diveWant = tt > (S.dive > 0.5 ? 0.25 : 1.3) ? 1 : 0;
     }
     S.dive += (diveWant - S.dive) * ease(dt, diveWant ? 5 : 16);
     if (S.dive < 0.001) S.dive = 0;
+    S.diveAgo = S.dive > 0.3 ? 0 : S.diveAgo + dt;
+    H.diving = !ground && !nAtt && S.diveAgo < 0.45; // physics rolls a landing that comes from a dive
+    // the landing roll, the punches, a hit, and the carry run on their own clocks
+    if (S.roll >= 0) { S.roll += dt; if (S.roll > S.rollDur) S.roll = -1; }
+    if (S.atk) { S.atkT += dt; if (S.atkT > S.atk.dur) S.atk = null; }
+    S.hitT += dt;
+    S.carry += ((S.carryOn ? 1 : 0) - S.carry) * ease(dt, 10);
     const freq = clamp(0.7 + 0.25 * (cling ? speed : hs), 0.7, 2.4); // on a wall the climb speed sets the hands' pace
     S.phase = (S.phase + dt * freq * TAU) % (TAU * 100);
 
@@ -749,9 +759,20 @@ export function createHero(scene, renderer) {
     V.a.set(V.u.x * c - V.u.z * s, V.u.y, V.u.x * s + V.u.z * c); // Ry(−yaw) · u
     QA.setFromUnitVectors(UP, V.a);
     S.tiltQ.slerp(QA, ease(dt, 9));
+    // the roll: one forward turn about the hips' side axis, tucked into a ball low over the ground
+    let rollK = 0, tuck = 0;
+    if (S.roll >= 0) {
+      rollK = clamp(S.roll / S.rollDur, 0, 1);
+      tuck = Math.sin(Math.PI * Math.min(1, rollK * 1.15));
+      const turn = TAU * (rollK < 0.85 ? smooth(0, 0.85, rollK) : 1);
+      QA.setFromAxisAngle(XAX, -turn);
+      S.tiltQ.copy(QA);
+    }
+    // a hit: the body rocks back from the blow
+    if (S.hitT < 0.4) { const k = Math.sin(Math.PI * S.hitT / 0.4) * 0.35; QA.setFromAxisAngle(XAX, k); S.tiltQ.multiply(QA); }
     root.position.set(pos.x + CL.off.x, pos.y + CL.off.y, pos.z + CL.off.z);
     root.rotation.set(0, S.yaw, 0);
-    tilt.position.set(0, chestH, 0);
+    tilt.position.set(0, chestH - (chestH - ROLL_PIVOT) * tuck, 0);
     tilt.quaternion.copy(S.tiltQ);
     holder.position.set(0, -chestH, 0);
     root.updateMatrixWorld(true);
@@ -823,6 +844,41 @@ export function createHero(scene, renderer) {
       }
       hipsDy = hipsDy * (1 - wD) + 0.01 * wD;
       lean = lean * (1 - wD) - 0.14 * wD;
+    }
+    // the roll: knees to the chest, arms round the shins, chin down
+    if (tuck > 0.001) {
+      for (let sd = 0; sd < 2; sd++) {
+        const sx = sd === 0 ? 1 : -1;
+        V.k.set(sx * 0.11, ay + 0.62, az + 0.34);
+        foot[sd].p.lerp(V.k, tuck);
+        foot[sd].pitch += (0.9 - foot[sd].pitch) * tuck;
+        V.a.set(sx * 0.3, -0.55, 0.78).normalize(); V.b.set(-sx * 0.25, -0.3, 0.9).normalize();
+        arm[sd].up.lerp(V.a, tuck).normalize(); arm[sd].fore.lerp(V.b, tuck).normalize();
+      }
+      hipsDy -= 0.12 * tuck; lean += 0.6 * tuck;
+    }
+    // a punch (straight arm from the shoulder, the hips turn into it) or a kick (the leg out in front, the body leaning back)
+    if (S.atk) {
+      const k = Math.sin(Math.PI * clamp(S.atkT / S.atk.dur, 0, 1)), sd = S.atk.side, sx = sd === 0 ? 1 : -1;
+      if (S.atk.kind === "kick") {
+        V.k.set(sx * 0.1, ay + 0.78, az + 0.8);
+        foot[sd].p.lerp(V.k, k); foot[sd].pitch += (-0.3 - foot[sd].pitch) * k;
+        lean -= 0.2 * k; hipTw += sx * 0.25 * k;
+        for (let a = 0; a < 2; a++) { const ax = a === 0 ? 1 : -1; V.a.set(ax * 0.7, -0.3, 0.3).normalize(); arm[a].up.lerp(V.a, k).normalize(); arm[a].fore.lerp(V.a, k).normalize(); }
+      } else {
+        V.a.set(sx * 0.12, 0.12, 1).normalize();
+        arm[sd].up.lerp(V.a, k).normalize(); arm[sd].fore.lerp(V.a, k).normalize();
+        const o = 1 - sd, ox = o === 0 ? 1 : -1; // the other fist guards the face
+        V.a.set(ox * 0.25, -0.45, 0.55).normalize(); V.b.set(-ox * 0.35, 0.75, 0.3).normalize();
+        arm[o].up.lerp(V.a, k * 0.8).normalize(); arm[o].fore.lerp(V.b, k * 0.8).normalize();
+        twist += -sx * 0.35 * k; lean += 0.12 * k;
+      }
+    }
+    // carrying someone over the left shoulder: the left arm holds the legs, the body leans into the weight
+    if (S.carry > 0.001) {
+      V.a.set(0.25, 0.75, 0.35).normalize(); V.b.set(-0.55, 0.45, -0.4).normalize();
+      arm[0].up.lerp(V.a, S.carry).normalize(); arm[0].fore.lerp(V.b, S.carry).normalize();
+      lean += 0.1 * S.carry;
     }
     // swing: legs trail, the hero hangs a little lower, the free arm goes out for balance
     if (wS > 0.001) {
@@ -905,6 +961,7 @@ export function createHero(scene, renderer) {
     let lookY = clamp(wrap(camYaw - S.yaw), -0.9, 0.9) * 0.55, lookP = clamp(-camPitch * 0.45, -0.5, 0.5) - lean * 0.5;
     if (wC > 0.001) { const k = wC * CL.look; lookY += (CL.lookYaw - lookY) * k; lookP += (CL.lookPitch - lookP) * k; } // on a wall: along the climb
     if (wD > 0.001) { lookY *= 1 - wD; lookP += (-0.55 - lookP) * wD; } // diving: along the dive, up in the body's frame
+    if (tuck > 0.001) { lookY *= 1 - tuck; lookP += (0.5 - lookP) * tuck; } // rolling: chin to the chest
     S.headYaw += (lookY - S.headYaw) * ease(dt, 8);
     S.headPitch += (lookP - S.headPitch) * ease(dt, 8);
 
@@ -956,7 +1013,7 @@ export function createHero(scene, renderer) {
     }
     // on the ground, the motion capture takes over from the code-built idle and run; the landing crouch, a rope arm, a yank
     // and the head's look stay on top of it
-    groundClips(dt, hs, ground && !cling, cr, hipsDx, hipsDy, hipsDz);
+    groundClips(dt, hs, ground && !cling && S.roll < 0 && !S.atk, cr, hipsDx, hipsDy, hipsDz);
     root.updateMatrixWorld(true);
     // the hands: a palm's width past the wrist bone, along the forearm
     for (let sd = 0; sd < 2; sd++) {
@@ -972,7 +1029,7 @@ export function createHero(scene, renderer) {
 
     /* -- a name for the tests -- */
     const yk = Math.max(S.yank[0], S.yank[1]);
-    H.pose = yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? "dive" : vel.y > 1 ? "jump" : "fall";
+    H.pose = S.roll >= 0 ? "roll" : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? "dive" : vel.y > 1 ? "jump" : "fall";
     H.yaw = S.yaw;
   };
 
@@ -980,9 +1037,17 @@ export function createHero(scene, renderer) {
   H.setVisible = (b) => { visible = !!b; applyVisible(); };
   H.setOpacity = (a) => { opacity = clamp(a, 0, 1); OPA.value = opacity; applyVisible(); };
   H.setYaw = (y) => { S.yaw = y; S.inited = true; };
+  // the landing roll (main calls it on the physics roll event), a punch or kick, a blow taken from (dx, dz), carrying someone
+  H.roll = (dur) => { S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; };
+  H.attack = (kind, side) => { S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
+  H.hit = (dx, dz) => { S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
+  H.setCarry = (on) => { S.carryOn = !!on; };
+  H.diving = false;
+  // in a car: no hero to draw (the pose keeps running underneath)
+  H.setHidden = (b) => { S.hidden = !!b; applyVisible(); };
   H.info = () => ({
     model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris,
-    weights: { run: S.run, air: S.air, swing: S.swing, dive: S.dive, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
+    weights: { run: S.run, air: S.air, swing: S.swing, dive: S.dive, roll: S.roll >= 0 ? S.roll / S.rollDur : -1, carry: S.carry, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
     // the motion capture: how much it shows, the loop weights (idle, walk, jog, run) and the moving loops' phase
     clips: { loaded: !!MC.data, on: MC.on, w: MC.w.slice(), phase: MC.phase },
     hands: [handPos[0].toArray(), handPos[1].toArray()], head: headPos.toArray(), feet: [footPos[0].toArray(), footPos[1].toArray()],

@@ -47,3 +47,24 @@ Native comparison retains the accepted layout, palette, typography and generated
 The foreground raft is capped at .33 viewport width so its registered base stays within the two outer lanes. This corrects the edge clipping exposed by normalizing the old off-center paddle frames; the oar can extend outward during its stroke, while the face and raft remain visible.
 
 Jump launch has a 60 ms clearance grace for logs and raised coins, so a timely tap registers on the next simulation frame. Rocks still require a lane dodge and branches still require duck. This changes the engine rule explicitly; visual animation remains independent of collision decisions.
+## Moving world — 2026-10-06
+
+The second feel review found that a stationary photographic scene and thin moving streaks still read as an incoming-obstacle overlay. Normal speed now starts at 42 m/s and rises to 72 m/s; the first hazard moves to 68 m and row spacing still follows encounter timing. View distance expands to 180 m and action hints scale with speed. Existing jump/duck windows and immediate logical controls remain.
+
+Whitewater patches and mossy bank rock clusters now use the same world distance and projection as hazards. They grow, approach and leave through the edges continuously, even between hazard rows. They are bounded (at most 30 bank props and 36 water patches), fade in at a distance and stay outside playable lanes. Invisible bank props are culled. Reduced motion omits them.
+
+Steering uses an analytic critically damped spring at omega 60, preserving position and velocity when the player reverses direction. A single-lane step reaches 95% in approximately 80 ms; unlike the previous exponential easing, its first 60 Hz step moves about 26% rather than half a lane. The jump lift is larger. Jump/duck retain the current paddle pose and raft registration. Duck compresses the torso below a full-size head, preserving face proportions. The eight exact source paddle poses replace photograph crossfades that produced doubled faces/arms; cached pose memory falls from about 33 MB to 5.5 MB.
+
+The browser now composites the existing fal.ai videos directly behind a transparent gameplay canvas. This eliminates full-frame video copies and texture uploads during normal playback. Videos stay muted, lazy, speed responsive and pause with the game; clips detach when returning to the menu and can be reused. Still/GPU/video-error/context-loss/data-saving fallbacks remain. The HUD updates locally every 80 ms instead of rerendering App every 50 ms.
+
+The production native clips are 60fps optical-flow derivatives of the existing fal.ai loops, sped up 1.3× and encoded at 512×768 and 768×512. Each lasts 3.916667 seconds; originals remain in the repository. Native playback begins at 1× and follows speed/Rush within 1.25×. Foreground resolution is bounded to 900,000 pixels on narrow layouts and 600,000 on wide layouts, while native video remains independent. This reduces texture/decoder work and uneven source-frame pacing; media.json records the exact derivation and original request IDs.
+
+The fal.ai game asset skill was used for a foliage attempt. The live schema for `openai/gpt-image-2` listed transparent background support, but request `01a10ec1-129b-7323-8c3e-eec6473bcd10` rejected that exact field with 422. No paid retry was submitted and no foliage output is claimed. Existing approved mossy rock art provides consistent bank scenery instead of the flat vector draft.
+
+## Meshy 3D world — 2026-10-06
+
+Primary gameplay now uses a genuine Three.js world. Meshy 7.1 generated a timber raft, tropical rock/root/leaf bank and tall palm through the connected fal account. Local GLBs use meshopt geometry and WebP textures; repeated scenery, terrain, mountains and coins share instanced draws. The approved rider remains a photographic animated cutout to retain his face, long hair and modest loincloth. He is not a generated rigged 3D character.
+
+The GPU displaced water and four CPU buoyancy probes share directional wave coefficients, simulation time and world distance. Damped heave/pitch/roll, steering lean, wake foam, obstacle motion, landing impulses, rings and spray connect the raft to the water. These are arcade wave/buoyancy approximations, not a full fluid solver, and never alter the deterministic course or collision rules.
+
+WebGL initialization failure retains playable 2D. Context loss pauses and remounts a 2D canvas. Reduced motion freezes water and decorative movement. Software WebGL uses simplified derived Meshy bank/palm meshes and inexpensive shading; actual hardware uses full detail. All generated models are hosted under the arcade route, with no external generation-service dependency during play. Required images and models retry transient failures twice; persistent model failures use primitives, while persistent image failures offer a usable retry button.

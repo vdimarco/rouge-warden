@@ -124,6 +124,10 @@ try {
     assert.equal(recap.hidden, false, 'the recap shows during respawn'); assert.match(recap.text, /Banished by/); assert.match(recap.text, /Dodgeable: Devil leap/); checks++;
     assert.deepEqual(recap.overlaps, [], `the recap covers no control at ${size.name}`); assert.ok(recap.fits, 'the recap is inside the screen'); checks++;
     assert.match(recap.text, /Back in \d+ s/, 'the recap carries the respawn countdown'); checks++;
+    // The countdown is large and runs while the recap stays open (players need not close it to see the timer).
+    const count = () => page.evaluate(() => { const t = document.querySelector('#death-recap .recap-timer'); return { text: t.textContent, size: parseFloat(getComputedStyle(t).fontSize) }; });
+    const first = await count(); await page.waitForTimeout(1300); const later = await count();
+    assert.ok(first.size >= 20 && first.text !== later.text, `the recap countdown is large and counts down while open: ${JSON.stringify([first, later])}`); checks++;
     await page.click('#death-recap .recap-close');
     assert.equal(await page.evaluate(() => document.getElementById('death-recap').hidden), true, 'the close button hides the recap'); checks++;
     assert.deepEqual(errors, [], `no page errors at ${size.name}`); checks++;

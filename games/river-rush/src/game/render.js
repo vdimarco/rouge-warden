@@ -1,5 +1,5 @@
 import { jumpHeight, VIEW_DISTANCE } from './engine.js';
-import { foamDepth } from './quality.js';
+import { bankScenery, rapids, duckCompression, prepareWorldArt } from './world.js';
 import { drawWater } from './water.js';
 import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
 const motions=new WeakMap();
@@ -12,13 +12,18 @@ const regions = [
 ];
 const indexes = { rock: 3, log: 4, branch: 5, coin: 6, magnet: 7, shield: 8 };
 let artPromise;
+function loadImage(key,name){return new Promise((resolve,reject)=>{
+  let attempt=0;const image=new Image();
+  image.onload=()=>resolve([key,image]);
+  image.onerror=()=>{if(attempt<2){attempt++;setTimeout(()=>{image.src=`${import.meta.env.BASE_URL}art/${name}.png?retry=${attempt}`;},attempt*350);}else reject(new Error(`Could not load ${name}.`));};
+  image.src=`${import.meta.env.BASE_URL}art/${name}.png`;
+});}
 export function loadArt() {
-  return artPromise??=Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames']].map(([key,name]) => new Promise((resolve,reject) => {
-    const image = new Image(); image.onload = () => resolve([key,image]); image.onerror = () => reject(new Error(`Could not load ${name}.`)); image.src = `${import.meta.env.BASE_URL}art/${name}.png`;
-  }))).then(entries => prepareHeroArt(Object.fromEntries(entries)));
+  return artPromise??=Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames']].map(([key,name])=>loadImage(key,name))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
 }
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];
 async function prepareHeroArt(art){
+  art.world=prepareWorldArt();
   function frame(source,rect,anchor,raftWidth){
     const canvas=document.createElement('canvas');canvas.width=448;canvas.height=480;
     const scale=300/raftWidth,ctx=canvas.getContext('2d');
@@ -27,21 +32,24 @@ async function prepareHeroArt(art){
   const sw=art.paddle.width/4,sh=art.paddle.height/2;
   const frames=paddleAnchors.map((anchor,i)=>frame(art.paddle,[i%4*sw,Math.floor(i/4)*sh,sw,sh],anchor,350));
   art.paddleFrames=[];
-  // Six cached in-betweens per source frame: 72 pose samples/second at
-  // starting speed. No blending/readback is needed in the hot render loop.
-  for(let i=0;i<8;i++)for(let step=0;step<6;step++){
+  // Keep a single opaque rider pose per frame. Blending different photo poses
+  // produces doubled faces/arms, especially when a jump freezes the blend.
+  for(const source of frames){
     const canvas=document.createElement('canvas');canvas.width=448;canvas.height=380;
-    const ctx=canvas.getContext('2d'),t=step/6;
-    ctx.globalAlpha=1-t;ctx.drawImage(frames[i],0,100,448,380,0,0,448,380);
-    ctx.globalCompositeOperation='lighter';ctx.globalAlpha=t;ctx.drawImage(frames[(i+1)%8],0,100,448,380,0,0,448,380);
+    canvas.getContext('2d').drawImage(source,0,100,448,380,0,0,448,380);
     try{art.paddleFrames.push(await createImageBitmap(canvas));}catch{art.paddleFrames.push(canvas);}
   }
-  art.actionFrames=[null,frame(art.sprites,regions[1],[207,535],414),frame(art.sprites,regions[2],[206,537],370)];
   return art;
 }
-function hero(ctx,frame,x,bottom,width,roll,alpha=1,squash=0){
+function hero(ctx,frame,raft,x,bottom,width,roll,alpha=1,squash=0,duck=0){
   const scale=width/300;ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,bottom);ctx.rotate(roll);ctx.scale(1+squash*.025,1-squash*.05);
-  ctx.drawImage(frame,-frame.width/2*scale,-(frame.height-16)*scale,frame.width*scale,frame.height*scale);ctx.restore();
+  // The raft stays registered while the torso crouches; actions never replace
+  // the approved face with another whole-body photograph.
+  const split=frame.height-88,head=150,compression=duck*.48,drop=(split-head)*compression;
+  ctx.drawImage(frame,0,0,frame.width,head,-frame.width/2*scale,(-(frame.height-16)+drop)*scale,frame.width*scale,head*scale);
+  ctx.drawImage(frame,0,head,frame.width,split-head,-frame.width/2*scale,(-(frame.height-16)+head+drop)*scale,frame.width*scale,(split-head)*(1-compression)*scale);
+  ctx.drawImage(frame,0,split,frame.width,88,-frame.width/2*scale,(split-frame.height+16)*scale,frame.width*scale,88*scale);
+  ctx.drawImage(raft,74,split,300,88,-150*scale,(split-frame.height+16)*scale,300*scale,88*scale);ctx.restore();
 }
 export function projection(width, height, lane, z) {
   const horizon = height * .29, foot = height * (height < 500 ? .73 : width/height<.85?.77:.8);
@@ -56,9 +64,18 @@ function sprite(ctx, atlas, index, x, bottom, w, rotation = 0, alpha = 1, squeez
 }
 function water(ctx,g,art,w,h,reduce,active) {
   drawWater(ctx,g,art,w,h,reduce,active);
-  // The photographic river is an art layer; moving foam and projected objects
-  // communicate forward speed without stretching thin image scanlines.
-  // Lane guidance lives on the water plane, so coins and hazards share it.
+  // The distant photographic river remains an art layer. Near whitewater
+  // flows on the course plane at every display frame, independent of video fps.
+  if(!reduce){
+    ctx.save();
+    for(const patch of rapids(g.distance,VIEW_DISTANCE)){
+      const at=projection(w,h,patch.lane,patch.z),size=at.corridor*patch.width*at.scale;
+      ctx.globalAlpha=Math.min(.8,at.scale*.9)*Math.min(1,(VIEW_DISTANCE-patch.z)/24);
+      ctx.drawImage(art.world.foam[patch.variant],at.x-size/2,at.y-size*.035,size,size*.075);
+    }
+    ctx.restore();
+  }
+  // Faint projected guides stay legible without resembling stationary rails.
   ctx.save();ctx.lineWidth = 1;ctx.setLineDash([10,20]);ctx.lineDashOffset = -g.distance*3;
   ctx.strokeStyle = 'rgba(214,255,246,.22)';
   for(const lane of [.5,1.5]) {
@@ -66,16 +83,27 @@ function water(ctx,g,art,w,h,reduce,active) {
     ctx.beginPath();ctx.moveTo(far.x,far.y);ctx.lineTo(near.x,near.y);ctx.stroke();
   }
   ctx.setLineDash([]);
-  if(!reduce) for(let i=0;i<64;i++) {
-    const z=foamDepth(i,g.distance,VIEW_DISTANCE);
-    const lane=fract(i*.381)*3-.5, at=projection(w,h,lane,z);
-    ctx.strokeStyle=`rgba(234,255,250,${.08+at.scale*.38})`;ctx.lineWidth=Math.max(1,at.scale*2.5);
-    ctx.beginPath();ctx.moveTo(at.x,at.y);ctx.lineTo(at.x+(lane-1)*at.scale*6,at.y+at.scale*at.scale*(g.rush?90:44));ctx.stroke();
+  ctx.restore();
+}
+function banks(ctx,g,art,w,h,reduce){
+  if(reduce)return;
+  ctx.save();
+  for(const item of bankScenery(g.distance,VIEW_DISTANCE)){
+    const at=projection(w,h,item.lane,item.z),size=at.corridor*.27*item.size*at.scale;
+    if(at.x+size*.8<0||at.x-size*.8>w)continue;
+    // Keep silhouettes outside the playable corridor, including near props.
+    ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-item.z)/25);
+    // Reuse the approved detailed mossy rock texture; bank-only clusters are
+    // grounded beyond the river lanes and cannot be confused with a hazard.
+    sprite(ctx,art.sprites,3,at.x,at.y,size,item.variant*.12);
+    if(item.kind===1)sprite(ctx,art.sprites,3,at.x+(item.lane<1?-1:1)*size*.42,at.y+size*.025,size*.6,-.2);
   }
   ctx.restore();
 }
 export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=true) {
+  ctx.clearRect(0,0,width,height);
   water(ctx,g,art,width,height,reducedMotion,active);
+  banks(ctx,g,art,width,height,reducedMotion);
   if(!motions.has(g))motions.set(g,createMotion(g));
   const motion=advanceMotion(motions.get(g),g,reducedMotion);
   const player=projection(width,height,g.visualLane,0);
@@ -102,14 +130,14 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       ctx.save();ctx.fillStyle=e.type==='coin'?'#ffcf5f28':'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
     }
     sprite(ctx,art.sprites,indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
-    if(['log','branch','rock'].includes(e.type)&&z<60&&z>10) {
+    if(['log','branch','rock'].includes(e.type)&&z<g.speed*1.65&&z>10) {
       const label=e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
       const font=Math.max(10,15*p.scale);ctx.font=`800 ${font}px system-ui`;ctx.textAlign='center';
       const tw=ctx.measureText(label).width;ctx.fillStyle='#042a26dd';ctx.beginPath();ctx.roundRect(p.x-tw/2-7,bottom-size*.9-22,tw+14,20,5);ctx.fill();
       ctx.fillStyle=e.type==='branch'?'#94ffe3':'#ffe49c';ctx.fillText(label,p.x,bottom-size*.9-8);
     }
   }
-  const lift=jumpHeight(g)*heroWidth*.70;
+  const lift=jumpHeight(g)*heroWidth*.95;
   const bob=reducedMotion?0:Math.sin(g.distance*.65)*heroWidth*.006;
   // Ground shadow remains while the entire raft lifts; landing wakes explain timing.
   ctx.save();ctx.fillStyle='#053c4670';ctx.beginPath();ctx.ellipse(player.x,player.foot+4,heroWidth*.44*(1-jumpHeight(g)*.18),heroWidth*.095,0,0,TAU);ctx.fill();ctx.restore();
@@ -121,7 +149,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     ctx.save();ctx.strokeStyle=g.rush?'#fff0a4':'#8cfff1';ctx.lineWidth=2;ctx.fillStyle='#81ffe90a';
     ctx.beginPath();ctx.ellipse(player.x,player.foot-heroWidth*.32-lift,heroWidth*.58,heroWidth*.37,0,.12,Math.PI-.12);ctx.stroke();ctx.restore();
   }
-  const roll=reducedMotion?0:(g.lane-g.visualLane)*-.13+Math.sin(g.time*5)*.018;
+  const roll=reducedMotion?0:Math.max(-.15,Math.min(.15,-g.laneVelocity*.009))+Math.sin(g.distance*.13)*.01;
   const landing=landingPulse(motion,g.time,reducedMotion);
   if(!reducedMotion&&Math.abs(g.lane-g.visualLane)>.03){
     ctx.save();ctx.strokeStyle='#c8fff99c';ctx.lineWidth=2;
@@ -129,13 +157,9 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
   }
   const bottom=player.foot-lift+bob+landing*heroWidth*.08;
   const alpha=g.grace>0&&Math.floor(g.time*12)%2?.7:1;
-  const pose=g.action==='jump'?1:g.action==='duck'?2:0;
-  if(pose){hero(ctx,art.actionFrames[pose],player.x+shake,bottom,heroWidth,roll,alpha);}
-  else{
-    const sample=paddleSample(g.distance,reducedMotion);
-    const frame=art.paddleFrames[sample.index*6+Math.floor(sample.blend*6)];
-    hero(ctx,frame,player.x+shake,bottom,heroWidth,roll,alpha,landing);
-  }
+  const sample=paddleSample(motion.paddleDistance,reducedMotion);
+  const frame=art.paddleFrames[sample.index];
+  hero(ctx,frame,art.paddleFrames[0],player.x+shake,bottom,heroWidth,roll,alpha,landing,duckCompression(g.action,g.actionTime));
   if(!reducedMotion){
     // Paddle-tip spray follows the stroke instead of covering hazards.
     if(motion.weights[0]>.8&&paddleSample(g.distance).index<4){

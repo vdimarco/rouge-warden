@@ -1,5 +1,6 @@
 // Shore of the Ancients, 3D battlefield (three-render.js), checked in Chromium with SwiftShader (software WebGL):
 // - ?renderer=3d starts the 3D renderer; every world model, the clips and all sixteen heroes load, with no console errors;
+// - the 3D arena draws behind the hero select;
 // - heroes animate (bone rotations change while the hero runs) and attack poses report their clip;
 // - every tower tier (outer, middle, inner, guardian) and both cores have a visible 3D view;
 // - the enemy core's crystal is cut crystal, not a flat block: its brightness varies, few of its pixels share one flat
@@ -56,6 +57,9 @@ try {
     assert.equal(g.renderer, 'Mythic 3D', 'the 3D renderer starts');
     assert.equal(g.models.world, g.models.worldTotal); assert.equal(g.models.clips, 17);
     assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d') && !!document.getElementById('battle-overlay')), true, 'the WebGL canvas and the overlay exist');
+    // The hero select shows the 3D arena behind it: the renderer draws and the menu drops its painted backdrop.
+    await until(() => page.evaluate(() => document.getElementById('menu').classList.contains('arena-3d') && document.getElementById('battle').__shore3d.drawCalls > 20), 'the arena behind the hero select', 120);
+    pass('the 3D arena draws behind the hero select', await page.evaluate(() => ({ drawCalls: document.getElementById('battle').__shore3d.drawCalls, background: getComputedStyle(document.getElementById('menu')).backgroundImage.includes('shore-scene') ? 'painted' : 'arena' })));
     await toMatch(t);
     await until(async () => { const g = await t.graphics(); return g.models.heroes + g.models.failed.length >= g.models.heroesTotal; }, 'all hero models load');
     await pump(3);

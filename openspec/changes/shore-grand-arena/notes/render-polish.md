@@ -134,8 +134,12 @@ here:
    - The lock-beam pixel screenshot also gets a 120 s timeout, because a SwiftShader frame of the full scene can take
      longer than 30 s.
 
-### Not done
-- The 3D arena behind the hero select is not drawn. It needs a change in `main.js`, which another session owns.
+### The arena behind the hero select
+- A first version (vdimarco/rouge-warden#244) drew a slow orbit over the middle bridge behind the hero select, without
+  the hero. The showcase arena from the main session replaces it: the selected hero stands in the arena in a low
+  cinematic camera, at most 30 frames a second, with a fallback to the painted stage. The capability spec
+  `moba-graphics` holds its requirement, and `qa/tidebreak/hero-select-3d.e2e.mjs` tests it.
+- `render3d.e2e.mjs` still checks that the arena draws behind the hero select (the `.arena-3d` class on the menu).
 
 ## 2. Performance
 

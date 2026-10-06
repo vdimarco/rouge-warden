@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix qa/browser
       - run: cd qa/browser && npx playwright install --with-deps chromium
-      - run: node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs
+      - run: node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/action.test.mjs
       - name: Compile city shaders and exercise one-thumb play
         run: node qa/vr/mobile.e2e.mjs
         env:
@@ -62,7 +62,7 @@ jobs:
 
   flat-play:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -112,6 +112,11 @@ jobs:
           SHOTS: ${{ github.workspace }}/test-results/flat
       - name: Street people, neon signs, bloom and the dive
         run: node qa/vr/street.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: City action (sprint, the roll, fights, cars, jobs, the opening)
+        run: node qa/vr/action.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat

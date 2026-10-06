@@ -27,3 +27,5 @@
 
 .reward-pop{display:inline-block;animation:reward-pop .24s ease-out}@keyframes reward-pop{0%{transform:scale(1.2);color:#fff7cb}100%{transform:scale(1)}}
 .in-game[data-paused="true"] *{animation-play-state:paused}
+
+.game-river-video{position:fixed;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;z-index:0}.game-canvas{z-index:1}

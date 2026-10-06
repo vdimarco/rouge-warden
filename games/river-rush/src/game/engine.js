@@ -1,34 +1,36 @@
 // Distance-based three-lane runner. Presentation never decides collisions.
+import { laneSpring } from './world.js';
 export const JUMP_SECONDS = .66;
 export const DUCK_SECONDS = .60;
-export const VIEW_DISTANCE = 140;
+export const VIEW_DISTANCE = 180;
+export const BASE_SPEED = 42, MAX_SPEED = 72, ACCELERATION = .42;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const emptyInput = () => ({ actions: [] });
 export function queueAction(input, action) { if (input.actions.length < 8) input.actions.push(action); }
-export const speedAt = time => Math.min(50, 30 + time * .28);
+export const speedAt = time => Math.min(MAX_SPEED, BASE_SPEED + time * ACCELERATION);
 
 // Forecast includes Rush ending; a constant current-speed estimate fires
 // short actions too early just before the boost expires.
 function travelTime(distance,time,factor=1){
-  const v=speedAt(time),d=Math.max(0,distance)/factor,capDistance=(50*50-v*v)/(.56);
-  return d<=capDistance?(Math.sqrt(v*v+.56*d)-v)/.28:(50-v)/.28+(d-capDistance)/50;
+  const v=speedAt(time),d=Math.max(0,distance)/factor,capDistance=(MAX_SPEED*MAX_SPEED-v*v)/(2*ACCELERATION);
+  return d<=capDistance?(Math.sqrt(v*v+2*ACCELERATION*d)-v)/ACCELERATION:(MAX_SPEED-v)/ACCELERATION+(d-capDistance)/MAX_SPEED;
 }
 export function timeToImpact(g,distance){
   const d=Math.max(0,distance-g.distance),rush=g.rush;
   if(!rush)return travelTime(d,g.time);
-  const v=speedAt(g.time),ramp=Math.min(rush,(50-v)/.28);
-  const boosted=((v*ramp+.14*ramp*ramp)+(rush-ramp)*50)*1.32;
+  const v=speedAt(g.time),ramp=Math.min(rush,(MAX_SPEED-v)/ACCELERATION);
+  const boosted=((v*ramp+ACCELERATION/2*ramp*ramp)+(rush-ramp)*MAX_SPEED)*1.32;
   return d<=boosted?travelTime(d,g.time,1.32):rush+travelTime(d-boosted,g.time+rush);
 }
 
 export function createGame(seed = Date.now()) {
   const g = { seed: seed >>> 0, rng: seed >>> 0, phase: 'playing', time: 0, distance: 0,
-    lane: 1, visualLane: 1, speed: 30, action: '', actionTime: 0, buffered: '', bufferTime: 0,
+    lane: 1, visualLane: 1, laneVelocity: 0, speed: BASE_SPEED, action: '', actionTime: 0, buffered: '', bufferTime: 0,
     coins: 0, score: 0, bonus: 0, streak: 0, multiplier: 1, lastCoin: -10,
     charge: 0, rush: 0, magnet: 0, shield: true, grace: 0,
     jumps: 0, ducks: 0, dodges: 0, shieldsUsed: 0, rowsPassed: 0,
     goalsCleared: 0, goal: { kind: 'tricks', start: 0, target: 3 },
-    entities: [], nextRow: 46, row: 0, nextId: 1,
+    entities: [], nextRow: 68, row: 0, nextId: 1,
     event: '', eventId: 0, effects: [], notice: 'Jump logs · Duck branches · Dodge rocks', noticeUntil: 4, reason: '' };
   for (let d = 7; d <= 32; d += 5) add(g, 'coin', 1, d);
   generateAhead(g); return g;
@@ -126,7 +128,8 @@ export function updateGame(g, input, dt) {
   g.magnet = Math.max(0, g.magnet - dt); g.grace = Math.max(0, g.grace - dt);
   g.speed = speedAt(g.time) * (g.rush > 0 ? 1.32 : 1);
   g.rush = Math.max(0, g.rush - dt);
-  g.visualLane += (g.lane - g.visualLane) * (1 - Math.exp(-dt * 42));
+  const steering=laneSpring(g.visualLane,g.laneVelocity,g.lane,dt);
+  g.visualLane=steering.position;g.laneVelocity=steering.velocity;
   const previous = g.distance;
   g.distance += g.speed * dt;
   if (g.time - g.lastCoin > 2.8) { g.streak = 0; g.multiplier = 1; }
@@ -182,6 +185,6 @@ export function snapshot(g) {
     jumps: g.jumps, ducks: g.ducks, dodges: g.dodges, reason: g.reason,
     goalsCleared: g.goalsCleared, goal: { ...g.goal, progress: Math.min(g.goal.target, Math.floor((g.goal.kind === 'tricks' ? g.jumps + g.ducks : g.goal.kind === 'coins' ? g.coins : g.distance) - g.goal.start)) },
     notice: g.time < g.noticeUntil ? g.notice : '',
-    hint: next && next.d - g.distance < 35 ? { id: next.id, type: next.type, in: timeToImpact(g,next.d), safeLane: [0,1,2].find(lane => !g.entities.some(e => e.row === next.row && e.lane === lane && ['rock','log','branch'].includes(e.type))) } : null };
+    hint: next && next.d - g.distance < g.speed*1.1 ? { id: next.id, type: next.type, in: timeToImpact(g,next.d), safeLane: [0,1,2].find(lane => !g.entities.some(e => e.row === next.row && e.lane === lane && ['rock','log','branch'].includes(e.type))) } : null };
 }
 export function validBest(value) { return value?.version === 2 && Number.isFinite(value.score) && value.score > 0 ? value : null; }

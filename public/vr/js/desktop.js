@@ -63,15 +63,15 @@ export function createDesktop(canvas, camera, settings) {
   const either = (a, b) => keys.has(a) || keys.has(b);
   // the two swing inputs: on this frame, on last frame, the hand each one holds (-1 none), the hand of its last press
   const SW = [{ on: false, hand: -1, last: -1 }, { on: false, hand: -1, last: -1 }], BUSY = [false, false];
-  const Q = { jump: false, menu: false, map: false, yank: false, mute: false };
+  const Q = { jump: false, menu: false, map: false, yank: false, mute: false, car: false };
   const pad = { a: false, x: false, y: false, rb: false, start: false };
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   // armed: Chromium's made-up jump may still come, until SKIP_MS after lockAt (the request, then the lock itself)
   let dx = 0, dy = 0, pitch = 0, wheel = 0, armed = false, lockAt = 0, usingPad = false, gt = 0, skipClick = 0;
-  // the lock: raw movement until the system says it has none; the request in flight and whether a click made it; refused click
-  // requests in a row (only those count); a browser that answers with events only; our own let-go after a change to full screen;
-  // when the lock was last lost by the user (Esc, alt-tab)
-  let raw = true, reqId = 0, pendingAt = 0, clickReq = false, events = false, lockFails = 0, relockAt = 0, lostAt = -1e9, retryT = 0;
+  // the lock: raw movement until the system says it has none; the request in flight and whether a click made it; clicks swallowed
+  // since the last grant (a browser that refuses every time loses two, then clicks fire again); a browser that answers with events
+  // only; our own let-go after a change to full screen; when the lock was last lost by the user (Esc, alt-tab)
+  let raw = true, reqId = 0, pendingAt = 0, events = false, lostClicks = 0, relockAt = 0, lostAt = -1e9, retryT = 0;
   let granted = false; // the lock has been granted since the last request: the next move ends the watch for the made-up jump
   // the free cursor (no lock): where it is, and whether it is over the page
   let cx = 0, cy = 0, inside = false;
@@ -99,8 +99,10 @@ export function createDesktop(canvas, camera, settings) {
       const api = !!canvas.requestPointerLock;
       // With no pointer lock API there is nothing to ask for (no grant and no error will come), so only the click that resumes a
       // pause is swallowed: swallowing every click would leave the buttons dead for ever. (G.state flips to play on the next tick.)
-      if (fromClick && lockFails < 2 && (api || window.G?.state === "paused")) skipClick = performance.now() + 200;
-      if (api && !asking()) request(!!fromClick); // one request at a time
+      // Every click that is swallowed counts, with no wait for the answer: a refusal is told a timer tick late, and clicks made in
+      // that gap would each be lost. With no API nothing is asked for, so a swallowed resume click is not one that counts.
+      if (fromClick && lostClicks < 2 && (api || window.G?.state === "paused")) { skipClick = performance.now() + 200; if (api) lostClicks++; }
+      if (api && !asking()) request(); // one request at a time
     },
     // Full screen just came on. With no lock, ask for one. On a Mac a lock taken while the screen changed may not hold the
     // cursor (it runs to the edge), so let go and take it straight back (a lock the page let go of needs no click).
@@ -129,23 +131,22 @@ export function createDesktop(canvas, camera, settings) {
   /* ---------------- the pointer lock ---------------- */
   // Raw mouse (no system acceleration) where the browser has it; a system without it says NotSupportedError, and then a
   // plain lock. An older browser returns no promise and answers with the events only.
-  function request(click) {
+  function request() {
     const id = ++reqId;
-    pendingAt = lockAt = performance.now(); clickReq = click; armed = true; granted = false;
+    pendingAt = lockAt = performance.now(); armed = true; granted = false;
     inside = false; // the free cursor's place is learnt again from the next move with no lock on the way
     let p = null;
     try { p = canvas.requestPointerLock(raw ? RAW : undefined); }
-    catch (e) { if (raw) { raw = false; request(click); } else refused(); return; }
+    catch (e) { if (raw) { raw = false; request(); } else refused(); return; }
     if (!p || !p.then) { events = true; return; }
     // (a refusal comes as a pointerlockerror, below: the promise only says when raw movement is not to be had)
     p.then(
       () => { if (armed) lockAt = performance.now(); }, // taken: the jump comes now, if it has not come yet
-      (e) => { if (id === reqId && raw && e && e.name === "NotSupportedError") { raw = false; request(click); } });
+      (e) => { if (id === reqId && raw && e && e.name === "NotSupportedError") { raw = false; request(); } });
   }
-  // a refused request: only a click's counts (a request no click made, a resume by Esc or Start, never does)
+  // a refused request: ask again once if the user's own Esc was just now (the lost clicks are counted when the click is swallowed)
   function refused() {
     pendingAt = 0;
-    if (clickReq) lockFails++;
     // refused just after the user's own Esc (Chrome waits about a second): ask once more when that is over
     const wait = lostAt + RETRY_MS - performance.now();
     if (wait > 0 && !retryT) retryT = setTimeout(() => { retryT = 0; if (looking() && free()) D.lock(); }, wait + 30);
@@ -157,7 +158,7 @@ export function createDesktop(canvas, camera, settings) {
     D.locked = now;
     pendingAt = 0;
     if (now && !was) {
-      lockFails = 0; inside = false; granted = true;
+      lostClicks = 0; inside = false; granted = true;
       // an older browser tells of the lock only here, so its made-up jump (see the mousemove) is timed from now
       if (events && armed) lockAt = t;
       // a button that is already down when the lock starts does nothing until it goes up
@@ -250,6 +251,7 @@ export function createDesktop(canvas, camera, settings) {
     }
     if (k === "Space" && !page) { e.preventDefault(); if (!e.repeat) Q.jump = true; }
     if (k === "KeyF" && !e.repeat) Q.yank = true;
+    if (k === "KeyR" && !e.repeat && !page) Q.car = true; // R: into a parked car, and out again
     // (not in the touch scheme: D.update reads the edges only in the mouse scheme, so one left here would fire a rope after a switch)
     if (!e.repeat && !page && !mobile.enabled) { if (k === "KeyE") edge[0] = true; else if (k === "KeyQ") edge[1] = true; }
     // M (the sound) by the letter on the key (AZERTY puts M where QWERTY has ;), or by its place when the key has no Latin
@@ -287,7 +289,9 @@ export function createDesktop(canvas, camera, settings) {
     let mx = (either("KeyD", "ArrowRight") ? 1 : 0) - (either("KeyA", "ArrowLeft") ? 1 : 0), my = (either("KeyW", "ArrowUp") ? 1 : 0) - (either("KeyS", "ArrowDown") ? 1 : 0);
     mx += phone.moveX; my += phone.moveY;
     let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0 || phone.reel, yank = Q.yank;
-    let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map, view = !!phone.view;
+    let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map, view = !!phone.view, car = Q.car || !!phone.car;
+    // Shift: on the ground with no rope out it sprints (main decides); a pad's left stick click does the same
+    let sprint = keys.has("ShiftLeft") || keys.has("ShiftRight");
     // the two swing inputs: a mouse button, E or Q, a trigger
     let s0 = mouse[0] && !skip[0] || keys.has("KeyE"), s1 = mouse[1] && !skip[1] || keys.has("KeyQ");
     if (gp) {
@@ -299,7 +303,10 @@ export function createDesktop(canvas, camera, settings) {
       gamepad.rt = padTrigger(gp, 7, gamepad.rt); gamepad.lt = padTrigger(gp, 6, gamepad.lt);
       s0 = s0 || gamepad.rt; s1 = s1 || gamepad.lt;
       grip = grip || padButton(gp, 4); // the left bumper reels; the right bumper yanks
-      const a = padButton(gp, 0), x = padButton(gp, 2), yb = padButton(gp, 3), rb = padButton(gp, 5), st = padButton(gp, 9);
+      const a = padButton(gp, 0), x = padButton(gp, 2), yb = padButton(gp, 3), rb = padButton(gp, 5), st = padButton(gp, 9), bb = padButton(gp, 1);
+      sprint = sprint || padButton(gp, 10);
+      if (bb && !pad.b) car = true;
+      pad.b = bb;
       if (a && !pad.a) jump = true;
       if ((x && !pad.x) || (rb && !pad.rb)) yank = true;
       if (yb && !pad.y) view = true;
@@ -307,14 +314,14 @@ export function createDesktop(canvas, camera, settings) {
       pad.a = a; pad.x = x; pad.y = yb; pad.rb = rb; pad.start = st;
     } else gamepad.rt = gamepad.lt = false;
     inp.muteDown = Q.mute;
-    Q.jump = Q.menu = Q.map = Q.yank = Q.mute = false;
+    Q.jump = Q.menu = Q.map = Q.yank = Q.mute = Q.car = false;
     wheel = Math.max(0, wheel - dt);
     pitch = clamp(pitch + dp, -PITCH_MAX, PITCH_MAX);
     const ml = Math.hypot(mx, my);
     if (ml > 1) { mx /= ml; my /= ml; }
     inp.move.x = mx; inp.move.y = my;
     inp.turn = turn; inp.pitch = pitch;
-    inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map; inp.viewDown = view;
+    inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map; inp.viewDown = view; inp.carDown = car; inp.sprintHeld = sprint; inp.jumpHeld = keys.has("Space") || (gp ? padButton(gp, 0) : false);
     inp.visible = true;
     // which device the player holds, for the tutorial words: a phone, the pad (once it moves), else the mouse
     const kind = inp.kind = mobile.enabled ? "touch" : usingPad ? "pad" : "mouse";

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: The game picks one swing target
-In flat play, the game SHALL pick one target for each swing. A target SHALL be a wall or the underside of a building or of another city structure, such as the Needle, the Dome or the expressway. A target SHALL NOT be a roof, a floor, the street, the water or a roof antenna. The picker SHALL work in three tiers. Tier 1 is a fan of rays in front of the view: its targets are 9 to 80 m from the head and more than 4 m above the chest. Tier 2 runs only when tier 1 finds nothing: its targets are 9 to 88 m from the head and more than 3 m above the chest. Tier 3 is the exact ray through the screen centre, with the tier 2 bounds. The game SHALL search the fan at most 20 times a second and tier 2 at most 5 times a second, and SHALL keep the last target between searches.
+In flat play, the game SHALL pick one target for each swing. A target SHALL be a wall or the underside of a building or of another city structure, such as the Needle, the Dome or the expressway. A target SHALL NOT be a roof, a floor, the street, the water, or a roof antenna found by a search. A roof antenna SHALL be the target when the exact ray through the screen centre rests on it, in third and in first person, so a player who aims at one can rope it and climb it (swing-climbing). The picker SHALL work in three tiers. Tier 1 is a fan of rays in front of the view: its targets are 9 to 80 m from the head and more than 4 m above the chest. Tier 2 runs only when tier 1 finds nothing: its targets are 9 to 88 m from the head and more than 3 m above the chest. Tier 3 is the exact ray through the screen centre, with the tier 2 bounds. The game SHALL search the fan at most 20 times a second and tier 2 at most 5 times a second, and SHALL keep the last target between searches.
 
 #### Scenario: Swing from the start roof
 - **WHEN** a player stands on the start roof in the default view with tutorial step 0 running, holds the swing input and does not touch the look input
@@ -66,7 +66,7 @@ The preferred elevation SHALL be the camera pitch plus 35 degrees, held between 
 - **THEN** the preferred elevation is 47 degrees
 
 ### Requirement: Clogs, pipes and the gold ring come first
-A clog or a pipe SHALL win over every building when it is within 60 m, within 22 degrees of the camera forward measured at the camera, and in line of sight from the head. Once it is the target, it SHALL stay the target until it is more than 28 degrees from the camera forward. A pipe SHALL count only from within 60 degrees of its outward normal. The gold ring SHALL win while tutorial step 0 runs, when it is within 80 m and in line of sight. It SHALL be within 35 degrees of the view bearing, measured around the vertical axis, at any elevation. After step 0 the ring SHALL have no special rank. Among specials, the one nearest the view axis SHALL win.
+A clog or a pipe SHALL win over every building when it is within 60 m, within 22 degrees of the camera forward measured at the camera, and in line of sight from the head. Once it is the target, it SHALL stay the target until it is more than 28 degrees from the camera forward. A pipe SHALL count from any side, as long as it is in line of sight from the head: the only places to stand near the pipes are the pod roof behind them and the deck under them. The gold ring SHALL win while tutorial step 0 runs, when it is within 80 m and in line of sight. It SHALL be within 35 degrees of the view bearing, measured around the vertical axis, at any elevation. After step 0 the ring SHALL have no special rank. Among specials, the one nearest the view axis SHALL win.
 
 #### Scenario: A clog in view
 - **WHEN** a clog is 30 m away and 5 degrees from the camera forward, with no wall between
@@ -87,9 +87,13 @@ A clog or a pipe SHALL win over every building when it is within 60 m, within 22
 - **WHEN** the clog moves beyond 28 degrees
 - **THEN** a building replaces it
 
-#### Scenario: A pipe seen from behind
-- **WHEN** the head is outside 60 degrees of the outward normal of a pipe
-- **THEN** the pipe is not the target
+#### Scenario: A pipe seen from the pod roof
+- **WHEN** the King is awake and the hero stands on the pod roof behind a pipe and looks at it
+- **THEN** the pipe is the target, a rope catches it, and three yanks rip it off
+
+#### Scenario: A roof antenna under the crosshair
+- **WHEN** the screen centre rests on a roof antenna 15 m away and the player fires
+- **THEN** the rope catches the antenna
 
 #### Scenario: The gold ring from the start roof
 - **WHEN** tutorial step 0 runs, the player stands on the start roof in the default view, and the screen is 16 by 9 or 390 by 844

@@ -876,6 +876,15 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       p.project(camera);
       return { x: (p.x + 1) * S.w / 2, y: (1 - p.y) * S.h / 2 };
     },
+    // the lure on the screen, in CSS px of the view; null while it is hidden or behind the camera. The messages keep
+    // clear of it (main.js), and the QA checks read it
+    lureScreen() {
+      const L = S.lure;
+      if (!L.visible || !firstPerson() || cutFn) return null;
+      vA.set(L.x, L.y, L.z).project(camera);
+      if (vA.z > 1) return null;
+      return { x: (vA.x + 1) * S.w / 2, y: (1 - vA.y) * S.h / 2 };
+    },
     setLine({ from = null, to = null, slack = 0, visible = true, flying = false } = {}) {
       S.line = { from, to, slack, visible, flying };
     },
