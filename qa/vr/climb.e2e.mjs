@@ -274,7 +274,7 @@ try {
     // a tap swings you off the wall
     const swing = await page.evaluate(() => {
       QA.flyIn(); G.test.step(1 / 60, 1);
-      document.querySelector('[data-action=throw]').onclick(); G.test.step(1 / 60, 30);
+      G.desktop.mobile.tap(1); G.test.step(1 / 60, 30);
       const ev = G.test.events().slice(-12).filter((e) => e.type !== 'input').map((e) => e.type);
       return { wall: !!G.P.wall, rope: G.P.ropes[1].state, ev, fired: ev.includes('fire') && ev.includes('attach') };
     });
