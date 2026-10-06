@@ -1,0 +1,1214 @@
+{
+  "stage": "local-verified",
+  "checkedAt": "2026-10-06T20:25:46.847995+00:00",
+  "unitTests": 43,
+  "freezeRecovery": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "viewport": "phone",
+        "preparedResources": {
+          "uploads": 36,
+          "shaderCompiles": 44
+        },
+        "transientDraw": {
+          "recovered": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true,
+          "recoveries": 1
+        }
+      },
+      {
+        "viewport": "phone",
+        "repeatedDraw": {
+          "paused": true,
+          "sameRun": true,
+          "resumableFallback": true,
+          "laneJumpDuck": true
+        }
+      },
+      {
+        "viewport": "desktop",
+        "preparedResources": {
+          "uploads": 36,
+          "shaderCompiles": 44
+        },
+        "transientDraw": {
+          "recovered": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true,
+          "recoveries": 1
+        }
+      },
+      {
+        "viewport": "desktop",
+        "repeatedDraw": {
+          "paused": true,
+          "sameRun": true,
+          "resumableFallback": true,
+          "laneJumpDuck": true
+        }
+      },
+      {
+        "audioFailure": {
+          "soundDisabled": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true
+        }
+      },
+      {
+        "blurVisibility": {
+          "paused": true,
+          "pausePixels": true,
+          "resumed": true,
+          "limitation": "Visibility and blur events are emulated; physical phone app switching was not tested."
+        }
+      },
+      {
+        "resize": {
+          "phoneDesktopLandscape": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true,
+          "overflow": false
+        }
+      },
+      {
+        "homeStart": {
+          "cycles": 3,
+          "timeAdvanced": true,
+          "laneInput": true,
+          "retainedCanvas": true,
+          "noMenuFrameWork": true,
+          "extraModelRequests": 0,
+          "noActiveResourcePreparation": true
+        }
+      },
+      {
+        "hungAssets": {
+          "readyAfterMs": 16867,
+          "preparationMs": 16397.5,
+          "requests": {
+            "bank": 1,
+            "vista": 1
+          },
+          "bank": "fallback",
+          "background": "fallback",
+          "playable3d": true,
+          "lateResponsesDiscarded": true,
+          "noLateUploadsOrCompiles": true,
+          "extraAssetRequests": 0,
+          "laneJumpDuck": true
+        }
+      }
+    ],
+    "errors": [],
+    "renderer": "Headless SwiftShader; recovery and lifecycle checks, not a physical device FPS claim."
+  },
+  "boundedDownloads": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "hungAssets": {
+          "readyAfterMs": 16445,
+          "preparationMs": 15961.89999999106,
+          "requests": {
+            "bank": 1,
+            "vista": 1
+          },
+          "bank": "fallback",
+          "background": "fallback",
+          "playable3d": true,
+          "lateResponsesDiscarded": true,
+          "noLateUploadsOrCompiles": true,
+          "extraAssetRequests": 0,
+          "laneJumpDuck": true
+        }
+      }
+    ],
+    "errors": [],
+    "renderer": "Headless SwiftShader; recovery and lifecycle checks, not a physical device FPS claim."
+  },
+  "controlsAndFallbacks": {
+    "passed": true,
+    "results": [
+      {
+        "viewport": "phone",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 99050,
+        "drawCalls": 31,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": true,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "desktop",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 100170,
+        "drawCalls": 31,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "landscape",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 95077,
+        "drawCalls": 31,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "temporary503": "recovered",
+        "imageAttempts": 2,
+        "modelAttempts": 2
+      },
+      {
+        "missingModel": "playable"
+      },
+      {
+        "missingRig": "playableRegisteredSprite",
+        "distinctPoses": true
+      },
+      {
+        "missingWorld": "playableOriginalSceneryAndProceduralSky",
+        "vistaAttempts": 3,
+        "sceneryAttempts": 9
+      },
+      {
+        "manualRetry": "recovered"
+      },
+      {
+        "noWebGL": "playable2d",
+        "distinctPoses": true
+      },
+      {
+        "contextLoss": "pausedThenPlayable2d"
+      }
+    ],
+    "screenshots": "/tmp/river-stalls/scene-qa",
+    "errors": []
+  },
+  "nativeCharacterMotion": {
+    "passed": true,
+    "fullDetailShaderCoverage": true,
+    "renderer": "headless SwiftShader; not a physical device FPS claim",
+    "frames": 28,
+    "uniqueStrokeSamples": 28,
+    "maxHandError": 1.1796572494771006e-07,
+    "maxTriangles": 244918,
+    "maxDrawCalls": 36,
+    "frameTiming": {
+      "meanMs": 244.21428571428572,
+      "p50Ms": 247.59999999403954,
+      "p95Ms": 312.5,
+      "fps": 4.094764551038315
+    },
+    "steeringReversal": true,
+    "distinctAnatomicalPoses": true,
+    "duckHeightRatio": 0.31751985121617143,
+    "pausePixels": true,
+    "reducedMotion": true,
+    "screenshots": "/tmp/river-stalls/native-motion",
+    "errors": []
+  },
+  "controlledRendererBenchmark": {
+    "status": "controlled before/after benchmark passed; cleanup patch subsequently reviewed in source",
+    "physicalDeviceFPSMeasured": false,
+    "environment": "Headless SwiftShader; controlled relative benchmark, not physical GPU FPS",
+    "results": [
+      {
+        "path": "software shaders",
+        "seed": 7123,
+        "samples": 130,
+        "preparationMs": 3460.7,
+        "legacyMaxColdCpuMs": 642.9,
+        "currentMaxColdActiveCpuMs": 12.7,
+        "steadyFrameMeanMs": {
+          "before": 148.29,
+          "after": 68.66
+        },
+        "steadyFrameP95Ms": {
+          "before": 297.9,
+          "after": 109.8
+        },
+        "steadyFrameMaxMs": 206.8,
+        "meanImprovementPercent": 53.7,
+        "activeHeavyImageUploads": 0,
+        "activeShaderLinks": 0,
+        "continuousStrokeSamples": 130,
+        "finalBudget": {
+          "scale": 0.55,
+          "meanMs": 77.32499999925494,
+          "dpr": 0.37742008817152495,
+          "pixels": 46746,
+          "water": "light"
+        },
+        "gpuResourcesStable": true,
+        "errors": []
+      },
+      {
+        "path": "native shaders on forced SwiftShader",
+        "seed": 7123,
+        "samples": 130,
+        "preparationMs": 5431.6,
+        "legacyMaxColdCpuMs": 1058,
+        "currentMaxColdActiveCpuMs": 17.3,
+        "steadyFrameMeanMs": {
+          "before": 317.04,
+          "after": 197.88
+        },
+        "steadyFrameP95Ms": {
+          "before": 453.9,
+          "after": 265.8
+        },
+        "steadyFrameMaxMs": 349.7,
+        "meanImprovementPercent": 37.6,
+        "activeHeavyImageUploads": 0,
+        "activeShaderLinks": 0,
+        "continuousStrokeSamples": 130,
+        "finalBudget": {
+          "scale": 0.55,
+          "meanMs": 175.25,
+          "dpr": 0.55,
+          "pixels": 99296,
+          "water": "light"
+        },
+        "gpuResourcesStable": true,
+        "errors": []
+      }
+    ],
+    "warmUploadExplanation": "Per-frame uploads are small Float32 bone-texture animation updates, not BYTE/image model maps.",
+    "variation": "An earlier concurrent/noisy forced-native run had two >1 second intervals without heavy uploads/program additions; retained at /tmp/river-stalls/after-first.json. Isolated repeat completed below350ms maximum. Native software-GPU time remains diagnostic.",
+    "cleanupReview": [
+      "Explicit InstancedMesh.dispose now releases each unique instance matrix/color buffer before geometry cleanup.",
+      "Detached rich waterMaterial and cheapWaterMaterial are both disposed.",
+      "Renderer forceContextLoss releases remaining internal driver resources."
+    ],
+    "cleanupExecutedInBenchmark": false,
+    "screenshotsCaptured": false,
+    "reports": {
+      "baseline": "/tmp/river-stalls/baseline.json",
+      "after": "/tmp/river-stalls/after.json"
+    }
+  },
+  "physicalDeviceFPSMeasured": false,
+  "riverSections": {
+    "passed": true,
+    "cases": 24,
+    "sections": [
+      "bend",
+      "chute",
+      "narrows",
+      "pool"
+    ],
+    "layouts": [
+      "phone",
+      "desktop",
+      "landscape"
+    ],
+    "shaderPaths": [
+      "native",
+      "software"
+    ],
+    "maxTriangles": {
+      "False": 114913,
+      "True": 278600
+    },
+    "errors": []
+  },
+  "wholeScreenDragging": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "layout": "phone",
+        "drags": [
+          {
+            "kind": "touch",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          }
+        ],
+        "taps": {
+          "jumpDuckPauseResume": true,
+          "onceOnRelease": true
+        },
+        "keyboard": {
+          "globalSpaceAfterPointerTap": true,
+          "globalSpaceAfterButtonDrag": true,
+          "focusedJumpEnter": true,
+          "focusedDuckSpace": true,
+          "focusedRestartEnter": true,
+          "focusedResumeSpace": true
+        },
+        "vertical": {
+          "oncePerContact": true,
+          "noHorizontalLeak": true
+        },
+        "cancellation": {
+          "pointerCancel": true,
+          "pause": true,
+          "hidden": true,
+          "noLateAction": true
+        },
+        "secondaryButtonContactIgnored": true,
+        "pen": "CDP-emulated primary pen pointer; physical pen not tested",
+        "overflow": false
+      },
+      {
+        "layout": "desktop",
+        "drags": [
+          {
+            "kind": "touch",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          }
+        ],
+        "taps": {
+          "jumpDuckPauseResume": true,
+          "onceOnRelease": true
+        },
+        "keyboard": {
+          "globalSpaceAfterPointerTap": true,
+          "globalSpaceAfterButtonDrag": true,
+          "focusedJumpEnter": true,
+          "focusedDuckSpace": true,
+          "focusedRestartEnter": true,
+          "focusedResumeSpace": true
+        },
+        "vertical": {
+          "oncePerContact": true,
+          "noHorizontalLeak": true
+        },
+        "cancellation": {
+          "pointerCancel": true,
+          "pause": true,
+          "hidden": true,
+          "noLateAction": true
+        },
+        "secondaryButtonContactIgnored": true,
+        "pen": "CDP-emulated primary pen pointer; physical pen not tested",
+        "overflow": false
+      },
+      {
+        "layout": "landscape",
+        "drags": [
+          {
+            "kind": "touch",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          }
+        ],
+        "taps": {
+          "jumpDuckPauseResume": true,
+          "onceOnRelease": true
+        },
+        "keyboard": {
+          "globalSpaceAfterPointerTap": true,
+          "globalSpaceAfterButtonDrag": true,
+          "focusedJumpEnter": true,
+          "focusedDuckSpace": true,
+          "focusedRestartEnter": true,
+          "focusedResumeSpace": true
+        },
+        "vertical": {
+          "oncePerContact": true,
+          "noHorizontalLeak": true
+        },
+        "cancellation": {
+          "pointerCancel": true,
+          "pause": true,
+          "hidden": true,
+          "noLateAction": true
+        },
+        "secondaryButtonContactIgnored": true,
+        "pen": "CDP-emulated primary pen pointer; physical pen not tested",
+        "overflow": false
+      }
+    ],
+    "errors": [],
+    "renderer": "Real CDP touch, mouse and browser-emulated pen events in headless Chromium; physical-device play was not tested."
+  },
+  "severeActiveFrame": {
+    "passed": true,
+    "activeStallMs": 1600,
+    "qualityReduces": true,
+    "zeroGapPreservesQuality": true,
+    "courseAndSimulationUnchanged": true,
+    "result": {
+      "before": {
+        "scale": 1,
+        "meanMs": 0,
+        "dpr": 0.6862183421300453,
+        "pixels": 154593,
+        "water": "light"
+      },
+      "after": {
+        "scale": 0.82,
+        "meanMs": 1000,
+        "dpr": 0.5626990405466371,
+        "pixels": 103806,
+        "water": "light"
+      },
+      "paused": {
+        "scale": 0.82,
+        "meanMs": 1000,
+        "dpr": 0.5626990405466371,
+        "pixels": 103806,
+        "water": "light"
+      },
+      "width": 35.376000000000005,
+      "course": 35.376000000000005,
+      "speed": 42,
+      "time": 0
+    },
+    "errors": []
+  },
+  "outerArrowControls": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "layout": "phone",
+        "order": [
+          "left",
+          "jump",
+          "duck",
+          "right"
+        ],
+        "bounds": [
+          {
+            "action": "left",
+            "x": 15,
+            "right": 97.5
+          },
+          {
+            "action": "jump",
+            "x": 107.5,
+            "right": 190
+          },
+          {
+            "action": "duck",
+            "x": 200,
+            "right": 282.5
+          },
+          {
+            "action": "right",
+            "x": 292.5,
+            "right": 375
+          }
+        ],
+        "actionLabelsVisible": true,
+        "arrowsAtEnds": true,
+        "tapsOnce": true,
+        "input": "real touch",
+        "overflow": false
+      },
+      {
+        "layout": "desktop",
+        "order": [
+          "left",
+          "jump",
+          "duck",
+          "right"
+        ],
+        "bounds": [
+          {
+            "action": "left",
+            "x": 559,
+            "right": 653
+          },
+          {
+            "action": "jump",
+            "x": 667,
+            "right": 761
+          },
+          {
+            "action": "duck",
+            "x": 775,
+            "right": 869
+          },
+          {
+            "action": "right",
+            "x": 883,
+            "right": 977
+          }
+        ],
+        "actionLabelsVisible": true,
+        "arrowsAtEnds": true,
+        "tapsOnce": true,
+        "input": "real mouse",
+        "overflow": false
+      },
+      {
+        "layout": "landscape",
+        "order": [
+          "left",
+          "jump",
+          "duck",
+          "right"
+        ],
+        "bounds": [
+          {
+            "action": "left",
+            "x": 539,
+            "right": 604
+          },
+          {
+            "action": "jump",
+            "x": 613,
+            "right": 678
+          },
+          {
+            "action": "duck",
+            "x": 687,
+            "right": 752
+          },
+          {
+            "action": "right",
+            "x": 761,
+            "right": 826
+          }
+        ],
+        "actionLabelsVisible": true,
+        "arrowsAtEnds": true,
+        "tapsOnce": true,
+        "input": "real mouse",
+        "overflow": false
+      }
+    ],
+    "errors": [],
+    "limitation": "Browser touch and mouse events were tested; physical devices were not tested."
+  },
+  "runtimeAssets": {
+    "javascript": "index-CvpeEbDr.js",
+    "stylesheet": "index-mGm7Jaxg.css"
+  }
+}

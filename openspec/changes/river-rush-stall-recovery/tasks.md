@@ -1,0 +1,7 @@
+- [x] 1. Reproduce freezes and record baseline frame/upload behavior.
+- [x] 2. Make render/audio failures recoverable and release replaced graphics resources.
+- [x] 3. Reduce active-frame shader/upload/resize stalls while retaining the river.
+- [x] 4. Verify fault recovery, sustained rendering, controls, layouts and existing safeguards.
+- [x] 5. Implement and verify whole-screen mouse/touch/pen gestures and deliberate button taps.
+- [x] 6. Place lane arrows at the outer ends of the control row and verify labels and taps.
+- [ ] 7. Publish and verify the live fix, archive and review the canonical specification.
