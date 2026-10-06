@@ -9,7 +9,7 @@
 // mouse button. In a fight the words name the mouse after a mouse press, and the keys (W, S, A, D, R, Space) after a press
 // of a rod key, with KEYS on the guide. A key that repeats, Space, R and the wheel keep the words. Exits with code 1 when
 // something fails.
-import { open, until, sleep } from "./lib.mjs";
+import { open, until } from "./lib.mjs";
 
 const fails = [];
 const check = (ok, msg) => { if (!ok) fails.push(msg); console.log((ok ? "ok   " : "FAIL ") + msg); return ok; };
@@ -26,11 +26,25 @@ function helpers() {
   };
   window.__fire = fire;
   window.__rect = (s) => { const e = document.querySelector(s); if (!e || !e.getClientRects().length) return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
+  // wait until ok() is true, then n frames more. A slow software renderer may draw no frame for seconds, and a slow frame
+  // moves the game on by 0.25 s at most, so the limit counts frames: false when it did not come in 3600 frames (a minute
+  // at 60 fps, and more game time at a lower rate), or when no frame came for a minute
+  window.__late = "it did not come in 3600 frames, or no frame came for a minute";
+  window.__frames = async (ok, n = 2) => {
+    const f0 = G.frame;
+    let f = null, last = G.frame, t = performance.now();
+    for (;;) {
+      if (f == null && ok()) f = G.frame;
+      if (f != null && G.frame >= f + n) return true;
+      if (G.frame !== last) { last = G.frame; t = performance.now(); }
+      if (G.frame - f0 > 3600 || performance.now() - t > 60000) return false;
+      await wait(5);
+    }
+  };
   // a new cast, once a frame has handed the press over to the reel panel
   window.__fresh = async (yaw = 0) => {
     FISH.newCast(); G.aimYaw = yaw; document.querySelector("#report").hidden = true;
-    const t0 = performance.now();
-    while (!(G.phase === "cast" && G.step === "ready" && FISH.reelPanel.s.grab === "lock") && performance.now() - t0 < 10000) await wait(5);
+    if (!(await window.__frames(() => G.phase === "cast" && G.step === "ready" && FISH.reelPanel.s.grab === "lock", 0))) throw new Error("no new cast took the press: " + window.__late);
     await wait(150);
   };
   // the hold cast: press at (x, y), keep still, and let go `ms` after the rod starts to tip back (G.pin.key). moves: sideways
@@ -39,26 +53,27 @@ function helpers() {
   // what the rail, the prompts and the boxes it must stay under were then
   window.__hold = async ({ x = 520, y = 520, ms = 780, moves = 0, look = false }) => {
     const casts = G.casts, said = document.querySelector("#toast").textContent, out = {};
+    // (look: the rod stays where it has swung back past LOAD, so a slow frame cannot find it at the end of its swing. Each
+    // read of the rod's clock gives 600 ms, from the time the hold takes the line: this listener comes just after the game's)
+    let key = 0;
+    const stay = () => { if (G.pin && G.pin.key) { key = G.pin.key; Object.defineProperty(G.pin, "key", { get: () => performance.now() - 600, configurable: true }); } };
+    if (look) FISH.reelPanel.on("pin", stay);
     const tp = performance.now();
     out.on = fire("pointerdown", x, y).id;
-    while (!(G.pin && G.pin.key) && performance.now() - tp < 1500) await wait(1);
+    while (!(G.pin && G.pin.key) && performance.now() - tp < 60000) await wait(1);
+    FISH.reelPanel.off("pin", stay);
     if (!(G.pin && G.pin.key)) { fire("pointerup", x, y); out.held = false; return out; }
-    const t0 = G.pin.key;
+    const t0 = key || G.pin.key;
     out.held = true; out.afterMs = Math.round(t0 - tp); out.bail = G.bail; out.step = G.step;
     for (let i = 1; i <= moves && G.pin; i++) { fire("pointermove", x + (100 * i) / moves, y + (i % 2)); await wait(10); }
     out.yawHeld = G.aimYaw;
     const prompts = new Set(), rail = document.querySelector("#castRail"), said1 = () => document.querySelector("#prompt .p1 span").textContent;
-    while (G.pin && performance.now() - t0 < (look ? 5000 : ms)) {
-      prompts.add(said1());
-      // (look: the rod stays where it has swung back past LOAD, so a slow frame cannot find it at the end of its swing)
-      if (look && G.pin.key) G.pin.key = performance.now() - 600;
-      if (look && !rail.hidden && said1() === "Let go in the green.") {
-        out.rail = { box: window.__rect("#castRail"), band: rail.querySelector(".band").hidden ? 0 : rail.querySelector(".band").offsetHeight };
-        out.boxes = ["#hud", "#prompt .p1", "#prompt .p2"].map(window.__rect).filter((b) => b && b.h > 0);
-        break;
-      }
-      await wait(1);
-    }
+    while (!look && G.pin && performance.now() - t0 < ms) { prompts.add(said1()); await wait(1); }
+    const shown = look && (await window.__frames(() => { prompts.add(said1()); return !G.pin || (!rail.hidden && said1() === "Let go in the green."); }, 0));
+    if (shown && G.pin) {
+      out.rail = { box: window.__rect("#castRail"), band: rail.querySelector(".band").hidden ? 0 : rail.querySelector(".band").offsetHeight };
+      out.boxes = ["#hud", "#prompt .p1", "#prompt .p2"].map(window.__rect).filter((b) => b && b.h > 0);
+    } else if (look) out.late = shown ? "the line came off before a frame showed the rail" : window.__late;
     out.ms = Math.round(performance.now() - t0);
     fire("pointerup", x + (moves ? 100 : 0), y);
     out.prompts = [...prompts];
@@ -67,7 +82,7 @@ function helpers() {
     out.cue = !document.querySelector("#report").hidden && document.querySelector("#report").classList.contains("cue") ? document.querySelector("#report .verdict").textContent : "";
     // fly a copy of the lure to the end, for the distance (the game flies its own)
     if (c && G.flight) { const f = Object.assign(Object.create(Object.getPrototypeOf(G.flight)), JSON.parse(JSON.stringify(G.flight))); let s, n = 0; do { s = f.step(1 / 60); n++; } while (!s.done && n < 3000); out.dist = Math.hypot(s.x, s.z); out.land = s.land; }
-    if (!c) { const t1 = performance.now(); while (document.querySelector("#toast").textContent === said && performance.now() - t1 < 1500) await wait(10); out.toast = document.querySelector("#toast").textContent; }
+    if (!c) { const t1 = performance.now(); while (document.querySelector("#toast").textContent === said && performance.now() - t1 < 30000) await wait(10); out.toast = document.querySelector("#toast").textContent; }
     out.busy = !look && Math.abs(out.ms - ms) > 40 && ms < 1100;
     return out;
   };
@@ -84,13 +99,20 @@ const tryHold = async (page, a) => {
   return r;
 };
 const overlap = (a, b) => !!(a && b) && a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+// the lure that flew is down: on the lake (the reel) or on the shore (a slow frame moves the game on by 0.25 s at most,
+// so a flight can take minutes)
+const down = async () => {
+  const r = await page.evaluate(async () => ({ ok: await window.__frames(() => !(FISH.G.phase === "cast" && (FISH.G.step === "flight" || FISH.G.step === "landed")), 0), step: FISH.G.step }));
+  if (!r.ok) check(false, `the lure came down (still ${r.step}: ${await page.evaluate(() => window.__late)})`);
+};
 
 const { browser, page, errors } = await open({ width: 1280, height: 800, touch: false, phone: false, save: { v: 1, quality: "low" } });
 try {
   await page.click("#freeBtn");
   await until(page, () => window.FISH && FISH.G.phase === "cast", null, 30000);
   await page.evaluate(helpers);
-  await sleep(800);
+  // (two frames into the cast)
+  await page.evaluate(async () => { if (!(await window.__frames(() => true))) throw new Error("the cast drew no two frames: " + window.__late); });
   const ready = await page.evaluate(() => [document.querySelector("#prompt .p1 span").textContent, document.querySelector("#prompt .p2").textContent]);
   check(ready[0] === "Hold the mouse button. Let go in the green." && /Drag sideways to aim/.test(ready[1]), `the cast prompt on a computer says how: "${ready.join(" / ")}"`);
 
@@ -98,39 +120,40 @@ try {
   // hold cast it says what the prompt and the rod cue say, with MOUSE ----
   const guideNow = () => page.evaluate(() => { const g = document.querySelector("#fishGuide"), v = g.querySelector("video"); return { shown: !g.hidden, count: g.querySelector(".guide-count").textContent, clip: !!v && (!v.paused || !v.hidden) }; });
   const g0 = await guideNow();
-  await sleep(3000);
+  // a frame that began 3 s later: the touch clip goes to its next step every 2.6 s (guide.js LENGTH)
+  await page.evaluate(async () => { const t0 = performance.now(); if (!(await window.__frames(() => performance.now() - t0 >= 3000, 1))) throw new Error("no frame came 3 s after the first look at the guide: " + window.__late); });
   const g1 = await guideNow();
   check(g0.shown && g0.count === "1 / 3" && g1.count === "1 / 3" && !g0.clip && !g1.clip, `on a computer the guide holds its first step still, with no touch clip (${JSON.stringify({ g0, g1 })})`);
   await page.evaluate(() => window.__fresh());
   const hg = await page.evaluate(async () => {
-    const G = FISH.G, wait = window.__wait, out = {};
+    const G = FISH.G, out = {};
     const read = () => { const g = document.querySelector("#fishGuide"); return { prompt: document.querySelector("#prompt .p1 span").textContent, guide: g.hidden ? "" : g.querySelector(".guide-caption").textContent, count: g.querySelector(".guide-count").textContent, cue: document.querySelector("#rodCue").hidden ? "" : document.querySelector("#rodCue span").textContent }; };
+    // the rod's clock held in each step, so a slow frame can show it: each read of the clock gives ms after the key. It is
+    // held from the time the hold takes the line (this listener comes just after the game's own), before a frame can come
+    let ms = 100;
+    const stop = () => { if (G.pin && G.pin.key) Object.defineProperty(G.pin, "key", { get: () => performance.now() - ms, configurable: true }); };
+    FISH.reelPanel.on("pin", stop);
     window.__fire("pointerdown", 520, 520);
-    const tp = performance.now();
-    while (!(G.pin && G.pin.key) && performance.now() - tp < 1500) await wait(1);
-    // the rod's clock held in each step, so a slow frame can show it: read two frames after the prompt says it
-    for (const [step, said, ms] of [["pinned", "Keep holding.", () => 100], ["loaded", "Let go in the green.", () => (G.step === "loaded" ? 700 : 450)]]) {
-      const t0 = performance.now();
-      let f = 0;
-      while (performance.now() - t0 < 10000) {
-        if (G.pin && G.pin.key) G.pin.key = performance.now() - ms();
-        if (!f && G.step === step && read().prompt === said) f = G.frame;
-        if (f && G.frame >= f + 2) break;
-        await wait(5);
-      }
-      out[step] = { step: G.step, ...read() };
+    // read two frames after the prompt says it (loaded: 450 ms, the rod tipped back past LOAD_THETA)
+    for (const [step, said, at] of [["pinned", "Keep holding.", 100], ["loaded", "Let go in the green.", 450]]) {
+      ms = at;
+      const shown = await window.__frames(() => G.step === step && read().prompt === said);
+      out[step] = { step: G.step, ...read(), ...(shown ? {} : { late: window.__late }) };
     }
+    FISH.reelPanel.off("pin", stop);
+    // let go as the rod comes forward, so the lure flies
+    ms = 700;
     window.__fire("pointerup", 520, 520);
     return out;
   });
-  check(hg.pinned.guide === "Keep holding" && hg.pinned.cue === "Keep holding" && hg.pinned.count === "MOUSE" && hg.loaded.guide === "Let go in the green" && hg.loaded.cue === "Let go in the green" && hg.loaded.count === "MOUSE", `during a mouse hold the guide says what the prompt and the rod cue say, "Keep holding", then "Let go in the green", with MOUSE (${JSON.stringify(hg)})`);
-  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  check(!hg.pinned.late && !hg.loaded.late && hg.pinned.guide === "Keep holding" && hg.pinned.cue === "Keep holding" && hg.pinned.count === "MOUSE" && hg.loaded.guide === "Let go in the green" && hg.loaded.cue === "Let go in the green" && hg.loaded.count === "MOUSE", `during a mouse hold the guide says what the prompt and the rod cue say, "Keep holding", then "Let go in the green", with MOUSE (${JSON.stringify(hg)})`);
+  await down();
 
   // ---- the hold cast, let go in the green ----
   const good = await tryHold(page, { ms: 780 });
   check(good.held && good.afterMs >= 140 && good.afterMs < 400 && good.bail === "open" && good.step === "pinned", `a mouse button held still takes the line after about 150 ms and opens the bail (${JSON.stringify({ afterMs: good.afterMs, bail: good.bail, step: good.step })})`);
   check(good.cast === "sweet" && good.cue === "Sweet!" && good.land === "water" && good.dist >= 25, `let go as the rod comes through the green: sweet, and the lure flies ${(good.dist || 0).toFixed(1)} m (${JSON.stringify({ ms: good.ms, cast: good.cast, cue: good.cue, land: good.land })})`);
-  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  await down();
 
   // ---- what it shows while it holds: the hold's own prompts (never the drag ones), and the rail beside the press, all of
   // it on the screen and clear of the HUD and the prompt (a press high up stands it lower) ----
@@ -140,8 +163,8 @@ try {
     await page.evaluate(() => window.__fresh());
     const o = await page.evaluate((y) => window.__hold({ y, look: true }), y);
     check(o.prompts.includes("Let go in the green.") && o.prompts.every((p) => HOLD_WORDS.includes(p)), `a hold at y ${y}: the prompts are the hold's own (${o.prompts.join(" / ")})`);
-    check(clear(o), `a hold at y ${y}: the whole rail and its green band show beside the press, clear of the HUD and the prompt (${JSON.stringify({ rail: o.rail, boxes: o.boxes })})`);
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    check(clear(o), `a hold at y ${y}: the whole rail and its green band show beside the press, clear of the HUD and the prompt (${JSON.stringify({ rail: o.rail, boxes: o.boxes, late: o.late })})`);
+    await down();
   }
 
   // ---- too soon, as Space: nothing in the back swing, high as the rod starts forward ----
@@ -149,24 +172,23 @@ try {
   check(tap.held && !tap.cast && tap.stepAfter === "ready" && tap.toast === "Keep holding until the rod comes forward.", `let go in the back swing: nothing flies, and it says "${tap.toast}" (${JSON.stringify({ ms: tap.ms, cast: tap.cast, step: tap.stepAfter })})`);
   const soon = await tryHold(page, { ms: 600 });
   check(soon.cast === "high", `let go as the rod starts forward: too soon, ${soon.cast} (${soon.ms} ms)`);
-  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  await down();
   const end = await tryHold(page, { ms: 1600 });
   check(end.cast === "slam", `held to the end: it lets go there, late: ${end.cast}`);
-  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  await down();
 
   // ---- the mouse moved sideways while it holds aims ----
   const aim = await tryHold(page, { ms: 780, moves: 10 });
   check(aim.yawHeld > 15 && Math.abs(aim.yaw - aim.yawHeld) < 1 && !!aim.cast, `moving the mouse 100 px right while it holds turns the aim ${aim.yawHeld.toFixed(1)}°, and the cast goes that way (yaw ${aim.yaw != null ? aim.yaw.toFixed(1) : "none"}, ${aim.cast})`);
-  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  await down();
 
   // ---- the bail opened first with the E key: the prompt says the same, a button held still is the hold cast, and a press
   // that moves down at once is the drag ----
   const openBail = () => page.evaluate(async () => {
-    const G = FISH.G, wait = window.__wait, p2 = () => document.querySelector("#prompt .p2").textContent;
+    const G = FISH.G, p2 = () => document.querySelector("#prompt .p2").textContent;
     for (const type of ["keydown", "keyup"]) window.dispatchEvent(new KeyboardEvent(type, { code: "KeyE", key: "e", bubbles: true, cancelable: true }));
-    const t0 = performance.now();
-    while (!/line/.test(p2()) && performance.now() - t0 < 3000) await wait(10);
-    return { step: G.step, bail: G.bail, said: [document.querySelector("#prompt .p1 span").textContent, p2()] };
+    const shown = await window.__frames(() => /line/.test(p2()), 0);
+    return { step: G.step, bail: G.bail, said: [document.querySelector("#prompt .p1 span").textContent, p2()], ...(shown ? {} : { late: window.__late }) };
   });
   let opened, before;
   for (let i = 0; i < 3; i++) {
@@ -175,11 +197,11 @@ try {
     opened = await page.evaluate(() => window.__hold({ ms: 780 }));
     if (!opened.busy) break;
     console.log("     (the page was busy: " + JSON.stringify({ ms: opened.ms, cast: opened.cast }) + ")");
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    await down();
   }
-  check(before.step === "open" && before.bail === "open" && before.said[0] === "Hold the mouse button. Let go in the green.", `the E key opens the bail, and the prompt still says how to cast with the mouse (${JSON.stringify(before)})`);
+  check(!before.late && before.step === "open" && before.bail === "open" && before.said[0] === "Hold the mouse button. Let go in the green.", `the E key opens the bail, and the prompt still says how to cast with the mouse (${JSON.stringify(before)})`);
   check(opened.held && opened.afterMs >= 140 && opened.afterMs < 400 && opened.step === "pinned" && opened.cast === "sweet" && opened.prompts.every((p) => HOLD_WORDS.includes(p)), `with the bail open, a mouse button held still is the hold cast: let go in the green, sweet (${JSON.stringify({ afterMs: opened.afterMs, step: opened.step, ms: opened.ms, cast: opened.cast, prompts: opened.prompts, toast: opened.toast })})`);
-  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  await down();
   await page.evaluate(() => window.__fresh());
   await openBail();
   const odrag = await page.evaluate(async () => {
@@ -203,8 +225,7 @@ try {
     for (let i = 1; i <= 6; i++) { spin(8); window.__fire("pointermove", x, y + 4 * i); }
     const out = { pinned: G.step === "pinned", hold: !!(G.pin && G.pin.key) };
     for (let i = 7; i <= 22; i++) { window.__fire("pointermove", x, y + 4 * i); await wait(12); }
-    const tr = performance.now();
-    while (G.step !== "loaded" && performance.now() - tr < 3000) await wait(20);
+    await window.__frames(() => G.step === "loaded", 0);
     out.loaded = G.step === "loaded";
     const t0 = performance.now();
     let k = 0;
@@ -214,7 +235,7 @@ try {
     return out;
   });
   check(flick.pinned && !flick.hold && flick.loaded && !!flick.cast, `a press that moves down at once is still the drag and flick: it loads and casts (${JSON.stringify(flick)})`);
-  await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+  await down();
 
   // ---- a press on a HUD button never casts ----
   await page.evaluate(() => window.__fresh());
@@ -224,14 +245,16 @@ try {
       const r = window.__rect(sel);
       if (!r) continue;
       const x = r.x + r.w / 2, y = r.y + r.h / 2, el = window.__fire("pointerdown", x, y);
+      // (past the hold's 150 ms, and two frames on, so a frame could take the line)
       await window.__wait(450);
-      out.push({ on: el.id, step: G.step, pin: !!G.pin, bail: G.bail });
+      const framed = await window.__frames(() => true);
+      out.push({ on: el.id, step: G.step, pin: !!G.pin, bail: G.bail, ...(framed ? {} : { late: window.__late }) });
       window.__fire("pointerup", x, y);
       await window.__wait(50);
     }
     return out;
   });
-  check(hud.length === 2 && hud.every((h) => h.step === "ready" && !h.pin && h.bail === "closed"), `a mouse button held on a HUD button takes no line (${JSON.stringify(hud)})`);
+  check(hud.length === 2 && hud.every((h) => !h.late && h.step === "ready" && !h.pin && h.bail === "closed"), `a mouse button held on a HUD button takes no line (${JSON.stringify(hud)})`);
 
   // ---- feathering: a click anywhere during the flight slows the line ----
   const fly = async (feather) => {
@@ -244,7 +267,7 @@ try {
         FISH.save.casts = 3;
         window.__fire("pointerdown", x, y);
         const tp = performance.now();
-        while (!(G.pin && G.pin.key) && performance.now() - tp < 1500) await wait(1);
+        while (!(G.pin && G.pin.key) && performance.now() - tp < 60000) await wait(1);
         const t0 = G.pin && G.pin.key;
         while (G.pin && performance.now() - t0 < 780) await wait(1);
         const ms = performance.now() - t0;
@@ -252,27 +275,24 @@ try {
         const out = { ms: Math.round(ms), cast: G.cast && G.cast.verdict };
         if (feather) {
           // once a frame has set up the flight, click on the lake far from the rod, and hold it until the lure is down
-          const tf = performance.now();
-          while (G.step === "flight" && FISH.reelPanel.s.grab !== "feather" && performance.now() - tf < 5000) await wait(2);
+          await window.__frames(() => G.step !== "flight" || FISH.reelPanel.s.grab === "feather", 0);
           // (the words of the flight on a computer: a click on the lake, not a touch on the rod)
           out.flightCue = document.querySelector("#rodCue span").textContent; out.flightSaid = document.querySelector("#prompt").hidden ? "" : document.querySelector("#prompt .p1 span").textContent;
           window.__fire("pointerdown", 300, 360);
           out.pin = !!(G.pin && G.pin.feather);
           // the words of the feather name the mouse button, not a thumb (once a frame has taken the press)
-          const tw = performance.now();
-          while (G.step === "flight" && !G.feathered && performance.now() - tw < 5000) await wait(2);
+          await window.__frames(() => G.step !== "flight" || G.feathered, 0);
           out.featherSaid = document.querySelector("#prompt").hidden ? "" : document.querySelector("#prompt .p1 span").textContent;
         }
-        const tl = performance.now();
-        while (G.step === "flight" && performance.now() - tl < 60000) await wait(5);
+        await window.__frames(() => G.step !== "flight", 0);
         if (feather) window.__fire("pointerup", 300, 360);
         out.dist = G.landing ? G.landing.dist : null; out.feathered = !!(G.landing && G.landing.feather); out.step = G.step;
         return out;
       }, feather);
       if (Math.abs(r.ms - 780) <= 40) break;
-      await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+      await down();
     }
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    await down();
     return r;
   };
   const plain = await fly(false), slowed = await fly(true);
@@ -283,32 +303,32 @@ try {
   // ---- a click during the reel starts no cast ----
   const reel = await page.evaluate(async () => {
     const G = FISH.G, wait = window.__wait;
-    const t0 = performance.now();
-    while (G.phase !== "reel" && performance.now() - t0 < 20000) await wait(10);
+    await window.__frames(() => G.phase === "reel", 0);
     const casts = G.casts, phase = G.phase;
     window.__fire("pointerdown", 520, 420);
+    // (past the hold's 150 ms, and two frames on, so a frame could take the line; then two frames after the button comes up)
     await wait(500);
+    const held = await window.__frames(() => true);
     const out = { before: phase, phase: G.phase, pin: !!G.pin, casts: G.casts - casts };
     window.__fire("pointerup", 520, 420);
-    await wait(100);
+    const up = await window.__frames(() => true);
     out.after = G.phase;
+    if (!held || !up) out.late = window.__late;
     return out;
   });
-  check(reel.before === "reel" && reel.phase === "reel" && !reel.pin && reel.casts === 0 && reel.after === "reel", `a mouse button held during the reel starts no cast (${JSON.stringify(reel)})`);
+  check(!reel.late && reel.before === "reel" && reel.phase === "reel" && !reel.pin && reel.casts === 0 && reel.after === "reel", `a mouse button held during the reel starts no cast (${JSON.stringify(reel)})`);
 
   // ---- the fight words name the input the player used last: after a mouse press the mouse moves, after a key the keys.
   // The prompt, the guide (with MOUSE or KEYS) and the rod cue say the same ----
   const fw = await page.evaluate(async () => {
-    const G = FISH.G, wait = window.__wait, out = {};
+    const G = FISH.G, out = {};
     const fish = (move) => ({ id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move, jump: 0, near: 0.5, known: true });
     const read = () => { const g = document.querySelector("#fishGuide"); return { h: document.querySelector("#prompt .p1 span").textContent, sub: document.querySelector("#prompt .p2").textContent, guide: g.hidden ? "" : g.querySelector(".guide-count").textContent + " " + g.querySelector(".guide-caption").textContent, cue: document.querySelector("#rodCue span").textContent }; };
     const say = async (patch, h) => {
       G.lastEvent = {}; G.hold = null; G.bail = "closed";
       G.sim = { fake: true, events: [], step() {}, state: Object.assign({ phase: "fight", lure: { x: 0, y: -0.2, z: -20, speed: 0 }, tfrac: 0.3, slip: 0, dragN: 18, breakN: 45, lineOut: 20, slack: false, bend: 0.3, fish: fish("swim") }, patch) };
       if (G.phase !== "reel") FISH.enterReel();
-      const t0 = performance.now();
-      let f = 0;
-      while (performance.now() - t0 < 8000) { if (!f && read().h === h) f = G.frame; if (f && G.frame >= f + 2) break; await wait(5); }
+      if (!(await window.__frames(() => read().h === h))) throw new Error(`the fight words "${h}" did not show for two frames: ${window.__late} (${JSON.stringify(read())})`);
       return read();
     };
     window.__fire("pointerdown", 520, 420); window.__fire("pointerup", 520, 420);
@@ -323,11 +343,13 @@ try {
     const look = () => { const r = read(); return r.sub + " | " + r.guide + " | " + r.cue; };
     await say({ fish: fish("jump") }, "It jumped! Lower the rod!");
     key("keydown", "KeyS");
-    const held = new Set(), f0 = G.frame, t0 = performance.now();
-    while (G.frame < f0 + 10 && performance.now() - t0 < 15000) {
+    const held = new Set(), f0 = G.frame;
+    while (G.frame < f0 + 10) {
       window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyS", key: "KeyS", repeat: true, bubbles: true, cancelable: true }));
       wheel();
-      await new Promise((r) => requestAnimationFrame(r));
+      const f = G.frame;
+      await Promise.race([new Promise((r) => requestAnimationFrame(r)), window.__wait(60000)]);
+      if (G.frame === f) throw new Error(`no frame came for a minute with S held (after ${f - f0} frames)`);
       held.add(look());
     }
     key("keyup", "KeyS");
@@ -336,9 +358,12 @@ try {
     wheel();
     await say({ fish: fish("jump") }, "It jumped! Lower the rod!");
     out.mixed = { held: [...held], mouse: look() };
-    // the loss line names the steer of the keys, as the fight does (last: the loss beat goes on to the next cast)
+    // the loss line names the steer of the keys, as the fight does (last: the loss beat goes on to the next cast). The beat
+    // ends LOSS_MS after the line shows, and two slow frames can take longer: its clock stands still while the check reads
     key("keydown", "KeyA"); key("keyup", "KeyA");
+    Object.defineProperty(G, "outcomeAt", { get: () => performance.now(), set() {}, configurable: true });
     out.keys.lost = await say({ phase: "lost", reason: "weeds" }, "It wrapped the line in the weeds.");
+    Object.defineProperty(G, "outcomeAt", { value: performance.now(), writable: true, enumerable: true, configurable: true });
     return out;
   });
   const same = (r, w, label) => !!r && r.cue === w && r.guide === label + " " + w;
