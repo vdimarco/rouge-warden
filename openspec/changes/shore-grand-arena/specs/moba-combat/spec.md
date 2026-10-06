@@ -326,9 +326,11 @@ see every pick.
 ### Requirement: Bot strength is measured
 Seeded six-bot matches with sides swapped SHALL be run for each difficulty against the previous bots on the current map. The report SHALL
 give the win rate, kills, wards taken, dive deaths and the number of seeds that the lineup decided (the same side won both games). Veteran and
-Mythic enemies SHALL get more kills and fewer dive deaths than the previous bots, and Apprentice enemies SHALL get fewer kills.
+Mythic enemies SHALL get more kills and fewer dive deaths than the previous bots, and Apprentice enemies SHALL get fewer kills. Mythic enemies
+SHALL win more than half of their matches against Veteran and against the previous bots.
 
 #### Scenario: Measured fights
-- **WHEN** `node qa/tidebreak/bot-ab.mjs <difficulty> legacy 30` runs for each difficulty on the 9600-unit map
-- **THEN** Veteran and Mythic get more kills and fewer dive deaths per match than the previous bots, Apprentice gets fewer kills, and the
-  report states the win rate and how many of the 30 seeds the lineup decided.
+- **WHEN** `AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs <difficulty> legacy 30` runs for each difficulty on the 9600-unit map, and Mythic
+  plays Veteran the same way
+- **THEN** Veteran and Mythic get more kills and fewer dive deaths per match than the previous bots, Apprentice gets fewer kills, Mythic wins
+  more than half of its matches in both of its pairings, and the report states the win rate and how many of the 30 seeds the lineup decided.

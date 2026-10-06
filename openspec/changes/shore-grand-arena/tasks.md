@@ -56,7 +56,8 @@
 - [x] Fix the bot review findings: bots that freeze when a route grazes a ward, the dive exception path, sieges without a wave, the double
   move, the difficulty badge over the HUD, the picker on small landscape phones and with blocked storage (vdimarco/rouge-warden#229).
 - [x] Retune for the 9600 map: spirit camps off, pushes only with the wave, Mythic drafts by measured kit strength (#229).
-- [ ] Measure the retuned levels again with drafted lineups (`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs`).
+- [x] Measure the retuned levels again with drafted lineups (`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs`): Mythic 67% against Veteran and
+  68% against the old bots, Veteran 52%, Apprentice 35% (vdimarco/rouge-warden#236).
 - [ ] Test the bot hooks through `step()`, not only the helpers: ganks from a held lane, the cast lock, the short failed dodge
   (review finding 17).
 - [x] Merge the branch.
