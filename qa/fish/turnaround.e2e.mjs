@@ -17,7 +17,9 @@
 //   lure flies. No fish was on, so that press is no pump
 // The automatic waits are timed by the clock the game reads as each frame begins: a check counts to the start of the last
 // frame that did not end the wait, so a slow frame (a software renderer on a busy machine can draw a frame a second) does
-// not count against the game. The retrieve times are game seconds. A fresh save, free fishing.
+// not count against the game. The retrieve times are game seconds. A wait for a game state stops after 60 s, and a wait
+// for a flight or a retrieve after 30 s or 60 s of game time; then the check fails and tells what showed. A read of what the
+// game did after a press waits for two frames. A fresh save, free fishing.
 // Exits with code 1 when something fails.
 import { open, until, sleep } from "./lib.mjs";
 
@@ -27,8 +29,12 @@ const gaps = [];
 const note = (name, v, unit = "ms") => { gaps.push([name, v, unit]); return v; };
 // unit "r": a wait the game ended in a frame (__ready): the time, and the gap before that frame it allows
 const fmt = (v, unit = "ms") => (v == null ? "none" : unit === "r" ? fmtR(v) : unit === "s" ? v.toFixed(1) + " s" : Math.round(v) + " ms");
-const fmtR = (r) => (r && r.ms != null ? Math.round(r.ms) + " ms" + (r.gap > 40 ? " (the frame before it began " + Math.round(r.gap) + " ms earlier)" : "") : "none");
+const fmtR = (r) => (r && r.ms != null ? Math.round(r.ms) + " ms" + (r.gap > 40 ? " (the frame before it began " + Math.round(r.gap) + " ms earlier)" : "") : "none" + (r && r.not ? " (" + r.not + ")" : ""));
 const within = (r, lo, hi) => !!r && r.ms != null && r.ms >= lo && r.ms - r.gap < hi;
+// a cast that a check threw comes down (in the water or on the shore), so the next part starts with no lure in the air.
+// It may take 30 s of game time; a cast still up then fails
+const down = async (page, what) => (await page.evaluate(() => window.__while(() => FISH.G.phase === "cast" && (FISH.G.step === "flight" || FISH.G.step === "landed"), 30000)))
+  || check(false, what + " comes down in 30 s of game time");
 // a tip that a press which only ended the beat must not get
 const TIP = /Hold Space until|Keep holding until|Drag down|Swing the phone|flick up and let go/i;
 
@@ -42,19 +48,33 @@ function helpers() {
   // layout). before: the start of the last frame that did not end the wait. A slow frame (its draw can take a second on a
   // software renderer) only moves the next frame later, so a wait counts to the clock the game read, not to the machine
   let frameAt = 0, prevAt = 0, frameTs = null, inFrame = false, step = G.step, readyAt = 0, before = 0;
+  // the frames begun, the game time (each frame moves it on by the time since the frame before, 250 ms at most, as the
+  // game's own step does), and when the last frame began (now, before the first one)
+  let frames = 0, gameMs = 0, alive = performance.now();
   const raf = window.requestAnimationFrame.bind(window);
   window.requestAnimationFrame = (fn) => raf((ts) => {
-    if (ts !== frameTs) { frameTs = ts; prevAt = frameAt; frameAt = performance.now(); }
+    if (ts !== frameTs) { frameTs = ts; prevAt = frameAt; frameAt = alive = performance.now(); frames++; if (prevAt) gameMs += Math.min(frameAt - prevAt, 250); }
     inFrame = true;
     try { fn(ts); } finally { inFrame = false; }
   });
   Object.defineProperty(G, "step", { get: () => step, set: (v) => { if (v === "ready") { readyAt = performance.now(); before = inFrame ? prevAt : frameAt; } step = v; }, configurable: true, enumerable: true });
+  // true while less than `ms` of game time has gone since g0 (__game()) and the frames still come (one began in the last
+  // 60 s): the bound of a wait that needs many frames, however slow they come
+  window.__game = () => gameMs;
+  window.__inTime = (g0, ms) => gameMs - g0 < ms && performance.now() - alive < 60000;
+  // waits while busy() is true, for at most `ms` of game time. True when busy() ended
+  window.__while = async (busy, ms) => { const g0 = gameMs; while (busy() && window.__inTime(g0, ms)) await wait(2); return !busy(); };
+  // waits until n more frames have begun and run, so a read after it sees what the game did in them
+  window.__frames = async (n = 2) => {
+    const f0 = frames;
+    while (frames - f0 < n) { if (performance.now() - alive > 60000) throw new Error("no frame began for 60 s"); await wait(2); }
+  };
   // ms from t0 until the next cast is ready (phase cast, step ready; null if not), and the gap from the start of the frame
-  // before: a wait the game ends in a frame ran out somewhere in that gap
-  window.__ready = async (t0, limit = 9000) => {
+  // before: a wait the game ends in a frame ran out somewhere in that gap. not: what the game showed instead
+  window.__ready = async (t0, limit = 60000) => {
     const ok = () => G.phase === "cast" && G.step === "ready";
     while (!ok() && performance.now() - t0 < limit) await wait(2);
-    if (!ok()) return { ms: null, gap: 0 };
+    if (!ok()) return { ms: null, gap: 0, not: "still " + G.phase + "/" + G.step + " after " + Math.round(limit / 1000) + " s" };
     return { ms: readyAt - t0, gap: before ? readyAt - before : 0 };
   };
   // a stand-in for the sim, in a state the reel reads on its next frame ("home", "lost", "caught"). Resolves to outcomeAt
@@ -63,7 +83,8 @@ function helpers() {
     G.lastEvent = {}; G.hold = null; G.bail = "closed"; G.thrownBy = "";
     G.sim = { fake: true, events: [], step() {}, state: Object.assign({ phase: "retrieve", lure: { x: 0, y: -0.2, z: -6, speed: 0 }, tfrac: 0, slip: 0, dragN: 18, breakN: 45, lineOut: 6, slack: false, bend: 0, fish: null }, state) };
     const t0 = performance.now();
-    while (G.phase === "reel" && performance.now() - t0 < 8000) await wait(2);
+    while (G.phase === "reel" && performance.now() - t0 < 60000) await wait(2);
+    if (G.phase === "reel") throw new Error("the reel did not read the staged " + state.phase + " in 60 s");
     return G.outcomeAt;
   };
   // a cast that lands at (x, z) on the ground `land` ("water", "land"), as the flight would leave it. Resolves to the time
@@ -72,7 +93,8 @@ function helpers() {
     FISH.newCast(); G.cast = null;
     G.step = "flight"; G.flight = { step: () => ({ x, y: 0, z, done: true, land, lineOut: Math.hypot(x, z), spool: 0 }) };
     const t0 = performance.now();
-    while (G.step === "flight" && performance.now() - t0 < 8000) await wait(2);
+    while (G.step === "flight" && performance.now() - t0 < 60000) await wait(2);
+    if (G.step === "flight") throw new Error("the staged cast did not land in 60 s");
     return land === "water" ? performance.now() : G.outcomeAt;
   };
   const fire = (type, x, y, kind, id) => {
@@ -88,7 +110,8 @@ function helpers() {
   const el = document.querySelector("#toast"), d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent");
   Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__toasts.push(v); d.set.call(this, v); }, configurable: true });
   // a press (mouse, touch or Space) `at` ms after t0, let go `hold` ms later. next: the press started the next cast at once
-  // (it is ready, or Space holds the line); after: ms from the press until the cast is ready; toasts: what it said
+  // (it is ready, or Space holds the line); after: ms from the press until the cast is ready (null when it is not ready in
+  // 60 s: was.not tells what showed); toasts: what it said until 150 ms and two frames after the release
   window.__press = async ({ t0, at, kind = "mouse", x = 300, y = 450, hold = 60, id = 1 }) => {
     while (performance.now() - t0 < at) await wait(1);
     const tp = performance.now(), n0 = window.__toasts.length, ready = () => G.phase === "cast" && G.step === "ready";
@@ -99,8 +122,8 @@ function helpers() {
     let after = ready() ? performance.now() - tp : null;
     while (performance.now() - tp < hold) { if (after == null && ready()) after = performance.now() - tp; await wait(2); }
     if (kind === "key") key("keyup"); else fire("pointerup", x, y, kind, id);
-    if (after == null) after = (await window.__ready(tp, 6000)).ms;
-    await wait(150);
+    if (after == null) { const r = await window.__ready(tp); after = r.ms; if (r.not) was.not = r.not; }
+    await wait(150); await window.__frames(2);
     return { next, after, toasts: window.__toasts.slice(n0), was };
   };
   return true;
@@ -127,13 +150,13 @@ function helpers() {
         const t0 = G.pin && G.pin.key;
         while (G.pin && performance.now() - t0 < 780) await wait(1);
         window.__key("keyup");
-        const t1 = performance.now();
-        while (G.phase === "cast" && G.step !== "ashore" && performance.now() - t1 < 30000) await wait(5);
+        // (the flight and the retrieve take a few seconds of game time: the waits allow 30 s and 60 s of it)
+        await window.__while(() => G.phase === "cast" && (G.step === "flight" || G.step === "landed"), 30000);
         if (G.phase === "reel") land = { t: performance.now(), dist: G.landing.dist };
       }
       if (!land) return null;
       window.__key("keydown", "KeyR");
-      while (G.phase === "reel" && performance.now() - land.t < 120000) await wait(2);
+      await window.__while(() => G.phase === "reel", 60000);
       window.__key("keyup", "KeyR");
       const home = G.outcomeAt, game = G.sim && G.sim.state.t, said = document.querySelector("#prompt .p1 span").textContent;
       return { dist: land.dist, game, wall: home - land.t, said, ready: await window.__ready(home) };
@@ -147,14 +170,15 @@ function helpers() {
     }
 
     // ---- a steady crank and a fast crank, from 30 m with nothing coming, and a slow crank from 53 m (game time; words: the
-    // game time when "Nothing is biting here." showed) ----
+    // game time when "Nothing is biting here." showed). Each retrieve may take up to 60 s of game time ----
     const crank = async (rps, dist = 30) => page.evaluate(async ([rps, dist]) => {
       const G = FISH.G, wait = window.__wait;
       G.force = { bite: false };
       Object.defineProperty(FISH.crank, "rate", { get: () => rps, configurable: true });
-      const t0 = await window.__land(0, -dist);
+      await window.__land(0, -dist);
+      const g0 = window.__game();
       let words = null;
-      while (G.phase === "reel" && performance.now() - t0 < 120000) {
+      while (G.phase === "reel" && window.__inTime(g0, 60000)) {
         if (words == null && document.querySelector("#prompt .p1 span").textContent === "Nothing is biting here.") words = G.sim.state.t;
         await wait(2);
       }
@@ -178,7 +202,7 @@ function helpers() {
     note("home to ready, a mouse click at 400 ms (after the click)", r.after);
     check(r.next && r.after != null && r.after < 50 && !r.toasts.some((t) => TIP.test(t)), `a mouse click 400 ms in ends it at once: ready ${fmt(r.after)} after the click, and no tip (${JSON.stringify(r.toasts)})`);
     r = await home({ at: 150, kind: "mouse", hold: 40 });
-    check(!r.next && r.after != null && r.after > 600, `a click in the first 350 ms does not end it (ready ${fmt(r.after)} after the click)`);
+    check(!r.next && r.after != null && r.after > 600, `a click in the first 350 ms does not end it (ready ${fmt(r.after)} after the click; ${JSON.stringify(r.was)})`);
     r = await home({ at: 400, kind: "key", hold: 60 });
     note("home to ready, Space at 400 ms (after the press)", r.after);
     check(r.next && r.after != null && r.after < 150 && !r.toasts.some((t) => TIP.test(t)), `Space 400 ms in ends it at once and holds the line; a short tap gets no tip (${fmt(r.after)}, ${JSON.stringify(r.toasts)})`);
@@ -216,7 +240,7 @@ function helpers() {
     note("legend loss to ready, no input", r, "r");
     check(within(r, 4500, 4900), `a legend's loss line stays longer (${fmtR(r)})`);
     r = await loss({ at: 500, kind: "mouse" });
-    check(!r.next && r.after != null && r.after > 2400, `a click 500 ms into a loss does not end it (ready ${fmt(r.after)} after the click)`);
+    check(!r.next && r.after != null && r.after > 2400, `a click 500 ms into a loss does not end it (ready ${fmt(r.after)} after the click; ${JSON.stringify(r.was)})`);
     r = await loss({ at: 900, kind: "mouse" });
     note("loss to ready, a mouse click at 900 ms (after the click)", r.after);
     check(r.next && r.after != null && r.after < 50, `a click 900 ms into a loss ends it at once (${fmt(r.after)} after the click; ${JSON.stringify(r.was)})`);
@@ -230,7 +254,7 @@ function helpers() {
       while (performance.now() - t0 < 400) await wait(1);
       window.__fire("pointerdown", 300, 450, "mouse", 1);
       const ready = G.phase === "cast" && G.step === "ready", tp = performance.now();
-      while (!(G.pin && G.pin.key) && performance.now() - tp < 2000) await wait(1);
+      while (!(G.pin && G.pin.key) && performance.now() - tp < 60000) await wait(1);
       const tk = G.pin && G.pin.key;
       // let go as the rod comes through the green band (780 ms into the hold, as Space)
       while (G.pin && performance.now() - tk < 780) await wait(1);
@@ -240,7 +264,7 @@ function helpers() {
       return { ready, held: !!tk, ms, step: G.step, verdict: G.cast && G.cast.verdict };
     });
     check(flow.ready && flow.held && flow.step === "flight" && (flow.verdict === "sweet" || Math.abs(flow.ms - 780) > 40), `the click that ends "Nothing this time.", held down, goes on into a hold cast, with no second press (${JSON.stringify(flow)})`);
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    await down(page, "the hold cast");
     // Space held: it ends a loss after 800 ms, and casts when it comes up in the green
     const sflow = await page.evaluate(async () => {
       const G = FISH.G, wait = window.__wait;
@@ -255,7 +279,7 @@ function helpers() {
       return { pin, ms, step: G.step, verdict: G.cast && G.cast.verdict };
     });
     check(sflow.pin === "key" && sflow.step === "flight" && (sflow.verdict === "sweet" || Math.abs(sflow.ms - 780) > 40), `Space that ends a loss, held, goes on into the Space cast (${JSON.stringify(sflow)})`);
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    await down(page, "the Space cast");
 
     // ---- a press on a HUD button or on the drag bar is no cast input ----
     const btn = await page.evaluate(async () => {
@@ -289,7 +313,7 @@ function helpers() {
       window.__fire("pointerdown", 300, 450, "mouse", 1);
       const results = G.phase === "results" && !document.querySelector("#results").hidden;
       window.__fire("pointerup", 300, 450, "mouse", 1);
-      await wait(100);
+      await wait(100); await window.__frames(2);
       return { mid: mid.after, left, results, still: !document.querySelector("#results").hidden };
     });
     check(derby.mid != null && derby.mid < 50 && derby.left === 6, `in a derby a click ends the beat and uses up no cast (${JSON.stringify(derby)})`);
@@ -302,13 +326,13 @@ function helpers() {
       const G = FISH.G, wait = window.__wait;
       await window.__stage({ phase: "caught", catch: c });
       const t0 = performance.now(), out = {}, n0 = window.__toasts.length;
-      while (document.querySelector("#catch").hidden && performance.now() - t0 < 8000) await wait(5);
+      while (document.querySelector("#catch").hidden && performance.now() - t0 < 60000) await wait(5);
       await wait(400);
       out.wait = G.cardWait;
       window.__key("keydown"); window.__key("keyup");
       await wait(60);
       out.early = G.phase;
-      while (G.cardWait && performance.now() - t0 < 8000) await wait(5);
+      while (G.cardWait && performance.now() - t0 < 60000) await wait(5);
       await wait(100);
       if (G.phase === "catch") {
         const tk = performance.now();
@@ -354,7 +378,7 @@ function helpers() {
       const ready = G.phase === "cast" && G.step === "ready";
       for (let i = 1; i <= 16; i++) { window.__fire("pointermove", x, y + 5 * i, "touch", id); await wait(12); }
       const tr = performance.now();
-      while (G.step !== "loaded" && performance.now() - tr < 3000) await wait(20);
+      while (G.step !== "loaded" && performance.now() - tr < 60000) await wait(20);
       const step = G.step, tf = performance.now();
       let k = 0;
       while (k < 1) { k = Math.min(1, (performance.now() - tf) / 90); window.__fire("pointermove", x, y + 80 - 130 * k, "touch", id); await wait(8); }
@@ -363,7 +387,7 @@ function helpers() {
       return { ready, step, after: G.step, verdict: G.cast && G.cast.verdict };
     });
     check(drag.ready && drag.step === "loaded" && drag.after === "flight", `the finger that ends a loss drags down and flicks, and the lure flies (${JSON.stringify(drag)})`);
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    await down(page, "the flicked cast");
     // the press that ends "Nothing this time." 500 ms in on the drawn rod (the rod pad is still up over it): it drags down
     // and flicks, and the lure flies. No fish was on, so this press is no pump
     const rodCast = await page.evaluate(async () => {
@@ -375,7 +399,7 @@ function helpers() {
       const out = { on: !!on.closest("#padBox"), ready: G.phase === "cast" && G.step === "ready" };
       for (let i = 1; i <= 16; i++) { window.__fire("pointermove", x, y + 5 * i, "touch", id); await wait(12); }
       const tr = performance.now();
-      while (G.step !== "loaded" && performance.now() - tr < 3000) await wait(20);
+      while (G.step !== "loaded" && performance.now() - tr < 60000) await wait(20);
       out.step = G.step;
       const tf = performance.now();
       let k = 0;
@@ -385,7 +409,7 @@ function helpers() {
       return { ...out, after: G.step, casts: G.casts - casts, verdict: G.cast && G.cast.verdict };
     });
     check(rodCast.on && rodCast.ready && rodCast.step === "loaded" && rodCast.after === "flight" && rodCast.casts === 1, `a finger on the drawn rod 500 ms into "Nothing this time." drags down and flicks, and the lure flies (${JSON.stringify(rodCast)})`);
-    await until(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 30000).catch(() => {});
+    await down(page, "the cast from the rod");
     // a derby, and a player still working the reel controls when the beat starts: a fresh press on the crank 420 ms into
     // "Nothing this time.", then circles at 2 turns a second; one more pump on the rod pad 900 ms into a loss (down, then a
     // quick lift). Either press ends the beat, and neither throws a cast or uses one up
@@ -403,7 +427,7 @@ function helpers() {
       const ts = performance.now();
       while (performance.now() - ts < 2500) { const a = ((performance.now() - ts) / 1000) * 4 * Math.PI; window.__fire("pointermove", cx + R * Math.cos(a), cy + R * Math.sin(a), "touch", 31); await wait(12); }
       window.__fire("pointerup", cx + R, cy, "touch", 31);
-      await wait(300);
+      await wait(300); await window.__frames(2);
       Object.assign(out.crank, { end: at(), casts: G.casts - casts, left: G.castsLeft });
       G.castsLeft = 5;
       t0 = await window.__stage({ phase: "lost", reason: "snap", fish: { id: "perch", kg: 0.3, x: 0, y: -1, z: -12, len: 0.2 } });
@@ -417,7 +441,7 @@ function helpers() {
       let k = 0;
       while (k < 1) { k = Math.min(1, (performance.now() - tf) / 90); window.__fire("pointermove", x, y + 84 - 140 * k, "touch", 41); await wait(8); }
       window.__fire("pointerup", x, y - 56, "touch", 41);
-      await wait(300);
+      await wait(300); await window.__frames(2);
       Object.assign(out.pump, { end: at(), casts: G.casts - casts, left: G.castsLeft });
       FISH.startMode("free");
       return out;
@@ -455,7 +479,7 @@ function helpers() {
       await wait(200);
       window.__fire("pointerup", 200, 600, "touch", 7);
       const tu = performance.now();
-      while (G.step !== "ready" && performance.now() - tu < 4000) await wait(10);
+      while (G.step !== "ready" && performance.now() - tu < 60000) await wait(10);
       await wait(100);
       out.after = G.step; out.toasts = window.__toasts.slice(n0);
       return out;
@@ -470,7 +494,7 @@ function helpers() {
       while (performance.now() - t0 < 900) await wait(1);
       const on = window.__fire("pointerdown", x, y, "touch", 8);
       const out = { on: !!on.closest("#crankBox"), at: G.phase + "/" + G.step, bail: G.bail, pin: !!G.pin };
-      await wait(300);
+      await wait(300); await window.__frames(2);
       out.later = { step: G.step, bail: G.bail, pin: !!G.pin };
       window.__fire("pointerup", x, y, "touch", 8);
       return out;
