@@ -102,5 +102,20 @@
     "durationSeconds": 3.916667,
     "derivation": "Scale, setpts=PTS/1.3, optical-flow interpolation (minterpolate fps=60, mci, aobmc, bidir, vsbmc). Browser-native playback rather than video-to-canvas copying. Original fal clips retained.",
     "bytes": 885435
+  },
+  "meshy_world": {
+    "source_manifest": "meshy-sources.json",
+    "provider": "Meshy7.1 via fal.ai",
+    "local_models": [
+      "models/meshy-raft.glb",
+      "models/meshy-bank.glb",
+      "models/meshy-palm.glb"
+    ],
+    "software_variants": [
+      "models/meshy-bank-lite.glb",
+      "models/meshy-palm-lite.glb"
+    ],
+    "runtime_generation_service_dependency": false,
+    "character": "approved photographic paddle cutout retained; no generated rigged character"
   }
 }
