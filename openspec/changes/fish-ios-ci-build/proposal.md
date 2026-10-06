@@ -13,3 +13,14 @@ The owner asked for an iPhone app of Reel It In. The Capacitor iOS project in `a
 
 - Changes to the game or to the native project.
 - App Store review submission. The owner submits from App Store Connect with the text in `apps/fish/store/`.
+
+## iPad and Mac
+
+The owner then asked that the app also work on iPad and macOS.
+
+- The iOS app targets iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`), portrait only, with `UIRequiresFullScreen` (an iPad app with fewer than four orientations needs it).
+- Macs with Apple silicon run the same app as "Designed for iPad" (`SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES`). Mac Catalyst is out of scope: the Capacitor plugins do not support it, and it would be a second app build.
+- On a Mac, `MainViewController` sets `window.__reelItInMac` before the page loads. `Native.touchScreen` is then false, so the game uses its computer controls (mouse and keys), turns off motion play, and Settings says "This Mac cannot buzz." The Mac web view can report touch points, so the flag is the only reliable signal.
+- The version goes to 1.1.0 (Android code 5, iOS build 5).
+- The bundle browser check opens the bundle as the iOS app on an iPad and on a Mac. CI opens the app on an iPad simulator and builds the device app that Macs run.
+- The store kit names the iPad 13" screenshot slot, and `qa/fish/store-shots.mjs` can make it (`SLOTS=ipad-13`).

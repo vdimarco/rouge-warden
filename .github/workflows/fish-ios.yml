@@ -1,6 +1,7 @@
 name: Reel It In iOS app
 # Builds the Capacitor app in apps/fish on a Mac runner, so nobody needs their own Mac.
-# On a pull request or a push to main it builds the app for the iOS Simulator, opens it there and takes a screenshot.
+# On a pull request or a push to main it builds the app for the iOS Simulator, opens it on an iPhone and an iPad there and
+# takes screenshots, and builds the device app that iPhones, iPads and Macs with Apple silicon run.
 # Run it by hand (Actions > this workflow > Run workflow) with "TestFlight" on to also sign the app and upload it
 # to App Store Connect. The upload needs four secrets; apps/fish/README.md says how to make them.
 on:
@@ -21,6 +22,10 @@ on:
         default: ''
 permissions:
   contents: read
+# bash with pipefail: an xcodebuild that fails before | tail fails the step
+defaults:
+  run:
+    shell: bash
 jobs:
   simulator:
     runs-on: macos-26
@@ -48,23 +53,35 @@ jobs:
             -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/dd" \
             CODE_SIGNING_ALLOWED=NO build | tail -40
           test -d "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app"
-      - name: Open the app in the Simulator and take a screenshot
+      - name: Open the app on an iPhone and an iPad in the Simulator, and take screenshots
         run: |
-          UDID=$(xcrun simctl list devices available -j | node -e '
-            const d = JSON.parse(require("fs").readFileSync(0, "utf8")).devices;
-            const ios = Object.keys(d).filter((k) => k.includes("iOS")).sort().reverse();
-            for (const k of ios) { const p = d[k].find((x) => /^iPhone/.test(x.name)); if (p) { console.log(p.udid); break; } }')
-          test -n "$UDID"
-          xcrun simctl boot "$UDID"
-          xcrun simctl bootstatus "$UDID"
-          xcrun simctl install "$UDID" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app"
-          xcrun simctl launch "$UDID" systems.uptick.reelitin
-          sleep 20
-          # the app must still run after 20 s: a crash at start removes it from the list of running apps
-          xcrun simctl spawn "$UDID" launchctl list | grep -q 'systems.uptick.reelitin'
           mkdir -p "$RUNNER_TEMP/shots"
-          xcrun simctl io "$UDID" screenshot "$RUNNER_TEMP/shots/title.png"
+          for KIND in iPhone iPad; do
+            UDID=$(xcrun simctl list devices available -j | KIND=$KIND node -e '
+              const d = JSON.parse(require("fs").readFileSync(0, "utf8")).devices;
+              const ios = Object.keys(d).filter((k) => k.includes("iOS")).sort().reverse();
+              for (const k of ios) { const p = d[k].find((x) => x.name.startsWith(process.env.KIND + " ")); if (p) { console.log(p.udid); break; } }')
+            test -n "$UDID" || { echo "no $KIND simulator"; exit 1; }
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID"
+            xcrun simctl install "$UDID" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app"
+            xcrun simctl launch "$UDID" systems.uptick.reelitin
+            sleep 20
+            # the app must still run after 20 s: a crash at start removes it from the list of running apps
+            xcrun simctl spawn "$UDID" launchctl list | grep -q 'systems.uptick.reelitin' || { echo "the app stopped on the $KIND"; exit 1; }
+            xcrun simctl io "$UDID" screenshot "$RUNNER_TEMP/shots/$(echo $KIND | tr A-Z a-z)-title.png"
+            xcrun simctl shutdown "$UDID"
+          done
           (cd "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator" && zip -qry "$RUNNER_TEMP/shots/ReelItIn-simulator.app.zip" App.app)
+      # a Mac with Apple silicon runs this same arm64 device build ("Designed for iPad"). Unsigned, it cannot launch here
+      - name: Build for iPhone, iPad and Mac devices, unsigned
+        working-directory: apps/fish/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-device" \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+          PLIST="$RUNNER_TEMP/dd-device/Build/Products/Release-iphoneos/App.app/Info.plist"
+          plutil -extract UIDeviceFamily json -o - "$PLIST" | tee /dev/stderr | grep -q '\[1,2\]'
       - uses: actions/upload-artifact@v4
         with:
           name: reelitin-ios-simulator

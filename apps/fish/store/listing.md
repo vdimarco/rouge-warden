@@ -80,8 +80,9 @@ The first release of Reel It In.
 | Copyright | `2026 <owner name>` |
 | Age rating | 4+ (Apple), Everyone and PEGI 3 (IARC). See `age-rating.md`. |
 | Contact email for review | Owner decision. |
-| Devices | iPhone only, iOS 16.4 or later (an iPad runs it in iPhone compatibility mode). Android 7.0 (API 24) or later, phones in portrait. |
-| Mac and Apple Vision Pro | Off. The Xcode project sets `SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO` and `SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO`, because the game needs motion sensors and a touch screen. Check the same boxes in App Store Connect. |
+| Devices | iPhone and iPad, iOS 16.4 or later, in portrait. Macs with Apple silicon, as "Designed for iPad". Android 7.0 (API 24) or later, phones in portrait. |
+| Mac | On. The Xcode project sets `SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES`. On a Mac the game plays with the mouse and the keys. In App Store Connect > Pricing and Availability, keep "Make this app available" on for Macs with Apple silicon. |
+| Apple Vision Pro | Off. The Xcode project sets `SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO`. Turn it off in App Store Connect too. |
 
 ## Graphics
 

@@ -4,7 +4,8 @@
 // Checks: the title shows, <html data-build="store">, no Switch game button, arcade link or arcade text (Switch game,
 // Back to the arcade, GET PLUNGER'D) is visible, no request leaves the origin, and no file is missing.
 // It also checks the native bridge (js/native.js loads, the splash hides, the back button has a listener) and the game
-// fonts. Each check fails the run when it does not hold.
+// fonts. Then it opens the bundle as the iOS app on an iPad and on a Mac (820x1180): the title fits, an iPad gets the
+// touch controls, and a Mac gets the mouse and keys with no motion play. Each check fails the run when it does not hold.
 //
 // Usage: NODE_PATH=qa/browser/node_modules node qa/fish/app-bundle.e2e.mjs   (SHOTS=dir saves a screenshot,
 // PORT=n serves the bundle on that port; the default is a free port). No other server is needed.
@@ -153,6 +154,54 @@ native("the splash screen hides once the title is ready", hides >= 1, `SplashScr
 native("the game listens for the Android back button", state.calls.some((c) => c.plugin === "App" && c.method === "addListener" && c.args[0] === "backButton"), "no App backButton listener");
 const fontServed = served.filter((s) => s.rel.startsWith("/fonts/") && s.status === 200).map((s) => s.rel);
 check("the game fonts load from fonts/", fontFiles.length > 0 && fontsAsked.includes("Alfa Slab One:loaded") && fontsAsked.includes("Nunito:loaded") && fontServed.length > 0, `fonts: ${fontsAsked.join(", ") || "none"}; served: ${fontServed.join(", ") || "none"}`);
+
+// 6. The same bundle in the iOS app on an iPad and on a Mac ("Designed for iPad"), at the iPad portrait size.
+// The Mac run reports touch points too, as the Mac web view can: only the flag that MainViewController sets on a Mac
+// (window.__reelItInMac) may turn on the computer controls.
+async function appleRun(name, { mac }) {
+  const c = await browser.newContext({ viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: !mac, hasTouch: true });
+  await c.route("**/*", (route) => (route.request().url().startsWith(ORIGIN + "/") ? route.continue() : route.abort("blockedbyclient")));
+  await c.addInitScript(fakeCapacitor, "ios");
+  if (mac) await c.addInitScript(() => { window.__reelItInMac = true; });
+  const p = await c.newPage();
+  const errs = [];
+  p.on("pageerror", (e) => errs.push("pageerror: " + e.message));
+  p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errs.push("console: " + m.text()); });
+  await p.goto(ORIGIN + "/");
+  let shown = true;
+  try { await p.waitForSelector("#title:not([hidden])", { timeout: 60000 }); } catch { shown = false; }
+  check(`${name}: the title shows`, shown, "the title did not show");
+  await p.waitForTimeout(1000);
+  if (SHOTS) await p.screenshot({ path: path.join(SHOTS, `app-bundle-${mac ? "mac" : "ipad"}-title.png`) });
+  const fit = await p.evaluate(() => {
+    const W = innerWidth, H = innerHeight, out = [];
+    for (const el of document.querySelectorAll("#title button, #title h1")) {
+      const r = el.getBoundingClientRect();
+      if (r.width && (r.left < -1 || r.top < -1 || r.right > W + 1 || r.bottom > H + 1)) out.push(el.id || el.textContent.trim().slice(0, 20));
+    }
+    return out;
+  });
+  check(`${name}: the title buttons are inside the screen`, fit.length === 0, fit.join(", "));
+  if (shown) { await p.click("#setBtn"); await p.waitForTimeout(300); }
+  const st = await p.evaluate(() => ({
+    tab: document.querySelector("#tabT")?.textContent || "",
+    inputOff: document.querySelector("#optInput")?.disabled,
+    buzz: document.querySelector("#hapticNote")?.textContent || "",
+    help: document.querySelector("#helpT")?.textContent || "",
+  }));
+  if (mac) {
+    check(`${name}: the help names the mouse`, st.tab === "Touch and mouse" && /mouse/i.test(st.help), `tab "${st.tab}"`);
+    check(`${name}: motion play is off`, st.inputOff === true, "the Controls list can pick Motion");
+    check(`${name}: Settings says a Mac cannot buzz`, st.buzz === "This Mac cannot buzz.", `"${st.buzz}"`);
+  } else {
+    check(`${name}: the help says Touch`, st.tab === "Touch", `tab "${st.tab}"`);
+    check(`${name}: the help has no mouse words`, !/mouse/i.test(st.help), "the touch help names the mouse");
+  }
+  check(`${name}: no script errors`, errs.length === 0, errs.slice(0, 3).join(" | "));
+  await c.close();
+}
+await appleRun("iPad", { mac: false });
+await appleRun("Mac", { mac: true });
 
 await browser.close();
 server.close();

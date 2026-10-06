@@ -2,7 +2,7 @@
 
 The shots to take, the sizes each store needs, and two ways to make them. Save them as PNG with no alpha (RGB) in `apps/fish/store/screenshots/<slot>/`, for example `store/screenshots/iphone-6.9/01-title.png`.
 
-The Android set is ready in `store/screenshots/android/`: the eight shots below at 1080 x 1920, made with `qa/fish/store-shots.mjs` (Way 1). The iPhone sets are not made yet.
+The Android set is ready in `store/screenshots/android/`: the eight shots below at 1080 x 1920, made with `qa/fish/store-shots.mjs` (Way 1). The iPhone and iPad sets are not in git yet. Make them with Way 1 before the first App Store upload.
 
 ## Sizes
 
@@ -10,6 +10,7 @@ The Android set is ready in `store/screenshots/android/`: the eight shots below 
 | --- | --- | --- | --- |
 | iPhone 6.9" | 1320 x 2868 | 440 x 956 | Yes. App Store Connect scales it down for the smaller iPhones. 1 to 10 shots. |
 | iPhone 6.5" | 1284 x 2778 | 428 x 926 | Only if there is no 6.9" set. Make it anyway, so both are ready. |
+| iPad 13" | 2064 x 2752 | 1032 x 1376 at 2x | Yes, now that the app runs on iPad. App Store Connect scales it down for the smaller iPads. 1 to 10 shots. The Mac uses the iPad set. |
 | Android phone | 1080 x 1920 | 360 x 640 | Yes. 2 to 8 shots. Give at least 4, each side 1080 px or more, so Play can feature the app. |
 
 Rules to keep:
@@ -41,7 +42,7 @@ In this order, for every slot:
 This is the quickest way, and it gives exact sizes. The game draws WebGL in software (SwiftShader) here, so it can lower its render scale. The `?shot` flag stops that: it sets Graphics High, draws the lake at up to 3x, and turns off the automatic render scale.
 
 1. From the repository root, serve `public/`, for example `python3 -m http.server 8765 --directory public`. On another port, set `FISH_URL`, for example `FISH_URL=http://127.0.0.1:8790/fish/`.
-2. Run `NODE_PATH=qa/browser/node_modules node qa/fish/store-shots.mjs`. It makes the eight shots of the table for the Android slot in `store/screenshots/android/`, as RGB PNGs at the exact size, and it checks each scene (for example, that the catch card has the TROPHY badge). `SLOTS=iphone-6.9,iphone-6.5` makes the iPhone sets, and `OUT=<dir>` writes them to another folder. It needs `npm ci` in `apps/fish` first, for `sharp`.
+2. Run `NODE_PATH=qa/browser/node_modules node qa/fish/store-shots.mjs`. It makes the eight shots of the table for the Android slot in `store/screenshots/android/`, as RGB PNGs at the exact size, and it checks each scene (for example, that the catch card has the TROPHY badge). `SLOTS=iphone-6.9,iphone-6.5,ipad-13` makes the iPhone and iPad sets, and `OUT=<dir>` writes them to another folder. It needs `npm ci` in `apps/fish` first, for `sharp`.
 3. Look at every picture. The script stages each scene with the game's QA hooks (`window.FISH`): a save with every place open and fish in the journal, a real motion cast with the virtual phone, and stand-ins for the strike, the fight and the catch. A change to the game can move a scene, so a check that passes is not enough.
 
 For another scene, `qa/fish/shots.mjs` saves every screen of the store build at the sizes in `SIZES` (for example `SHOTS=<dir> SCALE=3 SIZES=360x640`), and `store-shots.mjs` shows how to stage one. A picture from another tool may need flattening. Flatten it and check its size:

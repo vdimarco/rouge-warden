@@ -1,7 +1,8 @@
 // The store screenshots of Reel It In (apps/fish/store/screenshots.md): the eight scenes in the store build, staged with the
 // game's QA hooks, at the size each store slot needs. Each file is a PNG with no alpha (RGB) at the exact size.
 // Run (serve public/ first): NODE_PATH=qa/browser/node_modules node qa/fish/store-shots.mjs
-//   SLOTS=android,iphone-6.9   the slots to make (android 1080x1920, iphone-6.9 1320x2868, iphone-6.5 1284x2778; default android)
+//   SLOTS=android,iphone-6.9   the slots to make (android 1080x1920, iphone-6.9 1320x2868, iphone-6.5 1284x2778,
+//                              ipad-13 2064x2752; default android)
 //   OUT=<dir>                  the folder (default apps/fish/store/screenshots); each slot gets its own folder in it
 // It prints what it checked in each scene and exits with code 1 when a scene is not as the list says. Look at the pictures too.
 import { createRequire } from "module";
@@ -14,8 +15,9 @@ const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const sharp = createRequire(path.join(ROOT, "apps/fish/package.json"))("sharp");
-const SIZES = { android: [360, 640], "iphone-6.9": [440, 956], "iphone-6.5": [428, 926] };
-const SCALE = 3, BG = "#0d2f38";
+// the CSS viewport and the pixel scale of each slot: phones at 3x, the iPad at 2x like a real one
+const SIZES = { android: [360, 640, 3], "iphone-6.9": [440, 956, 3], "iphone-6.5": [428, 926, 3], "ipad-13": [1032, 1376, 2] };
+const BG = "#0d2f38";
 const OUT = path.resolve(process.env.OUT || path.join(ROOT, "apps/fish/store/screenshots"));
 const SLOTS = (process.env.SLOTS || "android").split(",").map((s) => s.trim());
 for (const s of SLOTS) if (!SIZES[s]) { console.error("Unknown slot " + s + ". Use " + Object.keys(SIZES).join(", ")); process.exit(2); }
@@ -38,7 +40,7 @@ const fails = [];
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); return ok; };
 
 async function runSlot(slot) {
-  const [W, H] = SIZES[slot], dir = path.join(OUT, slot);
+  const [W, H, SCALE] = SIZES[slot], dir = path.join(OUT, slot);
   fs.mkdirSync(dir, { recursive: true });
   console.log(`${slot}: ${W * SCALE}x${H * SCALE}`);
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"] });
