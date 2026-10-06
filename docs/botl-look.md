@@ -23,7 +23,7 @@ The resolution ladder in `main.js` can go above the base ratio when the frame ti
 
 ## Watercolour wash (`post.js`, `uWash`)
 
-The default Paint setting copies the look of [Susurrus](https://susurrus.vercel.app/): a cream-and-sepia watercolour.
+The Watercolor Paint setting (off by default) copies the look of [Susurrus](https://susurrus.vercel.app/): a cream-and-sepia watercolour.
 `uWash` is 1 for Watercolor and 0 for Bright. The Paint button in the pause menu sets it. `?paint=bright` sets it for one visit.
 
 - The brush reads the scene 1 to 2 pixels off, along slow noise. Edges wobble like bled paint.

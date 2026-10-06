@@ -2,7 +2,7 @@
 
 The user asked to apply the style of [Susurrus](https://susurrus.vercel.app/) to Breath of the Lake. Susurrus is a cream-and-sepia watercolour world. Its single post pass uses a Kuwahara brush, wet edges, paper grain, and a ragged vignette.
 
-Breath of the Lake already has a Kuwahara brush, ink lines and faint grain in `public/wild/js/post.js`. This change adds the rest of the watercolour stages to that pass and makes the result the default look. The old bright look stays available from the pause menu.
+Breath of the Lake already has a Kuwahara brush, ink lines and faint grain in `public/wild/js/post.js`. This change adds the rest of the watercolour stages to that pass, as an option in the pause menu. It shipped as the default first. The user found it grey and worse than the bright look, so Bright is the default again.
 
 ## Scope
 

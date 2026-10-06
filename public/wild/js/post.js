@@ -25,7 +25,7 @@ export class Painter {
       tColor: { value: null }, tDepth: { value: null }, tGlow: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
       uNear: { value: 0.3 }, uFar: { value: 5000 }, uRadius: { value: quality.radius }, uFarR: { value: quality.farR || 0 }, uHaze: { value: new THREE.Color(0.6, 0.75, 0.9) }, uGlow: { value: quality.glow },
       uTime: { value: 0 }, uSun: { value: new THREE.Vector2(-9, -9) }, uSunVis: { value: 0 }, uSunCol: { value: new THREE.Color(1, 0.92, 0.75) },
-      uNight: { value: 0 }, uMood: { value: 0 }, uPunch: { value: 0 }, uWash: { value: 1 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
+      uNight: { value: 0 }, uMood: { value: 0 }, uPunch: { value: 0 }, uWash: { value: 0 }, uInk: { value: new THREE.Color(0.2, 0.15, 0.12) },
     };
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
       uniforms: this.uniforms, depthTest: false, depthWrite: false,
