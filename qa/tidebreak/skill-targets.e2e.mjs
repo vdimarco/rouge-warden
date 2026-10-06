@@ -49,7 +49,7 @@ const MEASURE = clearList => {
   const badges = [...document.querySelectorAll('.ability-upgrade')].filter(shown).map(b => { const r = box(b), disc = { x: r.x + r.w / 2, y: r.y + r.h / 2, r: Math.min(r.w, r.h) / 2 }; return { slot: +b.dataset.upgrade, disc, share: share(disc, el => el === b) }; });
   const clear = Object.fromEntries(clearList.flatMap(s => [...document.querySelectorAll(s)].filter(shown).map((el, i) => [i ? `${s} ${i + 1}` : s, box(el)])));
   const chat = [...document.querySelectorAll('#team-chat li')].filter(shown).map(box);
-  const extra = Object.fromEntries(['#map-button', '#objective-clock'].map(s => document.querySelector(s)).filter(shown).map(el => ['#' + el.id, box(el)]));
+  const extra = Object.fromEntries(['#map-button', '#objective-clock', '#objective', '#joystick'].map(s => document.querySelector(s)).filter(shown).map(el => ['#' + el.id, box(el)]));
   return { skills, badges, clear, chat, extra, view: { w: innerWidth, h: innerHeight } };
 };
 
@@ -104,6 +104,8 @@ try {
       for (const [sel, r] of Object.entries(m.clear)) check(!parts.some(p => overlap(p, r)), `${at}: the skill cluster overlaps ${sel}`);
       // The point button covers neither the minimap nor the objective timers.
       for (const sel of ['#map-button', '#objective-clock']) if (m.clear['#skill-points'] && m.extra[sel]) check(!overlap(m.clear['#skill-points'], m.extra[sel]), `${at}: the point button overlaps ${sel}`);
+      // The objective text ends above the movement pad.
+      if (m.extra['#objective'] && m.extra['#joystick']) check(!overlap(m.extra['#objective'], m.extra['#joystick']), `${at}: the objective text overlaps the movement pad`);
       // Chat lines fade after a few seconds and take no presses, so an overlap with them is a note, not a failure.
       if (m.chat.some(c => m.clear['#skill-points'] && overlap(c, m.clear['#skill-points']))) console.log(`note ${at}: the point button touches a team chat line`);
       check(parts.every(p => p.x >= 0 && p.y >= 0 && p.x + p.w <= m.view.w && p.y + p.h <= m.view.h), `${at}: the skill cluster leaves the screen`);
