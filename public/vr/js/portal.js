@@ -1220,6 +1220,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     fx.decal.visible = t > 0;
     if (s.crackOn || s.overflowOn) s.dripT += toiletMode() ? dt * 4 : dt; // the toilet spills fast
     m.drip.uniforms.uT.value = s.dripT;
+    if (fx.drips) fx.drips.visible = !toiletMode(); // the strands run from the crack, which the toilet intro has not got
     m.puddle.uniforms.uT.value = s.dripT;
     m.puddle.uniforms.uSize.value = sstep(2.2, 13, s.dripT) * 0.92 + (s.dripT > 13 ? 0.08 : 0);
     fx.puddle.visible = s.dripT > 2.2;
