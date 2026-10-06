@@ -14,7 +14,7 @@ import { groundTextures, macroTexture, glowTexture, sparkAtlas, softAtlas } from
 import { Sky, installGrade } from './render3d/sky.js';
 import { Terrain } from './render3d/terrain.js';
 import { Props } from './render3d/props.js';
-import { Units, TEAM3D, NEUTRAL, PLAYER, TOWER_HEIGHT, OUTLINE } from './render3d/units.js';
+import { Units, TEAM3D, NEUTRAL, PLAYER, TOWER_HEIGHT, OUTLINE, HERO_HEIGHT } from './render3d/units.js';
 import { Effects } from './render3d/effects.js';
 import { fow, seeUniforms, SEE_POINTS } from './render3d/materials.js';
 import { foliageUniforms } from './render3d/foliage.js';
@@ -26,6 +26,8 @@ export { preload };
 
 const { clamp, distance, visibleTo, concealed } = world;
 const TAU = Math.PI * 2, PITCH = THREE.MathUtils.degToRad(55), FOV = 34, HERO_ROW = .6;
+// The hero select camera: low, a narrower lens, a slow sway of SHOW_SWAY radians to each side of the hero's front.
+const SHOW_PITCH = THREE.MathUtils.degToRad(15), SHOW_FOV = 30, SHOW_SWAY = .3;
 const SPELL = ['#c7b8ef', '#8fd8c8', '#f0c890', '#ef9a8a', '#b9a0e6', '#a6d4f0', '#f2b98a', '#c6d49a', '#c9c0f2', '#f3c27a', '#9fd6aa', '#acd8bb'];
 const v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const identityColor = e => HERO_IDENTITIES[e?.identity]?.color;
@@ -81,7 +83,8 @@ export class ThreeRenderer {
     this.dpr = backingRatio(this.width, this.height, devicePixelRatio, this.quality);
     this.gl.setPixelRatio(this.dpr); this.gl.setSize(this.width, this.height, false);
     this.overlay.width = Math.round(this.width * this.dpr); this.overlay.height = Math.round(this.height * this.dpr); this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    const aspect = this.width / Math.max(1, this.height); this.camera.aspect = aspect; this.camera.updateProjectionMatrix();
+    // The footprint below is the gameplay camera's, so the hero select lens comes off first (it returns on its next frame).
+    const aspect = this.width / Math.max(1, this.height); this.camera.aspect = aspect; this.gameLens();
     // Landscape screens see about 1900 units of ground from top to bottom, like the 2D view; a narrow screen pulls the
     // camera back so it still sees at least about 1250 units across.
     this.distance = Math.max(2350, 2050 / aspect);
@@ -116,6 +119,7 @@ export class ThreeRenderer {
   lookAt(x, y) { this.freeCam = { x, y }; this.cam = { x, y }; }
   setLook(n) { this.look = clamp(n, -1, 1); }
   recenter() { this.freeCam = null; }
+  // menu: true for a plain menu view, or { stage } for the hero select arena (showcaseCamera).
   draw(s, dt, menu = false, aim = null, waypoint = null) {
     if (this.lost) return;
     const p = player(s); this.setScene(s); this.lastPoses = []; this.menuTime += dt; const time = menu ? this.menuTime : s.time;
@@ -123,7 +127,7 @@ export class ThreeRenderer {
     if (!menu) this.heroScreen = this.project(p.x, p.y);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
     this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
-    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, rect = { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
+    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, rect = this.showcase || { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
     this.props.update(dt, time, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
     foliageUniforms.uSunView.value.copy(sd).transformDirection(this.camera.matrixWorldInverse); foliageUniforms.uSunColor.value.copy(this.sky.sun.color).multiplyScalar(this.sky.sun.intensity * .25);
     this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
@@ -131,23 +135,49 @@ export class ThreeRenderer {
     const inView = e => e.x > rect.x0 - 450 && e.x < rect.x1 + 250 && e.y > rect.y0 - 250 && e.y < rect.y1 + 450;
     this.units.frozen = !menu && !this.reducedMotion && this.feel?.hitstop > 0 ? this.feel.frozen : null;
     this.units.sync(s, time, dt, e => inView(e) && (menu || this.visible.has(e.id)), this.cam);
-    for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') v.concealed = v.unit.team === 0 && concealed(s, v.unit);
+    // The hero select shows the hero as a portrait: no gameplay outline and no ring.
+    for (const v of this.units.views.values()) if (v.unit?.kind === 'hero') { v.concealed = v.unit.team === 0 && concealed(s, v.unit); if (this.showcase && v.outline) v.outline.visible = false; }
     this.lastPoses = this.units.poses;
     this.seeThrough(s, p, menu);
     this.drawWorldEffects(s, p, time, dt, menu, aim, waypoint);
     this.updateFog(s, menu);
-    const view = this.camTarget, radius = Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55);
-    this.sky.fitShadow(v3.set(view.x, 0, view.y + (this.foot.minY + this.foot.maxY) / 2), radius, this.shadowSize);
+    const view = this.camTarget, show = this.showcase, radius = show ? show.radius : Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55);
+    this.sky.fitShadow(show ? v3.set(show.cx, 0, show.cy) : v3.set(view.x, 0, view.y + (this.foot.minY + this.foot.maxY) / 2), radius, this.shadowSize);
     this.gl.toneMappingExposure = this.sky.exposure;
     if (!this.compiled) { this.gl.compile(this.scene, this.camera); this.compiled = true; }
     this.gl.render(this.scene, this.camera);
     this.drawCalls = this.gl.info.render.calls; this.triangles = this.gl.info.render.triangles;
     this.drawOverlay(s, p, time, menu);
-    if (this.frames++ % 6 === 0) this.drawMap(s, this.mini, waypoint);
+    if (this.frames++ % 6 === 0 && !this.showcase) this.drawMap(s, this.mini, waypoint);
+  }
+  // The selected hero's model for the hero select: 'ready', 'loading' or 'failed'. Asking starts its parse.
+  heroStatus(identity) { const slug = HERO_IDENTITIES[identity]?.slug; return !slug || assets.failed.has(slug) ? 'failed' : heroModel(slug) ? 'ready' : 'loading'; }
+  // The gameplay lens. The hero select changes the field of view, the near plane and the lens shift.
+  gameLens() { const c = this.camera; c.fov = FOV; c.near = 150; c.clearViewOffset(); }
+  // The hero select arena: a low camera in front of the player's hero that sways slowly from side to side (it holds
+  // still with reduced motion). stage is the hero's box on screen from the menu layout: centre x, head y and feet y. The
+  // distance sets the hero's height (an idle hero stands at about .9 of the model), and a lens shift (view offset) puts
+  // the feet on stage.feet on every screen shape. The near plane cuts away anything in the nearer half of the way to
+  // the hero, so a tree beside the camera never fills the view.
+  showcaseCamera(p, stage, time) {
+    const c = this.camera, tall = this.units.views.get(p.id)?.height || HERO_HEIGHT * 1.1, half = Math.tan(THREE.MathUtils.degToRad(SHOW_FOV / 2));
+    const yaw = p.facing + (this.reducedMotion ? 0 : Math.sin(time * .12) * SHOW_SWAY), dist = tall * .9 * this.height / (2 * half * Math.max(60, stage.feet - stage.head)), look = tall * .55;
+    const fx = Math.cos(yaw), fz = Math.sin(yaw), ground = dist * Math.cos(SHOW_PITCH);
+    c.fov = SHOW_FOV; c.near = dist * .5; c.clearViewOffset(); c.position.set(p.x + fx * ground, look + dist * Math.sin(SHOW_PITCH), p.y + fz * ground); c.lookAt(p.x, look, p.y);
+    c.updateMatrixWorld(); c.matrixWorldInverse.copy(c.matrixWorld).invert();
+    const feet = this.project(p.x, p.y, 0); c.setViewOffset(this.width, this.height, feet.x - stage.x, feet.y - stage.feet, this.width, this.height);
+    // The ground in view for scenery and shadows: a wedge from the near plane to 3000 units behind the hero, wide enough
+    // for the lens shift.
+    const cx = c.position.x, cz = c.position.z, spread = half * this.width / this.height * 1.8, xs = [], zs = [];
+    for (const t of [dist * .5, dist + 3000]) for (const side of [-1, 1]) { xs.push(cx - fx * t - fz * t * spread * side); zs.push(cz - fz * t + fx * t * spread * side); }
+    this.showcase = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...zs), y1: Math.max(...zs), cx: p.x - fx * 900, cy: p.y - fz * 900, radius: 1900 };
+    this.cam = { x: p.x, y: p.y }; this.camTarget = this.cam; this.shake.x = this.shake.y = 0;
   }
   // The 2D renderer's camera rule, unchanged: follow the hero, lead toward the order, push toward the pointer within a
   // third of the screen, and keep the whole view inside the map.
   follow(s, p, dt, menu, time) {
+    if (menu?.stage) return this.showcaseCamera(p, menu.stage, time);
+    if (this.showcase) { this.showcase = null; this.gameLens(); }
     const focus = p.order?.type === 'attack' ? s.units.find(e => e.id === p.order.target) : p.order?.type === 'move' ? p.order : null;
     const dx = focus ? focus.x - p.x : 0, dy = focus ? focus.y - p.y : 0, length = Math.hypot(dx, dy) || 1, lead = Math.min(220, length * .16), damping = 1 - Math.exp(-dt * 8);
     if (this.freeCam && !menu) { const k = 1 - Math.exp(-dt * 14); this.cam.x += (this.freeCam.x - this.cam.x) * k; this.cam.y += (this.freeCam.y - this.cam.y) * k; }
@@ -209,7 +239,7 @@ export class ThreeRenderer {
     // Hero rings: teal allies, crimson enemies, gold for the player.
     for (const e of s.units) {
       if (e.hp <= 0 || !(menu || this.visible.has(e.id)) || !near(e.x, e.y)) continue;
-      if (e.kind === 'hero') d.circle(e.x, e.y, e.player ? 64 : 56, { color: e.player ? PLAYER : TEAM3D[e.team], alpha: e.player ? .75 : .55, line: e.player ? 5 : 4 });
+      if (e.kind === 'hero' && !this.showcase) d.circle(e.x, e.y, e.player ? 64 : 56, { color: e.player ? PLAYER : TEAM3D[e.team], alpha: e.player ? .75 : .55, line: e.player ? 5 : 4 });
       if (e.shield > 0) d.circle(e.x, e.y, 76, { color: '#c3e9ec', alpha: .7, line: 4 });
       if (e.kind === 'camp') d.circle(e.x, e.y, e.radius + 22, { color: e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', alpha: .45, line: 4, dash: 18 });
       if (e.kind === 'tower' && e.team !== p.team && !structureProtected(s, e) && distance(e, p) < e.range + 250) d.circle(e.x, e.y, e.range, { color: e.towerTarget === p.id ? '#ff8f75' : '#dcb075', alpha: .55, line: 5, dash: 40 });
@@ -364,7 +394,7 @@ export class ThreeRenderer {
     return { renderer: 'Mythic 3D', heroScreen: this.heroScreen, freeCam: !!this.freeCam, pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0,
       models: { world: Object.keys(assets.world).length, worldTotal: WORLD_MODELS.length, clips: assets.clips ? Object.keys(assets.clips).length : 0, heroes: assets.heroes.size, heroesTotal: HERO_IDENTITIES.length, failed: [...assets.failed] },
       drawCalls: this.drawCalls, triangles: this.triangles, shadowMap: this.shadowSize, grassTufts: this.props.grass.count, seeThrough: seeUniforms.uSeeAt.value.filter(v => v.w > 0).length, units: this.units.stats(), structures, scenerySeed: this.sceneSeed, sceneryCount: this.props.counts, crossings: this.terrain.bridges?.length || 0,
-      cameraPitch: 55, fov: FOV, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
+      cameraPitch: Math.round(THREE.MathUtils.radToDeg(this.showcase ? SHOW_PITCH : PITCH)), fov: this.camera.fov, showcase: !!this.showcase, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
   }
 }
 // Shared with the 2D renderer: the frame-rate rule, the minimap and tactical map, badges and result labels.
