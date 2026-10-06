@@ -76,3 +76,22 @@
 @media(max-height:340px) and (min-width:540px) and (max-width:599px){#objective{top:calc(52px + env(safe-area-inset-top))}#objective .realm-track{margin:3px 0}#objective-sub{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:10px;line-height:1.2}}
 /* From 600 px wide the rally button keeps clear of the health bar and the market button. */
 @media(max-height:400px) and (min-width:600px) and (max-width:699px){#rally{left:138px;width:54px}}
+/* Short landscape screens: the kill feed moves to the middle under the objective timers, clear of the minimap, the
+   point button and the skill cluster. */
+@media(max-height:520px) and (min-width:600px){#kill-feed{left:50%;right:auto;top:calc(84px + env(safe-area-inset-top));transform:translateX(-50%);align-items:center}}
+/* Small phones on their side under 600 px wide: the kill feed and the team chat show only their newest line, both in
+   the gap under the objective timers, so they cover neither the objective text, the skill cluster nor the top edge. */
+@media(max-height:400px) and (min-width:540px) and (max-width:599px){
+ #kill-feed{left:186px;right:auto;top:calc(84px + env(safe-area-inset-top));width:176px;align-items:center}
+ #kill-feed li:nth-last-child(n+2),#team-chat li:nth-last-child(n+2){display:none}
+ #team-chat{left:186px;top:calc(108px + env(safe-area-inset-top));bottom:auto;width:176px}
+ #team-chat li{font-size:10px}
+}
+/* Small landscape windows 401 to 520 px high: the market button reaches under the rally button, so the rally button
+   moves up above it. */
+@media(max-height:520px) and (min-height:401px) and (min-width:600px) and (max-width:699px){#rally{bottom:calc(55px + env(safe-area-inset-bottom))}}
+/* Small phones on their side from 600 px wide: the team chat shows its newest line only, so it ends above the
+   movement pad. */
+@media(max-height:400px) and (min-width:600px) and (max-width:699px){#team-chat li:nth-last-child(n+2){display:none}}
+/* Upright phones: the team chat ends before the point button, and the kill feed starts below the objective text. */
+@media(max-width:600px) and (min-height:521px){#team-chat{width:min(200px,calc(100vw - 184px))}#kill-feed{top:calc(156px + env(safe-area-inset-top))}}

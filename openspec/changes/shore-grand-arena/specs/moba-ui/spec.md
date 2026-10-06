@@ -47,6 +47,21 @@ lines and kill-feed names SHALL carry a small portrait of the hero who spoke or 
 - **THEN** the match clock turns crimson and counts down the last three minutes, and screens at least 700 px wide show a sudden death
   label under the score.
 
+### Requirement: Team chat and kill feed keep clear of the HUD
+The shown team chat lines and kill feed lines SHALL stay on the screen and SHALL NOT cover a skill, an upgrade badge, the point button, the minimap, the objective text, the objective timers, the difficulty label, the movement pad, the rally button, the market button or the team lineup. The rally button SHALL NOT cover the market button. qa/tidebreak/skill-targets.e2e.mjs fills both feeds with three lines and measures this at nine screen sizes.
+
+#### Scenario: Feeds on short landscape screens
+- **WHEN** the window is 600 px wide or more and up to 520 px high, for example 640x360, 844x390 or 600x500
+- **THEN** the kill feed shows in the middle under the objective timers, and up to 400 px high the team chat shows its newest line only
+
+#### Scenario: Feeds on small phones on their side
+- **WHEN** the window is 540 to 599 px wide and up to 400 px high, for example 568x320
+- **THEN** the kill feed and the team chat each show their newest line, one under the other, in the gap under the objective timers
+
+#### Scenario: Feeds on upright phones
+- **WHEN** the window is up to 600 px wide and more than 520 px high, for example 320x568 or 390x844
+- **THEN** the kill feed starts below the objective text, and the team chat ends before the point button
+
 ### Requirement: Skill buttons are easy to hit
 The skill cluster SHALL place Q, E and C on an arc around the ultimate R in the bottom-right corner. E and C, the buttons nearest the middle of the screen, SHALL be at least 80 px wide on desktop and at least 70 px wide in the phone layout (width up to 430 px, or height up to 520 px). Every point of each skill's visible disc SHALL activate that skill, and no other control SHALL cover it. Each "+" upgrade badge SHALL sit on the outer side of its skill, cover no skill disc, and be at least 34 px wide. In upgrade mode no second "+" mark SHALL show on a tile. A press in a gap of the cluster SHALL go to the skill with the nearest disc edge. The cluster SHALL NOT overlap the market bar, the inventory slots, the auto-status label, the minimap, the point button, the health bar, the movement pad or the rally button, and in the phone layout every skill centre SHALL be within 250 px of the bottom-right corner. Drag-to-aim, return-to-centre cancel and the Q/E/C/R keys SHALL work as before. qa/tidebreak/skill-targets.e2e.mjs measures this at nine screen sizes.
 
