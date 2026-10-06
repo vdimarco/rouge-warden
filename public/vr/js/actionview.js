@@ -1,4 +1,6 @@
-// In Full Swing: what the city action draws. The cars you can drive (one instanced mesh and its ink hull), the job markers (a
+// In Full Swing: what the city action draws. The cars you can drive (three models made with Higgsfield image-to-3D, see
+// models/cars/CREDITS.md, each an instanced mesh with its ink hull; a box-built car stands in until they load or if they fail),
+// the job markers (a
 // light beam and a ground ring per marker, coloured by job, and a gold beam over the running job's goal), and the balloon of the
 // balloon chase. The people of the jobs and the Sludge Gang are figures (streetview.js createFigures).
 import * as THREE from "three";
@@ -53,6 +55,49 @@ export function createActionView(scene, { cars, jobs }) {
   carMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cars.cars.length * 3), 3);
   root.add(carMesh);
   carMesh.add(outlineOf(carMesh, { width: 0.03 }));
+  // The models: front to -z (they come facing +z), scaled into the game's car (4.4 m long, 2 m wide at most), wheels on the ground.
+  // Each parked car keeps a model by its id. The paint tints the near-white body texture.
+  const MODELS = [{ src: "muscle", len: 4.5 }, { src: "hatchback", len: 4.0 }, { src: "van", len: 5.0 }];
+  const models = [];
+  (async () => {
+    try {
+      const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+      const loader = new GLTFLoader();
+      await Promise.all(MODELS.map(async (m, k) => {
+        const gltf = await loader.loadAsync("models/cars/" + m.src + ".glb");
+        let src = null;
+        gltf.scene.updateMatrixWorld(true);
+        gltf.scene.traverse((o) => { if (o.isMesh && !src) src = o; });
+        if (!src) throw new Error(m.src + ": no mesh");
+        const g = src.geometry.clone();
+        g.applyMatrix4(src.matrixWorld);
+        g.computeBoundingBox();
+        const b = g.boundingBox, len = b.max.z - b.min.z, wid = b.max.x - b.min.x;
+        const k2 = Math.min(m.len / len, (CAR.half.w * 2 + 0.2) / wid);
+        g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+        g.scale(k2, k2, k2);
+        g.rotateY(Math.PI);
+        if (!g.attributes.normal) g.computeVertexNormals();
+        const map = src.material.map || null;
+        if (map) { map.colorSpace = THREE.NoColorSpace; map.anisotropy = 4; }
+        const mat = toonify(new THREE.MeshLambertMaterial({ map, color: 0xffffff }), { dots: 0 });
+        const im = new THREE.InstancedMesh(g, mat, cars.cars.length);
+        im.name = "car-" + m.src; im.frustumCulled = false; im.count = 0;
+        im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cars.cars.length * 3), 3);
+        im.add(outlineOf(im, { width: 0.03 }));
+        root.add(im);
+        models[k] = im;
+      }));
+      modelsOk = true;
+      carMesh.visible = false;
+    } catch (e) {
+      console.info("the car models did not load, using the built-in cars:", e && e.message);
+      for (const im of models) if (im) { root.remove(im); im.geometry.dispose(); }
+      models.length = 0;
+    }
+  })();
+  let modelsOk = false;
+  const counts = [0, 0, 0];
 
   /* ---- markers: beams and rings ---- */
   const beamGeo = new THREE.CylinderGeometry(0.7, 0.7, 70, 10, 1, true);
@@ -101,18 +146,24 @@ export function createActionView(scene, { cars, jobs }) {
     root,
     update(dt, time, opts = {}) {
       beamMat.uniforms.uTime.value = time;
-      // cars
+      // cars: into their model's mesh (or the built-in box car)
       let n = 0;
+      counts[0] = counts[1] = counts[2] = 0;
       for (const c of cars.cars) {
         if (!c.on) continue;
         Q.setFromAxisAngle(UP, c.yaw);
         M.compose(Pv.set(c.x, c.y, c.z), Q, S1);
-        carMesh.setMatrixAt(n, M);
-        carMesh.instanceColor.setXYZ(n, c.paint[0], c.paint[1], c.paint[2]);
+        if (modelsOk) {
+          const k = c.id % models.length, im = models[k], i = counts[k]++;
+          im.setMatrixAt(i, M); im.instanceColor.setXYZ(i, c.paint[0], c.paint[1], c.paint[2]);
+        } else {
+          carMesh.setMatrixAt(n, M);
+          carMesh.instanceColor.setXYZ(n, c.paint[0], c.paint[1], c.paint[2]);
+        }
         n++;
       }
-      carMesh.count = n;
-      carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true;
+      if (modelsOk) for (let k = 0; k < models.length; k++) { const im = models[k]; im.count = counts[k]; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; }
+      else { carMesh.count = n; carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true; }
       // markers: the offers, or the running job's goal
       let m = 0;
       const put = (x, y, z, col) => {
@@ -135,7 +186,7 @@ export function createActionView(scene, { cars, jobs }) {
       if (b) { balloon.position.set(b.x, b.y, b.z); balloon.rotation.z = Math.sin(time * 1.7) * 0.15; }
     },
     setVisible(v) { root.visible = !!v; },
-    info: () => ({ cars: carMesh.count, markers: beams.count, balloon: balloon.visible }),
+    info: () => ({ cars: modelsOk ? counts.reduce((a, b) => a + b, 0) : carMesh.count, models: modelsOk ? MODELS.map((m) => m.src) : null, markers: beams.count, balloon: balloon.visible }),
   };
   return V;
 }

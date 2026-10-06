@@ -20,7 +20,7 @@ export const JOB = {
   catch: { fall: 7, fallMax: 22, reach: 2.8, delay: 1.5, reward: 30 },
   washer: { grip: 60, reach: 2.6, reward: 40 },
   pizza: { speed: 12, spare: 18, reach: 4.5, reward: 25, bonus: 15 },
-  balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, reward: 20 },
+  balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
   brawl: { time: 120, wave1: 4, wave2: 3, reward: 35 },
   sludge: { speed: 5.4, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
 };
@@ -179,7 +179,8 @@ export function createJobs({ city, combat, seed = 4711 }) {
     balloon(A) {
       const kid = person(KID, A.o.x, A.o.y, A.o.z, 14, { height: 0.62 });
       const a = r() * Math.PI * 2;
-      A.data = { kid, b: { x: A.o.x + 0.3, y: A.o.y + 1.4, z: A.o.z, vx: Math.cos(a) * JOB.balloon.drift, vz: Math.sin(a) * JOB.balloon.drift, held: false, color: [0.95, 0.15, 0.25] } };
+      A.data = { kid, b: { x: A.o.x + 0.3, y: A.o.y + 1.4, z: A.o.z, vx: Math.cos(a) * JOB.balloon.drift, vz: Math.sin(a) * JOB.balloon.drift, held: false, free: false, color: [0.95, 0.15, 0.25] } };
+      A.timer = JOB.balloon.slip;
       J.balloons = [A.data.b];
       A.reward = JOB.balloon.reward;
     },
@@ -290,9 +291,12 @@ export function createJobs({ city, combat, seed = 4711 }) {
     },
     balloon(A, dt, h) {
       const D = A.data, b = D.b, C = JOB.balloon;
-      if (!b.held) {
+      if (!b.free) {
+        // the kid still holds it for a moment, then it slips away
+        if ((A.timer -= dt) <= 0) { b.free = true; D.kid.pose = 14; emit({ type: "say", line: "Waaah! My balloon!" }); }
+      } else if (!b.held) {
         b.y += C.rise * dt; b.x += b.vx * dt; b.z += b.vz * dt;
-        if (near3(b, { x: h.x, y: h.y + 1.6, z: h.z }, C.reach)) { b.held = true; emit({ type: "caught", job: "balloon" }); }
+        if (b.y > A.o.y + C.clear && near3(b, { x: h.x, y: h.y + 1.6, z: h.z }, C.reach)) { b.held = true; emit({ type: "caught", job: "balloon" }); }
         else if (b.y > C.top) { end(false, "gone"); return; }
       } else {
         b.x = h.x; b.y = h.y + 2.6; b.z = h.z;
@@ -318,14 +322,14 @@ export function createJobs({ city, combat, seed = 4711 }) {
     const A = J.active, out = [];
     if (!A) return out;
     if (A.type === "catch" && A.data.falling && !A.data.caught) out.push({ id: "person", tag: "person", pos: A.data.p, radius: 1.4 });
-    if (A.type === "balloon" && !A.data.b.held) out.push({ id: "balloon", tag: "balloon", pos: A.data.b, radius: 1.4 });
+    if (A.type === "balloon" && A.data.b.free && !A.data.b.held) out.push({ id: "balloon", tag: "balloon", pos: A.data.b, radius: 1.4 });
     return out;
   };
   J.ropeCaught = function ropeCaught(id) {
     const A = J.active;
     if (!A) return false;
     if (id === "person" && A.type === "catch" && A.data.falling) { A.data.caught = true; emit({ type: "caught", job: "catch", rope: true }); return true; }
-    if (id === "balloon" && A.type === "balloon") { A.data.b.held = true; emit({ type: "caught", job: "balloon", rope: true }); return true; }
+    if (id === "balloon" && A.type === "balloon" && A.data.b.free) { A.data.b.held = true; emit({ type: "caught", job: "balloon", rope: true }); return true; }
     return false;
   };
   J.carrying = () => !!(J.active && J.active.data.caught && (J.active.type === "catch" || J.active.type === "washer"));

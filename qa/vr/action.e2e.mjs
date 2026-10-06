@@ -38,7 +38,7 @@ try {
     const walk = QA.hs();
     QA.key("ShiftLeft", true); QA.step(60);
     const run = QA.hs(), a1 = G.test.action();
-    QA.step(240);
+    QA.step(300);
     const a2 = G.test.action(), tired = QA.hs();
     QA.key("ShiftLeft", false); QA.key("KeyW", false); QA.step(300);
     const a3 = G.test.action();
