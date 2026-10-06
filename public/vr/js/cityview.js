@@ -175,6 +175,8 @@ ${COMMON_FS}
 varying vec4 vFog;
 uniform sampler2D uWin;
 uniform float uHaveWin;
+uniform sampler2D uRooms;
+uniform float uHaveRooms;
 uniform float uFinale;
 varying vec3 vW;
 varying vec3 vN;
@@ -493,6 +495,8 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     em = mix(em, e * inFloors, nearD);
   }
   float upper = street ? 0.0 : inFloors * step(y, top);
+  // a pixel's step in window metres, each screen axis (for the painted rooms' mip level)
+  vec2 pmX = vec2(gx.x / tw * sub, gx.y) * S, pmY = vec2(gy.x / tw * sub, gy.y) * S;
   #ifndef LOW
   // -- rooms behind the glass, up close (interior mapping). Each window looks into its own box of a room: the view ray
   // meets its back wall, a side wall, the floor or the ceiling, with a sofa, table or cabinet, the odd person or plant
@@ -578,6 +582,24 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float pool = 1.0 - smoothstep(1.9 - 0.08, 1.9 + 0.08, length(h - lamp));
     vec3 lightC = tcls < 0.5 ? mix(vec3(1.0), litPaint, 0.55) * 1.15 : tint * 0.85;
     vec3 litC = c * lightC * mix(1.0, 1.3, pool);
+    // With the painted rooms (art/rooms.webp, 8 x 4 rooms): one per window, on a plane 1.6 m in and half again the
+    // window's size, so it shifts against the frame as the view moves. It keeps its own painted light; the lamp colour
+    // only warms or cools it a little.
+    if (uHaveRooms > 0.5) {
+      float side2 = max(max(hm.x, hm.y) * 2.0, 1.2) * 1.5;
+      vec2 pp = o.xy + d.xy * (1.6 / d.z);
+      vec2 uvc = pp / side2 + 0.5;
+      float flipR = step(0.5, fract(r * 31.7));
+      uvc.x = mix(uvc.x, 1.0 - uvc.x, flipR);
+      uvc = clamp(uvc, 0.01, 0.99);
+      float ri = floor(fract(r * 113.1 + sd * 0.37) * 31.999);
+      vec2 cellR = vec2(mod(ri, 8.0), floor(ri / 8.0));
+      vec2 auv = vec2((cellR.x + uvc.x) / 8.0, 1.0 - (cellR.y + 1.0 - uvc.y) / 4.0);
+      vec2 gsc = vec2(mix(1.0, -1.0, flipR), 1.0) / (side2 * vec2(8.0, 4.0));
+      c = textureGrad(uRooms, auv, pmX * gsc, pmY * gsc).rgb;
+      // the first 16 rooms are painted at night, darker than the second 16: they get more light when lit
+      litC = c * mix(vec3(1.0), lightC, 0.3) * (ri < 16.0 ? 1.6 : 1.25);
+    }
     litC = mix(litC, litC * green * 1.4, vClog * 0.4) * finW;
     vec3 darkC = c * vec3(0.14, 0.16, 0.24);
     // curtains: drapes on both sides, some with a valance, gathered in folds
@@ -1856,7 +1878,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     uSky: { value: blankTex }, uHaveSky: { value: 0 },
     // the strip's sun sits at u = SKY_SUN_U: shift the azimuth so it lands on SUN_DIR
     uSkyU: { value: SKY_SUN_U - Math.atan2(-SUN_DIR.x, SUN_DIR.z) / (Math.PI * 2) },
-    uWin: { value: blankTex }, uHaveWin: { value: 0 },
+    uWin: { value: blankTex }, uHaveWin: { value: 0 }, uRooms: { value: blankTex }, uHaveRooms: { value: 0 },
     uInkS: { value: 1 },
     // fog (spec §9): it starts at PERF.fogNear and hides 90 % by PERF.fogFar at street level; thinner higher up
     uFog: { value: new THREE.Vector3(PERF.fogNear, Math.LN10 / (PERF.fogFar - PERF.fogNear), 110) },
@@ -1935,7 +1957,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     return m;
   }
   // low: window tiles fade to flat blocks sooner, and no dots or sky mirrors on the walls, for a slower GPU
-  const facadeMat = mat(FACADE_VS, FACADE_FS, { ...pick(...COMMON_U, "uClog", "uFinale"), uWin: U.uWin, uHaveWin: U.uHaveWin }, { defines: low ? { LOW: 1, DETAIL0: "0.14", DETAIL1: "0.34", NEAR0: "0.03", NEAR1: "0.06" } : { DETAIL0: "0.2", DETAIL1: "0.5", NEAR0: "0.05", NEAR1: "0.1" } });
+  const facadeMat = mat(FACADE_VS, FACADE_FS, { ...pick(...COMMON_U, "uClog", "uFinale"), uWin: U.uWin, uHaveWin: U.uHaveWin, uRooms: U.uRooms, uHaveRooms: U.uHaveRooms }, { defines: low ? { LOW: 1, DETAIL0: "0.14", DETAIL1: "0.34", NEAR0: "0.03", NEAR1: "0.06" } : { DETAIL0: "0.2", DETAIL1: "0.5", NEAR0: "0.05", NEAR1: "0.1" } });
   const landMat = mat(LANDMARK_VS, LANDMARK_FS, { ...pick(...COMMON_U, "uKing", "uFinale"),
     uNeedle: { value: new THREE.Vector4(N0.x, N0.z, N0.podY0, 0) }, uDome: { value: new THREE.Vector4(D0.x, D0.z, D0.r, X0.z) } });
   const landInk = mat(LANDMARK_HULL_VS, LANDMARK_HULL_FS, { ...pick(...COMMON_U), uInkK: inkK, uInkPx: { value: INK_PX }, uInkW: { value: 0 } }, { side: THREE.BackSide });
@@ -2863,7 +2885,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     perch,
     stats,
     // which art files arrived (art/sky.webp, art/windows.webp): the tests read this
-    art: { loaded: false, sky: false, windows: false },
+    art: { loaded: false, sky: false, windows: false, rooms: false },
     // Builds a few units per call within the time budget and a hard count (the clock can stand still in tests).
     build(budgetMs = 6) {
       if (next >= units.length) return true;
@@ -2973,6 +2995,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   loadArt(renderer).then((art) => {
     if (art.sky) { U.uSky.value = art.sky; U.uHaveSky.value = 1; readSky(art.sky.image); V.art.sky = true; }
     if (art.windows) { U.uWin.value = art.windows; U.uHaveWin.value = 1; V.art.windows = true; }
+    if (art.rooms) { U.uRooms.value = art.rooms; U.uHaveRooms.value = 1; V.art.rooms = true; }
     V.art.loaded = true;
   }).catch((e) => { console.warn("cityview art:", e && e.message); V.art.loaded = true; });
 

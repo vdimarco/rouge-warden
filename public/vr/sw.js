@@ -30,6 +30,7 @@ const PRECACHE = [
   "./art/keyart.webp",
   "./art/sky.webp",
   "./art/windows.webp",
+  "./art/rooms.webp",
   "./art/words.webp",
   "./art/words.json",
   "./art/cutscene/city.webp",
