@@ -2,7 +2,7 @@
 // room (VR), sludge drips, a jagged hole opens onto the city at sunset, you plunge the crack and pull,
 // the wall bursts, and a sphere of city sweeps out round you until you stand on the start roof.
 // On a flat screen the cottage's toilet is the trouble instead: it rattles, the lid flies open and sludge spills over, you
-// plunge the toilet and pull, it flushes with a swirl and takes you with it, and you splash out on the start roof.
+// plunge the toilet and pull, it erupts, and the blast throws you out over the city into the lake.
 // The city shows only through stencil masks: the hole, then the growing sphere. Everything that belongs to the room
 // draws only where the mask is not set, so the room is replaced by the city and never fights it in the depth buffer.
 // It is all drawn like the key art: thick ink cracks with dots, flat colour in three bands, ink outlines round the shards.
@@ -22,7 +22,7 @@ const rng = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) 
 /* ---------------- the sequence, in seconds ---------------- */
 const T = {
   gurgleMin: 3.2, // the gurgle before the crack shows
-  toilet: { gurgle: 1.0, overflow: 1.4, flush: 1.2, fade: 0.35 }, // the flat screen's toilet: rattle, spill, then the flush
+  toilet: { gurgle: 1.0, overflow: 1.4, erupt: 1.3, fade: 0.35 }, // the flat screen's toilet: rattle, spill, then it erupts
   gazeMax: 10, // wait this long for you to face a wall that is off to the side
   crack: 4.6, // the crack grows
   hole: 1.4, // the hole opens
@@ -792,11 +792,14 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const ooze = new THREE.Mesh(new THREE.CircleGeometry(0.17, 20), sludgeM); ooze.rotation.x = -Math.PI / 2; ooze.scale.set(1, 1.32, 1); ooze.position.set(0, 0.452, 0.12);
     const glow = new THREE.Mesh(new THREE.CircleGeometry(0.3, 20), basic("glow", { color: 0x9cff3a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
     glow.rotation.x = -Math.PI / 2; glow.scale.set(1, 1.32, 1); glow.position.set(0, 0.5, 0.12); glow.renderOrder = 6;
-    T.add(bowl, seat, lidPivot, tank, tankTop, handle, knob, ooze, glow);
+    // the eruption: a column of sludge out of the bowl (an open tube, scaled up when it blows)
+    const geyser = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 1, 16, 1, true), sludgeM);
+    geyser.position.set(0, 0.45, 0.12); geyser.scale.set(1, 0.001, 1.25); geyser.visible = false;
+    T.add(bowl, seat, lidPivot, tank, tankTop, handle, knob, ooze, glow, geyser);
     // an ink outline round each solid part of the toilet and the lamp shade (they draw only where the mask is not set, too)
     for (const m of [bowl, seat, lid, tank, tankTop, handle, knob, shadeM]) { const h = outlineOf(m, { width: 0.007, px: 2 }); roomStencil(h.material); m.add(h); }
     g.add(T);
-    fx.room = { g, toilet: T, lid: lidPivot, glow, ooze, fl };
+    fx.room = { g, toilet: T, lid: lidPivot, glow, ooze, geyser, fl };
     wallG.add(g);
     // the light in the room comes from the window: from −x, above
     fx.lightLocal = new THREE.Vector3(-0.7, 0.6, 0.35).normalize();
@@ -1062,7 +1065,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
       audio.sfx("gurgle", { pos: crackWorld, vol: 1.4 });
       haptic("left", 0.3, 60); haptic("right", 0.3, 60);
     },
-    flush() { s.flushT = 0; },
+    erupt() { s.eruptT = 0; s.fading = false; },
     room() { say(5); s.roomT = 0; },
     burst() { /* startBurst does the work */ },
   };
@@ -1088,21 +1091,24 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     if (view.setKing) view.setKing(1);
     go("burst");
   }
-  // The flat screen's toilet flushes: the ropes let go, the sludge swirls down the bowl, the screen fades and you are on the roof.
-  function startFlush() {
+  // The flat screen's toilet erupts: the ropes let go, a column of sludge blasts out of the bowl to the ceiling with a flash,
+  // the screen fades, and the blast throws you out over the city into the lake (main.js lakeDrop, on Pt.launch).
+  function startErupt() {
     releaseRopes();
     ropes.removeTarget("crack");
     if (gl.gurgle) { try { gl.gurgle.stop(); } catch (e) { /* audio off */ } gl.gurgle = null; }
-    audio.sfx("flush", { pos: crackWorld, vol: 1.4 });
-    haptic("left", 0.8, 160); haptic("right", 0.8, 160);
+    audio.sfx("burst", { pos: crackWorld, vol: 1.4 });
+    audio.sfx("flush", { pos: crackWorld, vol: 1.2, pitch: 0.7 });
+    haptic("left", 1, 220); haptic("right", 1, 220);
     arrow.goal = null;
-    go("flush");
+    s.flash = 0.8;
+    if (ui.say) ui.say("KABLOOSH!", 1.2);
+    go("erupt");
   }
-  function finishFlush() {
+  function finishErupt() {
+    Pt.launch = true;
     finishReveal();
-    audio.sfx("splash", { vol: 1.2 });
-    if (ui.say) ui.say("SPLOOSH! Port Loon. Go get him.", 2.5);
-    if (ui.fade) ui.fade(0, 0.5, "black");
+    if (ui.fade) ui.fade(0, 0.4, "black");
   }
   // The end of the reveal: the stencil comes off, the room things go, the chalk outline of your room stays, and play starts.
   function finishReveal() {
@@ -1239,17 +1245,22 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
       toiletT += dt;
       const R = fx.room;
       if (toiletMode()) {
-        // rattle, then the lid flies back and the sludge rises over the rim; at the flush it swirls and drains
+        // rattle, then the lid flies back and the sludge rises over the rim; then the column of the eruption
         const rattle = phase === "gurgle" ? 0.3 + sstep(0, T.toilet.gurgle, pt) * 0.7 : 0;
         const open = s.overflowOn ? (phase === "overflow" ? easeOut(Math.min(1, pt / 0.22)) : 1) : 0;
-        const fl = phase === "flush" ? clamp(s.flushT / (T.toilet.flush - 0.1), 0, 1) : 0;
+        const fl = phase === "erupt" ? clamp(s.eruptT / (T.toilet.erupt - 0.1), 0, 1) : 0;
         R.lid.rotation.x = -open * 1.95 - rattle * (0.07 * Math.abs(Math.sin(toiletT * 21)) + 0.05 * Math.abs(Math.sin(toiletT * 13.7)));
         const rise = s.overflowOn ? (phase === "overflow" ? sstep(0, T.toilet.overflow, pt) : 1) * (1 - fl) : 0;
         R.ooze.position.y = 0.452 + 0.04 * rise;
-        R.ooze.scale.set(1 + 0.22 * rise - 0.8 * fl, 1.32 * (1 + 0.22 * rise - 0.8 * fl), 1);
-        R.ooze.rotation.z += dt * (2 + 26 * fl * fl);
-        R.glow.material.opacity = Math.max(rattle * 0.3, rise * (0.4 + 0.2 * Math.sin(toiletT * 9))) + fl * 0.6 * (1 - fl);
-        R.toilet.position.x = rattle * 0.012 * Math.sin(toiletT * 37);
+        R.ooze.scale.set(1 + 0.22 * rise, 1.32 * (1 + 0.22 * rise), 1);
+        R.ooze.rotation.z += dt * 2;
+        R.glow.material.opacity = Math.max(rattle * 0.3, rise * (0.4 + 0.2 * Math.sin(toiletT * 9))) + fl * 0.8;
+        // the eruption: the column shoots to the ceiling in a fifth of a second and bulges as it pumps; the toilet bucks
+        const gh = fl > 0 ? easeOut(Math.min(1, fl * 5)) * 2.2 : 0;
+        R.geyser.visible = gh > 0.01;
+        R.geyser.scale.set(1 + 0.25 * Math.sin(toiletT * 31) * fl, Math.max(0.001, gh), 1.25 * (1 + 0.25 * Math.cos(toiletT * 27) * fl));
+        R.geyser.position.y = 0.45 + gh / 2;
+        R.toilet.position.x = rattle * 0.012 * Math.sin(toiletT * 37) + fl * 0.02 * Math.sin(toiletT * 53);
       } else {
         const g = phase === "gurgle" ? sstep(0, 2.5, pt) * 0.6 : s.crackOn ? 0.6 + 0.4 * (phase === "crack" ? t : 1) : 0;
         R.lid.rotation.x = -g * (0.05 * Math.abs(Math.sin(toiletT * 21)) + 0.035 * Math.abs(Math.sin(toiletT * 13.7)));
@@ -1280,7 +1291,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const hl = input.head.local.pos;
     headFwd(input.head.local.quat, V4);
     const yawNow = yawOf(V4.x, V4.z);
-    if (skipReq) { if (phase === "burst" || phase === "reveal") finishReveal(); else if (phase === "flush") finishFlush(); else finishSkip(); return; }
+    if (skipReq) { if (phase === "burst" || phase === "reveal") finishReveal(); else if (phase === "erupt") finishErupt(); else finishSkip(); return; }
     // the Skip button: always on later runs, on the first run after 30 s
     const allowed = !firstRun || total >= INTRO.skipAfter;
     if (allowed !== s.skipOn) { s.skipOn = allowed; if (ui.setSkip) ui.setSkip(allowed ? Pt.skip : null); }
@@ -1326,11 +1337,17 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
         if (pt >= T.toilet.overflow) { ropes.addTarget(target); go("shoot"); }
         break;
       }
-      case "flush": {
-        s.flushT += dt;
+      case "erupt": {
+        s.eruptT += dt;
         const ready = view.startReady !== false;
-        if (!s.fading && s.flushT >= T.toilet.flush - T.toilet.fade && ui.fade) { s.fading = true; ui.fade(1, T.toilet.fade, "black"); }
-        if (s.flushT >= T.toilet.flush && ready) { finishFlush(); return; }
+        // sludge spray from the top of the column
+        if (fx.room && Math.random() < dt * 40) {
+          V1.set(0, 0.45 + 2.2 * Math.min(1, s.eruptT * 5), 0.62).applyMatrix4(fx.room.toilet.matrixWorld);
+          const rd = Math.random;
+          puff(V1.x, V1.y, V1.z, (rd() - 0.5) * 3, -0.5 - rd(), (rd() - 0.5) * 3, 0.8 + rd() * 0.5, 0.15, 0.5 + rd() * 0.4, 0.6);
+        }
+        if (!s.fading && s.eruptT >= T.toilet.erupt - T.toilet.fade && ui.fade) { s.fading = true; ui.fade(1, T.toilet.fade, "black"); }
+        if (s.eruptT >= T.toilet.erupt && ready) { finishErupt(); return; }
         break;
       }
       case "crack": {
@@ -1399,7 +1416,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   // The yank is enough: in mixed reality a tight room asks you to step back first.
   function pumped() {
     if (phase !== "yank") return;
-    if (toiletMode()) { startFlush(); return; }
+    if (toiletMode()) { startErupt(); return; }
     if (mode === "ar" && inp && roomScan(inp.head.local.pos.y)) {
       const hl = inp.head.local.pos;
       if (clearance(hl.x, hl.z) < 1.0) { s.best = openPoint(hl.x, hl.z); go("room"); return; }
@@ -1421,13 +1438,14 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
 
   /* ---------------- API ---------------- */
   const Pt = {
-    active: false, phase: "idle",
+    active: false, phase: "idle", launch: false, // launch: the toilet erupted, and play starts with the fall into the lake
     begin(m, first) {
+      Pt.launch = false;
       hideRoom(); buildFx();
       if (ui.setSkip) ui.setSkip(null);
       mode = m === "ar" || m === "desktop" ? m : "vr"; firstRun = !!first;
       skipReq = false; placed = false; total = 0; pt = 0; resetSeen = false; last.ok = false;
-      Object.assign(s, { defer: 0, hid: false, roomClear: 0, best: null, parked: 0, burstT: 0, slow: 1, stance: "none", waitPlanes: 0, gaze: 0, said: -1, sayT: 0, widened: false, auto: false, easy: false, warmed: false, hole: 0, dripT: 0, surge: -1, room: null, roomT: 0, r: 0, flash: 0, stirAt: 0, kingT: -1, chalkT: -1, crackOn: false, holeOn: false, grow: 0, yankT: 0, skipOn: false, revealSpeed: INTRO.revealSpeed, overflowOn: false, flushT: 0, fading: false });
+      Object.assign(s, { defer: 0, hid: false, roomClear: 0, best: null, parked: 0, burstT: 0, slow: 1, stance: "none", waitPlanes: 0, gaze: 0, said: -1, sayT: 0, widened: false, auto: false, easy: false, warmed: false, hole: 0, dripT: 0, surge: -1, room: null, roomT: 0, r: 0, flash: 0, stirAt: 0, kingT: -1, chalkT: -1, crackOn: false, holeOn: false, grow: 0, yankT: 0, skipOn: false, revealSpeed: INTRO.revealSpeed, overflowOn: false, eruptT: 0, fading: false });
       arrow.goal = null; arrow.t = 0; dustN = 0; toiletT = 0; dropT = 0; dropI = 0; rippleN = 0;
       if (MC["room:glow"]) MC["room:glow"].opacity = 0;
       if (MC.puddle) { const u = MC.puddle.uniforms; u.uSize.value = 0; u.uT.value = 0; for (const r of u.uRip.value) r.set(9, 9, -9); }

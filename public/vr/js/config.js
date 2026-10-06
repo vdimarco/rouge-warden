@@ -232,20 +232,20 @@ export const COLORS = {
 // LINES_HANDS, LINES_DESKTOP, LINES_PAD and LINES_PHONE keep the same keys and order, so ui.sayLine(group, i, kind) can pick the
 // right words. The three flat tables also have a wall group: the first wall line.
 export const LINES = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Shoot the crack. Hold the trigger.", "Now pull back hard.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Shoot it. Hold the trigger.", "Now pull back hard. Flush it!"],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Shoot the crack. Hold the trigger.", "Now pull back hard.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Shoot it. Hold the trigger.", "Now pull back hard. Hold on!"],
   tutorial: ["Shoot the gold ring. Hold the trigger.", "Swing out. Let go at the bottom.", "Shoot again before you land.", "Squeeze the grip to reel in.", "Pull back hard to yank.", "Push the right stick to turn.", "Look at your left wrist.", "That green light is a clog. Plunge it."],
   clog: ["That's a clog. Plunge it.", "Pull back hard. Like you mean it.", "Flushed.", "The city thanks you. Quietly."],
   king: ["Twelve clogs. One King.", "The King is on the Needle.", "Rip his pipes off.", "Flushed. For good this time.", "He felt that one.", "He is getting angry."],
   splash: ["The lake is not a shortcut.", "Back to the roof."],
 };
 export const LINES_HANDS = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Pinch at the crack. Keep pinching.", "Now pull your hand back hard.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Pinch at it. Keep pinching.", "Now pull your hand back hard. Flush it!"],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Pinch at the crack. Keep pinching.", "Now pull your hand back hard.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Pinch at it. Keep pinching.", "Now pull your hand back hard. Hold on!"],
   tutorial: ["Pinch at the gold ring. Keep pinching.", "Swing out. Open your fingers at the bottom.", "Pinch again before you land.", "Make a fist to reel in.", "Pull your hand back hard to yank.", "Tap the arrows on your wrist to turn.", "Look at your left wrist.", "That green light is a clog. Plunge it."],
   clog: LINES.clog, king: LINES.king, splash: LINES.splash,
 };
 // Mouse and keys. The game picks the building, so the lines say look at it and let go when the ring says GO.
 export const LINES_DESKTOP = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the left mouse button.", "Now press F to yank. Flush it!"],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the left mouse button.", "Now press F to yank. Hold on!"],
   tutorial: ["Look at the gold ring. Hold W and the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press F three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
@@ -253,7 +253,7 @@ export const LINES_DESKTOP = {
 };
 // A game pad. The words fit an Xbox pad and a PlayStation pad: trigger, bumper, stick and "the bottom button".
 export const LINES_PAD = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the right trigger.", "Now press the right bumper to yank. Flush it!"],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the right trigger.", "Now press the right bumper to yank. Hold on!"],
   tutorial: ["Look at the gold ring. Hold the left stick up and the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press the right bumper three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
@@ -261,7 +261,7 @@ export const LINES_PAD = {
 };
 // Phone play: one tap swings, the rope lets go by itself, and a rope on a clog plunges by itself.
 export const LINES_PHONE = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Tap it.", "It plunges by itself. Flush!"],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Tap it.", "It plunges by itself. Hold on!"],
   tutorial: ["Tap left or right to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap the other side before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
   clog: ["That's a clog. Tap it to plunge.", "Hold on. It plunges by itself.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,

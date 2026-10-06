@@ -259,5 +259,37 @@ try {
   await page.context().close();
 } catch (e) { check(false, "the first-run check threw", e.stack || String(e)); }
 
+/* ---- the toilet erupts: the blast throws the hero into the lake, the lake gives him back on the start roof, Mission 1 starts ---- */
+try {
+  const page = await newPage({ width: 960, height: 540 });
+  await page.addInitScript(quiet);
+  await open(page, "?nosw&cut");
+  await page.waitForFunction(() => G.viewDone, null, { timeout: 300000 });
+  await enterXR(page, "desktop");
+  await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); for (let i = 0; i < 40 && G.test.cutscene().playing; i++) G.test.step(1 / 60, 60); });
+  // the opening on its own clock: the cup fires and pulls by itself after a wait, and the toilet erupts
+  const run = await page.evaluate(() => {
+    const seen = new Set();
+    for (let i = 0; i < 240 && G.state === "intro"; i++) { G.test.step(1 / 60, 15); seen.add(G.test.portal().phase); }
+    const d0 = G.test.lakeDrop(), p0 = G.test.state().pos;
+    let low = p0.y, splash = false;
+    for (let i = 0; i < 600 && G.test.lakeDrop(); i++) {
+      G.test.step(1 / 60, 2);
+      low = Math.min(low, G.test.state().pos.y);
+      if (G.test.events().slice(-24).some((e) => e.type === "splash")) splash = true;
+    }
+    for (let i = 0; i < 30; i++) G.test.step(1 / 60, 10);
+    const a = G.test.action();
+    return { phases: [...seen], state: G.state, d0, p0, low, splash, end: G.test.state().pos, start: G.city.start, job: a.jobs.active && a.jobs.active.type };
+  });
+  check(run.phases.includes("erupt") && run.state === "play", "the toilet erupts and play starts (" + run.phases.join(", ") + ")", run.phases);
+  check(run.d0 && run.p0.z > 270 && run.p0.y > 40, "the blast throws the hero high over the lake shore", { d0: run.d0, p0: run.p0 });
+  check(run.splash && run.low < 0.5, "he falls into the lake: KASPLASH", { low: run.low, splash: run.splash });
+  check(Math.hypot(run.end.x - run.start.x, run.end.z - run.start.z) < 3 && Math.abs(run.end.y - run.start.y) < 1, "the lake gives him back on the start roof", { end: run.end, start: run.start });
+  check(run.job === "sludge", "then Mission 1, the Sludge Run, starts", run.job);
+  check(page.errors.length === 0, "no errors in the eruption", page.errors);
+  await page.context().close();
+} catch (e) { check(false, "the eruption check threw", e.stack || String(e)); }
+
 await close();
 done();

@@ -309,9 +309,12 @@ function handOff() {
   if (introYaw) { G.rigYaw += introYaw; introYaw = 0; }
   if (flatOn) { flatcam.settle(); hero.setYaw(G.rigYaw); } // the camera pulls out of the eyes and tips down to the chase view
   syncRig();
+  // the toilet erupted (flat screen): the blast throws the hero out over the lake
+  const launched = !!(portal && portal.launch);
+  if (launched) { portal.launch = false; launchIntoLake(); if (flatOn) { flatcam.settle(); hero.setYaw(G.rigYaw); } syncRig(); }
   // stepped off the roof in the real room: fade and start on the roof proper
   const tb = city.topBelow(hx, S.y + 0.1, hz, 0.25);
-  if (!tb || tb.y < S.y - 0.5) fadeMove(S.x, S.y, S.z);
+  if (!launched && (!tb || tb.y < S.y - 0.5)) fadeMove(S.x, S.y, S.z);
   const first = !save.intro;
   save.intro = true;
   gameStarted = true;
@@ -321,7 +324,7 @@ function handOff() {
   saveNow();
   // Mission 1, the Sludge Run, starts at once (the King's comic played before the cottage room); a returning save that has not
   // done it gets it too. The tests (?nocut, ?skipintro) start it only when they ask (G.test.job).
-  if (!FLAGS.nocut && !FLAGS.skipintro) startSludge();
+  if (!FLAGS.nocut && !FLAGS.skipintro) { if (lakeDrop) lakeDrop.sludge = true; else startSludge(); }
 }
 function coldOpen() {
   save.seen.opening = true;
@@ -391,6 +394,24 @@ function streetFrame(dt, inPlay) {
 /* ---------------- the city action: sprint, fights, cars and jobs (flat play) ---------------- */
 // The action runs in flat play once the game has started; a headset keeps its swinging game.
 let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1;
+// The fall into the lake after the toilet erupts (flat screen): { t, sludge } while it lasts. The splash fishes the hero out on the
+// start roof (respawn from lastSafe), and Mission 1 starts then, or when he lands somewhere else, or after 12 s.
+let lakeDrop = null;
+const LAKE_DROP = { y: 60, z: WORLD.shoreZ - 20, vy: 5, vz: 12, max: 12 };
+function launchIntoLake() {
+  const S = city.start;
+  teleport(P, S.x, LAKE_DROP.y, LAKE_DROP.z);
+  P.vel.set(0, LAKE_DROP.vy, LAKE_DROP.vz);
+  P.lastSafe.set(S.x, S.y, S.z);
+  G.rigYaw = Math.PI; // facing the lake (+z)
+  lakeDrop = { t: 0, sludge: false };
+  wordAhead("WHOOOA!", P.pos, 3, 1, 1.2);
+}
+function endLakeDrop() {
+  if (!lakeDrop) return;
+  if (lakeDrop.sludge) sludgeRetry = 1.2;
+  lakeDrop = null;
+}
 const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false };
 const ropeIds = new Set(), GOON_POS = new Map();
 function actionOn() { return flatOn && !isXR() && gameStarted && G.mode === "desktop"; }
@@ -556,6 +577,7 @@ function actionFrame(dt, inp) {
   jobs.events.length = 0;
   game.setJob(jobs.card);
   syncRopeTargets();
+  if (lakeDrop && ((lakeDrop.t += dt) > LAKE_DROP.max || (lakeDrop.t > 0.5 && P.onGround && !respawning))) endLakeDrop();
   if (sludgeRetry > 0 && (sludgeRetry -= dt) <= 0) { sludgeRetry = -1; startSludge(); }
   hudFrame(dt, inp);
 }
@@ -1440,7 +1462,10 @@ function feedback(ev) {
       if (re && re.cheer) audio.sfx("cheer", { pos: re, vol: clamp(re.n / 6, 0.4, 1.2) });
       break;
     }
-    case "splash": audio.sfx("splash"); wordAhead("KASPLASH", P.pos, 2.6, 1, 1.5); respawn(); break;
+    case "splash":
+      audio.sfx("splash"); wordAhead("KASPLASH", P.pos, 2.6, 1, 1.5); respawn();
+      if (lakeDrop) { ui.say("KASPLOOSH! Fished out of the lake. Port Loon. Go get him.", 3); endLakeDrop(); }
+      break;
     case "oob": respawn(); break;
     case "bump": audio.sfx("bump", { vol: clamp(ev.speed / 10, 0.3, 1.5) }); haptic(0, Math.min(1, ev.speed / 10), 50); haptic(1, Math.min(1, ev.speed / 10), 50); wordAtBump(ev); break;
     case "snap": if (G.input.easySwing) D.mobile.miss(i); audio.sfx("snap", { pos: r.anchor }); break;
@@ -1872,6 +1897,7 @@ G.test = {
   wakeKing() { if (game && game.wakeKing) game.wakeKing(); },
   clearClog(id) { if (game && game.clearClog) game.clearClog(id); },
   portal: () => (portal ? portal.info() : null),
+  lakeDrop: () => (lakeDrop ? { ...lakeDrop } : null),
   ui: () => (ui && ui.info ? ui.info() : { paused: !!(ui && ui.paused), panel: null, buttons: [] }),
   uiPress(id) { if (ui && ui.press) ui.press(id); },
   reality: () => (comfort && comfort.realityInfo ? comfort.realityInfo() : { planes: X.planes.size, meshes: X.meshes.size, maxFade: 0 }),
