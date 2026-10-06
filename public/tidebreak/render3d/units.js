@@ -15,14 +15,40 @@ import { windupClips, windupClipFor, WINDUP_WEIGHT } from './windup.js';
 // Team colours: teal for allies, crimson for enemies; warm and a little muted, not neon.
 export const TEAM3D = ['#58c4ad', '#d65a6c'], NEUTRAL = '#d9b26a', PLAYER = '#f2d68a';
 const RIM = [new THREE.Color('#2fa58f'), new THREE.Color('#c23c50'), new THREE.Color('#b08a40')];
-export const HERO_HEIGHT = 230;
-export const TOWER_HEIGHT = [520, 600, 680, 760];
+// Heroes stand a little taller than the soldiers and camp beasts. Towers are kept low enough that, from the 55 degree
+// camera, a hero beside one is never fully hidden (the see-through tube does the rest).
+export const HERO_HEIGHT = 262;
+export const TOWER_HEIGHT = [440, 490, 540, 600], CORE_HEIGHT = 660;
 const SOLDIER = { melee: { height: 170, clip: 'thrust' }, caster: { height: 158, clip: 'cast' }, siege: { height: 215, clip: 'slam' }, elder: { height: 245, clip: 'slam' } };
 const CAMP_HEIGHT = { 'possessed-ogre': 215, 'undead-knight': 165, 'undead-mage': 175, 'undead-archer': 160 };
 const TAU = Math.PI * 2, angleTo = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
 // Sim facing (x right, y down the map) to a model yaw: models face +Z.
 const yawOf = facing => Math.PI / 2 - facing;
 const ease = t => t * t * (3 - 2 * t);
+// Hero outlines: a thin team-coloured line around the body, the same width in pixels on every screen. The back faces of
+// a copy of the body are pushed out along their screen-space normal; the body hides the inside.
+export const OUTLINE = { uWidth: { value: 1.5 }, uResolution: { value: new THREE.Vector2(1280, 720) } };
+const OUTLINE_COLOR = [new THREE.Color('#3fae97'), new THREE.Color('#c9455a'), new THREE.Color('#b8964e')], OUTLINE_PLAYER = new THREE.Color('#ecd08a');
+function outlineMaterial(color) {
+  return new THREE.ShaderMaterial({ side: THREE.BackSide, toneMapped: false, uniforms: { ...OUTLINE, uColor: { value: color.clone() } },
+    vertexShader: `#include <common>
+      #include <skinning_pars_vertex>
+      uniform vec2 uResolution; uniform float uWidth;
+      void main() {
+        #include <skinbase_vertex>
+        #include <beginnormal_vertex>
+        #include <skinnormal_vertex>
+        #include <begin_vertex>
+        #include <skinning_vertex>
+        #include <project_vertex>
+        vec4 clipN = projectionMatrix * vec4( normalize( normalMatrix * objectNormal ), 0. );
+        gl_Position.xy += normalize( clipN.xy + 1e-6 ) * uWidth * 2. / uResolution * gl_Position.w;
+        gl_Position.z += .004 * gl_Position.w; // behind the body: one-sided cloth must not show the line on its face
+      }`,
+    fragmentShader: `uniform vec3 uColor; void main() { gl_FragColor = vec4( uColor, 1. );
+      #include <colorspace_fragment>
+      }` });
+}
 // The clip time for an attack: the lead-in plays during the sim windup and the strike lands on the hit; the follow-through
 // fills the rest of the attack. The lead-in is never played more than about three times faster than authored.
 function strikeTime(timing, variant, age, windup, duration) {
@@ -61,7 +87,8 @@ class HeroView {
     this.identity = HERO_IDENTITIES[e.identity] || HERO_IDENTITIES.find(h => h.kit === e.hero) || HERO_IDENTITIES[0];
     this.slug = this.identity.slug; this.clips = HERO_CLIPS[this.slug] || ['slash', 'cast'];
     this.scale = (e.player ? 1.1 : 1); this.height = HERO_HEIGHT * this.scale; this.yaw = yawOf(e.facing); this.speed = 0; this.lx = e.x; this.ly = e.y;
-    this.uniforms = unitUniforms(); this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]);
+    this.uniforms = unitUniforms(); this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]); this.uniforms.uDissolveColor.value.lerp(RIM[e.team] || RIM[2], .35);
+    this.outlineColor = e.player ? OUTLINE_PLAYER : OUTLINE_COLOR[e.team] || OUTLINE_COLOR[2];
     this.stand = placeholder(this.height, TEAM3D[e.team] || NEUTRAL); this.root.add(this.stand);
     this.tryModel();
   }
@@ -70,14 +97,18 @@ class HeroView {
     const m = heroModel(this.slug); if (!m) return false;
     const model = cloneSkinned(m.scene), mats = new Map();
     model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; let mat = mats.get(o.material); if (!mat) mats.set(o.material, mat = unitMaterial(o.material, this.uniforms, 'hero')); o.material = mat; } });
-    model.scale.setScalar(this.height / m.height);
+    model.scale.setScalar(this.height / m.height); this.uniforms.uNoiseScale.value = 10 / this.height;
+    // The outline copies: one per body part, sharing its geometry and skeleton.
+    const outline = outlineMaterial(this.outlineColor), parts = []; model.traverse(o => { if (o.isMesh) parts.push(o); });
+    for (const o of parts) { const copy = o.isSkinnedMesh ? new THREE.SkinnedMesh(o.geometry, outline) : new THREE.Mesh(o.geometry, outline); if (o.isSkinnedMesh) { copy.bind(o.skeleton, o.bindMatrix); copy.bindMode = o.bindMode; } copy.frustumCulled = false; copy.name = 'outline'; o.add(copy); }
+    this.outline = outline; this.outlines = parts.length;
     const mesh = skinnedMeshOf(model), clips = { ...clipsFor(this.slug, mesh, []), ...windupClips(this.slug, mesh) };
     this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips, 'windup', 'crouch']);
     this.root.remove(this.stand); this.stand.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); this.stand = null;
     this.root.add(model); this.model = model; return true;
   }
   update(e, s, time, dt, vis) {
-    if (!this.model && this.units.frame % 10 === 0) this.tryModel();
+    if (!this.model && !assets.failed.has(this.slug)) this.tryModel(); // a map lookup until the model is parsed; a failed one keeps its stand-in
     const r = this.root, u = this.uniforms, dead = e.hp <= 0;
     // Smoothed ground speed from the drawn positions (they are interpolated between sim steps).
     const moved = Math.hypot(e.x - this.lx, e.y - this.ly); this.lx = e.x; this.ly = e.y;
@@ -87,11 +118,16 @@ class HeroView {
     const pose = dead ? null : attackPose(e, s.time), facing = pose?.angle ?? e.facing;
     this.yaw += angleTo(this.yaw, yawOf(facing)) * (1 - Math.exp(-dt * (pose ? 22 : 12)));
     r.rotation.y = this.yaw;
-    // Death: the clip plays once and holds; the body then sinks and fades. A respawn resets it.
+    // Death: the clip plays once and holds; the body then burns away from the head down, with an ember edge, and sinks a
+    // little. A respawn resets it.
     if (dead) { this.deadAt ??= time; } else this.deadAt = null;
-    const since = dead ? time - this.deadAt : 0, sink = dead ? Math.max(0, since - 2.6) : 0;
-    r.position.set(x, lift - sink * 90, y); r.visible = vis && sink < 1.2;
-    u.uFade.value = dead ? Math.max(0, 1 - sink) : this.concealed ? .5 : 1;
+    const since = dead ? time - this.deadAt : 0, burn = dead ? Math.max(0, Math.min(1, (since - 1.6) / 1.1)) : 0;
+    r.position.set(x, lift - burn * 24, y); r.visible = vis && burn < 1;
+    u.uFade.value = !dead && this.concealed ? .5 : 1; u.uDissolve.value = burn; u.uDissolveBase.value = r.position.y;
+    // The shadow pass knows nothing of the dissolve: a burning body drops its shadow instead of keeping it whole.
+    const shadow = burn === 0; if (this.model && this.shadow !== shadow) { this.shadow = shadow; this.model.traverse(o => { if (o.isMesh && o.name !== 'outline') o.castShadow = shadow; }); }
+    if (this.outline) this.outline.visible = !dead && !this.concealed;
+    if (burn > 0 && burn < .95 && vis && !this.units.reduced && Math.random() < dt * 30) this.units.effects.sparks.emit({ x: x + (Math.random() - .5) * 60, y: this.height * (1 - burn) * (.6 + Math.random() * .4), z: y + (Math.random() - .5) * 60, vx: (Math.random() - .5) * 40, vy: 60 + Math.random() * 50, vz: (Math.random() - .5) * 40, life: .9, size: 16, color: '#ffbf7a', drag: .6 });
     u.uFlash.value = e.hit > 0 ? e.hit / .16 * .22 : 0;
     u.uRimPower.value = this.units.rimPower * (e.player ? 1.2 : 1);
     if (!this.rig || !r.visible) return;
@@ -120,7 +156,7 @@ class HeroView {
     }
     g.update(dt, dead ? .12 : .14);
   }
-  dispose() { this.units.group.remove(this.root); this.root.traverse(o => { if (o.isMesh && o.material?.userData?.uniforms) o.material.dispose(); }); this.rig?.mixer.stopAllAction(); }
+  dispose() { this.units.group.remove(this.root); this.root.traverse(o => { if (o.isMesh && o.material?.userData?.uniforms) o.material.dispose(); }); this.outline?.dispose(); this.rig?.mixer.stopAllAction(); }
 }
 // --- lane soldiers ------------------------------------------------------------------------------------------------
 class MinionView {
@@ -160,15 +196,15 @@ class StructureView {
   constructor(units, e) {
     this.units = units; this.root = new THREE.Group(); this.root.name = e.kind; units.group.add(this.root);
     const core = e.kind === 'core', tier = e.guardian ? 3 : Math.max(0, Math.min(3, e.tier ?? 0)), gltf = assets.world[core ? 'core' : 'tower'];
-    this.height = core ? 760 : TOWER_HEIGHT[tier]; this.core = core; this.guardian = !core && tier === 3;
-    const mat = unitMaterial(units.meshMaterial(gltf), this.uniforms = unitUniforms(), 'structure');
+    this.height = core ? CORE_HEIGHT : TOWER_HEIGHT[tier]; this.core = core; this.guardian = !core && tier === 3;
+    const mat = unitMaterial(units.meshMaterial(gltf), this.uniforms = unitUniforms(), 'structure', { see: true });
     const mesh = new THREE.Mesh(units.meshGeometry(gltf), mat); mesh.castShadow = mesh.receiveShadow = true; mesh.scale.setScalar(this.height); this.mesh = mesh; this.root.add(mesh);
     this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]); this.uniforms.uRimPower.value = .18;
     // The pale crystal takes the team colour and glows.
-    this.uniforms.uTint.value.set(e.team === 0 ? '#79cfbf' : e.team === 1 ? '#e27c8c' : '#e8c27e'); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = core ? .1 : .25; this.uniforms.uTintLevel.value = core ? .38 : .55; // big lit crystals would read white
+    this.uniforms.uTint.value.set(e.team === 0 ? '#3fd4bc' : e.team === 1 ? '#f04a62' : '#f0b04a'); this.uniforms.uTintOn.value = 1; this.uniforms.uTintRange.value.set(.62, .8); this.uniforms.uTintGlow.value = core ? .5 : .6; this.uniforms.uTintLevel.value = core ? .16 : .2; // a lit pale crystal reads white; the colour comes from the glow
     if (this.guardian || core) { const ring = new THREE.Mesh(units.plinth, units.stone); ring.scale.set(core ? 520 : 190, core ? 46 : 56, core ? 520 : 190); ring.castShadow = ring.receiveShadow = true; this.root.add(ring); if (!core) mesh.position.y = 50; }
     // The crystal's glow: a sprite in the team colour that breathes.
-    const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 300 : 240); this.glow = glow; this.root.add(glow);
+    const glow = new THREE.Sprite(units.glowMaterial(e.team)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 380 : 260); this.glow = glow; this.root.add(glow);
     this.ward = new THREE.Mesh(units.wardGeometry, units.wardMaterial(e.team)); this.ward.scale.set(core ? 520 : 170, this.height * 1.05, core ? 520 : 170); this.ward.visible = false; this.root.add(this.ward);
     this.root.position.set(e.x, 0, e.y); this.root.rotation.y = core ? (e.team ? Math.PI : 0) : (e.id * 1.7) % TAU;
   }
@@ -181,7 +217,7 @@ class StructureView {
     // Damage darkens the stone; a low structure smokes; a fallen one sinks to a stump and leaves rubble.
     this.mesh.material.color.setScalar(.55 + .45 * ratio);
     this.mesh.position.y = (this.guardian ? 50 : 0) - fall * this.height * .78; this.mesh.rotation.z = fall * .09; this.mesh.rotation.x = fall * .05;
-    this.glow.visible = !dead; const pulse = this.units.reduced ? 1 : 1 + Math.sin(time * 2.2 + e.id) * .08; this.glow.scale.setScalar((this.core ? 300 : 240) * pulse * (.75 + ratio * .25));
+    this.glow.visible = !dead; const pulse = this.units.reduced ? 1 : 1 + Math.sin(time * 2.2 + e.id) * .08; this.glow.scale.setScalar((this.core ? 380 : 260) * pulse * (.75 + ratio * .25));
     u.uFlash.value = e.hit > 0 ? e.hit / .16 * .12 : 0;
     const prot = !dead && structureProtected(s, e); this.ward.visible = prot && vis; if (prot) this.ward.material.uniforms.uTime.value = time;
     if (dead && !this.rubble) { this.rubble = true; this.units.effects.dust(e.x, e.y, this.core ? 300 : 140, this.core ? 24 : 14, '#9a8c74'); const r = this.units.rubble(e, this.core ? 2.2 : 1); this.root.add(r); }
@@ -258,7 +294,7 @@ export class Units {
     map.set('*', [...map.values()][0]); map.uniforms = uniforms; this.cache.set(key, map); return map;
   }
   glowMaterial(team) {
-    this.glows[team + 1] ||= new THREE.SpriteMaterial({ map: this.textures.glow, color: team === 0 ? '#79e6d2' : team === 1 ? '#ff7088' : '#f3c67a', blending: THREE.AdditiveBlending, depthWrite: false, depthTest: true, transparent: true, toneMapped: false, opacity: .55 });
+    this.glows[team + 1] ||= new THREE.SpriteMaterial({ map: this.textures.glow, color: team === 0 ? '#79e6d2' : team === 1 ? '#ff7088' : '#f3c67a', blending: THREE.AdditiveBlending, depthWrite: false, depthTest: true, transparent: true, toneMapped: false, opacity: .3 });
     return this.glows[team + 1];
   }
   // The ward shimmer on a protected structure: a faint fresnel wall in the team colour, rising bands.
@@ -304,5 +340,5 @@ export class Units {
     for (const [id, v] of this.views) if (!alive.has(id)) { if (v.update(v.unit, s, time, dt, v.root.visible, true)) { this.release(v); this.views.delete(id); } }
   }
   clear() { for (const v of this.views.values()) this.release(v); this.views.clear(); }
-  stats() { let heroes = 0, placeholders = 0; for (const v of this.views.values()) if (v instanceof HeroView) { heroes++; if (!v.model) placeholders++; } return { views: this.views.size, heroes, placeholders }; }
+  stats() { let heroes = 0, placeholders = 0; for (const v of this.views.values()) if (v instanceof HeroView) { heroes++; if (!v.model && !assets.failed.has(v.slug)) placeholders++; } return { views: this.views.size, heroes, placeholders }; }
 }

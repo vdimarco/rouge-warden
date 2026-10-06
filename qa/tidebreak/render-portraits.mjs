@@ -6,8 +6,9 @@
 // Each hero gets <slug>-bust.webp (512x512: head and shoulders on a dark warm backdrop, for cards, HUD and minimap) and
 // <slug>-full.webp (768x1024: the whole hero on a clear background, feet at the bottom edge, for the hero select and
 // the 2D battlefield). One studio for all: idle pose at a fixed frame, 3/4 view, warm key light from the upper left,
-// cool rim light from behind on the right, a soft environment for the metal. Chromium draws with SwiftShader (software
-// WebGL), so the same models and script give the same files. It serves public/ itself; no other server is needed.
+// cool rim light from behind on the right, a soft environment for the metal. The full-length shot stands in front of
+// bright sunset stage art, so it has its own, brighter and warmer light set (LOOKS.full); the busts keep theirs.
+// Chromium draws with SwiftShader (software WebGL), so the same models and script give the same files. It serves public/ itself; no other server is needed.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -33,7 +34,13 @@ const YAW = -0.42, IDLE_FRAME = 0.12, SUPER = 2;
 const clips = await (await fetch('/tidebreak/models/clips.json')).json();
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const gl = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-gl.setPixelRatio(1); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.15;
+gl.setPixelRatio(1); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping;
+// Light sets. bust: the dark warm card look. full: a stronger warm key and rim, a warm bounce from below, a lifted fill
+// and exposure, so a dark-armoured hero still reads against the bright stage.
+const LOOKS = {
+  bust: { exposure: 1.15, env: 0.55, key: [0xffcf98, 3.8], rim: [0x9fc6ff, 5.2], kick: [0xffb27a, 0.9], fill: [0x6f7d8c, 0x2b1d12, 0.55], bounce: [0xffb070, 0] },
+  full: { exposure: 1.5, env: 0.85, key: [0xffd2a0, 5.6], rim: [0xbfd8ff, 7.2], kick: [0xffb27a, 2.2], fill: [0x9a8f86, 0x4a3420, 1.05], bounce: [0xffb878, 1.1] },
+};
 gl.shadowMap.enabled = true; gl.shadowMap.type = THREE.PCFSoftShadowMap; gl.setClearColor(0x000000, 0);
 // Reflections come from a small light room: a warm softbox up left, a cool strip behind on the right, a dark floor.
 function studioEnvironment() {
@@ -43,15 +50,16 @@ function studioEnvironment() {
   const pmrem = new THREE.PMREMGenerator(gl), map = pmrem.fromScene(room, 0.04).texture; pmrem.dispose(); return map;
 }
 const environment = studioEnvironment();
-function stage() {
-  const scene = new THREE.Scene(); scene.environment = environment; scene.environmentIntensity = 0.55;
-  const key = new THREE.DirectionalLight(0xffcf98, 3.8); key.position.set(-3.2, 4.4, 3.6); key.castShadow = true;
+function stage(look) {
+  const scene = new THREE.Scene(); scene.environment = environment; scene.environmentIntensity = look.env;
+  const key = new THREE.DirectionalLight(...look.key); key.position.set(-3.2, 4.4, 3.6); key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 4;
   key.target.position.set(0, 1, 0); Object.assign(key.shadow.camera, { left: -1.8, right: 1.8, top: 1.8, bottom: -1.8, near: 0.5, far: 14 }); key.shadow.camera.updateProjectionMatrix();
-  const rim = new THREE.DirectionalLight(0x9fc6ff, 5.2); rim.position.set(3.4, 2.6, -3.4);
-  const kick = new THREE.DirectionalLight(0xffb27a, 0.9); kick.position.set(-3.5, 1.2, -2.5);
-  const fill = new THREE.HemisphereLight(0x6f7d8c, 0x2b1d12, 0.55);
-  scene.add(key, key.target, rim, kick, fill); return scene;
+  const rim = new THREE.DirectionalLight(...look.rim); rim.position.set(3.4, 2.6, -3.4);
+  const kick = new THREE.DirectionalLight(...look.kick); kick.position.set(-3.5, 1.2, -2.5);
+  const bounce = new THREE.DirectionalLight(...look.bounce); bounce.position.set(0.5, -1.5, 3);
+  const fill = new THREE.HemisphereLight(...look.fill);
+  scene.add(key, key.target, rim, kick, bounce, fill); return scene;
 }
 async function pose(slug) {
   const gltf = await loader.loadAsync('/tidebreak/models/heroes/' + slug + '.glb'), root = gltf.scene, body = skinnedMeshOf(root);
@@ -91,9 +99,10 @@ function full(scene, p) {
   ctx.imageSmoothingQuality = 'high'; ctx.drawImage(image, 0, 0, 768, 1024);
   return canvas.toDataURL('image/webp', 0.88);
 }
+const lit = (look, p, draw) => { const scene = stage(look); scene.add(p.root); gl.toneMappingExposure = look.exposure; const out = draw(scene, p); scene.remove(p.root); return out; };
 window.renderHero = async slug => {
-  const scene = stage(), p = await pose(slug); scene.add(p.root);
-  const result = { bust: bust(scene, p), full: full(scene, p), height: +(p.top - p.bodyBox.min.y).toFixed(3), weaponTop: +(p.allBox.max.y - p.top).toFixed(3) };
+  const p = await pose(slug);
+  const result = { bust: lit(LOOKS.bust, p, bust), full: lit(LOOKS.full, p, full), height: +(p.top - p.bodyBox.min.y).toFixed(3), weaponTop: +(p.allBox.max.y - p.top).toFixed(3) };
   p.root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); for (const m of [o.material].flat()) { for (const k in m) if (m[k]?.isTexture) m[k].dispose(); m.dispose(); } } });
   return result;
 };

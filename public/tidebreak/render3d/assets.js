@@ -7,7 +7,8 @@ import { MeshoptDecoder } from '../lib/meshopt_decoder.mjs';
 import { HERO_IDENTITIES } from '../hero-identities.js';
 import { retarget, skinnedMeshOf } from '../hero-rig.js';
 
-export const WORLD_MODELS = ['minion', 'tower', 'core', 'wildhunt', 'beast', 'pine', 'oak', 'boulders', 'arch'];
+// Trees and bushes are built in code (foliage.js); pine.glb and oak.glb stay in models/world/ for the asset record.
+export const WORLD_MODELS = ['minion', 'tower', 'core', 'wildhunt', 'beast', 'boulders', 'arch'];
 const url = file => new URL(`../models/${file}`, import.meta.url).href;
 const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
 // Shared state: world: name -> gltf; heroes: slug -> { scene, mesh, height, clips } once parsed.
@@ -80,9 +81,10 @@ export function heroModel(slug) {
   return null;
 }
 export const heroesReady = () => assets.heroes.size;
-// Heroes are parsed one at a time in idle moments after the world is ready, so a match rarely waits for one.
+// Heroes are parsed one at a time in idle moments after the world is ready, so a match rarely waits for one. A busy
+// main thread (a slow graphics device) still parses one at least every second.
 function parseInIdle(slugs) {
-  const idle = globalThis.requestIdleCallback || (f => setTimeout(f, 60));
+  const idle = globalThis.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 1000 }) : f => setTimeout(f, 60);
   const next = () => {
     const slug = slugs.find(s => !assets.heroes.has(s) && !assets.failed.has(s));
     if (!slug) return;

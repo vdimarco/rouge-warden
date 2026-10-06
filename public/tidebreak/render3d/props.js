@@ -3,7 +3,8 @@
 // GPU only draws what the camera sees. Each realm has its own set; at a realm change the old set sinks and the new one
 // grows in about a second. Cover blocks (they stop movement and sight) fill their whole footprint, so they read solid.
 import * as THREE from 'three';
-import { withWorld, fowAtEnd, worldMapped } from './materials.js';
+import { withWorld, fowAtEnd, worldMapped, SEE_GLSL, seeUniforms } from './materials.js';
+import { foliageAtlas, broadleafGeometry, pineGeometry, bushGeometry, tuftGeometry, foliagePatch, foliageUniforms } from './foliage.js';
 
 const random = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const geometryOf = gltf => { let g = null; gltf.scene.traverse(o => { if (!g && o.isMesh) g = o.geometry; }); return g; };
@@ -40,62 +41,23 @@ function simplify(source, cells) {
   const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); out.setAttribute('uv', new THREE.Float32BufferAttribute(t, 2)); out.setIndex(index); out.computeVertexNormals();
   return out;
 }
-// Laplacian smoothing of the crown: rounds the sharp shards of a generated canopy into soft leaf masses.
-function smooth(g, iterations, from, k = .6) {
-  const p = g.attributes.position, n = p.count, idx = g.index.array, adj = Array.from({ length: n }, () => new Set());
-  for (let i = 0; i < idx.length; i += 3) { const a = idx[i], b = idx[i + 1], c = idx[i + 2]; adj[a].add(b).add(c); adj[b].add(a).add(c); adj[c].add(a).add(b); }
-  const next = new Float32Array(n * 3);
-  for (let it = 0; it < iterations; it++) {
-    for (let i = 0; i < n; i++) {
-      let x = 0, y = 0, z = 0; for (const j of adj[i]) { x += p.getX(j); y += p.getY(j); z += p.getZ(j); }
-      const m = adj[i].size || 1, w = p.getY(i) > from ? k : 0;
-      next[i * 3] = p.getX(i) + (x / m - p.getX(i)) * w; next[i * 3 + 1] = p.getY(i) + (y / m - p.getY(i)) * w; next[i * 3 + 2] = p.getZ(i) + (z / m - p.getZ(i)) * w;
-    }
-    p.array.set(next);
-  }
-  p.needsUpdate = true; g.computeVertexNormals(); return g;
-}
-// Foliage shades as one soft volume: canopy normals lean out from the crown's centre, the way a painter lights a tree.
-function softCanopy(g, centre, from, amount = .7) {
-  const p = g.attributes.position, n = g.attributes.normal, v = new THREE.Vector3(), m = new THREE.Vector3();
-  for (let i = 0; i < p.count; i++) {
-    const y = p.getY(i); if (y < from) continue;
-    v.set(p.getX(i), (y - centre) * .8, p.getZ(i)).normalize(); m.set(n.getX(i), n.getY(i), n.getZ(i));
-    const k = amount * Math.min(1, (y - from) / .12); m.lerp(v, k).normalize(); n.setXYZ(i, m.x, m.y, m.z);
-  }
-  n.needsUpdate = true; return g;
-}
-// A shrub: a few lumpy leaf balls, about 1 wide and 1 high, textured with a tree's leaf map.
-function bushGeometry(seed) {
-  const rand = random(seed), parts = [];
-  for (let i = 0; i < 6; i++) {
-    const g = new THREE.IcosahedronGeometry(.3 + rand() * .14, 1), p = g.attributes.position, a = rand() * Math.PI * 2, r = i ? .18 + rand() * .2 : 0;
-    // Normals point out from the ball's centre, so the facets of the low-detail sphere shade as one soft mass.
-    const nrm = new Float32Array(p.count * 3);
-    for (let k = 0; k < p.count; k++) { const x = p.getX(k), y = p.getY(k), z = p.getZ(k), l = Math.hypot(x, y, z) || 1, s = 1 + (rand() - .5) * .2; nrm.set([x / l, y / l, z / l], k * 3); p.setXYZ(k, x * s, y * s * .85, z * s); }
-    g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
-    g.translate(Math.cos(a) * r, .3 + rand() * .25 - (i ? .08 : 0), Math.sin(a) * r); parts.push(g);
-  }
-  return merge(parts);
-}
 // Reeds: a fan of thin blades, one geometry.
 function reedGeometry() {
   const parts = [], rand = random(5);
   for (let i = 0; i < 9; i++) { const g = new THREE.ConeGeometry(.035, 1, 3, 1, true); g.translate(0, .5, 0); const a = rand() * Math.PI * 2, r = rand() * .22; g.rotateZ((rand() - .5) * .5); g.scale(1, .6 + rand() * .5, 1); g.translate(Math.cos(a) * r, 0, Math.sin(a) * r); parts.push(g); }
   return merge(parts);
 }
-// The scenery material patch: wind sway, the realm grow, fog of war, and a see-through tube from the camera to the
-// player's hero (screen-door, so no sorting and the shadows stay whole).
-export const propUniforms = { uTime: { value: 0 }, uSway: { value: 1 }, uHero: { value: new THREE.Vector3(0, -9999, 0) }, uSee: { value: 1 } };
-// Value noise in world space, for leaf masses that do not follow a generated model's scattered texture islands.
-const NOISE = `float pHash( vec3 p ) { p = fract( p * .3183099 + .1 ); p *= 17.; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
-float pNoise( vec3 x ) { vec3 i = floor( x ), f = fract( x ); f = f * f * ( 3. - 2. * f );
-  return mix( mix( mix( pHash( i ), pHash( i + vec3( 1, 0, 0 ) ), f.x ), mix( pHash( i + vec3( 0, 1, 0 ) ), pHash( i + vec3( 1, 1, 0 ) ), f.x ), f.y ),
-              mix( mix( pHash( i + vec3( 0, 0, 1 ) ), pHash( i + vec3( 1, 0, 1 ) ), f.x ), mix( pHash( i + vec3( 0, 1, 1 ) ), pHash( i + vec3( 1, 1, 1 ) ), f.x ), f.y ), f.z ); }`;
-function patch(material, grow, { sway = 0, see = true, key, bias = 0, leaves = null }) {
-  const uniforms = { ...propUniforms, uGrow: grow };
-  material.onBeforeCompile = shader => {
-    withWorld(shader); fowAtEnd(shader); Object.assign(shader.uniforms, uniforms);
+// The scenery material patch: wind sway, the realm grow, fog of war, and see-through tubes from the camera to the
+// heroes and soldiers in view (screen-door, so no sorting and the shadows stay whole).
+export const propUniforms = { uTime: { value: 0 }, uSway: { value: 1 } };
+function patch(material, grow, { sway = 0, see = true, key, foliage = false }) {
+  const uniforms = { ...propUniforms, ...seeUniforms, uGrow: grow };
+  // A material that already has its own patch (worldMapped: world-space texture mapping) keeps it; that patch also adds
+  // the world position and the fog of war.
+  const base = Object.hasOwn(material, 'onBeforeCompile') ? material.onBeforeCompile : null, baseKey = base ? material.customProgramCacheKey() : '';
+  material.onBeforeCompile = (shader, renderer) => {
+    if (base) base(shader, renderer); else { withWorld(shader); fowAtEnd(shader); }
+    Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime, uSway, uGrow;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         { float g = uGrow; transformed.y *= g; transformed.xz *= .55 + .45 * g;
@@ -105,56 +67,52 @@ function patch(material, grow, { sway = 0, see = true, key, bias = 0, leaves = n
             vec2 ph = vec2( 0. );
           #endif
           float hy = max( position.y, 0. ); transformed.xz += vec2( sin( uTime * 1.25 + ph.x + ph.y ), cos( uTime * .9 + ph.y * 1.3 ) ) * hy * hy * ${sway.toFixed(3)} * uSway; }`);
-    // Leaf maps are sampled a little blurred: from this far the leaf detail is noise, the mass of the crown is what reads.
-    if (bias) shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', THREE.ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', `texture2D( map, vMapUv, ${bias.toFixed(1)} )`));
-    // Procedural leaves: the model's own map gives only a faint grain; the colour comes from soft world-space clumps,
-    // darker toward the crown's underside. The instance colour then tints it.
-    if (leaves) shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + NOISE).replace(/#include <map_fragment>|vec4 sampledDiffuseColor[^;]*;\n[^]*?diffuseColor \*= sampledDiffuseColor;/, `
-      float grain = dot( texture2D( map, vMapUv, 2. ).rgb, vec3( .33 ) );
-      float clump = pNoise( vWorldP / 46. ) * .6 + pNoise( vWorldP / 15. ) * .4;
-      diffuseColor.rgb *= vec3( ${leaves} ) * ( .55 + clump * .75 ) * ( .75 + grain * .5 );`);
-    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uHero; uniform float uSee;')
-      .replace('#include <clipping_planes_fragment>', see ? `#include <clipping_planes_fragment>
-        if ( uSee > .5 ) { vec3 ab = uHero - cameraPosition; float t = clamp( dot( vWorldP - cameraPosition, ab ) / dot( ab, ab ), 0., 1. );
-          float d = length( vWorldP - cameraPosition - ab * t ), k = fract( dot( floor( gl_FragCoord.xy ), vec2( .7548777, .5698403 ) ) );
-          if ( t < .97 && k < .72 * ( 1. - smoothstep( 90., 170., d ) ) ) discard; }` : '#include <clipping_planes_fragment>');
+    if (foliage) foliagePatch(shader);
+    if (see) shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + SEE_GLSL)
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nseeThrough( vWorldP );');
   };
-  material.customProgramCacheKey = () => key + (see ? '-see' : '') + sway + bias + (leaves || '');
+  material.customProgramCacheKey = () => key + baseKey + (see ? '-see' : '') + sway + (foliage ? '-leaf' : '');
   return material;
 }
 // Names from scenery.js -> what to build. Unknown names fall back to a boulder, so new scenery never breaks the scene.
-// [kind, height factor, width factor]; the oak model is an autumn oak, so tints move it toward summer or birch.
-const TREE = { pines: ['pine', 1.6, .6], pine: ['pine', 1.6, .6], juniper: ['pine', 1.05, .9], oak: ['oak', 1.35, .52], willow: ['oak', 1.3, .6], birches: ['oak', 1.5, .38] };
-// Late-summer crowns: some still green, some turning gold.
-const TINTS = { oak: ['#e2d996', '#b7c27c', '#d9b874', '#c8cf8a'], willow: ['#a9bc8e', '#9fb486'], birches: ['#efe8c8', '#dfe4b0'], juniper: ['#d4dcc0'], pines: ['#ffffff', '#e6eedc'], pine: ['#ffffff'] };
+// [kind, height factor, width factor]; tints move the leaves toward summer green, birch or autumn gold.
+const TREE = { pines: ['pine', 1.6, .62], pine: ['pine', 1.6, .62], juniper: ['pine', 1.05, .9], oak: ['oak', 1.3, .9], willow: ['oak', 1.25, 1], birches: ['oak', 1.45, .62] };
+// Late summer: mostly green crowns, some turning gold or amber. Never a flat brown.
+const TINTS = { oak: ['#b9dc84', '#a3cf78', '#cfe08e', '#c6d97e', '#aed88a', '#9cc874', '#f2cf6e', '#ffb860'], willow: ['#b5d99a', '#a6cf90'], birches: ['#e4f2a0', '#f6e48a'], juniper: ['#b8d4b0'], pines: ['#c4dcbc', '#b4d0b0', '#d0e0c0'], pine: ['#c4dcbc'] };
+const oakTint = rand => TINTS.oak[Math.floor(rand() * TINTS.oak.length)];
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
+const MAX_TUFTS = 2400, TUFT_TONES = [['#d4e49a', '#c4da90', '#e0e4a2', '#ece0a0'], ['#9cb486', '#8ea87c', '#a8bc8a']].map(l => l.map(c => new THREE.Color(c)));
+const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0), _v = new THREE.Vector3(), _s = new THREE.Vector3();
 const KEEP = { ferns: .38, mushrooms: .22, branch: .15, 'hollow-log': .45, boulders: .65, birches: .35, juniper: .6, willow: .4, oak: .35, pines: .85 };
 export class Props {
-  constructor(scene, assets, textures) {
+  constructor(scene, assets, textures, { coverage = true } = {}) {
     this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
     const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
-    // Leaves glow a little with their own colour (light through the canopy), so a crown never turns to a black blob.
-    const tree = (m, sway, glow = 0, bias = 0, leaves = null) => set => { const c = m.clone(); if (glow) { c.emissive = new THREE.Color(glow, glow, glow * .8); c.emissiveMap = leaves ? null : c.map; } return patch(c, this.grow[set], { sway, key: 'tree', bias, leaves }); };
-    const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: 'built' }), this.grow[set], { key: 'built' });
+    this.atlas = foliageAtlas();
+    const leafy = sway => set => patch(new THREE.MeshStandardMaterial({ map: this.atlas, alphaTest: coverage ? .42 : .5, alphaToCoverage: coverage, side: THREE.DoubleSide, roughness: .8, metalness: 0 }), this.grow[set], { sway, key: 'foliage', foliage: true });
+    const solid = (m, sway = 0) => set => patch(m.clone(), this.grow[set], { sway, key: 'tree' });
+    const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: `built-${scale}` }), this.grow[set], { key: 'built' });
     const plain = (color, rough) => set => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[set], { see: false, key: 'plain' });
-    const leaves = materialOf(w.pine), autumn = materialOf(w.oak);
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
-      pine: { geometry: softCanopy(simplify(geometryOf(w.pine), 22), .55, .12, .75), material: tree(leaves, .035, .16, 1.2), shadow: true, selfShadow: false },
-      oak: { geometry: softCanopy(smooth(simplify(geometryOf(w.oak), 22), 10, .32), .62, .3, .85), material: tree(autumn, .03, .04, 0, '.2, .16, .045'), shadow: true, selfShadow: false },
-      bush: { geometry: bushGeometry(3), material: tree(leaves, .05, .04, 0, '.08, .12, .04'), shadow: false },
-      shrub: { geometry: bushGeometry(9), material: tree(autumn, .05, .04, 0, '.18, .15, .05'), shadow: false },
-      boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: tree(materialOf(w.boulders), 0), shadow: true, bright: 1.55 },
-      arch: { geometry: simplify(geometryOf(w.arch), 28), material: tree(materialOf(w.arch), 0), shadow: true },
+      pine: { geometry: pineGeometry(7), material: leafy(.03), shadow: true },
+      oak: { geometry: broadleafGeometry(5), material: leafy(.03), shadow: true },
+      bush: { geometry: bushGeometry(3), material: leafy(.05), shadow: false },
+      shrub: { geometry: bushGeometry(9), material: leafy(.05), shadow: false },
+      boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: solid(materialOf(w.boulders)), shadow: true, bright: 1.55 },
+      arch: { geometry: simplify(geometryOf(w.arch), 28), material: solid(materialOf(w.arch)), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
       pillar: { geometry: new THREE.CylinderGeometry(.42, .5, 1, 10).translate(0, .5, 0), material: built(textures.stone, '#d3c9b6', 200), shadow: true },
       log: { geometry: new THREE.CylinderGeometry(.5, .5, 1, 9).rotateZ(Math.PI / 2).translate(0, .45, 0), material: built(textures.dirt, '#b09478', 120), shadow: false, bright: 1.3 },
       timber: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.dirt, '#6b5a48', 150), shadow: true },
       reeds: { geometry: reedGeometry(), material: plain('#8a8a52', .9), shadow: false },
+      tuft: { geometry: tuftGeometry(), material: leafy(.22), shadow: false, selfShadow: true },
     };
     for (const k of Object.values(this.kinds)) k.materials = [0, 1, 2].map(set => k.material(set));
     this.sets = [0, 1, 2].map(() => ({ group: new THREE.Group(), kinds: new Map() })); for (const s of this.sets) this.root.add(s.group);
     this.phase = 0; this.blend = [1, 0]; this.view = null; this.counts = [0, 0, 0];
+    this.grass = new THREE.InstancedMesh(this.kinds.tuft.geometry, this.kinds.tuft.materials[2], MAX_TUFTS); this.grass.count = 0; this.grass.frustumCulled = false; this.grass.receiveShadow = true; this.grass.name = 'grass';
+    this.grass.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.grass.setColorAt(0, new THREE.Color()); this.root.add(this.grass);
   }
   build(world, s, scenery) {
     for (const set of this.sets) { for (const m of [...set.group.children]) { set.group.remove(m); m.dispose(); } set.kinds.clear(); }
@@ -168,7 +126,7 @@ export class Props {
     // Both realms: a forest wall just outside the arena edge, so a wide view never shows bare ground.
     const rand = random(seed + 4242), put = this.collector(), S = world.SIZE;
     for (let d = -400; d < S + 400; d += 170) for (const [x, y] of [[d, -140 - rand() * 420], [d, S + 140 + rand() * 420], [-140 - rand() * 420, d], [S + 140 + rand() * 420, d]]) {
-      const h = 560 + rand() * 360, oak = rand() < .3; put(oak ? 'oak' : 'pine', x + (rand() - .5) * 80, y, h * .6, h, h * .6, rand() * 6.3, oak ? '#b4c49a' : '#d5dacb');
+      const h = 560 + rand() * 360, oak = rand() < .3; put(oak ? 'oak' : 'pine', x + (rand() - .5) * 80, y, h * .6, h, h * .6, rand() * 6.3, oak ? oakTint(rand) : '#bcd4b4');
     }
     this.commit(put, 2);
     this.view = null; this.setPhase(s.phase, true);
@@ -217,10 +175,10 @@ export class Props {
     if ((KEEP[p.name] ?? 1) < rand()) return;
     if (tree) { const [kind, k, wide] = tree, h = p.height * k, tints = TINTS[p.name]; put(kind, p.x, p.y, h * wide, h, h * wide, r, tints[Math.floor(rand() * tints.length)]); return; }
     switch (p.name) {
-      case 'forest-island': for (let i = 0; i < 3; i++) { const h = p.height * (1.25 + rand() * .45), a = rand() * 6.3; put('pine', p.x + Math.cos(a) * 75 * i, p.y + Math.sin(a) * 65 * i, h * .6, h, h * .6, rand() * 6.3, '#f0f2e6'); } return;
+      case 'forest-island': for (let i = 0; i < 3; i++) { const h = p.height * (1.25 + rand() * .45), a = rand() * 6.3; put('pine', p.x + Math.cos(a) * 75 * i, p.y + Math.sin(a) * 65 * i, h * .6, h, h * .6, rand() * 6.3, '#c8e0c0'); } return;
       case 'boulders': { const h = p.height * .7; put('boulder', p.x, p.y, h * 1.15, h, h * 1.15, r, '#d6d0c4'); return; }
-      case 'ferns': case 'mushrooms': { const h = 60 + p.height * .55; put(p.name === 'ferns' ? 'bush' : 'shrub', p.x, p.y, h * 1.5, h, h * 1.5, r, p.name === 'ferns' ? '#c8d0b0' : '#b8a888'); return; }
-      case 'branch': case 'hollow-log': { const l = p.height * (p.name === 'branch' ? 1.1 : 1.6), d = p.name === 'branch' ? 24 : 48; put('log', p.x, p.y, l, d, d, r, '#ffffff'); if (p.name === 'hollow-log') put('bush', p.x + 40, p.y + 30, 110, 70, 110, r, '#b8c4a0'); return; }
+      case 'ferns': case 'mushrooms': { const h = 60 + p.height * .55; put(p.name === 'ferns' ? 'bush' : 'shrub', p.x, p.y, h * 1.5, h, h * 1.5, r, p.name === 'ferns' ? '#c4dca0' : '#ecd088'); return; }
+      case 'branch': case 'hollow-log': { const l = p.height * (p.name === 'branch' ? 1.1 : 1.6), d = p.name === 'branch' ? 24 : 48; put('log', p.x, p.y, l, d, d, r, '#ffffff'); if (p.name === 'hollow-log') put('bush', p.x + 40, p.y + 30, 110, 70, 110, r, '#c0d89c'); return; }
       case 'reeds': { const h = p.height * 1.1; put('reeds', p.x, p.y, h * .8, h, h * .8, r); return; }
       case 'shrine': case 'abbey': case 'ivy-wall': case 'house-b': case 'house-a': case 'pier': case 'market': case 'mill': case 'observatory': case 'greenhouse':
         this.ruin(put, { x: p.x, y: p.y, w: 220 + p.height * .4, h: 160 + p.height * .3 }, p.height * .6, rand); return;
@@ -242,16 +200,16 @@ export class Props {
       const u = (i + .5) / nx - .5, v = (j + .5) / ny - .5, centre = 1 - Math.max(Math.abs(u), Math.abs(v)) * 1.2, h = (height * .3 + rand() * height * .22) * (.55 + centre * .7);
       put('boulder', b.x + u * b.w + (rand() - .5) * 60, b.y + v * b.h + (rand() - .5) * 60, step * (1 + rand() * .5), h, step * (1 + rand() * .5), rand() * 6.3, rand() < .5 ? '#cfc8ba' : '#bdb6a6', (rand() - .5) * .25);
     }
-    for (let i = 0; i < 2 + Math.floor(b.w * b.h / 120000); i++) { const h = height * (.8 + rand() * .4); put('pine', b.x + (rand() - .5) * b.w * .8, b.y + (rand() - .5) * b.h * .7, h * .55, h, h * .55, rand() * 6.3, '#d5dacb'); }
-    for (let i = 0; i < 4; i++) { const a = rand() * 6.3, h = 70 + rand() * 50; put('bush', b.x + Math.cos(a) * b.w * .55, b.y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
+    for (let i = 0; i < 2 + Math.floor(b.w * b.h / 120000); i++) { const h = height * (.8 + rand() * .4); put('pine', b.x + (rand() - .5) * b.w * .8, b.y + (rand() - .5) * b.h * .7, h * .55, h, h * .55, rand() * 6.3, '#bcd4b4'); }
+    for (let i = 0; i < 4; i++) { const a = rand() * 6.3, h = 70 + rand() * 50; put('bush', b.x + Math.cos(a) * b.w * .55, b.y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#c0d89c'); }
   }
   grove(put, b, height, rand, name) {
     const step = 125, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
       const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .12;
-      put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? '#b4c49a' : TINTS.oak[Math.floor(rand() * 4)]) : '#e6eadb');
+      put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? TINTS.willow[0] : oakTint(rand)) : '#c4dcbc');
     }
-    for (let i = 0; i < nx + ny; i++) { const a = rand() * 6.3, h = 80 + rand() * 60; put('bush', b.x + Math.cos(a) * b.w * .52, b.y + Math.sin(a) * b.h * .52, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
+    for (let i = 0; i < nx + ny; i++) { const a = rand() * 6.3, h = 80 + rand() * 60; put('bush', b.x + Math.cos(a) * b.w * .52, b.y + Math.sin(a) * b.h * .52, h * 1.6, h, h * 1.6, rand() * 6.3, '#c0d89c'); }
     if (name === 'hollow-log') put('log', b.x, b.y + b.h * .3, b.w * .7, 70, 70, .2, '#ffffff');
   }
   // Broken stone walls around the footprint with gaps, pillars and rubble; `full` also adds an arch and a tree.
@@ -267,8 +225,8 @@ export class Props {
       put('pillar', x0, y0, 62, height * (.55 + rand() * .3), 62, 0, '#ffffff');
     }
     for (let i = 0; i < 3; i++) { const h = 50 + rand() * 60; put('boulder', b.x + (rand() - .5) * b.w * .7, b.y + (rand() - .5) * b.h * .7, h * 1.3, h, h * 1.3, rand() * 6.3, '#cbc4b4'); }
-    for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', b.x + Math.cos(a) * b.w * .5, b.y + Math.sin(a) * b.h * .5, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
-    if (full) { put('arch', b.x + (rand() - .5) * b.w * .3, b.y, height * .5, height * .78, height * .78, rand() < .5 ? 0 : Math.PI / 2, '#d9d2c3'); put('oak', b.x + b.w * .3, b.y - b.h * .25, height * .55, height * .9, height * .55, rand() * 6.3); }
+    for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', b.x + Math.cos(a) * b.w * .5, b.y + Math.sin(a) * b.h * .5, h * 1.6, h, h * 1.6, rand() * 6.3, '#c0d89c'); }
+    if (full) { put('arch', b.x + (rand() - .5) * b.w * .3, b.y, height * .5, height * .78, height * .78, rand() < .5 ? 0 : Math.PI / 2, '#d9d2c3'); put('oak', b.x + b.w * .3, b.y - b.h * .25, height * .6, height * .9, height * .6, rand() * 6.3, oakTint(rand)); }
   }
   // A roofless stone cottage with a doorway and a gable, timber and a tree in the yard.
   hamlet(put, b, height, rand) {
@@ -278,24 +236,49 @@ export class Props {
     put('wall', x, y - h / 2, w * .5, wall * 1.6, t * .9, 0, '#e3dccd');
     for (let i = 0; i < 4; i++) put('timber', x - w * .35 + i * w * .23, y + (rand() - .5) * h * .4, 18, wall * (.9 + rand() * .3), 18, rand() * .3, '#ffffff', (rand() - .5) * .3);
     put('timber', x, y + (rand() - .5) * h * .2, w * .9, 20, 22, (rand() - .5) * .3, '#ffffff', .05);
-    put('oak', x + b.w * .45, y - b.h * .4, height * .5, height * .95, height * .5, rand() * 6.3);
+    put('oak', x + b.w * .45, y - b.h * .4, height * .55, height * .95, height * .55, rand() * 6.3, oakTint(rand));
     for (let i = 0; i < 2; i++) put('log', x + (rand() - .5) * b.w, y + b.h * .45, 120, 40, 40, rand() * 3, '#ffffff');
-    for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', x + Math.cos(a) * b.w * .55, y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#b8c4a0'); }
+    for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', x + Math.cos(a) * b.w * .55, y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#c0d89c'); }
   }
   brush(put, b, rand) {
     const n = Math.min(30, Math.round(b.radius * b.radius / 5200));
-    for (let i = 0; i < n; i++) { const a = rand() * 6.3, r = Math.sqrt(rand()) * b.radius * .95, h = 100 + rand() * 60; put(rand() < .75 ? 'bush' : 'shrub', b.x + Math.cos(a) * r, b.y + Math.sin(a) * r, h * 1.6, h, h * 1.6, rand() * 6.3, rand() < .5 ? '#a8b890' : '#c2c8a4'); }
+    for (let i = 0; i < n; i++) { const a = rand() * 6.3, r = Math.sqrt(rand()) * b.radius * .95, h = 100 + rand() * 60; put(rand() < .75 ? 'bush' : 'shrub', b.x + Math.cos(a) * r, b.y + Math.sin(a) * r, h * 1.6, h, h * 1.6, rand() * 6.3, rand() < .5 ? '#b0cc90' : '#cadca4'); }
   }
   setPhase(phase, instant = false) { if (this.phase !== phase) this.view = null; this.phase = phase; if (instant) { this.blend = [phase ? 0 : 1, phase ? 1 : 0]; this.apply(); } }
-  update(dt, time, hero, reduced, view, sun) {
-    propUniforms.uTime.value = time; propUniforms.uSway.value = reduced ? 0 : 1; propUniforms.uSee.value = hero ? 1 : 0;
-    if (hero) propUniforms.uHero.value.set(hero.x, 120, hero.y);
+  update(dt, time, reduced, view, sun) {
+    propUniforms.uTime.value = time; propUniforms.uSway.value = reduced ? 0 : 1;
     const target = this.phase, speed = dt / .9; let changed = false;
     for (const p of [0, 1]) { const goal = p === target ? 1 : 0, b = this.blend[p]; if (b !== goal) { this.blend[p] = goal > b ? Math.min(1, b + speed) : Math.max(0, b - speed * 1.4); changed = true; } }
     if (changed) this.apply();
     // Re-cull when the view has moved a little, or a set has just appeared.
     const last = this.view;
-    if (changed || !last || Math.abs(last.x0 - view.x0) > 60 || Math.abs(last.y0 - view.y0) > 60 || Math.abs(last.x1 - view.x1) > 60) { this.view = { ...view }; this.cull(view, sun); }
+    if (changed || !last || Math.abs(last.x0 - view.x0) > 60 || Math.abs(last.y0 - view.y0) > 60 || Math.abs(last.x1 - view.x1) > 60) { this.view = { ...view }; this.cull(view, sun); this.tufts(view); }
+  }
+  // Grass tufts on open grass in view (fewer as the frame-rate rule lowers this.detail): a jittered grid of 64-unit cells, the same tufts for the same cell every time,
+  // none on lanes, sand, stone or water (the ground masks from terrain.js). In the woods they are darker and lower.
+  tufts(view) {
+    const g = this.ground, mesh = this.grass, detail = Math.min(1, this.detail ?? 1); if (!g || !mesh) return;
+    if (detail < .6) { mesh.count = 0; return; } // the frame-rate rule took many pixels: grass goes first
+    const cell = 64, woods = this.phase, tones = TUFT_TONES[woods ? 1 : 0];
+    const hash = (x, z, k) => { const h = Math.sin(x * 127.1 + z * 311.7 + k * 74.7) * 43758.5453; return h - Math.floor(h); };
+    // A wide view thins every cell evenly, so the cap never leaves one edge bare.
+    const cx0 = Math.floor(view.x0 / cell), cx1 = Math.ceil(view.x1 / cell), cz0 = Math.floor(view.y0 / cell), cz1 = Math.ceil(view.y1 / cell);
+    const fit = Math.min(1, MAX_TUFTS / ((cx1 - cx0 + 1) * (cz1 - cz0 + 1) * .9)) * detail;
+    let n = 0;
+    for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) for (let k = 0; k < 2 && n < MAX_TUFTS; k++) {
+      // Patches: a soft wave over the cells thins the tufts out between clumps.
+      const patchy = Math.sin(cx * .37 + Math.sin(cz * .21) * 2) * Math.cos(cz * .29 + Math.sin(cx * .17) * 2);
+      if (hash(cx, cz, k + 5) > (.25 + patchy * .5) * fit) continue;
+      const x = (cx + hash(cx, cz, k)) * cell, z = (cz + hash(cx, cz, k + 2)) * cell, i = Math.floor(z / g.world * g.size), j = Math.floor(x / g.world * g.size);
+      if (i < 0 || j < 0 || i >= g.size || j >= g.size) continue;
+      const o = (i * g.size + j) * 4, bare = Math.max(g.data[o], g.data[o + 1], g.data[o + 2], g.data[o + 3] * 2);
+      if (bare > 60) continue;
+      const h = (24 + hash(cx, cz, k + 7) * 26) * (woods ? .8 : 1) * (1 - bare / 90), w = h * (1.2 + hash(cx, cz, k + 9) * .5);
+      _q.setFromAxisAngle(_up, hash(cx, cz, k + 11) * 6.3); _m4.compose(_v.set(x, 0, z), _q, _s.set(w, h, w)); mesh.setMatrixAt(n, _m4);
+      mesh.setColorAt(n, tones[Math.floor(hash(cx, cz, k + 13) * tones.length)]); n++;
+    }
+    mesh.count = n; mesh.instanceMatrix.clearUpdateRanges(); mesh.instanceMatrix.addUpdateRange(0, n * 16); mesh.instanceMatrix.needsUpdate = true;
+    mesh.instanceColor.clearUpdateRanges(); mesh.instanceColor.addUpdateRange(0, n * 3); mesh.instanceColor.needsUpdate = true;
   }
   apply() { for (const p of [0, 1]) { const b = this.blend[p], e = b * b * (3 - 2 * b); this.grow[p].value = e; this.sets[p].group.visible = e > .001; } }
 }
