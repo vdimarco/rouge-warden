@@ -300,6 +300,8 @@ function updateUI() {
   $('auto-status').textContent = p.hp <= 0 ? 'RESPAWNING' : p.order?.type==='attack' && focus ? `${distance(p,focus)>p.range+focus.radius?'APPROACH':'ATTACK'} · ${focus.name} · ${p.attackVariant+1||1}/3` : p.order?.type==='move' ? 'MOVING · CLICK ENEMY TO ATTACK' : focus ? `AUTO ${p.attackVariant + 1 || 1}/3 · ${BASIC_ATTACKS[p.hero][p.attackVariant || 0]}` : 'AUTO · CLICK ENEMY TO ATTACK';
   $('auto-status').classList.toggle('engaged', !!focus);
   if (waypoint && distance(p, waypoint) < 110) waypoint = null;
+  // The enemy bots' team focus is the player: a mark under the health bar. The focus needs the enemy team to see the player.
+  const hunt=state.botFocus?.[1-p.team];$('hunted').hidden=!(hunt&&hunt.id===p.id&&hunt.until>state.time&&p.hp>0);
   const towerThreat=state.units.find(t=>t.kind==='tower'&&t.team!==p.team&&t.towerTarget===p.id&&t.towerUntil>state.time&&t.hp>0);
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : towerThreat?'Tower fire is growing. Leave its range.':concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : objectiveText(state,p.lane);
   const rallyWait=Math.ceil(rallyReadyAt-state.time);$('rally').disabled=p.hp<=0||rallyWait>0;$('rally').querySelector('small').textContent=rallyWait>0?`${rallyWait}s`:'Call team';

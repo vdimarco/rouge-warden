@@ -319,13 +319,13 @@ export class Renderer {
     m.restore();
   }
   drawPings(m, s, size, full) {
-    const colors = { fight: '#ff9a5c', defend: '#ff5a4f', rally: '#ffe27a', onmyway: '#7fe6ff', retreat: '#b9c4c8' };
+    const colors = { fight: '#ff9a5c', defend: '#ff5a4f', rally: '#ffe27a', onmyway: '#7fe6ff', retreat: '#b9c4c8', missing: '#d7b4ff' };
     for (const p of s.pings || []) {
       const age = s.time - p.time; if (p.team !== 0 || age < 0 || age > (p.type === 'rally' ? 6 : 4)) continue;
       const x = p.x / SIZE * size, y = p.y / SIZE * size, pulse = (age * 1.4) % 1;
       m.save(); m.strokeStyle = colors[p.type] || '#fff'; m.lineWidth = full ? 3 : 1.5;
       for (const k of [0, .5]) { const t = (pulse + k) % 1; m.globalAlpha = (1 - t) * .9; m.beginPath(); m.arc(x, y, (full ? 10 : 5) + t * (full ? 34 : 16), 0, TAU); m.stroke(); }
-      if (p.type === 'defend' || p.type === 'fight') { m.globalAlpha = .95; m.fillStyle = colors[p.type]; m.font = `900 ${full ? 20 : 11}px Barlow`; m.textAlign = 'center'; m.textBaseline = 'middle'; m.fillText('!', x, y); }
+      if (p.type === 'defend' || p.type === 'fight' || p.type === 'missing') { m.globalAlpha = .95; m.fillStyle = colors[p.type]; m.font = `900 ${full ? 20 : 11}px Barlow`; m.textAlign = 'center'; m.textBaseline = 'middle'; m.fillText(p.type === 'missing' ? '?' : '!', x, y); }
       m.restore();
     }
   }

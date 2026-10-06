@@ -19,6 +19,8 @@ function graph(phase, radius) {
   for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++)if(clear(nodes[i],nodes[j])){const cost=distance(nodes[i],nodes[j]);edges[i].push([j,cost]);edges[j].push([i,cost]);}
   const result={nodes,edges,clear};graphs.set(key,result);return result;
 }
+// Builds the route graphs for both realm phases once, so the first route in play does not stall a frame.
+export function warmRoutes(radius = 22) { for (const phase of Object.keys(OBSTACLES)) graph(+phase, radius); }
 export function route(s, e, destination) {
   const goal={x:clamp(destination.x,200,SIZE-200),y:clamp(destination.y,180,SIZE-180)};
   const g=graph(s.phase,e.radius||22);if(g.clear(e,goal))return [goal];

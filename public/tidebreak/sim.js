@@ -14,8 +14,8 @@ import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js'
 import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
 import { castLock, guardMove, botProfile, recallStep } from './bot-difficulty.js';
-import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
-import { followOrder } from './navigation.js';
+import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing, noteMissing } from './team-events.js';
+import { followOrder, warmRoutes } from './navigation.js';
 import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
 import { rooted, spellBlocked, castTiming, emitCombatFeedback } from './combat-state.js';
@@ -87,7 +87,7 @@ export function createMatch(kind = 0, seed = 49, lineup = null) {
   for (let lane = 0; lane < 3; lane++) { const roll = (Math.floor(s.random() * HEROES.length) + lane) % HEROES.length; hero(s, 1, lineup?.enemies?.[lane] ?? roll, lane); }
   for (const e of s.units) if (e.kind === 'hero' && !e.player) trainBot(e);
   announce(s, 'Choose your first spell', 'You have one skill point. Basic attacks are always ready.');
-  return s;
+  warmRoutes(); return s;
 }
 export const player = s => s.units.find(e => e.id === s.playerId);
 export function announce(s, title, detail = '') { s.messages.push({ title, detail, time: s.time }); if (s.messages.length > 5) s.messages.shift(); }
@@ -497,7 +497,8 @@ function bot(s, e, dt) {
   }
   if(e.castIntent)return;
   const to=guardMove(s,e,intent);
-  if(to)move(s,e,to.x,to.y,dt,heroSpeed(s,e));
+  // Bots walk around cover with the same route as the player's click orders. The old bots walk straight.
+  if(to){const next=botProfile(s,e).legacy?to:followOrder(s,e,to)||to;move(s,e,next.x,next.y,dt,heroSpeed(s,e));}
   if(intent.portal)portal(s,e);
   if(intent.target)attack(s,e,intent.target);
   if(intent.mode==='lane'&&!intent.move&&!to&&!baseGate(s,e,dt))followLane(s,e,dt);
@@ -560,6 +561,7 @@ export function step(s, input = {}, dt = 1 / 60) {
   s.effects.forEach(e => e.life -= dt); s.effects = s.effects.filter(e => e.life > 0);
   s.floaters.forEach(e => { e.life -= dt; e.y -= dt * 26; }); s.floaters = s.floaters.filter(e => e.life > 0);
   if (shiftWorld(s)) announce(s, s.phase ? 'The woods swallow the town' : 'The town returns', s.phase ? 'Vision shrinks. Hide in brush for a 75% ambush strike.' : 'Streets reopen. Buildings block sight and movement.');
+  if (Math.floor(s.time * 2) !== Math.floor((s.time - dt) * 2)) noteMissing(s);
   if (s.time >= s.nextWave) { spawnWave(s); s.nextWave += PACE.waveEvery; }
   if (!s.suddenDeath && s.time >= SUDDEN_DEATH) { s.suddenDeath = true; announce(s, 'Sudden death', 'Every ward and both rifts are open and take more damage. Home no longer heals, and deaths last longer.'); }
   if (!s.objective && s.time >= s.objectiveAt) {

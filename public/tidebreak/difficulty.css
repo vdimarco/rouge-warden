@@ -16,3 +16,8 @@
 @media (max-height:480px) and (min-width:600px){#difficulty-picker{font-size:9px;padding:2px;gap:2px;right:calc(100% + 8px)}#difficulty-picker .difficulty-title{display:none}#difficulty-picker button{min-height:26px;padding:2px 7px}}
 /* Small phones on their side: the picker sits under the logo, where it covers no control. */
 @media (max-height:480px) and (max-width:599px){#difficulty-picker{position:fixed;top:calc(116px + env(safe-area-inset-top));left:12px;right:auto;bottom:auto;transform:none;font-size:9px;padding:2px;gap:2px}#difficulty-picker .difficulty-title{display:none}#difficulty-picker button{min-height:26px;padding:2px 7px}}
+/* The enemy bots focus the player: a small mark under the health bar, clear of the joystick. */
+#hunted{position:absolute;left:0;top:calc(100% + 4px);padding:0 6px;border:1px solid #ff6b5a;border-radius:3px;background:#3a0d0bd9;color:#ffd2c9;font:800 10px/16px Barlow,system-ui,sans-serif;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;pointer-events:none;animation:hunted-pulse 1.2s ease-in-out infinite}
+#hunted[hidden]{display:none}
+@keyframes hunted-pulse{50%{box-shadow:0 0 10px #ff6b5a99}}
+@media (prefers-reduced-motion:reduce){#hunted{animation:none}}

@@ -21,6 +21,7 @@ export function chatFor(fact, s, { player, bots, handleOf }) {
       const foe = s.units.filter(u => u.kind === 'hero' && u.team === 1 && u.hp > 0).sort((a, b) => distance(a, source) - distance(b, source))[0];
       return [{ unitId: source.id, text: pick([`Fighting ${foe?.name || 'them'} ${lane}!`, `${foe?.name || 'Enemy'} on me, ${lane}!`, `Help ${lane}!`], seed) }];
     }
+    if (fact.type === 'missing') { const foe = unit(fact.target), bot = nearestBot(fact); return bot && foe ? [{ unitId: bot.id, text: pick([`${foe.name} missing ${lane}!`, `${foe.name} left ${lane}. Careful.`, `Lost sight of ${foe.name} ${lane}.`], seed) }] : []; }
     if (fact.type === 'defend') { const bot = nearestBot(fact); return bot ? [{ unitId: bot.id, text: pick([`${lane} ward is under attack. I'll go.`, `They're hitting our ${lane} ward!`], seed) }] : []; }
     return [];
   }
