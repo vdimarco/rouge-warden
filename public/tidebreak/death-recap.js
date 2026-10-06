@@ -54,7 +54,7 @@ export class RecapView {
   update(p) {
     const r = p.hp <= 0 ? p.deathRecap : null, show = !!r && this.closed !== r;
     this.el.hidden = !show; if (!show) return;
-    // The respawn countdown moves into the recap while it shows.
+    // The respawn countdown moves into the recap while it shows, on its own large line.
     if (this.shown === r) { const back = `Back in ${Math.max(1, Math.ceil(p.respawn))} s`; if (this.timer.textContent !== back) this.timer.textContent = back; return; }
     this.shown = r; this.el.replaceChildren();
     const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
@@ -62,7 +62,7 @@ export class RecapView {
     const close = el('button', 'recap-close', '×'); close.type = 'button'; close.setAttribute('aria-label', 'Hide death recap');
     close.addEventListener('pointerdown', e => { e.stopPropagation(); }); close.addEventListener('click', () => { this.closed = r; this.el.hidden = true; });
     head.append(title, close); this.el.append(head);
-    const sub = el('small', 'recap-sub', `${r.total} damage in the last ${Math.max(1, Math.round(r.window))} s · `); this.timer = el('strong', 'recap-timer', `Back in ${Math.max(1, Math.ceil(p.respawn))} s`); sub.append(this.timer); this.el.append(sub);
+    const sub = el('small', 'recap-sub', `${r.total} damage in the last ${Math.max(1, Math.round(r.window))} s`); this.timer = el('strong', 'recap-timer', `Back in ${Math.max(1, Math.ceil(p.respawn))} s`); sub.append(this.timer); this.el.append(sub);
     const list = el('ol', 'recap-sources');
     for (const v of r.sources.slice(0, 3)) { const li = el('li'), bar = el('i'); bar.style.width = `${Math.round(v.share * 100)}%`; li.append(el('span', '', v.name), el('em', '', `${v.amount} · ${Math.round(v.share * 100)}%`), bar); list.append(li); }
     this.el.append(list);

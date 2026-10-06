@@ -431,6 +431,7 @@ document.addEventListener('visibilitychange', () => { sound.setHidden(document.h
 // A resize (full screen, zoom, devtools) keeps the hero's order and held keys; only pointer gestures in progress end.
 window.addEventListener('resize', () => { movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); aim = null; $('thumb').style.transform = ''; renderer?.resize(); });
 window.addEventListener('contextmenu', e => e.preventDefault());
+let arenaBackdrop = false;
 function frame(now) {
   const frameMs = Math.max(0, now - last), dt = Math.min(frameMs / 1000, .05); last = now;
   let steps = 0;
@@ -470,6 +471,10 @@ function frame(now) {
   if (running && (paused || window.GameSwitch?.isOpen)) { feel.idle(dt); hurtEdge.style.opacity = hurtEdge.dataset.edge = Math.round(feel.edge * 20) / 20; }
   const drawStart = performance.now();
   if (running && renderer) drawBetweenSteps(dt);
+  // The 3D arena drifts behind the hero select; the 2D renderer keeps the painted backdrop.
+  const backdrop = !running && !!renderer?.backdrop && !$('menu').hidden && $('draft').hidden;
+  if (backdrop) renderer.draw(state, dt, true);
+  if (backdrop !== arenaBackdrop) { arenaBackdrop = backdrop; $('menu').classList.toggle('arena-backdrop', backdrop); }
   perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running, running && !paused && !window.GameSwitch?.isOpen);
   requestAnimationFrame(frame);
 }

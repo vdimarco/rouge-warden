@@ -31,13 +31,13 @@ The arcade build SHALL load `/arcade/quiet.js` before other scripts so audio sus
 - **THEN** the shared lifecycle script silences the game without breaking its own mute control
 
 ### Requirement: Motion lifecycle and accessibility
-The simulation SHALL stop on pause, page hide and completion; canvas frames SHALL remain unchanged while paused, including the cached animated water frame and sprite animation. All inactive screens and page visibility loss SHALL pause water videos. Data-saving preferences SHALL use still water without downloading gameplay videos. Live reduced-motion preferences SHALL disable video playback, water displacement and decorative motion/effects while preserving course movement and action feedback. All actions SHALL be available without swipes through keyboard and touch buttons.
+The simulation SHALL stop on pause, page hide and completion. Reduced motion SHALL disable water displacement, decorative particles, paddle cycling and cosmetic raft rocking while preserving course movement and lane/jump/duck feedback. Data saving SHALL disable menu video and gameplay video in fallback. All actions SHALL remain available through keyboard and touch buttons.
 #### Scenario: Pause mid-effect
-- **WHEN** the player pauses during a jump or animated river/pickup effect
-- **THEN** simulation, sprite state and the cached water frame remain unchanged until resume
+- **WHEN** the player pauses during a jump or water effect
+- **THEN** simulation and the displayed frame remain unchanged until resume
 #### Scenario: Reduced motion
 - **WHEN** reduced motion changes during play
-- **THEN** water displacement, decorative particles, frame cycling and rocking stop while lane/jump/duck controls remain functional
+- **THEN** water displacement and decorative effects stop while lane/jump/duck controls remain functional
 
 ### Requirement: Higgsfield living title scene
 The title scene SHALL use a Higgsfield-generated silent looping video based on the approved character art, with a still-image fallback. It SHALL preserve live readable menu controls, pause while hidden or covered by instructions, and use the still image for reduced motion or data-saving.
@@ -96,13 +96,13 @@ The runner SHALL offer rotating trick, coin and distance challenges with visible
 - **THEN** the challenge pays once, shows completion feedback and advances to a new coin target
 
 ### Requirement: Living gameplay river
-River Rush SHALL animate flowing water and ripples over the generated portrait and landscape gameplay environments using optional fal.ai-generated video loops, with a GPU texture effect and moving-foam fallbacks. Water displacement SHALL remain within the river surface while camera, shores, ruins and hazard projection remain stable. Animation SHALL NOT delay starting a run or require video readiness.
+River Rush SHALL primarily render a three-dimensional displaced water surface with directional waves, normal-based lighting, moving crest foam, wakes and obstacle ripples. The water and raft buoyancy SHALL share a world-distance wave field. The 3D renderer SHALL use no gameplay video. Unavailable WebGL SHALL retain a playable 2D fallback.
 #### Scenario: Ride through living rapids
-- **WHEN** a normal-motion player starts a run
-- **THEN** river foam and water texture visibly move behind the projected hazards and live controls
+- **WHEN** a normal-motion player rides, steers and lands from a jump
+- **THEN** the raft follows surface height and slopes, banking creates a wake and landing creates a short splash and settling response without changing collision timing
 #### Scenario: Video and GPU unavailable
-- **WHEN** video playback fails and a water graphics context is unavailable or lost
-- **THEN** the matching still background and moving-foam fallback remain and the runner is fully playable
+- **WHEN** WebGL cannot initialize
+- **THEN** the course and all controls remain playable through the 2D fallback
 
 ### Requirement: Runner character animation
 The approved character SHALL use a generated multi-frame paddling cycle, brief ride/jump/duck transitions, lane banking and landing recoil/splash. His face, long hair and modest loincloth SHALL remain consistent. Visual animation SHALL NOT change action windows, speed, collision outcomes or score rules.
@@ -132,31 +132,40 @@ The runner SHALL start at 42 m/s and escalate to a bounded 72 m/s, use .66-secon
 - **THEN** two lane changes occur without lifting the finger, and a cancelled pointer produces no further action
 
 ### Requirement: Coherent fluid motion
-Projected foam SHALL travel toward the raft at course speed. Character animation SHALL retain registered raft centers, base width and waterline across paddle frames and actions, with a registered paddle cycle and continuous ride/action transforms, without crossfading different rider images. River playback SHALL respond to normal speed escalation and Rush.
+Water waves and raft buoyancy SHALL share the same surface definition. Raft pitch and roll SHALL come from separated surface probes with stable damping; steering and landing SHALL produce bounded additional response. The approved rider appearance SHALL remain registered to the raft through actions.
 #### Scenario: Accelerate and dodge
 - **WHEN** a run accelerates and the player dodges
-- **THEN** water cues and upcoming objects approach together, the raft moves continuously and its animation does not jump between anchors
+- **THEN** world scenery and hazards approach coherently, the raft follows the water continuously and its action feedback does not drift away from the raft
 
 ### Requirement: Bounded frame rendering
-The renderer SHALL composite native decoded video directly behind the gameplay canvas, cap total backing-buffer pixels and avoid full-frame video copies or repeatedly drawing inactive runs. Rendering SHALL preserve exact paused pixels and late-decode freeze, and remain playable through unavailable video/GPU and live motion/data preferences.
+The renderer SHALL cap backing-buffer pixels, share repeated model resources, bound scene objects independently of run length and stop repeating scene work on inactive runs. Pause SHALL preserve the visible frame. GPU loss SHALL pause play and allow restart with a usable fallback.
 #### Scenario: Warm active rendering
-- **WHEN** a normal-motion run is sampled with 60fps river media
-- **THEN** there are zero full-frame video-to-canvas copies during active native playback, and warmed active frame cost is measured against the prior build
+- **WHEN** a phone or desktop run is sampled after assets load
+- **THEN** model loads, draw calls, triangle counts and frame times are recorded and repeated scenery does not grow with distance
 #### Scenario: Inactive run
 - **WHEN** a run is paused or completed
-- **THEN** simulation and captured pixels remain unchanged and the renderer stops repeating full scene work
+- **THEN** simulation and captured pixels remain unchanged and scene rendering stops until a meaningful state or viewport change
 
 ### Requirement: Continuous forward world motion
-The runner SHALL present continuously approaching whitewater and bank scenery in the same perspective and world-distance coordinate system as hazards. Decorative scenery SHALL remain outside playable lanes, fade into the distant scene, pass beyond the viewport and remain bounded independently of run length. Reduced motion SHALL omit this decorative movement.
+The runner SHALL present genuine 3D terrain and Meshy-generated textured riverbank and raft models with consistent perspective, lighting, depth occlusion and distance fog. Bank scenery SHALL remain outside playable lanes, recycle beyond the camera and have bounded counts. Reduced motion SHALL suppress decorative bank movement.
 #### Scenario: Ride without steering
 - **WHEN** a normal-motion player rides forward on phone, desktop or landscape
-- **THEN** foreground scenery grows and passes beside the raft, whitewater approaches continuously and forward movement remains visible between obstacle rows
+- **THEN** solid banks, layered vegetation and rocks pass beside the raft while the playable river remains readable
 #### Scenario: Pause or reduce motion
 - **WHEN** the player pauses or enables reduced motion
-- **THEN** pause freezes all scenery and pixels, and reduced motion suppresses decorative flow while preserving course movement
+- **THEN** pause freezes the world and reduced motion suppresses decorative movement while preserving course movement
 
 ### Requirement: Continuous steering and character geometry
 Visual steering SHALL preserve position and velocity through repeated lane inputs, settle a single-lane step to 95% within 90 ms and retain immediate logical lane selection. Jump and duck SHALL use the current approved rider appearance, continuous lift or body compression, and registered raft geometry rather than swapping the full character image.
 #### Scenario: Reverse a dodge and jump
 - **WHEN** the player changes lanes, immediately reverses and jumps or ducks
 - **THEN** steering follows a short continuous trajectory, the face and raft remain consistent and controls are available throughout the action
+
+### Requirement: Meshy asset provenance
+The deployed game SHALL load locally hosted GLBs generated by Meshy for its raft and riverbank scenery. Generation request IDs, input prompts, source URLs and optimization steps SHALL be recorded. Model failure SHALL retain usable substitutes without blocking controls.
+#### Scenario: Generated assets load
+- **WHEN** a normal run starts with the generated assets available
+- **THEN** the Meshy raft and bank meshes render in the world and renderer status identifies loaded assets
+#### Scenario: Missing model
+- **WHEN** a model request fails
+- **THEN** a usable geometric substitute remains and the run continues
