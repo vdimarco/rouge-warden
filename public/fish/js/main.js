@@ -1762,11 +1762,12 @@ function castUpdate(dt) {
   const p = Motion.pose;
   // the sensors went quiet after the player chose motion (a call, a system sheet): after STALL_S the game offers touch.
   // Counted by the clock from the last sample (pose.t; Motion.live turns false LIVE_MS after it), so slow frames count in
-  // full; a pause or another phase counts a second at most
-  const quiet = G.input === "motion" && !Motion.live, gap = G.quietT ? Math.min(1, (t - G.quietT) / 1000) : 0;
+  // full, also a frame longer than a second; a pause or another phase (no cast step in the frame before) counts a second at most
+  const cap = G.quietF >= G.frame - 1 ? Infinity : 1;
+  const quiet = G.input === "motion" && !Motion.live, gap = G.quietT ? Math.min(cap, (t - G.quietT) / 1000) : 0;
   const since = (t - Motion.pose.t) / 1000, live = Motion.tune.LIVE_MS / 1000;
-  G.quietT = t;
-  G.quiet = quiet ? (G.quiet ? G.quiet + gap : Number.isFinite(since) ? clamp(since, live, 1) : live) : 0;
+  G.quietT = t; G.quietF = G.frame;
+  G.quiet = quiet ? (G.quiet ? G.quiet + gap : Number.isFinite(since) ? clamp(since, live, cap) : live) : 0;
   // a motion lift that waits for the rod to reach 11 o'clock, and no sample came: the wait ends here
   if (G.lift) frameLift();
   // touch mode: the finger on the rod is the rod. Drag down = rod back; flick up = forward
