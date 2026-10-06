@@ -68,7 +68,7 @@ async function press(page, touch, x, y) {
 const report = [];
 try {
   for (const [w, h] of SIZES) {
-    const phone = w <= 430 || (h <= 520 && w >= 600), name = `${w}x${h}`;
+    const phone = w <= 430 || h <= 520, name = `${w}x${h}`;
     const page = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: phone, isMobile: phone });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto(URL + '?renderer=2d');

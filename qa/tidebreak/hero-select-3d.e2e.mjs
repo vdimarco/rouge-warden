@@ -117,8 +117,10 @@ try {
     // Every size: the hero stands in the portrait box, and the roster, a skill preview and Play take the pointer.
     for (const size of SIZES) {
       const [width, height] = size.split('x').map(Number);
-      await page.setViewportSize({ width, height });
-      // The renderer takes the new size on the resize event, then the next arena frame sets the hero select lens again.
+      // Chromium sends the resize event with its next rendered frame, which takes up to a minute in SwiftShader at these
+      // sizes. The test sends the event itself. The renderer takes the new size on it, then the next arena frame sets the
+      // hero select lens again.
+      await page.setViewportSize({ width, height }); await page.evaluate(() => dispatchEvent(new Event('resize')));
       await page.waitForFunction(([w, h]) => { const r = document.getElementById('battle').__shore3d; return r.width === w && r.height === h; }, [width, height], { polling: 100, timeout: 60000 }); await draw(3);
       h = await heroView(page);
       assert(inBox(h), `${size}: the hero stands in the portrait box: ` + JSON.stringify(h));
