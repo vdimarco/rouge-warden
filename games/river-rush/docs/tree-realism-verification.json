@@ -579,6 +579,123 @@
     "OpenSpec CLI absent; Markdown structure validated directly."
   ],
   "production": {
-    "status": "pending"
+    "status": "READY",
+    "deploymentId": "dpl_CjTrtcsLBycetWPEn1pf51ENwGkE",
+    "implementationCommit": "6aeb758be4d90fbe342541f15eb8e8db583d7036",
+    "url": "https://arcade.uptick.systems/river-rush/",
+    "verifiedAt": "2026-10-06T22:11:06.846885+00:00",
+    "http": {
+      "verifiedAt": "2026-10-06T22:10:34.857751+00:00",
+      "sha": "6aeb758be4d90fbe342541f15eb8e8db583d7036",
+      "base": "https://arcade.uptick.systems/",
+      "passed": true,
+      "files": [
+        {
+          "path": "public/river-rush/index.html",
+          "url": "https://arcade.uptick.systems/river-rush/index.html?tree-realism=6aeb758be4d90fbe342541f15eb8e8db583d7036",
+          "status": 200,
+          "contentType": "text/html; charset=utf-8",
+          "bytes": 752,
+          "sha256": "77513f90ad454ee67e5b48e8be0d6eda54e6a0157c4455f12c4eaaabff6b1240"
+        },
+        {
+          "path": "public/river-rush/assets/index-BHUdth4r.css",
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-BHUdth4r.css?tree-realism=6aeb758be4d90fbe342541f15eb8e8db583d7036",
+          "status": 200,
+          "contentType": "text/css; charset=utf-8",
+          "bytes": 18049,
+          "sha256": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540"
+        },
+        {
+          "path": "public/river-rush/assets/index-CCEXKX3N.js",
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-CCEXKX3N.js?tree-realism=6aeb758be4d90fbe342541f15eb8e8db583d7036",
+          "status": 200,
+          "contentType": "application/javascript; charset=utf-8",
+          "bytes": 961995,
+          "sha256": "37a72e9ed6db3f2d71fca82aff171406a02a856897992511c5aef381df06ce65"
+        },
+        {
+          "path": "public/river-rush/art/tree-bark-normal.webp",
+          "url": "https://arcade.uptick.systems/river-rush/art/tree-bark-normal.webp?tree-realism=6aeb758be4d90fbe342541f15eb8e8db583d7036",
+          "status": 200,
+          "contentType": "image/webp",
+          "bytes": 536952,
+          "sha256": "e8533790102db671ca34721c1ca9f2882fd9ebb6eb9df33307574b3cf0fea825"
+        },
+        {
+          "path": "public/river-rush/art/tree-bark.webp",
+          "url": "https://arcade.uptick.systems/river-rush/art/tree-bark.webp?tree-realism=6aeb758be4d90fbe342541f15eb8e8db583d7036",
+          "status": 200,
+          "contentType": "image/webp",
+          "bytes": 454760,
+          "sha256": "01a05056af68f139e93a17d264bd32a3e3d1d49ba05066902ced22c3b6115a13"
+        },
+        {
+          "path": "public/river-rush/art/tree-foliage.webp",
+          "url": "https://arcade.uptick.systems/river-rush/art/tree-foliage.webp?tree-realism=6aeb758be4d90fbe342541f15eb8e8db583d7036",
+          "status": 200,
+          "contentType": "image/webp",
+          "bytes": 99296,
+          "sha256": "57dc3bed01746f8f5bf502fbd5866a0465e9088cbe8958d2c57ded65b7bea7ce"
+        }
+      ]
+    },
+    "browser": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "results": [
+        {
+          "case": "phone",
+          "renderer": "webgl",
+          "approach": true,
+          "rootRegistrationChecked": true,
+          "duckCleared": true,
+          "shieldPreserved": true,
+          "passedTreeGeometryChecked": true,
+          "pausePixels": true,
+          "noActiveGpuPreparationChecked": true,
+          "reducedMotion": false,
+          "missingTextureFallback": false,
+          "detailedMaterials": false,
+          "speedUnchanged": true,
+          "contextLossFallbackChecked": true,
+          "drawCalls": 31,
+          "triangles": 113744,
+          "branchBatches": {
+            "trees": 8,
+            "scenery": 7,
+            "woodSegments": 101,
+            "leafClusters": 173,
+            "capacity": 32,
+            "perTree": 32,
+            "drawCalls": 2,
+            "style": "curved-tapered",
+            "bark": "fal",
+            "foliage": "fal",
+            "origins": [
+              {
+                "id": 14,
+                "lane": 1,
+                "course": 112.6757980952381,
+                "side": -1,
+                "root": {
+                  "x": -17.245432406412593,
+                  "y": 0.7615244707234102,
+                  "d": 7.664
+                },
+                "tip": {
+                  "x": 0,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              }
+            ]
+          }
+        }
+      ],
+      "errors": [],
+      "screenshots": "/tmp/river-tree-realism/live"
+    }
   }
 }

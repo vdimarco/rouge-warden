@@ -1,4 +1,4 @@
 - [x] Generate and pack realistic bark and foliage with provenance and fallbacks.
 - [x] Smooth and taper limbs; create fuller crowns and matching bank trees.
 - [x] Verify visuals, duck clearance, pause, startup resources and fallback.
-- [ ] Publish, verify the live arcade and archive the completed specification.
+- [x] Publish, verify the live arcade and archive the completed specification.
