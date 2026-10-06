@@ -262,7 +262,7 @@ try {
     };
     await page.evaluate(() => G.test.step(1 / 60, 3));
     const rest = await hintOf();
-    assert(/^Tap a building to swing\. Keep tapping/.test(rest), 'off the wall the hint over SWING says to tap a building: ' + rest);
+    assert(/^Tap left or right to throw a plunger/.test(rest), 'off the wall the hint says to tap left or right: ' + rest);
     const pad = page.locator('.phone-climb');
     assert(await pad.isHidden(), 'no climb pad off the wall');
     assert(await page.evaluate(() => QA.flyIn()), 'a phone holds the wall too');
@@ -329,7 +329,7 @@ try {
     console.log('PASS a Center press on the wall keeps the wall line');
     const dry = await page.evaluate(() => {
       const tap = G.picker.tap; G.picker.tap = () => null;
-      document.querySelector('[data-action=throw]').onclick(); G.test.step(1 / 60, 6);
+      G.desktop.mobile.tap(1); G.test.step(1 / 60, 6);
       G.picker.tap = tap;
       return { wall: !!G.P.wall, dry: G.test.events().slice(-12).some((e) => e.type === 'dry'), hint: document.querySelector('.phone-hint').textContent };
     });
