@@ -398,14 +398,23 @@ if (part("A")) {
       ["spat", [], "It spat the lure.", "Swipe it up as soon as it strikes."],
       ["thrown", [{ type: "thrown", jump: true }], "The Golden Loon Bass got away.", "Lower the rod as soon as it jumps. Look for its gold ring again at dawn or dusk.", { id: "golden", kg: 4.2 }],
     ];
+    // the loss line is up 3.4 s of wall time, and a busy machine can take longer than that to look: each one is logged at
+    // the end of the frame that puts it up
+    await page.evaluate(() => {
+      const p = document.querySelector("#prompt");
+      window.__lost = [];
+      window.__lostObs = new MutationObserver(() => { if (FISH.G.phase === "lost" && !p.hidden) window.__lost.push({ h: p.querySelector(".p1 span").textContent, sub: p.querySelector(".p2").textContent, cls: p.className }); });
+      window.__lostObs.observe(p, { attributes: true, childList: true, subtree: true, characterData: true });
+    });
     for (const [reason, ev, h, sub, fish = null, cause = ""] of LOSS) {
-      await page.evaluate(() => { if (FISH.G.phase === "lost") FISH.enterReel(); });
+      await page.evaluate(() => { if (FISH.G.phase === "lost") FISH.enterReel(); window.__lost.length = 0; });
       await stage(page, { phase: "lost", reason, cause, ...(fish ? { fish } : {}) }, ev);
       // (two loss lines in a row can share the headline: wait for the sub too)
-      await wait(page, ([h, sub]) => { const p = document.querySelector("#prompt"); return !p.hidden && p.querySelector(".p1 span").textContent === h && p.querySelector(".p2").textContent === sub; }, [h, sub], 8000).catch(() => {});
-      const p = await promptNow(page);
+      await wait(page, ([h, sub]) => window.__lost.some((x) => x.h === h && x.sub === sub), [h, sub], 30000).catch(() => console.log("     (no loss line \"" + h + "\" in 30 s)"));
+      const p = (await page.evaluate(([h, sub]) => window.__lost.find((x) => x.h === h && x.sub === sub) || window.__lost.pop(), [h, sub])) || (await promptNow(page));
       check(p && p.h === h && p.sub === sub, `loss: ${reason}${ev.length ? " (" + Object.keys(ev[0]).filter((k) => k !== "type").join() + ")" : ""}${cause ? " (" + cause + ")" : ""} -> "${h}"` + (p && p.h === h && p.sub === sub ? "" : " (got " + JSON.stringify(p) + ")"));
     }
+    await page.evaluate(() => window.__lostObs.disconnect());
     // the loss beat: the line stays up 3.2 s or more (a legend longer), then the next cast. It is timed in the page, by the
     // game's clock: from the loss line (G.outcomeAt) to the frame that takes it down. (Times taken here would also count the
     // trips to the page, which are slow on a busy machine)
@@ -452,11 +461,18 @@ if (part("A")) {
     // big for its kind: a perch at the top of its range
     await stage(page, { fish: { id: "perch", kg: 0.59, known: false } }, [{ type: "hooked", id: "perch" }]);
     check(await page.evaluate(() => !!FISH.G.big), "a perch near the top of its range is big for its kind (size rank 0.9 or more)");
-    // a fish that never runs: the warning comes after 4 s
+    // a fish that never runs: the warning comes after 4 s. It is timed by the game's clock, from the hook set (G.big.at) to
+    // the toast: a look 1.5 s after the hook set can come late on a busy machine
+    await page.evaluate(() => {
+      const t = document.querySelector("#toast");
+      window.__bigAt = null;
+      const o = new MutationObserver(() => { if (t.textContent !== "It is a big one!") return; o.disconnect(); window.__bigAt = FISH.G.big ? Math.round(performance.now() - FISH.G.big.at) : -1; });
+      o.observe(t, { childList: true, characterData: true, subtree: true });
+    });
     await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }]);
-    await sleep(1500);
-    check((await toastNow()) !== "It is a big one!", "no warning yet 1.5 s after the hook set");
-    await wait(page, () => FISH.G.big && FISH.G.big.said, null, 6000).catch(() => {});
+    await wait(page, () => window.__bigAt !== null, null, 30000).catch(() => console.log("     (no warning in 30 s)"));
+    const bigMs = await page.evaluate(() => window.__bigAt);
+    check(bigMs === null || bigMs >= 1500, "no warning yet 1.5 s after the hook set (" + bigMs + " ms)");
     check(await page.evaluate(() => FISH.G.big && FISH.G.big.said), "4 s after the hook set the warning comes, run or no run");
     // the reveal of a fish with a vowel, and of a legend
     await stage(page, { fish: { id: "smallmouth", kg: 1.2, known: true } }, [{ type: "hooked", id: "smallmouth" }, { type: "reveal", id: "smallmouth" }]);
@@ -578,8 +594,9 @@ if (part("A")) {
     check(c.badges.join() === "LEGEND,NEW SPECIES" && c.photo && c.size === expectSize(golden, 4.2), "the legend: LEGEND and NEW SPECIES, the photo (" + JSON.stringify({ badges: c.badges, size: c.size }) + ")");
     lg2 = await logNow(page);
     check(has(lg2, "H.land", 2) && has(lg2, "S.sfx", "record") && has(lg2, "S.sfx", "shutter"), "the legend buzz, the record sting and the shutter");
-    await sleep(1500);
-    check(has(await logNow(page), "S.sfx", "loonWail"), "and at Loon Lake the loon wails for it");
+    // (the loon calls by its own timer, 1.7 s after the catch)
+    const wail = await wait(page, () => window.__log.some((l) => l[0] === "S.sfx" && l[1] === "loonWail"), null, 30000).then(() => true, () => false);
+    check(wail, "and at Loon Lake the loon wails for it");
     check(await page.evaluate(() => FISH.save.places.loon.lg === 3 && FISH.save.journal.golden.n === 1), "the save marks the legend as landed (step 3)");
     await click(page, "#catchGo");
     await wait(page, () => FISH.G.phase === "cast");
