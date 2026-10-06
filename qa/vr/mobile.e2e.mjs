@@ -73,6 +73,9 @@ try {
  // must land on the ring, not on whatever sits at the middle of the screen.
  const target=await page.evaluate(()=>{
   const S=G.city.start,R=G.city.goldRing;G.test.teleport(S.x,S.y,S.z);G.test.aimAt(1,null);G.desktop.mobile.reset();
+  // the ring sits near the middle, so the tap may land on either half: let the ropes of the swings above go first (a tap on a
+  // side whose rope still flies does nothing)
+  for(let k=0;k<180&&G.P.ropes.some(r=>r.state!=='idle');k++){G.test.step(1/60,1);G.test.teleport(S.x,S.y,S.z);}
   G.rigYaw=Math.atan2(-(R.x-S.x),-(R.z-S.z));G.test.look(0,.45);G.test.step(1/60,30);G.camera.updateMatrixWorld(true);
   const v=new G.camera.position.constructor(R.x,R.y,R.z).project(G.camera);
   return {x:(v.x*.5+.5)*innerWidth,y:(.5-v.y*.5)*innerHeight,ndcY:v.y};
