@@ -83,8 +83,15 @@ try {
   const st = await page.evaluate(() => { G.test.hold(true); const a = G.test.state(); const b = G.test.step(1 / 60, 30); return { a, b }; });
   const dt = st.b.time - st.a.time, df = st.b.frame - st.a.frame;
   check(Math.abs(dt - 0.5) < 1e-6 && df === 30, "G.test.step(1/60, 30) moves time by 0.5 s and 30 frames", { dt, df });
-  const still = await page.evaluate(async () => { const f = G.frame; await new Promise((r) => setTimeout(r, 300)); return G.frame - f; });
-  check(still === 0, "G.test.hold(true) stops the loop's logic", { frames: still });
+  // The check counts drawn frames, not wall time: each G.test.sample answers on a frame that the loop drew, so five answers are five
+  // drawn frames. A wait of 300 ms can pass with no frame at all on a busy machine, and G.frame would stand still for the wrong reason.
+  const still = await page.evaluate(async () => {
+    const f = G.frame, t = G.time;
+    let drawn = 0;
+    for (let i = 0; i < 5; i++) { await G.test.sample([[0.5, 0.5]]); drawn++; }
+    return { drawn, frames: G.frame - f, time: G.time - t };
+  });
+  check(still.drawn === 5 && still.frames === 0 && still.time === 0, "G.test.hold(true) stops the loop's logic while 5 frames draw", still);
   // walking forward with W moves the body; the step is deterministic
   const walk = await page.evaluate(() => { const a = G.test.state().pos; window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyW" })); G.test.step(1 / 60, 30); window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyW" })); G.test.step(1 / 60, 30); return { a, b: G.test.state().pos }; });
   check(Math.hypot(walk.b.x - walk.a.x, walk.b.z - walk.a.z) > 0.8, "W walks the body along the roof in flat play", walk);
