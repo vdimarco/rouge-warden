@@ -4,4 +4,4 @@
 - [x] 4. Verify fault recovery, sustained rendering, controls, layouts and existing safeguards.
 - [x] 5. Implement and verify whole-screen mouse/touch/pen gestures and deliberate button taps.
 - [x] 6. Place lane arrows at the outer ends of the control row and verify labels and taps.
-- [ ] 7. Publish and verify the live fix, archive and review the canonical specification.
+- [x] 7. Publish and verify the live fix on GitHub and the arcade.
