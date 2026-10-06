@@ -2,7 +2,7 @@
 
 The shots to take, the sizes each store needs, and two ways to make them. Save them as PNG with no alpha (RGB) in `apps/fish/store/screenshots/<slot>/`, for example `store/screenshots/iphone-6.9/01-title.png`.
 
-The Android set is ready in `store/screenshots/android/`: the eight shots below at 1080 x 1920, made with `qa/fish/store-shots.mjs` (Way 1). The iPad set is ready in `store/screenshots/ipad-13/`: the same eight shots at 2064 x 2752 (Way 1, `SLOTS=ipad-13`). The iPhone sets are not in git yet. Make them with Way 1 before the first App Store upload.
+The Android set is ready in `store/screenshots/android/`: the eight shots below at 1080 x 1920, made with `qa/fish/store-shots.mjs` (Way 1). The App Store sets are ready too, the same eight shots in each, made with Way 1: `store/screenshots/iphone-6.9/` (1320 x 2868), `store/screenshots/iphone-6.5/` (1284 x 2778) and `store/screenshots/ipad-13/` (2064 x 2752).
 
 ## Sizes
 
