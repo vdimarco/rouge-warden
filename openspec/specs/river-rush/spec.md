@@ -318,6 +318,9 @@ remain bounded and use locally available resources prepared before active play.
 ### Requirement: Natural tree anatomy and materials
 Shoreline trees SHALL have smooth curved, tapering limbs, rooted broad trunks,
 irregular fuller crowns, detailed bark and natural individual leaf textures.
+The duck bough SHALL have substantial structural thickness and multiple
+connected woody forks with leafy offshoots along its span. Its terminal
+silhouette SHALL descend naturally without a curled upward hook.
 Matching decorative trees SHALL be placed outside the playable river. Curved
 low limbs SHALL remain confined to their duck lane. Texture and geometry work
 SHALL finish before active play; missing new textures SHALL retain usable local
@@ -340,3 +343,8 @@ speed, action windows, inputs and collision outcomes.
   cannot load
 - **THEN** paused pixels stay fixed, reduced motion preserves readable trees,
   and the fallback remains playable with the same branch geometry and controls
+
+#### Scenario: Read a substantial branched bough
+- **WHEN** a player approaches a duck tree on phone, desktop or landscape
+- **THEN** a thick supporting bough has multiple clearly connected leafy forks,
+  its low end tapers without curling upward, and a timed duck clears the wood
