@@ -39,7 +39,7 @@ A box is ticked only when the code and a test in the branch show the work done. 
 - [x] Ink twins on the ropes, the cups, the launchers and the gloves, with the rope twin drawing as many segments as the rope (`rope.js`, `hands.js`; `swing.mjs`).
 - [x] Comic caption boxes for the HUD, the subtitles, the toasts, the pause menu and the map, on a flat screen and in VR (`ui.js`; `ui.mjs` runs the flat-screen HUD, the menus and the map).
 - [x] Ink lines on the wall shards of the mixed reality opening (`portal.js`; `mr.mjs`).
-- [ ] Check the outlines of the room toilet and the lamp shade in the opening (`portal.js` builds them; no suite reads them yet).
+- [x] Check the outlines of the room toilet and the lamp shade in the opening (`portal.js` builds them; no suite reads them yet). Done (2026-10-06): `mr.mjs` has a cottage run. It checks the 7 toilet parts and the lamp shade: one ink outline each, visible with its part, a thin line, and none left after the opening. The AR opening builds no room, and `mr.mjs` checks that too. All 8 outlines are correct.
 - [x] Keep the hero and the art optional: a missing file gives the built-in look (`hero.mjs`, `render.mjs`).
 - [x] Keep the hero's texture on the GPU after the loader frees the other maps. Fixed in #181. Check: `ui.mjs` reads that the colour map is uploaded at load and that the first draw does not upload it again. `ui.mjs` passes on c190922: "the hero's colour map is on the GPU as soon as the model loads, and the first draw does not upload it again".
 - [x] Fit two-line toasts inside their canvas. Fixed in #181. Check: `ui.mjs` measures the box, the border and the shadow. `ui.mjs` passes on c190922: "a toast's caption box, border and shadow fit inside its canvas (the two-line unlock toasts too)".
@@ -48,9 +48,9 @@ A box is ticked only when the code and a test in the branch show the work done. 
 
 ## Checks that are still open
 
-- [ ] Off-centre tap at 390x844. `mobile.e2e.mjs` taps off the centre only at 844x390. Add the portrait tap.
-- [ ] Screenshots at 960x540, 844x390 and 390x844, read against the scenarios. `mobile.e2e.mjs` writes the two phone sizes. No suite runs at 960x540.
-- [ ] The flat HUD, the toast and the pause menu inside the window at the same three sizes. No suite measures this.
+- [x] Off-centre tap at 390x844. `mobile.e2e.mjs` taps off the centre only at 844x390. Add the portrait tap. Done (2026-10-06): `mobile.e2e.mjs` taps 0.4 off the centre at 390x844 in third and first person, and switches to a second building. The start roof shows only one building in portrait, so the check finds a roof that shows two.
+- [x] Screenshots at 960x540, 844x390 and 390x844, read against the scenarios. `mobile.e2e.mjs` writes the two phone sizes. No suite runs at 960x540. Done (2026-10-06): `qa/vr/state-shots.mjs` saves the screens at six sizes, and each one was read against the specs. One defect was fixed: the arrow behind the camera sat under the training card. Open: on a phone, the SWING hint keeps the wall text after the hero leaves the wall.
+- [x] The flat HUD, the toast and the pause menu inside the window at the same three sizes. No suite measures this. Done (2026-10-06): `qa/vr/layout.e2e.mjs` measures them at six sizes (402 checks) and runs in CI. It found two defects, now fixed: the pause menu was 2 px too tall at 640x360, and the Comfort buttons ran off the panel on 390 and 360 px phones.
 - [ ] Run the suites below on the final tree, one at a time, and write the results here. An earlier run, before the review fixes, passed all of them. No run on the final tree is recorded.
 - [x] Validate with the OpenSpec CLI. 2026-10-05, CLI 1.14.0 (`npx --yes @fission-ai/openspec@1.14.0 validate swing-hero-comic --type change`), tree c190922: it prints "Change 'swing-hero-comic' is valid" and exits 0. The same command with `--strict` gives the same result.
 - [ ] Archive with the OpenSpec CLI. Then read the new specs under `openspec/specs/`. This waits for the device checks, so the change stays open (see J6 in `swing-controls/tasks.md`).
@@ -84,3 +84,4 @@ The headless suites cannot cover these. Nobody has run them.
 ## Not in this change
 
 The flat-screen controls change holds these: the auto target, the pad button Y and an eye button for the view, comic-style touch buttons, vibration, the key hint strip, the portrait "turn your phone" card, and `qa/vr/flat.mjs` and `qa/vr/touch.mjs`. A review found that nothing sets `input.viewDown`, so V is the only view toggle today. `hero.mjs` fakes the edge by hand. That gap belongs to the controls change.
+- [x] Make the comfort vignette check and the boot attract-camera check count frames (2026-10-06). The vignette check failed 3 of 3 runs on a busy machine. It now passes 7 of 7: `lib.sampleAfter` reads the pixels on the frame that draws the vignette. The attract check waits 5 game frames, not 600 ms. Open: under heavy load, `boot.mjs` can still stop on a slow shader compile or when the system stops the renderer for lack of memory.
