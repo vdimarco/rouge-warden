@@ -22,7 +22,7 @@
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.
     { id: "lab", name: "The Lab", sub: "Early prototypes and toys", url: "/lab/", art: "/arcade/key/lab.webp", color: "#f0b848" },
-    { id: "neon", name: "Neon Ronin", sub: "Gyro sword duels", url: "/neon/", art: "/arcade/neon.webp", color: "#caff54" },
+    { id: "neon", name: "Neon Ronin", sub: "Gyro sword duels", url: "/neon/", art: "/arcade/key/neon.webp", color: "#caff54" },
     { id: "echo", name: "Loon Echo", sub: "Rescue the flock", url: "/echo/", art: "/arcade/echo.webp", color: "#9ff2de" },
     { id: "tellme", name: "Tell Me", sub: "A card game with critters", url: "/tellme/", art: "/arcade/tellme.webp", color: "#f4e4bd" },
     { id: "plunge", name: "Take the Plunge", sub: "Dive and fly south", url: "/lab/plunge/", art: "/arcade/plunge.webp", color: "#ffce7e", credits: false },
