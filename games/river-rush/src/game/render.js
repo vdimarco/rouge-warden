@@ -12,10 +12,14 @@ const regions = [
 ];
 const indexes = { rock: 3, log: 4, branch: 5, coin: 6, magnet: 7, shield: 8 };
 let artPromise;
+function loadImage(key,name){return new Promise((resolve,reject)=>{
+  let attempt=0;const image=new Image();
+  image.onload=()=>resolve([key,image]);
+  image.onerror=()=>{if(attempt<2){attempt++;setTimeout(()=>{image.src=`${import.meta.env.BASE_URL}art/${name}.png?retry=${attempt}`;},attempt*350);}else reject(new Error(`Could not load ${name}.`));};
+  image.src=`${import.meta.env.BASE_URL}art/${name}.png`;
+});}
 export function loadArt() {
-  return artPromise??=Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames']].map(([key,name]) => new Promise((resolve,reject) => {
-    const image = new Image(); image.onload = () => resolve([key,image]); image.onerror = () => reject(new Error(`Could not load ${name}.`)); image.src = `${import.meta.env.BASE_URL}art/${name}.png`;
-  }))).then(entries => prepareHeroArt(Object.fromEntries(entries)));
+  return artPromise??=Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames']].map(([key,name])=>loadImage(key,name))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
 }
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];
 async function prepareHeroArt(art){
