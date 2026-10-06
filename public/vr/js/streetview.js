@@ -1,6 +1,7 @@
-// In Full Swing: the street life view. The people that street.js moves, drawn as comic figures (one instanced mesh and its
-// ink hull: two draws for everybody), posed in the vertex shader from a few numbers per person; and the neon shop signs
-// (one instanced box mesh), whose colours go over 1 so the bloom pass (bloom.js) picks them out.
+// In Full Swing: the street life view. Comic figures (one instanced mesh and its ink hull: two draws for everybody) posed in the
+// vertex shader from a few numbers per figure: the people that street.js moves, the Sludge Gang (combat.js) and the people of the
+// odd jobs (jobs.js) all go through createFigures. And the neon shop signs (one instanced box mesh), whose colours go over 1 so
+// the bloom pass (bloom.js) picks them out.
 import * as THREE from "three";
 import { PERF, COLORS, SUN_DIR } from "./config.js";
 import { GLSL, INK, inkK, syncInk } from "./comic.js";
@@ -26,6 +27,7 @@ attribute vec4 aA;  // walk phase, stride (m/s), pose code, time in the pose
 attribute vec4 aC1; // shirt rgb, height scale
 attribute vec3 aC2; // trousers rgb
 attribute vec3 aC3; // skin rgb
+attribute vec4 aB;  // the whole body's pitch (+ falls forward) and roll about the feet, a lift, unused
 uniform float uTime;
 uniform float uHull; // 0 the body, 1 the ink hull
 uniform float uInkK, uInkPx;
@@ -70,6 +72,47 @@ void main() {
     if (part == 5) pitch = 0.2;
     headP = 0.6 * smoothstep(0.0, 0.25, t); lean = -0.08;
   }
+  float thrust = sin(3.14159 * clamp(t / 0.3, 0.0, 1.0));
+  if (pose == 8) { // a punch: the right arm out straight at the target
+    if (part == 4) pitch = 1.55 * thrust;
+    if (part == 5) { pitch = 1.0; raise = -0.3; }
+    lean = 0.15 * thrust;
+  }
+  if (pose == 9) { // the wind-up: the right fist drawn back over the shoulder, the weight back
+    if (part == 4) { pitch = -0.9; raise = 0.35; }
+    if (part == 5) pitch = 0.9;
+    lean = -0.12;
+  }
+  if (pose == 10) { // staggered by a blow: arms thrown out, rocking back
+    float k = 1.0 - smoothstep(0.0, 0.6, t);
+    if (part == 4 || part == 5) raise = sx * 1.1 * k;
+    lean = -0.35 * k;
+  }
+  if (pose == 11) { // down on the ground (the body's pitch lays it flat): limbs loose
+    if (part == 4 || part == 5) raise = sx * 0.5;
+    if (part == 2 || part == 3) pitch = sx * 0.15;
+  }
+  if (pose == 12) { // falling: arms and legs flailing
+    float f = uTime * 11.0 + aP.x;
+    if (part == 4 || part == 5) { raise = sx * (2.0 + 0.4 * sin(f + sx)); pitch = 0.4 * sin(f * 1.3); }
+    if (part == 2 || part == 3) pitch = 0.6 * sin(f * 0.9 + sx * 1.5);
+    headP = 0.3;
+  }
+  if (pose == 13) { // carried or hanging limp
+    if (part == 4 || part == 5) pitch = 0.1;
+    if (part == 2 || part == 3) pitch = sx * 0.1 + 0.2;
+    headP = -0.3;
+  }
+  if (pose == 14) { // waving for help: the right arm over the head
+    if (part == 4) raise = 2.7 + 0.35 * sin(uTime * 8.0 + aP.z);
+    if (part == 5) raise = -0.2;
+    headP = 0.35;
+  }
+  if (pose == 15) { // a kick: the right leg out in front
+    if (part == 2) pitch = 1.35 * thrust;
+    if (part == 4 || part == 5) raise = sx * 0.7;
+    lean = -0.2 * thrust;
+  }
   vec3 pivot = vec3(0.0);
   if (part == 1) { pivot = vec3(0.0, 1.45, 0.0); p = pivot + rotX(headP) * (p - pivot); n = rotX(headP) * n; }
   if (part == 2 || part == 3) { pivot = vec3(sx * 0.1, 0.86, 0.0); p = pivot + rotX(pitch) * (p - pivot); n = rotX(pitch) * n; }
@@ -83,6 +126,9 @@ void main() {
   p.y += bob;
   float s = aC1.w;
   p *= s;
+  // the whole body: laid down, falling or carried (a pitch and a roll about the feet, then a lift)
+  if (aB.x != 0.0 || aB.y != 0.0) { mat3 B = rotZ(aB.y) * rotX(-aB.x); p = B * p; n = B * n; }
+  p.y += aB.z;
   // to the world: the yaw, then the place
   float c = cos(aP.w), si = sin(aP.w);
   mat3 Y = mat3(c, 0.0, -si, 0.0, 1.0, 0.0, si, 0.0, c);
@@ -230,20 +276,17 @@ void main() {
 }
 `;
 
-export function createStreetView(scene, street, opts = {}) {
-  const root = new THREE.Group();
-  root.name = "street";
-  scene.add(root);
+// Figures: up to max comic figures, drawn in two calls. Each frame: begin(cam), then add(f) for every figure to draw (the ones
+// further than reach from the camera are skipped), then end(). A figure: { x, y, z, yaw, phase, stride, pose, poseT, height,
+// shirt, pants, skin (rgb arrays), and optional bp, br (the body's pitch and roll), lift }.
+export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
   const U = { uTime: { value: 0 } };
-  const max = street.max;
-
-  /* ---- people ---- */
   const base = figure();
   const g = new THREE.InstancedBufferGeometry();
   g.index = base.index;
   for (const [k, a] of Object.entries(base.attributes)) g.setAttribute(k, a);
   const A = {};
-  for (const [k, size] of [["aP", 4], ["aA", 4], ["aC1", 4], ["aC2", 3], ["aC3", 3]]) {
+  for (const [k, size] of [["aP", 4], ["aA", 4], ["aC1", 4], ["aC2", 3], ["aC3", 3], ["aB", 4]]) {
     const a = new THREE.InstancedBufferAttribute(new Float32Array(max * size), size);
     a.setUsage(THREE.DynamicDrawUsage);
     g.setAttribute(k, a);
@@ -254,14 +297,53 @@ export function createStreetView(scene, street, opts = {}) {
   const hullU = { ...U, uHull: { value: 1 }, uInkK: inkK, uInkPx: { value: 1.6 } };
   const bodyMat = new THREE.ShaderMaterial({ vertexShader: PEOPLE_VS, fragmentShader: PEOPLE_FS, uniforms: bodyU, fog: false });
   const hullMat = new THREE.ShaderMaterial({ vertexShader: PEOPLE_VS, fragmentShader: PEOPLE_FS, uniforms: hullU, fog: false, side: THREE.BackSide });
-  const people = new THREE.Mesh(g, bodyMat);
-  people.name = "people";
-  people.frustumCulled = false;
+  const root = new THREE.Group();
+  root.name = "figures";
+  const mesh = new THREE.Mesh(g, bodyMat);
+  mesh.name = "people";
+  mesh.frustumCulled = false;
   const hull = new THREE.Mesh(g, hullMat);
   hull.name = "people-ink";
   hull.frustumCulled = false;
   hull.onBeforeRender = (r, sc, cam) => syncInk(r, cam);
-  root.add(people, hull);
+  root.add(mesh, hull);
+  scene.add(root);
+  let n = 0, cam = null, counts = {};
+  const R2 = reach * reach;
+  const F = {
+    root, mesh, hull,
+    begin(c, time) { n = 0; cam = c; counts = {}; if (time != null) U.uTime.value = time; },
+    // tag: a name to count by (people, goons, jobs) for the tests
+    add(p, tag = "people") {
+      if (n >= max) return false;
+      if (cam && (p.x - cam.x) ** 2 + (p.z - cam.z) ** 2 + (p.y - cam.y) ** 2 > R2) return false; // a far figure is a few pixels: not drawn
+      const o4 = n * 4, o3 = n * 3, aP = A.aP.array, aA = A.aA.array, c1 = A.aC1.array, c2 = A.aC2.array, c3 = A.aC3.array, aB = A.aB.array;
+      aP[o4] = p.x; aP[o4 + 1] = p.y; aP[o4 + 2] = p.z; aP[o4 + 3] = p.yaw;
+      const still = p.delay > 0 && p.state !== "flee";
+      aA[o4] = p.phase; aA[o4 + 1] = still ? 0 : p.stride; aA[o4 + 2] = p.delay > 0 ? 1 : p.pose; aA[o4 + 3] = p.poseT;
+      c1[o4] = p.shirt[0]; c1[o4 + 1] = p.shirt[1]; c1[o4 + 2] = p.shirt[2]; c1[o4 + 3] = p.height;
+      c2[o3] = p.pants[0]; c2[o3 + 1] = p.pants[1]; c2[o3 + 2] = p.pants[2];
+      c3[o3] = p.skin[0]; c3[o3 + 1] = p.skin[1]; c3[o3 + 2] = p.skin[2];
+      aB[o4] = p.bp || 0; aB[o4 + 1] = p.br || 0; aB[o4 + 2] = p.lift || 0; aB[o4 + 3] = 0;
+      counts[tag] = (counts[tag] || 0) + 1;
+      n++;
+      return true;
+    },
+    end() {
+      g.instanceCount = n;
+      for (const k in A) A[k].needsUpdate = true;
+    },
+    setVisible(v) { root.visible = !!v; },
+    info: () => ({ drawn: g.instanceCount, counts: { ...counts }, visible: root.visible }),
+  };
+  return F;
+}
+
+export function createStreetView(scene, street, figures) {
+  const root = new THREE.Group();
+  root.name = "street";
+  scene.add(root);
+  const U = { uTime: { value: 0 } };
 
   /* ---- signs ---- */
   const signs = street.signs;
@@ -304,32 +386,17 @@ export function createStreetView(scene, street, opts = {}) {
   signMesh.frustumCulled = false;
   root.add(signMesh);
 
-  /* ---- every frame: copy the people in ---- */
+  /* ---- every frame: the signs near the camera, and the people into the shared figures (between figures.begin and end) ---- */
   const V = {
-    root, people, hull, signs: signMesh,
+    root, signs: signMesh,
     // cam: the camera's world position (the signs near it are drawn)
     update(dt, time, cam) {
       U.uTime.value = time;
       if (cam && Math.hypot(cam.x - signAt.x, cam.z - signAt.z) > SIGN_STEP) nearSigns(cam.x, cam.z);
-      let n = 0;
-      const aP = A.aP.array, aA = A.aA.array, c1 = A.aC1.array, c2 = A.aC2.array, c3 = A.aC3.array;
-      const R2 = PEOPLE_REACH * PEOPLE_REACH;
-      for (const p of street.people) {
-        if (!p.on) continue;
-        if (cam && (p.x - cam.x) ** 2 + (p.z - cam.z) ** 2 + (p.y - cam.y) ** 2 > R2) continue; // a far figure is a few pixels: not drawn
-        const o4 = n * 4, o3 = n * 3;
-        aP[o4] = p.x; aP[o4 + 1] = p.y; aP[o4 + 2] = p.z; aP[o4 + 3] = p.yaw;
-        aA[o4] = p.phase; aA[o4 + 1] = p.delay > 0 && p.state !== "flee" ? 0 : p.stride; aA[o4 + 2] = p.delay > 0 ? 1 : p.pose; aA[o4 + 3] = p.poseT;
-        c1[o4] = p.shirt[0]; c1[o4 + 1] = p.shirt[1]; c1[o4 + 2] = p.shirt[2]; c1[o4 + 3] = p.height;
-        c2[o3] = p.pants[0]; c2[o3 + 1] = p.pants[1]; c2[o3 + 2] = p.pants[2];
-        c3[o3] = p.skin[0]; c3[o3 + 1] = p.skin[1]; c3[o3 + 2] = p.skin[2];
-        n++;
-      }
-      g.instanceCount = n;
-      for (const k in A) A[k].needsUpdate = true;
+      if (figures && root.visible) for (const p of street.people) if (p.on) figures.add(p, "people");
     },
     setVisible(v) { root.visible = !!v; },
-    info: () => ({ people: g.instanceCount, signs: sg.instanceCount, signsAll: signs.length, visible: root.visible }),
+    info: () => ({ people: figures ? figures.info().counts.people || 0 : 0, signs: sg.instanceCount, signsAll: signs.length, visible: root.visible }),
   };
   return V;
 }

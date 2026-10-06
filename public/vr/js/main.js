@@ -2,7 +2,7 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
-import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT } from "./config.js";
+import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES } from "./config.js";
 import { generate } from "./city.js";
 import { createPlayer, fire, release, step, teleport } from "./physics.js";
 import { createXR } from "./xr.js";
@@ -20,7 +20,12 @@ import { createHero } from "./hero.js";
 import { createFlatCam } from "./flatcam.js";
 import { createCutscenes } from "./cutscene.js";
 import { createStreet, STREET } from "./street.js";
-import { createStreetView } from "./streetview.js";
+import { createStreetView, createFigures } from "./streetview.js";
+import { createCombat, FIGHT } from "./combat.js";
+import { createCars } from "./cars.js";
+import { createJobs, JOB_NAMES } from "./jobs.js";
+import { createActionView } from "./actionview.js";
+import { createActionHud } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
 
@@ -49,7 +54,7 @@ function defaultSettings() {
   return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
 }
 // seen: the comic scenes already played (cutscene.js), so each plays once
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, districts: [] }, settings: defaultSettings() }; }
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, districts: [] }, jobs: { sludge: false, done: {} }, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
@@ -59,8 +64,12 @@ function loadSave() {
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
   if (raw.seen && typeof raw.seen === "object") {
-    for (const k of ["opening", "king", "finale"]) s.seen[k] = raw.seen[k] === true;
+    for (const k of ["opening", "king", "finale", "mission2"]) s.seen[k] = raw.seen[k] === true;
     s.seen.districts = ints(raw.seen.districts).filter((d) => d < 6);
+  }
+  if (raw.jobs && typeof raw.jobs === "object") {
+    s.jobs.sludge = raw.jobs.sludge === true;
+    if (raw.jobs.done && typeof raw.jobs.done === "object") for (const [k, v] of Object.entries(raw.jobs.done)) if (JOB_NAMES[k] && Number.isInteger(v) && v > 0) s.jobs.done[k] = v;
   }
   if (raw.best && typeof raw.best === "object") for (const [k, v] of Object.entries(raw.best)) if (Number.isFinite(v) && v > 0) s.best[k] = v;
   const r = raw.settings && typeof raw.settings === "object" ? raw.settings : {}, t = s.settings;
@@ -120,6 +129,7 @@ async function installEmulator() {
 /* ---------------- renderer, scene, rig (spec §2) ---------------- */
 let renderer, scene, camera, rig, X, D, audio;
 let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes, street, streetView, bloom;
+let figures, combat, cars, jobs, actionView, actHud; // the city action (flat play): fights, cars, jobs
 let loadRing = null;
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -161,7 +171,13 @@ function createWorld() {
   P = G.P = createPlayer(city);
   view = G.view = createCityView(renderer, scene, city, { low: false });
   street = G.street = createStreet(city); // people on the sidewalks and the shop signs (js/street.js)
-  streetView = G.streetView = createStreetView(scene, street);
+  figures = G.figures = createFigures(scene, 240); // the people, the Sludge Gang and the job people, in two draws
+  streetView = G.streetView = createStreetView(scene, street, figures);
+  combat = G.combat = createCombat(city);
+  cars = G.cars = createCars(city);
+  jobs = G.jobs = createJobs({ city, combat });
+  actionView = G.actionView = createActionView(scene, { cars, jobs });
+  actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
@@ -244,7 +260,7 @@ function showHands(v) { handsVisible = !!v; if (hands) hands.setVisible(handsVis
 // page or the pause menu) and are yours to change after that, so starting a session leaves them alone. Flat play borrows the
 // "desktop" preset (a phone: the "phone" preset, with faster physics) and puts your headset fields back when it ends.
 // Flat play (a mouse or a phone) also climbs walls; a headset does not.
-const FLAT_SWING = { ...SWING, climb: CLIMB }, PHONE_SWING = { ...SWING, ...PHONE.physics, climb: CLIMB };
+const FLAT_SWING = { ...SWING, climb: CLIMB, moves: MOVES }, PHONE_SWING = { ...SWING, ...PHONE.physics, climb: CLIMB, moves: MOVES };
 function applyComfort(name) {
   const p = COMFORT.presets[name] || COMFORT.presets[COMFORT.defaultPreset];
   P.cfg = name === "phone" ? PHONE_SWING : name === "desktop" ? FLAT_SWING : SWING;
@@ -269,6 +285,8 @@ function beginIntro(mode) {
   ropes.setMode("special");
   portal.begin(mode, !save.intro);
   if (FLAGS.skipintro || (mode === "desktop" && D.mobile.enabled)) portal.skip();
+  // flat play, first run: the comic of who the Porcelain King is comes first, then the cottage room
+  if (mode === "desktop" && !save.seen.opening && !FLAGS.nocut && !FLAGS.skipintro) coldOpen();
 }
 // Portal done: the body starts where the head is, on the start roof. The rig does not move.
 function handOff() {
@@ -301,12 +319,23 @@ function handOff() {
   if (!worldVisible && game.root) game.root.visible = false;
   resumable = true;
   saveNow();
-  if (first) story("opening"); // why the King sits on the Needle, and the first mission
+  // Mission 1, the Sludge Run, starts at once (the King's comic played before the cottage room); a returning save that has not
+  // done it gets it too. The tests (?nocut, ?skipintro) start it only when they ask (G.test.job).
+  if (!FLAGS.nocut && !FLAGS.skipintro) startSludge();
+}
+function coldOpen() {
+  save.seen.opening = true;
+  saveNow();
+  const S = city.start, king = game.targets().find((t) => t.kind === "king") || { x: city.needle.x, y: 230, z: city.needle.z };
+  const ctx = { city, king, clog: city.clogs[0], start: S, hero: { x: S.x, y: S.y + 1.6, z: S.z }, district: null };
+  const was = G.state;
+  G.state = "cutscene";
+  cutscenes.play("opening", ctx, () => { if (G.state === "cutscene") G.state = was; });
 }
 // A comic scene (cutscene.js) in flat play, once per save: the opening after the hand-off, a district's briefing the first
 // time you come near its clogs, the King waking, the finale. The game holds still while it plays (G.state "cutscene"); a
 // headset plays none and shows the mission as a toast. ?skipintro and ?nocut (the tests) play none.
-const STORY_TOAST = { king: () => "Mission 2: rip off the King's three pipes, then flush him.", finale: () => "All clear! Free roam: trials and Loonies." };
+const STORY_TOAST = { mission2: () => "Mission 2: flush the twelve clogs.", king: () => "Mission 3: rip off the King's three pipes, then flush him.", finale: () => "All clear! Free roam: trials and Loonies." };
 function story(name, arg, force) {
   if (!force && (FLAGS.nocut || FLAGS.skipintro || !save.seen)) return;
   const seen = save.seen;
@@ -346,10 +375,211 @@ function streetFrame(dt, inPlay) {
   street.limit = isXR() ? STREET.maxXR : STREET.max;
   HERO_SEEN.x = P.pos.x; HERO_SEEN.y = P.pos.y; HERO_SEEN.z = P.pos.z;
   HERO_SEEN.vx = P.vel.x; HERO_SEEN.vy = P.vel.y; HERO_SEEN.vz = P.vel.z; HERO_SEEN.onGround = !!P.onGround;
-  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null);
-  streetView.update(dt, G.time, camera.getWorldPosition(CAMW));
+  const act = actionOn();
+  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null, act ? cars.hazards() : null);
+  figures.begin(camera.getWorldPosition(CAMW), G.time);
+  streetView.update(dt, G.time, CAMW);
+  if (act) {
+    for (const g of combat.goons) if (g.on) figures.add(g, "goons");
+    for (const q of jobs.people) if (q.on) figures.add(q, "jobs");
+  }
+  figures.end();
+  actionView.setVisible(act && worldVisible);
+  if (act) actionView.update(dt, G.time, { markers: G.state !== "cutscene" });
   audio.setCrowd(inPlay ? street.crowd : 0);
 }
+/* ---------------- the city action: sprint, fights, cars and jobs (flat play) ---------------- */
+// The action runs in flat play once the game has started; a headset keeps its swinging game.
+let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1;
+const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false };
+const ropeIds = new Set(), GOON_POS = new Map();
+function actionOn() { return flatOn && !isXR() && gameStarted && G.mode === "desktop"; }
+// Shift on the ground with no rope out and a direction held: sprint while the energy lasts; the gauge fills again after a pause
+function sprintFrame(dt, inp, moving) {
+  const rope = P.ropes[0].state !== "idle" || P.ropes[1].state !== "idle";
+  const want = actionOn() && G.state === "play" && !!inp.sprintHeld && P.onGround && !rope && !P.wall && moving > 0.3;
+  if (want && energy > (sprinting ? 1e-3 : MOVES.minEnergy)) { sprinting = true; energy = Math.max(0, energy - MOVES.drain * dt); energyWait = MOVES.wait; if (energy <= 1e-3) { energy = 0; sprinting = false; } }
+  else { sprinting = false; if ((energyWait -= dt) <= 0) energy = Math.min(1, energy + MOVES.fill * dt); }
+}
+function heroFight() {
+  const H = HERO_FIGHT;
+  H.x = P.pos.x; H.y = P.pos.y; H.z = P.pos.z; H.yaw = hero.yaw || 0; H.onGround = !!P.onGround;
+  H.safe = driving || P.roll > 0 || G.state !== "play" || respawning; H.hidden = driving || respawning;
+  H.vx = P.vel.x; H.vy = P.vel.y; H.vz = P.vel.z; H.busy = driving || G.state !== "play";
+  return H;
+}
+// a swing press with a goon in reach: the hero punches (or kicks) him
+function tryAttack() {
+  if (driving) return false;
+  const a = combat.attack(heroFight());
+  if (!a) return false;
+  hero.attack(a.kind, a.side);
+  audio.sfx(a.kind === "kick" ? "kick" : "punch", { pos: a.goon });
+  fx.word("BONK", FXP.set(a.goon.x, a.goon.y + 2.1, a.goon.z), { scale: a.kind === "kick" ? 1.5 : 1.1 });
+  haptic(1, 0.5, 30);
+  catchFeedback(1, "yank");
+  return true;
+}
+// a rope caught a goon (he is yanked off his feet), a falling person or the balloon (caught)
+function ropeCatch(i, r) {
+  const tag = r.target.tag, id = String(r.target.id);
+  if (tag === "goon") {
+    if (combat.pull(+id.slice(5), heroFight())) { audio.sfx("yank", { pos: r.anchor }); fx.word("YANK", r.anchor, { scale: 1.3 }); }
+  } else if (jobs.ropeCaught(tag)) { audio.sfx("stick", { pos: r.anchor }); fx.word("THWIP", r.anchor, { scale: 1.3 }); }
+  release(P, i);
+}
+// The rope targets: the fighting goons near the hero and a job's falling person or balloon. They are added and taken away as
+// they come and go; a goon's target point is his chest.
+function syncRopeTargets() {
+  const want = new Map();
+  if (actionOn() && G.state === "play" && !driving) {
+    for (const g of combat.targets(P.pos)) {
+      let q = GOON_POS.get(g.id);
+      if (!q) { q = { x: 0, y: 0, z: 0 }; GOON_POS.set(g.id, q); }
+      q.x = g.x; q.y = g.y + 1.1; q.z = g.z;
+      want.set("goon:" + g.id, { id: "goon:" + g.id, tag: "goon", pos: q, radius: 1.3 });
+    }
+    for (const t of jobs.ropeTargets(P.pos)) want.set(t.id, t);
+  }
+  for (const id of ropeIds) if (!want.has(id)) { ropes.removeTarget(id); ropeIds.delete(id); if (id.startsWith("goon:")) GOON_POS.delete(+id.slice(5)); }
+  for (const [id, t] of want) if (!ropeIds.has(id)) { ropes.addTarget(t); ropeIds.add(id); }
+}
+function enterCar(c) {
+  release(P, 0); release(P, 1);
+  cars.enter(c);
+  driving = true; sprinting = false;
+  hero.setHidden(true);
+  P.vel.x = P.vel.y = P.vel.z = 0;
+  audio.sfx("door", { pos: c }); audio.sfx("engine", { pos: c });
+  ui.say(G.input.easySwing ? "GAS and BRAKE to drive, the arrows to steer. OUT to get out." : G.input.kind === "pad" ? "Stick to drive and steer, A for the handbrake. B to get out." : "W and S to drive, A and D to steer, Space for the handbrake. R to get out.", 4);
+}
+function exitCar() {
+  const o = cars.exit();
+  driving = false;
+  hero.setHidden(false);
+  if (!o) return;
+  teleport(P, o.x, o.y, o.z);
+  P.vel.x = o.vx; P.vel.z = o.vz;
+  placeRig(G.rigYaw, o.x, o.y, o.z);
+  audio.sfx("door", { pos: o });
+}
+const DRIVE_IN = { throttle: 0, steer: 0, handbrake: false };
+// 11b. After the physics and its events: the cars, the fights, the jobs, the rope targets and the screen bits
+function actionFrame(dt, inp) {
+  if (!actionOn()) return;
+  const tc = actHud.takeCar(), T = actHud.touch;
+  if (inp.carDown || tc) {
+    if (driving) exitCar();
+    else if (P.onGround && P.ropes[0].state === "idle" && P.ropes[1].state === "idle" && !P.wall) { const c = cars.near(P.pos.x, P.pos.y, P.pos.z); if (c) enterCar(c); }
+  }
+  if (driving) {
+    DRIVE_IN.throttle = (inp.move.y || 0) + (T.gas ? 1 : 0) - (T.brake ? 1 : 0);
+    DRIVE_IN.steer = -(inp.move.x || 0) + (T.left ? 1 : 0) - (T.right ? 1 : 0);
+    DRIVE_IN.handbrake = !!inp.jumpHeld;
+  }
+  cars.update(dt, P.pos, driving ? DRIVE_IN : null);
+  const car = cars.driving;
+  if (driving && car) {
+    // the body rides in the car: the camera, the people and the gang all see the car's place
+    P.pos.x = car.x; P.pos.y = car.y; P.pos.z = car.z; P.vel.x = car.vx; P.vel.y = 0; P.vel.z = car.vz;
+    P.onGround = true; P.lastSafe.x = car.x; P.lastSafe.y = 0; P.lastSafe.z = car.z;
+    hero.setYaw(car.yaw);
+    syncRig();
+    if (combat.carHit(car.x, car.z, car.vx, car.vz)) { audio.sfx("bump", { vol: 1.2 }); fx.word("BONK", FXP.set(car.x, 2.5, car.z), { scale: 1.5 }); }
+  } else if (driving) { driving = false; hero.setHidden(false); }
+  for (const e of cars.events) if (e.type === "bump") { audio.sfx("bump", { vol: Math.min(1.5, e.speed / 8) }); haptic(0, 0.6, 60); }
+  cars.events.length = 0;
+  // the gang guards the clogs once Mission 1 is done
+  if (save.jobs.sludge) guardClogs();
+  const hf = heroFight();
+  combat.update(dt, hf);
+  jobs.offersOn = save.jobs.sludge && !driving;
+  jobs.update(dt, G.time, hf);
+  hero.setCarry(jobs.carrying());
+  for (const e of combat.events) combatEvent(e);
+  combat.events.length = 0;
+  for (const e of jobs.events) jobEvent(e);
+  jobs.events.length = 0;
+  game.setJob(jobs.card);
+  syncRopeTargets();
+  if (sludgeRetry > 0 && (sludgeRetry -= dt) <= 0) { sludgeRetry = -1; startSludge(); }
+  hudFrame(dt, inp);
+}
+// two goons on each clogged roof near the hero, once (they come back after a reload)
+const guarded = new Set();
+function guardClogs() {
+  for (const t of game.targets()) {
+    if (t.kind !== "clog" || t.done || guarded.has(t.id)) continue;
+    if (Math.hypot(t.x - P.pos.x, t.z - P.pos.z) > 140) continue;
+    guarded.add(t.id);
+    for (let k = 0; k < 2; k++) combat.spawn(t.x + (k ? 4 : -4), t.y, t.z + (k ? -3 : 3), "clog:" + t.id);
+  }
+}
+function combatEvent(e) {
+  switch (e.type) {
+    case "hurt": {
+      const dx = P.pos.x - e.fromX, dz = P.pos.z - e.fromZ, d = Math.hypot(dx, dz) || 1;
+      hero.hit(dx / d, dz / d);
+      if (P.onGround) { P.vel.x += (dx / d) * 4; P.vel.z += (dz / d) * 4; }
+      actHud.flash(); audio.sfx("hurt"); haptic(0, 0.9, 80); haptic(1, 0.9, 80);
+      if (G.input.easySwing) D.mobile.buzz?.([60, 40, 60]);
+      break;
+    }
+    case "knockout":
+      ui.toast("Knocked out! You wake up on a safe roof.");
+      jobs.knockedOut();
+      respawn();
+      combat.heal();
+      for (const g of combat.goons) g.aggro = false;
+      break;
+    case "ko": audio.sfx("goonDown", { pos: e }); fx.word("SPLORT", FXP.set(e.x, e.y + 1.6, e.z), { scale: 1.2 }); break;
+    case "windup": if (fightHints < 1 && !G.input.easySwing) { fightHints++; ui.say("A goon! Get close and press " + (G.input.kind === "pad" ? "RT" : "the left mouse button") + " to punch. Roll out of the way.", 4); } break;
+  }
+}
+const FAIL_LINES = {
+  drain: "The Market drain blew! Sludge everywhere. Try again!",
+  time: "Out of time!", dumpster: "Ouch! A dumpster broke the fall. They are fine, but you missed.",
+  drainpipe: "The washer slid down a drainpipe. Safe, but shaken.", cold: "Cold pizza. No tip.", gone: "The balloon is gone. The kid will get over it.",
+  knockout: "You were knocked out. The job is lost.", left: "You left the job behind.",
+};
+function jobEvent(e) {
+  switch (e.type) {
+    case "start": ui.toast(e.line); audio.sfx("trialStart"); break;
+    case "say": ui.say(e.line, 2.5); break;
+    case "caught": audio.sfx("unlock"); haptic(1, 0.6, 50); break;
+    case "done": {
+      audio.sfx("trialEnd");
+      game.reward(e.reward);
+      if (e.job === "sludge") {
+        save.jobs.sludge = true;
+        ui.toast("Bomb defused! +" + e.reward + " Loonies");
+        story("mission2");
+      } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
+      save.jobs.done[e.job] = (save.jobs.done[e.job] || 0) + 1;
+      saveNow();
+      break;
+    }
+    case "failed":
+      ui.toast(FAIL_LINES[e.why] || "Job failed.");
+      if (e.job === "sludge") sludgeRetry = 3.5;
+      break;
+  }
+}
+// Mission 1: the gang runner and his clog bomb (the story's fast start)
+function startSludge() {
+  if (!actionOn() || save.jobs.sludge) return;
+  jobs.start("sludge", null, heroFight());
+}
+function hudFrame(dt, inp) {
+  const phone = !!inp.easySwing, near = !driving && P.onGround ? cars.near(P.pos.x, P.pos.y, P.pos.z) : null;
+  const key = (k, m, t) => "<b>" + (phone ? t : inp.kind === "pad" ? k : m) + "</b>";
+  let prompt = "";
+  if (driving) prompt = phone ? "" : key("B", "R", "") + "GET OUT";
+  else if (near) prompt = phone ? "" : key("B", "R", "") + "GET IN";
+  else if (combat.inReach(heroFight()) && fightHints < 3) prompt = key("RT", "CLICK", "TAP") + "PUNCH";
+  actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving });
+}
+
 // The glow of flat play: the saved choice, else Low with a mouse or a pad and Off on a phone. A headset has none.
 function bloomLevel() {
   if (G.mode !== "desktop" || renderer.xr.isPresenting) return "off";
@@ -493,6 +723,7 @@ function exitPlay() {
   if (X.session) { X.end(); return; }
   if (G.mode !== "desktop") return;
   saveNow();
+  if (driving) exitCar();
   if (G.state === "intro" || (G.state === "paused" && G.pausedFrom === "intro")) resumable = false;
   D.active = false;
   D.unlock();
@@ -521,7 +752,7 @@ function flatCamera(fov) {
 // coordinates; the rig still carries the body and the yaw, so the physics, the input and every G.test hook work as before.
 // The intro stays first person (the cottage room is small); the camera pulls out at the hand-off. V (or input.viewDown) toggles.
 let flatOn = false, lastPitchIn = 0, flatDy = 0, viewAttr = "", introYaw = 0; // introYaw: the head's turn in the desktop opening
-const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, lift: false, forceFirst: false }, FLAT_VIEW = { pos: null, quat: null };
+const FLAT_LOOK = { dx: 0, dy: 0 }, FLAT_FLAGS = { swinging: false, lift: false, forceFirst: false, drive: null }, FLAT_VIEW = { pos: null, quat: null };
 const FLAT_E = new THREE.Euler(0, 0, 0, "YXZ");
 function flatView(on) {
   if (!hero || on === flatOn) return;
@@ -656,6 +887,7 @@ function flatFrame(dt, inp, yawDelta) {
   FLAT_FLAGS.swinging = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
   FLAT_FLAGS.lift = pickerOn && !inp.easySwing && !picker.specialNear; // the phone has its own follow; a clog in view stays in view
   FLAT_FLAGS.forceFirst = G.state === "intro" || (G.state === "paused" && G.pausedFrom === "intro");
+  FLAT_FLAGS.drive = driving && cars.driving ? cars.driving.yaw : null; // behind the car, further back
   hero.setVisible(!shot);
   hero.update(dt, P, ropes, inp);
   flatcam.update(dt, P, hero, FLAT_LOOK, FLAT_FLAGS);
@@ -796,6 +1028,7 @@ function tick(dt, frame, time) {
   if (!paused && (G.state === "play" || G.state === "intro")) physics(dt, inp);
   // 11. events
   drainEvents();
+  if (G.state === "play" && !paused) actionFrame(dt, inp);
   // 12. turning, the rig, world poses again
   let yawDelta = 0;
   if (G.state === "play") {
@@ -859,8 +1092,11 @@ let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 function aimAndFire(dt, inp) {
+  if (driving) return;
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
+    // a goon in reach: the swing input punches (punch, punch, kick) instead of firing a rope
+    if (actionOn() && G.state === "play" && (inp.easySwing ? i === 1 && inp.phoneFire : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
     // phone: a tap (or SWING) with a rope out moves it to the tapped building, or the next one ahead: one tap, one swing, with
     // no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does nothing:
     // a new shot would cancel the cup before it lands.
@@ -965,6 +1201,7 @@ function dryFire(i, h, dir) {
 
 // 10. n = ceil(dt / fixedDt) equal substeps (no accumulator, so no judder between frames).
 function physics(dt, inp) {
+  if (driving) return; // in a car the car moves the body (actionFrame)
   const n = Math.min(SWING.maxSubsteps, Math.max(1, Math.ceil(dt / SWING.fixedDt - 1e-9))), h = dt / n;
   const intro = G.state === "intro";
   // move: the stick (or WASD) relative to where the head looks, flattened
@@ -996,6 +1233,11 @@ function physics(dt, inp) {
     o.holding = (!inp.easySwing && settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0 || (latch[i] && r.state === "flying");
     o.reeling = false;
   }
+  // flat play: Shift sprints on the ground with no rope out, while the energy lasts; a landing from a dive rolls
+  sprintFrame(dt, inp, ml);
+  physIn.sprint = sprinting;
+  P.rollReady = flatOn && !isXR() && hero.diving;
+  P.face = HERO_FACE; HERO_FACE.x = -Math.sin(hero.yaw || 0); HERO_FACE.z = -Math.cos(hero.yaw || 0);
   const wasGround = P.onGround;
   for (let k = 0; k < n; k++) step(P, h, physIn);
   if (!intro && inp.easySwing) phoneRelease(dt);
@@ -1072,7 +1314,9 @@ function phoneCatch(r) {
   const most = A.y - P.chest - PHONE.catch.clear;
   if (most > PHONE.catch.min && r.lenTarget > most) { r.lenTarget = most; r.rate = PHONE.catch.rate; } // (a low point cannot keep you off the street: no change)
 }
-const SPECIAL_TAGS = { clog: true, pipe: true, crack: true };
+const SPECIAL_TAGS = { clog: true, pipe: true, crack: true, goon: true, person: true, balloon: true };
+// a rope that catches one of these does not stay: it yanks a goon off his feet, or catches a falling person or the balloon
+const CATCH_TAGS = { goon: true, person: true, balloon: true };
 
 // 11. One drain per frame: the portal hears them in the intro, the game in play; main plays the feedback.
 function drainEvents() {
@@ -1092,6 +1336,7 @@ function feedback(ev) {
   const i = ev.side === 1 || ev.side === "right" ? 1 : 0, r = P.ropes[i];
   switch (ev.type) {
     case "attach":
+      if (r.target && CATCH_TAGS[r.target.tag]) { ropeCatch(i, r); break; }
       audio.sfx("stick", { pos: r.anchor }); haptic(i, 0.5, 30); fx.word("THUCK", r.anchor, { dir: r.normal });
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
       if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
@@ -1105,6 +1350,12 @@ function feedback(ev) {
       audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40);
       if (ev.pump) fx.word("SPLORT", r.anchor, { dir: FX_UP, scale: 1.2 }); else wordAtHand("YANK", i);
       catchFeedback(i, ev.pump ? "pump" : "yank");
+      break;
+    case "roll":
+      hero.roll(MOVES.roll.time);
+      audio.sfx("land", { vol: 0.5 });
+      // a dive into the gang flattens the goons round you (a plain hard landing, a smaller ring)
+      if (actionOn() && combat.slam(P.pos.x, P.pos.y, P.pos.z, ev.dive ? FIGHT.slam.r : 3)) { fx.word("BONK", { x: P.pos.x, y: P.pos.y + 2, z: P.pos.z }, { scale: 1.6 }); haptic(0, 0.8, 80); }
       break;
     case "land": {
       audio.sfx("land", { vol: clamp(ev.speed / 10, 0.3, 1.5) });
@@ -1568,6 +1819,16 @@ G.test = {
   // the people and the signs (js/street.js): counts, states, reactions; people: every person out, for the scenario checks
   street: (all) => ({ ...street.info(), view: streetView.info(), people: all ? street.people.filter((p) => p.on).map((p) => ({ id: p.id, x: p.x, z: p.z, yaw: p.yaw, state: p.state, pose: p.pose, onWalk: street.onWalk(p) })) : undefined }),
   bloom: () => ({ ...bloom.info(), want: bloomLevel() }),
+  // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
+  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds] }),
+  // start a job (type: sludge, catch, washer, pizza, balloon, brawl) at the nearest offer of that type, or at the hero
+  job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
+  jobOffers(on = true) { save.jobs.sludge = !!on; return jobs.info().offers; },
+  spawnGoon(x, y, z, aggro = true) { const g = combat.spawn(x, y, z, "test"); g.aggro = aggro; return g.id; },
+  // get into the nearest parked car (or the given one), and out
+  enterCar(id) { const c = id == null ? cars.near(P.pos.x, P.pos.y, P.pos.z) : cars.cars.find((q) => q.id === id && q.on); if (c) enterCar(c); return driving; },
+  exitCar() { if (driving) exitCar(); return !driving; },
+  attack() { return tryAttack(); },
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
 };
 

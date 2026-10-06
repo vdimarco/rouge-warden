@@ -315,7 +315,8 @@ export function createStreet(city, opts = {}) {
 
   /* ---- the frame ---- */
   // focus: where the player is { x, y, z }; hero: { x, y, z, vx, vy, vz, onGround } (or null in the headset's first person)
-  S.update = function update(dt, t, focus, hero) {
+  // hazards: moving cars [{ x, z, r, vx, vz }]: the people in one's way jump aside
+  S.update = function update(dt, t, focus, hero, hazards) {
     dt = clamp(dt || 0, 0, 0.1);
     S.time = t;
     const fx = focus.x, fz = focus.z, K2 = STREET.keep * STREET.keep;
@@ -345,6 +346,15 @@ export function createStreet(city, opts = {}) {
       p.poseT += dt;
       if (p.cool > 0) p.cool -= dt;
       if (p.delay > 0) { p.delay -= dt; if (p.state !== "flee") { p.stride = 0; } continue; }
+      // a car coming: run out of its way, along the sidewalk
+      if (hazards && p.state !== "flee") for (const q of hazards) {
+        const dx = p.x - q.x, dz = p.z - q.z;
+        if (dx * dx + dz * dz > q.r * q.r) continue;
+        const st = p.strip, away = st.axis === "x" ? dz : dx;
+        p.fleeDir = Math.sign(away) || 1; p.fleeThen = "walk";
+        react(p, "flee", 0.9, POSE.flee); S.stats.dodges = (S.stats.dodges || 0) + 1;
+        break;
+      }
       // the hero walks into this person: step aside
       if (hero && hero.onGround && Math.abs(hero.y - p.y) < 1.5) {
         const dx = p.x - hero.x, dz = p.z - hero.z, d = Math.hypot(dx, dz);
@@ -378,7 +388,7 @@ export function createStreet(city, opts = {}) {
           nudge(p, p.fleeDir * 3.6 * dt, 0);
           const st = p.strip, dx = st.axis === "x" ? 0 : p.fleeDir, dz = st.axis === "x" ? p.fleeDir : 0;
           p.yaw = Math.atan2(-dx, -dz);
-          if (p.t <= 0) { react(p, "cheer", 2 + r() * 2, POSE.cheer); S.stats.cheers++; }
+          if (p.t <= 0) { if (p.fleeThen === "walk") { p.fleeThen = null; walkOnFrom(p); } else { react(p, "cheer", 2 + r() * 2, POSE.cheer); S.stats.cheers++; } }
           break;
         }
         case "aside": {

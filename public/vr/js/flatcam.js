@@ -11,6 +11,7 @@ import { COMFORT, FLATCAM } from "./config.js";
 const DEG = Math.PI / 180;
 const ARM = FLATCAM.arm;        // the spring arm, metres from the pivot
 const ARM_FAST = 5.6;           // it lets out a little at speed
+const DRIVE_ARM = 1.7;          // behind a car the arm is this much longer
 const ARM_UP = 0.9;             // looking up from level to the limit shortens it to this part of its length
 const PIVOT_UP = 0.35;          // the pivot sits this far above the eyes, so the middle of the view is above the head
 const OVER_HEAD = 0.45;         // looking up brings the camera down to this height above the eyes, and no lower
@@ -95,6 +96,8 @@ export function createFlatCam(camera, city) {
       // while you swing and move fast, the view turns slowly toward where you go (never right after you moved it yourself)
       FC.following = !!(flags && flags.swinging) && !fp && speed > 6 && hs > 3 && S.hold > HOLD_LOOK && !S.turn;
       if (FC.following) S.yaw = wrap(S.yaw + wrap(Math.atan2(-vx, -vz) - S.yaw) * ease(dt, 1 / FOLLOW_TAU) * smooth(3, 7, hs));
+      // driving (flags.drive: the car's yaw): the view swings round behind the car, faster than a swing's follow
+      if (flags && flags.drive != null && !fp && S.hold > HOLD_LOOK * 0.5) { FC.following = true; S.yaw = wrap(S.yaw + wrap(flags.drive - S.yaw) * ease(dt, 2.2) * smooth(0.5, 4, hs)); }
       FC.yaw = S.yaw; FC.pitch = S.pitch;
       const cp = Math.cos(S.pitch);
       DIR.set(-Math.sin(S.yaw) * cp, Math.sin(S.pitch), -Math.cos(S.yaw) * cp); // the way the camera looks
@@ -108,7 +111,7 @@ export function createFlatCam(camera, city) {
       T.set(px, EYE.y + PIVOT_UP, pz);
 
       // the arm: longer at speed, and a little shorter as you look up past level (the hero keeps its size in ordinary play)
-      const full = ARM + (ARM_FAST - ARM) * smooth(FOV_V[0], FOV_V[1], speed);
+      const full = (ARM + (ARM_FAST - ARM) * smooth(FOV_V[0], FOV_V[1], speed)) * (flags && flags.drive != null ? DRIVE_ARM : 1);
       const arm = full * (1 - (1 - ARM_UP) * smooth(0, PITCH_MAX, S.pitch));
       // its angle: the view's while you look down; above the default it bends smoothly toward the floor over the head
       // (with the same slope at the default, so the camera never jerks there)
