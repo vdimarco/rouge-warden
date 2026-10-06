@@ -1,0 +1,3 @@
+- [x] Rebuild substantial boughs with natural terminal shape and multiple forks.
+- [x] Check volume, curved lane clearance and successful ducks in both renderers.
+- [ ] Publish, verify live assets/gameplay and archive the completed specification.

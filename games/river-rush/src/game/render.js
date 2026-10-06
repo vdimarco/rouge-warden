@@ -3,7 +3,7 @@ import { bankScenery, rapids, prepareWorldArt } from './world.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
 import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
-import {shorelineBranch,branchLeafArt} from './shoreline-branch.js';
+import {shorelineBranch,branchLeafArt,limbPoint} from './shoreline-branch.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const TAU = Math.PI * 2, fract = n => n - Math.floor(n);
@@ -107,11 +107,15 @@ function shorelineTree(ctx,g,e,art,w,h){
   ctx.save();ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-e.d+g.distance)/24);ctx.lineCap='round';
   const bark=ctx.createPattern(art.treebark??art.surfacewood,'repeat');
   for(const limb of shape.wood){
-    const a=locate(limb.a),b=locate(limb.b),c=locate(limb.c1),d=locate(limb.c2),width=Math.max(1,limb.r*(a.unit+b.unit));
-    const path=()=>{ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.bezierCurveTo(c.x,c.y,d.x,d.y,b.x,b.y);};
-    ctx.strokeStyle='#42382b';ctx.lineWidth=width;path();ctx.stroke();
-    ctx.strokeStyle=bark;ctx.lineWidth=width*.78;path();ctx.stroke();
-    ctx.strokeStyle='#e3cf9b30';ctx.lineWidth=width*.23;path();ctx.stroke();
+    const points=Array.from({length:13},(_,i)=>{const t=i/12,p=locate(limbPoint(limb,t));return{...p,r:Math.max(.5,(limb.r+(limb.rEnd-limb.r)*t)*p.unit)};});
+    const left=[],right=[];
+    for(let i=0;i<points.length;i++){
+      const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy)||1;
+      left.push({x:p.x-dy/length*p.r,y:p.y+dx/length*p.r});right.push({x:p.x+dy/length*p.r,y:p.y-dx/length*p.r});
+    }
+    ctx.beginPath();ctx.moveTo(left[0].x,left[0].y);for(const p of left.slice(1))ctx.lineTo(p.x,p.y);for(const p of right.reverse())ctx.lineTo(p.x,p.y);ctx.closePath();
+    ctx.fillStyle=bark;ctx.fill();ctx.strokeStyle='#30291f99';ctx.lineWidth=.75;ctx.stroke();
+    ctx.strokeStyle='#e3cf9b30';ctx.lineWidth=Math.max(.5,points[0].r*.25);ctx.beginPath();ctx.moveTo(left[0].x,left[0].y);for(const p of left.slice(1))ctx.lineTo(p.x,p.y);ctx.stroke();
   }
   for(const leaf of shape.leaves){const p=locate(leaf.p),lw=leaf.size[0]*p.unit*2,lh=leaf.size[1]*p.unit*2;ctx.drawImage(art.branchLeaves,p.x-lw/2,p.y-lh/2,lw,lh);}
   ctx.restore();

@@ -24,10 +24,10 @@ export function shorelineBranch(e,course=e.d,seed=137){
   const lane=(e.lane-1)*3.8,d=4+e.lane*3+riverHash(e.id+31,seed)*2;
   const x=side*(riverHalfWidth(course+d,seed)+1.8),ground=riverBankHeight(x,course+d,seed);
   const wood=[],leaves=[],node=(x,y,d=0)=>({x,y,d});
-  const limb=(a,b,r)=>wood.push({a,b,r});
+  const limb=(a,b,r,kind)=>wood.push({a,b,r,kind});
   const root=node(x,ground,d),fork=node(x-side*.9,7.2+ground*.4,d-.7);
   const trunk=[root,node(x-side*.15,ground+2.2,d-.2),node(x-side*.45,ground+4.5,d-.5),fork,node(x-side*.2,9.5+ground*.3,d+.5)];
-  for(let i=1;i<trunk.length;i++)limb(trunk[i-1],trunk[i],.98-i*.14);
+  for(let i=1;i<trunk.length;i++)limb(trunk[i-1],trunk[i],[1.16,.98,.84,.64][i-1]);
   for(const sign of [-1,1]){
     const rx=x+side*.75,rd=d+sign*1.15;
     limb(node(rx,riverBankHeight(rx,course+rd,seed),rd),trunk[1],.34);
@@ -35,22 +35,27 @@ export function shorelineBranch(e,course=e.d,seed=137){
   }
   let previous=fork;
   for(let i=1;i<=5;i++){
-    const t=i/5,p=node(fork.x+(lane+side*1.4-fork.x)*t,7.2+ground*.4-(1.6+ground*.4)*t+Math.sin(t*Math.PI)*.38,(d-.7)*(1-t)+Math.sin(t*Math.PI)*1.1);
-    limb(previous,p,.38-t*.15);
-    if(i===2||i===4){const twig=node(p.x+side*.6,p.y+1.05,p.d+.8);limb(p,twig,.075);leaves.push({p:twig,size:[.75,.55,.65],turn:e.id+i});}
+    const t=i/5,p=node(fork.x+(lane+side*1.25-fork.x)*t,7.2+ground*.4-(2.2+ground*.4)*t+Math.sin(t*Math.PI)*.45,(d-.7)*(1-t)+Math.sin(t*Math.PI)*1.1);
+    limb(previous,p,.84-t*.28,'bough');
+    // Substantial lateral forks branch from shared wood nodes. The fan opens
+    // into multiple depths so it reads as a tree in the downstream chase view.
+    if(i>=2){
+      const fan=i%2?1:-1,spread=2.2+riverHash(e.id+i+54,seed)*1.6;
+      const elbow=node(p.x-side*(1.0+i*.12),p.y+1.4+i*.1,p.d+fan*spread*.6);
+      const end=node(elbow.x-side*1.0,p.y+2.6+i*.15,p.d+fan*spread);
+      limb(p,elbow,.47-i*.028,'fork');limb(elbow,end,.29-i*.012,'fork');
+      limb(elbow,node(elbow.x+side*.9,elbow.y+.75,elbow.d+fan*.65),.15,'twig');
+      leaves.push({p:end,size:[1.15,.95,1.05],turn:e.id+i},{p:elbow,size:[.62,.52,.6],turn:e.id-i});
+    }
     previous=p;
   }
-  const dip=[node(lane+side*1.3,4.6,.8),node(lane+side*1.1,3.6,.3),node(lane+side*.8,2.95,.08),node(lane+side*.55,2.65,0)];
-  for(let i=0;i<dip.length;i++){limb(previous,dip[i],.23-i*.012);previous=dip[i];}
-  const knuckle=previous;
-  const middle=node(lane,2.42,0),tip=node(lane-side*1.35,2.57,-.08);
-  limb(knuckle,middle,.22);limb(middle,tip,.17);
-  limb(middle,node(lane-side*.1,3.2,.38),.09);
-  limb(tip,node(lane-side*1.55,3.02,-.3),.075);
-  limb(knuckle,node(lane+side*1.6,3.25,-.45),.085);
-  crown(leaves,x,d,e.id,seed,ground);
-  for(const t of [.3,.65])leaves.push({p:node(fork.x+(lane+side*1.4-fork.x)*t,7.4-t*1.4,(d-.7)*(1-t)+1.1),size:[1.5,1.1,1.3],turn:e.id+t});
-  leaves.push({p:node(lane-side*.8,3.35,-.18),size:[.65,.4,.6],turn:e.id});
+  // A descending end replaces the old vertical hook and its upturned prongs.
+  const dip=[node(lane+side*.9,4.05,.35),node(lane+side*.5,3.1,.12),node(lane+side*.2,2.55,.02)];
+  for(let i=0;i<dip.length;i++){limb(previous,dip[i],[.55,.49,.44][i],'bough');previous=dip[i];}
+  const middle=node(lane,2.42,0),tip=node(lane-side*1.0,2.22,-.18);
+  limb(previous,middle,.42,'bough');limb(middle,tip,.34,'bough');
+  crown(leaves,x,d,e.id,seed,ground,18);
+  leaves.push({p:node(lane+side*1.8,5.45,.8),size:[.72,.55,.65],turn:e.id});
   curveLimbs(wood);
   return {side,root,tip:middle,lane,wood,leaves};
 }
@@ -70,9 +75,9 @@ function curveLimbs(wood){
   limb.rEnd=after?Math.min(limb.r,after.r):limb.r*.32;
  }
 }
-function crown(leaves,x,d,id,seed,ground=0){
- for(let i=0;i<21;i++){
-  const a=i*2.399+riverHash(id+43,seed),spread=.5+Math.sqrt(i/21)*2.9,scale=.85+riverHash(id+i+81,seed)*.5;
+function crown(leaves,x,d,id,seed,ground=0,count=21){
+ for(let i=0;i<count;i++){
+  const a=i*2.399+riverHash(id+43,seed),spread=.5+Math.sqrt(i/count)*2.9,scale=.85+riverHash(id+i+81,seed)*.5;
   leaves.push({p:{x:x+Math.cos(a)*spread,y:8.4+ground*.3+Math.sin(i*1.7)*1.6,d:d+Math.sin(a)*spread*.85},size:[2.25*scale,1.65*scale,2*scale],turn:a});
  }
 }
