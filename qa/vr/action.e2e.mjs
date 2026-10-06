@@ -147,12 +147,6 @@ try {
   await page.screenshot({ path: out + "/action-job.png" });
 
   /* ---- the map: a pin on each job marker, and travel to one takes its job ---- */
-  const now = await page.evaluate(() => {
-    G.ui.openMap(); G.test.step(1 / 60, 2);
-    const names = G.test.ui().map.names;
-    G.ui.closePause(); G.test.step(1 / 60, 2);
-    return { names };
-  });
   const mp = await page.evaluate(() => {
     const before = { state: G.state, ui: G.ui.paused, ids: G.jobs.offers.map((o) => o.id), active: !!G.jobs.active };
     G.jobs.cancel(); QA.street(); QA.step(5);
@@ -168,6 +162,13 @@ try {
   for (let i = 0; i < 12; i++) await page.evaluate(() => QA.step(8));
   const tv = await page.evaluate(() => ({ state: G.state, active: G.test.action().jobs.active, pos: G.test.state().pos }));
   check(!!want && tv.state === "play" && tv.active && tv.active.type === want.type, "a click on a job pin travels there and takes the job", { want, tv, before: mp.before, after: mp.after });
+  const now = await page.evaluate(() => {
+    QA.step(5);
+    G.ui.openMap(); G.test.step(1 / 60, 2);
+    const names = G.test.ui().map.names;
+    G.ui.closePause(); G.test.step(1 / 60, 2);
+    return { names };
+  });
   check(now.names.some((n) => /^Your job/.test(n)) && !now.names.some((n) => /^Odd job/.test(n)), "while you are on a job the map pins that job, and no other markers", now.names);
 
   check(page.errors.length === 0, "no errors in flat play", page.errors);
