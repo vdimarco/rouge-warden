@@ -14,8 +14,10 @@ try{
    if(full){const get=WebGL2RenderingContext.prototype.getParameter;WebGL2RenderingContext.prototype.getParameter=function(k){return k===37446?'Full detail shader coverage':get.call(this,k);};}
    window.__tools={};Object.defineProperty(document,'modelContext',{value:{registerTool(t){window.__tools[t.name]=t.execute;}}});
  },full);
+ const state=()=>p.evaluate(()=>window.__tools.get_run_status({}));
+ async function until(predicate){const end=Date.now()+25000;let s;while(Date.now()<end){s=await state();if(predicate(s))return s;await p.waitForTimeout(15);}throw new Error(`State timeout: ${JSON.stringify(s)}`);}
  await p.goto(new URL('river-rush/',base).href);await p.getByRole('button',{name:'Start run',exact:true}).click();
- await p.waitForFunction(async()=>{const s=await window.__tools.get_run_status({});return s.renderer.readyFrames>=3;});
+ await until(s=>s.renderer.readyFrames>=3);
  await p.keyboard.press('Escape');await p.getByRole('button',{name:'Restart run',exact:true}).click();await p.keyboard.press('ArrowLeft');
  const frames=await p.evaluate(async()=>{
    const frames=[],start=(await window.__tools.get_run_status({})).run.time;let previous=performance.now();
@@ -29,12 +31,11 @@ try{
  const maxHandError=Math.max(...frames.map(f=>f.animation.handError));assert.ok(maxHandError<.09,`hands drifted from shaft: ${maxHandError}`);
  const maxTriangles=Math.max(...frames.map(f=>f.triangles)),maxDrawCalls=Math.max(...frames.map(f=>f.drawCalls));
  assert.ok(maxTriangles<(full?230000:100000));assert.ok(maxDrawCalls<45);
- const state=()=>p.evaluate(()=>window.__tools.get_run_status({}));
  const sample=async(n=4)=>p.evaluate(async n=>{const s=[];for(let i=0;i<n;i++){await new Promise(requestAnimationFrame);s.push(await window.__tools.get_run_status({}));}return s;},n);
  await p.keyboard.press('ArrowRight');const right=await sample();await p.keyboard.press('ArrowLeft');const left=await sample();
  assert.ok(right.some(s=>s.renderer.rider.animation.balance>0));assert.ok(left.some(s=>s.renderer.rider.animation.balance<0));
  assert.ok([...right,...left].every(s=>s.run.action===''));
- async function pose(name,key){await p.keyboard.press(key);await p.waitForFunction(async name=>{const s=await window.__tools.get_run_status({});return s.run.action===name&&s.renderer.rider.animation[name]>.99;},name);
+ async function pose(name,key){await p.keyboard.press(key);await until(s=>s.run.action===name&&s.renderer.rider.animation[name]>.99);
    await p.keyboard.press('Escape');const s=await state();const style=await p.addStyleTag({content:'dialog.modal{visibility:hidden}dialog.modal::backdrop{background:transparent;backdrop-filter:none}'});
    await p.screenshot({path:`${out}/${name}.png`});const before=await p.locator('canvas').screenshot();await p.waitForTimeout(200);assert.deepEqual(await p.locator('canvas').screenshot(),before);await style.evaluate(e=>e.remove());await p.getByRole('button',{name:'Resume run'}).click();return s.renderer.rider.animation;}
  const jump=await pose('jump','Space'),duck=await pose('duck','ArrowDown');

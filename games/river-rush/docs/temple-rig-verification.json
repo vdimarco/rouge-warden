@@ -1,6 +1,6 @@
 {
   "date": "2026-10-06",
-  "stage": "local checks complete; production pending",
+  "stage": "production verified and canonical archive reviewed",
   "unitChecks": 38,
   "layouts": {
     "passed": true,
@@ -98,46 +98,46 @@
     "passed": true,
     "fullDetailShaderCoverage": true,
     "renderer": "headless SwiftShader; not a physical device FPS claim",
-    "frames": 28,
-    "uniqueStrokeSamples": 28,
-    "maxHandError": 1.2040909898447478e-07,
-    "maxTriangles": 196009,
-    "maxDrawCalls": 27,
+    "frames": 29,
+    "uniqueStrokeSamples": 29,
+    "maxHandError": 1.2040972468909903e-07,
+    "maxTriangles": 199333,
+    "maxDrawCalls": 26,
     "frameTiming": {
-      "meanMs": 306.2964285713221,
-      "p50Ms": 298.5,
-      "p95Ms": 438.8999999910593,
-      "fps": 3.2648111656553214
+      "meanMs": 269.4034482759648,
+      "p50Ms": 276.6000000089407,
+      "p95Ms": 315.5,
+      "fps": 3.711904975231218
     },
     "steeringReversal": true,
     "distinctAnatomicalPoses": true,
-    "duckHeightRatio": 0.3172535145272546,
+    "duckHeightRatio": 0.3175195120070481,
     "pausePixels": true,
     "reducedMotion": true,
-    "screenshots": "/tmp/river-temple/final-native",
+    "screenshots": "/tmp/river-temple/live-native",
     "errors": []
   },
   "softwareMotion": {
     "passed": true,
     "fullDetailShaderCoverage": false,
     "renderer": "headless SwiftShader; not a physical device FPS claim",
-    "frames": 28,
-    "uniqueStrokeSamples": 28,
-    "maxHandError": 1.2040909898447478e-07,
-    "maxTriangles": 97269,
-    "maxDrawCalls": 27,
+    "frames": 29,
+    "uniqueStrokeSamples": 29,
+    "maxHandError": 1.2040015567404913e-07,
+    "maxTriangles": 97618,
+    "maxDrawCalls": 28,
     "frameTiming": {
-      "meanMs": 91.13214285724929,
-      "p50Ms": 94.79999999701977,
-      "p95Ms": 110.70000000298023,
-      "fps": 10.97307677233503
+      "meanMs": 90.45517241389587,
+      "p50Ms": 90.8999999910593,
+      "p95Ms": 104.90000000596046,
+      "fps": 11.055199756010618
     },
     "steeringReversal": true,
     "distinctAnatomicalPoses": true,
-    "duckHeightRatio": 0.3172535145272546,
+    "duckHeightRatio": 0.31751951397994993,
     "pausePixels": true,
     "reducedMotion": true,
-    "screenshots": "/tmp/river-temple/software-motion",
+    "screenshots": "/tmp/river-temple/live-motion",
     "errors": []
   },
   "glide": {
@@ -307,5 +307,261 @@
   "limitations": [
     "Headless SwiftShader is not a physical-device frame-rate measurement.",
     "Physical iOS/Android and Safari were not available."
-  ]
+  ],
+  "implementationSha": "3308e213f5c4da6760b4f794b7be53e2e80771db",
+  "production": {
+    "url": "https://arcade.uptick.systems/river-rush/",
+    "deploymentId": "dpl_P3RQNrikgZULroJhVRE45bij7PQz",
+    "readyState": "READY",
+    "alias": "arcade.uptick.systems",
+    "layouts": {
+      "passed": true,
+      "results": [
+        {
+          "viewport": "phone",
+          "models": {
+            "raft": "ready",
+            "bank": "ready",
+            "palm": "ready",
+            "temple": "ready",
+            "guardian": "ready",
+            "rider": "ready"
+          },
+          "triangles": 90980,
+          "drawCalls": 26,
+          "software": true,
+          "jump": true,
+          "duck": true,
+          "direction": "downstream",
+          "distinctPoses": true,
+          "touch": true,
+          "pausePixels": true,
+          "reducedMotion": true
+        },
+        {
+          "viewport": "desktop",
+          "models": {
+            "raft": "ready",
+            "bank": "ready",
+            "palm": "ready",
+            "temple": "ready",
+            "guardian": "ready",
+            "rider": "ready"
+          },
+          "triangles": 90980,
+          "drawCalls": 26,
+          "software": true,
+          "jump": true,
+          "duck": true,
+          "direction": "downstream",
+          "distinctPoses": true,
+          "touch": false,
+          "pausePixels": true,
+          "reducedMotion": true
+        },
+        {
+          "viewport": "landscape",
+          "models": {
+            "raft": "ready",
+            "bank": "ready",
+            "palm": "ready",
+            "temple": "ready",
+            "guardian": "ready",
+            "rider": "ready"
+          },
+          "triangles": 90165,
+          "drawCalls": 29,
+          "software": true,
+          "jump": true,
+          "duck": true,
+          "direction": "downstream",
+          "distinctPoses": true,
+          "touch": false,
+          "pausePixels": true,
+          "reducedMotion": true
+        },
+        {
+          "temporary503": "recovered",
+          "imageAttempts": 2,
+          "modelAttempts": 2
+        },
+        {
+          "missingModel": "playable"
+        },
+        {
+          "missingRig": "playableRegisteredSprite",
+          "distinctPoses": true
+        },
+        {
+          "manualRetry": "recovered"
+        },
+        {
+          "noWebGL": "playable2d",
+          "distinctPoses": true
+        },
+        {
+          "contextLoss": "pausedThenPlayable2d"
+        }
+      ],
+      "screenshots": "/tmp/river-temple/live-layouts",
+      "errors": []
+    },
+    "motion": {
+      "passed": true,
+      "fullDetailShaderCoverage": false,
+      "renderer": "headless SwiftShader; not a physical device FPS claim",
+      "frames": 29,
+      "uniqueStrokeSamples": 29,
+      "maxHandError": 1.2040015567404913e-07,
+      "maxTriangles": 97618,
+      "maxDrawCalls": 28,
+      "frameTiming": {
+        "meanMs": 90.45517241389587,
+        "p50Ms": 90.8999999910593,
+        "p95Ms": 104.90000000596046,
+        "fps": 11.055199756010618
+      },
+      "steeringReversal": true,
+      "distinctAnatomicalPoses": true,
+      "duckHeightRatio": 0.31751951397994993,
+      "pausePixels": true,
+      "reducedMotion": true,
+      "screenshots": "/tmp/river-temple/live-motion",
+      "errors": []
+    },
+    "cabinet": {
+      "passed": true,
+      "cabinet": "river-rush",
+      "url": "https://arcade.uptick.systems/river-rush/",
+      "menuReady": true,
+      "switcherLoaded": true
+    },
+    "assets": [
+      {
+        "file": "river-rush/index.html",
+        "status": 200,
+        "bytes": 752,
+        "sha256": "01f0ad286e6a5f9f1ef22bbbbb8a4f05b0304f113dcfcda2e9692a6b3e0ba06e"
+      },
+      {
+        "file": "arcade/quiet.js",
+        "status": 200,
+        "bytes": 9469,
+        "sha256": "35edcc34e6fe6db9d95786245447b7d99fd2489be863b241df5140edb997dd5a"
+      },
+      {
+        "file": "river-rush/assets/index-CzWsLO-a.js",
+        "status": 200,
+        "bytes": 929918,
+        "sha256": "79680209f586b8d5d9b8006a9dacc98ccbf914f5f12a25a7fe95bd3f0eec3da5"
+      },
+      {
+        "file": "river-rush/assets/index-B7-zVVFN.css",
+        "status": 200,
+        "bytes": 17807,
+        "sha256": "f44a4b92bb5d0d08f849fba4abd2f8fd7f8850e78aec12ae7336a643f92ecea5"
+      },
+      {
+        "file": "arcade/switch.js",
+        "status": 200,
+        "bytes": 15053,
+        "sha256": "016f46555a03379535fe50b43534b778e0203f90ae875ad4249f16a3130d96dc"
+      },
+      {
+        "file": "river-rush/models/meshy-palm.glb",
+        "status": 200,
+        "bytes": 177816,
+        "sha256": "54e5414f8c52927eae66dddcc76d27e62969591dd22b9aa46699b40fde0879ef"
+      },
+      {
+        "file": "river-rush/models/meshy-palm-lite.glb",
+        "status": 200,
+        "bytes": 89424,
+        "sha256": "a693d8e8aa2135bd3e76379d026e2fc3951fcdb21d2fc36b8ec30c66b5708e68"
+      },
+      {
+        "file": "river-rush/models/meshy-bank.glb",
+        "status": 200,
+        "bytes": 265716,
+        "sha256": "30cce241291fb9b10a269d633058f8a6bff7da4e9b8ce0bbf26dea21415a7b81"
+      },
+      {
+        "file": "river-rush/models/meshy-bank-lite.glb",
+        "status": 200,
+        "bytes": 93172,
+        "sha256": "4eae31dfe50076aaa3da4e19d6be61a407e457c42e46ef2414426473b89a8cf6"
+      },
+      {
+        "file": "river-rush/models/meshy-temple-lite.glb",
+        "status": 200,
+        "bytes": 229088,
+        "sha256": "1c169c9b83854db380a6d26de6b31c8b2bf9f37b7daf02159c54bf75b3c20412"
+      },
+      {
+        "file": "river-rush/models/meshy-rider.glb",
+        "status": 200,
+        "bytes": 741008,
+        "sha256": "5c182182fd13c2f7e4e5fcbdf827ce8ec5dae1535d361e4e52b621aa8eb15177"
+      },
+      {
+        "file": "river-rush/models/meshy-temple.glb",
+        "status": 200,
+        "bytes": 483748,
+        "sha256": "83b0d1c98460d2db9c04b977dfc039f33025ca9a7de966ec4ca9465ccd2b3f86"
+      },
+      {
+        "file": "river-rush/models/meshy-raft.glb",
+        "status": 200,
+        "bytes": 185968,
+        "sha256": "9c00fb20f45bbe452a2fcfb1147549db0240d68894e6503150713e541d50d1a6"
+      },
+      {
+        "file": "river-rush/models/meshy-guardian.glb",
+        "status": 200,
+        "bytes": 356280,
+        "sha256": "04b4794a3b06fd474361169c9a2cb44aca7f75da0111a9ccf1f70a4106a4069d"
+      },
+      {
+        "file": "river-rush/models/meshy-guardian-lite.glb",
+        "status": 200,
+        "bytes": 176980,
+        "sha256": "3765b111d46e260760552047aad7c68678178acb7c8b23fb22b306127529f3e2"
+      },
+      {
+        "file": "river-rush/models/meshy-temple-raft.glb",
+        "status": 200,
+        "bytes": 413288,
+        "sha256": "ee97a02012a9880640c16dcd022915d926b9b33d1b29d21d60fc1b33275adbb3"
+      }
+    ],
+    "fullDetailShader": {
+      "passed": true,
+      "fullDetailShaderCoverage": true,
+      "renderer": "headless SwiftShader; not a physical device FPS claim",
+      "frames": 29,
+      "uniqueStrokeSamples": 29,
+      "maxHandError": 1.2040972468909903e-07,
+      "maxTriangles": 199333,
+      "maxDrawCalls": 26,
+      "frameTiming": {
+        "meanMs": 269.4034482759648,
+        "p50Ms": 276.6000000089407,
+        "p95Ms": 315.5,
+        "fps": 3.711904975231218
+      },
+      "steeringReversal": true,
+      "distinctAnatomicalPoses": true,
+      "duckHeightRatio": 0.3175195120070481,
+      "pausePixels": true,
+      "reducedMotion": true,
+      "screenshots": "/tmp/river-temple/live-native",
+      "errors": []
+    }
+  },
+  "archive": {
+    "path": "openspec/changes/archive/2026-10-06-river-rush-temple-rig",
+    "canonical": "openspec/specs/river-rush/spec.md",
+    "strictValidation": "passed",
+    "review": "Reviewed character, brace, pose, motion and fallback requirements for consistency; two requirements added, two updated."
+  }
 }
