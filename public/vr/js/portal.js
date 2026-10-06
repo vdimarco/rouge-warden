@@ -81,10 +81,12 @@ function crackLines(rand, poly) {
   return lines;
 }
 // The crack texture: red is the dark line, green its pale rim, blue a soft halo of dust round it (the shader colours them).
-function crackTexture(lines) {
+// px: the canvas size (the flat screen's toilet intro never shows the crack, so it draws a tiny one: a 2048 px blur is slow
+// on a CPU).
+function crackTexture(lines, px = DECAL.px) {
   const cv = document.createElement("canvas");
-  cv.width = cv.height = DECAL.px;
-  const c = cv.getContext("2d"), k = DECAL.px / DECAL.size, X = (x) => (x + DECAL.size / 2) * k, Y = (y) => (DECAL.size / 2 - y) * k;
+  cv.width = cv.height = px;
+  const c = cv.getContext("2d"), k = px / DECAL.size, X = (x) => (x + DECAL.size / 2) * k, Y = (y) => (DECAL.size / 2 - y) * k;
   c.fillStyle = "#000"; c.fillRect(0, 0, cv.width, cv.height);
   c.globalCompositeOperation = "lighter"; c.lineCap = "round"; c.lineJoin = "round";
   const stroke = (col, grow, dx, dy, blur) => {
@@ -98,7 +100,7 @@ function crackTexture(lines) {
       }
     }
   };
-  stroke("rgb(0,0,255)", 8, 0, 0, 9 * DECAL.px / 1024); // the dust halo keeps its size in metres
+  stroke("rgb(0,0,255)", 8, 0, 0, 9 * px / 1024); // the dust halo keeps its size in metres
   stroke("rgb(0,255,0)", 4.4, 0, 0, 0); // the pale plaster chips round the ink
   stroke("rgb(255,0,0)", 2.6, 0, 0, 0); // the thick ink line
   c.filter = "none";
@@ -560,7 +562,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const fl = wall.C.y - wall.floorY; // the crack centre's height above the floor
     wall.fl = fl;
     // the crack decal
-    const tex = fx.crackTex = crackTexture(lines);
+    const tex = fx.crackTex = crackTexture(lines, toiletMode() ? 64 : DECAL.px);
     renderer.initTexture(tex);
     fx.mats.decal = mat("decal", () => decalMaterial(tex));
     fx.mats.decal.uniforms.uMap.value = tex;
