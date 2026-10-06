@@ -61,3 +61,15 @@
 @media(max-width:430px){.abilities #skill-points{width:146px}}
 /* Small landscape windows: the market bar reaches under C, so the cluster moves up to clear it. */
 @media(max-height:520px) and (min-width:600px) and (max-width:659px){.abilities{bottom:calc(60px + env(safe-area-inset-bottom))}}
+/* Small phones on their side (568x320 to 667x375): the minimap gets smaller, and the point button becomes a compact
+   pill to the left of it, so the minimap, the point button, the Q skill and the difficulty label do not overlap. */
+@media(max-height:400px) and (min-width:540px) and (max-width:699px){
+ #map-button{width:72px;height:72px;top:calc(6px + env(safe-area-inset-top))}
+ #map-button #minimap{width:100%;height:100%}
+ .abilities #skill-points{position:fixed;top:calc(24px + env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 80px);left:auto;width:104px;min-height:32px;padding:4px 8px;border-radius:999px;font-size:10px}
+}
+/* Under 600 px wide the rally button stands beside the movement pad, clear of the objective text, and the objective
+   text ends before the timers at the top. */
+@media(max-height:400px) and (min-width:540px) and (max-width:599px){#rally{left:137px;bottom:calc(118px + env(safe-area-inset-bottom))}#objective{max-width:164px}}
+/* From 600 px wide the rally button keeps clear of the health bar and the market button. */
+@media(max-height:400px) and (min-width:600px) and (max-width:699px){#rally{left:138px;width:54px}}

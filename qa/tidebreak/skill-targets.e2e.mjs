@@ -1,4 +1,4 @@
-// The skill buttons are easy to hit at seven screen sizes, with skill points to spend and without:
+// The skill buttons are easy to hit at nine screen sizes, with skill points to spend and without:
 // 1. every point of each skill's visible disc reaches that skill, and no other control covers it. The "+" badges
 //    cover no disc and are easy to hit themselves.
 // 2. E and C, the skills nearest the middle of the screen, are at least 80 px wide on desktop and 70 px on phones. The
@@ -18,7 +18,8 @@ const SHOTS = process.env.SHOTS;
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const browser = await chromium.launch({ executablePath });
 // 600x500 is a small landscape window: it gets the phone cluster, and the market bar reaches close under C.
-const SIZES = [[1440, 900], [1920, 1080], [3440, 1440], [844, 390], [600, 500], [390, 844], [320, 568]];
+// 640x360 and 568x320 are small phones on their side: a smaller minimap, and the point button is a pill beside it.
+const SIZES = [[1440, 900], [1920, 1080], [3440, 1440], [844, 390], [600, 500], [640, 360], [568, 320], [390, 844], [320, 568]];
 const KEYS = ['Q', 'E', 'C', 'R'], CLEAR = ['#skill-points', '#auto-status', '#map-button', '#shop', '#quick-buy', '#loadout', '#inventory', '.inventory-slot', '.health', '#joystick', '#rally'];
 const failures = [];
 const check = (ok, message) => { if (!ok) failures.push(message); };
@@ -48,7 +49,8 @@ const MEASURE = clearList => {
   const badges = [...document.querySelectorAll('.ability-upgrade')].filter(shown).map(b => { const r = box(b), disc = { x: r.x + r.w / 2, y: r.y + r.h / 2, r: Math.min(r.w, r.h) / 2 }; return { slot: +b.dataset.upgrade, disc, share: share(disc, el => el === b) }; });
   const clear = Object.fromEntries(clearList.flatMap(s => [...document.querySelectorAll(s)].filter(shown).map((el, i) => [i ? `${s} ${i + 1}` : s, box(el)])));
   const chat = [...document.querySelectorAll('#team-chat li')].filter(shown).map(box);
-  return { skills, badges, clear, chat, view: { w: innerWidth, h: innerHeight } };
+  const extra = Object.fromEntries(['#map-button', '#objective-clock'].map(s => document.querySelector(s)).filter(shown).map(el => ['#' + el.id, box(el)]));
+  return { skills, badges, clear, chat, extra, view: { w: innerWidth, h: innerHeight } };
 };
 
 const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -100,6 +102,8 @@ try {
       check(m.skills[0].size >= (phone ? 70 : 80), `${at}: Q is ${Math.round(m.skills[0].size)} px`);
       const parts = [...m.skills.map(s => s.hit), ...m.badges.map(b => discBox(b.disc))];
       for (const [sel, r] of Object.entries(m.clear)) check(!parts.some(p => overlap(p, r)), `${at}: the skill cluster overlaps ${sel}`);
+      // The point button covers neither the minimap nor the objective timers.
+      for (const sel of ['#map-button', '#objective-clock']) if (m.clear['#skill-points'] && m.extra[sel]) check(!overlap(m.clear['#skill-points'], m.extra[sel]), `${at}: the point button overlaps ${sel}`);
       // Chat lines fade after a few seconds and take no presses, so an overlap with them is a note, not a failure.
       if (m.chat.some(c => m.clear['#skill-points'] && overlap(c, m.clear['#skill-points']))) console.log(`note ${at}: the point button touches a team chat line`);
       check(parts.every(p => p.x >= 0 && p.y >= 0 && p.x + p.w <= m.view.w && p.y + p.h <= m.view.h), `${at}: the skill cluster leaves the screen`);
@@ -142,4 +146,4 @@ try {
   }
 } finally { await browser.close(); }
 if (failures.length) { console.log(failures.map(f => 'FAIL ' + f).join('\n')); assert.fail(`${failures.length} skill target checks failed`); }
-console.log('PASS: at seven sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls and gap presses reach the nearest skill.');
+console.log('PASS: at nine sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls and gap presses reach the nearest skill.');
