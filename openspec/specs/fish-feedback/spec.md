@@ -63,10 +63,10 @@ The last-run warning SHALL NOT use the line-snap buzz and SHALL NOT mute the dra
 - **THEN** the drag buzz keeps going and the warning buzz differs from the snap buzz.
 
 ### Requirement: Trophy photo framing
-The photo beat of a trophy, a legend or a fish that opens a place SHALL show the fish in the middle of the part of the view that the catch card leaves free when the flash comes. The card SHALL then come up beside the fish, not over it. This SHALL hold right after a jump, and when frames take longer than 50 ms.
+The photo beat of a trophy, a legend or a fish that opens a place SHALL show the fish in the middle of the part of the view that the catch card leaves free when the flash comes. The card SHALL then come up beside the fish, not over it. This SHALL hold right after a jump, and when frames take longer than 50 ms. The flash SHALL wait for a frame that shows the fish in the photo's position, also when no frame comes until after the time of the flash.
 
 #### Scenario: Trophy landed during a jump's zoom on slow frames
-- **WHEN** a trophy is landed while a jump's zoom is still on, and every frame takes 150 ms
+- **WHEN** a trophy is landed while a jump's zoom is still on, every frame takes 150 ms, and no frame comes for 1.5 s after the landing
 - **THEN** at the flash the fish's middle is within 3% of the view's size from the middle of the free part, at 390x844, 360x640 and 844x390
 
 #### Scenario: The card comes up

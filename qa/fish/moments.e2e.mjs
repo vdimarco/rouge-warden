@@ -11,8 +11,9 @@
 // buzzes and words; the cast report and the "Sweet!" cue show without their pop (with reduced motion too).
 // Part C: the jump zoom on the other layouts (844x390 and 360x640 phones, a 1280x800 desktop), 30 and 50 m out: the
 // leaping fish stays in the view, below the HUD and the prompt, and the rod stays drawn where the hand holds it.
-// Part D: the trophy photo, landed while a jump's zoom is still on and on slow frames (each one 150 ms): when the flash
-// comes, the fish is in the middle of the part of the view the card leaves free, and the card comes up under the fish.
+// Part D: the trophy photo, landed while a jump's zoom is still on and on slow frames (each one 150 ms, and none for 1.5 s
+// after the landing): when the flash comes, the fish is in the middle of the part of the view the card leaves free, and the
+// card comes up under the fish.
 // The fights are staged: a stand-in for the sim goes into G.sim with the same state and events (like screens.mjs).
 // Run: serve public/ (FISH_URL, default http://localhost:8765/fish/), then
 //   NODE_PATH=qa/browser/node_modules node qa/fish/moments.e2e.mjs       (PARTS=A, B, C or D for one part; SHOTS=dir)
@@ -21,7 +22,15 @@ import { CAST } from "../../public/fish/js/cast.js";
 
 const fails = [];
 const check = (ok, msg) => { if (!ok) fails.push(msg); console.log((ok ? "ok   " : "FAIL ") + msg); return ok; };
-const wait = (page, fn, arg, ms = 30000) => page.waitForFunction(fn, arg, { timeout: ms, polling: 40 });
+// waits for fn in the page; a timeout fails with the condition it waited for
+const wait = (page, fn, arg, ms = 30000) => page.waitForFunction(fn, arg, { timeout: ms, polling: 40 }).catch((e) => { throw new Error(`waited ${ms / 1000} s for ${fn}: ${e.message.split("\n")[0]}`); });
+// the lake's own clock moves at most 50 ms a frame, and a loaded software GPU can take 2 s a frame: a wait for the lake's
+// time (a camera that settles, a zoom that eases) can take this long (ms)
+const SLOW = 180000;
+// waits until the lake's own clock has run on by s seconds
+async function lakeTime(page, s) { const c = await page.evaluate(() => FISH.world.feel().clock); await wait(page, ([c, s]) => FISH.world.feel().clock >= c + s, [c, s], SLOW); }
+// waits until the game has run n more frames
+async function frames(page, n) { const f = await page.evaluate(() => FISH.G.frame); await wait(page, ([f, n]) => FISH.G.frame >= f + n, [f, n], 60000); }
 const PARTS = process.env.PARTS ? process.env.PARTS.split(",") : null, part = (p) => !PARTS || PARTS.includes(p);
 const PAUSE = 350;   // the double-tap guard ignores a click in the first 300 ms of a screen
 const click = async (page, sel) => { await sleep(PAUSE); await page.click(sel); };
@@ -84,6 +93,20 @@ async function spy(page) {
     new MutationObserver(() => L("banner", bn.hidden ? "" : bn.querySelector("b").textContent, bn.querySelector("span").textContent)).observe(bn, { attributes: true, attributeFilter: ["hidden"] });
   });
 }
+// the banner as it shows next, taken at the show: it hides 0.9 s later on the wall clock, and a slow frame can delay a
+// read past that
+const armBanner = (page) => page.evaluate(() => {
+  const b = document.querySelector("#banner");
+  if (window.__bannerObs) window.__bannerObs.disconnect();
+  window.__shown = { hidden: true };
+  window.__bannerObs = new MutationObserver(() => {
+    if (b.hidden) return;
+    window.__bannerObs.disconnect();
+    window.__shown = { hidden: b.hidden, text: b.querySelector("b").textContent, sub: b.querySelector("span").textContent, prompt: getComputedStyle(document.querySelector("#prompt")).visibility, pop: getComputedStyle(b.querySelector("b")).animationName };
+  });
+  window.__bannerObs.observe(b, { attributes: true, attributeFilter: ["hidden"] });
+});
+const shownBanner = (page) => page.evaluate(() => window.__shown);
 const logClear = (page) => page.evaluate(() => { window.__log.length = 0; });
 const logNow = (page) => page.evaluate(() => window.__log.slice());
 const has = (log, k, a) => log.some((l) => l[0] === k && (a === undefined || l[1] === a));
@@ -108,14 +131,15 @@ const fishBox = (page, id) => page.evaluate(async (id) => {
 const freeTop = (page) => page.evaluate(() => Math.max(...["#hud", "#prompt"].map((s) => document.querySelector(s).getBoundingClientRect().bottom)));
 const inFree = (b, top) => !!b && b.x0 >= 0 && b.x1 <= b.vw && b.y0 >= top && b.y1 <= b.vh;
 const boxText = (b) => (b ? `x ${b.x0.toFixed(0)}..${b.x1.toFixed(0)}, y ${b.y0.toFixed(0)}..${b.y1.toFixed(0)} of ${b.vw}x${b.vh}` : "no fish");
-// the tallest a splash at pt gets on the screen over ms (CSS px): the droplets within 8 m of it, with their size
-const splashHeight = (page, pt, ms = 2500) => page.evaluate(async ([pt, ms]) => {
+// the tallest a splash at pt gets on the screen over s seconds of the lake's clock (CSS px): the droplets within 8 m of it,
+// with their size. (A slow frame moves the droplets at most 50 ms)
+const splashHeight = (page, pt, s = 2.5) => page.evaluate(async ([pt, s, SLOW]) => {
   const THREE = await import("/fish/lib/three.module.min.js");
   const W = FISH.world, sp = W.scene.children.find((o) => o.isPoints && o.geometry.attributes.aGold && o.geometry.attributes.aSize), A = sp.geometry.attributes;
   const view = document.querySelector("#view"), h = view.clientHeight, v = new THREE.Vector3();
   let best = 0, n = 0;
-  const t0 = performance.now();
-  while (performance.now() - t0 < ms) {
+  const c0 = W.feel().clock, t0 = performance.now();
+  while (W.feel().clock - c0 < s && performance.now() - t0 < SLOW) {
     await new Promise((r) => requestAnimationFrame(r));
     const cam = W.camera, k = h / (2 * Math.tan(cam.fov * Math.PI / 360));
     let top = Infinity, bot = -Infinity, c = 0;
@@ -134,7 +158,7 @@ const splashHeight = (page, pt, ms = 2500) => page.evaluate(async ([pt, ms]) => 
     if (c && bot - top > best) { best = bot - top; n = c; }
   }
   return { height: best, n };
-}, [pt, ms]);
+}, [pt, s, SLOW]);
 // every shader number in the scene that is not finite (a NaN in a water ripple hides the water): [renderOrder, name]
 const badUniforms = (page) => page.evaluate(() => {
   const out = [];
@@ -151,12 +175,23 @@ const badUniforms = (page) => page.evaluate(() => {
 async function catchCard(page, c, { calm = false } = {}) {
   await page.evaluate(() => FISH.newCast());
   await logClear(page);
+  // the badges when the weight first shows (the count-up runs on the wall clock: a slow frame can delay a later read past
+  // its end)
+  await page.evaluate(() => {
+    const kg = document.querySelector("#ckg"), b = document.querySelector("#cbadges");
+    window.__early = null;
+    if (window.__earlyObs) window.__earlyObs.disconnect();
+    window.__earlyObs = new MutationObserver(() => { if (!window.__early) window.__early = { held: b.classList.contains("held"), kg: kg.textContent }; });
+    window.__earlyObs.observe(kg, { childList: true, characterData: true, subtree: true });
+  });
   await stage(page, { phase: "caught", catch: c, fish: null });
   await wait(page, () => !document.querySelector("#catch").hidden);
-  await wait(page, () => !FISH.G.cardWait, null, 20000);
-  const early = await page.evaluate(() => ({ held: document.querySelector("#cbadges").classList.contains("held"), kg: document.querySelector("#ckg").textContent }));
-  if (!c.junk) await wait(page, (kg) => document.querySelector("#ckg").dataset.kg === String(kg), c.kg, 20000);
-  await sleep(1900);   // the stingers come 0.5 to 1.7 s after the landing
+  // the stingers come 0.5 to 1.7 s after the landing, from timers: a timer of 1.9 s set now comes after all of them
+  await page.evaluate(() => { window.__stung = false; setTimeout(() => { window.__stung = true; }, 1900); });
+  await wait(page, () => !FISH.G.cardWait);
+  if (!c.junk) await wait(page, (kg) => document.querySelector("#ckg").dataset.kg === String(kg), c.kg);
+  await wait(page, () => window.__stung);
+  const early = await page.evaluate(() => window.__early || {});
   const card = await page.evaluate(() => {
     const b = document.querySelector("#cbadges");
     return { badges: [...b.querySelectorAll(".badge")].map((x) => x.textContent), held: b.classList.contains("held"), stamp: b.classList.contains("stamp"),
@@ -181,22 +216,22 @@ if (part("A")) {
     console.log("     the hot prompt");
     await page.evaluate(() => { window.__hot = 0; document.querySelector("#prompt .p1").addEventListener("animationstart", (e) => { if (e.animationName === "hot") window.__hot++; }); });
     await stage(page, { tfrac: 0.9 });
-    await wait(page, () => document.querySelector("#prompt").classList.contains("hot"), null, 8000);
+    await wait(page, () => document.querySelector("#prompt").classList.contains("hot"));
     const hot = await page.evaluate(() => {
       const a = window.__anim("#prompt .p1"), rule = [...document.styleSheets].flatMap((s) => { try { return [...s.cssRules]; } catch (e) { return []; } }).find((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === "hot");
       return { ...a, scale: !!rule && /transform|scale/.test(rule.cssText) };
     });
     check(hot.name === "hot" && hot.n === "1" && !hot.scale, "a hot prompt glows once, and its text never grows (" + JSON.stringify(hot) + ")");
     // (the animation events come with the frames, which are slow on a software GPU: wait for them)
-    await wait(page, () => document.querySelector("#prompt .p1").getAnimations().length === 0, null, 8000).catch(() => {});
-    await sleep(800);
+    await wait(page, () => document.querySelector("#prompt .p1").getAnimations().length === 0);
+    await sleep(800); await frames(page, 5);
     check(await page.evaluate(() => document.querySelector("#prompt .p1").getAnimations().length === 0 && window.__hot === 1), "and then holds still");
     const hot0 = await page.evaluate(() => window.__hot);
     await stage(page, { tfrac: 0.3, fish: { move: "turn" } }, [], false);
-    await wait(page, () => /It turned/.test(document.querySelector("#prompt").textContent), null, 8000);
-    await wait(page, (n) => window.__hot > n, hot0, 8000).catch(() => {});
-    await wait(page, () => document.querySelector("#prompt .p1").getAnimations().length === 0, null, 8000).catch(() => {});
-    await sleep(800);
+    await wait(page, () => /It turned/.test(document.querySelector("#prompt").textContent));
+    await wait(page, (n) => window.__hot > n, hot0);
+    await wait(page, () => document.querySelector("#prompt .p1").getAnimations().length === 0);
+    await sleep(800); await frames(page, 5);
     const hot1 = await page.evaluate(() => window.__hot);
     check(hot1 === hot0 + 1, `a new hot prompt glows once again, and once only (${hot0} glows, then ${hot1})`);
 
@@ -228,13 +263,11 @@ if (part("A")) {
     console.log("     the hook set");
     await stage(page, { phase: "strike", fish: null });
     await logClear(page);
+    await armBanner(page);
     await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, x: 0, z: -20, known: false } }, [{ type: "strike", s: 1 }, { type: "hooked", id: "smallmouth" }], false);
-    const shown = await page.evaluate(() => {
-      const b = document.querySelector("#banner");
-      return { hidden: b.hidden, text: b.querySelector("b").textContent, sub: b.querySelector("span").textContent, prompt: getComputedStyle(document.querySelector("#prompt")).visibility, pop: getComputedStyle(b.querySelector("b")).animationName };
-    });
+    const shown = await shownBanner(page);
     await shot(page, "moments-hookset");
-    await wait(page, () => document.querySelector("#banner").hidden, null, 5000).catch(() => {});
+    await wait(page, () => document.querySelector("#banner").hidden);
     l = await logNow(page);
     const vibs = l.filter((x) => x[0] === "vib").map((x) => x[1]), setVib = vibs.find((p) => onMs(p) >= 160) || vibs.at(-1) || [];
     const bOn = l.find((x) => x[0] === "banner" && x[1]), bOff = l.find((x) => x[0] === "banner" && !x[1] && bOn && x.at(-1) > bOn.at(-1));
@@ -251,9 +284,9 @@ if (part("A")) {
       const c0 = W.feel().clock; W.update(0.016); out.held = W.feel().clock === c0 && W.feel().frozen;
       await new Promise((r) => setTimeout(r, 120));
       const c1 = W.feel().clock; W.update(0.016); out.after = W.feel().clock > c1;
-      // a long freeze, to count the sim's steps meanwhile (long, so a slow timer here cannot outlast it)
-      window.__steps = 0; W.freeze(8000); const c2 = W.feel().clock, t2 = performance.now();
-      while (window.__steps < 3 && performance.now() - t2 < 6000) await new Promise((r) => setTimeout(r, 100));
+      // a long freeze, to count the sim's steps meanwhile (long, so a slow frame or timer here cannot outlast it)
+      window.__steps = 0; W.freeze(60000); const c2 = W.feel().clock, t2 = performance.now();
+      while (window.__steps < 3 && performance.now() - t2 < 30000) await new Promise((r) => setTimeout(r, 100));
       out.steps = window.__steps; out.still = W.feel().clock === c2 && W.feel().frozen;
       W.freeze(0);
       out.punch0 = (W.punch(), W.feel().punch);
@@ -267,8 +300,9 @@ if (part("A")) {
     // a slower set, and a fish that hooked itself
     await stage(page, { phase: "strike", fish: null }, [{ type: "strike", s: 0.6 }]);
     await sleep(600);
+    await armBanner(page);
     await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, x: 0, z: -20, known: false } }, [{ type: "hooked", id: "smallmouth" }], false);
-    let b = await page.evaluate(() => ({ text: document.querySelector("#banner b").textContent, sub: document.querySelector("#banner span").textContent, hidden: document.querySelector("#banner").hidden }));
+    let b = await shownBanner(page);
     check(!b.hidden && b.text === "Fish on!" && b.sub === "", "a set 0.6 s after the strike: \"Fish on!\" with no \"Quick set!\" (" + JSON.stringify(b) + ")");
     await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, known: false } }, [{ type: "hooked", id: "smallmouth", self: true }]);
     b = await page.evaluate(() => ({ text: document.querySelector("#banner b").textContent, sub: document.querySelector("#banner span").textContent }));
@@ -299,11 +333,11 @@ if (part("A")) {
     console.log("     a jump");
     const jx = eye.x, jz = eye.z - 30;
     await stage(page, { fish: { id: "smallmouth", kg: 0.9, len: 0.34, x: jx, z: jz, y: -0.3, heading: Math.PI / 2, move: "swim", jump: 0, known: true } });
-    await sleep(1500);
+    await lakeTime(page, 1.5);
     const before = await fishBox(page, "smallmouth");
     await logClear(page);
     await stage(page, { fish: { y: 0.3, jump: 0.5, move: "jump" } }, [{ type: "jump", size: 0.34, x: jx, z: jz }], false);
-    await wait(page, () => FISH.world.feel().zoom > 0.95, null, 20000).catch(() => {});
+    await wait(page, () => FISH.world.feel().zoom > 0.95, null, SLOW);
     const box = await fishBox(page, "smallmouth"), zf = await page.evaluate(() => FISH.world.feel()), top = await freeTop(page);
     await shot(page, "moments-jump");
     l = await logNow(page);
@@ -312,7 +346,7 @@ if (part("A")) {
     check(inFree(box, top) && zf.rod, `and it is in the view below the HUD and the prompt (${boxText(box)}, free from ${top.toFixed(0)}), with the rod still drawn (${zf.rod})`);
     await stage(page, { fish: { y: -0.4, jump: 0, move: "swim" } }, [], false);
     const zoomAfter = await page.evaluate(() => FISH.world.feel().zoom);
-    await wait(page, () => FISH.world.feel().zoom < 0.05, null, 30000).catch(() => {});
+    await wait(page, () => FISH.world.feel().zoom < 0.05, null, SLOW);
     const back = await page.evaluate(() => FISH.world.feel());
     check(zoomAfter > 0.5 && back.zoom < 0.05 && back.fov > back.base * 0.9, `after the jump the view eases back (zoom ${zoomAfter.toFixed(2)} as it lands, then ${back.zoom.toFixed(3)}; view ${back.fov.toFixed(1)} of ${back.base.toFixed(1)})`);
 
@@ -320,7 +354,7 @@ if (part("A")) {
     console.log("     the cast");
     await page.evaluate(() => { FISH.newCast(); });
     await wait(page, () => FISH.G.phase === "cast");
-    await wait(page, () => FISH.rises && FISH.rises.list.length > 0, null, 10000);
+    await wait(page, () => FISH.rises && FISH.rises.list.length > 0, null, SLOW);
     const ring = await page.evaluate(() => { const g = FISH.rises.list[0]; return { x: g.x, z: g.z, gold: g.gold }; });
     await logClear(page);
     await landAt(page, ring.x, ring.z);
@@ -334,7 +368,7 @@ if (part("A")) {
     l = await logNow(page);
     const s1 = sounds(l);
     check(sweet.verdict === "sweet" && sweet.cue === "Sweet!" && s1.includes("zing") && !s1.includes("ui") && s1.indexOf("release") < s1.indexOf("zing"), "a sweet release: \"Sweet!\" with its own bright sound, not the menu click (" + s1.join(" ") + ")");
-    await wait(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 60000).catch(() => {});
+    await wait(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, SLOW);
     // a far splash: no rings near it, so only its own droplets count
     await page.evaluate(() => { FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); FISH.newCast(); });
     await wait(page, () => FISH.G.phase === "cast");
@@ -347,7 +381,7 @@ if (part("A")) {
     await wait(page, () => FISH.G.phase === "cast");
     await sleep(800);
     await landAt(page, eye.x, eye.z - 6);
-    const near = await splashHeight(page, { x: eye.x, z: eye.z - 6 }, 1500);
+    const near = await splashHeight(page, { x: eye.x, z: eye.z - 6 }, 1.5);
     console.log(`     (a splash 6 m out: ${near.height.toFixed(1)} px tall, ${near.n} droplets)`);
 
     // ---- the catch: tiered stingers and the card's reveal ----
@@ -411,8 +445,10 @@ if (part("A")) {
         FISH.G.castsLeft = 0; FISH.G.bag = bag; FISH.G.unlocked = unlocked; FISH.newCast();
       }, [bag, unlocked]);
       await page.waitForSelector("#results:not([hidden])");
-      await wait(page, () => !document.querySelector("#rrank").classList.contains("held"), null, 8000).catch(() => {});
-      await sleep(unlocked.length ? 3200 : 600);
+      await wait(page, () => !document.querySelector("#rrank").classList.contains("held"));
+      // a place this derby opened sounds its call 2.6 s after a best derby's close
+      if (unlocked.length) await wait(page, () => window.__log.some((l) => l[0] === "sfx" && l[1] === "newPlace"));
+      else await sleep(600);
       return { rt: await page.evaluate(() => window.__rt.slice()), log: await logNow(page) };
     }
     let d = await derby([{ id: "perch", kg: 0.42 }, { id: "walleye", kg: 2.2 }], [{ id: "stumps", kg: 3.6, name: "Walleye" }]);
@@ -448,13 +484,14 @@ if (part("B")) {
     await wait(page, () => FISH.G.phase === "cast");
     console.log("     Calm effects");
     await stage(page, { tfrac: 0.9 });
-    await wait(page, () => document.querySelector("#prompt").classList.contains("hot"), null, 8000);
+    await wait(page, () => document.querySelector("#prompt").classList.contains("hot"));
     check(await page.evaluate(() => getComputedStyle(document.querySelector("#prompt .p1")).animationName === "none"), "calm: a hot prompt does not glow");
     // the strike and the hook set
     await stage(page, { phase: "strike", fish: null });
     await logClear(page);
+    await armBanner(page);
     await stage(page, { phase: "fight", fish: { id: "smallmouth", kg: 1.2, x: 0, z: -20, known: false } }, [{ type: "strike", s: 1 }, { type: "hooked", id: "smallmouth" }], false);
-    const bn = await page.evaluate(() => ({ hidden: document.querySelector("#banner").hidden, text: document.querySelector("#banner b").textContent, sub: document.querySelector("#banner span").textContent, pop: getComputedStyle(document.querySelector("#banner b")).animationName, feel: FISH.world.feel() }));
+    const bn = { ...(await shownBanner(page)), feel: await page.evaluate(() => FISH.world.feel()) };
     let l = await logNow(page);
     check(!bn.hidden && bn.text === "Fish on!" && bn.sub === "Quick set!" && bn.pop === "none", "calm: the hook set keeps its words, with no pop (" + JSON.stringify({ text: bn.text, sub: bn.sub, pop: bn.pop }) + ")");
     check(has(l, "sfx", "strike") && has(l, "sfx", "hookset") && has(l, "hx.thump") && has(l, "hx.hookset") && l.some((x) => x[0] === "vib"), "calm: the strike and the hook set keep their sounds and buzzes (" + brief(l) + ")");
@@ -462,7 +499,7 @@ if (part("B")) {
     // a jump: no zoom
     await stage(page, { fish: { id: "smallmouth", kg: 0.9, len: 0.34, x: eye.x, z: eye.z - 30, y: 0.3, heading: Math.PI / 2, move: "jump", jump: 0.5, known: true } }, [{ type: "jump", size: 0.34, x: eye.x, z: eye.z - 30 }]);
     const c0 = await page.evaluate(() => FISH.world.feel().clock);
-    await wait(page, (c) => FISH.world.feel().clock > c + 1, c0, 30000).catch(() => {});
+    await wait(page, (c) => FISH.world.feel().clock > c + 1, c0, SLOW);
     const jf = await page.evaluate(() => FISH.world.feel());
     l = await logNow(page);
     check(jf.zoom === 0 && l.some((x) => x[0] === "w.jumpZoom" && x[2] === false) && has(l, "sfx", "jump"), `calm: a jump keeps its sound, and the view does not zoom (zoom ${jf.zoom})`);
@@ -477,7 +514,7 @@ if (part("B")) {
         return { cue: el.querySelector(".verdict").textContent, cls: el.className, anim: getComputedStyle(el).animationName, running: el.getAnimations().map((a) => a.animationName) };
       }, CAST.IDEAL_RELEASE);
       r.sounds = sounds(await logNow(page));
-      await wait(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, 60000).catch(() => {});
+      await wait(page, () => FISH.G.phase === "reel" || FISH.G.step === "ashore", null, SLOW);
       return r;
     };
     let sw = await sweetRelease();
@@ -493,7 +530,7 @@ if (part("B")) {
     await page.evaluate(() => FISH.newCast());
     await stage(page, { phase: "caught", catch: { id: "perch", name: "Yellow Perch", kg: 0.59, cm: 34, junk: false }, fish: null });
     await wait(page, () => !document.querySelector("#catch").hidden);
-    await wait(page, () => !FISH.G.cardWait, null, 20000);
+    await wait(page, () => !FISH.G.cardWait);
     const card = await page.evaluate(() => ({ kg: document.querySelector("#ckg").dataset.kg, held: document.querySelector("#cbadges").classList.contains("held"), anims: [...document.querySelectorAll("#cbadges .badge, #ckg")].filter((x) => getComputedStyle(x).animationName !== "none").length }));
     await sleep(1900);
     l = await logNow(page);
@@ -505,7 +542,7 @@ if (part("B")) {
     await page.evaluate(() => FISH.newCast());
     await stage(page, { phase: "caught", catch: { id: "walleye", name: "Walleye", kg: 3.6, cm: 62, junk: false }, fish: null });
     await wait(page, () => !document.querySelector("#catch").hidden);
-    await wait(page, () => !FISH.G.cardWait, null, 20000);
+    await wait(page, () => !FISH.G.cardWait);
     await logClear(page);
     await click(page, "#catchGo");
     await page.waitForSelector("#unlock:not([hidden])");
@@ -548,18 +585,18 @@ if (part("C")) {
       const cases = [["smallmouth", 0.34, 30], ["smallmouth", 0.34, 50]].concat(width === 844 ? [["golden", 0.66, 30]] : []);
       for (const [id, len, dist] of cases) {
         await stage(page, { fish: { id, kg: 1, len, x: eye.x, z: eye.z - dist, y: -0.3, heading: Math.PI / 2, move: "swim", jump: 0, known: true } });
-        await sleep(1500);
+        await lakeTime(page, 1.5);
         const a0 = await page.evaluate(() => FISH.world.rodAnchor());
         await stage(page, { fish: { y: 0.35 + 0.35 * len, jump: 0.5, move: "jump" } }, [{ type: "jump", size: len, x: eye.x, z: eye.z - dist }], false);
-        await wait(page, () => FISH.world.feel().zoom > 0.95, null, 20000).catch(() => {});
-        await sleep(600);
+        await wait(page, () => FISH.world.feel().zoom > 0.95, null, SLOW);
+        await lakeTime(page, 0.6);
         const box = await fishBox(page, id), top = await freeTop(page), f = await page.evaluate(() => FISH.world.feel()), a1 = await page.evaluate(() => FISH.world.rodAnchor());
         await shot(page, `moments-jump${dist}-${id}-${sz}`);
         check(inFree(box, top) && box.w >= 20, `${sz}: a ${id} leaping ${dist} m out is in the view below the HUD and the prompt (${boxText(box)}, free from ${top.toFixed(0)}; ${box ? box.w.toFixed(0) : "?"} px wide; view ${f.fov.toFixed(1)} of ${f.base.toFixed(1)} degrees)`);
         const drift = Math.hypot(a1.x - a0.x, a1.y - a0.y);
         check(f.rod && drift < 12, `${sz}: the rod stays drawn through the zoom, held where it was (moved ${drift.toFixed(1)} px)`);
         await stage(page, { fish: { y: -0.4, jump: 0, move: "swim" } }, [], false);
-        await wait(page, () => FISH.world.feel().zoom < 0.05, null, 30000).catch(() => {});
+        await wait(page, () => FISH.world.feel().zoom < 0.05, null, SLOW);
       }
     } catch (e) { check(false, `exception in part C at ${sz}: ` + (e && e.stack)); }
     check(errors.length === 0, `part C at ${sz}: no page errors` + (errors.length ? ":\n" + errors.join("\n") : ""));
@@ -581,13 +618,14 @@ if (part("D")) {
       // a smallmouth leaps 11 m out, and the view zooms in on it (and looks up at the leap)
       const jx = eye.x - 0.8, jz = eye.z - 11;
       await stage(page, { tfrac: 0.6, lineOut: 11.5, fish: { id: "smallmouth", kg: 1.7, cm: 44, len: 0.44, x: jx, z: jz, y: -0.4, heading: Math.PI / 2, move: "swim", jump: 0, known: true } });
-      await sleep(1500);
+      await lakeTime(page, 1.5);
       await stage(page, { fish: { y: 0.9, jump: 0.8, move: "jump" } }, [{ type: "jump", size: 0.44, x: jx, z: jz }], false);
-      await wait(page, () => FISH.world.feel().zoom > 0.95, null, 20000);
+      await wait(page, () => FISH.world.feel().zoom > 0.95, null, SLOW);
       // the trophy on the screen (CSS px in the view): its middle, its box (the board too), and the middle of the part of
       // the view the card leaves free (above it on a tall view, left of it on a wide one). Taken at the flash. From here on
       // every frame takes 150 ms: the lake's clock (at most 50 ms a frame) runs at a third of the wall clock, which times
-      // the flash and the card
+      // the flash and the card. And no frame comes for 1.5 s after the landing, so the flash's time comes before a frame
+      // shows the photo's pose
       await page.evaluate(async () => {
         const THREE = await import("/fish/lib/three.module.min.js"), W = FISH.world, fl = document.querySelector("#flash");
         window.__trophy = () => {
@@ -605,9 +643,10 @@ if (part("D")) {
           return { x: (p.x + 1) / 2 * w, y: (1 - p.y) / 2 * h, x0, x1, y0, y1, w, h, mx: w / 2 - off.offsetX, my: h / 2 - off.offsetY, left: r.left, top: r.top };
         };
         new MutationObserver(() => { if (fl.classList.contains("go") && fl.classList.contains("photo") && !window.__photo) window.__photo = window.__trophy(); }).observe(fl, { attributes: true, attributeFilter: ["class"] });
-        const raf = window.requestAnimationFrame.bind(window);
-        let last = performance.now();
-        window.requestAnimationFrame = (cb) => raf(() => { while (performance.now() - last < 150); last = performance.now(); cb(last); });
+        const raf = window.requestAnimationFrame.bind(window), cat = document.querySelector("#catch");
+        let last = performance.now(), hold = 0;
+        new MutationObserver(() => { if (!cat.hidden && !hold) hold = performance.now() + 1500; }).observe(cat, { attributes: true, attributeFilter: ["hidden"] });
+        window.requestAnimationFrame = (cb) => raf(function go() { if (performance.now() < hold) { raf(go); return; } while (performance.now() - last < 150); last = performance.now(); cb(last); });
       });
       // a trophy largemouth is landed at once, with the zoom still on
       await stage(page, { phase: "caught", catch: { id: "largemouth", name: "Largemouth Bass", kg: 3.9, cm: 55, junk: false }, fish: null }, [], false);
