@@ -60,7 +60,8 @@
   move, the difficulty badge over the HUD, the picker on small landscape phones and with blocked storage (vdimarco/rouge-warden#229).
 - [x] Retune for the 9600 map: spirit camps off, pushes only with the wave, Mythic drafts by measured kit strength (#229).
 - [x] Measure the retuned levels again with drafted lineups (`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs`): Mythic 67% against Veteran and
-  68% against the old bots, Veteran 52%, Apprentice 35% (vdimarco/rouge-warden#236).
+  68% against the old bots, Veteran 52%, Apprentice 35% (vdimarco/rouge-warden#236). After #259: Mythic 63% against Veteran
+  and 87% against the old bots, Veteran 47%, Apprentice 35%.
 - [x] Test the bot hooks through `step()`, not only the helpers: ganks from a held lane, the cast lock, the short failed dodge (`qa/tidebreak/bot-hooks.test.mjs`; the cast lock is in `bot-difficulty.test.mjs`)
   (review finding 17).
 - [x] Merge the branch.

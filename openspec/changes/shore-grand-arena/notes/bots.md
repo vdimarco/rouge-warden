@@ -63,16 +63,17 @@ Mythic uses Veteran's map plays. Its own ganks every 45 s, gathering 12 s early 
 
 ### Grand arena (9600 units, final code)
 
-`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs <A> <B> 30` on main after #229: 60 seeded matches per row, sides swapped on every seed, lineups drafted as in the game (Mythic drafts by kit strength, the other profiles do not). Matches last about 12–13 minutes. The standard error of a win rate is about 0.065. "Lineup splits" counts seeds where A won both sides, B won both sides, or each side won once.
+`AB_DRAFT=1 node qa/tidebreak/bot-ab.mjs <A> <B> 30` on main after #259 (short failed dodges, recall parity, defend priority, routes around cover): 60 seeded matches per row, sides swapped on every seed, lineups drafted as in the game (Mythic drafts by kit strength, the other profiles do not). Matches last about 11–12 minutes. The standard error of a win rate is about 0.065. "Lineup splits" counts seeds where A won both sides, B won both sides, or each side won once.
 
 | A against B | A wins | Lineup splits (A both / B both / split) | Kills A–B | Wards taken A / B | Bosses A / B | Dive deaths A / B | Spell share A / B |
 |---|---|---|---|---|---|---|---|
-| Mythic vs Veteran | **0.67** | 13 / 3 / 14 | 17.7 – 6.9 | 6.08 / 5.00 | 2.62 / 1.73 | 0.48 / 0.90 | 34.8% / 33.7% |
-| Mythic vs old | **0.68** | 12 / 1 / 17 | 19.1 – 4.3 | 5.75 / 4.82 | 3.45 / 0.52 | 0.37 / 3.20 | 32.6% / 28.8% |
-| Veteran vs old | 0.52 | 6 / 5 / 19 | 15.5 – 9.0 | 5.38 / 5.27 | 3.32 / 0.68 | 0.43 / 2.85 | 29.2% / 26.1% |
-| Apprentice vs old | **0.35** | 2 / 11 / 17 | 8.4 – 14.9 | 4.85 / 5.93 | 1.33 / 2.00 | 0.92 / 1.33 | 22.6% / 24.7% |
+| Mythic vs Veteran | **0.63** | 10 / 2 / 18 | 16.2 – 7.6 | 5.58 / 4.73 | 2.42 / 1.87 | 0.45 / 0.72 | 34.7% / 34.9% |
+| Mythic vs old | **0.87** | 22 / 0 / 8 | 20.0 – 3.4 | 6.05 / 4.37 | 3.50 / 0.43 | 0.20 / 2.95 | 33.0% / 29.4% |
+| Veteran vs old | 0.47 | 5 / 7 / 18 | 14.7 – 9.1 | 5.03 / 5.48 | 3.20 / 0.72 | 0.47 / 2.48 | 28.8% / 26.9% |
+| Apprentice vs old | **0.35** | 2 / 11 / 17 | 8.0 – 14.6 | 4.63 / 5.98 | 1.40 / 1.75 | 0.68 / 1.67 | 22.1% / 25.5% |
 
-- **Mythic is clearly stronger than Veteran:** 0.67, about 2.6 standard errors above even. Mythic won both sides of 13 seeds and Veteran of 3.
+- **Mythic is clearly stronger than Veteran:** 0.63, about 2 standard errors above even. Mythic won both sides of 10 seeds and Veteran of 2.
+- Before #256–#259 (on main after #229) the same runs gave Mythic vs Veteran 0.67, Mythic vs old 0.68, Veteran vs old 0.52 and Apprentice vs old 0.35. Bots that fail a dodge are now hit, and bots stand still to recall. Mythic dodges more often, so it gained the most against the old bots, which still dodge every warning in full and recall while they walk.
 - The order is Apprentice < old ≈ Veteran < Mythic. Veteran wins fights, bosses and kills against the old bots and dies far less under wards, but it is even on wins.
 - Earlier rows (before drafting and with camps on): Mythic vs Veteran 0.48, Veteran vs old 0.50 and Mythic vs old 0.40. A single-play ablation of drafted Mythic against the old bots gave 0.75 with gathering only, 0.72 with defend only, 0.70 with ganks only and 0.60 with camps only, so camps were turned off.
 
