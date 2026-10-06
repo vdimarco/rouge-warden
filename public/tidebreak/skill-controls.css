@@ -5,19 +5,6 @@
 .abilities .ability.aiming{outline:3px solid #e6d2ae;outline-offset:4px}
 .abilities .ability.aim-cancelled{outline-color:#e8b8a7}
 .abilities .ability.control-blocked b{font-size:11px}
-/* The smallest phones: the C skill ends before the health bar. */
-@media(max-width:370px){
- .abilities{width:162px;height:162px;right:max(18px,env(safe-area-inset-right))}
- .abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature{width:70px;height:70px}
- .abilities .ability.dash{right:8px;bottom:92px}
- .abilities .ability.surge{right:84px;bottom:84px}
- .abilities .ability.signature{right:92px;bottom:8px}
- .abilities .ability.ult{width:86px;height:86px}
- .abilities .ability-upgrade.upgrade-dash{right:-11px!important;bottom:145px!important}
- .abilities .ability-upgrade.upgrade-surge{right:137px!important;bottom:137px!important}
- .abilities .ability-upgrade.upgrade-signature{right:158px!important;bottom:38px!important}
- .abilities .ability-upgrade.upgrade-ult{right:-17px!important;bottom:67px!important}
-}
 @media(max-height:520px) and (min-width:600px){#skill-aim-status{bottom:calc(100% + 44px);width:205px;font-size:11px;padding:4px 7px}}
 /* Skill cluster: Q, E and C sit on an arc around R. E and C are nearest the middle of the screen, so they are large.
    Each "+" badge sits on the outer side of its skill and covers no disc. The visible disc is the art, 4px inside the
@@ -67,3 +54,9 @@
  .abilities .ability-upgrade.upgrade-ult{right:-17px!important;bottom:67px!important}
 }
 @media(max-height:520px) and (min-width:600px){#skill-aim-status{right:calc(100% + 30px);bottom:40px}}
+/* The real "+" badges mark every skill that can take a point, so the old small mark on each tile goes. */
+.abilities.upgrade-mode .ability.upgrade-target::before{content:none}
+/* Portrait phones: a narrower point button keeps clear of the team chat. */
+@media(max-width:430px){.abilities #skill-points{width:146px}}
+/* Small landscape windows: the market bar reaches under C, so the cluster moves up to clear it. */
+@media(max-height:520px) and (min-width:600px) and (max-width:659px){.abilities{bottom:calc(60px + env(safe-area-inset-bottom))}}

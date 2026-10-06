@@ -1,4 +1,4 @@
-// The skill buttons are easy to hit at six screen sizes, with skill points to spend and without:
+// The skill buttons are easy to hit at seven screen sizes, with skill points to spend and without:
 // 1. every point of each skill's visible disc reaches that skill, and no other control covers it. The "+" badges
 //    cover no disc and are easy to hit themselves.
 // 2. E and C, the skills nearest the middle of the screen, are at least 80 px wide on desktop and 70 px on phones. The
@@ -17,8 +17,9 @@ const URL = process.env.SHORE_URL || 'http://127.0.0.1:8765/tidebreak/';
 const SHOTS = process.env.SHOTS;
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const browser = await chromium.launch({ executablePath });
-const SIZES = [[1440, 900], [1920, 1080], [3440, 1440], [844, 390], [390, 844], [320, 568]];
-const KEYS = ['Q', 'E', 'C', 'R'], CLEAR = ['#skill-points', '#auto-status', '#map-button', '#shop', '#quick-buy', '#inventory'];
+// 600x500 is a small landscape window: it gets the phone cluster, and the market bar reaches close under C.
+const SIZES = [[1440, 900], [1920, 1080], [3440, 1440], [844, 390], [600, 500], [390, 844], [320, 568]];
+const KEYS = ['Q', 'E', 'C', 'R'], CLEAR = ['#skill-points', '#auto-status', '#map-button', '#shop', '#quick-buy', '#loadout', '#inventory', '.inventory-slot', '.health', '#joystick', '#rally'];
 const failures = [];
 const check = (ok, message) => { if (!ok) failures.push(message); };
 
@@ -33,7 +34,7 @@ const ranks = `(async () => { const s = (await import('/tidebreak/main.js')).qaS
 
 // Reads the layout: each skill's hit box and visible disc, the badges, the controls the cluster must keep clear of,
 // and who owns each point of each disc and badge.
-const MEASURE = () => {
+const MEASURE = clearList => {
   const box = el => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
   const shown = el => { if (!el) return false; const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
   const label = el => el ? (el.id ? '#' + el.id : el.dataset?.skill ? 'skill ' + el.dataset.skill : el.dataset?.upgrade ? 'badge ' + el.dataset.upgrade : String(el.className || el.tagName).slice(0, 30)) : 'none';
@@ -45,8 +46,9 @@ const MEASURE = () => {
     return { slot: +b.dataset.skill, hit, disc, size: Math.min(hit.w, hit.h), share: share(disc, el => el === b) };
   });
   const badges = [...document.querySelectorAll('.ability-upgrade')].filter(shown).map(b => { const r = box(b), disc = { x: r.x + r.w / 2, y: r.y + r.h / 2, r: Math.min(r.w, r.h) / 2 }; return { slot: +b.dataset.upgrade, disc, share: share(disc, el => el === b) }; });
-  const clear = Object.fromEntries(['#skill-points', '#auto-status', '#map-button', '#shop', '#quick-buy', '#inventory', '.health', '#joystick', '#rally'].map(s => [s, document.querySelector(s)]).filter(([, el]) => shown(el)).map(([s, el]) => [s, box(el)]));
-  return { skills, badges, clear, view: { w: innerWidth, h: innerHeight } };
+  const clear = Object.fromEntries(clearList.flatMap(s => [...document.querySelectorAll(s)].filter(shown).map((el, i) => [i ? `${s} ${i + 1}` : s, box(el)])));
+  const chat = [...document.querySelectorAll('#team-chat li')].filter(shown).map(box);
+  return { skills, badges, clear, chat, view: { w: innerWidth, h: innerHeight } };
 };
 
 const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -66,7 +68,7 @@ async function press(page, touch, x, y) {
 const report = [];
 try {
   for (const [w, h] of SIZES) {
-    const phone = Math.min(w, h) < 500, name = `${w}x${h}`;
+    const phone = w <= 430 || (h <= 520 && w >= 600), name = `${w}x${h}`;
     const page = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: phone, isMobile: phone });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto(URL + '?renderer=2d');
@@ -83,7 +85,7 @@ try {
       // The HUD redraws on a game timer; a slow software frame can take a while.
       await page.waitForFunction(want => [...document.querySelectorAll('.ability-upgrade')].filter(b => !b.hidden).length === want && [...document.querySelectorAll('button.ability[data-skill]')].every(b => b.getAttribute('aria-disabled') === String(want === 4)), mode === 'points' ? 4 : 0, { timeout: 30000 }).catch(() => {});
       await page.waitForTimeout(200);
-      const m = await page.evaluate(MEASURE), at = `${name} ${mode}`;
+      const m = await page.evaluate(MEASURE, CLEAR), at = `${name} ${mode}`;
       if (SHOTS) { const xs = m.skills.flatMap(s => [s.hit.x, s.hit.x + s.hit.w]).concat(m.clear['#skill-points'] ? [m.clear['#skill-points'].x] : []), ys = m.skills.flatMap(s => [s.hit.y, s.hit.y + s.hit.h]).concat(m.clear['#skill-points'] ? [m.clear['#skill-points'].y] : []); const x = Math.max(0, Math.min(...xs) - 40), y = Math.max(0, Math.min(...ys) - 40); await page.screenshot({ path: `${SHOTS}/cluster-${name}-${mode}.png`, clip: { x, y, width: Math.min(w, Math.max(...xs) + 40) - x, height: Math.min(h, Math.max(...ys) + 40) - y } }); }
       // Goal 1: the whole visible disc reaches its own skill, and the badges cover no disc.
       for (const s of m.skills) check(s.share.own === 1, `${at}: only ${Math.round(s.share.own * 100)}% of ${KEYS[s.slot]}'s disc reaches it (${JSON.stringify(s.share.others)})`);
@@ -98,6 +100,8 @@ try {
       check(m.skills[0].size >= (phone ? 70 : 80), `${at}: Q is ${Math.round(m.skills[0].size)} px`);
       const parts = [...m.skills.map(s => s.hit), ...m.badges.map(b => discBox(b.disc))];
       for (const [sel, r] of Object.entries(m.clear)) check(!parts.some(p => overlap(p, r)), `${at}: the skill cluster overlaps ${sel}`);
+      // Chat lines fade after a few seconds and take no presses, so an overlap with them is a note, not a failure.
+      if (m.chat.some(c => m.clear['#skill-points'] && overlap(c, m.clear['#skill-points']))) console.log(`note ${at}: the point button touches a team chat line`);
       check(parts.every(p => p.x >= 0 && p.y >= 0 && p.x + p.w <= m.view.w && p.y + p.h <= m.view.h), `${at}: the skill cluster leaves the screen`);
       const reach = Math.max(...m.skills.map(s => Math.hypot(m.view.w - s.disc.x, m.view.h - s.disc.y)));
       if (phone) check(reach <= 250, `${at}: a skill centre is ${Math.round(reach)} px from the bottom-right corner, out of thumb reach`);
@@ -138,4 +142,4 @@ try {
   }
 } finally { await browser.close(); }
 if (failures.length) { console.log(failures.map(f => 'FAIL ' + f).join('\n')); assert.fail(`${failures.length} skill target checks failed`); }
-console.log('PASS: at six sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls and gap presses reach the nearest skill.');
+console.log('PASS: at seven sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls and gap presses reach the nearest skill.');
