@@ -1105,7 +1105,8 @@ function ringNews(e) {
 /* ---------------- the catch ---------------- */
 // the photo beat of a trophy, a legend or a fish that opens a place: the fish shows alone (world.js pushes the camera
 // in), the flash and the shutter come, then the card slides up. Seconds, on the wall clock: the flash comes as the
-// push-in ends, and the card as the fish's hold ends (world.js runs both on this clock too)
+// push-in ends, after a frame shows the photo's pose, and the card as the fish's hold ends (world.js runs both on this
+// clock too)
 const PHOTO = { flash: WORLD.PHOTO.push, card: WORLD.PHOTO.push + WORLD.PHOTO.freeze };
 // the call of each place, after a legend's fanfare
 const PLACE_CALL = { loon: "loonWail", stumps: "frogs", river: "rapids", sea: "gulls" };
@@ -1186,7 +1187,9 @@ function caught(c) {
   show("catch");
   updateHud();
   if (!photo) { countUp(c, junk, rank); return; }
-  cardT = setTimeout(() => {
+  cardT = setTimeout(function snap() {
+    // on slow frames the timer can come before the frame that brings the camera to the photo's pose: wait for that frame
+    if (!world.posed()) { cardT = setTimeout(snap, 16); return; }
     flash("photo"); Sound.sfx("shutter"); Haptics.shutter();
     cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, junk, rank); }, (PHOTO.card - PHOTO.flash) * 1000);
   }, PHOTO.flash * 1000);
