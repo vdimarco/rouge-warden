@@ -44,10 +44,22 @@ try {
   // A late sky download can upload one texture during the switch loop. Count
   // only after all art has settled so this checks retained GPU resources.
   await page.evaluate(async()=>{await (await import('/fish/js/world-env.js')).loadStorySky();FISH.world.render();});
-  await page.evaluate(()=>{FISH.world.setArtStyle('original');FISH.world.update(0);FISH.world.render();FISH.world.setArtStyle('painted');FISH.world.update(0);FISH.world.render();});
-  const before=await page.evaluate(()=>FISH.world.info().mem);
-  await page.evaluate(()=>{for(let i=0;i<12;i++){for(const style of ['original','painted']){FISH.world.setArtStyle(style);FISH.world.update(0);FISH.world.render();}}});
-  const after=await page.evaluate(()=>FISH.world.info().mem);
+  // The first frames of play turn the camera to the stand and swing the lure in under the rod tip. Wait in the page for a
+  // frame that shows the rod and the lure, then count in that same task: no game frame can change the view between the
+  // two counts, and the first switch draws the parts that each style keeps (the lure body, blade and matcap).
+  const {before,after,lure}=await page.evaluate(()=>new Promise(done=>{
+    const W=FISH.world,c=W.renderer.domElement,end=performance.now()+60000;
+    const draw=style=>{W.setArtStyle(style);W.update(0);W.render();};
+    (function count(){
+      const p=W.lureScreen();
+      if(!(W.feel().rod&&p&&p.x>=0&&p.y>=0&&p.x<=c.clientWidth&&p.y<=c.clientHeight)){if(performance.now()<end)requestAnimationFrame(count);else done({lure:p});return;}
+      draw('original');draw('painted');
+      const before=W.info().mem;
+      for(let i=0;i<12;i++){for(const style of ['original','painted'])draw(style);}
+      done({before,after:W.info().mem,lure:p});
+    })();
+  }));
+  assert.ok(before,'the rod and the hanging lure come into view within 60 s, lure at '+JSON.stringify(lure));
   assert.ok(after.geometries<=before.geometries&&after.textures<=before.textures,'no resource growth with rendered switches: '+JSON.stringify({before,after}));
   await page.route('**/cartoon-models.glb',r=>r.abort());
   await page.route('**/painted-forest.webp',r=>r.abort());
