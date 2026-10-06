@@ -30,7 +30,7 @@ The privacy policy is `public/fish/privacy.html`. The web serves it at `https://
 | --- | --- |
 | Everything | Node 22 or later and npm. Run `npm ci` in this folder. |
 | Android | JDK 21, and the Android SDK with platform 36 (`platforms;android-36`), `platform-tools` and build tools 35.0.0. Gradle installs build tools 35.0.0 on the first build if the licences are accepted. Set `ANDROID_HOME`, or write `sdk.dir=/path/to/android-sdk` in `android/local.properties` (not in git). Gradle 8.14.3 comes with the wrapper. |
-| iOS | A Mac with Xcode 26 and the iOS 26 SDK (App Store uploads need them since April 2026). Swift Package Manager fetches Capacitor, so CocoaPods is not needed. |
+| iOS | A Mac with Xcode 26 and the iOS 26 SDK (App Store uploads need them since April 2026), or the iOS workflow in GitHub Actions. Swift Package Manager fetches Capacitor, so CocoaPods is not needed. |
 | Art and browser checks | Playwright with Chromium: `npm ci --prefix ../../qa/browser`, then `npx playwright install chromium` in `qa/browser`. Run the scripts with `NODE_PATH=../../qa/browser/node_modules`. |
 | Uploads | An Apple Developer Program membership and a Google Play developer account. |
 
@@ -161,6 +161,26 @@ xcodebuild -exportArchive -archivePath build/ReelItIn.xcarchive -exportPath buil
 
 What the iOS project already sets: iPhone only (`TARGETED_DEVICE_FAMILY = 1`) from iOS 16.4 (the first version with import maps), in the project and in the Swift package; portrait only; the status bar hidden; `UIRequiresFullScreen`; `ITSAppUsesNonExemptEncryption = NO`; no `NSMotionUsageDescription`; `PrivacyInfo.xcprivacy` in the App target; no Mac or Vision Pro builds; and `MainViewController`, which hides the status bar and defers the system gesture at the bottom edge so a crank stroke does not leave the app. The home indicator stays on (dimmed by the deferral). It does not auto-hide, because developers report that iOS ignores the deferred edge when the home indicator auto-hides. For this reason SystemBars has `"hidden": false`.
 
+### Build in GitHub Actions (no Mac needed)
+
+`.github/workflows/fish-ios.yml` runs on a GitHub macOS runner with Xcode 26. On each pull request and each push to `main` that changes `public/fish/` or `apps/fish/`, it builds `www/`, syncs the iOS project, builds the app for the iOS Simulator, opens it on a simulated iPhone, and fails if the app stops in the first 20 s. The run's artifacts hold `reelitin-ios-simulator` for 7 days: a screenshot of the app (`title.png`) and the simulator app (`ReelItIn-simulator.app.zip`). On a private repository, macOS runner minutes cost 10 times the Linux minutes.
+
+To put the app on your iPhone through TestFlight, do these steps once:
+
+1. Join the Apple Developer Program. Your Team ID is on developer.apple.com > Account > Membership details.
+2. In App Store Connect > Apps, add a new app: iOS, the name "Reel It In: Lake Fishing", the bundle ID `systems.uptick.reelitin` (if the list does not show it, add it on developer.apple.com > Identifiers first), and any SKU, for example `reelitin`.
+3. In App Store Connect > Users and Access > Integrations > App Store Connect API, make a team key with the **Admin** role. The workflow uses it to make the distribution certificate and the profile. Download the `.p8` file. You can download it only once.
+4. Add these repository secrets (Settings > Secrets and variables > Actions):
+
+   | Secret | Value |
+   | --- | --- |
+   | `REELITIN_ASC_KEY_ID` | The Key ID of the API key |
+   | `REELITIN_ASC_ISSUER_ID` | The Issuer ID on the same page |
+   | `REELITIN_ASC_KEY_P8_BASE64` | The `.p8` file as base64: `base64 -i AuthKey_XXXX.p8` (on Linux: `base64 -w0 AuthKey_XXXX.p8`) |
+   | `REELITIN_APPLE_TEAM_ID` | The Team ID from step 1 |
+
+Then, for each upload: open Actions > Reel It In iOS app > Run workflow, turn on **TestFlight**, and run it. The run builds the bundle with `--release`, so it stops if a page still holds a placeholder. It signs the archive and uploads it to App Store Connect. The run summary shows the version and the build number. The build number must go up for each upload of the same version: type a new number in **Build number**, or raise `CURRENT_PROJECT_VERSION` in the Xcode project. After Apple processes the build (often 10 to 30 minutes), it shows in App Store Connect > TestFlight. Add yourself as an internal tester, and install the TestFlight app on the iPhone to get it.
+
 ## Icons and splash
 
 ```sh
@@ -225,4 +245,4 @@ None of these can run on this Linux machine. Do them on a real iPhone (TestFligh
 
 ## What this folder was checked with
 
-On Linux (no Mac, no KVM): `npm run build:www`, `npm run check:www`, `npm run test:check`, `npm run check:native`, `npx cap sync`, `./gradlew assembleDebug`, `aapt2` on the APK, and `qa/fish/app-bundle.e2e.mjs`. The Android emulator could not run (no KVM). The iOS project was set up by hand and was not built: that needs a Mac with Xcode 26.
+On Linux (no Mac, no KVM): `npm run build:www`, `npm run check:www`, `npm run test:check`, `npm run check:native`, `npx cap sync`, `./gradlew assembleDebug`, `aapt2` on the APK, and `qa/fish/app-bundle.e2e.mjs`. The Android emulator could not run (no KVM). The iOS project was set up by hand. The iOS workflow in GitHub Actions builds it on a Mac runner (see "Build in GitHub Actions (no Mac needed)").
