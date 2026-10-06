@@ -142,10 +142,29 @@ try {
       check(gaps.length >= 3, `${at}: at least three gaps between neighbours were pressed (${gaps.length})`);
       row.gaps = gaps.join(' ');
     }
+    // Feeds: with three team chat lines and three kill feed lines, no shown line covers a skill, a badge or another HUD
+    // part, and every shown line stays on the screen. The rally button keeps clear of the market button.
+    const feeds = await page.evaluate(() => {
+      const box = el => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
+      const shown = el => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'; };
+      const line = (cls, html) => { const li = document.createElement('li'); li.className = cls; li.dataset.time = 1e9; li.innerHTML = html; return li; };
+      document.getElementById('team-chat').replaceChildren(...[0, 1, 2].map(i => line('team', `<span><b>moonweaver (Salt Priestess):</b> Ready. Ping and I come, line ${i}.</span>`)));
+      document.getElementById('kill-feed').replaceChildren(...[0, 1, 2].map(() => line('ally', '<b>Tidewarden</b><span>⚔</span><b>Voidcaller</b>')));
+      const lines = [...document.querySelectorAll('#team-chat li, #kill-feed li')].filter(shown).map(el => ({ id: el.parentElement.id, ...box(el) }));
+      const parts = ['button.ability[data-skill]', '.ability-upgrade', '#skill-points', '#map-button', '#objective', '#objective-clock', '#difficulty-badge', '#joystick', '#rally', '#shop', '#lineup'].flatMap(sel => [...document.querySelectorAll(sel)].filter(shown).map(el => ({ sel, ...box(el) })));
+      const one = sel => { const el = document.querySelector(sel); return el && shown(el) ? box(el) : null; };
+      return { lines, parts, rally: one('#rally'), shop: one('#shop'), view: { w: innerWidth, h: innerHeight } };
+    });
+    check(feeds.lines.some(l => l.id === 'team-chat') && feeds.lines.some(l => l.id === 'kill-feed'), `${name}: a team chat line and a kill feed line show`);
+    for (const l of feeds.lines) {
+      check(l.x >= 0 && l.y >= 0 && l.x + l.w <= feeds.view.w && l.y + l.h <= feeds.view.h, `${name}: a ${l.id} line leaves the screen`);
+      for (const p of feeds.parts) check(!overlap(l, p), `${name}: a ${l.id} line covers ${p.sel}`);
+    }
+    if (feeds.rally && feeds.shop) check(!overlap(feeds.rally, feeds.shop), `${name}: the rally button covers the market button`);
     check(errors.length === 0, `${name}: page errors ${errors.join('; ')}`);
     report.push(row); console.log(JSON.stringify(row));
     await page.close();
   }
 } finally { await browser.close(); }
 if (failures.length) { console.log(failures.map(f => 'FAIL ' + f).join('\n')); assert.fail(`${failures.length} skill target checks failed`); }
-console.log('PASS: at nine sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls and gap presses reach the nearest skill.');
+console.log('PASS: at nine sizes each skill disc reaches its skill, the badges cover no disc, E and C are large, the cluster keeps clear of other controls, gap presses reach the nearest skill, and the team chat and kill feed cover no HUD part.');
