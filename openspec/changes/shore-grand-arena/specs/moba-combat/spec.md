@@ -257,7 +257,7 @@ decide, never health, damage, speed, range, armour, mana or gold. Allied bots SH
 
 #### Scenario: Choose and keep a difficulty
 - **WHEN** the player selects Mythic beside Play and reloads the page
-- **THEN** Mythic is still selected, and the next match shows "Enemy · Mythic" in the HUD.
+- **THEN** Mythic is still selected, and the next match shows "Mythic" next to the minimap.
 
 #### Scenario: Difficulty does not change stats
 - **WHEN** the same lineup starts on Apprentice and on Mythic
