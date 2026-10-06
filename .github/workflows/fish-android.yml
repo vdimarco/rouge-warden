@@ -49,6 +49,10 @@ jobs:
       - name: Debug APK
         working-directory: apps/fish/android
         run: ./gradlew assembleDebug --no-daemon
+      # the release build runs R8: an unsigned bundle here shows that it shrinks the code without an error
+      - name: Release bundle with R8, unsigned
+        working-directory: apps/fish/android
+        run: ./gradlew bundleRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: reelitin-debug-apk
