@@ -22,13 +22,13 @@ test('whitewater progresses continuously between obstacle rows and wraps outside
   }
 });
 test('steering preserves position and velocity under reversal and is independent of refresh rate',()=>{
-  const whole=laneSpring(1,0,2,.08);assert.ok(whole.position>1.95&&whole.position<2);
+  const whole=laneSpring(1,0,2,.08);assert.ok(whole.position>1.78&&whole.position<2);
   for(const hz of [30,60,120]){
     let p=1,v=0;
-    for(let i=0;i<Math.ceil(hz*.09);i++){const next=laneSpring(p,v,2,1/hz);p=next.position;v=next.velocity;}
+    for(let i=0;i<Math.ceil(hz*.15);i++){const next=laneSpring(p,v,2,1/hz);p=next.position;v=next.velocity;}
     assert.ok(p>1.95&&p<2);
   }
-  const first=laneSpring(1,0,2,1/60);assert.ok(first.position<1.3);
+  const first=laneSpring(1,0,2,1/60);assert.ok(first.position>1.1&&first.position<1.15);
   const reverse=laneSpring(first.position,first.velocity,0,0);assert.equal(reverse.position,first.position);assert.equal(reverse.velocity,first.velocity);
   const small=laneSpring(first.position,first.velocity,0,.00001);assert.ok(Math.abs(small.position-first.position)<.001);
   const half=laneSpring(1,0,2,.04),twice=laneSpring(half.position,half.velocity,2,.04);assert.ok(Math.abs(twice.position-whole.position)<1e-12);

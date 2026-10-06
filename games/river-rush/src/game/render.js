@@ -13,14 +13,17 @@ const regions = [
 ];
 const indexes = { rock: 3, log: 4, branch: 5, coin: 6, magnet: 7, shield: 8 };
 let artPromise;
-function loadImage(key,name){return new Promise((resolve,reject)=>{
+function loadImage(key,name,extension='png'){return new Promise((resolve,reject)=>{
   let attempt=0;const image=new Image();
   image.onload=()=>resolve([key,image]);
-  image.onerror=()=>{if(attempt<2){attempt++;setTimeout(()=>{image.src=`${import.meta.env.BASE_URL}art/${name}.png?retry=${attempt}`;},attempt*350);}else reject(new Error(`Could not load ${name}.`));};
-  image.src=`${import.meta.env.BASE_URL}art/${name}.png`;
+  image.onerror=()=>{if(attempt<2){attempt++;setTimeout(()=>{image.src=`${import.meta.env.BASE_URL}art/${name}.${extension}?retry=${attempt}`;},attempt*350);}else reject(new Error(`Could not load ${name}.`));};
+  image.src=`${import.meta.env.BASE_URL}art/${name}.${extension}`;
 });}
 export function loadArt() {
-  return artPromise??=Promise.all([['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames'],['downstream','rider-downstream']].map(([key,name])=>loadImage(key,name))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
+  const sources=[['environment','runner-river'],['portrait','runner-portrait'],['sprites','runner-sprites'],['menu','menu'],['paddle','paddle-frames'],['downstream','rider-downstream'],['lowDuck','rider-low-duck']];
+  for(const name of ['rock','wood','ground','water'])sources.push([`surface${name}`,`surface-${name}`,'webp']);
+  for(const name of ['rock','wood','ground'])sources.push([`normal${name}`,`surface-${name}-normal`]);
+  return artPromise??=Promise.all(sources.map(([key,name,extension])=>loadImage(key,name,extension))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
 }
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];
 async function prepareHeroArt(art){
@@ -46,6 +49,7 @@ async function prepareHeroArt(art){
     canvas.getContext('2d').drawImage(art.downstream,i%4*RIDER_SIZE.width,Math.floor(i/4)*RIDER_SIZE.height,RIDER_SIZE.width,RIDER_SIZE.height,0,0,RIDER_SIZE.width,RIDER_SIZE.height);
     try{art.downstreamFrames.push(await createImageBitmap(canvas));}catch{art.downstreamFrames.push(canvas);}
   }
+  art.downstreamFrames.push(art.lowDuck);
   return art;
 }
 function hero(ctx,frame,raft,x,bottom,width,roll,alpha=1,squash=0){
@@ -156,7 +160,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     ctx.save();ctx.strokeStyle=g.rush?'#fff0a4':'#8cfff1';ctx.lineWidth=2;ctx.fillStyle='#81ffe90a';
     ctx.beginPath();ctx.ellipse(player.x,player.foot-heroWidth*.32-lift,heroWidth*.58,heroWidth*.37,0,.12,Math.PI-.12);ctx.stroke();ctx.restore();
   }
-  const roll=reducedMotion?0:Math.max(-.15,Math.min(.15,-g.laneVelocity*.009))+Math.sin(g.distance*.13)*.01;
+  const roll=reducedMotion?0:Math.max(-.16,Math.min(.16,-g.laneVelocity*.016))+Math.sin(g.distance*.13)*.01;
   const landing=landingPulse(motion,g.time,reducedMotion);
   if(!reducedMotion&&Math.abs(g.lane-g.visualLane)>.03){
     ctx.save();ctx.strokeStyle='#c8fff99c';ctx.lineWidth=2;

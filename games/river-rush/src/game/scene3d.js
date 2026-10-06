@@ -15,6 +15,7 @@ vec3 surface(float x,float z){vec3 s=vec3(0.); ${normalCode} return s*uMotion;}
 void main(){vec3 p=position;vec3 s=surface(p.x,uDistance-p.z);p.y+=s.x;vHeight=s.x;vNormal=normalize(vec3(-s.y,1.,s.z));vWorld=p;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`;
 const fragment=`varying vec3 vWorld,vNormal;varying float vHeight;
 uniform float uTime,uDistance,uMotion,uSpeed,uRush;
+uniform sampler2D uDetail;
 uniform vec2 uRaft; uniform vec4 uRipples[4];
 float wave(float x,float z){float h=0.; ${waveCode} return h*uMotion;}
 vec3 surface(float x,float z){vec3 s=vec3(0.); ${normalCode} return s*uMotion;}
@@ -22,11 +23,13 @@ float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return 
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 void main(){
  float z=uDistance-vWorld.z;vec2 p=vec2(vWorld.x,z);
- vec3 s=vec3(vHeight,0.,0.);vec3 n=normalize(vNormal);
+ vec3 detail=texture2D(uDetail,p*vec2(.09,.05)+vec2(0.,-uTime*.12*uMotion)).rgb;
+ vec3 s=vec3(vHeight,0.,0.);vec3 n=normalize(vNormal+vec3(detail.r-.14,0.,detail.g-.28)*.13*uMotion);
  vec3 view=normalize(cameraPosition-vWorld);float fresnel=pow(1.-max(dot(view,n),0.),3.);
  float turbulence=noise(p*vec2(1.3,.75)+vec2(0.,-uTime*2.1))*uMotion;
  vec3 color=mix(vec3(.006,.065,.068),vec3(.024,.20,.12),.36+turbulence*.55);
  color=mix(color,vec3(.38,.65,.59),fresnel*.48);
+ color+=detail*.042;
  float sun=pow(max(dot(reflect(-normalize(vec3(-.5,.8,.35)),n),view),0.),110.);
  color+=vec3(1.,.88,.56)*sun*.85;
  float crest=smoothstep(.12,.26,s.x+turbulence*.13)*(.38+.62*noise(p*3.));
@@ -49,10 +52,11 @@ void main(){
 // Software WebGL uses the same displaced mesh and buoyancy with cheaper
 // shading. Hardware keeps the detailed turbulence and reflection shader.
 const simpleFragment=`varying vec3 vWorld,vNormal;varying float vHeight;
-uniform float uTime,uDistance,uMotion,uRush;uniform vec2 uRaft;uniform vec4 uRipples[4];
+uniform float uTime,uDistance,uMotion,uRush;uniform vec2 uRaft;uniform vec4 uRipples[4];uniform sampler2D uDetail;
 void main(){vec3 n=normalize(vNormal),view=normalize(cameraPosition-vWorld);float facing=1.-max(dot(view,n),0.);
 vec3 color=mix(vec3(.008,.09,.075),vec3(.07,.28,.17),facing*facing*.6);
-float grain=fract((vWorld.x*1.31+uDistance-vWorld.z)*.31);
+vec3 detail=texture2D(uDetail,vec2(vWorld.x*.09,(uDistance-vWorld.z)*.05-uTime*.12*uMotion)).rgb;
+float grain=detail.g; color+=detail*.035;
 float foam=smoothstep(.09,.24,vHeight)*(.07+.10*grain);
 float behind=vWorld.z-uRaft.y,side=abs(vWorld.x-uRaft.x),width=1.25+behind*.18;
 if(behind>0.&&behind<20.)foam+= (1.-smoothstep(.02,.3,abs(side-width)))*(1.-behind/20.)*.7;
@@ -70,31 +74,17 @@ function normalized(object,width,height,depth){
  const holder=new THREE.Group();holder.add(object);object.position.sub(center);object.position.y+=size.y/2;
  holder.scale.set(width/size.x,height/size.y,depth/size.z);return holder;
 }
-function primitiveRaft(){
- const group=new THREE.Group(),wood=mat('#755037');
+function primitiveRaft(wood=mat('#755037')){
+ const group=new THREE.Group();
  for(let i=0;i<7;i++){const log=mesh(new THREE.CylinderGeometry(.21,.23,3.5,10),wood,group,(i-3)*.43,.18,0);log.rotation.x=Math.PI/2;log.castShadow=true;}
  for(const z of [-1.1,1.1])mesh(new THREE.BoxGeometry(3.12,.12,.13),mat('#b29564'),group,0,.43,z);
  return group;
-}
-function groundTexture(){
- const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d'),data=ctx.createImageData(256,256);
- const hash=(x,y,period)=>{const a=(x+period)%period,b=(y+period)%period;let seed=Math.imul(a+8307,374761393)^Math.imul(b+127,668265263);seed=Math.imul(seed^(seed>>>13),1274126177);return (seed>>>0)/4294967296;};
- const noise=(x,y,period)=>{const a=Math.floor(x),b=Math.floor(y),u=x-a,v=y-b,fx=u*u*(3-2*u),fy=v*v*(3-2*v),top=hash(a,b,period)*(1-fx)+hash(a+1,b,period)*fx,bot=hash(a,b+1,period)*(1-fx)+hash(a+1,b+1,period)*fx;return top*(1-fy)+bot*fy;};
- for(let i=0;i<data.data.length;i+=4){const x=(i/4)%256,y=Math.floor(i/1024),grain=(noise(x/32,y/32,8)-.5)*54+(noise(x/8,y/8,32)-.5)*18+hash(x,y,256)*9;
-  data.data[i]=130+grain;data.data[i+1]=138+grain;data.data[i+2]=98+grain*.65;data.data[i+3]=255;}
- ctx.putImageData(data,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(7,14);t.anisotropy=4;return t;
 }
 function skyTexture(){
  const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');
  const sky=x.createLinearGradient(0,0,0,512);sky.addColorStop(0,'#486f81');sky.addColorStop(.55,'#afc4aa');sky.addColorStop(1,'#ebd5a0');x.fillStyle=sky;x.fillRect(0,0,512,512);
  const glow=x.createRadialGradient(100,240,3,100,240,170);glow.addColorStop(0,'#fff2c9cc');glow.addColorStop(.13,'#ffedbf66');glow.addColorStop(1,'#ffeab000');x.fillStyle=glow;x.fillRect(0,0,512,512);
  const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;return texture;
-}
-function stoneTexture(){
- const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),data=x.createImageData(128,128);let seed=191;
- for(let y=0;y<128;y++)for(let z=0;z<128;z++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const vein=Math.sin(z*.09+Math.sin(y*.08)*2),grain=seed/4294967296*35,shade=110+vein*24+grain,i=(y*128+z)*4;
- data.data[i]=shade;data.data[i+1]=shade+8;data.data[i+2]=shade-9;data.data[i+3]=255;}
- x.putImageData(data,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
 }
 function terrain(side,index,material){
  const geo=new THREE.PlaneGeometry(34,64,12,24);geo.rotateX(-Math.PI/2);
@@ -107,7 +97,7 @@ function terrain(side,index,material){
  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.computeVertexNormals();
  const m=new THREE.Mesh(geo,material);m.receiveShadow=true;return m;
 }
-function primitiveBank(){const g=new THREE.Group(),rock=mat('#737c64');
+function primitiveBank(rock=mat('#737c64')){const g=new THREE.Group();
  for(let i=0;i<3;i++){const m=mesh(new THREE.DodecahedronGeometry(1.4+i*.15,1),rock,g,(i-1)*1.4,.8+i*.4,Math.sin(i)*.7);m.scale.set(1.2,1.1,.85);}
  return g;
 }
@@ -118,27 +108,34 @@ export function createScene(canvas,art,onLost){
  softwareMaterials=!!software;
  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;
  renderer.shadowMap.enabled=!software;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ const surfaceTextures=[];
+ function texture(image,srgb=true){const t=new THREE.Texture(image);t.needsUpdate=true;t.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());surfaceTextures.push(t);return t;}
+ const waterDetail=texture(art.surfacewater),stone=texture(art.surfacerock),ground=texture(art.surfaceground),timber=texture(art.surfacewood);
+ const normals=software?null:{rock:texture(art.normalrock,false),ground:texture(art.normalground,false),wood:texture(art.normalwood,false)};
+ ground.repeat.set(9,16);normals?.ground.repeat.copy(ground.repeat);
+ function surfaceMaterial(name,map,color,roughness){const m=mat(color,roughness);m.map=map;if(normals){m.normalMap=normals[name];m.normalScale=new THREE.Vector2(.65,.65);}return m;}
+ const rockMat=surfaceMaterial('rock',stone,'#dedbcf',.7),logMat=surfaceMaterial('wood',timber,'#ddc6a4',.74);
  const scene=new THREE.Scene();scene.background=skyTexture();scene.fog=new THREE.FogExp2('#b2c3a5',.0065);
  const camera=new THREE.PerspectiveCamera(58,1,.3,350);
  scene.add(new THREE.HemisphereLight('#d8ebd9','#324b29',1.55));
  const sun=new THREE.DirectionalLight('#ffdda5',2.7);sun.position.set(-25,40,20);sun.castShadow=true;
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:20,bottom:-18,near:1,far:100});sun.shadow.bias=-.001;sun.shadow.normalBias=.07;scene.add(sun);
  const waterGeo=new THREE.PlaneGeometry(19,260,32,160);waterGeo.rotateX(-Math.PI/2);waterGeo.translate(0,0,-100);
- const uniforms={uTime:{value:0},uDistance:{value:0},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))}};
+ const uniforms={uTime:{value:0},uDistance:{value:0},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uDetail:{value:waterDetail},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))}};
  const waterMaterial=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:software?simpleFragment:fragment});
  const water=mesh(waterGeo,waterMaterial,scene);water.frustumCulled=false;
  const terrainTiles=[],banks=[];
- const ground=groundTexture(),groundMaterial=software?new THREE.MeshLambertMaterial({map:ground,vertexColors:true,side:THREE.DoubleSide}):new THREE.MeshStandardMaterial({map:ground,bumpMap:ground,bumpScale:.24,vertexColors:true,roughness:.93,side:THREE.DoubleSide});
+ const groundMaterial=surfaceMaterial('ground',ground,'#ffffff',.91);groundMaterial.vertexColors=true;groundMaterial.side=THREE.DoubleSide;
  for(const side of [-1,1]){const t=terrain(side,0,groundMaterial),batch=new THREE.InstancedMesh(t.geometry,groundMaterial,6);batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);batch.frustumCulled=false;scene.add(batch);terrainTiles.push(batch);}
- const bankTemplate=primitiveBank();
+ const bankTemplate=primitiveBank(rockMat);
  for(const side of [-1,1])for(let i=0;i<13;i++){
  const holder=new THREE.Group();holder.position.x=side*(11.5+Math.sin(i*2.3)*1.8);holder.add(bankTemplate.clone());scene.add(holder);banks.push({holder,side,index:i,rotation:i*2.399,scale: .85+(i%4)*.25});}
  // Distant solid ridges remain visible above the mist; no painted backdrop.
- const mountainMat=mat('#667c62'),mountainGeo=new THREE.IcosahedronGeometry(1,2),ridge=mountainGeo.attributes.position;
+ const mountainMat=mat('#899b7e');mountainMat.map=stone;const mountainGeo=new THREE.IcosahedronGeometry(1,2),ridge=mountainGeo.attributes.position;
  for(let i=0;i<ridge.count;i++){const x=ridge.getX(i),y=ridge.getY(i),z=ridge.getZ(i),r=1+Math.sin(x*4+z*3)*Math.cos(y*5-z)*.16;ridge.setXYZ(i,x*r,y*r,z*r);}mountainGeo.computeVertexNormals();
  const mountains=new THREE.InstancedMesh(mountainGeo,mountainMat,14),mountainPose=new THREE.Object3D();let mountainIndex=0;
  for(const side of [-1,1])for(let i=0;i<7;i++){mountainPose.position.set(side*(40+i*5),6+i*3,-120-i*20);mountainPose.rotation.y=i*1.73+side;mountainPose.scale.set(28,15+i*3,45);mountainPose.updateMatrix();mountains.setMatrixAt(mountainIndex++,mountainPose.matrix);}scene.add(mountains);
- const raft=new THREE.Group();scene.add(raft);let raftModel=primitiveRaft();raft.add(raftModel);
+ const raft=new THREE.Group();scene.add(raft);let raftModel=primitiveRaft(logMat);raft.add(raftModel);
  // Canvas supplies Three's normal texture orientation. ImageBitmap ignores
  // UNPACK_FLIP_Y_WEBGL and would put the rider upside down on this plane.
  const riderTextures=art.downstreamFrames.map(frame=>{const c=document.createElement('canvas');c.width=RIDER_SIZE.width;c.height=RIDER_SIZE.height;c.getContext('2d').drawImage(frame,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;});
@@ -148,10 +145,10 @@ export function createScene(canvas,art,onLost){
  const shield=mesh(new THREE.SphereGeometry(2.05,24,12),new THREE.MeshBasicMaterial({color:'#a0fff0',wireframe:true,transparent:true,opacity:.055,depthWrite:false}),raft,0,1,0);shield.scale.set(1.05,.85,1.15);
  const shadow=mesh(new THREE.PlaneGeometry(3.4,4),new THREE.MeshBasicMaterial({color:'#033c40',transparent:true,opacity:.26,depthWrite:false}),scene,0,.01,0);shadow.rotation.x=-Math.PI/2;
  const coinGeo=new THREE.CylinderGeometry(.34,.34,.12,16),coinMat=new THREE.MeshStandardMaterial({color:'#ffc349',metalness:.75,roughness:.22,emissive:'#885200',emissiveIntensity:.28});
- const rockGeo=new THREE.DodecahedronGeometry(1,1),rockMat=mat('#abb4a4',.68),stone=stoneTexture();rockMat.map=stone;if(!software){rockMat.bumpMap=stone;rockMat.bumpScale=.15;}
+ const rockGeo=new THREE.DodecahedronGeometry(1,1);
  const rockVertices=rockGeo.attributes.position;
  for(let i=0;i<rockVertices.count;i++){const x=rockVertices.getX(i),y=rockVertices.getY(i),z=rockVertices.getZ(i),r=1+Math.sin(x*5+y*3-z*4)*.09;rockVertices.setXYZ(i,x*r,y*r,z*r);}rockGeo.computeVertexNormals();
- const logGeo=new THREE.CylinderGeometry(.32,.37,3.3,10),logMat=mat('#795136');
+ const logGeo=new THREE.CylinderGeometry(.32,.37,3.3,10);
  const coinBatch=new THREE.InstancedMesh(coinGeo,coinMat,64),coinPose=new THREE.Object3D(),coinTarget=new THREE.Vector3();coinBatch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);coinBatch.frustumCulled=false;scene.add(coinBatch);
  const entities=new Map(),labels=new Map(),twigGeo=new THREE.CylinderGeometry(.1,.19,1.2,5),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ff8292',.35)};
  function label(text){if(labels.has(text))return labels.get(text);const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#043b35dd';x.roundRect(0,0,256,64,16);x.fill();x.font='bold 31px sans-serif';x.fillStyle='#fff0b9';x.textAlign='center';x.fillText(text,128,44);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;labels.set(text,t);return t;}
@@ -195,7 +192,9 @@ export function createScene(canvas,art,onLost){
  const portrait=w/h<.85;
  camera.position.set(reduced?0:(g.visualLane-1)*.22,portrait?8.2:7.3,portrait?15:14);camera.lookAt(0,portrait?.8:.7,-27);
  const f=advanceFloat(float,g,reduced),x=(g.visualLane-1)*3.8,lift=jumpHeight(g)*2.9;
- raft.position.set(x,f.height+lift,0);raft.rotation.set(f.pitch,0,f.roll);
+ const carve=reduced?0:THREE.MathUtils.clamp(-g.laneVelocity*.018,-.14,.14);
+ raft.position.set(x,f.height+lift,0);raft.rotation.set(f.pitch,carve,f.roll);
+ rider.rotation.z=reduced?0:THREE.MathUtils.clamp(-g.laneVelocity*.008,-.07,.07);
  const pose=riderPose(g,reduced);riderMat.map=riderTextures[pose.index];status.rider=pose;
  riderMat.opacity=g.grace>0&&Math.floor(g.time*12)%2?.65:1;
  shield.visible=g.shield||g.rush>0||g.grace>0;shield.material.opacity=g.rush?.11:.045;
@@ -234,8 +233,8 @@ export function createScene(canvas,art,onLost){
  else{xx=x+side*(1.55+p*.55+bank*.3);yy=.04+Math.sin(p*Math.PI)*(.2+bank*.5);zz=.3+p*6.5;}
  sprayPositions[i*3]=xx;sprayPositions[i*3+1]=yy;sprayPositions[i*3+2]=zz;}
  sprayGeometry.attributes.position.needsUpdate=true;}
- renderer.render(scene,camera);status.frames++;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:surfaceAt(x,g.distance,g.time,reduced).height};status.reducedMotion=reduced;
+ renderer.render(scene,camera);status.frames++;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.steering={x,velocity:g.laneVelocity,yaw:carve,lean:rider.rotation.z};status.surfaceMaps={rock:1024,wood:1024,ground:1024,water:1024,normals:software?0:512};status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:surfaceAt(x,g.distance,g.time,reduced).height};status.reducedMotion=reduced;
  }
- function dispose(){disposed=true;retryTimers.forEach(clearTimeout);canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,twigGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats)]),textures=new Set([scene.background]);for(const root of [scene,...retired])root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());renderer.dispose();}
+ function dispose(){disposed=true;retryTimers.forEach(clearTimeout);canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,twigGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats)]),textures=new Set([scene.background,...surfaceTextures]);for(const root of [scene,...retired])root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());renderer.dispose();}
  return {render,dispose,status};
 }

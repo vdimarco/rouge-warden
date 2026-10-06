@@ -124,5 +124,31 @@
     "date": "2026-10-06",
     "format": "2048x1408 RGBA; eight registered 512x704 poses",
     "direction": "Rear view faces downstream. Separate anatomical jump and folded duck silhouettes."
+  },
+  "rider-low-duck.png": {
+    "source_manifest": "low-duck-texture-sources.json",
+    "format": "512x704 RGBA with independent 448x235 near-prone brace, deck anchor684",
+    "provider": "fal.ai Nano Banana Pro Edit + Pixelcut",
+    "date": "2026-10-06"
+  },
+  "surface-textures": {
+    "source_manifest": "low-duck-texture-sources.json",
+    "provider": "fal.ai Nano Banana Pro",
+    "date": "2026-10-06",
+    "diffuse": [
+      "surface-rock.webp",
+      "surface-wood.webp",
+      "surface-ground.webp",
+      "surface-water.webp"
+    ],
+    "diffuse_size": 1024,
+    "derived_normal_size": 512,
+    "normal_maps": [
+      "surface-rock-normal.png",
+      "surface-wood-normal.png",
+      "surface-ground-normal.png"
+    ],
+    "runtime_service_dependency": false,
+    "diffuse_encoding": "WebP quality90; lossless PNG normals"
   }
 }

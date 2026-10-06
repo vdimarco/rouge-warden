@@ -20,7 +20,9 @@ export function rapids(distance,view=140){
 }
 // Analytic spring is stable and gives the same trajectory at any refresh rate.
 export function laneSpring(position,velocity,target,dt){
-  const omega=60,offset=position-target,coefficient=velocity+omega*offset,decay=Math.exp(-omega*dt);
+  // A short carving glide: immediate input, gradual first movement and no
+  // discontinuity when reversing. Reaches 95% in about 132 ms.
+  const omega=36,offset=position-target,coefficient=velocity+omega*offset,decay=Math.exp(-omega*dt);
   return{position:target+(offset+coefficient*dt)*decay,velocity:(velocity-omega*coefficient*dt)*decay};
 }
 export function duckCompression(action,actionTime,seconds=.6){
