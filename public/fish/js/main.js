@@ -230,16 +230,18 @@ for (const b of $$("[data-close]")) b.addEventListener("click", () => { Sound.sf
 const TOAST_MIN = 1200, TOAST_QUEUE = 2, TOAST_STALE = 3000;
 let toastT = 0, toastNextT = 0, toastAt = -1e9;
 const toastQ = [];
+// in the reel the cast report stands where the toast goes: a toast waits until the report is gone
+const reportHoldsToast = () => (G.layout === "tall-reel" || G.layout === "reel") && !$("#report").hidden;
 function toast(msg, ms = 2200, onShow = null, keep = false) {
   if (cuts && cuts.playing) { heldToasts.push([msg, ms, onShow, keep]); return; }
   const t = $("#toast"), up = now() - toastAt;
-  if (t.classList.contains("on") && up < TOAST_MIN) {
+  if ((t.classList.contains("on") && up < TOAST_MIN) || reportHoldsToast()) {
     // the same news again (a second gold ring) keeps the shown toast up for its full time; it is not news to queue
     if (t.textContent === msg) { showToast(msg, ms, onShow); return; }
     if (toastQ.some((q) => q.msg === msg)) return;
     toastQ.push({ msg, ms, onShow, keep, at: now() });
     if (toastQ.length > TOAST_QUEUE) { const i = toastQ.findIndex((q) => !q.keep); if (i >= 0) toastQ.splice(i, 1); }
-    if (!toastNextT) toastNextT = setTimeout(nextToast, TOAST_MIN - up);
+    if (!toastNextT) toastNextT = setTimeout(nextToast, Math.max(100, TOAST_MIN - up));
     return;
   }
   showToast(msg, ms, onShow);
@@ -250,14 +252,18 @@ function showToast(msg, ms, onShow) {
   t.classList.add("on");
   toastAt = now();
   clearTimeout(toastT);
-  toastT = setTimeout(() => t.classList.remove("on"), ms);
+  toastT = setTimeout(() => { t.classList.remove("on"); toastPush(0); }, ms);
+  // in the tall reel the toast stands beside the gauge: a long one (Larger text) moves the prompt down while it is up
+  toastPush(G.layout === "tall-reel" ? Math.max(0, t.getBoundingClientRect().bottom + 6 - ($("#gaugeBox").getBoundingClientRect().bottom + 10)) : 0);
   if (onShow) onShow();
 }
+function toastPush(px) { game.style.setProperty("--toast-push", Math.round(px) + "px"); }
 function nextToast() {
   toastNextT = 0;
   // the shown toast was asked for again: it keeps its full TOAST_MIN
   const up = now() - toastAt;
   if (up < TOAST_MIN - 5) { toastNextT = setTimeout(nextToast, TOAST_MIN - up); return; }
+  if (reportHoldsToast()) { toastNextT = setTimeout(nextToast, 200); return; }
   while (toastQ.length && !toastQ[0].keep && now() - toastQ[0].at > TOAST_STALE) toastQ.shift();
   const q = toastQ.shift();
   if (!q) return;
@@ -407,6 +413,7 @@ function relayout(force) {
   if (!force && L === G.layout && game.classList.contains("flying") === flying && G.vw === innerWidth && G.vh === innerHeight) return;
   G.vw = innerWidth; G.vh = innerHeight;
   G.layout = L;
+  if (L !== "tall-reel") toastPush(0);
   game.className = "l-" + L + (flying ? " flying" : "") + (G.input === "motion" ? " motion" : " touch");
   const inCast = L === "tall-cast" || L === "wide-cast";
   $("#castUI").hidden = !(inCast && G.phase === "cast");
