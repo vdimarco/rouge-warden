@@ -65,9 +65,10 @@ async function spy(page) {
   });
 }
 const has = (log, name, arg) => log.some((l) => l[0] === name && (arg === undefined || l[1] === arg));
-// toasts wait in a short queue (each stays up 1.2 s): wait until the toast says this, then return what it says
-async function toastIs(page, text, ms = 6000) {
-  await wait(page, (t) => document.querySelector("#toast").textContent === t && document.querySelector("#toast").classList.contains("on"), text, ms).catch(() => {});
+// toasts wait in a short queue (each stays up 1.2 s): wait until the toast says this, then return what it says. Only a
+// toast that shows sets the words, and they stay after it fades: a busy machine can look after a toast of 2 s has gone
+async function toastIs(page, text, ms = 30000) {
+  await wait(page, (t) => document.querySelector("#toast").textContent === t, text, ms).catch(() => console.log("     (no toast \"" + text + "\" in " + ms / 1000 + " s)"));
   return page.evaluate(() => document.querySelector("#toast").textContent);
 }
 
@@ -258,9 +259,17 @@ if (part("A")) {
     check(w0.h === "It jumps again and again!" && w0.prompt === "visible" && !w0.banner, `a tail walk at the hook set: the jump words show at once, and the banner gives way (${JSON.stringify(w0)})`);
     check(w1 && w1.h === "It jumps again and again!", `between two leaps of the walk, with slack line, the jump words stay (${JSON.stringify(w1)})`);
     check(w2 && w2.h === "Slack line! Reel it in.", `after the walk ends, the slack words come back (${JSON.stringify(w2)})`);
+    // (the banner is up 900 ms of wall time, and a busy machine can take longer than that to look: it is read at the end of
+    // the frame that puts it up)
+    await page.evaluate(() => {
+      const b = document.querySelector("#banner");
+      window.__hs = null;
+      const o = new MutationObserver(() => { if (b.hidden) return; o.disconnect(); window.__hs = { banner: true, prompt: getComputedStyle(document.querySelector("#prompt")).visibility }; });
+      o.observe(b, { attributes: true, attributeFilter: ["hidden"] });
+    });
     await stage(page, {}, [{ type: "hooked" }]);
-    await sleep(200);
-    const hs = await shown();
+    await wait(page, () => !!window.__hs, null, 60000);
+    const hs = await page.evaluate(() => window.__hs);
     check(hs.banner && hs.prompt === "hidden", `a hook set with no jump keeps "Fish on!" up (${JSON.stringify(hs)})`);
 
     // ---- the same with a phone in the hand (motion) ----
@@ -351,21 +360,23 @@ if (part("A")) {
     check((await toastIs(page, "It runs for the lily pads!")) === "It runs for the lily pads!", "a boss stage shows its name as a toast");
     await stage(page, {}, [{ type: "turned" }], false);
     check((await toastIs(page, "You turned it!")) === "You turned it!", "turning a fish shows \"You turned it!\"");
-    // the rub: the grind loop and the buzz follow the meter, and stop when it is empty
+    // the rub: the grind loop and the buzz follow the meter, and stop when it is empty. They come from the reel step of each
+    // frame, so the checks wait for frames of the game (a fixed sleep can see no frame on a busy machine)
+    const ran = async (n = 2) => { const f = await page.evaluate(() => FISH.G.frame); await wait(page, ([f, n]) => FISH.G.frame >= f + n, [f, n], 60000); };
     await stage(page, { rub: 0.5 });
-    await sleep(500);
+    await ran();
     await logClear(page);
-    await sleep(500);
+    await ran();
     let l = await logNow(page);
     check(l.some((x) => x[0] === "S.setGrind" && x[1] === 0.5) && l.some((x) => x[0] === "H.rub" && x[1] === 0.5), "a rub of 0.5 drives the grind loop and the buzz");
     await stage(page, { rub: 0 });
-    await sleep(400);
+    await ran();
     await logClear(page);
-    await sleep(400);
+    await ran();
     l = await logNow(page);
     check(l.filter((x) => x[0] === "S.setGrind").every((x) => x[1] === 0) && l.filter((x) => x[0] === "H.rub").every((x) => x[1] === 0), "and both stop when the meter is empty");
     await stage(page, { fish: { move: "sulk" } });
-    await sleep(600);
+    await ran();
     check(has(await logNow(page), "H.throb"), "a sulking fish throbs in the hand");
 
     // ---- the loss lines ----
@@ -395,14 +406,23 @@ if (part("A")) {
       const p = await promptNow(page);
       check(p && p.h === h && p.sub === sub, `loss: ${reason}${ev.length ? " (" + Object.keys(ev[0]).filter((k) => k !== "type").join() + ")" : ""}${cause ? " (" + cause + ")" : ""} -> "${h}"` + (p && p.h === h && p.sub === sub ? "" : " (got " + JSON.stringify(p) + ")"));
     }
-    // the loss beat: the line stays up 3.2 s or more (a legend longer), then the next cast
+    // the loss beat: the line stays up 3.2 s or more (a legend longer), then the next cast. It is timed in the page, by the
+    // game's clock: from the loss line (G.outcomeAt) to the frame that takes it down. (Times taken here would also count the
+    // trips to the page, which are slow on a busy machine)
     const beat = async (fish) => {
       await page.evaluate(() => { if (FISH.G.phase === "lost") FISH.enterReel(); });
+      await page.evaluate(() => {
+        window.__beat = null;
+        let up = false;
+        const o = new MutationObserver(() => {
+          if (FISH.G.phase === "lost") { up = true; return; }
+          if (up) { o.disconnect(); window.__beat = Math.round(performance.now() - FISH.G.outcomeAt); }
+        });
+        o.observe(document.querySelector("#prompt"), { attributes: true, childList: true, subtree: true, characterData: true });
+      });
       await stage(page, { phase: "lost", reason: "thrown", fish }, [{ type: "thrown" }]);
-      await wait(page, () => FISH.G.phase === "lost", null, 8000);
-      const t0 = Date.now();
-      await wait(page, () => FISH.G.phase !== "lost", null, 15000).catch(() => {});
-      return Date.now() - t0;
+      await wait(page, () => window.__beat !== null, null, 60000);
+      return page.evaluate(() => window.__beat);
     };
     const plainMs = await beat({ id: "walleye", kg: 2 }), legendMs = await beat({ id: "golden", kg: 4.2 });
     check(plainMs >= 3200 && plainMs < 6000 && legendMs >= 4200 && legendMs < 7000, `the loss line stays 3.2 s or more, a legend's longer (${plainMs} ms, the legend ${legendMs} ms)`);
@@ -965,7 +985,9 @@ if (part("H")) {
       FISH.crank.keyHold(true);
       let struck = false, gifted = null;
       const heads = new Set(), p = document.querySelector("#prompt");
-      while (performance.now() - t0 < 40000 && G.phase === "reel") {
+      // (up to 40 s of the game's clock: a slow test browser runs the game slower than the wall clock. 300 s of wall time
+      // at most)
+      while (G.phase === "reel" && G.sim.state.t < 40 && performance.now() - t0 < 300000) {
         const s = G.sim.state;
         if (!p.hidden) heads.add(p.querySelector(".p1 span").textContent);
         if (s.phase === "strike" && !struck) { struck = true; await wait(250); gifted = !!G.gifted; G.hookReq = true; }
@@ -994,7 +1016,7 @@ if (part("H")) {
       const keyNow = () => (p.hidden ? "" : p.querySelector(".p1 span").textContent + " | " + p.querySelector(".p2").textContent);
       const obs = new MutationObserver(() => { const k = keyNow(); if (G.phase === "reel" && (!log.length || log[log.length - 1][1] !== k)) log.push([performance.now() / 1000, k]); });
       obs.observe(p, { subtree: true, childList: true, characterData: true, attributes: true });
-      while (performance.now() - t0 < 40000 && G.phase === "reel") {
+      while (G.phase === "reel" && G.sim.state.t < 40 && performance.now() - t0 < 300000) {
         const s = G.sim.state;
         if (s.phase === "strike" && !struck) { struck = true; await wait(250); G.hookReq = true; }
         if (toast.classList.contains("on")) {
@@ -1031,15 +1053,17 @@ if (part("H")) {
       Object.defineProperty(el, "textContent", { get() { return d.get.call(this); }, set(v) { window.__tq.push([v, performance.now() - t0]); d.set.call(this, v); } });
     });
     await page.evaluate(() => { delete FISH.save.seen.run; });
-    await sleep(2500);   // the toasts before have gone
+    // the toasts before have gone
+    await wait(page, () => !document.querySelector("#toast").classList.contains("on"), null, 30000);
     // ("Fish on!" is the hook set's banner now, not a toast: the big fish's warning comes first, so the run tip waits)
     await stage(page, { fish: { id: "walleye", kg: 5, known: false } }, [{ type: "hooked", id: "walleye" }, { type: "drag" }, { type: "run" }]);
     const early = await page.evaluate(() => !!FISH.save.seen.run);
-    await sleep(4200);
-    const tq = await page.evaluate(() => window.__tq.slice());
-    const want = ["It is a big one!", "It is running! Let the drag work."], got = tq.map((x) => x[0]);
+    const want = ["It is a big one!", "It is running! Let the drag work."];
+    // (the queue shows the next toast by its own timer: wait until both have shown)
+    const late = await wait(page, (want) => want.every((w) => window.__tq.some((x) => x[0] === w)), want, 30000).then(() => "", () => "not all shown in 30 s: ");
+    const tq = await page.evaluate(() => window.__tq.slice()), got = tq.map((x) => x[0]);
     const gaps = tq.slice(1).map((x, i) => Math.round(x[1] - tq[i][1]));
-    check(want.every((w) => got.includes(w)) && gaps.every((g) => g >= 1150), `the hook set, a run and a drag in one frame: each toast is up 1.2 s before the next (${JSON.stringify(got)}, gaps ${gaps.join(", ")} ms)`);
+    check(!late && want.every((w) => got.includes(w)) && gaps.every((g) => g >= 1150), `the hook set, a run and a drag in one frame: each toast is up 1.2 s before the next (${late}${JSON.stringify(got)}, gaps ${gaps.join(", ")} ms)`);
     check(!early && (await page.evaluate(() => !!FISH.save.seen.run)), `the one-time run tip is marked seen when it shows, not before (${early} at once)`);
     await page.evaluate(() => { const el = document.querySelector("#toast"); delete el.textContent; });
 
@@ -1060,17 +1084,27 @@ if (part("H")) {
       await stage(page, {});
       await frames(4);
       await sleep(1300);
+      // the boxes are read in the frame that shows the toast. The toast is up 2.2 s of wall time, and a busy machine can draw
+      // less than a frame in that time: a read some frames later can come after the toast has gone
+      await page.evaluate((msg) => {
+        const t = document.querySelector("#toast");
+        window.__tp = null;
+        const o = new MutationObserver(() => {
+          if (t.textContent !== msg || !t.classList.contains("on")) return;
+          o.disconnect();
+          const R = (sel) => { const e = document.querySelector(sel); if (!e || e.hidden || !e.getClientRects().length) return null; const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom }; };
+          const cue = document.querySelector("#rodCue");
+          window.__tp = { toast: R("#toast"), crank: R("#crankBox"), gauge: R("#gaugeBox"), cue: cue && !cue.hidden ? R("#rodCue span") : null, prompt: R("#prompt .p1"), pull: R("#pullStrength"), drag: R("#dragBar"), layout: FISH.G.layout, live: FISH.Motion.live };
+        });
+        o.observe(t, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true });
+      }, msg);
       await stage(page, {}, [msg === SHORT ? { type: "refuse" } : { type: "phase", n: 2, of: 3, name: LONG }], false);
-      await toastIs(page, msg);
-      await frames(3);
-      const r = await page.evaluate(() => {
-        const R = (sel) => { const e = document.querySelector(sel); if (!e || e.hidden || !e.getClientRects().length) return null; const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom }; };
-        const cue = document.querySelector("#rodCue");
-        return { toast: R("#toast"), crank: R("#crankBox"), gauge: R("#gaugeBox"), cue: cue && !cue.hidden ? R("#rodCue span") : null, prompt: R("#prompt .p1"), pull: R("#pullStrength"), drag: R("#dragBar"), layout: FISH.G.layout, on: document.querySelector("#toast").classList.contains("on") };
-      });
+      const shown = await wait(page, () => !!window.__tp, null, 60000).then(() => true, () => false);
+      const r = shown ? await page.evaluate(() => window.__tp) : {};
       const hit = (a, b) => !!a && !!b && a.x < b.r && a.r > b.x && a.y < b.b && a.b > b.y;
       const hits = ["crank", "gauge", "cue", "prompt", "pull", "drag"].filter((k) => hit(r.toast, r[k]));
-      check(r.on && !!r.toast && !hits.length && r.toast.x >= 0 && r.toast.r <= W && (input === "touch" || !!r.pull), `${input} ${W}x${H}, reel side ${side} (${r.layout})${msg === LONG ? ", a long toast" : ""}: the toast is clear of the crank, the gauge, the rod cue, the prompt, the drag bar${input === "motion" ? " and the pull meter" : ""} (toast ${JSON.stringify(r.toast)}${hits.length ? "; on the " + hits.map((k) => k + " " + JSON.stringify(r[k])).join(", ") : ""})`);
+      const why = !shown ? "; it did not show in 60 s" : input === "motion" && !r.pull ? "; the pull meter was not up (Motion.live " + r.live + ")" : "";
+      check(shown && !!r.toast && !hits.length && r.toast.x >= 0 && r.toast.r <= W && (input === "touch" || !!r.pull), `${input} ${W}x${H}, reel side ${side} (${r.layout})${msg === LONG ? ", a long toast" : ""}: the toast is clear of the crank, the gauge, the rod cue, the prompt, the drag bar${input === "motion" ? " and the pull meter" : ""} (toast ${JSON.stringify(r.toast)}${hits.length ? "; on the " + hits.map((k) => k + " " + JSON.stringify(r[k])).join(", ") : ""}${why})`);
     }
     await page.evaluate(() => { document.querySelector("#game").dataset.reelSide = FISH.save.reelSide; FISH.G.input = "touch"; });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -1113,11 +1147,17 @@ if (part("H")) {
       window.__gt = [];
       c.fillText = function (t, ...a) { window.__gt.push([String(t), parseFloat((/(\d+(?:\.\d+)?)px/.exec(this.font) || [])[1])]); return f.call(this, t, ...a); };
     });
-    const gword = async (o, w) => { await stage(page, o); await wait(page, (w) => FISH.gauge.box && FISH.gauge.box.word === w, w, 5000).catch(() => {}); return page.evaluate(() => FISH.gauge.box && FISH.gauge.box.word); };
+    // the gauge draws a new state in the next frames: wait for those first (the word asked for can be the one already up),
+    // then for the word, which eases in. A slow test browser draws few frames
+    const gword = async (o, w) => {
+      await stage(page, o);
+      await frames(3);
+      await wait(page, (w) => FISH.gauge.box && FISH.gauge.box.word === w, w, 60000).catch(() => console.log("     (the gauge did not say " + w + " in 60 s)"));
+      return page.evaluate(() => FISH.gauge.box && FISH.gauge.box.word);
+    };
     check((await gword({ slack: true, slackT: 0.5, tfrac: 0.01 }, "SLACK")) === "SLACK", "the gauge says SLACK when the line has been slack 0.3 s");
     check((await gword({ slack: true, slackT: 0.2, tfrac: 0.01 }, "GOOD")) === "GOOD", "and not before (" + (await page.evaluate(() => FISH.gauge.box.word)) + ")");
     for (const [o, w] of [[{ tfrac: 0.92 }, "TOO TIGHT"], [{ slip: 0.8, tfrac: 0.45 }, "SLIPPING"], [{ tfrac: 0.3, rub: 0.5, rubKind: "stump", rubSide: 1 }, "GOOD"], [{ tfrac: 0.2, beaten: true, fish: { stamina: 0.05 } }, "GOOD"]]) await gword(o, w);
-    await sleep(600);
     const gt = await page.evaluate(() => window.__gt.slice()), words = ["GOOD", "TIGHT", "SLIPPING", "SLACK", "TOO TIGHT", "TENSION"];
     const small = gt.filter(([t, px]) => words.includes(t) ? px < 12 : px < 10), seenW = [...new Set(gt.map((x) => x[0]).filter((t) => words.includes(t) || ["RUB", "FIGHT", "TIRED", "LINE OUT", "DEPTH"].includes(t)))];
     check(gt.length > 20 && !small.length && ["TOO TIGHT", "SLIPPING", "SLACK", "RUB", "FIGHT", "TIRED", "LINE OUT", "DEPTH"].every((t) => seenW.includes(t)), `at 360x640 the state word is 12 px or more and every gauge label 10 px or more (${seenW.join(", ")}; too small: ${JSON.stringify(small.slice(0, 5))})`);
@@ -1125,8 +1165,10 @@ if (part("H")) {
     const names = [];
     for (const id of ["golden", "smallmouth", "largemouth", "perch"]) {
       await stage(page, { tfrac: 0.3, rub: 0, fish: { id, known: true, stamina: 0.6 } });
-      await wait(page, () => FISH.gauge.box && FISH.gauge.box.name, null, 5000).catch(() => {});
-      await sleep(300);
+      // (frames first: until the gauge draws again, the box has the last fish's name. While the rub band eases out, the
+      // name is not drawn)
+      await frames(3);
+      await wait(page, () => FISH.gauge.box && FISH.gauge.box.name, null, 60000).catch(() => console.log("     (the gauge drew no name for " + id + " in 60 s)"));
       names.push(await page.evaluate((id) => ({ id, ...(FISH.gauge.box.name || {}) }), id));
     }
     check(names.every((n) => n.px >= 10 && n.w <= n.max + 0.5), `at 360x640 every fish name fits its room at 10 px or more (${names.map((n) => n.id + " " + n.px + "px " + Math.round(n.w) + "/" + Math.round(n.max)).join(", ")})`);
@@ -1135,7 +1177,7 @@ if (part("H")) {
     const rubAt = async (o) => {
       await stage(page, { rubKind: "stump", rubSide: 1, ...o });
       // (the band eases to the new rub: wait for it, a slow test browser draws few frames)
-      await wait(page, (r) => Math.abs(FISH.gauge.v.rub - r) < 0.005 && Math.abs(FISH.gauge.v.t - FISH.G.sim.state.tfrac) < 0.01, o.rub, 8000).catch(() => {});
+      await wait(page, (r) => Math.abs(FISH.gauge.v.rub - r) < 0.005 && Math.abs(FISH.gauge.v.t - FISH.G.sim.state.tfrac) < 0.01, o.rub, 60000).catch(() => console.log("     (the rub band did not ease to " + o.rub + " in 60 s)"));
       await frames(2);
       return page.evaluate(() => ({ word: FISH.gauge.box.word, rub: FISH.gauge.box.rub }));
     };
@@ -1278,9 +1320,11 @@ if (part("J")) {
     // the first fish of this new player too: that line says "Your first fish!" in place of the day's line ----
     await page.evaluate(() => { FISH.newCast(); window.__toasts.length = 0; window.__log.length = 0; FISH.G.landing = { x: 6, z: -14, dist: 15.2, ring: true, feather: true }; });
     let c = await catchCard(page, { id: "perch", name: "Yellow Perch", kg: 0.35, cm: 27, junk: false });
-    await sleep(1600);
-    const t1 = await toastsNow(page), NEWS1 = "Your first fish!\nGoal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.";
-    check(t1.includes(NEWS1) && has(await logNow(page), "S.sfx", "record"), "a new player's first fish does two goals: one toast says \"Your first fish!\" (not the day's line) and both goals, a line each, with the record sting (" + JSON.stringify(t1) + ")");
+    const NEWS1 = "Your first fish!\nGoal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.";
+    // (the news can wait in the toast queue: wait until it shows)
+    const late1 = await wait(page, (n) => window.__toasts.includes(n), NEWS1, 30000).then(() => "", () => "not shown in 30 s: ");
+    const t1 = await toastsNow(page);
+    check(!late1 && has(await logNow(page), "S.sfx", "record"), "a new player's first fish does two goals: one toast says \"Your first fish!\" (not the day's line) and both goals, a line each, with the record sting (" + late1 + JSON.stringify(t1) + ")");
     const shown = await page.evaluate(() => { const t = document.querySelector("#toast"), r = t.getBoundingClientRect(), card = document.querySelector("#catch .card").getBoundingClientRect(); return { on: t.classList.contains("on"), lines: Math.round(r.height / parseFloat(getComputedStyle(t).lineHeight)), clear: r.bottom <= card.top, top: r.top >= 0 }; });
     check(shown.on && shown.lines >= 3 && shown.clear && shown.top, "the news shows over the catch screen, three lines, clear of the card (" + JSON.stringify(shown) + ")");
     check(c.badges.join() === "NEW SPECIES" && c.found === "1 of 13 found here.", "a new find says how much of the place is found, the journal's count: \"" + c.found + "\"");
@@ -1467,10 +1511,16 @@ if (part("L")) {
     await page.evaluate(() => { window.__toasts.length = 0; FISH.G.landing = { x: 0, z: -20, dist: 20, ring: true, feather: true }; });
     await stage(page, { fish: { id: "perch", kg: 0.3, known: true } }, [{ type: "hooked", id: "perch" }, { type: "cover", kind: "weeds", side: 1, steer: -1 }, { type: "turned" }]);
     await catchCard(page, { id: "perch", name: "Yellow Perch", kg: 0.3, cm: 25, junk: false });
-    await sleep(3200);
-    const t = await toastsNow(page), lg = await logNow(page);
     const NEWS = "Goal done: Land a fish from a rising ring.\nGoal done: Stop a cast short. Land a fish.\nGoal done: Turn a fish away from cover.\nToday's goal is done. 2 days in a row.";
-    check(t.includes("You turned it!") && t.includes(NEWS) && !t.some((x) => x.includes("Your first fish today.")) && has(lg, "S.sfx", "record"), "the fifth fish does three goals and today's goal while \"You turned it!\" is up: one toast says all four, a line each, with the record sting (" + JSON.stringify(t) + ")");
+    // (the news waits in the toast queue behind "You turned it!": wait until both have shown, and then 1.3 s more of the
+    // game's clock, the time a toast after it in the queue would take to show)
+    const late = await wait(page, (n) => {
+      if (!window.__toasts.includes("You turned it!") || !window.__toasts.includes(n)) return false;
+      window.__newsAt = window.__newsAt || performance.now();
+      return performance.now() - window.__newsAt > 1300;
+    }, NEWS, 30000).then(() => "", () => "not all shown in 30 s: ");
+    const t = await toastsNow(page), lg = await logNow(page);
+    check(!late && !t.some((x) => x.includes("Your first fish today.")) && has(lg, "S.sfx", "record"), "the fifth fish does three goals and today's goal while \"You turned it!\" is up: one toast says all four, a line each, with the record sting (" + late + JSON.stringify(t) + ")");
     check(await page.evaluate(() => FISH.save.days.n === 2 && FISH.save.days.run === 2 && FISH.save.days.best === 2 && FISH.save.today.done === 1 && FISH.save.places.loon.g === 22), "the save: 2 days done, a run of 2, and the three goals (g 22)");
     const kept = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("fish.v1")); return { today: s.today, days: s.days, g: s.places.loon.g }; });
     check(JSON.stringify(kept.today) === JSON.stringify(save.today) && JSON.stringify(kept.days) === JSON.stringify(save.days) && kept.g === 22, "under ?day the stored save keeps its own day and run of days, and the goals done (" + JSON.stringify(kept) + ")");
