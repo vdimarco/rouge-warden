@@ -5,4 +5,65 @@
 .abilities .ability.aiming{outline:3px solid #e6d2ae;outline-offset:4px}
 .abilities .ability.aim-cancelled{outline-color:#e8b8a7}
 .abilities .ability.control-blocked b{font-size:11px}
+/* The smallest phones: the C skill ends before the health bar. */
+@media(max-width:370px){
+ .abilities{width:162px;height:162px;right:max(18px,env(safe-area-inset-right))}
+ .abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature{width:70px;height:70px}
+ .abilities .ability.dash{right:8px;bottom:92px}
+ .abilities .ability.surge{right:84px;bottom:84px}
+ .abilities .ability.signature{right:92px;bottom:8px}
+ .abilities .ability.ult{width:86px;height:86px}
+ .abilities .ability-upgrade.upgrade-dash{right:-11px!important;bottom:145px!important}
+ .abilities .ability-upgrade.upgrade-surge{right:137px!important;bottom:137px!important}
+ .abilities .ability-upgrade.upgrade-signature{right:158px!important;bottom:38px!important}
+ .abilities .ability-upgrade.upgrade-ult{right:-17px!important;bottom:67px!important}
+}
 @media(max-height:520px) and (min-width:600px){#skill-aim-status{bottom:calc(100% + 44px);width:205px;font-size:11px;padding:4px 7px}}
+/* Skill cluster: Q, E and C sit on an arc around R. E and C are nearest the middle of the screen, so they are large.
+   Each "+" badge sits on the outer side of its skill and covers no disc. The visible disc is the art, 4px inside the
+   button. The layer from skill-reach.js sends a press in a gap to the nearest skill. */
+.abilities{width:192px;height:192px;right:max(22px,env(safe-area-inset-right))}
+.abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature,.abilities .ability.ult{left:auto;top:auto;width:84px;height:84px}
+.abilities .ability.dash{right:8px;bottom:108px}
+.abilities .ability.surge{right:100px;bottom:100px}
+.abilities .ability.signature{right:108px;bottom:8px}
+.abilities .ability.ult{right:0;bottom:0;width:100px;height:100px}
+.abilities .ability-upgrade.upgrade-dash{left:auto!important;top:auto!important;right:-11px!important;bottom:173px!important}
+.abilities .ability-upgrade.upgrade-surge{left:auto!important;top:auto!important;right:165px!important;bottom:165px!important}
+.abilities .ability-upgrade.upgrade-signature{left:auto!important;top:auto!important;right:188px!important;bottom:46px!important}
+.abilities .ability-upgrade.upgrade-ult{left:auto!important;top:auto!important;right:-16px!important;bottom:78px!important}
+.abilities #skill-points{top:-70px}
+/* The Q and R badges sit at the top-right corner, so the key hints of Q and R move to the top-left corner. */
+.abilities .ability.dash kbd,.abilities .ability.ult kbd{left:5px;right:auto}
+#skill-aim-status{bottom:calc(100% + 76px)}
+.skill-reach{position:absolute;inset:0;z-index:0;pointer-events:none}
+.skill-reach>*{position:absolute;display:block;border-radius:50%;pointer-events:auto;touch-action:none}
+.skill-reach>b{inset:0;border-radius:0}
+@media(max-width:430px),(max-height:520px) and (min-width:600px){
+ .abilities{width:170px;height:170px;right:max(20px,env(safe-area-inset-right))}
+ .abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature{width:74px;height:74px}
+ .abilities .ability.dash{right:7px;bottom:96px}
+ .abilities .ability.surge{right:89px;bottom:89px}
+ .abilities .ability.signature{right:96px;bottom:7px}
+ .abilities .ability.ult{width:88px;height:88px}
+ .abilities .ability-upgrade:not([hidden]){width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important}
+ .abilities .ability-upgrade.upgrade-dash{right:-11px!important;bottom:152px!important}
+ .abilities .ability-upgrade.upgrade-surge{right:145px!important;bottom:145px!important}
+ .abilities .ability-upgrade.upgrade-signature{right:166px!important;bottom:40px!important}
+ .abilities .ability-upgrade.upgrade-ult{right:-16px!important;bottom:68px!important}
+ .abilities #skill-points{top:-66px}
+}
+/* The smallest phones: the C skill ends before the health bar. */
+@media(max-width:370px){
+ .abilities{width:162px;height:162px;right:max(18px,env(safe-area-inset-right))}
+ .abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature{width:70px;height:70px}
+ .abilities .ability.dash{right:8px;bottom:92px}
+ .abilities .ability.surge{right:84px;bottom:84px}
+ .abilities .ability.signature{right:92px;bottom:8px}
+ .abilities .ability.ult{width:86px;height:86px}
+ .abilities .ability-upgrade.upgrade-dash{right:-11px!important;bottom:145px!important}
+ .abilities .ability-upgrade.upgrade-surge{right:137px!important;bottom:137px!important}
+ .abilities .ability-upgrade.upgrade-signature{right:158px!important;bottom:38px!important}
+ .abilities .ability-upgrade.upgrade-ult{right:-17px!important;bottom:67px!important}
+}
+@media(max-height:520px) and (min-width:600px){#skill-aim-status{right:calc(100% + 30px);bottom:40px}}

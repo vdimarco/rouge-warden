@@ -1,3 +1,4 @@
+import { nearestSkill, skillReach } from './skill-reach.js';
 // A second touch is not guaranteed to dispatch click. Activate its own captured release.
 export function pointerAction(button, action, enabled=()=>!button.disabled) {
   let pointer=null,origin;
@@ -28,12 +29,15 @@ export function abilityPointers(buttons,{enabled,onStart,onAim,onCast,onStatus=(
     onAim(aim?{...aim,slot}:null);
     onStatus(aimed?{slot,cancelled}:null);
   };
+  const available=button=>enabled()&&button.getAttribute('aria-disabled')!=='true';
+  // A press goes to the skill with the nearest disc edge, so a press in a gap of the cluster still casts.
+  const start=(button,e)=>{if(pointer!==null||e.button!==0||!button||!available(button))return;e.preventDefault();e.stopPropagation();onStart();pointer=e.pointerId;slot=+button.dataset.skill;origin={x:e.clientX,y:e.clientY};const rect=button.getBoundingClientRect();center={x:(rect.left+rect.right)/2,y:(rect.top+rect.bottom)/2,cancelRadius:Math.min(rect.right-rect.left,rect.bottom-rect.top)*.27};aim=null;aimed=cancelled=false;onAim(null);onStatus(null);button.setPointerCapture(pointer);};
+  skillReach(buttons,start);
   for(const button of buttons){
-    const available=()=>enabled()&&button.getAttribute('aria-disabled')!=='true';
-    button.addEventListener('click',e=>{if(e.detail===0&&available()){onStart();onCast({slot:+button.dataset.skill,aim:null});}});
-    button.addEventListener('pointerdown',e=>{if(pointer!==null||e.button!==0||!available())return;e.preventDefault();e.stopPropagation();onStart();pointer=e.pointerId;slot=+button.dataset.skill;origin={x:e.clientX,y:e.clientY};const rect=button.getBoundingClientRect();center={x:(rect.left+rect.right)/2,y:(rect.top+rect.bottom)/2,cancelRadius:Math.min(rect.right-rect.left,rect.bottom-rect.top)*.27};aim=null;aimed=cancelled=false;onAim(null);onStatus(null);button.setPointerCapture(pointer);});
+    button.addEventListener('click',e=>{if(e.detail===0&&available(button)){onStart();onCast({slot:+button.dataset.skill,aim:null});}});
+    button.addEventListener('pointerdown',e=>start(nearestSkill(buttons,e.clientX,e.clientY)||button,e));
     button.addEventListener('pointermove',e=>{if(e.pointerId===pointer)update(e);});
-    button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;update(e);if(available()&&!cancelled)onCast({slot,aim});reset();});
+    button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;update(e);if(available(button)&&!cancelled)onCast({slot,aim});reset();});
     for(const event of ['pointercancel','lostpointercapture'])button.addEventListener(event,e=>{if(e.pointerId===pointer)reset();});
   }
   return {reset};
