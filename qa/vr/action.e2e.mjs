@@ -285,6 +285,8 @@ try {
   check(run.phases.includes("erupt") && run.state === "play", "the toilet erupts and play starts (" + run.phases.join(", ") + ")", run.phases);
   check(run.d0 && run.p0.z > 270 && run.p0.y > 40, "the blast throws the hero high over the lake shore", { d0: run.d0, p0: run.p0 });
   check(run.splash && run.low < 0.5, "he falls into the lake: KASPLASH", { low: run.low, splash: run.splash });
+  // the move back to the roof runs behind the screen fade, which keeps real time: give it a moment
+  run.end = await page.waitForFunction((S) => { G.test.step(1 / 60, 5); const p = G.test.state().pos; return Math.hypot(p.x - S.x, p.z - S.z) < 3 && Math.abs(p.y - S.y) < 1 ? p : false; }, run.start, { polling: 100, timeout: 30000 }).then((h) => h.jsonValue()).catch(() => page.evaluate(() => G.test.state().pos));
   check(Math.hypot(run.end.x - run.start.x, run.end.z - run.start.z) < 3 && Math.abs(run.end.y - run.start.y) < 1, "the lake gives him back on the start roof", { end: run.end, start: run.start });
   check(run.job === "sludge", "then Mission 1, the Sludge Run, starts", run.job);
   check(page.errors.length === 0, "no errors in the eruption", page.errors);
