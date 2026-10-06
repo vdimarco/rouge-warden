@@ -22,7 +22,7 @@ import { createCutscenes } from "./cutscene.js";
 import { createStreet, STREET } from "./street.js";
 import { createStreetView, createFigures } from "./streetview.js";
 import { createCombat, FIGHT } from "./combat.js";
-import { createCars } from "./cars.js";
+import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
 import { createJobs, JOB_NAMES } from "./jobs.js";
 import { createActionView } from "./actionview.js";
 import { createActionHud } from "./actionhud.js";
@@ -453,6 +453,44 @@ function enterCar(c) {
   audio.sfx("door", { pos: c }); audio.sfx("engine", { pos: c });
   ui.say(G.input.easySwing ? "GAS and BRAKE to drive, the arrows to steer. OUT to get out." : G.input.kind === "pad" ? "Stick to drive and steer, A for the handbrake. B to get out." : "W and S to drive, A and D to steer, Space for the handbrake. R to get out.", 4);
 }
+// Car theft: the street car in reach of the hero (on the ground, or just above it, off the walls), from the traffic shader's lanes
+function canSteal() { return !P.wall && (P.onGround || P.pos.y < CAR.stealUp); }
+function trafficNear() { return canSteal() ? nearTraffic(view.traffic && view.traffic(), P.pos.x, P.pos.z, G.time) : null; }
+// the closest car in reach: { car } a parked one (or a stolen one left), { traffic } a street car, or null
+function carInReach() {
+  const c = P.onGround && !P.wall ? cars.near(P.pos.x, P.pos.y, P.pos.z) : null, t = trafficNear();
+  if (c && (!t || Math.hypot(c.x - P.pos.x, c.z - P.pos.z) - CAR.half.w <= t.dist)) return { car: c };
+  return t ? { traffic: t } : null;
+}
+// The street car stops and becomes the hero's car; its instance leaves the traffic; the driver jumps out and runs off shouting.
+let shoutT = -1;
+const SHOUT = { x: 0, y: 0, z: 0 };
+function stealCar(t) {
+  const c = cars.steal(t, P.pos);
+  if (!c) return false;
+  view.hideTraffic(t.i, true); // a reused slot's old traffic car comes back with the release event in actionFrame
+  const fx = -Math.sin(c.yaw), fz = -Math.cos(c.yaw); // the driver's door is on the car's left
+  const dx = c.x + fz * 1.4, dz = c.z - fx * 1.4;
+  const d = street.bail(dx, dz, P.pos.x, P.pos.z, Math.abs(fx) > Math.abs(fz) ? "x" : "z");
+  enterCar(c);
+  SHOUT.x = d ? d.x : dx; SHOUT.y = 0; SHOUT.z = d ? d.z : dz; SHOUT.who = d;
+  audio.sfx("gasp", { pos: SHOUT });
+  shoutT = 2.4;
+  return true;
+}
+// the driver's shout: a speech bubble over the driver, "HEY!" and then "MY CAR!", for 2.4 s (actionhud.js draws it)
+const SHOUT_V = new THREE.Vector3(), SHOUT_OUT = { text: "", x: 0, y: 0 };
+function shoutFrame(dt) {
+  if (shoutT <= 0) return null;
+  shoutT -= dt;
+  const p = SHOUT.who;
+  if (p && p.on) { SHOUT.x = p.x; SHOUT.z = p.z; }
+  SHOUT_V.set(SHOUT.x, (p ? p.y : 0) + 2.2, SHOUT.z).project(camera);
+  if (shoutT <= 0 || SHOUT_V.z > 1 || Math.abs(SHOUT_V.x) > 1.1 || Math.abs(SHOUT_V.y) > 1.1) return null;
+  SHOUT_OUT.text = shoutT > 1.3 ? "HEY!" : "MY CAR!";
+  SHOUT_OUT.x = (SHOUT_V.x * 0.5 + 0.5) * innerWidth; SHOUT_OUT.y = (0.5 - SHOUT_V.y * 0.5) * innerHeight;
+  return SHOUT_OUT;
+}
 function exitCar() {
   const o = cars.exit();
   driving = false;
@@ -464,13 +502,26 @@ function exitCar() {
   audio.sfx("door", { pos: o });
 }
 const DRIVE_IN = { throttle: 0, steer: 0, handbrake: false };
+let carWant = 0; // a car press with no car in reach waits this long (s) for one to come
+// the car key, or a press still waiting: get into a parked car or steal a street car
+function tryCar() {
+  const r = carInReach();
+  if (!r) return false;
+  if (r.traffic) return stealCar(r.traffic); // ropes out too: enterCar lets them go
+  if (P.ropes[0].state !== "idle" || P.ropes[1].state !== "idle") return false;
+  enterCar(r.car);
+  return true;
+}
 // 11b. After the physics and its events: the cars, the fights, the jobs, the rope targets and the screen bits
 function actionFrame(dt, inp) {
   if (!actionOn()) return;
   const tc = actHud.takeCar(), T = actHud.touch;
   if (inp.carDown || tc) {
-    if (driving) exitCar();
-    else if (P.onGround && P.ropes[0].state === "idle" && P.ropes[1].state === "idle" && !P.wall) { const c = cars.near(P.pos.x, P.pos.y, P.pos.z); if (c) enterCar(c); }
+    if (driving) { exitCar(); carWant = 0; }
+    else carWant = tryCar() ? 0 : CAR.stealBuffer;
+  } else if (carWant > 0) {
+    carWant = driving || G.state !== "play" ? 0 : Math.max(0, carWant - dt);
+    if (carWant > 0 && tryCar()) carWant = 0;
   }
   if (driving) {
     DRIVE_IN.throttle = (inp.move.y || 0) + (T.gas ? 1 : 0) - (T.brake ? 1 : 0);
@@ -487,7 +538,10 @@ function actionFrame(dt, inp) {
     syncRig();
     if (combat.carHit(car.x, car.z, car.vx, car.vz)) { audio.sfx("bump", { vol: 1.2 }); fx.word("BONK", FXP.set(car.x, 2.5, car.z), { scale: 1.5 }); }
   } else if (driving) { driving = false; hero.setHidden(false); }
-  for (const e of cars.events) if (e.type === "bump") { audio.sfx("bump", { vol: Math.min(1.5, e.speed / 8) }); haptic(0, 0.6, 60); }
+  for (const e of cars.events) {
+    if (e.type === "bump") { audio.sfx("bump", { vol: Math.min(1.5, e.speed / 8) }); haptic(0, 0.6, 60); }
+    else if (e.type === "release") view.hideTraffic(e.traffic, false); // a stolen car is gone: its traffic car drives again
+  }
   cars.events.length = 0;
   // the gang guards the clogs once Mission 1 is done
   if (save.jobs.sludge) guardClogs();
@@ -571,13 +625,13 @@ function startSludge() {
   jobs.start("sludge", null, heroFight());
 }
 function hudFrame(dt, inp) {
-  const phone = !!inp.easySwing, near = !driving && P.onGround ? cars.near(P.pos.x, P.pos.y, P.pos.z) : null;
+  const phone = !!inp.easySwing, near = !driving ? carInReach() : null;
   const key = (k, m, t) => "<b>" + (phone ? t : inp.kind === "pad" ? k : m) + "</b>";
   let prompt = "";
   if (driving) prompt = phone ? "" : key("B", "R", "") + "GET OUT";
-  else if (near) prompt = phone ? "" : key("B", "R", "") + "GET IN";
+  else if (near) prompt = phone ? "" : key("B", "R", "") + (near.traffic ? "STEAL" : "GET IN");
   else if (combat.inReach(heroFight()) && fightHints < 3) prompt = key("RT", "CLICK", "TAP") + "PUNCH";
-  actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving });
+  actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt) });
 }
 
 // The glow of flat play: the saved choice, else Low with a mouse or a pad and Off on a phone. A headset has none.
@@ -1846,6 +1900,16 @@ G.test = {
   jobOffers(on = true) { save.jobs.sludge = !!on; return jobs.info().offers; },
   spawnGoon(x, y, z, aggro = true) { const g = combat.spawn(x, y, z, "test"); g.aggro = aggro; return g.id; },
   // get into the nearest parked car (or the given one), and out
+  // the street cars within r of the hero now (cars.js trafficAt), nearest first, and the hidden (stolen) instances
+  traffic(r = 60) {
+    const T = view.traffic(), out = [];
+    if (T) for (let i = 0; i < T.n; i++) {
+      const t = trafficAt(T, i, G.time);
+      if (Math.abs(t.y) < 1 && Math.hypot(t.x - P.pos.x, t.z - P.pos.z) < r) out.push({ i, x: t.x, z: t.z, yaw: t.yaw, fx: t.fx, fz: t.fz, speed: t.speed, s: t.s, len: t.len, paint: t.paint });
+    }
+    out.sort((a, b) => Math.hypot(a.x - P.pos.x, a.z - P.pos.z) - Math.hypot(b.x - P.pos.x, b.z - P.pos.z));
+    return { list: out, hidden: view.trafficHidden(), near: trafficNear() };
+  },
   enterCar(id) { const c = id == null ? cars.near(P.pos.x, P.pos.y, P.pos.z) : cars.cars.find((q) => q.id === id && q.on); if (c) enterCar(c); return driving; },
   exitCar() { if (driving) exitCar(); return !driving; },
   attack() { return tryAttack(); },
