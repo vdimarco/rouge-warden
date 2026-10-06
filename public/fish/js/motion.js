@@ -445,6 +445,8 @@ export const Motion = {
   get status() { return status; },
   request,
   get live() { return now() - lastReal < T.LIVE_MS; },
+  // when the last real sample came (now() ms), or -1e9 before the first
+  get lastSample() { return lastReal; },
   get mode() { return mode; },
   set mode(v) {
     const m = v === "landscape" ? "landscape" : "portrait";

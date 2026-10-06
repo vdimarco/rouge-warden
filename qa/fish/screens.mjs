@@ -1106,6 +1106,20 @@ if (part("H")) {
       const why = !shown ? "; it did not show in 60 s" : input === "motion" && !r.pull ? "; the pull meter was not up (Motion.live " + r.live + ")" : "";
       check(shown && !!r.toast && !hits.length && r.toast.x >= 0 && r.toast.r <= W && (input === "touch" || !!r.pull), `${input} ${W}x${H}, reel side ${side} (${r.layout})${msg === LONG ? ", a long toast" : ""}: the toast is clear of the crank, the gauge, the rod cue, the prompt, the drag bar${input === "motion" ? " and the pull meter" : ""} (toast ${JSON.stringify(r.toast)}${hits.length ? "; on the " + hits.map((k) => k + " " + JSON.stringify(r[k])).join(", ") : ""}${why})`);
     }
+    // a slow frame in motion play: the page is busy 4 s, and the phone's samples come in only after the next frame. In that
+    // frame and the 2 after it the pull meter stays up, and the card stays under it
+    const slow = await page.evaluate(() => new Promise((res) => {
+      const m = document.querySelector("#pullStrength"), up = !m.hidden, h0 = FISH.G.pullH;
+      requestAnimationFrame(() => {
+        window.__phone.on = false;
+        const t = performance.now();
+        while (performance.now() - t < 4000);
+        let n = 0;
+        const f = () => { window.__phone.on = true; if (m.hidden || FISH.G.pullH !== h0) return res({ up, hidAfter: n }); if (++n >= 3) return res({ up, hidAfter: null }); requestAnimationFrame(f); };
+        requestAnimationFrame(f);
+      });
+    }));
+    check(slow.up && slow.hidAfter === null, `motion play: a frame 4 s late does not hide the pull meter or move the card (${JSON.stringify(slow)})`);
     await page.evaluate(() => { document.querySelector("#game").dataset.reelSide = FISH.save.reelSide; FISH.G.input = "touch"; });
     await page.setViewportSize({ width: 390, height: 844 });
     await frames(4);
