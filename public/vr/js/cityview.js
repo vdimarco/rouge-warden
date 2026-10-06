@@ -222,6 +222,34 @@ int styleOf(int kk, float h) {
   if (kk == 5) return h < 0.65 ? 5 : 2;
   return h < 0.65 ? 6 : h < 0.85 ? 4 : 0;
 }
+// Window families (per building, from its seed): the painted atlas tile as drawn, tall narrow sashes, ribbon bands
+// across the whole face, pairs of windows per bay, a glass curtain wall with mullions, small punched windows in a wide
+// wall, and big multi-pane factory windows. Each family but the painted one draws its own frame and glazing bars.
+#define F_PAINT 0
+#define F_TALL 1
+#define F_RIBBON 2
+#define F_PAIR 3
+#define F_CURTAIN 4
+#define F_PUNCH 5
+#define F_GRID 6
+// the families that suit each window style: glass, gold, brick, stone, concrete, loft, condo
+int familyOf(int st, float h) {
+  if (st <= 1) return h < 0.3 ? F_PAINT : h < 0.6 ? F_CURTAIN : h < 0.85 ? F_RIBBON : F_PAIR;
+  if (st == 2) return h < 0.28 ? F_PAINT : h < 0.48 ? F_TALL : h < 0.66 ? F_PUNCH : h < 0.83 ? F_PAIR : F_GRID;
+  if (st == 3) return h < 0.32 ? F_PAINT : h < 0.58 ? F_TALL : h < 0.8 ? F_PAIR : F_PUNCH;
+  if (st == 4) return h < 0.28 ? F_PAINT : h < 0.58 ? F_RIBBON : h < 0.8 ? F_PUNCH : F_PAIR;
+  if (st == 5) return h < 0.32 ? F_PAINT : h < 0.64 ? F_GRID : h < 0.84 ? F_TALL : F_RIBBON;
+  return h < 0.28 ? F_PAINT : h < 0.54 ? F_RIBBON : h < 0.78 ? F_TALL : F_CURTAIN;
+}
+// frame paints: ink, white, cream, green, oxblood, bronze, teal, navy; the towers pick from GFR, homes from HFR
+const vec3 FRAMEC[8] = vec3[8](vec3(0.09, 0.08, 0.11), vec3(0.86, 0.84, 0.78), vec3(0.82, 0.72, 0.52), vec3(0.14, 0.34, 0.22), vec3(0.46, 0.13, 0.11), vec3(0.45, 0.32, 0.16), vec3(0.14, 0.4, 0.44), vec3(0.12, 0.16, 0.3));
+const int GFR[5] = int[5](0, 1, 5, 6, 7);
+const int HFR[6] = int[6](1, 2, 3, 4, 0, 7);
+const int CFR[4] = int[4](1, 5, 6, 2);
+// dark glass tints: blue, teal, green, bronze, slate
+const vec3 GLASSC[5] = vec3[5](vec3(0.06, 0.17, 0.32), vec3(0.04, 0.22, 0.24), vec3(0.07, 0.18, 0.1), vec3(0.2, 0.12, 0.07), vec3(0.13, 0.13, 0.18));
+// shutter paints: green, blue, red, black
+const vec3 SHUTC[4] = vec3[4](vec3(0.15, 0.38, 0.22), vec3(0.16, 0.3, 0.5), vec3(0.55, 0.16, 0.12), vec3(0.1, 0.1, 0.12));
 // The light in a lit room (c picks it, s is a second hash): half are the painted warm lamps (white = keep), then cool
 // white, deep orange, a flickering TV blue, and the odd pink neon.
 vec3 roomTint(float c, float s) {
@@ -251,7 +279,12 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float band = comicBand(L, 0.12, 0.5);
   float pil = (hx < 0.45 && faceW > bay * 4.0) ? mix(0.45, 1.0, fract(hx * 7.3)) : 0.0;
   float u2 = u - pil, faceW2 = faceW - 2.0 * pil;
-  float grp = hp < 0.3 ? 2.0 : hp < 0.45 ? 3.0 : 1.0;
+  // -- the window family the building wears (see familyOf), and its own window size, frame, glass and light pattern
+  float hf = hash12(vec2(sd, 83.7)), hw1 = hash12(vec2(sd, 89.3)), hw2 = hash12(vec2(sd, 97.1)), hw3 = hash12(vec2(sd, 101.9));
+  float hfc = hash12(vec2(sd, 113.9)), hg = hash12(vec2(sd, 127.3)), hl = hash12(vec2(sd, 131.7)), htp = hash12(vec2(sd, 139.1));
+  int fam = familyOf(st, hf);
+  bool fullW = fam == F_RIBBON || fam == F_CURTAIN;
+  float grp = fullW ? 1.0 : hp < 0.3 ? 2.0 : hp < 0.45 ? 3.0 : 1.0;
   float bs = mix(0.82, 1.38, hb);
   if (grp > 1.5) bs = max(bs, 1.22);
   // The grid of window cells: one row per floor, and a tall row for the street floor (id.y = -1).
@@ -268,25 +301,82 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   vec2 id = floor(q), f = fract(q);
   float inFloors = street ? step(gH, top) : step((id.y + 1.0) * fh + gH, top - 0.5);
   // the window keeps its painted width in a wider cell; the rest is pier, gathered between the groups
-  float tw = street ? 1.0 : clamp(bay / cw, 0.6, 1.0);
+  float tw = (street || fullW) ? 1.0 : clamp(bay / cw, 0.6, 1.0);
   float gpos = mod(id.x, grp);
   float lx = grp > 1.5 ? (1.0 - tw) * (grp - 1.0 - gpos) / (grp - 1.0) : (1.0 - tw) * 0.5;
   vec2 ft = vec2((f.x - lx) / tw, f.y);
   vec2 aa = max(vec2(fq.x / tw, fq.y) * 0.75, vec2(1e-4));
   float pier = mix(1.0 - tw, 1.0 - boxM(ft, vec4(0.0, -1.0, 1.0, 2.0), aa), det2.x) * step(tw, 0.999);
-  // the rooms: dark or lit (offices fewer, homes more); greener in a clogged district; all lit at the finale
-  float r = hash13(vec3(id, sd * 0.618 + salt * 7.31));
+  // this row's family: the street floor keeps the painted shop and lobby tiles; the top floor of a home may differ
+  // (arched, small attic windows or round ones) under a cornice
+  int fr = street ? F_PAINT : fam;
+  float lastRow = floor((top - 0.5 - gH) / fh) - 1.0;
+  bool topRow = !street && !glassy && abs(id.y - lastRow) < 0.5 && lastRow >= 2.0;
+  int shape = (!street && (fr == F_TALL || fr == F_PAIR) && homes && hw3 < 0.45) ? 1 : 0;
+  if (topRow && !fullW && htp < 0.7) {
+    if (htp < 0.3) { fr = fr == F_PAIR ? F_PAIR : F_TALL; shape = 1; }
+    else if (htp < 0.5) { fr = F_PUNCH; shape = 2; }
+    else fr = F_PUNCH;
+  }
+  bool painted = fr == F_PAINT;
+  // the window rectangle in the window's own cell (0..1 each way), the panes (columns, rows) and the cell count (2: a pair)
+  bool shopRow = street && shop > 0.5;
+  vec4 wr = shopRow ? vec4(0.08, 0.06, 0.92, 0.56) : WRECT[st];
+  vec2 mun = vec2(0.0);
+  float sub = 1.0;
+  if (fr == F_TALL) { float w = mix(0.34, 0.5, hw1); wr = vec4(0.5 - w * 0.5, mix(0.08, 0.15, hw2), 0.5 + w * 0.5, mix(0.82, 0.9, hw3)); mun = vec2(hw1 < 0.5 ? 1.0 : 2.0, hw2 < 0.5 ? 2.0 : 3.0); }
+  else if (fr == F_RIBBON) { wr = vec4(0.0, mix(0.26, 0.38, hw2), 1.0, mix(0.7, 0.84, hw3)); mun = vec2(floor(1.0 + hw1 * 2.99), 1.0); }
+  else if (fr == F_PAIR) { float w = mix(0.48, 0.64, hw1); sub = 2.0; wr = vec4(0.5 - w * 0.5, mix(0.12, 0.2, hw2), 0.5 + w * 0.5, mix(0.78, 0.88, hw3)); mun = vec2(1.0, hw2 < 0.5 ? 1.0 : 2.0); }
+  else if (fr == F_CURTAIN) { wr = vec4(0.0, mix(0.1, 0.22, hw2), 1.0, 1.0); mun = vec2(floor(2.0 + hw1 * 2.99), hw3 < 0.5 ? 1.0 : 2.0); }
+  else if (fr == F_PUNCH) { float w = topRow ? 0.3 : mix(0.26, 0.4, hw1), y0 = topRow ? 0.36 : mix(0.3, 0.4, hw2); wr = vec4(0.5 - w * 0.5, y0, 0.5 + w * 0.5, y0 + (topRow ? 0.36 : mix(0.3, 0.42, hw3))); mun = vec2(hw1 < 0.5 ? 1.0 : 2.0, hw3 < 0.5 ? 1.0 : 2.0); }
+  else if (fr == F_GRID) { float x0 = mix(0.06, 0.14, hw1); wr = vec4(x0, mix(0.08, 0.14, hw2), 1.0 - x0, mix(0.84, 0.92, hw3)); mun = vec2(floor(3.0 + hw1 * 2.99), floor(3.0 + hw2 * 1.99)); }
+  // the window's own coordinates (a pair splits the cell in two), its metres per unit each way, and a pixel in metres
+  float inSub = sub > 1.5 ? step(0.0, ft.x) * step(ft.x, 1.0) : 1.0;
+  vec2 fc = sub > 1.5 ? vec2(fract(ft.x * 2.0), ft.y) : ft;
+  vec2 aaW = vec2(aa.x * sub, aa.y);
+  vec2 S = vec2(tw * cw / sub, street ? gH : fh);
+  float pxm = max(max(fwidth(u), fwidth(y)), 1e-4) * 0.75;
+  if (shape == 2) { vec2 c = (wr.xy + wr.zw) * 0.5; float rr = min((wr.z - wr.x) * S.x, (wr.w - wr.y) * S.y) * 0.5; wr = vec4(c - rr / S, c + rr / S); }
+  vec2 wc = (wr.xy + wr.zw) * 0.5, hm = (wr.zw - wr.xy) * 0.5 * S;
+  float ys = wr.w - hm.x / S.y;
+  if (shape == 1 && ys < wc.y) shape = 0;
+  // the rounded cut (arch top or round window) as a distance in metres, < 0 inside
+  vec2 pa = (fc - vec2(wc.x, shape == 1 ? ys : wc.y)) * S;
+  float dR = shape == 0 ? -1e3 : (shape == 1 && fc.y < ys) ? -1e3 : length(pa) - (shape == 1 ? hm.x : hm.x);
+  float roundAvg = shape == 0 ? 1.0 : shape == 2 ? 0.785 : 1.0 - 0.43 * hm.x * hm.x / max(4.0 * hm.x * hm.y, 1e-3);
+  float fm = mix(0.07, 0.14, hg);
+  float round0 = 1.0 - smoothstep(-pxm, pxm, dR);
+  float roundE = 1.0 - smoothstep(-pxm, pxm, dR - fm);
+  // the rooms: dark or lit (offices fewer, homes more); greener in a clogged district; all lit at the finale.
+  // Each building keeps its own pattern: scattered, whole floors on or off, lit stacks, or a lit block of rooms.
+  float r = hash13(vec3(id.x * sub + (sub > 1.5 ? clamp(floor(ft.x * 2.0), 0.0, 1.0) : 0.0), id.y, sd * 0.618 + salt * 7.31));
   float rs = hash12(vec2(id.x, sd * 0.97 + salt * 3.1));
   float litP = clamp(((glassy ? mix(0.25, 0.52, h2) : mix(0.32, 0.62, h2)) + uFinale * 0.6) * (1.0 - 0.45 * vClog), 0.0, 0.95);
-  float lit = step(r, litP);
+  float litR = litP;
+  if (hl > 0.4) {
+    float hz = hl < 0.6 ? hash12(vec2(id.y, sd * 3.3)) : hl < 0.75 ? hash12(vec2(id.x, sd * 5.7 + salt)) : hash12(floor(id / vec2(3.0, 2.0)) + sd * 9.1);
+    litR = clamp(litP * (hz < 0.35 ? 0.2 : hz > 0.7 ? 1.9 : 1.0), 0.0, 0.97);
+  }
+  float lit = step(r, litR);
   float fl = step(0.975, fract(r * 57.3));
   lit = mix(lit, step(0.55, fract(uTime * (0.02 + 0.04 * fract(r * 91.0)) + r * 7.0)), fl);
-  bool shopRow = street && shop > 0.5;
   if (street) lit = step(rs, shopRow ? 0.92 : glassy ? 0.72 : 0.55);
   float litAvg = street ? (shopRow ? 0.92 : glassy ? 0.72 : 0.55) : litP;
   float baseTile = TILE0[st];
   float tile = shopRow && lit > 0.5 ? (rs < 0.62 ? 12.0 : 13.0) : baseTile + lit;
-  vec3 celWall = comicCelX(wallAlb, band, LITMUL, LITADD);
+  // the building's wall: brick courses, stone blocks or concrete panel joints where the painted tile does not show its own
+  float mort = 0.0;
+  #ifndef LOW
+  if (fam != F_PAINT && !glassy) {
+    vec2 jc = brickish ? vec2(0.62, 0.3) : st == 3 ? vec2(1.5, 0.75) : vec2(cw, fh * 0.5);
+    float course = floor(y / jc.y);
+    mort = max(stripe(y / jc.y, brickish ? 0.07 : 0.04), stripe(u / jc.x + 0.5 * mod(course, 2.0), brickish ? 0.04 : 0.02)) * (brickish ? 0.2 : 0.14);
+  }
+  #endif
+  // the frame paint; a curtain wall's spandrel panels take a darker tone of it
+  vec3 frameC = FRAMEC[fr == F_CURTAIN ? CFR[int(hfc * 3.99)] : glassy || fullW ? GFR[int(hfc * 4.99)] : HFR[int(hfc * 5.99)]];
+  vec3 wallP = fr == F_CURTAIN ? mix(frameC, vec3(0.08, 0.08, 0.12), 0.5) : wallAlb * (1.0 - mort);
+  vec3 celWall = comicCelX(wallP, band, LITMUL, LITADD);
   vec3 green = vec3(0.5, 0.9, 0.25);
   vec3 warm = vec3(1.06, 1.0, 0.88);
   // each lit room its own light (not on the street floor, whose shops keep their painted glow)
@@ -297,7 +387,9 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   vec3 finW = mix(vec3(1.0), warm, uFinale);
   vec3 litWin = mix(litRoom, green, vClog * 0.5) * finW;
   vec3 litWinAvg = mix(vec3(1.0, 0.76, 0.27), green, vClog * 0.5) * finW;
+  // dark glass in the building's own tint: blue, teal, green, bronze or slate
   vec3 darkWin = vec3(0.06, 0.17, 0.32);
+  vec3 glassC = shopRow ? darkWin : GLASSC[int(hash12(vec2(sd, 149.3)) * 4.99)];
   // Glass mirrors the painted sky: the sunset side glows orange, the far side stays violet.
   vec3 skyR = vec3(0.0);
   float mirror = 0.0;
@@ -305,16 +397,18 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   if (glassy) {
     vec3 R = reflect(-V, N);
     skyR = skyAt(vec3(R.x, abs(R.y) * 0.5 + 0.07, R.z)) * mix(vec3(1.0), vec3(0.78, 0.9, 1.0), step(0.5, h3)) * (0.7 + 0.3 * min(band, 1.0));
-    mirror = k == 1 ? 0.3 : 0.55;
+    mirror = k == 1 ? 0.3 : (fr == F_CURTAIN ? 0.65 : 0.55);
   }
   #endif
-  // -- flat blocks: a window rectangle in each cell, flat lit or dark (also the look without the atlas)
-  vec4 wr = shopRow ? vec4(0.08, 0.06, 0.92, 0.56) : WRECT[st];
-  vec2 wa = smoothstep(wr.xy - aa, wr.xy + aa, ft) * (1.0 - smoothstep(wr.zw - aa, wr.zw + aa, ft));
+  // -- flat blocks: a window in each cell, flat lit or dark (also the look without the atlas)
+  vec2 wa = smoothstep(wr.xy - aaW, wr.xy + aaW, fc) * (1.0 - smoothstep(wr.zw - aaW, wr.zw + aaW, fc));
+  wa.x *= inSub;
   vec2 ww = wa;
   wa = mix(wr.zw - wr.xy, wa, det2);
-  float wmask = wa.x * wa.y * inFloors;
-  vec3 glassDark = mix(darkWin, skyR, mirror);
+  float rcut = mix(roundAvg, round0, detail);
+  float wmask = wa.x * wa.y * rcut * inFloors;
+  float wSharp = ww.x * ww.y * round0;
+  vec3 glassDark = mix(glassC, skyR, mirror);
   vec3 roomDark = comicCelX(glassDark * (0.85 + 0.4 * f.y), band, LITMUL, LITADD);
   vec3 roomNow = lit > 0.5 ? litWin : roomDark;
   vec3 roomAvg = mix(comicCelX(glassDark, band, LITMUL, LITADD), litWinAvg, litAvg);
@@ -328,16 +422,35 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 aw = comicCelX(rs < 0.5 ? vec3(0.7, 0.14, 0.1) : vec3(0.1, 0.4, 0.4), band, LITMUL, LITADD);
     col = mix(col, aw, ay * detail);
   }
-  // -- the painted tile: the atlas cell for this window, lit or dark, in the building's own wall paint
+  // -- the painted tile: the atlas cell for this window, lit or dark. The painted family shows the whole tile in the
+  // building's own wall paint; the other families show only the tile's window, stretched into their own window shape.
   if (nearD > 0.001) {
-    vec2 fx = vec2(mix(ft.x, 1.0 - ft.x, step(0.5, fract(r * 37.1))), f.y);
-    vec3 tc = tileSample(tile, fx, vec2(gx.x / tw, gx.y), vec2(gy.x / tw, gy.y)).rgb;
+    float flip = step(0.5, fract(r * 37.1));
+    vec2 tf, tgx, tgy;
+    float tl = tile, win;
+    if (painted) {
+      tf = vec2(mix(ft.x, 1.0 - ft.x, flip), f.y);
+      tgx = vec2(gx.x / tw, gx.y); tgy = vec2(gy.x / tw, gy.y);
+      win = ww.x * ww.y;
+    } else {
+      // which painted window each family borrows: office glass, gold glass, a sash, the loft grid or the ribbon
+      float tb = fr == F_RIBBON ? 14.0 : fr == F_GRID ? 8.0 : fr == F_CURTAIN ? (st == 1 ? 2.0 : 0.0) : (homes ? 4.0 : st == 1 ? 2.0 : 0.0);
+      vec4 TR = (fr == F_RIBBON ? WRECT[4] : fr == F_GRID ? WRECT[5] : tb == 4.0 ? WRECT[2] : WRECT[0]) + vec4(0.03, 0.03, -0.03, -0.03);
+      vec2 sc = (TR.zw - TR.xy) / (wr.zw - wr.xy);
+      vec2 wn = clamp((fc - wr.xy) / (wr.zw - wr.xy), 0.0, 1.0);
+      tf = TR.xy + vec2(mix(wn.x, 1.0 - wn.x, flip), wn.y) * (TR.zw - TR.xy);
+      tgx = vec2(gx.x / tw * sub, gx.y) * sc; tgy = vec2(gy.x / tw * sub, gy.y) * sc;
+      tl = tb + lit;
+      win = wSharp;
+    }
+    vec3 tc = tileSample(tl, tf, tgx, tgy).rgb;
     float yy = min(tc.r, tc.g) - tc.b;
     float e = lit * smoothstep(0.12, 0.34, yy);
-    if (tile > 12.5 && tile < 13.5) e = max(e, smoothstep(0.3, 0.55, max(tc.r, max(tc.g, tc.b))));
-    float win = ww.x * ww.y;
-    if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0);
-    // dark glass shows the sky, the way the towers in the key art do
+    if (tl > 12.5 && tl < 13.5) e = max(e, smoothstep(0.3, 0.55, max(tc.r, max(tc.g, tc.b))));
+    if (painted) { if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0); }
+    else { e *= win; tc = mix(wallP, tc, win); }
+    // the dark glass takes the building's tint, and shows the sky, the way the towers in the key art do
+    tc = max(tc + (glassC - darkWin) * win * (1.0 - e) * 0.9, 0.0);
     tc = mix(tc, skyR, (1.0 - lit) * mirror * 0.7 * win);
     vec3 glow = tc * e * (0.94 + 0.12 * fract(r * 5.3));
     if (tcls >= 0.5) glow = vec3(dot(glow, LUMW)) * tint * 1.15;
@@ -352,10 +465,10 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   // -- per window, up close only: a roller shade or blinds pulled part way down; an air-conditioner box in some homes
   {
     float wh = wr.w - wr.y;
-    float wy = (ft.y - wr.y) / wh;
+    float wy = (fc.y - wr.y) / wh;
     float sk = fract(r * 41.3);
     float depth = mix(0.22, 0.6, fract(r * 17.9));
-    float sm = ww.x * ww.y * smoothstep(1.0 - depth - aa.y / wh, 1.0 - depth + aa.y / wh, wy) * step(sk, 0.3) * upper * detail;
+    float sm = wSharp * smoothstep(1.0 - depth - aa.y / wh, 1.0 - depth + aa.y / wh, wy) * step(sk, fullW ? 0.18 : 0.3) * upper * detail;
     vec3 fab = fract(r * 7.7) < 0.4 ? vec3(0.92, 0.86, 0.7) : fract(r * 7.7) < 0.7 ? vec3(0.75, 0.25, 0.2) : vec3(0.25, 0.55, 0.5);
     float slat = sk < 0.12 ? stripe(wy * 9.0, 0.16) : 0.0;
     vec3 shadeCol = lit > 0.5 ? mix(litWin * 0.85, fab * litWin.r * 1.05, sk < 0.12 ? 0.25 : 0.6) * (1.0 - 0.45 * slat)
@@ -363,17 +476,66 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     col = mix(col, shadeCol, sm);
     em *= 1.0 - sm * 0.4;
     // the box sits in the bottom of the sash, poking out over the sill
-    float acOn = step(fract(r * 67.1), 0.16) * step(hr, 0.7) * (homes ? 1.0 : 0.0) * upper * detail;
+    float acOn = step(fract(r * 67.1), 0.16) * step(hr, 0.7) * (homes && shape != 2 ? 1.0 : 0.0) * upper * detail;
     float ax0 = wr.x + (wr.z - wr.x) * (fract(r * 29.3) < 0.5 ? 0.12 : 0.5);
-    vec4 acB = vec4(ax0, wr.y - 0.07, ax0 + 0.26, wr.y + 0.08);
-    float acM = boxM(ft, acB, aa) * acOn;
-    float acIn = boxM(ft, acB + vec4(0.02, 0.02, -0.02, -0.02), aa);
-    float grille = stripe((ft.y - acB.y) / 0.035, 0.18) * acIn;
+    vec4 acB = vec4(ax0, wr.y - 0.07, ax0 + 0.26 / sub, wr.y + 0.08);
+    float acM = boxM(fc, acB, aaW) * acOn * inSub;
+    float acIn = boxM(fc, acB + vec4(0.02, 0.02, -0.02, -0.02), aaW);
+    float grille = stripe((fc.y - acB.y) / 0.035, 0.18) * acIn;
     vec3 acCol = mix(comicCelX(vec3(0.7, 0.7, 0.66), band, LITMUL, LITADD), INKC, max(1.0 - acIn, grille * 0.6));
     col = mix(col, acCol, acM);
     em *= 1.0 - acM;
   }
   #endif
+  // -- the families' own frames: a frame in the building's colour round each window with an ink line outside it, and
+  // glazing bars between the panes. They fade to their average tone where they would shimmer.
+  if (!painted) {
+    vec3 frameCol = comicCelX(frameC, band, LITMUL, LITADD);
+    vec2 fmw = vec2(fm) / S, inw = vec2(fm + 0.045) / S;
+    vec4 RE = wr + vec4(-fmw, fmw), RI = wr + vec4(-inw, inw);
+    vec2 eE = smoothstep(RE.xy - aaW, RE.xy + aaW, fc) * (1.0 - smoothstep(RE.zw - aaW, RE.zw + aaW, fc));
+    vec2 eI = smoothstep(RI.xy - aaW, RI.xy + aaW, fc) * (1.0 - smoothstep(RI.zw - aaW, RI.zw + aaW, fc));
+    eE.x *= inSub; eI.x *= inSub;
+    eE = mix(RE.zw - RE.xy, eE, det2); eI = mix(RI.zw - RI.xy, eI, det2);
+    float roundI = 1.0 - smoothstep(-pxm, pxm, dR - fm - 0.045);
+    float outE = eE.x * eE.y * mix(roundAvg, roundE, detail), outI = eI.x * eI.y * mix(roundAvg, roundI, detail);
+    float frameM = clamp(outE - wa.x * wa.y * rcut, 0.0, 1.0) * upper;
+    float inkM = clamp(outI - outE, 0.0, 1.0) * upper * (fullW ? 0.0 : 1.0);
+    // glazing bars: in face cells for the full-width families, so the bar on a cell's edge stays one line
+    vec2 wn = (fc - wr.xy) / (wr.zw - wr.xy);
+    vec2 per = (wr.zw - wr.xy) * S / max(mun, vec2(1.0));
+    vec2 mw = clamp(0.035 / per, vec2(0.015), vec2(0.12));
+    float bx = mun.x > 1.5 || fullW ? stripe((fullW ? q.x * mun.x : wn.x * mun.x) + 0.5, mw.x) : 0.0;
+    float by = mun.y > 1.5 ? stripe(wn.y * mun.y + 0.5, mw.y) : 0.0;
+    float bars = max(bx, by) * wSharp * upper * detail;
+    col = mix(col, INKC, inkM * 0.85);
+    col = mix(col, frameCol, max(frameM, bars));
+    em *= 1.0 - max(max(frameM, inkM), bars);
+    #ifndef LOW
+    // homes: a stone sill under each window, a lintel over a square-headed one, and shutters beside some
+    if (homes && shape != 2 && fr != F_RIBBON) {
+      vec2 pm = (fc - wc) * S;
+      vec3 stoneC = comicCelX(mix(wallAlb, vec3(0.86, 0.83, 0.76), 0.65), band, LITMUL, LITADD);
+      vec2 pa2 = vec2(pxm);
+      float sill = boxM(pm, vec4(-hm.x - fm - 0.1, -hm.y - fm - 0.16, hm.x + fm + 0.1, -hm.y - fm + 0.01), pa2);
+      float lint = shape == 0 && hw2 < 0.6 ? boxM(pm, vec4(-hm.x - fm - 0.05, hm.y + fm - 0.01, hm.x + fm + 0.05, hm.y + fm + 0.22), pa2) : 0.0;
+      float sl = max(sill, lint) * upper * inSub;
+      float slA = mix((2.0 * hm.x + 2.0 * fm + 0.2) * 0.17 / (S.x * S.y), sl, detail) * upper;
+      col = mix(col, stoneC, slA);
+      col = mix(col, INKC, sl * detail * (1.0 - boxM(pm, vec4(-hm.x - fm - 0.08, -hm.y - fm - 0.14, hm.x + fm + 0.08, -hm.y - fm), pa2)) * (1.0 - lint) * 0.8);
+      em *= 1.0 - slA;
+      float sw = hm.x * 0.85;
+      if ((fr == F_TALL || fr == F_PUNCH) && hw1 > 0.6 && hm.x + fm + sw < 0.5 * S.x - 0.08) {
+        float ax = abs(pm.x) - hm.x - fm - 0.03;
+        float shut = smoothstep(-pxm, pxm, ax) * (1.0 - smoothstep(sw - pxm, sw + pxm, ax)) * (1.0 - smoothstep(hm.y + fm - pxm, hm.y + fm + pxm, abs(pm.y))) * upper * inSub;
+        vec3 shC = SHUTC[int(hash12(vec2(sd, 157.1)) * 3.99)];
+        vec3 shCol = mix(comicCelX(shC, band, LITMUL, LITADD), INKC, max(stripe(pm.y / 0.14, 0.1) * 0.5, 1.0 - smoothstep(0.02, 0.02 + pxm, min(ax, sw - ax))));
+        col = mix(col, shCol, shut * detail);
+        em *= 1.0 - shut * detail;
+      }
+    }
+    #endif
+  }
   // -- the building's own structure, which fades to its average tone: piers between window groups, pilasters on the
   // corners, a spandrel band in a contrasting tone every few floors, balcony rails, and a fire escape on some brick faces
   vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0), band, LITMUL, LITADD);
@@ -394,13 +556,24 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float pm = pil > 0.0 ? 1.0 - smoothstep(-pw, pw, min(u, faceW - u) - pil) : 0.0;
   col = mix(col, accentCol, pm * step(y, top));
   em *= 1.0 - pm;
+  // a cornice under the top of some homes: a pale moulding, an ink line under it and a row of dentils
+  if (!glassy && htp > 0.35 && !street && top - 0.42 > gH + fh) {
+    float cb = top - 0.42;
+    float cm = smoothstep(cb - pxm, cb + pxm, y) * step(y, top);
+    float dn = smoothstep(cb - 0.2 - pxm, cb - 0.2 + pxm, y) * (1.0 - step(cb, y)) * stripe(u / 0.32 + 0.5, 0.22);
+    vec3 cc = comicCelX(mix(wallAlb, vec3(0.86, 0.83, 0.76), 0.55), band, LITMUL, LITADD);
+    float cv = max(cm, dn * detail);
+    col = mix(col, cc, cv);
+    col = mix(col, INKC, (1.0 - smoothstep(pxm * 0.6, pxm * 1.6, abs(y - cb))) * 0.9);
+    em *= 1.0 - cv;
+  }
   #ifndef LOW
   // balcony rails under the windows of some homes and condos (a slab, a top bar, thin balusters)
-  if (homes && hr < 0.32) {
+  if (homes && hr < 0.32 && (fr == F_PAINT || fr == F_TALL || fr == F_PAIR)) {
     vec4 rb = vec4(wr.x - 0.06, wr.y - 0.05, wr.z + 0.06, wr.y + 0.24);
-    float inR = boxM(ft, rb, aa);
-    float slab = boxM(ft, vec4(rb.x, rb.y, rb.z, wr.y + 0.01), aa);
-    float bar = boxM(ft, vec4(rb.x, rb.w - 0.035, rb.z, rb.w), aa);
+    float inR = boxM(fc, rb, aaW) * inSub;
+    float slab = boxM(fc, vec4(rb.x, rb.y, rb.z, wr.y + 0.01), aaW) * inSub;
+    float bar = boxM(fc, vec4(rb.x, rb.w - 0.035, rb.z, rb.w), aaW) * inSub;
     float bal = stripe(u / 0.16, 0.09) * inR;
     float rm = max(max(slab, bar), bal);
     float rAvg = 0.17 * (rb.z - rb.x) * tw;
