@@ -227,6 +227,7 @@ In play, a marker SHALL show the point the next swing will use. The marker SHALL
 #### Scenario: Target behind the camera
 - **WHEN** the target lies behind the camera plane, as on a wall in third person
 - **THEN** an arrow sits on the bottom border of the safe window and points down
+- **AND** no other part of the screen covers the arrow, also the training card at 960 by 540 and 1280 by 720
 
 #### Scenario: A rope is attached
 - **WHEN** the right rope holds building A and a second target exists

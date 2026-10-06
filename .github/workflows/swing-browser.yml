@@ -85,6 +85,11 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: The HUD, a toast, the phone buttons and the pause menu inside the window
+        run: node qa/vr/layout.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
       - name: Wall climbing and antennas
         run: node qa/vr/climb.e2e.mjs
         env:

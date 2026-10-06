@@ -145,6 +145,48 @@ try {
  await page.evaluate(()=>{G.test.press(1,false);G.flatcam.setFirstPerson(true);G.test.step(1/60,60);});
  const fp=await tapFrom('first person');console.log('PASS tap a building off the screen centre in first person',JSON.stringify({nx:+fp.nx.toFixed(2),ny:+fp.ny.toFixed(2),id:fp.id}));
  await page.evaluate(()=>{G.flatcam.setFirstPerson(false);G.test.step(1/60,30);});
+ // The same taps at 390x844, a phone held upright. The screen is narrow, so a tap 0.4 across is a small turn off the view axis, and the
+ // tap ray must still come from the tapped pixel and not from the screen centre. The same rules as above: a building that shows on
+ // screen and is at least 0.4 NDC off the centre, the rope on that building, then a second building to switch, third person and first.
+ // From the start roof the narrow view shows no such building, so each view looks for a roof and a turn that show two of them.
+ await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>G.camera.aspect<.6);
+ const upright=await page.evaluate(()=>({w:innerWidth,h:innerHeight,aspect:G.camera.aspect}));
+ assert(upright.w===390&&upright.h===844&&upright.aspect<.5,'the page is upright at 390x844 '+JSON.stringify(upright));
+ const standAt=at=>page.evaluate(({roof,turn})=>{const s=G.city.safe[roof];G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;G.test.step(1/60,90);},at);
+ const findAt=async()=>{
+  const roofs=await page.evaluate(()=>G.city.safe.length);
+  for(let roof=0;roof<roofs;roof++)for(let turn=0;turn<8;turn++){
+   await standAt({roof,turn});
+   const a=await pick([]);if(a&&await pick([a.id]))return {roof,turn};
+  }
+  return null;
+ };
+ const uprightTap=async(label,at)=>{
+  await standAt(at);
+  const t=await pick([]);assert(t,label+': a building well off the screen centre is in view');
+  assert(Math.max(Math.abs(t.nx),Math.abs(t.ny))>=.4,label+': the tap is at least 0.4 NDC from the centre');
+  await page.mouse.click(t.px,t.py);
+  const r=await page.evaluate(()=>{for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[1];if(s.state==='attached')return {state:s.state,tag:s.tag,id:s.id,anchor:{...s.anchor}};}const s=G.test.state().ropes[1];return {state:s.state,tag:s.tag,id:s.id,anchor:s.anchor};});
+  const miss=Math.hypot(r.anchor.x-t.x,r.anchor.y-t.y,r.anchor.z-t.z);
+  assert.equal(r.state,'attached',label+': the tap fires and the rope attaches '+JSON.stringify(r));
+  assert(r.id===t.id&&miss<8,label+': the rope anchors on the tapped building, not the centre target '+JSON.stringify({tapped:t.id,centre:t.centre,got:r.id,miss,nx:t.nx,ny:t.ny}));
+  return t;
+ };
+ const at3=await findAt();assert(at3,'portrait third person: a roof and a turn show two buildings off the screen centre');
+ const ptp=await uprightTap('portrait third person',at3);console.log('PASS tap a building off the screen centre in portrait, third person',JSON.stringify({...at3,nx:+ptp.nx.toFixed(2),ny:+ptp.ny.toFixed(2),id:ptp.id}));
+ // with a rope attached, a tap on another building off the centre switches to that building
+ const pcur=await page.evaluate(()=>G.test.state().ropes[1].id);
+ const pt2=await pick([ptp.id,pcur]);assert(pt2,'portrait: a second building is in view');
+ await page.mouse.click(pt2.px,pt2.py);
+ const psw=await page.evaluate((first)=>{for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[1];if(s.state==='attached'&&s.id!==first)return {state:s.state,id:s.id};}const s=G.test.state().ropes[1];return {state:s.state,id:s.id};},ptp.id);
+ assert(psw.state==='attached'&&psw.id===pt2.id,'portrait: a tap on another building switches the rope to it '+JSON.stringify({want:pt2.id,got:psw}));
+ console.log('PASS tap another building to switch ropes in portrait');
+ await page.evaluate(()=>{G.test.press(1,false);G.flatcam.setFirstPerson(true);G.test.step(1/60,60);});
+ const at1=await findAt();assert(at1,'portrait first person: a roof and a turn show two buildings off the screen centre');
+ const pfp=await uprightTap('portrait first person',at1);console.log('PASS tap a building off the screen centre in portrait, first person',JSON.stringify({...at1,nx:+pfp.nx.toFixed(2),ny:+pfp.ny.toFixed(2),id:pfp.id}));
+ await page.evaluate(()=>{G.flatcam.setFirstPerson(false);G.test.step(1/60,30);});
+ // back to landscape for the checks below
+ await page.setViewportSize({width:844,height:390});await page.waitForFunction(()=>G.camera.aspect>2);
  // A rope can catch and be let go in the same step (the chest grabs a wall and drops the ropes). The attach feedback must not read the
  // gone rope's target: the event queue then threw every frame and the picture froze.
  const stale=await page.evaluate(()=>{const s=G.city.start;G.test.press(1,false);G.test.teleport(s.x,s.y,s.z);G.test.step(1/60,2);const f0=G.frame;
