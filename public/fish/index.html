@@ -158,8 +158,8 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 /* the reel controls come in with a short rise, not a jump */
 #reelUI:not([hidden]) > * { animation: rise 0.3s cubic-bezier(.2, .8, .2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
-/* the gauge only fades in: the prompt sits just under it */
-#reelUI:not([hidden]) > #gaugeBox { animation-name: fade-in; }
+/* the gauge and the pull meter only fade in: the toast sits just under the gauge, and the action card under the pull meter */
+#reelUI:not([hidden]) > #gaugeBox, #reelUI:not([hidden]) > #pullStrength { animation-name: fade-in; }
 @keyframes fade-in { from { opacity: 0; } }
 
 /* ---------- HUD ---------- */
