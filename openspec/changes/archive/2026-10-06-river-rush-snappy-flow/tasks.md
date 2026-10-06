@@ -3,5 +3,5 @@
 - [x] 3. Register/interpolate paddle frames, immediate action presentation and coherent current/speed feedback.
 - [x] 4. Reduce video/canvas work and preserve pause/fallback/preferences.
 - [x] 5. Pass meaningful engine/motion tests and actual browser response, performance, layouts and lifecycle checks.
-- [ ] 6. Rebuild, publish and verify exact live release.
-- [ ] 7. Record results, archive and validate canonical specification.
+- [x] 6. Rebuild, publish and verify exact live release.
+- [x] 7. Record results, archive and validate canonical specification.
