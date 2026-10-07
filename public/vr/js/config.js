@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.15.0";
+export const VERSION = "1.16.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -62,6 +62,11 @@ export const SWING = {
 export const MOVES = {
   sprint: 2.2, drain: 0.2, fill: 0.16, wait: 0.8, minEnergy: 0.12,
   roll: { time: 0.62, minSpeed: 6, friction: 1.4, fall: 13 },
+  // the release boost (mouse and pad): a rope let go while the GO cue shows adds forward m/s along the flight and up m/s, widens
+  // the view by kick degrees and flips the hero over flip s. One boost per cool s.
+  release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6 },
+  // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
+  finisher: { slow: 0.3, time: 0.7, zoom: 10 },
 };
 
 /* ---------------- wall climbing (flat play) ---------------- */

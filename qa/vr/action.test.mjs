@@ -79,6 +79,71 @@ test("the hero's hearts come back after a quiet while", () => {
   assert.ok(C.hp > 3.5, "hearts " + C.hp);
 });
 
+test("a goon who winds up near the hero is a threat; a dodge in the wind-up makes his blow miss (a perfect dodge)", () => {
+  const C = createCombat(city), h = hero(street.x, 0, street.z);
+  const g = C.spawn(street.x - 1.4, 0, street.z, "t"); g.aggro = true;
+  assert.equal(C.dodge(h), null, "no threat yet: no dodge");
+  let t = 0;
+  while (g.state !== "windup" && t < 4) { C.update(DT, h); t += DT; }
+  assert.equal(g.state, "windup", "wound up");
+  assert.equal(C.threat(h), g);
+  const d = C.dodge(h, 0, 1);
+  assert.ok(d && d.perfect, "a perfect dodge");
+  assert.ok(Math.abs(Math.hypot(d.dx, d.dz) - 1) < 1e-6, "a unit direction");
+  for (let i = 0; i < 1 / DT; i++) C.update(DT, h); // the blow comes while the dodge holds
+  assert.equal(C.hp, FIGHT.hp, "no heart lost");
+  assert.equal(C.stats.perfect, 1);
+  assert.ok(C.focus >= FIGHT.focus.perfect - 1e-9, "the meter filled: " + C.focus);
+});
+test("with no dodge, the same blow lands", () => {
+  const C = createCombat(city), h = hero(street.x, 0, street.z);
+  C.spawn(street.x - 1.4, 0, street.z, "t").aggro = true;
+  for (let i = 0; i < 2 / DT; i++) C.update(DT, h);
+  assert.ok(C.hp < FIGHT.hp);
+});
+test("perch takedown: from above, an unaware guard is lifted and hangs; the guard beside him does not notice", () => {
+  const C = createCombat(city);
+  const g = C.spawn(street.x - 6, 0, street.z, "t"), o = C.spawn(street.x - 9, 0, street.z, "t");
+  const h = hero(street.x, 9, street.z, { onGround: true, perch: true });
+  for (let i = 0; i < 0.5 / DT; i++) C.update(DT, h);
+  assert.ok(!g.aggro && !o.aggro, "they have not seen the hero above them");
+  assert.ok(C.targets(h).includes(g), "a perched hero can rope the guard");
+  assert.ok(!C.targets({ ...h, perch: false }).includes(g), "in a swing, a quiet guard is no target");
+  assert.equal(C.pull(g.id, h), "takedown");
+  for (let i = 0; i < 1 / DT; i++) C.update(DT, h);
+  assert.equal(g.state, "hung");
+  assert.ok(g.y > 3 && g.y <= h.y - FIGHT.perch.under + 1e-6, "lifted under the hero: " + g.y.toFixed(2));
+  assert.ok(Math.abs(g.bp - Math.PI) < 0.01, "upside down");
+  assert.ok(!o.aggro && o.state === "idle", "the other guard stays quiet");
+  assert.equal(C.stats.takedowns, 1);
+  for (let i = 0; i < (FIGHT.perch.hang + 1) / DT; i++) C.update(DT, h);
+  assert.ok(!C.goons.includes(g), "he is gone after a while");
+});
+test("no takedown on a guard who has seen the hero, or from the same level: a plain pull", () => {
+  const C = createCombat(city), h = hero(street.x, 0, street.z, { perch: true });
+  const g = C.spawn(street.x - 8, 0, street.z, "t");
+  assert.equal(C.perched(g, h), false);
+  g.aggro = true;
+  assert.equal(C.perched(g, { ...h, y: 9 }), false);
+  assert.equal(C.pull(g.id, h), "pull");
+});
+test("the combo count and the focus meter; a full meter finishes every goon in reach", () => {
+  const C = createCombat(city), h = hero(street.x, 0, street.z, { safe: true });
+  const a = C.spawn(street.x - 1.4, 0, street.z, "t", { hp: 9 }), b = C.spawn(street.x + 1.6, 0, street.z, "t", { hp: 9 });
+  assert.equal(C.finish(h), null, "an empty meter does nothing");
+  for (let i = 0; i < 3; i++) { C.attack(h); for (let k = 0; k < 5; k++) C.update(0.1, h); }
+  assert.equal(C.hits, 3, "three blows in a row");
+  assert.ok(C.focus > 0 && C.focus < 1);
+  C.focus = 1;
+  a.x = street.x - 1.4; a.z = street.z; b.x = street.x + 1.6; b.z = street.z; // (the kick pushed one away)
+  const out = C.finish(h);
+  assert.ok(out && out.length === 2, "both goons in reach: " + (out && out.length));
+  assert.ok(a.state === "down" && b.state === "down");
+  assert.equal(C.focus, 0, "the meter empties");
+  for (let i = 0; i < 3 / DT; i++) C.update(DT, h);
+  assert.equal(C.hits, 0, "the count ends after a gap");
+});
+
 /* ---------------- cars ---------------- */
 test("parked cars wait at kerbs round the player, clear of buildings and junctions", () => {
   const K = createCars(city);

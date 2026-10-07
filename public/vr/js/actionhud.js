@@ -1,7 +1,9 @@
 // In Full Swing: the screen bits of the city action in flat play. The hero's hearts and the energy gauge (bottom left), a prompt
-// line (R GET IN, a punch hint), a red glow at the edges when the hero is hit, and on a phone the CAR button and the driving pad
-// (left, right, GAS, BRAKE). main reads the phone buttons from touch: { car, left, right, gas, brake } (car is an edge).
-// A speech bubble over a person in the street (a robbed driver's shout) follows a screen point main gives each frame.
+// line (R GET IN, a punch hint), a red glow at the edges when the hero is hit, and on a phone the CAR button, the DODGE button (while
+// a goon winds up) and the driving pad (left, right, GAS, BRAKE). main reads the phone buttons from touch: { car, dodge, left,
+// right, gas, brake } (car and dodge are edges).
+// A speech bubble over a person in the street (a robbed driver's shout) follows a screen point main gives each frame, and so
+// does the red warning mark over a goon who winds up. In a fight, a combo count and the focus meter show at the right edge.
 const CSS = `
 #actHud{position:fixed;left:14px;bottom:14px;z-index:12;pointer-events:none;font-family:var(--comic,"Bangers",Impact,"Arial Black",sans-serif);color:#140a18}
 #actHud[hidden]{display:none}
@@ -17,15 +19,29 @@ const CSS = `
 #actShout{position:fixed;left:0;top:0;z-index:12;pointer-events:none;padding:4px 12px 1px;background:#fffdf5;border:3px solid #140a18;border-radius:14px;box-shadow:3px 3px 0 #140a18;font-family:var(--comic,"Bangers",Impact,sans-serif);font-size:26px;letter-spacing:.04em;color:#e8402a;white-space:nowrap;transform:translate(-50%,-100%)}
 #actShout:after{content:"";position:absolute;left:40%;bottom:-12px;border:6px solid transparent;border-top:8px solid #140a18}
 #actShout[hidden]{display:none}
+#actFight{position:fixed;right:16px;top:170px;z-index:12;pointer-events:none;display:flex;flex-direction:column;align-items:flex-end;font-family:var(--comic,"Bangers",Impact,"Arial Black",sans-serif)}
+#actFight[hidden]{display:none}
+@media (max-width:600px){#actFight{top:260px}}
+#actFight .combo{font-size:30px;line-height:1;color:#ffd84a;text-shadow:2px 2px 0 #140a18,-1px -1px 0 #140a18,1px -1px 0 #140a18,-1px 1px 0 #140a18}
+#actFight .combo[hidden],#actFight .focus[hidden]{display:none}
+#actFight .focus{margin-top:6px;width:120px;height:10px;border:3px solid #140a18;background:#fffdf5;box-shadow:3px 3px 0 #140a18;overflow:hidden}
+#actFight .focus i{display:block;height:100%;width:100%;background:#5ec2e8;transform-origin:left center}
+#actFight .focus.full i{background:#e8402a;animation:actFull .5s ease-in-out infinite alternate}
+@keyframes actFull{to{background:#ffd84a}}
+#actWarn{position:fixed;left:0;top:0;z-index:12;pointer-events:none;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid #140a18;border-radius:50%;background:#e8402a;box-shadow:3px 3px 0 #140a18;color:#fffdf5;font-family:var(--comic,"Bangers",Impact,sans-serif);font-size:26px;line-height:34px;text-align:center;animation:actWarn .25s ease-in-out infinite alternate}
+#actWarn[hidden]{display:none}
+@keyframes actWarn{to{transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){#actWarn,#actFight .focus.full i{animation:none}}
 #actHit{position:fixed;inset:0;z-index:11;pointer-events:none;opacity:0;box-shadow:inset 0 0 120px 30px rgba(232,40,30,.85);transition:opacity .35s}
 #actTouch{position:fixed;inset:0;z-index:13;pointer-events:none}
 #actTouch button{pointer-events:auto;position:absolute;width:74px;height:74px;border:4px solid #140a18;border-radius:50%;background:#fffdf5;box-shadow:4px 4px 0 #140a18;font-family:var(--comic,"Bangers",Impact,sans-serif);font-size:20px;color:#140a18;touch-action:none;user-select:none;-webkit-user-select:none}
 #actTouch button[hidden]{display:none}
 #actTouch button.on{background:#ffd84a}
 #actTouch .car{right:18px;top:42%;background:#5ec2e8}
+#actTouch .dodge{right:18px;top:calc(42% + 88px);width:96px;height:96px;background:#e8402a;color:#fffdf5;font-size:22px}
 #actTouch .left{left:18px;bottom:22px}#actTouch .right{left:104px;bottom:22px}
 #actTouch .gas{right:18px;bottom:22px;background:#7fdc5a}#actTouch .brake{right:104px;bottom:22px;background:#e8806a}
-body.cutscene #actHud,body.cutscene #actPrompt,body.cutscene #actTouch,body.cutscene #actShout{visibility:hidden}
+body.cutscene #actHud,body.cutscene #actPrompt,body.cutscene #actTouch,body.cutscene #actShout,body.cutscene #actWarn,body.cutscene #actFight{visibility:hidden}
 `;
 
 export function createActionHud() {
@@ -35,29 +51,37 @@ export function createActionHud() {
   const hud = document.createElement("div");
   hud.id = "actHud"; hud.hidden = true;
   hud.innerHTML = '<div class="hearts"></div><div class="energy" hidden><i></i></div>';
+  const fightEl = document.createElement("div");
+  fightEl.id = "actFight"; fightEl.hidden = true;
+  fightEl.innerHTML = '<div class="combo" hidden></div><div class="focus" hidden><i></i></div>';
   const prompt = document.createElement("div");
   prompt.id = "actPrompt"; prompt.hidden = true;
   const shout = document.createElement("div");
   shout.id = "actShout"; shout.hidden = true;
   const hit = document.createElement("div");
   hit.id = "actHit";
+  const warn = document.createElement("div");
+  warn.id = "actWarn"; warn.hidden = true; warn.textContent = "!";
   const touchEl = document.createElement("div");
   touchEl.id = "actTouch";
   const btn = (k, label) => { const b = document.createElement("button"); b.className = k; b.textContent = label; b.hidden = true; b.type = "button"; touchEl.appendChild(b); return b; };
-  const B = { car: btn("car", "CAR"), left: btn("left", "◀"), right: btn("right", "▶"), gas: btn("gas", "GAS"), brake: btn("brake", "BRAKE") };
-  document.body.append(hud, prompt, shout, hit, touchEl);
+  const B = { dodge: btn("dodge", "DODGE"), car: btn("car", "CAR"), left: btn("left", "◀"), right: btn("right", "▶"), gas: btn("gas", "GAS"), brake: btn("brake", "BRAKE") };
+  document.body.append(hud, fightEl, prompt, shout, warn, hit, touchEl);
   const hearts = hud.querySelector(".hearts"), energy = hud.querySelector(".energy"), bar = energy.querySelector("i");
-  const touch = { car: false, left: false, right: false, gas: false, brake: false };
+  const comboEl = fightEl.querySelector(".combo"), focusEl = fightEl.querySelector(".focus"), focusBar = focusEl.querySelector("i");
+  const touch = { car: false, dodge: false, left: false, right: false, gas: false, brake: false };
   for (const k of ["left", "right", "gas", "brake"]) {
     const b = B[k];
     const on = (v) => (e) => { e.preventDefault(); touch[k] = v; b.classList.toggle("on", v); };
     b.addEventListener("pointerdown", on(true)); b.addEventListener("pointerup", on(false)); b.addEventListener("pointercancel", on(false)); b.addEventListener("pointerleave", on(false));
   }
   B.car.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.car = true; });
-  let shown = { hp: -1, max: -1, e: -2, p: "" }, hitT = 0;
+  B.dodge.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.dodge = true; });
+  let shown = { hp: -1, max: -1, e: -2, p: "", c: -1, f: -2 }, hitT = 0;
   const H = {
     touch,
-    // s: { on, hp, max, energy (0..1, or < 0 to hide), prompt (html or ""), phone, nearCar, driving, shout: { text, x, y } (px) or null }
+    // s: { on, hp, max, energy (0..1, or < 0 to hide), prompt (html or ""), phone, nearCar, driving, shout: { text, x, y } (px) or null,
+    //   combo (blows in a row; shows from 2), focus (0..1, or < 0 to hide), warn: { x, y } (px) or null }
     update(dt, s) {
       hud.hidden = !s.on;
       const sh = s.on && s.shout;
@@ -66,7 +90,18 @@ export function createActionHud() {
         if (shout.textContent !== sh.text) shout.textContent = sh.text;
         shout.hidden = false; shout.style.left = Math.round(sh.x) + "px"; shout.style.top = Math.round(sh.y) + "px";
       }
+      const wn = s.on && s.warn;
+      warn.hidden = !wn;
+      if (wn) { warn.style.left = Math.round(wn.x) + "px"; warn.style.top = Math.round(wn.y) + "px"; }
+      fightEl.hidden = !s.on;
       if (!s.on) { prompt.hidden = true; for (const k in B) B[k].hidden = true; return; }
+      const c = s.combo >= 2 ? s.combo : 0;
+      if (c !== shown.c) { shown.c = c; comboEl.hidden = !c; comboEl.textContent = c ? c + " HITS" : ""; }
+      const f = s.focus == null || s.focus < 0 ? -1 : Math.round(s.focus * 50) / 50;
+      if (f !== shown.f) {
+        shown.f = f; focusEl.hidden = f < 0;
+        if (f >= 0) { focusBar.style.transform = "scaleX(" + f + ")"; focusEl.classList.toggle("full", f >= 1); }
+      }
       const hp = Math.ceil(s.hp - 1e-6);
       if (hp !== shown.hp || s.max !== shown.max) {
         shown.hp = hp; shown.max = s.max;
@@ -81,14 +116,18 @@ export function createActionHud() {
       }
       if (s.prompt !== shown.p) { shown.p = s.prompt; prompt.hidden = !s.prompt; prompt.innerHTML = s.prompt || ""; }
       B.car.hidden = !(s.phone && (s.nearCar || s.driving));
+      B.dodge.hidden = !(s.phone && s.warn);
+      if (B.dodge.hidden) touch.dodge = false;
       B.car.textContent = s.driving ? "OUT" : "CAR";
       for (const k of ["left", "right", "gas", "brake"]) { B[k].hidden = !(s.phone && s.driving); if (B[k].hidden && touch[k]) { touch[k] = false; B[k].classList.remove("on"); } }
       if (hitT > 0) { hitT -= dt; if (hitT <= 0) hit.style.opacity = "0"; }
     },
     // read and clear the CAR press
     takeCar() { const v = touch.car; touch.car = false; return v; },
+    // read and clear the DODGE press (phone)
+    takeDodge() { const v = touch.dodge; touch.dodge = false; return v; },
     flash() { hit.style.opacity = "1"; hitT = 0.25; },
-    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, car: !B.car.hidden, drive: !B.gas.hidden }),
+    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, combo: shown.c, focus: shown.f, warn: !warn.hidden, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, car: !B.car.hidden, dodge: !B.dodge.hidden, drive: !B.gas.hidden }),
   };
   return H;
 }
