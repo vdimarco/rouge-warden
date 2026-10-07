@@ -10,12 +10,12 @@
 <title>Cottage Arcade</title>
 <meta name="description" content="Play Cottage Arcade games, grouped by style, with early prototypes and toys in The Lab. Free in your browser.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://warden-alpha-wheat.vercel.app/">
+<meta property="og:url" content="https://arcade.uptick.systems/">
 <meta property="og:title" content="Cottage Arcade">
 <meta property="og:description" content="Explore arcade games across Cottage, Action, and Strategy collections, plus early prototypes and toys in The Lab. Free in your browser.">
-<meta property="og:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
+<meta property="og:image" content="https://arcade.uptick.systems/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://warden-alpha-wheat.vercel.app/og.jpg">
+<meta name="twitter:image" content="https://arcade.uptick.systems/og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Monoton&family=Press+Start+2P&family=Bungee&display=swap" rel="stylesheet">
@@ -66,6 +66,7 @@ button { font: inherit; color: inherit; }
 .section-nav button, .section-nav a { min-height: 28px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(20,12,36,.72); color: var(--muted); font: 8px/1 var(--pixel); letter-spacing: .04em; text-decoration: none; cursor: pointer; }
 .section-nav button.on { color: #07050f; background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px rgba(63,240,255,.42); }
 .section-nav a { color: var(--gold); border-color: rgba(255,207,74,.42); }
+.section-nav .all-games { color: var(--pink); border-color: rgba(255,63,164,.5); }
 .section-nav button:hover, .section-nav a:hover { color: #fff; border-color: rgba(255,255,255,.4); }
 
 @keyframes flick { 0%, 100% { opacity: 1; } 71% { opacity: 0.25; text-shadow: none; } 72% { opacity: 1; } 74% { opacity: 0.3; text-shadow: none; } 75% { opacity: 1; } }
@@ -248,6 +249,7 @@ button { font: inherit; color: inherit; }
       <button type="button" data-section="action">ACTION</button>
       <button type="button" data-section="strategy">STRATEGY</button>
       <a href="/lab/">LAB ↗</a>
+      <button type="button" class="all-games" data-switch>ALL GAMES ▦</button>
     </nav>
   </header>
 
@@ -403,7 +405,7 @@ button { font: inherit; color: inherit; }
       <article class="cab neon" data-game="neon" data-url="/neon/" aria-label="Neon Ronin: sword duels in a neon city">
       <div class="marquee"><div><b>NEON RONIN</b><small>GYRO SWORD FIGHTING</small></div></div>
       <div class="bezel"><div class="screen">
-      <img src="arcade/neon.webp" alt="" loading="lazy" decoding="async">
+      <img src="arcade/key/neon.webp" alt="A ronin and an armored rival cross swords on a neon canal bridge in the rain" loading="lazy" decoding="async">
       <div class="osd"><p class="hi">PARRY · CUT · REPEAT</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
@@ -480,11 +482,11 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
-      <article class="cab river-rush" data-game="river-rush" data-url="/river-rush/" aria-label="River Rush: a whitewater treasure race">
-      <div class="marquee"><div><b>RIVER RUSH</b><small>THE GOLDEN KEY RUN</small></div></div>
+      <article class="cab river-rush" data-game="river-rush" data-url="/river-rush/" aria-label="River Rush: a three-map whitewater adventure">
+      <div class="marquee"><div><b>RIVER RUSH</b><small>THREE WILD RIVERS</small></div></div>
       <div class="bezel"><div class="screen">
       <img src="arcade/key/river-rush.webp" alt="A jungle raft racing through turquoise rapids toward a golden key" loading="lazy" decoding="async">
-      <div class="osd"><p class="hi">CLAIM THE TREASURE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      <div class="osd"><p class="hi">DODGE · JUMP · DUCK</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button></div>
@@ -505,6 +507,7 @@ button { font: inherit; color: inherit; }
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/chip.js"></script>
+<script src="/arcade/switch.js"></script>
 <script>
 "use strict";
 const $ = (s, el) => (el || document).querySelector(s);
@@ -1189,10 +1192,10 @@ try {
   const best = store.get("follow-suit:best-chain", 0);
   if (Number.isFinite(best) && best > 0) $(".hi", $('.cab[data-game="follow-suit"]')).textContent = "BEST CHAIN " + Math.round(best).toLocaleString();
 } catch (e) { /* a save that cannot be read leaves the plain line */ }
-// River Rush shares its browser-local winning score with its cabinet.
+// River Rush shares its browser-local best score with its cabinet.
 try {
-  const best = store.get("river-rush-best", null);
-  if (best && Number.isFinite(best.score) && best.score > 0) $(".hi", $('.cab[data-game="river-rush"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " PTS";
+  const best = store.get("river-rush-adventure-best", null);
+  if (best?.version === 3 && Number.isSafeInteger(best.score) && best.score > 0) $(".hi", $('.cab[data-game="river-rush"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " PTS";
 } catch (e) { /* a broken save leaves the plain line */ }
 drawTokens();
 cabs.forEach(showCredit);

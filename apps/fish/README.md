@@ -14,14 +14,15 @@ Never edit `www/` or the copies in the native projects by hand. Change `public/f
 | `scripts/check-www.mjs` | The bundle check. `scripts/check-www.test.mjs` tests it. |
 | `scripts/native-check.mjs` | Runs after each `cap sync`. It keeps the iOS package at 16.4. It fails when a store setting is missing, or when the versions differ (see the release steps). `scripts/native-check.test.mjs` tests the version rule. |
 | `scripts/render-art.mjs` | Paints the icon, the adaptive icon layers, the splash and the Play graphics. |
+| `scripts/art.mjs` | The parts of the store art as SVG: the painted water, the rings, the glints and the bobber. `render-art.mjs` and the promo video (`qa/fish/store-video.mjs`) draw with them. |
 | `scripts/adaptive-icons.mjs` | Writes the Android adaptive icon layers at full size after `@capacitor/assets`. |
 | `resources/` | The icon and splash sources (`icon-only.png` is the 1024 px icon). |
 | `web/webview-update.html` | The page the app shows when the game page does not load, or when the Android web view is too old (before version 105). |
 | `android/`, `ios/` | The native projects, made by `npx cap add` and then set up for the stores. |
-| `store/` | The store listing, the privacy and age answers, the screenshot list, the review notes and the accessibility labels. |
+| `store/` | The store listing, the privacy and age answers, the screenshot list, the notes on the two store videos, the review notes and the accessibility labels. |
 | `www/` | Made by the build. Not in git. |
 
-The privacy policy is `public/fish/privacy.html`. The web serves it at `/fish/privacy.html`, and the app shows the same file offline.
+The privacy policy is `public/fish/privacy.html`. The web serves it at `https://arcade.uptick.systems/fish/privacy.html`, the URL to give both stores, and the app shows the same file offline. The support email is `support@uptick.systems`: the policy gives it, and it goes in both store forms.
 
 ## What you need
 
@@ -29,7 +30,7 @@ The privacy policy is `public/fish/privacy.html`. The web serves it at `/fish/pr
 | --- | --- |
 | Everything | Node 22 or later and npm. Run `npm ci` in this folder. |
 | Android | JDK 21, and the Android SDK with platform 36 (`platforms;android-36`), `platform-tools` and build tools 35.0.0. Gradle installs build tools 35.0.0 on the first build if the licences are accepted. Set `ANDROID_HOME`, or write `sdk.dir=/path/to/android-sdk` in `android/local.properties` (not in git). Gradle 8.14.3 comes with the wrapper. |
-| iOS | A Mac with Xcode 26 and the iOS 26 SDK (App Store uploads need them since April 2026). Swift Package Manager fetches Capacitor, so CocoaPods is not needed. |
+| iOS | A Mac with Xcode 26 and the iOS 26 SDK (App Store uploads need them since April 2026), or the iOS workflow in GitHub Actions. Swift Package Manager fetches Capacitor, so CocoaPods is not needed. |
 | Art and browser checks | Playwright with Chromium: `npm ci --prefix ../../qa/browser`, then `npx playwright install chromium` in `qa/browser`. Run the scripts with `NODE_PATH=../../qa/browser/node_modules`. |
 | Uploads | An Apple Developer Program membership and a Google Play developer account. |
 
@@ -56,7 +57,7 @@ The check reads every HTML, CSS, JavaScript, SVG and JSON file in `www/`, also t
 
 It warns about "ghibli", and about arcade text in a script: the check cannot tell if the code shows that string. With `--strict` (or `WWW_STRICT=1`) both are errors. When the code shows the string on the web only (it checks the store flag first), put `// web only` on the same line. It prints the size of the bundle.
 
-It also warns about a placeholder that the owner must fill in: an element with `data-placeholder`, such as the support email in `privacy.html`. Use `--release` (or `WWW_RELEASE=1`) for every build that you upload to a store. The release mode is strict, and it fails on a placeholder and when `privacy.html` is missing. `npm run android:bundle` and `npm run ios:release` use it.
+It also warns about a placeholder that the owner must fill in: an element with `data-placeholder` in a page. Use `--release` (or `WWW_RELEASE=1`) for every build that you upload to a store. The release mode is strict, and it fails on a placeholder and when `privacy.html` is missing. `npm run android:bundle` and `npm run ios:release` use it.
 
 The check reads the files. It cannot see a web address that the code builds at run time from parts, or a root path that the code keeps in a variable. The browser check below blocks and counts every request that leaves the app's origin, and it fails on arcade text that the page shows.
 
@@ -113,7 +114,7 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
      --androidreleasetype AAB --signing-type jarsigner
    ```
 
-   The release build stops while `privacy.html` holds the support email placeholder (see "Owner decisions still open"). The signed bundle is `android/app/build/outputs/bundle/release/app-release-signed.aab`. Android Studio can do the same: Build > Generate Signed App Bundle.
+   The release build stops if a page still holds a placeholder. The signed bundle is `android/app/build/outputs/bundle/release/app-release-signed.aab`. Android Studio can do the same: Build > Generate Signed App Bundle.
 4. Upload it in the Play Console: Test and release > a testing track first (see the closed test below), then Production.
 
 `.gitignore` keeps `*.jks`, `*.keystore`, `keystore.properties` and `local.properties` out of git. Never commit a key.
@@ -121,6 +122,8 @@ Google Play signs the app for the store (Play App Signing). You sign each upload
 ### Build in GitHub Actions
 
 `.github/workflows/fish-android.yml` runs on each pull request and each push to `main` that changes `public/fish/` or `apps/fish/`. It runs the check tests, builds `www/`, runs the browser check of the bundle, and builds the debug APK. The APK is in the run's artifacts as `reelitin-debug-apk` for 7 days.
+
+`.github/workflows/fish-ios.yml` runs on the same changes on a Mac (`macos-26`, the newest Xcode 26). It builds `www/`, runs `cap sync ios` (and so the version check), and builds the iPhone app for a device with no code signing. A change that breaks only the iOS build fails here. It makes no file to upload: the signed build and the upload stay on a Mac with Xcode (see the iOS release steps).
 
 To build a signed bundle in Actions, do steps 1 and 2 above once. Then add these repository secrets (Settings > Secrets and variables > Actions):
 
@@ -130,7 +133,7 @@ To build a signed bundle in Actions, do steps 1 and 2 above once. Then add these
 | `REELITIN_STORE_PASS` | The keystore password |
 | `REELITIN_KEY_PASS` | The password of the `upload` key |
 
-Open Actions > Reel It In Android app > Run workflow, turn on **Signed bundle**, and run it. The signed AAB is in the run's artifacts as `reelitin-release-aab` for 7 days. The run summary shows the commit, `versionCode` and `versionName`. Upload the AAB as in step 4.
+Open Actions > Reel It In Android app > Run workflow, turn on **Signed bundle**, and run it. The run builds the bundle with `--release`, as in step 3, so it stops if a page still holds a placeholder. The signed AAB is in the run's artifacts as `reelitin-release-aab` for 7 days. The run summary shows the commit, `versionCode` and `versionName`. Upload the AAB as in step 4.
 
 ## iOS (on a Mac)
 
@@ -143,7 +146,7 @@ In Xcode, on the App target:
 
 1. Signing & Capabilities: pick your team. Keep "Automatically manage signing" on.
 2. General: set Version (`MARKETING_VERSION`, for example 1.0.0) and Build (`CURRENT_PROJECT_VERSION`, up by 1 for every upload). Version must be the same as `VERSION` in `public/fish/js/version.js` (Settings > About shows it), `version` in `package.json` and `versionName` on Android. If you change it, change `version.js` too, then run `npm run ios:open` again so the bundle has the new version. `npm run check:native` fails when the versions differ.
-3. Before an archive for upload, run `npm run ios:release`. It builds the bundle with `--release`, so it stops while `privacy.html` holds the support email placeholder. Then it syncs the iOS project and opens Xcode.
+3. Before an archive for upload, run `npm run ios:release`. It builds the bundle with `--release`, so it stops if a page still holds a placeholder. Then it syncs the iOS project and opens Xcode.
 4. Choose "Any iOS Device (arm64)", then Product > Archive.
 5. In the Organizer, pick the archive, then Distribute App > App Store Connect > Upload. Before the first upload, use Generate Privacy Report on the archive and check that it lists only the UserDefaults reason (see `store/data-safety.md`).
 6. In App Store Connect, add the build to TestFlight, test it on an iPhone, then submit it for review with the text in `store/`.
@@ -158,7 +161,27 @@ xcodebuild -exportArchive -archivePath build/ReelItIn.xcarchive -exportPath buil
 
 (`ExportOptions.plist` with `method` = `app-store-connect` and your team ID. It is not in git.)
 
-What the iOS project already sets: iPhone only (`TARGETED_DEVICE_FAMILY = 1`) from iOS 16.4 (the first version with import maps), in the project and in the Swift package; portrait only; the status bar hidden; `UIRequiresFullScreen`; `ITSAppUsesNonExemptEncryption = NO`; no `NSMotionUsageDescription`; `PrivacyInfo.xcprivacy` in the App target; no Mac or Vision Pro builds; and `MainViewController`, which hides the status bar and defers the system gesture at the bottom edge so a crank stroke does not leave the app. The home indicator stays on (dimmed by the deferral). It does not auto-hide, because developers report that iOS ignores the deferred edge when the home indicator auto-hides. For this reason SystemBars has `"hidden": false`.
+What the iOS project already sets: iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`) from iOS 16.4 (the first version with import maps), in the project and in the Swift package; Macs with Apple silicon as "Designed for iPad" (`SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES`); portrait only on all of them; the status bar hidden; `UIRequiresFullScreen` (App Store Connect refuses an iPad app with fewer than four orientations without it); `ITSAppUsesNonExemptEncryption = NO`; no `NSMotionUsageDescription`; `PrivacyInfo.xcprivacy` in the App target; no Vision Pro build; and `MainViewController`, which hides the status bar, defers the system gesture at the bottom edge so a crank stroke does not leave the app, and on a Mac sets `window.__reelItInMac` before the page loads. With that flag the game plays as on a computer: the mouse and the keys, no motion play, and "This Mac cannot buzz." in Settings. (The Mac web view can report touch points, so the game cannot tell a Mac from an iPad without it.) The home indicator stays on (dimmed by the deferral). It does not auto-hide, because developers report that iOS ignores the deferred edge when the home indicator auto-hides. For this reason SystemBars has `"hidden": false`.
+
+### Build in GitHub Actions (no Mac needed)
+
+`.github/workflows/fish-ios.yml` runs on a GitHub macOS runner with Xcode 26. On each pull request and each push to `main` that changes `public/fish/` or `apps/fish/`, it builds `www/`, syncs the iOS project, builds the app for the iOS Simulator, opens it on a simulated iPhone and a simulated iPad, and fails if the app stops in the first 20 s on either. Then it builds the unsigned device app, the one that iPhones, iPads and Macs with Apple silicon run, and checks that it lists both iPhone and iPad. (An unsigned app cannot open on the Mac runner, so the Mac check is on a real Mac, in the device checklist.) The run's artifacts hold `reelitin-ios-simulator` for 7 days: the screenshots (`iphone-title.png`, `ipad-title.png`) and the simulator app (`ReelItIn-simulator.app.zip`). On a private repository, macOS runner minutes cost 10 times the Linux minutes.
+
+To put the app on your iPhone through TestFlight, do these steps once:
+
+1. Join the Apple Developer Program. Your Team ID is on developer.apple.com > Account > Membership details.
+2. In App Store Connect > Apps, add a new app: iOS, the name "Reel It In: Lake Fishing", the bundle ID `systems.uptick.reelitin` (if the list does not show it, add it on developer.apple.com > Identifiers first), and any SKU, for example `reelitin`.
+3. In App Store Connect > Users and Access > Integrations > App Store Connect API, make a team key with the **Admin** role. The workflow uses it to make the distribution certificate and the profile. Download the `.p8` file. You can download it only once.
+4. Add these repository secrets (Settings > Secrets and variables > Actions):
+
+   | Secret | Value |
+   | --- | --- |
+   | `REELITIN_ASC_KEY_ID` | The Key ID of the API key |
+   | `REELITIN_ASC_ISSUER_ID` | The Issuer ID on the same page |
+   | `REELITIN_ASC_KEY_P8_BASE64` | The `.p8` file as base64: `base64 -i AuthKey_XXXX.p8` (on Linux: `base64 -w0 AuthKey_XXXX.p8`) |
+   | `REELITIN_APPLE_TEAM_ID` | The Team ID from step 1 |
+
+Then, for each upload: open Actions > Reel It In iOS app > Run workflow, turn on **TestFlight**, and run it. The run builds the bundle with `--release`, so it stops if a page still holds a placeholder. It signs the archive and uploads it to App Store Connect. The run summary shows the version and the build number. The build number must go up for each upload of the same version: type a new number in **Build number**, or raise `CURRENT_PROJECT_VERSION` in the Xcode project. After Apple processes the build (often 10 to 30 minutes), it shows in App Store Connect > TestFlight. Add yourself as an internal tester, and install the TestFlight app on the iPhone, the iPad or the Mac to get it. On a Mac, the app is in the store only when App Store Connect > the app > Pricing and Availability > iPhone and iPad Apps on Apple Silicon Macs is on.
 
 ## Icons and splash
 
@@ -171,11 +194,11 @@ npm run assets                                         # every size for iOS and 
 
 ## Change the app ID
 
-`com.cottagearcade.reelitin` is a placeholder. Neither store lets you change the ID after the first upload, so set the real one first, in all of these places:
+The app ID is `systems.uptick.reelitin`, from the owner's domain `uptick.systems`. Neither store lets you change the ID after the first upload. A change before then goes in all of these places:
 
 - `capacitor.config.json`: `appId`
 - `android/app/build.gradle`: `namespace` and `applicationId`
-- `android/app/src/main/java/com/cottagearcade/reelitin/MainActivity.java`: the `package` line, and move the file to the folders of the new ID
+- `android/app/src/main/java/systems/uptick/reelitin/MainActivity.java`: the `package` line, and move the file to the folders of the new ID
 - `android/app/src/main/res/values/strings.xml`: `package_name` and `custom_url_scheme`
 - `ios/App/App.xcodeproj/project.pbxproj`: `PRODUCT_BUNDLE_IDENTIFIER` (or Xcode > App target > General > Bundle Identifier)
 
@@ -195,10 +218,7 @@ Then run `npx cap sync` and build both apps again.
 
 | Decision | Default in this folder | What to do |
 | --- | --- | --- |
-| Bundle ID and application ID | `com.cottagearcade.reelitin` (placeholder) | Pick a reverse domain you control, and change it before the first upload (see above). |
 | Store name | "Reel It In: Lake Fishing"; "Reel It In" under the icon | Check that the name is free in App Store Connect and the Play Console, and search the USPTO for "Reel It In" in classes 9 and 41. |
-| Support email | A marked placeholder in `public/fish/privacy.html` (`data-placeholder="support-email"`) | Put a real address in the page (text and a `mailto:` link) and in both store forms. Remove the placeholder element. The release build (`--release`) fails until you do. |
-| Privacy policy URL | `https://<the site>/fish/privacy.html` | Choose the host (the arcade site or your own domain). Both stores need a public URL. |
 | Google Play account type | Not known | A personal account made after 13 November 2023 must run a closed test with at least 12 testers for 14 days in a row before it can publish to production. Start the closed test as soon as there is a signed build. An organisation account does not need this. |
 | Content rating and audience | 4+, Everyone, PEGI 3; audience 13 and over | Fill in the questionnaires with `store/age-rating.md`. Decide if the Play audience includes children under 13. |
 | Accessibility labels | Only the labels that pass their checks | See `store/accessibility.md`. |
@@ -212,13 +232,15 @@ None of these can run on this Linux machine. Do them on a real iPhone (TestFligh
 - [ ] **Motion timing.** 20 casts with the debug overlay on, on each phone (a debug build, then `location.replace("./?debug")` in the web inspector, see "Debug APK"). Read the cast numbers in the overlay. The release timing feels right, and the mean timing error is within about 15 ms of the web build on the same phone.
 - [ ] **Haptics feel.** iPhone: taps for nibbles, a strong hit on the strike and the hook set, a buzz for the drag and a pattern for the catch. Android: the same patterns through vibration. Turn "Buzz and taps" off: nothing buzzes.
 - [ ] **Back button on every screen (Android).** Help, Settings, the Journal and the Places close. In a cast, a reel or a fight the game pauses, and a second back resumes. On the catch card and the results the main button runs. On the title the app goes to the background. While a place loads nothing happens.
+- [ ] **Touch cast from anywhere.** In touch play, cast from the top, the middle and 1 cm above the bottom edge, on the rod, the reel and the open lake. Each press drags down past LOAD and casts. No press near the bottom edge starts an Android back or an iOS home gesture.
 - [ ] **Edge gestures while cranking.** 50 fast crank turns near the bottom corners, in touch play and in motion play with each reel side. No Android back, no Android home, no iOS home (a first swipe up only lights the home indicator). If a single swipe leaves the app on iPhone, the bottom-edge deferral does not work: check that the home indicator does not auto-hide (`SystemBars` `"hidden"` is `false`, and the game calls no `SystemBars.hide()` on iOS).
 - [ ] **Audio interruption by a call.** Take a call in a fight. The game pauses. After the call, the sound comes back after Resume.
 - [ ] **Audio interruption by Control Center (iOS) and the notification shade (Android).** Pull it down in a fight. The game pauses, and nothing snaps the line while it is open.
 - [ ] **Keep awake.** Wait 5 minutes for a bite with no touch. The screen stays on. On the title and the pause screen the screen can sleep again.
 - [ ] **Safe areas on a notch or punch-hole phone.** The pause button, the clock and the HUD clear the camera cutout. The crank and the bottom buttons clear the home indicator and the gesture bar. Check an iPhone with a Dynamic Island and an Android phone with a punch-hole camera, and an older Android phone with a web view before version 140.
 - [ ] **Portrait lock.** Turn the phone and a tablet or an unfolded foldable. The game stays in portrait.
-- [ ] **iPad.** The app is for iPhone, but an iPad runs it in iPhone compatibility mode, and App Review can test it there. Install it from TestFlight on an iPad, play one cast and one fight, and open Settings.
+- [ ] **iPad.** Install it from TestFlight on an iPad. The game fills the screen in portrait. Play one cast and one fight with touch and one with motion, and open Settings. Turn the iPad: the game stays in portrait.
+- [ ] **Mac.** Install it from TestFlight on a Mac with Apple silicon (the TestFlight app for Mac shows iPhone and iPad builds). The title shows Go fishing with a focus ring. Cast with the mouse button and with Space, reel with the crank, the mouse wheel and R. Settings shows "This Mac cannot buzz." and the Controls list cannot pick Motion.
 - [ ] **Large system font (Android).** Set the largest font size in the phone's display settings. The menus, the HUD and the cards show all their text, and nothing covers a button. (The web view follows the font size up to 130%.)
 - [ ] **Save.** Land a fish, close the app from the app switcher, open it again: the fish is in the journal. On Android, clear the app's web storage only (not the app data) if you can: the save comes back from Preferences.
 - [ ] **Secure context.** In the debug overlay or the web inspector, `window.isSecureContext` is true and the motion sensors report data.
@@ -226,4 +248,4 @@ None of these can run on this Linux machine. Do them on a real iPhone (TestFligh
 
 ## What this folder was checked with
 
-On Linux (no Mac, no KVM): `npm run build:www`, `npm run check:www`, `npm run test:check`, `npm run check:native`, `npx cap sync`, `./gradlew assembleDebug`, `aapt2` on the APK, and `qa/fish/app-bundle.e2e.mjs`. The Android emulator could not run (no KVM). The iOS project was set up by hand and was not built: that needs a Mac with Xcode 26.
+On Linux (no Mac, no KVM): `npm run build:www`, `npm run check:www`, `npm run test:check`, `npm run check:native`, `npx cap sync`, `./gradlew assembleDebug`, `aapt2` on the APK, and `qa/fish/app-bundle.e2e.mjs`. The Android emulator could not run (no KVM). The iOS project was set up by hand. The iOS workflow in GitHub Actions builds it on a Mac runner (see "Build in GitHub Actions (no Mac needed)").

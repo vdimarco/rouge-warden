@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { createMatch, player, cast, castTarget } from '../../public/tidebreak/sim.js';
 import { Renderer } from '../../public/tidebreak/illustrated-render.js';
 import { cursorSkillAim, dragSkillAim, skillAimPreview, skillAimRange, AIM_DRAG_RANGE } from '../../public/tidebreak/skill-aim.js';
+import { near } from './open-ground.mjs';
 
 const close=(a,b,message)=>assert(Math.abs(a-b)<1e-7,`${message}: ${a} vs ${b}`);
-function setup(hero){const s=createMatch(hero,49),p=player(s);s.units=[p];Object.assign(p,{x:2400,y:3100,level:18,skillRanks:[4,4,4,3],mana:3000,maxMana:3000});return {s,p};}
+function setup(hero){const s=createMatch(hero,49),p=player(s);s.units=[p];Object.assign(p,{...near(2400,3100),level:18,skillRanks:[4,4,4,3],mana:3000,maxMana:3000});return {s,p};}
 const screenDirection=(x,y)=>Renderer.prototype.screenDirection(x,y);
 
 for(const [width,height] of [[1440,900],[390,844],[844,390]]){
@@ -36,9 +37,9 @@ for(const hero of [0,8]){
   const empty=skillAimPreview(s,p,2,cursorSkillAim(p,2,{x:p.x-350,y:p.y}));assert.equal(empty.shape.valid,false,'manual empty spot does not preview a different auto target');
 }
 
-for(let hero=0;hero<12;hero++)for(let slot=0;slot<4;slot++){
+for(let hero=0;hero<16;hero++)for(let slot=0;slot<4;slot++){
   const {s,p}=setup(hero),aim=dragSkillAim(p,slot,{x:48,y:-32},screenDirection),preview=skillAimPreview(s,p,slot,aim);
   assert(preview&&Number.isFinite(preview.shape.x)&&Number.isFinite(preview.shape.y)&&Number.isFinite(preview.shape.radius),`hero ${hero} slot ${slot} has a finite preview`);
 }
 assert.equal(cursorSkillAim(setup(2).p,2,null),null);assert.equal(dragSkillAim(setup(2).p,2,null,screenDirection),null);
-console.log('PASS: cursor world aim in desktop, portrait and landscape; thumb placement range; exact ground and leap previews; manual target previews; all 48 finite spell previews.');
+console.log('PASS: cursor world aim in desktop, portrait and landscape; thumb placement range; exact ground and leap previews; manual target previews; all 64 finite spell previews.');

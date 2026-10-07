@@ -1155,8 +1155,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       if (done.size === 1) later(3, () => say("clog", 3));
     }
     setBank();
-    // the first flush ends the spoken tutorial; the checklist only ticks its row (the other rows stay open)
-    if (train.on) trainTick("plunge");
+    // the first flush ends the training, as it ends the spoken tutorial: rows still open stay unticked
+    if (train.on) { trainTick("plunge"); if (train.on) trainFinish(false); }
     else if (!save.tutorial || tut.step >= 0) tutFinish(false);
     kingOnFlush();
     saveNow();
@@ -1822,10 +1822,14 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   // the mission card: what to do now, and where
   const OBJ = { title: "", detail: "", short: "", n: 0, of: 0 }; // short: the phone's label
   let objT = 0;
+  let jobCard = null; // the job's mission card (jobs.js), over the clogs' one
   function objectiveUpdate(dt) {
     if ((objT -= dt) > 0) return;
     objT = 0.5;
-    if (progress.trial) { progress.objective = null; return; }
+    if (progress.trial) { progress.objective = null; progress.goal = null; return; }
+    // a job or the story mission (jobs.js) has the card, and the compass points at its goal
+    if (jobCard) { progress.objective = jobCard; progress.goal = jobCard.goal || null; return; }
+    progress.goal = null;
     if (progress.king === "beaten" || K.state === "gone") { OBJ.title = "ALL CLEAR"; OBJ.detail = "Free roam: trials and Loonies"; OBJ.short = ""; OBJ.n = OBJ.of = 0; }
     else if (K.state === "awake") {
       OBJ.title = "FLUSH THE KING"; OBJ.detail = "Rope his pipes and pump them off";
@@ -2052,6 +2056,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     targets, travelSpots,
     cancelTrial,
     skipTutorial() { tutFinish(true); },
+    // jobs.js: Loonies for a job done, and the mission card while a job runs ({ title, detail, short, n, of, goal } or null)
+    reward(n) { addBonus(n); setBank(); },
+    setJob(card) { if (!!card !== !!jobCard) objT = 0; jobCard = card || null; },
     onStory(fn) { storyFn = fn; },
     // the line of the row or step you are on, again (after a scene covered it)
     resay() { if (train.on && progress.training && progress.training.now >= 0) trainSay(train.items[progress.training.now]); else if (tut.step >= 0) say("tutorial", tut.step); },

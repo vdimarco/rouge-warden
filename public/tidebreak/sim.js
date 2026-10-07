@@ -1,7 +1,7 @@
 // Deterministic Monster Mash rules. Rendering and input are separate.
 import { BUILDS, hasItem, purchase, sellItem, recalculate, nextPurchase } from './items.js';
-import { SIZE, LIMIT, SHIFT, BASES, LANES, PATHS, TOWER_POSITIONS, CENTER, closestTrack, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, visibleTo, lineOfSight, inWater, concealed } from './world.js';
-export { SIZE, LIMIT, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
+import { SIZE, LIMIT, SUDDEN_DEATH, SHIFT, BASES, TOWER_POSITIONS, TOWER_ARC, GUARDIAN_POSITIONS, HUNT, closestTrack, laneFrom, laneMid, pointAtArc, PORTALS, CAMPS, distance, clamp, move, resolveBody, shiftWorld, canSee, visibleTo, lineOfSight, inWater, concealed } from './world.js';
+export { SIZE, LIMIT, SUDDEN_DEATH, SHIFT, BASES, LANES, PORTALS, distance } from './world.js';
 import { ATTACK_TIMINGS, attackTiming } from './basic-attacks.js';
 import { chooseCreature, creatureHash, provokeNeutral, neutralIntent } from '../arcade/creatures/catalog.js';
 import { KITS, MAX_LEVEL, xpForLevel, trainSkill, trainBot, cooldownFor } from './abilities.js';
@@ -11,39 +11,81 @@ import { NEW_HEROES } from './legends.js';
 import { heroClass } from './hero-classes.js';
 import { tickSkillEvents } from './skill-events.js';
 import { castLegend, tickLegendZone, tickHeroMechanic } from './legend-rules.js';
-import { manaCost, manaCapacity, canAfford, canReturn, spellShape } from './combat-rules.js';
+import { tideGuard, tickTideUnits, taunter, onBanish } from './tide-kits.js';
+import { manaCost, manaCapacity, canAfford, canReturn, spellShape, insideWarning } from './combat-rules.js';
 import { combatDecision } from './combat-ai.js';
-import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing } from './team-events.js';
-import { followOrder } from './navigation.js';
-import { structureProtected, LANE_NAMES } from './objectives.js';
+import { castLock, guardMove, botProfile, recallStep } from './bot-difficulty.js';
+import { noteSkirmish, noteStructureHit, recordKill, callRally, pushPing, noteMissing } from './team-events.js';
+import { followOrder, warmRoutes } from './navigation.js';
+import { structureProtected, laneOpen, LANE_NAMES, TIER_NAMES, INNER } from './objectives.js';
 import { campSprite } from './marketplace-sprites.js';
 import { rooted, spellBlocked, castTiming, emitCombatFeedback } from './combat-state.js';
 import { tickEncounter } from './encounters.js';
+import { recordHit, noteControl, withContext, openCommit, closeCommit, judgeCommit, noteCommitHit, expose, heroOpening, EXPOSED_BONUS, INTERRUPT_EXPOSE, towerLock, pushImpact, bufferCast, lockRemaining, isEngage, engageShape, engageLength, ENGAGES, manaRegen, DODGE_SLACK } from './combat-tells.js';
+import { buildRecap } from './death-recap.js';
+import { BASIC_ATTACKS } from './basic-attacks.js';
+// Ranged basic attacks reach 1.5 times their listed range. At the old reach a hero model (340-475 units tall)
+// stood almost on top of its target, so a ranged attack looked like a melee hit.
+export const RANGED_REACH = 1.5;
+// A hero must still step inside a ward's (or the core's) own reach to hit it, so wards keep out-ranging heroes.
+export const reach = (e, t) => e.kind === 'hero' && (t.kind === 'tower' || t.kind === 'core') ? Math.max(120, Math.min(e.range, t.range - t.radius - 30)) : e.range;
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
   { name: 'Baba Yaga', slug: 'baba', role: 'Walking fortress', note: 'Your hut has legs. Your traps have teeth.', hp: 1820, speed: 285, range: 360, damage: 94, rate: .8, color: '#edc47c', sprite: 2 },
   { name: 'Jersey Devil', slug: 'devil', role: 'Relentless chaser', note: 'Leap into a brawl. Feed on the fear.', hp: 1690, speed: 365, range: 140, damage: 143, rate: .68, color: '#f6a086', sprite: 3 },
  ...NEW_HEROES,
-].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, attribute:heroClass(i), attackType:h.range>250?'Ranged':'Melee', height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
+].map((h,i) => ({ category:['Assassin','Tank','Mage','Fighter'][i]||h.category, attribute:heroClass(i), attackType:h.range>250?'Ranged':'Melee', height:[365,475,360,390][i]||h.height, build:i<4?i:h.build, ...h, range: h.range > 250 ? Math.round(h.range * RANGED_REACH) : h.range, skills: KITS[i].map(a=>a.name), labels: KITS[i].map(a=>a.label), descriptions: KITS[i].map(a=>a.description) }));
+// Structures by tier: 0 outer, 1 middle, 2 inner, 3 base guardian. Rewards go to the whole team.
+export const TIERS = [
+  { name: 'Outer ward', hp: 3600, range: 360, damage: 210, rate: 1.05, xp: 120, gold: 110 },
+  { name: 'Middle ward', hp: 5200, range: 385, damage: 225, rate: 1.05, xp: 150, gold: 130 },
+  { name: 'Inner ward', hp: 6000, range: 410, damage: 240, rate: 1.05, xp: 180, gold: 160 },
+  { name: 'Guardian', hp: 5000, range: 420, damage: 240, rate: 1.2, xp: 200, gold: 180 },
+];
+// The core's armor and its regeneration (while no enemy wisp is at it) make the final siege take more than one push.
+export const CORE = { hp: 24000, range: 420, damage: 260, rate: 1.1, armor: 80, regen: .015 };
+// The guardian slam: a ground circle shows for `tell` seconds, then the guardian is exposed for `recovery` seconds.
+export const SLAM = { radius: 230, tell: .8, recovery: 1.4, cooldown: 6, damage: 380 };
+// Match rhythm for the 9600 map. Times are in seconds.
+export const PACE = { startGold: 360, killGold: 70, campGold: 80, firstWave: 24, fortifyUntil: 210, fortify: .5, growthFrom: 300, growth: .06, waveEvery: 20, minionSpeed: 280, bossFirst: 120, bossEvery: 150, campRespawn: 50, passiveGold: 1.3, portalCooldown: 15, backdoor: .25, respawnBase: 6, respawnPerLevel: 1.2, respawnMax: 28, suddenRespawn: 1.5, suddenStructures: 1.5 };
+// Lane wisps: two melee, one caster that hits from range, and a siege wisp on every third wave.
+// An elder wisp joins a team's waves on a lane where the enemy inner ward is down, and every wave in sudden death.
+export const MINIONS = {
+  melee: { hp: 390, damage: 45, range: 95, rate: 1, radius: 16 },
+  caster: { hp: 300, damage: 55, range: 320, rate: 1.2, radius: 16 },
+  siege: { hp: 780, damage: 88, range: 270, rate: 1, radius: 18 },
+  elder: { hp: 1500, damage: 110, range: 110, rate: 1.1, radius: 24 },
+};
+// Outer wards take less damage early, so the first towers fall after a real laning phase.
+export const fortified = (s, e) => e.kind === 'tower' && e.tier === 0 && s.time < PACE.fortifyUntil;
+export const respawnTime = (level, sudden = false) => Math.round(Math.min(PACE.respawnMax, PACE.respawnBase + PACE.respawnPerLevel * level) * (sudden ? PACE.suddenRespawn : 1) * 10) / 10;
+// Every hero moves by the same rules: out-of-combat sprint, slows, haste effects and Nessie in water.
+export function heroSpeed(s, e) {
+  const sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
+  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.windUntil > s.time ? 1.25 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
+}
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
   const e = { id: s.nextId++, hp: 100, maxHp: 100, radius: 22, speed: 0, range: 100, damage: 10, rate: 1, attackCd: 0, hit: 0, shield: 0, stun: 0, slow: 0, fear: 0, lastHit: -100, revealedUntil: -1, facing: -Math.PI / 2, ...data };
   s.units.push(e); return e;
 }
 function hero(s, team, kind, lane, human = false) {
-  const h = HEROES[kind], front = TOWER_POSITIONS[team][lane][0], toward = team ? -1 : 1;
-  return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y + toward * 180, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: 360, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
+  // Each hero starts on its lane a short walk behind its outer ward.
+  const h = HEROES[kind], front = pointAtArc(laneFrom(team, lane), TOWER_ARC[lane][0] - 220);
+  return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: PACE.startGold, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 // A drafted lineup replaces the default picks: { allies:[kit,kit], enemies:[kit,kit,kit] }.
 export function createMatch(kind = 0, seed = 49, lineup = null) {
-  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], missiles: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [6, 6], wave: 0, nextWave: 1, objectiveAt: 26, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
+  const s = { time: 0, phase: 0, nextId: 1, units: [], effects: [], missiles: [], zones: [], traps: [], floaters: [], messages: [], random: rng(seed), seed, score: [0, 0], towers: [9, 9], guardians: [2, 2], suddenDeath: false, wave: 0, nextWave: PACE.firstWave, objectiveAt: PACE.bossFirst, objective: null, campTimers: CAMPS.map(() => 0), campRolls: CAMPS.map(() => 0), winner: null, reason: '', stats: { damage: 0, towers: 0, leviathans: 0, ambushes: 0, camps: 0, portals: 0 } };
   for (let team = 0; team < 2; team++) {
-    add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: 6200, maxHp: 6200, radius: 130, sprite: 7, range: 350, damage: 145, rate: 1.1 });
-    for (let lane = 0; lane < 3; lane++) for (let tier = 0; tier < 2; tier++) {
-      const hp = tier ? 3400 : 2700;
-      add(s, { kind: 'tower', name: `${tier ? 'Inner' : 'Outer'} ward · ${LANE_NAMES[lane]}`, team, lane, tier, ...TOWER_POSITIONS[team][lane][tier], hp, maxHp: hp, radius: 42, range: tier ? 390 : 360, damage: tier ? 195 : 180, rate: 1.05, sprite: 6 });
-    }
+    add(s, { kind: 'core', name: BASE_STYLES[team].name, team, ...BASES[team], hp: CORE.hp, maxHp: CORE.hp, radius: 130, sprite: 7, range: CORE.range, damage: CORE.damage, rate: CORE.rate, armor: CORE.armor });
+    for (let lane = 0; lane < 3; lane++) TOWER_POSITIONS[team][lane].forEach((spot, tier) => {
+      const t = TIERS[tier];
+      add(s, { kind: 'tower', name: `${t.name} · ${LANE_NAMES[lane]}`, team, lane, tier, ...spot, hp: t.hp, maxHp: t.hp, radius: 42, range: t.range, damage: t.damage, rate: t.rate, sprite: 6 });
+    });
+    // Two guardians defend the base. They keep kind 'tower' (tier 3) so every renderer draws them as structures.
+    GUARDIAN_POSITIONS[team].forEach((spot, side) => { const t = TIERS[3]; add(s, { kind: 'tower', guardian: true, name: `${t.name} · ${side ? 'East' : 'West'}`, team, lane: side ? 2 : 0, tier: 3, ...spot, hp: t.hp, maxHp: t.hp, radius: 48, range: t.range, damage: t.damage, rate: t.rate, sprite: 6 }); });
   }
   const p = hero(s, 0, kind, 1, true); s.playerId = p.id;
   hero(s, 0, lineup?.allies?.[0] ?? (kind + 1) % HEROES.length, 0); hero(s, 0, lineup?.allies?.[1] ?? (kind + 2) % HEROES.length, 2);
@@ -51,7 +93,7 @@ export function createMatch(kind = 0, seed = 49, lineup = null) {
   for (let lane = 0; lane < 3; lane++) { const roll = (Math.floor(s.random() * HEROES.length) + lane) % HEROES.length; hero(s, 1, lineup?.enemies?.[lane] ?? roll, lane); }
   for (const e of s.units) if (e.kind === 'hero' && !e.player) trainBot(e);
   announce(s, 'Choose your first spell', 'You have one skill point. Basic attacks are always ready.');
-  return s;
+  warmRoutes(); return s;
 }
 export const player = s => s.units.find(e => e.id === s.playerId);
 export function announce(s, title, detail = '') { s.messages.push({ title, detail, time: s.time }); if (s.messages.length > 5) s.messages.shift(); }
@@ -67,17 +109,43 @@ function reward(s, team, xp, gold, local=null) {
 }
 function finish(s, winner, reason) { s.winner = winner; s.reason = reason; announce(s, winner === 0 ? 'Legends never die' : 'Lost to the veil', reason); }
 export function heal(s, e, amount) { if (e.hp <= 0) return; e.hp = Math.min(e.maxHp, e.hp + amount * (e.woundedUntil > s.time ? .55 : 1)); }
+// Item damage edges: Duelist's glass, a rally, ward breakers and a Seer's mark.
+function itemEdge(s, source, credit, target, kind) {
+  let k = 1; const structure = t => t && ['tower', 'core'].includes(t.kind);
+  if (credit?.kind === 'hero') {
+    if (target.kind === 'hero' && hasItem(credit, 'glass') && credit.hp > credit.maxHp * .7) k *= 1.15;
+    if (credit.rallyUntil > s.time) k *= 1 + (credit.rallyBonus || .2);
+    if (kind === 'attack' && structure(target)) k *= hasItem(credit, 'titan') ? 1.7 : hasItem(credit, 'siege') ? 1.4 : 1;
+  }
+  if (target.kind === 'hero') {
+    if (hasItem(target, 'glass')) k *= 1.1;
+    if (structure(source)) k *= hasItem(target, 'titan') ? .5 : hasItem(target, 'siege') ? .7 : 1;
+    if (target.seerUntil > s.time && source.team !== target.team) k *= 1.1;
+  }
+  return k;
+}
 export function damage(s, source, target, amount, kind = 'spell') {
   if (!target || target.hp <= 0 || s.winner !== null) return;
   const credit=source.kind==='summon'?s.units.find(e=>e.id===source.owner):source;
-  if (structureProtected(s, target)) { if (source.player && s.time - (s.lockTip ?? -10) > 4) { announce(s, target.kind === 'core' ? 'Rift protected' : 'Inner ward protected', target.kind === 'core' ? 'Break both towers on one lane.' : 'Break this lane’s outer ward first.'); s.lockTip = s.time; } return; }
+  if (structureProtected(s, target)) { if (source.player && s.time - (s.lockTip ?? -10) > 4) { announce(s, ...lockTip(target)); s.lockTip = s.time; } return; }
   if (target.kind === 'hero' && target.respawn > 0) return;
   if (target.kind === 'camp') {
     if (target.leash) return;
     if (source.team >= 0) provokeNeutral(target, source, s.time);
   }
   if (kind === 'spell') amount += (source.power || 0) * .55;
-  if(['boss','camp'].includes(target.kind)&&target.exposedUntil>s.time){amount*=1.25;emitCombatFeedback(s,source,target,'exposed','OPENING HIT');}
+  if((['boss','camp'].includes(target.kind)||target.guardian)&&target.exposedUntil>s.time){amount*=1.25;emitCombatFeedback(s,source,target,'exposed','OPENING HIT');}
+  const opening=heroOpening(s,credit,target);if(opening){amount*=EXPOSED_BONUS;emitCombatFeedback(s,credit,target,'exposed','OPENING HIT');}
+  if (fortified(s, target)) amount *= PACE.fortify;
+  // Sudden death: structures take extra damage and need no wave. Otherwise backdoor protection applies:
+  // structures shrug off most hero damage unless the attacker's wave is at the structure.
+  if (s.suddenDeath && ['tower', 'core'].includes(target.kind)) amount *= PACE.suddenStructures;
+  else if (['tower', 'core'].includes(target.kind) && credit?.kind === 'hero' && !escorted(s, credit.team, target)) {
+    amount *= PACE.backdoor;
+    if (credit.player && s.time - (s.backdoorTip ?? -10) > 6) { announce(s, 'Ward resists you', 'Structures take little hero damage without your wisps. Push with your wave.'); s.backdoorTip = s.time; }
+  }
+  amount *= itemEdge(s, source, credit, target, kind);
+  amount = tideGuard(s, source, credit, target, amount, kind, damage); if (amount === null) return 0;
   const armor = target.armor || 0;
   amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
   if(target.scaleGuardUntil>s.time)amount*=.65;
@@ -90,12 +158,14 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if(absorbed>0&&target.shield<=0)emitCombatFeedback(s,source,target,'shield-break','SHIELD BROKEN');
   const actual = Math.min(target.hp, amount); target.hp = Math.max(0, target.hp - amount); target.hit = .16; target.hitAngle = Math.atan2(target.y - source.y, target.x - source.x); target.lastHit = s.time; target.revealedUntil = s.time + 2.6;
   if (credit?.player) s.stats.damage += actual;
+  recordHit(s, source, credit, target, actual, absorbed, kind); if (actual > 0 || absorbed > 0) noteCommitHit(s, credit, target);
+  if (opening && (credit.player || target.player)) pushImpact(s, credit, target, 1, 'opening');
   if(source.hp>0&&target.soulThread?.source===source.id&&target.soulThread.until>s.time)heal(s,source,actual*.25);
   if(target.hp>0&&target.guardUntil>s.time&&kind==='attack'&&source.hp>0&&source.id!==target.id)damage(s,target,source,(actual+absorbed/shieldMultiplier)*.2,'reflect');
   if (source.hp > 0 && source.frenzy > s.time) heal(s, source, actual * .3);
-  if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : '#fff4c9', life: .8 });
+  if (source.player || target.player || target.kind === 'tower') s.floaters.push({ x: target.x, y: target.y - 55, text: Math.round(amount), color: target.player ? '#ff9b82' : opening ? '#ffd27a' : kind === 'spell' ? '#e0d2ff' : '#fff4c9', life: .8, size: Math.round(Math.min(30, 14 + Math.sqrt(Math.max(0, amount)) * .55) * (opening ? 1.2 : 1)), emphasis: opening ? 'opening' : undefined });
   if (actual > 0 || absorbed > 0) { noteSkirmish(s, credit, target); noteStructureHit(s, credit || source, target); }
-  if (target.kind === 'hero' && source.kind === 'hero') for (const t of s.units) if (t.kind === 'tower' && t.team === target.team && t.hp > 0 && distance(t, source) < t.range) { t.aggro = source.id; t.aggroUntil = s.time + 3; }
+  if (target.kind === 'hero' && source.kind === 'hero') for (const t of s.units) if (['tower', 'core'].includes(t.kind) && t.team === target.team && t.hp > 0 && distance(t, source) < t.range) { t.aggro = source.id; t.aggroUntil = s.time + 3; }
   if (source.hp > 0 && kind === 'attack' && source.lifesteal) heal(s, source, actual * source.lifesteal);
   if (target.hp > 0 && target.kind === 'hero' && hasItem(target, 'root') && target.hp < target.maxHp * .35 && s.time >= (target.itemState.root || 0)) {
     target.shield += 300; target.itemState.root = s.time + 35; burst(s, target.x, target.y, '#b8eb91', 120);
@@ -103,6 +173,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   if (target.hp > 0 && kind === 'spell' && source.kind === 'hero' && !['tower', 'core'].includes(target.kind)) {
     if (hasItem(source, 'lantern')) target.burn = { source: source.id, until: s.time + 3, tick: target.burn?.source === source.id ? target.burn.tick : s.time + 1, amount: 28 + source.power * .05 };
     if (hasItem(source, 'frost')) target.slow = Math.max(target.slow, 1.2);
+    if (hasItem(source, 'seer') && target.kind === 'hero') { target.seerUntil = s.time + 5; target.revealedUntil = Math.max(target.revealedUntil, s.time + 5); }
     if (hasItem(source, 'winter')) {
       target.frostMarks ||= {}; const mark = target.frostMarks[source.id] ||= { count: 0, until: 0, ready: 0 };
       if (s.time >= mark.ready) { mark.count = (s.time <= mark.until ? mark.count : 0) + 1; mark.until = s.time + 5;
@@ -112,34 +183,61 @@ export function damage(s, source, target, amount, kind = 'spell') {
   }
   if (target.hp > 0) return actual;
   if(target.rebirthUntil>s.time){target.rebirthUntil=0;target.hp=target.maxHp*.35;target.shield=140;target.stun=target.fear=target.slow=0;target.snaredUntil=target.silencedUntil=target.disarmedUntil=0;target.bleed=target.burn=null;area(s,target,target,330,260*(target.rebirthStrength||1));burst(s,target.x,target.y,'#ffc16d',330,'ultimate');return actual;}
-  emitCombatFeedback(s,source,target,'kill',target.kind==='hero'?'BANISHED':'DEFEATED');
+  if(target.kind!=='minion')emitCombatFeedback(s,credit||source,target,'kill',target.kind==='hero'?target.exposedUntil>s.time?'FINISHER':'BANISHED':'DEFEATED');
+  if (target.kind === 'hero') { target.deathRecap = buildRecap(s, target, source); pushImpact(s, credit || source, target, 3, 'kill'); }
   burst(s, target.x, target.y, target.team === 0 ? '#abf8b2' : '#ff917c', target.kind === 'hero' ? 110 : 70);
   if (target.kind === 'hero') {
     if (source.kind === 'hero' && hasItem(source, 'hunter')) { source.cd[0] = 0; source.cd[3] = Math.max(0, source.cd[3] - 3); }
-    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.deaths++; target.respawn = 5 + target.level; target.recall = 0; target.ambushReady = false;
-    if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, 100); if (credit?.kind === 'hero') credit.kills++; }
+    // Drowned doubloon: the banisher gains a stack; the fallen loses half (the hoard keeps them).
+    if (credit?.kind === 'hero' && hasItem(credit, 'tidecoin')) { credit.itemState.coin = Math.min(hasItem(credit, 'hoard') ? 20 : 10, (credit.itemState.coin || 0) + 1); recalculate(credit, HEROES[credit.hero]); }
+    if (hasItem(target, 'tidecoin') && !hasItem(target, 'hoard') && target.itemState.coin) { target.itemState.coin = Math.floor(target.itemState.coin / 2); recalculate(target, HEROES[target.hero]); }
+    onBanish(s, target);
+    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
+    if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, PACE.killGold); if (credit?.kind === 'hero') credit.kills++; }
     recordKill(s, credit, target);
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
-    else if (credit?.player) announce(s, `${target.name} banished`, '+100 embers · Team experience');
+    else if (credit?.player) announce(s, `${target.name} banished`, `+${PACE.killGold} embers · Team experience`);
   } else if (target.kind === 'tower') {
-    s.towers[target.team]--; reward(s, source.team, 150, 180); if (source.team === 0) s.stats.towers++;
-    announce(s, target.team === 1 ? 'Enemy ward broken' : 'Our ward has fallen', target.tier === 0 ? `${LANE_NAMES[target.lane]} inner ward is now vulnerable.` : 'Both wards are down. The elder rift is vulnerable.');
+    const tier = TIERS[target.tier], ours = target.team === 0;
+    if (target.guardian) s.guardians[target.team]--; else s.towers[target.team]--;
+    reward(s, source.team, tier.xp, tier.gold); if (source.team === 0) s.stats.towers++;
+    if (target.guardian) announce(s, ours ? 'Our guardian has fallen' : 'Enemy guardian down', s.guardians[target.team] ? 'One guardian still protects the rift.' : ours ? 'Our elder rift is exposed. Defend it!' : 'The enemy elder rift is exposed.');
+    else announce(s, ours ? 'Our ward has fallen' : 'Enemy ward broken', wardFallText(s, target));
   } else if (target.kind === 'core') finish(s, 1 - target.team, 'The enemy elder rift was destroyed.');
   else if (target.kind === 'boss') {
-    reward(s, source.team, 190, 160); s.objectiveAt = s.time + 65; s.objective = null;
-    const lane = source.lane ?? 1, path = source.team ? [...LANES[lane]].reverse() : LANES[lane];
-    add(s, { kind: 'leviathan', name: 'Wild Hunt', team: source.team, ...path[2], lane, waypoint: 3, hp: 4400, maxHp: 4400, radius: 52, range: 190, damage: 350, rate: 1.2, speed: 180, sprite: 8, creatureId: target.creatureId });
+    reward(s, source.team, 190, 160); s.objectiveAt = s.time + PACE.bossEvery; s.objective = null;
+    const lane = source.lane ?? 1;
+    add(s, { kind: 'leviathan', name: 'Wild Hunt', team: source.team, ...laneMid(lane), lane, waypoint: 0, hp: 4400, maxHp: 4400, radius: 52, range: 190, damage: 350, rate: 1.2, speed: 180, sprite: 8, creatureId: target.creatureId });
     if (source.team === 0) s.stats.leviathans++;
     announce(s, source.team === 0 ? 'The Wild Hunt rides with us' : 'Enemy claimed the Wild Hunt', 'Escort the great beast to their wardstone.');
   } else if (target.kind === 'camp') {
-    reward(s, source.team, 90, 110); s.campTimers[target.camp] = s.time + 32;
+    reward(s, source.team, 90, PACE.campGold); s.campTimers[target.camp] = s.time + PACE.campRespawn;
     if (source.kind === 'hero' && source.hp > 0) { heal(s, source, 430); source.huntUntil = s.time + 18; }
-    if (source.player) { s.stats.camps++; announce(s, 'Spirit feast', '+110 embers · Healing · 18 seconds of haste'); }
+    if (source.player) { s.stats.camps++; announce(s, 'Spirit feast', `+${PACE.campGold} embers · Healing · 18 seconds of haste`); }
   } else if (target.kind!=='summon'&&source.team >= 0) {
     reward(s,source.team,target.kind==='leviathan'?120:18,target.kind==='leviathan'?100:0,target.kind==='minion'?target:null);
     if(target.kind==='minion'&&credit?.kind==='hero'){credit.gold+=target.siege?65:40;credit.lastHits++;if(credit.player)s.floaters.push({x:target.x,y:target.y-80,text:`+${target.siege?65:40} EMBERS`,color:'#f3d27a',life:1});}
   }
 }
+// The tip names the structure that must fall first.
+export function lockTip(t) {
+  if (t.kind === 'core') return ['Rift protected', 'Break both rift guardians first.'];
+  if (t.guardian) return ['Guardian protected', 'Break an inner ward first.'];
+  return [`${TIERS[t.tier].name} protected`, `Break this lane’s ${TIER_NAMES[t.tier - 1]} ward first.`];
+}
+// The ward-fall banner names a structure only when this fall opened it: the structure still stands,
+// it was protected while the ward stood, and it is open now. Otherwise the line stays neutral.
+// The fallen ward stands again for a moment, only to see what it protected.
+export function wardFallText(s, ward) {
+  const hp = ward.hp; ward.hp = 1;
+  const guarded = s.units.filter(e => e !== ward && e.team === ward.team && e.hp > 0 && structureProtected(s, e)); ward.hp = hp;
+  const opened = guarded.filter(e => !structureProtected(s, e)), next = opened.find(e => e.kind === 'tower' && !e.guardian);
+  if (next) return `${LANE_NAMES[next.lane]} ${TIER_NAMES[next.tier]} ward is now vulnerable.`;
+  if (opened.some(e => e.guardian)) return 'The rift guardians are now vulnerable.';
+  return `${LANE_NAMES[ward.lane]} ${TIER_NAMES[ward.tier]} ward destroyed.`;
+}
+// A wisp or the Wild Hunt of this team stands at the structure, so heroes may siege it.
+export const escorted = (s, team, t) => s.units.some(a => a.team === team && a.hp > 0 && (a.kind === 'minion' || a.kind === 'leviathan') && distance(a, t) < t.range + 150);
 function hostile(s, a, b) { return b.hp > 0 && a.id !== b.id && a.team !== b.team && !structureProtected(s, b) && (b.team !== -1 || a.kind === 'hero' || a.team === -1); }
 export function cancelOrder(e) { e.order=null;e.orderRoute=null;e.target=0; }
 export function commandOrder(s,e,command) {
@@ -153,19 +251,19 @@ export function commandOrder(s,e,command) {
   else return false;
   e.recall=0;return true;
 }
-function nearest(s, a, range, preferHero = false) {
+function nearest(s, a, range, preferHero = false, heroPenalty = 0) {
   let best = null, score = Infinity;
   for (const b of s.units) {
     if (!hostile(s, a, b) || !canSee(s, a, b) || (b.kind === 'camp' && (b.leash || !(b.aggroUntil > s.time)))) continue;
     const d = distance(a, b); if (d > range + b.radius) continue;
-    const n = d + (preferHero && b.kind !== 'hero' ? 100 : 0);
+    const n = d + (preferHero && b.kind !== 'hero' ? 100 : 0) + (b.kind === 'hero' ? heroPenalty : 0);
     if (n < score) { score = n; best = b; }
   }
   return best;
 }
 // Stable, sight-aware focus. Walking away never causes an automatic chase.
 export function autoTarget(s, e, manual = 0) {
-  const candidates = s.units.filter(t => hostile(s, e, t) && distance(e, t) <= e.range + t.radius && canSee(s, e, t) && lineOfSight(s, e, t));
+  const candidates = s.units.filter(t => hostile(s, e, t) && distance(e, t) <= reach(e, t) + t.radius && canSee(s, e, t) && lineOfSight(s, e, t));
   const chosen = candidates.find(t => t.id === manual); if (chosen) return chosen;
   const active = candidates.filter(t => t.kind !== 'camp' || (!t.leash && t.aggroUntil > s.time));
   const heroes = active.filter(t => t.kind === 'hero'), pool = heroes.length ? heroes : active;
@@ -173,30 +271,37 @@ export function autoTarget(s, e, manual = 0) {
   return pool.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || distance(e, a) - distance(e, b))[0] || null;
 }
 function attack(s, e, t) {
-  if (!t || e.castIntent || e.recoveryUntil>s.time || e.disarmedUntil>s.time || e.attackCd > 0 || distance(e, t) > e.range + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
+  if (!t || e.castIntent || e.recoveryUntil>s.time || e.disarmedUntil>s.time || e.attackCd > 0 || distance(e, t) > reach(e, t) + t.radius || !canSee(s, e, t) || !lineOfSight(s, e, t)) return;
   if (e.kind === 'hero') {
     if (e.comboTarget !== t.id || s.time > (e.comboUntil || 0)) e.comboNext = 0;
     e.attackVariant = e.comboNext || 0; e.comboTarget = t.id;
   }
   const timing = e.kind==='hero'?attackTiming(e,e.attackVariant||0,s.time):ATTACK_TIMINGS[e.attackVariant||0];
-  e.attackWindup = e.kind === 'hero' ? timing.windup : .12;
-  e.attackDuration = e.kind === 'hero' ? timing.duration : .46;
-  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1); e.attackAnim = e.attackDuration; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
+  // The third strike on a hero is slower and shows an arc, so stepping out of range dodges it.
+  const telegraph = e.kind === 'hero' && t.kind === 'hero' && (e.attackVariant || 0) === 2;
+  e.attackWindup = e.kind === 'hero' ? timing.windup + (telegraph ? .08 : 0) : .12;
+  e.attackDuration = e.kind === 'hero' ? Math.max(timing.duration, e.attackWindup + .14) : .46;
+  e.attackCd = e.rate * (e.frenzy > s.time ? .48 : 1) * (e.bloodUntil > s.time ? .7 : 1); e.attackAnim = e.attackDuration; e.attackStarted = s.time; e.facing = Math.atan2(t.y - e.y, t.x - e.x); e.attackFacing = e.facing;
   const ambush = e.ambushReady && t.kind === 'hero';
   if (ambush) { if (e.player) s.stats.ambushes++; s.floaters.push({ x: t.x, y: t.y - 90, text: 'AMBUSH!', color: '#e2fa78', life: 1.2 }); }
   e.ambushReady = false; e.revealedUntil = s.time + 2.6;
-  const multiplier = s.time > 240 ? 1 + (s.time - 240) / 110 : 1;
+  // Attacks grow stronger only in sudden death, and structures never ramp.
+  const multiplier = s.suddenDeath && !['tower', 'core'].includes(e.kind) ? 1 + (s.time - SUDDEN_DEATH) / 150 : 1;
   const towerPressure=e.kind==='tower'&&t.kind==='hero'?(e.towerTarget===t.id&&e.towerUntil>s.time?Math.min(4,e.towerHits||0):0):0;
-  e.pendingAttack = { target: t.id, at: s.time + e.attackWindup, variant: e.attackVariant || 0, amount: e.damage * multiplier * (ambush ? 1.75 : 1) * (e.kind === 'hero' ? timing.damage : 1)*(1+towerPressure*.22) };
+  if (e.kind === 'hero' && e.range > 250) s.effects.push({ type: 'bolt', hero: e.hero, source: e.id, target: t.id, variant: e.attackVariant || 0, x: e.x, y: e.y - 20, tx: t.x, ty: t.y - 20, life: e.attackWindup, maxLife: e.attackWindup });
+  e.pendingAttack = { target: t.id, at: s.time + e.attackWindup, variant: e.attackVariant || 0, amount: e.damage * multiplier * (ambush ? 1.75 : 1) * (e.kind === 'hero' ? timing.damage : 1)*(1+towerPressure*.22), telegraph, ambush };
 }
 function resolveAttack(s, e) {
   const pending = e.pendingAttack; if (!pending || s.time < pending.at) return;
   e.pendingAttack = null;
   const t = s.units.find(u => u.id === pending.target);
-  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > e.range + t.radius + 90 || !lineOfSight(s, e, t)) { e.comboNext = 0; e.comboUntil = 0; return; }
+  const slack = e.kind === 'hero' && t?.kind === 'hero' ? DODGE_SLACK : 90;
+  const stepped = t && t.hp > 0 && e.hp > 0 && e.stun <= 0 && !(e.disarmedUntil>s.time) && distance(e, t) > reach(e, t) + t.radius + slack;
+  if (!t || t.hp <= 0 || e.hp <= 0 || e.stun > 0 || e.disarmedUntil>s.time || distance(e, t) > reach(e, t) + t.radius + slack || !lineOfSight(s, e, t)) { if (pending.telegraph && stepped) emitCombatFeedback(s, t.player ? t : e, t, 'dodge', 'DODGED'); e.comboNext = 0; e.comboUntil = 0; return; }
   if (e.kind === 'hero') { e.comboNext = (pending.variant + 1) % 3; e.comboUntil = s.time + 2; e.lastBasicHit = s.time; e.lastBasicVariant = pending.variant; }
   if(e.kind==='tower'&&t.kind==='hero'){e.towerHits=e.towerTarget===t.id&&e.towerUntil>s.time?(e.towerHits||0)+1:1;e.towerTarget=t.id;e.towerUntil=s.time+2;}
-  damage(s, e, t, pending.amount, 'attack');
+  withContext(s, { source: e.id, label: e.kind === 'hero' ? BASIC_ATTACKS[e.hero]?.[pending.variant] || 'Basic attack' : e.kind === 'tower' || e.kind === 'core' ? 'Tower shot' : 'Basic attack', telegraphed: !!pending.telegraph || e.kind === 'tower', dodgeable: !!pending.telegraph }, () => damage(s, e, t, pending.amount, 'attack'));
+  if ((pending.ambush || pending.telegraph) && (e.player || t.player)) pushImpact(s, e, t, 1, pending.ambush ? 'ambush' : 'heavy');
   if (e.hero === 0 && t.omen?.source === e.id && t.omen.until > s.time) {
     const omen = t.omen; t.omen = null; if (t.hp > 0) damage(s,e,t,omen.amount);
     emitCombatFeedback(s,e,t,'combo','OMEN');
@@ -234,7 +339,8 @@ export function castTarget(s,e,slot,aim) {
   return s.units.find(t=>t.id===e.target&&hostile(s,e,t)&&canSee(s,e,t)&&distance(e,t)<540&&lineOfSight(s,e,t))||nearest(s,e,540,true);
 }
 export function requestCast(s,e,slot,aim,{bot=false}={}) {
-  if(e.kind!=='hero'||![0,1,2,3].includes(slot)||!e.skillRanks[slot]||spellBlocked(s,e,slot)||s.winner!==null||e.castIntent||e.recoveryUntil>s.time)return false;
+  if(e.kind!=='hero'||![0,1,2,3].includes(slot)||!e.skillRanks[slot]||spellBlocked(s,e,slot)||s.winner!==null)return false;
+  if(e.castIntent||e.recoveryUntil>s.time){if(!bot)bufferCast(s,e,slot,aim,e.cd[slot]<=0&&canAfford(e,slot)||slot===0&&canReturn(s,e));return false;}
   if(slot===0&&canReturn(s,e))return cast(s,e,slot,aim);
   if(e.cd[slot]>0||!canAfford(e,slot))return false;
   const target=castTarget(s,e,slot,aim);
@@ -243,8 +349,8 @@ export function requestCast(s,e,slot,aim,{bot=false}={}) {
   if(!timing.windup)return cast(s,e,slot,aim);
   const angle=aim&&Math.hypot(aim.x,aim.y)>.1?Math.atan2(aim.y,aim.x):target?Math.atan2(target.y-e.y,target.x-e.x):e.facing;
   const locked={x:Math.cos(angle),y:Math.sin(angle),distance:aim?.distance??(target?distance(e,target):undefined)};
-  const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:spellShape(e,slot,locked);
-  e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape};
+  const shape=slot===2&&[0,8].includes(e.hero)?{x:target.x,y:target.y,radius:target.radius+20,shape:'circle',targetId:target.id}:isEngage(e,slot)?engageShape(e,angle,e.skillRanks[slot],s):spellShape(e,slot,locked);
+  e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape,heroAim:target?.kind==='hero'&&insideWarning(target,shape,20)};
   e.pendingAttack=null;e.facing=angle;e.revealedUntil=s.time+timing.windup+1;e.recall=0;
   return true;
 }
@@ -259,6 +365,14 @@ export function cast(s, e, slot, aim, {lockedTarget}={}) {
   const rank = e.skillRanks[slot], strength = 1 + (rank-1)*.28;
   e.mana-=manaCost(e,slot);e.recall = 0; e.cd[slot] = cooldownFor(e,slot); e.facing = angle; e.attackAnim = .42; e.attackStarted = s.time; e.castStarted = s.time; e.castSlot = slot; e.castFacing = angle; e.itemState.empowered = s.time+5;
   e.itemState.spells = Math.min(3,(e.itemState.spells||0)+1);
+  if (hasItem(e,'riptide')) e.rushUntil = s.time + 2;
+  // Rallying conch: the ultimate rallies nearby allies; the warhorn also rallies on any skill, every 8s.
+  const warhorn = hasItem(e,'warhorn'), rally = hasItem(e,'horn') && (slot === 3 || warhorn && s.time >= (e.itemState.horn || 0));
+  if (rally) {
+    const big = slot === 3, bonus = big ? (warhorn ? .25 : .2) : .12, until = s.time + (big ? (warhorn ? 5 : 4) : 3); if (!big) e.itemState.horn = s.time + 8;
+    for (const ally of s.units) if (ally.kind === 'hero' && ally.team === e.team && ally.hp > 0 && distance(e,ally) < 500 && !(ally.rallyUntil > s.time && ally.rallyBonus > bonus)) { ally.rallyUntil = until; ally.rallyBonus = bonus; }
+    burst(s, e.x, e.y, '#ffd98a', big ? 500 : 260);
+  }
   if (slot === 3 && hasItem(e,'worldroot') && s.time >= (e.itemState.worldroot||0)) {
     e.itemState.worldroot = s.time+18;
     for (const ally of s.units) if (ally.kind === 'hero' && ally.team === e.team && ally.hp > 0 && distance(e,ally)<450) { ally.shield += e.maxHp*.15; burst(s,ally.x,ally.y,'#c8f9bc',110); }
@@ -270,14 +384,15 @@ export function cast(s, e, slot, aim, {lockedTarget}={}) {
   }};
   if(e.hero>=4) return castLegend({s,e,slot,aim,target,angle,rank,strength,origin,color,fx,cone,damage,heal,area,hostile,spawn:data=>add(s,{...data,creatureId:chooseCreature(s.seed,`sentinel:${e.id}`,'neutral').id})});
   if (slot === 0) {
-    const length=[490,410,330,460][e.hero]+(rank-1)*25;
+    // Jersey Devil's leap is an engage. Its length and stun radius come from ENGAGES, so they match its tell.
+    const length=e.hero===3?engageLength(3,rank):[490,410,330][e.hero]+(rank-1)*25;
     e.x+=Math.cos(angle)*length; e.y+=Math.sin(angle)*length; resolveBody(s,e);
     e.motion={...origin,start:s.time,duration:.38,arc:[95,30,160,130][e.hero]};
     s.effects.push({...origin,tx:e.x,ty:e.y,color,type:'beam',hero:e.hero,life:.45,maxLife:.45}); fx(e,160);
     if(e.hero===0) {e.cloak=s.time+2+(rank-1)*.35;e.revealedUntil=-1;e.ambushReady=true;}
     if(e.hero===1) {heal(s,e,190*strength);s.zones.push({...origin,team:e.team,source:e.id,rank,radius:180,life:5,tick:0,type:'water',amount:30*strength});}
     if(e.hero===2) e.shield=Math.max(e.shield,380*strength);
-    if(e.hero===3) area(s,e,e,160,180*strength,{stun:.65});
+    if(e.hero===3) area(s,e,e,ENGAGES[3].radius,180*strength,{stun:.65});
   } else if(slot===1) {
     fx(origin,e.hero===1?440:300);
     if(e.hero===0) cone(360,1.05,t=>{damage(s,e,t,205*strength);if(!['core','tower'].includes(t.kind))t.slow=2+rank*.3;});
@@ -301,7 +416,9 @@ export function cast(s, e, slot, aim, {lockedTarget}={}) {
 export function portal(s, e = player(s)) {
   if (e.hp <= 0 || e.stun > 0 || e.fear > 0 || rooted(s,e) || e.castIntent || e.recoveryUntil>s.time || e.portalCd > 0 || s.winner !== null) return false;
   const gate = PORTALS.find(g => distance(e, g) < 150); if (!gate) return false;
-  const to = PORTALS[gate.to]; burst(s, e.x, e.y, '#c1f4ed', 180, 'ultimate'); e.x = to.x; e.y = to.y; e.portalCd = 10; e.recall = 0; resolveBody(s, e); burst(s, e.x, e.y, '#c1f4ed', 180);
+  // A base gate picks the river gate on the side the hero faces.
+  const toward = i => Math.cos(Math.atan2(PORTALS[i].y - gate.y, PORTALS[i].x - gate.x) - e.facing);
+  const to = PORTALS[gate.choices ? [...gate.choices].sort((a, b) => toward(b) - toward(a))[0] : gate.to]; burst(s, e.x, e.y, '#c1f4ed', 180, 'ultimate'); e.x = to.x; e.y = to.y; e.portalCd = PACE.portalCooldown; e.recall = 0; resolveBody(s, e); burst(s, e.x, e.y, '#c1f4ed', 180);
   if (e.player) { s.stats.portals++; announce(s, 'Through the looking glass', 'You crossed the map. Find your ambush.'); } return true;
 }
 export function buy(s, id, e = player(s)) { return s.winner === null && purchase(e, id, HEROES[e.hero]); }
@@ -311,7 +428,8 @@ export function setGoal(s, id) { player(s).goal = id; }
 function itemTick(s, e, dt) {
   if (e.burn && e.hp > 0 && e.burn.tick <= s.time) {
     const source = s.units.find(v => v.id === e.burn.source);
-    if (source && s.time <= e.burn.until + dt) damage(s, source, e, e.burn.amount * (e.slow > 0 ? hasItem(source, 'inferno') ? 1.6 : hasItem(source, 'frost') ? 1.35 : 1 : 1), 'item');
+    if (source && hasItem(source, 'seer') && e.seerUntil > s.time) e.revealedUntil = Math.max(e.revealedUntil, s.time + 1.2);
+    if (source && s.time <= e.burn.until + dt) withContext(s, { source: source.id, label: 'Burn' }, () => damage(s, source, e, e.burn.amount * (e.slow > 0 ? hasItem(source, 'inferno') ? 1.6 : hasItem(source, 'frost') ? 1.35 : 1 : 1), 'item'));
     if (e.burn) e.burn.tick += 1;
   }
   if (e.burn && e.burn.until < s.time) e.burn = null;
@@ -324,53 +442,104 @@ function itemTick(s, e, dt) {
     if (hasItem(e, 'beacon')) for (const t of s.units) if (t.kind === 'hero' && t.team === e.team && t.hp > 0 && distance(e, t) < 300) heal(s, t, 24 + (hasItem(e, 'root') ? e.maxHp * .01 : 0));
   }
 }
+// Every wave leaves the base. An elder wisp (when earned) and the melee wisps lead, the caster follows, and the siege wisp walks last.
+// Waves grow a little stronger every minute after the laning phase, so late pushes can finish.
 function spawnWave(s) {
   s.wave++;
-  for (let team = 0; team < 2; team++) for (let lane = 0; lane < 3; lane++) for (let i = 0; i < 3; i++) {
-    const front = LANES[lane][2], base = s.wave === 1 ? { x: front.x, y: front.y + (team ? -1 : 1) * 370 } : BASES[team], siege = i === 2 && s.wave % 3 === 0;
-    add(s, { kind: 'minion', team, lane, x: base.x + (i - 1) * 32, y: base.y + (team ? 1 : -1) * i * 28, waypoint: s.wave === 1 ? 2 : 1, hp: siege ? 780 : 390, maxHp: siege ? 780 : 390, damage: siege ? 88 : 45, rate: 1, range: siege ? 270 : 95, speed: 240, radius: 16, sprite: team ? 5 : 4, siege, creatureId: chooseCreature(s.seed, `wave:${s.wave}:lane:${lane}:slot:${i}`, siege ? 'siege' : 'lane').id });
+  const grow = 1 + Math.max(0, s.time - PACE.growthFrom) / 60 * PACE.growth;
+  for (let team = 0; team < 2; team++) for (let lane = 0; lane < 3; lane++) {
+    const roles = ['melee', 'melee', 'caster'], innerDown = s.units.some(t => t.kind === 'tower' && !t.guardian && t.team !== team && t.lane === lane && t.tier === INNER && t.hp <= 0);
+    if (s.wave % 3 === 0) roles.push('siege');
+    if (innerDown || s.suddenDeath) roles.unshift('elder');
+    roles.forEach((role, i) => {
+      const path = laneFrom(team, lane), spot = pointAtArc(path, 320 - i * 45), m = MINIONS[role], siege = role === 'siege', hp = Math.round(m.hp * grow);
+      add(s, { kind: 'minion', role, team, lane, x: spot.x + (i % 2 ? 18 : -18), y: spot.y, waypoint: closestTrack(spot, path), hp, maxHp: hp, damage: m.damage * grow, rate: m.rate, range: m.range, speed: PACE.minionSpeed, radius: m.radius, sprite: team ? 5 : 4, siege, caster: role === 'caster', elder: role === 'elder', creatureId: chooseCreature(s.seed, `wave:${s.wave}:lane:${lane}:slot:${i}`, siege || role === 'elder' ? 'siege' : 'lane').id });
+    });
   }
 }
 function followLane(s, e, dt) {
-  const path = e.team ? [...PATHS[e.lane]].reverse() : PATHS[e.lane];
+  const path = laneFrom(e.team, e.lane);
   // Rejoin the closest piece of the curved lane after a chase or teleport.
-  const index = closestTrack(e, path), ahead = path[Math.min(path.length - 1, index + 2)];
-  e.waypoint = index; move(s, e, ahead.x, ahead.y, dt, e.speed * (e.slow > 0 ? .52 : 1));
-
+  const index = closestTrack(e, path);
+  e.waypoint = index;
+  if (e.kind !== 'hero') {
+    // At the enemy base the lane ends: wisps march on the nearest structure they can damage.
+    const goal = index >= path.length - 8 && s.units.filter(t => (t.kind === 'tower' || t.kind === 'core') && t.team !== e.team && t.hp > 0 && !structureProtected(s, t)).sort((a, b) => distance(e, a) - distance(e, b))[0];
+    const ahead = goal || path[Math.min(path.length - 1, index + 2)];
+    move(s, e, ahead.x, ahead.y, dt, e.speed * (e.slow > 0 ? .52 : 1)); return;
+  }
+  // A hero walks with its wave: never more than a few steps past the leading wisp, and never into an
+  // enemy structure's range that no wisp of its own team tanks. Without a wave it waits at its front ward.
+  let limit = -1;
+  for (const m of s.units) if (m.team === e.team && m.lane === e.lane && m.hp > 0 && (m.kind === 'minion' || m.kind === 'leviathan')) limit = Math.max(limit, m.waypoint - 1);
+  if (limit < 0) limit = Math.max(4, ...s.units.filter(t => t.kind === 'tower' && !t.guardian && t.team === e.team && t.lane === e.lane && t.hp > 0).map(t => closestTrack(t, path) + 4));
+  let goal = Math.min(path.length - 1, index + 2, limit);
+  const threats = s.units.filter(t => (t.kind === 'tower' || t.kind === 'core') && t.team !== e.team && t.hp > 0 && distance(t, e) < 1500 && !escorted(s, e.team, t));
+  const unsafe = p => threats.some(t => distance(t, p) < t.range + 70);
+  while (goal > 0 && unsafe(path[goal])) goal--;
+  const target = path[goal];
+  if (unsafe(e)) { const back = path[Math.max(0, index - 3)]; move(s, e, back.x, back.y, dt, heroSpeed(s, e)); }
+  // Far from the lane (after a gate or a lane change) the hero takes the routed path around cover.
+  else if (distance(e, path[index]) > 350) { const next = followOrder(s, e, target); if (next) move(s, e, next.x, next.y, dt, heroSpeed(s, e)); }
+  else if (distance(e, target) > 30) move(s, e, target.x, target.y, dt, heroSpeed(s, e));
 }
 function bot(s, e, dt) {
   if(e.castIntent||e.recoveryUntil>s.time)return;
+  // When an enemy lane is open all the way to its base, every bot joins that push, so a won game can end.
+  const open=[0,1,2].find(lane=>laneOpen(s,1-e.team,lane));if(open!==undefined)e.lane=open;
   const intent=combatDecision(s,e),previous=e.botMode;e.botMode=intent.mode;
   // Mode changes become team pings, so teammates can be heard and seen on the map.
   if(intent.mode==='assist'&&previous!=='assist'&&s.time-(e.assistPingAt??-99)>10){e.assistPingAt=s.time;pushPing(s,{team:e.team,type:'onmyway',x:intent.move.x,y:intent.move.y,source:e.id,call:intent.call});}
   if(intent.mode==='retreat'&&previous!=='retreat'&&s.time-(e.retreatPingAt??-99)>12){e.retreatPingAt=s.time;pushPing(s,{team:e.team,type:'retreat',x:e.x,y:e.y,source:e.id});}
   e.retreat=intent.mode==='retreat';
-  if(intent.mode==='retreat'){
-    if(s.time-e.lastHit>3){e.botRecall=(e.botRecall||0)+dt;if(e.botRecall>2.5){Object.assign(e,BASES[e.team]);e.botRecall=0;e.waypoint=1;}}
-  }else e.botRecall=0;
+  if(botProfile(s,e).legacy){
+    if(intent.mode==='retreat'){
+      if(s.time-e.lastHit>3){e.botRecall=(e.botRecall||0)+dt;if(e.botRecall>2.5){Object.assign(e,BASES[e.team]);e.botRecall=0;e.waypoint=1;}}
+    }else e.botRecall=0;
+  }else if(intent.mode==='retreat'){
+    // Bots recall like the player: they stand still, and a hit cancels it.
+    const r=recallStep(s,e,dt);if(r==='home'){Object.assign(e,BASES[e.team]);e.waypoint=1;burst(s,e.x,e.y,'#e4f5ac',180);}if(r)return;
+  }else e.recall=0;
   if(intent.target)e.target=intent.target.id;
   if(intent.slot!==undefined){
-    requestCast(s,e,intent.slot,intent.aim,{bot:true});
-    e.thinkAt=s.time+1.1;
+    e.thinkAt=s.time+castLock(s,e,requestCast(s,e,intent.slot,intent.aim,{bot:true}));
   }
   if(e.castIntent)return;
-  if(intent.move)move(s,e,intent.move.x,intent.move.y,dt,e.speed*(e.slow>0?.52:1)*(e.pursuitUntil>s.time?1.3:1));
+  const to=guardMove(s,e,intent);
+  // Bots walk around cover with the same route as the player's click orders. The old bots walk straight.
+  if(to){const next=botProfile(s,e).legacy?to:followOrder(s,e,to)||to;move(s,e,next.x,next.y,dt,heroSpeed(s,e));}
+  if(intent.portal)portal(s,e);
   if(intent.target)attack(s,e,intent.target);
-  if(intent.mode==='lane')followLane(s,e,dt);
+  if(intent.mode==='lane'&&!intent.move&&!to&&!baseGate(s,e,dt))followLane(s,e,dt);
+}
+// A side-lane bot leaving its base takes the base gate when its wave has already passed the river gate.
+function baseGate(s,e,dt){
+  const gate=PORTALS.find(g=>g.base===e.team);
+  if(!gate||e.lane===1||e.portalCd>0||distance(e,BASES[e.team])>1300)return false;
+  const exit=PORTALS[gate.choices.find(i=>Math.sign(PORTALS[i].x-gate.x)===(e.lane?1:-1))],path=laneFrom(e.team,e.lane),front=Math.max(-1,...s.units.filter(m=>m.kind==='minion'&&m.team===e.team&&m.lane===e.lane&&m.hp>0).map(m=>m.waypoint));
+  if(!exit||front<closestTrack(exit,path)-6)return false;
+  e.facing=Math.atan2(exit.y-gate.y,exit.x-gate.x);
+  if(distance(e,gate)<140)return portal(s,e);
+  move(s,e,gate.x,gate.y,dt,heroSpeed(s,e));return true;
 }
 function resolveIntent(s,e){
  const intent=e.castIntent;if(!intent)return;
- if(spellBlocked(s,e,intent.slot)||intent.origin&&distance(e,intent.origin)>8){e.castIntent=null;if(e.hp>0)emitCombatFeedback(s,e,e,'interrupt','INTERRUPTED');return;}
+ if(spellBlocked(s,e,intent.slot)||intent.origin&&distance(e,intent.origin)>8){e.castIntent=null;if(e.hp>0){emitCombatFeedback(s,e,e,'interrupt','INTERRUPTED');expose(s,e,INTERRUPT_EXPOSE,'interrupt');}return;}
  const t=s.units.find(t=>t.id===intent.target);
  if(intent.shape.targetId&&t){intent.shape.x=t.x;intent.shape.y=t.y;}
  if(s.time<intent.at)return;
  e.castIntent=null;
  if(intent.slot===2&&[0,8].includes(e.hero)&&(!t||t.hp<=0||!canSee(s,e,t)||!lineOfSight(s,e,t)||distance(e,t)>=540))return;
- e.target=intent.target||0;if(cast(s,e,intent.slot,intent.aim,{lockedTarget:intent.shape.targetId?t:undefined}))e.recoveryUntil=s.time+(intent.recovery||0);
+ // A targeted cast lands on its locked target, so only aimed casts can miss.
+ e.target=intent.target||0;if(!intent.shape.targetId)openCommit(s,e,intent.slot,!!intent.heroAim);
+ const done=withContext(s,{source:e.id,label:KITS[e.hero]?.[intent.slot]?.name||'Spell',telegraphed:true,dodgeable:true},()=>cast(s,e,intent.slot,intent.aim,{lockedTarget:intent.shape.targetId?t:undefined}));
+ if(done){e.recoveryUntil=s.time+(intent.recovery||0);if(intent.slot===3)pushImpact(s,e,e,2,'ultimate');}
+ closeCommit(s,e,done);
 }
 function terrainEffects(s, dt) {
   for (const z of s.zones) {
     z.life-=dt;z.tick-=dt;const source=s.units.find(e=>e.id===z.source);
+    s.hitContext={source:z.source,label:z.type[0].toUpperCase()+z.type.slice(1),telegraphed:z.armed!==undefined,dodgeable:true};
     if(z.follow&&source){z.x=source.x;z.y=source.y;if(source.hp<=0||z.type==='sunray'&&(source.stun>0||source.fear>0||source.silencedUntil>s.time))z.life=0;}
     if(!source||z.life<=0||s.time<(z.armed||0)||z.tick>0)continue;
     z.tick=z.type==='stomp'?.8:.6;
@@ -387,11 +556,11 @@ function terrainEffects(s, dt) {
       } else if(z.type==='maelstrom'&&t.kind==='hero'&&t.team===z.team)heal(s,t,45*(1+(z.rank-1)*.28));
     }
   }
-  s.zones = s.zones.filter(z => z.life > 0);
+  s.hitContext = null; s.zones = s.zones.filter(z => z.life > 0);
   for (const t of s.traps) {
     t.life -= dt; if (s.time < t.armed) continue;
     const source = s.units.find(e => e.id === t.source), enemy = s.units.find(e => e.hp > 0 && e.team !== t.team && e.team >= 0 && !['core', 'tower'].includes(e.kind) && distance(e, t) < 95);
-    if (source && enemy) { area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{snaredUntil:s.time+2.5}); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
+    if (source && enemy) { withContext(s,{source:source.id,label:'Trap',telegraphed:true,dodgeable:true},()=>area(s,source,t,145,260*(1+((t.rank||1)-1)*.28),{snaredUntil:s.time+2.5})); burst(s, t.x, t.y, '#dceb80', 145); t.life = 0; }
   }
   s.traps = s.traps.filter(t => t.life > 0);
 }
@@ -401,9 +570,11 @@ export function step(s, input = {}, dt = 1 / 60) {
   s.effects.forEach(e => e.life -= dt); s.effects = s.effects.filter(e => e.life > 0);
   s.floaters.forEach(e => { e.life -= dt; e.y -= dt * 26; }); s.floaters = s.floaters.filter(e => e.life > 0);
   if (shiftWorld(s)) announce(s, s.phase ? 'The woods swallow the town' : 'The town returns', s.phase ? 'Vision shrinks. Hide in brush for a 75% ambush strike.' : 'Streets reopen. Buildings block sight and movement.');
-  if (s.time >= s.nextWave) { spawnWave(s); s.nextWave += 14; }
+  if (Math.floor(s.time * 2) !== Math.floor((s.time - dt) * 2)) noteMissing(s);
+  if (s.time >= s.nextWave) { spawnWave(s); s.nextWave += PACE.waveEvery; }
+  if (!s.suddenDeath && s.time >= SUDDEN_DEATH) { s.suddenDeath = true; announce(s, 'Sudden death', 'Every ward and both rifts are open and take more damage. Home no longer heals, and deaths last longer.'); }
   if (!s.objective && s.time >= s.objectiveAt) {
-    const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, ...CENTER, homeX: CENTER.x, homeY: CENTER.y, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55, creatureId: chooseCreature(s.seed, `boss:${Math.floor(s.time)}`, 'boss').id });
+    const boss = add(s, { kind: 'boss', name: 'Wild Hunt', team: -1, ...HUNT, homeX: HUNT.x, homeY: HUNT.y, hp: 3300, maxHp: 3300, damage: 95, range: 200, speed: 125, rate: 1.2, sprite: 8, radius: 55, creatureId: chooseCreature(s.seed, `boss:${Math.floor(s.time)}`, 'boss').id });
     s.objective = boss.id; announce(s, 'The Wild Hunt awakens', 'Slay the great beast. It will fight for your team.');
   }
   for (let i = 0; i < CAMPS.length; i++) if (s.time >= s.campTimers[i] && !s.units.some(e => e.kind === 'camp' && e.camp === i && e.hp > 0)) {
@@ -416,15 +587,16 @@ export function step(s, input = {}, dt = 1 / 60) {
   tickSkillEvents(s,dt,{damage,heal,hostile});
   terrainEffects(s, dt);
   for (const e of [...s.units]) {
-    for (const key of ['attackCd', 'attackAnim', 'hit', 'stun', 'slow', 'fear']) e[key] = Math.max(0, (e[key] || 0) - dt);
-    if(e.hp>0 && e.bleed?.until>s.time && s.time>=e.bleed.tick) {const source=s.units.find(t=>t.id===e.bleed.source);e.bleed.tick+=.8;if(source)damage(s,source,e,e.bleed.amount);}
+    const tenacity = e.kind === 'hero' && hasItem(e, 'charm') ? 1 / .6 : 1; // Moonstone charm: control wears off 40% faster
+    for (const key of ['attackCd', 'attackAnim', 'hit', 'stun', 'slow', 'fear']) e[key] = Math.max(0, (e[key] || 0) - dt * (key === 'stun' || key === 'slow' || key === 'fear' ? tenacity : 1));
+    if(e.hp>0 && e.bleed?.until>s.time && s.time>=e.bleed.tick) {const source=s.units.find(t=>t.id===e.bleed.source);e.bleed.tick+=.8;if(source)withContext(s,{source:source.id,label:e.bleed.type==='poison'?'Poison':e.bleed.type==='fire'?'Burn':'Bleed'},()=>damage(s,source,e,e.bleed.amount));}
     e.moving = false; itemTick(s, e, dt); resolveAttack(s, e);
     if(e.kind==='summon'){
       e.life-=dt;if(e.life<=0){e.hp=0;continue;}
       if(e.hp>0&&s.time>=e.healAt){e.healAt=s.time+1;for(const a of s.units)if(a.kind==='hero'&&a.team===e.team&&a.hp>0&&distance(e,a)<260)heal(s,a,e.healing);}
     }
     if (e.kind === 'hero') {
-      e.cd = e.cd.map(c => Math.max(0, c - dt)); e.portalCd = Math.max(0, e.portalCd - dt); e.gold += dt * 3.2;
+      e.cd = e.cd.map(c => Math.max(0, c - dt)); e.portalCd = Math.max(0, e.portalCd - dt); e.gold += dt * PACE.passiveGold;
       if(!e.player||input.autopilot)trainBot(e);
       if ((!e.player || input.autopilot) && s.time >= (e.nextShop || 0)) { const id = nextPurchase(e); if (id) buy(s, id, e); e.nextShop = s.time + 2; }
       if (e.hp <= 0) {
@@ -432,24 +604,27 @@ export function step(s, input = {}, dt = 1 / 60) {
         if (e.respawn <= 0) { Object.assign(e, BASES[e.team]); e.hp = e.maxHp;e.mana=e.maxMana; e.shield = 140; e.waypoint = 1; e.cd = [0,0,0,Math.min(6,e.cd[3])]; e.cloak = 0; e.revealedUntil = -1; if (e.player) announce(s, 'A legend returns', 'Leave the rift or take a portal to rejoin the hunt.'); }
         continue;
       }
-      if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * .24 * dt);
+      // The court heals quickly, but not in sudden death: a defended base can still fall.
+      if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * (s.suddenDeath ? .02 : .24) * dt);
       else if (s.time - e.lastHit > 5) heal(s, e, 12 * dt);
-      e.mana=Math.min(e.maxMana,e.mana+dt*(distance(e,BASES[e.team])<BASE_HEAL_RADIUS?e.maxMana*.3:6+e.level*.35+(e.manaRegen||0)));
+      e.mana=Math.min(e.maxMana,e.mana+dt*(distance(e,BASES[e.team])<BASE_HEAL_RADIUS?e.maxMana*.3:manaRegen(e.level)+(e.manaRegen||0)));
       e.shield = Math.max(0, e.shield - dt * 13);
       if (concealed(s, e)) e.ambushReady = true;
       else if (e.cloak <= s.time && !concealed(s, e)) e.ambushReady = false;
-      resolveIntent(s,e);
+      resolveIntent(s,e); judgeCommit(s,e); noteControl(s,e,dt);
+      if (e.queuedCast) { const q = e.queuedCast; if (s.time > q.until || spellBlocked(s,e,q.slot)) e.queuedCast = null; else if (!lockRemaining(s,e)) { e.queuedCast = null; requestCast(s,e,q.slot,q.aim); } }
       if (e.stun > 0) {e.travel=null;continue;}
       if (e.fear > 0) {e.travel=null; move(s, e, e.x + (e.x - e.fearX), e.y + (e.y - e.fearY), dt, e.speed * .8); continue; }
+      const taunt = taunter(s, e);
+      if (taunt) { e.travel = null; e.target = taunt.id; if (distance(e, taunt) > e.range + taunt.radius - 8) move(s, e, taunt.x, taunt.y, dt, heroSpeed(s, e)); attack(s, e, taunt); continue; }
       if(tickHeroMechanic({s,e,dt,damage,heal,hostile})){if(e.player&&input.cast!==undefined)requestCast(s,e,input.cast,input.aim);continue;}
       if (!e.player || input.autopilot) { bot(s, e, dt); continue; }
       if(input.order)commandOrder(s,e,input.order);
       const dx = input.x || 0, dy = input.y || 0, moving = Math.hypot(dx, dy) > .12;
       if(moving||input.stop||input.recall||input.portal)cancelOrder(e);
       if (moving) {
-        const mag = Math.max(1, Math.hypot(dx, dy)), sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
-        const speed = e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
-        move(s, e, e.x + dx / mag * 250, e.y + dy / mag * 250, dt, speed); e.recall = 0;
+        const mag = Math.max(1, Math.hypot(dx, dy));
+        move(s, e, e.x + dx / mag * 250, e.y + dy / mag * 250, dt, heroSpeed(s, e)); e.recall = 0;
       }
       if (input.portal) portal(s, e);
       if (input.rally) callRally(s, e.team, input.rally === true ? e : input.rally, e);
@@ -467,8 +642,8 @@ export function step(s, input = {}, dt = 1 / 60) {
         }
         if(e.order){
           const destination=ordered||e.order;
-          const inRange=ordered&&distance(e,ordered)<=e.range+ordered.radius-8&&lineOfSight(s,e,ordered);
-          if(!inRange){const next=followOrder(s,e,destination,dt);if(next)move(s,e,next.x,next.y,dt,e.speed*(e.slow>0?.52:1)*(e.hero===1&&inWater(e,s)?1.4:1));}
+          const inRange=ordered&&distance(e,ordered)<=reach(e,ordered)+ordered.radius-8&&lineOfSight(s,e,ordered);
+          if(!inRange){const next=followOrder(s,e,destination,dt);if(next)move(s,e,next.x,next.y,dt,heroSpeed(s,e));}
           if(e.order.type==='move'&&distance(e,e.order)<10)cancelOrder(e);
         }
         const t = ordered||autoTarget(s, e, input.target); e.target = t?.id || 0;
@@ -478,11 +653,13 @@ export function step(s, input = {}, dt = 1 / 60) {
       if (e.hp <= 0 || e.stun > 0) {e.specialIntent=null;e.exposedUntil=0;continue;}
       if (e.fear > 0) {e.specialIntent=null;e.exposedUntil=0;e.nextSpecial=Math.max(e.nextSpecial||0,s.time+1.5);if(e.speed>0)move(s, e, e.x + e.x - e.fearX, e.y + e.y - e.fearY, dt);continue;}
       if (e.kind === 'tower' || e.kind === 'core') {
+        if (e.kind === 'core' && !s.suddenDeath && !escorted(s, 1 - e.team, e)) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * CORE.regen * dt);
+        if (e.guardian && guardianSlam(s, e)) continue;
         const tracked=s.units.find(t=>t.id===e.towerTarget);
         if(!tracked||tracked.hp<=0||distance(e,tracked)>e.range||!canSee(s,e,tracked)){e.towerTarget=0;e.towerHits=0;e.towerUntil=0;}
         let t = s.units.find(x => x.id === e.aggro && s.time < e.aggroUntil && x.hp > 0 && distance(e, x) < e.range && canSee(s, e, x));
         if (!t) t = s.units.filter(x => x.team !== e.team && x.team !== -1 && x.hp > 0 && distance(e, x) < e.range && canSee(s, e, x) && !['tower', 'core'].includes(x.kind)).sort((a, b) => (a.kind === 'hero') - (b.kind === 'hero') || distance(e, a) - distance(e, b))[0];
-        attack(s, e, t);
+        attack(s, e, towerLock(s, e, t) ? null : t);
       } else if(e.kind==='summon'){
         attack(s,e,nearest(s,e,e.range));
       } else if (e.kind === 'camp') {
@@ -505,11 +682,13 @@ export function step(s, input = {}, dt = 1 / 60) {
         else if (t) { attack(s, e, t); if (distance(e, t) > e.range) move(s, e, t.x, t.y, dt); }
         else move(s, e, home.x, home.y, dt);
       } else {
-        const t = nearest(s, e, e.range + 140);
+        // Wisps fight wisps first; a hero is a target only when no wisp or structure is close. A taunt overrides both.
+        const t = taunter(s, e) || nearest(s, e, e.range + 140, false, 400);
         if (t) { if (distance(e, t) > e.range + t.radius) move(s, e, t.x, t.y, dt, e.speed * (e.slow > 0 ? .5 : 1)); attack(s, e, t); } else followLane(s, e, dt);
       }
     }
   }
+  tickTideUnits(s, heal);
   const bodies = s.units.filter(e => e.hp > 0 && e.speed > 0);
   for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) {
     const a = bodies[i], b = bodies[j], d = distance(a, b), min = (a.radius + b.radius) * .78;
@@ -517,7 +696,34 @@ export function step(s, input = {}, dt = 1 / 60) {
   }
   s.units = s.units.filter(e => e.hp > 0 || ['hero', 'tower', 'core'].includes(e.kind));
   if (s.time >= LIMIT && s.winner === null) {
-    const value = team => s.units.filter(e => e.team === team && ['core', 'tower'].includes(e.kind)).reduce((v, e) => v + e.hp, 0);
-    const a = value(0), b = value(1); finish(s, a === b ? -1 : a > b ? 0 : 1, 'Six minutes. The team with more ward and rift health wins.');
+    // Tiebreak: structures broken, then structure health left, then hero kills.
+    const broken = team => s.units.filter(e => e.team === 1 - team && e.kind === 'tower' && e.hp <= 0).length;
+    const health = team => Math.round(s.units.filter(e => e.team === team && ['core', 'tower'].includes(e.kind)).reduce((v, e) => v + e.hp, 0));
+    const rules = [[broken, 'The team that broke more structures wins.'], [health, 'The team with more structure health wins.'], [team => s.score[team], 'The team with more kills wins.']];
+    const rule = rules.find(([f]) => f(0) !== f(1));
+    finish(s, rule ? (rule[0](0) > rule[0](1) ? 0 : 1) : -1, `Time is up. ${rule ? rule[1] : 'The shore is even.'}`);
   }
+}
+// The guardian slam: a circle on the ground under a hero (or a packed wave) shows before impact.
+// After the slam the guardian stays exposed: it does not attack and takes extra damage.
+function guardianSlam(s, e) {
+  const intent = e.specialIntent;
+  if (intent) {
+    e.pendingAttack = null;
+    if (s.time < intent.at) return true;
+    e.specialIntent = null; e.exposedUntil = s.time + SLAM.recovery; e.nextSpecial = s.time + SLAM.cooldown; e.attackCd = Math.max(e.attackCd, SLAM.recovery);
+    s.hitContext = { source: e.id, label: intent.label || 'Guardian slam', telegraphed: true, dodgeable: true };
+    for (const t of s.units) if (t.hp > 0 && t.team !== e.team && t.team >= 0 && !['tower', 'core'].includes(t.kind) && insideWarning(t, intent.shape)) damage(s, e, t, intent.amount * (t.kind === 'hero' ? 1 : .6), 'spell');
+    s.hitContext = null;
+    s.effects.push({ ...intent.shape, type: 'neutral-impact', source: e.id, life: .45, maxLife: .45, color: '#ffbb78' });
+    return true;
+  }
+  if (e.exposedUntil > s.time) { e.pendingAttack = null; return true; }
+  if (s.time < (e.nextSpecial ?? 0) || structureProtected(s, e)) return false;
+  const foes = s.units.filter(t => t.hp > 0 && t.team !== e.team && t.team >= 0 && !['tower', 'core'].includes(t.kind) && distance(e, t) < e.range + t.radius && canSee(s, e, t));
+  const target = foes.filter(t => t.kind === 'hero').sort((a, b) => distance(e, a) - distance(e, b) || a.id - b.id)[0] || foes.find(t => foes.filter(o => distance(o, t) < SLAM.radius).length >= 3);
+  if (!target) return false;
+  e.specialIntent = { shape: { x: target.x, y: target.y, radius: SLAM.radius, shape: 'circle' }, start: s.time, at: s.time + SLAM.tell, label: 'Guardian · Rift slam', amount: SLAM.damage, recovery: SLAM.recovery };
+  e.facing = Math.atan2(target.y - e.y, target.x - e.x); e.pendingAttack = null;
+  return true;
 }

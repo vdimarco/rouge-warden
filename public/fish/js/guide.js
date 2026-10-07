@@ -86,14 +86,14 @@ export function sceneFrame(kind, motion, time) {
 // One set of words for each fight move and each input: the fight prompt (main.js), the guide caption (lesson below) and the
 // rod cue (rod-cues.js) all read this, so a move is never written two ways at once. Inputs: motion (the phone is the rod),
 // touch, and on a computer with no touch screen the mouse or the keys (the one the player used last); an input that is
-// left out uses the touch words (the mouse drags the rod as a finger does).
+// left out uses the touch words (the mouse drags the rod as a finger does, from a press anywhere; its wheel is the crank).
 // strength is the motion pump: tipping the phone back as you crank is what pulls the fish in.
 export const MOVE_WORDS = {
-  reel: { touch: "Turn the crank to reel.", keys: "Hold R to reel." },
+  reel: { touch: "Turn the crank to reel.", mouse: "Scroll the mouse wheel to reel.", keys: "Hold R to reel." },
   hook: { motion: "Snap it up!", touch: "Swipe it up!", mouse: "Drag the rod up fast!", keys: "Press Space!" },
-  pump: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down.", keys: "Hold W. Then hold S and R." },
-  strength: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down." },
-  stop: { touch: "Stop reeling." },
+  pump: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down.", mouse: "Drag up. Scroll as it comes down.", keys: "Hold W. Then hold S and R." },
+  strength: { motion: "Tip back as you reel.", touch: "Drag the rod up. Reel as it comes down.", mouse: "Drag up. Scroll as it comes down." },
+  stop: { touch: "Stop reeling.", mouse: "Stop scrolling." },
   low: { motion: "Lower the phone.", touch: "Drag the rod down.", keys: "Hold S." },
   raise: { touch: "Hold the rod up.", keys: "Hold W to keep the rod up." },
   turn: { motion: "Tilt the phone left or right.", touch: "Drag the rod sideways.", keys: "Hold A or D." },
@@ -109,13 +109,15 @@ const STEER_KEYS = { left: "Hold A.", right: "Hold D." };
 // the crank as fast as the prompt says: the reel move's words when the prompt gives a pace (main.js fightCue passes it with
 // the cue), so the guide caption and the rod cue say "Reel fast." together. With no pace the reel move is MOVE_WORDS.reel
 export const REEL_PACE = { slow: "Reel slowly.", fast: "Reel fast.", faster: "Reel a little faster.", steady: "Reel steadily." };
+// the same pace for the mouse wheel
+const SCROLL_PACE = { slow: "Scroll slowly.", fast: "Scroll fast.", faster: "Scroll a little faster.", steady: "Scroll steadily." };
 // the input of a player: "motion", "touch", or on a computer desk: "mouse" or "keys" (main.js keeps the last one used)
 export const inputOf = (motion, touch = true, desk = "keys") => (motion ? "motion" : touch ? "touch" : desk === "mouse" ? "mouse" : "keys");
 // the words for a move. side: -1 left, 1 right, for the steer. pace: "slow" | "fast" | "faster" | "steady" for the reel
 export function moveWords(kind, input = "touch", side = 0, pace = "") {
   if (kind === "turn" && side && input === "keys") return STEER_KEYS[side > 0 ? "right" : "left"];
   if (kind === "turn" && side) return (STEER_WORDS[input] || STEER_WORDS.touch) + (side > 0 ? "right." : "left.");
-  if (kind === "reel" && REEL_PACE[pace]) return REEL_PACE[pace];
+  if (kind === "reel" && REEL_PACE[pace]) return (input === "mouse" ? SCROLL_PACE : REEL_PACE)[pace];
   const w = MOVE_WORDS[kind];
   return w ? w[input] || w.touch : "";
 }
@@ -211,8 +213,8 @@ export function createGuide(game, button, { caught = () => 0 } = {}) {
   const rect = el => {
     let x = 0, y = 0;
     for (let p = el; p && p !== game; p = p.offsetParent) { x += p.offsetLeft; y += p.offsetTop; }
-    // The game's prompt/report use a translateX(-50%) layout.
-    if (["prompt", "report", "toast"].includes(el.id)) x -= el.offsetWidth / 2;
+    // The game's report and toast use a translateX(-50%) layout (the prompt, the card in the corner, does not).
+    if (["report", "toast"].includes(el.id)) x -= el.offsetWidth / 2;
     if (el.id === "report") y -= el.offsetHeight / 2;
     return { x, y, w: el.offsetWidth, h: el.offsetHeight };
   };

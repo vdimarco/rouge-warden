@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import { createMatch, step, player, HEROES } from '../../public/tidebreak/sim.js';
 import { HERO_IDENTITIES, assignIdentities } from '../../public/tidebreak/hero-identities.js';
 import { draftPlan, PICK_ORDER, SLOTS } from '../../public/tidebreak/draft.js';
-import { recordKill, noteStructureHit, assistPoint, MULTI_KILL_WINDOW, ALARM_COOLDOWN } from '../../public/tidebreak/team-events.js';
+import { recordKill, noteStructureHit, assistPoint, MULTI_KILL_WINDOW, ALARM_COOLDOWN, MISSING_AFTER, MISSING_COOLDOWN } from '../../public/tidebreak/team-events.js';
 import { combatDecision } from '../../public/tidebreak/combat-ai.js';
 import { killCall, defendCall, multiName, streakName, clipFor } from '../../public/tidebreak/announcer.js';
 import { CLIPS } from '../../public/tidebreak/audio.js';
 import { existsSync } from 'node:fs';
 import { chatFor, laneAt } from '../../public/tidebreak/team-chat.js';
+import { TOWER_POSITIONS, LANES } from '../../public/tidebreak/world.js';
 
 // Draft: the player's hero locks, five bots pick distinct heroes, and the plan is seeded.
 for (const identity of HERO_IDENTITIES) for (const seed of [1, 77, 4096]) {
@@ -104,7 +105,39 @@ for (const seed of [3, 11]) {
   const s = createMatch(0, 5), heroes = s.units.filter(u => u.kind === 'hero'), bots = heroes.slice(1, 3);
   const lines = chatFor({ kind: 'ping', team: 0, type: 'onmyway', source: bots[0].id, x: 1000, y: 3000, id: 1, time: 1 }, s, { player: heroes[0], bots });
   assert.equal(lines[0].unitId, bots[0].id); assert.match(lines[0].text, /West/);
-  assert.equal(laneAt({ x: 6000 }), 'East');
+  // Lane names come from the nearest lane, so every ward is named after its own lane.
+  for (const team of [0, 1]) TOWER_POSITIONS[team].forEach((lane, i) => lane.forEach(p => assert.equal(laneAt(p), ['West', 'Middle', 'East'][i])));
   assert.deepEqual(chatFor({ kind: 'ping', team: 1, type: 'fight', source: heroes[3].id, x: 0, y: 0 }, s, { player: heroes[0], bots }), []);
+}
+// Missing calls: an enemy hero the team saw in a lane leaves their sight for 4 s. A bot calls it in chat.
+{
+  const s = createMatch(0, 7, { allies: [1, 2], enemies: [4, 3, 5] }), p = player(s);
+  const ally = s.units.find(u => u.kind === 'hero' && u.team === 0 && !u.player), foe = s.units.find(u => u.kind === 'hero' && u.team === 1);
+  s.units = s.units.filter(u => u === p || u === ally || u === foe); s.nextWave = s.objectiveAt = Infinity; s.campTimers = s.campTimers.map(() => Infinity);
+  Object.assign(p, LANES[0][3]); Object.assign(foe, { x: p.x + 250, y: p.y }); Object.assign(ally, LANES[2][1]);
+  const hold = () => { for (const u of [p, ally, foe]) { u.hp = u.maxHp; u.stun = 9; } };
+  const missing = () => s.pings?.filter(x => x.type === 'missing') || [];
+  for (let i = 0; i < 20; i++) { hold(); step(s, {}, .05); }
+  assert.equal(missing().length, 0, 'no call while the hero is seen');
+  Object.assign(foe, LANES[1][LANES[1].length - 2]);
+  for (let i = 0; i < (MISSING_AFTER - .5) * 20; i++) { hold(); step(s, {}, .05); }
+  assert.equal(missing().length, 0, 'no call before 4 s out of sight');
+  for (let i = 0; i < 30; i++) { hold(); step(s, {}, .05); }
+  assert.equal(missing().length, 1, 'one missing call after 4 s out of sight');
+  const call = missing()[0]; assert.equal(call.target, foe.id); assert.equal(call.lane, 0); assert.equal(call.team, 0);
+  const line = chatFor({ ...call, kind: 'ping' }, s, { player: p, bots: [ally] });
+  assert.equal(line.length, 1); assert.ok(line[0].text.includes(foe.name) && line[0].text.includes('West'), line[0].text);
+  // Seen again and gone again inside the cooldown: no second call.
+  Object.assign(foe, { x: p.x + 250, y: p.y }); for (let i = 0; i < 10; i++) { hold(); step(s, {}, .05); }
+  Object.assign(foe, LANES[1][LANES[1].length - 2]); for (let i = 0; i < (MISSING_AFTER + 1) * 20; i++) { hold(); step(s, {}, .05); }
+  assert.equal(missing().length, 1, `no second call inside ${MISSING_COOLDOWN} s`);
+}
+// A dead hero is not missing, and a hero the team never saw is not called.
+{
+  const s = createMatch(0, 8, { allies: [1, 2], enemies: [4, 3, 5] }), p = player(s);
+  s.units = s.units.filter(u => u.kind === 'hero'); s.nextWave = s.objectiveAt = Infinity; s.campTimers = s.campTimers.map(() => Infinity);
+  for (const u of s.units) if (u.team === 1) Object.assign(u, LANES[1][LANES[1].length - 2]);
+  for (let i = 0; i < 8 * 20; i++) { for (const u of s.units) { u.hp = u.maxHp; u.stun = 9; } step(s, {}, .05); }
+  assert.equal((s.pings || []).filter(x => x.type === 'missing').length, 0, 'no call for a hero the team never saw');
 }
 console.log('team presence ok');

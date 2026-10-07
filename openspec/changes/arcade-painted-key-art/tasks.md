@@ -7,6 +7,11 @@
 - [x] Add a size and format check (WebP, under 100 KB) for `public/arcade/key/` to `qa/arcade/machines.mjs`.
 - [x] Run `node qa/arcade/machines.mjs` and check the switcher in a browser at 390 x 844 and 1280 x 720.
 - [ ] Validate the spec with the OpenSpec CLI when it is available.
+- [x] Add an ALL GAMES button to the arcade page that opens the grid, with its own title and one exit.
+- [x] Give the grid the arcade look (neon heading, CRT tiles, game-color glow, PRESS START, NOW PLAYING), with reduced motion respected.
+- [x] Check the arcade page grid at 1280 x 720 and 390 x 844: 23 tiles, no broken picture, no page error, arrow keys do not move the machines, Escape closes.
+- [x] Make painted art for Neon Ronin, and show it on its switcher tile and machine screen.
+- [ ] Make painted art for Loon Echo, Tell Me, Take the Plunge, Up the Creek, Full Tilt and House Rules when the Higgsfield account has credits again.
 
 ## Checks
 

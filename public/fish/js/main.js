@@ -132,7 +132,7 @@ const game = $("#game");
 game.dataset.reelSide = save.reelSide;
 const guide = createGuide(game, $("#guideToggle"), { caught: () => save.caught });
 let guideCue = { text: "", sub: "", icon: "", tone: "" };
-const touchDevice = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+const touchDevice = Native.touchScreen;
 const G = {
   phase: "boot",    // boot | title | cast | reel | catch | lost | results
   mode: "free",     // free | derby
@@ -178,6 +178,8 @@ const ICON = {
   // the phone stays upright in every picture, as in play: tilted for a steer, tipped back for a pull, forward to lower
   turn: "<svg viewBox='0 0 40 40'><g transform='translate(0 3)'>" + PHONE + "</g><path d='M10 21 H3 m3 -3 l-3 3 l3 3 M30 21 H37 m-3 -3 l3 3 l-3 3' fill='none' stroke='#e8b64a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>",
   upright: "<svg viewBox='0 0 40 40'><g transform='translate(0 3)'>" + PHONE + "</g><path d='M33 6 V34 m-3 -25 l3 -3 l3 3 m-6 22 l3 3 l3 -3' fill='none' stroke='#e8b64a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+  // the mouse wheel turns the crank on a computer: a mouse, its wheel rolling down
+  wheel: "<svg viewBox='0 0 40 40'><rect x='11' y='5' width='18' height='30' rx='9' fill='none' stroke='currentColor' stroke-width='2.4'/><path d='M20 5 V17 M11 17 H29' stroke='currentColor' stroke-width='1.6' opacity='0.6'/><rect class='w' x='18' y='9' width='4' height='6' rx='2' fill='#e8b64a'/></svg>",
   crank: "<svg viewBox='0 0 40 40'><circle cx='20' cy='20' r='12' fill='none' stroke='currentColor' stroke-width='2' stroke-dasharray='3 3'/><circle cx='20' cy='20' r='3' fill='currentColor'/><path d='M20 20 L29 12' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><circle cx='29' cy='12' r='4' fill='#e0453a'/></svg>",
   pull: "<svg viewBox='0 0 40 40'><g transform='translate(3 4) rotate(18 20 30)'>" + PHONE + "</g><path d='M8 24 V6 m-4 4 l4 -4 l4 4' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
   low: "<svg viewBox='0 0 40 40'><g transform='translate(-3 4) rotate(-18 20 30)'>" + PHONE + "</g><path d='M32 10 V30 m-4 -4 l4 4 l4 -4' fill='none' stroke='#e8b64a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>",
@@ -230,16 +232,18 @@ for (const b of $$("[data-close]")) b.addEventListener("click", () => { Sound.sf
 const TOAST_MIN = 1200, TOAST_QUEUE = 2, TOAST_STALE = 3000;
 let toastT = 0, toastNextT = 0, toastAt = -1e9;
 const toastQ = [];
+// in the reel the cast report stands where the toast goes: a toast waits until the report is gone
+const reportHoldsToast = () => (G.layout === "tall-reel" || G.layout === "reel") && !$("#report").hidden;
 function toast(msg, ms = 2200, onShow = null, keep = false) {
   if (cuts && cuts.playing) { heldToasts.push([msg, ms, onShow, keep]); return; }
   const t = $("#toast"), up = now() - toastAt;
-  if (t.classList.contains("on") && up < TOAST_MIN) {
+  if ((t.classList.contains("on") && up < TOAST_MIN) || reportHoldsToast()) {
     // the same news again (a second gold ring) keeps the shown toast up for its full time; it is not news to queue
     if (t.textContent === msg) { showToast(msg, ms, onShow); return; }
     if (toastQ.some((q) => q.msg === msg)) return;
     toastQ.push({ msg, ms, onShow, keep, at: now() });
     if (toastQ.length > TOAST_QUEUE) { const i = toastQ.findIndex((q) => !q.keep); if (i >= 0) toastQ.splice(i, 1); }
-    if (!toastNextT) toastNextT = setTimeout(nextToast, TOAST_MIN - up);
+    if (!toastNextT) toastNextT = setTimeout(nextToast, Math.max(100, TOAST_MIN - up));
     return;
   }
   showToast(msg, ms, onShow);
@@ -250,7 +254,7 @@ function showToast(msg, ms, onShow) {
   t.classList.add("on");
   toastAt = now();
   clearTimeout(toastT);
-  toastT = setTimeout(() => t.classList.remove("on"), ms);
+  toastT = setTimeout(() => { t.classList.remove("on"); }, ms);
   if (onShow) onShow();
 }
 function nextToast() {
@@ -258,6 +262,7 @@ function nextToast() {
   // the shown toast was asked for again: it keeps its full TOAST_MIN
   const up = now() - toastAt;
   if (up < TOAST_MIN - 5) { toastNextT = setTimeout(nextToast, TOAST_MIN - up); return; }
+  if (reportHoldsToast()) { toastNextT = setTimeout(nextToast, 200); return; }
   while (toastQ.length && !toastQ[0].keep && now() - toastQ[0].at > TOAST_STALE) toastQ.shift();
   const q = toastQ.shift();
   if (!q) return;
@@ -267,6 +272,8 @@ function nextToast() {
 let promptKey = "";
 function prompt(text, sub = "", icon = "", tone = "") {
   guideCue = { text, sub, icon, tone };
+  // on a computer with a mouse the crank is the wheel: the card shows the wheel rolling
+  if (icon === "crank" && inputOf(sensing(), touchDevice, G.desk) === "mouse") icon = "wheel";
   const p = $("#prompt");
   if (!text) { p.hidden = true; promptKey = ""; return; }
   const key = text + "|" + sub + "|" + icon + "|" + tone;
@@ -276,6 +283,7 @@ function prompt(text, sub = "", icon = "", tone = "") {
   // a hot prompt glows once when it changes: start its animation again
   if (tone === "hot" && p.classList.contains("hot")) { p.className = ""; void p.querySelector(".p1").offsetWidth; }
   p.className = tone;
+  p.dataset.icon = ICON[icon] ? icon : "";
   p.querySelector(".p1").innerHTML = (ICON[icon] || "") + "<span></span>";
   p.querySelector(".p1 span").textContent = text;
   p.querySelector(".p2").textContent = sub;
@@ -1100,8 +1108,9 @@ function ringNews(e) {
 
 /* ---------------- the catch ---------------- */
 // the photo beat of a trophy, a legend or a fish that opens a place: the fish shows alone (world.js pushes the camera
-// in), the flash and the shutter come, then the card slides up. Seconds
-const PHOTO = { flash: 1.2, card: 1.5 };
+// in), the flash and the shutter come, then the card slides up. Seconds, on the wall clock: the flash comes as the
+// push-in ends, and the card as the fish's hold ends (world.js runs both on this clock too)
+const PHOTO = { flash: WORLD.PHOTO.push, card: WORLD.PHOTO.push + WORLD.PHOTO.freeze };
 // the call of each place, after a legend's fanfare
 const PLACE_CALL = { loon: "loonWail", stumps: "frogs", river: "rapids", sea: "gulls" };
 function caught(c) {
@@ -1375,12 +1384,12 @@ function helpRows(input) {
   // a computer: the next cast comes at once with a click or Space (the phone tabs keep their room)
   if (keys) steps.push(["thumb", "No fish? <b>Click or press Space</b> to cast again at once."]);
   steps.push(
-    ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "Turn the <b>crank</b>, or use the mouse wheel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
+    ["crank", m ? "Turn the <b>crank</b> with your thumb. Reel slowly." : keys ? "<b>Scroll the mouse wheel</b> to reel, or hold <b>R</b>. Reel slowly." : "Turn the <b>crank</b> on the left with your left thumb. Reel slowly."],
     [m ? "pull" : "swipe", "A fish <b>strikes</b>? " + (keys ? moveWords("hook", "mouse").replace(/!$/, "") + ", or press <b>Space</b>." : moveWords("hook", input))],
   );
-  if (!m) steps.push(["pull", keys ? "Drag the <b>rod</b> up, down and sideways, or use <b>W&nbsp;A&nbsp;S&nbsp;D</b>." : "Your right thumb works the <b>rod</b>: drag it up, down and sideways."]);
+  if (!m) steps.push(["pull", keys ? "<b>Drag anywhere</b> up, down and sideways to work the rod, or use <b>W&nbsp;A&nbsp;S&nbsp;D</b>." : "Your right thumb works the <b>rod</b>: drag it up, down and sideways."]);
   steps.push(
-    ["fish", "In a fight, <b>follow the big words</b> at the top. They tell you each move."],
+    ["fish", "In a fight, <b>follow the card</b> in the top corner. It shows each move."],
     ["ring", "<b>Rings</b> on the water are rising fish. Cast into one for a near-sure bite."],
   );
   const moves = [
@@ -1397,8 +1406,8 @@ function helpRows(input) {
 }
 $("#helpM").innerHTML = helpRows("motion");
 $("#helpT").innerHTML = helpRows(inputOf(false, touchDevice));
-// the app and a phone have no mouse: the tab says Touch
-if (Native.isStore || touchDevice) $("#tabT").textContent = "Touch";
+// the app on a phone or a tablet, and a phone, have no mouse: the tab says Touch (the app on a Mac keeps Touch and mouse)
+if ((Native.isStore && !Native.onMac) || touchDevice) $("#tabT").textContent = "Touch";
 // an opened list comes into view: on a small phone it opens below the part of the list that shows
 for (const d of $$("#help .moves")) d.addEventListener("toggle", () => {
   fades();
@@ -1466,7 +1475,7 @@ function syncSettings() {
   $("#optSound").checked = Sound.isOn();
   $("#optHaptics").checked = Haptics.enabled;
   $("#optHaptics").disabled = Haptics.kind === "none";
-  $("#hapticNote").textContent = Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
+  $("#hapticNote").textContent = Native.onMac ? "This Mac cannot buzz." : Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
   $("#optAssist").checked = !!save.assist;
   // after stalled sensors switched this visit to touch (G.stallTouch), the saved choice is still motion: show touch, so
   // picking Motion turns the sensors back on
@@ -1915,7 +1924,7 @@ function reelUpdate(dt) {
   if (s.fish) {
     const f = s.fish;
     // roll: the body turned about its length, in radians
-    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
+    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
     world.setLure({ x: L.x, y: L.y, z: L.z, visible: false });
     world.setLine({ from: tip, to: { x: f.x, y: f.jump ? f.y : Math.max(f.y, -0.25), z: f.z }, slack: s.slack ? 1 : clamp(0.5 - s.tfrac * 2, 0, 0.5), visible: true });
   } else {
@@ -2292,6 +2301,13 @@ function frame() {
   rodCues.update({ world, phase: G.phase, step: G.step, motion: sensing(), desk: G.desk,
     paused: still || stalled(), cue: guideCue, fish: G.sim?.state, nibble: t - (G.lastEvent.nibble || -1e9) < 900,
     held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
+  // a computer: the crank's hint says to scroll the mouse wheel
+  if (crank) crank.wheelHint = !touchDevice && !sensing();
+  // the action card stands under the pull meter while it shows
+  const pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6;
+  if (pullH !== G.pullH) { G.pullH = pullH; game.style.setProperty("--pull-h", pullH + "px"); }
+  // the action card's how-to stays away while the rod cue over the reel shows the same words
+  { const sub = $("#prompt .p2"), rc = $("#rodCue"); sub.classList.toggle("same", !!rc && !rc.hidden && !!sub.textContent && rc.querySelector("span").textContent === sub.textContent); }
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A
   // hold cast (Space, the mouse button) moves the rod by the clock: its rail stands where all of it shows
   const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;
@@ -2492,7 +2508,9 @@ async function boot() {
   crank = new Crank($("#crankBox"), { toLocal, hand: "right" });
   // touch play: the crank sits on the left, so a fast fling up on the open lake (not on the crank) sets the hook in a
   // strike. The rod's own swipe up works as before, at any time
-  rodPad = new RodPad($("#padBox"), { toLocal, direct: true, area: game, skip: [$("#crankBox"), $("#dragBar")] });
+  // on a computer the mouse takes the rod from a press anywhere on the lake in a fight, not only on the drawn rod
+  rodPad = new RodPad($("#padBox"), { toLocal, direct: true, area: game, skip: [$("#crankBox"), $("#dragBar")],
+    anywhere: (e) => e.pointerType === "mouse" && G.phase === "reel" && !sensing() && !G.paused });
   rodPad.on("yank", () => { if (G.phase === "reel") G.hookReq = true; });
   rodPad.on("fling", () => { if (G.phase === "reel" && !sensing() && G.sim && G.sim.state.phase === "strike") G.hookReq = true; });
   gauge = new Gauge($("#gaugeBox"));

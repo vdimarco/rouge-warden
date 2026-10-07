@@ -2,14 +2,15 @@ import { CENTER, CAMPS } from './world.js';
 import { objectiveText, nextObjective, structureProtected } from './objectives.js';
 import { market, inventoryHTML } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
-import { createMatch, step, player, HEROES, trainSkill, cancelOrder, announce, buy, setBuild, distance, SIZE, LIMIT, SHIFT, PORTALS } from './sim.js';
+import { createMatch, step, player, HEROES, trainSkill, cancelOrder, announce, buy, setBuild, distance, SIZE, LIMIT, SUDDEN_DEATH, SHIFT, PORTALS, lockTip } from './sim.js';
 import { loadArt, Renderer } from './illustrated-render.js';
+import { rendererChoice, saveRendererChoice, graphicsSupport } from './render3d/choice.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
-import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS } from './roster.js';
+import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS, portraitURL, mountMatchPortraits, updateMatchPortraits } from './roster.js';
 import { HERO_IDENTITIES, identitySkill, assignIdentities } from './hero-identities.js';
 import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers, screenMovementPointer } from './pointer-action.js';
@@ -19,9 +20,13 @@ import { cursorSkillAim, dragSkillAim, skillAimPreview } from './skill-aim.js';
 import { followUpFeedback } from './combat-feedback.js';
 import { spellBlocked } from './combat-state.js';
 import { draftPlan, runDraft } from './draft.js';
+import { mountDifficulty, applyDifficulty, savedDifficulty } from './difficulty-ui.js';
 import { Announcer } from './announcer.js';
 import { PerfMeter } from './perf.js';
 import { TeamChat } from './team-chat.js';
+import { RecapView } from './death-recap.js';
+import { ImpactFeel } from './impact-feel.js';
+import { objectiveClock, clockText } from './objective-clock.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
 let selectedIdentity=0;
@@ -55,12 +60,21 @@ document.addEventListener('fullscreenchange', () => {
   if (document.fullscreenElement) { fullscreenLeft = false; lockEscape(); return; }
   try { navigator.keyboard?.unlock?.(); } catch {}
   if (leavingFullscreen) { leavingFullscreen = false; return; }
-  if (running && !resultShown && !paused) { fullscreenLeft = true; pause(); }
+  // Chrome leaves full screen about two seconds into a held Esc, after the first press has opened the menu: the open
+  // menu is drawn again with the windowed choice.
+  if (running && !resultShown) { fullscreenLeft = true; if (!paused || $('screen-mode') || $('resume')) pause(); }
 });
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
+// Combat feel HUD: death recap, objective timers and the edge flash for damage taken.
+const combatFeelStyle=document.createElement('link');combatFeelStyle.rel='stylesheet';combatFeelStyle.href=new URL('./combat-feel.css',import.meta.url).href;document.head.append(combatFeelStyle);
+const recapView=new RecapView($('hud')),feel=new ImpactFeel(),hurtEdge=Object.assign(document.createElement('div'),{id:'hurt-edge'}),objectiveClockEl=Object.assign(document.createElement('div'),{id:'objective-clock'});
+hurtEdge.setAttribute('aria-hidden','true');$('hud').prepend(hurtEdge);$('hud').append(objectiveClockEl);
+let lastIntent,lastHits=0,huntCue=null;
 const skillControlsStyle=document.createElement('link');skillControlsStyle.rel='stylesheet';skillControlsStyle.href=new URL('./skill-controls.css',import.meta.url).href;document.head.append(skillControlsStyle);
+// The desktop command bar loads last, so its layout wins over the thumb fan on mouse-and-keyboard screens.
+const commandBarStyle=document.createElement('link');commandBarStyle.rel='stylesheet';commandBarStyle.href=new URL('./command-bar.css',import.meta.url).href;document.head.append(commandBarStyle);
 const aimStatus=document.createElement('output');aimStatus.id='skill-aim-status';aimStatus.setAttribute('role','status');aimStatus.setAttribute('aria-live','polite');aimStatus.hidden=true;$('skill-points').before(aimStatus);
 skillButtons.forEach(b=>b.setAttribute('aria-describedby','skill-aim-status'));
 function updateAimStatus(status){
@@ -77,13 +91,14 @@ function pause() {
   if (!running || resultShown) return;
   // After full screen ended during play, the menu asks how to go on. Nothing returns to full screen without a choice.
   const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
-  const screen = fullscreenLeft ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
-  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
+  const canFullscreen = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+  const screen = fullscreenLeft || !canFullscreen ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
+  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="graphics-mode" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
   $('resume').onclick = () => { if (fullscreenLeft) playWindowed(); closeSheet(); };
   if ($('fullscreen-back')) $('fullscreen-back').onclick = () => { requestFullscreen(); closeSheet(); };
   if ($('screen-mode')) $('screen-mode').onclick = () => { if (document.fullscreenElement) playWindowed(); else requestFullscreen(); closeSheet(); };
   $('return-home').onclick = () => { closeSheet(); recallQueue = true; };
-  wireSoundRows('pause'); wirePerfRow($('perf-toggle')); $('quit').onclick = menu;
+  wireSoundRows('pause'); wirePerfRow($('perf-toggle')); wireGraphicsRow($('graphics-mode')); $('quit').onclick = menu;
 }
 // Sound controls name the action, not the state, so a player who hears nothing and presses one does not mute the game.
 const SOUND_LABELS = {
@@ -91,30 +106,32 @@ const SOUND_LABELS = {
   voice: on => on ? 'Mute the announcer voice' : 'Announcer voice is off · Turn it on',
   music: on => on ? 'Mute the music' : 'Music is off · Turn it on',
 };
-function soundRowsHTML(id) { return `<button id="${id}-sound" class="row-btn"></button><button id="${id}-voice" class="row-btn"></button><button id="${id}-music" class="row-btn"></button><button id="${id}-test" class="row-btn">Test sound</button><output id="${id}-test-result" class="sound-test" hidden></output>`; }
+function soundRowsHTML(id) { return `<button id="${id}-sound" class="row-btn"></button><button id="${id}-voice" class="row-btn"></button><button id="${id}-music" class="row-btn"></button><button id="${id}-test" class="row-btn">Test sound</button>`; }
 function wireSoundRows(id) {
   const state = { sound: () => sound.on, voice: () => sound.voiceOn, music: () => sound.musicOn }, toggle = { sound: () => sound.toggle(), voice: () => sound.toggleVoice(), music: () => sound.toggleMusic() };
   for (const kind of Object.keys(state)) {
     const b = $(`${id}-${kind}`), label = () => { b.textContent = SOUND_LABELS[kind](state[kind]()); }; label();
     b.onclick = () => { sound.start(); const on = toggle[kind](); label(); updateSound(); if (on) confirmSound(); };
   }
-  $(`${id}-test`).onclick = () => testSound($(`${id}-test-result`), id);
+  $(`${id}-test`).onclick = () => soundTestPanel(id === 'pause' ? pause : gameSettings, $(`${id}-test`));
 }
 function confirmSound() { if (!sound.clip('ui-confirmation', { gain: .9 })) sound.tone(880, .15, .05); }
 function turnSoundOn() { sound.start(); if (!sound.on) sound.toggle(); updateSound(); confirmSound(); }
 // The game measures its own output while it plays a chime. If the level is there and the player still hears nothing,
-// the sound is stopped outside the game, and the result says where to look.
-async function testSound(out, id) {
-  out.hidden = false; out.classList.remove('silent'); out.textContent = 'Playing a test chime…';
+// the sound is stopped outside the game, and the panel says where to look. The panel opens after the measurement, so
+// the menu pager lays it out with its full text.
+async function soundTestPanel(back, button) {
+  if (button) { button.disabled = true; button.textContent = 'Playing a test chime…'; }
   const result = await sound.test();
-  if (result.state === 'muted') {
-    out.classList.add('silent'); out.innerHTML = 'Sound is off in this game. <button class="row-btn" id="test-turn-on">Turn sound on</button>';
-    $('test-turn-on').onclick = () => { turnSoundOn(); wireSoundRows(id); testSound(out, id); };
-  } else if (result.peak > .01) {
-    out.textContent = `The game is playing sound now (level ${Math.round(result.peak * 100)}%). If you heard nothing, the sound stops outside the game. Check the speaker icon on this browser tab (leave full screen, right-click the tab, choose Unmute site), this site's sound setting next to the address bar, your system volume mixer, and your output device. A monitor connected by DisplayPort or HDMI often becomes the default output.`;
-  } else {
-    out.classList.add('silent'); out.textContent = `The game could not start its sound (audio state: ${result.state}). Click anywhere in the game, then press Test sound again.`;
-  }
+  if (!$('sheet').open) return; // the player closed the menu meanwhile
+  const muted = result.state === 'muted', heard = result.peak > .01;
+  const message = muted ? 'Sound is off in this game.'
+    : heard ? `The game is playing sound now (level ${Math.round(result.peak * 100)}%). If you heard nothing, the sound stops outside the game. Check the speaker icon on this browser tab (leave full screen, right-click the tab, choose Unmute site), this site's sound setting next to the address bar, your system volume mixer, and your output device. A monitor connected by DisplayPort or HDMI often becomes the default output.`
+    : `The game could not start its sound (audio state: ${result.state}). Click anywhere in the game, then press Test again.`;
+  sheet(`<h2>Test sound</h2><p id="sound-test-result" class="sound-test${heard ? '' : ' silent'}">${message}</p>${muted ? '<button id="sound-test-on" class="primary">Turn sound on</button>' : ''}<button id="sound-test-again" class="row-btn">Test again</button><button id="sound-test-back" class="${muted ? 'row-btn' : 'primary'}">Back</button>`);
+  if (muted) $('sound-test-on').onclick = () => { turnSoundOn(); soundTestPanel(back); };
+  $('sound-test-again').onclick = () => soundTestPanel(back, $('sound-test-again'));
+  $('sound-test-back').onclick = back;
 }
 function wirePerfRow(b) { const label = () => { b.textContent = perf.on ? 'Hide the performance readout' : 'Show the performance readout'; }; label(); b.onclick = () => { perf.toggle(); label(); }; }
 function menu() { fullscreenLeft = false; sound.silence(); sound.setScene('menu'); draft?.cancel(); autoPaused = false; autoPauseNote.hidden = true; closeSheet(); running = false; resultShown = false; $('menu').hidden = false; $('hud').hidden = true; state = assignIdentities(createMatch(selected),selectedIdentity); sound.next = 0; lineup.refresh(); }
@@ -127,7 +144,7 @@ function choose(identityId) {
   selectedIdentity=identityId;selected=h.kit;
   $('hero-name').textContent=h.name;$('ready-legend').textContent=`${h.name} · ${h.subtitle}`;$('hero-role').textContent=h.subtitle;$('hero-note').textContent=h.note;
   $('hero-tags').innerHTML=h.tags.map(tag=>`<span>${tag}</span>`).join('');
-  $('hero-art').src=`./art/reference/${h.slug}.webp`;$('hero-art').alt=`${h.name}, ${h.subtitle}`;
+  $('hero-art').src=portraitURL(h.slug,'full');$('hero-art').alt=`${h.name}, ${h.subtitle}`;
   document.querySelectorAll('[data-hero]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.hero===identityId)));
   $('menu').style.setProperty('--hero-color',h.color);$('hero-preview').innerHTML=heroPreviewHTML(identityId);
   const spellNote=$('hero-spell-note');spellNote.hidden=false;
@@ -149,15 +166,15 @@ function startDraft() {
   if ($('play').disabled) return;
   // Sound starts in the click before full screen, so the draft music plays under every autoplay rule.
   sound.start(); sound.setScene('draft'); enterFullscreen(); draft?.cancel(); $('menu').hidden = true; $('hud').hidden = true; $('draft').hidden = false;
-  plan = draftPlan(selectedIdentity, Date.now() >>> 0); sound.voiceClip('choose-your-character', .1);
+  plan = draftPlan(selectedIdentity, Date.now() >>> 0, ['ally', savedDifficulty()]); sound.voiceClip('choose-your-character', .1);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   draft = runDraft($('draft'), plan, { sound, reduced, onDone: () => { $('draft').hidden = true; draft = null; start(); }, onBack: () => { $('draft').hidden = true; draft = null; $('menu').hidden = false; sound.setScene('menu'); } });
   $('draft-go').focus({ preventScroll: true });
 }
 function start() {
-  sound.start(); sound.next = 0; plan ||= draftPlan(selectedIdentity, Date.now() >>> 0);
-  state = assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks); rallyReadyAt = 0; rallyQueue = null;
-  announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} updateSound(); $('gpu-note').hidden = !perf.software || gpuNoteClosed; if (!$('gpu-note').hidden) setTimeout(() => { $('gpu-note').hidden = true; }, 20000); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; resetInput();
+  sound.start(); sound.next = 0; plan ||= draftPlan(selectedIdentity, Date.now() >>> 0, ['ally', savedDifficulty()]);
+  state = applyDifficulty(assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks), $('difficulty-badge')); rallyReadyAt = 0; rallyQueue = null;
+  announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} perf.reset(); updateSound(); $('gpu-note').hidden = !perf.software || gpuNoteClosed; if (!$('gpu-note').hidden) setTimeout(() => { $('gpu-note').hidden = true; }, 20000); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
   for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
@@ -166,7 +183,7 @@ function start() {
     b.querySelector('svg')?.remove();b.querySelector('.hud-spell-art')?.remove();
     b.insertAdjacentHTML('afterbegin',hudSpellArt(selectedIdentity,i,'hud-spell-art'));
   });
-  updateUI(); learnSkills();
+  mountMatchPortraits(state,selectedIdentity); updateUI(); learnSkills();
 }
 function learnSkills() {
   if (!running || resultShown) return;
@@ -204,7 +221,7 @@ upgradeButtons.forEach(b=>pointerAction(b,()=>trainFromHUD(+b.dataset.upgrade),(
 
 function how() {
   const h = {...HEROES[selected],...HERO_IDENTITIES[selectedIdentity],descriptions:[0,1,2,3].map(i=>identitySkill(selectedIdentity,i).description)};
-  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Break the outer tower, then the inner tower on one lane to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Drag anywhere on the battlefield to move. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. When a skill point is ready, tap the point pill, then tap the full ability icon to learn or upgrade it without stopping movement. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Your two teammates and the enemy three are drafted before each match. Teammates call fights in chat and rotate to help. Press G or Rally to call them to you, or use Call team here on the map. Pings and hero markers show on the minimap; a red pulse marks a ward under attack.</li><li>Use rift gates to cross the map. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>Six minutes maximum. Remaining structure health breaks a stalemate.</p><p class="keyhint">Sound: announcer kill calls by TripleSnail, recorded by Antti Saari (CC BY 3.0). Voice, impact and interface sounds by Kenney (CC0). Music (CC0): A Legend Will Rise by codemanu, Prepare to Fight by Basil, Unexplored by TAD and Bo Jingles, Determined Pursuit by Emma_MA, Victory Theme by cynicmusic, Lament of the War by Cethiel.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · G rally team · M map · B return · Esc menu<br>The view follows your hero; move the mouse left or right to push the view that way · Click the minimap to look there, right-click to move there · Space returns the view to your hero</p><button id="got-it" class="primary">Into the dark</button>`);
+  sheet(`<h2>Hunt. Hide. Haunt.</h2><p>Each lane has three wards: outer, middle and inner. Break them in order. When any inner ward falls, the two rift guardians can be hit. Break both guardians to expose the enemy elder rift. Destroy the rift to win.</p><ul><li>Drag anywhere on the battlefield to move. Basic attacks fire automatically in range and cycle through three strikes. The third strike hits hardest. Click or tap an enemy to select it, approach and attack. A gold ring marks your target. Click open ground to move. WASD or the pad cancels pursuit. Space stops the order. Automatic attacks continue when enemies enter range.</li><li>Tap a skill for aim assist, or drag to aim and release. Short drags place ground spells nearby. Return your finger to the button center to cancel an aimed skill. On desktop, point at the battlefield and press Q, E, C or R. Start with one skill point and choose your first spell. Each level earns another point. Basic ranks unlock at levels 1, 3, 5 and 7; ultimate ranks at 6, 12 and 18. When a skill point is ready, tap the point pill, then tap the full ability icon to learn or upgrade it without stopping movement. Use the spellbook to inspect every move. Your three-hit basic attacks always work.</li><li>Watch your mana. Each spell costs mana; the blue bar refills over time and faster at home. Heavy casts briefly hold your position. Red cast warnings lock their aim: move out, or stun or silence the caster. Bots combine marks with finishers and save spells for dangerous fights. Finish lane wisps for extra embers. Stay near your wave to gain experience. Repeated tower hits grow stronger, so push with a wave and retreat after attacking a hero under its tower. Wards and rifts take little hero damage unless your wisps are at them, and a rift heals while no enemy wisp is at it. Outer wards are fortified for the first three and a half minutes. Guardians slam the ground: a circle shows first. Step out, then hit the guardian while it recovers.</li><li>Every 40 seconds, the town becomes woods. Buildings and trees block movement and sight. In the woods, hide inside glowing brush. Your first hit from concealment deals 75% extra damage to a creature.</li><li>Your two teammates and the enemy three are drafted before each match. Teammates call fights in chat and rotate to help. Press G or Rally to call them to you, or use Call team here on the map. Pings and hero markers show on the minimap; a red pulse marks a ward under attack.</li><li>Use rift gates to cross the map. A gate near your base sends you to your river gate on the side you face. Tap a neutral guardian to start a camp fight. Guardians retaliate when hit and return home if you lead them too far away. Clear camps for embers, healing and haste. Slay the central beast to recruit the Wild Hunt.</li><li>Spend embers in the Night Market. Combine components into six items. Forge one powerful relic per build. Look for item synergies and counter enemy healing or shields. Choose a build, or track any item. Both teams buy items as they earn embers. Return home to heal. Tap the map to travel to a destination or push the next tower.</li></ul><h2>${h.name}</h2>${h.skills.map((name, i) => `<p><b>${name}</b><br>${h.descriptions[i]}</p>`).join('')}<p>The clock at the top counts down. When it runs out after 14 minutes, sudden death starts: every ward and rift is open and takes more damage, home stops healing and deaths last longer. The clock then turns red and counts down the last 3 minutes. When it runs out again, the team that broke more structures wins.</p><p class="keyhint">Sound: announcer kill calls by TripleSnail, recorded by Antti Saari (CC BY 3.0). Voice, impact and interface sounds by Kenney (CC0). Music (CC0): A Legend Will Rise by codemanu, Prepare to Fight by Basil, Unexplored by TAD and Bo Jingles, Determined Pursuit by Emma_MA, Victory Theme by cynicmusic, Lament of the War by Cethiel.</p><p class="keyhint">One player and five bots. Click enemy to attack · Click ground to move · Space stop · WASD / arrows · Q / E / C / R skills · K spellbook · F gate · G rally team · M map · B return · Esc menu<br>The view follows your hero; move the mouse left or right to push the view that way · Click the minimap to look there, right-click to move there · Space returns the view to your hero</p><button id="got-it" class="primary">Into the dark</button>`);
   $('got-it').onclick = closeSheet;
 }
 function map() {
@@ -228,7 +245,8 @@ function result() {
   $('close-sheet').hidden = true; $('again').onclick = () => { closeSheet(); $('close-sheet').hidden = false; plan = null; $('hud').hidden = true; running = false; resultShown = false; startDraft(); }; $('change-hero').onclick = () => { $('close-sheet').hidden = false; menu(); };
 }
 function updateUI() {
-  const p = player(state), remain = Math.max(0, Math.ceil(LIMIT - state.time));
+  // The clock counts down to sudden death, then to the hard limit.
+  const p = player(state), remain = Math.max(0, Math.ceil((state.suddenDeath ? LIMIT : SUDDEN_DEATH) - state.time)); dom.clock.classList.toggle('sudden-death', !!state.suddenDeath);
   dom.clock.textContent = `${String(Math.floor(remain / 60)).padStart(2, '0')}:${String(remain % 60).padStart(2, '0')}`;
   $('allied-score').textContent = state.score[0]; $('enemy-score').textContent = state.score[1]; dom.level.textContent = p.level; dom.healthFill.style.width = `${p.hp / p.maxHp * 98}%`; dom.healthText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`; dom.xp.style.width = `${(p.level === MAX_LEVEL ? 1 : p.xp / xpForLevel(p.level)) * 100}%`; dom.gold.textContent = Math.floor(p.gold); dom.shop.classList.toggle('available', !!nextPurchase(p));
   $('mana-fill').style.width=`${p.mana/p.maxMana*98}%`;$('mana-text').textContent=`${Math.floor(p.mana)} / ${p.maxMana}`;$('mana-text').setAttribute('aria-label',`Mana ${Math.floor(p.mana)} of ${p.maxMana}`);
@@ -238,12 +256,12 @@ function updateUI() {
   const upgradeMode=abilityCluster.classList.contains('upgrade-mode');
   skillButtons.forEach((b,i)=>{
     const eligible=canLearn(p,i),rank=p.skillRanks[i],locked=!rank,returnReady=i===0&&canReturn(state,p),empty=!canAfford(p,i)&&!returnReady,blocked=spellBlocked(state,p,i)||!!p.castIntent||p.recoveryUntil>state.time;
-    const blockedLabel=p.castIntent?'CAST':p.recoveryUntil>state.time?'WAIT':p.stun>0?'STUN':p.fear>0?'FEAR':p.silencedUntil>state.time?'SILENCE':p.hp<=0?'':blocked?'ROOT':'';
+    const queued=p.queuedCast?.slot===i,blockedLabel=queued?'QUEUED':p.castIntent?'CAST':p.recoveryUntil>state.time?'WAIT':p.stun>0?'STUN':p.fear>0?'FEAR':p.silencedUntil>state.time?'SILENCE':p.hp<=0?'':blocked?'ROOT':'';
     b.querySelector('b').textContent=locked?(i===3&&p.level<6?'LV 6':'LOCK'):blocked?blockedLabel:returnReady?'BACK':p.cd[i]>0?Math.ceil(p.cd[i]):empty?'MANA':'';
     b.querySelector('b').classList.toggle('locked',locked);
     b.classList.toggle('unlearned',locked);b.classList.toggle('trainable',eligible);
     b.classList.toggle('upgrade-target',upgradeMode&&eligible);
-    b.classList.toggle('control-blocked',blocked&&!locked);
+    b.classList.toggle('control-blocked',blocked&&!locked);b.classList.toggle('queued',queued);
     b.classList.toggle('mana-empty',empty&&!locked);b.classList.toggle('return-ready',returnReady);
     b.querySelector('.mana-cost').textContent=`${returnReady?0:manaCost(p,i)} MP`;
     const combatDisabled=locked||!returnReady&&(p.cd[i]>0||empty)||blocked;
@@ -265,6 +283,10 @@ function updateUI() {
   });
 
   dom.respawn.hidden = p.hp > 0; if (p.hp <= 0) dom.respawn.innerHTML = `The veil takes you<strong>${Math.max(1, Math.ceil(p.respawn))}</strong>`;
+  recapView.update(p);
+  const clock=objectiveClock(state,p),clockKey=clock.items.map(i=>i.state+clockText(i)).join('|');
+  if(objectiveClockEl.dataset.key!==clockKey){objectiveClockEl.dataset.key=clockKey;objectiveClockEl.replaceChildren(...clock.items.map(i=>Object.assign(document.createElement('span'),{className:i.state,textContent:clockText(i)})));}
+  if(clock.hunt.state==='soon'&&(huntCue?.state!==state||huntCue.at!==state.objectiveAt)){huntCue={state,at:state.objectiveAt};sound.horn();}
   const msg = state.messages.at(-1), fresh = msg && state.time - msg.time < 3.8;
   const noticeKey = msg && JSON.stringify([msg.time, msg.title, msg.detail]);
   dom.notice.style.opacity = fresh ? '1' : '0'; if (fresh && dom.notice.dataset.message !== noticeKey) { dom.notice.replaceChildren(); const b = document.createElement('b'), small = document.createElement('small'); b.textContent = msg.title; small.textContent = msg.detail; dom.notice.append(b, small); dom.notice.dataset.message = noticeKey; }
@@ -275,15 +297,18 @@ function updateUI() {
   $('objective').classList.toggle('shifting', until <= 6);
   $('portal').disabled = distance(p, gate) >= 150 || p.portalCd > 0 || p.hp <= 0;
   $('portal').hidden = distance(p, gate) >= 180 && p.portalCd <= 0;
-  $('portal').querySelector('small').textContent = p.portalCd > 0 ? `${Math.ceil(p.portalCd)}s` : 'Jump across the map';
+  $('portal').querySelector('small').textContent = p.portalCd > 0 ? `${Math.ceil(p.portalCd)}s` : (gate.choices ? 'Jump to the river you face' : 'Jump across the map');
   const focus = state.units.find(e => e.id === p.target && e.hp > 0);
   $('auto-status').textContent = p.hp <= 0 ? 'RESPAWNING' : p.order?.type==='attack' && focus ? `${distance(p,focus)>p.range+focus.radius?'APPROACH':'ATTACK'} · ${focus.name} · ${p.attackVariant+1||1}/3` : p.order?.type==='move' ? 'MOVING · CLICK ENEMY TO ATTACK' : focus ? `AUTO ${p.attackVariant + 1 || 1}/3 · ${BASIC_ATTACKS[p.hero][p.attackVariant || 0]}` : 'AUTO · CLICK ENEMY TO ATTACK';
   $('auto-status').classList.toggle('engaged', !!focus);
   if (waypoint && distance(p, waypoint) < 110) waypoint = null;
+  // The enemy bots' team focus is the player: a mark under the health bar. The focus needs the enemy team to see the player.
+  const hunt=state.botFocus?.[1-p.team];$('hunted').hidden=!(hunt&&hunt.id===p.id&&hunt.until>state.time&&p.hp>0);
   const towerThreat=state.units.find(t=>t.kind==='tower'&&t.team!==p.team&&t.towerTarget===p.id&&t.towerUntil>state.time&&t.hp>0);
   dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : towerThreat?'Tower fire is growing. Leave its range.':concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : objectiveText(state,p.lane);
   const rallyWait=Math.ceil(rallyReadyAt-state.time);$('rally').disabled=p.hp<=0||rallyWait>0;$('rally').querySelector('small').textContent=rallyWait>0?`${rallyWait}s`:'Call team';
   if (state.time > 18) $('coach').hidden = true;
+  updateMatchPortraits(state);
 }
 const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);
@@ -313,7 +338,7 @@ function heroDetails(){
 }
 function selectionPanel(title,copy){sheet(`<h2>${title}</h2>${copy}<button id="selection-back" class="primary">Back to heroes</button>`);$('selection-back').onclick=closeSheet;}
 function matchRecord(){let record={wins:0,matches:0};try{record=JSON.parse(localStorage.getItem('monster-mash.record'))||record;}catch{}selectionPanel('Tidecaller',`<p>Your match record on this device.</p><dl><dt>Matches played</dt><dd>${Number(record.matches)||0}</dd><dt>Victories</dt><dd>${Number(record.wins)||0}</dd></dl>`);}
-function gameSettings(){sheet(`<h2>Game settings</h2>${soundRowsHTML('settings')}<button id="selection-fullscreen" class="row-btn"></button><button id="settings-perf" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>`);wireSoundRows('settings');wirePerfRow($('settings-perf'));const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}saveFullscreen(!on);if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
+function gameSettings(){sheet(`<h2>Game settings</h2>${soundRowsHTML('settings')}<button id="selection-fullscreen" class="row-btn"></button><button id="settings-perf" class="row-btn"></button><button id="settings-graphics" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>`);wireSoundRows('settings');wirePerfRow($('settings-perf'));wireGraphicsRow($('settings-graphics'));const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}saveFullscreen(!on);if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
 $('play').onclick=startDraft;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
 $('hero-profile').onclick=matchRecord;$('tidecaller-profile').onclick=matchRecord;$('hero-settings').onclick=gameSettings;
 document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
@@ -327,6 +352,7 @@ document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
 $('sheet').addEventListener('cancel', e => { e.preventDefault(); if (!resultShown) closeSheet(); });
 $('select-key').onclick=startDraft;$('menu-muted-chip').onclick=turnSoundOn;updateSound();
 let rosterFilter='All';
+mountDifficulty($('difficulty-picker'));
 const lineup=mountLineup({track:$('hero-picks'),previous:$('hero-prev'),next:$('hero-next'),position:$('lineup-position'),selected:()=>selectedIdentity,choose});
 function showRoster(){ $('hero-picks').innerHTML=rosterHTML(selectedIdentity,rosterFilter);const count=document.querySelectorAll('[data-hero]').length;$('roster-count').textContent=`${count} ${count===1?'hero':'heroes'}`;lineup.refresh(); }
 $('role-filters').innerHTML=ROLES.map((role,i)=>`<button data-role="${role}" aria-pressed="${role==='All'}"><span class="role-icon" style="--role-x:${[42,117,194,272,347,429][i]}" aria-hidden="true"></span>${role}</button>`).join('');
@@ -347,7 +373,7 @@ function battlefieldTap(e){
   if(!renderer||!running||paused||player(state).hp<=0)return;
   const point=renderer.world(e.clientX,e.clientY),picked=renderer.pick(state,e.clientX,e.clientY);
   const hit=state.units.find(u=>u.id===picked&&u.team!==0&&u.hp>0&&visibleTo(state,0,u))||state.units.filter(u=>u.team!==0&&u.hp>0&&distance(u,point)<Math.max(55,u.radius)&&visibleTo(state,0,u)).sort((a,b)=>distance(a,point)-distance(b,point))[0];
-  if(hit&&structureProtected(state,hit)){announce(state,hit.kind==='core'?'Rift protected':'Inner ward protected',hit.kind==='core'?'Clear both towers on one lane.':'Break this lane’s outer ward first.');return;}
+  if(hit&&structureProtected(state,hit)){announce(state,...lockTip(hit));return;}
   target=0;orderQueue=hit?{type:'attack',target:hit.id}:e.pointerType==='mouse'?{type:'move',...point}:{type:'stop'};
 }
 $('battle').addEventListener('pointerdown',e=>{
@@ -425,6 +451,9 @@ function frame(now) {
       step(state, input);
       if(Number.isFinite(p.castStarted)&&p.castStarted>lastCast){sound.skill(p.castSlot,p.hero);lastCast=p.castStarted;}
       sound.syncFeedback(state,p);
+      // A quiet click when your cast starts, and a gold chime for a last hit.
+      const intentStart=p.castIntent?.start;if(intentStart!==undefined&&intentStart!==lastIntent)sound.commit();lastIntent=intentStart;
+      if(p.lastHits!==lastHits){if(p.lastHits>lastHits)sound.lastHit();lastHits=p.lastHits;}
       if (p.lastBasicHit > lastAttack) { sound.hit(p.lastBasicVariant,p.hero); lastAttack = p.lastBasicHit; }
       accumulator -= 1 / 60;
     }
@@ -433,13 +462,54 @@ function frame(now) {
     renderer?.setLook(keys.has(' ') ? 0 : lookX); renderer?.adapt(frameMs);
     if (renderer) { const span = Math.abs(renderer.world(renderer.width, 0).x - renderer.world(0, 0).x) / 2 || 1400; sound.setListener(renderer.cam.x, renderer.cam.y, span); }
     announcer.update(state, { playerId: state.playerId, visible: renderer?.visible }); teamChat.update(state);
+    // Hitstop and shake are drawn by the renderer; the sim keeps stepping at 60 Hz.
+    const felt = feel.update(state, state.playerId, dt, { reducedMotion: renderer?.reducedMotion }); if (renderer) renderer.feel = feel;
+    for (const i of felt.impacts) sound.impact(i.weight, i.x, i.y); if (felt.hurt > .004) sound.hurt(felt.hurt);
+    const me = player(state); if (me.hp > 0 && me.hp < me.maxHp * .3) sound.heartbeat();
+    const edge = Math.round(feel.edge * 20) / 20; if (hurtEdge.dataset.edge !== String(edge)) { hurtEdge.dataset.edge = edge; hurtEdge.style.opacity = edge; }
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
     if (state.winner !== null && !resultShown) result();
   }
+  // A held match keeps fading the shake, the hitstop and the red edge instead of freezing them.
+  if (running && (paused || window.GameSwitch?.isOpen)) { feel.idle(dt); hurtEdge.style.opacity = hurtEdge.dataset.edge = Math.round(feel.edge * 20) / 20; }
   const drawStart = performance.now();
-  if (running && renderer) drawBetweenSteps(dt);
-  perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running);
+  if (running && renderer) drawBetweenSteps(dt); else drawArena(frameMs);
+  perf.frame(frameMs, steps, performance.now() - drawStart, renderer, running, running && !paused && !window.GameSwitch?.isOpen);
   requestAnimationFrame(frame);
+}
+// The hero select arena (3D only): the selected hero stands alone near the allied base, with only the structures and no
+// match clock. three-render.js frames it with a low camera in the box of the portrait. The painted stage and portrait
+// stay for the 2D view, until the first hero model is ready, when a model fails and when the WebGL context is lost. A new
+// pick keeps the last hero on stage while its model parses, then swaps. Idle frames parse the nearest other heroes one at
+// a time, so later picks swap at once. It draws at most 30 frames a second. A slow draw waits twice its own time (up to
+// 2 s), so the menu keeps about half of the main thread. It never draws while the tab is hidden, and stops when the draft
+// or a match starts.
+const ARENA = { x: 4250, y: 8950, facing: 1.95 }, ARENA_MS = 1000 / 30;
+let arena = null, arenaClock = ARENA_MS, arenaSince = 0, arenaCost = 0;
+function arenaState(ready) {
+  if (!ready || arena?.identity === selectedIdentity) return arena.state;
+  const s = assignIdentities(createMatch(selected), selectedIdentity), p = Object.assign(player(s), ARENA);
+  // No structure is warded in sudden death, so no ward light stands in the view. The clock never runs here.
+  s.units = s.units.filter(u => u === p || u.kind === 'tower' || u.kind === 'core'); s.suddenDeath = true;
+  // A short ring in the hero's colour marks a new choice (not the first hero, and not with reduced motion).
+  if (arena && !matchMedia('(prefers-reduced-motion: reduce)').matches) s.effects.push({ x: p.x, y: p.y, type: 'arrive', color: HERO_IDENTITIES[selectedIdentity].color, radius: 120, life: .8, maxLife: .8 });
+  arena = { identity: selectedIdentity, state: s }; return s;
+}
+function warmHeroes() { const n = HERO_IDENTITIES.length; for (let k = 1; k < n; k++) for (const i of [(selectedIdentity + k) % n, (selectedIdentity - k + n) % n]) if (renderer.heroStatus(i) === 'loading') return; }
+function drawArena(frameMs) {
+  const menu = $('menu'); if (running || menu.hidden) return;
+  const status = renderer?.lost ? 'lost' : renderer?.heroStatus?.(selectedIdentity);
+  if (status !== 'ready' && !(status === 'loading' && arena && menu.classList.contains('arena-3d'))) { menu.classList.remove('arena-3d'); arenaClock = ARENA_MS; return; }
+  if (document.hidden || window.GameSwitch?.isOpen) return;
+  arenaSince += frameMs; arenaClock += frameMs; const gap = Math.min(2000, Math.max(ARENA_MS, arenaCost * 2)); if (arenaClock < gap) return;
+  const s = arenaState(status === 'ready'), dt = Math.min(arenaSince, 100) / 1000; arenaClock = Math.min(arenaClock - gap, ARENA_MS); arenaSince = 0;
+  for (const f of s.effects) f.life -= dt; s.effects = s.effects.filter(f => f.life > 0);
+  // The hero stands where the portrait stands: feet on the portrait's lower edge (above the footer), head near its top
+  // and below the wordmark where the two share a column (phones).
+  const art = $('hero-art').getBoundingClientRect(), floor = menu.querySelector('.roster-footer').getBoundingClientRect().top, mark = menu.querySelector('.roster-heading').getBoundingClientRect(), x = art.left + art.width / 2;
+  const start = performance.now();
+  renderer.draw(s, dt, { stage: { x, head: Math.max(art.top + art.height * .06, x < mark.right ? mark.bottom + 8 : 0), feet: Math.min(art.bottom, floor) - art.height * .03 } });
+  arenaCost = performance.now() - start; menu.classList.add('arena-3d'); if (status === 'ready') warmHeroes();
 }
 // The simulation steps at 60 Hz, but a 100-175 Hz screen draws two or three frames per step. Units and missiles are
 // drawn between their last two positions (by the time left over in the accumulator), so they glide with the camera
@@ -456,7 +526,43 @@ function drawBetweenSteps(dt) {
   try { renderer.draw(state, dt, false, aim ? skillAimPreview(state, player(state), aim.slot, dragSkillAim(player(state), aim.slot, aim, (x, y) => renderer.screenDirection(x, y))) : null, waypoint); }
   finally { state.time = time; for (let i = 0; i < moved.length; i += 3) { moved[i].x = moved[i + 1]; moved[i].y = moved[i + 2]; } }
 }
-loadArt().then(art => { renderer = new Renderer($('battle'), $('minimap'), art); $('play').disabled = false; $('play').querySelector('span').textContent = 'Play Shore of the Ancients'; requestAnimationFrame(frame); }).catch(error => { console.error(error); if (/WebGL/i.test(String(error))) $('load-error').innerHTML = '3D graphics are unavailable in this browser. Turn on graphics acceleration or open on another device.'; $('load-error').hidden = false; $('play').querySelector('span').textContent = 'Shore unavailable'; });
+// The battlefield renderer: 3D where a graphics card draws WebGL2 (render3d/choice.js), otherwise the 2D one. 3D that
+// fails to start falls back to 2D. The models download from page load; Play waits for the world models and clips, and
+// heroes still loading show a stand-in. The menu's Graphics row switches renderers during play.
+let art = null, graphicsMode = rendererChoice(), three = null;
+const loadingText = (done, total) => { if ($('play').disabled) $('play').querySelector('span').textContent = `Opening the shore… ${Math.round(done / total * 100)}%`; };
+const loadThree = () => three ||= import('./three-render.js').then(m => m.preload(loadingText).then(() => m));
+async function makeRenderer(mode) {
+  if (mode === '3d') try { const m = await loadThree(); return new m.ThreeRenderer($('battle'), $('minimap'), art); } catch (error) { console.warn('3D graphics are unavailable; using the 2D battlefield.', error); }
+  return new Renderer($('battle'), $('minimap'), art);
+}
+// One switch runs at a time. The first switch to 3D loads three.js and the models, which takes seconds, and the menu
+// builds a new Graphics button each time it opens, so the guard lives here and not on the button.
+let switching = null;
+function labelGraphics(b) {
+  b.textContent = switching ? 'Switching graphics…' : graphicsMode === '3d' ? 'Graphics: 3D · Switch to 2D' : 'Graphics: 2D · Switch to 3D';
+  b.disabled = !!switching;
+}
+function wireGraphicsRow(b) {
+  if (!b) return;
+  if (!graphicsSupport().webgl2) { b.textContent = 'Graphics: 2D (no WebGL2 in this browser)'; b.disabled = true; return; }
+  labelGraphics(b);
+  b.onclick = async () => {
+    if (!art || switching) return;
+    const next = graphicsMode === '3d' ? '2d' : '3d', old = renderer; saveRendererChoice(next);
+    const run = switching = makeRenderer(next); labelGraphics(b);
+    let made;
+    try { made = await run; } finally { if (switching === run) switching = null; }
+    // If another renderer took over meanwhile, the new one is dropped so its canvases and WebGL context do not stay.
+    if (renderer !== old) made.dispose?.();
+    else {
+      old?.dispose?.(); renderer = made; graphicsMode = made instanceof Renderer ? '2d' : '3d';
+      if (old) renderer.cam = { ...old.cam }; renderer.resize();
+    }
+    for (const button of document.querySelectorAll('#graphics-mode,#settings-graphics')) labelGraphics(button);
+  };
+}
+Promise.all([loadArt(), graphicsMode === '3d' ? loadThree().catch(error => { console.warn('3D models are unavailable; using the 2D battlefield.', error); graphicsMode = '2d'; }) : null]).then(async ([loaded]) => { art = loaded; renderer = await makeRenderer(graphicsMode); graphicsMode = renderer instanceof Renderer ? '2d' : '3d'; $('play').disabled = false; $('play').querySelector('span').textContent = 'Play Shore of the Ancients'; requestAnimationFrame(frame); }).catch(error => { console.error(error); $('load-error').hidden = false; $('play').querySelector('span').textContent = 'Shore unavailable'; });
 document.addEventListener('error',e=>{if(e.target.tagName!=='IMG')return;const picture=e.target.closest('picture');if(picture?.querySelector('source')?.hasAttribute('srcset')){picture.querySelector('source').removeAttribute('srcset');e.target.src=e.target.getAttribute('src');}},true);
 choose(selectedIdentity);
 // A read-only snapshot supports the existing arcade's QA tooling.

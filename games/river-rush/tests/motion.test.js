@@ -1,56 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, emptyInput, updateGame } from '../src/game/engine.js';
-import { createMotion, advanceMotion } from '../src/game/motion.js';
-
-test('pose and event effects freeze with simulation time and reset for a new run', () => {
-  const g = createGame(2), m = createMotion(g);
-  g.time = 0.05; g.wasReaching = true; g.event = 'hit'; g.eventId++;
-  advanceMotion(m, g);
-  assert.ok(m.reach > 0 && m.reach < 1);
-  assert.equal(m.effects.length, 1);
-  const frozen = structuredClone(m);
-  for (let i = 0; i < 30; i++) advanceMotion(m, g);
-  assert.deepEqual(m, frozen);
-  g.time += 1.4; advanceMotion(m, g);
-  assert.equal(m.effects.length, 0);
-  const fresh = createMotion(createGame(2));
-  assert.equal(fresh.effects.length, 0); assert.equal(fresh.reach, 0);
+import {createMotion,advanceMotion,paddleFrame,landingPulse,impactPulse,pickupProgress} from '../src/game/motion.js';
+import {createGame,emptyInput,applyAction,updateGame} from '../src/game/engine.js';
+const state=()=>({time:0,coins:0,action:'',effects:[]});
+test('immediate pose selection, paddling and effects freeze with simulation time',()=>{
+ const g=state(),m=createMotion(g);g.action='jump';g.time=.04;g.effects=[{type:'land',time:.02,id:1}];advanceMotion(m,g);
+ const before=structuredClone(m),frame=paddleFrame(g.time),pulse=landingPulse(m,g.time);
+ for(let i=0;i<100;i++)advanceMotion(m,g);
+ assert.deepEqual(m,before);assert.equal(paddleFrame(g.time),frame);assert.equal(landingPulse(m,g.time),pulse);assert.ok(m.weights[1]>.7);assert.equal(m.bursts.length,1);
 });
-
-test('reduced motion selects the correct pose immediately and effects stay bounded', () => {
-  const g = createGame(4), m = createMotion(g);
-  g.wasReaching = true; advanceMotion(m, g, true); assert.equal(m.reach, 1);
-  for (let i = 0; i < 20; i++) {
-    g.time += 0.02; g.event = 'key'; g.eventId++;
-    advanceMotion(m, g);
-  }
-  assert.equal(m.effects.length, 6);
+test('coin flights retain the source lane and expire; repeated events are never duplicated',()=>{
+ const g=state(),m=createMotion(g);g.effects=[{type:'coin',time:0,id:1,lane:0,playerLane:2,attracted:true}];advanceMotion(m,g);advanceMotion(m,g);
+ assert.equal(m.pickups.length,1);assert.equal(m.pickups[0].lane,0);assert.equal(m.pickups[0].playerLane,2);assert.equal(pickupProgress(m.pickups[0],.18),.5);
+ g.time=.7;advanceMotion(m,g);assert.equal(m.pickups.length,0);
 });
-
-test('Surge accelerates once per press, costs balance and is blocked while falling', () => {
-  const g = createGame(1), plain = createGame(1), input = { ...emptyInput(), boost: true };
-  g.charge = 100; g.rocks = []; plain.rocks = [];
-  updateGame(g, input, 0.05); updateGame(plain, emptyInput(), 0.05);
-  assert.ok(g.distance > plain.distance * 1.4); assert.ok(g.balance < plain.balance);
-  assert.ok(g.charge >= 65 && g.charge < 66);
-  for (let i = 0; i < 45; i++) updateGame(g, input, 0.05);
-  assert.equal(g.surge, 0); assert.ok(g.charge > 65);
-  updateGame(g, emptyInput(), 0.05); updateGame(g, input, 0.05);
-  assert.ok(g.surge > 0 && g.charge < 40);
-  const fallen = createGame(1); fallen.falling = 2;
-  updateGame(fallen, input, 0.05); assert.equal(fallen.surge, 0);
-  const tapped = createGame(1), tapInput = { ...emptyInput(), boostTap: true };
-  updateGame(tapped, tapInput, 0.05); assert.ok(tapped.surge > 0); assert.equal(tapInput.boostTap, false);
+test('presentation buffers stay bounded under many pickups and impacts',()=>{
+ const g=state(),m=createMotion(g);g.effects=Array.from({length:200},(_,i)=>({id:i+1,type:i%2?'coin':'hit',time:0}));advanceMotion(m,g);
+ assert.equal(m.pickups.length,12);assert.equal(m.bursts.length,8);g.time=1;advanceMotion(m,g);assert.deepEqual(m.pickups,[]);assert.deepEqual(m.bursts,[]);
 });
-
-test('clear near misses grant one reward, build combos and collisions break them', () => {
-  const g = createGame(1); g.x = 500; g.rocks = [{ x: 360, d: 0, radius: 50, hit: false }]; g.distance = 56;
-  updateGame(g, emptyInput(), 0.01);
-  assert.equal(g.closeCalls, 1); assert.equal(g.combo, 1); assert.equal(g.score, 60);
-  updateGame(g, emptyInput(), 0.01); assert.equal(g.score, 60);
-  g.rocks.push({ x: 360, d: g.distance - 56, radius: 50, hit: false });
-  updateGame(g, emptyInput(), 0.01); assert.equal(g.combo, 2); assert.equal(g.score, 180);
-  g.rocks.push({ x: 500, d: g.distance + 2, radius: 50, hit: false });
-  updateGame(g, emptyInput(), 0.01); assert.equal(g.combo, 0);
+test('live reduced motion chooses exact poses and clears optional particles',()=>{
+ const g=state(),m=createMotion(g);g.time=.02;g.action='duck';g.effects=[{type:'coin',time:0,id:1},{type:'hit',time:0,id:2}];advanceMotion(m,g);advanceMotion(m,g,true);
+ assert.deepEqual(m.weights,[0,0,1]);assert.deepEqual(m.pickups,[]);assert.deepEqual(m.bursts,[]);assert.equal(paddleFrame(100,true),0);assert.equal(impactPulse(m,.02,true),0);assert.equal(landingPulse(m,.02,true),0);
+});
+test('each completed jump emits one landing without scoring or changing the action window',()=>{
+ const g=Object.assign(createGame(1),{entities:[],nextRow:1e9});applyAction(g,'jump');
+ for(let i=0;i<53;i++)updateGame(g,emptyInput(),1/60);
+ assert.equal(g.action,'');assert.equal(g.effects.filter(e=>e.type==='land').length,1);assert.equal(g.bonus,0);assert.equal(g.coins,0);
+ for(let i=0;i<6;i++)updateGame(g,emptyInput(),1/60);assert.equal(g.effects.filter(e=>e.type==='land').length,1);
 });

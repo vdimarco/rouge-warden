@@ -1,0 +1,486 @@
+{
+  "recordedAt": "2026-10-06T22:26:03.573136+00:00",
+  "unitTests": {
+    "passed": 48,
+    "command": "npm test --prefix games/river-rush"
+  },
+  "geometryCoverage": "60 seed/course/lane scenarios; 129 curve samples using actual taper; connected substantial forks and descending low profile",
+  "build": "npm run build:arcade --prefix games/river-rush",
+  "runtimeFiles": [
+    {
+      "path": "public/river-rush/index.html",
+      "bytes": 752,
+      "sha256": "2ae8c324722ae778b73ab2a36eed0765ca88894daff6867838a41b4fa5b46a15"
+    },
+    {
+      "path": "public/river-rush/assets/index-B8RnzyfL.js",
+      "bytes": 962570,
+      "sha256": "9553dd0ee742306074e311996bd24fbcec60b402ec0615e27eba036e62272d73"
+    },
+    {
+      "path": "public/river-rush/assets/index-BHUdth4r.css",
+      "bytes": 18049,
+      "sha256": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540"
+    },
+    {
+      "path": "public/river-rush/art/tree-bark-normal.webp",
+      "bytes": 536952,
+      "sha256": "e8533790102db671ca34721c1ca9f2882fd9ebb6eb9df33307574b3cf0fea825"
+    },
+    {
+      "path": "public/river-rush/art/tree-bark.webp",
+      "bytes": 454760,
+      "sha256": "01a05056af68f139e93a17d264bd32a3e3d1d49ba05066902ced22c3b6115a13"
+    },
+    {
+      "path": "public/river-rush/art/tree-foliage.webp",
+      "bytes": 99296,
+      "sha256": "57dc3bed01746f8f5bf502fbd5866a0465e9088cbe8958d2c57ded65b7bea7ce"
+    }
+  ],
+  "localBrowser": {
+    "passed": true,
+    "results": [
+      {
+        "case": "phone",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": true,
+        "drawCalls": 31,
+        "triangles": 115520,
+        "branchBatches": {
+          "trees": 9,
+          "scenery": 7,
+          "woodSegments": 137,
+          "leafClusters": 201,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -17.777538354203365,
+                "y": 1.0149512124144884,
+                "d": 7.136
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 26,
+              "lane": 1,
+              "course": 203.15633381626628,
+              "side": -1,
+              "root": {
+                "x": -18.22660850300103,
+                "y": 0.5326319325885606,
+                "d": 8.04
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "phone-2d",
+        "renderer": "2d",
+        "approach": true,
+        "rootRegistrationChecked": false,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": false,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": false,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false
+      },
+      {
+        "case": "desktop-materials",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": true,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 31,
+        "triangles": 249303,
+        "branchBatches": {
+          "trees": 9,
+          "scenery": 7,
+          "woodSegments": 137,
+          "leafClusters": 201,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -16.562272010361458,
+                "y": 0.9113778101020089,
+                "d": 8.911999999999999
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 2,
+              "course": 203.15633381626628,
+              "side": 1,
+              "root": {
+                "x": 17.247851174276903,
+                "y": 0.6968108154436462,
+                "d": 11.48
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "landscape",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 31,
+        "triangles": 117000,
+        "branchBatches": {
+          "trees": 9,
+          "scenery": 7,
+          "woodSegments": 137,
+          "leafClusters": 201,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": 1,
+              "root": {
+                "x": 19.19221285830505,
+                "y": 0.5469818525507408,
+                "d": 8.04
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 0,
+              "course": 203.15633381626628,
+              "side": -1,
+              "root": {
+                "x": -18.109047119135035,
+                "y": 0.9789945321273821,
+                "d": 4.608
+              },
+              "tip": {
+                "x": -3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "phone-reduced",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": true,
+        "missingTextureFallback": false,
+        "detailedMaterials": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": false,
+        "drawCalls": 30,
+        "triangles": 119294,
+        "branchBatches": {
+          "trees": 10,
+          "scenery": 7,
+          "woodSegments": 167,
+          "leafClusters": 228,
+          "capacity": 32,
+          "perTree": 32,
+          "drawCalls": 2,
+          "style": "curved-tapered",
+          "bark": "fal",
+          "foliage": "fal",
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 40.65104809523811,
+              "side": 1,
+              "root": {
+                "x": 17.8978102790276,
+                "y": 0.7157456225364205,
+                "d": 8.368
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 26,
+              "lane": 2,
+              "course": 131.1315838162663,
+              "side": 1,
+              "root": {
+                "x": 19.73911310967118,
+                "y": 0.7720819034758036,
+                "d": 10.264
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 34,
+              "lane": 2,
+              "course": 176.9387590841952,
+              "side": 1,
+              "root": {
+                "x": 19.360559357164544,
+                "y": 0.7507255047913957,
+                "d": 11.208
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "screenshots": "/tmp/river-boughs/final-*"
+  },
+  "limitations": [
+    "Emulated viewports and SwiftShader, not physical phone/GPU frame rates.",
+    "OpenSpec CLI unavailable; Markdown structure validated directly."
+  ],
+  "production": {
+    "status": "READY",
+    "deploymentId": "dpl_8ky2Nb7erk3kDaPj2bkHnWwWqCFD",
+    "implementationCommit": "ef7385e9d692476932b40c0fc245ba429aea0e07",
+    "url": "https://arcade.uptick.systems/river-rush/",
+    "verifiedAt": "2026-10-06T22:27:17.579914+00:00",
+    "http": {
+      "verifiedAt": "2026-10-06T22:26:46.356252+00:00",
+      "sha": "ef7385e9d692476932b40c0fc245ba429aea0e07",
+      "base": "https://arcade.uptick.systems/",
+      "passed": true,
+      "files": [
+        {
+          "path": "public/river-rush/index.html",
+          "url": "https://arcade.uptick.systems/river-rush/index.html?branched-boughs=ef7385e9d692476932b40c0fc245ba429aea0e07",
+          "status": 200,
+          "contentType": "text/html; charset=utf-8",
+          "bytes": 752,
+          "sha256": "2ae8c324722ae778b73ab2a36eed0765ca88894daff6867838a41b4fa5b46a15"
+        },
+        {
+          "path": "public/river-rush/assets/index-B8RnzyfL.js",
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-B8RnzyfL.js?branched-boughs=ef7385e9d692476932b40c0fc245ba429aea0e07",
+          "status": 200,
+          "contentType": "application/javascript; charset=utf-8",
+          "bytes": 962570,
+          "sha256": "9553dd0ee742306074e311996bd24fbcec60b402ec0615e27eba036e62272d73"
+        },
+        {
+          "path": "public/river-rush/assets/index-BHUdth4r.css",
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-BHUdth4r.css?branched-boughs=ef7385e9d692476932b40c0fc245ba429aea0e07",
+          "status": 200,
+          "contentType": "text/css; charset=utf-8",
+          "bytes": 18049,
+          "sha256": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540"
+        },
+        {
+          "path": "public/river-rush/art/tree-bark-normal.webp",
+          "url": "https://arcade.uptick.systems/river-rush/art/tree-bark-normal.webp?branched-boughs=ef7385e9d692476932b40c0fc245ba429aea0e07",
+          "status": 200,
+          "contentType": "image/webp",
+          "bytes": 536952,
+          "sha256": "e8533790102db671ca34721c1ca9f2882fd9ebb6eb9df33307574b3cf0fea825"
+        },
+        {
+          "path": "public/river-rush/art/tree-bark.webp",
+          "url": "https://arcade.uptick.systems/river-rush/art/tree-bark.webp?branched-boughs=ef7385e9d692476932b40c0fc245ba429aea0e07",
+          "status": 200,
+          "contentType": "image/webp",
+          "bytes": 454760,
+          "sha256": "01a05056af68f139e93a17d264bd32a3e3d1d49ba05066902ced22c3b6115a13"
+        },
+        {
+          "path": "public/river-rush/art/tree-foliage.webp",
+          "url": "https://arcade.uptick.systems/river-rush/art/tree-foliage.webp?branched-boughs=ef7385e9d692476932b40c0fc245ba429aea0e07",
+          "status": 200,
+          "contentType": "image/webp",
+          "bytes": 99296,
+          "sha256": "57dc3bed01746f8f5bf502fbd5866a0465e9088cbe8958d2c57ded65b7bea7ce"
+        }
+      ]
+    },
+    "browser": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "results": [
+        {
+          "case": "phone",
+          "renderer": "webgl",
+          "approach": true,
+          "rootRegistrationChecked": true,
+          "duckCleared": true,
+          "shieldPreserved": true,
+          "passedTreeGeometryChecked": true,
+          "pausePixels": true,
+          "noActiveGpuPreparationChecked": true,
+          "reducedMotion": false,
+          "missingTextureFallback": false,
+          "detailedMaterials": false,
+          "speedUnchanged": true,
+          "contextLossFallbackChecked": true,
+          "drawCalls": 31,
+          "triangles": 114216,
+          "branchBatches": {
+            "trees": 9,
+            "scenery": 7,
+            "woodSegments": 137,
+            "leafClusters": 201,
+            "capacity": 32,
+            "perTree": 32,
+            "drawCalls": 2,
+            "style": "curved-tapered",
+            "bark": "fal",
+            "foliage": "fal",
+            "origins": [
+              {
+                "id": 14,
+                "lane": 1,
+                "course": 112.6757980952381,
+                "side": 1,
+                "root": {
+                  "x": 19.772119514021885,
+                  "y": 0.5982106403779874,
+                  "d": 8.152
+                },
+                "tip": {
+                  "x": 0,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              },
+              {
+                "id": 34,
+                "lane": 1,
+                "course": 248.96350908419518,
+                "side": -1,
+                "root": {
+                  "x": -20.95775026175613,
+                  "y": 0.7726489357952144,
+                  "d": 7.992
+                },
+                "tip": {
+                  "x": 0,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              }
+            ]
+          }
+        }
+      ],
+      "errors": [],
+      "screenshots": "/tmp/river-boughs/live"
+    }
+  }
+}

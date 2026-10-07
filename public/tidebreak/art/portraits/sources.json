@@ -1,0 +1,85 @@
+{
+  "note": "Rendered by qa/tidebreak/render-portraits.mjs from public/tidebreak/models/heroes/<slug>.glb (idle clip from models/clips.json, retargeted by hero-rig.js). Run the script again after a model changes.",
+  "files": {
+    "tidewarden": {
+      "model": "../../models/heroes/tidewarden.glb",
+      "bust": "tidewarden-bust.webp",
+      "full": "tidewarden-full.webp"
+    },
+    "embersong": {
+      "model": "../../models/heroes/embersong.glb",
+      "bust": "embersong-bust.webp",
+      "full": "embersong-full.webp"
+    },
+    "voidcaller": {
+      "model": "../../models/heroes/voidcaller.glb",
+      "bust": "voidcaller-bust.webp",
+      "full": "voidcaller-full.webp"
+    },
+    "stoneheart": {
+      "model": "../../models/heroes/stoneheart.glb",
+      "bust": "stoneheart-bust.webp",
+      "full": "stoneheart-full.webp"
+    },
+    "skyreaver": {
+      "model": "../../models/heroes/skyreaver.glb",
+      "bust": "skyreaver-bust.webp",
+      "full": "skyreaver-full.webp"
+    },
+    "irontide": {
+      "model": "../../models/heroes/irontide.glb",
+      "bust": "irontide-bust.webp",
+      "full": "irontide-full.webp"
+    },
+    "moonweaver": {
+      "model": "../../models/heroes/moonweaver.glb",
+      "bust": "moonweaver-bust.webp",
+      "full": "moonweaver-full.webp"
+    },
+    "dredge": {
+      "model": "../../models/heroes/dredge.glb",
+      "bust": "dredge-bust.webp",
+      "full": "dredge-full.webp"
+    },
+    "glasshand": {
+      "model": "../../models/heroes/glasshand.glb",
+      "bust": "glasshand-bust.webp",
+      "full": "glasshand-full.webp"
+    },
+    "salt-priestess": {
+      "model": "../../models/heroes/salt-priestess.glb",
+      "bust": "salt-priestess-bust.webp",
+      "full": "salt-priestess-full.webp"
+    },
+    "riftblade": {
+      "model": "../../models/heroes/riftblade.glb",
+      "bust": "riftblade-bust.webp",
+      "full": "riftblade-full.webp"
+    },
+    "coral-sage": {
+      "model": "../../models/heroes/coral-sage.glb",
+      "bust": "coral-sage-bust.webp",
+      "full": "coral-sage-full.webp"
+    },
+    "nightcurrent": {
+      "model": "../../models/heroes/nightcurrent.glb",
+      "bust": "nightcurrent-bust.webp",
+      "full": "nightcurrent-full.webp"
+    },
+    "the-marrow": {
+      "model": "../../models/heroes/the-marrow.glb",
+      "bust": "the-marrow-bust.webp",
+      "full": "the-marrow-full.webp"
+    },
+    "bloodwake": {
+      "model": "../../models/heroes/bloodwake.glb",
+      "bust": "bloodwake-bust.webp",
+      "full": "bloodwake-full.webp"
+    },
+    "zephyrs": {
+      "model": "../../models/heroes/zephyrs.glb",
+      "bust": "zephyrs-bust.webp",
+      "full": "zephyrs-full.webp"
+    }
+  }
+}

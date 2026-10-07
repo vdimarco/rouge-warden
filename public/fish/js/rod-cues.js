@@ -1,5 +1,6 @@
 // Small action cues attached to the scene's rod, without a second tackle view.
 import { activeLesson, moveWords, inputOf, HOLD_WORDS } from "./guide.js";
+import { Native } from "./native.js";
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const UP = 'M20 34V8m-8 8 8-8 8 8';
 const DOWN = 'M20 8v26m-8-8 8 8 8-8';
@@ -19,7 +20,7 @@ const LABELS = { hold: 'Hold rod', back: 'Drag down', cast: 'Flick up!', flight:
 const MOTION_LABELS = { back: 'Pull back', cast: 'Flick forward!' };
 const DESK_LABELS = { flight: 'Click to slow' };
 export function createRodCues(game) {
-  const touchDevice = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const touchDevice = Native.touchScreen;
   const el = document.createElement('div');
   el.id = 'rodCue'; el.hidden = true;
   el.innerHTML = `<svg class="rod-ring" viewBox="0 0 96 96" aria-hidden="true"><circle class="rod-halo" cx="48" cy="48" r="35"/><circle class="rod-tension" cx="48" cy="48" r="35" pathLength="100"/></svg><svg class="rod-action" viewBox="0 0 40 40" aria-hidden="true"><path/></svg><span role="status" aria-live="polite"></span>`;

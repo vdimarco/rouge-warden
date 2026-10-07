@@ -16,30 +16,38 @@ const median = list => { const s = [...list].sort((a, b) => a - b); return s.len
 const percentile = (list, p) => { const s = [...list].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor(s.length * p))] : 0; };
 export class PerfMeter {
   constructor(el) {
-    this.el = el; this.frames = []; this.draws = []; this.steps = [0, 0, 0, 0]; this.shownAt = 0;
+    this.el = el; this.frames = []; this.draws = []; this.stepLog = []; this.shownAt = 0;
     this.gpu = graphicsRenderer(); this.software = softwareRendering(this.gpu);
     let saved = false; try { saved = localStorage.getItem(KEY) === 'on'; } catch {}
     this.on = saved || new URLSearchParams(location.search).has('perf');
     el.querySelector('button').onclick = () => { const text = JSON.stringify(this.report(this.renderer), null, 1); navigator.clipboard?.writeText(text).catch(() => {}); el.querySelector('button').textContent = 'Copied'; };
   }
   toggle() { this.on = !this.on; try { localStorage.setItem(KEY, this.on ? 'on' : 'off'); } catch {} if (!this.on) this.el.hidden = true; return this.on; }
-  frame(ms, steps, drawMs, renderer, visible) {
+  // A new match starts from no samples, so menu and draft frames never colour its numbers.
+  reset() { this.frames = []; this.draws = []; this.stepLog = []; }
+  // sample: the match is running and not paused. Only those frames count; the readout shows whenever a match is open.
+  frame(ms, steps, drawMs, renderer, visible, sample = visible) {
     this.renderer = renderer;
-    if (ms > 0 && ms < 500) { this.frames.push(ms); this.draws.push(drawMs); if (this.frames.length > SAMPLES) { this.frames.shift(); this.draws.shift(); } }
-    this.steps[Math.min(3, steps)]++;
+    if (sample && ms > 0 && ms < 500) {
+      this.frames.push(ms); this.draws.push(drawMs); this.stepLog.push(Math.min(3, steps));
+      if (this.frames.length > SAMPLES) { this.frames.shift(); this.draws.shift(); this.stepLog.shift(); }
+    }
     this.el.hidden = !(this.on && visible);
     const now = performance.now(); if (this.el.hidden || now - this.shownAt < 500) return; this.shownAt = now;
     const r = this.report(renderer);
-    this.el.querySelector('pre').textContent = `frame ${r.medianMs} ms median · ${r.p95Ms} ms p95 · ${r.fps} fps\nslow frames ${r.slowPercent}% · draw ${r.drawMs} ms · steps/frame ${r.stepsPerFrame.join('/')}\ncanvas ${r.canvas} · quality ${r.quality} · pixel ratio ${r.pixelRatio} · screen ${r.screen}\ngraphics ${r.gpu}${this.software ? '\nThis browser draws the game without the graphics card. Turn on graphics acceleration in the browser settings.' : ''}`;
+    this.el.querySelector('pre').textContent = `frame ${r.medianMs} ms median · ${r.p95Ms} ms p95 · ${r.fps} fps\nslow frames ${r.slowPercent}% · draw ${r.drawMs} ms · steps/frame ${r.stepsPerFrame.join('/')}\ncanvas ${r.canvas} · quality ${r.quality} · pixel ratio ${r.pixelRatio} · screen ${r.screen}\n${r.renderer ? `${r.renderer}${r.drawCalls != null ? ` · ${r.drawCalls} draw calls · ${Math.round(r.triangles / 1000)}k triangles` : ''}\n` : ''}graphics ${r.gpu}${this.software ? '\nThis browser draws the game without the graphics card. Turn on graphics acceleration in the browser settings.' : ''}`;
   }
   report(renderer) {
-    const m = median(this.frames), refresh = Math.min(m || 16.7, renderer?.refreshMs ?? 16.7), total = this.steps.reduce((a, b) => a + b, 0) || 1;
+    const m = median(this.frames), refresh = Math.min(m || 16.7, renderer?.refreshMs ?? 16.7), counts = [0, 0, 0, 0], total = this.stepLog.length || 1;
+    for (const n of this.stepLog) counts[n]++;
     return {
       medianMs: +m.toFixed(1), p95Ms: +percentile(this.frames, .95).toFixed(1), fps: m ? Math.round(1000 / m) : 0,
       slowPercent: Math.round(100 * this.frames.filter(f => f > refresh * 1.5).length / (this.frames.length || 1)),
-      drawMs: +median(this.draws).toFixed(1), stepsPerFrame: this.steps.map(n => Math.round(100 * n / total)),
+      drawMs: +median(this.draws).toFixed(1), stepsPerFrame: counts.map(n => Math.round(100 * n / total)),
       canvas: renderer ? `${renderer.canvas.width}x${renderer.canvas.height}` : 'none', quality: +(renderer?.quality ?? 1).toFixed(2),
       pixelRatio: +(renderer?.dpr ?? 1).toFixed(2), screen: `${innerWidth}x${innerHeight} @${devicePixelRatio}`, gpu: this.gpu, software: this.software,
+      // The 3D renderer counts its draw calls and triangles each frame.
+      renderer: renderer?.stats ? renderer.stats().renderer : undefined, drawCalls: renderer?.drawCalls, triangles: renderer?.triangles,
     };
   }
 }

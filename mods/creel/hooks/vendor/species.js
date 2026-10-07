@@ -175,4 +175,12 @@ export function lengthFor(sp, kg) {
   const t = (Math.cbrt(kg) - Math.cbrt(k0)) / (Math.cbrt(k1) - Math.cbrt(k0) || 1);
   return Math.round(c0 + (c1 - c0) * t);
 }
+// How much bigger than life a fish is drawn out in the water, so its weight reads on a phone: 1.6x for a small fish, and
+// more for each doubling of the weight, up to 3.2x (a 1 kg fish 2x, 5 kg 2.7x, 13 kg and up 3.2x). The catch view and
+// the journal keep the true length: near the rod the fish shrinks back to it (world.js)
+export const SHOW = { MIN: 1.6, PER: 0.6, MAX: 3.2 };
+export function showScale(kg) {
+  const k = Number.isFinite(kg) && kg > 0 ? kg : 0;
+  return Math.min(SHOW.MAX, SHOW.MIN + SHOW.PER * Math.log(1 + k));
+}
 

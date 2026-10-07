@@ -1,25 +1,28 @@
-import { nearestKey } from './engine.js';
-
-// Presentation state belongs to one run, never to the race model or wall clock.
-export function createMotion(g) {
-  return { time: g.time, eventId: g.eventId, reach: g.wasReaching ? 1 : 0, effects: [], key: nearestKey(g) };
-}
-
-export function advanceMotion(m, g, reducedMotion = false) {
-  const dt = Math.max(0, Math.min(0.1, g.time - m.time));
-  const target = g.wasReaching ? 1 : 0;
-  m.reach = reducedMotion ? target : m.reach + (target - m.reach) * (1 - Math.exp(-dt * 18));
-  if (Math.abs(target - m.reach) < 0.002) m.reach = target;
-  m.effects = m.effects.filter(effect => g.time - effect.time < 1.3);
-  if (g.eventId !== m.eventId) {
-    if (['key', 'chest', 'hit', 'fall', 'recover', 'win', 'near', 'surge'].includes(g.event)) {
-      m.effects.push({ type: g.event, time: g.time, x: g.x, distance: g.distance,
-        keyX: m.key?.x ?? g.x, keyDistance: m.key?.d ?? g.distance });
-      m.effects = m.effects.slice(-6);
-    }
-    m.eventId = g.eventId;
+// Presentation state advances only with simulation time, never with wall time.
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+export const PADDLE_FRAMES=8;
+export function createMotion(g){return{time:g.time,paddleDistance:g.distance??0,weights:[1,0,0],lastEvent:0,pickups:[],bursts:[],landAt:-10,hitAt:-10,rushAt:-10};}
+export function advanceMotion(m,g,reduced=false){
+  m.time=g.time;
+  if(!g.action)m.paddleDistance=g.distance??0;
+  const target=g.action==='jump'?1:g.action==='duck'?2:0;
+  m.weights=m.weights.map((_,i)=>i===target?1:0);
+  for(const e of g.effects){
+    if(e.id<=m.lastEvent)continue;
+    m.lastEvent=e.id;
+    if(e.type==='land')m.landAt=e.time;
+    if(e.type==='hit'||e.type==='lose')m.hitAt=e.time;
+    if(e.type==='rush')m.rushAt=e.time;
+    if(!reduced&&e.type==='coin')m.pickups.push({...e});
+    if(!reduced&&['land','hit','smash','perfect','power','goal','rush'].includes(e.type))m.bursts.push({...e});
   }
-  m.key = nearestKey(g);
-  m.time = g.time;
+  m.pickups=reduced?[]:m.pickups.filter(e=>g.time-e.time<.4).slice(-12);
+  m.bursts=reduced?[]:m.bursts.filter(e=>g.time-e.time<.55).slice(-8);
   return m;
 }
+export function paddleFrame(time,reduced=false){return reduced?0:Math.floor(time*12)%PADDLE_FRAMES;}
+export function landingPulse(m,time,reduced=false){const t=time-m.landAt;return !reduced&&t>=0&&t<.4?Math.sin(t/.4*Math.PI)*Math.exp(-t*7):0;}
+export function impactPulse(m,time,reduced=false){const t=time-m.hitAt;return !reduced&&t>=0&&t<.36?Math.sin(t*55)*Math.exp(-t*9):0;}
+export function pickupProgress(effect,time){return clamp((time-effect.time)/.36,0,1);}
+
+export function paddleSample(distance,reduced=false){const phase=reduced?0:distance*.4,index=Math.floor(phase)%8;return{index,next:(index+1)%8,blend:phase-Math.floor(phase)};}

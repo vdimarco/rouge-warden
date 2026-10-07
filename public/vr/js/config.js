@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.9.2";
+export const VERSION = "1.15.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -55,6 +55,15 @@ export const SWING = {
   fireHold: 0.3, // a trigger held on an idle hand still fires if a target shows up within this time
 };
 
+/* ---------------- flat-play moves: the sprint and the landing roll ---------------- */
+// Shift (a pad's left stick click) on the ground with no rope out runs at sprint times the run speed and drains the energy
+// gauge (0..1) at drain a second; it fills again at fill a second, after a pause of wait seconds. A landing from a dive, or one
+// faster than fall m/s down, rolls for time seconds and keeps at least minSpeed along the ground. Headset play has neither.
+export const MOVES = {
+  sprint: 2.2, drain: 0.2, fill: 0.16, wait: 0.8, minEnergy: 0.12,
+  roll: { time: 0.62, minSpeed: 6, friction: 1.4, fall: 13 },
+};
+
 /* ---------------- wall climbing (flat play) ---------------- */
 // Touch a wall in the air, or walk into one, and you hold on to it. W/S or the up/down arrows climb, A/D or left/right go
 // along it, Space jumps off, and a rope fired from the wall swings you off it. Headset play does not climb.
@@ -88,6 +97,8 @@ export const PHONE = {
   catch: { clear: 6, min: 8, rate: 30 }, // (min: no change when that would leave a rope shorter than this; rate: m/s it shortens)
   // The marker prefers a building point at least y m up and up m over the chest: it wins over any lower one (bonus to the score)
   high: { y: 22, up: 8, bonus: 1 },
+  handoff: 0.12, // s: when a new plunger catches, the other one lets go this much later (so taps on alternate sides chain)
+  pair: 0.3, // s: two plungers thrown this close together hold together (a double swing)
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
   buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
   follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly
@@ -200,10 +211,10 @@ export const TRAINING = {
     { id: "plunge", text: "Plunge a clog: rope it, then pump", keys: ["RB", "RB", "RB"], of: 3, line: 7 },
   ],
   touch: [
-    { id: "rope", text: "Swing at the gold ring", keys: ["SWING"], line: 0 },
+    { id: "rope", text: "Swing at the gold ring", keys: ["TAP"], line: 0 },
     { id: "swing", text: "Swing out", keys: ["IT LETS GO"], line: 1 },
-    { id: "again", text: "Tap again before you land", keys: ["TAP"], line: 2 },
-    { id: "fast", text: "Fly fast", keys: ["TAP", "TAP"], line: 4 },
+    { id: "again", text: "Tap the other side before you land", keys: ["L", "R"], line: 2 },
+    { id: "fast", text: "Fly fast: tap left, right, left", keys: ["L", "R"], line: 4 },
     { id: "look", text: "Look around", keys: ["DRAG"], line: 5 },
     { id: "climb", text: "Climb a wall", keys: ["ARROWS"], say: "Fly into a wall, then hold the arrows to climb." },
     { id: "plunge", text: "Plunge a clog: tap it, hold on", keys: ["TAP"], of: 3, line: 7 },
@@ -221,20 +232,20 @@ export const COLORS = {
 // LINES_HANDS, LINES_DESKTOP, LINES_PAD and LINES_PHONE keep the same keys and order, so ui.sayLine(group, i, kind) can pick the
 // right words. The three flat tables also have a wall group: the first wall line.
 export const LINES = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Shoot the crack. Hold the trigger.", "Now pull back hard.", "Clear the space around you.", "Give yourself some room."],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Shoot the crack. Hold the trigger.", "Now pull back hard.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Shoot it. Hold the trigger.", "Now pull back hard. Hold on!"],
   tutorial: ["Shoot the gold ring. Hold the trigger.", "Swing out. Let go at the bottom.", "Shoot again before you land.", "Squeeze the grip to reel in.", "Pull back hard to yank.", "Push the right stick to turn.", "Look at your left wrist.", "That green light is a clog. Plunge it."],
   clog: ["That's a clog. Plunge it.", "Pull back hard. Like you mean it.", "Flushed.", "The city thanks you. Quietly."],
   king: ["Twelve clogs. One King.", "The King is on the Needle.", "Rip his pipes off.", "Flushed. For good this time.", "He felt that one.", "He is getting angry."],
   splash: ["The lake is not a shortcut.", "Back to the roof."],
 };
 export const LINES_HANDS = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Pinch at the crack. Keep pinching.", "Now pull your hand back hard.", "Clear the space around you.", "Give yourself some room."],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Pinch at the crack. Keep pinching.", "Now pull your hand back hard.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Pinch at it. Keep pinching.", "Now pull your hand back hard. Hold on!"],
   tutorial: ["Pinch at the gold ring. Keep pinching.", "Swing out. Open your fingers at the bottom.", "Pinch again before you land.", "Make a fist to reel in.", "Pull your hand back hard to yank.", "Tap the arrows on your wrist to turn.", "Look at your left wrist.", "That green light is a clog. Plunge it."],
   clog: LINES.clog, king: LINES.king, splash: LINES.splash,
 };
 // Mouse and keys. The game picks the building, so the lines say look at it and let go when the ring says GO.
 export const LINES_DESKTOP = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room."],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the left mouse button.", "Now press F to yank. Hold on!"],
   tutorial: ["Look at the gold ring. Hold W and the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press F three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
@@ -242,7 +253,7 @@ export const LINES_DESKTOP = {
 };
 // A game pad. The words fit an Xbox pad and a PlayStation pad: trigger, bumper, stick and "the bottom button".
 export const LINES_PAD = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room."],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the right trigger.", "Now press the right bumper to yank. Hold on!"],
   tutorial: ["Look at the gold ring. Hold the left stick up and the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press the right bumper three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
@@ -250,8 +261,8 @@ export const LINES_PAD = {
 };
 // Phone play: one tap swings, the rope lets go by itself, and a rope on a clog plunges by itself.
 export const LINES_PHONE = {
-  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room."],
-  tutorial: ["Tap SWING to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
+  intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Tap it.", "It plunges by itself. Hold on!"],
+  tutorial: ["Tap left or right to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap the other side before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
   clog: ["That's a clog. Tap it to plunge.", "Hold on. It plunges by itself.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. Hold the arrows to climb. Tap JUMP to jump off."],

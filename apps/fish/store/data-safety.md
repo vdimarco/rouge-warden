@@ -22,7 +22,7 @@ Apple: "Data that is processed only on device is not 'collected'". Google: data 
 | Do you or your third-party partners collect data from this app? | No, we do not collect data from this app. |
 | Result shown on the store | Data Not Collected |
 | Tracking (App Tracking Transparency) | The app does not track. No ATT prompt. `NSPrivacyTracking` is false. |
-| Privacy policy URL | `https://<the site>/fish/privacy.html` |
+| Privacy policy URL | `https://arcade.uptick.systems/fish/privacy.html` |
 
 Privacy manifest (`ios/App/App/PrivacyInfo.xcprivacy`, in the App target):
 
@@ -43,7 +43,7 @@ Export compliance: `ITSAppUsesNonExemptEncryption` is `NO` in `Info.plist`. The 
 | --- | --- |
 | Does your app collect or share any of the required user data types? | No |
 | Result shown on the store | No data collected. No data shared with third parties. |
-| Privacy policy | `https://<the site>/fish/privacy.html` (required even with no data) |
+| Privacy policy | `https://arcade.uptick.systems/fish/privacy.html` (required even with no data) |
 
 When the first answer is No, Play skips the questions about encryption in transit and data deletion.
 

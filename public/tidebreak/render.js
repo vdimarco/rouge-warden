@@ -189,6 +189,8 @@ export class Renderer {
       if (f.tx !== undefined) { const a = this.project(f.x, f.y, .45), b = this.project(f.tx, f.ty, .45); c.globalAlpha = 1 - age; c.strokeStyle = f.color; c.lineWidth = f.type === 'slash' ? 4 : 2; c.shadowColor = f.color; c.shadowBlur = 9; c.beginPath(); c.moveTo(a.x, a.y); c.quadraticCurveTo((a.x + b.x) / 2 + 12, (a.y + b.y) / 2 - 20, b.x, b.y); c.stroke(); c.shadowBlur = 0; c.globalAlpha = 1; }
       else { this.effectRing(f.x, f.y, Math.max(1, f.radius * (.3 + age * .7)), f.color, (1 - age) * .85); const a = this.project(f.x, f.y, .1); for (let k = 0; k < 8; k++) { const b = this.project(f.x + Math.cos(k * .785) * f.radius * age, f.y + Math.sin(k * .785) * f.radius * age, Math.sin(age * Math.PI) * .8); c.globalAlpha = 1 - age; c.fillStyle = f.color; c.fillRect(b.x, b.y, 3, 3); } c.globalAlpha = 1; }
     }
+    // Other heroes show their recall channel too, when the player's team can see them.
+    if (!menu) for (const h of s.units) if (h !== p && h.kind === 'hero' && h.recall > 0 && h.hp > 0 && visibleTo(s, p.team, h)) this.effectRing(h.x, h.y, 70 + Math.sin(time * 8) * 8, '#d6ffec', .6);
     if (!menu && p.hp > 0) {
       if (p.recall) this.effectRing(p.x, p.y, 85 + Math.sin(time * 8) * 10, '#d6ffec', .8);
       if (aim) { const d = Math.hypot(aim.x, aim.y), a = this.project(px, py, .1), b = this.project(px + aim.x / d * 420, py + aim.y / d * 420, .1); c.strokeStyle = '#e2f3a1'; c.lineWidth = 4; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); c.beginPath(); c.arc(b.x, b.y, 10, 0, TAU); c.stroke(); }

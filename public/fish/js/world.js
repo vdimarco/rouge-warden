@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { artStyle, normalizeStyle } from "./art-style.js";
 import { PLACES, getPlace } from "./places.js";
 import { placeSpecies } from "./fishing.js";
-import { byId, lengthFor } from "./species.js";
+import { byId, lengthFor, showScale } from "./species.js";
 import * as E from "./world-env.js";
 import { lookOf } from "./world-look.js";
 import { isCalm } from "./calm.js";
@@ -264,6 +264,19 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     const T = S.trophy, d = T ? T.dist * T.push : 1.1, p = T ? T.pitch : CATCH_PITCH;
     return new THREE.Vector3(Math.sin(CATCH_YAW) * Math.cos(p), Math.sin(p), -Math.cos(CATCH_YAW) * Math.cos(p)).multiplyScalar(d).add(CATCH_CAM);
   };
+  // The photo beat runs on the wall clock (s since the fish showed), as main.js times the flash and the card by it. The
+  // lake's own clock moves at most 50 ms a frame, so on slow frames it falls behind them
+  const beatT = (T) => (performance.now() - T.at) / 1000;
+  // the share of the way to the photo's pose the camera goes this frame, during the push-in (null after it, or with no
+  // beat): the rest of the push-in's curve, so the camera is there when the push-in ends and the flash comes, from
+  // wherever the fight left it (a leap's zoom looks up at the sky) and however slow the frames are
+  function photoStep() {
+    const T = S.trophy, P = WORLD.PHOTO.push;
+    if (!T || !T.beat || S.view.mode !== "catch" || T.camT >= P) return null;
+    const e = beatT(T), left = (t) => Math.pow(1 - clamp(t / P, 0, 1), 3), k = 1 - left(e) / left(T.camT);
+    T.camT = e;
+    return k;
+  }
   function camTarget() {
     const m = S.view.mode, portrait = S.view.portrait || S.w / S.h < 0.9;
     const out = { pos: EYEV.clone(), yaw: (S.view.yaw || 0) * DEG, pitch: (portrait ? WORLD.PITCH_CAST.portrait : WORLD.PITCH_CAST.wide) * DEG, fov: baseFov(m), rate: 4, posRate: 2.2 };
@@ -342,8 +355,11 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (cutFn) { cutCamera(dt); return; }
     const T = camTarget(), C = S.cam;
     if (!C.init) { C.pos.copy(T.pos); C.yaw = T.yaw; C.pitch = T.pitch; C.fov = T.fov; C.init = true; }
-    const k = 1 - Math.exp(-dt * T.rate), kp = 1 - Math.exp(-dt * T.posRate);
-    C.pos.lerp(T.pos, S.view.mode === "title" ? kp : Math.max(kp, k * 0.6));
+    let k = 1 - Math.exp(-dt * T.rate), kp = 1 - Math.exp(-dt * T.posRate);
+    if (S.view.mode !== "title") kp = Math.max(kp, k * 0.6);
+    const b = photoStep();
+    if (b !== null) k = kp = b;
+    C.pos.lerp(T.pos, kp);
     C.yaw += angDiff(C.yaw, T.yaw) * k;
     C.pitch += (T.pitch - C.pitch) * k;
     C.fov += (T.fov - C.fov) * k;
@@ -473,6 +489,9 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     }
     return fishCache.get(id);
   }
+  // out in the water a fish is drawn bigger than life, more so the heavier it is (showScale in species.js). It comes back
+  // to its true length as it nears the rod (from 9 m in to 2.5 m), so it meets the hand and the board at its own size
+  const shown = (f) => (f.kg ? 1 + (showScale(f.kg) - 1) * smooth(2.5, 9, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1);
   const unitLen = (m) => (m.userData.kind === "junk" ? JUNK_LEN[m.userData.id] : 1);
   function drawFish(dt) {
     const f = S.fish;
@@ -485,7 +504,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // a leap far out is drawn larger (up to 2x from 30 m), so the moment reads on a phone. Not in a cutscene: its camera
     // is near the fish and frames it at its own size
     const far = (f.jump || 0) > 0 && !cutFn ? 1 + smooth(8, 30, Math.hypot(f.x - EYEV.x, f.z - EYEV.z)) : 1;
-    m.scale.setScalar((len / unitLen(m)) * far);
+    m.scale.setScalar((len / unitLen(m)) * far * (m.userData.kind === "junk" ? 1 : shown(f)));
     const j = clamp(f.jump || 0, 0, 1), heading = f.heading || 0;
     let y = f.y, pitch = 0, roll = f.roll || 0;   // roll: the body turns about its length (radians): a thrashing or beaten fish lies over
     const fwd = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading));
@@ -533,7 +552,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (!shadow.visible || !g) return;
     shadow.position.set(g.x, -0.03, g.z);
     shadow.rotation.y = -(g.heading || 0);
-    const len = g.len || 0.4;
+    const len = (g.len || 0.4) * shown(g);
     shadow.scale.set(len * 1.35, 1, len * 1.35);
     shadow.userData.u.uAlpha.value = S.followA * 0.75 * clamp(Math.exp((g.y || -0.5) * 0.3), 0.3, 1);
   }
@@ -623,9 +642,11 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       stage.add(board);
       W = L * 1.06; H = (size.y / 2 - (yb - bh / 2)) * 1.1;
     }
+    // beat: main.js holds the card back for the photo beat (Calm effects too, with no push-in); at: when the fish showed, on
+    // the wall clock (ms); camT: how far into the beat the camera has come (s, see photoStep)
     const calm = isCalm();
     S.trophy = { mesh: stage, pivot, inner: m, board, behind, len, W, H, dist: 1, fov: 40, t: 0, sw: 0, junk, id, photo: photo && !calm, push: photo && !calm ? WORLD.PHOTO.from : 1, pitch: CATCH_PITCH,
-      legend: !!(sp && sp.legend), sparkle: sparkle && !calm };
+      legend: !!(sp && sp.legend), sparkle: sparkle && !calm, beat: photo, at: performance.now(), camT: 0 };
     fitTrophy();
     scene.add(stage);
   }
@@ -662,9 +683,10 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     m.visible = S.view.mode === "catch";
     // the board lies a little behind the fish: drawn larger by that much, its marks line up with the fish as the eye sees it
     if (T.board) T.board.scale.setScalar(1 + T.behind / Math.max(0.3, T.dist * T.push));
-    // the photo beat: the view eases in from far away, then the fish holds still for a moment
-    if (T.photo) T.push = lerp(P.from, 1, 1 - Math.pow(1 - clamp(T.t / P.push, 0, 1), 3));
-    const frozen = T.photo && T.t > P.push && T.t < P.push + P.freeze;
+    // the photo beat: the view eases in from far away, then the fish holds still for a moment (on the beat's clock, beatT)
+    const e = T.photo ? beatT(T) : T.t;
+    if (T.photo) T.push = lerp(P.from, 1, 1 - Math.pow(1 - clamp(e / P.push, 0, 1), 3));
+    const frozen = T.photo && e > P.push && e < P.push + P.freeze;
     if (!frozen) T.sw += dt;
     const p = trophySpot();
     // face the camera: the stage turns with the view, the fish swings slowly on it
@@ -684,7 +706,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // a legend glitters
     if (T.legend && Math.random() < dt * 12) spray.emit(p.x + (Math.random() - 0.5) * T.len, p.y + (Math.random() - 0.5) * T.len * 0.3, p.z + (Math.random() - 0.5) * 0.1, 0, 0.08, 0, 0.012, 1.2, 1, 0);
     // a trophy or a legend: one burst of gold sparks around the fish as the push-in ends
-    if (T.sparkle && T.t >= (T.photo ? P.push : 0.3)) {
+    if (T.sparkle && e >= (T.photo ? P.push : 0.3)) {
       T.sparkle = false;
       for (let i = 0; i < 60; i++) {
         const a = Math.random() * 6.28, r = T.len * (0.3 + 0.4 * Math.random());
@@ -856,6 +878,20 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       if (q > 1) p.applyMatrix4(rodSqueeze(q));
       p.project(camera);
       return { x: (p.x + 1) * S.w / 2, y: (1 - p.y) * S.h / 2 };
+    },
+    // the lure on the screen, in CSS px of the view; null while it is hidden or behind the camera. The messages keep
+    // clear of it (main.js), and the QA checks read it
+    // the length the hooked fish is drawn at, in m (QA: the Heavy fish look heavy checks); null when none shows
+    fishDrawn() {
+      const f = S.fish, m = f && fishCache.get(f.id);
+      return m && m.visible ? m.scale.x * unitLen(m) : null;
+    },
+    lureScreen() {
+      const L = S.lure;
+      if (!L.visible || !firstPerson() || cutFn) return null;
+      vA.set(L.x, L.y, L.z).project(camera);
+      if (vA.z > 1) return null;
+      return { x: (vA.x + 1) * S.w / 2, y: (1 - vA.y) * S.h / 2 };
     },
     setLine({ from = null, to = null, slack = 0, visible = true, flying = false } = {}) {
       S.line = { from, to, slack, visible, flying };

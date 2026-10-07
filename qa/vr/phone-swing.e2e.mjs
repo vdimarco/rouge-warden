@@ -1,5 +1,5 @@
-// One-tap phone swinging: taps alone chain fast swings, the rope lets go by itself, a steady beat of taps keeps a fast swing over
-// the street, a tap at the sky still swings, a tap on a clog plunges it, the view widens and the speed lines show at speed, the
+// Two-thumb phone swinging: taps alone chain fast swings, the rope lets go by itself, a steady beat of taps on alternate sides
+// keeps a fast swing over the street, a tap on the other side hands the swing over, two thumbs hold both plungers, a tap at the sky still swings, a tap on a clog plunges it, the view widens and the speed lines show at speed, the
 // phone tutorial says phone words, and the phone buttons never cover the score or the spoken lines. Run from the repo root (the server is our own, see lib.mjs).
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
@@ -42,14 +42,14 @@ try {
     // many frames ran before this point
     if (G.flatcam) { G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 1); }
     G.desktop.level(0.35); G.test.step(1 / 60, 2);
-    const btn = document.querySelector('[data-action=throw]'), p0 = { ...G.P.pos };
+    const M = G.desktop.mobile, badge = document.querySelector('.phone-side[data-side="1"]'), p0 = { ...G.P.pos };
     let sum = 0, max = 0, flings = 0, wide = 0, rush = 0, pressedAfterFling = null;
     for (let f = 0; f < 720; f++) {
-      if (G.P.ropes[1].state === 'idle' && f % 10 === 0) btn.onclick();
+      if (G.P.ropes[1].state === 'idle' && f % 10 === 0) M.tap(1);
       const before = G.test.events().filter((e) => e.type === 'fling').length;
       G.test.step(1 / 60, 1);
       const now = G.test.events().filter((e) => e.type === 'fling').length;
-      if (now > before) { flings++; pressedAfterFling = btn.getAttribute('aria-pressed'); }
+      if (now > before) { flings++; pressedAfterFling = String(badge.classList.contains('held')); }
       const v = G.P.vel, sp = Math.hypot(v.x, v.y, v.z);
       sum += sp; max = Math.max(max, sp);
       if (sp > 28) { wide = Math.max(wide, G.camera.fov); rush = Math.max(rush, +document.querySelector('.phone-rush').style.opacity || 0); }
@@ -59,24 +59,25 @@ try {
   });
   assert(run.mean >= 15, 'taps alone average at least 15 m/s: ' + JSON.stringify(run));
   assert(run.dist >= 140, 'taps alone cover at least 140 m in 12 s: ' + JSON.stringify(run));
-  assert(run.flings >= 1 && run.pressedAfterFling === 'false', 'the rope lets go by itself and SWING comes back: ' + JSON.stringify(run));
+  assert(run.flings >= 1 && run.pressedAfterFling === 'false', 'the rope lets go by itself and its badge goes dark: ' + JSON.stringify(run));
   assert(run.wide > 85 && run.rush > 0.5, 'the view widens and the speed lines show at speed: ' + JSON.stringify(run));
   assert.equal(run.dead, null);
   console.log('PASS taps alone chain fast swings', JSON.stringify({ mean: +run.mean.toFixed(1), max: +run.max.toFixed(1), dist: Math.round(run.dist), flings: run.flings, fov: Math.round(run.wide), rush: run.rush }));
 
-  // A steady beat: SWING pressed every 0.5, 0.8 or 1.2 s whatever the rope is doing, as a player who just keeps tapping. A press
-  // with a rope out swings on to the next building (no let-go between), the catch keeps the speed, and the rope is short enough
-  // that the arc stays over the street. Low is the time the feet spend under 8 m (the street and the low shops).
+  // A steady beat: a tap every 0.5, 0.8 or 1.2 s whatever the ropes are doing, left, right, left, as a player who just keeps
+  // tapping with both thumbs. Each new plunger takes over from the other one (no let-go between), the catch keeps the speed, and
+  // the rope is short enough that the arc stays over the street. Low is the time the feet spend under 8 m (the street and the
+  // low shops).
   const beats = [];
   for (const beat of [0.5, 0.8, 1.2]) beats.push(await page.evaluate((beat) => {
     const s = G.city.start, R = G.city.goldRing;
     G.test.teleport(s.x, s.y, s.z); G.desktop.mobile.reset(); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z));
     if (G.flatcam) { G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 1); }
     G.desktop.level(0.35); G.test.step(1 / 60, 2);
-    const btn = document.querySelector('[data-action=throw]'), p0 = { ...G.P.pos }, every = Math.round(beat * 60);
-    let sum = 0, low = 0, ground = 0;
+    const M = G.desktop.mobile, p0 = { ...G.P.pos }, every = Math.round(beat * 60);
+    let sum = 0, low = 0, ground = 0, n = 0;
     for (let f = 0; f < 720; f++) {
-      if (f % every === 0) btn.onclick();
+      if (f % every === 0) M.tap(n++ % 2);
       G.test.step(1 / 60, 1);
       const v = G.P.vel; sum += Math.hypot(v.x, v.y, v.z);
       if (G.P.pos.y < 8) low++;
@@ -91,7 +92,37 @@ try {
     assert(b.low <= 2.5 && b.ground <= 1.5, 'a steady beat of taps keeps the hero over the street: ' + JSON.stringify(b));
     assert.equal(b.dead, null);
   }
-  console.log('PASS a steady beat of taps (0.5, 0.8 and 1.2 s) swings on with no let-go, fast and over the street');
+  console.log('PASS a steady beat of taps on alternate sides (0.5, 0.8 and 1.2 s) swings on with no let-go, fast and over the street');
+
+  // Two thumbs: a tap on the other side while one plunger holds hands the swing over (the old plunger lets go just after the new one
+  // catches), and two taps together hold both plungers (a double swing) until each lets go by itself.
+  const two = await page.evaluate(() => {
+    const s = G.city.start, R = G.city.goldRing, M = G.desktop.mobile, ropes = () => G.P.ropes.map((r) => r.state);
+    const go = () => { G.test.teleport(s.x, s.y, s.z); M.reset(); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z)); if (G.flatcam) { G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 1); } G.desktop.level(0.35); G.test.step(1 / 60, 2); };
+    go();
+    // in the air over the street, flying toward the ring (a plunger on a roof lets go as soon as you stand on it)
+    const air = () => { const d = Math.hypot(R.x - s.x, R.z - s.z); G.test.teleport(s.x, s.y + 25, s.z); G.P.vel.x = (R.x - s.x) / d * 12; G.P.vel.z = (R.z - s.z) / d * 12; G.P.vel.y = 0; };
+    air();
+    M.tap(1); let t = 0;
+    while (G.P.ropes[1].state !== 'attached' && t < 60) { G.test.step(1 / 60, 1); t++; }
+    G.test.step(1 / 60, 19); // past PHONE.pair (0.3 s), so the two plungers are not a pair
+    const first = ropes();
+    M.tap(0); t = 0;
+    let before = ropes();
+    while (G.P.ropes[0].state !== 'attached' && t < 60) { before = ropes(); G.test.step(1 / 60, 1); t++; }
+    const caught = before.map((x, i) => (i === 0 ? G.P.ropes[0].state : x)); let after = 0; // the right rope the frame before the catch
+    while (G.P.ropes[1].state === 'attached' && after < 60) { G.test.step(1 / 60, 1); after++; }
+    const handed = { first, caught, after, now: ropes() };
+    go();
+    M.tap(0); M.tap(1); t = 0;
+    while (!(G.P.ropes[0].state === 'attached' && G.P.ropes[1].state === 'attached') && t < 60) { G.test.step(1 / 60, 1); t++; }
+    const both = ropes(); G.test.step(1 / 60, 6); const bothLater = ropes();
+    return { handed, both, bothLater, dead: G.P.dead };
+  });
+  assert(two.handed.first[1] === 'attached' && two.handed.caught[0] === 'attached' && two.handed.after <= 12 && two.handed.now[1] === 'idle' && two.handed.now[0] === 'attached', 'a tap on the other side takes over: the old plunger lets go within 0.2 s of the new catch: ' + JSON.stringify(two.handed));
+  assert(two.both.every((x) => x === 'attached') && two.bothLater.every((x) => x === 'attached'), 'two taps together hold both plungers: ' + JSON.stringify(two));
+  assert.equal(two.dead, null);
+  console.log('PASS a tap on the other side hands the swing over, and two thumbs together hold both plungers', JSON.stringify(two.handed));
 
   // A tap at the empty sky still swings: the assist picks a building ahead and above.
   const sky = await page.evaluate(() => {
@@ -99,7 +130,7 @@ try {
     G.test.teleport(s.x, s.y, s.z); G.desktop.mobile.reset();
     G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z)); G.test.step(1 / 60, 2);
     G.test.aimAt(1, s.x, s.y + 5000, s.z);
-    document.querySelector('[data-action=throw]').onclick();
+    G.desktop.mobile.tap(1);
     G.test.step(1 / 60, 30);
     const r = G.P.ropes[1];
     G.test.aimAt(1, null);
@@ -122,7 +153,7 @@ try {
     if (!sp) return 'no spot';
     G.test.teleport(sp.x, sp.y, sp.z); G.desktop.mobile.reset(); G.test.step(1 / 60, 3);
     G.test.aimAt(1, T.x, T.y, T.z);
-    document.querySelector('[data-action=throw]').onclick();
+    G.desktop.mobile.tap(1);
     G.test.step(1 / 60, 20);
     const tag = G.P.ropes[1].tag || G.test.state().ropes[1].tag;
     G.test.step(1 / 60, 180);
@@ -136,7 +167,7 @@ try {
   assert(words.every((w) => w && !/mouse|Shift|Press F|trigger/i.test(w)), 'phone tutorial lines: ' + JSON.stringify(words));
   console.log('PASS the phone tutorial says tap, not mouse or keys');
 
-  // The layout: the top buttons never cover the score pills, and a spoken line never sits under the SWING panel, the top
+  // The layout: the top buttons never cover the score pills, and a spoken line never sits under the hint panel, the top
   // buttons or the pills, nor over the hero.
   await page.evaluate(() => { G.ui.say('Tap the next building while you fly.', 6); G.test.step(1 / 60, 2); });
   let b = await boxes();

@@ -1,0 +1,11 @@
+# Tasks
+- [x] Add `command-bar.css` with the framed bar, the skill row, the bars and the item grid for mouse screens from 1040x600.
+- [x] Load it from `main.js` after `skill-controls.css`.
+- [x] Check the bar in Chromium at 1040x640, 1280x720, 1440x900 and 1920x1080: no overlaps, art visible.
+- [x] Check training, casting, cooldown and an item purchase through the bar.
+- [x] Check that a click on the empty frame gives no move order.
+- [x] Check that 390x844 and 844x390 touch layouts do not change.
+- [x] Adapt `qa/tidebreak/skill-targets.e2e.mjs` to the bar on mouse screens and add 1040x640.
+- [x] Run the 2D browser checks and the 3D combat check.
+- [ ] Validate the change with the OpenSpec CLI (not installed in this environment).
+- [ ] Play a match on a desktop with a real GPU and mouse, then archive this change.

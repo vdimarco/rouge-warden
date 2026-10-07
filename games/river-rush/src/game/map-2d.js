@@ -1,0 +1,175 @@
+import { levelAt } from './levels.js';
+import { bankScenery } from './world.js';
+import { currentDistance,WAVE_CADENCE } from './hydrodynamics.js';
+
+// All texture cards are made at loading time. Stage changes only select an
+// existing image; the fallback never starts a new graphics context mid-run.
+const patternCache=new WeakMap();
+const make=(width,height,paint)=>{const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;paint(canvas.getContext('2d'));return canvas;};
+const hash=n=>{let v=Math.imul(n^0x4c71a27,1597334677);v=Math.imul(v^(v>>>16),2246822519);return((v^(v>>>13))>>>0)/4294967296;};
+
+function cliffCard(art,variant){
+  return make(384,512,ctx=>{
+    const ridges=[[[8,512],[11,326],[34,319],[42,220],[70,214],[84,139],[123,145],[136,76],[175,67],[187,22],[232,30],[248,85],[295,92],[306,184],[338,202],[351,323],[377,348],[384,512]],[[8,512],[28,246],[62,191],[73,85],[111,30],[143,62],[155,189],[227,186],[251,69],[283,45],[313,126],[322,258],[364,348],[384,512]],[[0,512],[24,388],[53,265],[91,208],[117,126],[164,150],[215,105],[248,123],[278,215],[318,259],[353,377],[384,512]]];
+    const ridge=ridges[variant];
+    ctx.beginPath();ctx.moveTo(...ridge[0]);for(const p of ridge.slice(1))ctx.lineTo(...p);ctx.closePath();ctx.clip();
+    const light=ctx.createLinearGradient(0,0,384,0);light.addColorStop(0,'#8c4437');light.addColorStop(.3,'#e8ad73');light.addColorStop(.65,'#b46a49');light.addColorStop(1,'#693c35');ctx.fillStyle=light;ctx.fillRect(0,0,384,512);
+    ctx.globalAlpha=.36;ctx.globalCompositeOperation='multiply';ctx.drawImage(art.surfacerock,0,0,384,512);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+    for(let i=0;i<18;i++){
+      const y=32+i*28+hash(i+variant*71)*16;
+      ctx.strokeStyle=i%3===0?'#ffe0ab55':'#572c3550';ctx.lineWidth=i%3===0?3:5;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(93,y+12,204,y-13,384,y+hash(i*27)*17);ctx.stroke();
+    }
+    for(let i=0;i<11;i++){
+      const x=20+i*35,y=hash(i+variant*9)*140;ctx.strokeStyle='#462b3655';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-8,320);ctx.lineTo(x+12,512);ctx.stroke();
+    }
+    ctx.fillStyle='#edcba142';ctx.beginPath();ctx.moveTo(84,139);ctx.lineTo(123,145);ctx.lineTo(139,512);ctx.lineTo(70,512);ctx.fill();
+    if(variant===1){ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.ellipse(192,373,46,127,0,0,Math.PI*2);ctx.fill();}
+  });
+}
+
+function templeCard(art,variant){
+  return make(384,512,ctx=>{
+    // Stepped sanctuary, projecting ledges, tall carved doors and broken caps.
+    const stone=ctx.createLinearGradient(0,0,384,0);stone.addColorStop(0,'#565575');stone.addColorStop(.42,'#aaa3ba');stone.addColorStop(1,'#393d5e');
+    const shapes=[[[16,424,352,88],[39,390,306,38],[67,340,251,52],[87,182,211,160],[70,167,247,24],[113,137,165,32],[133,110,125,28],[146,87,100,28],[162,56,65,41],[172,35,40,30]],[[18,434,349,78],[43,398,299,38],[65,193,62,207],[259,193,62,207],[52,174,282,25],[84,136,218,40],[126,103,138,35],[148,81,94,24]],[[69,438,245,74],[94,408,197,33],[110,377,166,33],[141,114,104,265],[125,98,136,20],[151,69,84,30],[171,35,44,36]]];
+    const blocks=shapes[variant];
+    ctx.fillStyle=stone;for(const [x,y,w,h] of blocks){ctx.fillRect(x,y,w,h);ctx.fillStyle='#cbc7d43a';ctx.fillRect(x,y,w,4);ctx.fillStyle=stone;}
+    ctx.globalCompositeOperation='source-atop';ctx.globalAlpha=.35;ctx.drawImage(art.surfacerock,0,0,384,512);ctx.globalAlpha=1;
+    for(let y=201;y<510;y+=29){ctx.strokeStyle='#252b4355';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(67,y);ctx.lineTo(318,y);ctx.stroke();for(let x=80+(y%58===0?0:28);x<307;x+=57){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+27);ctx.stroke();}}
+    for(const x of variant===0?[119,173,227]:variant===2?[175]:[]){
+      ctx.fillStyle='#25253f';ctx.fillRect(x,247,32,90);ctx.fillStyle='#ded5dc66';ctx.fillRect(x-5,240,42,6);ctx.fillStyle='#79758f';ctx.fillRect(x-5,246,5,94);ctx.fillStyle='#30354b';ctx.fillRect(x+32,246,5,94);
+    }
+    ctx.fillStyle='#526a68';for(let i=0;i<13;i++){const x=96+hash(i+variant*13)*189,y=183+hash(i+43)*167;ctx.beginPath();ctx.ellipse(x,y,10,4,hash(i*3)*3,0,Math.PI*2);ctx.fill();}
+    const glow=ctx.createRadialGradient(190,278,0,190,278,44);glow.addColorStop(0,'#dfc28488');glow.addColorStop(1,'#dfc28400');ctx.fillStyle=glow;ctx.fillRect(145,233,89,101);
+  });
+}
+
+function canyonSkyline(art,layer){
+  return make(1536,320,ctx=>{
+    // No river, water edge or foreground is baked into this skyline. Its
+    // subdued silhouettes can sit at actual distant projection depths.
+    const points=[];
+    for(let i=0;i<=48;i++){
+      const x=i*32,side=Math.abs(x/768-1),ridge=35+hash(i+layer*91)*55;
+      const y=305-Math.pow(side,.65)*(ridge+75+layer*24);
+      points.push([x,y]);
+    }
+    ctx.beginPath();ctx.moveTo(0,320);for(const p of points)ctx.lineTo(...p);ctx.lineTo(1536,320);ctx.closePath();ctx.clip();
+    const haze=ctx.createLinearGradient(0,80,0,320);
+    haze.addColorStop(0,layer===0?'#bca094':'#bf936f');haze.addColorStop(1,layer===0?'#dcb597':'#ceaa83');ctx.fillStyle=haze;ctx.fillRect(0,0,1536,320);
+    ctx.globalAlpha=layer===0?.08:.14;ctx.globalCompositeOperation='multiply';ctx.drawImage(art.surfacerock,0,0,1536,320);ctx.globalCompositeOperation='source-over';
+    ctx.globalAlpha=.12;ctx.strokeStyle='#e5c8a0';ctx.lineWidth=2;
+    for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(0,145+i*23);ctx.bezierCurveTo(470,138+i*23,820,154+i*23,1536,144+i*23);ctx.stroke();}
+  });
+}
+
+export function prepareMap2D(art){
+  const rivers=[null,...[1,2].map(index=>make(256,256,ctx=>{
+    const level=levelAt(index);ctx.fillStyle=level.waterDeep;ctx.fillRect(0,0,256,256);ctx.globalAlpha=.32;ctx.drawImage(art.surfacewater,0,0,256,256);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.72;ctx.fillStyle=level.waterEdge;ctx.fillRect(0,0,256,256);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+    for(let i=0;i<42;i++){const x=hash(i*27)*256,y=hash(i*63+2)*256;ctx.strokeStyle=index===2?'#aebff12e':'#c7efee33';ctx.lineWidth=1+hash(i)*2;ctx.beginPath();ctx.moveTo(x,y);ctx.bezierCurveTo(x+9,y-3,x+18,y+3,x+29,y);ctx.stroke();}
+  }))];
+  const grounds=[null,...[1,2].map(index=>make(256,256,ctx=>{
+    const level=levelAt(index);ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);ctx.globalAlpha=.25;ctx.drawImage(art.surfaceground,0,0,256,256);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.65;ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);
+  }))];
+  return{rivers,grounds,canyonSkyline:[0,1].map(layer=>canyonSkyline(art,layer)),props:[null,[0,1,2].map(v=>cliffCard(art,v)),[0,1,2].map(v=>templeCard(art,v))]};
+}
+
+function cover(ctx,image,width,height,center=.5){
+  const scale=Math.max(width/image.width,height/image.height),sw=width/scale,sh=height/scale;
+  const x=Math.max(0,Math.min(image.width-sw,image.width*center-sw/2));
+  ctx.drawImage(image,x,Math.max(0,(image.height-sh)*.4),sw,sh,0,0,width,height);
+}
+
+export function drawMap2D(ctx,g,art,width,height,reduced,project){
+  const level=levelAt(g.levelIndex);if(level.index===0)return;
+  const image=level.index===2?art.mapruins:null;
+  const sky=ctx.createLinearGradient(0,0,0,height);sky.addColorStop(0,level.sky);sky.addColorStop(.6,level.fog);sky.addColorStop(1,level.waterDeep);ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
+  if(level.index===1){
+    // Far land receives only small course parallax; bank cards below advance
+    // much faster. Covering the screen with the old canyon painting pinned
+    // its foreground river in place while the real world rushed underneath.
+    for(let layer=0;layer<2;layer++){
+      const depth=layer===0?2200:1050,p=project(width,height,1,depth);
+      const ridgeHeight=height*(layer===0?.19:.155),parallax=Math.sin(g.distance*.0008+layer*.7)*width*(layer===0?.007:.017);
+      ctx.drawImage(art.map2d.canyonSkyline[layer],-width*.035+parallax,p.y-ridgeHeight,width*1.07,ridgeHeight);
+    }
+  }
+  else if(image)cover(ctx,image,width,height,.63);
+  else{const ground=ctx.createLinearGradient(0,height*.3,0,height);ground.addColorStop(0,level.fog);ground.addColorStop(1,level.ground);ctx.fillStyle=ground;ctx.fillRect(0,height*.3,width,height*.7);}
+  const edges=[[],[]],distant=project(width,height,1,1400),near=project(width,height,1,-14);
+  for(let i=0;i<=26;i++){
+    const scale=distant.scale+(near.scale-distant.scale)*i/26,z=29*(1/scale-1),p=project(width,height,1,z),wave=1+Math.sin((g.distance+z)*.019)*.09;
+    const bend=(Math.sin((g.distance+z)*.007)-Math.sin(g.distance*.007))*p.corridor*.075*p.scale;
+    const half=p.corridor*.79*p.scale*wave;
+    edges[0].push([p.x+bend-half,p.y]);edges[1].push([p.x+bend+half,p.y]);
+  }
+  let patterns=patternCache.get(ctx);if(!patterns){patterns={river:[],ground:[]};patternCache.set(ctx,patterns);}
+  patterns.ground[level.index]??=ctx.createPattern(art.map2d.grounds[level.index],'repeat');
+  // A course-plane bank apron joins the distant skyline to moving cards.
+  // Without it, a tall temple can look suspended in the painted sky.
+  for(let side=0;side<2;side++){
+    const edge=edges[side],outside=side===0?0:width;
+    ctx.save();ctx.beginPath();ctx.moveTo(outside,distant.y);ctx.lineTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.lineTo(outside,near.y);ctx.closePath();ctx.clip();
+    const soil=ctx.createLinearGradient(0,distant.y,0,height);soil.addColorStop(0,`${level.fog}00`);soil.addColorStop(.08,`${level.ground}ef`);soil.addColorStop(.35,level.ground);soil.addColorStop(1,level.index===1?'#70483c':'#333c53');ctx.fillStyle=soil;ctx.fillRect(0,distant.y,width,height-distant.y);
+    const groundOffset=(g.distance*2)%256;ctx.globalAlpha=.26;ctx.fillStyle=patterns.ground[level.index];ctx.translate(0,groundOffset);ctx.fillRect(0,distant.y+height*.04-groundOffset,width,height);ctx.restore();
+  }
+  ctx.save();ctx.beginPath();ctx.moveTo(...edges[0][0]);for(const p of edges[0].slice(1))ctx.lineTo(...p);for(const p of [...edges[1]].reverse())ctx.lineTo(...p);ctx.closePath();ctx.clip();
+  const river=ctx.createLinearGradient(0,distant.y,0,near.y);river.addColorStop(0,level.waterEdge);river.addColorStop(.35,level.waterDeep);river.addColorStop(1,level.waterEdge);ctx.fillStyle=river;ctx.fillRect(0,distant.y,width,height-distant.y);
+  const source=art.map2d.rivers[level.index];patterns.river[level.index]??=ctx.createPattern(source,'repeat');
+  const offset=reduced?0:(currentDistance(g.distance,g.time)*8)%256;ctx.translate(0,offset);ctx.globalAlpha=.52;ctx.fillStyle=patterns.river[level.index];ctx.fillRect(0,distant.y-offset,width,height);ctx.globalAlpha=1;ctx.translate(0,-offset);
+  if(!reduced){
+    // Small living crests use the same downstream phase as GPU current.
+    // Projected positions accelerate toward the raft instead of scrolling
+    // a full-screen painted river at one uniform screen-space velocity.
+    ctx.strokeStyle=level.index===1?'#e0faf466':'#c3d6f555';ctx.lineCap='round';
+    const flow=currentDistance(g.distance,g.time);
+    for(let i=0;i<26;i++){
+      const d=((i*37-flow+14)%254+254)%254-14,lane=.05+hash(i*19)*1.9,p=project(width,height,lane,d);
+      const length=p.corridor*p.scale*(.05+hash(i*31)*.07),spark=.6+.4*Math.sin(g.time*WAVE_CADENCE*2.7+i);
+      ctx.globalAlpha=Math.min(.7,p.scale*1.5)*Math.min(1,(240-d)/30)*spark;ctx.lineWidth=Math.max(.65,p.scale*2.5);ctx.beginPath();ctx.moveTo(p.x-length/2,p.y);ctx.quadraticCurveTo(p.x,p.y+p.scale*3,p.x+length/2,p.y);ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+  // Long reflections make the twilight channel feel wet without screen-space
+  // shimmer that obscures upcoming obstacle silhouettes.
+  if(level.index===2){const reflection=ctx.createLinearGradient(width*.42,0,width*.58,0);reflection.addColorStop(0,'#c9b7ff00');reflection.addColorStop(.5,'#c9b7ff20');reflection.addColorStop(1,'#c9b7ff00');ctx.fillStyle=reflection;ctx.fillRect(width*.42,distant.y,width*.16,height);}
+  ctx.restore();
+  ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  for(const edge of edges){ctx.strokeStyle=level.index===1?'#b8dfd37a':'#a8b9df5a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.stroke();}
+  ctx.restore();
+}
+
+export function drawMapBanks2D(ctx,g,art,width,height,reduced,project,view){
+  const level=levelAt(g.levelIndex),cards=art.map2d.props[level.index];if(!cards)return;
+  ctx.save();
+  for(const item of bankScenery(g.distance,view)){
+    const courseId=Number.parseInt(item.id,10);
+    if(level.index===2&&Math.abs(courseId)%3===1)continue;
+    // Fixed world anchors advance even in reduced motion: they communicate
+    // the course speed but have no independent decorative animation.
+    const p=project(width,height,item.lane,item.z),size=p.corridor*(level.index===1?.42:.32)*item.size*p.scale;
+    if(p.x+size*.6<0||p.x-size*.6>width)continue;
+    ctx.globalAlpha=Math.min(1,(view-item.z)/25)*Math.min(1,p.scale*4+.25);
+    const card=cards[item.kind],tall=size*card.height/card.width;
+    ctx.fillStyle='#1123333f';ctx.beginPath();ctx.ellipse(p.x,p.y,size*.48,size*.045,0,0,Math.PI*2);ctx.fill();
+    ctx.save();ctx.translate(p.x,p.y);ctx.scale(courseId%2?-1:1,1);ctx.drawImage(card,-size/2,-tall,size,tall);ctx.restore();
+    if(level.index===2&&item.kind===1){ctx.fillStyle='#c7b0f22a';ctx.beginPath();ctx.ellipse(p.x,p.y-3,size*.4,size*.04,0,0,Math.PI*2);ctx.fill();}
+  }
+  ctx.restore();
+}
+
+export function drawFinish2D(ctx,g,width,height,project,view){
+  const level=levelAt(g.levelIndex),z=level.length-g.distance;if(z>view||z< -14)return;
+  const left=project(width,height,-1.3,z),right=project(width,height,3.3,z),p=project(width,height,1,z),unit=p.corridor/11.4*p.scale;
+  const top=p.y-unit*5.8,post=unit*.38;
+  ctx.save();ctx.globalAlpha=Math.min(1,(view-z)/25);ctx.lineJoin='round';
+  for(const point of [left,right]){
+    ctx.fillStyle=level.index===1?'#705044':level.index===2?'#44415f':'#5b4430';ctx.fillRect(point.x-post/2,top,post,p.y-top);
+    ctx.fillStyle=level.accent;ctx.fillRect(point.x-post*.65,top-unit*.1,post*1.3,unit*.22);
+    ctx.fillStyle='#17282b66';ctx.beginPath();ctx.ellipse(point.x,p.y,post*1.3,post*.25,0,0,Math.PI*2);ctx.fill();
+  }
+  const bannerHeight=unit*.85,bannerWidth=right.x-left.x;
+  ctx.fillStyle='#152a36';ctx.fillRect(left.x,top,bannerWidth,bannerHeight);ctx.fillStyle=level.accent;ctx.fillRect(left.x,top,bannerWidth,unit*.09);ctx.fillRect(left.x,top+bannerHeight-unit*.07,bannerWidth,unit*.07);
+  const check=unit*.19;ctx.fillStyle='#e5f5ef';for(let i=0;i<4;i++)for(let j=0;j<3;j++)if((i+j)%2===0){ctx.fillRect(left.x+unit*.22+i*check,top+unit*.15+j*check,check,check);ctx.fillRect(right.x-unit*.22-(i+1)*check,top+unit*.15+j*check,check,check);}
+  ctx.fillStyle='#f5f4dc';ctx.font=`900 ${Math.max(9,unit*.43)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('FINISH',p.x,top+bannerHeight*.52);ctx.restore();
+}

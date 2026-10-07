@@ -1,0 +1,115 @@
+{
+  "stage": "local-build-verified",
+  "checkedAt": "2026-10-06T20:44:34.526468+00:00",
+  "baseline": {
+    "commit": "88d78bf02f935a091fe6a405c132fd0a1494e9af",
+    "actualFatalCollision": true,
+    "regressionFailed": true,
+    "cause": "Paused ancestor rule held dialog entrance at zero opacity."
+  },
+  "build": {
+    "passed": true,
+    "assets": {
+      "public/river-rush/index.html": "7232a3e21ec25aec91aca78773735c4d81f44aedac5f8bc7434f2892beddfb4d",
+      "public/river-rush/assets/index-BHUdth4r.css": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540",
+      "public/river-rush/assets/index-CYU_aK-X.js": "1287c530619c20bb8497e0e73a30ee455c87508153e876cf112b15a3d3ea7247"
+    }
+  },
+  "browser": {
+    "passed": true,
+    "base": "http://127.0.0.1:8765/",
+    "results": [
+      {
+        "case": "phone",
+        "renderer": "webgl",
+        "naturalDeaths": 2,
+        "shieldAbsorbedFirstHit": true,
+        "paintedResults": true,
+        "score": 518,
+        "distance": 159,
+        "buttonRetry": true,
+        "keyboardRetry": true,
+        "paintedPause": true,
+        "pauseResume": true,
+        "reducedMotion": false,
+        "homeAndStart": true,
+        "deathWhileHoldingGesture": true,
+        "secondScore": 496
+      },
+      {
+        "case": "desktop",
+        "renderer": "webgl",
+        "naturalDeaths": 2,
+        "shieldAbsorbedFirstHit": true,
+        "paintedResults": true,
+        "score": 516,
+        "distance": 158,
+        "buttonRetry": true,
+        "keyboardRetry": true,
+        "paintedPause": true,
+        "pauseResume": true,
+        "reducedMotion": false,
+        "homeAndStart": true,
+        "deathWhileHoldingGesture": false,
+        "secondScore": 496
+      },
+      {
+        "case": "landscape",
+        "renderer": "webgl",
+        "naturalDeaths": 2,
+        "shieldAbsorbedFirstHit": true,
+        "paintedResults": true,
+        "score": 516,
+        "distance": 158,
+        "buttonRetry": true,
+        "keyboardRetry": true,
+        "paintedPause": true,
+        "pauseResume": true,
+        "reducedMotion": false,
+        "homeAndStart": true,
+        "deathWhileHoldingGesture": false,
+        "secondScore": 496
+      },
+      {
+        "case": "phone-2d",
+        "renderer": "2d",
+        "naturalDeaths": 2,
+        "shieldAbsorbedFirstHit": true,
+        "paintedResults": true,
+        "score": 516,
+        "distance": 158,
+        "buttonRetry": true,
+        "keyboardRetry": true,
+        "paintedPause": true,
+        "pauseResume": true,
+        "reducedMotion": false,
+        "homeAndStart": true,
+        "deathWhileHoldingGesture": false,
+        "secondScore": 516
+      },
+      {
+        "case": "phone-reduced",
+        "renderer": "webgl",
+        "naturalDeaths": 2,
+        "shieldAbsorbedFirstHit": true,
+        "paintedResults": true,
+        "score": 516,
+        "distance": 158,
+        "buttonRetry": true,
+        "keyboardRetry": true,
+        "paintedPause": true,
+        "pauseResume": true,
+        "reducedMotion": true,
+        "homeAndStart": true,
+        "deathWhileHoldingGesture": false,
+        "secondScore": 476
+      }
+    ],
+    "pageErrors": [],
+    "screenshots": "/tmp/river-death"
+  },
+  "limitations": [
+    "Chromium emulates phone, desktop and landscape viewports; no physical phone testing.",
+    "WebGL uses SwiftShader in automated checks."
+  ]
+}

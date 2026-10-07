@@ -1,50 +1,85 @@
 /* Composition measured against the selected 9:16 Higgsfield reference. */
 #hud header{height:44px;background:none;border:0;box-shadow:none;justify-content:flex-start;padding-left:60px;pointer-events:none}
-#hud header .wordmark{display:none}.score{background:#101c2470;border:0;border-radius:6px;box-shadow:none;clip-path:none;height:34px;gap:8px;font-size:17px;padding:4px 10px;margin:5px 0 0}.score time{font-size:13px;margin-left:5px;position:static;display:inline}.score i{font-size:12px}
+#hud header .wordmark{display:none}.score{background:linear-gradient(180deg,#26211bf0,#15120fe6);border:1px solid #6e573a;border-top:0;border-radius:0 0 3px 3px;box-shadow:var(--mr-bevel),0 4px 14px #0009;clip-path:none;height:34px;gap:8px;font-size:17px;line-height:26px;padding:4px 12px;margin:0;font-variant-numeric:tabular-nums}.score time{font-size:13px;margin-left:5px;position:static;display:inline;color:var(--mr-text);letter-spacing:.6px}.score i{font-size:12px}
+/* Sudden death: the clock turns crimson for the final countdown. Wider screens also show a label under the score; on
+   phones the lineup row sits there. */
+#clock.sudden-death{color:var(--mr-enemy-text);font-weight:700}.score:has(#clock.sudden-death){border-color:var(--mr-enemy)}
+@media(min-width:700px){.score:has(#clock.sudden-death)::after{content:'SUDDEN DEATH';position:absolute;top:calc(100% + 2px);left:50%;transform:translateX(-50%);font:700 10px/1 Barlow,sans-serif;letter-spacing:1px;color:var(--mr-enemy-text);white-space:nowrap;text-shadow:0 1px 2px #000,0 0 4px #000}}
+/* The six heroes of the match flank the score, portraits from the 3D models: your team on the left, the other shore on
+   the right. A fallen hero turns grey and shows the seconds until it returns. Phones show them smaller, in a row under
+   the score. */
+.hud-lineup{position:absolute;left:0;right:0;top:env(safe-area-inset-top);height:0;pointer-events:none}
+.lineup{position:absolute;top:2px;display:flex;gap:4px;margin:0;padding:0;list-style:none}
+.lineup.ally{right:calc(50% + 66px);flex-direction:row-reverse}.lineup.enemy{left:calc(50% + 66px)}
+.lineup li{position:relative;width:30px;height:30px;border:1px solid #6e573a;border-radius:2px;background:#0f0d0b;box-shadow:0 0 0 1px #000,0 3px 8px #0009;overflow:hidden}
+.lineup li::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--mr-ally);box-shadow:0 -1px 0 #000a}
+.lineup.enemy li::after{background:var(--mr-enemy)}
+.lineup li.player{border-color:var(--mr-gold);box-shadow:0 0 0 1px #000,0 0 0 2px #dcb46e40,0 3px 8px #0009}
+.lineup img{display:block;width:100%;height:100%;object-fit:cover;box-shadow:inset 0 0 6px #000}
+.lineup li.down img{filter:grayscale(1) brightness(.45)}
+.lineup b{position:absolute;inset:0;display:grid;place-items:center;font:700 14px/1 Barlow,sans-serif;color:var(--mr-parchment);text-shadow:0 1px 2px #000,0 0 4px #000}
+@media(min-width:1800px){.lineup li{width:36px;height:36px}.lineup.ally{right:calc(50% + 70px)}.lineup.enemy{left:calc(50% + 70px)}}
+@media(max-width:699px){.lineup{top:36px;gap:3px}.lineup.ally{right:calc(50% + 4px)}.lineup.enemy{left:calc(50% + 4px)}.lineup li{width:20px;height:20px;box-shadow:0 0 0 1px #000,0 2px 5px #0009}.lineup li::after{height:2px}.lineup b{font-size:12px}}
+@media(max-width:370px){.lineup li{width:18px;height:18px}.lineup b{font-size:11px}}
 /* The menu and sound buttons sit together in the top left, clear enough to find at a glance. */
 .hud-corner{position:absolute;left:10px;top:calc(6px + env(safe-area-inset-top));display:flex;gap:6px;pointer-events:auto;z-index:5}
-#pause,#hud-sound{height:38px;display:flex;align-items:center;justify-content:center;gap:7px;background:#0b1a22e6;border:1px solid #d6ea78a8;border-radius:19px;color:#f0eccd;box-shadow:0 2px 10px #0009;cursor:pointer}
+#pause,#hud-sound{height:38px;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--mr-plate);border:1px solid var(--mr-bronze);border-radius:3px;color:var(--mr-parchment);box-shadow:var(--mr-bevel),var(--mr-frame);cursor:pointer}
 #pause{width:auto;padding:0 10px 0 11px;font:700 14px/1 Barlow,sans-serif;letter-spacing:1.5px;text-transform:uppercase}#pause svg{width:18px;height:18px;stroke-width:2.6}
-#pause kbd{font:600 11px/1 Barlow,sans-serif;padding:3px 5px;border:1px solid #d6ea7880;border-radius:4px;color:#d6ea78;letter-spacing:.5px;text-transform:none}
+#pause kbd{font:600 11px/1 Barlow,sans-serif;padding:3px 5px;border:1px solid #9a7a4b99;border-radius:2px;background:#0f0d0b99;color:var(--mr-bronze-hi);letter-spacing:.5px;text-transform:none}
 #hud-sound{width:38px;padding:0}#hud-sound svg{width:19px;height:19px;stroke-width:2.2}#hud-sound .cross{display:none}
-#hud-sound[aria-pressed=false]{color:#ffad90;border-color:#ffad90b0}#hud-sound[aria-pressed=false] .wave{display:none}#hud-sound[aria-pressed=false] .cross{display:inline}
-#pause:hover,#pause:focus-visible,#hud-sound:hover,#hud-sound:focus-visible{background:#183029;border-color:#d6ea78}
-@media (hover:none){#pause kbd{display:none}}@media (max-width:520px){#pause span{display:none}#pause{padding:0 10px}}
-#map-button{width:96px;height:96px;top:14px;right:12px;left:auto;border:3px solid #95856a;outline:2px solid #111b20;box-shadow:inset 0 0 0 2px #101c20,2px 3px 0 #10192399;border-radius:50%;overflow:hidden}
-#map-button #minimap{border-radius:50%}#map-button small{display:none}
-#objective{top:57px;left:16px;right:125px;width:auto;max-width:215px}#objective b{font-size:12px;letter-spacing:1.1px;color:#d4d7ba}#realm-count{font-size:11px;color:#c3d2c5}.realm-track{height:2px;margin:5px 0;width:95px;background:#101c2460}.realm-track i{height:2px;background:#9dc4a9}#objective-sub{font-size:11px;max-width:165px;color:#dbdfcd}
+#hud-sound[aria-pressed=false]{color:var(--mr-enemy-text);border-color:#ad5446}#hud-sound[aria-pressed=false] .wave{display:none}#hud-sound[aria-pressed=false] .cross{display:inline}
+#pause:hover,#pause:focus-visible,#hud-sound:hover,#hud-sound:focus-visible{background:linear-gradient(180deg,#352e25,#1f1b16);border-color:var(--mr-bronze-hi)}
+@media (hover:none){#pause kbd{display:none}}@media (max-width:520px){#pause span,#pause kbd{display:none}#pause{padding:0 10px}}
+/* The minimap sits in a bronze ring: a dark iron band between a lit outer edge and a shadowed inner edge. */
+#map-button{width:96px;height:96px;top:14px;right:12px;left:auto;border:3px solid #7d6240;outline:1px solid #0b0a08;background:#14110e;box-shadow:inset 0 0 0 2px #0b0a08,inset 0 0 14px #000c,0 0 0 2px #c9a66b40,0 6px 18px #000b;border-radius:50%;overflow:hidden}
+#map-button #minimap{width:100%;height:100%;border-radius:50%}#map-button small{display:none}
+#objective{top:57px;left:16px;right:125px;width:auto;max-width:215px}#objective{text-shadow:0 1px 2px #000,0 0 6px #000c}#objective b{font:600 12px/1.2 Cinzel,Barlow,serif;letter-spacing:1.4px;color:var(--mr-parchment)}#realm-count{font-size:11px;color:var(--mr-text)}.realm-track{height:2px;margin:5px 0;width:95px;background:#0f0d0b99;box-shadow:0 0 0 1px #0008}.realm-track i{height:2px;background:var(--mr-bronze-hi)}#objective-sub{font-size:11px;max-width:165px;color:#e2d9c8}
 #controls{height:236px;bottom:calc(49px + env(safe-area-inset-bottom))}
-#joystick{left:17px;bottom:25px;width:112px;height:112px;border:2px solid #92b4a25e;background:#1835363d;box-shadow:inset 0 0 0 6px #172b3133;opacity:.8}
-#thumb{left:33px;top:33px;width:42px;height:42px;border:2px solid #91d6c5a6;background:#376b65a1;box-shadow:0 0 0 3px #1c414b99}
+#joystick{left:17px;bottom:25px;width:112px;height:112px;border:2px solid #9a7a4b80;background:radial-gradient(#0f0d0b33 55%,#0f0d0b88);box-shadow:inset 0 0 0 5px #0f0d0b55,inset 0 0 0 6px #c9a66b22,0 4px 14px #0006;opacity:.85}
+#thumb{left:33px;top:33px;width:42px;height:42px;border:1px solid #c9a66bcc;background:radial-gradient(circle at 38% 30%,#5a4a36,#2a231b 70%);box-shadow:inset 0 1px 0 #ffffff1f,0 0 0 3px #0f0d0b99,0 3px 8px #000a}
 .abilities{right:10px;bottom:3px;width:145px;height:170px;transform:none}
-.abilities .ability{width:58px;height:58px;padding:0;border:0;background-color:transparent;background-size:contain;background-repeat:no-repeat;background-position:center;outline:0;box-shadow:none;filter:drop-shadow(1px 3px 1px #081720);border-radius:50%}
+.abilities .ability{width:58px;height:58px;padding:0;border:0;background-color:transparent;background-size:contain;background-repeat:no-repeat;background-position:center;outline:0;box-shadow:none;filter:drop-shadow(1px 3px 1px #171310);border-radius:50%}
 .abilities .dash{top:0;right:0;left:auto;bottom:auto}.abilities .surge{top:56px;right:26px;left:auto;bottom:auto}.abilities .ult{top:auto;bottom:0;right:56px;left:auto;width:64px;height:64px;padding:0}
-.ability svg{display:none}.ability span{bottom:-8px;font-size:8px;letter-spacing:1px;line-height:12px;color:#bcdaca;background:none;text-shadow:1px 1px #102029,0 0 4px #102029;opacity:.9}.ability b:not(:empty){background:#0b192969;border-radius:50%;font-size:19px}.ability[aria-disabled=true]{filter:drop-shadow(1px 3px 1px #081720) saturate(.65)}.ability kbd{display:none}
-#auto-status{top:auto;bottom:-19px;right:0;border:0;background:#152a2c77;box-shadow:none;padding:3px 5px;font-size:8px;max-width:140px;color:#b2cabd}
+.ability svg{display:none}.ability span{bottom:-8px;font-size:8px;letter-spacing:1px;line-height:12px;color:var(--mr-text);background:none;text-shadow:0 1px 2px #000,0 0 4px #000;opacity:.9}.ability b:not(:empty){background:#1e191469;border-radius:50%;font-size:19px}.ability[aria-disabled=true]{filter:drop-shadow(1px 3px 1px #171310) saturate(.65)}.ability kbd{display:none}
+#auto-status{top:auto;bottom:-19px;right:0;border:0;background:#0f0d0b99;box-shadow:none;padding:3px 5px;font-size:8px;max-width:140px;color:var(--mr-text)}
 #loadout{display:flex;align-items:center;gap:3px;left:50%;transform:translateX(-50%);width:252px;bottom:calc(5px + env(safe-area-inset-bottom));height:44px;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
-#loadout #shop{width:61px;min-width:61px;min-height:40px;padding:0;background:#152524d9;border:1px solid #8d7b5899;border-radius:5px;font-size:0;color:#eac66c;white-space:nowrap}
-#loadout #shop #gold{font-size:19px;font-weight:700}#loadout #shop small{display:block;font-size:8px;margin:0;letter-spacing:.8px;color:#b5bca0}
-#inventory{display:flex;gap:3px;height:40px;align-items:center}#inventory .inventory-slot{width:22px;height:32px;border:1px solid #948667;background:#102025c9;border-radius:3px;box-shadow:inset 0 0 0 2px #101e25;color:transparent}#inventory .inventory-slot span:not(.item-icon){display:none}#inventory .item-icon{border-radius:2px;outline:0}
-#quick-buy{width:36px;min-width:36px;height:40px;min-height:40px;background:#263b32c9;border:1px solid #86795799;border-radius:5px;margin:0;font-size:23px;color:#d4d991}#quick-buy:disabled{opacity:.5}
-.health{bottom:7px;left:17px;transform:none;width:112px;height:12px;opacity:.8}.health strong{font-size:10px;flex-basis:16px;height:16px;line-height:12px}.health>div{height:9px}.health span{font-size:0}.health i{background:#75cbaa}.health #xp-fill{height:2px}
-#notice{top:20%;left:17%;right:17%;text-align:center}#notice b{font-size:17px;color:#e3dcc1}#notice small{font-size:11px;line-height:1.4}
-#coach{bottom:calc(305px + env(safe-area-inset-bottom));left:14px;width:226px;background:#15282bea;border:1px solid #b0a578;border-radius:4px;box-shadow:2px 3px 0 #11192377}
-#portal{bottom:310px;right:12px;min-width:72px;font-size:10px;background:#173531d9;border:1px solid #a1c5ad;padding:5px}#portal small{font-size:9px}
-.hero-stage img{filter:drop-shadow(4px 6px #10192388);object-fit:contain}.hero-picks img{object-fit:contain;filter:none}.hero-stage{height:clamp(155px,26dvh,270px)}
+#loadout #shop{width:61px;min-width:61px;min-height:40px;padding:0;background:var(--mr-plate);border:1px solid var(--mr-bronze);border-radius:3px;box-shadow:var(--mr-bevel),var(--mr-frame);font-size:0;color:var(--mr-gold);white-space:nowrap}
+#loadout #shop #gold{font-size:19px;font-weight:700}#loadout #shop small{display:block;font-size:8px;margin:0;letter-spacing:.8px;color:var(--mr-muted)}
+#inventory{display:flex;gap:3px;height:40px;align-items:center}#inventory .inventory-slot{width:22px;height:32px;border:1px solid #6e573a;background:#0f0d0bd0;border-radius:2px;box-shadow:inset 0 0 0 1px #000,inset 0 4px 8px #0009;color:transparent}#inventory .inventory-slot span:not(.item-icon){display:none}#inventory .item-icon{border-radius:2px;outline:0}
+#quick-buy{width:36px;min-width:36px;height:40px;min-height:40px;background:var(--mr-plate);border:1px solid var(--mr-bronze);border-radius:3px;box-shadow:var(--mr-bevel),var(--mr-frame);margin:0;font-size:23px;color:var(--mr-gold)}#quick-buy:disabled{opacity:.5}
+.health{bottom:7px;left:17px;transform:none;width:112px;height:12px;opacity:.8}.health strong{font-size:10px;flex-basis:16px;height:16px;line-height:12px}.health>div{height:9px}.health span{font-size:0}.health i{background:linear-gradient(180deg,#68843f,#46602b)}.health #xp-fill{height:2px}
+#notice{top:20%;left:17%;right:17%;text-align:center}#notice{text-shadow:0 1px 2px #000,0 0 8px #000c}#notice b{font:600 17px/1.2 Cinzel,Barlow,serif;letter-spacing:.8px;color:var(--mr-parchment)}#notice small{font-size:11px;line-height:1.4}
+#coach{bottom:calc(305px + env(safe-area-inset-bottom));left:14px;width:226px;background:var(--mr-panel);border:1px solid var(--mr-line);border-left:2px solid var(--mr-bronze-hi);border-radius:2px;box-shadow:var(--mr-bevel),var(--mr-frame);color:var(--mr-text)}#coach svg{stroke:var(--mr-bronze-hi)}.coach-thumb{fill:var(--mr-gold)}
+#portal{bottom:310px;right:12px;min-width:72px;font-size:10px;background:var(--mr-plate);border:1px solid var(--mr-bronze);border-radius:3px;box-shadow:var(--mr-bevel),var(--mr-frame);color:var(--mr-parchment);padding:5px}#portal:not(:disabled){border-color:var(--mr-ally);box-shadow:var(--mr-bevel),var(--mr-frame),0 0 0 1px #6aa99c55}#portal small{font-size:9px}
+.hero-stage img{object-fit:contain}.hero-picks img{object-fit:contain;filter:none}.hero-stage{height:clamp(155px,26dvh,270px)}
 @media(min-width:700px){#map-button{width:122px;height:122px;top:18px;right:20px}#objective{top:57px;max-width:240px}#controls{bottom:63px}.abilities{right:27px;transform:scale(1.18);transform-origin:right bottom}#joystick{left:30px;width:128px;height:128px}#thumb{left:41px;top:41px}.health{left:30px;width:128px}#loadout{bottom:12px}#notice{left:35%;right:35%}.ability kbd{display:block;top:3px;right:8px;font-size:9px}}
 @media(max-width:370px){#map-button{width:80px;height:80px;right:10px}#objective{right:101px}#controls{bottom:48px}#joystick{width:94px;height:94px;left:13px}#thumb{left:24px;top:24px}.abilities{right:7px;transform:scale(.9);transform-origin:right bottom}.health{left:13px;width:95px}#loadout{width:247px}#notice{top:24%}}
 @media(max-height:520px) and (min-width:600px){#controls{bottom:19px}.abilities{transform:scale(.85);right:18px}#joystick{bottom:0;left:22px;width:105px;height:105px}#thumb{left:29px;top:29px}.health{left:25px;bottom:-12px;width:98px}#map-button{width:76px;height:76px;top:8px}#objective{top:51px;width:170px}#loadout{bottom:9px}#notice{top:30%}#coach{bottom:135px;left:140px;width:220px}.hero-stage{height:240px}}
+/* Phones in portrait: the objective panel moves down to make room for the objective clock above it, and the notice
+   stays below the panel. */
+@media(max-width:699px) and (min-height:521px){#objective{top:calc(78px + env(safe-area-inset-top))}#notice{top:max(20%,calc(158px + env(safe-area-inset-top)))}}
+@media(max-width:370px) and (min-height:521px){#notice{top:max(24%,calc(158px + env(safe-area-inset-top)))}}
 
 /* Shown only while sound is saved off: one click turns it back on. */
-.muted-chip{height:38px;padding:0 14px;border:1px solid #ffad90c0;border-radius:19px;background:#2a1410e6;color:#ffd2c2;font:700 13px/1 Barlow,sans-serif;letter-spacing:.8px;cursor:pointer;pointer-events:auto;box-shadow:0 2px 10px #0009}.muted-chip[hidden]{display:none}
-.muted-chip:hover,.muted-chip:focus-visible{background:#3d1d16;border-color:#ffc7b4}
+.muted-chip{height:38px;padding:0 14px;border:1px solid #ad5446;border-radius:3px;background:linear-gradient(180deg,#3a201b,#24130f);color:#f1ddd3;font:700 13px/1 Barlow,sans-serif;letter-spacing:.8px;cursor:pointer;pointer-events:auto;box-shadow:var(--mr-bevel),var(--mr-frame)}.muted-chip[hidden]{display:none}
+.muted-chip:hover,.muted-chip:focus-visible{background:linear-gradient(180deg,#4a2a23,#2d1813);border-color:var(--mr-enemy-text)}
+.muted-chip svg{display:none;width:19px;height:19px;margin:auto;stroke-width:2.2}
+/* Below 1000 px the full chip would reach the allied portraits, so it shows only a speaker with sound waves. */
+@media (max-width:999px){.hud-corner .muted-chip{width:38px;padding:0}.hud-corner .muted-chip span{display:none}.hud-corner .muted-chip svg{display:block}}
 .selection-account .muted-chip{height:34px;padding:0 12px;font-size:12px;align-self:center;flex:none}
-@media (max-width:520px){.selection-account .muted-chip{padding:0 9px}.selection-account .muted-chip .wide{display:none}}
-#gpu-note{position:absolute;left:50%;top:calc(52px + env(safe-area-inset-top));transform:translateX(-50%);z-index:6;display:flex;gap:10px;align-items:center;max-width:min(92vw,560px);padding:8px 10px 8px 14px;border:1px solid #ffd09a99;border-radius:8px;background:#1d1609ee;color:#ffe6c4;font:600 13px/1.35 Barlow,sans-serif;pointer-events:auto}#gpu-note[hidden]{display:none}
-#gpu-note button{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:#ffd09a22;color:#ffe6c4;font-size:18px;cursor:pointer;pointer-events:auto}
-/* The note never blocks a control: clicks pass through it except on its close button. Phones draw with the graphics
-   card, and their small screens need the space, so it shows only on desktop screens. */
+@media (max-width:999px){.selection-account .muted-chip{padding:0 9px}.selection-account .muted-chip .wide{display:none}}
+/* On narrow screens the HUD chip would cover the score; the crossed-out speaker still shows a saved mute there. */
+@media (max-width:760px){.hud-corner .muted-chip{display:none!important}}
+#gpu-note{position:absolute;left:50%;top:calc(72px + env(safe-area-inset-top));transform:translateX(-50%);z-index:6;display:flex;gap:10px;align-items:center;max-width:min(92vw,560px);padding:8px 10px 8px 14px;border:1px solid var(--mr-bronze);border-radius:3px;background:var(--mr-panel);box-shadow:var(--mr-bevel),var(--mr-frame);color:var(--mr-parchment);font:600 13px/1.35 Barlow,sans-serif;pointer-events:auto}#gpu-note[hidden]{display:none}
+#gpu-note button{flex:none;width:30px;height:30px;border:1px solid var(--mr-line);border-radius:2px;background:#0f0d0b99;color:var(--mr-parchment);font-size:18px;cursor:pointer;pointer-events:auto}
+/* The note never blocks a control: clicks pass through it except on its close button. It sits below the objective clock,
+   so the clock stays readable. Phones draw with the graphics card, and their small screens need the space, so it shows
+   only on desktop screens. */
 #gpu-note{pointer-events:none}@media (max-width:699px),(hover:none){#gpu-note{display:none!important}}
-#perf{pointer-events:none;position:absolute;right:12px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:6;max-width:min(92vw,520px);padding:8px 10px;border:1px solid #9fc3b066;border-radius:6px;background:#06131ae6;color:#d7eadf}#perf[hidden]{display:none}
-#perf button{pointer-events:auto}#perf pre{margin:0 0 6px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}#perf button{font:600 12px Barlow,sans-serif;padding:3px 10px;border:1px solid #9fc3b088;border-radius:4px;background:#12262c;color:#d7eadf;cursor:pointer}
-.sound-test{display:block;margin:6px 0 10px;padding:10px 12px;border-left:3px solid #d6ea78;background:#0d1f26;color:#e8ecd9;font-size:14px;line-height:1.4;text-align:left}.sound-test[hidden]{display:none}.sound-test.silent{border-color:#ffad90}
+/* The performance readout carries the same warning, so the note steps aside while it shows. */
+#perf:not([hidden]) ~ #gpu-note{display:none}
+#perf{pointer-events:none;position:absolute;right:12px;top:calc(140px + env(safe-area-inset-top));z-index:6;max-width:min(60vw,460px);padding:8px 10px;border:1px solid var(--mr-line);border-radius:2px;background:#0f0d0bee;color:#e6e2db}#perf[hidden]{display:none}
+#perf button{pointer-events:auto}#perf pre{margin:0 0 6px;font:11px/1.35 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}
+/* The readout sits under the minimap, clear of the skills; on short landscape screens it moves to the top centre. */
+@media (max-height:520px){#perf{top:calc(52px + env(safe-area-inset-top));right:50%;transform:translateX(50%);max-width:min(70vw,460px)}}#perf button{font:600 12px Barlow,sans-serif;padding:3px 10px;border:1px solid var(--mr-bronze);border-radius:2px;background:var(--mr-iron);color:var(--mr-parchment);cursor:pointer}
+.sound-test{display:block;margin:6px 0 10px;padding:10px 12px;border-left:3px solid var(--mr-bronze-hi);background:#0f0d0b99;color:#e8e4dd;font-size:14px;line-height:1.4;text-align:left}.sound-test[hidden]{display:none}.sound-test.silent{border-color:var(--mr-enemy)}

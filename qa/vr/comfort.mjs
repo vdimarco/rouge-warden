@@ -5,7 +5,7 @@
 // the middle of the room, the seated rules, the blend) and the safety bubble when there is no room data.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/comfort.mjs   (SHOTS=<dir> saves pictures)
 import {
-  checker, watchdog, newPage, open, close, state, waitState, waitFor, enterXR, freeze, frames, run, controller, head, recenter, lookQuat, shot,
+  checker, watchdog, newPage, open, close, state, waitState, waitFor, enterXR, freeze, frames, sampleAfter, controller, head, recenter, lookQuat, shot,
 } from "./lib.mjs";
 
 const { check, done } = checker("comfort");
@@ -53,15 +53,11 @@ try {
   check(vig.fast.strength > 0.55 && vig.fast.strength < 0.65, "it rises fast (0.1 s attack)", vig.fast);
   check(vig.mesh.parent && vig.mesh.side === 1 && !vig.mesh.depthTest && !vig.mesh.depthWrite && vig.mesh.transparent && vig.mesh.order === 999 && !vig.mesh.culled && vig.mesh.r === 1, "the vignette is an inward 1 m sphere on the camera (BackSide, no depth, renderOrder 999)", vig.mesh);
 
-  // pixels: at full strength the edge of the view goes dark and the middle stays clear
-  await page.evaluate(() => { for (let i = 0; i < 60; i++) G.comfort.update(0.02, { play: true, mode: "xr" }); });
-  const s0 = page.evaluate(() => G.test.sample({ mid: [0.5, 0.5], edge: [0.03, 0.5], corner: [0.04, 0.08] }));
-  await run(page, 32);
-  const px0 = await s0;
-  await page.evaluate(() => { for (let i = 0; i < 10; i++) G.comfort.update(0.02, { speed: 0, accel: 15, yawRate: 0, play: true, ar: false, mode: "xr" }); });
-  const s1 = page.evaluate(() => G.test.sample({ mid: [0.5, 0.5], edge: [0.03, 0.5], corner: [0.04, 0.08] }));
-  await run(page, 32);
-  const px1 = await s1;
+  // pixels: at full strength the edge of the view goes dark and the middle stays clear. The vignette draws only on the first frame after
+  // a comfort.update. The loop is held, so a frame between the update and the read would hide it. The update and the read go in one task.
+  const spots = { mid: [0.5, 0.5], edge: [0.03, 0.5], corner: [0.04, 0.08] };
+  const px0 = await sampleAfter(page, spots, () => { for (let i = 0; i < 60; i++) G.comfort.update(0.02, { play: true, mode: "xr" }); });
+  const px1 = await sampleAfter(page, spots, () => { for (let i = 0; i < 10; i++) G.comfort.update(0.02, { speed: 0, accel: 15, yawRate: 0, play: true, ar: false, mode: "xr" }); });
   const lum = (p) => p[0] + p[1] + p[2];
   check(lum(px1.edge) < 50 && lum(px1.corner) < 50 && Math.abs(lum(px1.mid) - lum(px0.mid)) < 30 && lum(px0.edge) > 60, "at full strength the edge of the view is dark and the middle is clear", { before: px0, after: px1 });
   await shot(page, "comfort-vignette");
@@ -174,6 +170,8 @@ try {
   await page.evaluate(() => G.test.skipIntro());
   await waitState(page, { mode: "desktop", state: "play" }, 120000);
   // freeze the world (the loop still draws), then draw the same view with the lines off and on. The vignette is off on the flat screen.
+  // The glow (bloom, on by default here) blurs the bright streaks into the clear middle. The first check reads the streaks alone, so it
+  // draws with the glow off. The second check bounds what the glow adds.
   const g = await page.evaluate(() => {
     G.test.hold(true);
     const cam = G.camera, aspect = cam.aspect, th = Math.tan((cam.fov * Math.PI) / 360), pts = [];
@@ -181,20 +179,37 @@ try {
       const nx = -0.97 + (i / 16) * 1.94, ny = -0.97 + (j / 10) * 1.94;
       pts.push({ fx: (nx + 1) / 2, fy: (1 - ny) / 2, deg: (Math.atan(Math.hypot(nx * aspect * th, ny * th)) * 180) / Math.PI });
     }
-    return { pts, fov: cam.fov, aspect, vignette: G.settings.vignette };
+    return { pts, fov: cam.fov, aspect, vignette: G.settings.vignette, bloom: G.test.bloom().want };
   });
-  const draw = (on) => page.evaluate(({ on, grid }) => {
+  // The settings, the updates and the read go in one page task, so the frame that answers the read is the first one after them (the lines
+  // draw only on that frame). level is the glow of that frame.
+  const draw = (on, level) => page.evaluate(({ on, level, grid }) => {
     const C = G.comfort;
+    G.settings.bloom = level;
     C.settings.speedLines = on;
     for (let i = 0; i < 120; i++) C.update(0.02, { vel: { x: 0, y: 0, z: -30 }, speed: 30, accel: 0, yawRate: 0, snapped: false, play: true, ar: false, mode: "desktop" });
-    return G.test.sample(grid);
-  }, { on, grid: g.pts.map((p) => [p.fx, p.fy]) });
-  const off = await draw(false), on = await draw(true);
-  const diff = g.pts.map((p, i) => Math.abs(on[i][0] - off[i][0]) + Math.abs(on[i][1] - off[i][1]) + Math.abs(on[i][2] - off[i][2]));
-  const inner = g.pts.map((p, i) => ({ deg: p.deg, d: diff[i] })).filter((q) => q.deg <= 24.5);
-  const outer = g.pts.map((p, i) => ({ deg: p.deg, d: diff[i] })).filter((q) => q.deg >= 30);
-  check(g.vignette === "off" && inner.length >= 20 && inner.every((q) => q.d <= 2), "in the middle 50 degrees (" + inner.length + " sample points within 24.5 degrees of where you look) no pixel changes with the lines on", { vignette: g.vignette, worst: Math.max(...inner.map((q) => q.d)) });
+    return G.test.sample(grid).then((px) => ({ px, level: G.test.bloom().level }));
+  }, { on, level, grid: g.pts.map((p) => [p.fx, p.fy]) });
+  const diffs = async (level) => {
+    const off = await draw(false, level), on = await draw(true, level);
+    const d = g.pts.map((p, i) => Math.abs(on.px[i][0] - off.px[i][0]) + Math.abs(on.px[i][1] - off.px[i][1]) + Math.abs(on.px[i][2] - off.px[i][2]));
+    return { level: off.level + "/" + on.level, d };
+  };
+  const flat = await diffs("off");
+  const inner = g.pts.map((p, i) => ({ deg: p.deg, d: flat.d[i] })).filter((q) => q.deg <= 24.5);
+  const outer = g.pts.map((p, i) => ({ deg: p.deg, d: flat.d[i] })).filter((q) => q.deg >= 30);
+  check(g.vignette === "off" && flat.level === "off/off" && inner.length >= 20 && inner.every((q) => q.d <= 2), "in the middle 50 degrees (" + inner.length + " sample points within 24.5 degrees of where you look) no pixel changes with the lines on", { vignette: g.vignette, bloom: flat.level, worst: Math.max(...inner.map((q) => q.d)) });
   check(outer.length >= 40 && outer.filter((q) => q.d > 40).length >= 3, "farther out the streaks show: " + outer.filter((q) => q.d > 40).length + " of " + outer.length + " sample points past 30 degrees change", { fov: g.fov, aspect: g.aspect });
+  // With the glow on, the bright streaks bleed a few levels into the middle. The measure (the sum over the three channels) is 3 to 5 on Low and
+  // 12 to 16 on High, and it differs a little from run to run. The limits are about 1.5 times the largest measure: a stronger glow fails here.
+  const GLOW = { low: 8, high: 24 }, glow = {};
+  for (const level of Object.keys(GLOW)) {
+    const r = await diffs(level);
+    const worst = Math.max(...g.pts.map((p, i) => (p.deg <= 24.5 ? r.d[i] : 0)));
+    glow[level] = { drawn: r.level, worst, limit: GLOW[level] };
+  }
+  console.log("INFO: the glow adds at most " + glow.low.worst + " levels on Low and " + glow.high.worst + " on High to the middle 50 degrees");
+  check(g.bloom === "low" && Object.keys(GLOW).every((l) => glow[l].drawn === l + "/" + l && glow[l].worst <= GLOW[l]), "the glow keeps the streaks faint in the middle 50 degrees: at most " + GLOW.low + " levels on Low and " + GLOW.high + " on High", { default: g.bloom, glow });
   check(page.errors.length === 0, "no errors on the flat screen", page.errors);
   await page.context().close();
 } catch (e) { check(false, "the speed-line pixel run threw", e.stack || String(e)); }

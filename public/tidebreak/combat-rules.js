@@ -5,13 +5,21 @@ const COSTS = [
  [45,65,55,140], [50,70,65,155], [55,60,80,150], [55,60,70,135],
  [60,75,80,160], [40,65,70,150], [55,60,75,145], [65,75,60,170],
  [60,70,65,155], [60,65,80,180], [80,70,75,160], [55,65,80,165],
+ [60,65,70,165], [45,60,60,150], [50,70,80,155], [60,70,70,190],
 ];
 export const manaCost = (e, slot) => COSTS[e.hero][slot] + Math.max(0,(e.skillRanks[slot] || 1)-1)*8;
 export const manaCapacity = (base, level=1) => 420 + (base.range>250?100:0) + (level-1)*32 + classGrowth(base,level).mana;
 export const canAfford = (e,slot) => e.mana >= manaCost(e,slot);
 export const canReturn = (s,e) => e.hero===6 && e.returnAnchor?.until>s.time;
 
-export const placementRange = (e,slot) => e.hero===2&&slot===1 ? 290 : e.hero===2&&slot===2 ? 380 : 360;
+export const placementRange = (e,slot) => e.hero===2&&slot===1 ? 290 : e.hero===2&&slot===2 ? 380 : e.hero===12&&slot===3 ? 400 : e.hero===14&&slot===2 ? 300 : e.hero===15&&slot===0 ? 520 : 360;
+// Shore kits: [shape, radius, cone width]. 'self' is a circle on the caster, 'place' a circle at the aim point.
+const TIDE_SHAPES = {
+ 12:[['cone',560,.09],['self',500],['self',320],['place',380]],
+ 13:[['cone',380,.2],['self',90],['self',90],['self',650]],
+ 14:[['cone',340,.25],['cone',650,.17],['place',180],['self',420]],
+ 15:[['place',220],['cone',520,.9],['self',500],['self',600]],
+};
 export function spellPlacement(e,slot,aim) {
  const angle=aim&&Math.hypot(aim.x,aim.y)>.1?Math.atan2(aim.y,aim.x):e.facing;
  const range=Math.min(placementRange(e,slot),Math.max(0,aim?.distance??placementRange(e,slot)));
@@ -21,6 +29,8 @@ export function spellPlacement(e,slot,aim) {
 // These shapes also describe the rules used by directional spells.
 export function spellShape(e,slot,aim) {
  const angle=Math.atan2(aim.y,aim.x), origin={x:e.x,y:e.y};
+ const tide=TIDE_SHAPES[e.hero]?.[slot];
+ if(tide)return tide[0]==='cone'?{...origin,angle,radius:tide[1],width:tide[2],shape:'cone'}:tide[0]==='place'?{...spellPlacement(e,slot,aim),radius:tide[1],shape:'circle'}:{...origin,radius:tide[1],shape:'circle'};
  if(e.hero===9&&slot===2)return {...origin,angle,radius:650,width:.13,shape:'cone'};
  if(e.hero===8&&slot===3)return {...origin,radius:550,shape:'circle'};
  if(slot===1){
@@ -36,6 +46,7 @@ export function spellShape(e,slot,aim) {
  return {...origin,radius:[340,460,370,0,410,420,330,440,390,0,410,390][e.hero],shape:'circle'};
 }
 export function insideWarning(point,w,margin=0){
+ if(w.shape==='path'){const dx=w.tx-w.x,dy=w.ty-w.y,l=dx*dx+dy*dy||1,u=Math.max(0,Math.min(1,((point.x-w.x)*dx+(point.y-w.y)*dy)/l));return Math.hypot(point.x-w.x-dx*u,point.y-w.y-dy*u)<=w.radius+(point.radius||0)+margin;}
  const d=distance(point,w);if(d>w.radius+(point.radius||0)+margin)return false;
  if(w.shape!=='cone'||d<50)return true;
  const a=Math.atan2(point.y-w.y,point.x-w.x),delta=Math.atan2(Math.sin(a-w.angle),Math.cos(a-w.angle));

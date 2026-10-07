@@ -1,0 +1,23 @@
+# Tasks
+
+- [x] 1. Add kits 12-15 to `legends.js` (stats, four spells with tags, combos and upgrades) and their rules in `tide-kits.js`.
+- [x] 2. Wire the rules into the simulation: casts, dashes, zones, the polyp missile, the damage rules (parry, heavy strikes, oath, damage reduction), taunts, leashes and the lunge reset.
+- [x] 3. Point Irontide, Bloodwake, Zephyrs and Coral Sage at the new kits, with new skill names and notes.
+- [x] 4. Extend the per-kit tables:
+  - [x] attributes;
+  - [x] mana costs;
+  - [x] windups;
+  - [x] basic attacks and rhythms;
+  - [x] spell shapes and aim previews;
+  - [x] colours and sounds;
+  - [x] bot strength;
+  - [x] combo hints.
+- [x] 5. Teach bots when to use each new spell.
+- [x] 6. Draw the new zones: the wind wall as a band in 2D and 3D, and spell glyphs in 2D.
+- [x] 7. Add 16 skill icons. Render the four spell sheets, 2D figures and idle loops, and record their sources.
+- [x] 8. Add `qa/tidebreak/shore-kits.test.mjs` (every new skill) and `qa/tidebreak/shore-kits.e2e.mjs` (each hero casts all four skills in 2D and 3D with no page errors).
+- [x] 9. Update the tests that counted twelve kits. Make three older checks independent of which random enemy kit they meet.
+- [x] 10. Measure the new kits with `qa/tidebreak/kit-strength.mjs` (240 Veteran matches) and record their lane values in `KIT_POWER`:
+  - Zephyrs won 67%.
+  - Bloodwake won 39%, Coral Sage 37% and Irontide 35%.
+  - These rates are inside the spread of the first twelve kits, which run from 34% (Stone Golem) to 68% (Jersey Devil).

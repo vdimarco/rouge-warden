@@ -7,7 +7,7 @@ import { spellbookHTML } from '../../public/tidebreak/spellbook.js';
 import { loadArt, Renderer } from '../../public/tidebreak/illustrated-render.js';
 
 assert.deepEqual(HERO_IDENTITIES.map(h => h.name), ['Tidewarden', 'Embersong', 'Voidcaller', 'Stoneheart', 'Skyreaver', 'Irontide', 'Moonweaver', 'Dredge', 'Glasshand', 'Salt Priestess', 'Riftblade', 'Coral Sage', 'Nightcurrent', 'The Marrow', 'Bloodwake', 'Zephyrs']);
-assert.deepEqual(HERO_IDENTITIES.map(h => h.kit), [1, 9, 4, 7, 0, 7, 8, 3, 2, 10, 6, 10, 11, 5, 3, 6]);
+assert.deepEqual(HERO_IDENTITIES.map(h => h.kit), [1, 9, 4, 7, 0, 12, 8, 3, 2, 10, 6, 15, 11, 5, 13, 14]);
 assert.equal(new Set(HERO_IDENTITIES.map(h => h.slug)).size, 16);
 assert.equal(new Set(HERO_IDENTITIES.map(h => h.kit)).size, HEROES.length);
 
@@ -39,7 +39,7 @@ for (const identity of HERO_IDENTITIES) {
     assert.equal(manaCost(p, slot), manaCost(player(baseline), slot));
     const html = spellbookHTML(p, slot);
     assert.ok(html.includes(`${identity.name} ·`));
-    assert.ok(html.includes(`./art/reference/${identity.slug}.webp`));
+    assert.ok(html.includes(`./art/portraits/${identity.slug}-bust.webp`));
     assert.ok(html.includes(`aria-label="Inspect ${move.name}"`));
     assert.ok(html.includes(`<h3>${move.name}</h3>`));
     assert.ok(html.includes(move.description));
@@ -67,7 +67,7 @@ assert.match(identitySkill(0, 1).description, /Pull enemies/);
 assert.match(identitySkill(0, 2).description, /knock enemies back.*Wet enemies are also stunned/);
 assert.match(identitySkill(10, 0).description, /Tap Rift Step again/);
 
-// Optional identity art must not block play when a new file fails to load.
+// Optional identity art (the full-length portraits rendered from the 3D models) must not block play when a file fails to load.
 const requests = [];
 const OriginalImage = globalThis.Image;
 globalThis.Image = class {
@@ -75,13 +75,13 @@ globalThis.Image = class {
   height = 240;
   set src(value) {
     requests.push(value);
-    queueMicrotask(() => value.includes('/reference/') ? this.onerror() : this.onload());
+    queueMicrotask(() => value.includes('/portraits/') ? this.onerror() : this.onload());
   }
 };
 let art;
 try { art = await loadArt(); }
 finally { if (OriginalImage) globalThis.Image = OriginalImage; else delete globalThis.Image; }
-assert.equal(requests.filter(path => path.includes('/reference/')).length, 16);
+assert.equal(requests.filter(path => /\/portraits\/[a-z-]+-full\.webp$/.test(path)).length, 16);
 for (const identity of HERO_IDENTITIES) assert.equal(art[`reference-${identity.slug}`], null);
 assert.ok(art['nessie-front'] && art['nessie-back'] && art['nessie-attack-back-0']);
 

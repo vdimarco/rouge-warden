@@ -1,6 +1,8 @@
 // In Full Swing: the opening (spec §10). A crack grows on a wall of your real room (mixed reality) or of a small cottage
-// room (VR and flat screen), sludge drips, a jagged hole opens onto the city at sunset, you plunge the crack and pull,
+// room (VR), sludge drips, a jagged hole opens onto the city at sunset, you plunge the crack and pull,
 // the wall bursts, and a sphere of city sweeps out round you until you stand on the start roof.
+// On a flat screen the cottage's toilet is the trouble instead: it rattles, the lid flies open and sludge spills over, you
+// plunge the toilet and pull, it erupts, and the blast throws you out over the city into the lake.
 // The city shows only through stencil masks: the hole, then the growing sphere. Everything that belongs to the room
 // draws only where the mask is not set, so the room is replaced by the city and never fights it in the depth buffer.
 // It is all drawn like the key art: thick ink cracks with dots, flat colour in three bands, ink outlines round the shards.
@@ -20,6 +22,7 @@ const rng = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) 
 /* ---------------- the sequence, in seconds ---------------- */
 const T = {
   gurgleMin: 3.2, // the gurgle before the crack shows
+  toilet: { gurgle: 1.0, overflow: 1.4, erupt: 1.3, fade: 0.35 }, // the flat screen's toilet: rattle, spill, then it erupts
   gazeMax: 10, // wait this long for you to face a wall that is off to the side
   crack: 4.6, // the crack grows
   hole: 1.4, // the hole opens
@@ -31,7 +34,7 @@ const T = {
 };
 const WALL = { min: 1.5, max: 4, far: 5.5, tight: 0.9, off: 60 * DEG, ahead: 2.2, half: 0.75 }; // where a wall may be (m), and the hole's half width plus a margin
 const HOLE = { w: INTRO.holeWidth, h: 1.7, n: 15 };
-const DECAL = { size: 2.3, px: 1024 };
+const DECAL = { size: 2.3, px: 2048 }; // 2048 px over 2.3 m (about 0.9 texels a millimetre): the lines stay sharp at arm's length
 const ROOM = { w: 4.4, d: 4.2, h: 2.7 }; // the cottage room of VR and flat play
 const INK_CSS = "#" + INK.toString(16).padStart(6, "0");
 
@@ -78,10 +81,12 @@ function crackLines(rand, poly) {
   return lines;
 }
 // The crack texture: red is the dark line, green its pale rim, blue a soft halo of dust round it (the shader colours them).
-function crackTexture(lines) {
+// px: the canvas size (the flat screen's toilet intro never shows the crack, so it draws a tiny one: a 2048 px blur is slow
+// on a CPU).
+function crackTexture(lines, px = DECAL.px) {
   const cv = document.createElement("canvas");
-  cv.width = cv.height = DECAL.px;
-  const c = cv.getContext("2d"), k = DECAL.px / DECAL.size, X = (x) => (x + DECAL.size / 2) * k, Y = (y) => (DECAL.size / 2 - y) * k;
+  cv.width = cv.height = px;
+  const c = cv.getContext("2d"), k = px / DECAL.size, X = (x) => (x + DECAL.size / 2) * k, Y = (y) => (DECAL.size / 2 - y) * k;
   c.fillStyle = "#000"; c.fillRect(0, 0, cv.width, cv.height);
   c.globalCompositeOperation = "lighter"; c.lineCap = "round"; c.lineJoin = "round";
   const stroke = (col, grow, dx, dy, blur) => {
@@ -95,7 +100,7 @@ function crackTexture(lines) {
       }
     }
   };
-  stroke("rgb(0,0,255)", 8, 0, 0, 9);
+  stroke("rgb(0,0,255)", 8, 0, 0, 9 * px / 1024); // the dust halo keeps its size in metres
   stroke("rgb(0,255,0)", 4.4, 0, 0, 0); // the pale plaster chips round the ink
   stroke("rgb(255,0,0)", 2.6, 0, 0, 0); // the thick ink line
   c.filter = "none";
@@ -137,8 +142,10 @@ function decalMaterial(tex) {
         float n = vn(vUv * 11.0) * 0.16 + vn(vUv * 31.0) * 0.06;
         float grow = uGrow * 1.25;
         float reveal = 1.0 - smoothstep(grow - 0.1, grow, d + n);
-        float core = smoothstep(0.35, 0.65, t.r) * reveal;
-        float rim = smoothstep(0.35, 0.65, t.g) * reveal * (1.0 - core);
+        // crisp, antialiased line edges at any distance: the step is as wide as one screen pixel of the texture's change
+        float aR = max(fwidth(t.r), 0.02), aG = max(fwidth(t.g), 0.02);
+        float core = smoothstep(0.5 - aR, 0.5 + aR, t.r) * reveal;
+        float rim = smoothstep(0.5 - aG, 0.5 + aG, t.g) * reveal * (1.0 - core);
         float halo = t.b * reveal * (1.0 - core) * (1.0 - rim);
         float dots = comicDots(vUv * ${DECAL.size.toFixed(2)}, 0.045, 0.62) * smoothstep(0.06, 0.45, halo);
         vec3 chip = mix(vec3(1.0, 0.96, 0.85), vec3(1.0, 0.8, 0.25), clamp(uPulse, 0.0, 1.0) * 0.9);
@@ -340,6 +347,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   const yawOf = (x, z) => Math.atan2(-x, -z); // the yaw of a direction (0 faces −z), as spec §10 writes it
 
   let mode = "vr", firstRun = false, skipReq = false, placed = false, phase = "idle", pt = 0, total = 0, resetSeen = false;
+  const toiletMode = () => mode === "desktop"; // the flat screen plunges the overflowing toilet; a headset plunges the crack
   let inp = null;
   const s = { defer: 0, hid: false, roomClear: 0, best: null, parked: 0, burstT: 0, stance: "none", waitPlanes: 0, gaze: 0, said: 0, sayT: 0, widened: false, auto: false, easy: false, warmed: false, hole: 0, dripT: 0, surge: 0, pulse: 0, room: null, roomT: 0, slow: 1, stirAt: 0, r: 0, kingT: -1, chalkT: -1, kingGlow: false, revealSpeed: INTRO.revealSpeed };
   const last = { ok: false, x: 0, z: 0, yaw: 0 }; // the head in the previous frame, to carry a fixed crack across a recentre
@@ -554,7 +562,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const fl = wall.C.y - wall.floorY; // the crack centre's height above the floor
     wall.fl = fl;
     // the crack decal
-    const tex = fx.crackTex = crackTexture(lines);
+    const tex = fx.crackTex = crackTexture(lines, toiletMode() ? 64 : DECAL.px);
     renderer.initTexture(tex);
     fx.mats.decal = mat("decal", () => decalMaterial(tex));
     fx.mats.decal.uniforms.uMap.value = tex;
@@ -769,7 +777,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const edges = edgeLines(W, D, H, y0, 0.03, basic("ink", { color: INK }));
     g.add(front, back, left, right, floor, ceil, win, shaft, rug, shadeM, cord, bulb, edges);
     // the toilet: a lathe bowl (stretched into an oval), a seat ring, a lid on a hinge, a tank with a gold handle
-    const T = new THREE.Group(); T.position.set(1.4, y0, 0.36);
+    const T = new THREE.Group(); T.position.set(toiletMode() ? 0 : 1.4, y0, toiletMode() ? 0.5 : 0.36);
     const porcelain = litMat("porcelain", COLORS.porcelain), goldM = litMat("gold", COLORS.gold), sludgeM = litMat("sludge", 0x6a8a1e);
     const prof = [[0.001, 0], [0.13, 0], [0.145, 0.1], [0.2, 0.26], [0.245, 0.36], [0.265, 0.43], [0.245, 0.47], [0.2, 0.475], [0.19, 0.44], [0.13, 0.36], [0.001, 0.32]].map((p) => new THREE.Vector2(p[0], p[1]));
     const bowl = new THREE.Mesh(new THREE.LatheGeometry(prof, 28), porcelain); bowl.scale.set(1, 1, 1.32); bowl.position.z = 0.12;
@@ -784,11 +792,14 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const ooze = new THREE.Mesh(new THREE.CircleGeometry(0.17, 20), sludgeM); ooze.rotation.x = -Math.PI / 2; ooze.scale.set(1, 1.32, 1); ooze.position.set(0, 0.452, 0.12);
     const glow = new THREE.Mesh(new THREE.CircleGeometry(0.3, 20), basic("glow", { color: 0x9cff3a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
     glow.rotation.x = -Math.PI / 2; glow.scale.set(1, 1.32, 1); glow.position.set(0, 0.5, 0.12); glow.renderOrder = 6;
-    T.add(bowl, seat, lidPivot, tank, tankTop, handle, knob, ooze, glow);
+    // the eruption: a column of sludge out of the bowl (an open tube, scaled up when it blows)
+    const geyser = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 1, 16, 1, true), sludgeM);
+    geyser.position.set(0, 0.45, 0.12); geyser.scale.set(1, 0.001, 1.25); geyser.visible = false;
+    T.add(bowl, seat, lidPivot, tank, tankTop, handle, knob, ooze, glow, geyser);
     // an ink outline round each solid part of the toilet and the lamp shade (they draw only where the mask is not set, too)
     for (const m of [bowl, seat, lid, tank, tankTop, handle, knob, shadeM]) { const h = outlineOf(m, { width: 0.007, px: 2 }); roomStencil(h.material); m.add(h); }
     g.add(T);
-    fx.room = { g, toilet: T, lid: lidPivot, glow, ooze, fl };
+    fx.room = { g, toilet: T, lid: lidPivot, glow, ooze, geyser, fl };
     wallG.add(g);
     // the light in the room comes from the window: from −x, above
     fx.lightLocal = new THREE.Vector3(-0.7, 0.6, 0.35).normalize();
@@ -1011,13 +1022,15 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   function syncTarget() {
     crackWorld.copy(wall.C).applyMatrix4(rig.matrixWorld);
     crackNormal.copy(wall.N).transformDirection(rig.matrixWorld);
+    // the flat screen's toilet: the target is the bowl, and the cup lands on it from above
+    if (toiletMode() && fx.room) { wallToWorld(0, -wall.fl + 0.47, 0.62, crackWorld); crackNormal.set(0, 1, 0); }
     target.pos.x = crackWorld.x; target.pos.y = crackWorld.y; target.pos.z = crackWorld.z;
     target.normal.x = crackNormal.x; target.normal.y = crackNormal.y; target.normal.z = crackNormal.z;
   }
   function releaseRopes() { release(P, 0); release(P, 1); }
   function stopLoops() { for (const k of ["gurgle", "drip"]) { if (gl[k]) { try { gl[k].stop(); } catch (e) { /* audio off */ } gl[k] = null; } } }
-  const gurglePos = (out) => (mode === "ar" || !fx.room ? out.copy(crackWorld) : wallToWorld(1.15, -wall.fl + 0.5, 0.36, out));
-  const puddlePos = (out) => wallToWorld(0, -wall.fl + 0.02, 0.42, out);
+  const gurglePos = (out) => (mode === "ar" || !fx.room ? out.copy(crackWorld) : toiletMode() ? wallToWorld(0, -wall.fl + 0.5, 0.6, out) : wallToWorld(1.15, -wall.fl + 0.5, 0.36, out));
+  const puddlePos = (out) => wallToWorld(0, -wall.fl + 0.02, toiletMode() ? 0.75 : 0.42, out);
   function go(next) {
     phase = Pt.phase = next; pt = 0;
     const f = ENTER[next];
@@ -1025,7 +1038,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   }
   const ENTER = {
     gurgle() {
-      say(0);
+      say(toiletMode() ? 1 : 0);
       s.said = 0;
       gurglePos(V3);
       gl.gurgle = audio.loop("gurgle", V3.clone());
@@ -1042,8 +1055,17 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
       crackDust(10, 1.0);
       ropes.addTarget(target);
     },
-    shoot() { say(2); },
-    yank() { say(3); s.yankT = 0; },
+    shoot() { say(toiletMode() ? 6 : 2); },
+    yank() { say(toiletMode() ? 7 : 3); s.yankT = 0; },
+    // the flat screen's toilet: the lid flies open and sludge spills over the rim on to the floor; then it is the target
+    overflow() {
+      s.overflowOn = true;
+      puddlePos(V3);
+      gl.drip = audio.loop("drip", V3.clone());
+      audio.sfx("gurgle", { pos: crackWorld, vol: 1.4 });
+      haptic("left", 0.3, 60); haptic("right", 0.3, 60);
+    },
+    erupt() { s.eruptT = 0; s.fading = false; },
     room() { say(5); s.roomT = 0; },
     burst() { /* startBurst does the work */ },
   };
@@ -1068,6 +1090,25 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     s.flash = 1; s.kingT = 0; s.burstT = 0;
     if (view.setKing) view.setKing(1);
     go("burst");
+  }
+  // The flat screen's toilet erupts: the ropes let go, a column of sludge blasts out of the bowl to the ceiling with a flash,
+  // the screen fades, and the blast throws you out over the city into the lake (main.js lakeDrop, on Pt.launch).
+  function startErupt() {
+    releaseRopes();
+    ropes.removeTarget("crack");
+    if (gl.gurgle) { try { gl.gurgle.stop(); } catch (e) { /* audio off */ } gl.gurgle = null; }
+    audio.sfx("burst", { pos: crackWorld, vol: 1.4 });
+    audio.sfx("flush", { pos: crackWorld, vol: 1.2, pitch: 0.7 });
+    haptic("left", 1, 220); haptic("right", 1, 220);
+    arrow.goal = null;
+    s.flash = 0.8;
+    if (ui.say) ui.say("KABLOOSH!", 1.2);
+    go("erupt");
+  }
+  function finishErupt() {
+    Pt.launch = true;
+    finishReveal();
+    if (ui.fade) ui.fade(0, 0.4, "black");
   }
   // The end of the reveal: the stencil comes off, the room things go, the chalk outline of your room stays, and play starts.
   function finishReveal() {
@@ -1185,8 +1226,9 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     m.decal.uniforms.uSeep.value = sstep(0.25, 0.9, t);
     m.decal.uniforms.uPulse.value = sstep(0.72, 1, t) * (phase === "crack" ? 1 : 0.6);
     fx.decal.visible = t > 0;
-    if (s.crackOn) s.dripT += dt;
+    if (s.crackOn || s.overflowOn) s.dripT += toiletMode() ? dt * 4 : dt; // the toilet spills fast
     m.drip.uniforms.uT.value = s.dripT;
+    if (fx.drips) fx.drips.visible = !toiletMode(); // the strands run from the crack, which the toilet intro has not got
     m.puddle.uniforms.uT.value = s.dripT;
     m.puddle.uniforms.uSize.value = sstep(2.2, 13, s.dripT) * 0.92 + (s.dripT > 13 ? 0.08 : 0);
     fx.puddle.visible = s.dripT > 2.2;
@@ -1201,9 +1243,29 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     // the room's own life
     if (fx.room) {
       toiletT += dt;
-      const g = phase === "gurgle" ? sstep(0, 2.5, pt) * 0.6 : s.crackOn ? 0.6 + 0.4 * (phase === "crack" ? t : 1) : 0;
-      fx.room.lid.rotation.x = -g * (0.05 * Math.abs(Math.sin(toiletT * 21)) + 0.035 * Math.abs(Math.sin(toiletT * 13.7)));
-      fx.room.glow.material.opacity = g * (0.24 + 0.18 * Math.sin(toiletT * 8.3));
+      const R = fx.room;
+      if (toiletMode()) {
+        // rattle, then the lid flies back and the sludge rises over the rim; then the column of the eruption
+        const rattle = phase === "gurgle" ? 0.3 + sstep(0, T.toilet.gurgle, pt) * 0.7 : 0;
+        const open = s.overflowOn ? (phase === "overflow" ? easeOut(Math.min(1, pt / 0.22)) : 1) : 0;
+        const fl = phase === "erupt" ? clamp(s.eruptT / (T.toilet.erupt - 0.1), 0, 1) : 0;
+        R.lid.rotation.x = -open * 1.95 - rattle * (0.07 * Math.abs(Math.sin(toiletT * 21)) + 0.05 * Math.abs(Math.sin(toiletT * 13.7)));
+        const rise = s.overflowOn ? (phase === "overflow" ? sstep(0, T.toilet.overflow, pt) : 1) * (1 - fl) : 0;
+        R.ooze.position.y = 0.452 + 0.04 * rise;
+        R.ooze.scale.set(1 + 0.22 * rise, 1.32 * (1 + 0.22 * rise), 1);
+        R.ooze.rotation.z += dt * 2;
+        R.glow.material.opacity = Math.max(rattle * 0.3, rise * (0.4 + 0.2 * Math.sin(toiletT * 9))) + fl * 0.8;
+        // the eruption: the column shoots to the ceiling in a fifth of a second and bulges as it pumps; the toilet bucks
+        const gh = fl > 0 ? easeOut(Math.min(1, fl * 5)) * 2.2 : 0;
+        R.geyser.visible = gh > 0.01;
+        R.geyser.scale.set(1 + 0.25 * Math.sin(toiletT * 31) * fl, Math.max(0.001, gh), 1.25 * (1 + 0.25 * Math.cos(toiletT * 27) * fl));
+        R.geyser.position.y = 0.45 + gh / 2;
+        R.toilet.position.x = rattle * 0.012 * Math.sin(toiletT * 37) + fl * 0.02 * Math.sin(toiletT * 53);
+      } else {
+        const g = phase === "gurgle" ? sstep(0, 2.5, pt) * 0.6 : s.crackOn ? 0.6 + 0.4 * (phase === "crack" ? t : 1) : 0;
+        R.lid.rotation.x = -g * (0.05 * Math.abs(Math.sin(toiletT * 21)) + 0.035 * Math.abs(Math.sin(toiletT * 13.7)));
+        R.glow.material.opacity = g * (0.24 + 0.18 * Math.sin(toiletT * 8.3));
+      }
       roomLight();
     }
     // drops fall from the lower edge of the hole once it has dripped for a while
@@ -1229,7 +1291,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     const hl = input.head.local.pos;
     headFwd(input.head.local.quat, V4);
     const yawNow = yawOf(V4.x, V4.z);
-    if (skipReq) { if (phase === "burst" || phase === "reveal") finishReveal(); else finishSkip(); return; }
+    if (skipReq) { if (phase === "burst" || phase === "reveal") finishReveal(); else if (phase === "erupt") finishErupt(); else finishSkip(); return; }
     // the Skip button: always on later runs, on the first run after 30 s
     const allowed = !firstRun || total >= INTRO.skipAfter;
     if (allowed !== s.skipOn) { s.skipOn = allowed; if (ui.setSkip) ui.setSkip(allowed ? Pt.skip : null); }
@@ -1265,7 +1327,27 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
         arrow.hideNear = 0;
         if (off > WALL.off) { aimAt(wall.C.x, wall.C.z); s.gaze += dt; } else if (off < 45 * DEG) arrow.goal = null;
         const facing = off < WALL.off;
-        if (pt >= T.gurgleMin && (facing || s.gaze >= T.gazeMax)) { arrow.goal = null; go("crack"); }
+        if (toiletMode() ? pt >= T.toilet.gurgle : pt >= T.gurgleMin && (facing || s.gaze >= T.gazeMax)) { arrow.goal = null; go(toiletMode() ? "overflow" : "crack"); }
+        break;
+      }
+      case "overflow": {
+        // warm the city's programs while the toilet spills: no hitch when you arrive
+        if (!s.warmed && pt > 0.3 && view.startReady !== false) { s.warmed = true; if (view.warm) view.warm(renderer, camera); }
+        if (off > WALL.off) aimAt(wall.C.x, wall.C.z); else if (off < 45 * DEG) arrow.goal = null;
+        if (pt >= T.toilet.overflow) { ropes.addTarget(target); go("shoot"); }
+        break;
+      }
+      case "erupt": {
+        s.eruptT += dt;
+        const ready = view.startReady !== false;
+        // sludge spray from the top of the column
+        if (fx.room && Math.random() < dt * 40) {
+          V1.set(0, 0.45 + 2.2 * Math.min(1, s.eruptT * 5), 0.62).applyMatrix4(fx.room.toilet.matrixWorld);
+          const rd = Math.random;
+          puff(V1.x, V1.y, V1.z, (rd() - 0.5) * 3, -0.5 - rd(), (rd() - 0.5) * 3, 0.8 + rd() * 0.5, 0.15, 0.5 + rd() * 0.4, 0.6);
+        }
+        if (!s.fading && s.eruptT >= T.toilet.erupt - T.toilet.fade && ui.fade) { s.fading = true; ui.fade(1, T.toilet.fade, "black"); }
+        if (s.eruptT >= T.toilet.erupt && ready) { finishErupt(); return; }
         break;
       }
       case "crack": {
@@ -1334,6 +1416,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
   // The yank is enough: in mixed reality a tight room asks you to step back first.
   function pumped() {
     if (phase !== "yank") return;
+    if (toiletMode()) { startErupt(); return; }
     if (mode === "ar" && inp && roomScan(inp.head.local.pos.y)) {
       const hl = inp.head.local.pos;
       if (clearance(hl.x, hl.z) < 1.0) { s.best = openPoint(hl.x, hl.z); go("room"); return; }
@@ -1355,13 +1438,14 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
 
   /* ---------------- API ---------------- */
   const Pt = {
-    active: false, phase: "idle",
+    active: false, phase: "idle", launch: false, // launch: the toilet erupted, and play starts with the fall into the lake
     begin(m, first) {
+      Pt.launch = false;
       hideRoom(); buildFx();
       if (ui.setSkip) ui.setSkip(null);
       mode = m === "ar" || m === "desktop" ? m : "vr"; firstRun = !!first;
       skipReq = false; placed = false; total = 0; pt = 0; resetSeen = false; last.ok = false;
-      Object.assign(s, { defer: 0, hid: false, roomClear: 0, best: null, parked: 0, burstT: 0, slow: 1, stance: "none", waitPlanes: 0, gaze: 0, said: -1, sayT: 0, widened: false, auto: false, easy: false, warmed: false, hole: 0, dripT: 0, surge: -1, room: null, roomT: 0, r: 0, flash: 0, stirAt: 0, kingT: -1, chalkT: -1, crackOn: false, holeOn: false, grow: 0, yankT: 0, skipOn: false, revealSpeed: INTRO.revealSpeed });
+      Object.assign(s, { defer: 0, hid: false, roomClear: 0, best: null, parked: 0, burstT: 0, slow: 1, stance: "none", waitPlanes: 0, gaze: 0, said: -1, sayT: 0, widened: false, auto: false, easy: false, warmed: false, hole: 0, dripT: 0, surge: -1, room: null, roomT: 0, r: 0, flash: 0, stirAt: 0, kingT: -1, chalkT: -1, crackOn: false, holeOn: false, grow: 0, yankT: 0, skipOn: false, revealSpeed: INTRO.revealSpeed, overflowOn: false, eruptT: 0, fading: false });
       arrow.goal = null; arrow.t = 0; dustN = 0; toiletT = 0; dropT = 0; dropI = 0; rippleN = 0;
       if (MC["room:glow"]) MC["room:glow"].opacity = 0;
       if (MC.puddle) { const u = MC.puddle.uniforms; u.uSize.value = 0; u.uT.value = 0; for (const r of u.uRip.value) r.set(9, 9, -9); }
@@ -1384,7 +1468,7 @@ export function createPortal({ scene, rig, camera, renderer, xr, city, view, rop
     onEvent(ev) {
       if (!Pt.active || !ev) return;
       const tag = ev.target && ev.target.tag;
-      if (ev.type === "attach" && tag === "crack" && (phase === "shoot" || phase === "hole")) go("yank");
+      if (ev.type === "attach" && tag === "crack" && (phase === "shoot" || phase === "hole" || phase === "overflow")) go("yank");
       else if (ev.type === "yank" && tag === "crack" && phase === "yank" && (ev.pump || (s.easy && ev.strength >= INTRO.easyYank))) pumped();
     },
     onDone: (fn) => doneFns.push(fn),

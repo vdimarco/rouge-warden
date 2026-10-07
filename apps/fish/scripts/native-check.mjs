@@ -29,8 +29,10 @@ const pbx = read("ios/App/App.xcodeproj/project.pbxproj");
 if (pbx !== null) {
   const targets = [...pbx.matchAll(/IPHONEOS_DEPLOYMENT_TARGET = ([\d.]+);/g)].map((m) => m[1]);
   need(targets.length > 0 && targets.every((t) => t === IOS_MIN), `project.pbxproj: IPHONEOS_DEPLOYMENT_TARGET is ${targets.join(", ")}, not ${IOS_MIN}`);
-  const families = [...pbx.matchAll(/TARGETED_DEVICE_FAMILY = ([^;]+);/g)].map((m) => m[1]);
-  need(families.length > 0 && families.every((f) => f === "1"), `project.pbxproj: TARGETED_DEVICE_FAMILY is ${families.join(", ")}, not 1 (iPhone only)`);
+  const families = [...pbx.matchAll(/TARGETED_DEVICE_FAMILY = ([^;]+);/g)].map((m) => m[1].replace(/"/g, ""));
+  need(families.length > 0 && families.every((f) => f === "1,2"), `project.pbxproj: TARGETED_DEVICE_FAMILY is ${families.join(", ")}, not "1,2" (iPhone and iPad)`);
+  const mac = [...pbx.matchAll(/SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = (\w+);/g)].map((m) => m[1]);
+  need(mac.length > 0 && mac.every((v) => v === "YES"), `project.pbxproj: SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD is ${mac.join(", ") || "missing"}, not YES (the app runs on a Mac as "Designed for iPad")`);
   need(pbx.includes("PrivacyInfo.xcprivacy in Resources"), "project.pbxproj: PrivacyInfo.xcprivacy is not in the App target");
   need(pbx.includes("MainViewController.swift in Sources"), "project.pbxproj: MainViewController.swift is not in the App target");
 }
@@ -39,9 +41,10 @@ if (plist !== null) {
   const block = (key) => { const m = new RegExp(`<key>${key.replace(/[~]/g, "\\$&")}</key>\\s*(<array>[\\s\\S]*?</array>|<array/>|<true/>|<false/>|<string>[^<]*</string>)`).exec(plist); return m ? m[1] : null; };
   const orient = block("UISupportedInterfaceOrientations");
   need(orient && /UIInterfaceOrientationPortrait</.test(orient) && !/Landscape|UpsideDown/.test(orient), "Info.plist: UISupportedInterfaceOrientations must be portrait only");
-  need(!plist.includes("UISupportedInterfaceOrientations~ipad"), "Info.plist: remove UISupportedInterfaceOrientations~ipad (iPhone only)");
+  need(!plist.includes("UISupportedInterfaceOrientations~ipad"), "Info.plist: remove UISupportedInterfaceOrientations~ipad (iPad is portrait only too)");
   need(block("UIStatusBarHidden") === "<true/>", "Info.plist: UIStatusBarHidden must be true");
-  need(block("UIRequiresFullScreen") === "<true/>", "Info.plist: UIRequiresFullScreen must be true");
+  // an iPad app with fewer than four orientations must ask for the full screen, or App Store Connect refuses the upload
+  need(block("UIRequiresFullScreen") === "<true/>", "Info.plist: UIRequiresFullScreen must be true (portrait only on iPad needs it)");
   need(block("ITSAppUsesNonExemptEncryption") === "<false/>", "Info.plist: ITSAppUsesNonExemptEncryption must be false");
   need(!plist.includes("NSMotionUsageDescription"), "Info.plist: no NSMotionUsageDescription (the web view grants motion itself)");
 }
@@ -60,6 +63,7 @@ const mvc = read("ios/App/App/MainViewController.swift");
 if (mvc !== null) {
   need(/preferredScreenEdgesDeferringSystemGestures[\s\S]*?\.bottom/.test(mvc), "MainViewController.swift: it must defer the system gesture at the bottom edge");
   need(/override var prefersStatusBarHidden[\s\S]*?return true/.test(mvc), "MainViewController.swift: it must hide the status bar (prefersStatusBarHidden)");
+  need(/isiOSAppOnMac[\s\S]*?window\.__reelItInMac = true/.test(mvc), "MainViewController.swift: on a Mac it must set window.__reelItInMac (the game then plays with the mouse and the keys)");
 }
 
 // --- Both ---

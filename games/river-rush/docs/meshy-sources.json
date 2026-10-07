@@ -1,0 +1,309 @@
+{
+  "provider": "Meshy via fal.ai",
+  "endpoint": "meshy/v7.1/text-to-3d",
+  "price": {
+    "unit_price": 0.8,
+    "unit": "generations",
+    "currency": "USD"
+  },
+  "assets": {
+    "raft": {
+      "request_id": "01a10edc-b2c2-70f0-9a3a-5c81765344bf",
+      "input": {
+        "mode": "full",
+        "model_type": "smart-topology",
+        "target_polycount": 4000,
+        "enable_pbr": true,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "off",
+        "prompt": "A realistic primitive river raft made of seven weathered timber logs tightly lashed together with coarse brown rope. Flat rectangular low profile raft, longer front to back than side to side. Two narrow wooden cross braces on top. Wet dark wood grain, frayed rope bindings, rounded uneven log ends. Empty raft only, no people, no sails, no water, no platform, no background. Photorealistic game prop with complete underside geometry.",
+        "seed": 31021
+      },
+      "result": {
+        "animation_glb": null,
+        "animation_fbx": null,
+        "model_glb": {
+          "url": "https://v3b.fal.media/files/b/0aad3b5d/VdvWPDdFo9uXO3bgbNNtj_model.glb",
+          "content_type": "model/gltf-binary",
+          "file_name": "model.glb",
+          "file_size": 6951940
+        },
+        "thumbnail": {
+          "url": "https://v3b.fal.media/files/b/0aad3b5e/XgJsLm4ZVGhG3_uTNFZjG_preview.png",
+          "content_type": "image/png",
+          "file_name": "preview.png",
+          "file_size": 98433
+        },
+        "model_urls": {
+          "glb": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5d/VdvWPDdFo9uXO3bgbNNtj_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 6951940
+          },
+          "fbx": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5d/sMyuR1qNkjjSrlnBFUAx5_model.fbx",
+            "content_type": "application/octet-stream",
+            "file_name": "model.fbx",
+            "file_size": 7409740
+          },
+          "obj": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5e/6dQKOFqNNyHNvGqo-7IWq_model.obj",
+            "content_type": "text/plain",
+            "file_name": "model.obj",
+            "file_size": 371238
+          },
+          "usdz": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5e/qPtvWX28SBNT8DKgoegib_model.usdz",
+            "content_type": "model/vnd.usdz+zip",
+            "file_name": "model.usdz",
+            "file_size": 7427285
+          },
+          "blend": null,
+          "stl": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5e/k73-vnVMBTJeVMB4h3X1__model.stl",
+            "content_type": "application/octet-stream",
+            "file_name": "model.stl",
+            "file_size": 190234
+          }
+        },
+        "texture_urls": [
+          {
+            "base_color": {
+              "url": "https://v3b.fal.media/files/b/0aad3b5e/PvWhpsdUi2dCfeXuGtg01_texture_0.png",
+              "content_type": "image/png",
+              "file_name": "texture_0.png",
+              "file_size": 5028171
+            },
+            "metallic": {
+              "url": "https://v3b.fal.media/files/b/0aad3b5e/usQ70OLGRZr1bto830ZbF_texture_0_metallic.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_metallic.png",
+              "file_size": 28570
+            },
+            "normal": {
+              "url": "https://v3b.fal.media/files/b/0aad3b5e/XX42QT1zUJs8KAeOo9rR7_texture_0_normal.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_normal.png",
+              "file_size": 4494627
+            },
+            "roughness": {
+              "url": "https://v3b.fal.media/files/b/0aad3b5e/xupyCyngWxLzidlxmxn9N_texture_0_roughness.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_roughness.png",
+              "file_size": 1244446
+            }
+          }
+        ],
+        "seed": 31021,
+        "prompt": "A realistic primitive river raft made of seven weathered timber logs tightly lashed together with coarse brown rope. Flat rectangular low profile raft, longer front to back than side to side. Two narrow wooden cross braces on top. Wet dark wood grain, frayed rope bindings, rounded uneven log ends. Empty raft only, no people, no sails, no water, no platform, no background. Photorealistic game prop with complete underside geometry.",
+        "actual_prompt": null,
+        "rigged_character_glb": null,
+        "rigged_character_fbx": null,
+        "basic_animations": null,
+        "rig_task_id": null
+      }
+    },
+    "bank": {
+      "request_id": "01a10edc-b7b8-7a30-8001-e5f5f38e8b99",
+      "input": {
+        "mode": "full",
+        "model_type": "smart-topology",
+        "target_polycount": 4000,
+        "enable_pbr": true,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "off",
+        "prompt": "A natural tropical riverbank rock outcrop: three irregular layered sandstone boulders with moss and exposed knotted roots, a tall leaning palm growing from a small patch of earth, dense green ferns and broad jungle leaves at the base. Asymmetric realistic geological shapes, warm grey rock with wet dark lower edges. One cohesive compact island of scenery, complete 3D geometry. No water, no background, no people, no square diorama base.",
+        "seed": 31022
+      },
+      "result": {
+        "animation_glb": null,
+        "animation_fbx": null,
+        "model_glb": {
+          "url": "https://v3b.fal.media/files/b/0aad3b5e/114pySp8M6sEdGog8xDEw_model.glb",
+          "content_type": "model/gltf-binary",
+          "file_name": "model.glb",
+          "file_size": 7391424
+        },
+        "thumbnail": {
+          "url": "https://v3b.fal.media/files/b/0aad3b5f/B70CTtZ88ew1GTbi8aDfQ_preview.png",
+          "content_type": "image/png",
+          "file_name": "preview.png",
+          "file_size": 231357
+        },
+        "model_urls": {
+          "glb": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5e/114pySp8M6sEdGog8xDEw_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 7391424
+          },
+          "fbx": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5e/60LQyR1ZJFOWlnQTPtSNx_model.fbx",
+            "content_type": "application/octet-stream",
+            "file_name": "model.fbx",
+            "file_size": 7927836
+          },
+          "obj": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5f/gqSKvrkh8zWuBZNe4A4Zc_model.obj",
+            "content_type": "text/plain",
+            "file_name": "model.obj",
+            "file_size": 371444
+          },
+          "usdz": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5f/3tF6hGTY4x33WlwdbSjGR_model.usdz",
+            "content_type": "model/vnd.usdz+zip",
+            "file_name": "model.usdz",
+            "file_size": 7910114
+          },
+          "blend": null,
+          "stl": {
+            "url": "https://v3b.fal.media/files/b/0aad3b5f/WVPBATeMj_rI1ifoBei4g_model.stl",
+            "content_type": "application/octet-stream",
+            "file_name": "model.stl",
+            "file_size": 180984
+          }
+        },
+        "texture_urls": [
+          {
+            "base_color": {
+              "url": "https://v3b.fal.media/files/b/0aad3b60/vCGVCecanW1VMdho03GHb_texture_0.png",
+              "content_type": "image/png",
+              "file_name": "texture_0.png",
+              "file_size": 6114399
+            },
+            "metallic": {
+              "url": "https://v3b.fal.media/files/b/0aad3b60/SthRB6TLJQbDZzaFHAwBC_texture_0_metallic.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_metallic.png",
+              "file_size": 32118
+            },
+            "normal": {
+              "url": "https://v3b.fal.media/files/b/0aad3b60/Nu-hhZNtjGKA5tz8MmyZD_texture_0_normal.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_normal.png",
+              "file_size": 4885704
+            },
+            "roughness": {
+              "url": "https://v3b.fal.media/files/b/0aad3b60/J6lXaSs0U34IqHW9wxwdw_texture_0_roughness.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_roughness.png",
+              "file_size": 1565490
+            }
+          }
+        ],
+        "seed": 31022,
+        "prompt": "A natural tropical riverbank rock outcrop: three irregular layered sandstone boulders with moss and exposed knotted roots, a tall leaning palm growing from a small patch of earth, dense green ferns and broad jungle leaves at the base. Asymmetric realistic geological shapes, warm grey rock with wet dark lower edges. One cohesive compact island of scenery, complete 3D geometry. No water, no background, no people, no square diorama base.",
+        "actual_prompt": null,
+        "rigged_character_glb": null,
+        "rigged_character_fbx": null,
+        "basic_animations": null,
+        "rig_task_id": null
+      }
+    },
+    "palm": {
+      "request_id": "01a10ee2-9da4-74e0-ac56-9121f89369a9",
+      "input": {
+        "mode": "full",
+        "model_type": "smart-topology",
+        "target_polycount": 3000,
+        "enable_pbr": true,
+        "geometry_resolution": "standard",
+        "symmetry_mode": "off",
+        "seed": 31023,
+        "prompt": "A single tall mature tropical coconut palm tree, complete upright tree from roots to crown. Slender gently curved brown trunk, very tall bare trunk with horizontal bark rings, crown at the very top with twelve long arching green pinnate fronds made of narrow leaflets, several coconuts under the crown. Realistic natural botanical silhouette and detailed bark, lush deep green leaves. Tree height is four times crown width. Roots only at bottom. No rock, no pot, no terrain, no water, no background."
+      },
+      "result": {
+        "animation_glb": null,
+        "animation_fbx": null,
+        "model_glb": {
+          "url": "https://v3b.fal.media/files/b/0aad3b7c/3R8X_cLCT46lecFn0htJs_model.glb",
+          "content_type": "model/gltf-binary",
+          "file_name": "model.glb",
+          "file_size": 7218320
+        },
+        "thumbnail": {
+          "url": "https://v3b.fal.media/files/b/0aad3b7e/uJfr6a0UDUzWhRpl_u7-7_preview.png",
+          "content_type": "image/png",
+          "file_name": "preview.png",
+          "file_size": 132017
+        },
+        "model_urls": {
+          "glb": {
+            "url": "https://v3b.fal.media/files/b/0aad3b7c/3R8X_cLCT46lecFn0htJs_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 7218320
+          },
+          "fbx": {
+            "url": "https://v3b.fal.media/files/b/0aad3b7c/_0V8uV52DQmXeoCsYQVQ7_model.fbx",
+            "content_type": "application/octet-stream",
+            "file_name": "model.fbx",
+            "file_size": 7811388
+          },
+          "obj": {
+            "url": "https://v3b.fal.media/files/b/0aad3b7d/ddTh0FuhMj_KYE3ONXBQM_model.obj",
+            "content_type": "text/plain",
+            "file_name": "model.obj",
+            "file_size": 255328
+          },
+          "usdz": {
+            "url": "https://v3b.fal.media/files/b/0aad3b7d/fKb_BWdQAkGfHsSwtVwMM_model.usdz",
+            "content_type": "model/vnd.usdz+zip",
+            "file_name": "model.usdz",
+            "file_size": 7770043
+          },
+          "blend": null,
+          "stl": {
+            "url": "https://v3b.fal.media/files/b/0aad3b7e/81Hn119JmBKl3wlRBh0ZU_model.stl",
+            "content_type": "application/octet-stream",
+            "file_name": "model.stl",
+            "file_size": 122584
+          }
+        },
+        "texture_urls": [
+          {
+            "base_color": {
+              "url": "https://v3b.fal.media/files/b/0aad3b7e/3Gcoa8t4TF1gmS_jAsZxc_texture_0.png",
+              "content_type": "image/png",
+              "file_name": "texture_0.png",
+              "file_size": 6112762
+            },
+            "metallic": {
+              "url": "https://v3b.fal.media/files/b/0aad3b7f/hdZ69hMg13dFc9kwmgsgD_texture_0_metallic.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_metallic.png",
+              "file_size": 24214
+            },
+            "normal": {
+              "url": "https://v3b.fal.media/files/b/0aad3b7f/BarDzkzLpvNWo5_0cZR31_texture_0_normal.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_normal.png",
+              "file_size": 4984668
+            },
+            "roughness": {
+              "url": "https://v3b.fal.media/files/b/0aad3b7f/kjsdMiH3GJ03afDdkcrFH_texture_0_roughness.png",
+              "content_type": "image/png",
+              "file_name": "texture_0_roughness.png",
+              "file_size": 1353804
+            }
+          }
+        ],
+        "seed": 31023,
+        "prompt": "A single tall mature tropical coconut palm tree, complete upright tree from roots to crown. Slender gently curved brown trunk, very tall bare trunk with horizontal bark rings, crown at the very top with twelve long arching green pinnate fronds made of narrow leaflets, several coconuts under the crown. Realistic natural botanical silhouette and detailed bark, lush deep green leaves. Tree height is four times crown width. Roots only at bottom. No rock, no pot, no terrain, no water, no background.",
+        "actual_prompt": null,
+        "rigged_character_glb": null,
+        "rigged_character_fbx": null,
+        "basic_animations": null,
+        "rig_task_id": null
+      }
+    }
+  },
+  "optimization": {
+    "pipeline": "higgsfield/models3d/pack-static.mjs",
+    "geometry": "weld, simplify <=4000 triangles, normalize, meshopt medium",
+    "textures": "WebP quality82; raft768px, bank1024px, normal/ORM512px",
+    "integration": "real raft, instanced bank and palm meshes in Three.js; approved photographic rider cutout retained",
+    "software_variants": "bank1200 triangles/palm899 triangles,512px textures, simplified from the same Meshy outputs"
+  }
+}

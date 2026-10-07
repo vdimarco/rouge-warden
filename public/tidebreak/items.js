@@ -33,12 +33,33 @@ ITEMS.push(
   relic('starfall', 'Starfall grimoire', 1800, { power: 160, attack: 35, haste: 20, health: -120, armor: -8 }, 'After three skill casts, your next attack explodes for 160 + 40% power in a 240 radius. Keeps burns and Nightfang.', ['lantern', 'nightfang'], ['lantern', 'nightfang'], 14, 'Spell burst. Costs 120 health and 8 armor.'),
   relic('colossus', 'Gravemaw idol', 1900, { health: 1100, armor: 45, power: 90, speed: -25 }, 'Grave aura also deals 1% of your maximum health each second. Keeps emergency Root shield.', ['root', 'grave'], ['root', 'grave'], 17, 'Close-range pressure. Costs 25 movement speed.'),
 );
+// Items with a single trick each: a snowball, a ward breaker, tenacity, momentum, a hunter's mark, a risky edge and a
+// team rally. They reuse painted icons with a hue shift (icon, hue in degrees).
+const special = (id, name, cost, category, stats, text, recipe, icon, hue, extra = {}) => ({ ...item(id, name, cost, category, stats, text, recipe), icon, hue, tier: extra.tier || 2, ...extra });
+ITEMS.push(
+  special('tidecoin', 'Drowned doubloon', 760, 'Attack', { attack: 20, power: 30 }, 'Each hero you banish adds a stack: +4 attack and +8 power, up to 10. You lose half the stacks when you fall.', ['bone', 'gem'], 2, 125),
+  special('siege', 'Wardbreaker maul', 820, 'Attack', { attack: 40, armor: 15 }, 'Basic attacks deal 40% more damage to wards and rifts. Wards and rifts deal 30% less damage to you.', ['bone', 'iron'], 16, 40),
+  special('glass', "Duelist's glass", 800, 'Attack', { attack: 45, attackSpeed: 12 }, 'Deal 15% more damage to heroes while above 70% health. You take 10% more damage.', ['bone', 'feather'], 6, 180),
+  special('seer', "Seer's eye", 820, 'Magic', { power: 70, haste: 12 }, 'Skill hits mark a hero for 5s: it stays revealed and takes 10% more damage from your whole team.', ['gem', 'dust'], 9, 180),
+  special('charm', 'Moonstone charm', 780, 'Defense', { armor: 20, health: 200, haste: 8 }, 'Stuns, fears and slows on you wear off 40% faster.', ['iron', 'dust'], 7, 200),
+  special('horn', 'Rallying conch', 820, 'Defense', { health: 300, haste: 15 }, 'Casting your ultimate rallies allies within 500: 20% more damage and 20% movement speed for 4s.', ['feather', 'seed'], 14, 180),
+  special('riptide', 'Riptide sandals', 700, 'Mobility', { speed: 45, health: 150 }, 'After each skill cast, gain 30% movement speed for 2s.', ['feather', 'dust'], 12, 300),
+);
+const specialRelic = (id, name, cost, stats, text, recipe, icon, hue, tradeoff) => special(id, name, cost, 'Relics', stats, text, recipe, icon, hue, { tier: 3, grants: recipe, tradeoff });
+ITEMS.push(
+  specialRelic('hoard', "Kraken's hoard", 1850, { attack: 70, power: 60, attackSpeed: 20 }, 'Banished heroes add stacks of +4 attack and +8 power, up to 20, and you keep them all when you fall. Keeps the doubloon and the duelist edge.', ['tidecoin', 'glass'], 17, 160, 'Snowball. Starts weak, and you still take 10% more damage.'),
+  specialRelic('titan', 'Siegebreaker titan', 1900, { attack: 55, armor: 45, health: 500, speed: -15 }, 'Basic attacks deal 70% more damage to wards and rifts, and wards and rifts deal 50% less damage to you. Keeps the charm.', ['siege', 'charm'], 3, 140, 'Tower diver. Costs 15 movement speed.'),
+  specialRelic('warhorn', "Tidecaller's warhorn", 1800, { health: 450, speed: 30, haste: 20 }, 'Any skill rallies allies within 500 for 3s (12% damage, 20% speed; 8s cooldown). Your ultimate rally is 25% for 5s. Keeps the sandals.', ['horn', 'riptide'], 13, 40, 'Team tempo. Little damage of its own.'),
+);
 export const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
 export const BUILDS = [
   { id: 'ambush', name: 'Ambush', note: 'Nightfang + Hunter → Eclipse. Cast, strike, then chase the reset.', order: ['nightfang', 'boots', 'hunter', 'eclipse', 'blood', 'mirror', 'thorn', 'frost'] },
   { id: 'bulwark', name: 'Bulwark', note: 'Root + Beacon → Worldroot. Trade speed for team shields and sustain.', order: ['root', 'boots', 'beacon', 'worldroot', 'grave', 'frost', 'blood', 'mirror'] },
   { id: 'hex', name: 'Hex', note: 'Lantern + Grave → Inferno. Add Frost to amplify every burn.', order: ['lantern', 'boots', 'frost', 'grave', 'inferno', 'mirror', 'beacon', 'nightfang'] },
   { id: 'frenzy', name: 'Frenzy', note: 'Storm + Quickthorn → Tempest. Every third strike shreds and chains.', order: ['storm', 'boots', 'thorn', 'tempest', 'blood', 'nightfang', 'root', 'hunter'] },
+  { id: 'plunder', name: 'Plunder', note: "Doubloon + Glass → Kraken's hoard. Win early fights and keep the spoils.", order: ['tidecoin', 'riptide', 'glass', 'hoard', 'blood', 'thorn', 'charm', 'nightfang'] },
+  { id: 'siege', name: 'Siege', note: 'Maul + Charm → Siegebreaker titan. Push with your wave and outlast the wards.', order: ['siege', 'boots', 'charm', 'titan', 'root', 'thorn', 'blood', 'mirror'] },
+  { id: 'vanguard', name: 'Vanguard', note: "Conch + Sandals → Tidecaller's warhorn. Lead the charge and speed your team in.", order: ['horn', 'riptide', 'seer', 'warhorn', 'charm', 'root', 'beacon', 'mirror'] },
 ];
 export const hasItem = (e, id) => e.inventory?.some(owned => owned === id || ITEM[owned]?.grants?.includes(id));
 export function synergies(e) {
@@ -46,6 +67,8 @@ export function synergies(e) {
   if (hasItem(e, 'lantern') && hasItem(e, 'frost')) active.push({ name: 'Frozen flame', text: `Burns against slowed foes deal ${hasItem(e, 'inferno') ? 60 : 35}% extra damage.` });
   if (hasItem(e, 'root') && hasItem(e, 'beacon')) active.push({ name: 'Living sanctuary', text: 'Beacon healing adds 1% of your maximum health per pulse.' });
   if (hasItem(e, 'nightfang') && hasItem(e, 'hunter')) active.push({ name: 'Endless hunt', text: 'Kill → movement skill reset → another empowered attack.' });
+  if (hasItem(e, 'tidecoin') && e.itemState?.coin) active.push({ name: 'Plunder', text: `${e.itemState.coin} stacks: +${e.itemState.coin * 4} attack, +${e.itemState.coin * 8} power.` });
+  if (hasItem(e, 'seer') && hasItem(e, 'lantern')) active.push({ name: 'Marked flame', text: 'Your burns keep a marked hero revealed.' });
   if (hasItem(e, 'storm') && hasItem(e, 'thorn')) active.push({ name: 'Thunder thorns', text: 'Every third hit triggers both lightning and maximum-health damage.' });
   return active;
 }
@@ -61,6 +84,7 @@ export function quote(e, id) {
 export function recalculate(e, base) {
   const stats = { attack: 0, attackSpeed: 0, power: 0, armor: 0, health: 0, haste: 0, speed: 0, regen: 0, lifesteal: 0 };
   for (const id of e.inventory || []) for (const [key, value] of Object.entries(ITEM[id].stats)) stats[key] += value;
+  const coins = hasItem(e, 'tidecoin') ? e.itemState?.coin || 0 : 0; stats.attack += coins * 4; stats.power += coins * 8;
   const growth=classGrowth(base,e.level);
   e.attribute=base.attribute;e.manaRegen=growth.manaRegen;
   e.maxHp = base.hp + (e.level - 1) * 110 + stats.health + growth.health;

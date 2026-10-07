@@ -1,0 +1,39 @@
+/* Combat feel HUD: damage edge, objective timers, queued cast label and the death recap. */
+#hurt-edge{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 min(14vw,120px) min(4vw,30px) #e2341fd0}
+#objective-clock{position:absolute;top:calc(47px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 210px);display:flex;justify-content:center;flex-wrap:wrap;gap:4px 6px;pointer-events:none}
+#objective-clock span{font:700 11px/1 Barlow,sans-serif;letter-spacing:.5px;padding:3px 7px;border-radius:3px;background:#061c2bc4;border:1px solid #bda46c55;color:#e9dcb4;text-shadow:none;white-space:nowrap}
+#objective-clock .soon{color:#ffd36a;border-color:#ffd36a;animation:clock-pulse .7s ease-in-out infinite alternate}
+#objective-clock .peak{color:#ff9f86;border-color:#ff9f86aa}
+#objective-clock .rest{color:#a3ead3;border-color:#a3ead355}
+@keyframes clock-pulse{to{background:#5a3d0bd8}}
+@media(prefers-reduced-motion:reduce){#objective-clock .soon{animation:none}}
+/* Phones: the clock stays on one line under the lineup row. In portrait it sits at the left above the objective panel,
+   clear of the realm title and the minimap; on short landscape phones it stays centred. */
+@media(max-width:699px){#objective-clock{top:calc(59px + env(safe-area-inset-top));flex-wrap:nowrap;gap:5px;max-width:none}#objective-clock span{padding:3px 6px}}
+@media(max-width:699px) and (min-height:521px){#objective-clock{left:16px;transform:none}}
+[data-skill].queued b{color:#a3ead3!important;letter-spacing:.3px}
+/* The recap sits in the free band above the controls, over transient banners, and carries the respawn countdown. */
+#death-recap{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(118px + env(safe-area-inset-bottom));width:min(380px,calc(100vw - 32px));max-height:calc(100% - 118px - 330px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;box-sizing:border-box;padding:9px 12px 10px;background:#061a29ee;border:1px solid #bda46c8c;border-radius:6px;color:#e5eeea;font:13px/1.35 Barlow,sans-serif;text-align:left;pointer-events:auto;z-index:9}
+#death-recap .recap-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#death-recap .recap-head b{font-size:16px;color:#ffd1c2;letter-spacing:.3px}
+#death-recap .recap-close{flex:none;width:32px;height:32px;margin:-6px -8px -6px 0;border:0;background:none;color:#e9dcb4;font-size:22px;line-height:1;cursor:pointer}
+#death-recap .recap-sub{display:block;color:#a9c3c0;font-size:12px}
+#death-recap ol{list-style:none;margin:6px 0 4px;padding:0}
+#death-recap li{position:relative;display:flex;justify-content:space-between;gap:8px;padding:3px 6px;margin-bottom:3px;border-radius:3px;background:#0c2a3a;overflow:hidden}
+#death-recap li i{position:absolute;left:0;bottom:0;height:2px;background:#ff8f75}
+#death-recap li em{font-style:normal;color:#ffd6a0;white-space:nowrap}
+#death-recap p{margin:3px 0 0}
+#death-recap .recap-types{color:#c0dcd6;font-size:12px}
+#death-recap .recap-warned{color:#ffb8a4;font-size:12px}
+#death-recap .recap-control{color:#ffe3a0;font-size:12px}
+#death-recap .recap-tip{margin-top:6px;padding-top:6px;border-top:1px solid #bda46c40;color:#fff1c5;font-weight:600}
+#death-recap .recap-timer{color:#ffd36a;font-weight:700}
+#hud:has(#death-recap:not([hidden])) #respawn{display:none}
+/* The countdown in the recap is large, so the respawn timer reads at a glance without closing the recap. */
+#death-recap .recap-timer{display:block;margin:4px 0 2px;font:700 22px/1.1 Barlow,sans-serif;color:var(--gold,#e8c27a);letter-spacing:.3px}
+@media(max-width:600px){#death-recap{bottom:calc(282px + env(safe-area-inset-bottom));max-height:calc(100% - 282px - 200px - env(safe-area-inset-bottom))}}
+@media(max-height:520px) and (min-width:600px){
+  #death-recap{bottom:calc(56px + env(safe-area-inset-bottom));width:min(440px,calc(100vw - 404px));max-height:calc(100% - 56px - 50px);padding:7px 10px;font-size:12px}
+  #death-recap ol{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  #death-recap li{display:block;margin:0;padding:2px 5px}#death-recap li span,#death-recap li em{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}

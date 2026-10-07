@@ -1,7 +1,8 @@
 // Checks the mixed-reality opening under IWER (an emulated Meta Quest 3 with two synthetic rooms, office_small and
 // living_room): the stance question, the wall rules, the crack, the stencil hole with the city behind it, the shot at the
 // crack and its sticky rope, a real yank, the room check, the burst and the reveal, the hand-off to the start roof, the chalk
-// outline, every timeout, the Skip rules, a recentre, and the map on a real table.
+// outline, every timeout, the Skip rules, a recentre, and the map on a real table. A headset with no passthrough (VR) opens in a cottage
+// room instead: its run checks the ink outlines of the toilet and the lamp shade.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/mr.mjs   (SHOTS=<dir> saves pictures)
 import {
   checker, watchdog, newPage, open, close, state, enterXR, freeze, frames, controller, head, recenter, axisQuat, mulQuat, shot,
@@ -95,6 +96,9 @@ async function room(name, opts) {
   check(Math.abs(wrapPi(yawTo(s1.head, crack.world) - S.yaw)) < 0.02, tag + "the crack lies toward the Needle from the start (the yaw formula of §10)", { yaw: yawTo(s1.head, crack.world), want: S.yaw });
   const st = await cityStencil(page);
   check(st.n > 0 && st.on === st.n, tag + "view.stencil(1) is on for every city material from the start: no city outside the mask", st);
+  // the real room shows through the passthrough, so the opening builds no cottage room: no toilet, no lamp shade and no outline of them
+  const cottageRoom = await page.evaluate(() => !!G.rig.getObjectByName("portal:room"));
+  check(!cottageRoom, tag + "the AR opening builds no cottage room (the real room shows)", cottageRoom);
   const snd0 = await page.evaluate(() => ({ ...window.__snd }));
   // the portal turned the city sound down when the opening began, before the spy was in place: read the level itself
   const amb0 = await page.evaluate(() => (G.audio._engine ? G.audio._engine.st.amb : null));
@@ -381,6 +385,140 @@ async function timeouts() {
   await close();
 
 }
+
+/* ================= the cottage room of a headset: the ink outlines of the toilet and the lamp shade ================= */
+// A headset with no passthrough (VR) opens in a cottage room (portal.js buildRoom). Each solid part of its toilet and its lamp shade has an
+// ink outline: comic.js outlineOf, a second draw of the same shape with the back faces pushed out, as a child of the part. In AR the real
+// room shows, so there is no cottage room and no outline (room() checks that). The parts have no names, so a part is found by its place
+// in the room: the meshes of the toilet group (not the two flat discs of the sludge and the glow) and the one cone of the room group.
+// armOutlines counts the draws of each part and of its outline (onBeforeRender runs once per draw) and keeps the list in window.__ol.
+const armOutlines = (page) => page.evaluate(() => {
+  const room = G.rig.getObjectByName("portal:room");
+  if (!room) return 0;
+  const toilet = room.children.find((c) => c.isGroup), shade = room.children.find((c) => c.isMesh && c.geometry.type === "ConeGeometry"), solid = [];
+  toilet.traverse((o) => { if (o.isMesh && !o.parent.isMesh && o.geometry.type !== "CircleGeometry") solid.push(o); });
+  const list = (window.__ol = solid.map((o, i) => ({ what: "toilet " + i + " " + o.geometry.type, lamp: false, o })).concat([{ what: "lamp shade " + shade.geometry.type, lamp: true, o: shade }]));
+  const hook = (o) => { o.userData.draws = 0; const f = o.onBeforeRender; o.onBeforeRender = function (...a) { o.userData.draws++; return f.apply(this, a); }; };
+  for (const p of list) { hook(p.o); for (const h of p.o.children) if (h.isMesh) hook(h); }
+  return list.length;
+});
+const countsOutlines = (page) => page.evaluate(() => { for (const p of window.__ol) { p.o.userData.draws = 0; for (const h of p.o.children) h.userData.draws = 0; } });
+// The facts about the outline of each part: how many, what it draws with, where it is, whether it shows, how often it draws and how thick it is.
+const readOutlines = (page) => page.evaluate(async () => {
+  const C = await import("./js/comic.js"), T = await import("three");
+  const up = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+  const box = (o) => { o.updateWorldMatrix(true, false); if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); return o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); };
+  // The bounds of the line at close range: each vertex pushed out along its aOutline direction by the width uInkW (read from the compiled
+  // uniforms), as the hull shader of comic.js does, in world space, against the bounds of the same vertices with no push (a box built from
+  // the corners of the local box is too wide for a curved part that is turned). Returns how far the six sides move: outward is the most
+  // any side moves out, inward the most any side moves in (a rim that tilts inward leaves a side a little inside the part).
+  const pushed = (h, u) => {
+    const pos = h.geometry.getAttribute("position"), dir = h.geometry.getAttribute("aOutline"), e = h.matrixWorld.elements;
+    if (!pos || !dir || !u || !u.uInkW) return null;
+    const sx = Math.max(Math.hypot(e[0], e[1], e[2]), 1e-4), b0 = new T.Box3(), b1 = new T.Box3(), v = new T.Vector3(), d = new T.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      d.fromBufferAttribute(dir, i).normalize().multiplyScalar(u.uInkW.value / sx);
+      b0.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(h.matrixWorld));
+      b1.expandByPoint(v.fromBufferAttribute(pos, i).add(d).applyMatrix4(h.matrixWorld));
+    }
+    const sides = [0, 1, 2].flatMap((k) => [b1.min.getComponent(k) - b0.min.getComponent(k), b0.max.getComponent(k) - b1.max.getComponent(k)]);
+    return { outward: Math.max(...sides.map((x) => -x)), inward: Math.max(...sides) };
+  };
+  return window.__ol.map(({ what, lamp, o }) => {
+    const hulls = o.children.filter((c) => c.isMesh), h = hulls[0], f = { what, lamp, hulls: hulls.length, draws: o.userData.draws };
+    if (!h) return f;
+    const m = h.material, b0 = box(o), b1 = box(h), pr = G.renderer.properties.get(m), u = pr && pr.uniforms, push = h.geometry.getAttribute("aOutline"), nor = h.geometry.getAttribute("normal");
+    let badPush = 0;
+    for (let i = 0; push && i < nor.count; i++) { const x = push.getX(i), y = push.getY(i), z = push.getZ(i), l = Math.hypot(x, y, z); if (!(Math.abs(l - 1) < 0.01) || x * nor.getX(i) + y * nor.getY(i) + z * nor.getZ(i) < 0) badPush++; }
+    return Object.assign(f, {
+      hullDraws: h.userData.draws,
+      ink: !!m.isMeshBasicMaterial && m.userData.comicInk === true && m.color.getHex() === C.INK && m.side === T.BackSide,
+      masked: m.stencilWrite === true && m.stencilRef === o.material.stencilRef && m.stencilFunc === o.material.stencilFunc && m.stencilFunc === T.NotEqualStencilFunc,
+      shown: h.visible && up(h) && up(o),
+      onPart: h.geometry === o.geometry && h.position.lengthSq() === 0 && h.quaternion.angleTo(new T.Quaternion()) === 0 && h.scale.x === 1 && h.scale.y === 1 && h.scale.z === 1,
+      gap: Math.max(...[0, 1, 2].map((k) => Math.max(Math.abs(b0.min.getComponent(k) - b1.min.getComponent(k)), Math.abs(b0.max.getComponent(k) - b1.max.getComponent(k))))),
+      width: u && u.uInkW ? u.uInkW.value : null, px: u && u.uInkPx ? u.uInkPx.value : null, pushed: pushed(h, u),
+      badPush, verts: nor.count,
+    });
+  });
+});
+async function cottage() {
+  const tag = "cottage: ";
+  const page = await newPage({ width: 480, height: 270, clock: true });
+  await open(page, "?emulate");
+  await enterXR(page, "vr");
+  await freeze(page);
+  await frames(page, 3);
+  await page.evaluate(() => G.test.hold(true));
+  await step(page, 0.4);
+  await page.evaluate(() => G.test.uiPress("stance:standing"));
+  let p = await step(page, 0.6);
+  check(p.mode === "vr" && p.phase === "gurgle" && p.wall.label === "cottage", tag + "a headset opens in the cottage room, not on a real wall", { mode: p.mode, phase: p.phase, wall: p.wall });
+  const n = await armOutlines(page);
+  check(n >= 8, tag + "the room has the toilet (7 solid parts or more) and the lamp shade", n);
+  const names = (list, ok) => list.filter((f) => !ok(f)).map((f) => f.what);
+  // what each outline is, where it sits and whether it shows: read at the start of the room and again with the hole open
+  const facts = async (when) => {
+    const list = await readOutlines(page), at = tag + when + ": ";
+    check(list.every((f) => f.hulls === 1), at + "every solid part of the toilet and the lamp shade has one outline (an ink twin as its child)", names(list, (f) => f.hulls === 1));
+    check(list.every((f) => f.ink), at + "each outline uses the ink material (comic ink: back faces, the ink colour, never pure black)", names(list, (f) => f.ink));
+    check(list.every((f) => f.shown && f.masked), at + "each outline shows while its part shows, and draws only where the hole mask is not set", names(list, (f) => f.shown && f.masked));
+    check(list.every((f) => f.onPart && f.gap < 1e-3), at + "each outline is set on its part: the same shape, no offset, turn or scale, so the same bounds before the push", list.map((f) => [f.what, f.onPart, f.gap]));
+    check(list.every((f) => f.badPush === 0 && f.verts > 0), at + "each outline pushes out along valid, outward normals (the aOutline attribute)", list.map((f) => [f.what, f.badPush, f.verts]));
+  };
+  await facts("in the room");
+  // The outlines draw as often as their parts. The parts draw only in view: look at the toilet (right and down), then up at the lamp.
+  const look = async (quat) => {
+    await head(page, { quat });
+    await page.evaluate(() => G.test.hold(false));
+    await frames(page, 3);
+    await page.evaluate(() => G.test.hold(true));
+    await countsOutlines(page);
+    await renders(page, 2);
+    return readOutlines(page);
+  };
+  const thin = (f) => f.width > 0 && f.width <= 0.02 && f.px >= 1 && f.px <= 4;
+  // The line at close range, pushed out as the hull shader does, sits close round the part: no side of the bounds of the part moves out or in
+  // by more than 1.5 cm (the game uses 7 mm, which is 9 mm on a part stretched by 1.32), and some side moves out. This is the line itself, not
+  // the growth with distance, which depends on the size of the picture.
+  const snug = (f) => f.pushed && f.pushed.outward > 0 && Math.max(f.pushed.outward, f.pushed.inward) <= 0.015;
+  const views = async (when, pictures) => {
+    const at = tag + when + ": ";
+    let list = await look(mulQuat(axisQuat([0, 1, 0], -0.55), axisQuat([1, 0, 0], -0.35)));
+    let part = list.filter((f) => !f.lamp);
+    check(part.length >= 7 && part.every((f) => f.draws > 0 && f.hullDraws === f.draws), at + "with the toilet in view each of its parts draws and so does its outline, as often", part.map((f) => [f.what, f.draws, f.hullDraws]));
+    check(part.every(thin), at + "the outline is a thin line round the toilet: at most 2 cm wide, 1 to 4 px at a distance", part.map((f) => [f.what, f.width, f.px]));
+    check(part.every(snug), at + "the line lies close round the toilet: its bounds, pushed out by the line width, differ from the bounds of the part by 1.5 cm at most", part.map((f) => [f.what, f.pushed]));
+    if (pictures) await shot(page, "mr-cottage-toilet");
+    list = await look(axisQuat([1, 0, 0], 1.25));
+    part = list.filter((f) => f.lamp);
+    check(part.length === 1 && part.every((f) => f.draws > 0 && f.hullDraws === f.draws), at + "with the lamp in view the shade draws and so does its outline, as often", part.map((f) => [f.what, f.draws, f.hullDraws]));
+    check(part.every(thin), at + "the outline is a thin line round the lamp shade: at most 2 cm wide, 1 to 4 px at a distance", part.map((f) => [f.what, f.width, f.px]));
+    check(part.every(snug), at + "the line lies close round the lamp shade: its bounds, pushed out by the line width, differ from the bounds of the part by 1.5 cm at most", part.map((f) => [f.what, f.pushed]));
+    if (pictures) await shot(page, "mr-cottage-lamp");
+    await head(page, { quat: [0, 0, 0, 1] });
+    await page.evaluate(() => G.test.hold(false));
+    await frames(page, 3);
+    await page.evaluate(() => G.test.hold(true));
+  };
+  await views("in the room", true);
+  // the hole opens: the room still shows, and so do the outlines
+  p = await step(page, 10.6);
+  check(p.phase === "hole" || p.phase === "shoot", tag + "the hole is open", p.phase);
+  await facts("with the hole open");
+  await views("with the hole open", false);
+  // the room goes at the end of the opening, and its outlines go with it
+  await page.evaluate(() => G.test.skipIntro());
+  p = await step(page, 0.5, 1 / 60);
+  const left = await page.evaluate(() => {
+    const inScene = (o) => { for (let x = o; x; x = x.parent) if (x === G.scene) return true; return false; };
+    return { room: !!G.rig.getObjectByName("portal:room"), parts: window.__ol.filter((q) => inScene(q.o) || q.o.children.some(inScene)).length };
+  });
+  check(p.phase === "done" && !left.room && left.parts === 0, tag + "after the opening the room is gone and no outline of it stays in the scene", { phase: p.phase, left });
+  const errs = page.errors.slice();
+  check(errs.length === 0, tag + "no page errors or console warnings", errs);
+  await close();
+}
 // A later run: the save says the opening was seen, so there is no stance question and Skip shows from the start.
 async function laterRun() {
   const tag = "later run: ";
@@ -402,10 +540,11 @@ async function laterRun() {
 }
 
 try {
-  // ONLY=living_room,office_small,timeouts,later picks parts (all by default)
+  // ONLY=living_room,office_small,cottage,timeouts,later picks parts (all by default)
   const only = process.env.ONLY ? process.env.ONLY.split(",") : null, want = (n) => !only || only.includes(n);
   if (want("living_room")) await room("living_room", { w: 640, h: 360 });
   if (want("office_small")) await room("office_small", { w: 480, h: 270, tiny: true });
+  if (want("cottage")) await cottage();
   if (want("timeouts")) await timeouts();
   if (want("later")) await laterRun();
 } catch (e) { check(false, "mr threw", e.stack || String(e)); }

@@ -419,6 +419,8 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
         rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
         rows.push(seg("cue", "Release cue", [["on", "On"], ["off", "Off"]], settings.cue === false ? "off" : "on"));
       }
+      // the glow round the neon, the lamps and the sun (flat play only; main.js picks Low or Off when nothing is saved)
+      if (desk) rows.push(seg("bloom", "Bloom", [["off", "Off"], ["low", "Low"], ["high", "High"]], settings.bloom || (inp && inp.easySwing ? "off" : "low")));
       if (!desk) {
         rows.push(seg("hand", "Dominant hand", [["left", "Left"], ["right", "Right"]], settings.hand));
         rows.push(seg("hold", "Rope trigger", [["hold", "Hold"], ["toggle", "Toggle"]], settings.hold));
@@ -641,6 +643,9 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
   function nearestTarget() {
     const g = G().game;
     if (!g || !g.targets || !Pl) return null;
+    // a job's goal (jobs.js) first
+    const jg = g.progress && g.progress.goal;
+    if (jg) return { kind: "job", x: jg.x, y: jg.y, z: jg.z };
     // in a trial the compass points to the next ring
     const tr = g.progress && g.progress.trial;
     if (tr && tr.next) return { kind: "ring", x: tr.next.x, y: tr.next.y, z: tr.next.z };
@@ -858,6 +863,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       case "hand": if (v === "left" || v === "right") { settings.hand = v; hud.init = false; } break;
       case "hold": if (v === "hold" || v === "toggle") settings.hold = v; break;
       case "cue": if (v === "on" || v === "off") settings.cue = v === "on"; break;
+      case "bloom": if (v === "off" || v === "low" || v === "high") settings.bloom = v; break;
       case "hz": settings.hz = +v === 90 ? 90 : 72; if (xr && xr.setFrameRate) Promise.resolve(xr.setFrameRate(settings.hz)).catch(() => {}); break;
       case "seated": {
         settings.seated = v === "on";
@@ -991,6 +997,13 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       }),
       trial: make((c) => { ring(c, C.orange); c.beginPath(); c.arc(64, 64, 22, 0, 7); c.lineWidth = 10; c.strokeStyle = C.orange; c.stroke(); c.beginPath(); c.arc(64, 64, 8, 0, 7); c.fillStyle = C.ink; c.fill(); }),
       start: make((c) => { ring(c, C.magenta); c.beginPath(); c.moveTo(30, 68); c.lineTo(64, 36); c.lineTo(98, 68); c.lineTo(88, 68); c.lineTo(88, 92); c.lineTo(40, 92); c.lineTo(40, 68); c.closePath(); c.fillStyle = C.yellow; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke(); }),
+      // an odd job: a magenta star
+      job: make((c) => {
+        ring(c, C.magenta);
+        c.beginPath();
+        for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + (k * Math.PI) / 5, r = k % 2 ? 13 : 30; c.lineTo(64 + Math.cos(a) * r, 66 + Math.sin(a) * r); }
+        c.closePath(); c.fillStyle = C.magenta; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke();
+      }),
       spot: make((c) => { ring(c, C.gold); c.beginPath(); c.moveTo(64, 34); c.lineTo(88, 64); c.lineTo(64, 94); c.lineTo(40, 64); c.closePath(); c.fillStyle = C.yellow; c.fill(); c.lineWidth = 6; c.lineJoin = "round"; c.strokeStyle = C.ink; c.stroke(); }),
     };
     return map.sprites;
@@ -1120,6 +1133,13 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
       const hit = want.find((w) => !w.spot && w.kind !== "drop" && w.kind !== "tick" && Math.hypot(w.x - sPot.x, w.z - sPot.z) < 6 && Math.abs(w.y - sPot.y) < 8);
       if (hit) { hit.spot = sPot; hit.name = sPot.name || hit.name; } else want.push({ kind: sPot.id === "start" ? "start" : "spot", x: sPot.x, y: sPot.y, z: sPot.z, name: sPot.name || "A rooftop", spot: sPot });
     }
+    // the odd jobs: a pin on each marker you can take (travel there takes the job), and one on the job you are on
+    const jb = G().jobs;
+    if (jb) {
+      if (jb.offersOn && !jb.active) for (const o of jb.offers) want.push({ kind: "job", x: o.x, y: o.y, z: o.z, name: "Odd job: " + o.name, spot: { id: "job:" + o.id, name: "Odd job: " + o.name, x: o.x, y: o.y, z: o.z } });
+      const A = jb.active, goal = jb.card && jb.card.goal;
+      if (A) { const at = goal || A.o; want.push({ kind: "job", x: at.x, y: at.y, z: at.z, name: "Your job: " + A.o.name, spot: null }); }
+    }
     const stem = [];
     const size = map.size * 0.052;
     for (const w of want) {
@@ -1247,6 +1267,8 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 .fs-menu .fs-seg>div{display:flex;flex:1;gap:8px}
 .fs-menu .fs-seg .btn{flex:1;min-height:44px;padding:6px 8px 3px;font-size:18px;letter-spacing:.06em}
 .fs-menu p{margin:10px 0;line-height:1.35}.fs-menu p.small{opacity:.78;font-size:17px}
+/* a narrow window: a labelled group puts its label on its own line, and its buttons wrap, so no button runs past the panel */
+@media (max-width:520px){.fs-menu .fs-seg{flex-wrap:wrap;gap:4px 12px}.fs-menu .fs-seg>span{flex:1 0 100%}.fs-menu .fs-seg>div{flex:1 1 100%;flex-wrap:wrap}.fs-menu .fs-seg .btn{flex:1 1 auto;padding:6px 6px 3px;font-size:16px}}
 .fs-map{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));z-index:14;display:grid;grid-template-columns:minmax(0,1fr) min(300px,34vw);grid-template-rows:minmax(0,1fr);gap:12px;padding:12px;border:5px solid var(--ink,#140a18);border-radius:4px;background:var(--paper,#fff9ea);box-shadow:8px 8px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:600 18px/1.3 var(--ui,"Barlow Condensed",system-ui,sans-serif)}
 .fs-map[hidden]{display:none}
 .fs-map-plan{position:relative;min-height:0;border:4px solid var(--ink,#140a18);border-radius:3px;overflow:hidden;background:#140a18}
@@ -1262,7 +1284,7 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 .fs-tip{position:fixed;z-index:15;pointer-events:none;padding:5px 12px 2px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:400 20px/1.15 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;text-transform:uppercase;transform:rotate(1deg)}
 @media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
 @media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{font-size:22px}
-dialog.fs-menu{padding:10px 18px 14px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
+dialog.fs-menu{padding:10px 18px 8px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu>:last-child{margin-bottom:0}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
 .fs-pill.fs-mission{order:-1;align-items:baseline;gap:10px;padding:6px 14px 3px;background:var(--cream,#fff4d8);transform:rotate(-0.8deg);white-space:nowrap}
 .fs-mission b{font-size:23px;letter-spacing:.04em}.fs-mission small{font-size:18px;opacity:.75}.fs-m-short{display:none}
 .fs-train{position:absolute;left:14px;bottom:14px;transform:rotate(-0.6deg);width:min(360px,38vw);padding:8px 10px 6px;background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:4px;box-shadow:6px 6px 0 var(--ink,#140a18)}
@@ -1411,7 +1433,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     side.appendChild(el("h2", null, "City map"));
     side.appendChild(el("p", null, isTouchNow() ? "Tap a pin or a place to go there." : "Click a pin or a place to go there."));
     const key = el("div", "fs-key");
-    for (const [col, txt] of [[C.sludge, "A clog to plunge"], [C.blue, "A clean roof"], [C.coin, "The Porcelain King"], ["#6cff73", "A trial: fly through its green ring"], [C.cream, "The start roof, and you"]]) {
+    for (const [col, txt] of [[C.sludge, "A clog to plunge"], [C.blue, "A clean roof"], [C.coin, "The Porcelain King"], [C.magenta, "An odd job"], ["#6cff73", "A trial: fly through its green ring"], [C.cream, "The start roof, and you"]]) {
       const dot = el("i"); dot.style.color = col; key.append(dot, el("span", null, txt));
     }
     side.appendChild(key);
@@ -1587,15 +1609,24 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     // the line and the toast sit under the score row, which wraps onto two rows on a narrow phone: place them from its real
     // bottom (the toast under the line while one shows), a few times a second, so they never cover the pills or the hero
     const subOn = sub.a > 0.02;
-    // at once on a new line, a new screen size, the phone panel coming or going, or a change in the score row (the mission, the training)
-    const phone = !!document.querySelector("#phoneControls:not([hidden])"), row = os + "|" + ts;
-    if (subOn !== dh.subOn || innerWidth !== dh.vw || innerHeight !== dh.vh || phone !== dh.phone || row !== dh.row) { dh.subOn = subOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.phone = phone; dh.row = row; dh.lay = 0; }
+    // at once on a new line or toast, a new screen size, the phone panel or the look hint coming or going, or a change in the score row (the mission, the training)
+    const phone = !!document.querySelector("#phoneControls:not([hidden])"), hintUp = !!document.querySelector("#lookHint:not([hidden])"), toastOn = toast.a > 0.02, row = os + "|" + ts;
+    if (subOn !== dh.subOn || toastOn !== dh.toastOn || innerWidth !== dh.vw || innerHeight !== dh.vh || phone !== dh.phone || hintUp !== dh.hintUp || row !== dh.row) { dh.subOn = subOn; dh.toastOn = toastOn; dh.vw = innerWidth; dh.vh = innerHeight; dh.phone = phone; dh.hintUp = hintUp; dh.row = row; dh.lay = 0; }
     if ((dh.lay = (dh.lay || 0) - dt) <= 0) {
       dh.lay = 0.1;
       const top = Math.round(dom.hud.querySelector(".fs-top").getBoundingClientRect().bottom) + (innerWidth <= 480 ? 6 : 10);
-      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 14 : 0);
+      // the tail of the line hangs 27 px under its box (CSS above; the 4 px border makes the real tip 23 px): the toast starts 14 px under that, so it never covers the tail
+      const toastTop = top + (subOn ? Math.round(k.sub.getBoundingClientRect().height) + 27 + 14 : 0);
       if (dh.subTop !== top) { dh.subTop = top; dom.hud.style.setProperty("--fs-sub-top", top + "px"); }
       if (dh.toastTop !== toastTop) { dh.toastTop = toastTop; dom.hud.style.setProperty("--fs-toast-top", toastTop + "px"); }
+      // the look hint (main.js) lies in the same band under the score row: it fades out while the line with its tail, or the toast, is over its place (a hint half under one of them is not readable).
+      // The edge arrow (desktop.js) stays over the hint: it can last for minutes, and the hint would be gone for as long.
+      const hint = hintUp && document.querySelector("#lookHint");
+      if (hint) {
+        const box = (e, down, right) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right + right, b: r.bottom + down }; };
+        const h = box(hint, 5, 5), parts = [subOn && box(k.sub, 27, 0), toastOn && box(k.toast, 5, 5)];
+        hint.classList.toggle("covered", parts.some((p) => p && h.l < p.r && p.l < h.r && h.t < p.b && p.t < h.b));
+      }
     }
     if (map.on) { map.root.updateMatrixWorld(true); tipPlace(); }
   }
@@ -1695,7 +1726,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
         subtitle: { text: sub.text, active: sub.t > 0, alpha: sub.a, world: sp, yaw: follow.yaw },
         toast: { text: toast.text, active: toast.t > 0 },
         fade: { value: fade.v, target: fade.to, look: fadeMesh.material === fadeMats.room ? "room" : fadeMesh.material === fadeMats.fog ? "fog" : "black", visible: fadeMesh.visible },
-        map: { open: map.on, pins: map.pins.length, hover: map.hover, table: map.table, size: map.size, world: map.root ? round4(map.root.getWorldPosition(V3)) : null, local: map.root ? round4(map.root.position) : null },
+        map: { open: map.on, pins: map.pins.length, names: map.pins.map((p) => p.name), hover: map.hover, table: map.table, size: map.size, world: map.root ? round4(map.root.getWorldPosition(V3)) : null, local: map.root ? round4(map.root.position) : null },
         stance: { on: stance.on, pre: stance.pre, left: stance.t },
         laser: { visible: !!(laser.mesh && laser.mesh.visible), side: laser.side },
         skip: canSkip(), dim,

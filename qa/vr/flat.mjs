@@ -541,7 +541,7 @@ async function swing() {
     fired.push(has(ei, "fire") || has(ei, "dry"));
     await page.mouse.up(); await step(page, 3);
   }
-  // every refused request of a click counts (a resume that asks with no click does not), so the clicks lost are two at most, and the click that resumes is one
+  // each click that is swallowed to ask for the lock counts at once (a resume that asks with no click does not), so the clicks lost are two at most, and the click that resumes is one
   check(!fired[0] && fired.filter((f) => !f).length <= 2 && fired[2], "a browser that refuses the pointer lock: the click that resumes swings nothing, at most two clicks are lost, then clicks swing again", fired);
   await page.evaluate(() => { window.__lock.refuse = false; });
   await page.mouse.click(40, m.y); await step(page, 3); await held(page); // the lock comes back with a click
@@ -1266,7 +1266,7 @@ async function titles() {
   await play(page);
   let m = await state(page);
   check(m.kind === "mouse" && !m.easy && !m.panel && m.enabled === false && JSON.stringify(m.useCalls) === "[false]", "the mouse button calls mobile.use(false) once and starts the mouse scheme: the kind is mouse, the phone panel is hidden and the phone scheme is off", m);
-  const mouseOnly = await page.evaluate(() => { const s = G.desktop.mobile.sample(0.016); return { hold: s.hold, panelHidden: document.querySelector("#phoneControls").hidden }; });
+  const mouseOnly = await page.evaluate(() => { const s = G.desktop.mobile.sample(0.016); return { hold: s.holds[0] || s.holds[1], panelHidden: document.querySelector("#phoneControls").hidden }; });
   check(mouseOnly.panelHidden && !mouseOnly.hold, "the phone panel element is hidden after mobile.use(false), and a sample holds nothing", mouseOnly);
   await page.evaluate(() => { __f.btn(1, 1); __f.step(3); __f.btn(1, 0); __f.step(2); });
   m = await page.evaluate(() => ({ kind: G.test.input().kind, device: document.body.dataset.device }));

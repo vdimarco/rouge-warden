@@ -1,5 +1,5 @@
 const TAU = Math.PI * 2;
-const COLORS = ['#bbacf6', '#91f4df', '#ffd699', '#ff9989','#b99aef','#a4dfff','#ffba83','#c3d990','#c5bdff','#ffc16d','#96e0ac','#a9dfb7'];
+const COLORS = ['#bbacf6', '#91f4df', '#ffd699', '#ff9989','#b99aef','#a4dfff','#ffba83','#c3d990','#c5bdff','#ffc16d','#96e0ac','#a9dfb7','#a9c5d0','#ff908b','#aeeaff','#ffa3ae'];
 export function drawCastWarning(r,intent,time,allied=false){
  const c=r.ctx,w=intent.shape,p=r.project(w.x,w.y),radius=w.radius*r.scale,progress=Math.max(0,Math.min(1,(time-intent.start)/(intent.at-intent.start)));
  c.save();c.translate(p.x,p.y);c.scale(1,.88);c.strokeStyle=allied?'#a3ead3':'#ff8f75';c.fillStyle=allied?'#76dfb91c':'#ff57392e';c.lineWidth=2.5;c.setLineDash([6,4]);
@@ -24,6 +24,12 @@ export function drawCombatEffect(renderer, f) {
   const a = renderer.project(f.x, f.y, 95), b = renderer.project(f.tx ?? f.x, f.ty ?? f.y, 95);
   const scale = renderer.scale, size = Math.max(18, (f.radius || 130) * scale);
   c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  if (f.type === 'bolt') {
+    // A ranged basic attack: a bolt flies from the hero and lands as the hit resolves.
+    const k = Math.min(1, age), tail = Math.max(0, k - .3), hx = a.x + (b.x - a.x) * k, hy = a.y + (b.y - a.y) * k - Math.sin(k * Math.PI) * 20;
+    c.strokeStyle = color; c.lineWidth = f.variant === 2 ? 7 : 5; c.globalAlpha = .9; c.beginPath(); c.moveTo(a.x + (b.x - a.x) * tail, a.y + (b.y - a.y) * tail - Math.sin(tail * Math.PI) * 20); c.lineTo(hx, hy); c.stroke();
+    c.fillStyle = '#fff8e0'; c.beginPath(); c.arc(hx, hy, f.variant === 2 ? 6 : 4, 0, TAU); c.fill(); c.restore(); return;
+  }
   if (f.type === 'strike') {
     const angle = Math.atan2(b.y - a.y, b.x - a.x), x = b.x, y = b.y;
     // The strike and damage share the same simulation event and world position.
@@ -95,6 +101,8 @@ export function drawSkillZone(r,z,time){
   c.save();c.translate(p.x,p.y);c.scale(1,.64);c.lineWidth=2.5;
   if(z.type==='sunray'){
     c.rotate(z.angle);c.strokeStyle='#fff4bd';c.shadowColor='#ffb653';c.shadowBlur=16;c.lineWidth=12+Math.sin(time*12)*3;c.globalAlpha=.55;c.beginPath();c.moveTo(0,0);c.lineTo(radius,0);c.stroke();c.shadowBlur=0;c.lineWidth=3;c.globalAlpha=.95;c.stroke();
+  }else if(z.type==='windwall'){
+    c.rotate(z.angle);c.strokeStyle=COLORS[z.hero]+'cc';c.fillStyle=COLORS[z.hero]+'30';c.lineWidth=3;c.beginPath();c.rect(-radius,-z.thickness*r.scale,radius*2,z.thickness*2*r.scale);c.fill();c.stroke();
   }else if(z.legend){
     const color=COLORS[z.hero];c.strokeStyle=color+'99';c.fillStyle=color+'18';c.setLineDash(time<(z.armed||0)?[6,7]:[]);c.beginPath();c.arc(0,0,radius,0,TAU);c.fill();c.stroke();c.setLineDash([]);c.globalAlpha=.45;drawLegendSpell(c,z.hero,z.type==='decoy'?0:3,radius*.8,(time*.3)%1,color);
   }else if(z.type==='witchfire'){
@@ -129,6 +137,10 @@ function drawLegendSpell(c,hero,slot,radius,age,color){
   if(hero===9){c.beginPath();c.moveTo(-8,7);c.quadraticCurveTo(-11,-10,0,-26);c.quadraticCurveTo(2,-7,8,-12);c.quadraticCurveTo(14,12,-8,7);c.fill();}
   if(hero===10){c.beginPath();c.moveTo(-10,0);c.quadraticCurveTo(0,-16,12,0);c.quadraticCurveTo(0,16,-10,0);c.fill();c.strokeStyle='#0b222a';c.lineWidth=1;c.beginPath();c.moveTo(-7,0);c.lineTo(8,0);c.stroke();}
   if(hero===11){c.beginPath();c.moveTo(-17,0);c.bezierCurveTo(-5,-15,2,15,17,0);c.stroke();c.beginPath();c.arc(17,0,3,0,TAU);c.fill();}
+  if(hero===12){c.beginPath();c.moveTo(0,-14);c.lineTo(0,10);c.moveTo(-9,4);c.quadraticCurveTo(0,16,9,4);c.moveTo(-6,-10);c.lineTo(6,-10);c.stroke();}
+  if(hero===13){c.beginPath();c.moveTo(-14,8);c.lineTo(14,-8);c.lineTo(10,-2);c.closePath();c.fill();}
+  if(hero===14){c.beginPath();c.arc(0,0,11,0,TAU*.75);c.moveTo(6,0);c.arc(0,0,6,0,TAU*.75);c.stroke();}
+  if(hero===15){c.beginPath();c.moveTo(0,12);c.lineTo(0,-6);c.lineTo(-7,-13);c.moveTo(0,-2);c.lineTo(8,-11);c.moveTo(0,4);c.lineTo(-9,-3);c.stroke();}
   c.restore();
  }
  if(slot===3){c.beginPath();c.arc(0,0,radius,0,TAU);c.stroke();}

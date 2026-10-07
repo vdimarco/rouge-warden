@@ -30,6 +30,8 @@
 - [x] Keep all creature sheets loaded and decode them off the main thread.
 - [x] Add the performance readout and the note for a browser drawing without the graphics card.
 - [x] Add `qa/tidebreak/adapt.test.mjs` and rewrite `qa/tidebreak/desktop.e2e.mjs` with a clean audio harness.
+- [x] Apply the review fixes: quality in proportion to pixels, the 21 ms raise floor, Test sound in its own panel, the chip layouts, the hold-Esc choice, no full-screen row without full screen, lost() timestamps, readout sampling.
+- [x] Make the motion and full-screen browser checks able to fail, and add a phone check for the score.
 - [ ] Play full screen on an ultra-wide monitor with a real GPU and confirm a smooth frame rate.
 - [ ] Listen to the mix and the announcer voice on a real device with speakers.
 - [ ] Check real multitouch and phone performance on a physical phone.

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { createMatch, player, buy, sell, damage, heal, cast, step, HEROES, setBuild, autoTarget } from '../../public/tidebreak/sim.js';
+import { createMatch, player, buy, sell, damage, heal, cast, step, HEROES, setBuild, autoTarget, heroSpeed } from '../../public/tidebreak/sim.js';
 import { quote, recalculate, nextPurchase, nextItem, ITEMS, hasItem, synergies } from '../../public/tidebreak/items.js';
-const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { x: 2400, y: 2800, gold: 9999 }); Object.assign(foe, { x: 2400, y: 2660, gold: 0, nextShop: 9999, stun: 100 }); return { s, p, foe }; };
+import { near } from './open-ground.mjs';
+const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { ...near(2400, 2800), gold: 9999 }); Object.assign(foe, { ...near(2400, 2660), gold: 0, nextShop: 9999, stun: 100 }); return { s, p, foe }; };
 {
  const { s, p } = duel(); p.gold = 780; const hp = p.hp;
  assert.ok(buy(s, 'bone')); assert.ok(buy(s, 'feather')); assert.equal(quote(p, 'nightfang').cost, 420);
@@ -33,7 +34,7 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
  buy(s, 'hunter'); p.cd = [4, 3, 0, 10]; damage(s, p, foe, 9999, 'attack'); assert.equal(p.cd[0], 0); assert.equal(p.cd[3], 7);
 }
 {
- const { s, p, foe } = duel(); buy(s, 'thorn'); buy(s, 'storm'); const other = { ...foe, id: 88, x: foe.x + 90, itemState: {}, inventory: [], hp: 1000, maxHp: 1000 }; s.units.push(other); p.itemState.hits = 2; const before = foe.hp; for (let i = 0; i < 4; i++) step(s, {}, .05); assert.ok(before - foe.hp >= p.damage + Math.min(160, foe.maxHp * .03)); assert.ok(other.hp < 1000, 'lightning reaches another foe');
+ const { s, p, foe } = duel(); buy(s, 'thorn'); buy(s, 'storm'); const other = { ...foe, id: 88, x: foe.x + 90, itemState: {}, inventory: [], hp: 1000, maxHp: 1000 }; s.units.push(other); p.itemState.hits = 2; const before = foe.hp; for (let i = 0; i < 4; i++) step(s, {}, .05); assert.ok(before - foe.hp >= p.damage + Math.min(160, foe.maxHp * .03) - 1e-6); assert.ok(other.hp < 1000, 'lightning reaches another foe');
 }
 {
  const { s, p, foe } = duel(); buy(s, 'grave'); buy(s, 'beacon'); p.hp -= 500; const hp = p.hp, enemyHp = foe.hp; step(s, { attack: false }, .05); assert.ok(p.hp > hp + 24); assert.ok(foe.hp < enemyHp);
@@ -93,13 +94,60 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
  foe.hp=0; assert.equal(autoTarget(s,p).id,wisp.id,'retarget after a kill');
  const start={x:p.x,y:p.y}; wisp.y=p.y-700; step(s,{}); assert.equal(p.target,0); assert.equal(p.x,start.x); assert.equal(p.y,start.y,'never chase without movement input');
 }
-assert.equal(ITEMS.length, 26);
+assert.equal(ITEMS.length, 36); // 6 components, 19 completed items, 11 relics
 {
  const { s, p, foe } = duel(); buy(s,'tempest'); p.itemState.hits=2; const hp=foe.hp;
- for(let i=0;i<4;i++)step(s,{},.05); assert.ok(hp-foe.hp >= p.damage + Math.min(160,foe.maxHp*.03) + 60, 'Tempest adds lightning to its main target');
+ for(let i=0;i<4;i++)step(s,{},.05); assert.ok(hp-foe.hp >= p.damage + Math.min(160,foe.maxHp*.03) + 60 - 1e-6, 'Tempest adds lightning to its main target');
 }
 {
  const { s, p, foe } = duel(); buy(s,'eclipse'); foe.hp=foe.maxHp*.5; p.itemState.empowered=5; const hp=foe.hp;
  for(let i=0;i<4;i++)step(s,{},.05); assert.ok(hp-foe.hp > p.damage+65+p.power*.5, 'Eclipse adds missing-health execution');
 }
-console.log('PASS: recipe discounts, atomic forge, six-slot limits, unique items, resale, no healing exploit, level scaling, build tracking, armor, life steal, burns, slows, shields, spellblade, kill refunds, third-hit effects and healing aura.');
+// The newer items: one trick each.
+{
+ // Drowned doubloon: a banished hero adds a stack (+4 attack, +8 power); the holder loses half when banished. The hoard caps at 20 and keeps them.
+ const { s, p, foe } = duel(); assert.ok(buy(s, 'tidecoin'));
+ for (let i = 0; i < 3; i++) { Object.assign(foe, { hp: foe.maxHp, respawn: 0 }); damage(s, p, foe, 1e6, 'attack'); }
+ const withCoins = { attack: p.damage, power: p.power }; p.itemState.coin = 0; recalculate(p, HEROES[0]); const bare = { attack: p.damage, power: p.power }; p.itemState.coin = 3; recalculate(p, HEROES[0]);
+ assert.deepEqual([withCoins.attack - bare.attack, withCoins.power - bare.power], [12, 24], 'three stacks: +12 attack, +24 power');
+ p.hp = p.maxHp; p.respawn = 0; damage(s, foe, p, 1e6, 'attack'); assert.equal(p.itemState.coin, 1, 'falling halves the stacks');
+ Object.assign(p, { hp: p.maxHp, respawn: 0 }); p.itemState.coin = 19; assert.ok(buy(s, 'glass')); assert.ok(buy(s, 'hoard')); Object.assign(foe, { hp: foe.maxHp, respawn: 0 }); damage(s, p, foe, 1e6, 'attack'); Object.assign(foe, { hp: foe.maxHp, respawn: 0 }); damage(s, p, foe, 1e6, 'attack');
+ assert.equal(p.itemState.coin, 20, 'the hoard caps at 20'); damage(s, foe, p, 1e6, 'attack'); assert.equal(p.itemState.coin, 20, 'the hoard keeps every stack');
+}
+{
+ // Duelist's glass: 15% more damage to heroes above 70% health, 10% more damage taken.
+ const plain = duel(), edge = duel(); buy(edge.s, 'glass');
+ const dealt = d => { const hp = d.foe.hp; damage(d.s, d.p, d.foe, 200, 'item'); return hp - d.foe.hp; }, taken = d => { const hp = d.p.hp; damage(d.s, d.foe, d.p, 200, 'item'); return hp - d.p.hp; };
+ assert.ok(Math.abs(dealt(edge) / dealt(plain) - 1.15) < 1e-6); assert.ok(Math.abs(taken(edge) / taken(plain) - 1.1) < 1e-6);
+ edge.p.hp = edge.p.maxHp * .5; plain.p.hp = plain.p.maxHp * .5; assert.ok(Math.abs(dealt(edge) / dealt(plain) - 1) < 1e-6, 'no edge below 70% health');
+}
+{
+ // Wardbreaker maul and the titan: basic attacks hit wards harder, and wards hit the holder softer.
+ const ward = () => { const d = duel(), t = createMatch(0).units.find(u => u.kind === 'tower' && u.team === 1 && u.tier === 0); Object.assign(t, { ...near(2400, 2500) }); d.s.units.push(t); return { ...d, t }; };
+ const hit = (d, kind = 'attack') => { const hp = d.t.hp; damage(d.s, d.p, d.t, 400, kind); return hp - d.t.hp; }, shot = d => { const hp = d.p.hp; damage(d.s, d.t, d.p, 300, 'attack'); return hp - d.p.hp; };
+ const plain = ward(), maul = ward(), titan = ward(); buy(maul.s, 'siege'); buy(titan.s, 'siege'); buy(titan.s, 'charm'); buy(titan.s, 'titan');
+ const armorOf = d => 100 / (100 + d.p.armor);
+ assert.ok(Math.abs(hit(maul) / hit(plain) - 1.4) < 1e-6); assert.ok(Math.abs(hit(titan) / hit(plain) - 1.7) < 1e-6); assert.ok(Math.abs(hit(maul, 'spell') / hit(plain, 'spell') - 1) < .01, 'spells are unchanged');
+ assert.ok(Math.abs(shot(maul) / armorOf(maul) / (shot(plain) / armorOf(plain)) - .7) < 1e-6); assert.ok(Math.abs(shot(titan) / armorOf(titan) / (shot(plain) / armorOf(plain)) - .5) < 1e-6);
+}
+{
+ // Seer's eye: a skill hit marks a hero for 5s; the mark keeps it revealed and adds 10% damage from the holder's team.
+ const { s, p, foe } = duel(); buy(s, 'seer'); damage(s, p, foe, 50, 'spell');
+ assert.ok(foe.seerUntil >= s.time + 5 - 1e-9 && foe.revealedUntil >= s.time + 5 - 1e-9);
+ const plain = duel(); const hp = foe.hp, hp2 = plain.foe.hp; damage(s, p, foe, 200, 'item'); damage(plain.s, plain.p, plain.foe, 200, 'item');
+ assert.ok(Math.abs((hp - foe.hp) / (hp2 - plain.foe.hp) - 1.1) < 1e-6);
+}
+{
+ // Moonstone charm: stuns, fears and slows wear off 40% faster.
+ const plain = duel(), { s, p } = duel(); buy(s, 'charm');
+ for (const d of [plain, { s, p }]) { Object.assign(d.p, { stun: 1, slow: 1, fear: 0 }); step(d.s, {}, .05); }
+ assert.ok(Math.abs((1 - p.stun) / (1 - plain.p.stun) - 1 / .6) < 1e-6 && Math.abs((1 - p.slow) / (1 - plain.p.slow) - 1 / .6) < 1e-6);
+}
+{
+ // Riptide sandals: a skill cast gives 30% movement speed for 2s. Rallying conch: the ultimate rallies the team.
+ const { s, p } = duel(); buy(s, 'riptide'); const before = heroSpeed(s, p); p.lastHit = s.time; p.revealedUntil = s.time + 9;
+ const slow = heroSpeed(s, p); assert.ok(cast(s, p, 1, { x: 0, y: -1 })); assert.ok(p.rushUntil > s.time); assert.ok(Math.abs(heroSpeed(s, p) / slow - 1.3) < 1e-6); void before;
+ const r = duel(); buy(r.s, 'horn'); r.p.skillRanks = [1, 1, 1, 1]; r.p.level = 6; r.p.mana = r.p.maxMana; r.p.cd = [0, 0, 0, 0];
+ assert.ok(cast(r.s, r.p, 3, { x: 0, y: -1 })); assert.ok(r.p.rallyUntil > r.s.time && Math.abs(r.p.rallyBonus - .2) < 1e-9, 'the ultimate rallies the caster and allies');
+}
+console.log('PASS: recipe discounts, atomic forge, six-slot limits, unique items, resale, no healing exploit, level scaling, build tracking, armor, life steal, burns, slows, shields, spellblade, kill refunds, third-hit effects, healing aura, doubloon stacks and the hoard, duelist edge, ward breakers, seer marks, tenacity, momentum and team rallies.');

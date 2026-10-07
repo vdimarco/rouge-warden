@@ -1,4 +1,5 @@
 import { distance, lineOfSight } from './world.js';
+import { hopPolyp } from './tide-kits.js';
 const creature=t=>!['tower','core'].includes(t.kind);
 export function launchSkill(s,source,target,type,amount,extra={}){
  s.missiles.push({x:source.x,y:source.y,source:source.id,team:source.team,hero:source.hero,target:target.id,type,amount,speed:type==='spirit'?520:680,life:5,visited:[],...extra});
@@ -12,6 +13,7 @@ export function tickSkillEvents(s,dt,{damage,heal,hostile}){
   if(d>travel+target.radius){m.x+=(target.x-m.x)/d*travel;m.y+=(target.y-m.y)/d*travel;continue;}
   m.x=target.x;m.y=target.y;
   if(m.returning){heal(s,source,m.healing);m.life=0;continue;}
+  if(m.type==='polyp'){hopPolyp(s,m,source,target,{damage,heal,hostile});continue;}
   if(!hostile(s,source,target)){m.life=0;continue;}
   const actual=damage(s,source,target,m.amount)||0;
   if(m.type==='foxfire')target.spiritUntil=s.time+5;

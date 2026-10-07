@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import http from "http";
 import fs from "fs";
 import path from "path";
+import { LINES, createLinePicker } from "../../public/tellme/lines.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const require = createRequire(path.join(root, "qa/browser/package.json"));
@@ -206,14 +207,129 @@ function calmPolicy(_hand, available) {
   return available[0];
 }
 
-async function open(browser, url, viewport) {
+function auditLines() {
+  const situations = ["deal", "small", "big", "check", "call", "fold", "win", "lose", "idle", "start", "end"];
+  const banned = /\b(aces?|kings?|queens?|jacks?|deuces?|bluffs?|bluffing|lying|liar|honest|honesty|nervous|smug|sweats?|sweating|tails?|flicks?|flicked|weak|strong|high card|low card|hole|faces?|tells?)\b|purchase|cash-?out|withdraw|wager|\$\d|real money|buy chips/i;
+  const problems = [];
+  for (const who of ["bram", "fennel"]) {
+    const seen = new Set();
+    for (const sit of situations) {
+      const bank = LINES[who] && LINES[who][sit];
+      if (!bank || bank.length < 12) problems.push(`${who} ${sit} has ${bank ? bank.length : 0} lines`);
+      for (const line of bank || []) {
+        const n = line.trim().split(/\s+/).filter(Boolean).length;
+        if (n < 1 || n > 8) problems.push(`${who} ${sit} "${line}" is ${n} words`);
+        if (banned.test(line)) problems.push(`${who} line may leak: ${line}`);
+        if (seen.has(line)) problems.push(`duplicate ${who} line: ${line}`);
+        seen.add(line);
+      }
+    }
+  }
+  return problems;
+}
+
+function repeats(rows) {
+  const last = {};
+  const bad = [];
+  for (const row of rows) {
+    if (last[row.who] === row.text) bad.push(`${row.who} repeated "${row.text}"`);
+    last[row.who] = row.text;
+  }
+  return bad;
+}
+
+const ACTION_SITS = ["check", "small", "big", "call", "fold"];
+
+function linesForCard(seed, playerRank) {
+  const pick = createLinePicker(seed);
+  const out = [];
+  const ctx = {
+    playerRank,
+    pot: 18,
+    cards: {
+      player: { rank: playerRank, suit: 1 },
+      bram: { rank: 11, suit: 0 },
+      fennel: { rank: 4, suit: 2 },
+    },
+    strength: playerRank,
+    face: playerRank >= 13 ? "sweating" : "smug",
+  };
+  for (const who of ["bram", "fennel"]) {
+    for (const action of ACTION_SITS) {
+      out.push(pick(who, action, ctx));
+      out.push(pick(who, action, ctx));
+    }
+  }
+  return out;
+}
+
+function nthActionLines(rows) {
+  const n = { bram: {}, fennel: {} };
+  const map = new Map();
+  for (const row of rows) {
+    if (!ACTION_SITS.includes(row.situation)) continue;
+    const i = n[row.who][row.situation] || 0;
+    n[row.who][row.situation] = i + 1;
+    map.set(`${row.who}:${row.situation}:${i}`, row.text);
+  }
+  return map;
+}
+
+async function open(browser, url, opts = {}) {
+  const viewport = opts.width && opts.height
+    ? { width: opts.width, height: opts.height }
+    : (opts.viewport || { width: 390, height: 844 });
   const ctx = await browser.newContext({
-    viewport: viewport || { width: 390, height: 844 },
+    viewport,
     isMobile: true,
     hasTouch: true,
     deviceScaleFactor: 1,
   });
   const page = await ctx.newPage();
+  if (opts.chat === false) {
+    await page.addInitScript(() => localStorage.setItem("tellme-chat", "0"));
+  }
+  await page.addInitScript(() => {
+    window.__bubbleHits = [];
+    const overlap = (a, b) => a.width > 2 && b.width > 2 && a.height > 2 && b.height > 2
+      && a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1;
+    const scan = () => {
+      for (const b of document.querySelectorAll(".bubble")) {
+        if (b.hidden) continue;
+        const br = b.getBoundingClientRect();
+        const sprite = b.closest(".critter") && b.closest(".critter").querySelector(".sprite");
+        if (sprite) {
+          const s = sprite.getBoundingClientRect();
+          const face = { left: s.left, top: s.top, right: s.right, bottom: s.top + s.height * 0.62, width: s.width, height: s.height * 0.62 };
+          if (overlap(br, face)) window.__bubbleHits.push("face " + b.textContent);
+        }
+        for (const btn of document.querySelectorAll("#actions button, #again, #start-btn, #mute, #chat, #home")) {
+          if (btn.hidden) continue;
+          const ar = btn.getBoundingClientRect();
+          if (overlap(br, ar)) window.__bubbleHits.push((btn.dataset.act || btn.id) + " :: " + b.textContent);
+        }
+      }
+      const end = document.getElementById("end-line");
+      const again = document.getElementById("again");
+      if (end && again && !end.hidden && !again.hidden) {
+        if (overlap(end.getBoundingClientRect(), again.getBoundingClientRect())) window.__bubbleHits.push("end-line overlaps again");
+      }
+    };
+    const boot = () => {
+      if (!document.documentElement) {
+        setTimeout(boot, 0);
+        return;
+      }
+      window.__bubbleWatch = true;
+      new MutationObserver(scan).observe(document.documentElement, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ["hidden", "class"],
+      });
+    };
+    boot();
+  });
   page.setDefaultTimeout(20000);
   const errors = [];
   const console404 = [];
@@ -268,6 +384,11 @@ async function drive(page, policy, onAct) {
     ));
     if (scroll > 1) seen.narrow = (seen.narrow ? seen.narrow + "; " : "") + "scroll " + scroll;
     if (onAct) await onAct(buttons);
+    const lag = await page.evaluate(() => Number(document.documentElement.dataset.lag || 0));
+    if (lag > 0) {
+      seen.lags = (seen.lags || 0) + 1;
+      seen.maxLag = Math.max(seen.maxLag || 0, lag);
+    }
     const available = buttons.filter((b) => !b.disabled).map((b) => b.act);
     const hand = await page.evaluate(() => window.__test.hands);
     const choice = await policy(hand, available);
@@ -299,6 +420,13 @@ console.log("serving", base);
 const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
 
 try {
+  const lineProblems = auditLines();
+  check(lineProblems.length === 0, lineProblems.length ? lineProblems.slice(0, 6).join("; ") : "dialogue banks are flavor, unique, and at most 8 words");
+  const lowCardLines = linesForCard(123, 2);
+  const highCardLines = linesForCard(123, 14);
+  const cardDrift = lowCardLines.filter((text, i) => text !== highCardLines[i]);
+  check(lowCardLines.length === highCardLines.length && cardDrift.length === 0, cardDrift.length ? `action line changed with the player card: "${cardDrift[0]}"` : "same dialogue seed and action, different player card, same line");
+
   // --- daily seed, before any tap ---
   {
     const day = new Date();
@@ -310,12 +438,23 @@ try {
     check(hook.seed === expect && hook.score === 100 && hook.hands === 0 && hook.log.length === 0, "hook starts at 100 chips, daily seed, empty log");
     const startBox = await s.page.locator("#start-btn").boundingBox();
     const muteBox = await s.page.locator("#mute").boundingBox();
+    const chatBox = await s.page.locator("#chat").boundingBox();
+    const homeBox = await s.page.locator("#home").boundingBox();
+    const titleBox = await s.page.locator("#topbar h1").boundingBox();
+    const hits = (a, b) => a && b && a.x < b.x + b.width - 0.5 && a.x + a.width > b.x + 0.5 && a.y < b.y + b.height - 0.5 && a.y + a.height > b.y + 0.5;
     check(startBox.height >= 48 && startBox.width >= 48, `start button ${startBox.width.toFixed(0)}x${startBox.height.toFixed(0)}`);
     check(muteBox.height >= 48 && muteBox.width >= 48, `mute button ${muteBox.width.toFixed(0)}x${muteBox.height.toFixed(0)}`);
+    check(homeBox && homeBox.height >= 48 && (await s.page.locator("#home").getAttribute("href")) === "/", "arcade link is tappable and points home");
+    check(!hits(homeBox, chatBox) && !hits(homeBox, muteBox) && !hits(chatBox, muteBox) && !hits(homeBox, titleBox), "arcade link clears the title, chat, and sound");
     const words = await s.page.locator("body").innerText();
     check(!/purchase|cash-?out|withdraw|wager|\$\d|real money|buy chips/i.test(words), "no real-money wording on the start screen");
-    const disk = ["index.html", "tellme.js", "style.css"].reduce((n, f) => n + fs.statSync(path.join(PUBLIC, "tellme", f)).size, 0);
+    const disk = fs.readdirSync(path.join(PUBLIC, "tellme"))
+      .filter((f) => /\.(html|css|js)$/.test(f))
+      .reduce((n, f) => n + fs.statSync(path.join(PUBLIC, "tellme", f)).size, 0);
     console.log(`  first-load transfer ${s.bytes()} bytes across ${s.files.length} responses; source files ${disk} bytes`);
+    const gameSrc = fs.readFileSync(path.join(PUBLIC, "tellme/tellme.js"), "utf8");
+    check(gameSrc.includes("document.hidden"), "sound stays quiet while the page is hidden");
+    check(s.bytes() < 150 * 1024, `first load ${s.bytes()} bytes is under 150 KB`);
     check(s.bytes() < 500 * 1024, `first load ${s.bytes()} bytes is under 500 KB`);
     globalThis.__bytes = s.bytes();
     globalThis.__files = s.files;
@@ -325,8 +464,8 @@ try {
   }
 
   // --- two fast runs, same seed, same taps ---
-  async function full(url) {
-    const s = await open(browser, url);
+  async function full(url, opts) {
+    const s = await open(browser, url, opts);
     const ident = await s.page.evaluate(() => {
       window.__keep = window.__test;
       return true;
@@ -355,6 +494,30 @@ try {
   const problems = auditRun(a.test);
   check(problems.length === 0, problems.length ? problems.join("; ") : "chips conserved and reads match the cards");
   check(a.test.log.some((h) => h.cues.bram || h.cues.fennel), "at least one tail cue in the seeded run");
+  const linesA = await a.page.evaluate(() => window.__lineLog.map((row) => ({ who: row.who, situation: row.situation, text: row.text })));
+  const lineRepeats = repeats(linesA);
+  check(lineRepeats.length === 0, lineRepeats.length ? lineRepeats.slice(0, 4).join("; ") : "line selection never repeats back-to-back");
+  check(linesA.length > 20 && linesA.some((row) => row.who === "bram") && linesA.some((row) => row.who === "fennel"), `dialogue spoke ${linesA.length} lines`);
+  const hitsA = await a.page.evaluate(() => ({ hits: window.__bubbleHits || [], watch: window.__bubbleWatch === true }));
+  check(hitsA.watch, "bubble overlap watcher is attached");
+  check(hitsA.hits.length === 0, hitsA.hits.length ? `bubble overlap: ${hitsA.hits.slice(0, 3).join(" | ")}` : "bubbles never overlap faces or buttons");
+  check((a.seen.lags || 0) > 0 && (a.seen.maxLag || 999) < 100, `button feedback ${a.seen.maxLag}ms`);
+
+  console.log("\nseed 123 chat off");
+  const quiet = await full(base + "?seed=123&fast=1", { chat: false });
+  check(JSON.stringify(quiet.test.log) === logA, "chat off keeps the same window.__test.log");
+  check(quiet.test.score === a.test.score && quiet.test.hands === a.test.hands, "chat off keeps the same score and hands");
+  const quietLabel = await quiet.page.locator("#chat").innerText();
+  check(quietLabel === "Chat off", `chat toggle starts off ("${quietLabel}")`);
+  const quietBubbles = await quiet.page.evaluate(() => ({
+    hits: window.__bubbleHits || [],
+    shown: [...document.querySelectorAll(".bubble, #end-line")].filter((el) => !el.hidden).length,
+    lines: window.__lineLog.length,
+  }));
+  check(quietBubbles.hits.length === 0 && quietBubbles.shown === 0, "chat off shows no bubbles");
+  check(quietBubbles.lines === linesA.length, `chat off still picks ${quietBubbles.lines} lines without changing the draw`);
+  for (const e of quiet.errors) check(false, e);
+  await quiet.close();
   const againBox = await a.page.locator("#again").boundingBox();
   check(againBox.height >= 48 && againBox.width >= 48, `play-again button ${againBox.width.toFixed(0)}x${againBox.height.toFixed(0)}`);
   const endText = await a.page.locator("#end").innerText();
@@ -404,6 +567,55 @@ try {
   check(JSON.stringify(two.test.log) === JSON.stringify(a.test.log.slice(0, 2)), "hands=2 matches the start of the full run");
   for (const e of short.errors) check(false, e);
   await short.close();
+
+  console.log("\nplayer card vs action lines");
+  async function playedLines(rank) {
+    const s = await open(browser, base + "?seed=123&fast=1&hands=4");
+    await s.page.evaluate((r) => { window.__playerRankOverride = r; }, rank);
+    await begin(s.page);
+    const run = await drive(s.page, scripted);
+    const rows = await s.page.evaluate(() => window.__lineLog.map((row) => ({
+      who: row.who,
+      situation: row.situation,
+      text: row.text,
+      revealed: row.revealed === true,
+    })));
+    for (const e of s.errors) check(false, e);
+    await s.close();
+    return { rows, log: run.test.log };
+  }
+  const playedLow = await playedLines(2);
+  const playedHigh = await playedLines(14);
+  const early = [...playedLow.rows, ...playedHigh.rows].filter((row) => (row.situation === "win" || row.situation === "lose") && !row.revealed);
+  check(early.length === 0, early.length ? "win or lose line before the reveal" : "win and lose lines appear only after the card is revealed");
+  const before = [...playedLow.rows, ...playedHigh.rows].filter((row) => ACTION_SITS.includes(row.situation) && row.revealed);
+  check(before.length === 0, before.length ? "action line after the reveal" : "action lines stay before showdown");
+  const mapLow = nthActionLines(playedLow.rows);
+  const mapHigh = nthActionLines(playedHigh.rows);
+  const drifted = [];
+  let shared = 0;
+  for (const [key, text] of mapLow) {
+    if (!mapHigh.has(key)) continue;
+    shared++;
+    if (mapHigh.get(key) !== text) drifted.push(`${key} "${text}" vs "${mapHigh.get(key)}"`);
+  }
+  check(shared > 0, `compared ${shared} live action lines across player ranks 2 and 14`);
+  check(drifted.length === 0, drifted.length ? drifted.slice(0, 3).join("; ") : "live action lines ignore the player card");
+  const sameCritters = playedLow.log.length === playedHigh.log.length && playedLow.log.every((hand, i) => {
+    const other = playedHigh.log[i];
+    return hand.cards.bram.rank === other.cards.bram.rank
+      && hand.cards.bram.suit === other.cards.bram.suit
+      && hand.cards.fennel.rank === other.cards.fennel.rank
+      && hand.cards.fennel.suit === other.cards.fennel.suit
+      && hand.cards.player.rank === 2
+      && other.cards.player.rank === 14;
+  });
+  check(sameCritters, "rank override keeps the critter cards and changes only the player's rank");
+  function replayMismatch(rows) {
+    const pick = createLinePicker(123);
+    return rows.filter((row) => pick(row.who, row.situation) !== row.text).length;
+  }
+  check(replayMismatch(playedLow.rows) === 0 && replayMismatch(playedHigh.rows) === 0, "live lines match the separate dialogue picker");
 
   // --- bust ---
   console.log("\nbust seed 239");
@@ -670,14 +882,22 @@ try {
       const bram = box(".critter.bram .sprite");
       const name = box(".critter.bram .name");
       const note = box("#note");
+      const home = box("#home");
+      const chat = box("#chat");
+      const mute = box("#mute");
+      const title = box("#topbar h1");
       return {
         cardBram: overlap(card, bram),
         cardName: overlap(card, name),
         cardNote: overlap(card, note),
+        homeChat: overlap(home, chat),
+        homeMute: overlap(home, mute),
+        homeTitle: overlap(home, title),
         noteText: document.querySelector("#note").textContent,
       };
     });
     check(!hit.cardBram && !hit.cardName && !hit.cardNote, `landscape overlap card/bram ${hit.cardBram} card/name ${hit.cardName} card/note ${hit.cardNote}`);
+    check(!hit.homeChat && !hit.homeMute && !hit.homeTitle, `landscape header overlap home/chat ${hit.homeChat} home/sound ${hit.homeMute} home/title ${hit.homeTitle}`);
     const landShot = await shoot(land.page, "tellme-landscape");
     check(landShot.w === 844 && landShot.h === 390, `tellme-landscape.png is ${landShot.w}x${landShot.h}`);
     for (const e of land.errors) check(false, e);
@@ -689,14 +909,21 @@ try {
   const shot = await open(browser, base + "?seed=1");
   const startShot = await shoot(shot.page, "tellme-start");
   await begin(shot.page);
-  const got = { faces: new Set(), flick: false, flip: false, end: false };
+  const got = { faces: new Set(), pairs: new Set(), flick: false, flip: false, end: false, win: false, lose: false, fold: false, bubble: { bram: false, fennel: false }, both: false };
   const t0 = Date.now();
   while (Date.now() - t0 < 180000) {
     const snap = await shot.page.evaluate(() => ({
       phase: document.documentElement.dataset.phase,
       flick: !!document.querySelector(".layer-tail.flick"),
       flip: document.getElementById("player-card").classList.contains("flipping"),
-      faces: [...document.querySelectorAll(".critter")].map((c) => c.dataset.face || ""),
+      faces: [...document.querySelectorAll(".critter")].map((c) => ({ who: c.dataset.who, face: c.dataset.face || "" })),
+      bubbles: [...document.querySelectorAll(".critter")].map((c) => {
+        const b = c.querySelector(".bubble");
+        return { who: c.dataset.who, on: !!b && !b.hidden && b.textContent.length > 0 };
+      }),
+      win: !!document.querySelector(".react-win"),
+      lose: !!document.querySelector(".react-lose"),
+      fold: !!document.querySelector(".react-fold"),
     }));
     if (snap.flick && !got.flick) {
       await sleep(100);
@@ -708,13 +935,49 @@ try {
       await shoot(shot.page, "tellme-showdown");
       got.flip = true;
     }
-    if (snap.phase === "act") {
-      for (const f of snap.faces) {
-        if (f && !got.faces.has(f)) {
-          await shoot(shot.page, "tellme-face-" + f);
-          got.faces.add(f);
+    if ((snap.win && !got.win) || (snap.lose && !got.lose) || (snap.fold && !got.fold)) {
+      await sleep(280);
+      if (snap.win && !got.win) {
+        await shoot(shot.page, "tellme-react-win");
+        got.win = true;
+      }
+      if (snap.lose && !got.lose) {
+        await shoot(shot.page, "tellme-react-lose");
+        got.lose = true;
+      }
+      if (snap.fold && !got.fold) {
+        await shoot(shot.page, "tellme-react-fold");
+        got.fold = true;
+      }
+    }
+    const bubbleOn = Object.fromEntries(snap.bubbles.map((b) => [b.who, b.on]));
+    if (bubbleOn.bram && !got.bubble.bram) {
+      await shoot(shot.page, "tellme-bubble-bram");
+      got.bubble.bram = true;
+    }
+    if (bubbleOn.fennel && !got.bubble.fennel) {
+      await shoot(shot.page, "tellme-bubble-fennel");
+      got.bubble.fennel = true;
+    }
+    if (bubbleOn.bram && bubbleOn.fennel && !got.both) {
+      await shoot(shot.page, "tellme-bubbles");
+      got.both = true;
+    }
+    if (snap.phase === "act" || snap.phase === "think") {
+      for (const c of snap.faces) {
+        if (!c.face) continue;
+        if (!got.faces.has(c.face) && snap.phase === "act") {
+          await shoot(shot.page, "tellme-face-" + c.face);
+          got.faces.add(c.face);
+        }
+        const key = c.who + "-" + c.face;
+        if (!got.pairs.has(key)) {
+          await shoot(shot.page, "tellme-" + key);
+          got.pairs.add(key);
         }
       }
+    }
+    if (snap.phase === "act") {
       const available = await shot.page.locator("#actions button:not([hidden]):not([disabled])").evaluateAll((els) => els.map((e) => e.dataset.act));
       const choice = calmPolicy(0, available);
       const serial = await shot.page.evaluate(() => document.documentElement.dataset.serial || "0");
@@ -734,11 +997,22 @@ try {
     await sleep(20);
   }
   const faceList = [...got.faces].sort().join(",");
+  const pairList = [...got.pairs].sort().join(",");
   check(got.faces.size === 4, `four face states shot (${faceList})`);
+  check(got.pairs.size === 8, `each critter in all four faces (${pairList})`);
+  check(got.bubble.bram && got.bubble.fennel, "speech bubble shot on each critter");
   check(got.flick, "tail flick shot");
   check(got.flip, "showdown flip shot");
+  check(got.win && got.lose, "win and lose reactions shot");
   check(got.end, "end screen shot");
-  for (const name of ["tellme-start", "tellme-face-smug", "tellme-face-calm", "tellme-face-nervous", "tellme-face-sweating", "tellme-tail", "tellme-showdown", "tellme-end"]) {
+  const shotNames = [
+    "tellme-start", "tellme-face-smug", "tellme-face-calm", "tellme-face-nervous", "tellme-face-sweating",
+    "tellme-tail", "tellme-showdown", "tellme-end",
+    "tellme-bram-smug", "tellme-bram-calm", "tellme-bram-nervous", "tellme-bram-sweating",
+    "tellme-fennel-smug", "tellme-fennel-calm", "tellme-fennel-nervous", "tellme-fennel-sweating",
+    "tellme-bubble-bram", "tellme-bubble-fennel", "tellme-react-win", "tellme-react-lose",
+  ];
+  for (const name of shotNames) {
     const file = path.join(SHOTS, name + ".png");
     if (!fs.existsSync(file)) {
       check(false, "missing " + name);
@@ -750,6 +1024,15 @@ try {
   for (const e of shot.errors) check(false, e);
   const done = await snapshot(shot.page);
   check(done.hands === 10 && done.score === 86, `screenshot run finished ${done.hands} hands at ${done.score} chips`);
+  const shotLines = await shot.page.evaluate(() => window.__lineLog.map((row) => ({ who: row.who, situation: row.situation, text: row.text })));
+  const shotRepeats = repeats(shotLines);
+  check(shotRepeats.length === 0, shotRepeats.length ? shotRepeats.slice(0, 4).join("; ") : "screenshot run never repeats a line back-to-back");
+  const needSituations = ["start", "deal", "small", "big", "check", "call", "fold", "win", "lose", "idle", "end"];
+  const seenSituations = new Set(shotLines.map((row) => row.situation));
+  const missingSituations = needSituations.filter((s) => !seenSituations.has(s));
+  check(missingSituations.length === 0, missingSituations.length ? `missing dialogue situations ${missingSituations.join(",")}` : "every dialogue situation was used");
+  const shotHits = await shot.page.evaluate(() => window.__bubbleHits || []);
+  check(shotHits.length === 0, shotHits.length ? `screenshot bubble overlap: ${shotHits.slice(0, 3).join(" | ")}` : "screenshot run bubbles stay off the buttons");
   await shot.close();
 } finally {
   await browser.close();

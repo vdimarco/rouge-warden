@@ -1,0 +1,1039 @@
+{
+  "status": "Gameplay, layout, storage and production checks passed",
+  "unitTests": 63,
+  "engineBots": {
+    "campaigns": 80,
+    "stages": 240,
+    "seeds": 40,
+    "reactionDelayMs": [
+      180,
+      288
+    ],
+    "tricks": 3141,
+    "rushes": 371,
+    "maxActiveEntities": 50,
+    "totalDistance": 432000
+  },
+  "limitations": [
+    "Chromium emulated viewports and SwiftShader; no physical phone/GPU FPS measurement.",
+    "Scores are guest-submitted, not gameplay-attested.",
+    "OpenSpec CLI unavailable; Markdown structure checked manually."
+  ],
+  "checks": {
+    "campaign": {
+      "passed": true,
+      "base": "http://127.0.0.1:8765/",
+      "renderer": "2d",
+      "actualFullCampaign": true,
+      "results": [
+        {
+          "level": {
+            "index": 0,
+            "id": "canopy",
+            "name": "Canopy Run",
+            "length": 1400,
+            "remaining": 0,
+            "progress": 1,
+            "final": false,
+            "difficulty": "FLOW"
+          },
+          "totals": {
+            "score": 12940,
+            "coins": 84,
+            "distance": 1400,
+            "jumps": 8,
+            "ducks": 3,
+            "levelsCleared": 1
+          },
+          "shieldPreserved": true,
+          "pausePixels": true
+        },
+        {
+          "level": {
+            "index": 1,
+            "id": "canyon",
+            "name": "Redstone Rapids",
+            "length": 1800,
+            "remaining": 0,
+            "progress": 1,
+            "final": false,
+            "difficulty": "RAPIDS"
+          },
+          "totals": {
+            "score": 32280,
+            "coins": 198,
+            "distance": 3200,
+            "jumps": 13,
+            "ducks": 17,
+            "levelsCleared": 2
+          },
+          "shieldPreserved": true,
+          "pausePixels": true
+        },
+        {
+          "level": {
+            "index": 2,
+            "id": "ruins",
+            "name": "Moonlit Ruins",
+            "length": 2200,
+            "remaining": 0,
+            "progress": 1,
+            "final": true,
+            "difficulty": "EXPERT"
+          },
+          "totals": {
+            "score": 55820,
+            "coins": 322,
+            "distance": 5400,
+            "jumps": 23,
+            "ducks": 28,
+            "levelsCleared": 3
+          },
+          "shieldPreserved": true,
+          "pausePixels": true
+        }
+      ],
+      "scoreCapture": true,
+      "boardReturn": true,
+      "persistentUnlocks": true,
+      "errors": []
+    },
+    "ui": [
+      {
+        "layout": "phone",
+        "level": "Canopy Run",
+        "noHorizontalOverflow": true,
+        "locks": true,
+        "helpGestureCount": 3,
+        "animation": "gesture-lanes",
+        "finiteHud": true,
+        "edgeArrows": true,
+        "screenWideDrag": true,
+        "pause": true,
+        "genuineWipeout": true,
+        "scorePng": [
+          1200,
+          1600
+        ],
+        "leaderboardMockSubmission": 516,
+        "leaderboardViewSubmitFlow": true,
+        "retryCurrent": true,
+        "errors": []
+      },
+      {
+        "layout": "desktop",
+        "level": "Redstone Rapids",
+        "noHorizontalOverflow": true,
+        "locks": true,
+        "helpGestureCount": 3,
+        "animation": "gesture-lanes",
+        "finiteHud": true,
+        "edgeArrows": true,
+        "screenWideDrag": true,
+        "pause": true,
+        "genuineWipeout": true,
+        "scorePng": [
+          1200,
+          1600
+        ],
+        "leaderboardMockSubmission": 428,
+        "leaderboardViewSubmitFlow": true,
+        "retryCurrent": true,
+        "errors": []
+      },
+      {
+        "layout": "landscape",
+        "level": "Redstone Rapids",
+        "noHorizontalOverflow": true,
+        "locks": true,
+        "helpGestureCount": 3,
+        "animation": "gesture-lanes",
+        "finiteHud": true,
+        "edgeArrows": true,
+        "screenWideDrag": true,
+        "pause": true,
+        "genuineWipeout": true,
+        "scorePng": [
+          1200,
+          1600
+        ],
+        "leaderboardMockSubmission": 437,
+        "leaderboardViewSubmitFlow": true,
+        "retryCurrent": true,
+        "errors": []
+      },
+      {
+        "layout": "reduced",
+        "level": "Redstone Rapids",
+        "noHorizontalOverflow": true,
+        "locks": true,
+        "helpGestureCount": 3,
+        "animation": "none",
+        "finiteHud": true,
+        "edgeArrows": true,
+        "screenWideDrag": true,
+        "pause": true,
+        "genuineWipeout": true,
+        "scorePng": [
+          1200,
+          1600
+        ],
+        "leaderboardMockSubmission": 447,
+        "leaderboardViewSubmitFlow": true,
+        "retryCurrent": true,
+        "errors": []
+      }
+    ],
+    "webgl": {
+      "passed": true,
+      "results": [
+        {
+          "width": 390,
+          "index": 0,
+          "drawCalls": 31,
+          "triangles": 98657,
+          "world": {
+            "district": "Canopy Run",
+            "canopies": 8,
+            "harbors": 1,
+            "woodHazards": 2,
+            "falls": 2,
+            "birds": 12,
+            "flowers": 34,
+            "flags": 2,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 900,
+              "course": 1400,
+              "x": 219.4025886132657,
+              "y": -48.3776,
+              "z": -900
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 390,
+          "index": 1,
+          "drawCalls": 32,
+          "triangles": 84317,
+          "world": {
+            "district": "Redstone Rapids",
+            "canopies": 2,
+            "harbors": 0,
+            "woodHazards": 3,
+            "falls": 1,
+            "birds": 12,
+            "flowers": 0,
+            "flags": 0,
+            "motionTime": 10,
+            "gorgeWalls": 12,
+            "gorgeLedges": 12,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 1300,
+              "course": 1800,
+              "x": -390.182528122552,
+              "y": -68.9664,
+              "z": -1300
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 390,
+          "index": 2,
+          "drawCalls": 38,
+          "triangles": 104063,
+          "world": {
+            "district": "Moonlit Ruins",
+            "canopies": 3,
+            "harbors": 4,
+            "woodHazards": 1,
+            "falls": 1,
+            "birds": 0,
+            "flowers": 0,
+            "flags": 8,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 40,
+            "templeColumns": 16,
+            "glyphs": 16,
+            "fireflies": 48,
+            "finish": {
+              "visible": false,
+              "remaining": 1700,
+              "course": 2200,
+              "x": 404.91481546231427,
+              "y": -91.7584,
+              "z": -1700
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 1536,
+          "index": 0,
+          "drawCalls": 31,
+          "triangles": 98657,
+          "world": {
+            "district": "Canopy Run",
+            "canopies": 8,
+            "harbors": 1,
+            "woodHazards": 2,
+            "falls": 2,
+            "birds": 12,
+            "flowers": 34,
+            "flags": 2,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 900,
+              "course": 1400,
+              "x": 219.4025886132657,
+              "y": -48.3776,
+              "z": -900
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 1536,
+          "index": 1,
+          "drawCalls": 32,
+          "triangles": 84317,
+          "world": {
+            "district": "Redstone Rapids",
+            "canopies": 2,
+            "harbors": 0,
+            "woodHazards": 3,
+            "falls": 1,
+            "birds": 12,
+            "flowers": 0,
+            "flags": 0,
+            "motionTime": 10,
+            "gorgeWalls": 12,
+            "gorgeLedges": 12,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 1300,
+              "course": 1800,
+              "x": -390.182528122552,
+              "y": -68.9664,
+              "z": -1300
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 1536,
+          "index": 2,
+          "drawCalls": 38,
+          "triangles": 104063,
+          "world": {
+            "district": "Moonlit Ruins",
+            "canopies": 3,
+            "harbors": 4,
+            "woodHazards": 1,
+            "falls": 1,
+            "birds": 0,
+            "flowers": 0,
+            "flags": 8,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 40,
+            "templeColumns": 16,
+            "glyphs": 16,
+            "fireflies": 48,
+            "finish": {
+              "visible": false,
+              "remaining": 1700,
+              "course": 2200,
+              "x": 404.91481546231427,
+              "y": -91.7584,
+              "z": -1700
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 844,
+          "index": 0,
+          "drawCalls": 31,
+          "triangles": 98657,
+          "world": {
+            "district": "Canopy Run",
+            "canopies": 8,
+            "harbors": 1,
+            "woodHazards": 2,
+            "falls": 2,
+            "birds": 12,
+            "flowers": 34,
+            "flags": 2,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 900,
+              "course": 1400,
+              "x": 219.4025886132657,
+              "y": -48.3776,
+              "z": -900
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 844,
+          "index": 1,
+          "drawCalls": 32,
+          "triangles": 84317,
+          "world": {
+            "district": "Redstone Rapids",
+            "canopies": 2,
+            "harbors": 0,
+            "woodHazards": 3,
+            "falls": 1,
+            "birds": 12,
+            "flowers": 0,
+            "flags": 0,
+            "motionTime": 10,
+            "gorgeWalls": 12,
+            "gorgeLedges": 12,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 1300,
+              "course": 1800,
+              "x": -390.182528122552,
+              "y": -68.9664,
+              "z": -1300
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 844,
+          "index": 2,
+          "drawCalls": 38,
+          "triangles": 104063,
+          "world": {
+            "district": "Moonlit Ruins",
+            "canopies": 3,
+            "harbors": 4,
+            "woodHazards": 1,
+            "falls": 1,
+            "birds": 0,
+            "flowers": 0,
+            "flags": 8,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 40,
+            "templeColumns": 16,
+            "glyphs": 16,
+            "fireflies": 48,
+            "finish": {
+              "visible": false,
+              "remaining": 1700,
+              "course": 2200,
+              "x": 404.91481546231427,
+              "y": -91.7584,
+              "z": -1700
+            }
+          },
+          "noActiveUploads": true
+        }
+      ],
+      "errors": []
+    },
+    "hardwareMaterialPath": {
+      "passed": true,
+      "results": [
+        {
+          "width": 390,
+          "index": 0,
+          "drawCalls": 32,
+          "triangles": 247357,
+          "world": {
+            "district": "Canopy Run",
+            "canopies": 10,
+            "harbors": 2,
+            "woodHazards": 2,
+            "falls": 2,
+            "birds": 12,
+            "flowers": 34,
+            "flags": 4,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 900,
+              "course": 1400,
+              "x": 219.4025886132657,
+              "y": -48.3776,
+              "z": -900
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 390,
+          "index": 1,
+          "drawCalls": 33,
+          "triangles": 199629,
+          "world": {
+            "district": "Redstone Rapids",
+            "canopies": 4,
+            "harbors": 0,
+            "woodHazards": 3,
+            "falls": 1,
+            "birds": 12,
+            "flowers": 0,
+            "flags": 0,
+            "motionTime": 10,
+            "gorgeWalls": 12,
+            "gorgeLedges": 12,
+            "templeBlocks": 0,
+            "templeColumns": 0,
+            "glyphs": 0,
+            "fireflies": 0,
+            "finish": {
+              "visible": false,
+              "remaining": 1300,
+              "course": 1800,
+              "x": -390.182528122552,
+              "y": -68.9664,
+              "z": -1300
+            }
+          },
+          "noActiveUploads": true
+        },
+        {
+          "width": 390,
+          "index": 2,
+          "drawCalls": 40,
+          "triangles": 244307,
+          "world": {
+            "district": "Moonlit Ruins",
+            "canopies": 4,
+            "harbors": 6,
+            "woodHazards": 1,
+            "falls": 1,
+            "birds": 0,
+            "flowers": 0,
+            "flags": 12,
+            "motionTime": 10,
+            "gorgeWalls": 0,
+            "gorgeLedges": 0,
+            "templeBlocks": 40,
+            "templeColumns": 16,
+            "glyphs": 16,
+            "fireflies": 48,
+            "finish": {
+              "visible": false,
+              "remaining": 1700,
+              "course": 2200,
+              "x": 404.91481546231427,
+              "y": -91.7584,
+              "z": -1700
+            }
+          },
+          "noActiveUploads": true
+        }
+      ],
+      "errors": []
+    },
+    "publicStorage": {
+      "checkedAt": "2026-10-07T00:45:44.793Z",
+      "service": "https://xindosmlyugxhndebabi.supabase.co",
+      "testRunId": "3c41e9f9-0456-44cc-9c9f-efa84aefdf80",
+      "payload": {
+        "name": "QA River API",
+        "score": 22117,
+        "coins": 211,
+        "levelsCleared": 2,
+        "levelIndex": 2,
+        "distance": 4701,
+        "runId": "3c41e9f9-0456-44cc-9c9f-efa84aefdf80"
+      },
+      "operations": [
+        {
+          "label": "initial public board",
+          "status": 200,
+          "response": {
+            "entries": []
+          }
+        },
+        {
+          "label": "guest score insert",
+          "status": 201,
+          "response": {
+            "entry": {
+              "name": "QA River API",
+              "score": 22117,
+              "coins": 211,
+              "levelsCleared": 2,
+              "levelIndex": 2,
+              "distance": 4701,
+              "createdAt": "2026-10-07T00:45:45.373Z",
+              "rank": 1
+            },
+            "submitted": true,
+            "entries": [
+              {
+                "rank": 1,
+                "name": "QA River API",
+                "score": 22117,
+                "coins": 211,
+                "levelsCleared": 2,
+                "levelIndex": 2,
+                "distance": 4701,
+                "createdAt": "2026-10-07T00:45:45.373Z"
+              }
+            ]
+          }
+        },
+        {
+          "label": "same run retry",
+          "status": 200,
+          "response": {
+            "entry": {
+              "name": "QA River API",
+              "score": 22117,
+              "coins": 211,
+              "levelsCleared": 2,
+              "levelIndex": 2,
+              "distance": 4701,
+              "createdAt": "2026-10-07T00:45:45.373Z",
+              "rank": 1
+            },
+            "submitted": true,
+            "duplicate": true,
+            "entries": [
+              {
+                "rank": 1,
+                "name": "QA River API",
+                "score": 22117,
+                "coins": 211,
+                "levelsCleared": 2,
+                "levelIndex": 2,
+                "distance": 4701,
+                "createdAt": "2026-10-07T00:45:45.373Z"
+              }
+            ]
+          }
+        },
+        {
+          "label": "same run changed score",
+          "status": 409,
+          "response": {
+            "error": "This run has already been submitted with different score details."
+          }
+        },
+        {
+          "label": "public read after insert",
+          "status": 200,
+          "response": {
+            "entries": [
+              {
+                "rank": 1,
+                "name": "QA River API",
+                "score": 22117,
+                "coins": 211,
+                "levelsCleared": 2,
+                "levelIndex": 2,
+                "distance": 4701,
+                "createdAt": "2026-10-07T00:45:45.373Z"
+              }
+            ]
+          }
+        }
+      ],
+      "upstream": [
+        {
+          "method": "GET",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 201
+        },
+        {
+          "method": "GET",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 201
+        },
+        {
+          "method": "GET",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 201
+        },
+        {
+          "method": "GET",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "pathname": "/rest/v1/river_rush_scores",
+          "status": 200
+        }
+      ],
+      "passed": true
+    },
+    "guestPolicies": {
+      "passed": true,
+      "results": [
+        {
+          "name": "Jos\u00e9 O'Neil",
+          "status": 201
+        },
+        {
+          "name": "\u5c0f\u6cb37",
+          "status": 201
+        },
+        {
+          "guestDeleteStatus": 401
+        }
+      ],
+      "testRunIds": [
+        "2595a0ed-d609-4e2a-907f-a87ce0c100c9",
+        "dc18323c-1ee4-4d5c-a6a3-0a0789225f5f"
+      ]
+    },
+    "webglBranchRecovery": {
+      "passed": true,
+      "base": "http://127.0.0.1:8765/",
+      "results": [
+        {
+          "case": "phone",
+          "renderer": "webgl",
+          "approach": true,
+          "rootRegistrationChecked": true,
+          "duckCleared": true,
+          "shieldPreserved": true,
+          "passedTreeGeometryChecked": true,
+          "pausePixels": true,
+          "noActiveGpuPreparationChecked": true,
+          "reducedMotion": false,
+          "missingTextureFallback": false,
+          "detailedMaterials": false,
+          "speedUnchanged": true,
+          "contextLossFallbackChecked": true,
+          "drawCalls": 31,
+          "triangles": 108999,
+          "branchBatches": {
+            "trees": 8,
+            "scenery": 7,
+            "woodSegments": 107,
+            "leafClusters": 174,
+            "capacity": 32,
+            "perTree": 32,
+            "drawCalls": 2,
+            "style": "curved-tapered",
+            "bark": "fal",
+            "foliage": "fal",
+            "origins": [
+              {
+                "id": 14,
+                "lane": 1,
+                "course": 112.6757980952381,
+                "side": 1,
+                "root": {
+                  "x": 18.504628401015758,
+                  "y": 0.6201666536779279,
+                  "d": 8.2
+                },
+                "tip": {
+                  "x": 0,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              }
+            ]
+          }
+        }
+      ],
+      "errors": [],
+      "screenshots": "/tmp/river-tree-realism"
+    },
+    "fallback": {
+      "passed": true,
+      "results": [
+        {
+          "case": "phone",
+          "mapsDistinct": true,
+          "finishScreenshots": true,
+          "actualEngineJumpDuck": {
+            "jumps": 1,
+            "ducks": 1,
+            "shield": true,
+            "phase": "playing",
+            "unchanged": true,
+            "clips": 0
+          }
+        },
+        {
+          "case": "desktop",
+          "mapsDistinct": true,
+          "finishScreenshots": true,
+          "actualEngineJumpDuck": {
+            "jumps": 1,
+            "ducks": 1,
+            "shield": true,
+            "phase": "playing",
+            "unchanged": true,
+            "clips": 0
+          }
+        },
+        {
+          "case": "landscape",
+          "mapsDistinct": true,
+          "finishScreenshots": true,
+          "actualEngineJumpDuck": {
+            "jumps": 1,
+            "ducks": 1,
+            "shield": true,
+            "phase": "playing",
+            "unchanged": true,
+            "clips": 0
+          }
+        }
+      ]
+    },
+    "fallbackApp": {
+      "passed": true,
+      "actualAppPhoneFallback": true,
+      "unlockedFixture": true,
+      "actualKeyboardJumpDuck": true,
+      "shieldPreserved": true,
+      "pausedStateAndPixels": true,
+      "noVisibleJungleVideoOnLaterMaps": true,
+      "levelIndices": [
+        1,
+        2
+      ],
+      "errors": []
+    },
+    "fallbackMissingReduced": {
+      "passed": true,
+      "actualAppPhoneFallback": true,
+      "missingOptionalPanoramas": true,
+      "reducedMotion": true,
+      "unlockedFixture": true,
+      "actualKeyboardJumpDuck": true,
+      "shieldPreserved": true,
+      "pausedStateAndPixels": true,
+      "noVisibleJungleVideoOnLaterMaps": true,
+      "levelIndices": [
+        1,
+        2
+      ],
+      "errors": []
+    },
+    "finalLandscape": [
+      {
+        "layout": "landscape",
+        "level": "Redstone Rapids",
+        "noHorizontalOverflow": true,
+        "locks": true,
+        "helpGestureCount": 3,
+        "animation": "gesture-lanes",
+        "finiteHud": true,
+        "edgeArrows": true,
+        "screenWideDrag": true,
+        "pause": true,
+        "genuineWipeout": true,
+        "scorePng": [
+          1200,
+          1600
+        ],
+        "leaderboardMockSubmission": 407,
+        "leaderboardViewSubmitFlow": true,
+        "retryCurrent": true,
+        "errors": []
+      }
+    ],
+    "liveWebgl": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "results": [
+        {
+          "case": "phone",
+          "renderer": "webgl",
+          "approach": true,
+          "rootRegistrationChecked": true,
+          "duckCleared": true,
+          "shieldPreserved": true,
+          "passedTreeGeometryChecked": true,
+          "pausePixels": true,
+          "noActiveGpuPreparationChecked": true,
+          "reducedMotion": false,
+          "missingTextureFallback": false,
+          "detailedMaterials": false,
+          "speedUnchanged": true,
+          "contextLossFallbackChecked": true,
+          "drawCalls": 30,
+          "triangles": 106797,
+          "branchBatches": {
+            "trees": 9,
+            "scenery": 7,
+            "woodSegments": 137,
+            "leafClusters": 201,
+            "capacity": 32,
+            "perTree": 32,
+            "drawCalls": 2,
+            "style": "curved-tapered",
+            "bark": "fal",
+            "foliage": "fal",
+            "origins": [
+              {
+                "id": 14,
+                "lane": 1,
+                "course": 112.6757980952381,
+                "side": 1,
+                "root": {
+                  "x": 18.379519882899004,
+                  "y": 0.6091885861568462,
+                  "d": 8.176
+                },
+                "tip": {
+                  "x": 0,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              },
+              {
+                "id": 33,
+                "lane": 0,
+                "course": 250.55585619321965,
+                "side": -1,
+                "root": {
+                  "x": -21.135397994718762,
+                  "y": 0.5945453615873619,
+                  "d": 4.448
+                },
+                "tip": {
+                  "x": -3.8,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              }
+            ]
+          }
+        }
+      ],
+      "errors": [],
+      "screenshots": "/tmp/river-adventure-live-webgl"
+    },
+    "liveLeaderboard": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "actualFinishedScore": {
+        "score": 516,
+        "coins": 17,
+        "distance": 158,
+        "jumps": 0,
+        "ducks": 0,
+        "levelsCleared": 0
+      },
+      "submitted": {
+        "name": "QA River muxe53zi",
+        "score": 516,
+        "coins": 17,
+        "levelsCleared": 0,
+        "levelIndex": 0,
+        "distance": 158,
+        "runId": "c7969270-3694-415f-940c-45a1cdd5c31a"
+      },
+      "testRunId": "c7969270-3694-415f-940c-45a1cdd5c31a",
+      "guestPostStatus": 201,
+      "independentBrowserVisible": true,
+      "idempotentRetry": true,
+      "invalidRejected": true,
+      "errors": [],
+      "testRowRemoved": true
+    }
+  },
+  "checkedAt": "2026-10-07T00:51:34.339324+00:00",
+  "production": {
+    "implementationCommit": "8fa48023ae178bb1a1d4cc905c0b739145bf5119",
+    "deployment": "dpl_HJvneKhW4GHUZfWceGxXQAVJYAsz",
+    "readyState": "READY",
+    "alias": "https://arcade.uptick.systems/river-rush/",
+    "finalLandscapeBundle": "index-DsTMvOK4.js",
+    "finalLandscapeCss": "index-DfEYLRAr.css",
+    "finalLandscapeLocalCheck": "passed"
+  },
+  "publicStorageSecurity": {
+    "rowLevelSecurity": true,
+    "anonymous": [
+      "SELECT",
+      "INSERT permitted columns"
+    ],
+    "guestUpdateDelete": false,
+    "databaseOwned": [
+      "id",
+      "created_at"
+    ],
+    "credentials": "Modern publishable key in server environment; no service-role key",
+    "newTableAdvisorFindings": 0
+  }
+}

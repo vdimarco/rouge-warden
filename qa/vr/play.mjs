@@ -207,9 +207,11 @@ try {
   });
   check(post.c.done && post.p.clogs === 1 && post.ropeState === "idle" && !post.target, "the third pump flushes: the rope lets go and the target is removed", { c: post.c, rope: post.ropeState, target: post.target });
   check(post.p.bank === GAME.looniesPerFlush && post.p.loonies === 0 && post.save.bonus === GAME.looniesPerFlush && post.save.loonies.length === 0, "the flush bonus goes to the bank and not to the x/80 Loonie count", { p: post.p, save: post.save });
-  // the training ends when every row is ticked: the flush ticks its plunge row, and the climb row is still open
+  // the first flush ends the training, as it ended the spoken tutorial: it ticks its plunge row, the climb row is left open, and
+  // the save marks the tutorial done
   const plunge = post.p.training && post.p.training.items.find((r) => r.id === "plunge");
-  check(post.save.clogs.includes(6) && plunge && plunge.done && !post.p.training.done && post.save.tutorial !== true && post.p.tutorial === 6, "the flush autosaves and ticks the plunge row; the training stays open while the climb row is left", { clogs: post.save.clogs, tutorial: post.save.tutorial, step: post.p.tutorial, training: post.p.training && post.p.training.items.map((r) => r.id + (r.done ? "+" : "-")).join(" ") });
+  const climb = post.p.training && post.p.training.items.find((r) => r.id === "climb");
+  check(post.save.clogs.includes(6) && plunge && plunge.done && climb && !climb.done && post.p.training.done && post.save.tutorial === true && post.p.tutorial === -1, "the flush autosaves and ticks the plunge row; the first flush ends the training while the climb row is left open", { clogs: post.save.clogs, tutorial: post.save.tutorial, step: post.p.tutorial, training: post.p.training && post.p.training.items.map((r) => r.id + (r.done ? "+" : "-")).join(" ") + (post.p.training.done ? " done" : "") });
   check(post.spy && post.spy[0] === c6.district && post.spy[1] === 0.5, "view.setDistrictClog gets the district's clean share (1 of 2 left)", post.spy);
 
   /* ---------------- 11 clogs, one by one, with real yanks (the 12th wakes the King, so it waits) ---------------- */

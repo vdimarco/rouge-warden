@@ -12,9 +12,10 @@ const FROZEN = 3000; // ms a running context clock may stand still before it cou
 const AHEAD = 0.3; // the live scheduler books music and loop events this far ahead of the audio clock
 const DUCK = 0.3; // the mix level while ducked
 const CITY = 0.45; // the city bed at street level, under the game
+const CROWD = 0.32; // the murmur of the people on the sidewalks round you, at its fullest
 const BPM = 84, S16 = 60 / BPM / 4, SWING = 0.16; // the groove: a lazy 84 with a light swing on the 16ths
 // refDistance of the spatial one-shots: loud things (the King, fireworks) carry across the city
-const REF = { kingRoar: 50, kingSnore: 30, fireworks: 120, flush: 10, burst: 8, pipeRip: 25, whistle: 8, splash: 8, pump: 5, gurgle: 4, drip: 1.5 };
+const REF = { cheer: 14, gasp: 8, punch: 6, kick: 6, goonDown: 10, door: 5, engine: 8, kingRoar: 50, kingSnore: 30, fireworks: 120, flush: 10, burst: 8, pipeRip: 25, whistle: 8, splash: 8, pump: 5, gurgle: 4, drip: 1.5 };
 
 const NO = {};
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -31,7 +32,7 @@ function seeded(seed) { // from fish
 /* ---------------- shared state: what the game asked for, kept even before the context exists ---------------- */
 function newState(on = true) {
   return {
-    on, speed: 0, height: NaN, ropes: [0, 0], music: false, duck: false, amb: 1, handles: new Set(),
+    on, speed: 0, height: NaN, ropes: [0, 0], music: false, duck: false, amb: 1, crowd: 0, handles: new Set(),
     L: { x: 0, y: 1.6, z: 0, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0 }, // the listener: world position, forward and up
   };
 }
@@ -384,6 +385,67 @@ const SFX = {
     train(e, t, { rate: 40, dur: 0.12, bands: [[2500, 4, 10]], peak: 0.2 });
     hiss(e, t + 0.1, { type: "lowpass", f: 900, dur: 0.05, att: 0.001, peak: 0.25 });
     return ring(e, t + 0.12, [[2093, 0.16, 0.9], [2637, 0.11, 0.7], [4186, 0.05, 0.5], [5870, 0.03, 0.3]], { send: 0.2 });
+  },
+  // a punch landing: a slap of air and a thud
+  punch(e, t) {
+    hiss(e, t, { type: "bandpass", f: 1800, q: 0.9, dur: 0.06, att: 0.001, peak: 0.35 });
+    return tone(e, t + 0.005, { f: 140, f2: 60, dur: 0.12, att: 0.001, peak: 0.42 });
+  },
+  // a kick: a bigger thud and a whoosh before it
+  kick(e, t) {
+    hiss(e, t, { buf: e.pink, type: "bandpass", f: 700, f2: 2200, sweep: 0.08, q: 1, dur: 0.1, att: 0.02, peak: 0.18 });
+    hiss(e, t + 0.08, { type: "lowpass", f: 1200, dur: 0.08, att: 0.001, peak: 0.4 });
+    return tone(e, t + 0.085, { f: 110, f2: 45, dur: 0.2, att: 0.001, peak: 0.5 });
+  },
+  // the hero takes a blow: a dull hit and a grunt
+  hurt(e, t) {
+    tone(e, t, { f: 90, f2: 50, dur: 0.16, att: 0.001, peak: 0.5 });
+    return tone(e, t + 0.03, { type: "sawtooth", f: 180, f2: 120, dur: 0.18, att: 0.01, peak: 0.08, lp: 900 });
+  },
+  // a goon goes down into his own sludge
+  goonDown(e, t) {
+    tone(e, t, { f: 260, f2: 70, dur: 0.45, att: 0.005, peak: 0.16, type: "triangle" });
+    return hiss(e, t + 0.15, { buf: e.brown, type: "bandpass", f: 320, q: 2, dur: 0.5, att: 0.05, peak: 0.25 });
+  },
+  // a car door: a click, a solid shut
+  door(e, t) {
+    hiss(e, t, { type: "highpass", f: 3000, dur: 0.02, att: 0.0005, peak: 0.2 });
+    tone(e, t + 0.04, { f: 85, f2: 60, dur: 0.14, att: 0.001, peak: 0.45 });
+    return hiss(e, t + 0.04, { type: "lowpass", f: 700, dur: 0.1, att: 0.001, peak: 0.3 });
+  },
+  // the engine starts: a starter whirr and a rev that settles
+  engine(e, t) {
+    train(e, t, { rate: 18, rate2: 30, dur: 0.45, bands: [[400, 2, 3]], peak: 0.12 });
+    const s = osc(e, "sawtooth", 38), lp = filt(e, "lowpass", 320, 1.2), g = gain(e, 0);
+    s.frequency.setValueAtTime(30, t + 0.4); s.frequency.linearRampToValueAtTime(70, t + 0.75); s.frequency.exponentialRampToValueAtTime(42, t + 1.4);
+    s.connect(lp); lp.connect(g); route(e, g, { send: 0.1 });
+    const end = env(g.gain, t + 0.4, 0.3, 0.06, 1.2);
+    s.start(t + 0.4); s.stop(end);
+    return end;
+  },
+  // the people who saw you land: a swell of voices, and a few whoops that rise
+  cheer(e, t) {
+    hiss(e, t, { buf: e.pink, type: "bandpass", f: 900, q: 0.7, dur: 1.6, att: 0.18, peak: 0.22, send: 0.2 });
+    hiss(e, t + 0.05, { buf: e.pink, type: "bandpass", f: 2300, q: 1.2, dur: 1.2, att: 0.15, peak: 0.08 });
+    let end = t + 2;
+    for (let i = 0; i < 4; i++) {
+      const at = t + 0.05 + 0.35 * rnd(), f = 260 + 260 * rnd(), d = 0.35 + 0.3 * rnd();
+      const s = osc(e, "sawtooth", f), bp = filt(e, "bandpass", 900 + 600 * rnd(), 3), g = gain(e, 0);
+      s.frequency.setValueAtTime(f, at); s.frequency.exponentialRampToValueAtTime(f * (1.5 + 0.4 * rnd()), at + d * 0.7);
+      s.connect(bp); bp.connect(g); route(e, g, { send: 0.2 });
+      end = Math.max(end, env(g.gain, at, 0.05, 0.04, d));
+      s.start(at); s.stop(end);
+    }
+    return end;
+  },
+  // a hard landing next to people: a sharp breath in, several at once
+  gasp(e, t) {
+    let end = t;
+    for (let i = 0; i < 3; i++) {
+      const at = t + 0.06 * i * rnd(), f = 1500 + 900 * rnd();
+      end = Math.max(end, hiss(e, at, { buf: e.pink, type: "bandpass", f, f2: f * 0.6, sweep: 0.3, q: 2.2, dur: 0.38, att: 0.05, peak: 0.16, send: 0.15 }));
+    }
+    return end;
   },
   // feet on a roof: a thud and gravel
   land(e, t) {
@@ -784,6 +846,13 @@ function cityBed(e) {
   lfo.connect(A.swell.gain);
   const t0 = e.ctx.currentTime;
   rn.start(t0, rnd() * 4); tn.start(t0, rnd() * 2); lfo.start(t0);
+  // the crowd: babble in three voice bands, wobbling fast and unevenly like many people talking at once
+  A.crowd = gain(e, 0, e.ambBus); A.crowdLvl = -1;
+  const cn = noise(e, e.pink), wob = gain(e, 0.6, A.crowd);
+  for (const [f, q, a] of [[520, 1.4, 0.9], [1450, 1.8, 0.55], [2600, 2.5, 0.2]]) { const b = filt(e, "bandpass", f, q); cn.connect(b); b.connect(gain(e, a, wob)); }
+  const cl = osc(e, swells(e.ctx, [[1, 0.2], [3, 0.12], [7, 0.08], [11, 0.06]]), 0.9);
+  cl.connect(wob.gain);
+  cn.start(t0, rnd() * 2); cl.start(t0);
   e.amb = A;
   return A;
 }
@@ -797,6 +866,8 @@ function cityTick(e, t, dt) {
     A.air.frequency.setTargetAtTime(500 + 2500 * low, t, 0.6);
     A.lvl = lvl;
   }
+  const cw = st.amb * st.crowd;
+  if (Math.abs(cw - A.crowdLvl) > 0.01) { A.crowd.gain.setTargetAtTime(CROWD * cw, t, 0.5); A.crowdLvl = cw; }
   const room = e.voices.length < MAX_VOICES - 4; // the city never steals a voice from the game
   A.horn -= dt;
   if (A.horn <= 0) {
@@ -1161,6 +1232,9 @@ export function createAudio(settings) {
     },
     // the city ambience level 0..1 (true = 1): the portal can keep it low until the wall bursts. On by default
     ambience(v) { st.amb = v === true ? 1 : v === false ? 0 : clamp(num(v, 1), 0, 1); },
+    // the people near you, 0..1 (street.js): the murmur follows it. Every frame
+    setCrowd(v) { st.crowd = clamp(num(v), 0, 1); },
+    get crowd() { return st.crowd; },
     // every frame, after setListener: books the music, the city and the loops a little ahead
     update(dt) {
       if (!alive()) return;

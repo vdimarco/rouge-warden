@@ -9,5 +9,162 @@
     "sourceDurationSeconds": 5.041667,
     "productionEncoding": "1920x1080, 24fps, H.264 CRF21, silent, faststart",
     "direction": "Locked camera; flowing rapids and waterfall, wind in flags, foliage and long hair, gentle raft and body motion. Preserve approved face, modest loincloth and composition; no generated text."
+  },
+  "runner-river.png": {
+    "provider": "Higgsfield",
+    "model": "GPT Image 2.5",
+    "jobId": "0300c341-fa4f-4beb-80ef-d372783f88ca",
+    "date": "2026-10-05",
+    "direction": "Empty cinematic turquoise river and jungle banks, forward perspective; no sprites or UI."
+  },
+  "runner-portrait.png": {
+    "provider": "OpenAI ImageGen",
+    "source": "exec-457e28f3-50d6-4de6-9294-3a0a6c7ef693.png",
+    "date": "2026-10-05",
+    "reference": "New runner concept, environment cleaned for portrait play."
+  },
+  "runner-sprites.png": {
+    "provider": "OpenAI ImageGen",
+    "source": "exec-dddd0df0-0c3d-4c9f-8dae-3856fc047485.png",
+    "date": "2026-10-05",
+    "reference": "Approved menu likeness and new runner concept",
+    "format": "1254x1254 RGBA; custom atlas regions in renderer preserve unequal generated rows",
+    "items": [
+      "ride",
+      "jump",
+      "duck",
+      "boulder",
+      "log",
+      "branch gate",
+      "coin",
+      "magnet",
+      "shield"
+    ]
+  },
+  "river-portrait-loop.mp4": {
+    "provider": "fal.ai",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "requestId": "01a10de6-8d12-7250-9252-c22ebb562a03",
+    "sourceUrl": "https://v3b.fal.media/files/b/0aad3501/KzBtqRsoJJC7e-77ac5aE_minimax-h3.mp4",
+    "date": "2026-10-05",
+    "reference": "runner-portrait.png",
+    "input": {
+      "duration": 5,
+      "resolution": "768P",
+      "prompt_expansion_mode": "disabled",
+      "matchingFirstAndLastFrame": true
+    },
+    "encoding": "H.264, 24fps, CRF23, silent, faststart",
+    "direction": "Locked camera; flowing rapids, foam and eddies; preserve shores and temple; no added characters, rafts, hazards or text."
+  },
+  "river-landscape-loop.mp4": {
+    "provider": "fal.ai",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "requestId": "01a10de6-92df-7020-bcc5-2e4e498cf2f7",
+    "sourceUrl": "https://v3b.fal.media/files/b/0aad3501/NsIz5S2jsuVL7mnqdIdbk_minimax-h3.mp4",
+    "date": "2026-10-05",
+    "reference": "runner-river.png",
+    "input": {
+      "duration": 5,
+      "resolution": "768P",
+      "prompt_expansion_mode": "disabled",
+      "matchingFirstAndLastFrame": true
+    },
+    "encoding": "H.264, 24fps, CRF23, silent, faststart",
+    "direction": "Locked camera; flowing rapids, foam and eddies; preserve shores and temple; no added characters, rafts, hazards or text."
+  },
+  "paddle-frames.png": {
+    "provider": "OpenAI ImageGen",
+    "source": "exec-4497622b-f764-442d-aa6f-b9f8e954301c.png",
+    "date": "2026-10-05",
+    "format": "1774x887 RGBA; eight frames in four columns and two rows",
+    "reference": "Approved menu likeness and runner-sprites.png",
+    "direction": "Seamless paddle stroke and recovery, bare torso, long hair, modest loincloth, same raft and camera."
+  },
+  "river-portrait-flow.mp4": {
+    "provider": "fal.ai (derived locally)",
+    "source": "river-portrait-loop.mp4",
+    "requestId": "01a10de6-8d12-7250-9252-c22ebb562a03",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "date": "2026-10-06",
+    "encoding": "512x768, 60fps, H.264 CRF23, silent, faststart",
+    "durationSeconds": 3.916667,
+    "derivation": "Scale, setpts=PTS/1.3, optical-flow interpolation (minterpolate fps=60, mci, aobmc, bidir, vsbmc). Browser-native playback rather than video-to-canvas copying. Original fal clips retained.",
+    "bytes": 1242254
+  },
+  "river-landscape-flow.mp4": {
+    "provider": "fal.ai (derived locally)",
+    "source": "river-landscape-loop.mp4",
+    "requestId": "01a10de6-92df-7020-bcc5-2e4e498cf2f7",
+    "endpoint": "minimax/h3-max/image-to-video",
+    "date": "2026-10-06",
+    "encoding": "768x512, 60fps, H.264 CRF23, silent, faststart",
+    "durationSeconds": 3.916667,
+    "derivation": "Scale, setpts=PTS/1.3, optical-flow interpolation (minterpolate fps=60, mci, aobmc, bidir, vsbmc). Browser-native playback rather than video-to-canvas copying. Original fal clips retained.",
+    "bytes": 885435
+  },
+  "meshy_world": {
+    "source_manifest": "meshy-sources.json",
+    "provider": "Meshy7.1 via fal.ai",
+    "local_models": [
+      "models/meshy-raft.glb",
+      "models/meshy-bank.glb",
+      "models/meshy-palm.glb"
+    ],
+    "software_variants": [
+      "models/meshy-bank-lite.glb",
+      "models/meshy-palm-lite.glb"
+    ],
+    "runtime_generation_service_dependency": false,
+    "character": "fal-generated skeletal rider, photographic sprites retained for fallback; see temple-rig-sources.json"
+  },
+  "rider-downstream.png": {
+    "source_manifest": "downstream-art.json",
+    "provider": "fal.ai Nano Banana Pro + Pixelcut",
+    "date": "2026-10-06",
+    "format": "2048x1408 RGBA; eight registered 512x704 poses",
+    "direction": "Rear view faces downstream. Separate anatomical jump and folded duck silhouettes."
+  },
+  "rider-low-duck.png": {
+    "source_manifest": "low-duck-texture-sources.json",
+    "format": "512x704 RGBA with independent 448x235 near-prone brace, deck anchor684",
+    "provider": "fal.ai Nano Banana Pro Edit + Pixelcut",
+    "date": "2026-10-06"
+  },
+  "surface-textures": {
+    "source_manifest": "low-duck-texture-sources.json",
+    "provider": "fal.ai Nano Banana Pro",
+    "date": "2026-10-06",
+    "diffuse": [
+      "surface-rock.webp",
+      "surface-wood.webp",
+      "surface-ground.webp",
+      "surface-water.webp"
+    ],
+    "diffuse_size": 1024,
+    "derived_normal_size": 512,
+    "normal_maps": [
+      "surface-rock-normal.png",
+      "surface-wood-normal.png",
+      "surface-ground-normal.png"
+    ],
+    "runtime_service_dependency": false,
+    "diffuse_encoding": "WebP quality90; lossless PNG normals"
+  },
+  "temple_rig_upgrade": {
+    "provider": "fal.ai \u2192 Nano Banana Pro \u2192 Meshy 7.1",
+    "source_manifest": "temple-rig-sources.json",
+    "local_models": [
+      "models/meshy-temple-raft.glb",
+      "models/meshy-temple.glb",
+      "models/meshy-guardian.glb",
+      "models/meshy-rider.glb"
+    ],
+    "software_variants": [
+      "models/meshy-temple-lite.glb",
+      "models/meshy-guardian-lite.glb"
+    ],
+    "character": "Humanoid skeletal rider, coordinated continuous paddling and distinct jump/near-prone duck; rear-facing sprite fallback retained.",
+    "runtime_generation_service_dependency": false
   }
 }

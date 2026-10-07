@@ -1,8 +1,11 @@
 // Bot teammates talk like players: short lines from pings, kills and objectives.
-import { SIZE, distance } from './world.js';
+import { PATHS, distance, closestTrack } from './world.js';
 import { HANDLES } from './draft.js';
+import { HERO_IDENTITIES } from './hero-identities.js';
 
-export const laneAt = p => p.x < SIZE * .38 ? 'West' : p.x > SIZE * .62 ? 'East' : 'Middle';
+// The nearest lane names a place; the lanes curve, so map fractions would mislabel the middle lane.
+const LANE_LABELS = ['West', 'Middle', 'East'];
+export const laneAt = p => LANE_LABELS[PATHS.map(path => distance(p, path[closestTrack(p, path)])).reduce((best, d, i, all) => d < all[best] ? i : best, 0)];
 const pick = (list, n) => list[Math.abs(Math.floor(n)) % list.length];
 
 // Returns [{ unitId, text, all? }] for a new fact. `bots` are allied bot heroes; `player` is the human hero.
@@ -18,6 +21,7 @@ export function chatFor(fact, s, { player, bots, handleOf }) {
       const foe = s.units.filter(u => u.kind === 'hero' && u.team === 1 && u.hp > 0).sort((a, b) => distance(a, source) - distance(b, source))[0];
       return [{ unitId: source.id, text: pick([`Fighting ${foe?.name || 'them'} ${lane}!`, `${foe?.name || 'Enemy'} on me, ${lane}!`, `Help ${lane}!`], seed) }];
     }
+    if (fact.type === 'missing') { const foe = unit(fact.target), bot = nearestBot(fact); return bot && foe ? [{ unitId: bot.id, text: pick([`${foe.name} missing ${lane}!`, `${foe.name} left ${lane}. Careful.`, `Lost sight of ${foe.name} ${lane}.`], seed) }] : []; }
     if (fact.type === 'defend') { const bot = nearestBot(fact); return bot ? [{ unitId: bot.id, text: pick([`${lane} ward is under attack. I'll go.`, `They're hitting our ${lane} ward!`], seed) }] : []; }
     return [];
   }
@@ -36,7 +40,7 @@ export function chatFor(fact, s, { player, bots, handleOf }) {
   }
   if (fact.kind === 'message') {
     const bot = pick(bots, seed);
-    const lines = { 'The Wild Hunt awakens': 'Hunt is up. Group middle?', 'Enemy ward broken': 'Ward down! Push on.', 'Our ward has fallen': 'We lost a ward. Careful.', 'The Wild Hunt rides with us': 'The Hunt is ours. Push with it!', 'Enemy claimed the Wild Hunt': 'They have the Hunt. Defend!', 'Legends never die': 'gg wp', 'Lost to the veil': 'gg. Next one is ours.' };
+    const lines = { 'The Wild Hunt awakens': 'Hunt is up. Group at the ford?', 'Enemy ward broken': 'Ward down! Push on.', 'Our ward has fallen': 'We lost a ward. Careful.', 'Enemy guardian down': 'Guardian down! Hit the rift.', 'Our guardian has fallen': 'They broke a guardian. Back to base!', 'Sudden death': 'Sudden death. All in!', 'The Wild Hunt rides with us': 'The Hunt is ours. Push with it!', 'Enemy claimed the Wild Hunt': 'They have the Hunt. Defend!', 'Legends never die': 'gg wp', 'Lost to the veil': 'gg. Next one is ours.' };
     return bot && lines[fact.title] ? [{ unitId: bot.id, text: lines[fact.title] }] : [];
   }
   if (fact.kind === 'start') return bots.slice(0, 2).map((b, i) => ({ unitId: b.id, text: i ? 'glhf' : pick(['Let’s go! Call if you need me.', 'Ready. Ping and I come.', 'Good luck all.'], seed) }));
@@ -63,7 +67,10 @@ export class TeamChat {
     const li = document.createElement('li'), who = document.createElement('b'), text = document.createElement('span');
     li.className = line.all ? 'all' : 'team'; li.dataset.time = s.time;
     who.textContent = `${line.all ? '[All] ' : ''}${this.handles.get(unit.id) || unit.name} (${unit.name}):`; who.style.color = line.all ? '#ff9f8c' : '';
-    text.textContent = ` ${line.text}`; li.append(who, text);
+    text.textContent = ` ${line.text}`;
+    // The speaker's portrait leads the line, so a glance shows who is talking.
+    const slug = HERO_IDENTITIES[unit.identity]?.slug, words = document.createElement('span');
+    words.append(who, text); if (slug) li.append(Object.assign(document.createElement('img'), { src: `./art/portraits/${slug}-bust.webp`, alt: '' })); li.append(words);
     this.el.append(li); while (this.el.children.length > 4) this.el.firstChild.remove();
     this.sound.chat();
   }

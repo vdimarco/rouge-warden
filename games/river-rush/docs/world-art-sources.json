@@ -1,0 +1,660 @@
+{
+  "createdAt": "2026-10-06",
+  "provider": "fal",
+  "style": "Sculpted jungle river adventure: jade, sandstone, turquoise, coral",
+  "pricing": {
+    "image": {
+      "unit_price": 0.15,
+      "unit": "images"
+    },
+    "model": {
+      "unit_price": 0.015,
+      "unit": "units",
+      "baseUnits": 25,
+      "pbrUnits": 10,
+      "customFaceCountUnits": 10,
+      "totalPerGenerationUSD": 0.675,
+      "source": "https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/pro/image-to-3d"
+    }
+  },
+  "assets": {
+    "canopy": {
+      "concept": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/nano-banana-pro",
+          "input": {
+            "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. One majestic tropical kapok canopy tree game prop isolated on a pure white background. Full tree entirely visible with margin, front three-quarter view. Huge twisting russet trunk with large sculpted buttress roots, branching sweeping limbs, broad umbrella canopy of distinct dense rounded leaf clusters, hanging lianas, epiphytic orchids and brilliant coral bromeliads growing in trunk clefts, moss, carved flowing bark grain. Interesting asymmetric silhouette, generous canopy with gaps between branches. Single self-contained tree on a small root base, no ground plane, no other objects, no shadow.",
+            "num_images": 1,
+            "resolution": "2K",
+            "aspect_ratio": "1:1",
+            "output_format": "png",
+            "seed": 204812
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11254-3835-7ad1-9589-afa01faad168",
+        "endpoint_id": "fal-ai/nano-banana-pro",
+        "status_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-3835-7ad1-9589-afa01faad168/status",
+        "response_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-3835-7ad1-9589-afa01faad168",
+        "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-3835-7ad1-9589-afa01faad168/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. One majestic tropical kapok canopy tree game prop isolated on a pure white background. Full tree entirely visible with margin, front three-quarter view. Huge twisting russet trunk with large sculpted buttress roots, branching sweeping limbs, broad umbrella canopy of distinct dense rounded leaf clusters, hanging lianas, epiphytic orchids and brilliant coral bromeliads growing in trunk clefts, moss, carved flowing bark grain. Interesting asymmetric silhouette, generous canopy with gaps between branches. Single self-contained tree on a small root base, no ground plane, no other objects, no shadow.",
+          "num_images": 1,
+          "resolution": "2K",
+          "aspect_ratio": "1:1",
+          "output_format": "png",
+          "seed": 204812
+        },
+        "result": {
+          "images": [
+            {
+              "url": "https://v3b.fal.media/files/b/0aad5207/Lp86KXj4LodbTxNe9Gg-F_ViWln7sP.png",
+              "content_type": "image/png",
+              "file_name": "Lp86KXj4LodbTxNe9Gg-F_ViWln7sP.png",
+              "file_size": null,
+              "width": null,
+              "height": null
+            }
+          ],
+          "description": ""
+        }
+      },
+      "model": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d",
+          "input": {
+            "input_image_url": "https://v3b.fal.media/files/b/0aad5207/Lp86KXj4LodbTxNe9Gg-F_ViWln7sP.png",
+            "generate_type": "Normal",
+            "face_count": 40000,
+            "enable_pbr": true
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11256-1cf2-7ec1-94d2-f527d8a22b72",
+        "endpoint_id": "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d",
+        "status_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-1cf2-7ec1-94d2-f527d8a22b72/status",
+        "response_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-1cf2-7ec1-94d2-f527d8a22b72",
+        "cancel_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-1cf2-7ec1-94d2-f527d8a22b72/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "input_image_url": "https://v3b.fal.media/files/b/0aad5207/Lp86KXj4LodbTxNe9Gg-F_ViWln7sP.png",
+          "generate_type": "Normal",
+          "face_count": 40000,
+          "enable_pbr": true
+        },
+        "result": {
+          "model_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad522d/qbdAY87AYc_KJMBc_z5xZ_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 28212796
+          },
+          "thumbnail": {
+            "url": "https://v3b.fal.media/files/b/0aad522e/1EV6LLMCYDO6N3AxqYsL3_preview.png",
+            "content_type": "image/png",
+            "file_name": "preview.png",
+            "file_size": 113481
+          },
+          "model_urls": {
+            "glb": {
+              "url": "https://v3b.fal.media/files/b/0aad522d/qbdAY87AYc_KJMBc_z5xZ_model.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "model.glb",
+              "file_size": 28212796
+            },
+            "fbx": null,
+            "obj": {
+              "url": "https://v3b.fal.media/files/b/0aad522d/R0W6bzh5Y8lJIfAwoOWDl_8685c41ba53d5b4270c3370c62d01ecc.obj",
+              "content_type": "model/obj",
+              "file_name": "8685c41ba53d5b4270c3370c62d01ecc.obj",
+              "file_size": 2769360
+            },
+            "mtl": {
+              "url": "https://v3b.fal.media/files/b/0aad522d/MRurd-ZkYwb9wC86QxVRq_material.mtl",
+              "content_type": "text/plain",
+              "file_name": "material.mtl",
+              "file_size": 245
+            },
+            "texture": {
+              "url": "https://v3b.fal.media/files/b/0aad522d/_lMhe_CMv3uUimzBi_eeU_texture_pbr_20250901_metallic.png",
+              "content_type": "image/png",
+              "file_name": "texture_pbr_20250901_metallic.png",
+              "file_size": 2249901
+            },
+            "usdz": null
+          },
+          "seed": null
+        }
+      },
+      "localFull": {
+        "path": "games/river-rush/public/models/fal-canopy.glb",
+        "bytes": 388620,
+        "sha256": "2c0bd26f50344cb0fcd479d8e26dc3dcd84f39eb5ce8041fc4717f9932574c0a",
+        "triangles": 9736,
+        "maps": [
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 1024,
+            "height": 1024,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          }
+        ]
+      },
+      "localLite": {
+        "path": "games/river-rush/public/models/fal-canopy-lite.glb",
+        "bytes": 118724,
+        "sha256": "9adae338e41f3d4e94604948acb3670c62d38ae7e7044133f1a59f86fb36ecdb",
+        "triangles": 2784,
+        "maps": [
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          }
+        ]
+      },
+      "packing": {
+        "native": {
+          "target": 8500,
+          "maxError": 0.025,
+          "colorTexture": 1024,
+          "normalOrmTextures": 512
+        },
+        "lite": {
+          "target": 2800,
+          "maxError": 0.08,
+          "textures": 512,
+          "uvWeightedPermissive": true
+        },
+        "bakeSourceWorldTransform": true,
+        "turnDegrees": 0,
+        "runtimeFarLodBeyondMeters": 90
+      }
+    },
+    "harbor": {
+      "concept": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/nano-banana-pro",
+          "input": {
+            "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. One spectacular jungle river watchtower pavilion landmark, isolated on pure white background, full object entirely visible, three-quarter view. A tall open-sided temple pavilion raised on four ornate sandstone piers, a wide tiered teal glazed tile roof with gracefully curling corners, large carved jaguar masks and gold sun medallions, coral orange cloth banners hanging from roof, creeping ivy and orchids on piers, a timber balcony with intricately woven rails and rope moorings, weathered stone steps at the base. A small old carved waterwheel integrated against one side. Elegant fantasy Mesoamerican river architecture with a rich tactile adventurous silhouette. No lettering, no people, no ground plane, no water, no outside scene, soft neutral studio lighting, no shadow.",
+            "num_images": 1,
+            "resolution": "2K",
+            "aspect_ratio": "1:1",
+            "output_format": "png",
+            "seed": 204813
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11254-3f45-7fb2-b938-d299e9971e60",
+        "endpoint_id": "fal-ai/nano-banana-pro",
+        "status_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-3f45-7fb2-b938-d299e9971e60/status",
+        "response_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-3f45-7fb2-b938-d299e9971e60",
+        "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-3f45-7fb2-b938-d299e9971e60/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. One spectacular jungle river watchtower pavilion landmark, isolated on pure white background, full object entirely visible, three-quarter view. A tall open-sided temple pavilion raised on four ornate sandstone piers, a wide tiered teal glazed tile roof with gracefully curling corners, large carved jaguar masks and gold sun medallions, coral orange cloth banners hanging from roof, creeping ivy and orchids on piers, a timber balcony with intricately woven rails and rope moorings, weathered stone steps at the base. A small old carved waterwheel integrated against one side. Elegant fantasy Mesoamerican river architecture with a rich tactile adventurous silhouette. No lettering, no people, no ground plane, no water, no outside scene, soft neutral studio lighting, no shadow.",
+          "num_images": 1,
+          "resolution": "2K",
+          "aspect_ratio": "1:1",
+          "output_format": "png",
+          "seed": 204813
+        },
+        "result": {
+          "images": [
+            {
+              "url": "https://v3b.fal.media/files/b/0aad5207/M8Q9Jil-J8JA0M4Z_Ya0g_z9VsdQop.png",
+              "content_type": "image/png",
+              "file_name": "M8Q9Jil-J8JA0M4Z_Ya0g_z9VsdQop.png",
+              "file_size": null,
+              "width": null,
+              "height": null
+            }
+          ],
+          "description": ""
+        }
+      },
+      "model": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d",
+          "input": {
+            "input_image_url": "https://v3b.fal.media/files/b/0aad5207/M8Q9Jil-J8JA0M4Z_Ya0g_z9VsdQop.png",
+            "generate_type": "Normal",
+            "face_count": 40000,
+            "enable_pbr": true
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11256-233f-7ae2-9554-b0d02a712e3c",
+        "endpoint_id": "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d",
+        "status_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-233f-7ae2-9554-b0d02a712e3c/status",
+        "response_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-233f-7ae2-9554-b0d02a712e3c",
+        "cancel_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-233f-7ae2-9554-b0d02a712e3c/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "input_image_url": "https://v3b.fal.media/files/b/0aad5207/M8Q9Jil-J8JA0M4Z_Ya0g_z9VsdQop.png",
+          "generate_type": "Normal",
+          "face_count": 40000,
+          "enable_pbr": true
+        },
+        "result": {
+          "model_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad522a/44-u6CBNCu4YKUg_DtPod_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 39020540
+          },
+          "thumbnail": {
+            "url": "https://v3b.fal.media/files/b/0aad522b/W1XgYN2fS-JNn5KYiTT59_preview.png",
+            "content_type": "image/png",
+            "file_name": "preview.png",
+            "file_size": 193644
+          },
+          "model_urls": {
+            "glb": {
+              "url": "https://v3b.fal.media/files/b/0aad522a/44-u6CBNCu4YKUg_DtPod_model.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "model.glb",
+              "file_size": 39020540
+            },
+            "fbx": null,
+            "obj": {
+              "url": "https://v3b.fal.media/files/b/0aad522a/LBi7r7zzHRUF2sHdxU79L_0d3757be6d64f85bad4dd1e00d5b1bd7.obj",
+              "content_type": "model/obj",
+              "file_name": "0d3757be6d64f85bad4dd1e00d5b1bd7.obj",
+              "file_size": 2769075
+            },
+            "mtl": {
+              "url": "https://v3b.fal.media/files/b/0aad522a/tAxRni2FjRjTq-GH3aN1Y_material.mtl",
+              "content_type": "text/plain",
+              "file_name": "material.mtl",
+              "file_size": 245
+            },
+            "texture": {
+              "url": "https://v3b.fal.media/files/b/0aad522a/QGDBfpxMM58RbLt9zO86__texture_pbr_20250901_metallic.png",
+              "content_type": "image/png",
+              "file_name": "texture_pbr_20250901_metallic.png",
+              "file_size": 2687724
+            },
+            "usdz": null
+          },
+          "seed": null
+        }
+      },
+      "localFull": {
+        "path": "games/river-rush/public/models/fal-harbor.glb",
+        "bytes": 459912,
+        "sha256": "6dc3b0b6a4897db26c339d5ef6c8a9a9a148136110116225eff8c265cb19b377",
+        "triangles": 9172,
+        "maps": [
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 1024,
+            "height": 1024,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          }
+        ]
+      },
+      "localLite": {
+        "path": "games/river-rush/public/models/fal-harbor-lite.glb",
+        "bytes": 158348,
+        "sha256": "319aa17cd57b4f08344465632c135f0e9cf3cc15fe0e721c6ad6e4993084ace9",
+        "triangles": 2740,
+        "maps": [
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          }
+        ]
+      },
+      "packing": {
+        "native": {
+          "target": 8500,
+          "maxError": 0.025,
+          "colorTexture": 1024,
+          "normalOrmTextures": 512
+        },
+        "lite": {
+          "target": 2800,
+          "maxError": 0.08,
+          "textures": 512,
+          "uvWeightedPermissive": true
+        },
+        "bakeSourceWorldTransform": true,
+        "turnDegrees": 0,
+        "runtimeFarLodBeyondMeters": 90
+      }
+    },
+    "driftwood": {
+      "concept": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/nano-banana-pro",
+          "input": {
+            "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. A single horizontal fallen jungle tree trunk obstacle isolated on pure white background, three-quarter camera view, whole object visible. Thick heavy twisted honey-brown log with sculpted bark ridges and curved silhouette, richly detailed end-grain concentric wood rings on both cut ends, bright emerald moss along its top, clusters of tiny coral shelf mushrooms on one side, ONE short broken branch stub. Log horizontal left to right, base width 5 times height, compact silhouette with no tall branches. Beautiful polished game object, no ground, no rocks, no shadow.",
+            "num_images": 1,
+            "resolution": "2K",
+            "aspect_ratio": "1:1",
+            "output_format": "png",
+            "seed": 204814
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11254-44de-7ad1-b035-077045855b95",
+        "endpoint_id": "fal-ai/nano-banana-pro",
+        "status_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-44de-7ad1-b035-077045855b95/status",
+        "response_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-44de-7ad1-b035-077045855b95",
+        "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-44de-7ad1-b035-077045855b95/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. A single horizontal fallen jungle tree trunk obstacle isolated on pure white background, three-quarter camera view, whole object visible. Thick heavy twisted honey-brown log with sculpted bark ridges and curved silhouette, richly detailed end-grain concentric wood rings on both cut ends, bright emerald moss along its top, clusters of tiny coral shelf mushrooms on one side, ONE short broken branch stub. Log horizontal left to right, base width 5 times height, compact silhouette with no tall branches. Beautiful polished game object, no ground, no rocks, no shadow.",
+          "num_images": 1,
+          "resolution": "2K",
+          "aspect_ratio": "1:1",
+          "output_format": "png",
+          "seed": 204814
+        },
+        "result": {
+          "images": [
+            {
+              "url": "https://v3b.fal.media/files/b/0aad5207/zSfjJ-HQcagvJhHm1sdzg_UswLd3n2.png",
+              "content_type": "image/png",
+              "file_name": "zSfjJ-HQcagvJhHm1sdzg_UswLd3n2.png",
+              "file_size": null,
+              "width": null,
+              "height": null
+            }
+          ],
+          "description": ""
+        }
+      },
+      "model": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d",
+          "input": {
+            "input_image_url": "https://v3b.fal.media/files/b/0aad5207/zSfjJ-HQcagvJhHm1sdzg_UswLd3n2.png",
+            "generate_type": "Normal",
+            "face_count": 40000,
+            "enable_pbr": true
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11256-2cd3-7770-a2a1-f5d0a4a5542f",
+        "endpoint_id": "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d",
+        "status_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-2cd3-7770-a2a1-f5d0a4a5542f/status",
+        "response_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-2cd3-7770-a2a1-f5d0a4a5542f",
+        "cancel_url": "https://queue.fal.run/fal-ai/hunyuan-3d/requests/01a11256-2cd3-7770-a2a1-f5d0a4a5542f/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "input_image_url": "https://v3b.fal.media/files/b/0aad5207/zSfjJ-HQcagvJhHm1sdzg_UswLd3n2.png",
+          "generate_type": "Normal",
+          "face_count": 40000,
+          "enable_pbr": true
+        },
+        "result": {
+          "model_glb": {
+            "url": "https://v3b.fal.media/files/b/0aad5222/xr_KO1PVYh4b0vMzI8fE2_model.glb",
+            "content_type": "model/gltf-binary",
+            "file_name": "model.glb",
+            "file_size": 34064724
+          },
+          "thumbnail": {
+            "url": "https://v3b.fal.media/files/b/0aad5223/tsIinHcBiYA18Na9W001a_preview.png",
+            "content_type": "image/png",
+            "file_name": "preview.png",
+            "file_size": 128393
+          },
+          "model_urls": {
+            "glb": {
+              "url": "https://v3b.fal.media/files/b/0aad5222/xr_KO1PVYh4b0vMzI8fE2_model.glb",
+              "content_type": "model/gltf-binary",
+              "file_name": "model.glb",
+              "file_size": 34064724
+            },
+            "fbx": null,
+            "obj": {
+              "url": "https://v3b.fal.media/files/b/0aad5222/zgv_NJybmFfd-tLpPvFAm_2660648af9eb62b8c18a7607ba1a0c8f.obj",
+              "content_type": "model/obj",
+              "file_name": "2660648af9eb62b8c18a7607ba1a0c8f.obj",
+              "file_size": 2534852
+            },
+            "mtl": {
+              "url": "https://v3b.fal.media/files/b/0aad5222/d6_XGhpUh4QjI4DE5gTvO_material.mtl",
+              "content_type": "text/plain",
+              "file_name": "material.mtl",
+              "file_size": 245
+            },
+            "texture": {
+              "url": "https://v3b.fal.media/files/b/0aad5222/Jd6JrQIjFJVzhA_K1_HMo_texture_pbr_20250901_metallic.png",
+              "content_type": "image/png",
+              "file_name": "texture_pbr_20250901_metallic.png",
+              "file_size": 2762516
+            },
+            "usdz": null
+          },
+          "seed": null
+        }
+      },
+      "localFull": {
+        "path": "games/river-rush/public/models/fal-driftwood.glb",
+        "bytes": 235600,
+        "sha256": "9ded69c20f75df498d7e11dbd6d5a8729b82a8dce4b7461c0c0852b91dcec2ee",
+        "triangles": 5000,
+        "maps": [
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 1024,
+            "height": 1024,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          }
+        ]
+      },
+      "localLite": {
+        "path": "games/river-rush/public/models/fal-driftwood-lite.glb",
+        "bytes": 110812,
+        "sha256": "11b29b8ef3863100047cde0bbf381a8a565ff2a0def25c694a99f46e1bec6ad8",
+        "triangles": 1700,
+        "maps": [
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          },
+          {
+            "width": 512,
+            "height": 512,
+            "mime": "image/webp"
+          }
+        ]
+      },
+      "packing": {
+        "native": {
+          "target": 5000,
+          "maxError": 0.025,
+          "colorTexture": 1024,
+          "normalOrmTextures": 512
+        },
+        "lite": {
+          "target": 1700,
+          "maxError": 0.06,
+          "textures": 512,
+          "uvWeightedPermissive": false
+        },
+        "bakeSourceWorldTransform": true,
+        "turnDegrees": 0,
+        "runtimeFarLodBeyondMeters": 90
+      }
+    },
+    "vista": {
+      "concept": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/nano-banana-pro",
+          "input": {
+            "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. Wide panoramic distant background matte painting for a jungle river endless runner. Eye level looking straight downstream into a lost emerald valley at sunrise. Brilliant cyan-blue sky taking the UPPER HALF, large layered fluffy peach-lit clouds, distant blue atmospheric mountain silhouettes, tall sculpted sandstone cliffs with lush rainforest canopy and hanging vines at left and right edges, cascading thin waterfalls on cliff faces, tiny golden stepped temple spires among distant trees, flocks of tiny birds, an open bright misty river valley centered at the LOWER HALF. Very strong depth with foreground dark framing foliage at extreme edges only, luminous middle distance, pale turquoise distant center. Horizon at 58 percent down. Broad colorful forms and finely painted texture detail. No character, no raft, no foreground river surface, no HUD, no text, no logo. Center completely open and distant. Background only, no obstacles. 21:9 panoramic landscape composition.",
+            "num_images": 1,
+            "resolution": "2K",
+            "aspect_ratio": "21:9",
+            "output_format": "png",
+            "seed": 204815
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11254-4abb-7be1-b391-e52a59778a9e",
+        "endpoint_id": "fal-ai/nano-banana-pro",
+        "status_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-4abb-7be1-b391-e52a59778a9e/status",
+        "response_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-4abb-7be1-b391-e52a59778a9e",
+        "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11254-4abb-7be1-b391-e52a59778a9e/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo. Wide panoramic distant background matte painting for a jungle river endless runner. Eye level looking straight downstream into a lost emerald valley at sunrise. Brilliant cyan-blue sky taking the UPPER HALF, large layered fluffy peach-lit clouds, distant blue atmospheric mountain silhouettes, tall sculpted sandstone cliffs with lush rainforest canopy and hanging vines at left and right edges, cascading thin waterfalls on cliff faces, tiny golden stepped temple spires among distant trees, flocks of tiny birds, an open bright misty river valley centered at the LOWER HALF. Very strong depth with foreground dark framing foliage at extreme edges only, luminous middle distance, pale turquoise distant center. Horizon at 58 percent down. Broad colorful forms and finely painted texture detail. No character, no raft, no foreground river surface, no HUD, no text, no logo. Center completely open and distant. Background only, no obstacles. 21:9 panoramic landscape composition.",
+          "num_images": 1,
+          "resolution": "2K",
+          "aspect_ratio": "21:9",
+          "output_format": "png",
+          "seed": 204815
+        },
+        "result": {
+          "images": [
+            {
+              "url": "https://v3b.fal.media/files/b/0aad5207/NVu3v4zUm76lXghu_5w_b_FFTRo9sc.png",
+              "content_type": "image/png",
+              "file_name": "NVu3v4zUm76lXghu_5w_b_FFTRo9sc.png",
+              "file_size": null,
+              "width": null,
+              "height": null
+            }
+          ],
+          "description": ""
+        }
+      },
+      "local": "games/river-rush/public/art/valley-vista.webp",
+      "bytes": 412202,
+      "sha256": "4a4ce6ab17088d6f8611cd644ad05a9637956a35881d7e5ba4582cdd34691aa4"
+    },
+    "ground": {
+      "concept": {
+        "status": "submitted",
+        "recipe": {
+          "endpoint_id": "fal-ai/nano-banana-pro",
+          "input": {
+            "prompt": "Seamless tileable hand-painted stylized 3D adventure game ground albedo texture, orthographic top down surface only. Lush bright jade green tropical moss carpet with tiny clusters of fern leaves and small emerald clover, olive and lime green softly varying patches, a few small warm sandstone pebbles half buried, fine organic plant detail. Dense beautiful moss floor. Green covers 95 percent of the image. Diffuse base color only, evenly lit, no shadows, no highlights, no perspective, no objects, no text, no borders. Seamless edges in both axes, high quality animated jungle adventure art.",
+            "num_images": 1,
+            "aspect_ratio": "1:1",
+            "resolution": "2K",
+            "output_format": "png",
+            "seed": 204816
+          },
+          "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+        },
+        "request_id": "01a11260-948b-7313-a53a-ed58ee691738",
+        "endpoint_id": "fal-ai/nano-banana-pro",
+        "status_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11260-948b-7313-a53a-ed58ee691738/status",
+        "response_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11260-948b-7313-a53a-ed58ee691738",
+        "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/01a11260-948b-7313-a53a-ed58ee691738/cancel",
+        "poll_after_seconds": 20,
+        "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+        "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes.",
+        "input": {
+          "prompt": "Seamless tileable hand-painted stylized 3D adventure game ground albedo texture, orthographic top down surface only. Lush bright jade green tropical moss carpet with tiny clusters of fern leaves and small emerald clover, olive and lime green softly varying patches, a few small warm sandstone pebbles half buried, fine organic plant detail. Dense beautiful moss floor. Green covers 95 percent of the image. Diffuse base color only, evenly lit, no shadows, no highlights, no perspective, no objects, no text, no borders. Seamless edges in both axes, high quality animated jungle adventure art.",
+          "num_images": 1,
+          "aspect_ratio": "1:1",
+          "resolution": "2K",
+          "output_format": "png",
+          "seed": 204816
+        },
+        "result": {
+          "images": [
+            {
+              "url": "https://v3b.fal.media/files/b/0aad5258/iZi1zHyUTw-e7mV6lFif6_EXSiXWUZ.png",
+              "content_type": "image/png",
+              "file_name": "iZi1zHyUTw-e7mV6lFif6_EXSiXWUZ.png",
+              "file_size": null,
+              "width": null,
+              "height": null
+            }
+          ],
+          "description": ""
+        }
+      },
+      "local": "games/river-rush/public/art/surface-ground.webp",
+      "normal": "games/river-rush/public/art/surface-ground-normal.png",
+      "packing": "node scripts/pack-ground.mjs downloaded-ground.png",
+      "bytes": 109712,
+      "sha256": "bc40d72d770048b945a347b8ad4b672b2028617880ecf7a404a0d297b8e4f440"
+    }
+  },
+  "estimatedGenerationCostUSD": 2.775
+}

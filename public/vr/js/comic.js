@@ -298,6 +298,7 @@ export function loadArt(renderer) {
     tex("windows.webp", (t) => { t.anisotropy = aniso; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; }),
     tex("words.webp", (t) => { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; }),
     rects,
-  ]).then(([sky, windows, words, wordRects]) => (artDone = { sky, windows, words, wordRects }));
+    tex("rooms.webp", (t) => { t.anisotropy = aniso; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; }),
+  ]).then(([sky, windows, words, wordRects, rooms]) => (artDone = { sky, windows, words, wordRects, rooms }));
   return artPromise;
 }

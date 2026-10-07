@@ -3,8 +3,9 @@ import {createMatch,player,cast,requestCast,step,damage} from '../../public/tide
 import {attackTiming} from '../../public/tidebreak/basic-attacks.js';
 import {CENTER} from '../../public/tidebreak/world.js';
 import {castTiming} from '../../public/tidebreak/combat-state.js';
+import { near } from './open-ground.mjs';
 
-const setup=(hero=4)=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{x:2400,y:2800,level:6,skillRanks:[1,1,1,1],nextShop:Infinity,power:0});return{s,p};};
+const setup=(hero=4)=>{const s=createMatch(hero,42),p=player(s);s.units=[p];s.nextWave=s.objectiveAt=Infinity;s.campTimers=s.campTimers.map(()=>Infinity);Object.assign(p,{...near(2400,2800),level:6,skillRanks:[1,1,1,1],nextShop:Infinity,power:0});return{s,p};};
 const foe=(s,p,extra={})=>{const t={id:900+s.units.length,kind:'minion',team:1,x:p.x,y:p.y-120,radius:16,hp:10000,maxHp:10000,shield:0,armor:0,speed:0,damage:0,range:0,attackCd:999,stun:0,slow:0,fear:0,lane:1,lastHit:0,...extra};s.units.push(t);p.target=t.id;return t;};
 const advance=(s,seconds,input={attack:false})=>{for(let i=0;i<Math.ceil(seconds*100);i++)step(s,input,.01);};
 
@@ -26,7 +27,7 @@ const advance=(s,seconds,input={attack:false})=>{for(let i=0;i<Math.ceil(seconds
  assert(requestCast(s,p,2,{x:0,y:-1,distance:300}));const intent=p.castIntent;assert.equal(p.mana,mana);assert.equal(p.cd[2],0);assert.equal(t.hp,health);
  const x=p.x;advance(s,.15,{x:1,attack:false});assert.equal(p.x,x,'committed aim holds its origin');assert.equal(p.castIntent.aim.y,-1);
  t.x+=700;advance(s,.28);assert.equal(p.castIntent,null);assert.equal(t.hp,health,'moving outside locked aim avoids the lance');assert(p.cd[2]>0);assert(p.mana<mana);assert(p.recoveryUntil>s.time);
- assert.equal(requestCast(s,p,0),false,'recovery creates a short cost before an escape');advance(s,.2);assert.equal(requestCast(s,p,0),false,'extended punish window remains active');advance(s,.07);assert(requestCast(s,p,0),'quick defense resumes after recovery');
+ assert.equal(requestCast(s,p,0),false,'recovery creates a short cost before an escape');assert(p.exposedUntil>s.time,'a missed cast leaves the caster exposed');advance(s,.2);assert.equal(requestCast(s,p,0),false,'extended punish window remains active');advance(s,.32);assert(requestCast(s,p,0),'quick defense resumes after recovery');
 }
 for(const status of ['stun','fear','silencedUntil']){
  const {s,p}=setup(4);foe(s,p);const mana=p.mana;assert(requestCast(s,p,2,{x:0,y:-1}));p[status]=1;advance(s,.02);
@@ -34,8 +35,8 @@ for(const status of ['stun','fear','silencedUntil']){
 }
 {
  const {s,p}=setup(4),t=foe(s,p,{x:p.x+450,y:p.y+310}),puller=player(createMatch(1));
- Object.assign(p,{x:3200,y:3200});Object.assign(t,{x:3650,y:3510});
- Object.assign(puller,{id:700,player:false,team:1,x:3200,y:3580,skillRanks:[1,1,1,1],nextShop:Infinity});s.units.push(puller);
+ Object.assign(p,near(2400,2800));Object.assign(t,near(2850,3110));
+ Object.assign(puller,{id:700,player:false,team:1,...near(2400,3180),skillRanks:[1,1,1,1],nextShop:Infinity});s.units.push(puller);
  const mana=p.mana,hp=t.hp;assert(requestCast(s,p,1,{x:1,y:0}));const origin=p.castIntent.origin;
  assert(cast(s,puller,1,{x:0,y:-1}));assert(p.y>origin.y+200,'a pull moves the committed caster');
  advance(s,.4);assert.equal(p.castIntent,null);assert.equal(p.mana,mana);assert.equal(p.cd[1],0);assert.equal(t.hp,hp,'displacement cannot move damage outside the shown warning');

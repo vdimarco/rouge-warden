@@ -1,10 +1,10 @@
 ## ADDED Requirements
 
-### Requirement: SWING and a tap use the auto target, and a ring marks it
-On a phone, the SWING button SHALL fire the right rope at the auto target. A tap on a building SHALL fire at that exact building, as the one-tap scheme of `swing-phone-play` says. While a target exists, a lock-on ring 56 px across SHALL sit on it. While no target exists, the SWING button SHALL be dimmed but SHALL still work. With a rope idle, the hand rays SHALL point at the target on every frame, so the ring and the reticle stay on it. The one-tap behaviour (the rope lets go by itself, the speed kick, the plunge of a clog) SHALL NOT change.
+### Requirement: A tap uses the auto target, and a ring marks it
+On a phone, a tap SHALL fire the plunger of its half of the screen (`swing-two-thumb`); with no building under the tap it SHALL fire at the auto target. A tap on a building SHALL fire at that exact building, as the one-tap scheme of `swing-phone-play` says. While a target exists, a lock-on ring 56 px across SHALL sit on it. While no target exists, the SWING button SHALL be dimmed but SHALL still work. With a rope idle, the hand rays SHALL point at the target on every frame, so the ring and the reticle stay on it. The one-tap behaviour (the rope lets go by itself, the speed kick, the plunge of a clog) SHALL NOT change.
 
-#### Scenario: Press SWING at the start
-- **WHEN** a phone player presses SWING on the start roof in the chase view
+#### Scenario: A tap at the start
+- **WHEN** a phone player taps the right half of the screen on the start roof in the chase view
 - **THEN** the rope attaches to a building at least 5 m above the roof, the hero leaves the roof, and 0.6 s later the hero moves at more than 10 m/s
 
 #### Scenario: The ring on the target
@@ -26,25 +26,25 @@ On a phone, the SWING button SHALL fire the right rope at the auto target. A tap
 
 #### Scenario: No target
 - **WHEN** no target exists
-- **THEN** the ring is hidden and the SWING button has the class `no-target`
-- **WHEN** the player presses SWING
-- **THEN** the hero stays on the roof and the button shows SWING
+- **THEN** the ring is hidden and the panel loses the class `target-ready`
+- **WHEN** the player taps
+- **THEN** the hero stays on the roof and the plunger badge of that side does not light
 
 #### Scenario: The only building holds the rope
 - **WHEN** a rope holds the only building in reach and the player taps the sky
 - **THEN** the rope stays attached, it is not fired again, and the hint says the rope is kept
 
 ### Requirement: The ring and the arrow stay clear of the HUD
-The ring and the arrow SHALL stay inside a safe window. The window SHALL start below the top buttons and the score pills. It SHALL end above the SWING panel and the spoken line. It SHALL keep 8 px from the safe-area insets and exclude the climb pad while it shows. When the projected centre of the target lies outside the window, the marker SHALL become an arrow on the border of the window, pointing at the target. A target behind the camera SHALL show an arrow on the bottom border, pointing down. The window SHALL be at least 55 percent of the screen height at 390 by 844 and 45 percent at 844 by 390.
+The ring and the arrow SHALL stay inside a safe window. The window SHALL start below the top buttons and the score pills. It SHALL end above the hint panel and the spoken line, and keep clear of the plunger badges. It SHALL keep 8 px from the safe-area insets and exclude the climb pad while it shows. When the projected centre of the target lies outside the window, the marker SHALL become an arrow on the border of the window, pointing at the target. A target behind the camera SHALL show an arrow on the bottom border, pointing down. The window SHALL be at least 55 percent of the screen height at 390 by 844 and 45 percent at 844 by 390.
 
 #### Scenario: A target above the screen
 - **WHEN** the target lies above the top edge of the screen at 390 by 844 or 844 by 390
 - **THEN** an arrow shows on the top border of the safe window at the target's side
-- **AND** the arrow overlaps no top button, no score pill, no spoken line, no SWING panel and no climb pad
+- **AND** the arrow overlaps no top button, no score pill, no spoken line, no hint panel, no plunger badge and no climb pad
 
 #### Scenario: Every height
 - **WHEN** a test sets a target at screen heights from NDC 0.3 to 1.5 in steps of 0.1, at both sizes, with a spoken line showing
-- **THEN** the ring or the arrow never overlaps a top button, a score pill, the spoken line, the SWING panel or the climb pad
+- **THEN** the ring or the arrow never overlaps a top button, a score pill, the spoken line, the hint panel, a plunger badge or the climb pad
 
 #### Scenario: On a wall
 - **WHEN** the player holds a wall at 390 by 844
@@ -96,7 +96,7 @@ Every touch area of a visible phone button SHALL be at least 48 by 48 CSS px. Th
 - **THEN** every visible button has a touch area of 48 by 48 px or more
 - **AND** the top buttons are 46 px high, a touch 1 px outside any side of one still hits it, and every other button box is 48 by 48 px or more
 - **AND** the top row is one line, inside the viewport
-- **AND** the top buttons do not overlap the score pills, the line and its tail do not overlap the SWING panel, and the page does not scroll sideways
+- **AND** the top buttons do not overlap the score pills, the line and its tail do not overlap the hint panel, and the page does not scroll sideways
 
 #### Scenario: Portrait with motion aim off
 - **WHEN** the phone is 390 by 844 and the sensors are denied, so that three buttons show
@@ -105,7 +105,7 @@ Every touch area of a visible phone button SHALL be at least 48 by 48 CSS px. Th
 #### Scenario: The narrowest phone
 - **WHEN** the phone is 360 by 740 with all four top buttons
 - **THEN** the top row is one line, inside the viewport
-- **AND** with a spoken line showing, each line the hint over SWING can say, except the wall line, fits on one line, and the tail of the spoken line clears the SWING panel
+- **AND** with a spoken line showing, each line the hint can say, except the wall line, fits on one line, and the tail of the spoken line clears the hint panel
 
 #### Scenario: Landscape
 - **WHEN** the phone is 844 by 390 and shows a spoken line
@@ -116,18 +116,18 @@ The phone SHALL play in portrait and in landscape. The game SHALL NOT show a car
 
 #### Scenario: Portrait start
 - **WHEN** a player starts play at 390 by 844
-- **THEN** the chase view shows and SWING works
+- **THEN** the chase view shows and a tap swings
 
 #### Scenario: Turn during play
 - **WHEN** the viewport changes from 390 by 844 to 844 by 390 during play
 - **THEN** play goes on, the camera aspect updates, and no card shows
 
 ### Requirement: Phone words and help
-The phone SHALL show phone words and never mouse, key, trigger, pinch or grip words. The tutorial's first line SHALL read "Tap SWING to swing at the gold ring." The title SHALL read PLAY WITH TOUCH on a touch device. A touch device with a fine pointer SHALL show PLAY WITH MOUSE AND KEYBOARD as a second button. A device with no touch point SHALL read PLAY ON THIS SCREEN. How to play SHALL have sections for headset controllers, hands, keyboard and mouse, a game pad, and the phone. The section for the device in use SHALL come first. The title SHALL show one note for the device in use.
+The phone SHALL show phone words and never mouse, key, trigger, pinch or grip words. The tutorial's first line SHALL read "Tap left or right to swing at the gold ring." The title SHALL read PLAY WITH TOUCH on a touch device. A touch device with a fine pointer SHALL show PLAY WITH MOUSE AND KEYBOARD as a second button. A device with no touch point SHALL read PLAY ON THIS SCREEN. How to play SHALL have sections for headset controllers, hands, keyboard and mouse, a game pad, and the phone. The section for the device in use SHALL come first. The title SHALL show one note for the device in use.
 
 #### Scenario: Tutorial on a phone
 - **WHEN** the tutorial starts on a phone
-- **THEN** the first line is "Tap SWING to swing at the gold ring."
+- **THEN** the first line is "Tap left or right to swing at the gold ring."
 - **AND** no phone line names a mouse, Shift, a key, a trigger, a pinch or a grip
 
 #### Scenario: Title on a touch device
@@ -162,7 +162,7 @@ The phone SHALL play with touch only. Motion aim SHALL stay optional. The Center
 - **THEN** the Center button shows, and it sets the aim straight again
 
 ### Requirement: A first-time phone player crosses three buildings in 30 seconds
-A phone player who only taps (the SWING button and taps on the city) SHALL attach to three different buildings within 30 s of game time, with no respawn.
+A phone player who only taps (taps on the city) SHALL attach to three different buildings within 30 s of game time, with no respawn.
 
 #### Scenario: Taps only
 - **WHEN** a bot taps every 10 frames while the rope is idle, for 30 s from the start roof facing the gold ring at -10, 0 and +10 degrees

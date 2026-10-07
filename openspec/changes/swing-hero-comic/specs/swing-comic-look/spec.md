@@ -59,6 +59,12 @@ On a flat screen the HUD, the subtitles, the toasts, the pause menu and the map 
 - **THEN** the Loonie count, the clog count, the subtitle, the toast and the pause menu stay inside the window at each size
 - **AND** the text does not overlap the SWING button on a phone
 
+#### Scenario: The pause menu in a small window
+- **WHEN** the pause menu is open at 640x360, 844x390, 390x844 or 360x740
+- **THEN** its panel, its title and each of its buttons lie inside the window with their hard shadows, and the panel does not scroll
+- **WHEN** the player opens the Comfort page at 390x844 or 360x740
+- **THEN** each button lies between the left and right edges of the window, and the panel does not scroll sideways
+
 ### Requirement: The opening in mixed reality is inked and ends clean
 The pieces of wall that fly out at the burst and the toilet in the room SHALL have ink lines. The ink line of a piece SHALL end before the piece gets thinner than the line. It SHALL not come back. The reveal SHALL not leave black dots.
 

@@ -7,10 +7,10 @@
 <title>In Full Swing: one-hand city swinging</title>
 <meta name="description" content="Swing through the city at sunset on plunger ropes. Plunge twelve rooftop clogs and flush the Porcelain King. A VR game for Meta Quest 3.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://warden-alpha-wheat.vercel.app/vr/">
+<meta property="og:url" content="https://arcade.uptick.systems/vr/">
 <meta property="og:title" content="In Full Swing">
 <meta property="og:description" content="Shoot plungers on ropes. Swing through the city at sunset. Flush the Porcelain King.">
-<meta property="og:image" content="https://warden-alpha-wheat.vercel.app/arcade/vr.webp">
+<meta property="og:image" content="https://arcade.uptick.systems/arcade/vr.webp">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -176,11 +176,13 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 }
 @media (max-height: 560px) { #title { padding-top: calc(var(--sat) + 1.6vh); gap: 8px; } .tag { display: none; } .btn.primary { min-height: 52px; padding-top: 8px; } .logo h1 { font-size: clamp(40px, 9vw, 96px); } .kicker { margin-bottom: 0.2em; } .bottom, .menu { gap: 10px; } }
 @media (max-width: 420px) { .btn { padding: 9px 16px 6px; letter-spacing: 0.06em; } .kicker { letter-spacing: 0.06em; } dialog { padding: 18px 16px 16px; } }
-@media (prefers-reduced-motion: reduce) { .stage .art.drift { animation: none; will-change: auto; } .logo { animation: none; } .btn, .preset span, .load, .load .track i { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .stage .art.drift { animation: none; will-change: auto; } .logo { animation: none; } .btn, .preset span, .load, .load .track i, .look-hint { transition: none; } }
 
-/* flat play with no pointer lock: how to get the mouse look back, a caption box over the hero's head, clear of the spoken
-   lines at the bottom (main.js shows it) */
-.look-hint { position: fixed; left: 50%; bottom: calc(50% + 44px); z-index: 13; margin: 0; max-width: calc(100vw - 32px); padding: 7px 18px 5px; transform: translateX(-50%) rotate(-1deg); pointer-events: none; text-align: center; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); border-radius: 3px; box-shadow: 5px 5px 0 var(--ink); }
+/* flat play with no pointer lock: how to get the mouse look back, a caption box over the hero's head (main.js shows it). It lies
+   under the HUD (z-index 12) and the lock-on marker (11): the spoken line, the toast and the edge arrow draw over it, never the other way.
+   ui.js adds .covered while the line or the toast is over its place: it fades out then, so that nobody reads half of it. The edge arrow stays over it. */
+.look-hint { position: fixed; left: 50%; bottom: calc(50% + 44px); z-index: 10; margin: 0; transition: opacity .25s; max-width: calc(100vw - 32px); padding: 7px 18px 5px; transform: translateX(-50%) rotate(-1deg); pointer-events: none; text-align: center; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); border-radius: 3px; box-shadow: 5px 5px 0 var(--ink); }
+.look-hint.covered { opacity: 0; }
 .look-hint b { display: block; font: 400 clamp(22px, 2.6vw, 30px) / 1.05 var(--comic); letter-spacing: 0.06em; text-transform: uppercase; }
 .look-hint small { display: block; margin-top: 2px; font: 700 17px / 1.2 var(--ui); letter-spacing: 0.03em; }
 
@@ -200,12 +202,12 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 2px solid
 .phone-top { display:flex; justify-content:center; gap:6px; padding:max(12px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left)); }
 #phoneControls .phone-top button { height:46px; min-height:46px; }
 .phone-top button::after { content:""; position:absolute; inset:-5px; }
-/* the climb pad: shown only on a wall, low on the left so the right thumb keeps the SWING button */
+/* the climb pad: shown only on a wall, low on the left so the right thumb keeps its side of the city */
 .phone-climb { position:absolute; left:max(16px,env(safe-area-inset-left)); bottom:calc(env(safe-area-inset-bottom,0px) + 190px); display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,58px); gap:6px; pointer-events:none; }
 #phoneControls .phone-climb button { min-width:0; min-height:0; padding:0; font:700 24px/1 var(--ui); touch-action:none; }
 .phone-climb [data-climb="up"] { grid-column:2; grid-row:1; } .phone-climb [data-climb="left"] { grid-column:1; grid-row:2; } .phone-climb [data-climb="right"] { grid-column:3; grid-row:2; } .phone-climb [data-climb="down"] { grid-column:2; grid-row:3; }
 #phoneControls .phone-climb [data-action="hop"] { grid-column:2; grid-row:2; font:400 18px/1 var(--comic); background:var(--red); color:var(--paper); }
-/* on a wall in portrait the pad needs that space: the hint over SWING says what to do, so the spoken lines wait */
+/* on a wall in portrait the pad needs that space: the hint at the bottom says what to do, so the spoken lines wait */
 @media (max-height:480px) { .phone-climb { bottom:max(12px,env(safe-area-inset-bottom)); grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); } }
 /* the centre ring is the exact aim of the first-person view. In the chase view it would sit on the hero, so the lock-on ring shows instead. */
 .phone-crosshair { display:none; position:absolute; left:50%; top:50%; width:24px; height:24px; border:3px solid var(--yellow); border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink); }
@@ -228,12 +230,14 @@ body[data-view="first"] .phone-crosshair { display:block; }
 @media (prefers-reduced-motion:reduce) { .phone-target.pop .pt-body { animation:none; filter:brightness(1.35) saturate(1.3); } }
 .phone-bottom { position:absolute; bottom:max(12px,env(safe-area-inset-bottom)); left:max(16px,env(safe-area-inset-left)); right:max(16px,env(safe-area-inset-right)); display:flex; flex-direction:column; align-items:center; gap:6px; }
 .phone-hint { margin:0; max-width:min(340px,100%); padding:5px 12px 3px; text-align:center; color:var(--ink); background:var(--cream); border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); font:700 16px/1.15 var(--ui); letter-spacing:.03em; }
-#phoneControls [data-action="throw"] { width:min(280px,85vw); min-height:64px; padding:4px 12px 2px; border-width:4px; box-shadow:5px 5px 0 var(--ink); background:radial-gradient(circle at 50% 50%,rgba(255,122,42,.85) 0 1.4px,rgba(255,122,42,0) 2px) 0 0 / 6px 6px, linear-gradient(180deg,#ffe867,var(--yellow)); font:400 32px/1 var(--comic); letter-spacing:.08em; }
-#phoneControls [data-action="throw"]:active { box-shadow:2px 2px 0 var(--ink); }
-#phoneControls [data-action="throw"] span { display:block; margin-top:4px; font:700 14px/1.1 var(--ui); letter-spacing:.04em; text-transform:none; opacity:.85; }
-#phoneControls [data-action="throw"].held { background:var(--red); color:var(--paper); }
-/* no target: SWING still works, but it looks asleep. With a rope out (held) it never dims. */
-#phoneControls [data-action="throw"].no-target:not(.held) { opacity:.6; filter:saturate(.45); }
+/* the two plunger badges, low in the corners over the hint: each half of the city throws its own plunger. A badge lights while its
+   plunger holds. They take no taps. */
+.phone-side { position:absolute; bottom:calc(max(12px,env(safe-area-inset-bottom)) + 58px); width:44px; height:44px; display:grid; place-items:center; border:3px solid var(--ink); border-radius:50%; background:var(--cream); color:var(--ink); box-shadow:3px 3px 0 var(--ink); font:400 22px/1 var(--comic); opacity:.55; pointer-events:none; transition:opacity .1s, background .1s; }
+.phone-side[data-side="0"] { left:max(10px,env(safe-area-inset-left)); }
+.phone-side[data-side="1"] { right:max(10px,env(safe-area-inset-right)); }
+.phone-side.held { opacity:1; background:var(--red); color:var(--paper); }
+#phoneControls.on-wall .phone-side { display:none; }
+@media (prefers-reduced-motion:reduce) { .phone-side { transition:none; } }
 #view canvas { touch-action:none; }
 /* a narrow phone (360 px): the four top buttons stay on one line */
 @media (max-width:380px) { #phoneControls .phone-top button { padding:3px 6px 0; font-size:17px; } .phone-top { gap:5px; padding-left:max(4px,env(safe-area-inset-left)); padding-right:max(4px,env(safe-area-inset-right)); } }
@@ -255,9 +259,9 @@ body:has(#phoneControls:not([hidden])) .fs-sub { max-width:calc(100vw - 16px); p
 }
 @media (max-height:480px) {
   body:has(#phoneControls:not([hidden])) .fs-sub, body:has(#phoneControls:not([hidden])) .fs-toast { max-width:calc(100vw - 320px); }
-  .phone-bottom { left:auto; width:260px; bottom:12px; }
+  /* landscape: a narrow hint at the bottom right (two lines), so the ring's window loses a side strip and keeps its height */
+  .phone-bottom { left:auto; width:176px; bottom:12px; }
   .phone-hint { font-size:14px; }
-  #phoneControls [data-action="throw"] { width:220px; min-height:64px; font-size:30px; }
 }
 /* How to play: the section for the device in use comes first (main.js sets body[data-device]) */
 body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mouse"] .cols section[data-for="mouse"], body[data-device="pad"] .cols section[data-for="pad"] { order:-1; }
@@ -299,7 +303,7 @@ body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mou
       </div>
     </nav>
     <p class="note" id="note" role="status" hidden></p>
-    <p class="note" id="touchNote" hidden>Tap a building to swing. Or press SWING. The rope lets go by itself.</p>
+    <p class="note" id="touchNote" hidden>Tap the left or right side of the city to throw that plunger. Use both thumbs. The rope lets go by itself.</p>
     <p class="note" id="deskNote" hidden>Hold W and the left mouse button to swing. A game pad works after you press PLAY.</p>
     <p class="note" id="hybridNote" hidden>This screen has touch and a mouse. Pick how you play. A game pad works with the mouse and keyboard.</p>
     <p class="note" id="noXR" hidden>This browser has no VR. You can play on this screen.</p>
@@ -366,8 +370,8 @@ body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mou
     <section data-for="touch">
       <h3>Phone and touch</h3>
       <ul>
-        <li>Tap a building to swing from it. Or press SWING, and the game picks a building. A ring marks the target.</li>
-        <li>Tap again at any time to swing on to the next building. You never need to let go: the rope lets go by itself and flings you on.</li>
+        <li>Tap the left side of the city to throw the left plunger, and the right side for the right one. Tap a building, or tap anywhere and the game picks the building the ring marks.</li>
+        <li>Use both thumbs: left, right, left. When a new plunger catches, the other one lets go. Tap both at once for a double swing. You never need to let go: the rope lets go by itself and flings you on.</li>
         <li>A tap on a clog plunges it.</li>
         <li>Drag to look around. VIEW switches the view.</li>
         <li>Hit a wall to hold on. Hold the arrows to climb. Tap JUMP to jump off.</li>

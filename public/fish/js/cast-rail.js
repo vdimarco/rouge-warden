@@ -8,17 +8,16 @@ const SWEET = [CAST.LOW_PITCH + CAST.PITCH_OFFSET, CAST.HIGH_PITCH + CAST.PITCH_
 // the rod angles at the two ends of the rail, how far beside the finger it stands, and the room its words need (px)
 const TOP = 40, BOTTOM = 140, GAP = 46, WORDS = 84;
 
-// The lowest edge the rail must stay below, in #game px: the HUD, and the lines of the prompt that stand beside the rail
-// (x0..x1). #prompt is centred with translateX(-50%), which offsetLeft leaves out
+// The lowest edge the rail must stay below, in #game px: the HUD, and the lines of the prompt (the action card in the
+// corner) that stand beside the rail (x0..x1)
 function ceiling(game, x0, x1) {
   let y = 0;
-  const hud = game.querySelector("#hud"), pr = game.querySelector("#prompt");
+  const hud = game.querySelector("#hud"), pr = game.querySelector("#prompt"), g = game.getBoundingClientRect();
   if (hud && !hud.hidden) y = hud.offsetTop + hud.offsetHeight;
-  if (pr && !pr.hidden) {
-    const left = pr.offsetLeft - pr.offsetWidth / 2;
+  if (pr && !pr.hidden && getComputedStyle(pr).visibility !== "hidden") {
     for (const n of pr.children) {
-      const l = left + n.offsetLeft;
-      if (n.offsetHeight && l < x1 && l + n.offsetWidth > x0) y = Math.max(y, pr.offsetTop + n.offsetTop + n.offsetHeight);
+      const r = n.getBoundingClientRect(), l = r.left - g.left;
+      if (r.height && l < x1 && l + r.width > x0) y = Math.max(y, r.bottom - g.top);
     }
   }
   return y;

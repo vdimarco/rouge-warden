@@ -1,4 +1,5 @@
 import { structureProtected } from './objectives.js';
+import { fortified } from './sim.js';
 import { CreatureBank } from '../arcade/creatures/player.js';
 import { CREATURES } from '../arcade/creatures/catalog.js';
 import { player, HEROES } from './sim.js';
@@ -11,14 +12,22 @@ import { BASE_STYLES, drawBaseCore } from './bases.js';
 import { MARKETPLACE_SPRITES, drawMarketplaceSprite } from './marketplace-sprites.js';
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
 import { HERO_IDENTITIES, identityFor, identitySkill } from './hero-identities.js';
+import { drawTells, drawUnitMarks } from './combat-tells-draw.js';
+import { windupState } from './combat-tells.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440, QUALITY_FLOOR = .5;
+// Tower art grows with its tier (outer, middle, inner, guardian), so the chain reads at a glance.
+const TOWER_HEIGHT = [245, 285, 325, 360], TOWER_LABEL = ['OUTER WARD', 'MIDDLE WARD', 'INNER WARD', 'GUARDIAN'];
+// Backing pixels per CSS pixel: the screen's own ratio (at most 2), limited by the pixel budget, then scaled so the
+// backing pixel count is in proportion to quality on every screen (a step from 1 to .8 removes 20% of the pixels).
+export const backingRatio = (width, height, deviceRatio = 1, quality = 1) => Math.max(.35, Math.min(deviceRatio || 1, 2, Math.sqrt(PIXEL_BUDGET / (width * height))) * Math.sqrt(quality));
 const surface = (w, h = w) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Art unavailable: ${src}`)); image.src = src; });
 export async function loadArt() {
   const names = ['house-a', 'house-b', 'pines', 'stones', 'tower-enemy', 'tower-ally', 'wisp-ally', 'wisp-enemy', 'bridge', ...LANDMARKS, ...PLANTS, ...LANDFORMS, ...HEROES.flatMap((h,i) => i>=4?[h.slug+'-front']:[h.slug + '-back', h.slug + '-front', ...['back', 'front'].flatMap(view => [0, 1, 2].map(frame => `${h.slug}-attack-${view}-${frame}`))])];
   const images = await Promise.all(names.map(n => load(`./art/illustrated/${n}.webp`)));
   const imported=await Promise.all([...new Set(MARKETPLACE_SPRITES.map(s=>s.file))].map(async file=>['marketplace-'+file,await load('./art/magicpixel/'+file).catch(()=>null)]));
-  const identities=await Promise.all(HERO_IDENTITIES.map(async h=>['reference-'+h.slug,await load(`./art/reference/${h.slug}.webp`).catch(()=>null)]));
+  // Hero sprites and minimap markers use the full-length portraits rendered from the 3D models (head near the top middle).
+  const identities=await Promise.all(HERO_IDENTITIES.map(async h=>['reference-'+h.slug,await load(`./art/portraits/${h.slug}-full.webp`).catch(()=>null)]));
   return { ...Object.fromEntries(names.map((n, i) => [n, images[i]])),...Object.fromEntries(imported),...Object.fromEntries(identities), ground: await load('./art/toon-ground.webp'), surfaces: await load('./art/illustrated/terrain-surfaces.webp') };
 }
 // An orthographic 2.5D stage: separate illustrated objects, depth sorting, camera
@@ -45,7 +54,7 @@ export class Renderer {
   // quality drops when frames are slow (see adapt), so an ultra-wide full screen keeps a smooth frame rate.
   resize() {
     this.width = innerWidth; this.height = innerHeight; this.quality ??= 1;
-    const budget = PIXEL_BUDGET * this.quality; this.dpr = Math.max(.5, Math.min(devicePixelRatio || 1, 2, Math.sqrt(budget / (this.width * this.height))));
+    this.dpr = backingRatio(this.width, this.height, devicePixelRatio, this.quality);
     this.canvas.width = this.width * this.dpr; this.canvas.height = this.height * this.dpr;
     this.scale = Math.min(this.width / 1200, this.height / 1680);
     this.anchor = this.height < 520 ? .70 : .78;
@@ -94,7 +103,7 @@ export class Renderer {
     if (slow && q > QUALITY_FLOOR && this.clock > (this.noDropUntil ?? 0)) {
       this.hold = Math.min(60000, (this.hold ?? 5000) * 2); this.raiseAt = this.clock + this.hold;
       this.descent = { quality: q, median, steps: 1 }; this.quality = Math.max(QUALITY_FLOOR, q * .8); this.resize();
-    } else if (!this.descent && median < Math.max(refresh * 1.15, 17.5) && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
+    } else if (!this.descent && median < Math.max(refresh * 1.15, 21) && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
   }
   // A resize or a scene repaint disturbs a few frames, so the next judgement starts from fresh samples.
   restartTiming() { this.window = []; this.nextAdapt = (this.clock ?? 0) + 1500; }
@@ -103,7 +112,7 @@ export class Renderer {
     const c = this.ctx, p = this.project(x, y); c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = line; c.beginPath(); c.ellipse(p.x, p.y, radius * this.scale, radius * this.scale * .55, 0, 0, TAU); c.stroke(); c.restore();
   }
   draw(s, dt, menu = false, aim = null, waypoint = null) {
-    const c = this.ctx, p = player(s); this.setScene(s.seed); this.lastPoses = []; this.menuTime += dt; const time = menu ? this.menuTime : s.time;
+    const c = this.ctx, p = player(s); this.setScene(s.seed); this.lastPoses = []; this.menuTime += dt; this.menu = menu; const time = menu ? this.menuTime : s.time;
     const focus = p.order?.type === 'attack' ? s.units.find(e => e.id === p.order.target) : p.order?.type === 'move' ? p.order : null;
     const dx = focus ? focus.x - p.x : 0, dy = focus ? focus.y - p.y : 0, length = Math.hypot(dx,dy) || 1, lead = Math.min(220, length * .16), damping = 1 - Math.exp(-dt * 8);
     // A free camera (edge scroll or minimap) holds its own target until the player recenters.
@@ -122,7 +131,8 @@ export class Renderer {
     this.cam.x = clamp(this.cam.x, halfW, SIZE - halfW); this.cam.y = clamp(this.cam.y, top, SIZE - bottom);
     if (this.freeCam) { this.freeCam.x = clamp(this.freeCam.x, halfW, SIZE - halfW); this.freeCam.y = clamp(this.freeCam.y, top, SIZE - bottom); }
     const impact = this.reducedMotion ? 0 : Math.min(1, s.effects.filter(f => (f.type === 'strike' || f.type === 'spell') && (f.source === p.id || distance(p, f) < 250)).reduce((n, f) => Math.max(n, Math.max(0, f.life / f.maxLife - .55)), 0));
-    this.shakeX = Math.sin(time * 103) * impact * 3; this.shakeY = Math.cos(time * 127) * impact * 2;
+    const weighted = this.reducedMotion || menu ? 0 : this.feel?.shake || 0;
+    this.shakeX = Math.sin(time * 103) * Math.max(impact * 3, weighted); this.shakeY = Math.cos(time * 127) * Math.max(impact * 2, weighted * .7);
     if (!menu) this.heroScreen = this.project(p.x, p.y); // read by QA to measure motion smoothness
     c.fillStyle = '#142932'; c.fillRect(0, 0, this.width, this.height);
     const origin = this.project(0, 0); c.drawImage(this.grounds[s.phase], origin.x, origin.y, SIZE * this.scale, SIZE * this.scale * .88);
@@ -149,7 +159,7 @@ export class Renderer {
     for(const e of s.units)if(e.hp>0&&this.visible.has(e.id)){
       const intent=e.castIntent||e.specialIntent;
       if(intent){
-        if(e.specialIntent)this.drawWarning(intent,s.time,'#ffc17a');else drawCastWarning(this,intent,s.time,e.team===p.team);
+        if(e.specialIntent)this.drawWarning(intent,s.time,'#ffc17a');else if(intent.shape?.shape==='path')this.drawWarning(intent,s.time,e.team===p.team?'#a3ead3':'#ff8f75');else drawCastWarning(this,intent,s.time,e.team===p.team);
         const identity=identityFor(e),a=this.project(e.x,e.y,(HEROES[e.hero]?.height||325)*.77+32),label=identity&&Number.isInteger(intent.slot)?identitySkill(identity.id,intent.slot).name:intent.label||HEROES[e.hero]?.skills[intent.slot];
         if(label){c.save();c.font='700 11px Barlow';c.textAlign='center';c.strokeStyle='#101c27';c.lineWidth=3;c.strokeText(label,a.x,a.y);c.fillStyle=e.specialIntent?'#ffd09a':e.team===p.team?'#bdebd9':'#ffad90';c.fillText(label,a.x,a.y);c.restore();}
       }
@@ -159,9 +169,12 @@ export class Renderer {
         const label=`${exposed?'EXPOSED':'RECOVERY'} ${Math.max(0,(exposed?e.exposedUntil:e.recoveryUntil)-s.time).toFixed(1)}s`;c.strokeText(label,a.x,a.y+15);c.fillStyle=color;c.fillText(label,a.x,a.y+15);c.restore();
       }
     }
+    if (!menu) drawTells(this, s, p, this.visible);
     for (const f of s.effects) drawCombatEffect(this, f);
     for(const m of s.missiles)if(m.team===0||visibleTo(s,0,m))drawSkillMissile(this,m,time);
     this.drawAtmosphere(s, time);
+    // Other heroes show their recall channel too, when the player's team can see them.
+    if (!menu) for (const h of s.units) if (h !== p && h.kind === 'hero' && h.recall > 0 && h.hp > 0 && visibleTo(s, p.team, h)) this.ring(h.x, h.y, 70 + Math.sin(time * 8) * 8, '#d6ffec', .6);
     if (!menu && p.hp > 0) {
       if (p.recall) this.ring(p.x, p.y, 85 + Math.sin(time * 8) * 10, '#d6ffec', .8);
       if (aim&&!aim.cancelled) {
@@ -170,7 +183,7 @@ export class Renderer {
       }
       if (waypoint) { const a = this.project(p.x, p.y), b = this.project(waypoint.x, waypoint.y), angle = Math.atan2(b.y - a.y, b.x - a.x); this.ring(p.x + Math.cos(angle) * 160, p.y + Math.sin(angle) * 160, 20, '#e4efa9'); }
     }
-    for (const f of s.floaters) { const a = this.project(f.x, f.y, 180 + (.8 - f.life) * 50); c.globalAlpha = Math.min(1, f.life * 2); c.font = '700 17px Barlow'; c.textAlign = 'center'; c.strokeStyle = '#101c27'; c.lineWidth = 3; c.strokeText(f.text, a.x, a.y); c.fillStyle = f.color; c.fillText(f.text, a.x, a.y); } c.globalAlpha = 1;
+    for (const f of s.floaters) { const a = this.project(f.x, f.y, 180 + (.8 - f.life) * 50); c.globalAlpha = Math.min(1, f.life * 2); c.font = `700 ${f.size || 17}px Barlow`; c.textAlign = 'center'; c.strokeStyle = '#101c27'; c.lineWidth = 3; c.strokeText(f.text, a.x, a.y); c.fillStyle = f.color; c.fillText(f.text, a.x, a.y); } c.globalAlpha = 1;
     this.drawResults(s,p);
     if (s.phase) { c.fillStyle = '#192c4429'; c.fillRect(0, 0, this.width, this.height); }
     if (this.frames++ % 6 === 0) this.drawMap(s, this.mini, waypoint);
@@ -178,13 +191,13 @@ export class Renderer {
   drawUnit(s, e, time) {
     const c = this.ctx, hero = e.kind === 'hero', tower = e.kind === 'tower' || e.kind === 'core';
     let name = tower ? e.team ? 'tower-enemy' : 'tower-ally' : e.team === 1 ? 'wisp-enemy' : 'wisp-ally';
-    let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : e.tier === 1 ? 315 : 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : 120;
+    let height = tower ? e.kind === 'core' ? BASE_STYLES[e.team].height : TOWER_HEIGHT[e.tier] || 245 : ['boss', 'leviathan'].includes(e.kind) ? 325 : e.kind === 'camp' ? 160 : e.elder ? 165 : 120;
     if (e.creatureId) {
       const screen = this.project(e.x, e.y), extent = height * this.scale * 3;
       if (screen.x + extent < 0 || screen.x - extent > this.width || screen.y + extent < 0 || screen.y - extent > this.height) return;
     }
     if (hero) { name = HEROES[e.hero].slug + (e.hero>=4||Math.sin(e.facing)>.2?'-front':'-back'); height = HEROES[e.hero].height*(e.player?1:.77); }
-    const pose = hero ? attackPose(e, s.time) : null;
+    const frozen = !this.menu && this.feel?.hitstop > 0 && this.feel.frozen.has(e.id), pose = hero ? attackPose(e, frozen ? this.feel.poseTime(e, s.time) : s.time) : null;
     const direction = (pose?.angle ?? e.facing) + (pose && !pose.casting ? [0, -.45, .25][pose.variant] : 0);
     if (pose && e.hero<4) name = `${HEROES[e.hero].slug}-attack-${Math.sin(direction) > .2 ? 'front' : 'back'}-${pose.stage}`;
     const baseAsset=name,identity=hero?identityFor(e):null,identityAsset=identity&&`reference-${identity.slug}`;
@@ -192,13 +205,14 @@ export class Renderer {
     if (pose) this.lastPoses.push({ id: e.id, hero: e.hero, identity: identity?.id, stage: pose.stage, asset: baseAsset, renderAsset: name });
     let x = e.x, y = e.y, jump = 0;
     if (e.motion) { const t = Math.max(0, Math.min(1, (s.time - e.motion.start) / e.motion.duration)), ease = t * t * (3 - 2 * t); x = e.motion.x + (e.x - e.motion.x) * ease; y = e.motion.y + (e.y - e.motion.y) * ease; jump = Math.sin(t * Math.PI) * e.motion.arc; }
-    const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
+    const swing = (pose?.power || 0) * (pose && !pose.casting ? [1, .75, 1.35][pose.variant] : 1), recoil = frozen && e.hit > 0 ? 13 : e.hit > 0 ? Math.sin(e.hit / .16 * Math.PI) * 13 : 0;
     x += Math.cos(direction) * swing * (hero && e.hero === 1 ? 42 : 28) + Math.cos(e.hitAngle || 0) * recoil;
     y += Math.sin(direction) * swing * 24 + Math.sin(e.hitAngle || 0) * recoil;
+    const wind = !pose && !tower ? windupState(e, s.time) : null; if (wind) { x -= Math.cos(e.facing) * wind.progress * 12; y -= Math.sin(e.facing) * wind.progress * 7; }
     if (hero && e.hero === 3 && pose) jump += Math.max(0, swing) * 27;
     // Contact shadows establish height during leaps and keep feet on the path.
     const shadow = this.project(x, y); c.save(); c.globalAlpha = .27; c.fillStyle = '#0d2425'; c.beginPath(); c.ellipse(shadow.x, shadow.y, height * this.scale * (hero ? .18 : .24) * (1 - Math.min(.4, jump / 400)), height * this.scale * .055, 0, 0, TAU); c.fill(); c.restore();
-    if (e.kind === 'tower' && e.tier === 1) { this.ring(x,y,78,structureProtected(s,e)?'#b9b4ce':'#e8c48f',.65,2); }
+    if (e.kind === 'tower' && e.tier > 0) { this.ring(x,y,64+e.tier*10,structureProtected(s,e)?'#b9b4ce':'#e8c48f',.65,2); }
     if(e.kind==='tower'&&e.team!==player(s).team&&!structureProtected(s,e)&&distance(e,player(s))<e.range+250)this.ring(x,y,e.range,e.towerTarget===player(s).id?'#ff8f75':'#dcb075',.65,2);
     if (e.shield > 0) this.ring(x, y, 68, '#c3e9ec', .75);
     if (e.kind === 'camp') this.ring(x, y, e.radius + 18, e.leash ? '#a7c794' : e.aggroUntil > s.time ? '#efaa79' : '#e8cc7c', .55);
@@ -218,8 +232,8 @@ export class Renderer {
       c.fillStyle = '#08151be8'; c.beginPath(); c.roundRect(a.x - width / 2 - 2, a.y - 1, width + 4, 6, 3); c.fill();
       c.fillStyle = structureProtected(s,e) ? '#9693aa' : TEAM[e.team] || '#e8cc7c'; c.beginPath(); c.roundRect(a.x - width / 2, a.y, Math.max(1, width * e.hp / e.maxHp), 4, 2); c.fill();
       if(hero){c.fillStyle='#407caf';c.fillRect(a.x-width/2,a.y+6,width*e.mana/e.maxMana,2);}
-      if (e.kind === 'tower') { c.textAlign='center';c.font='700 10px Barlow';c.fillStyle=structureProtected(s,e)?'#ddd2ec':'#ead7a8';c.fillText(structureProtected(s,e)?'INNER · PROTECTED':e.tier===1?'INNER WARD':'OUTER WARD',a.x,a.y-6); }
-      this.drawBadges(e,s.time,a);
+      if (e.kind === 'tower') { const name=TOWER_LABEL[e.tier]||'WARD';c.textAlign='center';c.font='700 10px Barlow';c.fillStyle=structureProtected(s,e)?'#ddd2ec':'#ead7a8';c.fillText(structureProtected(s,e)?`${name} · PROTECTED`:fortified(s,e)?`${name} · FORTIFIED`:name,a.x,a.y-6); }
+      this.drawBadges(e,s.time,a); drawUnitMarks(this, s, e, a, player(s));
     }
   }
   drawBadges(e,time,anchor) {
@@ -280,7 +294,7 @@ export class Renderer {
     c.restore();
     c.save(); c.strokeStyle = '#b8eee459'; c.lineWidth = 1.5;
     const left = Math.max(0, this.world(0, 0).x), right = Math.min(SIZE, this.world(this.width, 0).x);
-    for (let i = 0; i < 34; i++) {
+    for (let i = 0, glints = Math.ceil(SIZE / 143); i < glints; i++) {
       const x = (i * 143 + (this.reducedMotion ? 0 : time * 16)) % SIZE; if (x < left - 40 || x > right + 40) continue;
       const water = riverSample(x, s.seed), offset = Math.sin(i * 2.399) * Math.min(water.y - water.north, water.south - water.y) * .7;
       const a = this.project(x, water.y + offset), next = riverSample(Math.min(SIZE, x + 38), s.seed), b = this.project(x + 38, next.y + offset);
@@ -305,13 +319,13 @@ export class Renderer {
     m.restore();
   }
   drawPings(m, s, size, full) {
-    const colors = { fight: '#ff9a5c', defend: '#ff5a4f', rally: '#ffe27a', onmyway: '#7fe6ff', retreat: '#b9c4c8' };
+    const colors = { fight: '#ff9a5c', defend: '#ff5a4f', rally: '#ffe27a', onmyway: '#7fe6ff', retreat: '#b9c4c8', missing: '#d7b4ff' };
     for (const p of s.pings || []) {
       const age = s.time - p.time; if (p.team !== 0 || age < 0 || age > (p.type === 'rally' ? 6 : 4)) continue;
       const x = p.x / SIZE * size, y = p.y / SIZE * size, pulse = (age * 1.4) % 1;
       m.save(); m.strokeStyle = colors[p.type] || '#fff'; m.lineWidth = full ? 3 : 1.5;
       for (const k of [0, .5]) { const t = (pulse + k) % 1; m.globalAlpha = (1 - t) * .9; m.beginPath(); m.arc(x, y, (full ? 10 : 5) + t * (full ? 34 : 16), 0, TAU); m.stroke(); }
-      if (p.type === 'defend' || p.type === 'fight') { m.globalAlpha = .95; m.fillStyle = colors[p.type]; m.font = `900 ${full ? 20 : 11}px Barlow`; m.textAlign = 'center'; m.textBaseline = 'middle'; m.fillText('!', x, y); }
+      if (p.type === 'defend' || p.type === 'fight' || p.type === 'missing') { m.globalAlpha = .95; m.fillStyle = colors[p.type]; m.font = `900 ${full ? 20 : 11}px Barlow`; m.textAlign = 'center'; m.textBaseline = 'middle'; m.fillText(p.type === 'missing' ? '?' : '!', x, y); }
       m.restore();
     }
   }
@@ -320,12 +334,12 @@ export class Renderer {
     m.save(); m.scale(size / SIZE, size / SIZE); riverOutline(m, riverGeometry(s.seed)); m.fillStyle = '#448e92'; m.fill(); m.restore();
     m.strokeStyle = '#56675a'; m.lineWidth = full ? 18 : 6; m.lineJoin = 'round';
     for (const lane of PATHS) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); }
-    for (const b of riverCrossings(PATHS, s.seed)) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
+    for (const b of this.bridges || []) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
     for (const gate of PORTALS) { m.strokeStyle = '#79d7bd'; m.lineWidth = 2; m.beginPath(); m.arc(gate.x / SIZE * size, gate.y / SIZE * size, full ? 7 : 3, 0, TAU); m.stroke(); }
     for (const e of s.units) {
       if (e.hp <= 0 || !this.visible.has(e.id)) continue;
       const x = e.x / SIZE * size, y = e.y / SIZE * size, scale = full ? 2 : 1;
-      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,(e.tier===1?10:7)*scale,0,TAU);m.stroke();} m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
+      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,[6,7.5,9,10.5][e.tier]*scale,0,TAU);m.stroke();} m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
       else if (e.kind !== 'hero') { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (['boss', 'leviathan'].includes(e.kind) ? 3.5 : 1) * scale, 0, TAU); m.fill(); }
     }
     // Heroes draw last so they stay readable above wisps; a structure under attack pulses red.

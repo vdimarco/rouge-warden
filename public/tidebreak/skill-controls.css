@@ -1,8 +1,97 @@
 /* A short status above the thumb fan keeps aim instructions clear in both layouts. */
-#skill-aim-status{position:absolute;right:0;bottom:calc(100% + 51px);width:220px;max-width:calc(100vw - 32px);padding:6px 9px;border:1px solid #e2f3a1;border-radius:6px;background:#10222cf2;color:#e2f3a1;font:12px/1.3 Barlow,Arial,sans-serif;text-align:center;pointer-events:none}
+#skill-aim-status{position:absolute;right:0;bottom:calc(100% + 51px);width:220px;max-width:calc(100vw - 32px);padding:6px 9px;border:1px solid #e6d2ae;border-radius:6px;background:#211d18f2;color:#e6d2ae;font:12px/1.3 Barlow,sans-serif;text-align:center;pointer-events:none}
 #skill-aim-status[hidden]{display:none}
-#skill-aim-status.cancelled{border-color:#ffad90;color:#ffad90}
-.abilities .ability.aiming{outline:3px solid #e2f3a1;outline-offset:4px}
-.abilities .ability.aim-cancelled{outline-color:#ffad90}
+#skill-aim-status.cancelled{border-color:#e8b8a7;color:#e8b8a7}
+.abilities .ability.aiming{outline:3px solid #e6d2ae;outline-offset:4px}
+.abilities .ability.aim-cancelled{outline-color:#e8b8a7}
 .abilities .ability.control-blocked b{font-size:11px}
 @media(max-height:520px) and (min-width:600px){#skill-aim-status{bottom:calc(100% + 44px);width:205px;font-size:11px;padding:4px 7px}}
+/* Skill cluster: Q, E and C sit on an arc around R. E and C are nearest the middle of the screen, so they are large.
+   Each "+" badge sits on the outer side of its skill and covers no disc. The visible disc is the art, 4px inside the
+   button. The layer from skill-reach.js sends a press in a gap to the nearest skill. */
+.abilities{width:192px;height:192px;right:max(22px,env(safe-area-inset-right))}
+.abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature,.abilities .ability.ult{left:auto;top:auto;width:84px;height:84px}
+.abilities .ability.dash{right:8px;bottom:108px}
+.abilities .ability.surge{right:100px;bottom:100px}
+.abilities .ability.signature{right:108px;bottom:8px}
+.abilities .ability.ult{right:0;bottom:0;width:100px;height:100px}
+.abilities .ability-upgrade.upgrade-dash{left:auto!important;top:auto!important;right:-11px!important;bottom:173px!important}
+.abilities .ability-upgrade.upgrade-surge{left:auto!important;top:auto!important;right:165px!important;bottom:165px!important}
+.abilities .ability-upgrade.upgrade-signature{left:auto!important;top:auto!important;right:188px!important;bottom:46px!important}
+.abilities .ability-upgrade.upgrade-ult{left:auto!important;top:auto!important;right:-16px!important;bottom:78px!important}
+.abilities #skill-points{top:-70px}
+/* The Q and R badges sit at the top-right corner, so the key hints of Q and R move to the top-left corner. */
+.abilities .ability.dash kbd,.abilities .ability.ult kbd{left:5px;right:auto}
+#skill-aim-status{bottom:calc(100% + 76px)}
+.skill-reach{position:absolute;inset:0;z-index:0;pointer-events:none}
+.skill-reach>*{position:absolute;display:block;border-radius:50%;pointer-events:auto;touch-action:none}
+.skill-reach>b{inset:0;border-radius:0}
+/* Phones and short windows of any width get the compact cluster, so the point button stays below the difficulty label. */
+@media(max-width:430px),(max-height:520px){
+ .abilities{width:170px;height:170px;right:max(20px,env(safe-area-inset-right))}
+ .abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature{width:74px;height:74px}
+ .abilities .ability.dash{right:7px;bottom:96px}
+ .abilities .ability.surge{right:89px;bottom:89px}
+ .abilities .ability.signature{right:96px;bottom:7px}
+ .abilities .ability.ult{width:88px;height:88px}
+ .abilities .ability-upgrade:not([hidden]){width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important}
+ .abilities .ability-upgrade.upgrade-dash{right:-11px!important;bottom:152px!important}
+ .abilities .ability-upgrade.upgrade-surge{right:145px!important;bottom:145px!important}
+ .abilities .ability-upgrade.upgrade-signature{right:166px!important;bottom:40px!important}
+ .abilities .ability-upgrade.upgrade-ult{right:-16px!important;bottom:68px!important}
+ .abilities #skill-points{top:-66px}
+}
+/* The smallest phones: the C skill ends before the health bar. */
+@media(max-width:370px){
+ .abilities{width:162px;height:162px;right:max(18px,env(safe-area-inset-right))}
+ .abilities .ability.dash,.abilities .ability.surge,.abilities .ability.signature{width:70px;height:70px}
+ .abilities .ability.dash{right:8px;bottom:92px}
+ .abilities .ability.surge{right:84px;bottom:84px}
+ .abilities .ability.signature{right:92px;bottom:8px}
+ .abilities .ability.ult{width:86px;height:86px}
+ .abilities .ability-upgrade.upgrade-dash{right:-11px!important;bottom:145px!important}
+ .abilities .ability-upgrade.upgrade-surge{right:137px!important;bottom:137px!important}
+ .abilities .ability-upgrade.upgrade-signature{right:158px!important;bottom:38px!important}
+ .abilities .ability-upgrade.upgrade-ult{right:-17px!important;bottom:67px!important}
+}
+@media(max-height:520px) and (min-width:600px){#skill-aim-status{right:calc(100% + 30px);bottom:40px}}
+/* The real "+" badges mark every skill that can take a point, so the old small mark on each tile goes. */
+.abilities.upgrade-mode .ability.upgrade-target::before{content:none}
+/* Portrait phones: a narrower point button keeps clear of the team chat. */
+@media(max-width:430px){.abilities #skill-points{width:146px}}
+/* Small landscape windows: the market bar reaches under C, so the cluster moves up to clear it. */
+@media(max-height:520px) and (min-width:600px) and (max-width:659px){.abilities{bottom:calc(60px + env(safe-area-inset-bottom))}}
+/* Small phones on their side (568x320 to 667x375): the minimap gets smaller, and the point button becomes a compact
+   pill to the left of it, so the minimap, the point button, the Q skill and the difficulty label do not overlap. */
+@media(max-height:400px) and (min-width:540px) and (max-width:699px){
+ #map-button{width:72px;height:72px;top:calc(6px + env(safe-area-inset-top))}
+ #map-button #minimap{width:100%;height:100%}
+ .abilities #skill-points{position:fixed;top:calc(24px + env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 80px);left:auto;width:104px;min-height:32px;padding:4px 8px;border-radius:999px;font-size:10px}
+}
+/* Under 600 px wide the rally button stands beside the movement pad, clear of the objective text, and the objective
+   text ends before the timers at the top. */
+@media(max-height:400px) and (min-width:540px) and (max-width:599px){#rally{left:137px;bottom:calc(118px + env(safe-area-inset-bottom))}#objective{max-width:164px}}
+/* On the shortest of these screens the objective text is tighter and keeps to two lines, so it ends above the
+   movement pad. */
+@media(max-height:340px) and (min-width:540px) and (max-width:599px){#objective{top:calc(52px + env(safe-area-inset-top))}#objective .realm-track{margin:3px 0}#objective-sub{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:10px;line-height:1.2}}
+/* From 600 px wide the rally button keeps clear of the health bar and the market button. */
+@media(max-height:400px) and (min-width:600px) and (max-width:699px){#rally{left:138px;width:54px}}
+/* Short landscape screens: the kill feed moves to the middle under the objective timers, clear of the minimap, the
+   point button and the skill cluster. */
+@media(max-height:520px) and (min-width:600px){#kill-feed{left:50%;right:auto;top:calc(84px + env(safe-area-inset-top));transform:translateX(-50%);align-items:center}}
+/* Small phones on their side under 600 px wide: the kill feed and the team chat show only their newest line, both in
+   the gap under the objective timers, so they cover neither the objective text, the skill cluster nor the top edge. */
+@media(max-height:400px) and (min-width:540px) and (max-width:599px){
+ #kill-feed{left:186px;right:auto;top:calc(84px + env(safe-area-inset-top));width:176px;align-items:center}
+ #kill-feed li:nth-last-child(n+2),#team-chat li:nth-last-child(n+2){display:none}
+ #team-chat{left:186px;top:calc(108px + env(safe-area-inset-top));bottom:auto;width:176px}
+ #team-chat li{font-size:10px}
+}
+/* Small landscape windows 401 to 520 px high: the market button reaches under the rally button, so the rally button
+   moves up above it. */
+@media(max-height:520px) and (min-height:401px) and (min-width:600px) and (max-width:699px){#rally{bottom:calc(55px + env(safe-area-inset-bottom))}}
+/* Small phones on their side from 600 px wide: the team chat shows its newest line only, so it ends above the
+   movement pad. */
+@media(max-height:400px) and (min-width:600px) and (max-width:699px){#team-chat li:nth-last-child(n+2){display:none}}
+/* Upright phones: the team chat ends before the point button, and the kill feed starts below the objective text. */
+@media(max-width:600px) and (min-height:521px){#team-chat{width:min(200px,calc(100vw - 184px))}#kill-feed{top:calc(156px + env(safe-area-inset-top))}}

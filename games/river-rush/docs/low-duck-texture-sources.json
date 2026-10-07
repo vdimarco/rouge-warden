@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-06",
+  "provider": "fal.ai",
+  "jobs": {
+    "low-duck-job": {
+      "endpoint": "fal-ai/nano-banana-pro/edit",
+      "requestId": "01a1118d-8659-7cc0-9fbb-29171fd4cdb9",
+      "recipe": {
+        "endpoint_id": "fal-ai/nano-banana-pro/edit",
+        "input": {
+          "image_urls": [
+            "https://arcade.uptick.systems/river-rush/art/rider-downstream.png"
+          ],
+          "aspect_ratio": "1:1",
+          "resolution": "2K",
+          "output_format": "png",
+          "num_images": 1,
+          "prompt": "Create ONE isolated photographic full-body action sprite of the SAME adult athletic tan man from the reference: long wavy dark brown hair, modest brown loincloth fully covering front/back, barefoot and bare torso. This is an extreme DUCK UNDER AN OVERHEAD BRANCH pose for a raft runner game. He is almost LYING PRONE on an invisible raft: belly/chest low, both knees tucked far outward, forearms planted forward on the invisible deck, long hair hanging low, head lower than shoulder blades. Back forms a nearly HORIZONTAL line. Both hands grip a wood paddle laid HORIZONTALLY close to the deck. Viewed FROM BEHIND and slightly above, he faces AWAY toward the top of image. Show his broad back and rear hair, not frontal face. Entire anatomical figure and paddle visible, wide padding all sides, centered in lower half of the square. Extremely low and wide silhouette: height from knees/deck to hair only about one third of a normal standing man's height. Not standing, not squatting upright, not jumping, no raised arms or lifted legs. Distinct believable bracing posture with bent arms and grounded knees. The reference establishes identity ONLY; do not copy its squat or jump posture. Pure white empty background; NO actual raft, water, shadow, scenery, text or grid. Warm natural photographic light matching the reference."
+        },
+        "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+      },
+      "media": {
+        "images": [
+          {
+            "url": "https://v3b.fal.media/files/b/0aad4cf1/zeX5i3xxJKBONCAFEJzWm_QaI1Giz8.png",
+            "content_type": "image/png",
+            "file_name": "zeX5i3xxJKBONCAFEJzWm_QaI1Giz8.png",
+            "file_size": null,
+            "width": null,
+            "height": null
+          }
+        ],
+        "description": ""
+      }
+    },
+    "surface-atlas-job": {
+      "endpoint": "fal-ai/nano-banana-pro",
+      "requestId": "01a1118d-8da0-78b1-9fb5-36431e994a8b",
+      "recipe": {
+        "endpoint_id": "fal-ai/nano-banana-pro",
+        "input": {
+          "aspect_ratio": "1:1",
+          "resolution": "2K",
+          "output_format": "png",
+          "num_images": 1,
+          "prompt": "A production game material texture atlas, exactly FOUR equal square quadrants filling the entire square image in a precise 2 by 2 grid, NO gutters, borders, text, labels or separators. TOP LEFT: close-up wet rugged tropical gray-brown stone with natural fissures, tiny pores, scattered olive moss in crevices and subtle mineral veins. TOP RIGHT: weathered dark honey-brown raft timber, long VERTICAL wood grain and water-darkened fine cracks, no plank gaps. BOTTOM LEFT: rich damp tropical riverbank earth, tiny pebbles, fine roots and patches of low olive moss, warm earthy brown-green, no large leaves. BOTTOM RIGHT: fine emerald green flowing water ripple detail seen straight overhead, small elongated highlights flowing VERTICALLY, dark clear green water, subtle white glints but no broad foam islands. Every quadrant is its own SEAMLESS TILEABLE flat surface texture: its left/right and top/bottom edges match. Orthographic top-down photography, consistent neutral diffuse illumination, no perspective, directional cast shadows, horizon, objects or baked specular glare. Dense realistic microtexture, naturally varied midscale detail, rich organic game-quality materials; no checkerboard patterns or repeated obvious motifs."
+        },
+        "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+      },
+      "media": {
+        "images": [
+          {
+            "url": "https://v3b.fal.media/files/b/0aad4cf1/Eh2_4J3pF8_xAwa4yeavr_r45b3HQc.png",
+            "content_type": "image/png",
+            "file_name": "Eh2_4J3pF8_xAwa4yeavr_r45b3HQc.png",
+            "file_size": null,
+            "width": null,
+            "height": null
+          }
+        ],
+        "description": ""
+      }
+    },
+    "prone-cutout-job": {
+      "endpoint": "pixelcut/background-removal",
+      "requestId": "01a1118f-0a3e-7962-b38e-dc8096c112bd",
+      "recipe": {
+        "endpoint_id": "pixelcut/background-removal",
+        "input": {
+          "image_url": "https://v3b.fal.media/files/b/0aad4cf1/zeX5i3xxJKBONCAFEJzWm_QaI1Giz8.png",
+          "output_format": "rgba",
+          "sync_mode": false
+        },
+        "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+      },
+      "media": {
+        "image": {
+          "url": "https://v3b.fal.media/files/b/0aad4cfb/3A6BbD02aD1Ig2fKuJDV-_result.png",
+          "content_type": "image/png",
+          "file_name": "result.png",
+          "file_size": 1395859,
+          "width": null,
+          "height": null
+        },
+        "file": null
+      }
+    }
+  },
+  "packing": {
+    "duck": "scripts/pack-low-duck.mjs; transparent bounds cropped, deck heading rotated 180\u00b0, uniform width448, 235px height at y684, 42.8% of jump height. No vertical compression.",
+    "surfaces": "scripts/pack-surfaces.mjs; four1024px diffuse tiles with stitched borders, encoded WebP quality90; three512px lossless PNG normals derived from luminance. Generated maps are stylized surface proxies, not scanned physical material measurements."
+  },
+  "runtime_generation_service_dependency": false
+}
