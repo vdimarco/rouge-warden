@@ -63,10 +63,10 @@ The last-run warning SHALL NOT use the line-snap buzz and SHALL NOT mute the dra
 - **THEN** the drag buzz keeps going and the warning buzz differs from the snap buzz.
 
 ### Requirement: Trophy photo framing
-The photo beat of a trophy, a legend or a fish that opens a place SHALL show the fish in the middle of the part of the view that the catch card leaves free when the flash comes. The card SHALL then come up beside the fish, not over it. This SHALL hold right after a jump, and when frames take longer than 50 ms.
+The photo beat of a trophy, a legend or a fish that opens a place SHALL show the fish in the middle of the part of the view that the catch card leaves free when the flash comes. The card SHALL then come up beside the fish, not over it. This SHALL hold right after a jump, and when frames take longer than 50 ms. The flash SHALL wait for a frame that shows the fish in the photo's position, also when no frame comes until after the time of the flash.
 
 #### Scenario: Trophy landed during a jump's zoom on slow frames
-- **WHEN** a trophy is landed while a jump's zoom is still on, and every frame takes 150 ms
+- **WHEN** a trophy is landed while a jump's zoom is still on, every frame takes 150 ms, and no frame comes for 1.5 s after the landing
 - **THEN** at the flash the fish's middle is within 3% of the view's size from the middle of the free part, at 390x844, 360x640 and 844x390
 
 #### Scenario: The card comes up
@@ -89,7 +89,7 @@ In play, no message SHALL cover the lure on the water: the prompt and its sub, t
 - **THEN** no message is within 22 px of the lure, and the card is clear of the gauge and the HUD.
 
 ### Requirement: Action card in the corner
-In play, the prompt SHALL be a small card in the top corner opposite the gauge: the top right, or the top left when the reel is on the left in motion play. It SHALL be at most 210 px wide. Its picture SHALL move as the player must move: tip back, flick forward, raise, lower, steer, hold upright, or turn the crank. A pulse SHALL show the other actions. With reduced motion or Calm effects the picture SHALL be still. The how-to line under the card SHALL hide when the rod cue over the reel shows the same words. The card SHALL hide while the cast report is up, and it SHALL move down under the pull meter while that shows. The gauge SHALL be at most 190 x 120 px (220 x 140 px with Larger text), and its words SHALL not overlap.
+In play, the prompt SHALL be a small card in the top corner opposite the gauge: the top right, or the top left when the reel is on the left in motion play. It SHALL be at most 210 px wide. Its picture SHALL move as the player must move: tip back, flick forward, raise, lower, steer, hold upright, or turn the crank. A pulse SHALL show the other actions. With reduced motion or Calm effects the picture SHALL be still. The how-to line under the card SHALL hide when the rod cue over the reel shows the same words. The card SHALL hide while the cast report is up, and it SHALL move down under the pull meter while that shows. In the tall reel a toast SHALL then stand under the card as well as under the gauge. The pull meter SHALL hide when the motion sensors send no sample for 0.4 s. A slow frame that holds the samples back SHALL NOT hide it or start its pull again. The gauge SHALL be at most 190 x 120 px (220 x 140 px with Larger text), and its words SHALL not overlap.
 
 #### Scenario: A jump in motion play
 - **WHEN** a fish jumps in a fight at 360x640 in motion play
@@ -98,3 +98,11 @@ In play, the prompt SHALL be a small card in the top corner opposite the gauge: 
 #### Scenario: The reel on the left
 - **WHEN** the reel is on the left in motion play at 412x915
 - **THEN** the gauge is in the top right and the card is in the top left.
+
+#### Scenario: A toast while the pull meter shows
+- **WHEN** a toast shows in a fight in motion play at 360x640 or 390x844, with the reel on either side, while the pull meter shows
+- **THEN** the toast stands under the gauge and under the card, and it is clear of the crank, the gauge, the rod cue, the card, the drag bar and the pull meter.
+
+#### Scenario: A slow frame in motion play
+- **WHEN** a frame of a fight in motion play comes 4 s late while the pull meter shows
+- **THEN** the pull meter stays up and keeps its pull, and the card stays under it.

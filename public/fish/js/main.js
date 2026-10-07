@@ -1109,7 +1109,8 @@ function ringNews(e) {
 /* ---------------- the catch ---------------- */
 // the photo beat of a trophy, a legend or a fish that opens a place: the fish shows alone (world.js pushes the camera
 // in), the flash and the shutter come, then the card slides up. Seconds, on the wall clock: the flash comes as the
-// push-in ends, and the card as the fish's hold ends (world.js runs both on this clock too)
+// push-in ends, after a frame shows the photo's pose, and the card as the fish's hold ends (world.js runs both on this
+// clock too)
 const PHOTO = { flash: WORLD.PHOTO.push, card: WORLD.PHOTO.push + WORLD.PHOTO.freeze };
 // the call of each place, after a legend's fanfare
 const PLACE_CALL = { loon: "loonWail", stumps: "frogs", river: "rapids", sea: "gulls" };
@@ -1190,7 +1191,9 @@ function caught(c) {
   show("catch");
   updateHud();
   if (!photo) { countUp(c, junk, rank); return; }
-  cardT = setTimeout(() => {
+  cardT = setTimeout(function snap() {
+    // on slow frames the timer can come before the frame that brings the camera to the photo's pose: wait for that frame
+    if (!world.posed()) { cardT = setTimeout(snap, 16); return; }
     flash("photo"); Sound.sfx("shutter"); Haptics.shutter();
     cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, junk, rank); }, (PHOTO.card - PHOTO.flash) * 1000);
   }, PHOTO.flash * 1000);
@@ -1766,11 +1769,12 @@ function castUpdate(dt) {
   const p = Motion.pose;
   // the sensors went quiet after the player chose motion (a call, a system sheet): after STALL_S the game offers touch.
   // Counted by the clock from the last sample (pose.t; Motion.live turns false LIVE_MS after it), so slow frames count in
-  // full; a pause or another phase counts a second at most
-  const quiet = G.input === "motion" && !Motion.live, gap = G.quietT ? Math.min(1, (t - G.quietT) / 1000) : 0;
+  // full, also a frame longer than a second; a pause or another phase (no cast step in the frame before) counts a second at most
+  const cap = G.quietF >= G.frame - 1 ? Infinity : 1;
+  const quiet = G.input === "motion" && !Motion.live, gap = G.quietT ? Math.min(cap, (t - G.quietT) / 1000) : 0;
   const since = (t - Motion.pose.t) / 1000, live = Motion.tune.LIVE_MS / 1000;
-  G.quietT = t;
-  G.quiet = quiet ? (G.quiet ? G.quiet + gap : Number.isFinite(since) ? clamp(since, live, 1) : live) : 0;
+  G.quietT = t; G.quietF = G.frame;
+  G.quiet = quiet ? (G.quiet ? G.quiet + gap : Number.isFinite(since) ? clamp(since, live, cap) : live) : 0;
   // a motion lift that waits for the rod to reach 11 o'clock, and no sample came: the wait ends here
   if (G.lift) frameLift();
   // touch mode: the finger on the rod is the rod. Drag down = rod back; flick up = forward
@@ -1899,10 +1903,17 @@ function reelUpdate(dt) {
   if (G.hookReq) { hookset = true; G.hookReq = false; }
   const s = sim.state;
   const pullActive = s.phase === "fight" && s.fish?.move !== "jump" && s.fish?.move !== "sulk" && (s.slip || 0) < 0.15;
-  const pull = pullStrength.step(dt, { theta, enabled: G.input === "motion" && Motion.live,
+  // the sensors are live while a sample came in the last LIVE_MS (Motion.live), or in the last LIVE_MS of game time: the
+  // frames since the last sample count, and a frame moves the game on 0.25 s at most. A slow frame holds the samples back,
+  // and that alone must not hide the pull meter or start the pull strength again from a new rest angle
+  const sampleAt = Motion.lastSample;
+  if (sampleAt > 0 && sampleAt !== G.sampleAt) { G.sampleAt = sampleAt; G.sampleFrame = G.frame; G.sensorQuiet = 0; }
+  else if (G.frame !== G.sampleFrame) G.sensorQuiet = (G.sensorQuiet || 0) + dt;
+  const live = G.input === "motion" && (Motion.live || G.sensorQuiet * 1000 < Motion.tune.LIVE_MS);
+  const pull = pullStrength.step(dt, { theta, enabled: live,
     active: pullActive, crank: crankRate, tension: s.tfrac || 0, session: sim });
   // (no "Tip back as you reel" while the prompt says to stop reeling)
-  pullMeter.hidden = G.input !== "motion" || !Motion.live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85 || guideCue.icon === "stop";
+  pullMeter.hidden = !live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85 || guideCue.icon === "stop";
   pullMeter.querySelector("span").textContent = pull > 0.03 ? "Pull strength +" + Math.round(pull * 35) + "%" : "Tip back as you reel";
   pullMeter.querySelector("i").style.transform = "scaleX(" + pull.toFixed(3) + ")";
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;
@@ -2303,9 +2314,10 @@ function frame() {
     held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
   // a computer: the crank's hint says to scroll the mouse wheel
   if (crank) crank.wheelHint = !touchDevice && !sensing();
-  // the action card stands under the pull meter while it shows
-  const pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6;
+  // the action card stands under the pull meter while it shows, and then the toasts of the tall reel stand under the card
+  const card = $("#prompt .p1"), pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6, cardH = pullH && card.offsetParent ? card.offsetHeight : 0;
   if (pullH !== G.pullH) { G.pullH = pullH; game.style.setProperty("--pull-h", pullH + "px"); }
+  if (cardH !== G.cardH) { G.cardH = cardH; game.style.setProperty("--card-h", cardH + "px"); }
   // the action card's how-to stays away while the rod cue over the reel shows the same words
   { const sub = $("#prompt .p2"), rc = $("#rodCue"); sub.classList.toggle("same", !!rc && !rc.hidden && !!sub.textContent && rc.querySelector("span").textContent === sub.textContent); }
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A
@@ -2316,8 +2328,10 @@ function frame() {
   if (DEBUG) debug();
 }
 function step(dt) {
-  // a cutscene holds the fish, the clock, the derby and the cast, and moves itself on
-  if (cuts && cuts.playing) { cuts.update(dt); return; }
+  // a cutscene holds the fish, the clock, the derby and the cast, and moves itself on. The step it ends in goes on with no
+  // time, so play sets its view before the frame draws: the last step of a slow frame must not draw the title view first
+  // and fly the camera home from there
+  if (cuts && cuts.playing) { cuts.update(dt); if (cuts.playing) return; dt = 0; }
   const inPlay = G.phase === "cast" || G.phase === "reel" || G.phase === "lost";
   if (inPlay) {
     // the day goes by: an hour every 75 s in free fishing; the derby stays at golden hour (journey.js has the clock)

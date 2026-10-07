@@ -10,7 +10,7 @@
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { URL, installPhone, sleep, SEEN } from "./lib.mjs";
+import { URL, installPhone, sleep, until, SEEN } from "./lib.mjs";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -38,8 +38,8 @@ async function open({ W, H, reelSide = "right", large = false }) {
   await page.evaluate(() => { FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); });
   return { browser, page, errors };
 }
-// a fight with a stand-in sim (as in store-shots.mjs); patch.fish merges into the fish
-const stage = (page, patch, events = []) => page.evaluate(([patch, events]) => {
+// a fight with a stand-in sim (as in store-shots.mjs); patch.fish merges into the fish. It returns the frame count
+const put = (page, patch, events = []) => page.evaluate(([patch, events]) => {
   const G = FISH.G;
   if (!G.sim || !G.sim.fake) {
     G.lastEvent = {}; G.walk = false; G.hold = null; G.big = null;
@@ -54,7 +54,15 @@ const stage = (page, patch, events = []) => page.evaluate(([patch, events]) => {
   Object.assign(s, rest);
   if (fish) s.fish = { ...s.fish, ...fish };
   G.sim.events.push(...events);
+  return G.frame;
 }, [patch, events]);
+// puts the fight in place, then waits for two game frames, so the prompt and the drawn fish show it. Under load one frame
+// can take a second or more, so a fixed sleep is not enough
+async function stage(page, patch, events) {
+  const f = await put(page, patch, events);
+  try { await until(page, (f) => FISH.G.frame >= f + 2, f); }
+  catch (e) { throw new Error(`no 2 game frames in 60 s after the stage at frame ${f}: ${e.message}`); }
+}
 function look() {
   const box = (s) => { const e = document.querySelector(s); if (!e || e.closest("[hidden]") || !e.getClientRects().length || getComputedStyle(e).visibility === "hidden") return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
   const svg = document.querySelector("#prompt .p1 svg");
@@ -64,9 +72,7 @@ function look() {
 async function cardCheck(page, tag, { side, gaugeMax }) {
   const eye = await page.evaluate(() => FISH.place.stand.eye);
   await stage(page, { fish: { x: eye.x - 0.8, z: eye.z - 11, y: -0.4 } });
-  await sleep(1500);
   await stage(page, { fish: { y: 0.9, jump: 0.8, move: "jump" } }, [{ type: "jump", size: 0.44, x: eye.x - 0.8, z: eye.z - 11 }]);
-  await sleep(700);
   const s = await page.evaluate(look);
   const c = s.card, g = s.gauge;
   const corner = c && (side === "right" ? s.W - c.r < 16 : c.x < 16) && c.y < 140;
@@ -83,12 +89,10 @@ async function cardCheck(page, tag, { side, gaugeMax }) {
   const eye = await page.evaluate(() => FISH.place.stand.eye);
   for (const [id, kg, len, want] of [["pumpkinseed", 0.2, 0.17, 1.7], ["walleye", 5, 0.66, 2.7]]) {
     await stage(page, { fish: { id, kg, len, x: eye.x, z: eye.z - 15, y: -0.3, jump: 0, move: "swim", near: 1 } });
-    await sleep(600);
     const d = await page.evaluate(() => FISH.world.fishDrawn());
     check(d != null && Math.abs(d / len - want) < 0.1, `a ${kg} kg ${id} 15 m out is drawn ${d ? (d / len).toFixed(2) : "-"}x its length (about ${want}x)`);
   }
   await stage(page, { fish: { x: eye.x, z: eye.z - 2, y: -0.3 } });
-  await sleep(600);
   const d2 = await page.evaluate(() => FISH.world.fishDrawn());
   check(d2 != null && Math.abs(d2 / 0.66 - 1) < 0.03, `2 m from the rod it is drawn ${d2 ? (d2 / 0.66).toFixed(2) : "-"}x its length`);
   check(!errors.length, "360x640: no page errors" + (errors.length ? " (" + errors.slice(0, 3).join(" | ") + ")" : ""));
