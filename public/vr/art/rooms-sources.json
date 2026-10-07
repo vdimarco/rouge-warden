@@ -1,0 +1,23 @@
+{
+  "file": "rooms.webp",
+  "layout": "2048 x 1024, 8 columns x 4 rows of 256 px rooms; index = row * 8 + column, row 0 at the top",
+  "made": "2026-10-06",
+  "tool": "Higgsfield, model gpt_image_2_5 (GPT Image 2.5), quality low",
+  "sheets": [
+    {
+      "job": "576f328b-6d07-40ea-bf43-683a587be3a8",
+      "resolution": "2048 x 2048",
+      "rooms": "0-15",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261006_202948_576f328b-6d07-40ea-bf43-683a587be3a8.png",
+      "brief": "4 x 4 sheet of night room interiors seen straight through a window (no frame), bold comic ink, cel bands, halftone: living room with TV, kitchen, bedroom, office, study, home gym, party, artist's studio, plumber's workshop, kid's bunk room, cat on an armchair, bar, laundry, plants and fish tank, gamer in pink neon, stairwell with exit sign"
+    },
+    {
+      "job": "d9390ab5-ca7d-4663-ab3b-528dc00c1983",
+      "resolution": "1024 x 1024",
+      "rooms": "16-31",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/hf_20261006_203035_d9390ab5-ca7d-4663-ab3b-528dc00c1983.png",
+      "brief": "4 x 4 sheet of brightly lit room interiors, same style: family dinner, dentist, hair salon, ballet studio, piano parlour, nursery, pizza oven, dog on a bed, old man with a newspaper, teen room with a guitar, boxing gym, library with green lamps, record shop, yoga, model railway, messy dorm"
+    }
+  ],
+  "processing": "Each sheet cut along its black gutters, each cell cropped 2.5 % in from its edges and resized to 256 px with Lanczos, packed in sheet order, saved as WebP quality 86. No artistic edits."
+}

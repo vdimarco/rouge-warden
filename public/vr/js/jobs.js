@@ -1,7 +1,7 @@
 // In Full Swing: missions and odd jobs. Mission 1, "Sludge Run" (the story's fast start): a gang runner with a clog bomb runs the
 // streets to the Market drain; catch him before the timer runs out, beat his crew, and the bomb is defused. Odd jobs wait at
 // markers round the city and pay Loonies: catch a falling person, carry a stranded window washer down, a pizza rush, a balloon
-// chase, a rooftop brawl. One job runs at a time; walk or swing into a marker to take it. Nobody gets hurt when a job fails: it
+// chase, a rooftop brawl, a taxi fare (drive a car into the marker) and a purse snatcher to run down. One job runs at a time; walk or swing into a marker to take it. Nobody gets hurt when a job fails: it
 // is a cartoon city. Pure: no three, no DOM; streetview.js draws the people, jobsview the markers and the balloon.
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 function rng(seed) {
@@ -23,8 +23,11 @@ export const JOB = {
   balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
   brawl: { time: 120, wave1: 4, wave2: 3, reward: 35 },
   sludge: { speed: 5.4, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
+  // taxi: the fare's drop is this far off; the clock gives this road speed plus spare; get out for longer than walk and they leave
+  taxi: { near: 260, far: 560, speed: 13, spare: 20, reach: 9, walk: 4, reward: 35, tip: 20, hail: 6 },
+  thief: { speed: 6.3, hops: [4, 6], spare: 4, reward: 30 },
 };
-export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl" };
+export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!" };
 // what the marker says, and the toast when you take the job
 export const JOB_LINES = {
   catch: "Someone is falling off a roof! Catch them.",
@@ -32,10 +35,16 @@ export const JOB_LINES = {
   pizza: "Pizza Rush: deliver it hot.",
   balloon: "A kid lost a balloon. Get it back!",
   brawl: "The Sludge Gang took this roof. Clear it.",
+  taxi: "A fare! Get them across town, fast.",
+  thief: "Stop, thief! A goon grabbed a purse. Run him down!",
   sludge: "Mission 1: catch the runner before he blows the Market drain!",
 };
+// jobs that take you far from their marker: no "left it behind" for these
+const ROAMS = { sludge: true, taxi: true, thief: true };
 const KID = { shirt: [0.95, 0.5, 0.2], pants: [0.2, 0.3, 0.6], skin: [0.85, 0.62, 0.45] };
 const WASHER = { shirt: [0.2, 0.55, 0.85], pants: [0.25, 0.25, 0.3], skin: [0.66, 0.45, 0.3] };
+const FARE = { shirt: [0.55, 0.2, 0.6], pants: [0.15, 0.15, 0.2], skin: [0.72, 0.52, 0.38] };
+const VICTIM = { shirt: [0.9, 0.35, 0.45], pants: [0.3, 0.3, 0.4], skin: [0.92, 0.74, 0.6] };
 const FALLER = { shirt: [0.95, 0.9, 0.3], pants: [0.3, 0.2, 0.15], skin: [0.96, 0.78, 0.62] };
 
 export function createJobs({ city, combat, seed = 4711 }) {
@@ -44,7 +53,7 @@ export function createJobs({ city, combat, seed = 4711 }) {
     active: null, offers: [], events: [], people: [], balloons: [], done: {}, failed: {}, story: { sludge: false }, offersOn: true,
     stats: { started: 0, done: 0, failed: 0 },
   };
-  let nextId = 1, offerAt = null;
+  let nextId = 1, offerAt = null, hailT = 0;
   const emit = (e) => { J.events.push(e); if (J.events.length > 64) J.events.shift(); };
   const tops = city.buildings.map((b) => ({ b, t: b.tiers[b.tiers.length - 1] }));
   const ground = (x, z) => (city.isWater(x, z) ? 0 : Math.max(0, city.groundY(x, z)));
@@ -57,6 +66,33 @@ export function createJobs({ city, combat, seed = 4711 }) {
     for (const at of S.zs) { const d = Math.abs(z - at); if (d < bd) { bd = d; best = { x, y: 0, z: at + 6 }; } }
     if (best && (city.collideSphere(best.x, 1, best.z, 0.8) || city.isWater(best.x, best.z))) return null;
     return best;
+  }
+  // A thief's run from (x, z): hops along the street grid from crossing to crossing, never back the way he came, each point
+  // clear of buildings and water. Points sit on the road centre lines (a little off, on his lane).
+  function streetRun(x, z, hops) {
+    const S = city.streets, xs = S.xs, zs = S.zs;
+    let i = 0, j = 0;
+    for (let k = 1; k < xs.length; k++) if (Math.abs(xs[k] - x) < Math.abs(xs[i] - x)) i = k;
+    for (let k = 1; k < zs.length; k++) if (Math.abs(zs[k] - z) < Math.abs(zs[j] - z)) j = k;
+    const at = (a, b) => ({ x: xs[a] + 3, y: 0, z: zs[b] + 3 });
+    const free = (q) => !city.collideSphere(q.x, 1, q.z, 0.8) && !city.isWater(q.x, q.z) && ground(q.x, q.z) < 0.5;
+    const path = [at(i, j)];
+    if (!free(path[0])) return null;
+    let from = null;
+    for (let n = 0; n < hops; n++) {
+      const steps = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([di, dj]) => {
+        const a = i + di, b = j + dj;
+        if (a < 0 || b < 0 || a >= xs.length || b >= zs.length || (from && from[0] === a && from[1] === b)) return false;
+        const q = at(a, b), p0 = at(i, j);
+        for (let f = 0.25; f < 1; f += 0.25) if (!free({ x: p0.x + (q.x - p0.x) * f, z: p0.z + (q.z - p0.z) * f })) return false;
+        return free(q);
+      });
+      if (!steps.length) break;
+      const [di, dj] = steps[Math.floor(r() * steps.length)];
+      from = [i, j]; i += di; j += dj;
+      path.push(at(i, j));
+    }
+    return path.length >= 3 ? path : null;
   }
   function pickRoof(fx, fz, lo, hi, minY, maxY, ok) {
     for (let k = 0; k < 60; k++) {
@@ -124,7 +160,7 @@ export function createJobs({ city, combat, seed = 4711 }) {
   function refreshOffers(fx, fz) {
     offerAt = { x: fx, z: fz };
     J.offers = [];
-    const types = ["catch", "washer", "pizza", "balloon", "brawl"].sort(() => r() - 0.5).slice(0, JOB.offers);
+    const types = ["catch", "washer", "pizza", "balloon", "brawl", "taxi", "thief"].sort(() => r() - 0.5).slice(0, JOB.offers);
     for (const t of types) { const o = makeOffer(t, fx, fz); if (o) J.offers.push(o); }
   }
 
@@ -133,6 +169,7 @@ export function createJobs({ city, combat, seed = 4711 }) {
   // start a job of type at the offer o (or at the hero, for the story and the tests)
   J.start = function start(type, o, h) {
     if (J.active) end(false, "dropped", true);
+    hailT = 0;
     // with no offer (the story, the tests): one made round the hero, or the hero's own spot
     o = o || (type !== "sludge" && makeOffer(type, h.x, h.z)) || { id: nextId++, type, name: JOB_NAMES[type], x: h.x, y: h.y, z: h.z };
     const A = { type, o, t: 0, phase: "go", timer: 0, data: {}, card: null };
@@ -204,6 +241,30 @@ export function createJobs({ city, combat, seed = 4711 }) {
       J.balloons = [A.data.b];
       A.reward = JOB.balloon.reward;
     },
+    taxi(A, h) {
+      // the fare gets in (out of sight in the car) and names a street across town
+      let drop = null;
+      for (let k = 0; k < 60 && !drop; k++) {
+        const a = r() * Math.PI * 2, d = JOB.taxi.near + r() * (JOB.taxi.far - JOB.taxi.near);
+        drop = streetNear(A.o.x + Math.cos(a) * d, A.o.z + Math.sin(a) * d);
+      }
+      drop = drop || { x: city.start.x, y: 0, z: 110 + 6 };
+      const d = Math.hypot(drop.x - A.o.x, drop.z - A.o.z);
+      A.data = { drop, out: 0 };
+      A.timer = A.data.limit = d / JOB.taxi.speed + JOB.taxi.spare;
+      A.reward = JOB.taxi.reward;
+    },
+    thief(A) {
+      const C = JOB.thief, path = streetRun(A.o.x, A.o.z, C.hops[0] + Math.floor(r() * (C.hops[1] - C.hops[0] + 1)));
+      const run = path || [{ x: A.o.x, y: 0, z: A.o.z }, { x: A.o.x + 80, y: 0, z: A.o.z }];
+      let len = 0;
+      for (let i = 1; i < run.length; i++) len += Math.hypot(run[i].x - run[i - 1].x, run[i].z - run[i - 1].z);
+      const g = combat.spawn(A.o.x, 0, A.o.z, "job", { runner: true, hp: 1, path: run, speed: C.speed });
+      const victim = person(VICTIM, A.o.x - 2, A.o.y, A.o.z, 14);
+      A.data = { runner: g, victim, path: run };
+      A.timer = len / C.speed + C.spare;
+      A.reward = C.reward;
+    },
     brawl(A) {
       A.data = { wave: 1 };
       spawnRing(A.o, JOB.brawl.wave1);
@@ -226,14 +287,25 @@ export function createJobs({ city, combat, seed = 4711 }) {
     if (!h) return;
     if (J.offersOn && !J.active && (!offerAt || Math.hypot(h.x - offerAt.x, h.z - offerAt.z) > JOB.refresh)) refreshOffers(h.x, h.z);
     // a marker you walk or swing into starts its job
-    if (!J.active && J.offersOn && !h.busy) {
-      for (const o of J.offers) if (Math.hypot(h.x - o.x, h.z - o.z) < JOB.markerR && Math.abs(h.y - o.y) < JOB.markerUp) { J.start(o.type, o, h); break; }
+    // A taxi fare only gets into a car: the hero driving (busy, but in play) takes it, on foot it is a shout and no job.
+    if (!J.active && J.offersOn) {
+      hailT = Math.max(0, hailT - dt);
+      for (const o of J.offers) {
+        if (Math.hypot(h.x - o.x, h.z - o.z) >= JOB.markerR || Math.abs(h.y - o.y) >= JOB.markerUp) continue;
+        if (o.type === "taxi" && !h.driving) {
+          if (!h.busy && hailT <= 0) { hailT = JOB.taxi.hail; emit({ type: "say", line: "Taxi! Hey, you're not a taxi. Come back with a car!" }); }
+          continue;
+        }
+        if (o.type !== "taxi" && h.busy) continue;
+        J.start(o.type, o, h);
+        break;
+      }
     }
     const A = J.active;
     for (const p of J.people) p.poseT += dt;
     if (!A) { J.card = null; return; }
     A.t += dt;
-    if (A.type !== "sludge" && Math.hypot(h.x - A.o.x, h.z - A.o.z) > JOB.leave && !A.data.caught) { end(false, "left"); return; }
+    if (!ROAMS[A.type] && Math.hypot(h.x - A.o.x, h.z - A.o.z) > JOB.leave && !A.data.caught) { end(false, "left"); return; }
     run[A.type](A, dt, h);
   };
   const fmt = (s) => Math.max(0, Math.ceil(s)) + " s";
@@ -326,6 +398,36 @@ export function createJobs({ city, combat, seed = 4711 }) {
       A.card = card("BALLOON CHASE", b.held ? "Give it back to the kid" : "Grab it before it floats away, " + Math.round(b.y) + " m up", b.held ? D.kid : b);
       J.card = A.card;
     },
+    taxi(A, dt, h) {
+      const D = A.data, C = JOB.taxi;
+      A.timer -= dt;
+      // out of the car too long, and the fare walks off
+      D.out = h.driving ? 0 : D.out + dt;
+      if (D.out > C.walk) { end(false, "walked"); return; }
+      if (h.driving && Math.hypot(h.x - D.drop.x, h.z - D.drop.z) < C.reach) {
+        A.reward += Math.round(C.tip * clamp(A.timer / D.limit, 0, 1) * 2);
+        emit({ type: "say", line: A.reward > C.reward ? "Wow, what a ride! Keep the change." : "Thanks. Here's your fare." });
+        end(true, "dropped");
+        return;
+      }
+      if (A.timer <= 0) { end(false, "late"); return; }
+      A.card = card("TAXI! " + fmt(A.timer), h.driving ? "Drive the fare to the pin, " + Math.round(Math.hypot(D.drop.x - h.x, D.drop.z - h.z)) + " m" : "Get back in the car!", D.drop, { short: fmt(A.timer) });
+      J.card = A.card;
+    },
+    thief(A, dt, h) {
+      A.timer -= dt;
+      const D = A.data, g = D.runner;
+      if (!g.on || !combat.alive(g)) {
+        D.victim.pose = 4; D.victim.poseT = 0;
+        emit({ type: "say", line: "My purse! Thank you!" });
+        end(true, "caught");
+        return;
+      }
+      if (combat.events.some((e) => e.type === "arrived" && e.id === g.id)) { end(false, "away"); return; }
+      if (A.timer <= 0) { end(false, "away"); return; }
+      A.card = card("STOP, THIEF! " + fmt(A.timer), "Run him down, " + Math.round(Math.hypot(g.x - h.x, g.z - h.z)) + " m", g, { short: fmt(A.timer) });
+      J.card = A.card;
+    },
     brawl(A, dt, h) {
       A.timer -= dt;
       const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
@@ -337,7 +439,7 @@ export function createJobs({ city, combat, seed = 4711 }) {
     },
   };
   // the hero was knocked out: a fight job is lost
-  J.knockedOut = () => { if (J.active && (J.active.type === "brawl" || J.active.type === "sludge")) end(false, "knockout"); };
+  J.knockedOut = () => { if (J.active && (J.active.type === "brawl" || J.active.type === "sludge" || J.active.type === "thief")) end(false, "knockout"); };
   // a rope that catches a falling person or the balloon catches them
   J.ropeTargets = function ropeTargets(h) {
     const A = J.active, out = [];

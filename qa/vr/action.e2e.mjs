@@ -189,6 +189,29 @@ try {
   check(job.active && job.active.type === job.o.type && job.card && job.goal, "walking into a marker starts its job, with its card and a compass goal", job);
   await page.screenshot({ path: out + "/action-job.png" });
 
+  /* ---- a taxi fare: on foot it only shouts; driving into its marker takes the job ---- */
+  const tx = await page.evaluate(() => {
+    G.jobs.cancel(); QA.street(); QA.step(5);
+    const P = G.test.state().pos;
+    G.jobs.offers.push({ id: 9001, type: "taxi", name: "Taxi!", x: P.x, y: 0, z: P.z });
+    const said = [];
+    const say = G.ui.say; G.ui.say = (t, d) => { said.push(t); return say.call(G.ui, t, d); };
+    QA.step(5);
+    const foot = G.test.action().jobs.active;
+    G.ui.say = say;
+    const pc = G.test.action().cars.list.sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z))[0];
+    G.test.enterCar(pc.id);
+    const c = G.test.action().cars.driving;
+    G.jobs.offers.push({ id: 9002, type: "taxi", name: "Taxi!", x: c.x, y: 0, z: c.z });
+    QA.step(5);
+    const a = G.test.action();
+    const r = { foot, said, driving: a.driving, active: a.jobs.active, card: G.game.progress.objective, goal: G.game.progress.goal, pins: a.jobs.offers.length };
+    G.jobs.cancel(); G.test.exitCar(); QA.step(5);
+    return r;
+  });
+  check(!tx.foot && tx.said.some((t) => /car/i.test(t)), "on foot at a taxi marker the fare only shouts for a car", tx);
+  check(tx.driving && tx.active && tx.active.type === "taxi" && tx.goal, "driving into the taxi marker takes the fare, with a card and a goal pin", tx);
+
   /* ---- the map: a pin on each job marker, and travel to one takes its job ---- */
   const mp = await page.evaluate(() => {
     const before = { state: G.state, ui: G.ui.paused, ids: G.jobs.offers.map((o) => o.id), active: !!G.jobs.active };
@@ -235,6 +258,40 @@ try {
   check(page.errors.length === 0, "no errors in the first run", page.errors);
   await page.context().close();
 } catch (e) { check(false, "the first-run check threw", e.stack || String(e)); }
+
+/* ---- the toilet erupts: the blast throws the hero into the lake, the lake gives him back on the start roof, Mission 1 starts ---- */
+try {
+  const page = await newPage({ width: 960, height: 540 });
+  await page.addInitScript(quiet);
+  await open(page, "?nosw&cut");
+  await page.waitForFunction(() => G.viewDone, null, { timeout: 300000 });
+  await enterXR(page, "desktop");
+  await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); for (let i = 0; i < 40 && G.test.cutscene().playing; i++) G.test.step(1 / 60, 60); });
+  // the opening on its own clock: the cup fires and pulls by itself after a wait, and the toilet erupts
+  const run = await page.evaluate(() => {
+    const seen = new Set();
+    for (let i = 0; i < 240 && G.state === "intro"; i++) { G.test.step(1 / 60, 15); seen.add(G.test.portal().phase); }
+    const d0 = G.test.lakeDrop(), p0 = G.test.state().pos;
+    let low = p0.y, splash = false;
+    for (let i = 0; i < 600 && G.test.lakeDrop(); i++) {
+      G.test.step(1 / 60, 2);
+      low = Math.min(low, G.test.state().pos.y);
+      if (G.test.events().slice(-24).some((e) => e.type === "splash")) splash = true;
+    }
+    for (let i = 0; i < 30; i++) G.test.step(1 / 60, 10);
+    const a = G.test.action();
+    return { phases: [...seen], state: G.state, d0, p0, low, splash, end: G.test.state().pos, start: G.city.start, job: a.jobs.active && a.jobs.active.type };
+  });
+  check(run.phases.includes("erupt") && run.state === "play", "the toilet erupts and play starts (" + run.phases.join(", ") + ")", run.phases);
+  check(run.d0 && run.p0.z > 270 && run.p0.y > 40, "the blast throws the hero high over the lake shore", { d0: run.d0, p0: run.p0 });
+  check(run.splash && run.low < 0.5, "he falls into the lake: KASPLASH", { low: run.low, splash: run.splash });
+  // the move back to the roof runs behind the screen fade, which keeps real time: give it a moment
+  run.end = await page.waitForFunction((S) => { G.test.step(1 / 60, 5); const p = G.test.state().pos; return Math.hypot(p.x - S.x, p.z - S.z) < 3 && Math.abs(p.y - S.y) < 1 ? p : false; }, run.start, { polling: 100, timeout: 30000 }).then((h) => h.jsonValue()).catch(() => page.evaluate(() => G.test.state().pos));
+  check(Math.hypot(run.end.x - run.start.x, run.end.z - run.start.z) < 3 && Math.abs(run.end.y - run.start.y) < 1, "the lake gives him back on the start roof", { end: run.end, start: run.start });
+  check(run.job === "sludge", "then Mission 1, the Sludge Run, starts", run.job);
+  check(page.errors.length === 0, "no errors in the eruption", page.errors);
+  await page.context().close();
+} catch (e) { check(false, "the eruption check threw", e.stack || String(e)); }
 
 await close();
 done();
