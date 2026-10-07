@@ -731,7 +731,7 @@ export function createHero(scene, renderer) {
     S.diveAgo = S.dive > 0.3 ? 0 : S.diveAgo + dt;
     H.diving = !ground && !nAtt && S.diveAgo < 0.45; // physics rolls a landing that comes from a dive
     // the landing roll, the punches, a hit, and the carry run on their own clocks
-    if (S.roll >= 0) { S.roll += dt; if (S.roll > S.rollDur) S.roll = -1; }
+    if (S.roll >= 0) { S.roll += dt; if (S.roll > S.rollDur) { S.roll = -1; S.flip = false; } }
     if (S.atk) { S.atkT += dt; if (S.atkT > S.atk.dur) S.atk = null; }
     S.hitT += dt;
     S.carry += ((S.carryOn ? 1 : 0) - S.carry) * ease(dt, 10);
@@ -1029,7 +1029,7 @@ export function createHero(scene, renderer) {
 
     /* -- a name for the tests -- */
     const yk = Math.max(S.yank[0], S.yank[1]);
-    H.pose = S.roll >= 0 ? "roll" : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? "dive" : vel.y > 1 ? "jump" : "fall";
+    H.pose = S.roll >= 0 ? (S.flip ? "flip" : "roll") : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? "dive" : vel.y > 1 ? "jump" : "fall";
     H.yaw = S.yaw;
   };
 
@@ -1038,7 +1038,9 @@ export function createHero(scene, renderer) {
   H.setOpacity = (a) => { opacity = clamp(a, 0, 1); OPA.value = opacity; applyVisible(); };
   H.setYaw = (y) => { S.yaw = y; S.inited = true; };
   // the landing roll (main calls it on the physics roll event), a punch or kick, a blow taken from (dx, dz), carrying someone
-  H.roll = (dur) => { S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; };
+  H.roll = (dur) => { S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; S.flip = false; };
+  // a tucked flip in the air (a release boost): the same turn as the roll, with no ground under it
+  H.flip = (dur) => { H.roll(dur); S.flip = true; };
   H.attack = (kind, side) => { S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
   H.hit = (dx, dz) => { S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
   H.setCarry = (on) => { S.carryOn = !!on; };

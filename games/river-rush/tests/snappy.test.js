@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,emptyInput,applyAction,updateGame,jumpHeight,timeToImpact,JUMP_SECONDS,DUCK_SECONDS,speedAt,COIN_LANE_RADIUS,restartLevel} from '../src/game/engine.js';
+import {createGame,emptyInput,queueAction,applyAction,updateGame,jumpHeight,timeToImpact,JUMP_SECONDS,DUCK_SECONDS,speedAt,COIN_LANE_RADIUS,restartLevel} from '../src/game/engine.js';
 import {createMotion,advanceMotion,paddleSample} from '../src/game/motion.js';
 import {readSwipe} from '../src/game/input.js';
 import {renderDpr,foamDepth,riverRate} from '../src/game/quality.js';
@@ -107,4 +107,69 @@ test('a missed coin passes once and leaves normally without awarding later lane 
  for(let i=0;i<20;i++)updateGame(g,emptyInput(),1/60);
  assert.equal(g.coins,0);assert.notEqual(coin.collected,true);assert.equal(g.entities.includes(coin),false);
  assert.equal(g.effects.some(e=>e.type==='coin'),false);
+});
+
+const pickupRun=(hz,items,{steer='',queued=[],startLane=1,until=.04,magnet=0,rush=0}={})=>{
+ const g=Object.assign(clean(),{time:1000,lane:startLane,visualLane:startLane,shield:false,magnet,rush,goal:{kind:'tricks',start:0,target:1e9}}),input=emptyInput();
+ const speed=speedAt(g.time)*(rush?1.32:1),entities=items.map((item,i)=>({id:801+i,done:false,...item,d:speed*item.at}));g.entities=entities;
+ if(steer)applyAction(g,steer);
+ queued.forEach(action=>queueAction(input,action));
+ const seen=new Map();let elapsed=0;
+ while(elapsed<until){const dt=Math.min(1/hz,until-elapsed);updateGame(g,input,dt);elapsed+=dt;for(const event of g.effects)seen.set(event.id,event);}
+ return{g,entities,events:[...seen.values()]};
+};
+
+test('late steering cannot acquire an adjacent magnet and thereby collect remote coins',()=>{
+ const cases=[
+  {name:'one queued right tap from center',items:[{type:'magnet',lane:2,at:.005},{type:'coin',lane:0,at:.012}],options:{queued:['right']}},
+  {name:'two queued right taps from left',items:[{type:'magnet',lane:2,at:.001665},...Array.from({length:9},(_,i)=>({type:'coin',lane:2,at:.003+i*.0025}))],options:{startLane:0,queued:['right','right']}}
+ ];
+ for(const hz of [30,60,120])for(const scenario of cases){
+  const {g,entities,events}=pickupRun(hz,scenario.items,scenario.options);
+  assert.equal(g.lane,2);assert.equal(g.rush,0);
+  assert.equal(g.magnet,0,`${hz} Hz ${scenario.name} activated a magnet beside the raft`);assert.equal(g.coins,0,`${hz} Hz ${scenario.name} awarded remote coins`);
+  assert.ok(entities.every(e=>e.done&&!e.collected));assert.equal(events.filter(e=>e.type==='power'||e.type==='coin').length,0);
+  assert.ok(g.entities.includes(entities[0]),'a missed magnet disappeared before the normal behind limit');
+ }
+});
+
+test('shield and magnet acquisition use visible contact even when leaving the selected lane',()=>{
+ for(const hz of [30,60,120])for(const type of ['shield','magnet']){
+  const miss=pickupRun(hz,[{type,lane:2,at:.005}],{steer:'right'});
+  assert.equal(miss.g.shield,false);assert.equal(miss.g.magnet,0);assert.equal(miss.events.filter(e=>e.type==='power').length,0);
+  const hit=pickupRun(hz,[{type,lane:1,at:.003}],{steer:'right',until:.05});
+  assert.equal(hit.entities[0].collected,true);assert.equal(hit.g.lane,2);
+  if(type==='shield')assert.equal(hit.g.shield,true);else assert.ok(Math.abs(hit.g.magnet-(8+.003-.05))<1e-10);
+  const powers=hit.events.filter(e=>e.type==='power');assert.equal(powers.length,1);assert.equal(powers[0].power,type);assert.equal(powers[0].lane,1);
+  assert.equal(powers[0].distance,hit.entities[0].d);assert.ok(Math.abs(powers[0].playerLane-1)<COIN_LANE_RADIUS);
+  const eventId=hit.g.eventId;updateGame(hit.g,emptyInput(),1/hz);assert.equal(hit.g.eventId,eventId,'a passed power registered another event');
+ }
+});
+
+test('a legitimate magnet attracts only later coin crossings regardless of entity insertion order',()=>{
+ const before={type:'coin',lane:0,at:.002},power={type:'magnet',lane:1,at:.004},after={type:'coin',lane:2,at:.006};
+ for(const hz of [30,60,120])for(const items of [[before,power,after],[after,power,before],[power,after,before],[power,before,after],[before,after,power],[after,before,power]]){
+  const {g,entities,events}=pickupRun(hz,items);
+  assert.equal(g.coins,1,`${hz} Hz power activation affected an earlier coin`);assert.ok(g.magnet>7.9);
+  assert.notEqual(entities.find(e=>e.type==='coin'&&e.at===.002).collected,true);
+  assert.equal(entities.find(e=>e.type==='coin'&&e.at===.006).collected,true);
+  assert.deepEqual(events.map(e=>e.type),['power','coin']);assert.equal(events[1].attracted,true);
+ }
+});
+
+test('a newly acquired magnet expires eight seconds after contact at 30/60/120 Hz',()=>{
+ for(const hz of [30,60,120]){
+  const {g,entities,events}=pickupRun(hz,[{type:'coin',lane:2,at:8.004},{type:'magnet',lane:1,at:.003},{type:'coin',lane:0,at:8.002}],{until:8.02});
+  assert.equal(g.magnet,0);assert.equal(g.coins,1);
+  assert.notEqual(entities.find(e=>e.at===8.004).collected,true);assert.equal(entities.find(e=>e.at===8.002).collected,true);
+  assert.deepEqual(events.map(e=>e.type),['power','coin']);assert.equal(events[1].attracted,true);
+ }
+});
+
+test('existing Magnet and Rush do not acquire other powers from adjacent lanes',()=>{
+ for(const hz of [30,60,120])for(const power of ['magnet','rush']){
+  const {g,entities,events}=pickupRun(hz,[{type:'magnet',lane:2,at:.005},{type:'shield',lane:0,at:.007}],{[power]:3});
+  assert.ok(entities.every(e=>e.done&&!e.collected));assert.equal(g.shield,false);assert.equal(events.filter(e=>e.type==='power').length,0);
+  assert.ok(Math.abs(g[power]-2.96)<1e-10);
+ }
 });

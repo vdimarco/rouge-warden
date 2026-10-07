@@ -1,0 +1,445 @@
+{
+  "checkedAt": "2026-10-07T02:26:47.425021+00:00",
+  "sourceBaseCommit": "221f6c0a1706fa9217028bf772a981df151b1d69",
+  "liveBaseline": {
+    "bundle": "index-Bq7v6xl3.js",
+    "renderer": "webgl",
+    "kind": "real-input-play",
+    "stateOrClockMutated": false,
+    "lateMagnet": {
+      "distance": 419.0908151214241,
+      "powerLane": 2,
+      "raftLaneBeforeInput": 0,
+      "actualRaftLaneAtCrossing": 0.0034505763975567483,
+      "timeToCrossingMs": 1.6645485113038407,
+      "sideGapMetres": 7.5868878096892844,
+      "wronglyActivatedSeconds": 8,
+      "unintendedAttractedCoinEvents": 9
+    },
+    "errors": []
+  },
+  "unitTests": {
+    "passed": 77,
+    "failed": 0,
+    "refreshRates": [
+      30,
+      60,
+      120
+    ],
+    "cases": [
+      "one late queued lane tap, and two late queued taps followed by nine remote coins, all miss",
+      "magnet/shield actual contact while leaving selected lane",
+      "all six insertion orders respect power acquisition time",
+      "eight-second magnet expiry from contact",
+      "existing powers cannot attract other powers"
+    ]
+  },
+  "simulation": {
+    "campaigns": 80,
+    "stages": 240,
+    "seeds": 40,
+    "totalDistance": 864000,
+    "reactionDelayMs": "180\u2013288",
+    "shieldUseRequired": false,
+    "maxEntities": 46
+  },
+  "trajectoryCheck": {
+    "passed": true,
+    "actualSourceFunction": true,
+    "poweredSourceRaftHud": true,
+    "boundaryContinuous": true,
+    "boundaryZeroArcVelocity": true,
+    "movingRaftBoundary": true,
+    "ordinaryFlightUnchanged": true,
+    "registeredSourceWaterHeight": true,
+    "pickupsHideOnlyCollected": true,
+    "noBrowserClaim": true
+  },
+  "build": {
+    "passed": true,
+    "assets": {
+      "index.html": "cd533241d5de933ed446fe17e92a9938da5709d184470bd8d3400e276d5d6c9f",
+      "assets/index-BCth4l5Z.js": "d21726006b8f3a69e4f01436a75f5f6214e32374135d5b7381b8307d9cc6610b",
+      "assets/index-DfEYLRAr.css": "64b34c85c308fdce15224dcfff1f8585da378a12a2afff5e02c4b54e5b4b7d0e"
+    }
+  },
+  "browser": {
+    "passed": true,
+    "base": "http://127.0.0.1:8765/",
+    "source": "http://127.0.0.1:3001/",
+    "bundle": "index-BCth4l5Z.js",
+    "verifiedAcrossSeparateRuns": true,
+    "results": [
+      {
+        "name": "phone",
+        "kind": "actual-app-DOM-input-and-pointer-play",
+        "renderer": "webgl",
+        "alignedCoins": 6,
+        "adjacentCoins": 0,
+        "magnet": 0,
+        "rush": 0,
+        "pausePixels": true,
+        "screenWideDrag": true,
+        "upwardGesture": true,
+        "noActiveGpuPreparation": true
+      },
+      {
+        "name": "desktop",
+        "kind": "actual-app-DOM-input-and-pointer-play",
+        "renderer": "webgl",
+        "alignedCoins": 6,
+        "adjacentCoins": 0,
+        "magnet": 0,
+        "rush": 0,
+        "pausePixels": true,
+        "screenWideDrag": true,
+        "upwardGesture": true,
+        "noActiveGpuPreparation": true
+      }
+    ],
+    "fixture": {
+      "kind": "isolated-source-engine-fixtures",
+      "actualCampaign": false,
+      "rows": [
+        {
+          "kind": "magnet",
+          "hz": 30,
+          "latePowerCollected": false,
+          "magnet": 0,
+          "shield": false,
+          "remoteCoins": 0
+        },
+        {
+          "kind": "shield",
+          "hz": 30,
+          "latePowerCollected": false,
+          "magnet": 0,
+          "shield": false,
+          "remoteCoins": 0
+        },
+        {
+          "kind": "magnet",
+          "hz": 60,
+          "latePowerCollected": false,
+          "magnet": 0,
+          "shield": false,
+          "remoteCoins": 0
+        },
+        {
+          "kind": "shield",
+          "hz": 60,
+          "latePowerCollected": false,
+          "magnet": 0,
+          "shield": false,
+          "remoteCoins": 0
+        },
+        {
+          "kind": "magnet",
+          "hz": 120,
+          "latePowerCollected": false,
+          "magnet": 0,
+          "shield": false,
+          "remoteCoins": 0
+        },
+        {
+          "kind": "shield",
+          "hz": 120,
+          "latePowerCollected": false,
+          "magnet": 0,
+          "shield": false,
+          "remoteCoins": 0
+        },
+        {
+          "kind": "physical-order",
+          "hz": 30,
+          "earlierCoin": false,
+          "laterCoin": true
+        },
+        {
+          "kind": "physical-order",
+          "hz": 60,
+          "earlierCoin": false,
+          "laterCoin": true
+        },
+        {
+          "kind": "physical-order",
+          "hz": 120,
+          "earlierCoin": false,
+          "laterCoin": true
+        }
+      ],
+      "missedPowers3D": {
+        "entities": 2,
+        "powers": [
+          {
+            "type": "magnet",
+            "done": true,
+            "collected": false
+          },
+          {
+            "type": "shield",
+            "done": true,
+            "collected": false
+          }
+        ],
+        "magnet": 0,
+        "shield": false
+      },
+      "fallback": {
+        "missedPowerPixels": 9843
+      },
+      "legitimateAttraction": {
+        "toRaft": {
+          "active": 1,
+          "attracted": 1,
+          "flights": [
+            {
+              "id": 2,
+              "attracted": true,
+              "phase": "to-raft",
+              "progress": 0.125,
+              "position": [
+                0.9370926578962657,
+                2.1886333102564257,
+                1.7278364432870368
+              ],
+              "caught": [
+                -3.8,
+                1.3953825303533778,
+                0.18
+              ]
+            }
+          ]
+        },
+        "toScore": {
+          "active": 1,
+          "attracted": 1,
+          "flights": [
+            {
+              "id": 2,
+              "attracted": true,
+              "phase": "to-score",
+              "progress": 0.3472222222222222,
+              "position": [
+                -3.7574415036317617,
+                1.6372124259947924,
+                0.3814274888536017
+              ],
+              "caught": [
+                -3.8,
+                1.3876025718730125,
+                0.18
+              ]
+            }
+          ]
+        }
+      },
+      "reduced": {
+        "feedback": {
+          "active": 0,
+          "attracted": 0,
+          "flights": []
+        },
+        "reduced": true
+      },
+      "unchangedGpuResources": true,
+      "frozenFixturePixels": true
+    },
+    "late": {
+      "kind": "actual-app-real-keyboard-handler-replay",
+      "attempt": {
+        "id": 57,
+        "lane": 2,
+        "d": 419.0908150851349,
+        "before": {
+          "time": 7.781999999999989,
+          "distance": 418.0725613992002,
+          "speed": 55.42408,
+          "lane": 0,
+          "visualLane": 3.625886106647147e-119,
+          "velocity": -1.3006463309397478e-117,
+          "coins": 8,
+          "magnet": 0,
+          "rush": 0,
+          "action": ""
+        }
+      },
+      "resolved": {
+        "time": 7.881999999999989,
+        "distance": 423.61826939920024,
+        "speed": 55.46807999999999,
+        "lane": 2,
+        "visualLane": 1.7486217534849084,
+        "velocity": 7.082308858338231,
+        "coins": 8,
+        "magnet": 0,
+        "rush": 0,
+        "action": "",
+        "power": {
+          "id": 57,
+          "type": "magnet",
+          "lane": 2,
+          "d": 419.0908150851349,
+          "done": true,
+          "collected": false
+        }
+      },
+      "unintendedMagnetActivations": 0,
+      "attractedSideAwards": 0,
+      "missedRemoteTrail": [
+        {
+          "id": 53,
+          "lane": 2,
+          "d": 420.0908150851349,
+          "frame": {
+            "time": 7.881999999999989,
+            "distance": 423.61826939920024,
+            "speed": 55.46807999999999,
+            "lane": 2,
+            "visualLane": 1.7486217534849084,
+            "velocity": 7.082308858338231,
+            "coins": 8,
+            "magnet": 0,
+            "rush": 0,
+            "action": ""
+          }
+        },
+        {
+          "id": 54,
+          "lane": 2,
+          "d": 425.0908150851349,
+          "frame": {
+            "time": 7.981999999999989,
+            "distance": 429.1683773992002,
+            "speed": 55.51208,
+            "lane": 0,
+            "visualLane": 0.23913423925771396,
+            "velocity": -6.695278775275759,
+            "coins": 8,
+            "magnet": 0,
+            "rush": 0,
+            "action": ""
+          }
+        }
+      ],
+      "rawTrace": "/tmp/river-pickup-contact-late-local/late-magnet-raw-trace.json"
+    },
+    "errors": [],
+    "physicalDeviceFrameRateMeasured": false,
+    "evidencePaths": {
+      "actualOpeningAndControls": "/tmp/river-pickup-contact",
+      "fixture": "/tmp/river-pickup-contact-fixture",
+      "lateReplay": "/tmp/river-pickup-contact-late-local"
+    }
+  },
+  "deployment": {
+    "passed": true,
+    "url": "https://arcade.uptick.systems/river-rush/",
+    "implementationCommit": "7f1802b773cab12cee216e68844e5b912dae894a",
+    "deployment": "dpl_AD6ij8XqUqHVLfpPCR6Vd2HQnBx9",
+    "assets": [
+      {
+        "path": "index.html",
+        "status": 200,
+        "sha256": "cd533241d5de933ed446fe17e92a9938da5709d184470bd8d3400e276d5d6c9f",
+        "matchesBuiltAsset": true
+      },
+      {
+        "path": "assets/index-BCth4l5Z.js",
+        "status": 200,
+        "sha256": "d21726006b8f3a69e4f01436a75f5f6214e32374135d5b7381b8307d9cc6610b",
+        "matchesBuiltAsset": true
+      },
+      {
+        "path": "assets/index-DfEYLRAr.css",
+        "status": 200,
+        "sha256": "64b34c85c308fdce15224dcfff1f8585da378a12a2afff5e02c4b54e5b4b7d0e",
+        "matchesBuiltAsset": true
+      }
+    ],
+    "readyState": "READY",
+    "liveActualPlay": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "source": "http://127.0.0.1:3001/",
+      "results": [],
+      "fixture": null,
+      "late": {
+        "kind": "actual-app-real-keyboard-handler-replay",
+        "attempt": {
+          "id": 246,
+          "lane": 1,
+          "d": 2124.9063757710774,
+          "before": {
+            "time": 35.5109000000001,
+            "distance": 2124.3805641840036,
+            "speed": 67.62479600000005,
+            "lane": 0,
+            "visualLane": 4.900493602624513e-44,
+            "velocity": -1.7474369091732418e-42,
+            "coins": 77,
+            "magnet": 0,
+            "rush": 0,
+            "action": ""
+          }
+        },
+        "resolved": {
+          "time": 35.61090000000009,
+          "distance": 2131.1463437840034,
+          "speed": 67.66879600000004,
+          "lane": 1,
+          "visualLane": 0.8743108767424542,
+          "velocity": 3.5411544291691155,
+          "coins": 78,
+          "magnet": 0,
+          "rush": 0,
+          "action": "",
+          "power": {
+            "id": 246,
+            "type": "magnet",
+            "lane": 1,
+            "d": 2124.9063757710774,
+            "done": true,
+            "collected": false
+          }
+        },
+        "unintendedMagnetActivations": 0,
+        "attractedSideAwards": 0,
+        "missedRemoteTrail": [
+          {
+            "id": 244,
+            "lane": 1,
+            "d": 2125.9063757710774,
+            "frame": {
+              "time": 35.61090000000009,
+              "distance": 2131.1463437840034,
+              "speed": 67.66879600000004,
+              "lane": 1,
+              "visualLane": 0.8743108767424542,
+              "velocity": 3.5411544291691155,
+              "coins": 78,
+              "magnet": 0,
+              "rush": 0,
+              "action": ""
+            }
+          }
+        ],
+        "rawTrace": "/tmp/river-pickup-contact-live/late-magnet-raw-trace.json"
+      },
+      "errors": [],
+      "physicalDeviceFrameRateMeasured": false
+    }
+  },
+  "validation": {
+    "manualOpenSpecStructurePassed": true,
+    "openSpecCliAvailable": false,
+    "physicalDeviceTested": false,
+    "physicalDeviceFrameRateMeasured": false
+  },
+  "reproduce": {
+    "allChecks": "node qa/river-rush/pickup-contact.e2e.mjs",
+    "liveLateReplay": "ARCADE_URL=https://arcade.uptick.systems/ CASE=late node qa/river-rush/pickup-contact.e2e.mjs",
+    "fixtureNeedsCurrentSourceServer": true
+  },
+  "localPassed": true
+}
