@@ -1,0 +1,53 @@
+/* Desktop command bar. On a mouse-and-keyboard screen the portrait, the health and mana bars, the four skills and the
+   item slots join in one framed bar at the bottom centre, as in classic arena games. Touch screens and small windows
+   keep the thumb fan. The bar is 700 px wide: portrait at -338, skills at -236, items at +72 from the centre line.
+   From 1040 px wide the bar clears the movement pad. */
+@media (hover:hover) and (pointer:fine) and (min-width:1040px) and (min-height:600px){
+ #hud #controls{bottom:0;height:300px;background:none}
+ /* The frame catches clicks, so a click between two buttons does not send the hero to the ground under the bar. */
+ #hud::before{content:"";position:absolute;left:calc(50% - 350px);bottom:0;width:700px;height:122px;border:1px solid var(--mr-bronze,#8a6a43);border-bottom:0;border-radius:10px 10px 0 0;background:linear-gradient(#211c17f2,#110e0bf7);box-shadow:inset 0 1px 0 #f2d9a333,inset 0 0 0 3px #0c0a08,0 -4px 18px #000a;pointer-events:auto}
+ #hud::after{content:"";position:absolute;left:calc(50% - 250px);bottom:120px;width:500px;height:2px;background:linear-gradient(90deg,transparent,var(--mr-gold,#d9b46a),transparent);opacity:.55;pointer-events:none}
+ #hud #joystick{bottom:calc(40px + env(safe-area-inset-bottom))}
+
+ /* Portrait with the level badge. The bars hang out of the portrait box to sit under the skills, so the box itself
+    stays clear of the skill row. */
+ #hud .health{left:calc(50% - 338px);bottom:12px;width:92px;height:98px;transform:none;align-items:flex-end;opacity:1;filter:none;pointer-events:none}
+ #hud .health .hero-frame{flex:0 0 92px;height:98px;margin-right:0;border:2px solid var(--mr-bronze,#8a6a43);border-radius:6px;background-position:center 22%}
+ #hud .health strong{left:34px;bottom:-6px;width:26px;height:20px;font-size:13px;line-height:18px}
+ #hud .health>div{position:absolute;left:102px;bottom:16px;width:294px;height:18px}
+ #hud .health #health-text{font-size:12px;line-height:16px}
+ #hud .health #mana-fill{bottom:-14px;height:11px;width:auto;right:1px}
+ #hud .health #mana-text{top:calc(100% + 3px);height:11px;font-size:9px;line-height:11px}
+ #hud .health #xp-fill{bottom:-18px;height:3px}
+ #hud #hunted{left:0;right:auto;top:auto;bottom:calc(100% + 16px)}
+
+ /* Four skills in a row, Q E C R from left to right. */
+ #hud .abilities{left:calc(50% - 236px);right:auto;bottom:52px;width:294px;height:66px;transform:none}
+ #hud .abilities .ability.dash,#hud .abilities .ability.surge,#hud .abilities .ability.signature,#hud .abilities .ability.ult{top:0;bottom:auto;right:auto;width:66px;height:66px;border-radius:8px;border-width:2px}
+ #hud .abilities .ability.dash{left:0}
+ #hud .abilities .ability.surge{left:76px}
+ #hud .abilities .ability.signature{left:152px}
+ #hud .abilities .ability.ult{left:228px;border-color:var(--hero-color,var(--mr-gold,#d9b46a))}
+ #hud .abilities .ability svg,#hud .abilities .ability.ult svg{inset:11px;width:40px;height:40px}
+ #hud .abilities .ability .hud-spell-art{inset:3px}
+ #hud .abilities .ability .hud-spell-art,#hud .abilities .ability b:not(:empty){border-radius:6px}
+ #hud .abilities .ability kbd,#hud .abilities .ability.dash kbd,#hud .abilities .ability.ult kbd{display:block;left:4px;right:auto;top:3px}
+ /* The spell name stays for screen readers; the key and the icon show it on screen. */
+ #hud .abilities .ability>span:not(.hud-spell-art){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ #hud .abilities .ability-upgrade.upgrade-dash,#hud .abilities .ability-upgrade.upgrade-surge,#hud .abilities .ability-upgrade.upgrade-signature,#hud .abilities .ability-upgrade.upgrade-ult{top:-30px!important;bottom:auto!important;right:auto!important;width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;font-size:19px!important}
+ #hud .abilities .ability-upgrade.upgrade-dash{left:20px!important}
+ #hud .abilities .ability-upgrade.upgrade-surge{left:96px!important}
+ #hud .abilities .ability-upgrade.upgrade-signature{left:172px!important}
+ #hud .abilities .ability-upgrade.upgrade-ult{left:248px!important}
+ #hud .abilities #skill-points{top:-78px;right:auto;left:47px;width:200px;min-height:34px;padding:6px 10px;border-radius:999px;font-size:11px}
+ #hud .abilities .ability.aiming{outline-offset:2px}
+ #hud #skill-aim-status{right:auto;left:0;bottom:calc(100% + 92px);width:294px}
+ #hud #auto-status{top:auto;bottom:auto;top:-22px;right:auto;left:calc(100% + 18px);max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+ /* Items: a three-by-two grid, with the market and quick-buy buttons beside it. */
+ #hud #loadout{display:grid;grid-template-columns:186px 72px;grid-template-rows:44px 44px;gap:6px 8px;left:calc(50% + 72px);bottom:12px;width:266px;height:94px;transform:none}
+ #hud #loadout #inventory{grid-column:1;grid-row:1/3;display:grid;grid-template-columns:repeat(3,58px);grid-auto-rows:44px;gap:6px 6px;height:auto}
+ #hud #inventory .inventory-slot{width:58px;height:44px;border-radius:4px}
+ #hud #loadout #shop{grid-column:2;grid-row:1;width:72px;min-width:72px;height:44px;min-height:44px}
+ #hud #loadout #quick-buy{grid-column:2;grid-row:2;width:72px;min-width:72px;height:44px;min-height:44px}
+}

@@ -21,19 +21,6 @@ The resolution ladder in `main.js` can go above the base ratio when the frame ti
 - Ink lines are thin (strength 0.42). They skip grass. The grass shader writes alpha 0 to the scene target. The ink pass reads the smallest alpha of the centre pixel and its four neighbours.
 - Haze strength is 0.42. Saturation is 1.12.
 
-## Watercolour wash (`post.js`, `uWash`)
-
-The default Paint setting copies the look of [Susurrus](https://susurrus.vercel.app/): a cream-and-sepia watercolour.
-`uWash` is 1 for Watercolor and 0 for Bright. The Paint button in the pause menu sets it. `?paint=bright` sets it for one visit.
-
-- The brush reads the scene 1 to 2 pixels off, along slow noise. Edges wobble like bled paint.
-- Wet edges: where the colour changes, the pigment dries 30% darker. Grass (alpha 0) gets no wet edge.
-- Far haze fades towards warm paper, not cool blue.
-- After the display transform, the paper tints the paint. Shadows stay sepia. Saturation drops by 10%.
-- Granulation: dark paint shows more paper grain than light paint.
-- A ragged border of bare paper frames the screen. It has a darker rim where the paint stops. At night the paper dims.
-- Cost: 4 more colour reads and about 8 noise calls for each pixel. There are no new draw calls or render targets.
-
 ## Grass (`world.js`)
 
 - Roots are dark and soft. Tips are bright yellow-green. One blade differs little from the next.

@@ -9,6 +9,8 @@ const GAP = 8; // clear space between the marker and any HUD box
 const READ = 100; // ms between two reads of the HUD boxes (a resize reads at once)
 const POP = 120; // ms of the catch pop
 const BUZZ_GAP = 40; // ms between two vibrations
+const SLOP = 12; // px a finger may move from where it went down and still tap
+const CANCEL_TAP = 500; // ms (event time): a finger the browser cancels sooner than this, with no drag, still throws
 // the hint line at the bottom. Each line fits on one line of the 328 px panel of a 360 px phone (the spoken line above it
 // leaves room for exactly one line, and its tail would poke into a second one): keep them to about 42 letters. The wall line shows
 // while the spoken lines are hidden (portrait) or far above (landscape), so it may run to two lines.
@@ -101,31 +103,45 @@ export function createMobile(canvas, active) {
     latched[side] = true; state.fires[side] = true; state.aims[side] = aim; label();
     hint.textContent = latched[0] && latched[1] ? SAY.both : SAY.swing;
   }
+  // A real phone can drop one finger of a two-thumb press: it may read the two thumbs as a pinch and cancel the first one, or move
+  // the pointer capture away. So the city takes no pinch or zoom gesture, the ups and cancels are read on the window, and a finger
+  // that the browser cancels while it is still a tap throws its plunger.
+  const lift = d => {
+    const rect = canvas.getBoundingClientRect(), x = (d.x-rect.left)/rect.width;
+    cast(x < .5 ? 0 : 1, { x:clamp(x*2-1,-1,1), y:clamp(1-(d.y-rect.top)/rect.height*2,-1,1) });
+  };
   canvas.addEventListener('pointerdown', ev => {
-    if (!on || !active() || drags.has(ev.pointerId)) return;
+    if (!on || !active()) return;
     ev.preventDefault();
-    try { canvas.setPointerCapture(ev.pointerId); } catch { /* a pointer that is already gone: the tap still counts */ }
-    drags.set(ev.pointerId, { x:ev.clientX, y:ev.clientY, distance:0 });
+    // a pointer id that is still listed lost its up somewhere: this press is a new one
+    drags.set(ev.pointerId, { x0:ev.clientX, y0:ev.clientY, x:ev.clientX, y:ev.clientY, look:false, t:ev.timeStamp });
   });
-  canvas.addEventListener('pointermove', ev => {
+  addEventListener('pointermove', ev => {
     const d = drags.get(ev.pointerId);
     if (!d || !active()) return;
     const dx = ev.clientX - d.x, dy = ev.clientY - d.y;
-    d.distance += Math.hypot(dx,dy);
-    // Allow a small amount of finger movement without turning a tap into a look gesture.
-    if (d.distance > 8) { state.turn -= dx * .004; state.pitch -= dy * .004; lookAt = performance.now(); }
+    // A finger that stays within SLOP px of where it went down is still a tap: a thumb that rocks as the other thumb lands looks nowhere.
+    if (!d.look && Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) > SLOP) d.look = true;
+    if (d.look) { state.turn -= dx * .004; state.pitch -= dy * .004; lookAt = performance.now(); }
     d.x = ev.clientX; d.y = ev.clientY;
   });
-  canvas.addEventListener('pointerup', ev => {
+  addEventListener('pointerup', ev => {
     const d = drags.get(ev.pointerId);
     if (!d) return;
     drags.delete(ev.pointerId);
-    if (on && active() && d.distance <= 8) {
-      const rect = canvas.getBoundingClientRect(), x = (ev.clientX-rect.left)/rect.width;
-      cast(x < .5 ? 0 : 1, { x:clamp(x*2-1,-1,1), y:clamp(1-(ev.clientY-rect.top)/rect.height*2,-1,1) });
-    }
+    d.x = ev.clientX; d.y = ev.clientY;
+    if (on && active() && !d.look) lift(d);
   });
-  for (const type of ['pointercancel','lostpointercapture']) canvas.addEventListener(type, ev => { drags.delete(ev.pointerId); });
+  addEventListener('pointercancel', ev => {
+    const d = drags.get(ev.pointerId);
+    if (!d) return;
+    drags.delete(ev.pointerId);
+    if (on && active() && !d.look && ev.timeStamp - d.t < CANCEL_TAP) lift(d);
+  });
+  // iPhone Safari: a second finger starts its own pinch gesture unless the touches and the gesture are cancelled
+  const noGesture = ev => { if (on && active() && ev.cancelable) ev.preventDefault(); };
+  for (const type of ['touchstart', 'touchmove']) canvas.addEventListener(type, noGesture, { passive:false });
+  document.addEventListener('gesturestart', noGesture, { passive:false });
   addEventListener('deviceorientation', ev => {
     if (!sensors || !active() || !Number.isFinite(ev.beta) || !Number.isFinite(ev.gamma) || !Number.isFinite(ev.alpha)) return;
     const rad = Math.PI/180, angle = (screen.orientation?.angle || 0)*rad;

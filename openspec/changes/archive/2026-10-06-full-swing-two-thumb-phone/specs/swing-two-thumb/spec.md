@@ -3,8 +3,8 @@
 ### Requirement: Each half of the screen throws its own plunger
 On a phone, a tap on the left half of the city SHALL throw the left plunger and a tap on the right half SHALL throw the right one.
 Each finger SHALL count as its own tap, so two fingers SHALL throw both plungers in the same frame. A tap SHALL aim through the
-tapped point, as before. A tap on a side whose plunger is out SHALL move that plunger to the new building. A finger that drags more
-than 8 px SHALL look around and SHALL throw nothing.
+tapped point, as before. A tap on a side whose plunger is out SHALL move that plunger to the new building. A finger that moves more
+than 12 px from where it went down SHALL look around and SHALL throw nothing.
 
 #### Scenario: Left and right
 - **WHEN** a phone player taps a building on the left half of the screen
@@ -17,6 +17,23 @@ than 8 px SHALL look around and SHALL throw nothing.
 #### Scenario: A drag beside a tap
 - **WHEN** one finger drags to look while another finger taps the right half
 - **THEN** the view turns and only the right plunger flies
+
+### Requirement: Two thumbs work on a real phone
+The city SHALL start no pinch, zoom or other browser gesture. A finger that the browser cancels within 0.5 s, before it moved
+12 px, SHALL throw its plunger as a tap. A finger that rocks less than 12 px while the other thumb lands SHALL still tap and SHALL
+not turn the view. A finger lifted anywhere on the page SHALL end its tap.
+
+#### Scenario: The browser cancels the first thumb
+- **WHEN** the player puts down the left thumb, then the right thumb, and the browser cancels both touches
+- **THEN** both plungers fly
+
+#### Scenario: Two thumbs pressed a moment apart
+- **WHEN** the left thumb goes down, the right thumb goes down 30 ms later, and they lift 40 ms apart
+- **THEN** both plungers fly and both hold their buildings
+
+#### Scenario: A thumb that rocks
+- **WHEN** a thumb moves 3 to 6 px while the other thumb lands, and both lift
+- **THEN** both plungers fly and the view does not turn
 
 ### Requirement: No SWING button
 The phone panel SHALL have no SWING button. A plunger badge (L, R) SHALL sit at each side of the screen. It SHALL take no taps and
