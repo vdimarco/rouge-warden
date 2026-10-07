@@ -1382,6 +1382,7 @@ attribute vec4 aLane; // start x, y, z, heading (0 +x, 1 -x, 2 +z, 3 -z)
 attribute vec4 aMove; // lane length, speed, phase, (unused)
 attribute vec3 aColor;
 attribute float aPart;
+attribute float aHide; // 1: drawn as a model by actionview.js (the trams have no such attribute: 0)
 #ifdef OUTLINE
 attribute vec3 aOutline;
 ${HULL_UNI}
@@ -1393,6 +1394,7 @@ varying vec3 vLN;
 varying vec3 vC;
 varying float vPart;
 void main() {
+  if (aHide > 0.5) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; } // behind the far plane: clipped
   vPart = aPart;
   float s = mod(aMove.z + aMove.y * uTime, aMove.x);
   float h = aLane.w;
@@ -2748,7 +2750,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     carBody(cb);
     const cg = finish(cb);
     smoothNormals(cg); // welded normals, so the hard-edged car body keeps a closed ink hull
-    cars = instancedMesh(cg, { aLane: 4, aMove: 4, aColor: 3 }, 1800, carMat, 0, carInk);
+    cars = instancedMesh(cg, { aLane: 4, aMove: 4, aColor: 3, aHide: 1 }, 1800, carMat, 0, carInk);
     const tb = Buf({ aPart: 1 }, 64);
     addGeo(tb, new THREE.BoxGeometry(30, 3.2, 2.6), M.makeTranslation(0, 1.9, 0), 0);
     const tg = finish(tb);
@@ -2808,6 +2810,16 @@ export function createCityView(renderer, scene, city, opts = {}) {
     if (on) { if (trafficHidden.has(i)) return true; trafficHidden.set(i, a.array[o]); a.array[o] = -500; }
     else { if (!trafficHidden.has(i)) return false; a.array[o] = trafficHidden.get(i); trafficHidden.delete(i); }
     a.addUpdateRange(o, 1); a.needsUpdate = true;
+    return true;
+  }
+
+  // A street car drawn as a model by actionview.js: its shader car is veiled (not drawn), and its lane stays as it is, so car
+  // theft and crashes still find it.
+  function veilTraffic(i, on) {
+    if (!cars || !(i >= 0 && i < cars.n)) return false;
+    const a = cars.attrs.aHide;
+    a.array[i] = on ? 1 : 0;
+    a.addUpdateRange(i, 1); a.needsUpdate = true;
     return true;
   }
 
@@ -2990,6 +3002,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   // car theft: the street traffic on the CPU, and hiding a stolen car's instance (see trafficCars above)
   V.traffic = trafficCars;
   V.hideTraffic = hideTraffic;
+  V.veilTraffic = veilTraffic;
   V.trafficHidden = () => [...trafficHidden.keys()];
   let kingWant = 0, finaleWant = 0;
   const inkSize = new THREE.Vector2();

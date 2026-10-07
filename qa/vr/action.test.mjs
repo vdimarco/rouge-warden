@@ -214,6 +214,44 @@ test("a car never drives into a building: it stops and bounces", () => {
   assert.ok(K.stats.bumps >= 1, "met a wall at least once in 20 s of wild steering");
 });
 
+test("car against car: a driven car meets a parked car, they never overlap, and the parked car is pushed", () => {
+  const K = createCars(city);
+  K.update(DT, street, null);
+  // two cars on the z = 14 avenue, 14 m apart along it, the first facing the second (yaw pi/2 faces -x)
+  const [a, b] = K.cars;
+  for (const c of K.cars) c.on = false;
+  Object.assign(a, { on: true, x: -140, y: 0, z: 14, yaw: Math.PI / 2, speed: 0, side: 0, vx: 0, vz: 0, job: false, traffic: -1 });
+  Object.assign(b, { on: true, x: -154, y: 0, z: 14, yaw: Math.PI / 2, speed: 0, side: 0, vx: 0, vz: 0, job: false, traffic: -1 });
+  const keep = { x: -147, y: 0, z: 14 };
+  assert.ok(K.enter(a));
+  let minGap = 99, hit = false;
+  for (let i = 0; i < 3 / DT; i++) {
+    K.update(DT, keep, { throttle: 1, steer: 0 });
+    minGap = Math.min(minGap, Math.hypot(a.x - b.x, a.z - b.z));
+    if (K.events.some((e) => e.type === "bump" && e.car)) hit = true;
+  }
+  assert.ok(hit && K.stats.crashes > 0, "a crash: " + K.stats.crashes);
+  assert.ok(minGap > CAR.hit.r * 2 - 0.15, "the cars never sink into each other: closest " + minGap.toFixed(2) + " m between middles");
+  assert.ok(b.x < -154.5, "the parked car was pushed along: " + (b.x + 154).toFixed(2) + " m");
+});
+test("the driven car hits a street car: it becomes a real car and takes the hit", () => {
+  const K = createCars(city);
+  K.update(DT, street, null);
+  for (const c of K.cars) c.on = false;
+  const a = K.cars[0];
+  // a street car standing still on the lane at x = -158 (speed 0.001); the hero drives at it from 12 m behind
+  const T = fakeTraffic([{ x: -400, z: 12.25, h: 0, len: 800, v: 0.001, ph: 242, col: [0.7, 0.12, 0.1] }]); // (mid-lane: the lane ends are skipped)
+  Object.assign(a, { on: true, x: -146, y: 0, z: 12.25, yaw: Math.PI / 2, speed: 0, side: 0, vx: 0, vz: 0, job: false, traffic: -1 });
+  assert.ok(K.enter(a));
+  const ev = [];
+  for (let i = 0; i < 3 / DT; i++) { K.update(DT, { x: -150, y: 0, z: 12 }, { throttle: 1, steer: 0 }, { T, t: 25 }); ev.push(...K.events); K.events.length = 0; }
+  const struck = ev.find((e) => e.type === "struck");
+  assert.ok(struck && struck.traffic === 0, "the street car was struck: " + JSON.stringify(ev.map((e) => e.type)));
+  const q = K.cars.find((c) => c.on && c.traffic === 0);
+  assert.ok(q && q !== a && Math.hypot(q.x - a.x, q.z - a.z) > CAR.hit.r * 2 - 0.15, "a real car now, not overlapping");
+  assert.ok(ev.some((e) => e.type === "bump" && e.car), "and a crash");
+});
+
 /* ---------------- car theft ---------------- */
 // a fake traffic buffer in cityview.js's layout: lane (x, y, z, heading), move (length, speed, phase), colour
 function fakeTraffic(lanes) {

@@ -31,6 +31,9 @@ export const CAR = {
   // a job's car (a getaway car on its run, a sludge tanker): it drives itself along its path at up to speed m/s, slowing for
   // turns; a stopped one brakes to a halt
   auto: { speed: 17, turnSlow: 0.5, look: 7, steerK: 2.2, reach: 6 },
+  // car against car: each car is two circles (radius r, off m from the middle, front and back). A hit pushes the two apart and
+  // trades their speed along the hit (restitution e); a street car the driven car meets becomes a real car (it can be pushed)
+  hit: { r: 0.95, off: 1.25, e: 0.3, traffic: 3.2 },
 };
 // paint: the city's car colours (cityview.js CAR_COLS), with a few brighter ones for the hero's pick
 export const CAR_PAINT = [[0.9, 0.9, 0.88], [0.12, 0.12, 0.13], [0.6, 0.62, 0.64], [0.7, 0.12, 0.1], [0.14, 0.24, 0.5], [0.95, 0.72, 0.1], [0.25, 0.36, 0.3], [0.8, 0.45, 0.2], [0.85, 0.2, 0.55], [0.1, 0.6, 0.7]];
@@ -81,7 +84,7 @@ export function createCars(city, opts = {}) {
   for (const s of streets) for (const side of [-1, 1]) kerbs.push({ s, side, line: s.at + side * (s.w / 2 - s.walk - CAR.half.w + 0.1) });
   const cars = [];
   for (let i = 0; i < (opts.max || CAR.max); i++) cars.push({ id: i, on: false, x: 0, y: 0, z: 0, yaw: 0, speed: 0, side: 0, steer: 0, paint: CAR_PAINT[0], driven: false, bumpT: 9, vx: 0, vz: 0, traffic: -1 });
-  const K = { cars, driving: null, first: true, events: [], stats: { spawned: 0, entered: 0, exited: 0, bumps: 0, stolen: 0 } };
+  const K = { cars, driving: null, first: true, events: [], stats: { spawned: 0, entered: 0, exited: 0, bumps: 0, stolen: 0, crashes: 0 } };
   const emit = (e) => { K.events.push(e); if (K.events.length > 32) K.events.shift(); };
 
   // a crossing's road at (along) on a kerb line, so no car parks across a junction
@@ -119,8 +122,9 @@ export function createCars(city, opts = {}) {
     return null;
   }
 
-  // One frame. focus: the player; drive: the input when the hero drives { throttle -1..1, steer -1..1, handbrake } (else null).
-  K.update = function update(dt, focus, drive) {
+  // One frame. focus: the player; drive: the input when the hero drives { throttle -1..1, steer -1..1, handbrake } (else null);
+  // traffic: { T, t } (the street cars and the clock), for the driven car to hit them.
+  K.update = function update(dt, focus, drive, traffic = null) {
     dt = clamp(dt || 0, 0, 0.1);
     let free = 0;
     for (const c of cars) {
@@ -139,8 +143,60 @@ export function createCars(city, opts = {}) {
       free--; K.stats.spawned++;
     }
     K.first = false;
+    // a street car in the driven car's way becomes a real car, so the hit below can push it
+    if (K.driving && traffic && traffic.T && Math.abs(K.driving.speed) > 1) {
+      const c = K.driving, fx = -Math.sin(c.yaw), fz = -Math.cos(c.yaw), sg = Math.sign(c.speed);
+      const t = nearTraffic(traffic.T, c.x + fx * CAR.half.l * sg, c.z + fz * CAR.half.l * sg, traffic.t, CAR.hit.traffic);
+      if (t && !cars.some((q) => q.on && q.traffic === t.i)) {
+        const q = K.steal(t, c, true);
+        if (q) { q.speed = t.speed; emit({ type: "struck", traffic: t.i, id: q.id, x: q.x, z: q.z }); }
+      }
+    }
     for (const c of cars) if (c.on) step(c, dt, c === K.driving ? drive : c.auto ? autoDrive(c) : null);
+    collide();
   };
+  // Car against car: two circles each. An overlap pushes the cars apart (half each, unless the push would go into a wall) and
+  // trades their velocity along the hit; the result goes back into each car's speed and slide.
+  const H = CAR.hit, CA = [{ x: 0, z: 0 }, { x: 0, z: 0 }], CB = [{ x: 0, z: 0 }, { x: 0, z: 0 }];
+  function circles(c, out) {
+    const fx = -Math.sin(c.yaw), fz = -Math.cos(c.yaw);
+    out[0].x = c.x + fx * H.off; out[0].z = c.z + fz * H.off; out[1].x = c.x - fx * H.off; out[1].z = c.z - fz * H.off;
+  }
+  function setVel(c, vx, vz) {
+    const fx = -Math.sin(c.yaw), fz = -Math.cos(c.yaw);
+    c.speed = clamp(vx * fx + vz * fz, -CAR.reverse * 2, CAR.top); c.side = vx * -fz + vz * fx; c.vx = vx; c.vz = vz;
+  }
+  function collide() {
+    for (let i = 0; i < cars.length; i++) {
+      const a = cars[i];
+      if (!a.on) continue;
+      for (let j = i + 1; j < cars.length; j++) {
+        const b = cars[j];
+        if (!b.on || Math.abs(a.x - b.x) > 6 || Math.abs(a.z - b.z) > 6) continue;
+        circles(a, CA); circles(b, CB);
+        let best = null, depth = 0;
+        for (const p of CA) for (const q of CB) {
+          const dx = p.x - q.x, dz = p.z - q.z, d = Math.hypot(dx, dz), over = H.r * 2 - d;
+          if (over > depth) { depth = over; best = d > 1e-4 ? { nx: dx / d, nz: dz / d } : { nx: 1, nz: 0 }; }
+        }
+        if (!best) continue;
+        const { nx, nz } = best;
+        // push apart: half each (all to the other when one cannot move)
+        const ax = a.x + nx * depth / 2, az = a.z + nz * depth / 2, bx = b.x - nx * depth / 2, bz = b.z - nz * depth / 2;
+        const aOk = clear(ax, az, a.yaw), bOk = clear(bx, bz, b.yaw);
+        if (aOk) { a.x = ax; a.z = az; } else if (clear(b.x - nx * depth, b.z - nz * depth, b.yaw)) { b.x -= nx * depth; b.z -= nz * depth; }
+        if (bOk) { b.x = bx; b.z = bz; } else if (clear(a.x + nx * depth, a.z + nz * depth, a.yaw)) { a.x += nx * depth; a.z += nz * depth; }
+        // trade the velocity along the hit (equal masses)
+        const rel = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
+        if (rel >= 0) continue; // already moving apart
+        const jn = -(1 + H.e) * rel / 2;
+        setVel(a, a.vx + nx * jn, a.vz + nz * jn);
+        setVel(b, b.vx - nx * jn, b.vz - nz * jn);
+        K.stats.crashes++;
+        if (-rel > 2) emit({ type: "bump", speed: -rel, x: (a.x + b.x) / 2, z: (a.z + b.z) / 2, id: a.id, other: b.id, car: true });
+      }
+    }
+  }
   // the self-driving input of a job's car: toward the next point of its path, slower in a turn; stopped: brake
   const AUTO_IN = { throttle: 0, steer: 0, handbrake: false };
   function autoDrive(c) {
@@ -210,18 +266,20 @@ export function createCars(city, opts = {}) {
     return best;
   };
   // A street car (trafficAt's { i, x, z, yaw, paint }) becomes a car here, stopped, in its colour: a free slot, else the
-  // farthest car the hero is not in. Returns the car (main.js then gets in), or null while the hero drives.
-  K.steal = function steal(t, from) {
-    if (!t || K.driving) return null;
+  // farthest car the hero is not in (nor a job's). Returns the car (main.js then gets in), or null while the hero drives. quiet:
+  // the driven car hit it (no steal counted, and it works while driving).
+  K.steal = function steal(t, from, quiet = false) {
+    if (!t || (K.driving && !quiet)) return null;
     let c = cars.find((q) => !q.on);
     if (!c) {
       const fx = from ? from.x : t.x, fz = from ? from.z : t.z;
       let fd = -1;
-      for (const q of cars) { const d = Math.hypot(q.x - fx, q.z - fz); if (d > fd) { fd = d; c = q; } }
+      for (const q of cars) { if (q === K.driving || q.job) continue; const d = Math.hypot(q.x - fx, q.z - fz); if (d > fd) { fd = d; c = q; } }
+      if (!c) return null;
       off(c);
     }
     Object.assign(c, { on: true, x: t.x, y: 0, z: t.z, yaw: t.yaw, speed: 0, side: 0, steer: 0, paint: t.paint.slice(0, 3), driven: false, vx: 0, vz: 0, bumpT: 9, traffic: t.i });
-    K.stats.stolen++; emit({ type: "steal", id: c.id, traffic: t.i, x: c.x, z: c.z });
+    if (!quiet) { K.stats.stolen++; emit({ type: "steal", id: c.id, traffic: t.i, x: c.x, z: c.z }); }
     return c;
   };
   K.enter = function enter(c) {

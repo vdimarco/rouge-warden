@@ -5,7 +5,7 @@
 // balloon chase. The people of the jobs and the Sludge Gang are figures (streetview.js createFigures).
 import * as THREE from "three";
 import { toonify, outlineOf } from "./comic.js";
-import { CAR } from "./cars.js";
+import { CAR, trafficAt } from "./cars.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 // marker colours (linear, a little over 1 so the bloom picks them out)
@@ -13,7 +13,10 @@ const JOB_COL = { catch: [2.2, 0.5, 0.4], washer: [0.4, 1.4, 2.4], pizza: [2.4, 
   mugging: [2.6, 0.3, 0.3], getaway: [2.6, 0.3, 0.3], tanker: [2.6, 0.3, 0.3] }; // a crime: red
 const MAX_MARK = 8;
 const CAR_REACH = 90; // cars drawn within this of the camera
-const MODEL_N = 3, MODEL_REACH = 50; // the nearest cars show their model (1,200 to 1,900 triangles, twice with its ink); the rest a box car
+const MODEL_N = 8, MODEL_REACH = CAR_REACH; // every drawn car shows its model (5,000 triangles, twice with its ink); the box car is the fallback
+// The street traffic (cityview.js, up to 1,800 shader cars in one draw) keeps its simple body far off; the nearest TRAFFIC_N street
+// cars within TRAFFIC_REACH m of the camera are drawn as the models instead, and their shader cars hidden while they are
+const TRAFFIC_N = 12, TRAFFIC_REACH = 60;
 
 function carGeometry() {
   const parts = [], paint = [1, 1, 1], glass = [0.14, 0.17, 0.24], tyre = [0.07, 0.07, 0.08], lamp = [1.6, 1.5, 1.1], tail = [1.4, 0.15, 0.1];
@@ -43,7 +46,7 @@ function carGeometry() {
   return mergeGeometries(parts);
 }
 
-export function createActionView(scene, { cars, jobs }) {
+export function createActionView(scene, { cars, jobs, traffic = null }) {
   const root = new THREE.Group();
   root.name = "action";
   scene.add(root);
@@ -73,6 +76,15 @@ export function createActionView(scene, { cars, jobs }) {
         gltf.scene.traverse((o) => { if (o.isMesh && !src) src = o; });
         if (!src) throw new Error(m.src + ": no mesh");
         const g = src.geometry.clone();
+        // quantized attributes (KHR_mesh_quantization: normalized integers) to floats first, or the resize below would clamp them
+        for (const k of Object.keys(g.attributes)) {
+          const at = g.attributes[k];
+          if (at.array instanceof Float32Array) continue;
+          const f = new Float32Array(at.count * at.itemSize);
+          const get = [at.getX, at.getY, at.getZ, at.getW];
+          for (let i = 0; i < at.count; i++) for (let c = 0; c < at.itemSize; c++) f[i * at.itemSize + c] = get[c].call(at, i);
+          g.setAttribute(k, new THREE.BufferAttribute(f, at.itemSize));
+        }
         g.applyMatrix4(src.matrixWorld);
         g.computeBoundingBox();
         const b = g.boundingBox, len = b.max.z - b.min.z, wid = b.max.x - b.min.x;
@@ -84,9 +96,9 @@ export function createActionView(scene, { cars, jobs }) {
         const map = src.material.map || null;
         if (map) { map.colorSpace = THREE.NoColorSpace; map.anisotropy = 4; }
         const mat = toonify(new THREE.MeshLambertMaterial({ map, color: 0xffffff }), { dots: 0 });
-        const im = new THREE.InstancedMesh(g, mat, cars.cars.length);
+        const im = new THREE.InstancedMesh(g, mat, cars.cars.length + TRAFFIC_N);
         im.name = "car-" + m.src; im.frustumCulled = false; im.count = 0;
-        im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cars.cars.length * 3), 3);
+        im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array((cars.cars.length + TRAFFIC_N) * 3), 3);
         im.add(outlineOf(im, { width: 0.03 }));
         root.add(im);
         models[k] = im;
@@ -145,9 +157,45 @@ export function createActionView(scene, { cars, jobs }) {
   root.add(balloon);
 
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Pv = new THREE.Vector3(), S1 = new THREE.Vector3(1, 1, 1), UP = new THREE.Vector3(0, 1, 0);
+  // The nearest street cars as models: pick them (lanes on the ground, so not the expressway nor a stolen car, clear of their
+  // lane's ends, where the shader shrinks them), veil their shader cars, draw the models where trafficAt puts them, and give back the ones
+  // that went out of reach. The model is picked by the slot, as for the parked cars.
+  const promoted = new Set(), pick = [], TQ = {};
+  function streetModels(cam, time) {
+    const T = traffic.cars();
+    if (!T || !cam) return;
+    const L = T.lane, Mv = T.move, R = TRAFFIC_REACH;
+    pick.length = 0;
+    for (let i = 0; i < T.n; i++) {
+      const o = i * 4, y = L[o + 1];
+      if (Math.abs(y) > 1 || !(Mv[o] > 20)) continue; // the expressway, and a stolen car's sunken lane (it is a real car now)
+      const alongX = L[o + 3] < 1.5;
+      if (Math.abs(alongX ? cam.z - L[o + 2] : cam.x - L[o]) > R) continue;
+      trafficAt(T, i, time, TQ);
+      if (TQ.s < 8 || TQ.len - TQ.s < 8) continue;
+      const d = (TQ.x - cam.x) ** 2 + (TQ.z - cam.z) ** 2;
+      if (d < R * R) pick.push(i, d);
+    }
+    // the nearest TRAFFIC_N
+    const idx = [];
+    for (let k = 0; k < pick.length; k += 2) idx.push(k);
+    idx.sort((a, b) => pick[a + 1] - pick[b + 1]);
+    const keep = new Set();
+    for (let k = 0; k < Math.min(TRAFFIC_N, idx.length); k++) keep.add(pick[idx[k]]);
+    for (const i of promoted) if (!keep.has(i)) { traffic.hide(i, false); promoted.delete(i); }
+    for (const i of keep) {
+      if (!promoted.has(i)) { traffic.hide(i, true); promoted.add(i); }
+      trafficAt(T, i, time, TQ);
+      Q.setFromAxisAngle(UP, TQ.yaw);
+      M.compose(Pv.set(TQ.x, 0, TQ.z), Q, S1);
+      const k = i % models.length, im = models[k], n = counts[k]++;
+      im.setMatrixAt(n, M); im.instanceColor.setXYZ(n, TQ.paint[0], TQ.paint[1], TQ.paint[2]);
+    }
+  }
   const V = {
     root,
     update(dt, time, opts = {}) {
+      if (!opts.cam && promoted.size && traffic) { for (const i of promoted) traffic.hide(i, false); promoted.clear(); }
       beamMat.uniforms.uTime.value = time;
       // cars: into their model's mesh (or the built-in box car)
       let n = 0;
@@ -174,6 +222,7 @@ export function createActionView(scene, { cars, jobs }) {
         }
         n++;
       }
+      if (modelsOk && traffic) streetModels(cam, time);
       if (modelsOk) for (let k = 0; k < models.length; k++) { const im = models[k]; im.count = counts[k]; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; }
       carMesh.count = nb; carMesh.visible = nb > 0; carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true;
       // markers: the offers, or the running job's goal
@@ -198,7 +247,7 @@ export function createActionView(scene, { cars, jobs }) {
       if (b) { balloon.position.set(b.x, b.y, b.z); balloon.rotation.z = Math.sin(time * 1.7) * 0.15; }
     },
     setVisible(v) { root.visible = !!v; },
-    info: () => ({ cars: counts.reduce((a, b) => a + b, 0) + carMesh.count, modelCars: modelsOk ? counts.reduce((a, b) => a + b, 0) : 0, models: modelsOk ? MODELS.map((m) => m.src) : null, markers: beams.count, balloon: balloon.visible }),
+    info: () => ({ cars: counts.reduce((a, b) => a + b, 0) + carMesh.count, modelCars: modelsOk ? counts.reduce((a, b) => a + b, 0) : 0, models: modelsOk ? MODELS.map((m) => m.src) : null, streetModels: promoted.size, markers: beams.count, balloon: balloon.visible }),
   };
   return V;
 }
