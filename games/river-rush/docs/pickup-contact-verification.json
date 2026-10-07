@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-07T02:22:57.109145+00:00",
+  "checkedAt": "2026-10-07T02:26:47.425021+00:00",
   "sourceBaseCommit": "221f6c0a1706fa9217028bf772a981df151b1d69",
   "liveBaseline": {
     "bundle": "index-Bq7v6xl3.js",
@@ -332,7 +332,104 @@
       "lateReplay": "/tmp/river-pickup-contact-late-local"
     }
   },
-  "deployment": null,
+  "deployment": {
+    "passed": true,
+    "url": "https://arcade.uptick.systems/river-rush/",
+    "implementationCommit": "7f1802b773cab12cee216e68844e5b912dae894a",
+    "deployment": "dpl_AD6ij8XqUqHVLfpPCR6Vd2HQnBx9",
+    "assets": [
+      {
+        "path": "index.html",
+        "status": 200,
+        "sha256": "cd533241d5de933ed446fe17e92a9938da5709d184470bd8d3400e276d5d6c9f",
+        "matchesBuiltAsset": true
+      },
+      {
+        "path": "assets/index-BCth4l5Z.js",
+        "status": 200,
+        "sha256": "d21726006b8f3a69e4f01436a75f5f6214e32374135d5b7381b8307d9cc6610b",
+        "matchesBuiltAsset": true
+      },
+      {
+        "path": "assets/index-DfEYLRAr.css",
+        "status": 200,
+        "sha256": "64b34c85c308fdce15224dcfff1f8585da378a12a2afff5e02c4b54e5b4b7d0e",
+        "matchesBuiltAsset": true
+      }
+    ],
+    "readyState": "READY",
+    "liveActualPlay": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "source": "http://127.0.0.1:3001/",
+      "results": [],
+      "fixture": null,
+      "late": {
+        "kind": "actual-app-real-keyboard-handler-replay",
+        "attempt": {
+          "id": 246,
+          "lane": 1,
+          "d": 2124.9063757710774,
+          "before": {
+            "time": 35.5109000000001,
+            "distance": 2124.3805641840036,
+            "speed": 67.62479600000005,
+            "lane": 0,
+            "visualLane": 4.900493602624513e-44,
+            "velocity": -1.7474369091732418e-42,
+            "coins": 77,
+            "magnet": 0,
+            "rush": 0,
+            "action": ""
+          }
+        },
+        "resolved": {
+          "time": 35.61090000000009,
+          "distance": 2131.1463437840034,
+          "speed": 67.66879600000004,
+          "lane": 1,
+          "visualLane": 0.8743108767424542,
+          "velocity": 3.5411544291691155,
+          "coins": 78,
+          "magnet": 0,
+          "rush": 0,
+          "action": "",
+          "power": {
+            "id": 246,
+            "type": "magnet",
+            "lane": 1,
+            "d": 2124.9063757710774,
+            "done": true,
+            "collected": false
+          }
+        },
+        "unintendedMagnetActivations": 0,
+        "attractedSideAwards": 0,
+        "missedRemoteTrail": [
+          {
+            "id": 244,
+            "lane": 1,
+            "d": 2125.9063757710774,
+            "frame": {
+              "time": 35.61090000000009,
+              "distance": 2131.1463437840034,
+              "speed": 67.66879600000004,
+              "lane": 1,
+              "visualLane": 0.8743108767424542,
+              "velocity": 3.5411544291691155,
+              "coins": 78,
+              "magnet": 0,
+              "rush": 0,
+              "action": ""
+            }
+          }
+        ],
+        "rawTrace": "/tmp/river-pickup-contact-live/late-magnet-raw-trace.json"
+      },
+      "errors": [],
+      "physicalDeviceFrameRateMeasured": false
+    }
+  },
   "validation": {
     "manualOpenSpecStructurePassed": true,
     "openSpecCliAvailable": false,
