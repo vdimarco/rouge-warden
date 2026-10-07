@@ -76,6 +76,22 @@ try {
       const sfx = FISH.Sound.sfx;
       FISH.Sound.sfx = function (name, ...a) { if (name === "bailClose" && window.__closeF == null) window.__closeF = FISH.G.frame; return sfx.call(this, name, ...a); };
     });
+    // the page sends Space in the first frame of the strike: a test step can miss a strike on slow frames (it lasts 0.85 s
+    // of the game's clock or more, and a frame moves the game on 0.25 s at most), and a fish can then hook itself
+    await page.evaluate(() => {
+      window.__space = null;
+      const look = () => {
+        const s = FISH.G.sim && FISH.G.sim.state;
+        if (s && s.phase === "strike") {
+          window.__space = FISH.G.frame;
+          window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", key: " ", bubbles: true }));
+          window.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", key: " ", bubbles: true }));
+          return;
+        }
+        if (FISH.G.phase === "reel") requestAnimationFrame(look);
+      };
+      requestAnimationFrame(look);
+    });
     await page.mouse.move(640, 360);
     // (up to 60 s of the game's clock, with a short pause in each 1.6 s of it: a slow test browser runs the game slower
     // than the wall clock. It stops when no frame came for a minute)
@@ -93,13 +109,11 @@ try {
     const cl = await page.evaluate(() => ({ wheel: window.__wheelF, close: window.__closeF }));
     const closeFrames = cl.wheel != null && cl.close != null ? cl.close - cl.wheel : null;
     check(closeFrames != null && closeFrames <= 2, "the wheel's first turn closes the bail (" + closeFrames + " game frames after the first wheel turn)");
-    check(phase === "strike" || phase === "fight", "the wheel reels until a strike (" + phase + still + ")");
-    if (phase === "strike") {
-      await page.keyboard.press("Space");
-      const notSet = await late(() => FISH.G.sim && FISH.G.sim.state.phase !== "strike");
-      phase = await page.evaluate(() => FISH.G.sim.state.phase);
-      check(phase === "fight" || phase === "land" || phase === "caught", "Space sets the hook (" + notSet + phase + ")");
-    }
+    const space = await page.evaluate(() => window.__space);
+    check((phase === "strike" || phase === "fight") && space != null, "the wheel reels until a strike (" + phase + still + (space == null ? ", no strike frame" : "") + ")");
+    const notSet = await late(() => FISH.G.sim && FISH.G.sim.state.phase !== "strike");
+    phase = await page.evaluate(() => FISH.G.sim.state.phase);
+    check(space != null && (phase === "fight" || phase === "land" || phase === "caught"), "Space in the strike sets the hook (" + notSet + phase + (space == null ? ", no strike came" : "") + ")");
     await shot(page, "desk-3-fight");
     // fight with the keys and the wheel, played inside the page in real time: W and S hold the rod near a
     // target that pumps between 50° and 85°, the wheel reels on the way down, and it stops when the drag slips. Up to

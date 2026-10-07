@@ -5,7 +5,8 @@
 // touch play at 390x844, 844x390 and 640x360, and Larger text at 360x640 and 844x390.
 // Each read waits for the state it checks, in a frame that shows it: the report up 0.7 s and 1.5 s after the landing on
 // the lake's clock (the camera on its way, then settled), and then the report gone.
-// Serve public/ first, then: NODE_PATH=qa/browser/node_modules node qa/fish/messages.e2e.mjs   (FISH_URL sets the address)
+// Serve public/ first, then: NODE_PATH=qa/browser/node_modules node qa/fish/messages.e2e.mjs   (FISH_URL sets the address,
+// PARTS=goal runs only the goal toast check)
 // Exits with code 1 when something fails.
 import { createRequire } from "module";
 import path from "path";
@@ -53,8 +54,7 @@ const fmt = (b) => b ? `${Math.round(b.y)}-${Math.round(b.b)}` : "-";
 // The hold: the landing's report, and a toast that shows after the landing, stay up while the test holds them. One whose
 // time came goes when the test lets it go (__let). The lake's clock moves the camera, at most 50 ms a frame, so on slow
 // frames the camera settles long after the report's 2.6 s. At 60 fps the camera settles first, and the hold does nothing.
-// The landing's sim does not step: the lure stays where it landed, on the water. (The sim runs on the page's clock: on
-// slow frames the lure would sink further before the camera settles, and a fish could come)
+// The landing's sim runs on the lake's clock too while the test reads (see land): at 60 fps that changes nothing
 function helpers() {
   const G = FISH.G, r = document.querySelector("#report"), t = document.querySelector("#toast");
   window.__late = "it did not come in 3600 frames, or no frame came for a minute";
@@ -73,7 +73,6 @@ function helpers() {
   Object.defineProperty(r, "hidden", { configurable: true, get() { return H.get.call(this); }, set(v) {
     if (v && hold.report) { hold.due.report = true; return; }
     H.set.call(this, v);
-    if (!v && hold.report && G.sim) G.sim.step = () => {};
   } });
   // (a toast that was up before the landing goes at its own time)
   new MutationObserver((l) => {
@@ -106,6 +105,10 @@ async function land(d) {
   G.step = "flight"; G.flight = { step: () => ({ x: 0, y: 0, z: -d, done: true, land: "water", lineOut: d, spool: 0 }) };
   await when("landing in the reel with the report up", () => G.phase === "reel" && !r.hidden);
   c = clock();
+  // the landing's sim runs on the lake's clock, as the camera does. The page's clock runs ahead of both on slow frames,
+  // and the lure would sink further, or a fish come, before the camera settles. At 60 fps the two clocks agree
+  { const sim = G.sim, step = sim.step.bind(sim); let t = 0;
+    sim.step = (dt, ...a) => { const room = clock() - c - t; if (room <= 0) return; dt = Math.min(dt, room); t += dt; return step(dt, ...a); }; }
   const out = [];
   for (const s of [0.7, 1.5]) out.push(await when(`report up ${s} s after the landing`, () => clock() >= c + s && window.__still()));
   window.__let("report");
@@ -164,6 +167,68 @@ async function run({ input, reelSide = "right", large = false, sizes }) {
   await browser.close();
 }
 
-for (const r of RUNS) await run(r);
+// A cast that finishes a goal, in the tall reel: the report covers the toast while it is up, so the "Goal done" toast
+// waits until the report goes, and then shows in full for its time (it showed for about 0.4 s when it came first)
+async function goalToast() {
+  const browser = await chromium.launch({ args: ARGS });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  page.setDefaultTimeout(120000);
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.route("**/three.module.min.js", (r) => r.fulfill({ path: path.join(ROOT, "public/crimson/lib/three.module.min.js"), contentType: "application/javascript" }));
+  const save = { v: 1, cuts: SEEN, input: "motion", assist: true, place: "loon", casts: 140, caught: 61, longest: 30, seen: { run: 1, bite: 1, "ring.tip": 1, cast: 1, bail: 1 } };
+  await page.addInitScript((save) => { localStorage.clear(); localStorage.setItem("fish.v1", JSON.stringify(save)); }, save);
+  await page.addInitScript(installPhone);
+  await page.goto(URL);
+  await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });
+  await page.click("#freeBtn");
+  await waitFor(page, "cast after Go fishing", () => FISH.G.phase === "cast");
+  await page.evaluate(() => { FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); });
+  const g = await page.evaluate(async () => {
+    const G = FISH.G, r = document.querySelector("#report"), t = document.querySelector("#toast"), out = { layout: "", on: 0, off: 0, under: false, covered: false, full: false };
+    const frames = (n) => new Promise((done) => { const f = G.frame; const go = () => (G.frame >= f + n ? done() : requestAnimationFrame(go)); requestAnimationFrame(go); });
+    // the goal toast's life on the page's clock: when it is put up (and whether the report was up then), and when it goes
+    new MutationObserver(() => {
+      const goal = /Goal done/.test(t.textContent), on = t.classList.contains("on");
+      if (goal && on && !out.on) { out.on = performance.now(); out.under = !r.hidden; }
+      if (out.on && !out.off && !on) out.off = performance.now();
+    }).observe(t, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    // no toast up or waiting when the cast lands (the reminder of Go fishing waits 1.2 s at most behind another, on the page's
+    // clock, as toasts do): a goal toast then has nothing to wait behind
+    let moved = performance.now();
+    new MutationObserver(() => { moved = performance.now(); }).observe(t, { attributes: true, attributeFilter: ["class"], childList: true });
+    FISH.newCast();
+    const fq = G.frame;
+    while (t.classList.contains("on") || performance.now() - moved < 1500) {
+      if (G.frame - fq > 3600) return out;
+      await frames(1);
+    }
+    G.cast = { verdict: "sweet", yaw: 0, stroke: 1 };
+    G.step = "flight"; G.flight = { step: () => ({ x: 0, y: 0, z: -55, done: true, land: "water", lineOut: 55, spool: 0 }) };
+    // each frame until the toast goes: the layout of the reel, and a frame that shows the toast in full
+    const f0 = G.frame;
+    await new Promise((done) => {
+      const go = () => {
+        if (G.phase === "reel") out.layout = G.layout;
+        if (out.on && !out.off && r.hidden && +getComputedStyle(t).opacity > 0.95) out.full = true;
+        // (the report over the toast while it is up: the player does not see it)
+        if (out.on && !out.off && !r.hidden) out.covered = true;
+        if (out.off || G.frame - f0 > 3600) return done();
+        requestAnimationFrame(go);
+      };
+      requestAnimationFrame(go);
+    });
+    return out;
+  });
+  const ms = g.on && g.off ? Math.round(g.off - g.on) : 0;
+  check(g.layout === "tall-reel" && !!g.on && !g.under && !g.covered && g.full && ms >= 2900, `a cast of 55 m finishes "Cast 40 m." in the tall reel (${g.layout}): the goal toast comes after the report (${!g.on ? "it never came" : g.under || g.covered ? "the report covered it" : "it did"}), shows in full (${g.full}), and stays ${ms} ms (2900 or more)`);
+  check(!errors.length, "goal toast: no page errors" + (errors.length ? " (" + errors.slice(0, 3).join(" | ") + ")" : ""));
+  await browser.close();
+}
+
+// PARTS=goal runs only the goal toast check
+if (process.env.PARTS !== "goal") for (const r of RUNS) await run(r);
+await goalToast();
 console.log(fails.length ? `\n${fails.length} FAILED` : "\nall passed");
 process.exit(fails.length ? 1 : 0);
