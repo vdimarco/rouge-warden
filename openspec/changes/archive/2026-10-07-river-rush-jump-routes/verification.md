@@ -19,4 +19,12 @@ The compact [browser receipt](browser-receipt.json) identifies the candidate and
 
 ## Limits and publication
 
-The OpenSpec CLI is unavailable; Markdown requirements/scenarios are checked manually. Browser checks use Chromium/SwiftShader and viewport layouts, not physical phone hardware or hardware frame-rate measurement. Production publication and exact asset/live-play checks remain pending.
+The OpenSpec CLI is unavailable; Markdown requirements/scenarios are checked manually. Browser checks use Chromium/SwiftShader and viewport layouts, not physical phone hardware or hardware frame-rate measurement. The isolated fallback proof constructs its own model state; natural actual-App probes do not change App state, clocks or seeds.
+
+## Production
+
+Source commit `ac7bc478f5b7062b226fde9c3a35f2611d7f6a32` is published on `vdimarco/rouge-warden` main. Vercel deployment `dpl_9LVjJfeCRdJFy76YpjR4vspnJy5H` is READY and assigned to `arcade.uptick.systems`. Production HTML, JavaScript, CSS and music bytes match the tested local files exactly; music range requests return HTTP 206. See [live asset receipt](live-assets.json).
+
+The exact production phone-layout probe passes at .327811 s actual jump lead: required jump at row 3 and duck at row 5, all five physical arc coins and matching height-aware flights, protection intact, every pickup cue, no collision, active GPU preparation or browser errors. This uses the actual App input handler, natural seed and simulation clock, without leaderboard writes. See [live browser receipt](live-browser-receipt.json).
+
+Canonical requirements contain both completed delta requirements and all four scenarios. The completed change is archived at `openspec/changes/archive/2026-10-07-river-rush-jump-routes/`.

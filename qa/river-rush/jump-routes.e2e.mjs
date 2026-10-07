@@ -7,7 +7,7 @@ const base=process.env.GAME_URL||new URL('river-rush/',process.env.ARCADE_URL||'
 const out=process.env.SHOTS||'/tmp/river-jump-routes';await fs.mkdir(out,{recursive:true});
 const source=await fs.readFile(new URL('./wild-finale.mjs',import.meta.url),'utf8');
 const install=source.slice(source.indexOf('function install(){'),source.indexOf('const state=p=>'));
-const report={passed:false,kind:'natural-actual-App-required-jump-and-physical-gold-routes',base,stateOrClockMutations:false,fixedWallClockOrSeed:false,rows:[],errors:[],limitations:['Synthetic keyboard events use the actual App input handler. Natural Date.now campaign seeds are retained.','Chromium/SwiftShader; input lead is measured in the real simulation, without claiming physical-device frame rate.']};
+const report={passed:false,kind:process.env.CASE==='fixture'?'isolated-2D-numeric-height-and-flight':'natural-actual-App-required-jump-and-physical-gold-routes',base,actualAppStateOrClockMutations:false,fixedWallClockOrSeed:false,rows:[],errors:[],limitations:['Synthetic keyboard events use the actual App input handler. Natural Date.now campaign seeds are retained.','Chromium/SwiftShader; input lead is measured in the real simulation, without claiming physical-device frame rate.']};
 const browser=await chromium.launch({args:['--no-sandbox','--enable-unsafe-swiftshader']});
 const checkpoint=()=>fs.writeFile(`${out}/jump-routes.json`,JSON.stringify(report,null,2)+'\n');
 async function fallbackHeightProof(){

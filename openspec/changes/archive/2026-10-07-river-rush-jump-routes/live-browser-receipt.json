@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "scope": "One natural actual-App live phone mandatory-jump and duck route",
+  "url": "https://arcade.uptick.systems/river-rush/?verify=ac7bc478",
+  "sourceRelease": "ac7bc478f5b7062b226fde9c3a35f2611d7f6a32",
+  "js": "index-CzEJCImM.js",
+  "css": "index-BttXBCLJ.css",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "actualAppStateOrClockMutations": false,
+  "fixedActualAppSeed": false,
+  "requestedLeadSeconds": 0.32,
+  "actualLeadSeconds": 0.327811,
+  "requiredJumpRow": 3,
+  "requiredDuckRow": 5,
+  "physicalArcCoins": 5,
+  "matchingRenderedArcFlights": 5,
+  "maxNormalizedHeightError": 0.029824,
+  "shieldIntact": true,
+  "noHitLoseOrSmash": true,
+  "coinCuePerPhysicalContact": true,
+  "noActiveGpuPreparation": true,
+  "errors": [],
+  "screenshot": "/tmp/river-jump-routes/live/phone-lead-0.32-arc.png",
+  "limitations": [
+    "Headless Chromium/SwiftShader; no physical-device FPS or human feel measurement.",
+    "Synthetic keyboard events use the actual App handler; applied lead is quantized to real simulation frames."
+  ]
+}
