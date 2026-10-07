@@ -175,7 +175,7 @@ function createWorld() {
   streetView = G.streetView = createStreetView(scene, street, figures);
   combat = G.combat = createCombat(city);
   cars = G.cars = createCars(city);
-  jobs = G.jobs = createJobs({ city, combat });
+  jobs = G.jobs = createJobs({ city, combat, cars });
   actionView = G.actionView = createActionView(scene, { cars, jobs });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
@@ -451,7 +451,10 @@ function ropeCatch(i, r) {
     const how = combat.pull(+id.slice(5), hf);
     if (how === "takedown") { audio.sfx("yank", { pos: r.anchor, vol: 0.5 }); fx.word("THWIP", r.anchor, { scale: 1.3 }); haptic(i, 0.5, 40); }
     else if (how) { audio.sfx("yank", { pos: r.anchor }); fx.word("YANK", r.anchor, { scale: 1.3 }); }
-  } else if (jobs.ropeCaught(tag)) { audio.sfx("stick", { pos: r.anchor }); fx.word("THWIP", r.anchor, { scale: 1.3 }); }
+  } else if (jobs.ropeCaught(tag)) {
+    audio.sfx(tag === "getaway" ? "bump" : "stick", { pos: r.anchor });
+    fx.word(tag === "getaway" ? "THUCK" : tag === "leak" ? "SPLORT" : "THWIP", r.anchor, { scale: 1.3 });
+  }
   release(P, i);
 }
 // The rope targets: the fighting goons near the hero and a job's falling person or balloon. They are added and taken away as
@@ -574,7 +577,10 @@ function actionFrame(dt, inp) {
   const hf = heroFight();
   combat.update(dt, hf);
   jobs.offersOn = save.jobs.sludge; // while driving only a taxi marker starts (jobs.js)
+  jobs.crimesOn = save.jobs.sludge; // crimes start near the hero after Mission 1
   jobs.update(dt, G.time, hf);
+  throwFrame(dt);
+  audio.fight(combat.fighting > 0 && G.state === "play");
   hero.setCarry(jobs.carrying());
   for (const e of combat.events) combatEvent(e);
   combat.events.length = 0;
@@ -624,12 +630,18 @@ const FAIL_LINES = {
   time: "Out of time!", dumpster: "Ouch! A dumpster broke the fall. They are fine, but you missed.",
   drainpipe: "The washer slid down a drainpipe. Safe, but shaken.", cold: "Cold pizza. No tip.", gone: "The balloon is gone. The kid will get over it.",
   knockout: "You were knocked out. The job is lost.", left: "You left the job behind.",
-  walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "The thief got away. Next time!",
+  walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "They got away. Next time!",
+  flood: "The tanker burst! Sludge everywhere. Next time!",
 };
 function jobEvent(e) {
   switch (e.type) {
     case "start": ui.toast(e.line); audio.sfx("trialStart"); break;
     case "say": ui.say(e.line, 2.5); break;
+    // a crime near the hero: the hero's shout, and a marker (actionview draws the offer)
+    case "crime": ui.say(e.line, 3); ui.toast("Crime: " + JOB_NAMES[e.job] + ". Swing over there!"); audio.sfx("trialStart"); break;
+    case "crimeover": ui.toast("Too late: the " + JOB_NAMES[e.job] + " is over."); break;
+    case "leak": fx.word("GLUG", FXP.set(e.x, e.y + 1, e.z), { scale: 1.1 }); break;
+    case "seal": fx.word("SPLORT", FXP.set(e.x, e.y + 0.6, e.z), { scale: 1.3 }); audio.sfx("pump"); if (e.n >= e.of) ui.toast("Leak sealed!"); break;
     case "caught": audio.sfx("unlock"); haptic(1, 0.6, 50); break;
     case "done": {
       audio.sfx("trialEnd");
@@ -664,10 +676,13 @@ function hudFrame(dt, inp) {
   else if (combat.focus >= 1 && combat.inReach(heroFight()) && !phone) prompt = key("RB", "F", "") + "FINISH";
   else if (near) prompt = phone ? "" : key("B", "R", "") + (near.traffic ? "STEAL" : "GET IN");
   else if (takedownAim()) prompt = key("RT", "CLICK", "TAP") + "TAKEDOWN";
+  else if (combat.throwTarget(throwFrom()) && combat.fighting > 0 && !phone) prompt = key("D-PAD UP", "G", "") + "THROW";
   else if (combat.inReach(heroFight()) && fightHints < 3) prompt = key("RT", "CLICK", "TAP") + "PUNCH";
   const fight = combat.hits > 0 || combat.focus > 0 || combat.fighting > 0;
   actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt),
-    combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame() });
+    combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(),
+    air: G.state === "play" && !P.onGround && !P.wall && !driving && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached",
+    throwable: combat.fighting > 0 && !!combat.throwTarget(throwFrom()) });
 }
 // the warning: a red mark on the screen over the goon who winds up near the hero (the prompt line says how to dodge)
 const WARN_V = new THREE.Vector3(), WARN_OUT = { x: 0, y: 0 };
@@ -996,6 +1011,7 @@ function flatFrame(dt, inp, yawDelta) {
   FLAT_FLAGS.forceFirst = G.state === "intro" || (G.state === "paused" && G.pausedFrom === "intro");
   FLAT_FLAGS.drive = driving && cars.driving ? cars.driving.yaw : null; // behind the car, further back
   hero.setVisible(!shot);
+  hero.setGlide(P.gliding);
   hero.update(dt, P, ropes, inp);
   flatcam.update(dt, P, hero, FLAT_LOOK, FLAT_FLAGS);
   // body[data-view] tells the page (the crosshair, the touch buttons) which view is on
@@ -1332,6 +1348,9 @@ function physics(dt, inp) {
   // desktop Space: a jump on the ground or off a wall, a yank on every rope in the air
   const airYank = inp.mode === "desktop" && inp.jumpDown && !P.onGround && !P.wall;
   physIn.jump = !intro && inp.jumpDown && !airYank;
+  // the glide: jump held (pad A, the phone's GLIDE button) in the air with no rope out; physics waits a moment after the take-off
+  physIn.glide = !intro && flatOn && !isXR() && G.state === "play" && !P.onGround && !P.wall && (!!inp.jumpHeld || !!actHud.touch.glide);
+  if (physIn.glide && !P.gliding && G.time - glideAt > 3 && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached") { glideAt = G.time; wordAhead("WHOOSH", P.pos, 5, 1.2, 1); }
   for (let i = 0; i < 2; i++) {
     const src = inp.hands[i], o = physIn.hands[i];
     o.pos.x = src.gripPos.x; o.pos.y = src.gripPos.y; o.pos.z = src.gripPos.z;
@@ -1460,9 +1479,10 @@ function phoneCatch(r) {
   const most = A.y - P.chest - PHONE.catch.clear;
   if (most > PHONE.catch.min && r.lenTarget > most) { r.lenTarget = most; r.rate = PHONE.catch.rate; } // (a low point cannot keep you off the street: no change)
 }
-const SPECIAL_TAGS = { clog: true, pipe: true, crack: true, goon: true, person: true, balloon: true };
-// a rope that catches one of these does not stay: it yanks a goon off his feet, or catches a falling person or the balloon
-const CATCH_TAGS = { goon: true, person: true, balloon: true };
+const SPECIAL_TAGS = { clog: true, pipe: true, crack: true, goon: true, person: true, balloon: true, getaway: true, leak: true };
+// a rope that catches one of these does not stay: it yanks a goon off his feet, catches a falling person or the balloon, plunges
+// the windscreen of a getaway car or plugs a tanker's leak
+const CATCH_TAGS = { goon: true, person: true, balloon: true, getaway: true, leak: true };
 
 // 11. One drain per frame: the portal hears them in the intro, the game in play; main plays the feedback.
 function drainEvents() {
@@ -1524,7 +1544,9 @@ function feedback(ev) {
       else if (!climbTold) { climbTold = true; ui.sayLine("wall", 0); } // the first wall line, in the words of the device in use
       break;
     case "mantle": audio.sfx("land", { vol: 0.6 }); break;
-    case "unclimb": if (ev.why === "jump") audio.sfx("release", { pos: G.input.head.pos }); break;
+    case "unclimb": if (ev.why === "jump" || ev.why === "leap") audio.sfx("release", { pos: G.input.head.pos }); if (ev.why === "leap") { fovKick = 6; hero.flip(0.6); } break;
+    case "wallrun": audio.sfx("land", { vol: 0.4 }); if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 3, 1.5, 1); } break;
+    case "leap": audio.sfx("release", { vol: 1 }); fovKick = 8; hero.flip(0.6); wordAhead("WHOOSH", P.pos, 3, 2.5, 1.3); break;
   }
 }
 
@@ -1643,7 +1665,36 @@ function after(dt, inp, yawDelta) {
 
 // The fight keys of flat play. Space (pad A, the phone's DODGE button) with a goon winding up near: a dodge, not a jump. F (pad RB) with a
 // full focus meter, a goon in reach and no rope out: the finisher, not a yank. Each one eats the press it used.
-let slowT = 0;
+let slowT = 0, glideAt = -9;
+// the things the hero throws: a toilet lid that spins along an arc to its goon (one mesh each, made on the first throw)
+const flying = [], lidPool = [];
+function lidMesh() {
+  let m = lidPool.find((q) => !q.visible);
+  if (!m) {
+    m = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 0.07, 18), new THREE.MeshBasicMaterial({ color: COLORS.porcelain }));
+    const ink = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.33, 0.05, 18), new THREE.MeshBasicMaterial({ color: 0x140a18, side: THREE.BackSide }));
+    m.add(ink);
+    scene.add(m); lidPool.push(m);
+  }
+  m.visible = true;
+  return m;
+}
+// a throw goes where you look (the view's yaw in flat play), not where the hero's body happens to face
+function throwFrom() { const hf = heroFight(); if (flatOn) hf.yaw = flatcam.yaw; return hf; }
+function throwFrame(dt) {
+  for (let k = flying.length - 1; k >= 0; k--) {
+    const f = flying[k], g = combat.goons.find((q) => q.id === f.id);
+    if (!f.mesh) f.mesh = lidMesh();
+    f.t += dt;
+    const u = Math.min(1, f.t / f.dur), tx = g ? g.x : f.x0, ty = g ? g.y + 1.2 : f.y0, tz = g ? g.z : f.z0;
+    f.mesh.position.set(f.x0 + (tx - f.x0) * u, f.y0 + (ty - f.y0) * u + Math.sin(Math.PI * u) * 1.5, f.z0 + (tz - f.z0) * u);
+    f.mesh.rotation.set(0.4, f.t * 18, 0);
+    if (u >= 1 || !g) {
+      if (g && combat.landThrow(g.id, f.fromX, f.fromZ)) { audio.sfx("punch", { pos: g }); fx.word("BONK", FXP.set(g.x, g.y + 2.1, g.z), { scale: 1.4 }); }
+      f.mesh.visible = false; flying.splice(k, 1);
+    }
+  }
+}
 function fightKeys(inp, mx, mz) {
   if (!actionOn() || G.state !== "play" || driving || P.wall) return;
   const dodgeTap = actHud.takeDodge();
@@ -1655,7 +1706,18 @@ function fightKeys(inp, mx, mz) {
       P.vel.x = d.dx * D.speed; P.vel.z = d.dz * D.speed; P.vel.y = Math.max(P.vel.y, D.hop);
       P.onGround = false; P.ground = null;
       hero.roll(D.time);
+      if (d.perfect) slowT = Math.max(slowT, 0.35); // a perfect dodge: a short slow moment
       pushRing({ type: "dodge", perfect: d.perfect });
+    }
+  }
+  if ((inp.throwDown || actHud.takeThrow()) && !driving) {
+    const t = combat.throw(throwFrom());
+    if (t) {
+      const g = t.goon;
+      flying.push({ id: g.id, t: 0, dur: t.time, x0: P.pos.x, y0: P.pos.y + 1.4, z0: P.pos.z, fromX: P.pos.x, fromZ: P.pos.z });
+      hero.attack("punch", 1);
+      audio.sfx("release", { vol: 0.8 });
+      pushRing({ type: "throw", id: g.id });
     }
   }
   const yank = inp.hands[0].yank > 0 || inp.hands[1].yank > 0;

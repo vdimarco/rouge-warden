@@ -115,7 +115,7 @@ try {
     G.rigYaw = yaw; G.desktop.level(-0.5); G.flatcam.reset(yaw);
     QA.step(20);
     const gx = roof.x - roof.ux * 14, gz = roof.z - roof.uz * 14;
-    const id = G.test.spawnGoon(gx, 0, gz, false), id2 = G.test.spawnGoon(gx - roof.uz * 3, 0, gz + roof.ux * 3, false);
+    const id = G.test.spawnGoon(gx, 0, gz, false), id2 = G.test.spawnGoon(gx - roof.uz * 8, 0, gz + roof.ux * 8, false); // (8 m off: seen from far above, two guards close together are one aim)
     QA.step(10);
     const a0 = G.test.action(), g0 = a0.combat.list.find((q) => q.id === id);
     const target = a0.ropeTargets.includes("goon:" + id);

@@ -719,7 +719,8 @@ export function createHero(scene, renderer) {
     // the dive: no rope, not on a wall, falling fast with time to spare before the floor below. It comes in over a fifth of a
     // second and holds until a quarter second before the floor, where the hero tucks for the landing roll (or a rope catches)
     let diveWant = 0;
-    if (!ground && !cling && !nAtt && vel.y < (S.dive > 0.5 ? -5 : -8)) {
+    if (S.glideOn && !ground && !cling && !nAtt) diveWant = 1; // the glide: a flat swan dive with the arms spread
+    else if (!ground && !cling && !nAtt && vel.y < (S.dive > 0.5 ? -5 : -8)) {
       const c = P.city;
       let floor = 0;
       if (c && c.topBelow) { const tb = c.topBelow(pos.x, pos.y - 0.05, pos.z, 0.3); floor = tb ? tb.y : c.isWater(pos.x, pos.z) ? 0 : c.groundY(pos.x, pos.z); }
@@ -831,7 +832,7 @@ export function createHero(scene, renderer) {
     // the toes pointed, the back a little arched
     const wD = S.dive;
     if (wD > 0.001) {
-      const tuck = smooth(10, 30, speed);
+      const tuck = S.glideOn ? 0 : smooth(10, 30, speed);
       for (let sd = 0; sd < 2; sd++) {
         const sx = sd === 0 ? 1 : -1, fl = 0.04 * Math.sin(t * 13 + sd * 1.3) * (1 - tuck); // a flutter in the spread
         V.a.set(sx * 0.8, -0.45 + fl, -0.35); V.b.set(sx * 0.75, -0.4 + fl, -0.5);
@@ -1029,7 +1030,7 @@ export function createHero(scene, renderer) {
 
     /* -- a name for the tests -- */
     const yk = Math.max(S.yank[0], S.yank[1]);
-    H.pose = S.roll >= 0 ? (S.flip ? "flip" : "roll") : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? "dive" : vel.y > 1 ? "jump" : "fall";
+    H.pose = S.roll >= 0 ? (S.flip ? "flip" : "roll") : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? (S.glideOn ? "glide" : "dive") : vel.y > 1 ? "jump" : "fall";
     H.yaw = S.yaw;
   };
 
@@ -1041,6 +1042,8 @@ export function createHero(scene, renderer) {
   H.roll = (dur) => { S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; S.flip = false; };
   // a tucked flip in the air (a release boost): the same turn as the roll, with no ground under it
   H.flip = (dur) => { H.roll(dur); S.flip = true; };
+  // the glide (main passes the physics' gliding flag every frame)
+  H.setGlide = (on) => { S.glideOn = !!on; };
   H.attack = (kind, side) => { S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
   H.hit = (dx, dz) => { S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
   H.setCarry = (on) => { S.carryOn = !!on; };

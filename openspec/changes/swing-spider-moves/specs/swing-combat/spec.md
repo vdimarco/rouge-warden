@@ -26,7 +26,7 @@ which he is gone. He counts as down. The other goons SHALL not notice. In a swin
 
 #### Scenario: Take down a guard from a roof
 - **WHEN** the hero stands on a roof edge 29 m over a street, and the player ropes a guard 14 m out on the street
-- **THEN** the guard hangs upside down over the street, and the guard 3 m from him stays unaware
+- **THEN** the guard hangs upside down over the street, and the guard 8 m from him stays unaware
 
 ### Requirement: A focus meter and a finisher
 In flat play, each blow SHALL fill a focus meter (a punch 10 %, a kick 16 %, a rope pull 12 %, a slam 12 %, a takedown 25 %, a

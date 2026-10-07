@@ -5,7 +5,7 @@ import { generate } from "../../public/vr/js/city.js";
 import { createCombat, FIGHT } from "../../public/vr/js/combat.js";
 import { createCars, CAR, trafficAt, nearTraffic } from "../../public/vr/js/cars.js";
 import { createStreet } from "../../public/vr/js/street.js";
-import { createJobs, JOB } from "../../public/vr/js/jobs.js";
+import { createJobs, JOB, CRIME_LINES } from "../../public/vr/js/jobs.js";
 
 const city = generate();
 let fails = 0;
@@ -98,7 +98,7 @@ test("a goon who winds up near the hero is a threat; a dodge in the wind-up make
 test("with no dodge, the same blow lands", () => {
   const C = createCombat(city), h = hero(street.x, 0, street.z);
   C.spawn(street.x - 1.4, 0, street.z, "t").aggro = true;
-  for (let i = 0; i < 2 / DT; i++) C.update(DT, h);
+  for (let i = 0; i < 3 / DT; i++) C.update(DT, h); // (his first blow lands 1.3 to 2.3 s in)
   assert.ok(C.hp < FIGHT.hp);
 });
 test("perch takedown: from above, an unaware guard is lifted and hangs; the guard beside him does not notice", () => {
@@ -142,6 +142,32 @@ test("the combo count and the focus meter; a full meter finishes every goon in r
   assert.equal(C.focus, 0, "the meter empties");
   for (let i = 0; i < 3 / DT; i++) C.update(DT, h);
   assert.equal(C.hits, 0, "the count ends after a gap");
+});
+
+test("a rope pull drags the goons beside the caught one into a heap at the hero's feet", () => {
+  const C = createCombat(city), h = hero(street.x, 0, street.z, { safe: true });
+  const g = C.spawn(street.x - 12, 0, street.z, "t"), a = C.spawn(street.x - 13.5, 0, street.z + 1, "t"), b = C.spawn(street.x - 12, 0, street.z - 1.8, "t"), far = C.spawn(street.x - 25, 0, street.z, "t");
+  for (const q of [g, a, b, far]) q.aggro = true;
+  assert.equal(C.pull(g.id, h), "pull");
+  assert.equal(C.stats.heaps, 1);
+  for (let i = 0; i < 1 / DT; i++) C.update(DT, h);
+  for (const q of [g, a, b]) assert.ok(Math.hypot(q.x - h.x, q.z - h.z) < 3.5, "pulled to the feet: " + Math.hypot(q.x - h.x, q.z - h.z).toFixed(2));
+  assert.ok(a.hp <= 1 && b.hp <= 1, "the heap hurts: " + a.hp + ", " + b.hp);
+  assert.ok(Math.hypot(far.x - h.x, far.z - h.z) > 8, "a goon 13 m away stays");
+});
+test("a throw hits the goon the hero faces, in range, then waits its cool-down", () => {
+  const C = createCombat(city), h = hero(street.x, 0, street.z, { yaw: Math.PI / 2, safe: true }); // facing -x
+  const g = C.spawn(street.x - 8, 0, street.z, "t"), behind = C.spawn(street.x + 8, 0, street.z, "t");
+  g.hp = 5; behind.hp = 5;
+  assert.equal(C.throwTarget(h), g, "the goon in front");
+  const t = C.throw(h);
+  assert.ok(t && t.goon === g && t.time > 0);
+  assert.equal(C.throw(h), null, "a cool-down before the next throw");
+  assert.ok(C.landThrow(g.id, h.x, h.z));
+  assert.equal(g.hp, 5 - FIGHT.throw.dmg);
+  assert.equal(behind.hp, 5);
+  const near = createCombat(city); near.spawn(street.x - 1, 0, street.z, "t");
+  assert.equal(near.throwTarget(h), null, "too close to throw: punch instead");
 });
 
 /* ---------------- cars ---------------- */
@@ -287,6 +313,90 @@ function runJob(type, act, secs = 200) {
   }
   return { J, C, ev, end: ev.find((e) => e.type === "done" || e.type === "failed") };
 }
+/* ---------------- crimes ---------------- */
+test("a crime starts near the hero with a shout and a marker, is taken from close, and is over after a minute if nobody comes", () => {
+  const C = createCombat(city), K = createCars(city), J = createJobs({ city, combat: C, cars: K });
+  J.crimesOn = true;
+  const h = hero(-150, 0, 14);
+  let crime = null, t = 0;
+  for (; t < JOB.crime.first + 5 && !crime; t += DT) { J.update(DT, t, h); crime = J.events.find((e) => e.type === "crime"); }
+  assert.ok(crime, "a crime within " + (JOB.crime.first + 5) + " s");
+  assert.ok(CRIME_LINES[crime.job].includes(crime.line), "the shout: " + crime.line);
+  const o = J.offers.find((q) => q.crime);
+  const d = Math.hypot(o.x - h.x, o.z - h.z);
+  assert.ok(d >= JOB.crime.near[0] - 1 && d <= JOB.crime.near[1] + 30, "near the hero: " + d.toFixed(0) + " m");
+  J.events.length = 0;
+  for (let k = 0; k < (JOB.crime.last + 2) / DT; k++) { t += DT; J.update(DT, t, h); }
+  assert.ok(J.events.some((e) => e.type === "crimeover"), "over after a minute");
+  assert.ok(!J.offers.some((q) => q.crime && q.id === o.id));
+  // a new one: swing close and it starts
+  const o2 = J.crime("mugging", h, t);
+  assert.ok(o2);
+  J.update(DT, t, hero(o2.x + JOB.crime.take - 3, 20, o2.z));
+  assert.equal(J.active && J.active.type, "mugging");
+  assert.ok(J.info().active.crime);
+});
+test("Mugging: beat the three goons and the victim thanks you, with a quip", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C });
+  const h = hero(-150, 0, 14);
+  J.start("mugging", null, h);
+  assert.equal(C.group("job").length, JOB.mugging.crew);
+  J.active.o.crime = true;
+  for (const g of C.group("job")) g.hp = 0, g.state = "down";
+  const ev = [];
+  J.update(DT, 1, h); ev.push(...J.events);
+  assert.ok(ev.some((e) => e.type === "done" && e.job === "mugging"));
+  assert.ok(ev.filter((e) => e.type === "say").length >= 2, "thanks and a quip");
+});
+test("Getaway Car: it drives itself along the streets; a rope stops it, the crew jumps out, and beating them ends it", () => {
+  const C = createCombat(city), K = createCars(city), J = createJobs({ city, combat: C, cars: K });
+  const h = hero(-150, 0, 14);
+  K.update(DT, h, null);
+  J.start("getaway", null, h);
+  const car = J.active.data.car;
+  assert.ok(car && car.job && car.auto, "a job car on autopilot");
+  const p0 = { x: car.x, z: car.z };
+  for (let i = 0; i < 3 / DT; i++) { K.update(DT, h, null); J.update(DT, i * DT, h); }
+  assert.ok(Math.hypot(car.x - p0.x, car.z - p0.z) > 15, "it drove " + Math.hypot(car.x - p0.x, car.z - p0.z).toFixed(1) + " m");
+  assert.ok(!city.collideSphere(car.x, 0.8, car.z, 0.9), "on the street");
+  assert.ok(J.ropeTargets(h).some((q) => q.tag === "getaway"), "the car is a rope target");
+  assert.ok(J.ropeCaught("getaway"));
+  for (let i = 0; i < 4 / DT; i++) { K.update(DT, h, null); J.update(DT, 3 + i * DT, h); }
+  assert.ok(Math.abs(car.speed) < 0.5, "it stopped: " + car.speed.toFixed(2));
+  assert.equal(C.group("job").length, JOB.getaway.crew, "the crew jumped out");
+  for (const g of C.group("job")) g.hp = 0, g.state = "down";
+  const ev = [];
+  J.update(DT, 8, h); ev.push(...J.events);
+  assert.ok(ev.some((e) => e.type === "done" && e.job === "getaway"));
+  assert.ok(!car.job, "the car is let go");
+});
+test("Getaway Car: left alone it gets away", () => {
+  const C = createCombat(city), K = createCars(city), J = createJobs({ city, combat: C, cars: K });
+  const h = hero(-150, 0, 14);
+  J.start("getaway", null, h);
+  const ev = [];
+  for (let i = 0; i < 200 / DT && J.active; i++) { K.update(DT, h, null); J.update(DT, i * DT, h); ev.push(...J.events); J.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "away"));
+});
+test("Sludge Tanker: three plunges seal the leak; with the crew down it is done; the clock runs out and it floods", () => {
+  const C = createCombat(city), K = createCars(city), J = createJobs({ city, combat: C, cars: K });
+  const h = hero(-150, 0, 14);
+  J.start("tanker", null, h);
+  assert.ok(J.active.data.car && J.active.data.car.tanker, "a tanker car");
+  for (let k = 0; k < JOB.tanker.seals; k++) { assert.ok(J.ropeTargets(h).some((q) => q.tag === "leak")); assert.ok(J.ropeCaught("leak")); }
+  assert.ok(!J.ropeTargets(h).some((q) => q.tag === "leak"), "sealed: no more leak target");
+  J.update(DT, 1, h);
+  assert.ok(J.active, "not done while the crew stands");
+  for (const g of C.group("job")) g.hp = 0, g.state = "down";
+  const ev = [];
+  J.update(DT, 2, h); ev.push(...J.events);
+  assert.ok(ev.some((e) => e.type === "done" && e.job === "tanker"));
+  const C2 = createCombat(city), J2 = createJobs({ city, combat: C2, cars: createCars(city) });
+  J2.start("tanker", null, h);
+  const ev2 = [];
+  for (let i = 0; i < (JOB.tanker.time + 2) / DT && J2.active; i++) { J2.update(DT, i * DT, { ...h, safe: true }); ev2.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev2.some((e) => e.type === "failed" && e.why === "flood"));
+});
 test("Sludge Run: catch the runner, beat his crew, the bomb is defused", () => {
   const r = runJob("sludge", (J, C, h) => {
     const t = C.goons.find((g) => C.alive(g));

@@ -9,7 +9,8 @@ import { CAR } from "./cars.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 // marker colours (linear, a little over 1 so the bloom picks them out)
-const JOB_COL = { catch: [2.2, 0.5, 0.4], washer: [0.4, 1.4, 2.4], pizza: [2.4, 1.3, 0.3], balloon: [2.3, 0.4, 1.6], brawl: [0.7, 2.2, 0.4], taxi: [2.5, 2.2, 0.2], thief: [1.6, 0.5, 2.4], sludge: [0.9, 2.4, 0.4], goal: [2.6, 2.0, 0.4] };
+const JOB_COL = { catch: [2.2, 0.5, 0.4], washer: [0.4, 1.4, 2.4], pizza: [2.4, 1.3, 0.3], balloon: [2.3, 0.4, 1.6], brawl: [0.7, 2.2, 0.4], taxi: [2.5, 2.2, 0.2], thief: [1.6, 0.5, 2.4], sludge: [0.9, 2.4, 0.4], goal: [2.6, 2.0, 0.4],
+  mugging: [2.6, 0.3, 0.3], getaway: [2.6, 0.3, 0.3], tanker: [2.6, 0.3, 0.3] }; // a crime: red
 const MAX_MARK = 8;
 const CAR_REACH = 90; // cars drawn within this of the camera
 const MODEL_N = 3, MODEL_REACH = 50; // the nearest cars show their model (1,200 to 1,900 triangles, twice with its ink); the rest a box car

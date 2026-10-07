@@ -24,6 +24,11 @@ export const FIGHT = {
   // lifted rise m (never higher than under m below the hero) over time s and hangs for hang s
   perch: { above: 5, range: 34, rise: 5, under: 1.5, time: 0.5, hang: 7 },
   // the focus meter (0..1): what each blow adds; a full meter finishes the goons within r m of the hero
+  // the group pull: a rope pull also drags up to n goons within r m of the one it caught; they land in a heap and each takes dmg
+  heap: { r: 3.5, n: 2, dmg: 2 },
+  // the throw: something from the street (a trash-can lid, a vent cap) at a goon min to max m away and within cone degrees of
+  // the facing; it flies time s and takes dmg; one throw every cool s
+  throw: { min: 3, max: 18, cone: 40, time: 0.45, dmg: 2, push: 2, cool: 2.5 },
   focus: { punch: 0.1, kick: 0.16, rope: 0.12, slam: 0.12, takedown: 0.25, dodge: 0.08, perfect: 0.2, r: 3.5 },
 };
 // the gang's clothes: sludge-green hoodies, dark trousers, a green sludge mask; the runner wears hazard yellow
@@ -35,8 +40,8 @@ export function createCombat(city) {
   let nextId = 0;
   const C = {
     goons, hp: FIGHT.hp, quiet: 99, combo: 0, comboT: 9, cool: 0, events: [],
-    hits: 0, hitsT: 9, focus: 0, dodgeT: 0, dodgeCool: 0, // the combo count (blows with no gap over 2 s), focus 0..1, the dodge clocks
-    stats: { punches: 0, kicks: 0, pulls: 0, slams: 0, kos: 0, hurt: 0, knockouts: 0, carHits: 0, dodges: 0, perfect: 0, takedowns: 0, finishers: 0 },
+    hits: 0, hitsT: 9, focus: 0, dodgeT: 0, dodgeCool: 0, throwCool: 0, // the combo count (blows with no gap over 2 s), focus 0..1, the dodge clocks
+    stats: { punches: 0, kicks: 0, pulls: 0, slams: 0, kos: 0, hurt: 0, knockouts: 0, carHits: 0, dodges: 0, perfect: 0, takedowns: 0, finishers: 0, heaps: 0, throws: 0 },
   };
   const emit = (e) => { C.events.push(e); if (C.events.length > 64) C.events.shift(); };
 
@@ -140,10 +145,17 @@ export function createCombat(city) {
       return "takedown";
     }
     C.stats.pulls++;
-    g.state = "pulled"; g.pullT = 0; g.from = { x: g.x, y: g.y, z: g.z };
-    const dx = g.x - h.x, dz = g.z - h.z, d = Math.hypot(dx, dz) || 1;
-    g.to = { x: h.x + (dx / d) * 1.4, y: h.y, z: h.z + (dz / d) * 1.4 };
-    setPose(g, 12);
+    const dx = g.x - h.x, dz = g.z - h.z, d = Math.hypot(dx, dz) || 1, H = FIGHT.heap;
+    // the goons beside him come along on the same rope: a heap at the hero's feet
+    const crew = goons.filter((q) => q !== g && C.alive(q) && Math.abs(q.y - g.y) < 1.6 && Math.hypot(q.x - g.x, q.z - g.z) < H.r)
+      .sort((a, b) => Math.hypot(a.x - g.x, a.z - g.z) - Math.hypot(b.x - g.x, b.z - g.z)).slice(0, H.n);
+    [g, ...crew].forEach((q, k) => {
+      q.state = "pulled"; q.pullT = 0; q.from = { x: q.x, y: q.y, z: q.z }; q.heap = crew.length > 0;
+      const a = k * 2.1; // spread round the landing point
+      q.to = { x: h.x + (dx / d) * 1.4 + Math.cos(a) * 0.6 * (k > 0), y: h.y, z: h.z + (dz / d) * 1.4 + Math.sin(a) * 0.6 * (k > 0) };
+      setPose(q, 12);
+    });
+    if (crew.length) { C.stats.heaps++; emit({ type: "heap", n: crew.length + 1, x: g.x, y: g.y, z: g.z }); }
     emit({ type: "pulled", id: g.id, x: g.x, y: g.y, z: g.z });
     scored("rope");
     return "pull";
@@ -176,6 +188,36 @@ export function createCombat(city) {
     const dx = sx * 0.8 + (ax / al) * 0.6, dz = sz * 0.8 + (az / al) * 0.6, dl = Math.hypot(dx, dz);
     emit({ type: "dodge", id: g.id, perfect, x: h.x, y: h.y, z: h.z });
     return { dx: dx / dl, dz: dz / dl, perfect, goon: g };
+  };
+  // The goon a throw would go to: alive, within throw.min..max and the cone of the facing, the nearest to the middle of the view.
+  C.throwTarget = function throwTarget(h) {
+    if (!h || C.throwCool > 0) return null;
+    const T = FIGHT.throw, fx = -Math.sin(h.yaw || 0), fz = -Math.cos(h.yaw || 0), cosC = Math.cos((T.cone * Math.PI) / 180);
+    let best = null, bs = -2;
+    for (const g of goons) {
+      if (!C.alive(g) || Math.abs(g.y - h.y) > 6) continue;
+      const dx = g.x - h.x, dz = g.z - h.z, d = Math.hypot(dx, dz);
+      if (d < T.min || d > T.max) continue;
+      const c = (dx * fx + dz * fz) / d;
+      if (c >= cosC && c > bs) { bs = c; best = g; }
+    }
+    return best;
+  };
+  // A throw at the goon the hero faces: returns { goon, time } (main flies the object; C.landThrow lands it), or null.
+  C.throw = function thrown(h) {
+    const g = C.throwTarget(h);
+    if (!g) return null;
+    C.throwCool = FIGHT.throw.cool; C.stats.throws++;
+    emit({ type: "throw", id: g.id, x: h.x, y: h.y, z: h.z });
+    return { goon: g, time: FIGHT.throw.time };
+  };
+  // the thrown object reaches goon id (from where the hero threw it)
+  C.landThrow = function landThrow(id, fromX, fromZ) {
+    const g = goons.find((q) => q.id === id);
+    if (!g || !C.alive(g)) return false;
+    knock(g, fromX, fromZ, FIGHT.throw.dmg, FIGHT.throw.push, "throw");
+    scored("kick");
+    return true;
   };
   // A finisher: with a full meter and a goon in reach, every goon within focus.r goes down. Returns the goons, or null.
   C.finish = function finish(h) {
@@ -224,7 +266,7 @@ export function createCombat(city) {
   C.update = function update(dt, h) {
     dt = clamp(dt || 0, 0, 0.1);
     C.cool = Math.max(0, C.cool - dt); C.comboT += dt; C.quiet += dt; C.hitsT += dt;
-    C.dodgeT = Math.max(0, C.dodgeT - dt); C.dodgeCool = Math.max(0, C.dodgeCool - dt);
+    C.dodgeT = Math.max(0, C.dodgeT - dt); C.dodgeCool = Math.max(0, C.dodgeCool - dt); C.throwCool = Math.max(0, C.throwCool - dt);
     if (C.hitsT > 2) C.hits = 0;
     if (C.quiet > FIGHT.regenAfter && C.hp < FIGHT.hp && C.hp > 0) C.hp = Math.min(FIGHT.hp, C.hp + FIGHT.regen * dt);
     const G = FIGHT.goon;
@@ -243,8 +285,9 @@ export function createCombat(city) {
           if (k >= 1) {
             const tb = city.topBelow(g.x, g.y + 1, g.z, 0.3);
             g.y = tb ? tb.y : Math.max(0, city.groundY(g.x, g.z));
-            g.state = "alive"; g.hp = Math.min(g.hp, FIGHT.pull.dmg);
-            knock(g, h ? h.x : g.x, h ? h.z : g.z, FIGHT.pull.dmg, 0, "rope");
+            g.state = "alive";
+            if (g.heap) { g.heap = false; knock(g, h ? h.x : g.x, h ? h.z : g.z, FIGHT.heap.dmg, 0.6, "heap"); }
+            else { g.hp = Math.min(g.hp, FIGHT.pull.dmg); knock(g, h ? h.x : g.x, h ? h.z : g.z, FIGHT.pull.dmg, 0, "rope"); }
           }
           break;
         }
