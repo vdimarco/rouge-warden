@@ -982,7 +982,7 @@ function landed(r) {
     // casts in the water here while the goal that opens the next place is not met: short ones, and all of them in free fishing
     if (goalOpen && dist < SHORT_M) G.shortN = (G.shortN || 0) + 1;
     if (goalOpen && G.mode === "free") { if (!G.dry || G.dry.at !== G.place.id) G.dry = { at: G.place.id, n: 0 }; G.dry.n++; }
-    for (const t of noteGoals({ kind: "cast", dist })) toast(t, 3000, () => Sound.sfx("record"));
+    const goalNews = noteGoals({ kind: "cast", dist });
     // G.force lets a test pick the fish: { species, kg, bite }. A brand-new player's first cast in the water gets a sure bite
     // from a small, easy fish (firstBite in fish.js). It is used up when that fish strikes (handleEvent), so a cast that ends
     // before the strike keeps it for the next one; the casts after the strike have the normal odds
@@ -1007,6 +1007,9 @@ function landed(r) {
     if (G.ring) { Sound.sfx("ringHit", G.ring.gold ? 1 : 0); Haptics.bump(0.5); world.sparkle(r.x, r.z, 8); }
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
+    // the goals this cast finished, with the record sting: after the report and the reel layout, so in the reel layouts
+    // they wait until the report goes (the report covers the toast). Kept, so the wait does not drop them
+    for (const t of goalNews) toast(t, 3000, () => Sound.sfx("record"), true);
     return;
   } else {
     Sound.sfx("plop");
