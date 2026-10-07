@@ -1,53 +1,191 @@
-/* Desktop command bar. On a mouse-and-keyboard screen the portrait, the health and mana bars, the four skills and the
-   item slots join in one framed bar at the bottom centre, as in classic arena games. Touch screens and small windows
-   keep the thumb fan. The bar is 700 px wide: portrait at -338, skills at -236, items at +72 from the centre line.
-   From 1040 px wide the bar clears the movement pad. */
-@media (hover:hover) and (pointer:fine) and (min-width:1040px) and (min-height:600px){
- #hud #controls{bottom:0;height:300px;background:none}
- /* The frame catches clicks, so a click between two buttons does not send the hero to the ground under the bar. */
- #hud::before{content:"";position:absolute;left:calc(50% - 350px);bottom:0;width:700px;height:122px;border:1px solid var(--mr-bronze,#8a6a43);border-bottom:0;border-radius:10px 10px 0 0;background:linear-gradient(#211c17f2,#110e0bf7);box-shadow:inset 0 1px 0 #f2d9a333,inset 0 0 0 3px #0c0a08,0 -4px 18px #000a;pointer-events:auto}
+/* Command bar. On every screen the portrait, the health and mana bars, the four skills and the item slots join in one
+   framed bar at the bottom, as in classic arena games. Three layouts:
+   - large screens (from 1040x600): one 700 px row at the bottom centre: portrait, skills over the bars, items;
+   - short landscape screens (under 600 px high): a smaller row at the bottom right, items first, so the skills sit
+     under the right thumb;
+   - upright and mid-size screens: a stacked bar across the bottom, portrait and skills on top (the skills at the right,
+     under the thumb), then the bars, then the items. The movement pad sits above the bar.
+   The frame is #hud::before. It paints under every HUD control and catches clicks, so a click between two buttons does
+   not send the hero to the ground under the bar. */
+
+/* Shared: square skills with the key at the top-left, the art filling the square, the spell name for screen readers. */
+#hud #controls{left:0;right:0;bottom:0;height:300px;background:none}
+#hud::before{content:"";position:absolute;bottom:0;border:1px solid var(--mr-bronze,#8a6a43);border-bottom:0;border-radius:10px 10px 0 0;background:linear-gradient(#211c17f2,#110e0bf7);box-shadow:inset 0 1px 0 #f2d9a333,inset 0 0 0 3px #0c0a08,0 -4px 18px #000a;pointer-events:auto}
+#hud .abilities{right:auto;top:auto;transform:none}
+#hud .abilities .ability.dash,#hud .abilities .ability.surge,#hud .abilities .ability.signature,#hud .abilities .ability.ult{top:0;bottom:auto;right:auto;border-radius:8px;border-width:2px}
+#hud .abilities .ability.ult{border-color:var(--hero-color,var(--mr-gold,#d9b46a))}
+#hud .abilities .ability svg,#hud .abilities .ability.ult svg{inset:18%;width:64%;height:64%}
+#hud .abilities .ability .hud-spell-art{inset:3px}
+#hud .abilities .ability .hud-spell-art,#hud .abilities .ability b:not(:empty){border-radius:6px}
+#hud .abilities .ability kbd,#hud .abilities .ability.dash kbd,#hud .abilities .ability.ult kbd{display:block;left:4px;right:auto;top:3px}
+#hud .abilities .ability>span:not(.hud-spell-art){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#hud .abilities .ability-upgrade.upgrade-dash,#hud .abilities .ability-upgrade.upgrade-surge,#hud .abilities .ability-upgrade.upgrade-signature,#hud .abilities .ability-upgrade.upgrade-ult{bottom:auto!important;right:auto!important}
+#hud .abilities #skill-points{position:absolute;right:auto;border-radius:999px}
+#hud .abilities .ability.aiming{outline-offset:2px}
+#hud .health{transform:none;align-items:flex-end;opacity:1;filter:none;pointer-events:none}
+#hud .health .hero-frame{margin-right:0;border:2px solid var(--mr-bronze,#8a6a43);border-radius:6px;background-position:center 22%}
+#hud .health>div{position:absolute}
+#hud .health #mana-fill{width:auto;right:1px}
+#hud #hunted{left:0;right:auto;top:auto}
+#hud #loadout{transform:none}
+#hud #inventory .inventory-slot{border-radius:4px}
+
+/* Large screens: one row, 700 px wide. Portrait at -338, skills at -236, items at +72 from the centre line. From
+   1040 px wide the bar clears the movement pad. */
+@media (min-width:1040px) and (min-height:600px){
+ #hud::before{left:calc(50% - 350px);width:700px;height:122px}
  #hud::after{content:"";position:absolute;left:calc(50% - 250px);bottom:120px;width:500px;height:2px;background:linear-gradient(90deg,transparent,var(--mr-gold,#d9b46a),transparent);opacity:.55;pointer-events:none}
  #hud #joystick{bottom:calc(40px + env(safe-area-inset-bottom))}
-
- /* Portrait with the level badge. The bars hang out of the portrait box to sit under the skills, so the box itself
-    stays clear of the skill row. */
- #hud .health{left:calc(50% - 338px);bottom:12px;width:92px;height:98px;transform:none;align-items:flex-end;opacity:1;filter:none;pointer-events:none}
- #hud .health .hero-frame{flex:0 0 92px;height:98px;margin-right:0;border:2px solid var(--mr-bronze,#8a6a43);border-radius:6px;background-position:center 22%}
+ #hud .health{left:calc(50% - 338px);bottom:12px;width:92px;height:98px}
+ #hud .health .hero-frame{flex:0 0 92px;height:98px}
  #hud .health strong{left:34px;bottom:-6px;width:26px;height:20px;font-size:13px;line-height:18px}
- #hud .health>div{position:absolute;left:102px;bottom:16px;width:294px;height:18px}
+ #hud .health>div{left:102px;bottom:16px;width:294px;height:18px}
  #hud .health #health-text{font-size:12px;line-height:16px}
- #hud .health #mana-fill{bottom:-14px;height:11px;width:auto;right:1px}
+ #hud .health #mana-fill{bottom:-14px;height:11px}
  #hud .health #mana-text{top:calc(100% + 3px);height:11px;font-size:9px;line-height:11px}
  #hud .health #xp-fill{bottom:-18px;height:3px}
- #hud #hunted{left:0;right:auto;top:auto;bottom:calc(100% + 16px)}
-
- /* Four skills in a row, Q E C R from left to right. */
- #hud .abilities{left:calc(50% - 236px);right:auto;bottom:52px;width:294px;height:66px;transform:none}
- #hud .abilities .ability.dash,#hud .abilities .ability.surge,#hud .abilities .ability.signature,#hud .abilities .ability.ult{top:0;bottom:auto;right:auto;width:66px;height:66px;border-radius:8px;border-width:2px}
+ #hud #hunted{bottom:calc(100% + 16px)}
+ #hud .abilities{left:calc(50% - 236px);bottom:52px;width:294px;height:66px}
+ #hud .abilities .ability.dash,#hud .abilities .ability.surge,#hud .abilities .ability.signature,#hud .abilities .ability.ult{width:66px;height:66px}
  #hud .abilities .ability.dash{left:0}
  #hud .abilities .ability.surge{left:76px}
  #hud .abilities .ability.signature{left:152px}
- #hud .abilities .ability.ult{left:228px;border-color:var(--hero-color,var(--mr-gold,#d9b46a))}
- #hud .abilities .ability svg,#hud .abilities .ability.ult svg{inset:11px;width:40px;height:40px}
- #hud .abilities .ability .hud-spell-art{inset:3px}
- #hud .abilities .ability .hud-spell-art,#hud .abilities .ability b:not(:empty){border-radius:6px}
- #hud .abilities .ability kbd,#hud .abilities .ability.dash kbd,#hud .abilities .ability.ult kbd{display:block;left:4px;right:auto;top:3px}
- /* The spell name stays for screen readers; the key and the icon show it on screen. */
- #hud .abilities .ability>span:not(.hud-spell-art){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
- #hud .abilities .ability-upgrade.upgrade-dash,#hud .abilities .ability-upgrade.upgrade-surge,#hud .abilities .ability-upgrade.upgrade-signature,#hud .abilities .ability-upgrade.upgrade-ult{top:-30px!important;bottom:auto!important;right:auto!important;width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;font-size:19px!important}
+ #hud .abilities .ability.ult{left:228px}
+ #hud .abilities .ability-upgrade.upgrade-dash,#hud .abilities .ability-upgrade.upgrade-surge,#hud .abilities .ability-upgrade.upgrade-signature,#hud .abilities .ability-upgrade.upgrade-ult{top:-30px!important;width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;font-size:19px!important}
  #hud .abilities .ability-upgrade.upgrade-dash{left:20px!important}
  #hud .abilities .ability-upgrade.upgrade-surge{left:96px!important}
  #hud .abilities .ability-upgrade.upgrade-signature{left:172px!important}
  #hud .abilities .ability-upgrade.upgrade-ult{left:248px!important}
- #hud .abilities #skill-points{top:-78px;right:auto;left:47px;width:200px;min-height:34px;padding:6px 10px;border-radius:999px;font-size:11px}
- #hud .abilities .ability.aiming{outline-offset:2px}
+ #hud .abilities #skill-points{top:-78px;left:47px;width:200px;min-height:34px;padding:6px 10px;font-size:11px}
  #hud #skill-aim-status{right:auto;left:0;bottom:calc(100% + 92px);width:294px}
- #hud #auto-status{top:auto;bottom:auto;top:-22px;right:auto;left:calc(100% + 18px);max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
- /* Items: a three-by-two grid, with the market and quick-buy buttons beside it. */
- #hud #loadout{display:grid;grid-template-columns:186px 72px;grid-template-rows:44px 44px;gap:6px 8px;left:calc(50% + 72px);bottom:12px;width:266px;height:94px;transform:none}
- #hud #loadout #inventory{grid-column:1;grid-row:1/3;display:grid;grid-template-columns:repeat(3,58px);grid-auto-rows:44px;gap:6px 6px;height:auto}
- #hud #inventory .inventory-slot{width:58px;height:44px;border-radius:4px}
+ #hud #auto-status{bottom:auto;top:-22px;right:auto;left:calc(100% + 18px);max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #hud #loadout{display:grid;grid-template-columns:186px 72px;grid-template-rows:44px 44px;gap:6px 8px;left:calc(50% + 72px);bottom:12px;width:266px;height:94px}
+ #hud #loadout #inventory{grid-column:1;grid-row:1/3;display:grid;grid-template-columns:repeat(3,58px);grid-auto-rows:44px;gap:6px;height:auto}
+ #hud #inventory .inventory-slot{width:58px;height:44px}
  #hud #loadout #shop{grid-column:2;grid-row:1;width:72px;min-width:72px;height:44px;min-height:44px}
  #hud #loadout #quick-buy{grid-column:2;grid-row:2;width:72px;min-width:72px;height:44px;min-height:44px}
+}
+/* A large touch screen gets "+" badges big enough for a finger. */
+@media (min-width:1040px) and (min-height:600px) and (pointer:coarse){
+ #hud .abilities .ability-upgrade.upgrade-dash,#hud .abilities .ability-upgrade.upgrade-surge,#hud .abilities .ability-upgrade.upgrade-signature,#hud .abilities .ability-upgrade.upgrade-ult{top:-40px!important;width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important}
+ #hud .abilities .ability-upgrade.upgrade-dash{left:16px!important}
+ #hud .abilities .ability-upgrade.upgrade-surge{left:92px!important}
+ #hud .abilities .ability-upgrade.upgrade-signature{left:168px!important}
+ #hud .abilities .ability-upgrade.upgrade-ult{left:244px!important}
+ #hud .abilities #skill-points{top:-88px}
+}
+
+/* Short landscape screens: one row, 516 px wide, at the bottom right. Items at +8, portrait at +202, skills at +274
+   from the left of the bar, so R is near the corner under the right thumb. */
+@media (max-height:599px) and (min-width:540px){
+ #hud{--bar:calc(100% - 516px - max(12px,env(safe-area-inset-right)))}
+ #hud::before{left:var(--bar);width:516px;height:98px}
+ #hud #joystick{left:max(16px,env(safe-area-inset-left));bottom:calc(10px + env(safe-area-inset-bottom));width:104px;height:104px}
+ #hud #thumb{left:29px;top:29px}
+ #hud #rally{left:max(16px,env(safe-area-inset-left));bottom:calc(124px + env(safe-area-inset-bottom));width:58px}
+ #hud .health{left:calc(var(--bar) + 202px);bottom:8px;width:64px;height:82px}
+ #hud .health .hero-frame{flex:0 0 64px;height:82px}
+ #hud .health strong{left:20px;bottom:-4px;width:24px;height:17px;font-size:11px;line-height:15px}
+ #hud .health>div{left:72px;bottom:14px;width:234px;height:14px}
+ #hud .health #health-text{font-size:10px;line-height:12px}
+ #hud .health #mana-fill{bottom:-11px;height:8px}
+ #hud .health #mana-text{display:none}
+ #hud .health #xp-fill{bottom:-14px;height:2px}
+ #hud #hunted{bottom:calc(100% + 54px)}
+ #hud .abilities{left:calc(var(--bar) + 274px);bottom:40px;width:234px;height:54px}
+ #hud .abilities .ability.dash,#hud .abilities .ability.surge,#hud .abilities .ability.signature,#hud .abilities .ability.ult{width:54px;height:54px}
+ #hud .abilities .ability.dash{left:0}
+ #hud .abilities .ability.surge{left:60px}
+ #hud .abilities .ability.signature{left:120px}
+ #hud .abilities .ability.ult{left:180px}
+ #hud .abilities .ability-upgrade.upgrade-dash,#hud .abilities .ability-upgrade.upgrade-surge,#hud .abilities .ability-upgrade.upgrade-signature,#hud .abilities .ability-upgrade.upgrade-ult{top:-40px!important;width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;font-size:22px!important}
+ #hud .abilities .ability-upgrade.upgrade-dash{left:10px!important}
+ #hud .abilities .ability-upgrade.upgrade-surge{left:70px!important}
+ #hud .abilities .ability-upgrade.upgrade-signature{left:130px!important}
+ #hud .abilities .ability-upgrade.upgrade-ult{left:190px!important}
+ #hud .abilities #skill-points{top:-84px;left:37px;width:160px;min-height:36px;padding:4px 10px;font-size:10px}
+ #hud #skill-aim-status{right:auto;left:0;bottom:calc(100% + 88px);width:234px}
+ #hud #auto-status{display:none}
+ #hud #loadout{display:grid;grid-template-columns:128px 50px;grid-template-rows:38px 38px;gap:6px;left:calc(var(--bar) + 8px);bottom:10px;width:186px;height:82px}
+ #hud #loadout #inventory{grid-column:1;grid-row:1/3;display:grid;grid-template-columns:repeat(3,40px);grid-auto-rows:38px;gap:6px 4px;height:auto}
+ #hud #inventory .inventory-slot{width:40px;height:38px}
+ #hud #loadout #shop{grid-column:2;grid-row:1;width:50px;min-width:50px;height:38px;min-height:38px}
+ #hud #loadout #shop #gold{font-size:15px}
+ #hud #loadout #shop small{font-size:6px;letter-spacing:.3px}
+ #hud #loadout #quick-buy{grid-column:2;grid-row:2;width:50px;min-width:50px;height:38px;min-height:38px}
+}
+/* Narrow landscape phones (540 to 699 px): a 415 px row with smaller parts, so it starts right of the movement pad.
+   Items at +6, portrait at +152, skills at +202. */
+@media (max-height:599px) and (min-width:540px) and (max-width:699px){
+ #hud{--bar:calc(100% - 415px - max(12px,env(safe-area-inset-right)))}
+ #hud::before{width:415px;height:88px}
+ #hud .health{left:calc(var(--bar) + 152px);bottom:6px;width:44px;height:76px}
+ #hud .health .hero-frame{flex:0 0 44px;height:76px}
+ #hud .health strong{left:10px}
+ #hud .health>div{left:50px;bottom:16px;width:207px;height:12px}
+ #hud .health #health-text{font-size:9px;line-height:10px}
+ #hud .abilities{left:calc(var(--bar) + 202px);bottom:36px;width:207px;height:48px}
+ #hud .abilities .ability.dash,#hud .abilities .ability.surge,#hud .abilities .ability.signature,#hud .abilities .ability.ult{width:48px;height:48px}
+ #hud .abilities .ability.surge{left:53px}
+ #hud .abilities .ability.signature{left:106px}
+ #hud .abilities .ability.ult{left:159px}
+ #hud .abilities .ability-upgrade.upgrade-dash{left:7px!important}
+ #hud .abilities .ability-upgrade.upgrade-surge{left:60px!important}
+ #hud .abilities .ability-upgrade.upgrade-signature{left:113px!important}
+ #hud .abilities .ability-upgrade.upgrade-ult{left:166px!important}
+ #hud .abilities #skill-points{left:29px;width:150px}
+ #hud #skill-aim-status{width:207px}
+ #hud #loadout{grid-template-columns:96px 40px;grid-template-rows:35px 35px;gap:5px 4px;left:calc(var(--bar) + 6px);bottom:8px;width:140px;height:75px}
+ #hud #loadout #inventory{grid-template-columns:repeat(3,30px);grid-auto-rows:35px;gap:5px 3px}
+ #hud #inventory .inventory-slot{width:30px;height:35px}
+ #hud #loadout #shop,#hud #loadout #quick-buy{width:40px;min-width:40px;height:35px;min-height:35px}
+ #hud #loadout #shop #gold{font-size:13px}
+ #hud #loadout #shop small{display:none}
+}
+
+/* Upright and mid-size screens: a stacked bar up to 440 px wide across the bottom. Top row: portrait at the left,
+   skills at the right. Middle row: the bars. Bottom row: market, quick-buy and six item slots. */
+@media (max-width:1039px) and (min-height:600px),(max-width:539px){
+ #hud{--w:min(100vw,440px);--bar:calc(50% - var(--w) / 2);--sk:60px;--sg:8px}
+ #hud::before{left:var(--bar);width:var(--w);height:calc(160px + env(safe-area-inset-bottom))}
+ #hud #joystick{left:max(16px,env(safe-area-inset-left));bottom:calc(214px + env(safe-area-inset-bottom));width:104px;height:104px}
+ #hud #thumb{left:29px;top:29px}
+ #hud #rally{left:max(16px,env(safe-area-inset-left));bottom:calc(328px + env(safe-area-inset-bottom))}
+ #hud .health{left:calc(var(--bar) + 10px);bottom:calc(92px + env(safe-area-inset-bottom));width:60px;height:60px}
+ #hud .health .hero-frame{flex:0 0 60px;height:60px}
+ #hud .health strong{left:18px;bottom:-6px;width:24px;height:17px;font-size:11px;line-height:15px}
+ #hud .health>div{left:0;bottom:-24px;width:calc(var(--w) - 20px);height:14px}
+ #hud .health #health-text{font-size:10px;line-height:12px}
+ #hud .health #mana-fill{bottom:-12px;height:8px}
+ #hud .health #mana-text{display:none}
+ #hud .health #xp-fill{bottom:-15px;height:2px}
+ #hud #hunted{bottom:calc(100% + 6px)}
+ #hud .abilities{left:calc(var(--bar) + var(--w) - 10px - 4 * var(--sk) - 3 * var(--sg));bottom:calc(92px + env(safe-area-inset-bottom));width:calc(4 * var(--sk) + 3 * var(--sg));height:var(--sk)}
+ #hud .abilities .ability.dash,#hud .abilities .ability.surge,#hud .abilities .ability.signature,#hud .abilities .ability.ult{width:var(--sk);height:var(--sk)}
+ #hud .abilities .ability.dash{left:0}
+ #hud .abilities .ability.surge{left:calc(var(--sk) + var(--sg))}
+ #hud .abilities .ability.signature{left:calc(2 * (var(--sk) + var(--sg)))}
+ #hud .abilities .ability.ult{left:calc(3 * (var(--sk) + var(--sg)))}
+ #hud .abilities .ability-upgrade.upgrade-dash,#hud .abilities .ability-upgrade.upgrade-surge,#hud .abilities .ability-upgrade.upgrade-signature,#hud .abilities .ability-upgrade.upgrade-ult{top:-50px!important;width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;font-size:22px!important}
+ #hud .abilities .ability-upgrade.upgrade-dash{left:calc(var(--sk) / 2 - 17px)!important}
+ #hud .abilities .ability-upgrade.upgrade-surge{left:calc(1.5 * var(--sk) + var(--sg) - 17px)!important}
+ #hud .abilities .ability-upgrade.upgrade-signature{left:calc(2.5 * var(--sk) + 2 * var(--sg) - 17px)!important}
+ #hud .abilities .ability-upgrade.upgrade-ult{left:calc(3.5 * var(--sk) + 3 * var(--sg) - 17px)!important}
+ #hud .abilities #skill-points{top:-96px;left:auto;right:0;width:150px;min-height:36px;padding:4px 10px;font-size:10px}
+ #hud #skill-aim-status{right:0;left:auto;bottom:calc(100% + 140px);width:min(240px,calc(100vw - 32px))}
+ #hud #auto-status{display:none}
+ #hud #loadout{display:flex;gap:4px;left:calc(var(--bar) + 10px);bottom:calc(10px + env(safe-area-inset-bottom));width:calc(var(--w) - 20px);height:42px}
+ #hud #loadout #inventory{display:flex;flex:1;gap:4px;height:42px}
+ #hud #inventory .inventory-slot{flex:1;width:auto;min-width:0;height:42px}
+ #hud #loadout #shop{width:58px;min-width:58px;height:42px;min-height:42px}
+ #hud #loadout #shop #gold{font-size:16px}
+ #hud #loadout #shop small{font-size:6px;letter-spacing:.3px}
+ #hud #loadout #quick-buy{width:40px;min-width:40px;height:42px;min-height:42px}
+}
+/* The smallest upright phones: smaller skills, so the row and the portrait fit in 320 px. */
+@media (max-width:370px){#hud{--sk:54px;--sg:6px}#hud .health{width:52px;height:54px}#hud .health .hero-frame{flex-basis:52px;height:54px}#hud .health strong{left:14px}}
+/* Upright phones: the team chat moves to the right, above the point button, so it covers neither the movement pad
+   nor the rally button. */
+@media (max-width:600px) and (min-height:600px),(max-width:539px){
+ #team-chat#team-chat{left:auto;right:10px;top:auto;bottom:calc(262px + env(safe-area-inset-bottom));width:min(220px,calc(100vw - 140px));align-items:flex-end}
 }
