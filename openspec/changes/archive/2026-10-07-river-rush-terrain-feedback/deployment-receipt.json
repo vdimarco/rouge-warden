@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "15ac31ed76d0e522dd2960348ecc2bee371d9728",
+  "deploymentId": "dpl_dAnhNHBAkRgdqQz6PT428M1gwZHw",
+  "state": "READY",
+  "aliases": [
+    "arcade.uptick.systems",
+    "warden-alpha-wheat.vercel.app",
+    "warden-vdimarcos-projects.vercel.app",
+    "warden-git-main-vdimarcos-projects.vercel.app"
+  ],
+  "gameUrl": "https://arcade.uptick.systems/river-rush/",
+  "productionAssetsMatchLocal": true,
+  "liveGameplayProbe": "passed",
+  "liveGameplayReceipt": "production-receipt.json",
+  "assetReceipt": "live-assets.json"
+}

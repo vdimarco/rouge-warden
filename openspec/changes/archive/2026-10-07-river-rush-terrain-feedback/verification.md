@@ -14,4 +14,12 @@ The compact [browser receipt](browser-receipt.json) records the tested versions,
 
 ## Limits and publication
 
-The OpenSpec CLI is unavailable in this workspace. Markdown structure/scenarios are validated manually. Browser checks use Chromium/SwiftShader and viewport layouts; physical phone/audio hardware and hardware frame rate are not measured. Publication and exact production asset checks remain pending.
+The OpenSpec CLI is unavailable in this workspace. Markdown structure/scenarios are validated manually. Browser checks use Chromium/SwiftShader and viewport layouts; physical phone/audio hardware and hardware frame rate are not measured. Production is verified below.
+
+## Published arcade verification
+
+The source/build release is `15ac31ed76d0e522dd2960348ecc2bee371d9728` on `vdimarco/rouge-warden` main. Vercel deployment `dpl_dAnhNHBAkRgdqQz6PT428M1gwZHw` is READY and serves `arcade.uptick.systems`. Production HTML, JavaScript, CSS and local music match the tested files byte-for-byte; the music range request returns HTTP 206 with the correct first 1,024 bytes. See [deployment receipt](deployment-receipt.json) and [asset receipt](live-assets.json).
+
+The short live phone probe passes on the exact release bundle: six physical starter contacts produce six pickup cues, protected impact has measurable wood/splash audio, lane steering remains available, settled paused status/pixels stay identical, resume works, home is silent, and no shader/texture preparation or browser/GPU errors occur during play. No App state/clock or leaderboard writes are used. See [production browser receipt](production-receipt.json).
+
+All tasks are complete and the canonical River Rush requirements have been reviewed. This archive follow-up changes only verification documents; it preserves the tested runtime assets.
