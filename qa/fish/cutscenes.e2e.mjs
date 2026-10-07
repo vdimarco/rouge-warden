@@ -801,4 +801,5 @@ if (part("H")) {
 }
 
 console.log(fails.length ? `\n${fails.length} of ${passes + fails.length} checks failed:\n  ` + fails.join("\n  ") : `\nAll ${passes} checks passed`);
+console.log("Screenshots in " + SHOTS);
 process.exit(fails.length ? 1 : 0);

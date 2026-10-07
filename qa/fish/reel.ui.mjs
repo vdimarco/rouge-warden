@@ -743,4 +743,5 @@ try {
 }
 check(errors.length === 0, "no console or page errors" + (errors.length ? ": " + errors.slice(0, 5).join(" | ") : ""));
 console.log(fails.length ? "\n" + fails.length + " FAILED" : "\nall passed");
+console.log("Screenshots in " + SHOTS);
 process.exit(fails.length ? 1 : 0);

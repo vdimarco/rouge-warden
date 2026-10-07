@@ -350,5 +350,5 @@ await browser.close();
 stop();
 const bad = errors.filter((e) => !/GPU stall due to ReadPixels|Automatic fallback to software WebGL|GroupMarkerNotSet|Multiple readback operations using getImageData/.test(e));
 if (bad.length) fail("console errors:\n  " + bad.join("\n  "));
-console.log(failed ? `fish.render: FAILED (${checks} checks)` : `fish.render: OK (${checks} checks, pictures in ${SHOTS})`);
+console.log(failed ? `fish.render: FAILED (${checks} checks, pictures in ${SHOTS})` : `fish.render: OK (${checks} checks, pictures in ${SHOTS})`);
 process.exit(failed ? 1 : 0);

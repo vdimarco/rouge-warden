@@ -425,6 +425,6 @@ await browser.close();
 stop();
 const bad = errors.filter((e) => !/GPU stall due to ReadPixels|Automatic fallback to software WebGL|GroupMarkerNotSet/.test(e));
 if (bad.length) { fail("console errors:\n  " + bad.join("\n  ")); }
-console.log(failed ? "world.render: FAILED" : `world.render: OK (${results.length} shots in ${SHOTS})`);
+console.log(failed ? `world.render: FAILED (shots in ${SHOTS})` : `world.render: OK (${results.length} shots in ${SHOTS})`);
 process.exit(failed ? 1 : 0);
 
