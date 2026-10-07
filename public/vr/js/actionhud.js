@@ -1,9 +1,11 @@
 // In Full Swing: the screen bits of the city action in flat play. The hero's hearts and the energy gauge (bottom left), a prompt
 // line (R GET IN, a punch hint), a red glow at the edges when the hero is hit, and on a phone the CAR button, the DODGE button (while
-// a goon winds up), THROW (a goon in throwing range), GLIDE (held, in the air) and the driving pad (left, right, GAS, BRAKE). main
+// a goon winds up), THROW (a goon in throwing range), GLIDE (held, in the air), the move stick (sx, sy) and the driving pad (left, right, GAS, BRAKE). main
 // reads the phone buttons from touch: { car, dodge, throw, glide, left, right, gas, brake } (car, dodge and throw are edges).
 // A speech bubble over a person in the street (a robbed driver's shout) follows a screen point main gives each frame, and so
 // does the red warning mark over a goon who winds up. In a fight, a combo count and the focus meter show at the right edge.
+import { PHONE } from "./config.js";
+const STICK = PHONE.stick;
 const CSS = `
 #actHud{position:fixed;left:14px;bottom:14px;z-index:12;pointer-events:none;font-family:var(--comic,"Bangers",Impact,"Arial Black",sans-serif);color:#140a18}
 #actHud[hidden]{display:none}
@@ -40,6 +42,9 @@ const CSS = `
 #actTouch .car{right:18px;top:42%;background:#5ec2e8}
 #actTouch .dodge{right:18px;top:calc(42% + 88px);width:96px;height:96px;background:#e8402a;color:#fffdf5;font-size:22px}
 #actTouch .throw{right:18px;top:calc(42% - 88px);background:#ffd84a;font-size:18px}
+#actTouch .stick{position:absolute;left:18px;bottom:140px;width:120px;height:120px;border:4px solid #140a18;border-radius:50%;background:rgba(255,253,245,.35);box-shadow:4px 4px 0 #140a18;pointer-events:auto;touch-action:none}
+#actTouch .stick[hidden]{display:none}
+#actTouch .stick i{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border:4px solid #140a18;border-radius:50%;background:#ffd84a;pointer-events:none}
 #actTouch .glide{left:50%;bottom:96px;width:120px;height:64px;margin-left:-60px;border-radius:32px;background:#5ec2e8;font-size:22px}
 #actTouch .left{left:18px;bottom:22px}#actTouch .right{left:104px;bottom:22px}
 #actTouch .gas{right:18px;bottom:22px;background:#7fdc5a}#actTouch .brake{right:104px;bottom:22px;background:#e8806a}
@@ -71,13 +76,31 @@ export function createActionHud() {
   document.body.append(hud, fightEl, prompt, shout, warn, hit, touchEl);
   const hearts = hud.querySelector(".hearts"), energy = hud.querySelector(".energy"), bar = energy.querySelector("i");
   const comboEl = fightEl.querySelector(".combo"), focusEl = fightEl.querySelector(".focus"), focusBar = focusEl.querySelector("i");
-  const touch = { car: false, dodge: false, throw: false, glide: false, left: false, right: false, gas: false, brake: false };
+  const touch = { sx: 0, sy: 0, stick: false, car: false, dodge: false, throw: false, glide: false, left: false, right: false, gas: false, brake: false };
   for (const k of ["left", "right", "gas", "brake", "glide"]) {
     const b = B[k];
     const on = (v) => (e) => { e.preventDefault(); touch[k] = v; b.classList.toggle("on", v); };
     b.addEventListener("pointerdown", on(true)); b.addEventListener("pointerup", on(false)); b.addEventListener("pointercancel", on(false)); b.addEventListener("pointerleave", on(false));
   }
   B.car.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.car = true; });
+  // the move stick: a finger down on it and dragged sets touch.sx, touch.sy (-1..1, y up); up anywhere lets it go back
+  const stick = document.createElement("div"); stick.className = "stick"; stick.hidden = true; stick.innerHTML = "<i></i>";
+  touchEl.appendChild(stick);
+  const knob = stick.firstChild;
+  let stickId = null;
+  const stickMove = (e) => {
+    const b = stick.getBoundingClientRect(), R = STICK.r;
+    let x = (e.clientX - (b.left + b.width / 2)) / R, y = -(e.clientY - (b.top + b.height / 2)) / R;
+    const l = Math.hypot(x, y);
+    if (l > 1) { x /= l; y /= l; }
+    knob.style.transform = "translate(" + Math.round(x * R) + "px," + Math.round(-y * R) + "px)";
+    const k = l < STICK.dead ? 0 : 1;
+    touch.sx = x * k; touch.sy = y * k;
+  };
+  const stickEnd = (e) => { if (e.pointerId !== stickId) return; stickId = null; touch.stick = false; touch.sx = touch.sy = 0; knob.style.transform = ""; };
+  stick.addEventListener("pointerdown", (e) => { e.preventDefault(); stickId = e.pointerId; touch.stick = true; try { stick.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } stickMove(e); });
+  stick.addEventListener("pointermove", (e) => { if (e.pointerId === stickId) stickMove(e); });
+  for (const t of ["pointerup", "pointercancel", "lostpointercapture"]) stick.addEventListener(t, stickEnd);
   B.dodge.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.dodge = true; });
   B.throw.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.throw = true; });
   let shown = { hp: -1, max: -1, e: -2, p: "", c: -1, f: -2 }, hitT = 0;
@@ -119,6 +142,8 @@ export function createActionHud() {
       }
       if (s.prompt !== shown.p) { shown.p = s.prompt; prompt.hidden = !s.prompt; prompt.innerHTML = s.prompt || ""; }
       B.car.hidden = !(s.phone && (s.nearCar || s.driving));
+      stick.hidden = !(s.phone && !s.driving && !s.wall); // (on a wall the climb pad takes its place)
+      if (stick.hidden && touch.stick) { stickId = null; touch.stick = false; touch.sx = touch.sy = 0; knob.style.transform = ""; }
       B.dodge.hidden = !(s.phone && s.warn);
       if (B.dodge.hidden) touch.dodge = false;
       B.throw.hidden = !(s.phone && s.throwable && !s.warn);
@@ -136,7 +161,7 @@ export function createActionHud() {
     takeDodge() { const v = touch.dodge; touch.dodge = false; return v; },
     takeThrow() { const v = touch.throw; touch.throw = false; return v; },
     flash() { hit.style.opacity = "1"; hitT = 0.25; },
-    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, combo: shown.c, focus: shown.f, warn: !warn.hidden, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, car: !B.car.hidden, dodge: !B.dodge.hidden, throw: !B.throw.hidden, glide: !B.glide.hidden, drive: !B.gas.hidden }),
+    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, combo: shown.c, focus: shown.f, warn: !warn.hidden, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, car: !B.car.hidden, stick: !stick.hidden, dodge: !B.dodge.hidden, throw: !B.throw.hidden, glide: !B.glide.hidden, drive: !B.gas.hidden }),
   };
   return H;
 }

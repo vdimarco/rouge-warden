@@ -681,6 +681,7 @@ function hudFrame(dt, inp) {
   const fight = combat.hits > 0 || combat.focus > 0 || combat.fighting > 0;
   actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt),
     combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(),
+    wall: !!P.wall,
     air: G.state === "play" && !P.onGround && !P.wall && !driving && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached",
     throwable: combat.fighting > 0 && !!combat.throwTarget(throwFrom()) });
 }
@@ -1087,6 +1088,11 @@ function tick(dt, frame, time) {
   // 2. input
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
   if (flatOn && !isXR()) flatInput(inp);
+  // a phone's move stick: walk (and sprint, pushed to the rim) on the ground, steer in the air, climb on a wall
+  if (inp.easySwing && actHud && !driving) {
+    const T = actHud.touch;
+    if (T.stick) { inp.move.x = clamp(inp.move.x + T.sx, -1, 1); inp.move.y = clamp(inp.move.y + T.sy, -1, 1); if (Math.hypot(T.sx, T.sy) > PHONE.stick.sprint) inp.sprintHeld = true; }
+  }
   // 3. test overrides
   applyOverrides(inp);
   // a comic scene holds the game still
@@ -1301,7 +1307,7 @@ function shoot(i, h, a) {
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
   fire(P, i, h.aimPos, a);
   toggled[i] = true;
-  if (phone) { firedAt[i] = G.time; handoffT[i] = -1; } // a rope thrown again is not the one that lets go
+  if (phone) { firedAt[i] = G.time; handoffT[i] = -1; firedPair[i] = !!(G.input.phonePair && G.input.phonePair[i]); } // a rope thrown again is not the one that lets go
   latch[i] = real; // a real press keeps the cup in flight, and earns the kick
   if (real) picker.fired(i);
   if (phone && P.onGround) {
@@ -1396,7 +1402,7 @@ function phoneClear(i) { phoneRopeT[i] = phoneGroundT[i] = phoneSlowT[i] = 0; ha
 function phoneReleaseRope(i, dt) {
   const r = P.ropes[i], R = PHONE.release;
   if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) { phoneClear(i); return; }
-  if (handoffT[i] >= 0 && (handoffT[i] -= dt) <= 0) { release(P, i); phoneClear(i); D.mobile.released(i); return; }
+  if (handoffT[i] >= 0 && (handoffT[i] -= dt) <= 0) { release(P, i); phoneClear(i); D.mobile.released(i); pushRing({ type: "handoff", side: i }); return; }
   phoneRopeT[i] += dt;
   if (P.onGround) phoneGroundT[i] += dt; // all the time on roofs since the rope caught: a rope that drags you over them lets go
   phoneSlowT[i] = Math.hypot(P.vel.x, P.vel.y, P.vel.z) < R.stallSpeed ? phoneSlowT[i] + dt : 0;
@@ -1448,10 +1454,12 @@ function releaseBoost(i) {
   if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
   pushRing({ type: "boost", side: i, speed: Math.hypot(v.x, v.y, v.z) });
 }
-// A new phone plunger on side i caught a building: the other one lets go soon, unless the two were thrown as a pair
+// A new phone plunger on side i caught a building: the other one lets go soon, unless the two were thrown as a pair (close in
+// time, or by two fingers that were down together)
+const firedPair = [false, false];
 function phoneHandoff(i) {
   const j = 1 - i, o = P.ropes[j];
-  if (o.state !== "attached" || o.sticky || SPECIAL_TAGS[o.target.tag] || Math.abs(firedAt[i] - firedAt[j]) <= PHONE.pair) return;
+  if (o.state !== "attached" || o.sticky || SPECIAL_TAGS[o.target.tag] || Math.abs(firedAt[i] - firedAt[j]) <= PHONE.pair || (firedPair[i] && firedPair[j])) return;
   handoffT[j] = PHONE.handoff;
 }
 // A rope that catches gives at least `speed` across the rope, toward where you look: the phone's PHONE.attachSpeed, or the

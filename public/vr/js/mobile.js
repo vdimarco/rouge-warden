@@ -1,6 +1,7 @@
 // Two-thumb flat-screen play. A tap on the left half of the city throws the left plunger, a tap on the right half the right one;
 // each finger is its own tap, so two thumbs throw both at once. A rope lets go by itself past the bottom of the arc.
-// Drag or phone motion aims; a tap fires immediately. The panel also draws the lock-on ring that marks the target.
+// Drag or phone motion aims; a tap fires immediately. Two fingers down at the same time throw a pair: both plungers hold.
+// The move stick lives in actionhud.js. The panel also draws the lock-on ring that marks the target.
 // (This file keeps single quotes: qa/vr/mobile.test.mjs rewrites the import of three by its exact text.)
 import * as THREE from 'three';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -28,7 +29,7 @@ const SAY = {
 export function createMobile(canvas, active) {
   const touch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   // fires, aims and holds: one slot per plunger (0 the left, 1 the right)
-  const state = { turn: 0, pitch: 0, moveX: 0, moveY: 0, reel: 0, yank: 0, jump: false, menu: false, view: false, fires: [false, false], aims: [null, null] };
+  const state = { turn: 0, pitch: 0, moveX: 0, moveY: 0, reel: 0, yank: 0, jump: false, menu: false, view: false, fires: [false, false], aims: [null, null], pairs: [false, false] };
   // no touch point: a stub with every method, so main.js calls them with no guard
   if (!touch) { state.holds = [false, false]; return { get enabled() { return false; }, sample: () => state, reset() {}, start() {}, tap() {}, miss() {}, target() {}, released() {}, idle: () => Infinity, rush() {}, climbing() {}, marker() {}, pop() {}, buzz() {}, use() {}, safe: () => null }; }
   let on = true, sensors = false, wasActive = false;
@@ -98,9 +99,9 @@ export function createMobile(canvas, active) {
   button('menu').onclick = () => { state.menu = true; };
   // A tap throws the plunger of its side. With that plunger out it moves to the tapped building, so taps chain swings with no gap.
   // aim: the tap's screen point (NDC, y up), or null for the marked target.
-  function cast(side, aim = null) {
+  function cast(side, aim = null, pair = false) {
     side = side === 0 ? 0 : 1;
-    latched[side] = true; state.fires[side] = true; state.aims[side] = aim; label();
+    latched[side] = true; state.fires[side] = true; state.aims[side] = aim; state.pairs[side] = !!pair; label();
     hint.textContent = latched[0] && latched[1] ? SAY.both : SAY.swing;
   }
   // A real phone can drop one finger of a two-thumb press: it may read the two thumbs as a pinch and cancel the first one, or move
@@ -108,13 +109,16 @@ export function createMobile(canvas, active) {
   // that the browser cancels while it is still a tap throws its plunger.
   const lift = d => {
     const rect = canvas.getBoundingClientRect(), x = (d.x-rect.left)/rect.width;
-    cast(x < .5 ? 0 : 1, { x:clamp(x*2-1,-1,1), y:clamp(1-(d.y-rect.top)/rect.height*2,-1,1) });
+    cast(x < .5 ? 0 : 1, { x:clamp(x*2-1,-1,1), y:clamp(1-(d.y-rect.top)/rect.height*2,-1,1) }, d.both);
   };
   canvas.addEventListener('pointerdown', ev => {
     if (!on || !active()) return;
     ev.preventDefault();
     // a pointer id that is still listed lost its up somewhere: this press is a new one
-    drags.set(ev.pointerId, { x0:ev.clientX, y0:ev.clientY, x:ev.clientX, y:ev.clientY, look:false, t:ev.timeStamp });
+    // another finger is down already: the two are a pair (two thumbs together), whenever each one lifts
+    const both = drags.size > 0;
+    if (both) for (const o of drags.values()) o.both = true;
+    drags.set(ev.pointerId, { x0:ev.clientX, y0:ev.clientY, x:ev.clientX, y:ev.clientY, look:false, t:ev.timeStamp, both });
   });
   addEventListener('pointermove', ev => {
     const d = drags.get(ev.pointerId);
@@ -297,7 +301,7 @@ export function createMobile(canvas, active) {
       wasActive=true;
       const blend=1-Math.exp(-20*Math.min(dt,.05)), sy=smoothYaw, sp=smoothPitch;
       smoothYaw+=(targetYaw-smoothYaw)*blend; smoothPitch+=(targetPitch-smoothPitch)*blend;
-      const out={...state,turn:state.turn+smoothYaw-sy,pitch:state.pitch+smoothPitch-sp,fires:[...state.fires],aims:[...state.aims],holds:[...latched],reel:pull>.12?pull:0};
+      const out={...state,turn:state.turn+smoothYaw-sy,pitch:state.pitch+smoothPitch-sp,fires:[...state.fires],aims:[...state.aims],pairs:[...state.pairs],holds:[...latched],reel:pull>.12?pull:0};
       pull*=Math.exp(-6*dt); state.turn=state.pitch=state.yank=0;state.jump=state.menu=state.view=false;
       state.fires[0]=state.fires[1]=false; state.aims[0]=state.aims[1]=null;
       return out;
