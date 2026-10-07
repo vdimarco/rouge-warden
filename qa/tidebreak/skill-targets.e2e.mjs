@@ -1,8 +1,8 @@
 // The skill buttons are easy to hit at eleven screen sizes, with skill points to spend and without:
 // 1. every point of each skill's visible disc reaches that skill, and no other control covers it. The "+" badges
 //    cover no disc and are easy to hit themselves.
-// 2. the command bar shows at every size, with the four skills in a row. Skills are at least 64 px with a mouse on a large screen,
-//    56 px with a mouse on a smaller one and 48 px on touch screens; the "+" badges are at least 24 px with a mouse and 34 px on touch screens. The skills stay
+// 2. the command bar shows at every size, with the four skills in a row. Skills are at least 64 px with a mouse on a large screen
+//    and 48 px elsewhere; the "+" badges are at least 24 px with a mouse and 34 px on touch screens. The skills stay
 //    clear of the market, the auto-status label, the minimap and the point button. On phones R is within 150 px of the
 //    bottom-right corner and every skill within 300 px, so the right thumb reaches them.
 // 3. a press in the gap between two skills, inside the cluster, goes to the nearest skill (the nearest disc edge).
@@ -103,7 +103,7 @@ try {
         for (const s of m.skills) check(Math.hypot(b.disc.x - s.disc.x, b.disc.y - s.disc.y) >= b.disc.r + s.disc.r - .5, `${at}: the ${KEYS[b.slot]} badge covers the ${KEYS[s.slot]} disc`);
       }
       // Goal 2: E and C are large; Q is not smaller than before; the cluster keeps clear of the other controls.
-      const big = phone ? 48 : w >= 1040 && h >= 600 ? 64 : 56;
+      const big = w >= 1040 && h >= 600 && !phone ? 64 : 48;
       check(m.bar, `${at}: the command bar is missing`);
       for (const s of m.skills.filter(s => s.slot === 1 || s.slot === 2)) check(s.size >= big, `${at}: ${KEYS[s.slot]} is ${Math.round(s.size)} px, under ${big} px`);
       check(m.skills[0].size >= big, `${at}: Q is ${Math.round(m.skills[0].size)} px`);

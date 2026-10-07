@@ -34,4 +34,4 @@ The HUD SHALL show one framed command bar at the bottom of every screen. It SHAL
 - **THEN** it shows a gold ring and glow, a dark veil with the seconds left, or a faded socket with LOCK.
 #### Scenario: Hit the controls by touch
 - **WHEN** the game runs on a touch screen
-- **THEN** each skill is at least 48 px and each "+" badge at least 34 px.
+- **THEN** each skill is at least 48 px and each "+" badge at least 34 px; with a mouse on a screen from 1040x600, each skill is at least 64 px.
