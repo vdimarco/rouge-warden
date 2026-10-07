@@ -12,8 +12,14 @@ Street cars live only in a vertex shader, so there is nothing to push. The drive
 
 ## Street cars as models
 
-Swapping the traffic shader body for a 5,000-triangle model would multiply 1,800 instances by 5,000. Instead `actionview.js` picks the nearest 12 street cars within 60 m each frame and draws them in the model instance meshes (capacity: 8 cars + 12), at the place `trafficAt` gives. Their shader cars are veiled by a new instance attribute, `aHide`, which the vertex shader turns into a clipped vertex. The old way to hide a car sinks its lane 500 m down. That would make `nearTraffic` skip the car, so a veiled car could be neither stolen nor hit. A stolen car still sinks its lane. The picker skips sunken lanes, and it gives back any street car that leaves the nearest 12.
+Swapping the traffic shader body for a model would multiply 1,800 instances by 2,500 triangles. Instead `actionview.js` gives 4 model places each frame to the cars nearest the camera. Parked cars, job cars and street cars within 40 m compete for them by distance, and the driven car always has one. A street car that gets a place is drawn in the model instance meshes (capacity: the parked cars + 4), at the place `trafficAt` gives. Their shader cars are veiled by a new instance attribute, `aHide`, which the vertex shader turns into a clipped vertex. The old way to hide a car sinks its lane 500 m down. That would make `nearTraffic` skip the car, so a veiled car could be neither stolen nor hit. A stolen car still sinks its lane. The picker skips sunken lanes, and it gives back any street car that loses its place.
 
 ## Budget
 
-Up to 20 models × 5,000 triangles, twice with the ink hull, is about 200,000 triangles in the worst case. The flat budget is 800,000 per view (`PERF.trisPerViewMax`), and `qa/vr/perf.mjs` checks it.
+The flat budget is 800,000 triangles per view (`PERF.trisPerViewMax`), and `qa/vr/perf.mjs` checks it. Main used 759,000 to 790,000 in its flat-play shots, so the cars had about 10,000 triangles to spend. The first try (5,000-triangle models on 8 parked cars and 12 street cars) went 85,000 over. Three changes bring it in:
+
+- Each body is packed at 2,500 triangles. Renders at 1,500 and 2,000 broke the van's panels into shards; 2,500 keeps the wheels round.
+- The ink outline is drawn from its own hull, `<car>-ink.glb`: 600 triangles of positions only (`pack-car.mjs` with texture size 0). A black back-face hull shows only at the edge, so the coarse shape does not show. `outlineOf` (`comic.js`) takes the hull as `geometry`.
+- Each model mesh, and its ink, has a bounding sphere round its instances, set every frame, so a view that does not look at the cars skips them. Before, `frustumCulled` was off.
+
+The worst case is now 4 × (2,500 + 600) = 12,400 triangles. The perf shots that look at the cars (harbour, aerial) measure about 798,000.

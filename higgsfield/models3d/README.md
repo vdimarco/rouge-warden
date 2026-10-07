@@ -23,6 +23,7 @@ The game slims `clips.json` to rotation tracks plus hip translation, rounded to 
 
 `node pack-car.mjs in.glb out.glb <triangles> <lengthMetres> [turnDegrees] [textureSize] [maxError]` packs a Higgsfield
 image-to-3D car (SAM 3D or Meshy) for `public/vr/models/cars/`: wheels on y = 0, centred, scaled to the length, front to +Z,
-simplified with smooth normals, a WebP base colour, and quantized attributes. It does not meshopt-compress, because
+simplified with smooth normals, a WebP base colour, and quantized attributes. A texture size of 0 packs a positions-only hull for
+the car's ink outline (`<car>-ink.glb`). It does not meshopt-compress, because
 `public/vr/js/actionview.js` loads the cars with a plain GLTFLoader. The commands and job IDs are in
 `public/vr/models/cars/CREDITS.md`.

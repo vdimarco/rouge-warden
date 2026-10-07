@@ -18,9 +18,10 @@ other car.
 - **THEN** that street car becomes a real car, and the two cars bump and do not overlap
 
 ### Requirement: Clean car models
-Every parked car and job car drawn SHALL show a car model, as SHALL the 12 nearest street cars within 60 m of the camera. Each
-model SHALL have round wheels and smooth panels, at about 5,000 triangles. Far street cars MAY keep the simple body. The frame SHALL
-stay within the triangle budget.
+The 4 cars nearest the camera SHALL show a car model. Parked cars, job cars and street cars within 40 m share these places by
+distance, and the car the player drives always has one. Each model SHALL have round wheels and smooth panels, at about 2,500
+triangles, with a dark ink outline round it. Other cars MAY keep the simple body. Every flat-play shot in `qa/vr/perf.mjs` SHALL stay
+within the triangle budget (`PERF.trisPerViewMax`, 800,000).
 
 #### Scenario: A street with traffic
 - **WHEN** the hero stands on a street with parked cars and traffic nearby

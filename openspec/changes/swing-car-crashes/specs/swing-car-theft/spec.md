@@ -5,5 +5,5 @@ A street car drawn as a model near the camera SHALL be found by car theft and by
 the traffic shader.
 
 #### Scenario: Steal a near street car
-- **WHEN** a street car within 60 m is drawn as a model, and the player presses R beside it
+- **WHEN** a street car within 40 m is drawn as a model, and the player presses R beside it
 - **THEN** the hero steals it, as before

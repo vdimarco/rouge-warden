@@ -12,8 +12,8 @@ The user asked for collisions between cars, and called the car models "super ugl
 
 - **Car against car (`cars.js` `collide`).** Each car is two circles (radius 0.95 m, 1.25 m in front of and behind its middle). A hit pushes the cars apart, but never into a wall, and trades their speed along the hit with restitution 0.3. A parked car that is hit rolls away and coasts to a stop. A hard hit makes a bump sound and rumble.
 - **The driven car against street traffic.** A street car in front of the driven car becomes a real car on the spot (`K.steal(t, from, true)`, a `struck` event). Its shader car is hidden, and the crash then pushes it like any other car.
-- **The models (`higgsfield/models3d/pack-car.mjs`).** Each car is packed again from the full SAM mesh at 5,000 triangles, with smooth normals, a 512 px WebP texture and quantized attributes (about 330 KB each). The loader in `actionview.js` turns quantized attributes into floats before it resizes the mesh.
-- **Models in more places.** Every parked car and job car drawn (up to 8) shows its model. The 12 nearest street cars within 60 m are also drawn as models: their shader cars are veiled (`cityview.js` `veilTraffic`, an `aHide` instance attribute), and their lanes stay as they are, so theft and crashes still find them. Far street traffic keeps the simple body.
+- **The models (`higgsfield/models3d/pack-car.mjs`).** Each car is packed again from the full SAM mesh at 2,500 triangles, with smooth normals, a 512 px WebP texture and quantized attributes (about 185 KB each). A 600-triangle hull (about 7 KB) draws its ink outline. The loader in `actionview.js` turns quantized attributes into floats before it resizes the mesh.
+- **Models in more places.** The 4 cars nearest the camera show a model, whether parked, on a job or in the street traffic within 40 m. Street cars shown this way their shader cars are veiled (`cityview.js` `veilTraffic`, an `aHide` instance attribute), and their lanes stay as they are, so theft and crashes still find them. Far street traffic keeps the simple body.
 - Version 1.19.0 (Quest APK code 26).
 
 ## Out of scope

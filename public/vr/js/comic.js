@@ -234,7 +234,8 @@ uniform float uInkK;
 `;
 export function outlineOf(mesh, opts = {}) {
   const o = { width: 0.02, grow: true, px: 2, color: INK, ...opts };
-  smoothNormals(mesh.geometry);
+  const geo = o.geometry || mesh.geometry; // a coarser hull of the same shape may stand in for the mesh's own
+  smoothNormals(geo);
   const mat = new THREE.MeshBasicMaterial({ color: o.color, side: THREE.BackSide, fog: false, toneMapped: false });
   mat.userData.comicInk = true;
   mat.onBeforeCompile = (shader) => {
@@ -257,7 +258,7 @@ export function outlineOf(mesh, opts = {}) {
         }`);
   };
   mat.customProgramCacheKey = () => "comic-ink";
-  const out = mesh.isInstancedMesh ? new THREE.InstancedMesh(mesh.geometry, mat, mesh.count) : new THREE.Mesh(mesh.geometry, mat);
+  const out = mesh.isInstancedMesh ? new THREE.InstancedMesh(geo, mat, mesh.count) : new THREE.Mesh(geo, mat);
   if (mesh.isInstancedMesh) {
     // the same matrices, not a copy: a move of one instance moves its outline
     out.instanceMatrix = mesh.instanceMatrix;

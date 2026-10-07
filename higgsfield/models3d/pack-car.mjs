@@ -2,7 +2,8 @@
 // Wheels on y = 0, centred on x = z = 0, the length along z scaled to <length> m, the front toward +z (turn it with
 // <turnDegrees> when it is not), welded and simplified to <triangles> with smooth normals (the toon shader reads them), one
 // base-colour texture as WebP, metallic 0 and roughness 0.6, quantized (KHR_mesh_quantization). No meshopt compression:
-// actionview.js loads it with a plain GLTFLoader.
+// actionview.js loads it with a plain GLTFLoader. A textureSize of 0 packs the ink hull instead: the positions alone, so the
+// weld closes the texture seams and the simplifier can go much lower (the game draws the car's ink outline from it).
 // Usage: node pack-car.mjs in.glb out.glb <triangles> <length> [turnDegrees] [textureSize] [maxError]
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, EXTTextureWebP } from '@gltf-transform/extensions';
@@ -28,9 +29,14 @@ const mul = (a, b) => { const o = new Array(16).fill(0); for (let col = 0; col <
 const M = mul(R, mul(S, T));
 for (const mesh of root.listMeshes()) transformMesh(mesh, M);
 for (const node of root.listNodes()) node.setTranslation([0, 0, 0]).setRotation([0, 0, 0, 1]).setScale([1, 1, 1]);
-const ratio = Math.min(1, +target / tris);
-await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio, error: +maxError, lockBorder: false }), normals({ overwrite: true }));
+const ratio = Math.min(1, +target / tris), hull = +texSize === 0;
+if (hull) {
+  for (const mesh of root.listMeshes()) for (const prim of mesh.listPrimitives()) for (const sem of prim.listSemantics()) if (sem !== 'POSITION') prim.setAttribute(sem, null);
+  for (const m of root.listMaterials()) m.setBaseColorTexture(null).setEmissiveTexture(null);
+}
+await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio, error: +maxError, lockBorder: false }), ...(hull ? [] : [normals({ overwrite: true })]));
 doc.createExtension(EXTTextureWebP).setRequired(true);
+if (hull) await doc.transform(prune());
 for (const tex of root.listTextures()) {
   const img = tex.getImage(); if (!img) continue;
   tex.setImage(await sharp(Buffer.from(img)).resize(+texSize, +texSize, { fit: 'inside' }).webp({ quality: 85 }).toBuffer()).setMimeType('image/webp');
