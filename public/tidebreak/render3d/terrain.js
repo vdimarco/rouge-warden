@@ -46,6 +46,14 @@ function paintMasks(world, s, seed) {
   for (const b of BASES) { c.beginPath(); c.ellipse(b.x, b.y, 660, 560, 0, 0, Math.PI * 2); c.fill(); }
   for (const e of s.units) if (e.kind === 'tower') { c.beginPath(); c.arc(e.x, e.y, e.guardian || e.tier >= 3 ? 230 : 170, 0, Math.PI * 2); c.fill(); }
   for (const g of PORTALS) { c.beginPath(); c.arc(g.x, g.y, 150, 0, Math.PI * 2); c.fill(); }
+  // Worn cobbles where each winding road leaves a base court: strong at the court, thinning over about 1200 units.
+  for (const path of PATHS) for (const end of [path, [...path].reverse()]) {
+    let walked = 0;
+    for (let i = 1; i < end.length && walked < 1250; i++) {
+      walked += Math.hypot(end[i].x - end[i - 1].x, end[i].y - end[i - 1].y);
+      stroke([end[i - 1], end[i]], 150, '#0000ff', .7 * Math.min(1, (1250 - walked) / 600));
+    }
+  }
   c.globalAlpha = .75;
   for (const b of OBSTACLES[0]) if (['ruins', 'village'].includes(b.biome)) { c.beginPath(); c.ellipse(b.x, b.y, b.w * .62, b.h * .62, 0, 0, Math.PI * 2); c.fill(); }
   c.globalAlpha = 1;
