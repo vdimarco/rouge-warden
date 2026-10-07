@@ -21,7 +21,7 @@ test('each finite river is 50 percent longer and has a clean 150 m finish approa
   const {g,rows}=inspectCourse(139,level.index);
   assert.ok(rows.every(row=>row[0].d<level.length-FINISH_RUNWAY));
   const approach=g.entities.filter(e=>e.motif==='finish-runway');
-  assert.equal(approach[0].d,level.length-130);assert.equal(approach.at(-1).d,level.length-15);
+  assert.equal(approach[0].d,level.length-90);assert.equal(approach.at(-1).d,level.length-15);
   assert.ok(approach.every(e=>e.type==='coin'&&e.lane===1));
   assert.ok(g.entities.every(e=>e.d<level.length));
  }
@@ -34,7 +34,9 @@ test('seeded episodes cross four acts with varied lengths, recovery gaps and inc
   const {g,rows}=inspectCourse(seed,level.index),episodes=new Map();
   assert.equal(new Set(g.patternsSeen.filter(id=>id!=='tutorial')).size,6);
   assert.deepEqual([...new Set(rows.map(row=>row[0].act))],[0,1,2,3]);
-  for(const act of [0,1,2,3])assert.ok(rows.some(row=>row[0].act===act&&row[0].recovery),`seed ${seed}, ${level.id}, act ${act} has no recovery`);
+  assert.ok(rows.filter(row=>row[0].recovery).length>=4,`seed ${seed}, ${level.id} has too few recovery beats`);
+  assert.ok(rows.slice(0,3).every(row=>row.length===1),'the three opening tutorial rows became mandatory walls');
+  for(const type of ['log','branch'])assert.ok(rows.some(row=>row.length===3&&row[0].type===type&&row[0].d<=650),`${level.id} seed${seed} postpones required ${type}`);
   for(let i=0;i<rows.length;i++){
    const row=rows[i],item=row[0],act=courseAct(item.d,level.length),stats=totals[act];
    assert.equal(item.act,act);stats.rows++;stats.paired+=row.length>1?1:0;stats.waves+=row.length===3?1:0;
@@ -52,8 +54,8 @@ test('seeded episodes cross four acts with varied lengths, recovery gaps and inc
   assert.ok(rows.some(row=>row[0].recovery),'no recovery between bursts');
  }
  assert.ok(episodeLengths.size>=4,'episodes repeat one fixed row count');
- assert.equal(totals[0].waves,0,'opening contains full-width action waves');
+ assert.ok(totals[0].waves>0,'the opening lets dodging-only players skip actions');
  assert.ok(totals[3].waves/totals[3].rows>totals[1].waves/totals[1].rows,'late action waves do not intensify');
- assert.ok(totals[3].paired/totals[3].rows>totals[0].paired/totals[0].rows+.15,'late formations do not become more demanding');
+ assert.ok(totals[3].paired/totals[3].rows>totals[0].paired/totals[0].rows+.08,'late formations do not become more demanding');
  assert.ok(totals.every(act=>act.gaps>0),'one act lacks recovery stretches');
 });

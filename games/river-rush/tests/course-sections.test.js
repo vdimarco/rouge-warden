@@ -51,7 +51,8 @@ test('terrain changes playable river shape and water while shoals remain outside
  assert.ok(average('wave-train','rapid')-average('low-canopy','rapid')>.2,'jump water does not differ from quiet canopy water');
 });
 
-test('active terrain routes use corresponding hazards, raised wave gold and safe adjacent choices on every map',()=>{
+test('terrain biases mixed readable routes with jump arcs, low canopy gold and safe adjacent choices',()=>{
+ const density=Object.fromEntries(TERRAIN_SECTIONS.map(s=>[s.type,{rock:0,log:0,branch:0,total:0}]));
  for(let seed=1;seed<=25;seed++)for(const level of LEVELS){
   const g=createGame(seed,level.index),seen=new Set(),rows=new Map();
   for(let d=0;d<level.length;d+=120){g.distance=d;g.time=d/level.startSpeed;generateAhead(g);}
@@ -59,7 +60,7 @@ test('active terrain routes use corresponding hazards, raised wave gold and safe
    if(!rows.has(item.row))rows.set(item.row,[]);rows.get(item.row).push(item);
    if(item.terrainActive){
     seen.add(item.sectionType);
-    assert.equal(item.type,item.sectionType==='narrows'?'rock':item.sectionType==='wave-train'?'log':'branch');
+    density[item.sectionType][item.type]++;density[item.sectionType].total++;
     assert.equal(terrainSection(item.d,g.terrainProfile).id,item.sectionId);
     assert.ok(item.d<level.length-FINISH_RUNWAY);
    }
@@ -67,10 +68,17 @@ test('active terrain routes use corresponding hazards, raised wave gold and safe
   assert.equal(seen.size,3);
   for(const row of rows.values()){
    assert.ok(row.length<=2||row.every(e=>e.type==='log')||row.every(e=>e.type==='branch'));
-   if(row.length===3)assert.ok(row[0].act>0,'introductory act has an unavoidable wave');
-   if(row[0].terrainActive&&row[0].sectionType==='wave-train')assert.equal(g.entities.filter(e=>e.type==='coin'&&e.row===row[0].row&&e.high).length,5);
+   if(row.length===3)assert.ok(row[0].row>=3,'tutorial row became a mandatory wall');
+   const coins=g.entities.filter(e=>e.type==='coin'&&e.row===row[0].row);
+   for(const coin of coins.filter(e=>Number.isFinite(e.jumpHeight)))assert.ok(row.some(e=>e.type==='log'&&e.lane===coin.lane),'raised route points at a different lane than its log');
+   if(row[0].terrainActive&&row[0].sectionType==='wave-train'&&row.every(e=>e.type==='log'))assert.equal(coins.filter(e=>e.high).length,5);
   }
  }
+ for(const type of ['narrows','wave-train','low-canopy'])assert.ok(['rock','log','branch'].every(h=>density[type][h]>0),'terrain section repeats one hazard type');
+ const share=(section,type)=>density[section][type]/density[section].total;
+ assert.ok(share('narrows','rock')>share('wave-train','rock')+.10);
+ assert.ok(share('wave-train','log')>share('low-canopy','log')+.10);
+ assert.ok(share('low-canopy','branch')>share('wave-train','branch')+.05);
 });
 
 test('natural no-Rush generation provides at least three eligible jumps for every advertised chain',()=>{

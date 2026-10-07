@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { createGame, jumpHeight, VIEW_DISTANCE } from './engine.js';
+import {coinWorldHeight} from './coin-presentation.js';
 import { surfaceAt, createFloat, advanceFloat } from './hydrodynamics.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { renderDpr,createFrameBudget,sampleFrameBudget } from './quality.js';
@@ -370,10 +371,10 @@ export function createScene(canvas,art,onLost){
  if(e.type==='branch'&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
  if(!worldEntityVisible(e,g.distance,VIEW_DISTANCE))continue;alive.add(e.id);visible++;
  const course=travel+z,cross=(e.lane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
- if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,(e.high?3.1:1.2)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
+ if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,coinWorldHeight(e)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
  let obj=entities.get(e.id);if(!obj){obj=makeEntity(e);entities.set(e.id,obj);}
  const sx=p.x,y=wy;
- obj.position.set(sx,e.type==='coin'?(e.high?3.1:1.2):e.type==='rock'?.5:e.type==='branch'?0:e.type==='log'?.27:1.4,-z);obj.position.y+=y;obj.rotation.y=-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed));
+ obj.position.set(sx,e.type==='coin'?coinWorldHeight(e):e.type==='rock'?.5:e.type==='branch'?0:e.type==='log'?.27:1.4,-z);obj.position.y+=y;obj.rotation.y=-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed));
  if(e.type==='rock'&&guardianBatches.length&&level.index===2){obj.userData.body.visible=false;guardianTransform.position.set(sx,y-.12,-z);guardianTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.14,0);guardianTransform.scale.setScalar(1);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  if(e.type==='rock'){hazardProjection.set(sx,y+1.2,-z).project(camera);rockSamples.push({id:e.id,lane:e.lane,ahead:z,resolved:!!e.done,kind:level.index===2&&guardianBatches.length?'guardian':'rock',screen:[hazardProjection.x,hazardProjection.y]});}
  if(e.type==='log'&&driftwoodBatches.length){obj.userData.body.visible=false;palmTransform.position.set(sx,y-.1,-z);palmTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.035,0);palmTransform.scale.set(1,1,1);palmTransform.updateMatrix();for(const b of driftwoodBatches){instanceMatrix.multiplyMatrices(palmTransform.matrix,b.local);b.mesh.setMatrixAt(woodCount,instanceMatrix);}woodCount++;}
@@ -396,11 +397,11 @@ export function createScene(canvas,art,onLost){
  if(!reduced){coinTarget.set((art.coinTarget?.x??w*.5)/w*2-1,1-(art.coinTarget?.y??40)/h*2,.8).unproject(camera);coinCatch.set(x,f.height+lift+1.2,.18);
  for(const e of g.effects){const t=(g.time-(e.contactTime??e.time))/.36;if(e.type!=='coin'||t<0||t>=1||tokenCount>=24)continue;
  const course=travel+(e.distance??g.distance)-g.distance,cross=(e.lane-1)*3.8,origin=point(course,cross);
- coinOrigin.set(origin.x,origin.y+waterHeight(cross,course)+(e.high?3.1:1.2),origin.z);
+ coinOrigin.set(origin.x,origin.y+waterHeight(cross,course)+coinWorldHeight(e),origin.z);
  positionCoinFlight(coinPose.position,coinOrigin,coinTarget,t);
  const pixels=15-10*t,depth=Math.max(.3,-tokenDepth.copy(coinPose.position).applyMatrix4(camera.matrixWorldInverse).z),scale=depth*2*Math.tan(camera.fov*Math.PI/360)*pixels/h/.78;
  coinPose.rotation.set(Math.PI/2,g.time*8,0);coinPose.scale.setScalar(scale);coinPose.updateMatrix();scoreTokens.setMatrixAt(tokenCount++,coinPose.matrix);
- coinFlights.push({id:e.id,entityId:e.entityId,attracted:false,boosted:!!e.boosted,value:e.value,contactTime:e.contactTime,playerLane:e.playerLane,playerHeight:e.playerHeight,phase:'to-score',progress:t,appearance:'white-score-token',color:'#fff5d8',pixelSize:pixels,maxDiameterPixels:pixels,position:coinPose.position.toArray(),caught:coinCatch.toArray()});}}
+ coinFlights.push({id:e.id,entityId:e.entityId,attracted:false,boosted:!!e.boosted,value:e.value,contactTime:e.contactTime,playerLane:e.playerLane,playerHeight:e.playerHeight,jumpHeight:e.jumpHeight,origin:coinOrigin.toArray(),originHeight:coinWorldHeight(e),phase:'to-score',progress:t,appearance:'white-score-token',color:'#fff5d8',pixelSize:pixels,maxDiameterPixels:pixels,position:coinPose.position.toArray(),caught:coinCatch.toArray()});}}
  scoreTokens.count=tokenCount;scoreTokens.instanceMatrix.needsUpdate=true;
  status.coinFeedback={active:coinFlights.length,attracted:0,capacity:24,worldCoins:coinCount,goldFlightInstances:0,flights:coinFlights};
  coinBatch.count=coinCount;coinBatch.instanceMatrix.needsUpdate=true;

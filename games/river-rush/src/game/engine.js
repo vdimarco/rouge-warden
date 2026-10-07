@@ -3,6 +3,7 @@ import { laneSpring } from './world.js';
 import { LEVELS, FINISH_RUNWAY, levelAt, levelSeed, levelSpeed } from './levels.js';
 import { courseAct, courseIntensity } from './course-intensity.js';
 import { terrainSection } from './course-sections.js';
+import {jumpArcHeight,coinJumpHeight,JUMP_REWARD_LEAD,JUMP_REWARD_OFFSETS,COIN_ARC_HEIGHT_RADIUS} from './jump-rewards.js';
 export const JUMP_SECONDS = .66;
 export const DUCK_SECONDS = .60;
 export const VIEW_DISTANCE = 180;
@@ -51,6 +52,7 @@ export function createGame(seed = Date.now(), levelIndex = 0, carry = null) {
     entities: [], nextRow: level.startSpeed*(68/42), row: 0, nextId: 1, patternsSeen:[], runwayGenerated:false,
     motifDeck:[], episode:null, episodeIndex:0, routeLane:1, routeDirection:mapSeed&1?1:-1,
     terrainProfile:Object.freeze({seed:mapSeed,length:level.length,mapIndex:level.index}),terrainCombo:{section:null,count:0,claimed:false},
+    terrainBeat:null,rowsSinceRequired:0,requiredJump:false,requiredDuck:false,lastRequiredType:null,requiredTypeRun:0,lastFormation:null,formationRun:0,
     event: '', eventId: 0, effects: [], notice: level.index===0?'Jump logs · Duck branches · Dodge rocks':`${level.name} · ${level.difficulty}`, noticeUntil: 4, reason: '' };
   for (let d = 7; d <= 32; d += 5) add(g, 'coin', 1, d);
   generateAhead(g); return g;
@@ -72,47 +74,85 @@ function nextEpisode(g,act){
     for(let i=g.motifDeck.length-1;i>0;i--){const j=Math.floor(random(g)*(i+1));[g.motifDeck[i],g.motifDeck[j]]=[g.motifDeck[j],g.motifDeck[i]];}
     if(g.motifDeck.at(-1)===g.episode?.motif)[g.motifDeck[0],g.motifDeck[g.motifDeck.length-1]]=[g.motifDeck.at(-1),g.motifDeck[0]];
   }
-  return{index:g.episodeIndex++,motif:g.motifDeck.pop(),act,length:5+Math.floor(random(g)*5),step:0};
+  return{index:g.episodeIndex++,motif:g.motifDeck.pop(),act,length:3+Math.floor(random(g)*4),step:0};
 }
 function rowPattern(g,row,d){
   const level=levelAt(g.levelIndex),act=courseAct(d,level.length),intensity=courseIntensity(d,level.length,g.levelIndex),terrain=terrainSection(d,g.terrainProfile);
-  if(g.levelIndex===0&&row<3){
+  if(row<3){
     g.routeLane=row<2?1:2;
     return{motif:'tutorial',safe:row<2?0:2,hazards:[{lane:1,type:['log','branch','rock'][row]}],coinLane:row<2?1:2,act,episode:-1,beat:row,recovery:false,intensity,terrain};
   }
-  // Seeded episodes have different lengths and change at geographic act boundaries,
-  // rather than repeating a visible four-row route. A shuffled deck keeps variety.
   if(!g.episode||g.episode.step>=g.episode.length||g.episode.act!==act)g.episode=nextEpisode(g,act);
   const episode=g.episode,step=episode.step++,motif=episode.motif;
-  // A complete wave encounter needs three real launch opportunities. Give
-  // its recovery at the terrain exit rather than cancelling an interior row.
-  const waveEncounter=terrain.phase==='active'&&terrain.type==='wave-train';
-  const recovery=terrain.phase==='recovery'||step===episode.length-1&&!waveEncounter;
-  const activeTerrain=terrain.phase==='active'&&!recovery;
-  const move=activeTerrain&&terrain.type==='narrows'||motif==='slalom'||motif==='coin-zigzag'||random(g)<.65;
-  if(!recovery&&move){
-    if(g.routeLane===0)g.routeDirection=1;else if(g.routeLane===2)g.routeDirection=-1;
-    else if(motif==='mixed-hazards'||motif==='split-current')g.routeDirection=random(g)<.5?-1:1;
-    g.routeLane+=g.routeDirection;
+  if(g.terrainBeat?.id!==terrain.id)g.terrainBeat={id:terrain.id,step:0,logs:0,mixed:false,rested:false};
+  const sectionBeat=g.terrainBeat;
+  let recovery=terrain.phase==='recovery'||step===episode.length-1;
+  const activeTerrain=terrain.phase==='active';
+  if(activeTerrain&&terrain.type==='wave-train'&&sectionBeat.logs>=3&&!sectionBeat.rested){recovery=true;sectionBeat.rested=true;}
+  // Route choices include holds and adjacent moves. A short direction bias
+  // changes at episode boundaries; edges never force an endless ping-pong.
+  if(step===0)g.routeDirection=random(g)<.5?-1:1;
+  if(!recovery&&random(g)<.42+.18*intensity){
+    const choices=[g.routeLane];
+    if(g.routeLane>0)choices.push(g.routeLane-1);
+    if(g.routeLane<2)choices.push(g.routeLane+1);
+    const preferred=g.routeLane+g.routeDirection;
+    g.routeLane=choices.includes(preferred)&&random(g)<.48?preferred:choices[Math.floor(random(g)*choices.length)];
   }
   const safe=g.routeLane,occupied=[0,1,2].filter(lane=>lane!==safe);
   if(random(g)<.5)occupied.reverse();
   let types=['rock','rock'];
-  if(motif==='coin-zigzag')types=['log','branch'];
-  else if(motif==='mixed-hazards')types=random(g)<.5?['branch','log']:['log','branch'];
+  if(motif==='coin-zigzag'||motif==='mixed-hazards')types=random(g)<.5?['log','branch']:['branch','log'];
   else if(motif==='jump-waves')types=['rock','log'];
   else if(motif==='low-canopy')types=['branch','rock'];
   else if(motif==='split-current')types=random(g)<.5?['branch','log']:['rock','branch'];
-  if(activeTerrain)types=terrain.type==='narrows'?['rock','rock']:terrain.type==='wave-train'?['log','log']:['branch','branch'];
-  // Full-width waves always share one action; other formations leave a clear
-  // adjacent-lane route. Opening waves stay light and episode ends breathe.
-  const wave=activeTerrain?(terrain.type==='wave-train'&&act>0||terrain.type==='low-canopy'&&act>0&&random(g)<.16+.60*intensity):(motif==='jump-waves'||motif==='low-canopy')&&act>0&&step>0&&!recovery&&random(g)<.12+.46*intensity;
+  if(activeTerrain&&random(g)<.66)types=terrain.type==='narrows'?['rock','rock']:terrain.type==='wave-train'?['log','rock']:['branch','rock'];
+  let mandatory=null;
+  if(!g.requiredJump)mandatory='log';
+  else if(row>=5&&!g.requiredDuck)mandatory='branch';
+  // Every advertised wave train contains three real jumps and one different
+  // beat in its first four active rows, even at the fastest row spacing.
+  if(activeTerrain&&terrain.type==='wave-train'&&terrain.comboAvailable&&sectionBeat.logs<3){
+    if(mandatory==='branch')sectionBeat.mixed=true;
+    else if(sectionBeat.logs>0&&!sectionBeat.mixed){mandatory='branch';sectionBeat.mixed=true;}
+    else mandatory='log';
+  }else if(!mandatory&&!recovery&&random(g)<.13+.32*intensity+g.levelIndex*.025){
+    mandatory=activeTerrain&&terrain.type==='low-canopy'?'branch':activeTerrain&&terrain.type==='wave-train'?'log':random(g)<.5?'log':'branch';
+  }
+  // Dodging alone cannot avoid actions for a long stretch. The random beats
+  // remain different between seeds, with a hard drought bound as a backstop.
+  if(!mandatory&&g.rowsSinceRequired>=3){
+    mandatory=activeTerrain&&terrain.type==='wave-train'?'log':activeTerrain&&terrain.type==='low-canopy'?'branch':random(g)<.5?'log':'branch';
+  }
+  if(mandatory&&g.requiredTypeRun>=2&&mandatory===g.lastRequiredType&&!(activeTerrain&&terrain.type==='wave-train'&&sectionBeat.logs<3))mandatory=mandatory==='log'?'branch':'log';
+  if(mandatory)recovery=false;
   const pair=!recovery&&random(g)<.28+.54*intensity+g.levelIndex*.05;
-  const waveType=activeTerrain?(terrain.type==='wave-train'?'log':'branch'):motif==='jump-waves'?'log':'branch';
-  const hazards=wave?[0,1,2].map(lane=>({lane,type:waveType})):occupied.slice(0,pair?2:1).map((lane,i)=>({lane,type:types[(i+step)%types.length]}));
-  // The coin line makes optional action routes readable before a full wave.
-  const coinLane=activeTerrain&&terrain.type!=='narrows'&&!wave?hazards[0].lane:safe;
+  let hazards=mandatory?[0,1,2].map(lane=>({lane,type:mandatory})):occupied.slice(0,pair?2:1).map((lane,i)=>({lane,type:types[(i+step)%types.length]}));
+  let formation=hazards.every(h=>h.type===hazards[0].type)?`${hazards.length}:${hazards[0].type}`:'mixed';
+  // Change the obstacle silhouette after at most three equal formations.
+  if(!mandatory&&g.formationRun>=3&&formation===g.lastFormation){
+    if(formation==='mixed'){hazards=hazards.map(h=>({...h,type:hazards[1].type}));formation=`${hazards.length}:${hazards[0].type}`;}
+    else{hazards[0].type=hazards[0].type==='rock'?'branch':hazards[0].type==='branch'?'log':'rock';formation=hazards.length===1?`1:${hazards[0].type}`:'mixed';}
+  }
+  g.formationRun=formation===g.lastFormation?g.formationRun+1:1;g.lastFormation=formation;
+  if(mandatory){
+    g.rowsSinceRequired=0;g.requiredJump ||= mandatory==='log';g.requiredDuck ||= mandatory==='branch';
+    g.requiredTypeRun=mandatory===g.lastRequiredType?g.requiredTypeRun+1:1;g.lastRequiredType=mandatory;
+  }else g.rowsSinceRequired++;
+  if(activeTerrain){sectionBeat.step++;if(mandatory==='log')sectionBeat.logs++;}
+  // A single coherent reward path: either clear water, a jump arc over its
+  // actual log, or low gold under the branch. Never point at a different lane.
+  const reward=mandatory?hazards.find(h=>h.lane===safe):hazards.find(h=>h.type==='log'&&(motif==='jump-waves'||terrain.type==='wave-train'))??(activeTerrain&&terrain.type==='low-canopy'?hazards.find(h=>h.type==='branch'):null);
+  const coinLane=reward?.lane??safe;
   return{motif,safe,hazards,coinLane,act,episode:episode.index,beat:step,recovery,intensity,terrain,activeTerrain};
+}
+// Integrate the same capped acceleration and known Rush remainder used by
+// timeToImpact. Gold stays attached to a temporal jump arc at every map speed.
+function forecastTravel(g,seconds){
+  const level=levelAt(g.levelIndex);
+  const integrate=(start,duration)=>{const initial=speedAt(start,g.levelIndex),ramp=Math.min(duration,Math.max(0,(level.maxSpeed-initial)/level.acceleration));return initial*ramp+level.acceleration*ramp*ramp/2+(duration-ramp)*level.maxSpeed;};
+  const boost=Math.min(Math.max(0,seconds),g.rush);
+  return integrate(g.time,boost)*1.32+integrate(g.time+boost,Math.max(0,seconds-boost));
 }
 export function generateAhead(g) {
   if(g.phase!=='playing')return;
@@ -124,35 +164,43 @@ export function generateAhead(g) {
     if(!g.patternsSeen.includes(motif))g.patternsSeen.push(motif);
     const section={sectionId:terrain.id,sectionType:terrain.type,sectionPhase:terrain.phase,terrainActive:!!activeTerrain,terrainComboAvailable:terrain.comboAvailable};
     hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery,...section }));
-    for (let offset = -17; offset <= -2; offset += 5) add(g, 'coin', coinLane, d + offset);
-    const actionHazard = hazards.find(h => h.type !== 'rock');
-    if(activeTerrain&&terrain.type==='wave-train'){
-      for(let offset=-8;offset<=8;offset+=4)add(g,'coin',coinLane,d+offset,{high:true,row,motif,...section});
-    }else if (actionHazard) {
-      // Gold over logs is collected only while airborne. Duck routes pay on clearing.
-      add(g, 'coin', actionHazard.lane, d, { high: actionHazard.type === 'log' });
-      add(g, 'coin', actionHazard.lane, d + 5);
-      if(activeTerrain&&terrain.type==='low-canopy')add(g,'coin',coinLane,d+10,{row,motif,...section});
+    // Every spacing stays above the existing per-map safety floor, with
+    // seeded variation and longer pauses after brief challenge bursts.
+    const interval=row<3?1.05-Math.min(1,predictedTime/95)*.19:Math.max(level.minInterval,level.rowInterval+.16*(1-intensity)-.1*intensity+(random(g)-.5)*.22)+(recovery ? .30+.20*intensity : 0);
+    const rewardHazard=hazards.find(h=>h.lane===coinLane);
+    const at=relative=>g.distance+forecastTravel(g,predictedTime-g.time+relative);
+    if(rewardHazard?.type==='log'){
+      for(const offset of JUMP_REWARD_OFFSETS)add(g,'coin',coinLane,at(offset),{high:true,jumpHeight:jumpArcHeight(JUMP_REWARD_LEAD+offset),jumpOffset:offset,row,motif,...section});
+      // Keep the shown route entirely airborne. Approach/landing ground
+      // coins cannot remain fair if a newly triggered Rush compresses it.
+      // They also leave too little time to change lane into the next ribbon.
+    }else{
+      for(const offset of [-.08,-.04,0,.04,.08,.12])add(g,'coin',coinLane,at(offset),{row,motif,...section});
     }
     if (row % 13 === 6) add(g, 'magnet', safe, d - 8);
     if (row % 17 === 11) add(g, 'shield', safe, d - 8);
-    // Preserve the introductory jump/duck/rock reaction time at faster speeds.
-    const interval=g.levelIndex===0&&row<3?1.05-Math.min(1,predictedTime/95)*.19:Math.max(level.minInterval,level.rowInterval+.16*(1-intensity)-.1*intensity)+(recovery ? .30+.20*intensity : 0);
     g.nextRow += speedAt(predictedTime,g.levelIndex) * interval;
   }
   if(!g.runwayGenerated&&visibleTo>limit){
     g.runwayGenerated=true;
-    for(let d=level.length-130;d<=level.length-15;d+=5)add(g,'coin',1,d,{motif:'finish-runway'});
+    // Late jumps have landed before the gold line, including earned Rush.
+    for(let d=level.length-90;d<=level.length-15;d+=5)add(g,'coin',1,d,{motif:'finish-runway'});
   }
   g.entities.sort((a, b) => a.d - b.d || a.id - b.id);
 }
 export function jumpHeight(g) {
   return jumpHeightAt(g.action,g.actionTime);
 }
-function jumpHeightAt(action,time){const p=clamp(time/JUMP_SECONDS,0,1);return action==='jump'?4*p*(1-p):0;}
+function jumpHeightAt(action,time){return action==='jump'?jumpArcHeight(time):0;}
 // Reward a timely tap on the launch frame, before the arc reaches full height.
 function jumpClearsAt(action,time){return action==='jump'&&time<JUMP_SECONDS&&(time<=.06||jumpHeightAt(action,time)>COIN_GROUND_MAX_JUMP_HEIGHT);}
 export function coinHeightTouches(high,action,time){return high?jumpClearsAt(action,time):jumpHeightAt(action,time)<=COIN_GROUND_MAX_JUMP_HEIGHT;}
+export function coinTouchesAtHeight(entity,action,time){
+ const height=coinJumpHeight(entity);
+ if(height===null)return coinHeightTouches(!!entity.high,action,time);
+ if(action!=='jump'||time>=JUMP_SECONDS)return false;
+ return entity.jumpOffset===0&&time<=.06||Math.abs(jumpArcHeight(time)-height)<=COIN_ARC_HEIGHT_RADIUS;
+}
 function crossingAction(frame,elapsed){
   const duration=frame.action==='jump'?JUMP_SECONDS:DUCK_SECONDS;
   if(!frame.action||frame.actionTime+elapsed<duration)return{action:frame.action,time:frame.actionTime+elapsed};
@@ -237,14 +285,14 @@ export function updateGame(g, input, dt) {
     if (e.type === 'coin') {
       const action=crossingAction(frame,elapsed);
       const boosted=boostUntil>elapsed;
-      if (overlap&&coinHeightTouches(!!e.high,action.action,action.time)) {
+      if (overlap&&coinTouchesAtHeight(e,action.action,action.time)) {
         e.collected=true;
         g.coins++; g.streak++; g.lastCoin = g.time;lastContactCoinTime=frame.time+elapsed;
         if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
         const value=10*g.multiplier*(boosted?2:1);
         g.bonus += value; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
-        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high, distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,streak:g.streak,multiplier:g.multiplier,contactTime:frame.time+elapsed });
+        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high,jumpHeight:coinJumpHeight(e), distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,streak:g.streak,multiplier:g.multiplier,contactTime:frame.time+elapsed });
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
       if (overlap) {

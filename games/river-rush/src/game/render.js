@@ -1,4 +1,5 @@
 import { jumpHeight, VIEW_DISTANCE } from './engine.js';
+import {coinPixelLift,coinFlightPixelLift} from './coin-presentation.js';
 import { bankScenery, rapids, prepareWorldArt, worldEntityVisible } from './world.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
@@ -173,7 +174,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     if(e.type==='coin') size=heroWidth*.28*p.scale;
     else if(e.type==='magnet'||e.type==='shield') size=heroWidth*.52*p.scale;
     else size=p.corridor/3*(e.type==='branch' ? 1.02 : .86)*p.scale;
-    const high=e.high ? heroWidth*.5*p.scale : 0;
+    const high=coinPixelLift(e,heroWidth,p.scale);
     const bottom=p.y-high;
     if(e.type==='coin'||e.type==='magnet'||e.type==='shield') {
       ctx.save();ctx.fillStyle=e.type==='coin'?'#ffcf5f28':'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
@@ -252,7 +253,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     }
     const target=art.coinTarget??{x:width*.5,y:40};
     for(const e of motion.pickups){
-      const t=pickupProgress(e,g.time),at=projection(width,height,e.lane,0),startY=at.foot-heroWidth*(e.high?.8:.25);
+      const t=pickupProgress(e,g.time),at=projection(width,height,e.lane,0),startY=at.foot-coinFlightPixelLift(e,heroWidth);
       const ease=t*t*(3-2*t),x=at.x+(target.x-at.x)*ease,y=startY+(target.y-startY)*ease-Math.sin(t*Math.PI)*heroWidth*.24;
       if(t<.4){const contact=projection(width,height,e.playerLane??e.lane,0);ctx.save();ctx.globalAlpha=1-t/.4;ctx.strokeStyle='#fff7d2';ctx.lineWidth=2;ctx.beginPath();ctx.arc(contact.x,contact.foot-heroWidth*((e.playerHeight??0)*.95+.15),heroWidth*(.06+t*.22),0,TAU);ctx.stroke();ctx.restore();}
       ctx.save();ctx.globalAlpha=Math.min(1,(1-t)*5);ctx.strokeStyle='#ffe29c88';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(target.x-at.x)*.025,y+16);ctx.stroke();
