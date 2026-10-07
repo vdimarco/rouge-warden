@@ -1,0 +1,1534 @@
+{
+  "stage": "production-verified",
+  "checkedAt": "2026-10-06T20:29:52.861343+00:00",
+  "unitTests": 43,
+  "freezeRecovery": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "viewport": "phone",
+        "preparedResources": {
+          "uploads": 36,
+          "shaderCompiles": 44
+        },
+        "transientDraw": {
+          "recovered": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true,
+          "recoveries": 1
+        }
+      },
+      {
+        "viewport": "phone",
+        "repeatedDraw": {
+          "paused": true,
+          "sameRun": true,
+          "resumableFallback": true,
+          "laneJumpDuck": true
+        }
+      },
+      {
+        "viewport": "desktop",
+        "preparedResources": {
+          "uploads": 36,
+          "shaderCompiles": 44
+        },
+        "transientDraw": {
+          "recovered": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true,
+          "recoveries": 1
+        }
+      },
+      {
+        "viewport": "desktop",
+        "repeatedDraw": {
+          "paused": true,
+          "sameRun": true,
+          "resumableFallback": true,
+          "laneJumpDuck": true
+        }
+      },
+      {
+        "audioFailure": {
+          "soundDisabled": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true
+        }
+      },
+      {
+        "blurVisibility": {
+          "paused": true,
+          "pausePixels": true,
+          "resumed": true,
+          "limitation": "Visibility and blur events are emulated; physical phone app switching was not tested."
+        }
+      },
+      {
+        "resize": {
+          "phoneDesktopLandscape": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true,
+          "overflow": false
+        }
+      },
+      {
+        "homeStart": {
+          "cycles": 3,
+          "timeAdvanced": true,
+          "laneInput": true,
+          "retainedCanvas": true,
+          "noMenuFrameWork": true,
+          "extraModelRequests": 0,
+          "noActiveResourcePreparation": true
+        }
+      },
+      {
+        "hungAssets": {
+          "readyAfterMs": 16867,
+          "preparationMs": 16397.5,
+          "requests": {
+            "bank": 1,
+            "vista": 1
+          },
+          "bank": "fallback",
+          "background": "fallback",
+          "playable3d": true,
+          "lateResponsesDiscarded": true,
+          "noLateUploadsOrCompiles": true,
+          "extraAssetRequests": 0,
+          "laneJumpDuck": true
+        }
+      }
+    ],
+    "errors": [],
+    "renderer": "Headless SwiftShader; recovery and lifecycle checks, not a physical device FPS claim."
+  },
+  "boundedDownloads": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "hungAssets": {
+          "readyAfterMs": 16445,
+          "preparationMs": 15961.89999999106,
+          "requests": {
+            "bank": 1,
+            "vista": 1
+          },
+          "bank": "fallback",
+          "background": "fallback",
+          "playable3d": true,
+          "lateResponsesDiscarded": true,
+          "noLateUploadsOrCompiles": true,
+          "extraAssetRequests": 0,
+          "laneJumpDuck": true
+        }
+      }
+    ],
+    "errors": [],
+    "renderer": "Headless SwiftShader; recovery and lifecycle checks, not a physical device FPS claim."
+  },
+  "controlsAndFallbacks": {
+    "passed": true,
+    "results": [
+      {
+        "viewport": "phone",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 99050,
+        "drawCalls": 31,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": true,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "desktop",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 100170,
+        "drawCalls": 31,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "viewport": "landscape",
+        "models": {
+          "raft": "ready",
+          "bank": "ready",
+          "palm": "ready",
+          "temple": "ready",
+          "guardian": "ready",
+          "rider": "ready",
+          "canopy": "ready",
+          "harbor": "ready",
+          "driftwood": "ready"
+        },
+        "triangles": 95077,
+        "drawCalls": 31,
+        "software": true,
+        "jump": true,
+        "duck": true,
+        "direction": "downstream",
+        "distinctPoses": true,
+        "touch": false,
+        "pausePixels": true,
+        "reducedMotion": true
+      },
+      {
+        "temporary503": "recovered",
+        "imageAttempts": 2,
+        "modelAttempts": 2
+      },
+      {
+        "missingModel": "playable"
+      },
+      {
+        "missingRig": "playableRegisteredSprite",
+        "distinctPoses": true
+      },
+      {
+        "missingWorld": "playableOriginalSceneryAndProceduralSky",
+        "vistaAttempts": 3,
+        "sceneryAttempts": 9
+      },
+      {
+        "manualRetry": "recovered"
+      },
+      {
+        "noWebGL": "playable2d",
+        "distinctPoses": true
+      },
+      {
+        "contextLoss": "pausedThenPlayable2d"
+      }
+    ],
+    "screenshots": "/tmp/river-stalls/scene-qa",
+    "errors": []
+  },
+  "nativeCharacterMotion": {
+    "passed": true,
+    "fullDetailShaderCoverage": true,
+    "renderer": "headless SwiftShader; not a physical device FPS claim",
+    "frames": 28,
+    "uniqueStrokeSamples": 28,
+    "maxHandError": 1.1796572494771006e-07,
+    "maxTriangles": 244918,
+    "maxDrawCalls": 36,
+    "frameTiming": {
+      "meanMs": 244.21428571428572,
+      "p50Ms": 247.59999999403954,
+      "p95Ms": 312.5,
+      "fps": 4.094764551038315
+    },
+    "steeringReversal": true,
+    "distinctAnatomicalPoses": true,
+    "duckHeightRatio": 0.31751985121617143,
+    "pausePixels": true,
+    "reducedMotion": true,
+    "screenshots": "/tmp/river-stalls/native-motion",
+    "errors": []
+  },
+  "controlledRendererBenchmark": {
+    "status": "controlled before/after benchmark passed; cleanup patch subsequently reviewed in source",
+    "physicalDeviceFPSMeasured": false,
+    "environment": "Headless SwiftShader; controlled relative benchmark, not physical GPU FPS",
+    "results": [
+      {
+        "path": "software shaders",
+        "seed": 7123,
+        "samples": 130,
+        "preparationMs": 3460.7,
+        "legacyMaxColdCpuMs": 642.9,
+        "currentMaxColdActiveCpuMs": 12.7,
+        "steadyFrameMeanMs": {
+          "before": 148.29,
+          "after": 68.66
+        },
+        "steadyFrameP95Ms": {
+          "before": 297.9,
+          "after": 109.8
+        },
+        "steadyFrameMaxMs": 206.8,
+        "meanImprovementPercent": 53.7,
+        "activeHeavyImageUploads": 0,
+        "activeShaderLinks": 0,
+        "continuousStrokeSamples": 130,
+        "finalBudget": {
+          "scale": 0.55,
+          "meanMs": 77.32499999925494,
+          "dpr": 0.37742008817152495,
+          "pixels": 46746,
+          "water": "light"
+        },
+        "gpuResourcesStable": true,
+        "errors": []
+      },
+      {
+        "path": "native shaders on forced SwiftShader",
+        "seed": 7123,
+        "samples": 130,
+        "preparationMs": 5431.6,
+        "legacyMaxColdCpuMs": 1058,
+        "currentMaxColdActiveCpuMs": 17.3,
+        "steadyFrameMeanMs": {
+          "before": 317.04,
+          "after": 197.88
+        },
+        "steadyFrameP95Ms": {
+          "before": 453.9,
+          "after": 265.8
+        },
+        "steadyFrameMaxMs": 349.7,
+        "meanImprovementPercent": 37.6,
+        "activeHeavyImageUploads": 0,
+        "activeShaderLinks": 0,
+        "continuousStrokeSamples": 130,
+        "finalBudget": {
+          "scale": 0.55,
+          "meanMs": 175.25,
+          "dpr": 0.55,
+          "pixels": 99296,
+          "water": "light"
+        },
+        "gpuResourcesStable": true,
+        "errors": []
+      }
+    ],
+    "warmUploadExplanation": "Per-frame uploads are small Float32 bone-texture animation updates, not BYTE/image model maps.",
+    "variation": "An earlier concurrent/noisy forced-native run had two >1 second intervals without heavy uploads/program additions; retained at /tmp/river-stalls/after-first.json. Isolated repeat completed below350ms maximum. Native software-GPU time remains diagnostic.",
+    "cleanupReview": [
+      "Explicit InstancedMesh.dispose now releases each unique instance matrix/color buffer before geometry cleanup.",
+      "Detached rich waterMaterial and cheapWaterMaterial are both disposed.",
+      "Renderer forceContextLoss releases remaining internal driver resources."
+    ],
+    "cleanupExecutedInBenchmark": false,
+    "screenshotsCaptured": false,
+    "reports": {
+      "baseline": "/tmp/river-stalls/baseline.json",
+      "after": "/tmp/river-stalls/after.json"
+    }
+  },
+  "physicalDeviceFPSMeasured": false,
+  "riverSections": {
+    "passed": true,
+    "cases": 24,
+    "sections": [
+      "bend",
+      "chute",
+      "narrows",
+      "pool"
+    ],
+    "layouts": [
+      "phone",
+      "desktop",
+      "landscape"
+    ],
+    "shaderPaths": [
+      "native",
+      "software"
+    ],
+    "maxTriangles": {
+      "False": 114913,
+      "True": 278600
+    },
+    "errors": []
+  },
+  "wholeScreenDragging": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "layout": "phone",
+        "drags": [
+          {
+            "kind": "touch",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          }
+        ],
+        "taps": {
+          "jumpDuckPauseResume": true,
+          "onceOnRelease": true
+        },
+        "keyboard": {
+          "globalSpaceAfterPointerTap": true,
+          "globalSpaceAfterButtonDrag": true,
+          "focusedJumpEnter": true,
+          "focusedDuckSpace": true,
+          "focusedRestartEnter": true,
+          "focusedResumeSpace": true
+        },
+        "vertical": {
+          "oncePerContact": true,
+          "noHorizontalLeak": true
+        },
+        "cancellation": {
+          "pointerCancel": true,
+          "pause": true,
+          "hidden": true,
+          "noLateAction": true
+        },
+        "secondaryButtonContactIgnored": true,
+        "pen": "CDP-emulated primary pen pointer; physical pen not tested",
+        "overflow": false
+      },
+      {
+        "layout": "desktop",
+        "drags": [
+          {
+            "kind": "touch",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          }
+        ],
+        "taps": {
+          "jumpDuckPauseResume": true,
+          "onceOnRelease": true
+        },
+        "keyboard": {
+          "globalSpaceAfterPointerTap": true,
+          "globalSpaceAfterButtonDrag": true,
+          "focusedJumpEnter": true,
+          "focusedDuckSpace": true,
+          "focusedRestartEnter": true,
+          "focusedResumeSpace": true
+        },
+        "vertical": {
+          "oncePerContact": true,
+          "noHorizontalLeak": true
+        },
+        "cancellation": {
+          "pointerCancel": true,
+          "pause": true,
+          "hidden": true,
+          "noLateAction": true
+        },
+        "secondaryButtonContactIgnored": true,
+        "pen": "CDP-emulated primary pen pointer; physical pen not tested",
+        "overflow": false
+      },
+      {
+        "layout": "landscape",
+        "drags": [
+          {
+            "kind": "touch",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "touch",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".score-stat",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-distance",
+            "source": {
+              "tag": "DIV",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".power-pill",
+            "source": {
+              "tag": "SPAN",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".runner-notice",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": ".rush-button",
+            "source": {
+              "tag": "CANVAS",
+              "label": null
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Pause game\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Pause game"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Enable sound\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Enable sound"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Jump\"]",
+            "source": {
+              "tag": "path",
+              "label": "Jump"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          },
+          {
+            "kind": "mouse",
+            "region": "button[aria-label=\"Left lane\"]",
+            "source": {
+              "tag": "svg",
+              "label": "Left lane"
+            },
+            "twoLanes": true,
+            "heldReversal": true,
+            "noButtonAction": true
+          }
+        ],
+        "taps": {
+          "jumpDuckPauseResume": true,
+          "onceOnRelease": true
+        },
+        "keyboard": {
+          "globalSpaceAfterPointerTap": true,
+          "globalSpaceAfterButtonDrag": true,
+          "focusedJumpEnter": true,
+          "focusedDuckSpace": true,
+          "focusedRestartEnter": true,
+          "focusedResumeSpace": true
+        },
+        "vertical": {
+          "oncePerContact": true,
+          "noHorizontalLeak": true
+        },
+        "cancellation": {
+          "pointerCancel": true,
+          "pause": true,
+          "hidden": true,
+          "noLateAction": true
+        },
+        "secondaryButtonContactIgnored": true,
+        "pen": "CDP-emulated primary pen pointer; physical pen not tested",
+        "overflow": false
+      }
+    ],
+    "errors": [],
+    "renderer": "Real CDP touch, mouse and browser-emulated pen events in headless Chromium; physical-device play was not tested."
+  },
+  "severeActiveFrame": {
+    "passed": true,
+    "activeStallMs": 1600,
+    "qualityReduces": true,
+    "zeroGapPreservesQuality": true,
+    "courseAndSimulationUnchanged": true,
+    "result": {
+      "before": {
+        "scale": 1,
+        "meanMs": 0,
+        "dpr": 0.6862183421300453,
+        "pixels": 154593,
+        "water": "light"
+      },
+      "after": {
+        "scale": 0.82,
+        "meanMs": 1000,
+        "dpr": 0.5626990405466371,
+        "pixels": 103806,
+        "water": "light"
+      },
+      "paused": {
+        "scale": 0.82,
+        "meanMs": 1000,
+        "dpr": 0.5626990405466371,
+        "pixels": 103806,
+        "water": "light"
+      },
+      "width": 35.376000000000005,
+      "course": 35.376000000000005,
+      "speed": 42,
+      "time": 0
+    },
+    "errors": []
+  },
+  "outerArrowControls": {
+    "passed": true,
+    "url": "http://localhost:8765/river-rush/",
+    "results": [
+      {
+        "layout": "phone",
+        "order": [
+          "left",
+          "jump",
+          "duck",
+          "right"
+        ],
+        "bounds": [
+          {
+            "action": "left",
+            "x": 15,
+            "right": 97.5
+          },
+          {
+            "action": "jump",
+            "x": 107.5,
+            "right": 190
+          },
+          {
+            "action": "duck",
+            "x": 200,
+            "right": 282.5
+          },
+          {
+            "action": "right",
+            "x": 292.5,
+            "right": 375
+          }
+        ],
+        "actionLabelsVisible": true,
+        "arrowsAtEnds": true,
+        "tapsOnce": true,
+        "input": "real touch",
+        "overflow": false
+      },
+      {
+        "layout": "desktop",
+        "order": [
+          "left",
+          "jump",
+          "duck",
+          "right"
+        ],
+        "bounds": [
+          {
+            "action": "left",
+            "x": 559,
+            "right": 653
+          },
+          {
+            "action": "jump",
+            "x": 667,
+            "right": 761
+          },
+          {
+            "action": "duck",
+            "x": 775,
+            "right": 869
+          },
+          {
+            "action": "right",
+            "x": 883,
+            "right": 977
+          }
+        ],
+        "actionLabelsVisible": true,
+        "arrowsAtEnds": true,
+        "tapsOnce": true,
+        "input": "real mouse",
+        "overflow": false
+      },
+      {
+        "layout": "landscape",
+        "order": [
+          "left",
+          "jump",
+          "duck",
+          "right"
+        ],
+        "bounds": [
+          {
+            "action": "left",
+            "x": 539,
+            "right": 604
+          },
+          {
+            "action": "jump",
+            "x": 613,
+            "right": 678
+          },
+          {
+            "action": "duck",
+            "x": 687,
+            "right": 752
+          },
+          {
+            "action": "right",
+            "x": 761,
+            "right": 826
+          }
+        ],
+        "actionLabelsVisible": true,
+        "arrowsAtEnds": true,
+        "tapsOnce": true,
+        "input": "real mouse",
+        "overflow": false
+      }
+    ],
+    "errors": [],
+    "limitation": "Browser touch and mouse events were tested; physical devices were not tested."
+  },
+  "runtimeAssets": {
+    "javascript": "index-CvpeEbDr.js",
+    "stylesheet": "index-mGm7Jaxg.css"
+  },
+  "production": {
+    "url": "https://arcade.uptick.systems/river-rush/",
+    "implementationCommit": "9de425d646f0eedc7ba26fedb629e2177fa5825d",
+    "deploymentId": "dpl_9z87bcWVVmbbgP5TK85QcrUTzft7",
+    "deploymentState": "READY",
+    "liveFiles": {
+      "checkedAt": "2026-10-06T20:27:09.619089+00:00",
+      "allMatched": true,
+      "files": 43,
+      "results": [
+        {
+          "path": "river-rush/art/menu-loop.mp4",
+          "httpStatus": 200,
+          "bytes": 2263778,
+          "sha256": "2ed39fe7aaa92f8577f9b4191a5005c3afe4de3658765f49154de52ec5801b0b"
+        },
+        {
+          "path": "river-rush/art/menu.png",
+          "httpStatus": 200,
+          "bytes": 2676425,
+          "sha256": "49d7010137943e1d425168a0abd549be89283b9cbbb3606831c7f2943ebdf6b5"
+        },
+        {
+          "path": "river-rush/art/paddle-frames.png",
+          "httpStatus": 200,
+          "bytes": 2188687,
+          "sha256": "8e21ddc2009bb7794cdb3313a05b525a91cde5f1ae4b742a846961c59d671110"
+        },
+        {
+          "path": "river-rush/art/rider-downstream.png",
+          "httpStatus": 200,
+          "bytes": 1483496,
+          "sha256": "e89f4f6b84938c6e7196c57c4fd88461f94c6945cbfc242154631b7acf34f36f"
+        },
+        {
+          "path": "river-rush/art/rider-low-duck.png",
+          "httpStatus": 200,
+          "bytes": 149560,
+          "sha256": "9e6f05baf5992df14084c4cb059e742af5246621427e2b23b026dc19566f4603"
+        },
+        {
+          "path": "river-rush/art/river-landscape-flow.mp4",
+          "httpStatus": 200,
+          "bytes": 885435,
+          "sha256": "90e73c66fa1ef50565f62adfe2a14aaf3bbc7013d5b4c038fdf35b079a7dd807"
+        },
+        {
+          "path": "river-rush/art/river-landscape-loop.mp4",
+          "httpStatus": 200,
+          "bytes": 2659873,
+          "sha256": "b9d938ac4f835e900d9467e62ebc7f8e36ab3a9ae0e33da79bea0e43637c038b"
+        },
+        {
+          "path": "river-rush/art/river-portrait-flow.mp4",
+          "httpStatus": 200,
+          "bytes": 1242254,
+          "sha256": "e2f1461162c7d5d4a0ef37065f36aa35de2f11988dbb01033590901de0554e9b"
+        },
+        {
+          "path": "river-rush/art/river-portrait-loop.mp4",
+          "httpStatus": 200,
+          "bytes": 3442472,
+          "sha256": "eb009a2a5ee4e637639123822942b8f605c2cd41841c53bfa82b314b29431c49"
+        },
+        {
+          "path": "river-rush/art/river.png",
+          "httpStatus": 200,
+          "bytes": 3861452,
+          "sha256": "db5c3e900de82f6095bbd33021e713cdef82c2fad0f8f5df6affdf30a0cab492"
+        },
+        {
+          "path": "river-rush/art/runner-portrait.png",
+          "httpStatus": 200,
+          "bytes": 3208590,
+          "sha256": "bbf34e1ab0b87a761d1a9de3c68e1643ac802160788583d5d6f0a1657c953eb3"
+        },
+        {
+          "path": "river-rush/art/runner-river.png",
+          "httpStatus": 200,
+          "bytes": 1577115,
+          "sha256": "2bf76bfa12cc7bb2190bafdc75ac982cc5497a514bdabd7bad89b8f2f0802277"
+        },
+        {
+          "path": "river-rush/art/runner-sprites.png",
+          "httpStatus": 200,
+          "bytes": 2326881,
+          "sha256": "014a02690031577fa1aeb3f6c65b5557de3673b465ac8adb58f5b6d190a1f3d9"
+        },
+        {
+          "path": "river-rush/art/sprites.png",
+          "httpStatus": 200,
+          "bytes": 2887250,
+          "sha256": "c0d7d0c6e7c226231fffc7d68d43ec358fda00a73bd2ab3984d2ccfb65525db2"
+        },
+        {
+          "path": "river-rush/art/surface-ground-normal.png",
+          "httpStatus": 200,
+          "bytes": 318872,
+          "sha256": "517796858f43811702e54987bdaef69f437fbfef1fb523f59212c8100a6ea633"
+        },
+        {
+          "path": "river-rush/art/surface-ground.webp",
+          "httpStatus": 200,
+          "bytes": 109712,
+          "sha256": "bc40d72d770048b945a347b8ad4b672b2028617880ecf7a404a0d297b8e4f440"
+        },
+        {
+          "path": "river-rush/art/surface-rock-normal.png",
+          "httpStatus": 200,
+          "bytes": 689565,
+          "sha256": "88d8a6fe4dbf6386f70b8e5c0f04d1e78f0321401ce83d22b0c205815b56c90e"
+        },
+        {
+          "path": "river-rush/art/surface-rock.webp",
+          "httpStatus": 200,
+          "bytes": 463754,
+          "sha256": "134892f15a96ef389c81d5d2038b2683d1eff5c285e1f25b6566ac730e9f35e5"
+        },
+        {
+          "path": "river-rush/art/surface-water.webp",
+          "httpStatus": 200,
+          "bytes": 116070,
+          "sha256": "0ab3af5bef2efb3c3cc2c7451ffdad7132819ea381042395a9ae6f33a77c471e"
+        },
+        {
+          "path": "river-rush/art/surface-wood-normal.png",
+          "httpStatus": 200,
+          "bytes": 624055,
+          "sha256": "0e452cb2ddc59970418c101ec64ff63b6b76c44a0fbadda5bfbaf1886727307c"
+        },
+        {
+          "path": "river-rush/art/surface-wood.webp",
+          "httpStatus": 200,
+          "bytes": 321272,
+          "sha256": "6977e9058884efcaa6a41ab29926195ab2e6b664808137d10fbb522945288495"
+        },
+        {
+          "path": "river-rush/art/valley-vista.webp",
+          "httpStatus": 200,
+          "bytes": 412202,
+          "sha256": "4a4ce6ab17088d6f8611cd644ad05a9637956a35881d7e5ba4582cdd34691aa4"
+        },
+        {
+          "path": "river-rush/assets/index-CvpeEbDr.js",
+          "httpStatus": 200,
+          "bytes": 953665,
+          "sha256": "1287c530619c20bb8497e0e73a30ee455c87508153e876cf112b15a3d3ea7247"
+        },
+        {
+          "path": "river-rush/assets/index-mGm7Jaxg.css",
+          "httpStatus": 200,
+          "bytes": 18074,
+          "sha256": "6c583d201078d338e6363dc729726da61ec637e4ef9c4092488bcacf7e0e6bbb"
+        },
+        {
+          "path": "river-rush/favicon.svg",
+          "httpStatus": 200,
+          "bytes": 294,
+          "sha256": "b2b1ab3ee2273b6ab833a5cc7ecd01ced1476e1264e68f5abb22dc1c053c3c21"
+        },
+        {
+          "path": "river-rush/index.html",
+          "httpStatus": 200,
+          "bytes": 752,
+          "sha256": "80b9f988fac9ceccbc77563977bc0ebb2560b6053df1c1c1c8cda511099a4300"
+        },
+        {
+          "path": "river-rush/models/fal-canopy-lite.glb",
+          "httpStatus": 200,
+          "bytes": 118724,
+          "sha256": "9adae338e41f3d4e94604948acb3670c62d38ae7e7044133f1a59f86fb36ecdb"
+        },
+        {
+          "path": "river-rush/models/fal-canopy.glb",
+          "httpStatus": 200,
+          "bytes": 388620,
+          "sha256": "2c0bd26f50344cb0fcd479d8e26dc3dcd84f39eb5ce8041fc4717f9932574c0a"
+        },
+        {
+          "path": "river-rush/models/fal-driftwood-lite.glb",
+          "httpStatus": 200,
+          "bytes": 110812,
+          "sha256": "11b29b8ef3863100047cde0bbf381a8a565ff2a0def25c694a99f46e1bec6ad8"
+        },
+        {
+          "path": "river-rush/models/fal-driftwood.glb",
+          "httpStatus": 200,
+          "bytes": 235600,
+          "sha256": "9ded69c20f75df498d7e11dbd6d5a8729b82a8dce4b7461c0c0852b91dcec2ee"
+        },
+        {
+          "path": "river-rush/models/fal-harbor-lite.glb",
+          "httpStatus": 200,
+          "bytes": 158348,
+          "sha256": "319aa17cd57b4f08344465632c135f0e9cf3cc15fe0e721c6ad6e4993084ace9"
+        },
+        {
+          "path": "river-rush/models/fal-harbor.glb",
+          "httpStatus": 200,
+          "bytes": 459912,
+          "sha256": "6dc3b0b6a4897db26c339d5ef6c8a9a9a148136110116225eff8c265cb19b377"
+        },
+        {
+          "path": "river-rush/models/meshy-bank-lite.glb",
+          "httpStatus": 200,
+          "bytes": 93172,
+          "sha256": "4eae31dfe50076aaa3da4e19d6be61a407e457c42e46ef2414426473b89a8cf6"
+        },
+        {
+          "path": "river-rush/models/meshy-bank.glb",
+          "httpStatus": 200,
+          "bytes": 265716,
+          "sha256": "30cce241291fb9b10a269d633058f8a6bff7da4e9b8ce0bbf26dea21415a7b81"
+        },
+        {
+          "path": "river-rush/models/meshy-guardian-lite.glb",
+          "httpStatus": 200,
+          "bytes": 176980,
+          "sha256": "3765b111d46e260760552047aad7c68678178acb7c8b23fb22b306127529f3e2"
+        },
+        {
+          "path": "river-rush/models/meshy-guardian.glb",
+          "httpStatus": 200,
+          "bytes": 356280,
+          "sha256": "04b4794a3b06fd474361169c9a2cb44aca7f75da0111a9ccf1f70a4106a4069d"
+        },
+        {
+          "path": "river-rush/models/meshy-palm-lite.glb",
+          "httpStatus": 200,
+          "bytes": 89424,
+          "sha256": "a693d8e8aa2135bd3e76379d026e2fc3951fcdb21d2fc36b8ec30c66b5708e68"
+        },
+        {
+          "path": "river-rush/models/meshy-palm.glb",
+          "httpStatus": 200,
+          "bytes": 177816,
+          "sha256": "54e5414f8c52927eae66dddcc76d27e62969591dd22b9aa46699b40fde0879ef"
+        },
+        {
+          "path": "river-rush/models/meshy-raft.glb",
+          "httpStatus": 200,
+          "bytes": 185968,
+          "sha256": "9c00fb20f45bbe452a2fcfb1147549db0240d68894e6503150713e541d50d1a6"
+        },
+        {
+          "path": "river-rush/models/meshy-rider.glb",
+          "httpStatus": 200,
+          "bytes": 741008,
+          "sha256": "5c182182fd13c2f7e4e5fcbdf827ce8ec5dae1535d361e4e52b621aa8eb15177"
+        },
+        {
+          "path": "river-rush/models/meshy-temple-lite.glb",
+          "httpStatus": 200,
+          "bytes": 229088,
+          "sha256": "1c169c9b83854db380a6d26de6b31c8b2bf9f37b7daf02159c54bf75b3c20412"
+        },
+        {
+          "path": "river-rush/models/meshy-temple-raft.glb",
+          "httpStatus": 200,
+          "bytes": 413288,
+          "sha256": "ee97a02012a9880640c16dcd022915d926b9b33d1b29d21d60fc1b33275adbb3"
+        },
+        {
+          "path": "river-rush/models/meshy-temple.glb",
+          "httpStatus": 200,
+          "bytes": 483748,
+          "sha256": "83b0d1c98460d2db9c04b977dfc039f33025ca9a7de966ec4ca9465ccd2b3f86"
+        }
+      ]
+    },
+    "liveGestures": {
+      "passed": true,
+      "url": "https://arcade.uptick.systems/river-rush/",
+      "mouseDragFromPause": true,
+      "touchDragFromJump": true,
+      "heldReversal": true,
+      "noAccidentalButtonActions": true,
+      "spaceAfterDrag": true,
+      "duckTap": true,
+      "pauseResumeTap": true,
+      "models": {
+        "raft": "ready",
+        "bank": "ready",
+        "palm": "ready",
+        "temple": "ready",
+        "guardian": "ready",
+        "rider": "ready",
+        "canopy": "ready",
+        "harbor": "ready",
+        "driftwood": "ready"
+      },
+      "prepared": true,
+      "errors": []
+    },
+    "liveRecovery": {
+      "passed": true,
+      "liveDrawFailureRecovered": true,
+      "recoveries": 1,
+      "renderFramesAdvance": true,
+      "runTimeAdvances": true,
+      "laneJumpDuck": true,
+      "renderer": "webgl",
+      "errors": []
+    },
+    "cabinet": {
+      "passed": true,
+      "cabinet": "river-rush",
+      "url": "https://arcade.uptick.systems/river-rush/",
+      "menuReady": true,
+      "switcherLoaded": true,
+      "errors": []
+    }
+  },
+  "specification": {
+    "archivedAs": "2026-10-06-river-rush-stall-recovery",
+    "strictValidationPassed": true,
+    "canonicalReviewed": true,
+    "requirementsAdded": 4,
+    "existingRequirementsModified": 0
+  }
+}

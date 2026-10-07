@@ -8,4 +8,7 @@
 - [x] Tests: unit tests, phone-swing, mobile, phone-controls and layout browser tests
 - [x] Version 1.12.0 (APK code 18)
 - [x] Validate with the OpenSpec CLI; run the phone browser suites (mobile, phone-swing, phone-controls, layout, climb, training, state-shots, flat: all pass here except the headset entry in flat, which this container cannot run)
+- [x] Real-phone two thumbs: no pinch or zoom gesture on the city, ups and cancels read on the window, a cancelled tap still
+  throws, a 12 px slop from the press point, a lost up does not block its pointer id; unit tests and a CDP touch check.
+  Version 1.14.1 (APK code 21)
 - [x] Recorded device limits, not checked in a cloud session: a real phone, real multi-touch

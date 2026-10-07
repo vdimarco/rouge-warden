@@ -26,11 +26,12 @@ test('frame budget ignores pauses, backs off sustained slow frames and restores 
  const b=createFrameBudget();for(let i=0;i<200;i++)sampleFrameBudget(b,1200);
  assert.equal(b.scale,1);assert.equal(b.warm,0);
  for(let i=0;i<60;i++)sampleFrameBudget(b,30);
- assert.equal(b.scale,.9);assert.equal(b.meanMs,30);
+ assert.ok(b.scale<.9&&b.scale>=.55);assert.equal(b.meanMs,30);const slowScale=b.scale;
  for(let i=0;i<210;i++)sampleFrameBudget(b,16.67);
- assert.ok(b.scale>.9&&b.scale<=1);
+ assert.ok(b.scale>slowScale&&b.scale<1);
  for(let i=0;i<1000;i++)sampleFrameBudget(b,40);
  assert.equal(b.scale,.55);
- const severe=createFrameBudget();for(let i=0;i<60;i++)sampleFrameBudget(severe,200);
- assert.equal(severe.scale,.9);
+ const severe=createFrameBudget();assert.equal(sampleFrameBudget(severe,200),true);assert.ok(severe.scale<.85);
+ const first=severe.scale;for(let i=0;i<6;i++)sampleFrameBudget(severe,200);assert.equal(severe.scale,first);
+ for(let i=0;i<60;i++)sampleFrameBudget(severe,200);assert.equal(severe.scale,.55);
 });

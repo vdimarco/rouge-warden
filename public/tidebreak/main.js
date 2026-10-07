@@ -73,6 +73,8 @@ const recapView=new RecapView($('hud')),feel=new ImpactFeel(),hurtEdge=Object.as
 hurtEdge.setAttribute('aria-hidden','true');$('hud').prepend(hurtEdge);$('hud').append(objectiveClockEl);
 let lastIntent,lastHits=0,huntCue=null;
 const skillControlsStyle=document.createElement('link');skillControlsStyle.rel='stylesheet';skillControlsStyle.href=new URL('./skill-controls.css',import.meta.url).href;document.head.append(skillControlsStyle);
+// The desktop command bar loads last, so its layout wins over the thumb fan on mouse-and-keyboard screens.
+const commandBarStyle=document.createElement('link');commandBarStyle.rel='stylesheet';commandBarStyle.href=new URL('./command-bar.css',import.meta.url).href;document.head.append(commandBarStyle);
 const aimStatus=document.createElement('output');aimStatus.id='skill-aim-status';aimStatus.setAttribute('role','status');aimStatus.setAttribute('aria-live','polite');aimStatus.hidden=true;$('skill-points').before(aimStatus);
 skillButtons.forEach(b=>b.setAttribute('aria-describedby','skill-aim-status'));
 function updateAimStatus(status){

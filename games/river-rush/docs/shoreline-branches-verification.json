@@ -1,0 +1,393 @@
+{
+  "stage": "production-verified",
+  "checkedAt": "2026-10-06T21:49:36.244262+00:00",
+  "unitTests": 45,
+  "buildAssets": {
+    "public/river-rush/index.html": "6338bb7ad9688492da49d51a5c47a69a4d9be22b2a115783745c4c95eba2dde8",
+    "public/river-rush/assets/index-BHUdth4r.css": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540",
+    "public/river-rush/assets/index-Dg6Lp20j.js": "880c6b66ebf8bcd32fa9cd296d41dcac85a10427f3fc4584fe9e27b6e1676bf1"
+  },
+  "browser": {
+    "passed": true,
+    "base": "http://127.0.0.1:8765/",
+    "results": [
+      {
+        "case": "phone",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "speedUnchanged": true,
+        "drawCalls": 31,
+        "branchBatches": {
+          "trees": 2,
+          "woodSegments": 48,
+          "leafClusters": 24,
+          "capacity": 32,
+          "drawCalls": 2,
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -17.54433853625763,
+                "y": 0.5597431223554493,
+                "d": 7.168
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 26,
+              "lane": 2,
+              "course": 203.15633381626628,
+              "side": 1,
+              "root": {
+                "x": 18.06333424832101,
+                "y": 0.4639256075140826,
+                "d": 11.072
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "desktop",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "speedUnchanged": true,
+        "drawCalls": 31,
+        "branchBatches": {
+          "trees": 2,
+          "woodSegments": 48,
+          "leafClusters": 24,
+          "capacity": 32,
+          "drawCalls": 2,
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": 1,
+              "root": {
+                "x": 21.657317181075825,
+                "y": 0.7616511339913343,
+                "d": 8.888
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 2,
+              "course": 203.15633381626628,
+              "side": 1,
+              "root": {
+                "x": 16.75019420860463,
+                "y": 0.5732674441738475,
+                "d": 11.456
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "landscape",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "speedUnchanged": true,
+        "drawCalls": 31,
+        "branchBatches": {
+          "trees": 1,
+          "woodSegments": 24,
+          "leafClusters": 12,
+          "capacity": 32,
+          "drawCalls": 2,
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": 1,
+              "root": {
+                "x": 20.39831977407227,
+                "y": 0.699609553744794,
+                "d": 8.64
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "case": "phone-2d",
+        "renderer": "2d",
+        "approach": true,
+        "rootRegistrationChecked": false,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": false,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": false,
+        "reducedMotion": false,
+        "speedUnchanged": true
+      },
+      {
+        "case": "phone-reduced",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": true,
+        "speedUnchanged": true,
+        "drawCalls": 29,
+        "branchBatches": {
+          "trees": 2,
+          "woodSegments": 48,
+          "leafClusters": 24,
+          "capacity": 32,
+          "drawCalls": 2,
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 40.65104809523811,
+              "side": 1,
+              "root": {
+                "x": 19.73428782503763,
+                "y": 0.7694919726010021,
+                "d": 8.784
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 2,
+              "course": 131.1315838162663,
+              "side": 1,
+              "root": {
+                "x": 20.244538638683064,
+                "y": 0.8136019234159387,
+                "d": 11.352
+              },
+              "tip": {
+                "x": 3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "screenshots": "/tmp/river-branches"
+  },
+  "contextLoss": {
+    "passed": true,
+    "base": "http://127.0.0.1:8765/",
+    "results": [
+      {
+        "case": "phone",
+        "renderer": "webgl",
+        "approach": true,
+        "rootRegistrationChecked": true,
+        "duckCleared": true,
+        "shieldPreserved": true,
+        "passedTreeGeometryChecked": true,
+        "pausePixels": true,
+        "noActiveGpuPreparationChecked": true,
+        "reducedMotion": false,
+        "speedUnchanged": true,
+        "contextLossFallbackChecked": true,
+        "drawCalls": 31,
+        "branchBatches": {
+          "trees": 2,
+          "woodSegments": 48,
+          "leafClusters": 24,
+          "capacity": 32,
+          "drawCalls": 2,
+          "origins": [
+            {
+              "id": 14,
+              "lane": 1,
+              "course": 112.6757980952381,
+              "side": -1,
+              "root": {
+                "x": -15.395750905576357,
+                "y": 0.6382478806335391,
+                "d": 7.384
+              },
+              "tip": {
+                "x": 0,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            },
+            {
+              "id": 27,
+              "lane": 0,
+              "course": 203.15633381626628,
+              "side": -1,
+              "root": {
+                "x": -14.343894021265168,
+                "y": 0.5846394597731028,
+                "d": 5.96
+              },
+              "tip": {
+                "x": -3.8,
+                "y": 2.42,
+                "d": 0
+              },
+              "passed": false
+            }
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "screenshots": "/tmp/river-branches/context-loss"
+  },
+  "specValidation": {
+    "markdownStructure": "passed",
+    "cli": "unavailable"
+  },
+  "limitations": [
+    "Chromium viewport emulation with SwiftShader; no physical phone or hardware GPU frame-rate verification."
+  ],
+  "production": {
+    "implementationCommit": "d3e780d8e84b37a82e7a42e1e8ee73423128943a",
+    "deployment": "dpl_FLFjxPLSMMB4fBiEj44zYrAMqChg",
+    "readyState": "READY",
+    "alias": "arcade.uptick.systems",
+    "browser": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "results": [
+        {
+          "case": "phone",
+          "renderer": "webgl",
+          "approach": true,
+          "rootRegistrationChecked": true,
+          "duckCleared": true,
+          "shieldPreserved": true,
+          "passedTreeGeometryChecked": true,
+          "pausePixels": true,
+          "noActiveGpuPreparationChecked": true,
+          "reducedMotion": false,
+          "speedUnchanged": true,
+          "contextLossFallbackChecked": true,
+          "drawCalls": 31,
+          "branchBatches": {
+            "trees": 1,
+            "woodSegments": 24,
+            "leafClusters": 12,
+            "capacity": 32,
+            "drawCalls": 2,
+            "origins": [
+              {
+                "id": 14,
+                "lane": 1,
+                "course": 112.6757980952381,
+                "side": -1,
+                "root": {
+                  "x": -16.26555485536763,
+                  "y": 0.6993143387442478,
+                  "d": 7.552
+                },
+                "tip": {
+                  "x": 0,
+                  "y": 2.42,
+                  "d": 0
+                },
+                "passed": false
+              }
+            ]
+          }
+        }
+      ],
+      "errors": [],
+      "screenshots": "/tmp/river-branches/live"
+    },
+    "assets": {
+      "allMatch": true,
+      "assets": [
+        {
+          "url": "https://arcade.uptick.systems/river-rush/index.html",
+          "status": 200,
+          "sha256": "6338bb7ad9688492da49d51a5c47a69a4d9be22b2a115783745c4c95eba2dde8",
+          "matchesLocal": true
+        },
+        {
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-BHUdth4r.css",
+          "status": 200,
+          "sha256": "4c3013b49294b751091f01aa6745b1f16315fb76ff56b094650363d2abfe1540",
+          "matchesLocal": true
+        },
+        {
+          "url": "https://arcade.uptick.systems/river-rush/assets/index-Dg6Lp20j.js",
+          "status": 200,
+          "sha256": "880c6b66ebf8bcd32fa9cd296d41dcac85a10427f3fc4584fe9e27b6e1676bf1",
+          "matchesLocal": true
+        }
+      ]
+    }
+  }
+}
