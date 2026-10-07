@@ -299,6 +299,8 @@
  #hud #loadout #shop{grid-row:1/3;height:94px;min-height:94px}
  #hud #auto-status{top:-60px;left:calc(100% + 14px)}
  #hud #hunted{top:3px;bottom:auto;left:3px;z-index:3;padding:0 3px;font-size:8px;line-height:13px;letter-spacing:.4px}
+ /* The death recap sits above the tab, the attack status and the point button. */
+ #hud #death-recap{bottom:calc(206px + env(safe-area-inset-bottom));max-height:calc(100% - 206px - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
 }
 /* Landscape phones: the tab sits on the frame above the items. */
 @media (max-height:599px) and (min-width:540px){
