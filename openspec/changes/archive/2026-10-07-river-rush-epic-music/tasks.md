@@ -6,4 +6,4 @@
 - [x] Correct Redstone disappearing rocks and add a focused regression check.
 - [x] Verify actual browser playback and silent states, rejected/missing audio, controls and bounded resources.
 - [x] Run relevant game checks and build the committed arcade copy.
-- [ ] Publish to the authorized main branch, verify production bundle/audio bytes, reconcile canonical spec and archive.
+- [x] Publish to the authorized main branch, verify production bundle/audio bytes, reconcile canonical spec and archive.

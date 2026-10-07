@@ -17,4 +17,4 @@ Compact measurements and proof summary are in `games/river-rush/docs/epic-music-
 
 ## Release
 
-Pending exact authorized main-branch deployment, production asset bytes/range checks and completion archive.
+Implementation `98de0b17f61c24fadbf3fe9bbe1343f084a5e886` is published to the authorized GitHub main branch and READY as `dpl_4DaQjbdQksnzpdByTnCpdpnRMT2x`. The exact arcade hostname resolves to this commit. Live HTML, JS, CSS and soundtrack match local bytes and SHA-256; audio streaming returns the correct 1,024-byte HTTP 206 range. The public Redstone phone run also passes actual Start audio RMS, keyboard steering, pause/playhead freeze, Resume resource reuse and silent menu checks, with no page error or simulation mutation. The completed change is archived as `2026-10-07-river-rush-epic-music`; the 47-requirement canonical specification is reviewed and passes the manual structure checks. Runtime assets remain unchanged in the archive receipt commit.
