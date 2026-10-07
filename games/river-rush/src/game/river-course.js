@@ -1,6 +1,7 @@
 // One deterministic course profile for CPU placement, buoyancy and GPU geometry.
 // Small integer hashes are exactly representable in GLSL float arithmetic.
 import {courseIntensity,intensityDerivative,intensityIntegral,INTENSITY_GLSL} from './course-intensity.js';
+import {bankTerrainOffset,TERRAIN_GLSL} from './terrain-noise.js';
 const mod=(x,n)=>((x%n)+n)%n;
 export const riverSeed=seed=>mod(typeof seed==='object'?seed?.seed??137:seed??137,251);
 export function createCourseProfile(seed=137,length=0,mapIndex=0){return Object.freeze({seed:riverSeed(seed),length:Number.isFinite(length)?Math.max(0,length):0,mapIndex:Math.max(0,Math.min(2,Math.trunc(mapIndex)||0))});}
@@ -34,12 +35,13 @@ function recoveryAt(d,seed){const cell=Math.floor(d/320),along=d-cell*320,start=
 export function rapidAt(d,seed=137){const c=chuteAt(d,seed),a=smooth((c.along-c.start+12)/16),b=1-smooth((c.along-c.start-c.length-8)/24);if(!profiled(seed))return .12+.88*a*b;const s=riverIntensity(d,seed),base=.045+.105*s,recovery=recoveryAt(d,seed),gain=1-(.45-.2*s)*recovery.pulse;return base+(1-base)*(.3+.7*s)*gain*a*b;}
 export function rapidDerivative(d,seed=137){const c=chuteAt(d,seed),u=(c.along-c.start+12)/16,v=(c.along-c.start-c.length-8)/24,a=smooth(u),b=1-smooth(v),dp=pulseDerivative(u,16)*b-a*pulseDerivative(v,24);if(!profiled(seed))return .88*dp;const s=riverIntensity(d,seed),ds=riverIntensityDerivative(d,seed),base=.045+.105*s,db=.105*ds,recovery=recoveryAt(d,seed),gain=1-(.45-.2*s)*recovery.pulse,dg=.2*ds*recovery.pulse-(.45-.2*s)*recovery.derivative,q=.3+.7*s,amp=(1-base)*q*gain;return db+(-db*q*gain+(1-base)*(.7*ds*gain+q*dg))*a*b+amp*dp;}
 export function riverPoint(origin,course,cross=0,seed=137){const ahead=course-origin;return {x:cross+riverCenter(course,seed)-riverCenter(origin,seed)-riverTangent(origin,seed)*ahead,y:riverElevation(course,seed)-riverElevation(origin,seed),z:-ahead};}
-export function riverBankHeight(cross,course,seed=137){const across=Math.max(0,(Math.abs(cross)-riverHalfWidth(course,seed))/32),s=riverIntensity(course,seed),profileOn=profiled(seed);return .16+Math.pow(across,.8)*(6+riverNoise(course/103+77,seed)*2)*(profileOn?1+s*.6:1)+riverNoise(course/29+across*3,seed)*1.5*Math.min(1,across*3)*(profileOn ? .65+s*.55 : 1);}
+export function riverBankHeight(cross,course,seed=137){const width=riverHalfWidth(course,seed),across=Math.max(0,(Math.abs(cross)-width)/32),s=riverIntensity(course,seed),profileOn=profiled(seed);return .16+Math.pow(across,.8)*(6+riverNoise(course/103+77,seed)*2)*(profileOn?1+s*.6:1)+riverNoise(course/29+across*3,seed)*1.5*Math.min(1,across*3)*(profileOn ? .65+s*.55 : 1)+bankTerrainOffset(cross,course,width,riverSeed(seed),profileOn?seed.mapIndex:0,s);}
 export function shoalAt(n,seed=137){const d=n*34+8+riverHash(n+17,seed)*18,side=riverHash(n+53,seed)>.5?1:-1;return {d,side,x:side*(riverHalfWidth(d,seed)-.65),size:.7+riverHash(n+79,seed)*1.1};}
 
 export const COURSE_GLSL=`
 uniform float uSeed,uDistance;
 ${INTENSITY_GLSL}
+${TERRAIN_GLSL}
 float rHash(float n){float k=mod(n,251.);return mod(k*k*17.+k*137.+uSeed*29.,251.)/250.;}
 float rNoise(float x){float i=floor(x),u=fract(x);return mix(rHash(i),rHash(i+1.),u*u*(3.-2.*u))*2.-1.;}
 float rNoiseD(float x){float i=floor(x),u=fract(x);return (rHash(i+1.)-rHash(i))*12.*u*(1.-u);}
@@ -63,5 +65,5 @@ float rRapidD(float d){vec4 c=rChute(d);float u=(c.y-c.z+12.)/16.,v=(c.y-c.z-c.w
 float rWidth(float d){float rapid=rRapid(d);if(uCourseLength<=0.)return 17.+rNoise(d/61.7+31.)*2.8+rNoise(d/193.+87.)*2.4-rapid*1.2;float s=rIntensity(d);return 18.2+rNoise(d/61.7+31.)*(1.6+s*.9)+rNoise(d/193.+87.)*2.6+(1.-rapid)*3.2-rapid*(.5+s*1.5);}
 float rLocalX(float d){return rCenter(d)-rCenter(uDistance)-rTangent(uDistance)*(d-uDistance);}
 float rLocalY(float d){return rElevation(d)-rElevation(uDistance);}
-float rBank(float cross,float d){float a=max(0.,(abs(cross)-rWidth(d))/32.),s=rIntensity(d),profileOn=step(.5,uCourseLength);return .16+pow(a,.8)*(6.+rNoise(d/103.+77.)*2.)*mix(1.,1.+s*.6,profileOn)+rNoise(d/29.+a*3.)*1.5*min(1.,a*3.)*mix(1.,.65+s*.55,profileOn);}
+float rBank(float cross,float d){float width=rWidth(d),a=max(0.,(abs(cross)-width)/32.),s=rIntensity(d),profileOn=step(.5,uCourseLength);return .16+pow(a,.8)*(6.+rNoise(d/103.+77.)*2.)*mix(1.,1.+s*.6,profileOn)+rNoise(d/29.+a*3.)*1.5*min(1.,a*3.)*mix(1.,.65+s*.55,profileOn)+tnBankOffset(cross,d,width,uSeed,uCourseMap*profileOn,s);}
 `;

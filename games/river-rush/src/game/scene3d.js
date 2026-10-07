@@ -16,6 +16,7 @@ import {createBranchTrees} from './branch-trees.js';
 import {levelAt,LEVELS} from './levels.js';
 import {createMapWorld} from './map-world.js';
 import {canyonSky,createCanyonHorizon} from './canyon-horizon.js';
+import {createChunkStream,updateChunkStream} from './chunk-stream.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -87,22 +88,26 @@ export function createScene(canvas,art,onLost){
  const waterMaterial=new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(software)});
  const cheapWaterMaterial=software?waterMaterial:new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(true)});
  const water=mesh(waterGeo,waterMaterial,scene);water.frustumCulled=false;
- const terrainTiles=[],banks=[];
+ const terrainTiles=[],banks=[],terrainStream=createChunkStream();
  const groundMaterial=surfaceMaterial('ground',ground,'#d0d9b7',.91);groundMaterial.vertexColors=true;groundMaterial.side=THREE.DoubleSide;
+ groundMaterial.transparent=true;groundMaterial.forceSinglePass=true;
  // Instanced tile seams sample the same absolute course rather than recycling
  // the same hill. Geometry and decorative feet use this exact bank function.
  groundMaterial.onBeforeCompile=shader=>{
    shader.uniforms.uDistance=uniforms.uDistance;shader.uniforms.uSeed=uniforms.uSeed;shader.uniforms.uCourseLength=uniforms.uCourseLength;shader.uniforms.uCourseMap=uniforms.uCourseMap;
    shader.uniforms.uMapIndex=uniforms.uMapIndex;shader.uniforms.uGroundTint=uniforms.uGroundTint;
-   shader.fragmentShader='uniform float uMapIndex;uniform vec3 uGroundTint;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-    diffuseColor.rgb=mix(diffuseColor.rgb,uGroundTint*(.6+diffuseColor.g*.8),min(uMapIndex,1.));`);
-   shader.vertexShader=COURSE_GLSL+shader.vertexShader.replace('#include <beginnormal_vertex>',`
+   shader.fragmentShader='uniform float uMapIndex;uniform vec3 uGroundTint;varying float vTerrainAhead;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+    diffuseColor.rgb=mix(diffuseColor.rgb,uGroundTint*(.6+diffuseColor.g*.8),min(uMapIndex,1.));`).replace('#include <opaque_fragment>',`
+    diffuseColor.a*=1.-smoothstep(248.,276.,vTerrainAhead);
+    if(diffuseColor.a<=.002)discard;
+    #include <opaque_fragment>`);
+   shader.vertexShader=COURSE_GLSL+'varying float vTerrainAhead;\n'+shader.vertexShader.replace('#include <beginnormal_vertex>',`
      #include <beginnormal_vertex>
      vec4 bankPosition=vec4(position,1.);
      #ifdef USE_INSTANCING
        bankPosition=instanceMatrix*bankPosition;
      #endif
-     float nd=uDistance-bankPosition.z,ncross=sign(position.x)*(rWidth(nd)+(abs(position.x)-9.)/34.*32.);
+     float nd=-bankPosition.z,ncross=sign(position.x)*(rWidth(nd)+(abs(position.x)-9.)/34.*32.);
      float nx=(rBank(ncross+.25,nd)-rBank(ncross-.25,nd))/.5;
      float nz=rGrade(nd)+(rBank(ncross,nd+.25)-rBank(ncross,nd-.25))/.5;
      objectNormal=normalize(vec3(-nx,1.,nz-nx*(rTangent(nd)-rTangent(uDistance))))*sign(position.x);
@@ -112,10 +117,10 @@ export function createScene(canvas,art,onLost){
      #ifdef USE_INSTANCING
        coursePosition=instanceMatrix*coursePosition;
      #endif
-     float course=uDistance-coursePosition.z;
+     float course=-coursePosition.z;
      float across=(abs(position.x)-9.)/34.;
      float cross=sign(position.x)*(rWidth(course)+across*32.);
-     transformed.x=cross+rLocalX(course);transformed.y=rLocalY(course)+rBank(cross,course);
+     transformed.x=cross+rLocalX(course);transformed.y=rLocalY(course)+rBank(cross,course);transformed.z+=uDistance;vTerrainAhead=course-uDistance;
    `);
 
  };
@@ -308,7 +313,12 @@ export function createScene(canvas,art,onLost){
  // Raise the painted valley horizon above the 3D water's vanishing point;
  // otherwise the river mesh hides the mountains and only empty sky is seen.
  if(panorama){const aspect=panorama.image.width/panorama.image.height,screen=w/h,rx=Math.min(1,screen/aspect),ry=Math.min(1,aspect/screen);panorama.matrix.setUvTransform((1-rx)/2+(reduced?0:(g.visualLane-1)*.006),(1-ry)/2-.26,rx,ry,0,0,0);}
- for(const batch of terrainTiles){for(let i=0;i<6;i++){instanceMatrix.makeTranslation(0,0,recycleZ(i*64,travel,384,32));batch.setMatrixAt(i,instanceMatrix);}batch.instanceMatrix.needsUpdate=true;}
+ updateChunkStream(terrainStream,travel,seed);
+ if(terrainStream.changedCount)for(const batch of terrainTiles){
+   for(let i=0;i<terrainStream.changedCount;i++){const slot=terrainStream.changedSlots[i];instanceMatrix.makeTranslation(0,0,terrainStream.chunks[slot].matrixZ);batch.setMatrixAt(slot,instanceMatrix);batch.instanceMatrix.addUpdateRange(slot*16,16);}
+   batch.instanceMatrix.needsUpdate=true;
+ }
+ status.terrain={kind:'periodic-gradient',map:level.id,octaves:2,poolPerBank:terrainStream.active,scheduledAhead:terrainStream.scheduled,coveredAhead:terrainStream.coveredAhead,coveredBehind:terrainStream.coveredBehind,changedSlots:terrainStream.changedCount,matrixUpdates:terrainStream.matrixUpdates,uploadFrames:terrainStream.updates,recycled:terrainStream.recycled};
  for(const b of banks){let slot=Math.floor((travel-24-b.index*22)/286)*13+b.index;
    let course=slot*22+riverHash(slot+b.side*47,seed)*15;
    if(course<travel-24){slot+=13;course=slot*22+riverHash(slot+b.side*47,seed)*15;}

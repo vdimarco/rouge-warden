@@ -5,9 +5,11 @@ import { drawWater } from './water.js';
 import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
 import {shorelineBranch,branchLeafArt,limbPoint} from './shoreline-branch.js';
 import { levelAt } from './levels.js';
+import {createCourseProfile} from './river-course.js';
 import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D,drawRapids2D } from './map-2d.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
+const courseProfiles=new WeakMap();
 const TAU = Math.PI * 2, fract = n => n - Math.floor(n);
 // Generated atlas has unequal row heights; rectangles preserve full silhouettes.
 const regions = [
@@ -107,7 +109,8 @@ function water(ctx,g,art,w,h,reduce,active) {
   ctx.restore();
 }
 function shorelineTree(ctx,g,e,art,w,h){
-  let shape=branchShapes.get(e);if(!shape){shape=shorelineBranch(e,e.d,g.seed);branchShapes.set(e,shape);}
+  let profile=courseProfiles.get(g);if(!profile){const level=levelAt(g.levelIndex);profile=createCourseProfile(g.seed,level.length,level.index);courseProfiles.set(g,profile);}
+  let shape=branchShapes.get(e);if(!shape){shape=shorelineBranch(e,e.d,profile);branchShapes.set(e,shape);}
   const locate=n=>{const p=projection(w,h,1+n.x/3.8,e.d+n.d-g.distance),unit=p.corridor/11.4*p.scale;return{x:p.x,y:p.y-n.y*unit,unit};};
   ctx.save();ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-e.d+g.distance)/24);ctx.lineCap='round';
   const bark=ctx.createPattern(art.treebark??art.surfacewood,'repeat');
