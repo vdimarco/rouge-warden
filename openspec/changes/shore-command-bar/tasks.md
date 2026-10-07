@@ -10,5 +10,7 @@
 - [x] Move the movement pad, the rally button and the upright team chat clear of the bar.
 - [x] Check every layout at 1040x560, 844x390, 740x360, 640x360, 568x320, 600x500, 390x844, 320x568, 768x1024 and 1000x700.
 - [x] Run the browser checks with the phone layouts, and move the death recap clear of the phone bars.
+- [x] Make the phone bars compact and give the bar a new look (frame, trim, sockets, bars, medallion, item sockets).
+- [x] Check every layout again at twelve sizes and rerun the browser checks.
 - [ ] Validate the change with the OpenSpec CLI (not installed in this environment).
 - [ ] Play a match on a real phone and on a desktop with a real GPU, then archive this change.

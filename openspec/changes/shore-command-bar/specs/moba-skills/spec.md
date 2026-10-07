@@ -26,6 +26,12 @@ The HUD SHALL show one framed command bar at the bottom of every screen. It SHAL
 #### Scenario: Click the frame between buttons
 - **WHEN** the player clicks or taps an empty part of the bar
 - **THEN** the hero gets no move order from that press.
+#### Scenario: Keep the battlefield visible on a phone
+- **WHEN** a match runs at 390x844 or 844x390
+- **THEN** the bar is at most 124 px high upright and at most 82 px high on its side, not counting the "+" badges and the point button above it.
+#### Scenario: Read the state of a skill
+- **WHEN** a skill can be used now, is cooling down, or is not learned
+- **THEN** it shows a gold ring and glow, a dark veil with the seconds left, or a faded socket with LOCK.
 #### Scenario: Hit the controls by touch
 - **WHEN** the game runs on a touch screen
 - **THEN** each skill is at least 48 px and each "+" badge at least 34 px.
