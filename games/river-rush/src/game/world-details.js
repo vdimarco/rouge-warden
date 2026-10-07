@@ -50,10 +50,10 @@ export function createWorldDetails(scene,material,waterDetail,stoneMaterial) {
       pose.position.set(p.x-side*2.7,p.y+.25,z+4.1);pose.rotation.set(0,-side*.22,0);pose.scale.set(1,height,1);pose.updateMatrix();falls.setMatrixAt(count,pose.matrix);
       pose.position.set(p.x-side*4.8,p.y+.05,z+4.2);pose.rotation.set(0,0,0);pose.scale.setScalar(1);pose.updateMatrix();mist.setMatrixAt(count++,pose.matrix);
     }
-    // Tall waterfall cards belong to the lush Canopy landmarks. In the gorge
-    // and ruins, intersecting rock/temple silhouettes exposed detached white
-    // slivers. Retain their solid cliffs without those water and mist cards.
-    cliffs.count=count;falls.count=mist.count=mapIndex===0?count:0;
+    // The upright water cards extend outside their cliff backing and leave
+    // detached white slivers on every map, including Canopy. Keep the solid
+    // landmarks; flowing water, foam and wakes remain on the river surface.
+    cliffs.count=count;falls.count=mist.count=0;
     falls.instanceMatrix.needsUpdate=mist.instanceMatrix.needsUpdate=cliffs.instanceMatrix.needsUpdate=true;
     state.falls=falls.count;state.cliffs=cliffs.count;state.mist=mist.count;
     let l=0,f=0;const start=Math.floor((distance-16)/12);

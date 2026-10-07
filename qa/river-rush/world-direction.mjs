@@ -23,7 +23,7 @@ try{
    },distance);
    assert.ok(status.world.canopies>0);assert.ok(status.triangles<(full?300000:125000),`${full}:${layout}:${district} triangles ${status.triangles}`);assert.ok(status.drawCalls<65);
    assert.equal(status.rider.animation.kind,'skeletal');assert.ok(status.rider.animation.handError<.09);
-   if(district==='falls')assert.ok(status.world.falls>=2);if(district==='harbor')assert.ok(status.world.harbors>=4);
+   if(district==='falls'){assert.ok(status.world.cliffs>=2);assert.equal(status.world.falls,0);assert.equal(status.world.mist,0);}if(district==='harbor')assert.ok(status.world.harbors>=4);
    await p.screenshot({path:`${out}/${full?'full':'lite'}-${layout}-${district}.png`});
    results.push({full,layout,district,triangles:status.triangles,calls:status.drawCalls,world:status.world});
   }
