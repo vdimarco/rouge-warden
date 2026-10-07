@@ -29,6 +29,8 @@ A box is ticked only when the code and a test show the work done.
 
 - [x] Version 1.17.0 in `config.js`, `sw.js` and `quest/twa-manifest.json` (APK code 24); `pwa.mjs` passes.
 - [x] Unit suites pass: action (five runs in a row), physics, target, city, street, mobile, mobile panel.
-- [ ] Browser suites on the final tree: `action.e2e`, `flat`, `training.e2e`, `climb.e2e`, `phone-swing.e2e`, `fight-moves.e2e`, `spider-world.e2e`.
+- [x] Browser suites pass in headless Chromium: `action.e2e`, `training.e2e`, `climb.e2e`, `phone-swing.e2e`, `fight-moves.e2e`, `spider-world.e2e`, and every flat-screen part of `flat`.
+- [ ] The headset part of `flat` could not run here: the network rules of this sandbox block the Quest emulator (`cdn.jsdelivr.net/npm/iwer`, 403). The `flat-play` CI job runs it.
+- [x] `fight-moves.e2e`: the second guard of the takedown check stands 8 m away (3 m was one aim from 38 m above, so the auto target picked either).
 - [ ] Hardware checks: a real phone, a pad and a Quest headset (the headset must show no change).
 - [ ] Archive this change and `swing-spider-moves` after the hardware checks.
