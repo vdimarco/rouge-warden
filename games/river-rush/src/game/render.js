@@ -2,11 +2,12 @@ import { jumpHeight, VIEW_DISTANCE } from './engine.js';
 import { bankScenery, rapids, prepareWorldArt, worldEntityVisible } from './world.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
-import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
+import { createMotion, advanceMotion, landingPulse, pickupProgress, paddleSample } from './motion.js';
 import {shorelineBranch,branchLeafArt,limbPoint} from './shoreline-branch.js';
 import { levelAt } from './levels.js';
 import {createCourseProfile} from './river-course.js';
-import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D,drawRapids2D } from './map-2d.js';
+import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D,drawRapids2D,drawCanopyTerrain2D } from './map-2d.js';
+import {impactFeedback,impactParticle} from './impact-feedback.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const courseProfiles=new WeakMap();
@@ -63,13 +64,13 @@ async function prepareHeroArt(art){
   art.downstreamFrames.push(art.lowDuck);
   return art;
 }
-function hero(ctx,frame,raft,x,bottom,width,roll,alpha=1,squash=0){
+function hero(ctx,frame,raft,x,bottom,width,roll,alpha=1,squash=0,brace=0){
   const scale=width/300;ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,bottom);ctx.rotate(roll);ctx.scale(1+squash*.025,1-squash*.05);
   const split=raft.height-88;
   ctx.drawImage(raft,74,split,300,88,-150*scale,(split-raft.height+16)*scale,300*scale,88*scale);ctx.restore();
   // Draw the independent rider above the deck. A crouch keeps its own anatomy
   // and the same foot registration; it is never a vertically squashed jump.
-  ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,bottom);ctx.rotate(roll);
+  ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,bottom+width*.018*brace);ctx.rotate(roll-brace*.16);
   const riderScale=width/512;
   ctx.drawImage(frame,-frame.width/2*riderScale,-RIDER_SIZE.foot*riderScale-width*.14,frame.width*riderScale,frame.height*riderScale);ctx.restore();
 }
@@ -86,6 +87,7 @@ function sprite(ctx, atlas, index, x, bottom, w, rotation = 0, alpha = 1, squeez
 }
 function water(ctx,g,art,w,h,reduce,active) {
   drawWater(ctx,g,art,w,h,reduce,active);
+  drawCanopyTerrain2D(ctx,g,art,w,h,projection);
   if(levelAt(g.levelIndex).index>0)drawMap2D(ctx,g,art,w,h,reduce,projection);
   // Near whitewater flows on the course plane at every display frame,
   // independent of video fps; Redstone has no painted near-river backdrop.
@@ -144,7 +146,7 @@ function banks(ctx,g,art,w,h,reduce){
   }
   ctx.restore();
 }
-export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=true) {
+export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=true,fatalElapsed=0) {
   ctx.clearRect(0,0,width,height);
   water(ctx,g,art,width,height,reducedMotion,active);
   drawRapids2D(ctx,g,width,height,reducedMotion,projection);
@@ -154,7 +156,8 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
   const motion=advanceMotion(motions.get(g),g,reducedMotion);
   const player=projection(width,height,g.visualLane,0);
   const heroWidth=Math.min(width*.33,height*.255,width/height<.85?480:245);
-  const shake=impactPulse(motion,g.time,reducedMotion)*heroWidth*.035;
+  const impact=impactFeedback(g,reducedMotion,fatalElapsed);
+  const shake=impact.shakeX*heroWidth*.5;
   if(g.rush>0) {
     ctx.fillStyle='rgba(17,224,203,.1)';ctx.fillRect(0,0,width,height);
     if(!reducedMotion) {
@@ -197,17 +200,31 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     ctx.save();ctx.strokeStyle=g.rush?'#fff0a4':'#8cfff1';ctx.lineWidth=2;ctx.fillStyle='#81ffe90a';
     ctx.beginPath();ctx.ellipse(player.x,player.foot-heroWidth*.32-lift,heroWidth*.58,heroWidth*.37,0,.12,Math.PI-.12);ctx.stroke();ctx.restore();
   }
-  const roll=reducedMotion?0:Math.max(-.16,Math.min(.16,-g.laneVelocity*.016))+Math.sin(g.distance*.13)*.01;
+  const roll=reducedMotion?0:Math.max(-.16,Math.min(.16,-g.laneVelocity*.016))+Math.sin(g.distance*.13)*.01+impact.roll;
   const landing=landingPulse(motion,g.time,reducedMotion);
   if(!reducedMotion&&Math.abs(g.lane-g.visualLane)>.03){
     ctx.save();ctx.strokeStyle='#c8fff99c';ctx.lineWidth=2;
     for(let i=0;i<3;i++){const side=Math.sign(g.lane-g.visualLane);ctx.beginPath();ctx.moveTo(player.x-side*heroWidth*(.4+i*.12),player.foot+i*6);ctx.lineTo(player.x-side*heroWidth*(.9+i*.15),player.foot+20+i*8);ctx.stroke();}ctx.restore();
   }
-  const bottom=player.foot-lift+bob+landing*heroWidth*.08;
+  const bottom=player.foot-lift+bob+landing*heroWidth*.08+impact.recoil*heroWidth*.075+impact.shakeY*heroWidth*.5;
   const alpha=g.grace>0&&Math.floor(g.time*12)%2?.7:1;
   const pose=riderPose(g,reducedMotion);
   const frame=art.downstreamFrames[pose.index];
-  hero(ctx,frame,art.paddleFrames[0],player.x+shake,bottom,heroWidth,roll,alpha,landing);
+  hero(ctx,frame,art.paddleFrames[0],player.x+shake,bottom,heroWidth,roll,alpha,landing+Math.abs(impact.pitch),impact.brace);
+  if(impact.active){
+    // A local contact halo stays readable under reduced motion. It never
+    // becomes a full-screen white flash or hides the next hazard.
+    ctx.save();ctx.globalAlpha=Math.max(impact.flash,impact.strength*.28);ctx.strokeStyle=impact.fatal?'#ff9b70':'#9bfff0';ctx.lineWidth=Math.max(3,heroWidth*.035);
+    ctx.beginPath();ctx.ellipse(player.x,bottom-heroWidth*.28,heroWidth*.58,heroWidth*.44,roll,0,TAU);ctx.stroke();ctx.restore();
+    if(!reducedMotion){
+      const p={};ctx.save();ctx.globalAlpha=Math.max(.05,1-impact.age/.62);ctx.fillStyle='#d6fff8';
+      for(let i=0;i<impact.splashParticles+impact.shieldShards;i++){
+        impactParticle(i,impact,p);const px=player.x+p.x*heroWidth*.25,py=player.foot-p.y*heroWidth*.24+p.z*heroWidth*.024;
+        if(p.shard){ctx.save();ctx.translate(px,py);ctx.rotate(i*2.4+impact.age*5);ctx.fillRect(-heroWidth*.012,-heroWidth*.035,heroWidth*.024,heroWidth*.07);ctx.restore();}
+        else{ctx.beginPath();ctx.arc(px,py,Math.max(1,heroWidth*.012*(1-impact.age/.65)),0,TAU);ctx.fill();}
+      }ctx.restore();
+    }
+  }
   if(!reducedMotion){
     // Paddle-tip spray follows the stroke instead of covering hazards.
     if(motion.weights[0]>.8&&paddleSample(g.distance).index<4){
@@ -219,6 +236,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       for(let i=0;i<3;i++){const a=g.time*2+i*TAU/3;ctx.beginPath();ctx.ellipse(player.x,player.foot-heroWidth*.38-lift,heroWidth*.57,heroWidth*.22,a*.12,a,a+.8);ctx.stroke();}ctx.restore();
     }
     for(const e of motion.bursts){
+      if(e.type==='hit')continue; // Contact droplets now share the 3D impact beat.
       const age=g.time-e.time,t=age/.55,at=projection(width,height,e.lane,0),land=e.type==='land',hit=e.type==='hit';
       const centerY=at.foot-(land?0:heroWidth*.45);
       ctx.save();ctx.globalAlpha=(1-t)*(1-t);ctx.strokeStyle=hit?'#b8fff5':'#fff0b0';ctx.fillStyle=land||hit?'#cafff7':'#ffe083';ctx.lineWidth=2;
@@ -241,5 +259,6 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       sprite(ctx,art.sprites,6,x,y+9,heroWidth*(.17*(1-t)+.05),g.time*3,1,.4+.6*Math.abs(Math.cos(g.time*9)));ctx.restore();
     }
   }
-  if(g.phase==='lost') {ctx.fillStyle='#09292d55';ctx.fillRect(0,0,width,height);}
+  if(g.phase==='lost') {ctx.fillStyle=`rgba(9,41,45,${.16+Math.min(.16,fatalElapsed*.25)})`;ctx.fillRect(0,0,width,height);}
+  return impact;
 }

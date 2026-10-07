@@ -2,6 +2,7 @@
 import { laneSpring } from './world.js';
 import { LEVELS, FINISH_RUNWAY, levelAt, levelSeed, levelSpeed } from './levels.js';
 import { courseAct, courseIntensity } from './course-intensity.js';
+import { terrainSection } from './course-sections.js';
 export const JUMP_SECONDS = .66;
 export const DUCK_SECONDS = .60;
 export const VIEW_DISTANCE = 180;
@@ -49,6 +50,7 @@ export function createGame(seed = Date.now(), levelIndex = 0, carry = null) {
     goalsCleared: 0, goal: { kind: 'tricks', start: 0, target: 3 },
     entities: [], nextRow: level.startSpeed*(68/42), row: 0, nextId: 1, patternsSeen:[], runwayGenerated:false,
     motifDeck:[], episode:null, episodeIndex:0, routeLane:1, routeDirection:mapSeed&1?1:-1,
+    terrainProfile:Object.freeze({seed:mapSeed,length:level.length,mapIndex:level.index}),terrainCombo:{section:null,count:0,claimed:false},
     event: '', eventId: 0, effects: [], notice: level.index===0?'Jump logs · Duck branches · Dodge rocks':`${level.name} · ${level.difficulty}`, noticeUntil: 4, reason: '' };
   for (let d = 7; d <= 32; d += 5) add(g, 'coin', 1, d);
   generateAhead(g); return g;
@@ -73,16 +75,21 @@ function nextEpisode(g,act){
   return{index:g.episodeIndex++,motif:g.motifDeck.pop(),act,length:5+Math.floor(random(g)*5),step:0};
 }
 function rowPattern(g,row,d){
-  const level=levelAt(g.levelIndex),act=courseAct(d,level.length),intensity=courseIntensity(d,level.length,g.levelIndex);
+  const level=levelAt(g.levelIndex),act=courseAct(d,level.length),intensity=courseIntensity(d,level.length,g.levelIndex),terrain=terrainSection(d,g.terrainProfile);
   if(g.levelIndex===0&&row<3){
     g.routeLane=row<2?1:2;
-    return{motif:'tutorial',safe:row<2?0:2,hazards:[{lane:1,type:['log','branch','rock'][row]}],coinLane:row<2?1:2,act,episode:-1,beat:row,recovery:false,intensity};
+    return{motif:'tutorial',safe:row<2?0:2,hazards:[{lane:1,type:['log','branch','rock'][row]}],coinLane:row<2?1:2,act,episode:-1,beat:row,recovery:false,intensity,terrain};
   }
   // Seeded episodes have different lengths and change at geographic act boundaries,
   // rather than repeating a visible four-row route. A shuffled deck keeps variety.
   if(!g.episode||g.episode.step>=g.episode.length||g.episode.act!==act)g.episode=nextEpisode(g,act);
-  const episode=g.episode,step=episode.step++,motif=episode.motif,recovery=step===episode.length-1;
-  const move=motif==='slalom'||motif==='coin-zigzag'||random(g)<.65;
+  const episode=g.episode,step=episode.step++,motif=episode.motif;
+  // A complete wave encounter needs three real launch opportunities. Give
+  // its recovery at the terrain exit rather than cancelling an interior row.
+  const waveEncounter=terrain.phase==='active'&&terrain.type==='wave-train';
+  const recovery=terrain.phase==='recovery'||step===episode.length-1&&!waveEncounter;
+  const activeTerrain=terrain.phase==='active'&&!recovery;
+  const move=activeTerrain&&terrain.type==='narrows'||motif==='slalom'||motif==='coin-zigzag'||random(g)<.65;
   if(!recovery&&move){
     if(g.routeLane===0)g.routeDirection=1;else if(g.routeLane===2)g.routeDirection=-1;
     else if(motif==='mixed-hazards'||motif==='split-current')g.routeDirection=random(g)<.5?-1:1;
@@ -96,12 +103,16 @@ function rowPattern(g,row,d){
   else if(motif==='jump-waves')types=['rock','log'];
   else if(motif==='low-canopy')types=['branch','rock'];
   else if(motif==='split-current')types=random(g)<.5?['branch','log']:['rock','branch'];
+  if(activeTerrain)types=terrain.type==='narrows'?['rock','rock']:terrain.type==='wave-train'?['log','log']:['branch','branch'];
   // Full-width waves always share one action; other formations leave a clear
   // adjacent-lane route. Opening waves stay light and episode ends breathe.
-  const wave=(motif==='jump-waves'||motif==='low-canopy')&&act>0&&step>0&&!recovery&&random(g)<.12+.46*intensity;
+  const wave=activeTerrain?(terrain.type==='wave-train'&&act>0||terrain.type==='low-canopy'&&act>0&&random(g)<.16+.60*intensity):(motif==='jump-waves'||motif==='low-canopy')&&act>0&&step>0&&!recovery&&random(g)<.12+.46*intensity;
   const pair=!recovery&&random(g)<.28+.54*intensity+g.levelIndex*.05;
-  const hazards=wave?[0,1,2].map(lane=>({lane,type:motif==='jump-waves'?'log':'branch'})):occupied.slice(0,pair?2:1).map((lane,i)=>({lane,type:types[(i+step)%types.length]}));
-  return{motif,safe,hazards,coinLane:safe,act,episode:episode.index,beat:step,recovery,intensity};
+  const waveType=activeTerrain?(terrain.type==='wave-train'?'log':'branch'):motif==='jump-waves'?'log':'branch';
+  const hazards=wave?[0,1,2].map(lane=>({lane,type:waveType})):occupied.slice(0,pair?2:1).map((lane,i)=>({lane,type:types[(i+step)%types.length]}));
+  // The coin line makes optional action routes readable before a full wave.
+  const coinLane=activeTerrain&&terrain.type!=='narrows'&&!wave?hazards[0].lane:safe;
+  return{motif,safe,hazards,coinLane,act,episode:episode.index,beat:step,recovery,intensity,terrain,activeTerrain};
 }
 export function generateAhead(g) {
   if(g.phase!=='playing')return;
@@ -109,15 +120,19 @@ export function generateAhead(g) {
   while (g.nextRow < visibleTo && g.nextRow < limit) {
     const d = g.nextRow, row = g.row++;
     const predictedTime = g.time + timeToImpact(g,d);
-    const {motif,safe,hazards,coinLane,act,episode,beat,recovery,intensity}=rowPattern(g,row,d);
+    const {motif,safe,hazards,coinLane,act,episode,beat,recovery,intensity,terrain,activeTerrain}=rowPattern(g,row,d);
     if(!g.patternsSeen.includes(motif))g.patternsSeen.push(motif);
-    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery }));
+    const section={sectionId:terrain.id,sectionType:terrain.type,sectionPhase:terrain.phase,terrainActive:!!activeTerrain,terrainComboAvailable:terrain.comboAvailable};
+    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery,...section }));
     for (let offset = -17; offset <= -2; offset += 5) add(g, 'coin', coinLane, d + offset);
     const actionHazard = hazards.find(h => h.type !== 'rock');
-    if (actionHazard) {
+    if(activeTerrain&&terrain.type==='wave-train'){
+      for(let offset=-8;offset<=8;offset+=4)add(g,'coin',coinLane,d+offset,{high:true,row,motif,...section});
+    }else if (actionHazard) {
       // Gold over logs is collected only while airborne. Duck routes pay on clearing.
       add(g, 'coin', actionHazard.lane, d, { high: actionHazard.type === 'log' });
       add(g, 'coin', actionHazard.lane, d + 5);
+      if(activeTerrain&&terrain.type==='low-canopy')add(g,'coin',coinLane,d+10,{row,motif,...section});
     }
     if (row % 13 === 6) add(g, 'magnet', safe, d - 8);
     if (row % 17 === 11) add(g, 'shield', safe, d - 8);
@@ -163,6 +178,7 @@ export function applyAction(g, action) {
   }
 }
 function collide(g, obstacle, contact, protectedAtCrossing) {
+  g.terrainCombo.count=0;
   if (protectedAtCrossing) { obstacle.destroyed = true; emit(g, 'smash', '', contact.playerLane, contact); return 'protected'; }
   if (g.shield) {
     obstacle.destroyed = true;
@@ -180,6 +196,8 @@ export function updateGame(g, input, dt) {
   const taps = input.actions.splice(0);
   taps.forEach(action => applyAction(g, action));
   const frame={time:g.time,position:g.visualLane,velocity:g.laneVelocity,target:g.lane,action:g.action,actionTime:g.actionTime,buffered:g.buffered,bufferTime:g.bufferTime,magnet:g.magnet,rush:g.rush,grace:g.grace};
+  const sectionAtFrame=terrainSection(g.distance,g.terrainProfile);
+  if(g.terrainCombo.section!==sectionAtFrame.id)g.terrainCombo={section:sectionAtFrame.id,count:0,claimed:false};
   g.time += dt;
   if (g.action) {
     g.actionTime += dt;
@@ -204,6 +222,7 @@ export function updateGame(g, input, dt) {
   let boostUntil=frame.magnet;
   let graceUntil=frame.grace;
   const clearedRows=new Set();
+  const waveRows=new Map(crossed.filter(e=>e.type==='log'&&e.terrainActive&&e.sectionType==='wave-train').map(e=>[Number.isInteger(e.row)?`row:${e.row}`:`entity:${e.id}`,e.sectionId]));
   let fatalContact=null,lastContactCoinTime=null;
   let coinGoalDuringRush=false;
   for (const e of crossed) {
@@ -225,7 +244,7 @@ export function updateGame(g, input, dt) {
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
         const value=10*g.multiplier*(boosted?2:1);
         g.bonus += value; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
-        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high, distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,contactTime:frame.time+elapsed });
+        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high, distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,streak:g.streak,multiplier:g.multiplier,contactTime:frame.time+elapsed });
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
       if (overlap) {
@@ -240,7 +259,7 @@ export function updateGame(g, input, dt) {
         const action=crossingAction(frame,elapsed);
         const contact={entityId:e.id,obstacle:e.type,obstacleLane:e.lane,distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),action:action.action,actionTime:action.time,contactTime:frame.time+elapsed};
         const cleared = (e.type === 'log' && jumpClearsAt(action.action,action.time)) || (e.type === 'branch' && action.action === 'duck');
-        if (cleared && !rushAtCrossing) {
+        if (cleared && !rushAtCrossing && graceUntil<=elapsed) {
           // Between lanes a raft can overlap two parts of one action wave.
           // Both clear, but the row is one trick and receives one reward.
           const rowKey=Number.isInteger(e.row)?`row:${e.row}`:`entity:${e.id}`;
@@ -250,15 +269,26 @@ export function updateGame(g, input, dt) {
           g[type === 'jump' ? 'jumps' : 'ducks']++;
           g.bonus += 100 * g.multiplier; g.charge = Math.min(100, g.charge + 12);
           emit(g, 'perfect', `PERFECT ${type.toUpperCase()} +${100 * g.multiplier}`, lane, contact);
+          if(e.terrainActive&&e.terrainComboAvailable&&e.sectionType==='wave-train'&&type==='jump'&&graceUntil<=elapsed){
+            if(g.terrainCombo.section!==e.sectionId)g.terrainCombo={section:e.sectionId,count:0,claimed:false};
+            g.terrainCombo.count=Math.min(3,g.terrainCombo.count+1);
+            if(g.terrainCombo.count===3&&!g.terrainCombo.claimed){
+              g.terrainCombo.claimed=true;g.bonus+=350;
+              emit(g,'terrain-combo','WAVE CHAIN! 3 perfect jumps +350',lane,{...contact,sectionId:e.sectionId,value:350});
+            }
+          }
         } else {
           const outcome=collide(g,e,contact,rushAtCrossing||graceUntil>elapsed);
           if(outcome==='shield')graceUntil=elapsed+1.1;
           else if(outcome==='lost')fatalContact={elapsed,distance:e.d,steering:steeringAtCrossing,action};
         }
-      } else { g.dodges++; if (!rushAtCrossing) g.charge = Math.min(100, g.charge + 2); }
+      } else { g.dodges++; if (!rushAtCrossing&&graceUntil<=elapsed) g.charge = Math.min(100, g.charge + 2); }
     }
     if (g.phase !== 'playing') break;
   }
+  // A bypassed wave or a powered smash breaks the optional jump chain. Parts
+  // of one full-width wave share a row, so passing its other lanes is harmless.
+  for(const [row,sectionId] of waveRows)if(!clearedRows.has(row)&&g.terrainCombo.section===sectionId)g.terrainCombo.count=0;
   // A wipeout freezes at actual contact. Keeping the remainder of the frame's
   // steering would show the stopped raft beside the rock that just hit it.
   const advanced=fatalContact?.elapsed??dt;
@@ -300,6 +330,7 @@ export function updateGame(g, input, dt) {
 }
 export function snapshot(g) {
   const level=levelAt(g.levelIndex);
+  const terrain=terrainSection(g.distance,g.terrainProfile),sameCombo=g.terrainCombo.section===terrain.id;
   const next = g.entities.find(e => !e.done && e.lane === g.lane && ['rock', 'log', 'branch'].includes(e.type));
   return { phase: g.phase, time: g.time, distance: Math.floor(g.distance), lane: g.lane, visualLane: g.visualLane, actionTime: g.actionTime,
     action: g.action, coins: g.coins, score: g.score, streak: g.streak, multiplier: g.multiplier,
@@ -307,6 +338,7 @@ export function snapshot(g) {
     jumps: g.jumps, ducks: g.ducks, dodges: g.dodges, reason: g.reason,
     level:{index:level.index,id:level.id,name:level.name,length:level.length,remaining:Math.max(0,Math.ceil(level.length-g.distance)),progress:clamp(g.distance/level.length,0,1),final:level.index===LEVELS.length-1,difficulty:level.difficulty},
     campaign:campaignTotals(g),
+    terrain:{...terrain,comboProgress:terrain.comboAvailable&&sameCombo?g.terrainCombo.count:0,comboClaimed:terrain.comboAvailable&&sameCombo&&g.terrainCombo.claimed},
     goalsCleared: g.goalsCleared, goal: { ...g.goal, progress: Math.min(g.goal.target, Math.floor((g.goal.kind === 'tricks' ? g.jumps + g.ducks : g.goal.kind === 'coins' ? g.coins : g.distance) - g.goal.start)) },
     notice: g.time < g.noticeUntil ? g.notice : '',
     hint: next && next.d - g.distance < g.speed*1.1 ? { id: next.id, type: next.type, in: timeToImpact(g,next.d), safeLane: [0,1,2].find(lane => !g.entities.some(e => e.row === next.row && e.lane === lane && ['rock','log','branch'].includes(e.type))) } : null };

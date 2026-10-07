@@ -3,30 +3,34 @@ import assert from 'node:assert/strict';
 import { RiverAudio, readSoundPreference, saveSoundPreference } from '../src/game/audio.js';
 
 class Parameter {
-  constructor() { this.value = 0; this.targets = []; this.cancels = 0; }
+  constructor() { this.value = 0; this.targets = []; this.cancels = 0; this.events = []; }
   cancelScheduledValues() { this.cancels++; }
-  setValueAtTime(value) { this.value = value; }
+  setValueAtTime(value, at) { this.value = value; this.events.push({ type: 'set', value, at }); }
   setTargetAtTime(value, at, smoothing) { this.value = value; this.targets.push({ value, at, smoothing }); }
-  linearRampToValueAtTime(value) { this.value = value; }
-  exponentialRampToValueAtTime(value) { this.value = value; }
+  linearRampToValueAtTime(value, at) { this.value = value; this.events.push({ type: 'linear', value, at }); }
+  exponentialRampToValueAtTime(value, at) { this.value = value; this.events.push({ type: 'exponential', value, at }); }
 }
 class Node {
-  constructor(kind) { this.kind = kind; this.connections = []; this.gain = new Parameter(); this.frequency = new Parameter(); this.Q = new Parameter(); }
+  constructor(kind) {
+    this.kind = kind; this.connections = [];
+    for (const name of ['gain', 'frequency', 'Q', 'threshold', 'knee', 'ratio', 'attack', 'release']) this[name] = new Parameter();
+  }
   connect(node) { this.connections.push(node); return node; }
   disconnect() { this.connections = []; }
-  start() { this.started = true; }
-  stop() { this.stopped = true; }
+  start(at) { this.started = true; this.startAt = at; }
+  stop(at) { this.stopped = true; this.stopAt = at; }
   end() { this.onended?.(); }
 }
 class Context {
-  constructor() { this.state = 'suspended'; this.sampleRate = 48000; this.currentTime = 0; this.destination = new Node('destination'); this.created = []; }
+  constructor() { this.state = 'suspended'; this.sampleRate = 48000; this.currentTime = 0; this.destination = new Node('destination'); this.created = []; this.buffers = []; }
   node(kind) { const node = new Node(kind); this.created.push(node); return node; }
   createGain() { return this.node('gain'); }
   createBiquadFilter() { return this.node('filter'); }
+  createDynamicsCompressor() { return this.node('compressor'); }
   createBufferSource() { return this.node('buffer'); }
   createMediaElementSource() { return this.node('media'); }
   createOscillator() { return this.node('oscillator'); }
-  createBuffer(_channels, samples) { return { getChannelData: () => new Float32Array(samples) }; }
+  createBuffer(_channels, samples) { const data = new Float32Array(samples), buffer = { getChannelData: () => data }; this.buffers.push(buffer); return buffer; }
   resume() { this.state = 'running'; return Promise.resolve(); }
   suspend() { this.state = 'suspended'; return Promise.resolve(); }
   close() { this.state = 'closed'; return Promise.resolve(); }
@@ -122,7 +126,7 @@ test('missing/rejected soundtrack leaves ambience and cues working without retri
   const rejected = rig(); rejected.audio.setEnabled(true); rejected.audio.ensureGraph(); rejected.audio.ensureMusic();
   rejected.media[0].play = () => Promise.reject(Object.assign(new Error('gesture required'), { name: 'NotAllowedError' }));
   rejected.audio.start(); await settled(); assert.equal(rejected.audio.status.musicState, 'blocked');
-  rejected.audio.tone('coin'); assert.equal(rejected.audio.voices.size, 1); assert.equal(rejected.audio.enabled, true);
+  rejected.audio.tone('coin'); assert.equal(rejected.audio.voices.size, 2); assert.equal(rejected.audio.enabled, true);
   rejected.media[0].play = Media.prototype.play;
   rejected.audio.pause(); rejected.audio.start(); await settled(); assert.equal(rejected.audio.status.musicPlaying, true);
 });
@@ -131,11 +135,101 @@ test('short cues disconnect when finished and pause discards queued cues', async
   const { audio, contexts } = rig(); audio.setEnabled(true); audio.start(); await settled();
   for (let burst = 0; burst < 100; burst++) audio.tone('coin');
   assert.equal(audio.voices.size, 12);
+  assert.equal(audio.status.cueCounts.coin, 100, 'new pickup attacks replace old tails instead of being dropped');
+  assert.equal(contexts[0].buffers.length, 2, 'river and impact samples are prepared only once');
+  assert.equal(contexts[0].created.filter(node => node.kind === 'oscillator' && node.connections.length).length, 12);
   for (const node of contexts[0].created.filter(node => node.kind === 'oscillator')) node.end();
   assert.equal(audio.voices.size, 0);
   assert.ok(contexts[0].created.filter(node => node.kind === 'oscillator').every(node => node.connections.length === 0));
   audio.tone('power'); assert.equal(audio.voices.size, 3); audio.pause(); assert.equal(audio.voices.size, 0);
   audio.tone('coin'); assert.equal(audio.voices.size, 0);
+});
+
+test('coin contact gives a brief metallic attack, streak raises pitch, and only audible cues count', async () => {
+  const { audio, contexts } = rig();
+  assert.equal(audio.tone('coin', { id: 1 }), false);
+  audio.setEnabled(true); audio.start({ reset: true }); await settled();
+  const context = contexts[0]; context.currentTime = 4;
+  assert.equal(audio.tone('coin', { id: 17, streak: 0 }), true);
+  const voices = [...audio.voices];
+  assert.equal(voices.length, 2);
+  assert.equal(voices[0].source.frequency.events[0].value, 1175);
+  assert.equal(voices[1].source.frequency.events[0].value, 1175 * 2.76);
+  assert.equal(voices[0].gain.gain.events[1].at, 4.003);
+  assert.equal(voices[1].gain.gain.events[1].at, 4.002);
+  assert.ok(voices.every(voice => voice.source.stopAt - voice.source.startAt <= .18 + 1e-9));
+  assert.deepEqual(audio.status.lastCue, { type: 'coin', at: 4, id: 17 });
+  audio.stopVoices(); audio.tone('coin', { id: 18, streak: 12 });
+  assert.ok([...audio.voices][0].source.frequency.events[0].value > 1175);
+  assert.equal(audio.status.cueCounts.coin, 2);
+  context.state = 'suspended'; assert.equal(audio.tone('coin', { id: 19 }), false);
+  assert.equal(audio.status.cueCounts.coin, 2, 'hidden or blocked context cannot claim audible pickups');
+  context.state = 'running'; audio.setEnabled(false);
+  assert.equal(audio.status.activeVoices, 0); assert.equal(audio.tone('coin'), false);
+  assert.equal(audio.status.cueCounts.coin, 2);
+  audio.setEnabled(true); audio.start({ reset: true });
+  assert.deepEqual(audio.status.cueCounts, {}); assert.equal(audio.status.lastCue, null);
+});
+
+test('impacts displace coin tails, combine descending wood and splash, and bound the fatal tail', async () => {
+  const { audio, contexts } = rig(); audio.setEnabled(true); audio.start(); await settled();
+  const context = contexts[0], sharedNoise = audio.effectNoise;
+  for (let coin = 0; coin < 6; coin++) audio.tone('coin');
+  assert.equal(audio.status.activeVoices, audio.status.voiceLimit);
+  assert.equal(audio.tone('hit', { id: 21 }), true);
+  const hit = [...audio.voices].filter(voice => voice.event === 'hit');
+  assert.equal(hit.length, 3); assert.equal(audio.status.activeVoices, 12);
+  assert.equal(hit.filter(voice => voice.source.kind === 'oscillator').length, 2);
+  const splash = hit.find(voice => voice.source.kind === 'buffer');
+  assert.equal(splash.source.buffer, sharedNoise); assert.equal(splash.filter.type, 'bandpass');
+  assert.ok(hit.filter(voice => voice.source.kind === 'oscillator').every(voice =>
+    voice.source.frequency.events.at(-1).value < voice.source.frequency.events[0].value));
+  assert.ok(hit.every(voice => voice.gain.connections[0] === audio.nodes.cueGain));
+  assert.equal(audio.nodes.cueLimiter.ratio.value, 8, 'one shared limiter controls stacked contact transients');
+  for (let crash = 0; crash < 3; crash++) audio.tone('hit');
+  assert.equal(audio.voices.size, 12); assert.ok([...audio.voices].every(voice => voice.event === 'hit'));
+  const audibleCoins = audio.status.cueCounts.coin;
+  assert.equal(audio.tone('coin'), false, 'pickup tails never cut off a protected impact');
+  assert.equal(audio.status.cueCounts.coin, audibleCoins);
+  assert.equal(audio.tone('lose', { id: 22 }), true);
+  const fatal = [...audio.voices].filter(voice => voice.event === 'lose');
+  assert.equal(fatal.length, 3);
+  assert.ok(fatal.every(voice => voice.source.stopAt - voice.source.startAt <= .51 + 1e-9));
+  assert.equal(context.buffers.length, 2, 'every hit and fatal splash reuses the prepared sample');
+  assert.equal(audio.status.cueCounts.hit, 4); assert.equal(audio.status.cueCounts.lose, 1);
+  const allVoices = [...audio.voices]; audio.pause();
+  assert.equal(audio.status.activeVoices, 0);
+  assert.ok(allVoices.every(voice => voice.source.connections.length === 0 && voice.gain.connections.length === 0 && (!voice.filter || voice.filter.connections.length === 0)));
+});
+
+test('smashes clean up splash filters on completion and a wave combo stays short and distinct', async () => {
+  const { audio } = rig(); audio.setEnabled(true); audio.start(); await settled();
+  assert.equal(audio.tone('smash'), true);
+  const smash = [...audio.voices];
+  for (const voice of smash) voice.source.end();
+  assert.equal(audio.voices.size, 0);
+  assert.ok(smash.every(voice => !voice.source.connections.length && !voice.gain.connections.length && (!voice.filter || !voice.filter.connections.length)));
+  for (let coin = 0; coin < 6; coin++) audio.tone('coin');
+  assert.equal(audio.tone('terrain-combo'), true);
+  const combo = [...audio.voices].filter(voice => voice.event === 'terrain-combo');
+  assert.deepEqual(combo.map(voice => voice.source.frequency.events[0].value), [784, 988, 1175]);
+  assert.ok(combo.at(-1).source.stopAt <= .38 + 1e-9);
+  for (let coin = 0; coin < 20; coin++) audio.tone('coin');
+  assert.ok(combo.every(voice => audio.voices.has(voice)), 'ordinary pickups preserve the earned completion cue');
+  audio.pause(); assert.equal(audio.voices.size, 0);
+});
+
+test('a contact graph failure releases partial nodes and cannot count or interrupt the run', async () => {
+  const { audio, contexts } = rig(); audio.setEnabled(true); audio.start(); await settled();
+  const context = contexts[0], createGain = context.createGain.bind(context), before = context.created.length;
+  let calls = 0;
+  context.createGain = () => { if (++calls === 2) throw new Error('resource unavailable'); return createGain(); };
+  assert.equal(audio.tone('hit'), false);
+  assert.equal(audio.status.activeVoices, 0); assert.equal(audio.status.cueCounts.hit, undefined);
+  assert.ok(context.created.slice(before).every(node => node.connections.length === 0));
+  assert.equal(audio.status.active, true); assert.equal(audio.status.musicPlaying, true);
+  context.createGain = createGain;
+  assert.equal(audio.tone('coin'), true); assert.equal(audio.status.cueCounts.coin, 1);
 });
 
 test('unmount unloads and closes audio; remount can create a fresh graph without old promises affecting it', async () => {

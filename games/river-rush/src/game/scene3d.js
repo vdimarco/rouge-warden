@@ -19,6 +19,7 @@ import {canyonSky,createCanyonHorizon} from './canyon-horizon.js';
 import {createChunkStream,updateChunkStream} from './chunk-stream.js';
 import {moonlitSky,createMoonlitHorizon,MOONLIT_FAR} from './moonlit-horizon.js';
 import {worldEntityVisible} from './world.js';
+import {impactFeedback,impactParticle,IMPACT_SPRAY_CAPACITY} from './impact-feedback.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -144,8 +145,9 @@ export function createScene(canvas,art,onLost){
  const riderTextures=art.downstreamFrames.map(frame=>{const c=document.createElement('canvas');c.width=RIDER_SIZE.width;c.height=RIDER_SIZE.height;c.getContext('2d').drawImage(frame,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;});
  const riderMat=new THREE.MeshBasicMaterial({map:riderTextures[0],transparent:true,alphaTest:.08,side:THREE.DoubleSide,depthWrite:true,toneMapped:false});
  const riderWidth=3.2,riderHeight=riderWidth*RIDER_SIZE.height/RIDER_SIZE.width;
- const rider=mesh(new THREE.PlaneGeometry(riderWidth,riderHeight),riderMat,raft,0,.48+(RIDER_SIZE.foot-RIDER_SIZE.height/2)*riderWidth/RIDER_SIZE.width,.3);rider.renderOrder=3;
- const shield=mesh(new THREE.SphereGeometry(2.05,24,12),new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uOpacity:{value:.4},uRush:{value:0}},vertexShader:'varying vec3 vN,vV;void main(){vec4 p=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-p.xyz);gl_Position=projectionMatrix*p;}',fragmentShader:'varying vec3 vN,vV;uniform float uOpacity,uRush;void main(){float rim=pow(1.-abs(dot(normalize(vN),normalize(vV))),3.);gl_FragColor=vec4(mix(vec3(.23,1.,.83),vec3(1.,.75,.18),uRush),rim*uOpacity);}'}),raft,0,1,0);shield.scale.set(1.05,.85,1.15);
+ const riderRig=new THREE.Group();raft.add(riderRig);
+ const rider=mesh(new THREE.PlaneGeometry(riderWidth,riderHeight),riderMat,riderRig,0,.48+(RIDER_SIZE.foot-RIDER_SIZE.height/2)*riderWidth/RIDER_SIZE.width,.3);rider.renderOrder=3;
+ const shield=mesh(new THREE.SphereGeometry(2.05,24,12),new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uOpacity:{value:.4},uRush:{value:0},uImpact:{value:0},uFatal:{value:0}},vertexShader:'varying vec3 vN,vV,vP;void main(){vec4 p=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-p.xyz);vP=position;gl_Position=projectionMatrix*p;}',fragmentShader:'varying vec3 vN,vV,vP;uniform float uOpacity,uRush,uImpact,uFatal;void main(){float rim=pow(1.-abs(dot(normalize(vN),normalize(vV))),3.);float cracks=step(.22,fract(atan(vP.z,vP.x)*2.54+vP.y*1.7));vec3 color=mix(mix(vec3(.23,1.,.83),vec3(1.,.75,.18),uRush),vec3(1.,.34,.16),uFatal);gl_FragColor=vec4(color,rim*uOpacity*mix(1.,cracks,uImpact*.65));}'}),raft,0,1,0);shield.scale.set(1.05,.85,1.15);
  const shadow=mesh(new THREE.PlaneGeometry(4.6,5),new THREE.MeshBasicMaterial({map:softShadow(),transparent:true,opacity:.55,depthWrite:false}),scene,0,.01,0);shadow.rotation.x=-Math.PI/2;
  const coinGeo=new THREE.CylinderGeometry(.39,.39,.12,24),coinMat=new THREE.MeshStandardMaterial({color:'#ffcf49',metalness:.45,roughness:.28,emissive:'#a95d00',emissiveIntensity:.38});
  const coinRims=new THREE.InstancedMesh(new THREE.TorusGeometry(.29,.028,4,20),coinMat,128);coinRims.frustumCulled=false;scene.add(coinRims);
@@ -224,7 +226,7 @@ export function createScene(canvas,art,onLost){
  else if(key==='canopyFar')batchModel(normalized(gltf.scene,14,17,12),canopyFarBatches,20);
  else if(key==='harborFar')batchModel(normalized(gltf.scene,10,13,8),harborFarBatches,12);
  else if(key==='driftwood')batchModel(normalized(gltf.scene,3.3,.85,.9),driftwoodBatches,48);
- else if(key==='rider'){try{skeletal=createSkeletalRider(gltf.scene,raft,logMat);rider.visible=false;}catch{retired.push(gltf.scene);status.models[key]='fallback';complete();return;}}
+ else if(key==='rider'){try{skeletal=createSkeletalRider(gltf.scene,riderRig,logMat);rider.visible=false;}catch{retired.push(gltf.scene);status.models[key]='fallback';complete();return;}}
  status.models[key]='ready';complete();},undefined,()=>{if(disposed||status.models[key]==='fallback'){complete();return;}if(attempt<2){status.models[key]='retrying';const timer=setTimeout(()=>{retryTimers.delete(timer);loadModel(key,attempt+1,complete);},(attempt+1)*350);retryTimers.add(timer);}else{status.models[key]='fallback';complete();}});}
  // Parse only two arriving models at once, and finish preparation before play.
  const modelKeys=Object.keys(status.models);let nextModel=0;
@@ -276,7 +278,7 @@ export function createScene(canvas,art,onLost){
 
  function lost(e){e.preventDefault();status.contextLost=true;onLost?.();}
  canvas.addEventListener('webglcontextlost',lost);
- function render(g,w,h,reduced,frameMs=0){
+ function render(g,w,h,reduced,frameMs=0,fatalElapsed=0){
  if(disposed||status.contextLost)return;
  if(run!==g){for(const obj of entities.values())scene.remove(obj);entities.clear();run=g;profile=createCourseProfile(g.seed,levelAt(g.levelIndex).length,g.levelIndex);float=createFloat(g,profile);lastEvent=0;waterImpulses=[];}
  // App supplies zero for pause/resume gaps; cap unusually long active GPU
@@ -300,14 +302,21 @@ export function createScene(canvas,art,onLost){
  const waterHeight=(cross,course)=>surfaceAt(cross,course,reduced?0:g.time,reduced,seed).height;
  const look=point(travel+(portrait?32:38));
  camera.position.set(reduced?0:(g.visualLane-1)*.22,portrait?10.4:9.4,portrait?19:18);camera.lookAt(look.x*.65,look.y+.8+(reduced?0:riverGrade(travel,seed)*6),look.z);
+ const impact=impactFeedback(g,reduced,fatalElapsed),impactDrop=impact.fatal&&!reduced?-.34*Math.min(1,impact.age/.55):0;
+ camera.position.x+=impact.shakeX;camera.position.y+=impact.shakeY;
+ camera.updateMatrixWorld();
 
  const f=advanceFloat(float,g,reduced),x=(g.visualLane-1)*3.8,lift=jumpHeight(g)*2.9;
  const carve=-balanceAt(g,reduced)*.85;
- raft.position.set(x,f.height+lift,0);raft.rotation.set(f.pitch,carve,f.roll);
+ raft.position.set(x,f.height+lift+impactDrop,impact.recoil);raft.rotation.set(f.pitch+impact.pitch,carve,f.roll+impact.roll);
+ // Restore the rig before evaluating deck-anchored hands and feet, then brace
+ // rider and paddle together. Neither the action nor stroke clock is changed.
+ riderRig.position.set(0,0,0);riderRig.rotation.set(0,0,0);
  rider.rotation.z=reduced?0:THREE.MathUtils.clamp(-g.laneVelocity*.008,-.07,.07);
  const pose=riderPose(g,reduced);riderMat.map=riderTextures[pose.index];status.rider={...pose,animation:skeletal?skeletal.update(g,reduced):{kind:'sprite'}};
+ riderRig.position.set(0,-impact.brace*.12,impact.brace*.22);riderRig.rotation.set(-impact.brace*.28,0,impact.side*impact.brace*.08);
  riderMat.opacity=g.grace>0&&Math.floor(g.time*12)%2?.65:1;
- shield.visible=g.shield||g.rush>0||g.grace>0;shield.material.uniforms.uOpacity.value=g.rush?.64:.25;shield.material.uniforms.uRush.value=g.rush>0?1:0;
+ shield.visible=g.shield||g.rush>0||g.grace>0||impact.active;shield.material.uniforms.uOpacity.value=Math.max(g.rush?.64:.25,impact.flash+impact.shieldPulse*.22);shield.material.uniforms.uRush.value=g.rush>0?1:0;shield.material.uniforms.uImpact.value=impact.shieldPulse;shield.material.uniforms.uFatal.value=impact.fatal?impact.strength:0;
  shadow.position.set(x,waterHeight(x,travel)-.03,0);shadow.scale.setScalar(1-jumpHeight(g)*.2);
  uniforms.uTime.value=g.time;uniforms.uDistance.value=travel;uniforms.uSeed.value=riverSeed(seed);uniforms.uCourseLength.value=level.length;uniforms.uCourseMap.value=level.index;uniforms.uMotion.value=reduced?0:1;uniforms.uSpeed.value=g.speed;uniforms.uRush.value=g.rush>0?1:0;uniforms.uRaft.value.set(x,0);
  for(const e of g.effects){if(e.id<=lastEvent)continue;lastEvent=e.id;
@@ -399,7 +408,7 @@ export function createScene(canvas,art,onLost){
  for(let i=0;i<coinCount;i++){coinBatch.getMatrixAt(i,instanceMatrix);for(let s=0;s<2;s++){rimLocal.makeTranslation(0,s?.068:-.068,0).multiply(rimTurn);rimMatrix.multiplyMatrices(instanceMatrix,rimLocal);coinRims.setMatrixAt(i*2+s,rimMatrix);}}
  coinRims.count=coinCount*2;coinRims.instanceMatrix.needsUpdate=true;
  spray.visible=!reduced;
- if(!reduced){const rapid=rapidAt(travel,seed),energyScale=1+.35*courseIntensity(g.distance,level.length,level.index),landing=Math.max(0,1-(g.time-f.landAt)/.55),bank=Math.min(1,Math.abs(g.laneVelocity)/12);
+ if(!reduced){const rapid=rapidAt(travel,seed),energyScale=1+.35*courseIntensity(g.distance,level.length,level.index),landing=Math.max(0,1-(g.time-f.landAt)/.55),bank=Math.min(1,Math.abs(g.laneVelocity)/12),impactCount=impact.splashParticles+impact.shieldShards,impactPoint={};
  const contact=g.effects.findLast(e=>e.type==='coin'&&g.time-(e.contactTime??e.time)<.16),contactAge=contact?g.time-(contact.contactTime??contact.time):0;
  for(let i=0;i<sprayCount;i++){const p=(g.time*2.3+i*.618)%1,side=i%2?1:-1,a=i*2.399;
  const burst=i<48&&landing>0;let xx,yy,zz;
@@ -407,8 +416,10 @@ export function createScene(canvas,art,onLost){
  else{xx=x+side*(1.55+p*.55+bank*.3);yy=f.height+Math.sin(p*Math.PI)*(.2+bank*.5+rapid*.65)*energyScale;zz=.3+p*6.5;}
  if(i<8&&contact){const radius=.25+contactAge*4;xx=(contact.playerLane-1)*3.8+Math.cos(a)*radius;yy=f.height+(contact.playerHeight??0)*2.9+.65+Math.sin(a)*radius;zz=.2;}
  if(i>=80){const d=travel+5+(i-80)*1.6,rx=Math.sin(a)*riverHalfWidth(d,seed)*.75,rp=point(d,rx),energy=rapidAt(d,seed);xx=rp.x;zz=rp.z;yy=rp.y+waterHeight(rx,d)+Math.sin(p*Math.PI)*energy*.8*energyScale;if(energy<.45)yy=rp.y-1;}
+ if(i<impactCount){impactParticle(i,impact,impactPoint);xx=(impact.lane-1)*3.8+impactPoint.x;yy=f.height+impactPoint.y;zz=impactPoint.z;}
  sprayPositions[i*3]=xx;sprayPositions[i*3+1]=yy;sprayPositions[i*3+2]=zz;}
- sprayGeometry.attributes.position.needsUpdate=true;}
+ spray.material.size=impact.active?.15:.09;sprayGeometry.attributes.position.needsUpdate=true;}
+ status.impact={...impact,raft:{z:raft.position.z,y:raft.position.y,pitch:raft.rotation.x,roll:raft.rotation.z},riderBrace:impact.brace,particleCapacity:IMPACT_SPRAY_CAPACITY};
  renderer.render(scene,camera);status.frames++;status.readyFrames=Object.values(status.models).every(x=>x==='ready')?(status.readyFrames??0)+1:0;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.templeInstances=templeCount;status.guardianInstances=guardianCount;status.course={seed:riverSeed(seed),act:courseAct(g.distance,level.length),intensity:courseIntensity(g.distance,level.length,level.index),profileLength:profile.length,width:riverHalfWidth(travel,seed)*2,rapid:rapidAt(travel,seed),grade:riverGrade(travel,seed),dropAhead:point(travel+100).y,bendAhead:point(travel+100).x,shoals:shoalCount,framing:[-3.8,0,3.8].map(lane=>{const foot=new THREE.Vector3(lane,f.height+lift+.55,0).project(camera),head=new THREE.Vector3(lane,f.height+lift+3.7,0).project(camera),near=point(travel+20,lane),route=new THREE.Vector3(near.x,near.y+1,near.z).project(camera);return{foot:[foot.x,foot.y],head:[head.x,head.y],route:[route.x,route.y]};}),camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,fov:camera.fov}};status.world={district:level.name,canopies:canopyCount,harbors:harborCount,woodHazards:woodCount,...worldDetails.state,...mapWorld.state};status.steering={x,velocity:g.laneVelocity,yaw:carve,lean:skeletal?.state.balance??rider.rotation.z};status.surfaceMaps={rock:1024,wood:1024,ground:1024,water:1024,normals:software?0:512};status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:waterHeight(x,travel)};status.reducedMotion=reduced;status.frameBudget={scale:frameBudget.scale,meanMs:frameBudget.meanMs,dpr:renderer.getPixelRatio(),pixels:canvas.width*canvas.height,water:water.material===cheapWaterMaterial?'light':'rich'};
  }
  function dispose(){if(disposed)return;disposed=true;retryTimers.forEach(clearTimeout);pendingLoads.forEach(done=>done());resolveVista();canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats),...retiredMaterials,...labelMaterials.values(),waterMaterial,cheapWaterMaterial]),textures=new Set([scene.background,...surfaceTextures]),skeletons=new Set(),instances=new Set();for(const root of [scene,...retired])root.traverse(o=>{if(o.isInstancedMesh)instances.add(o);if(o.skeleton)skeletons.add(o.skeleton);if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});for(const m of retiredMaterials)for(const v of Object.values(m))if(v?.isTexture)textures.add(v);riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));instances.forEach(o=>o.dispose());geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());skeletons.forEach(s=>s.dispose());renderer.forceContextLoss();renderer.dispose();}

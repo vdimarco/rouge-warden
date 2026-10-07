@@ -11,6 +11,8 @@ import { LEVELS, freshProgress, unlockLevel, validProgress } from './game/levels
 import { loadArt, renderGame } from './game/render.js';
 import { RiverAudio, readSoundPreference, saveSoundPreference } from './game/audio.js';
 import { courseIntensity } from './game/course-intensity.js';
+import { FATAL_IMPACT_DURATION } from './game/impact-feedback.js';
+import { advanceWipeout, unplayedEffects } from './game/run-feedback.js';
 import { pauseWater } from './game/water.js';
 import { renderDpr } from './game/quality.js';
 import { readSwipe } from './game/input.js';
@@ -23,9 +25,9 @@ export default function App() {
   const [game,setGame]=useState(null),[best,setBest]=useState(readBest),[sound,setSound]=useState(readSoundPreference);
   const [fallback,setFallback]=useState(false),[graphicsReady,setGraphicsReady]=useState(false);
   const [artAttempt,setArtAttempt]=useState(0),[progress,setProgress]=useState(readProgress),[selectedLevel,setSelectedLevel]=useState(0),[leaderboardReturn,setLeaderboardReturn]=useState('menu');
-  const fallbackRef=useRef(false),sceneRef=useRef(null);
+  const fallbackRef=useRef(false),sceneRef=useRef(null),fallbackImpact=useRef(null);
   const appRef=useRef(),canvasRef=useRef(),model=useRef(),input=useRef(emptyInput()),pointer=useRef(null),blockedClick=useRef(null),ignoredClicks=useRef(new Set()),resetFrame=useRef(true);
-  const modeRef=useRef(mode),audio=useRef(new RiverAudio()),actions=useRef();modeRef.current=mode;
+  const modeRef=useRef(mode),audio=useRef(new RiverAudio()),actions=useRef(),wipeout=useRef(0),pausedFrom=useRef('playing');modeRef.current=mode;
   useEffect(()=>{let alive=true;loadArt().then(a=>{if(alive)setArt(a);}).catch(e=>{if(alive)setError(e.message);});return()=>{alive=false;};},[artAttempt]);
   useEffect(()=>()=>audio.current.dispose(),[]);
   function retryArt(){setError('');setArtAttempt(value=>value+1);}
@@ -34,15 +36,15 @@ export default function App() {
   function playAudio(reset=false){try{const run=model.current;audio.current.setEnabled(sound);audio.current.start({reset,intensity:courseIntensity(run.distance,LEVELS[run.levelIndex].length,run.levelIndex),rush:run.rush>0});}catch{disableSound();}}
   function pauseAudio(){try{audio.current.pause();}catch{disableSound();}}
   function cancelGesture(){const gesture=pointer.current;pointer.current=null;if(!gesture)return;blockedClick.current=gesture.id;gesture.button?.blur();try{if(gesture.capture?.hasPointerCapture(gesture.id))gesture.capture.releasePointerCapture(gesture.id);}catch{}}
-  function beginRun(run){if(!run||!art||!graphicsReady)return;resetFrame.current=true;cancelGesture();input.current=emptyInput();model.current=run;setGame(snapshot(run));modeRef.current='playing';setMode('playing');playAudio(true);}
+  function beginRun(run){if(!run||!art||!graphicsReady)return;wipeout.current=0;fallbackImpact.current=null;pausedFrom.current='playing';resetFrame.current=true;cancelGesture();input.current=emptyInput();model.current=run;setGame(snapshot(run));modeRef.current='playing';setMode('playing');playAudio(true);}
   function start(){if(!art||!graphicsReady)return;if(!menuModes.includes(modeRef.current)&&model.current){beginRun(restartLevel(model.current));return;}beginRun(createGame(undefined,Math.min(selectedLevel,progress.unlocked)));}
   function advance(){const run=model.current&&nextLevel(model.current);if(run){setSelectedLevel(run.levelIndex);beginRun(run);}else home();}
   function selectLevel(index){if(index<=progress.unlocked)setSelectedLevel(index);}
   function leaderboard(){pauseAudio();setLeaderboardReturn(modeRef.current);resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='leaderboard';setMode('leaderboard');}
   function closeLeaderboard(){const screen=leaderboardReturn;modeRef.current=screen;setMode(screen);}
   function recordBest(run){const totals=run.campaign;setBest(old=>{const value=!old||totals.score>old.score?{version:3,score:totals.score,distance:Math.floor(totals.distance),coins:totals.coins,levelsCleared:totals.levelsCleared}:old;try{localStorage.setItem('river-rush-adventure-best',JSON.stringify(value));}catch{}return value;});}
-  function pause(){if(modeRef.current==='playing'){pauseAudio();if(model.current)setGame(snapshot(model.current));resetFrame.current=true;input.current=emptyInput();cancelGesture();modeRef.current='paused';setMode('paused');}}
-  function resume(){resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='playing';setMode('playing');playAudio();}
+  function pause(){if(modeRef.current==='playing'||modeRef.current==='impact'){pausedFrom.current=modeRef.current;pauseAudio();if(model.current)setGame(snapshot(model.current));resetFrame.current=true;input.current=emptyInput();cancelGesture();modeRef.current='paused';setMode('paused');}}
+  function resume(){resetFrame.current=true;cancelGesture();input.current=emptyInput();const screen=pausedFrom.current==='impact'?'impact':'playing';modeRef.current=screen;setMode(screen);playAudio();}
   function home(){pauseAudio();resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='menu';setMode('menu');}
   function switchGames(){home();requestAnimationFrame(()=>window.GameSwitch?.open('river-rush'));}
   function toggleSound(){const enabled=!sound;setSound(enabled);saveSoundPreference(enabled);setAudioEnabled(enabled);}
@@ -57,13 +59,13 @@ export default function App() {
     const context=document.modelContext;if(!context?.registerTool)return;
     const lifecycle=new AbortController();
     function register(name,description,readOnly,execute){try{Promise.resolve(context.registerTool({name,description,inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:readOnly},execute:async value=>{if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length)throw new Error('Expected an empty object.');return execute();}},{signal:lifecycle.signal})).catch(()=>{});}catch{}}
-    register('get_run_status','Read the three-map River Rush adventure status.',true,()=>({screen:modeRef.current,run:model.current?snapshot(model.current):null,renderer:sceneRef.current?.status??{kind:'2d'},audio:audio.current.status}));
+    register('get_run_status','Read the three-map River Rush adventure status.',true,()=>({screen:modeRef.current,run:model.current?snapshot(model.current):null,renderer:sceneRef.current?.status??{kind:'2d',impact:fallbackImpact.current},audio:audio.current.status,presentation:{fatalElapsed:wipeout.current,duration:FATAL_IMPACT_DURATION,active:modeRef.current==='impact'}}));
     register('start_run','Start the player’s selected unlocked map, or restart the current map.',false,async()=>{if(!actions.current.ready)throw new Error('The river is preparing.');actions.current.start();await new Promise(requestAnimationFrame);return{screen:'playing'};});
     register('pause_run','Pause the active river runner.',false,async()=>{if(modeRef.current!=='playing')throw new Error('No active run.');actions.current.pause();return{screen:'paused'};});
     return()=>lifecycle.abort();
   },[]);
   useEffect(()=>{
-    if(!art)return;let alive=true,raf,previous=0,lastTime=-1,lastWidth=0,lastHeight=0,lastReduce=null,lastRun=null,lastCanvas=null,ctx=null,renderFailures=0;
+    if(!art)return;let alive=true,raf,previous=0,lastTime=-1,lastWipeout=-1,lastWidth=0,lastHeight=0,lastReduce=null,lastRun=null,lastCanvas=null,ctx=null,renderFailures=0;
     const pref=window.matchMedia('(prefers-reduced-motion: reduce)');let reduce=pref.matches;const changed=e=>{reduce=e.matches;};pref.addEventListener('change',changed);
     function useFallback(){if(!alive)return;actions.current.pause();fallbackRef.current=true;setFallback(true);setGraphicsReady(true);}
     function tick(now){
@@ -88,14 +90,17 @@ export default function App() {
         const g=model.current,before=g.eventId,beforeCoins=g.coins;
         if(modeRef.current==='playing')updateGame(g,input.current,dt);
         if(modeRef.current==='playing'){try{audio.current.updateMix(courseIntensity(g.distance,LEVELS[g.levelIndex].length,g.levelIndex),g.rush>0);}catch{disableSound();}}
-        if(g.eventId!==before){try{audio.current.tone(g.event);}catch{disableSound();}}
+        // One frame can cross coins, a power and a challenge. Play every contact,
+        // rather than only the last event, and never replay it on a redraw.
+        for(const effect of unplayedEffects(g,before)){try{audio.current.tone(effect.type,effect);}catch{disableSound();}}
+        if(modeRef.current==='impact')wipeout.current=advanceWipeout(wipeout.current,frameMs/1000,FATAL_IMPACT_DURATION);
         // Publish contact in its render frame, before the raft moves away.
         if(g.coins!==beforeCoins||g.effects.some(e=>e.id>before&&e.type==='power'))window.dispatchEvent(new Event('river-rush-contact'));
-        const dirty=g!==lastRun||g.time!==lastTime||w!==lastWidth||h!==lastHeight||reduce!==lastReduce;
+        const dirty=g!==lastRun||g.time!==lastTime||wipeout.current!==lastWipeout||w!==lastWidth||h!==lastHeight||reduce!==lastReduce;
         if(canvas&&dirty){
           let drawn=false;
           if(sceneRef.current){
-            try{sceneRef.current.render(g,w,h,reduce,modeRef.current==='playing'?frameMs:0);renderFailures=0;drawn=true;}
+            try{sceneRef.current.render(g,w,h,reduce,modeRef.current==='playing'?frameMs:0,wipeout.current);renderFailures=0;drawn=true;}
             catch{
               if(++renderFailures===1&&!sceneRef.current.status.contextLost){try{sceneRef.current.recover?.();}catch{useFallback();}}
               else useFallback();
@@ -105,18 +110,21 @@ export default function App() {
             const dpr=renderDpr(w,h,window.devicePixelRatio||1),bw=Math.floor(w*dpr),bh=Math.floor(h*dpr);
             if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh;}
             ctx??=canvas.getContext('2d',{alpha:true});
-            if(ctx){ctx.setTransform(bw/w,0,0,bh/h,0,0);renderGame(ctx,g,art,w,h,reduce,modeRef.current==='playing');drawn=true;}
+            if(ctx){ctx.setTransform(bw/w,0,0,bh/h,0,0);fallbackImpact.current=renderGame(ctx,g,art,w,h,reduce,modeRef.current==='playing',wipeout.current);drawn=true;}
           }
           // Retry a failed draw even if the run was paused or its clock did not
           // advance; only a completed frame can satisfy the dirty check.
-          if(drawn){lastRun=g;lastTime=g.time;lastWidth=w;lastHeight=h;lastReduce=reduce;}
+          if(drawn){lastRun=g;lastTime=g.time;lastWipeout=wipeout.current;lastWidth=w;lastHeight=h;lastReduce=reduce;}
         }
         if((g.phase==='lost'||g.phase==='won')&&modeRef.current==='playing'){
-          pauseAudio();
           const run=snapshot(g);setGame(run);input.current=emptyInput();cancelGesture();
-          const nextMode=g.phase==='won'?'complete':'result';modeRef.current=nextMode;setMode(nextMode);recordBest(run);
+          // A fatal contact stops the simulation immediately. Give the recoil
+          // and crash sound their own brief presentation before the score.
+          if(g.phase==='won')pauseAudio();else wipeout.current=0;
+          const nextMode=g.phase==='won'?'complete':'impact';modeRef.current=nextMode;setMode(nextMode);recordBest(run);
           if(g.phase==='won'){setProgress(old=>{const value=unlockLevel(old,run.level.index);try{localStorage.setItem('river-rush-progress',JSON.stringify(value));}catch{}return value;});setSelectedLevel(Math.min(2,run.level.index+1));}
         }
+        if(modeRef.current==='impact'&&wipeout.current>=FATAL_IMPACT_DURATION){pauseAudio();modeRef.current='result';setMode('result');}
       }
     }
     raf=requestAnimationFrame(tick);return()=>{alive=false;cancelAnimationFrame(raf);sceneRef.current?.dispose();sceneRef.current=null;pref.removeEventListener('change',changed);};
@@ -177,7 +185,7 @@ export default function App() {
     <header className="app-header"><button className="brand" aria-label="River Rush home" onClick={()=>inGame?pause():home()}><Logo/><span>RIVER RUSH</span></button><div className="header-actions">{inGame&&<button className="circle-button" aria-label="Pause game" onClick={pause}><Icon name="pause"/></button>}<button className="circle-button" aria-label={sound?'Mute sound':'Enable sound'} aria-pressed={sound} onClick={toggleSound}><Icon name={sound?'sound':'muted'}/></button></div></header>
     {!inGame&&<Menu onStart={start} onRetry={retryArt} onHelp={()=>setMode('help')} ready={!!art&&graphicsReady} error={error} best={best} active={mode==='menu'} levels={LEVELS} progress={progress} selectedLevel={selectedLevel} onSelectLevel={selectLevel} onLeaderboard={leaderboard}/>}
     {inGame&&game&&<Hud game={game} model={model} input={input} canvasRef={canvasRef} disabled={mode!=='playing'}/>}
-    {mode==='help'&&<Modal label="How to play" onDismiss={home}><button className="modal-close circle-button" aria-label="Close instructions" onClick={home}><Icon name="close"/></button><Icon name="bolt" className="modal-symbol"/><h2>Find your flow.</h2><p>Three rivers. Three finish lines. One wild adventure.</p><GestureGuide variant="help"/><ol className="instructions"><li><b>Dodge · Jump · Duck</b><span>← / → or A / D switch lanes. ↑, W or Space jumps logs. ↓ or S ducks branches. On phones, swipe in any direction or use the buttons.</span></li><li><b>Chase the streak</b><span>Pass over coins to collect them. Jump for raised coins; ground coins pass beneath an airborne raft. Eight coins raise your multiplier, up to ×5. Gold Boost doubles the points of coins you touch for eight seconds.</span></li><li><b>Make it a Rush</b><span>Coins and tricks fill your Rush. Press Shift or tap the meter when full: four seconds of speed and invincibility! Keep steering over the coins to collect them.</span></li><li><b>Reach the next river</b><span>Ride from open water through bends, whitewater chutes and wild rapids. Finish Canopy Run to unlock Redstone Rapids, then Moonlit Ruins. Your score carries into the next map.</span></li><li><b>Ride again</b><span>Your shield absorbs one hit. A wipeout lets you retry the current map with your earlier map scores preserved. Beat all three to finish the adventure.</span></li></ol><button className="primary" disabled={!art||!graphicsReady} onClick={start}>Let’s ride<Icon name="arrow"/></button></Modal>}
+    {mode==='help'&&<Modal label="How to play" onDismiss={home}><button className="modal-close circle-button" aria-label="Close instructions" onClick={home}><Icon name="close"/></button><Icon name="bolt" className="modal-symbol"/><h2>Find your flow.</h2><p>Three rivers. Three finish lines. One wild adventure.</p><GestureGuide variant="help"/><ol className="instructions"><li><b>Dodge · Jump · Duck</b><span>← / → or A / D switch lanes. ↑, W or Space jumps logs. ↓ or S ducks branches. On phones, swipe in any direction or use the buttons.</span></li><li><b>Chase the streak</b><span>Pass over coins to collect them. Jump for raised coins; ground coins pass beneath an airborne raft. Eight coins raise your multiplier, up to ×5. Gold Boost doubles the points of coins you touch for eight seconds.</span></li><li><b>Make it a Rush</b><span>Coins and tricks fill your Rush. Press Shift or tap the meter when full: four seconds of speed and invincibility! Keep steering over the coins to collect them.</span></li><li><b>Read the river</b><span>Dodge through boulder narrows, jump the whitewater runs, and duck the low canopy. Chain three perfect jumps in a jump section for +350. Calm pools give you room to recover. Finish Canopy Run to unlock Redstone Rapids, then Moonlit Ruins. Your score carries into the next map.</span></li><li><b>Ride again</b><span>Your shield absorbs one hit. A wipeout lets you retry the current map with your earlier map scores preserved. Beat all three to finish the adventure.</span></li></ol><button className="primary" disabled={!art||!graphicsReady} onClick={start}>Let’s ride<Icon name="arrow"/></button></Modal>}
     {mode==='paused'&&<Modal label="Game paused" onDismiss={resume}><Icon name="pause" className="modal-symbol"/><h2>Catch your breath.</h2><p>{stage.name} · {game?.level.remaining.toLocaleString()} m to the finish.</p><button className="primary" onClick={resume}>Resume run<Icon name="arrow"/></button><div className="modal-secondary"><button onClick={start}>Restart this map</button><button onClick={home}>Back to river</button></div><small>← → Lanes · ↑ Jump · ↓ Duck · Shift Rush</small></Modal>}
     {mode==='result'&&game&&<Modal label="Map ended" onDismiss={home}><div className="result-kicker">{best&&totals.score>=best.score?'NEW PERSONAL BEST':'READY TO TRY AGAIN?'}</div><h2>What a ride.</h2><p>{game.reason}<br/><span className="result-map">{stage.name} · {stage.remaining.toLocaleString()} m from the finish</span></p><div className="result-stats"><div><b>{totals.score.toLocaleString()}</b><span>POINTS</span></div><div><b>{totals.distance.toLocaleString()}m</b><span>TOTAL DISTANCE</span></div><div><b>{totals.coins}</b><span>COINS</span></div></div><p className="result-tricks">{totals.jumps} perfect jumps · {totals.ducks} perfect ducks</p><div className="score-actions"><ScoreCapture game={game} canvasRef={canvasRef}/><button className="text-button" onClick={leaderboard}>Post to leaderboard</button></div><button className="primary" onClick={start}>Retry {stage.name}<Icon name="arrow"/></button><small className="retry-hint">Enter to retry this map · Best {best?.score.toLocaleString()??'—'}</small><div className="modal-secondary"><button onClick={home}>Choose map</button><button onClick={switchGames}>Switch game</button><a href="/">Arcade</a></div></Modal>}
     {mode==='complete'&&game&&<Modal label={adventureVictory?'Adventure complete':'Map complete'} onDismiss={home}><div className="result-kicker">{adventureVictory?'ALL THREE RIVERS CLEARED':`MAP ${stage.index+1} OF 3 COMPLETE`}</div><Icon name="flag" className="modal-symbol finish-symbol"/><h2>{adventureVictory?'River legend.':'Finish line!'}</h2><p>{stage.name} cleared.{adventureVictory?' You conquered the entire adventure.':stage.final?' The final river is conquered.':` ${LEVELS[stage.index+1].name} is unlocked.`}</p><div className="result-stats"><div><b>{totals.score.toLocaleString()}</b><span>POINTS</span></div><div><b>{totals.distance.toLocaleString()}m</b><span>TOTAL DISTANCE</span></div><div><b>{totals.coins}</b><span>COINS</span></div></div><p className="result-tricks">{totals.jumps} perfect jumps · {totals.ducks} perfect ducks<br/>Map finish bonus +{((stage.index+1)*1000).toLocaleString()}</p><div className="score-actions"><ScoreCapture game={game} canvasRef={canvasRef}/><button className="text-button" onClick={leaderboard}>Post to leaderboard</button></div><button className="primary" onClick={stage.final?home:advance}>{stage.final?'Choose your next ride':`Next: ${LEVELS[stage.index+1].name}`}<Icon name="arrow"/></button><small>{stage.final?`${adventureVictory?'Adventure':'Map'} complete · Your maps stay unlocked`:'Your score carries into the next map'}</small><div className="modal-secondary"><button onClick={start}>Replay this map</button><button onClick={home}>Choose map</button><a href="/">Arcade</a></div></Modal>}

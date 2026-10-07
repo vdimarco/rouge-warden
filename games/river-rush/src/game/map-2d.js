@@ -3,7 +3,7 @@ import { bankScenery } from './world.js';
 import { currentDistance,WAVE_CADENCE } from './hydrodynamics.js';
 import { FINISH_GATE,prepareFinishArt } from './finish-line.js';
 import { courseIntensity } from './course-intensity.js';
-import { createCourseProfile,rapidAt,riverHash } from './river-course.js';
+import { createCourseProfile,rapidAt,riverHash,riverHalfWidth } from './river-course.js';
 import {paintMoonlitSky,MOONLIT_LAYERS,moonlitPlacement,moonlitLayerRange} from './moonlit-horizon.js';
 
 // All texture cards are made at loading time. Stage changes only select an
@@ -126,9 +126,10 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
     drawMoonlitHorizon2D(ctx,g,art,width,height,project);
   }
   else{const ground=ctx.createLinearGradient(0,height*.3,0,height);ground.addColorStop(0,level.fog);ground.addColorStop(1,level.ground);ctx.fillStyle=ground;ctx.fillRect(0,height*.3,width,height*.7);}
+  let profile=profiles.get(g);if(!profile){profile=createCourseProfile(g.seed,level.length,level.index);profiles.set(g,profile);}
   const edges=[[],[]],distant=project(width,height,1,1400),near=project(width,height,1,-14);
   for(let i=0;i<=26;i++){
-    const scale=distant.scale+(near.scale-distant.scale)*i/26,z=29*(1/scale-1),p=project(width,height,1,z),wave=1+Math.sin((g.distance+z)*.019)*.09;
+    const scale=distant.scale+(near.scale-distant.scale)*i/26,z=29*(1/scale-1),p=project(width,height,1,z),wave=riverHalfWidth(g.distance+z,profile)/18;
     const intensity=courseIntensity(g.distance+z,level.length,level.index);
     const bend=(Math.sin((g.distance+z)*.007)-Math.sin(g.distance*.007))*p.corridor*(.05+.07*intensity)*p.scale;
     const half=p.corridor*.79*p.scale*wave;
@@ -238,4 +239,23 @@ export function drawFinish2D(ctx,g,width,height,project,view,art,reduced=false){
   if(art?.banner)ctx.drawImage(art.banner,level.index*1024,0,1024,256,left,top,right-left,bannerHeight);
   else{ctx.fillStyle='#12323a';ctx.fillRect(left,top,right-left,bannerHeight);ctx.fillStyle='#fff4ca';ctx.font=`900 ${Math.max(9,bannerHeight*.6)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('FINISH',p.x,top+bannerHeight*.48);}
   ctx.restore();
+}
+
+// The Canopy fallback uses the same section widths instead of an unchanging
+// painted river edge. This apron remains outside the playable three lanes.
+export function drawCanopyTerrain2D(ctx,g,art,width,height,project){
+ const level=levelAt(g.levelIndex);if(level.index!==0)return;
+ let profile=profiles.get(g);if(!profile){profile=createCourseProfile(g.seed,level.length,level.index);profiles.set(g,profile);}
+ const far=project(width,height,1,420),near=project(width,height,1,-14),edges=[[],[]];
+ for(let i=0;i<=26;i++){
+  const scale=far.scale+(near.scale-far.scale)*i/26,z=29*(1/scale-1),p=project(width,height,1,z),half=p.corridor*.79*p.scale*riverHalfWidth(g.distance+z,profile)/18;
+  edges[0].push([p.x-half,p.y]);edges[1].push([p.x+half,p.y]);
+ }
+ for(let side=0;side<2;side++){
+  const edge=edges[side],outside=side?width:0;
+  ctx.save();ctx.beginPath();ctx.moveTo(outside,far.y);ctx.lineTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.lineTo(outside,near.y);ctx.closePath();ctx.clip();
+  const soil=ctx.createLinearGradient(0,far.y,0,height);soil.addColorStop(0,'#51795c00');soil.addColorStop(.13,'#6f9541c0');soil.addColorStop(1,'#38613b');ctx.fillStyle=soil;ctx.fillRect(0,far.y,width,height-far.y);
+  let patterns=patternCache.get(ctx);if(!patterns){patterns={river:[],ground:[]};patternCache.set(ctx,patterns);}patterns.ground[0]??=ctx.createPattern(art.surfaceground,'repeat');
+  const offset=g.distance*2%256;ctx.globalAlpha=.24;ctx.translate(0,offset);ctx.fillStyle=patterns.ground[0];ctx.fillRect(0,far.y-offset,width,height);ctx.restore();
+ }
 }

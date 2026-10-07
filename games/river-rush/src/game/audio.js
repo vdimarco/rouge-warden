@@ -1,7 +1,8 @@
 // Stream the score once; action cues and the river share a small, reusable graph.
 const SOUND_KEY = 'river-rush-sound-enabled';
 const MUSIC_URL = `${import.meta.env?.BASE_URL ?? '/'}audio/river-rush-adventure.mp3`;
-const patterns = { coin: [880], land: [160, 110], goal: [523, 659, 784, 1046], perfect: [660, 988], power: [440, 660, 880], rush: [330, 660, 1046], smash: [220, 440], jump: [330], duck: [260], key: [660, 880], chest: [440, 660, 880], win: [523, 659, 784, 1046], finish: [523, 659, 784, 1046], hit: [130], miss: [220], fall: [160, 100], lose: [260, 190, 130], recover: [330, 440], near: [740, 988], surge: [220, 330, 660] };
+const patterns = { land: [160, 110], goal: [523, 659, 784, 1046], perfect: [660, 988], power: [440, 660, 880], rush: [330, 660, 1046], jump: [330], duck: [260], key: [660, 880], chest: [440, 660, 880], win: [523, 659, 784, 1046], finish: [523, 659, 784, 1046], miss: [220], fall: [160, 100], recover: [330, 440], near: [740, 988], surge: [220, 330, 660], 'terrain-combo': [784, 988, 1175] };
+const VOICE_LIMIT = 12;
 const clamp = value => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 
 export function readSoundPreference(storage) {
@@ -20,6 +21,7 @@ export class RiverAudio {
     this.ctx = null; this.music = null; this.nodes = null;
     this.enabled = false; this.active = false; this.intensity = 0; this.rush = false;
     this.musicState = 'idle'; this.voices = new Set(); this.playAttempt = 0;
+    this.effectNoise = null; this.cueCounts = {}; this.lastCue = null;
     this.lastMixTime = -Infinity; this.lastMixBucket = -1; this.lastMixRush = false;
   }
 
@@ -28,7 +30,8 @@ export class RiverAudio {
     return { enabled: this.enabled, active: this.active, contextState: this.ctx?.state ?? 'uninitialized',
       musicState: this.musicState, musicPlaying: !!(this.audible && this.music && !this.music.paused && this.ctx?.state === 'running'),
       intensity: this.intensity, rush: this.rush, musicGain: this.nodes?.musicGain.gain.value ?? 0,
-      filterFrequency: this.nodes?.musicFilter.frequency.value ?? 0 };
+      filterFrequency: this.nodes?.musicFilter.frequency.value ?? 0,
+      cueCounts: { ...this.cueCounts }, lastCue: this.lastCue && { ...this.lastCue }, activeVoices: this.voices.size, voiceLimit: VOICE_LIMIT };
   }
 
   setEnabled(enabled) {
@@ -40,6 +43,7 @@ export class RiverAudio {
   start({ reset = false, intensity = 0, rush = false } = {}) {
     this.active = true; this.intensity = clamp(intensity); this.rush = !!rush;
     this.stopVoices();
+    if (reset) { this.cueCounts = {}; this.lastCue = null; }
     if (reset && this.music) { try { this.music.currentTime = 0; } catch {} }
     if (this.audible) this.activate();
   }
@@ -52,19 +56,29 @@ export class RiverAudio {
     try {
       context = this.createContext();
       const master = context.createGain(); master.gain.value = 0; master.connect(context.destination);
+      const cueGain = context.createGain(); cueGain.gain.value = .8;
+      const cueLimiter = context.createDynamicsCompressor();
+      cueLimiter.threshold.value = -9; cueLimiter.knee.value = 6; cueLimiter.ratio.value = 8;
+      cueLimiter.attack.value = .002; cueLimiter.release.value = .06;
+      cueGain.connect(cueLimiter); cueLimiter.connect(master);
       const riverGain = context.createGain(); riverGain.gain.value = .075; riverGain.connect(master);
       const riverFilter = context.createBiquadFilter(); riverFilter.type = 'lowpass'; riverFilter.frequency.value = 1100; riverFilter.connect(riverGain);
       const river = context.createBufferSource(), buffer = context.createBuffer(1, context.sampleRate * 3, context.sampleRate);
       const samples = buffer.getChannelData(0); let last = 0;
       for (let i = 0; i < samples.length; i++) { last = (last + (Math.random() * 2 - 1) * .02) / 1.02; samples[i] = last * 3; }
       river.buffer = buffer; river.loop = true; river.connect(riverFilter); river.start();
+      // Impacts share one short noise buffer; collection and collisions never prepare samples in the frame loop.
+      const effectNoise = context.createBuffer(1, Math.ceil(context.sampleRate * .55), context.sampleRate);
+      const noiseSamples = effectNoise.getChannelData(0);
+      for (let i = 0; i < noiseSamples.length; i++) noiseSamples[i] = Math.random() * 2 - 1;
       const musicGain = context.createGain(); musicGain.gain.value = .4; musicGain.connect(master);
       const musicFilter = context.createBiquadFilter(); musicFilter.type = 'lowpass'; musicFilter.frequency.value = 5500; musicFilter.Q.value = .55; musicFilter.connect(musicGain);
       this.ctx = context;
-      this.nodes = { master, river, riverFilter, riverGain, musicFilter, musicGain };
+      this.effectNoise = effectNoise;
+      this.nodes = { master, cueGain, cueLimiter, river, riverFilter, riverGain, musicFilter, musicGain };
     } catch {
       try { Promise.resolve(context?.close()).catch(() => {}); } catch {}
-      this.ctx = null; this.nodes = null;
+      this.ctx = null; this.nodes = null; this.effectNoise = null;
     }
   }
 
@@ -146,23 +160,82 @@ export class RiverAudio {
   }
 
   stopVoices() {
-    for (const voice of this.voices) { try { voice.osc.stop(); } catch {} try { voice.osc.disconnect(); voice.gain.disconnect(); } catch {} }
-    this.voices.clear();
+    for (const voice of this.voices) this.releaseVoice(voice, true);
   }
 
-  tone(event) {
-    if (!this.ctx || !this.audible) return;
-    for (const [i, freq] of (patterns[event] || []).entries()) {
-      // Bound even repeated coin bursts; finished voices release their graph nodes.
-      if (this.voices.size >= 12) break;
-      const at = this.ctx.currentTime + i * .13;
-      const osc = this.ctx.createOscillator(), gain = this.ctx.createGain(), voice = { osc, gain };
-      this.voices.add(voice); osc.type = 'sine'; osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, at); gain.gain.linearRampToValueAtTime(.13, at + .02); gain.gain.exponentialRampToValueAtTime(.001, at + .3);
-      osc.connect(gain); gain.connect(this.nodes.master);
-      osc.onended = () => { this.voices.delete(voice); osc.disconnect(); gain.disconnect(); };
-      osc.start(at); osc.stop(at + .31);
+  releaseVoice(voice, cancel = false) {
+    if (voice.released) return;
+    voice.released = true; this.voices.delete(voice);
+    if (voice.source) {
+      voice.source.onended = null;
+      if (cancel) { try { voice.source.stop(); } catch {} }
     }
+    for (const node of [voice.source, voice.filter, voice.gain]) { try { node?.disconnect(); } catch {} }
+  }
+
+  tone(event, detail = {}) {
+    // A hidden or suspended context must not record a cue that nobody heard.
+    if (!this.ctx || !this.audible || this.ctx.state !== 'running') return false;
+    const impact = event === 'hit' || event === 'lose' || event === 'smash';
+    let notes;
+    if (event === 'coin') {
+      const streak = Math.max(0, Math.min(12, Number.isFinite(detail?.streak) ? detail.streak : 0));
+      const pitch = 1175 * 2 ** (streak / 36);
+      notes = [
+        { frequency: pitch, volume: .15, duration: .16, attack: .003 },
+        { frequency: pitch * 2.76, volume: .065, duration: .085, attack: .002 }
+      ];
+    } else if (impact) {
+      const fatal = event === 'lose', duration = fatal ? .49 : event === 'smash' ? .27 : .34;
+      notes = [
+        { waveform: 'triangle', frequency: 175, endFrequency: 58, volume: .28, duration: .17, attack: .004 },
+        { frequency: fatal ? 82 : 98, endFrequency: 34, volume: .27, duration, attack: .006 },
+        { noise: true, frequency: event === 'smash' ? 2800 : 1900, volume: .24, duration: duration * .87, attack: .007 }
+      ];
+    } else {
+      const combo = event === 'terrain-combo';
+      notes = (patterns[event] || []).map((frequency, i) => ({ frequency, offset: i * (combo ? .075 : .13), volume: .13, duration: combo ? .21 : .3, attack: combo ? .006 : .02 }));
+    }
+    if (!notes.length) return false;
+    const priority = event === 'lose' ? 4 : impact ? 3 : event === 'terrain-combo' ? 2 : 1;
+    // Repeated contacts replace quiet tails; a full coin burst cannot swallow a crash.
+    while (this.voices.size + notes.length > VOICE_LIMIT) {
+      let oldest;
+      for (const voice of this.voices) if (voice.priority <= priority && (!oldest || voice.priority < oldest.priority)) oldest = voice;
+      if (!oldest) return false;
+      this.releaseVoice(oldest, true);
+    }
+    const created = [], now = this.ctx.currentTime;
+    try {
+      for (const note of notes) {
+        const voice = { source: null, gain: null, filter: null, priority, event, released: false };
+        created.push(voice); this.voices.add(voice);
+        const source = voice.source = note.noise ? this.ctx.createBufferSource() : this.ctx.createOscillator();
+        const gain = voice.gain = this.ctx.createGain(), at = now + (note.offset || 0);
+        if (note.noise) {
+          source.buffer = this.effectNoise;
+          const filter = voice.filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass'; filter.frequency.value = note.frequency; filter.Q.value = .6;
+          source.connect(filter); filter.connect(gain);
+        } else {
+          source.type = note.waveform || 'sine'; source.frequency.setValueAtTime(note.frequency, at);
+          if (note.endFrequency) source.frequency.exponentialRampToValueAtTime(note.endFrequency, at + note.duration);
+          source.connect(gain);
+        }
+        gain.gain.setValueAtTime(0, at);
+        gain.gain.linearRampToValueAtTime(note.volume, at + note.attack);
+        gain.gain.exponentialRampToValueAtTime(.0001, at + note.duration);
+        gain.connect(this.nodes.cueGain);
+        source.onended = () => this.releaseVoice(voice);
+        source.start(at); source.stop(at + note.duration + .02);
+      }
+    } catch {
+      for (const voice of created) this.releaseVoice(voice, true);
+      return false;
+    }
+    this.cueCounts[event] = (this.cueCounts[event] || 0) + 1;
+    this.lastCue = { type: event, at: now, id: Number.isFinite(detail?.id) ? detail.id : null };
+    return true;
   }
 
   dispose() {
@@ -171,7 +244,7 @@ export class RiverAudio {
     try { this.nodes?.river.stop(); } catch {}
     if (this.nodes) for (const node of Object.values(this.nodes)) { try { node.disconnect(); } catch {} }
     try { Promise.resolve(this.ctx?.close()).catch(() => {}); } catch {}
-    this.ctx = null; this.nodes = null; this.music = null; this.musicError = null;
+    this.ctx = null; this.nodes = null; this.music = null; this.musicError = null; this.effectNoise = null;
     this.musicState = 'idle'; this.lastMixTime = -Infinity; this.lastMixBucket = -1;
   }
 }

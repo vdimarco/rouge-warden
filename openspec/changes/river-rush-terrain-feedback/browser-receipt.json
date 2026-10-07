@@ -1,0 +1,219 @@
+{
+  "passed": true,
+  "scope": "River Rush contact audio, impact presentation, shared terrain and HUD",
+  "actualAppStateOrClockMutations": false,
+  "release": {
+    "js": "index-wW83rlHd.js",
+    "css": "index-BttXBCLJ.css"
+  },
+  "appFullFeedback": {
+    "passed": true,
+    "testedCandidate": "index-SNVa2l_c.js",
+    "unchangedFeedbackCodeRetainedInRelease": true,
+    "rows": [
+      {
+        "layout": "desktop",
+        "contacts": 17,
+        "coinCues": 17,
+        "starterPhysicalContacts": 6,
+        "fatalFrames": 7,
+        "frozenFatalSimulation": true,
+        "fatalElapsedSamples": [
+          0,
+          0.1,
+          0.183,
+          0.283,
+          0.383,
+          0.483,
+          0.583
+        ],
+        "audioPeaks": {
+          "wood": 0.0934,
+          "splash": 0.0497
+        },
+        "protectedSteering": true,
+        "resultSilent": true,
+        "retry": "playing",
+        "noActiveGpuPreparation": true
+      },
+      {
+        "layout": "phone",
+        "contacts": 17,
+        "coinCues": 17,
+        "starterPhysicalContacts": 6,
+        "fatalFrames": 8,
+        "frozenFatalSimulation": true,
+        "fatalElapsedSamples": [
+          0,
+          0.083,
+          0.15,
+          0.233,
+          0.317,
+          0.417,
+          0.5,
+          0.567
+        ],
+        "audioPeaks": {
+          "wood": 0.1053,
+          "splash": 0.0439
+        },
+        "protectedSteering": true,
+        "resultSilent": true,
+        "retry": "playing",
+        "noActiveGpuPreparation": true
+      },
+      {
+        "layout": "landscape",
+        "contacts": 17,
+        "coinCues": 17,
+        "starterPhysicalContacts": 6,
+        "fatalFrames": 7,
+        "frozenFatalSimulation": true,
+        "fatalElapsedSamples": [
+          0,
+          0.1,
+          0.183,
+          0.267,
+          0.35,
+          0.45,
+          0.533
+        ],
+        "audioPeaks": {
+          "wood": 0.1017,
+          "splash": 0.0431
+        },
+        "protectedSteering": true,
+        "resultSilent": true,
+        "retry": "playing",
+        "noActiveGpuPreparation": true
+      },
+      {
+        "case": "adjacent-coins-reduced-motion-mute-pause-hidden",
+        "adjacentCoins": 0,
+        "adjacentCoinCues": 0,
+        "mutedContext": "suspended",
+        "hiddenScreen": "paused",
+        "reducedCameraShake": 0
+      }
+    ]
+  },
+  "realRenderedCueAudio": {
+    "passed": true,
+    "kind": "isolated-production-RiverAudio-real-OfflineAudioContext-waveforms",
+    "cases": [
+      {
+        "type": "coin",
+        "rms": 0.00675,
+        "peak": 0.05855,
+        "lastAudibleSeconds": 0.15,
+        "clippedSamples": 0,
+        "activeVoices": 2
+      },
+      {
+        "type": "hit",
+        "rms": 0.0262,
+        "peak": 0.23691,
+        "lastAudibleSeconds": 0.3122,
+        "clippedSamples": 0,
+        "activeVoices": 3
+      },
+      {
+        "type": "lose",
+        "rms": 0.03432,
+        "peak": 0.2604,
+        "lastAudibleSeconds": 0.4522,
+        "clippedSamples": 0,
+        "activeVoices": 3
+      },
+      {
+        "type": "smash",
+        "rms": 0.02252,
+        "peak": 0.22293,
+        "lastAudibleSeconds": 0.2601,
+        "clippedSamples": 0,
+        "activeVoices": 3
+      },
+      {
+        "type": "terrain-combo",
+        "rms": 0.02367,
+        "peak": 0.15937,
+        "lastAudibleSeconds": 0.3447,
+        "clippedSamples": 0,
+        "activeVoices": 3
+      },
+      {
+        "type": "burst-impact",
+        "rms": 0.04339,
+        "peak": 0.40186,
+        "lastAudibleSeconds": 0.4523,
+        "clippedSamples": 0,
+        "activeVoices": 12
+      }
+    ]
+  },
+  "sourcePreparedRenderer": {
+    "passed": true,
+    "protectedFatalLayoutCases": 6,
+    "terrainStates": 20,
+    "allThreeMapsOnPhone": true,
+    "allFourSectionTypes": true,
+    "reducedMotionValidated": true,
+    "impactParticleCapacity": 72,
+    "maxDrawCalls": 40,
+    "maxTriangles": 117365,
+    "maxActiveEntities": 36,
+    "poolPerBankMax": 6,
+    "noActiveGpuPreparation": true,
+    "isolatedFixtureClocksExplicitlySet": true
+  },
+  "hud": {
+    "passed": true,
+    "cases": 16,
+    "layouts": [
+      "phone390x844",
+      "desktop1536x1024",
+      "landscape844x390",
+      "tablet820x1180"
+    ],
+    "panelNoticeGestureCaptureClear": true,
+    "phoneWavePanelBottom": 186.53125,
+    "phoneNoticeTop": 194
+  },
+  "actualFallbackShort": {
+    "passed": true,
+    "protectedContactAudio": true,
+    "controlsPauseResumeHome": true,
+    "screenshot": "/tmp/river-terrain-feedback/fallback-built/fallback-hud.png"
+  },
+  "proofs": {
+    "app": "/tmp/river-terrain-feedback/all-layouts/contact-after.json",
+    "waveforms": "/tmp/river-terrain-feedback/final/cue-waveforms.json",
+    "renderer": "/tmp/river-terrain-feedback/fixtures/terrain-feedback-fixtures.json",
+    "hud": "/tmp/river-terrain-feedback/hud-final/terrain-hud.json",
+    "impactStart": "/tmp/river-terrain-feedback/fixtures/phone-hit-0.03.png",
+    "fatalTip": "/tmp/river-terrain-feedback/fixtures/phone-lose-0.58.png",
+    "terrainExample": "/tmp/river-terrain-feedback/fixtures/phone-canyon-wave-train.png",
+    "hudExample": "/tmp/river-terrain-feedback/hud-final/phone-wave-train.png",
+    "finalBuilt": "/tmp/river-terrain-feedback/release-built/contact-after.json"
+  },
+  "limitations": [
+    "Headless Chromium/SwiftShader. No physical-device frame-rate measurement or speaker audition.",
+    "Visibility events emulated; OfflineAudioContext is a cue-only isolated render with river and music muted.",
+    "Terrain gallery uses isolated source-engine/renderer fixtures rather than a complete actual-App campaign."
+  ],
+  "finalBuiltPhone": {
+    "passed": true,
+    "js": "index-wW83rlHd.js",
+    "css": "index-BttXBCLJ.css",
+    "starterCoins": 6,
+    "starterCoinCues": 6,
+    "protectedWoodRms": 0.0775,
+    "protectedSplashRms": 0.023,
+    "steeringPauseResumeHome": true,
+    "pausedStatusAndSettledPixelsExact": true,
+    "homeAudioInactive": true,
+    "noActiveGpuPreparation": true,
+    "errors": [],
+    "screenshot": "/tmp/river-terrain-feedback/release-built/phone-hud.png"
+  }
+}
