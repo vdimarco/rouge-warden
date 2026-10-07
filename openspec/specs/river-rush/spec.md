@@ -1,27 +1,33 @@
 # River Rush Specification
 
 ## Purpose
-Define River Rush's endless three-lane raft runner, responsive keyboard/swipe/touch actions, fair escalating hazards, coin streaks, challenges, power-ups, Higgsfield title scene, and Cottage Arcade integration.
+Define River Rush's finite three-map whitewater adventure, responsive keyboard/swipe/touch actions, fair progressively harder courses, coin streaks, challenges, power-ups, shareable scores, public guest leaderboard and Cottage Arcade integration.
 
 ## Requirements
 
 ### Requirement: River Rush arcade cabinet
-The arcade SHALL retain the River Rush cabinet id `river-rush`, name `River Rush`, route `/river-rush/`, Action membership, existing art direction and shared switcher entry. Its copy SHALL describe the endless runner.
-#### Scenario: Launch from the arcade
-- **WHEN** a player selects River Rush and starts its cabinet
-- **THEN** the runner menu loads at `/river-rush/` with Start run
-#### Scenario: Shared switcher
-- **WHEN** a player opens Switch game from the menu or results
-- **THEN** the shared switcher marks River Rush as current and allows another game or the arcade
+The arcade SHALL retain the River Rush cabinet id, name, /river-rush/ route,
+Action membership, approved art direction and shared switcher entry. Its copy
+SHALL describe the finite three-map adventure.
+
+#### Scenario: Launch and switch
+- **WHEN** a player starts the River Rush cabinet or uses Switch game
+- **THEN** the selected adventure opens correctly and the shared switcher
+  identifies River Rush while retaining links to other games and the arcade
 
 ### Requirement: Validated best score
-The game SHALL save positive finite best runner scores in `river-rush-best` with a runner version. Legacy race scores SHALL NOT become runner records. The cabinet SHALL display positive finite scores and tolerate malformed storage.
-#### Scenario: End and retry
-- **WHEN** a run ends with a new personal best and the player retries
-- **THEN** the record persists and a fresh run starts with zero distance and coins
-#### Scenario: Saved and invalid scores
-- **WHEN** the save is invalid or a legacy race record
-- **THEN** the game starts without a runner record and remains playable
+The game SHALL save positive bounded finite-adventure best scores in
+river-rush-adventure-best with version 3. Older race/endless scores SHALL NOT
+become adventure records. The cabinet SHALL show valid adventure scores and
+tolerate malformed storage.
+
+#### Scenario: Retry an adventure map
+- **WHEN** a player finishes or wipes out with a new personal best and retries
+- **THEN** the best persists, current-map statistics reset and prior clears carry
+
+#### Scenario: Malformed or old records
+- **WHEN** storage is malformed, inconsistent or from the earlier runner
+- **THEN** the game remains playable with safe defaults and no old best score
 
 ### Requirement: Shared audio lifecycle
 The arcade build SHALL load `/arcade/quiet.js` before other scripts so audio suspends when the page is hidden.
@@ -63,22 +69,37 @@ Coins, successful obstacle actions, power-ups, shield impacts and fatal collisio
 - **THEN** a shield burst communicates protection consumed, the streak breaks and the run continues with brief collision grace
 
 ### Requirement: Endless runner controls and retry
-The game SHALL offer three discrete lanes, immediate lane-change input, jump, duck and Rush through keyboard and touch buttons; touch SHALL also support directional swipes. Inputs SHALL consume each tap once. A fatal collision SHALL show score, distance, coins, cause and a one-action retry, without a two-minute finish timer.
+The finite adventure SHALL offer three lanes, immediate lane changes, jump,
+duck and Rush through keyboard/buttons and screen-wide directional gestures.
+Inputs SHALL consume each tap once. A fatal collision SHALL show cumulative
+score, distance, coins, cause and one-action current-map retry. Map clears SHALL
+show Next map or final victory rather than a wipeout.
+
 #### Scenario: Keyboard and swipe
-- **WHEN** a player presses A/D or left/right, W/up/Space or S/down, or swipes in those directions
-- **THEN** the player changes lane, jumps or ducks correspondingly, with no missed short taps
-#### Scenario: Restart
-- **WHEN** the player chooses Ride again after a collision
-- **THEN** the next run begins immediately without navigating through the menu
+- **WHEN** a player uses keyboard actions or swipes on any gameplay area
+- **THEN** matching actions occur immediately, with left/right buttons anchored
+  at the screen edges and no gesture-guide interception
+
+#### Scenario: Restart or advance
+- **WHEN** the player retries a wiped-out map or advances a cleared map
+- **THEN** the current map restarts with earlier clears preserved or the next
+  harder map starts with cumulative totals carried exactly once
 
 ### Requirement: Fair escalating obstacle course
-The seeded course SHALL continuously introduce rocks requiring avoidance, low logs cleared by jumping, and overhead branches cleared by ducking. Speed and pattern complexity SHALL increase gradually. Rows SHALL have a clear lane or a traversable jump/duck barrier and sufficient spacing for an action to complete before the next required action. Course entities SHALL remain bounded during long runs.
+Each seeded finite course SHALL vary slalom, coin zigzags, mixed obstacles,
+jump waves, low canopy and split-current motifs. Later maps SHALL increase
+speed/complexity while each row retains a clear lane or traversable action
+barrier and enough time for the existing jump/duck durations. Hazards SHALL
+stop before the finish runway and active course entities SHALL remain bounded.
+
 #### Scenario: Choose an action
-- **WHEN** a player meets a log during a jump or a branch while ducking
-- **THEN** the hazard is cleared and rewards action points; the same hazard without the correct action consumes protection or ends the run
-#### Scenario: Long course
-- **WHEN** a player survives for several minutes
-- **THEN** varied harder patterns continue, a reachable legal route remains and passed entities are removed
+- **WHEN** a player jumps a log, ducks a branch or avoids a rock
+- **THEN** the matching action safely clears the hazard and rewards its points
+
+#### Scenario: Finish a varied map
+- **WHEN** a player survives to the finish of any of the three maps
+- **THEN** multiple route motifs appear, a legal route remains, the last 90 m
+  is hazard-free, and simulation stops at the stated distance
 
 ### Requirement: Coins streaks and power-ups
 The game SHALL reward coin trails and successful actions with points and Rush charge. Coin streaks SHALL increase the score multiplier and expire after a collection gap; the HUD SHALL communicate time remaining. Rush SHALL NOT recharge itself. Magnet SHALL collect nearby coins across lanes for eight seconds; shield SHALL absorb one impact; full Rush charge SHALL grant four seconds of faster invulnerable riding and be activated by Shift or its touch button.
@@ -192,10 +213,16 @@ The river SHALL use locally hosted detailed rock, wood, shoreline and water surf
 - **THEN** surface detail remains visible, pose silhouettes remain clear and paused pixels remain stable, without changing speed or controls
 
 ### Requirement: Distinctive lost-temple models
-The primary world SHALL present locally hosted fal-generated textured expedition raft, serpent temple landmarks and carved guardian obstacles with coherent mossy stone, warm timber and restrained gold/teal accents. Temple landmarks SHALL remain outside the three playable lanes. Repeated scenery and hazards SHALL share model resources and remain bounded. Existing speed, collision types and arcade route SHALL remain unchanged.
+The primary world SHALL present the locally hosted fal-generated textured
+expedition raft and detailed driftwood across maps. Moonlit Ruins SHALL add
+serpent temples and carved guardian obstacles with mossy stone and gold accents.
+Temple landmarks SHALL remain outside playable lanes. Shared scenery/hazards
+SHALL remain bounded and controls/action windows SHALL retain their timings.
+
 #### Scenario: Inspect upgraded course
-- **WHEN** a player starts River Rush on phone, desktop or landscape and passes riverbank landmarks
-- **THEN** carved temple silhouettes and guardian obstacles are visibly distinct from generic boulders, hazards remain readable and controls retain their timings
+- **WHEN** a player enters Moonlit Ruins on phone, desktop or landscape
+- **THEN** carved temple and guardian silhouettes differ from canyon boulders,
+  hazards remain readable, and the same controls retain their action timing
 
 ### Requirement: Continuous skeletal rider motion
 The primary view SHALL use a fal-generated humanoid skeletal rider with long dark hair, modest loincloth and downstream orientation. Paddling SHALL follow a continuous time-based stroke with a physical paddle and coordinated arm joints. Steering SHALL use continuous bank, torso and leg weight shifts without pose teleportation or animation locks. Rendering SHALL follow display animation-frame cadence and SHALL NOT quantize the paddle cycle to a handful of still frames.
@@ -210,19 +237,22 @@ The primary view SHALL use a fal-generated humanoid skeletal rider with long dar
 - **THEN** the existing registered rear-facing character art and usable geometric substitutes keep the course playable
 
 ### Requirement: Layered adventurous world presentation
-The primary view SHALL present a coherent turquoise, jade, warm sandstone and coral river world with a locally hosted fal-generated distant valley panorama, textured sculpted canopy trees, river pavilion landmarks and detailed driftwood hazards. Near scenery SHALL move with the course, distant scenery SHALL provide atmospheric depth, and canopy, falls and harbor stretches SHALL have visibly different landmark density. Decoration SHALL remain outside playable lanes and SHALL NOT obscure incoming hazards. Existing speed, immediate controls, collision types and continuous skeletal rider behavior SHALL remain unchanged.
-#### Scenario: Discover the river
-- **WHEN** a player rides through canopy, falls and harbor stretches on phone, desktop or landscape
-- **THEN** the background and nearby silhouette composition visibly vary, the valley has clouds and distant landmarks, and the three lanes and next obstacle remain readable
-#### Scenario: Inspect detailed hazards
-- **WHEN** a log or overhead branch approaches the raft
-- **THEN** sculpted wood, end grain and moss are visible, low and overhead heights retain their distinct jump/duck meanings, and existing action windows remain effective
+The primary view SHALL distinguish jungle canopy, sandstone gorge and moonlit
+temple maps using locally hosted fal panoramas, prepared palettes, textured
+trees, rock/temple landmarks and driftwood. Near scenery SHALL move with the
+course and the distant environment SHALL provide atmospheric depth. Decorative
+landmarks SHALL remain outside playable lanes and preserve hazard readability.
+
+#### Scenario: Discover the rivers
+- **WHEN** a player advances through all three maps on a supported layout
+- **THEN** sky, water, bank composition and landmarks visibly change between
+  the lush jungle, orange gorge and violet moonlit ruin environments
+
 #### Scenario: Preserve motion and performance
-- **WHEN** the player paddles, reverses lanes, jumps, ducks or enables reduced motion
-- **THEN** continuous anatomical animation and accepted speed remain intact, reduced motion freezes decoration, and the measured rendered scene remains below 300000 triangles and 65 calls on the full path or 125000 triangles and 65 calls on software
-#### Scenario: Pause and asset failure
-- **WHEN** the player pauses or a new scenery model or panorama remains unavailable after bounded retries
-- **THEN** pause freezes displayed canvas pixels and unavailable decoration falls back without preventing play or changing collision rules
+- **WHEN** a player paddles, reverses lanes, jumps, ducks or reduces motion
+- **THEN** the continuous rider and responsive control timings remain, optional
+  decoration freezes, and measured scenes stay below 65 calls and 300,000
+  triangles on the full path or 125,000 triangles on the software path
 
 ### Requirement: Procedural downhill whitewater course
 The primary view SHALL use a run-seeded continuous river profile with bends, varying width, quiet pools and downhill chutes. The channel SHALL be wider than the previous 19-unit strip and the chase framing SHALL make the raft smaller relative to the environment. Elevation ahead SHALL descend along the course. Terrain, water, hazards and decorative objects SHALL follow the same profile. Near scenery SHALL approach coherently in the downstream chase view with irregular spacing and asymmetry.
@@ -348,3 +378,74 @@ speed, action windows, inputs and collision outcomes.
 - **WHEN** a player approaches a duck tree on phone, desktop or landscape
 - **THEN** a thick supporting bough has multiple clearly connected leafy forks,
   its low end tapers without curling upward, and a timed duck clears the wood
+
+### Requirement: Three finite adventure maps
+River Rush SHALL offer exactly three maps in order: Canopy Run, Redstone Rapids
+and Moonlit Ruins, each with a finite visible finish and a distinct environment.
+A cleared level SHALL stop simulation, report results and unlock the next map.
+The third clear SHALL show an adventure victory. Campaign totals SHALL carry
+between levels; wiping out SHALL retry the current level with prior clears
+preserved. Later maps SHALL have higher speed and more demanding varied
+sequences while preserving fair routes and the existing action durations.
+
+#### Scenario: Finish the adventure
+- **WHEN** a player clears each of the three map finish gates and chooses Next level
+- **THEN** every level ends at its stated distance, totals accumulate exactly once,
+  the next map visibly changes, and the third finish shows a final victory
+
+#### Scenario: Read varied routes and increasing difficulty
+- **WHEN** a player plays the three seeded maps
+- **THEN** multiple slalom, mixed obstacle, jump/duck and coin-route sequences
+  appear, each row remains traversable, and later maps increase speed and timing demands
+
+#### Scenario: Retry and resume
+- **WHEN** a player wipes out or pauses in the second or third level
+- **THEN** retry restarts that level with prior cleared totals intact, resume
+  preserves simulation, and whole-screen dragging and edge controls still work
+
+#### Scenario: Distinct readable maps
+- **WHEN** a map is played at phone, desktop or short landscape size
+- **THEN** jungle, rocky gorge and moonlit temple silhouettes and palettes are
+  distinct, the character and next hazard remain readable, and the finish is visible
+
+#### Scenario: Prepared maps and fallback
+- **WHEN** a level changes, reduced motion is active or graphics/image loading fails
+- **THEN** stage transitions allocate no new play-time textures or shader variants,
+  stopped screens freeze, and all three maps remain playable in fallback
+
+#### Scenario: Persistent progress
+- **WHEN** a player reloads after a level clear or stored progress is malformed
+- **THEN** valid map unlocks persist, malformed data starts safely, and old endless
+  scores do not become finite adventure records
+
+### Requirement: Shareable scores and gesture guidance
+The game SHALL offer a button to save a legible PNG score image with the map,
+score and adventure progress. Animated visual guidance SHALL demonstrate
+horizontal lane swipes, upward jumping and downward ducking; reduced motion
+SHALL retain still diagrams. Guides SHALL not capture gameplay gestures.
+
+#### Scenario: Save a score
+- **WHEN** a player chooses Save score image during a run or on a result screen
+- **THEN** a downloaded PNG contains the current score, map and cleared progress
+  and does not depend on retaining WebGL drawing-buffer pixels
+
+#### Scenario: Learn gestures
+- **WHEN** a player opens instructions or starts an early run
+- **THEN** directional swipe/jump/duck guides visibly show the required gesture,
+  remain readable at phone size, respect reduced motion and permit screen-wide input
+
+### Requirement: Public guest leaderboard
+The game SHALL show a shared persistent high-score leaderboard visible to
+anyone. Guests SHALL be able to choose a short display name and explicitly
+submit their completed score without signing in. The service SHALL validate
+names and finite bounded score statistics, return ranked results, and report
+failure visibly without replacing the shared board with local-only data.
+
+#### Scenario: Submit and read across browsers
+- **WHEN** a guest submits a finished score and another browser opens the board
+- **THEN** the named score persists in the ranked public board and is visible to both
+
+#### Scenario: Invalid or unavailable submission
+- **WHEN** a request has invalid score/name data or the shared service is unavailable
+- **THEN** invalid data is rejected or a retryable service error is shown, and
+  the adventure, score capture and local progression remain usable

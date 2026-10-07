@@ -12,6 +12,7 @@ const status=p=>p.evaluate(()=>window.__tools.get_run_status({}));
 async function until(p,fn){const end=Date.now()+15000;let value;while(Date.now()<end){value=await status(p);if(fn(value))return value;await p.waitForTimeout(40);}throw new Error(JSON.stringify(value));}
 try{
  for(const [layout,viewport] of [['phone',{width:390,height:844}],['desktop',{width:1536,height:1024}],['landscape',{width:844,height:390}],['reduced',{width:390,height:844}]]){
+  if(process.env.CASE&&process.env.CASE!==layout)continue;
   const p=await browser.newPage({viewport,hasTouch:true,reducedMotion:layout==='reduced'?'reduce':'no-preference'});const errors=[],posts=[];
   p.on('pageerror',e=>errors.push(e.message));
   await p.route('**/arcade/*.js',r=>r.fulfill({contentType:'application/javascript',body:''}));
@@ -30,7 +31,7 @@ try{
   await p.locator('.start').click();let s=await until(p,s=>s.screen==='playing'&&s.run.time>.1);
   assert.equal(s.run.level.index,layout==='phone'?0:1);assert.match(await p.locator('.runner-distance').innerText(),/m to finish/);
   await p.screenshot({path:`${dir}/play-${layout}.png`});await p.evaluate(()=>window.__tools.start_run({}));
-  const left=await p.getByRole('button',{name:'Left lane',exact:true}).boundingBox(),right=await p.getByRole('button',{name:'Right lane',exact:true}).boundingBox();assert.ok(left.x<=21,'left arrow at screen edge');assert.ok(right.x+right.width>=viewport.width-21,'right arrow at screen edge');
+  const left=await p.getByRole('button',{name:'Left lane',exact:true}).boundingBox(),right=await p.getByRole('button',{name:'Right lane',exact:true}).boundingBox();assert.ok(left.x<=21,'left arrow at screen edge');assert.ok(right.x+right.width>=viewport.width-21,'right arrow at screen edge');if(layout==='landscape'){const rush=await p.locator('.rush-button').boundingBox(),jump=await p.getByRole('button',{name:'Jump',exact:true}).boundingBox();assert.ok(rush.x>=left.x+left.width+10,'Rush clears left arrow');assert.ok(rush.x+rush.width<=jump.x-10,'Rush clears centered jump');assert.ok(rush.y>=viewport.height-100,'Rush clears the central character');}
   await p.getByRole('button',{name:'Left lane',exact:true}).click();await until(p,s=>s.run.lane===0);await p.getByRole('button',{name:'Right lane',exact:true}).click();await until(p,s=>s.run.lane===1);
   await p.evaluate(()=>window.__tools.start_run({}));
   const cdp=await p.context().newCDPSession(p),scoreBox=await p.locator('.score-stat').boundingBox(),point={x:scoreBox.x+scoreBox.width/2,y:scoreBox.y+scoreBox.height/2};

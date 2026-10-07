@@ -129,3 +129,33 @@ stop before the finish runway and active course entities SHALL remain bounded.
 - **WHEN** a player survives to the finish of any of the three maps
 - **THEN** multiple route motifs appear, a legal route remains, the last 90 m
   is hazard-free, and simulation stops at the stated distance
+
+### Requirement: Distinctive lost-temple models
+The primary world SHALL present the locally hosted fal-generated textured
+expedition raft and detailed driftwood across maps. Moonlit Ruins SHALL add
+serpent temples and carved guardian obstacles with mossy stone and gold accents.
+Temple landmarks SHALL remain outside playable lanes. Shared scenery/hazards
+SHALL remain bounded and controls/action windows SHALL retain their timings.
+
+#### Scenario: Inspect upgraded course
+- **WHEN** a player enters Moonlit Ruins on phone, desktop or landscape
+- **THEN** carved temple and guardian silhouettes differ from canyon boulders,
+  hazards remain readable, and the same controls retain their action timing
+
+### Requirement: Layered adventurous world presentation
+The primary view SHALL distinguish jungle canopy, sandstone gorge and moonlit
+temple maps using locally hosted fal panoramas, prepared palettes, textured
+trees, rock/temple landmarks and driftwood. Near scenery SHALL move with the
+course and the distant environment SHALL provide atmospheric depth. Decorative
+landmarks SHALL remain outside playable lanes and preserve hazard readability.
+
+#### Scenario: Discover the rivers
+- **WHEN** a player advances through all three maps on a supported layout
+- **THEN** sky, water, bank composition and landmarks visibly change between
+  the lush jungle, orange gorge and violet moonlit ruin environments
+
+#### Scenario: Preserve motion and performance
+- **WHEN** a player paddles, reverses lanes, jumps, ducks or reduces motion
+- **THEN** the continuous rider and responsive control timings remain, optional
+  decoration freezes, and measured scenes stay below 65 calls and 300,000
+  triangles on the full path or 125,000 triangles on the software path
