@@ -1,7 +1,8 @@
 // Geometry is shared by movement, targeting, fog, the minimap and the renderer.
 import { creekCenter, insideRiver } from './river.js';
 import { SIZE, CENTER, FEATURE_SCALE, at, mirror } from './arena.js';
-import { BASE, LANE_KNOTS, TOWER_ARC, GUARDIANS, RIVER_GATES, BASE_GATE, CAMP_SPOTS, BRUSH_SPOTS, COVER_SPOTS } from './layout.js';
+import { BASE, LANE_KNOTS, LANE_MEANDER, TOWER_ARC, GUARDIANS, RIVER_GATES, BASE_GATE, CAMP_SPOTS, BRUSH_SPOTS, COVER_SPOTS } from './layout.js';
+import { windHalf } from './roads.js';
 export { SIZE, MAP_SCALE, CENTER, FEATURE_SCALE } from './arena.js';
 export { TOWER_ARC } from './layout.js';
 // The soft limit starts sudden death. The hard limit ends the match with a tiebreak.
@@ -13,7 +14,7 @@ export const LANES = LANE_KNOTS.map(knots => {
   const south = knots.map(k => at(...k)), axis = south.pop();
   return [BASES[0], ...south, axis, ...[...south].reverse().map(mirror), BASES[1]];
 });
-// Catmull-Rom centerlines are consumed by movement, terrain and the minimap.
+// Catmull-Rom splines through the knots. roads.js winds them into the PATHS that movement, terrain and the minimap use.
 function track(knots) {
   const result = [];
   for (let i = 0; i < knots.length - 1; i++) {
@@ -26,7 +27,21 @@ function track(knots) {
   }
   result.push(knots.at(-1)); return result;
 }
-export const PATHS = LANES.map(track);
+// The roads wind (roads.js). Team 0's half of each spline is wound; team 1's half is its mirror.
+const rectGap = (p, r) => Math.hypot(Math.max(0, Math.abs(p.x - r.x) - r.w / 2), Math.max(0, Math.abs(p.y - r.y) - r.h / 2));
+const COVER_RECTS = COVER_SPOTS.map(b => ({ ...at(b.x, b.y), w: b.w * FEATURE_SCALE, h: b.h * FEATURE_SCALE }));
+const KEEP_AWAY = [...CAMP_SPOTS.map(c => at(...c)), ...RIVER_GATES.map(g => at(...g))];
+// windLane(lane) winds team 0's half of a lane from scratch; it is pure, so the same map always gets the same roads.
+export function windLane(index) {
+  const spline = track(LANES[index]), middle = (spline.length - 1) / 2, m = LANE_MEANDER;
+  const wound = windHalf(spline.slice(0, middle + 1), {
+    ...m, seed: m.seed + index * 7919, amplitude: m.amplitude[index], stations: [...TOWER_ARC[index]].reverse(),
+    clear: p => Math.min(...COVER_RECTS.map(r => rectGap(p, r) - m.coverClear), ...KEEP_AWAY.map(c => Math.hypot(p.x - c.x, p.y - c.y) - m.spotClear)),
+  });
+  return { ...wound, spline };
+}
+export const WINDING = LANES.map((_, index) => windLane(index));
+export const PATHS = WINDING.map(({ path }) => [...path, ...path.slice(0, -1).reverse().map(mirror)]);
 export function closestTrack(p, path) {
   let best = Infinity, index = 0;
   for (let i = 0; i < path.length; i++) { const d = Math.hypot(p.x - path[i].x, p.y - path[i].y); if (d < best) { best = d; index = i; } }

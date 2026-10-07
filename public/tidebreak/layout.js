@@ -11,6 +11,16 @@ export const LANE_KNOTS = [
   [[.5, .805], [.425, .7], [.53, .597], [.6, .5]],
   [[.646, .852], [.769, .767], [.846, .65], [.87, .5]],
 ];
+// The roads wind between the knots (roads.js). The meander is fixed for the map. amplitude: the largest sideways
+// swing per lane in world units; wavelength: the range of the overlapping waves' lengths. The meander fades in over
+// calmBase (walk from the base) and fades out over calmRiver (walk before the river axis), so the court exits and the
+// bridges stay straight. It is damped where the road would pass within coverClear of a cover block or spotClear of a
+// camp or river gate, bend tighter than minBend, put consecutive wards closer than minGap (2.5 tower ranges plus a
+// margin, inner-middle then middle-outer; see TIERS in sim.js), or make the half lane longer than maxStretch times its spline.
+export const LANE_MEANDER = {
+  seed: 0x5107e, amplitude: [230, 170, 230], wavelength: [1300, 3100], calmBase: [520, 1250], calmRiver: [700, 1500],
+  coverClear: 210, spotClear: 600, minBend: 300, minGap: [1035, 975], maxStretch: 1.06,
+};
 // Tower stations by path distance from the team's own base, in world units [outer, middle, inner].
 // Distances are fixed (not fractions) so tower spacing stays a fixed number of tower ranges.
 export const TOWER_ARC = [[3700, 2450, 1250], [3250, 2180, 1100], [3700, 2450, 1250]];
