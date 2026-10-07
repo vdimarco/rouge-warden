@@ -51,7 +51,8 @@ const promptNow = (page) => page.evaluate(() => { const p = document.querySelect
 // stage a fight and wait until the prompt says the headline
 async function prompts(page, patch, events, headline) {
   await stage(page, patch, events);
-  try { await wait(page, (h) => { const p = document.querySelector("#prompt"); return !p.hidden && p.querySelector(".p1 span").textContent === h; }, headline, 12000); } catch (e) { /* the check below says what it saw */ }
+  // (a frame puts the prompt up: a slow software renderer can draw none for some seconds. The check below says what it saw)
+  await wait(page, (h) => { const p = document.querySelector("#prompt"); return !p.hidden && p.querySelector(".p1 span").textContent === h; }, headline, 60000).catch(() => console.log("     (the prompt did not say \"" + headline + "\" in 60 s)"));
   return promptNow(page);
 }
 const logNow = (page) => page.evaluate(() => window.__log.slice());
@@ -154,6 +155,8 @@ if (part("A")) {
   try {
     await stand(page);
     await spy(page);
+    // until the game has run n more frames
+    const ran = async (n = 2) => { const f = await page.evaluate(() => FISH.G.frame); await wait(page, ([f, n]) => FISH.G.frame >= f + n, [f, n], 60000); };
     await page.evaluate(() => FISH.startMode("free"));
     await wait(page, () => FISH.G.phase === "cast");
     // ---- the goal reminder ----
@@ -287,11 +290,13 @@ if (part("A")) {
     }
     // one set of words for each move: a fish on the bottom in motion mode. The prompt sub, the guide caption and the rod
     // cue all say "Tip back as you reel." (the guide is turned on for this)
+    // (the guide shows the move in the frame that puts it up. The read comes two frames after that, so the guide and the
+    // rod cue have drawn the move: a fixed sleep can see no frame on a busy machine)
     const words = async (patch, h) => {
       await prompts(page, patch, [], h);
-      await wait(page, () => { const g = document.querySelector("#fishGuide"); return g && !g.hidden && g.dataset.lesson !== "hold"; }, null, 5000).catch(() => {});
-      await sleep(300);
-      return page.evaluate(() => ({ sub: document.querySelector("#prompt .p2").textContent, guide: document.querySelector("#fishGuide").hidden ? null : document.querySelector("#fishGuide .guide-caption").textContent, cue: document.querySelector("#rodCue span").textContent }));
+      const late = await wait(page, () => { const g = document.querySelector("#fishGuide"); return g && !g.hidden && g.dataset.lesson !== "hold"; }, null, 60000).then(() => "", () => "the guide did not show in 60 s");
+      await ran();
+      return page.evaluate((late) => ({ sub: document.querySelector("#prompt .p2").textContent, guide: document.querySelector("#fishGuide").hidden ? null : document.querySelector("#fishGuide .guide-caption").textContent, cue: document.querySelector("#rodCue span").textContent, ...(late ? { late } : {}) }), late);
     };
     await page.evaluate(() => { if (document.querySelector("#guideToggle").getAttribute("aria-label") === "Show the moves guide") document.querySelector("#guideToggle").click(); });
     // the phone held at 60°: the rod is up
@@ -362,7 +367,6 @@ if (part("A")) {
     check((await toastIs(page, "You turned it!")) === "You turned it!", "turning a fish shows \"You turned it!\"");
     // the rub: the grind loop and the buzz follow the meter, and stop when it is empty. They come from the reel step of each
     // frame, so the checks wait for frames of the game (a fixed sleep can see no frame on a busy machine)
-    const ran = async (n = 2) => { const f = await page.evaluate(() => FISH.G.frame); await wait(page, ([f, n]) => FISH.G.frame >= f + n, [f, n], 60000); };
     await stage(page, { rub: 0.5 });
     await ran();
     await logClear(page);
@@ -446,13 +450,15 @@ if (part("A")) {
     await logClear(page);
     await stage(page, {}, [{ type: "drag" }], false);
     check((await toastIs(page, "It is a big one!")) === "It is a big one!", "the first run of the drag says \"It is a big one!\"");
-    await wait(page, () => FISH.gauge.s.label === "Big fish on!", null, 5000).catch(() => {});
-    check(await page.evaluate(() => FISH.gauge.s.label === "Big fish on!"), "and the gauge says \"Big fish on!\"");
+    // (a frame gives the gauge its label: a slow software renderer can draw none for some seconds)
+    const bigOn = await wait(page, () => FISH.gauge.s.label === "Big fish on!", null, 60000).then(() => "", async () => " (not in 60 s: " + JSON.stringify(await page.evaluate(() => FISH.gauge.s.label)) + ")");
+    check(!bigOn, "and the gauge says \"Big fish on!\"" + bigOn);
     check(has(await logNow(page), "H.big") && !has(await logNow(page), "H.thump"), "with its own buzz, not the strike's");
     await stage(page, { fish: { known: true } }, [{ type: "reveal", id: "walleye" }], false);
     check((await toastIs(page, "It is a huge Walleye!")) === "It is a huge Walleye!", "the reveal says \"It is a huge Walleye!\" (" + (await toastNow()) + ")");
-    await wait(page, () => FISH.gauge.s.label === "", null, 5000).catch(() => {});
-    check(await page.evaluate(() => FISH.gauge.s.label === "" && FISH.gauge.s.name === "Walleye"), "and the gauge shows the name again");
+    // (the name, read in the same look as the label that goes)
+    const named = await wait(page, () => FISH.gauge.s.label === "" && { name: FISH.gauge.s.name }, null, 60000).then((h) => h.jsonValue(), () => null);
+    check(!!named && named.name === "Walleye", "and the gauge shows the name again" + (named ? named.name === "Walleye" ? "" : " (" + named.name + ")" : " (the label did not go in 60 s)"));
     // a small fish: no warning
     await stage(page, { fish: { id: "perch", kg: 0.35, known: false } }, [{ type: "hooked", id: "perch" }]);
     check(await page.evaluate(() => FISH.G.big === null), "a small perch is not a big one");
@@ -885,8 +891,9 @@ if (part("F")) {
     check((await golds()) === 1, "a ring that pulses again and again toasts once (" + (await golds()) + ")");
     await page.evaluate(() => { window.__gold = [46, -34]; });
     await frames(6);
-    await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 2, null, 5000).catch(() => {});
-    check((await golds()) === 2, "a second ring toasts once more");
+    // (the toast can wait in the queue behind the one before)
+    const second = await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 2, null, 30000).then(() => "", () => " (not in 30 s)");
+    check(!second && (await golds()) === 2, "a second ring toasts once more" + (second || " (" + (await golds()) + ")"));
     check(await page.evaluate(() => FISH.save.places.loon.lg >= 1), "and the save knows the ring was seen");
     // in a fight the ring stays quiet, and is said when the fight is over
     await stage(page, {});
@@ -896,8 +903,8 @@ if (part("F")) {
     await page.evaluate(() => FISH.newCast());
     await wait(page, () => FISH.G.phase === "cast");
     await frames(6);
-    await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 3, null, 5000).catch(() => {});
-    check((await golds()) === 3, "it is said after the fight");
+    const after = await wait(page, () => window.__toasts.filter((t) => /gold ring/.test(t)).length >= 3, null, 30000).then(() => "", () => " (not in 30 s)");
+    check(!after && (await golds()) === 3, "it is said after the fight" + (after || " (" + (await golds()) + ")"));
     await page.evaluate(() => { window.__gold = null; FISH.rises.spawn = window.__spawn; FISH.startMode("free"); });
     check(await page.evaluate(() => FISH.G.goldAt === null), "a new mode forgets the last ring");
 
@@ -910,6 +917,9 @@ if (part("F")) {
     check(c.badges.includes("TROPHY") && c.photoFlashes > 0, "a trophy flash is the \"photo\" flash (" + c.photoFlashes + ")");
     // the catch view: on a tall phone the card covers the bottom, and the world is told how much (setView "bottom")
     const view = () => page.evaluate(() => { const v = window.__views.filter((x) => x.mode === "catch").pop(), card = document.querySelector("#catch .card"), g = document.querySelector("#game"); return { v, h: card.offsetHeight, gh: g.clientHeight, w: card.offsetWidth, gw: g.clientWidth }; });
+    // (each frame tells the world the height of the card then, and the card can change after the last frame: read once
+    // some frames have run, as a busy machine can draw none in the first moments of the card)
+    await frames();
     let vw = await view();
     const wantB = Math.min(0.62, (vw.h + 24) / vw.gh);
     check(vw.v && vw.v.inset === 0 && vw.v.bottom > 0.15 && Math.abs(vw.v.bottom - wantB) < 0.02, "on a tall phone the catch view gets bottom = the share of the height the card covers (" + JSON.stringify(vw.v) + ", card " + vw.h + " of " + vw.gh + " px)");

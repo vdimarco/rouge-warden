@@ -1,7 +1,8 @@
 // Checks the fish bodies (world-fish.js): every species and junk id builds, each fish costs 3 draw calls and few triangles,
 // the shapes have the parts that make them (beak, flat head, barbels, hooked jaw), the eye colours come from the look data,
 // the new fish show up in the catch view, and releaseFish frees the skins.
-// Run: node qa/fish/fish.render.mjs   (FISH_SHOTS=dir to choose where the pictures go)
+// Run: node qa/fish/fish.render.mjs   (FISH_SHOTS=dir to choose where the pictures go, by default a new folder
+// <tmp>/fish-shots-XXXXXX for each run)
 // It serves public/ itself and injects two test pages at /fish/__fishbody.html and /fish/__fishworld.html, so nothing test-only lives in public/.
 import { createRequire } from "module";
 import { spawn } from "child_process";
@@ -13,7 +14,8 @@ import { fileURLToPath } from "url";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const SHOTS = process.env.FISH_SHOTS || path.join(os.tmpdir(), "fish-shots");
+// (a new folder for each run: two runs at the same time do not write over each other's pictures)
+const SHOTS = process.env.FISH_SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), "fish-shots-"));
 const THREE_LOCAL = process.env.THREE_LOCAL || path.join(ROOT, "public/crimson/lib/three.module.min.js");
 fs.mkdirSync(SHOTS, { recursive: true });
 
@@ -350,5 +352,5 @@ await browser.close();
 stop();
 const bad = errors.filter((e) => !/GPU stall due to ReadPixels|Automatic fallback to software WebGL|GroupMarkerNotSet|Multiple readback operations using getImageData/.test(e));
 if (bad.length) fail("console errors:\n  " + bad.join("\n  "));
-console.log(failed ? `fish.render: FAILED (${checks} checks)` : `fish.render: OK (${checks} checks, pictures in ${SHOTS})`);
+console.log(failed ? `fish.render: FAILED (${checks} checks, pictures in ${SHOTS})` : `fish.render: OK (${checks} checks, pictures in ${SHOTS})`);
 process.exit(failed ? 1 : 0);

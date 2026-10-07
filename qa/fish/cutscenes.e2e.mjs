@@ -10,7 +10,7 @@
 //   E. calm effects and reduced motion: still shots joined by fades, the caption and the sound; a calm reveal hides the aim
 //      and gives the camera back on the dock, by itself or skipped
 //   F. the bars, the caption and the Skip hint at 390x844, 360x640, 844x390 and 1280x800, clear of the safe areas
-//      (screenshots in SHOTS, or <tmp>/fish-cuts, to check by eye)
+//      (screenshots in SHOTS, or a new folder <tmp>/fish-cuts-XXXXXX for each run, to check by eye)
 //   G. a desktop mouse held on the crank and let go over the hero shot lets go of the crank; the card keeps the key focus
 //   H. a press held into a reveal casts nothing, under it or after it (a mouse let go in it or after it, a finger that drags
 //      and flicks in it), and the derby casts left stay the same; Space on the beat or on the catch card plays the first
@@ -25,7 +25,8 @@ import { CUTS } from "../../public/fish/js/save.js";
 
 // PARTS=A,E runs only those parts
 const PARTS = process.env.PARTS ? process.env.PARTS.split(",") : null, part = (p) => !PARTS || PARTS.includes(p);
-const SHOTS = process.env.SHOTS || path.join(os.tmpdir(), "fish-cuts");
+// (a new folder for each run: two runs at the same time do not write over each other's screenshots)
+const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), "fish-cuts-"));
 fs.mkdirSync(SHOTS, { recursive: true });
 const fails = [];
 let passes = 0;
@@ -801,4 +802,5 @@ if (part("H")) {
 }
 
 console.log(fails.length ? `\n${fails.length} of ${passes + fails.length} checks failed:\n  ` + fails.join("\n  ") : `\nAll ${passes} checks passed`);
+console.log("Screenshots in " + SHOTS);
 process.exit(fails.length ? 1 : 0);

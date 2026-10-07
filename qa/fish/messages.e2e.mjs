@@ -3,18 +3,22 @@
 // water: the prompt and its sub, the cast report, the banner and a toast. The report also stays clear of the gauge, the
 // HUD and the prompt, and on the screen. Motion play at 360x640, 390x844, 412x915 and 430x932 (and the reel on the left),
 // touch play at 390x844, 844x390 and 640x360, and Larger text at 360x640 and 844x390.
+// Each read waits for the state it checks, in a frame that shows it: the report up 0.7 s and 1.5 s after the landing on
+// the lake's clock (the camera on its way, then settled), and then the report gone.
 // Serve public/ first, then: NODE_PATH=qa/browser/node_modules node qa/fish/messages.e2e.mjs   (FISH_URL sets the address)
 // Exits with code 1 when something fails.
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { URL, installPhone, sleep, SEEN } from "./lib.mjs";
+import { URL, installPhone, until, SEEN } from "./lib.mjs";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-accelerated-2d-canvas"];
 const fails = [];
 const check = (ok, msg) => { if (!ok) fails.push(msg); console.log((ok ? "ok   " : "FAIL ") + msg); return ok; };
+// until(), and when the time is up an error that says what did not come
+const waitFor = (page, what, fn, arg, ms = 60000) => until(page, fn, arg, ms).catch(() => { throw new Error(`no ${what} in ${ms / 1000} s`); });
 // room kept around the lure, in CSS px: the lure, its splash and the first ring
 const PAD = 22;
 const DISTS = [15, 35, 55];
@@ -43,6 +47,73 @@ const hit = (a, b) => !!a && !!b && a.x < b.r - 1 && a.r > b.x + 1 && a.y < b.b 
 const near = (m, L) => !!m && !!L && m.x < L.x + PAD && m.r > L.x - PAD && m.y < L.y + PAD && m.b > L.y - PAD;
 const fmt = (b) => b ? `${Math.round(b.y)}-${Math.round(b.b)}` : "-";
 
+// In the page. __when(ok): look() in the first frame in which ok() holds, read after the game's own work in that frame. A
+// slow software renderer may draw no frame for seconds, so the limit counts frames: null when ok() did not hold in 3600
+// frames (a minute at 60 fps), or when no frame came for a minute.
+// The hold: the landing's report, and a toast that shows after the landing, stay up while the test holds them. One whose
+// time came goes when the test lets it go (__let). The lake's clock moves the camera, at most 50 ms a frame, so on slow
+// frames the camera settles long after the report's 2.6 s. At 60 fps the camera settles first, and the hold does nothing.
+// The landing's sim does not step: the lure stays where it landed, on the water. (The sim runs on the page's clock: on
+// slow frames the lure would sink further before the camera settles, and a fish could come)
+function helpers() {
+  const G = FISH.G, r = document.querySelector("#report"), t = document.querySelector("#toast");
+  window.__late = "it did not come in 3600 frames, or no frame came for a minute";
+  window.__when = (ok) => new Promise((done) => {
+    const f0 = G.frame;
+    let last = f0, at = performance.now();
+    const go = () => {
+      if (ok()) return done(window.__look());
+      if (G.frame !== last) { last = G.frame; at = performance.now(); }
+      if (G.frame - f0 > 3600 || performance.now() - at > 60000) return done(null);
+      requestAnimationFrame(go);
+    };
+    requestAnimationFrame(go);
+  });
+  const hold = (window.__hold = { report: false, toast: false, fresh: false, due: {} }), H = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "hidden");
+  Object.defineProperty(r, "hidden", { configurable: true, get() { return H.get.call(this); }, set(v) {
+    if (v && hold.report) { hold.due.report = true; return; }
+    H.set.call(this, v);
+    if (!v && hold.report && G.sim) G.sim.step = () => {};
+  } });
+  // (a toast that was up before the landing goes at its own time)
+  new MutationObserver((l) => {
+    if (!hold.toast) return;
+    if (l.some((m) => m.type === "childList")) hold.fresh = true;
+    if (hold.fresh && !t.classList.contains("on") && l.some((m) => m.type === "attributes" && (m.oldValue || "").split(" ").includes("on"))) { hold.due.toast = true; t.classList.add("on"); }
+  }).observe(t, { childList: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });
+  window.__let = (k) => { hold[k] = false; if (hold.due[k]) { hold.due[k] = false; if (k === "report") r.hidden = true; else t.classList.remove("on"); } };
+  // nothing on the report or the toast moves: the report's pop, the toast's fade (a read in the frame that starts one
+  // sees where it starts)
+  window.__still = () => ![r, t].some((e) => e.getAnimations({ subtree: true }).some((a) => a.playState === "running" || a.pending));
+}
+
+// In the page: a cast lands d m out, straight ahead (as menus.e2e.mjs stages a landing). Returns what the page shows with
+// the report up 0.7 s after the landing on the lake's clock (the camera on its way) and 1.5 s after it (the camera
+// settled), and after the report, each in a frame in which the report and the toast are still
+async function land(d) {
+  const G = FISH.G, r = document.querySelector("#report"), clock = () => FISH.world.feel().clock, hold = window.__hold;
+  const when = async (what, ok) => {
+    const s = await window.__when(ok);
+    if (!s) throw new Error(`${d} m: no ${what}: ${window.__late} (${G.phase}/${G.step}, the report ${r.hidden ? "hidden" : "up"}, lake clock ${clock().toFixed(2)} s)`);
+    return s;
+  };
+  // a new cast, and 0.3 s on the lake's clock in its view
+  FISH.newCast();
+  let c = clock();
+  await when("0.3 s of a new cast", () => clock() >= c + 0.3);
+  Object.assign(hold, { report: true, toast: true, fresh: false, due: {} });
+  G.cast = { verdict: "sweet", yaw: 0, stroke: 1 };
+  G.step = "flight"; G.flight = { step: () => ({ x: 0, y: 0, z: -d, done: true, land: "water", lineOut: d, spool: 0 }) };
+  await when("landing in the reel with the report up", () => G.phase === "reel" && !r.hidden);
+  c = clock();
+  const out = [];
+  for (const s of [0.7, 1.5]) out.push(await when(`report up ${s} s after the landing`, () => clock() >= c + s && window.__still()));
+  window.__let("report");
+  out.push(await when("end of the report", () => r.hidden && window.__still()));
+  window.__let("toast");
+  return out;
+}
+
 async function run({ input, reelSide = "right", large = false, sizes }) {
   const [W0, H0] = sizes[0];
   const browser = await chromium.launch({ args: ARGS });
@@ -57,35 +128,34 @@ async function run({ input, reelSide = "right", large = false, sizes }) {
   await page.addInitScript(installPhone);
   await page.goto(URL);
   await page.waitForSelector("#title:not([hidden])", { timeout: 180000 });
-  await sleep(400);
+  // (the double-tap guard holds back only a screen that a tap put up)
   await page.click("#freeBtn");
-  await page.waitForFunction(() => FISH.G.phase === "cast", null, { timeout: 60000 });
+  await waitFor(page, "cast after Go fishing", () => FISH.G.phase === "cast");
+  await page.evaluate(`window.__look = ${look}`);
+  await page.evaluate(helpers);
   await page.evaluate(() => { FISH.rises.list = []; FISH.rises.spawn = () => null; FISH.world.setRings([]); });
   const name = `${input}${reelSide === "left" ? ", reel on the left" : ""}${large ? ", Larger text" : ""}`;
   for (const [W, H] of sizes) {
     await page.setViewportSize({ width: W, height: H });
-    await sleep(900);
+    // the page lays itself out and draws at the new size, then the lake's clock runs 0.9 s (the camera moves by it)
+    await page.evaluate(async ([W, H]) => {
+      const G = FISH.G, v = document.querySelector("#view"), clock = () => FISH.world.feel().clock;
+      if (!(await window.__when(() => innerWidth === W && innerHeight === H && G.vw === W && G.vh === H && Math.abs(FISH.world.camera.aspect - v.clientWidth / v.clientHeight) < 1e-3))) throw new Error(`no layout at ${W}x${H}: ${window.__late}`);
+      const c = clock();
+      if (!(await window.__when(() => clock() >= c + 0.9))) throw new Error(`no 0.9 s on the lake's clock at ${W}x${H}: ${window.__late}`);
+    }, [W, H]);
     for (const d of DISTS) {
-      // a cast lands d m out, straight ahead (as menus.e2e.mjs stages a landing)
-      await page.evaluate(async (d) => {
-        const G = FISH.G, wait = (ms) => new Promise((r) => setTimeout(r, ms));
-        FISH.newCast(); await wait(300);
-        G.cast = { verdict: "sweet", yaw: 0, stroke: 1 };
-        G.step = "flight"; G.flight = { step: () => ({ x: 0, y: 0, z: -d, done: true, land: "water", lineOut: d, spool: 0 }) };
-        const t0 = performance.now();
-        while (G.phase !== "reel" && performance.now() - t0 < 8000) await wait(10);
-      }, d);
-      for (const [when, ms] of [["with the report", 700], ["with the report, the camera settled", 1500], ["after the report", 2400]]) {
-        await sleep(ms === 700 ? 700 : ms === 1500 ? 800 : 1300);
-        const s = await page.evaluate(look);
+      const reads = await page.evaluate(land, d);
+      for (const [i, when] of ["with the report", "with the report, the camera settled", "after the report"].entries()) {
+        const s = reads[i];
         const on = Object.entries(s.msgs).filter(([, m]) => near(m, s.lure)).map(([k, m]) => k + " " + fmt(m));
         const tag = `${name} ${W}x${H}, ${d} m, ${when}`;
         check(!!s.lure && !on.length, `${tag}: no message covers the lure (lure ${s.lure ? Math.round(s.lure.x) + "," + Math.round(s.lure.y) : "not on screen"}${on.length ? "; on it: " + on.join(", ") : ""})`);
-        // the report as it shows: its distance, its verdict and its note
+        // the report as it shows, while it is up: its distance, its verdict and its note
         const parts = [s.msgs.dist, s.msgs.verdict, s.msgs.zone].filter(Boolean);
-        if (s.report && parts.length) {
-          const r = { x: Math.min(...parts.map((b) => b.x)), y: Math.min(...parts.map((b) => b.y)), r: Math.max(...parts.map((b) => b.r)), b: Math.max(...parts.map((b) => b.b)) }, clash = ["gauge", "hud"].filter((k) => hit(r, s[k])).concat(["prompt", "sub"].filter((k) => hit(r, s.msgs[k])));
-          check(!clash.length && r.x >= 0 && r.r <= s.W && r.y >= 0, `${tag}: the report (${fmt(r)}) is on the screen and clear of ${clash.length ? "all but " + clash.join(", ") : "the gauge, the HUD and the prompt"}`);
+        if (i < 2) {
+          const r = s.report && parts.length ? { x: Math.min(...parts.map((b) => b.x)), y: Math.min(...parts.map((b) => b.y)), r: Math.max(...parts.map((b) => b.r)), b: Math.max(...parts.map((b) => b.b)) } : null, clash = r ? ["gauge", "hud"].filter((k) => hit(r, s[k])).concat(["prompt", "sub"].filter((k) => hit(r, s.msgs[k]))) : [];
+          check(!!r && !clash.length && r.x >= 0 && r.r <= s.W && r.y >= 0, `${tag}: the report (${r ? fmt(r) : "not shown"}) is on the screen and clear of ${clash.length ? "all but " + clash.join(", ") : "the gauge, the HUD and the prompt"}`);
         }
       }
     }
