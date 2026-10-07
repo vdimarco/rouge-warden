@@ -278,6 +278,7 @@ export function createDesktop(canvas, camera, settings) {
     // per plunger (0 the left, 1 the right): a tap this frame, and its screen point (NDC x and y, else null): main aims through it
     inp.phoneFire = phone.fires;
     inp.phoneAim = phone.aims;
+    inp.phonePair = phone.pairs;
     // look: the mouse (locked, or the free cursor in play) and the pad's right stick
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;

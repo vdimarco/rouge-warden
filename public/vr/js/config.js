@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.17.0";
+export const VERSION = "1.18.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -110,10 +110,12 @@ export const PHONE = {
   // The marker prefers a building point at least y m up and up m over the chest: it wins over any lower one (bonus to the score)
   high: { y: 22, up: 8, bonus: 1 },
   handoff: 0.12, // s: when a new plunger catches, the other one lets go this much later (so taps on alternate sides chain)
-  pair: 0.3, // s: two plungers thrown this close together hold together (a double swing)
+  pair: 0.3, // s: two plungers thrown this close together hold together (a double swing), as do two thrown by fingers that were down together
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
   buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
-  follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly
+  follow: { speed: 6, idle: 2.5, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly, idle s after the last drag
+  // the move stick (bottom left): r px from the middle is full push; pushed further than sprint (0..1) on the ground, the hero sprints
+  stick: { r: 46, dead: 0.12, sprint: 0.9 },
   fov: { base: 75, wide: 24, from: 12, to: 42 }, // the view widens by up to wide degrees over this speed range (m/s)
   lines: { from: 13, to: 34 }, // the phone's comic speed lines at the screen edges grow over this speed range (m/s)
 };
