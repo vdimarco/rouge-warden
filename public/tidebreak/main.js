@@ -1,6 +1,6 @@
 import { CENTER, CAMPS } from './world.js';
 import { objectiveText, nextObjective, structureProtected } from './objectives.js';
-import { market, inventoryHTML } from './market.js';
+import { market, inventoryHTML, icon as itemIcon } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
 import { createMatch, step, player, HEROES, trainSkill, cancelOrder, announce, buy, setBuild, distance, SIZE, LIMIT, SUDDEN_DEATH, SHIFT, PORTALS, lockTip } from './sim.js';
 import { loadArt, Renderer } from './illustrated-render.js';
@@ -8,6 +8,7 @@ import { rendererChoice, saveRendererChoice, graphicsSupport } from './render3d/
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
+import { skillCard } from './skill-card.js';
 import { BASIC_ATTACKS } from './basic-attacks.js';
 import { spellbookHTML, spellDetail } from './spellbook.js';
 import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SELECTION_KEYS, portraitURL, mountMatchPortraits, updateMatchPortraits } from './roster.js';
@@ -66,6 +67,15 @@ document.addEventListener('fullscreenchange', () => {
 });
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
+// The skill card explains a skill on mouse hover, keyboard focus or touch, with live rank, cost, cooldown and status.
+skillCard(skillButtons, slot => {
+  if (!running) return null;
+  const p = player(state), a = identitySkill(selectedIdentity, slot), rank = p.skillRanks[slot], cost = manaCost(p, slot);
+  const cd = Math.round(cooldownFor({ ...p, skillRanks: p.skillRanks.map((r, i) => i === slot ? Math.max(1, r) : r) }, slot) * 10) / 10;
+  const status = p.hp <= 0 ? 'Respawning' : !rank ? (canLearn(p, slot) ? 'Not learned yet. Press + to learn it.' : `Learn at level ${rankGate(slot, 0)}`)
+    : p.cd[slot] > 0 ? `Ready in ${Math.ceil(p.cd[slot])}s` : p.mana < cost ? `Need ${Math.ceil(cost - p.mana)} more mana` : 'Ready';
+  return { name: a.name, key: skillButtons[slot].querySelector('kbd')?.textContent || '', rank, maxRank: slot === 3 ? 3 : 4, cost, cooldown: cd, tags: a.tags, description: a.description, status, ready: status === 'Ready' };
+});
 skillButtons.forEach(b=>b.insertAdjacentHTML('beforeend','<small class="mana-cost"></small>'));
 // Combat feel HUD: death recap, objective timers and the edge flash for damage taken.
 const combatFeelStyle=document.createElement('link');combatFeelStyle.rel='stylesheet';combatFeelStyle.href=new URL('./combat-feel.css',import.meta.url).href;document.head.append(combatFeelStyle);
@@ -86,7 +96,7 @@ function updateAimStatus(status){
 }
 function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); castQueue = undefined; recallQueue = portalQueue = false; aim = null; $('thumb').style.transform = ''; }
 function closeSheet() { $('sheet').close(); paused = false; resetInput(); }
-function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet'))paginatePanel($('sheet-content'));}); }
+function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet')&&!$('sheet').classList.contains('market'))paginatePanel($('sheet-content'));}); }
 function pause() {
   if (!running || resultShown) return;
   // After full screen ended during play, the menu asks how to go on. Nothing returns to full screen without a choice.
@@ -176,7 +186,7 @@ function start() {
   state = applyDifficulty(assignIdentities(createMatch(selected, plan.seed, plan.lineup), selectedIdentity, plan.picks), $('difficulty-badge')); rallyReadyAt = 0; rallyQueue = null;
   announcer.reset(state); teamChat.reset(state, plan); recenter(); sound.setScene('match'); sound.horn(); sound.line('prepare-yourself', 'Battle begins. Defend the shore.', .4); sound.clip('fight', { gain: 1.25, delay: 2.2, reverb: .2 }); try { setBuild(state, localStorage.getItem('monster-mash.build.' + selected)); } catch {} perf.reset(); updateSound(); $('gpu-note').hidden = !perf.software || gpuNoteClosed; if (!$('gpu-note').hidden) setTimeout(() => { $('gpu-note').hidden = true; }, 20000); running = true; paused = false; resultShown = false; target = 0; waypoint = null; accumulator = 0; lastAttack = 0; lastCast = -1; resetInput();
   $('menu').hidden = true; $('hud').hidden = false; $('coach').hidden = false; $('close-sheet').hidden = false;
-  for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('title',a.name);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
+  for (let i = 0; i < 4; i++) { const a=identitySkill(selectedIdentity,i);skillButtons[i].setAttribute('aria-label',a.name+'. '+a.description);skillButtons[i].querySelector('span').textContent=a.name.toUpperCase(); }
   if (renderer) renderer.cam = { x: player(state).x, y: player(state).y };
   $('controls').style.setProperty('--hero-color',HEROES[selected].color);
   skillButtons.forEach((b,i)=> {
@@ -251,7 +261,7 @@ function updateUI() {
   $('allied-score').textContent = state.score[0]; $('enemy-score').textContent = state.score[1]; dom.level.textContent = p.level; dom.healthFill.style.width = `${p.hp / p.maxHp * 98}%`; dom.healthText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`; dom.xp.style.width = `${(p.level === MAX_LEVEL ? 1 : p.xp / xpForLevel(p.level)) * 100}%`; dom.gold.textContent = Math.floor(p.gold); dom.shop.classList.toggle('available', !!nextPurchase(p));
   $('mana-fill').style.width=`${p.mana/p.maxMana*98}%`;$('mana-text').textContent=`${Math.floor(p.mana)} / ${p.maxMana}`;$('mana-text').setAttribute('aria-label',`Mana ${Math.floor(p.mana)} of ${p.maxMana}`);
   const bag = p.inventory.join(','); if ($('inventory').dataset.bag !== bag) { $('inventory').innerHTML = inventoryHTML(p); $('inventory').dataset.bag = bag; }
-  const next = nextPurchase(p), goal = nextItem(p); $('quick-buy').disabled = !next; $('quick-buy').dataset.item = next || ''; $('quick-buy').title = next ? `+ ${ITEM[next].name} · ${quote(p, next).cost}` : goal ? `${ITEM[goal].name} · saving ${Math.floor(p.gold)}/${quote(p, goal).cost}` : 'Build complete'; $('quick-buy').textContent = next ? '+' : '·'; $('quick-buy').setAttribute('aria-label', $('quick-buy').title);
+  updateQuickBuy(p);
   const followUp=followUpFeedback(state,p,{visible:renderer?.visible});
   const upgradeMode=abilityCluster.classList.contains('upgrade-mode');
   skillButtons.forEach((b,i)=>{
@@ -312,6 +322,19 @@ function updateUI() {
 }
 const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);
+// The quick-buy button previews the next purchase: its icon and price, glowing when it can be bought, or the embers
+// saved toward it. A small corner icon shows the build goal it leads to.
+const nextStep = (p, id, bag = [...p.inventory]) => { const at = bag.indexOf(id); if (at >= 0) { bag.splice(at, 1); return null; } for (const part of ITEM[id].recipe) { const found = nextStep(p, part, bag); if (found) return found; } return id; };
+let quickBuyKey = '';
+function updateQuickBuy(p) {
+  const b = $('quick-buy'), next = nextPurchase(p), goal = nextItem(p), step = next || (goal && nextStep(p, goal)), cost = step ? quote(p, step).cost : 0;
+  b.disabled = !next; b.dataset.item = next || ''; b.classList.toggle('affordable', !!next);
+  const key = `${step}|${goal}`;
+  if (key !== quickBuyKey) { quickBuyKey = key; b.innerHTML = step ? `${itemIcon(step)}<b class="qb-cost"></b>${goal && goal !== step ? `<i class="qb-goal">${itemIcon(goal)}</i>` : ''}` : '<b class="qb-cost">✓</b>'; }
+  const price = b.querySelector('.qb-cost'); if (step && price) price.textContent = next ? cost : `${Math.floor(Math.min(p.gold, cost))}/${cost}`;
+  const label = !step ? 'Build complete' : next ? `Buy ${ITEM[next].name} for ${cost} embers${goal && goal !== next ? `, toward ${ITEM[goal].name}` : ''}` : `Next: ${ITEM[step].name}, ${Math.floor(p.gold)} of ${cost} embers${goal !== step ? `, toward ${ITEM[goal].name}` : ''}`;
+  b.title = label; b.setAttribute('aria-label', label);
+}
 pointerAction($('quick-buy'),()=>{const id=$('quick-buy').dataset.item;if(id&&buy(state,id)){sound.coin();updateUI();}},()=>hudReady()&&!$('quick-buy').disabled);
 function minimapPoint(e){const r=$('minimap').getBoundingClientRect();return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*SIZE,y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))*SIZE};}
 $('map-button').addEventListener('pointerdown',e=>{

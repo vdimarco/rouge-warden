@@ -256,3 +256,52 @@
 @media (max-width:600px) and (min-height:600px),(max-width:539px){
  #hud #death-recap{left:128px;right:10px;transform:none;width:auto;bottom:calc(214px + env(safe-area-inset-bottom));max-height:calc(100% - 214px - 160px - env(safe-area-inset-bottom))}
 }
+
+/* ---------- Skill card ----------
+   Shown on hover, keyboard focus or touch (see skill-card.js). It takes no presses, so it never blocks a control. */
+#skill-card{position:fixed;z-index:40;width:min(290px,calc(100vw - 16px));padding:10px 12px 11px;border:1px solid var(--cb-gold-lo,#8a6a3c);border-radius:10px;background:linear-gradient(#211b15f7,#0f0c0afa);box-shadow:0 0 0 1px #000,inset 0 1px 0 #f6dca233,0 10px 28px #000c;color:var(--mr-text,#d9cfbc);font:13px/1.4 Barlow,sans-serif;pointer-events:none}
+#skill-card[hidden]{display:none}
+#skill-card header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+#skill-card kbd{flex:none;min-width:20px;padding:1px 5px;border:1px solid #e3c27e88;border-radius:4px;background:#0b0908;color:var(--cb-gold,#e3c27e);font:700 11px/16px Barlow,sans-serif;text-align:center}
+#skill-card strong{flex:1;color:#f3dfb0;font:700 15px/1.2 var(--mr-title,serif);letter-spacing:.4px}
+#skill-card .skill-card-ranks{display:flex;gap:4px}
+#skill-card .skill-card-ranks i{width:6px;height:6px;border:1px solid #c9a66b99;border-radius:1px;background:#0b0908;transform:rotate(45deg)}
+#skill-card .skill-card-ranks i.filled{background:var(--cb-gold,#e3c27e);border-color:#fff0c4}
+#skill-card p{margin:0}
+#skill-card .skill-card-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-bottom:6px;color:var(--mr-muted,#aea38f);font-size:11px;letter-spacing:.3px}
+#skill-card .skill-card-meta .mana{color:#9cc8f2}
+#skill-card .skill-card-text{color:#ecdfc4}
+#skill-card .skill-card-status{margin-top:7px;padding-top:6px;border-top:1px solid #e3c27e2e;color:#f0b9a4;font-weight:700;font-size:12px}
+#skill-card .skill-card-status.ready{color:#9fd98a}
+@media (max-width:539px),(max-height:599px){#skill-card{padding:8px 10px 9px;font-size:12px}#skill-card strong{font-size:14px}}
+
+/* ---------- Next purchase preview (quick-buy) ----------
+   The next item's icon and price; the price shows saved/needed embers until it can be bought. A small corner icon
+   shows the build goal. */
+#hud #loadout #quick-buy{position:relative;display:flex;align-items:center;justify-content:center;gap:4px;padding:0 4px;overflow:visible;font-size:0}
+#hud #quick-buy .item-icon{flex:none;width:28px;height:28px;border-radius:4px;box-shadow:0 0 0 1px #000}
+#hud #quick-buy:not(.affordable) .item-icon{filter:grayscale(.6) brightness(.7)}
+#hud #quick-buy .qb-cost{color:var(--mr-muted,#aea38f);font:700 11px/1 Barlow,sans-serif;white-space:nowrap}
+#hud #quick-buy.affordable .qb-cost{color:var(--cb-gold,#e3c27e)}
+#hud #quick-buy .qb-goal{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border:1px solid var(--cb-gold-lo,#8a6a3c);border-radius:50%;background:#0b0908;box-shadow:0 0 0 1px #000;overflow:hidden}
+#hud #quick-buy .qb-goal .item-icon{width:100%;height:100%;border-radius:50%;box-shadow:none;filter:none}
+#hud #quick-buy.affordable{animation:none}
+@media (prefers-reduced-motion:no-preference){#hud #quick-buy.affordable .item-icon{animation:cb-coin 1.6s ease-in-out infinite}}
+/* Large screens: the icon beside the price in the 72 x 44 tile. */
+@media (min-width:1040px) and (min-height:600px){#hud #quick-buy{flex-direction:row}}
+/* Landscape phones: the icon over a small price. */
+@media (max-height:599px) and (min-width:540px){
+ #hud #loadout #quick-buy{flex-direction:column;gap:1px}
+ #hud #quick-buy .item-icon{width:18px;height:18px}
+ #hud #quick-buy .qb-cost{font-size:8px}
+ #hud #quick-buy .qb-goal{width:15px;height:15px;top:-6px;right:-6px}
+}
+@media (max-height:599px) and (min-width:540px) and (max-width:699px){#hud #quick-buy .qb-cost{display:none}#hud #quick-buy .item-icon{width:20px;height:20px}}
+/* Upright phones: a wider tile with the icon beside the price. */
+@media (max-width:1039px) and (min-height:600px),(max-width:539px){
+ #hud #loadout #quick-buy{width:60px;min-width:60px}
+ #hud #quick-buy .item-icon{width:22px;height:22px}
+ #hud #quick-buy .qb-cost{font-size:9px}
+ #hud #quick-buy .qb-goal{width:16px;height:16px;top:-6px;right:-6px}
+}
+@media (max-width:370px){#hud #loadout #quick-buy{width:52px;min-width:52px}#hud #loadout #shop{width:54px;min-width:54px}}
