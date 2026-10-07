@@ -482,8 +482,8 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
-      <article class="cab river-rush" data-game="river-rush" data-url="/river-rush/" aria-label="River Rush: an endless three-lane whitewater runner">
-      <div class="marquee"><div><b>RIVER RUSH</b><small>THE ENDLESS RIVER</small></div></div>
+      <article class="cab river-rush" data-game="river-rush" data-url="/river-rush/" aria-label="River Rush: a three-map whitewater adventure">
+      <div class="marquee"><div><b>RIVER RUSH</b><small>THREE WILD RIVERS</small></div></div>
       <div class="bezel"><div class="screen">
       <img src="arcade/key/river-rush.webp" alt="A jungle raft racing through turquoise rapids toward a golden key" loading="lazy" decoding="async">
       <div class="osd"><p class="hi">DODGE · JUMP · DUCK</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
@@ -1194,8 +1194,8 @@ try {
 } catch (e) { /* a save that cannot be read leaves the plain line */ }
 // River Rush shares its browser-local best score with its cabinet.
 try {
-  const best = store.get("river-rush-best", null);
-  if (best && Number.isFinite(best.score) && best.score > 0) $(".hi", $('.cab[data-game="river-rush"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " PTS";
+  const best = store.get("river-rush-adventure-best", null);
+  if (best?.version === 3 && Number.isSafeInteger(best.score) && best.score > 0) $(".hi", $('.cab[data-game="river-rush"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " PTS";
 } catch (e) { /* a broken save leaves the plain line */ }
 drawTokens();
 cabs.forEach(showCredit);

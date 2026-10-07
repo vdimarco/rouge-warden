@@ -38,13 +38,13 @@ export function createWorldDetails(scene,material,waterDetail,stoneMaterial) {
   flagMat.onBeforeCompile=shader=>{shader.uniforms.uFlutter=flutter;shader.vertexShader='uniform float uFlutter;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.z+=sin(position.y*3.-uFlutter*4.)*.13*(-position.y/2.9);');};
   const flutter={value:0},flags=new THREE.InstancedMesh(flagGeo,flagMat,16);flags.frustumCulled=false;scene.add(flags);
   const state={falls:0,birds:0,flowers:0,flags:0,motionTime:0};
-  function update(distance,time,reduced,harbors=[],seed=137) {
+  function update(distance,time,reduced,harbors=[],seed=137,mapIndex=0) {
     const t=reduced?0:time;const point=(course,cross)=>riverPoint(distance,course,cross,seed);fallUniforms.uTime.value=t;flutter.value=t;state.motionTime=t;
     let count=0;
     const first=Math.floor((distance-20)/96);
     for(let n=first;n<=first+3;n++)for(const side of [-1,1]){
       const course=n*96+(side>0?37:0)+riverHash(n+side*53,seed)*12,z=distance-course;
-      if(z>14||z< -205||(districtAt(course).index!==1&&Math.abs(n)%9!==1))continue;
+      if(z>14||z< -205||(mapIndex===1?Math.abs(n)%3!==1:mapIndex===2?Math.abs(n)%5!==2:districtAt(course).index!==1&&Math.abs(n)%9!==1))continue;
       const height=.7+riverHash(n+31,seed)*.5,width=riverHalfWidth(course,seed),p=point(course,side*(width+5.6));
       pose.position.set(p.x,p.y+riverBankHeight(side*(width+5.6),course,seed),z-1);pose.rotation.set(0,n*1.7,0);pose.scale.set(1,height,1);pose.updateMatrix();cliffs.setMatrixAt(count,pose.matrix);
       pose.position.set(p.x-side*2.7,p.y+.25,z+4.1);pose.rotation.set(0,-side*.22,0);pose.scale.set(1,height,1);pose.updateMatrix();falls.setMatrixAt(count,pose.matrix);
@@ -53,15 +53,17 @@ export function createWorldDetails(scene,material,waterDetail,stoneMaterial) {
     falls.count=mist.count=cliffs.count=count;falls.instanceMatrix.needsUpdate=mist.instanceMatrix.needsUpdate=cliffs.instanceMatrix.needsUpdate=true;state.falls=count;
     let l=0,f=0;const start=Math.floor((distance-16)/12);
     for(let n=start;n<start+18;n++)for(const side of [-1,1]){
+      if(mapIndex===1&&Math.abs(n)%3!==1)continue;
       const course=n*12+(side>0?6:0)+riverHash(n+side*67,seed)*5,z=distance-course;if(z>10||z< -145)continue;
       const cross=side*(riverHalfWidth(course,seed)+.8+riverHash(n+side*37,seed)*1.5),p=point(course,cross),x=p.x,y=p.y+riverBankHeight(cross,course,seed);
       for(let k=0;k<4;k++){pose.position.set(x,y+.2,z);pose.rotation.set(-.1-k*.07,n*1.7+k*Math.PI/2,side*(.35+k*.06));pose.scale.setScalar(.7+(Math.abs(n)%3)*.13);pose.updateMatrix();leaves.setMatrixAt(l++,pose.matrix);}
-      if(Math.abs(n)%3!==1)for(let k=0;k<2;k++){pose.position.set(x+Math.sin(k*2)*.3,y+.85+k*.24,z+k*.19);pose.rotation.set(0,0,0);pose.scale.set(1.8,1,1.8);pose.updateMatrix();flowers.setMatrixAt(f++,pose.matrix);}
+      if(mapIndex===0&&Math.abs(n)%3!==1)for(let k=0;k<2;k++){pose.position.set(x+Math.sin(k*2)*.3,y+.85+k*.24,z+k*.19);pose.rotation.set(0,0,0);pose.scale.set(1.8,1,1.8);pose.updateMatrix();flowers.setMatrixAt(f++,pose.matrix);}
     }
     leaves.count=l;flowers.count=f;leaves.instanceMatrix.needsUpdate=flowers.instanceMatrix.needsUpdate=true;state.flowers=f;
     for(let i=0;i<12;i++){const side=i%2?1:-1,index=Math.floor(i/2),x=side*(19+index*3)+Math.sin(t*.33+i)*5,y=20+Math.sin(t*.8+i)*1.8+index*1.1,z=-65-index*19;
       for(const s of [-1,1]){pose.position.set(x,y,z);pose.rotation.set(0,side*.3,s*(.18+Math.sin(t*8+i)*.62));pose.scale.set(s,1,1);pose.updateMatrix();wings.setMatrixAt(i*2+(s>0?1:0),pose.matrix);}}
-    wings.instanceMatrix.needsUpdate=true;state.birds=12;
+    wings.count=mapIndex===2?0:24;wings.instanceMatrix.needsUpdate=true;state.birds=mapIndex===2?0:12;
+    leafMat.color.set(mapIndex===1?'#8f9a58':mapIndex===2?'#566e86':'#4c9950');cliffMat.color.set(mapIndex===1?'#cd9569':mapIndex===2?'#918da8':'#d8c898');flagMat.color.set(mapIndex===2?'#ceaeff':'#ff7955');
     let flagCount=0;for(const h of harbors)for(const s of [-1,1]){if(flagCount>=16)continue;pose.position.set(h.x+s*2.2,h.y+9.1*h.size,h.z+.8);pose.rotation.set(0,-h.side*.25,0);pose.scale.setScalar(h.size);pose.updateMatrix();flags.setMatrixAt(flagCount++,pose.matrix);}
     flags.count=flagCount;flags.instanceMatrix.needsUpdate=true;state.flags=flagCount;
   }

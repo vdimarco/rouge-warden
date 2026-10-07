@@ -2,20 +2,26 @@ import React, { useEffect, useRef, useState } from 'react';
 import Menu from './components/Menu.jsx';
 import Hud from './components/Hud.jsx';
 import Modal from './components/Modal.jsx';
+import ScoreCapture from './components/ScoreCapture.jsx';
+import GestureGuide from './components/GestureGuide.jsx';
+import Leaderboard from './components/Leaderboard.jsx';
 import { Logo, Icon } from './components/Icons.jsx';
-import { createGame, emptyInput, queueAction, snapshot, updateGame, validBest } from './game/engine.js';
+import { createGame, emptyInput, nextLevel, queueAction, restartLevel, snapshot, updateGame, validBest } from './game/engine.js';
+import { LEVELS, freshProgress, unlockLevel, validProgress } from './game/levels.js';
 import { loadArt, renderGame } from './game/render.js';
 import { RiverAudio } from './game/audio.js';
 import { pauseWater } from './game/water.js';
 import { renderDpr } from './game/quality.js';
 import { readSwipe } from './game/input.js';
 import { createScene } from './game/scene3d.js';
-const readBest=()=>{try{return validBest(JSON.parse(localStorage.getItem('river-rush-best')));}catch{return null;}};
+const readBest=()=>{try{return validBest(JSON.parse(localStorage.getItem('river-rush-adventure-best')));}catch{return null;}};
+const readProgress=()=>{try{return validProgress(JSON.parse(localStorage.getItem('river-rush-progress')))??freshProgress();}catch{return freshProgress();}};
+const menuModes=['menu','help','leaderboard'];
 export default function App() {
   const [mode,setMode]=useState('menu'),[art,setArt]=useState(null),[error,setError]=useState('');
   const [game,setGame]=useState(null),[best,setBest]=useState(readBest),[sound,setSound]=useState(false);
   const [fallback,setFallback]=useState(false),[graphicsReady,setGraphicsReady]=useState(false);
-  const [artAttempt,setArtAttempt]=useState(0);
+  const [artAttempt,setArtAttempt]=useState(0),[progress,setProgress]=useState(readProgress),[selectedLevel,setSelectedLevel]=useState(0),[leaderboardReturn,setLeaderboardReturn]=useState('menu');
   const fallbackRef=useRef(false),sceneRef=useRef(null);
   const appRef=useRef(),canvasRef=useRef(),model=useRef(),input=useRef(emptyInput()),pointer=useRef(null),blockedClick=useRef(null),ignoredClicks=useRef(new Set()),resetFrame=useRef(true);
   const modeRef=useRef(mode),audio=useRef(new RiverAudio()),actions=useRef();modeRef.current=mode;
@@ -24,14 +30,20 @@ export default function App() {
   function disableSound(){audio.current.enabled=false;try{audio.current.setEnabled(false);}catch{}setSound(false);}
   function setAudioEnabled(enabled){try{audio.current.setEnabled(enabled);}catch{disableSound();}}
   function cancelGesture(){const gesture=pointer.current;pointer.current=null;if(!gesture)return;blockedClick.current=gesture.id;gesture.button?.blur();try{if(gesture.capture?.hasPointerCapture(gesture.id))gesture.capture.releasePointerCapture(gesture.id);}catch{}}
-  function start(){if(!art||!graphicsReady)return;resetFrame.current=true;cancelGesture();input.current=emptyInput();model.current=createGame();setGame(snapshot(model.current));modeRef.current='playing';setMode('playing');setAudioEnabled(sound);}
-  function pause(){if(modeRef.current==='playing'){resetFrame.current=true;input.current=emptyInput();cancelGesture();modeRef.current='paused';setMode('paused');}}
+  function beginRun(run){if(!run||!art||!graphicsReady)return;resetFrame.current=true;cancelGesture();input.current=emptyInput();model.current=run;setGame(snapshot(run));modeRef.current='playing';setMode('playing');setAudioEnabled(sound);}
+  function start(){if(!art||!graphicsReady)return;if(!menuModes.includes(modeRef.current)&&model.current){beginRun(restartLevel(model.current));return;}beginRun(createGame(undefined,Math.min(selectedLevel,progress.unlocked)));}
+  function advance(){const run=model.current&&nextLevel(model.current);if(run){setSelectedLevel(run.levelIndex);beginRun(run);}else home();}
+  function selectLevel(index){if(index<=progress.unlocked)setSelectedLevel(index);}
+  function leaderboard(){setLeaderboardReturn(modeRef.current);resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='leaderboard';setMode('leaderboard');}
+  function closeLeaderboard(){const screen=leaderboardReturn;modeRef.current=screen;setMode(screen);}
+  function recordBest(run){const totals=run.campaign;setBest(old=>{const value=!old||totals.score>old.score?{version:3,score:totals.score,distance:Math.floor(totals.distance),coins:totals.coins,levelsCleared:totals.levelsCleared}:old;try{localStorage.setItem('river-rush-adventure-best',JSON.stringify(value));}catch{}return value;});}
+  function pause(){if(modeRef.current==='playing'){if(model.current)setGame(snapshot(model.current));resetFrame.current=true;input.current=emptyInput();cancelGesture();modeRef.current='paused';setMode('paused');}}
   function resume(){resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='playing';setMode('playing');}
   function home(){resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='menu';setMode('menu');}
   function switchGames(){home();requestAnimationFrame(()=>window.GameSwitch?.open('river-rush'));}
   function toggleSound(){const enabled=!sound;setSound(enabled);setAudioEnabled(enabled);}
-  actions.current={start,pause,resume,ready:!!art&&graphicsReady};
-  useEffect(()=>{window.GameSwitch?.wire();if(art&&mode!=='playing')pauseWater(art);if(['menu','help'].includes(mode))document.querySelectorAll('.game-river-video').forEach(clip=>{clip.style.display='none';});},[mode,art]);
+  actions.current={start,pause,resume,advance,ready:!!art&&graphicsReady};
+  useEffect(()=>{window.GameSwitch?.wire();if(art&&mode!=='playing')pauseWater(art);if(menuModes.includes(mode))document.querySelectorAll('.game-river-video').forEach(clip=>{clip.style.display='none';});},[mode,art]);
   useEffect(()=>{
     if(!art)return;
     const measure=()=>{const r=document.querySelector('.coin-stat svg')?.getBoundingClientRect();if(r)art.coinTarget={x:r.left+r.width/2,y:r.top+r.height/2};};
@@ -41,8 +53,8 @@ export default function App() {
     const context=document.modelContext;if(!context?.registerTool)return;
     const lifecycle=new AbortController();
     function register(name,description,readOnly,execute){try{Promise.resolve(context.registerTool({name,description,inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:readOnly},execute:async value=>{if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length)throw new Error('Expected an empty object.');return execute();}},{signal:lifecycle.signal})).catch(()=>{});}catch{}}
-    register('get_run_status','Read the River Rush endless runner status.',true,()=>({screen:modeRef.current,run:model.current?snapshot(model.current):null,renderer:sceneRef.current?.status??{kind:'2d'}}));
-    register('start_run','Start or immediately restart the endless river runner.',false,async()=>{if(!actions.current.ready)throw new Error('The river is preparing.');actions.current.start();await new Promise(requestAnimationFrame);return{screen:'playing'};});
+    register('get_run_status','Read the three-map River Rush adventure status.',true,()=>({screen:modeRef.current,run:model.current?snapshot(model.current):null,renderer:sceneRef.current?.status??{kind:'2d'}}));
+    register('start_run','Start the player’s selected unlocked map, or restart the current map.',false,async()=>{if(!actions.current.ready)throw new Error('The river is preparing.');actions.current.start();await new Promise(requestAnimationFrame);return{screen:'playing'};});
     register('pause_run','Pause the active river runner.',false,async()=>{if(modeRef.current!=='playing')throw new Error('No active run.');actions.current.pause();return{screen:'paused'};});
     return()=>lifecycle.abort();
   },[]);
@@ -68,7 +80,7 @@ export default function App() {
           }catch{useFallback();}
         }else if(canvas)setGraphicsReady(true);
       }
-      if(model.current&&!['menu','help'].includes(modeRef.current)){
+      if(model.current&&!menuModes.includes(modeRef.current)){
         const g=model.current,before=g.eventId;
         if(modeRef.current==='playing')updateGame(g,input.current,dt);
         if(g.eventId!==before){try{audio.current.tone(g.event);}catch{disableSound();}}
@@ -92,10 +104,10 @@ export default function App() {
           // advance; only a completed frame can satisfy the dirty check.
           if(drawn){lastRun=g;lastTime=g.time;lastWidth=w;lastHeight=h;lastReduce=reduce;}
         }
-        if(g.phase==='lost'&&modeRef.current==='playing'){
-          setGame(snapshot(g));
-          modeRef.current='result';setMode('result');
-          setBest(old=>{const value=!old||g.score>old.score?{version:2,score:g.score,distance:Math.floor(g.distance),coins:g.coins}:old;try{localStorage.setItem('river-rush-best',JSON.stringify(value));}catch{}return value;});
+        if((g.phase==='lost'||g.phase==='won')&&modeRef.current==='playing'){
+          const run=snapshot(g);setGame(run);input.current=emptyInput();cancelGesture();
+          const nextMode=g.phase==='won'?'complete':'result';modeRef.current=nextMode;setMode(nextMode);recordBest(run);
+          if(g.phase==='won'){setProgress(old=>{const value=unlockLevel(old,run.level.index);try{localStorage.setItem('river-rush-progress',JSON.stringify(value));}catch{}return value;});setSelectedLevel(Math.min(2,run.level.index+1));}
         }
       }
     }
@@ -103,7 +115,7 @@ export default function App() {
   },[art,fallback]);
   useEffect(()=>{
     const mapping={KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',KeyW:'jump',ArrowUp:'jump',Space:'jump',KeyS:'duck',ArrowDown:'duck',ShiftLeft:'rush',ShiftRight:'rush'};
-    function down(e){const focusedButton=e.target?.closest?.('button,a');if(modeRef.current==='playing'){if(e.code==='Escape'||e.code==='KeyP'){e.preventDefault();actions.current.pause();return;}if(e.code==='Space'&&focusedButton)return;if(mapping[e.code]){e.preventDefault();if(!e.repeat)queueAction(input.current,mapping[e.code]);}}else if(modeRef.current==='result'&&(e.code==='Enter'||e.code==='KeyR')){if(e.code==='Enter'&&focusedButton)return;e.preventDefault();actions.current.start();}else if(modeRef.current==='paused'&&e.code==='Enter'){if(focusedButton)return;e.preventDefault();actions.current.resume();}}
+    function down(e){const focusedButton=e.target?.closest?.('button,a');if(modeRef.current==='playing'){if(e.code==='Escape'||e.code==='KeyP'){e.preventDefault();actions.current.pause();return;}if(e.code==='Space'&&focusedButton)return;if(mapping[e.code]){e.preventDefault();if(!e.repeat)queueAction(input.current,mapping[e.code]);}}else if(modeRef.current==='result'&&(e.code==='Enter'||e.code==='KeyR')){if(e.code==='Enter'&&focusedButton)return;e.preventDefault();actions.current.start();}else if(modeRef.current==='complete'&&e.code==='Enter'){if(focusedButton)return;e.preventDefault();actions.current.advance();}else if(modeRef.current==='paused'&&e.code==='Enter'){if(focusedButton)return;e.preventDefault();actions.current.resume();}}
     function hidden(){if(document.hidden)actions.current.pause();}
     const blur=()=>actions.current.pause();window.addEventListener('keydown',down);window.addEventListener('blur',blur);document.addEventListener('visibilitychange',hidden);
     return()=>{window.removeEventListener('keydown',down);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',hidden);};
@@ -148,14 +160,20 @@ export default function App() {
     return()=>{cancelGesture();for(const [name,listener] of Object.entries(listeners))app.removeEventListener(name,listener,true);};
   },[]);
   useEffect(()=>{if(mode!=='playing')cancelGesture();},[mode]);
-  const inGame=!['menu','help'].includes(mode);
-  return <div ref={appRef} className={`app ${inGame?'in-game':''}`} data-paused={inGame&&mode!=='playing'}>
+  const inGame=!menuModes.includes(mode);
+  const totals=game?.campaign??game;
+  const stage=game?.level??LEVELS[selectedLevel];
+  const adventureVictory=stage.final&&totals?.levelsCleared===3;
+  return <div ref={appRef} className={`app ${inGame?'in-game':''}`} data-paused={inGame&&mode!=='playing'} data-level={inGame?stage.id:LEVELS[selectedLevel].id} style={{'--map-accent':LEVELS[inGame?stage.index:selectedLevel].accent}}>
     <canvas key={fallback?'fallback':'webgl'} ref={canvasRef} className="game-canvas" style={{visibility:inGame?'visible':'hidden',pointerEvents:inGame?'auto':'none'}} aria-hidden={!inGame} aria-label="Three-lane river runner. Left and right change lanes, Up or Space jumps, Down ducks, Shift activates Rush."/>
     <header className="app-header"><button className="brand" aria-label="River Rush home" onClick={()=>inGame?pause():home()}><Logo/><span>RIVER RUSH</span></button><div className="header-actions">{inGame&&<button className="circle-button" aria-label="Pause game" onClick={pause}><Icon name="pause"/></button>}<button className="circle-button" aria-label={sound?'Mute sound':'Enable sound'} aria-pressed={sound} onClick={toggleSound}><Icon name={sound?'sound':'muted'}/></button></div></header>
-    {!inGame&&<Menu onStart={start} onRetry={retryArt} onHelp={()=>setMode('help')} ready={!!art&&graphicsReady} error={error} best={best} active={mode==='menu'}/>}
-    {inGame&&game&&<Hud game={game} model={model} input={input} disabled={mode!=='playing'}/>}
-    {mode==='help'&&<Modal label="How to play" onDismiss={home}><button className="modal-close circle-button" aria-label="Close instructions" onClick={home}><Icon name="close"/></button><Icon name="bolt" className="modal-symbol"/><h2>Find your flow.</h2><p>Three lanes. No finish line. How far can you ride?</p><ol className="instructions"><li><b>Dodge · Jump · Duck</b><span>← / → or A / D switch lanes. ↑, W or Space jumps logs. ↓ or S ducks branches. On phones, swipe in any direction or use the buttons.</span></li><li><b>Chase the streak</b><span>Collect eight coins to raise your multiplier, up to ×5. Keep collecting before the streak runs out. Perfect jumps and ducks earn bonus points.</span></li><li><b>Make it a Rush</b><span>Coins and tricks fill your Rush. Press Shift or tap the meter when full: four seconds of speed and invincibility! Magnets pull coins from every lane.</span></li><li><b>Risk. Wipe out. Ride again.</b><span>Your shield absorbs one hit. After that, a collision ends the run. Grab another shield, beat your best, and retry instantly.</span></li></ol><button className="primary" disabled={!art||!graphicsReady} onClick={start}>Let’s ride<Icon name="arrow"/></button></Modal>}
-    {mode==='paused'&&<Modal label="Game paused" onDismiss={resume}><Icon name="pause" className="modal-symbol"/><h2>Catch your breath.</h2><p>Your streak will be here.</p><button className="primary" onClick={resume}>Resume run<Icon name="arrow"/></button><div className="modal-secondary"><button onClick={start}>Restart run</button><button onClick={home}>Back to river</button></div><small>← → Lanes · ↑ Jump · ↓ Duck · Shift Rush</small></Modal>}
-    {mode==='result'&&game&&<Modal label="Run complete" onDismiss={home}><div className="result-kicker">{best&&game.score>=best.score?'NEW PERSONAL BEST':'ONE MORE RUN?'}</div><h2>What a ride.</h2><p>{game.reason}</p><div className="result-stats"><div><b>{game.score.toLocaleString()}</b><span>POINTS</span></div><div><b>{game.distance.toLocaleString()}m</b><span>DISTANCE</span></div><div><b>{game.coins}</b><span>COINS</span></div></div><p className="result-tricks">{game.jumps} perfect jumps · {game.ducks} perfect ducks</p><button className="primary" onClick={start}>Ride again<Icon name="arrow"/></button><small className="retry-hint">Enter to retry · Best {best?.score.toLocaleString()??'—'}</small><div className="modal-secondary"><button onClick={home}>Back to river</button><button onClick={switchGames}>Switch game</button><a href="/">Arcade</a></div></Modal>}
+    {!inGame&&<Menu onStart={start} onRetry={retryArt} onHelp={()=>setMode('help')} ready={!!art&&graphicsReady} error={error} best={best} active={mode==='menu'} levels={LEVELS} progress={progress} selectedLevel={selectedLevel} onSelectLevel={selectLevel} onLeaderboard={leaderboard}/>}
+    {inGame&&game&&<Hud game={game} model={model} input={input} canvasRef={canvasRef} disabled={mode!=='playing'}/>}
+    {mode==='help'&&<Modal label="How to play" onDismiss={home}><button className="modal-close circle-button" aria-label="Close instructions" onClick={home}><Icon name="close"/></button><Icon name="bolt" className="modal-symbol"/><h2>Find your flow.</h2><p>Three rivers. Three finish lines. One wild adventure.</p><GestureGuide variant="help"/><ol className="instructions"><li><b>Dodge · Jump · Duck</b><span>← / → or A / D switch lanes. ↑, W or Space jumps logs. ↓ or S ducks branches. On phones, swipe in any direction or use the buttons.</span></li><li><b>Chase the streak</b><span>Collect eight coins to raise your multiplier, up to ×5. Keep collecting before the streak runs out. Perfect jumps and ducks earn bonus points.</span></li><li><b>Make it a Rush</b><span>Coins and tricks fill your Rush. Press Shift or tap the meter when full: four seconds of speed and invincibility! Magnets pull coins from every lane.</span></li><li><b>Reach the next river</b><span>Finish Canopy Run to unlock Redstone Rapids, then take on Moonlit Ruins. Each map gets faster and more demanding. Your score carries into the next map.</span></li><li><b>Ride again</b><span>Your shield absorbs one hit. A wipeout lets you retry the current map with your earlier map scores preserved. Beat all three to finish the adventure.</span></li></ol><button className="primary" disabled={!art||!graphicsReady} onClick={start}>Let’s ride<Icon name="arrow"/></button></Modal>}
+    {mode==='paused'&&<Modal label="Game paused" onDismiss={resume}><Icon name="pause" className="modal-symbol"/><h2>Catch your breath.</h2><p>{stage.name} · {game?.level.remaining.toLocaleString()} m to the finish.</p><button className="primary" onClick={resume}>Resume run<Icon name="arrow"/></button><div className="modal-secondary"><button onClick={start}>Restart this map</button><button onClick={home}>Back to river</button></div><small>← → Lanes · ↑ Jump · ↓ Duck · Shift Rush</small></Modal>}
+    {mode==='result'&&game&&<Modal label="Map ended" onDismiss={home}><div className="result-kicker">{best&&totals.score>=best.score?'NEW PERSONAL BEST':'READY TO TRY AGAIN?'}</div><h2>What a ride.</h2><p>{game.reason}<br/><span className="result-map">{stage.name} · {stage.remaining.toLocaleString()} m from the finish</span></p><div className="result-stats"><div><b>{totals.score.toLocaleString()}</b><span>POINTS</span></div><div><b>{totals.distance.toLocaleString()}m</b><span>TOTAL DISTANCE</span></div><div><b>{totals.coins}</b><span>COINS</span></div></div><p className="result-tricks">{totals.jumps} perfect jumps · {totals.ducks} perfect ducks</p><div className="score-actions"><ScoreCapture game={game} canvasRef={canvasRef}/><button className="text-button" onClick={leaderboard}>Post to leaderboard</button></div><button className="primary" onClick={start}>Retry {stage.name}<Icon name="arrow"/></button><small className="retry-hint">Enter to retry this map · Best {best?.score.toLocaleString()??'—'}</small><div className="modal-secondary"><button onClick={home}>Choose map</button><button onClick={switchGames}>Switch game</button><a href="/">Arcade</a></div></Modal>}
+    {mode==='complete'&&game&&<Modal label={adventureVictory?'Adventure complete':'Map complete'} onDismiss={home}><div className="result-kicker">{adventureVictory?'ALL THREE RIVERS CLEARED':`MAP ${stage.index+1} OF 3 COMPLETE`}</div><Icon name="flag" className="modal-symbol finish-symbol"/><h2>{adventureVictory?'River legend.':'Finish line!'}</h2><p>{stage.name} cleared.{adventureVictory?' You conquered the entire adventure.':stage.final?' The final river is conquered.':` ${LEVELS[stage.index+1].name} is unlocked.`}</p><div className="result-stats"><div><b>{totals.score.toLocaleString()}</b><span>POINTS</span></div><div><b>{totals.distance.toLocaleString()}m</b><span>TOTAL DISTANCE</span></div><div><b>{totals.coins}</b><span>COINS</span></div></div><p className="result-tricks">{totals.jumps} perfect jumps · {totals.ducks} perfect ducks<br/>Map finish bonus +{((stage.index+1)*1000).toLocaleString()}</p><div className="score-actions"><ScoreCapture game={game} canvasRef={canvasRef}/><button className="text-button" onClick={leaderboard}>Post to leaderboard</button></div><button className="primary" onClick={stage.final?home:advance}>{stage.final?'Choose your next ride':`Next: ${LEVELS[stage.index+1].name}`}<Icon name="arrow"/></button><small>{stage.final?`${adventureVictory?'Adventure':'Map'} complete · Your maps stay unlocked`:'Your score carries into the next map'}</small><div className="modal-secondary"><button onClick={start}>Replay this map</button><button onClick={home}>Choose map</button><a href="/">Arcade</a></div></Modal>}
+
+    {mode==='leaderboard'&&<Modal label="Public leaderboard" onDismiss={closeLeaderboard}><button className="modal-close circle-button" aria-label="Close leaderboard" onClick={closeLeaderboard}><Icon name="close"/></button><Leaderboard game={leaderboardReturn==='result'||leaderboardReturn==='complete'?game:null} canSubmit={leaderboardReturn==='result'||leaderboardReturn==='complete'}/></Modal>}
   </div>;
 }

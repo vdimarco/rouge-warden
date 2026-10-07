@@ -69,6 +69,9 @@ function videoWater(ctx,g,art,width,height,active,disabled){
   return true;
 }
 export function drawWater(ctx,g,art,width,height,reducedMotion,active=true) {
+  // Canopy footage belongs to the jungle map. Later stages draw their own
+  // prepared canvas river and must never start this video's GL fallback.
+  if((g.levelIndex??0)>0){videoWater(ctx,g,art,width,height,false,true);return false;}
   const portrait=width/height<.85,source=portrait?art.portrait:art.environment;
   const disabled=reducedMotion||navigator.connection?.saveData;
   if(videoWater(ctx,g,art,width,height,active,disabled))return true;

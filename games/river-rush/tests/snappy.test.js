@@ -15,7 +15,7 @@ test('short actions begin visibly on first update, cancel immediately, expire an
  applyAction(g,'jump');for(let i=0;i<Math.floor((JUMP_SECONDS-.1)*60);i++)updateGame(g,emptyInput(),1/60);applyAction(g,'jump');for(let i=0;i<10;i++)updateGame(g,emptyInput(),1/60);assert.equal(g.action,'jump');assert.ok(g.actionTime<.15);
 });
 test('impact forecast accounts for speed changes when Rush ends, including cap speed',()=>{
- for(const t of [0,60,200]){const g=clean();g.time=t;g.rush=.1;g.speed=speedAt(t)*1.32;const d=g.distance+g.speed*.6,predicted=timeToImpact(g,d);assert.ok(predicted>.6);let elapsed=0;while(g.distance<d){updateGame(g,emptyInput(),1/240);elapsed+=1/240;}assert.ok(Math.abs(elapsed-predicted)<.009);}
+ for(const index of [0,1,2])for(const t of [0,60,200]){const g=Object.assign(createGame(1,index),{entities:[],nextRow:1e9,time:t,rush:.1,speed:speedAt(t,index)*1.32});const d=g.distance+g.speed*.6,predicted=timeToImpact(g,d);assert.ok(predicted>.6);let elapsed=0;while(g.distance<d){updateGame(g,emptyInput(),1/240);elapsed+=1/240;}assert.ok(Math.abs(elapsed-predicted)<.009,`map ${index}, ${t}s forecast differs by ${elapsed-predicted}`);}
 });
 test('swipes respond at 26px, chain a deliberate lane step, lock axis and consume vertical actions once',()=>{
  const p={x:0,y:0};assert.equal(readSwipe(p,25,0),null);const first=readSwipe(p,26,0);assert.equal(first.action,'right');assert.equal(readSwipe(first.next,70,120),null);const second=readSwipe(first.next,82,120);assert.equal(second.action,'right');const up=readSwipe(p,0,-26);assert.equal(up.action,'jump');assert.equal(up.next,null);assert.equal(readSwipe(null,0,-60),null);

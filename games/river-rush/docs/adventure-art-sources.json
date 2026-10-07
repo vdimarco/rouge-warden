@@ -1,0 +1,76 @@
+{
+  "provider": "fal",
+  "estimatedCostUSD": 0.3,
+  "generatedAt": "2026-10-07T00:41:51.700Z",
+  "reusedJungle": "public/art/valley-vista.webp",
+  "maps": [
+    {
+      "map": "canyon",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "input": {
+        "prompt": "Wide 16:9 panoramic environment matte painting for a polished fast colorful 3D arcade river rafting game, lush natural detail with a richly hand painted stylized cinematic finish. A spectacular red orange sandstone gorge with organic eroded towering rock spires framing the far left and far right, sunlit ochre layered cliffs, sparse desert palms and tiny hardy plants, misty distant cascading waterfalls, a brilliant teal whitewater river winding DOWNHILL from the foreground toward a low distant vanishing point at center. Horizon at 42 percent of image height. Clear uninterrupted center river channel, no near obstacles, no raft, no humans, no signs, no labels, no HUD, no text. Peach apricot blue sky, painterly clouds, dynamic depth with distant purple mesas and atmospheric haze. Lifelike detailed rock textures, appealing adventurous arcade quality, crisp sculptural silhouettes, welcoming readable light, not flat low poly, no buildings. This is a clean background environment painting, not a screenshot with interface.",
+        "num_images": 1,
+        "resolution": "1K",
+        "aspect_ratio": "16:9",
+        "output_format": "png",
+        "seed": 607021
+      },
+      "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire.",
+      "request_id": "01a113cb-d3c6-75d2-9a6b-9f50c2096c5e",
+      "source": "https://v3b.fal.media/files/b/0aad5ba4/6hGFwR4Qo1rgRggpkNZPL_x7F6jHxR.png",
+      "localAsset": "games/river-rush/public/art/map-canyon.webp",
+      "bytes": 155706,
+      "sha256": "20ae88b0c5986cbf53948781f46e7267ce88b6c50b67aa5ef644180a844e1e78",
+      "metadata": {
+        "format": "webp",
+        "width": 1376,
+        "height": 768,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "isProgressive": false,
+        "isPalette": false,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 1376,
+          "height": 768
+        }
+      }
+    },
+    {
+      "map": "ruins",
+      "endpoint_id": "fal-ai/nano-banana-pro",
+      "input": {
+        "prompt": "Wide 16:9 panoramic environment matte painting for a polished fast colorful 3D arcade river rafting game, lush natural detail with richly hand painted stylized cinematic finish. Ancient magical golden stone temples and beautifully carved vine covered ruined towers framing the far left and far right of a broad downhill river valley, luminous turquoise waterfalls among distant blue purple mountains, a cool sapphire flowing whitewater river winding DOWNHILL from foreground toward a low distant center vanishing point. Horizon at 42 percent of image height. Dusk indigo violet sky with a big soft crescent moon high right, scattered small stars and glowing clouds, warm amber temple windows contrasting rich blue moonlight, atmospheric luminous fireflies at the banks. Clear uninterrupted center river channel. No near obstacles, no raft, no humans, no signs, no labels, no HUD, no text. Detailed natural foliage, realistic stone textures, crisp appealing sculptural temple silhouettes, mystical adventurous arcade quality, readable luminous lighting rather than dark shadows, not flat low poly. This is a clean background environment painting, not a screenshot with interface.",
+        "num_images": 1,
+        "resolution": "1K",
+        "aspect_ratio": "16:9",
+        "output_format": "png",
+        "seed": 607022
+      },
+      "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire.",
+      "request_id": "01a113cc-338a-7200-be04-63f5bb56f550",
+      "source": "https://v3b.fal.media/files/b/0aad5ba7/YuyVjdlu657B-LJI9CW70_yqhXC6bO.png",
+      "localAsset": "games/river-rush/public/art/map-ruins.webp",
+      "bytes": 161306,
+      "sha256": "6be7d33e3182485c22847bad3dc9d44bfeaf9a343fca6a464ea5528caf65561c",
+      "metadata": {
+        "format": "webp",
+        "width": 1376,
+        "height": 768,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "isProgressive": false,
+        "isPalette": false,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 1376,
+          "height": 768
+        }
+      }
+    }
+  ]
+}

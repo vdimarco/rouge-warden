@@ -31,6 +31,7 @@ const fineNormal=`vec3 fineSurface(float x,float d){vec3 s=vec3(0.);${wave}
  return vec3(s.x*energy+.24*vRapid*sin(p),s.y*energy+.24*vRapid*.23*cos(p),s.z*energy+s.x*1.15*vProfile.z+.24*(vProfile.z*sin(p)+vRapid*.68*cos(p)))*uMotion;}`;
 const common=`
 uniform float uTime,uMotion,uRush;uniform sampler2D uDetail;
+uniform vec3 uWaterDeep,uWaterEdge,uWaterSky,uWaterFoam;
 uniform vec2 uRaft;uniform vec4 uRipples[4];
 ${varyings}
 float square(float x){return x*x;}
@@ -70,11 +71,11 @@ void main(){vec2 p=vCourse;float flow=p.y-uTime*22.*uMotion;
  ${simple?'vec3 n=normalize(vNormal+vec3(detail.r-.4,0.,detail.g-.4)*.12*uMotion);':`vec3 s=fineSurface(p.x,p.y);vec3 n=normalize(vec3(-s.y,1.,vProfile.y+s.z-s.y*vProfile.w)+vec3(detail.r-.4,0.,detail.g-.4)*.08*uMotion);`}
  vec3 view=normalize(cameraPosition-vWorld);
  float fresnel=pow(1.-max(dot(view,n),0.),3.),edge=smoothstep(.45,1.,abs(p.x)/vProfile.x);
- vec3 color=mix(vec3(.012,.19,.24),vec3(.055,.43,.37),edge*.55+vRapid*.22+grain*.18);
- color=mix(color,vec3(.39,.69,.76),fresnel*.3);
+ vec3 color=mix(uWaterDeep,uWaterEdge,edge*.55+vRapid*.22+grain*.18);
+ color=mix(color,uWaterSky,fresnel*.3);
  ${simple?'':'float sun=pow(max(dot(reflect(-normalize(vec3(-.5,.8,.35)),n),view),0.),90.);color+=vec3(1.,.88,.56)*sun*.6;'}
- color=mix(color,vec3(.84,.97,.93),foamAt(p,grain)*.88);
- vec2 fog=vWorld.xz-cameraPosition.xz;color=mix(color,vec3(.53,.77,.79),1.-exp(-dot(fog,fog)*.00001936));
+ color=mix(color,uWaterFoam,foamAt(p,grain)*.88);
+ vec2 fog=vWorld.xz-cameraPosition.xz;color=mix(color,uWaterSky,1.-exp(-dot(fog,fog)*.00001936));
  gl_FragColor=vec4(color,1.);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>

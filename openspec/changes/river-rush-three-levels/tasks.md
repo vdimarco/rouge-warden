@@ -1,0 +1,6 @@
+- [x] Implement finite stages, varied fair patterns and progressive difficulty.
+- [x] Implement map selection, progress, level completion, retry and final victory.
+- [x] Build three distinct prepared map environments and visible finish gates.
+- [x] Verify engine journeys, controls, state lifecycle and all map visuals.
+- [ ] Publish, verify the live adventure and archive the completed specification.
+- [ ] Add score-image export, animated gesture guidance and a public persistent guest leaderboard.

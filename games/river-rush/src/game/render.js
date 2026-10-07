@@ -4,6 +4,8 @@ import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
 import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
 import {shorelineBranch,branchLeafArt,limbPoint} from './shoreline-branch.js';
+import { levelAt } from './levels.js';
+import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D } from './map-2d.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const TAU = Math.PI * 2, fract = n => n - Math.floor(n);
@@ -27,11 +29,13 @@ export function loadArt() {
   for(const name of ['rock','wood','ground','water'])sources.push([`surface${name}`,`surface-${name}`,'webp']);
   for(const name of ['rock','wood','ground'])sources.push([`normal${name}`,`surface-${name}-normal`]);
   sources.push(['treebark','tree-bark','webp',true],['treebarknormal','tree-bark-normal','webp',true],['treeleaves','tree-foliage','webp',true]);
+  sources.push(['mapjungle','valley-vista','webp',true],['mapcanyon','map-canyon','webp',true],['mapruins','map-ruins','webp',true]);
   return artPromise??=Promise.all(sources.map(([key,name,extension,optional])=>loadImage(key,name,extension,optional))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
 }
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];
 async function prepareHeroArt(art){
   art.world=prepareWorldArt();
+  art.map2d=prepareMap2D(art);
   art.branchLeaves=art.treeleaves??branchLeafArt();
   function frame(source,rect,anchor,raftWidth){
     const canvas=document.createElement('canvas');canvas.width=448;canvas.height=480;
@@ -80,6 +84,7 @@ function sprite(ctx, atlas, index, x, bottom, w, rotation = 0, alpha = 1, squeez
 }
 function water(ctx,g,art,w,h,reduce,active) {
   drawWater(ctx,g,art,w,h,reduce,active);
+  if(levelAt(g.levelIndex).index>0)drawMap2D(ctx,g,art,w,h,reduce,projection);
   // The distant photographic river remains an art layer. Near whitewater
   // flows on the course plane at every display frame, independent of video fps.
   if(!reduce){
@@ -93,7 +98,7 @@ function water(ctx,g,art,w,h,reduce,active) {
   }
   // Faint projected guides stay legible without resembling stationary rails.
   ctx.save();ctx.lineWidth = 1;ctx.setLineDash([10,20]);ctx.lineDashOffset = -g.distance*3;
-  ctx.strokeStyle = 'rgba(214,255,246,.22)';
+  ctx.strokeStyle = levelAt(g.levelIndex).index===2?'rgba(203,196,255,.2)':'rgba(214,255,246,.22)';
   for(const lane of [.5,1.5]) {
     const far=projection(w,h,lane,VIEW_DISTANCE), near=projection(w,h,lane,-10);
     ctx.beginPath();ctx.moveTo(far.x,far.y);ctx.lineTo(near.x,near.y);ctx.stroke();
@@ -121,6 +126,7 @@ function shorelineTree(ctx,g,e,art,w,h){
   ctx.restore();
 }
 function banks(ctx,g,art,w,h,reduce){
+  if(levelAt(g.levelIndex).index>0){drawMapBanks2D(ctx,g,art,w,h,reduce,projection,VIEW_DISTANCE);return;}
   if(reduce)return;
   ctx.save();
   for(const item of bankScenery(g.distance,VIEW_DISTANCE)){
@@ -139,6 +145,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
   ctx.clearRect(0,0,width,height);
   water(ctx,g,art,width,height,reducedMotion,active);
   banks(ctx,g,art,width,height,reducedMotion);
+  drawFinish2D(ctx,g,width,height,projection,VIEW_DISTANCE);
   if(!motions.has(g))motions.set(g,createMotion(g));
   const motion=advanceMotion(motions.get(g),g,reducedMotion);
   const player=projection(width,height,g.visualLane,0);

@@ -7,11 +7,13 @@ import { riderPose, RIDER_SIZE } from './rider.js';
 import { renderDpr,createFrameBudget,sampleFrameBudget } from './quality.js';
 import { createSkeletalRider } from './skeletal-rider.js';
 import { balanceAt } from './stroke.js';
-import { districtAt,scenerySlots,recycleZ } from './districts.js';
+import { scenerySlots,recycleZ } from './districts.js';
 import { createWorldDetails } from './world-details.js';
 import {COURSE_GLSL,riverSeed,riverHash,riverPoint,riverHalfWidth,riverBankHeight,riverGrade,riverTangent,rapidAt,shoalAt} from './river-course.js';
 import {waterVertex,waterFragment} from './river-water.js';
 import {createBranchTrees} from './branch-trees.js';
+import {levelAt,LEVELS} from './levels.js';
+import {createMapWorld} from './map-world.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -28,9 +30,9 @@ function primitiveRaft(wood=mat('#755037')){
  for(const z of [-1.1,1.1])mesh(new THREE.BoxGeometry(3.12,.12,.13),mat('#b29564'),group,0,.43,z);
  return group;
 }
-function skyTexture(){
+function skyTexture(level=levelAt(0)){
  const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');
- const sky=x.createLinearGradient(0,0,0,512);sky.addColorStop(0,'#164b67');sky.addColorStop(.52,'#7eb5b1');sky.addColorStop(1,'#f2d39b');x.fillStyle=sky;x.fillRect(0,0,512,512);
+ const sky=x.createLinearGradient(0,0,0,512);sky.addColorStop(0,level.index===2?'#11152f':level.index===1?'#827579':'#164b67');sky.addColorStop(.52,level.sky);sky.addColorStop(1,level.index===2?'#a184b4':'#f2d39b');x.fillStyle=sky;x.fillRect(0,0,512,512);
  const glow=x.createRadialGradient(100,240,3,100,240,170);glow.addColorStop(0,'#fff2c9cc');glow.addColorStop(.13,'#ffedbf66');glow.addColorStop(1,'#ffeab000');x.fillStyle=glow;x.fillRect(0,0,512,512);
  const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
@@ -70,11 +72,11 @@ export function createScene(canvas,art,onLost){
  const rockMat=surfaceMaterial('rock',stone,'#dedbcf',.7),logMat=surfaceMaterial('wood',timber,'#ddc6a4',.74);
  const scene=new THREE.Scene();scene.background=skyTexture();scene.fog=new THREE.FogExp2('#bce4df',.0044);
  const camera=new THREE.PerspectiveCamera(58,1,.3,350);
- scene.add(new THREE.HemisphereLight('#c4f1ff','#3e6244',1.65));
+ const hemisphere=new THREE.HemisphereLight('#c4f1ff','#3e6244',1.65);scene.add(hemisphere);
  const sun=new THREE.DirectionalLight('#fff1d1',2.9);sun.position.set(-25,32,12);sun.castShadow=true;
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:20,bottom:-18,near:1,far:100});sun.shadow.bias=-.001;sun.shadow.normalBias=.07;scene.add(sun);
  const waterGeo=new THREE.PlaneGeometry(2,260,software?32:56,software?160:210);waterGeo.rotateX(-Math.PI/2);waterGeo.translate(0,0,-100);
- const uniforms={uTime:{value:0},uDistance:{value:0},uSeed:{value:137},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uDetail:{value:waterDetail},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))}};
+ const uniforms={uTime:{value:0},uDistance:{value:0},uSeed:{value:137},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uDetail:{value:waterDetail},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))},uWaterDeep:{value:new THREE.Color(levelAt(0).waterDeep)},uWaterEdge:{value:new THREE.Color(levelAt(0).waterEdge)},uWaterSky:{value:new THREE.Color(levelAt(0).fog)},uWaterFoam:{value:new THREE.Color('#d7f7ed')},uGroundTint:{value:new THREE.Color(levelAt(0).ground)},uMapIndex:{value:0}};
  const waterMaterial=new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(software)});
  const cheapWaterMaterial=software?waterMaterial:new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(true)});
  const water=mesh(waterGeo,waterMaterial,scene);water.frustumCulled=false;
@@ -84,6 +86,9 @@ export function createScene(canvas,art,onLost){
  // the same hill. Geometry and decorative feet use this exact bank function.
  groundMaterial.onBeforeCompile=shader=>{
    shader.uniforms.uDistance=uniforms.uDistance;shader.uniforms.uSeed=uniforms.uSeed;
+   shader.uniforms.uMapIndex=uniforms.uMapIndex;shader.uniforms.uGroundTint=uniforms.uGroundTint;
+   shader.fragmentShader='uniform float uMapIndex;uniform vec3 uGroundTint;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+    diffuseColor.rgb=mix(diffuseColor.rgb,uGroundTint*(.6+diffuseColor.g*.8),min(uMapIndex,1.));`);
    shader.vertexShader=COURSE_GLSL+shader.vertexShader.replace('#include <beginnormal_vertex>',`
      #include <beginnormal_vertex>
      vec4 bankPosition=vec4(position,1.);
@@ -163,15 +168,22 @@ export function createScene(canvas,art,onLost){
  const guardianBanks=banks.filter(b=>!templeBanks.includes(b)&&riverHash(b.index+b.side*31,137)>.82);
  const retryTimers=new Set(),retired=[raftModel,bankTemplate],retiredMaterials=new Set();
  const worldDetails=createWorldDetails(scene,mat,waterDetail,rockMat);
+ const mapWorld=createMapWorld(scene,mat,rockMat,software);
  const treeBark=mat('#ded9ce',.93);treeBark.map=texture(art.treebark??art.surfacewood);
  if(!software){treeBark.normalMap=texture(art.treebarknormal??art.normalwood,false);treeBark.normalScale=new THREE.Vector2(.8,.8);}
  const branchTrees=createBranchTrees(scene,treeBark,mat,art,software);
  const bankTrees=Array.from({length:8},(_,i)=>({id:7000+i,side:i%2?1:-1}));
+ const mapPanoramas=LEVELS.map(level=>{
+  const image=art[['mapjungle','mapcanyon','mapruins'][level.index]];
+  const t=image?new THREE.Texture(image):level.index===0?scene.background:skyTexture(level);
+  if(image){t.needsUpdate=true;t.colorSpace=THREE.SRGBColorSpace;t.matrixAutoUpdate=false;}
+  surfaceTextures.push(t);return {texture:t,painted:!!image};
+ });
  let panorama=null;const pendingLoads=new Set();let resolveVista;const vistaDone=new Promise(resolve=>{resolveVista=resolve;});
  function loadVista(attempt=0){if(disposed){resolveVista();return;}new THREE.TextureLoader().load(`${base}art/valley-vista.webp${attempt?`?retry=${attempt}`:''}`,t=>{
-   if(disposed||status.background==='fallback'){t.dispose();resolveVista();return;}t.colorSpace=THREE.SRGBColorSpace;t.matrixAutoUpdate=false;surfaceTextures.push(scene.background);scene.background=t;panorama=t;mountains.visible=false;status.background='ready';resolveVista();
+   if(disposed||status.background==='fallback'){t.dispose();resolveVista();return;}t.colorSpace=THREE.SRGBColorSpace;t.matrixAutoUpdate=false;surfaceTextures.push(t);mapPanoramas[0]={texture:t,painted:true};status.background='ready';resolveVista();
  },undefined,()=>{if(disposed||status.background==='fallback'){resolveVista();return;}if(attempt<2){status.background='retrying';const timer=setTimeout(()=>{retryTimers.delete(timer);loadVista(attempt+1);},(attempt+1)*350);retryTimers.add(timer);}else{status.background='fallback';resolveVista();}});}
- loadVista();
+ if(mapPanoramas[0].painted){status.background='ready';resolveVista();}else loadVista();
  const frameBudget=createFrameBudget();
  function batchModel(model,collection,capacity){model.updateMatrixWorld(true);retired.push(model);model.traverse(o=>{if(!o.isMesh)return;const batch=new THREE.InstancedMesh(o.geometry,o.material,capacity);batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);batch.frustumCulled=false;batch.count=0;scene.add(batch);collection.push({mesh:batch,local:o.matrixWorld.clone()});});}
  function loadModel(key,attempt=0,complete=()=>{}){if(disposed){complete();return;}const far=key.endsWith('Far'),file=key==='raft'?'temple-raft':key.replace('Far',''),prefix=['canopy','harbor','driftwood'].includes(file)?'fal':'meshy';loader.load(`${base}models/${prefix}-${file}${far||software&&!['raft','rider'].includes(key)?'-lite':''}.glb${attempt?`?retry=${attempt}`:''}`,gltf=>{
@@ -223,12 +235,15 @@ export function createScene(canvas,art,onLost){
    let uploads=0;for(const t of textures){await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;renderer.initTexture(t);uploads++;}
    await renderer.compileAsync(scene,camera);if(disposed||status.contextLost)return;
    await renderer.compileAsync(prototypes,camera,scene);if(disposed||status.contextLost)return;
-   const warm=createGame(137);warm.entities=[...['rock','log','branch','shield','magnet'].map((type,i)=>({id:-1000-i,type,lane:i%3,d:12+i*7})),...warm.entities];
-   await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;
-   render(warm,w,h,false,0);
-   // Warm backgrounds, flags and every near/far bank mesh before they're first
-   // encountered downstream. Advance a throwaway course, never the player's.
-   for(const distance of [780,1380]){await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;warm.distance=distance;warm.entities=[];render(warm,w,h,false,0);}
+   // Warm every map, its horizon, landmarks and finish. Switching levels cannot
+   // create a first-use material, texture or instance-buffer upload in play.
+   for(const level of LEVELS){
+    const warm=createGame(137,level.index);warm.entities=[...['rock','log','branch','shield','magnet'].map((type,i)=>({id:-1000-i,type,lane:i%3,d:12+i*7})),...warm.entities];
+    for(const distance of [0,780,level.length-70]){
+     await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;
+     warm.distance=distance;if(distance)warm.entities=[];render(warm,w,h,false,0);
+    }
+   }
    for(const [id,obj] of entities){scene.remove(obj);entities.delete(id);}
    run=null;status.preparing=false;status.prepared=true;status.preparation={ms:performance.now()-started,textures:uploads};
  })();}
@@ -238,7 +253,7 @@ export function createScene(canvas,art,onLost){
  canvas.addEventListener('webglcontextlost',lost);
  function render(g,w,h,reduced,frameMs=0){
  if(disposed||status.contextLost)return;
- if(run!==g){run=g;float=createFloat(g);lastEvent=0;waterImpulses=[];}
+ if(run!==g){for(const obj of entities.values())scene.remove(obj);entities.clear();run=g;float=createFloat(g);lastEvent=0;waterImpulses=[];}
  // App supplies zero for pause/resume gaps; cap unusually long active GPU
  // frames so a genuine stall still triggers quality reduction.
  const qualityChanged=sampleFrameBudget(frameBudget,Math.min(frameMs,1000));
@@ -247,6 +262,14 @@ export function createScene(canvas,art,onLost){
  if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr))renderer.setDrawingBufferSize(w,h,dpr);
  camera.aspect=w/h;camera.fov=w/h<.85?80:60;camera.updateProjectionMatrix();}
  const portrait=w/h<.85,travel=reduced?0:g.distance,seed=g.seed;
+ const level=levelAt(g.levelIndex),map=mapPanoramas[level.index];
+ scene.background=map.texture;panorama=map.painted?map.texture:null;mountains.visible=!map.painted;
+ scene.fog.color.set(level.fog);scene.fog.density=level.index===2?.0034:.0044;
+ hemisphere.color.set(level.index===2?'#c2c6ff':level.index===1?'#ffe3bd':'#c4f1ff');hemisphere.groundColor.set(level.index===2?'#514967':level.index===1?'#866147':'#3e6244');hemisphere.intensity=level.index===2?1.8:1.65;
+ sun.color.set(level.index===2?'#d0d7ff':level.index===1?'#ffe3b6':'#fff1d1');sun.intensity=level.index===2?1.7:2.9;
+ mountainMat.color.set(level.index===2?'#77708e':level.index===1?'#b78269':'#899b7e');
+ uniforms.uWaterDeep.value.set(level.waterDeep);uniforms.uWaterEdge.value.set(level.waterEdge);uniforms.uWaterSky.value.set(level.fog);uniforms.uWaterFoam.value.set(level.index===2?'#cbd9ff':'#d7f7ed');uniforms.uGroundTint.value.set(level.ground);uniforms.uMapIndex.value=level.index;
+ status.map={id:level.id,index:level.index,name:level.name,finishDistance:level.length,remaining:Math.max(0,level.length-g.distance),background:map.painted?'panorama':'gradient'};
  const point=(course,cross=0)=>riverPoint(travel,course,cross,seed);
  const waterHeight=(cross,course)=>surfaceAt(cross,course,reduced?0:g.time,reduced,seed).height;
  const look=point(travel+(portrait?32:38));
@@ -276,23 +299,27 @@ export function createScene(canvas,art,onLost){
    b.course=course;b.cross=cross;b.holder.position.set(p.x,p.y+riverBankHeight(cross,course,seed)-.3,p.z);
    b.holder.rotation.y=riverHash(slot+71,seed)*TAU;b.holder.scale.set(.72+riverHash(slot+4,seed)*.45,.68+riverHash(slot+29,seed)*.7,.72+riverHash(slot+39,seed)*.65);
  }
- for(const batch of bankBatches){let i=0;for(const b of banks){if(b.holder.position.z>18||b.holder.position.z< -(software?140:210)||(templeBatches.length&&templeBanks.includes(b))||(guardianBatches.length&&guardianBanks.includes(b)))continue;b.holder.updateMatrixWorld(true);instanceMatrix.multiplyMatrices(b.holder.matrixWorld,batch.local);batch.mesh.setMatrixAt(i++,instanceMatrix);}batch.mesh.count=i;batch.mesh.instanceMatrix.needsUpdate=true;}
- for(const batch of templeBatches){let i=0;for(const b of templeBanks){const course=b.course+riverHash(b.index+37,seed)*19,cross=b.side*(riverHalfWidth(course,seed)+3.3),p=point(course,cross);if(p.z>18||p.z< -(software?140:220))continue;
-   palmTransform.position.set(p.x,p.y+riverBankHeight(cross,course,seed)-.1,p.z);palmTransform.rotation.set(0,-b.side*.3+riverHash(b.index+81,seed)*.3,0);palmTransform.scale.set(.68,.85+riverHash(b.index+21,seed)*.3,.8);palmTransform.updateMatrix();instanceMatrix.multiplyMatrices(palmTransform.matrix,batch.local);batch.mesh.setMatrixAt(i++,instanceMatrix);}batch.mesh.count=i;batch.mesh.instanceMatrix.needsUpdate=true;}
+ for(const batch of bankBatches){let i=0;for(const b of banks){if(b.holder.position.z>18||b.holder.position.z< -(software?140:210)||(level.index===2&&templeBatches.length&&templeBanks.includes(b))||(level.index===2&&guardianBatches.length&&guardianBanks.includes(b)))continue;b.holder.updateMatrixWorld(true);instanceMatrix.multiplyMatrices(b.holder.matrixWorld,batch.local);batch.mesh.setMatrixAt(i++,instanceMatrix);}batch.mesh.count=i;batch.mesh.instanceMatrix.needsUpdate=true;}
+ let templeCount=0;for(const batch of templeBatches){let i=0;for(const b of templeBanks){const course=b.course+riverHash(b.index+37,seed)*19,cross=b.side*(riverHalfWidth(course,seed)+3.3),p=point(course,cross);if(level.index!==2||p.z>18||p.z< -(software?140:220))continue;
+   palmTransform.position.set(p.x,p.y+riverBankHeight(cross,course,seed)-.1,p.z);palmTransform.rotation.set(0,-b.side*.3+riverHash(b.index+81,seed)*.3,0);palmTransform.scale.set(.68,.85+riverHash(b.index+21,seed)*.3,.8);palmTransform.updateMatrix();instanceMatrix.multiplyMatrices(palmTransform.matrix,batch.local);batch.mesh.setMatrixAt(i++,instanceMatrix);}batch.mesh.count=i;templeCount=i;batch.mesh.instanceMatrix.needsUpdate=true;}
  for(const batch of palmBatches){let count=0;for(let i=0;i<40;i++){const side=i%2?1:-1,index=Math.floor(i/2),z=recycleZ(index*16+side*7,travel,320,32),course=travel-z,cross=side*(riverHalfWidth(course,seed)+4+riverHash(index+31,seed)*6),p=point(course,cross),size=.65+(index%4)*.15;if(canopyBatches.length||z>20||z< -210)continue;
  palmTransform.position.set(p.x,p.y+riverBankHeight(cross,course,seed),p.z);palmTransform.rotation.set(Math.sin(index)*.06,index*2.399,side*.04+Math.sin(index*1.7)*.055);palmTransform.scale.set(size*(.8+(index%3)*.13),size*(.85+(index%5)*.07),size);palmTransform.updateMatrix();instanceMatrix.multiplyMatrices(palmTransform.matrix,batch.local);batch.mesh.setMatrixAt(count++,instanceMatrix);}batch.mesh.count=count;batch.mesh.instanceMatrix.needsUpdate=true;}
  const slots=scenerySlots(travel,software?150:205,seed),harbors=[],sceneryCounts=new Map([[canopyBatches,0],[harborBatches,0],[canopyFarBatches,0],[harborFarBatches,0]]);let canopyCount=0,harborCount=0;
- for(const s of slots){const isHarbor=(s.kind==='harbor'||Math.abs(s.n)%17===3)&&harborBatches.length;
+ for(const s of slots){
+   if(level.index===1&&Math.abs(s.n)%5!==1)continue;
+   if(level.index===2&&Math.abs(s.n)%3===1)continue;
+   const isHarbor=level.index!==1&&(level.index===2?Math.abs(s.n)%3===0:s.kind==='harbor'||Math.abs(s.n)%17===3)&&harborBatches.length;
    const cross=s.side*(riverHalfWidth(s.course,seed)+(isHarbor?4.5:7)+riverHash(s.n+s.side*71,seed)*4),p=point(s.course,cross),px=p.x,far=s.z< -(frameBudget.scale<.75?65:90),collection=isHarbor?(far&&harborFarBatches.length?harborFarBatches:harborBatches):(far&&canopyFarBatches.length?canopyFarBatches:canopyBatches);
    if(!collection.length)continue;const groundY=p.y+riverBankHeight(cross,s.course,seed)-.18;palmTransform.position.set(px,groundY,s.z);palmTransform.rotation.set(0,isHarbor?-s.side*.3:riverHash(s.n+91+s.side*23,seed)*TAU,0);palmTransform.scale.setScalar(s.size);palmTransform.updateMatrix();
    const count=sceneryCounts.get(collection);sceneryCounts.set(collection,count+1);if(isHarbor)harborCount++;else canopyCount++;for(const batch of collection){instanceMatrix.multiplyMatrices(palmTransform.matrix,batch.local);batch.mesh.setMatrixAt(count,instanceMatrix);}
    if(isHarbor)harbors.push({x:px,y:groundY,z:s.z,size:s.size,side:s.side});
  }
  for(const [collection,count] of sceneryCounts)for(const b of collection){b.mesh.count=count;b.mesh.instanceMatrix.needsUpdate=true;}
- worldDetails.update(travel,g.time,reduced,harbors,seed);
+ worldDetails.update(travel,g.time,reduced,harbors,seed,level.index);
+ mapWorld.update(g,travel,reduced,level);
  let shoalCount=0;for(let n=Math.floor((travel-15)/34);n<=Math.ceil((travel+210)/34);n++){const rock=shoalAt(n,seed),p=point(rock.d,rock.x);if(p.z>15||p.z< -210||shoalCount>=10)continue;palmTransform.position.set(p.x,p.y+.18,p.z);palmTransform.rotation.set(.1,riverHash(n+83,seed)*TAU,.14);palmTransform.scale.set(rock.size*1.5,rock.size*.85,rock.size*2);palmTransform.updateMatrix();shoals.setMatrixAt(shoalCount++,palmTransform.matrix);}shoals.count=shoalCount;shoals.instanceMatrix.needsUpdate=true;
  const alive=new Set();let visible=0,coinCount=0,guardianCount=0,woodCount=0;
- if(guardianBatches.length)for(const b of guardianBanks){const cross=b.side*(riverHalfWidth(b.course,seed)+3),p=point(b.course,cross);if(p.z>18||p.z< -(software?140:210))continue;guardianTransform.position.set(p.x,p.y+riverBankHeight(cross,b.course,seed),p.z);guardianTransform.rotation.set(0,-b.side*.42+riverHash(b.index+65,seed)*.3,0);guardianTransform.scale.setScalar(1.7+riverHash(b.index+25,seed)*.5);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
+ if(level.index===2&&guardianBatches.length)for(const b of guardianBanks){const cross=b.side*(riverHalfWidth(b.course,seed)+3),p=point(b.course,cross);if(p.z>18||p.z< -(software?140:210))continue;guardianTransform.position.set(p.x,p.y+riverBankHeight(cross,b.course,seed),p.z);guardianTransform.rotation.set(0,-b.side*.42+riverHash(b.index+65,seed)*.3,0);guardianTransform.scale.setScalar(1.7+riverHash(b.index+25,seed)*.5);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  branchTrees.begin();
  for(const e of g.entities){const z=e.d-g.distance;
  if(e.type==='branch'&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
@@ -302,13 +329,14 @@ export function createScene(canvas,art,onLost){
  let obj=entities.get(e.id);if(!obj){obj=makeEntity(e);entities.set(e.id,obj);}
  const sx=p.x,y=wy;
  obj.position.set(sx,e.type==='coin'?(e.high?3.1:1.2):e.type==='rock'?.5:e.type==='branch'?0:e.type==='log'?.27:1.4,-z);obj.position.y+=y;obj.rotation.y=-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed));
- if(e.type==='rock'&&guardianBatches.length){obj.userData.body.visible=false;guardianTransform.position.set(sx,y-.12,-z);guardianTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.14,0);guardianTransform.scale.setScalar(1);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
+ if(e.type==='rock'&&guardianBatches.length&&level.index===2){obj.userData.body.visible=false;guardianTransform.position.set(sx,y-.12,-z);guardianTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.14,0);guardianTransform.scale.setScalar(1);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  if(e.type==='log'&&driftwoodBatches.length){obj.userData.body.visible=false;palmTransform.position.set(sx,y-.1,-z);palmTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.035,0);palmTransform.scale.set(1,1,1);palmTransform.updateMatrix();for(const b of driftwoodBatches){instanceMatrix.multiplyMatrices(palmTransform.matrix,b.local);b.mesh.setMatrixAt(woodCount,instanceMatrix);}woodCount++;}
  if(e.type==='coin')obj.rotation.y=reduced?0:g.time*4+e.id;
  else if(e.type==='log')obj.rotation.x=reduced?0:Math.sin(e.d*.58-g.time*1.9)*.04;
  if(obj.userData.label)obj.userData.label.visible=z<g.speed*1.6&&z>3;
  }
  for(let i=0;i<bankTrees.length;i++){
+  if(level.index===1&&i%4!==0||level.index===2&&i%2!==0)continue;
   const z=recycleZ(Math.floor(i/2)*48+(i%2)*13,travel,192,24);
   if(z>18||z< -150)continue;
   branchTrees.add(bankTrees[i],travel,travel-z,seed,true);
@@ -333,7 +361,7 @@ export function createScene(canvas,art,onLost){
  if(i>=80){const d=travel+5+(i-80)*1.6,rx=Math.sin(a)*riverHalfWidth(d,seed)*.75,rp=point(d,rx),energy=rapidAt(d,seed);xx=rp.x;zz=rp.z;yy=rp.y+waterHeight(rx,d)+Math.sin(p*Math.PI)*energy*.8;if(energy<.45)yy=rp.y-1;}
  sprayPositions[i*3]=xx;sprayPositions[i*3+1]=yy;sprayPositions[i*3+2]=zz;}
  sprayGeometry.attributes.position.needsUpdate=true;}
- renderer.render(scene,camera);status.frames++;status.readyFrames=Object.values(status.models).every(x=>x==='ready')?(status.readyFrames??0)+1:0;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.templeInstances=templeBatches.length?templeBanks.length:0;status.guardianInstances=guardianCount;status.course={seed:riverSeed(seed),width:riverHalfWidth(travel,seed)*2,rapid:rapidAt(travel,seed),grade:riverGrade(travel,seed),dropAhead:point(travel+100).y,bendAhead:point(travel+100).x,shoals:shoalCount,framing:[-3.8,0,3.8].map(lane=>{const foot=new THREE.Vector3(lane,f.height+.55,0).project(camera),head=new THREE.Vector3(lane,f.height+lift+3.7,0).project(camera),near=point(travel+20,lane),route=new THREE.Vector3(near.x,near.y+1,near.z).project(camera);return{foot:[foot.x,foot.y],head:[head.x,head.y],route:[route.x,route.y]};}),camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,fov:camera.fov}};status.world={district:districtAt(g.distance).name,canopies:canopyCount,harbors:harborCount,woodHazards:woodCount,...worldDetails.state};status.steering={x,velocity:g.laneVelocity,yaw:carve,lean:skeletal?.state.balance??rider.rotation.z};status.surfaceMaps={rock:1024,wood:1024,ground:1024,water:1024,normals:software?0:512};status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:waterHeight(x,travel)};status.reducedMotion=reduced;status.frameBudget={scale:frameBudget.scale,meanMs:frameBudget.meanMs,dpr:renderer.getPixelRatio(),pixels:canvas.width*canvas.height,water:water.material===cheapWaterMaterial?'light':'rich'};
+ renderer.render(scene,camera);status.frames++;status.readyFrames=Object.values(status.models).every(x=>x==='ready')?(status.readyFrames??0)+1:0;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.templeInstances=templeCount;status.guardianInstances=guardianCount;status.course={seed:riverSeed(seed),width:riverHalfWidth(travel,seed)*2,rapid:rapidAt(travel,seed),grade:riverGrade(travel,seed),dropAhead:point(travel+100).y,bendAhead:point(travel+100).x,shoals:shoalCount,framing:[-3.8,0,3.8].map(lane=>{const foot=new THREE.Vector3(lane,f.height+.55,0).project(camera),head=new THREE.Vector3(lane,f.height+lift+3.7,0).project(camera),near=point(travel+20,lane),route=new THREE.Vector3(near.x,near.y+1,near.z).project(camera);return{foot:[foot.x,foot.y],head:[head.x,head.y],route:[route.x,route.y]};}),camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,fov:camera.fov}};status.world={district:level.name,canopies:canopyCount,harbors:harborCount,woodHazards:woodCount,...worldDetails.state,...mapWorld.state};status.steering={x,velocity:g.laneVelocity,yaw:carve,lean:skeletal?.state.balance??rider.rotation.z};status.surfaceMaps={rock:1024,wood:1024,ground:1024,water:1024,normals:software?0:512};status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:waterHeight(x,travel)};status.reducedMotion=reduced;status.frameBudget={scale:frameBudget.scale,meanMs:frameBudget.meanMs,dpr:renderer.getPixelRatio(),pixels:canvas.width*canvas.height,water:water.material===cheapWaterMaterial?'light':'rich'};
  }
  function dispose(){if(disposed)return;disposed=true;retryTimers.forEach(clearTimeout);pendingLoads.forEach(done=>done());resolveVista();canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats),...retiredMaterials,...labelMaterials.values(),waterMaterial,cheapWaterMaterial]),textures=new Set([scene.background,...surfaceTextures]),skeletons=new Set(),instances=new Set();for(const root of [scene,...retired])root.traverse(o=>{if(o.isInstancedMesh)instances.add(o);if(o.skeleton)skeletons.add(o.skeleton);if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});for(const m of retiredMaterials)for(const v of Object.values(m))if(v?.isTexture)textures.add(v);riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));instances.forEach(o=>o.dispose());geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());skeletons.forEach(s=>s.dispose());renderer.forceContextLoss();renderer.dispose();}
  return {render,prepare,recover,dispose,status};
