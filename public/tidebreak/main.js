@@ -322,15 +322,16 @@ function updateUI() {
 }
 const hudReady=()=>running&&!paused&&!resultShown;
 pointerAction($('inventory'),shop,hudReady);
-// The quick-buy button previews the next purchase: its icon and price, glowing when it can be bought, or the embers
-// saved toward it. A small corner icon shows the build goal it leads to.
+// The quick-buy tab sits on top of the bar, above the items, and says QUICK BUY. It previews the next purchase: its
+// icon, name and price, glowing when it can be bought, or the embers saved toward it. A small corner icon shows the
+// build goal it leads to.
 const nextStep = (p, id, bag = [...p.inventory]) => { const at = bag.indexOf(id); if (at >= 0) { bag.splice(at, 1); return null; } for (const part of ITEM[id].recipe) { const found = nextStep(p, part, bag); if (found) return found; } return id; };
 let quickBuyKey = '';
 function updateQuickBuy(p) {
   const b = $('quick-buy'), next = nextPurchase(p), goal = nextItem(p), step = next || (goal && nextStep(p, goal)), cost = step ? quote(p, step).cost : 0;
   b.disabled = !next; b.dataset.item = next || ''; b.classList.toggle('affordable', !!next);
   const key = `${step}|${goal}`;
-  if (key !== quickBuyKey) { quickBuyKey = key; b.innerHTML = step ? `${itemIcon(step)}<b class="qb-cost"></b>${goal && goal !== step ? `<i class="qb-goal">${itemIcon(goal)}</i>` : ''}` : '<b class="qb-cost">✓</b>'; }
+  if (key !== quickBuyKey) { quickBuyKey = key; b.innerHTML = `<small class="qb-label">Quick buy</small>` + (step ? `${itemIcon(step)}<span class="qb-name">${ITEM[step].name}</span><b class="qb-cost"></b>${goal && goal !== step ? `<i class="qb-goal">${itemIcon(goal)}</i>` : ''}` : '<span class="qb-name">Build complete</span>'); }
   const price = b.querySelector('.qb-cost'); if (step && price) price.textContent = next ? cost : `${Math.floor(Math.min(p.gold, cost))}/${cost}`;
   const label = !step ? 'Build complete' : next ? `Buy ${ITEM[next].name} for ${cost} embers${goal && goal !== next ? `, toward ${ITEM[goal].name}` : ''}` : `Next: ${ITEM[step].name}, ${Math.floor(p.gold)} of ${cost} embers${goal !== step ? `, toward ${ITEM[goal].name}` : ''}`;
   b.title = label; b.setAttribute('aria-label', label);

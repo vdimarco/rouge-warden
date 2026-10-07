@@ -1,10 +1,11 @@
 // HUD details in Shore of the Ancients, checked in Chromium at a desktop, an upright phone and a phone on its side:
 // - the skill card: a mouse over a skill (or a tap on a phone) shows its name, key, mana, cooldown, text and status; it
-//   covers no skill, badge or point button and stays on screen; it goes when the mouse leaves, or about 2.5 s after a
-//   tap; a tap still casts a ready skill;
+//   covers no skill, badge, point button or quick-buy tab and stays on screen; on phones it is compact (at most 100 px
+//   high) and sits left of the skills, over the items; it goes when the mouse leaves, or about 2 s after a tap; a tap still
+//   casts a ready skill;
 // - the Night Market: the Relics tab shows the relics on the first view and selects the first relic;
-// - the quick-buy button previews the next purchase: its icon and price, saved/needed embers when it cannot be bought,
-//   and the build goal; a press buys it.
+// - the quick-buy tab sits above the item slots and says QUICK BUY; it previews the next purchase: its icon and price,
+//   saved/needed embers when it cannot be bought, and the build goal; a press buys it.
 // Needs the static server (see AGENTS.md): node qa/tidebreak/hud-details.e2e.mjs
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -37,12 +38,13 @@ try {
     await page.waitForTimeout(350);
     const card = await page.evaluate(() => {
       const c = document.getElementById('skill-card'), b = c.getBoundingClientRect();
-      const covers = [...document.querySelectorAll('.ability,.ability-upgrade:not([hidden]),#skill-points')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top; }).map(e => e.id || e.className);
-      return { hidden: c.hidden, text: c.innerText, covers, inView: b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight };
+      const covers = [...document.querySelectorAll('.ability,.ability-upgrade:not([hidden]),#skill-points,#quick-buy')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top; }).map(e => e.id || e.className);
+      return { hidden: c.hidden, text: c.innerText, covers, inView: b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight, height: b.height, centre: b.left + b.width / 2, skills: document.querySelector('.ability.dash').getBoundingClientRect().left };
     });
     assert.equal(card.hidden, false, at('the skill card shows'));
-    assert.match(card.text, /\bQ\b/); assert.match(card.text, /mana/); assert.match(card.text, /cooldown/); assert.match(card.text, /Ready in \d+s/, at('the card shows the cooldown left'));
-    assert.deepEqual(card.covers, [], at('the card covers no skill, badge or point button')); assert.ok(card.inView, at('the card is on screen'));
+    assert.match(card.text, /\bQ\b/); assert.match(card.text, /mana/); assert.match(card.text, /\d(\.\d)?s\b/, at('the card shows the cooldown')); assert.match(card.text, /Ready in \d+s/, at('the card shows the cooldown left'));
+    assert.deepEqual(card.covers, [], at('the card covers no skill, badge, point button or quick-buy tab')); assert.ok(card.inView, at('the card is on screen'));
+    if (size.touch) assert.ok(card.height <= 100 && card.centre < card.skills, at(`the phone card is compact and left of the skills: ${Math.round(card.height)} px high, centre at ${Math.round(card.centre)}, skills from ${Math.round(card.skills)}`));
     checks++;
     // An unlearned skill says how to learn it.
     const e = await (await page.$('.ability.surge')).boundingBox();
@@ -68,6 +70,9 @@ try {
     await page.waitForTimeout(400);
     const poor = await page.evaluate(() => { const b = document.getElementById('quick-buy'); return { label: b.getAttribute('aria-label'), icon: !!b.querySelector('.item-icon'), disabled: b.disabled, text: b.innerText }; });
     assert.ok(poor.icon && poor.disabled, at('the preview shows the next item while it cannot be bought'));
+    const tab = await page.evaluate(() => { const b = document.getElementById('quick-buy').getBoundingClientRect(), slots = document.getElementById('inventory').getBoundingClientRect(), label = document.querySelector('#quick-buy .qb-label'); return { above: b.bottom <= slots.top + 1, label: label?.innerText.trim(), shown: !!label && label.getBoundingClientRect().width > 0 }; });
+    assert.ok(tab.above, at('the quick-buy tab sits above the item slots'));
+    assert.ok(tab.shown && /quick buy/i.test(tab.label), at(`the tab says QUICK BUY: ${tab.label}`));
     assert.match(poor.label, /^Next: .+, 40 of \d+ embers/, at('the label says the embers saved toward it'));
     await page.evaluate(player('p.gold = 3000;'));
     await page.waitForTimeout(400);
