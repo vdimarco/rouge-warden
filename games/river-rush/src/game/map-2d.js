@@ -4,6 +4,7 @@ import { currentDistance,WAVE_CADENCE } from './hydrodynamics.js';
 import { FINISH_GATE,prepareFinishArt } from './finish-line.js';
 import { courseIntensity } from './course-intensity.js';
 import { createCourseProfile,rapidAt,riverHash } from './river-course.js';
+import {paintMoonlitSky,MOONLIT_LAYERS,moonlitPlacement,moonlitLayerRange} from './moonlit-horizon.js';
 
 // All texture cards are made at loading time. Stage changes only select an
 // existing image; the fallback never starts a new graphics context mid-run.
@@ -75,18 +76,39 @@ export function prepareMap2D(art){
   const grounds=[null,...[1,2].map(index=>make(256,256,ctx=>{
     const level=levelAt(index);ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);ctx.globalAlpha=.25;ctx.drawImage(art.surfaceground,0,0,256,256);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.65;ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);
   }))];
-  return{rivers,grounds,canyonSkyline:[0,1].map(layer=>canyonSkyline(art,layer)),props:[null,[0,1,2].map(v=>cliffCard(art,v)),[0,1,2].map(v=>templeCard(art,v))],finish:prepareFinishArt()};
+  const moonlitSky=make(1024,512,ctx=>paintMoonlitSky(ctx,1024,512));
+  const moonlitRidges=[0,1,2].map(layer=>make(512,384,ctx=>{
+    const ridge=[];
+    for(let i=0;i<=40;i++){
+      const x=i*512/40,edge=Math.sin(Math.PI*i/40),crown=(.65+hash(i+layer*79)*.35)*edge;
+      ridge.push([x,360-crown*(205+layer*18)-(i%3===1?18*edge:0)]);
+    }
+    ctx.beginPath();ctx.moveTo(0,384);for(const p of ridge)ctx.lineTo(...p);ctx.lineTo(512,384);ctx.closePath();ctx.clip();
+    const shade=ctx.createLinearGradient(0,50,0,384);shade.addColorStop(0,['#596380','#737396','#8b83a6'][layer]);shade.addColorStop(1,['#343e5c','#555571','#716783'][layer]);ctx.fillStyle=shade;ctx.fillRect(0,0,512,384);
+    ctx.globalAlpha=.13;ctx.globalCompositeOperation='multiply';ctx.drawImage(art.surfacerock,0,0,512,384);
+  }));
+  return{rivers,grounds,moonlitSky,moonlitRidges,canyonSkyline:[0,1].map(layer=>canyonSkyline(art,layer)),props:[null,[0,1,2].map(v=>cliffCard(art,v)),[0,1,2].map(v=>templeCard(art,v))],finish:prepareFinishArt()};
 }
 
-function cover(ctx,image,width,height,center=.5){
-  const scale=Math.max(width/image.width,height/image.height),sw=width/scale,sh=height/scale;
-  const x=Math.max(0,Math.min(image.width-sw,image.width*center-sw/2));
-  ctx.drawImage(image,x,Math.max(0,(image.height-sh)*.4),sw,sh,0,0,width,height);
+function drawMoonlitHorizon2D(ctx,g,art,width,height,project){
+  const level=levelAt(g.levelIndex),travel=g.distance;
+  let profile=profiles.get(g);if(!profile){profile=createCourseProfile(g.seed,level.length,level.index);profiles.set(g,profile);}
+  ctx.save();
+  for(let i=MOONLIT_LAYERS.length-1;i>=0;i--){
+    const layer=MOONLIT_LAYERS[i],range=moonlitLayerRange(travel,layer);let count=0;
+    for(let n=range.first;n<=range.last;n++)for(const side of [-1,1]){
+      const at=moonlitPlacement(travel,layer,n,side,profile);if(!at||at.visibility<.0001||count>=layer.capacity)continue;count++;
+      const p=project(width,height,1+at.x/3.8,at.ahead),unit=p.corridor/11.4*p.scale;
+      const w=at.width*2*unit,h=at.height*1.4*unit,foot=p.y-at.y*unit;
+      ctx.globalAlpha=1;ctx.save();ctx.translate(p.x,foot);ctx.scale(side,1);
+      ctx.drawImage(art.map2d.moonlitRidges[i],-w/2,-h,w,h);ctx.restore();
+    }
+  }
+  ctx.restore();
 }
 
 export function drawMap2D(ctx,g,art,width,height,reduced,project){
   const level=levelAt(g.levelIndex);if(level.index===0)return;
-  const image=level.index===2?art.mapruins:null;
   const sky=ctx.createLinearGradient(0,0,0,height);sky.addColorStop(0,level.sky);sky.addColorStop(.6,level.fog);sky.addColorStop(1,level.waterDeep);ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
   if(level.index===1){
     // Far land receives only small course parallax; bank cards below advance
@@ -98,7 +120,11 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
       ctx.drawImage(art.map2d.canyonSkyline[layer],-width*.035+parallax,p.y-ridgeHeight,width*1.07,ridgeHeight);
     }
   }
-  else if(image)cover(ctx,image,width,height,.63);
+  else if(level.index===2){
+    const sky=art.map2d.moonlitSky,scale=Math.max(width/sky.width,height/sky.height),sw=width/scale,sh=height/scale;
+    ctx.drawImage(sky,(sky.width-sw)/2,(sky.height-sh)/2,sw,sh,0,0,width,height);
+    drawMoonlitHorizon2D(ctx,g,art,width,height,project);
+  }
   else{const ground=ctx.createLinearGradient(0,height*.3,0,height);ground.addColorStop(0,level.fog);ground.addColorStop(1,level.ground);ctx.fillStyle=ground;ctx.fillRect(0,height*.3,width,height*.7);}
   const edges=[[],[]],distant=project(width,height,1,1400),near=project(width,height,1,-14);
   for(let i=0;i<=26;i++){

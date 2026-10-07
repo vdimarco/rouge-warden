@@ -31,7 +31,7 @@ export function loadArt() {
   for(const name of ['rock','wood','ground','water'])sources.push([`surface${name}`,`surface-${name}`,'webp']);
   for(const name of ['rock','wood','ground'])sources.push([`normal${name}`,`surface-${name}-normal`]);
   sources.push(['treebark','tree-bark','webp',true],['treebarknormal','tree-bark-normal','webp',true],['treeleaves','tree-foliage','webp',true]);
-  sources.push(['mapjungle','valley-vista','webp',true],['mapcanyon','map-canyon','webp',true],['mapruins','map-ruins','webp',true]);
+  sources.push(['mapjungle','valley-vista','webp',true],['mapcanyon','map-canyon','webp',true]);
   return artPromise??=Promise.all(sources.map(([key,name,extension,optional])=>loadImage(key,name,extension,optional))).then(entries=>prepareHeroArt(Object.fromEntries(entries))).catch(error=>{artPromise=null;throw error;});
 }
 const paddleAnchors=[[264,422],[264,422],[265,422],[265,422],[266,408],[264,408],[266,408],[265,410]];

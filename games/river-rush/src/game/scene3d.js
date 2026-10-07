@@ -17,6 +17,7 @@ import {levelAt,LEVELS} from './levels.js';
 import {createMapWorld} from './map-world.js';
 import {canyonSky,createCanyonHorizon} from './canyon-horizon.js';
 import {createChunkStream,updateChunkStream} from './chunk-stream.js';
+import {moonlitSky,createMoonlitHorizon,MOONLIT_FAR} from './moonlit-horizon.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -186,13 +187,15 @@ export function createScene(canvas,art,onLost){
  const worldDetails=createWorldDetails(scene,mat,waterDetail,rockMat);
  const mapWorld=createMapWorld(scene,mat,rockMat,software);
  const canyonHorizon=createCanyonHorizon(scene,mat,stone);
+ const moonlitHorizon=createMoonlitHorizon(scene,mat,stone);
  const treeBark=mat('#ded9ce',.93);treeBark.map=texture(art.treebark??art.surfacewood);
  if(!software){treeBark.normalMap=texture(art.treebarknormal??art.normalwood,false);treeBark.normalScale=new THREE.Vector2(.8,.8);}
  const branchTrees=createBranchTrees(scene,treeBark,mat,art,software);
  const bankTrees=Array.from({length:8},(_,i)=>({id:7000+i,side:i%2?1:-1}));
  const mapPanoramas=LEVELS.map(level=>{
   if(level.index===1){const t=canyonSky();surfaceTextures.push(t);return {texture:t,painted:false};}
-  const image=art[['mapjungle','mapcanyon','mapruins'][level.index]];
+  if(level.index===2){const t=moonlitSky();surfaceTextures.push(t);return {texture:t,painted:false};}
+  const image=art.mapjungle;
   const t=image?new THREE.Texture(image):level.index===0?scene.background:skyTexture(level);
   if(image){t.needsUpdate=true;t.colorSpace=THREE.SRGBColorSpace;t.matrixAutoUpdate=false;}
   surfaceTextures.push(t);return {texture:t,painted:!!image};
@@ -284,14 +287,14 @@ export function createScene(canvas,art,onLost){
  camera.aspect=w/h;camera.fov=w/h<.85?80:60;camera.updateProjectionMatrix();}
  const portrait=w/h<.85,travel=reduced?0:g.distance,seed=profile;
  const level=levelAt(g.levelIndex),map=mapPanoramas[level.index];
- scene.background=map.texture;panorama=map.painted?map.texture:null;mountains.visible=!map.painted&&level.index!==1;
- const farPlane=level.index===1?1050:350;if(camera.far!==farPlane){camera.far=farPlane;camera.updateProjectionMatrix();}
- scene.fog.color.set(level.fog);scene.fog.density=level.index===1?.0026:level.index===2?.0034:.0044;
+ scene.background=map.texture;panorama=map.painted?map.texture:null;mountains.visible=!map.painted&&level.index===0;
+ const farPlane=level.index===1?1050:level.index===2?MOONLIT_FAR:350;if(camera.far!==farPlane){camera.far=farPlane;camera.updateProjectionMatrix();}
+ scene.fog.color.set(level.fog);scene.fog.density=level.index===1?.0026:level.index===2?.0022:.0044;
  hemisphere.color.set(level.index===2?'#c2c6ff':level.index===1?'#ffe3bd':'#c4f1ff');hemisphere.groundColor.set(level.index===2?'#514967':level.index===1?'#866147':'#3e6244');hemisphere.intensity=level.index===2?1.8:1.65;
  sun.color.set(level.index===2?'#d0d7ff':level.index===1?'#ffe3b6':'#fff1d1');sun.intensity=level.index===2?1.7:2.9;
  mountainMat.color.set(level.index===2?'#77708e':level.index===1?'#b78269':'#899b7e');
  uniforms.uWaterDeep.value.set(level.waterDeep);uniforms.uWaterEdge.value.set(level.waterEdge);uniforms.uWaterSky.value.set(level.fog);uniforms.uWaterFoam.value.set(level.index===2?'#cbd9ff':'#d7f7ed');uniforms.uGroundTint.value.set(level.ground);uniforms.uMapIndex.value=level.index;
- status.map={id:level.id,index:level.index,name:level.name,finishDistance:level.length,remaining:Math.max(0,level.length-g.distance),background:level.index===1?'sky-and-projected-canyon':map.painted?'panorama':'gradient'};
+ status.map={id:level.id,index:level.index,name:level.name,finishDistance:level.length,remaining:Math.max(0,level.length-g.distance),background:level.index===1?'sky-and-projected-canyon':level.index===2?'night-sky-and-projected-ruins':map.painted?'panorama':'gradient'};
  const point=(course,cross=0)=>riverPoint(travel,course,cross,seed);
  const waterHeight=(cross,course)=>surfaceAt(cross,course,reduced?0:g.time,reduced,seed).height;
  const look=point(travel+(portrait?32:38));
@@ -313,6 +316,7 @@ export function createScene(canvas,art,onLost){
  // Raise the painted valley horizon above the 3D water's vanishing point;
  // otherwise the river mesh hides the mountains and only empty sky is seen.
  if(panorama){const aspect=panorama.image.width/panorama.image.height,screen=w/h,rx=Math.min(1,screen/aspect),ry=Math.min(1,aspect/screen);panorama.matrix.setUvTransform((1-rx)/2+(reduced?0:(g.visualLane-1)*.006),(1-ry)/2-.26,rx,ry,0,0,0);}
+ if(level.index===2){const sky=map.texture,aspect=sky.image.width/sky.image.height,screen=w/h,rx=Math.min(1,screen/aspect),ry=Math.min(1,aspect/screen);sky.matrix.setUvTransform((1-rx)/2,(1-ry)/2,rx,ry,0,0,0);}
  updateChunkStream(terrainStream,travel,seed);
  if(terrainStream.changedCount)for(const batch of terrainTiles){
    for(let i=0;i<terrainStream.changedCount;i++){const slot=terrainStream.changedSlots[i];instanceMatrix.makeTranslation(0,0,terrainStream.chunks[slot].matrixZ);batch.setMatrixAt(slot,instanceMatrix);batch.instanceMatrix.addUpdateRange(slot*16,16);}
@@ -344,7 +348,9 @@ export function createScene(canvas,art,onLost){
  for(const [collection,count] of sceneryCounts)for(const b of collection){b.mesh.count=count;b.mesh.instanceMatrix.needsUpdate=true;}
  worldDetails.update(travel,g.time,reduced,harbors,seed,level.index);
  mapWorld.update(g,travel,reduced,level,seed);
- canyonHorizon.update(g,travel,level.index===1,camera,seed);status.horizon=level.index===1?canyonHorizon.state:null;
+ canyonHorizon.update(g,travel,level.index===1,camera,seed);
+ moonlitHorizon.update(g,travel,level.index===2,camera,seed);
+ status.horizon=level.index===1?canyonHorizon.state:level.index===2?moonlitHorizon.state:null;
  let shoalCount=0;for(let n=Math.floor((travel-15)/34);n<=Math.ceil((travel+210)/34);n++){const rock=shoalAt(n,seed),p=point(rock.d,rock.x);if(p.z>15||p.z< -210||shoalCount>=10)continue;palmTransform.position.set(p.x,p.y+.18,p.z);palmTransform.rotation.set(.1,riverHash(n+83,seed)*TAU,.14);palmTransform.scale.set(rock.size*1.5,rock.size*.85,rock.size*2);palmTransform.updateMatrix();shoals.setMatrixAt(shoalCount++,palmTransform.matrix);}shoals.count=shoalCount;shoals.instanceMatrix.needsUpdate=true;
  const fatalId=g.phase==='lost'?g.effects.find(effect=>effect.type==='lose')?.entityId:null;
  const alive=new Set();let visible=0,coinCount=0,guardianCount=0,woodCount=0;
