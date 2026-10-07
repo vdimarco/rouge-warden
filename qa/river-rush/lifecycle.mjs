@@ -5,7 +5,8 @@ const browser=await chromium.launch({args:['--no-sandbox']});
 try {
  const page=await browser.newPage();
  await page.goto(new URL('river-rush/',process.env.ARCADE_URL||'http://localhost:8765/').href,{waitUntil:'networkidle'});
- await page.getByRole('button',{name:'Enable sound'}).click();await page.getByRole('button',{name:'Start run',exact:true}).click();
+ // Saved mute is respected, while first-time players start with sound enabled.
+ const enable=page.getByRole('button',{name:'Enable sound',exact:true});if(await enable.count())await enable.click();await page.getByRole('button',{name:'Start run',exact:true}).click();
  await page.waitForFunction(()=>window.__quiet.contexts().some(c=>c.state==='running'));
  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});Object.defineProperty(document,'visibilityState',{configurable:true,get:()=> 'hidden'});document.dispatchEvent(new Event('visibilitychange'));});
  await page.getByRole('dialog',{name:'Game paused'}).waitFor();await page.waitForFunction(()=>window.__quiet.contexts().every(c=>c.state==='suspended'));

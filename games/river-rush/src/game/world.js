@@ -1,4 +1,10 @@
 // World coordinates, not screen-space particles: every patch shares course speed.
+// `done` means the crossing was scored, not that the physical hazard vanished.
+// A dodged rock or jumped log still has to pass the raft and leave the camera.
+export function worldEntityVisible(entity,distance,view){
+  const ahead=entity.d-distance,pickup=entity.type==='coin'||entity.type==='magnet'||entity.type==='shield';
+  return ahead<=view&&ahead>(pickup?-5:-16)&&!(pickup?entity.collected:entity.destroyed);
+}
 export function bankScenery(distance,view=140){
   const first=Math.floor((distance-22)/14),last=Math.ceil((distance+view)/14),items=[];
   for(let n=first;n<=last;n++)for(const side of [-1,1]){

@@ -564,6 +564,10 @@ Decorative bank rocks SHALL remain outside navigable lanes throughout the seeded
 - **WHEN** the player jumps, ducks, activates protection, pauses or uses reduced motion
 - **THEN** controls respond immediately, stopped frames remain unchanged, action barriers stay traversable, and the correction adds no active shader or texture preparation
 
+#### Scenario: A dodged rock passes beside the raft
+- **WHEN** the raft successfully passes beside a rock or jumps over a log
+- **THEN** the obstacle remains solid as it passes the raft and retires after leaving the near viewport behind the raft; only an actual shield or Rush impact removes it, without reappearing when feedback expires
+
 ### Requirement: Seamless varied terrain with bounded forward chunks
 Riverbanks SHALL use deterministic seamlessly periodic two-dimensional noise with bounded layered relief. Canopy SHALL have rounded hills, Redstone SHALL have eroded terraced rock formations, and Moonlit SHALL have broken stepped ridges. CPU scenery placement and GPU bank geometry SHALL use matching terrain heights, with additional relief fading to zero at the navigable channel.
 
@@ -603,3 +607,22 @@ Moonlit Ruins SHALL use an atmosphere-only night sky and prepared bounded course
 #### Scenario: Use graphics fallback
 - **WHEN** WebGL cannot initialize
 - **THEN** Moonlit remains playable with a coherent night environment and no fixed painted near river
+
+### Requirement: Epic adaptive gameplay soundtrack
+River Rush SHALL play a locally hosted original instrumental adventure loop during active gameplay, with a smoothly fuller mix as course intensity and Rush increase. Action cues SHALL remain distinct. Playback SHALL reuse bounded resources and SHALL NOT delay the frame loop.
+
+#### Scenario: Start and build momentum
+- **WHEN** a new player starts a run on desktop or portrait/landscape touch layouts
+- **THEN** the score begins from that gesture, loops continuously and smoothly increases in energy with the rapids while jump, duck and pickup sounds remain available
+
+#### Scenario: Pause, hide, finish and retry
+- **WHEN** a sounding run pauses, the page hides, the run ends or the player returns to the menu
+- **THEN** playback becomes silent and stays silent until an explicit sounding Start or Resume; retry does not create duplicate media elements or contexts
+
+#### Scenario: Persist mute
+- **WHEN** the player mutes sound and retries a map or reloads the page
+- **THEN** the preference remains muted until the player explicitly enables sound
+
+#### Scenario: Soundtrack unavailable
+- **WHEN** the soundtrack cannot load or browser audio playback is rejected
+- **THEN** the game, pause, retry and keyboard/swipe controls continue to work without an unhandled rejection or repeated allocation

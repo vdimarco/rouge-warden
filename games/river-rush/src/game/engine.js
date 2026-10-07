@@ -163,8 +163,9 @@ export function applyAction(g, action) {
   }
 }
 function collide(g, obstacle, contact, protectedAtCrossing) {
-  if (protectedAtCrossing) { emit(g, 'smash', '', contact.playerLane, contact); return 'protected'; }
+  if (protectedAtCrossing) { obstacle.destroyed = true; emit(g, 'smash', '', contact.playerLane, contact); return 'protected'; }
   if (g.shield) {
+    obstacle.destroyed = true;
     g.shield = false; g.shieldsUsed++;
     g.streak = 0; g.multiplier = 1;
     emit(g, 'hit', 'Shield saved you! Next hit ends the run', contact.playerLane, contact); return 'shield';

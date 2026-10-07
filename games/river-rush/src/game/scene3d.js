@@ -18,6 +18,7 @@ import {createMapWorld} from './map-world.js';
 import {canyonSky,createCanyonHorizon} from './canyon-horizon.js';
 import {createChunkStream,updateChunkStream} from './chunk-stream.js';
 import {moonlitSky,createMoonlitHorizon,MOONLIT_FAR} from './moonlit-horizon.js';
+import {worldEntityVisible} from './world.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -159,7 +160,7 @@ export function createScene(canvas,art,onLost){
  // a HUD-bound token from growing into a new golden world coin beside the raft.
  const scoreTokenMat=new THREE.MeshBasicMaterial({color:'#fff5d8',transparent:true,opacity:.94,depthTest:false,depthWrite:false,toneMapped:false});
  const scoreTokens=new THREE.InstancedMesh(coinGeo,scoreTokenMat,24),tokenDepth=new THREE.Vector3();scoreTokens.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scoreTokens.frustumCulled=false;scoreTokens.renderOrder=5;scene.add(scoreTokens);
- const entities=new Map(),labels=new Map(),labelMaterials=new Map(),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ffd36c',.35)};
+ const entities=new Map(),labels=new Map(),labelMaterials=new Map(),hazardProjection=new THREE.Vector3(),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ffd36c',.35)};
  function label(text){if(labels.has(text))return labels.get(text);const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#043b35dd';x.roundRect(0,0,256,64,16);x.fill();x.font='bold 31px sans-serif';x.fillStyle='#fff0b9';x.textAlign='center';x.fillText(text,128,44);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;labels.set(text,t);return t;}
  function makeEntity(e){const g=new THREE.Group();let m;
  if(e.type==='coin'){m=mesh(coinGeo,coinMat,g);m.rotation.x=Math.PI/2;}
@@ -186,7 +187,7 @@ export function createScene(canvas,art,onLost){
  const retryTimers=new Set(),retired=[raftModel,bankTemplate],retiredMaterials=new Set();
  const worldDetails=createWorldDetails(scene,mat,waterDetail,rockMat);
  const mapWorld=createMapWorld(scene,mat,rockMat,software);
- const canyonHorizon=createCanyonHorizon(scene,mat,stone);
+ const canyonHorizon=createCanyonHorizon(scene,mat,stone,uniforms);
  const moonlitHorizon=createMoonlitHorizon(scene,mat,stone);
  const treeBark=mat('#ded9ce',.93);treeBark.map=texture(art.treebark??art.surfacewood);
  if(!software){treeBark.normalMap=texture(art.treebarknormal??art.normalwood,false);treeBark.normalScale=new THREE.Vector2(.8,.8);}
@@ -352,20 +353,20 @@ export function createScene(canvas,art,onLost){
  moonlitHorizon.update(g,travel,level.index===2,camera,seed);
  status.horizon=level.index===1?canyonHorizon.state:level.index===2?moonlitHorizon.state:null;
  let shoalCount=0;for(let n=Math.floor((travel-15)/34);n<=Math.ceil((travel+210)/34);n++){const rock=shoalAt(n,seed),p=point(rock.d,rock.x);if(p.z>15||p.z< -210||shoalCount>=10)continue;palmTransform.position.set(p.x,p.y+.18,p.z);palmTransform.rotation.set(.1,riverHash(n+83,seed)*TAU,.14);palmTransform.scale.set(rock.size*1.5,rock.size*.85,rock.size*2);palmTransform.updateMatrix();shoals.setMatrixAt(shoalCount++,palmTransform.matrix);}shoals.count=shoalCount;shoals.instanceMatrix.needsUpdate=true;
- const fatalId=g.phase==='lost'?g.effects.find(effect=>effect.type==='lose')?.entityId:null;
+ const rockSamples=[];
  const alive=new Set();let visible=0,coinCount=0,guardianCount=0,woodCount=0;
  if(level.index===2&&guardianBatches.length)for(const b of guardianBanks){const cross=b.side*(riverHalfWidth(b.course,seed)+3),p=point(b.course,cross);if(p.z>18||p.z< -(software?140:210))continue;guardianTransform.position.set(p.x,p.y+riverBankHeight(cross,b.course,seed),p.z);guardianTransform.rotation.set(0,-b.side*.42+riverHash(b.index+65,seed)*.3,0);guardianTransform.scale.setScalar(1.7+riverHash(b.index+25,seed)*.5);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  branchTrees.begin();
  for(const e of g.entities){const z=e.d-g.distance;
  if(e.type==='branch'&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
- const pickup=e.type==='coin'||e.type==='magnet'||e.type==='shield';
- if((pickup?e.collected:e.done&&e.id!==fatalId)||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
+ if(!worldEntityVisible(e,g.distance,VIEW_DISTANCE))continue;alive.add(e.id);visible++;
  const course=travel+z,cross=(e.lane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
  if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,(e.high?3.1:1.2)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
  let obj=entities.get(e.id);if(!obj){obj=makeEntity(e);entities.set(e.id,obj);}
  const sx=p.x,y=wy;
  obj.position.set(sx,e.type==='coin'?(e.high?3.1:1.2):e.type==='rock'?.5:e.type==='branch'?0:e.type==='log'?.27:1.4,-z);obj.position.y+=y;obj.rotation.y=-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed));
  if(e.type==='rock'&&guardianBatches.length&&level.index===2){obj.userData.body.visible=false;guardianTransform.position.set(sx,y-.12,-z);guardianTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.14,0);guardianTransform.scale.setScalar(1);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
+ if(e.type==='rock'){hazardProjection.set(sx,y+1.2,-z).project(camera);rockSamples.push({id:e.id,lane:e.lane,ahead:z,resolved:!!e.done,kind:level.index===2&&guardianBatches.length?'guardian':'rock',screen:[hazardProjection.x,hazardProjection.y]});}
  if(e.type==='log'&&driftwoodBatches.length){obj.userData.body.visible=false;palmTransform.position.set(sx,y-.1,-z);palmTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.035,0);palmTransform.scale.set(1,1,1);palmTransform.updateMatrix();for(const b of driftwoodBatches){instanceMatrix.multiplyMatrices(palmTransform.matrix,b.local);b.mesh.setMatrixAt(woodCount,instanceMatrix);}woodCount++;}
  if(e.type==='coin')obj.rotation.y=reduced?0:g.time*4+e.id;
  else if(e.type==='log')obj.rotation.x=reduced?0:Math.sin(e.d*.58-g.time*1.9)*.04;
@@ -378,6 +379,7 @@ export function createScene(canvas,art,onLost){
   branchTrees.add(bankTrees[i],travel,travel-z,seed,true);
  }
  branchTrees.finish();status.branches=branchTrees.state;
+ status.hazards={rocks:rockSamples.length,samples:rockSamples};
  for(const [id,obj] of entities)if(!alive.has(id)){scene.remove(obj);entities.delete(id);}
  for(const batch of guardianBatches){batch.mesh.count=guardianCount;batch.mesh.instanceMatrix.needsUpdate=true;}
  for(const batch of driftwoodBatches){batch.mesh.count=woodCount;batch.mesh.instanceMatrix.needsUpdate=true;}

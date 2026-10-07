@@ -9,7 +9,8 @@ import { Logo, Icon } from './components/Icons.jsx';
 import { createGame, emptyInput, nextLevel, queueAction, restartLevel, snapshot, updateGame, validBest } from './game/engine.js';
 import { LEVELS, freshProgress, unlockLevel, validProgress } from './game/levels.js';
 import { loadArt, renderGame } from './game/render.js';
-import { RiverAudio } from './game/audio.js';
+import { RiverAudio, readSoundPreference, saveSoundPreference } from './game/audio.js';
+import { courseIntensity } from './game/course-intensity.js';
 import { pauseWater } from './game/water.js';
 import { renderDpr } from './game/quality.js';
 import { readSwipe } from './game/input.js';
@@ -19,29 +20,32 @@ const readProgress=()=>{try{return validProgress(JSON.parse(localStorage.getItem
 const menuModes=['menu','help','leaderboard'];
 export default function App() {
   const [mode,setMode]=useState('menu'),[art,setArt]=useState(null),[error,setError]=useState('');
-  const [game,setGame]=useState(null),[best,setBest]=useState(readBest),[sound,setSound]=useState(false);
+  const [game,setGame]=useState(null),[best,setBest]=useState(readBest),[sound,setSound]=useState(readSoundPreference);
   const [fallback,setFallback]=useState(false),[graphicsReady,setGraphicsReady]=useState(false);
   const [artAttempt,setArtAttempt]=useState(0),[progress,setProgress]=useState(readProgress),[selectedLevel,setSelectedLevel]=useState(0),[leaderboardReturn,setLeaderboardReturn]=useState('menu');
   const fallbackRef=useRef(false),sceneRef=useRef(null);
   const appRef=useRef(),canvasRef=useRef(),model=useRef(),input=useRef(emptyInput()),pointer=useRef(null),blockedClick=useRef(null),ignoredClicks=useRef(new Set()),resetFrame=useRef(true);
   const modeRef=useRef(mode),audio=useRef(new RiverAudio()),actions=useRef();modeRef.current=mode;
   useEffect(()=>{let alive=true;loadArt().then(a=>{if(alive)setArt(a);}).catch(e=>{if(alive)setError(e.message);});return()=>{alive=false;};},[artAttempt]);
+  useEffect(()=>()=>audio.current.dispose(),[]);
   function retryArt(){setError('');setArtAttempt(value=>value+1);}
-  function disableSound(){audio.current.enabled=false;try{audio.current.setEnabled(false);}catch{}setSound(false);}
+  function disableSound(){try{audio.current.setEnabled(false);}catch{}try{audio.current.pause();}catch{}setSound(false);}
   function setAudioEnabled(enabled){try{audio.current.setEnabled(enabled);}catch{disableSound();}}
+  function playAudio(reset=false){try{const run=model.current;audio.current.setEnabled(sound);audio.current.start({reset,intensity:courseIntensity(run.distance,LEVELS[run.levelIndex].length,run.levelIndex),rush:run.rush>0});}catch{disableSound();}}
+  function pauseAudio(){try{audio.current.pause();}catch{disableSound();}}
   function cancelGesture(){const gesture=pointer.current;pointer.current=null;if(!gesture)return;blockedClick.current=gesture.id;gesture.button?.blur();try{if(gesture.capture?.hasPointerCapture(gesture.id))gesture.capture.releasePointerCapture(gesture.id);}catch{}}
-  function beginRun(run){if(!run||!art||!graphicsReady)return;resetFrame.current=true;cancelGesture();input.current=emptyInput();model.current=run;setGame(snapshot(run));modeRef.current='playing';setMode('playing');setAudioEnabled(sound);}
+  function beginRun(run){if(!run||!art||!graphicsReady)return;resetFrame.current=true;cancelGesture();input.current=emptyInput();model.current=run;setGame(snapshot(run));modeRef.current='playing';setMode('playing');playAudio(true);}
   function start(){if(!art||!graphicsReady)return;if(!menuModes.includes(modeRef.current)&&model.current){beginRun(restartLevel(model.current));return;}beginRun(createGame(undefined,Math.min(selectedLevel,progress.unlocked)));}
   function advance(){const run=model.current&&nextLevel(model.current);if(run){setSelectedLevel(run.levelIndex);beginRun(run);}else home();}
   function selectLevel(index){if(index<=progress.unlocked)setSelectedLevel(index);}
-  function leaderboard(){setLeaderboardReturn(modeRef.current);resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='leaderboard';setMode('leaderboard');}
+  function leaderboard(){pauseAudio();setLeaderboardReturn(modeRef.current);resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='leaderboard';setMode('leaderboard');}
   function closeLeaderboard(){const screen=leaderboardReturn;modeRef.current=screen;setMode(screen);}
   function recordBest(run){const totals=run.campaign;setBest(old=>{const value=!old||totals.score>old.score?{version:3,score:totals.score,distance:Math.floor(totals.distance),coins:totals.coins,levelsCleared:totals.levelsCleared}:old;try{localStorage.setItem('river-rush-adventure-best',JSON.stringify(value));}catch{}return value;});}
-  function pause(){if(modeRef.current==='playing'){if(model.current)setGame(snapshot(model.current));resetFrame.current=true;input.current=emptyInput();cancelGesture();modeRef.current='paused';setMode('paused');}}
-  function resume(){resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='playing';setMode('playing');}
-  function home(){resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='menu';setMode('menu');}
+  function pause(){if(modeRef.current==='playing'){pauseAudio();if(model.current)setGame(snapshot(model.current));resetFrame.current=true;input.current=emptyInput();cancelGesture();modeRef.current='paused';setMode('paused');}}
+  function resume(){resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='playing';setMode('playing');playAudio();}
+  function home(){pauseAudio();resetFrame.current=true;cancelGesture();input.current=emptyInput();modeRef.current='menu';setMode('menu');}
   function switchGames(){home();requestAnimationFrame(()=>window.GameSwitch?.open('river-rush'));}
-  function toggleSound(){const enabled=!sound;setSound(enabled);setAudioEnabled(enabled);}
+  function toggleSound(){const enabled=!sound;setSound(enabled);saveSoundPreference(enabled);setAudioEnabled(enabled);}
   actions.current={start,pause,resume,advance,ready:!!art&&graphicsReady};
   useEffect(()=>{window.GameSwitch?.wire();if(art&&mode!=='playing')pauseWater(art);if(menuModes.includes(mode))document.querySelectorAll('.game-river-video').forEach(clip=>{clip.style.display='none';});},[mode,art]);
   useEffect(()=>{
@@ -53,7 +57,7 @@ export default function App() {
     const context=document.modelContext;if(!context?.registerTool)return;
     const lifecycle=new AbortController();
     function register(name,description,readOnly,execute){try{Promise.resolve(context.registerTool({name,description,inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:readOnly},execute:async value=>{if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length)throw new Error('Expected an empty object.');return execute();}},{signal:lifecycle.signal})).catch(()=>{});}catch{}}
-    register('get_run_status','Read the three-map River Rush adventure status.',true,()=>({screen:modeRef.current,run:model.current?snapshot(model.current):null,renderer:sceneRef.current?.status??{kind:'2d'}}));
+    register('get_run_status','Read the three-map River Rush adventure status.',true,()=>({screen:modeRef.current,run:model.current?snapshot(model.current):null,renderer:sceneRef.current?.status??{kind:'2d'},audio:audio.current.status}));
     register('start_run','Start the player’s selected unlocked map, or restart the current map.',false,async()=>{if(!actions.current.ready)throw new Error('The river is preparing.');actions.current.start();await new Promise(requestAnimationFrame);return{screen:'playing'};});
     register('pause_run','Pause the active river runner.',false,async()=>{if(modeRef.current!=='playing')throw new Error('No active run.');actions.current.pause();return{screen:'paused'};});
     return()=>lifecycle.abort();
@@ -83,6 +87,7 @@ export default function App() {
       if(model.current&&!menuModes.includes(modeRef.current)){
         const g=model.current,before=g.eventId,beforeCoins=g.coins;
         if(modeRef.current==='playing')updateGame(g,input.current,dt);
+        if(modeRef.current==='playing'){try{audio.current.updateMix(courseIntensity(g.distance,LEVELS[g.levelIndex].length,g.levelIndex),g.rush>0);}catch{disableSound();}}
         if(g.eventId!==before){try{audio.current.tone(g.event);}catch{disableSound();}}
         // Publish contact in its render frame, before the raft moves away.
         if(g.coins!==beforeCoins||g.effects.some(e=>e.id>before&&e.type==='power'))window.dispatchEvent(new Event('river-rush-contact'));
@@ -107,6 +112,7 @@ export default function App() {
           if(drawn){lastRun=g;lastTime=g.time;lastWidth=w;lastHeight=h;lastReduce=reduce;}
         }
         if((g.phase==='lost'||g.phase==='won')&&modeRef.current==='playing'){
+          pauseAudio();
           const run=snapshot(g);setGame(run);input.current=emptyInput();cancelGesture();
           const nextMode=g.phase==='won'?'complete':'result';modeRef.current=nextMode;setMode(nextMode);recordBest(run);
           if(g.phase==='won'){setProgress(old=>{const value=unlockLevel(old,run.level.index);try{localStorage.setItem('river-rush-progress',JSON.stringify(value));}catch{}return value;});setSelectedLevel(Math.min(2,run.level.index+1));}
@@ -119,8 +125,8 @@ export default function App() {
     const mapping={KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',KeyW:'jump',ArrowUp:'jump',Space:'jump',KeyS:'duck',ArrowDown:'duck',ShiftLeft:'rush',ShiftRight:'rush'};
     function down(e){const focusedButton=e.target?.closest?.('button,a');if(modeRef.current==='playing'){if(e.code==='Escape'||e.code==='KeyP'){e.preventDefault();actions.current.pause();return;}if(e.code==='Space'&&focusedButton)return;if(mapping[e.code]){e.preventDefault();if(!e.repeat)queueAction(input.current,mapping[e.code]);}}else if(modeRef.current==='result'&&(e.code==='Enter'||e.code==='KeyR')){if(e.code==='Enter'&&focusedButton)return;e.preventDefault();actions.current.start();}else if(modeRef.current==='complete'&&e.code==='Enter'){if(focusedButton)return;e.preventDefault();actions.current.advance();}else if(modeRef.current==='paused'&&e.code==='Enter'){if(focusedButton)return;e.preventDefault();actions.current.resume();}}
     function hidden(){if(document.hidden)actions.current.pause();}
-    const blur=()=>actions.current.pause();window.addEventListener('keydown',down);window.addEventListener('blur',blur);document.addEventListener('visibilitychange',hidden);
-    return()=>{window.removeEventListener('keydown',down);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',hidden);};
+    const blur=()=>actions.current.pause();window.addEventListener('keydown',down);window.addEventListener('blur',blur);window.addEventListener('pagehide',blur);document.addEventListener('freeze',blur);document.addEventListener('visibilitychange',hidden);
+    return()=>{window.removeEventListener('keydown',down);window.removeEventListener('blur',blur);window.removeEventListener('pagehide',blur);document.removeEventListener('freeze',blur);document.removeEventListener('visibilitychange',hidden);};
   },[]);
   useEffect(()=>{
     const app=appRef.current;

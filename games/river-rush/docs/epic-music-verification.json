@@ -1,0 +1,236 @@
+{
+  "verified_on": "2026-10-07",
+  "unit_checks": {
+    "existing_and_new_rock_horizon": 125,
+    "focused_audio": 9,
+    "failures": 0
+  },
+  "audio": {
+    "base": "http://127.0.0.1:8765/river-rush/",
+    "cases": [
+      "music-desktop",
+      "music-phone",
+      "music-landscape",
+      "missing-music",
+      "play-rejection"
+    ],
+    "actual_stream_and_master_RMS_measured": true,
+    "resources": {
+      "media_players": 1,
+      "audio_contexts": 1
+    },
+    "state_or_clock_mutations": false,
+    "errors": [],
+    "loop_duration_seconds": 93.333333,
+    "loop_samples": 70,
+    "loop_silent_samples": 0,
+    "loop_probe_artificial_media_seek": true,
+    "oscillator_failure": [
+      {
+        "audioFailure": {
+          "soundDisabled": true,
+          "timeAdvanced": true,
+          "laneJumpDuck": true
+        }
+      }
+    ],
+    "ended_retry_menu_browser_passed": true,
+    "ended_browser_proof": "music-ended-browser.json",
+    "shared_quiet_lifecycle_compatibility_passed": true
+  },
+  "rocks": {
+    "actual_App_layouts": [
+      {
+        "name": "desktop",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "name": "landscape",
+        "width": 844,
+        "height": 390
+      }
+    ],
+    "actual_App_state_or_clock_mutations": false,
+    "post_crossing_frames": [
+      2,
+      2,
+      3
+    ],
+    "isolated_projection_layouts": [
+      {
+        "name": "desktop",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "name": "landscape",
+        "width": 844,
+        "height": 390
+      }
+    ],
+    "isolated_distances": [
+      100,
+      280,
+      295,
+      340,
+      360,
+      520,
+      640,
+      700,
+      1300
+    ],
+    "prepared_horizon_pool": 36,
+    "instances_max": 35,
+    "errors": [],
+    "final_built_phone_actual_dodge_passed": true
+  },
+  "assets": [
+    {
+      "path": "public/river-rush/index.html",
+      "bytes": 798,
+      "sha256": "bde08eea88a8a34865070e9b8b4cf7d4b9c49c532cb6c1a435e793242b61e5be"
+    },
+    {
+      "path": "public/river-rush/assets/index-aD_k1wTR.css",
+      "bytes": 32995,
+      "sha256": "d2bb8fc0e83bf5ecf0a628811d380fd855648e7132600d3c0c9bb7c623693eac"
+    },
+    {
+      "path": "public/river-rush/assets/index-sBVLe8yU.js",
+      "bytes": 1052081,
+      "sha256": "a85b7b52d67222b7eff67e4af3a1b5343ff741257768634ca4d89201d3c0a5b0"
+    },
+    {
+      "path": "public/river-rush/audio/river-rush-adventure.mp3",
+      "bytes": 1494295,
+      "sha256": "85d06b70bd67827b6ca4a939859cfdd74b2202ad42844758376bb4ab2db2e982"
+    }
+  ],
+  "limits": {
+    "renderer": "Chromium SwiftShader",
+    "physical_device_frame_rate_measured": false,
+    "physical_audio_hardware_or_Safari_tested": false,
+    "subjective_music_listening_performed": false,
+    "visibility_events_emulated": true
+  },
+  "production": {
+    "status": "pending"
+  },
+  "browser_summary": {
+    "passed": true,
+    "bundle": "index-sBVLe8yU.js",
+    "bundleSha256": "a85b7b52d67222b7eff67e4af3a1b5343ff741257768634ca4d89201d3c0a5b0",
+    "actualAppMusic": {
+      "cases": [
+        "music-desktop",
+        "music-phone",
+        "music-landscape",
+        "missing-music",
+        "play-rejection"
+      ],
+      "musicRmsMax": [
+        0.09196041918034407,
+        0.12755870440170972,
+        0.09468116610901607
+      ],
+      "singleContextAndSourceAcrossRetry": true,
+      "noMenuAutoplay": true,
+      "savedMute": true,
+      "pauseResume": true,
+      "hiddenVisibilityNoAutoResume": true,
+      "optionalMissingAssetAndPlayRejectionKeepControls": true
+    },
+    "nativeMP3Loop": {
+      "duration": 93.333333,
+      "samples": 70,
+      "silentSamples": 0,
+      "nearEndSeekOnly": true,
+      "rushRaisesGainAndOpensFilter": true,
+      "disposeClosesContext": true
+    },
+    "actualRunEnd": {
+      "lossSilencesAndFreezesPlayhead": true,
+      "retryReusesSingleContextAndSource": true,
+      "menuSilences": true
+    },
+    "oscillatorException": {
+      "soundDisabled": true,
+      "timeAdvanced": true,
+      "laneJumpDuck": true
+    },
+    "horizonProjection": {
+      "layouts": [
+        {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "name": "landscape",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "sameMesaFullHeightsAcrossFormerNearCutoffs": true,
+      "maxMesas": 35,
+      "capacity": 36,
+      "maxEmptyFixtureDrawCalls": 24,
+      "maxEmptyFixtureTriangles": 73297
+    },
+    "limits": [
+      "Headless Chromium/SwiftShader, not physical-device frame-rate measurements.",
+      "Actual decoded waveform/output sampled; speakers and subjective sound quality were not measured.",
+      "Visibility events emulated; no physical phone app switching.",
+      "Horizon sampling and native media seeks are isolated fixtures, not game state/clock mutations in actual-play checks."
+    ],
+    "evidence": [
+      "epic-music.json",
+      "music-loop-browser.json",
+      "music-ended-browser.json",
+      "oscillator-failure.json",
+      "rocks-before.json",
+      "rocks-after.json",
+      "rocks-app.json",
+      "rocks-built/rocks-app.json"
+    ],
+    "actualAppDodgedRock": {
+      "sourceLayouts": [
+        {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "name": "landscape",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "allPostCrossingFramesRetained": true,
+      "finalBuiltPhone": true,
+      "builtRockId": 69,
+      "enginesOrClocksMutated": false
+    }
+  }
+}

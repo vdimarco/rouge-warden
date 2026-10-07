@@ -1,0 +1,63 @@
+{
+  "endpoint": "elevenlabs/music/v2.5",
+  "request_id": "01a117c1-75ab-7091-b3c5-0be2ae2d14ed",
+  "source_url": "https://v3b.fal.media/files/b/0aad7599/frknULlfmnGu7Ldgvwj6a_music_generated.mp3",
+  "input": {
+    "prompt": "An original epic river-adventure arcade game score, instrumental only. 144 BPM, 4/4, D minor with hopeful heroic modal lifts. Begin immediately with a tight driving groove: resonant toms, punchy taiko-style drums, shaker sixteenths, warm bass pulses and agile staccato strings. Add a memorable uplifting four-note horn-and-woodwind adventure motif, answered by sweeping high strings and shimmering marimba. Capture the excitement of a fearless raft racing downhill through wild jungle whitewater, then a vast red sandstone canyon, then moonlit ancient ruins. Playful, propulsive, triumphant and cinematic rather than grim or ominous. A polished hybrid orchestral game soundtrack with crisp rhythmic definition, wide stereo ambience, dynamic brass accents and subtle modern synth arpeggios. Maintain the same fast tempo and harmonic center throughout; alternate full energetic passages with lighter flowing passages, then return to the main motif. Foreground percussion gives constant forward momentum; melodies have space for arcade sound effects. This is a continuous looping gameplay cue: no slow introductory build, no spoken words, no singing, no choir, no water sound effects, no final crash, no closing cadence or fade out. End on the same active rhythmic and harmonic texture as the opening so the music can cycle seamlessly. Professional soundtrack mix, controlled bass and percussion, expressive lively orchestration.",
+    "music_length_ms": 106667,
+    "force_instrumental": true,
+    "output_format": "mp3_48000_192"
+  },
+  "pricing": {
+    "unit_price": 0.6,
+    "unit": "minutes",
+    "currency": "USD",
+    "estimated_generation_cost": 1.06667,
+    "checked_on": "2026-10-07"
+  },
+  "result": {
+    "status": "completed",
+    "endpoint_id": "elevenlabs/music/v2.5",
+    "request_id": "01a117c1-75ab-7091-b3c5-0be2ae2d14ed",
+    "response_url": "https://queue.fal.run/elevenlabs/music/requests/01a117c1-75ab-7091-b3c5-0be2ae2d14ed",
+    "result": {
+      "audio": {
+        "url": "https://v3b.fal.media/files/b/0aad7599/frknULlfmnGu7Ldgvwj6a_music_generated.mp3",
+        "content_type": "audio/mpeg",
+        "file_name": "music_generated.mp3",
+        "file_size": 2560941
+      }
+    },
+    "media": [
+      {
+        "url": "https://v3b.fal.media/files/b/0aad7599/frknULlfmnGu7Ldgvwj6a_music_generated.mp3",
+        "json_path": "result.audio.url",
+        "output_path": "/audio/url",
+        "media_type": "audio",
+        "content_type": "audio/mpeg",
+        "file_name": "music_generated.mp3",
+        "reference": {
+          "$fal_ref": {
+            "kind": "job",
+            "endpoint_id": "elevenlabs/music/v2.5",
+            "request_id": "01a117c1-75ab-7091-b3c5-0be2ae2d14ed",
+            "response_url": "https://queue.fal.run/elevenlabs/music/requests/01a117c1-75ab-7091-b3c5-0be2ae2d14ed",
+            "output_path": "/audio/url"
+          }
+        }
+      }
+    ],
+    "display_hint": "Present completed media to the user. Forward attached image content blocks to the host's image display helper (for example, image(block)); do not stringify image blocks as text. For Markdown previews use previews[].preview_url, and separately link original_url as the full-resolution file. If no preview is available, show a clearly labeled original-file link. Do not claim a preview rendered unless it is visible. Video, audio and 3D URLs are original result files, not queue URLs."
+  },
+  "prepared_asset": {
+    "path": "audio/river-rush-adventure.mp3",
+    "sha256": "85d06b70bd67827b6ca4a939859cfdd74b2202ad42844758376bb4ab2db2e982",
+    "bytes": 1494295,
+    "duration_seconds": 93.33333333333333,
+    "sample_rate": 48000,
+    "channels": 2,
+    "preparation_script": "scripts/prepare-music.py",
+    "measurements": "epic-music-measurements.json",
+    "bit_identical_reproduction_verified": true
+  }
+}
