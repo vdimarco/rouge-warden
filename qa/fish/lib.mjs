@@ -84,6 +84,20 @@ export async function until(page, fn, arg, timeout = 60000) {
   return page.waitForFunction(fn, arg, { timeout, polling: 50 });
 }
 
+// Waits for a condition in the page while the game plays (a flight, a fight), and fails with what it waited for. A slow
+// software renderer may draw no frame for seconds, and a slow frame moves the game on by 0.25 s at most, so the limit
+// counts game frames: it fails when the condition did not come in n frames (a minute at 60 fps, and more game time at a
+// lower rate), or when no frame came for a minute
+export async function untilPlay(page, fn, arg, what, n = 3600) {
+  const f0 = await page.evaluate(() => FISH.G.frame);
+  for (let f = f0; ;) {
+    if (await until(page, fn, arg, 60000).then(() => true, (e) => { if (e.name === "TimeoutError") return false; throw e; })) return;
+    const g = await page.evaluate(() => FISH.G.frame);
+    if (g === f || g - f0 > n) throw new Error(`${what}: not so after ${g - f0} game frames${g === f ? ", and no frame came for a minute" : ""}`);
+    f = g;
+  }
+}
+
 // A pointer on an element, in client coordinates. Synthetic events bubble like real ones, and carry
 // an exact timeStamp, which the cast release needs.
 export async function pointer(page, type, x, y, id = 1) {

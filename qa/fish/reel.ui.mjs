@@ -1,7 +1,7 @@
 // Checks reel.js (the reel face, the crank, the rod pad, the gauge) in a real browser with real touch sequences.
 // Run: node qa/fish/reel.ui.mjs            (serves public/ itself on a free port; exit code 1 on failure)
-// Options: SHOTS=dir (where the screenshots go; default the system temp folder), ONLY=shots (screenshots only),
-// ONLY=checks (no screenshots), ONLY=landscape (the 844x390 part only), DIAG=1 (input latency and frame gaps),
+// Options: SHOTS=dir (where the screenshots go; default a new folder <tmp>/fish-reel-shots-XXXXXX for each run),
+// ONLY=shots (screenshots only), ONLY=checks (no screenshots), ONLY=landscape (the 844x390 part only), DIAG=1 (input latency and frame gaps),
 // FISH_URL=http://127.0.0.1:8765/fish/ (use a server that is already up, at the root of public/).
 // The checks wait for what the page did (the lift it got, a frame, game time), not for a time on the clock of this
 // process: this process and the browser can be slow on a busy machine.
@@ -9,7 +9,7 @@
 // #padBox / #gaugeBox structure, invisible switch pads like haptics.js adds, and main.js's toLocal and CSS rotation.
 import { createRequire } from "module";
 import { execSync, spawn } from "child_process";
-import { readFileSync, mkdirSync } from "fs";
+import { readFileSync, mkdirSync, mkdtempSync } from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
 import net from "net";
@@ -20,7 +20,8 @@ const root = path.resolve(here, "../..");
 const req = createRequire(import.meta.url);
 let pw;
 try { pw = req("playwright"); } catch (e) { pw = req(path.join(execSync("npm root -g").toString().trim(), "playwright")); }
-const SHOTS = process.env.SHOTS || path.join(os.tmpdir(), "fish-reel-shots");
+// (a new folder for each run: two runs at the same time do not write over each other's screenshots)
+const SHOTS = process.env.SHOTS || mkdtempSync(path.join(os.tmpdir(), "fish-reel-shots-"));
 mkdirSync(SHOTS, { recursive: true });
 
 const fails = [];
@@ -743,4 +744,5 @@ try {
 }
 check(errors.length === 0, "no console or page errors" + (errors.length ? ": " + errors.slice(0, 5).join(" | ") : ""));
 console.log(fails.length ? "\n" + fails.length + " FAILED" : "\nall passed");
+console.log("Screenshots in " + SHOTS);
 process.exit(fails.length ? 1 : 0);
