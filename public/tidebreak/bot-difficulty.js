@@ -39,25 +39,25 @@ PROFILES.ally = { ...PROFILES.veteran, retreatRules: true, tradeRetreat: .75 };
 
 // Kit strength by lane, measured by qa/tidebreak/kit-strength.mjs: the share of matches a team
 // won with this kit in this lane, with equal Veteran bots on both sides. Index [kit][lane].
-// 240 matches with all sixteen kits and the 1.5x ranged reach; each lane value is shrunk toward the kit's
-// overall rate (100-game prior).
+// 480 matches (seeds 1-480) with the 1.5x ranged reach and the melee shot guard and closing speed; each lane value
+// is shrunk toward the kit's overall rate (100-game prior).
 export const KIT_POWER = [
-  [.55, .52, .49],
-  [.54, .53, .54],
-  [.55, .55, .55],
-  [.48, .54, .56],
-  [.49, .51, .5],
-  [.47, .47, .47],
-  [.73, .71, .73],
-  [.31, .34, .29],
-  [.45, .45, .42],
-  [.55, .54, .58],
-  [.48, .46, .46],
-  [.53, .55, .55],
-  [.27, .26, .25],
-  [.44, .46, .43],
-  [.76, .76, .77],
-  [.36, .36, .35],
+  [.51, .49, .5],
+  [.6, .59, .64],
+  [.38, .4, .39],
+  [.65, .7, .67],
+  [.51, .52, .55],
+  [.57, .59, .56],
+  [.64, .57, .58],
+  [.33, .36, .34],
+  [.36, .39, .37],
+  [.53, .53, .52],
+  [.51, .47, .49],
+  [.52, .54, .51],
+  [.25, .27, .31],
+  [.47, .48, .5],
+  [.72, .71, .67],
+  [.4, .39, .37],
 ];
 // A drafting profile adds this to a candidate's draft score. The pool and the board are the
 // same for everyone, and the player sees every pick, so a strong draft is a fair edge.

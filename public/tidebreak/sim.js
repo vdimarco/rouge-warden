@@ -29,6 +29,12 @@ import { BASIC_ATTACKS } from './basic-attacks.js';
 export const RANGED_REACH = 1.5;
 // A hero must still step inside a ward's (or the core's) own reach to hit it, so wards keep out-ranging heroes.
 export const reach = (e, t) => e.kind === 'hero' && (t.kind === 'tower' || t.kind === 'core') ? Math.max(120, Math.min(e.range, t.range - t.radius - 30)) : e.range;
+// Melee heroes must walk into reach, so ranged heroes shoot them on the way in. When a ranged hero's basic attack hits
+// a melee hero, the melee hero takes shotGuard less damage and moves closeSpeed faster for closeTime seconds.
+// The rule follows the hero's attack type, so the player and the bots get it in the same way.
+export const MELEE = { shotGuard: .25, closeSpeed: .15, closeTime: 1.5 };
+export const isMelee = e => e?.kind === 'hero' && HEROES[e.hero]?.attackType === 'Melee';
+export const isRanged = e => e?.kind === 'hero' && HEROES[e.hero]?.attackType === 'Ranged';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
@@ -63,7 +69,7 @@ export const respawnTime = (level, sudden = false) => Math.round(Math.min(PACE.r
 // Every hero moves by the same rules: out-of-combat sprint, slows, haste effects and Nessie in water.
 export function heroSpeed(s, e) {
   const sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
-  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.windUntil > s.time ? 1.25 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
+  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.windUntil > s.time ? 1.25 : 1) * (e.closeUntil > s.time ? 1 + MELEE.closeSpeed : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
 }
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
@@ -149,6 +155,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   const armor = target.armor || 0;
   amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
   if(target.scaleGuardUntil>s.time)amount*=.65;
+  if (kind === 'attack' && isMelee(target) && isRanged(source)) { amount *= 1 - MELEE.shotGuard; target.closeUntil = s.time + MELEE.closeTime; }
   const shieldMultiplier = kind === 'attack' && hasItem(source, 'reaper') ? 1.5 : 1;
   if (shieldMultiplier > 1) target.woundedUntil = s.time + 4;
   if (target.kind === 'hero' && hasItem(target, 'mirror') && source.kind === 'hero' && s.time >= (target.itemState.mirror || 0)) {
@@ -192,7 +199,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (credit?.kind === 'hero' && hasItem(credit, 'tidecoin')) { credit.itemState.coin = Math.min(hasItem(credit, 'hoard') ? 20 : 10, (credit.itemState.coin || 0) + 1); recalculate(credit, HEROES[credit.hero]); }
     if (hasItem(target, 'tidecoin') && !hasItem(target, 'hoard') && target.itemState.coin) { target.itemState.coin = Math.floor(target.itemState.coin / 2); recalculate(target, HEROES[target.hero]); }
     onBanish(s, target);
-    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
+    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=target.closeUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, PACE.killGold); if (credit?.kind === 'hero') credit.kills++; }
     recordKill(s, credit, target);
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);

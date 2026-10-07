@@ -4,8 +4,11 @@
 - [x] Check the bar in Chromium at 1040x640, 1280x720, 1440x900 and 1920x1080: no overlaps, art visible.
 - [x] Check training, casting, cooldown and an item purchase through the bar.
 - [x] Check that a click on the empty frame gives no move order.
-- [x] Check that 390x844 and 844x390 touch layouts do not change.
-- [x] Adapt `qa/tidebreak/skill-targets.e2e.mjs` to the bar on mouse screens and add 1040x640.
+- [x] Adapt `qa/tidebreak/skill-targets.e2e.mjs` to the bar and add 1040x640.
 - [x] Run the 2D browser checks and the 3D combat check.
+- [x] Add the landscape row and the stacked bar for phones and mid-size screens.
+- [x] Move the movement pad, the rally button and the upright team chat clear of the bar.
+- [x] Check every layout at 1040x560, 844x390, 740x360, 640x360, 568x320, 600x500, 390x844, 320x568, 768x1024 and 1000x700.
+- [x] Run the browser checks with the phone layouts, and move the death recap clear of the phone bars.
 - [ ] Validate the change with the OpenSpec CLI (not installed in this environment).
-- [ ] Play a match on a desktop with a real GPU and mouse, then archive this change.
+- [ ] Play a match on a real phone and on a desktop with a real GPU, then archive this change.
