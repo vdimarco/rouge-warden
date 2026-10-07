@@ -65,7 +65,7 @@ async function latePowerPlay(){
  });
  await p.evaluate(async()=>window.__tools.start_run({}));
  await p.waitForFunction(()=>window.__late.resolved||window.__raw()?.phase==='lost',{},{timeout:90000});
- const initial=await p.evaluate(()=>window.__late);assert.ok(initial.resolved,'Real-input run must reach the late Magnet crossing');assert.equal(initial.resolved.power.collected,false);assert.equal(initial.resolved.magnet,0);assert.ok(Math.abs(initial.attempt.before.visualLane-initial.attempt.lane)>.65);
+ const initial=await p.evaluate(()=>window.__late);assert.ok(initial.resolved,'Real-input run must reach the late Gold boost crossing');assert.equal(initial.resolved.power.collected,false);assert.equal(initial.resolved.magnet,0);assert.ok(Math.abs(initial.attempt.before.visualLane-initial.attempt.lane)>.65);
  await freeze(p,'late-magnet-missed');await p.getByRole('button',{name:'Resume run',exact:true}).click();await until(p,s=>s.run.distance>initial.attempt.d+22||s.screen==='result');
  const raw=await p.evaluate(()=>{clearInterval(window.__lateTimer);const g=window.__raw();return{...window.__late,current:{coins:g.coins,magnet:g.magnet,rush:g.rush}};});
  await fs.writeFile(`${out}/late-magnet-raw-trace.json`,JSON.stringify(raw,null,2)+'\n');
@@ -84,7 +84,14 @@ async function fixtures(){
    if(power.collected||g.magnet||g.shield||g.coins||g.effects.some(e=>e.type==='power'))throw new Error(`${kind}@${hz} acquired from beside the actual raft`);
    rows.push({kind,hz,latePowerCollected:!!power.collected,magnet:g.magnet,shield:g.shield,remoteCoins:g.coins});
   }
-  for(const hz of [30,60,120]){const g=clean();g.lane=g.visualLane=0;const early={id:1,type:'coin',lane:2,d:.1},magnet={id:2,type:'magnet',lane:0,d:.2},late={id:3,type:'coin',lane:2,d:.3};g.entities=[magnet,late,early];updateGame(g,emptyInput(),1/hz);if(early.collected||!magnet.collected||!late.collected||g.coins!==1)throw new Error(`Retroactive magnet collection @${hz}`);rows.push({kind:'physical-order',hz,earlierCoin:false,laterCoin:true});}
+  for(const hz of [30,60,120]){
+   const g=clean();g.lane=g.visualLane=0;
+   const early={id:1,type:'coin',lane:0,d:.1},boost={id:2,type:'magnet',lane:0,d:.2},late={id:3,type:'coin',lane:0,d:.3},remote={id:4,type:'coin',lane:2,d:.35};
+   g.entities=[boost,remote,late,early];updateGame(g,emptyInput(),1/hz);
+   const events=g.effects.filter(e=>e.type==='coin');
+   if(!early.collected||!boost.collected||!late.collected||remote.collected||g.coins!==2||g.bonus!==30||events.length!==2||events[0].boosted||events[0].value!==10||!events[1].boosted||events[1].value!==20||events.some(e=>e.attracted))throw new Error(`Gold boost must enhance later physical contacts without side collection @${hz}`);
+   rows.push({kind:'strict-contact-and-boost-order',hz,contactedCoins:2,remoteCoins:0,earlierValue:10,laterValue:20});
+  }
   return{kind:'isolated-source-engine-fixtures',actualCampaign:false,rows};
  });
  await p.evaluate(async()=>{const {loadArt,renderGame}=await import('/src/game/render.js'),{createScene}=await import('/src/game/scene3d.js');window.__fixtureArt=await loadArt();window.__fixtureArt.coinTarget={x:150,y:35};window.__render2d=renderGame;window.__fixtureScene=createScene(document.querySelector('#fixture'),window.__fixtureArt);await window.__fixtureScene.prepare(390,844,false);});
@@ -93,14 +100,16 @@ async function fixtures(){
  assert.equal(missed.entities,2);assert.equal(missed.magnet,0);assert.equal(missed.shield,false);assert.ok(missed.powers.every(e=>e.done&&!e.collected));await p.screenshot({path:`${out}/missed-powers-3d.png`});
  const fallback=await p.evaluate(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return type==='webgl'||type==='webgl2'?null:original.call(this,type,...args);};const c=document.createElement('canvas');c.width=390;c.height=844;c.id='fallback';document.body.append(c);const ctx=c.getContext('2d'),g=window.__missedFixture;window.__render2d(ctx,g,window.__fixtureArt,390,844,true,false);const visible=ctx.getImageData(0,0,390,844).data.slice();window.__missed2d=c.toDataURL('image/png');for(const e of g.entities)e.collected=true;window.__render2d(ctx,g,window.__fixtureArt,390,844,true,false);const hidden=ctx.getImageData(0,0,390,844).data;let pixels=0;for(let i=0;i<visible.length;i+=4)if(visible[i]!==hidden[i]||visible[i+1]!==hidden[i+1]||visible[i+2]!==hidden[i+2])pixels++;c.remove();HTMLCanvasElement.prototype.getContext=original;return{missedPowerPixels:pixels};});
  assert.ok(fallback.missedPowerPixels>100);await fs.writeFile(`${out}/missed-powers-2d.png`,Buffer.from(await p.evaluate(()=>window.__missed2d.split(',')[1]),'base64'));
- const flight=await p.evaluate(()=>{const {createGame,updateGame,emptyInput}=window.__fixtureEngine,g=Object.assign(createGame(17),{lane:0,visualLane:0,entities:[{id:900,type:'magnet',lane:0,d:.1},{id:901,type:'coin',lane:2,d:.2}],nextRow:1e9,runwayGenerated:true});updateGame(g,emptyInput(),.01);updateGame(g,emptyInput(),.045);window.__flightFixture=g;window.__fixtureScene.render(g,390,844,false);return JSON.parse(JSON.stringify(window.__fixtureScene.status.coinFeedback));});
- assert.equal(flight.attracted,1);assert.equal(flight.flights[0].phase,'to-raft');await p.screenshot({path:`${out}/attracted-to-raft.png`});
+ const flight=await p.evaluate(()=>{const {createGame,updateGame,emptyInput}=window.__fixtureEngine,g=Object.assign(createGame(17),{lane:0,visualLane:0,entities:[{id:900,type:'magnet',lane:0,d:.1},{id:901,type:'coin',lane:0,d:.2},{id:902,type:'coin',lane:2,d:.3}],nextRow:1e9,runwayGenerated:true});updateGame(g,emptyInput(),.01);updateGame(g,emptyInput(),.045);window.__flightFixture=g;window.__fixtureScene.render(g,390,844,false);return JSON.parse(JSON.stringify({...window.__fixtureScene.status.coinFeedback,coins:g.coins,bonus:g.bonus,remoteCollected:!!g.entities.find(e=>e.id===902)?.collected}));});
+ assert.equal(flight.coins,1);assert.equal(flight.bonus,20);assert.equal(flight.remoteCollected,false);assert.equal(flight.attracted,0);assert.equal(flight.active,1);
+ const contact=flight.flights[0];assert.equal(contact.phase,'to-score');assert.equal(contact.boosted,true);assert.equal(contact.value,20);assert.equal(contact.entityId,901);assert.equal(contact.playerLane,0);assert.equal(contact.playerHeight,0);assert.ok(Number.isFinite(contact.contactTime));assert.ok(contact.progress>0,'Flight clock must start at physical contact');
+ await p.screenshot({path:`${out}/gold-boost-contact-to-score.png`});
  const scoring=await p.evaluate(()=>{const {updateGame,emptyInput}=window.__fixtureEngine,g=window.__flightFixture;updateGame(g,emptyInput(),.04);updateGame(g,emptyInput(),.04);window.__fixtureScene.render(g,390,844,false);return JSON.parse(JSON.stringify(window.__fixtureScene.status.coinFeedback));});
- assert.equal(scoring.attracted,1);assert.equal(scoring.flights[0].phase,'to-score');await p.screenshot({path:`${out}/attracted-to-score.png`});
+ assert.equal(scoring.attracted,0);assert.equal(scoring.active,1);assert.equal(scoring.flights[0].phase,'to-score');assert.equal(scoring.flights[0].boosted,true);assert.equal(scoring.flights[0].value,20);assert.ok(scoring.flights[0].progress>contact.progress);await p.screenshot({path:`${out}/gold-boost-score-flight.png`});
  const pixels=await p.locator('#fixture').screenshot();await p.waitForTimeout(150);assert.deepEqual(await p.locator('#fixture').screenshot(),pixels);
  const reduced=await p.evaluate(()=>{window.__fixtureScene.render(window.__flightFixture,390,844,true);return JSON.parse(JSON.stringify({feedback:window.__fixtureScene.status.coinFeedback,reduced:window.__fixtureScene.status.reducedMotion}));});assert.equal(reduced.reduced,true);assert.equal(reduced.feedback.active,0);await p.screenshot({path:`${out}/reduced-fixture.png`});
  assert.deepEqual(await p.evaluate(()=>window.__resources),resources);await p.evaluate(()=>window.__fixtureScene.dispose());await p.close();
- return{...engine,missedPowers3D:missed,fallback,legitimateAttraction:{toRaft:flight,toScore:scoring},reduced,unchangedGpuResources:true,frozenFixturePixels:true};
+ return{...engine,missedPowers3D:missed,fallback,legitimateContactBoost:{contactFlight:flight,laterFlight:scoring},reduced,unchangedGpuResources:true,frozenFixturePixels:true};
 }
 try{
  const results=[];let fixture=null,late=null;

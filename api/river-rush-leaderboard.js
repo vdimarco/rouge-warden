@@ -17,7 +17,7 @@ function validate(body) {
   if (typeof body.name !== 'string') return null;
   const name = body.name.normalize('NFC').trim().replace(/\s+/gu, ' ');
   if (![...name].length || [...name].length > 20 || !NAME.test(name)) return null;
-  const limits = { score: [1, 1000000], coins: [0, 5000], levelsCleared: [0, 3], levelIndex: [0, 2], distance: [0, 10800] };
+  const limits = { score: [1, 1000000], coins: [0, 5000], levelsCleared: [0, 3], levelIndex: [0, 2], distance: [0, 16200] };
   for (const [key, [min, max]] of Object.entries(limits)) {
     const value = body[key];
     if (!Number.isInteger(value) || value < min || value > max) return null;

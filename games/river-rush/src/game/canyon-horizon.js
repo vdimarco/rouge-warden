@@ -40,7 +40,8 @@ export function createCanyonHorizon(scene,material,stoneTexture){
   for(let i=0;i<12;i++)mesh.setColorAt(i,new THREE.Color(1,1,1));mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);scene.add(mesh);return {layer,mesh,base:new THREE.Color(layer.color)};
  });
  const state={kind:'procedural',id:'canyon',instances:0,layers:[],paintedRiver:false};
- function update(g,travel,enabled,camera){
+ function update(g,travel,enabled,camera,profile=g.seed){
+  const seed=profile;
   state.instances=0;state.layers=[];
   for(const {layer,mesh,base} of batches){
    let count=0;const samples=[];mesh.visible=enabled;
@@ -49,9 +50,9 @@ export function createCanyonHorizon(scene,material,stoneTexture){
     for(let n=first;n<=last;n++)for(const side of [-1,1]){
      const course=n*layer.spacing+(side>0?layer.spacing*.36:0),ahead=course-travel;
      if(ahead<=layer.near-18||ahead>=layer.far||count>=12)continue;
-     const cross=side*(riverHalfWidth(course,g.seed)+layer.cross+riverHash(n+side*61,g.seed)*layer.width*.3),p=riverPoint(travel,course,cross,g.seed);
-     const variation=.78+riverHash(n+side*37,g.seed)*.46,visibility=smooth(layer.near-18,layer.near+26,ahead)*(1-smooth(layer.far-65,layer.far,ahead));
-     pose.position.set(p.x,p.y+riverBankHeight(cross,course,g.seed)-5,p.z);pose.scale.set(layer.width*variation,layer.height*variation*visibility,layer.depth*(.8+riverHash(n+31,g.seed)*.4));pose.rotation.set(0,riverHash(n+side*43,g.seed)*1.3,0);pose.updateMatrix();mesh.setMatrixAt(count,pose.matrix);
+     const cross=side*(riverHalfWidth(course,seed)+layer.cross+riverHash(n+side*61,seed)*layer.width*.3),p=riverPoint(travel,course,cross,seed);
+     const variation=.78+riverHash(n+side*37,seed)*.46,visibility=smooth(layer.near-18,layer.near+26,ahead)*(1-smooth(layer.far-65,layer.far,ahead));
+     pose.position.set(p.x,p.y+riverBankHeight(cross,course,seed)-5,p.z);pose.scale.set(layer.width*variation,layer.height*variation*visibility,layer.depth*(.8+riverHash(n+31,seed)*.4));pose.rotation.set(0,riverHash(n+side*43,seed)*1.3,0);pose.updateMatrix();mesh.setMatrixAt(count,pose.matrix);
      // Atmospheric fading supplements geometric depth without a transparent
      // layer, an extra draw call, or a shader variant during a run.
      color.copy(base).lerp(fog,(1-visibility)*.6);color.setRGB(color.r/base.r,color.g/base.g,color.b/base.b);mesh.setColorAt(count++,color);

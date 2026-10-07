@@ -1,6 +1,7 @@
 // Distance-based three-lane runner. Presentation never decides collisions.
 import { laneSpring } from './world.js';
 import { LEVELS, FINISH_RUNWAY, levelAt, levelSeed, levelSpeed } from './levels.js';
+import { courseAct, courseIntensity } from './course-intensity.js';
 export const JUMP_SECONDS = .66;
 export const DUCK_SECONDS = .60;
 export const VIEW_DISTANCE = 180;
@@ -8,6 +9,9 @@ export const BASE_SPEED = LEVELS[0].startSpeed, MAX_SPEED = Math.max(...LEVELS.m
 // Every pickup needs actual raft-center contact within the same 0.95 m
 // tolerance on 3.8 m lanes. Target-lane input is not visible overlap.
 export const COIN_LANE_RADIUS = .25;
+// Above this normalized arc height the lifted raft has cleared a low coin.
+// Both views use the same jump arc; waves remain presentation/buoyancy detail.
+export const COIN_GROUND_MAX_JUMP_HEIGHT = .28;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const emptyInput = () => ({ actions: [] });
 export function queueAction(input, action) { if (input.actions.length < 8) input.actions.push(action); }
@@ -41,6 +45,7 @@ export function createGame(seed = Date.now(), levelIndex = 0, carry = null) {
     jumps: 0, ducks: 0, dodges: 0, shieldsUsed: 0, rowsPassed: 0,
     goalsCleared: 0, goal: { kind: 'tricks', start: 0, target: 3 },
     entities: [], nextRow: level.startSpeed*(68/42), row: 0, nextId: 1, patternsSeen:[], runwayGenerated:false,
+    motifDeck:[], episode:null, episodeIndex:0, routeLane:1, routeDirection:mapSeed&1?1:-1,
     event: '', eventId: 0, effects: [], notice: level.index===0?'Jump logs · Duck branches · Dodge rocks':`${level.name} · ${level.difficulty}`, noticeUntil: 4, reason: '' };
   for (let d = 7; d <= 32; d += 5) add(g, 'coin', 1, d);
   generateAhead(g); return g;
@@ -56,23 +61,44 @@ function emit(g, type, text = '', lane = g.lane, detail = {}) {
   if (text) { g.notice = text; g.noticeUntil = g.time + 1.35; }
 }
 const motifs=['slalom','coin-zigzag','mixed-hazards','jump-waves','low-canopy','split-current'];
-function rowPattern(g,row){
-  if(g.levelIndex===0&&row<3)return{motif:'tutorial',safe:row<2?0:2,hazards:[{lane:1,type:['log','branch','rock'][row]}],coinLane:row<2?1:2};
-  const n=row-(g.levelIndex===0?3:0),block=Math.floor(n/4),step=n%4;
-  const motif=motifs[(block+g.campaignSeed%motifs.length+g.levelIndex*2)%motifs.length];
-  const forward=(g.seed&1)?1:-1,route=[0,1,2,1];
-  let safe=route[step],types=['rock','rock'];
-  if(motif==='coin-zigzag'){safe=g.levelIndex===0?route[(step+1)%4]:(step%2?2:0);types=['log','branch'];}
-  else if(motif==='mixed-hazards'){safe=(block+step)%3;types=step%2?['branch','log']:['log','branch'];}
-  else if(motif==='jump-waves'){safe=route[(step+block)%4];types=['rock','log'];if(step%2===0)return{motif,safe,hazards:[0,1,2].map(lane=>({lane,type:'log'})),coinLane:safe};}
-  else if(motif==='low-canopy'){safe=route[(step+block)%4];types=['branch','rock'];if(step%2===0)return{motif,safe,hazards:[0,1,2].map(lane=>({lane,type:'branch'})),coinLane:safe};}
-  else if(motif==='split-current'){safe=(step+block)%3;types=step%2?['branch','log']:['rock','branch'];}
-  if(forward<0)safe=2-safe;
-  const occupied=[0,1,2].filter(lane=>lane!==safe);
-  // Every ordinary row offers a clear lane; later maps put pressure on both alternatives.
-  const pair=g.levelIndex>0||motif==='slalom'||random(g)<.55;
-  const hazards=occupied.slice(0,pair?2:1).map((lane,i)=>({lane,type:types[(i+step)%types.length]}));
-  return{motif,safe,hazards,coinLane:safe};
+function nextEpisode(g,act){
+  if(!g.motifDeck.length){
+    g.motifDeck=[...motifs];
+    for(let i=g.motifDeck.length-1;i>0;i--){const j=Math.floor(random(g)*(i+1));[g.motifDeck[i],g.motifDeck[j]]=[g.motifDeck[j],g.motifDeck[i]];}
+    if(g.motifDeck.at(-1)===g.episode?.motif)[g.motifDeck[0],g.motifDeck[g.motifDeck.length-1]]=[g.motifDeck.at(-1),g.motifDeck[0]];
+  }
+  return{index:g.episodeIndex++,motif:g.motifDeck.pop(),act,length:5+Math.floor(random(g)*5),step:0};
+}
+function rowPattern(g,row,d){
+  const level=levelAt(g.levelIndex),act=courseAct(d,level.length),intensity=courseIntensity(d,level.length,g.levelIndex);
+  if(g.levelIndex===0&&row<3){
+    g.routeLane=row<2?1:2;
+    return{motif:'tutorial',safe:row<2?0:2,hazards:[{lane:1,type:['log','branch','rock'][row]}],coinLane:row<2?1:2,act,episode:-1,beat:row,recovery:false,intensity};
+  }
+  // Seeded episodes have different lengths and change at geographic act boundaries,
+  // rather than repeating a visible four-row route. A shuffled deck keeps variety.
+  if(!g.episode||g.episode.step>=g.episode.length||g.episode.act!==act)g.episode=nextEpisode(g,act);
+  const episode=g.episode,step=episode.step++,motif=episode.motif,recovery=step===episode.length-1;
+  const move=motif==='slalom'||motif==='coin-zigzag'||random(g)<.65;
+  if(!recovery&&move){
+    if(g.routeLane===0)g.routeDirection=1;else if(g.routeLane===2)g.routeDirection=-1;
+    else if(motif==='mixed-hazards'||motif==='split-current')g.routeDirection=random(g)<.5?-1:1;
+    g.routeLane+=g.routeDirection;
+  }
+  const safe=g.routeLane,occupied=[0,1,2].filter(lane=>lane!==safe);
+  if(random(g)<.5)occupied.reverse();
+  let types=['rock','rock'];
+  if(motif==='coin-zigzag')types=['log','branch'];
+  else if(motif==='mixed-hazards')types=random(g)<.5?['branch','log']:['log','branch'];
+  else if(motif==='jump-waves')types=['rock','log'];
+  else if(motif==='low-canopy')types=['branch','rock'];
+  else if(motif==='split-current')types=random(g)<.5?['branch','log']:['rock','branch'];
+  // Full-width waves always share one action; other formations leave a clear
+  // adjacent-lane route. Opening waves stay light and episode ends breathe.
+  const wave=(motif==='jump-waves'||motif==='low-canopy')&&act>0&&step>0&&!recovery&&random(g)<.12+.46*intensity;
+  const pair=!recovery&&random(g)<.28+.54*intensity+g.levelIndex*.05;
+  const hazards=wave?[0,1,2].map(lane=>({lane,type:motif==='jump-waves'?'log':'branch'})):occupied.slice(0,pair?2:1).map((lane,i)=>({lane,type:types[(i+step)%types.length]}));
+  return{motif,safe,hazards,coinLane:safe,act,episode:episode.index,beat:step,recovery,intensity};
 }
 export function generateAhead(g) {
   if(g.phase!=='playing')return;
@@ -80,9 +106,9 @@ export function generateAhead(g) {
   while (g.nextRow < visibleTo && g.nextRow < limit) {
     const d = g.nextRow, row = g.row++;
     const predictedTime = g.time + timeToImpact(g,d);
-    const {motif,safe,hazards,coinLane}=rowPattern(g,row);
+    const {motif,safe,hazards,coinLane,act,episode,beat,recovery,intensity}=rowPattern(g,row,d);
     if(!g.patternsSeen.includes(motif))g.patternsSeen.push(motif);
-    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif }));
+    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery }));
     for (let offset = -17; offset <= -2; offset += 5) add(g, 'coin', coinLane, d + offset);
     const actionHazard = hazards.find(h => h.type !== 'rock');
     if (actionHazard) {
@@ -93,21 +119,23 @@ export function generateAhead(g) {
     if (row % 13 === 6) add(g, 'magnet', safe, d - 8);
     if (row % 17 === 11) add(g, 'shield', safe, d - 8);
     // Preserve the introductory jump/duck/rock reaction time at faster speeds.
-    const interval=g.levelIndex===0&&row<3?1.05-Math.min(1,predictedTime/95)*.19:Math.max(level.minInterval,level.rowInterval-predictedTime/180*.09);
+    const interval=g.levelIndex===0&&row<3?1.05-Math.min(1,predictedTime/95)*.19:Math.max(level.minInterval,level.rowInterval+.16*(1-intensity)-.1*intensity)+(recovery ? .30+.20*intensity : 0);
     g.nextRow += speedAt(predictedTime,g.levelIndex) * interval;
   }
   if(!g.runwayGenerated&&visibleTo>limit){
     g.runwayGenerated=true;
-    for(let d=level.length-70;d<=level.length-15;d+=5)add(g,'coin',1,d,{motif:'finish-runway'});
+    for(let d=level.length-130;d<=level.length-15;d+=5)add(g,'coin',1,d,{motif:'finish-runway'});
   }
   g.entities.sort((a, b) => a.d - b.d || a.id - b.id);
 }
 export function jumpHeight(g) {
-  return g.action === 'jump' ? 4 * clamp(g.actionTime / JUMP_SECONDS, 0, 1) * (1 - clamp(g.actionTime / JUMP_SECONDS, 0, 1)) : 0;
+  return jumpHeightAt(g.action,g.actionTime);
 }
+function jumpHeightAt(action,time){const p=clamp(time/JUMP_SECONDS,0,1);return action==='jump'?4*p*(1-p):0;}
 // Reward a timely tap on the launch frame, before the arc reaches full height.
 function jumpClears(g){return jumpClearsAt(g.action,g.actionTime);}
-function jumpClearsAt(action,time){const p=clamp(time/JUMP_SECONDS,0,1);return action==='jump'&&time<JUMP_SECONDS&&(time<=.06||4*p*(1-p)>.28);}
+function jumpClearsAt(action,time){return action==='jump'&&time<JUMP_SECONDS&&(time<=.06||jumpHeightAt(action,time)>COIN_GROUND_MAX_JUMP_HEIGHT);}
+export function coinHeightTouches(high,action,time){return high?jumpClearsAt(action,time):jumpHeightAt(action,time)<=COIN_GROUND_MAX_JUMP_HEIGHT;}
 function crossingAction(frame,elapsed){
   const duration=frame.action==='jump'?JUMP_SECONDS:DUCK_SECONDS;
   if(!frame.action||frame.actionTime+elapsed<duration)return{action:frame.action,time:frame.actionTime+elapsed};
@@ -169,9 +197,10 @@ export function updateGame(g, input, dt) {
   g.distance = Math.min(level.length,g.distance+g.speed*dt);
   if (g.time - g.lastCoin > 2.8) { g.streak = 0; g.multiplier = 1; }
   // Generated courses are ordered, but processing the crossed subset in
-  // physical order also guarantees a magnet cannot attract an earlier coin.
+  // physical order also guarantees a coin boost cannot enhance an earlier coin.
   const crossed=g.entities.filter(e=>!e.done&&e.d<=g.distance&&e.d>previous).sort((a,b)=>a.d-b.d||a.id-b.id);
-  let magnetUntil=frame.magnet;
+  let boostUntil=frame.magnet;
+  let coinGoalDuringRush=false;
   for (const e of crossed) {
     e.done = true;
     // Sample the same analytic trajectory for coins and powers at their exact
@@ -182,19 +211,21 @@ export function updateGame(g, input, dt) {
     const overlap=Math.abs(e.lane-lane)<=COIN_LANE_RADIUS;
     if (e.type === 'coin') {
       const action=crossingAction(frame,elapsed);
-      const attracted=magnetUntil>elapsed||frame.rush>elapsed;
-      if ((overlap&&(!e.high||jumpClearsAt(action.action,action.time)))||attracted) {
+      const boosted=boostUntil>elapsed;
+      if (overlap&&coinHeightTouches(!!e.high,action.action,action.time)) {
         e.collected=true;
         g.coins++; g.streak++; g.lastCoin = g.time;
+        if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
-        g.bonus += 10 * g.multiplier; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
-        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { high: !!e.high, distance:e.d, playerLane:lane, attracted: attracted&&(!overlap||e.high&&!jumpClearsAt(action.action,action.time)) });
+        const value=10*g.multiplier*(boosted?2:1);
+        g.bonus += value; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
+        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high, distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,contactTime:g.time-dt+elapsed });
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
       if (overlap) {
         e.collected=true;
-        if (e.type === 'magnet') magnetUntil=elapsed+8; else g.shield = true;
-        emit(g, 'power', e.type === 'magnet' ? 'MAGNET! All lanes pay' : 'SHIELD! One free hit', e.lane, {power:e.type,distance:e.d,playerLane:lane});
+        if (e.type === 'magnet') boostUntil=elapsed+8; else g.shield = true;
+        emit(g, 'power', e.type === 'magnet' ? 'GOLD BOOST ×2! Touch coins for double points' : 'SHIELD! One free hit', e.lane, {power:e.type,distance:e.d,playerLane:lane});
       }
     } else {
       g.rowsPassed++;
@@ -210,12 +241,14 @@ export function updateGame(g, input, dt) {
     }
     if (g.phase !== 'playing') break;
   }
-  g.magnet=Math.max(0,magnetUntil-dt);
+  g.magnet=Math.max(0,boostUntil-dt);
   if (g.phase === 'playing') {
     const totals = { tricks: g.jumps + g.ducks, coins: g.coins, distance: g.distance };
     if (totals[g.goal.kind] - g.goal.start >= g.goal.target) {
       g.goalsCleared++; g.bonus += 500;
-      if (!g.rush) g.charge = Math.min(100, g.charge + 20);
+      // A coin challenge completed during Rush is still a powered reward,
+      // even if Rush expires before this frame's goal bookkeeping runs.
+      if (!g.rush&&!coinGoalDuringRush) g.charge = Math.min(100, g.charge + 20);
       emit(g, 'goal', 'CHALLENGE CLEARED +500');
       const kind = ['tricks', 'coins', 'distance'][g.goalsCleared % 3];
       g.goal = { kind, start: totals[kind], target: kind === 'tricks' ? 3 + Math.min(5, g.goalsCleared) : kind === 'coins' ? 40 : 500 };

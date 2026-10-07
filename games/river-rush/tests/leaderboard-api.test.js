@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
+import {LEVELS} from '../src/game/levels.js';
 const require=createRequire(import.meta.url);
 const handler=require('../../../api/river-rush-leaderboard.js');
 
@@ -57,31 +58,44 @@ test('invalid and oversized requests never reach public storage',async t=>{
   {...valid(),name:'<script>'},{...valid(),name:'River🚣'}, {...valid(),created_at:'2020-01-01'}, {...valid(),status:'won'},
   {...valid(),score:0},{...valid(),score:1000001},{...valid(),score:Infinity},{...valid(),score:'20000'}, {...valid(),score:1.5},
   {...valid(),coins:-1},{...valid(),coins:5001},{...valid(),levelsCleared:4},{...valid(),levelsCleared:3,levelIndex:1},
-  {...valid(),levelIndex:3},{...valid(),distance:10801},{...valid(),distance:NaN},{...valid(),distance:1.5},{...valid(),runId:'not-uuid'},
+  {...valid(),levelIndex:3},{...valid(),distance:16201},{...valid(),distance:NaN},{...valid(),distance:1.5},{...valid(),runId:'not-uuid'},
   {...valid(),name:'x'.repeat(5000)}];
  for(const body of invalid){const r=await call('POST',body);assert.equal(r.statusCode,400,JSON.stringify(body));}
  assert.equal((await call('POST',valid(),{'content-length':'5000'})).statusCode,400);
  assert.equal(calls,0);
 });
 
-test('longer adventure distances are accepted alongside historical 5400 m scores',async t=>{
+test('longer adventure distances are accepted alongside historical 5400 m and 10800 m scores',async t=>{
  const inserted=[];
  setup(t,async(_url,init)=>{
   if(init.method!=='POST')return reply([]);
   const row=JSON.parse(init.body);inserted.push(row);
   return reply([stored({distance:row.distance,levels_cleared:row.levels_cleared})]);
  });
- for(const distance of [5400,5401,10800]){
+ for(const distance of [5400,5401,10800,10801,16200]){
   const r=await call('POST',{...valid(),distance,levelsCleared:3});
   assert.equal(r.statusCode,201);assert.equal(r.payload.entry.distance,distance);
   assert.equal(r.payload.entry.levelsCleared,3);
  }
- assert.deepEqual(inserted.map(row=>row.distance),[5400,5401,10800]);
- const rejected=await call('POST',{...valid(),distance:10801});
- assert.equal(rejected.statusCode,400);assert.equal(inserted.length,3);
- globalThis.fetch=async()=>reply([stored({distance:10800}),stored({distance:5400})]);
+ assert.deepEqual(inserted.map(row=>row.distance),[5400,5401,10800,10801,16200]);
+ const rejected=await call('POST',{...valid(),distance:16201});
+ assert.equal(rejected.statusCode,400);assert.equal(inserted.length,5);
+ globalThis.fetch=async()=>reply([stored({distance:16200}),stored({distance:10800}),stored({distance:5400})]);
  const board=await call('GET');assert.equal(board.statusCode,200);
- assert.deepEqual(board.payload.entries.map(row=>row.distance),[10800,5400]);
+ assert.deepEqual(board.payload.entries.map(row=>row.distance),[16200,10800,5400]);
+});
+
+test('public score distance bounds match the shared finite adventure length',async t=>{
+ const distance=LEVELS.reduce((sum,level)=>sum+level.length,0);
+ let inserts=0;
+ setup(t,async(_url,init)=>{
+  if(init.method!=='POST')return reply([]);
+  inserts++;return reply([stored({distance,levels_cleared:3})]);
+ });
+ const completed=await call('POST',{...valid(),distance,levelsCleared:3});
+ assert.equal(completed.statusCode,201);assert.equal(completed.payload.entry.distance,distance);
+ const tooFar=await call('POST',{...valid(),distance:distance+1,levelsCleared:3});
+ assert.equal(tooFar.statusCode,400);assert.equal(inserts,1);
 });
 
 test('a matching duplicate run is successful without granting update permission',async t=>{
@@ -96,15 +110,15 @@ test('a repeated extended-adventure UUID remains idempotent and cannot change it
  const requests=[];
  setup(t,async(url,init)=>{
   requests.push({url:new URL(url),init});
-  return reply(init.method==='POST'?[]:[stored({distance:10800,levels_cleared:3})]);
+  return reply(init.method==='POST'?[]:[stored({distance:16200,levels_cleared:3})]);
  });
- const body={...valid(),distance:10800,levelsCleared:3};
+ const body={...valid(),distance:16200,levelsCleared:3};
  const duplicate=await call('POST',body);
  assert.equal(duplicate.statusCode,200);assert.equal(duplicate.payload.duplicate,true);
- assert.equal(duplicate.payload.entry.distance,10800);
+ assert.equal(duplicate.payload.entry.distance,16200);
  assert.equal(requests[1].url.searchParams.get('run_id'),`eq.${RUN}`);
  assert.ok(requests.every(({init})=>init.method===undefined||init.method==='POST'));
- const changed=await call('POST',{...body,distance:10799});
+ const changed=await call('POST',{...body,distance:16199});
  assert.equal(changed.statusCode,409);
  assert.match(changed.payload.error,/already been submitted/);
 });

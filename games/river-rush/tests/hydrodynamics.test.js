@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {riverElevation} from '../src/game/river-course.js';
+import {riverElevation,createCourseProfile} from '../src/game/river-course.js';
 import { surfaceAt, floatTarget, createFloat, advanceFloat, WAVES,currentDistance,CURRENT_FLOW_SPEED } from '../src/game/hydrodynamics.js';
 
 test('buoyancy probes sample the same continuous directional wave surface',()=>{
@@ -37,4 +37,23 @@ test('landing impulse is applied once, settles, and paused state freezes exactly
  let maximum=0;for(let i=1;i<=120;i++){g.time=i/60;advanceFloat(impact,g);advanceFloat(control,{...g,effects:[]});maximum=Math.max(maximum,Math.abs(impact.height-control.height));}
  assert.ok(maximum>.025);assert.ok(Math.abs(impact.height-control.height)<.001);
  advanceFloat(impact,g,true);assert.equal(impact.height,.12);assert.equal(impact.pitch,0);assert.equal(impact.roll,0);assert.equal(impact.heaveVelocity,0);
+});
+
+test('profiled buoyancy follows each full escalating map at 30, 60 and 120 Hz without global state',()=>{
+ const courses=[[0,4200,68],[1,5400,80],[2,6600,92]].map(([index,length,speed])=>({profile:createCourseProfile(7319,length,index),length,speed}));
+ const run=({profile,length,speed},hz)=>{
+  const g={seed:7319,time:0,distance:0,visualLane:1,laneVelocity:0,effects:[]},state=createFloat(g,profile);
+  assert.equal(state.course,profile);let peak=0;
+  for(let i=0;i<Math.ceil(length/speed*hz);i++){
+   g.time=Math.min((i+1)/hz,length/speed);g.distance=g.time*speed;g.visualLane=1+Math.sin(g.time*2);g.laneVelocity=Math.cos(g.time*2)*20;
+   advanceFloat(state,g);peak=Math.max(peak,Math.abs(state.height));
+   assert.ok(Number.isFinite(state.height)&&Math.abs(state.height)<.85);assert.ok(state.pitch>=-.29&&state.pitch<=.18);assert.ok(Math.abs(state.roll)<=.25);
+  }
+  const frozen={...state};advanceFloat(state,g);assert.deepEqual(state,frozen);
+  const actual={height:state.height,roll:state.roll,peak};advanceFloat(state,g,true);assert.equal(state.height,.12);assert.equal(state.pitch,0);assert.equal(state.roll,0);
+  return actual;
+ };
+ for(const course of courses){const reference=run(course,120);for(const hz of [30,60]){const actual=run(course,hz);assert.ok(Math.abs(actual.height-reference.height)<.03);assert.ok(Math.abs(actual.roll-reference.roll)<.02);}}
+ // Interleaving two maps cannot change an earlier map's deterministic probes.
+ const before=surfaceAt(3.8,3000,60,false,courses[0].profile);surfaceAt(3.8,3000,60,false,courses[2].profile);assert.deepEqual(surfaceAt(3.8,3000,60,false,courses[0].profile),before);
 });

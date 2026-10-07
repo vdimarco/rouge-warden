@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,updateGame,timeToImpact,nextLevel,restartLevel,snapshot} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
 
-test('40 delayed-input players clear all three varied maps unshielded, with and without Rush',()=>{
+test('40 delayed-input players clear the longer escalating adventure unshielded at 30/60/120 Hz, with and without Rush',()=>{
  let tricks=0,powers=0,highestEntities=0,totalDistance=0,stages=0;
- for(const useRush of [false,true])for(let seed=1;seed<=40;seed++){
+ for(const hz of [30,60,120])for(const useRush of [false,true])for(let seed=1;seed<=40;seed++){
   let g=createGame(seed),input=emptyInput();
   const campaignScores=[];
   for(const level of LEVELS){
    g.shield=false;
    let pending=null,handled=new Set(),maxEntities=0,lastHazard=0;
-   for(let frame=0;frame<70*60&&g.phase==='playing';frame++){
+   for(let frame=0;frame<Math.ceil(level.length/level.startSpeed+10)*hz&&g.phase==='playing';frame++){
     const obstacles=g.entities.filter(e=>!e.done&&['rock','log','branch'].includes(e.type));
     for(const e of obstacles){lastHazard=Math.max(lastHazard,e.d);assert.ok(e.d<level.length-FINISH_RUNWAY);}
     const next=obstacles.find(e=>e.lane===g.lane);
@@ -23,8 +23,8 @@ test('40 delayed-input players clear all three varied maps unshielded, with and 
     }
     if(pending&&g.time>=pending.at){pending.actions.forEach(a=>queueAction(input,a));handled.add(pending.id);pending=null;}
     if(useRush&&g.charge>=100&&!g.rush){queueAction(input,'rush');powers++;}
-    updateGame(g,input,1/60);maxEntities=Math.max(maxEntities,g.entities.length);
-    assert.notEqual(g.phase,'lost',`seed ${seed}, map ${level.id}, time ${g.time.toFixed(2)}, Rush ${useRush}: ${g.reason}`);
+    updateGame(g,input,1/hz);maxEntities=Math.max(maxEntities,g.entities.length);
+    assert.notEqual(g.phase,'lost',`${hz} Hz, seed ${seed}, map ${level.id}, time ${g.time.toFixed(2)}, Rush ${useRush}: ${g.reason}`);
     assert.equal(g.shieldsUsed,0,'the route needed a shield rescue');
     if(handled.size>20)handled=new Set([...handled].slice(-10));
    }
@@ -46,7 +46,7 @@ test('40 delayed-input players clear all three varied maps unshielded, with and 
   assert.equal(nextLevel(g),null);
   assert.ok(campaignScores[1]>campaignScores[0]&&campaignScores[2]>campaignScores[1]);
  }
- console.log(JSON.stringify({seeds:40,campaigns:80,stages,reactionDelayMs:'180–288',tricks,rushes:powers,maxEntities:highestEntities,totalDistance}));
+ console.log(JSON.stringify({seeds:40,refreshRates:[30,60,120],campaigns:240,stages,reactionDelayMs:'180–288',tricks,rushes:powers,maxEntities:highestEntities,totalDistance}));
 });
 
 test('doing nothing reliably wipes out before a finish, and retry repeats the same course cleanly',()=>{

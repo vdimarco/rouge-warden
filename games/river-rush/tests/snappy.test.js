@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,emptyInput,queueAction,applyAction,updateGame,jumpHeight,timeToImpact,JUMP_SECONDS,DUCK_SECONDS,speedAt,COIN_LANE_RADIUS,restartLevel} from '../src/game/engine.js';
+import {createGame,emptyInput,queueAction,applyAction,updateGame,jumpHeight,timeToImpact,JUMP_SECONDS,DUCK_SECONDS,speedAt,COIN_LANE_RADIUS,COIN_GROUND_MAX_JUMP_HEIGHT,restartLevel} from '../src/game/engine.js';
 import {createMotion,advanceMotion,paddleSample} from '../src/game/motion.js';
 import {readSwipe} from '../src/game/input.js';
 import {renderDpr,foamDepth,riverRate} from '../src/game/quality.js';
@@ -56,6 +56,7 @@ test('ordinary coins need tight visible center overlap at the crossing, at 30/60
   const {g,coin,events}=coinRun(hz,{lane:2,target:2,at:.15});
   assert.equal(g.coins,1,`${hz} Hz missed a real arrival`);assert.equal(coin.collected,true);assert.equal(events.length,1);assert.equal(events[0].attracted,false);
   assert.ok(Math.abs(events[0].playerLane-2)<COIN_LANE_RADIUS);
+  assert.equal(events[0].entityId,coin.id);assert.equal(events[0].playerHeight,0);assert.ok(Math.abs(events[0].contactTime-1000.15)<1e-10);
   const crossing=coinRun(hz,{lane:1,target:2,at:.003});
   assert.equal(crossing.g.coins,1,'the raft crossed a coin in the lane it was leaving');assert.equal(crossing.coin.collected,true);
  }
@@ -66,10 +67,13 @@ test('steering reversal preserves the same swept coin result across refresh rate
   const g=Object.assign(clean(),{time:1000});applyAction(g,'right');
   for(let elapsed=0;elapsed<.09;){const dt=Math.min(1/hz,.09-elapsed);updateGame(g,emptyInput(),dt);elapsed+=dt;}
   const reversal={position:g.visualLane,velocity:g.laneVelocity,lane:2,target:1};
-  const early=coinRun(hz,{...reversal,at:.005});
-  assert.equal(early.g.coins,1,`${hz} Hz failed the still-overlapping reversal`);assert.equal(early.coin.collected,true);
-  const late=coinRun(hz,{...reversal,at:.08});
-  assert.equal(late.g.coins,0,`${hz} Hz collected after steering away`);assert.equal(late.events.length,0);assert.notEqual(late.coin.collected,true);
+  for(const power of ['', 'magnet','rush']){
+   const activePower=power?{[power]:3}:{};
+   const early=coinRun(hz,{...reversal,...activePower,at:.005});
+   assert.equal(early.g.coins,1,`${hz} Hz failed the still-overlapping reversal`);assert.equal(early.coin.collected,true);
+   const late=coinRun(hz,{...reversal,...activePower,at:.08});
+   assert.equal(late.g.coins,0,`${hz} Hz ${power||'ordinary'} collected after steering away`);assert.equal(late.events.length,0);assert.notEqual(late.coin.collected,true);
+  }
  }
 });
 
@@ -92,13 +96,44 @@ test('a nearly expired buffered jump agrees with the rendered launch on a raised
  assert.equal(g.effects.filter(e=>e.type==='coin').length,1);
 });
 
-test('magnet and Rush are explicit pickup exceptions, expire at crossing and reset on retry',()=>{
+test('Gold boost rewards actual contact, expires at crossing and neither it nor Rush bypasses pickup contact',()=>{
  for(const hz of [30,60,120])for(const power of ['magnet','rush']){
-  const active=coinRun(hz,{lane:0,high:true,[power]:.01,at:.005});
-  assert.equal(active.g.coins,1);assert.equal(active.coin.collected,true);assert.equal(active.events[0].attracted,true);
+  const active=coinRun(hz,{[power]:.01,at:.005});
+  assert.equal(active.g.coins,1);assert.equal(active.coin.collected,true);assert.equal(active.events[0].attracted,false);
+  assert.equal(active.events[0].boosted,power==='magnet');assert.equal(active.events[0].value,power==='magnet'?20:10);
   if(power==='rush')assert.equal(active.g.charge,0,'a pickup during the final Rush frame recharged Rush');
-  const expired=coinRun(hz,{lane:0,high:true,[power]:.01,at:.02});assert.equal(expired.g.coins,0);assert.equal(expired.events.length,0);
+  const expired=coinRun(hz,{[power]:.01,at:.02});assert.equal(expired.g.coins,1);assert.equal(expired.events[0].boosted,false);assert.equal(expired.events[0].value,10);
+  for(const setup of [{lane:0},{high:true},{lane:2,high:true}]){const missed=coinRun(hz,{...setup,[power]:3});assert.equal(missed.g.coins,0);assert.equal(missed.events.length,0);}
   const retry=restartLevel(active.g);assert.equal(retry.magnet,0);assert.equal(retry.rush,0);assert.equal(retry.coins,0);assert.ok(retry.entities.every(e=>!e.done&&!e.collected));
+ }
+});
+
+test('coin challenges cannot recharge Rush through a reward completed in its final frame',()=>{
+ for(const hz of [30,60,120])for(const crossing of [.005,.02]){
+  const g=Object.assign(clean(),{time:1000,coins:39,charge:0,rush:.01,goalsCleared:1,goal:{kind:'coins',start:0,target:40}});
+  g.entities=[{id:711,type:'coin',lane:1,d:speedAt(g.time)*1.32*crossing,done:false}];
+  for(let elapsed=0;elapsed<.04;elapsed+=1/hz)updateGame(g,emptyInput(),1/hz);
+  assert.equal(g.coins,40);assert.equal(g.goalsCleared,2);assert.equal(g.goal.kind,'distance');assert.equal(g.rush,0);
+  assert.equal(g.charge,crossing<.01?0:22,`${hz} Hz attributed challenge charge to the wrong side of Rush expiry`);
+  assert.equal(g.bonus,510,'the challenge should still award points once');
+ }
+});
+
+test('ordinary, Gold boost and Rush runs never collect a coin 7.6 m beside the raft',()=>{
+ for(const hz of [30,60,120])for(const power of ['', 'magnet','rush']){
+  const {g,coin,events}=coinRun(hz,{position:0,target:0,lane:2,...(power?{[power]:3}:{})});
+  assert.equal(g.visualLane,0);assert.equal(g.coins,0);assert.equal(g.bonus,0);assert.equal(g.charge,0);assert.notEqual(coin.collected,true);assert.equal(events.length,0);
+ }
+});
+
+test('peak airborne rafts pass above low coins in ordinary, Gold boost and Rush runs',()=>{
+ assert.equal(COIN_GROUND_MAX_JUMP_HEIGHT,.28);
+ for(const hz of [30,60,120])for(const power of ['', 'magnet','rush']){
+  const result=coinRun(hz,{action:'jump',actionTime:.3,...(power?{[power]:3}:{})});
+  assert.ok(jumpHeight(result.g)>COIN_GROUND_MAX_JUMP_HEIGHT);assert.equal(result.g.coins,0);assert.notEqual(result.coin.collected,true);assert.equal(result.events.length,0);
+  for(const setup of [{action:'jump',at:.005},{action:'jump',actionTime:.645,at:.004}]){
+   const contact=coinRun(hz,{...setup,...(power?{[power]:3}:{})});assert.equal(contact.g.coins,1,'low coins should remain reachable during launch/landing');
+  }
  }
 });
 
@@ -124,10 +159,10 @@ test('late steering cannot acquire an adjacent magnet and thereby collect remote
   {name:'one queued right tap from center',items:[{type:'magnet',lane:2,at:.005},{type:'coin',lane:0,at:.012}],options:{queued:['right']}},
   {name:'two queued right taps from left',items:[{type:'magnet',lane:2,at:.001665},...Array.from({length:9},(_,i)=>({type:'coin',lane:2,at:.003+i*.0025}))],options:{startLane:0,queued:['right','right']}}
  ];
- for(const hz of [30,60,120])for(const scenario of cases){
-  const {g,entities,events}=pickupRun(hz,scenario.items,scenario.options);
-  assert.equal(g.lane,2);assert.equal(g.rush,0);
-  assert.equal(g.magnet,0,`${hz} Hz ${scenario.name} activated a magnet beside the raft`);assert.equal(g.coins,0,`${hz} Hz ${scenario.name} awarded remote coins`);
+ for(const hz of [30,60,120])for(const scenario of cases)for(const power of ['', 'magnet','rush']){
+  const {g,entities,events}=pickupRun(hz,scenario.items,{...scenario.options,...(power?{[power]:3}:{})});
+  assert.equal(g.lane,2);if(power!=='rush')assert.equal(g.rush,0);
+  assert.ok(Math.abs(g.magnet-(power==='magnet'?2.96:0))<1e-10,`${hz} Hz ${scenario.name} acquired or extended a boost beside the raft`);assert.equal(g.coins,0,`${hz} Hz ${power||'ordinary'} ${scenario.name} awarded remote coins`);
   assert.ok(entities.every(e=>e.done&&!e.collected));assert.equal(events.filter(e=>e.type==='power'||e.type==='coin').length,0);
   assert.ok(g.entities.includes(entities[0]),'a missed magnet disappeared before the normal behind limit');
  }
@@ -146,27 +181,27 @@ test('shield and magnet acquisition use visible contact even when leaving the se
  }
 });
 
-test('a legitimate magnet attracts only later coin crossings regardless of entity insertion order',()=>{
- const before={type:'coin',lane:0,at:.002},power={type:'magnet',lane:1,at:.004},after={type:'coin',lane:2,at:.006};
+test('a legitimate Gold boost enhances only later touched coins regardless of entity insertion order',()=>{
+ const before={type:'coin',lane:1,at:.002},power={type:'magnet',lane:1,at:.004},after={type:'coin',lane:1,at:.006};
  for(const hz of [30,60,120])for(const items of [[before,power,after],[after,power,before],[power,after,before],[power,before,after],[before,after,power],[after,before,power]]){
   const {g,entities,events}=pickupRun(hz,items);
-  assert.equal(g.coins,1,`${hz} Hz power activation affected an earlier coin`);assert.ok(g.magnet>7.9);
-  assert.notEqual(entities.find(e=>e.type==='coin'&&e.at===.002).collected,true);
+  assert.equal(g.coins,2);assert.equal(g.bonus,30,`${hz} Hz power activation enhanced an earlier coin`);assert.ok(g.magnet>7.9);
+  assert.equal(entities.find(e=>e.type==='coin'&&e.at===.002).collected,true);
   assert.equal(entities.find(e=>e.type==='coin'&&e.at===.006).collected,true);
-  assert.deepEqual(events.map(e=>e.type),['power','coin']);assert.equal(events[1].attracted,true);
+  assert.deepEqual(events.map(e=>e.type),['coin','power','coin']);assert.equal(events[0].value,10);assert.equal(events[0].boosted,false);assert.equal(events[2].value,20);assert.equal(events[2].boosted,true);assert.ok(events.filter(e=>e.type==='coin').every(e=>!e.attracted));
  }
 });
 
-test('a newly acquired magnet expires eight seconds after contact at 30/60/120 Hz',()=>{
+test('a newly acquired Gold boost expires eight seconds after contact at 30/60/120 Hz',()=>{
  for(const hz of [30,60,120]){
-  const {g,entities,events}=pickupRun(hz,[{type:'coin',lane:2,at:8.004},{type:'magnet',lane:1,at:.003},{type:'coin',lane:0,at:8.002}],{until:8.02});
-  assert.equal(g.magnet,0);assert.equal(g.coins,1);
-  assert.notEqual(entities.find(e=>e.at===8.004).collected,true);assert.equal(entities.find(e=>e.at===8.002).collected,true);
-  assert.deepEqual(events.map(e=>e.type),['power','coin']);assert.equal(events[1].attracted,true);
+  const {g,entities,events}=pickupRun(hz,[{type:'coin',lane:1,at:8.004},{type:'magnet',lane:1,at:.003},{type:'coin',lane:1,at:8.002}],{until:8.02});
+  assert.equal(g.magnet,0);assert.equal(g.coins,2);assert.equal(g.bonus,30);
+  assert.equal(entities.find(e=>e.at===8.004).collected,true);assert.equal(entities.find(e=>e.at===8.002).collected,true);
+  assert.deepEqual(events.map(e=>e.type),['power','coin','coin']);assert.equal(events[1].boosted,true);assert.equal(events[1].value,20);assert.equal(events[2].boosted,false);assert.equal(events[2].value,10);assert.equal(events[1].attracted,false);
  }
 });
 
-test('existing Magnet and Rush do not acquire other powers from adjacent lanes',()=>{
+test('existing Gold boost and Rush do not acquire other powers from adjacent lanes',()=>{
  for(const hz of [30,60,120])for(const power of ['magnet','rush']){
   const {g,entities,events}=pickupRun(hz,[{type:'magnet',lane:2,at:.005},{type:'shield',lane:0,at:.007}],{[power]:3});
   assert.ok(entities.every(e=>e.done&&!e.collected));assert.equal(g.shield,false);assert.equal(events.filter(e=>e.type==='power').length,0);

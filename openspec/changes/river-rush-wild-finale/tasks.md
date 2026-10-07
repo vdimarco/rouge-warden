@@ -1,0 +1,7 @@
+- [x] Diagnose repeated adjacent awards and implement strict visible coin contact/feedback.
+- [x] Extend all maps and add seeded route episodes with progressive difficulty and recoveries.
+- [x] Add continuous shared four-act geography, stronger late rapids and dynamic scenery.
+- [x] Replace the finish gate and add legible themed approach markers in 3D and 2D.
+- [x] Extend public score validation/storage while preserving historical results.
+- [x] Verify delayed-input full campaigns, refresh rates, all supported layouts and real inputs.
+- [ ] Publish, verify exact live assets and gameplay, reconcile and archive the specification.

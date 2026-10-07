@@ -5,7 +5,7 @@ import { drawWater } from './water.js';
 import { createMotion, advanceMotion, landingPulse, impactPulse, pickupProgress, paddleSample } from './motion.js';
 import {shorelineBranch,branchLeafArt,limbPoint} from './shoreline-branch.js';
 import { levelAt } from './levels.js';
-import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D } from './map-2d.js';
+import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D,drawRapids2D } from './map-2d.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const TAU = Math.PI * 2, fract = n => n - Math.floor(n);
@@ -144,8 +144,9 @@ function banks(ctx,g,art,w,h,reduce){
 export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=true) {
   ctx.clearRect(0,0,width,height);
   water(ctx,g,art,width,height,reducedMotion,active);
+  drawRapids2D(ctx,g,width,height,reducedMotion,projection);
   banks(ctx,g,art,width,height,reducedMotion);
-  drawFinish2D(ctx,g,width,height,projection,VIEW_DISTANCE);
+  drawFinish2D(ctx,g,width,height,projection,VIEW_DISTANCE,art.map2d.finish,reducedMotion);
   if(!motions.has(g))motions.set(g,createMotion(g));
   const motion=advanceMotion(motions.get(g),g,reducedMotion);
   const player=projection(width,height,g.visualLane,0);
@@ -172,7 +173,8 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       ctx.save();ctx.fillStyle=e.type==='coin'?'#ffcf5f28':'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
     }
     if(e.type==='branch')shorelineTree(ctx,g,e,art,width,height);
-    else sprite(ctx,art.sprites,indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
+    else sprite(ctx,art.sprites,e.type==='magnet'?indexes.coin:indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
+    if(e.type==='magnet'){ctx.save();ctx.font=`900 ${Math.max(12,size*.3)}px system-ui`;ctx.textAlign='center';ctx.strokeStyle='#3f2e14';ctx.lineWidth=3;ctx.strokeText('×2',p.x,bottom-size*.32);ctx.fillStyle='#fff8d0';ctx.fillText('×2',p.x,bottom-size*.32);ctx.restore();}
     if(!e.done&&['log','branch','rock'].includes(e.type)&&z<g.speed*1.65&&z>10) {
       const label=e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
       const font=Math.max(10,15*p.scale);ctx.font=`800 ${font}px system-ui`;ctx.textAlign='center';
@@ -210,7 +212,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       for(let i=0;i<6;i++){const t=fract(g.time*4+i/6);ctx.globalAlpha=(1-t)*.65;ctx.beginPath();ctx.arc(player.x-heroWidth*.62-t*heroWidth*.08,player.foot-heroWidth*.08-Math.sin(t*Math.PI)*heroWidth*.11,1.5,0,TAU);ctx.stroke();}ctx.restore();
     }
     if(g.magnet>0){
-      ctx.save();ctx.strokeStyle='#ffb1bf9c';ctx.lineWidth=1.8;
+      ctx.save();ctx.strokeStyle='#ffe5a69c';ctx.lineWidth=1.8;
       for(let i=0;i<3;i++){const a=g.time*2+i*TAU/3;ctx.beginPath();ctx.ellipse(player.x,player.foot-heroWidth*.38-lift,heroWidth*.57,heroWidth*.22,a*.12,a,a+.8);ctx.stroke();}ctx.restore();
     }
     for(const e of motion.bursts){
@@ -230,11 +232,10 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     const target=art.coinTarget??{x:width*.5,y:40};
     for(const e of motion.pickups){
       const t=pickupProgress(e,g.time),at=projection(width,height,e.lane,0),startY=at.foot-heroWidth*(e.high?.8:.25);
-      let x,y;
-      if(e.attracted&&t<.3){const q=t/.3,mid=projection(width,height,e.playerLane,0);x=at.x+(mid.x-at.x)*q;y=startY-Math.sin(q*Math.PI)*heroWidth*.4;}
-      else{const q=e.attracted?(t-.3)/.7:t,from=e.attracted?projection(width,height,e.playerLane,0).x:at.x,ease=1-(1-q)*(1-q);x=from+(target.x-from)*ease;y=startY+(target.y-startY)*ease-Math.sin(q*Math.PI)*heroWidth*.24;}
+      const ease=t*t*(3-2*t),x=at.x+(target.x-at.x)*ease,y=startY+(target.y-startY)*ease-Math.sin(t*Math.PI)*heroWidth*.24;
+      if(t<.4){const contact=projection(width,height,e.playerLane??e.lane,0);ctx.save();ctx.globalAlpha=1-t/.4;ctx.strokeStyle='#fff7d2';ctx.lineWidth=2;ctx.beginPath();ctx.arc(contact.x,contact.foot-heroWidth*((e.playerHeight??0)*.95+.15),heroWidth*(.06+t*.22),0,TAU);ctx.stroke();ctx.restore();}
       ctx.save();ctx.globalAlpha=Math.min(1,(1-t)*5);ctx.strokeStyle='#ffe29c88';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(target.x-at.x)*.025,y+16);ctx.stroke();
-      sprite(ctx,art.sprites,6,x,y+9,heroWidth*(.23*(1-t)+.09),g.time*3,1,.4+.6*Math.abs(Math.cos(g.time*9)));ctx.restore();
+      sprite(ctx,art.sprites,6,x,y+9,heroWidth*(.17*(1-t)+.05),g.time*3,1,.4+.6*Math.abs(Math.cos(g.time*9)));ctx.restore();
     }
   }
   if(g.phase==='lost') {ctx.fillStyle='#09292d55';ctx.fillRect(0,0,width,height);}

@@ -9,7 +9,8 @@ import { createSkeletalRider } from './skeletal-rider.js';
 import { balanceAt } from './stroke.js';
 import { scenerySlots,recycleZ } from './districts.js';
 import { createWorldDetails } from './world-details.js';
-import {COURSE_GLSL,riverSeed,riverHash,riverPoint,riverHalfWidth,riverBankHeight,riverGrade,riverTangent,rapidAt,shoalAt} from './river-course.js';
+import {COURSE_GLSL,createCourseProfile,riverSeed,riverHash,riverPoint,riverHalfWidth,riverBankHeight,riverGrade,riverTangent,rapidAt,shoalAt} from './river-course.js';
+import {courseAct,courseIntensity} from './course-intensity.js';
 import {waterVertex,waterFragment} from './river-water.js';
 import {createBranchTrees} from './branch-trees.js';
 import {levelAt,LEVELS} from './levels.js';
@@ -20,14 +21,10 @@ const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
 function mat(color,roughness=.85){return softwareMaterials?new THREE.MeshLambertMaterial({color}):new THREE.MeshStandardMaterial({color,roughness});}
 function mesh(geometry,material,parent,x=0,y=0,z=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);parent.add(m);return m;}
-function positionCoinFlight(out,origin,caught,target,t,attracted){
- const catching=attracted&&t<.3,phase=attracted?(catching?t/.3:(t-.3)/.7):t,q=phase*phase*(3-2*phase);
- const from=attracted&&!catching?caught:origin,to=catching?caught:target;
- // Both powered phases meet at the visible raft with zero arc velocity. A
- // squared sine gives the catch and score flight a continuous join.
- const arc=attracted?Math.sin(phase*Math.PI)**2*(catching?.9:2.5):Math.sin(t*Math.PI)*2.5;
- out.set(from.x+(to.x-from.x)*q,from.y+(to.y-from.y)*q+arc,from.z+(to.z-from.z)*q);
- return catching?0:q;
+function positionCoinFlight(out,origin,target,t){
+ const q=t*t*(3-2*t);
+ out.set(origin.x+(target.x-origin.x)*q,origin.y+(target.y-origin.y)*q+Math.sin(t*Math.PI)*2.5,origin.z+(target.z-origin.z)*q);
+ return q;
 }
 function normalized(object,width,height,depth){
  const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
@@ -86,7 +83,7 @@ export function createScene(canvas,art,onLost){
  const sun=new THREE.DirectionalLight('#fff1d1',2.9);sun.position.set(-25,32,12);sun.castShadow=true;
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:20,bottom:-18,near:1,far:100});sun.shadow.bias=-.001;sun.shadow.normalBias=.07;scene.add(sun);
  const waterGeo=new THREE.PlaneGeometry(2,260,software?32:56,software?160:210);waterGeo.rotateX(-Math.PI/2);waterGeo.translate(0,0,-100);
- const uniforms={uTime:{value:0},uDistance:{value:0},uSeed:{value:137},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uDetail:{value:waterDetail},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))},uWaterDeep:{value:new THREE.Color(levelAt(0).waterDeep)},uWaterEdge:{value:new THREE.Color(levelAt(0).waterEdge)},uWaterSky:{value:new THREE.Color(levelAt(0).fog)},uWaterFoam:{value:new THREE.Color('#d7f7ed')},uGroundTint:{value:new THREE.Color(levelAt(0).ground)},uMapIndex:{value:0}};
+ const uniforms={uTime:{value:0},uDistance:{value:0},uSeed:{value:137},uCourseLength:{value:LEVELS[0].length},uCourseMap:{value:0},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uDetail:{value:waterDetail},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))},uWaterDeep:{value:new THREE.Color(levelAt(0).waterDeep)},uWaterEdge:{value:new THREE.Color(levelAt(0).waterEdge)},uWaterSky:{value:new THREE.Color(levelAt(0).fog)},uWaterFoam:{value:new THREE.Color('#d7f7ed')},uGroundTint:{value:new THREE.Color(levelAt(0).ground)},uMapIndex:{value:0}};
  const waterMaterial=new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(software)});
  const cheapWaterMaterial=software?waterMaterial:new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(true)});
  const water=mesh(waterGeo,waterMaterial,scene);water.frustumCulled=false;
@@ -95,7 +92,7 @@ export function createScene(canvas,art,onLost){
  // Instanced tile seams sample the same absolute course rather than recycling
  // the same hill. Geometry and decorative feet use this exact bank function.
  groundMaterial.onBeforeCompile=shader=>{
-   shader.uniforms.uDistance=uniforms.uDistance;shader.uniforms.uSeed=uniforms.uSeed;
+   shader.uniforms.uDistance=uniforms.uDistance;shader.uniforms.uSeed=uniforms.uSeed;shader.uniforms.uCourseLength=uniforms.uCourseLength;shader.uniforms.uCourseMap=uniforms.uCourseMap;
    shader.uniforms.uMapIndex=uniforms.uMapIndex;shader.uniforms.uGroundTint=uniforms.uGroundTint;
    shader.fragmentShader='uniform float uMapIndex;uniform vec3 uGroundTint;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
     diffuseColor.rgb=mix(diffuseColor.rgb,uGroundTint*(.6+diffuseColor.g*.8),min(uMapIndex,1.));`);
@@ -152,7 +149,11 @@ export function createScene(canvas,art,onLost){
  const logGeo=new THREE.CylinderGeometry(.32,.37,3.3,12,5),bark=logGeo.attributes.position;
  for(let i=0;i<bark.count;i++){const x=bark.getX(i),y=bark.getY(i),z=bark.getZ(i),warp=1+Math.sin(y*7+Math.atan2(z,x)*3)*.08;bark.setXYZ(i,x*warp+Math.sin(y*2)*.07,y,z*warp);}logGeo.computeVertexNormals();
  const coinBatch=new THREE.InstancedMesh(coinGeo,coinMat,64),coinPose=new THREE.Object3D(),coinTarget=new THREE.Vector3(),coinOrigin=new THREE.Vector3(),coinCatch=new THREE.Vector3();coinBatch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);coinBatch.frustumCulled=false;scene.add(coinBatch);
- const entities=new Map(),labels=new Map(),labelMaterials=new Map(),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ff8292',.35)};
+ // Consumed rewards use small white tokens. Camera-depth compensation keeps
+ // a HUD-bound token from growing into a new golden world coin beside the raft.
+ const scoreTokenMat=new THREE.MeshBasicMaterial({color:'#fff5d8',transparent:true,opacity:.94,depthTest:false,depthWrite:false,toneMapped:false});
+ const scoreTokens=new THREE.InstancedMesh(coinGeo,scoreTokenMat,24),tokenDepth=new THREE.Vector3();scoreTokens.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scoreTokens.frustumCulled=false;scoreTokens.renderOrder=5;scene.add(scoreTokens);
+ const entities=new Map(),labels=new Map(),labelMaterials=new Map(),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ffd36c',.35)};
  function label(text){if(labels.has(text))return labels.get(text);const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#043b35dd';x.roundRect(0,0,256,64,16);x.fill();x.font='bold 31px sans-serif';x.fillStyle='#fff0b9';x.textAlign='center';x.fillText(text,128,44);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;labels.set(text,t);return t;}
  function makeEntity(e){const g=new THREE.Group();let m;
  if(e.type==='coin'){m=mesh(coinGeo,coinMat,g);m.rotation.x=Math.PI/2;}
@@ -164,15 +165,15 @@ export function createScene(canvas,art,onLost){
  }else{m=mesh(powerGeo,powerMats[e.type],g);}
  m.castShadow=e.type!=='coin';
  g.userData.type=e.type;g.userData.body=m;
- if(['rock','log','branch'].includes(e.type)){
- const text=e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':'DUCK ↓';if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(2.2,.55,1);g.add(sprite);g.userData.label=sprite;}
+ if(['rock','log','branch','magnet'].includes(e.type)){
+ const text=e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':e.type==='magnet'?'GOLD ×2':'DUCK ↓';if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(2.2,.55,1);g.add(sprite);g.userData.label=sprite;}
  scene.add(g);return g;}
  const sprayCount=120,sprayPositions=new Float32Array(sprayCount*3),sprayGeometry=new THREE.BufferGeometry();sprayGeometry.setAttribute('position',new THREE.BufferAttribute(sprayPositions,3));
  const spray= new THREE.Points(sprayGeometry,new THREE.PointsMaterial({color:'#e5fff2',size:.09,transparent:true,opacity:.72,depthWrite:false}));spray.frustumCulled=false;scene.add(spray);
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
  const status={kind:'webgl',software:!!software,models:{raft:'loading',bank:'loading',palm:'loading',temple:'loading',guardian:'loading',rider:'loading',canopy:'loading',harbor:'loading',driftwood:'loading'},background:'loading',drawCalls:0,triangles:0,frames:0,buoyancy:null,contextLost:false,preparing:true,prepared:false,recoveries:0};
  if(!software)Object.assign(status.models,{canopyFar:'loading',harborFar:'loading'});
- let disposed=false,bankModel=null,run=null,float=null,lastEvent=0,width=0,height=0,waterImpulses=[],skeletal=null;
+ let disposed=false,bankModel=null,run=null,profile=null,float=null,lastEvent=0,width=0,height=0,waterImpulses=[],skeletal=null;
  const bankBatches=[],palmBatches=[],templeBatches=[],guardianBatches=[],canopyBatches=[],harborBatches=[],canopyFarBatches=[],harborFarBatches=[],driftwoodBatches=[],instanceMatrix=new THREE.Matrix4(),palmTransform=new THREE.Object3D(),guardianTransform=new THREE.Object3D();
  const templeBanks=banks.filter(b=>riverHash(b.index+b.side*41,137)>.77);
  const guardianBanks=banks.filter(b=>!templeBanks.includes(b)&&riverHash(b.index+b.side*31,137)>.82);
@@ -253,7 +254,10 @@ export function createScene(canvas,art,onLost){
     const warm=createGame(137,level.index);warm.entities=[...['rock','log','branch','shield','magnet'].map((type,i)=>({id:-1000-i,type,lane:i%3,d:12+i*7})),...warm.entities];
     for(const distance of [0,780,level.length-70]){
      await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;
-     warm.distance=distance;if(distance)warm.entities=[];render(warm,w,h,false,0);
+     warm.distance=distance;if(distance)warm.entities=[];
+     // Exercise the feedback instance buffer during preparation as well.
+     warm.effects=distance?[]:[{id:-1,type:'coin',time:0,contactTime:0,lane:1,playerLane:1,playerHeight:0,distance:0,value:10}];
+     render(warm,w,h,false,0);
     }
    }
    for(const [id,obj] of entities){scene.remove(obj);entities.delete(id);}
@@ -265,7 +269,7 @@ export function createScene(canvas,art,onLost){
  canvas.addEventListener('webglcontextlost',lost);
  function render(g,w,h,reduced,frameMs=0){
  if(disposed||status.contextLost)return;
- if(run!==g){for(const obj of entities.values())scene.remove(obj);entities.clear();run=g;float=createFloat(g);lastEvent=0;waterImpulses=[];}
+ if(run!==g){for(const obj of entities.values())scene.remove(obj);entities.clear();run=g;profile=createCourseProfile(g.seed,levelAt(g.levelIndex).length,g.levelIndex);float=createFloat(g,profile);lastEvent=0;waterImpulses=[];}
  // App supplies zero for pause/resume gaps; cap unusually long active GPU
  // frames so a genuine stall still triggers quality reduction.
  const qualityChanged=sampleFrameBudget(frameBudget,Math.min(frameMs,1000));
@@ -273,7 +277,7 @@ export function createScene(canvas,art,onLost){
  if(w!==width||h!==height||qualityChanged){width=w;height=h;const dpr=Math.min(renderDpr(w,h,devicePixelRatio||1),software?Math.sqrt(155000/(w*h)):2)*frameBudget.scale;
  if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr))renderer.setDrawingBufferSize(w,h,dpr);
  camera.aspect=w/h;camera.fov=w/h<.85?80:60;camera.updateProjectionMatrix();}
- const portrait=w/h<.85,travel=reduced?0:g.distance,seed=g.seed;
+ const portrait=w/h<.85,travel=reduced?0:g.distance,seed=profile;
  const level=levelAt(g.levelIndex),map=mapPanoramas[level.index];
  scene.background=map.texture;panorama=map.painted?map.texture:null;mountains.visible=!map.painted&&level.index!==1;
  const farPlane=level.index===1?1050:350;if(camera.far!==farPlane){camera.far=farPlane;camera.updateProjectionMatrix();}
@@ -296,7 +300,7 @@ export function createScene(canvas,art,onLost){
  riderMat.opacity=g.grace>0&&Math.floor(g.time*12)%2?.65:1;
  shield.visible=g.shield||g.rush>0||g.grace>0;shield.material.uniforms.uOpacity.value=g.rush?.64:.25;shield.material.uniforms.uRush.value=g.rush>0?1:0;
  shadow.position.set(x,waterHeight(x,travel)-.03,0);shadow.scale.setScalar(1-jumpHeight(g)*.2);
- uniforms.uTime.value=g.time;uniforms.uDistance.value=travel;uniforms.uSeed.value=riverSeed(seed);uniforms.uMotion.value=reduced?0:1;uniforms.uSpeed.value=g.speed;uniforms.uRush.value=g.rush>0?1:0;uniforms.uRaft.value.set(x,0);
+ uniforms.uTime.value=g.time;uniforms.uDistance.value=travel;uniforms.uSeed.value=riverSeed(seed);uniforms.uCourseLength.value=level.length;uniforms.uCourseMap.value=level.index;uniforms.uMotion.value=reduced?0:1;uniforms.uSpeed.value=g.speed;uniforms.uRush.value=g.rush>0?1:0;uniforms.uRaft.value.set(x,0);
  for(const e of g.effects){if(e.id<=lastEvent)continue;lastEvent=e.id;
  if(['land','hit','smash','swap'].includes(e.type))waterImpulses.push({x:(e.lane-1)*3.8,d:e.distance??g.distance,time:e.time,strength:e.type==='land'?1:.55});}
  waterImpulses=waterImpulses.filter(e=>g.time-e.time<1.4).slice(-4);
@@ -329,8 +333,8 @@ export function createScene(canvas,art,onLost){
  }
  for(const [collection,count] of sceneryCounts)for(const b of collection){b.mesh.count=count;b.mesh.instanceMatrix.needsUpdate=true;}
  worldDetails.update(travel,g.time,reduced,harbors,seed,level.index);
- mapWorld.update(g,travel,reduced,level);
- canyonHorizon.update(g,travel,level.index===1,camera);status.horizon=level.index===1?canyonHorizon.state:null;
+ mapWorld.update(g,travel,reduced,level,seed);
+ canyonHorizon.update(g,travel,level.index===1,camera,seed);status.horizon=level.index===1?canyonHorizon.state:null;
  let shoalCount=0;for(let n=Math.floor((travel-15)/34);n<=Math.ceil((travel+210)/34);n++){const rock=shoalAt(n,seed),p=point(rock.d,rock.x);if(p.z>15||p.z< -210||shoalCount>=10)continue;palmTransform.position.set(p.x,p.y+.18,p.z);palmTransform.rotation.set(.1,riverHash(n+83,seed)*TAU,.14);palmTransform.scale.set(rock.size*1.5,rock.size*.85,rock.size*2);palmTransform.updateMatrix();shoals.setMatrixAt(shoalCount++,palmTransform.matrix);}shoals.count=shoalCount;shoals.instanceMatrix.needsUpdate=true;
  const alive=new Set();let visible=0,coinCount=0,guardianCount=0,woodCount=0;
  if(level.index===2&&guardianBatches.length)for(const b of guardianBanks){const cross=b.side*(riverHalfWidth(b.course,seed)+3),p=point(b.course,cross);if(p.z>18||p.z< -(software?140:210))continue;guardianTransform.position.set(p.x,p.y+riverBankHeight(cross,b.course,seed),p.z);guardianTransform.rotation.set(0,-b.side*.42+riverHash(b.index+65,seed)*.3,0);guardianTransform.scale.setScalar(1.7+riverHash(b.index+25,seed)*.5);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
@@ -360,29 +364,33 @@ export function createScene(canvas,art,onLost){
  for(const [id,obj] of entities)if(!alive.has(id)){scene.remove(obj);entities.delete(id);}
  for(const batch of guardianBatches){batch.mesh.count=guardianCount;batch.mesh.instanceMatrix.needsUpdate=true;}
  for(const batch of driftwoodBatches){batch.mesh.count=woodCount;batch.mesh.instanceMatrix.needsUpdate=true;}
- const coinFlights=[];
- if(!reduced&&art.coinTarget){coinTarget.set(art.coinTarget.x/w*2-1,1-art.coinTarget.y/h*2,.8).unproject(camera);coinCatch.set(x,f.height+lift+1.2,.18);
- for(const e of g.effects){const t=(g.time-e.time)/.36;if(e.type!=='coin'||t<0||t>=1||coinCount>=64)continue;
+ const coinFlights=[];let tokenCount=0;
+ if(!reduced){coinTarget.set((art.coinTarget?.x??w*.5)/w*2-1,1-(art.coinTarget?.y??40)/h*2,.8).unproject(camera);coinCatch.set(x,f.height+lift+1.2,.18);
+ for(const e of g.effects){const t=(g.time-(e.contactTime??e.time))/.36;if(e.type!=='coin'||t<0||t>=1||tokenCount>=24)continue;
  const course=travel+(e.distance??g.distance)-g.distance,cross=(e.lane-1)*3.8,origin=point(course,cross);
  coinOrigin.set(origin.x,origin.y+waterHeight(cross,course)+(e.high?3.1:1.2),origin.z);
- const q=positionCoinFlight(coinPose.position,coinOrigin,coinCatch,coinTarget,t,!!e.attracted);
- coinPose.rotation.set(Math.PI/2,g.time*8,0);coinPose.scale.setScalar(1-q*.83);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);
- coinFlights.push({id:e.id,attracted:!!e.attracted,phase:e.attracted&&t<.3?'to-raft':'to-score',progress:t,position:coinPose.position.toArray(),caught:coinCatch.toArray()});}}
- status.coinFeedback={active:coinFlights.length,attracted:coinFlights.filter(e=>e.attracted).length,flights:coinFlights};
+ positionCoinFlight(coinPose.position,coinOrigin,coinTarget,t);
+ const pixels=15-10*t,depth=Math.max(.3,-tokenDepth.copy(coinPose.position).applyMatrix4(camera.matrixWorldInverse).z),scale=depth*2*Math.tan(camera.fov*Math.PI/360)*pixels/h/.78;
+ coinPose.rotation.set(Math.PI/2,g.time*8,0);coinPose.scale.setScalar(scale);coinPose.updateMatrix();scoreTokens.setMatrixAt(tokenCount++,coinPose.matrix);
+ coinFlights.push({id:e.id,entityId:e.entityId,attracted:false,boosted:!!e.boosted,value:e.value,contactTime:e.contactTime,playerLane:e.playerLane,playerHeight:e.playerHeight,phase:'to-score',progress:t,appearance:'white-score-token',color:'#fff5d8',pixelSize:pixels,maxDiameterPixels:pixels,position:coinPose.position.toArray(),caught:coinCatch.toArray()});}}
+ scoreTokens.count=tokenCount;scoreTokens.instanceMatrix.needsUpdate=true;
+ status.coinFeedback={active:coinFlights.length,attracted:0,capacity:24,worldCoins:coinCount,goldFlightInstances:0,flights:coinFlights};
  coinBatch.count=coinCount;coinBatch.instanceMatrix.needsUpdate=true;
- // Raised rim on both faces shares the coin transform, including pickup flight.
+ // Only collectible world coins retain their raised golden rims.
  for(let i=0;i<coinCount;i++){coinBatch.getMatrixAt(i,instanceMatrix);for(let s=0;s<2;s++){rimLocal.makeTranslation(0,s?.068:-.068,0).multiply(rimTurn);rimMatrix.multiplyMatrices(instanceMatrix,rimLocal);coinRims.setMatrixAt(i*2+s,rimMatrix);}}
  coinRims.count=coinCount*2;coinRims.instanceMatrix.needsUpdate=true;
  spray.visible=!reduced;
- if(!reduced){const rapid=rapidAt(travel,seed),landing=Math.max(0,1-(g.time-f.landAt)/.55),bank=Math.min(1,Math.abs(g.laneVelocity)/12);
+ if(!reduced){const rapid=rapidAt(travel,seed),energyScale=1+.35*courseIntensity(g.distance,level.length,level.index),landing=Math.max(0,1-(g.time-f.landAt)/.55),bank=Math.min(1,Math.abs(g.laneVelocity)/12);
+ const contact=g.effects.findLast(e=>e.type==='coin'&&g.time-(e.contactTime??e.time)<.16),contactAge=contact?g.time-(contact.contactTime??contact.time):0;
  for(let i=0;i<sprayCount;i++){const p=(g.time*2.3+i*.618)%1,side=i%2?1:-1,a=i*2.399;
  const burst=i<48&&landing>0;let xx,yy,zz;
  if(burst){const age=g.time-f.landAt;xx=x+Math.cos(a)*(1.4+age*5);yy=.1+Math.sin(age/.55*Math.PI)*(1.1+(i%5)*.1);zz=Math.sin(a)*(1.7+age*4);}
- else{xx=x+side*(1.55+p*.55+bank*.3);yy=f.height+Math.sin(p*Math.PI)*(.2+bank*.5+rapid*.65);zz=.3+p*6.5;}
- if(i>=80){const d=travel+5+(i-80)*1.6,rx=Math.sin(a)*riverHalfWidth(d,seed)*.75,rp=point(d,rx),energy=rapidAt(d,seed);xx=rp.x;zz=rp.z;yy=rp.y+waterHeight(rx,d)+Math.sin(p*Math.PI)*energy*.8;if(energy<.45)yy=rp.y-1;}
+ else{xx=x+side*(1.55+p*.55+bank*.3);yy=f.height+Math.sin(p*Math.PI)*(.2+bank*.5+rapid*.65)*energyScale;zz=.3+p*6.5;}
+ if(i<8&&contact){const radius=.25+contactAge*4;xx=(contact.playerLane-1)*3.8+Math.cos(a)*radius;yy=f.height+(contact.playerHeight??0)*2.9+.65+Math.sin(a)*radius;zz=.2;}
+ if(i>=80){const d=travel+5+(i-80)*1.6,rx=Math.sin(a)*riverHalfWidth(d,seed)*.75,rp=point(d,rx),energy=rapidAt(d,seed);xx=rp.x;zz=rp.z;yy=rp.y+waterHeight(rx,d)+Math.sin(p*Math.PI)*energy*.8*energyScale;if(energy<.45)yy=rp.y-1;}
  sprayPositions[i*3]=xx;sprayPositions[i*3+1]=yy;sprayPositions[i*3+2]=zz;}
  sprayGeometry.attributes.position.needsUpdate=true;}
- renderer.render(scene,camera);status.frames++;status.readyFrames=Object.values(status.models).every(x=>x==='ready')?(status.readyFrames??0)+1:0;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.templeInstances=templeCount;status.guardianInstances=guardianCount;status.course={seed:riverSeed(seed),width:riverHalfWidth(travel,seed)*2,rapid:rapidAt(travel,seed),grade:riverGrade(travel,seed),dropAhead:point(travel+100).y,bendAhead:point(travel+100).x,shoals:shoalCount,framing:[-3.8,0,3.8].map(lane=>{const foot=new THREE.Vector3(lane,f.height+.55,0).project(camera),head=new THREE.Vector3(lane,f.height+lift+3.7,0).project(camera),near=point(travel+20,lane),route=new THREE.Vector3(near.x,near.y+1,near.z).project(camera);return{foot:[foot.x,foot.y],head:[head.x,head.y],route:[route.x,route.y]};}),camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,fov:camera.fov}};status.world={district:level.name,canopies:canopyCount,harbors:harborCount,woodHazards:woodCount,...worldDetails.state,...mapWorld.state};status.steering={x,velocity:g.laneVelocity,yaw:carve,lean:skeletal?.state.balance??rider.rotation.z};status.surfaceMaps={rock:1024,wood:1024,ground:1024,water:1024,normals:software?0:512};status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:waterHeight(x,travel)};status.reducedMotion=reduced;status.frameBudget={scale:frameBudget.scale,meanMs:frameBudget.meanMs,dpr:renderer.getPixelRatio(),pixels:canvas.width*canvas.height,water:water.material===cheapWaterMaterial?'light':'rich'};
+ renderer.render(scene,camera);status.frames++;status.readyFrames=Object.values(status.models).every(x=>x==='ready')?(status.readyFrames??0)+1:0;status.drawCalls=renderer.info.render.calls;status.triangles=renderer.info.render.triangles;status.entities=visible;status.bankInstances=banks.length;status.templeInstances=templeCount;status.guardianInstances=guardianCount;status.course={seed:riverSeed(seed),act:courseAct(g.distance,level.length),intensity:courseIntensity(g.distance,level.length,level.index),profileLength:profile.length,width:riverHalfWidth(travel,seed)*2,rapid:rapidAt(travel,seed),grade:riverGrade(travel,seed),dropAhead:point(travel+100).y,bendAhead:point(travel+100).x,shoals:shoalCount,framing:[-3.8,0,3.8].map(lane=>{const foot=new THREE.Vector3(lane,f.height+lift+.55,0).project(camera),head=new THREE.Vector3(lane,f.height+lift+3.7,0).project(camera),near=point(travel+20,lane),route=new THREE.Vector3(near.x,near.y+1,near.z).project(camera);return{foot:[foot.x,foot.y],head:[head.x,head.y],route:[route.x,route.y]};}),camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,fov:camera.fov}};status.world={district:level.name,canopies:canopyCount,harbors:harborCount,woodHazards:woodCount,...worldDetails.state,...mapWorld.state};status.steering={x,velocity:g.laneVelocity,yaw:carve,lean:skeletal?.state.balance??rider.rotation.z};status.surfaceMaps={rock:1024,wood:1024,ground:1024,water:1024,normals:software?0:512};status.buoyancy={height:f.height,pitch:f.pitch,roll:f.roll,lift,water:waterHeight(x,travel)};status.reducedMotion=reduced;status.frameBudget={scale:frameBudget.scale,meanMs:frameBudget.meanMs,dpr:renderer.getPixelRatio(),pixels:canvas.width*canvas.height,water:water.material===cheapWaterMaterial?'light':'rich'};
  }
  function dispose(){if(disposed)return;disposed=true;retryTimers.forEach(clearTimeout);pendingLoads.forEach(done=>done());resolveVista();canvas.removeEventListener('webglcontextlost',lost);const geometries=new Set([coinGeo,rockGeo,logGeo,powerGeo]),materials=new Set([coinMat,rockMat,logMat,...Object.values(powerMats),...retiredMaterials,...labelMaterials.values(),waterMaterial,cheapWaterMaterial]),textures=new Set([scene.background,...surfaceTextures]),skeletons=new Set(),instances=new Set();for(const root of [scene,...retired])root.traverse(o=>{if(o.isInstancedMesh)instances.add(o);if(o.skeleton)skeletons.add(o.skeleton);if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});for(const m of retiredMaterials)for(const v of Object.values(m))if(v?.isTexture)textures.add(v);riderTextures.forEach(t=>textures.add(t));labels.forEach(t=>textures.add(t));instances.forEach(o=>o.dispose());geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());skeletons.forEach(s=>s.dispose());renderer.forceContextLoss();renderer.dispose();}
  return {render,prepare,recover,dispose,status};

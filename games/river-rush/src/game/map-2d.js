@@ -1,10 +1,14 @@
 import { levelAt } from './levels.js';
 import { bankScenery } from './world.js';
 import { currentDistance,WAVE_CADENCE } from './hydrodynamics.js';
+import { FINISH_GATE,prepareFinishArt } from './finish-line.js';
+import { courseIntensity } from './course-intensity.js';
+import { createCourseProfile,rapidAt,riverHash } from './river-course.js';
 
 // All texture cards are made at loading time. Stage changes only select an
 // existing image; the fallback never starts a new graphics context mid-run.
 const patternCache=new WeakMap();
+const profiles=new WeakMap();
 const make=(width,height,paint)=>{const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;paint(canvas.getContext('2d'));return canvas;};
 const hash=n=>{let v=Math.imul(n^0x4c71a27,1597334677);v=Math.imul(v^(v>>>16),2246822519);return((v^(v>>>13))>>>0)/4294967296;};
 
@@ -71,7 +75,7 @@ export function prepareMap2D(art){
   const grounds=[null,...[1,2].map(index=>make(256,256,ctx=>{
     const level=levelAt(index);ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);ctx.globalAlpha=.25;ctx.drawImage(art.surfaceground,0,0,256,256);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.65;ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);
   }))];
-  return{rivers,grounds,canyonSkyline:[0,1].map(layer=>canyonSkyline(art,layer)),props:[null,[0,1,2].map(v=>cliffCard(art,v)),[0,1,2].map(v=>templeCard(art,v))]};
+  return{rivers,grounds,canyonSkyline:[0,1].map(layer=>canyonSkyline(art,layer)),props:[null,[0,1,2].map(v=>cliffCard(art,v)),[0,1,2].map(v=>templeCard(art,v))],finish:prepareFinishArt()};
 }
 
 function cover(ctx,image,width,height,center=.5){
@@ -99,7 +103,8 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
   const edges=[[],[]],distant=project(width,height,1,1400),near=project(width,height,1,-14);
   for(let i=0;i<=26;i++){
     const scale=distant.scale+(near.scale-distant.scale)*i/26,z=29*(1/scale-1),p=project(width,height,1,z),wave=1+Math.sin((g.distance+z)*.019)*.09;
-    const bend=(Math.sin((g.distance+z)*.007)-Math.sin(g.distance*.007))*p.corridor*.075*p.scale;
+    const intensity=courseIntensity(g.distance+z,level.length,level.index);
+    const bend=(Math.sin((g.distance+z)*.007)-Math.sin(g.distance*.007))*p.corridor*(.05+.07*intensity)*p.scale;
     const half=p.corridor*.79*p.scale*wave;
     edges[0].push([p.x+bend-half,p.y]);edges[1].push([p.x+bend+half,p.y]);
   }
@@ -139,6 +144,25 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
   ctx.restore();
 }
 
+// Seeded chutes come toward the player at their world coordinates, with
+// stronger breaking crests later in a map. The fallback uses bounded paths.
+export function drawRapids2D(ctx,g,width,height,reduced,project){
+  if(reduced)return;
+  const level=levelAt(g.levelIndex);
+  let profile=profiles.get(g);if(!profile){profile=createCourseProfile(g.seed,level.length,level.index);profiles.set(g,profile);}
+  const first=Math.floor(g.distance/11),last=first+27;
+  ctx.save();ctx.lineCap='round';ctx.strokeStyle=level.index===2?'#d5dfff':'#e4fff5';
+  for(let n=first;n<=last;n++){
+    const d=n*11+riverHash(n+19,profile)*7,z=d-g.distance;if(z<1||z>270)continue;
+    const energy=rapidAt(d,profile);if(energy<.16)continue;
+    const p=project(width,height,.2+riverHash(n+47,profile)*1.6,z),span=p.corridor*p.scale*(.06+energy*.13),rise=energy*p.scale*9;
+    ctx.globalAlpha=Math.min(.62,energy*.8)*Math.min(1,(270-z)/35);ctx.lineWidth=Math.max(.8,p.scale*(1+energy*2.8));
+    ctx.beginPath();ctx.moveTo(p.x-span*.5,p.y);ctx.bezierCurveTo(p.x-span*.23,p.y-rise,p.x+span*.16,p.y+rise*.2,p.x+span*.5,p.y-rise*.45);ctx.stroke();
+    if(energy>.5){ctx.globalAlpha*=.6;ctx.beginPath();ctx.moveTo(p.x-span*.3,p.y+rise*.8);ctx.quadraticCurveTo(p.x,p.y+rise*.15,p.x+span*.4,p.y+rise*.65);ctx.stroke();}
+  }
+  ctx.restore();
+}
+
 export function drawMapBanks2D(ctx,g,art,width,height,reduced,project,view){
   const level=levelAt(g.levelIndex),cards=art.map2d.props[level.index];if(!cards)return;
   ctx.save();
@@ -158,18 +182,34 @@ export function drawMapBanks2D(ctx,g,art,width,height,reduced,project,view){
   ctx.restore();
 }
 
-export function drawFinish2D(ctx,g,width,height,project,view){
-  const level=levelAt(g.levelIndex),z=level.length-g.distance;if(z>view||z< -14)return;
-  const left=project(width,height,-1.3,z),right=project(width,height,3.3,z),p=project(width,height,1,z),unit=p.corridor/11.4*p.scale;
-  const top=p.y-unit*5.8,post=unit*.38;
-  ctx.save();ctx.globalAlpha=Math.min(1,(view-z)/25);ctx.lineJoin='round';
-  for(const point of [left,right]){
-    ctx.fillStyle=level.index===1?'#705044':level.index===2?'#44415f':'#5b4430';ctx.fillRect(point.x-post/2,top,post,p.y-top);
-    ctx.fillStyle=level.accent;ctx.fillRect(point.x-post*.65,top-unit*.1,post*1.3,unit*.22);
-    ctx.fillStyle='#17282b66';ctx.beginPath();ctx.ellipse(point.x,p.y,post*1.3,post*.25,0,0,Math.PI*2);ctx.fill();
+export function drawFinish2D(ctx,g,width,height,project,view,art,reduced=false){
+  const level=levelAt(g.levelIndex),z=level.length-g.distance;if(z>FINISH_GATE.visibleFrom||z< -14)return;
+  const p=project(width,height,1,z),unit=p.corridor/11.4*p.scale,left=p.x-FINISH_GATE.halfWidth*unit,right=p.x+FINISH_GATE.halfWidth*unit;
+  // The fallback's screen projection has no camera pitch. Limit the tall
+  // arch's top in shallow layouts while retaining its projected river feet.
+  const top=Math.max(height*(height<500?.25:.18),p.y-FINISH_GATE.bannerTop*unit),bannerHeight=Math.max(8,Math.min(3.1*unit,height*.135)),bottom=top+bannerHeight,postWidth=unit*1.15;
+  const theme=level.index===0?'#8b6950':level.index===1?'#c98a63':'#9b92b0',t=reduced?0:g.time;
+  ctx.save();ctx.lineJoin='round';ctx.globalAlpha=Math.min(1,(FINISH_GATE.visibleFrom-z)/32);
+  // Paired beacons guide the safe run-in; they flank all three lane envelopes.
+  for(const offset of FINISH_GATE.approach){const d=z-offset;if(d< -12||d>view)continue;for(const side of [-1,1]){
+    const q=project(width,height,1+side*FINISH_GATE.halfWidth/3.8,d),u=q.corridor/11.4*q.scale;
+    ctx.fillStyle='#10292c66';ctx.beginPath();ctx.ellipse(q.x,q.y+u*.2,u*.65,u*.18,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=theme;ctx.fillRect(q.x-u*.48,q.y-u*.3,u*.96,u*.6);
+    ctx.fillStyle=level.accent;ctx.fillRect(q.x-u*.22,q.y-u*1.7,u*.44,u*1.5);ctx.fillStyle='#fff3bd';ctx.fillRect(q.x-u*.35,q.y-u*1.8,u*.7,u*.22);
+    ctx.beginPath();ctx.moveTo(q.x,q.y-u*2.1);ctx.lineTo(q.x+side*u*(1.05+Math.sin(t*2+offset)*.05),q.y-u*1.95);ctx.lineTo(q.x+side*u*.73,q.y-u*1.52);ctx.lineTo(q.x,q.y-u*1.62);ctx.closePath();ctx.fillStyle=level.accent;ctx.fill();
+  }}
+  // A bright checkered water ribbon marks the exact crossing beneath the arch.
+  const ribbonHeight=Math.max(2,unit*.36);ctx.fillStyle='#fff1b3';ctx.beginPath();ctx.moveTo(left,p.y-ribbonHeight);ctx.lineTo(right,p.y-ribbonHeight);ctx.lineTo(right+unit*.4,p.y+ribbonHeight);ctx.lineTo(left-unit*.4,p.y+ribbonHeight);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#14333b';for(let i=0;i<16;i++)if(i%2===0)ctx.fillRect(left+i*(right-left)/16,p.y-ribbonHeight,(right-left)/16,ribbonHeight*2);
+  for(const [x,side] of [[left,-1],[right,1]]){
+    ctx.fillStyle='#071d2855';ctx.beginPath();ctx.ellipse(x,p.y,unit*1.4,unit*.28,0,0,Math.PI*2);ctx.fill();
+    const pillar=ctx.createLinearGradient(x-postWidth*.5,0,x+postWidth*.5,0);pillar.addColorStop(0,theme);pillar.addColorStop(.26,'#e6cbaa');pillar.addColorStop(.45,theme);pillar.addColorStop(1,level.index===2?'#48435e':'#614536');ctx.fillStyle=pillar;ctx.fillRect(x-postWidth/2,top-unit*.3,postWidth,p.y-top+unit*.3);
+    ctx.fillRect(x-unit*1.13,p.y-unit*.66,unit*2.26,unit*.74);ctx.fillRect(x-unit*.99,top-unit*.44,unit*1.98,unit*.25);
+    ctx.fillStyle=level.accent;for(let i=0;i<3;i++)ctx.fillRect(x-postWidth*.57,bottom+(p.y-bottom)*(i+.3)/3,postWidth*1.14,Math.max(1,unit*.11));
+    const beaconHeight=Math.min(unit*.66,height*.045);ctx.fillStyle='#fff1b7';ctx.fillRect(x-unit*.42,top-unit*.49-beaconHeight,unit*.84,beaconHeight);ctx.fillStyle=theme;ctx.fillRect(x-unit*.56,top-unit*.56-beaconHeight,unit*1.12,unit*.12);
+    const flagY=top-unit*.65-beaconHeight;ctx.strokeStyle=level.accent;ctx.lineWidth=Math.max(1,unit*.07);ctx.beginPath();ctx.moveTo(x,flagY-unit*.8);ctx.lineTo(x,flagY+unit*.15);ctx.stroke();ctx.beginPath();ctx.moveTo(x,flagY-unit*.8);ctx.lineTo(x+side*unit*1.35,flagY-unit*.7);ctx.lineTo(x+side*unit*.98,flagY-unit*.3);ctx.lineTo(x+side*unit*1.3,flagY+unit*.04);ctx.lineTo(x,flagY);ctx.closePath();ctx.fillStyle=level.accent;ctx.fill();
   }
-  const bannerHeight=unit*.85,bannerWidth=right.x-left.x;
-  ctx.fillStyle='#152a36';ctx.fillRect(left.x,top,bannerWidth,bannerHeight);ctx.fillStyle=level.accent;ctx.fillRect(left.x,top,bannerWidth,unit*.09);ctx.fillRect(left.x,top+bannerHeight-unit*.07,bannerWidth,unit*.07);
-  const check=unit*.19;ctx.fillStyle='#e5f5ef';for(let i=0;i<4;i++)for(let j=0;j<3;j++)if((i+j)%2===0){ctx.fillRect(left.x+unit*.22+i*check,top+unit*.15+j*check,check,check);ctx.fillRect(right.x-unit*.22-(i+1)*check,top+unit*.15+j*check,check,check);}
-  ctx.fillStyle='#f5f4dc';ctx.font=`900 ${Math.max(9,unit*.43)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('FINISH',p.x,top+bannerHeight*.52);ctx.restore();
+  ctx.fillStyle=level.accent;ctx.fillRect(left-unit*.17,top-unit*.12,right-left+unit*.34,Math.max(1,unit*.16));ctx.fillRect(left-unit*.17,bottom,right-left+unit*.34,Math.max(1,unit*.16));
+  if(art?.banner)ctx.drawImage(art.banner,level.index*1024,0,1024,256,left,top,right-left,bannerHeight);
+  else{ctx.fillStyle='#12323a';ctx.fillRect(left,top,right-left,bannerHeight);ctx.fillStyle='#fff4ca';ctx.font=`900 ${Math.max(9,bannerHeight*.6)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('FINISH',p.x,top+bannerHeight*.48);}
+  ctx.restore();
 }
