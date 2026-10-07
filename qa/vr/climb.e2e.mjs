@@ -262,7 +262,7 @@ try {
     };
     await page.evaluate(() => G.test.step(1 / 60, 3));
     const rest = await hintOf();
-    assert(/^Tap left or right to throw a plunger/.test(rest), 'off the wall the hint says to tap left or right: ' + rest);
+    assert(/^Tap left or right to swing/.test(rest), 'off the wall the hint says to tap left or right: ' + rest);
     const pad = page.locator('.phone-climb');
     assert(await pad.isHidden(), 'no climb pad off the wall');
     assert(await page.evaluate(() => QA.flyIn()), 'a phone holds the wall too');
