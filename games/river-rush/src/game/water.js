@@ -1,4 +1,5 @@
 import { riverRate } from './quality.js';
+import { CURRENT_FLOW_SPEED,WAVE_CADENCE } from './hydrodynamics.js';
 // Animate the generated water texture. Shorelines remain the original art.
 const scenes = new WeakMap();
 const vertex = `attribute vec2 a_position; varying vec2 v_uv;
@@ -10,11 +11,11 @@ void main(){
   float channel=mix(.095,.64,smoothstep(0.,.38,depth));
   float bank=1.-smoothstep(channel-.045,channel,abs(v_uv.x-.5));
   float mask=bank*smoothstep(.005,.09,depth);
-  float phase=fract(u_time*.31);float second=fract(phase+.5);
+  float phase=fract(u_time*${(.31*WAVE_CADENCE).toFixed(4)});float second=fract(phase+.5);
   float blend=abs(phase-.5)*2.;
   float strength=smoothstep(0.,.65,depth);
   vec2 flow=vec2(sin(v_uv.y*25.+u_time*.8)*.014,-.12)*strength;
-  vec2 ripple=vec2(sin(v_uv.y*85.-u_time*3.1),cos(v_uv.x*75.+v_uv.y*38.-u_time*2.4))*.0028*strength;
+  vec2 ripple=vec2(sin(v_uv.y*85.-u_time*${(3.1*WAVE_CADENCE).toFixed(4)}),cos(v_uv.x*75.+v_uv.y*38.-u_time*${(2.4*WAVE_CADENCE).toFixed(4)}))*.0028*strength;
   vec3 a=texture2D(u_image,clamp(v_uv+flow*phase+ripple,.001,.999)).rgb;
   vec3 b=texture2D(u_image,clamp(v_uv+flow*second+ripple,.001,.999)).rgb;
   gl_FragColor=vec4(mix(a,b,blend),mask*.96);
@@ -58,7 +59,7 @@ function videoWater(ctx,g,art,width,height,active,disabled){
   const clip=state.clips[key];if(!clip||clip.failed)return false;
   if(!active)return state.key===key&&clip.isConnected&&clip.style.display!=='none'&&clip.readyState>=2;
   if(clip.paused&&!clip.starting){clip.starting=true;clip.play().catch(error=>{if(error.name!=='AbortError')clip.failed=true;}).finally(()=>{clip.starting=false;});}
-  const rate=riverRate(g.speed);if(Math.abs(clip.playbackRate-rate)>.03)clip.playbackRate=rate;
+  const rate=Math.min(1.6,riverRate(g.speed)*CURRENT_FLOW_SPEED/22);if(Math.abs(clip.playbackRate-rate)>.03)clip.playbackRate=rate;
   if(clip.readyState<2)return false;
   // Let the browser composite decoded video directly. Copying it through a
   // full canvas texture every frame introduces upload stalls on real devices.
@@ -88,7 +89,7 @@ export function drawWater(ctx,g,art,width,height,reducedMotion,active=true) {
     const changed=state.source!==source;
     if(changed){gl.bindTexture(gl.TEXTURE_2D,state.texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);state.source=source;}
     if(resized||changed||state.time!==g.time){
-      gl.uniform1f(state.timeLocation,g.distance/24);gl.uniform1f(state.horizonLocation,portrait?.325:.35);
+      gl.uniform1f(state.timeLocation,g.distance/24*CURRENT_FLOW_SPEED/22);gl.uniform1f(state.horizonLocation,portrait?.325:.35);
       gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLES,0,6);state.time=g.time;
     }
     ctx.drawImage(canvas,0,0,width,height);return true;

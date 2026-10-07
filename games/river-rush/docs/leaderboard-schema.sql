@@ -19,7 +19,7 @@ create table public.river_rush_scores (
   constraint river_rush_score_bounds check (score between 1 and 1000000),
   constraint river_rush_coin_bounds check (coins between 0 and 5000),
   constraint river_rush_level_bounds check (level_index between 0 and 2 and levels_cleared between 0 and 3 and levels_cleared <= level_index + 1),
-  constraint river_rush_distance_bounds check (distance between 0 and 5400)
+  constraint river_rush_distance_bounds check (distance between 0 and 10800)
 );
 
 create index river_rush_scores_ranking on public.river_rush_scores
@@ -44,7 +44,7 @@ create policy river_rush_guest_submit on public.river_rush_scores
     and level_index between 0 and 2
     and levels_cleared between 0 and 3
     and levels_cleared <= level_index + 1
-    and distance between 0 and 5400
+    and distance between 0 and 10800
   );
 
 comment on table public.river_rush_scores is

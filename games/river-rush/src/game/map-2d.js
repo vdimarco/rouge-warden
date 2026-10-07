@@ -1,5 +1,6 @@
 import { levelAt } from './levels.js';
 import { bankScenery } from './world.js';
+import { currentDistance,WAVE_CADENCE } from './hydrodynamics.js';
 
 // All texture cards are made at loading time. Stage changes only select an
 // existing image; the fallback never starts a new graphics context mid-run.
@@ -43,6 +44,25 @@ function templeCard(art,variant){
   });
 }
 
+function canyonSkyline(art,layer){
+  return make(1536,320,ctx=>{
+    // No river, water edge or foreground is baked into this skyline. Its
+    // subdued silhouettes can sit at actual distant projection depths.
+    const points=[];
+    for(let i=0;i<=48;i++){
+      const x=i*32,side=Math.abs(x/768-1),ridge=35+hash(i+layer*91)*55;
+      const y=305-Math.pow(side,.65)*(ridge+75+layer*24);
+      points.push([x,y]);
+    }
+    ctx.beginPath();ctx.moveTo(0,320);for(const p of points)ctx.lineTo(...p);ctx.lineTo(1536,320);ctx.closePath();ctx.clip();
+    const haze=ctx.createLinearGradient(0,80,0,320);
+    haze.addColorStop(0,layer===0?'#bca094':'#bf936f');haze.addColorStop(1,layer===0?'#dcb597':'#ceaa83');ctx.fillStyle=haze;ctx.fillRect(0,0,1536,320);
+    ctx.globalAlpha=layer===0?.08:.14;ctx.globalCompositeOperation='multiply';ctx.drawImage(art.surfacerock,0,0,1536,320);ctx.globalCompositeOperation='source-over';
+    ctx.globalAlpha=.12;ctx.strokeStyle='#e5c8a0';ctx.lineWidth=2;
+    for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(0,145+i*23);ctx.bezierCurveTo(470,138+i*23,820,154+i*23,1536,144+i*23);ctx.stroke();}
+  });
+}
+
 export function prepareMap2D(art){
   const rivers=[null,...[1,2].map(index=>make(256,256,ctx=>{
     const level=levelAt(index);ctx.fillStyle=level.waterDeep;ctx.fillRect(0,0,256,256);ctx.globalAlpha=.32;ctx.drawImage(art.surfacewater,0,0,256,256);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.72;ctx.fillStyle=level.waterEdge;ctx.fillRect(0,0,256,256);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
@@ -51,7 +71,7 @@ export function prepareMap2D(art){
   const grounds=[null,...[1,2].map(index=>make(256,256,ctx=>{
     const level=levelAt(index);ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);ctx.globalAlpha=.25;ctx.drawImage(art.surfaceground,0,0,256,256);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.65;ctx.fillStyle=level.ground;ctx.fillRect(0,0,256,256);
   }))];
-  return{rivers,grounds,props:[null,[0,1,2].map(v=>cliffCard(art,v)),[0,1,2].map(v=>templeCard(art,v))]};
+  return{rivers,grounds,canyonSkyline:[0,1].map(layer=>canyonSkyline(art,layer)),props:[null,[0,1,2].map(v=>cliffCard(art,v)),[0,1,2].map(v=>templeCard(art,v))]};
 }
 
 function cover(ctx,image,width,height,center=.5){
@@ -62,9 +82,19 @@ function cover(ctx,image,width,height,center=.5){
 
 export function drawMap2D(ctx,g,art,width,height,reduced,project){
   const level=levelAt(g.levelIndex);if(level.index===0)return;
-  const image=level.index===1?art.mapcanyon:art.mapruins;
+  const image=level.index===2?art.mapruins:null;
   const sky=ctx.createLinearGradient(0,0,0,height);sky.addColorStop(0,level.sky);sky.addColorStop(.6,level.fog);sky.addColorStop(1,level.waterDeep);ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
-  if(image)cover(ctx,image,width,height,level.index===2?.63:.5);
+  if(level.index===1){
+    // Far land receives only small course parallax; bank cards below advance
+    // much faster. Covering the screen with the old canyon painting pinned
+    // its foreground river in place while the real world rushed underneath.
+    for(let layer=0;layer<2;layer++){
+      const depth=layer===0?2200:1050,p=project(width,height,1,depth);
+      const ridgeHeight=height*(layer===0?.19:.155),parallax=Math.sin(g.distance*.0008+layer*.7)*width*(layer===0?.007:.017);
+      ctx.drawImage(art.map2d.canyonSkyline[layer],-width*.035+parallax,p.y-ridgeHeight,width*1.07,ridgeHeight);
+    }
+  }
+  else if(image)cover(ctx,image,width,height,.63);
   else{const ground=ctx.createLinearGradient(0,height*.3,0,height);ground.addColorStop(0,level.fog);ground.addColorStop(1,level.ground);ctx.fillStyle=ground;ctx.fillRect(0,height*.3,width,height*.7);}
   const edges=[[],[]],distant=project(width,height,1,1400),near=project(width,height,1,-14);
   for(let i=0;i<=26;i++){
@@ -75,7 +105,7 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
   }
   let patterns=patternCache.get(ctx);if(!patterns){patterns={river:[],ground:[]};patternCache.set(ctx,patterns);}
   patterns.ground[level.index]??=ctx.createPattern(art.map2d.grounds[level.index],'repeat');
-  // A course-plane bank apron joins the distant painting to moving cards.
+  // A course-plane bank apron joins the distant skyline to moving cards.
   // Without it, a tall temple can look suspended in the painted sky.
   for(let side=0;side<2;side++){
     const edge=edges[side],outside=side===0?0:width;
@@ -86,7 +116,20 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
   ctx.save();ctx.beginPath();ctx.moveTo(...edges[0][0]);for(const p of edges[0].slice(1))ctx.lineTo(...p);for(const p of [...edges[1]].reverse())ctx.lineTo(...p);ctx.closePath();ctx.clip();
   const river=ctx.createLinearGradient(0,distant.y,0,near.y);river.addColorStop(0,level.waterEdge);river.addColorStop(.35,level.waterDeep);river.addColorStop(1,level.waterEdge);ctx.fillStyle=river;ctx.fillRect(0,distant.y,width,height-distant.y);
   const source=art.map2d.rivers[level.index];patterns.river[level.index]??=ctx.createPattern(source,'repeat');
-  const offset=reduced?0:(g.distance*4)%256;ctx.translate(0,offset);ctx.globalAlpha=.52;ctx.fillStyle=patterns.river[level.index];ctx.fillRect(0,distant.y-offset,width,height);ctx.globalAlpha=1;ctx.translate(0,-offset);
+  const offset=reduced?0:(currentDistance(g.distance,g.time)*8)%256;ctx.translate(0,offset);ctx.globalAlpha=.52;ctx.fillStyle=patterns.river[level.index];ctx.fillRect(0,distant.y-offset,width,height);ctx.globalAlpha=1;ctx.translate(0,-offset);
+  if(!reduced){
+    // Small living crests use the same downstream phase as GPU current.
+    // Projected positions accelerate toward the raft instead of scrolling
+    // a full-screen painted river at one uniform screen-space velocity.
+    ctx.strokeStyle=level.index===1?'#e0faf466':'#c3d6f555';ctx.lineCap='round';
+    const flow=currentDistance(g.distance,g.time);
+    for(let i=0;i<26;i++){
+      const d=((i*37-flow+14)%254+254)%254-14,lane=.05+hash(i*19)*1.9,p=project(width,height,lane,d);
+      const length=p.corridor*p.scale*(.05+hash(i*31)*.07),spark=.6+.4*Math.sin(g.time*WAVE_CADENCE*2.7+i);
+      ctx.globalAlpha=Math.min(.7,p.scale*1.5)*Math.min(1,(240-d)/30)*spark;ctx.lineWidth=Math.max(.65,p.scale*2.5);ctx.beginPath();ctx.moveTo(p.x-length/2,p.y);ctx.quadraticCurveTo(p.x,p.y+p.scale*3,p.x+length/2,p.y);ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
   // Long reflections make the twilight channel feel wet without screen-space
   // shimmer that obscures upcoming obstacle silhouettes.
   if(level.index===2){const reflection=ctx.createLinearGradient(width*.42,0,width*.58,0);reflection.addColorStop(0,'#c9b7ff00');reflection.addColorStop(.5,'#c9b7ff20');reflection.addColorStop(1,'#c9b7ff00');ctx.fillStyle=reflection;ctx.fillRect(width*.42,distant.y,width*.16,height);}

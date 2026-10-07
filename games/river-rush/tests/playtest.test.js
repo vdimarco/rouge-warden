@@ -36,11 +36,11 @@ test('40 delayed-input players clear all three varied maps unshielded, with and 
    const s=snapshot(g);assert.equal(s.campaign.levelsCleared,level.index+1);
    campaignScores.push(s.campaign.score);
    tricks+=g.jumps+g.ducks;totalDistance+=g.distance;highestEntities=Math.max(highestEntities,maxEntities);stages++;
-   if(!level.index)assert.ok(g.time<35,'intro map is excessively long');
+   if(!level.index){assert.ok(g.time>LEVELS[0].length/(LEVELS[0].maxSpeed*1.32)-.05,'the longer river ended too early');assert.ok(g.time<LEVELS[0].length/LEVELS[0].startSpeed+1,'intro map is excessively long');}
    if(level.index<2){const previous=s.campaign;g=nextLevel(g);assert.deepEqual(snapshot(g).campaign,previous);}
   }
   const completed=snapshot(g).campaign;
-  assert.equal(completed.distance,5400);
+  assert.equal(completed.distance,LEVELS.reduce((sum,level)=>sum+level.length,0));
   assert.ok(Number.isSafeInteger(completed.score)&&completed.score>0&&completed.score<=1000000,'a genuine finished campaign exceeds the public score range');
   assert.ok(Number.isSafeInteger(completed.coins)&&completed.coins<=5000,'a genuine finished campaign exceeds the public coin range');
   assert.equal(nextLevel(g),null);

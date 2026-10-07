@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {riverHalfWidth,riverBankHeight} from '../../games/river-rush/src/game/river-course.js';
 const {chromium}=createRequire(new URL('../../games/river-rush/package.json',import.meta.url))('playwright');
+import {levelSpeed} from '../../games/river-rush/src/game/levels.js';
 const base=process.env.ARCADE_URL||'http://127.0.0.1:8765/';
 const out=process.env.SHOTS||'/tmp/river-tree-realism';await fs.mkdir(out,{recursive:true});
 const cases=[['phone',{width:390,height:844}],['desktop',{width:1536,height:1024}],['landscape',{width:844,height:390}],['phone-2d',{width:390,height:844},true],['phone-reduced',{width:390,height:844},false,true],['phone-missing-textures',{width:390,height:844},false,false,true],['desktop-materials',{width:1536,height:1024},false,false,false,true],['phone-stalled-textures',{width:390,height:844},false,false,true]];
@@ -52,7 +53,7 @@ try{
     await shot(p,`approach-${name}`);
     await until(p,s=>s.run.hint?.type==='branch'&&s.run.hint.in<.3&&s.run.hint.in>.1);await p.keyboard.press('ArrowDown');await until(p,s=>s.run.action==='duck');
     await shot(p,`duck-${name}`);await until(p,s=>s.run.ducks===1);
-    const passed=await shot(p,`passed-${name}`);assert.equal(passed.run.shield,true);assert.equal(passed.run.speed,42+passed.run.time*.42);assert.equal(passed.run.phase,'playing');
+    const passed=await shot(p,`passed-${name}`);assert.equal(passed.run.shield,true);assert.equal(passed.run.speed,levelSpeed(passed.run.time,passed.run.level.index));assert.equal(passed.run.phase,'playing');
     if(!fallback){assert.ok(passed.renderer.branches.origins.some(t=>t.passed),'Rooted tree must remain after the duck');assert.deepEqual(await p.evaluate(()=>window.__resources),resources,'No texture uploads or shader compilation during play');}
     await p.keyboard.press('ArrowRight');await until(p,s=>s.run.lane===2);await p.keyboard.press('ArrowLeft');await until(p,s=>s.run.lane===1);
     assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
@@ -63,7 +64,7 @@ try{
       await p.getByRole('button',{name:'Resume run',exact:true}).click();await p.keyboard.press('ArrowLeft');await until(p,s=>s.screen==='playing'&&s.run.lane===0);
       await p.keyboard.press('ArrowDown');await until(p,s=>s.run.action==='duck');
     }
-    results.push({case:name,renderer:fallback?'2d':'webgl',approach:true,rootRegistrationChecked:!fallback,duckCleared:true,shieldPreserved:true,passedTreeGeometryChecked:!fallback,pausePixels:true,noActiveGpuPreparationChecked:!fallback,reducedMotion:reduced,missingTextureFallback:missing,detailedMaterials:detailed,speedUnchanged:true,contextLossFallbackChecked:name==='phone',drawCalls:approach.renderer.drawCalls,triangles:approach.renderer.triangles,branchBatches:approach.renderer.branches});
+    results.push({case:name,renderer:fallback?'2d':'webgl',approach:true,rootRegistrationChecked:!fallback,duckCleared:true,shieldPreserved:true,passedTreeGeometryChecked:!fallback,pausePixels:true,noActiveGpuPreparationChecked:!fallback,reducedMotion:reduced,missingTextureFallback:missing,detailedMaterials:detailed,speedProfileMatches:true,contextLossFallbackChecked:name==='phone',drawCalls:approach.renderer.drawCalls,triangles:approach.renderer.triangles,branchBatches:approach.renderer.branches});
     console.log(JSON.stringify({case:name,passed:true}));await p.close();
   }
   assert.deepEqual(errors,[]);const report={passed:true,base,results,errors,screenshots:out};await fs.writeFile(`${out}/tree-realism.json`,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

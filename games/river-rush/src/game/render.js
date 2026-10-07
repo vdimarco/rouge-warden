@@ -85,8 +85,8 @@ function sprite(ctx, atlas, index, x, bottom, w, rotation = 0, alpha = 1, squeez
 function water(ctx,g,art,w,h,reduce,active) {
   drawWater(ctx,g,art,w,h,reduce,active);
   if(levelAt(g.levelIndex).index>0)drawMap2D(ctx,g,art,w,h,reduce,projection);
-  // The distant photographic river remains an art layer. Near whitewater
-  // flows on the course plane at every display frame, independent of video fps.
+  // Near whitewater flows on the course plane at every display frame,
+  // independent of video fps; Redstone has no painted near-river backdrop.
   if(!reduce){
     ctx.save();
     for(const patch of rapids(g.distance,VIEW_DISTANCE)){
@@ -159,7 +159,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     }
   }
   // Distant entities draw first. The player is inserted at collision depth.
-  const visible=g.entities.filter(e=>(!e.done||e.type==='branch') && e.d-g.distance<VIEW_DISTANCE && e.d-g.distance>-16).sort((a,b)=>b.d-a.d);
+  const visible=g.entities.filter(e=>(e.type==='coin'?!e.collected:!e.done||e.type==='branch') && e.d-g.distance<VIEW_DISTANCE && e.d-g.distance>-16).sort((a,b)=>b.d-a.d);
   for(const e of visible) {
     const z=e.d-g.distance, p=projection(width,height,e.lane,z);
     let size;

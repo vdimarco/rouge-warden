@@ -1,11 +1,16 @@
 // The GPU renderer imports these exact wave coefficients. Floating-origin
 // coordinates are converted back to world distance for both mesh and probes.
 import {rapidAt,rapidDerivative,riverElevation} from './river-course.js';
+// World-distance advection and wave timing are shared with both renderers.
+// Raising the cadence changes the water and the raft probes together.
+export const CURRENT_FLOW_SPEED = 26;
+export const WAVE_CADENCE = 1.15;
+export function currentDistance(distance,time,reduced=false){return distance-(reduced?0:time*CURRENT_FLOW_SPEED);}
 export const WAVES = [
   { amplitude: .19, kx: .32, kz: .58, omega: 1.9, phase: 0 },
   { amplitude: .095, kx: -.81, kz: .92, omega: 2.7, phase: 1.8 },
   { amplitude: .045, kx: 1.72, kz: .35, omega: 3.6, phase: 4.1 }
-];
+].map(wave=>({...wave,omega:wave.omega*WAVE_CADENCE}));
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function surfaceAt(x,distance,time,reduced=false,seed=137){
   if(reduced)return {height:0,dx:0,dz:0};

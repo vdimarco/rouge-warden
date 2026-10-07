@@ -1,0 +1,1749 @@
+{
+  "checkedAt": "2026-10-07T01:52:02.179509+00:00",
+  "localPassed": true,
+  "sourceBaseCommit": "729d8e683572f20c664db7e10a54f90eb8961276",
+  "unitTests": {
+    "passed": 72,
+    "failed": 0
+  },
+  "delayedSimulation": {
+    "seeds": 40,
+    "campaigns": 80,
+    "stages": 240,
+    "totalDistance": 864000,
+    "reactionDelayMs": "180\u2013288",
+    "tricks": 4985,
+    "rushes": 560,
+    "maxEntities": 46,
+    "shieldUseRequired": false
+  },
+  "courseProfiles": [
+    {
+      "map": "Canopy Run",
+      "length": 2800,
+      "startSpeed": 52,
+      "maxSpeed": 68
+    },
+    {
+      "map": "Redstone Rapids",
+      "length": 3600,
+      "startSpeed": 62,
+      "maxSpeed": 80
+    },
+    {
+      "map": "Moonlit Ruins",
+      "length": 4400,
+      "startSpeed": 72,
+      "maxSpeed": 92
+    }
+  ],
+  "water": {
+    "downstreamCurrentSpeed": 26,
+    "waveCadenceMultiplier": 1.15,
+    "sharedCpuGpuCoefficients": true,
+    "derivativeDistanceRange": [
+      0,
+      10800
+    ],
+    "refreshRatesChecked": [
+      30,
+      60,
+      120
+    ],
+    "maximumTravelSpeedChecked": 92,
+    "reducedCurrentFrozen": true,
+    "fallbackPixelFixtures": [
+      {
+        "layout": "phone",
+        "pausedPixels": true,
+        "reducedWaterPixels": true,
+        "skylineCards": [
+          [
+            1536,
+            320
+          ],
+          [
+            1536,
+            320
+          ]
+        ],
+        "errors": []
+      },
+      {
+        "layout": "desktop",
+        "pausedPixels": true,
+        "reducedWaterPixels": true,
+        "skylineCards": [
+          [
+            1536,
+            320
+          ],
+          [
+            1536,
+            320
+          ]
+        ],
+        "errors": []
+      },
+      {
+        "layout": "landscape",
+        "pausedPixels": true,
+        "reducedWaterPixels": true,
+        "skylineCards": [
+          [
+            1536,
+            320
+          ],
+          [
+            1536,
+            320
+          ]
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "browserMatrix": {
+    "passed": true,
+    "base": "http://127.0.0.1:8765/",
+    "source": "http://127.0.0.1:3001/",
+    "fixtures": {
+      "kind": "isolated-source-engine-and-render-fixtures",
+      "actualCampaign": false,
+      "rows": [
+        {
+          "name": "aligned",
+          "hz": 30,
+          "coins": 1,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.03333333333333333,
+            "lane": 1,
+            "id": 1,
+            "distance": 0.5166666666666666,
+            "playerLane": 1,
+            "high": false,
+            "attracted": false
+          }
+        },
+        {
+          "name": "adjacent",
+          "hz": 30,
+          "coins": 0,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "target-selected-before-arrival",
+          "hz": 30,
+          "coins": 0,
+          "targetLane": 1,
+          "visualLane": 0.6915589588159974,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "crossing-original-lane-while-leaving",
+          "hz": 30,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0.3084410411840026,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.03333333333333333,
+            "lane": 1,
+            "id": 2,
+            "distance": 0.5166666666666666,
+            "playerLane": 0.963078021141712,
+            "high": false,
+            "attracted": false
+          }
+        },
+        {
+          "name": "raised-without-jump",
+          "hz": 30,
+          "coins": 0,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "raised-during-jump",
+          "hz": 30,
+          "coins": 1,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.03333333333333333,
+            "lane": 1,
+            "id": 1,
+            "distance": 0.5166666666666666,
+            "playerLane": 1,
+            "high": true,
+            "attracted": false
+          }
+        },
+        {
+          "name": "magnet-explains-adjacent-pickup",
+          "hz": 30,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.03333333333333333,
+            "lane": 2,
+            "id": 1,
+            "distance": 0.5166666666666666,
+            "playerLane": 0,
+            "high": false,
+            "attracted": true
+          }
+        },
+        {
+          "name": "rush-explains-raised-adjacent-pickup",
+          "hz": 30,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.03333333333333333,
+            "lane": 2,
+            "id": 1,
+            "distance": 0.5166666666666666,
+            "playerLane": 0,
+            "high": true,
+            "attracted": true
+          }
+        },
+        {
+          "name": "aligned",
+          "hz": 60,
+          "coins": 1,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.016666666666666666,
+            "lane": 1,
+            "id": 1,
+            "distance": 0.2583333333333333,
+            "playerLane": 1,
+            "high": false,
+            "attracted": false
+          }
+        },
+        {
+          "name": "adjacent",
+          "hz": 60,
+          "coins": 0,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "target-selected-before-arrival",
+          "hz": 60,
+          "coins": 0,
+          "targetLane": 1,
+          "visualLane": 0.33737273379315547,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "crossing-original-lane-while-leaving",
+          "hz": 60,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0.6626272662068445,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.016666666666666666,
+            "lane": 1,
+            "id": 2,
+            "distance": 0.2583333333333333,
+            "playerLane": 0.9898162549277965,
+            "high": false,
+            "attracted": false
+          }
+        },
+        {
+          "name": "raised-without-jump",
+          "hz": 60,
+          "coins": 0,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "raised-during-jump",
+          "hz": 60,
+          "coins": 1,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.016666666666666666,
+            "lane": 1,
+            "id": 1,
+            "distance": 0.2583333333333333,
+            "playerLane": 1,
+            "high": true,
+            "attracted": false
+          }
+        },
+        {
+          "name": "magnet-explains-adjacent-pickup",
+          "hz": 60,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.016666666666666666,
+            "lane": 2,
+            "id": 1,
+            "distance": 0.2583333333333333,
+            "playerLane": 0,
+            "high": false,
+            "attracted": true
+          }
+        },
+        {
+          "name": "rush-explains-raised-adjacent-pickup",
+          "hz": 60,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.016666666666666666,
+            "lane": 2,
+            "id": 1,
+            "distance": 0.2583333333333333,
+            "playerLane": 0,
+            "high": true,
+            "attracted": true
+          }
+        },
+        {
+          "name": "aligned",
+          "hz": 120,
+          "coins": 1,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.008333333333333333,
+            "lane": 1,
+            "id": 1,
+            "distance": 0.12916666666666665,
+            "playerLane": 1,
+            "high": false,
+            "attracted": false
+          }
+        },
+        {
+          "name": "adjacent",
+          "hz": 120,
+          "coins": 0,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "target-selected-before-arrival",
+          "hz": 120,
+          "coins": 0,
+          "targetLane": 1,
+          "visualLane": 0.1219013822495576,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "crossing-original-lane-while-leaving",
+          "hz": 120,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0.8780986177504424,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.008333333333333333,
+            "lane": 1,
+            "id": 2,
+            "distance": 0.12916666666666665,
+            "playerLane": 0.9973245283487219,
+            "high": false,
+            "attracted": false
+          }
+        },
+        {
+          "name": "raised-without-jump",
+          "hz": 120,
+          "coins": 0,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": false,
+          "event": null
+        },
+        {
+          "name": "raised-during-jump",
+          "hz": 120,
+          "coins": 1,
+          "targetLane": 1,
+          "visualLane": 1,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.008333333333333333,
+            "lane": 1,
+            "id": 1,
+            "distance": 0.12916666666666665,
+            "playerLane": 1,
+            "high": true,
+            "attracted": false
+          }
+        },
+        {
+          "name": "magnet-explains-adjacent-pickup",
+          "hz": 120,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.008333333333333333,
+            "lane": 2,
+            "id": 1,
+            "distance": 0.12916666666666665,
+            "playerLane": 0,
+            "high": false,
+            "attracted": true
+          }
+        },
+        {
+          "name": "rush-explains-raised-adjacent-pickup",
+          "hz": 120,
+          "coins": 1,
+          "targetLane": 0,
+          "visualLane": 0,
+          "collected": true,
+          "event": {
+            "type": "coin",
+            "time": 0.008333333333333333,
+            "lane": 2,
+            "id": 1,
+            "distance": 0.12916666666666665,
+            "playerLane": 0,
+            "high": true,
+            "attracted": true
+          }
+        }
+      ],
+      "pickupRadius": 0.25,
+      "currentSpeed": 26,
+      "waveCadence": 1.15,
+      "reducedCurrentFrozen": true,
+      "missedCoinVisiblePixels": 888
+    },
+    "coins": {
+      "kind": "actual-app-input",
+      "renderer": "2d",
+      "unmovedBesideCoins": 0,
+      "alignedCoins": 6,
+      "screenWideDrag": true,
+      "upwardGestureJump": true
+    },
+    "results": [
+      {
+        "case": "phone-canyon",
+        "map": "Redstone Rapids",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "renderer": "webgl",
+        "levelLength": 3600,
+        "speed": 62.26672,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": true,
+        "noActiveGpuPreparation": true,
+        "reducedMotion": false,
+        "horizon": {
+          "kind": "procedural",
+          "instances": 16,
+          "paintedRiver": false,
+          "courseSamples": [
+            {
+              "layer": 0,
+              "id": "2:-1",
+              "course": 188,
+              "zDelta": 29.027080896000058,
+              "screenStart": [
+                -0.5549400311129766,
+                0.3010545644126747
+              ],
+              "screenEnd": [
+                -0.43741258112264153,
+                0.2859054522143914
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "2:1",
+              "course": 221.84,
+              "zDelta": 29.027080896000086,
+              "screenStart": [
+                0.7782257623287293,
+                0.30074654269937
+              ],
+              "screenEnd": [
+                1.1343411460517794,
+                0.38980100475711443
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:-1",
+              "course": 282,
+              "zDelta": 29.02708089600003,
+              "screenStart": [
+                -0.2640360810892741,
+                0.25531791760317535
+              ],
+              "screenEnd": [
+                -0.07461133242000197,
+                0.3338705048842475
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:1",
+              "course": 315.84,
+              "zDelta": 29.02708089600003,
+              "screenStart": [
+                0.6580579027229343,
+                0.2678754258586863
+              ],
+              "screenEnd": [
+                0.9630631650576439,
+                0.3474376359225759
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:-1",
+              "course": 376,
+              "zDelta": 29.02708089600003,
+              "screenStart": [
+                -0.2943709586179124,
+                0.23631156131979378
+              ],
+              "screenEnd": [
+                -0.09734772494466011,
+                0.310978152549728
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:1",
+              "course": 409.84,
+              "zDelta": 29.02708089600003,
+              "screenStart": [
+                0.3370666319510002,
+                0.232962571650742
+              ],
+              "screenEnd": [
+                0.5976471978683507,
+                0.3233891322755944
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "2:1",
+              "course": 349.28,
+              "zDelta": 29.02708089600003,
+              "screenStart": [
+                0.8094232411383856,
+                0.3369838126914718
+              ],
+              "screenEnd": [
+                1.128960193294276,
+                0.40807521486750054
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:-1",
+              "course": 444,
+              "zDelta": 29.02708089600003,
+              "screenStart": [
+                -0.4567802266440275,
+                0.28170727208351465
+              ],
+              "screenEnd": [
+                -0.2676034725504435,
+                0.36060507627458566
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:1",
+              "course": 497.28,
+              "zDelta": 29.02708089600003,
+              "screenStart": [
+                0.6485674818565638,
+                0.29748367411032367
+              ],
+              "screenEnd": [
+                0.9340992624705289,
+                0.37726005941771074
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:-1",
+              "course": 592,
+              "zDelta": 29.027080896000143,
+              "screenStart": [
+                -0.22419230749763092,
+                0.2603089604765263
+              ],
+              "screenEnd": [
+                -0.00850553092627847,
+                0.33584246641586374
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:1",
+              "course": 645.28,
+              "zDelta": 29.027080896000143,
+              "screenStart": [
+                0.4409559256892473,
+                0.26612830089142503
+              ],
+              "screenEnd": [
+                0.7025296641483868,
+                0.3455582166249565
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:-1",
+              "course": 615,
+              "zDelta": 29.027080896000143,
+              "screenStart": [
+                -0.45483310074674926,
+                0.30052676939914497
+              ],
+              "screenEnd": [
+                -0.253462476659627,
+                0.3793886714949401
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:1",
+              "course": 688.8,
+              "zDelta": 29.027080896000143,
+              "screenStart": [
+                0.638482357977466,
+                0.3173862492441754
+              ],
+              "screenEnd": [
+                0.9152712695889231,
+                0.3969859108346922
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:-1",
+              "course": 820,
+              "zDelta": 29.027080896000143,
+              "screenStart": [
+                -0.2782330600448809,
+                0.27886657230632167
+              ],
+              "screenEnd": [
+                -0.05991709045199734,
+                0.3548116196618109
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:1",
+              "course": 893.8,
+              "zDelta": 29.027080896000143,
+              "screenStart": [
+                0.4730354739073758,
+                0.21351869309475946
+              ],
+              "screenEnd": [
+                0.7364557011746485,
+                0.3457526649250228
+              ]
+            }
+          ]
+        },
+        "drawCalls": 34,
+        "triangles": 80935,
+        "softwareGpu": true
+      },
+      {
+        "case": "desktop-canyon",
+        "map": "Redstone Rapids",
+        "viewport": {
+          "width": 1536,
+          "height": 1024
+        },
+        "renderer": "webgl",
+        "levelLength": 3600,
+        "speed": 62.26664,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": true,
+        "noActiveGpuPreparation": true,
+        "reducedMotion": false,
+        "horizon": {
+          "kind": "procedural",
+          "instances": 16,
+          "paintedRiver": false,
+          "courseSamples": [
+            {
+              "layer": 0,
+              "id": "2:-1",
+              "course": 188,
+              "zDelta": 29.014626223999898,
+              "screenStart": [
+                -0.1410493827351418,
+                0.2840799877606419
+              ],
+              "screenEnd": [
+                -0.15421698750155224,
+                0.2603547517768659
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "2:1",
+              "course": 221.84,
+              "zDelta": 29.014626223999926,
+              "screenStart": [
+                0.4714561022949357,
+                0.3055468074876697
+              ],
+              "screenEnd": [
+                0.5548437745667192,
+                0.41057198165780934
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:-1",
+              "course": 282,
+              "zDelta": 29.01462622399987,
+              "screenStart": [
+                -0.0003807579691830947,
+                0.3382825349160227
+              ],
+              "screenEnd": [
+                0.012473997581785155,
+                0.44630349288970655
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:1",
+              "course": 315.84,
+              "zDelta": 29.01462622399987,
+              "screenStart": [
+                0.3771449212697567,
+                0.28908882967235383
+              ],
+              "screenEnd": [
+                0.42967524932353063,
+                0.3898518682936416
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:-1",
+              "course": 376,
+              "zDelta": 29.01462622399987,
+              "screenStart": [
+                0.03795774345156175,
+                0.29943159183740586
+              ],
+              "screenEnd": [
+                0.05497979345089011,
+                0.4006961990059354
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:1",
+              "course": 409.84,
+              "zDelta": 29.01462622399987,
+              "screenStart": [
+                0.3388156316172007,
+                0.26675522884143793
+              ],
+              "screenEnd": [
+                0.3803946231570745,
+                0.3845970131587265
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "2:1",
+              "course": 349.28,
+              "zDelta": 29.01462622399987,
+              "screenStart": [
+                0.4543786392983556,
+                0.37517270134872754
+              ],
+              "screenEnd": [
+                0.5106480047040781,
+                0.46498810175213284
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:-1",
+              "course": 444,
+              "zDelta": 29.01462622399987,
+              "screenStart": [
+                -0.025180029791362784,
+                0.3906902971821156
+              ],
+              "screenEnd": [
+                -0.013429548927213918,
+                0.5003066014815751
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:1",
+              "course": 497.28,
+              "zDelta": 29.01462622399987,
+              "screenStart": [
+                0.41887933650052617,
+                0.3157895998192084
+              ],
+              "screenEnd": [
+                0.46075218820446623,
+                0.417393562441293
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:-1",
+              "course": 592,
+              "zDelta": 29.014626223999926,
+              "screenStart": [
+                0.01994186033250463,
+                0.3136110763985547
+              ],
+              "screenEnd": [
+                0.03533293063079746,
+                0.4145734473085287
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:1",
+              "course": 645.28,
+              "zDelta": 29.014626223999926,
+              "screenStart": [
+                0.3350074054256456,
+                0.2898517515018169
+              ],
+              "screenEnd": [
+                0.36693442078081767,
+                0.393382632620959
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:-1",
+              "course": 615,
+              "zDelta": 29.014626223999926,
+              "screenStart": [
+                -0.07826990864212821,
+                0.38950630873183784
+              ],
+              "screenEnd": [
+                -0.06909861033350757,
+                0.49632756849247167
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:1",
+              "course": 688.8,
+              "zDelta": 29.014626223999926,
+              "screenStart": [
+                0.4024755606128317,
+                0.3601093864165374
+              ],
+              "screenEnd": [
+                0.4373358403003346,
+                0.46345962773545624
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:-1",
+              "course": 820,
+              "zDelta": 29.014626223999926,
+              "screenStart": [
+                0.015483714896993787,
+                0.3694668480928085
+              ],
+              "screenEnd": [
+                0.030808255608825653,
+                0.47307618840071736
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:1",
+              "course": 893.8,
+              "zDelta": 29.014626223999926,
+              "screenStart": [
+                0.36486709783682814,
+                0.2259891485130093
+              ],
+              "screenEnd": [
+                0.39600228670016285,
+                0.3951670113281893
+              ]
+            }
+          ]
+        },
+        "drawCalls": 33,
+        "triangles": 81501,
+        "softwareGpu": true
+      },
+      {
+        "case": "landscape-canyon",
+        "map": "Redstone Rapids",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "renderer": "webgl",
+        "levelLength": 3600,
+        "speed": 62.26668,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": true,
+        "noActiveGpuPreparation": true,
+        "reducedMotion": false,
+        "horizon": {
+          "kind": "procedural",
+          "instances": 16,
+          "paintedRiver": false,
+          "courseSamples": [
+            {
+              "layer": 0,
+              "id": "2:-1",
+              "course": 188,
+              "zDelta": 29.02085355599999,
+              "screenStart": [
+                -0.19520000623956316,
+                0.37972596931893454
+              ],
+              "screenEnd": [
+                -0.11761306853795697,
+                0.3699931020177979
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "2:1",
+              "course": 221.84,
+              "zDelta": 29.02085355599999,
+              "screenStart": [
+                0.24983651574045856,
+                0.3052132226915817
+              ],
+              "screenEnd": [
+                0.4119618763215895,
+                0.4652393928819583
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:-1",
+              "course": 282,
+              "zDelta": 29.020853555999963,
+              "screenStart": [
+                -0.02708354587180749,
+                0.317349732020572
+              ],
+              "screenEnd": [
+                0.09058324606088371,
+                0.47766918637972233
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:1",
+              "course": 315.84,
+              "zDelta": 29.020853555999963,
+              "screenStart": [
+                0.22511129287789666,
+                0.28116848889545876
+              ],
+              "screenEnd": [
+                0.3744761958728532,
+                0.43545719847728037
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:-1",
+              "course": 376,
+              "zDelta": 29.020853555999963,
+              "screenStart": [
+                -0.02594375465570604,
+                0.295588510066531
+              ],
+              "screenEnd": [
+                0.09427280175113295,
+                0.45112474538944364
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:1",
+              "course": 409.84,
+              "zDelta": 29.020853555999963,
+              "screenStart": [
+                0.20030133506372708,
+                0.2531108387082894
+              ],
+              "screenEnd": [
+                0.3434148288238814,
+                0.4221724353511622
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "2:1",
+              "course": 349.28,
+              "zDelta": 29.020853555999963,
+              "screenStart": [
+                0.2901596963700122,
+                0.3534534848406251
+              ],
+              "screenEnd": [
+                0.4460881965837098,
+                0.4980070621405738
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:-1",
+              "course": 444,
+              "zDelta": 29.020853555999963,
+              "screenStart": [
+                -0.04026994712386354,
+                0.3595329675117181
+              ],
+              "screenEnd": [
+                0.08076581238238091,
+                0.522264969979658
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:1",
+              "course": 497.28,
+              "zDelta": 29.020853555999963,
+              "screenStart": [
+                0.26146873952265465,
+                0.29541227120610053
+              ],
+              "screenEnd": [
+                0.40770509025270435,
+                0.4500927418223974
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:-1",
+              "course": 592,
+              "zDelta": 29.02085355600002,
+              "screenStart": [
+                -0.0027223002494795386,
+                0.32251034693359226
+              ],
+              "screenEnd": [
+                0.12283566405793156,
+                0.4794071065841634
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:1",
+              "course": 645.28,
+              "zDelta": 29.02085355600002,
+              "screenStart": [
+                0.2239870882603551,
+                0.292109313514031
+              ],
+              "screenEnd": [
+                0.36513871007995924,
+                0.45008098499660026
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:-1",
+              "course": 615,
+              "zDelta": 29.02085355600002,
+              "screenStart": [
+                -0.04771976355351107,
+                0.40037019990957556
+              ],
+              "screenEnd": [
+                0.0754712950932396,
+                0.5653011936969712
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:1",
+              "course": 688.8,
+              "zDelta": 29.02085355600002,
+              "screenStart": [
+                0.2639732981078327,
+                0.34837774038455427
+              ],
+              "screenEnd": [
+                0.40859241242308825,
+                0.5066363035890892
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:-1",
+              "course": 820,
+              "zDelta": 29.02085355600002,
+              "screenStart": [
+                0.004338782198315124,
+                0.35534495069516314
+              ],
+              "screenEnd": [
+                0.13201730515883678,
+                0.5140396520703898
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:1",
+              "course": 893.8,
+              "zDelta": 29.02085355600002,
+              "screenStart": [
+                0.2592925116283249,
+                0.23254893169413493
+              ],
+              "screenEnd": [
+                0.40148951018696993,
+                0.4508810156478856
+              ]
+            }
+          ]
+        },
+        "drawCalls": 35,
+        "triangles": 71365,
+        "softwareGpu": true
+      },
+      {
+        "case": "phone-2d-canyon",
+        "map": "Redstone Rapids",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "renderer": "2d",
+        "levelLength": 3600,
+        "speed": 62.24,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": false,
+        "noActiveGpuPreparation": false,
+        "reducedMotion": false,
+        "horizon": null,
+        "softwareGpu": null
+      },
+      {
+        "case": "desktop-2d-canyon",
+        "map": "Redstone Rapids",
+        "viewport": {
+          "width": 1536,
+          "height": 1024
+        },
+        "renderer": "2d",
+        "levelLength": 3600,
+        "speed": 62.26,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": false,
+        "noActiveGpuPreparation": false,
+        "reducedMotion": false,
+        "horizon": null,
+        "softwareGpu": null
+      },
+      {
+        "case": "landscape-2d-canyon",
+        "map": "Redstone Rapids",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "renderer": "2d",
+        "levelLength": 3600,
+        "speed": 62.24,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": false,
+        "noActiveGpuPreparation": false,
+        "reducedMotion": false,
+        "horizon": null,
+        "softwareGpu": null
+      },
+      {
+        "case": "phone-canopy",
+        "map": "Canopy Run",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "renderer": "webgl",
+        "levelLength": 2800,
+        "speed": 52.337348,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": true,
+        "noActiveGpuPreparation": true,
+        "reducedMotion": false,
+        "horizon": null,
+        "drawCalls": 30,
+        "triangles": 104481,
+        "softwareGpu": true
+      },
+      {
+        "case": "phone-ruins",
+        "map": "Moonlit Ruins",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "renderer": "webgl",
+        "levelLength": 4400,
+        "speed": 72.209988,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": true,
+        "noActiveGpuPreparation": true,
+        "reducedMotion": false,
+        "horizon": null,
+        "drawCalls": 35,
+        "triangles": 95792,
+        "softwareGpu": true
+      },
+      {
+        "case": "phone-reduced-canyon",
+        "map": "Redstone Rapids",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "renderer": "webgl",
+        "levelLength": 3600,
+        "speed": 62.27336,
+        "phase": "playing",
+        "pausePixels": true,
+        "preparedBeforePlay": true,
+        "noActiveGpuPreparation": true,
+        "reducedMotion": true,
+        "horizon": {
+          "kind": "procedural",
+          "instances": 18,
+          "paintedRiver": false,
+          "courseSamples": [
+            {
+              "layer": 0,
+              "id": "1:1",
+              "course": 127.84,
+              "zDelta": 0,
+              "screenStart": [
+                0.6200570745829819,
+                0.11138662235622485
+              ],
+              "screenEnd": [
+                0.6200570745829819,
+                0.11138662235622485
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "2:-1",
+              "course": 188,
+              "zDelta": 0,
+              "screenStart": [
+                -0.8720240772475374,
+                0.22362995088274903
+              ],
+              "screenEnd": [
+                -0.8720240772475374,
+                0.22362995088274903
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "2:1",
+              "course": 221.84,
+              "zDelta": 0,
+              "screenStart": [
+                0.4241250987248056,
+                0.23922984228402258
+              ],
+              "screenEnd": [
+                0.4241250987248056,
+                0.23922984228402258
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:-1",
+              "course": 282,
+              "zDelta": 0,
+              "screenStart": [
+                -0.4742912783452318,
+                0.2624802285888455
+              ],
+              "screenEnd": [
+                -0.4742912783452318,
+                0.2624802285888455
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "3:1",
+              "course": 315.84,
+              "zDelta": 0,
+              "screenStart": [
+                0.3614043851476492,
+                0.2304735986871275
+              ],
+              "screenEnd": [
+                0.3614043851476492,
+                0.2304735986871275
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:-1",
+              "course": 376,
+              "zDelta": 0,
+              "screenStart": [
+                -0.3923699027216123,
+                0.23834619251265815
+              ],
+              "screenEnd": [
+                -0.3923699027216123,
+                0.23834619251265815
+              ]
+            },
+            {
+              "layer": 0,
+              "id": "4:1",
+              "course": 409.84,
+              "zDelta": 0,
+              "screenStart": [
+                0.21559559484086466,
+                0.19875994256171745
+              ],
+              "screenEnd": [
+                0.21559559484086466,
+                0.19875994256171745
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "2:-1",
+              "course": 296,
+              "zDelta": 0,
+              "screenStart": [
+                -0.7901300186647354,
+                0.22573022940093485
+              ],
+              "screenEnd": [
+                -0.7901300186647354,
+                0.22573022940093485
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "2:1",
+              "course": 349.28,
+              "zDelta": 0,
+              "screenStart": [
+                0.522335927368528,
+                0.2884744704061004
+              ],
+              "screenEnd": [
+                0.522335927368528,
+                0.2884744704061004
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:-1",
+              "course": 444,
+              "zDelta": 0,
+              "screenStart": [
+                -0.6030279819264825,
+                0.2997845087150885
+              ],
+              "screenEnd": [
+                -0.6030279819264825,
+                0.2997845087150885
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "3:1",
+              "course": 497.28,
+              "zDelta": 0,
+              "screenStart": [
+                0.36432646736619306,
+                0.250233242377815
+              ],
+              "screenEnd": [
+                0.36432646736619306,
+                0.250233242377815
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:-1",
+              "course": 592,
+              "zDelta": 0,
+              "screenStart": [
+                -0.43676455007996723,
+                0.24937354561353428
+              ],
+              "screenEnd": [
+                -0.43676455007996723,
+                0.24937354561353428
+              ]
+            },
+            {
+              "layer": 1,
+              "id": "4:1",
+              "course": 645.28,
+              "zDelta": 0,
+              "screenStart": [
+                0.23704698258562035,
+                0.22024546062912756
+              ],
+              "screenEnd": [
+                0.23704698258562035,
+                0.22024546062912756
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "2:1",
+              "course": 483.8,
+              "zDelta": 0,
+              "screenStart": [
+                0.584169230919651,
+                0.19956366641575002
+              ],
+              "screenEnd": [
+                0.584169230919651,
+                0.19956366641575002
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:-1",
+              "course": 615,
+              "zDelta": 0,
+              "screenStart": [
+                -0.6543677039130389,
+                0.30063002993111565
+              ],
+              "screenEnd": [
+                -0.6543677039130389,
+                0.30063002993111565
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "3:1",
+              "course": 688.8,
+              "zDelta": 0,
+              "screenStart": [
+                0.3529942892781247,
+                0.2812746906655917
+              ],
+              "screenEnd": [
+                0.3529942892781247,
+                0.2812746906655917
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:-1",
+              "course": 820,
+              "zDelta": 0,
+              "screenStart": [
+                -0.48056079582347616,
+                0.2882043127514793
+              ],
+              "screenEnd": [
+                -0.48056079582347616,
+                0.2882043127514793
+              ]
+            },
+            {
+              "layer": 2,
+              "id": "4:1",
+              "course": 893.8,
+              "zDelta": 0,
+              "screenStart": [
+                0.3080619155986797,
+                0.17763029846766576
+              ],
+              "screenEnd": [
+                0.3080619155986797,
+                0.17763029846766576
+              ]
+            }
+          ]
+        },
+        "drawCalls": 33,
+        "triangles": 81529,
+        "softwareGpu": true
+      }
+    ],
+    "errors": [],
+    "screenshots": "/tmp/river-longer-rapids-final",
+    "physicalDeviceFrameRateMeasured": false
+  },
+  "actualCampaign": {
+    "passed": true,
+    "base": "http://127.0.0.1:8765/",
+    "renderer": "2d",
+    "actualFullCampaign": true,
+    "results": [
+      {
+        "level": {
+          "index": 0,
+          "id": "canopy",
+          "name": "Canopy Run",
+          "length": 2800,
+          "remaining": 0,
+          "progress": 1,
+          "final": false,
+          "difficulty": "FLOW"
+        },
+        "totals": {
+          "score": 26640,
+          "coins": 168,
+          "distance": 2800,
+          "jumps": 15,
+          "ducks": 8,
+          "levelsCleared": 1
+        },
+        "shieldPreserved": true,
+        "pausePixels": true
+      },
+      {
+        "level": {
+          "index": 1,
+          "id": "canyon",
+          "name": "Redstone Rapids",
+          "length": 3600,
+          "remaining": 0,
+          "progress": 1,
+          "final": false,
+          "difficulty": "RAPIDS"
+        },
+        "totals": {
+          "score": 58180,
+          "coins": 326,
+          "distance": 6400,
+          "jumps": 28,
+          "ducks": 24,
+          "levelsCleared": 2
+        },
+        "shieldPreserved": true,
+        "pausePixels": true
+      },
+      {
+        "level": {
+          "index": 2,
+          "id": "ruins",
+          "name": "Moonlit Ruins",
+          "length": 4400,
+          "remaining": 0,
+          "progress": 1,
+          "final": true,
+          "difficulty": "EXPERT"
+        },
+        "totals": {
+          "score": 98820,
+          "coins": 550,
+          "distance": 10800,
+          "jumps": 37,
+          "ducks": 47,
+          "levelsCleared": 3
+        },
+        "shieldPreserved": true,
+        "pausePixels": true
+      }
+    ],
+    "scoreCapture": true,
+    "boardReturn": true,
+    "persistentUnlocks": true,
+    "errors": []
+  },
+  "actualCampaignInputEvidence": {
+    "method": "ordinary keyboard events from the browser driver; no gameplay state replacement",
+    "completedJumps": 37,
+    "completedDucks": 47,
+    "inputTrace": "unavailable in this run: old harness read it after reload; future harness retains it before reload"
+  },
+  "storage": {
+    "migration": "river_rush_extended_distance",
+    "table": "public.river_rush_scores",
+    "distanceBounds": [
+      0,
+      10800
+    ],
+    "rowsReset": false,
+    "version3BestRetained": true,
+    "version1UnlocksRetained": true,
+    "rowLevelSecurity": true,
+    "guestPermissions": [
+      "SELECT",
+      "INSERT permitted columns"
+    ],
+    "guestUpdateDelete": false,
+    "realApiHandlerFixture": {
+      "startedAt": "2026-10-07T01:34:57.859Z",
+      "name": "Longer Rivers QA",
+      "runId": "4b007f1c-b2d3-4e66-b463-4bdc73b9506c",
+      "distance": 10800,
+      "passed": true,
+      "checks": {
+        "beforeRead": {
+          "status": 200,
+          "entries": 0,
+          "historicalEntries": 0
+        },
+        "creation": {
+          "status": 201,
+          "submitted": true,
+          "distance": 10800
+        },
+        "retry": {
+          "status": 200,
+          "duplicate": true,
+          "distance": 10800
+        },
+        "rejectedDistance": {
+          "status": 400,
+          "distance": 10801
+        },
+        "afterRead": {
+          "status": 200,
+          "entries": 1,
+          "qaEntries": 1,
+          "historicalEntries": 0
+        }
+      },
+      "finishedAt": "2026-10-07T01:35:00.864Z"
+    },
+    "realApiHandlerFixtureRowRemoved": true,
+    "historicalAndExtendedReads": "mocked compatibility test; no historical rows existed in live fixture"
+  },
+  "bundle": {
+    "javascript": "index-Bq7v6xl3.js",
+    "javascriptSha256": "5fbc811aa135ca8d9c8528b4ea7e764158114073f7100e7516bd1acb52f8a6bc",
+    "css": "index-DfEYLRAr.css",
+    "cssSha256": "64b34c85c308fdce15224dcfff1f8585da378a12a2afff5e02c4b54e5b4b7d0e",
+    "htmlSha256": "a9db1efaf16281ff8303626e21e5a31b41eec29d16ffc90c55cfa108bec115c3"
+  },
+  "visualEvidence": {
+    "/tmp/river-longer-rapids-final/actual-app-coins-collected.png": "a2b891d480f12588bd465c5f0e3ed92cdf8de4bcfe36876721f6a6e1ace2f8fe",
+    "/tmp/river-longer-rapids-final/actual-app-coins-missed.png": "8b2ac93292dfe5b171e53a293584195e4e0264e6bed0d5b28c29a6670e68ef83",
+    "/tmp/river-longer-rapids-final/collected-coin-2d.png": "7381419cbe1fcbd5746cb3a148832f367cd5cad9c01cb97c1fd3d3b39822efeb",
+    "/tmp/river-longer-rapids-final/desktop-2d-canyon-early.png": "7f619ae6bff61a6febc7d5a58d786d2e7222995a59c4df1ebb6a04b95aaa3ab7",
+    "/tmp/river-longer-rapids-final/desktop-2d-canyon-later.png": "eda4fbb77c9096a26716672e6a8fc37e30416de472da709625dc27712b7f8725",
+    "/tmp/river-longer-rapids-final/desktop-canyon-early.png": "f3eb89911fda50e66633be186a0b9bbd964788474dcb075e4e78522edc134416",
+    "/tmp/river-longer-rapids-final/desktop-canyon-later.png": "f63dc343c7deea9208bd9e02514d460eb9a1d9fa5a79b05fbf4ba38ca351236c",
+    "/tmp/river-longer-rapids-final/landscape-2d-canyon-early.png": "480dbd7c6c0910f037cf14b311ad275eca1566bdcf6c86b653a0318dec1692f8",
+    "/tmp/river-longer-rapids-final/landscape-2d-canyon-later.png": "610fca2515f7a18a431c9cd0965146826b867c6acb00d0abd2278ae2ab8ed070",
+    "/tmp/river-longer-rapids-final/landscape-canyon-early.png": "d7d1f26eeafc693c688db9f2ede2caf2c67c4d182192de0f2cefa0c7da38e541",
+    "/tmp/river-longer-rapids-final/landscape-canyon-later.png": "f5a3caa09a17d2b56e706ee72172088af16f003c99c7019527f27a25344d17ad",
+    "/tmp/river-longer-rapids-final/missed-coin-2d.png": "b8966b1bf143ac01326af601f1d6485bdc8628e0fa82194910631d1884e38f78",
+    "/tmp/river-longer-rapids-final/phone-2d-canyon-early.png": "85108580c69de013755e26690d053bd3bdf0009e37a83070191d017c4b19781e",
+    "/tmp/river-longer-rapids-final/phone-2d-canyon-later.png": "315994f70f9388f2b5c5f7f4dc4c5e18409709d875cdb52d2ca359a244ccde9a",
+    "/tmp/river-longer-rapids-final/phone-canopy-early.png": "c838aa9558bb03bea9ff1b0d00b30fa032196a049bb7744e3ed55e4903722757",
+    "/tmp/river-longer-rapids-final/phone-canopy-later.png": "34424ac413ff8589bda2e03bb4861e21434e9900a92e8a193e6ac8f3edb8246f",
+    "/tmp/river-longer-rapids-final/phone-canyon-early.png": "b31b19d35918391b5672495133318f0272b59c7666f38c37298fc6dcfa571a98",
+    "/tmp/river-longer-rapids-final/phone-canyon-later.png": "300bb00058b6474899ff0b622eb3f279d5ba0636c4f524e5b599ea7c82c64e53",
+    "/tmp/river-longer-rapids-final/phone-reduced-canyon-early.png": "d876d13f3b081e6adfa71318ad342ae2dbbb7d811f4928d9d18980a51569d352",
+    "/tmp/river-longer-rapids-final/phone-reduced-canyon-later.png": "27e0ff6f4e02ebd7b6927695e0d8f64a4ad9c85a95584fcd355b8cc5ce10293e",
+    "/tmp/river-longer-rapids-final/phone-ruins-early.png": "d3dc80d1367eb45d8e76c28a97bc916de056a39d3b1a970f73de23c20e0a54f8",
+    "/tmp/river-longer-rapids-final/phone-ruins-later.png": "d94a4a40ffa443a5e2cd986b0c371d0907fcee362ad518706058f096b36dfc1e"
+  },
+  "limitations": {
+    "physicalDeviceFrameRateMeasured": false,
+    "headlessGpu": "software SwiftShader"
+  },
+  "specValidation": {
+    "manualStructure": "passed",
+    "requirements": 5,
+    "scenarios": 10,
+    "cli": "unavailable",
+    "archive": "pending production verification"
+  },
+  "production": {
+    "status": "pending publication"
+  }
+}

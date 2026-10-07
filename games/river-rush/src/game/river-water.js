@@ -1,5 +1,5 @@
 import {COURSE_GLSL} from './river-course.js';
-import {WAVES} from './hydrodynamics.js';
+import {WAVES,CURRENT_FLOW_SPEED,WAVE_CADENCE} from './hydrodynamics.js';
 
 const wave=WAVES.map(w=>`{float p=x*${w.kx}+d*${w.kz}-uTime*${w.omega}+${w.phase.toFixed(1)};s+=vec3(${w.amplitude}*sin(p),${w.amplitude*w.kx}*cos(p),${w.amplitude*w.kz}*cos(p));}`).join('\n');
 const waterSample=`vec3 surface(float x,float d){vec3 s=vec3(0.);${wave}
@@ -40,7 +40,7 @@ float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return 
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 `;
 function foamCode(simple){return `float foamAt(vec2 p,float grain){
- float x=p.x,d=p.y,flow=d-uTime*22.*uMotion;
+ float x=p.x,d=p.y,flow=d-uTime*${CURRENT_FLOW_SPEED.toFixed(1)}*uMotion;
  float bend=x*.78+sin(d*.11+x*.3)*.8+sin(d*.037-x*.27)*1.1;
  float threads=streak(bend,.07)*smoothstep(.28,.72,.5+.5*sin(flow*.42+x*2.));
  float crest=streak(d*.68+x*.23+sin(x*.63+d*.08)*1.1+sin(x*.27-d*.14)*.55,.16)*smoothstep(.3,.76,grain)*vRapid;
@@ -51,8 +51,8 @@ function foamCode(simple){return `float foamAt(vec2 p,float grain){
  // The wet boulders and their downstream eddies share vertex-sampled positions.
  for(int j=0;j<2;j++){vec2 rock=j==0?vShoal0:vShoal1;float tail=d-rock.y;
  if(tail>0.&&tail<17.){float xx=x-rock.x,spread=.75+tail*.1;
- ${simple?`float ring=max(0.,1.-abs(abs(xx)-spread)*1.4),swirl=.65+.35*sin(tail*.9+xx*2.-uTime*3.*uMotion);
- foam+=ring*ring*(1.-tail/17.)*swirl*.5;`:`float swirl=sin(atan(xx,tail-4.)*4.+length(vec2(xx,tail-4.))*2.-uTime*3.*uMotion);
+ ${simple?`float ring=max(0.,1.-abs(abs(xx)-spread)*1.4),swirl=.65+.35*sin(tail*.9+xx*2.-uTime*${(3*WAVE_CADENCE).toFixed(2)}*uMotion);
+ foam+=ring*ring*(1.-tail/17.)*swirl*.5;`:`float swirl=sin(atan(xx,tail-4.)*4.+length(vec2(xx,tail-4.))*2.-uTime*${(3*WAVE_CADENCE).toFixed(2)}*uMotion);
  foam+=exp(-square((abs(xx)-spread)*2.))*exp(-tail*.13)*(.28+.25*swirl);`}}}
  float behind=vWorld.z-uRaft.y;
  if(behind>0.&&behind<22.){float sideDist=abs(vWorld.x-uRaft.x),width=1.25+behind*.18;
@@ -65,7 +65,7 @@ function foamCode(simple){return `float foamAt(vec2 p,float grain){
 export function waterFragment(simple=false){return `${common}
 ${simple?'':fineNormal}
 ${foamCode(simple)}
-void main(){vec2 p=vCourse;float flow=p.y-uTime*22.*uMotion;
+void main(){vec2 p=vCourse;float flow=p.y-uTime*${CURRENT_FLOW_SPEED.toFixed(1)}*uMotion;
  vec3 detail=texture2D(uDetail,vec2(p.x*.09,flow*.045)).rgb;
  float grain=${simple?'detail.g':'noise(vec2(p.x*1.15,flow*.44))*.75+detail.g*.25'};
  ${simple?'vec3 n=normalize(vNormal+vec3(detail.r-.4,0.,detail.g-.4)*.12*uMotion);':`vec3 s=fineSurface(p.x,p.y);vec3 n=normalize(vec3(-s.y,1.,vProfile.y+s.z-s.y*vProfile.w)+vec3(detail.r-.4,0.,detail.g-.4)*.08*uMotion);`}

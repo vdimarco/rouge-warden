@@ -31,10 +31,11 @@ test('seeded finite maps vary routes, stop hazards before the finish and use inc
   const count=g.entities.length;g.distance=level.length+100;generateAhead(g);assert.equal(g.entities.length,count);
   assert.equal(speedAt(0,level.index),level.startSpeed);assert.equal(speedAt(99999,level.index),level.maxSpeed);
  }
- assert.equal(speedAt(0),42);assert.equal(speedAt(99999),56);assert.equal(speedAt(99999,2),72);
+ assert.equal(speedAt(0),LEVELS[0].startSpeed);assert.equal(speedAt(99999),LEVELS[0].maxSpeed);assert.equal(speedAt(99999,2),LEVELS[2].maxSpeed);
  const tutorial=createGame(7).entities.filter(e=>e.row<3&&['log','branch','rock'].includes(e.type));
  assert.deepEqual(tutorial.map(e=>[e.type,e.lane]),[['log',1],['branch',1],['rock',1]]);
- assert.ok(Math.abs(tutorial[1].d-112.6758)<.0001);
+ assert.ok(tutorial[0].d/LEVELS[0].startSpeed>1.5,'the faster start cuts off the first reaction window');
+ assert.ok((tutorial[1].d-tutorial[0].d)/LEVELS[0].startSpeed>1,'introductory jump/duck spacing became too tight');
 });
 test('finite-adventure best scores reject malformed records and every prior endless score',()=>{
  const good={version:3,score:2500,distance:1400,coins:12,levelsCleared:1};
@@ -61,7 +62,7 @@ test('finish stops at the exact gate, pays once and carries each clear once thro
   if(level.index<2){assert.deepEqual(next.carry,totals);assert.equal(next.score,0);assert.equal(next.coins,0);assert.equal(next.distance,0);g=next;}
   else assert.equal(next,null);
  }
- assert.equal(totals.distance,5400);assert.equal(totals.levelsCleared,3);
+ assert.equal(totals.distance,LEVELS.reduce((sum,level)=>sum+level.length,0));assert.equal(totals.levelsCleared,3);
 });
 
 test('a wipeout cannot be promoted to victory in the finish frame, and retry preserves only prior clears',()=>{

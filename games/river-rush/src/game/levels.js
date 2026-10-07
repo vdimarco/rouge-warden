@@ -1,8 +1,8 @@
 // Shared finite adventure definition. Renderer themes never decide collisions.
 export const LEVELS = Object.freeze([
- Object.freeze({index:0,id:'canopy',name:'Canopy Run',subtitle:'Sunlit jungle · Find your flow',difficulty:'FLOW',length:1400,startSpeed:42,maxSpeed:56,acceleration:.42,rowInterval:1.08,minInterval:.98,seedSalt:0,accent:'#79e8b1',sky:'#9fe4e5',fog:'#bce4df',waterDeep:'#063a42',waterEdge:'#148e72',ground:'#7d9e43',stone:'#c3c6a5'}),
- Object.freeze({index:1,id:'canyon',name:'Redstone Rapids',subtitle:'Rocky gorge · Ride the rush',difficulty:'RAPIDS',length:1800,startSpeed:50,maxSpeed:64,acceleration:.34,rowInterval:.99,minInterval:.89,seedSalt:0x7e217c13,accent:'#ffb867',sky:'#efd0a1',fog:'#dcaa85',waterDeep:'#063c59',waterEdge:'#299b9a',ground:'#aa6847',stone:'#d48c5d'}),
- Object.freeze({index:2,id:'ruins',name:'Moonlit Ruins',subtitle:'Dusk temples · Master the river',difficulty:'EXPERT',length:2200,startSpeed:58,maxSpeed:72,acceleration:.38,rowInterval:.91,minInterval:.81,seedSalt:0x3bdba971,accent:'#c0abff',sky:'#302c59',fog:'#665c88',waterDeep:'#132853',waterEdge:'#306f9c',ground:'#58576f',stone:'#a5a1bb'})
+ Object.freeze({index:0,id:'canopy',name:'Canopy Run',subtitle:'Sunlit jungle · Find your flow',difficulty:'FLOW',length:2800,startSpeed:52,maxSpeed:68,acceleration:.44,rowInterval:1.08,minInterval:.98,seedSalt:0,accent:'#79e8b1',sky:'#9fe4e5',fog:'#bce4df',waterDeep:'#063a42',waterEdge:'#148e72',ground:'#7d9e43',stone:'#c3c6a5'}),
+ Object.freeze({index:1,id:'canyon',name:'Redstone Rapids',subtitle:'Rocky gorge · Ride the rush',difficulty:'RAPIDS',length:3600,startSpeed:62,maxSpeed:80,acceleration:.40,rowInterval:.99,minInterval:.89,seedSalt:0x7e217c13,accent:'#ffb867',sky:'#efd0a1',fog:'#dcaa85',waterDeep:'#063c59',waterEdge:'#299b9a',ground:'#aa6847',stone:'#d48c5d'}),
+ Object.freeze({index:2,id:'ruins',name:'Moonlit Ruins',subtitle:'Dusk temples · Master the river',difficulty:'EXPERT',length:4400,startSpeed:72,maxSpeed:92,acceleration:.36,rowInterval:.91,minInterval:.81,seedSalt:0x3bdba971,accent:'#c0abff',sky:'#302c59',fog:'#665c88',waterDeep:'#132853',waterEdge:'#306f9c',ground:'#58576f',stone:'#a5a1bb'})
 ]);
 export const FINISH_RUNWAY=90;
 export const levelAt=index=>LEVELS[Math.max(0,Math.min(LEVELS.length-1,Number.isInteger(index)?index:0))];

@@ -4,7 +4,10 @@ import { LEVELS, FINISH_RUNWAY, levelAt, levelSeed, levelSpeed } from './levels.
 export const JUMP_SECONDS = .66;
 export const DUCK_SECONDS = .60;
 export const VIEW_DISTANCE = 180;
-export const BASE_SPEED = 42, MAX_SPEED = 72, ACCELERATION = .42;
+export const BASE_SPEED = LEVELS[0].startSpeed, MAX_SPEED = Math.max(...LEVELS.map(level=>level.maxSpeed)), ACCELERATION = LEVELS[0].acceleration;
+// A pickup needs the raft's center to cross the coin, within roughly its
+// 0.95 m half-width on 3.8 m lanes. Target-lane input is not visible overlap.
+export const COIN_LANE_RADIUS = .25;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const emptyInput = () => ({ actions: [] });
 export function queueAction(input, action) { if (input.actions.length < 8) input.actions.push(action); }
@@ -37,7 +40,7 @@ export function createGame(seed = Date.now(), levelIndex = 0, carry = null) {
     charge: 0, rush: 0, magnet: 0, shield: true, grace: 0,
     jumps: 0, ducks: 0, dodges: 0, shieldsUsed: 0, rowsPassed: 0,
     goalsCleared: 0, goal: { kind: 'tricks', start: 0, target: 3 },
-    entities: [], nextRow: 68, row: 0, nextId: 1, patternsSeen:[], runwayGenerated:false,
+    entities: [], nextRow: level.startSpeed*(68/42), row: 0, nextId: 1, patternsSeen:[], runwayGenerated:false,
     event: '', eventId: 0, effects: [], notice: level.index===0?'Jump logs · Duck branches · Dodge rocks':`${level.name} · ${level.difficulty}`, noticeUntil: 4, reason: '' };
   for (let d = 7; d <= 32; d += 5) add(g, 'coin', 1, d);
   generateAhead(g); return g;
@@ -76,7 +79,7 @@ export function generateAhead(g) {
   const level=levelAt(g.levelIndex),limit=level.length-FINISH_RUNWAY,visibleTo=g.distance+VIEW_DISTANCE+45;
   while (g.nextRow < visibleTo && g.nextRow < limit) {
     const d = g.nextRow, row = g.row++;
-    const predictedTime = g.time + (g.levelIndex===0&&row<3?Math.max(0,d-g.distance)/speedAt(g.time):timeToImpact(g,d));
+    const predictedTime = g.time + timeToImpact(g,d);
     const {motif,safe,hazards,coinLane}=rowPattern(g,row);
     if(!g.patternsSeen.includes(motif))g.patternsSeen.push(motif);
     hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif }));
@@ -89,7 +92,7 @@ export function generateAhead(g) {
     }
     if (row % 13 === 6) add(g, 'magnet', safe, d - 8);
     if (row % 17 === 11) add(g, 'shield', safe, d - 8);
-    // Preserve the original introductory jump/duck/rock timing on Canopy Run.
+    // Preserve the introductory jump/duck/rock reaction time at faster speeds.
     const interval=g.levelIndex===0&&row<3?1.05-Math.min(1,predictedTime/95)*.19:Math.max(level.minInterval,level.rowInterval-predictedTime/180*.09);
     g.nextRow += speedAt(predictedTime,g.levelIndex) * interval;
   }
@@ -103,7 +106,16 @@ export function jumpHeight(g) {
   return g.action === 'jump' ? 4 * clamp(g.actionTime / JUMP_SECONDS, 0, 1) * (1 - clamp(g.actionTime / JUMP_SECONDS, 0, 1)) : 0;
 }
 // Reward a timely tap on the launch frame, before the arc reaches full height.
-function jumpClears(g){return g.action==='jump'&&(g.actionTime<=.06||jumpHeight(g)>.28);}
+function jumpClears(g){return jumpClearsAt(g.action,g.actionTime);}
+function jumpClearsAt(action,time){const p=clamp(time/JUMP_SECONDS,0,1);return action==='jump'&&time<JUMP_SECONDS&&(time<=.06||4*p*(1-p)>.28);}
+function crossingAction(frame,elapsed){
+  const duration=frame.action==='jump'?JUMP_SECONDS:DUCK_SECONDS;
+  if(!frame.action||frame.actionTime+elapsed<duration)return{action:frame.action,time:frame.actionTime+elapsed};
+  const remaining=elapsed-(duration-frame.actionTime);
+  // updateGame starts a queued action before decrementing its buffer timer.
+  // Use the same decision here when landing and crossing share one frame.
+  return frame.buffered&&frame.bufferTime>0?{action:frame.buffered,time:remaining}:{action:'',time:0};
+}
 function beginAction(g, action) {
   g.action = action; g.actionTime = 0; g.buffered = ''; g.bufferTime = 0;
   emit(g, action);
@@ -136,6 +148,7 @@ export function updateGame(g, input, dt) {
   dt = clamp(dt, 0, .05);
   const taps = input.actions.splice(0);
   taps.forEach(action => applyAction(g, action));
+  const frame={position:g.visualLane,velocity:g.laneVelocity,target:g.lane,action:g.action,actionTime:g.actionTime,buffered:g.buffered,bufferTime:g.bufferTime,magnet:g.magnet,rush:g.rush};
   g.time += dt;
   if (g.action) {
     g.actionTime += dt;
@@ -159,11 +172,19 @@ export function updateGame(g, input, dt) {
     if (e.done || e.d > g.distance || e.d <= previous) continue;
     e.done = true;
     if (e.type === 'coin') {
-      if ((e.lane === g.lane && (!e.high || jumpClears(g))) || g.magnet > 0 || g.rush > 0) {
+      // Sample at the exact longitudinal crossing, rather than the end of the
+      // render frame. This also handles reversals and crossing a lane that is
+      // no longer selected, without skipping narrow pickups at low frame rates.
+      const elapsed=clamp((e.d-previous)/g.speed,0,dt);
+      const lane=laneSpring(frame.position,frame.velocity,frame.target,elapsed).position;
+      const action=crossingAction(frame,elapsed),overlap=Math.abs(e.lane-lane)<=COIN_LANE_RADIUS;
+      const attracted=frame.magnet>elapsed||frame.rush>elapsed||g.magnet>0;
+      if ((overlap&&(!e.high||jumpClearsAt(action.action,action.time)))||attracted) {
+        e.collected=true;
         g.coins++; g.streak++; g.lastCoin = g.time;
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
-        g.bonus += 10 * g.multiplier; if (!g.rush) g.charge = Math.min(100, g.charge + 2);
-        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { high: !!e.high, attracted: (g.magnet > 0 || g.rush > 0) && e.lane !== g.lane });
+        g.bonus += 10 * g.multiplier; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
+        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { high: !!e.high, distance:e.d, playerLane:lane, attracted: attracted&&(!overlap||e.high&&!jumpClearsAt(action.action,action.time)) });
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
       if (e.lane === g.lane) {

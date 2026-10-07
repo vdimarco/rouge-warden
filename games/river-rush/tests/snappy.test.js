@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,emptyInput,applyAction,updateGame,jumpHeight,timeToImpact,JUMP_SECONDS,DUCK_SECONDS,speedAt} from '../src/game/engine.js';
+import {createGame,emptyInput,applyAction,updateGame,jumpHeight,timeToImpact,JUMP_SECONDS,DUCK_SECONDS,speedAt,COIN_LANE_RADIUS,restartLevel} from '../src/game/engine.js';
 import {createMotion,advanceMotion,paddleSample} from '../src/game/motion.js';
 import {readSwipe} from '../src/game/input.js';
 import {renderDpr,foamDepth,riverRate} from '../src/game/quality.js';
@@ -33,4 +33,78 @@ test('a jump tapped on the collision frame clears a log and its raised coin with
  const g=clean();g.entities=[{id:101,type:'coin',lane:1,d:.2,high:true},{id:102,type:'log',lane:1,d:.2}];applyAction(g,'jump');updateGame(g,emptyInput(),1/60);
  assert.ok(jumpHeight(g)<.28);assert.equal(g.phase,'playing');assert.equal(g.shield,true);assert.equal(g.jumps,1);assert.equal(g.coins,1);
  const rock=clean();rock.shield=false;rock.entities=[{id:103,type:'rock',lane:1,d:.2}];applyAction(rock,'jump');updateGame(rock,emptyInput(),1/60);assert.equal(rock.phase,'lost');
+});
+
+// Constant cap speed makes the longitudinal crossing identical at every
+// refresh rate, so these cases measure steering/height rather than integration.
+const coinRun=(hz,{lane=1,target=1,position=1,velocity=0,at=.02,action='',actionTime=0,high=false,magnet=0,rush=0}={})=>{
+ const g=Object.assign(clean(),{time:1000,lane:target,visualLane:position,laneVelocity:velocity,action,actionTime,magnet,rush,goal:{kind:'tricks',start:0,target:1e9}});
+ const coin={id:601,type:'coin',lane,d:speedAt(g.time)*(rush?1.32:1)*at,high,done:false};g.entities=[coin];
+ const before=g.eventId;for(let elapsed=0;elapsed<at+.002;elapsed+=1/hz)updateGame(g,emptyInput(),1/hz);
+ return{g,coin,events:g.effects.filter(e=>e.id>before&&e.type==='coin')};
+};
+
+test('ordinary coins need tight visible center overlap at the crossing, at 30/60/120 Hz',()=>{
+ assert.equal(COIN_LANE_RADIUS,.25);
+ for(const hz of [30,60,120]){
+  for(const setup of [{lane:2},{lane:2,target:2,at:.025},{position:1.30,target:1,at:.0005}]){
+   const {g,coin,events}=coinRun(hz,setup);
+   assert.equal(g.coins,0,`${hz} Hz awarded an adjacent coin`);assert.equal(g.bonus,0);assert.equal(g.charge,0);assert.equal(g.streak,0);
+   assert.equal(coin.done,true);assert.notEqual(coin.collected,true);assert.equal(events.length,0,'a miss emitted pickup feedback');
+   assert.ok(g.entities.includes(coin),'a missed coin disappeared before the normal behind limit');
+  }
+  const {g,coin,events}=coinRun(hz,{lane:2,target:2,at:.15});
+  assert.equal(g.coins,1,`${hz} Hz missed a real arrival`);assert.equal(coin.collected,true);assert.equal(events.length,1);assert.equal(events[0].attracted,false);
+  assert.ok(Math.abs(events[0].playerLane-2)<COIN_LANE_RADIUS);
+  const crossing=coinRun(hz,{lane:1,target:2,at:.003});
+  assert.equal(crossing.g.coins,1,'the raft crossed a coin in the lane it was leaving');assert.equal(crossing.coin.collected,true);
+ }
+});
+
+test('steering reversal preserves the same swept coin result across refresh rates',()=>{
+ for(const hz of [30,60,120]){
+  const g=Object.assign(clean(),{time:1000});applyAction(g,'right');
+  for(let elapsed=0;elapsed<.09;){const dt=Math.min(1/hz,.09-elapsed);updateGame(g,emptyInput(),dt);elapsed+=dt;}
+  const reversal={position:g.visualLane,velocity:g.laneVelocity,lane:2,target:1};
+  const early=coinRun(hz,{...reversal,at:.005});
+  assert.equal(early.g.coins,1,`${hz} Hz failed the still-overlapping reversal`);assert.equal(early.coin.collected,true);
+  const late=coinRun(hz,{...reversal,at:.08});
+  assert.equal(late.g.coins,0,`${hz} Hz collected after steering away`);assert.equal(late.events.length,0);assert.notEqual(late.coin.collected,true);
+ }
+});
+
+test('raised coins use jump height at their crossing and retain the timely launch reward',()=>{
+ for(const hz of [30,60,120]){
+  for(const setup of [{high:true},{high:true,action:'duck',actionTime:.2},{high:true,action:'jump',actionTime:.65}]){
+   const result=coinRun(hz,setup);assert.equal(result.g.coins,0,`${hz} Hz awarded a raised coin without a jump`);assert.equal(result.events.length,0);
+  }
+  for(const setup of [{high:true,action:'jump',at:.005},{high:true,action:'jump',actionTime:.3}]){
+   const result=coinRun(hz,setup);assert.equal(result.g.coins,1);assert.equal(result.coin.collected,true);
+  }
+ }
+});
+
+test('a nearly expired buffered jump agrees with the rendered launch on a raised-coin crossing',()=>{
+ const g=Object.assign(clean(),{time:1000,action:'jump',actionTime:JUMP_SECONDS-.03,buffered:'jump',bufferTime:.01});
+ const coin={id:710,type:'coin',lane:1,d:speedAt(g.time)*.04,high:true,done:false};g.entities=[coin];
+ updateGame(g,emptyInput(),.05);
+ assert.equal(g.action,'jump');assert.equal(g.actionTime,0);assert.equal(g.coins,1);assert.equal(coin.collected,true);
+ assert.equal(g.effects.filter(e=>e.type==='coin').length,1);
+});
+
+test('magnet and Rush are explicit pickup exceptions, expire at crossing and reset on retry',()=>{
+ for(const hz of [30,60,120])for(const power of ['magnet','rush']){
+  const active=coinRun(hz,{lane:0,high:true,[power]:.01,at:.005});
+  assert.equal(active.g.coins,1);assert.equal(active.coin.collected,true);assert.equal(active.events[0].attracted,true);
+  if(power==='rush')assert.equal(active.g.charge,0,'a pickup during the final Rush frame recharged Rush');
+  const expired=coinRun(hz,{lane:0,high:true,[power]:.01,at:.02});assert.equal(expired.g.coins,0);assert.equal(expired.events.length,0);
+  const retry=restartLevel(active.g);assert.equal(retry.magnet,0);assert.equal(retry.rush,0);assert.equal(retry.coins,0);assert.ok(retry.entities.every(e=>!e.done&&!e.collected));
+ }
+});
+
+test('a missed coin passes once and leaves normally without awarding later lane changes',()=>{
+ const {g,coin}=coinRun(60,{lane:2});applyAction(g,'right');
+ for(let i=0;i<20;i++)updateGame(g,emptyInput(),1/60);
+ assert.equal(g.coins,0);assert.notEqual(coin.collected,true);assert.equal(g.entities.includes(coin),false);
+ assert.equal(g.effects.some(e=>e.type==='coin'),false);
 });
