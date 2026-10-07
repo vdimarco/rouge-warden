@@ -28,6 +28,9 @@ export const CAR = {
   steer: 0.6, steerRate: 3.2, // radians at the wheel, and how fast it turns
   grip: 7, handbrake: { grip: 1.6, brake: 9, turn: 1.5 }, // sideways grip (1/s); the handbrake lets the back slide
   bounce: 0.25,
+  // a job's car (a getaway car on its run, a sludge tanker): it drives itself along its path at up to speed m/s, slowing for
+  // turns; a stopped one brakes to a halt
+  auto: { speed: 17, turnSlow: 0.5, look: 7, steerK: 2.2, reach: 6 },
 };
 // paint: the city's car colours (cityview.js CAR_COLS), with a few brighter ones for the hero's pick
 export const CAR_PAINT = [[0.9, 0.9, 0.88], [0.12, 0.12, 0.13], [0.6, 0.62, 0.64], [0.7, 0.12, 0.1], [0.14, 0.24, 0.5], [0.95, 0.72, 0.1], [0.25, 0.36, 0.3], [0.8, 0.45, 0.2], [0.85, 0.2, 0.55], [0.1, 0.6, 0.7]];
@@ -122,6 +125,7 @@ export function createCars(city, opts = {}) {
     let free = 0;
     for (const c of cars) {
       if (!c.on) { free++; continue; }
+      if (c.job) continue; // a job's car stays until the job lets it go
       if (c !== K.driving && Math.hypot(c.x - focus.x, c.z - focus.z) > (c.traffic >= 0 ? CAR.keepStolen : CAR.keep)) { off(c); free++; }
     }
     let n = K.first ? CAR.max : 1;
@@ -135,11 +139,38 @@ export function createCars(city, opts = {}) {
       free--; K.stats.spawned++;
     }
     K.first = false;
-    for (const c of cars) if (c.on) step(c, dt, c === K.driving ? drive : null);
+    for (const c of cars) if (c.on) step(c, dt, c === K.driving ? drive : c.auto ? autoDrive(c) : null);
   };
+  // the self-driving input of a job's car: toward the next point of its path, slower in a turn; stopped: brake
+  const AUTO_IN = { throttle: 0, steer: 0, handbrake: false };
+  function autoDrive(c) {
+    const A = c.auto, Q = CAR.auto;
+    AUTO_IN.handbrake = false;
+    if (A.stop || A.i >= A.path.length) { AUTO_IN.throttle = c.speed > 0.3 ? -1 : 0; AUTO_IN.steer = A.stop ? A.swerve : 0; if (!A.done && A.i >= A.path.length) { A.done = true; emit({ type: "arrived", id: c.id }); } return AUTO_IN; }
+    const q = A.path[A.i], dx = q.x - c.x, dz = q.z - c.z, d = Math.hypot(dx, dz);
+    if (d < Q.reach) { A.i++; return autoDrive(c); }
+    const want = Math.atan2(-dx, -dz), err = wrap(want - c.yaw);
+    AUTO_IN.steer = clamp(err * Q.steerK, -1, 1);
+    const top = (A.speed || Q.speed) * (1 - Q.turnSlow * Math.min(1, Math.abs(err)));
+    AUTO_IN.throttle = c.speed < top ? 1 : c.speed > top + 2 ? -0.5 : 0;
+    return AUTO_IN;
+  }
+  // A job's car at (x, z, yaw) in paint: a free slot, else the farthest car the hero is not in. o: { path (points to drive
+  // along; none: parked), speed, tanker }. Returns the car; K.release(c) gives it back.
+  K.jobCar = function jobCar(x, z, yaw, paint, o = {}) {
+    let c = cars.find((q) => !q.on);
+    if (!c) { let fd = -1; for (const q of cars) { if (q === K.driving || q.job) continue; const d = Math.hypot(q.x - x, q.z - z); if (d > fd) { fd = d; c = q; } } if (!c) return null; off(c); }
+    Object.assign(c, { on: true, x, y: 0, z, yaw, speed: 0, side: 0, steer: 0, paint: paint.slice(0, 3), driven: false, vx: 0, vz: 0, bumpT: 9, traffic: -1, job: true, tanker: !!o.tanker,
+      auto: o.path ? { path: o.path, i: 0, speed: o.speed || CAR.auto.speed, stop: false, swerve: 0, done: false } : null });
+    emit({ type: "jobcar", id: c.id, x, z });
+    return c;
+  };
+  // a job's car stops: it swerves (a little to one side) and brakes to a halt
+  K.stopCar = function stopCar(c, swerve = 0.5) { if (c && c.auto) { c.auto.stop = true; c.auto.swerve = swerve; } };
+  K.release = function release(c) { if (c) { c.job = false; c.auto = null; c.tanker = false; } };
   // a car goes back to the pool; a stolen one gives its traffic car back to the street
   function off(c) {
-    c.on = false;
+    c.on = false; c.job = false; c.auto = null; c.tanker = false;
     if (c.traffic >= 0) { emit({ type: "release", traffic: c.traffic, id: c.id }); c.traffic = -1; }
   }
   // the car model: a bicycle with grip. side: the sideways slide (m/s) the grip takes away
@@ -175,7 +206,7 @@ export function createCars(city, opts = {}) {
   K.near = function near(x, y, z) {
     if (y > 1.6) return null;
     let best = null, bd = CAR.enter;
-    for (const c of cars) { if (!c.on) continue; const d = Math.hypot(c.x - x, c.z - z); if (d < bd) { bd = d; best = c; } }
+    for (const c of cars) { if (!c.on || c.job) continue; const d = Math.hypot(c.x - x, c.z - z); if (d < bd) { bd = d; best = c; } }
     return best;
   };
   // A street car (trafficAt's { i, x, z, yaw, paint }) becomes a car here, stopped, in its colour: a free slot, else the
@@ -222,6 +253,6 @@ export function createCars(city, opts = {}) {
     return out;
   };
   K.info = () => ({ cars: cars.filter((c) => c.on).length, driving: K.driving ? { id: K.driving.id, x: K.driving.x, z: K.driving.z, yaw: K.driving.yaw, speed: K.driving.speed } : null, stats: { ...K.stats },
-    list: cars.filter((c) => c.on).map((c) => ({ id: c.id, x: c.x, z: c.z, yaw: c.yaw, speed: c.speed, traffic: c.traffic, paint: c.paint })) });
+    list: cars.filter((c) => c.on).map((c) => ({ id: c.id, x: c.x, z: c.z, yaw: c.yaw, speed: c.speed, traffic: c.traffic, paint: c.paint, job: !!c.job, tanker: !!c.tanker, auto: !!c.auto })) });
   return K;
 }

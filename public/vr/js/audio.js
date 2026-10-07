@@ -32,7 +32,7 @@ function seeded(seed) { // from fish
 /* ---------------- shared state: what the game asked for, kept even before the context exists ---------------- */
 function newState(on = true) {
   return {
-    on, speed: 0, height: NaN, ropes: [0, 0], music: false, duck: false, amb: 1, crowd: 0, handles: new Set(),
+    on, speed: 0, height: NaN, ropes: [0, 0], music: false, fight: false, duck: false, amb: 1, crowd: 0, handles: new Set(),
     L: { x: 0, y: 1.6, z: 0, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0 }, // the listener: world position, forward and up
   };
 }
@@ -942,6 +942,12 @@ function playStep(e, step, t) {
   for (const [bs, which, len] of BASS) if (bs === s) bass(e, at, mtof(which === "fifth" ? C.fifth : which === "up" ? C.root + 12 : C.root), len * S16);
   if (s === 0 || s === 6 || s === 10) C.keys.forEach((m, i) => keys(e, at + i * 0.008, mtof(m), (s === 0 ? 6 : s === 6 ? 2 : 4) * S16, s === 0 ? 1 : 0.7));
   if (pass % 2 === 1) for (const [ls, m, len] of LEAD[bar]) if (ls === s) lead(e, at, mtof(m), len * S16);
+  if (e.st.fight) {
+    // the fight layer: four on the floor, a bass stab on the off-beats, and a tom run into the next bar
+    if (s % 4 === 0 && s !== 0) kick(e, at, 0.8);
+    if (s === 3 || s === 11) bass(e, at, mtof(C.root + 12), S16);
+    if (s >= 13) tone(e, at, { type: "triangle", f: [196, 165, 131][s - 13], f2: [150, 120, 95][s - 13], dur: 0.16, att: 0.002, peak: 0.12, to: e.musIn });
+  }
 }
 // an electric piano: one sine through another (FM), bright at the strike and mellow after
 function keys(e, t, f, dur, v) {
@@ -1190,6 +1196,9 @@ export function createAudio(settings) {
       if (alive()) try { musicSet(E, now()); } catch (err) { /* ignore */ }
     },
     get musicOn() { return st.music; },
+    // the fight layer of the groove: driving kicks, a stab on the off-beat and toms into each bar while goons fight the hero
+    fight(v) { st.fight = !!v; },
+    get fightOn() { return st.fight; },
     // a one-shot. pos (world, {x, y, z}) makes it spatial; vol 0..2; pitch 0.25..4 (1 = as designed)
     sfx(name, o) {
       if (!on || !alive() || !SFX[name]) return;

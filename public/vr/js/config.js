@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.16.0";
+export const VERSION = "1.17.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -67,6 +67,9 @@ export const MOVES = {
   release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6 },
   // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
   finisher: { slow: 0.3, time: 0.7, zoom: 10 },
+  // the glide (hold jump in the air with no rope, after minAir s): the fall eases to sink m/s, lift of the fall it stops turns into
+  // speed along the ground, which stays between min and max m/s; the move input turns it at turn rad/s
+  glide: { sink: 3.2, min: 14, max: 32, lift: 0.6, turn: 1.6, minAir: 0.25, grow: 8 },
 };
 
 /* ---------------- wall climbing (flat play) ---------------- */
@@ -86,6 +89,10 @@ export const CLIMB = {
   // counting a fall) goes into it: a swing that brushes a wall keeps going
   head: 1.7, headR: 0.25, // the head sphere over the feet: a ceiling it meets on the way up is an overhang
   lip: 1, lipReach: 40, // under an overhang you move out to its face (found up to lipReach m out) and up lip m
+  // the wall run: a wall met at min m/s or more with the move input toward it (or head-on) is run up (down, when falling faster
+  // than down m/s) at keep times that speed (at most max), slowing by decay m/s² to the climb speed. Space jumps off it with
+  // jump.out m/s out and 6 + jump.k times the run speed up (at most jump.max); at the top, a run faster than top m/s leaps up.
+  run: { min: 9, keep: 0.85, max: 24, decay: 7, down: 6, top: 10, jump: { out: 5, k: 0.5, max: 16 }, leap: 0.8 },
 };
 
 /* ---------------- one-tap phone swinging ---------------- */
