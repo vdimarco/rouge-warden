@@ -933,6 +933,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     feel() { return { clock: S.clock, frozen: performance.now() < S.freezeUntil, punch: punchK(), zoom: S.zoomK, kick: S.kick, fov: camera.fov, base: baseFov(S.view.mode), rod: rod.mesh.visible }; },
     setHour,
     showCatch, hideCatch,
+    // true when a drawn frame has the camera at the photo's pose (the push-in is done), or when there is no photo beat
+    posed() { const T = S.trophy; return !T || !T.beat || T.camT >= WORLD.PHOTO.push; },
     update, render,
     info() {
       const m = renderer.info.memory;

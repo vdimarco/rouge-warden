@@ -112,3 +112,14 @@ On a computer with a mouse, a press anywhere on the lake SHALL take the rod in a
 #### Scenario: A fish on the bottom
 - **WHEN** a fish sulks on a computer after a mouse press
 - **THEN** the rod cue says "Drag up. Scroll as it comes down."
+
+### Requirement: The crank reads the thumb
+A thumb that turns the crank at a steady speed SHALL read as that speed, also when each touch move gets to the game late by the same delay. The game SHALL find that the thumb stopped from the time since the last move got to it, not from the time on the move. When the thumb stops, the crank SHALL read 0 within 0.25 s after the last move got to the game.
+
+#### Scenario: Late touch moves
+- **WHEN** a thumb turns the crank at 2 turns a second and each touch move gets to the game 50 ms after its time, in portrait, in landscape, or with the screen turned 90 degrees either way
+- **THEN** the crank reads 2 turns a second, within 0.3, in 9 of 10 frames that had a steady thumb to read.
+
+#### Scenario: The thumb stops
+- **WHEN** the thumb stops on the crank
+- **THEN** the crank reads 0 by the first frame 0.25 s after the last move got to the game.
