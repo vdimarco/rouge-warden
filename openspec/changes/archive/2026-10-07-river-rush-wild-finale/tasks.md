@@ -4,4 +4,4 @@
 - [x] Replace the finish gate and add legible themed approach markers in 3D and 2D.
 - [x] Extend public score validation/storage while preserving historical results.
 - [x] Verify delayed-input full campaigns, refresh rates, all supported layouts and real inputs.
-- [ ] Publish, verify exact live assets and gameplay, reconcile and archive the specification.
+- [x] Publish, verify exact live assets and gameplay, reconcile and archive the specification.

@@ -102,13 +102,22 @@ stop before the finish runway and active course entities SHALL remain bounded.
   is hazard-free, and simulation stops at the stated distance
 
 ### Requirement: Coins streaks and power-ups
-The game SHALL reward coin trails and successful actions with points and Rush charge. Coin streaks SHALL increase the score multiplier and expire after a collection gap; the HUD SHALL communicate time remaining. Rush SHALL NOT recharge itself. Magnet SHALL collect nearby coins across lanes for eight seconds; shield SHALL absorb one impact; full Rush charge SHALL grant four seconds of faster invulnerable riding and be activated by Shift or its touch button.
-#### Scenario: Build and use Rush
-- **WHEN** a player fills the Rush meter and activates it
-- **THEN** charge is spent once, speed increases, hazards are safely cleared and the timed state expires
-#### Scenario: Collect magnet
-- **WHEN** a player picks up a magnet and passes coins in other lanes
-- **THEN** those coins are collected while the timer lasts and normal lane collection returns afterward
+Coin trails and successful actions SHALL reward points and Rush charge.
+Streaks SHALL increase the multiplier and expire after a collection gap.
+The eight-second coin power SHALL boost rewards for physically collected
+coins, with a clear name and HUD feedback. Shield SHALL absorb one impact.
+Rush SHALL grant four seconds of faster invulnerable riding, SHALL NOT collect
+remote coins or recharge itself, and SHALL use Shift or its touch control.
+
+#### Scenario: Use the contact coin boost
+- **WHEN** a raft acquires the timed coin power by actual overlap
+- **THEN** touched coins earn a clearly communicated bonus for eight seconds
+  while adjacent coins remain missed
+
+#### Scenario: Use Rush
+- **WHEN** a player activates full Rush charge
+- **THEN** charge spends once, speed/protection activate and expire normally,
+  and coins continue to require contact
 
 ### Requirement: Active runner challenges
 The runner SHALL offer rotating trick, coin and distance challenges with visible progress, a one-time 500-point reward, and a fresh target relative to the start of each challenge.
@@ -135,13 +144,18 @@ The approved adult character SHALL use a rear-facing fal-generated skeletal ride
 - **THEN** the rider faces the upcoming course, the wake trails behind and scenery approaches the camera coherently
 
 ### Requirement: Animated runner rewards and powers
-Coins SHALL spin and fly toward the HUD on collection; magnet attraction SHALL visibly travel from other lanes toward the raft. Shield impacts SHALL show a short shatter burst and recoil; Rush SHALL show motion trails and obstacle bursts. Reward HUD pulses SHALL remain small and preserve readable values and controls.
-#### Scenario: Coin and shield feedback
-- **WHEN** a player collects a coin and later consumes a shield on impact
-- **THEN** the coin travels toward the counter and a shield burst/recoil communicates protection lost without obscuring upcoming hazards
-#### Scenario: Magnet and Rush
-- **WHEN** magnet or Rush is active
-- **THEN** attracted coins and invulnerable obstacle clears have distinct animated feedback and effects expire with bounded counts
+Collected coins SHALL disappear at contact and fly toward the HUD as small,
+distinct score tokens with immediate reward feedback. Perspective SHALL NOT
+enlarge feedback into apparent collectible coins beside the raft. The timed
+coin boost SHALL visibly enhance contact rewards.
+Shield SHALL show a shatter/recoil on impact; Rush SHALL show motion trails
+and obstacle bursts. Effects SHALL remain bounded and preserve legible controls.
+
+#### Scenario: Score at contact
+- **WHEN** a coin is touched during a rapid lane change or a coin boost
+- **THEN** its reward is shown at contact rather than delayed until the raft
+  appears beside its former lane, no remote pickup animation is shown and
+  its small score token remains distinct from golden coins in the river
 
 ### Requirement: Snappy runner response
 The runner SHALL use map start speeds of 52 / 62 / 72 m/s with respective caps of 68 / 80 / 92 m/s, use .66-second jumps and .60-second ducks, and settle visual lane changes to 95% within 150 ms at normal frame rates. Actions SHALL cancel or chain without animation locks. A launch-frame jump SHALL clear a log and its raised coin before the visible arc reaches full height. Touch drags SHALL support successive lane changes at an initial 26-pixel segment and subsequent 56-pixel segments.
@@ -451,37 +465,39 @@ failure visibly without replacing the shared board with local-only data.
   the adventure, score capture and local progression remain usable
 
 ### Requirement: Longer faster river courses
-Each map SHALL have a finite finish at 2,800 / 3,600 / 4,400 m respectively.
-Downstream travel SHALL be faster than the prior adventure while preserving
-the current jump/duck durations, responsive steering and traversable routes.
-Campaign totals, saved unlocks and public scores SHALL remain usable.
+Each map SHALL have a finite finish at 4,200 / 5,400 / 6,600 m respectively.
+Travel SHALL retain current fast start/cap speeds and responsive controls.
+Routes SHALL progressively vary and intensify through four course sections,
+offer recovery stretches and remain traversable with ordinary reaction delay.
+The last 150 m SHALL be hazard-free. Historical progress/scores SHALL remain usable.
 
-#### Scenario: Complete the extended adventure
-- **WHEN** a player completes the three maps in order
-- **THEN** finishes stop exactly, distance totals 10,800 m, speed/difficulty
-  increase across maps, and the public board accepts the result
+#### Scenario: Complete the wilder adventure
+- **WHEN** a player clears the three maps in order
+- **THEN** simulation stops exactly, the total distance is 16,200 m, the latter
+  sections are more demanding and public score storage accepts the result
 
-#### Scenario: React to faster hazards
-- **WHEN** players react with ordinary input delay at 30, 60 or 120 Hz
-- **THEN** every map retains a legal route and sufficient action spacing
+#### Scenario: Recover and react
+- **WHEN** delayed-input players ride at 30, 60 or 120 Hz
+- **THEN** changing seeded route episodes, burst/recovery spacing and legal
+  action routes allow every map to finish without requiring a shield
 
 ### Requirement: Coin pickup follows visible overlap
-Ordinary coins SHALL score only when the visibly interpolated raft passes
-over them; choosing a target lane alone SHALL NOT collect an adjacent coin.
-Missed coins SHALL continue past with no pickup event. Magnet and Rush SHALL
-retain explicit visible attraction. Raised coins SHALL require a jump unless
-an attraction power-up is active.
+Every coin SHALL require actual visible raft overlap at its crossing, including
+coin-boost and Rush runs. Selecting a lane before arrival SHALL NOT award a
+side coin. Misses SHALL pass without reward or pickup feedback. Raised coins
+SHALL require the appropriate jump contact; powered play SHALL NOT bypass
+contact. Contact rewards SHALL appear while the raft is touching the coin.
 
-#### Scenario: Miss or cross a coin
-- **WHEN** a coin reaches a raft that is beside it, steering toward it too late,
-  or reversing away without overlap
-- **THEN** it passes without scoring or pickup effects; a physically overlapped
-  coin scores once, including when crossed during a lane transition
+#### Scenario: Miss coins during powered play
+- **WHEN** a stationary or late-steering raft passes beside a coin during
+  ordinary play, the timed coin boost or Rush
+- **THEN** no coin, points, charge or streak are awarded and the coin passes
+  visibly uncollected
 
-#### Scenario: Powered collection
-- **WHEN** a magnet or Rush is active while another lane's coin passes
-- **THEN** attraction feedback explains the pickup and normal overlap rules
-  resume after the power-up expires
+#### Scenario: Touch and show the award
+- **WHEN** the raft overlaps a coin while steering, reversing or jumping
+- **THEN** that coin rewards exactly once and the counter/contact effect agree
+  with the visible collection in 3D and fallback views
 
 ### Requirement: Coherent Redstone horizon and faster current
 Redstone SHALL retain its textured gorge and use a distant canyon/sky that
@@ -501,25 +517,34 @@ play and remain bounded.
   playable and the prepared skyline introduces no play-time texture/shader work
 
 ### Requirement: Visible power pickup contact
-Magnets and shields SHALL activate only when the visibly moving raft overlaps
-them at their crossing. Selecting a target lane before arriving SHALL NOT
-grant a power. Pickups SHALL be resolved in travel order so a magnet cannot
-collect a coin crossed before its acquisition. Existing explicit Magnet and
-Rush attraction SHALL remain available after legitimate activation.
-Missed powers SHALL remain visibly missed. Attracted coins SHALL visibly pass
-through the raft before flying to the counter in the primary 3D view.
+Timed coin powers and shields SHALL activate only on actual raft overlap at
+their crossing. Target-lane selection alone SHALL NOT grant a power. Crossed
+items SHALL resolve in travel order; bonuses SHALL affect only later coins.
+Missed powers SHALL remain visible as they pass.
 
-#### Scenario: Steer beside a magnet
-- **WHEN** a player changes toward a magnet's lane too late to overlap it
-- **THEN** the magnet passes uncollected, no power activates and another lane's
-  coins remain missed in both renderers
+#### Scenario: Steer too late toward a power
+- **WHEN** a player selects a power's lane without reaching it in time
+- **THEN** the power passes uncollected and later side coins remain missed
 
-#### Scenario: Acquire a magnet between two coins
-- **WHEN** a raft overlaps a magnet between adjacent coins within one frame
-- **THEN** only the later coin is attracted, regardless of entity insertion order
+### Requirement: Escalating organic river acts
+All maps SHALL pass through four visibly distinct intensity sections with
+continuous geography and shared CPU/GPU buoyancy/placement. Late sections
+SHALL contain stronger varied bends, chutes and whitewater, with readable
+recovery pools and consistent downstream motion. Resources SHALL be bounded
+and prepared before play; paused/reduced-motion behavior SHALL remain usable.
 
-#### Scenario: Real play and refresh rates
-- **WHEN** a player crosses or misses pickups at 30, 60 or 120 Hz, or uses
-  screen-wide gestures in the primary 3D view
-- **THEN** scoring, visible contact and power feedback agree without changing
-  movement timing, finite-map progression or saved scores
+#### Scenario: Ride from opening to finale
+- **WHEN** a player moves through each map's four sections
+- **THEN** the river becomes progressively wilder, seeded episodes vary,
+  boundaries do not pop and water, raft, hazards and banks remain registered
+
+### Requirement: Memorable themed finish gate
+Each map SHALL end at a substantial gate across the navigation corridor with
+a legible themed checkered banner, beacons and approach markers. The gate
+SHALL be registered to the exact finish and readable on portrait phone,
+landscape and desktop layouts in primary 3D and 2D fallback views.
+
+#### Scenario: Approach and cross the gate
+- **WHEN** a raft approaches the last hazard-free stretch and crosses the gate
+- **THEN** increasing approach cues make the finish unmistakable, all lanes
+  pass safely beneath it and the clear bonus/result occur once at the exact end
