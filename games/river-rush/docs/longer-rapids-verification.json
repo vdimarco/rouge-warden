@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-07T01:52:02.179509+00:00",
+  "checkedAt": "2026-10-07T01:55:14.770898+00:00",
   "localPassed": true,
   "sourceBaseCommit": "729d8e683572f20c664db7e10a54f90eb8961276",
   "unitTests": {
@@ -1741,9 +1741,404 @@
     "requirements": 5,
     "scenarios": 10,
     "cli": "unavailable",
-    "archive": "pending production verification"
+    "archive": "2026-10-07-river-rush-longer-rapids",
+    "manualCanonicalStructure": "passed",
+    "canonicalRequirements": 40
   },
   "production": {
-    "status": "pending publication"
+    "status": "READY",
+    "implementationCommit": "fced2dc7c4c794b248cfb64e9257d2db1ddc4956",
+    "deployment": "dpl_Aym6jNEv5EGdn25MWKfpRzG1P7bv",
+    "alias": "https://arcade.uptick.systems/river-rush/",
+    "assets": [
+      {
+        "path": "index.html",
+        "status": 200,
+        "matchesLocal": true,
+        "sha256": "a9db1efaf16281ff8303626e21e5a31b41eec29d16ffc90c55cfa108bec115c3"
+      },
+      {
+        "path": "assets/index-Bq7v6xl3.js",
+        "status": 200,
+        "matchesLocal": true,
+        "sha256": "5fbc811aa135ca8d9c8528b4ea7e764158114073f7100e7516bd1acb52f8a6bc"
+      },
+      {
+        "path": "assets/index-DfEYLRAr.css",
+        "status": 200,
+        "matchesLocal": true,
+        "sha256": "64b34c85c308fdce15224dcfff1f8585da378a12a2afff5e02c4b54e5b4b7d0e"
+      }
+    ],
+    "extendedScore": {
+      "passed": true,
+      "startedAt": "2026-10-07T01:53:31.721Z",
+      "source": {
+        "kind": "actual-local-browser-campaign",
+        "path": "/tmp/river-longer-campaign/adventure.json",
+        "base": "http://127.0.0.1:8765/",
+        "sha256": "66466869ac7200ac02ad72e7e9f8a739b24c840b740090ca3ab878078829ae26",
+        "actualFullCampaign": true,
+        "exactMapLengths": [
+          2800,
+          3600,
+          4400
+        ],
+        "campaignTotals": {
+          "score": 98820,
+          "coins": 550,
+          "distance": 10800,
+          "jumps": 37,
+          "ducks": 47,
+          "levelsCleared": 3
+        }
+      },
+      "production": {
+        "origin": "https://arcade.uptick.systems",
+        "endpoint": "https://arcade.uptick.systems/api/river-rush-leaderboard",
+        "checks": {
+          "post": {
+            "status": 201,
+            "submitted": true,
+            "entry": {
+              "name": "QA Rapid muxgefyg",
+              "score": 98820,
+              "coins": 550,
+              "levelsCleared": 3,
+              "levelIndex": 2,
+              "distance": 10800,
+              "createdAt": "2026-10-07T01:53:33.815Z",
+              "rank": 1
+            }
+          },
+          "retry": {
+            "status": 200,
+            "duplicate": true
+          },
+          "excessDistance": {
+            "status": 400,
+            "distance": 10801
+          },
+          "independentPublicRead": {
+            "status": 200,
+            "matchingEntries": 1
+          },
+          "independentLeaderboardUI": {
+            "visible": true,
+            "contextIsolated": true,
+            "rowText": "1\tQA Rapid muxgefyg\t3/3\t98,820",
+            "screenshot": "/tmp/river-longer-live-score/independent-public-board.png"
+          }
+        }
+      },
+      "submission": {
+        "name": "QA Rapid muxgefyg",
+        "score": 98820,
+        "coins": 550,
+        "levelsCleared": 3,
+        "levelIndex": 2,
+        "distance": 10800,
+        "runId": "59c77d97-1576-473e-8936-907f0a9d7cdd"
+      },
+      "errors": [],
+      "finishedAt": "2026-10-07T01:53:37.258Z",
+      "testRowRemoved": true
+    },
+    "liveCanyon": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "source": "http://127.0.0.1:3001/",
+      "fixtures": null,
+      "coins": null,
+      "results": [
+        {
+          "case": "phone-canyon",
+          "map": "Redstone Rapids",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "renderer": "webgl",
+          "levelLength": 3600,
+          "speed": 62.26668,
+          "phase": "playing",
+          "pausePixels": true,
+          "preparedBeforePlay": true,
+          "noActiveGpuPreparation": true,
+          "reducedMotion": false,
+          "horizon": {
+            "kind": "procedural",
+            "instances": 16,
+            "paintedRiver": false,
+            "courseSamples": [
+              {
+                "layer": 0,
+                "id": "2:-1",
+                "course": 188,
+                "zDelta": 29.020853555999935,
+                "screenStart": [
+                  -0.28412049619466684,
+                  0.3010093041546901
+                ],
+                "screenEnd": [
+                  -0.7064463686250168,
+                  0.281178223263013
+                ]
+              },
+              {
+                "layer": 0,
+                "id": "2:1",
+                "course": 221.84,
+                "zDelta": 29.020853555999935,
+                "screenStart": [
+                  0.8491442915684523,
+                  0.30870264682455517
+                ],
+                "screenEnd": [
+                  0.6176731434149836,
+                  0.40261791992338963
+                ]
+              },
+              {
+                "layer": 0,
+                "id": "3:-1",
+                "course": 282,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  -0.4169490871133748,
+                  0.25979603451220956
+                ],
+                "screenEnd": [
+                  -0.8595915062021592,
+                  0.34256297211895975
+                ]
+              },
+              {
+                "layer": 0,
+                "id": "3:1",
+                "course": 315.84,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  0.44953810519521775,
+                  0.25729731689341706
+                ],
+                "screenEnd": [
+                  0.12033710339657117,
+                  0.33908378354602375
+                ]
+              },
+              {
+                "layer": 0,
+                "id": "4:-1",
+                "course": 376,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  -0.18643648200886928,
+                  0.2288704634721099
+                ],
+                "screenEnd": [
+                  -0.5921521972029943,
+                  0.3065177749142965
+                ]
+              },
+              {
+                "layer": 0,
+                "id": "4:1",
+                "course": 409.84,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  0.538210424719915,
+                  0.22452352179197457
+                ],
+                "screenEnd": [
+                  0.2062506168067844,
+                  0.3185590426159713
+                ]
+              },
+              {
+                "layer": 1,
+                "id": "2:1",
+                "course": 349.28,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  0.8346607589590324,
+                  0.33386391760407086
+                ],
+                "screenEnd": [
+                  0.5411264118922909,
+                  0.4083743919453476
+                ]
+              },
+              {
+                "layer": 1,
+                "id": "3:-1",
+                "course": 444,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  -0.30656408795636975,
+                  0.26395024193207733
+                ],
+                "screenEnd": [
+                  -0.7265866017242575,
+                  0.34510125328571084
+                ]
+              },
+              {
+                "layer": 1,
+                "id": "3:1",
+                "course": 497.28,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  0.5967301873673357,
+                  0.2804469046230727
+                ],
+                "screenEnd": [
+                  0.25702431122423564,
+                  0.3629155211031329
+                ]
+              },
+              {
+                "layer": 1,
+                "id": "4:-1",
+                "course": 592,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  -0.2894871246557342,
+                  0.2561408142976599
+                ],
+                "screenEnd": [
+                  -0.7040861406962239,
+                  0.3356635795149428
+                ]
+              },
+              {
+                "layer": 1,
+                "id": "4:1",
+                "course": 645.28,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  0.5023273272537173,
+                  0.2581809218907826
+                ],
+                "screenEnd": [
+                  0.145877412002985,
+                  0.3415414598920492
+                ]
+              },
+              {
+                "layer": 2,
+                "id": "3:-1",
+                "course": 615,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  -0.47991087718109626,
+                  0.30042264720176315
+                ],
+                "screenEnd": [
+                  -0.9134595357506886,
+                  0.38377871969183064
+                ]
+              },
+              {
+                "layer": 2,
+                "id": "3:1",
+                "course": 688.8,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  0.6534585721558126,
+                  0.3073700217963555
+                ],
+                "screenEnd": [
+                  0.3034939034564479,
+                  0.3909887213870514
+                ]
+              },
+              {
+                "layer": 2,
+                "id": "4:-1",
+                "course": 820,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  -0.29353078522804854,
+                  0.2691963322814929
+                ],
+                "screenEnd": [
+                  -0.7074015861948699,
+                  0.34903700155586953
+                ]
+              },
+              {
+                "layer": 2,
+                "id": "4:1",
+                "course": 893.8,
+                "zDelta": 29.020853555999906,
+                "screenStart": [
+                  0.4988573154292858,
+                  0.2018030397432638
+                ],
+                "screenEnd": [
+                  0.13851013213885993,
+                  0.3400945891417434
+                ]
+              }
+            ]
+          },
+          "drawCalls": 32,
+          "triangles": 81857,
+          "softwareGpu": true
+        }
+      ],
+      "errors": [],
+      "screenshots": "/tmp/river-longer-live-canyon",
+      "physicalDeviceFrameRateMeasured": false
+    }
+  },
+  "passed": true,
+  "fullCampaignMemoryCheck": {
+    "peakCgroupGiB": 1.93,
+    "additionalOutOfMemoryKills": 0,
+    "scope": "workspace aggregate during the monitored successful campaign; not a physical-device benchmark"
+  },
+  "additionalRefreshRateCampaigns": {
+    "passed": true,
+    "source": "games/river-rush/src/game/engine.js",
+    "seeds": 40,
+    "refreshRates": [
+      30,
+      120
+    ],
+    "rush": false,
+    "shield": false,
+    "reactionDelayMs": "180\u2013288",
+    "expectedCampaigns": 80,
+    "expectedStages": 240,
+    "completedCampaigns": 80,
+    "completedStages": 240,
+    "totalDistance": 864000,
+    "tricks": 6466,
+    "maxEntities": 46,
+    "groups": [
+      {
+        "hz": 30,
+        "campaigns": 40,
+        "stages": 120,
+        "totalDistance": 432000,
+        "tricks": 3233,
+        "maxEntities": 46,
+        "minStageSeconds": 45.46666666666665,
+        "maxStageSeconds": 53.86666666666617
+      },
+      {
+        "hz": 120,
+        "campaigns": 40,
+        "stages": 120,
+        "totalDistance": 432000,
+        "tricks": 3233,
+        "maxEntities": 46,
+        "minStageSeconds": 45.458333333331396,
+        "maxStageSeconds": 53.85833333333092
+      }
+    ],
+    "failure": null
   }
 }

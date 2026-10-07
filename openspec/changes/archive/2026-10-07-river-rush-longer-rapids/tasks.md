@@ -3,4 +3,4 @@
 - [x] Replace Redstone's painted near-river horizon with coherent distant depth.
 - [x] Increase downstream water feedback while retaining buoyancy/accessibility.
 - [x] Raise public leaderboard distance bounds without removing scores.
-- [ ] Verify gameplay, layouts, motion, storage compatibility and publication.
+- [x] Verify gameplay, layouts, motion, storage compatibility and publication.
