@@ -27,7 +27,11 @@ Detailed local evidence is saved outside source in `/tmp/river-seamless-terrain/
 
 ## Build and publication
 
-Arcade build passes and references `index-BICyYle8.js` and `index-aD_k1wTR.css`; final-bundle actual App smoke passes on all three layouts. Exact production publication is pending. This change remains active until that check is complete.
+Arcade build passes and references `index-BICyYle8.js` and `index-aD_k1wTR.css`; final-bundle actual App smoke passes on all three layouts. Runtime commit `90d9eb8d275c2da7d5deab3d8a48307d1588905f` is published to GitHub main. Production deployment `dpl_GL5mC6sbjYy2syeuu11FQdUUwyPw` is READY, and a direct lookup confirms `arcade.uptick.systems` serves that exact commit.
+
+Live HTML, JS and CSS all return HTTP 200 and match the built files byte-for-byte. HTML SHA256 is `cdddc9db74b95af564b44c8c96d7572bc0dd043669cda25f0bcc419df9a02f9f`; JS SHA256 is `e4cd8101f3a0d087b74248613cf4f5e9ae3e24addc35716666a98d63d5eb7c6a`; CSS SHA256 is `d2bb8fc0e83bf5ecf0a628811d380fd855648e7132600d3c0c9bb7c623693eac`. Receipt: `/tmp/river-seamless-live-assets.json`.
+
+Focused public-URL phone App smoke also passes with the exact JS/CSS and all detailed models ready. Actual screen-wide pointer drag moves to lane 2; the run reaches 46 m, recycles a section, then pauses with exact pixels. Six slots, two upcoming descriptors and 337 m ahead coverage remain. No runtime/shader errors, post-prepare texture uploads/compiles, game/clock mutations or leaderboard writes occur. Evidence: `/tmp/river-seamless-terrain/live-phone-smoke.json` and matching screenshot. The completed change is archived; subsequent documentation publication does not alter the verified runtime bytes.
 
 The rock/white-bank correction was separately verified and deployed as `32f809dd941d68b19e6240fa1df47f801a9a9a0f`; this upgrade retains it.
 
