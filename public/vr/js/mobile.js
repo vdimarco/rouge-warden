@@ -1,6 +1,11 @@
-// Two-thumb flat-screen play. A tap on the left half of the city throws the left plunger, a tap on the right half the right one;
-// each finger is its own tap, so two thumbs throw both at once. A rope lets go by itself past the bottom of the arc.
-// Drag or phone motion aims; a tap fires immediately. Two fingers down at the same time throw a pair: both plungers hold.
+// Two-thumb flat-screen play. A finger on the left half of the city throws the left plunger, on the right half the right one;
+// each finger is its own, so two thumbs throw both at once. Three gestures, and each one answers at once:
+// - a tap (down and up): the plunger flies; its rope lets go by itself past the bottom of the arc.
+// - a hold (down and still for PRESS ms): the plunger flies while the finger is still down, and the rope holds until the finger
+//   lifts. Lifted after HOLD ms, it lets go with a fling. The finger may drag to look while it holds.
+// - a drag (moved SLOP px before PRESS ms): it looks around and throws nothing.
+// Phone motion aims too. Two fingers down at the same time throw a pair: both plungers hold.
+// A ring under each finger shows what it does: grey while it waits, the plunger's colour once it throws, blue while it looks.
 // The move stick lives in actionhud.js. The panel also draws the lock-on ring that marks the target.
 // (This file keeps single quotes: qa/vr/mobile.test.mjs rewrites the import of three by its exact text.)
 import * as THREE from 'three';
@@ -12,14 +17,19 @@ const POP = 120; // ms of the catch pop
 const BUZZ_GAP = 40; // ms between two vibrations
 const SLOP = 12; // px a finger may move from where it went down and still tap
 const CANCEL_TAP = 500; // ms (event time): a finger the browser cancels sooner than this, with no drag, still throws
+const PRESS = 120; // ms a finger stays still before it throws while still down (a hold); a drag starts sooner than this
+const HOLD = 350; // ms down: a finger lifted later than this lets go of its rope (a hold); sooner, it was a tap
+const DOTS = 3; // finger rings
+const COACH = 10000; // ms the gesture card shows at most
 // the hint line at the bottom. Each line fits on one line of the 328 px panel of a 360 px phone (the spoken line above it
 // leaves room for exactly one line, and its tail would poke into a second one): keep them to about 42 letters. The wall line shows
 // while the spoken lines are hidden (portrait) or far above (landscape), so it may run to two lines.
 const SAY = {
-  tap: 'Tap left or right to throw a plunger.',
+  tap: 'Tap left or right to swing. Drag to look.',
   motion: 'Point the phone. Tap left or right.',
   center: 'Aim centered. Tap when the ring is yellow.',
-  swing: 'Swinging. Tap the other side to swing on.',
+  swing: 'Swinging. Tap again, or hold to keep it.',
+  hold: 'Holding on. Lift your thumb to let go.',
   both: 'Two plungers! Tap again to swing on.',
   fly: 'Flying. Tap the next building.',
   wall: 'On the wall. Hold the arrows to climb. Tap a building to swing off.',
@@ -29,11 +39,13 @@ const SAY = {
 export function createMobile(canvas, active) {
   const touch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   // fires, aims and holds: one slot per plunger (0 the left, 1 the right)
-  const state = { turn: 0, pitch: 0, moveX: 0, moveY: 0, reel: 0, yank: 0, jump: false, menu: false, view: false, fires: [false, false], aims: [null, null], pairs: [false, false] };
+  // presses: a finger holds that plunger down now (its rope does not let go by itself); lets: that finger lifted after a hold (an edge)
+  const state = { turn: 0, pitch: 0, moveX: 0, moveY: 0, reel: 0, yank: 0, jump: false, menu: false, view: false, fires: [false, false], aims: [null, null], pairs: [false, false], presses: [false, false], lets: [false, false] };
   // no touch point: a stub with every method, so main.js calls them with no guard
-  if (!touch) { state.holds = [false, false]; return { get enabled() { return false; }, sample: () => state, reset() {}, start() {}, tap() {}, miss() {}, target() {}, released() {}, idle: () => Infinity, rush() {}, climbing() {}, marker() {}, pop() {}, buzz() {}, use() {}, safe: () => null }; }
+  if (!touch) { state.holds = [false, false]; return { dots: () => [], get enabled() { return false; }, sample: () => state, reset() {}, start() {}, tap() {}, miss() {}, target() {}, released() {}, idle: () => Infinity, rush() {}, climbing() {}, marker() {}, pop() {}, buzz() {}, use() {}, safe: () => null }; }
   let on = true, sensors = false, wasActive = false;
   const latched = [false, false], drags = new Map(); // a plunger out on each side; the fingers down, by pointer id
+  const pressing = [null, null]; // the finger that holds each plunger down, or null
   let lastYaw = null, lastPitch = null, targetYaw = 0, targetPitch = 0, smoothYaw = 0, smoothPitch = 0;
   let pull = 0, cooldown = 0, lookAt = -1e9;
   const q = new THREE.Quaternion(), correction = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
@@ -42,11 +54,23 @@ export function createMobile(canvas, active) {
   // The star is the ring of a clog or a pipe (sludge green, with points). The arrow shows when the target is off the window.
   const STAR = '0,-26 5.3,-16.2 15.3,-21 13.8,-10 24.7,-8 17,0 24.7,8 13.8,10 15.3,21 5.3,16.2 0,26 -5.3,16.2 -15.3,21 -13.8,10 -24.7,8 -17,0 -24.7,-8 -13.8,-10 -15.3,-21 -5.3,-16.2';
   const INK = '#140a18';
-  panel.innerHTML = `<div class="phone-rush" aria-hidden="true"></div><div class="phone-safe" aria-hidden="true"></div><div class="phone-top"><button data-action="motion" aria-label="Motion aim" aria-pressed="false">Motion</button><button data-action="center" aria-label="Center the aim" hidden>Center</button><button class="phone-view" data-action="view" aria-label="Switch between the view behind you and your own eyes">View</button><button data-action="menu" aria-label="Pause game">Pause</button></div><div class="phone-crosshair" aria-hidden="true"></div><div class="phone-target" data-kind="swing" hidden aria-hidden="true"><svg class="pt-body" viewBox="-28 -28 56 56"><g class="pt-ring"><circle r="19" fill="none" stroke="${INK}" stroke-width="10"/><circle r="19" fill="none" stroke="currentColor" stroke-width="5"/><path d="M0-26V-13M0 26V13M-26 0H-13M26 0H13" fill="none" stroke="${INK}" stroke-width="7"/><path d="M0-24V-15M0 24V15M-24 0H-15M24 0H15" fill="none" stroke="currentColor" stroke-width="3"/></g><g class="pt-star"><polygon points="${STAR}" fill="none" stroke="${INK}" stroke-width="8" stroke-linejoin="miter"/><polygon points="${STAR}" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="miter"/></g></svg><svg class="pt-arrow" viewBox="-28 -28 56 56"><polygon points="0,-24 19,3 7,3 7,23 -7,23 -7,3 -19,3" fill="currentColor" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/></svg></div><div class="phone-climb" hidden role="group" aria-label="Climb"><button data-climb="up" aria-label="Climb up">▲</button><button data-climb="left" aria-label="Climb left">◀</button><button data-action="hop" aria-label="Jump off the wall">JUMP</button><button data-climb="right" aria-label="Climb right">▶</button><button data-climb="down" aria-label="Climb down">▼</button></div><div class="phone-side" data-side="0" aria-hidden="true">L</div><div class="phone-side" data-side="1" aria-hidden="true">R</div><div class="phone-bottom"><p class="phone-hint" role="status">${SAY.tap}</p></div>`;
+  panel.innerHTML = `<div class="phone-rush" aria-hidden="true"></div><div class="phone-safe" aria-hidden="true"></div><div class="phone-top"><button data-action="motion" aria-label="Motion aim" aria-pressed="false">Motion</button><button data-action="center" aria-label="Center the aim" hidden>Center</button><button class="phone-view" data-action="view" aria-label="Switch between the view behind you and your own eyes">View</button><button data-action="menu" aria-label="Pause game">Pause</button></div><div class="phone-crosshair" aria-hidden="true"></div><div class="phone-target" data-kind="swing" hidden aria-hidden="true"><svg class="pt-body" viewBox="-28 -28 56 56"><g class="pt-ring"><circle r="19" fill="none" stroke="${INK}" stroke-width="10"/><circle r="19" fill="none" stroke="currentColor" stroke-width="5"/><path d="M0-26V-13M0 26V13M-26 0H-13M26 0H13" fill="none" stroke="${INK}" stroke-width="7"/><path d="M0-24V-15M0 24V15M-24 0H-15M24 0H15" fill="none" stroke="currentColor" stroke-width="3"/></g><g class="pt-star"><polygon points="${STAR}" fill="none" stroke="${INK}" stroke-width="8" stroke-linejoin="miter"/><polygon points="${STAR}" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="miter"/></g></svg><svg class="pt-arrow" viewBox="-28 -28 56 56"><polygon points="0,-24 19,3 7,3 7,23 -7,23 -7,3 -19,3" fill="currentColor" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/></svg></div><div class="phone-climb" hidden role="group" aria-label="Climb"><button data-climb="up" aria-label="Climb up">▲</button><button data-climb="left" aria-label="Climb left">◀</button><button data-action="hop" aria-label="Jump off the wall">JUMP</button><button data-climb="right" aria-label="Climb right">▶</button><button data-climb="down" aria-label="Climb down">▼</button></div><div class="phone-side" data-side="0" aria-hidden="true">L</div><div class="phone-side" data-side="1" aria-hidden="true">R</div>${'<div class="phone-touch" hidden aria-hidden="true"></div>'.repeat(DOTS)}<div class="phone-coach" hidden role="note"><p><b>TAP</b>a building to swing. The rope lets go by itself.</p><p><b>HOLD</b>to keep the rope. Lift your thumb to let go.</p><p><b>DRAG</b>to look around.</p><p><b>STICK</b>to walk and run.</p></div><div class="phone-bottom"><p class="phone-hint" role="status">${SAY.tap}</p></div>`;
   document.body.append(panel);
   const button = name => panel.querySelector(`[data-action="${name}"]`), hint = panel.querySelector('.phone-hint'), rushEl = panel.querySelector('.phone-rush');
   const ring = panel.querySelector('.phone-target'), arrowEl = panel.querySelector('.pt-arrow'), safeEl = panel.querySelector('.phone-safe');
   const sides = [0, 1].map(i => panel.querySelector(`.phone-side[data-side="${i}"]`));
+  const dotEls = [...(panel.querySelectorAll('.phone-touch') || [])];
+  // the gesture card: until it is seen once (G.save.seen.phoneCoach), from the first frame of play until the first touch on the
+  // city or COACH ms
+  const coach = panel.querySelector('.phone-coach');
+  let coachUntil = 0;
+  const coachSeen = () => !!window.G?.save?.seen?.phoneCoach;
+  const coachOff = () => {
+    if (!coachUntil) return;
+    coachUntil = 0; if (coach) coach.hidden = true;
+    const seen = window.G?.save?.seen;
+    if (seen && !seen.phoneCoach) { seen.phoneCoach = true; window.G.saveNow?.(); }
+  };
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // The climb pad shows only while you hold a wall. Each arrow moves you while it is held down.
   const pad = panel.querySelector('.phone-climb'), held = { up: false, down: false, left: false, right: false };
@@ -67,10 +91,10 @@ export function createMobile(canvas, active) {
   function label() { for (let i = 0; i < 2; i++) sides[i]?.classList?.toggle('held', latched[i]); }
   function center() { lastYaw = lastPitch = null; targetYaw = targetPitch = smoothYaw = smoothPitch = 0; }
   function reset() {
-    latched[0] = latched[1] = false; drags.clear(); pull = 0; center(); padClear();
+    latched[0] = latched[1] = false; drags.clear(); pressing[0] = pressing[1] = null; pull = 0; center(); padClear();
     Object.assign(state, { turn:0, pitch:0, moveX:0, moveY:0, reel:0, yank:0, jump:false, menu:false, view:false });
-    state.fires[0] = state.fires[1] = false; state.aims[0] = state.aims[1] = null;
-    label();
+    state.fires[0] = state.fires[1] = false; state.aims[0] = state.aims[1] = null; state.lets[0] = state.lets[1] = false;
+    label(); dotsDraw();
   }
   // the hint line when no rope is out and nothing else has spoken: it depends on motion aim
   const rest = () => (sensors ? SAY.motion : SAY.tap);
@@ -109,16 +133,42 @@ export function createMobile(canvas, active) {
   // that the browser cancels while it is still a tap throws its plunger.
   const lift = d => {
     const rect = canvas.getBoundingClientRect(), x = (d.x-rect.left)/rect.width;
-    cast(x < .5 ? 0 : 1, { x:clamp(x*2-1,-1,1), y:clamp(1-(d.y-rect.top)/rect.height*2,-1,1) }, d.both);
+    d.side = x < .5 ? 0 : 1; d.thrown = true;
+    cast(d.side, { x:clamp(x*2-1,-1,1), y:clamp(1-(d.y-rect.top)/rect.height*2,-1,1) }, d.both);
   };
+  // a finger that holds its plunger down: the rope stays while it does (a newer finger on the same side takes it over)
+  const press = d => { lift(d); pressing[d.side] = d; d.holding = true; };
+  // the finger is up (or gone): the rope it held lets go if it was down long enough to be a hold
+  const unpress = (d, t, letGo) => {
+    if (!d.holding) return;
+    d.holding = false;
+    if (pressing[d.side] !== d) return;
+    pressing[d.side] = null;
+    if (letGo && t - d.t >= HOLD && latched[d.side]) { state.lets[d.side] = true; latched[d.side] = false; label(); hint.textContent = latched[0] || latched[1] ? SAY.swing : SAY.fly; }
+  };
+  // the finger rings: one under each finger down (wait, rope with its side, or look)
+  function dotsDraw() {
+    let k = 0;
+    for (const d of drags.values()) {
+      const el = dotEls[k++];
+      if (!el) break;
+      const mode = d.look && !d.thrown ? 'look' : d.thrown ? 'rope' : 'wait';
+      if (el.dataset && (el.dataset.mode !== mode || el.dataset.side !== String(d.side ?? ''))) { el.dataset.mode = mode; el.dataset.side = String(d.side ?? ''); }
+      setStyle(el, 'transform', `translate(${Math.round(d.x)}px,${Math.round(d.y)}px)`);
+      if (el.hidden) el.hidden = false;
+    }
+    for (; k < dotEls.length; k++) if (!dotEls[k].hidden) dotEls[k].hidden = true;
+  }
   canvas.addEventListener('pointerdown', ev => {
     if (!on || !active()) return;
     ev.preventDefault();
     // a pointer id that is still listed lost its up somewhere: this press is a new one
     // another finger is down already: the two are a pair (two thumbs together), whenever each one lifts
+    coachOff();
     const both = drags.size > 0;
     if (both) for (const o of drags.values()) o.both = true;
-    drags.set(ev.pointerId, { x0:ev.clientX, y0:ev.clientY, x:ev.clientX, y:ev.clientY, look:false, t:ev.timeStamp, both });
+    drags.set(ev.pointerId, { x0:ev.clientX, y0:ev.clientY, x:ev.clientX, y:ev.clientY, look:false, t:ev.timeStamp, both, thrown:false, holding:false, side:null });
+    dotsDraw();
   });
   addEventListener('pointermove', ev => {
     const d = drags.get(ev.pointerId);
@@ -128,19 +178,24 @@ export function createMobile(canvas, active) {
     if (!d.look && Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) > SLOP) d.look = true;
     if (d.look) { state.turn -= dx * .004; state.pitch -= dy * .004; lookAt = performance.now(); }
     d.x = ev.clientX; d.y = ev.clientY;
+    dotsDraw();
   });
   addEventListener('pointerup', ev => {
     const d = drags.get(ev.pointerId);
     if (!d) return;
     drags.delete(ev.pointerId);
     d.x = ev.clientX; d.y = ev.clientY;
-    if (on && active() && !d.look) lift(d);
+    if (on && active() && !d.look && !d.thrown) lift(d);
+    unpress(d, ev.timeStamp, on && active());
+    dotsDraw();
   });
   addEventListener('pointercancel', ev => {
     const d = drags.get(ev.pointerId);
     if (!d) return;
     drags.delete(ev.pointerId);
-    if (on && active() && !d.look && ev.timeStamp - d.t < CANCEL_TAP) lift(d);
+    if (on && active() && !d.look && !d.thrown && ev.timeStamp - d.t < CANCEL_TAP) lift(d);
+    unpress(d, ev.timeStamp, false); // the browser took the finger: the rope keeps going as after a tap
+    dotsDraw();
   });
   // iPhone Safari: a second finger starts its own pinch gesture unless the touches and the gesture are cancelled
   const noGesture = ev => { if (on && active() && ev.cancelable) ev.preventDefault(); };
@@ -234,7 +289,7 @@ export function createMobile(canvas, active) {
     tap(side = 1, aim = null) { if (on && active()) cast(side, aim); },
     // A rope let go by itself (side, or both when no side is given): its badge goes dark.
     released(side) {
-      for (let i = 0; i < 2; i++) if (side === undefined || side === i) { latched[i] = false; state.fires[i] = false; state.aims[i] = null; }
+      for (let i = 0; i < 2; i++) if (side === undefined || side === i) { latched[i] = false; state.fires[i] = false; state.aims[i] = null; if (pressing[i]) pressing[i].holding = false; pressing[i] = null; }
       label(); hint.textContent = latched[0] || latched[1] ? SAY.swing : SAY.fly;
     },
     // Seconds since the player last dragged or tilted to look. The camera follow waits for this.
@@ -284,6 +339,9 @@ export function createMobile(canvas, active) {
     },
     // The window the ring and the arrow stay in: { l, t, r, b } in CSS px, read now (tests ask for it). null on the stub.
     safe() { readBoxes(performance.now()); return win; },
+    // the gesture card shows now, and the finger rings shown now ({ mode: wait, rope or look, side }), for the tests
+    coach: () => !!(coach && !coach.hidden),
+    dots: () => dotEls.filter(el => !el.hidden).map(el => ({ mode: el.dataset?.mode, side: el.dataset?.side })),
     // The catch pop: the ring grows for POP ms on every attach, yank and pump. It works on a phone with no vibration.
     pop() { if (!on || !ring) return; popUntil = performance.now() + POP; ring.classList.add('pop'); },
     // A short buzz where the browser has one (Android; iPhone has none). At most one in 40 ms, none while the page is hidden.
@@ -297,13 +355,22 @@ export function createMobile(canvas, active) {
     sample(dt) {
       const live=on && active(); panel.hidden=!live;
       if(popUntil && performance.now()>=popUntil) { popUntil=0; ring.classList.remove('pop'); }
-      if(!live) { if(wasActive) reset(); wasActive=false; return {...state,fires:[false,false],aims:[null,null],holds:[false,false]}; }
+      if(!live) { if(wasActive) reset(); wasActive=false; if(coachUntil) { coachUntil=0; if(coach) coach.hidden=true; } return {...state,fires:[false,false],aims:[null,null],presses:[false,false],lets:[false,false],holds:[false,false]}; }
+      if(!wasActive && !coachSeen() && coach && !coachUntil) { coachUntil=performance.now()+COACH; coach.hidden=false; }
+      else if(coachUntil && performance.now()>=coachUntil) coachOff();
       wasActive=true;
+      // a finger down and still for PRESS ms throws now (a hold); one held past HOLD ms says how to let go
+      const now=performance.now();
+      for (const d of drags.values()) {
+        if (!d.look && !d.thrown && now-d.t>=PRESS) { press(d); dotsDraw(); }
+        if (d.holding && pressing[d.side]===d && now-d.t>=HOLD && latched[d.side] && !onWall && hint.textContent!==SAY.hold) hint.textContent=SAY.hold;
+      }
+      for (let i=0;i<2;i++) state.presses[i]=!!pressing[i];
       const blend=1-Math.exp(-20*Math.min(dt,.05)), sy=smoothYaw, sp=smoothPitch;
       smoothYaw+=(targetYaw-smoothYaw)*blend; smoothPitch+=(targetPitch-smoothPitch)*blend;
-      const out={...state,turn:state.turn+smoothYaw-sy,pitch:state.pitch+smoothPitch-sp,fires:[...state.fires],aims:[...state.aims],pairs:[...state.pairs],holds:[...latched],reel:pull>.12?pull:0};
+      const out={...state,turn:state.turn+smoothYaw-sy,pitch:state.pitch+smoothPitch-sp,fires:[...state.fires],aims:[...state.aims],pairs:[...state.pairs],presses:[...state.presses],lets:[...state.lets],holds:[...latched],reel:pull>.12?pull:0};
       pull*=Math.exp(-6*dt); state.turn=state.pitch=state.yank=0;state.jump=state.menu=state.view=false;
-      state.fires[0]=state.fires[1]=false; state.aims[0]=state.aims[1]=null;
+      state.fires[0]=state.fires[1]=false; state.aims[0]=state.aims[1]=null; state.lets[0]=state.lets[1]=false;
       return out;
     },
   };

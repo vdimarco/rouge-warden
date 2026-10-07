@@ -238,6 +238,19 @@ body[data-view="first"] .phone-crosshair { display:block; }
 .phone-side.held { opacity:1; background:var(--red); color:var(--paper); }
 #phoneControls.on-wall .phone-side { display:none; }
 @media (prefers-reduced-motion:reduce) { .phone-side { transition:none; } }
+/* a ring under each finger on the city: grey while it waits, yellow with L or R once its plunger flies, blue while it looks */
+.phone-touch { position:absolute; left:-34px; top:-34px; width:68px; height:68px; box-sizing:border-box; display:grid; place-items:center; border:4px solid var(--ink); border-radius:50%; background:rgba(255,253,245,.3); color:var(--ink); font:400 22px/1 var(--comic); pointer-events:none; }
+.phone-touch[hidden] { display:none; }
+.phone-touch[data-mode="rope"] { background:rgba(255,216,74,.75); box-shadow:3px 3px 0 var(--ink); }
+.phone-touch[data-mode="rope"][data-side="0"]::after { content:"L"; }
+.phone-touch[data-mode="rope"][data-side="1"]::after { content:"R"; }
+.phone-touch[data-mode="look"] { border-color:#5ec2e8; background:rgba(94,194,232,.18); }
+.phone-touch[data-mode="look"]::after { content:"LOOK"; font-size:15px; color:var(--paper); text-shadow:1px 1px 0 var(--ink),-1px -1px 0 var(--ink); }
+/* the gesture card: shows when phone play starts, until the first touch on the city (or 10 s) */
+.phone-coach { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(300px,calc(100vw - 32px)); box-sizing:border-box; padding:10px 14px 8px; background:var(--cream); border:3px solid var(--ink); box-shadow:4px 4px 0 var(--ink); color:var(--ink); font:600 15px/1.3 var(--ui); pointer-events:none; }
+.phone-coach[hidden] { display:none; }
+.phone-coach p { margin:0 0 6px; }
+.phone-coach b { display:inline-block; min-width:52px; margin-right:6px; padding:2px 6px 0; background:var(--yellow); border:2px solid var(--ink); font:400 17px/1.1 var(--comic); letter-spacing:.05em; text-align:center; }
 #view canvas { touch-action:none; }
 /* a narrow phone (360 px): the four top buttons stay on one line */
 @media (max-width:380px) { #phoneControls .phone-top button { padding:3px 6px 0; font-size:17px; } .phone-top { gap:5px; padding-left:max(4px,env(safe-area-inset-left)); padding-right:max(4px,env(safe-area-inset-right)); } }
@@ -303,7 +316,7 @@ body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mou
       </div>
     </nav>
     <p class="note" id="note" role="status" hidden></p>
-    <p class="note" id="touchNote" hidden>Tap the left or right side of the city to throw that plunger. Use both thumbs. The rope lets go by itself.</p>
+    <p class="note" id="touchNote" hidden>Tap the left or right side of the city to throw that plunger. Use both thumbs. After a tap the rope lets go by itself. Hold your thumb down to keep the rope, and lift it to let go. Drag to look.</p>
     <p class="note" id="deskNote" hidden>Hold W and the left mouse button to swing. A game pad works after you press PLAY.</p>
     <p class="note" id="hybridNote" hidden>This screen has touch and a mouse. Pick how you play. A game pad works with the mouse and keyboard.</p>
     <p class="note" id="noXR" hidden>This browser has no VR. You can play on this screen.</p>
@@ -371,9 +384,10 @@ body[data-device="touch"] .cols section[data-for="touch"], body[data-device="mou
       <h3>Phone and touch</h3>
       <ul>
         <li>Tap the left side of the city to throw the left plunger, and the right side for the right one. Tap a building, or tap anywhere and the game picks the building the ring marks.</li>
-        <li>Use both thumbs: left, right, left. When a new plunger catches, the other one lets go. Tap both at once for a double swing. You never need to let go: the rope lets go by itself and flings you on.</li>
+        <li>Use both thumbs: left, right, left. When a new plunger catches, the other one lets go. Tap both at once for a double swing.</li>
+        <li>Tap, and the rope lets go by itself and flings you on. Hold your thumb down, and the rope holds until you lift it. Then it flings you on.</li>
         <li>A tap on a clog plunges it.</li>
-        <li>Drag to look around. VIEW switches the view.</li>
+        <li>Drag to look around. A thumb that holds a rope can drag to look too. VIEW switches the view.</li>
         <li>Hit a wall to hold on. Hold the arrows to climb. Tap JUMP to jump off.</li>
         <li>Motion aim is optional. Center sets it straight again.</li>
       </ul>

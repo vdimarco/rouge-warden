@@ -279,6 +279,9 @@ export function createDesktop(canvas, camera, settings) {
     inp.phoneFire = phone.fires;
     inp.phoneAim = phone.aims;
     inp.phonePair = phone.pairs;
+    // a finger holds that plunger down now (its rope does not let go by itself), and a held finger lifted this frame (let go)
+    inp.phoneHeld = phone.presses;
+    inp.phoneLetGo = phone.lets;
     // look: the mouse (locked, or the free cursor in play) and the pad's right stick
     let turn = -dx * SENS + phone.turn, dp = -dy * SENS + phone.pitch;
     dx = dy = 0;
