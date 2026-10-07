@@ -336,13 +336,14 @@ export function createScene(canvas,art,onLost){
  mapWorld.update(g,travel,reduced,level,seed);
  canyonHorizon.update(g,travel,level.index===1,camera,seed);status.horizon=level.index===1?canyonHorizon.state:null;
  let shoalCount=0;for(let n=Math.floor((travel-15)/34);n<=Math.ceil((travel+210)/34);n++){const rock=shoalAt(n,seed),p=point(rock.d,rock.x);if(p.z>15||p.z< -210||shoalCount>=10)continue;palmTransform.position.set(p.x,p.y+.18,p.z);palmTransform.rotation.set(.1,riverHash(n+83,seed)*TAU,.14);palmTransform.scale.set(rock.size*1.5,rock.size*.85,rock.size*2);palmTransform.updateMatrix();shoals.setMatrixAt(shoalCount++,palmTransform.matrix);}shoals.count=shoalCount;shoals.instanceMatrix.needsUpdate=true;
+ const fatalId=g.phase==='lost'?g.effects.find(effect=>effect.type==='lose')?.entityId:null;
  const alive=new Set();let visible=0,coinCount=0,guardianCount=0,woodCount=0;
  if(level.index===2&&guardianBatches.length)for(const b of guardianBanks){const cross=b.side*(riverHalfWidth(b.course,seed)+3),p=point(b.course,cross);if(p.z>18||p.z< -(software?140:210))continue;guardianTransform.position.set(p.x,p.y+riverBankHeight(cross,b.course,seed),p.z);guardianTransform.rotation.set(0,-b.side*.42+riverHash(b.index+65,seed)*.3,0);guardianTransform.scale.setScalar(1.7+riverHash(b.index+25,seed)*.5);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  branchTrees.begin();
  for(const e of g.entities){const z=e.d-g.distance;
  if(e.type==='branch'&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
  const pickup=e.type==='coin'||e.type==='magnet'||e.type==='shield';
- if((pickup?e.collected:e.done)||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
+ if((pickup?e.collected:e.done&&e.id!==fatalId)||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
  const course=travel+z,cross=(e.lane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
  if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,(e.high?3.1:1.2)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
  let obj=entities.get(e.id);if(!obj){obj=makeEntity(e);entities.set(e.id,obj);}

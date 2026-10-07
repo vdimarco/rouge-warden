@@ -37,7 +37,7 @@ export function createWorldDetails(scene,material,waterDetail,stoneMaterial) {
   const flagMat=material('#ff7955');flagMat.side=THREE.DoubleSide;
   flagMat.onBeforeCompile=shader=>{shader.uniforms.uFlutter=flutter;shader.vertexShader='uniform float uFlutter;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.z+=sin(position.y*3.-uFlutter*4.)*.13*(-position.y/2.9);');};
   const flutter={value:0},flags=new THREE.InstancedMesh(flagGeo,flagMat,16);flags.frustumCulled=false;scene.add(flags);
-  const state={falls:0,birds:0,flowers:0,flags:0,motionTime:0};
+  const state={falls:0,cliffs:0,mist:0,birds:0,flowers:0,flags:0,motionTime:0};
   function update(distance,time,reduced,harbors=[],seed=137,mapIndex=0) {
     const t=reduced?0:time;const point=(course,cross)=>riverPoint(distance,course,cross,seed);fallUniforms.uTime.value=t;flutter.value=t;state.motionTime=t;
     let count=0;
@@ -50,7 +50,12 @@ export function createWorldDetails(scene,material,waterDetail,stoneMaterial) {
       pose.position.set(p.x-side*2.7,p.y+.25,z+4.1);pose.rotation.set(0,-side*.22,0);pose.scale.set(1,height,1);pose.updateMatrix();falls.setMatrixAt(count,pose.matrix);
       pose.position.set(p.x-side*4.8,p.y+.05,z+4.2);pose.rotation.set(0,0,0);pose.scale.setScalar(1);pose.updateMatrix();mist.setMatrixAt(count++,pose.matrix);
     }
-    falls.count=mist.count=cliffs.count=count;falls.instanceMatrix.needsUpdate=mist.instanceMatrix.needsUpdate=cliffs.instanceMatrix.needsUpdate=true;state.falls=count;
+    // Tall waterfall cards belong to the lush Canopy landmarks. In the gorge
+    // and ruins, intersecting rock/temple silhouettes exposed detached white
+    // slivers. Retain their solid cliffs without those water and mist cards.
+    cliffs.count=count;falls.count=mist.count=mapIndex===0?count:0;
+    falls.instanceMatrix.needsUpdate=mist.instanceMatrix.needsUpdate=cliffs.instanceMatrix.needsUpdate=true;
+    state.falls=falls.count;state.cliffs=cliffs.count;state.mist=mist.count;
     let l=0,f=0;const start=Math.floor((distance-16)/12);
     for(let n=start;n<start+18;n++)for(const side of [-1,1]){
       if(mapIndex===1&&Math.abs(n)%3!==1)continue;

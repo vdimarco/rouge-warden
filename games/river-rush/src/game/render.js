@@ -160,7 +160,8 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     }
   }
   // Distant entities draw first. The player is inserted at collision depth.
-  const visible=g.entities.filter(e=>((e.type==='coin'||e.type==='magnet'||e.type==='shield')?!e.collected:!e.done||e.type==='branch') && e.d-g.distance<VIEW_DISTANCE && e.d-g.distance>-16).sort((a,b)=>b.d-a.d);
+  const fatalId=g.phase==='lost'?g.effects.find(effect=>effect.type==='lose')?.entityId:null;
+  const visible=g.entities.filter(e=>((e.type==='coin'||e.type==='magnet'||e.type==='shield')?!e.collected:!e.done||e.type==='branch'||e.id===fatalId) && e.d-g.distance<VIEW_DISTANCE && e.d-g.distance>-16).sort((a,b)=>b.d-a.d);
   for(const e of visible) {
     const z=e.d-g.distance, p=projection(width,height,e.lane,z);
     let size;

@@ -9,6 +9,9 @@ export const BASE_SPEED = LEVELS[0].startSpeed, MAX_SPEED = Math.max(...LEVELS.m
 // Every pickup needs actual raft-center contact within the same 0.95 m
 // tolerance on 3.8 m lanes. Target-lane input is not visible overlap.
 export const COIN_LANE_RADIUS = .25;
+// A forgiving common hazard core: 2.58 m on 3.8 m lanes. This matches the
+// smallest combined raft/rock footprint and leaves action waves continuous.
+export const HAZARD_LANE_RADIUS = .68;
 // Above this normalized arc height the lifted raft has cleared a low coin.
 // Both views use the same jump arc; waves remain presentation/buoyancy detail.
 export const COIN_GROUND_MAX_JUMP_HEIGHT = .28;
@@ -133,7 +136,6 @@ export function jumpHeight(g) {
 }
 function jumpHeightAt(action,time){const p=clamp(time/JUMP_SECONDS,0,1);return action==='jump'?4*p*(1-p):0;}
 // Reward a timely tap on the launch frame, before the arc reaches full height.
-function jumpClears(g){return jumpClearsAt(g.action,g.actionTime);}
 function jumpClearsAt(action,time){return action==='jump'&&time<JUMP_SECONDS&&(time<=.06||jumpHeightAt(action,time)>COIN_GROUND_MAX_JUMP_HEIGHT);}
 export function coinHeightTouches(high,action,time){return high?jumpClearsAt(action,time):jumpHeightAt(action,time)<=COIN_GROUND_MAX_JUMP_HEIGHT;}
 function crossingAction(frame,elapsed){
@@ -160,23 +162,23 @@ export function applyAction(g, action) {
     g.charge = 0; g.rush = 4; emit(g, 'rush', 'RUSH! Smash through everything');
   }
 }
-function collide(g, obstacle) {
-  if (g.rush > 0 || g.grace > 0) { emit(g, 'smash', '', g.lane, { obstacle: obstacle.type }); return; }
+function collide(g, obstacle, contact, protectedAtCrossing) {
+  if (protectedAtCrossing) { emit(g, 'smash', '', contact.playerLane, contact); return 'protected'; }
   if (g.shield) {
-    g.shield = false; g.shieldsUsed++; g.grace = 1.1;
+    g.shield = false; g.shieldsUsed++;
     g.streak = 0; g.multiplier = 1;
-    emit(g, 'hit', 'Shield saved you! Next hit ends the run'); return;
+    emit(g, 'hit', 'Shield saved you! Next hit ends the run', contact.playerLane, contact); return 'shield';
   }
   g.phase = 'lost';
   g.reason = obstacle.type === 'rock' ? 'Rock hit. Switch lanes to dodge boulders.' : obstacle.type === 'log' ? 'Log hit. Jump as it reaches your raft.' : 'Branch hit. Duck as it reaches your raft.';
-  emit(g, 'lose', 'WIPEOUT');
+  emit(g, 'lose', 'WIPEOUT', contact.playerLane, contact); return 'lost';
 }
 export function updateGame(g, input, dt) {
   if (g.phase !== 'playing') return;
   dt = clamp(dt, 0, .05);
   const taps = input.actions.splice(0);
   taps.forEach(action => applyAction(g, action));
-  const frame={position:g.visualLane,velocity:g.laneVelocity,target:g.lane,action:g.action,actionTime:g.actionTime,buffered:g.buffered,bufferTime:g.bufferTime,magnet:g.magnet,rush:g.rush};
+  const frame={time:g.time,position:g.visualLane,velocity:g.laneVelocity,target:g.lane,action:g.action,actionTime:g.actionTime,buffered:g.buffered,bufferTime:g.bufferTime,magnet:g.magnet,rush:g.rush,grace:g.grace};
   g.time += dt;
   if (g.action) {
     g.actionTime += dt;
@@ -187,7 +189,6 @@ export function updateGame(g, input, dt) {
     }
   }
   g.bufferTime = Math.max(0, g.bufferTime - dt);
-  g.grace = Math.max(0, g.grace - dt);
   g.speed = speedAt(g.time,g.levelIndex) * (g.rush > 0 ? 1.32 : 1);
   g.rush = Math.max(0, g.rush - dt);
   const steering=laneSpring(g.visualLane,g.laneVelocity,g.lane,dt);
@@ -200,6 +201,9 @@ export function updateGame(g, input, dt) {
   // physical order also guarantees a coin boost cannot enhance an earlier coin.
   const crossed=g.entities.filter(e=>!e.done&&e.d<=g.distance&&e.d>previous).sort((a,b)=>a.d-b.d||a.id-b.id);
   let boostUntil=frame.magnet;
+  let graceUntil=frame.grace;
+  const clearedRows=new Set();
+  let fatalContact=null,lastContactCoinTime=null;
   let coinGoalDuringRush=false;
   for (const e of crossed) {
     e.done = true;
@@ -207,41 +211,70 @@ export function updateGame(g, input, dt) {
     // crossing. Powers cannot activate while the visible raft is still beside
     // them, including when steering is reversed or a frame spans several items.
     const elapsed=clamp((e.d-previous)/g.speed,0,dt);
-    const lane=laneSpring(frame.position,frame.velocity,frame.target,elapsed).position;
+    const steeringAtCrossing=laneSpring(frame.position,frame.velocity,frame.target,elapsed);
+    const lane=steeringAtCrossing.position;
     const overlap=Math.abs(e.lane-lane)<=COIN_LANE_RADIUS;
     if (e.type === 'coin') {
       const action=crossingAction(frame,elapsed);
       const boosted=boostUntil>elapsed;
       if (overlap&&coinHeightTouches(!!e.high,action.action,action.time)) {
         e.collected=true;
-        g.coins++; g.streak++; g.lastCoin = g.time;
+        g.coins++; g.streak++; g.lastCoin = g.time;lastContactCoinTime=frame.time+elapsed;
         if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
         const value=10*g.multiplier*(boosted?2:1);
         g.bonus += value; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
-        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high, distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,contactTime:g.time-dt+elapsed });
+        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high, distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,contactTime:frame.time+elapsed });
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
       if (overlap) {
         e.collected=true;
         if (e.type === 'magnet') boostUntil=elapsed+8; else g.shield = true;
-        emit(g, 'power', e.type === 'magnet' ? 'GOLD BOOST ×2! Touch coins for double points' : 'SHIELD! One free hit', e.lane, {power:e.type,distance:e.d,playerLane:lane});
+        emit(g, 'power', e.type === 'magnet' ? 'GOLD BOOST ×2! Touch coins for double points' : 'SHIELD! One free hit', e.lane, {power:e.type,distance:e.d,playerLane:lane,contactTime:frame.time+elapsed});
       }
     } else {
       g.rowsPassed++;
-      if (e.lane === g.lane) {
-        const cleared = (e.type === 'log' && jumpClears(g)) || (e.type === 'branch' && g.action === 'duck');
-        if (cleared && !g.rush) {
+      const rushAtCrossing=frame.rush>elapsed;
+      if (Math.abs(e.lane-lane)<=HAZARD_LANE_RADIUS) {
+        const action=crossingAction(frame,elapsed);
+        const contact={entityId:e.id,obstacle:e.type,obstacleLane:e.lane,distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),action:action.action,actionTime:action.time,contactTime:frame.time+elapsed};
+        const cleared = (e.type === 'log' && jumpClearsAt(action.action,action.time)) || (e.type === 'branch' && action.action === 'duck');
+        if (cleared && !rushAtCrossing) {
+          // Between lanes a raft can overlap two parts of one action wave.
+          // Both clear, but the row is one trick and receives one reward.
+          const rowKey=Number.isInteger(e.row)?`row:${e.row}`:`entity:${e.id}`;
+          if(clearedRows.has(rowKey))continue;
+          clearedRows.add(rowKey);
           const type = e.type === 'log' ? 'jump' : 'duck';
           g[type === 'jump' ? 'jumps' : 'ducks']++;
           g.bonus += 100 * g.multiplier; g.charge = Math.min(100, g.charge + 12);
-          emit(g, 'perfect', `PERFECT ${type.toUpperCase()} +${100 * g.multiplier}`);
-        } else collide(g, e);
-      } else { g.dodges++; if (!g.rush) g.charge = Math.min(100, g.charge + 2); }
+          emit(g, 'perfect', `PERFECT ${type.toUpperCase()} +${100 * g.multiplier}`, lane, contact);
+        } else {
+          const outcome=collide(g,e,contact,rushAtCrossing||graceUntil>elapsed);
+          if(outcome==='shield')graceUntil=elapsed+1.1;
+          else if(outcome==='lost')fatalContact={elapsed,distance:e.d,steering:steeringAtCrossing,action};
+        }
+      } else { g.dodges++; if (!rushAtCrossing) g.charge = Math.min(100, g.charge + 2); }
     }
     if (g.phase !== 'playing') break;
   }
-  g.magnet=Math.max(0,boostUntil-dt);
+  // A wipeout freezes at actual contact. Keeping the remainder of the frame's
+  // steering would show the stopped raft beside the rock that just hit it.
+  const advanced=fatalContact?.elapsed??dt;
+  if(fatalContact){
+    g.time=frame.time+advanced;g.distance=fatalContact.distance;
+    g.visualLane=fatalContact.steering.position;g.laneVelocity=fatalContact.steering.velocity;
+    g.action=fatalContact.action.action;g.actionTime=fatalContact.action.time;
+    const duration=frame.action==='jump'?JUMP_SECONDS:DUCK_SECONDS;
+    const bufferConsumed=frame.action&&frame.actionTime+advanced>=duration;
+    g.buffered=bufferConsumed?'':frame.buffered;g.bufferTime=bufferConsumed?0:Math.max(0,frame.bufferTime-advanced);
+    g.rush=Math.max(0,frame.rush-advanced);g.speed=speedAt(g.time,g.levelIndex)*(g.rush>0?1.32:1);
+    if(lastContactCoinTime!==null)g.lastCoin=lastContactCoinTime;
+    g.effects=g.effects.filter(e=>e.time<=g.time||Number.isFinite(e.contactTime)&&e.contactTime<=g.time);
+    for(const effect of g.effects)if(Number.isFinite(effect.contactTime))effect.time=Math.min(effect.time,effect.contactTime);
+  }
+  g.magnet=Math.max(0,boostUntil-advanced);
+  g.grace=Math.max(0,graceUntil-advanced);
   if (g.phase === 'playing') {
     const totals = { tricks: g.jumps + g.ducks, coins: g.coins, distance: g.distance };
     if (totals[g.goal.kind] - g.goal.start >= g.goal.target) {
