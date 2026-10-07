@@ -4,8 +4,7 @@
 // runs the live AudioContext path once, and saves a few WAV files to listen to.
 // Run: node qa/fish/audio.render.mjs   (exit code 1 on failure)
 // Needs python3 (it serves public/ on a free port) and the playwright package (from this project, NODE_PATH or npm -g).
-// FISH_AUDIO_OUT sets the folder for the WAV files (default: a new folder <tmp>/fish-audio-XXXXXX for each run, so two
-// runs at the same time do not write over each other's files).
+// FISH_AUDIO_OUT sets the folder for the WAV files (default: <tmp>/fish-audio).
 import { createRequire } from "module";
 import { spawn, execSync } from "child_process";
 import net from "net";
@@ -15,7 +14,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const OUT = process.env.FISH_AUDIO_OUT || fs.mkdtempSync(path.join(os.tmpdir(), "fish-audio-"));
+const OUT = process.env.FISH_AUDIO_OUT || path.join(os.tmpdir(), "fish-audio");
 const SRC = new URL("../../public/fish/js/audio.js", import.meta.url).href;
 
 function loadPlaywright() {

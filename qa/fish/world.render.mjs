@@ -1,6 +1,5 @@
 // Renders the world of every place in set scenes and saves screenshots, then checks for errors and broken frames.
-// Run: node qa/fish/world.render.mjs   (FISH_SHOTS=dir to choose where the pictures go, by default a new folder <tmp>/fish-shots-XXXXXX
-//   for each run, ONLY=text to run only the shots with that text in the name,
+// Run: node qa/fish/world.render.mjs   (FISH_SHOTS=dir to choose where the pictures go, ONLY=text to run only the shots with that text in the name,
 //   WORLD_PLACES=loon,sea to run only those places, SITE=dir to serve another copy of public/)
 // It serves public/ itself and injects a test page at /fish/__world.html, so nothing test-only lives in public/.
 // The page takes ?q=low|high and ?place=loon|stumps|river|sea. Checks:
@@ -21,8 +20,7 @@ const { chromium } = createRequire(import.meta.url)("playwright");
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SITE = process.env.SITE || path.join(ROOT, "public");   // SITE: serve another copy of public/ (to compare with an older build)
-// (a new folder for each run: two runs at the same time do not write over each other's pictures)
-const SHOTS = process.env.FISH_SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), "fish-shots-"));
+const SHOTS = process.env.FISH_SHOTS || path.join(os.tmpdir(), "fish-shots");
 const THREE_LOCAL = process.env.THREE_LOCAL || path.join(ROOT, "public/crimson/lib/three.module.min.js");
 const ONLY = process.env.ONLY || "";
 const PLACES_ONLY = (process.env.WORLD_PLACES || "").split(",").filter(Boolean);
