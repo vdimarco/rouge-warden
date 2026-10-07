@@ -1909,7 +1909,8 @@ function reelUpdate(dt) {
   const sampleAt = Motion.lastSample;
   if (sampleAt > 0 && sampleAt !== G.sampleAt) { G.sampleAt = sampleAt; G.sampleFrame = G.frame; G.sensorQuiet = 0; }
   else if (G.frame !== G.sampleFrame) G.sensorQuiet = (G.sensorQuiet || 0) + dt;
-  const live = G.input === "motion" && (Motion.live || G.sensorQuiet * 1000 < Motion.tune.LIVE_MS);
+  // (only after a first sample: sensors that never sent one are not live)
+  const live = G.input === "motion" && (Motion.live || (G.sampleAt > 0 && G.sensorQuiet * 1000 < Motion.tune.LIVE_MS));
   const pull = pullStrength.step(dt, { theta, enabled: live,
     active: pullActive, crank: crankRate, tension: s.tfrac || 0, session: sim });
   // (no "Tip back as you reel" while the prompt says to stop reeling)
