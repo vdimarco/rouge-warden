@@ -176,7 +176,7 @@ function createWorld() {
   combat = G.combat = createCombat(city);
   cars = G.cars = createCars(city);
   jobs = G.jobs = createJobs({ city, combat, cars });
-  actionView = G.actionView = createActionView(scene, { cars, jobs });
+  actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
   hands = G.hands = createHands(rig, scene, settings);
@@ -530,7 +530,7 @@ function exitCar() {
   placeRig(G.rigYaw, o.x, o.y, o.z);
   audio.sfx("door", { pos: o });
 }
-const DRIVE_IN = { throttle: 0, steer: 0, handbrake: false };
+const DRIVE_IN = { throttle: 0, steer: 0, handbrake: false }, TRAFFIC_IN = { T: null, t: 0 };
 let carWant = 0; // a car press with no car in reach waits this long (s) for one to come
 // the car key, or a press still waiting: get into a parked car or steal a street car
 function tryCar() {
@@ -557,7 +557,8 @@ function actionFrame(dt, inp) {
     DRIVE_IN.steer = -(inp.move.x || 0) + (T.left ? 1 : 0) - (T.right ? 1 : 0);
     DRIVE_IN.handbrake = !!inp.jumpHeld;
   }
-  cars.update(dt, P.pos, driving ? DRIVE_IN : null);
+  TRAFFIC_IN.T = view.traffic ? view.traffic() : null; TRAFFIC_IN.t = G.time;
+  cars.update(dt, P.pos, driving ? DRIVE_IN : null, TRAFFIC_IN);
   const car = cars.driving;
   if (driving && car) {
     // the body rides in the car: the camera, the people and the gang all see the car's place
@@ -570,6 +571,7 @@ function actionFrame(dt, inp) {
   for (const e of cars.events) {
     if (e.type === "bump") { audio.sfx("bump", { vol: Math.min(1.5, e.speed / 8) }); haptic(0, 0.6, 60); }
     else if (e.type === "release") view.hideTraffic(e.traffic, false); // a stolen car is gone: its traffic car drives again
+    else if (e.type === "struck") view.hideTraffic(e.traffic, true); // the driven car hit a street car: it is a real car now
   }
   cars.events.length = 0;
   // the gang guards the clogs once Mission 1 is done

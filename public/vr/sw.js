@@ -2,7 +2,7 @@
 // index.html registers it with scope "./". A plain classic worker (no modules, no importScripts), so every browser runs it.
 // VERSION must equal VERSION in js/config.js (qa/vr/pwa.mjs checks it). A new VERSION makes a new cache and drops the old one.
 
-const VERSION = "1.18.0";
+const VERSION = "1.19.0";
 const PREFIX = "fullswing-";
 const CACHE = PREFIX + VERSION;
 
@@ -18,6 +18,9 @@ const PRECACHE = [
   "./models/cars/muscle.glb",
   "./models/cars/hatchback.glb",
   "./models/cars/van.glb",
+  "./models/cars/muscle-ink.glb",
+  "./models/cars/hatchback-ink.glb",
+  "./models/cars/van-ink.glb",
   "./privacy.html",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
