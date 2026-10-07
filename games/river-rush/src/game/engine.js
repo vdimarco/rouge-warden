@@ -5,8 +5,8 @@ export const JUMP_SECONDS = .66;
 export const DUCK_SECONDS = .60;
 export const VIEW_DISTANCE = 180;
 export const BASE_SPEED = LEVELS[0].startSpeed, MAX_SPEED = Math.max(...LEVELS.map(level=>level.maxSpeed)), ACCELERATION = LEVELS[0].acceleration;
-// A pickup needs the raft's center to cross the coin, within roughly its
-// 0.95 m half-width on 3.8 m lanes. Target-lane input is not visible overlap.
+// Every pickup needs actual raft-center contact within the same 0.95 m
+// tolerance on 3.8 m lanes. Target-lane input is not visible overlap.
 export const COIN_LANE_RADIUS = .25;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const emptyInput = () => ({ actions: [] });
@@ -159,7 +159,7 @@ export function updateGame(g, input, dt) {
     }
   }
   g.bufferTime = Math.max(0, g.bufferTime - dt);
-  g.magnet = Math.max(0, g.magnet - dt); g.grace = Math.max(0, g.grace - dt);
+  g.grace = Math.max(0, g.grace - dt);
   g.speed = speedAt(g.time,g.levelIndex) * (g.rush > 0 ? 1.32 : 1);
   g.rush = Math.max(0, g.rush - dt);
   const steering=laneSpring(g.visualLane,g.laneVelocity,g.lane,dt);
@@ -168,17 +168,21 @@ export function updateGame(g, input, dt) {
   const level=levelAt(g.levelIndex);
   g.distance = Math.min(level.length,g.distance+g.speed*dt);
   if (g.time - g.lastCoin > 2.8) { g.streak = 0; g.multiplier = 1; }
-  for (const e of g.entities) {
-    if (e.done || e.d > g.distance || e.d <= previous) continue;
+  // Generated courses are ordered, but processing the crossed subset in
+  // physical order also guarantees a magnet cannot attract an earlier coin.
+  const crossed=g.entities.filter(e=>!e.done&&e.d<=g.distance&&e.d>previous).sort((a,b)=>a.d-b.d||a.id-b.id);
+  let magnetUntil=frame.magnet;
+  for (const e of crossed) {
     e.done = true;
+    // Sample the same analytic trajectory for coins and powers at their exact
+    // crossing. Powers cannot activate while the visible raft is still beside
+    // them, including when steering is reversed or a frame spans several items.
+    const elapsed=clamp((e.d-previous)/g.speed,0,dt);
+    const lane=laneSpring(frame.position,frame.velocity,frame.target,elapsed).position;
+    const overlap=Math.abs(e.lane-lane)<=COIN_LANE_RADIUS;
     if (e.type === 'coin') {
-      // Sample at the exact longitudinal crossing, rather than the end of the
-      // render frame. This also handles reversals and crossing a lane that is
-      // no longer selected, without skipping narrow pickups at low frame rates.
-      const elapsed=clamp((e.d-previous)/g.speed,0,dt);
-      const lane=laneSpring(frame.position,frame.velocity,frame.target,elapsed).position;
-      const action=crossingAction(frame,elapsed),overlap=Math.abs(e.lane-lane)<=COIN_LANE_RADIUS;
-      const attracted=frame.magnet>elapsed||frame.rush>elapsed||g.magnet>0;
+      const action=crossingAction(frame,elapsed);
+      const attracted=magnetUntil>elapsed||frame.rush>elapsed;
       if ((overlap&&(!e.high||jumpClearsAt(action.action,action.time)))||attracted) {
         e.collected=true;
         g.coins++; g.streak++; g.lastCoin = g.time;
@@ -187,9 +191,10 @@ export function updateGame(g, input, dt) {
         emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { high: !!e.high, distance:e.d, playerLane:lane, attracted: attracted&&(!overlap||e.high&&!jumpClearsAt(action.action,action.time)) });
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
-      if (e.lane === g.lane) {
-        if (e.type === 'magnet') g.magnet = 8; else g.shield = true;
-        emit(g, 'power', e.type === 'magnet' ? 'MAGNET! All lanes pay' : 'SHIELD! One free hit');
+      if (overlap) {
+        e.collected=true;
+        if (e.type === 'magnet') magnetUntil=elapsed+8; else g.shield = true;
+        emit(g, 'power', e.type === 'magnet' ? 'MAGNET! All lanes pay' : 'SHIELD! One free hit', e.lane, {power:e.type,distance:e.d,playerLane:lane});
       }
     } else {
       g.rowsPassed++;
@@ -205,6 +210,7 @@ export function updateGame(g, input, dt) {
     }
     if (g.phase !== 'playing') break;
   }
+  g.magnet=Math.max(0,magnetUntil-dt);
   if (g.phase === 'playing') {
     const totals = { tricks: g.jumps + g.ducks, coins: g.coins, distance: g.distance };
     if (totals[g.goal.kind] - g.goal.start >= g.goal.target) {

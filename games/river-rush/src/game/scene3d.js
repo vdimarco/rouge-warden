@@ -20,6 +20,15 @@ const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
 function mat(color,roughness=.85){return softwareMaterials?new THREE.MeshLambertMaterial({color}):new THREE.MeshStandardMaterial({color,roughness});}
 function mesh(geometry,material,parent,x=0,y=0,z=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);parent.add(m);return m;}
+function positionCoinFlight(out,origin,caught,target,t,attracted){
+ const catching=attracted&&t<.3,phase=attracted?(catching?t/.3:(t-.3)/.7):t,q=phase*phase*(3-2*phase);
+ const from=attracted&&!catching?caught:origin,to=catching?caught:target;
+ // Both powered phases meet at the visible raft with zero arc velocity. A
+ // squared sine gives the catch and score flight a continuous join.
+ const arc=attracted?Math.sin(phase*Math.PI)**2*(catching?.9:2.5):Math.sin(t*Math.PI)*2.5;
+ out.set(from.x+(to.x-from.x)*q,from.y+(to.y-from.y)*q+arc,from.z+(to.z-from.z)*q);
+ return catching?0:q;
+}
 function normalized(object,width,height,depth){
  const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  const holder=new THREE.Group();holder.add(object);object.position.sub(center);object.position.y+=size.y/2;
@@ -142,7 +151,7 @@ export function createScene(canvas,art,onLost){
  for(let i=0;i<rockVertices.count;i++){const x=rockVertices.getX(i),y=rockVertices.getY(i),z=rockVertices.getZ(i),r=1+Math.sin(x*5+y*3-z*4)*.09;rockVertices.setXYZ(i,x*r,y*r,z*r);}rockGeo.computeVertexNormals();
  const logGeo=new THREE.CylinderGeometry(.32,.37,3.3,12,5),bark=logGeo.attributes.position;
  for(let i=0;i<bark.count;i++){const x=bark.getX(i),y=bark.getY(i),z=bark.getZ(i),warp=1+Math.sin(y*7+Math.atan2(z,x)*3)*.08;bark.setXYZ(i,x*warp+Math.sin(y*2)*.07,y,z*warp);}logGeo.computeVertexNormals();
- const coinBatch=new THREE.InstancedMesh(coinGeo,coinMat,64),coinPose=new THREE.Object3D(),coinTarget=new THREE.Vector3();coinBatch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);coinBatch.frustumCulled=false;scene.add(coinBatch);
+ const coinBatch=new THREE.InstancedMesh(coinGeo,coinMat,64),coinPose=new THREE.Object3D(),coinTarget=new THREE.Vector3(),coinOrigin=new THREE.Vector3(),coinCatch=new THREE.Vector3();coinBatch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);coinBatch.frustumCulled=false;scene.add(coinBatch);
  const entities=new Map(),labels=new Map(),labelMaterials=new Map(),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ff8292',.35)};
  function label(text){if(labels.has(text))return labels.get(text);const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#043b35dd';x.roundRect(0,0,256,64,16);x.fill();x.font='bold 31px sans-serif';x.fillStyle='#fff0b9';x.textAlign='center';x.fillText(text,128,44);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;labels.set(text,t);return t;}
  function makeEntity(e){const g=new THREE.Group();let m;
@@ -328,7 +337,8 @@ export function createScene(canvas,art,onLost){
  branchTrees.begin();
  for(const e of g.entities){const z=e.d-g.distance;
  if(e.type==='branch'&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
- if((e.type==='coin'?e.collected:e.done)||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
+ const pickup=e.type==='coin'||e.type==='magnet'||e.type==='shield';
+ if((pickup?e.collected:e.done)||z< -5||z>VIEW_DISTANCE)continue;alive.add(e.id);visible++;
  const course=travel+z,cross=(e.lane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
  if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,(e.high?3.1:1.2)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
  let obj=entities.get(e.id);if(!obj){obj=makeEntity(e);entities.set(e.id,obj);}
@@ -350,9 +360,15 @@ export function createScene(canvas,art,onLost){
  for(const [id,obj] of entities)if(!alive.has(id)){scene.remove(obj);entities.delete(id);}
  for(const batch of guardianBatches){batch.mesh.count=guardianCount;batch.mesh.instanceMatrix.needsUpdate=true;}
  for(const batch of driftwoodBatches){batch.mesh.count=woodCount;batch.mesh.instanceMatrix.needsUpdate=true;}
- if(!reduced&&art.coinTarget){coinTarget.set(art.coinTarget.x/w*2-1,1-art.coinTarget.y/h*2,.8).unproject(camera);
- for(const e of g.effects){const t=(g.time-e.time)/.36;if(e.type!=='coin'||t<0||t>=1||coinCount>=64)continue;const q=t*t*(3-2*t),origin=point(travel+(e.distance??g.distance)-g.distance,(e.lane-1)*3.8),sx=origin.x,sy=origin.y+(e.high?3.1:1.2);
- coinPose.position.set(sx+(coinTarget.x-sx)*q,sy+(coinTarget.y-sy)*q+Math.sin(t*Math.PI)*2.5,origin.z+(coinTarget.z-origin.z)*q);coinPose.rotation.set(Math.PI/2,g.time*8,0);coinPose.scale.setScalar(1-q*.83);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);}}
+ const coinFlights=[];
+ if(!reduced&&art.coinTarget){coinTarget.set(art.coinTarget.x/w*2-1,1-art.coinTarget.y/h*2,.8).unproject(camera);coinCatch.set(x,f.height+lift+1.2,.18);
+ for(const e of g.effects){const t=(g.time-e.time)/.36;if(e.type!=='coin'||t<0||t>=1||coinCount>=64)continue;
+ const course=travel+(e.distance??g.distance)-g.distance,cross=(e.lane-1)*3.8,origin=point(course,cross);
+ coinOrigin.set(origin.x,origin.y+waterHeight(cross,course)+(e.high?3.1:1.2),origin.z);
+ const q=positionCoinFlight(coinPose.position,coinOrigin,coinCatch,coinTarget,t,!!e.attracted);
+ coinPose.rotation.set(Math.PI/2,g.time*8,0);coinPose.scale.setScalar(1-q*.83);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);
+ coinFlights.push({id:e.id,attracted:!!e.attracted,phase:e.attracted&&t<.3?'to-raft':'to-score',progress:t,position:coinPose.position.toArray(),caught:coinCatch.toArray()});}}
+ status.coinFeedback={active:coinFlights.length,attracted:coinFlights.filter(e=>e.attracted).length,flights:coinFlights};
  coinBatch.count=coinCount;coinBatch.instanceMatrix.needsUpdate=true;
  // Raised rim on both faces shares the coin transform, including pickup flight.
  for(let i=0;i<coinCount;i++){coinBatch.getMatrixAt(i,instanceMatrix);for(let s=0;s<2;s++){rimLocal.makeTranslation(0,s?.068:-.068,0).multiply(rimTurn);rimMatrix.multiplyMatrices(instanceMatrix,rimLocal);coinRims.setMatrixAt(i*2+s,rimMatrix);}}
