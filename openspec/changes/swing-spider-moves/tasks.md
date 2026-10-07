@@ -38,6 +38,6 @@ A box is ticked only when the code and a test show the work done.
 
 - [x] Version 1.16.0 in `config.js`, `sw.js` and `quest/twa-manifest.json` (APK code 23); `qa/vr/pwa.mjs` passes.
 - [x] Unit suites pass: action, physics, target, city, street, mobile, mobile panel.
-- [ ] Browser suites on the final tree: `action.e2e`, `flat`, `training.e2e`, `climb.e2e`, `phone-swing.e2e`, `fight-moves.e2e`.
+- [x] Browser suites on the final tree pass in headless Chromium: `action.e2e`, `flat`, `training.e2e`, `climb.e2e`, `phone-swing.e2e`, `fight-moves.e2e`.
 - [ ] Hardware checks: a real phone, a pad and a Quest headset (the headset must show no change). These cannot run here.
 - [ ] Archive the change and fold the specs into `openspec/specs/swing-combat` and `swing-moves` after the hardware checks.
