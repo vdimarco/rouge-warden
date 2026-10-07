@@ -9,6 +9,6 @@
 - [x] Add the landscape row and the stacked bar for phones and mid-size screens.
 - [x] Move the movement pad, the rally button and the upright team chat clear of the bar.
 - [x] Check every layout at 1040x560, 844x390, 740x360, 640x360, 568x320, 600x500, 390x844, 320x568, 768x1024 and 1000x700.
-- [ ] Run the browser checks with the phone layouts.
+- [x] Run the browser checks with the phone layouts, and move the death recap clear of the phone bars.
 - [ ] Validate the change with the OpenSpec CLI (not installed in this environment).
 - [ ] Play a match on a real phone and on a desktop with a real GPU, then archive this change.

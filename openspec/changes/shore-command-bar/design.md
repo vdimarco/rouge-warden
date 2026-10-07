@@ -19,3 +19,5 @@ The spell name labels stay in the markup for screen readers and are hidden on sc
 On upright phones the team chat moves to the right, above the point button, so it does not cover the movement pad.
 
 The skill reach layer in `skill-reach.js` measures the buttons, so it follows the new row without change.
+
+The death recap moves with the bar on phones. In landscape it sits above the bar, between the movement pad and the skill column. Upright, it sits right of the movement pad and above the point button.

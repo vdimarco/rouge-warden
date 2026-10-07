@@ -189,3 +189,14 @@
 @media (max-width:600px) and (min-height:600px),(max-width:539px){
  #team-chat#team-chat{left:auto;right:10px;top:auto;bottom:calc(262px + env(safe-area-inset-bottom));width:min(220px,calc(100vw - 140px));align-items:flex-end}
 }
+/* The death recap keeps clear of the bar and its controls. Landscape: above the bar, between the movement pad (which
+   ends at 120 px) and the skill column. Upright: right of the movement pad and above the point button. */
+@media (max-height:599px) and (min-width:540px){
+ #hud #death-recap{left:136px;transform:none;bottom:calc(108px + env(safe-area-inset-bottom));width:min(440px,calc(var(--bar) + 264px - 136px));max-height:calc(100% - 108px - 60px - env(safe-area-inset-bottom))}
+}
+@media (max-height:599px) and (min-width:540px) and (max-width:699px){
+ #hud #death-recap{width:min(440px,calc(var(--bar) + 194px - 136px))}
+}
+@media (max-width:600px) and (min-height:600px),(max-width:539px){
+ #hud #death-recap{left:130px;right:10px;transform:none;width:auto;bottom:calc(256px + env(safe-area-inset-bottom));max-height:calc(100% - 256px - 160px - env(safe-area-inset-bottom))}
+}
