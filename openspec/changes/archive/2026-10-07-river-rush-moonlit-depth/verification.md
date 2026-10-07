@@ -27,6 +27,8 @@ Independent geometry review found on-screen depths up to 824 m beyond the old 80
 
 ## Publication and specs
 
-Production publication is pending. This change remains active until final source, build and live checks pass.
+Runtime commit `66a63891fd1f8f9a5073257e4ed6aa344b496a01` is published on GitHub main. Vercel deployment `dpl_DsyQXfBzPNKEJoyFnaZo3pkbUqr2` is READY; a direct hostname lookup confirms `arcade.uptick.systems` serves that exact commit. The public `/river-rush/` HTML, `index-ByIAhKor.js` and `index-aD_k1wTR.css` all return HTTP 200 and match the tested build byte-for-byte.
+
+HTML SHA256: `16da54373b04a16d9285e5367db298c419e5529e2b28c2c3e5c3fef1087df4a9`; JS: `dc146104bc0d32bd1b540ea30e54a7c133b40327d940a959982673288b98e597`; CSS: `d2bb8fc0e83bf5ecf0a628811d380fd855648e7132600d3c0c9bb7c623693eac`. Receipt: `/tmp/river-moonlit-background/live-assets.json`. The completed change is archived; subsequent documentation publication preserves the verified runtime files.
 
 OpenSpec CLI is unavailable. Markdown structure is validated manually; canonical river requirements contain 46 unique titles and valid delta scenarios.
