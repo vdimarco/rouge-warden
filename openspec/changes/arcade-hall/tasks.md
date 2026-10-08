@@ -14,3 +14,7 @@
 Desktop preview checks passed on commit 173d54f: plays is selected by default; views, likes and active time update selection; title search and empty results work; metric definitions expand; all 23 games remain playable in the missing-key state. PostHog accepted the fixed query with an empty result and expected taxonomy warnings for the newly defined events. Capture/API lifecycle checks pass. Physical phone, WebGL room visuals and live production ingestion remain unverified.
 
 The user provided the capture key for new PostHog project arcade (653362). Capture and aggregate project defaults now match that project. The endpoint accepts lowercase posthog_personal_api_key and posthog_project_id as well as uppercase names. A sensitive lowercase read-key variable exists in Vercel production; its value cannot be read via the connector. Actual read authorization still needs a deployed production check. The official wizard v2.81.0 could not download its required skills and made no tracked changes.
+
+- [x] Condense header and move summary below the games.
+- [x] Add Featured default order and preserve genuine metric sorts.
+- [ ] Verify rendered first viewport, sticky header, search and menu; report untested phone checks.
