@@ -1,6 +1,6 @@
 // Capture-only PostHog integration. No replay, autocapture, text or identify calls.
 (() => {
-  const token = 'phc_uueVktK2gaALRxPpXzdMWE6PYZiNgGhEeE7qLoMUJviP';
+  const token = 'phc_v36Y6bWGWmKqp2iTsmN5APUMgnGvZwLJdesVWvipauaC';
   const enabled = location.hostname === 'arcade.uptick.systems';
   const game = document.currentScript?.dataset.game;
   const uuid = () => crypto.randomUUID();

@@ -29,8 +29,8 @@ async function load(key, project) {
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return res.status(405).json({ error: 'Use GET.' }); }
-  const key = process.env.POSTHOG_PERSONAL_API_KEY;
-  const project = process.env.POSTHOG_PROJECT_ID || '500056';
+  const key = process.env.POSTHOG_PERSONAL_API_KEY || process.env.posthog_personal_api_key;
+  const project = process.env.POSTHOG_PROJECT_ID || process.env.posthog_project_id || '653362';
   if (!key || !/^\d+$/.test(project)) return res.status(503).json({ error: 'Analytics are not connected yet.' });
   try {
     if (!cached || Date.now() - cached.at >= TTL) {
