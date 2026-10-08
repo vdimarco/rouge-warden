@@ -1,0 +1,12 @@
+{
+  "sha": "9bb7e46c5e03c17b4b8e0aa637a915d77072de2d",
+  "parent": "c167d978b69ea0b308a6b731cb7dd4165c7d111e",
+  "tree": "38f8e78620b3fc475f646748b4d84ee386d1c884",
+  "github": "vdimarco/rouge-warden",
+  "branch": "main",
+  "nonForce": true,
+  "deployment": "dpl_9LNJmBqwPEMSGfzNdJ9pYfMNVKy5",
+  "deploymentState": "READY",
+  "alias": "arcade.uptick.systems",
+  "deploymentMatchesSource": true
+}

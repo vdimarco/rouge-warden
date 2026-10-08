@@ -45,16 +45,20 @@ The simulation SHALL stop on pause, page hide and completion. Reduced motion SHA
 - **WHEN** reduced motion changes during play
 - **THEN** water displacement and decorative effects stop while lane/jump/duck controls remain functional
 
-### Requirement: Higgsfield living title scene
-The title scene SHALL use a Higgsfield-generated silent looping video based on the approved character art, with a still-image fallback. It SHALL preserve live readable menu controls, pause while hidden or covered by instructions, and use the still image for reduced motion or data-saving.
+### Requirement: Character-led title artwork
+The title screen SHALL display local illustrated jungle-rafting key art inspired by the supplied adult character, with long dark hair, a brown wrap and wooden raft in rapids. The illustration SHALL contain no phone overlay or baked-in title text. Responsive crops SHALL retain the character's face and readable live title, Start, map, Help, Leaderboard and arcade controls. The previous title video SHALL NOT cover this artwork.
 
-#### Scenario: Enter the menu
-- **WHEN** the menu loads in a normal-motion browser
-- **THEN** the river and character artwork animate behind working Start and Switch game controls
+#### Scenario: View the title across layouts
+- **WHEN** the player opens the title at 1365×900, 390×844 or 844×390
+- **THEN** the hero is undistorted, his face and the full Start button are initially visible, and all menu actions are reachable without artwork intercepting input
 
-#### Scenario: Video unavailable
-- **WHEN** video cannot load or motion/data preferences disable it
-- **THEN** the approved still image and all menu actions remain usable
+#### Scenario: Use the title actions
+- **WHEN** the player starts a ready run or opens and closes Help or Leaderboard
+- **THEN** the existing action works and returning to the title restores its artwork and controls
+
+#### Scenario: Art unavailable or motion reduced
+- **WHEN** the hero image fails to load or the player prefers reduced motion
+- **THEN** readable live menu actions remain usable on a stable dark background without waiting for the title artwork
 
 ### Requirement: Runner perspective art
 River Rush SHALL present a three-lane forward-perspective river with generated environment, approved character likeness, long hair and only a modest loincloth. Lane swaps, raft jumps, ducks and obstacle depth SHALL clearly communicate their gameplay state at 1536×1024, 390×844 and 844×390.

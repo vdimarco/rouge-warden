@@ -1,110 +1,11 @@
 {
   "passed": true,
-  "scope": "Restyled title artwork and real menu actions only; no gameplay/campaign retesting",
-  "finalBuiltBundle": "http://127.0.0.1:8765/river-rush/assets/index-C0jiCQVD.js",
-  "finalCSS": "index-Cf5Qdi04.css",
-  "layoutScreenshots": {
-    "desktop": "openspec/changes/river-rush-restyled-title-hero/qa/desktop-title.jpg",
-    "phone": "openspec/changes/river-rush-restyled-title-hero/qa/phone-title.jpg",
-    "landscape": "openspec/changes/river-rush-restyled-title-hero/qa/landscape-title-final.jpg"
-  },
-  "faceAndReadabilityReview": {
-    "browserQA": "Face visible clear of header/mute, high-contrast live title/button/maps; no input intercepted by hero.",
-    "independentCritic": "Initial desktop/phone crops accepted unchanged; final landscape compact CTA screenshot independently accepted with clear face, readable live text and entire Start above fold."
-  },
-  "layoutChecks": {
-    "noHorizontalOverflow": true,
-    "distinctControlHitAreas": true,
-    "allActionsReachable": true,
-    "initialStartVisible": {
-      "desktop": true,
-      "phone": true,
-      "landscape": true
-    },
-    "landscapeStart": {
-      "left": 42.1875,
-      "top": 307.828125,
-      "right": 481.0625,
-      "bottom": 370.828125,
-      "width": 438.875,
-      "height": 63
-    }
-  },
-  "actualActionProofs": {
-    "initialAllLayouts": [
-      {
-        "layout": "desktop",
-        "steps": [
-          "Open Help through visible button",
-          "Close Help back to title",
-          "Open public Leaderboard, read only",
-          "Close Leaderboard back to title",
-          "Start ready run through real button",
-          "Pause and return to title through real buttons"
-        ],
-        "titleRestored": true,
-        "imageLoadedOnReturn": true
-      },
-      {
-        "layout": "phone",
-        "steps": [
-          "Open Help through visible button",
-          "Close Help back to title",
-          "Open public Leaderboard, read only",
-          "Close Leaderboard back to title",
-          "Start ready run through real button",
-          "Pause and return to title through real buttons"
-        ],
-        "titleRestored": true,
-        "imageLoadedOnReturn": true
-      },
-      {
-        "layout": "landscape",
-        "steps": [
-          "Open Help through visible button",
-          "Close Help back to title",
-          "Open public Leaderboard, read only",
-          "Close Leaderboard back to title",
-          "Start ready run through real button",
-          "Pause and return to title through real buttons"
-        ],
-        "titleRestored": true,
-        "imageLoadedOnReturn": true
-      }
-    ],
-    "finalLandscape": [
-      {
-        "layout": "landscape",
-        "steps": [
-          "Start ready run through real button",
-          "Pause and return to title through real buttons"
-        ],
-        "titleRestored": true,
-        "imageLoadedOnReturn": true
-      }
-    ]
-  },
-  "heroImageFailure": {
-    "requestAbortedLocally": true,
-    "prefersReducedMotion": false,
-    "darkBase": "rgb(3, 28, 23)",
-    "failedImageHiddenWithoutPlaceholder": true,
-    "startReadyDespiteImageFailure": true,
-    "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/phone-title-image-unavailable.jpg",
-    "actions": {
-      "layout": "phone",
-      "steps": [
-        "Open Help through visible button",
-        "Close Help back to title",
-        "Open public Leaderboard, read only",
-        "Close Leaderboard back to title",
-        "Start ready run through real button",
-        "Pause and return to title through real buttons"
-      ],
-      "titleRestored": true,
-      "imageLoadedOnReturn": false
-    },
-    "proof": {
+  "base": "https://arcade.uptick.systems/river-rush/?v=9bb7e46",
+  "selected": "phone",
+  "scope": "Built title hero and existing menu actions only",
+  "previousUnchangedDesktopPhoneProof": null,
+  "layouts": [
+    {
       "layout": {
         "name": "phone",
         "width": 390,
@@ -119,10 +20,10 @@
         "height": 1088
       },
       "image": {
-        "src": "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp",
+        "src": "https://arcade.uptick.systems/river-rush/art/title-hero-reference-v1.webp",
         "complete": true,
-        "naturalWidth": 0,
-        "naturalHeight": 0,
+        "naturalWidth": 1672,
+        "naturalHeight": 941,
         "rect": {
           "left": 0,
           "top": 0,
@@ -135,7 +36,7 @@
         "objectPosition": "70% 35%",
         "pointerEvents": "none",
         "animationName": "none",
-        "visibility": "hidden"
+        "visibility": "visible"
       },
       "heading": {
         "text": "RiverRush.",
@@ -214,7 +115,7 @@
           }
         },
         {
-          "text": "01Canopy RunSunlit jungle \u00b7 Find your flow4,200 M \u00b7 FLOW",
+          "text": "01Canopy RunSunlit jungle · Find your flow4,200 M · FLOW",
           "label": null,
           "disabled": false,
           "rect": {
@@ -315,27 +216,38 @@
       },
       "videoCount": 0,
       "heroPosition": "absolute",
-      "baseColor": "rgb(3, 28, 23)"
+      "baseColor": "rgb(3, 28, 23)",
+      "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/live/phone-title.jpg"
     }
-  },
-  "reducedMotion": {
-    "heroVisible": true,
-    "staticPixels": true,
-    "noTitleVideo": true,
-    "realActionsPassed": true
-  },
-  "receipts": [
-    "title-hero.json",
-    "title-hero-landscape.json",
-    "title-hero-image-failure.json"
   ],
-  "recheckScope": "Landscape heading/spacing updated after initial checks; final error handler affects only failed images. Unchanged desktop/phone and reduced-motion proof retained.",
-  "scoreWrites": [],
+  "actions": [
+    {
+      "layout": "phone",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": true
+    }
+  ],
   "errors": [],
+  "scoreWrites": [],
+  "imageRequests": [
+    "https://arcade.uptick.systems/river-rush/art/title-hero-reference-v1.webp",
+    "https://arcade.uptick.systems/river-rush/art/title-hero-reference-v1.webp"
+  ],
+  "imageFailure": null,
+  "reducedMotion": null,
   "actualAppStateOrClockMutations": false,
   "fixedSeedOrClock": false,
   "limitations": [
     "Chromium uses SwiftShader; no physical device FPS or campaign/gameplay regression claim.",
     "Readability and face crop need actual-image review; rectangle and hit-target checks are recorded separately."
-  ]
+  ],
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-C0jiCQVD.js"
 }
