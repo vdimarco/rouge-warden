@@ -2,7 +2,7 @@
 // `done` means the crossing was scored, not that the physical hazard vanished.
 // A dodged rock or jumped log still has to pass the raft and leave the camera.
 export function worldEntityVisible(entity,distance,view){
-  const ahead=entity.d-distance,pickup=entity.type==='coin'||entity.type==='magnet'||entity.type==='shield';
+  const ahead=entity.d-distance,pickup=entity.type==='coin'||entity.type==='magnet'||entity.type==='shield'||entity.type==='target';
   return ahead<=view&&ahead>(pickup?-5:-16)&&!(pickup?entity.collected:entity.destroyed);
 }
 export function bankScenery(distance,view=140){

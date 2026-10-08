@@ -1,0 +1,17 @@
+[
+  {
+    "file": "public/river-rush/index.html",
+    "bytes": 798,
+    "sha256": "c3475d483a05741f3f3de7fad25878569d5b8d35ae313b1219949f9ccbf92902"
+  },
+  {
+    "file": "public/river-rush/assets/index-Bkn1MAT_.js",
+    "bytes": 1085871,
+    "sha256": "58a1b0681884151a8e5063914e96f4e275d1f31d3e2e35b3362c27220155f3d1"
+  },
+  {
+    "file": "public/river-rush/assets/index-BttXBCLJ.css",
+    "bytes": 33889,
+    "sha256": "6517ad030e1900dda887e6c15822a45cddd2b54f4d3d26b35d922f109d30ed95"
+  }
+]

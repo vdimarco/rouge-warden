@@ -20,11 +20,11 @@ function Gesture({ gesture }) {
   </div>;
 }
 
-export default function GestureGuide({ variant = 'menu', active = true, time = 0, action }) {
+export default function GestureGuide({ variant = 'menu', active = true, time = 0, action, enemy }) {
   const opening = variant === 'play' || variant === 'opening';
-  if (!active || (opening && time >= 10)) return null;
+  if (!active || (opening && time >= 10 && !enemy)) return null;
   const nextGesture = action === 'log' ? 1 : action === 'branch' ? 2 : action === 'rock' ? 0 : time < .7 ? 0 : time < 2.15 ? 1 : time < 3.5 ? 2 : time < 5.5 ? 0 : time < 7.75 ? 1 : 2;
-  const shown = opening ? [gestures[nextGesture]] : gestures;
+  const shown = opening ? [{ ...gestures[nextGesture], ...(enemy ? { label: enemy === 'crocodile' ? 'Jump crocodile' : 'Duck swooping bird', hint: enemy === 'crocodile' ? 'Swipe up or dodge its lane' : 'Swipe down or dodge its lane' } : {}) }] : gestures;
   return <div className={`gesture-guide gesture-guide-${opening ? 'play' : variant}`} role="group" aria-label="Swipe controls: left or right changes lanes, up jumps, down ducks">
     {shown.map(gesture => <Gesture gesture={gesture} key={gesture.id}/>)}
   </div>;

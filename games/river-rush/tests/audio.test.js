@@ -219,6 +219,23 @@ test('smashes clean up splash filters on completion and a wave combo stays short
   audio.pause(); assert.equal(audio.voices.size, 0);
 });
 
+test('relic pickups are distinct, audible over coin tails, bounded and silent when stopped', async () => {
+  const { audio } = rig(); audio.setEnabled(true); audio.start(); await settled();
+  for (let coin = 0; coin < 6; coin++) audio.tone('coin');
+  assert.equal(audio.tone('target', { id: 34 }), true);
+  const target = [...audio.voices].filter(voice => voice.event === 'target');
+  assert.equal(target.length, 3);
+  assert.equal(audio.status.cueCounts.target, 1);
+  assert.deepEqual(target.map(voice => voice.source.frequency.events[0].value), [659, 988, 1319]);
+  assert.ok(target.at(-1).source.stopAt <= .38);
+  for (let coin = 0; coin < 20; coin++) audio.tone('coin');
+  assert.ok(target.every(voice => audio.voices.has(voice)));
+  assert.ok(audio.status.activeVoices <= audio.status.voiceLimit);
+  audio.pause(); assert.equal(audio.tone('target'), false);
+  audio.setEnabled(false); assert.equal(audio.tone('target'), false);
+  assert.equal(audio.status.cueCounts.target, 1);
+});
+
 test('a contact graph failure releases partial nodes and cannot count or interrupt the run', async () => {
   const { audio, contexts } = rig(); audio.setEnabled(true); audio.start(); await settled();
   const context = contexts[0], createGain = context.createGain.bind(context), before = context.created.length;

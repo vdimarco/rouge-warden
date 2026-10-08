@@ -83,7 +83,7 @@ test('terrain biases mixed readable routes with jump arcs, low canopy gold and s
 
 test('natural no-Rush generation provides at least three eligible jumps for every advertised chain',()=>{
  let advertised=0,truncated=0,minEligible=Infinity;
- for(let seed=1;seed<=50;seed++)for(const level of LEVELS){
+ for(const seed of [...Array.from({length:50},(_,n)=>n+1),55])for(const level of LEVELS){
   const g=createGame(seed,level.index),rows=new Map(),promises=new Map(),shortened=new Set();
   for(let d=260;d<level.length-FINISH_RUNWAY;d+=10){
    const section=terrainSection(d,g.terrainProfile);
@@ -108,7 +108,7 @@ test('natural no-Rush generation provides at least three eligible jumps for ever
   }
  }
  assert.ok(advertised>200);assert.ok(truncated>0);
- console.log(JSON.stringify({naturalSeedMaps:150,advertisedWaveEncounters:advertised,minEligibleJumps:minEligible,truncatedEncountersWithoutChainCue:truncated}));
+ console.log(JSON.stringify({naturalSeedMaps:153,advertisedWaveEncounters:advertised,minEligibleJumps:minEligible,truncatedEncountersWithoutChainCue:truncated}));
 });
 
 function waveFixture(){
