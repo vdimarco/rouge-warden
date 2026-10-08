@@ -3,6 +3,7 @@
 // The script finds those buttons, works out which game this page is from its URL, and opens the list.
 (() => {
   const GAMES = [
+    { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62" },
     { id: "tidebreak", name: "Shore of the Ancients", sub: "3v3 folklore MOBA", url: "/tidebreak/", art: "/tidebreak/art/shore-ancients-hero.webp", color: "#d2e46d" },
     { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/hero-chaos.webp", color: "#ffca51" },
     { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/arcade/worlds.webp", color: "#c7e5ac" },

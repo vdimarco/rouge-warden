@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0817">
+<meta name="description" content="Carry the last sparks home. A three-crossing ASCII sailing adventure in Cottage Arcade.">
+<title>Last Light · Cottage Arcade</title>
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./style.css">
+<script src="/arcade/quiet.js"></script>
+</head>
+<body>
+<main>
+<header><a class="brand" href="./">Last Light</a><a href="/" aria-label="Return to Cottage Arcade">[ arcade ]</a></header>
+<div class="hud" aria-label="Voyage status">
+<span id="crossing">sunset crossing</span>
+<span>lights <b id="lights">0</b></span>
+<span>hull <b id="hull">3/3</b></span>
+</div>
+<div class="sea" id="sea" tabindex="0" role="region" aria-label="Sailing play area">
+<canvas id="scene" aria-label="An animated coloured ASCII ocean sunset"></canvas>
+<canvas id="play" aria-label="Sailboat, drifting lights and rocks"></canvas>
+</div>
+<section class="console" aria-labelledby="title">
+<h1 id="title">Last Light</h1>
+<p id="message" role="status" aria-live="polite">Carry the last sparks home.</p>
+<div class="actions"><button id="primary" type="button">[ set sail ]</button><button id="retry" type="button" hidden>[ new voyage ]</button></div>
+<p class="instructions">arrows / WASD to steer · space to dash · P to pause</p>
+<div class="run-details"><span id="progress">three crossings · one way home</span><span id="best">best 0</span></div>
+</section>
+<div class="touch" aria-label="Touch controls">
+<div class="steering">
+<button type="button" data-direction="up" aria-label="Steer up">↑</button>
+<button type="button" data-direction="left" aria-label="Steer left">←</button>
+<button type="button" data-direction="down" aria-label="Steer down">↓</button>
+<button type="button" data-direction="right" aria-label="Steer right">→</button>
+</div>
+<button type="button" id="dash" aria-label="Dash">[ dash ]</button>
+</div>
+<footer><span>scenes by <a href="https://ascii.rest/" target="_blank" rel="noopener">ascii.rest</a> / <a href="./vendor/LICENSE">MIT</a></span><button type="button" data-switch>[ switch game ]</button></footer>
+</main>
+<script src="/arcade/switch.js"></script>
+<script type="module" src="./game.js"></script>
+</body>
+</html>
+
