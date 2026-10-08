@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,updateGame,speedAt,JUMP_SECONDS,DUCK_SECONDS,HAZARD_LANE_RADIUS} from '../src/game/engine.js';
 import {laneSpring} from '../src/game/world.js';
@@ -7,7 +8,7 @@ import {laneSpring} from '../src/game/world.js';
 // input queue. These fixtures separate physical contact from frame cadence.
 function crossing(hz,items,options={}){
  const {steer='',until=Math.max(...items.map(e=>e.at))+.002,...state}=options;
- const g=Object.assign(createGame(73,1),{entities:[],nextRow:1e9,time:1000,shield:false,goal:{kind:'tricks',start:0,target:1e9}},state);
+ const g=Object.assign(createGame(73,1),{entities:[],nextRow:1e9,time:1000,lane:1,visualLane:1,shield:false,goal:{kind:'tricks',start:0,target:1e9}},state);
  const speed=speedAt(g.time,g.levelIndex)*(g.rush?1.32:1),input=emptyInput();
  g.entities=items.map((item,index)=>({id:900+index,done:false,...item,d:speed*item.at}));
  if(steer)queueAction(input,steer);
@@ -47,8 +48,8 @@ test('a completed carve and a reversal clear or hit according to visible crossin
 });
 
 test('full-width action waves have no gaps between lanes and award one trick per row',()=>{
- for(const hz of [30,60,120])for(const visualLane of [.5,1.5])for(const [type,action] of [['log','jump'],['branch','duck']]){
-  const items=[0,1,2].map(lane=>({type,lane,at:.005,row:17})),position={lane:visualLane<1?0:2,visualLane};
+ for(const hz of [30,60,120])for(const visualLane of [.5,1.5,2.5,3.5])for(const [type,action] of [['log','jump'],['branch','duck']]){
+  const items=LANES.map(lane=>({type,lane,at:.005,row:17})),position={lane:Math.round(visualLane),visualLane};
   const miss=crossing(hz,items,position);assert.equal(miss.g.phase,'lost','the gap between adjacent wave parts bypassed the action');
   const clear=crossing(hz,items,{...position,action,actionTime:.2});
   assert.equal(clear.g.phase,'playing');assert.equal(clear.g[action==='jump'?'jumps':'ducks'],1);
@@ -102,7 +103,7 @@ test('rocks remain dodge-only during visibly airborne contact',()=>{
 });
 
 test('a 50 ms wipeout frame freezes at contact and keeps only rewards already crossed',()=>{
- const g=Object.assign(createGame(73,1),{entities:[],nextRow:1e9,time:1000,shield:false,action:'duck',actionTime:DUCK_SECONDS-.02,goal:{kind:'tricks',start:0,target:1e9}});
+ const g=Object.assign(createGame(73,1),{entities:[],nextRow:1e9,time:1000,lane:1,visualLane:1,shield:false,action:'duck',actionTime:DUCK_SECONDS-.02,goal:{kind:'tricks',start:0,target:1e9}});
  const speed=speedAt(g.time,1),input=emptyInput();queueAction(input,'right');
  g.entities=[{id:990,type:'coin',lane:1,d:speed*.002},{id:991,type:'rock',lane:1,d:speed*.005},{id:992,type:'coin',lane:1,d:speed*.009}];
  updateGame(g,input,.05);

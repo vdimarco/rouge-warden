@@ -1,11 +1,12 @@
 import test from 'node:test';
+import {CENTER_LANE} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,updateGame} from '../src/game/engine.js';
 import {unplayedEffects,advanceWipeout} from '../src/game/run-feedback.js';
 
 test('every touched coin survives another event in the same frame; missed side coins are silent',()=>{
  const g=createGame(73),input=emptyInput();
- Object.assign(g,{entities:[{id:901,type:'coin',lane:1,d:1},{id:902,type:'coin',lane:1,d:1.2},{id:903,type:'coin',lane:0,d:1.3}],nextRow:1e9,goal:{kind:'coins',start:0,target:2}});
+ Object.assign(g,{entities:[{id:901,type:'coin',lane:CENTER_LANE,d:1},{id:902,type:'coin',lane:CENTER_LANE,d:1.2},{id:903,type:'coin',lane:CENTER_LANE-1,d:1.3}],nextRow:1e9,goal:{kind:'coins',start:0,target:2}});
  const before=g.eventId;updateGame(g,input,.05);
  assert.equal(g.event,'goal');assert.equal(g.coins,2);
  const cues=unplayedEffects(g,before);
@@ -16,7 +17,7 @@ test('every touched coin survives another event in the same frame; missed side c
 
 test('the wipeout clock is bounded, holds on pause, and never touches frozen contact state',()=>{
  for(const hz of [30,60,120]){
-  const g=createGame(17);Object.assign(g,{shield:false,entities:[{id:990,type:'rock',lane:1,d:1}],nextRow:1e9});
+  const g=createGame(17);Object.assign(g,{shield:false,entities:[{id:990,type:'rock',lane:CENTER_LANE,d:1}],nextRow:1e9});
   updateGame(g,emptyInput(),.05);assert.equal(g.phase,'lost');
   const frozen={time:g.time,distance:g.distance,lane:g.visualLane,score:g.score};
   let elapsed=0;for(let frame=0;frame<hz;frame++)elapsed=advanceWipeout(elapsed,1/hz);

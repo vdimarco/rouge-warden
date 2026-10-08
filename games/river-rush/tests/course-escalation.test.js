@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,generateAhead} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
@@ -23,7 +24,7 @@ test('each finite river is 50 percent longer and has a clean 150 m finish approa
   assert.ok(rows.every(row=>row[0].d<level.length-FINISH_RUNWAY));
   const approach=g.entities.filter(e=>e.motif==='finish-runway');
   assert.equal(approach[0].d,level.length-90);assert.equal(approach.at(-1).d,level.length-15);
-  assert.ok(approach.every(e=>e.type==='coin'&&e.lane===1));
+  assert.ok(approach.every(e=>e.type==='coin'&&e.lane===CENTER_LANE));
   assert.ok(g.entities.every(e=>e.d<level.length));
  }
 });
@@ -41,7 +42,7 @@ test('seeded episodes cross four acts with varied lengths, recovery gaps and inc
   for(let i=0;i<rows.length;i++){
    const row=rows[i],item=row[0],act=courseAct(item.d,level.length),stats=totals[act];
    assert.equal(item.act,act);stats.rows++;stats.paired+=coveredLanes(row).length>1?1:0;stats.waves+=actionWall(row)?1:0;
-   assert.ok(coveredLanes(row).length<3||actionWall(row),'mixed wall has no safe route');
+   assert.ok(coveredLanes(row).length<LANE_COUNT||actionWall(row),'mixed wall has no safe route');
    if(item.episode>=0){
     if(!episodes.has(item.episode))episodes.set(item.episode,[]);episodes.get(item.episode).push(item);
     const next=rows[i+1]?.[0];

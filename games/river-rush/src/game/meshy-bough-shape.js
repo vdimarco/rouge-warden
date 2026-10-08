@@ -1,3 +1,4 @@
+import {laneToX} from './lanes.js';
 import {riverBankHeight} from './river-course.js';
 // The complete native oak keeps its authored trunk, crooked limb and forks.
 // Placement is affine; the only deformation gently seats the bank root into
@@ -190,7 +191,7 @@ const frames=new WeakMap();
 export function boughFrame(shape,anatomy=NATIVE_OAK_ANATOMY){
  const saved=frames.get(shape);if(saved?.anatomy===anatomy)return saved;
  const xScale=(shape.nativeReach-shape.root.x)/anatomy.extent;
- const nativeXs=shape.span.lanes.map(lane=>((lane-1)*3.8-shape.root.x)/xScale);
+ const nativeXs=shape.span.lanes.map(lane=>(laneToX(lane)-shape.root.x)/xScale);
  const nativeShafts=nativeXs.map(x=>nativeOakShaft(x,anatomy));
  const mean=(values)=>values.reduce((n,v)=>n+v,0)/values.length;
  const nativeYs=nativeShafts.map(p=>p.y),heightRange=Math.max(...nativeYs)-Math.min(...nativeYs);

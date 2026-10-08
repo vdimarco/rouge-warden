@@ -4,21 +4,22 @@ import {branchProjection,projection,encounterProjection} from '../src/game/rende
 import {branchOverlap,branchSpan} from '../src/game/branch-spans.js';
 import {HAZARD_LANE_RADIUS} from '../src/game/engine.js';
 import {encounterMotion} from '../src/game/moving-encounters.js';
+import {LANES,MIN_LANE,MAX_LANE,CENTER_LANE} from '../src/game/lanes.js';
 
 const layouts=[[390,844],[360,640],[1440,900],[844,390]];
-const spans=[[0],[2],[0,1],[1,2],[0,1,2]];
+const spans=[[0],[4],[0,1],[3,4],[0,1,2],[2,3,4]];
 const close=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-9,`${actual} differs from ${expected}`);
 const branch=(lanes,side=-1)=>({id:13,type:'branch',lane:lanes[0],d:300,branchLanes:lanes,branchSide:side});
 
-test('one-, two- and full-width fallback branch cues match exact continuous physical coverage',()=>{
+test('one-, two- and three-lane fallback branch cues match exact continuous physical coverage',()=>{
  for(const [width,height] of layouts)for(const lanes of spans)for(const distance of [240,285,300]){
   const e=branch(lanes),g={distance},p=branchProjection(e,g,width,height),span=branchSpan(e);
   assert.equal(p.width,lanes.length);assert.equal(p.marks.length,lanes.length);
   close(p.low,lanes[0]-HAZARD_LANE_RADIUS);close(p.high,lanes.at(-1)+HAZARD_LANE_RADIUS);
   close(p.center.x,projection(width,height,span.centerLane,e.d-distance).x);
   assert.ok(p.start.x<p.end.x);assert.ok(p.corners.every(point=>Number.isFinite(point.x)&&Number.isFinite(point.y)));
-  assert.match(p.label,/DUCK/);assert.match(p.label,lanes.length===3?/FULL RIVER/:new RegExp(`${lanes.length} LANES?`));
-  for(let lane=-1;lane<=3;lane+=.05){
+  assert.match(p.label,/DUCK/);assert.match(p.label,new RegExp(`${lanes.length} LANES?`));assert.doesNotMatch(p.label,/FULL RIVER/);
+  for(let lane=MIN_LANE-1;lane<=MAX_LANE+1;lane+=.05){
    const at=projection(width,height,lane,e.d-distance),inside=at.x>=p.start.x-1e-9&&at.x<=p.end.x+1e-9;
    const physical=branchOverlap(e,lane);
    // The thin water-plane band's horizontal footprint must mean the same
@@ -33,9 +34,9 @@ test('wider branch cues grow from either bank without moving the representative 
  for(const [width,height] of layouts)for(const side of [-1,1]){
   const widths=[];
   for(let count=1;count<=3;count++){
-   const lanes=side<0?[0,1,2].slice(0,count):[0,1,2].slice(3-count),e=branch(lanes,side),before=JSON.stringify(e),p=branchProjection(e,{distance:285},width,height);
+   const lanes=side<0?LANES.slice(0,count):LANES.slice(-count),e=branch(lanes,side),before=JSON.stringify(e),p=branchProjection(e,{distance:285},width,height);
    widths.push(p.end.x-p.start.x);assert.equal(JSON.stringify(e),before);
-   if(count<3)for(const clear of [0,1,2].filter(lane=>!lanes.includes(lane))){const at=projection(width,height,clear,15);assert.ok(at.x<p.start.x||at.x>p.end.x,'uncovered lane center must stay visibly clear');}
+   for(const clear of LANES.filter(lane=>!lanes.includes(lane))){const at=projection(width,height,clear,15);assert.ok(at.x<p.start.x||at.x>p.end.x,'uncovered lane center must stay visibly clear');}
    if(count===2)assert.notEqual(p.center.x,projection(width,height,e.lane,15).x,'one whole-span label belongs between covered lanes');
   }
   assert.ok(widths[0]<widths[1]&&widths[1]<widths[2]);
@@ -48,7 +49,16 @@ test('branch projection stays deterministic while paused and does not change wil
   const e=branch(lanes),normal=branchProjection(e,{distance:270,time:1},390,844),stopped=branchProjection(e,{distance:270,time:60,phase:'paused',reducedMotion:true},390,844);
   assert.deepEqual(stopped,normal);assert.notDeepEqual(branchProjection(e,{distance:275},390,844),normal);
  }
- const e={id:14,type:'branch',enemy:'bird',lane:1,d:300,motion:encounterMotion(1,300,100,'bird',0),branchLanes:[0,1,2]};
+ const e={id:14,type:'branch',enemy:'bird',lane:CENTER_LANE,d:300,motion:encounterMotion(CENTER_LANE,300,100,'bird',0),branchLanes:[0,1,2]};
  const p=encounterProjection(e,{distance:240},390,844);
- assert.equal(p.action,'duck');assert.ok(p.lift>0);assert.equal(p.contactLane,1);
+ assert.equal(p.action,'duck');assert.ok(p.lift>0);assert.equal(p.contactLane,CENTER_LANE);
+});
+
+test('paired full canopies retain individual physical marks while communicating the five-lane row',()=>{
+ for(const [width,height] of layouts)for(const leftCount of [2,3]){
+  const covered=[LANES.slice(0,leftCount),LANES.slice(leftCount)];
+  const cues=covered.map((lanes,index)=>branchProjection({...branch(lanes,index===0?-1:1),fullRiver:true,canopyLead:index===0},{distance:285},width,height));
+  assert.deepEqual(cues.flatMap(cue=>cue.lanes),LANES);
+  for(const cue of cues){assert.match(cue.label,/FULL RIVER/);assert.equal(cue.marks.length,cue.width);assert.ok(cue.width<=3);}
+ }
 });

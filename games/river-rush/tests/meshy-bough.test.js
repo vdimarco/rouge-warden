@@ -1,3 +1,4 @@
+import {laneToX,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
@@ -20,7 +21,7 @@ const vertices=doc=>doc.getRoot().listNodes().filter(n=>n.getMesh()).flatMap(nod
  const a=p.getAttribute('POSITION'),out=[],matrix=new THREE.Matrix4().fromArray(node.getWorldMatrix());
  for(let i=0;i<a.getCount();i++){const v=new THREE.Vector3().fromArray(a.getElement(i,[])).applyMatrix4(matrix);out.push({x:v.x,y:v.y,z:v.z});}return out;
 }));
-const layouts=[[0],[2],[0,1],[1,2],[0,1,2]];
+const layouts=[[0],[4],[0,1],[3,4],[0,1,2],[2,3,4]];
 const profiles=[0,137,98213,...LEVELS.map(l=>createCourseProfile(137,l.length,l.index))];
 const shapeCases=()=>profiles.flatMap(seed=>[110,580,1380,4872].flatMap(d=>layouts.flatMap(lanes=>[-1,1].map(side=>({seed,d,shape:shorelineBranch({type:'branch',id:d+lanes.length,d,lane:lanes[0],branchLanes:lanes,branchSide:side},d,seed)})))));
 
@@ -33,7 +34,7 @@ test('native tree placements remain rooted with registered wood contacts for all
    const frame=boughFrame(shape),contacts=nativeOakContacts(shape);
    assert.deepEqual(contacts.map(p=>p.lane),shape.span.lanes);
    for(const [i,c] of contacts.entries()){
-    assert.ok(Math.abs(c.x-(c.lane-1)*3.8)<1e-6);assert.ok(Math.abs(c.d)<1.25,'natural shaft bends remain close to the contact station');
+    assert.ok(Math.abs(c.x-laneToX(c.lane))<1e-6);assert.ok(Math.abs(c.d)<1.25,'natural shaft bends remain close to the contact station');
     assert.ok(c.y>=2.7&&c.y<=3.8,'the primary limb reaches duck height at covered lanes');
     const native=nativeOakShaft(frame.nativeXs[i]);
     const section=source.filter(v=>Math.abs(v.x-native.x)<.018&&Math.abs(v.z-native.z)<.055&&Math.abs(v.y-native.y)<.065);
@@ -51,7 +52,7 @@ test('native tree placements remain rooted with registered wood contacts for all
    for(const v of source){
     const p=boughVertex(v,shape),native=nativeOakShaft(v.x);
     const mainWood=v.x>=.4&&Math.abs(v.z-native.z)<.055&&Math.abs(v.y-native.y)<.065;
-    if(mainWood&&p.y<3.5&&Math.abs(p.d)<1.25&&Math.abs(p.x)<=5.7){
+    if(mainWood&&p.y<3.5&&Math.abs(p.d)<1.25&&Math.abs(p.x)<=PLAYABLE_HALF_WIDTH){
      assert.ok(p.x>=shape.span.minX-.08&&p.x<=shape.span.maxX+.08,'native low main wood stays inside the marked covered region');
     }
    }
@@ -92,7 +93,7 @@ test('complete native batches recycle the fixed pool and replace all old wood ov
  const resources=scene.children.map(m=>[m.geometry,m.material,m.instanceMatrix,...Object.values(m.geometry.attributes)]);
  assert.equal(trees.state.capacity,32);assert.equal(trees.state.perTree,BRANCH_TREE_PARTS);
  for(let update=0;update<50;update++){
-  trees.begin();for(let i=0;i<38;i++){const count=i%3+1,lanes=i%2?[0,1,2].slice(0,count):[0,1,2].slice(3-count),e={type:'branch',id:i+1,d:100+i*50,lane:lanes[0],branchLanes:lanes,branchSide:i%2?-1:1};trees.add(e,update,e.d,137);}trees.finish();
+  trees.begin();for(let i=0;i<38;i++){const count=i%3+1,lanes=i%2?[0,1,2].slice(0,count):[2,3,4].slice(3-count),e={type:'branch',id:i+1,d:100+i*50,lane:lanes[0],branchLanes:lanes,branchSide:i%2?-1:1};trees.add(e,update,e.d,137);}trees.finish();
   assert.equal(trees.state.trees,32);assert.equal(trees.state.meshyInstances,32);assert.equal(trees.state.woodSegments,0);assert.equal(trees.state.leafClusters,0);
   assert.equal(trees.state.model,'meshy');assert.equal(trees.state.style,'meshy-natural-oak');assert.equal(trees.state.meshySamples.length,6);
   assert.deepEqual(scene.children.map(m=>[m.geometry,m.material,m.instanceMatrix,...Object.values(m.geometry.attributes)]),resources);
@@ -111,7 +112,7 @@ test('native prepared winding keeps an outward surface lit after the course Z re
  assert.deepEqual(Array.from(geometry.index.array),[0,1,2],'native source topology is untouched');
  assert.equal(prepared.getAttribute('tangent').getW(0),-1,'normal-map tangent handedness follows the reflection');
  for(const side of [-1,1]){
-  const e={type:'branch',id:41,d:580,lane:0,branchLanes:[0,1,2],branchSide:side},shape=shorelineBranch(e,e.d,137);
+  const e={type:'branch',id:41,d:580,lane:side<0?0:4,branchLanes:side<0?[0,1,2]:[2,3,4],branchSide:side},shape=shorelineBranch(e,e.d,137);assert.equal(shape.side,side);
   const points=Array.from(prepared.index.array,i=>{const attribute=prepared.getAttribute('position'),p=boughVertex({x:attribute.getX(i),y:attribute.getY(i),z:attribute.getZ(i)},shape),world=riverPoint(e.d,e.d+p.d,p.x,137);return new THREE.Vector3(world.x,world.y+p.y,world.z);});
   const normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).normalize();
   const centreCourse=e.d-points.reduce((n,p)=>n+p.z,0)/3,outward=new THREE.Vector3(0,1,riverGrade(centreCourse,137)).normalize();

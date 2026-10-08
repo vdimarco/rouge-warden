@@ -1,6 +1,7 @@
+import {LANES,laneToX,LANE_SPACING,PLAYABLE_HALF_WIDTH,RIVER_WIDTH_EXPANSION} from '../src/game/lanes.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {riverCenter,riverTangent,riverHalfWidth,riverElevation,riverGrade,rapidAt,rapidDerivative,riverPoint,shoalAt,createCourseProfile,chuteAt,riverIntensity} from '../src/game/river-course.js';
+import {riverCenter,riverTangent,riverHalfWidth,riverElevation,riverGrade,rapidAt,rapidDerivative,riverPoint,shoalAt,createCourseProfile,chuteAt,riverIntensity,COURSE_GLSL} from '../src/game/river-course.js';
 import {surfaceAt,floatTarget} from '../src/game/hydrodynamics.js';
 import {COURSE_ACTS,courseAct,courseIntensity,intensityDerivative,intensityIntegral} from '../src/game/course-intensity.js';
 
@@ -9,7 +10,7 @@ test('seeded river stays wide, descends downstream and has continuous chute boun
   let minWidth=Infinity,maxWidth=0,minGrade=0,maxRapid=0;
   for(let d=-200;d<3000;d+=.71){
    const width=riverHalfWidth(d,seed)*2,grade=riverGrade(d,seed);
-   assert.ok(width>21.1&&width<44.5);assert.ok(grade<=-.0219);
+   assert.ok(width>21.1+RIVER_WIDTH_EXPANSION*2&&width<44.5+RIVER_WIDTH_EXPANSION*2);assert.ok(grade<=-.0219);
    assert.ok(riverElevation(d+1,seed)<riverElevation(d,seed));
    assert.ok(rapidAt(d,seed)>=.12&&rapidAt(d,seed)<=1);
    minWidth=Math.min(minWidth,width);maxWidth=Math.max(maxWidth,width);minGrade=Math.min(minGrade,grade);maxRapid=Math.max(maxRapid,rapidAt(d,seed));
@@ -42,7 +43,7 @@ test('profiled rivers stay downhill, wide and continuous through all acts and se
   assert.ok(Object.isFrozen(course));
   for(let d=-100;d<=length+150;d+=1.77){
    const width=riverHalfWidth(d,course),grade=riverGrade(d,course),rapid=rapidAt(d,course);
-   assert.ok(width>=11.1&&width<=26.5);assert.ok(grade<=-.01999&&grade>=-.563);assert.ok(rapid>=0&&rapid<=1);
+   assert.ok(width>=11.1+RIVER_WIDTH_EXPANSION&&width<=26.5+RIVER_WIDTH_EXPANSION);assert.ok(grade<=-.01999&&grade>=-.563);assert.ok(rapid>=0&&rapid<=1);
    assert.ok(Math.abs(riverCenter(d,course))<=33.2);assert.ok(riverElevation(d+1,course)<riverElevation(d,course));
   }
   const boundaries=[...COURSE_ACTS.map(act=>act.from*length),length];
@@ -51,7 +52,7 @@ test('profiled rivers stay downhill, wide and continuous through all acts and se
   for(const d of boundaries)for(const sample of [riverElevation,riverGrade,riverCenter,riverTangent,riverHalfWidth,rapidAt,rapidDerivative]){
    assert.ok(Math.abs(sample(d-1e-5,course)-sample(d+1e-5,course))<1e-4,`${sample.name} boundary ${index}:${seed}:${d}`);
   }
-  for(let n=0;n<Math.ceil(length/34);n++){const rock=shoalAt(n,course);assert.ok(Math.abs(rock.x)-rock.size*2*1.18>5.5,'shoals stay outside the playable lanes');}
+  for(let n=0;n<Math.ceil(length/34);n++){const rock=shoalAt(n,course);assert.ok(Math.abs(rock.x)-rock.size*2*1.18>PLAYABLE_HALF_WIDTH-.2,'shoals stay outside the playable lanes');}
  }
 });
 
@@ -99,9 +100,18 @@ test('floating course preserves lane spacing, follows downhill bends and places 
   const left=riverPoint(origin,origin+20,-3.8,7123),right=riverPoint(origin,origin+20,3.8,7123);
   assert.ok(Math.abs(right.x-left.x-7.6)<1e-10);assert.equal(right.y,left.y);
   for(let n=Math.floor(origin/34);n<Math.floor(origin/34)+9;n++){
-   const rock=shoalAt(n,7123);assert.ok(Math.abs(rock.x)-rock.size*2*1.18>5.5);
+   const rock=shoalAt(n,7123);assert.ok(Math.abs(rock.x)-rock.size*2*1.18>PLAYABLE_HALF_WIDTH-.2);
   }
  }
  const pool=floatTarget(0,0,0,false,7123),chute=floatTarget(0,67,0,false,7123);
  assert.ok(chute.pitch<pool.pitch);assert.deepEqual(floatTarget(0,67,0,true,7123),{height:.12,pitch:0,roll:0});
+});
+
+
+test('river widening preserves original organic course samples and uses the same shared GPU expansion',()=>{
+ const before=[{"seed":0,"length":0,"mapIndex":0,"d":0,"width":12.315199999999999},{"seed":0,"length":0,"mapIndex":0,"d":110,"width":17.76146451046025},{"seed":0,"length":0,"mapIndex":0,"d":580,"width":15.296686547883866},{"seed":0,"length":0,"mapIndex":0,"d":1380,"width":17.283900086349007},{"seed":0,"length":0,"mapIndex":0,"d":4872,"width":17.089637948785686},{"seed":137,"length":0,"mapIndex":0,"d":0,"width":20.968},{"seed":137,"length":0,"mapIndex":0,"d":110,"width":17.907432992864635},{"seed":137,"length":0,"mapIndex":0,"d":580,"width":13.507886547883864},{"seed":137,"length":0,"mapIndex":0,"d":1380,"width":15.503935217343662},{"seed":137,"length":0,"mapIndex":0,"d":4872,"width":15.334219007177687},{"seed":98213,"length":0,"mapIndex":0,"d":0,"width":15.6432},{"seed":98213,"length":0,"mapIndex":0,"d":110,"width":15.49457580817403},{"seed":98213,"length":0,"mapIndex":0,"d":580,"width":13.805873341089148},{"seed":98213,"length":0,"mapIndex":0,"d":1380,"width":13.542171311201525},{"seed":98213,"length":0,"mapIndex":0,"d":4872,"width":16.31662980732849},{"seed":137,"length":4200,"mapIndex":0,"d":0,"width":24.729951999999997},{"seed":137,"length":4200,"mapIndex":0,"d":110,"width":22.031811257273056},{"seed":137,"length":4200,"mapIndex":0,"d":580,"width":16.17794559146528},{"seed":137,"length":4200,"mapIndex":0,"d":1380,"width":18.376591049100558},{"seed":137,"length":4200,"mapIndex":0,"d":4872,"width":15.776088855061161},{"seed":137,"length":5400,"mapIndex":1,"d":0,"width":24.734427999999998},{"seed":137,"length":5400,"mapIndex":1,"d":110,"width":22.02023614572925},{"seed":137,"length":5400,"mapIndex":1,"d":580,"width":15.198251690896086},{"seed":137,"length":5400,"mapIndex":1,"d":1380,"width":18.922904585722417},{"seed":137,"length":5400,"mapIndex":1,"d":4872,"width":19.697913623331978},{"seed":137,"length":6600,"mapIndex":2,"d":0,"width":24.7384},{"seed":137,"length":6600,"mapIndex":2,"d":110,"width":22.007785742632706},{"seed":137,"length":6600,"mapIndex":2,"d":580,"width":15.32342422657814},{"seed":137,"length":6600,"mapIndex":2,"d":1380,"width":19.5030517897516},{"seed":137,"length":6600,"mapIndex":2,"d":4872,"width":20.61178014559804}];
+ for(const c of before){const profile=c.length?createCourseProfile(c.seed,c.length,c.mapIndex):c.seed;assert.ok(Math.abs(riverHalfWidth(c.d,profile)-c.width-RIVER_WIDTH_EXPANSION)<1e-12);}
+ const gpuWidth=COURSE_GLSL.match(/float rWidth\(float d\)\{([^\n]+)\}/)[1];
+ assert.equal((gpuWidth.match(new RegExp(RIVER_WIDTH_EXPANSION.toFixed(4).replace('.', '\\.'),'g'))??[]).length,2,'both GPU profile paths include the same imported width expansion');
+ for(const origin of [0,580,4872]){const points=LANES.map(lane=>riverPoint(origin,origin+20,laneToX(lane),137));for(let i=1;i<points.length;i++)assert.ok(Math.abs(points[i].x-points[i-1].x-LANE_SPACING)<1e-10);assert.ok(riverHalfWidth(origin,137)>PLAYABLE_HALF_WIDTH+2);}
 });

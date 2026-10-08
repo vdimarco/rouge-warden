@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,updateGame,timeToImpact,snapshot,speedAt,hazardTouchesLane} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
@@ -7,12 +8,12 @@ import {worldEntityVisible,laneSpring} from '../src/game/world.js';
 const hazard=e=>['rock','log','branch'].includes(e.type);
 function fixture(entity,extra={}){
  const g=createGame(37);
- Object.assign(g,{entities:[entity],nextRow:1e9,shield:false,...extra});
+ Object.assign(g,{entities:[entity],nextRow:1e9,lane:1,visualLane:1,shield:false,...extra});
  return g;
 }
 
 test('relic glide remains smooth, endpoint-locked, finite and paused with the simulation',()=>{
- for(const level of LEVELS)for(const lane of [0,1,2]){
+ for(const level of LEVELS)for(const lane of LANES){
   const kind='target';
   const speed=level.maxSpeed*1.32,motion=encounterMotion(lane,1000,speed,kind,17),e={lane,motion};
   assert.equal(entityLane(e,motion.startD-100),motion.from);
@@ -30,16 +31,16 @@ test('relic glide remains smooth, endpoint-locked, finite and paused with the si
 
 test('crocodiles sweep the whole river repeatedly and continue moving into the contact window',()=>{
  let previousPeriod=Infinity;
- for(const level of LEVELS)for(const lane of [0,1,2])for(const seed of [16,17]){
+ for(const level of LEVELS)for(const lane of LANES)for(const seed of [16,17]){
   const speed=level.maxSpeed*1.32,d=1000,motion=encounterMotion(lane,d,speed,'crocodile',seed,level.index),e={lane,d,motion};
   const samples=Array.from({length:241},(_,n)=>entityPose(e,motion.startD+n*speed*.01));
-  assert.ok(Math.min(...samples.map(p=>p.lane))<.005);assert.ok(Math.max(...samples.map(p=>p.lane))>1.995);
+  assert.ok(Math.min(...samples.map(p=>p.lane))<.005);assert.ok(Math.max(...samples.map(p=>p.lane))>MAX_LANE-.005);
   const slopes=samples.map(p=>Math.sign(p.lateralSlope)).filter(Boolean),reversals=slopes.filter((sign,n)=>n&&sign!==slopes[n-1]).length;
   assert.ok(reversals>=4,'crocodile makes only one lateral pass');
   assert.equal(entityLane(e,d),lane);assert.equal(entityPose(e,d-.1*speed).contactLane,lane);
   assert.ok(Math.abs(entityLane(e,d-.18*speed)-lane)>.4,'crocodile parks well before contact');
   assert.ok(Math.abs(entityLane(e,d+.18*speed)-lane)>.4,'crocodile parks at contact');
-  for(const p of samples){assert.ok(p.lane>=0&&p.lane<=2);assert.ok(Object.values(p).every(Number.isFinite));}
+  for(const p of samples){assert.ok(p.lane>=0&&p.lane<=MAX_LANE);assert.ok(Object.values(p).every(Number.isFinite));}
   const at=d-.2*speed,h=.001,before=entityLane(e,at-h),after=entityLane(e,at+h);
   assert.ok(Math.abs((after-before)/(2*h)-entityPose(e,at).lateralSlope)<1e-6);
   const g=fixture({...e,id:1,type:'log',enemy:'crocodile'},{distance:at,phase:'paused'}),pose=entityPose(e,g.distance);
@@ -49,10 +50,10 @@ test('crocodiles sweep the whole river repeatedly and continue moving into the c
 });
 
 test('birds enter from both banks, dive into the duck envelope and fish visibly leap above their water shadow',()=>{
- for(const level of LEVELS)for(const lane of [0,1,2])for(const seed of [16,17]){
+ for(const level of LEVELS)for(const lane of LANES)for(const seed of [16,17]){
   const speed=level.maxSpeed*1.32,d=1000,bird={lane,d,motion:encounterMotion(lane,d,speed,'bird',seed,level.index)};
   const bank=entityPose(bird,bird.motion.startD),approach=entityPose(bird,d-speed*.7),contact=entityPose(bird,d),after=entityPose(bird,d+speed*.1);
-  assert.equal(bank.lane,seed&1?-.85:2.85);assert.equal(bank.lift,2.7);assert.ok(approach.lift>0&&approach.lift<bank.lift);
+  assert.equal(bank.lane,seed&1?-.85:MAX_LANE+.85);assert.equal(bank.lift,2.7);assert.ok(approach.lift>0&&approach.lift<bank.lift);
   assert.equal(contact.lane,lane);assert.equal(contact.contactLane,lane);assert.equal(contact.lift,0);
   assert.ok(Math.abs(contact.lateralSlope)>0,'bird stops short of its strike');assert.ok(after.lift>0,'bird does not pull up after its strike');
   assert.ok(Math.abs(entityLane(bird,d-.0001)-entityLane(bird,d+.0001))<.0001,'bird snaps into the contact lane');
@@ -211,8 +212,8 @@ test('relic-chasing full maps remain reachable at early/late action leads and 30
   while(g.phase==='playing'){
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),first=obstacles[0];
    if(first){
-    const row=obstacles.filter(e=>e.row===first.row),target=g.entities.find(e=>!e.done&&e.type==='target'&&e.row===first.row),coins=g.entities.filter(e=>e.type==='coin'&&e.row===first.row);
-    const lane=target?.lane??coins[0]?.lane??[0,1,2].find(l=>!row.some(e=>hazardTouchesLane(e,l)));
+    const row=obstacles.filter(e=>e.row===first.row),target=g.entities.find(e=>!e.done&&e.type==='target'&&e.row===first.row),coins=g.entities.filter(e=>e.type==='coin'&&e.primaryRoute!==false&&e.row===first.row);
+    const lane=target?.lane??coins[0]?.lane??LANES.find(l=>!row.some(e=>hazardTouchesLane(e,l)));
     const contact=row.find(e=>hazardTouchesLane(e,lane));
     if(g.distance>=holdUntil&&timeToImpact(g,first.d)<.85&&lane!==undefined&&g.lane!==lane)for(let n=0;n<Math.abs(lane-g.lane);n++)queueAction(input,lane>g.lane?'right':'left');
     if(contact&&contact.type!=='rock'&&!handled.has(first.row)&&timeToImpact(g,first.d)<=lead){queueAction(input,contact.type==='log'?'jump':'duck');handled.add(first.row);holdUntil=Math.max(first.d,...coins.map(e=>e.d));}

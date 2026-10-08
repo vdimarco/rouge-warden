@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,updateGame,timeToImpact,coinTouchesAtHeight,COIN_LANE_RADIUS,hazardTouchesLane} from '../src/game/engine.js';
 import {LEVELS} from '../src/game/levels.js';
@@ -33,7 +34,7 @@ test('required jumps and ducks arrive just after tutorials, action droughts are 
    assert.ok(run<=3,`${level.id} seed${seed} repeats ${kind} for ${run} rows`);
    if(actionWall(row)){required++;drought=0;assert.ok(row.every(e=>e.type===row[0].type&&e.type!=='rock'));}
    else{drought++;assert.ok(drought<=3,`${level.id} seed${seed} has ${drought} dodge-only beats`);}
-   const safe=[0,1,2].find(lane=>!row.some(e=>hazardTouchesLane(e,lane)));
+   const safe=LANES.find(lane=>!row.some(e=>hazardTouchesLane(e,lane)));
    if(safe!==undefined){if(clearLanes.at(-1)===safe)holds++;clearLanes.push(safe);}
    if(i+1<rows.length){const interval=arrival.get(rows[i+1][0].row)-arrival.get(row[0].row);assert.ok(interval>=level.minInterval-.015);intervals.add(Math.round(interval*100));}
   }
@@ -48,7 +49,7 @@ test('dodging-only players cannot camp through the first third of any map',()=>{
   const g=createGame(seed,level.index),input=emptyInput();g.shield=false;
   while(g.phase==='playing'&&g.distance<level.length/3){
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),next=obstacles.find(e=>hazardTouchesLane(e,g.lane));
-   if(next&&timeToImpact(g,next.d)<.6){const row=obstacles.filter(e=>e.row===next.row),safe=[0,1,2].find(lane=>!row.some(e=>hazardTouchesLane(e,lane)));if(safe!==undefined)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
+   if(next&&timeToImpact(g,next.d)<.6){const row=obstacles.filter(e=>e.row===next.row),safe=LANES.find(lane=>!row.some(e=>hazardTouchesLane(e,lane)));if(safe!==undefined)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
    updateGame(g,input,1/hz);
   }
   assert.equal(g.phase,'lost');assert.match(g.reason,/Log hit/);assert.ok(g.distance<500);assert.equal(g.jumps,0);
@@ -61,9 +62,9 @@ function firstRequiredArc(seed,index,hz,lead){
  for(let frame=0;frame<15*hz&&g.phase==='playing';frame++){
   const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),next=obstacles[0];
   if(next){
-   const group=obstacles.filter(e=>e.row===next.row),gold=g.entities.filter(e=>e.type==='coin'&&e.row===next.row);
+   const group=obstacles.filter(e=>e.row===next.row),gold=g.entities.filter(e=>e.type==='coin'&&e.primaryRoute!==false&&e.row===next.row);
    const marked=gold.find(e=>Number.isFinite(e.jumpHeight));
-   const lane=marked?.lane??gold[0]?.lane??[0,1,2].find(l=>!group.some(e=>hazardTouchesLane(e,l)))??g.lane;
+   const lane=marked?.lane??gold[0]?.lane??LANES.find(l=>!group.some(e=>hazardTouchesLane(e,l)))??g.lane;
    if(timeToImpact(g,next.d)<.85&&g.lane!==lane)for(let n=0;n<Math.abs(lane-g.lane);n++)queueAction(input,lane>g.lane?'right':'left');
    const contact=group.find(e=>hazardTouchesLane(e,lane));
    if(next.row===3&&row===null){row={...next};coins=gold.filter(e=>Number.isFinite(e.jumpHeight));assert.equal(coins.length,5);}
@@ -71,7 +72,7 @@ function firstRequiredArc(seed,index,hz,lead){
     if(next.row===3)appliedLead=timeToImpact(g,next.d);
     queueAction(input,contact.type==='log'?'jump':'duck');handled.add(next.row);
    }
-   if(contact?.type==='rock'&&timeToImpact(g,next.d)<.6){const safe=[0,1,2].find(l=>!group.some(e=>hazardTouchesLane(e,l)));if(safe!==undefined&&g.lane!==safe)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
+   if(contact?.type==='rock'&&timeToImpact(g,next.d)<.6){const safe=LANES.find(l=>!group.some(e=>hazardTouchesLane(e,l)));if(safe!==undefined&&g.lane!==safe)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
   }
   updateGame(g,input,1/hz);
   if(row&&g.distance>coins.at(-1).d){
@@ -111,7 +112,7 @@ test('marked gold leaves a human lane-change window between successive rows, inc
  for(let seed=1;seed<=35;seed++)for(const level of LEVELS){
   const {rows,items}=naturalCourse(seed,level.index);
   for(let i=1;i<rows.length;i++){
-   const previous=items.filter(e=>e.type==='coin'&&e.row===rows[i-1][0].row),next=items.filter(e=>e.type==='coin'&&e.row===rows[i][0].row);
+   const previous=items.filter(e=>e.type==='coin'&&e.primaryRoute!==false&&e.row===rows[i-1][0].row),next=items.filter(e=>e.type==='coin'&&e.primaryRoute!==false&&e.row===rows[i][0].row);
    if(previous[0].lane===next[0].lane)continue;
    const window=(next[0].d-previous.at(-1).d)/(level.maxSpeed*1.32);
    minWindow=Math.min(minWindow,window);transitions++;
@@ -125,16 +126,14 @@ test('earned Rush never puts the next ground ribbon under a still-airborne late-
  let rushes=0,alignedGround=0,finishCoins=0,highestEntities=0;
  for(const hz of [30,60,120])for(const level of LEVELS)for(const lead of [.22,.42])for(const seed of [8,12,137]){
   const g=createGame(seed,level.index),input=emptyInput(),handled=new Set();g.shield=false;
-  let holding=null;
   while(g.phase==='playing'){
+   const primary=g.entities.filter(e=>!e.done&&e.type==='coin'&&e.primaryRoute!==false),next=primary[0];
+   if(next&&timeToImpact(g,next.d)<.24&&g.lane!==next.lane)for(let n=0;n<Math.abs(next.lane-g.lane);n++)queueAction(input,next.lane>g.lane?'right':'left');
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),first=obstacles[0];
-   if(first){
-    const row=obstacles.filter(e=>e.row===first.row),coins=g.entities.filter(e=>e.type==='coin'&&e.row===first.row),lane=coins[0]?.lane??[0,1,2].find(l=>!row.some(e=>hazardTouchesLane(e,l)));
-    const contact=row.find(e=>hazardTouchesLane(e,lane));
-    if((!holding||g.distance>=holding.until)&&lane!==undefined&&g.lane!==lane)for(let n=0;n<Math.abs(lane-g.lane);n++)queueAction(input,lane>g.lane?'right':'left');
-    if(contact&&contact.type!=='rock'&&!handled.has(first.row)&&timeToImpact(g,first.d)<=lead){queueAction(input,contact.type==='log'?'jump':'duck');handled.add(first.row);holding={until:Math.max(...coins.map(e=>e.d))};}
+   if(first&&!handled.has(first.row)&&timeToImpact(g,first.d)<=lead){
+    const row=obstacles.filter(e=>e.row===first.row),contact=row.find(e=>hazardTouchesLane(e,next?.lane??g.lane));
+    if(contact&&contact.type!=='rock')queueAction(input,contact.type==='log'?'jump':'duck');handled.add(first.row);
    }
-   if(!first&&g.runwayGenerated&&(!holding||g.distance>=holding.until)&&g.lane!==1)queueAction(input,g.lane<1?'right':'left');
    if(g.charge>=100&&!g.rush){queueAction(input,'rush');rushes++;}
    const dt=1/hz,previous=g.distance,position=g.visualLane,velocity=g.laneVelocity;
    const coins=g.entities.filter(e=>!e.done&&e.type==='coin'&&!Number.isFinite(e.jumpHeight)&&e.d>previous&&e.d<=previous+level.maxSpeed*1.32*dt);
@@ -159,7 +158,7 @@ test('numeric arc gold still needs real lateral/vertical contact, while legacy l
  assert.equal(coinTouchesAtHeight({jumpHeight:jumpArcHeight(.31)},'',0),false);
  assert.equal(coinTouchesAtHeight({jumpHeight:jumpArcHeight(.31)},'jump',.65),false);
  for(const hz of [30,60,120])for(const lane of [1,1+COIN_LANE_RADIUS+.001]){
-  const g=Object.assign(createGame(73),{entities:[{id:991,type:'coin',lane,d:.1,jumpHeight:jumpArcHeight(.31),jumpOffset:0}],nextRow:1e9,action:'jump',actionTime:.31});
+  const g=Object.assign(createGame(73),{lane:1,visualLane:1,entities:[{id:991,type:'coin',lane,d:.1,jumpHeight:jumpArcHeight(.31),jumpOffset:0}],nextRow:1e9,action:'jump',actionTime:.31});
   updateGame(g,emptyInput(),1/hz);assert.equal(g.coins,lane===1?1:0);
  }
 });

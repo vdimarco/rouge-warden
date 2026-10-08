@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,updateGame,speedAt} from '../src/game/engine.js';
 import {impactFeedback,impactParticle,FATAL_IMPACT_DURATION,IMPACT_SPRAY_CAPACITY} from '../src/game/impact-feedback.js';
+import {CENTER_LANE} from '../src/game/lanes.js';
 
 function contact(shield=false){
  const g=Object.assign(createGame(73),{time:1000,entities:[],nextRow:1e9,shield,goal:{kind:'tricks',start:0,target:1e9}});
- g.entities=[{id:991,type:'rock',lane:1,d:speedAt(g.time,0)*.005}];
+ g.entities=[{id:991,type:'rock',lane:CENTER_LANE,d:speedAt(g.time,0)*.005}];
  updateGame(g,emptyInput(),.05);return g;
 }
 
@@ -15,7 +16,7 @@ test('physical shield contact visibly recoils without locking the controls',()=>
  assert.ok(feedback.active);assert.ok(Math.abs(feedback.recoil)>.5);assert.ok(Math.abs(feedback.pitch)>.12);assert.ok(feedback.brace>.7);assert.ok(feedback.shieldPulse>.7);
  assert.equal(feedback.splashParticles+feedback.shieldShards,IMPACT_SPRAY_CAPACITY);
  const input=emptyInput();queueAction(input,'right');updateGame(g,input,.05);
- assert.equal(g.lane,2);assert.ok(g.visualLane>1);assert.equal(g.phase,'playing');
+ assert.equal(g.lane,CENTER_LANE+1);assert.ok(g.visualLane>CENTER_LANE);assert.equal(g.phase,'playing');
  for(let i=0;i<12;i++)updateGame(g,emptyInput(),.05);
  const recovered=impactFeedback(g);assert.equal(recovered.active,false);assert.equal(recovered.cameraShake,0);assert.ok(Math.abs(recovered.recoil)<.02);
 });

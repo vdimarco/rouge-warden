@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bankScenery,rapids,laneSpring,duckCompression} from '../src/game/world.js';
 import {createMotion,advanceMotion} from '../src/game/motion.js';
+import {CENTER_LANE,LANE_COUNT,MIN_LANE,MAX_LANE} from '../src/game/lanes.js';
 
 test('bank props approach with course distance, stay outside playable lanes and never accumulate',()=>{
   for(const distance of [0,100,1000000]){
     const a=bankScenery(distance,180),b=bankScenery(distance+1,180);
     assert.ok(a.length<=30);
     for(const item of a){
-      assert.ok(Math.abs(item.lane-1)/3-.27*item.size/2>.5);
+      assert.ok(Math.abs(item.lane-CENTER_LANE)-.81*item.size/2>LANE_COUNT/2);
       const same=b.find(e=>e.id===item.id);if(same)assert.ok(Math.abs(same.z-(item.z-1))<1e-8);
     }
     assert.deepEqual(bankScenery(distance,180),a);
@@ -18,6 +19,8 @@ test('whitewater progresses continuously between obstacle rows and wraps outside
   for(const distance of [0,123,1000000]){
     const a=rapids(distance,180),b=rapids(distance+.5,180);
     assert.ok(a.length<=36);assert.ok(a.some(e=>e.z<15));
+    assert.ok(a.every(patch=>patch.lane>MIN_LANE-.2&&patch.lane<MAX_LANE+.2));
+    assert.ok(a.some(patch=>patch.lane<1)&&a.some(patch=>patch.lane>MAX_LANE-1),'whitewater reaches both outer parts of the wider channel');
     for(const patch of a.filter(e=>e.z>0&&e.z<130))assert.ok(b.some(e=>Math.abs(e.z-(patch.z-.5))<1e-8));
   }
 });

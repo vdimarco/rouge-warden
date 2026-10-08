@@ -1,11 +1,12 @@
+import {PLAYABLE_HALF_WIDTH} from './lanes.js';
 import * as THREE from 'three';
 import {riverPoint,riverHalfWidth,riverBankHeight} from './river-course.js';
 import {surfaceAt} from './hydrodynamics.js';
 
-export const FINISH_GATE={halfWidth:6.8,bannerBottom:8,bannerTop:11.1,visibleFrom:300,approach:[120,80,40,15]};
+export const FINISH_GATE={halfWidth:PLAYABLE_HALF_WIDTH+1.1,bannerBottom:8,bannerTop:11.1,visibleFrom:300,approach:[120,80,40,15]};
 
 // Exact course coordinates are shared by the arch, water ribbon and markers.
-// The gate sits outside the three navigable raft envelopes, rather than on
+// The gate sits outside the five navigable raft envelopes, rather than on
 // distant banks that disappear beyond the edges of a portrait screen.
 export function finishLayout(g,travel,level,profile=g.seed){
  const remaining=level.length-g.distance,course=travel+remaining,center=riverPoint(travel,course,0,profile);
@@ -40,7 +41,7 @@ export function createFinishLine(scene,material,stoneMaterial){
  const art=prepareFinishArt(),bannerTexture=new THREE.CanvasTexture(art.banner),ribbonTexture=new THREE.CanvasTexture(art.ribbon);for(const texture of [bannerTexture,ribbonTexture])texture.colorSpace=THREE.SRGBColorSpace;bannerTexture.repeat.set(1/3,1);
  const banner=new THREE.Mesh(new THREE.PlaneGeometry(FINISH_GATE.halfWidth*2,FINISH_GATE.bannerTop-FINISH_GATE.bannerBottom),new THREE.MeshBasicMaterial({map:bannerTexture,side:THREE.DoubleSide,toneMapped:false}));banner.frustumCulled=false;scene.add(banner);
  const ribbon=new THREE.Mesh(new THREE.PlaneGeometry(FINISH_GATE.halfWidth*2,1.5),new THREE.MeshBasicMaterial({map:ribbonTexture,side:THREE.DoubleSide,toneMapped:false}));ribbon.rotation.x=-Math.PI/2;ribbon.frustumCulled=false;scene.add(ribbon);
- const state={visible:false,remaining:0,kind:'navigation-gate',structureInstances:0,accentInstances:0,flags:0,approachPairs:0,banner:{width:13.6,bottom:8,top:11.1}};
+ const state={visible:false,remaining:0,kind:'navigation-gate',structureInstances:0,accentInstances:0,flags:0,approachPairs:0,banner:{width:FINISH_GATE.halfWidth*2,bottom:8,top:11.1}};
  const place=(mesh,index,p,s,r=[0,0,0])=>{pose.position.set(...p);pose.scale.set(...s);pose.rotation.set(...r);pose.updateMatrix();mesh.setMatrixAt(index,pose.matrix);};
  function update(g,travel,reduced,level,profile=g.seed){
   const layout=finishLayout(g,travel,level,profile),{center,remaining,course,visible}=layout,t=reduced?0:g.time;let sc=0,ac=0,fc=0,approachPairs=0;
@@ -62,8 +63,8 @@ export function createFinishLine(scene,material,stoneMaterial){
     for(const dz of [-.65,.65]){place(accents,ac++,[p.x,p.y+12.4,p.z+dz],[.08,2.2,.08]);place(flags,fc++,[p.x,p.y+13.1,p.z+dz],[p.side,.92,1],[0,reduced?0:Math.sin(t*2+dz)*.15,0]);}
    }
    // A layered frame keeps its banner clear of even the tallest jump pose.
-   for(const y of [FINISH_GATE.bannerBottom-.15,FINISH_GATE.bannerTop+.16])place(accents,ac++,[center.x,center.y+y,center.z],[14,.22,.45]);
-   for(const side of [-1,1])place(accents,ac++,[center.x+side*6.72,center.y+9.55,center.z+.06],[.16,3.2,.35]);
+   for(const y of [FINISH_GATE.bannerBottom-.15,FINISH_GATE.bannerTop+.16])place(accents,ac++,[center.x,center.y+y,center.z],[FINISH_GATE.halfWidth*2+.4,.22,.45]);
+   for(const side of [-1,1])place(accents,ac++,[center.x+side*(FINISH_GATE.halfWidth-.08),center.y+9.55,center.z+.06],[.16,3.2,.35]);
    if(level.index===2)for(let i=0;i<3;i++)place(structure,sc++,[center.x,center.y+11.45+i*.34,center.z],[(7-i*1.5),.34,1.3]);
    for(const p of layout.docks){place(structure,sc++,[p.x,p.y+.12,p.z+1.5],[4.8,.4,9]);for(const dz of [-2.2,4.8])place(structure,sc++,[p.x,p.y-.75,p.z+dz],[.42,2,.42]);place(accents,ac++,[p.x,p.y+.4,p.z+1.5],[.18,.16,8.7]);}
    for(const p of layout.markers){
@@ -74,7 +75,7 @@ export function createFinishLine(scene,material,stoneMaterial){
    }
   }
   for(const [mesh,count] of [[structure,sc],[accents,ac],[flags,fc]]){mesh.count=count;mesh.instanceMatrix.needsUpdate=true;}
-  Object.assign(state,{visible,remaining,course,x:center.x,y:center.y,z:center.z,structureInstances:sc,accentInstances:ac,flags:fc,approachPairs,banner:{width:13.6,bottom:8,top:11.1,x:banner.position.x,y:banner.position.y,z:banner.position.z}});
+  Object.assign(state,{visible,remaining,course,x:center.x,y:center.y,z:center.z,structureInstances:sc,accentInstances:ac,flags:fc,approachPairs,banner:{width:FINISH_GATE.halfWidth*2,bottom:8,top:11.1,x:banner.position.x,y:banner.position.y,z:banner.position.z}});
  }
  return {update,state,textures:[bannerTexture,ribbonTexture]};
 }

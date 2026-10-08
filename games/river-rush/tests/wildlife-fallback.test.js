@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {encounterProjection,projection} from '../src/game/render.js';
 import {encounterMotion,entityPose} from '../src/game/moving-encounters.js';
+import {LANES,CENTER_LANE,MIN_LANE,MAX_LANE} from '../src/game/lanes.js';
 
 const layouts=[[390,844],[360,640],[1440,900],[844,390]];
 const close=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-9,`${actual} differs from ${expected}`);
-const enemy=(kind,lane=1,seed=1,map=0)=>({id:7,type:kind==='bird'?'branch':'log',enemy:kind,lane,d:500,motion:encounterMotion(lane,500,120,kind,seed,map)});
+const enemy=(kind,lane=CENTER_LANE,seed=1,map=0)=>({id:7,type:kind==='bird'?'branch':'log',enemy:kind,lane,d:500,motion:encounterMotion(lane,500,120,kind,seed,map)});
 
 test('fallback wildlife bodies and water-plane contact guides follow shared physical poses on every layout',()=>{
- for(const [width,height] of layouts)for(const kind of ['crocodile','bird','fish'])for(const lane of [0,1,2]){
+ for(const [width,height] of layouts)for(const kind of ['crocodile','bird','fish'])for(const lane of LANES){
   const e=enemy(kind,lane),distances=[e.motion.startD,(e.motion.startD+e.d)/2,e.d-1,e.d,e.d+10];
   for(const distance of distances){
    const p=encounterProjection(e,{distance},width,height),pose=entityPose(e,distance),surface=projection(width,height,pose.lane,e.d-distance),contact=projection(width,height,pose.contactLane,e.d-distance);
@@ -27,8 +28,8 @@ test('fallback wildlife bodies and water-plane contact guides follow shared phys
 
 test('bird approach visibly descends from either shoreline to a high duck encounter',()=>{
  for(const [width,height] of layouts)for(const seed of [0,1]){
-  const e=enemy('bird',1,seed),start=encounterProjection(e,{distance:e.motion.startD},width,height),hit=encounterProjection(e,{distance:e.d},width,height);
-  assert.ok(start.lane<0||start.lane>2,'bird starts beyond a bank');
+  const e=enemy('bird',CENTER_LANE,seed),start=encounterProjection(e,{distance:e.motion.startD},width,height),hit=encounterProjection(e,{distance:e.d},width,height);
+  assert.ok(start.lane<MIN_LANE||start.lane>MAX_LANE,'bird starts beyond a bank');
   close((start.y-start.bodyY)/start.unit,5.03);
   close((hit.y-hit.bodyY)/hit.unit,2.33);
   close(hit.x,hit.destination.x);assert.equal(hit.action,'duck');
@@ -47,7 +48,7 @@ test('fish leap rises above a stable surface cue and returns to the water after 
 
 test('weaving crocodile marker predicts the crossing lane while its body reverses repeatedly',()=>{
  for(const [width,height] of layouts){
-  const e=enemy('crocodile',1,1,2),points=[];
+  const e=enemy('crocodile',CENTER_LANE,1,2),points=[];
   for(let distance=e.motion.startD;distance<=e.d;distance+=2){
    const p=encounterProjection(e,{distance},width,height);
    close(p.destination.x,width/2);points.push(p.lane);
@@ -55,7 +56,7 @@ test('weaving crocodile marker predicts the crossing lane while its body reverse
   const differences=points.slice(1).map((lane,i)=>Math.sign(lane-points[i]));
   const reversals=differences.slice(1).filter((sign,i)=>sign&&differences[i]&&sign!==differences[i]).length;
   assert.ok(reversals>=4,'a crocodile must weave more than one simple lane glide');
-  assert.ok(points.some(lane=>lane<.1)&&points.some(lane=>lane>1.9),'weave must traverse the full river width');
+  assert.ok(points.some(lane=>lane<MIN_LANE+.1)&&points.some(lane=>lane>MAX_LANE-.1),'weave must traverse the full river width');
   const hit=encounterProjection(e,{distance:e.d},width,height);close(hit.x,hit.destination.x);assert.ok(Math.abs(hit.lateralSlope)>.01,'center-lane crocodile is still swimming at impact');
  }
 });
