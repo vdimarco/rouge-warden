@@ -1,9 +1,8 @@
 // The 3D battlefield (three.js): rigged heroes and soldiers, golden-hour light with one moving shadow map, a splat
-// ground, a river with bridges, and instanced scenery. It keeps the 2D Renderer's interface, so main.js and QA use
-// either one. The minimap, the tactical map and the frame-rate rule are the 2D renderer's own code.
+// ground, a river with bridges, and instanced scenery. Maps and screen-space labels use battlefield-overlay.js.
 // Coordinates: sim x -> three x, sim y -> three z, height is three y; one unit is one sim unit.
 import * as THREE from 'three';
-import { Renderer as Renderer2D, backingRatio } from './illustrated-render.js';
+import { BattlefieldOverlay, backingRatio } from './battlefield-overlay.js';
 import * as world from './world.js';
 import { player, HEROES, fortified } from './sim.js';
 import { makeScenery } from './scenery.js';
@@ -69,7 +68,7 @@ export class ThreeRenderer {
     canvas.__shore3d = this; // QA handle (qa/tidebreak/render3d.e2e.mjs); gameplay never reads it
     this.resize();
   }
-  // Removes the 3D canvases and frees the GPU context (switching to the 2D renderer).
+  // Removes the canvases and frees the GPU context when the renderer is disposed.
   dispose() { this.events.removeEventListener('pointermove', this.onPointer); if (this.events.__shore3d === this) delete this.events.__shore3d; this.units.clear(); this.gl.dispose(); this.gl.forceContextLoss(); this.canvas.remove(); this.overlay.remove(); }
   setScene(s) {
     if (s.seed !== this.sceneSeed) {
@@ -423,8 +422,8 @@ export class ThreeRenderer {
       cameraPitch: Math.round(THREE.MathUtils.radToDeg(this.showcase ? SHOW_PITCH : PITCH)), fov: this.camera.fov, showcase: !!this.showcase, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
   }
 }
-// Shared with the 2D renderer: the frame-rate rule, the minimap and tactical map, badges and result labels.
-for (const k of ['adapt', 'restartTiming', 'drawMap', 'drawHeroMarker', 'drawPings', 'rememberHeroes', 'drawBadges', 'drawResults']) ThreeRenderer.prototype[k] = Renderer2D.prototype[k];
+// Maps, adaptive resolution, badges and result labels are independent of the battlefield scene.
+for (const k of ['adapt', 'restartTiming', 'drawMap', 'drawHeroMarker', 'drawPings', 'rememberHeroes', 'drawBadges', 'drawResults']) ThreeRenderer.prototype[k] = BattlefieldOverlay.prototype[k];
 // Starts parsing a hero model early, for example the hero picked on the select screen.
 export const warmHero = slug => { heroModel(slug); };
 

@@ -24,7 +24,9 @@ function landform(x, z, size) {
   const ridge = 1 - Math.abs(noise(x + 3010, z - 910, 1050, 1511) * 2 - 1);
   const rock = ridge ** 5 * 165;
   const folds = (noise(x, z, 340, 3761) - .5) * 42;
-  return clamp(22 + broad + hills + rock + folds - 120, -22, 590);
+  // Raise the shoulders players see, with a soft ceiling rather than flat-topped clipped hills.
+  const elevation = 150 + broad + hills + rock + folds - 120;
+  return elevation < 0 ? Math.max(-22, elevation) : 400 * Math.tanh(elevation / 400);
 }
 const segmentDistance = (x, z, a, b) => {
   const dx = b.x - a.x, dz = b.y - a.y, t = clamp(((x - a.x) * dx + (z - a.y) * dz) / (dx * dx + dz * dz || 1), 0, 1);
@@ -49,15 +51,15 @@ function roadIndex(paths, reach) {
 }
 function padsFor(world, state, cell) {
   const pads = [], zero = (p, inner, outer) => pads.push({ x: p.x, z: p.y, rx: inner, rz: inner, reach: outer, height: 0 });
-  for (const p of world.BASES) pads.push({ x: p.x, z: p.y, rx: 810, rz: 710, reach: 1550, height: 0 });
-  for (const unit of state.units || []) if (unit.kind === 'tower') zero(unit, (unit.guardian || unit.tier >= 3 ? 255 : 210) + cell * 1.5, 1120);
+  for (const p of world.BASES) pads.push({ x: p.x, z: p.y, rx: 810, rz: 710, reach: 1300, height: 0 });
+  for (const unit of state.units || []) if (unit.kind === 'tower') zero(unit, (unit.guardian || unit.tier >= 3 ? 255 : 210) + cell * 1.5, 850);
   // Towers may not yet exist when a standalone renderer/map builds the field.
   if (!(state.units || []).some(e => e.kind === 'tower')) {
-    for (const team of world.TOWER_POSITIONS || []) for (const lane of team) for (const p of lane) zero(p, 210 + cell * 1.5, 1120);
-    for (const team of world.GUARDIAN_POSITIONS || []) for (const p of team) zero(p, 255 + cell * 1.5, 1120);
+    for (const team of world.TOWER_POSITIONS || []) for (const lane of team) for (const p of lane) zero(p, 210 + cell * 1.5, 850);
+    for (const team of world.GUARDIAN_POSITIONS || []) for (const p of team) zero(p, 255 + cell * 1.5, 850);
   }
-  for (const p of world.PORTALS) zero(p, 190 + cell * 1.5, 1090);
-  for (const p of world.CAMPS) zero(p, 290 + cell * 1.5, 1190);
+  for (const p of world.PORTALS) zero(p, 190 + cell * 1.5, 750);
+  for (const p of world.CAMPS) zero(p, 290 + cell * 1.5, 900);
   return pads;
 }
 function padWeight(p, x, z) {
@@ -72,7 +74,7 @@ export function buildRelief(world, state = {}, { segments = RELIEF_SEGMENTS, mar
   const size = world.SIZE, origin = -margin, span = size + margin * 2, resolution = segments + 1, cell = span / segments;
   const heights = new Float32Array(resolution * resolution), vertices = new Float32Array(heights.length * 3);
   const IndexArray = heights.length <= 65535 ? Uint16Array : Uint32Array, indices = new IndexArray(segments * segments * 6);
-  const laneCore = 160 + cell * Math.SQRT2, laneOuter = laneCore + 700;
+  const laneCore = 110 + cell, laneOuter = laneCore + 600;
   const distanceToRoad = roadIndex(world.PATHS, laneOuter), pads = padsFor(world, state, cell);
   const rockPads = (world.OBSTACLES?.[0] || []).map(p => ({ x: p.x, z: p.y, rx: p.w * .56 + cell, rz: p.h * .56 + cell, reach: Math.max(p.w, p.h) * .7 + cell * 2 + 500, height: landform(p.x, p.y, size) }));
   const seed = state.seed ?? 49, banks = [];
@@ -102,10 +104,10 @@ export function buildRelief(world, state = {}, { segments = RELIEF_SEGMENTS, mar
       const bed = -42 - (1 - smooth(-150, 0, bank)) * 20;
       const riverWeight = end * (1 - bankBlend);
       h += (bed - h) * riverWeight;
-      // Dry defensive pads remain level even where their broad taper meets the bank's taper.
-      if (bank > bedCore) h *= 1 - level;
-      // A lane lands on dry, low ground at each bridge; keep the river bed below the deck itself.
-      if (bank > 0) h *= smooth(laneCore, laneOuter, road);
+      // Restore only the level cores after carving. Repeating the whole taper here used
+      // to square its weight, erasing hills along the routes players actually see.
+      if (bank > bedCore && level === 1) h = 0;
+      if (bank > 0 && road <= laneCore) h = 0;
       // The two asymmetrical live bank landings also share their mirrored pads. A mesh-sized collar avoids a
       // depression underneath a deck end when the opposite bank happens to lie farther from the river axis.
       let landing = 0;

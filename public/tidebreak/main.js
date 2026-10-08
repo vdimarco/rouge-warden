@@ -3,8 +3,8 @@ import { objectiveText, nextObjective, structureProtected } from './objectives.j
 import { market, inventoryHTML, icon as itemIcon } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
 import { createMatch, step, player, HEROES, trainSkill, cancelOrder, announce, buy, setBuild, distance, SIZE, LIMIT, SUDDEN_DEATH, SHIFT, PORTALS, lockTip } from './sim.js';
-import { loadArt, Renderer } from './illustrated-render.js';
-import { rendererChoice, saveRendererChoice, graphicsSupport } from './render3d/choice.js';
+import { loadMapArt } from './battlefield-overlay.js';
+import { graphicsSupport } from './render3d/choice.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
@@ -96,22 +96,26 @@ function updateAimStatus(status){
   skillButtons.forEach((b,i)=>{b.classList.toggle('aiming',status?.slot===i);b.classList.toggle('aim-cancelled',status?.slot===i&&status.cancelled);});
 }
 function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); castQueue = undefined; recallQueue = portalQueue = false; aim = null; $('thumb').style.transform = ''; }
-function closeSheet() { $('sheet').close(); paused = false; resetInput(); }
+function closeSheet() {
+  if (renderer?.lost) return;
+  $('sheet').close(); paused = false; resetInput();
+}
 function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet')&&!$('sheet').classList.contains('market'))paginatePanel($('sheet-content'));}); }
 function pause() {
+  if (renderer?.lost) return;
   if (!running || resultShown) return;
   // After full screen ended during play, the menu asks how to go on. Nothing returns to full screen without a choice.
   const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
   const canFullscreen = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
   const screen = fullscreenLeft || !canFullscreen ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
   const book = desktopInput.matches ? '<button id="menu-spellbook" class="row-btn">Spellbook <kbd>K</kbd></button>' : '';
-  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${book}${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="graphics-mode" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
+  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${book}${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
   $('resume').onclick = () => { if (fullscreenLeft) playWindowed(); closeSheet(); };
   if ($('fullscreen-back')) $('fullscreen-back').onclick = () => { requestFullscreen(); closeSheet(); };
   if ($('screen-mode')) $('screen-mode').onclick = () => { if (document.fullscreenElement) playWindowed(); else requestFullscreen(); closeSheet(); };
   $('return-home').onclick = () => { closeSheet(); recallQueue = true; };
   if ($('menu-spellbook')) $('menu-spellbook').onclick = learnSkills;
-  wireSoundRows('pause'); wirePerfRow($('perf-toggle')); wireGraphicsRow($('graphics-mode')); $('quit').onclick = menu;
+  wireSoundRows('pause'); wirePerfRow($('perf-toggle')); $('quit').onclick = menu;
 }
 // Sound controls name the action, not the state, so a player who hears nothing and presses one does not mute the game.
 const SOUND_LABELS = {
@@ -367,7 +371,7 @@ function heroDetails(){
 }
 function selectionPanel(title,copy){sheet(`<h2>${title}</h2>${copy}<button id="selection-back" class="primary">Back to heroes</button>`);$('selection-back').onclick=closeSheet;}
 function matchRecord(){let record={wins:0,matches:0};try{record=JSON.parse(localStorage.getItem('monster-mash.record'))||record;}catch{}selectionPanel('Tidecaller',`<p>Your match record on this device.</p><dl><dt>Matches played</dt><dd>${Number(record.matches)||0}</dd><dt>Victories</dt><dd>${Number(record.wins)||0}</dd></dl>`);}
-function gameSettings(){sheet(`<h2>Game settings</h2>${soundRowsHTML('settings')}<button id="selection-fullscreen" class="row-btn"></button><button id="settings-perf" class="row-btn"></button><button id="settings-graphics" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>`);wireSoundRows('settings');wirePerfRow($('settings-perf'));wireGraphicsRow($('settings-graphics'));const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}saveFullscreen(!on);if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
+function gameSettings(){sheet(`<h2>Game settings</h2>${soundRowsHTML('settings')}<button id="selection-fullscreen" class="row-btn"></button><button id="settings-perf" class="row-btn"></button><button id="selection-how" class="row-btn">How to play</button><button id="settings-back" class="primary">Back to heroes</button>`);wireSoundRows('settings');wirePerfRow($('settings-perf'));const fs=$('selection-fullscreen'),fsLabel=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}fs.textContent=on?'Full screen at start: on':'Full screen at start: off';};fsLabel();fs.onclick=()=>{let on=true;try{on=localStorage.getItem('tidebreak.fullscreen')!=='off';}catch{}saveFullscreen(!on);if(on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});fsLabel();};$('selection-how').onclick=how;$('settings-back').onclick=closeSheet;}
 $('play').onclick=startDraft;$('how').onclick=heroDetails;$('close-sheet').onclick=closeSheet;
 $('hero-profile').onclick=matchRecord;$('tidecaller-profile').onclick=matchRecord;$('hero-settings').onclick=gameSettings;
 document.querySelectorAll('[data-menu-tab]').forEach(b=>b.onclick=()=>{
@@ -412,6 +416,7 @@ $('battle').addEventListener('pointerdown',e=>{
 $('battle').addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cursor={x:e.clientX,y:e.clientY};if(renderer&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
 const MOVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
 window.addEventListener('keydown', e => {
+  if ($('graphics-error').open) { if (e.key === 'Escape') e.preventDefault(); return; }
   // A held Esc repeats. Chrome tells the player to hold Esc to leave a keyboard-locked full screen, and each repeat
   // would open or close the menu again, so only the first press counts.
   if (e.key === 'Escape' && e.repeat) { e.preventDefault(); return; }
@@ -449,7 +454,7 @@ function autoPause() {
   autoPauseNote.innerHTML = lastPointer === 'mouse' ? '<b>Paused</b><small>Click to keep playing</small>' : '<b>Paused</b><small>Tap to keep playing</small>';
 }
 function autoResume() {
-  if (!autoPaused || document.hidden) return;
+  if (!autoPaused || document.hidden || renderer?.lost) return;
   autoPaused = false; autoPauseNote.hidden = true; if (!$('sheet').open) paused = false;
 }
 window.addEventListener('pointerdown', e => { lastPointer = e.pointerType; }, true);
@@ -467,7 +472,7 @@ window.addEventListener('contextmenu', e => e.preventDefault());
 function frame(now) {
   const frameMs = Math.max(0, now - last), dt = Math.min(frameMs / 1000, .05); last = now;
   let steps = 0;
-  if (running && !paused && !window.GameSwitch?.isOpen) {
+  if (running && !paused && !renderer?.lost && !window.GameSwitch?.isOpen) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
       steps++;
@@ -508,7 +513,7 @@ function frame(now) {
 }
 // The hero select arena (3D only): the selected hero stands alone near the allied base, with only the structures and no
 // match clock. three-render.js frames it with a low camera in the box of the portrait. The painted stage and portrait
-// stay for the 2D view, until the first hero model is ready, when a model fails and when the WebGL context is lost. A new
+// stay until the first hero model is ready, when a model fails and when the WebGL context is lost. A new
 // pick keeps the last hero on stage while its model parses, then swaps. Idle frames parse the nearest other heroes one at
 // a time, so later picks swap at once. It draws at most 30 frames a second. A slow draw waits twice its own time (up to
 // 2 s), so the menu keeps about half of the main thread. It never draws while the tab is hidden, and stops when the draft
@@ -555,43 +560,46 @@ function drawBetweenSteps(dt) {
   try { renderer.draw(state, dt, false, aim ? skillAimPreview(state, player(state), aim.slot, dragSkillAim(player(state), aim.slot, aim, (x, y) => renderer.screenDirection(x, y))) : null, waypoint); }
   finally { state.time = time; for (let i = 0; i < moved.length; i += 3) { moved[i].x = moved[i + 1]; moved[i].y = moved[i + 2]; } }
 }
-// The battlefield renderer: 3D where a graphics card draws WebGL2 (render3d/choice.js), otherwise the 2D one. 3D that
-// fails to start falls back to 2D. The models download from page load; Play waits for the world models and clips, and
-// heroes still loading show a stand-in. The menu's Graphics row switches renderers during play.
-let art = null, graphicsMode = rendererChoice(), three = null;
+// 3D is the only battlefield. Old links/preferences cannot silently select another view.
+try { localStorage.removeItem('tidebreak.renderer'); } catch {}
 const loadingText = (done, total) => { if ($('play').disabled) $('play').querySelector('span').textContent = `Opening the shore… ${Math.round(done / total * 100)}%`; };
-const loadThree = () => three ||= import('./three-render.js').then(m => m.preload(loadingText).then(() => m));
-async function makeRenderer(mode) {
-  if (mode === '3d') try { const m = await loadThree(); return new m.ThreeRenderer($('battle'), $('minimap'), art); } catch (error) { console.warn('3D graphics are unavailable; using the 2D battlefield.', error); }
-  return new Renderer($('battle'), $('minimap'), art);
+function graphicsMessage(message, visible = true) {
+  $('graphics-error-text').textContent = message;
+  const dialog = $('graphics-error');
+  if (visible && !dialog.open) dialog.showModal();
+  if (!visible && dialog.open) dialog.close();
 }
-// One switch runs at a time. The first switch to 3D loads three.js and the models, which takes seconds, and the menu
-// builds a new Graphics button each time it opens, so the guard lives here and not on the button.
-let switching = null;
-function labelGraphics(b) {
-  b.textContent = switching ? 'Switching graphics…' : graphicsMode === '3d' ? 'Graphics: 3D · Switch to 2D' : 'Graphics: 2D · Switch to 3D';
-  b.disabled = !!switching;
+async function startGraphics() {
+  if (!graphicsSupport().webgl2) {
+    graphicsMessage('Shore needs 3D graphics. Enable graphics acceleration in your browser or try a browser with WebGL2 support, then reload.');
+    $('play').querySelector('span').textContent = '3D graphics unavailable';
+    return;
+  }
+  try {
+    const [art, module] = await Promise.all([loadMapArt(), import('./three-render.js')]);
+    await module.preload(loadingText);
+    renderer = new module.ThreeRenderer($('battle'), $('minimap'), art);
+    renderer.canvas.addEventListener('webglcontextlost', () => {
+      if (running) { paused = true; resetInput(); accumulator = 0; }
+      $('play').disabled = true;
+      graphicsMessage('3D graphics were interrupted. Your match is paused while graphics recover. If this continues, reload Shore.');
+    });
+    renderer.canvas.addEventListener('webglcontextrestored', () => {
+      $('play').disabled = false;
+      graphicsMessage('', false);
+      if (running) { paused = true; pause(); }
+    });
+    $('play').disabled = false;
+    $('play').querySelector('span').textContent = 'Play Shore of the Ancients';
+    requestAnimationFrame(frame);
+  } catch (error) {
+    console.error('Shore 3D could not start.', error);
+    graphicsMessage('Shore’s 3D world could not load. Check your connection and reload to try again.');
+    $('play').querySelector('span').textContent = 'Shore unavailable';
+  }
 }
-function wireGraphicsRow(b) {
-  if (!b) return;
-  if (!graphicsSupport().webgl2) { b.textContent = 'Graphics: 2D (no WebGL2 in this browser)'; b.disabled = true; return; }
-  labelGraphics(b);
-  b.onclick = async () => {
-    if (!art || switching) return;
-    const next = graphicsMode === '3d' ? '2d' : '3d', old = renderer; saveRendererChoice(next);
-    const run = switching = makeRenderer(next); labelGraphics(b);
-    let made;
-    try { made = await run; } finally { if (switching === run) switching = null; }
-    // If another renderer took over meanwhile, the new one is dropped so its canvases and WebGL context do not stay.
-    if (renderer !== old) made.dispose?.();
-    else {
-      old?.dispose?.(); renderer = made; graphicsMode = made instanceof Renderer ? '2d' : '3d';
-      if (old) renderer.cam = { ...old.cam }; renderer.resize();
-    }
-    for (const button of document.querySelectorAll('#graphics-mode,#settings-graphics')) labelGraphics(button);
-  };
-}
-Promise.all([loadArt(), graphicsMode === '3d' ? loadThree().catch(error => { console.warn('3D models are unavailable; using the 2D battlefield.', error); graphicsMode = '2d'; }) : null]).then(async ([loaded]) => { art = loaded; renderer = await makeRenderer(graphicsMode); graphicsMode = renderer instanceof Renderer ? '2d' : '3d'; $('play').disabled = false; $('play').querySelector('span').textContent = 'Play Shore of the Ancients'; requestAnimationFrame(frame); }).catch(error => { console.error(error); $('load-error').hidden = false; $('play').querySelector('span').textContent = 'Shore unavailable'; });
+$('graphics-error').addEventListener('cancel', event => event.preventDefault());
+startGraphics();
 document.addEventListener('error',e=>{if(e.target.tagName!=='IMG')return;const picture=e.target.closest('picture');if(picture?.querySelector('source')?.hasAttribute('srcset')){picture.querySelector('source').removeAttribute('srcset');e.target.src=e.target.getAttribute('src');}},true);
 choose(selectedIdentity);
 // A read-only snapshot supports the existing arcade's QA tooling.

@@ -50,6 +50,20 @@ for (const seed of [49, 7, 101]) {
   }
 }
 
+// Whole-map range missed the flat corridors players actually travel. Measure shoulders near the two side lanes.
+const shoulders = [];
+for (const path of [PATHS[0], PATHS[2]]) for (let i = 3; i < path.length - 3; i += 3) {
+  const p = path[i], q = path[i + 1], length = Math.hypot(q.x - p.x, q.y - p.y);
+  for (const side of [-1, 1]) {
+    const x = p.x - (q.y - p.y) / length * 650 * side, z = p.y + (q.x - p.x) / length * 650 * side;
+    const bank = riverSample(x, state.seed);
+    if (x > 1000 && x < SIZE - 1000 && z > 2000 && z < SIZE - 2000 && (z < bank.north - 900 || z > bank.south + 900)) shoulders.push(field.heightAt(x, z));
+  }
+}
+assert(shoulders.length > 60, 'sample both side lanes outside base courts and the river');
+assert(shoulders.filter(h => h > 90).length / shoulders.length >= .5, 'raised hills must be visible beside ordinary travel routes');
+assert(shoulders.sort((a, b) => a - b)[shoulders.length >> 1] > 90, 'typical lane shoulders retain relief instead of being flattened twice');
+
 // Independently read mesh indices and world-space vertices, find the triangle containing an interior point, and
 // interpolate its plane. This catches bilinear samplers, inverted diagonals and incorrect row/coordinate mapping.
 function meshHeight(col, row, x, z) {

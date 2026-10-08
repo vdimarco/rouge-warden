@@ -8,8 +8,8 @@
 // - trees, bushes and grass are built in code (leaf cards), heroes have outlines, and the see-through points follow the
 //   heroes in view; towers take the see-through too; a fortified outer ward says so; the minimap gets the bridges;
 // - world(project(x, y)) returns the same ground point, and pick() finds an enemy under the cursor;
-// - the WebGL canvas stays inside the 2D renderer's pixel budget; the menu's Graphics row switches to 2D and back;
-// - ?renderer=2d keeps the 2D renderer and never makes a WebGL canvas.
+// - the WebGL canvas stays inside its pixel budget; pause has no renderer switch;
+// - legacy ?renderer=2d links now start 3D.
 // SwiftShader frame times are not real graphics-card numbers; the test prints them only as a rough trace.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/render3d.e2e.mjs
 // SHOTS=<dir> also saves a screenshot of the match there.
@@ -19,7 +19,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.SHORE_URL || 'http://127.0.0.1:8765/tidebreak/';
-const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
+const executablePath = process.env.SHORE_CHROMIUM || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const results = [];
 const pass = (name, data) => { results.push(name); console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
@@ -164,24 +164,20 @@ try {
     if (process.env.SHOTS) { mkdirSync(process.env.SHOTS, { recursive: true }); await page.screenshot({ path: join(process.env.SHOTS, 'render3d-e2e.png'), timeout: 120000 }); }
     pass('the 3D canvas stays in the pixel budget', { pixels: size, drawCalls: g.drawCalls, triangles: g.triangles, cpuMsPerFrame: +cpu.toFixed(1), note: 'SwiftShader, not a real GPU' });
 
-    // The menu's Graphics row switches to 2D and back to 3D during play.
+    // Pause keeps 3D and offers no legacy renderer switch.
     await page.evaluate(() => { window.__auto = true; });
-    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-    assert.match(await page.evaluate(() => document.getElementById('graphics-mode').textContent), /Graphics: 3D/);
-    await page.evaluate(() => document.getElementById('graphics-mode').click()); await until(async () => (await t.graphics()).renderer === 'Illustrated 2.5D', 'the switch to 2D', 120);
-    assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d')), false, 'the WebGL canvas is gone in 2D');
-    await page.evaluate(() => document.getElementById('graphics-mode').click()); await until(async () => (await t.graphics()).renderer === 'Mythic 3D', 'the switch back to 3D', 120);
-    await page.keyboard.press('Escape'); await page.waitForTimeout(1500);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#graphics-mode').count(), 0);
+    await page.keyboard.press('Escape');
     assert.equal((await t.graphics()).renderer, 'Mythic 3D');
-    await page.evaluate(() => localStorage.removeItem('tidebreak.renderer'));
-    pass('the Graphics row switches to 2D and back to 3D during play');
+    pass('pause retains 3D with no renderer switch');
     assert.deepEqual(t.errors, [], 'no console errors'); await page.close();
   }
   {
     const t = await open('?renderer=2d');
-    assert.equal((await t.graphics()).renderer, 'Illustrated 2.5D');
-    assert.equal(await t.page.evaluate(() => !!document.getElementById('battle-3d')), false);
-    pass('?renderer=2d keeps the 2D renderer');
+    assert.equal((await t.graphics()).renderer, 'Mythic 3D');
+    assert.equal(await t.page.evaluate(() => !!document.getElementById('battle-3d')), true);
+    pass('old ?renderer=2d links now start 3D');
     assert.deepEqual(t.errors, []); await t.page.close();
   }
   console.log(`${results.length} checks passed`);

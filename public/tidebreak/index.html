@@ -72,13 +72,14 @@
       <a class="arcade-brand" href="/" aria-label="Cottage Arcade"><span class="brand-source" aria-hidden="true"></span><span class="arcade-motto">Play together.<br>Somewhere brighter.</span></a>
       <div class="start-action"><button id="play" class="primary" disabled><i class="play-sigil" aria-hidden="true"></i><span>Opening the shore…</span><img src="./art/ui/chevron-right.svg" alt=""></button><span id="ready-legend" class="sr-only">Tidewarden</span>
       <div id="difficulty-picker" class="difficulty-picker" role="radiogroup"></div></div>
-      <p id="load-error" role="alert" hidden>Art could not load. Check your connection and <button onclick="location.reload()">try again</button>.</p>
+
       <div class="menu-links"><button data-switch><kbd>Esc</kbd> Back</button><button id="select-key"><kbd>Enter</kbd> Select</button><button id="how"><kbd>F</kbd> Hero details</button></div>
       </div>
     </div>
   </main>
   <section id="draft" class="draft-overlay" hidden></section>
   <dialog id="sheet"><button id="close-sheet" class="close" aria-label="Close panel">×</button><div id="sheet-content"></div></dialog>
+  <dialog id="graphics-error" aria-labelledby="graphics-error-text"><p id="graphics-error-text"></p><button onclick="location.reload()">Reload Shore</button></dialog>
   <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
   <script src="/arcade/switch.js"></script><script type="module" src="./main.js"></script>
 <script src="/arcade/analytics.js" data-game="tidebreak"></script></body>

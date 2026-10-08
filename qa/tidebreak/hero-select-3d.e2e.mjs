@@ -8,7 +8,7 @@
 // - the roster, the skill previews and Play stay on top and take clicks at five screen sizes;
 // - with reduced motion the camera holds still;
 // - starting the draft stops the arena, and the match draws with the gameplay camera;
-// - ?renderer=2d keeps the painted stage and portrait.
+// - old ?renderer=2d links now show the 3D arena.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/hero-select-3d.e2e.mjs
 // SHOTS=<dir> also saves a screenshot of the hero select at each size.
 import assert from 'node:assert/strict';
@@ -164,11 +164,10 @@ try {
     assert.deepEqual(t.errors, []); await page.close();
   }
   {
-    const t = await open('?renderer=2d'), { page, pump, draw } = t;
-    await pump(10);
-    const look = await page.evaluate(() => ({ bg: getComputedStyle(document.getElementById('menu')).backgroundImage, art: getComputedStyle(document.getElementById('hero-art')).visibility, arena: document.getElementById('menu').classList.contains('arena-3d'), canvas: !!document.getElementById('battle-3d') }));
-    assert(/shore-scene/.test(look.bg) && look.art === 'visible' && !look.arena && !look.canvas, '?renderer=2d keeps the painted stage: ' + JSON.stringify(look));
-    pass('?renderer=2d keeps the painted stage and portrait');
+    const t = await open('?renderer=2d'), { page } = t;
+    await arenaOn(page);
+    assert.equal(await page.locator('#battle-3d').count(), 1);
+    pass('old ?renderer=2d links show the 3D arena');
     assert.deepEqual(t.errors, []); await page.close();
   }
   console.log(`${results.length} checks passed`);
