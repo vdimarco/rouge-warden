@@ -8,5 +8,5 @@
 - [x] Verify conservative and aggressive route strategies, fair aborts/returns, protected outcomes and real payoff differences.
 - [x] Run regression tests and rebuild the committed arcade bundle.
 - [x] Inspect browser gameplay and fixtures on desktop, portrait, landscape and fallback; record concrete limits.
-- [ ] Publish source/build to main and verify READY arcade deployment and live gameplay.
-- [ ] Merge the requirements into canonical specs, validate structure and archive completed work.
+- [x] Publish source/build to main and verify READY arcade deployment and live gameplay.
+- [x] Merge the requirements into canonical specs, validate structure and archive completed work.
