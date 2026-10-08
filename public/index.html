@@ -780,6 +780,7 @@ $$(".cab").forEach((c) => {
 function boot(c) {
   if (window.Chip) Chip.stop(0.8);
   const url = c.dataset.url;
+  window.GameSwitch?.record(c.dataset.game);
   if (reduceMotion) { location.href = url; return; }
   const scr = $(".screen", c), r = scr.getBoundingClientRect();
   const b = document.createElement("div");

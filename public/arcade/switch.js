@@ -30,13 +30,29 @@
     { id: "tilt", name: "Full Tilt", sub: "A pinball voyage", url: "/lab/tilt/", art: "/arcade/tilt.webp", color: "#f5a6e5", credits: false },
     { id: "rules", name: "House Rules", sub: "Build a Down the Drain layer", url: "/lab/rules/", art: "/arcade/rules.webp", color: "#ffd56b", credits: false },
   ];
+  const home = location.pathname === "/" || location.pathname === "/index.html";
+  const readPlays = () => { try { const v = JSON.parse(localStorage.getItem('cottage-plays') || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; } };
+  const count = id => { const n = readPlays()[id]; return Number.isSafeInteger(n) && n > 0 ? n : 0; };
+  function record(id) { if (!GAMES.some(g => g.id === id)) return; try { localStorage.setItem('cottage-plays', JSON.stringify({...readPlays(), [id]: Math.min(count(id) + 1, 1000000)})); } catch {} }
   // a game marked probe shows only when its page answers
   const live = {};
   for (const g of GAMES) if (g.probe) live[g.id] = fetch(g.url, { method: "HEAD", cache: "no-store" }).then((r) => r.ok, () => false);
   // the longest matching address wins, so /lab/worlds/ is Small Worlds and not The Lab
   const thisGame = () => (GAMES.filter((g) => location.pathname.startsWith(g.url)).sort((a, b) => b.url.length - a.url.length)[0] || {}).id;
   // the arcade look: a dark room, a neon heading, and each game as a small lit screen with its own glow
-  const css = `
+  const css = `.gsw.scoreboard { background: radial-gradient(ellipse at 15% 0%,#311740,transparent 55%),radial-gradient(ellipse at 100% 30%,#07333e,transparent 55%),#080b13; }
+.scoreboard .gsw-card { width:min(1240px,100%); }
+.board-head { display:flex;align-items:center;justify-content:space-between;gap:18px;margin:12px 0 44px; }
+.board-kicker {font:11px/1.6 var(--pixel);color:#9db2b8;}
+.room-link {color:#071017;background:#6df7e5;text-decoration:none;border-radius:5px;padding:15px;font:11px/1.5 var(--pixel);box-shadow:0 0 25px #6df7e533;}
+.gsw.scoreboard h2 {text-align:left;font-size:clamp(32px,5.5vw,72px);letter-spacing:-.03em;max-width:850px;text-shadow:0 0 30px #ff3fa455;}
+.scoreboard .board-tag {text-align:left;font:18px/1.5 system-ui;letter-spacing:0;color:#b8a6bf;text-shadow:none;text-transform:none;}
+.board-stats {display:flex;gap:50px;padding:22px 0 30px;border-bottom:1px solid #ffffff22;margin-bottom:28px;}
+.board-stats strong {display:block;font:32px/1.4 var(--display);color:#ffcf4a;}.board-stats span {font:9px/1.8 var(--pixel);color:#9fb0bf;}
+.board-tools {display:flex;justify-content:space-between;gap:20px;align-items:center;margin:28px 0 20px;}.board-tools h3 {font:20px var(--display);margin:0 0 5px;}.board-tools span {font:13px system-ui;color:#aeb8c4;}.board-tools label {font:8px/1.8 var(--pixel);color:#9fb0bf;}.board-tools input {display:block;width:240px;max-width:100%;background:#101622;color:white;border:1px solid #3a4658;border-radius:5px;padding:12px;font:15px system-ui;}
+.scoreboard .gsw-list {grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}.scoreboard .gsw-game {padding:10px;min-width:0;border-radius:7px;}.scoreboard .gsw-game[hidden] {display:none;}.board-rank {position:absolute;z-index:3;top:18px;left:18px;background:#0a0a14dd;color:#fff;font:15px var(--pixel);padding:10px;border:1px solid #ffffff55;}.scoreboard .gsw-game[data-rank="1"] .board-rank {background:#ffcf4a;color:#191006;}.scoreboard .gsw-game[data-rank="2"] .board-rank {background:#c6d8e5;color:#101723;}.scoreboard .gsw-game[data-rank="3"] .board-rank {background:#d99a6f;color:#28140c;}.board-plays {display:block;color:#6df7e5;font:10px var(--pixel);padding-top:16px;}.scoreboard .gsw-game b {font-size:20px;}.scoreboard .gsw-game small {min-height:28px;}.scoreboard .gsw-game:nth-child(-n+3) {margin-bottom:12px;box-shadow:inset 0 0 0 1px var(--c),0 0 28px #ffcf4a11;}.scoreboard .gsw-row {justify-content:space-between;}
+@media(max-width:700px){.board-head{margin-bottom:24px;align-items:flex-start;}.board-kicker{font-size:8px;}.room-link{font-size:8px;padding:10px;}.board-stats{gap:20px;}.board-stats strong{font-size:26px;}.board-stats span{font-size:7px;}.board-tools{align-items:flex-start;flex-direction:column;}.board-tools label,.board-tools input{width:100%;}.scoreboard .gsw-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}.scoreboard .gsw-game{flex-direction:column;align-items:stretch;gap:0;padding:7px;}.scoreboard .gsw-scr{width:100%;}.scoreboard .gsw-txt{padding:12px 3px 6px;}.scoreboard .gsw-game b{font-size:15px;}.scoreboard .gsw-game small{font:8px/1.6 system-ui;}.board-rank{font-size:10px;top:12px;left:12px;padding:6px;}.board-plays{font-size:8px;}.scoreboard .gsw-row a,.scoreboard .gsw-row button{font-size:8px;}}
+
 .gsw { --pink: #ff3fa4; --cyan: #3ff0ff; --gold: #ffcf4a; --ink: #f3ead3; --muted: #9a93b0; --pixel: "Press Start 2P", ui-monospace, monospace; --display: "Bungee", Impact, "Arial Black", sans-serif;
   position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: start center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); cursor: default;
   background: radial-gradient(ellipse 90% 50% at 50% 0%, rgba(120, 40, 170, 0.55), transparent 70%), radial-gradient(ellipse 70% 40% at 50% 100%, rgba(63, 240, 255, 0.12), transparent 70%), linear-gradient(#0d0820, #07050f 70%); }
@@ -98,21 +114,21 @@
     st.textContent = css;
     document.head.appendChild(st);
     box = document.createElement("div");
-    box.className = "gsw";
+    box.className = "gsw" + (home ? " scoreboard" : "");
     box.hidden = true;
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-modal", "true");
     // on the arcade page itself the list is the ALL GAMES view: no run ends, and there is no arcade to go back to
-    const home = location.pathname === "/" || location.pathname === "/index.html";
     box.setAttribute("aria-label", home ? "All games" : "Switch game");
     box.innerHTML = home
-      ? "<div class='gsw-card'><h2>ALL GAMES</h2><p>Pick a game to play.</p><div class='gsw-list'></div><div class='gsw-row'><button type='button' class='gsw-close'>◀ Back to the machines</button></div></div>"
+      ? "<div class='gsw-card'><header class='board-head'><span class='board-kicker'>COTTAGE ARCADE / FREE PLAY</span><a class='room-link' href='/arcade/room/'>ENTER THE 3D ARCADE ↗</a></header><h2>THE HIGH SCORE CLUB</h2><p class='board-tag'>One more game. One better run.</p><div class='board-stats'></div><div class='board-tools'><div><h3>ALL GAMES</h3><span>Most played on this device</span></div><label>FIND A GAME <input type='search' placeholder='Search the arcade' aria-label='Find a game'></label></div><div class='gsw-list'></div><p class='board-empty' hidden>No games found. Try another name.</p><div class='gsw-row'><a href='/arcade/room/'>Walk through the 3D arcade ↗</a><button type='button' class='gsw-close'>Original machines</button></div></div>"
       : "<div class='gsw-card'><h2>SWITCH GAME</h2><p>Pick a cabinet. Your current run ends.</p><div class='gsw-list'></div><div class='gsw-row'><a href='/'>◀ Back to the arcade</a><button type='button' class='gsw-close'>Keep playing</button></div></div>";
     // keep the game from seeing clicks and keys meant for the switcher
     for (const ev of ["pointerdown", "mousedown", "click", "touchstart", "keydown", "keyup"]) box.addEventListener(ev, (e) => e.stopPropagation());
     box.addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.repeat) close(); }); // a held Esc must not reopen what it closed
     box.addEventListener("click", (e) => { if (e.target === box) close(); });
     box.querySelector(".gsw-close").onclick = close;
+    if (home) box.querySelector('input').addEventListener('input', e => { let matches = 0; for (const tile of box.querySelectorAll('.gsw-game')) { tile.hidden = !tile.textContent.toLowerCase().includes(e.target.value.trim().toLowerCase()); if (!tile.hidden) matches++; } box.querySelector('.board-empty').hidden = matches > 0; });
     // a game that turns its own frame (Reel It In keeps itself upright on the phone) marks a host, so the list turns with it
     (document.querySelector("[data-switch-host]") || document.body).appendChild(box);
   }
@@ -123,7 +139,8 @@
     for (const g of GAMES) if (!g.probe || g.id === here || (await live[g.id])) shown.push(g);
     const list = box.querySelector(".gsw-list");
     list.innerHTML = "";
-    for (const g of shown) {
+    if (home) { shown.sort((a,b) => count(b.id) - count(a.id)); const total = shown.reduce((n,g) => n + count(g.id),0); box.querySelector('.board-stats').innerHTML = `<div><strong>${shown.length}</strong><span>GAMES TO EXPLORE</span></div><div><strong>${total.toLocaleString()}</strong><span>PLAYS ON THIS DEVICE</span></div><div><strong>∞</strong><span>FREE CREDITS</span></div>`; box.querySelector('input').value = ''; }
+    for (const [rank, g] of shown.entries()) {
       const a = document.createElement("a");
       a.className = "gsw-game" + (g.id === here ? " here" : "");
       a.href = g.id === here ? "#" : g.url;
@@ -134,6 +151,8 @@
       img.src = g.art;
       a.querySelector("b").textContent = g.name;
       a.querySelector("small").textContent = g.sub;
+      if (home) { a.dataset.rank = rank + 1; const badge = document.createElement('span'); badge.className = 'board-rank'; badge.textContent = String(rank + 1).padStart(2,'0'); a.prepend(badge); const stat = document.createElement('span'); stat.className = 'board-plays'; stat.textContent = count(g.id).toLocaleString() + ' PLAYS'; a.querySelector('.gsw-txt').append(stat); }
+      a.addEventListener('click', () => { if (g.id !== here) record(g.id); });
       if (g.id === here) a.onclick = (e) => { e.preventDefault(); close(); };
       list.appendChild(a);
     }
@@ -151,7 +170,8 @@
       b.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); open(); });
     }
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
-  window.GameSwitch = { open, close, wire, get isOpen() { return !!box && !box.hidden; }, GAMES };
+  function init() { wire(); if (home && !new URLSearchParams(location.search).has("machines")) open(); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+  window.GameSwitch = { open, close, wire, record, count, get isOpen() { return !!box && !box.hidden; }, GAMES };
 })();
 

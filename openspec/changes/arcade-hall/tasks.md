@@ -1,0 +1,4 @@
+- [ ] Implement ranked default All Games view and scoped launch counts.
+- [ ] Build neon 3D room with desktop/touch input and cabinet launching.
+- [ ] Check scenarios in desktop and phone-sized browsers.
+- [ ] Validate and archive specifications.
