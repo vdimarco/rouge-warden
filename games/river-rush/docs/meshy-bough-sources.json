@@ -103,7 +103,8 @@
     "script": "scripts/pack-bough.mjs",
     "geometry": "4907 triangles full; 1458 triangles lite; root-to-tip stem coordinates with locally rooted course deformation",
     "textures": "Embedded WebP; 1024 albedo /512 PBR detail full, 512 albedo /256 PBR detail lite",
-    "fallback": "Locally textured curved shoreline trees with the same contiguous span, connected offshoot anatomy and shared coverage rules as the Meshy path"
+    "fallback": "Locally textured curved shoreline trees with the same contiguous span, connected offshoot anatomy and shared coverage rules as the Meshy path",
+    "status": "Historical flattened-bough pipeline retired; archived runtime asset bytes retained. New native complete trees use scripts/pack-river-oak.mjs and docs/meshy-river-oak-sources.json."
   },
   "runtimeAssets": [
     {

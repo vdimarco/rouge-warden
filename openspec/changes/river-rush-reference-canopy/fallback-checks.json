@@ -1,0 +1,553 @@
+{
+  "functionalChecks": [
+    {
+      "passed": true,
+      "scope": "fixtures",
+      "artReview": true,
+      "forcedProceduralBranchFixture": true,
+      "expectedBranchModel": "fallback",
+      "actualAppStateOrClockMutations": false,
+      "fixedNaturalSeedOrWallClock": false,
+      "errors": [],
+      "limitations": [
+        "Chromium uses SwiftShader; physical phone FPS and human reaction feel are not measured.",
+        "Visual fixtures set their own game states and clocks. Natural App runs retain Date.now seeds and use the real keyboard and pointer handlers."
+      ],
+      "actualGPU": "default SwiftShader path",
+      "rawReceipt": "/tmp/river-natural-oak-fallback-revised/branch-spans.json",
+      "views": [
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-revised/desktop-width3-left-12m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-revised/desktop-width2-right-12m-lite-duck-fallback.png",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "passed": true,
+      "scope": "fixtures",
+      "artReview": true,
+      "forcedProceduralBranchFixture": true,
+      "expectedBranchModel": "fallback",
+      "actualAppStateOrClockMutations": false,
+      "fixedNaturalSeedOrWallClock": false,
+      "errors": [],
+      "limitations": [
+        "Chromium uses SwiftShader; physical phone FPS and human reaction feel are not measured.",
+        "Visual fixtures set their own game states and clocks. Natural App runs retain Date.now seeds and use the real keyboard and pointer handlers."
+      ],
+      "actualGPU": "default SwiftShader path",
+      "rawReceipt": "/tmp/river-natural-oak-fallback-matrix/branch-spans.json",
+      "views": [
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width1-left-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": -1,
+          "remaining": 62,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width1-left-62m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width1-right-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": 1,
+          "remaining": 62,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width1-right-62m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width2-left-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": -1,
+          "remaining": 62,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width2-left-62m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width2-right-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": 1,
+          "remaining": 62,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width2-right-62m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width3-left-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": -1,
+          "remaining": 62,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width3-left-62m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width3-right-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": 1,
+          "remaining": 62,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width3-right-62m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width1-left-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": -1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width1-left-45m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width1-right-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": 1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width1-right-45m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width2-left-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": -1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width2-left-45m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": 1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width2-right-45m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width3-left-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": -1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width3-left-45m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width3-right-12m-lite-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": 1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width3-right-45m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width3-left-12m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width3-right-12m-lite-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-fallback-matrix/desktop-width3-right-12m-lite-standing-fallback.png",
+          "passed": true
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 50,
+        "shaders": 74
+      },
+      "resourcesAfter": {
+        "uploads": 50,
+        "shaders": 74
+      },
+      "gpuErrors": [],
+      "stoppedProof": {
+        "screenshot": "/tmp/river-natural-oak-fallback-matrix/phone-width1-left-12m-lite-duck-fallback.png",
+        "sameStoppedPixels": true
+      },
+      "noActiveGpuPreparation": true,
+      "saturated": {
+        "drawCalls": 61,
+        "triangles": 282257
+      },
+      "treeCapacity": 32,
+      "markerCapacity": 32,
+      "markerInstances": 158
+    },
+    {
+      "passed": true,
+      "scope": "fallback",
+      "artReview": true,
+      "forcedProceduralBranchFixture": false,
+      "expectedBranchModel": "meshy",
+      "actualAppStateOrClockMutations": false,
+      "fixedNaturalSeedOrWallClock": false,
+      "errors": [],
+      "limitations": [
+        "Chromium uses SwiftShader; physical phone FPS and human reaction feel are not measured.",
+        "Visual fixtures set their own game states and clocks. Natural App runs retain Date.now seeds and use the real keyboard and pointer handlers."
+      ],
+      "actualGPU": null,
+      "rawReceipt": "/tmp/river-natural-oak-canvas2d-matrix/branch-spans.json",
+      "views": [
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width1-left-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": -1,
+          "remaining": 90,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width1-left-90m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width1-right-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 1,
+          "side": 1,
+          "remaining": 90,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width1-right-90m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width2-left-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": -1,
+          "remaining": 90,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width2-left-90m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width2-right-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 2,
+          "side": 1,
+          "remaining": 90,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width2-right-90m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width3-left-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": -1,
+          "remaining": 90,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width3-left-90m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width3-right-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "phone",
+          "width": 3,
+          "side": 1,
+          "remaining": 90,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/phone-width3-right-90m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width1-left-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": -1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width1-left-45m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width1-right-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 1,
+          "side": 1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width1-right-45m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width2-left-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": -1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width2-left-45m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width2-right-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 2,
+          "side": 1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width2-right-45m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": -1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width3-left-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": -1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width3-left-45m-standing-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": 1,
+          "remaining": 12,
+          "characterPose": "duck",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width3-right-12m-duck-fallback.png",
+          "passed": true
+        },
+        {
+          "layout": "desktop",
+          "width": 3,
+          "side": 1,
+          "remaining": 45,
+          "characterPose": "standing",
+          "screenshot": "/tmp/river-natural-oak-canvas2d-matrix/desktop-width3-right-45m-standing-fallback.png",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "aestheticReview": {
+    "scope": "loading failure procedural/Canvas2D fallback only",
+    "root": "accepted after structural revision",
+    "independentReviewer": "accepted after sampling both banks, all three widths and phone/desktop near/approach views",
+    "limitations": "Procedural cylinders and unlit Canvas2D bark/leaf wafers remain visibly synthetic; primary native mesh requires separate approval."
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "command": "npm run build:arcade --prefix games/river-rush",
+  "passed": true,
+  "assets": [
+    {
+      "file": "index.html",
+      "bytes": 798,
+      "sha256": "d5690dc56776326a5109302ccfb35c8506c49988c4fde82efe73f16cd6619d6b"
+    },
+    {
+      "file": "assets/index-D6GsolDK.js",
+      "bytes": 1109472,
+      "sha256": "795c96838854e4fb02c2081d1b0484c55ec827886ba5bde183866e4878dbf3a3"
+    },
+    {
+      "file": "assets/index-CBusqfet.css",
+      "bytes": 35573,
+      "sha256": "a4d4955834844e197547c0a4894ae9f20571dac45da7cd0af3ac195d6dbedd17"
+    },
+    {
+      "file": "models/meshy-river-oak.glb",
+      "bytes": 2004232,
+      "sha256": "5c4a91aafe30e2d97f5907dd465c9b647f483be0e446f23c1012653219caf7c5"
+    },
+    {
+      "file": "models/meshy-river-oak-lite.glb",
+      "bytes": 207516,
+      "sha256": "f562abd55a0e50531191add35cabf64d47657939490f342706baa97257bdf4b3"
+    }
+  ]
+}

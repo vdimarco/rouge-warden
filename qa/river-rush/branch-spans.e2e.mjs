@@ -10,6 +10,12 @@ const out = process.env.SHOTS || '/tmp/river-branch-spans';
 const selected = process.env.CASE || 'fixtures';
 const full = process.env.FULL_MATERIALS === '1';
 const nearOnly = process.env.NEAR_ONLY === '1';
+const artReview = process.env.ART_REVIEW === '1';
+const proceduralOnly = process.env.PROCEDURAL_ONLY === '1';
+const expectedBranchModel = process.env.EXPECTED_BRANCH_MODEL || (proceduralOnly ? 'fallback' : 'meshy');
+const firstOnly = Number(process.env.FIRST_ONLY || 0), skipFirst = Number(process.env.SKIP_FIRST || 0);
+assert.ok(['fixtures', 'fallback', 'phone', 'desktop'].includes(selected), 'Select a known QA case');
+assert.ok(Number.isInteger(firstOnly) && firstOnly >= 0 && Number.isInteger(skipFirst) && skipFirst >= 0);
 await fs.mkdir(out, { recursive: true });
 const previous = await fs.readFile(new URL('./wild-finale.mjs', import.meta.url), 'utf8');
 const install = previous.slice(previous.indexOf('function install(){'), previous.indexOf('const state=p=>'));
@@ -18,6 +24,8 @@ const sampler = (await fs.readFile(new URL('../../games/river-rush/src/game/movi
 const coverage = (await fs.readFile(new URL('../../games/river-rush/src/game/branch-spans.js', import.meta.url), 'utf8')).replaceAll('export ', '')
   + '\nwindow.__branches={isBranchSpan,branchLanes,branchSpan,branchOverlap};';
 const report = { passed: false, base, dev, scope: selected,
+  artReview, forcedProceduralBranchFixture: proceduralOnly, expectedBranchModel, firstOnly, skipFirst,
+  aestheticApproval: artReview ? 'Pending root and independent reference review; functional assertions do not grant art approval.' : null,
   materialPath: full ? 'detailed-full-assets-on-recorded-SwiftShader-isolated-fixture' : 'default-renderer-quality',
   actualAppStateOrClockMutations: false, fixedNaturalSeedOrWallClock: false,
   fixtures: [], fallback: [], actual: [], errors: [],
@@ -39,6 +47,9 @@ const overlaps = (a, b) => a.x < b.right - .5 && a.right > b.x + .5 && a.y < b.b
 async function sourcePage({ onlyFallback = false } = {}) {
   const p = await browser.newPage({ viewport: { width: layouts[0].width, height: layouts[0].height } });
   p.on('pageerror', e => report.errors.push({ case: 'source-fixture', error: e.message }));
+  p.on('requestfinished', request => { if (/\/models\/meshy-(?:bough|river-oak)[^/?]*\.glb/.test(request.url())) {
+    report.branchAssetRequests ??= []; if (!report.branchAssetRequests.includes(request.url())) report.branchAssetRequests.push(request.url()); } });
+  if (proceduralOnly && !onlyFallback) await p.route(/\/models\/meshy-(?:bough|river-oak)[^/?]*\.glb(?:\?.*)?$/, route => route.abort());
   await p.addInitScript({ content: install + '\ninstall();' });
   if (full && !onlyFallback) await p.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
@@ -68,49 +79,80 @@ async function sourcePage({ onlyFallback = false } = {}) {
   return p;
 }
 
-async function renderBranch(p, layout, scenario, remaining) {
+async function renderBranch(p, layout, scenario, remaining, pose = 'duck') {
   await p.setViewportSize({ width: layout.width, height: layout.height });
-  return p.evaluate(({ layout, scenario, remaining }) => {
+  return p.evaluate(({ layout, scenario, remaining, pose }) => {
     const { width, height } = layout, { entity } = scenario;
     const c = document.querySelector('#fixture'); c.style.width = `${width}px`; c.style.height = `${height}px`;
     const g = Object.assign(__engine.createGame(137), { time: 8, distance: entity.d - remaining,
-      lane: entity.lane, visualLane: entity.lane, action: 'duck', actionTime: .3,
+      lane: entity.lane, visualLane: entity.lane, action: pose === 'standing' ? '' : 'duck', actionTime: .3,
       entities: [{ ...entity, branchLanes: [...entity.branchLanes] }], effects: [], nextRow: 1e9, runwayGenerated: true });
+    if (window.__artReviewFixture) g.shield = false;
     // Settle the isolated rider's pose before capturing the static tree.
     for (const time of [7.7, 7.85, 8]) { g.time = time; __scene.render(g, width, height, false); }
     window.__fixture = g;
     const shape = __shore.shorelineBranch(g.entities[0], entity.d, g.terrainProfile);
-    return { explicitFixtureStateAndClock: true, span: __branches.branchSpan(entity), shape: {
+    return { explicitFixtureStateAndClock: true, characterPose: pose, span: __branches.branchSpan(entity), shape: {
       side: shape.side, root: shape.root, tip: shape.tip, contacts: shape.contacts ?? null,
       span: shape.span ?? null, meshFrame: shape.meshFrame ?? null,
       woodSegments: shape.wood.length, leafClusters: shape.leaves.length },
       expectedContactWorld: (shape.contacts ?? []).map(contact => ({ lane: contact.lane,
+        ...__course.riverPoint(g.distance, entity.d, (contact.lane - 1) * 3.8, g.terrainProfile) })),
+      actualWoodContactWorld: (shape.contacts ?? []).map(contact => ({ lane: contact.lane, depthFromTriggerPlane: contact.d,
         ...__course.riverPoint(g.distance, entity.d + contact.d, contact.x, g.terrainProfile) })),
       scene: JSON.parse(JSON.stringify(__scene.status)) };
-  }, { layout, scenario, remaining });
+  }, { layout, scenario, remaining, pose });
 }
 
 async function fixtures() {
   const p = await sourcePage(), resources = await p.evaluate(() => ({ ...__resources }));
+  await p.evaluate(value => window.__artReviewFixture = value, artReview);
   report.actualGPU = await p.evaluate(() => window.__actualGPU ?? 'default SwiftShader path');
-  const shots = full
+  const shots = artReview ? layouts.flatMap(layout => scenarios.flatMap(scenario => [
+    { layout, scenario, remaining: 12, pose: 'duck' },
+    { layout, scenario, remaining: layout.name === 'phone' ? 62 : 45, pose: 'standing' },
+  ])) : full
     ? [...scenarios.map(scenario => ({ layout: layouts[1], scenario, remaining: 12 })),
       { layout: layouts[0], scenario: scenarios.find(s => s.width === 3 && s.side === 1), remaining: 12 }]
     : layouts.flatMap(layout => scenarios.map(scenario => ({ layout, scenario, remaining: 12 })));
-  if (!full && !nearOnly) shots.push(...scenarios.filter(s => s.side === -1).map(scenario => ({ layout: layouts[1], scenario, remaining: 45 })),
+  if (!artReview && !full && !nearOnly) shots.push(...scenarios.filter(s => s.side === -1).map(scenario => ({ layout: layouts[1], scenario, remaining: 45 })),
     { layout: layouts[0], scenario: scenarios.find(s => s.width === 3 && s.side === 1), remaining: 45 });
+  if (artReview) shots.push(...layouts.flatMap(layout => scenarios.filter(s => s.width === 3).map(scenario => ({ layout, scenario, remaining: 12, pose: 'standing' }))));
+  if (artReview) {
+    const representatives = process.env.ART_REPRESENTATIVES?.split(',') ?? ['desktop-3--1-45-standing', 'desktop-3-1-45-standing', 'phone-3-1-62-standing',
+      'desktop-3--1-12-standing', 'phone-1--1-12-duck', 'desktop-2-1-12-duck'];
+    report.artRepresentativeKeys = representatives;
+    const priority = shot => { const index = representatives.indexOf(`${shot.layout.name}-${shot.scenario.width}-${shot.scenario.side}-${shot.remaining}-${shot.pose}`);
+      return index < 0 ? representatives.length : index; };
+    shots.sort((a, b) => priority(a) - priority(b));
+    if (skipFirst) shots.splice(0, skipFirst);
+    if (firstOnly) shots.splice(firstOnly);
+  }
   let stoppedProof = null;
-  for (const { layout, scenario, remaining } of shots) {
-    const proof = await renderBranch(p, layout, scenario, remaining);
-    const filename = `${out}/${layout.name}-width${scenario.width}-${scenario.side === -1 ? 'left' : 'right'}-${remaining}m-${full ? 'full' : 'lite'}.png`;
+  for (const { layout, scenario, remaining, pose = 'duck' } of shots) {
+    const proof = await renderBranch(p, layout, scenario, remaining, pose);
+    const filename = `${out}/${layout.name}-width${scenario.width}-${scenario.side === -1 ? 'left' : 'right'}-${remaining}m-${full ? 'full' : 'lite'}${artReview ? `-${pose}` : ''}${proceduralOnly ? '-fallback' : ''}.png`;
     await p.locator('#fixture').screenshot({ path: filename });
     const row = { layout: layout.name, width: scenario.width, side: scenario.side, remaining, screenshot: filename, ...proof, passed: false };
     report.fixtures.push(row); await checkpoint();
     assert.deepEqual(proof.span.lanes, scenario.entity.branchLanes); assert.equal(proof.span.side, scenario.side);
-    assert.equal(proof.shape.side, scenario.side); assert.equal(proof.scene.models.bough, 'ready');
+    assert.equal(proof.shape.side, scenario.side); assert.equal(proof.scene.models.bough, proceduralOnly ? 'fallback' : 'ready');
     assert.deepEqual(proof.shape.span.lanes, scenario.entity.branchLanes); assert.equal(proof.shape.span.width, scenario.width);
     assert.deepEqual(proof.shape.contacts.map(p => p.lane), scenario.entity.branchLanes);
-    assert.equal(proof.scene.branches.model, 'meshy'); assert.equal(proof.scene.branches.meshyInstances, 1);
+    for (const contact of proof.shape.contacts) {
+      assert.ok(Math.abs(contact.x - (contact.lane - 1) * 3.8) < 1e-6, 'Low wood crosses each covered lane center');
+      assert.ok(Number.isFinite(contact.y) && Number.isFinite(contact.d));
+    }
+    assert.equal(proof.scene.branches.model, expectedBranchModel); assert.equal(proof.scene.branches.meshyInstances, proceduralOnly ? 0 : 1);
+    if (process.env.EXPECTED_BRANCH_STYLE) assert.equal(proof.scene.branches.style, process.env.EXPECTED_BRANCH_STYLE);
+    if (process.env.EXPECTED_BRANCH_STYLE === 'meshy-natural-oak') {
+      assert.ok(report.branchAssetRequests.some(url => /\/meshy-river-oak(?:-lite)?\.glb(?:\?|$)/.test(url)), 'The new integral oak GLB must be requested');
+      const native = proof.scene.branches.meshySamples.find(sample => sample.id === scenario.entity.id);
+      assert.equal(native.topology, 'complete-native-tree'); assert.deepEqual(native.contacts.map(p => p.lane), scenario.entity.branchLanes);
+      for (const key of ['x', 'y', 'd']) assert.ok(Math.abs(native.nativeRoot[key] - proof.shape.root[key]) < 1e-6, 'Native root seats at the bank');
+      for (const contact of native.contacts) { assert.ok(Math.abs(contact.x - (contact.lane - 1) * 3.8) < 1e-6);
+        assert.ok(Math.abs(contact.d) <= 1.250001, 'Native low shaft stays near its contact row'); }
+    }
     assert.equal(proof.scene.branches.origins.filter(o => o.id === scenario.entity.id).length, 1, 'One rooted tree per span');
     const cue = proof.scene.branchCoverage.samples.find(s => s.id === scenario.entity.id);
     assert.ok(cue); assert.equal(cue.width, scenario.width); assert.deepEqual(cue.lanes, scenario.entity.branchLanes);
@@ -122,7 +164,12 @@ async function fixtures() {
     if (!stoppedProof) { const pixels = await p.locator('#fixture').screenshot(); await p.waitForTimeout(120);
       assert.deepEqual(await p.locator('#fixture').screenshot(), pixels); stoppedProof = { screenshot: filename, sameStoppedPixels: true }; }
     row.passed = true; await checkpoint();
-    console.log(JSON.stringify({ fixture: layout.name, width: scenario.width, side: scenario.side, remaining, screenshot: filename }));
+    console.log(JSON.stringify({ fixture: layout.name, width: scenario.width, side: scenario.side, remaining, pose, screenshot: filename }));
+  }
+  if (artReview && firstOnly) {
+    report.initialArtReviewOnly = true; report.partialResources = { before: resources, after: await p.evaluate(() => ({ ...__resources })), stoppedProof };
+    assert.deepEqual(report.partialResources.after, resources); assert.deepEqual(await p.evaluate(() => __gpuErrors), []);
+    await checkpoint(); await p.evaluate(() => __scene.dispose()); await p.close(); return;
   }
   const sweep = await p.evaluate(({ scenarios }) => {
     const rows = [], g = __fixture;
@@ -145,32 +192,41 @@ async function fixtures() {
   }, { scenarios });
   assert.deepEqual(sweep.resourcesAfter, resources); assert.deepEqual(sweep.gpuErrors, []); assert.deepEqual(sweep.reduced, sweep.repeated);
   assert.equal(sweep.saturated.coverage.active, 32); assert.ok(sweep.saturated.coverage.instances <= 192);
-  assert.equal(sweep.saturated.branches.meshyInstances, 32); assert.equal(sweep.saturated.branches.capacity, 32);
+  assert.equal(sweep.saturated.branches.meshyInstances, proceduralOnly ? 0 : 32); assert.equal(sweep.saturated.branches.capacity, 32);
   report.poolSweep = { ...sweep, resourcesBefore: resources, stoppedProof, noActiveGpuPreparation: true };
   await checkpoint(); await p.evaluate(() => __scene.dispose()); await p.close();
 }
 
 async function fallback() {
   const p = await sourcePage({ onlyFallback: true });
-  await p.setViewportSize({ width: 844, height: 390 });
-  for (const scenario of scenarios.filter(s => s.side === -1)) {
-    const proof = await p.evaluate(({ scenario }) => {
+  const shots = artReview ? layouts.flatMap(layout => scenarios.flatMap(scenario => [
+    { layout, scenario, remaining: 12, pose: 'duck' },
+    { layout, scenario, remaining: layout.name === 'phone' ? 90 : 45, pose: 'standing' },
+  ])) : scenarios.filter(s => s.side === -1).map(scenario => ({ layout: { name: 'landscape', width: 844, height: 390 }, scenario, remaining: 12, pose: 'duck' }));
+  for (const { layout, scenario, remaining, pose } of shots) {
+    await p.setViewportSize({ width: layout.width, height: layout.height });
+    const proof = await p.evaluate(({ scenario, layout, remaining, pose }) => {
+      const { width, height } = layout;
       const canvas = document.querySelector('#fallback'); canvas.style.display = 'block';
+      canvas.width = width; canvas.height = height; canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
       document.querySelector('#fixture').style.display = 'none'; const ctx = canvas.getContext('2d');
-      const g = Object.assign(__engine.createGame(137), { time: 8, distance: 448, lane: scenario.entity.lane,
-        visualLane: scenario.entity.lane, action: 'duck', actionTime: .3, entities: [{ ...scenario.entity }], effects: [], nextRow: 1e9, runwayGenerated: true });
-      __fallback.renderGame(ctx, g, __art, 844, 390, true, false); const a = canvas.toDataURL();
-      __fallback.renderGame(ctx, g, __art, 844, 390, true, false);
-      return { span: __branches.branchSpan(scenario.entity), projection: __fallback.branchProjection(scenario.entity, g, 844, 390),
-        expectedMarks: scenario.entity.branchLanes.map(lane => __fallback.projection(844, 390, lane, scenario.entity.d - g.distance)),
+      const g = Object.assign(__engine.createGame(137), { time: 8, distance: scenario.entity.d - remaining, lane: scenario.entity.lane,
+        visualLane: scenario.entity.lane, action: pose === 'standing' ? '' : 'duck', actionTime: .3, shield: false,
+        entities: [{ ...scenario.entity }], effects: [], nextRow: 1e9, runwayGenerated: true });
+      __fallback.renderGame(ctx, g, __art, width, height, true, false); const a = canvas.toDataURL();
+      __fallback.renderGame(ctx, g, __art, width, height, true, false);
+      return { renderer: 'canvas2d', characterPose: pose, explicitFixtureStateAndClock: true,
+        span: __branches.branchSpan(scenario.entity), projection: __fallback.branchProjection(scenario.entity, g, width, height),
+        expectedMarks: scenario.entity.branchLanes.map(lane => __fallback.projection(width, height, lane, scenario.entity.d - g.distance)),
         sameStoppedPixels: a === canvas.toDataURL() };
-    }, { scenario });
+    }, { scenario, layout, remaining, pose });
     assert.equal(proof.sameStoppedPixels, true); assert.equal(proof.span.width, scenario.width);
     assert.deepEqual(proof.projection.marks, proof.expectedMarks); assert.equal(proof.projection.low, proof.span.minLane - .68);
     assert.equal(proof.projection.high, proof.span.maxLane + .68); assert.ok(proof.projection.start.x < proof.projection.end.x);
     assert.equal(proof.projection.marks.length, scenario.width);
-    const screenshot = `${out}/landscape-width${scenario.width}-left-fallback.png`;
-    await p.locator('#fallback').screenshot({ path: screenshot }); report.fallback.push({ width: scenario.width, ...proof, screenshot, passed: true }); await checkpoint();
+    const screenshot = `${out}/${layout.name}-width${scenario.width}-${scenario.side === -1 ? 'left' : 'right'}${artReview ? `-${remaining}m-${pose}` : ''}-fallback.png`;
+    await p.locator('#fallback').screenshot({ path: screenshot }); report.fallback.push({ layout: layout.name, width: scenario.width, side: scenario.side, remaining, ...proof, screenshot, passed: true }); await checkpoint();
+    console.log(JSON.stringify({ fallback: layout.name, width: scenario.width, side: scenario.side, remaining, pose, screenshot }));
   }
   await p.close();
 }
@@ -202,7 +258,12 @@ function naturalController({ levels, phone }) {
         for (const sample of s.renderer.branchCoverage?.samples ?? []) { const e = g.entities.find(e => e.id === sample.id); if (!e) continue;
           const span = __branches.branchSpan(e); P.maxCoverageError = Math.max(P.maxCoverageError, Math.abs(sample.width - span.width),
             Math.abs(sample.minLane - span.minLane), Math.abs(sample.maxLane - span.maxLane));
-          P.spans.set(e.id, { entity: { ...e }, sample: { ...sample }, time: g.time, distance: g.distance });
+          const native = s.renderer.branches?.meshySamples?.find(branch => branch.id === e.id);
+          const origin = s.renderer.branches?.origins?.find(branch => branch.id === e.id);
+          P.spans.set(e.id, { entity: { ...e }, sample: { ...sample }, time: g.time, distance: g.distance,
+            branchModel: s.renderer.branches?.model, branchStyle: s.renderer.branches?.style,
+            native: native ? JSON.parse(JSON.stringify(native)) : null,
+            origin: origin ? JSON.parse(JSON.stringify(origin)) : null });
           if (e.d - g.distance > 22 && e.d - g.distance < 42 && !P.shots.has(span.width) && P.screenshotWidth === null) P.screenshotWidth = span.width;
         }
         const hint = document.querySelector('.gesture-guide-play');
@@ -262,6 +323,8 @@ function naturalController({ levels, phone }) {
 async function actual(layout) {
   const p = await browser.newPage({ viewport: { width: layout.width, height: layout.height } });
   p.on('pageerror', e => report.errors.push({ case: layout.name, error: e.message }));
+  p.on('requestfinished', request => { if (/\/models\/meshy-(?:bough|river-oak)[^/?]*\.glb/.test(request.url())) {
+    report.branchAssetRequests ??= []; if (!report.branchAssetRequests.includes(request.url())) report.branchAssetRequests.push(request.url()); } });
   await p.addInitScript({ content: install + '\ninstall();\n' + sampler + '\n' + coverage }); await p.goto(base);
   await p.waitForFunction(() => { const b = document.querySelector('button[aria-label="Start run"]'); return b && !b.disabled; }, {}, { timeout: 90000 });
   const bundle = await p.evaluate(() => [...document.scripts].map(s => s.src).find(s => s.includes('/river-rush/assets/index-')));
@@ -302,6 +365,21 @@ async function actual(layout) {
     assert.deepEqual(markers.map(m => m.lane), span.entity.branchLanes);
     for (const marker of markers) { assert.ok(Math.abs(marker.position[0] - first.position[0] - (marker.lane - first.lane) * 3.8) < 1e-8);
       assert.ok(Math.abs(marker.position[2] + span.entity.d - span.distance) < 1e-8); } }
+  if (process.env.EXPECTED_BRANCH_STYLE === 'meshy-natural-oak') {
+    assert.ok(report.branchAssetRequests?.some(url => /\/meshy-river-oak(?:-lite)?\.glb(?:\?|$)/.test(url)), 'The natural App requests the new oak GLB');
+    for (const width of [1, 2, 3]) {
+      const span = data.spans.find(s => s.sample.width === width && s.native);
+      assert.ok(span, `Natural width${width} uses the integral native oak`);
+      assert.equal(span.branchModel, 'meshy'); assert.equal(span.branchStyle, 'meshy-natural-oak');
+      assert.equal(span.native.topology, 'complete-native-tree');
+      assert.deepEqual(span.native.contacts.map(c => c.lane), span.entity.branchLanes);
+      for (const key of ['x', 'y', 'd']) assert.ok(Math.abs(span.native.nativeRoot[key] - span.origin.root[key]) < 1e-6, 'Natural native root remains seated at its bank');
+      for (const contact of span.native.contacts) {
+        assert.ok(Math.abs(contact.x - (contact.lane - 1) * 3.8) < 1e-6);
+        assert.ok(Math.abs(contact.d) <= 1.250001, 'Natural native shaft meets the physical covered row');
+      }
+    }
+  }
   assert.ok(!data.events.some(e => ['hit', 'lose', 'smash'].includes(e.type))); assert.deepEqual(data.resourcesAfter, resources); assert.deepEqual(data.gpuErrors, []);
   assert.equal(data.guide.pointerEvents, 'none'); for (const b of [data.guide.map, data.guide.score, data.guide.rush, ...data.guide.buttons]) assert.ok(!overlaps(data.guide.hint, b));
   if (layout.name === 'phone') assert.ok(data.guideGesture?.actualPointerEvents);

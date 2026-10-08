@@ -1,3 +1,9 @@
+// Historical flattened-bough pipeline, retired by river-rush-reference-canopy.
+// The archived GLBs/provenance remain; native complete trees use pack-river-oak.mjs.
+console.error('The historical flattened-bough packer is retired. Use scripts/pack-river-oak.mjs with its recorded native metadata.');
+process.exitCode=1;
+
+/* Historical implementation retained for provenance, not execution.
 // Meshy shoreline bough: durable embedded WebP PBR maps, meshopt topology,
 // root-to-tip stem coordinates for the rooted contact-preserving shader.
 // node scripts/pack-bough.mjs original.glb output.glb triangleBudget textureSize
@@ -51,3 +57,5 @@ await doc.transform(prune(),dedup(),meshopt({encoder:MeshoptEncoder,level:'mediu
 await io.write(output,doc);
 const after=root.listMeshes().flatMap(m=>m.listPrimitives()).reduce((n,p)=>n+p.getIndices().getCount()/3,0);
 console.log(JSON.stringify({output,before,after,textureSize:+texSize,positionBounds:positions.bounds}));
+
+*/
