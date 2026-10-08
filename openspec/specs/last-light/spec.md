@@ -33,7 +33,7 @@ The simulation SHALL freeze on pause, page hiding, and completion. Reduced motio
 - **THEN** time, collisions, entities and dash cooldown freeze until resumed
 
 ### Requirement: ASCII art and responsive layouts
-The game SHALL retain dense coloured halftone characters, violet/gold sunset, blue night coast and green aurora scenes, monospace UI, and ASCII boat/collectible/hazard art. Scenes SHALL be bundled locally with MIT attribution. The intended deviation from raster game assets is required by the user's ASCII reference.
+The game SHALL retain dense coloured halftone characters, violet/gold sunset, blue night coast and green aurora scenes, monospace UI, and boat/collectible/hazard art drawn with the same dot glyphs, cell spacing and scene palettes. Scenes SHALL be bundled locally with MIT attribution. The intended deviation from raster game assets is required by the user's ASCII reference.
 #### Scenario: Desktop and phone layouts
 - **WHEN** viewed at 1440×900, 390×844, or 844×390
 - **THEN** the game, primary actions and touch controls remain readable, reachable and free from horizontal overflow
@@ -49,3 +49,7 @@ The game SHALL retain valid finite nonnegative best scores and tolerate unavaila
 #### Scenario: Invalid storage
 - **WHEN** saved data is malformed or storage throws
 - **THEN** a new voyage remains playable with a safe default best
+
+#### Scenario: Cohesive moving objects
+- **WHEN** the boat, lights and rocks are rendered over a crossing
+- **THEN** their dots align to the scene grid, use the crossing palette, and avoid oversized line-character overlays

@@ -11,13 +11,27 @@ let state = createVoyage(), best = 0, sceneIndex = -1, stopScene = () => {}, sce
 try { best = readBest(localStorage); } catch {}
 const keys = new Set(), pointers = new Map();
 let last = 0, saved = false;
-const boat = ['    |    ', '    |\\   ', '   /| \\  ', '  /_|__\\ ', ' \\_____/ '];
-const rock = ['  /\\  ', ' /##\\ ', '/####\\'];
+// Use the scene's 200 × 100 dot grid for every moving object.
+const boat = ['    •    ', '    ●•   ', '    ●●•  ', '   •●●●• ', ' •●●●●●• ', '  •●●●•  '];
+const rock = ['   ••   ', '  •●●•  ', ' •●●●●• ', '••●●●●••'];
 function sprite(lines, x, y, size, color) {
-  ctx.font = size + 'px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  const cell = canvas.clientWidth / 200;
+  const gx = Math.round(x / cell), gy = Math.round(y / cell);
+  ctx.font = (cell / .6) + 'px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color;
-  const step = size * .82;
-  for (let i=0; i<lines.length; i++) ctx.fillText(lines[i], x, y + (i-(lines.length-1)/2)*step);
+  for (let row = 0; row < lines.length; row++) {
+    for (let col = 0; col < lines[row].length; col++) {
+      const glyph = lines[row][col];
+      if (glyph === ' ') continue;
+      const px = (gx + col - Math.floor(lines[row].length / 2)) * cell;
+      const py = (gy + row - Math.floor(lines.length / 2)) * cell;
+      // Replace individual sea cells, rather than overlaying oversized text.
+      ctx.fillStyle = scenes[state.crossing].meta.ground;
+      ctx.fillRect(px - cell / 2, py - cell / 2, cell, cell);
+      ctx.fillStyle = color;
+      ctx.fillText(glyph, px, py);
+    }
+  }
 }
 function resize() {
   const r = canvas.getBoundingClientRect();
@@ -35,16 +49,16 @@ function render() {
     : state.entities;
   for (const e of entities) {
     if (e.type === 'light') {
-      sprite([' | ', '-*-', ' | '],e.x*w,e.y*h,scale*1.1,'#ffcd62');
-    } else sprite(rock,e.x*w,e.y*h,scale,'#ff5d8f');
+      sprite(['  ·  ', ' ·•· ', '·•●•·', ' ·•· ', '  ·  '],e.x*w,e.y*h,scale,'#ffcd62');
+    } else sprite(rock,e.x*w,e.y*h,scale,['#90327c','#526a92','#568b85'][state.crossing]);
   }
-  const boatInk = state.dash > 0 ? '#7cf0a0' : state.safe > 0 ? '#ff8a9a' : '#fff5d8';
+  const boatInk = state.dash > 0 ? '#fff5d8' : state.safe > 0 ? '#ea6a78' : ['#ffe39a','#bdd5eb','#b6e5ce'][state.crossing];
   // Dark glyph shadow preserves contrast over the sun's reflection.
-  ctx.shadowColor='#0b0817'; ctx.shadowBlur=3;
+  ctx.shadowBlur=0;
   sprite(boat,state.x*w,state.y*h,scale,boatInk);
   ctx.shadowBlur=0;
   if (!reduced.matches && (state.status === 'playing' || state.status === 'ready')) {
-    sprite(['· . · . ·'],state.x*w,(state.y+.045)*h,scale,'#c8bbdb');
+    sprite(['· · • · ·'],state.x*w,(state.y+.045)*h,scale,'#c8bbdb');
   }
   for (const e of state.effects) {
     ctx.globalAlpha=1-e.age/.9;

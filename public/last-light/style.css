@@ -57,3 +57,19 @@ footer button { font-size:11px; }
  footer { padding:0; }
 }
 
+
+/* Keep the interface quiet so the landscape remains the main event. */
+main { max-width:1200px; }
+header { border-bottom:0; min-height:64px; color:var(--muted); font-size:12px; }
+.brand { font-size:14px; font-weight:400; letter-spacing:.12em; color:#d6bdcd; }
+.hud { font-size:11px; padding:0 0 12px; }
+.sea { width:min(100%, calc((100dvh - 265px) * 2)); }
+h1 { font-size:18px; font-weight:400; letter-spacing:.12em; color:#e3c4b6; }
+.console { padding-top:22px; }
+#message { font-size:12px; min-height:22px; margin-top:7px; }
+#primary { font-size:14px; font-weight:400; color:#ffe39a; }
+.instructions { font-size:11px; }
+.run-details { font-size:10px; margin-top:4px; }
+footer { opacity:.75; }
+@media(max-width:600px) { .sea { width:100%; } header { min-height:50px; } }
+@media(max-height:500px) and (orientation:landscape) { header { min-height:38px; } .sea { width:100%; } .console { padding-top:4px; } }
