@@ -1,0 +1,966 @@
+{
+  "passed": true,
+  "base": "http://127.0.0.1:8765/river-rush/",
+  "scope": "Built title hero and existing menu actions only",
+  "layouts": [
+    {
+      "layout": {
+        "name": "desktop",
+        "width": 1365,
+        "height": 900
+      },
+      "viewport": {
+        "width": 1365,
+        "height": 900
+      },
+      "document": {
+        "width": 1365,
+        "height": 1108
+      },
+      "image": {
+        "src": "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp",
+        "complete": true,
+        "naturalWidth": 1672,
+        "naturalHeight": 941,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 1365,
+          "bottom": 900,
+          "width": 1365,
+          "height": 900
+        },
+        "objectFit": "cover",
+        "objectPosition": "70% 38%",
+        "pointerEvents": "none",
+        "animationName": "none"
+      },
+      "heading": {
+        "text": "RiverRush.",
+        "rect": {
+          "left": 60.25,
+          "top": 157,
+          "right": 628.25,
+          "bottom": 372.65625,
+          "width": 568,
+          "height": 215.65625
+        },
+        "color": "rgb(255, 240, 201)"
+      },
+      "brand": {
+        "left": 68.25,
+        "top": 35.5,
+        "right": 323.859375,
+        "bottom": 89.5,
+        "width": 255.609375,
+        "height": 54
+      },
+      "tagline": {
+        "left": 68.25,
+        "top": 402.65625,
+        "right": 628.25,
+        "bottom": 444.6875,
+        "width": 560,
+        "height": 42.03125
+      },
+      "start": {
+        "left": 68.25,
+        "top": 542.6875,
+        "right": 628.25,
+        "bottom": 612.6875,
+        "width": 560,
+        "height": 70
+      },
+      "maps": [
+        {
+          "left": 68.25,
+          "top": 670.6875,
+          "right": 248.25,
+          "bottom": 819.6875,
+          "width": 180,
+          "height": 149
+        },
+        {
+          "left": 258.25,
+          "top": 670.6875,
+          "right": 438.25,
+          "bottom": 819.6875,
+          "width": 180,
+          "height": 149
+        },
+        {
+          "left": 448.25,
+          "top": 670.6875,
+          "right": 628.25,
+          "bottom": 819.6875,
+          "width": 180,
+          "height": 149
+        }
+      ],
+      "controls": [
+        {
+          "text": "Ride Canopy Run",
+          "label": "Start run",
+          "disabled": false,
+          "rect": {
+            "left": 68.25,
+            "top": 542.6875,
+            "right": 628.25,
+            "bottom": 612.6875,
+            "width": 560,
+            "height": 70
+          }
+        },
+        {
+          "text": "01Canopy RunSunlit jungle · Find your flow4,200 M · FLOW",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 68.25,
+            "top": 670.6875,
+            "right": 248.25,
+            "bottom": 819.6875,
+            "width": 180,
+            "height": 149
+          }
+        },
+        {
+          "text": "02Redstone RapidsFinish map 1 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 258.25,
+            "top": 670.6875,
+            "right": 438.25,
+            "bottom": 819.6875,
+            "width": 180,
+            "height": 149
+          }
+        },
+        {
+          "text": "03Moonlit RuinsFinish map 2 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 448.25,
+            "top": 670.6875,
+            "right": 628.25,
+            "bottom": 819.6875,
+            "width": 180,
+            "height": 149
+          }
+        },
+        {
+          "text": "Leaderboard",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 225.5625,
+            "top": 1029.1875,
+            "right": 315.5625,
+            "bottom": 1073.1875,
+            "width": 90,
+            "height": 44
+          }
+        },
+        {
+          "text": "How to play",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 335.5625,
+            "top": 1029.1875,
+            "right": 416.5625,
+            "bottom": 1073.1875,
+            "width": 81,
+            "height": 44
+          }
+        },
+        {
+          "text": "Switch game",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 436.5625,
+            "top": 1029.1875,
+            "right": 526.5625,
+            "bottom": 1073.1875,
+            "width": 90,
+            "height": 44
+          }
+        },
+        {
+          "text": "Arcade",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 546.5625,
+            "top": 1029.1875,
+            "right": 597.5625,
+            "bottom": 1073.1875,
+            "width": 51,
+            "height": 44
+          }
+        }
+      ],
+      "footer": {
+        "left": 68.25,
+        "top": 1029.1875,
+        "right": 1296.75,
+        "bottom": 1073.1875,
+        "width": 1228.5,
+        "height": 44
+      },
+      "videoCount": 0,
+      "heroPosition": "absolute",
+      "baseColor": "rgb(3, 28, 23)",
+      "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/desktop-title.jpg"
+    },
+    {
+      "layout": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "document": {
+        "width": 390,
+        "height": 1088
+      },
+      "image": {
+        "src": "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp",
+        "complete": true,
+        "naturalWidth": 1672,
+        "naturalHeight": 941,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 390,
+          "bottom": 405.109375,
+          "width": 390,
+          "height": 405.109375
+        },
+        "objectFit": "cover",
+        "objectPosition": "70% 35%",
+        "pointerEvents": "none",
+        "animationName": "none"
+      },
+      "heading": {
+        "text": "RiverRush.",
+        "rect": {
+          "left": 23.296875,
+          "top": 346.15625,
+          "right": 362.703125,
+          "bottom": 402.3125,
+          "width": 339.40625,
+          "height": 56.15625
+        },
+        "color": "rgb(255, 240, 201)"
+      },
+      "brand": {
+        "left": 23.390625,
+        "top": 22.5,
+        "right": 172.390625,
+        "bottom": 59.5,
+        "width": 149,
+        "height": 37
+      },
+      "tagline": {
+        "left": 27.296875,
+        "top": 419.3125,
+        "right": 362.703125,
+        "bottom": 446.8125,
+        "width": 335.40625,
+        "height": 27.5
+      },
+      "start": {
+        "left": 27.296875,
+        "top": 527.8125,
+        "right": 362.703125,
+        "bottom": 586.8125,
+        "width": 335.40625,
+        "height": 59
+      },
+      "maps": [
+        {
+          "left": 27.296875,
+          "top": 634.8125,
+          "right": 134.421875,
+          "bottom": 790.8125,
+          "width": 107.125,
+          "height": 156
+        },
+        {
+          "left": 141.421875,
+          "top": 634.8125,
+          "right": 248.5625,
+          "bottom": 790.8125,
+          "width": 107.140625,
+          "height": 156
+        },
+        {
+          "left": 255.5625,
+          "top": 634.8125,
+          "right": 362.6875,
+          "bottom": 790.8125,
+          "width": 107.125,
+          "height": 156
+        }
+      ],
+      "controls": [
+        {
+          "text": "Ride Canopy Run",
+          "label": "Start run",
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 527.8125,
+            "right": 362.703125,
+            "bottom": 586.8125,
+            "width": 335.40625,
+            "height": 59
+          }
+        },
+        {
+          "text": "01Canopy RunSunlit jungle · Find your flow4,200 M · FLOW",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 634.8125,
+            "right": 134.421875,
+            "bottom": 790.8125,
+            "width": 107.125,
+            "height": 156
+          }
+        },
+        {
+          "text": "02Redstone RapidsFinish map 1 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 141.421875,
+            "top": 634.8125,
+            "right": 248.5625,
+            "bottom": 790.8125,
+            "width": 107.140625,
+            "height": 156
+          }
+        },
+        {
+          "text": "03Moonlit RuinsFinish map 2 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 255.5625,
+            "top": 634.8125,
+            "right": 362.6875,
+            "bottom": 790.8125,
+            "width": 107.125,
+            "height": 156
+          }
+        },
+        {
+          "text": "Leaderboard",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 998,
+            "right": 100.296875,
+            "bottom": 1042,
+            "width": 73,
+            "height": 44
+          }
+        },
+        {
+          "text": "How to play",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 109.296875,
+            "top": 998,
+            "right": 176.296875,
+            "bottom": 1042,
+            "width": 67,
+            "height": 44
+          }
+        },
+        {
+          "text": "Switch game",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 185.296875,
+            "top": 998,
+            "right": 258.296875,
+            "bottom": 1042,
+            "width": 73,
+            "height": 44
+          }
+        },
+        {
+          "text": "Arcade",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 267.296875,
+            "top": 998,
+            "right": 308.296875,
+            "bottom": 1042,
+            "width": 41,
+            "height": 44
+          }
+        }
+      ],
+      "footer": {
+        "left": 27.296875,
+        "top": 973,
+        "right": 362.703125,
+        "bottom": 1063,
+        "width": 335.40625,
+        "height": 90
+      },
+      "videoCount": 0,
+      "heroPosition": "absolute",
+      "baseColor": "rgb(3, 28, 23)",
+      "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/phone-title.jpg"
+    },
+    {
+      "layout": {
+        "name": "landscape",
+        "width": 844,
+        "height": 390
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "document": {
+        "width": 844,
+        "height": 718
+      },
+      "image": {
+        "src": "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp",
+        "complete": true,
+        "naturalWidth": 1672,
+        "naturalHeight": 941,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 844,
+          "bottom": 390,
+          "width": 844,
+          "height": 390
+        },
+        "objectFit": "cover",
+        "objectPosition": "70% 35%",
+        "pointerEvents": "none",
+        "animationName": "none"
+      },
+      "heading": {
+        "text": "RiverRush.",
+        "rect": {
+          "left": 34.1875,
+          "top": 122,
+          "right": 481.0625,
+          "bottom": 264.1875,
+          "width": 446.875,
+          "height": 142.1875
+        },
+        "color": "rgb(255, 240, 201)"
+      },
+      "brand": {
+        "left": 42.1875,
+        "top": 19,
+        "right": 261.1875,
+        "bottom": 73,
+        "width": 219,
+        "height": 54
+      },
+      "tagline": {
+        "left": 42.1875,
+        "top": 284.1875,
+        "right": 481.0625,
+        "bottom": 312.78125,
+        "width": 438.875,
+        "height": 28.59375
+      },
+      "start": {
+        "left": 42.1875,
+        "top": 395.78125,
+        "right": 481.0625,
+        "bottom": 458.78125,
+        "width": 438.875,
+        "height": 63
+      },
+      "maps": [
+        {
+          "left": 42.1875,
+          "top": 509.78125,
+          "right": 181.8125,
+          "bottom": 628.78125,
+          "width": 139.625,
+          "height": 119
+        },
+        {
+          "left": 191.8125,
+          "top": 509.78125,
+          "right": 331.4375,
+          "bottom": 628.78125,
+          "width": 139.625,
+          "height": 119
+        },
+        {
+          "left": 341.4375,
+          "top": 509.78125,
+          "right": 481.0625,
+          "bottom": 628.78125,
+          "width": 139.625,
+          "height": 119
+        }
+      ],
+      "controls": [
+        {
+          "text": "Ride Canopy Run",
+          "label": "Start run",
+          "disabled": false,
+          "rect": {
+            "left": 42.1875,
+            "top": 395.78125,
+            "right": 481.0625,
+            "bottom": 458.78125,
+            "width": 438.875,
+            "height": 63
+          }
+        },
+        {
+          "text": "01Canopy RunSunlit jungle · Find your flow4,200 M · FLOW",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 42.1875,
+            "top": 509.78125,
+            "right": 181.8125,
+            "bottom": 628.78125,
+            "width": 139.625,
+            "height": 119
+          }
+        },
+        {
+          "text": "02Redstone RapidsFinish map 1 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 191.8125,
+            "top": 509.78125,
+            "right": 331.4375,
+            "bottom": 628.78125,
+            "width": 139.625,
+            "height": 119
+          }
+        },
+        {
+          "text": "03Moonlit RuinsFinish map 2 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 341.4375,
+            "top": 509.78125,
+            "right": 481.0625,
+            "bottom": 628.78125,
+            "width": 139.625,
+            "height": 119
+          }
+        },
+        {
+          "text": "Leaderboard",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 199.5,
+            "top": 648.78125,
+            "right": 289.5,
+            "bottom": 692.78125,
+            "width": 90,
+            "height": 44
+          }
+        },
+        {
+          "text": "How to play",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 309.5,
+            "top": 648.78125,
+            "right": 390.5,
+            "bottom": 692.78125,
+            "width": 81,
+            "height": 44
+          }
+        },
+        {
+          "text": "Switch game",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 410.5,
+            "top": 648.78125,
+            "right": 500.5,
+            "bottom": 692.78125,
+            "width": 90,
+            "height": 44
+          }
+        },
+        {
+          "text": "Arcade",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 520.5,
+            "top": 648.78125,
+            "right": 571.5,
+            "bottom": 692.78125,
+            "width": 51,
+            "height": 44
+          }
+        }
+      ],
+      "footer": {
+        "left": 42.1875,
+        "top": 648.78125,
+        "right": 801.8125,
+        "bottom": 692.78125,
+        "width": 759.625,
+        "height": 44
+      },
+      "videoCount": 0,
+      "heroPosition": "absolute",
+      "baseColor": "rgb(3, 28, 23)",
+      "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/landscape-title.jpg"
+    }
+  ],
+  "actions": [
+    {
+      "layout": "desktop",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": true
+    },
+    {
+      "layout": "phone",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": true
+    },
+    {
+      "layout": "landscape",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": true
+    }
+  ],
+  "errors": [],
+  "scoreWrites": [],
+  "imageRequests": [
+    "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp"
+  ],
+  "imageFailure": {
+    "requestAbortedLocally": true,
+    "darkBase": "rgb(3, 28, 23)",
+    "startReadyDespiteImageFailure": true,
+    "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/phone-title-image-unavailable.jpg",
+    "actions": {
+      "layout": "phone",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": false
+    },
+    "proof": {
+      "layout": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "document": {
+        "width": 390,
+        "height": 1088
+      },
+      "image": {
+        "src": "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp",
+        "complete": true,
+        "naturalWidth": 0,
+        "naturalHeight": 0,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 390,
+          "bottom": 405.109375,
+          "width": 390,
+          "height": 405.109375
+        },
+        "objectFit": "cover",
+        "objectPosition": "70% 35%",
+        "pointerEvents": "none",
+        "animationName": "none"
+      },
+      "heading": {
+        "text": "RiverRush.",
+        "rect": {
+          "left": 23.296875,
+          "top": 346.15625,
+          "right": 362.703125,
+          "bottom": 402.3125,
+          "width": 339.40625,
+          "height": 56.15625
+        },
+        "color": "rgb(255, 240, 201)"
+      },
+      "brand": {
+        "left": 23.390625,
+        "top": 22.5,
+        "right": 172.390625,
+        "bottom": 59.5,
+        "width": 149,
+        "height": 37
+      },
+      "tagline": {
+        "left": 27.296875,
+        "top": 419.3125,
+        "right": 362.703125,
+        "bottom": 446.8125,
+        "width": 335.40625,
+        "height": 27.5
+      },
+      "start": {
+        "left": 27.296875,
+        "top": 527.8125,
+        "right": 362.703125,
+        "bottom": 586.8125,
+        "width": 335.40625,
+        "height": 59
+      },
+      "maps": [
+        {
+          "left": 27.296875,
+          "top": 634.8125,
+          "right": 134.421875,
+          "bottom": 790.8125,
+          "width": 107.125,
+          "height": 156
+        },
+        {
+          "left": 141.421875,
+          "top": 634.8125,
+          "right": 248.5625,
+          "bottom": 790.8125,
+          "width": 107.140625,
+          "height": 156
+        },
+        {
+          "left": 255.5625,
+          "top": 634.8125,
+          "right": 362.6875,
+          "bottom": 790.8125,
+          "width": 107.125,
+          "height": 156
+        }
+      ],
+      "controls": [
+        {
+          "text": "Ride Canopy Run",
+          "label": "Start run",
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 527.8125,
+            "right": 362.703125,
+            "bottom": 586.8125,
+            "width": 335.40625,
+            "height": 59
+          }
+        },
+        {
+          "text": "01Canopy RunSunlit jungle · Find your flow4,200 M · FLOW",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 634.8125,
+            "right": 134.421875,
+            "bottom": 790.8125,
+            "width": 107.125,
+            "height": 156
+          }
+        },
+        {
+          "text": "02Redstone RapidsFinish map 1 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 141.421875,
+            "top": 634.8125,
+            "right": 248.5625,
+            "bottom": 790.8125,
+            "width": 107.140625,
+            "height": 156
+          }
+        },
+        {
+          "text": "03Moonlit RuinsFinish map 2 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 255.5625,
+            "top": 634.8125,
+            "right": 362.6875,
+            "bottom": 790.8125,
+            "width": 107.125,
+            "height": 156
+          }
+        },
+        {
+          "text": "Leaderboard",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 998,
+            "right": 100.296875,
+            "bottom": 1042,
+            "width": 73,
+            "height": 44
+          }
+        },
+        {
+          "text": "How to play",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 109.296875,
+            "top": 998,
+            "right": 176.296875,
+            "bottom": 1042,
+            "width": 67,
+            "height": 44
+          }
+        },
+        {
+          "text": "Switch game",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 185.296875,
+            "top": 998,
+            "right": 258.296875,
+            "bottom": 1042,
+            "width": 73,
+            "height": 44
+          }
+        },
+        {
+          "text": "Arcade",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 267.296875,
+            "top": 998,
+            "right": 308.296875,
+            "bottom": 1042,
+            "width": 41,
+            "height": 44
+          }
+        }
+      ],
+      "footer": {
+        "left": 27.296875,
+        "top": 973,
+        "right": 362.703125,
+        "bottom": 1063,
+        "width": 335.40625,
+        "height": 90
+      },
+      "videoCount": 0,
+      "heroPosition": "absolute",
+      "baseColor": "rgb(3, 28, 23)"
+    }
+  },
+  "reducedMotion": {
+    "imageVisible": true,
+    "sameHeroPixels": true,
+    "noTitleVideo": true,
+    "actions": {
+      "layout": "phone",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": true
+    },
+    "image": {
+      "src": "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp",
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "rect": {
+        "left": 0,
+        "top": 0,
+        "right": 390,
+        "bottom": 405.109375,
+        "width": 390,
+        "height": 405.109375
+      },
+      "objectFit": "cover",
+      "objectPosition": "70% 35%",
+      "pointerEvents": "none",
+      "animationName": "none"
+    }
+  },
+  "actualAppStateOrClockMutations": false,
+  "fixedSeedOrClock": false,
+  "limitations": [
+    "Chromium uses SwiftShader; no physical device FPS or campaign/gameplay regression claim.",
+    "Readability and face crop need actual-image review; rectangle and hit-target checks are recorded separately."
+  ],
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-xDDZwsSw.js"
+}

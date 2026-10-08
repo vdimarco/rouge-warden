@@ -1,11 +1,10 @@
 import React from 'react';
 import { KeyLegend } from './Controls.jsx';
 import { Icon } from './Icons.jsx';
-import LivingScene from './LivingScene.jsx';
 import GestureGuide from './GestureGuide.jsx';
 export default function Menu({ onStart, onRetry, onHelp, ready, error, best, active, levels, progress, selectedLevel, onSelectLevel, onLeaderboard }) {
   return <main className="menu">
-    <LivingScene active={active}/>
+    <div className="title-hero" aria-hidden="true"><img src={`${import.meta.env.BASE_URL}art/title-hero-reference-v1.webp`} alt="" fetchPriority="high" decoding="async" onError={event=>{event.currentTarget.style.visibility='hidden';}}/></div>
     <div className="menu-content"><div className="gold-rule"/><h1><span>River</span><br/><span>Rush.</span></h1><p className="tagline">The river doesn’t wait.</p>
       <p className="menu-description">Three rivers. One adventure.<br/>Dodge. Jump. Duck. Reach the finish.</p>
       <button className="primary start" aria-label={error?'Try loading again':'Start run'} onClick={error?onRetry:onStart} disabled={!ready&&!error}>{error ? 'Try loading again' : ready ? `Ride ${levels[selectedLevel].name}` : 'Preparing the river…'}<Icon name="arrow"/></button>

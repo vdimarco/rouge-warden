@@ -1,0 +1,11 @@
+{
+  "generator": "OpenAI image generation",
+  "sourcePhotoUsed": false,
+  "reason": "Original photo edit rejected by service; independent nonsexual adventure illustration generated from described appearance. Exact photographic likeness is not claimed.",
+  "sourceOriginal": "/workspace/generated_images/exec-a3914561-95c1-4c99-88a5-8b2a6be39326.png",
+  "packaging": "WebP quality88; no image content edits",
+  "asset": "games/river-rush/public/art/title-hero-reference-v1.webp",
+  "bytes": 483096,
+  "sha256": "489f8bce0822bae801dc148ab6864f404658a2aeb10689cf643c3c4f39b3a162",
+  "direction": "Long-haired adult bearded man in opaque brown knee-length wrap shorts, paddling a wooden raft through organic jungle rapids; no text."
+}

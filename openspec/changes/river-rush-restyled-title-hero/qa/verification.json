@@ -1,0 +1,341 @@
+{
+  "passed": true,
+  "scope": "Restyled title artwork and real menu actions only; no gameplay/campaign retesting",
+  "finalBuiltBundle": "http://127.0.0.1:8765/river-rush/assets/index-C0jiCQVD.js",
+  "finalCSS": "index-Cf5Qdi04.css",
+  "layoutScreenshots": {
+    "desktop": "openspec/changes/river-rush-restyled-title-hero/qa/desktop-title.jpg",
+    "phone": "openspec/changes/river-rush-restyled-title-hero/qa/phone-title.jpg",
+    "landscape": "openspec/changes/river-rush-restyled-title-hero/qa/landscape-title-final.jpg"
+  },
+  "faceAndReadabilityReview": {
+    "browserQA": "Face visible clear of header/mute, high-contrast live title/button/maps; no input intercepted by hero.",
+    "independentCritic": "Initial desktop/phone crops accepted unchanged; final landscape compact CTA screenshot independently accepted with clear face, readable live text and entire Start above fold."
+  },
+  "layoutChecks": {
+    "noHorizontalOverflow": true,
+    "distinctControlHitAreas": true,
+    "allActionsReachable": true,
+    "initialStartVisible": {
+      "desktop": true,
+      "phone": true,
+      "landscape": true
+    },
+    "landscapeStart": {
+      "left": 42.1875,
+      "top": 307.828125,
+      "right": 481.0625,
+      "bottom": 370.828125,
+      "width": 438.875,
+      "height": 63
+    }
+  },
+  "actualActionProofs": {
+    "initialAllLayouts": [
+      {
+        "layout": "desktop",
+        "steps": [
+          "Open Help through visible button",
+          "Close Help back to title",
+          "Open public Leaderboard, read only",
+          "Close Leaderboard back to title",
+          "Start ready run through real button",
+          "Pause and return to title through real buttons"
+        ],
+        "titleRestored": true,
+        "imageLoadedOnReturn": true
+      },
+      {
+        "layout": "phone",
+        "steps": [
+          "Open Help through visible button",
+          "Close Help back to title",
+          "Open public Leaderboard, read only",
+          "Close Leaderboard back to title",
+          "Start ready run through real button",
+          "Pause and return to title through real buttons"
+        ],
+        "titleRestored": true,
+        "imageLoadedOnReturn": true
+      },
+      {
+        "layout": "landscape",
+        "steps": [
+          "Open Help through visible button",
+          "Close Help back to title",
+          "Open public Leaderboard, read only",
+          "Close Leaderboard back to title",
+          "Start ready run through real button",
+          "Pause and return to title through real buttons"
+        ],
+        "titleRestored": true,
+        "imageLoadedOnReturn": true
+      }
+    ],
+    "finalLandscape": [
+      {
+        "layout": "landscape",
+        "steps": [
+          "Start ready run through real button",
+          "Pause and return to title through real buttons"
+        ],
+        "titleRestored": true,
+        "imageLoadedOnReturn": true
+      }
+    ]
+  },
+  "heroImageFailure": {
+    "requestAbortedLocally": true,
+    "prefersReducedMotion": false,
+    "darkBase": "rgb(3, 28, 23)",
+    "failedImageHiddenWithoutPlaceholder": true,
+    "startReadyDespiteImageFailure": true,
+    "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/phone-title-image-unavailable.jpg",
+    "actions": {
+      "layout": "phone",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": false
+    },
+    "proof": {
+      "layout": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "document": {
+        "width": 390,
+        "height": 1088
+      },
+      "image": {
+        "src": "http://127.0.0.1:8765/river-rush/art/title-hero-reference-v1.webp",
+        "complete": true,
+        "naturalWidth": 0,
+        "naturalHeight": 0,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 390,
+          "bottom": 405.109375,
+          "width": 390,
+          "height": 405.109375
+        },
+        "objectFit": "cover",
+        "objectPosition": "70% 35%",
+        "pointerEvents": "none",
+        "animationName": "none",
+        "visibility": "hidden"
+      },
+      "heading": {
+        "text": "RiverRush.",
+        "rect": {
+          "left": 23.296875,
+          "top": 346.15625,
+          "right": 362.703125,
+          "bottom": 402.3125,
+          "width": 339.40625,
+          "height": 56.15625
+        },
+        "color": "rgb(255, 240, 201)"
+      },
+      "brand": {
+        "left": 23.390625,
+        "top": 22.5,
+        "right": 172.390625,
+        "bottom": 59.5,
+        "width": 149,
+        "height": 37
+      },
+      "tagline": {
+        "left": 27.296875,
+        "top": 419.3125,
+        "right": 362.703125,
+        "bottom": 446.8125,
+        "width": 335.40625,
+        "height": 27.5
+      },
+      "start": {
+        "left": 27.296875,
+        "top": 527.8125,
+        "right": 362.703125,
+        "bottom": 586.8125,
+        "width": 335.40625,
+        "height": 59
+      },
+      "maps": [
+        {
+          "left": 27.296875,
+          "top": 634.8125,
+          "right": 134.421875,
+          "bottom": 790.8125,
+          "width": 107.125,
+          "height": 156
+        },
+        {
+          "left": 141.421875,
+          "top": 634.8125,
+          "right": 248.5625,
+          "bottom": 790.8125,
+          "width": 107.140625,
+          "height": 156
+        },
+        {
+          "left": 255.5625,
+          "top": 634.8125,
+          "right": 362.6875,
+          "bottom": 790.8125,
+          "width": 107.125,
+          "height": 156
+        }
+      ],
+      "controls": [
+        {
+          "text": "Ride Canopy Run",
+          "label": "Start run",
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 527.8125,
+            "right": 362.703125,
+            "bottom": 586.8125,
+            "width": 335.40625,
+            "height": 59
+          }
+        },
+        {
+          "text": "01Canopy RunSunlit jungle \u00b7 Find your flow4,200 M \u00b7 FLOW",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 634.8125,
+            "right": 134.421875,
+            "bottom": 790.8125,
+            "width": 107.125,
+            "height": 156
+          }
+        },
+        {
+          "text": "02Redstone RapidsFinish map 1 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 141.421875,
+            "top": 634.8125,
+            "right": 248.5625,
+            "bottom": 790.8125,
+            "width": 107.140625,
+            "height": 156
+          }
+        },
+        {
+          "text": "03Moonlit RuinsFinish map 2 to unlockLOCKED",
+          "label": null,
+          "disabled": true,
+          "rect": {
+            "left": 255.5625,
+            "top": 634.8125,
+            "right": 362.6875,
+            "bottom": 790.8125,
+            "width": 107.125,
+            "height": 156
+          }
+        },
+        {
+          "text": "Leaderboard",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 27.296875,
+            "top": 998,
+            "right": 100.296875,
+            "bottom": 1042,
+            "width": 73,
+            "height": 44
+          }
+        },
+        {
+          "text": "How to play",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 109.296875,
+            "top": 998,
+            "right": 176.296875,
+            "bottom": 1042,
+            "width": 67,
+            "height": 44
+          }
+        },
+        {
+          "text": "Switch game",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 185.296875,
+            "top": 998,
+            "right": 258.296875,
+            "bottom": 1042,
+            "width": 73,
+            "height": 44
+          }
+        },
+        {
+          "text": "Arcade",
+          "label": null,
+          "disabled": false,
+          "rect": {
+            "left": 267.296875,
+            "top": 998,
+            "right": 308.296875,
+            "bottom": 1042,
+            "width": 41,
+            "height": 44
+          }
+        }
+      ],
+      "footer": {
+        "left": 27.296875,
+        "top": 973,
+        "right": 362.703125,
+        "bottom": 1063,
+        "width": 335.40625,
+        "height": 90
+      },
+      "videoCount": 0,
+      "heroPosition": "absolute",
+      "baseColor": "rgb(3, 28, 23)"
+    }
+  },
+  "reducedMotion": {
+    "heroVisible": true,
+    "staticPixels": true,
+    "noTitleVideo": true,
+    "realActionsPassed": true
+  },
+  "receipts": [
+    "title-hero.json",
+    "title-hero-landscape.json",
+    "title-hero-image-failure.json"
+  ],
+  "recheckScope": "Landscape heading/spacing updated after initial checks; final error handler affects only failed images. Unchanged desktop/phone and reduced-motion proof retained.",
+  "scoreWrites": [],
+  "errors": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedSeedOrClock": false,
+  "limitations": [
+    "Chromium uses SwiftShader; no physical device FPS or campaign/gameplay regression claim.",
+    "Readability and face crop need actual-image review; rectangle and hit-target checks are recorded separately."
+  ]
+}
