@@ -1,6 +1,12 @@
 // Last Light's deterministic, DOM-free simulation.
 export const CROSSING_SECONDS = 35;
 export const CROSSINGS = ['sunset crossing', 'night coast', 'aurora fjord'];
+export const HORIZONS = [.56, .60, .62];
+export function projectWater(lane, depth, crossing = 0) {
+  const horizon = HORIZONS[crossing];
+  return { x: .62 + (lane - .5) * (.36 + depth * .92),
+    y: horizon + depth * (1.04 - horizon), scale: .18 + depth * 1.55 };
+}
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export function createVoyage(seed = 17) {
   return { status: 'ready', time: 0, crossing: 0, score: 0, lights: 0, hull: 3,
@@ -33,18 +39,24 @@ export function update(s, input, elapsed) {
   s.y = clamp(s.y + dy * speed * diagonal * dt, .64, .91);
   s.spawn -= dt;
   if (s.spawn <= 0) {
-    const x = .03 + random(s) * .94;
+    const lane = .06 + random(s) * .88;
+    const projected = projectWater(lane, .015, s.crossing);
     const light = random(s) > .38 + s.crossing * .04;
     s.entities.push({ id: s.nextId++, type: light ? 'light' : 'rock',
-      x, y: .565, age: 0, speed: .085 + s.crossing * .024 + random(s) * .025 });
+      ...projected, lane, depth: .015, age: 0, speed: .22 + s.crossing * .035 + random(s) * .025 });
     s.spawn = .62 - s.crossing * .1 + random(s) * .36;
   }
   const remaining = [];
   for (const e of s.entities) {
-    e.age += dt; e.y += e.speed * dt;
+    e.age += dt;
+    if (e.depth !== undefined) {
+      e.depth += e.speed * (.28 + e.depth) * dt;
+      Object.assign(e, projectWater(e.lane, e.depth, s.crossing));
+    } else e.y += e.speed * dt;
+    const radius = e.scale === undefined ? 1 : Math.max(.35, Math.min(1, e.scale / 1.3));
     // The logical scene is 2:1, hence horizontal collision radii are halved.
-    const hit = Math.abs(e.x - s.x) < (e.type === 'light' ? .03 : .038)
-      && Math.abs(e.y - s.y) < (e.type === 'light' ? .048 : .055);
+    const hit = Math.abs(e.x - s.x) < (e.type === 'light' ? .03 : .038) * radius
+      && Math.abs(e.y - s.y) < (e.type === 'light' ? .048 : .055) * radius;
     if (hit) {
       if (e.type === 'light') {
         s.lights++; s.combo++;

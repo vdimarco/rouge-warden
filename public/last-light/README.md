@@ -34,3 +34,5 @@ ASCII is the requested production art. No generated raster sprite substitute is 
 
 
 Visual correction: moving objects share the scene’s 200×100 halftone grid and palette; interface typography stays subordinate to the landscape. HTML asset URLs are rooted at `/last-light/` to tolerate directory redirects. Chromium interaction and desktop/phone screenshot checks passed after this correction.
+
+Water perspective: entities emerge at the scene-specific waterline (56/60/62 rows), then spread, grow and accelerate toward the foreground. Dot-grid ripples and broken reflections anchor sprites to the water. Collision positions use the same projection. Ten simulation tests, three predictive bot voyages, and Chromium desktop/phone interaction checks pass.
