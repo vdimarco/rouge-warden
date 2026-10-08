@@ -8,6 +8,7 @@ import {entityLane,encounterMotion,encounterGap,TARGET_VALUE,TARGET_CHARGE} from
 import {isBranchSpan,branchLanes,branchSpan,branchOverlap,BRANCH_LANE_RADIUS} from './branch-spans.js';
 import {LANES,LANE_COUNT,MIN_LANE,MAX_LANE,CENTER_LANE,clampLane} from './lanes.js';
 import {groundCoinLayout} from './coin-layouts.js';
+import {chooseGuardedRoute,linkDecisionExit,ORDINARY_COIN_VALUE,GUARDED_COIN_VALUE,SAFE_COIN_OFFSETS,GUARDED_DUCK_OFFSETS} from './risk-reward.js';
 export const JUMP_SECONDS = .66;
 export const DUCK_SECONDS = .60;
 export const VIEW_DISTANCE = 180;
@@ -59,6 +60,7 @@ export function createGame(seed = Date.now(), levelIndex = 0, carry = null) {
     terrainProfile:Object.freeze({seed:mapSeed,length:level.length,mapIndex:level.index}),terrainCombo:{section:null,count:0,claimed:false},
     terrainBeat:null,rowsSinceRequired:0,requiredJump:false,requiredDuck:false,lastRequiredType:null,requiredTypeRun:0,lastFormation:null,formationRun:0,
     encounters:{lastRow:-99,nextEnemyRow:7+mapSeed%3,enemyIndex:0,lowEnemyIndex:0,lastEnemyType:null,targetIndex:0,nextTargetRow:11+mapSeed%4},lastJumpRewardD:null,
+    decisions:[],lastDecisionRow:-99,pendingDecisionExit:null,
     event: '', eventId: 0, effects: [], notice: level.index===0?'Jump logs · Duck branches · Dodge rocks':`${level.name} · ${level.difficulty}`, noticeUntil: 4, reason: '' };
   for (let d = 7; d <= 32; d += 5) add(g, 'coin', CENTER_LANE, d,{coinPattern:'opening',primaryRoute:true});
   generateAhead(g); return g;
@@ -66,7 +68,7 @@ export function createGame(seed = Date.now(), levelIndex = 0, carry = null) {
 export function restartLevel(g){return createGame(g.campaignSeed,g.levelIndex,g.carry);}
 export function nextLevel(g){return g.phase==='won'&&g.levelIndex<LEVELS.length-1?createGame(g.campaignSeed,g.levelIndex+1,campaignTotals(g)):null;}
 function random(g) { g.rng = (Math.imul(g.rng, 1664525) + 1013904223) >>> 0; return g.rng / 4294967296; }
-function add(g, type, lane, d, extra = {}) { g.entities.push({ id: g.nextId++, type, lane, d, done: false, ...extra });if(type==='coin')g.coinLanesSeen|=1<<lane; }
+function add(g, type, lane, d, extra = {}) { g.entities.push({ id: g.nextId++, type, lane, d, done: false,...(type==='coin'?{coinValue:ORDINARY_COIN_VALUE}:{}), ...extra });if(type==='coin')g.coinLanesSeen|=1<<lane; }
 function emit(g, type, text = '', lane = g.lane, detail = {}) {
   g.event = type; g.eventId++;
   g.effects.push({ type, time: g.time, lane, id: g.eventId, distance: g.distance, playerLane: g.lane, ...detail });
@@ -178,7 +180,9 @@ function rowPattern(g,row,d){
   }
   g.rewardLane=coinLane;
   hazards=spanBranches(hazards,safe,coinLane,g.seed,row,g.branchWidthsSeen);
-  return{motif,safe,hazards,coinLane,act,episode:episode.index,beat:step,recovery,intensity,terrain,activeTerrain};
+  const decision=chooseGuardedRoute({seed:g.seed,row,levelIndex:g.levelIndex,intensity,previousLane:previous,safe,coinLane,hazards,recovery,terrain,lastDecisionRow:g.lastDecisionRow,touches:hazardTouchesLane});
+  if(decision){coinLane=decision.safeLane;g.rewardLane=coinLane;g.lastDecisionRow=row;}
+  return{motif,safe,hazards,coinLane,decision,act,episode:episode.index,beat:step,recovery,intensity,terrain,activeTerrain};
 }
 // Integrate the same capped acceleration and known Rush remainder used by
 // timeToImpact. Gold stays attached to a temporal jump arc at every map speed.
@@ -241,26 +245,49 @@ export function generateAhead(g) {
       return{plan,pattern:rowPattern(plan,row,distance)};
     };
     let planned=planAt(d);
-    if(planned.pattern.hazards.some(h=>h.type==='log'&&h.lane===planned.pattern.coinLane)&&Number.isFinite(g.lastJumpRewardD)&&d-g.lastJumpRewardD<maxRushSpeed*.90){
-      d=g.lastJumpRewardD+maxRushSpeed*.90;
-      if(d>=limit){g.nextRow=limit;break;}
+    // A relocation can cross a section boundary and change a duck decision
+    // into a jump. Recompute from its final pattern; distance only increases
+    // and the two possible minimums make this a bounded planning operation.
+    for(let pass=0;pass<3;pass++){
+      const jumpReward=planned.pattern.decision?.action==='jump'||planned.pattern.hazards.some(h=>h.type==='log'&&h.lane===planned.pattern.coinLane);
+      const jumpSpacing=jumpReward ? .90 : planned.pattern.decision ? .75 : 0;
+      if(!jumpSpacing||!Number.isFinite(g.lastJumpRewardD)||d-g.lastJumpRewardD>=maxRushSpeed*jumpSpacing-1e-7)break;
+      d=g.lastJumpRewardD+maxRushSpeed*jumpSpacing;
+      if(d>=limit)break;
       planned=planAt(d);
     }
-    for(const key of ['rng','routeLane','rewardLane','routeDirection','episode','episodeIndex','motifDeck','terrainBeat','encounters','rowsSinceRequired','requiredJump','requiredDuck','lastRequiredType','requiredTypeRun','lastFormation','formationRun'])g[key]=planned.plan[key];
+    if(d>=limit){g.nextRow=limit;break;}
+    for(const key of ['rng','routeLane','rewardLane','routeDirection','episode','episodeIndex','motifDeck','terrainBeat','encounters','rowsSinceRequired','requiredJump','requiredDuck','lastRequiredType','requiredTypeRun','lastFormation','formationRun','lastDecisionRow'])g[key]=planned.plan[key];
     g.row++;g.nextRow=d;
     const predictedTime = g.time + timeToImpact(g,d);
-    const {motif,safe,hazards:plannedHazards,coinLane,act,episode,beat,recovery,intensity,terrain,activeTerrain}=planned.pattern;
+    const {motif,safe,hazards:plannedHazards,coinLane,decision,act,episode,beat,recovery,intensity,terrain,activeTerrain}=planned.pattern;
     const hazards=motif==='tutorial'?spanBranches(plannedHazards,safe,coinLane,g.seed,row):plannedHazards;
     if(!g.patternsSeen.includes(motif))g.patternsSeen.push(motif);
     const section={sectionId:terrain.id,sectionType:terrain.type,sectionPhase:terrain.phase,terrainActive:!!activeTerrain,terrainComboAvailable:terrain.comboAvailable};
     for(const h of hazards.filter(isBranchSpan))g.branchWidthsSeen|=1<<branchLanes(h).length;
-    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery,...section,...(h.branchLanes?{branchLanes:h.branchLanes,...(h.branchSide?{branchSide:h.branchSide}:{}),...(h.fullRiver?{fullRiver:true,canopyLead:h.canopyLead}:{})}:{}),...(h.enemy?{enemy:h.enemy,motion:encounterMotion(h.lane,d,maxRushSpeed,h.enemy,g.seed^row,g.levelIndex)}:{}) }));
+    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery,...section,
+      ...(decision&&hazardTouchesLane(h,decision.riskLane)?{decisionId:`choice-${g.levelIndex}-${row}`,riskAction:decision.action}:{}),
+      ...(h.branchLanes?{branchLanes:h.branchLanes,...(h.branchSide?{branchSide:h.branchSide}:{}),...(h.fullRiver?{fullRiver:true,canopyLead:h.canopyLead}:{})}:{}),...(h.enemy?{enemy:h.enemy,motion:encounterMotion(h.lane,d,maxRushSpeed,h.enemy,g.seed^row,g.levelIndex)}:{}) }));
     // Every spacing stays above the existing per-map safety floor, with
     // seeded variation and longer pauses after brief challenge bursts.
     const interval=row<3?1.05-Math.min(1,predictedTime/95)*.19:Math.max(level.minInterval,level.rowInterval+.16*(1-intensity)-.1*intensity+(random(g)-.5)*.22)+(recovery ? .30+.20*intensity : 0);
     const rewardHazard=hazards.find(h=>hazardTouchesLane(h,coinLane));
     const at=relative=>g.distance+forecastTravel(g,predictedTime-g.time+relative);
-    if(rewardHazard?.type==='log'){
+    if(decision){
+      const id=`choice-${g.levelIndex}-${row}`,metadata={decisionId:id,row,riskAction:decision.action,riskEnemy:decision.enemy,...section};
+      const packet={...decision,id,row,d,startD:Infinity,endD:-Infinity,exitLane:null,exitD:null};
+      const addChoiceCoin=(lane,distance,routeRole,extra={})=>{
+        packet.startD=Math.min(packet.startD,distance);packet.endD=Math.max(packet.endD,distance);
+        add(g,'coin',lane,distance,{...metadata,motif,coinPattern:routeRole==='risk'&&decision.action==='jump'?'jump-arc':'guarded-fork',routeRole,
+          coinValue:routeRole==='risk'?GUARDED_COIN_VALUE:ORDINARY_COIN_VALUE,primaryRoute:routeRole==='safe',...extra});
+      };
+      for(const offset of SAFE_COIN_OFFSETS)addChoiceCoin(decision.safeLane,d+maxRushSpeed*offset,'safe');
+      if(decision.action==='jump'){
+        g.lastJumpRewardD=d;
+        for(const offset of JUMP_REWARD_OFFSETS)addChoiceCoin(decision.riskLane,at(offset),'risk',{high:true,jumpHeight:jumpArcHeight(JUMP_REWARD_LEAD+offset),jumpOffset:offset});
+      }else for(const offset of GUARDED_DUCK_OFFSETS)addChoiceCoin(decision.riskLane,d+maxRushSpeed*offset,'risk');
+      g.decisions.push(packet);
+    }else if(rewardHazard?.type==='log'){
       g.lastJumpRewardD=d;
       for(const offset of JUMP_REWARD_OFFSETS)add(g,'coin',coinLane,at(offset),{high:true,jumpHeight:jumpArcHeight(JUMP_REWARD_LEAD+offset),jumpOffset:offset,row,motif,coinPattern:'jump-arc',primaryRoute:true,...section});
       // Keep the shown route entirely airborne. Approach/landing ground
@@ -274,10 +301,15 @@ export function generateAhead(g) {
       for(const coin of layout.coins)add(g,'coin',coin.lane,d+maxRushSpeed*coin.offset,{row,motif,coinPattern:layout.pattern,primaryRoute:coin.primaryRoute,...section});
       g.rewardLane=layout.endLane;
     }
+    // The return cue names the next real ribbon, never an invented exit. It is
+    // normally resolved while both rows are still ahead in the bounded horizon.
+    const firstPrimary=g.entities.find(e=>e.row===row&&e.type==='coin'&&e.primaryRoute!==false);
+    if(g.pendingDecisionExit)linkDecisionExit(g.decisions.find(packet=>packet.id===g.pendingDecisionExit),firstPrimary);
+    g.pendingDecisionExit=decision?`choice-${g.levelIndex}-${row}`:null;
     // A relic is an optional clear-water choice at an existing recovery beat,
     // rather than a squeeze between a jump's airborne gold and the next wall.
     const encounter=g.encounters;
-    if(recovery&&plannedHazards.length===1&&!plannedHazards[0].enemy&&rewardHazard?.type!=='log'&&encounter.enemyIndex>0&&row>=encounter.nextTargetRow&&row-encounter.lastRow>=3){
+    if(!decision&&recovery&&plannedHazards.length===1&&!plannedHazards[0].enemy&&rewardHazard?.type!=='log'&&encounter.enemyIndex>0&&row>=encounter.nextTargetRow&&row-encounter.lastRow>=3){
       const clear=LANES.filter(lane=>!hazards.some(h=>hazardTouchesLane(h,lane)));
       const targetLane=clear.find(lane=>lane!==coinLane&&Math.abs(lane-coinLane)===1)??(clear.includes(coinLane)?coinLane:clear[0]);
       if(clear.includes(targetLane)){
@@ -288,7 +320,7 @@ export function generateAhead(g) {
     }
     if (row % 13 === 6) add(g, 'magnet', safe, d - 8);
     if (row % 17 === 11) add(g, 'shield', safe, d - 8);
-    g.nextRow += speedAt(predictedTime,g.levelIndex) * interval;
+    g.nextRow += Math.max(speedAt(predictedTime,g.levelIndex)*interval,decision?maxRushSpeed*decision.returnSeconds:0);
   }
   if(!g.runwayGenerated&&visibleTo>limit){
     g.runwayGenerated=true;
@@ -402,9 +434,12 @@ export function updateGame(g, input, dt) {
         g.coins++; g.streak++; g.lastCoin = g.time;lastContactCoinTime=frame.time+elapsed;
         if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
         g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
-        const value=10*g.multiplier*(boosted?2:1);
+        const coinValue=e.coinValue===GUARDED_COIN_VALUE?GUARDED_COIN_VALUE:ORDINARY_COIN_VALUE;
+        const value=coinValue*g.multiplier*(boosted?2:1);
         g.bonus += value; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
-        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high,jumpHeight:coinJumpHeight(e),coinPattern:e.coinPattern??null,primaryRoute:e.primaryRoute!==false, distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,streak:g.streak,multiplier:g.multiplier,contactTime:frame.time+elapsed });
+        emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high,jumpHeight:coinJumpHeight(e),coinPattern:e.coinPattern??null,primaryRoute:e.primaryRoute!==false,
+          coinValue,decisionId:e.decisionId??null,row:e.row??null,routeRole:e.routeRole??null,riskAction:e.riskAction??null,riskEnemy:e.riskEnemy??null,
+          distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,streak:g.streak,multiplier:g.multiplier,contactTime:frame.time+elapsed });
       }
     } else if(e.type==='target'){
       const action=crossingAction(frame,elapsed);
@@ -428,7 +463,7 @@ export function updateGame(g, input, dt) {
         if(e.fullRiver&&canopyContacts.has(e.row))continue;
         if(e.fullRiver)canopyContacts.add(e.row);
         const action=crossingAction(frame,elapsed);
-        const contact={entityId:e.id,obstacle:e.type,enemy:e.enemy??null,obstacleLane,...(isBranchSpan(e)?{branchLanes:branchLanes(e),spanWidth:branchSpan(e).width}:{}),distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),action:action.action,actionTime:action.time,contactTime:frame.time+elapsed};
+        const contact={entityId:e.id,row:e.row??null,decisionId:e.decisionId??null,obstacle:e.type,enemy:e.enemy??null,obstacleLane,...(isBranchSpan(e)?{branchLanes:branchLanes(e),spanWidth:branchSpan(e).width}:{}),distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),action:action.action,actionTime:action.time,contactTime:frame.time+elapsed};
         const cleared = (e.type === 'log' && jumpClearsAt(action.action,action.time)) || (e.type === 'branch' && action.action === 'duck');
         if (cleared && !rushAtCrossing && graceUntil<=elapsed) {
           // Between lanes a raft can overlap two parts of one action wave.
@@ -498,12 +533,14 @@ export function updateGame(g, input, dt) {
   g.score = Math.floor(g.distance * 2) + g.bonus;
   g.effects = g.effects.filter(e => g.time - e.time < .75);
   g.entities = g.entities.filter(e => e.d > g.distance - 16);
+  g.decisions=g.decisions.filter(packet=>packet.endD>g.distance-16);
   if (g.phase === 'playing') generateAhead(g);
 }
 export function snapshot(g) {
   const level=levelAt(g.levelIndex);
   const terrain=terrainSection(g.distance,g.terrainProfile),sameCombo=g.terrainCombo.section===terrain.id;
   const next = g.entities.find(e => !e.done && hazardTouchesLane(e,g.lane) && ['rock', 'log', 'branch'].includes(e.type));
+  const decision=g.phase==='playing'?g.decisions.find(packet=>packet.endD>g.distance&&timeToImpact(g,packet.startD)<=2.8):null;
   return { phase: g.phase,laneCount:LANE_COUNT,coinPatterns:[...g.coinPatternsSeen], time: g.time, distance: Math.floor(g.distance), lane: g.lane, visualLane: g.visualLane, actionTime: g.actionTime,
     action: g.action, coins: g.coins, score: g.score, streak: g.streak, multiplier: g.multiplier,
     charge: g.charge, rush: g.rush, magnet: g.magnet, shield: g.shield, speed: g.speed, streakTime: g.streak ? Math.max(0, 2.8 - (g.time - g.lastCoin)) : 0,
@@ -513,6 +550,10 @@ export function snapshot(g) {
     terrain:{...terrain,comboProgress:terrain.comboAvailable&&sameCombo?g.terrainCombo.count:0,comboClaimed:terrain.comboAvailable&&sameCombo&&g.terrainCombo.claimed},
     goalsCleared: g.goalsCleared, goal: { ...g.goal, progress: Math.min(g.goal.target, Math.floor((g.goal.kind === 'tricks' ? g.jumps + g.ducks : g.goal.kind === 'coins' ? g.coins : g.distance) - g.goal.start)) },
     notice: g.time < g.noticeUntil ? g.notice : '',
+    decision:decision?{id:decision.id,in:timeToImpact(g,decision.d),action:decision.action,enemy:decision.enemy,safeLane:decision.safeLane,riskLane:decision.riskLane,
+      exitLane:decision.exitLane,safeBasePoints:decision.safeBasePoints,riskBasePoints:decision.riskBasePoints,skillBasePoints:decision.skillBasePoints,
+      variant:decision.variant,entryWidth:decision.entryWidth,exitWidth:decision.exitWidth??null,
+      committed:Math.abs(g.visualLane-decision.riskLane)<=COIN_LANE_RADIUS&&timeToImpact(g,decision.d)<.8}:null,
     hint: next && next.d - g.distance < g.speed*(next.enemy?1.6:1.1) ? { id: next.id, type: next.type, enemy:next.enemy??null,fullRiver:!!next.fullRiver, lane:isBranchSpan(next)?branchSpan(next).centerLane:entityLane(next,g.distance),destinationLane:isBranchSpan(next)?branchSpan(next).centerLane:entityLane(next,next.d),...(isBranchSpan(next)?{spanLanes:branchLanes(next),spanWidth:branchSpan(next).width}:{}),in: timeToImpact(g,next.d), safeLane: LANES.find(lane => !g.entities.some(e => e.row === next.row && hazardTouchesLane(e,lane) && ['rock','log','branch'].includes(e.type))) } : null };
 }
 export function validBest(value) {

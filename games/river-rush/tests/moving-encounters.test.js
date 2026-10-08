@@ -205,7 +205,7 @@ test('all seeded maps offer three sparse species and reachable clear-water relic
 });
 
 test('relic-chasing full maps remain reachable at early/late action leads and 30/60/120 Hz with naturally earned Rush',()=>{
- let picked=0,avoided=0,stages=0,maxEntities=0,rushes=0,arcCoins=0;
+ let picked=0,avoided=0,stages=0,maxEntities=0,rushes=0,arcCoins=0,untakenGuardedArcCoins=0;
  for(const hz of [30,60,120])for(const lead of [.22,.42])for(const useRush of [false,true])for(const seed of [2,8,12,137,311])for(const level of LEVELS){
   const g=createGame(seed,level.index),input=emptyInput(),handled=new Set();g.shield=false;
   let holdUntil=0;
@@ -222,10 +222,18 @@ test('relic-chasing full maps remain reachable at early/late action leads and 30
    const pending=g.entities.filter(e=>!e.done&&(e.type==='target'||e.enemy||Number.isFinite(e.jumpHeight)));
    updateGame(g,input,1/hz);maxEntities=Math.max(maxEntities,g.entities.length);
    assert.notEqual(g.phase,'lost',`${hz}Hz ${level.id} seed${seed} lead${lead} Rush${useRush}: ${g.reason}`);
-   for(const e of pending)if(e.done){if(e.type==='target'){assert.ok(e.collected,`${hz}Hz ${level.id} seed${seed} lead${lead} misses relic row${e.row}`);picked++;}else if(e.enemy)avoided++;else{assert.ok(e.collected,`${hz}Hz ${level.id} seed${seed} lead${lead} Rush${useRush} misses jump gold row${e.row} offset${e.jumpOffset}`);arcCoins++;}}
+   for(const e of pending)if(e.done){
+    if(e.type==='target'){assert.ok(e.collected,`${hz}Hz ${level.id} seed${seed} lead${lead} misses relic row${e.row}`);picked++;}
+    else if(e.enemy)avoided++;
+    else if(e.primaryRoute===false){
+     // This strategy follows the modest bypass at a guarded fork. Raised
+     // gold in the alternative lane is deliberately not part of its route.
+     assert.equal(e.routeRole,'risk');assert.ok(!e.collected,`${hz}Hz ${level.id} seed${seed} collects untaken guarded arc row${e.row}`);untakenGuardedArcCoins++;
+    }else{assert.ok(e.collected,`${hz}Hz ${level.id} seed${seed} lead${lead} Rush${useRush} misses primary jump gold row${e.row} offset${e.jumpOffset}`);arcCoins++;}
+   }
   }
   assert.equal(g.phase,'won');assert.equal(g.shieldsUsed,0);assert.equal(g.distance,level.length);stages++;
  }
- assert.ok(picked>300);assert.ok(avoided>500);assert.ok(maxEntities<120);assert.ok(rushes>100);
- console.log(JSON.stringify({relicChasingStages:stages,relicsCollected:picked,jumpArcCoinsCollected:arcCoins,enemiesClearedOrDodged:avoided,rushes,maxLiveEntities:maxEntities,refreshRates:[30,60,120],actionLeads:[.22,.42]}));
+ assert.ok(picked>300);assert.ok(avoided>500);assert.ok(maxEntities<120);assert.ok(rushes>100);assert.ok(untakenGuardedArcCoins>500);
+ console.log(JSON.stringify({relicChasingStages:stages,relicsCollected:picked,primaryJumpArcCoinsCollected:arcCoins,untakenGuardedArcCoins,enemiesClearedOrDodged:avoided,rushes,maxLiveEntities:maxEntities,refreshRates:[30,60,120],actionLeads:[.22,.42]}));
 });

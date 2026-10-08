@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { createGame, jumpHeight, VIEW_DISTANCE } from './engine.js';
-import {coinWorldHeight} from './coin-presentation.js';
+import {coinWorldHeight,coinAppearance} from './coin-presentation.js';
 import { surfaceAt, createFloat, advanceFloat } from './hydrodynamics.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { renderDpr,createFrameBudget,sampleFrameBudget } from './quality.js';
@@ -155,15 +155,21 @@ export function createScene(canvas,art,onLost){
  const rider=mesh(new THREE.PlaneGeometry(riderWidth,riderHeight),riderMat,riderRig,0,.48+(RIDER_SIZE.foot-RIDER_SIZE.height/2)*riderWidth/RIDER_SIZE.width,.3);rider.renderOrder=3;
  const shield=mesh(new THREE.SphereGeometry(2.05,24,12),new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uOpacity:{value:.4},uRush:{value:0},uImpact:{value:0},uFatal:{value:0}},vertexShader:'varying vec3 vN,vV,vP;void main(){vec4 p=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-p.xyz);vP=position;gl_Position=projectionMatrix*p;}',fragmentShader:'varying vec3 vN,vV,vP;uniform float uOpacity,uRush,uImpact,uFatal;void main(){float rim=pow(1.-abs(dot(normalize(vN),normalize(vV))),3.);float cracks=step(.22,fract(atan(vP.z,vP.x)*2.54+vP.y*1.7));vec3 color=mix(mix(vec3(.23,1.,.83),vec3(1.,.75,.18),uRush),vec3(1.,.34,.16),uFatal);gl_FragColor=vec4(color,rim*uOpacity*mix(1.,cracks,uImpact*.65));}'}),raft,0,1,0);shield.scale.set(1.05,.85,1.15);
  const shadow=mesh(new THREE.PlaneGeometry(4.6,5),new THREE.MeshBasicMaterial({map:softShadow(),transparent:true,opacity:.55,depthWrite:false}),scene,0,.01,0);shadow.rotation.x=-Math.PI/2;
- const coinGeo=new THREE.CylinderGeometry(.39,.39,.12,24),coinMat=new THREE.MeshStandardMaterial({color:'#ffcf49',metalness:.45,roughness:.28,emissive:'#a95d00',emissiveIntensity:.38});
+ const coinGeo=new THREE.CylinderGeometry(.39,.39,.12,24),coinMat=new THREE.MeshStandardMaterial({color:'#ffffff',metalness:.45,roughness:.28,emissive:'#a95d00',emissiveIntensity:.38});
  const coinRims=new THREE.InstancedMesh(new THREE.TorusGeometry(.29,.028,4,20),coinMat,128);coinRims.frustumCulled=false;scene.add(coinRims);
  const rimLocal=new THREE.Matrix4(),rimTurn=new THREE.Matrix4().makeRotationX(Math.PI/2),rimMatrix=new THREE.Matrix4();
+ const coinStyles=[coinAppearance({coinValue:10}),coinAppearance({coinValue:20})],coinColors=coinStyles.map(style=>new THREE.Color(style.color)),rimColors=coinStyles.map(style=>new THREE.Color(style.rimColor)),premiumRimScale=new THREE.Vector3(coinStyles[1].rimScale,coinStyles[1].rimScale,1),coinKinds=new Uint8Array(64);
  const rockGeo=new THREE.DodecahedronGeometry(1,1);
  const rockVertices=rockGeo.attributes.position;
  for(let i=0;i<rockVertices.count;i++){const x=rockVertices.getX(i),y=rockVertices.getY(i),z=rockVertices.getZ(i),r=1+Math.sin(x*5+y*3-z*4)*.09;rockVertices.setXYZ(i,x*r,y*r,z*r);}rockGeo.computeVertexNormals();
  const logGeo=new THREE.CylinderGeometry(.32,.37,3.3,12,5),bark=logGeo.attributes.position;
  for(let i=0;i<bark.count;i++){const x=bark.getX(i),y=bark.getY(i),z=bark.getZ(i),warp=1+Math.sin(y*7+Math.atan2(z,x)*3)*.08;bark.setXYZ(i,x*warp+Math.sin(y*2)*.07,y,z*warp);}logGeo.computeVertexNormals();
  const coinBatch=new THREE.InstancedMesh(coinGeo,coinMat,64),coinPose=new THREE.Object3D(),coinTarget=new THREE.Vector3(),coinOrigin=new THREE.Vector3(),coinCatch=new THREE.Vector3();coinBatch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);coinBatch.frustumCulled=false;scene.add(coinBatch);
+ // Allocate color attributes before renderer preparation. A player's first
+ // guarded fork then reuses the ordinary shader and all existing buffers.
+ for(let i=0;i<64;i++)coinBatch.setColorAt(i,coinColors[0]);
+ for(let i=0;i<128;i++)coinRims.setColorAt(i,rimColors[0]);
+ coinBatch.instanceColor.setUsage(THREE.DynamicDrawUsage);coinRims.instanceColor.setUsage(THREE.DynamicDrawUsage);coinBatch.instanceColor.needsUpdate=true;coinRims.instanceColor.needsUpdate=true;
  // Consumed rewards use small white tokens. Camera-depth compensation keeps
  // a HUD-bound token from growing into a new golden world coin beside the raft.
  const scoreTokenMat=new THREE.MeshBasicMaterial({color:'#fff5d8',transparent:true,opacity:.94,depthTest:false,depthWrite:false,toneMapped:false});
@@ -402,7 +408,13 @@ export function createScene(canvas,art,onLost){
  const course=travel+z,pose=entityPose(e,g.distance),currentLane=pose.lane,cross=laneToX(currentLane),p=point(course,cross),wy=p.y+waterHeight(cross,course);
  const span=isBranchSpan(e)?branchSpan(e):null;
  if(span)addBranchCoverage(e,span,course,point,waterHeight);
- if(e.type==='coin'){if(coinCount>=coinBatch.instanceMatrix.count){coinOverflow++;continue;}coinPose.scale.setScalar(1);coinPose.position.set(p.x,coinWorldHeight(e)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);hazardProjection.copy(coinPose.position).project(camera);coinSamples.push({id:e.id,lane:currentLane,position:coinPose.position.toArray(),screen:[hazardProjection.x,hazardProjection.y],coinPattern:e.coinPattern??null,primaryRoute:e.primaryRoute!==false});continue;}
+ if(e.type==='coin'){
+  if(coinCount>=coinBatch.instanceMatrix.count){coinOverflow++;continue;}
+  const style=coinAppearance(e),kind=style.premium?1:0;coinKinds[coinCount]=kind;
+  coinPose.scale.set(style.scale,style.scale*style.thickness,style.scale);coinPose.position.set(p.x,coinWorldHeight(e)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount,coinPose.matrix);coinBatch.setColorAt(coinCount++,coinColors[kind]);
+  hazardProjection.copy(coinPose.position).project(camera);
+  coinSamples.push({id:e.id,lane:currentLane,position:coinPose.position.toArray(),screen:[hazardProjection.x,hazardProjection.y],coinPattern:e.coinPattern??null,primaryRoute:e.primaryRoute!==false,coinValue:e.coinValue??10,decisionId:e.decisionId??null,routeRole:e.routeRole??null,riskAction:e.riskAction??null,riskEnemy:e.riskEnemy??null,premium:style.premium,appearance:style.appearance,color:style.color,rimColor:style.rimColor,renderScale:style.scale});continue;
+ }
  if(e.enemy||e.type==='target'){
   const destinationCross=laneToX(pose.contactLane),destination=point(course,destinationCross);destination.y+=waterHeight(destinationCross,course);
   movingVisuals.add(e,{x:p.x,y:wy,z:p.z},destination,g.time,reduced,currentLane,g.distance,-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed)));
@@ -442,13 +454,13 @@ export function createScene(canvas,art,onLost){
  positionCoinFlight(coinPose.position,coinOrigin,coinTarget,t);
  const pixels=15-10*t,depth=Math.max(.3,-tokenDepth.copy(coinPose.position).applyMatrix4(camera.matrixWorldInverse).z),scale=depth*2*Math.tan(camera.fov*Math.PI/360)*pixels/h/.78;
  coinPose.rotation.set(Math.PI/2,g.time*8,0);coinPose.scale.setScalar(scale);coinPose.updateMatrix();scoreTokens.setMatrixAt(tokenCount++,coinPose.matrix);
- coinFlights.push({id:e.id,entityId:e.entityId,attracted:false,boosted:!!e.boosted,value:e.value,contactTime:e.contactTime,playerLane:e.playerLane,playerHeight:e.playerHeight,jumpHeight:e.jumpHeight,origin:coinOrigin.toArray(),originHeight:coinWorldHeight(e),phase:'to-score',progress:t,appearance:'white-score-token',color:'#fff5d8',pixelSize:pixels,maxDiameterPixels:pixels,position:coinPose.position.toArray(),caught:coinCatch.toArray()});}}
+ coinFlights.push({id:e.id,entityId:e.entityId,attracted:false,boosted:!!e.boosted,value:e.value,coinValue:e.coinValue??10,premium:coinAppearance(e).premium,decisionId:e.decisionId??null,routeRole:e.routeRole??null,riskAction:e.riskAction??null,riskEnemy:e.riskEnemy??null,contactTime:e.contactTime,playerLane:e.playerLane,playerHeight:e.playerHeight,jumpHeight:e.jumpHeight,origin:coinOrigin.toArray(),originHeight:coinWorldHeight(e),phase:'to-score',progress:t,appearance:'white-score-token',color:'#fff5d8',pixelSize:pixels,maxDiameterPixels:pixels,position:coinPose.position.toArray(),caught:coinCatch.toArray()});}}
  scoreTokens.count=tokenCount;scoreTokens.instanceMatrix.needsUpdate=true;
  status.coinFeedback={active:coinFlights.length,attracted:0,capacity:24,worldCoins:coinCount,goldFlightInstances:0,flights:coinFlights};
- coinBatch.count=coinCount;coinBatch.instanceMatrix.needsUpdate=true;
+ coinBatch.count=coinCount;coinBatch.instanceMatrix.needsUpdate=true;coinBatch.instanceColor.needsUpdate=true;
  // Only collectible world coins retain their raised golden rims.
- for(let i=0;i<coinCount;i++){coinBatch.getMatrixAt(i,instanceMatrix);for(let s=0;s<2;s++){rimLocal.makeTranslation(0,s?.068:-.068,0).multiply(rimTurn);rimMatrix.multiplyMatrices(instanceMatrix,rimLocal);coinRims.setMatrixAt(i*2+s,rimMatrix);}}
- coinRims.count=coinCount*2;coinRims.instanceMatrix.needsUpdate=true;status.coinPool={capacity:coinBatch.instanceMatrix.count,visible:coinCount,rims:coinRims.count,overflow:coinOverflow,samples:coinSamples};
+ for(let i=0;i<coinCount;i++){coinBatch.getMatrixAt(i,instanceMatrix);const kind=coinKinds[i];for(let s=0;s<2;s++){rimLocal.makeTranslation(0,s?.068:-.068,0).multiply(rimTurn);if(kind)rimLocal.scale(premiumRimScale);rimMatrix.multiplyMatrices(instanceMatrix,rimLocal);coinRims.setMatrixAt(i*2+s,rimMatrix);coinRims.setColorAt(i*2+s,rimColors[kind]);}}
+ coinRims.count=coinCount*2;coinRims.instanceMatrix.needsUpdate=true;coinRims.instanceColor.needsUpdate=true;status.coinPool={capacity:coinBatch.instanceMatrix.count,visible:coinCount,rims:coinRims.count,overflow:coinOverflow,samples:coinSamples};
  spray.visible=!reduced;
  if(!reduced){const rapid=rapidAt(travel,seed),energyScale=1+.35*courseIntensity(g.distance,level.length,level.index),landing=Math.max(0,1-(g.time-f.landAt)/.55),bank=Math.min(1,Math.abs(g.laneVelocity)/12),impactCount=impact.splashParticles+impact.shieldShards,impactPoint={};
  const contact=g.effects.findLast(e=>e.type==='coin'&&g.time-(e.contactTime??e.time)<.16),contactAge=contact?g.time-(contact.contactTime??contact.time):0;

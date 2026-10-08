@@ -91,16 +91,21 @@ test('one natural jump collects its whole five-coin arc at early, normal and lat
  console.log(JSON.stringify({naturalJumpArcs:arcs,raisedCoinsCollected:arcs*5,requestedLeadSeconds:[.22,.32,.42],actualLeadSeconds:[minLead,maxLead],refreshRates:[30,60,120]}));
 });
 
-test('generated jump gold stays wholly on one airborne hazard-lane route',()=>{
+test('generated jump gold stays on one airborne route while guarded forks keep their bypass on clear water',()=>{
  let arcs=0;
  for(let seed=1;seed<=12;seed++)for(const level of LEVELS){
   const {rows,items}=naturalCourse(seed,level.index);
   for(const row of rows){
    const coins=items.filter(e=>e.type==='coin'&&e.row===row[0].row),raised=coins.filter(e=>Number.isFinite(e.jumpHeight));
    if(!raised.length)continue;arcs++;
-   assert.equal(raised.length,5);assert.equal(coins.length,5,'low gold overlaps the displayed jump route');
+   assert.equal(raised.length,5);
+   if(raised[0].decisionId){
+    const bypass=coins.filter(e=>e.routeRole==='safe');assert.equal(bypass.length,3);assert.equal(coins.length,8);
+    assert.ok(bypass.every(c=>!row.some(h=>hazardTouchesLane(h,c.lane))),'safe gold overlaps the guarded jump');
+    assert.ok(raised.every(e=>e.routeRole==='risk'&&e.coinValue===20));
+   }else assert.equal(coins.length,5,'low gold overlaps the displayed jump route');
    assert.deepEqual(raised.map(e=>e.jumpOffset),JUMP_REWARD_OFFSETS);
-   assert.equal(new Set(coins.map(e=>e.lane)).size,1,'the shown reward trail changes lanes halfway through the jump');
+   assert.equal(new Set(raised.map(e=>e.lane)).size,1,'the shown reward trail changes lanes halfway through the jump');
    assert.ok(row.some(e=>e.type==='log'&&e.lane===raised[0].lane));
   }
  }
@@ -147,7 +152,10 @@ test('earned Rush never puts the next ground ribbon under a still-airborne late-
   }
   assert.equal(g.phase,'won');assert.equal(g.shieldsUsed,0);
  }
- assert.ok(rushes>100);assert.ok(alignedGround>10000);assert.equal(finishCoins,54*16);assert.ok(highestEntities<120);
+ // Deliberately modest three-token safe bypasses replace some former ribbons.
+ // Require broad aligned contact coverage without treating lower safe payoff
+ // as a failed pickup; every aligned token above is individually asserted.
+ assert.ok(rushes>100);assert.ok(alignedGround>7000);assert.equal(finishCoins,54*16);assert.ok(highestEntities<120);
  console.log(JSON.stringify({earnedRushCampaignStages:54,rushes,alignedGroundCoinsCollected:alignedGround,finishGoldCollected:finishCoins,maxLiveEntities:highestEntities}));
 });
 

@@ -1,5 +1,5 @@
 import { jumpHeight, VIEW_DISTANCE, HAZARD_LANE_RADIUS } from './engine.js';
-import {coinPixelLift,coinFlightPixelLift} from './coin-presentation.js';
+import {coinPixelLift,coinFlightPixelLift,coinAppearance} from './coin-presentation.js';
 import { bankScenery, rapids, prepareWorldArt, worldEntityVisible } from './world.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
@@ -23,6 +23,16 @@ const regions = [
   [0,900,425,354],[425,900,425,354],[850,900,404,354]
 ];
 const indexes = { rock: 3, log: 4, branch: 5, coin: 6, magnet: 7, shield: 8 };
+function premiumCoin(ctx,x,bottom,size,roll,spin){
+  const style=coinAppearance({coinValue:20}),radius=size*.47;
+  ctx.save();ctx.translate(x,bottom-size*.48);ctx.rotate(roll);ctx.scale(spin,1);
+  function face(r){ctx.beginPath();for(let i=0;i<6;i++){const a=i*TAU/6-Math.PI/2,px=Math.cos(a)*r,py=Math.sin(a)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();}
+  // A faceted orange medal stays distinct even when color is hard to read at
+  // the horizon. Its cream raised edge remains visible through the spin.
+  face(radius);ctx.fillStyle=style.rimColor;ctx.fill();ctx.strokeStyle='#66341e';ctx.lineWidth=Math.max(.6,size*.055);ctx.stroke();
+  face(radius*.77);ctx.fillStyle=style.color;ctx.fill();ctx.strokeStyle='#fff0c6';ctx.lineWidth=Math.max(.5,size*.025);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-radius*.37);ctx.lineTo(radius*.26,0);ctx.lineTo(0,radius*.37);ctx.lineTo(-radius*.26,0);ctx.closePath();ctx.fillStyle='#fff0c6';ctx.fill();ctx.restore();
+}
 let artPromise;
 function loadImage(key,name,extension='png',optional=false){return new Promise((resolve,reject)=>{
   let attempt=0,done=false;const image=new Image();
@@ -319,14 +329,14 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     const encounter=!!e.enemy||e.type==='target';
     const z=e.d-g.distance, p=encounter?encounterProjection(e,g,width,height):projection(width,height,e.lane,z);
     let size;
-    if(e.type==='coin') size=heroWidth*.28*p.scale;
+    if(e.type==='coin') size=heroWidth*.28*p.scale*coinAppearance(e).scale;
     else if(e.type==='target')size=heroWidth*.4*p.scale;
     else if(e.type==='magnet'||e.type==='shield') size=heroWidth*.52*p.scale;
     else size=p.laneSpacing*(e.type==='branch'&&!e.enemy ? 1.02 : .86);
     const high=coinPixelLift(e,heroWidth,p.scale);
     const bottom=p.y-high;
     if(e.type==='coin'||e.type==='magnet'||e.type==='shield') {
-      ctx.save();ctx.fillStyle=e.type==='coin'?'#ffcf5f28':'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
+      ctx.save();ctx.fillStyle=e.type==='coin'?coinAppearance(e).glow:'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
     }
     if(encounter){
       ctx.save();ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-z)/24);
@@ -341,6 +351,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       if(!e.done)branchGuide(ctx,e,g,width,height);
       shorelineTree(ctx,g,e,art,width,height);
     }
+    else if(e.type==='coin'&&coinAppearance(e).premium)premiumCoin(ctx,p.x,bottom,size,reducedMotion?0:Math.sin(g.time*3+e.id)*.045,reducedMotion?1:.55+.45*Math.abs(Math.cos(g.time*5+e.id)));
     else sprite(ctx,art.sprites,e.type==='magnet'?indexes.coin:indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
     if(e.type==='magnet'){ctx.save();ctx.font=`900 ${Math.max(12,size*.3)}px system-ui`;ctx.textAlign='center';ctx.strokeStyle='#3f2e14';ctx.lineWidth=3;ctx.strokeText('×2',p.x,bottom-size*.32);ctx.fillStyle='#fff8d0';ctx.fillText('×2',p.x,bottom-size*.32);ctx.restore();}
     if(!e.done&&['log','branch','rock'].includes(e.type)&&(!e.fullRiver||e.canopyLead!==false)&&z<g.speed*1.65&&z>10) {
