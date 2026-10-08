@@ -32,6 +32,7 @@ try {
   await failed.close(); console.log('PASS failed required model stays unavailable without 2D fallback');
 
   const page = await browser.newPage({ viewport: { width: 960, height: 600 } });
+  page.setDefaultTimeout(180000);
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   const requests = []; page.on('request', r => requests.push(r.url()));
@@ -46,6 +47,8 @@ try {
   assert.match(await page.title(), /Shore/);
   await page.waitForFunction(() => !document.getElementById('play').disabled, null, { timeout: 120000 });
   assert.equal(await read(page, 'return m.snapshot().graphics.renderer;'), 'Mythic 3D');
+  // Exercise the supported adaptive-resolution floor in software WebGL, not hardware performance.
+  await read(page, 'r.quality=.5;r.resize();');
   assert.equal(await page.evaluate(() => localStorage.getItem('tidebreak.renderer')), null);
   assert(!requests.some(url => /illustrated-render\.js|toon-ground\.webp|terrain-surfaces\.webp/.test(url)));
   assert(await page.locator('#hero-picks').isVisible());
@@ -99,6 +102,7 @@ try {
   const device = await page.context().newCDPSession(page);
   for (const [name, width, height] of [['desktop',1280,800],['phone',390,844]]) {
     if (name === 'phone') await device.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+    await read(page, 'r.quality=.5;');
     await page.setViewportSize({width,height});
     await read(page, 'p.x=p.px=8396;p.y=p.py=5930;r.recenter();r.cam={x:p.x,y:p.y};r.draw(s,0);');
     assert(await page.locator('#hud').isVisible());
