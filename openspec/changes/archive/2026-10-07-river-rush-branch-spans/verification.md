@@ -63,12 +63,26 @@ covered branch is safely cleared. See [phone receipt](local-phone-receipt.json).
 The first external automation sequence arrived after contact; its failed
 receipt/images are retained in /tmp/river-branch-spans-local-phone-late-probe.
 Only QA event timing changed, then the final natural run passed.
-Production desktop, exact publication and canonical archive checks are pending.
+Source commit `4e7e3fdfea94df1274f644453bf3a0b9f8f40826` is published to
+GitHub main without force. Deployment `dpl_BphYT4SXtcHvPjGPqGz9Mshh73Mf`
+is READY and owns the arcade domain at that exact commit. Fetched HTML,
+JavaScript, CSS, both Meshy models and music return HTTP 200 and match local
+bytes exactly. See [live assets](live-assets.json) and
+[deployment receipt](deployment-receipt.json). The natural production desktop
+run passes on that exact bundle: timely ducks clear widths 1/2/3, the shield
+is retained with no hits, physical marker/coverage errors are zero, and paused
+pixels/status remain identical. The prepared 51 upload/76 shader counters stay
+unchanged; no page/GPU errors occur. See
+[live browser receipt](live-browser-receipt.json). Both natural runs retain
+App state, seed and clock and use the actual keyboard/pointer handlers.
 
 ## Limits
 
 OpenSpec CLI is unavailable; Markdown requirement/scenario structure and merge
-are validated directly. Browser tests use Chromium/SwiftShader and synthetic
+are validated directly and independently reviewed. Two modified titles
+match canonical requirements uniquely; five observable WHEN/THEN scenarios
+merge into 53 canonical requirements and 115 scenarios. All tasks are complete
+and the change is archived. See [spec validation](spec-validation.json). Browser tests use Chromium/SwiftShader and synthetic
 keyboard/pointer input. Isolated fixtures set their own state/clock; natural
 App runs use actual controls without changing App state, clock or seed. These
 checks do not measure physical-device frame rate or human reaction feel.

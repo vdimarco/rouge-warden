@@ -1,0 +1,158 @@
+{
+  "passed": true,
+  "layout": "desktop",
+  "base": "https://arcade.uptick.systems/river-rush/?verify=4e7e3fdfea94df1274f644453bf3a0b9f8f40826",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-BpSfABkQ.js",
+  "actualAppStateOrClockMutations": false,
+  "fixedSeedOrWallClock": false,
+  "contacts": [
+    {
+      "entityId": 80,
+      "spanWidth": 1,
+      "branchLanes": [
+        0
+      ],
+      "action": "duck",
+      "playerLane": 6.88838027711237e-122,
+      "actionTime": 0.273374406198537,
+      "contactTime": 14.323374406198607
+    },
+    {
+      "entityId": 13,
+      "spanWidth": 2,
+      "branchLanes": [
+        1,
+        2
+      ],
+      "action": "duck",
+      "playerLane": 0.9999999999999503,
+      "actionTime": 0.28310822619369963,
+      "contactTime": 2.649808226193699
+    },
+    {
+      "entityId": 42,
+      "spanWidth": 3,
+      "branchLanes": [
+        0,
+        1,
+        2
+      ],
+      "action": "duck",
+      "playerLane": 1.3169121640532735e-14,
+      "actionTime": 0.27107367448548536,
+      "contactTime": 7.40447367448547
+    }
+  ],
+  "guide": {
+    "hint": {
+      "x": 24,
+      "y": 96,
+      "right": 208,
+      "bottom": 148,
+      "width": 184,
+      "height": 52
+    },
+    "text": "Duck full riverSwipe down to duck",
+    "map": {
+      "x": 1143,
+      "y": 96,
+      "right": 1341,
+      "bottom": 261.1875,
+      "width": 198,
+      "height": 165.1875
+    },
+    "score": {
+      "x": 287.5,
+      "y": 16,
+      "right": 1017.5,
+      "bottom": 74,
+      "width": 730,
+      "height": 58
+    },
+    "rush": {
+      "x": 540,
+      "y": 721,
+      "right": 825,
+      "bottom": 790,
+      "width": 285,
+      "height": 69
+    },
+    "buttons": [
+      {
+        "x": 20,
+        "y": 806,
+        "right": 114,
+        "bottom": 881,
+        "width": 94,
+        "height": 75
+      },
+      {
+        "x": 581.5,
+        "y": 806,
+        "right": 675.5,
+        "bottom": 881,
+        "width": 94,
+        "height": 75
+      },
+      {
+        "x": 689.5,
+        "y": 806,
+        "right": 783.5,
+        "bottom": 881,
+        "width": 94,
+        "height": 75
+      },
+      {
+        "x": 1251,
+        "y": 806,
+        "right": 1345,
+        "bottom": 881,
+        "width": 94,
+        "height": 75
+      }
+    ],
+    "pointerEvents": "none",
+    "time": 6.3666999999999865,
+    "distance": 340.0559825116001
+  },
+  "final": {
+    "time": 14.850000000000078,
+    "distance": 820.8779333348002,
+    "phase": "playing",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "resourcesBefore": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "resourcesAfter": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "maxCoverageError": 0,
+  "stoppedProof": {
+    "sameStatus": true,
+    "samePixels": true
+  },
+  "screenshots": [
+    {
+      "width": 2,
+      "screenshot": "/tmp/river-branch-spans-production-desktop/desktop-natural-width2.png"
+    },
+    {
+      "width": 3,
+      "screenshot": "/tmp/river-branch-spans-production-desktop/desktop-natural-width3.png"
+    },
+    {
+      "width": 1,
+      "screenshot": "/tmp/river-branch-spans-production-desktop/desktop-natural-width1.png"
+    }
+  ],
+  "errors": [],
+  "gpuErrors": [],
+  "limitations": [
+    "Chromium uses SwiftShader; physical phone FPS and human reaction feel are not measured.",
+    "Visual fixtures set their own game states and clocks. Natural App runs retain Date.now seeds and use the real keyboard and pointer handlers."
+  ]
+}

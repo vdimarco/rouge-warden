@@ -1,0 +1,13 @@
+{
+  "repository": "vdimarco/rouge-warden",
+  "branch": "main",
+  "source_commit": "4e7e3fdfea94df1274f644453bf3a0b9f8f40826",
+  "deployment_id": "dpl_BphYT4SXtcHvPjGPqGz9Mshh73Mf",
+  "state": "READY",
+  "production_alias": "arcade.uptick.systems",
+  "alias_sha_verified": true,
+  "non_force_publication": true,
+  "exact_asset_bytes_verified": true,
+  "production_browser": "passed",
+  "browser_bundle": "index-BpSfABkQ.js"
+}

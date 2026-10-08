@@ -334,64 +334,48 @@ The control row SHALL present Left lane, Jump, Duck and Right lane in that order
 
 ### Requirement: Shoreline ducking branches
 Duck hazards SHALL visibly grow from rooted shoreline trees in WebGL and the
-2D fallback, with textured tapering limbs and foliage. Their low tips SHALL
-align to the existing branch lane and collision distance. Connecting limbs
-crossing other lanes SHALL stay above the standing rider. The existing speed,
-duck window and collision outcomes SHALL remain unchanged. Tree geometry SHALL
-remain bounded and use locally available resources prepared before active play.
+2D fallback. Generated trees SHALL offer three contiguous widths covering one,
+two or three river lanes. One- and two-lane branches SHALL originate from the
+nearest bank; full-width branches SHALL vary bank sides. One tree SHALL present
+each coherent span. Its visible low wood, markers, hint and physical coverage
+SHALL agree, including between covered lanes. Timed ducking SHALL clear every
+covered lane; uncovered lanes SHALL remain safely traversable. Accepted speed,
+inputs, action windows, protection feedback and finite finishes SHALL remain.
+Tree resources SHALL be prepared and bounded.
 
-#### Scenario: Approach and duck a shoreline limb
-- **WHEN** a player approaches a branch on phone, desktop or short landscape
-- **THEN** its tree is grounded on a shoreline, its limb reaches into the marked
-  lane, and a correctly timed duck clears it with the existing reward
+#### Scenario: Read and react to three widths
+- **WHEN** a player approaches one-, two- or three-lane branches on phone, desktop or short landscape
+- **THEN** each rooted tree visibly covers its marked contiguous lanes and shows a readable duck cue
+- **AND** a timely duck clears any covered lane while an uncovered lane remains safe
 
-#### Scenario: Safe route and passed tree
-- **WHEN** a player avoids the branch lane or passes below its tip
-- **THEN** connecting wood stays overhead outside the hazard lane and the rooted
-  tree continues past before being removed within the existing entity bounds
+#### Scenario: Physical span contact
+- **WHEN** the standing raft crosses in a covered lane or between two covered lanes
+- **THEN** that single branch triggers the existing collision outcome once
+- **AND** coin pickups still require actual coin contact and a perfect duck earns one row reward
 
-#### Scenario: Fallback and inactive play
-- **WHEN** WebGL is unavailable, reduced motion is enabled, or the run pauses
-- **THEN** rooted branches remain readable in fallback and reduced motion, and
-  pause preserves the rendered scene without decorative branch movement
+#### Scenario: Safe routes and stopped state
+- **WHEN** seeded play completes all three maps, pauses or uses the fallback
+- **THEN** full-width branches remain duckable, partial spans retain a fair clear or duck route, paused pixels stay fixed, and fallback coverage agrees within fixed resource bounds
 
 ### Requirement: Natural tree anatomy and materials
-Shoreline trees SHALL have smooth curved, tapering limbs, rooted broad trunks,
-irregular fuller crowns, detailed bark and natural individual leaf textures.
-The duck bough SHALL have substantial structural thickness and multiple
-connected woody forks with leafy offshoots along its span. Its terminal
-silhouette SHALL descend naturally without a curled upward hook.
-The primary 3D duck-tree visual SHALL use an optimized locally packaged Meshy
-asset with recorded generation provenance. Its connecting wood SHALL stay
-above safe lanes while the low limb remains confined to its duck lane.
-Matching decorative trees SHALL be placed outside the playable river.
-Texture and geometry work SHALL finish before active play; missing new assets
-SHALL retain usable local fallback materials and geometry. All trees SHALL
-share a bounded renderer budget and retain existing speed, action windows,
-inputs and collision outcomes.
+Shoreline duck trees SHALL have rooted broad trunks, detailed bark, naturally
+tapering main limbs and multiple connected secondary and smaller offshoots
+distributed along each span. The low limb SHALL sag gently across its covered
+lanes without a steep angular drop, singular needle end or upward hook.
+The primary 3D limb SHALL retain optimized local Meshy geometry and recorded
+provenance. All three widths SHALL have distinct readable silhouettes from
+both banks. Low wood and foliage SHALL respect covered/clear lanes and duck
+clearance; decorative trees SHALL stay outside playable water. Texture and
+geometry preparation SHALL finish before active play; failed assets SHALL
+retain matching playable fallback anatomy and controls.
 
-#### Scenario: Read a natural duck tree
-- **WHEN** a player approaches and ducks a shoreline branch at phone, desktop
-  or short landscape size
-- **THEN** the prepared Meshy tree has thick connected branching wood,
-  recognizable bark and foliage and a readable low limb at the marked lane
-- **AND** a successful timed duck preserves protection and earns the existing reward
+#### Scenario: Read connected natural anatomy
+- **WHEN** a one-, two- or three-lane branch approaches from either bank
+- **THEN** broad connected wood grows smoothly from the trunk, multiple substantial offshoots stem from it, and taper and bark remain readable on phone and desktop
 
-#### Scenario: Travel through a fuller riverbank
-- **WHEN** a run advances through its bank scenery
-- **THEN** matching detailed trees remain outside playable lanes, recycle within
-  fixed counts and do not obscure low hazard tips with crown foliage
-
-#### Scenario: Pause or use fallback
-- **WHEN** the run pauses, reduced motion is active, WebGL fails or a new asset
-  cannot load
-- **THEN** paused pixels stay fixed, reduced motion preserves readable trees,
-  and the fallback remains playable with the same branch geometry and controls
-
-#### Scenario: Read a substantial branched bough
-- **WHEN** a player approaches a duck tree on phone, desktop or landscape
-- **THEN** a thick supporting bough has multiple clearly connected leafy forks,
-  its low end tapers without curling upward, and a timed duck clears the wood
+#### Scenario: Preserve clearance and resources
+- **WHEN** the raft ducks, changes between covered lanes, pauses or advances deep into a map
+- **THEN** low wood agrees with span coverage, the ducking silhouette clears it, uncovered lanes stay open, paused pixels remain identical and prepared tree resources stay bounded
 
 ### Requirement: Three finite adventure maps
 River Rush SHALL offer exactly three maps in order: Canopy Run, Redstone Rapids
