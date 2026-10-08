@@ -507,7 +507,7 @@ button { font: inherit; color: inherit; }
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/chip.js"></script>
-<script src="/arcade/switch.js"></script>
+<script src="/arcade/analytics.js"></script><script src="/arcade/switch.js"></script>
 <script>
 "use strict";
 const $ = (s, el) => (el || document).querySelector(s);
@@ -780,6 +780,7 @@ $$(".cab").forEach((c) => {
 function boot(c) {
   if (window.Chip) Chip.stop(0.8);
   const url = c.dataset.url;
+  window.GameSwitch?.record(c.dataset.game);
   if (reduceMotion) { location.href = url; return; }
   const scr = $(".screen", c), r = scr.getBoundingClientRect();
   const b = document.createElement("div");
