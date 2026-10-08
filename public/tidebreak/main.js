@@ -30,6 +30,7 @@ import { ImpactFeel } from './impact-feel.js';
 import { objectiveClock, clockText } from './objective-clock.js';
 const $ = id => document.getElementById(id);
 const sound = new Sound(), keys = new Set();
+const desktopInput = matchMedia('(hover: hover) and (pointer: fine)');
 let selectedIdentity=0;
 let state = assignIdentities(createMatch(1),selectedIdentity), renderer, selected = 1, running = false, paused = false, last = performance.now(), accumulator = 0, uiTime = 0, resultShown = false, aim = null, cursor = null, orderQueue, castQueue, recallQueue = false, target = 0, movementControl, screenMovementControl, abilityControl, lastAttack = 0, lastCast = -1, portalQueue = false, waypoint = null;
 const movement = { x: 0, y: 0 };
@@ -103,11 +104,13 @@ function pause() {
   const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
   const canFullscreen = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
   const screen = fullscreenLeft || !canFullscreen ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
-  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="graphics-mode" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
+  const book = desktopInput.matches ? '<button id="menu-spellbook" class="row-btn">Spellbook <kbd>K</kbd></button>' : '';
+  sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${book}${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="graphics-mode" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><p class="keyhint">Click enemy to attack · Click ground to move · Space stop · Hold Space to centre the view · WASD or arrows · Q / E / C / R skills · K spellbook · F rift · G rally team · M map · B return · Esc menu</p>`);
   $('resume').onclick = () => { if (fullscreenLeft) playWindowed(); closeSheet(); };
   if ($('fullscreen-back')) $('fullscreen-back').onclick = () => { requestFullscreen(); closeSheet(); };
   if ($('screen-mode')) $('screen-mode').onclick = () => { if (document.fullscreenElement) playWindowed(); else requestFullscreen(); closeSheet(); };
   $('return-home').onclick = () => { closeSheet(); recallQueue = true; };
+  if ($('menu-spellbook')) $('menu-spellbook').onclick = learnSkills;
   wireSoundRows('pause'); wirePerfRow($('perf-toggle')); wireGraphicsRow($('graphics-mode')); $('quit').onclick = menu;
 }
 // Sound controls name the action, not the state, so a player who hears nothing and presses one does not mute the game.
@@ -193,7 +196,9 @@ function start() {
     b.querySelector('svg')?.remove();b.querySelector('.hud-spell-art')?.remove();
     b.insertAdjacentHTML('afterbegin',hudSpellArt(selectedIdentity,i,'hud-spell-art'));
   });
-  mountMatchPortraits(state,selectedIdentity); updateUI(); learnSkills();
+  abilityCluster.classList.remove('upgrade-mode');
+  mountMatchPortraits(state,selectedIdentity); updateUI();
+  if (!desktopInput.matches) learnSkills();
 }
 function learnSkills() {
   if (!running || resultShown) return;
@@ -598,3 +603,4 @@ export const qaState = () => state;
 const wakeSound = () => { if (!sound.context || sound.context.state !== 'running' || sound.scoreBlocked()) { soundWokeAt = performance.now(); sound.start(); } };
 window.addEventListener('pointerdown', wakeSound, { capture: true });
 window.addEventListener('keydown', wakeSound, { capture: true });
+

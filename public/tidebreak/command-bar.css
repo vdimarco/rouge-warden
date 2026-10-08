@@ -332,3 +332,9 @@
 #skill-card.compact .skill-card-meta{margin-bottom:3px;font-size:10px}
 #skill-card.compact .skill-card-meta .skill-card-status{margin:0;padding:0;border:0;font-size:10px}
 #skill-card.compact .skill-card-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+
+/* Mouse and keyboard players use K or the menu for the book, and the direct + badges to learn skills. */
+@media (hover: hover) and (pointer: fine){
+ #hud #joystick,#hud #coach,#hud .abilities #skill-points{display:none}
+}
+

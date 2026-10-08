@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { SIZE, PATHS, WINDING, windLane, BASES, OBSTACLES, CAMPS, PORTALS, TOWER_POSITIONS, arcLength, distance } from '../../public/tidebreak/world.js';
 import { mirror } from '../../public/tidebreak/arena.js';
 import { LANE_MEANDER, LANE_KNOTS } from '../../public/tidebreak/layout.js';
-import { meanderWave, bendRadius } from '../../public/tidebreak/roads.js';
+import { meanderWave, bendRadius, windHalf } from '../../public/tidebreak/roads.js';
 import { TIERS } from '../../public/tidebreak/sim.js';
 
 const rectGap = (p, r) => Math.hypot(Math.max(0, Math.abs(p.x - r.x) - r.w / 2), Math.max(0, Math.abs(p.y - r.y) - r.h / 2));
@@ -25,11 +25,30 @@ function bends(path) {
 for (let lane = 0; lane < 3; lane++) assert.deepEqual(windLane(lane).path, WINDING[lane].path, `lane ${lane} winds the same way every time`);
 const wave = meanderWave(LANE_MEANDER.seed, 5000, LANE_MEANDER.wavelength), again = meanderWave(LANE_MEANDER.seed, 5000, LANE_MEANDER.wavelength), other = meanderWave(LANE_MEANDER.seed + 1, 5000, LANE_MEANDER.wavelength);
 assert.equal(wave(1234), again(1234)); assert.notEqual(wave(1234), other(1234), 'a different seed gives a different meander');
-for (let s = 0; s <= 5000; s += 50) assert(Math.abs(wave(s)) <= 1 + 1e-9, 'the meander wave is scaled to [-1, 1]');
+for (let s = 0; s <= 5000; s += 50) assert(Math.abs(wave(s)) <= 1 + 1e-9, 'the meander curve stays in [-1, 1]');
+// Long curves contain unequal distances between successive extrema and varied bend strengths.
+const longWave = meanderWave(LANE_MEANDER.seed, 18000, LANE_MEANDER.wavelength), peaks = [];
+for (let s = 20; s < 18000; s += 20) {
+  const before = longWave(s - 20), at = longWave(s), after = longWave(s + 20);
+  if ((at > before && at > after) || (at < before && at < after)) peaks.push({ s, strength: Math.abs(at) });
+}
+const spacing = peaks.slice(1).map((p, i) => p.s - peaks[i].s), strengths = peaks.map(p => p.strength);
+assert(peaks.length >= 5 && Math.max(...spacing) / Math.min(...spacing) > 1.4, 'bend spacing varies visibly rather than repeating one wave');
+assert(Math.max(...strengths) - Math.min(...strengths) > .15, 'successive bends vary in strength');
+
+// Exhausted local damping must return a validated original route, or reject an impossible layout.
+const straight = Array.from({ length: 21 }, (_, i) => ({ x: 0, y: i * 50 }));
+const narrow = { seed: 49, amplitude: 400, wavelength: [500, 900], calmBase: [0, 1], calmRiver: [0, 1],
+  maxStretch: 1.06, minBend: 300, stations: [100, 900], minGap: [500], clear: p => p.x === 0 ? 1 : -1 };
+const fallback = windHalf(straight, narrow);
+assert(fallback.valid && fallback.fallback, 'the solver validates its fallback after local damping runs out');
+assert.deepEqual(fallback.path, straight, 'a zero-width corridor retains the original route');
+assert.throws(() => windHalf(straight, { ...narrow, clear: () => -1 }), /original lane cannot satisfy/, 'an impossible placement rule cannot publish an unsafe road');
 
 const report = [];
 for (const [lane, path] of PATHS.entries()) {
   const { spline, path: half } = WINDING[lane], n = path.length, middle = (n - 1) / 2;
+  assert(WINDING[lane].valid && !WINDING[lane].fallback, `lane ${lane} finishes the solver with a validated winding route`);
   // Fairness: team 1's half is the exact mirror of team 0's half, end to end.
   assert.deepEqual(path[0], BASES[0]); assert.deepEqual(path.at(-1), BASES[1]);
   for (let i = 0; i < n; i++) assert.deepEqual(path[n - 1 - i], mirror(path[i]), `lane ${lane} is mirrored at sample ${i}`);
@@ -45,7 +64,7 @@ for (const [lane, path] of PATHS.entries()) {
   }
   // Organic: a real sideways swing, more turning than the spline, at least one change of bend (an S) on each half.
   const wound = bends(half), plain = bends(spline.slice(0, middle + 1));
-  assert(widest >= (lane === 1 ? 60 : 150), `lane ${lane} swings ${widest.toFixed(0)} units off its spline`);
+  assert(widest >= (lane === 1 ? 150 : 275), `lane ${lane} swings ${widest.toFixed(0)} units off its spline`);
   assert(wound.turn >= plain.turn * 1.4, `lane ${lane} turns more than the plain spline (${wound.turn.toFixed(0)} against ${plain.turn.toFixed(0)} degrees)`);
   assert(wound.flips >= 2, `lane ${lane} bends left and right (${wound.flips} changes)`);
   // Gentle: no kink tighter than the rule (or than the plain spline already had there).
@@ -55,6 +74,8 @@ for (const [lane, path] of PATHS.entries()) {
   assert(after >= before && after <= before * LANE_MEANDER.maxStretch, `lane ${lane} length ${after.toFixed(0)} stays within ${LANE_MEANDER.maxStretch} of ${before.toFixed(0)}`);
   // Clear of cover (both realms), camps and river gates.
   for (const p of path) {
+    assert(Number.isFinite(p.x) && Number.isFinite(p.y), `lane ${lane} contains finite positions`);
+    assert(p.x >= LANE_MEANDER.edgeClear && p.x <= SIZE - LANE_MEANDER.edgeClear && p.y >= LANE_MEANDER.edgeClear && p.y <= SIZE - LANE_MEANDER.edgeClear, `lane ${lane} keeps its road and verge inside the map`);
     for (const phase of [0, 1]) for (const r of OBSTACLES[phase]) assert(rectGap(p, r) >= LANE_MEANDER.coverClear - 1e-6, `lane ${lane} keeps ${LANE_MEANDER.coverClear} units from cover`);
     for (const c of [...CAMPS, ...PORTALS.filter(g => g.base === undefined)]) assert(distance(p, c) >= LANE_MEANDER.spotClear - 1e-6, `lane ${lane} keeps ${LANE_MEANDER.spotClear} units from camps and river gates`);
   }
@@ -69,3 +90,4 @@ const [west, middle, east] = PATHS.map(arcLength);
 assert(Math.abs(west - east) / west < .02, 'the two side lanes are about the same length');
 assert(middle >= .75 * Math.max(west, east), 'the middle lane is not much shorter than the side lanes');
 console.log('PASS: deterministic, mirrored winding roads with gentle bends, bounded swing and length, clear of cover, camps and gates, and wards still spaced.', JSON.stringify(report));
+

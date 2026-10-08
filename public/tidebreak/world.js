@@ -36,7 +36,9 @@ export function windLane(index) {
   const spline = track(LANES[index]), middle = (spline.length - 1) / 2, m = LANE_MEANDER;
   const wound = windHalf(spline.slice(0, middle + 1), {
     ...m, seed: m.seed + index * 7919, amplitude: m.amplitude[index], stations: [...TOWER_ARC[index]].reverse(),
-    clear: p => Math.min(...COVER_RECTS.map(r => rectGap(p, r) - m.coverClear), ...KEEP_AWAY.map(c => Math.hypot(p.x - c.x, p.y - c.y) - m.spotClear)),
+    // Reserve room for the road's verge at the map edge and keep this half on its own side of the river axis.
+    clear: p => Math.min(p.x - m.edgeClear, SIZE - m.edgeClear - p.x, p.y - CENTER.y, SIZE - m.edgeClear - p.y,
+      ...COVER_RECTS.map(r => rectGap(p, r) - m.coverClear), ...KEEP_AWAY.map(c => Math.hypot(p.x - c.x, p.y - c.y) - m.spotClear)),
   });
   return { ...wound, spline };
 }
@@ -136,3 +138,4 @@ export function shiftWorld(s) {
   for (const e of s.units) if (e.speed && e.hp > 0) resolveBody(s, e);
   return true;
 }
+

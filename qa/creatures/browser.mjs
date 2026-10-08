@@ -207,9 +207,18 @@ try {
     assert.equal(await page.locator('#draft [data-slot="0"]').getAttribute('data-team'), '0');
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.querySelector('#draft').hidden, null, { timeout: 10000 });
-    await page.locator('#train-selected').waitFor();
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
-    // Starting a match opens the spellbook and pauses play until training is done.
+    // Mouse players open the book on demand; touch play keeps its opening skill choice.
+    const desktopInput = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
+    if (desktopInput) {
+      assert.equal(await page.locator('#sheet').isVisible(), false, 'mouse play starts without an automatic spellbook');
+      assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), false, 'mouse play starts unpaused');
+      await page.keyboard.press('k');
+    } else {
+      assert.equal(await page.locator('#sheet').isVisible(), true, 'touch play retains the opening spellbook');
+    }
+    await page.locator('#train-selected').waitFor();
+    // The spellbook pauses play while the player trains a skill.
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), true);
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.identity), 0);
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.hero), 1);
