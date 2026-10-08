@@ -115,6 +115,7 @@ button { font: inherit; color: inherit; }
 .cab.tilt { --c1: #66328c; --c2: #f5a6e5; --glow: rgba(245, 166, 229, 0.45); }
 .cab.rules { --c1: #93632e; --c2: #ffd56b; --glow: rgba(255, 213, 107, 0.45); }
 .cab.follow-suit { --c1: #1f4b40; --c2: #e9c46a; --glow: rgba(233, 196, 106, 0.45); }
+.cab.last-light { --c1: #552a74; --c2: #ffcd62; --glow: rgba(255, 205, 98, 0.45); }
 .cab.river-rush { --c1: #083d31; --c2: #f9c65b; --glow: rgba(249, 198, 91, 0.45); }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
@@ -492,6 +493,16 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab last-light" data-game="last-light" data-url="/last-light/" aria-label="Last Light: an ASCII sailing adventure">
+      <div class="marquee"><div><b>LAST LIGHT</b><small>CARRY THE SPARKS HOME</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="last-light/art/sunset.svg" alt="Golden light on an ASCII ocean at sunset" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">STEER · GATHER · DASH</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Last Light"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Last Light"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
   </main>
@@ -590,7 +601,7 @@ const cabs = $$(".cab");
 const machinePicker = $("#machinePicker");
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
-  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"] },
+  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "last-light"] },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"] },
   { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"] },
 ];

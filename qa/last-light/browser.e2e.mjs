@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { mkdir } from 'node:fs/promises';
+const require=createRequire(new URL('../browser/package.json',import.meta.url));
+const {chromium}=require('playwright');
+const browser=await chromium.launch({headless:true, executablePath:process.env.LAST_LIGHT_CHROMIUM || undefined});
+const errors=[];
+const base=process.env.LAST_LIGHT_URL||'http://127.0.0.1:8765/last-light/';
+await mkdir('/tmp/last-light-qa',{recursive:true});
+try {
+ const page=await browser.newPage({viewport:{width:1440,height:900}});
+ page.on('pageerror',e=>errors.push(e.message));
+ page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
+ await page.goto(base);await page.waitForFunction(()=>document.querySelector('#scene').width>0);
+ assert.equal(await page.title(),'Last Light · Cottage Arcade');
+ assert.equal(await page.locator('#title').textContent(),'Last Light');
+ assert.equal(await page.locator('#message').textContent(),'Carry the last sparks home.');
+ assert.equal(await page.locator('.instructions').textContent(),'arrows / WASD to steer · space to dash · P to pause');
+ await assert.doesNotReject(()=>page.getByRole('button',{name:'[ set sail ]',exact:true}).waitFor());
+ await page.screenshot({path:'/tmp/last-light-qa/desktop-title.png'});
+ await page.getByRole('button',{name:'[ set sail ]',exact:true}).click();
+ assert.equal(await page.locator('#sea').evaluate(el=>el===document.activeElement),true);
+ await page.keyboard.press('Space');
+ await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('dash ready in'));
+ await page.keyboard.down('ArrowRight');await page.waitForTimeout(500);await page.keyboard.up('ArrowRight');
+ await page.keyboard.press('p');
+ assert.equal(await page.locator('#title').textContent(),'Voyage paused');
+ const frozen=await page.locator('#progress').textContent();
+ await page.waitForTimeout(1200);assert.equal(await page.locator('#progress').textContent(),frozen);
+ await page.getByRole('button',{name:'[ resume ]',exact:true}).click();
+ assert.equal(await page.locator('#title').textContent(),'Carry the light.');
+ await page.screenshot({path:'/tmp/last-light-qa/desktop-play.png'});
+ await page.keyboard.press('p');await page.getByRole('button',{name:'[ new voyage ]',exact:true}).click();
+ assert.equal(await page.locator('#hull').textContent(),'3/3');
+ assert.equal(await page.locator('#lights').textContent(),'0');
+ await page.getByRole('button',{name:'[ switch game ]',exact:true}).click();
+ assert.equal(await page.locator('#title').textContent(),'Voyage paused');
+ await page.keyboard.press('Escape');
+ for(const size of [{width:390,height:844},{width:844,height:390}]) {
+   const context=await browser.newContext({viewport:size,hasTouch:true,isMobile:true});
+   const mobile=await context.newPage();mobile.on('pageerror',e=>errors.push(e.message));
+   await mobile.goto(base);await mobile.waitForFunction(()=>document.querySelector('#scene').width>0);
+   assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   await mobile.getByRole('button',{name:'[ set sail ]',exact:true}).click();
+   await mobile.getByRole('button',{name:'Dash',exact:true}).click();
+   await mobile.waitForFunction(()=>document.querySelector('#message').textContent.includes('dash ready in'));
+   const button=mobile.getByRole('button',{name:'Steer left',exact:true});
+   await button.dispatchEvent('pointerdown',{pointerId:1,pointerType:'touch',bubbles:true});
+   await button.dispatchEvent('pointercancel',{pointerId:1,pointerType:'touch',bubbles:true});
+   await mobile.screenshot({path:'/tmp/last-light-qa/'+size.width+'x'+size.height+'.png'});
+   await context.close();
+ }
+ const reducedPage=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
+ await reducedPage.goto(base);
+ await reducedPage.getByRole('button',{name:'[ set sail ]',exact:true}).click();
+ const before=await reducedPage.locator('#scene').evaluate(c=>c.toDataURL());
+ await reducedPage.waitForTimeout(600);
+ assert.equal(await reducedPage.locator('#scene').evaluate(c=>c.toDataURL()),before);
+ assert.deepEqual(errors,[]);
+ console.log('Last Light browser checks passed; screenshots in /tmp/last-light-qa');
+} finally {await browser.close();}
+
