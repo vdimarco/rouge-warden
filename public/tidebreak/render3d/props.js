@@ -85,8 +85,8 @@ const MAX_TUFTS = 2400, TUFT_TONES = [['#d4e49a', '#c4da90', '#e0e4a2', '#ece0a0
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0), _v = new THREE.Vector3(), _s = new THREE.Vector3();
 const KEEP = { ferns: .38, mushrooms: .22, branch: .15, 'hollow-log': .45, boulders: .65, birches: .35, juniper: .6, willow: .4, oak: .35, pines: .85 };
 export class Props {
-  constructor(scene, assets, textures, { coverage = true } = {}) {
-    this.scene = scene; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
+  constructor(scene, assets, textures, { coverage = true, heightAt = () => 0 } = {}) {
+    this.scene = scene; this.heightAt = heightAt; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
     const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
     this.atlas = foliageAtlas();
     const leafy = sway => set => patch(new THREE.MeshStandardMaterial({ map: this.atlas, alphaTest: coverage ? .42 : .5, alphaToCoverage: coverage, side: THREE.DoubleSide, roughness: .8, metalness: 0 }), this.grow[set], { sway, key: 'foliage', foliage: true });
@@ -136,10 +136,11 @@ export class Props {
   commit(put, set) {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
     for (const [kind, list] of put.lists) {
-      const def = this.kinds[kind], n = list.length, matrices = new Float32Array(n * 16), colors = new Float32Array(n * 3), spots = new Float32Array(n * 4);
+      const def = this.kinds[kind], n = list.length, matrices = new Float32Array(n * 16), colors = new Float32Array(n * 3), spots = new Float32Array(n * 5);
       list.forEach((it, i) => {
-        e.set(it.tilt, it.rot, it.tilt * .6); q.setFromEuler(e); m4.compose(v.set(it.x, 0, it.z), q, sc.set(it.sx, it.sy, it.sz)); m4.toArray(matrices, i * 16);
-        col.set(it.color).multiplyScalar(def.bright || 1).toArray(colors, i * 3); spots.set([it.x, it.z, Math.max(it.sx, it.sz) * .7, it.sy], i * 4);
+        const base = this.heightAt(it.x, it.z);
+        e.set(it.tilt, it.rot, it.tilt * .6); q.setFromEuler(e); m4.compose(v.set(it.x, base, it.z), q, sc.set(it.sx, it.sy, it.sz)); m4.toArray(matrices, i * 16);
+        col.set(it.color).multiplyScalar(def.bright || 1).toArray(colors, i * 3); spots.set([it.x, it.z, Math.max(it.sx, it.sz) * .7, it.sy, base], i * 5);
       });
       const mesh = new THREE.InstancedMesh(def.geometry, def.materials[set], n); mesh.count = 0; mesh.frustumCulled = false;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.setColorAt(0, col); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
@@ -155,10 +156,11 @@ export class Props {
       for (const k of set.kinds.values()) {
         const { mesh, matrices, colors, spots, n } = k, dst = mesh.instanceMatrix.array, cdst = mesh.instanceColor.array; let c = 0;
         for (let j = 0; j < n; j++) {
-          const x = spots[j * 4], z = spots[j * 4 + 1], r = spots[j * 4 + 2], h = spots[j * 4 + 3];
+          const x = spots[j * 5], z = spots[j * 5 + 1], r = spots[j * 5 + 2], h = spots[j * 5 + 3], base = spots[j * 5 + 4];
           // A tall caster up to its shadow length toward the sun still darkens the view.
-          const reach = Math.min(700, h * sun.k), sx = x - sun.x * reach, sz = z - sun.z * reach;
-          const inView = x + r > view.x0 && x - r < view.x1 && z + r > view.y0 && z - r - h * .5 < view.y1;
+          // Elevation also moves its silhouette toward the camera, including objects below the water level.
+          const reach = Math.min(700, Math.max(0, h + base) * sun.k), sx = x - sun.x * reach, sz = z - sun.z * reach;
+          const inView = x + r > view.x0 && x - r < view.x1 && z + r - Math.min(0, base) * .7 > view.y0 && z - r - Math.max(0, h + base) * .7 < view.y1;
           const shadowIn = mesh.castShadow && Math.max(x, sx) + r > view.x0 && Math.min(x, sx) - r < view.x1 && Math.max(z, sz) + r > view.y0 && Math.min(z, sz) - r < view.y1;
           if (!inView && !shadowIn) continue;
           dst.set(matrices.subarray(j * 16, j * 16 + 16), c * 16); cdst[c * 3] = colors[j * 3]; cdst[c * 3 + 1] = colors[j * 3 + 1]; cdst[c * 3 + 2] = colors[j * 3 + 2]; c++;
@@ -274,7 +276,7 @@ export class Props {
       const o = (i * g.size + j) * 4, bare = Math.max(g.data[o], g.data[o + 1], g.data[o + 2], g.data[o + 3] * 2);
       if (bare > 60) continue;
       const h = (24 + hash(cx, cz, k + 7) * 26) * (woods ? .8 : 1) * (1 - bare / 90), w = h * (1.2 + hash(cx, cz, k + 9) * .5);
-      _q.setFromAxisAngle(_up, hash(cx, cz, k + 11) * 6.3); _m4.compose(_v.set(x, 0, z), _q, _s.set(w, h, w)); mesh.setMatrixAt(n, _m4);
+      _q.setFromAxisAngle(_up, hash(cx, cz, k + 11) * 6.3); _m4.compose(_v.set(x, this.heightAt(x, z), z), _q, _s.set(w, h, w)); mesh.setMatrixAt(n, _m4);
       mesh.setColorAt(n, tones[Math.floor(hash(cx, cz, k + 13) * tones.length)]); n++;
     }
     mesh.count = n; mesh.instanceMatrix.clearUpdateRanges(); mesh.instanceMatrix.addUpdateRange(0, n * 16); mesh.instanceMatrix.needsUpdate = true;
@@ -282,3 +284,4 @@ export class Props {
   }
   apply() { for (const p of [0, 1]) { const b = this.blend[p], e = b * b * (3 - 2 * b); this.grow[p].value = e; this.sets[p].group.visible = e > .001; } }
 }
+

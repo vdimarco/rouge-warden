@@ -1,11 +1,12 @@
-// Ground, river and bridges. The ground is one flat plane with a splat shader: a mask texture painted once per match
+// Ground, river and bridges. The ground is a sampled landscape with a splat shader: a mask texture painted once per match
 // from the live world geometry (lanes, river banks, plazas) picks between tiling grass, dry meadow, dirt, stone and
 // sand, blended by height so the edges look worn rather than cut.
 import * as THREE from 'three';
 import { riverGeometry, riverCrossings, riverOutline, shoreRibbon } from '../river.js';
 import { withWorld, fowAtEnd, worldMapped } from './materials.js';
+import { buildRelief } from '../relief.js';
 
-const MASK = 1024, MARGIN = 5200;
+const MASK = 1024;
 // Box blur of one channel (stride 4) in place, horizontal then vertical, twice: soft edges without canvas filters,
 // which are very slow on some canvases.
 function blur(data, channel, radius) {
@@ -81,6 +82,16 @@ const GROUND_FRAGMENT = `
   // Height blending: each layer wins where its mask and its own height together beat what lies below.
   vec4 dirt = texture2D( uDirt, wp / 380. ), stone = texture2D( uStone, wp / 330. ), sand = texture2D( uSand, wp / 300. );
   float h = ground.a; vec3 col = ground.rgb; float rough = .96;
+  // Fells expose grey stone on the steep shoulders. Sheltered hollows keep a little darker green moss; both cues
+  // come from the actual surface so the material describes landforms rather than decorating a flat floor.
+  vec3 surfaceN = normalize( cross( dFdx( vWorldP ), dFdy( vWorldP ) ) );
+  float slope = 1. - abs( surfaceN.y );
+  float rocky = max( smoothstep( .025, .19, slope ) * .8, smoothstep( 300., 480., vWorldP.y ) * smoothstep( .44, .7, macro2.g ) * .5 );
+  rocky *= 1. - max( mask.r, max( mask.g, mask.b ) );
+  vec3 fellStone = stone.rgb * vec3( .8, .84, .83 );
+  col = mix( col, fellStone, rocky ); h = mix( h, stone.a, rocky );
+  float sheltered = ( 1. - smoothstep( 70., 180., vWorldP.y ) ) * smoothstep( .48, .78, macro.g ) * .2;
+  col = mix( col, moss.rgb * .85, sheltered * ( 1. - mask.r ) );
   #define LAYER(tex, m, sharp, rgh) { float t = clamp( ( m * 1.7 - .55 + ( tex.a - h ) * .9 ) * sharp, 0., 1. ); col = mix( col, tex.rgb, t ); h = mix( h, tex.a, t ); rough = mix( rough, rgh, t ); }
   LAYER( sand, mask.g, 3., .9 )
   LAYER( dirt, mask.r, 3.2, .93 )
@@ -98,13 +109,15 @@ const GROUND_FRAGMENT = `
   diffuseColor.rgb *= col; groundH = h; groundRough = rough;`;
 const BUMP = `
   { vec3 dpdx = dFdx( vWorldP ), dpdy = dFdy( vWorldP ); float dhx = dFdx( groundH ), dhy = dFdy( groundH );
-    vec3 n = vec3( 0., 1., 0. ), r1 = cross( dpdy, n ), r2 = cross( n, dpdx ); float det = dot( dpdx, r1 );
+    vec3 n = inverseTransformDirection( normal, viewMatrix ), r1 = cross( dpdy, n ), r2 = cross( n, dpdx ); float det = dot( dpdx, r1 );
     vec3 grad = sign( det ) * ( dhx * r1 + dhy * r2 ) * 7.;
     vec3 nw = normalize( abs( det ) * n - grad );
     normal = normalize( ( viewMatrix * vec4( nw, 0. ) ).xyz ); }`;
 export class Terrain {
   constructor(scene, textures, macro) {
     this.scene = scene; this.textures = textures;
+    this.relief = null;
+    this.heightUniforms = { uTerrainHeight: { value: null }, uTerrainOrigin: { value: new THREE.Vector2() }, uTerrainSpan: { value: 1 }, uTerrainSegments: { value: 1 } };
     this.uniforms = { uMask: { value: null }, uMacro: { value: macro }, uGrass: { value: textures.grass }, uDry: { value: textures.dry }, uMoss: { value: textures.moss }, uDirt: { value: textures.dirt }, uStone: { value: textures.stone }, uSand: { value: textures.sand }, uRealm: { value: 0 } };
     const material = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, metalness: 0 });
     material.onBeforeCompile = shader => {
@@ -115,22 +128,36 @@ export class Terrain {
         .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = groundRough;')
         .replace('#include <normal_fragment_maps>', BUMP);
     };
-    material.customProgramCacheKey = () => 'shore-ground';
-    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material); this.ground.rotation.x = -Math.PI / 2; this.ground.receiveShadow = true;
+    material.customProgramCacheKey = () => 'shore-ground-relief';
+    this.ground = new THREE.Mesh(new THREE.BufferGeometry(), material); this.ground.receiveShadow = true;
     this.ground.name = 'ground'; scene.add(this.ground);
     this.stone = worldMapped(textures.stone, { color: '#b9b1a1', scale: 240, key: 'stone-built' });
     this.group = new THREE.Group(); scene.add(this.group);
   }
   // Rebuilt for each match seed: masks, river and bridges follow the live geometry.
   build(world, s) {
-    const { SIZE, PATHS } = world, seed = s.seed;
+    const { PATHS } = world, seed = s.seed;
     this.uniforms.uMask.value?.dispose(); this.uniforms.uMask.value = paintMasks(world, s, seed); this.mask = this.uniforms.uMask.value.userData.mask;
-    this.ground.scale.set(SIZE + MARGIN * 2, SIZE + MARGIN * 2, 1); this.ground.position.set(SIZE / 2, 0, SIZE / 2);
-    for (const child of [...this.group.children]) { this.group.remove(child); child.geometry?.dispose(); if (child.material !== this.stone) child.material?.dispose?.(); }
+    this.relief = buildRelief(world, s);
+    const { vertices, indices, heights, resolution, origin, span, segments } = this.relief;
+    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3)); geometry.setIndex(new THREE.BufferAttribute(indices, 1)); geometry.computeVertexNormals(); geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+    this.ground.geometry.dispose(); this.ground.geometry = geometry;
+    // An unfiltered floating-point texture keeps signed heights exact and avoids needing linear float extensions.
+    const textureData = new Float32Array(heights.length * 4);
+    for (let i = 0; i < heights.length; i++) { textureData[i * 4] = heights[i]; textureData[i * 4 + 3] = 1; }
+    const heightMap = new THREE.DataTexture(textureData, resolution, resolution, THREE.RGBAFormat, THREE.FloatType);
+    heightMap.magFilter = heightMap.minFilter = THREE.NearestFilter; heightMap.flipY = false; heightMap.generateMipmaps = false; heightMap.needsUpdate = true;
+    this.heightUniforms.uTerrainHeight.value?.dispose(); this.heightUniforms.uTerrainHeight.value = heightMap;
+    this.heightUniforms.uTerrainOrigin.value.set(origin, origin); this.heightUniforms.uTerrainSpan.value = span; this.heightUniforms.uTerrainSegments.value = segments;
+    for (const child of [...this.group.children]) {
+      this.group.remove(child);
+      child.traverse(object => { object.geometry?.dispose(); if (object.material !== this.stone) object.material?.dispose?.(); });
+    }
     this.water = water(riverGeometry(seed)); this.group.add(this.water);
     this.bridges = riverCrossings(PATHS, seed);
     for (const b of this.bridges) this.group.add(bridge(b, this.stone));
   }
+  heightAt(x, z) { return this.relief?.heightAt(x, z) ?? 0; }
   update(time, realm, sunDir, fogColor) {
     this.uniforms.uRealm.value = realm;
     if (this.water) { const u = this.water.material.uniforms; u.uTime.value = time; u.uSun.value.copy(sunDir); u.uSky.value.copy(fogColor); u.uRealm.value = realm; }
@@ -192,3 +219,4 @@ function bridge(b, stone) {
   group.position.set(b.x, 0, b.y); group.rotation.y = -angle; group.name = 'bridge';
   return group;
 }
+
