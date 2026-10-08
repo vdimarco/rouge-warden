@@ -1,0 +1,793 @@
+{
+  "endpoint": "meshy/v7.1/image-to-3d",
+  "requestId": "01a11ba8-a049-7631-9a50-d06f57b957d8",
+  "input": {
+    "image_url": "https://v3b.fal.media/files/b/0aad8f1b/O7JLcPIxy2xihYo-3EfwG_hsK97JfL.png",
+    "model_type": "standard",
+    "target_polycount": 12000,
+    "topology": "triangle",
+    "should_remesh": true,
+    "should_texture": true,
+    "symmetry_mode": "off",
+    "enable_pbr": true,
+    "geometry_resolution": "2k",
+    "texture_prompt": "Preserve the source concept's natural dark weathered oak bark with deep fissures, gnarled collars, healed knots and subtle moss in crevices. Fine broadleaf sprays in muted olive and forest green, sparse dark hanging moss strands. Rough matte nonmetallic wood and leaves. Cohesive realistic game prop, natural albedo, no painted directional shadows."
+  },
+  "estimatedCostUSD": 0.8,
+  "result": {
+    "animation_glb": null,
+    "animation_fbx": null,
+    "model_glb": {
+      "url": "https://v3b.fal.media/files/b/0aad8f45/dED5k3ZclwrsHm7LQiSmO_model.glb",
+      "content_type": "model/gltf-binary",
+      "file_name": "model.glb",
+      "file_size": 14335748
+    },
+    "thumbnail": {
+      "url": "https://v3b.fal.media/files/b/0aad8f4a/P_3qw5gI_LIogfRYv0OOK_preview.png",
+      "content_type": "image/png",
+      "file_name": "preview.png",
+      "file_size": 78619
+    },
+    "model_urls": {
+      "glb": {
+        "url": "https://v3b.fal.media/files/b/0aad8f45/dED5k3ZclwrsHm7LQiSmO_model.glb",
+        "content_type": "model/gltf-binary",
+        "file_name": "model.glb",
+        "file_size": 14335748
+      },
+      "fbx": {
+        "url": "https://v3b.fal.media/files/b/0aad8f46/ZI9N7pTQeqgdseSO70K8d_model.fbx",
+        "content_type": "application/octet-stream",
+        "file_name": "model.fbx",
+        "file_size": 14476508
+      },
+      "obj": {
+        "url": "https://v3b.fal.media/files/b/0aad8f49/dneHFEDPngUsIXW7hxcKP_model.obj",
+        "content_type": "text/plain",
+        "file_name": "model.obj",
+        "file_size": 1401638
+      },
+      "usdz": {
+        "url": "https://v3b.fal.media/files/b/0aad8f48/hUe-iSkLCPrLghu6-hxOK_model.usdz",
+        "content_type": "model/vnd.usdz+zip",
+        "file_name": "model.usdz",
+        "file_size": 14909719
+      },
+      "blend": null,
+      "stl": {
+        "url": "https://v3b.fal.media/files/b/0aad8f49/jPOY6IKnBbqBQ6KW59nL8_model.stl",
+        "content_type": "application/octet-stream",
+        "file_name": "model.stl",
+        "file_size": 529584
+      }
+    },
+    "texture_urls": [
+      {
+        "base_color": {
+          "url": "https://v3b.fal.media/files/b/0aad8f4a/wNdz1nS_DUhFczxBbrDpY_texture_0.png",
+          "content_type": "image/png",
+          "file_name": "texture_0.png",
+          "file_size": 6377317
+        },
+        "metallic": {
+          "url": "https://v3b.fal.media/files/b/0aad8f4b/G9kz_F1o56Soq9aU1NQ7W_texture_0_metallic.png",
+          "content_type": "image/png",
+          "file_name": "texture_0_metallic.png",
+          "file_size": 224807
+        },
+        "normal": {
+          "url": "https://v3b.fal.media/files/b/0aad8f4b/aFZFfyLDSS3GDS7-WaOsX_texture_0_normal.png",
+          "content_type": "image/png",
+          "file_name": "texture_0_normal.png",
+          "file_size": 7133657
+        },
+        "roughness": {
+          "url": "https://v3b.fal.media/files/b/0aad8f4c/g-zZvTZO-uC_BgKrsdzT8_texture_0_roughness.png",
+          "content_type": "image/png",
+          "file_name": "texture_0_roughness.png",
+          "file_size": 1688214
+        }
+      }
+    ],
+    "seed": 1333539126,
+    "rigged_character_glb": null,
+    "rigged_character_fbx": null,
+    "basic_animations": null,
+    "rig_task_id": null
+  },
+  "concept": {
+    "endpoint": "google/nano-banana-2.1",
+    "requestId": "01a11ba6-1f41-74e0-93d4-353b5a4d56ec",
+    "input": {
+      "prompt": "A realistic isolated 3D game-prop concept study, one single ancient riverbank oak growing almost SIDEWAYS, seen in a clean side profile with a little depth. Entire object visible against pure white, no scenery or floor plane. The ROOT COLLAR and a short thick leaning trunk exist ONLY at the extreme LEFT of the image. That trunk continuously curves into an enormous low horizontal crooked S-shaped over-water limb, extending to the RIGHT across about 80 percent of the whole silhouette. The long lateral limb is the dominant structure, several times longer than the height of the root stump. Its thick broad irregular wood makes a gentle knee and another organic shallow bend; it gradually tapers rather than ending in a blunt sawn cut. A broad unequal Y-fork sweeps diagonally above and alongside the main limb; further sideways branches split recursively into many smaller irregular twigs, some drooping down. Natural oak branch collars and gnarled junctions. Offshoot angles and lengths vary organically, with obvious negative space. Sparse irregular broadleaf sprays and small leafy clusters distributed along real connected twig networks; airy broken canopy, never a dome or roof. A few dark green hanging moss threads and short vines underneath the wood. Rough deeply fissured dark brown bark, moss in damp crevices, healed knots, weathered gray ridges. Photoreal natural tree anatomy, detailed sculptural wood, restrained forest greens. No upright central tree, no umbrella canopy, no radial octopus roots, no straight railing, no repeated upward prongs, no counted fork pattern, no round lollipop foliage balls, no floating detached pieces, no water, no snake, no text. Wide composition with clear margins around the whole root-to-tip tree.",
+      "num_images": 1,
+      "seed": 804722,
+      "aspect_ratio": "21:9",
+      "resolution": "2K",
+      "output_format": "png",
+      "thinking_level": "high",
+      "enable_web_search": false
+    },
+    "result": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0aad8f1b/O7JLcPIxy2xihYo-3EfwG_hsK97JfL.png",
+          "content_type": "image/png",
+          "file_name": "O7JLcPIxy2xihYo-3EfwG_hsK97JfL.png",
+          "file_size": null,
+          "width": null,
+          "height": null
+        }
+      ],
+      "description": ""
+    },
+    "localFile": "docs/meshy-river-oak-concept.png",
+    "bytes": 5348539,
+    "sha256": "5a50007a6234940e1a07d4069833e9fdc09276955d7b02d1f291bcbbcd3f0c01",
+    "pricing": {
+      "currency": "USD",
+      "unitPrice": 1,
+      "unit": "units",
+      "configuredEstimateUSD": null,
+      "reason": "Billing quantity for configured image request was not exposed by current pricing API; one2K image submitted."
+    }
+  },
+  "nativeGeometry": {
+    "requestId": "01a11ba8-a049-7631-9a50-d06f57b957d8",
+    "nativeBounds": {
+      "min": [
+        -0.9507099390029907,
+        -0.36043599247932434,
+        -0.29253000020980835
+      ],
+      "max": [
+        0.8795130252838135,
+        0.3466460406780243,
+        0.30205899477005005
+      ],
+      "size": [
+        1.8302229642868042,
+        0.7070820331573486,
+        0.5945889949798584
+      ]
+    },
+    "rootAnchor": [
+      -0.7643000119181309,
+      -0.36043599247932434,
+      0.12113188044566543
+    ],
+    "limbAxis": [
+      0.9982163107191825,
+      0,
+      -0.059700896259473946
+    ],
+    "uniformScale": 0.6087711139924268,
+    "nativeToRoot": [
+      0.6076852554819272,
+      0,
+      0.03634418112222626,
+      0,
+      0,
+      0.6087711139924268,
+      0,
+      0,
+      -0.03634418112222626,
+      0,
+      0.6076852554819272,
+      0,
+      0.4688562870099025,
+      0.21942302066460423,
+      -0.045832199650758215,
+      1
+    ],
+    "bounds": {
+      "min": [
+        -0.11457696542019907,
+        0,
+        -0.2214440241791725
+      ],
+      "max": [
+        1.0000000000000002,
+        0.43045111700922917,
+        0.1632435925799079
+      ]
+    },
+    "vertices": 21833,
+    "triangles": 10590,
+    "sections": [
+      {
+        "x": 0,
+        "count": 380,
+        "yMin": 0,
+        "y10": 0.0033756299226974373,
+        "y25": 0.011666487182031504,
+        "y50": 0.037709123966158664,
+        "y75": 0.07342083527982832,
+        "yMax": 0.1574373474203653,
+        "zMin": -0.09724401601289226,
+        "zMax": 0.06164517002479268
+      },
+      {
+        "x": 0.05,
+        "count": 550,
+        "yMin": 0.00037196354207610915,
+        "y10": 0.0035077457413199287,
+        "y25": 0.010064224561072005,
+        "y50": 0.033951152823789355,
+        "y75": 0.1094253984866997,
+        "yMax": 0.16147714870918914,
+        "zMin": -0.08290901908444179,
+        "zMax": 0.09273269458452474
+      },
+      {
+        "x": 0.1,
+        "count": 120,
+        "yMin": 0.000903420377411035,
+        "y10": 0.07647870325453571,
+        "y25": 0.10455400413794992,
+        "y50": 0.1277573119604454,
+        "y75": 0.14753325568600528,
+        "yMax": 0.1686472576094692,
+        "zMin": -0.04923542235645794,
+        "zMax": 0.07213048478221583
+      },
+      {
+        "x": 0.15,
+        "count": 573,
+        "yMin": 0.05474556944856673,
+        "y10": 0.08556522177226014,
+        "y25": 0.10014955992402526,
+        "y50": 0.11593620282507548,
+        "y75": 0.1439421120609648,
+        "yMax": 0.18915431960732368,
+        "zMin": -0.01284490294843929,
+        "zMax": 0.07328829219058919
+      },
+      {
+        "x": 0.2,
+        "count": 323,
+        "yMin": 0.08296090547974774,
+        "y10": 0.1015016334295214,
+        "y25": 0.1112237030574155,
+        "y50": 0.12086541825511472,
+        "y75": 0.15964779274825466,
+        "yMax": 0.21495586475275216,
+        "zMin": -0.01372273849336831,
+        "zMax": 0.06274216533544136
+      },
+      {
+        "x": 0.25,
+        "count": 350,
+        "yMin": 0.10111688828977711,
+        "y10": 0.11797254083994496,
+        "y25": 0.13942259264674245,
+        "y50": 0.149175110416988,
+        "y75": 0.16745650074792828,
+        "yMax": 0.23517802026681417,
+        "zMin": -0.04047399039392775,
+        "zMax": 0.10070112232426565
+      },
+      {
+        "x": 0.3,
+        "count": 410,
+        "yMin": 0.09333070003191415,
+        "y10": 0.1161577988987716,
+        "y25": 0.14182297487454376,
+        "y50": 0.15956439032883588,
+        "y75": 0.22455983443657818,
+        "yMax": 0.32378950996550765,
+        "zMin": -0.13517691706426965,
+        "zMax": 0.09629784772727676
+      },
+      {
+        "x": 0.35,
+        "count": 855,
+        "yMin": 0.07102714774264382,
+        "y10": 0.103005897754094,
+        "y25": 0.13203089220846453,
+        "y50": 0.2464414947844,
+        "y75": 0.26608653372277014,
+        "yMax": 0.3236458371877444,
+        "zMin": -0.1503316856290544,
+        "zMax": 0.08658610899685201
+      },
+      {
+        "x": 0.4,
+        "count": 875,
+        "yMin": 0.019280382406174523,
+        "y10": 0.06803868502255608,
+        "y25": 0.09574446256955262,
+        "y50": 0.12341554202493757,
+        "y75": 0.17732040619579437,
+        "yMax": 0.316067256910175,
+        "zMin": -0.18901088199763721,
+        "zMax": 0.1021699636118529
+      },
+      {
+        "x": 0.45,
+        "count": 1624,
+        "yMin": 0.016103216496098804,
+        "y10": 0.09398267944114486,
+        "y25": 0.11967708345643925,
+        "y50": 0.2566609400109794,
+        "y75": 0.31364982952835063,
+        "yMax": 0.35006652442099906,
+        "zMin": -0.21053777916073643,
+        "zMax": 0.10082299795802843
+      },
+      {
+        "x": 0.5,
+        "count": 1665,
+        "yMin": 0.04939509650787166,
+        "y10": 0.10500450783092097,
+        "y25": 0.20395414311331778,
+        "y50": 0.27585365644138027,
+        "y75": 0.3539851862809651,
+        "yMax": 0.4302106524308136,
+        "zMin": -0.2214440241791725,
+        "zMax": 0.1365982096682896
+      },
+      {
+        "x": 0.55,
+        "count": 1779,
+        "yMin": 0.04331225344216502,
+        "y10": 0.22002022187910886,
+        "y25": 0.2781876859394841,
+        "y50": 0.30202291177785107,
+        "y75": 0.3512968507140719,
+        "yMax": 0.427479055374013,
+        "zMin": -0.21830305692265242,
+        "zMax": 0.12677599583941696
+      },
+      {
+        "x": 0.6,
+        "count": 2757,
+        "yMin": 0.06069083571495801,
+        "y10": 0.19861521919429145,
+        "y25": 0.2640477645736387,
+        "y50": 0.30567309658701025,
+        "y75": 0.3299429738529649,
+        "yMax": 0.43045111700922917,
+        "zMin": -0.21241309098336628,
+        "zMax": 0.13791904528503782
+      },
+      {
+        "x": 0.65,
+        "count": 2089,
+        "yMin": 0.07634112645522034,
+        "y10": 0.2486202900099017,
+        "y25": 0.2962310518976672,
+        "y50": 0.3170967061991572,
+        "y75": 0.33638194180245906,
+        "yMax": 0.4082011041021004,
+        "zMin": -0.17274274336632936,
+        "zMax": 0.14931057930093103
+      },
+      {
+        "x": 0.7,
+        "count": 1000,
+        "yMin": 0.10079850041542855,
+        "y10": 0.13226587766339432,
+        "y25": 0.18817419830465806,
+        "y50": 0.27827900315234894,
+        "y75": 0.32906268553662826,
+        "yMax": 0.38440730279584956,
+        "zMin": -0.17674440645503367,
+        "zMax": 0.13724125792248557
+      },
+      {
+        "x": 0.75,
+        "count": 1250,
+        "yMin": 0.08366767612383699,
+        "y10": 0.12128731076352553,
+        "y25": 0.14372173609009792,
+        "y50": 0.16579637168869682,
+        "y75": 0.21288361024432872,
+        "yMax": 0.3647896367964175,
+        "zMin": -0.08098530340682532,
+        "zMax": 0.13355859027793282
+      },
+      {
+        "x": 0.8,
+        "count": 2371,
+        "yMin": 0.07977640988130022,
+        "y10": 0.17138429296847132,
+        "y25": 0.19892569681089223,
+        "y50": 0.22655721193740574,
+        "y75": 0.23948933979212142,
+        "yMax": 0.28207288795346075,
+        "zMin": -0.07967068520895304,
+        "zMax": 0.15037504202448337
+      },
+      {
+        "x": 0.85,
+        "count": 796,
+        "yMin": 0.1085432868196666,
+        "y10": 0.15345171597573978,
+        "y25": 0.16811944747552718,
+        "y50": 0.21288360967736644,
+        "y75": 0.24233717772366986,
+        "yMax": 0.2994167721346422,
+        "zMin": -0.032510102341095234,
+        "zMax": 0.1432340117524689
+      },
+      {
+        "x": 0.9,
+        "count": 1034,
+        "yMin": 0.10492901566924998,
+        "y10": 0.1838671446035548,
+        "y25": 0.22080555166732946,
+        "y50": 0.23304063029671104,
+        "y75": 0.2459057925355032,
+        "yMax": 0.3107660779380596,
+        "zMin": 0.03956929535172711,
+        "zMax": 0.1632435925799079
+      },
+      {
+        "x": 0.95,
+        "count": 616,
+        "yMin": 0.07258075139277859,
+        "y10": 0.10492231190723665,
+        "y25": 0.1126372715597835,
+        "y50": 0.17917047215493778,
+        "y75": 0.20874457411438263,
+        "yMax": 0.23759301991615028,
+        "zMin": 0.01687189816798494,
+        "zMax": 0.09360233414873939
+      },
+      {
+        "x": 1,
+        "count": 104,
+        "yMin": 0.15479892721271205,
+        "y10": 0.16263746649977512,
+        "y25": 0.1674248415741441,
+        "y50": 0.17840220651397665,
+        "y75": 0.1873200900386197,
+        "yMax": 0.2078350656959957,
+        "zMin": 0.025340521776063066,
+        "zMax": 0.06003559737998812
+      }
+    ],
+    "nativeOakAnatomy": {
+      "extent": 1,
+      "shaftY": 0.14844685886934658,
+      "shaftZ": 0.07175104407902072,
+      "rootFade": 0.25,
+      "shaft": [
+        {
+          "x": 0.35,
+          "y": 0.1582336626034519,
+          "z": 0.052650987312214945,
+          "yMin": 0.13613691089900548,
+          "yMax": 0.18033041430789834,
+          "zMin": 0.027326593438445696,
+          "zMax": 0.0779753811859842,
+          "segments": 25,
+          "wood": 1
+        },
+        {
+          "x": 0.4,
+          "y": 0.14226053042146003,
+          "z": 0.06525670244659547,
+          "yMin": 0.1155883151420408,
+          "yMax": 0.16893274570087924,
+          "zMin": 0.04434863219087312,
+          "zMax": 0.08616477270231782,
+          "segments": 24,
+          "wood": 1
+        },
+        {
+          "x": 0.45,
+          "y": 0.111606411540105,
+          "z": 0.07792235882106611,
+          "yMin": 0.08967710450146568,
+          "yMax": 0.13353571857874433,
+          "zMin": 0.05671704119408979,
+          "zMax": 0.09912767644804243,
+          "segments": 23,
+          "wood": 1
+        },
+        {
+          "x": 0.5,
+          "y": 0.0937438413306059,
+          "z": 0.10144016249910828,
+          "yMin": 0.07396352445060418,
+          "yMax": 0.1135241582106076,
+          "zMin": 0.06688304477389996,
+          "zMax": 0.1359972802243166,
+          "segments": 24,
+          "wood": 1
+        },
+        {
+          "x": 0.55,
+          "y": 0.1012966991646936,
+          "z": 0.07982319989281665,
+          "yMin": 0.08403696557692583,
+          "yMax": 0.11855643275246136,
+          "zMin": 0.058700321100234,
+          "zMax": 0.1009460786853993,
+          "segments": 22,
+          "wood": 0.9848484848484849
+        },
+        {
+          "x": 0.6,
+          "y": 0.13231616311439073,
+          "z": 0.06834216739513213,
+          "yMin": 0.1115177816213676,
+          "yMax": 0.15311454460741386,
+          "zMin": 0.048859493525292244,
+          "zMax": 0.08782484126497202,
+          "segments": 20,
+          "wood": 1
+        },
+        {
+          "x": 0.65,
+          "y": 0.16465105622409212,
+          "z": 0.06979766094118509,
+          "yMin": 0.149781696807813,
+          "yMax": 0.17952041564037124,
+          "zMin": 0.04828437636837,
+          "zMax": 0.09131094551400018,
+          "segments": 19,
+          "wood": 1
+        },
+        {
+          "x": 0.7,
+          "y": 0.1772183864513735,
+          "z": 0.06716478388040603,
+          "yMin": 0.16005533825813453,
+          "yMax": 0.1943814346446125,
+          "zMin": 0.0511430931553208,
+          "zMax": 0.08318647460549125,
+          "segments": 25,
+          "wood": 0.9600000000000002
+        },
+        {
+          "x": 0.75,
+          "y": 0.1627935565006407,
+          "z": 0.06740145210378815,
+          "yMin": 0.13597225926311177,
+          "yMax": 0.18961485373816966,
+          "zMin": 0.044097651784886706,
+          "zMax": 0.09070525242268959,
+          "segments": 46,
+          "wood": 0.8768115942028986
+        },
+        {
+          "x": 0.8,
+          "y": 0.16431979456880857,
+          "z": 0.06929454436075515,
+          "yMin": 0.15525725124177606,
+          "yMax": 0.17338233789584107,
+          "zMin": 0.059983571828802436,
+          "zMax": 0.07860551689270785,
+          "segments": 11,
+          "wood": 1
+        },
+        {
+          "x": 0.85,
+          "y": 0.168363014363286,
+          "z": 0.06255916276980045,
+          "yMin": 0.16132034664173472,
+          "yMax": 0.17540568208483726,
+          "zMin": 0.054382521370555326,
+          "zMax": 0.07073580416904555,
+          "segments": 11,
+          "wood": 0.9696969696969696
+        },
+        {
+          "x": 0.9,
+          "y": 0.16181376173073678,
+          "z": 0.07360218430467078,
+          "yMin": 0.1563746515643455,
+          "yMax": 0.16725287189712806,
+          "zMin": 0.06712390802978203,
+          "zMax": 0.0800804605795595,
+          "segments": 10,
+          "wood": 1
+        },
+        {
+          "x": 0.94,
+          "y": 0.163208658013781,
+          "z": 0.08473151644420282,
+          "yMin": 0.16137732594618412,
+          "yMax": 0.1650399900813779,
+          "zMin": 0.08130016803251465,
+          "zMax": 0.08816286485589099,
+          "segments": 7,
+          "wood": 1
+        },
+        {
+          "x": 0.96,
+          "y": 0.16419425056538978,
+          "z": 0.05386146379645259,
+          "yMin": 0.16210426475759565,
+          "yMax": 0.16628423637318387,
+          "zMin": 0.051566335764496096,
+          "zMax": 0.05615659182840908,
+          "segments": 7,
+          "wood": 1
+        },
+        {
+          "x": 0.98,
+          "y": 0.16428357173360203,
+          "z": 0.05682291581788525,
+          "yMin": 0.1622064161536254,
+          "yMax": 0.16636072731357865,
+          "zMin": 0.05391914333723527,
+          "zMax": 0.059726688298535224,
+          "segments": 8,
+          "wood": 0.7083333333333334
+        }
+      ],
+      "source": "Measured actual native triangle-plane cross sections after uniform native-to-root transform; brown/gray texture-supported lower woody loops, upper canopy excluded",
+      "terminalNote": "Native main limb forks near x0.75. Lower terminal path tapers to fine connected twigs by x0.94\u20130.98; preserve those vertices in Lite rather than inflate or collapse them."
+    }
+  },
+  "sourceOriginal": {
+    "bytes": 14335748,
+    "sha256": "3f9d9285559292873f95e27bad704ba9b3d78c820ac5fb2d6052da479665eab0"
+  },
+  "rejectedAttempts": [
+    {
+      "endpoint": "meshy/v7.1/text-to-3d",
+      "requestId": "01a11b98-abb8-75d2-9068-8107f567d1d0",
+      "input": {
+        "prompt": "Isolated riverbank oak, complete rooted leaning tree. A huge buttressed trunk curves seamlessly into one massive crooked horizontal S-shaped limb reaching far to the right, gently sagging over open space. Thick irregular asymmetric Y-forks spread mainly sideways at shallow angles, recursively tapering into many crooked slender twigs. Airy broadleaf canopy with gaps, sparse hanging moss and vines. Rough dark fissured bark, healed knots and mossy crevices. Real living tree anatomy, unequal fork lengths and angles. No ground, water, scenery, straight bars, upright comb prongs or floating parts.",
+        "mode": "full",
+        "seed": 804721,
+        "model_type": "standard",
+        "target_polycount": 12000,
+        "topology": "triangle",
+        "should_remesh": true,
+        "symmetry_mode": "off",
+        "enable_pbr": true,
+        "geometry_resolution": "standard",
+        "enable_prompt_expansion": false,
+        "texture_prompt": "Natural dark brown oak bark with deep longitudinal fissures, rugged burl knots and weathered gray patches. Muted moss in damp crevices, sparse hanging moss and vines. Airy clusters of olive and forest green broad leaves with veins and irregular edges. Rough matte wood, soft leaf translucency appearance; zero metal. Realistic adventure game asset albedo, no painted highlights or directional shadows."
+      },
+      "estimatedCostUSD": 0.8,
+      "preview": {
+        "url": "https://v3b.fal.media/files/b/0aad8ef3/RsOBlFGvL6-7RednCIRSo_preview.png",
+        "content_type": "image/png",
+        "file_name": "preview.png",
+        "file_size": 159128
+      },
+      "reason": "Root and independent reviewer rejected upright umbrella canopy/radial octopus roots; no assets from this attempt shipped."
+    }
+  ],
+  "packing": {
+    "script": "scripts/pack-river-oak.mjs",
+    "nativeMetadataPath": "docs/meshy-river-oak-native.json",
+    "transform": "Bake native world transforms; exactly one positive uniform scale, horizontal rotation and root-origin translation. No per-axis packing scales, stem-baseline subtraction, slicing or terminal-domain collapse.",
+    "full": "10590 original triangles retained;2048 albedo/1024 detail; embedded WebP and meshopt",
+    "lite": "2915 triangles; UV-weighted permissive simplification, no component-pruning flag,182 lower far-twig vertices locked;512 albedo/256 detail",
+    "materials": "Generated albedo, normal, metallic-roughness detail maps retained; matte roughness factors of 0.92 packed and 0.93 in the runtime clone, zero metalness; no arbitrary color tint.",
+    "runtime": "Native whole-tree batches replace all old wood/leaf overlays. Global affine placement plus root-only bank seating is owned by runtime module."
+  },
+  "runtimeAssets": [
+    {
+      "file": "public/models/meshy-river-oak.glb",
+      "bytes": 2004232,
+      "sha256": "5c4a91aafe30e2d97f5907dd465c9b647f483be0e446f23c1012653219caf7c5",
+      "triangles": 10590,
+      "vertices": 21833,
+      "bounds": {
+        "min": [
+          -0.11457696557044983,
+          2.822450101766516e-05,
+          -0.22143932187274723
+        ],
+        "max": [
+          1,
+          0.4304229004055222,
+          0.16323888802245884
+        ]
+      },
+      "textures": [
+        {
+          "role": "normal",
+          "mime": "image/webp",
+          "bytes": 472272,
+          "width": 1024,
+          "height": 1024,
+          "embedded": true
+        },
+        {
+          "role": "albedo",
+          "mime": "image/webp",
+          "bytes": 1076596,
+          "width": 2048,
+          "height": 2048,
+          "embedded": true
+        },
+        {
+          "role": "metallic-roughness",
+          "mime": "image/webp",
+          "bytes": 135954,
+          "width": 1024,
+          "height": 1024,
+          "embedded": true
+        }
+      ],
+      "extensions": [
+        "EXT_meshopt_compression",
+        "EXT_texture_webp",
+        "KHR_mesh_quantization"
+      ],
+      "sceneAnatomy": true,
+      "protectedFarTwigVertices": 0
+    },
+    {
+      "file": "public/models/meshy-river-oak-lite.glb",
+      "bytes": 207516,
+      "sha256": "f562abd55a0e50531191add35cabf64d47657939490f342706baa97257bdf4b3",
+      "triangles": 2915,
+      "vertices": 4656,
+      "bounds": {
+        "min": [
+          -0.11441899836063385,
+          0.0003622541303088811,
+          -0.21828503288365256
+        ],
+        "max": [
+          0.9985865950584412,
+          0.43042188175196816,
+          0.15837804354763876
+        ]
+      },
+      "textures": [
+        {
+          "role": "normal",
+          "mime": "image/webp",
+          "bytes": 34194,
+          "width": 256,
+          "height": 256,
+          "embedded": true
+        },
+        {
+          "role": "albedo",
+          "mime": "image/webp",
+          "bytes": 70584,
+          "width": 512,
+          "height": 512,
+          "embedded": true
+        },
+        {
+          "role": "metallic-roughness",
+          "mime": "image/webp",
+          "bytes": 15996,
+          "width": 256,
+          "height": 256,
+          "embedded": true
+        }
+      ],
+      "extensions": [
+        "EXT_meshopt_compression",
+        "EXT_texture_webp",
+        "KHR_mesh_quantization"
+      ],
+      "sceneAnatomy": true,
+      "protectedFarTwigVertices": 182
+    }
+  ],
+  "review": {
+    "concept": "Root and independent reference reviewer accepted the complete left-rooted crooked oak side-profile concept.",
+    "native": "Root and independent reviewer accepted the actual Meshy native preview before packing.",
+    "runtime": "Full/Lite all-width/bank chase screenshots still reviewed separately by browser QA before publishing."
+  },
+  "nativePreservationCheck": {
+    "sourcePoints": 21833,
+    "packedPoints": 21833,
+    "unmatchedSourcePoints": 0,
+    "maxPositionError": 6.65360076472495e-05,
+    "tolerance": 0.0001,
+    "proof": "Every original native source position after its recorded uniform transform is present in the full optimized model within codec quantization error. No stem baseline/shape/domain deformation."
+  },
+  "packedTests": {
+    "command": "node --test tests/meshy-bough.test.js",
+    "result": "4 passed,0 failed",
+    "log": "/tmp/river-meshy-oak/native-packed-tests.log"
+  }
+}

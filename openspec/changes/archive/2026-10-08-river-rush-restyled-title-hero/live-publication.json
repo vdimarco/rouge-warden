@@ -1,0 +1,35 @@
+{
+  "head": "9bb7e46c5e03c17b4b8e0aa637a915d77072de2d",
+  "domain": "arcade.uptick.systems",
+  "exactLocalBytes": true,
+  "files": [
+    {
+      "path": "/river-rush/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 798,
+      "sha256": "8e939f4208dfdce82a7560eba0e6b7e3936efdb542c9ce04f1aa5e806b8e0263"
+    },
+    {
+      "path": "/river-rush/art/title-hero-reference-v1.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "bytes": 483096,
+      "sha256": "489f8bce0822bae801dc148ab6864f404658a2aeb10689cf643c3c4f39b3a162"
+    },
+    {
+      "path": "/river-rush/assets/index-C0jiCQVD.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=utf-8",
+      "bytes": 1108622,
+      "sha256": "4a63ed8d3d3ee4a401dfffb40a63cce6f2d43052836df3d54961b2aacca851da"
+    },
+    {
+      "path": "/river-rush/assets/index-Cf5Qdi04.css",
+      "status": 200,
+      "contentType": "text/css; charset=utf-8",
+      "bytes": 36930,
+      "sha256": "25b916b6458516afce2d733da108b54dae29ebde87aabe3819b5c6bce5e678c1"
+    }
+  ]
+}

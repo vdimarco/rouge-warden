@@ -52,32 +52,32 @@ export function createBranchTrees(scene,bark,mat,art,software){
  const geometry=new THREE.CylinderGeometry(1,1,1,software?8:12,software?5:8);
  const controls=['aP0','aP1','aP2','aP3'].map(name=>{const a=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);a.setUsage(THREE.DynamicDrawUsage);geometry.setAttribute(name,a);return a;});
  const radii=new THREE.InstancedBufferAttribute(new Float32Array(capacity*4),4);radii.setUsage(THREE.DynamicDrawUsage);geometry.setAttribute('aRadii',radii);
- const wood=new THREE.InstancedMesh(geometry,curvedBark(bark),capacity),identity=new THREE.Matrix4();
- for(let i=0;i<capacity;i++)wood.setMatrixAt(i,identity);
+ const wood=new THREE.InstancedMesh(geometry,curvedBark(bark),capacity),identity=new THREE.Matrix4(),white=new THREE.Color('#ffffff'),moss=new THREE.Color('#667348');
+ for(let i=0;i<capacity;i++){wood.setMatrixAt(i,identity);wood.setColorAt(i,white);}
  const green=mat('#e1e6d6');green.map=leafTexture(art);green.alphaTest=.38;green.side=THREE.DoubleSide;
  const leaves=new THREE.InstancedMesh(leafGeometry(),green,capacity),color=new THREE.Color();
  for(let i=0;i<capacity;i++)leaves.setColorAt(i,color.setRGB(.82+(i%5)*.035,.86+(i%4)*.035,.76+(i%3)*.06));
  for(const batch of [wood,leaves]){batch.count=0;batch.frustumCulled=false;batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);batch.receiveShadow=true;scene.add(batch);}
  const transform=new THREE.Object3D(),v=new THREE.Vector3();
  const cache=new WeakMap();let woodCount=0,leafCount=0,count=0,scenery=0;
- const state={trees:0,scenery:0,woodSegments:0,leafClusters:0,capacity:MAX_TREES,perTree:PER_TREE,drawCalls:2,style:'curved-tapered',bark:art.treebark?'fal':'fallback',foliage:art.treeleaves?'fal':'fallback',origins:[]};
+ const state={trees:0,scenery:0,woodSegments:0,leafClusters:0,capacity:MAX_TREES,perTree:PER_TREE,drawCalls:2,style:'rooted-recursive-oak',bark:art.treebark?'fal':'fallback',foliage:art.treeleaves?'fal':'fallback',origins:[]};
  function begin(){woodCount=leafCount=count=scenery=0;state.origins=[];generated.begin();}
  function add(e,travel,course,seed,scenic=false){
   if(count>=MAX_TREES)return;
   let saved=cache.get(e);if(!saved||saved.seed!==seed||Math.abs(saved.course-course)>.001){saved={seed,course,shape:scenic?scenicTree(e,course,seed):shorelineBranch(e,course,seed)};cache.set(e,saved);}
   const shape=saved.shape;
-  const meshy=!scenic&&generated.state.model==='meshy';
+  const meshy=!scenic&&!shape.legacyCenter&&generated.state.model==='meshy';
   if(meshy)generated.add(e,shape,travel,course,seed);
   const locate=node=>{const p=riverPoint(travel,course+node.d,node.x,seed);return v.set(p.x,p.y+node.y,p.z);};
-  for(const segment of shape.wood){
+  for(const segment of meshy?[]:shape.wood){
    for(const [i,node] of [segment.a,segment.c1,segment.c2,segment.b].entries()){locate(node);controls[i].setXYZ(woodCount,v.x,v.y,v.z);}
    const length=Math.hypot(segment.b.x-segment.a.x,segment.b.y-segment.a.y,segment.b.d-segment.a.d);
-   radii.setXYZW(woodCount++,segment.r,segment.rEnd,length,0);
+   radii.setXYZW(woodCount++,segment.r,segment.rEnd,length,0);wood.setColorAt(woodCount-1,segment.kind==='vine'?moss:white);
   }
-  for(const leaf of shape.leaves){transform.position.copy(locate(leaf.p));transform.rotation.set(.15,leaf.turn,.12);transform.scale.set(...leaf.size);transform.updateMatrix();leaves.setMatrixAt(leafCount++,transform.matrix);}
+  for(const leaf of meshy?[]:shape.leaves){transform.position.copy(locate(leaf.p));transform.rotation.set(.15,leaf.turn,.12);transform.scale.set(...leaf.size);transform.updateMatrix();leaves.setMatrixAt(leafCount++,transform.matrix);}
   if(!scenic&&state.origins.length<6)state.origins.push({id:e.id,lane:e.lane,course,side:shape.side,root:{...shape.root},tip:{...shape.tip},span:shape.span,contacts:shape.contacts,passed:!!e.done});
   count++;if(scenic)scenery++;
  }
- function finish(){wood.count=woodCount;leaves.count=leafCount;for(const a of [...controls,radii])a.needsUpdate=true;leaves.instanceMatrix.needsUpdate=true;generated.finish();Object.assign(state,{trees:count,scenery,woodSegments:woodCount,leafClusters:leafCount,model:generated.state.model,meshyInstances:generated.state.instances,meshyTriangles:generated.state.triangles,meshySamples:generated.state.samples,drawCalls:2+generated.state.batches,style:generated.state.model==='meshy'?'meshy-gnarled':'curved-tapered'});}
+ function finish(){wood.count=woodCount;leaves.count=leafCount;for(const a of [...controls,radii])a.needsUpdate=true;leaves.instanceMatrix.needsUpdate=true;wood.instanceColor.needsUpdate=true;generated.finish();Object.assign(state,{trees:count,scenery,woodSegments:woodCount,leafClusters:leafCount,model:generated.state.model,meshyInstances:generated.state.instances,meshyTriangles:generated.state.triangles,meshySamples:generated.state.samples,drawCalls:(woodCount?1:0)+(leafCount?1:0)+(generated.state.instances?generated.state.batches:0),style:generated.state.model==='meshy'?'meshy-natural-oak':'rooted-recursive-oak'});}
  return {begin,add,finish,state,installModel:generated.install};
 }

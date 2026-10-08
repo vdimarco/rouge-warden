@@ -1,4 +1,9 @@
-# Meshy shoreline boughs
+# Historical Meshy shoreline boughs
+
+These archived flattened-bough assets and their provenance remain for history.
+The active native complete-tree pipeline is documented in `meshy-river-oak.md`
+and `meshy-river-oak-sources.json`. `scripts/pack-bough.mjs` is explicitly retired;
+its former runtime normalization helper no longer applies to the new tree.
 
 The duck obstacles use a real Meshy 7.1 generated hardwood prop, including its
 knotted core, irregular connected forks, broken stubs, sparse leaf sprays,

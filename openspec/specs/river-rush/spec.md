@@ -45,16 +45,20 @@ The simulation SHALL stop on pause, page hide and completion. Reduced motion SHA
 - **WHEN** reduced motion changes during play
 - **THEN** water displacement and decorative effects stop while lane/jump/duck controls remain functional
 
-### Requirement: Higgsfield living title scene
-The title scene SHALL use a Higgsfield-generated silent looping video based on the approved character art, with a still-image fallback. It SHALL preserve live readable menu controls, pause while hidden or covered by instructions, and use the still image for reduced motion or data-saving.
+### Requirement: Character-led title artwork
+The title screen SHALL display local illustrated jungle-rafting key art inspired by the supplied adult character, with long dark hair, a brown wrap and wooden raft in rapids. The illustration SHALL contain no phone overlay or baked-in title text. Responsive crops SHALL retain the character's face and readable live title, Start, map, Help, Leaderboard and arcade controls. The previous title video SHALL NOT cover this artwork.
 
-#### Scenario: Enter the menu
-- **WHEN** the menu loads in a normal-motion browser
-- **THEN** the river and character artwork animate behind working Start and Switch game controls
+#### Scenario: View the title across layouts
+- **WHEN** the player opens the title at 1365×900, 390×844 or 844×390
+- **THEN** the hero is undistorted, his face and the full Start button are initially visible, and all menu actions are reachable without artwork intercepting input
 
-#### Scenario: Video unavailable
-- **WHEN** video cannot load or motion/data preferences disable it
-- **THEN** the approved still image and all menu actions remain usable
+#### Scenario: Use the title actions
+- **WHEN** the player starts a ready run or opens and closes Help or Leaderboard
+- **THEN** the existing action works and returning to the title restores its artwork and controls
+
+#### Scenario: Art unavailable or motion reduced
+- **WHEN** the hero image fails to load or the player prefers reduced motion
+- **THEN** readable live menu actions remain usable on a stable dark background without waiting for the title artwork
 
 ### Requirement: Runner perspective art
 River Rush SHALL present a three-lane forward-perspective river with generated environment, approved character likeness, long hair and only a modest loincloth. Lane swaps, raft jumps, ducks and obstacle depth SHALL clearly communicate their gameplay state at 1536×1024, 390×844 and 844×390.
@@ -358,24 +362,35 @@ Tree resources SHALL be prepared and bounded.
 - **THEN** full-width branches remain duckable, partial spans retain a fair clear or duck route, paused pixels stay fixed, and fallback coverage agrees within fixed resource bounds
 
 ### Requirement: Natural tree anatomy and materials
-Shoreline duck trees SHALL have rooted broad trunks, detailed bark, naturally
-tapering main limbs and multiple connected secondary and smaller offshoots
-distributed along each span. The low limb SHALL sag gently across its covered
-lanes without a steep angular drop, singular needle end or upward hook.
-The primary 3D limb SHALL retain optimized local Meshy geometry and recorded
-provenance. All three widths SHALL have distinct readable silhouettes from
-both banks. Low wood and foliage SHALL respect covered/clear lanes and duck
-clearance; decorative trees SHALL stay outside playable water. Texture and
-geometry preparation SHALL finish before active play; failed assets SHALL
-retain matching playable fallback anatomy and controls.
+Shoreline duck trees SHALL resemble the supplied oak-over-water and mossy
+jungle-limb references: a rooted leaning bank trunk continuously grows into a
+thick crooked tapering limb with broad asymmetric lateral forks, recursively
+smaller twigs, airy broadleaf foliage and hanging strands. They SHALL NOT read
+as a straight rail with repeated upright prongs, a detached beam/stump or tiny
+foliage balls at equally spaced tips. The visible bank root, branch collar and
+low river limb SHALL form one coherent connected tree. One/two/three-lane
+coverage SHALL vary by natural reach rather than a decorative fixed fork count.
+The primary view SHALL use an optimized locally hosted complete Meshy tree
+with recorded provenance and preserve its native topology/proportions. Low
+blocking wood SHALL register to covered lanes and remain above a ducking raft;
+uncovered lanes SHALL stay open. Native and procedural fallback trees SHALL
+retain the same span rules, speed, actions and inputs. Decorative trees SHALL
+remain outside playable water. Resources SHALL be prepared before play and
+recycled within fixed limits; failed assets SHALL retain a natural playable
+fallback.
 
-#### Scenario: Read connected natural anatomy
-- **WHEN** a one-, two- or three-lane branch approaches from either bank
-- **THEN** broad connected wood grows smoothly from the trunk, multiple substantial offshoots stem from it, and taper and bark remain readable on phone and desktop
+#### Scenario: Read a naturally attached canopy
+- **WHEN** one-, two- or three-lane trees approach from either bank in phone or desktop chase framing
+- **THEN** a visible grounded trunk and broad collar support irregular crooked tapering wood, sideways forks, hanging twigs and sparse foliage like the supplied references
+- **AND** the tree remains visibly attached without a repeated rail/antenna silhouette or counted lollipop tips
 
-#### Scenario: Preserve clearance and resources
-- **WHEN** the raft ducks, changes between covered lanes, pauses or advances deep into a map
-- **THEN** low wood agrees with span coverage, the ducking silhouette clears it, uncovered lanes stay open, paused pixels remain identical and prepared tree resources stay bounded
+#### Scenario: Preserve physical branch play
+- **WHEN** a player ducks through a covered lane or passes beside a partial tree
+- **THEN** the blocking limb agrees with its contact marker, ducking clears the wood and uncovered lanes remain open with existing reward/input behavior
+
+#### Scenario: Prepared native tree and fallback
+- **WHEN** the run pauses, enables reduced motion, advances through all maps or cannot load the new native model
+- **THEN** paused pixels stay unchanged, essential coverage remains readable, native proportions or matching organic fallback remain intact and tree/texture/shader resources stay bounded
 
 ### Requirement: Three finite adventure maps
 River Rush SHALL offer exactly three maps in order: Canopy Run, Redstone Rapids

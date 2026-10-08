@@ -1,0 +1,95 @@
+{
+  "nativeArtAccepted": true,
+  "reviewers": {
+    "root": "Corrected near full/Lite plus both phone full-bank mid Lite accepted.",
+    "independentBranchReferenceReview": "All7 fullPBR views and Lite allwidth/bank near/mid accepted: rooted collar/limb, crooked substantial wood, unequal forks, natural taper and airy foliage, restored bark shading; no rail/prong/leaf-ball/detached beam recurrence.",
+    "browserQA": "Corrected actual native view retains connected crooked anatomy and visible bark volume; no comb/rail recurrence across widths/banks. Native branch and bank attachment remains visible in full actual-camera mid views."
+  },
+  "fallbackAcceptance": "Revised rooted-recursive oak is approved as a backup direction; flat Canvas2D material is a documented fallback limitation, not the primary reference art.",
+  "rejectionHistory": [
+    "First fallback rejected for constant rail, antenna posts, pom-pom clumps, boot anchor.",
+    "Initial actual native full/Lite both rejected as almost-black silhouettes; worldD to world-minusZ reflection corrected by one winding reversal/tangent handedness change, preserving source anatomy."
+  ],
+  "receipts": {
+    "rejectedInitialFallback": "/tmp/river-natural-oak-fallback-early/art-review.json",
+    "revisedFallback": "/tmp/river-natural-oak-fallback-compact.json",
+    "rejectedBlackLite": "/tmp/river-natural-oak-native-early/branch-spans.json",
+    "rejectedBlackPBR": "/tmp/river-natural-oak-native-full-early/branch-spans.json",
+    "correctedLiteNear": "/tmp/river-natural-oak-native-lighting-lite/branch-spans.json",
+    "correctedPBRNear": "/tmp/river-natural-oak-native-lighting-full/branch-spans.json",
+    "correctedLiteMatrix": "/tmp/river-natural-oak-native-lite-matrix/branch-spans.json",
+    "correctedPBRMatrix": "/tmp/river-natural-oak-native-full-matrix/branch-spans.json",
+    "correctedPBRPhoneMid": "/tmp/river-natural-oak-native-full-phone-mid/branch-spans.json"
+  },
+  "nativeAssets": {
+    "meshy-river-oak.glb": {
+      "bytes": 2004232,
+      "sha256": "5c4a91aafe30e2d97f5907dd465c9b647f483be0e446f23c1012653219caf7c5"
+    },
+    "meshy-river-oak-lite.glb": {
+      "bytes": 207516,
+      "sha256": "f562abd55a0e50531191add35cabf64d47657939490f342706baa97257bdf4b3"
+    }
+  },
+  "coverage": {
+    "Lite": {
+      "correctedNearPairs": 2,
+      "remainingAllWidthBankLayoutNearMidViews": 26
+    },
+    "fullPBR": {
+      "correctedNearPairs": 2,
+      "allWidthBankDesktopNearPlusPhoneNear": 7,
+      "phoneFullBankMid": 1
+    },
+    "fallbackWebGL": 28,
+    "fallbackCanvas2D": 24
+  },
+  "functional": {
+    "correctedLiteMatrix": {
+      "passed": true,
+      "resourcesBefore": {
+        "uploads": 51,
+        "shaders": 76
+      },
+      "resourcesAfter": {
+        "uploads": 51,
+        "shaders": 76
+      },
+      "gpuErrors": [],
+      "nativeCapacity": 32,
+      "nativeInstancesAtSaturation": 32,
+      "coverageMarkerCapacity": 192,
+      "stoppedPixelsEqual": true,
+      "reducedRepeatedEqual": true,
+      "assetRequests": [
+        "http://127.0.0.1:3001/models/meshy-river-oak-lite.glb"
+      ]
+    },
+    "correctedPBRMatrix": {
+      "passed": true,
+      "resourcesBefore": {
+        "uploads": 82,
+        "shaders": 86
+      },
+      "resourcesAfter": {
+        "uploads": 82,
+        "shaders": 86
+      },
+      "gpuErrors": [],
+      "nativeCapacity": 32,
+      "nativeInstancesAtSaturation": 32,
+      "coverageMarkerCapacity": 192,
+      "stoppedPixelsEqual": true,
+      "reducedRepeatedEqual": true,
+      "assetRequests": [
+        "http://127.0.0.1:3001/models/meshy-river-oak.glb"
+      ]
+    }
+  },
+  "limitations": [
+    "Chromium SwiftShader; hardware FPS and human play feel not measured.",
+    "Fixtures use explicit state/time, exact gameplay camera, full uncropped canvas. Natural App proof runs separately with real inputs and no state/clock/seed writes.",
+    "Phone near outer roots can lie outside the fixed game camera; whole-bank mid views show root seating.",
+    "Geometry assertions do not grant art approval; root and independent critic actual-image verdicts are recorded separately."
+  ]
+}

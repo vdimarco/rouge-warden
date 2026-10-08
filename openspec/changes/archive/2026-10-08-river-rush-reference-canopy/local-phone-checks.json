@@ -1,0 +1,223 @@
+{
+  "passed": true,
+  "layout": "390x844 phone",
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-D6GsolDK.js",
+  "assetRequests": [
+    "http://127.0.0.1:8765/river-rush/models/meshy-river-oak-lite.glb"
+  ],
+  "sourceReceipt": "/tmp/river-natural-oak-local-phone/branch-spans.json",
+  "allThreeWidths": [
+    1,
+    2,
+    3
+  ],
+  "actualDuckContacts": [
+    {
+      "width": 2,
+      "branchLanes": [
+        1,
+        2
+      ],
+      "physicalPlayerLane": 0.9999999999999503,
+      "contactTime": 2.649808226035009,
+      "action": "duck"
+    },
+    {
+      "width": 3,
+      "branchLanes": [
+        0,
+        1,
+        2
+      ],
+      "physicalPlayerLane": 1.5124730548235768e-13,
+      "contactTime": 5.852287100555772,
+      "action": "duck"
+    },
+    {
+      "width": 1,
+      "branchLanes": [
+        0
+      ],
+      "physicalPlayerLane": 4.411804108614604e-14,
+      "contactTime": 16.636629189512234,
+      "action": "duck"
+    }
+  ],
+  "newNativeOakProof": [
+    {
+      "width": 1,
+      "model": "meshy",
+      "style": "meshy-natural-oak",
+      "topology": "complete-native-tree",
+      "side": -1,
+      "contacts": [
+        {
+          "lane": 0,
+          "x": -3.8000000000000007,
+          "y": 3.26,
+          "d": 0
+        }
+      ],
+      "nativeRoot": {
+        "x": -18.739195077932695,
+        "y": 1.165354757118911,
+        "d": 1.3554
+      },
+      "originRoot": {
+        "x": -18.739195077932695,
+        "y": 1.165354757118911,
+        "d": 1.3554
+      }
+    },
+    {
+      "width": 2,
+      "model": "meshy",
+      "style": "meshy-natural-oak",
+      "topology": "complete-native-tree",
+      "side": 1,
+      "contacts": [
+        {
+          "lane": 1,
+          "x": 0,
+          "y": 3.2576902881949796,
+          "d": -0.09326596338711401
+        },
+        {
+          "lane": 2,
+          "x": 3.8000000000000007,
+          "y": 3.26230971180502,
+          "d": 0.09326596338711357
+        }
+      ],
+      "nativeRoot": {
+        "x": 22.81317592929347,
+        "y": 0.8534998597684047,
+        "d": 1.7766
+      },
+      "originRoot": {
+        "x": 22.81317592929347,
+        "y": 0.8534998597684047,
+        "d": 1.7766
+      }
+    },
+    {
+      "width": 3,
+      "model": "meshy",
+      "style": "meshy-natural-oak",
+      "topology": "complete-native-tree",
+      "side": 1,
+      "contacts": [
+        {
+          "lane": 0,
+          "x": -3.8000000000000007,
+          "y": 3.2317148502685127,
+          "d": -0.11722542213395348
+        },
+        {
+          "lane": 1,
+          "x": 0,
+          "y": 3.2482451623217674,
+          "d": -0.015814465814031564
+        },
+        {
+          "lane": 2,
+          "x": 3.8000000000000007,
+          "y": 3.3000399874097193,
+          "d": 0.1330398879479857
+        }
+      ],
+      "nativeRoot": {
+        "x": 21.68469580713312,
+        "y": 1.0870756273955626,
+        "d": 1.7193999999999998
+      },
+      "originRoot": {
+        "x": 21.68469580713312,
+        "y": 1.0870756273955626,
+        "d": 1.7193999999999998
+      }
+    }
+  ],
+  "sharedCoverageError": 0,
+  "final": {
+    "time": 17.150100000000105,
+    "distance": 956.7011886740003,
+    "phase": "playing",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "hits": [],
+  "pause": {
+    "sameStatus": true,
+    "samePixels": true
+  },
+  "resourcesBefore": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "resourcesAfter": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "gpuErrors": [],
+  "phoneGuideGesture": {
+    "before": {
+      "lane": 2,
+      "time": 4.816599999999993,
+      "distance": 255.6199804464002
+    },
+    "x": 40,
+    "y": 101,
+    "step": -1,
+    "text": "Duck full riverSwipe down to duck",
+    "hint": {
+      "x": 15,
+      "y": 78,
+      "right": 189,
+      "bottom": 124,
+      "width": 174,
+      "height": 46
+    },
+    "entityId": 35,
+    "lead": 1.035895971268178,
+    "stage": "restore-and-duck",
+    "sideways": {
+      "lane": 1,
+      "time": 4.866599999999993
+    },
+    "after": {
+      "lane": 2,
+      "action": "duck",
+      "time": 4.916599999999993,
+      "distance": 261.0352108464002
+    },
+    "actualPointerEvents": true,
+    "browserSideDispatchThroughAppHandlers": true,
+    "startsInsideHint": true,
+    "appStateOrClockMutations": false,
+    "screen": "playing",
+    "textAfter": "Duck full riverSwipe down to duck"
+  },
+  "screenshots": [
+    {
+      "width": 2,
+      "screenshot": "/tmp/river-natural-oak-local-phone/phone-natural-width2.png"
+    },
+    {
+      "width": 3,
+      "screenshot": "/tmp/river-natural-oak-local-phone/phone-natural-width3.png"
+    },
+    {
+      "width": 1,
+      "screenshot": "/tmp/river-natural-oak-local-phone/phone-natural-width1.png"
+    }
+  ],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrWallClock": false,
+  "leaderboardWrites": false,
+  "limitations": [
+    "Chromium uses SwiftShader; physical phone FPS and human reaction feel are not measured.",
+    "Visual fixtures set their own game states and clocks. Natural App runs retain Date.now seeds and use the real keyboard and pointer handlers."
+  ],
+  "artAcceptanceReceipt": "/tmp/river-natural-oak-art-acceptance.json"
+}
