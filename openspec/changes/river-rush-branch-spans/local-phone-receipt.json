@@ -1,0 +1,195 @@
+{
+  "passed": true,
+  "layout": "phone",
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-BpSfABkQ.js",
+  "actualAppStateOrClockMutations": false,
+  "fixedSeedOrWallClock": false,
+  "contacts": [
+    {
+      "entityId": 107,
+      "spanWidth": 1,
+      "branchLanes": [
+        2
+      ],
+      "action": "duck",
+      "playerLane": 1.9999999999999805,
+      "actionTime": 0.2795590862193763,
+      "contactTime": 18.479659086219502
+    },
+    {
+      "entityId": 13,
+      "spanWidth": 2,
+      "branchLanes": [
+        1,
+        2
+      ],
+      "action": "duck",
+      "playerLane": 0.9999999999999503,
+      "actionTime": 0.28310822619369963,
+      "contactTime": 2.649808226193699
+    },
+    {
+      "entityId": 41,
+      "spanWidth": 3,
+      "branchLanes": [
+        0,
+        1,
+        2
+      ],
+      "action": "duck",
+      "playerLane": 2.561353979561305e-12,
+      "actionTime": 0.21505403006879295,
+      "contactTime": 7.348454030068777
+    }
+  ],
+  "guide": {
+    "hint": {
+      "x": 15,
+      "y": 78,
+      "right": 189,
+      "bottom": 124,
+      "width": 174,
+      "height": 46
+    },
+    "text": "Duck full riverSwipe down to duck",
+    "map": {
+      "x": 237,
+      "y": 78,
+      "right": 375,
+      "bottom": 176.4375,
+      "width": 138,
+      "height": 98.4375
+    },
+    "score": {
+      "x": 57,
+      "y": 18,
+      "right": 296,
+      "bottom": 67,
+      "width": 239,
+      "height": 49
+    },
+    "rush": {
+      "x": 61,
+      "y": 668,
+      "right": 329,
+      "bottom": 737,
+      "width": 268,
+      "height": 69
+    },
+    "buttons": [
+      {
+        "x": 15,
+        "y": 757,
+        "right": 73,
+        "bottom": 822,
+        "width": 58,
+        "height": 65
+      },
+      {
+        "x": 121,
+        "y": 757,
+        "right": 191,
+        "bottom": 822,
+        "width": 70,
+        "height": 65
+      },
+      {
+        "x": 199,
+        "y": 757,
+        "right": 269,
+        "bottom": 822,
+        "width": 70,
+        "height": 65
+      },
+      {
+        "x": 317,
+        "y": 757,
+        "right": 375,
+        "bottom": 822,
+        "width": 58,
+        "height": 65
+      }
+    ],
+    "pointerEvents": "none",
+    "time": 6.466699999999986,
+    "distance": 345.5394173116001
+  },
+  "guideGesture": {
+    "before": {
+      "lane": 0,
+      "time": 6.466699999999986,
+      "distance": 345.5394173116001
+    },
+    "x": 40,
+    "y": 101,
+    "step": 1,
+    "text": "Duck full riverSwipe down to duck",
+    "hint": {
+      "x": 15,
+      "y": 78,
+      "right": 189,
+      "bottom": 124,
+      "width": 174,
+      "height": 46
+    },
+    "entityId": 41,
+    "lead": 0.8819295161790919,
+    "stage": "restore-and-duck",
+    "sideways": {
+      "lane": 1,
+      "time": 6.516699999999986
+    },
+    "after": {
+      "lane": 0,
+      "action": "duck",
+      "time": 6.566699999999986,
+      "distance": 351.02725211160015
+    },
+    "actualPointerEvents": true,
+    "browserSideDispatchThroughAppHandlers": true,
+    "startsInsideHint": true,
+    "appStateOrClockMutations": false,
+    "screen": "playing",
+    "textAfter": "Duck full riverSwipe down to duck"
+  },
+  "final": {
+    "time": 19.000100000000135,
+    "distance": 1067.6346700696,
+    "phase": "playing",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "resourcesBefore": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "resourcesAfter": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "maxCoverageError": 0,
+  "stoppedProof": {
+    "sameStatus": true,
+    "samePixels": true
+  },
+  "screenshots": [
+    {
+      "width": 2,
+      "screenshot": "/tmp/river-branch-spans-local-phone/phone-natural-width2.png"
+    },
+    {
+      "width": 3,
+      "screenshot": "/tmp/river-branch-spans-local-phone/phone-natural-width3.png"
+    },
+    {
+      "width": 1,
+      "screenshot": "/tmp/river-branch-spans-local-phone/phone-natural-width1.png"
+    }
+  ],
+  "errors": [],
+  "gpuErrors": [],
+  "limitations": [
+    "Chromium uses SwiftShader; physical phone FPS and human reaction feel are not measured.",
+    "Visual fixtures set their own game states and clocks. Natural App runs retain Date.now seeds and use the real keyboard and pointer handlers."
+  ]
+}

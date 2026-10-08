@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,emptyInput,queueAction,updateGame,timeToImpact,nextLevel,restartLevel,snapshot} from '../src/game/engine.js';
+import {createGame,emptyInput,queueAction,updateGame,timeToImpact,nextLevel,restartLevel,snapshot,hazardTouchesLane} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
 
 test('40 delayed-input players clear the longer escalating adventure unshielded at 30/60/120 Hz, with and without Rush',()=>{
@@ -14,10 +14,10 @@ test('40 delayed-input players clear the longer escalating adventure unshielded 
    for(let frame=0;frame<Math.ceil(level.length/level.startSpeed+10)*hz&&g.phase==='playing';frame++){
     const obstacles=g.entities.filter(e=>!e.done&&['rock','log','branch'].includes(e.type));
     for(const e of obstacles){lastHazard=Math.max(lastHazard,e.d);assert.ok(e.d<level.length-FINISH_RUNWAY);}
-    const next=obstacles.find(e=>e.lane===g.lane);
+    const next=obstacles.find(e=>hazardTouchesLane(e,g.lane));
     if(next&&!handled.has(next.id)&&timeToImpact(g,next.d)<.62&&!pending){
      const row=obstacles.filter(e=>e.row===next.row);
-     const safe=[0,1,2].find(l=>!row.some(e=>e.lane===l));
+     const safe=[0,1,2].find(l=>!row.some(e=>hazardTouchesLane(e,l)));
      assert.ok(next.type!=='rock'||safe!==undefined,'a rock row has no route');
      pending={id:next.id,at:g.time+.18+(seed%7)*.018,actions:next.type==='rock'?Array.from({length:Math.abs(safe-g.lane)},()=>safe>g.lane?'right':'left'):[next.type==='log'?'jump':'duck']};
     }

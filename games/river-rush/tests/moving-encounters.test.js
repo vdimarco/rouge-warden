@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,emptyInput,queueAction,updateGame,timeToImpact,snapshot,speedAt} from '../src/game/engine.js';
+import {createGame,emptyInput,queueAction,updateGame,timeToImpact,snapshot,speedAt,hazardTouchesLane} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
 import {entityLane,entityPose,encounterMotion,TARGET_VALUE,TARGET_CHARGE} from '../src/game/moving-encounters.js';
 import {worldEntityVisible,laneSpring} from '../src/game/world.js';
@@ -192,7 +192,7 @@ test('all seeded maps offer three sparse species and reachable clear-water relic
     if(e.enemy!=='fish')assert.ok(e.motion.endD>e.d,'weaving/swooping wildlife stops before contact');
     assert.ok(!(e.terrainActive&&e.sectionType==='wave-train'&&e.terrainComboAvailable),'an enemy replaces an advertised chain row');
    }else{
-    targets++;assert.ok(e.recovery);assert.ok(row.every(h=>h.lane!==e.lane));assert.ok(row.every(h=>!h.enemy));
+    targets++;assert.ok(e.recovery);assert.ok(row.every(h=>!hazardTouchesLane(h,e.lane)));assert.ok(row.every(h=>!h.enemy));
     assert.ok(entities.filter(c=>c.row===e.row&&c.type==='coin').every(c=>!Number.isFinite(c.jumpHeight)),'ground relic conflicts with its row jump gold');
     const before=entities.filter(h=>hazard(h)&&h.d<e.d).at(-1),after=entities.find(h=>hazard(h)&&h.d>e.d);
     assert.ok(!before||(e.d-before.d)/(level.maxSpeed*1.32)>.45,'the preceding reasonable late jump cannot land');
@@ -212,8 +212,8 @@ test('relic-chasing full maps remain reachable at early/late action leads and 30
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),first=obstacles[0];
    if(first){
     const row=obstacles.filter(e=>e.row===first.row),target=g.entities.find(e=>!e.done&&e.type==='target'&&e.row===first.row),coins=g.entities.filter(e=>e.type==='coin'&&e.row===first.row);
-    const lane=target?.lane??coins[0]?.lane??[0,1,2].find(l=>!row.some(e=>e.lane===l));
-    const contact=row.find(e=>e.lane===lane);
+    const lane=target?.lane??coins[0]?.lane??[0,1,2].find(l=>!row.some(e=>hazardTouchesLane(e,l)));
+    const contact=row.find(e=>hazardTouchesLane(e,lane));
     if(g.distance>=holdUntil&&timeToImpact(g,first.d)<.85&&lane!==undefined&&g.lane!==lane)for(let n=0;n<Math.abs(lane-g.lane);n++)queueAction(input,lane>g.lane?'right':'left');
     if(contact&&contact.type!=='rock'&&!handled.has(first.row)&&timeToImpact(g,first.d)<=lead){queueAction(input,contact.type==='log'?'jump':'duck');handled.add(first.row);holdUntil=Math.max(first.d,...coins.map(e=>e.d));}
    }

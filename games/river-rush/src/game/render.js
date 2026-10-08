@@ -1,4 +1,4 @@
-import { jumpHeight, VIEW_DISTANCE } from './engine.js';
+import { jumpHeight, VIEW_DISTANCE, HAZARD_LANE_RADIUS } from './engine.js';
 import {coinPixelLift,coinFlightPixelLift} from './coin-presentation.js';
 import { bankScenery, rapids, prepareWorldArt, worldEntityVisible } from './world.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
@@ -10,6 +10,7 @@ import {createCourseProfile} from './river-course.js';
 import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D,drawRapids2D,drawCanopyTerrain2D } from './map-2d.js';
 import {impactFeedback,impactParticle} from './impact-feedback.js';
 import {entityPose} from './moving-encounters.js';
+import {isBranchSpan,branchSpan} from './branch-spans.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const courseProfiles=new WeakMap();
@@ -88,6 +89,24 @@ export function encounterProjection(e,g,width,height){
   const pose=entityPose(e,g.distance),z=e.d-g.distance,p=projection(width,height,pose.lane,z);
   const unit=p.corridor/11.4*p.scale,base=e.enemy==='bird'?2.33:e.enemy==='fish'?.25:0;
   return {...p,...pose,unit,bodyY:p.y-(base+pose.lift)*unit,destination:projection(width,height,pose.contactLane,z),action:e.enemy==='bird'?'duck':e.enemy?'jump':'collect'};
+}
+// A branch is one contiguous obstacle, even when its reward lane lies near a
+// bank. Its water-plane cue includes exactly the physical collision envelope.
+export function branchProjection(e,g,width,height){
+  const span=branchSpan(e),z=e.d-g.distance,low=span.minLane-HAZARD_LANE_RADIUS,high=span.maxLane+HAZARD_LANE_RADIUS;
+  const center=projection(width,height,span.centerLane,z);
+  return {...span,low,high,z,center,start:projection(width,height,low,z),end:projection(width,height,high,z),
+    corners:[projection(width,height,low,z+1.2),projection(width,height,high,z+1.2),projection(width,height,high,z-1.2),projection(width,height,low,z-1.2)],
+    marks:span.lanes.map(lane=>projection(width,height,lane,z)),label:span.width===3?'DUCK · FULL RIVER ↓':`DUCK · ${span.width} ${span.width===1?'LANE':'LANES'} ↓`};
+}
+function branchGuide(ctx,e,g,width,height){
+  const p=branchProjection(e,g,width,height),unit=p.center.corridor/11.4*p.center.scale;
+  ctx.save();ctx.globalAlpha=Math.min(.78,(VIEW_DISTANCE-p.z)/24);ctx.strokeStyle='#a3ffcf';ctx.fillStyle='#67eeb323';ctx.lineWidth=Math.max(.8,unit*.045);
+  ctx.beginPath();ctx.moveTo(p.corners[0].x,p.corners[0].y);for(const point of p.corners.slice(1))ctx.lineTo(point.x,point.y);ctx.closePath();ctx.fill();ctx.stroke();
+  // Lane ticks explain a two-lane or full-width sweep without duplicating the
+  // rooted tree or adding separate floating hazard rings.
+  for(const mark of p.marks){ctx.beginPath();ctx.moveTo(mark.x,mark.y-unit*.08);ctx.lineTo(mark.x,mark.y+unit*.08);ctx.stroke();}
+  ctx.restore();
 }
 function encounterGuide(ctx,e,p,size){
   const to=p.destination,target=e.type==='target',color=target?'#72fff1':'#ff9377';
@@ -305,14 +324,19 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       else relicTarget(ctx,p,size,g.time,reducedMotion);
       ctx.restore();
     }
-    else if(e.type==='branch')shorelineTree(ctx,g,e,art,width,height);
+    else if(e.type==='branch'){
+      if(!e.done)branchGuide(ctx,e,g,width,height);
+      shorelineTree(ctx,g,e,art,width,height);
+    }
     else sprite(ctx,art.sprites,e.type==='magnet'?indexes.coin:indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
     if(e.type==='magnet'){ctx.save();ctx.font=`900 ${Math.max(12,size*.3)}px system-ui`;ctx.textAlign='center';ctx.strokeStyle='#3f2e14';ctx.lineWidth=3;ctx.strokeText('×2',p.x,bottom-size*.32);ctx.fillStyle='#fff8d0';ctx.fillText('×2',p.x,bottom-size*.32);ctx.restore();}
     if(!e.done&&['log','branch','rock'].includes(e.type)&&z<g.speed*1.65&&z>10) {
-      const label=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
+      const span=isBranchSpan(e)?branchProjection(e,g,width,height):null;
+      const label=span?span.label:e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
       const font=Math.max(10,15*p.scale);ctx.font=`800 ${font}px system-ui`;ctx.textAlign='center';
-      const labelX=e.enemy?p.destination.x:p.x,tw=ctx.measureText(label).width;ctx.fillStyle='#042a26dd';ctx.beginPath();ctx.roundRect(labelX-tw/2-7,bottom-size*.9-22,tw+14,20,5);ctx.fill();
-      ctx.fillStyle=e.type==='branch'?'#94ffe3':'#ffe49c';ctx.fillText(label,labelX,bottom-size*.9-8);
+      const labelX=span?span.center.x:e.enemy?p.destination.x:p.x,labelY=span?span.center.y-span.center.corridor/11.4*span.center.scale*3.1-12:bottom-size*.9-8,tw=ctx.measureText(label).width;
+      ctx.fillStyle='#042a26dd';ctx.beginPath();ctx.roundRect(labelX-tw/2-7,labelY-14,tw+14,20,5);ctx.fill();
+      ctx.fillStyle=e.type==='branch'?'#94ffe3':'#ffe49c';ctx.fillText(label,labelX,labelY);
     }
   }
   const lift=jumpHeight(g)*heroWidth*.95;

@@ -23,6 +23,7 @@ import {worldEntityVisible} from './world.js';
 import {impactFeedback,impactParticle,IMPACT_SPRAY_CAPACITY} from './impact-feedback.js';
 import {entityPose} from './moving-encounters.js';
 import {createMovingEncounterVisuals} from './moving-visuals.js';
+import {isBranchSpan,branchSpan,BRANCH_LANE_RADIUS} from './branch-spans.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -165,8 +166,26 @@ export function createScene(canvas,art,onLost){
  // a HUD-bound token from growing into a new golden world coin beside the raft.
  const scoreTokenMat=new THREE.MeshBasicMaterial({color:'#fff5d8',transparent:true,opacity:.94,depthTest:false,depthWrite:false,toneMapped:false});
  const scoreTokens=new THREE.InstancedMesh(coinGeo,scoreTokenMat,24),tokenDepth=new THREE.Vector3();scoreTokens.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scoreTokens.frustumCulled=false;scoreTokens.renderOrder=5;scene.add(scoreTokens);
+ // A single prepared buffer draws each duck span's water-plane contact band,
+ // covered-lane ticks and end caps. Width changes never allocate GPU resources.
+ const BRANCH_CUE_CAPACITY=32,branchMarkerCapacity=BRANCH_CUE_CAPACITY*6;
+ const branchMarkers=new THREE.InstancedMesh(new THREE.BoxGeometry(1,.025,1),new THREE.MeshBasicMaterial({color:'#85edd7',transparent:true,opacity:.76,depthTest:false,depthWrite:false,toneMapped:false}),branchMarkerCapacity),branchMarkerPose=new THREE.Object3D();
+ branchMarkers.count=0;branchMarkers.frustumCulled=false;branchMarkers.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(branchMarkers);
+ const branchCoverage={capacity:BRANCH_CUE_CAPACITY,instanceCapacity:branchMarkerCapacity,drawBatches:1,active:0,instances:0,samples:[]};let branchMarkerCount=0;
+ function branchMark(position,width,depth){if(branchMarkerCount>=branchMarkerCapacity)return;branchMarkerPose.position.set(position.x,position.y+.12,position.z);branchMarkerPose.rotation.set(0,0,0);branchMarkerPose.scale.set(width,1,depth);branchMarkerPose.updateMatrix();branchMarkers.setMatrixAt(branchMarkerCount++,branchMarkerPose.matrix);}
+ function addBranchCoverage(e,span,course,point,waterHeight){
+  if(branchCoverage.active>=BRANCH_CUE_CAPACITY)return;
+  const minCross=(span.minLane-1-BRANCH_LANE_RADIUS)*3.8,maxCross=(span.maxLane-1+BRANCH_LANE_RADIUS)*3.8,centerCross=(span.centerLane-1)*3.8;
+  const surface=cross=>{const p=point(course,cross);p.y+=waterHeight(cross,course);return p;},middle=surface(centerCross),markers=[];
+  branchMark(middle,maxCross-minCross,.11);
+  for(const lane of span.lanes){const p=surface((lane-1)*3.8);branchMark(p,.12,.82);markers.push({lane,position:[p.x,p.y+.12,p.z]});}
+  for(const cross of [minCross,maxCross])branchMark(surface(cross),.12,.82);
+  branchCoverage.active++;
+  if(branchCoverage.samples.length<12)branchCoverage.samples.push({id:e.id,lanes:[...span.lanes],width:span.width,side:span.side,minLane:span.minLane,maxLane:span.maxLane,centerLane:span.centerLane,contactBounds:[span.minLane-BRANCH_LANE_RADIUS,span.maxLane+BRANCH_LANE_RADIUS],labelPosition:[middle.x,middle.y+3.5,middle.z],markers,passed:!!e.done});
+ }
  const entities=new Map(),labels=new Map(),labelMaterials=new Map(),hazardProjection=new THREE.Vector3(),powerGeo=new THREE.TorusGeometry(.48,.1,8,16),powerMats={shield:mat('#7dffe3',.35),magnet:mat('#ffd36c',.35)};
- function label(text){if(labels.has(text))return labels.get(text);const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#043b35dd';x.roundRect(0,0,256,64,16);x.fill();x.font='bold 31px sans-serif';x.fillStyle='#fff0b9';x.textAlign='center';x.fillText(text,128,44);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;labels.set(text,t);return t;}
+ function label(text){if(labels.has(text))return labels.get(text);const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#043b35dd';x.roundRect(0,0,256,64,16);x.fill();const spanLabel=text.startsWith('DUCK ·');x.font=`bold ${spanLabel&&text.length>15?25:31}px sans-serif`;x.fillStyle='#fff0b9';x.textAlign='center';if(spanLabel)x.fillText(text,128,44,232);else x.fillText(text,128,44);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;labels.set(text,t);return t;}
+ const branchLabel=width=>width===3?'DUCK · FULL RIVER ↓':`DUCK · ${width} ${width===1?'LANE':'LANES'} ↓`;
  function makeEntity(e){const g=new THREE.Group();let m;
  if(e.type==='coin'){m=mesh(coinGeo,coinMat,g);m.rotation.x=Math.PI/2;}
  else if(e.type==='rock'){m=mesh(rockGeo,rockMat,g);m.scale.set(1.35,1.4,1);m.rotation.set(.2,e.id*2.4,.1);}
@@ -178,7 +197,7 @@ export function createScene(canvas,art,onLost){
  m.castShadow=e.type!=='coin';
  g.userData.type=e.type;g.userData.body=m;
  if(['rock','log','branch','magnet'].includes(e.type)){
- const text=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':e.type==='magnet'?'GOLD ×2':'DUCK ↓';if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(e.enemy?2.65:2.2,.55,1);g.add(sprite);g.userData.label=sprite;}
+ const text=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':e.type==='magnet'?'GOLD ×2':branchLabel(branchSpan(e).width);if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(e.enemy||isBranchSpan(e)?2.65:2.2,.55,1);g.add(sprite);g.userData.label=sprite;g.userData.labelText=text;}
  scene.add(g);return g;}
  const sprayCount=120,sprayPositions=new Float32Array(sprayCount*3),sprayGeometry=new THREE.BufferGeometry();sprayGeometry.setAttribute('position',new THREE.BufferAttribute(sprayPositions,3));
  const spray= new THREE.Points(sprayGeometry,new THREE.PointsMaterial({color:'#e5fff2',size:.09,transparent:true,opacity:.72,depthWrite:false}));spray.frustumCulled=false;scene.add(spray);
@@ -258,6 +277,7 @@ export function createScene(canvas,art,onLost){
    // preparation group. No prototype is drawn during a player's run.
    const prototypes=new THREE.Group();
    for(const [i,type] of ['rock','log','branch','shield','magnet'].entries()){const obj=makeEntity({id:-100-i,type});scene.remove(obj);prototypes.add(obj);}
+   for(const [i,branchLanes] of [[0],[0,1],[0,1,2]].entries()){const obj=makeEntity({id:-120-i,type:'branch',lane:0,branchLanes});scene.remove(obj);prototypes.add(obj);}
    for(const [i,enemy] of ['crocodile','bird','fish'].entries()){const obj=makeEntity({id:-110-i,type:enemy==='bird'?'branch':'log',enemy});scene.remove(obj);prototypes.add(obj);}
    prototypes.add(new THREE.Mesh(waterGeo,cheapWaterMaterial));retired.push(prototypes);
    const textures=new Set([scene.background,...surfaceTextures,...riderTextures,...labels.values()]);
@@ -268,7 +288,7 @@ export function createScene(canvas,art,onLost){
    // Warm every map, its horizon, landmarks and finish. Switching levels cannot
    // create a first-use material, texture or instance-buffer upload in play.
    for(const level of LEVELS){
-    const warm=createGame(137,level.index);warm.entities=[...['rock','log','branch','shield','magnet'].map((type,i)=>({id:-1000-i,type,lane:i%3,d:12+i*7})),{id:-1010,type:'log',enemy:'crocodile',lane:0,d:28,motion:{from:1,to:0,startD:-20,endD:20}},{id:-1011,type:'branch',enemy:'bird',lane:2,d:44},{id:-1012,type:'target',lane:1,d:58},{id:-1013,type:'log',enemy:'fish',lane:1,d:70,motion:{kind:'leap',from:0,to:1,startD:-40,endD:45,contactD:70,leapStartD:-5,leapEndD:145}},...warm.entities];
+    const warm=createGame(137,level.index);warm.entities=[...['rock','log','branch','shield','magnet'].map((type,i)=>({id:-1000-i,type,lane:i%3,d:12+i*7})),...[[0],[0,1],[0,1,2]].map((branchLanes,i)=>({id:-1020-i,type:'branch',lane:0,branchLanes,d:80+i*15})),{id:-1010,type:'log',enemy:'crocodile',lane:0,d:28,motion:{from:1,to:0,startD:-20,endD:20}},{id:-1011,type:'branch',enemy:'bird',lane:2,d:44},{id:-1012,type:'target',lane:1,d:58},{id:-1013,type:'log',enemy:'fish',lane:1,d:70,motion:{kind:'leap',from:0,to:1,startD:-40,endD:45,contactD:70,leapStartD:-5,leapEndD:145}},...warm.entities];
     for(const distance of [0,780,level.length-70]){
      await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;
      warm.distance=distance;if(distance)warm.entities=[];
@@ -372,11 +392,14 @@ export function createScene(canvas,art,onLost){
  const alive=new Set();let visible=0,coinCount=0,guardianCount=0,woodCount=0;
  if(level.index===2&&guardianBatches.length)for(const b of guardianBanks){const cross=b.side*(riverHalfWidth(b.course,seed)+3),p=point(b.course,cross);if(p.z>18||p.z< -(software?140:210))continue;guardianTransform.position.set(p.x,p.y+riverBankHeight(cross,b.course,seed),p.z);guardianTransform.rotation.set(0,-b.side*.42+riverHash(b.index+65,seed)*.3,0);guardianTransform.scale.setScalar(1.7+riverHash(b.index+25,seed)*.5);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  branchTrees.begin();
+ branchMarkerCount=0;branchCoverage.active=0;branchCoverage.samples=[];
  movingVisuals.begin();
  for(const e of g.entities){const z=e.d-g.distance;
  if(e.type==='branch'&&!e.enemy&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
  if(!worldEntityVisible(e,g.distance,VIEW_DISTANCE))continue;alive.add(e.id);visible++;
  const course=travel+z,pose=entityPose(e,g.distance),currentLane=pose.lane,cross=(currentLane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
+ const span=isBranchSpan(e)?branchSpan(e):null;
+ if(span)addBranchCoverage(e,span,course,point,waterHeight);
  if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,coinWorldHeight(e)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
  if(e.enemy||e.type==='target'){
   const destinationCross=(pose.contactLane-1)*3.8,destination=point(course,destinationCross);destination.y+=waterHeight(destinationCross,course);
@@ -386,13 +409,14 @@ export function createScene(canvas,art,onLost){
  let obj=entities.get(e.id);if(!obj){obj=makeEntity(e);entities.set(e.id,obj);}
  const sx=p.x,y=wy;
  obj.position.set(sx,e.type==='coin'?coinWorldHeight(e):e.type==='rock'?.5:e.type==='branch'?0:e.type==='log'?.27:1.4,-z);obj.position.y+=y;obj.rotation.y=-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed));
+ if(span){const labelCross=(span.centerLane-1)*3.8,anchor=point(course,labelCross);obj.position.set(anchor.x,anchor.y+waterHeight(labelCross,course),anchor.z);}
  if(e.type==='rock'&&guardianBatches.length&&level.index===2){obj.userData.body.visible=false;guardianTransform.position.set(sx,y-.12,-z);guardianTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.14,0);guardianTransform.scale.setScalar(1);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  if(e.type==='rock'){hazardProjection.set(sx,y+1.2,-z).project(camera);rockSamples.push({id:e.id,lane:e.lane,ahead:z,resolved:!!e.done,kind:level.index===2&&guardianBatches.length?'guardian':'rock',screen:[hazardProjection.x,hazardProjection.y]});}
  if(e.enemy){obj.userData.body.visible=false;obj.position.y+=pose.lift;}
  if(e.type==='log'&&!e.enemy&&driftwoodBatches.length){obj.userData.body.visible=false;palmTransform.position.set(sx,y-.1,-z);palmTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.035,0);palmTransform.scale.set(1,1,1);palmTransform.updateMatrix();for(const b of driftwoodBatches){instanceMatrix.multiplyMatrices(palmTransform.matrix,b.local);b.mesh.setMatrixAt(woodCount,instanceMatrix);}woodCount++;}
  if(e.type==='coin')obj.rotation.y=reduced?0:g.time*4+e.id;
  else if(e.type==='log')obj.rotation.x=reduced?0:Math.sin(e.d*.58-g.time*1.9)*.04;
- if(obj.userData.label)obj.userData.label.visible=z<g.speed*1.6&&z>3;
+ if(obj.userData.label){obj.userData.label.visible=z<g.speed*1.6&&z>3;if(span){const sample=branchCoverage.samples.find(sample=>sample.id===e.id);if(sample){sample.label=obj.userData.labelText;sample.labelVisible=obj.userData.label.visible;}}}
  }
  for(let i=0;i<bankTrees.length;i++){
   if(level.index===1&&i%4!==0||level.index===2&&i%2!==0)continue;
@@ -401,6 +425,7 @@ export function createScene(canvas,art,onLost){
   branchTrees.add(bankTrees[i],travel,travel-z,seed,true);
  }
  branchTrees.finish();status.branches=branchTrees.state;
+ branchMarkers.count=branchMarkerCount;branchMarkers.instanceMatrix.needsUpdate=true;branchCoverage.instances=branchMarkerCount;status.branchCoverage=branchCoverage;
  for(const e of g.effects){if(e.type!=='target')continue;const age=g.time-(e.contactTime??e.time),course=travel+(e.distance??g.distance)-g.distance,cross=(e.lane-1)*3.8,p=point(course,cross);p.y+=waterHeight(cross,course);movingVisuals.burst(e,p,age,reduced);}
  movingVisuals.finish();status.encounters=movingVisuals.state;
  status.hazards={rocks:rockSamples.length,samples:rockSamples};

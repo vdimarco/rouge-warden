@@ -1,4 +1,5 @@
 import {riverHash,riverHalfWidth,riverBankHeight} from './river-course.js';
+import {branchSpan} from './branch-spans.js';
 
 let leafArt;
 export function branchLeafArt(){
@@ -17,47 +18,63 @@ export function branchLeafArt(){
   return leafArt=c;
 }
 
-// Heights are relative to the river at each node's course offset. Only the
-// terminal limb dips to duck height; the long reach stays over standing heads.
+export const BRANCH_TREE_PARTS=48;
+// The low supporting limb is a shallow span, not a single hanging point.
+// Its woody forks share real parent nodes and fan in depth above the route.
 export function shorelineBranch(e,course=e.d,seed=137){
-  const side=e.lane===0?-1:e.lane===2?1:riverHash(e.id+19,seed)>.5?1:-1;
-  const lane=(e.lane-1)*3.8,d=4+e.lane*3+riverHash(e.id+31,seed)*2;
+  const declared=branchSpan(e),side=declared.side,lane=(e.lane-1)*3.8;
+  const minCenter=(declared.minLane-1)*3.8,maxCenter=(declared.maxLane-1)*3.8;
+  const span={...declared,minX:minCenter-1.9,maxX:maxCenter+1.9,centerX:(minCenter+maxCenter)/2};
+  const legacyCenter=declared.width===1&&declared.minLane===1;
+  const d=1+riverHash(e.id+31,seed)*.8;
   const x=side*(riverHalfWidth(course+d,seed)+1.8),ground=riverBankHeight(x,course+d,seed);
   const wood=[],leaves=[],node=(x,y,d=0)=>({x,y,d});
   const limb=(a,b,r,kind)=>wood.push({a,b,r,kind});
-  const root=node(x,ground,d),fork=node(x-side*.9,7.2+ground*.4,d-.7);
-  const trunk=[root,node(x-side*.15,ground+2.2,d-.2),node(x-side*.45,ground+4.5,d-.5),fork,node(x-side*.2,9.5+ground*.3,d+.5)];
-  for(let i=1;i<trunk.length;i++)limb(trunk[i-1],trunk[i],[1.16,.98,.84,.64][i-1]);
+  const forkHeight=legacyCenter?Math.max(6.0,ground+2.5):Math.max(3.6,ground+2.5);
+  const root=node(x,ground,d),fork=node(x-side*.6,forkHeight,d-.4);
+  const trunk=[root,node(x-side*.1,(ground+forkHeight)/2,d-.2),fork,node(x-side*.25,forkHeight+2.5,d+.1),node(x+side*.15,Math.max(9.5,ground+8),d+.5)];
+  for(let i=1;i<trunk.length;i++)limb(trunk[i-1],trunk[i],[1.16,.98,.73,.48][i-1]);
   for(const sign of [-1,1]){
     const rx=x+side*.75,rd=d+sign*1.15;
     limb(node(rx,riverBankHeight(rx,course+rd,seed),rd),trunk[1],.34);
-    limb(fork,node(x+sign*1.6,8.7,d+sign*1.4),.19);
+    limb(trunk[3],node(x+sign*1.6,8.7+ground*.2,d+sign*1.4),.23);
   }
-  let previous=fork;
-  for(let i=1;i<=5;i++){
-    const t=i/5,p=node(fork.x+(lane+side*1.25-fork.x)*t,7.2+ground*.4-(2.2+ground*.4)*t+Math.sin(t*Math.PI)*.45,(d-.7)*(1-t)+Math.sin(t*Math.PI)*1.1);
-    limb(previous,p,.84-t*.28,'bough');
-    // Substantial lateral forks branch from shared wood nodes. The fan opens
-    // into multiple depths so it reads as a tree in the downstream chase view.
-    if(i>=2){
-      const fan=i%2?1:-1,spread=2.2+riverHash(e.id+i+54,seed)*1.6;
-      const elbow=node(p.x-side*(1.0+i*.12),p.y+1.4+i*.1,p.d+fan*spread*.6);
-      const end=node(elbow.x-side*1.0,p.y+2.6+i*.15,p.d+fan*spread);
-      limb(p,elbow,.47-i*.028,'fork');limb(elbow,end,.29-i*.012,'fork');
-      limb(elbow,node(elbow.x+side*.9,elbow.y+.75,elbow.d+fan*.65),.15,'twig');
-      leaves.push({p:end,size:[1.15,.95,1.05],turn:e.id+i},{p:elbow,size:[.62,.52,.6],turn:e.id-i});
-    }
-    previous=p;
+  const farCenter=side<0?maxCenter:minCenter;
+  const start=node(legacyCenter?side*1.1:side*6.7,3.1,0),end=node(farCenter-side*.55,2.96,0);
+  const spanLength=Math.abs(end.x-start.x);
+  const meshFrame=[start,node(start.x+(end.x-start.x)/3,2.55),node(start.x+(end.x-start.x)*2/3,2.55),end];
+  const spanPoint=t=>{
+    const u=1-t;return node(u*u*u*start.x+3*u*u*t*meshFrame[1].x+3*u*t*t*meshFrame[2].x+t*t*t*end.x,
+      u*u*u*start.y+3*u*u*t*meshFrame[1].y+3*u*t*t*meshFrame[2].y+t*t*t*end.y,0);
+  };
+  const connectorEnd=legacyCenter?node(side*1.55,5.0,.15):node(side*8.4,3.28,.35);
+  limb(fork,connectorEnd,.94,'connector');limb(connectorEnd,start,legacyCenter?.48:.67,'connector');
+  const forkStations=declared.width===1?[.16,.48,.81]:declared.width===2?[.11,.36,.61,.85]:[.09,.26,.47,.69,.88];
+  const forkTs=forkStations.map((t,i)=>t+(riverHash(e.id+i+103,seed)-.5)*.045);
+  const ts=new Set([0,1,.2,.4,.6,.8,...forkTs]);
+  for(const covered of declared.lanes)ts.add(((covered-1)*3.8-start.x)/(end.x-start.x));
+  const stations=[...ts].filter(t=>t>=0&&t<=1).sort((a,b)=>a-b).map(t=>({t,p:spanPoint(t)}));
+  // A rounded bark core and the generated knots use the same shallow center
+  // curve. It stays substantial along all three lanes, not just at one tip.
+  for(let i=1;i<stations.length;i++)limb(stations[i-1].p,stations[i].p,.54-stations[i-1].t*.13,'span');
+  // Connect the rounded core to the bank with an identical shared endpoint.
+  stations[0].p=start;wood.find(l=>l.kind==='span').a=start;
+  for(let i=0;i<forkTs.length;i++){
+    const p=stations.find(s=>Math.abs(s.t-forkTs[i])<1e-8).p,fan=i%2?1:-1;
+    const elbowX=p.x+side*(.75+riverHash(e.id+i+43,seed)*.4);
+    const elbow=node(legacyCenter?Math.max(span.minX+.45,Math.min(span.maxX-.45,elbowX)):elbowX,
+      p.y+1.12+riverHash(e.id+i+49,seed)*.3,fan*(.45+riverHash(e.id+i+53,seed)*.45));
+    const endFork=node(elbow.x-side*(.55+riverHash(e.id+i+57,seed)*.65),5.1+riverHash(e.id+i+68,seed)*.7,fan*(1.7+riverHash(e.id+i+81,seed)*.6));
+    const smallA=node(elbow.x+side*.65,Math.max(4.85,elbow.y+.9),elbow.d+fan*.75),smallB=node(endFork.x-side*.65,endFork.y+.25,endFork.d-fan*.55);
+    limb(p,elbow,.31+riverHash(e.id+i+95,seed)*.07,'fork');limb(elbow,endFork,.23,'fork');
+    limb(elbow,smallA,.14,'twig');limb(endFork,smallB,.105,'twig');
+    leaves.push({p:endFork,size:[.78,.58,.75],turn:e.id+i},{p:smallA,size:[.47,.38,.46],turn:e.id-i},{p:smallB,size:[.42,.34,.4],turn:e.id+i*2});
   }
-  // A descending end replaces the old vertical hook and its upturned prongs.
-  const dip=[node(lane+side*.9,4.05,.35),node(lane+side*.5,3.1,.12),node(lane+side*.2,2.55,.02)];
-  for(let i=0;i<dip.length;i++){limb(previous,dip[i],[.55,.49,.44][i],'bough');previous=dip[i];}
-  const middle=node(lane,2.42,0),tip=node(lane-side*1.0,2.22,-.18);
-  limb(previous,middle,.42,'bough');limb(middle,tip,.34,'bough');
   crown(leaves,x,d,e.id,seed,ground,18);
-  leaves.push({p:node(lane+side*1.8,5.45,.8),size:[.72,.55,.65],turn:e.id});
   curveLimbs(wood);
-  return {side,root,tip:middle,lane,wood,leaves};
+  const contacts=declared.lanes.map(covered=>({lane:covered,...spanPoint(((covered-1)*3.8-start.x)/(end.x-start.x))}));
+  const contact=contacts.find(p=>p.lane===e.lane)??contacts[Math.floor(contacts.length/2)];
+  return {side,root,tip:contact,lane,wood,leaves,span,contacts,meshFrame,spanLength};
 }
 
 // Endpoint tangents follow adjoining limbs. Tubes share endpoints and taper;

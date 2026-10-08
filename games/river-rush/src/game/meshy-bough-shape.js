@@ -2,13 +2,10 @@
 // rooted duck tree; broad upper forks keep their original asymmetric topology.
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function boughFrame(shape){
- const limbs=shape.wood.filter(l=>l.kind==='bough'),root=limbs[3].a,side=shape.side;
- return [root,
-  {x:shape.lane+side*2.5,y:Math.max(6.8,root.y+.5),d:0},
-  {x:shape.lane+side*.4,y:5.1,d:0},shape.tip];
+ return shape.meshFrame;
 }
 export const MESHY_BOUGH_CORE_END=.5;
-export const MESHY_BOUGH_SCALE=Object.freeze({y:6.4,under:.5,d:3.4,contactD:.8,twigs:3,depthStart:.3,depthSpan:.42});
+export const MESHY_BOUGH_SCALE=Object.freeze({y:2.6,under:.5,d:1.1,contactD:1.1,twigs:1.3,depthStart:.3,depthSpan:.42});
 export function boughVertex(vertex,shape,scale=MESHY_BOUGH_SCALE){
  const sourceT=clamp(vertex.x,0,1),t=Math.min(sourceT/MESHY_BOUGH_CORE_END,1),u=1-t,p=boughFrame(shape),out={};
  for(const k of ['x','y','d'])out[k]=u*u*u*p[0][k]+3*u*u*t*p[1][k]+3*u*t*t*p[2][k]+t*t*t*p[3][k];

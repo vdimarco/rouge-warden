@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createGame,generateAhead} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
 import {courseAct} from '../src/game/course-intensity.js';
+import {coveredLanes,actionWall} from './route-coverage.js';
 
 const hazardTypes=new Set(['rock','log','branch']);
 function inspectCourse(seed,index){
@@ -35,12 +36,12 @@ test('seeded episodes cross four acts with varied lengths, recovery gaps and inc
   assert.equal(new Set(g.patternsSeen.filter(id=>id!=='tutorial')).size,6);
   assert.deepEqual([...new Set(rows.map(row=>row[0].act))],[0,1,2,3]);
   assert.ok(rows.filter(row=>row[0].recovery).length>=4,`seed ${seed}, ${level.id} has too few recovery beats`);
-  assert.ok(rows.slice(0,3).every(row=>row.length===1),'the three opening tutorial rows became mandatory walls');
-  for(const type of ['log','branch'])assert.ok(rows.some(row=>row.length===3&&row[0].type===type&&row[0].d<=650),`${level.id} seed${seed} postpones required ${type}`);
+  assert.ok(rows.slice(0,3).every(row=>!actionWall(row)),'the three opening tutorial rows became mandatory walls');
+  for(const type of ['log','branch'])assert.ok(rows.some(row=>actionWall(row)&&row[0].type===type&&row[0].d<=650),`${level.id} seed${seed} postpones required ${type}`);
   for(let i=0;i<rows.length;i++){
    const row=rows[i],item=row[0],act=courseAct(item.d,level.length),stats=totals[act];
-   assert.equal(item.act,act);stats.rows++;stats.paired+=row.length>1?1:0;stats.waves+=row.length===3?1:0;
-   assert.ok(row.length<3||row.every(e=>e.type===row[0].type&&e.type!=='rock'),'mixed wall has no safe route');
+   assert.equal(item.act,act);stats.rows++;stats.paired+=coveredLanes(row).length>1?1:0;stats.waves+=actionWall(row)?1:0;
+   assert.ok(coveredLanes(row).length<3||actionWall(row),'mixed wall has no safe route');
    if(item.episode>=0){
     if(!episodes.has(item.episode))episodes.set(item.episode,[]);episodes.get(item.episode).push(item);
     const next=rows[i+1]?.[0];

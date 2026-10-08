@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {riverPoint} from './river-course.js';
-import {shorelineBranch,scenicTree,branchLeafArt} from './shoreline-branch.js';
+import {shorelineBranch,scenicTree,branchLeafArt,BRANCH_TREE_PARTS} from './shoreline-branch.js';
 import {createMeshyBoughs} from './meshy-boughs.js';
 
 function leafTexture(art){
@@ -48,7 +48,7 @@ ${shader.vertexShader}`;
 }
 export function createBranchTrees(scene,bark,mat,art,software){
  const generated=createMeshyBoughs(scene);
- const MAX_TREES=32,PER_TREE=32,capacity=MAX_TREES*PER_TREE;
+ const MAX_TREES=32,PER_TREE=BRANCH_TREE_PARTS,capacity=MAX_TREES*PER_TREE;
  const geometry=new THREE.CylinderGeometry(1,1,1,software?8:12,software?5:8);
  const controls=['aP0','aP1','aP2','aP3'].map(name=>{const a=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);a.setUsage(THREE.DynamicDrawUsage);geometry.setAttribute(name,a);return a;});
  const radii=new THREE.InstancedBufferAttribute(new Float32Array(capacity*4),4);radii.setUsage(THREE.DynamicDrawUsage);geometry.setAttribute('aRadii',radii);
@@ -68,23 +68,14 @@ export function createBranchTrees(scene,bark,mat,art,software){
   const shape=saved.shape;
   const meshy=!scenic&&generated.state.model==='meshy';
   if(meshy)generated.add(e,shape,travel,course,seed);
-  const upper=shape.wood.filter(l=>l.kind==='bough');
-  const replacedNodes=meshy?new Set([upper[3].b,upper[4].b]):null;
-  const replacedWood=new Set();
-  if(meshy)for(const limb of shape.wood)if((limb.kind==='fork'||limb.kind==='twig')&&(replacedNodes.has(limb.a)||replacedNodes.has(limb.b))){replacedWood.add(limb);replacedNodes.add(limb.b);}
-  const forkNodes=meshy?new Set([...replacedWood].flatMap(l=>[l.a,l.b])):null;
-  let boughIndex=0;
   const locate=node=>{const p=riverPoint(travel,course+node.d,node.x,seed);return v.set(p.x,p.y+node.y,p.z);};
   for(const segment of shape.wood){
-   // The generated prop joins the thick bank connector and is the complete
-   // duck limb, including its exact contact. No duplicate low cylinder dip.
-   if(meshy){const i=segment.kind==='bough'?boughIndex++:-1;if(replacedWood.has(segment)||i>=3)continue;}
    for(const [i,node] of [segment.a,segment.c1,segment.c2,segment.b].entries()){locate(node);controls[i].setXYZ(woodCount,v.x,v.y,v.z);}
    const length=Math.hypot(segment.b.x-segment.a.x,segment.b.y-segment.a.y,segment.b.d-segment.a.d);
    radii.setXYZW(woodCount++,segment.r,segment.rEnd,length,0);
   }
-  for(const leaf of shape.leaves){if(forkNodes?.has(leaf.p))continue;transform.position.copy(locate(leaf.p));transform.rotation.set(.15,leaf.turn,.12);transform.scale.set(...leaf.size);transform.updateMatrix();leaves.setMatrixAt(leafCount++,transform.matrix);}
-  if(!scenic&&state.origins.length<6)state.origins.push({id:e.id,lane:e.lane,course,side:shape.side,root:{...shape.root},tip:{...shape.tip},passed:!!e.done});
+  for(const leaf of shape.leaves){transform.position.copy(locate(leaf.p));transform.rotation.set(.15,leaf.turn,.12);transform.scale.set(...leaf.size);transform.updateMatrix();leaves.setMatrixAt(leafCount++,transform.matrix);}
+  if(!scenic&&state.origins.length<6)state.origins.push({id:e.id,lane:e.lane,course,side:shape.side,root:{...shape.root},tip:{...shape.tip},span:shape.span,contacts:shape.contacts,passed:!!e.done});
   count++;if(scenic)scenery++;
  }
  function finish(){wood.count=woodCount;leaves.count=leafCount;for(const a of [...controls,radii])a.needsUpdate=true;leaves.instanceMatrix.needsUpdate=true;generated.finish();Object.assign(state,{trees:count,scenery,woodSegments:woodCount,leafClusters:leafCount,model:generated.state.model,meshyInstances:generated.state.instances,meshyTriangles:generated.state.triangles,meshySamples:generated.state.samples,drawCalls:2+generated.state.batches,style:generated.state.model==='meshy'?'meshy-gnarled':'curved-tapered'});}

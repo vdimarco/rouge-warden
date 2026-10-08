@@ -40,7 +40,7 @@ export function createMeshyBoughs(scene){
    const spec=new THREE.InstancedBufferAttribute(new Float32Array(MESHY_BOUGH_CAPACITY*4),4);spec.setUsage(THREE.DynamicDrawUsage);geometry.setAttribute('aFit',spec);
    const materials=(Array.isArray(source.material)?source.material:[source.material]).map(original=>{
     const material=original.clone();material.metalness=0;material.roughness=.9;material.side=THREE.DoubleSide;
-    material.customProgramCacheKey=()=> 'river-meshy-bough-v4';
+    material.customProgramCacheKey=()=> 'river-meshy-bough-span-v1';
     material.onBeforeCompile=shader=>{
      for(const name of Object.keys(uniforms))shader.uniforms[name]=uniforms[name];
      shader.vertexShader=declaration+shader.vertexShader
@@ -68,7 +68,7 @@ export function createMeshyBoughs(scene){
   }
   if(state.samples.length<6){
    const end=boughVertex({x:MESHY_BOUGH_CORE_END,y:0,z:0},shape),point=riverPoint(travel,course+end.d,end.x,profile);
-   state.samples.push({id:e.id,lane:e.lane,side:shape.side,root:{...shape.root},contact:{...shape.tip},fitStart:{...frame[0]},fitEnd:{...frame[3]},terminal:{x:point.x,y:point.y+end.y,z:point.z},passed:!!e.done});
+   state.samples.push({id:e.id,lane:e.lane,side:shape.side,span:shape.span,root:{...shape.root},contact:{...shape.tip},contacts:shape.contacts,fitStart:{...frame[0]},fitEnd:{...frame[3]},terminal:{x:point.x,y:point.y+end.y,z:point.z},passed:!!e.done});
   }
  }
  function finish(){for(const {mesh,controls,spec} of batches){mesh.count=state.instances;for(const a of [...controls,spec])a.needsUpdate=true;}}

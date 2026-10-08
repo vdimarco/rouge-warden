@@ -4,6 +4,8 @@ import {terrainSection,TERRAIN_SECTIONS} from '../src/game/course-sections.js';
 import {createCourseProfile,riverHalfWidth,rapidAt,rapidDerivative,shoalAt} from '../src/game/river-course.js';
 import {createGame,generateAhead,updateGame,emptyInput,snapshot} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
+import {isBranchSpan,branchLanes} from '../src/game/branch-spans.js';
+import {coveredLanes,actionWall} from './route-coverage.js';
 
 test('each seeded finite river has all three terrain encounters, calm transitions and a clean opening/finish',()=>{
  for(let seed=0;seed<30;seed++)for(const level of LEVELS){
@@ -60,15 +62,16 @@ test('terrain biases mixed readable routes with jump arcs, low canopy gold and s
    if(!rows.has(item.row))rows.set(item.row,[]);rows.get(item.row).push(item);
    if(item.terrainActive){
     seen.add(item.sectionType);
-    density[item.sectionType][item.type]++;density[item.sectionType].total++;
+    const weight=isBranchSpan(item)?branchLanes(item).length:1;
+    density[item.sectionType][item.type]+=weight;density[item.sectionType].total+=weight;
     assert.equal(terrainSection(item.d,g.terrainProfile).id,item.sectionId);
     assert.ok(item.d<level.length-FINISH_RUNWAY);
    }
   }
   assert.equal(seen.size,3);
   for(const row of rows.values()){
-   assert.ok(row.length<=2||row.every(e=>e.type==='log')||row.every(e=>e.type==='branch'));
-   if(row.length===3)assert.ok(row[0].row>=3,'tutorial row became a mandatory wall');
+   assert.ok(coveredLanes(row).length<=2||actionWall(row));
+   if(actionWall(row))assert.ok(row[0].row>=3,'tutorial row became a mandatory wall');
    const coins=g.entities.filter(e=>e.type==='coin'&&e.row===row[0].row);
    for(const coin of coins.filter(e=>Number.isFinite(e.jumpHeight)))assert.ok(row.some(e=>e.type==='log'&&e.lane===coin.lane),'raised route points at a different lane than its log');
    if(row[0].terrainActive&&row[0].sectionType==='wave-train'&&row.every(e=>e.type==='log'))assert.equal(coins.filter(e=>e.high).length,5);

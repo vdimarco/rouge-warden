@@ -103,7 +103,7 @@
     "script": "scripts/pack-bough.mjs",
     "geometry": "4907 triangles full; 1458 triangles lite; root-to-tip stem coordinates with locally rooted course deformation",
     "textures": "Embedded WebP; 1024 albedo /512 PBR detail full, 512 albedo /256 PBR detail lite",
-    "fallback": "Existing locally textured curved duck trees; unchanged 2D branch anatomy and contact rules"
+    "fallback": "Locally textured curved shoreline trees with the same contiguous span, connected offshoot anatomy and shared coverage rules as the Meshy path"
   },
   "runtimeAssets": [
     {
@@ -116,5 +116,12 @@
       "bytes": 112516,
       "sha256": "16a5c1a41707ff596bc1e717a9de52403bd78e61ae97928ea3f39150dd3e2b9b"
     }
-  ]
+  ],
+  "runtimeFit": {
+    "change": "river-rush-branch-spans",
+    "coverage": "One bank-grown tree over one, two or three contiguous lanes; branch-spans.js is authoritative",
+    "mainLimb": "Shallow across-river cubic sag; root depth 1\u20131.8; native halfway core ends beyond the far covered center; remaining native twigs extend at most 0.65",
+    "anatomy": "Generated topology and PBR maps preserved; shared rounded bark shaft with 3/4/5 diagonal secondary forks and connected tertiary twigs",
+    "pools": "32 trees, 48 wood/leaf slots per tree, 32 Meshy instances; geometry and materials recycled"
+  }
 }

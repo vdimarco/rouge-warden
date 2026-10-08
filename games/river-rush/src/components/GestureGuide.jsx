@@ -26,12 +26,14 @@ function Gesture({ gesture }) {
   </div>;
 }
 
-export default function GestureGuide({ variant = 'menu', active = true, time = 0, action, enemy }) {
+export default function GestureGuide({ variant = 'menu', active = true, time = 0, action, enemy, branchWidth = 0 }) {
   const opening = variant === 'play' || variant === 'opening';
-  if (!active || (opening && time >= 10 && !enemy)) return null;
+  const branchGuide = action === 'branch' && !enemy && branchWidth > 0;
+  if (!active || (opening && time >= 10 && !enemy && !branchGuide)) return null;
   const nextGesture = action === 'log' ? 1 : action === 'branch' ? 2 : action === 'rock' ? 0 : time < .7 ? 0 : time < 2.15 ? 1 : time < 3.5 ? 2 : time < 5.5 ? 0 : time < 7.75 ? 1 : 2;
   const enemyGuide = enemyGuides[enemy];
-  const shown = opening ? [{ ...(enemyGuide ? gestures.find(gesture => gesture.id === enemyGuide.gesture) : gestures[nextGesture]), ...enemyGuide }] : gestures;
+  const spanGuide = branchGuide ? { label: branchWidth === 3 ? 'Duck full river' : branchWidth === 2 ? 'Duck 2 lanes' : 'Duck branch', hint: branchWidth === 3 ? 'Swipe down to duck' : 'Swipe down or dodge' } : null;
+  const shown = opening ? [{ ...(enemyGuide ? gestures.find(gesture => gesture.id === enemyGuide.gesture) : gestures[nextGesture]), ...enemyGuide, ...spanGuide }] : gestures;
   return <div className={`gesture-guide gesture-guide-${opening ? 'play' : variant}`} role="group" aria-label="Swipe controls: left or right changes lanes, up jumps, down ducks">
     {shown.map(gesture => <Gesture gesture={gesture} key={gesture.id}/>)}
   </div>;

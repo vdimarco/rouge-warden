@@ -1,0 +1,97 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "initial-lite",
+      "passed": true,
+      "pictures": [
+        "/tmp/river-branch-spans-initial-lite/phone-width1-left-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/phone-width1-right-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/phone-width2-left-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/phone-width2-right-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/phone-width3-left-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/phone-width3-right-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width1-left-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width1-right-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width2-left-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width2-right-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width3-left-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width3-right-12m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width1-left-45m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width2-left-45m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/desktop-width3-left-45m-lite.png",
+        "/tmp/river-branch-spans-initial-lite/phone-width3-right-45m-lite.png"
+      ],
+      "errors": [],
+      "resourcesBefore": {
+        "uploads": 51,
+        "shaders": 76
+      },
+      "resourcesAfter": {
+        "uploads": 51,
+        "shaders": 76
+      },
+      "stoppedPixels": true,
+      "reducedStatusSame": true,
+      "capacity": {
+        "MeshySpans": 32,
+        "coverageInstances": 158,
+        "maxCoverageInstances": 192
+      },
+      "regularPeak": {
+        "drawCalls": 24,
+        "triangles": 97539
+      },
+      "gpuErrors": [],
+      "materialPath": "default-renderer-quality",
+      "actualGPU": "default SwiftShader path"
+    },
+    {
+      "case": "initial-full",
+      "passed": true,
+      "pictures": [
+        "/tmp/river-branch-spans-initial-full/desktop-width1-left-12m-full.png",
+        "/tmp/river-branch-spans-initial-full/desktop-width1-right-12m-full.png",
+        "/tmp/river-branch-spans-initial-full/desktop-width2-left-12m-full.png",
+        "/tmp/river-branch-spans-initial-full/desktop-width2-right-12m-full.png",
+        "/tmp/river-branch-spans-initial-full/desktop-width3-left-12m-full.png",
+        "/tmp/river-branch-spans-initial-full/desktop-width3-right-12m-full.png",
+        "/tmp/river-branch-spans-initial-full/phone-width3-right-12m-full.png"
+      ],
+      "errors": [],
+      "resourcesBefore": {
+        "uploads": 82,
+        "shaders": 86
+      },
+      "resourcesAfter": {
+        "uploads": 82,
+        "shaders": 86
+      },
+      "stoppedPixels": true,
+      "reducedStatusSame": true,
+      "capacity": {
+        "MeshySpans": 32,
+        "coverageInstances": 158,
+        "maxCoverageInstances": 192
+      },
+      "regularPeak": {
+        "drawCalls": 27,
+        "triangles": 239624
+      },
+      "gpuErrors": [],
+      "materialPath": "detailed-full-assets-on-recorded-SwiftShader-isolated-fixture",
+      "actualGPU": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "case": "fallback",
+      "passed": true,
+      "pictures": [
+        "/tmp/river-branch-spans-fallback/landscape-width1-left-fallback.png",
+        "/tmp/river-branch-spans-fallback/landscape-width2-left-fallback.png",
+        "/tmp/river-branch-spans-fallback/landscape-width3-left-fallback.png"
+      ],
+      "errors": []
+    }
+  ],
+  "physicalDeviceFrameRateMeasured": false
+}

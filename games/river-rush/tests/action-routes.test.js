@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,emptyInput,queueAction,updateGame,timeToImpact,coinTouchesAtHeight,COIN_LANE_RADIUS} from '../src/game/engine.js';
+import {createGame,emptyInput,queueAction,updateGame,timeToImpact,coinTouchesAtHeight,COIN_LANE_RADIUS,hazardTouchesLane} from '../src/game/engine.js';
 import {LEVELS} from '../src/game/levels.js';
 import {laneSpring} from '../src/game/world.js';
 import {coinJumpHeight,jumpArcHeight,JUMP_REWARD_OFFSETS} from '../src/game/jump-rewards.js';
+import {coveredLanes,actionWall,formation} from './route-coverage.js';
 const hazard=e=>['log','branch','rock'].includes(e.type);
-const formation=row=>row.every(e=>e.type===row[0].type)?`${row.length}:${row[0].type}`:'mixed';
 function naturalCourse(seed,index){
  const g=createGame(seed,index),items=new Map(),arrival=new Map();
  while(g.phase==='playing'){
@@ -23,7 +23,7 @@ test('required jumps and ducks arrive just after tutorials, action droughts are 
  for(let seed=1;seed<=35;seed++)for(const level of LEVELS){
   const {rows,arrival}=naturalCourse(seed,level.index);
   assert.deepEqual(rows.slice(0,3).map(row=>row.map(e=>e.type)),[['log'],['branch'],['rock']]);
-  const firstJump=rows.find(row=>row.length===3&&row[0].type==='log'),firstDuck=rows.find(row=>row.length===3&&row[0].type==='branch');
+  const firstJump=rows.find(row=>actionWall(row)&&row[0].type==='log'),firstDuck=rows.find(row=>actionWall(row)&&row[0].type==='branch');
   assert.equal(firstJump[0].row,3);assert.ok(firstJump[0].d<500);assert.ok(firstDuck[0].row<=5);assert.ok(firstDuck[0].d<650);
   earlyJumps++;earlyDucks++;
   let drought=0,lastFormation='',run=0;
@@ -31,13 +31,13 @@ test('required jumps and ducks arrive just after tutorials, action droughts are 
   for(let i=3;i<rows.length;i++){
    const row=rows[i],kind=formation(row);run=kind===lastFormation?run+1:1;lastFormation=kind;
    assert.ok(run<=3,`${level.id} seed${seed} repeats ${kind} for ${run} rows`);
-   if(row.length===3){required++;drought=0;assert.ok(row.every(e=>e.type===row[0].type&&e.type!=='rock'));}
+   if(actionWall(row)){required++;drought=0;assert.ok(row.every(e=>e.type===row[0].type&&e.type!=='rock'));}
    else{drought++;assert.ok(drought<=3,`${level.id} seed${seed} has ${drought} dodge-only beats`);}
-   const safe=[0,1,2].find(lane=>!row.some(e=>e.lane===lane));
+   const safe=[0,1,2].find(lane=>!row.some(e=>hazardTouchesLane(e,lane)));
    if(safe!==undefined){if(clearLanes.at(-1)===safe)holds++;clearLanes.push(safe);}
    if(i+1<rows.length){const interval=arrival.get(rows[i+1][0].row)-arrival.get(row[0].row);assert.ok(interval>=level.minInterval-.015);intervals.add(Math.round(interval*100));}
   }
-  seedRoutes.add(rows.slice(3,18).map(row=>`${formation(row)}:${row.map(e=>e.lane).join('')}`).join('|'));
+  seedRoutes.add(rows.slice(3,18).map(row=>`${formation(row)}:${coveredLanes(row).join('')}`).join('|'));
  }
  assert.ok(holds>100,'every clear lane turns back at the next gate');assert.ok(seedRoutes.size>95,'seeds repeat a small set of routes');assert.ok(intervals.size>25,'obstacles repeat one metronomic interval');
  console.log(JSON.stringify({naturalSeedMaps:105,earlyRequiredJumps:earlyJumps,earlyRequiredDucks:earlyDucks,mandatoryActionRows:required,safeLaneHolds:holds,distinctIntervals:intervals.size,distinctOpeningRoutes:seedRoutes.size}));
@@ -47,8 +47,8 @@ test('dodging-only players cannot camp through the first third of any map',()=>{
  for(const hz of [30,60,120])for(let seed=1;seed<=12;seed++)for(const level of LEVELS){
   const g=createGame(seed,level.index),input=emptyInput();g.shield=false;
   while(g.phase==='playing'&&g.distance<level.length/3){
-   const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),next=obstacles.find(e=>e.lane===g.lane);
-   if(next&&timeToImpact(g,next.d)<.6){const row=obstacles.filter(e=>e.row===next.row),safe=[0,1,2].find(lane=>!row.some(e=>e.lane===lane));if(safe!==undefined)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
+   const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),next=obstacles.find(e=>hazardTouchesLane(e,g.lane));
+   if(next&&timeToImpact(g,next.d)<.6){const row=obstacles.filter(e=>e.row===next.row),safe=[0,1,2].find(lane=>!row.some(e=>hazardTouchesLane(e,lane)));if(safe!==undefined)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
    updateGame(g,input,1/hz);
   }
   assert.equal(g.phase,'lost');assert.match(g.reason,/Log hit/);assert.ok(g.distance<500);assert.equal(g.jumps,0);
@@ -63,15 +63,15 @@ function firstRequiredArc(seed,index,hz,lead){
   if(next){
    const group=obstacles.filter(e=>e.row===next.row),gold=g.entities.filter(e=>e.type==='coin'&&e.row===next.row);
    const marked=gold.find(e=>Number.isFinite(e.jumpHeight));
-   const lane=marked?.lane??gold[0]?.lane??[0,1,2].find(l=>!group.some(e=>e.lane===l))??g.lane;
+   const lane=marked?.lane??gold[0]?.lane??[0,1,2].find(l=>!group.some(e=>hazardTouchesLane(e,l)))??g.lane;
    if(timeToImpact(g,next.d)<.85&&g.lane!==lane)for(let n=0;n<Math.abs(lane-g.lane);n++)queueAction(input,lane>g.lane?'right':'left');
-   const contact=group.find(e=>e.lane===lane);
+   const contact=group.find(e=>hazardTouchesLane(e,lane));
    if(next.row===3&&row===null){row={...next};coins=gold.filter(e=>Number.isFinite(e.jumpHeight));assert.equal(coins.length,5);}
    if(contact&&contact.type!=='rock'&&!handled.has(next.row)&&timeToImpact(g,next.d)<=lead){
     if(next.row===3)appliedLead=timeToImpact(g,next.d);
     queueAction(input,contact.type==='log'?'jump':'duck');handled.add(next.row);
    }
-   if(contact?.type==='rock'&&timeToImpact(g,next.d)<.6){const safe=[0,1,2].find(l=>!group.some(e=>e.lane===l));if(safe!==undefined&&g.lane!==safe)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
+   if(contact?.type==='rock'&&timeToImpact(g,next.d)<.6){const safe=[0,1,2].find(l=>!group.some(e=>hazardTouchesLane(e,l)));if(safe!==undefined&&g.lane!==safe)for(let n=0;n<Math.abs(safe-g.lane);n++)queueAction(input,safe>g.lane?'right':'left');}
   }
   updateGame(g,input,1/hz);
   if(row&&g.distance>coins.at(-1).d){
@@ -129,8 +129,8 @@ test('earned Rush never puts the next ground ribbon under a still-airborne late-
   while(g.phase==='playing'){
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),first=obstacles[0];
    if(first){
-    const row=obstacles.filter(e=>e.row===first.row),coins=g.entities.filter(e=>e.type==='coin'&&e.row===first.row),lane=coins[0]?.lane??[0,1,2].find(l=>!row.some(e=>e.lane===l));
-    const contact=row.find(e=>e.lane===lane);
+    const row=obstacles.filter(e=>e.row===first.row),coins=g.entities.filter(e=>e.type==='coin'&&e.row===first.row),lane=coins[0]?.lane??[0,1,2].find(l=>!row.some(e=>hazardTouchesLane(e,l)));
+    const contact=row.find(e=>hazardTouchesLane(e,lane));
     if((!holding||g.distance>=holding.until)&&lane!==undefined&&g.lane!==lane)for(let n=0;n<Math.abs(lane-g.lane);n++)queueAction(input,lane>g.lane?'right':'left');
     if(contact&&contact.type!=='rock'&&!handled.has(first.row)&&timeToImpact(g,first.d)<=lead){queueAction(input,contact.type==='log'?'jump':'duck');handled.add(first.row);holding={until:Math.max(...coins.map(e=>e.d))};}
    }

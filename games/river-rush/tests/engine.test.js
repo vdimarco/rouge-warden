@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,applyAction,updateGame,generateAhead,jumpHeight,speedAt,validBest,JUMP_SECONDS,nextLevel,restartLevel,snapshot} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY,levelSeed,validProgress,freshProgress,unlockLevel} from '../src/game/levels.js';
+import {coveredLanes,actionWall} from './route-coverage.js';
 const clean=()=>Object.assign(createGame(1),{entities:[],nextRow:1e9,shield:false});
 const hazard=(type,lane=1)=>({id:999,type,lane,d:1,done:false});
 const advance=(g,seconds,input=emptyInput())=>{for(let t=0;t<seconds;t+=1/60)updateGame(g,input,Math.min(1/60,seconds-t));};
@@ -25,7 +26,7 @@ test('seeded finite maps vary routes, stop hazards before the finish and use inc
    assert.ok(e.d<level.length-FINISH_RUNWAY,'finish runway contains an obstacle');
    if(!rows.has(e.row))rows.set(e.row,[]);rows.get(e.row).push(e);
   }
-  for(const row of rows.values())assert.ok(new Set(row.map(e=>e.lane)).size<=2||row.every(e=>e.type==='log')||row.every(e=>e.type==='branch'));
+  for(const row of rows.values())assert.ok(coveredLanes(row).length<=2||actionWall(row));
   assert.equal(new Set(g.patternsSeen.filter(p=>p!=='tutorial')).size,6);
   assert.ok(g.entities.every(e=>e.d<level.length),'entities continue after the finish');
   const count=g.entities.length;g.distance=level.length+100;generateAhead(g);assert.equal(g.entities.length,count);
