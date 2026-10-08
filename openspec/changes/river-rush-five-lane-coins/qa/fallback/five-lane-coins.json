@@ -1,0 +1,2830 @@
+{
+  "passed": true,
+  "base": "http://127.0.0.1:8765/river-rush/",
+  "dev": "http://127.0.0.1:3001/",
+  "scope": "fallback",
+  "controls": [],
+  "natural": [],
+  "fixtures": [
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "phone",
+      "lane": 0,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 22
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 22
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 22
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 22
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 22
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 111.6164705882353,
+          "y": 470.6046333176471,
+          "screen": [
+            -0.42760784313725486,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 153.30823529411765,
+          "y": 470.6046333176471,
+          "screen": [
+            -0.2138039215686275,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 195,
+          "y": 470.6046333176471,
+          "screen": [
+            0,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 236.69176470588235,
+          "y": 470.6046333176471,
+          "screen": [
+            0.21380392156862738,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 278.3835294117647,
+          "y": 470.6046333176471,
+          "screen": [
+            0.427607843137255,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 118,
+          "totalRgbDifference": 10293
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 119,
+          "totalRgbDifference": 14299
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 122,
+          "totalRgbDifference": 21159
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 121,
+          "totalRgbDifference": 15167
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 118,
+          "totalRgbDifference": 11639
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 15.366000000000014,
+        "right": 81.35400000000001,
+        "width": 65.988
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-all-five-outer0-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "phone",
+      "lane": 4,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 22
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 22
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 22
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 22
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 22
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 111.6164705882353,
+          "y": 470.6046333176471,
+          "screen": [
+            -0.42760784313725486,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 153.30823529411765,
+          "y": 470.6046333176471,
+          "screen": [
+            -0.2138039215686275,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 195,
+          "y": 470.6046333176471,
+          "screen": [
+            0,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 236.69176470588235,
+          "y": 470.6046333176471,
+          "screen": [
+            0.21380392156862738,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 278.3835294117647,
+          "y": 470.6046333176471,
+          "screen": [
+            0.427607843137255,
+            -0.11517685620295515
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 118,
+          "totalRgbDifference": 10293
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 119,
+          "totalRgbDifference": 14299
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 122,
+          "totalRgbDifference": 21159
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 121,
+          "totalRgbDifference": 15167
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 118,
+          "totalRgbDifference": 11639
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 308.64599999999996,
+        "right": 374.634,
+        "width": 65.988
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-all-five-outer4-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "desktop",
+      "lane": 0,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 22
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 22
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 22
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 22
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 22
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 442.99411764705883,
+          "y": 509.02357129411763,
+          "screen": [
+            -0.3509243697478992,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 562.7470588235294,
+          "y": 509.02357129411763,
+          "screen": [
+            -0.1754621848739496,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 682.5,
+          "y": 509.02357129411763,
+          "screen": [
+            0,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 802.2529411764706,
+          "y": 509.02357129411763,
+          "screen": [
+            0.1754621848739495,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 922.0058823529412,
+          "y": 509.02357129411763,
+          "screen": [
+            0.3509243697478992,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 624,
+          "totalRgbDifference": 82495
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 624,
+          "totalRgbDifference": 114556
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 622,
+          "totalRgbDifference": 148921
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 624,
+          "totalRgbDifference": 92785
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 624,
+          "totalRgbDifference": 93210
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 166.53000000000003,
+        "right": 356.07,
+        "width": 189.54
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-all-five-outer0-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "desktop",
+      "lane": 4,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 22
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 22
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 22
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 22
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 22
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 442.99411764705883,
+          "y": 509.02357129411763,
+          "screen": [
+            -0.3509243697478992,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 562.7470588235294,
+          "y": 509.02357129411763,
+          "screen": [
+            -0.1754621848739496,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 682.5,
+          "y": 509.02357129411763,
+          "screen": [
+            0,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 802.2529411764706,
+          "y": 509.02357129411763,
+          "screen": [
+            0.1754621848739495,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 922.0058823529412,
+          "y": 509.02357129411763,
+          "screen": [
+            0.3509243697478992,
+            -0.13116349176470576
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 624,
+          "totalRgbDifference": 82495
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 624,
+          "totalRgbDifference": 114556
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 622,
+          "totalRgbDifference": 148921
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 624,
+          "totalRgbDifference": 92785
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 624,
+          "totalRgbDifference": 93210
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 1008.9300000000001,
+        "right": 1198.47,
+        "width": 189.54
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-all-five-outer4-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "landscape",
+      "lane": 0,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 22
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 22
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 22
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 22
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 22
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 318.21411764705886,
+          "y": 205.05335148235292,
+          "screen": [
+            -0.24593810984109277,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 370.1070588235294,
+          "y": 205.05335148235292,
+          "screen": [
+            -0.12296905492054633,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 422,
+          "y": 205.05335148235292,
+          "screen": [
+            0,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 473.8929411764706,
+          "y": 205.05335148235292,
+          "screen": [
+            0.12296905492054644,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 525.7858823529411,
+          "y": 205.05335148235292,
+          "screen": [
+            0.24593810984109266,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 186,
+          "totalRgbDifference": 17631
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 187,
+          "totalRgbDifference": 24628
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 182,
+          "totalRgbDifference": 32054
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 187,
+          "totalRgbDifference": 22164
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 186,
+          "totalRgbDifference": 19192
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 198.413,
+        "right": 280.547,
+        "width": 82.134
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/landscape-all-five-outer0-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "landscape",
+      "lane": 4,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 22
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 22
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 22
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 22
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 472,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 22
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 318.21411764705886,
+          "y": 205.05335148235292,
+          "screen": [
+            -0.24593810984109277,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 370.1070588235294,
+          "y": 205.05335148235292,
+          "screen": [
+            -0.12296905492054633,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 422,
+          "y": 205.05335148235292,
+          "screen": [
+            0,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 473.8929411764706,
+          "y": 205.05335148235292,
+          "screen": [
+            0.12296905492054644,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 525.7858823529411,
+          "y": 205.05335148235292,
+          "screen": [
+            0.24593810984109266,
+            -0.05155564862745088
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 186,
+          "totalRgbDifference": 17631
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 187,
+          "totalRgbDifference": 24628
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 182,
+          "totalRgbDifference": 32054
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 187,
+          "totalRgbDifference": 22164
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 186,
+          "totalRgbDifference": 19192
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 563.453,
+        "right": 645.587,
+        "width": 82.134
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/landscape-all-five-outer4-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "phone",
+      "lane": 2,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 4155,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 25
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 4155,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 25
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 4155,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 25
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 4155,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 25
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 4155,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 25
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 116.24888888888889,
+          "y": 458.0577092444444,
+          "screen": [
+            -0.4038518518518519,
+            -0.08544480863612414
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 155.62444444444444,
+          "y": 458.0577092444444,
+          "screen": [
+            -0.20192592592592595,
+            -0.08544480863612414
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 195,
+          "y": 458.0577092444444,
+          "screen": [
+            0,
+            -0.08544480863612414
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 234.37555555555556,
+          "y": 458.0577092444444,
+          "screen": [
+            0.20192592592592606,
+            -0.08544480863612414
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 273.75111111111113,
+          "y": 458.0577092444444,
+          "screen": [
+            0.4038518518518519,
+            -0.08544480863612414
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 105,
+          "totalRgbDifference": 8994
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 105,
+          "totalRgbDifference": 13586
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 104,
+          "totalRgbDifference": 19563
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 107,
+          "totalRgbDifference": 13381
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 109,
+          "totalRgbDifference": 13928
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 70,
+        "course": 4200,
+        "center": {
+          "x": 8.641345086394697,
+          "y": -1.5399999999999636,
+          "z": -70
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": -1.9586549136053035,
+            "y": -1.5399999999999636,
+            "z": -70
+          },
+          {
+            "side": 1,
+            "x": 19.2413450863947,
+            "y": -1.5399999999999636,
+            "z": -70
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": -12.504546436615094,
+            "y": -0.7168573060197487,
+            "z": -70
+          },
+          {
+            "side": 1,
+            "x": 29.787236609404484,
+            "y": -0.43785333491650147,
+            "z": -70
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": -4.24523799529374,
+            "y": 1.8171126818189407,
+            "z": 50
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 16.95476200470626,
+            "y": 1.8171126818189407,
+            "z": 50
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": -10.318096499055814,
+            "y": 0.22000000000002728,
+            "z": 10
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 10.881903500944187,
+            "y": 0.22000000000002728,
+            "z": 10
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": -8.425491070222435,
+            "y": -0.6599999999999682,
+            "z": -30
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 12.774508929777564,
+            "y": -0.6599999999999682,
+            "z": -30
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": -4.4619428417007105,
+            "y": -1.2099999999999795,
+            "z": -55
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 16.738057158299288,
+            "y": -1.2099999999999795,
+            "z": -55
+          }
+        ],
+        "visible": true
+      },
+      "fallbackBody": {
+        "left": 162.006,
+        "right": 227.994,
+        "width": 65.988
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-finish-map0-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "desktop",
+      "lane": 2,
+      "map": 1,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 5355,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 25
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 5355,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 25
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 5355,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 25
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 5355,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 25
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 5355,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 25
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 456.29999999999995,
+          "y": 495.244484,
+          "screen": [
+            -0.3314285714285715,
+            -0.10054329777777782
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 569.4,
+          "y": 495.244484,
+          "screen": [
+            -0.1657142857142857,
+            -0.10054329777777782
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 682.5,
+          "y": 495.244484,
+          "screen": [
+            0,
+            -0.10054329777777782
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 795.6,
+          "y": 495.244484,
+          "screen": [
+            0.1657142857142857,
+            -0.10054329777777782
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 908.7,
+          "y": 495.244484,
+          "screen": [
+            0.3314285714285714,
+            -0.10054329777777782
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 620,
+          "totalRgbDifference": 79956
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 620,
+          "totalRgbDifference": 98179
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 616,
+          "totalRgbDifference": 120801
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 618,
+          "totalRgbDifference": 90043
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 618,
+          "totalRgbDifference": 91458
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 70,
+        "course": 5400,
+        "center": {
+          "x": 6.132444891937087,
+          "y": -5.942399999999964,
+          "z": -70
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": -4.467555108062912,
+            "y": -5.942399999999964,
+            "z": -70
+          },
+          {
+            "side": 1,
+            "x": 16.732444891937085,
+            "y": -5.942399999999964,
+            "z": -70
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": -18.197699110395433,
+            "y": -5.050301722397501,
+            "z": -70
+          },
+          {
+            "side": 1,
+            "x": 30.4625888942696,
+            "y": -5.091207269204399,
+            "z": -70
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 5280,
+            "x": -8.619837109442289,
+            "y": 1.1000000000000227,
+            "z": 50
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 5280,
+            "x": 12.58016289055771,
+            "y": 1.1000000000000227,
+            "z": 50
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 5320,
+            "x": -10.482072339034636,
+            "y": 0.22000000000002728,
+            "z": 10
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 5320,
+            "x": 10.717927660965364,
+            "y": 0.22000000000002728,
+            "z": 10
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 5360,
+            "x": -9.488450357612399,
+            "y": -0.6599999999999682,
+            "z": -30
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 5360,
+            "x": 11.7115496423876,
+            "y": -0.6599999999999682,
+            "z": -30
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 5385,
+            "x": -6.830771619296727,
+            "y": -4.758234295681518,
+            "z": -55
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 5385,
+            "x": 14.369228380703273,
+            "y": -4.758234295681518,
+            "z": -55
+          }
+        ],
+        "visible": true
+      },
+      "fallbackBody": {
+        "left": 587.73,
+        "right": 777.27,
+        "width": 189.54
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-finish-map1-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "landscape",
+      "lane": 2,
+      "map": 2,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 200,
+          "type": "coin",
+          "lane": 0,
+          "d": 6555,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -7.6,
+          "ahead": 25
+        },
+        {
+          "id": 201,
+          "type": "coin",
+          "lane": 1,
+          "d": 6555,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": -3.8,
+          "ahead": 25
+        },
+        {
+          "id": 202,
+          "type": "coin",
+          "lane": 2,
+          "d": 6555,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 0,
+          "ahead": 25
+        },
+        {
+          "id": 203,
+          "type": "coin",
+          "lane": 3,
+          "d": 6555,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 3.8,
+          "ahead": 25
+        },
+        {
+          "id": 204,
+          "type": "coin",
+          "lane": 4,
+          "d": 6555,
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true,
+          "worldX": 7.6,
+          "ahead": 25
+        }
+      ],
+      "factory": null,
+      "samples": [
+        {
+          "id": 200,
+          "lane": 0,
+          "x": 323.98,
+          "y": 199.94483195555557,
+          "screen": [
+            -0.2322748815165876,
+            -0.025358112592592574
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "x": 372.99,
+          "y": 199.94483195555557,
+          "screen": [
+            -0.1161374407582938,
+            -0.025358112592592574
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "x": 422,
+          "y": 199.94483195555557,
+          "screen": [
+            0,
+            -0.025358112592592574
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "x": 471.01,
+          "y": 199.94483195555557,
+          "screen": [
+            0.1161374407582938,
+            -0.025358112592592574
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "x": 520.02,
+          "y": 199.94483195555557,
+          "screen": [
+            0.2322748815165876,
+            -0.025358112592592574
+          ],
+          "coinPattern": "fixture-all-five",
+          "primaryRoute": true
+        }
+      ],
+      "pixelProof": [
+        {
+          "id": 200,
+          "lane": 0,
+          "changedPixels": 168,
+          "totalRgbDifference": 17869
+        },
+        {
+          "id": 201,
+          "lane": 1,
+          "changedPixels": 168,
+          "totalRgbDifference": 20583
+        },
+        {
+          "id": 202,
+          "lane": 2,
+          "changedPixels": 67,
+          "totalRgbDifference": 7419
+        },
+        {
+          "id": 203,
+          "lane": 3,
+          "changedPixels": 168,
+          "totalRgbDifference": 18784
+        },
+        {
+          "id": 204,
+          "lane": 4,
+          "changedPixels": 168,
+          "totalRgbDifference": 20499
+        }
+      ],
+      "scene": null,
+      "finish": {
+        "remaining": 70,
+        "course": 6600,
+        "center": {
+          "x": 12.035386328406622,
+          "y": -6.338399999999979,
+          "z": -70
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 1.435386328406624,
+            "y": -6.338399999999979,
+            "z": -70
+          },
+          {
+            "side": 1,
+            "x": 22.63538632840662,
+            "y": -6.338399999999979,
+            "z": -70
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": -8.17491725001199,
+            "y": -5.51767397441316,
+            "z": -70
+          },
+          {
+            "side": 1,
+            "x": 32.245689906825234,
+            "y": -5.652259828138772,
+            "z": -70
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 6480,
+            "x": -9.522041096205559,
+            "y": 1.1000000000000227,
+            "z": 50
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 6480,
+            "x": 11.67795890379444,
+            "y": 1.1000000000000227,
+            "z": 50
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 6520,
+            "x": -10.464569098540581,
+            "y": 0.22000000000002728,
+            "z": 10
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 6520,
+            "x": 10.735430901459418,
+            "y": 0.22000000000002728,
+            "z": 10
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 6560,
+            "x": -8.662633901050157,
+            "y": -3.7707177418946003,
+            "z": -30
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 6560,
+            "x": 12.537366098949843,
+            "y": -3.7707177418946003,
+            "z": -30
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 6585,
+            "x": -3.1232783149249723,
+            "y": -6.008399999999995,
+            "z": -55
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 6585,
+            "x": 18.07672168507503,
+            "y": -6.008399999999995,
+            "z": -55
+          }
+        ],
+        "visible": true
+      },
+      "fallbackBody": {
+        "left": 380.933,
+        "right": 463.067,
+        "width": 82.134
+      },
+      "branchSpans": [],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/landscape-finish-map2-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "phone",
+      "lane": 2,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 300,
+          "type": "branch",
+          "lane": 0,
+          "branchLanes": [
+            0,
+            1,
+            2
+          ],
+          "branchSide": -1,
+          "d": 490,
+          "row": 20,
+          "fullRiver": true,
+          "canopyLead": true,
+          "worldX": -7.6,
+          "ahead": 40
+        },
+        {
+          "id": 301,
+          "type": "branch",
+          "lane": 3,
+          "branchLanes": [
+            3,
+            4
+          ],
+          "branchSide": 1,
+          "d": 490,
+          "row": 20,
+          "fullRiver": true,
+          "canopyLead": false,
+          "worldX": 3.8,
+          "ahead": 40
+        }
+      ],
+      "factory": null,
+      "samples": [],
+      "pixelProof": [],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 162.006,
+        "right": 227.994,
+        "width": 65.988
+      },
+      "branchSpans": [
+        {
+          "lanes": [
+            0,
+            1,
+            2
+          ],
+          "width": 3,
+          "minLane": 0,
+          "maxLane": 2,
+          "centerLane": 1,
+          "side": -1
+        },
+        {
+          "lanes": [
+            3,
+            4
+          ],
+          "width": 2,
+          "minLane": 3,
+          "maxLane": 4,
+          "centerLane": 3.5,
+          "side": 1
+        }
+      ],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-paired-full-five-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "desktop",
+      "lane": 2,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 300,
+          "type": "branch",
+          "lane": 0,
+          "branchLanes": [
+            0,
+            1,
+            2
+          ],
+          "branchSide": -1,
+          "d": 490,
+          "row": 20,
+          "fullRiver": false,
+          "canopyLead": true,
+          "worldX": -7.6,
+          "ahead": 40
+        }
+      ],
+      "factory": null,
+      "samples": [],
+      "pixelProof": [],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 587.73,
+        "right": 777.27,
+        "width": 189.54
+      },
+      "branchSpans": [
+        {
+          "lanes": [
+            0,
+            1,
+            2
+          ],
+          "width": 3,
+          "minLane": 0,
+          "maxLane": 2,
+          "centerLane": 1,
+          "side": -1
+        }
+      ],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-partial-three-2d.jpg",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "scoreWrites": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "limitations": [
+    "SwiftShader Chromium; no physical hardware FPS or human reaction-time claim.",
+    "Actual App tests retain natural seeds, clocks and states; isolated visual fixtures declare their own state."
+  ],
+  "fixtureRenderer": "canvas2d",
+  "fixtureStart": 0,
+  "stoppedProof": {
+    "sameStoppedPixels": true,
+    "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-all-five-outer0-2d.jpg"
+  }
+}

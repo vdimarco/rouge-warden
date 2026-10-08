@@ -1,10 +1,11 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {BRANCH_LANE_RADIUS,isBranchSpan,branchLanes,branchSpan,branchOverlap} from '../src/game/branch-spans.js';
 import {createGame,emptyInput,updateGame,snapshot,generateAhead,hazardTouchesLane} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
 import {coveredLanes,actionWall} from './route-coverage.js';
-const spans=[[0],[2],[0,1],[1,2],[0,1,2]];
+const spans=[[0],[4],[0,1],[3,4],[0,1,2],[2,3,4]];
 const tree=(lanes,extra={})=>({id:501,type:'branch',lane:lanes[0],branchLanes:lanes,d:.4,row:8,...extra});
 function crossing(entity,physicalLane,{hz=60,...extra}={}){
  const g=Object.assign(createGame(37,1),{time:1000,entities:[entity],nextRow:1e9,shield:false,lane:physicalLane,visualLane:physicalLane,laneVelocity:0,goal:{kind:'tricks',start:0,target:1e9},...extra});
@@ -12,8 +13,8 @@ function crossing(entity,physicalLane,{hz=60,...extra}={}){
 }
 test('coverage is contiguous, bank anchored and compatible with legacy centered trees and single-lane birds',()=>{
  for(const lanes of spans){const e=tree(lanes),span=branchSpan(e);assert.deepEqual(span.lanes,lanes);assert.equal(span.width,lanes.length);assert.equal(span.centerLane,(lanes[0]+lanes.at(-1))/2);assert.ok(isBranchSpan(e));}
- assert.equal(branchSpan(tree([0,1])).side,-1);assert.equal(branchSpan(tree([1,2])).side,1);
- for(const side of [-1,1])assert.equal(branchSpan(tree([0,1,2],{branchSide:side})).side,side);
+ assert.equal(branchSpan(tree([0,1])).side,-1);assert.equal(branchSpan(tree([3,4])).side,1);
+ for(const side of [-1,1])assert.equal(branchSpan(tree([CENTER_LANE],{branchSide:side})).side,side);
  assert.equal(branchSpan({id:1,type:'branch',lane:1}).side,-1);assert.equal(branchSpan({id:2,type:'branch',lane:1}).side,1);
  assert.deepEqual(branchLanes(tree([1,0,1])),[0,1]);
  for(const invalid of [[],[0,2],[-1,0],[0,1,3],[.5,1],['0',1],null])assert.deepEqual(branchLanes({type:'branch',lane:1,branchLanes:invalid}),[1]);
@@ -29,7 +30,7 @@ test('covered lanes and their seams hit standing rafts and clear with one duck a
    const perfect=duck.effects.filter(e=>e.type==='perfect');assert.equal(perfect.length,1);assert.deepEqual(perfect[0].branchLanes,lanes);assert.equal(perfect[0].spanWidth,lanes.length);
    updateGame(duck,emptyInput(),1/hz);assert.equal(duck.ducks,1);assert.equal(duck.bonus,100);
   }
-  for(const lane of [0,1,2].filter(l=>!lanes.includes(l))){const dodge=crossing(tree(lanes),lane,{hz});assert.equal(dodge.phase,'playing');assert.equal(dodge.dodges,1);assert.equal(dodge.ducks,0);}
+  for(const lane of LANES.filter(l=>!lanes.includes(l))){const dodge=crossing(tree(lanes),lane,{hz});assert.equal(dodge.phase,'playing');assert.equal(dodge.dodges,1);assert.equal(dodge.ducks,0);}
   const jumping=crossing(tree(lanes),lanes[0],{hz,action:'jump',actionTime:.3});assert.equal(jumping.phase,'lost','airborne raft bypasses high wood');
  }
 });
@@ -50,7 +51,7 @@ test('span hints show every covered lane and wide wood never widens coin pickup'
   assert.equal(g.ducks,1);assert.equal(g.coins,1);assert.equal(g.bonus,110);assert.ok(coins[0].collected);assert.ok(!coins[1].collected);
  }
  const full=Object.assign(createGame(37),{entities:[tree([0,1,2],{d:40})],lane:2,visualLane:2}),hint=snapshot(full).hint;
- assert.deepEqual(hint.spanLanes,[0,1,2]);assert.equal(hint.spanWidth,3);assert.equal(hint.destinationLane,1);assert.equal(hint.safeLane,undefined);
+ assert.deepEqual(hint.spanLanes,[0,1,2]);assert.equal(hint.spanWidth,3);assert.equal(hint.destinationLane,1);assert.equal(hint.safeLane,3);assert.equal(hint.fullRiver,false);
  const partial=Object.assign(createGame(37),{entities:[tree([0,1],{d:40})],lane:1,visualLane:1}),safe=snapshot(partial).hint;
  assert.deepEqual(safe.spanLanes,[0,1]);assert.equal(safe.spanWidth,2);assert.equal(safe.safeLane,2);
 });
@@ -62,16 +63,16 @@ test('all seeded maps emit all three widths as coherent trees with fair uncovere
   const rows=new Map();for(const e of g.entities.filter(e=>['rock','log','branch'].includes(e.type))){if(!rows.has(e.row))rows.set(e.row,[]);rows.get(e.row).push(e);}
   for(const e of branches){
    trees++;const span=branchSpan(e),row=rows.get(e.row);assert.ok(e.d<level.length-FINISH_RUNWAY);assert.ok(span.lanes.includes(e.lane));origins.add(`${span.width}:${span.side}`);
-   if(span.width===1)assert.ok(e.lane===0||e.lane===2,'generated single tree floats in the center');
-   if(span.width===3){full++;assert.equal(row.length,1,'full width duck wall uses duplicate trees');assert.ok(actionWall(row));assert.ok(e.branchSide===-1||e.branchSide===1);}
-   else assert.ok([0,1,2].some(l=>!row.some(h=>hazardTouchesLane(h,l))),'partial tree row lost its safe route');
+   if(span.width===1)assert.ok(e.lane===0||e.lane===MAX_LANE,'generated single tree floats in the center');
+   if(e.fullRiver){if(e.canopyLead)full++;assert.equal(row.length,2,'full river canopy must pair two native bank trees');assert.deepEqual(row.map(h=>branchLanes(h).length).sort(),[2,3]);assert.ok(actionWall(row));assert.ok(e.branchSide===-1||e.branchSide===1);}
+   else assert.ok(LANES.some(l=>!row.some(h=>hazardTouchesLane(h,l))),'partial tree row lost its safe route');
    assert.ok(row.filter(h=>h!==e).every(h=>coveredLanes([h]).every(l=>!span.lanes.includes(l))),'another hazard hides inside its duck span');
   }
   for(const row of rows.values()){
-   assert.ok(coveredLanes(row).length<3||actionWall(row),'mixed wall is impassable');
+   assert.ok(coveredLanes(row).length<LANE_COUNT||actionWall(row),'mixed wall is impassable');
    const raised=g.entities.filter(e=>e.row===row[0].row&&Number.isFinite(e.jumpHeight));
    if(raised.length){arcs++;assert.equal(raised.length,5);assert.ok(raised.every(c=>row.some(h=>h.type==='log'&&h.lane===c.lane)),'branch swallowed its original raised log reward');}
   }
  }
- assert.equal(origins.size,6);assert.ok(full>500);assert.ok(arcs>2000);console.log(JSON.stringify({seedMaps:150,trees,fullRiverTrees:full,jumpRewardArcs:arcs,bankWidthVariants:origins.size}));
+ assert.equal(origins.size,6);assert.ok(full>500);assert.ok(arcs>2000);console.log(JSON.stringify({seedMaps:150,trees,pairedFullRiverCanopies:full,jumpRewardArcs:arcs,bankWidthVariants:origins.size}));
 });

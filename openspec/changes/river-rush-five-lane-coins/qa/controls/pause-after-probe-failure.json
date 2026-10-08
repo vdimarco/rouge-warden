@@ -1,0 +1,40 @@
+{
+  "passed": false,
+  "base": "http://127.0.0.1:8765/river-rush/",
+  "dev": "http://127.0.0.1:3001/",
+  "scope": "controls",
+  "controls": [],
+  "natural": [],
+  "fixtures": [],
+  "errors": [],
+  "scoreWrites": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "limitations": [
+    "SwiftShader Chromium; no physical hardware FPS or human reaction-time claim.",
+    "Actual App tests retain natural seeds, clocks and states; isolated visual fixtures declare their own state."
+  ],
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-1CN26cCA.js",
+  "restoredTitle": {
+    "rejectedHeroMounted": false,
+    "background": "url(\"http://127.0.0.1:8765/river-rush/art/menu.png\")",
+    "video": "/river-rush/art/menu-loop.mp4",
+    "canvasLabel": "Five-lane river runner. Left and right change lanes, Up or Space jumps, Down ducks, Shift activates Rush.",
+    "requests": [
+      "http://127.0.0.1:8765/river-rush/art/menu.png",
+      "http://127.0.0.1:8765/river-rush/art/menu-loop.mp4",
+      "http://127.0.0.1:8765/river-rush/art/menu-loop.mp4"
+    ],
+    "normalMotion": {
+      "approvedVideoPlaying": true,
+      "pausesForHelp": true,
+      "resumesAfterHelp": true,
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/phone-restored-title.jpg"
+    },
+    "reducedMotion": {
+      "animatedVideoAbsent": true,
+      "priorStill": "url(\"http://127.0.0.1:8765/river-rush/art/menu.png\")"
+    }
+  },
+  "failure": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Game paused', exact: true }) to be visible\u001b[22m\n\n    at controls (/workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:144:107)\n    at async file:///workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:464:32"
+}

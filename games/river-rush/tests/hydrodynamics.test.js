@@ -1,3 +1,4 @@
+import {CENTER_LANE,LANES,laneToX} from '../src/game/lanes.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {riverElevation,createCourseProfile} from '../src/game/river-course.js';
@@ -16,8 +17,8 @@ test('buoyancy probes sample the same continuous directional wave surface',()=>{
  }
 });
 test('raft remains stable at 30, 60 and 120 Hz under long runs and steering reversals',()=>{
- const run=(hz,speed)=>{const g={time:0,distance:0,visualLane:1,laneVelocity:0,effects:[],seed:509},s=createFloat(g);let peak=0;
-  for(let i=0;i<hz*120;i++){g.time=(i+1)/hz;g.distance=g.time*speed;g.visualLane=1+Math.sin(g.time*2);g.laneVelocity=Math.cos(g.time*2)*20;advanceFloat(s,g);peak=Math.max(peak,Math.abs(s.roll));assert.ok(Number.isFinite(s.height));assert.ok(Math.abs(s.height)<.85);assert.ok(s.pitch>=-.29&&s.pitch<=.18);assert.ok(Math.abs(s.roll)<=.25);}
+ const run=(hz,speed)=>{const g={time:0,distance:0,visualLane:CENTER_LANE,laneVelocity:0,effects:[],seed:509},s=createFloat(g);let peak=0;
+  for(let i=0;i<hz*120;i++){g.time=(i+1)/hz;g.distance=g.time*speed;g.visualLane=CENTER_LANE+2*Math.sin(g.time*2);g.laneVelocity=Math.cos(g.time*2)*40;advanceFloat(s,g);peak=Math.max(peak,Math.abs(s.roll));assert.ok(Number.isFinite(s.height));assert.ok(Math.abs(s.height)<.85);assert.ok(s.pitch>=-.29&&s.pitch<=.18);assert.ok(Math.abs(s.roll)<=.25);}
   return {height:s.height,pitch:s.pitch,roll:s.roll,peak};};
  for(const speed of [52,68,80,92]){const reference=run(120,speed);for(const hz of [30,60]){const actual=run(hz,speed);assert.ok(Math.abs(actual.height-reference.height)<.03,`${hz}Hz height at ${speed}`);assert.ok(Math.abs(actual.roll-reference.roll)<.02,`${hz}Hz roll at ${speed}`);}}
 });
@@ -32,7 +33,7 @@ test('current advects downstream while a faster raft overtakes it, and reduced w
  }
 });
 test('landing impulse is applied once, settles, and paused state freezes exactly',()=>{
- const g={time:0,distance:0,visualLane:1,laneVelocity:0,effects:[]},impact=createFloat(g),control=createFloat(g);
+ const g={time:0,distance:0,visualLane:CENTER_LANE,laneVelocity:0,effects:[]},impact=createFloat(g),control=createFloat(g);
  g.effects=[{id:1,type:'land',time:0}];advanceFloat(impact,g);assert.equal(impact.heaveVelocity,-2.2);const saved={...impact};advanceFloat(impact,g);assert.deepEqual(impact,saved);
  let maximum=0;for(let i=1;i<=120;i++){g.time=i/60;advanceFloat(impact,g);advanceFloat(control,{...g,effects:[]});maximum=Math.max(maximum,Math.abs(impact.height-control.height));}
  assert.ok(maximum>.025);assert.ok(Math.abs(impact.height-control.height)<.001);
@@ -42,10 +43,10 @@ test('landing impulse is applied once, settles, and paused state freezes exactly
 test('profiled buoyancy follows each full escalating map at 30, 60 and 120 Hz without global state',()=>{
  const courses=[[0,4200,68],[1,5400,80],[2,6600,92]].map(([index,length,speed])=>({profile:createCourseProfile(7319,length,index),length,speed}));
  const run=({profile,length,speed},hz)=>{
-  const g={seed:7319,time:0,distance:0,visualLane:1,laneVelocity:0,effects:[]},state=createFloat(g,profile);
+  const g={seed:7319,time:0,distance:0,visualLane:CENTER_LANE,laneVelocity:0,effects:[]},state=createFloat(g,profile);
   assert.equal(state.course,profile);let peak=0;
   for(let i=0;i<Math.ceil(length/speed*hz);i++){
-   g.time=Math.min((i+1)/hz,length/speed);g.distance=g.time*speed;g.visualLane=1+Math.sin(g.time*2);g.laneVelocity=Math.cos(g.time*2)*20;
+   g.time=Math.min((i+1)/hz,length/speed);g.distance=g.time*speed;g.visualLane=CENTER_LANE+2*Math.sin(g.time*2);g.laneVelocity=Math.cos(g.time*2)*40;
    advanceFloat(state,g);peak=Math.max(peak,Math.abs(state.height));
    assert.ok(Number.isFinite(state.height)&&Math.abs(state.height)<.85);assert.ok(state.pitch>=-.29&&state.pitch<=.18);assert.ok(Math.abs(state.roll)<=.25);
   }
@@ -56,4 +57,14 @@ test('profiled buoyancy follows each full escalating map at 30, 60 and 120 Hz wi
  for(const course of courses){const reference=run(course,120);for(const hz of [30,60]){const actual=run(course,hz);assert.ok(Math.abs(actual.height-reference.height)<.03);assert.ok(Math.abs(actual.roll-reference.roll)<.02);}}
  // Interleaving two maps cannot change an earlier map's deterministic probes.
  const before=surfaceAt(3.8,3000,60,false,courses[0].profile);surfaceAt(3.8,3000,60,false,courses[2].profile);assert.deepEqual(surfaceAt(3.8,3000,60,false,courses[0].profile),before);
+});
+
+
+test('all five raft centers and continuous steering probe their actual shared cross-stream position',()=>{
+ const course=createCourseProfile(509,5400,1);
+ for(const visualLane of [...LANES,.25,1.75,3.6]){
+  const g={seed:509,time:7.5,distance:580,visualLane,laneVelocity:0,effects:[]},state=createFloat(g,course),target=floatTarget(laneToX(visualLane),g.distance,g.time,false,course);
+  assert.equal(state.height,target.height);assert.equal(state.heightTarget,target.height);
+  g.time+=1/60;advanceFloat(state,g);const moved=floatTarget(laneToX(visualLane),g.distance,g.time,false,course);assert.equal(state.heightTarget,moved.height);
+ }
 });

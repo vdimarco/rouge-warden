@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {terrainSection,TERRAIN_SECTIONS} from '../src/game/course-sections.js';
 import {createCourseProfile,riverHalfWidth,rapidAt,rapidDerivative,shoalAt} from '../src/game/river-course.js';
@@ -43,10 +44,10 @@ test('terrain changes playable river shape and water while shoals remain outside
   const profile=createCourseProfile(seed,level.length,level.index);
   for(let d=300;d<level.length-FINISH_RUNWAY;d+=13.1){
    const section=terrainSection(d,profile),width=riverHalfWidth(d,profile),rapid=rapidAt(d,profile);
-   assert.ok(width>=11.8&&width<=26.5);assert.ok(rapid>=0&&rapid<=1);
+   assert.ok(width>=11.8+RIVER_WIDTH_EXPANSION&&width<=26.5+RIVER_WIDTH_EXPANSION);assert.ok(rapid>=0&&rapid<=1);
    if(section.strength>.999){const s=samples[section.type];s.width+=width;s.rapid+=rapid;s.count++;}
   }
-  for(let n=0;n<Math.ceil(level.length/34);n++){const rock=shoalAt(n,profile);assert.ok(Math.abs(rock.x)-rock.size*2*1.18>5.5);}
+  for(let n=0;n<Math.ceil(level.length/34);n++){const rock=shoalAt(n,profile);assert.ok(Math.abs(rock.x)-rock.size*2*1.18>PLAYABLE_HALF_WIDTH-.2);}
  }
  const average=(type,key)=>samples[type][key]/samples[type].count;
  assert.ok(average('low-canopy','width')-average('narrows','width')>3,'narrows do not visibly tighten');
@@ -70,11 +71,11 @@ test('terrain biases mixed readable routes with jump arcs, low canopy gold and s
   }
   assert.equal(seen.size,3);
   for(const row of rows.values()){
-   assert.ok(coveredLanes(row).length<=2||actionWall(row));
+   assert.ok(coveredLanes(row).length<LANE_COUNT||actionWall(row));
    if(actionWall(row))assert.ok(row[0].row>=3,'tutorial row became a mandatory wall');
    const coins=g.entities.filter(e=>e.type==='coin'&&e.row===row[0].row);
    for(const coin of coins.filter(e=>Number.isFinite(e.jumpHeight)))assert.ok(row.some(e=>e.type==='log'&&e.lane===coin.lane),'raised route points at a different lane than its log');
-   if(row[0].terrainActive&&row[0].sectionType==='wave-train'&&row.every(e=>e.type==='log'))assert.equal(coins.filter(e=>e.high).length,5);
+   if(row[0].terrainActive&&row[0].sectionType==='wave-train'&&actionWall(row)&&row.every(e=>e.type==='log'))assert.equal(coins.filter(e=>e.high).length,5);
   }
  }
  for(const type of ['narrows','wave-train','low-canopy'])assert.ok(['rock','log','branch'].every(h=>density[type][h]>0),'terrain section repeats one hazard type');
@@ -117,11 +118,11 @@ test('natural no-Rush generation provides at least three eligible jumps for ever
 function waveFixture(){
  const g=createGame(73,1);
  let d=300;while(terrainSection(d,g.terrainProfile).type!=='wave-train'||terrainSection(d,g.terrainProfile).phase!=='active')d+=5;
- return Object.assign(g,{distance:d,time:1000,entities:[],nextRow:1e9,shield:false,goal:{kind:'tricks',start:0,target:1e9}});
+ return Object.assign(g,{lane:1,visualLane:1,distance:d,time:1000,entities:[],nextRow:1e9,shield:false,goal:{kind:'tricks',start:0,target:1e9}});
 }
 function clearWave(g,id,extra={}){
  const section=terrainSection(g.distance,g.terrainProfile);
- g.entities=[0,1,2].map(lane=>({id:id*3+lane,type:'log',lane,d:g.distance+1,row:id,terrainActive:true,terrainComboAvailable:section.comboAvailable,sectionType:'wave-train',sectionId:section.id}));
+ g.entities=LANES.map(lane=>({id:id*LANE_COUNT+lane,type:'log',lane,d:g.distance+1,row:id,terrainActive:true,terrainComboAvailable:section.comboAvailable,sectionType:'wave-train',sectionId:section.id}));
  Object.assign(g,{action:'jump',actionTime:.2},extra);updateGame(g,emptyInput(),.05);
 }
 test('three actual wave jumps pay one chain reward, a new section resets it and powered contacts cannot farm it',()=>{

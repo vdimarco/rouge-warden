@@ -1,9 +1,10 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,applyAction,updateGame,generateAhead,jumpHeight,speedAt,validBest,JUMP_SECONDS,nextLevel,restartLevel,snapshot} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY,levelSeed,validProgress,freshProgress,unlockLevel} from '../src/game/levels.js';
 import {coveredLanes,actionWall} from './route-coverage.js';
-const clean=()=>Object.assign(createGame(1),{entities:[],nextRow:1e9,shield:false});
+const clean=()=>Object.assign(createGame(1),{entities:[],nextRow:1e9,shield:false,lane:1,visualLane:1});
 const hazard=(type,lane=1)=>({id:999,type,lane,d:1,done:false});
 const advance=(g,seconds,input=emptyInput())=>{for(let t=0;t<seconds;t+=1/60)updateGame(g,input,Math.min(1/60,seconds-t));};
 test('discrete input survives a short tap, clamps lanes and is consumed once',()=>{const g=clean(),i=emptyInput();queueAction(i,'left');updateGame(g,i,.016);assert.equal(g.lane,0);updateGame(g,i,.016);assert.equal(g.lane,0);applyAction(g,'left');assert.equal(g.lane,0);queueAction(i,'right');queueAction(i,'right');updateGame(g,i,.016);assert.equal(g.lane,2);assert.equal(i.actions.length,0);});
@@ -26,7 +27,7 @@ test('seeded finite maps vary routes, stop hazards before the finish and use inc
    assert.ok(e.d<level.length-FINISH_RUNWAY,'finish runway contains an obstacle');
    if(!rows.has(e.row))rows.set(e.row,[]);rows.get(e.row).push(e);
   }
-  for(const row of rows.values())assert.ok(coveredLanes(row).length<=2||actionWall(row));
+  for(const row of rows.values())assert.ok(coveredLanes(row).length<LANE_COUNT||actionWall(row));
   assert.equal(new Set(g.patternsSeen.filter(p=>p!=='tutorial')).size,6);
   assert.ok(g.entities.every(e=>e.d<level.length),'entities continue after the finish');
   const count=g.entities.length;g.distance=level.length+100;generateAhead(g);assert.equal(g.entities.length,count);
@@ -34,7 +35,7 @@ test('seeded finite maps vary routes, stop hazards before the finish and use inc
  }
  assert.equal(speedAt(0),LEVELS[0].startSpeed);assert.equal(speedAt(99999),LEVELS[0].maxSpeed);assert.equal(speedAt(99999,2),LEVELS[2].maxSpeed);
  const tutorial=createGame(7).entities.filter(e=>e.row<3&&['log','branch','rock'].includes(e.type));
- assert.deepEqual(tutorial.map(e=>[e.type,e.lane]),[['log',1],['branch',1],['rock',1]]);
+ assert.deepEqual(tutorial.map(e=>[e.type,e.lane]),[['log',CENTER_LANE],['branch',CENTER_LANE],['rock',CENTER_LANE]]);
  assert.ok(tutorial[0].d/LEVELS[0].startSpeed>1.5,'the faster start cuts off the first reaction window');
  assert.ok((tutorial[1].d-tutorial[0].d)/LEVELS[0].startSpeed>1,'introductory jump/duck spacing became too tight');
 });
@@ -70,7 +71,7 @@ test('a wipeout cannot be promoted to victory in the finish frame, and retry pre
  const carry={score:7800,coins:70,distance:1400,jumps:5,ducks:4,levelsCleared:1};
  const g=createGame(987,1,carry),length=LEVELS[1].length;
  assert.equal(nextLevel(g),null);
- Object.assign(g,{entities:[{id:912,type:'rock',lane:1,d:length-.1}],nextRow:1e9,distance:length-.5,shield:false,coins:99,bonus:900});
+ Object.assign(g,{lane:1,visualLane:1,entities:[{id:912,type:'rock',lane:1,d:length-.1}],nextRow:1e9,distance:length-.5,shield:false,coins:99,bonus:900});
  updateGame(g,emptyInput(),.05);
  assert.equal(g.phase,'lost');assert.equal(g.bonus,900);assert.equal(snapshot(g).campaign.levelsCleared,1);assert.equal(nextLevel(g),null);
  const retry=restartLevel(g);

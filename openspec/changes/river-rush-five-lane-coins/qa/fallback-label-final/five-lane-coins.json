@@ -1,0 +1,373 @@
+{
+  "passed": true,
+  "base": "http://127.0.0.1:8765/river-rush/",
+  "dev": "http://127.0.0.1:3001/",
+  "scope": "fallback",
+  "controls": [],
+  "natural": [],
+  "fixtures": [
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "phone",
+      "lane": 2,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 300,
+          "type": "branch",
+          "lane": 0,
+          "branchLanes": [
+            0,
+            1,
+            2
+          ],
+          "branchSide": -1,
+          "d": 490,
+          "row": 20,
+          "fullRiver": true,
+          "canopyLead": true,
+          "worldX": -7.6,
+          "ahead": 40
+        },
+        {
+          "id": 301,
+          "type": "branch",
+          "lane": 3,
+          "branchLanes": [
+            3,
+            4
+          ],
+          "branchSide": 1,
+          "d": 490,
+          "row": 20,
+          "fullRiver": true,
+          "canopyLead": false,
+          "worldX": 3.8,
+          "ahead": 40
+        }
+      ],
+      "factory": null,
+      "samples": [],
+      "pixelProof": [],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 162.006,
+        "right": 227.994,
+        "width": 65.988
+      },
+      "branchSpans": [
+        {
+          "lanes": [
+            0,
+            1,
+            2
+          ],
+          "width": 3,
+          "minLane": 0,
+          "maxLane": 2,
+          "centerLane": 1,
+          "side": -1
+        },
+        {
+          "lanes": [
+            3,
+            4
+          ],
+          "width": 2,
+          "minLane": 3,
+          "maxLane": 4,
+          "centerLane": 3.5,
+          "side": 1
+        }
+      ],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback-label-final/phone-paired-full-five-2d.jpg",
+      "passed": true
+    },
+    {
+      "explicitFixtureStateAndClock": true,
+      "renderer": "canvas2d",
+      "layout": "desktop",
+      "lane": 2,
+      "map": 0,
+      "pattern": null,
+      "entities": [
+        {
+          "id": 300,
+          "type": "branch",
+          "lane": 0,
+          "branchLanes": [
+            0,
+            1,
+            2
+          ],
+          "branchSide": -1,
+          "d": 490,
+          "row": 20,
+          "fullRiver": false,
+          "canopyLead": true,
+          "worldX": -7.6,
+          "ahead": 40
+        }
+      ],
+      "factory": null,
+      "samples": [],
+      "pixelProof": [],
+      "scene": null,
+      "finish": {
+        "remaining": 3750,
+        "course": 4200,
+        "center": {
+          "x": 477.7719408709754,
+          "y": -198.56917080224386,
+          "z": -3750
+        },
+        "posts": [
+          {
+            "side": -1,
+            "x": 467.17194087097545,
+            "y": -198.56917080224386,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 488.37194087097544,
+            "y": -198.56917080224386,
+            "z": -3750
+          }
+        ],
+        "docks": [
+          {
+            "side": -1,
+            "x": 456.62604934796565,
+            "y": -197.74602810826366,
+            "z": -3750
+          },
+          {
+            "side": 1,
+            "x": 498.91783239398524,
+            "y": -197.4670241371604,
+            "z": -3750
+          }
+        ],
+        "markers": [
+          {
+            "side": -1,
+            "offset": 120,
+            "course": 4080,
+            "x": 439.453128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": 1,
+            "offset": 120,
+            "course": 4080,
+            "x": 460.653128697621,
+            "y": -195.21205812042496,
+            "z": -3630
+          },
+          {
+            "side": -1,
+            "offset": 80,
+            "course": 4120,
+            "x": 441.857679891081,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": 1,
+            "offset": 80,
+            "course": 4120,
+            "x": 463.05767989108097,
+            "y": -196.80917080224387,
+            "z": -3670
+          },
+          {
+            "side": -1,
+            "offset": 40,
+            "course": 4160,
+            "x": 452.22769501713634,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": 1,
+            "offset": 40,
+            "course": 4160,
+            "x": 473.42769501713633,
+            "y": -197.68917080224386,
+            "z": -3710
+          },
+          {
+            "side": -1,
+            "offset": 15,
+            "course": 4185,
+            "x": 461.4896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          },
+          {
+            "side": 1,
+            "offset": 15,
+            "course": 4185,
+            "x": 482.6896243064218,
+            "y": -198.23917080224388,
+            "z": -3735
+          }
+        ],
+        "visible": false
+      },
+      "fallbackBody": {
+        "left": 587.73,
+        "right": 777.27,
+        "width": 189.54
+      },
+      "branchSpans": [
+        {
+          "lanes": [
+            0,
+            1,
+            2
+          ],
+          "width": 3,
+          "minLane": 0,
+          "maxLane": 2,
+          "centerLane": 1,
+          "side": -1
+        }
+      ],
+      "resourcesAfter": {
+        "uploads": 0,
+        "shaders": 0
+      },
+      "gpuErrors": [],
+      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback-label-final/desktop-partial-three-2d.jpg",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "scoreWrites": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "limitations": [
+    "SwiftShader Chromium; no physical hardware FPS or human reaction-time claim.",
+    "Actual App tests retain natural seeds, clocks and states; isolated visual fixtures declare their own state."
+  ],
+  "fixtureRenderer": "canvas2d",
+  "fixtureStart": 9,
+  "stoppedProof": {
+    "sameStoppedPixels": true,
+    "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback-label-final/phone-paired-full-five-2d.jpg"
+  }
+}

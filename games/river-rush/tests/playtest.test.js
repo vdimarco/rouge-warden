@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,updateGame,timeToImpact,nextLevel,restartLevel,snapshot,hazardTouchesLane} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
@@ -17,7 +18,7 @@ test('40 delayed-input players clear the longer escalating adventure unshielded 
     const next=obstacles.find(e=>hazardTouchesLane(e,g.lane));
     if(next&&!handled.has(next.id)&&timeToImpact(g,next.d)<.62&&!pending){
      const row=obstacles.filter(e=>e.row===next.row);
-     const safe=[0,1,2].find(l=>!row.some(e=>hazardTouchesLane(e,l)));
+     const safe=LANES.find(l=>!row.some(e=>hazardTouchesLane(e,l)));
      assert.ok(next.type!=='rock'||safe!==undefined,'a rock row has no route');
      pending={id:next.id,at:g.time+.18+(seed%7)*.018,actions:next.type==='rock'?Array.from({length:Math.abs(safe-g.lane)},()=>safe>g.lane?'right':'left'):[next.type==='log'?'jump':'duck']};
     }

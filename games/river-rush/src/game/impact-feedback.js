@@ -1,5 +1,6 @@
 // Contact presentation has its own short fatal clock. It never advances the
 // stopped river, player action or pickup simulation.
+import {CENTER_LANE} from './lanes.js';
 export const FATAL_IMPACT_DURATION=.60;
 export const IMPACT_SPRAY_CAPACITY=72;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -11,7 +12,7 @@ export function impactFeedback(g,reduced=false,fatalElapsed=0){
  const age=Math.max(0,g.time-contactTime+(fatal?clamp(fatalElapsed,0,FATAL_IMPACT_DURATION):0));
  const shieldEvent=g.effects.findLast(e=>e.type==='hit'),shieldAge=shieldEvent?Math.max(0,g.time-(shieldEvent.contactTime??shieldEvent.time)+(fatal?clamp(fatalElapsed,0,FATAL_IMPACT_DURATION):0)):10;
  const active=!!event&&age<(fatal?FATAL_IMPACT_DURATION:.56);
- const side=(event?.playerLane??event?.lane??g.visualLane??1)<1?-1:1;
+ const side=(event?.playerLane??event?.lane??g.visualLane??CENTER_LANE)<CENTER_LANE?-1:1;
  const kick=event?Math.exp(-age*8)*(Math.cos(age*19)+.24*Math.sin(age*19)):0;
  const settle=fatal?smooth((age-.1)/.45):0;
  const strength=active?clamp(Math.exp(-age*5)+(fatal?.22:0),0,1):0;
@@ -25,7 +26,7 @@ export function impactFeedback(g,reduced=false,fatalElapsed=0){
  const shakeY=active&&!reduced?Math.sin(age*82+.6)*Math.exp(-age*18)*(fatal?.062:.044):0;
  const splashParticles=active&&!reduced?56:0;
  const shieldShards=active&&!reduced&&shieldPulse>0?16:0;
- return{eventId:event?.id??null,type:event?.type??null,fatal,age,active,strength,recoil,pitch,roll,brace,flash,shieldPulse,shieldAge,shakeX,shakeY,cameraShake:Math.hypot(shakeX,shakeY),splashParticles,shieldShards,side,lane:event?.playerLane??event?.lane??g.visualLane??1};
+ return{eventId:event?.id??null,type:event?.type??null,fatal,age,active,strength,recoil,pitch,roll,brace,flash,shieldPulse,shieldAge,shakeX,shakeY,cameraShake:Math.hypot(shakeX,shakeY),splashParticles,shieldShards,side,lane:event?.playerLane??event?.lane??g.visualLane??CENTER_LANE};
 }
 
 // Reuse the fixed spray pool for impact droplets and shield fragments.

@@ -1,0 +1,18 @@
+{
+  "passed": false,
+  "base": "http://127.0.0.1:8765/river-rush/",
+  "dev": "http://127.0.0.1:3001/",
+  "scope": "controls",
+  "controls": [],
+  "natural": [],
+  "fixtures": [],
+  "errors": [],
+  "scoreWrites": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "limitations": [
+    "SwiftShader Chromium; no physical hardware FPS or human reaction-time claim.",
+    "Actual App tests retain natural seeds, clocks and states; isolated visual fixtures declare their own state."
+  ],
+  "failure": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:8765/river-rush/\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:8765/river-rush/\", waiting until \"load\"\u001b[22m\n\n    at appPage (/workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:36:90)\n    at async controls (/workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:123:13)\n    at async file:///workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:464:32"
+}

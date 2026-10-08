@@ -4,7 +4,7 @@ import {createGame,emptyInput,queueAction,applyAction,updateGame,jumpHeight,time
 import {createMotion,advanceMotion,paddleSample} from '../src/game/motion.js';
 import {readSwipe} from '../src/game/input.js';
 import {renderDpr,foamDepth,riverRate} from '../src/game/quality.js';
-const clean=()=>Object.assign(createGame(1),{entities:[],nextRow:1e9});
+const clean=()=>Object.assign(createGame(1),{entities:[],nextRow:1e9,lane:1,visualLane:1});
 test('lane responds immediately and settles within 150ms at 30, 60 and 120Hz',()=>{
  for(const hz of [30,60,120]){const g=clean();applyAction(g,'right');assert.equal(g.lane,2);for(let i=0;i<Math.ceil(hz*.15);i++)updateGame(g,emptyInput(),1/hz);assert.ok(Math.abs(g.visualLane-2)<.05);}
 });

@@ -1,3 +1,5 @@
+import {CENTER_LANE,LANE_COUNT} from './lanes.js';
+
 // World coordinates, not screen-space particles: every patch shares course speed.
 // `done` means the crossing was scored, not that the physical hazard vanished.
 // A dodged rock or jumped log still has to pass the raft and leave the camera.
@@ -11,7 +13,7 @@ export function bankScenery(distance,view=140){
     const hash=((Math.imul(n,1597334677)^Math.imul(side,3812015801))>>>0)/4294967296;
     const z=n*14+(side===1?7:0)-distance;
     if(z<=-18||z>=view)continue;
-    items.push({id:`${n}:${side}`,z,lane:1+side*(3.1+hash*.45),kind:Math.abs(n+(side===1?2:0))%3,variant:Math.abs(n)%3,size:1.2+hash*.7});
+    items.push({id:`${n}:${side}`,z,lane:CENTER_LANE+side*(CENTER_LANE+2.1+hash*.45),kind:Math.abs(n+(side===1?2:0))%3,variant:Math.abs(n)%3,size:1.2+hash*.7});
   }
   return items.sort((a,b)=>b.z-a.z);
 }
@@ -20,7 +22,7 @@ export function rapids(distance,view=140){
   for(let n=first;n<=last;n++){
     const z=n*5.5-distance;
     if(z<=-10||z>=view)continue;
-    items.push({z,lane:1+Math.sin(n*2.399)*1.15,width:.65+(Math.sin(n*1.73)+1)*.28,variant:Math.abs(n)%3});
+    items.push({z,lane:CENTER_LANE+Math.sin(n*2.399)*(LANE_COUNT/2-.35),width:.65+(Math.sin(n*1.73)+1)*.28,variant:Math.abs(n)%3});
   }
   return items;
 }

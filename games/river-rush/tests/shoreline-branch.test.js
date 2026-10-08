@@ -1,9 +1,10 @@
+import {laneToX,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {shorelineBranch,limbPoint,scenicTree,BRANCH_TREE_PARTS} from '../src/game/shoreline-branch.js';
 import {riverHalfWidth,riverBankHeight,createCourseProfile} from '../src/game/river-course.js';
 import {LEVELS} from '../src/game/levels.js';
-const layouts=[[0],[2],[0,1],[1,2],[0,1,2],[1]];
+const layouts=[[0],[4],[0,1],[3,4],[0,1,2],[2,3,4],[1],[2],[3]];
 const profiles=[0,137,98213,...LEVELS.map(l=>createCourseProfile(137,l.length,l.index))];
 const scenarios=()=>profiles.flatMap(seed=>[110,580,1380,4872].flatMap(d=>layouts.flatMap(branchLanes=>[-1,1].map(branchSide=>({seed,d,e:{type:'branch',id:d+branchLanes.length,d,lane:branchLanes[0],branchLanes,branchSide}})))));
 const radiusAt=(limb,t)=>limb.r+(limb.rEnd-limb.r)*t;
@@ -23,7 +24,7 @@ test('natural trees have grounded roots, a joined trunk collar and exact one/two
   assert.equal(trunks.at(-1).b,arms[0].a);assert.equal(arms[0].b,arms[1].a);assert.equal(arms.at(-1).b,shaft[0].a);
   assert.ok(tree.wood.filter(p=>p.kind==='root').every(p=>p.b===trunks[0].b));
   for(const contact of tree.contacts){
-   close(contact.x,(contact.lane-1)*3.8);assert.ok(Math.abs(contact.d)<.5);assert.ok(contact.y>2.75&&contact.y<3.5);
+   close(contact.x,laneToX(contact.lane));assert.ok(Math.abs(contact.d)<.5);assert.ok(contact.y>2.75&&contact.y<3.5);
    assert.ok(shaft.some(p=>p.a.x===contact.x||p.b.x===contact.x),'covered lanes have a physical vertex of the continuous limb');
   }
  }
@@ -36,9 +37,9 @@ test('crooked main limbs clear a ducked rider and keep low wood out of uncovered
    const t=i/64,p=limbPoint(limb,t),r=radiusAt(limb,t);
    assert.ok([p.x,p.y,p.d,r].every(Number.isFinite)&&r>0);assert.ok(limb.rEnd>0&&limb.rEnd<=limb.r);
    if(limb.kind==='span'){assert.ok(p.y-r>=2.02,'a ducked rider clears the entire natural primary limb');minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);minD=Math.min(minD,p.d);maxD=Math.max(maxD,p.d);}
-   if(Math.abs(p.x)<=5.7&&p.y-r<3.5&&Math.abs(p.d)<1.25){
-    assert.ok(Math.max(-5.7,p.x-r)>=tree.span.minX-.1,`low wood enters left clear lane: ${JSON.stringify({p,r,span:tree.span,kind:limb.kind})}`);
-    assert.ok(Math.min(5.7,p.x+r)<=tree.span.maxX+.1,`low wood enters right clear lane: ${JSON.stringify({p,r,span:tree.span,kind:limb.kind})}`);
+   if(Math.abs(p.x)<=PLAYABLE_HALF_WIDTH&&p.y-r<3.5&&Math.abs(p.d)<1.25){
+    assert.ok(Math.max(-PLAYABLE_HALF_WIDTH,p.x-r)>=tree.span.minX-.1,`low wood enters left clear lane: ${JSON.stringify({p,r,span:tree.span,kind:limb.kind})}`);
+    assert.ok(Math.min(PLAYABLE_HALF_WIDTH,p.x+r)<=tree.span.maxX+.1,`low wood enters right clear lane: ${JSON.stringify({p,r,span:tree.span,kind:limb.kind})}`);
    }
   }
   for(let i=1;i<shaft.length;i++)assert.equal(shaft[i-1].b,shaft[i].a);
@@ -75,6 +76,6 @@ test('natural anatomy is reproducible and independent of reward lane',()=>{
 test('decorative trees remain outside the corridor with bounded resources',()=>{
  for(const seed of profiles)for(const d of [110,580,1380,4872])for(const side of [-1,1]){
   const tree=scenicTree({id:21,d,side},d,seed);assert.ok(tree.wood.length<=BRANCH_TREE_PARTS&&tree.leaves.length<=BRANCH_TREE_PARTS);
-  for(const limb of tree.wood)for(let i=0;i<=64;i++){const t=i/64,p=limbPoint(limb,t);assert.ok(Math.abs(p.x)-radiusAt(limb,t)>5.7);assert.ok(limb.rEnd>0&&limb.rEnd<=limb.r);}
+  for(const limb of tree.wood)for(let i=0;i<=64;i++){const t=i/64,p=limbPoint(limb,t);assert.ok(Math.abs(p.x)-radiusAt(limb,t)>PLAYABLE_HALF_WIDTH);assert.ok(limb.rEnd>0&&limb.rEnd<=limb.r);}
  }
 });

@@ -1,3 +1,4 @@
+import {laneToX} from './lanes.js';
 // The GPU renderer imports these exact wave coefficients. Floating-origin
 // coordinates are converted back to world distance for both mesh and probes.
 import {rapidAt,rapidDerivative,riverElevation,riverIntensity,riverIntensityDerivative} from './river-course.js';
@@ -29,7 +30,7 @@ export function floatTarget(x,distance,time,reduced=false,seed=137){
   const front=surfaceAt(x,distance+1.45,time,false,seed).height+riverElevation(distance+1.45,seed)-base,back=surfaceAt(x,distance-1.45,time,false,seed).height+riverElevation(distance-1.45,seed)-base;
   return {height:(left+right+front+back)/4+.12,pitch:Math.atan2(front-back,2.9),roll:Math.atan2(right-left,2.1)};
 }
-export function createFloat(g,course=g.seed){const x=(g.visualLane-1)*3.8,t=floatTarget(x,g.distance,g.time,false,course),pitch=clamp(t.pitch,-.29,.18),roll=clamp(t.roll,-.25,.25);return{course,time:g.time,height:t.height,heightTarget:t.height,heaveVelocity:0,pitch,pitchTarget:pitch,pitchVelocity:0,roll,rollTarget:roll,rollVelocity:0,lastEvent:0,landAt:-10};}
+export function createFloat(g,course=g.seed){const x=laneToX(g.visualLane),t=floatTarget(x,g.distance,g.time,false,course),pitch=clamp(t.pitch,-.29,.18),roll=clamp(t.roll,-.25,.25);return{course,time:g.time,height:t.height,heightTarget:t.height,heaveVelocity:0,pitch,pitchTarget:pitch,pitchVelocity:0,roll,rollTarget:roll,rollVelocity:0,lastEvent:0,landAt:-10};}
 // Exact critically damped response to a linearly moving probe target. A
 // zero-order target adds a frame-rate-dependent lead on fast standing waves.
 // Constant targets retain the original response; pause is an exact no-op.
@@ -40,7 +41,7 @@ function spring(value,velocity,target,omega,dt,start=target){
 }
 export function advanceFloat(state,g,reduced=false){
   const dt=clamp(g.time-state.time,0,.05);state.time=g.time;
-  const target=floatTarget((g.visualLane-1)*3.8,g.distance,g.time,reduced,state.course??g.seed);
+  const target=floatTarget(laneToX(g.visualLane),g.distance,g.time,reduced,state.course??g.seed);
   for(const e of g.effects){if(e.id<=state.lastEvent)continue;state.lastEvent=e.id;if(e.type==='land'){state.heaveVelocity-=reduced?0:2.2;state.landAt=e.time;}}
   if(reduced){state.height=state.heightTarget=.12;state.pitch=state.pitchTarget=state.roll=state.rollTarget=0;state.heaveVelocity=state.pitchVelocity=state.rollVelocity=0;return state;}
   const linear=state.course?.length>0,pitch=clamp(target.pitch,-.29,.18),roll=clamp(target.roll-g.laneVelocity*.011,-.25,.25);
