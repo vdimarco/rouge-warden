@@ -4,3 +4,9 @@
 - [x] Check storage failure paths, scene construction, desktop/touch movement, collision, selection and launch in Node.
 - [ ] Check 3D visuals and performance in a browser with WebGL, plus a physical phone. Cloud Chrome has WebGL disabled; local Chromium download is invalid.
 - [ ] Validate through OpenSpec CLI and archive once visual checks pass. CLI is unavailable. Markdown structure inspected.
+
+- [ ] Replace local leaderboard with PostHog views, plays, likes and active time sorting.
+- [ ] Instrument every catalog destination without replay or preview pollution.
+- [ ] Add bounded, cached server aggregate queries and document private read credential setup.
+- [ ] Verify query against the connected project, endpoint failure paths, tracking lifecycle, and rendered ranking controls.
+- [ ] Configure a private PostHog read credential and verify live production collection after deployment.

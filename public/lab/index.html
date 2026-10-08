@@ -126,5 +126,5 @@ for (const card of document.querySelectorAll(".toy[data-toy]")) {
   card.querySelector(".time").textContent = s.ms > 0 ? `Your time: ${fmtTime(s.ms)}, ${s.runs} ${s.runs === 1 ? "run" : "runs"}.` : "Not played yet in this browser.";
 }
 </script>
-</body>
+<script src="/arcade/analytics.js" data-game="lab"></script></body>
 </html>
