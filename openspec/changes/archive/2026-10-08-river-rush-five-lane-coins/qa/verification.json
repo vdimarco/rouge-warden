@@ -1,0 +1,200 @@
+{
+  "passed": true,
+  "finalBundle": "index-CM2Lutz-.js",
+  "css": "index-CBusqfet.css",
+  "testedPrimaryBundle": "index-1CN26cCA.js",
+  "finalOnlyRuntimeCorrection": "Fallback branch hint text is drawn after both bank trees; primary3D, engine, App and styles unchanged. Two targeted final-source fallback views pass.",
+  "controls": {
+    "layouts": [
+      "phone390x844",
+      "desktop1365x900",
+      "landscape844x390"
+    ],
+    "cases": 6,
+    "keyboardAndHeldDragAllFive": true,
+    "reversalsJumpDuckAndClamps": true,
+    "maximumSpringError": 4.796163466380676e-14
+  },
+  "title": {
+    "rejectedHeroMounted": false,
+    "background": "url(\"http://127.0.0.1:8765/river-rush/art/menu.png\")",
+    "video": "/river-rush/art/menu-loop.mp4",
+    "canvasLabel": "Five-lane river runner. Left and right change lanes, Up or Space jumps, Down ducks, Shift activates Rush.",
+    "requests": [
+      "http://127.0.0.1:8765/river-rush/art/menu.png",
+      "http://127.0.0.1:8765/river-rush/art/menu-loop.mp4",
+      "http://127.0.0.1:8765/river-rush/art/menu-loop.mp4",
+      "http://127.0.0.1:8765/river-rush/art/menu-loop.mp4"
+    ],
+    "normalMotion": {
+      "approvedVideoPlaying": true,
+      "pausesForHelp": true,
+      "resumesAfterHelp": true,
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/phone-restored-title.jpg"
+    },
+    "reducedMotion": {
+      "animatedVideoAbsent": true,
+      "priorStill": "url(\"http://127.0.0.1:8765/river-rush/art/menu.png\")"
+    }
+  },
+  "webglFixtures": {
+    "acceptedViews": 17,
+    "viewPaths": [
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-all-five-outer0-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-all-five-outer4-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-all-five-outer0-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-all-five-outer4-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/landscape-all-five-outer0-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/landscape-all-five-outer4-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-gold-split-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-gold-fork-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/landscape-gold-offbeat-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-gold-staggered-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-gold-sweep-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-finish-map0-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-finish-map1-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/landscape-finish-map2-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-paired-full-five-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-paired-full-five-3d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-partial-three-3d.jpg"
+    ],
+    "actualCoinUploadAndPixelProof": true,
+    "factoryPatterns": [
+      "split",
+      "fork",
+      "offbeat",
+      "staggered",
+      "sweep"
+    ],
+    "unchangedResources": true,
+    "boundedCoinPool": {
+      "body": 64,
+      "rims": 128,
+      "naturalPeak": 23,
+      "synthetic80Overflow": 16
+    }
+  },
+  "fallback": {
+    "matrixViews": 11,
+    "finalForegroundViews": 2,
+    "foregroundPaths": [
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback-label-final/phone-paired-full-five-2d.jpg",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback-label-final/desktop-partial-three-2d.jpg"
+    ],
+    "labelVisuallyApprovedByRoot": true
+  },
+  "natural": {
+    "localPhoneFullMap": true,
+    "final": {
+      "phase": "won",
+      "time": 66.0665999999984,
+      "distance": 4200,
+      "shield": true,
+      "shieldsUsed": 0,
+      "coins": 258,
+      "score": 43840
+    },
+    "optionalChoices": {
+      "emitted": 81,
+      "collected": 0,
+      "observedMissed": 81,
+      "adjacentStandingMisses": 32
+    },
+    "maxVisibleCoins": 23,
+    "overflow": 0,
+    "maxSpringError": 4.884981308350689e-13,
+    "resourcesBefore": {
+      "uploads": 52,
+      "shaders": 76
+    },
+    "resourcesAfter": {
+      "uploads": 52,
+      "shaders": 76
+    },
+    "pause": {
+      "samePixels": true,
+      "sameStatus": true
+    },
+    "screenshots": [
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/natural/phone-finish.png",
+      "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/natural/phone-natural-canopy-full-near.png"
+    ],
+    "playingHintText": {
+      "partial3": "Duck 3 lanesSwipe down or dodge",
+      "full": "Duck full riverSwipe down to duck"
+    }
+  },
+  "resolvedChecks": [
+    "Local servers were initially absent and restarted; no gameplay ran on connection failure.",
+    "A QA reversal originally queued before its outward target was consumed; waiting for actual target fixed the controller.",
+    "The sweep fixture initially placed its nearest token4m ahead behind the rider; moving the isolated fixture to20m minimum lead made each token visible.",
+    "The paired fallback tree overpainted its lead warning; final foreground pass is source-fixed and visually rechecked.",
+    "The root restarted local servers after sole-browser ownership handoff."
+  ],
+  "limitations": [
+    "SwiftShader Chromium; no physical hardware FPS or human reaction-time claim.",
+    "Actual App tests retain natural seeds, clocks and states; isolated visual fixtures declare their own state."
+  ],
+  "publicScoreWrites": [],
+  "production": {
+    "passed": true,
+    "bundle": "https://arcade.uptick.systems/river-rush/assets/index-CM2Lutz-.js",
+    "shortActualAppRun": {
+      "phase": "playing",
+      "time": 11.050000000000022,
+      "distance": 601.5841000000004,
+      "shield": true,
+      "shieldsUsed": 0,
+      "coins": 47,
+      "score": 6143
+    },
+    "directTouchedCoins": 47,
+    "adjacentStandingMisses": 8,
+    "optionalCoinsCollected": 0,
+    "playingFullCanopyCue": {
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/live/desktop-playing-full-canopy-cue.png",
+      "before": {
+        "text": "Duck full riverSwipe down to duck",
+        "rect": {
+          "x": 24,
+          "y": 96,
+          "width": 184,
+          "height": 52
+        },
+        "opacity": "1",
+        "time": 6.0499999999999865,
+        "distance": 322.7191000000001,
+        "phase": "playing",
+        "paused": "false"
+      },
+      "after": {
+        "text": "Duck full riverSwipe down to duck",
+        "rect": {
+          "x": 24,
+          "y": 96,
+          "width": 184,
+          "height": 52
+        },
+        "opacity": "1",
+        "time": 6.649999999999984,
+        "distance": 355.6021000000001,
+        "phase": "playing",
+        "paused": "false"
+      },
+      "realPlayingFrame": true,
+      "controllerStayedActive": true
+    },
+    "resourcesBefore": {
+      "uploads": 52,
+      "shaders": 76
+    },
+    "resourcesAfter": {
+      "uploads": 52,
+      "shaders": 76
+    },
+    "exactRuntimeBytesReceipt": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/production-bytes.json",
+    "errors": [],
+    "publicScoreWrites": []
+  },
+  "sourceCommit": "1bb3f758a40592a78dd6b901c1a782ed75a4d36c"
+}

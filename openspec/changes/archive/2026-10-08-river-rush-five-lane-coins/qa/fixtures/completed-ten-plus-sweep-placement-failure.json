@@ -783,7 +783,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/phone-all-five-outer0-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-all-five-outer0-3d.jpg",
       "passed": true
     },
     {
@@ -1563,7 +1563,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/phone-all-five-outer4-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-all-five-outer4-3d.jpg",
       "passed": true
     },
     {
@@ -2343,7 +2343,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/desktop-all-five-outer0-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-all-five-outer0-3d.jpg",
       "passed": true
     },
     {
@@ -3123,7 +3123,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/desktop-all-five-outer4-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-all-five-outer4-3d.jpg",
       "passed": true
     },
     {
@@ -3903,7 +3903,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/landscape-all-five-outer0-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/landscape-all-five-outer0-3d.jpg",
       "passed": true
     },
     {
@@ -4683,7 +4683,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/landscape-all-five-outer4-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/landscape-all-five-outer4-3d.jpg",
       "passed": true
     },
     {
@@ -5655,7 +5655,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/phone-gold-split-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-gold-split-3d.jpg",
       "passed": true
     },
     {
@@ -6523,7 +6523,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/desktop-gold-fork-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-gold-fork-3d.jpg",
       "passed": true
     },
     {
@@ -7443,7 +7443,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/landscape-gold-offbeat-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/landscape-gold-offbeat-3d.jpg",
       "passed": true
     },
     {
@@ -8363,7 +8363,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/phone-gold-staggered-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/phone-gold-staggered-3d.jpg",
       "passed": true
     },
     {
@@ -9127,7 +9127,7 @@
         "shaders": 76
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fixtures/desktop-gold-sweep-3d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fixtures/desktop-gold-sweep-3d.jpg",
       "passed": false
     }
   ],

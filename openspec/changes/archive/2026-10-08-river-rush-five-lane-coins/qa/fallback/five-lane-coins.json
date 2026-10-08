@@ -276,7 +276,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-all-five-outer0-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/phone-all-five-outer0-2d.jpg",
       "passed": true
     },
     {
@@ -549,7 +549,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-all-five-outer4-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/phone-all-five-outer4-2d.jpg",
       "passed": true
     },
     {
@@ -822,7 +822,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-all-five-outer0-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/desktop-all-five-outer0-2d.jpg",
       "passed": true
     },
     {
@@ -1095,7 +1095,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-all-five-outer4-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/desktop-all-five-outer4-2d.jpg",
       "passed": true
     },
     {
@@ -1368,7 +1368,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/landscape-all-five-outer0-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/landscape-all-five-outer0-2d.jpg",
       "passed": true
     },
     {
@@ -1641,7 +1641,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/landscape-all-five-outer4-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/landscape-all-five-outer4-2d.jpg",
       "passed": true
     },
     {
@@ -1914,7 +1914,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-finish-map0-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/phone-finish-map0-2d.jpg",
       "passed": true
     },
     {
@@ -2187,7 +2187,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-finish-map1-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/desktop-finish-map1-2d.jpg",
       "passed": true
     },
     {
@@ -2460,7 +2460,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/landscape-finish-map2-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/landscape-finish-map2-2d.jpg",
       "passed": true
     },
     {
@@ -2648,7 +2648,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-paired-full-five-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/phone-paired-full-five-2d.jpg",
       "passed": true
     },
     {
@@ -2809,7 +2809,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/desktop-partial-three-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/desktop-partial-three-2d.jpg",
       "passed": true
     }
   ],
@@ -2825,6 +2825,6 @@
   "fixtureStart": 0,
   "stoppedProof": {
     "sameStoppedPixels": true,
-    "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback/phone-all-five-outer0-2d.jpg"
+    "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback/phone-all-five-outer0-2d.jpg"
   }
 }

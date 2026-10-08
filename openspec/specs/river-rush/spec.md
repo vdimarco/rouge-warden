@@ -45,23 +45,19 @@ The simulation SHALL stop on pause, page hide and completion. Reduced motion SHA
 - **WHEN** reduced motion changes during play
 - **THEN** water displacement and decorative effects stop while lane/jump/duck controls remain functional
 
-### Requirement: Character-led title artwork
-The title screen SHALL display local illustrated jungle-rafting key art inspired by the supplied adult character, with long dark hair, a brown wrap and wooden raft in rapids. The illustration SHALL contain no phone overlay or baked-in title text. Responsive crops SHALL retain the character's face and readable live title, Start, map, Help, Leaderboard and arcade controls. The previous title video SHALL NOT cover this artwork.
+### Requirement: Higgsfield living title scene
+The title scene SHALL use a Higgsfield-generated silent looping video based on the approved character art, with a still-image fallback. It SHALL preserve live readable menu controls, pause while hidden or covered by instructions, and use the still image for reduced motion or data-saving.
 
-#### Scenario: View the title across layouts
-- **WHEN** the player opens the title at 1365×900, 390×844 or 844×390
-- **THEN** the hero is undistorted, his face and the full Start button are initially visible, and all menu actions are reachable without artwork intercepting input
+#### Scenario: Enter the menu
+- **WHEN** the menu loads in a normal-motion browser
+- **THEN** the river and character artwork animate behind working Start and Switch game controls
 
-#### Scenario: Use the title actions
-- **WHEN** the player starts a ready run or opens and closes Help or Leaderboard
-- **THEN** the existing action works and returning to the title restores its artwork and controls
-
-#### Scenario: Art unavailable or motion reduced
-- **WHEN** the hero image fails to load or the player prefers reduced motion
-- **THEN** readable live menu actions remain usable on a stable dark background without waiting for the title artwork
+#### Scenario: Video unavailable
+- **WHEN** video cannot load or motion/data preferences disable it
+- **THEN** the approved still image and all menu actions remain usable
 
 ### Requirement: Runner perspective art
-River Rush SHALL present a three-lane forward-perspective river with generated environment, approved character likeness, long hair and only a modest loincloth. Lane swaps, raft jumps, ducks and obstacle depth SHALL clearly communicate their gameplay state at 1536×1024, 390×844 and 844×390.
+River Rush SHALL present a five-lane forward-perspective river with generated environment, approved character likeness, long hair and only a modest loincloth. Lane swaps, raft jumps, ducks and obstacle depth SHALL clearly communicate their gameplay state at 1536×1024, 390×844 and 844×390.
 #### Scenario: Chain actions
 - **WHEN** the player swaps lane, jumps a log and ducks a branch
 - **THEN** the raft and character visibly perform the actions while upcoming hazards remain readable
@@ -73,7 +69,7 @@ Coins, successful obstacle actions, power-ups, shield impacts and fatal collisio
 - **THEN** a shield burst communicates protection consumed, the streak breaks and the run continues with brief collision grace
 
 ### Requirement: Endless runner controls and retry
-The finite adventure SHALL offer three lanes, immediate lane changes, jump,
+The finite adventure SHALL offer five lanes, immediate lane changes, jump,
 duck and Rush through keyboard/buttons and screen-wide directional gestures.
 Inputs SHALL consume each tap once. A fatal collision SHALL show cumulative
 score, distance, coins, cause and one-action current-map retry. Map clears SHALL
@@ -90,7 +86,7 @@ show Next map or final victory rather than a wipeout.
   harder map starts with cumulative totals carried exactly once
 
 ### Requirement: Fair escalating obstacle course
-Each seeded finite course SHALL vary slalom, coin zigzags, mixed obstacles,
+Each seeded finite five-lane course SHALL vary slalom, coin zigzags, mixed obstacles,
 jump waves, low canopy and split-current motifs. Later maps SHALL increase
 speed/complexity while each row retains a clear lane or traversable action
 barrier and enough time for the existing jump/duck durations. Hazards SHALL
@@ -272,7 +268,7 @@ The primary view SHALL distinguish jungle canopy, sandstone gorge and moonlit te
 The primary view SHALL use a run-seeded continuous river profile with bends, varying width, quiet pools and downhill chutes. The channel SHALL be wider than the previous 19-unit strip and the chase framing SHALL make the raft smaller relative to the environment. Elevation ahead SHALL descend along the course. Terrain, water, hazards and decorative objects SHALL follow the same profile. Near scenery SHALL approach coherently in the downstream chase view with irregular spacing and asymmetry.
 #### Scenario: Ride through pools and chutes
 - **WHEN** the player rides through successive generated sections on phone, desktop or landscape
-- **THEN** water width, bends, drop grade and bank composition visibly change, the raft points downstream and upcoming hazards remain legible across the three lanes
+- **THEN** water width, bends, drop grade and bank composition visibly change, the raft points downstream and upcoming hazards remain legible across the five lanes
 #### Scenario: Cross procedural boundaries
 - **WHEN** the course advances through a chute or terrain segment boundary
 - **THEN** elevation and channel edges remain continuous, hazards remain on the river and the raft does not teleport or change logical lanes
@@ -305,7 +301,7 @@ Renderer preparation SHALL avoid repeated model texture/program work in active s
 - **THEN** resource preparation remains bounded, animation scheduling continues and the accepted river visuals and controls are available
 #### Scenario: Sustained slow rendering
 - **WHEN** active frame times remain slow or the viewport changes size
-- **THEN** rendering cost reduces with bounded buffer changes, while all three lanes remain readable on phone, desktop and landscape
+- **THEN** rendering cost reduces with bounded buffer changes, while all five lanes remain readable on phone, desktop and landscape
 #### Scenario: Pause and visibility
 - **WHEN** the player pauses or hides the page and later resumes
 - **THEN** paused pixels remain unchanged, hidden time does not lower quality or advance the run, and resumed rendering continues
@@ -339,13 +335,12 @@ The control row SHALL present Left lane, Jump, Duck and Right lane in that order
 ### Requirement: Shoreline ducking branches
 Duck hazards SHALL visibly grow from rooted shoreline trees in WebGL and the
 2D fallback. Generated trees SHALL offer three contiguous widths covering one,
-two or three river lanes. One- and two-lane branches SHALL originate from the
-nearest bank; full-width branches SHALL vary bank sides. One tree SHALL present
+two or three river lanes. Each tree SHALL originate from its declared bank. Full-river canopy rows SHALL vary which bank carries the three-lane tree. One tree SHALL present
 each coherent span. Its visible low wood, markers, hint and physical coverage
 SHALL agree, including between covered lanes. Timed ducking SHALL clear every
 covered lane; uncovered lanes SHALL remain safely traversable. Accepted speed,
 inputs, action windows, protection feedback and finite finishes SHALL remain.
-Tree resources SHALL be prepared and bounded.
+Full five-lane canopy rows SHALL use two opposite-bank native trees rather than stretching one tree beyond its three-lane variant. A successful duck SHALL reward that row once. Partial three-lane trees SHALL NOT be labeled as covering the full river. Tree resources SHALL be prepared and bounded.
 
 #### Scenario: Read and react to three widths
 - **WHEN** a player approaches one-, two- or three-lane branches on phone, desktop or short landscape
@@ -359,7 +354,7 @@ Tree resources SHALL be prepared and bounded.
 
 #### Scenario: Safe routes and stopped state
 - **WHEN** seeded play completes all three maps, pauses or uses the fallback
-- **THEN** full-width branches remain duckable, partial spans retain a fair clear or duck route, paused pixels stay fixed, and fallback coverage agrees within fixed resource bounds
+- **THEN** full five-lane canopies formed by opposite-bank three-plus-two-lane trees remain duckable, partial spans retain a fair clear or duck route, paused pixels stay fixed, and fallback coverage agrees within fixed resource bounds
 
 ### Requirement: Natural tree anatomy and materials
 Shoreline duck trees SHALL resemble the supplied oak-over-water and mossy
@@ -721,3 +716,18 @@ Courses SHALL offer sparse drifting relic targets in clear recovery space using 
 #### Scenario: Keep accessible feedback and bounded play
 - **WHEN** a player mutes, pauses, hides, retries or plays the graphics fallback
 - **THEN** sound preferences and stopped motion remain correct, targets remain distinct and reachable, and their prepared resources do not grow with course distance
+
+### Requirement: Varied five-lane coin routes
+Seeded maps SHALL offer geometrically distinct ground coin ribbons, adjacent sweeps, staggered zigzags and split or geometric choices across all five lanes, with at least four ground families over each full map. Raised gold SHALL retain the existing reachable jump arcs. Each station SHALL retain a reachable primary reward route; optional simultaneous branches SHALL NOT require collecting every alternative. Changes along the primary route SHALL allow the existing steering spring enough time even at maximum Rush speed. No ground reward SHALL bait a collision with a rock or a conflicting jump. Coin contact SHALL retain its physical lane and height tolerances without adjacent auto-collection. Entity and render pools SHALL remain bounded.
+
+#### Scenario: Follow changing gold
+- **WHEN** a player rides a complete seeded map
+- **THEN** at least four distinct ground layout families and raised jump arcs appear, use all five lanes, and a timed primary route can be followed with existing steering and actions
+
+#### Scenario: Choose a reward branch
+- **WHEN** the player takes one side of a split or fork trail
+- **THEN** touched gold pays normally while untaken and adjacent coins remain uncollected
+
+#### Scenario: Move across the wider river
+- **WHEN** keyboard or a continuous whole-screen drag sweeps from lane0 to lane4 and reverses
+- **THEN** five distinct lane centers remain visible and usable, outer inputs clamp safely, and continuous steering agrees with hazard and coin contact in both renderers

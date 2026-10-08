@@ -191,7 +191,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback-label-final/phone-paired-full-five-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback-label-final/phone-paired-full-five-2d.jpg",
       "passed": true
     },
     {
@@ -352,7 +352,7 @@
         "shaders": 0
       },
       "gpuErrors": [],
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback-label-final/desktop-partial-three-2d.jpg",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback-label-final/desktop-partial-three-2d.jpg",
       "passed": true
     }
   ],
@@ -368,6 +368,6 @@
   "fixtureStart": 9,
   "stoppedProof": {
     "sameStoppedPixels": true,
-    "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/fallback-label-final/phone-paired-full-five-2d.jpg"
+    "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/fallback-label-final/phone-paired-full-five-2d.jpg"
   }
 }

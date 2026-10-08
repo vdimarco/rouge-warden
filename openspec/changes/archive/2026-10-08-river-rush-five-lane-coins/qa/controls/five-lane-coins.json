@@ -828,7 +828,7 @@
           "active": false
         }
       },
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/phone-keyboard-outer.png",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/phone-keyboard-outer.png",
       "done": true,
       "error": null,
       "kind": "keyboard",
@@ -2315,7 +2315,7 @@
           "active": false
         }
       },
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/phone-drag-outer.png",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/phone-drag-outer.png",
       "done": true,
       "error": null,
       "kind": "drag",
@@ -4105,7 +4105,7 @@
           "active": false
         }
       },
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/desktop-keyboard-outer.png",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/desktop-keyboard-outer.png",
       "done": true,
       "error": null,
       "kind": "keyboard",
@@ -6344,7 +6344,7 @@
           "active": false
         }
       },
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/desktop-drag-outer.png",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/desktop-drag-outer.png",
       "done": true,
       "error": null,
       "kind": "drag",
@@ -8565,7 +8565,7 @@
           "active": false
         }
       },
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/landscape-keyboard-outer.png",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/landscape-keyboard-outer.png",
       "done": true,
       "error": null,
       "kind": "keyboard",
@@ -10484,7 +10484,7 @@
           "active": false
         }
       },
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/landscape-drag-outer.png",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/landscape-drag-outer.png",
       "done": true,
       "error": null,
       "kind": "drag",
@@ -11178,7 +11178,7 @@
       "approvedVideoPlaying": true,
       "pausesForHelp": true,
       "resumesAfterHelp": true,
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/phone-restored-title.jpg"
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/phone-restored-title.jpg"
     },
     "reducedMotion": {
       "animatedVideoAbsent": true,

@@ -1561,7 +1561,7 @@
           "active": true
         }
       },
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/phone-keyboard-outer.png",
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/phone-keyboard-outer.png",
       "done": false,
       "error": "Error: Controls interrupted by lost\n    at tick (eval at evaluate (:311:30), <anonymous>:19:59)",
       "kind": "keyboard",
@@ -2383,7 +2383,7 @@
       "approvedVideoPlaying": true,
       "pausesForHelp": true,
       "resumesAfterHelp": true,
-      "screenshot": "openspec/changes/river-rush-five-lane-coins/qa/controls/phone-restored-title.jpg"
+      "screenshot": "openspec/changes/archive/2026-10-08-river-rush-five-lane-coins/qa/controls/phone-restored-title.jpg"
     },
     "reducedMotion": {
       "animatedVideoAbsent": true,

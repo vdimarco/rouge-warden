@@ -1,0 +1,35 @@
+{
+  "head": "1bb3f758a40592a78dd6b901c1a782ed75a4d36c",
+  "domain": "arcade.uptick.systems",
+  "exactLocalBytes": true,
+  "files": [
+    {
+      "path": "/river-rush/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 865,
+      "sha256": "4b7f1e9fbe5105b67962d946ffffaed116d21ed61187fab3c23d3ff8bb47c88e"
+    },
+    {
+      "path": "/river-rush/art/menu.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 2676425,
+      "sha256": "49d7010137943e1d425168a0abd549be89283b9cbbb3606831c7f2943ebdf6b5"
+    },
+    {
+      "path": "/river-rush/assets/index-CM2Lutz-.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=utf-8",
+      "bytes": 1115013,
+      "sha256": "064a73e0a208bb064c3b617bcc01315575885141a39f697ee874aee3307bc3f0"
+    },
+    {
+      "path": "/river-rush/assets/index-CBusqfet.css",
+      "status": 200,
+      "contentType": "text/css; charset=utf-8",
+      "bytes": 35573,
+      "sha256": "a4d4955834844e197547c0a4894ae9f20571dac45da7cd0af3ac195d6dbedd17"
+    }
+  ]
+}
