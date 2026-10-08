@@ -7,6 +7,12 @@ const gestures = [
   { id: 'duck', label: 'Duck branches', hint: 'Swipe down to duck', path: 'M50 10v48M40 47l10 11 10-11' },
 ];
 
+const enemyGuides = {
+  crocodile: { gesture: 'jump', label: 'Jump weaving croc', hint: 'Swipe up or dodge' },
+  fish: { gesture: 'jump', label: 'Jump leaping fish', hint: 'Swipe up or dodge' },
+  bird: { gesture: 'duck', label: 'Duck diving bird', hint: 'Swipe down or dodge' },
+};
+
 function Gesture({ gesture }) {
   return <div className={`gesture-card gesture-${gesture.id}`}>
     <svg className="gesture-motion" viewBox="0 0 100 76" aria-hidden="true">
@@ -24,7 +30,8 @@ export default function GestureGuide({ variant = 'menu', active = true, time = 0
   const opening = variant === 'play' || variant === 'opening';
   if (!active || (opening && time >= 10 && !enemy)) return null;
   const nextGesture = action === 'log' ? 1 : action === 'branch' ? 2 : action === 'rock' ? 0 : time < .7 ? 0 : time < 2.15 ? 1 : time < 3.5 ? 2 : time < 5.5 ? 0 : time < 7.75 ? 1 : 2;
-  const shown = opening ? [{ ...gestures[nextGesture], ...(enemy ? { label: enemy === 'crocodile' ? 'Jump crocodile' : 'Duck swooping bird', hint: enemy === 'crocodile' ? 'Swipe up or dodge its lane' : 'Swipe down or dodge its lane' } : {}) }] : gestures;
+  const enemyGuide = enemyGuides[enemy];
+  const shown = opening ? [{ ...(enemyGuide ? gestures.find(gesture => gesture.id === enemyGuide.gesture) : gestures[nextGesture]), ...enemyGuide }] : gestures;
   return <div className={`gesture-guide gesture-guide-${opening ? 'play' : variant}`} role="group" aria-label="Swipe controls: left or right changes lanes, up jumps, down ducks">
     {shown.map(gesture => <Gesture gesture={gesture} key={gesture.id}/>)}
   </div>;

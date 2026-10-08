@@ -9,7 +9,7 @@ import { levelAt } from './levels.js';
 import {createCourseProfile} from './river-course.js';
 import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D,drawRapids2D,drawCanopyTerrain2D } from './map-2d.js';
 import {impactFeedback,impactParticle} from './impact-feedback.js';
-import {entityLane} from './moving-encounters.js';
+import {entityPose} from './moving-encounters.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const courseProfiles=new WeakMap();
@@ -82,11 +82,12 @@ export function projection(width, height, lane, z) {
   const scale = 1 / (1 + Math.max(-14, z) / 29);
   return { x: width / 2 + (lane - 1) * corridor / 3 * scale, y: horizon + (foot - horizon) * scale, scale, corridor, foot, horizon };
 }
-// The actual draw and fallback QA share this projection. Decorative flaps and
-// tails never change its registered center or the locked destination cue.
+// The body, water shadow and exact contact marker have separate registration.
+// Shared course-space lift stays visible even when decorative motion reduces.
 export function encounterProjection(e,g,width,height){
-  const lane=entityLane(e,g.distance),z=e.d-g.distance;
-  return {...projection(width,height,lane,z),lane,destination:projection(width,height,e.lane,z),action:e.enemy==='crocodile'?'jump':e.enemy==='bird'?'duck':'collect'};
+  const pose=entityPose(e,g.distance),z=e.d-g.distance,p=projection(width,height,pose.lane,z);
+  const unit=p.corridor/11.4*p.scale,base=e.enemy==='bird'?2.33:e.enemy==='fish'?.25:0;
+  return {...p,...pose,unit,bodyY:p.y-(base+pose.lift)*unit,destination:projection(width,height,pose.contactLane,z),action:e.enemy==='bird'?'duck':e.enemy?'jump':'collect'};
 }
 function encounterGuide(ctx,e,p,size){
   const to=p.destination,target=e.type==='target',color=target?'#72fff1':'#ff9377';
@@ -105,6 +106,14 @@ function crocodile(ctx,p,size,time,reduced){
   const tail=reduced?0:Math.sin(time*3.6)*.075,jaw=reduced?.018:.026+Math.max(0,Math.sin(time*2.7))*.044;
   ctx.save();ctx.translate(p.x,p.y);ctx.scale(size,size);
   ctx.fillStyle='#062f3766';ctx.beginPath();ctx.ellipse(0,.028,.47,.078,0,0,TAU);ctx.fill();
+  // A curved wake follows the shared swimming direction. The body banks as it
+  // reverses, rather than looking like a stationary log sliding across lanes.
+  const bank=Math.max(-.2,Math.min(.2,p.lateralSlope*1.9));
+  ctx.strokeStyle='#c4fff28c';ctx.lineWidth=.009;
+  for(let i=0;i<3;i++){
+    const spread=.026+i*.029;ctx.beginPath();ctx.moveTo(-.41-bank*.4,spread);ctx.quadraticCurveTo(-bank*.34,.07+spread,.38-bank*.4,spread);ctx.stroke();
+  }
+  ctx.rotate(bank);
   // A thick tapering tail, four feet and dorsal armor give the low enemy a
   // reptile silhouette rather than reusing the log sprite.
   ctx.fillStyle='#263e2b';ctx.beginPath();ctx.moveTo(-.18,-.055);ctx.bezierCurveTo(-.35,-.08,-.47,-.22+tail,-.55,-.18+tail);ctx.bezierCurveTo(-.5,-.28+tail,-.33,-.26,-.14,-.16);ctx.closePath();ctx.fill();
@@ -132,7 +141,8 @@ function crocodile(ctx,p,size,time,reduced){
 function swoopingBird(ctx,p,size,time,reduced){
   const flap=reduced?0:Math.sin(time*7.5)*.24;
   ctx.save();ctx.translate(p.x,p.y);ctx.scale(size,size);
-  ctx.fillStyle='#062f374d';ctx.beginPath();ctx.ellipse(0,0,.31,.065,0,0,TAU);ctx.fill();ctx.translate(0,-.64);
+  ctx.fillStyle='#062f374d';ctx.beginPath();ctx.ellipse(0,0,.31,.065,0,0,TAU);ctx.fill();
+  ctx.translate(0,(p.bodyY-p.y)/size);ctx.rotate(Math.max(-.23,Math.min(.23,p.lateralSlope*.8)));
   for(const side of [-1,1]){
     ctx.save();ctx.scale(side,1);ctx.rotate(flap);
     ctx.fillStyle='#654d39';ctx.beginPath();ctx.moveTo(.045,-.075);ctx.quadraticCurveTo(.24,-.18,.52,-.09);ctx.lineTo(.39,.1);ctx.lineTo(.1,.055);ctx.closePath();ctx.fill();
@@ -146,6 +156,36 @@ function swoopingBird(ctx,p,size,time,reduced){
   ctx.fillStyle='#f0d0a3';ctx.beginPath();ctx.ellipse(0,-.115,.081,.075,0,0,TAU);ctx.fill();ctx.fillStyle='#362920';ctx.beginPath();ctx.ellipse(0,-.132,.083,.042,0,Math.PI,TAU);ctx.fill();
   ctx.fillStyle='#efb444';ctx.beginPath();ctx.moveTo(-.028,-.087);ctx.lineTo(.028,-.087);ctx.lineTo(0,-.044);ctx.closePath();ctx.fill();
   for(const side of [-1,1]){ctx.fillStyle='#ce992b';ctx.beginPath();ctx.arc(side*.04,-.121,.018,0,TAU);ctx.fill();ctx.fillStyle='#161b19';ctx.beginPath();ctx.arc(side*.04,-.122,.009,0,TAU);ctx.fill();}
+  ctx.restore();
+}
+function leapingFish(ctx,p,size,time,reduced,id){
+  const tail=reduced?0:Math.sin(time*12+id*.61)*.06;
+  ctx.save();ctx.translate(p.x,p.y);ctx.scale(size,size);
+  // Water-level rings and a small spray explain where the fish breaks the
+  // surface, while the body uses the same airborne lift as physical contact.
+  const splash=.4+.6*Math.max(0,1-p.lift/.72),radius=.24+.06*Math.sin(Math.PI*p.leapProgress);
+  ctx.strokeStyle='#b4fff3';ctx.lineWidth=.012;ctx.globalAlpha*=splash*.82;
+  ctx.beginPath();ctx.ellipse(0,0,radius,.052,0,0,TAU);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(0,.006,radius*.73,.031,0,0,TAU);ctx.stroke();
+  if(!reduced)for(let i=0;i<6;i++){
+    const angle=i*2.399+id*.1,t=fract(time*2.2+i/6),spread=.13+t*.23;
+    ctx.beginPath();ctx.arc(Math.cos(angle)*spread,-Math.sin(t*Math.PI)*.13,.007*(1-t)+.003,0,TAU);ctx.fillStyle='#d1fffa';ctx.fill();
+  }
+  ctx.restore();
+  ctx.save();ctx.translate(p.x,p.bodyY);ctx.scale(size,size);
+  ctx.rotate(-Math.cos(Math.PI*p.leapProgress)*.24);
+  // A broad forked tail, red dorsal sail and bright scale bands create a
+  // distinct salmon silhouette, with a compact low jump-compatible body.
+  ctx.fillStyle='#d66b43';ctx.beginPath();ctx.moveTo(-.2,-.01);ctx.lineTo(-.43,-.16+tail);ctx.quadraticCurveTo(-.37,-.02,-.43,.15+tail);ctx.lineTo(-.2,.027);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#9c3438';ctx.beginPath();ctx.moveTo(-.16,-.063);ctx.lineTo(-.055,-.205);ctx.lineTo(.04,-.105);ctx.lineTo(.13,-.056);ctx.closePath();ctx.fill();
+  const scales=ctx.createLinearGradient(0,-.095,0,.08);scales.addColorStop(0,'#3c7782');scales.addColorStop(.43,'#b3e1d0');scales.addColorStop(.72,'#f1dca2');scales.addColorStop(1,'#749d96');ctx.fillStyle=scales;
+  ctx.beginPath();ctx.moveTo(-.24,0);ctx.bezierCurveTo(-.11,-.13,.18,-.12,.32,-.015);ctx.quadraticCurveTo(.345,.01,.305,.04);ctx.bezierCurveTo(.13,.115,-.1,.1,-.24,0);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#56878a88';ctx.lineWidth=.009;
+  for(let i=0;i<5;i++){const x=-.12+i*.057;ctx.beginPath();ctx.moveTo(x,-.055);ctx.quadraticCurveTo(x-.033,0,x,.06);ctx.stroke();}
+  ctx.fillStyle='#d4844f';ctx.beginPath();ctx.moveTo(.02,.025);ctx.lineTo(-.02,.14);ctx.lineTo(.12,.07);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#437582';ctx.lineWidth=.009;ctx.beginPath();ctx.moveTo(.2,-.044);ctx.quadraticCurveTo(.15,0,.2,.052);ctx.stroke();
+  ctx.fillStyle='#ffe39a';ctx.beginPath();ctx.arc(.255,-.025,.024,0,TAU);ctx.fill();ctx.fillStyle='#142b30';ctx.beginPath();ctx.arc(.26,-.025,.013,0,TAU);ctx.fill();
+  ctx.strokeStyle='#fff5dba8';ctx.lineWidth=.008;ctx.beginPath();ctx.moveTo(-.16,-.031);ctx.quadraticCurveTo(.06,-.087,.22,-.043);ctx.stroke();
   ctx.restore();
 }
 function relicTarget(ctx,p,size,time,reduced){
@@ -261,6 +301,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       if(!e.done)encounterGuide(ctx,e,p,e.type==='target'?p.corridor/3*.65*p.scale:size);
       if(e.enemy==='crocodile')crocodile(ctx,p,size,g.time,reducedMotion);
       else if(e.enemy==='bird')swoopingBird(ctx,p,size,g.time,reducedMotion);
+      else if(e.enemy==='fish')leapingFish(ctx,p,size,g.time,reducedMotion,e.id);
       else relicTarget(ctx,p,size,g.time,reducedMotion);
       ctx.restore();
     }
@@ -268,7 +309,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     else sprite(ctx,art.sprites,e.type==='magnet'?indexes.coin:indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
     if(e.type==='magnet'){ctx.save();ctx.font=`900 ${Math.max(12,size*.3)}px system-ui`;ctx.textAlign='center';ctx.strokeStyle='#3f2e14';ctx.lineWidth=3;ctx.strokeText('×2',p.x,bottom-size*.32);ctx.fillStyle='#fff8d0';ctx.fillText('×2',p.x,bottom-size*.32);ctx.restore();}
     if(!e.done&&['log','branch','rock'].includes(e.type)&&z<g.speed*1.65&&z>10) {
-      const label=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
+      const label=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
       const font=Math.max(10,15*p.scale);ctx.font=`800 ${font}px system-ui`;ctx.textAlign='center';
       const labelX=e.enemy?p.destination.x:p.x,tw=ctx.measureText(label).width;ctx.fillStyle='#042a26dd';ctx.beginPath();ctx.roundRect(labelX-tw/2-7,bottom-size*.9-22,tw+14,20,5);ctx.fill();
       ctx.fillStyle=e.type==='branch'?'#94ffe3':'#ffe49c';ctx.fillText(label,labelX,bottom-size*.9-8);

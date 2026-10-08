@@ -1,19 +1,55 @@
-// Motion lives in course space, so paused simulation and both renderers agree.
+// All wildlife motion is sampled in course space. Pausing, contact and both
+// renderers therefore see the same pose without an independent animation clock.
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+const smooth=t=>t*t*(3-2*t);
 export const TARGET_VALUE=200;
 export const TARGET_CHARGE=10;
-export const ENEMY_LOCK_SECONDS=1;
 export const TARGET_LOCK_SECONDS=.4;
-export function entityLane(entity,distance){
+function sample(entity,distance){
  const motion=entity.motion;
- if(!motion||!Number.isFinite(motion.startD)||!Number.isFinite(motion.endD)||motion.endD<=motion.startD)return entity.lane;
- const t=clamp((distance-motion.startD)/(motion.endD-motion.startD),0,1),u=t*t*(3-2*t);
- return motion.from+(motion.to-motion.from)*u;
+ if(!motion||!Number.isFinite(motion.startD)||!Number.isFinite(motion.endD)||motion.endD<=motion.startD)return{lane:entity.lane,lift:0,progress:0,lateralSlope:0,liftSlope:0,leapProgress:0};
+ const progress=clamp((distance-motion.startD)/(motion.endD-motion.startD),0,1);
+ const active=distance>motion.startD&&distance<motion.endD;
+ if(motion.kind==='weave'){
+  const at=clamp(distance,motion.startD,motion.endD),angle=motion.phase+(at-motion.contactD)*Math.PI*2/motion.periodD;
+  return{lane:distance===motion.contactD?motion.to:1+Math.sin(angle),lift:0,progress,lateralSlope:active?Math.cos(angle)*Math.PI*2/motion.periodD:0,liftSlope:0,leapProgress:0};
+ }
+ const u=smooth(progress),span=motion.endD-motion.startD;
+ let lane=motion.from+(motion.to-motion.from)*u,lift=0,liftSlope=0,leapProgress=0;
+ const lateralSlope=active?(motion.to-motion.from)*6*progress*(1-progress)/span:0;
+ if(motion.kind==='swoop'){
+  if(distance===motion.contactD)lane=motion.contactLane;
+  const before=clamp((distance-motion.startD)/(motion.contactD-motion.startD),0,1);
+  const after=clamp((distance-motion.contactD)/(motion.endD-motion.contactD),0,1);
+  lift=distance<=motion.contactD?2.7*(1-smooth(before)):.9*smooth(after);
+  liftSlope=distance>motion.startD&&distance<motion.contactD?-2.7*6*before*(1-before)/(motion.contactD-motion.startD):distance>motion.contactD&&distance<motion.endD?.9*6*after*(1-after)/(motion.endD-motion.contactD):0;
+ }else if(motion.kind==='leap'){
+  const leapSpan=motion.leapEndD-motion.leapStartD;
+  leapProgress=clamp((distance-motion.leapStartD)/leapSpan,0,1);
+  lift=.72*Math.sin(Math.PI*leapProgress)**2;
+  liftSlope=distance>motion.leapStartD&&distance<motion.leapEndD?.72*Math.PI*Math.sin(Math.PI*2*leapProgress)/leapSpan:0;
+ }
+ return{lane,lift,progress,lateralSlope,liftSlope,leapProgress};
 }
-export function encounterMotion(lane,distance,maxRushSpeed,kind,seed=0){
- const from=lane===0?1:lane===2?1:(seed&1?0:2);
- const lock=kind==='target'?TARGET_LOCK_SECONDS:ENEMY_LOCK_SECONDS;
- return Object.freeze({from,to:lane,startD:distance-maxRushSpeed*(kind==='target'?1:1.5),endD:distance-maxRushSpeed*lock});
+export function entityPose(entity,distance){
+ const pose=sample(entity,distance);
+ const contactD=Number.isFinite(entity.d)?entity.d:entity.motion?.contactD;
+ return{...pose,contactLane:Number.isFinite(contactD)?sample(entity,contactD).lane:entity.lane};
+}
+export function entityLane(entity,distance){return sample(entity,distance).lane;}
+export function encounterMotion(lane,distance,maxRushSpeed,kind,seed=0,mapIndex=0){
+ const adjacent=lane===0?1:lane===2?1:(seed&1?0:2);
+ if(kind==='crocodile'){
+  const periodD=maxRushSpeed*(1.15-.15*clamp(mapIndex,0,2)),phase=lane===0?-Math.PI/2:lane===2?Math.PI/2:(seed&1?Math.PI:0),startD=distance-maxRushSpeed*2.4;
+  return Object.freeze({kind:'weave',from:1+Math.sin(phase+(startD-distance)*Math.PI*2/periodD),to:lane,startD,endD:distance+maxRushSpeed*.45,contactD:distance,periodD,phase});
+ }
+ if(kind==='bird'){
+  const from=seed&1?-.85:2.85,startD=distance-maxRushSpeed*1.9,endD=distance+maxRushSpeed*.18;
+  const contactProgress=(distance-startD)/(endD-startD),to=from+(lane-from)/smooth(contactProgress);
+  return Object.freeze({kind:'swoop',from,to,startD,endD,contactD:distance,contactLane:lane});
+ }
+ if(kind==='fish')return Object.freeze({kind:'leap',from:adjacent,to:lane,startD:distance-maxRushSpeed*1.7,endD:distance-maxRushSpeed*.25,contactD:distance,leapStartD:distance-maxRushSpeed*.8,leapEndD:distance+maxRushSpeed*.8});
+ return Object.freeze({kind:'glide',from:adjacent,to:lane,startD:distance-maxRushSpeed,endD:distance-maxRushSpeed*TARGET_LOCK_SECONDS,contactD:distance});
 }
 // Separate deterministic cadence leaves the original route random stream intact.
 export function encounterGap(seed,index,mapIndex){

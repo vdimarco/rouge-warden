@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,emptyInput,queueAction,updateGame,timeToImpact,snapshot,speedAt} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
-import {entityLane,encounterMotion,TARGET_VALUE,TARGET_CHARGE} from '../src/game/moving-encounters.js';
+import {entityLane,entityPose,encounterMotion,TARGET_VALUE,TARGET_CHARGE} from '../src/game/moving-encounters.js';
 import {worldEntityVisible,laneSpring} from '../src/game/world.js';
 const hazard=e=>['rock','log','branch'].includes(e.type);
 function fixture(entity,extra={}){
@@ -11,8 +11,9 @@ function fixture(entity,extra={}){
  return g;
 }
 
-test('course-space motion is smooth, endpoint-locked, finite and paused with the simulation',()=>{
- for(const level of LEVELS)for(const lane of [0,1,2])for(const kind of ['crocodile','bird','target']){
+test('relic glide remains smooth, endpoint-locked, finite and paused with the simulation',()=>{
+ for(const level of LEVELS)for(const lane of [0,1,2]){
+  const kind='target';
   const speed=level.maxSpeed*1.32,motion=encounterMotion(lane,1000,speed,kind,17),e={lane,motion};
   assert.equal(entityLane(e,motion.startD-100),motion.from);
   assert.equal(entityLane(e,motion.endD+100),lane);
@@ -25,6 +26,43 @@ test('course-space motion is smooth, endpoint-locked, finite and paused with the
  }
  assert.equal(entityLane({lane:2},50),2);
  assert.equal(entityLane({lane:1,motion:{startD:0,endD:0}},50),1);
+});
+
+test('crocodiles sweep the whole river repeatedly and continue moving into the contact window',()=>{
+ let previousPeriod=Infinity;
+ for(const level of LEVELS)for(const lane of [0,1,2])for(const seed of [16,17]){
+  const speed=level.maxSpeed*1.32,d=1000,motion=encounterMotion(lane,d,speed,'crocodile',seed,level.index),e={lane,d,motion};
+  const samples=Array.from({length:241},(_,n)=>entityPose(e,motion.startD+n*speed*.01));
+  assert.ok(Math.min(...samples.map(p=>p.lane))<.005);assert.ok(Math.max(...samples.map(p=>p.lane))>1.995);
+  const slopes=samples.map(p=>Math.sign(p.lateralSlope)).filter(Boolean),reversals=slopes.filter((sign,n)=>n&&sign!==slopes[n-1]).length;
+  assert.ok(reversals>=4,'crocodile makes only one lateral pass');
+  assert.equal(entityLane(e,d),lane);assert.equal(entityPose(e,d-.1*speed).contactLane,lane);
+  assert.ok(Math.abs(entityLane(e,d-.18*speed)-lane)>.4,'crocodile parks well before contact');
+  assert.ok(Math.abs(entityLane(e,d+.18*speed)-lane)>.4,'crocodile parks at contact');
+  for(const p of samples){assert.ok(p.lane>=0&&p.lane<=2);assert.ok(Object.values(p).every(Number.isFinite));}
+  const at=d-.2*speed,h=.001,before=entityLane(e,at-h),after=entityLane(e,at+h);
+  assert.ok(Math.abs((after-before)/(2*h)-entityPose(e,at).lateralSlope)<1e-6);
+  const g=fixture({...e,id:1,type:'log',enemy:'crocodile'},{distance:at,phase:'paused'}),pose=entityPose(e,g.distance);
+  updateGame(g,emptyInput(),.05);assert.deepEqual(entityPose(e,g.distance),pose);
+  if(lane===0&&seed===16){const period=motion.periodD/speed;assert.ok(period<previousPeriod);previousPeriod=period;}
+ }
+});
+
+test('birds enter from both banks, dive into the duck envelope and fish visibly leap above their water shadow',()=>{
+ for(const level of LEVELS)for(const lane of [0,1,2])for(const seed of [16,17]){
+  const speed=level.maxSpeed*1.32,d=1000,bird={lane,d,motion:encounterMotion(lane,d,speed,'bird',seed,level.index)};
+  const bank=entityPose(bird,bird.motion.startD),approach=entityPose(bird,d-speed*.7),contact=entityPose(bird,d),after=entityPose(bird,d+speed*.1);
+  assert.equal(bank.lane,seed&1?-.85:2.85);assert.equal(bank.lift,2.7);assert.ok(approach.lift>0&&approach.lift<bank.lift);
+  assert.equal(contact.lane,lane);assert.equal(contact.contactLane,lane);assert.equal(contact.lift,0);
+  assert.ok(Math.abs(contact.lateralSlope)>0,'bird stops short of its strike');assert.ok(after.lift>0,'bird does not pull up after its strike');
+  assert.ok(Math.abs(entityLane(bird,d-.0001)-entityLane(bird,d+.0001))<.0001,'bird snaps into the contact lane');
+  const fish={lane,d,motion:encounterMotion(lane,d,speed,'fish',seed,level.index)};
+  assert.ok(entityPose(fish,d-speed).lift<1e-15);assert.ok(entityPose(fish,d+speed).lift<1e-15);
+  assert.ok(entityPose(fish,d-speed*.4).liftSlope>0);assert.ok(entityPose(fish,d+speed*.4).liftSlope<0);
+  assert.equal(entityPose(fish,d).lift,.72);assert.equal(entityPose(fish,d).leapProgress,.5);assert.equal(entityLane(fish,d),lane);
+  const g=fixture({...fish,id:1,type:'log',enemy:'fish'},{distance:d-speed*.3,phase:'paused'}),pose=entityPose(fish,g.distance);
+  updateGame(g,emptyInput(),.05);assert.deepEqual(entityPose(fish,g.distance),pose);
+ }
 });
 
 test('moving relic contact samples its physical lane at crossing, once, at 30/60/120 Hz',()=>{
@@ -55,9 +93,9 @@ test('relic misses beside or above the raft pass silently and boosts never widen
  const capped=fixture({id:503,type:'target',lane:1,d:.1},{charge:96});updateGame(capped,emptyInput(),1/60);assert.equal(capped.charge,100);assert.equal(capped.effects.find(e=>e.type==='target').charge,4);
 });
 
-test('both enemy actions, dodge and fatal contact use the same moving lane and useful hints',()=>{
- for(const hz of [30,60,120])for(const enemy of ['crocodile','bird'])for(const response of ['action','dodge','hit']){
-  const type=enemy==='crocodile'?'log':'branch',d=52/(hz*2),e={id:501,type,enemy,lane:2,d,motion:{from:0,to:2,startD:d-10,endD:d+10}};
+test('every enemy action, dodge and fatal contact samples the physical moving lane with useful contact forecasts',()=>{
+ for(const hz of [30,60,120])for(const enemy of ['crocodile','bird','fish'])for(const response of ['action','dodge','hit']){
+  const type=enemy==='bird'?'branch':'log',d=52/(hz*2),e={id:501,type,enemy,lane:2,d,motion:{from:0,to:2,startD:d-10,endD:d+10}};
   const g=fixture(e,response==='dodge'?{lane:0,visualLane:0}:response==='action'?{action:type==='log'?'jump':'duck',actionTime:.3}:{});
   updateGame(g,emptyInput(),1/hz);
   assert.equal(g.phase,response==='hit'?'lost':'playing');
@@ -65,12 +103,25 @@ test('both enemy actions, dodge and fatal contact use the same moving lane and u
    assert.equal(type==='log'?g.jumps:g.ducks,1);
    const contact=g.effects.find(e=>e.type==='perfect');assert.equal(contact.enemy,enemy);assert.equal(contact.obstacleLane,1);
   }else if(response==='hit'){
-   assert.match(g.reason,enemy==='crocodile'?/Crocodile hit/:/Bird hit/);
+   assert.match(g.reason,enemy==='crocodile'?/Crocodile hit/:enemy==='bird'?/Bird hit/:/Leaping fish hit/);
    const contact=g.effects.find(e=>e.type==='lose');assert.equal(contact.enemy,enemy);assert.equal(contact.obstacleLane,1);assert.equal(g.distance,d);
   }else assert.equal(g.dodges,1);
  }
  const g=fixture({id:502,type:'log',enemy:'crocodile',lane:1,d:78,motion:{from:0,to:1,startD:-70,endD:20}});
  const hint=snapshot(g).hint;assert.equal(hint.enemy,'crocodile');assert.equal(hint.destinationLane,1);assert.equal(hint.lane,entityLane(g.entities[0],g.distance));assert.ok(hint.in>1.1);
+ const crossing=fixture({id:503,type:'branch',enemy:'bird',lane:2,d:78,row:7,motion:{from:0,to:2,startD:68,endD:88}}),forecast=snapshot(crossing).hint;
+ assert.equal(forecast.destinationLane,1);assert.equal(forecast.safeLane,0);
+});
+
+test('generated wildlife poses preserve exact action, shield and Rush outcomes at 30/60/120 Hz',()=>{
+ for(const hz of [30,60,120])for(const enemy of ['crocodile','bird','fish'])for(const protection of ['action','shield','rush','none']){
+  const d=52/(hz*2),type=enemy==='bird'?'branch':'log',e={id:501,type,enemy,lane:1,d,motion:encounterMotion(1,d,LEVELS[0].maxSpeed*1.32,enemy,17)};
+  const g=fixture(e,{shield:protection==='shield',rush:protection==='rush'?4:0,...(protection==='action'?{action:type==='log'?'jump':'duck',actionTime:.3}:{})});
+  updateGame(g,emptyInput(),1/hz);
+  assert.equal(g.phase,protection==='none'?'lost':'playing');
+  const contact=g.effects.find(effect=>effect.entityId===e.id);assert.equal(contact.obstacleLane,entityPose(e,e.d).lane);assert.equal(contact.playerLane,1);
+  assert.equal(contact.type,{action:'perfect',shield:'hit',rush:'smash',none:'lose'}[protection]);assert.equal(g.shieldsUsed,protection==='shield'?1:0);
+ }
 });
 
 test('Rush expiration integrates only its active portion and samples every exact crossing on either side',()=>{
@@ -116,7 +167,7 @@ function naturalCourse(seed,index){
  }
  return [...items.values()];
 }
-test('all seeded maps offer both sparse species and reachable clear-water relics without replacing action walls or chains',()=>{
+test('all seeded maps offer three sparse species and reachable clear-water relics without replacing action walls or chains',()=>{
  let enemies=0,targets=0,latestFirst=0;
  for(let seed=1;seed<=100;seed++)for(const level of LEVELS){
   const entities=naturalCourse(seed,level.index),special=entities.filter(e=>e.enemy||e.type==='target'),foes=special.filter(e=>e.enemy),relics=special.filter(e=>e.type==='target');
@@ -127,18 +178,18 @@ test('all seeded maps offer both sparse species and reachable clear-water relics
     if(e.type==='log'&&e.terrainActive)promised.get(e.sectionId).add(e.row);
   }
   for(const [section,rows] of promised)assert.ok(rows.size>=3,`${level.id} seed${seed} section${section} advertises a chain with ${rows.size} jumps`);
-  assert.equal(new Set(foes.map(e=>e.enemy)).size,2,`seed${seed} ${level.id} misses a species`);assert.ok(relics.length>0,`seed${seed} ${level.id} misses relics`);
+  assert.equal(new Set(foes.map(e=>e.enemy)).size,3,`seed${seed} ${level.id} misses a species`);assert.ok(relics.length>0,`seed${seed} ${level.id} misses relics`);
   latestFirst=Math.max(latestFirst,foes[0].row);
   assert.ok(foes[0].d<level.length/3,'enemy variety arrives after the first third of the map');
-  assert.notEqual(foes[0].enemy,foes[1].enemy,'the first two encounters must show different species');
+  assert.deepEqual(foes.slice(0,3).map(e=>e.enemy),['crocodile','bird','fish'],'the first three encounters must show different species');
   for(let i=0;i<special.length;i++){
    const e=special[i],row=entities.filter(h=>hazard(h)&&h.row===e.row);
    assert.equal(row.length,1);assert.ok(e.row>=7);assert.ok(e.d<level.length-FINISH_RUNWAY);
    if(i)assert.ok(e.row-special[i-1].row>=3,'special encounters overlap their cooldown');
    assert.equal(entityLane(e,e.d),e.lane);assert.ok(e.motion.from!==e.motion.to);
    if(e.enemy){
-    enemies++;assert.equal(e.type,e.enemy==='crocodile'?'log':'branch');
-    assert.ok((e.d-e.motion.endD)/(level.maxSpeed*1.32)>=.8);
+    enemies++;assert.equal(e.type,e.enemy==='bird'?'branch':'log');
+    if(e.enemy!=='fish')assert.ok(e.motion.endD>e.d,'weaving/swooping wildlife stops before contact');
     assert.ok(!(e.terrainActive&&e.sectionType==='wave-train'&&e.terrainComboAvailable),'an enemy replaces an advertised chain row');
    }else{
     targets++;assert.ok(e.recovery);assert.ok(row.every(h=>h.lane!==e.lane));assert.ok(row.every(h=>!h.enemy));

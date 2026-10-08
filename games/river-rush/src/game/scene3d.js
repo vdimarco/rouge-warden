@@ -21,7 +21,7 @@ import {createChunkStream,updateChunkStream} from './chunk-stream.js';
 import {moonlitSky,createMoonlitHorizon,MOONLIT_FAR} from './moonlit-horizon.js';
 import {worldEntityVisible} from './world.js';
 import {impactFeedback,impactParticle,IMPACT_SPRAY_CAPACITY} from './impact-feedback.js';
-import {entityLane} from './moving-encounters.js';
+import {entityPose} from './moving-encounters.js';
 import {createMovingEncounterVisuals} from './moving-visuals.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
@@ -178,12 +178,12 @@ export function createScene(canvas,art,onLost){
  m.castShadow=e.type!=='coin';
  g.userData.type=e.type;g.userData.body=m;
  if(['rock','log','branch','magnet'].includes(e.type)){
- const text=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':e.type==='magnet'?'GOLD ×2':'DUCK ↓';if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(e.enemy?2.65:2.2,.55,1);g.add(sprite);g.userData.label=sprite;}
+ const text=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':e.type==='magnet'?'GOLD ×2':'DUCK ↓';if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(e.enemy?2.65:2.2,.55,1);g.add(sprite);g.userData.label=sprite;}
  scene.add(g);return g;}
  const sprayCount=120,sprayPositions=new Float32Array(sprayCount*3),sprayGeometry=new THREE.BufferGeometry();sprayGeometry.setAttribute('position',new THREE.BufferAttribute(sprayPositions,3));
  const spray= new THREE.Points(sprayGeometry,new THREE.PointsMaterial({color:'#e5fff2',size:.09,transparent:true,opacity:.72,depthWrite:false}));spray.frustumCulled=false;scene.add(spray);
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
- const status={kind:'webgl',software:!!software,models:{raft:'loading',bank:'loading',palm:'loading',temple:'loading',guardian:'loading',rider:'loading',canopy:'loading',harbor:'loading',driftwood:'loading'},background:'loading',drawCalls:0,triangles:0,frames:0,buoyancy:null,contextLost:false,preparing:true,prepared:false,recoveries:0};
+ const status={kind:'webgl',software:!!software,models:{raft:'loading',bank:'loading',palm:'loading',temple:'loading',guardian:'loading',rider:'loading',canopy:'loading',harbor:'loading',driftwood:'loading',bough:'loading'},background:'loading',drawCalls:0,triangles:0,frames:0,buoyancy:null,contextLost:false,preparing:true,prepared:false,recoveries:0};
  if(!software)Object.assign(status.models,{canopyFar:'loading',harborFar:'loading'});
  let disposed=false,bankModel=null,run=null,profile=null,float=null,lastEvent=0,width=0,height=0,waterImpulses=[],skeletal=null;
  const bankBatches=[],palmBatches=[],templeBatches=[],guardianBatches=[],canopyBatches=[],harborBatches=[],canopyFarBatches=[],harborFarBatches=[],driftwoodBatches=[],instanceMatrix=new THREE.Matrix4(),palmTransform=new THREE.Object3D(),guardianTransform=new THREE.Object3D();
@@ -230,6 +230,7 @@ export function createScene(canvas,art,onLost){
  else if(key==='canopyFar')batchModel(normalized(gltf.scene,14,17,12),canopyFarBatches,20);
  else if(key==='harborFar')batchModel(normalized(gltf.scene,10,13,8),harborFarBatches,12);
  else if(key==='driftwood')batchModel(normalized(gltf.scene,3.3,.85,.9),driftwoodBatches,48);
+ else if(key==='bough'){let installed=false;try{installed=branchTrees.installModel(gltf.scene);}catch{/* Keep the prepared local branch if the new asset cannot be fitted. */}if(installed)retired.push(gltf.scene);else{releaseModel(gltf.scene);status.models[key]='fallback';complete();return;}}
  else if(key==='rider'){try{skeletal=createSkeletalRider(gltf.scene,riderRig,logMat);rider.visible=false;}catch{retired.push(gltf.scene);status.models[key]='fallback';complete();return;}}
  status.models[key]='ready';complete();},undefined,()=>{if(disposed||status.models[key]==='fallback'){complete();return;}if(attempt<2){status.models[key]='retrying';const timer=setTimeout(()=>{retryTimers.delete(timer);loadModel(key,attempt+1,complete);},(attempt+1)*350);retryTimers.add(timer);}else{status.models[key]='fallback';complete();}});}
  // Parse only two arriving models at once, and finish preparation before play.
@@ -257,7 +258,7 @@ export function createScene(canvas,art,onLost){
    // preparation group. No prototype is drawn during a player's run.
    const prototypes=new THREE.Group();
    for(const [i,type] of ['rock','log','branch','shield','magnet'].entries()){const obj=makeEntity({id:-100-i,type});scene.remove(obj);prototypes.add(obj);}
-   for(const [i,enemy] of ['crocodile','bird'].entries()){const obj=makeEntity({id:-110-i,type:i?'branch':'log',enemy});scene.remove(obj);prototypes.add(obj);}
+   for(const [i,enemy] of ['crocodile','bird','fish'].entries()){const obj=makeEntity({id:-110-i,type:enemy==='bird'?'branch':'log',enemy});scene.remove(obj);prototypes.add(obj);}
    prototypes.add(new THREE.Mesh(waterGeo,cheapWaterMaterial));retired.push(prototypes);
    const textures=new Set([scene.background,...surfaceTextures,...riderTextures,...labels.values()]);
    for(const root of [scene,prototypes])root.traverse(o=>{for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])for(const value of Object.values(m))if(value?.isTexture)textures.add(value);});
@@ -267,7 +268,7 @@ export function createScene(canvas,art,onLost){
    // Warm every map, its horizon, landmarks and finish. Switching levels cannot
    // create a first-use material, texture or instance-buffer upload in play.
    for(const level of LEVELS){
-    const warm=createGame(137,level.index);warm.entities=[...['rock','log','branch','shield','magnet'].map((type,i)=>({id:-1000-i,type,lane:i%3,d:12+i*7})),{id:-1010,type:'log',enemy:'crocodile',lane:0,d:28,motion:{from:1,to:0,startD:-20,endD:20}},{id:-1011,type:'branch',enemy:'bird',lane:2,d:44},{id:-1012,type:'target',lane:1,d:58},...warm.entities];
+    const warm=createGame(137,level.index);warm.entities=[...['rock','log','branch','shield','magnet'].map((type,i)=>({id:-1000-i,type,lane:i%3,d:12+i*7})),{id:-1010,type:'log',enemy:'crocodile',lane:0,d:28,motion:{from:1,to:0,startD:-20,endD:20}},{id:-1011,type:'branch',enemy:'bird',lane:2,d:44},{id:-1012,type:'target',lane:1,d:58},{id:-1013,type:'log',enemy:'fish',lane:1,d:70,motion:{kind:'leap',from:0,to:1,startD:-40,endD:45,contactD:70,leapStartD:-5,leapEndD:145}},...warm.entities];
     for(const distance of [0,780,level.length-70]){
      await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;
      warm.distance=distance;if(distance)warm.entities=[];
@@ -375,10 +376,10 @@ export function createScene(canvas,art,onLost){
  for(const e of g.entities){const z=e.d-g.distance;
  if(e.type==='branch'&&!e.enemy&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
  if(!worldEntityVisible(e,g.distance,VIEW_DISTANCE))continue;alive.add(e.id);visible++;
- const course=travel+z,currentLane=entityLane(e,g.distance),cross=(currentLane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
+ const course=travel+z,pose=entityPose(e,g.distance),currentLane=pose.lane,cross=(currentLane-1)*3.8,p=point(course,cross),wy=p.y+waterHeight(cross,course);
  if(e.type==='coin'){coinPose.scale.setScalar(1);coinPose.position.set(p.x,coinWorldHeight(e)+wy,p.z);coinPose.rotation.set(Math.PI/2,reduced?0:g.time*4+e.id,0);coinPose.updateMatrix();coinBatch.setMatrixAt(coinCount++,coinPose.matrix);continue;}
  if(e.enemy||e.type==='target'){
-  const destinationCross=(e.lane-1)*3.8,destination=point(course,destinationCross);destination.y+=waterHeight(destinationCross,course);
+  const destinationCross=(pose.contactLane-1)*3.8,destination=point(course,destinationCross);destination.y+=waterHeight(destinationCross,course);
   movingVisuals.add(e,{x:p.x,y:wy,z:p.z},destination,g.time,reduced,currentLane,g.distance,-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed)));
   if(e.type==='target')continue;
  }
@@ -387,7 +388,7 @@ export function createScene(canvas,art,onLost){
  obj.position.set(sx,e.type==='coin'?coinWorldHeight(e):e.type==='rock'?.5:e.type==='branch'?0:e.type==='log'?.27:1.4,-z);obj.position.y+=y;obj.rotation.y=-Math.atan(riverTangent(course,seed)-riverTangent(travel,seed));
  if(e.type==='rock'&&guardianBatches.length&&level.index===2){obj.userData.body.visible=false;guardianTransform.position.set(sx,y-.12,-z);guardianTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.14,0);guardianTransform.scale.setScalar(1);guardianTransform.updateMatrix();for(const batch of guardianBatches){instanceMatrix.multiplyMatrices(guardianTransform.matrix,batch.local);batch.mesh.setMatrixAt(guardianCount,instanceMatrix);}guardianCount++;}
  if(e.type==='rock'){hazardProjection.set(sx,y+1.2,-z).project(camera);rockSamples.push({id:e.id,lane:e.lane,ahead:z,resolved:!!e.done,kind:level.index===2&&guardianBatches.length?'guardian':'rock',screen:[hazardProjection.x,hazardProjection.y]});}
- if(e.enemy)obj.userData.body.visible=false;
+ if(e.enemy){obj.userData.body.visible=false;obj.position.y+=pose.lift;}
  if(e.type==='log'&&!e.enemy&&driftwoodBatches.length){obj.userData.body.visible=false;palmTransform.position.set(sx,y-.1,-z);palmTransform.rotation.set(0,obj.rotation.y+Math.sin(e.id)*.035,0);palmTransform.scale.set(1,1,1);palmTransform.updateMatrix();for(const b of driftwoodBatches){instanceMatrix.multiplyMatrices(palmTransform.matrix,b.local);b.mesh.setMatrixAt(woodCount,instanceMatrix);}woodCount++;}
  if(e.type==='coin')obj.rotation.y=reduced?0:g.time*4+e.id;
  else if(e.type==='log')obj.rotation.x=reduced?0:Math.sin(e.d*.58-g.time*1.9)*.04;

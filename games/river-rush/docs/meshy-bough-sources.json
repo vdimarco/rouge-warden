@@ -1,0 +1,120 @@
+{
+  "endpoint": "meshy/v7.1/text-to-3d",
+  "requestId": "01a11966-1f38-7fd2-8aee-aa623eee0424",
+  "input": {
+    "prompt": "Isolated massive sideways-growing rainforest hardwood branch, no trunk or ground. Thick twisted main limb extends horizontally left to right and bends gently down at its tapered far tip. Five substantial irregular secondary forks rise upward and outward from shared knotted junctions, then divide into thin twigs. Airy small green leaf clusters only at twig ends. Open asymmetric branching silhouette with exposed wood, deep ridged bark, healed knots, weathered broken stubs. Main limb is much thicker than its forks. Realistic adventure game prop, cohesive physically connected organic wood.",
+    "mode": "full",
+    "seed": 604221,
+    "model_type": "standard",
+    "target_polycount": 5000,
+    "topology": "triangle",
+    "should_remesh": true,
+    "symmetry_mode": "off",
+    "enable_pbr": true,
+    "geometry_resolution": "standard",
+    "texture_prompt": "Realistic rough dark warm brown hardwood bark, deeply weathered fissures and gnarled burl knots, small muted moss patches near thick branch base. Healthy forest green leaves with visible veins. Natural material albedo, no painted highlights or fake directional shadows. Matte wood and leaves, no metallic surfaces."
+  },
+  "result": {
+    "animation_glb": null,
+    "animation_fbx": null,
+    "model_glb": {
+      "url": "https://v3b.fal.media/files/b/0aad8068/IIERdg7TZRlgpgANPZ7Of_model.glb",
+      "content_type": "model/gltf-binary",
+      "file_name": "model.glb",
+      "file_size": 8318352
+    },
+    "thumbnail": {
+      "url": "https://v3b.fal.media/files/b/0aad806a/mhLf2uR7X7kb4nZxrlKXV_preview.png",
+      "content_type": "image/png",
+      "file_name": "preview.png",
+      "file_size": 60484
+    },
+    "model_urls": {
+      "glb": {
+        "url": "https://v3b.fal.media/files/b/0aad8068/IIERdg7TZRlgpgANPZ7Of_model.glb",
+        "content_type": "model/gltf-binary",
+        "file_name": "model.glb",
+        "file_size": 8318352
+      },
+      "fbx": {
+        "url": "https://v3b.fal.media/files/b/0aad8069/I_wq_ZxdyzHDKLwrHrm1N_model.fbx",
+        "content_type": "application/octet-stream",
+        "file_name": "model.fbx",
+        "file_size": 8439580
+      },
+      "obj": {
+        "url": "https://v3b.fal.media/files/b/0aad8069/e1ge4LbPA6NMiJHYcu9_F_model.obj",
+        "content_type": "text/plain",
+        "file_name": "model.obj",
+        "file_size": 553748
+      },
+      "usdz": {
+        "url": "https://v3b.fal.media/files/b/0aad8069/KVYrR7ra2Nhdx1a0xtPom_model.usdz",
+        "content_type": "model/vnd.usdz+zip",
+        "file_name": "model.usdz",
+        "file_size": 8622095
+      },
+      "blend": null,
+      "stl": {
+        "url": "https://v3b.fal.media/files/b/0aad806a/ntgAssKi7hRmMrOMHZjcy_model.stl",
+        "content_type": "application/octet-stream",
+        "file_name": "model.stl",
+        "file_size": 245434
+      }
+    },
+    "texture_urls": [
+      {
+        "base_color": {
+          "url": "https://v3b.fal.media/files/b/0aad806a/0Rfw0y65XNaHwa_AcKenR_texture_0.png",
+          "content_type": "image/png",
+          "file_name": "texture_0.png",
+          "file_size": 5730941
+        },
+        "metallic": {
+          "url": "https://v3b.fal.media/files/b/0aad806b/whcsll8pCdV54KtORFfHg_texture_0_metallic.png",
+          "content_type": "image/png",
+          "file_name": "texture_0_metallic.png",
+          "file_size": 80374
+        },
+        "normal": {
+          "url": "https://v3b.fal.media/files/b/0aad806b/z8Trj9taKGKMUZzVe5U_w_texture_0_normal.png",
+          "content_type": "image/png",
+          "file_name": "texture_0_normal.png",
+          "file_size": 4879801
+        },
+        "roughness": {
+          "url": "https://v3b.fal.media/files/b/0aad806b/z4SVHH1QxKk8HaS4DFS1q_texture_0_roughness.png",
+          "content_type": "image/png",
+          "file_name": "texture_0_roughness.png",
+          "file_size": 1353709
+        }
+      }
+    ],
+    "seed": 604221,
+    "prompt": "Isolated massive sideways-growing rainforest hardwood branch, no trunk or ground. Thick twisted main limb extends horizontally left to right and bends gently down at its tapered far tip. Five substantial irregular secondary forks rise upward and outward from shared knotted junctions, then divide into thin twigs. Airy small green leaf clusters only at twig ends. Open asymmetric branching silhouette with exposed wood, deep ridged bark, healed knots, weathered broken stubs. Main limb is much thicker than its forks. Realistic adventure game prop, cohesive physically connected organic wood.",
+    "actual_prompt": null,
+    "rigged_character_glb": null,
+    "rigged_character_fbx": null,
+    "basic_animations": null,
+    "rig_task_id": null
+  },
+  "estimatedCostUSD": 0.8,
+  "packing": {
+    "script": "scripts/pack-bough.mjs",
+    "geometry": "4907 triangles full; 1458 triangles lite; root-to-tip stem coordinates with locally rooted course deformation",
+    "textures": "Embedded WebP; 1024 albedo /512 PBR detail full, 512 albedo /256 PBR detail lite",
+    "fallback": "Existing locally textured curved duck trees; unchanged 2D branch anatomy and contact rules"
+  },
+  "runtimeAssets": [
+    {
+      "file": "public/models/meshy-bough.glb",
+      "bytes": 388268,
+      "sha256": "6e6d4e77beb4ae7575af7bb262f5d36bc33e60db5ed4116cd5ff223cb4096375"
+    },
+    {
+      "file": "public/models/meshy-bough-lite.glb",
+      "bytes": 112516,
+      "sha256": "16a5c1a41707ff596bc1e717a9de52403bd78e61ae97928ea3f39150dd3e2b9b"
+    }
+  ]
+}

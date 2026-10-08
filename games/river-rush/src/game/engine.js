@@ -54,7 +54,7 @@ export function createGame(seed = Date.now(), levelIndex = 0, carry = null) {
     motifDeck:[], episode:null, episodeIndex:0, routeLane:1, routeDirection:mapSeed&1?1:-1,
     terrainProfile:Object.freeze({seed:mapSeed,length:level.length,mapIndex:level.index}),terrainCombo:{section:null,count:0,claimed:false},
     terrainBeat:null,rowsSinceRequired:0,requiredJump:false,requiredDuck:false,lastRequiredType:null,requiredTypeRun:0,lastFormation:null,formationRun:0,
-    encounters:{lastRow:-99,nextEnemyRow:7+mapSeed%3,enemyIndex:0,lastEnemyType:null,targetIndex:0,nextTargetRow:11+mapSeed%4},lastJumpRewardD:null,
+    encounters:{lastRow:-99,nextEnemyRow:7+mapSeed%3,enemyIndex:0,lowEnemyIndex:0,lastEnemyType:null,targetIndex:0,nextTargetRow:11+mapSeed%4},lastJumpRewardD:null,
     event: '', eventId: 0, effects: [], notice: level.index===0?'Jump logs · Duck branches · Dodge rocks':`${level.name} · ${level.difficulty}`, noticeUntil: 4, reason: '' };
   for (let d = 7; d <= 32; d += 5) add(g, 'coin', 1, d);
   generateAhead(g); return g;
@@ -141,7 +141,7 @@ function rowPattern(g,row,d){
   if(reserveTarget&&hazards[0].type==='log')hazards[0].type='rock';
   // A single occupied lane always leaves a readable dodge route. Full-width
   // action walls and the promised wave-chain beats keep their original art.
-  const enemyType=encounter.lastEnemyType?encounter.lastEnemyType==='log'?'branch':'log':g.seed&1?'branch':'log';
+  const enemyType=encounter.lastEnemyType?encounter.lastEnemyType==='log'?'branch':'log':'log';
   const enemyReady=!reserveTarget&&hazards.length===1&&row>=encounter.nextEnemyRow&&row-encounter.lastRow>=3&&g.requiredJump&&g.requiredDuck&&!(activeTerrain&&terrain.type==='wave-train'&&terrain.comboAvailable)&&!(g.formationRun>=3&&g.lastFormation===`1:${enemyType}`);
   if(enemyReady)hazards[0].type=enemyType;
   let formation=hazards.every(h=>h.type===hazards[0].type)?`${hazards.length}:${hazards[0].type}`:'mixed';
@@ -151,7 +151,7 @@ function rowPattern(g,row,d){
     else{hazards[0].type=reserveTarget?(hazards[0].type==='rock'?'branch':'rock'):enemyReady?(hazards[0].type==='log'?'branch':'log'):hazards[0].type==='rock'?'branch':hazards[0].type==='branch'?'log':'rock';formation=hazards.length===1?`1:${hazards[0].type}`:'mixed';}
   }
   if(enemyReady){
-    hazards[0].enemy=hazards[0].type==='log'?'crocodile':'bird';
+    hazards[0].enemy=hazards[0].type==='log'?(encounter.lowEnemyIndex++%2===0?'crocodile':'fish'):'bird';
     encounter.lastRow=row;encounter.enemyIndex++;encounter.lastEnemyType=hazards[0].type;
     encounter.nextEnemyRow=row+encounterGap(g.seed,encounter.enemyIndex,g.levelIndex);
   }
@@ -163,7 +163,7 @@ function rowPattern(g,row,d){
   if(activeTerrain){sectionBeat.step++;if(mandatory==='log')sectionBeat.logs++;}
   // A single coherent reward path: either clear water, a jump arc over its
   // actual log, or low gold under the branch. Never point at a different lane.
-  const reward=mandatory?hazards.find(h=>h.lane===safe):hazards.find(h=>h.enemy==='crocodile')??hazards.find(h=>h.type==='log'&&(motif==='jump-waves'||terrain.type==='wave-train'))??(activeTerrain&&terrain.type==='low-canopy'?hazards.find(h=>h.type==='branch'):null);
+  const reward=mandatory?hazards.find(h=>h.lane===safe):hazards.find(h=>h.enemy&&h.type==='log')??hazards.find(h=>h.type==='log'&&(motif==='jump-waves'||terrain.type==='wave-train'))??(activeTerrain&&terrain.type==='low-canopy'?hazards.find(h=>h.type==='branch'):null);
   const coinLane=reward?.lane??safe;
   return{motif,safe,hazards,coinLane,act,episode:episode.index,beat:step,recovery,intensity,terrain,activeTerrain};
 }
@@ -201,7 +201,7 @@ export function generateAhead(g) {
     const {motif,safe,hazards,coinLane,act,episode,beat,recovery,intensity,terrain,activeTerrain}=planned.pattern;
     if(!g.patternsSeen.includes(motif))g.patternsSeen.push(motif);
     const section={sectionId:terrain.id,sectionType:terrain.type,sectionPhase:terrain.phase,terrainActive:!!activeTerrain,terrainComboAvailable:terrain.comboAvailable};
-    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery,...section,...(h.enemy?{enemy:h.enemy,motion:encounterMotion(h.lane,d,maxRushSpeed,h.enemy,g.seed^row)}:{}) }));
+    hazards.forEach(h => add(g, h.type, h.lane, d, { row, motif,act,episode,beat,recovery,...section,...(h.enemy?{enemy:h.enemy,motion:encounterMotion(h.lane,d,maxRushSpeed,h.enemy,g.seed^row,g.levelIndex)}:{}) }));
     // Every spacing stays above the existing per-map safety floor, with
     // seeded variation and longer pauses after brief challenge bursts.
     const interval=row<3?1.05-Math.min(1,predictedTime/95)*.19:Math.max(level.minInterval,level.rowInterval+.16*(1-intensity)-.1*intensity+(random(g)-.5)*.22)+(recovery ? .30+.20*intensity : 0);
@@ -286,7 +286,7 @@ function collide(g, obstacle, contact, protectedAtCrossing) {
     emit(g, 'hit', 'Shield saved you! Next hit ends the run', contact.playerLane, contact); return 'shield';
   }
   g.phase = 'lost';
-  g.reason = obstacle.enemy==='crocodile'?'Crocodile hit. Jump over it or switch lanes.':obstacle.enemy==='bird'?'Bird hit. Duck under it or switch lanes.':obstacle.type === 'rock' ? 'Rock hit. Switch lanes to dodge boulders.' : obstacle.type === 'log' ? 'Log hit. Jump as it reaches your raft.' : 'Branch hit. Duck as it reaches your raft.';
+  g.reason = obstacle.enemy==='crocodile'?'Crocodile hit. Jump over it or switch lanes.':obstacle.enemy==='bird'?'Bird hit. Duck under it or switch lanes.':obstacle.enemy==='fish'?'Leaping fish hit. Jump over it or switch lanes.':obstacle.type === 'rock' ? 'Rock hit. Switch lanes to dodge boulders.' : obstacle.type === 'log' ? 'Log hit. Jump as it reaches your raft.' : 'Branch hit. Duck as it reaches your raft.';
   emit(g, 'lose', 'WIPEOUT', contact.playerLane, contact); return 'lost';
 }
 export function updateGame(g, input, dt) {
@@ -441,7 +441,7 @@ export function updateGame(g, input, dt) {
 export function snapshot(g) {
   const level=levelAt(g.levelIndex);
   const terrain=terrainSection(g.distance,g.terrainProfile),sameCombo=g.terrainCombo.section===terrain.id;
-  const next = g.entities.find(e => !e.done && e.lane === g.lane && ['rock', 'log', 'branch'].includes(e.type));
+  const next = g.entities.find(e => !e.done && Math.abs(entityLane(e,e.d)-g.lane)<=HAZARD_LANE_RADIUS && ['rock', 'log', 'branch'].includes(e.type));
   return { phase: g.phase, time: g.time, distance: Math.floor(g.distance), lane: g.lane, visualLane: g.visualLane, actionTime: g.actionTime,
     action: g.action, coins: g.coins, score: g.score, streak: g.streak, multiplier: g.multiplier,
     charge: g.charge, rush: g.rush, magnet: g.magnet, shield: g.shield, speed: g.speed, streakTime: g.streak ? Math.max(0, 2.8 - (g.time - g.lastCoin)) : 0,
@@ -451,7 +451,7 @@ export function snapshot(g) {
     terrain:{...terrain,comboProgress:terrain.comboAvailable&&sameCombo?g.terrainCombo.count:0,comboClaimed:terrain.comboAvailable&&sameCombo&&g.terrainCombo.claimed},
     goalsCleared: g.goalsCleared, goal: { ...g.goal, progress: Math.min(g.goal.target, Math.floor((g.goal.kind === 'tricks' ? g.jumps + g.ducks : g.goal.kind === 'coins' ? g.coins : g.distance) - g.goal.start)) },
     notice: g.time < g.noticeUntil ? g.notice : '',
-    hint: next && next.d - g.distance < g.speed*(next.enemy?1.6:1.1) ? { id: next.id, type: next.type, enemy:next.enemy??null, lane:entityLane(next,g.distance),destinationLane:next.lane,in: timeToImpact(g,next.d), safeLane: [0,1,2].find(lane => !g.entities.some(e => e.row === next.row && e.lane === lane && ['rock','log','branch'].includes(e.type))) } : null };
+    hint: next && next.d - g.distance < g.speed*(next.enemy?1.6:1.1) ? { id: next.id, type: next.type, enemy:next.enemy??null, lane:entityLane(next,g.distance),destinationLane:entityLane(next,next.d),in: timeToImpact(g,next.d), safeLane: [0,1,2].find(lane => !g.entities.some(e => e.row === next.row && Math.abs(entityLane(e,e.d)-lane)<=HAZARD_LANE_RADIUS && ['rock','log','branch'].includes(e.type))) } : null };
 }
 export function validBest(value) {
   return value?.version===3&&Number.isSafeInteger(value.score)&&value.score>0
