@@ -1,0 +1,3 @@
+- [x] Implement horizon projection and depth-scaled water sprites
+- [x] Verify projection, collisions, three complete voyages and Chromium desktop/phone layouts
+- [x] Validate and archive specification

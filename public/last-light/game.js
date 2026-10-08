@@ -2,7 +2,7 @@ import { mount } from './vendor/mount.js';
 import * as sunset from './vendor/ocean-sunset.js';
 import * as coast from './vendor/night-coast.js';
 import * as fjord from './vendor/aurora-fjord.js';
-import { createVoyage, start, pause, resume, dash, update, readBest, saveBest, CROSSINGS, CROSSING_SECONDS } from './engine.js';
+import { createVoyage, start, pause, resume, dash, update, readBest, saveBest, CROSSINGS, CROSSING_SECONDS, projectWater, HORIZONS } from './engine.js';
 const $ = id => document.getElementById(id);
 const scenes = [sunset, coast, fjord];
 const canvas = $('play'), ctx = canvas.getContext('2d');
@@ -17,21 +17,32 @@ const rock = ['   ••   ', '  •●●•  ', ' •●●●●• ', '•�
 function sprite(lines, x, y, size, color) {
   const cell = canvas.clientWidth / 200;
   const gx = Math.round(x / cell), gy = Math.round(y / cell);
+  const scale = size || 1;
+  const width = Math.max(1, Math.round(lines[0].length * scale));
+  const height = Math.max(1, Math.round(lines.length * scale));
   ctx.font = (cell / .6) + 'px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color;
-  for (let row = 0; row < lines.length; row++) {
-    for (let col = 0; col < lines[row].length; col++) {
-      const glyph = lines[row][col];
-      if (glyph === ' ') continue;
-      const px = (gx + col - Math.floor(lines[row].length / 2)) * cell;
-      const py = (gy + row - Math.floor(lines.length / 2)) * cell;
-      // Replace individual sea cells, rather than overlaying oversized text.
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const glyph = lines[Math.min(lines.length-1, Math.floor(row / height * lines.length))][Math.min(lines[0].length-1, Math.floor(col / width * lines[0].length))];
+      if (!glyph || glyph === ' ') continue;
+      const px = (gx + col - Math.floor(width / 2) + .5) * cell;
+      const py = (gy + row - Math.floor(height / 2) + .5) * cell;
       ctx.fillStyle = scenes[state.crossing].meta.ground;
       ctx.fillRect(px - cell / 2, py - cell / 2, cell, cell);
-      ctx.fillStyle = color;
-      ctx.fillText(glyph, px, py);
+      ctx.fillStyle = color; ctx.fillText(glyph, px, py);
     }
   }
+}
+function waterContact(x, y, scale, ink, light = false) {
+  const cell = canvas.clientWidth / 200;
+  ctx.globalAlpha = .38;
+  sprite(['· • · · • ·'], x, y + 2 * cell * scale, scale, ink);
+  if (light) {
+    ctx.globalAlpha = .24;
+    sprite([' ·•· ', '  ·  ', ' · · '], x, y + 5 * cell * scale, scale, ink);
+  }
+  ctx.globalAlpha = 1;
 }
 function resize() {
   const r = canvas.getBoundingClientRect();
@@ -43,26 +54,31 @@ function render() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   if (!w || !h) return;
   ctx.clearRect(0,0,w,h);
-  const scale = Math.max(5.5, Math.min(14,w/95));
+  const boatScale = .4 + (state.y - HORIZONS[state.crossing]) / (1.04 - HORIZONS[state.crossing]) * 1.5;
   const entities = state.status === 'ready'
-    ? [{type:'light',x:.18,y:.69},{type:'light',x:.5,y:.71},{type:'light',x:.84,y:.72},{type:'rock',x:.29,y:.78},{type:'rock',x:.87,y:.84}]
-    : state.entities;
+    ? [{type:'light',lane:.18,depth:.08},{type:'light',lane:.5,depth:.32},{type:'light',lane:.73,depth:.63},{type:'rock',lane:.3,depth:.48},{type:'rock',lane:.8,depth:.85}].map(e=>({...e,...projectWater(e.lane,e.depth,state.crossing)}))
+    : [...state.entities].sort((a,b)=>a.y-b.y);
   for (const e of entities) {
-    if (e.type === 'light') {
-      sprite(['  ·  ', ' ·•· ', '·•●•·', ' ·•· ', '  ·  '],e.x*w,e.y*h,scale,'#ffcd62');
-    } else sprite(rock,e.x*w,e.y*h,scale,['#90327c','#526a92','#568b85'][state.crossing]);
+    const scale = e.scale || 1;
+    const ink = e.type === 'light' ? '#ffcd62' : ['#90327c','#526a92','#568b85'][state.crossing];
+    waterContact(e.x*w,e.y*h,scale,ink,e.type==='light');
+    ctx.globalAlpha = Math.min(1,.25 + (e.depth ?? 1)*1.5);
+    if (e.type === 'light') sprite(['  ·  ', ' ·•· ', '·•●•·', ' ·•· ', '  ·  '],e.x*w,e.y*h,scale,ink);
+    else sprite(rock,e.x*w,e.y*h,scale,ink);
+    ctx.globalAlpha=1;
   }
   const boatInk = state.dash > 0 ? '#fff5d8' : state.safe > 0 ? '#ea6a78' : ['#ffe39a','#bdd5eb','#b6e5ce'][state.crossing];
   // Dark glyph shadow preserves contrast over the sun's reflection.
   ctx.shadowBlur=0;
-  sprite(boat,state.x*w,state.y*h,scale,boatInk);
+  waterContact(state.x*w,state.y*h,boatScale,boatInk);
+  sprite(boat,state.x*w,state.y*h,boatScale,boatInk);
   ctx.shadowBlur=0;
   if (!reduced.matches && (state.status === 'playing' || state.status === 'ready')) {
-    sprite(['· · • · ·'],state.x*w,(state.y+.045)*h,scale,'#c8bbdb');
+    sprite(['· · • · ·'],state.x*w,(state.y+.045)*h,boatScale,'#874266');
   }
   for (const e of state.effects) {
     ctx.globalAlpha=1-e.age/.9;
-    sprite([e.text],e.x*w,(e.y-.04-e.age*.025)*h,Math.max(10,scale),'#fff5d8');
+    sprite([e.text],e.x*w,(e.y-.04-e.age*.025)*h,1,'#fff5d8');
   }
   ctx.globalAlpha=1;
 }

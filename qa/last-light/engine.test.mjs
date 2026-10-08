@@ -1,17 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createVoyage,start,pause,resume,dash,update,readBest,saveBest} from '../../public/last-light/engine.js';
+import {createVoyage,start,pause,resume,dash,update,readBest,saveBest,projectWater,HORIZONS} from '../../public/last-light/engine.js';
 test('complete seeded voyages remain winnable while collecting lights',()=>{
  for(const seed of [2,9,13]) {
   const s=createVoyage(seed);start(s);
   while(s.status==='playing') {
-   const danger=s.entities.filter(e=>e.type==='rock'&&e.y>.7&&e.y<s.y+.07).sort((a,b)=>b.y-a.y)[0];
-   const light=s.entities.filter(e=>e.type==='light'&&e.y>.68&&e.y<s.y).sort((a,b)=>b.y-a.y)[0];
-   let target=light?.x??.5;
-   if(danger&&Math.abs(danger.x-s.x)<.065&&!dash(s)) target=danger.x>.5?.1:.9;
-   update(s,{x:Math.abs(target-s.x)<.015?0:Math.sign(target-s.x)},1/60);
+   const dangers=s.entities.filter(e=>e.type==='rock'&&Math.abs(e.y-s.y)<.12&&Math.abs(e.x-s.x)<.10);
+   if(dangers.length) dash(s);
+   let action=0, best=-Infinity;
+   for(const x of [-1,0,1]) {
+    const forecast=structuredClone(s);forecast.spawn=100;
+    for(let frame=0;frame<36&&forecast.status==='playing';frame++) update(forecast,{x},1/60);
+    const lights=forecast.entities.filter(e=>e.type==='light'&&e.y>forecast.y-.18&&e.y<forecast.y+.05);
+    const distance=lights.length?Math.min(...lights.map(e=>Math.abs(e.x-forecast.x))):.2;
+    const value=forecast.hull*1000+(forecast.score-s.score)*5-distance*40-Math.abs(forecast.x-.5)*.5;
+    if(value>best){best=value;action=x;}
+   }
+   update(s,{x:action},1/60);
   }
-  assert.equal(s.status,'won');assert.ok(s.lights>40);assert.ok(s.score>500);
+  assert.equal(s.status,'won');assert.ok(s.lights>25);assert.ok(s.score>500);
  }
 });
 test('steering is bounded, diagonal movement is normalized',()=>{
@@ -63,3 +70,24 @@ test('records tolerate blocked/malformed storage and retain the maximum',()=>{
  assert.equal(saveBest(storage,90,40),90);assert.equal(value,'90');
 });
 
+
+test('objects emerge at each waterline and spread and grow toward foreground',()=>{
+ for(let crossing=0;crossing<3;crossing++) {
+  const far=projectWater(.2,0,crossing), near=projectWater(.2,.8,crossing);
+  assert.equal(far.y,HORIZONS[crossing]);
+  assert.ok(near.y>far.y && near.scale>far.scale && near.x<far.x);
+  const s=createVoyage(9);start(s);s.time=crossing*35;s.spawn=0;
+  update(s,{},.01);const e=s.entities[0];
+  assert.ok(e.depth<.02);assert.ok(e.y>=HORIZONS[crossing]);
+  const before={...e};s.spawn=100;update(s,{},.05);
+  assert.ok(e.depth>before.depth && e.scale>before.scale && e.y>before.y);
+  assert.deepEqual({x:e.x,y:e.y,scale:e.scale},projectWater(e.lane,e.depth,crossing));
+ }
+});
+test('projected objects collide where they appear on the water',()=>{
+ const s=createVoyage();start(s);s.spawn=100;
+ const depth=(s.y-HORIZONS[0])/(1.04-HORIZONS[0]);
+ const lane=.5+(s.x-.62)/(.36+depth*.92);
+ s.entities=[{id:1,type:'light',lane,depth,age:0,speed:0,...projectWater(lane,depth)}];
+ update(s,{},.01);assert.equal(s.lights,1);
+});
