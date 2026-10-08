@@ -24,3 +24,7 @@ All units are world units. Exact segment clearances are at least 275 from cover 
 
 ## Verification
 Measure relief range, surface continuity and mirrored samples. Check structures, bridge approaches and animated units against mesh heights. Compare broader bends with the baseline and enforce safe route invariants. Run relevant simulation checks and inspect 3D plus the 2D map on desktop and phone viewport sizes when browser access permits. Record missing assets or unavailable browser/CLI checks without claiming they passed.
+
+## Desktop HUD follow-up
+
+Use the same `(hover: hover) and (pointer: fine)` query in CSS and match startup. Desktop players receive no movement pad, movement coach or floating spellbook/point pill at any viewport size. The book opens through K or a Spellbook action in the pause menu. Matches begin directly; the existing plus badges train skills without a modal. Clear stale full-icon upgrade mode when starting a match. Coarse-pointer/touch players retain their movement and point controls and the initial book. Input capability determines this behavior, so a wide touch screen still receives touch controls.

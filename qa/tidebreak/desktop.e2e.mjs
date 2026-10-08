@@ -2,6 +2,8 @@
 // - the mouse pushes the following camera; the mouse may leave the window; the minimap look ends on release;
 // - Esc and the top-left Menu button open the menu; a held Esc opens it once; a resize keeps the hero's order and keys;
 //   leaving full screen offers windowed play and never forces full screen back;
+// - mouse play starts without the spellbook or touch-only HUD controls; K and the menu still open the spellbook;
+//   a touch phone keeps its movement pad, skill-point control and opening spellbook;
 // - sound: the match is audible at the output with a clean harness; a saved mute shows a chip that turns it back on;
 //   a click that wakes a stopped context does not mute; Test sound reports the level;
 // - motion: at a simulated 144 Hz the hero moves smoothly on screen (no 60 Hz judder);
@@ -35,21 +37,30 @@ async function reader(page) {
   return async expr => { const r = await cdp.send('Runtime.evaluate', { expression: expr, userGesture: false, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.text + ' ' + (r.exceptionDetails.exception?.description || '')); return r.result.value; };
 }
 const SNAP = `(async () => (await import('/tidebreak/main.js')).snapshot())()`;
-async function open(width, height, { init = [], query = '' } = {}) {
-  const page = await browser.newPage({ viewport: { width, height } });
+async function open(width, height, { init = [], query = '', touch = false } = {}) {
+  const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(TAP); for (const f of init) await page.addInitScript(f);
   await page.goto(URL + query);
   const read = await reader(page);
   for (let i = 0; i < 300 && await read(`document.getElementById('play').disabled`); i++) await page.waitForTimeout(200);
-  return { page, errors, read, snap: () => read(SNAP) };
+  return { page, errors, read, touch, snap: () => read(SNAP) };
 }
 const centre = async (read, selector) => read(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+const shown = (read, selector) => read(`(() => { const e = document.querySelector(${JSON.stringify(selector)}), r = e.getBoundingClientRect(); return !e.hidden && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden' && r.width > 0 && r.height > 0; })()`);
 async function toMatch(t) {
   const play = await centre(t.read, '#play'); await t.page.mouse.click(play.x, play.y);
   for (let i = 0; i < 150 && !(await t.read(`!document.getElementById('hud').hidden`)); i++) { await t.page.keyboard.press('Enter'); await t.page.waitForTimeout(200); }
   for (let i = 0; i < 100 && !(await t.snap()).running; i++) await t.page.waitForTimeout(200);
   await t.page.waitForTimeout(500);
+  const desktop = await t.read(`matchMedia('(hover: hover) and (pointer: fine)').matches`);
+  if (desktop) assert.equal(await t.read(`document.getElementById('sheet').open`), false, 'mouse play starts without an automatic spellbook');
+  if (t.touch) {
+    assert.equal(desktop, false, 'the phone context uses touch input');
+    assert.equal(await t.read(`document.getElementById('sheet').open && document.getElementById('sheet').classList.contains('spellbook-sheet')`), true, 'touch play retains the opening spellbook');
+    assert.equal(await shown(t.read, '#joystick'), true, 'the touch movement pad remains visible');
+    assert.equal(await shown(t.read, '#skill-points'), true, 'the touch skill-point control remains visible');
+  }
   if (await t.read(`document.getElementById('sheet').open`)) await t.page.keyboard.press('Escape');
   await t.page.waitForTimeout(300);
 }
@@ -66,6 +77,19 @@ try {
     assert(rms > .01, 'the match is audible after a real click on Play: rms ' + rms);
     assert(!plays.some(p => /NotAllowed/.test(p)), 'no track was refused: ' + plays);
     pass('a real click on Play gives an audible draft and match', { rms: +rms.toFixed(3) });
+
+    for (const selector of ['#joystick', '#coach', '#skill-points']) assert.equal(await shown(t.read, selector), false, selector + ' stays out of the desktop battlefield');
+    await t.page.keyboard.press('k');
+    assert.equal(await t.read(`document.getElementById('sheet').open && document.getElementById('sheet').classList.contains('spellbook-sheet')`), true, 'K opens the spellbook');
+    await t.page.keyboard.press('Escape');
+    assert.equal(await t.read(`document.getElementById('sheet').open`), false, 'Esc closes the spellbook');
+    assert.equal((await t.snap()).paused, false, 'closing the spellbook returns to play');
+    await t.page.keyboard.press('Escape');
+    const book = await centre(t.read, '#menu-spellbook'); await t.page.mouse.click(book.x, book.y);
+    assert.equal(await t.read(`document.getElementById('sheet').open && document.getElementById('sheet').classList.contains('spellbook-sheet')`), true, 'the pause menu opens the spellbook');
+    await t.page.keyboard.press('Escape');
+    assert.equal((await t.snap()).paused, false, 'closing the menu spellbook returns to play');
+    pass('desktop controls stay clear, and K or the menu opens the spellbook');
 
     // Test sound: the game plays a chime and reports its own level.
     await t.page.keyboard.press('Escape'); await t.page.waitForTimeout(200);
@@ -239,13 +263,13 @@ try {
 
   /* ---------------- a phone with sound saved off ---------------- */
   {
-    const t = await open(390, 844, { init: [() => localStorage.setItem('tidebreak.sound', 'off')] });
+    const t = await open(390, 844, { touch: true, init: [() => localStorage.setItem('tidebreak.sound', 'off')] });
     await toMatch(t);
     // The header ignores pointer events, so compare boxes: no shown top-left control may overlap the score.
     const overlaps = await t.read(`(() => { const s = document.querySelector('.score').getBoundingClientRect(); return [...document.querySelectorAll('.hud-corner > *')].filter(e => getComputedStyle(e).display !== 'none').map(e => [e.id, e.getBoundingClientRect()]).filter(([, r]) => r.right > s.left && r.left < s.right && r.bottom > s.top && r.top < s.bottom).map(([id]) => id); })()`);
     assert.deepEqual(overlaps, [], 'nothing in the top left covers the score on a phone');
     assert.equal(await t.read(`document.getElementById('hud-sound').getAttribute('aria-pressed')`), 'false', 'the speaker shows the saved mute');
-    pass('on a phone with sound off, the score stays visible and the speaker shows the mute');
+    pass('touch play retains its opening spellbook and controls; the score and saved mute stay visible');
     assert.deepEqual(t.errors, []); await t.page.close();
   }
 
@@ -264,3 +288,4 @@ try {
   }
   console.log(`${results.length} checks passed`);
 } finally { await browser.close(); }
+

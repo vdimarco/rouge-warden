@@ -47,3 +47,9 @@ The temporary harnesses are not committed test dependencies. Hero/scenery ground
 The sandbox forbids network sockets. The local HTTP server could not bind, and Chromium also crashed with `setsockopt: Operation not permitted` and SIGTRAP, including the attempted no-server harness. The GitHub connector cannot download binary GLBs. No browser screenshots, WebGL shader compilation/execution, live mouse/WASD/touch controls, real-device checks or GPU frame-rate measurements ran.
 
 With the full repository and browser access, run `render3d.e2e.mjs`, `hero-select-3d.e2e.mjs` and `combat-feel-3d.e2e.mjs`, then inspect both realms, hills/banks, steep-ground spell warnings, bridge crossings and the 2D fallback at desktop, landscape-phone and portrait-phone sizes. Check the existing renderer quality/frame-rate rule. Keep this change active until those visual tasks pass; it is not archived into canonical specs yet.
+
+## Desktop HUD follow-up
+
+The desktop command-bar stylesheet now hides the movement pad, movement coach and floating spellbook/point control with `(hover: hover) and (pointer: fine)`. The same query suppresses the initial book in desktop match startup. K and a pause-menu Spellbook action open it on demand; direct plus badges still train skills. New match startup clears stale upgrade mode. Touch/coarse-pointer controls retain the initial book and movement/point controls.
+
+`desktop.e2e.mjs` now checks initial desktop/touch book behavior, hidden desktop controls, K/Escape and menu book access, and an explicit touch phone context. Syntax checks passed. Its browser assertions were not executed because Chromium remains unavailable in this sandbox; they are pending, not reported as passes.
