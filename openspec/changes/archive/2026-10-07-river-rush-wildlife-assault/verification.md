@@ -71,13 +71,28 @@ lanes with reversals; bird lift descends from 2.7 and fish reaches .72. Shared
 pose errors are zero, all six encounter screenshots remain identical while
 paused, and texture uploads/shader counters remain 49/76 through active play.
 The shield is retained with no hits. Meshy bough readiness and the final compact
-phone receipt are recorded in the browser receipt. Production results will be
-recorded after exact deployment checks finish.
+phone receipt are recorded in the browser receipt. Source commit `e17a94b66ce3093d88f64d6c929e2232bd79b87c` is published to
+`vdimarco/rouge-warden` main without force. Production deployment
+`dpl_BsiCBVi2y9G4JEaD1b5JnrocnXRY` is READY and owns the arcade domain.
+Fetched HTML, JavaScript, CSS, both Meshy models and music exactly match local
+bytes; all six return HTTP 200 and the music range request returns HTTP 206.
+See [live assets](live-assets.json) and [deployment receipt](deployment-receipt.json).
+The natural production desktop run also passes on that exact bundle through
+the actual App controls: crocodile jump, right-bank bird duck and fish jump,
+plus a physical relic with exactly +200 bonus. Recorded poses match the shared
+engine helper with zero errors; all six encounter screenshots retain identical
+paused pixels and status. Upload/shader counters remain 49/76, the shield stays
+intact with no hits, and the Meshy bough is ready with no GPU errors. See
+[live browser receipt](live-browser-receipt.json). Both natural runs retain the
+App seed, state and clock.
 
 ## Limits
 
 The OpenSpec CLI is unavailable; requirement/scenario structure and archive
-merging are checked directly. Browser checks use Chromium/SwiftShader and
+merging are checked directly. Three uniquely matching modified requirements
+with 11 observable scenarios merge into 53 canonical requirements and 117
+WHEN/THEN scenarios, independently reviewed before archiving. See
+[spec validation](spec-validation.json). Browser checks use Chromium/SwiftShader and
 synthetic pointer/keyboard input. Isolated rendering fixtures set their own
 states and clocks; natural App probes retain the App's seed, clock and state
 and use the real controls. These checks do not measure physical-phone frame
