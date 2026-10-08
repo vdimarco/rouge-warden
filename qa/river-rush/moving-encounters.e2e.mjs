@@ -10,13 +10,14 @@ const selected=process.env.CASE||'all';
 await fs.mkdir(out,{recursive:true});
 const source=await fs.readFile(new URL('./wild-finale.mjs',import.meta.url),'utf8');
 const install=source.slice(source.indexOf('function install(){'),source.indexOf('const state=p=>'));
-const report={passed:false,base,dev,kind:'moving-encounters-browser-proof',actualAppStateOrClockMutations:false,fixedWallClockOrSeed:false,actual:[],fixtures:[],errors:[],limitations:['Chromium with SwiftShader; physical phone frame rate and human reaction feel were not measured.','Actual play dispatches synthetic keyboard events through the real App handler, retaining natural Date.now campaign seeds. Isolated renderer fixtures explicitly set their own states and clocks.']};
+const smoke=process.env.SMOKE==='1';
+const report={passed:false,base,dev,kind:smoke?'first-natural-enemy-and-relic-production-smoke':'moving-encounters-browser-proof',actualAppStateOrClockMutations:false,fixedWallClockOrSeed:false,actual:[],fixtures:[],errors:[],limitations:['Chromium with SwiftShader; physical phone frame rate and human reaction feel were not measured.','Actual play dispatches synthetic keyboard events through the real App handler, retaining natural Date.now campaign seeds. Isolated renderer fixtures explicitly set their own states and clocks.']};
 const browser=await chromium.launch({args:['--no-sandbox','--enable-unsafe-swiftshader']});
 const checkpoint=()=>fs.writeFile(`${out}/moving-encounters.json`,JSON.stringify(report,null,2)+'\n');
 const status=p=>p.evaluate(()=>__tools.get_run_status({}));
 const layouts=[{name:'phone',width:390,height:844},{name:'desktop',width:1365,height:900},{name:'landscape',width:844,height:390}];
 
-function naturalController(levels){
+function naturalController({levels,smoke}){
  const P=window.__encounterProbe={done:false,error:null,steerEnabled:true,inputs:[],events:[],seen:new Set(),handled:new Set(),samples:new Map(),outcomes:new Map(),maxLaneError:0,targetBonus:[],lastBonus:null,screenshotKind:null};
  const laneAt=(e,d)=>{if(!e.motion)return e.lane;const t=Math.max(0,Math.min(1,(d-e.motion.startD)/(e.motion.endD-e.motion.startD))),u=t*t*(3-2*t);return e.motion.from+(e.motion.to-e.motion.from)*u;};
  const forecast=(g,d)=>{const l=levels[g.levelIndex],v=Math.min(l.maxSpeed,l.startSpeed+g.time*l.acceleration),distance=Math.max(0,d-g.distance),cap=(l.maxSpeed*l.maxSpeed-v*v)/(2*l.acceleration);return distance<=cap?(Math.sqrt(v*v+2*l.acceleration*distance)-v)/l.acceleration:(l.maxSpeed-v)/l.acceleration+(distance-cap)/l.maxSpeed;};
@@ -39,7 +40,7 @@ function naturalController(levels){
      if(t<1.0&&t>.48&&lane!==undefined&&lane!==g.lane)steer(g,lane);
      if((enemy||full)&&!P.handled.has(row.row)&&t<=.33){press(g,row.hazards[0].type==='log'?'ArrowUp':'ArrowDown',{row:row.row,enemy:enemy?.enemy??null,predictedLead:t});P.handled.add(row.row);}
     }
-    const kinds=['crocodile','bird'].every(kind=>P.events.some(e=>e.type==='perfect'&&e.enemy===kind));
+    const kinds=smoke?P.events.some(e=>e.type==='perfect'&&e.enemy):['crocodile','bird'].every(kind=>P.events.some(e=>e.type==='perfect'&&e.enemy===kind));
     if(kinds&&P.events.some(e=>e.type==='target')&&g.time>P.events.findLast(e=>e.type==='target').time+.55){P.done=true;P.final={phase:g.phase,shield:g.shield,shieldsUsed:g.shieldsUsed,bonus:g.bonus,time:g.time,distance:g.distance};}
    }else if(['impact','result','complete'].includes(s.screen))P.error=`Probe ended on ${s.screen} before both enemies and relic at ${g.distance}m`;
   }}catch(e){P.error=e.stack;}
@@ -53,7 +54,7 @@ async function actual(layout){
  await p.goto(base);await p.waitForFunction(()=>{const b=document.querySelector('button[aria-label="Start run"]');return b&&!b.disabled;},{},{timeout:90000});
  const bundle=await p.evaluate(()=>[...document.scripts].map(s=>s.src).find(s=>s.includes('/river-rush/assets/index-'))??null);if(process.env.EXPECTED_BUNDLE)assert.ok(bundle?.endsWith(process.env.EXPECTED_BUNDLE));
  const ready=await status(p);assert.equal(ready.renderer.kind,'webgl');assert.equal(ready.renderer.prepared,true);const resources=await p.evaluate(()=>({...__resources}));
- await p.getByRole('button',{name:'Start run',exact:true}).click();await p.evaluate(naturalController,LEVELS);
+ await p.getByRole('button',{name:'Start run',exact:true}).click();await p.evaluate(naturalController,{levels:LEVELS,smoke});
  const shots=[],end=Date.now()+240000;let pauseProof=null,peek;
  while(Date.now()<end){peek=await p.evaluate(()=>({done:__encounterProbe.done,error:__encounterProbe.error,kind:__encounterProbe.screenshotKind}));if(peek.done||peek.error)break;
   if(peek.kind&&!shots.some(s=>s.kind===peek.kind)){
@@ -66,11 +67,11 @@ async function actual(layout){
   await p.waitForTimeout(35);
  }
  const data=await p.evaluate(()=>{const P=__encounterProbe;return{done:P.done,error:P.error,inputs:P.inputs,events:P.events,samples:[...P.samples.values()],outcomes:[...P.outcomes.values()],maxLaneError:P.maxLaneError,targetBonus:P.targetBonus,final:P.final,resources:{...__resources},gpuErrors:__gpuErrors};});data.status=await status(p);const row={layout:layout.name,kind:'actual-App-natural-seed-keyboard-handler',bundle,shots,pauseProof,resourcesBefore:resources,...data};report.actual.push(row);await checkpoint();
- assert.equal(data.error,null);assert.equal(data.done,true,'Natural route must actually clear crocodile and bird and collect relic');
- for(const [kind,action]of [['crocodile','jump'],['bird','duck']]){const contact=data.events.find(e=>e.type==='perfect'&&e.enemy===kind);assert.ok(contact);assert.equal(contact.action,action);assert.ok(Math.abs(contact.playerLane-contact.obstacleLane)<=.54);}
+ assert.equal(data.error,null);assert.equal(data.done,true,smoke?'Natural smoke must clear one enemy and collect relic':'Natural route must actually clear crocodile and bird and collect relic');
+ const kinds=smoke?[...new Set(data.events.filter(e=>e.type==='perfect'&&e.enemy).map(e=>e.enemy))]:['crocodile','bird'];assert.ok(kinds.length);for(const kind of kinds){const contact=data.events.find(e=>e.type==='perfect'&&e.enemy===kind);assert.ok(contact);assert.equal(contact.action,kind==='crocodile'?'jump':'duck');assert.ok(Math.abs(contact.playerLane-contact.obstacleLane)<=.54);}
  const contacts=data.events.filter(e=>e.type==='target');assert.ok(contacts.length>=1);assert.equal(new Set(contacts.map(e=>e.entityId)).size,contacts.length);for(const e of contacts){assert.equal(e.value,200);assert.ok(e.charge>=0&&e.charge<=10);assert.ok(Math.abs(e.playerLane-e.lane)<=.250001);assert.ok(e.playerHeight<=.280001);assert.ok(data.outcomes.find(o=>o.id===e.entityId)?.collected);}
  assert.ok(data.targetBonus.every(b=>b.net===200),'Real physical pickup must add exactly200bonus after concurrent coin/trick/goal bonuses');assert.equal(data.status.audio.cueCounts.target,contacts.length,'One distinct relic cue per physical pickup');assert.ok(data.maxLaneError<1e-9);assert.ok(data.samples.some(h=>new Set(h.samples.map(s=>s.lane.toFixed(3))).size>2),'A natural encounter must visibly change lanes');assert.equal(data.final.shield,true);assert.equal(data.final.shieldsUsed,0);assert.ok(!data.events.some(e=>['hit','lose','smash'].includes(e.type)));assert.deepEqual(data.resources,resources);assert.deepEqual(data.gpuErrors,[]);assert.ok(data.status.renderer.encounters.instances<4800);
- row.passed=true;await checkpoint();console.log(JSON.stringify({actual:layout.name,crocodileJump:true,birdDuck:true,relicContacts:contacts.length,pause:true,noActiveGpuPreparation:true}));await p.evaluate(()=>cancelAnimationFrame(__encounterRAF));await p.keyboard.press('Escape');await p.getByRole('button',{name:'Back to river',exact:true}).click();await p.close();
+ row.passed=true;row.scope=smoke?'first-enemy-and-first-relic':'both-enemies-and-relic';await checkpoint();console.log(JSON.stringify({actual:layout.name,enemyKinds:kinds,relicContacts:contacts.length,pause:true,noActiveGpuPreparation:true,scope:row.scope}));await p.evaluate(()=>cancelAnimationFrame(__encounterRAF));await p.keyboard.press('Escape');await p.getByRole('button',{name:'Back to river',exact:true}).click();await p.close();
 }
 
 async function fixtures(){
