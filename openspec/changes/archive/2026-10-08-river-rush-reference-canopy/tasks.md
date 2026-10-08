@@ -5,5 +5,5 @@
 - [x] Integrate local full/Lite assets while preserving prepared renderer budgets.
 - [x] Verify roots, contacts, duck clearance, clear lanes and stopped resources.
 - [x] Independently review phone/desktop screenshots against the references.
-- [ ] Test actual controls and publish exact assets to main and the arcade.
-- [ ] Validate, merge canonical requirements and archive the completed change.
+- [x] Test actual controls and publish exact assets to main and the arcade.
+- [x] Validate, merge canonical requirements and archive the completed change.

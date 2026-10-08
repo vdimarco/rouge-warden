@@ -34,8 +34,20 @@ were not measured. Canvas2D backup bark is unlit and procedural materials are
 simpler; fine native distal twigs taper naturally, and close portrait framing
 can crop the outer bank roots, shown in approach views.
 
-Exact GitHub/production publication and live desktop control checks are
-pending. The OpenSpec CLI is unavailable: independent Markdown validation
-found one unique modified requirement and three WHEN/THEN scenarios, yielding
-53 canonical requirements/116 scenarios after merge. Canonical merge/archive
-will follow live verification.
+Source commit `1b0190af3152b6a0e9a5ca2c6f11192c6abbff52` was published to
+GitHub main without force. An unrelated Shore update was incorporated first;
+all tested River Rush source, build, QA and change files remained byte-identical
+through that integration. Vercel deployment
+`dpl_FET2qLpKXVxBW6WgyZoQY6CFHciN` is READY on `arcade.uptick.systems`.
+Live HTML, JavaScript, CSS, favicon and both new GLBs return HTTP 200 and match
+local bytes exactly. The production desktop run requested the new native
+asset, ducked widths one/two/three through real handlers without hits, retained
+shield, and passed root/contact/marker, pause and stable-resource checks.
+No game state, seed, clock or public leaderboard writes were used by natural
+phone/desktop probes. Source publication and live receipts are retained here.
+
+The OpenSpec CLI is unavailable. Independent Markdown validation and canonical
+merge passed: one unique modified requirement, three WHEN/THEN scenarios and
+final totals of 53 requirements/116 scenarios. All requirement titles are
+unique and every scenario retains WHEN/THEN. This completed change is archived
+on 2026-10-08; its archive commit changes only specifications/evidence.
