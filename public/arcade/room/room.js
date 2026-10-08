@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 let renderer;
 try { renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance'}); }
 catch { $('error').style.display = 'block'; }
-if (renderer) buildRoom();
+if (renderer) { try { buildRoom(); } catch (error) { console.error('Arcade room initialization failed', error); $('error').style.display = 'block'; } }
 function buildRoom() {
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
   renderer.setSize(innerWidth,innerHeight);

@@ -139,7 +139,7 @@
     for (const g of GAMES) if (!g.probe || g.id === here || (await live[g.id])) shown.push(g);
     const list = box.querySelector(".gsw-list");
     list.innerHTML = "";
-    if (home) { shown.sort((a,b) => count(b.id) - count(a.id)); const total = shown.reduce((n,g) => n + count(g.id),0); box.querySelector('.board-stats').innerHTML = `<div><strong>${shown.length}</strong><span>GAMES TO EXPLORE</span></div><div><strong>${total.toLocaleString()}</strong><span>PLAYS ON THIS DEVICE</span></div><div><strong>∞</strong><span>FREE CREDITS</span></div>`; box.querySelector('input').value = ''; }
+    if (home) { shown.sort((a,b) => count(b.id) - count(a.id)); const total = shown.reduce((n,g) => n + count(g.id),0); box.querySelector('.board-stats').innerHTML = `<div><strong>${shown.length}</strong><span>GAMES TO EXPLORE</span></div><div><strong>${total.toLocaleString()}</strong><span>PLAYS ON THIS DEVICE</span></div><div><strong>∞</strong><span>FREE CREDITS</span></div>`; box.querySelector('input').value = ''; box.querySelector('.board-empty').hidden = true; }
     for (const [rank, g] of shown.entries()) {
       const a = document.createElement("a");
       a.className = "gsw-game" + (g.id === here ? " here" : "");
@@ -151,7 +151,7 @@
       img.src = g.art;
       a.querySelector("b").textContent = g.name;
       a.querySelector("small").textContent = g.sub;
-      if (home) { a.dataset.rank = rank + 1; const badge = document.createElement('span'); badge.className = 'board-rank'; badge.textContent = String(rank + 1).padStart(2,'0'); a.prepend(badge); const stat = document.createElement('span'); stat.className = 'board-plays'; stat.textContent = count(g.id).toLocaleString() + ' PLAYS'; a.querySelector('.gsw-txt').append(stat); }
+      if (home) { a.dataset.rank = rank + 1; const badge = document.createElement('span'); badge.className = 'board-rank'; badge.textContent = String(rank + 1).padStart(2,'0'); a.prepend(badge); const stat = document.createElement('span'); stat.className = 'board-plays'; stat.textContent = count(g.id).toLocaleString() + (count(g.id) === 1 ? ' PLAY' : ' PLAYS'); a.querySelector('.gsw-txt').append(stat); }
       a.addEventListener('click', () => { if (g.id !== here) record(g.id); });
       if (g.id === here) a.onclick = (e) => { e.preventDefault(); close(); };
       list.appendChild(a);
