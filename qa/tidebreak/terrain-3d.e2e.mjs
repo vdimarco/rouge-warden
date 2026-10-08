@@ -98,7 +98,7 @@ try {
 
   const device = await page.context().newCDPSession(page);
   for (const [name, width, height] of [['desktop',1280,800],['phone',390,844]]) {
-    await device.send('Emulation.setTouchEmulationEnabled', { enabled: name === 'phone', maxTouchPoints: 1 });
+    if (name === 'phone') await device.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
     await page.setViewportSize({width,height});
     await read(page, 'p.x=p.px=8396;p.y=p.py=5930;r.recenter();r.cam={x:p.x,y:p.y};r.draw(s,0);');
     assert(await page.locator('#hud').isVisible());
