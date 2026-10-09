@@ -115,4 +115,4 @@ The municipal upgrade was checked with source triangulation tests (courtyard hol
 
 ![Comic Parc La Fontaine district](Preview/ParkComicOverview.png)
 
-![Cottage crew](Preview/ParkComicResident9.png)
+![Cottage crew models](Preview/CottageCrew.png)
