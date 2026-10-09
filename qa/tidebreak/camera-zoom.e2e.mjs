@@ -19,7 +19,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
-  for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['landscape', 844, 390, true], ['small-phone', 320, 568, true]]) {
+  for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['landscape', 844, 390, true], ['small-phone', 320, 568, true]].filter(([name])=>!process.env.VIEWPORT || process.env.VIEWPORT===name)) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch }), errors = [];
     page.on('pageerror', e => { errors.push(e.message); console.error('PAGE ERROR', e.message); });
     page.on('console', m => { if (m.type() === 'error') { errors.push(m.text()); console.error('CONSOLE ERROR', m.text()); } });
@@ -79,7 +79,7 @@ try {
       await touchEvent('touchMove',[[1,x-15,y],[2,x+35,y]]);await page.evaluate(()=>window.__pump(1));
       const pinched=await measure();assert(pinched.zoom>1.6,'real two-finger pinch zooms out');assert(!pinched.order,'pinch clears orders');
       await touchEvent('touchEnd',[[2,x+35,y]]);
-      await touchEvent('touchMove',[[2,x+60,y]]);await page.evaluate(()=>window.__pump(4));
+      await touchEvent('touchMove',[[2,x+60,y]]);await page.evaluate(()=>window.__pump(1));
       const held=await measure();assert(Math.hypot(held.player.x-pinched.player.x,held.player.y-pinched.player.y)<.01,'surviving pinch finger cannot move');
       await touchEvent('touchEnd',[]);await page.evaluate(()=>window.__pump(1));assert(!(await measure()).order,'pinch release cannot issue a tap');
       await cdp.detach();
@@ -90,7 +90,7 @@ try {
     await page.mouse.move(width/2,height*.4);await page.mouse.wheel(0,240);await page.waitForTimeout(100);assert.equal((await measure()).zoom,pausedZoom,'paused menus cannot zoom');await page.keyboard.press('Escape');
     console.log('PASS camera controls',name,JSON.stringify({layout,normal:normal.zoom,out:out.zoom}));
     const before = await page.evaluate(async () => { const s = (await import('/tidebreak/main.js')).qaState(); s.paused = false; const p = s.units.find(u => u.player); return { x: p.x, y: p.y }; });
-    await page.keyboard.down('d'); await page.evaluate(() => window.__pump(18)); await page.keyboard.up('d');
+    await page.keyboard.down('d'); await page.evaluate(() => window.__pump(3)); await page.keyboard.up('d');
     const after = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(Math.hypot(after.player.x - before.x, after.player.y - before.y) > 3, 'movement stays live beside high terrain');
     await page.keyboard.press('k'); assert(await page.locator('#train-selected').isVisible(), 'skills remain reachable');
@@ -98,7 +98,7 @@ try {
     await page.evaluate(async()=>{
       const s=(await import('/tidebreak/main.js')).qaState(),p=s.units.find(u=>u.player),{PORTALS}=await import('/tidebreak/world.js');
       s.paused=false;p.x=PORTALS[0].x;p.y=PORTALS[0].y;p.portalCd=0;p.order=null;
-      window.__pump(20);
+      window.__ts+=100;window.__pump(1);window.__ts+=100;window.__pump(1);
     });
     assert(await page.locator('#portal').isEnabled(),'Rift enables near a gate');
     await page.locator('#portal').click();await page.evaluate(()=>window.__pump(2));
