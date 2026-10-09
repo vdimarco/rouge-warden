@@ -6,11 +6,11 @@ Keep Shore exclusively in 3D with visible terrain beside travel routes, stable s
 ## Requirements
 
 ### Requirement: Visible hills alongside playable routes
-Shore SHALL display clearly raised, lit hills alongside ordinary travel routes in both realms while keeping road cores, structure foundations and bridge approaches stable. Terrain, units, camera, picking and spell warnings SHALL agree on the same sampled surface. Team symmetry and planar combat rules SHALL remain unchanged.
+Shore SHALL display clearly raised, lit hills alongside ordinary travel routes in both realms while keeping rolling road cores, level structure foundations and bridge approaches stable. Terrain, units, camera, picking and spell warnings SHALL agree on the same sampled surface. Team symmetry and planar combat rules SHALL remain unchanged.
 
 #### Scenario: Follow a road past a hillside
 - **WHEN** a player travels a side lane on desktop or a phone viewport
-- **THEN** nearby hills have visible slopes and rock faces at the normal gameplay camera, with at least half of sampled dry side-lane shoulders 650 units from the route exceeding 90 units elevation
+- **THEN** nearby hills have visible slopes and rock faces at the normal gameplay camera, with dry side lanes spanning at least 300 units of elevation and whole-map land relief exceeding 900 units
 - **AND** desktop and phone screenshots show the hillside beside the traversable road without covering controls
 
 #### Scenario: Aim on raised land

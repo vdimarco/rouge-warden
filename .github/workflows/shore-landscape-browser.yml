@@ -1,0 +1,31 @@
+name: Shore landscape 3D QA
+on:
+  pull_request:
+    paths: ['public/tidebreak/**', 'qa/tidebreak/**', '.github/workflows/shore-landscape-browser.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  landscape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - name: Verify large relief, cave geometry and exact surface queries
+        run: node qa/tidebreak/terrain.test.mjs && node qa/tidebreak/geology.test.mjs && node qa/tidebreak/surface.test.mjs && node qa/tidebreak/terrain-effects.test.mjs
+      - name: Render cliffs, caves and woods and verify controls at two viewport sizes
+        run: node qa/tidebreak/landscape.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/shore-landscape
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shore-landscape-desktop-portrait
+          path: test-results/shore-landscape
+          retention-days: 14

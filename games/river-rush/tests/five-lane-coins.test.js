@@ -1,3 +1,4 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LANE_COUNT,LANES,CENTER_LANE,MIN_LANE,MAX_LANE,LANE_SPACING,laneToX,xToLane,clampLane} from '../src/game/lanes.js';
@@ -11,7 +12,7 @@ function normalizedGeometry(coins,spacing=1){
  const shape=mirror=>JSON.stringify(coins.map(c=>[mirror?max-c.lane:c.lane-min,Math.round(((c.d??c.offset)-origin)/spacing*1e6)]).sort((a,b)=>a[1]-b[1]||a[0]-b[0]));
  return [shape(false),shape(true)].sort()[0];
 }
-function naturalCourse(seed,index){const g=createGame(seed,index),items=new Map();while(g.phase==='playing'){for(const e of g.entities)items.set(e.id,{...e});g.entities=[];updateGame(g,emptyInput(),.05);}return[...items.values()];}
+function naturalCourse(seed,index){const g=createGame(seed,index),items=new Map();while(g.phase==='playing'){for(const e of g.entities)items.set(e.id,{...e});g.entities=[];advanceCourseScanner(g);}return[...items.values()];}
 test('five physical centers map exactly and controls reach every lane while clamping both edges',()=>{
  assert.equal(LANE_COUNT,5);assert.deepEqual(LANES,[0,1,2,3,4]);assert.equal(CENTER_LANE,2);assert.equal(LANE_SPACING,3.8);
  for(const lane of LANES){assert.equal(xToLane(laneToX(lane)),lane);assert.equal(laneToX(lane),(lane-2)*3.8);}
@@ -31,14 +32,15 @@ test('paired three-plus-two canopies cover all five lanes once even at the seam'
  }
  const solo={id:501,type:'branch',lane:2,branchLanes:[0,1,2],row:8,d:20},g=Object.assign(createGame(2),{entities:[solo]});assert.equal(snapshot(g).hint.fullRiver,false);
 });
-test('ground families have different actual geometry and primary sweeps retain future-Rush contact spacing',()=>{
- const layouts=GROUND_COIN_PATTERNS.map((_,index)=>groundCoinLayout({seed:0,row:10,lane:2,clearLanes:LANES,index,recovery:true,allowCarve:true}));
- const geometry=new Set(layouts.map(layout=>normalizedGeometry(layout.coins)));assert.equal(geometry.size,GROUND_COIN_PATTERNS.length);
- for(const layout of layouts){assert.ok(layout.coins.every(c=>Number.isInteger(c.lane)&&LANES.includes(c.lane)));assert.ok(layout.coins.some(c=>c.primaryRoute));}
- const sweep=layouts.find(e=>e.pattern==='sweep'),primary=sweep.coins.filter(c=>c.primaryRoute);
- for(let n=1;n<primary.length;n++)if(primary[n].lane!==primary[n-1].lane){assert.equal(Math.abs(primary[n].lane-primary[n-1].lane),1);assert.ok(primary[n].offset-primary[n-1].offset>=.24);}
+test('ground rewards describe shelter, duck clearance, landing and cutback rather than arbitrary multi-lane scatter',()=>{
+ const cases=[{guardType:null,recovery:false},{guardType:'branch',recovery:false},{recovery:true,allowCarve:false},{recovery:true,allowCarve:true}];
+ const layouts=cases.map(options=>groundCoinLayout({seed:0,row:12,lane:2,clearLanes:LANES,...options}));
+ assert.deepEqual(layouts.map(layout=>layout.pattern),GROUND_COIN_PATTERNS);
+ for(const layout of layouts){assert.ok(layout.coins.length<=2);assert.ok(layout.coins.every(c=>c.primaryRoute&&Number.isInteger(c.lane)));}
+ const cutback=layouts.at(-1);assert.equal(Math.abs(cutback.coins[0].lane-cutback.coins[1].lane),1);assert.ok(cutback.coins[1].offset-cutback.coins[0].offset>=.24);
+ assert.equal(layouts[1].coins.every(c=>c.lane===2),true,'low passage points outside actual duck lane');
 });
-test('every seeded five-lane map contains four geometric ground families and uses every gold lane safely',()=>{
+test('every seeded map uses all five gold lanes with purposeful sparse pockets and physical treasure objectives',()=>{
  let coins=0,canopies=0;
  for(let seed=1;seed<=50;seed++)for(const level of LEVELS){
   const all=naturalCourse(seed,level.index),gold=all.filter(e=>e.type==='coin'),rows=new Map();coins+=gold.length;
@@ -51,7 +53,7 @@ test('every seeded five-lane map contains four geometric ground families and use
     assert.ok(!hazards.some(h=>h.type==='rock'&&hazardTouchesLane(h,c.lane)),'gold trail passes through a rock');
     if(!Number.isFinite(c.jumpHeight))assert.ok(!hazards.some(h=>h.type==='log'&&hazardTouchesLane(h,c.lane)),'ground gold conflicts with a log or leaping enemy');
    }
-   if(primary.length){if(previousPrimary)assert.ok(Math.abs(primary[0].lane-previousPrimary.lane)<=1,'primary path jumps multiple lanes between stations');previousPrimary=primary.at(-1);}
+   if(primary.length){if(previousPrimary&&Math.abs(primary[0].lane-previousPrimary.lane)>1)assert.ok((primary[0].d-previousPrimary.d)/(level.maxSpeed*1.32)>=.40,'multi-lane fork commitment has no clear approach');previousPrimary=primary.at(-1);}
    if(ground.length&&ground[0].coinPattern!=='ribbon'){
     const signature=normalizedGeometry(ground,level.maxSpeed*1.32);
     if(!families.has(ground[0].coinPattern))families.set(ground[0].coinPattern,signature);
@@ -60,15 +62,18 @@ test('every seeded five-lane map contains four geometric ground families and use
    if(canopy.length){canopies++;assert.equal(canopy.length,2);assert.deepEqual(canopy.map(e=>branchLanes(e).length).sort(),[2,3]);assert.equal(canopy.filter(e=>e.canopyLead).length,1);assert.deepEqual([...new Set(canopy.flatMap(branchLanes))].sort(),LANES);}
    for(const e of hazards.filter(isBranchSpan)){const lanes=branchLanes(e);assert.ok(lanes.length<=3);assert.ok(lanes[0]===MIN_LANE||lanes.at(-1)===MAX_LANE);}
   }
-  assert.ok(families.size>=4,`${level.id} seed${seed} has only${families.size} actual ground shapes`);assert.ok(new Set(families.values()).size>=4,'distinct labels share one geometry');
+  assert.ok(gold.some(e=>e.coinPattern==='jump-arc'),'map lacks an actual airborne reward');assert.ok(all.filter(e=>e.type==='treasure').length>=2,'map lacks physical stream prizes');
+  for(const row of rows.values()){const pocket=row.filter(e=>e.type==='coin'&&!Number.isFinite(e.jumpHeight)&&!e.decisionId&&!['opening','finish'].includes(e.coinPattern));assert.ok(pocket.length<=3,'ordinary ground rewards became a geometric carpet');}
+  assert.ok(families.has('shelter'));assert.ok(families.has('low-passage')||families.has('landing-pocket'));
  }
- console.log(JSON.stringify({seedMaps:150,groundFamilyMinimum:4,coinLanes:LANES,coins,pairedCanopies:canopies}));
+ console.log(JSON.stringify({seedMaps:150,purposefulPockets:true,coinLanes:LANES,coins,pairedCanopies:canopies}));
 });
-test('real primary routes including sweeps collect at early/late jumps and future earned Rush at 30/60/120 Hz',()=>{
+test('real primary routes including cutbacks collect at early/late jumps and future earned Rush at 30/60/120 Hz',()=>{
  let stages=0,collected=0,sweeps=0,maxVisibleCoins=0,maxEntities=0;
  for(const hz of [30,60,120])for(const lead of [.22,.42])for(const useRush of [false,true])for(const seed of [1,12,137])for(const level of LEVELS){
   const g=createGame(seed,level.index),input=emptyInput(),handled=new Set();g.shield=false;
   while(g.phase==='playing'){
+   chooseForkWater(g,input);
    const primary=g.entities.filter(e=>!e.done&&e.type==='coin'&&e.primaryRoute),next=primary[0];
    if(next&&timeToImpact(g,next.d)<.24&&g.lane!==next.lane)for(let n=0;n<Math.abs(next.lane-g.lane);n++)queueAction(input,next.lane>g.lane?'right':'left');
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),first=obstacles[0];
@@ -76,11 +81,11 @@ test('real primary routes including sweeps collect at early/late jumps and futur
    if(useRush&&g.charge>=100&&!g.rush)queueAction(input,'rush');
    const pending=g.entities.filter(e=>!e.done&&e.type==='coin'&&e.primaryRoute);
    updateGame(g,input,1/hz);assert.notEqual(g.phase,'lost',`${hz}Hz ${level.id} seed${seed} lead${lead} Rush${useRush}: ${g.reason}`);
-   for(const coin of pending)if(coin.done){assert.ok(coin.collected,`${hz}Hz ${level.id} seed${seed} lead${lead} Rush${useRush} misses${coin.coinPattern} lane${coin.lane} row${coin.row}`);collected++;if(coin.coinPattern==='sweep')sweeps++;}
+   for(const coin of pending)if(coin.done){assert.ok(coin.collected,`${hz}Hz ${level.id} seed${seed} lead${lead} Rush${useRush} misses${coin.coinPattern} lane${coin.lane} row${coin.row}`);collected++;if(coin.coinPattern==='cutback')sweeps++;}
    maxEntities=Math.max(maxEntities,g.entities.length);maxVisibleCoins=Math.max(maxVisibleCoins,g.entities.filter(e=>!e.collected&&e.type==='coin'&&e.d>=g.distance&&e.d-g.distance<=180).length);
   }
   assert.equal(g.phase,'won');assert.equal(g.shieldsUsed,0);stages++;
  }
- assert.ok(sweeps>100);assert.ok(maxVisibleCoins<=64);assert.ok(maxEntities<120);
- console.log(JSON.stringify({stages,primaryCoinsCollected:collected,sweepCoinsCollected:sweeps,maxVisibleCoins,maxEntities,refreshRates:[30,60,120],jumpLeads:[.22,.42]}));
+ assert.ok(sweeps>100,'real cutback recoveries disappeared');assert.ok(maxVisibleCoins<=64);assert.ok(maxEntities<120);
+ console.log(JSON.stringify({stages,primaryCoinsCollected:collected,cutbackCoinsCollected:sweeps,maxVisibleCoins,maxEntities,refreshRates:[30,60,120],jumpLeads:[.22,.42]}));
 });

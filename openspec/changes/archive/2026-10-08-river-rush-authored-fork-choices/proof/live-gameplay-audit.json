@@ -1,0 +1,138 @@
+{
+  "kind": "independent-offline-audit-of-preserved-failed-live-production-phone-report",
+  "originalReport": "/tmp/river-rush-authored-release-live-phone/authored-fork-choices.json",
+  "originalReportSha256": "434f172c1639da9e2d4369843c5842dd9a7d209b3c0086a3fcc34d467e3a7d94",
+  "originalHarnessPassed": false,
+  "originalFailure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Error: No water route around rock 231 at 3991.5647999999997\\n' +\n+   '    at tick (eval at evaluate (:311:30), <anonymous>:170:35)'\n- null\n\n    at natural (file:///workspace/rouge-warden/qa/river-rush/authored-fork-choices.e2e.mjs:526:12)\n    at async file:///workspace/rouge-warden/qa/river-rush/authored-fork-choices.e2e.mjs:1085:90",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-CqqlzDw1.js",
+  "validatedSavedLiveGameplayChecksPassed": true,
+  "checks": [
+    "Original live harness failure and frozen production bundle identity remain explicit",
+    "Observed natural seed/campaign/clock provenance is internally consistent",
+    "Detailed production assets are ready, rendering is prepared and context is healthy",
+    "Native keyboard handlers exercise actual left/right/jump/duck events",
+    "Native pointer drag reaches the underlying game surface and changes a running lane",
+    "No new counted GPU preparation or leaderboard posts",
+    "Recorded entity/adventure/coin pools and physical spring motion remain bounded",
+    "All 116 unique live reward payouts independently satisfy entity contact and compatible height",
+    "Live bank and clean-skip cache qualification agrees with actual required clears and stash payouts",
+    "Promoted live detour after banking and its return preserve lost-clean truth and fit the phone",
+    "Opposite stream rewards remain physically uncollected",
+    "Selected route and wildlife stay over the correct actual water geography",
+    "Saved software render budgets and player envelopes meet canonical limits",
+    "Registered running fork/cache/payout/local-opportunity images exist",
+    "Controller error is a stale route constraint rather than absent product water topology",
+    "Actual game remains playing without product error, recorded fatal/protected impact or loss of its shield at controller stop"
+  ],
+  "failures": [],
+  "controllerFailure": {
+    "kind": "QA-controller-plans-ordinary-post-fork-rock-using-stale-two-lane-stream-restriction",
+    "ordinaryRockRow": 43,
+    "rockIds": [
+      231,
+      232
+    ],
+    "rockLanes": [
+      0,
+      1
+    ],
+    "rockDistance": 3991.5647999999997,
+    "previousForkEnd": 3948.4799999999996,
+    "metersBeyondPreviousFork": 43.08480000000009,
+    "forkAtRockContact": null,
+    "physicalFreeLanesAtRock": [
+      2,
+      3,
+      4
+    ],
+    "currentGameStillPlaying": true,
+    "analyticCenterReturnAfterRejoin": {
+      "secondsUntilRockAtObservedSpeed": 0.6335852941176484,
+      "reactionDelaySeconds": 0.18,
+      "predictedActualLaneAtRock": 1.9999971934032668,
+      "physicallyClear": true,
+      "islandAtImpact": false,
+      "scope": "offline analytic reachability check, not a recorded execution beyond the controller stop"
+    }
+  },
+  "summary": {
+    "observedGameTime": 62.149999999998606,
+    "observedDistance": 3935,
+    "naturalSeed": 521892993,
+    "campaignSeed": 521892993,
+    "nativeKeyboardEvents": 57,
+    "nativePointerCutbacks": 1,
+    "rewardReceipts": 116,
+    "recomputedMaxRewardContactGap": 4.0754453145552816e-9,
+    "strategyResults": [
+      {
+        "adventureId": 1,
+        "policy": "bank",
+        "cache": 200,
+        "clean": false,
+        "actualGuardClears": 2,
+        "stashes": [
+          {
+            "family": "wildlife-bank",
+            "value": 120
+          },
+          {
+            "family": "landing-detour",
+            "value": 200
+          }
+        ]
+      },
+      {
+        "adventureId": 5,
+        "policy": "clean-skip",
+        "cache": 600,
+        "clean": true,
+        "actualGuardClears": 3,
+        "stashes": []
+      }
+    ],
+    "untakenOppositeStreamMisses": 8,
+    "geographySamples": 146,
+    "enemySamples": 36,
+    "localCueSamples": 7,
+    "renderSamples": 48,
+    "maxTriangles": 116363,
+    "maxDrawCalls": 46,
+    "preparedGpuCounters": {
+      "uploads": 55,
+      "shaders": 84
+    },
+    "allDetailedModelStates": {
+      "raft": "ready",
+      "bank": "ready",
+      "palm": "ready",
+      "temple": "ready",
+      "guardian": "ready",
+      "rider": "ready",
+      "canopy": "ready",
+      "harbor": "ready",
+      "driftwood": "ready",
+      "bough": "ready"
+    },
+    "scoreWrites": 0,
+    "registeredCaptureCounts": {
+      "captures": 2,
+      "treasureCaptures": 2,
+      "receiptCaptures": 2,
+      "opportunityCaptures": 3
+    },
+    "observedImpactEvents": 0,
+    "shieldPresentAtStop": true,
+    "shieldsUsedCounterRecorded": false
+  },
+  "unprovenFromThisTrace": [
+    "Exact-pause status/pixel equality: controller threw before the natural completion/freeze path and row.pause is null. Separate fresh native production smoke is required.",
+    "The ordinary post-fork rock was not actually ridden past; offline topology/analytic spring reachability classify the controller failure but do not claim observed continuation.",
+    "No finite-map finish, original Next transition, later maps or full 11.7km production campaign are established here.",
+    "This live run covers bank and clean-skip only, with an additionally contacted valid landing-detour stash in the bank episode. Sheltered snatch/open, protected impacts and all alternative policies need separate existing proof.",
+    "Only phone-sized Chromium/SwiftShader light-water rendering is exercised; this trace does not establish hardware phone FPS, full-renderer/fallback performance or human reaction difficulty.",
+    "The trace stores the exact production bundle URL and ready model states, not independent downloaded asset-byte hashes or all response cache headers. Use separate deployment byte verification for byte identity."
+  ],
+  "counterScope": "GPU instrumentation counts non-FLOAT texture upload and shader compile calls. Score write instrumentation watches non-GET requests to /api/river-rush-leaderboard.",
+  "auditMethodNote": "The live status snapshot does not expose a shieldsUsed counter; shield preservation is checked directly from shield=true and absence of any recorded hit/smash/lose event, not from an invented zero-valued counter."
+}

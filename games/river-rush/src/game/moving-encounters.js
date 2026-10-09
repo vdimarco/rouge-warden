@@ -13,7 +13,7 @@ function sample(entity,distance){
  const active=distance>motion.startD&&distance<motion.endD;
  if(motion.kind==='weave'){
   const at=clamp(distance,motion.startD,motion.endD),angle=motion.phase+(at-motion.contactD)*Math.PI*2/motion.periodD;
-  return{lane:distance===motion.contactD?motion.to:CENTER_LANE+motion.amplitude*Math.sin(angle),lift:0,progress,lateralSlope:active?motion.amplitude*Math.cos(angle)*Math.PI*2/motion.periodD:0,liftSlope:0,leapProgress:0};
+  return{lane:distance===motion.contactD?motion.to:(motion.center??CENTER_LANE)+motion.amplitude*Math.sin(angle),lift:0,progress,lateralSlope:active?motion.amplitude*Math.cos(angle)*Math.PI*2/motion.periodD:0,liftSlope:0,leapProgress:0};
  }
  const u=smooth(progress),span=motion.endD-motion.startD;
  let lane=motion.from+(motion.to-motion.from)*u,lift=0,liftSlope=0,leapProgress=0;
@@ -38,14 +38,15 @@ export function entityPose(entity,distance){
  return{...pose,contactLane:Number.isFinite(contactD)?sample(entity,contactD).lane:entity.lane};
 }
 export function entityLane(entity,distance){return sample(entity,distance).lane;}
-export function encounterMotion(lane,distance,maxRushSpeed,kind,seed=0,mapIndex=0){
- const adjacent=lane===MIN_LANE?MIN_LANE+1:lane===MAX_LANE?MAX_LANE-1:lane+(seed&1?-1:1);
+export function encounterMotion(lane,distance,maxRushSpeed,kind,seed=0,mapIndex=0,channelLanes=null,launchLane=null){
+ const min=channelLanes?.[0]??MIN_LANE,max=channelLanes?.at(-1)??MAX_LANE,center=(min+max)/2;
+ const adjacent=lane===min?min+1:lane===max?max-1:lane+(seed&1?-1:1);
  if(kind==='crocodile'){
-  const amplitude=(MAX_LANE-MIN_LANE)/2,periodD=maxRushSpeed*(1.15-.15*clamp(mapIndex,0,2)),basePhase=Math.asin((lane-CENTER_LANE)/amplitude),phase=seed&1?Math.PI-basePhase:basePhase,startD=distance-maxRushSpeed*2.4;
-  return Object.freeze({kind:'weave',from:CENTER_LANE+amplitude*Math.sin(phase+(startD-distance)*Math.PI*2/periodD),to:lane,startD,endD:distance+maxRushSpeed*.45,contactD:distance,periodD,phase,amplitude});
+  const amplitude=(max-min)/2,periodD=maxRushSpeed*(1.15-.15*clamp(mapIndex,0,2)),basePhase=Math.asin((lane-center)/amplitude),phase=seed&1?Math.PI-basePhase:basePhase,startD=distance-maxRushSpeed*2.4;
+  return Object.freeze({kind:'weave',center,from:center+amplitude*Math.sin(phase+(startD-distance)*Math.PI*2/periodD),to:lane,startD,endD:distance+maxRushSpeed*.45,contactD:distance,periodD,phase,amplitude});
  }
  if(kind==='bird'){
-  const from=seed&1?MIN_LANE-.85:MAX_LANE+.85,startD=distance-maxRushSpeed*1.9,endD=distance+maxRushSpeed*.18;
+  const from=Number.isFinite(launchLane)?launchLane:channelLanes?(min<CENTER_LANE?min-.85:max+.85):seed&1?MIN_LANE-.85:MAX_LANE+.85,startD=distance-maxRushSpeed*1.9,endD=distance+maxRushSpeed*.18;
   const contactProgress=(distance-startD)/(endD-startD),to=from+(lane-from)/smooth(contactProgress);
   return Object.freeze({kind:'swoop',from,to,startD,endD,contactD:distance,contactLane:lane});
  }

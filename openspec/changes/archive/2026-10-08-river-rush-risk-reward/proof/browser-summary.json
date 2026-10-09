@@ -1,0 +1,115 @@
+{
+  "allPassed": true,
+  "layouts": [
+    {
+      "layout": "phone",
+      "passed": true,
+      "naturalSeedAndClock": true,
+      "screenshot": "phone-playing-choice.png",
+      "choices": [
+        {
+          "strategy": "safe",
+          "coinsCollected": 3,
+          "guardClears": 0,
+          "action": "duck",
+          "enemy": null
+        },
+        {
+          "strategy": "risk",
+          "coinsCollected": 5,
+          "guardClears": 1,
+          "action": "duck",
+          "enemy": null
+        }
+      ],
+      "maxVisibleCoins": 23,
+      "overflow": 0,
+      "springError": 4.884981308350689e-13,
+      "resources": {
+        "uploads": 52,
+        "shaders": 76
+      },
+      "pause": {
+        "sameStatus": true,
+        "samePixels": true,
+        "modalSettledAndHidden": true,
+        "sha256": "c267efc067d3a6c13fa7fb24914ed75870cced8aa5406115ad20f9126449b4df"
+      },
+      "noScoreWrites": true
+    },
+    {
+      "layout": "desktop",
+      "passed": true,
+      "naturalSeedAndClock": true,
+      "screenshot": "desktop-playing-choice.png",
+      "choices": [
+        {
+          "strategy": "safe",
+          "coinsCollected": 3,
+          "guardClears": 0,
+          "action": "jump",
+          "enemy": "crocodile"
+        },
+        {
+          "strategy": "risk",
+          "coinsCollected": 5,
+          "guardClears": 1,
+          "action": "duck",
+          "enemy": "bird"
+        }
+      ],
+      "maxVisibleCoins": 23,
+      "overflow": 0,
+      "springError": 1.2079226507921703e-13,
+      "resources": {
+        "uploads": 52,
+        "shaders": 76
+      },
+      "pause": {
+        "sameStatus": true,
+        "samePixels": true,
+        "modalSettledAndHidden": true,
+        "sha256": "fde4ed3d753e0bf70b8b75006a1ab7fff69d62a8bb86dd597f6201036b3d7365"
+      },
+      "noScoreWrites": true
+    },
+    {
+      "layout": "landscape",
+      "passed": true,
+      "naturalSeedAndClock": true,
+      "screenshot": "landscape-playing-choice.png",
+      "choices": [
+        {
+          "strategy": "safe",
+          "coinsCollected": 3,
+          "guardClears": 0,
+          "action": "jump",
+          "enemy": "crocodile"
+        },
+        {
+          "strategy": "risk",
+          "coinsCollected": 5,
+          "guardClears": 1,
+          "action": "duck",
+          "enemy": "bird"
+        }
+      ],
+      "maxVisibleCoins": 23,
+      "overflow": 0,
+      "springError": 1.2079226507921703e-13,
+      "resources": {
+        "uploads": 52,
+        "shaders": 76
+      },
+      "pause": {
+        "sameStatus": true,
+        "samePixels": true,
+        "modalSettledAndHidden": true,
+        "sha256": "6d3469e9f7e7f3c331bb78fe55fb8abafdcd30c914beed24218ec551ebf1ad64"
+      },
+      "noScoreWrites": true
+    }
+  ],
+  "rendererFixtures": "renderer-fixtures.json",
+  "automatedTests": 221
+}

@@ -1,5 +1,5 @@
 import { jumpHeight, VIEW_DISTANCE, HAZARD_LANE_RADIUS } from './engine.js';
-import {coinPixelLift,coinFlightPixelLift} from './coin-presentation.js';
+import {coinPixelLift,coinFlightPixelLift,coinAppearance} from './coin-presentation.js';
 import { bankScenery, rapids, prepareWorldArt, worldEntityVisible } from './world.js';
 import { riderPose, RIDER_SIZE } from './rider.js';
 import { drawWater } from './water.js';
@@ -11,7 +11,10 @@ import { prepareMap2D, drawMap2D, drawMapBanks2D, drawFinish2D,drawRapids2D,draw
 import {impactFeedback,impactParticle} from './impact-feedback.js';
 import {entityPose} from './moving-encounters.js';
 import {isBranchSpan,branchSpan} from './branch-spans.js';
-import {LANES,LANE_COUNT,CENTER_LANE,PLAYABLE_WIDTH,xToLane} from './lanes.js';
+import {LANES,CENTER_LANE,LANE_SPACING} from './lanes.js';
+import {forkLaneCross,riverFork} from './river-forks.js';
+import {projectLane,projectPhysical,fallbackShoreHalfWidth,drawForkFallback,drawTreasure2D,treasurePresentation,drawStash2D} from './fork-fallback.js';
+import {prepareForkFallbackArt} from './fork-fallback-art.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const courseProfiles=new WeakMap();
@@ -23,6 +26,16 @@ const regions = [
   [0,900,425,354],[425,900,425,354],[850,900,404,354]
 ];
 const indexes = { rock: 3, log: 4, branch: 5, coin: 6, magnet: 7, shield: 8 };
+function premiumCoin(ctx,x,bottom,size,roll,spin){
+  const style=coinAppearance({coinValue:20}),radius=size*.47;
+  ctx.save();ctx.translate(x,bottom-size*.48);ctx.rotate(roll);ctx.scale(spin,1);
+  function face(r){ctx.beginPath();for(let i=0;i<6;i++){const a=i*TAU/6-Math.PI/2,px=Math.cos(a)*r,py=Math.sin(a)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();}
+  // A faceted orange medal stays distinct even when color is hard to read at
+  // the horizon. Its cream raised edge remains visible through the spin.
+  face(radius);ctx.fillStyle=style.rimColor;ctx.fill();ctx.strokeStyle='#66341e';ctx.lineWidth=Math.max(.6,size*.055);ctx.stroke();
+  face(radius*.77);ctx.fillStyle=style.color;ctx.fill();ctx.strokeStyle='#fff0c6';ctx.lineWidth=Math.max(.5,size*.025);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-radius*.37);ctx.lineTo(radius*.26,0);ctx.lineTo(0,radius*.37);ctx.lineTo(-radius*.26,0);ctx.closePath();ctx.fillStyle='#fff0c6';ctx.fill();ctx.restore();
+}
 let artPromise;
 function loadImage(key,name,extension='png',optional=false){return new Promise((resolve,reject)=>{
   let attempt=0,done=false;const image=new Image();
@@ -44,6 +57,7 @@ async function prepareHeroArt(art){
   art.world=prepareWorldArt();
   art.map2d=prepareMap2D(art);
   art.branchLeaves=art.treeleaves??branchLeafArt();
+  art.fork2d=prepareForkFallbackArt(art);
   function frame(source,rect,anchor,raftWidth){
     const canvas=document.createElement('canvas');canvas.width=448;canvas.height=480;
     const scale=300/raftWidth,ctx=canvas.getContext('2d');
@@ -78,33 +92,33 @@ function hero(ctx,frame,raft,x,bottom,width,roll,alpha=1,squash=0,brace=0){
   const riderScale=width/512;
   ctx.drawImage(frame,-frame.width/2*riderScale,-RIDER_SIZE.foot*riderScale-width*.14,frame.width*riderScale,frame.height*riderScale);ctx.restore();
 }
-export function projection(width, height, lane, z) {
-  const horizon = height * .29, foot = height * (height < 500 ? .73 : width/height<.85?.77:.8);
-  const corridor = Math.min(width * .94, height * 1.17);
-  const scale = 1 / (1 + Math.max(-14, z) / 29);
-  const laneSpacing=corridor/LANE_COUNT*scale,unit=corridor/PLAYABLE_WIDTH*scale;
-  return { x: width / 2 + (lane - CENTER_LANE) * laneSpacing, y: horizon + (foot - horizon) * scale, scale, corridor, laneSpacing, unit, foot, horizon };
+export function projection(width,height,lane,z,g){return projectLane(width,height,lane,z,g);}
+function gameProjection(g){
+  const project=(width,height,lane,z)=>projection(width,height,lane,z,g);
+  project.physical=(width,height,cross,z)=>projectPhysical(width,height,cross,z,g);
+  return project;
 }
 // Scale the registered raft/rider with the visible lane spacing. The full
 // portrait silhouette keeps room to bank at the two outer lane centers.
-export function fallbackRiderWidth(width,height){
-  return Math.min(projection(width,height,CENTER_LANE,0).laneSpacing*.9,height*.255,245);
+export function fallbackRiderWidth(width,height,g){
+  return Math.min(projection(width,height,CENTER_LANE,0,g).laneSpacing*.9,height*.255,245);
 }
 // The body, water shadow and exact contact marker have separate registration.
 // Shared course-space lift stays visible even when decorative motion reduces.
 export function encounterProjection(e,g,width,height){
-  const pose=entityPose(e,g.distance),z=e.d-g.distance,p=projection(width,height,pose.lane,z);
+  const pose=entityPose(e,g.distance),z=e.d-g.distance,p=projection(width,height,pose.lane,z,g);
   const unit=p.unit,base=e.enemy==='bird'?2.33:e.enemy==='fish'?.25:0;
-  return {...p,...pose,unit,bodyY:p.y-(base+pose.lift)*unit,destination:projection(width,height,pose.contactLane,z),action:e.enemy==='bird'?'duck':e.enemy?'jump':'collect'};
+  return {...p,...pose,unit,bodyY:p.y-(base+pose.lift)*unit,destination:projection(width,height,pose.contactLane,z,g),action:e.enemy==='bird'?'duck':e.enemy?'jump':'collect'};
 }
 // A branch is one contiguous obstacle, even when its reward lane lies near a
 // bank. Its water-plane cue includes exactly the physical collision envelope.
 export function branchProjection(e,g,width,height){
   const span=branchSpan(e),z=e.d-g.distance,low=span.minLane-HAZARD_LANE_RADIUS,high=span.maxLane+HAZARD_LANE_RADIUS;
-  const center=projection(width,height,span.centerLane,z);
-  return {...span,low,high,z,center,start:projection(width,height,low,z),end:projection(width,height,high,z),
-    corners:[projection(width,height,low,z+1.2),projection(width,height,high,z+1.2),projection(width,height,high,z-1.2),projection(width,height,low,z-1.2)],
-    marks:span.lanes.map(lane=>projection(width,height,lane,z)),label:e.fullRiver?'DUCK · FULL RIVER ↓':`DUCK · ${span.width} ${span.width===1?'LANE':'LANES'} ↓`};
+  const minCross=forkLaneCross(span.minLane,e.d,g.terrainProfile),maxCross=forkLaneCross(span.maxLane,e.d,g.terrainProfile),radius=HAZARD_LANE_RADIUS*LANE_SPACING;
+  const center=projectPhysical(width,height,(minCross+maxCross)/2,z,g),lowCross=minCross-radius,highCross=maxCross+radius;
+  return {...span,low,high,lowCross,highCross,z,center,start:projectPhysical(width,height,lowCross,z,g),end:projectPhysical(width,height,highCross,z,g),
+    corners:[projectPhysical(width,height,lowCross,z+1.2,g),projectPhysical(width,height,highCross,z+1.2,g),projectPhysical(width,height,highCross,z-1.2,g),projectPhysical(width,height,lowCross,z-1.2,g)],
+    marks:span.lanes.map(lane=>projection(width,height,lane,z,g)),label:e.fullRiver?'DUCK · FULL RIVER ↓':`DUCK · ${span.width} ${span.width===1?'LANE':'LANES'} ↓`};
 }
 function branchGuide(ctx,e,g,width,height){
   const p=branchProjection(e,g,width,height),unit=p.center.unit;
@@ -234,15 +248,16 @@ function hazardHint(ctx,{label,x,y,font,branch}){
   ctx.fillStyle=branch?'#94ffe3':'#ffe49c';ctx.fillText(label,x,y);
 }
 function water(ctx,g,art,w,h,reduce,active) {
+  const project=gameProjection(g);
   drawWater(ctx,g,art,w,h,reduce,active);
-  drawCanopyTerrain2D(ctx,g,art,w,h,projection);
-  if(levelAt(g.levelIndex).index>0)drawMap2D(ctx,g,art,w,h,reduce,projection);
+  drawCanopyTerrain2D(ctx,g,art,w,h,project);
+  if(levelAt(g.levelIndex).index>0)drawMap2D(ctx,g,art,w,h,reduce,project);
   // Near whitewater flows on the course plane at every display frame,
   // independent of video fps; Redstone has no painted near-river backdrop.
   if(!reduce){
     ctx.save();
     for(const patch of rapids(g.distance,VIEW_DISTANCE)){
-      const at=projection(w,h,patch.lane,patch.z),size=at.corridor*patch.width*at.scale;
+      const at=project(w,h,patch.lane,patch.z),size=at.corridor*patch.width*at.scale;
       ctx.globalAlpha=Math.min(.8,at.scale*.9)*Math.min(1,(VIEW_DISTANCE-patch.z)/24);
       ctx.drawImage(art.world.foam[patch.variant],at.x-size/2,at.y-size*.035,size,size*.075);
     }
@@ -252,16 +267,16 @@ function water(ctx,g,art,w,h,reduce,active) {
   ctx.save();ctx.lineWidth = 1;ctx.setLineDash([10,20]);ctx.lineDashOffset = -g.distance*3;
   ctx.strokeStyle = levelAt(g.levelIndex).index===2?'rgba(203,196,255,.13)':'rgba(214,255,246,.15)';
   for(const lane of LANES.slice(1).map(lane=>lane-.5)) {
-    const far=projection(w,h,lane,VIEW_DISTANCE), near=projection(w,h,lane,-10);
+    const far=project(w,h,lane,VIEW_DISTANCE), near=project(w,h,lane,-10);
     ctx.beginPath();ctx.moveTo(far.x,far.y);ctx.lineTo(near.x,near.y);ctx.stroke();
   }
   ctx.setLineDash([]);
   ctx.restore();
 }
 function shorelineTree(ctx,g,e,art,w,h){
-  let profile=courseProfiles.get(g);if(!profile){const level=levelAt(g.levelIndex);profile=createCourseProfile(g.seed,level.length,level.index);courseProfiles.set(g,profile);}
+  let profile=g.terrainProfile??courseProfiles.get(g);if(!profile){const level=levelAt(g.levelIndex);profile=createCourseProfile(g.seed,level.length,level.index);courseProfiles.set(g,profile);}
   let shape=branchShapes.get(e);if(!shape){shape=shorelineBranch(e,e.d,profile);branchShapes.set(e,shape);}
-  const locate=n=>{const p=projection(w,h,xToLane(n.x),e.d+n.d-g.distance),unit=p.unit;return{x:p.x,y:p.y-n.y*unit,unit};};
+  const locate=n=>{const p=projectPhysical(w,h,n.x,e.d+n.d-g.distance,g),unit=p.unit;return{x:p.x,y:p.y-n.y*unit,unit};};
   ctx.save();ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-e.d+g.distance)/24);ctx.lineCap='round';
   const bark=ctx.createPattern(art.treebark??art.surfacewood,'repeat');
   for(const limb of shape.wood){
@@ -279,11 +294,13 @@ function shorelineTree(ctx,g,e,art,w,h){
   ctx.restore();
 }
 function banks(ctx,g,art,w,h,reduce){
-  if(levelAt(g.levelIndex).index>0){drawMapBanks2D(ctx,g,art,w,h,reduce,projection,VIEW_DISTANCE);return;}
+  const project=gameProjection(g);
+  if(levelAt(g.levelIndex).index>0){drawMapBanks2D(ctx,g,art,w,h,reduce,project,VIEW_DISTANCE);return;}
   if(reduce)return;
   ctx.save();
   for(const item of bankScenery(g.distance,VIEW_DISTANCE)){
-    const at=projection(w,h,item.lane,item.z),size=at.laneSpacing*.81*item.size;
+    const fork=riverFork(g.distance+item.z,g.terrainProfile),side=item.lane<CENTER_LANE?-1:1;
+    const at=fork?project.physical(w,h,side*(fallbackShoreHalfWidth(g.distance+item.z,g.terrainProfile)+2),item.z):project(w,h,item.lane,item.z),size=at.laneSpacing*.81*item.size;
     if(at.x+size*.8<0||at.x-size*.8>w)continue;
     // Keep silhouettes outside the playable corridor, including near props.
     ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-item.z)/25);
@@ -295,15 +312,17 @@ function banks(ctx,g,art,w,h,reduce){
   ctx.restore();
 }
 export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=true,fatalElapsed=0) {
+  const project=gameProjection(g);
   ctx.clearRect(0,0,width,height);
   water(ctx,g,art,width,height,reducedMotion,active);
-  drawRapids2D(ctx,g,width,height,reducedMotion,projection);
+  drawRapids2D(ctx,g,width,height,reducedMotion,project);
   banks(ctx,g,art,width,height,reducedMotion);
-  drawFinish2D(ctx,g,width,height,projection,VIEW_DISTANCE,art.map2d.finish,reducedMotion);
+  drawForkFallback(ctx,g,art,width,height,reducedMotion);
+  drawFinish2D(ctx,g,width,height,project,VIEW_DISTANCE,art.map2d.finish,reducedMotion);
   if(!motions.has(g))motions.set(g,createMotion(g));
   const motion=advanceMotion(motions.get(g),g,reducedMotion);
-  const player=projection(width,height,g.visualLane,0);
-  const heroWidth=fallbackRiderWidth(width,height);
+  const player=project(width,height,g.visualLane,0);
+  const heroWidth=fallbackRiderWidth(width,height,g);
   const impact=impactFeedback(g,reducedMotion,fatalElapsed);
   const shake=impact.shakeX*heroWidth*.5;
   if(g.rush>0) {
@@ -314,19 +333,21 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     }
   }
   // Distant entities draw first. The player is inserted at collision depth.
-  const visible=g.entities.filter(e=>worldEntityVisible(e,g.distance,VIEW_DISTANCE)).sort((a,b)=>b.d-a.d),branchHints=[];
+  const visible=g.entities.filter(e=>worldEntityVisible(e,g.distance,VIEW_DISTANCE)&&!(['treasure','stash'].includes(e.type)&&e.collected)).sort((a,b)=>b.d-a.d),branchHints=[];
   for(const e of visible) {
     const encounter=!!e.enemy||e.type==='target';
-    const z=e.d-g.distance, p=encounter?encounterProjection(e,g,width,height):projection(width,height,e.lane,z);
+    const z=e.d-g.distance, p=encounter?encounterProjection(e,g,width,height):project(width,height,e.lane,z);
     let size;
-    if(e.type==='coin') size=heroWidth*.28*p.scale;
+    if(e.type==='coin') size=heroWidth*.28*p.scale*coinAppearance(e).scale;
+    else if(e.type==='stash')size=p.laneSpacing*.55;
+    else if(e.type==='treasure')size=p.laneSpacing*.64;
     else if(e.type==='target')size=heroWidth*.4*p.scale;
     else if(e.type==='magnet'||e.type==='shield') size=heroWidth*.52*p.scale;
     else size=p.laneSpacing*(e.type==='branch'&&!e.enemy ? 1.02 : .86);
     const high=coinPixelLift(e,heroWidth,p.scale);
     const bottom=p.y-high;
     if(e.type==='coin'||e.type==='magnet'||e.type==='shield') {
-      ctx.save();ctx.fillStyle=e.type==='coin'?'#ffcf5f28':'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
+      ctx.save();ctx.fillStyle=e.type==='coin'?coinAppearance(e).glow:'#7dfdd33b';ctx.beginPath();ctx.ellipse(p.x,bottom-size*.43,size*.53,size*.63,0,0,TAU);ctx.fill();ctx.restore();
     }
     if(encounter){
       ctx.save();ctx.globalAlpha=Math.min(1,(VIEW_DISTANCE-z)/24);
@@ -337,16 +358,28 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       else relicTarget(ctx,p,size,g.time,reducedMotion);
       ctx.restore();
     }
+    else if(e.type==='stash')drawStash2D(ctx,e,p,size,g.time,reducedMotion);
+    else if(e.type==='treasure'){
+      drawTreasure2D(ctx,e,p,size,g.time,reducedMotion);
+      if(z<g.speed*1.8&&z>12){
+        const style=treasurePresentation(e),label=style.risk?`TREASURE · ${style.base} + ${style.bonus} CLEAN`:`TREASURE · ${style.base}`;
+        hazardHint(ctx,{label,x:p.x,y:p.y-size*.88-8,font:Math.max(9,13*p.scale),branch:false});
+      }
+    }
     else if(e.type==='branch'){
       if(!e.done)branchGuide(ctx,e,g,width,height);
       shorelineTree(ctx,g,e,art,width,height);
     }
+    else if(e.type==='coin'&&coinAppearance(e).premium)premiumCoin(ctx,p.x,bottom,size,reducedMotion?0:Math.sin(g.time*3+e.id)*.045,reducedMotion?1:.55+.45*Math.abs(Math.cos(g.time*5+e.id)));
     else sprite(ctx,art.sprites,e.type==='magnet'?indexes.coin:indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
     if(e.type==='magnet'){ctx.save();ctx.font=`900 ${Math.max(12,size*.3)}px system-ui`;ctx.textAlign='center';ctx.strokeStyle='#3f2e14';ctx.lineWidth=3;ctx.strokeText('×2',p.x,bottom-size*.32);ctx.fillStyle='#fff8d0';ctx.fillText('×2',p.x,bottom-size*.32);ctx.restore();}
+    if(!e.done&&e.choiceRole==='counterpart'&&z<g.speed*2.6&&size>=12){
+      hazardHint(ctx,{label:e.type==='shield'?'SHIELD · 1 HIT':'GOLD ×2 · 8s',x:p.x,y:bottom-size*.95-8,font:Math.max(10,14*p.scale),branch:false});
+    }
     if(!e.done&&['log','branch','rock'].includes(e.type)&&(!e.fullRiver||e.canopyLead!==false)&&z<g.speed*1.65&&z>10) {
       const span=isBranchSpan(e)?branchProjection(e,g,width,height):null;
       const label=span?span.label:e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
-      const x=span?(e.fullRiver?projection(width,height,CENTER_LANE,z).x:span.center.x):e.enemy?p.destination.x:p.x,y=span?span.center.y-span.center.unit*3.1-12:bottom-size*.9-8;
+      const x=span?(e.fullRiver?project(width,height,CENTER_LANE,z).x:span.center.x):e.enemy?p.destination.x:p.x,y=span?span.center.y-span.center.unit*3.1-12:bottom-size*.9-8;
       const hint={label,x,y,font:Math.max(10,15*p.scale),branch:e.type==='branch'};
       if(span)branchHints.push(hint);else hazardHint(ctx,hint);
     }
@@ -378,14 +411,14 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
   const frame=art.downstreamFrames[pose.index];
   hero(ctx,frame,art.paddleFrames[0],player.x+shake,bottom,heroWidth,roll,alpha,landing+Math.abs(impact.pitch),impact.brace);
   for(const effect of g.effects){
-    if(effect.type!=='target')continue;
+    if(effect.type!=='target'&&effect.type!=='treasure'&&effect.type!=='stash')continue;
     const age=g.time-(effect.contactTime??effect.time),duration=reducedMotion?.28:.55;
     if(age<0||age>=duration)continue;
-    const at=projection(width,height,effect.lane,0),progress=age/duration;
-    ctx.save();ctx.globalAlpha=1-progress;ctx.strokeStyle='#99ffed';ctx.lineWidth=Math.max(2,heroWidth*.014);
+    const at=project(width,height,effect.lane,0),progress=age/duration,treasure=effect.type==='treasure',gold=treasure||effect.type==='stash';
+    ctx.save();ctx.globalAlpha=1-progress;ctx.strokeStyle=gold?'#ffe19c':'#99ffed';ctx.lineWidth=Math.max(2,heroWidth*.014);
     ctx.beginPath();ctx.ellipse(at.x,at.foot-heroWidth*.17,heroWidth*(.22+(reducedMotion?0:progress*.22)),heroWidth*.13,0,0,TAU);ctx.stroke();
-    ctx.font=`900 ${Math.max(14,heroWidth*.15)}px system-ui`;ctx.textAlign='center';ctx.fillStyle='#d9fff2';ctx.strokeStyle='#123d35';ctx.lineWidth=3;
-    const y=at.foot-heroWidth*(.43+(reducedMotion?0:progress*.2));ctx.strokeText(`+${effect.value??200}`,at.x,y);ctx.fillText(`+${effect.value??200}`,at.x,y);ctx.restore();
+    ctx.font=`900 ${Math.max(14,heroWidth*.15)}px system-ui`;ctx.textAlign='center';ctx.fillStyle=gold?'#fff1bf':'#d9fff2';ctx.strokeStyle='#123d35';ctx.lineWidth=3;
+    const y=at.foot-heroWidth*(.43+(reducedMotion?0:progress*.2)),text=effect.coinCount?`+${effect.coinCount} COINS`:`+${effect.value??200}${treasure&&effect.clean?' CLEAN':''}`;ctx.strokeText(text,at.x,y);ctx.fillText(text,at.x,y);ctx.restore();
   }
   if(impact.active){
     // A local contact halo stays readable under reduced motion. It never
@@ -412,8 +445,10 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       for(let i=0;i<3;i++){const a=g.time*2+i*TAU/3;ctx.beginPath();ctx.ellipse(player.x,player.foot-heroWidth*.38-lift,heroWidth*.57,heroWidth*.22,a*.12,a,a+.8);ctx.stroke();}ctx.restore();
     }
     for(const e of motion.bursts){
-      if(e.type==='hit')continue; // Contact droplets now share the 3D impact beat.
-      const age=g.time-e.time,t=age/.55,at=projection(width,height,e.lane,0),land=e.type==='land',hit=e.type==='hit';
+      // Terrain stays intact during a protected rebound. Its droplets already
+      // use the shared impact beat; it has no destructible atlas silhouette.
+      if(e.type==='hit'||e.type==='smash'&&e.obstacle==='island')continue;
+      const age=g.time-e.time,t=age/.55,at=project(width,height,e.lane,0),land=e.type==='land',hit=e.type==='hit';
       const centerY=at.foot-(land?0:heroWidth*.45);
       ctx.save();ctx.globalAlpha=(1-t)*(1-t);ctx.strokeStyle=hit?'#b8fff5':'#fff0b0';ctx.fillStyle=land||hit?'#cafff7':'#ffe083';ctx.lineWidth=2;
       if(land){ctx.beginPath();ctx.ellipse(at.x,at.foot,heroWidth*(.4+age*.75),heroWidth*(.05+age*.15),0,0,TAU);ctx.stroke();}
@@ -428,9 +463,9 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     }
     const target=art.coinTarget??{x:width*.5,y:40};
     for(const e of motion.pickups){
-      const t=pickupProgress(e,g.time),at=projection(width,height,e.lane,0),startY=at.foot-coinFlightPixelLift(e,heroWidth);
+      const t=pickupProgress(e,g.time),at=project(width,height,e.lane,0),startY=at.foot-coinFlightPixelLift(e,heroWidth);
       const ease=t*t*(3-2*t),x=at.x+(target.x-at.x)*ease,y=startY+(target.y-startY)*ease-Math.sin(t*Math.PI)*heroWidth*.24;
-      if(t<.4){const contact=projection(width,height,e.playerLane??e.lane,0);ctx.save();ctx.globalAlpha=1-t/.4;ctx.strokeStyle='#fff7d2';ctx.lineWidth=2;ctx.beginPath();ctx.arc(contact.x,contact.foot-heroWidth*((e.playerHeight??0)*.95+.15),heroWidth*(.06+t*.22),0,TAU);ctx.stroke();ctx.restore();}
+      if(t<.4){const contact=project(width,height,e.playerLane??e.lane,0);ctx.save();ctx.globalAlpha=1-t/.4;ctx.strokeStyle='#fff7d2';ctx.lineWidth=2;ctx.beginPath();ctx.arc(contact.x,contact.foot-heroWidth*((e.playerHeight??0)*.95+.15),heroWidth*(.06+t*.22),0,TAU);ctx.stroke();ctx.restore();}
       ctx.save();ctx.globalAlpha=Math.min(1,(1-t)*5);ctx.strokeStyle='#ffe29c88';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(target.x-at.x)*.025,y+16);ctx.stroke();
       sprite(ctx,art.sprites,6,x,y+9,heroWidth*(.17*(1-t)+.05),g.time*3,1,.4+.6*Math.abs(Math.cos(g.time*9)));ctx.restore();
     }

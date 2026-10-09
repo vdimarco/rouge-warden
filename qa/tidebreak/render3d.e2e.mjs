@@ -8,8 +8,8 @@
 // - trees, bushes and grass are built in code (leaf cards), heroes have outlines, and the see-through points follow the
 //   heroes in view; towers take the see-through too; a fortified outer ward says so; the minimap gets the bridges;
 // - world(project(x, y)) returns the same ground point, and pick() finds an enemy under the cursor;
-// - the WebGL canvas stays inside its pixel budget; pause has no renderer switch;
-// - legacy ?renderer=2d links now start 3D.
+// - the WebGL canvas stays inside its pixel budget; no menu action offers 2D;
+// - legacy ?renderer=2d URLs start 3D too.
 // SwiftShader frame times are not real graphics-card numbers; the test prints them only as a rough trace.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/render3d.e2e.mjs
 // SHOTS=<dir> also saves a screenshot of the match there.
@@ -19,7 +19,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.SHORE_URL || 'http://127.0.0.1:8765/tidebreak/';
-const executablePath = process.env.SHORE_CHROMIUM || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
+const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const results = [];
 const pass = (name, data) => { results.push(name); console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
@@ -34,6 +34,7 @@ async function open(query, width = 960, height = 540) {
   const page = await browser.newPage({ viewport: { width, height } });
   const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.addInitScript(VIRTUAL_RAF);
+  await page.addInitScript(() => localStorage.setItem('tidebreak.renderer', '2d'));
   await page.goto(URL + query, { waitUntil: 'domcontentloaded', timeout: 120000 });
   await page.waitForFunction(() => !document.getElementById('play').disabled, null, { timeout: 240000 });
   const read = body => page.evaluate(`(async () => { const m = await import('/tidebreak/main.js'); const s = m.qaState(), p = s.units.find(u => u.player); ${body} })()`);
@@ -164,21 +165,32 @@ try {
     if (process.env.SHOTS) { mkdirSync(process.env.SHOTS, { recursive: true }); await page.screenshot({ path: join(process.env.SHOTS, 'render3d-e2e.png'), timeout: 120000 }); }
     pass('the 3D canvas stays in the pixel budget', { pixels: size, drawCalls: g.drawCalls, triangles: g.triangles, cpuMsPerFrame: +cpu.toFixed(1), note: 'SwiftShader, not a real GPU' });
 
-    // Pause keeps 3D and offers no legacy renderer switch.
+    // No settings action can replace the battlefield with 2D.
     await page.evaluate(() => { window.__auto = true; });
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#graphics-mode').count(), 0);
     await page.keyboard.press('Escape');
     assert.equal((await t.graphics()).renderer, 'Mythic 3D');
-    pass('pause retains 3D with no renderer switch');
+    pass('the match exposes no 2D mode control');
     assert.deepEqual(t.errors, [], 'no console errors'); await page.close();
   }
   {
     const t = await open('?renderer=2d');
     assert.equal((await t.graphics()).renderer, 'Mythic 3D');
     assert.equal(await t.page.evaluate(() => !!document.getElementById('battle-3d')), true);
-    pass('old ?renderer=2d links now start 3D');
+    pass('a legacy 2D URL starts the 3D battlefield');
     assert.deepEqual(t.errors, []); await t.page.close();
+  }
+  {
+    const page = await browser.newPage();
+    await page.addInitScript(() => { const get = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function(type, ...args) { return type === 'webgl2' ? null : get.call(this, type, ...args); }; });
+    await page.goto(URL, { waitUntil: 'domcontentloaded' });
+    await page.locator('#load-error').waitFor({ state: 'visible' });
+    assert.match(await page.locator('#load-error-message').textContent(), /Enable graphics acceleration/);
+    assert.equal(await page.locator('#play').isEnabled(), false);
+    assert.equal(await page.locator('#battle-3d').count(), 0);
+    pass('unsupported graphics explain the failure and keep Play disabled');
+    await page.close();
   }
   console.log(`${results.length} checks passed`);
 } finally { await browser.close(); }

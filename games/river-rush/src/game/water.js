@@ -1,5 +1,6 @@
 import { riverRate } from './quality.js';
 import { CURRENT_FLOW_SPEED,WAVE_CADENCE } from './hydrodynamics.js';
+import {nextRiverFork} from './river-forks.js';
 // Animate the generated water texture. Shorelines remain the original art.
 const scenes = new WeakMap();
 const vertex = `attribute vec2 a_position; varying vec2 v_uv;
@@ -75,8 +76,12 @@ export function drawWater(ctx,g,art,width,height,reducedMotion,active=true) {
   if((g.levelIndex??0)>0){videoWater(ctx,g,art,width,height,false,true);return false;}
   const portrait=width/height<.85,source=portrait?art.portrait:art.environment;
   const disabled=reducedMotion||navigator.connection?.saveData;
-  if(videoWater(ctx,g,art,width,height,active,disabled))return true;
+  const fork=nextRiverFork(g.distance-14,g.terrainProfile),splitVisible=!!fork&&fork.start<g.distance+245;
+  if(videoWater(ctx,g,art,width,height,active,disabled||splitVisible))return true;
   ctx.drawImage(source,0,0,width,height);
+  // Fork geography is drawn from the shared course plane. An unrelated filmed
+  // river underneath it would pin a third painted stream to the screen.
+  if(splitVisible)return false;
   if(disabled)return false;
   const clip=videos.get(art)?.clips[portrait?'portrait':'landscape'];
   if(!clip?.failed&&g.time<1.2)return false;

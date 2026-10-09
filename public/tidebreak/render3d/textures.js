@@ -128,14 +128,27 @@ function stone(size, seed) {
     h.putImageData(img, 0, 0);
   });
 }
-// Four tiling ground materials plus dry meadow and woods moss, in the order the ground shader samples them.
+// Continuous weathered bedrock has mineral grain and warped strata, without paving joints.
+function bedrock(size, seed) {
+  const coarse = fbm(size, 6, seed, 3), fine = fbm(size, 4, seed + 1, 24), height = new Float32Array(size * size);
+  return material(size, c => {
+    const img = c.createImageData(size, size), tones = ['#767d72', '#929a8b', '#b0b5a5', '#cbd0bd'].map(hex);
+    for (let i = 0; i < coarse.length; i++) {
+      const bands = Math.sin(Math.floor(i / size) / size * Math.PI * 14 + coarse[i] * 3) * .5 + .5;
+      const col = ramp(tones, coarse[i] * .64 + fine[i] * .22 + bands * .14);
+      img.data.set([...col, 255], i * 4); height[i] = coarse[i] * .65 + fine[i] * .25 + bands * .1;
+    }
+    c.putImageData(img, 0, 0);
+  }, h => grayFill(h, size, height, .65, .2));
+}
+// Ground materials plus a separate natural rock texture for geology.
 export function groundTextures() {
   const size = 512;
   return {
     grass: grass(size, 11, ['#3b4822', '#4b5a29', '#5b6930', '#6f7a3a', '#898a47'], ['#9a9852', '#33401c', '#7a8842', '#b0a462']),
     dry: grass(size, 23, ['#4f4626', '#665a32', '#7c6c3e', '#937e4a', '#a58e57'], ['#b8a46a', '#4a4024', '#8a7a48']),
     moss: grass(size, 37, ['#1f2a17', '#2b3a1f', '#38482a', '#475532', '#5a6440'], ['#6c7a4a', '#18220f', '#4e6234']),
-    dirt: dirt(size, 41), stone: stone(size, 53), sand: sand(size, 67),
+    dirt: dirt(size, 41), stone: stone(size, 53), sand: sand(size, 67), rock: bedrock(256, 79),
   };
 }
 // Large soft patches (R and G are independent noises), sampled at a low frequency to break up tiling.

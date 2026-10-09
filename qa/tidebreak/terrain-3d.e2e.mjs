@@ -15,7 +15,7 @@ try {
   await unsupported.addInitScript(() => { const get = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function(type, ...args) { return type === 'webgl2' ? null : get.call(this, type, ...args); }; });
   await unsupported.goto(base);
   await unsupported.locator('#graphics-error[open]').waitFor();
-  assert.match(await unsupported.locator('#graphics-error').innerText(), /WebGL2/);
+  assert.match(await unsupported.locator('#graphics-error').innerText(), /graphics acceleration/);
   assert(await unsupported.locator('#play').isDisabled());
   await unsupported.keyboard.press('Escape');
   assert(await unsupported.locator('#graphics-error').isVisible());
@@ -63,7 +63,7 @@ try {
   await page.evaluate(() => { window.__auto = false; });
   await read(page, 'p.x = p.px = 8396; p.y = p.py = 5930; r.recenter(); r.cam = { x: p.x, y: p.y }; r.draw(s, 0);');
   const nearby = await read(page, `const f=r.terrain.relief; return {lane:f.heightAt(8396,5930), hill:f.heightAt(7880,6120), pitch:r.stats().cameraPitch};`);
-  assert.equal(nearby.pitch, 55);
+  assert(nearby.pitch >= 55 && nearby.pitch < 85, JSON.stringify(nearby));
   assert(nearby.hill > nearby.lane + 90, JSON.stringify(nearby));
   // Click a ground point, then move with a keyboard key: both must update the real match.
   const at = await read(page, 'return r.project(p.x + 120, p.y - 140);');

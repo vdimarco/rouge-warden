@@ -1,5 +1,6 @@
 // The 3D battlefield (three.js): rigged heroes and soldiers, golden-hour light with one moving shadow map, a splat
-// ground, a river with bridges, and instanced scenery. Maps and screen-space labels use battlefield-overlay.js.
+// ground, a river with bridges, and instanced scenery. It keeps the 2D Renderer's interface, so main.js and QA use
+// either one. The minimap, the tactical map and the frame-rate rule are the 2D renderer's own code.
 // Coordinates: sim x -> three x, sim y -> three z, height is three y; one unit is one sim unit.
 import * as THREE from 'three';
 import { BattlefieldOverlay, backingRatio } from './battlefield-overlay.js';
@@ -12,7 +13,7 @@ import { assets, preload, WORLD_MODELS, heroModel } from './render3d/assets.js';
 import { groundTextures, macroTexture, glowTexture, sparkAtlas, softAtlas } from './render3d/textures.js';
 import { Sky, installGrade } from './render3d/sky.js';
 import { Terrain } from './render3d/terrain.js';
-import { bridgeSurface, intersectRelief, waterMaskAt } from './surface.js';
+import { bridgeSurface, intersectRelief, waterMaskAt, cameraLift } from './surface.js';
 import { Props } from './render3d/props.js';
 import { Units, TEAM3D, NEUTRAL, PLAYER, TOWER_HEIGHT, OUTLINE, HERO_HEIGHT } from './render3d/units.js';
 import { Effects } from './render3d/effects.js';
@@ -54,7 +55,7 @@ export class ThreeRenderer {
     this.sky = new Sky(this.gl, this.scene);
     this.textures = { ...groundTextures(), macro: macroTexture(), glow: glowTexture(), sparks: sparkAtlas(), soft: softAtlas() };
     this.terrain = new Terrain(this.scene, this.textures, this.textures.macro);
-    this.props = new Props(this.scene, assets, this.textures, { coverage: !graphicsSupport().software, heightAt: (x, z) => this.terrain.heightAt(x, z) }); // alpha to coverage is slow in software WebGL
+    this.props = new Props(this.scene, assets, this.textures, { coverage: !graphicsSupport().software, heightAt: (x, z) => this.terrain.heightAt(x, z), heightUniforms: this.terrain.heightUniforms }); // alpha to coverage is slow in software WebGL
     this.effects = new Effects(this.scene, this.textures, { heightAt: (x, z) => this.effectHeight(x, z), heightUniforms: this.terrain.heightUniforms, surfaceUniforms: { uSurfaceMask: this.terrain.uniforms.uMask, uSurfaceSize: { value: world.SIZE } } });
     this.units = new Units(this.scene, this.effects, { heightAt: (x, z) => this.groundHeight(x, z) }); this.units.init(this.textures);
     this.fowCanvas = Object.assign(document.createElement('canvas'), { width: 128, height: 128 }); this.fowCanvas.getContext('2d', { willReadFrequently: true }); this.fowTex = new THREE.CanvasTexture(this.fowCanvas); this.fowTex.colorSpace = THREE.NoColorSpace; this.fowTex.flipY = false; fow.uFow.value = this.fowTex;
@@ -68,7 +69,7 @@ export class ThreeRenderer {
     canvas.__shore3d = this; // QA handle (qa/tidebreak/render3d.e2e.mjs); gameplay never reads it
     this.resize();
   }
-  // Removes the canvases and frees the GPU context when the renderer is disposed.
+  // Removes the 3D canvases and frees the GPU context (switching to the 2D renderer).
   dispose() { this.events.removeEventListener('pointermove', this.onPointer); if (this.events.__shore3d === this) delete this.events.__shore3d; this.units.clear(); this.gl.dispose(); this.gl.forceContextLoss(); this.canvas.remove(); this.overlay.remove(); }
   setScene(s) {
     if (s.seed !== this.sceneSeed) {
@@ -107,7 +108,10 @@ export class ThreeRenderer {
   }
   placeCamera(x, y, sx, sy) {
     const c = this.camera, tx = x, tz = y - this.lead, height = this.calibrating ? 0 : this.groundHeight(x, y);
-    c.position.set(tx, height + Math.sin(PITCH) * this.distance, tz + Math.cos(PITCH) * this.distance); c.lookAt(tx, height, tz);
+    const up = Math.sin(PITCH) * this.distance, cameraZ = tz + Math.cos(PITCH) * this.distance;
+    this.cameraLift = this.calibrating ? 0 : cameraLift((x, z) => this.groundHeight(x, z), x, y, height, 0, cameraZ - y, up);
+    this.cameraViewScale = 1 + this.cameraLift / up;
+    c.position.set(tx, height + up + this.cameraLift, cameraZ); c.lookAt(tx, height, tz);
     if (sx || sy) { c.translateX(sx); c.translateY(sy); }
     c.updateMatrixWorld(); c.matrixWorldInverse.copy(c.matrixWorld).invert();
   }
@@ -139,7 +143,8 @@ export class ThreeRenderer {
     if (!menu) this.heroScreen = this.project(p.x, p.y);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
     this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
-    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, rect = this.showcase || { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
+    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, viewScale = this.cameraViewScale || 1;
+    const rect = this.showcase || { x0: this.cam.x + f.minX * viewScale - 150, x1: this.cam.x + f.maxX * viewScale + 150, y0: this.cam.y + f.minY * viewScale - 150, y1: this.cam.y + f.maxY * viewScale + 150 };
     this.props.update(dt, time, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
     foliageUniforms.uSunView.value.copy(sd).transformDirection(this.camera.matrixWorldInverse); foliageUniforms.uSunColor.value.copy(this.sky.sun.color).multiplyScalar(this.sky.sun.intensity * .25);
     this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
@@ -154,7 +159,7 @@ export class ThreeRenderer {
     this.seeThrough(s, p, menu);
     this.drawWorldEffects(s, p, time, dt, menu, aim, waypoint);
     this.updateFog(s, menu);
-    const view = this.camTarget, show = this.showcase, radius = show ? show.radius : Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55);
+    const view = this.camTarget, show = this.showcase, radius = show ? show.radius : Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55) * viewScale;
     this.sky.fitShadow(show ? v3.set(show.cx, this.groundHeight(show.cx, show.cy), show.cy) : v3.set(view.x, this.groundHeight(view.x, view.y), view.y + (this.foot.minY + this.foot.maxY) / 2), radius, this.shadowSize);
     this.gl.toneMappingExposure = this.sky.exposure;
     if (!this.compiled) { this.gl.compile(this.scene, this.camera); this.compiled = true; }
@@ -419,10 +424,11 @@ export class ThreeRenderer {
       models: { world: Object.keys(assets.world).length, worldTotal: WORLD_MODELS.length, clips: assets.clips ? Object.keys(assets.clips).length : 0, heroes: assets.heroes.size, heroesTotal: HERO_IDENTITIES.length, failed: [...assets.failed] },
       drawCalls: this.drawCalls, triangles: this.triangles, shadowMap: this.shadowSize, grassTufts: this.props.grass.count, seeThrough: seeUniforms.uSeeAt.value.filter(v => v.w > 0).length, units: this.units.stats(), structures, scenerySeed: this.sceneSeed, sceneryCount: this.props.counts, crossings: this.terrain.bridges?.length || 0,
       terrain: this.terrain.relief ? { vertices: this.terrain.relief.heights.length, min: this.terrain.relief.minHeight, max: this.terrain.relief.maxHeight, landRange: this.terrain.relief.landMax - this.terrain.relief.landMin } : null,
-      cameraPitch: Math.round(THREE.MathUtils.radToDeg(this.showcase ? SHOW_PITCH : PITCH)), fov: this.camera.fov, showcase: !!this.showcase, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
+      geology: this.props.sets.map(set => ({ caves: set.kinds.get('cave-shell')?.n || 0, cliffs: set.kinds.get('cliff')?.n || 0, trees: (set.kinds.get('pine')?.n || 0) + (set.kinds.get('oak')?.n || 0) })), cameraLift: this.cameraLift || 0,
+      cameraPitch: Math.round(THREE.MathUtils.radToDeg(this.showcase ? SHOW_PITCH : Math.atan2(Math.sin(PITCH) * this.distance + (this.cameraLift || 0), Math.cos(PITCH) * this.distance))), fov: this.camera.fov, showcase: !!this.showcase, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
   }
 }
-// Maps, adaptive resolution, badges and result labels are independent of the battlefield scene.
+// Shared canvas overlay helpers: the frame-rate rule, the minimap and tactical map, badges and result labels.
 for (const k of ['adapt', 'restartTiming', 'drawMap', 'drawHeroMarker', 'drawPings', 'rememberHeroes', 'drawBadges', 'drawResults']) ThreeRenderer.prototype[k] = BattlefieldOverlay.prototype[k];
 // Starts parsing a hero model early, for example the hero picked on the select screen.
 export const warmHero = slug => { heroModel(slug); };

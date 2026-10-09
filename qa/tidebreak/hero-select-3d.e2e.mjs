@@ -4,11 +4,11 @@
 // - the selected hero's model stands on screen inside the portrait's box, and choosing another hero swaps the model
 //   without a flash of the painted stage; the hero keeps only a faint team rim light;
 // - the arena draws at most about 30 frames a second, a slow draw stretches the gap, and nothing draws while the tab
-//   is hidden; a lost WebGL context brings the painted stage back;
+//   is hidden; a lost WebGL context shows an interruption message;
 // - the roster, the skill previews and Play stay on top and take clicks at five screen sizes;
 // - with reduced motion the camera holds still;
 // - starting the draft stops the arena, and the match draws with the gameplay camera;
-// - old ?renderer=2d links now show the 3D arena.
+// - legacy ?renderer=2d URLs start the 3D arena.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/hero-select-3d.e2e.mjs
 // SHOTS=<dir> also saves a screenshot of the hero select at each size.
 import assert from 'node:assert/strict';
@@ -97,12 +97,12 @@ try {
     const heavy = await count(30, 1000 / 60);
     assert(heavy >= 3 && heavy <= 6, 'a slow draw stretches the gap: ' + heavy);
     await page.evaluate(() => { delete document.getElementById('battle').__shore3d.draw; }); await draw(1);
-    // A lost WebGL context brings the painted stage back until the context returns.
+    // Context loss leaves the battlefield in 3D and shows an interruption message until it returns.
     await page.evaluate(() => { document.getElementById('battle').__shore3d.lost = true; }); await pump(2);
-    const lost = await page.evaluate(() => document.getElementById('menu').classList.contains('arena-3d'));
+    assert.equal(await page.locator('#graphics-interrupted').isVisible(), true);
     await page.evaluate(() => { document.getElementById('battle').__shore3d.lost = false; }); await draw(2);
-    const back = await page.evaluate(() => document.getElementById('menu').classList.contains('arena-3d'));
-    assert(!lost && back, 'a lost context shows the painted stage: ' + JSON.stringify({ lost, back }));
+    assert.equal(await page.locator('#graphics-interrupted').isVisible(), false);
+    assert.equal(await page.evaluate(() => document.getElementById('menu').classList.contains('arena-3d')), true);
     // A hidden tab draws nothing.
     await page.evaluate(() => Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }));
     const hidden = await count(3, 5000);
@@ -166,8 +166,8 @@ try {
   {
     const t = await open('?renderer=2d'), { page } = t;
     await arenaOn(page);
-    assert.equal(await page.locator('#battle-3d').count(), 1);
-    pass('old ?renderer=2d links show the 3D arena');
+    assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d')), true);
+    pass('a legacy 2D URL starts the 3D arena');
     assert.deepEqual(t.errors, []); await page.close();
   }
   console.log(`${results.length} checks passed`);

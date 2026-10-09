@@ -11,7 +11,7 @@ assert.equal(field.resolution, RELIEF_SEGMENTS + 1);
 assert.equal(field.vertices.length / 3, field.heights.length);
 assert.equal(field.indices.length / 3, RELIEF_SEGMENTS ** 2 * 2);
 assert(field.heights.length < 40000, 'the sampled field stays bounded');
-assert(field.landMax - field.landMin >= 250, `off-lane land has ${field.landMax - field.landMin} units of relief`);
+assert(field.landMax - field.landMin >= 900, `off-lane land has ${field.landMax - field.landMin} units of relief`);
 assert(field.minHeight < 0 && field.maxHeight > 300, 'lowered beds and real raised landforms exist');
 assert.deepEqual(buildRelief(world, state).heights, field.heights, 'identical geometry and seed produce identical relief');
 assert.throws(() => buildRelief(world, state, { segments: 191 }), /even/, 'triangulation requires a mirror axis');
@@ -32,10 +32,19 @@ for (const p of [...BASES, ...CAMPS, ...PORTALS, ...state.units.filter(u => u.ki
     assert(Math.abs(field.heightAt(p.x + dx, p.y + dz)) < 1e-6, `important pad ${p.x},${p.y} stays level`);
   }
 }
-for (const path of PATHS) for (const p of path) {
-  const b = riverSample(p.x, state.seed), bank = Math.min(Math.max(b.north - p.y, p.y - b.south), Math.max(b.north - (SIZE - p.y), (SIZE - p.y) - b.south));
-  if (bank > 300) assert(Math.abs(field.heightAt(p.x, p.y)) < 1e-6, 'dry road cores remain open, level valleys');
-}
+// Roads retain their shared topology and safe pads while dry ground now rises between defenses.
+const laneRanges = PATHS.map(path => {
+  const heights = path.filter(p => {
+    const b = riverSample(p.x, state.seed);
+    return Math.min(Math.max(b.north - p.y, p.y - b.south), Math.max(b.north - (SIZE - p.y), (SIZE - p.y) - b.south)) > 650;
+  }).map(p => field.heightAt(p.x, p.y));
+  return Math.max(...heights) - Math.min(...heights);
+});
+assert(laneRanges.every(range => range > 10), 'dry roads follow rolling ground instead of one level plane');
+assert(laneRanges[0] > 300 && laneRanges[2] > 300, 'side lanes climb visibly into the highlands');
+let flat = 0, sampled = 0;
+for (let x = 0; x <= SIZE; x += 100) for (let z = 0; z <= SIZE; z += 100) { sampled++; flat += Math.abs(field.heightAt(x, z)) < 10; }
+assert(flat / sampled < .4, 'level carving must not flatten most of the playable landscape');
 for (const b of riverCrossings(PATHS, state.seed)) for (const sign of [-1, 1]) {
   const reach = (b.span * 1.08 + 60) / 2 + 30;
   assert(Math.abs(field.heightAt(b.x + sign * b.dx * reach, b.y + sign * b.dy * reach)) < 1e-6, 'bridge landings meet low dry approach pads');
@@ -49,20 +58,6 @@ for (const seed of [49, 7, 101]) {
     }
   }
 }
-
-// Whole-map range missed the flat corridors players actually travel. Measure shoulders near the two side lanes.
-const shoulders = [];
-for (const path of [PATHS[0], PATHS[2]]) for (let i = 3; i < path.length - 3; i += 3) {
-  const p = path[i], q = path[i + 1], length = Math.hypot(q.x - p.x, q.y - p.y);
-  for (const side of [-1, 1]) {
-    const x = p.x - (q.y - p.y) / length * 650 * side, z = p.y + (q.x - p.x) / length * 650 * side;
-    const bank = riverSample(x, state.seed);
-    if (x > 1000 && x < SIZE - 1000 && z > 2000 && z < SIZE - 2000 && (z < bank.north - 900 || z > bank.south + 900)) shoulders.push(field.heightAt(x, z));
-  }
-}
-assert(shoulders.length > 60, 'sample both side lanes outside base courts and the river');
-assert(shoulders.filter(h => h > 90).length / shoulders.length >= .5, 'raised hills must be visible beside ordinary travel routes');
-assert(shoulders.sort((a, b) => a - b)[shoulders.length >> 1] > 90, 'typical lane shoulders retain relief instead of being flattened twice');
 
 // Independently read mesh indices and world-space vertices, find the triangle containing an interior point, and
 // interpolate its plane. This catches bilinear samplers, inverted diagonals and incorrect row/coordinate mapping.
@@ -94,6 +89,6 @@ for (let i = 0; i < 1000; i++) {
   const x = (i * 791.43) % SIZE, z = (i * 617.17) % SIZE, epsilon = .001;
   assert(Math.abs(field.heightAt(x + epsilon, z + epsilon) - field.heightAt(x - epsilon, z - epsilon)) <= field.maxSlope * epsilon * 2 * Math.SQRT2 + 1e-6, 'the sampled surface is continuous across cells and triangles');
 }
-assert(field.maxSlope < 1.6, `relief slopes remain traversable-looking (${field.maxSlope.toFixed(3)})`);
+assert(field.maxSlope < 3.2, `highland banks have bounded slopes (${field.maxSlope.toFixed(3)})`);
 assert(TERRAIN_HEIGHT_GLSL.includes('uTerrainHeight') && TERRAIN_HEIGHT_GLSL.includes('terrainHeightAt'), 'ground materials can share the sampled field');
-console.log('PASS: deterministic mirrored terrain, varied land, level pads, stable banks/bridges and exact mesh sampling.', JSON.stringify({ buildMs: Math.round(buildMs), vertices: field.heights.length, landRange: +(field.landMax - field.landMin).toFixed(1), maxSlope: +field.maxSlope.toFixed(3), meshError: +meshError.toFixed(6) }));
+console.log('PASS: deterministic mirrored terrain, varied land, rolling roads, level pads, stable banks/bridges and exact mesh sampling.', JSON.stringify({ laneRanges: laneRanges.map(n => +n.toFixed(1)), flatShare: +(flat / sampled).toFixed(3), buildMs: Math.round(buildMs), vertices: field.heights.length, landRange: +(field.landMax - field.landMin).toFixed(1), maxSlope: +field.maxSlope.toFixed(3), meshError: +meshError.toFixed(6) }));

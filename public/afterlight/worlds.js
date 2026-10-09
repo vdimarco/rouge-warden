@@ -1,0 +1,166 @@
+const landmark = (id, name, x, y, kind = "device") => ({
+  id,
+  name,
+  x,
+  y,
+  kind,
+});
+export const REGIONS = ["forest", "city", "coast", "fjord", "desert", "moon"];
+export const WORLDS = {
+  forest: {
+    name: "The Firefly Woods",
+    subtitle: "Wake the groves and carry their seeds",
+    bounds: { minX: 15, maxX: 185, minY: 48, maxY: 96 },
+    spawn: { x: 35, y: 87 },
+    landmarks: [
+      landmark("camp", "Woodland camp", 35, 87, "camp"),
+      landmark("cache", "Fallen courier’s pack", 60, 76, "resource"),
+      landmark("grove-a", "Willow grove", 48, 55),
+      landmark("grove-b", "Fern grove", 105, 69),
+      landmark("grove-c", "Old cedar grove", 160, 82),
+      landmark("beacon", "Forest beacon", 140, 52),
+    ],
+    hazards: [
+      {
+        id: "moth",
+        kind: "shadow",
+        x: 90,
+        y: 80,
+        rx: 24,
+        ry: 8,
+        speed: 0.45,
+        radius: 5,
+      },
+    ],
+  },
+  city: {
+    name: "The Rainlit City",
+    subtitle: "Reconnect the tramline and build a sonar",
+    bounds: { minX: 12, maxX: 188, minY: 55, maxY: 96 },
+    spawn: { x: 30, y: 88 },
+    landmarks: [
+      landmark("camp", "Tram shelter", 30, 88, "camp"),
+      landmark("cache-a", "Abandoned tram", 62, 73, "resource"),
+      landmark("cache-b", "Workshop drawers", 150, 89, "resource"),
+      landmark("junction-a", "West junction", 87, 63),
+      landmark("junction-b", "East junction", 169, 68),
+      landmark("station", "Central workshop", 111, 88),
+    ],
+    hazards: [
+      {
+        id: "tram",
+        kind: "traffic",
+        x: 108,
+        y: 77,
+        rx: 64,
+        ry: 0,
+        speed: 0.7,
+        radius: 5,
+      },
+    ],
+  },
+  coast: {
+    name: "The Night Harbor",
+    subtitle: "Guide three stranded crews to the harbor",
+    bounds: { minX: 35, maxX: 188, minY: 64, maxY: 96 },
+    spawn: { x: 42, y: 89 },
+    landmarks: [
+      landmark("camp", "Harbor pier", 42, 89, "camp"),
+      landmark("boat-a", "Drifting skiff", 79, 67, "person"),
+      landmark("boat-b", "Silent trawler", 148, 74, "person"),
+      landmark("boat-c", "Stranded cutter", 122, 92, "person"),
+      landmark("beacon", "Harbor lamp", 54, 69),
+    ],
+    hazards: [
+      {
+        id: "reef",
+        kind: "reef",
+        x: 103,
+        y: 81,
+        rx: 0,
+        ry: 0,
+        speed: 0,
+        radius: 6,
+      },
+    ],
+  },
+  fjord: {
+    name: "The Sleeping Fjord",
+    subtitle: "Find the bells beneath the ice",
+    bounds: { minX: 38, maxX: 166, minY: 64, maxY: 96 },
+    spawn: { x: 147, y: 68 },
+    landmarks: [
+      landmark("camp", "Cabin landing", 147, 68, "camp"),
+      landmark("bell-a", "Western bell", 57, 85, "resource"),
+      landmark("bell-b", "Deep bell", 99, 93, "resource"),
+      landmark("bell-c", "Eastern bell", 135, 81, "resource"),
+      landmark("spire", "Ice spire", 83, 68),
+    ],
+    hazards: [
+      {
+        id: "ice",
+        kind: "ice",
+        x: 95,
+        y: 78,
+        rx: 36,
+        ry: 7,
+        speed: 0.35,
+        radius: 5,
+      },
+    ],
+  },
+  desert: {
+    name: "The Mirage Expanse",
+    subtitle: "Find the true route and revive the oasis",
+    bounds: { minX: 15, maxX: 185, minY: 66, maxY: 96 },
+    spawn: { x: 32, y: 89 },
+    landmarks: [
+      landmark("camp", "Caravan camp", 32, 89, "camp"),
+      landmark("cache", "Buried caravan", 66, 71, "resource"),
+      landmark("stone-a", "Western waystone", 52, 78),
+      landmark("stone-b", "Northern waystone", 109, 68),
+      landmark("stone-c", "Eastern waystone", 164, 85),
+      landmark("oasis", "Dry oasis", 121, 83),
+    ],
+    hazards: [
+      {
+        id: "storm",
+        kind: "sandstorm",
+        x: 105,
+        y: 73,
+        rx: 47,
+        ry: 10,
+        speed: 0.38,
+        radius: 7,
+      },
+    ],
+  },
+  moon: {
+    name: "The Orbital Garden",
+    subtitle: "Plant the seeds that traveled through the world",
+    bounds: { minX: 16, maxX: 184, minY: 57, maxY: 96 },
+    spawn: { x: 31, y: 88 },
+    landmarks: [
+      landmark("camp", "Lunar airlock", 31, 88, "camp"),
+      landmark("garden-a", "Western seedbed", 66, 72),
+      landmark("garden-b", "Crater seedbed", 117, 91),
+      landmark("garden-c", "Earthrise seedbed", 158, 66),
+      landmark("relay", "Orbital relay", 107, 65),
+    ],
+    hazards: [
+      {
+        id: "debris",
+        kind: "debris",
+        x: 105,
+        y: 78,
+        rx: 55,
+        ry: 12,
+        speed: 0.55,
+        radius: 5,
+      },
+    ],
+  },
+};
+export function getWorld(s) {
+  return WORLDS[s.region];
+}

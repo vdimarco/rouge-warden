@@ -1,0 +1,128 @@
+{
+  "passed": true,
+  "scope": "natural",
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-CqqlzDw1.js",
+  "actualAppStateOrClockMutations": false,
+  "publicScoreWrites": 0,
+  "actual": [
+    {
+      "layout": "desktop",
+      "passed": true,
+      "distance": 2800.090800000017,
+      "totalNaturalDistance": 2800.090800000017,
+      "naturalLevels": [
+        {
+          "levelIndex": 0,
+          "seed": 521459091,
+          "campaignSeed": 521459091,
+          "firstTime": 0.2,
+          "firstDistance": 10.411000000000001,
+          "profile": {
+            "seed": 521459091,
+            "length": 4200,
+            "mapIndex": 0
+          }
+        }
+      ],
+      "realNextRiverTransitions": [],
+      "strategies": [
+        {
+          "levelIndex": 0,
+          "id": 1,
+          "strategy": "safe-snatch",
+          "side": -1,
+          "earned": 200
+        },
+        {
+          "levelIndex": 0,
+          "id": 3,
+          "strategy": "safe-open",
+          "side": 1,
+          "earned": 200
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 55,
+        "shaders": 84
+      },
+      "resourcesAfter": {
+        "uploads": 55,
+        "shaders": 84
+      },
+      "maxVisibleCoins": 15,
+      "maxCoinOverflow": 0,
+      "maxEntities": 35,
+      "nativePointerCutbacks": [],
+      "exactPause": true,
+      "physicalReceipts": 70,
+      "deliberateOpportunities": [
+        {
+          "id": "choice-0-1-boulder-snatch",
+          "family": "boulder-snatch",
+          "policy": "safe-snatch",
+          "take": true
+        },
+        {
+          "id": "choice-0-3-boulder-snatch",
+          "family": "boulder-snatch",
+          "policy": "safe-open",
+          "take": false
+        }
+      ],
+      "stashReceipts": [
+        {
+          "choiceId": "choice-0-1-boulder-snatch",
+          "family": "boulder-snatch",
+          "value": 120,
+          "levelIndex": 0
+        }
+      ],
+      "observedGpuBudget": {
+        "samples": 35,
+        "maxTriangles": 117658,
+        "maxDrawCalls": 50
+      },
+      "maxRewardContactGap": 0.0000019647426876545637,
+      "untakenStreamMisses": 16,
+      "screenshots": [
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-playing-fork-1.jpg",
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-playing-fork-2.jpg",
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-playing-cache-0-1.jpg",
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-playing-cache-0-3.jpg",
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-treasure-receipt-0-1.jpg",
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-treasure-receipt-0-3.jpg",
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-opportunity-choice-0-1-boulder-snatch.jpg",
+        "/tmp/river-rush-authored-release-natural-desktop/desktop-opportunity-choice-0-3-boulder-snatch.jpg"
+      ],
+      "error": null
+    }
+  ],
+  "rendererPath": "normal-backend-classification",
+  "actualBackend": null,
+  "isolatedRendererFixtures": {
+    "total": 0,
+    "passed": 0,
+    "maps": [],
+    "layouts": [],
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "richWaterShaderCompiled": null,
+  "matchedAuthoredPolicies": {
+    "cases": 0,
+    "scoreOnlyCases": 0,
+    "composedBankPromotions": 0
+  },
+  "gpuBudgetPreflight": {
+    "samples": 0,
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "errors": [],
+  "captureWarnings": [],
+  "failure": null,
+  "limitations": [
+    "Chromium SwiftShader; hardware phone frame rate and human reaction difficulty are not measured.",
+    "Natural App runs retain the original game seed and clock. Source fixtures explicitly own isolated state."
+  ]
+}

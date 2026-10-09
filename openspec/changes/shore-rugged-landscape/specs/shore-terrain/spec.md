@@ -22,6 +22,6 @@ Pointer movement, skill aim and camera following SHALL use the rendered terrain 
 - **WHEN** the player clicks raised ground or aims a skill there on desktop or a phone viewport
 - **THEN** the movement or aim marker appears at the selected surface point and combat warnings remain visible on the terrain.
 
-#### Scenario: 3D-only play
-- **WHEN** the player opens settings during a match
-- **THEN** the match stays in 3D with the same controls, winding roads and tactical map, without a 2D graphics option.
+#### Scenario: Shared tactical map
+- **WHEN** the player opens the tactical map during a 3D match
+- **THEN** it shows the same winding roads and live match state.

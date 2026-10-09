@@ -1,3 +1,4 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
 import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
@@ -7,6 +8,7 @@ import {createGame,generateAhead,updateGame,emptyInput,snapshot} from '../src/ga
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
 import {isBranchSpan,branchLanes} from '../src/game/branch-spans.js';
 import {coveredLanes,actionWall} from './route-coverage.js';
+import {riverFork} from '../src/game/river-forks.js';
 
 test('each seeded finite river has all three terrain encounters, calm transitions and a clean opening/finish',()=>{
  for(let seed=0;seed<30;seed++)for(const level of LEVELS){
@@ -44,8 +46,11 @@ test('terrain changes playable river shape and water while shoals remain outside
   const profile=createCourseProfile(seed,level.length,level.index);
   for(let d=300;d<level.length-FINISH_RUNWAY;d+=13.1){
    const section=terrainSection(d,profile),width=riverHalfWidth(d,profile),rapid=rapidAt(d,profile);
-   assert.ok(width>=11.8+RIVER_WIDTH_EXPANSION&&width<=26.5+RIVER_WIDTH_EXPANSION);assert.ok(rapid>=0&&rapid<=1);
-   if(section.strength>.999){const s=samples[section.type];s.width+=width;s.rapid+=rapid;s.count++;}
+   // Forks widen two streams around land; compare the underlying terrain
+   // envelope independently of that deliberate extra channel spread.
+   const terrainWidth=width-(riverFork(d,profile)?.fanOffset??0);
+   assert.ok(terrainWidth>=11.8+RIVER_WIDTH_EXPANSION-1e-10&&terrainWidth<=26.5+RIVER_WIDTH_EXPANSION+1e-10);assert.ok(rapid>=0&&rapid<=1);
+   if(section.strength>.999){const s=samples[section.type];s.width+=terrainWidth;s.rapid+=rapid;s.count++;}
   }
   for(let n=0;n<Math.ceil(level.length/34);n++){const rock=shoalAt(n,profile);assert.ok(Math.abs(rock.x)-rock.size*2*1.18>PLAYABLE_HALF_WIDTH-.2);}
  }
@@ -103,7 +108,7 @@ test('natural no-Rush generation provides at least three eligible jumps for ever
    for(const item of g.entities)if(item.type==='log'&&item.terrainActive&&item.terrainComboAvailable){
     if(!rows.has(item.sectionId))rows.set(item.sectionId,new Set());rows.get(item.sectionId).add(item.row);
    }
-   g.entities=[];updateGame(g,emptyInput(),.05);
+   g.entities=[];advanceCourseScanner(g);
   }
   assert.equal(g.phase,'won');truncated+=shortened.size;
   for(const [id,section] of promises){

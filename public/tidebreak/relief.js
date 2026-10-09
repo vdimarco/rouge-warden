@@ -19,14 +19,18 @@ function noise(x, y, scale, salt) {
 }
 function landform(x, z, size) {
   z = Math.abs(z - size / 2);
-  const broad = noise(x + 1370, z + 780, 1900, 0) * 330;
-  const hills = noise(x - 520, z + 1910, 790, 731) * 165;
+  const broad = noise(x + 1370, z + 780, 2200, 0) * 510;
+  const hills = noise(x - 520, z + 1910, 1050, 731) * 240;
   const ridge = 1 - Math.abs(noise(x + 3010, z - 910, 1050, 1511) * 2 - 1);
-  const rock = ridge ** 5 * 165;
-  const folds = (noise(x, z, 340, 3761) - .5) * 42;
-  // Raise the shoulders players see, with a soft ceiling rather than flat-topped clipped hills.
-  const elevation = 150 + broad + hills + rock + folds - 120;
-  return elevation < 0 ? Math.max(-22, elevation) : 400 * Math.tanh(elevation / 400);
+  const rock = ridge ** 5 * 130;
+  const folds = (noise(x, z, 420, 3761) - .5) * 58;
+  // Broad authored crests give the map a recognizable silhouette. Each mound mirrors with the noise field.
+  let highlands = 0;
+  for (const [cx, cz, rx, rz, height] of [[.14, .30, .22, .28, 760], [.78, .25, .23, .25, 910], [.44, .18, .2, .2, 640], [.56, .49, .23, .2, 560]]) {
+    const r2 = ((x / size - cx) / rx) ** 2 + ((z / size - cz) / rz) ** 2;
+    highlands += Math.max(0, 1 - r2) ** 2 * height;
+  }
+  return clamp(24 + broad + hills + rock + folds + highlands - 170, -22, 1450);
 }
 const segmentDistance = (x, z, a, b) => {
   const dx = b.x - a.x, dz = b.y - a.y, t = clamp(((x - a.x) * dx + (z - a.y) * dz) / (dx * dx + dz * dz || 1), 0, 1);
@@ -51,15 +55,15 @@ function roadIndex(paths, reach) {
 }
 function padsFor(world, state, cell) {
   const pads = [], zero = (p, inner, outer) => pads.push({ x: p.x, z: p.y, rx: inner, rz: inner, reach: outer, height: 0 });
-  for (const p of world.BASES) pads.push({ x: p.x, z: p.y, rx: 810, rz: 710, reach: 1300, height: 0 });
-  for (const unit of state.units || []) if (unit.kind === 'tower') zero(unit, (unit.guardian || unit.tier >= 3 ? 255 : 210) + cell * 1.5, 850);
+  for (const p of world.BASES) pads.push({ x: p.x, z: p.y, rx: 810, rz: 710, reach: 1550, height: 0 });
+  for (const unit of state.units || []) if (unit.kind === 'tower') zero(unit, (unit.guardian || unit.tier >= 3 ? 255 : 210) + cell * 1.5, 1020);
   // Towers may not yet exist when a standalone renderer/map builds the field.
   if (!(state.units || []).some(e => e.kind === 'tower')) {
-    for (const team of world.TOWER_POSITIONS || []) for (const lane of team) for (const p of lane) zero(p, 210 + cell * 1.5, 850);
-    for (const team of world.GUARDIAN_POSITIONS || []) for (const p of team) zero(p, 255 + cell * 1.5, 850);
+    for (const team of world.TOWER_POSITIONS || []) for (const lane of team) for (const p of lane) zero(p, 210 + cell * 1.5, 1020);
+    for (const team of world.GUARDIAN_POSITIONS || []) for (const p of team) zero(p, 255 + cell * 1.5, 1020);
   }
-  for (const p of world.PORTALS) zero(p, 190 + cell * 1.5, 750);
-  for (const p of world.CAMPS) zero(p, 290 + cell * 1.5, 900);
+  for (const p of world.PORTALS) zero(p, 190 + cell * 1.5, 1000);
+  for (const p of world.CAMPS) zero(p, 290 + cell * 1.5, 1120);
   return pads;
 }
 function padWeight(p, x, z) {
@@ -74,7 +78,7 @@ export function buildRelief(world, state = {}, { segments = RELIEF_SEGMENTS, mar
   const size = world.SIZE, origin = -margin, span = size + margin * 2, resolution = segments + 1, cell = span / segments;
   const heights = new Float32Array(resolution * resolution), vertices = new Float32Array(heights.length * 3);
   const IndexArray = heights.length <= 65535 ? Uint16Array : Uint32Array, indices = new IndexArray(segments * segments * 6);
-  const laneCore = 110 + cell, laneOuter = laneCore + 600;
+  const laneCore = 120 + cell * Math.SQRT2, laneOuter = laneCore + 620;
   const distanceToRoad = roadIndex(world.PATHS, laneOuter), pads = padsFor(world, state, cell);
   const rockPads = (world.OBSTACLES?.[0] || []).map(p => ({ x: p.x, z: p.y, rx: p.w * .56 + cell, rz: p.h * .56 + cell, reach: Math.max(p.w, p.h) * .7 + cell * 2 + 500, height: landform(p.x, p.y, size) }));
   const seed = state.seed ?? 49, banks = [];
@@ -91,9 +95,9 @@ export function buildRelief(world, state = {}, { segments = RELIEF_SEGMENTS, mar
       let h = landform(x, z, size);
       // Structures sit on small terraces; the surrounding land retains the broader hill shape.
       for (const p of rockPads) { const w = padWeight(p, x, z); h += (p.height - h) * w; }
-      // Accessible routes and important combat pads taper down into low, readable valleys.
+      // Dry roads retain rolling ground. Wide level corridors previously hid the landscape during lane play.
       const road = Math.min(distanceToRoad(x, z), distanceToRoad(x, size - z));
-      h *= smooth(laneCore, laneOuter, road);
+      h *= .85 + .15 * smooth(laneCore, laneOuter, road);
       let level = 0; for (const p of pads) level = Math.max(level, padWeight(p, x, z), padWeight(p, x, size - z));
       h *= 1 - level;
       // The live banks are intentionally asymmetric. Carving their mirrored union preserves fair relief and keeps
@@ -104,10 +108,10 @@ export function buildRelief(world, state = {}, { segments = RELIEF_SEGMENTS, mar
       const bed = -42 - (1 - smooth(-150, 0, bank)) * 20;
       const riverWeight = end * (1 - bankBlend);
       h += (bed - h) * riverWeight;
-      // Restore only the level cores after carving. Repeating the whole taper here used
-      // to square its weight, erasing hills along the routes players actually see.
-      if (bank > bedCore && level === 1) h = 0;
-      if (bank > 0 && road <= laneCore) h = 0;
+      // Dry defensive pads remain level even where their broad taper meets the bank's taper.
+      if (bank > bedCore && riverWeight > 0) h *= 1 - level;
+      // Only the river approaches flatten a road; its dry sections can climb and descend.
+      if (bank > 0) h *= 1 - (1 - smooth(200, 650, bank)) * (1 - smooth(laneCore, laneOuter, road));
       // The two asymmetrical live bank landings also share their mirrored pads. A mesh-sized collar avoids a
       // depression underneath a deck end when the opposite bank happens to lie farther from the river axis.
       let landing = 0;

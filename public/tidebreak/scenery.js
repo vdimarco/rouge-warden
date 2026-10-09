@@ -75,11 +75,11 @@ export function makeScenery(seed, phase) {
   for (const [x, y, r] of GROVE_SPOTS) for (const north of [false, true]) {
     const { x: gx, y: gy } = north ? mirror(at(x, y)) : at(x, y), radius = r * SIZE;
     const grove = districtAt({x:gx,y:gy});
-    for (let j = 0; j < 13; j++) {
+    for (let j = 0; j < 30; j++) {
       const angle = rand() * Math.PI * 2, radiusAt = Math.sqrt(rand()) * radius, p = { x: gx + Math.cos(angle) * radiusAt, y: gy + Math.sin(angle) * radiusAt };
       if (laneDistance(p) < 200 || outsideRiver(p, seed) < 70 || blocked(p) || anchors.some(a => distance(p,a) < 220)) continue;
       const name = pick(grove.plants.filter(n=>!['branch','boulders','ferns','reeds','mushrooms','hollow-log'].includes(n)));
-      add({ ...p, name, height: 240 + rand() * 220, flip: rand() < .5, sway: true, biome: grove.name, canopy: true });
+      add({ ...p, name, height: 380 + rand() * 300, flip: rand() < .5, sway: true, biome: grove.name, canopy: true });
     }
   }
   // Infill has a deliberately varied scale; large blank lawns never form a grid. Its count follows the map area.
@@ -88,8 +88,8 @@ export function makeScenery(seed, phase) {
     if (d < 175 || water < 35 || blocked(p) || anchors.some(a => distance(p,a) < 170) || grid.near(p, 85)) continue;
     const district = districtAt(p), name = water < 150 ? pick(['reeds','reeds','boulders','ferns']) : pick(district.plants);
     const tall = ['willow','oak','birches','juniper','pines','forest-island'].includes(name);
-    if (tall && (d < 260 || rand() < .48)) continue;
-    add({ ...p, name, height: tall ? 220 + rand() * 180 : 65 + rand() * 115, flip: rand() < .5, sway: ['reeds','ferns','willow','birches'].includes(name), biome: district.name, canopy: tall });
+    if (tall && (d < 300 || rand() < .22)) continue;
+    add({ ...p, name, height: tall ? 340 + rand() * 280 : 65 + rand() * 115, flip: rand() < .5, sway: ['reeds','ferns','willow','birches'].includes(name), biome: district.name, canopy: tall });
   }
   // Unequal reed beds leave exposed sand between them and avoid crossings.
   for (let i = 0, beds = Math.round(24 * LENGTH_SCALE); i < beds; i++) {

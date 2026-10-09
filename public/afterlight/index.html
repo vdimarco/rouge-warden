@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#050a10" />
+    <title>Afterlight · Bring them home</title>
+    <meta
+      name="description"
+      content="Break shadow tethers, rescue survivors and defeat guardians across six living 3D worlds."
+    />
+    <link rel="icon" href="/icons/favicon.svg" />
+    <link rel="stylesheet" href="/afterlight/action.css" />
+    <script src="/arcade/quiet.js"></script>
+  </head>
+  <body>
+    <main
+      id="action-arena"
+      tabindex="0"
+      aria-label="Afterlight rescue playfield. Move with WASD or arrows, aim and click to fire, Space fires toward enemies, Shift dodges, E interrupts attacks, release fire to cool the weapon and P pauses."
+    >
+      <div
+        id="action-scene"
+        aria-label="A living three-dimensional rescue landscape"
+      ></div>
+      <div id="action-world-labels" aria-hidden="true"></div>
+      <canvas
+        id="action-radar"
+        width="200"
+        height="100"
+        role="img"
+        aria-label="Radar: gold is you and the beacon, peach is survivors, violet is tethers and enemies"
+      ></canvas>
+      <header class="action-hud">
+        <div class="action-identity">
+          <a class="action-brand" href="/afterlight/">Afterlight</a
+          ><span id="action-place">The Firefly Woods</span>
+        </div>
+        <div
+          class="action-objective"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span id="action-goal">Lead three survivors to the beacon</span
+          ><span id="action-progress">Rescued 0 / 3</span>
+        </div>
+        <div class="action-status">
+          <span id="action-health" aria-label="Health">HP 100</span
+          ><span id="action-score">Score 0</span
+          ><span id="action-heat">Light heat 0%</span>
+        </div>
+        <nav class="action-settings" aria-label="Game settings">
+          <button id="action-sound" type="button" aria-pressed="false">
+            Sound off</button
+          ><button
+            id="action-motion"
+            type="button"
+            aria-pressed="false"
+            aria-label="Reduce decorative motion"
+          >
+            Motion</button
+          ><button id="action-pause" type="button">Pause</button
+          ><a href="/">Arcade</a>
+        </nav>
+      </header>
+      <section
+        id="action-overlay"
+        aria-labelledby="action-title"
+        aria-describedby="action-description"
+      >
+        <div class="action-overlay-content">
+          <h1 id="action-title">Bring them home.</h1>
+          <p id="action-description">
+            Blast the shadows. Lead three survivors to the beacon. Defend it
+            until the rescue route opens.
+          </p>
+          <div class="action-overlay-buttons">
+            <button id="action-begin" type="button">Begin rescue</button
+            ><button id="action-restart" type="button" hidden>
+              New campaign
+            </button>
+          </div>
+          <p id="action-overlay-hint">
+            Move close to the orange survivors. They will follow you to the
+            golden beacon.
+          </p>
+        </div>
+      </section>
+      <div class="action-bottom">
+        <div class="action-guidance">
+          <p id="action-tip">Survivors follow when you get close.</p>
+          <p class="action-instructions">
+            WASD / arrows move · aim + click / Space fire · Shift dodge · P
+            pause
+          </p>
+          <p id="action-message" role="status" aria-live="polite"></p>
+        </div>
+        <nav class="action-direction-pad" aria-label="Touch movement">
+          <button type="button" data-move="up" aria-label="Move up">↑</button
+          ><button type="button" data-move="left" aria-label="Move left">
+            ←</button
+          ><button type="button" data-move="down" aria-label="Move down">
+            ↓</button
+          ><button type="button" data-move="right" aria-label="Move right">
+            →
+          </button>
+        </nav>
+        <div class="action-combat" aria-label="Rescue actions">
+          <button
+            id="action-fire"
+            type="button"
+            aria-label="Fire light toward enemies"
+          >
+            <span class="action-glyph" aria-hidden="true">+</span
+            ><span>Fire</span></button
+          ><button
+            id="action-pulse"
+            type="button"
+            aria-label="Pulse to interrupt nearby threats"
+          >
+            <span class="action-glyph" aria-hidden="true">◎</span
+            ><span>Pulse · E</span></button
+          ><button id="action-dodge" type="button" aria-label="Dodge danger">
+            <span class="action-glyph" aria-hidden="true">»</span
+            ><span>Dodge</span>
+          </button>
+        </div>
+      </div>
+      <div class="action-links">
+        <span
+          >scenes by <a href="https://ascii.rest/">ascii.rest</a> ·
+          <a href="/last-light/vendor/LICENSE">MIT</a></span
+        ><a href="/battle-tanks/">Battle Tanks</a
+        ><a href="/afterlight/classic.html">Classic</a
+        ><button type="button" data-switch>Other games</button>
+      </div>
+    </main>
+    <script src="/arcade/switch.js"></script>
+    <script type="module" src="/afterlight/action-game.js"></script>
+  </body>
+</html>

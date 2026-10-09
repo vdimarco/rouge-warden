@@ -1,18 +1,20 @@
-// Maps, screen-space combat labels and resolution control for the 3D battlefield.
-import { SIZE, PATHS, PORTALS } from './world.js';
+// Canvas overlays and tactical maps for the 3D battlefield. No playable canvas renderer is imported.
 import { structureProtected } from './objectives.js';
-import { riverOutline, riverGeometry } from './river.js';
+import { SIZE, PATHS, PORTALS, clamp } from './world.js';
+import { riverGeometry, riverOutline } from './river.js';
 import { BASE_STYLES } from './bases.js';
 import { HERO_IDENTITIES } from './hero-identities.js';
 import { combatMarks, controlLabels, recentCombatFeedback, RESULT_COLORS, RESULT_LABELS } from './combat-feedback.js';
 const TAU = Math.PI * 2, TEAM = ['#73e0be', '#c167d8'], PIXEL_BUDGET = 2560 * 1440, QUALITY_FLOOR = .5;
 export const backingRatio = (width, height, deviceRatio = 1, quality = 1) => Math.max(.35, Math.min(deviceRatio || 1, 2, Math.sqrt(PIXEL_BUDGET / (width * height))) * Math.sqrt(quality));
-const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Map icon unavailable: ${src}`)); image.src = src; });
+const load = src => new Promise(resolve => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => resolve(null); image.src = src; });
 export async function loadMapArt() {
   const names = ['tower-enemy', 'tower-ally', ...BASE_STYLES.map(b => b.asset)];
-  const icons = await Promise.all(names.map(async name => [name, await load(`./art/illustrated/${name}.webp`)]));
-  const portraits = await Promise.all(HERO_IDENTITIES.map(async h => ['reference-' + h.slug, await load(`./art/portraits/${h.slug}-full.webp`).catch(() => null)]));
-  return Object.fromEntries([...icons, ...portraits]);
+  const entries = await Promise.all([
+    ...names.map(async name => [name, await load(`./art/illustrated/${name}.webp`)]),
+    ...HERO_IDENTITIES.map(async h => ['reference-' + h.slug, await load(`./art/portraits/${h.slug}-full.webp`)]),
+  ]);
+  return Object.fromEntries(entries);
 }
 export class BattlefieldOverlay {
   adapt(ms) {
@@ -34,9 +36,28 @@ export class BattlefieldOverlay {
     } else if (!this.descent && median < Math.max(refresh * 1.15, 21) && q < 1 && this.clock > (this.raiseAt ?? 0)) { this.quality = Math.min(1, q * 1.15); this.resize(); }
   }
   restartTiming() { this.window = []; this.nextAdapt = (this.clock ?? 0) + 1500; }
-  rememberHeroes(s) {
-    if (this.seenState !== s) { this.seenState = s; this.lastSeen = new Map(); }
-    for (const e of s.units) if (e.kind === 'hero' && e.team !== 0) { if (e.hp <= 0) this.lastSeen.delete(e.id); else if (this.visible.has(e.id)) this.lastSeen.set(e.id, { x: e.x, y: e.y, time: s.time }); }
+  drawMap(s, canvas, waypoint = null) {
+    const m = canvas.getContext('2d'), size = canvas.width, full = size > 250; m.clearRect(0, 0, size, size); m.fillStyle = '#1c353a'; m.fillRect(0, 0, size, size);
+    m.save(); m.scale(size / SIZE, size / SIZE); riverOutline(m, riverGeometry(s.seed)); m.fillStyle = '#448e92'; m.fill(); m.restore();
+    m.strokeStyle = '#56675a'; m.lineWidth = full ? 18 : 6; m.lineJoin = 'round';
+    for (const lane of PATHS) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); }
+    // The large map shows the packed-earth middle of each winding road.
+    if (full) { m.save(); m.strokeStyle = '#7c7a5f'; m.lineWidth = 6; m.lineCap = 'round'; m.setLineDash([20, 12]); for (const lane of PATHS) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); } m.restore(); }
+    for (const b of this.bridges || []) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
+    for (const gate of PORTALS) { m.strokeStyle = '#79d7bd'; m.lineWidth = 2; m.beginPath(); m.arc(gate.x / SIZE * size, gate.y / SIZE * size, full ? 7 : 3, 0, TAU); m.stroke(); }
+    for (const e of s.units) {
+      if (e.hp <= 0 || !this.visible.has(e.id)) continue;
+      const x = e.x / SIZE * size, y = e.y / SIZE * size, scale = full ? 2 : 1;
+      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,[6,7.5,9,10.5][e.tier]*scale,0,TAU);m.stroke();} if (image) m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); else { m.fillStyle = TEAM[e.team]; m.fillRect(x - 4 * scale, y - 4 * scale, 8 * scale, 8 * scale); } }
+      else if (e.kind !== 'hero') { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (['boss', 'leviathan'].includes(e.kind) ? 3.5 : 1) * scale, 0, TAU); m.fill(); }
+    }
+    // Heroes draw last so they stay readable above wisps; a structure under attack pulses red.
+    for (const e of s.units) if (['tower', 'core'].includes(e.kind) && e.team === 0 && e.hp > 0 && e.alarmAt - 14 + 5 > s.time) { const t = (s.time * 1.5) % 1; m.save(); m.globalAlpha = 1 - t; m.strokeStyle = '#ff5a4f'; m.lineWidth = full ? 3 : 1.5; m.beginPath(); m.arc(e.x / SIZE * size, e.y / SIZE * size, (full ? 12 : 6) + t * (full ? 18 : 9), 0, TAU); m.stroke(); m.restore(); }
+    for (const [id, seen] of this.lastSeen || []) { const e = s.units.find(u => u.id === id); if (e && !this.visible.has(id) && s.time - seen.time < 8) this.drawHeroMarker(m, s, e, seen.x / SIZE * size, seen.y / SIZE * size, full, true); }
+    for (const e of [...s.units].sort((a, b) => Number(!!a.player) - Number(!!b.player))) if (e.kind === 'hero' && e.hp > 0 && this.visible.has(e.id)) this.drawHeroMarker(m, s, e, e.x / SIZE * size, e.y / SIZE * size, full);
+    this.drawPings(m, s, size, full);
+    if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
+    if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
   }
   drawHeroMarker(m, s, e, x, y, full, ghost = false) {
     const identity = HERO_IDENTITIES[e.identity], color = identity?.color || TEAM[e.team], r = (e.player ? 1.2 : 1) * (full ? 21 : 7.5), art = identity && this.art['reference-' + identity.slug];
@@ -59,28 +80,9 @@ export class BattlefieldOverlay {
       m.restore();
     }
   }
-  drawMap(s, canvas, waypoint = null) {
-    const m = canvas.getContext('2d'), size = canvas.width, full = size > 250; m.clearRect(0, 0, size, size); m.fillStyle = '#1c353a'; m.fillRect(0, 0, size, size);
-    m.save(); m.scale(size / SIZE, size / SIZE); riverOutline(m, riverGeometry(s.seed)); m.fillStyle = '#448e92'; m.fill(); m.restore();
-    m.strokeStyle = '#56675a'; m.lineWidth = full ? 18 : 6; m.lineJoin = 'round';
-    for (const lane of PATHS) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); }
-    // The large map shows the packed-earth middle of each winding road.
-    if (full) { m.save(); m.strokeStyle = '#7c7a5f'; m.lineWidth = 6; m.lineCap = 'round'; m.setLineDash([20, 12]); for (const lane of PATHS) { m.beginPath(); lane.forEach((p, i) => i ? m.lineTo(p.x / SIZE * size, p.y / SIZE * size) : m.moveTo(p.x / SIZE * size, p.y / SIZE * size)); m.stroke(); } m.restore(); }
-    for (const b of this.bridges || []) { m.strokeStyle = '#b6b294'; m.lineWidth = full ? 6 : 2; m.beginPath(); m.moveTo((b.x - b.dx * b.span / 2) / SIZE * size, (b.y - b.dy * b.span / 2) / SIZE * size); m.lineTo((b.x + b.dx * b.span / 2) / SIZE * size, (b.y + b.dy * b.span / 2) / SIZE * size); m.stroke(); }
-    for (const gate of PORTALS) { m.strokeStyle = '#79d7bd'; m.lineWidth = 2; m.beginPath(); m.arc(gate.x / SIZE * size, gate.y / SIZE * size, full ? 7 : 3, 0, TAU); m.stroke(); }
-    for (const e of s.units) {
-      if (e.hp <= 0 || !this.visible.has(e.id)) continue;
-      const x = e.x / SIZE * size, y = e.y / SIZE * size, scale = full ? 2 : 1;
-      if (e.kind === 'tower' || e.kind === 'core') { const core = e.kind === 'core', image = this.art[core ? BASE_STYLES[e.team].asset : e.team ? 'tower-enemy' : 'tower-ally']; if(!core){m.strokeStyle=structureProtected(s,e)?'#9b96aa':'#e9cd8a';m.lineWidth=full?3:1;m.beginPath();m.arc(x,y,[6,7.5,9,10.5][e.tier]*scale,0,TAU);m.stroke();} m.drawImage(image, x - (core ? 11 : 6) * scale, y - (core ? 18 : 10) * scale, (core ? 22 : 12) * scale, (core ? 27 : 17) * scale); }
-      else if (e.kind !== 'hero') { m.fillStyle = TEAM[e.team] || '#dec789'; m.beginPath(); m.arc(x, y, (['boss', 'leviathan'].includes(e.kind) ? 3.5 : 1) * scale, 0, TAU); m.fill(); }
-    }
-    // Heroes draw last so they stay readable above wisps; a structure under attack pulses red.
-    for (const e of s.units) if (['tower', 'core'].includes(e.kind) && e.team === 0 && e.hp > 0 && e.alarmAt - 14 + 5 > s.time) { const t = (s.time * 1.5) % 1; m.save(); m.globalAlpha = 1 - t; m.strokeStyle = '#ff5a4f'; m.lineWidth = full ? 3 : 1.5; m.beginPath(); m.arc(e.x / SIZE * size, e.y / SIZE * size, (full ? 12 : 6) + t * (full ? 18 : 9), 0, TAU); m.stroke(); m.restore(); }
-    for (const [id, seen] of this.lastSeen || []) { const e = s.units.find(u => u.id === id); if (e && !this.visible.has(id) && s.time - seen.time < 8) this.drawHeroMarker(m, s, e, seen.x / SIZE * size, seen.y / SIZE * size, full, true); }
-    for (const e of [...s.units].sort((a, b) => Number(!!a.player) - Number(!!b.player))) if (e.kind === 'hero' && e.hp > 0 && this.visible.has(e.id)) this.drawHeroMarker(m, s, e, e.x / SIZE * size, e.y / SIZE * size, full);
-    this.drawPings(m, s, size, full);
-    if (waypoint) { m.strokeStyle = '#e8de9b'; m.lineWidth = 2; m.beginPath(); m.arc(waypoint.x / SIZE * size, waypoint.y / SIZE * size, 8, 0, TAU); m.stroke(); }
-    if (full) { m.fillStyle = '#e7e4bc'; m.font = 'bold 19px Barlow'; m.textAlign = 'center'; m.fillText('ENEMY RIFT', size / 2, 28); m.fillText('YOUR RIFT', size / 2, size - 20); }
+  rememberHeroes(s) {
+    if (this.seenState !== s) { this.seenState = s; this.lastSeen = new Map(); }
+    for (const e of s.units) if (e.kind === 'hero' && e.team !== 0) { if (e.hp <= 0) this.lastSeen.delete(e.id); else if (this.visible.has(e.id)) this.lastSeen.set(e.id, { x: e.x, y: e.y, time: s.time }); }
   }
   drawBadges(e,time,anchor) {
     const c=this.ctx,marks=combatMarks(e,time),controls=controlLabels(e,time);

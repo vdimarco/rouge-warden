@@ -1,6 +1,7 @@
-import {laneToX,MAX_LANE,LANE_SPACING,PLAYABLE_HALF_WIDTH} from './lanes.js';
+import {MAX_LANE,LANE_SPACING,PLAYABLE_HALF_WIDTH} from './lanes.js';
 import {riverHash,riverHalfWidth,riverBankHeight} from './river-course.js';
 import {branchSpan} from './branch-spans.js';
+import {forkLaneCross,riverFork} from './river-forks.js';
 
 let leafArt;
 export function branchLeafArt(){
@@ -24,8 +25,8 @@ export const BRANCH_TREE_PARTS=96;
 // main limb wanders in height and depth; its connected forks grow sideways,
 // uphill and downriver at irregular intervals. Width controls reach only.
 export function shorelineBranch(e,course=e.d,seed=137){
-  const declared=branchSpan(e),side=declared.side,lane=laneToX(e.lane);
-  const minCenter=laneToX(declared.minLane),maxCenter=laneToX(declared.maxLane);
+  const declared=branchSpan(e),side=declared.side,lane=forkLaneCross(e.lane,course,seed);
+  const minCenter=forkLaneCross(declared.minLane,course,seed),maxCenter=forkLaneCross(declared.maxLane,course,seed);
   const span={...declared,minX:minCenter-LANE_SPACING/2,maxX:maxCenter+LANE_SPACING/2,centerX:(minCenter+maxCenter)/2};
   const rand=n=>riverHash(e.id+n,seed),node=(x,y,d=0)=>({x,y,d});
   const rootD=1.15+rand(31)*.65,x=side*(riverHalfWidth(course+rootD,seed)+1.5),ground=riverBankHeight(x,course+rootD,seed);
@@ -42,13 +43,13 @@ export function shorelineBranch(e,course=e.d,seed=137){
   const far=side<0?span.maxX-.68:span.minX+.68;
   const legacyCenter=declared.minLane>0&&declared.maxLane<MAX_LANE;
   const nearEdge=side<0?span.minX:span.maxX;
-  const start=node(legacyCenter?nearEdge-side*.98:side*(PLAYABLE_HALF_WIDTH+.95+rand(59)*.3),3.27+rand(61)*.14,.28+rand(63)*.24);
+  const start=node(legacyCenter?nearEdge-side*.98:side*(PLAYABLE_HALF_WIDTH+.95+rand(59)*.3+(riverFork(course,seed)?.fanOffset??0)),3.27+rand(61)*.14,.28+rand(63)*.24);
   // The long bank-reaching arm has a real collar and a crooked elbow, rather
   // than two cylinders meeting at a sharp angle over the navigation corridor.
   const elbow=node(x-side*(Math.abs(x-start.x)*.45),legacyCenter?9.5:4.75+rand(68)*.5,.9+rand(71)*.5);
   limb(collar,elbow,.86,'arm');limb(elbow,start,legacyCenter?.42:.69,'arm');
   const spanLength=Math.abs(far-start.x),stationTs=[0,.15+rand(77)*.035,.34+rand(79)*.035,.55+rand(83)*.035,.75+rand(89)*.035,1];
-  for(const covered of declared.lanes){const t=(laneToX(covered)-start.x)/(far-start.x);if(t>0&&t<1)stationTs.push(t);}
+  for(const covered of declared.lanes){const t=(forkLaneCross(covered,course,seed)-start.x)/(far-start.x);if(t>0&&t<1)stationTs.push(t);}
   const ts=[...new Set(stationTs)].sort((a,b)=>a-b),stations=[];
   const pointAt=t=>node(start.x+(far-start.x)*t,3.12+.22*Math.sin(t*6.5+rand(94))+.12*Math.sin(t*13+rand(96)*2),.28*Math.sin(t*5.5+rand(98))+.18*Math.sin(t*11));
   for(const t of ts)stations.push({t,p:t===0?start:pointAt(t)});
@@ -105,7 +106,7 @@ export function shorelineBranch(e,course=e.d,seed=137){
   }
   curveLimbs(wood);
   if(legacyCenter){const arm=wood.filter(p=>p.kind==='arm').at(-1);arm.c2=node(start.x+side*1.7,5.35,start.d+.12);}
-  const contacts=declared.lanes.map(covered=>({lane:covered,...stations.find(s=>Math.abs(s.p.x-laneToX(covered))<1e-6)?.p}));
+  const contacts=declared.lanes.map(covered=>({lane:covered,...stations.find(s=>Math.abs(s.p.x-forkLaneCross(covered,course,seed))<1e-6)?.p}));
   const contact=contacts.find(p=>p.lane===e.lane)??contacts[Math.floor(contacts.length/2)];
   return {side,root,tip:contact,lane,wood,leaves,span,contacts,spanLength,nativeReach:far,variation:rand(397),anatomy:'rooted-recursive-oak',legacyCenter,course,profile:seed};
 }

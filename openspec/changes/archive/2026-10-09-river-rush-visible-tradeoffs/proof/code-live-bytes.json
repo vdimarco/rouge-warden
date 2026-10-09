@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "sha": "9c296e275929857a0c539b4ce7501326bd07ac4d",
+  "assets": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "mime": "text/html",
+      "bytes": 865,
+      "sha256": "1e01a381d5b5934516612139e055d84f2481e29193019ad8601f16fdb4038261",
+      "exactLocalBytes": true
+    },
+    {
+      "path": "assets/index-u8BvqzOE.js",
+      "status": 200,
+      "mime": "application/javascript",
+      "bytes": 1197432,
+      "sha256": "873995348d1202f7100257a17ba0e4978742ac3d19002f8d1ba3eed37446dae0",
+      "exactLocalBytes": true
+    },
+    {
+      "path": "assets/index-CFXT-lgx.css",
+      "status": 200,
+      "mime": "text/css",
+      "bytes": 44894,
+      "sha256": "4c0b26e3a1996500cf660bb49d5473c85f4384eb8b90e709273a8be45e6ee42e",
+      "exactLocalBytes": true
+    },
+    {
+      "path": "art/menu.png",
+      "status": 200,
+      "mime": "image/png",
+      "bytes": 2676425,
+      "sha256": "49d7010137943e1d425168a0abd549be89283b9cbbb3606831c7f2943ebdf6b5",
+      "exactLocalBytes": true
+    }
+  ]
+}

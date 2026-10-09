@@ -1,3 +1,4 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
 import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
@@ -13,7 +14,7 @@ function naturalCourse(seed,index){
   for(const e of g.entities){items.set(e.id,{...e});if(hazard(e)&&!arrival.has(e.row))arrival.set(e.row,g.time+timeToImpact(g,e.d));}
   // Reveal generation with its real simulation clock/acceleration; this
   // trace does not claim playability (the delayed-input campaigns check it).
-  g.entities=[];updateGame(g,emptyInput(),.05);
+  g.entities=[];advanceCourseScanner(g);
  }
  const rows=new Map();for(const e of items.values())if(hazard(e)){if(!rows.has(e.row))rows.set(e.row,[]);rows.get(e.row).push(e);}
  return{g,items:[...items.values()],rows:[...rows.values()],arrival};
@@ -30,7 +31,7 @@ test('required jumps and ducks arrive just after tutorials, action droughts are 
   let drought=0,lastFormation='',run=0;
   const clearLanes=[];
   for(let i=3;i<rows.length;i++){
-   const row=rows[i],kind=formation(row);run=kind===lastFormation?run+1:1;lastFormation=kind;
+   const row=rows[i];if(row[0].adventureId!==undefined){drought=0;lastFormation='';run=0;continue;}const kind=formation(row);run=kind===lastFormation?run+1:1;lastFormation=kind;
    assert.ok(run<=3,`${level.id} seed${seed} repeats ${kind} for ${run} rows`);
    if(actionWall(row)){required++;drought=0;assert.ok(row.every(e=>e.type===row[0].type&&e.type!=='rock'));}
    else{drought++;assert.ok(drought<=3,`${level.id} seed${seed} has ${drought} dodge-only beats`);}
@@ -91,16 +92,21 @@ test('one natural jump collects its whole five-coin arc at early, normal and lat
  console.log(JSON.stringify({naturalJumpArcs:arcs,raisedCoinsCollected:arcs*5,requestedLeadSeconds:[.22,.32,.42],actualLeadSeconds:[minLead,maxLead],refreshRates:[30,60,120]}));
 });
 
-test('generated jump gold stays wholly on one airborne hazard-lane route',()=>{
+test('generated jump gold stays on one airborne route while guarded forks keep their bypass on clear water',()=>{
  let arcs=0;
  for(let seed=1;seed<=12;seed++)for(const level of LEVELS){
   const {rows,items}=naturalCourse(seed,level.index);
   for(const row of rows){
    const coins=items.filter(e=>e.type==='coin'&&e.row===row[0].row),raised=coins.filter(e=>Number.isFinite(e.jumpHeight));
    if(!raised.length)continue;arcs++;
-   assert.equal(raised.length,5);assert.equal(coins.length,5,'low gold overlaps the displayed jump route');
-   assert.deepEqual(raised.map(e=>e.jumpOffset),JUMP_REWARD_OFFSETS);
-   assert.equal(new Set(coins.map(e=>e.lane)).size,1,'the shown reward trail changes lanes halfway through the jump');
+   assert.equal(raised.length,row[0].adventureId!==undefined?3:5);
+   if(raised[0].decisionId){
+    const bypass=coins.filter(e=>e.routeRole==='safe');assert.equal(bypass.length,2);assert.equal(coins.length,7);
+    assert.ok(bypass.every(c=>!row.some(h=>hazardTouchesLane(h,c.lane))),'safe gold overlaps the guarded jump');
+    assert.ok(raised.every(e=>e.routeRole==='risk'&&e.coinValue===20));
+   }else if(row[0].adventureId!==undefined){assert.equal(coins.length,4);assert.equal(coins.filter(e=>e.routeRole==='safe').length,1);assert.ok(coins.filter(e=>e.routeRole==='safe').every(c=>!row.some(h=>hazardTouchesLane(h,c.lane))));}else assert.equal(coins.length,5,'low gold overlaps the displayed jump route');
+   assert.deepEqual(raised.map(e=>e.jumpOffset),row[0].adventureId!==undefined?[-.04,0,.04]:JUMP_REWARD_OFFSETS);
+   assert.equal(new Set(raised.map(e=>e.lane)).size,1,'the shown reward trail changes lanes halfway through the jump');
    assert.ok(row.some(e=>e.type==='log'&&e.lane===raised[0].lane));
   }
  }
@@ -127,6 +133,7 @@ test('earned Rush never puts the next ground ribbon under a still-airborne late-
  for(const hz of [30,60,120])for(const level of LEVELS)for(const lead of [.22,.42])for(const seed of [8,12,137]){
   const g=createGame(seed,level.index),input=emptyInput(),handled=new Set();g.shield=false;
   while(g.phase==='playing'){
+   chooseForkWater(g,input);
    const primary=g.entities.filter(e=>!e.done&&e.type==='coin'&&e.primaryRoute!==false),next=primary[0];
    if(next&&timeToImpact(g,next.d)<.24&&g.lane!==next.lane)for(let n=0;n<Math.abs(next.lane-g.lane);n++)queueAction(input,next.lane>g.lane?'right':'left');
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),first=obstacles[0];
@@ -147,7 +154,10 @@ test('earned Rush never puts the next ground ribbon under a still-airborne late-
   }
   assert.equal(g.phase,'won');assert.equal(g.shieldsUsed,0);
  }
- assert.ok(rushes>100);assert.ok(alignedGround>10000);assert.equal(finishCoins,54*16);assert.ok(highestEntities<120);
+ // Deliberately modest three-token safe bypasses replace some former ribbons.
+ // Require broad aligned contact coverage without treating lower safe payoff
+ // as a failed pickup; every aligned token above is individually asserted.
+ assert.ok(rushes>100);assert.ok(alignedGround>2500,'sparse pockets still need broad actual contact coverage');assert.equal(finishCoins,54*16);assert.ok(highestEntities<120);
  console.log(JSON.stringify({earnedRushCampaignStages:54,rushes,alignedGroundCoinsCollected:alignedGround,finishGoldCollected:finishCoins,maxLiveEntities:highestEntities}));
 });
 

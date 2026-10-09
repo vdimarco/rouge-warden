@@ -21,3 +21,6 @@ Browser plugin not available; use the existing Playwright installation with `/us
 - The existing six-viewport creature/roster CI harness now checks loaded 3D models instead of retired 2D sprite counters, uses SwiftShader explicitly, and waits for movement rather than assuming a 350ms frame window. Its full CI run is separate from the focused local check.
 - The extracted map, labels and adaptive-resolution methods were compared with their originals and are identical. JavaScript syntax and `git diff --check` pass. OpenSpec strict validation passes.
 - PR: https://github.com/vdimarco/rouge-warden/pull/292. Preview deploys through Vercel. Production requires merging the PR.
+
+## Integration with current main
+The final merge retains the newer highlands, rolling roads, cliffs, caves, camera clearance, startup module and optional map-icon fallbacks from main. The original flat-road and height-ceiling design above records the initial preview only. Current geometry checks measure side-lane ranges of 360.8 and 478.7 units, total land relief of 1054.7, and level defensive pads and bridge approaches. The remaining runtime additions are terrain shadows, preference cleanup and modal graphics recovery requiring explicit resume. The browser server retains main’s `.mjs` content-type fix.

@@ -236,6 +236,46 @@ test('relic pickups are distinct, audible over coin tails, bounded and silent wh
   assert.equal(audio.status.cueCounts.target, 1);
 });
 
+test('treasure contact earns a distinct bounded cue and clean completion adds a final note', async () => {
+  const { audio, contexts } = rig(); audio.setEnabled(true); audio.start(); await settled();
+  const bufferCount = contexts[0].buffers.length;
+  for (let coin = 0; coin < 6; coin++) audio.tone('coin');
+  assert.equal(audio.tone('treasure', { id: 42, clean: false }), true);
+  let treasure = [...audio.voices].filter(voice => voice.event === 'treasure');
+  assert.deepEqual(treasure.map(voice => voice.source.frequency.events[0].value), [440, 659, 880]);
+  assert.ok(treasure.every(voice => voice.source.stopAt <= .42));
+  for (let coin = 0; coin < 20; coin++) audio.tone('coin');
+  assert.ok(treasure.every(voice => audio.voices.has(voice)), 'coin chatter preserves the treasure payoff');
+  audio.stopVoices();
+  assert.equal(audio.tone('treasure', { id: 43, clean: true }), true);
+  treasure = [...audio.voices];
+  assert.deepEqual(treasure.map(voice => voice.source.frequency.events[0].value), [440, 659, 880, 1319]);
+  assert.ok(treasure.every(voice => voice.source.stopAt <= .43));
+  assert.equal(contexts[0].buffers.length, bufferCount, 'caches reuse the prepared audio graph');
+  assert.ok(audio.status.activeVoices <= audio.status.voiceLimit);
+  assert.equal(audio.status.cueCounts.treasure, 2);
+  audio.pause(); assert.equal(audio.tone('treasure', { clean: true }), false);
+  audio.setEnabled(false); assert.equal(audio.tone('treasure'), false);
+  assert.equal(audio.status.cueCounts.treasure, 2, 'stopped or muted runs cannot claim an audible payoff');
+});
+
+test('a stash has its own short score-only sound, preserves its cue over coins and stops on pause', async () => {
+  const { audio, contexts } = rig(); audio.setEnabled(true); audio.start(); await settled();
+  const buffers = contexts[0].buffers.length;
+  for (let coin = 0; coin < 6; coin++) audio.tone('coin');
+  assert.equal(audio.tone('stash', { id: 56, value: 120 }), true);
+  const stash = [...audio.voices].filter(voice => voice.event === 'stash');
+  assert.equal(stash.length, 2);
+  assert.deepEqual(stash.map(voice => voice.source.frequency.events[0].value), [784, 1568]);
+  assert.ok(stash.every(voice => voice.source.stopAt <= .26));
+  for (let coin = 0; coin < 20; coin++) audio.tone('coin');
+  assert.ok(stash.every(voice => audio.voices.has(voice)));
+  assert.equal(audio.status.cueCounts.stash, 1); assert.equal(audio.status.cueCounts.power, undefined);
+  assert.equal(contexts[0].buffers.length, buffers); assert.ok(audio.voices.size <= audio.status.voiceLimit);
+  audio.pause(); assert.equal(audio.tone('stash'), false); assert.equal(audio.voices.size, 0);
+  assert.equal(audio.status.cueCounts.stash, 1);
+});
+
 test('a contact graph failure releases partial nodes and cannot count or interrupt the run', async () => {
   const { audio, contexts } = rig(); audio.setEnabled(true); audio.start(); await settled();
   const context = contexts[0], createGain = context.createGain.bind(context), before = context.created.length;

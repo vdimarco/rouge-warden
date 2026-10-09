@@ -1,4 +1,4 @@
-// WebGL capability and software-renderer detection for the 3D battlefield.
+// Probe 3D graphics support. Shore has one battlefield renderer.
 let probe = null;
 // { webgl2, software, name }: one throwaway context, released at once.
 export function graphicsSupport() {

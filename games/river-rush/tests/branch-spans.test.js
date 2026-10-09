@@ -71,7 +71,7 @@ test('all seeded maps emit all three widths as coherent trees with fair uncovere
   for(const row of rows.values()){
    assert.ok(coveredLanes(row).length<LANE_COUNT||actionWall(row),'mixed wall is impassable');
    const raised=g.entities.filter(e=>e.row===row[0].row&&Number.isFinite(e.jumpHeight));
-   if(raised.length){arcs++;assert.equal(raised.length,5);assert.ok(raised.every(c=>row.some(h=>h.type==='log'&&h.lane===c.lane)),'branch swallowed its original raised log reward');}
+   if(raised.length){arcs++;assert.equal(raised.length,raised[0].adventureId===undefined?5:3);assert.ok(raised.every(c=>row.some(h=>h.type==='log'&&h.lane===c.lane)),'branch swallowed its original raised log reward');}
   }
  }
  assert.equal(origins.size,6);assert.ok(full>500);assert.ok(arcs>2000);console.log(JSON.stringify({seedMaps:150,trees,pairedFullRiverCanopies:full,jumpRewardArcs:arcs,bankWidthVariants:origins.size}));

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {riverCenter,riverTangent,riverHalfWidth,riverElevation,riverGrade,rapidAt,rapidDerivative,riverPoint,shoalAt,createCourseProfile,chuteAt,riverIntensity,COURSE_GLSL} from '../src/game/river-course.js';
 import {surfaceAt,floatTarget} from '../src/game/hydrodynamics.js';
 import {COURSE_ACTS,courseAct,courseIntensity,intensityDerivative,intensityIntegral} from '../src/game/course-intensity.js';
+import {riverFork} from '../src/game/river-forks.js';
 
 test('seeded river stays wide, descends downstream and has continuous chute boundaries',()=>{
  for(const seed of [0,3,137,7123,249]){
@@ -43,7 +44,8 @@ test('profiled rivers stay downhill, wide and continuous through all acts and se
   assert.ok(Object.isFrozen(course));
   for(let d=-100;d<=length+150;d+=1.77){
    const width=riverHalfWidth(d,course),grade=riverGrade(d,course),rapid=rapidAt(d,course);
-   assert.ok(width>=11.1+RIVER_WIDTH_EXPANSION&&width<=26.5+RIVER_WIDTH_EXPANSION);assert.ok(grade<=-.01999&&grade>=-.563);assert.ok(rapid>=0&&rapid<=1);
+   const baseWidth=width-(riverFork(d,course)?.fanOffset??0);
+   assert.ok(baseWidth>=11.1+RIVER_WIDTH_EXPANSION&&baseWidth<=26.5+RIVER_WIDTH_EXPANSION);assert.ok(grade<=-.01999&&grade>=-.563);assert.ok(rapid>=0&&rapid<=1);
    assert.ok(Math.abs(riverCenter(d,course))<=33.2);assert.ok(riverElevation(d+1,course)<riverElevation(d,course));
   }
   const boundaries=[...COURSE_ACTS.map(act=>act.from*length),length];

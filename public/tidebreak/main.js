@@ -3,8 +3,7 @@ import { objectiveText, nextObjective, structureProtected } from './objectives.j
 import { market, inventoryHTML, icon as itemIcon } from './market.js';
 import { ITEM, nextItem, nextPurchase, quote } from './items.js';
 import { createMatch, step, player, HEROES, trainSkill, cancelOrder, announce, buy, setBuild, distance, SIZE, LIMIT, SUDDEN_DEATH, SHIFT, PORTALS, lockTip } from './sim.js';
-import { loadMapArt } from './battlefield-overlay.js';
-import { graphicsSupport } from './render3d/choice.js';
+import { createBattlefield } from './render3d/startup.js';
 import { visibleTo, concealed } from './world.js';
 import { Sound } from './audio.js';
 import { KITS, canLearn, rankGate, xpForLevel, MAX_LEVEL, cooldownFor } from './abilities.js';
@@ -570,15 +569,8 @@ function graphicsMessage(message, visible = true) {
   if (!visible && dialog.open) dialog.close();
 }
 async function startGraphics() {
-  if (!graphicsSupport().webgl2) {
-    graphicsMessage('Shore needs 3D graphics. Enable graphics acceleration in your browser or try a browser with WebGL2 support, then reload.');
-    $('play').querySelector('span').textContent = '3D graphics unavailable';
-    return;
-  }
   try {
-    const [art, module] = await Promise.all([loadMapArt(), import('./three-render.js')]);
-    await module.preload(loadingText);
-    renderer = new module.ThreeRenderer($('battle'), $('minimap'), art);
+    renderer = await createBattlefield({ canvas: $('battle'), minimap: $('minimap'), onProgress: loadingText });
     renderer.canvas.addEventListener('webglcontextlost', () => {
       if (running) { paused = true; resetInput(); accumulator = 0; }
       $('play').disabled = true;
@@ -594,7 +586,7 @@ async function startGraphics() {
     requestAnimationFrame(frame);
   } catch (error) {
     console.error('Shore 3D could not start.', error);
-    graphicsMessage('Shore’s 3D world could not load. Check your connection and reload to try again.');
+    graphicsMessage(error.code === 'GRAPHICS_UNAVAILABLE' ? error.message : 'Shore’s 3D world could not load. Check your connection and reload to try again.');
     $('play').querySelector('span').textContent = 'Shore unavailable';
   }
 }

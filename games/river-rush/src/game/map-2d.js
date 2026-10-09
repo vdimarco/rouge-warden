@@ -3,13 +3,16 @@ import { bankScenery } from './world.js';
 import { currentDistance,WAVE_CADENCE } from './hydrodynamics.js';
 import { FINISH_GATE,prepareFinishArt } from './finish-line.js';
 import { courseIntensity } from './course-intensity.js';
-import { createCourseProfile,rapidAt,riverHash,riverHalfWidth } from './river-course.js';
+import { createCourseProfile,rapidAt,riverHash } from './river-course.js';
 import {paintMoonlitSky,MOONLIT_LAYERS,moonlitPlacement,moonlitLayerRange} from './moonlit-horizon.js';
-import {CENTER_LANE,MAX_LANE,PLAYABLE_HALF_WIDTH,xToLane} from './lanes.js';
+import {CENTER_LANE,MAX_LANE,xToLane} from './lanes.js';
+import {riverFork} from './river-forks.js';
+import {fallbackShoreHalfWidth,drawFallbackWaterSurface} from './fork-fallback.js';
+import {FORK_PALETTES} from './fork-art-direction.js';
 
 // Painted bank aprons keep their perspective scale while leaving every raft
 // envelope on water even at the tightest procedural narrows.
-export const fallbackBankHalfWidth=(course,profile)=>Math.max(PLAYABLE_HALF_WIDTH+1.1,riverHalfWidth(course,profile)*.5);
+export const fallbackBankHalfWidth=fallbackShoreHalfWidth;
 
 // All texture cards are made at loading time. Stage changes only select an
 // existing image; the fallback never starts a new graphics context mid-run.
@@ -113,7 +116,7 @@ function drawMoonlitHorizon2D(ctx,g,art,width,height,project){
 }
 
 export function drawMap2D(ctx,g,art,width,height,reduced,project){
-  const level=levelAt(g.levelIndex);if(level.index===0)return;
+  const level=levelAt(g.levelIndex);if(level.index===0)return;const palette=FORK_PALETTES[level.index];
   const sky=ctx.createLinearGradient(0,0,0,height);sky.addColorStop(0,level.sky);sky.addColorStop(.6,level.fog);sky.addColorStop(1,level.waterDeep);ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
   if(level.index===1){
     // Far land receives only small course parallax; bank cards below advance
@@ -134,7 +137,7 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
   let profile=profiles.get(g);if(!profile){profile=createCourseProfile(g.seed,level.length,level.index);profiles.set(g,profile);}
   const edges=[[],[]],distant=project(width,height,CENTER_LANE,1400),near=project(width,height,CENTER_LANE,-14);
   for(let i=0;i<=26;i++){
-    const scale=distant.scale+(near.scale-distant.scale)*i/26,z=29*(1/scale-1),p=project(width,height,CENTER_LANE,z);
+    const scale=distant.scale+(near.scale-distant.scale)*i/26,z=29*(1/scale-1),p=project.physical?project.physical(width,height,0,z):project(width,height,CENTER_LANE,z);
     const intensity=courseIntensity(g.distance+z,level.length,level.index);
     const bend=(Math.sin((g.distance+z)*.007)-Math.sin(g.distance*.007))*p.corridor*(.05+.07*intensity)*p.scale;
     const half=fallbackBankHalfWidth(g.distance+z,profile)*p.unit;
@@ -147,13 +150,11 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
   for(let side=0;side<2;side++){
     const edge=edges[side],outside=side===0?0:width;
     ctx.save();ctx.beginPath();ctx.moveTo(outside,distant.y);ctx.lineTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.lineTo(outside,near.y);ctx.closePath();ctx.clip();
-    const soil=ctx.createLinearGradient(0,distant.y,0,height);soil.addColorStop(0,`${level.fog}00`);soil.addColorStop(.08,`${level.ground}ef`);soil.addColorStop(.35,level.ground);soil.addColorStop(1,level.index===1?'#70483c':'#333c53');ctx.fillStyle=soil;ctx.fillRect(0,distant.y,width,height-distant.y);
+    const soil=ctx.createLinearGradient(0,distant.y,0,height);soil.addColorStop(0,`${level.fog}00`);soil.addColorStop(.08,`${palette.ridge}ef`);soil.addColorStop(.35,palette.earth);soil.addColorStop(1,palette.wet);ctx.fillStyle=soil;ctx.fillRect(0,distant.y,width,height-distant.y);
     const groundOffset=(g.distance*2)%256;ctx.globalAlpha=.26;ctx.fillStyle=patterns.ground[level.index];ctx.translate(0,groundOffset);ctx.fillRect(0,distant.y+height*.04-groundOffset,width,height);ctx.restore();
   }
   ctx.save();ctx.beginPath();ctx.moveTo(...edges[0][0]);for(const p of edges[0].slice(1))ctx.lineTo(...p);for(const p of [...edges[1]].reverse())ctx.lineTo(...p);ctx.closePath();ctx.clip();
-  const river=ctx.createLinearGradient(0,distant.y,0,near.y);river.addColorStop(0,level.waterEdge);river.addColorStop(.35,level.waterDeep);river.addColorStop(1,level.waterEdge);ctx.fillStyle=river;ctx.fillRect(0,distant.y,width,height-distant.y);
-  const source=art.map2d.rivers[level.index];patterns.river[level.index]??=ctx.createPattern(source,'repeat');
-  const offset=reduced?0:(currentDistance(g.distance,g.time)*8)%256;ctx.translate(0,offset);ctx.globalAlpha=.52;ctx.fillStyle=patterns.river[level.index];ctx.fillRect(0,distant.y-offset,width,height);ctx.globalAlpha=1;ctx.translate(0,-offset);
+  drawFallbackWaterSurface(ctx,g,art,width,height,reduced);
   if(!reduced){
     // Small living crests use the same downstream phase as GPU current.
     // Projected positions accelerate toward the raft instead of scrolling
@@ -167,12 +168,9 @@ export function drawMap2D(ctx,g,art,width,height,reduced,project){
     }
     ctx.globalAlpha=1;
   }
-  // Long reflections make the twilight channel feel wet without screen-space
-  // shimmer that obscures upcoming obstacle silhouettes.
-  if(level.index===2){const reflection=ctx.createLinearGradient(width*.42,0,width*.58,0);reflection.addColorStop(0,'#c9b7ff00');reflection.addColorStop(.5,'#c9b7ff20');reflection.addColorStop(1,'#c9b7ff00');ctx.fillStyle=reflection;ctx.fillRect(width*.42,distant.y,width*.16,height);}
   ctx.restore();
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
-  for(const edge of edges){ctx.strokeStyle=level.index===1?'#b8dfd37a':'#a8b9df5a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.stroke();}
+  for(const edge of edges){ctx.strokeStyle=palette.wet;ctx.globalAlpha=.65;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.stroke();ctx.strokeStyle=palette.shore;ctx.globalAlpha=.5;ctx.lineWidth=1.2;ctx.stroke();}
   ctx.restore();
 }
 
@@ -203,7 +201,9 @@ export function drawMapBanks2D(ctx,g,art,width,height,reduced,project,view){
     if(level.index===2&&Math.abs(courseId)%3===1)continue;
     // Fixed world anchors advance even in reduced motion: they communicate
     // the course speed but have no independent decorative animation.
-    const p=project(width,height,item.lane,item.z),size=p.laneSpacing*(level.index===1?1.26:.96)*item.size;
+    const fork=riverFork(g.distance+item.z,g.terrainProfile),side=item.lane<CENTER_LANE?-1:1;
+    const bankLane=fork?xToLane(side*(fallbackBankHalfWidth(g.distance+item.z,g.terrainProfile)+2-fork.fanOffset)-fork.islandCenter):item.lane;
+    const p=fork&&project.physical?project.physical(width,height,side*(fallbackBankHalfWidth(g.distance+item.z,g.terrainProfile)+2),item.z):project(width,height,bankLane,item.z),size=p.laneSpacing*(level.index===1?1.26:.96)*item.size;
     if(p.x+size*.6<0||p.x-size*.6>width)continue;
     ctx.globalAlpha=Math.min(1,(view-item.z)/25)*Math.min(1,p.scale*4+.25);
     const card=cards[item.kind],tall=size*card.height/card.width;
@@ -249,18 +249,19 @@ export function drawFinish2D(ctx,g,width,height,project,view,art,reduced=false){
 // The Canopy fallback uses the same section widths instead of an unchanging
 // painted river edge. This apron remains outside all five playable lanes.
 export function drawCanopyTerrain2D(ctx,g,art,width,height,project){
- const level=levelAt(g.levelIndex);if(level.index!==0)return;
+ const level=levelAt(g.levelIndex);if(level.index!==0)return;const palette=FORK_PALETTES[0];
  let profile=profiles.get(g);if(!profile){profile=createCourseProfile(g.seed,level.length,level.index);profiles.set(g,profile);}
  const far=project(width,height,CENTER_LANE,420),near=project(width,height,CENTER_LANE,-14),edges=[[],[]];
  for(let i=0;i<=26;i++){
-  const scale=far.scale+(near.scale-far.scale)*i/26,z=29*(1/scale-1),p=project(width,height,CENTER_LANE,z),half=fallbackBankHalfWidth(g.distance+z,profile)*p.unit;
+  const scale=far.scale+(near.scale-far.scale)*i/26,z=29*(1/scale-1),p=project.physical?project.physical(width,height,0,z):project(width,height,CENTER_LANE,z),half=fallbackBankHalfWidth(g.distance+z,profile)*p.unit;
   edges[0].push([p.x-half,p.y]);edges[1].push([p.x+half,p.y]);
  }
  for(let side=0;side<2;side++){
   const edge=edges[side],outside=side?width:0;
   ctx.save();ctx.beginPath();ctx.moveTo(outside,far.y);ctx.lineTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.lineTo(outside,near.y);ctx.closePath();ctx.clip();
-  const soil=ctx.createLinearGradient(0,far.y,0,height);soil.addColorStop(0,'#51795c00');soil.addColorStop(.13,'#6f9541c0');soil.addColorStop(1,'#38613b');ctx.fillStyle=soil;ctx.fillRect(0,far.y,width,height-far.y);
+  const soil=ctx.createLinearGradient(0,far.y,0,height);soil.addColorStop(0,`${palette.moss}00`);soil.addColorStop(.13,`${palette.earth}b0`);soil.addColorStop(1,palette.wet);ctx.fillStyle=soil;ctx.fillRect(0,far.y,width,height-far.y);
   let patterns=patternCache.get(ctx);if(!patterns){patterns={river:[],ground:[]};patternCache.set(ctx,patterns);}patterns.ground[0]??=ctx.createPattern(art.surfaceground,'repeat');
-  const offset=g.distance*2%256;ctx.globalAlpha=.24;ctx.translate(0,offset);ctx.fillStyle=patterns.ground[0];ctx.fillRect(0,far.y-offset,width,height);ctx.restore();
+  const offset=g.distance*2%256;ctx.globalAlpha=.24;ctx.translate(0,offset);ctx.fillStyle=patterns.ground[0];ctx.fillRect(0,far.y-offset,width,height);ctx.translate(0,-offset);
+  ctx.globalAlpha=.65;ctx.strokeStyle=palette.wet;ctx.lineWidth=5;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(...edge[0]);for(const p of edge.slice(1))ctx.lineTo(...p);ctx.stroke();ctx.strokeStyle=palette.shore;ctx.globalAlpha=.4;ctx.lineWidth=1;ctx.stroke();ctx.restore();
  }
 }
