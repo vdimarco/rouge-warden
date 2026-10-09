@@ -1,9 +1,33 @@
 import { nearestSkill, skillReach } from './skill-reach.js';
+// A pointer release can replace the UI before its compatibility click arrives.
+// Catch that one click at the document, even if the browser retargets it to a new button.
+const clickGuards = new WeakMap();
+const clickClock = () => globalThis.performance?.now?.() ?? Date.now();
+function compatibilityClickGuard(doc) {
+  if (!doc?.addEventListener) return null;
+  if (clickGuards.has(doc)) return clickGuards.get(doc);
+  let pending = null;
+  doc.addEventListener('pointerdown', () => { pending = null; }, true);
+  doc.addEventListener('click', e => {
+    if (!pending || e.detail === 0) return; // Keyboard and assistive activation remain available.
+    if (clickClock() > pending.until) { pending = null; return; }
+    const matches = Number.isFinite(e.pointerId) && e.pointerId > 0
+      ? e.pointerId === pending.pointerId
+      : Math.hypot(e.clientX - pending.x, e.clientY - pending.y) <= 4;
+    if (!matches) return;
+    pending = null;
+    e.preventDefault(); e.stopImmediatePropagation();
+  }, true);
+  const guard = { remember: e => { pending = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, until: clickClock() + 500 }; } };
+  clickGuards.set(doc, guard);
+  return guard;
+}
 // A second touch is not guaranteed to dispatch click. Activate its own captured release.
 export function pointerAction(button, action, enabled=()=>!button.disabled) {
+  const clickGuard = compatibilityClickGuard(button.ownerDocument || (typeof document === 'undefined' ? null : document));
   let pointer=null,origin;
   button.addEventListener('pointerdown',e=>{e.stopPropagation();if(pointer!==null||e.button!==0||!enabled())return;e.preventDefault();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};button.setPointerCapture?.(pointer);});
-  button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;const rect=button.getBoundingClientRect(),slop=e.pointerType==='touch'?22:8,inside=e.clientX>=rect.left-slop&&e.clientX<=rect.right+slop&&e.clientY>=rect.top-slop&&e.clientY<=rect.bottom+slop,travel=Math.hypot(e.clientX-origin.x,e.clientY-origin.y);pointer=null;if(inside&&enabled()&&travel<(e.pointerType==='touch'?60:28))action();});
+  button.addEventListener('pointerup',e=>{if(e.pointerId!==pointer)return;const rect=button.getBoundingClientRect(),slop=e.pointerType==='touch'?22:8,inside=e.clientX>=rect.left-slop&&e.clientX<=rect.right+slop&&e.clientY>=rect.top-slop&&e.clientY<=rect.bottom+slop,travel=Math.hypot(e.clientX-origin.x,e.clientY-origin.y);pointer=null;if(inside&&enabled()&&travel<(e.pointerType==='touch'?60:28)){clickGuard?.remember(e);action();}});
   for(const event of ['pointercancel','lostpointercapture'])button.addEventListener(event,e=>{if(e.pointerId===pointer)pointer=null;});
   button.addEventListener('click',e=>{if(e.detail===0&&enabled())action();});
 }

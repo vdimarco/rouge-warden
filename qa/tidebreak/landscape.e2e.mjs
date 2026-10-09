@@ -41,7 +41,17 @@ try {
     for (let i = 0; i < 120 && await page.locator('#hud').isHidden(); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
     await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running);
     if (await page.locator('#sheet').isVisible()) await page.keyboard.press('Escape');
-    if (await page.locator('#coach-close').isVisible()) await page.locator('#coach-close').click();
+    if (await page.locator('#coach-close').isVisible()) {
+      // This fixture pumps its own frames. Stop SwiftShader rendering before input,
+      // rather than waiting for locator stability behind a continuous render queue.
+      await page.evaluate(() => { window.__auto = false; });
+      const box = await page.locator('#coach-close').boundingBox();
+      assert(box && box.width > 0 && box.height > 0, 'coach dismissal has a visible input target');
+      const x = box.x + box.width / 2, y = box.y + box.height / 2;
+      assert(await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('#coach-close'), { x, y }), 'coach dismissal is unobstructed at its center');
+      await page.mouse.click(x, y);
+      assert(await page.locator('#coach').isHidden(), 'native pointer dismisses the control guide');
+    }
     await page.mouse.move(width / 2, height / 2);
     await page.evaluate(async () => {
       window.__auto = false;

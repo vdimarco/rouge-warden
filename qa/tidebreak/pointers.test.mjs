@@ -72,3 +72,63 @@ console.log('Anywhere-drag screen movement preserves taps and releases cleanly.'
  pad.send('pointerup',51);
 }
 console.log('Battlefield pinch: ratios, movement suppression, unrelated touches, inactive states and cancellation pass.');
+
+// A modal can replace the original pointer target between pointerup and click.
+// Route the event through document capture before its new target, as the browser does.
+{
+ const doc=new EventTarget(),otherDoc=new EventTarget(),map=new Control(),otherMap=new Control(),close=new EventTarget();
+ map.ownerDocument=doc;otherMap.ownerDocument=otherDoc;
+ let open=false,opens=0,closes=0,immediateClick=false;
+ close.addEventListener('click',()=>{open=false;closes++;});
+ const route=(document,target,type,id=71,x=50,y=50,detail=1)=>{
+  const e=new Event(type,{cancelable:true});
+  Object.assign(e,{clientX:x,clientY:y,button:0,pointerType:'touch',detail});
+  if(id!==undefined&&id!==null)Object.assign(e,{pointerId:id});
+  document.dispatchEvent(e);
+  if(!e.defaultPrevented)target.dispatchEvent(e);
+  return e;
+ };
+ const release=(id=71)=>{route(doc,map,'pointerdown',id);route(doc,map,'pointerup',id);};
+ pointerAction(map,()=>{open=true;opens++;if(immediateClick)route(doc,close,'click',71);});
+ pointerAction(otherMap,()=>{});
+ release();assert.equal(opens,1,'pointerup opens the modal once');
+ const retargeted=route(doc,close,'click',71);
+ assert(retargeted.defaultPrevented,'matching compatibility click is stopped at document capture');
+ assert(open&&closes===0,'the retargeted click cannot close the new modal');
+ route(doc,close,'click',71);assert.equal(closes,1,'only one matching click is consumed');
+
+ // The guard must be armed before the action replaces its DOM, not after it returns.
+ immediateClick=true;release();assert(open&&closes===1,'a click triggered as the action changes the UI is already guarded');immediateClick=false;
+
+ release(72);
+ route(doc,close,'click',99);assert.equal(closes,2,'a different pointer is not suppressed at matching coordinates');
+ open=true;assert(route(doc,close,'click',72).defaultPrevented,'the original pointer still owns its pending compatibility click');
+ assert(open,'unrelated input does not replace the pending pointer identity');
+
+ release(73);route(doc,map,'click',-1,50,50,0);
+ assert.equal(opens,5,'keyboard activation still runs the pointerAction callback exactly once');
+ const keyboard=route(doc,close,'click',-1,50,50,0);assert(!keyboard.defaultPrevented&&closes===3,'keyboard dismissal remains available');
+
+ release(74);route(doc,close,'pointerdown',80);route(doc,close,'pointerup',80);
+ assert(!route(doc,close,'click',74).defaultPrevented,'the next real pointerdown clears the old guard');
+ assert.equal(closes,4,'a distinct press can close the modal even at the same coordinates');
+
+ // Safari can deliver a MouseEvent with no pointer ID. Its location and short deadline identify the old click.
+ release(75);const safari=route(doc,close,'click',null,51,50);
+ assert(safari.defaultPrevented&&open,'nearby MouseEvent fallback consumes the compatibility click');
+ release(76);assert(!route(doc,close,'click',null,90,90).defaultPrevented,'a different MouseEvent location stays available');
+
+ const originalPerformance=Object.getOwnPropertyDescriptor(globalThis,'performance');let clock=0;
+ try{
+  Object.defineProperty(globalThis,'performance',{configurable:true,value:{now:()=>clock}});
+  release(77);clock=501;
+  assert(!route(doc,close,'click',null).defaultPrevented,'an expired fallback cannot suppress a future click');
+ }finally{if(originalPerformance)Object.defineProperty(globalThis,'performance',originalPerformance);else delete globalThis.performance;}
+
+ release(78);assert(!route(otherDoc,close,'click',78).defaultPrevented,'another document has an independent guard');
+ map.disabled=true;route(doc,map,'pointerdown',79);route(doc,map,'pointerup',79);open=true;
+ assert(!route(doc,close,'click',79).defaultPrevented,'a rejected action does not arm click suppression');
+ map.disabled=false;route(doc,map,'pointerdown',81);route(doc,map,'pointercancel',81);route(doc,map,'pointerup',81);
+ assert(!route(doc,close,'click',81).defaultPrevented,'a cancelled pointer does not arm click suppression');
+}
+console.log('Pointer actions: retargeted compatibility clicks, keyboard activation, distinct presses, legacy MouseEvents and per-document guards pass.');

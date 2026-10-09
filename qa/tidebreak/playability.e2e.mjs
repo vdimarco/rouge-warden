@@ -45,6 +45,7 @@ async function screenshot(page, name) {
   await page.screenshot({ path: path.join(shots, `${name}.png`), animations: 'disabled', timeout: 120000 });
 }
 async function press(page, selector, touch) {
+  await page.evaluate(() => window.__flush());
   const box = await page.locator(selector).boundingBox();
   assert(box && box.width > 0 && box.height > 0, `${selector} is visible and has an input target`);
   const x = box.x + box.width / 2, y = box.y + box.height / 2;
@@ -234,11 +235,27 @@ try {
       return { id: wisp.id, hero: foe.id };
     });
     await page.mouse.move(width / 2, height / 2); await advance(page);
+    await page.evaluate(() => window.__flush());
     const hit = await page.evaluate(id => {
       const r = document.querySelector('#battle').__shore3d, b = r.hitBoxes.find(b => b.id === id);
       if (!b) return null;
-      const x = b.x + b.w / 2, y = b.y + b.h * .7;
-      return { x, y, picked: r.pick(null, x, y), owner: document.elementFromPoint(x, y)?.id };
+      const buttons = [...document.querySelectorAll('button')].flatMap(button => {
+        const rect = button.getBoundingClientRect(), css = getComputedStyle(button);
+        if (!rect.width || !rect.height || css.display === 'none' || css.visibility === 'hidden' || css.pointerEvents === 'none') return [];
+        return [{ control: button.id || button.dataset.skill, x: rect.x, y: rect.y, w: rect.width, h: rect.height }];
+      });
+      // Chromium may adjust a native touch toward a nearby button even when
+      // elementFromPoint resolves to the battlefield. Tap inside the same real
+      // wisp hitBox with enough clearance to avoid that native adjustment.
+      for (const [fx, fy] of [[.5, .7], [.5, .35], [.25, .5], [.75, .5], [.5, .9], [.5, .15]]) {
+        const x = b.x + b.w * fx, y = b.y + b.h * fy;
+        const clearance = Math.min(...buttons.map(rect => Math.hypot(Math.max(rect.x - x, 0, x - rect.x - rect.w), Math.max(rect.y - y, 0, y - rect.y - rect.h))));
+        const hit = { x, y, picked: r.pick(null, x, y), owner: document.elementFromPoint(x, y)?.id, clearance };
+        if (hit.picked === id && hit.owner === 'battle' && clearance >= 12) {
+          window.__wispHit = { ...hit, box: b, buttons }; return hit;
+        }
+      }
+      window.__wispHit = { box: b, buttons }; return null;
     }, staged.id);
     assert(hit && hit.picked === staged.id && hit.owner === 'battle', `${name}: the visible wisp has an unobstructed world input target: ${JSON.stringify(hit)}`);
     if (touch) await page.touchscreen.tap(hit.x, hit.y); else await page.mouse.click(hit.x, hit.y);
@@ -297,6 +314,13 @@ try {
         window.__mapBefore = { state: (await import('/tidebreak/main.js')).snapshot(), sheetOpen: document.querySelector('#sheet').open };
       });
       await press(page, '#map-button', touch);
+      // Opening on pointer release must survive the compatibility click that
+      // Chromium can retarget to the newly displayed dialog's close button.
+      await page.waitForFunction(() => {
+        const down = window.__controlPointers.find(e => e.type === 'pointerdown' && e.control === 'map-button');
+        return down && window.__controlPointers.some(e => e.type === 'click' && e.pointerId === down.pointerId);
+      }, null, { polling: 20, timeout: 5000 });
+      await page.evaluate(() => window.__flush());
       await page.evaluate(async () => {
         window.__mapAfter = { state: (await import('/tidebreak/main.js')).snapshot(), sheetOpen: document.querySelector('#sheet').open };
       });
@@ -333,7 +357,7 @@ try {
           const r = el.getBoundingClientRect(), css = getComputedStyle(el);
           return [selector, { x: r.x, y: r.y, w: r.width, h: r.height, hidden: el.hidden, display: css.display, text: el.innerText }];
         }));
-        return { viewport: { width: innerWidth, height: innerHeight }, player: state.player, paused: state.paused, time: state.time, touchEvents: window.__battleTouch, controlPointers: window.__controlPointers, mapBefore: window.__mapBefore, mapAfter: window.__mapAfter, rects };
+        return { viewport: { width: innerWidth, height: innerHeight }, player: state.player, paused: state.paused, time: state.time, touchEvents: window.__battleTouch, controlPointers: window.__controlPointers, wispHit: window.__wispHit, mapBefore: window.__mapBefore, mapAfter: window.__mapAfter, rects };
       });
       console.error('FAILURE STATE', JSON.stringify(details));
       const name = process.env.VIEWPORT || `${details.viewport.width}x${details.viewport.height}`;
