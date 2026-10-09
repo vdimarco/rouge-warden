@@ -51,7 +51,7 @@ dialog.map-sheet{width:min(760px,calc(100vw - 24px));max-width:calc(100vw - 24px
 dialog.map-sheet #sheet-content{display:grid;grid-template-columns:minmax(0,1fr) 200px;grid-template-rows:auto auto minmax(0,1fr) auto;gap:8px 12px;height:100%;overflow:hidden}
 dialog.map-sheet h2{grid-column:1/-1;margin:0;font-size:26px;line-height:1.2}
 dialog.map-sheet .map-help{grid-column:1/-1;margin:0;font-size:13px;line-height:1.3}
-dialog.map-sheet #tactical-map{grid-column:1;grid-row:3;width:min(100%,480px,calc(100dvh - 180px));height:auto;max-height:100%;margin:auto;align-self:center}
+dialog.map-sheet #tactical-map{grid-column:1;grid-row:3;width:auto;height:auto;max-width:100%;max-height:100%;margin:auto;align-self:center}
 dialog.map-sheet .map-legend{grid-column:1;grid-row:4;margin:0;font-size:11px;line-height:1.3;align-self:center}
 dialog.map-sheet .map-destinations{grid-column:2;grid-row:3;display:grid;grid-template-columns:1fr;align-content:start;gap:6px}
 dialog.map-sheet .map-destinations button{min-height:44px;font:13px/1.2 Barlow,sans-serif}
@@ -59,14 +59,13 @@ dialog.map-sheet #back-map{grid-column:2;grid-row:4;min-height:44px;margin:0;fon
 @media(max-height:599px) and (min-width:540px){
  dialog.map-sheet #sheet-content{grid-template-columns:minmax(0,1fr) 250px;gap:6px 12px}
  dialog.map-sheet h2{font-size:23px}
- dialog.map-sheet #tactical-map{width:min(100%,calc(100dvh - 190px))}
  dialog.map-sheet .map-destinations{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:539px){
  dialog.map-sheet{height:calc(100dvh - 24px)}
  dialog.map-sheet #sheet-content{grid-template-columns:1fr;grid-template-rows:auto auto minmax(0,1fr) auto auto auto;gap:5px}
  dialog.map-sheet h2{font-size:23px}
- dialog.map-sheet #tactical-map{grid-column:1;grid-row:3;width:min(100%,calc(100dvh - 380px))}
+ dialog.map-sheet #tactical-map{grid-column:1;grid-row:3}
  dialog.map-sheet .map-legend{grid-column:1;grid-row:4}
  dialog.map-sheet .map-destinations{grid-column:1;grid-row:5;grid-template-columns:repeat(2,minmax(0,1fr))}
  dialog.map-sheet #back-map{grid-column:1;grid-row:6}

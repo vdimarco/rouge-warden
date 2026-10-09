@@ -328,6 +328,8 @@ try {
     } else await page.keyboard.press('m');
     await page.waitForFunction(() => document.querySelector('#sheet').open, null, { polling: 20, timeout: 5000 });
     await advance(page);
+    const arenaBox = await page.locator('#tactical-map').boundingBox();
+    assert(arenaBox && Math.abs(arenaBox.width - arenaBox.height) < 1, `${name}: the tactical map preserves arena proportions: ${JSON.stringify(arenaBox)}`);
     const mapActions = await page.evaluate(() => [...document.querySelectorAll('[data-destination]')].map(button => {
       const r = button.getBoundingClientRect();
       return { action: button.dataset.destination, x: r.x, y: r.y, w: r.width, h: r.height };
