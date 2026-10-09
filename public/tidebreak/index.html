@@ -26,7 +26,6 @@
 </head>
 <body>
   <canvas id="battle" aria-label="Shore of the Ancients battlefield"></canvas>
-  <p id="graphics-interrupted" role="alert" hidden style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;padding:20px;background:#181511;color:#f4e6b0;border:1px solid #a88c54">The 3D view was interrupted. Play will continue when it returns.</p>
   <div id="hud" hidden>
     <span id="difficulty-badge" class="difficulty-badge" hidden></span>
     <header><span class="wordmark">SHORE OF<br>THE ANCIENTS</span><div class="score"><span id="allied-score">0</span><i>:</i><span id="enemy-score">0</span><time id="clock">06:00</time></div><div id="lineup" class="hud-lineup" aria-label="Heroes in this match"></div><div class="hud-corner"><button id="pause" class="pause" aria-label="Open menu (Esc)" title="Menu (Esc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span><kbd>Esc</kbd></button><button id="hud-sound" class="hud-sound" aria-pressed="true" aria-label="Sound on" title="Sound on"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="M16 9l5 6M21 9l-5 6"/></svg></button><button id="muted-chip" class="muted-chip" hidden aria-label="Sound is off. Turn it on" title="Sound is off. Turn it on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><span>Sound is off · Turn on</span></button></div></header>
@@ -73,13 +72,14 @@
       <a class="arcade-brand" href="/" aria-label="Cottage Arcade"><span class="brand-source" aria-hidden="true"></span><span class="arcade-motto">Play together.<br>Somewhere brighter.</span></a>
       <div class="start-action"><button id="play" class="primary" disabled><i class="play-sigil" aria-hidden="true"></i><span>Opening the shore…</span><img src="./art/ui/chevron-right.svg" alt=""></button><span id="ready-legend" class="sr-only">Tidewarden</span>
       <div id="difficulty-picker" class="difficulty-picker" role="radiogroup"></div></div>
-      <p id="load-error" role="alert" hidden><span id="load-error-message">The 3D view could not load.</span> <button onclick="location.reload()">Reload</button></p>
+
       <div class="menu-links"><button data-switch><kbd>Esc</kbd> Back</button><button id="select-key"><kbd>Enter</kbd> Select</button><button id="how"><kbd>F</kbd> Hero details</button></div>
       </div>
     </div>
   </main>
   <section id="draft" class="draft-overlay" hidden></section>
   <dialog id="sheet"><button id="close-sheet" class="close" aria-label="Close panel">×</button><div id="sheet-content"></div></dialog>
+  <dialog id="graphics-error" aria-labelledby="graphics-error-text"><p id="graphics-error-text"></p><button onclick="location.reload()">Reload Shore</button></dialog>
   <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
   <script src="/arcade/switch.js"></script><script type="module" src="./main.js"></script>
 <script src="/arcade/analytics.js" data-game="tidebreak"></script></body>
