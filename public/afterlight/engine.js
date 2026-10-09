@@ -1,5 +1,9 @@
 import { WORLDS, REGIONS } from "./worlds.js";
+import * as simulation from "./simulation.js";
 export { WORLDS, REGIONS };
+export const getLandmarks = simulation.getLandmarks;
+export const getChallengeView = simulation.getChallengeView;
+export const terrainAt = simulation.terrainAt;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x)),
   distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y),
   count = (s, prefix) =>
@@ -39,6 +43,7 @@ export function createJourney(seed = 1) {
     checkpoint: { region: "forest", x: 35, y: 87 },
     ending: false,
   };
+  simulation.ensureSimulation(s);
   entities(s);
   return s;
 }
@@ -55,6 +60,7 @@ export function resume(s) {
   return s;
 }
 function entities(s) {
+  simulation.ensureSimulation(s);
   s.entities = WORLDS[s.region].hazards.map((h) => ({
     ...h,
     x: h.x + Math.sin(s.time * h.speed + s.seed) * h.rx,
@@ -62,6 +68,10 @@ function entities(s) {
     radius:
       h.radius * (s.region === "moon" ? 1 - s.worlds.moon.stage * 0.16 : 1),
     active:
+      !(
+        s.challenge &&
+        !(s.challenge.type === "coast" && s.challenge.variant === "escort")
+      ) &&
       !s.worlds[s.region].restored &&
       !(
         s.pulse > 0 && ["forest", "coast", "fjord", "desert"].includes(s.region)
@@ -74,11 +84,29 @@ export function update(s, input = {}, dt = 0) {
   s.time += dt;
   s.pulse = Math.max(0, s.pulse - dt);
   const b = WORLDS[s.region].bounds;
-  let dx = clamp(Number(input.dx) || 0, -1, 1),
-    dy = clamp(Number(input.dy) || 0, -1, 1),
+  const focused =
+    s.challenge &&
+    !(s.challenge.type === "coast" && s.challenge.variant === "escort");
+  let dx = focused ? 0 : clamp(Number(input.dx) || 0, -1, 1),
+    dy = focused ? 0 : clamp(Number(input.dy) || 0, -1, 1),
     length = Math.max(1, Math.hypot(dx, dy));
-  s.x = clamp(s.x + (dx / length) * 17 * dt, b.minX, b.maxX);
-  s.y = clamp(s.y + (dy / length) * 17 * dt, b.minY, b.maxY);
+  const ground = simulation.terrainAt(s);
+  const towing = s.challenge?.escort?.tethered;
+  const speed =
+    (towing ? 10 : 17) *
+    ground.friction *
+    (s.region === "moon" ? 0.88 + s.worlds.moon.stage * 0.05 : 1);
+  s.x = clamp(
+    s.x + ((dx / length) * speed + (focused ? 0 : ground.flowX)) * dt,
+    b.minX,
+    b.maxX,
+  );
+  s.y = clamp(
+    s.y + ((dy / length) * speed + (focused ? 0 : ground.flowY)) * dt,
+    b.minY,
+    b.maxY,
+  );
+  simulation.advanceSimulation(s, input, dt);
   s.energy = Math.max(
     0,
     s.energy - dt * (Math.hypot(dx, dy) > 0.05 ? 0.16 : 0.04),
@@ -97,7 +125,8 @@ export function update(s, input = {}, dt = 0) {
   return s;
 }
 function nearby(s) {
-  return WORLDS[s.region].landmarks
+  return simulation
+    .getLandmarks(s)
     .map((l) => ({ ...l, d: distance(s, l) }))
     .filter((l) => l.d <= 7)
     .sort((a, b) => a.d - b.d)[0];
@@ -115,7 +144,19 @@ function regionCount(s, prefix) {
   ).length;
 }
 export function getContext(s) {
-  const l = nearby(s);
+  if (s.challenge)
+    return {
+      title: s.challenge.title,
+      text: s.challenge.hint,
+      choices: s.challenge.choices,
+      toolHint:
+        "Complete the operation or set it aside without spending supplies.",
+      landmarkId: s.challenge.landmarkId,
+      challenge: true,
+    };
+  return contextFor(s, nearby(s));
+}
+function contextFor(s, l) {
   if (!l)
     return {
       title: WORLDS[s.region].name,
@@ -327,6 +368,8 @@ function toolHint(s) {
 }
 function mark(s, id) {
   s.worlds[s.region].flags[id] = true;
+  s.worlds[s.region].completedAt ??= {};
+  s.worlds[s.region].completedAt[id] = s.time;
   refresh(s);
 }
 function refresh(s) {
@@ -343,7 +386,7 @@ function refresh(s) {
   w.restoration = w.restored ? 1 : w.stage / 4;
 }
 export function useTool(s) {
-  if (s.phase !== "playing") return false;
+  if (s.phase !== "playing" || s.challenge) return false;
   let amount = (s.region === "fjord" ? 8 : 5) * (s.tools.efficient ? 0.5 : 1);
   if (s.energy < amount) {
     s.message = "Not enough energy for this tool. Return to a camp and rest.";
@@ -361,7 +404,7 @@ export function useTool(s) {
   s.energy -= amount;
   s.pulse = 2;
   let hits = 0;
-  for (const l of WORLDS[s.region].landmarks) {
+  for (const l of simulation.getLandmarks(s)) {
     const r = s.region === "fjord" ? 36 : 10;
     if (distance(s, l) > r) continue;
     const suffix =
@@ -385,8 +428,19 @@ export function useTool(s) {
   return hits > 0;
 }
 export function interact(s, id) {
+  if (s.challenge)
+    return actionChallenge(
+      s,
+      id || s.challenge.choices.find((c) => !c.disabled)?.id,
+    );
+  return performInteraction(s, id);
+}
+function performInteraction(s, id, committed = false, landmarkId = null) {
   if (s.phase !== "playing") return false;
-  const context = getContext(s),
+  const landmark = landmarkId
+    ? simulation.getLandmarks(s).find((l) => l.id === landmarkId)
+    : nearby(s);
+  const context = contextFor(s, landmark),
     c = context.choices.find(
       (c) => c.id === (id || context.choices.find((c) => !c.disabled)?.id),
     );
@@ -394,6 +448,12 @@ export function interact(s, id) {
     s.message = context.text;
     return false;
   }
+  if (
+    !committed &&
+    landmark.kind !== "camp" &&
+    !landmark.id.startsWith("cache")
+  )
+    return startChallenge(s, c.id);
   const l = context.landmarkId,
     w = s.worlds[s.region];
   if (c.id === "rest") {
@@ -509,9 +569,64 @@ export function interact(s, id) {
   }
   return false;
 }
+export function startChallenge(s, choiceId) {
+  if (s.phase !== "playing" || s.challenge) return false;
+  const landmark = nearby(s),
+    context = contextFor(s, landmark);
+  const c = context.choices.find(
+    (c) => c.id === (choiceId || context.choices.find((c) => !c.disabled)?.id),
+  );
+  if (
+    !landmark ||
+    landmark.kind === "camp" ||
+    landmark.id.startsWith("cache") ||
+    !c ||
+    c.disabled
+  )
+    return false;
+  const started = simulation.startChallenge(s, {
+    landmarkId: landmark.id,
+    choiceId: c.id,
+  });
+  if (started) entities(s);
+  return started;
+}
+function commitChallenge(s) {
+  if (s.challenge?.phase !== "complete") return false;
+  const operation = s.challenge;
+  s.challenge = null;
+  const completed = performInteraction(
+    s,
+    operation.choiceId,
+    true,
+    operation.landmarkId,
+  );
+  if (!completed)
+    s.message =
+      "Operation prepared, but its supplies ran low. Rest and try again; nothing was spent.";
+  entities(s);
+  return completed;
+}
+export function actionChallenge(s, actionId) {
+  const accepted = simulation.actionChallenge(s, actionId);
+  if (s.challenge?.phase === "complete") return commitChallenge(s);
+  return accepted;
+}
+export function advanceChallenge(s, dt, input = {}) {
+  if (s.phase !== "playing") return false;
+  simulation.advanceChallenge(s, clamp(Number(dt) || 0, 0, 0.25), input);
+  if (s.challenge?.phase === "complete") return commitChallenge(s);
+  return false;
+}
+export function cancelChallenge(s) {
+  const cancelled = simulation.cancelChallenge(s);
+  if (cancelled) entities(s);
+  return cancelled;
+}
 export function travel(s, region) {
   if (s.phase === "lost" || !WORLDS[region] || !s.unlocked.includes(region))
     return false;
+  cancelChallenge(s);
   if (s.phase === "won") s.phase = "playing";
   s.region = region;
   Object.assign(s, WORLDS[region].spawn);
@@ -523,6 +638,7 @@ export function travel(s, region) {
 }
 export function recover(s) {
   if (s.phase !== "lost") return false;
+  cancelChallenge(s);
   s.region = s.checkpoint.region;
   Object.assign(s, {
     x: s.checkpoint.x,
@@ -639,6 +755,16 @@ export function restore(raw) {
         ).length,
         flags: { ...w.flags },
         visited: !!w.visited,
+        completedAt: Object.fromEntries(
+          Object.entries(w.completedAt || {})
+            .filter(
+              ([id, at]) => allowed.has(id) && Number.isFinite(at) && at >= 0,
+            )
+            .map(([id, at]) => [
+              id,
+              Math.min(at, Math.max(0, Number(saved.time) || 0)),
+            ]),
+        ),
       };
     }
     for (const r of REGIONS) {
@@ -712,7 +838,10 @@ export function restore(raw) {
           ? "lost"
           : "ready";
     base.ending = REGIONS.every((r) => base.worlds[r].restored);
-    base.message = "Saved journey found. Resume deliberately when ready.";
+    base.message =
+      "Saved journey found. Resume deliberately when ready. In-progress operations can be restarted without spending supplies.";
+    base.challenge = null;
+    simulation.ensureSimulation(base);
     entities(base);
     return base;
   } catch {

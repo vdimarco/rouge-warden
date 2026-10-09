@@ -94,3 +94,56 @@ test("nurtured groves visibly bloom independently from harvested restoration", (
     );
   assert.ok(differences(harvested, nurtured) > 70);
 });
+
+test("completed action timestamps keep woodland and lunar growth alive after the operation", () => {
+  for (const region of ["forest", "moon"]) {
+    const ids =
+        region === "forest"
+          ? ["grove-a", "grove-b", "grove-c"]
+          : ["garden-a", "garden-b", "garden-c"],
+      source = createScene(region),
+      frame = source.frame(0, { color: source.color }),
+      world = {
+        restored: 1,
+        stage: 3,
+        flags: Object.fromEntries(ids.map((id) => [id, true])),
+        completedAt: Object.fromEntries(ids.map((id) => [id, 10])),
+      };
+    const young = evolveFrame(region, frame, source.color, world, {
+        time: 12,
+        stateTime: 12,
+      }),
+      mature = evolveFrame(region, frame, source.color, world, {
+        time: 12,
+        stateTime: 42,
+      });
+    assert.ok(differences(young, mature) > 100, region);
+    const reducedYoung = evolveFrame(region, frame, source.color, world, {
+        time: 12,
+        stateTime: 12,
+        reducedMotion: true,
+      }),
+      reducedMature = evolveFrame(region, frame, source.color, world, {
+        time: 42,
+        stateTime: 42,
+        reducedMotion: true,
+      });
+    assert.equal(differences(reducedYoung, reducedMature), 0);
+  }
+});
+test("simulation weather and gravity alter physical scene cues at the same decorative time", () => {
+  for (const region of ["forest", "city", "coast", "fjord", "desert", "moon"]) {
+    const source = createScene(region),
+      frame = source.frame(0, { color: source.color }),
+      world = { restored: 0.6, stage: 1 };
+    const calm = evolveFrame(region, frame, source.color, world, {
+        time: 15,
+        simulation: { wind: 0, tide: 0, storm: 0, season: 0, gravity: 1 },
+      }),
+      weather = evolveFrame(region, frame, source.color, world, {
+        time: 15,
+        simulation: { wind: 0.9, tide: 1, storm: 1, season: 3, gravity: 0.7 },
+      });
+    assert.ok(differences(calm, weather) > 5, region);
+  }
+});

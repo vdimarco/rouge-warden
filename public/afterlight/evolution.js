@@ -7,6 +7,15 @@ export const hash = (x, y = 0) => {
   return ((v ^ (v >>> 16)) >>> 0) / 4294967296;
 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+export function growthAt(world, id, time, reducedMotion = false) {
+  const value = world.growth?.[id] ?? world.completedAt?.[id];
+  if (value == null) return 1; // Legacy restorations are already mature.
+  if (typeof value === "object" && Number.isFinite(value.progress))
+    return clamp(value.progress, 0, 1);
+  const at = typeof value === "object" ? value.at : value;
+  const duration = typeof value === "object" ? value.duration || 24 : 24;
+  return reducedMotion ? 1 : clamp((time - at) / duration, 0, 1);
+}
 /** Mutate real scene cells: restoration is persistent geometry, not a screen tint.
  * Decorative time freezes in reduced motion; restoration still changes the scene.
  */
@@ -26,6 +35,44 @@ export function evolveFrame(
     stage = Number(world.stage) || 0,
     t = options.reducedMotion ? 0 : options.time || 0,
     level = Math.max(restored, Math.min(1, stage / 3));
+  const sim = options.simulation || options.environment || {},
+    stateTime = Number(options.stateTime ?? options.time) || 0,
+    wind = options.reducedMotion ? 0 : Number(sim.wind ?? Math.sin(t * 0.057)),
+    tide = options.reducedMotion ? 0 : Number(sim.tide ?? Math.sin(t * 0.035)),
+    storm = options.reducedMotion
+      ? 0.25
+      : clamp(Number(sim.storm ?? 0.5 + 0.5 * Math.sin(t * 0.023)), 0, 1),
+    season = options.reducedMotion
+      ? 0.35
+      : sim.season != null
+        ? (((Number(sim.season) / 4) % 1) + 1) % 1
+        : 0.5 + 0.5 * Math.sin(t * 0.006),
+    meanGrowth =
+      level > 0
+        ? [
+            "grove-a",
+            "grove-b",
+            "grove-c",
+            "garden-a",
+            "garden-b",
+            "garden-c",
+            "oasis",
+          ]
+            .filter((id) => world.flags?.[id])
+            .reduce(
+              (sum, id, _, ids) =>
+                sum +
+                growthAt(world, id, stateTime, options.reducedMotion) /
+                  ids.length,
+              0,
+            )
+        : 1,
+    growth = Math.max(
+      0.15,
+      meanGrowth ||
+        (level > 0 && !world.growth && !world.completedAt ? 1 : 0.15),
+    );
+
   function put(x, y, d, c) {
     x = Math.round(x);
     y = Math.round(y);
@@ -108,7 +155,14 @@ export function evolveFrame(
     for (let j = 0; j < Math.floor(level * 31); j++) {
       const x = 12 + hash(j, 18) * 176,
         y = 70 + hash(j, 55) * 29;
-      tree(x, y, 3 + hash(j, 9) * 7, extra, 17);
+      const height = (3 + hash(j, 9) * 7) * (0.35 + growth * 0.65);
+      tree(
+        x + wind * 0.5,
+        y,
+        height,
+        season > 0.72 && j % 3 === 0 ? 4 : extra,
+        17,
+      );
       if (j % 3 === 0) ellipse(x + 2, y - 3, 1.2, 0.7, extra + 1, 2);
     }
     for (const [id, x, y] of [
@@ -119,7 +173,10 @@ export function evolveFrame(
       if (world.flags?.[id + "-bloom"]) {
         for (let j = 0; j < 15; j++) {
           const a = j * 2.4,
-            r = 2 + hash(j, 21) * 9,
+            r =
+              (2 + hash(j, 21) * 9) *
+              (0.2 +
+                0.8 * growthAt(world, id, stateTime, options.reducedMotion)),
             px = x + Math.cos(a) * r,
             py = y + Math.sin(a) * r * 0.5;
           stroke(px, py, px, py - 2, extra, 1);
@@ -202,8 +259,15 @@ export function evolveFrame(
         stroke(x, 71 + (x - 18) * 0.11, x, 80 + (x - 18) * 0.04, 23, 2);
     }
     for (let j = 0; j < Math.floor(level * 5); j++) {
-      const x = 76 + j * 20,
-        y = 72 + (j % 3) * 6;
+      const x = 76 + j * 20 + Math.sin(t * (0.055 + j * 0.006) + j) * 11,
+        y = 72 + (j % 3) * 6 + Math.sin(t * 0.14 + j) * 0.6 + tide;
+      for (let wake = 1; wake < 9; wake++)
+        put(
+          x - wake * 1.3,
+          y + 1 + Math.sin(wake + t * 0.2) * 0.5,
+          1,
+          extra + 1,
+        );
       stroke(x - 4, y, x + 4, y, extra + 3, 2);
       stroke(x, y, x, y - 5, extra, 1);
       stroke(x, y - 5, x + 3, y - 2, extra, 2);
@@ -260,7 +324,12 @@ export function evolveFrame(
     // Ice floes fracture and a broad navigable channel opens through the actual water.
     for (let y = 65; y < 100; y++)
       for (let x = 13; x < 190; x++) {
-        const n = hash(Math.floor(x / 8), Math.floor(y / 6)),
+        const drift = Math.sin(t * 0.028) * 3,
+          n =
+            0.5 +
+            (Math.sin((x + drift) * 0.135 + y * 0.24) +
+              Math.sin(x * 0.29 - y * 0.14) * 0.55) /
+              3.1,
           channel = 100 + Math.sin(y * 0.16) * 13,
           clear = Math.abs(x - channel) < (7 + (y - 65) * 0.65) * level;
         if (!clear && n > 0.28 + level * 0.68 && hash(x, y) > 0.12) {
@@ -297,8 +366,14 @@ export function evolveFrame(
         put(x, y, 1, j % 3 ? 19 : 25);
       }
     if (level > 0) {
-      const rx = 13 + 25 * level,
-        ry = 3 + 9 * level;
+      const oasisGrowth = growthAt(
+          world,
+          "oasis",
+          stateTime,
+          options.reducedMotion,
+        ),
+        rx = 10 + 28 * level * (0.25 + oasisGrowth * 0.75),
+        ry = 2 + 10 * level * (0.25 + oasisGrowth * 0.75);
       ellipse(109, 84, rx + 3, ry + 1, extra + 3, 2);
       ellipse(109, 84, rx, ry, extra + 2, 2, 0.45);
       for (let y = 79; y < 91; y++)
@@ -313,7 +388,10 @@ export function evolveFrame(
       const a = j * Math.PI * 0.28,
         x = 109 + Math.cos(a) * (18 + 25 * level),
         y = 84 + Math.sin(a) * 8,
-        h = 8 + (j % 3) * 2;
+        h =
+          (8 + (j % 3) * 2) *
+          (0.3 +
+            growthAt(world, "oasis", stateTime, options.reducedMotion) * 0.7);
       stroke(x, y, x + 2, y - h, 18, 2);
       for (let k = -2; k <= 2; k++) {
         stroke(
@@ -346,7 +424,7 @@ export function evolveFrame(
     for (let j = 0; j < Math.floor(level * 25); j++) {
       const x = 17 + hash(j, 81) * 169,
         y = 66 + hash(j, 52) * 30,
-        h = 4 + hash(j, 14) * 9;
+        h = (4 + hash(j, 14) * 9) * (0.2 + growth * 0.8);
       tree(x, y, h, extra, extra + 1);
       ellipse(x, y - h, 2.3, 1.5, j % 3 ? extra + 1 : extra + 3, 2);
       for (let k = -8; k <= 8; k++)
@@ -398,6 +476,113 @@ export function evolveFrame(
         ellipse(x, y, 1, 1, extra + 2, 3);
         if (j) stroke(...stars[j - 1], x, y, extra + 2, 1, 3);
       }
+    }
+  }
+  // Moving material connects the landscapes to their physical conditions.
+  // These are native halftone cells, with perspective compression toward the horizon.
+  if (region === "forest") {
+    for (let j = 0; j < 28; j++) {
+      const y = 57 + hash(j, 23) * 37,
+        depth = (y - 48) / 52;
+      const x =
+        (hash(j, 17) * 200 + t * (1.2 + depth * 2) * (wind + 0.6) + 2000) % 200;
+      put(
+        x,
+        y + Math.sin(t * 0.16 + j) * 1.5,
+        1,
+        season > 0.72 ? 3 : extra + 1,
+      );
+    }
+    // Low drifting valley mist retains the ridges rather than flattening their depth.
+    for (let band = 0; band < 3; band++)
+      for (let x = 8; x < 194; x++) {
+        const y = 46 + band * 11 + Math.sin(x * 0.038 + t * 0.024 + band) * 3;
+        if (hash(x, band + 2) < (0.2 + storm * 0.12) * (1 - level * 0.6))
+          put(x, y, 1, 10 + band);
+      }
+  }
+  if (region === "city") {
+    // Rails converge into the street; wet power travels along the restored line.
+    for (let y = 63; y < 100; y++) {
+      const d = (y - 60) / 40;
+      for (const side of [-1, 1]) {
+        const x = 108 + side * (2 + d * 18);
+        put(x, y, 1, 50);
+        if (level > 0.3 && ((Math.floor(y - t * 8) % 9) + 9) % 9 < 2)
+          put(x, y, 2, extra);
+      }
+    }
+    for (let j = 0; j < Math.floor(12 + storm * 18); j++) {
+      const x = 66 + hash(j, 81) * 78,
+        y = 72 + hash(j, 61) * 26;
+      const r = 1 + ((t * 0.7 + hash(j, 48) * 3) % 3);
+      for (let k = 0; k < 8; k++)
+        put(
+          x + Math.cos((k * Math.PI) / 4) * r,
+          y + Math.sin((k * Math.PI) / 4) * r * 0.3,
+          1,
+          40,
+        );
+    }
+  }
+  if (region === "coast" || region === "fjord") {
+    for (let band = 0; band < 10; band++)
+      for (let x = 44; x < 188; x++) {
+        const y =
+          65 +
+          band * 3.4 +
+          Math.sin(x * 0.09 + t * (0.3 + band * 0.012)) * (0.4 + band * 0.07) +
+          tide * 0.8;
+        if (hash(x, band + 117) > 0.76)
+          put(x, y, 1, region === "fjord" ? extra + 3 : 7);
+      }
+    if (region === "fjord")
+      for (let j = 0; j < 11; j++) {
+        const x = 18 + ((j * 27 + t * 0.28 * (wind + 0.7) + 2000) % 166),
+          y = 68 + hash(j, 91) * 27;
+        if (Math.abs(x - 100) > 15 + level * 20) {
+          const r = 1.5 + hash(j, 22) * 3;
+          for (let yy = -r * 0.4; yy <= r * 0.4; yy++)
+            for (let xx = -r; xx <= r; xx++)
+              if (Math.abs(xx / r) + Math.abs(yy / (r * 0.5)) < 1)
+                put(x + xx, y + yy, 2, extra);
+          stroke(x - r, y + r * 0.3, x + r, y + r * 0.3, extra + 1, 1);
+        }
+      }
+  }
+  if (region === "desert") {
+    for (let ridge = 0; ridge < 4; ridge++)
+      for (let x = 4; x < 197; x++) {
+        const y =
+          66 +
+          ridge * 8 +
+          Math.sin(x * (0.055 + ridge * 0.008) + t * 0.015 * wind + ridge) *
+            (3 + ridge);
+        if (
+          hash(x, ridge + 62) > 0.35 &&
+          !(level > 0.1 && Math.abs(x - 109) < 42 && y > 74)
+        )
+          put(x, y, 1, ridge % 2 ? 25 : 18);
+      }
+    for (let j = 0; j < Math.floor(storm * 100 * (1 - level * 0.75)); j++) {
+      const y = 62 + hash(j, 38) * 35,
+        x = (hash(j, 27) * 200 + t * (wind * 8 + 5) + 2000) % 200;
+      stroke(x, y, x - 1 - storm * 2, y + 0.4, 25, 1);
+    }
+  }
+  if (region === "moon" && level > 0) {
+    for (let j = 0; j < 17; j++) {
+      const q = (t * (0.019 + (j % 3) * 0.003) + hash(j, 66)) % 1,
+        startX = 18 + hash(j, 14) * 167,
+        endX = 40 + (j % 6) * 26,
+        x =
+          startX * (1 - q) +
+          endX * q +
+          (Math.sin(q * Math.PI) * 20) /
+            Math.max(0.5, Number(sim.gravity) || 1),
+        y = 16 + q * q * 65;
+      put(x, y, 2, extra + 3);
+      put(x - (endX - startX) * 0.025, y - 1, 1, extra + 2);
     }
   }
   let changedCells = 0;

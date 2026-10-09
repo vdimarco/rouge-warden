@@ -35,10 +35,7 @@
             role="region"
             aria-label="Adventure landscape. Move with arrows or WASD, interact with E, use your tool with Space."
           >
-            <canvas
-              id="scene"
-              aria-label="An evolving ASCII landscape"
-            ></canvas>
+            <div id="scene" aria-label="An evolving ASCII landscape"></div>
             <div id="intro">
               <h1>Afterlight</h1>
               <p>
@@ -62,6 +59,7 @@
             <button id="interact">[ interact · E ]</button
             ><button id="tool">[ lantern · Space ]</button>
           </div>
+          <p id="conditions" class="hint"></p>
           <p class="hint">
             arrows / WASD · E interact · space tool · M travel · J journal · P
             pause
@@ -106,6 +104,7 @@
       <div id="menu-content"></div>
     </dialog>
     <script src="/arcade/switch.js"></script>
+    <script src="/afterlight/vendor/phaser-3.90.0.min.js"></script>
     <script type="module" src="/afterlight/game.js"></script>
   </body>
 </html>
