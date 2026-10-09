@@ -34,10 +34,14 @@ export function rewardChoiceCue(run, disabled = false) {
   return { ...choice,
     stashDirection: lateralDirection(choice.alternativeLane, lane),
     actionDirection: lateralDirection(choice.entryLane, lane),
+    counterpartDirection: lateralDirection(choice.entryLane, lane),
+    opposingChoiceDirection: lateralDirection(choice.entryLane, lane),
     guardExitDirection: lateralDirection(choice.exitLane, choice.entryLane),
-    returnDirection: lateralDirection(choice.exitLane, choice.collected ? lane : choice.alternativeLane),
+    returnDirection: lateralDirection(choice.exitLane, choice.collected||choice.counterpartCollected ? lane : choice.alternativeLane),
     actionLabel: choice.action === 'jump' ? 'Jump' : choice.action === 'duck' ? 'Duck' : 'Dodge',
     stashPoints: Math.max(0, Math.floor(choice.baseValue ?? 0)),
+    coinCount: Math.max(0, Math.floor(choice.coinCount ?? 0)),
+    counterpartLabel: choice.counterpartType==='magnet'?'Gold Boost ×2 · 8s':choice.counterpartType==='shield'?(choice.heldShield?'Shield already held':'Shield · 1 hit'):null,
     actionPoints: Math.max(0, Math.floor(choice.actionBasePoints ?? 0)),
     cleanAtRisk: Math.max(0, Math.floor(choice.cleanBonusAtRisk ?? 0)) };
 }

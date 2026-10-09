@@ -655,3 +655,94 @@ button.held {
     background-size: 100% 3px;
   }
 }
+#action-heat {
+  padding-bottom: 7px;
+  background: linear-gradient(
+      to right,
+      #ffd47a var(--heat, 0%),
+      #173344 var(--heat, 0%)
+    )
+    left bottom/100% 3px no-repeat;
+  font-size: 10px;
+  min-width: 115px;
+  color: #ffde94;
+}
+.action-status {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+#action-pulse {
+  color: #99fff1;
+  border-color: #77e9ec;
+  background: #062c3299;
+}
+@media (max-width: 700px) {
+  .action-combat {
+    gap: 6px;
+  }
+  .action-combat button {
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+    font-size: 10px;
+  }
+  .action-direction-pad {
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(2, 44px);
+  }
+  .action-direction-pad button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+#action-world-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+.depth-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font:
+    11px/1.2 ui-monospace,
+    monospace;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 3px #000,
+    1px 0 3px #000,
+    -1px 0 3px #000;
+  background: #04121690;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+#action-radar {
+  position: absolute;
+  z-index: 3;
+  right: 24px;
+  top: 135px;
+  width: 128px;
+  height: 64px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+@media (max-width: 700px) {
+  #action-radar {
+    right: 12px;
+    top: 150px;
+    width: 90px;
+    height: 45px;
+  }
+  .depth-label {
+    font-size: 10px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #action-radar {
+    top: 90px;
+    right: 14px;
+    width: 90px;
+    height: 45px;
+  }
+}

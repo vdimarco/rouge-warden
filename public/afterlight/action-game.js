@@ -1,5 +1,5 @@
 import * as engine from "./action-engine.js";
-import { createActionArt } from "./action-art.js";
+import { createDepthRenderer } from "./depth-render.js";
 const $ = (id) => document.getElementById(id),
   text = (id, value) => {
     const node = $(id);
@@ -116,9 +116,14 @@ function objective() {
   const followers = state.survivors.filter(
     (s) => s.status === "following",
   ).length;
+  const bound = state.survivors.filter(
+    (s) => s.status === "stranded" && s.bound,
+  ).length;
   return followers
-    ? "Lead your survivors to the golden beacon"
-    : "Reach survivors · blast the shadows";
+    ? "Lead survivors to the golden beacon"
+    : bound
+      ? "Break violet tethers · free the survivors"
+      : "Reach survivors · blast the shadows";
 }
 function sync() {
   const region = engine.ACTION_REGIONS[state.region];
@@ -131,6 +136,21 @@ function sync() {
       : `${state.rescued}/3 home · ${state.index + 1}/6 worlds`,
   );
   text("action-health", `Health ${Math.ceil(state.hp)}`);
+  text(
+    "action-heat",
+    state.overheated
+      ? "OVERHEATED · let it cool"
+      : `Light heat ${Math.round((state.heat || 0) * 100)}%`,
+  );
+  $("action-heat").style.setProperty("--heat", `${(state.heat || 0) * 100}%`);
+  $("action-pulse").disabled =
+    state.phase !== "playing" || state.pulseCooldown > 0;
+  const pulseLabel = $("action-pulse").querySelector("span:last-child");
+  if (pulseLabel)
+    pulseLabel.textContent =
+      state.pulseCooldown > 0
+        ? `${Math.ceil(state.pulseCooldown)}s`
+        : "Pulse · E";
   $("action-health").style.setProperty("--health", `${state.hp}%`);
   text(
     "action-score",
@@ -185,11 +205,11 @@ function sync() {
     text("action-title", loaded ? "The rescue continues." : "Bring them home.");
     text(
       "action-description",
-      "Blast the shadows. Lead three survivors to the beacon. Defend it until the rescue route opens.",
+      "Break the violet tethers. Lead survivors to the beacon. Defeat its guardian to open the route.",
     );
     text(
       "action-overlay-hint",
-      "Move with WASD or arrows. Aim and hold click, or hold Space to fire at nearby shadows. Shift dodges.",
+      "WASD moves · aim + click or Space fires · Shift dodges · E pulses. Pace your shots to avoid overheating.",
     );
     begin.textContent = loaded ? "Continue rescue" : "Start rescue";
   } else if (state.phase === "paused") {
@@ -287,94 +307,130 @@ function dodge() {
   }
 }
 function resize() {
-  if (!scene || !art) return;
-  const w = Math.max(320, game.scale.width),
-    h = Math.max(240, game.scale.height),
-    rw = Math.min(w, 960),
-    rh = Math.round((rw * h) / w);
-  scene.textures.get("living-action").setSize(rw, rh);
-  art.resize(rw, rh);
-  scene.picture.setSize(rw, rh).setOrigin(0.5, 0.5);
-  scene.picture.setDisplaySize(w, h);
-  scene.picture.setPosition(w / 2, h / 2);
+  art?.resize(innerWidth, innerHeight);
 }
-class ActionScene extends Phaser.Scene {
-  constructor() {
-    super("action");
-  }
-  create() {
-    scene = this;
-    this.game.canvas.id = "action-canvas";
-    const texture = this.textures.createCanvas(
-      "living-action",
-      innerWidth,
-      innerHeight,
-    );
-    art = createActionArt(texture.canvas, { reducedMotion });
-    this.picture = this.add.image(
-      innerWidth / 2,
-      innerHeight / 2,
-      "living-action",
-    );
-    this.scale.on("resize", resize);
-    resize();
-    const point = (p) => ({
-      x: (p.x / this.scale.width) * 200,
-      y: (p.y / this.scale.height) * 100,
-    });
-    this.input.on("pointerdown", (p) => {
-      if (state.phase !== "playing") return;
-      pointerFire = true;
-      pointerAim = point(p);
-      focus();
-    });
-    this.input.on("pointermove", (p) => {
-      if (pointerFire) pointerAim = point(p);
-    });
-    this.input.on("pointerup", () => {
-      pointerFire = false;
-      pointerAim = null;
-    });
-    this.input.on("gameout", () => {
-      pointerFire = false;
-      pointerAim = null;
-    });
-    sync();
-    this.renderWorld();
-  }
-  renderWorld() {
-    if (!art) return;
-    art.render(state, visualTime);
-    const texture = this.textures.get("living-action");
-    texture.refresh();
-    Object.assign(this.game.canvas.dataset, texture.canvas.dataset, {
-      engine: "Phaser 3.90.0",
-      region: state.region,
-      phase: state.phase,
-    });
-  }
-  update(time, delta) {
-    const dt = Math.min(delta / 1000, 0.08);
-    accumulator += dt;
-    while (accumulator >= 1 / 60) {
-      engine.updateAction(state, input(), 1 / 60);
-      accumulator -= 1 / 60;
+const labelNodes = new Map();
+function worldGuidance() {
+  if (!art) return;
+  const items = [
+    {
+      id: "you",
+      x: state.x,
+      y: state.y,
+      height: 6,
+      text: "YOU",
+      color: "#ffe4a3",
+    },
+    {
+      id: "beacon",
+      x: state.beacon.x,
+      y: state.beacon.y,
+      height: 28,
+      text: "BEACON",
+      color: "#ffd573",
+    },
+    ...state.survivors
+      .filter((s) => s.status !== "safe")
+      .map((s) => ({
+        id: s.id,
+        x: s.x,
+        y: s.y,
+        height: 6,
+        text: s.bound
+          ? "BREAK TETHER"
+          : s.status === "following"
+            ? "FOLLOWING"
+            : "HELP",
+        color: s.bound ? "#dc9fff" : "#ffc79b",
+      })),
+    ...state.enemies
+      .filter((e) => e.elite)
+      .map((e) => ({
+        id: e.id,
+        x: e.x,
+        y: e.y,
+        height: 10,
+        text: `GUARDIAN ${Math.ceil(e.hp)}/${e.maxHp}`,
+        color: "#d49aff",
+      })),
+  ];
+  const active = new Set();
+  for (const item of items) {
+    active.add(item.id);
+    let node = labelNodes.get(item.id);
+    if (!node) {
+      node = document.createElement("span");
+      node.className = "depth-label";
+      $("action-world-labels").append(node);
+      labelNodes.set(item.id, node);
     }
-    if (!["paused", "lost"].includes(state.phase)) visualTime += dt;
-    feedback();
-    this.renderWorld();
-    sync();
-    if (lastPhase !== state.phase) {
-      lastPhase = state.phase;
-      save();
-    }
-    if (state.phase === "playing" && state.time - lastSaved > 3) save();
+    const point = art.project(item.x, item.y, item.height);
+    node.hidden = !point.visible || state.phase === "ready";
+    node.textContent = item.text;
+    node.style.left = point.x + "px";
+    node.style.top = point.y + "px";
+    node.style.color = item.color;
   }
+  for (const [id, node] of labelNodes)
+    if (!active.has(id)) {
+      node.remove();
+      labelNodes.delete(id);
+    }
+  const radar = $("action-radar"),
+    ctx = radar.getContext("2d");
+  ctx.clearRect(0, 0, 200, 100);
+  ctx.fillStyle = "#021913d0";
+  ctx.fillRect(0, 0, 200, 100);
+  ctx.strokeStyle = "#57998b";
+  ctx.strokeRect(1, 1, 198, 98);
+  const dot = (x, y, c, r = 3) => {
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  for (const e of state.enemies)
+    dot(e.x, e.y, e.elite ? "#bb6dff" : "#8666ac", e.elite ? 4 : 2);
+  for (const s of state.survivors)
+    if (s.status !== "safe") dot(s.x, s.y, s.bound ? "#c786ff" : "#ffb98a");
+  dot(state.beacon.x, state.beacon.y, "#ffd575", 5);
+  dot(state.x, state.y, "#fff2b8", 4);
+}
+function renderWorld() {
+  art?.render(state, visualTime);
+  worldGuidance();
+  sync();
+}
+let previousFrame = 0;
+function frame(now) {
+  const dt = Math.min(previousFrame ? (now - previousFrame) / 1000 : 0, 0.08);
+  previousFrame = now;
+  accumulator += dt;
+  while (accumulator >= 1 / 60) {
+    engine.updateAction(state, input(), 1 / 60);
+    accumulator -= 1 / 60;
+  }
+  if (!["paused", "lost"].includes(state.phase)) visualTime += dt;
+  feedback();
+  renderWorld();
+  if (lastPhase !== state.phase) {
+    lastPhase = state.phase;
+    save();
+  }
+  if (state.phase === "playing" && state.time - lastSaved > 3) save();
+  requestAnimationFrame(frame);
 }
 $("action-begin").onclick = start;
 $("action-restart").onclick = restart;
 $("action-pause").onclick = togglePause;
 $("action-dodge").onclick = dodge;
+$("action-pulse").onclick = () => {
+  if (engine.pulseAction?.(state)) {
+    tone(160, 0.3, 0.045);
+    sync();
+    focus();
+  }
+};
 for (const b of document.querySelectorAll("[data-move]")) {
   b.addEventListener("pointerdown", (e) => {
     if (state.phase !== "playing") return;
@@ -431,6 +487,11 @@ addEventListener("keydown", (e) => {
     start();
     return;
   }
+  if (k === "e") {
+    engine.pulseAction?.(state);
+    sync();
+    return;
+  }
   if (k === "shift") {
     dodge();
     return;
@@ -449,20 +510,39 @@ preference.addEventListener("change", (e) => {
   art?.setReducedMotion?.(reducedMotion);
   text("action-motion", reducedMotion ? "Motion reduced" : "Motion full");
 });
-game = new Phaser.Game({
-  type: Phaser.CANVAS,
-  parent: "action-scene",
-  width: innerWidth,
-  height: innerHeight,
-  backgroundColor: "#030b14",
-  banner: false,
-  audio: { noAudio: true },
-  render: { antialias: true },
-  scale: { mode: Phaser.Scale.RESIZE },
-  input: { keyboard: { capture: [] }, activePointers: 4 },
-  scene: ActionScene,
-  fps: { target: 60 },
-});
+try {
+  art = createDepthRenderer($("action-scene"), { reducedMotion });
+  art.canvas.id = "action-canvas";
+  game = { renderer: art, scene: { isActive: () => true } };
+  resize();
+  const point = (e) => art.aim(e.clientX, e.clientY, state);
+  art.canvas.addEventListener("pointerdown", (e) => {
+    if (state.phase !== "playing") return;
+    e.preventDefault();
+    art.canvas.setPointerCapture(e.pointerId);
+    pointerFire = true;
+    pointerAim = point(e);
+    focus();
+  });
+  art.canvas.addEventListener("pointermove", (e) => {
+    if (pointerFire) pointerAim = point(e);
+  });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"])
+    art.canvas.addEventListener(ev, () => {
+      pointerFire = false;
+      pointerAim = null;
+    });
+  addEventListener("resize", resize);
+  requestAnimationFrame(frame);
+} catch (error) {
+  text("action-title", "3D could not start.");
+  text(
+    "action-description",
+    "Enable WebGL in your browser or open Classic to keep playing.",
+  );
+  text("action-overlay-hint", String(error.message || error));
+  $("action-begin").disabled = true;
+}
 window.__afterlightAction = {
   get state() {
     return state;
@@ -470,9 +550,12 @@ window.__afterlightAction = {
   get game() {
     return game;
   },
+  get renderer() {
+    return art;
+  },
   engine,
   render() {
-    scene?.renderWorld();
+    renderWorld();
     sync();
   },
   start,

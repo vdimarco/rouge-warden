@@ -154,7 +154,7 @@ export class Terrain {
         .replace('#include <normal_fragment_maps>', BUMP);
     };
     material.customProgramCacheKey = () => 'shore-ground-relief';
-    this.ground = new THREE.Mesh(new THREE.BufferGeometry(), material); this.ground.receiveShadow = true;
+    this.ground = new THREE.Mesh(new THREE.BufferGeometry(), material); this.ground.castShadow = this.ground.receiveShadow = true;
     this.ground.name = 'ground'; scene.add(this.ground);
     this.stone = worldMapped(textures.stone, { color: '#b9b1a1', scale: 240, key: 'stone-built' });
     this.group = new THREE.Group(); scene.add(this.group);

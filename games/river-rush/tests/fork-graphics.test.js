@@ -119,6 +119,19 @@ test('stash purses preserve fixed payouts and world metadata with bounded prepar
  const maxTriangles=scene.children.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3*mesh.instanceMatrix.count,0);assert.equal(maxTriangles,1836);
 });
 
+test('bank pouch labels actual coins separately from fixed point stashes without adding draw batches',()=>{
+ const scene=new THREE.Scene(),mat=color=>new THREE.MeshStandardMaterial({color}),camera=new THREE.PerspectiveCamera(60,1,.3,300);
+ camera.position.set(0,12,24);camera.lookAt(0,0,-20);camera.updateMatrixWorld();
+ const visual=createStashVisuals(scene,mat),batches=scene.children.length;
+ visual.begin();
+ for(const [i,item] of [{value:80,coinCount:8},{value:120},{value:200}].entries())visual.add({id:i,type:'stash',...item},{x:i*3.8,y:0,z:-20},0,true,camera);
+ visual.finish();
+ assert.deepEqual(visual.state.samples.map(s=>s.label),['8 COINS','+120 PTS','+200 PTS']);
+ assert.equal(visual.state.samples[0].coinCount,8);assert.equal(scene.children.length,batches);
+ const values=scene.children.at(-1).geometry.attributes.stashValue;
+ assert.deepEqual(Array.from(values.array).slice(0,3),[2,0,1]);
+});
+
 test('themed island detail keeps native slot capacities and adds at most4000 prepared triangles with all stashes',()=>{
  const scene=new THREE.Scene(),mat=color=>new THREE.MeshStandardMaterial({color}),ground=mat('#d0d9b7'),uniforms={uDistance:{value:0},uSeed:{value:137},uCourseLength:{value:4200},uCourseMap:{value:0},uGroundTint:{value:new THREE.Color('#7d9e43')},uForkBounds:{value:new THREE.Vector2()}};
  const islands=createForkIslands(scene,uniforms,ground,mat('#b1b1a2'),mat('#765039'),mat,{branchLeaves:{width:1,height:1}},true),prepared=scene.children.map(mesh=>({mesh,geometry:mesh.geometry,material:mesh.material,buffer:mesh.instanceMatrix?.array}));

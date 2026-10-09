@@ -202,15 +202,24 @@ test('gold stashes have a stationary ground silhouette and truthful fixed-value 
  for(const value of [120,200]){
   const e={id:91,type:'stash',value,lane:1,d:1200},a=recordingContext(),b=recordingContext(),chest=recordingContext(),point={x:190,y:610};
   assert.equal(stashPresentation(e).value,value);drawStash2D(a,e,point,42,1,true);drawStash2D(b,e,point,42,60,true);assert.deepEqual(a.calls,b.calls);
-  assert.ok(a.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value}`));drawTreasure2D(chest,{id:92,treasureBase:200,treasureCleanBonus:400},point,42,1,true);assert.notDeepEqual(a.calls,chest.calls,'a low gold purse must not promise the clean-cache chest');
+  assert.ok(a.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value} PTS`));drawTreasure2D(chest,{id:92,treasureBase:200,treasureCleanBonus:400},point,42,1,true);assert.notDeepEqual(a.calls,chest.calls,'a low gold purse must not promise the clean-cache chest');
   const g=createGame(137,1),fork=nextRiverFork(0,g.terrainProfile);g.distance=(fork.splitStart+fork.splitEnd)/2;g.time=20;g.lane=g.visualLane=1;g.laneVelocity=0;g.nextRow=Infinity;g.entities=[{...e,d:g.distance+1,collected:false}];g.streak=18;g.multiplier=3;g.lastCoin=20;g.magnet=6;g.charge=37;
   const card={width:512,height:704},art={surfaceground:card,surfacewater:card,sprites:card,paddleFrames:[{width:448,height:380}],downstreamFrames:Array(9).fill(card),world:{foam:Array(3).fill(card)},map2d:{grounds:Array(3).fill(card),rivers:Array(3).fill(card),canyonSkyline:[card,card],props:[null,null,null],finish:null}},beforeRender=recordingContext();
-  assert.doesNotThrow(()=>renderGame(beforeRender,g,art,390,844,false,true));assert.ok(beforeRender.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value}`),'the actual approaching purse advertises its fixed payout');
+  assert.doesNotThrow(()=>renderGame(beforeRender,g,art,390,844,false,true));assert.ok(beforeRender.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value} PTS`),'the actual approaching purse advertises its fixed payout');
   const before={bonus:g.bonus,coins:g.coins,streak:g.streak,charge:g.charge};updateGame(g,{actions:[]},1/60);
   assert.equal(g.bonus-before.bonus,value);assert.equal(g.coins,before.coins);assert.equal(g.streak,before.streak);assert.equal(g.charge,before.charge);
   const receipt=g.effects.find(effect=>effect.type==='stash');assert.equal(receipt.value,value);assert.equal(receipt.entityId,e.id);
   const afterRender=recordingContext();assert.doesNotThrow(()=>renderGame(afterRender,g,art,390,844,false,true));assert.ok(afterRender.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value}`),'the physically collected purse has its own visible receipt');
  }
+});
+
+test('bank fallback advertises actual coin currency rather than an invented fixed point value',()=>{
+ const entity={id:92,type:'stash',value:80,coinCount:8,choiceFamily:'wildlife-bank'},ctx=recordingContext();
+ assert.equal(stashPresentation(entity).coinCount,8);
+ assert.equal(stashPresentation(entity).label,'8 COINS');
+ drawStash2D(ctx,entity,{x:190,y:610},42,0,true);
+ assert.ok(ctx.calls.some(call=>call[0]==='fillText'&&call[1]==='8 COINS'));
+ assert.equal(ctx.calls.some(call=>call[0]==='fillText'&&call[1]==='+80 PTS'),false);
 });
 
 test('treasure silhouettes and promise distinguish the actual completion bonus from a route label',()=>{

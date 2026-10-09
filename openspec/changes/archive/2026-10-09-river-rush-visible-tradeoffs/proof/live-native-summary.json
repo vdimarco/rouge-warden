@@ -1,0 +1,126 @@
+{
+  "passed": true,
+  "scope": "short-cold-production-native-controls-and-exact-pause",
+  "base": "https://arcade.uptick.systems/river-rush/?v=9c296e2",
+  "codeCommit": "9c296e275929857a0c539b4ce7501326bd07ac4d",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-u8BvqzOE.js",
+  "bundleSha256": "873995348d1202f7100257a17ba0e4978742ac3d19002f8d1ba3eed37446dae0",
+  "finalCopyTokens": {
+    "heldShield": true,
+    "activeBoost": true
+  },
+  "started": {
+    "seed": 556363496,
+    "campaignSeed": 556363496,
+    "time": 0.1,
+    "distance": 5.2033000000000005,
+    "phase": "playing",
+    "lane": 2,
+    "visualLane": 2,
+    "action": "",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "nativeKeyboard": {
+    "from": 2,
+    "to": 3,
+    "code": "ArrowRight",
+    "after": {
+      "seed": 556363496,
+      "campaignSeed": 556363496,
+      "time": 0.35,
+      "distance": 18.230800000000002,
+      "phase": "playing",
+      "lane": 3,
+      "visualLane": 2.993877996371311,
+      "action": "",
+      "shield": true,
+      "shieldsUsed": 0
+    }
+  },
+  "nativePointer": {
+    "from": 3,
+    "to": 2,
+    "point": {
+      "x": 195,
+      "y": 464.20000000000005,
+      "element": "game-canvas"
+    },
+    "after": {
+      "seed": 556363496,
+      "campaignSeed": 556363496,
+      "time": 1.1500000000000004,
+      "distance": 60.10360000000001,
+      "phase": "playing",
+      "lane": 2,
+      "visualLane": 2.0012340980408583,
+      "action": "",
+      "shield": true,
+      "shieldsUsed": 0
+    },
+    "actualAppHandler": true
+  },
+  "pause": {
+    "sameStatus": true,
+    "samePixels": true,
+    "sha256": "990357de54316d6d59708c5ff0ae45d01d8dfd16b66c7776129a373c6e32b680",
+    "modalSettledAndHidden": true
+  },
+  "final": {
+    "seed": 556363496,
+    "campaignSeed": 556363496,
+    "time": 1.2000000000000004,
+    "distance": 62.730000000000004,
+    "phase": "playing",
+    "lane": 2,
+    "visualLane": 2.0002407141402503,
+    "action": "",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "resourcesBefore": {
+    "uploads": 56,
+    "shaders": 84
+  },
+  "resourcesAfter": {
+    "uploads": 56,
+    "shaders": 84
+  },
+  "gpuErrors": [],
+  "errors": [],
+  "scoreWrites": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "limitations": [
+    "Chromium phone viewport on SwiftShader; hardware phone FPS and human fun are not measured.",
+    "This short run verifies native controls and pause. Fork choices are verified by the separate preceding native local run on the recorded pre-copy-polish bundle; no live fork replay is claimed."
+  ],
+  "pairedChoiceEvidence": "/tmp/river-rush-visible-tradeoffs-actual/visible-tradeoffs.json",
+  "pairedChoiceBundle": "index-cK9xwG5D.js",
+  "render": {
+    "triangles": 90676,
+    "drawCalls": 31,
+    "frames": 37,
+    "prepared": true,
+    "contextLost": false,
+    "software": true,
+    "models": {
+      "raft": "ready",
+      "bank": "ready",
+      "palm": "ready",
+      "temple": "ready",
+      "guardian": "ready",
+      "rider": "ready",
+      "canopy": "ready",
+      "harbor": "ready",
+      "driftwood": "ready",
+      "bough": "ready"
+    }
+  },
+  "reportSha256": "29fd63e7205e091d304e166cb924d9da5449439a1a5cec32e4f9d86c4347b1b5",
+  "browserClosed": true,
+  "failedAuxiliaryNodeRequest": {
+    "path": "/tmp/river-rush-visible-tradeoffs-live/failed-node-request-network.json",
+    "reason": "Node API request bypassed successful browser network path and got connection refused before controls; final browser-fetch byte check succeeded."
+  }
+}

@@ -2,7 +2,9 @@
 // stateless; this small packet stores only earned progress while it is nearby.
 export const TREASURE_BASE=200;
 export const TREASURE_CLEAN_BONUS=400;
-export const STASH_VALUES=Object.freeze({'wildlife-bank':120,'boulder-snatch':120,'landing-detour':200});
+// The bank's 80 is its unmultiplied denomination, never a fixed payout.
+export const STASH_VALUES=Object.freeze({'wildlife-bank':80,'boulder-snatch':120,'landing-detour':200});
+export const BANK_COIN_COUNT=8;
 export const ADVENTURE_PHRASES=Object.freeze(['iio','oii','ioo','ooi']);
 export const ADVENTURE_NAMES=Object.freeze({'crocodile-run':'Crocodile Run','canopy-cut':'Canopy Cut','rapids-gates':'Rapids Gates'});
 export const streamLanes=side=>side<0?[0,1]:[3,4];
@@ -30,9 +32,11 @@ export function createAdventure(fork,maxRushSpeed,levelIndex){
  const choices=[];
  const choice=(family,step,side,entryLane,alternativeLane,exitLane,choiceD,guardD,exitD,action,extra={})=>{
   const id=`choice-${levelIndex}-${fork.id}-${family}`,value=STASH_VALUES[family],role=side===fork.riskSide?'risk':'safe';
-  const packet={id,family,step,routeSide:side,routeRole:role,entryLane,alternativeLane,exitLane,choiceD,guardD,exitD,action,baseValue:value,
-    guardId:guardId(step),returnSeconds:(exitD-choiceD)/maxRushSpeed,collected:false,earned:0,...extra};
-  choices.push(packet);nodes.push({kind:'stash',step,side,d:choiceD,lane:alternativeLane,value,choiceId:id,choiceFamily:family,choiceRole:family==='wildlife-bank'?'bank':family==='boulder-snatch'?'snatch':'detour'});
+  const coinCount=family==='wildlife-bank'?BANK_COIN_COUNT:0,counterpartType=family==='landing-detour'?'magnet':family==='boulder-snatch'?'shield':null;
+  const packet={id,family,step,routeSide:side,routeRole:role,entryLane,alternativeLane,exitLane,choiceD,guardD,exitD,action,baseValue:value,coinCount,counterpartType,counterpartDuration:counterpartType==='magnet'?8:0,
+    guardId:guardId(step),returnSeconds:(exitD-choiceD)/maxRushSpeed,collected:false,earned:0,counterpartCollected:false,counterpartEarned:0,outcome:'pending',...extra};
+  choices.push(packet);nodes.push({kind:'stash',step,side,d:choiceD,lane:alternativeLane,value,coinCount,choiceId:id,choiceFamily:family,choiceRole:family==='wildlife-bank'?'bank':family==='boulder-snatch'?'snatch':'detour'});
+  if(counterpartType)nodes.push({kind:'counterpart',step,side,d:choiceD,lane:entryLane,type:counterpartType,choiceId:id,choiceFamily:family,choiceRole:'counterpart'});
  };
  const wildlife=nodes.filter(node=>['crocodile','fish','bird'].includes(node.guard)),bank=wildlife[(ordinal+levelIndex)%wildlife.length];
  const afterBank=nodes.find(node=>node.kind==='beat'&&node.step===bank.step+1);

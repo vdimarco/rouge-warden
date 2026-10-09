@@ -780,20 +780,20 @@ Reward placement SHALL express coherent challenges through sparse approach clues
 - **THEN** the landing pocket and cache remain reachable with existing steering and action durations instead of hiding ground rewards under an airborne raft
 
 ### Requirement: Authored fork reward tradeoffs
-Both fork streams SHALL offer voluntary, coherent reward opportunities tied to actual hazards, action heights and reachable exits. Opportunity families SHALL include an immediate ground stash versus a single wildlife action, a post-landing detour with a return, and an exposed sheltered-stream grab before a boulder. Seeded variation SHALL select bounded authored phrases rather than random token positions. Same-plane alternatives SHALL have different physical commitments; full-stream gates SHALL NOT advertise an action-free bypass. A stash SHALL award its stated fixed points once on compatible ground-height contact within the existing 0.95m physical radius, with distinct visual/audio feedback, without changing ordinary coin/streak/Gold Boost/Rush semantics. Optional collection SHALL NOT arbitrarily invalidate the main clean-cache bonus. Every advertised path SHALL remain attainable with existing controls and action durations, real spring motion/reversal, realistic input delay and maximum future Rush. Unsupported opportunities SHALL be omitted instead of promising impossible pickups. Metadata, world rewards and cues SHALL agree within bounded pools.
+Both fork streams SHALL offer voluntary authored reward opportunities with real competing benefits, actual hazards and attainable exits. A wildlife bank SHALL pay eight actual ordinary coins at grounded contact, applying individual coin streak, multiplier, boost, charge and coin-goal semantics; its lane bypasses the required clear and therefore forfeits an otherwise eligible clean bonus. A +200-point landing-detour stash SHALL compete with eight seconds of Gold Boost in the other stream lane at the exact same distance. A +120-point sheltered boulder-snatch SHALL compete with a single nonstacking shield in the clear lane at the exact same distance. Competing pickups SHALL require grounded physical contact within 0.95m and SHALL NOT both be earned on one trajectory. Stashes without coins SHALL retain their fixed point semantics. Optional collection alone SHALL NOT invalidate clean qualification. Seeded variation SHALL select complete authored phrases rather than random reward coordinates; full-stream gates SHALL NOT advertise an action-free bypass. Existing action timing, continuous steering, reachable delayed returns, pool limits and geometry SHALL remain intact. Unsupported promises SHALL be omitted, unrelated imminent hazards SHALL take cue priority, and metadata, world rewards and receipts SHALL agree. Visible cues and world rewards SHALL distinguish actual coins, fixed points, boost duration and shield redundancy before commitment.
 
-#### Scenario: Bank immediate income or face wildlife
-- **WHEN** the player approaches a single wildlife guard and its alternative stash
-- **THEN** both commitments are readable before contact, choosing the grounded stash naturally bypasses the required clear, and physically untouched or incompatible-height rewards remain uncollected
+#### Scenario: Take coins or preserve clean completion
+- **WHEN** the player takes the eight-coin bank instead of facing its wildlife guard
+- **THEN** contacted coins advance coin goals, streak and Rush using ordinary coin rules, the uncontacted action gold is missed, and the bypassed clear removes the clean-cache bonus
 
-#### Scenario: Detour and return
-- **WHEN** the player chooses an optional reward after a jump lands or a duck gate clears
-- **THEN** the reward and required exit remain reachable using the actual steering trajectory, and a successful return plus actual required clears retains the clean-cache entitlement
+#### Scenario: Choose immediate points or future gold
+- **WHEN** the player reaches the landing-detour alternatives
+- **THEN** the stash pays fixed points or the opposite-lane Gold Boost activates for eight seconds, both cannot pay, and a successful required return remains eligible for clean completion
 
-#### Scenario: Snatch or preserve a sheltered line
-- **WHEN** the player takes a stash before a sheltered-stream boulder or stays in clear water
-- **THEN** the exposed path has a visible, physically attainable cutback and extra immediate payout, while the clearer path retains its ordinary cache without automatically receiving the stash
+#### Scenario: Choose score or protection
+- **WHEN** the player reaches the sheltered snatch alternatives
+- **THEN** the exposed stash requires a cutback while holding the clear lane offers one shield, the benefits cannot both pay, and the cue discloses an already-held shield rather than promising another life
 
-#### Scenario: Read one honest opportunity
-- **WHEN** an opportunity approaches on desktop, portrait, short landscape or fallback
-- **THEN** a compact cue and world reward show its action, base payout and escape, unrelated immediate hazards take priority, gestures remain unobstructed, and paid/expired opportunities cannot reward again
+#### Scenario: Read the decision at speed
+- **WHEN** a fork or its next reward decision approaches on portrait, desktop, short landscape or fallback
+- **THEN** distinct competing benefits and required exits appear legibly before contact, actual world labels agree with receipts, unrelated urgent dangers take priority, paused/reduced motion remains stable, and drag gestures work through the guidance

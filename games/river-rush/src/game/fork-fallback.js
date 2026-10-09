@@ -275,7 +275,8 @@ export function treasurePresentation(entity){
 }
 export function stashPresentation(entity){
  const value=entity.value===200?200:entity.value===120?120:0;
- return{value,label:value?`+${value}`:'STASH',color:value===200?'#ffe3a1':'#ffd075',cloth:value===200?'#965542':'#746143'};
+ const coinCount=entity.coinCount===8?8:0;
+ return{value,coinCount,label:coinCount?'8 COINS':value?`+${value} PTS`:'STASH',color:coinCount?'#ffde65':value===200?'#ffe3a1':'#ffd075',cloth:value===200?'#965542':'#746143'};
 }
 export function drawStash2D(ctx,entity,point,size,time,reducedMotion){
  const style=stashPresentation(entity),pulse=reducedMotion?1:1+Math.sin(time*3.4+entity.id)*.04;
@@ -289,7 +290,7 @@ export function drawStash2D(ctx,entity,point,size,time,reducedMotion){
   ctx.fillStyle=style.color;ctx.strokeStyle='#a96828';ctx.lineWidth=.015;ctx.beginPath();ctx.ellipse(x,y,.11,.066,-.2,0,0,TAU);ctx.fill();ctx.stroke();
  }
  ctx.fillStyle=style.color;ctx.beginPath();ctx.moveTo(0,-.36);ctx.lineTo(.1,-.24);ctx.lineTo(0,-.12);ctx.lineTo(-.1,-.24);ctx.closePath();ctx.fill();ctx.restore();
- if(size>=12&&style.value){
+ if(size>=12&&(style.value||style.coinCount)){
   ctx.save();ctx.textAlign='center';ctx.font=`900 ${Math.max(10,size*.26)}px system-ui`;ctx.strokeStyle='#3a3329';ctx.fillStyle=style.color;ctx.lineWidth=3;const y=point.y-size*.88;ctx.strokeText(style.label,point.x,y);ctx.fillText(style.label,point.x,y);ctx.restore();
  }
 }

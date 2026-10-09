@@ -68,70 +68,123 @@
 @media(max-height:550px) and (min-width:701px){.coin-decision{padding:6px 8px}.coin-decision-risk{margin-top:5px;padding-top:5px}}
 @media(min-width:701px) and (max-aspect-ratio:3/4){.coin-decision{padding:10px 11px;font-size:13px}.coin-decision b{font-size:12px}.coin-decision small,.coin-decision em{font-size:10px}}
 
-/* A small route card gives each stream an objective without covering the river. */
-.river-adventure{width:100%;padding:7px 9px;border:1px solid #9cf7d768;border-radius:9px;background:#033c3be8;box-shadow:0 2px 9px #002e2f26;color:#dffff3;font-size:11px;line-height:1.3;pointer-events:none}
-.river-adventure header{display:flex;align-items:center;gap:5px;color:#b2ffde;margin-bottom:5px;font-size:8px;letter-spacing:.05em}
-.river-adventure header svg{width:14px;height:14px;flex:none}
-.adventure-route{color:#b6f0d1}
-.adventure-route>b{display:flex;align-items:center;gap:2px;font-size:10px;font-weight:900}
-.adventure-route>b svg{width:13px;height:13px;flex:none}
+/* Choices sit in the upper HUD band; the river and full-screen swipes stay open. */
+.runner-side-status.has-river-choice{width:460px;max-width:calc(100% - 300px);gap:6px}
+.runner-side-status.has-river-choice .power-status{flex-direction:row;flex-wrap:wrap;gap:6px}
+.has-river-choice .power-pill{padding:5px 9px;font-size:11px}
+.river-adventure{width:100%;padding:11px 12px;border:1px solid #b6efcf80;border-radius:12px;background:#032c2ff2;box-shadow:0 4px 18px #00171455;color:#e9f8eb;line-height:1.25;pointer-events:none}
+.river-adventure header{display:flex;align-items:center;gap:6px;color:#b2ffde;margin-bottom:8px;font-size:11px;letter-spacing:.04em}
+.river-adventure header svg{width:17px;height:17px;flex:none}
+.river-adventure header>span{margin-left:auto;color:#c5dad1;font-size:11px;letter-spacing:0;font-weight:600}
+.adventure-route-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.adventure-route{min-width:0;color:#cef4e1}
+.adventure-route-options .adventure-route{padding:9px 10px;border:1px solid #97dfc957;border-radius:8px;background:#a4efca08}
+.adventure-route>b{display:flex;align-items:center;gap:3px;font-size:13px;font-weight:900;line-height:1.25}
+.adventure-route>b svg{width:15px;height:15px;flex:none}
 .adventure-route>b span{min-width:0}
-.adventure-prize{display:flex;align-items:center;gap:4px;margin:3px 0 0 15px;font-weight:800;color:#ffe180;font-variant-numeric:tabular-nums}
-.adventure-prize svg{width:12px;height:12px;flex:none}
-.adventure-route>small{display:block;margin:2px 0 0 15px;font-size:8px;color:#ffcd97}
-.adventure-route.adventure-risk{color:#ffb56b}
-.adventure-preview .adventure-route+.adventure-route{border-top:1px solid #e5f3cf33;margin-top:6px;padding-top:5px}
-.adventure-island-cue{display:block;border-top:1px solid #e5f3cf22;margin-top:6px;padding-top:5px;font-size:8px;color:#b6ded0}
-.adventure-island-warning{border-color:#ffe180b3}
-.adventure-island-warning .adventure-island-cue{font-weight:800;color:#ffe180}
-.adventure-clear-progress{display:flex;align-items:center;gap:6px;margin:5px 0 0 15px}
-.adventure-clear-progress>span{display:flex;gap:4px}
-.adventure-clear-progress i{display:block;width:13px;height:4px;border-radius:2px;background:#ffffff38}
-.adventure-clear-progress i.cleared{background:#ffe180}
-.adventure-clear-progress small{font-size:8px;color:#ffe1b6;white-space:nowrap}
-.adventure-route>small.adventure-base-only{color:#c2d8ca}
-.adventure-rejoin>span{font-size:9px;color:#b6ded0}
-@media(max-width:700px){.river-adventure{padding:6px 7px;font-size:10px}.river-adventure header{font-size:7px;letter-spacing:0}.adventure-route>b{font-size:9px}.adventure-route>small,.adventure-island-cue,.adventure-clear-progress small{font-size:7px}.adventure-preview .adventure-route+.adventure-route{margin-top:5px;padding-top:4px}.adventure-island-cue{margin-top:5px;padding-top:4px}}
-@media(max-height:550px) and (min-width:701px){.river-adventure{padding:6px 8px}.adventure-preview .adventure-route+.adventure-route{margin-top:4px;padding-top:4px}}
-@media(min-width:701px) and (max-aspect-ratio:3/4){.river-adventure{padding:10px 11px;font-size:13px}.river-adventure header{font-size:10px}.adventure-route>b{font-size:12px}.adventure-route>small,.adventure-island-cue,.adventure-clear-progress small{font-size:10px}}
-
-/* One nearby opportunity replaces a long list of future rewards. */
-.adventure-compact-payoff{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:4px 0 0;font-size:10px;font-weight:800;color:#ffe180;font-variant-numeric:tabular-nums}
-.adventure-compact-payoff>span{display:flex;align-items:center;gap:3px}
-.adventure-compact-payoff svg{width:12px;height:12px;flex:none}
-.compact-clean>b{font-size:8px}
+.adventure-prize{display:flex;align-items:center;gap:5px;margin:7px 0 5px;font-weight:900;font-size:18px;color:#ffe180;font-variant-numeric:tabular-nums}
+.adventure-prize svg{width:17px;height:17px;flex:none}
+.adventure-route-terms,.adventure-route-option,.adventure-route-cost{display:block;font-size:11px;line-height:1.35;letter-spacing:0}
+.adventure-route-option{margin-top:6px;font-weight:800;color:#dffff0}
+.adventure-route-cost{margin-top:3px;color:#bad4c8}
+.adventure-route.adventure-risk{color:#ffd2a3}
+.adventure-route-options .adventure-risk{border-color:#ffbd715a;background:#fcb06d0b}
+.adventure-risk .adventure-route-cost{color:#f0c19d}
+.adventure-island-cue{display:block;margin-top:8px;font-size:11px;font-weight:700;color:#c6ebdc}
+.adventure-island-warning{border-color:#ffe180}
+.adventure-island-warning .adventure-island-cue{color:#ffe180}
+.adventure-rejoin{width:max-content;min-width:200px}
+.adventure-rejoin header{margin-bottom:3px}
+.adventure-rejoin>span{font-size:11px;color:#b6ded0}
+.adventure-compact{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.adventure-compact>b{font-size:12px}
+.adventure-compact-payoff{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:800;color:#ffe180;font-variant-numeric:tabular-nums}
+.adventure-compact-payoff>span{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.adventure-compact-payoff svg{width:13px;height:13px;flex:none}
+.compact-clean{flex-direction:column}
+.compact-clean>b{font-size:11px}
 .compact-clean>i{display:flex;gap:3px}
-.compact-clean em{height:3px;width:8px;background:#ffffff38;border-radius:2px}
+.compact-clean em{height:3px;width:14px;background:#ffffff38;border-radius:2px}
 .compact-clean em.cleared{background:#ffe180}
 .compact-clean.clean-lost{color:#bacbbe}
 .compact-clean.clean-lost>i{display:none}
-.reward-opportunity{border-top:1px solid #e5f3cf44;padding-top:6px;margin-top:6px;pointer-events:none;min-width:0;color:#dffff3;font-size:10px;line-height:1.2}
-.reward-opportunity>div{display:flex;align-items:center;gap:4px;min-width:0}
-.reward-opportunity svg{width:13px;height:13px;flex:none}
-.reward-opportunity b{font-size:10px;font-weight:900;min-width:0}
-.reward-opportunity small{font-size:8px;font-weight:600}
-.reward-action-line{color:#ffd1a0}
-.reward-action-line>span{min-width:0}
-.reward-action-line>span>b,.reward-action-line>span>small{display:block}
-.reward-action-line>span>small{margin-top:1px}
-.reward-stash-line{color:#ffe180;margin-top:4px}
-.reward-stash-line>small{order:-1;color:#c9e4d4}
-.reward-return-line{margin-top:5px;color:#bdffe7}
-.reward-return-line>span{font-size:9px;font-weight:700}
-.reward-return-line b{font-size:9px}
-.reward-hold{width:13px;text-align:center;font-size:12px;font-weight:700;flex:none}
-.reward-opportunity>.reward-choice-cost{display:block;margin-top:4px;color:#eacba1;font-size:7px}
-@media(max-width:700px){.adventure-compact-payoff{font-size:9px}.compact-clean>b{font-size:7px}.compact-clean em{width:7px}.reward-opportunity{padding-top:5px;margin-top:5px}.reward-opportunity b{font-size:9px}.reward-opportunity svg{width:12px;height:12px}.reward-opportunity small{font-size:7px}.reward-return-line>span,.reward-return-line b{font-size:8px}.reward-opportunity>.reward-choice-cost{font-size:7px}}
-@media(min-width:701px) and (max-aspect-ratio:3/4){.adventure-compact-payoff{font-size:12px}.compact-clean>b{font-size:10px}.reward-opportunity{font-size:12px}.reward-opportunity b{font-size:12px}.reward-opportunity small{font-size:10px}.reward-return-line>span,.reward-return-line b{font-size:11px}.reward-opportunity>.reward-choice-cost{font-size:9px}}
-.adventure-compact>b{font-size:11px}
-.adventure-compact-payoff{font-size:11px}
-.compact-clean>b{font-size:9px}
-.reward-opportunity b{font-size:11px}
-.reward-opportunity small{font-size:9px}
-.reward-return-line>span,.reward-return-line b{font-size:10px}
-.reward-opportunity>.reward-choice-cost{font-size:9px}
-.reward-compare-line{flex-wrap:wrap;justify-content:space-between}
-.reward-compare-line>span{display:flex;align-items:center;gap:2px;white-space:nowrap}
-.reward-compare-line .reward-stash-line{margin-top:0}
-.reward-opportunity-compact{padding-top:4px;margin-top:4px}
-@media(max-width:700px){.adventure-compact>b{font-size:10px}.adventure-compact-payoff{font-size:10px}.compact-clean>b{font-size:8px}.reward-opportunity b{font-size:11px}.reward-opportunity small{font-size:9px}.reward-return-line>span,.reward-return-line b{font-size:10px}.reward-opportunity>.reward-choice-cost{font-size:8px}.reward-compare-line svg{width:11px;height:11px}.reward-compare-line b{font-size:11px}.reward-compare-line>small{font-size:8px}}
+.reward-opportunity{border-top:1px solid #e5f3cf33;padding-top:8px;margin-top:8px;pointer-events:none;min-width:0;color:#effbef;line-height:1.25}
+.reward-opportunity h3{font-size:11px;font-weight:900;letter-spacing:.04em;margin:0 0 7px;color:#e3f6ea}
+.reward-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.reward-option{min-width:0;padding:8px 9px;border:1px solid #f9c65b73;border-radius:8px;background:#f9c65b0a}
+.reward-option-power{border-color:#91ffe56a;background:#91ffe509}
+.reward-option-risk{border-color:#ffb0716a;background:#ffb07109}
+.reward-option-heading{display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:11px;font-weight:800;color:#e2ecdd}
+.reward-direction{display:inline-flex;align-items:center;gap:1px;white-space:nowrap;font-size:11px;font-weight:900;color:#fff0c9}
+.reward-direction svg{width:14px;height:14px;flex:none}
+.reward-option-heading>.reward-direction{margin-left:-3px}
+.reward-option-benefit{display:flex;align-items:center;gap:5px;font-size:16px;line-height:1.2;margin-top:6px;font-weight:900;color:#ffe180;white-space:nowrap}
+.reward-option-benefit svg{width:17px;height:17px;flex:none}
+.reward-option-power .reward-option-benefit{color:#aaffdf}
+.reward-option-risk .reward-option-benefit{color:#ffd2a3}
+.reward-option-redundant{border-color:#b3c4bc55;background:#b3c4bc08}
+.reward-option-redundant .reward-option-benefit{color:#c6d8cd}
+.reward-option-detail,.reward-option-cost{display:block;font-size:11px;line-height:1.3;margin-top:5px;font-weight:600;letter-spacing:0}
+.reward-option-cost{color:#ecc8a7;font-weight:700;margin-top:3px}
+.reward-option-power .reward-option-cost{color:#bfdacb}
+.reward-return-line{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:7px;color:#caffea;font-size:11px;font-weight:700}
+.reward-return-line .reward-direction{color:#caffea}
+.reward-return-line svg{width:14px;height:14px;flex:none}
+.reward-return-line b{font-size:11px}
+.reward-receipt{display:flex;align-items:center;gap:6px;color:#ffe180;font-size:13px}
+.reward-receipt svg{width:18px;height:18px;flex:none}
+.reward-receipt-cost{display:block;margin-top:5px;color:#d1ded0;font-size:11px}
+.notice-during-choice{top:225px;left:auto;right:24px;translate:none;font-size:11px;max-width:220px;padding:7px 9px}
+@media(max-width:700px){
+  .runner-distance.distance-during-choice{top:71px;left:15px;right:15px;min-width:0;max-width:none;display:grid;grid-template-columns:1fr auto;gap:0 12px;text-align:left;padding:5px 8px;background:#043a38cc}
+  .distance-during-choice>span{font-size:9px;align-self:center;letter-spacing:.04em}
+  .runner-distance.distance-during-choice>b{font-size:12px}
+  .distance-during-choice .map-progress{grid-column:1 / -1;height:3px;margin-top:4px}
+  .distance-during-choice :is(.course-stage,.terrain-cue,.run-goal){display:none}
+  .runner-side-status.has-river-choice{top:114px;left:15px;right:15px;width:auto;max-width:none;gap:5px}
+  .river-adventure{padding:9px 10px}
+  .river-adventure header{margin-bottom:7px}
+  .river-adventure header>span{display:none}
+  .adventure-route-options,.reward-options{gap:7px}
+  .adventure-route-options .adventure-route{padding:8px}
+  .adventure-route>b{font-size:12px}
+  .adventure-prize{font-size:16px;margin-top:6px}
+  .adventure-route-option{margin-top:5px}
+  .adventure-compact{gap:8px}
+  .adventure-compact>b{font-size:11px;max-width:40%}
+  .adventure-compact-payoff{gap:7px;font-size:11px}
+  .compact-clean>b{font-size:11px}
+  .reward-option{padding:7px}
+  .reward-option-heading{font-size:11px;gap:3px}
+  .reward-option-benefit{font-size:14px;gap:3px}
+  .reward-option-benefit svg{width:15px;height:15px}
+  .reward-option-detail,.reward-option-cost{font-size:11px}
+  .reward-opportunity h3{font-size:11px}
+  .capture-during-choice{top:315px;right:15px}
+  .notice-during-choice{display:none}
+}
+@media(max-height:550px) and (min-width:701px){
+  .runner-side-status.has-river-choice{width:405px;max-width:calc(100% - 310px);top:80px;left:20px}
+  .river-adventure{padding:8px 10px}
+  .river-adventure header{margin-bottom:6px}
+  .adventure-route-options .adventure-route{padding:7px 8px}
+  .adventure-prize{font-size:16px;margin:5px 0 3px}
+  .adventure-route-option{margin-top:4px}
+  .adventure-island-cue{margin-top:6px}
+  .reward-opportunity{padding-top:5px;margin-top:5px}
+  .reward-opportunity h3{margin-bottom:5px}
+  .reward-option{padding:6px 8px}
+  .reward-option-benefit{font-size:14px;margin-top:5px}
+  .reward-option-detail{margin-top:3px}
+  .reward-option-cost{margin-top:2px}
+  .reward-return-line{margin-top:5px}
+  .has-river-choice .power-status{display:none}
+  .notice-during-choice{top:233px;left:auto;right:20px;translate:none;max-width:205px;font-size:11px}
+  .capture-during-choice{top:282px;right:20px}
+}
+@media(min-width:701px) and (max-aspect-ratio:3/4){
+  .runner-side-status.has-river-choice{width:470px;max-width:calc(100% - 410px)}
+  .river-adventure{padding:12px}
+  .adventure-route>b{font-size:14px}
+  .adventure-prize{font-size:20px}
+}

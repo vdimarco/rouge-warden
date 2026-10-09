@@ -13,15 +13,15 @@ function prepare(seed,index,boost=false,forkIndex=0){
  return{g,fork,packet:g.adventures.find(p=>p.id===fork.id)};
 }
 function play(seed,index,hz,mode,{delay=.288,boost=false,forkIndex=0}={}){
- const {g,fork,packet}=prepare(seed,index,boost,forkIndex),input=emptyInput(),safe=mode==='snatch'||mode==='sheltered',side=safe?fork.safeSide:fork.riskSide;
- const family=mode==='bank'?'wildlife-bank':mode==='snatch'?'boulder-snatch':mode==='detour'?'landing-detour':null,choice=packet.choices.find(p=>p.family===family),handled=new Set(),events=[];
+ const {g,fork,packet}=prepare(seed,index,boost,forkIndex),input=emptyInput(),safe=['snatch','sheltered','shield'].includes(mode),side=safe?fork.safeSide:fork.riskSide;
+ const family=mode==='bank'?'wildlife-bank':['snatch','shield'].includes(mode)?'boulder-snatch':['detour','gold-boost'].includes(mode)?'landing-detour':null,choice=packet.choices.find(p=>p.family===family),handled=new Set(),events=[];
  let last=0,pendingReturn=null,stashSeen=false,guardMargin=null;
  while(g.phase==='playing'&&g.distance<fork.end){
   const guard=g.entities.find(e=>!e.done&&e.adventureId===fork.id&&e.routeSide===side&&['rock','log','branch'].includes(e.type));
   const cache=g.entities.find(e=>!e.done&&e.type==='treasure'&&e.adventureId===fork.id&&e.routeSide===side);
   let target=guard?.adventureRouteLane??cache?.lane??(side<0?1:3);
   const stash=choice?g.entities.find(e=>!e.done&&e.type==='stash'&&e.choiceId===choice.id):null;
-  if(stash&&timeToImpact(g,stash.d)<=.28)target=stash.lane;
+  if(stash&&timeToImpact(g,stash.d)<=.28&&!['gold-boost','shield'].includes(mode))target=stash.lane;
   if(mode==='bank'&&guard?.guardId===choice.guardId)target=choice.alternativeLane;
   if(pendingReturn&&g.time<pendingReturn.at)target=choice.alternativeLane;
   steer(g,input,target);
@@ -60,13 +60,13 @@ test('bank versus guard gives mutually exclusive physical qualification and hone
  let comparisons=0;
  for(const seed of [1,12,137])for(const level of LEVELS)for(const hz of [30,60,120]){
   const bank=play(seed,level.index,hz,'bank'),guard=play(seed,level.index,hz,'guard');comparisons++;
-  const stash=bank.events.find(e=>e.type==='stash'&&e.choiceId===bank.choice.id);assert.ok(stash);assert.equal(stash.value,120);assert.equal(stash.choiceFamily,'wildlife-bank');assert.equal(bank.events.some(e=>e.type==='perfect'&&e.guardId===bank.choice.guardId),false);
+  const stash=bank.events.find(e=>e.type==='stash'&&e.choiceId===bank.choice.id);assert.ok(stash);assert.equal(stash.coinCount,8);assert.equal(stash.value,stash.coinValues.reduce((sum,value)=>sum+value,0));assert.ok(stash.value>=90);assert.equal(stash.choiceFamily,'wildlife-bank');assert.equal(bank.events.some(e=>e.type==='perfect'&&e.guardId===bank.choice.guardId),false);
   assert.equal(bank.events.find(e=>e.type==='treasure').value,200);assert.equal(guard.events.find(e=>e.type==='treasure').value,600);assert.equal(guard.events.some(e=>e.type==='stash'),false);
   const guardEvent=guard.events.find(e=>e.type==='perfect'&&e.guardId===bank.choice.guardId);assert.ok(guardEvent);
   const actualGuard=bank.packet.nodes.find(n=>n.guardId===bank.choice.guardId);assert.ok(Math.abs(forkLaneCross(stash.playerLane,stash.distance,bank.g.terrainProfile)-forkLaneCross(actualGuard.riskLane,stash.distance,bank.g.terrainProfile))>HAZARD_LANE_RADIUS*3.8);
   const centerGold=bank.events.find(e=>e.type==='coin'&&e.choiceId===bank.choice.id&&Math.abs(e.distance-bank.choice.choiceD)<1e-7);assert.equal(centerGold,undefined,'banked player also got the mutually exclusive contact-plane guard coin');
  }
- console.log(JSON.stringify({matchedBankGuardComparisons:comparisons,bankStash:120,bankMainCache:200,cleanGuardMainCache:600}));
+ console.log(JSON.stringify({matchedBankGuardComparisons:comparisons,bankCoins:8,bankMainCache:200,cleanGuardMainCache:600}));
 });
 
 test('taking and skipping detours and boulder snatches work with actual delayed reversals across maps, refresh rates and maximum future Rush',()=>{
@@ -84,9 +84,9 @@ test('taking and skipping detours and boulder snatches work with actual delayed 
  console.log(JSON.stringify({takenLandingDetours:detours,takenBoulderSnatches:snatches,protectedMaximumRushRuns:protectedRuns,inputDelayMs:[180,234,288],minimumObservedJumpTimeAtReturnGuard:minJumpTime,minimumObservedImpactReturnSeconds:minReturn}));
 });
 
-test('stash is a fixed score-only ground pickup, never a coin, power, adjacent attraction or main-cache claim',()=>{
+test('noncoin stash is a fixed score-only ground pickup, never a coin, power, adjacent attraction or main-cache claim',()=>{
  for(const hz of [30,60,120])for(const value of [120,200])for(const powered of [false,true]){
-  const g=createGame(1),e={id:900,type:'stash',lane:2,d:.1,value,choiceId:'fixture',choiceFamily:'wildlife-bank',choiceRole:'bank',adventureId:'fixture',routeSide:-1,routeRole:'risk'};
+  const g=createGame(1),e={id:900,type:'stash',lane:2,d:.1,value,choiceId:'fixture',choiceFamily:value===200?'landing-detour':'boulder-snatch',choiceRole:'stash',adventureId:'fixture',routeSide:-1,routeRole:'risk'};
   Object.assign(g,{entities:[e],nextRow:1e9,coins:11,streak:7,multiplier:1,lastCoin:0,charge:48,magnet:powered?8:0,rush:powered?4:0,goal:{kind:'coins',start:0,target:1e9}});updateGame(g,emptyInput(),1/hz);
   assert.equal(e.collected,true);assert.equal(g.bonus,value);assert.equal(g.coins,11);assert.equal(g.streak,7);assert.equal(g.multiplier,1);assert.equal(g.charge,48);assert.equal(g.effects.find(e=>e.type==='stash').value,value);assert.equal(worldEntityVisible(e,g.distance,180),false);
  }
@@ -101,7 +101,7 @@ test('the upcoming bank alternative stays readable after a collected detour at t
  let found=null;
  for(let seed=1;seed<=50&&!found;seed++)for(const level of LEVELS){const state=prepare(seed,level.index),bank=state.packet.choices.find(c=>c.family==='wildlife-bank'),detour=state.packet.choices.find(c=>c.family==='landing-detour');if(bank.guardId===detour.guardId){found={...state,bank,detour};break;}}
  assert.ok(found);const {g,packet,bank,detour}=found;g.distance=detour.choiceD+1;g.lane=g.visualLane=detour.alternativeLane;detour.collected=true;detour.earned=200;
- const choice=snapshot(g).rewardChoice;assert.equal(choice.id,bank.id);assert.equal(choice.returnFromChoiceId,detour.id);assert.equal(choice.returnFromValue,200);assert.equal(choice.guardId,detour.guardId);assert.equal(choice.baseValue,120);assert.equal(adventureRoute(packet,packet.riskSide).collected,false);
+ const choice=snapshot(g).rewardChoice;assert.equal(choice.id,bank.id);assert.equal(choice.returnFromChoiceId,detour.id);assert.equal(choice.returnFromValue,200);assert.equal(choice.guardId,detour.guardId);assert.equal(choice.baseValue,80);assert.equal(choice.coinCount,8);assert.equal(adventureRoute(packet,packet.riskSide).collected,false);
 });
 
 test('a physically banked stash reveals its following detour and keeps that detour return urgent without restoring the clean bonus',()=>{
@@ -110,10 +110,10 @@ test('a physically banked stash reveals its following detour and keeps that deto
   assert.equal(bank.step,0);assert.equal(detour.sourceGuardId,bank.guardId);assert.equal(detour.exitD,bank.exitD);assert.equal(detour.alternativeLane,bank.alternativeLane);
   steer(g,input,bank.alternativeLane);
   while(!bank.collected){updateGame(g,input,1/hz);assert.equal(g.phase,'playing');assert.ok(g.distance<=bank.choiceD+g.speed/hz);}
-  const bankReceipt=g.effects.find(e=>e.type==='stash'&&e.choiceId===bank.id);assert.ok(bankReceipt);assert.equal(bankReceipt.value,120);
+  const bankReceipt=g.effects.find(e=>e.type==='stash'&&e.choiceId===bank.id);assert.ok(bankReceipt);assert.equal(bankReceipt.coinCount,8);assert.equal(bankReceipt.value,90);
   const banked=snapshot(g),offer=rewardChoiceCue(banked);
   assert.ok(g.distance<bank.exitD,'the original bank return is still unfinished');assert.ok(g.distance<detour.choiceD,'the new decision must be readable before stash contact');
-  assert.equal(banked.rewardChoice.id,detour.id);assert.equal(banked.rewardChoice.returnFromChoiceId,bank.id);assert.equal(banked.rewardChoice.returnFromValue,120);
+  assert.equal(banked.rewardChoice.id,detour.id);assert.equal(banked.rewardChoice.returnFromChoiceId,bank.id);assert.equal(banked.rewardChoice.returnFromValue,bankReceipt.value);
   assert.ok(offer);assert.equal(offer.family,'landing-detour');assert.equal(offer.stashPoints,200);assert.equal(offer.stashDirection,'hold');
   assert.equal(offer.returnDirection,detour.exitLane<detour.alternativeLane?'left':'right');assert.equal(offer.cleanAtRisk,0);
   assert.equal(adventureRoute(packet,packet.riskSide).cleanEligible,false);assert.equal(adventureRoute(packet,packet.riskSide).cleanClears,0);
@@ -183,4 +183,55 @@ test('whole finite maps support consciously taking every chosen-family stash, re
   assert.equal(g.phase,'won');assert.equal(g.distance,level.length);assert.deepEqual([...paid].sort(),[...wanted].sort(),'a consciously selected stash was not physically reached');stages++;
  }
  assert.ok(stashCount>=stages*2);assert.ok(cacheCount>=stages*2);assert.ok(rushes>20);assert.ok(maxEntities<120);console.log(JSON.stringify({completeOptionalStashStages:stages,selectedStashesPhysicallyPaid:stashCount,mainCachesPhysicallyPaid:cacheCount,naturallyEarnedRushes:rushes,maxEntities,delayedExitMs:288}));
+});
+
+test('same-plane authored alternatives are physically exclusive across maps, steering rates and future Rush',()=>{
+ let pairs=0;
+ for(const seed of [1,137])for(const level of LEVELS)for(const hz of [30,60,120])for(const boost of [false,true])for(const [stashMode,powerMode,power] of [['detour','gold-boost','magnet'],['snatch','shield','shield']]){
+  const stashRun=play(seed,level.index,hz,stashMode,{boost}),powerRun=play(seed,level.index,hz,powerMode,{boost});pairs++;
+  const stash=stashRun.events.find(e=>e.type==='stash'&&e.choiceId===stashRun.choice.id),counterpart=powerRun.events.find(e=>e.type==='power'&&e.choiceId===powerRun.choice.id);
+  assert.ok(stash);assert.ok(counterpart);assert.equal(counterpart.power,power);assert.equal(counterpart.distance,stash.distance,'the alternatives are not at one physical commitment plane');
+  assert.equal(stashRun.events.some(e=>e.type==='power'&&e.choiceId===stash.choiceId),false,'a stash also activated its competing power');
+  assert.equal(powerRun.events.some(e=>e.type==='stash'&&e.choiceId===counterpart.choiceId),false,'a power also paid its competing stash');
+  assert.equal(stashRun.choice.outcome,'stash');assert.equal(stashRun.choice.counterpartCollected,false);assert.equal(powerRun.choice.outcome,'counterpart');assert.equal(powerRun.choice.collected,false);assert.equal(powerRun.choice.counterpartCollected,true);
+  assert.equal(powerRun.choice.counterpartEarned,power==='magnet'?8:1);
+  assert.ok(counterpart.playerHeight<=.28);assert.ok(Math.abs(forkLaneCross(counterpart.lane,counterpart.distance,powerRun.g.terrainProfile)-forkLaneCross(counterpart.playerLane,counterpart.distance,powerRun.g.terrainProfile))<=.95+1e-8);
+  const powerNode=powerRun.packet.nodes.find(n=>n.kind==='counterpart'&&n.choiceId===powerRun.choice.id);assert.equal(powerNode.lane,powerRun.choice.entryLane);assert.equal(powerNode.d,powerRun.choice.choiceD);
+  if(power==='magnet'){assert.equal(counterpart.duration,8);assert.equal(powerRun.events.find(e=>e.type==='treasure').value,boost?200:600,'taking the boost itself forfeited the clean bonus');assert.ok(powerRun.events.some(e=>e.type==='coin'&&e.boosted&&e.contactTime>counterpart.contactTime),'the boost provided no reachable future gold');}
+  else{assert.equal(counterpart.shieldAlreadyHeld,false);assert.equal(powerRun.g.shield,true);assert.equal(powerRun.g.shieldsUsed,0);}
+ }
+ console.log(JSON.stringify({samePlaneStashPowerPairs:pairs,refreshRates:[30,60,120],maximumFutureRush:true}));
+});
+
+test('eight-coin bank uses the identical individual economics of eight ordinary tokens with one truthful receipt',()=>{
+ for(const hz of [30,60,120])for(const streak of [0,7,15,31,39])for(const boosted of [false,true])for(const rushing of [false,true]){
+  const setup=entities=>{const g=createGame(1);Object.assign(g,{entities,nextRow:1e9,coins:11,streak,multiplier:Math.min(5,1+Math.floor(streak/8)),lastCoin:0,charge:48,magnet:boosted?8:0,rush:rushing?4:0,goal:{kind:'coins',start:11,target:8}});return g;};
+  const pouch=setup([{id:900,type:'stash',lane:2,d:.1,value:80,coinCount:8,choiceFamily:'wildlife-bank',choiceRole:'bank'}]);
+  const tokens=setup(Array.from({length:8},(_,index)=>({id:900+index,type:'coin',lane:2,d:.1,coinValue:10})));
+  updateGame(pouch,emptyInput(),1/hz);updateGame(tokens,emptyInput(),1/hz);
+  for(const key of ['coins','streak','lastCoin','multiplier','charge','bonus','score','goalsCleared'])assert.equal(pouch[key],tokens[key],`${hz}Hz streak${streak} boost${boosted} Rush${rushing}: ${key}`);
+  assert.deepEqual(pouch.goal,tokens.goal);assert.equal(pouch.coins,19);assert.equal(pouch.streak,streak+8);assert.equal(pouch.charge,rushing?48:84);assert.equal(pouch.goalsCleared,1);
+  const receipt=pouch.effects.find(e=>e.type==='stash');assert.ok(receipt);assert.equal(receipt.coinCount,8);assert.equal(receipt.coinValue,10);assert.equal(receipt.boosted,boosted);assert.deepEqual(receipt.coinValues,tokens.effects.filter(e=>e.type==='coin').map(e=>e.value));assert.equal(receipt.value,receipt.coinValues.reduce((sum,value)=>sum+value,0));
+  assert.equal(pouch.effects.filter(e=>e.type==='stash').length,1);assert.equal(pouch.effects.some(e=>e.type==='coin'),false,'one contact generated eight world pickup receipts');
+ }
+});
+
+test('authored coin bank and powers miss airborne and widened adjacent contacts, and a shield never stacks',()=>{
+ for(const hz of [30,60,120])for(const type of ['stash','magnet','shield'])for(const condition of ['airborne','adjacent','widened-gap']){
+  const {g,fork,packet}=prepare(137,0),choice=packet.choices.find(c=>c.family===(type==='stash'?'wildlife-bank':type==='magnet'?'landing-detour':'boulder-snatch')),lane=type==='stash'?choice.alternativeLane:choice.entryLane;
+  g.distance=choice.choiceD-.1;g.nextRow=1e9;g.entities=[{id:900,type,lane,d:choice.choiceD,value:80,coinCount:type==='stash'?8:0,groundedContact:true,choiceId:choice.id,choiceFamily:choice.family,adventureId:packet.id}];
+  const direction=lane===1||lane===4?-1:1;
+  let edgeLane=lane+direction*.24;
+  while(Math.abs(forkLaneCross(edgeLane,choice.choiceD,g.terrainProfile)-forkLaneCross(lane,choice.choiceD,g.terrainProfile))<1.01)edgeLane+=direction*.001;
+  g.lane=g.visualLane=condition==='airborne'?lane:condition==='adjacent'?streamLanes(choice.routeSide).find(l=>l!==lane):edgeLane;g.laneVelocity=0;
+  if(condition==='airborne'){g.action='jump';g.actionTime=.3;}
+  const entity=g.entities[0];updateGame(g,emptyInput(),1/hz);
+  assert.equal(entity.collected,undefined,`${type}/${condition} collected`);assert.equal(g.coins,0);assert.equal(g.bonus,0);assert.equal(g.magnet,0);assert.equal(g.shield,false);assert.equal(choice.collected,false);assert.equal(choice.counterpartCollected,false);assert.equal(choice.outcome,'missed');
+  assert.ok(!islandContains(forkLaneCross(g.visualLane,g.distance,g.terrainProfile),g.distance,g.terrainProfile),'miss fixture entered land');
+ }
+ for(const hz of [30,60,120]){
+  const g=createGame(1),e={id:900,type:'shield',lane:2,d:.1,groundedContact:true};Object.assign(g,{entities:[e],nextRow:1e9,shield:true,shieldsUsed:2});updateGame(g,emptyInput(),1/hz);
+  assert.equal(e.collected,true);assert.equal(g.shield,true);assert.equal(g.shieldsUsed,2);assert.equal(g.effects.find(e=>e.type==='power').shieldAlreadyHeld,true);
+  const airborne=createGame(1);Object.assign(airborne,{entities:[{id:901,type:'magnet',lane:2,d:.1}],nextRow:1e9,action:'jump',actionTime:.3});updateGame(airborne,emptyInput(),1/hz);assert.ok(airborne.magnet>7.9,'ordinary powers lost their existing airborne pickup behavior');
+ }
 });
