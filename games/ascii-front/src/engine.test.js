@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createGame, startGame, updateGame, togglePause, chooseUpgrade, activateEmp, snapshot, TILE, WIDTH } from './engine.js';
+import { createGame, startGame, updateGame, togglePause, chooseUpgrade, continueStage, activateEmp, snapshot, TILE, WIDTH } from './engine.js';
 import { MAPS, makeTerrain, validateMap } from './maps.js';
 
 function isolated(options = {}) {
@@ -27,6 +27,24 @@ function hitPlayer(game, player = game.player) {
   player.invulnerable = 0;
   shell(game, { x: player.x, y: player.y, owner: 'enemy' });
   updateGame(game, 0.01);
+}
+
+function reachableCells(game, player, maxSteps = 6) {
+  const start = [Math.floor(player.x / TILE), Math.floor(player.y / TILE), 0];
+  const queue = [start], visited = new Set([start[1] * 30 + start[0]]);
+  for (const [col, row, steps] of queue) {
+    if (steps >= maxSteps) continue;
+    for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+      const nextCol = col + dx, nextRow = row + dy, key = nextRow * 30 + nextCol;
+      const x = nextCol * TILE + 16, y = nextRow * TILE + 16;
+      if (visited.has(key) || !['.', '%', 'I'].includes(game.terrain[nextRow]?.[nextCol])
+        || (Math.abs(x - game.base.x) < 34 && Math.abs(y - game.base.y) < 30)
+        || [...game.players, ...game.enemies].some(tank => tank !== player && !tank.dead
+          && Math.abs(tank.x - x) < 22 && Math.abs(tank.y - y) < 22)) continue;
+      visited.add(key); queue.push([nextCol, nextRow, steps + 1]);
+    }
+  }
+  return visited;
 }
 
 test('35 fresh maps, deterministic games, stage selection and validated custom maps', () => {
@@ -59,19 +77,25 @@ test('35 fresh maps, deterministic games, stage selection and validated custom m
   assert.equal(selected.player.hp, 4);
 });
 
-test('normalized movement, wall sliding, tank collision and independent finite pointer aim', () => {
+test('cardinal movement retains a held axis, respects walls and tanks, and supports deliberate pointer aim', () => {
   const game = isolated();
   Object.assign(game.player, { x: 336, y: 336 });
   updateGame(game, 0.05, { up: true, right: true });
-  assert.ok(Math.abs(Math.hypot(game.player.x - 336, game.player.y - 336) - 11) < 1e-9);
-  assert.equal(game.player.hullAngle, -Math.PI / 4);
+  assert.ok(Math.abs(Math.hypot(game.player.x - 336, game.player.y - 336) - 8) < 1e-9);
+  assert.equal(game.player.x, 336); assert.equal(game.player.hullAngle, -Math.PI / 2);
   assert.equal(game.player.aimAngle, game.player.hullAngle);
+  updateGame(game, 0.05, { right: true });
+  const heldY = game.player.y;
+  updateGame(game, 0.05, { up: true, right: true });
+  assert.equal(game.player.dir, 1); assert.equal(game.player.y, heldY);
   const point = { x: game.player.x, y: game.player.y };
   updateGame(game, 0.05, { up: true, down: true, left: true, right: true });
   assert.equal(game.player.x, point.x); assert.equal(game.player.y, point.y);
   Object.assign(game.player, { x: 116, y: 112 });
   for (let row = 1; row < 10; row++) game.terrain[row][4] = 'S';
   updateGame(game, 0.05, { up: true, right: true });
+  assert.equal(game.player.y, 112, 'A held blocked axis does not turn into diagonal wall sliding');
+  updateGame(game, 0.05, { up: true });
   assert.ok(game.player.x <= 117 && game.player.y < 112);
   updateGame(game, 0.05, { right: true, dash: true });
   assert.ok(game.player.x <= 117);
@@ -90,9 +114,31 @@ test('normalized movement, wall sliding, tank collision and independent finite p
   updateGame(aimed, 0.02, { right: true, aimX: 0, aimY: 400, fire: true });
   assert.equal(aimed.player.hullAngle, 0); assert.equal(aimed.player.aimAngle, Math.PI);
   updateGame(aimed, 0.02, { aimX: NaN, aimY: Infinity });
-  assert.equal(aimed.player.aimAngle, Math.PI);
+  assert.equal(aimed.player.aimAngle, aimed.player.hullAngle, 'Keyboard fire returns to the hull after click aim ends');
   updateGame(aimed, NaN, { right: true });
   assert.ok(Number.isFinite(aimed.player.x));
+});
+
+test('a blocked perpendicular turn centers within its corridor without crossing walls, tanks or ice', () => {
+  const corridor = (coop = false) => {
+    const game = isolated({ coop });
+    game.terrain = game.terrain.map(row => row.map(() => 'S'));
+    for (let row = 1; row < 20; row++) game.terrain[row][3] = '.';
+    for (let col = 1; col < 29; col++) game.terrain[10][col] = '.';
+    Object.assign(game.player, { x: 112, y: 342 });
+    return game;
+  };
+  const assisted = corridor(); updateGame(assisted, 0.05, { right: true });
+  assert.equal(assisted.player.y, 336); assert.equal(assisted.player.x, 120);
+  step(assisted, 0.2, { right: true }); assert.ok(assisted.player.x > 144);
+  const wall = corridor(); wall.terrain[10][4] = 'S'; updateGame(wall, 0.05, { right: true });
+  assert.equal(wall.player.y, 342);
+  const occupied = corridor(true); Object.assign(occupied.players[1], { x: 144, y: 336 });
+  updateGame(occupied, 0.05, { right: true }); assert.equal(occupied.player.y, 342);
+  const ice = corridor(); ice.terrain[10][3] = 'I'; updateGame(ice, 0.05, { right: true });
+  assert.equal(ice.player.y, 342);
+  const open = isolated(); Object.assign(open.player, { x: 112, y: 342 });
+  updateGame(open, 0.05, { right: true }); assert.equal(open.player.y, 342);
 });
 
 test('dash integrates exactly 0.16 seconds with a 2.1 second recharge', () => {
@@ -101,7 +147,7 @@ test('dash integrates exactly 0.16 seconds with a 2.1 second recharge', () => {
     updateGame(game, dt, { right: true, dash: true });
     assert.equal(game.player.dashCooldown, 2.1);
     step(game, 0.2, {}, dt);
-    assert.ok(Math.abs(game.player.x - 336 - 220 * 3.5 * 0.16) < 1e-8);
+    assert.ok(Math.abs(game.player.x - 336 - 160 * 3.5 * 0.16) < 1e-8);
     assert.equal(game.player.dashTimer, 0);
     updateGame(game, dt, { dash: true }); assert.equal(game.player.dashTimer, 0);
     step(game, 2.2, {}, dt);
@@ -198,6 +244,117 @@ test('carrier ordinals4/11/18 drop exactly once on their first hit', () => {
   assert.ok(['star', 'helmet', 'grenade', 'timer', 'shovel', 'tank'].includes(hit.pickups[0].type));
 });
 
+test('arrivals allow preparation, use the outer lanes first and telegraph before acting', () => {
+  const game = startGame(createGame());
+  step(game, 1.48); assert.equal(game.enemies.length, 0);
+  updateGame(game, 0.04); assert.equal(game.enemies.length, 1);
+  const first = game.enemies[0], position = { x: first.x, y: first.y };
+  assert.equal(first.x, game.spawnPoints[0].x); assert.equal(game.spawnTimer, 2.4);
+  first.fireCooldown = 0;
+  step(game, 0.9);
+  assert.equal(first.x, position.x); assert.equal(first.y, position.y); assert.equal(first.shotCount, 0);
+  step(game, 0.12); assert.ok(first.moving || first.shotCount > 0);
+  for (const lane of [2, 1]) {
+    game.enemies = []; game.bullets = []; game.spawnTimer = 0;
+    updateGame(game, 0.01);
+    assert.equal(game.enemies[0].x, game.spawnPoints[lane].x);
+  }
+  const late = isolated({ stage: 35 }); late.spawnTimer = 0;
+  updateGame(late, 0.01); assert.equal(late.spawnTimer, 1.6);
+  for (const coop of [false, true]) {
+    const capped = isolated({ coop }); capped.freezeTimer = 999;
+    for (let ordinal = 0; ordinal < 9; ordinal++) {
+      capped.spawnTimer = 0; updateGame(capped, 0.01);
+      capped.enemies.forEach((tank, index) => Object.assign(tank, { x: 112 + index * 96, y: 144 }));
+    }
+    assert.equal(capped.enemies.length, coop ? 6 : 4);
+    assert.equal(capped.waveSpawned, coop ? 6 : 4);
+  }
+});
+
+test('opening roster teaches basic tanks before scouts, armor and power enter later', () => {
+  const rosters = new Map();
+  for (const stage of [1, 2, 3, 4]) {
+    const game = isolated({ stage }), types = [];
+    for (let ordinal = 1; ordinal <= 20; ordinal++) {
+      game.spawnTimer = 0; updateGame(game, 0.01);
+      types.push(game.enemies[0].type); game.enemies = []; game.bullets = [];
+    }
+    rosters.set(stage, types);
+  }
+  assert.deepEqual(rosters.get(1), [...Array(18).fill('basic'), 'scout', 'scout']);
+  assert.ok(rosters.get(2).includes('heavy')); assert.ok(!rosters.get(2).includes('power'));
+  assert.ok(!rosters.get(3).includes('power')); assert.ok(rosters.get(4).includes('power'));
+});
+
+test('enemies carry one shell, fire at a slower cadence and only redirect toward nearby targets', () => {
+  for (const [type, fireRate] of Object.entries({ basic: 2.4, scout: 2.4, power: 1.8, heavy: 2.6 })) {
+    const game = isolated();
+    const tank = enemy(type, 400, 300);
+    Object.assign(tank, { stunned: 0, speed: 0, routeDir: 1, routeDistance: 999, fireCooldown: 0 });
+    game.enemies = [tank]; updateGame(game, 0.01);
+    assert.equal(tank.fireCooldown, fireRate); assert.equal(tank.shotCount, 1);
+    assert.ok(game.bullets[0].dx > 0); assert.equal(game.bullets[0].dy, 0);
+    tank.fireCooldown = 0; updateGame(game, 0.01); assert.equal(tank.shotCount, 1);
+    game.bullets = []; game.base.x = 400; game.base.y = 450;
+    updateGame(game, 0.01); assert.equal(tank.shotCount, 2);
+    assert.ok(game.bullets[0].dy > 0); assert.ok(Math.abs(game.bullets[0].dx) < 1e-9);
+  }
+  const far = isolated(); Object.assign(far.player, { x: 337, y: 112 });
+  const scout = enemy('scout', 112, 112); scout.stunned = 0; far.enemies = [scout];
+  const near = snapshot(far); near.player.x = 336;
+  updateGame(far, 0.01); updateGame(near, 0.01);
+  assert.equal(far.enemies[0].routeDir, 2, 'A distant scout advances toward HQ');
+  assert.equal(near.enemies[0].routeDir, 1, 'A nearby scout pursues the player');
+});
+
+test('early supplies offer nearby reachable stars to the lowest-ranked surviving player', () => {
+  for (const coop of [false, true]) {
+    const game = isolated({ coop });
+    if (coop) game.player.level = 2;
+    const recipient = game.players.at(-1);
+    for (let drop = 1; drop <= 2; drop++) {
+      const carrier = enemy('heavy', 400, 300, drop); carrier.carrier = true;
+      game.enemies = [carrier]; shell(game); updateGame(game, 0.01);
+      const pickup = game.pickups.at(-1), distance = Math.hypot(pickup.x - recipient.x, pickup.y - recipient.y);
+      assert.equal(pickup.type, 'star'); assert.ok(pickup.life > 44.9 && pickup.life <= 45);
+      assert.ok(distance >= 72 && distance <= 192);
+      assert.ok(reachableCells(game, recipient).has(Math.floor(pickup.y / TILE) * 30 + Math.floor(pickup.x / TILE)));
+      assert.ok(game.pickups.slice(0, -1).every(other => Math.hypot(other.x - pickup.x, other.y - pickup.y) >= 28));
+      assert.equal(game.carrierDrops, drop);
+    }
+  }
+  const randomTypes = new Set();
+  for (let seed = 1; seed <= 16; seed++) {
+    const game = isolated({ seed }); game.player.level = 3;
+    const carrier = enemy('heavy'); carrier.carrier = true; game.enemies = [carrier];
+    shell(game); updateGame(game, 0.01); randomTypes.add(game.pickups[0].type);
+  }
+  assert.ok(randomTypes.size > 2, 'Maximum-rank tanks receive varied classic supplies');
+  const boxed = isolated(); boxed.terrain = boxed.terrain.map(row => row.map(() => 'S'));
+  for (let col = 13; col <= 18; col++) boxed.terrain[19][col] = '.';
+  Object.assign(boxed.player, { x: 432, y: 624 }); boxed.terrain[3][3] = '.';
+  const carrier = enemy('heavy', 112, 112); carrier.carrier = true; boxed.enemies = [carrier];
+  shell(boxed, { x: 112, y: 112 }); updateGame(boxed, 0.01);
+  assert.equal(boxed.player.level, 1, 'HQ cannot connect a boxed tank to unreachable supplies; fallback collects locally');
+  assert.equal(boxed.pickups.length, 0);
+});
+
+test('real rank gains grant a short shield and feedback without healing or replaying counts', () => {
+  const game = isolated(); game.player.hp = 2;
+  for (const [level, message] of [[1, 'GUNNER // FASTER SHELLS'], [2, 'TWIN // TWO ACTIVE SHELLS'], [3, 'SIEGE // BREAK STEEL']]) {
+    collect(game, 'star');
+    assert.equal(game.player.level, level); assert.equal(game.rankUps, level);
+    assert.equal(game.player.hp, 2); assert.equal(game.player.invulnerable, 2); assert.equal(game.player.rankFx, 1.6);
+    assert.ok(game.event.includes(message));
+  }
+  const score = game.score; collect(game, 'star');
+  assert.equal(game.rankUps, 3); assert.equal(game.score, score + 500);
+  game.player.hp = 1; hitPlayer(game);
+  assert.equal(game.player.level, 0); assert.equal(game.player.rankFx, 0); assert.equal(game.rankUps, 3);
+  startGame(game); assert.equal(game.rankUps, 0);
+});
+
 test('four classes score100/200/300/400; personal score milestones award a tank', () => {
   for (const [type, points] of Object.entries({ basic: 100, scout: 200, power: 300, heavy: 400 })) {
     const game = isolated(); game.enemies = [enemy(type)]; shell(game, { damage: 4 }); updateGame(game, 0.01);
@@ -215,7 +372,9 @@ test('limited lives reset stars, respawn under shield and end only when out', ()
   const x = game.player.x, shots = game.shots;
   updateGame(game, 0.05, { right: true, fire: true, dash: true });
   assert.equal(game.player.x, x); assert.equal(game.shots, shots);
+  game.player.dir = 1; game.player.hullAngle = 0; game.player.aimAngle = Math.PI;
   step(game, 1.3); assert.equal(game.player.dead, false); assert.equal(game.player.hp, 4); assert.ok(game.player.invulnerable > 2);
+  assert.equal(game.player.dir, 0); assert.equal(game.player.hullAngle, -Math.PI / 2); assert.equal(game.player.aimAngle, -Math.PI / 2);
   for (let life = 2; life > 0; life--) {
     game.player.hp = 1; hitPlayer(game);
     assert.equal(game.player.lives, life - 1);
@@ -236,12 +395,12 @@ test('co-op input, friendly stun, independent lives, kill attribution and stage 
   assert.equal(p2.kills, 1); assert.equal(p2.score, 300);
   game.waveSpawned = 20; updateGame(game, 0.01); assert.equal(game.status, 'upgrade');
   assert.equal(game.stageBonus.p2, 1000); assert.equal(p2.score, 1300);
-  chooseUpgrade(game, game.upgradeChoices[0].id);
+  assert.deepEqual(game.upgradeChoices, []); assert.equal(continueStage(game), true);
   assert.equal(game.player.dead, true); assert.equal(game.stageBonus.p2, 0);
   p2.hp = 1; p2.stunned = 0; p2.lives = 1; hitPlayer(game, p2); assert.equal(game.status, 'gameover');
   const reserves = isolated({ coop: true }); reserves.player.hp = 1; hitPlayer(reserves);
-  reserves.waveSpawned = 20; updateGame(reserves, 0.01); reserves.upgradeChoices = [{ id: 'overdrive' }];
-  chooseUpgrade(reserves, 'overdrive');
+  reserves.waveSpawned = 20; updateGame(reserves, 0.01);
+  continueStage(reserves);
   assert.equal(reserves.player.dead, false); assert.equal(reserves.player.hp, reserves.player.maxHp);
   assert.equal(reserves.player.lives, 2); assert.ok(reserves.player.invulnerable > 0);
 });
@@ -294,32 +453,38 @@ test('HQ attackers navigate tank blockers and breach partial bricks from all spa
   step(breach, 15); assert.equal(breach.terrain[3][3], '.'); assert.ok(heavy.y > 128);
 });
 
-test('35-stage campaign, endless wrapping, custom victory and bounded shared upgrades', () => {
+test('35-stage campaign continues with armor repairs and retained stars; Endless keeps bounded perks', () => {
   const game = startGame(createGame({ coop: true })); game.player.level = 3;
   for (let stage = 1; stage <= 35; stage++) {
     assert.equal(game.wave, stage); assert.equal(game.stage, stage); assert.equal(game.waveTotal, 20);
     game.waveSpawned = 20; game.enemies = []; updateGame(game, 0.01);
     if (stage === 35) { assert.equal(game.status, 'victory'); break; }
-    assert.equal(game.status, 'upgrade'); game.upgradeChoices = [{ id: 'overdrive' }];
+    assert.equal(game.status, 'upgrade'); assert.deepEqual(game.upgradeChoices, []);
     game.terrain[8][8] = '~'; game.freezeTimer = 10; game.fortifyTimer = 10;
-    assert.equal(chooseUpgrade(game, 'missing'), false); assert.equal(chooseUpgrade(game, 'overdrive'), true);
-    assert.equal(chooseUpgrade(game, 'overdrive'), false);
+    game.player.hp = 1; game.player.lives = 2; game.player.dir = 3; game.player.hullAngle = Math.PI; game.player.aimAngle = Math.PI;
+    assert.equal(chooseUpgrade(game, 'overdrive'), false); assert.equal(continueStage(game), true);
+    assert.equal(continueStage(game), false);
     assert.equal(game.player.level, 3); assert.equal(game.freezeTimer, 0); assert.equal(game.fortifyTimer, 0);
+    assert.equal(game.player.hp, game.player.maxHp); assert.equal(game.player.lives, 2);
+    assert.equal(game.player.dir, 0); assert.equal(game.player.hullAngle, -Math.PI / 2); assert.equal(game.player.aimAngle, -Math.PI / 2);
     assert.deepEqual(game.terrain, makeTerrain(stage + 1));
   }
-  assert.equal(game.player.speed, 360); assert.equal(game.players[1].speed, 360); assert.equal(game.player.dashRecharge, 0.8);
+  assert.equal(game.player.speed, 160); assert.equal(game.players[1].speed, 160); assert.equal(game.player.dashRecharge, 2.1);
+  assert.equal(game.upgrades.length, 0); assert.equal(continueStage(game), false);
   const endless = startGame(createGame({ mode: 'endless', stage: 35 })); endless.waveSpawned = 20;
-  updateGame(endless, 0.01); assert.equal(endless.status, 'upgrade'); chooseUpgrade(endless, endless.upgradeChoices[0].id);
+  updateGame(endless, 0.01); assert.equal(endless.status, 'upgrade'); assert.equal(endless.upgradeChoices.length, 3);
+  assert.equal(continueStage(endless), false); chooseUpgrade(endless, endless.upgradeChoices[0].id);
   assert.equal(endless.wave, 36); assert.equal(endless.stageName, MAPS[0].name);
   const custom = startGame(createGame({ customMap: makeTerrain(7) })); custom.waveSpawned = 20; updateGame(custom, 0.01);
-  assert.equal(custom.status, 'victory');
-  for (const id of ['rapid-fire', 'reinforced', 'piercing', 'repair']) {
+  assert.equal(custom.status, 'victory'); assert.equal(continueStage(custom), false);
+  for (const id of ['rapid-fire', 'reinforced', 'overdrive', 'piercing', 'repair']) {
     const world = startGame(createGame({ coop: true, mode: 'endless' }));
     for (let iteration = 0; iteration < 12; iteration++) {
       world.status = 'upgrade'; world.upgradeChoices = [{ id }]; chooseUpgrade(world, id);
     }
     for (const player of world.players) {
       assert.ok(player.fireRate >= 0.08); assert.ok(player.maxHp <= 10); assert.ok(player.pierce <= 2);
+      assert.ok(player.speed <= 360); assert.ok(player.dashRecharge >= 0.8);
     }
     if (id === 'repair') { assert.equal(world.fortifyTimer, 20); assert.equal(world.empCharges, 5); }
   }

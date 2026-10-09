@@ -1,0 +1,12 @@
+# Design
+Reuse the current engine and canvas, with no dependencies or difficulty/settings systems. Cap live enemies at 4 solo/6 co-op and live shells at 1 per enemy. Start after 1.5 seconds, then 2.4 second gaps easing to 1.6 seconds across 35 stages; use outer lanes before the middle and a 1 second entry tell. Opening roster has 18 basic tanks/2 late scouts, heavy enters stage 2, power enters stage 4. Enemy firing follows movement at distance and only targets aligned nearby units; pursuit of players is local.
+
+Cardinal control chooses a single axis for overlapping direction keys, retaining an already held direction. Starting movement slows from 220 to 160 pixels per second for easier cornering and lining up shots. Space/touch fires along the hull; pointer aim is used while left click is held, so hovering no longer hijacks keyboard aim. Ice retains its intended slide.
+
+On a perpendicular turn blocked by a narrow road, a small correction toward the nearest tile center is allowed only if both the corrected hull and its forward path fit. Walls and other tanks still block it; open ground and ice receive no correction. Quick keyboard, pointer and touch taps are consumed by the next physics step so taps between render frames are not lost.
+
+Count carrier drops per stage. The first two become stars while a live tank is below Siege; all later/max-rank drops sample the existing six supplies. Find passable cells connected to the lowest-ranked surviving player's current cell and prefer a nearby 72–192 pixel pickup position. Extend supply lifetime to 45 seconds and provide 2 seconds of collection protection. Preserve rank loss on tank destruction and all three weapon benefits.
+
+Reuse the existing stage-clear state and transition function: campaign exposes only continuation; Endless retains perk cards. Campaign restores armor at each new stage, stars persist, lives are not silently replenished. Original chiptune audio adds a short ascent when a real rank increase is observed; resets/death cannot trigger it.
+
+Verification: targeted engine tests for caps, pacing, roster, reachable star recovery, rank benefits, stage continuation, cardinal controls, HQ vulnerability and enemy route access. Browser checks keyboard facing despite pointer hover, stage-clear continuation, rank feedback, sound/pause and desktop/phone fit. Compare idle HQ survival against the measured baseline as a pressure diagnostic, not a human difficulty score.

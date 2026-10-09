@@ -109,3 +109,34 @@ test('centers EMP on the surviving co-op tank', () => {
   renderGame(ctx, game);
   assert(calls.some(call => call.text === '+' && call.x === game.players[1].x + 16 && call.y === game.players[1].y));
 });
+
+test('telegraphs an incoming enemy before showing its armed hull', () => {
+  const enemy = createGame().enemies[0];
+  const game = createGame();
+  startGame(game);
+  game.enemies = [{ ...enemy, spawnTimer: 0.5 }];
+  Object.assign(game.player, { hp: 0, dead: true });
+  const incoming = canvasSpy();
+  renderGame(incoming.ctx, game, 1, { reducedMotion: true });
+  assert(incoming.calls.some(call => call.text === 'INBOUND'));
+  assert(!incoming.calls.some(call => call.text === '◉'));
+  game.enemies[0].spawnTimer = 0;
+  const armed = canvasSpy();
+  renderGame(armed.ctx, game, 1);
+  assert(armed.calls.some(call => call.text === '◉'));
+  assert(!armed.calls.some(call => call.text === 'INBOUND'));
+});
+
+test('celebrates a rank-up with static stars when reduced motion is enabled', () => {
+  const game = createGame();
+  game.enemies = [];
+  Object.assign(game.player, { level: 1, rankFx: 1.6 });
+  const before = structuredClone(game);
+  const { ctx, calls, stack } = canvasSpy();
+  renderGame(ctx, game, 1, { reducedMotion: true });
+  const stars = calls.filter(call => call.text === '★');
+  assert.equal(stars.length, 4);
+  for (const star of stars) assert(Math.abs(Math.hypot(star.x - game.player.x, star.y - game.player.y) - 24) < 1e-9);
+  assert.deepEqual(game, before);
+  assert.equal(stack.length, 0);
+});

@@ -1,9 +1,4 @@
-# ascii-front Specification
-
-## Purpose
-An original character-art tank roguelite with headquarters defense, responsive movement and aim, between-wave upgrades, campaign/endless play and Warden Arcade discovery.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Character-art tank defense
 ASCII Front SHALL provide 35 original maps, stage selection, 20 enemies per stage, four enemy roles, HQ defense, a 35-stage campaign and repeating Endless play. Character tanks SHALL retain green P1, cyan P2 and warm enemy colors. Armor, dash and EMP SHALL remain available. Pressure SHALL be capped at four enemies solo or six in co-op, with spaced, telegraphed arrivals and gradual enemy introductions.
@@ -59,17 +54,6 @@ The game SHALL support cardinal movement and facing-based keyboard/touch firing,
 - **WHEN** viewed on desktop or portrait/landscape phone layouts, or paused/hidden
 - **THEN** actions fit without horizontal overflow and paused gameplay does not continue in the background
 
-### Requirement: Warden Arcade discovery
-Warden Arcade SHALL expose ASCII Front at `/ascii-front/`, in the ASCII Scenes collection and shared game switcher, with the same id, name and original local cabinet art. The game SHALL offer an arcade return and shared switcher action.
-
-#### Scenario: Find and launch ASCII Front
-- **WHEN** a player chooses ASCII Front in the arcade or shared switcher
-- **THEN** `/ascii-front/` loads its bundled assets and presents the game
-
-#### Scenario: Return to the arcade
-- **WHEN** the player chooses the arcade return action
-- **THEN** the arcade opens without changing another game's saves or catalog entry
-
 ### Requirement: Classic pickups and visible tank ranks
 Carriers SHALL drop star, helmet, grenade, timer, shovel or tank supplies. The first two per stage SHALL offer stars while a surviving tank needs ranks. Supplies SHALL appear nearby on reachable ground for 45 seconds. Three star ranks SHALL visibly improve the tank, granting faster shells, two shots and steel destruction in turn. Pickups SHALL apply effects and scores; score milestones SHALL award lives.
 
@@ -84,17 +68,3 @@ Carriers SHALL drop star, helmet, grenade, timer, shovel or tank supplies. The f
 #### Scenario: Recognize tank progression
 - **WHEN** a player gains stars or loses a tank
 - **THEN** hull, turret, markings and HUD show the actual rank; tank destruction resets stars and the next stage's early carriers offer opportunities to rebuild
-
-### Requirement: Construction mode
-Players SHALL paint original terrain, save/load a map locally, and start a custom battle. Reserved boundaries, HQ and spawn cells SHALL remain usable; stored maps SHALL be validated before loading.
-
-#### Scenario: Create and test a map
-- **WHEN** the player paints terrain, saves, reloads and tests
-- **THEN** the map persists locally and launches a playable 20-enemy battle using the edited layout
-
-### Requirement: Original musical soundtrack
-An original chiptune score SHALL accompany active combat after a user gesture and respect the sound toggle, pause, hidden-page and arcade-menu lifecycle. Repeated restarts SHALL not multiply audio schedulers.
-
-#### Scenario: Start and mute music
-- **WHEN** the player starts combat then toggles sound or pauses
-- **THEN** music plays while active, stops when muted/paused and resumes after deliberate play without duplicate loops

@@ -11,10 +11,10 @@ const RADIUS = 11;
 const HQ_WALLS = [[13, 18], [14, 18], [15, 18], [16, 18], [13, 19], [16, 19]];
 const PICKUPS = ['star', 'helmet', 'grenade', 'timer', 'shovel', 'tank'];
 const ENEMY = {
-  basic: { hp: 1, speed: 72, fireRate: 1.4, bulletSpeed: 240, points: 100 },
-  scout: { hp: 1, speed: 110, fireRate: 1.4, bulletSpeed: 240, points: 200 },
-  power: { hp: 1, speed: 72, fireRate: 0.85, bulletSpeed: 520, points: 300 },
-  heavy: { hp: 4, speed: 54, fireRate: 1.65, bulletSpeed: 240, points: 400 },
+  basic: { hp: 1, speed: 72, fireRate: 2.4, bulletSpeed: 240, points: 100 },
+  scout: { hp: 1, speed: 110, fireRate: 2.4, bulletSpeed: 240, points: 200 },
+  power: { hp: 1, speed: 72, fireRate: 1.8, bulletSpeed: 520, points: 300 },
+  heavy: { hp: 4, speed: 54, fireRate: 2.6, bulletSpeed: 240, points: 400 },
 };
 const UPGRADES = [
   { id: 'rapid-fire', name: 'Rapid fire', description: 'Fire 30% faster when a shell slot is free.', icon: '»' },
@@ -33,7 +33,7 @@ function makePlayer(index) {
   return {
     id: `p${index + 1}`, x: index === 0 ? 112 : 848, y: 592,
     spawnX: index === 0 ? 112 : 848, spawnY: 592,
-    dir: 0, hp: 4, maxHp: 4, speed: 220, level: 0, lives: 3, dead: false,
+    dir: 0, hp: 4, maxHp: 4, speed: 160, level: 0, lives: 3, dead: false, rankFx: 0,
     respawnTimer: 0, stunned: 0, score: 0, nextLifeScore: 20000, stageKills: 0, kills: 0,
     hullAngle: -Math.PI / 2, aimAngle: -Math.PI / 2, moving: false, vx: 0, vy: 0,
     fireCooldown: 0, fireRate: 0.14, dashCooldown: 0, dashRecharge: 2.1,
@@ -57,10 +57,10 @@ export function createGame({ mode = 'campaign', seed = 1, stage = 1, coop = fals
     players, player: players[0], base: { x: 480, y: 624, hp: 1, maxHp: 1 },
     enemies: [], bullets: [], particles: [], pickups: [], terrain: makeTerrain(startStage, customTerrain), brickDamage: {},
     spawnPoints: [{ x: 112, y: 48 }, { x: 496, y: 48 }, { x: 848, y: 48 }],
-    waveTotal: 20, waveSpawned: 0, waveKills: 0, spawnTimer: 0.6,
+    waveTotal: 20, waveSpawned: 0, waveKills: 0, spawnTimer: 1.5, carrierDrops: 0,
     upgrades: [], upgradeChoices: [], empCharges: 2, empFx: 0, empRadius: 280,
     nextId: 1, event: 'DEFEND THE SIGNAL', previousEmp: false,
-    shots: 0, empCount: 0, shake: 0, hitFlash: 0, freezeTimer: 0, fortifyTimer: 0,
+    shots: 0, empCount: 0, rankUps: 0, shake: 0, hitFlash: 0, freezeTimer: 0, fortifyTimer: 0,
     stageBonus: { p1: 0, p2: 0 },
   };
   for (const [index, type] of ['basic', 'scout', 'power', 'heavy', 'basic'].entries()) {
@@ -86,7 +86,8 @@ function makeEnemy(game, point, type, ordinal = 0) {
   return {
     id: game.nextId++, x: point.x, y: point.y, dir: 2, type,
     hp: ENEMY[type].hp, maxHp: ENEMY[type].hp, speed: ENEMY[type].speed,
-    fireCooldown: 0.4 + random(game), stunned: 0, carrier: [4, 11, 18].includes(ordinal), dropped: false,
+    fireCooldown: ENEMY[type].fireRate + random(game) * 0.4, spawnTimer: ordinal > 0 ? 1 : 0,
+    stunned: 0, carrier: [4, 11, 18].includes(ordinal), dropped: false,
     routeDir: 2, routeDistance: 0, flash: 0, moving: false, vx: 0, vy: 0,
     hullAngle: Math.PI / 2, aimAngle: Math.PI / 2, shotCount: 0, muzzleFlash: 0,
   };
@@ -143,6 +144,7 @@ function motion(game, tank, vx, vy, dt) {
 function shoot(game, tank, owner) {
   if (owner === 'player' && game.bullets.filter(bullet => !bullet.dead && bullet.owner === 'player'
     && (bullet.shooterId ?? 'p1') === tank.id).length >= (tank.level >= 2 ? 2 : 1)) return false;
+  if (owner === 'enemy' && game.bullets.some(bullet => !bullet.dead && bullet.owner === 'enemy' && bullet.shooterId === tank.id)) return false;
   const angle = owner === 'player' && Number.isFinite(tank.aimAngle)
     ? tank.aimAngle : Math.atan2(DIRECTIONS[tank.dir][1], DIRECTIONS[tank.dir][0]);
   const dx = Math.cos(angle), dy = Math.sin(angle);
@@ -185,14 +187,38 @@ function addScore(game, player, points) {
 function dropCarrier(game, enemy) {
   if (!enemy.carrier || enemy.dropped) return;
   enemy.dropped = true;
-  let point = { x: enemy.x, y: enemy.y };
-  for (let attempt = 0; attempt < 100; attempt++) {
-    const col = 1 + Math.floor(random(game) * (COLS - 2));
-    const row = 2 + Math.floor(random(game) * (ROWS - 5));
-    if (['.', '%', 'I'].includes(game.terrain[row][col])) { point = { x: col * TILE + 16, y: row * TILE + 16 }; break; }
-  }
-  game.pickups.push({ ...point, type: PICKUPS[Math.floor(random(game) * PICKUPS.length)], life: 25 });
+  game.carrierDrops++;
+  const livePlayers = game.players.filter(player => !player.dead).sort((a, b) => a.level - b.level);
+  const player = livePlayers[0] ?? game.player;
+  const point = supplyPosition(game, player);
+  const type = game.carrierDrops <= 2 && livePlayers.some(tank => tank.level < 3)
+    ? 'star' : PICKUPS[Math.floor(random(game) * PICKUPS.length)];
+  game.pickups.push({ ...point, type, life: 45 });
   game.event = 'SUPPLY CARRIER HIT // POWER-UP DEPLOYED';
+}
+
+function supplyPosition(game, player) {
+  const queue = [[Math.floor(player.x / TILE), Math.floor(player.y / TILE), 0]];
+  const visited = new Set([queue[0][1] * COLS + queue[0][0]]);
+  const candidates = [];
+  for (let index = 0; index < queue.length; index++) {
+    const [col, row, steps] = queue[index];
+    const point = { x: col * TILE + 16, y: row * TILE + 16 };
+    const distance = Math.hypot(point.x - player.x, point.y - player.y);
+    if (distance <= 192 && canStand(game, point.x, point.y, null)
+      && !game.pickups.some(pickup => Math.hypot(pickup.x - point.x, pickup.y - point.y) < 28)) candidates.push({ ...point, distance });
+    if (steps >= 6) continue;
+    for (const [dx, dy] of DIRECTIONS) {
+      const nextCol = col + dx, nextRow = row + dy, key = nextRow * COLS + nextCol;
+      if (nextCol < 1 || nextCol >= COLS - 1 || nextRow < 1 || nextRow >= ROWS - 1 || visited.has(key)
+        || !['.', '%', 'I'].includes(game.terrain[nextRow][nextCol])
+        || !canStand(game, nextCol * TILE + 16, nextRow * TILE + 16, player)) continue;
+      visited.add(key); queue.push([nextCol, nextRow, steps + 1]);
+    }
+  }
+  const nearby = candidates.filter(point => point.distance >= 72);
+  const choices = nearby.length ? nearby : candidates;
+  return choices.length ? choices[Math.floor(random(game) * choices.length)] : { x: player.x, y: player.y };
 }
 
 function destroyEnemy(game, enemy, player = game.player) {
@@ -271,9 +297,10 @@ function updateEnemies(game, dt) {
     enemy.muzzleFlash = Math.max(0, (enemy.muzzleFlash ?? 0) - dt);
     enemy.flash = Math.max(0, (enemy.flash ?? 0) - dt);
     enemy.stunned = Math.max(0, (enemy.stunned ?? 0) - dt);
-    if (game.freezeTimer > 0 || enemy.stunned > 0 || enemy.dead) { enemy.vx = 0; enemy.vy = 0; continue; }
+    enemy.spawnTimer = Math.max(0, (enemy.spawnTimer ?? 0) - dt);
+    if (game.freezeTimer > 0 || enemy.spawnTimer > 0 || enemy.stunned > 0 || enemy.dead) { enemy.vx = 0; enemy.vy = 0; continue; }
     enemy.fireCooldown -= dt;
-    const visiblePlayers = game.players.filter(player => !player.dead
+    const visiblePlayers = game.players.filter(player => !player.dead && Math.hypot(player.x - enemy.x, player.y - enemy.y) <= 224
       && (game.terrain[Math.floor(player.y / TILE)]?.[Math.floor(player.x / TILE)] !== '%'
       || Math.hypot(player.x - enemy.x, player.y - enemy.y) <= 160));
     visiblePlayers.sort((a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y));
@@ -298,12 +325,14 @@ function updateEnemies(game, dt) {
     enemy.routeDistance = Math.max(0, enemy.routeDistance - moved);
     if (!nearTarget && moved < Math.hypot(vx, vy) * dt * 0.8) enemy.routeDistance = 0;
     const dx = target.x - enemy.x, dy = target.y - enemy.y;
-    const aligned = Math.abs(dx) < 17 || Math.abs(dy) < 17;
-    enemy.aimAngle = aligned ? (Math.abs(dx) < 17 ? (dy > 0 ? Math.PI / 2 : -Math.PI / 2) : (dx > 0 ? 0 : Math.PI)) : enemy.hullAngle;
+    const aligned = (Math.abs(dx) < 17 || Math.abs(dy) < 17) && Math.hypot(dx, dy) <= 192;
+    const fireDir = aligned ? (Math.abs(dx) < 17 ? (dy > 0 ? 2 : 0) : (dx > 0 ? 1 : 3)) : enemy.routeDir;
+    enemy.aimAngle = Math.atan2(DIRECTIONS[fireDir][1], DIRECTIONS[fireDir][0]);
     if (enemy.fireCooldown <= 0) {
-      if (aligned) enemy.dir = Math.abs(dx) < 17 ? (dy > 0 ? 2 : 0) : (dx > 0 ? 1 : 3);
-      shoot(game, enemy, 'enemy');
-      enemy.fireCooldown = ENEMY[enemy.type].fireRate * Math.max(0.65, 1 - (game.wave - 1) * 0.012);
+      const travelDir = enemy.dir;
+      enemy.dir = fireDir;
+      if (shoot(game, enemy, 'enemy')) enemy.fireCooldown = ENEMY[enemy.type].fireRate * Math.max(0.9, 1 - (game.wave - 1) * 0.003);
+      enemy.dir = travelDir;
     }
   }
 }
@@ -326,7 +355,7 @@ function freePosition(game, tank, x = tank.spawnX, y = tank.spawnY) {
 function destroyPlayer(game, player) {
   if (player.dead) return;
   player.lives = Math.max(0, player.lives - 1);
-  player.dead = true; player.hp = 0; player.level = 0;
+  player.dead = true; player.hp = 0; player.level = 0; player.rankFx = 0;
   player.moving = false; player.vx = 0; player.vy = 0; player.dashTimer = 0;
   player.respawnTimer = player.lives > 0 ? 1.2 : 0;
   game.bullets = game.bullets.filter(bullet => bullet.shooterId !== player.id);
@@ -445,7 +474,13 @@ function updatePickups(game, dt) {
     if (!player || pickup.life <= 0) continue;
     pickup.life = 0;
     addScore(game, player, 500);
-    if (pickup.type === 'star') player.level = Math.min(3, player.level + 1);
+    const rankGained = pickup.type === 'star' && player.level < 3;
+    if (rankGained) {
+      player.level++;
+      player.rankFx = 1.6;
+      player.invulnerable = Math.max(player.invulnerable, 2);
+      game.rankUps++;
+    }
     if (pickup.type === 'helmet') player.invulnerable = Math.max(player.invulnerable, 12);
     if (pickup.type === 'grenade') {
       for (const enemy of game.enemies) {
@@ -458,8 +493,10 @@ function updatePickups(game, dt) {
     if (pickup.type === 'timer') game.freezeTimer = 10;
     if (pickup.type === 'shovel') fortify(game);
     if (pickup.type === 'tank') player.lives++;
-    burst(game, pickup.x, pickup.y, '#8df5ca', 8, `+${pickup.type.toUpperCase()}`);
-    game.event = `${player.id.toUpperCase()} ${pickup.type.toUpperCase()} COLLECTED // +500`;
+    const rankMessages = ['', 'GUNNER // FASTER SHELLS', 'TWIN // TWO ACTIVE SHELLS', 'SIEGE // BREAK STEEL'];
+    burst(game, pickup.x, pickup.y, '#8df5ca', rankGained ? 16 : 8, rankGained ? rankMessages[player.level].split(' // ')[0] : `+${pickup.type.toUpperCase()}`);
+    game.event = rankGained ? `${player.id.toUpperCase()} ${rankMessages[player.level]} // +500`
+      : `${player.id.toUpperCase()} ${pickup.type.toUpperCase()} COLLECTED // +500`;
   }
   game.pickups = game.pickups.filter(pickup => pickup.life > 0);
 }
@@ -475,6 +512,11 @@ function finishWave(game) {
     game.status = 'victory'; game.event = 'SECTOR SECURE // SIGNAL RESTORED'; return;
   }
   game.status = 'upgrade'; game.empCharges = Math.min(5, game.empCharges + 1);
+  if (game.mode === 'campaign') {
+    game.upgradeChoices = [];
+    game.event = `STAGE ${String(game.wave).padStart(2, '0')} CLEARED // CONTINUE TO REARM`;
+    return;
+  }
   const choices = [...UPGRADES];
   for (let index = choices.length - 1; index > 0; index--) {
     const next = Math.floor(random(game) * (index + 1));
@@ -485,55 +527,79 @@ function finishWave(game) {
 }
 
 export function chooseUpgrade(game, id) {
-  if (game.status !== 'upgrade' || !game.upgradeChoices.some(choice => choice.id === id)) return false;
+  if (game.mode !== 'endless' || game.status !== 'upgrade' || !game.upgradeChoices.some(choice => choice.id === id)) return false;
   for (const player of game.players.filter(tank => tank.lives > 0)) {
     if (id === 'rapid-fire') player.fireRate = Math.max(0.08, player.fireRate * 0.7);
     if (id === 'reinforced') { player.maxHp = Math.min(10, player.maxHp + 2); player.hp = player.maxHp; }
     if (id === 'overdrive') { player.speed = Math.min(360, player.speed * 1.2); player.dashRecharge = Math.max(0.8, player.dashRecharge * 0.75); }
     if (id === 'piercing') player.pierce = Math.min(2, player.pierce + 1);
   }
-  game.upgrades.push(id); game.wave++; game.stage = game.wave;
+  game.upgrades.push(id);
+  nextStage(game);
+  if (id === 'repair') { fortify(game); game.empCharges = Math.min(5, game.empCharges + 1); }
+  return true;
+}
+
+export function continueStage(game) {
+  if (game.mode !== 'campaign' || game.status !== 'upgrade' || game.wave >= MAPS.length) return false;
+  nextStage(game);
+  return true;
+}
+
+function nextStage(game) {
+  game.wave++; game.stage = game.wave;
   game.stageName = MAPS[(game.wave - 1) % MAPS.length].name;
   game.terrain = makeTerrain(game.wave);
   game.brickDamage = {};
   game.enemies = []; game.bullets = []; game.pickups = []; game.particles = [];
   game.freezeTimer = 0; game.fortifyTimer = 0; game.empFx = 0;
-  game.waveTotal = 20; game.waveSpawned = 0; game.waveKills = 0; game.spawnTimer = 0.8;
+  game.waveTotal = 20; game.waveSpawned = 0; game.waveKills = 0; game.spawnTimer = 1.5; game.carrierDrops = 0;
   game.upgradeChoices = []; game.status = 'playing'; game.previousEmp = false;
   game.stageBonus = { p1: 0, p2: 0 };
   for (const player of game.players) {
     player.stageKills = 0; player.stunned = 0; player.vx = 0; player.vy = 0;
+    player.rankFx = 0; player.dir = 0; player.hullAngle = -Math.PI / 2; player.aimAngle = -Math.PI / 2;
     player.dashTimer = 0; player.dashCooldown = 0; player.fireCooldown = 0; player.moving = false;
     if (player.lives <= 0) continue;
-    player.hp = player.dead ? player.maxHp : Math.max(1, player.hp);
+    player.hp = game.mode === 'campaign' || player.dead ? player.maxHp : Math.max(1, player.hp);
     player.dead = false; player.respawnTimer = 0;
     const point = freePosition(game, player);
     if (point) { player.x = point.x; player.y = point.y; }
     player.invulnerable = 2.5;
   }
-  if (id === 'repair') { fortify(game); game.empCharges = Math.min(5, game.empCharges + 1); }
   game.event = `STAGE ${String(game.wave).padStart(2, '0')} // ${game.stageName.toUpperCase()}`;
-  return true;
 }
 
 function updatePlayer(game, player, dt, input) {
   player.moving = false;
-  for (const field of ['muzzleFlash', 'fireCooldown', 'dashCooldown', 'invulnerable', 'stunned']) player[field] = Math.max(0, player[field] - dt);
+  for (const field of ['muzzleFlash', 'fireCooldown', 'dashCooldown', 'invulnerable', 'stunned', 'rankFx']) player[field] = Math.max(0, player[field] - dt);
   if (player.dead) {
     if (player.lives <= 0) return;
     player.respawnTimer = Math.max(0, player.respawnTimer - dt);
     if (player.respawnTimer > 0) return;
     const point = freePosition(game, player);
     if (!point) { player.respawnTimer = 0.1; return; }
-    Object.assign(player, point, { dead: false, hp: player.maxHp, level: 0, invulnerable: 2.5, stunned: 0, vx: 0, vy: 0, fireCooldown: 0 });
+    Object.assign(player, point, { dead: false, hp: player.maxHp, level: 0, invulnerable: 2.5, stunned: 0, vx: 0, vy: 0, fireCooldown: 0,
+      rankFx: 0, dir: 0, hullAngle: -Math.PI / 2, aimAngle: -Math.PI / 2 });
     game.event = `${player.id.toUpperCase()} REDEPLOYED // SHIELD ACTIVE`;
   }
   if (player.stunned > 0) return;
-  const moveX = Number(!!input.right) - Number(!!input.left), moveY = Number(!!input.down) - Number(!!input.up);
-  const moving = moveX !== 0 || moveY !== 0;
+  const directions = [input.up && !input.down, input.right && !input.left, input.down && !input.up, input.left && !input.right];
+  const dir = directions[player.dir] ? player.dir : directions.findIndex(Boolean);
+  const moving = dir >= 0;
   if (moving) {
-    player.hullAngle = Math.atan2(moveY, moveX);
-    player.dir = Math.abs(moveX) > Math.abs(moveY) ? (moveX > 0 ? 1 : 3) : (moveY > 0 ? 2 : 0);
+    const [dx, dy] = DIRECTIONS[dir];
+    const onIce = game.terrain[Math.floor(player.y / TILE)]?.[Math.floor(player.x / TILE)] === 'I';
+    if (dir % 2 !== player.dir % 2 && !onIce && !canStand(game, player.x + dx * RADIUS, player.y + dy * RADIUS, player)) {
+      const x = dx ? player.x : Math.floor(player.x / TILE) * TILE + TILE / 2;
+      const y = dy ? player.y : Math.floor(player.y / TILE) * TILE + TILE / 2;
+      if (Math.hypot(x - player.x, y - player.y) <= TILE / 2
+        && canStand(game, x, y, player) && canStand(game, x + dx * RADIUS, y + dy * RADIUS, player)) {
+        player.x = x; player.y = y;
+      }
+    }
+    player.dir = dir;
+    player.hullAngle = Math.atan2(DIRECTIONS[dir][1], DIRECTIONS[dir][0]);
   }
   if (input.dash && player.dashCooldown === 0) {
     player.dashTimer = 0.16; player.dashCooldown = player.dashRecharge;
@@ -546,8 +612,15 @@ function updatePlayer(game, player, dt, input) {
   player.dashTimer = Math.max(0, player.dashTimer - dt);
   if (Number.isFinite(input.aimX) && Number.isFinite(input.aimY)) {
     if (input.aimX !== player.x || input.aimY !== player.y) player.aimAngle = Math.atan2(input.aimY - player.y, input.aimX - player.x);
-  } else if (moving) player.aimAngle = player.hullAngle;
+  } else player.aimAngle = player.hullAngle;
   if (input.fire && player.fireCooldown === 0 && shoot(game, player, 'player')) player.fireCooldown = player.fireRate;
+}
+
+function enemyType(stage, ordinal) {
+  if (stage === 1) return ordinal >= 19 ? 'scout' : 'basic';
+  if (stage >= 4 && ordinal % 6 === 0) return 'power';
+  if (ordinal % (stage >= 10 ? 4 : 10) === 0) return 'heavy';
+  return ordinal % 5 === 0 ? 'scout' : 'basic';
 }
 
 export function updateGame(game, dt, input = {}) {
@@ -564,16 +637,16 @@ export function updateGame(game, dt, input = {}) {
   if (input.emp && !game.previousEmp) activateEmp(game);
   game.previousEmp = !!input.emp;
   game.spawnTimer -= dt;
-  if (game.waveSpawned < game.waveTotal && game.spawnTimer <= 0 && game.enemies.length < 8) {
+  if (game.waveSpawned < game.waveTotal && game.spawnTimer <= 0 && game.enemies.length < (game.coop ? 6 : 4)) {
     const candidates = game.spawnPoints.filter(point => canStand(game, point.x, point.y, null));
     if (candidates.length) {
-      const point = candidates[Math.floor(random(game) * candidates.length)];
-      const roster = ['basic', 'scout', 'basic', 'power', 'heavy', 'basic', 'scout', 'power'];
+      const preferred = game.spawnPoints[[0, 2, 1][game.waveSpawned % 3]];
+      const point = candidates.includes(preferred) ? preferred : candidates[0];
       const ordinal = game.waveSpawned + 1;
-      const type = roster[(ordinal - 1 + (game.wave - 1) % 5) % roster.length];
+      const type = enemyType(game.wave, ordinal);
       game.enemies.push(makeEnemy(game, point, type, ordinal));
       game.waveSpawned++;
-      game.spawnTimer = Math.max(0.55, 1.15 - Math.min(7, game.wave) * 0.09);
+      game.spawnTimer = Math.max(1.6, 2.4 - Math.min(34, game.wave - 1) * (0.8 / 34));
       burst(game, point.x, point.y, '#ffb25b', 5);
     }
   }
