@@ -50,3 +50,25 @@ console.log('All 16 heroes: concurrent movement, full-icon upgrades, aiming, can
  screen.reset();
 }
 console.log('Anywhere-drag screen movement preserves taps and releases cleanly.');
+
+{
+ const movement={x:0,y:0},surface=new Control(),factors=[],taps=[];let enabled=true,stops=0;
+ const input=screenMovementPointer(surface,{movement,enabled:()=>enabled,onStart(){},onDragStart(){stops++;},onTap:e=>taps.push(e.pointerId),onZoom:f=>factors.push(f)});
+ surface.send('pointerdown',41,10,50);surface.send('pointermove',41,60,50);assert.equal(movement.x,1);
+ surface.send('pointerdown',42,160,50);assert(input.pinching);assert.deepEqual(movement,{x:0,y:0});assert.equal(stops,2);
+ surface.send('pointermove',42,110,50);assert.equal(factors.at(-1),2,'fingers together zoom out');
+ surface.send('pointermove',42,160,50);assert.equal(factors.at(-1),.5,'fingers apart zoom in');
+ const count=factors.length;surface.send('pointermove',99,300,50);assert.equal(factors.length,count);
+ enabled=false;surface.send('pointermove',42,110,50);assert.equal(factors.length,count,'inactive gestures cannot zoom');enabled=true;
+ surface.send('pointercancel',41);surface.send('lostpointercapture',41);surface.send('pointerup',41);
+ surface.send('pointermove',42,200,50);assert.deepEqual(movement,{x:0,y:0});surface.send('pointerup',42);assert.equal(taps.length,0);assert(!input.active);
+ surface.send('pointerdown',43,10,50);surface.send('pointerup',43);assert.deepEqual(taps,[43],'fresh single touch still taps');
+ surface.send('pointerdown',44,10,50);surface.send('pointerdown',45,110,50);surface.send('lostpointercapture',45);surface.send('pointerup',44);assert.deepEqual(taps,[43]);assert(!input.active);
+ surface.send('pointerdown',46,10,50);surface.send('pointerdown',47,110,50);input.reset();surface.send('pointerup',46);surface.send('pointerup',47);assert(!input.pinching);assert.deepEqual(taps,[43]);
+ const pad=new Control(),thumb=new Control(),skill=new Control(),casts=[];
+ movementPointer(pad,{movement,thumb,enabled:()=>true,onStart(){}});abilityPointers([skill],{enabled:()=>true,onStart(){},onAim(){},onCast:c=>casts.push(c)});
+ pad.send('pointerdown',51);pad.send('pointermove',51,88,50);skill.send('pointerdown',52);skill.send('pointerup',52);
+ assert.equal(movement.x,1);assert.equal(casts.length,1);assert(!input.pinching,'control touches do not enter battlefield pinch');
+ pad.send('pointerup',51);
+}
+console.log('Battlefield pinch: ratios, movement suppression, unrelated touches, inactive states and cancellation pass.');

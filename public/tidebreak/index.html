@@ -34,12 +34,12 @@
     <div id="gpu-note" role="status" hidden><span>This browser draws the game without the graphics card, so it can lag. Turn on graphics acceleration in the browser settings.</span><button id="gpu-note-close" aria-label="Close this note">×</button></div>
     <button id="map-button" aria-label="Open arena map"><canvas id="minimap" width="180" height="180"></canvas><small>MAP ↗</small></button>
     <div id="objective"><b id="realm">MIDNIGHT TOWN</b><span id="realm-count">Woods arrive in 40s</span><div class="realm-track"><i id="realm-fill"></i></div><span id="objective-sub">Break the outer, middle and inner wards, then the guardians.</span></div>
-    <button id="recall" class="utility">RETURN <small>Heal at home</small></button>
+    <button id="recall" class="utility"><span id="recall-label">RECALL</span> <small>Heal at home</small></button>
     <button id="portal" class="utility" disabled>RIFT JUMP<small>Find a gate</small></button>
     <button id="rally" aria-label="Call your team to you (G)"><span aria-hidden="true">⚑</span>RALLY<small>Call team</small></button>
     <div id="notice" role="status" aria-live="polite"></div>
     <div id="respawn" hidden></div>
-    <div id="coach"><svg viewBox="0 0 80 38" aria-hidden="true"><circle cx="28" cy="20" r="14"/><circle class="coach-thumb" cx="28" cy="20" r="5"/><path d="M51 20h17m-6-6 6 6-6 6"/></svg><span>Move with WASD or the left pad.<br>Click an enemy to approach and attack.<br>Click ground to move. Space to stop.</span><button id="coach-close" aria-label="Close control tip">×</button></div>
+    <aside id="coach" aria-live="polite" hidden><strong id="coach-title"></strong><span id="coach-text"></span><button id="coach-close" aria-label="Skip the control guide">Skip guide</button></aside>
     <div id="loadout"><button id="shop" class="utility"><span id="gold">0</span> embers <small>NIGHT MARKET</small></button><button id="quick-buy" aria-label="Buy next recommended item"></button><div id="inventory" aria-label="Your six item slots"></div></div>
     <div id="controls">
       <div id="joystick" role="group" aria-label="Movement pad"><span class="stick-arrows"></span><span id="thumb"></span><small>MOVE</small></div>

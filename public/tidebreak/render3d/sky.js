@@ -1,6 +1,7 @@
 // Light and air: a low golden sun that casts the one shadow map, a cool sky fill, an environment map for metal, and a
 // light haze toward the horizon. Each realm has its own mood and the change blends over about a second.
 import * as THREE from 'three';
+import { clampZoom } from '../camera-zoom.js';
 
 // Town: warm late afternoon. Woods: cooler misty dusk under the canopy.
 export const MOODS = [
@@ -34,7 +35,7 @@ function skyEnvironment(gl) {
 }
 export class Sky {
   constructor(gl, scene) {
-    this.scene = scene; this.blend = 0; this.target = 0;
+    this.scene = scene; this.blend = 0; this.target = 0; this.zoom = 1;
     scene.environment = skyEnvironment(gl);
     this.hemi = new THREE.HemisphereLight('#9db6d6', '#5d4a30', 1); scene.add(this.hemi);
     this.sun = new THREE.DirectionalLight('#ffc985', 3); this.sun.castShadow = true; scene.add(this.sun, this.sun.target);
@@ -48,17 +49,18 @@ export class Sky {
     col(a.sun, b.sun, this.sun.color); this.sun.intensity = mix(a.sunIntensity, b.sunIntensity);
     col(a.sky, b.sky, this.hemi.color); col(a.ground, b.ground, this.hemi.groundColor); this.hemi.intensity = mix(a.hemi, b.hemi);
     col(a.fog, b.fog, this.scene.fog.color); this.scene.background.copy(this.scene.fog.color);
-    this.scene.fog.near = mix(a.fogNear, b.fogNear); this.scene.fog.far = mix(a.fogFar, b.fogFar);
+    this.scene.fog.near = mix(a.fogNear, b.fogNear) * this.zoom; this.scene.fog.far = mix(a.fogFar, b.fogFar) * this.zoom;
     this.scene.environmentIntensity = mix(a.env, b.env); this.exposure = mix(a.exposure, b.exposure); this.rim = mix(a.rim, b.rim);
     // The sun comes from the south-west and low, so shadows fall up and to the right on screen.
     const el = THREE.MathUtils.degToRad(mix(a.elevation, b.elevation)), az = THREE.MathUtils.degToRad(mix(a.azimuth, b.azimuth));
     this.dir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
     this.mood = m;
   }
-  update(phase, dt) {
+  update(phase, dt, zoom = 1) {
+    const nextZoom = clampZoom(zoom), zoomChanged = nextZoom !== this.zoom; this.zoom = nextZoom;
     this.target = phase ? 1 : 0;
     if (this.blend !== this.target) { const step = dt / 1.1; this.blend = this.target > this.blend ? Math.min(this.target, this.blend + step) : Math.max(this.target, this.blend - step); }
-    const m = this.blend * this.blend * (3 - 2 * this.blend); if (m !== this.mood) this.apply(m);
+    const m = this.blend * this.blend * (3 - 2 * this.blend); if (m !== this.mood || zoomChanged) this.apply(m);
   }
   // Fits the shadow camera around the ground the view can see. Snapping to whole shadow texels keeps edges still
   // while the camera glides.

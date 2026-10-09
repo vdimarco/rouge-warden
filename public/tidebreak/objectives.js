@@ -1,8 +1,32 @@
+import { BASES, PATHS, distance } from './world.js';
+import { BASE_HEAL_RADIUS } from './bases.js';
+
 export const LANE_NAMES = ['West', 'Middle', 'East'];
 export const TIER_NAMES = ['outer', 'middle', 'inner'];
 export const INNER = TIER_NAMES.length - 1;
 export const wards = (s, team, lane) => s.units.filter(e => e.kind === 'tower' && !e.guardian && e.team === team && (lane === undefined || e.lane === lane));
 export const guardians = (s, team) => s.units.filter(e => e.kind === 'tower' && e.guardian && e.team === team);
+// Project onto whole road segments, rather than choosing the nearest sampled knot.
+export function distanceToPath(point, path) {
+  let best = Infinity;
+  for (let i = 0; i < path.length; i++) {
+    const a = path[i], b = path[i + 1] || a, dx = b.x - a.x, dy = b.y - a.y;
+    const length2 = dx * dx + dy * dy;
+    const t = length2 ? Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / length2)) : 0;
+    best = Math.min(best, Math.hypot(point.x - a.x - dx * t, point.y - a.y - dy * t));
+  }
+  return best;
+}
+// Guidance follows the current position without changing the hero's simulation lane.
+// Keep its last lane in the shared court and until another road is 120 units nearer.
+export function guidanceLane(point, previous = 1) {
+  const current = Number.isInteger(previous) && previous >= 0 && previous < PATHS.length ? previous : 1;
+  if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) return current;
+  if (BASES.some(base => distance(point, base) < BASE_HEAL_RADIUS)) return current;
+  const distances = PATHS.map(path => distanceToPath(point, path));
+  const nearest = distances.reduce((best, d, i) => d < distances[best] ? i : best, current);
+  return distances[current] - distances[nearest] > 120 ? nearest : current;
+}
 // A lane is open when every ward on it is down.
 export function laneOpen(s, team, lane) {
   const towers = wards(s, team, lane);
