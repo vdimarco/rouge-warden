@@ -1,3 +1,5 @@
+import { MAPS, makeTerrain, validateMap } from './maps.js';
+
 export const WIDTH = 960;
 export const HEIGHT = 672;
 export const TILE = 32;
@@ -6,17 +8,20 @@ export const ROWS = HEIGHT / TILE;
 
 const DIRECTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const RADIUS = 11;
+const HQ_WALLS = [[13, 18], [14, 18], [15, 18], [16, 18], [13, 19], [16, 19]];
+const PICKUPS = ['star', 'helmet', 'grenade', 'timer', 'shovel', 'tank'];
 const ENEMY = {
-  scout: { hp: 1, speed: 110, fireRate: 1.4, points: 100 },
-  striker: { hp: 2, speed: 80, fireRate: 1.15, points: 200 },
-  heavy: { hp: 4, speed: 54, fireRate: 1.65, points: 400 },
+  basic: { hp: 1, speed: 72, fireRate: 1.4, bulletSpeed: 240, points: 100 },
+  scout: { hp: 1, speed: 110, fireRate: 1.4, bulletSpeed: 240, points: 200 },
+  power: { hp: 1, speed: 72, fireRate: 0.85, bulletSpeed: 520, points: 300 },
+  heavy: { hp: 4, speed: 54, fireRate: 1.65, bulletSpeed: 240, points: 400 },
 };
 const UPGRADES = [
-  { id: 'rapid-fire', name: 'Rapid fire', description: 'Fire 30% faster. Keep the pressure on.', icon: '»' },
-  { id: 'reinforced', name: 'Reactive armor', description: '+2 maximum armor. Fully repairs your tank.', icon: '◈' },
+  { id: 'rapid-fire', name: 'Rapid fire', description: 'Fire 30% faster when a shell slot is free.', icon: '»' },
+  { id: 'reinforced', name: 'Reactive armor', description: '+2 maximum armor. Repairs surviving tanks.', icon: '◈' },
   { id: 'overdrive', name: 'Overdrive', description: '+20% movement. Dash recharges 25% faster.', icon: '↗' },
   { id: 'piercing', name: 'Rail rounds', description: 'Shots punch through one extra target or wall.', icon: '↯' },
-  { id: 'repair', name: 'Field engineer', description: 'Repair HQ by 2 and gain an extra EMP charge.', icon: '+' },
+  { id: 'repair', name: 'Field engineer', description: 'Fortify HQ for 20 seconds and gain an EMP.', icon: '+' },
 ];
 
 function random(game) {
@@ -24,72 +29,50 @@ function random(game) {
   return game.rng / 4294967296;
 }
 
-function makeTerrain() {
-  const terrain = Array.from({ length: ROWS }, () => Array(COLS).fill('.'));
-  function block(x, y, w, h, type) {
-    for (let row = y; row < y + h; row++) {
-      for (let col = x; col < x + w; col++) terrain[row][col] = type;
-    }
-  }
-  block(0, 0, COLS, 1, 'S');
-  block(0, ROWS - 1, COLS, 1, 'S');
-  block(0, 0, 1, ROWS, 'S');
-  block(COLS - 1, 0, 1, ROWS, 'S');
-  for (const x of [2, 13, 24]) block(x, 0, 4, 1, '.');
-  for (const x of [3, 8, 19, 24]) {
-    block(x, 3, 3, 3, '#');
-    block(x, 14, 3, 3, '#');
-  }
-  block(8, 4, 3, 1, '.');
-  block(19, 4, 3, 1, '.');
-  for (const x of [3, 10, 18, 25]) block(x, 7, 2, 1, 'S');
-  for (const x of [5, 22]) block(x, 9, 3, 3, '~');
-  for (const x of [11, 17]) block(x, 10, 2, 2, '#');
-  block(14, 8, 2, 1, 'S');
-  block(14, 12, 2, 1, 'S');
-  for (const x of [2, 25]) block(x, 11, 3, 2, '%');
-  for (const x of [12, 17]) block(x, 2, 1, 3, '%');
-  block(12, 15, 1, 2, '%');
-  block(17, 15, 1, 2, '%');
-  block(13, 18, 4, 1, '#');
-  block(13, 19, 1, 1, '#');
-  block(16, 19, 1, 1, '#');
-  return terrain;
+function makePlayer(index) {
+  return {
+    id: `p${index + 1}`, x: index === 0 ? 112 : 848, y: 592,
+    spawnX: index === 0 ? 112 : 848, spawnY: 592,
+    dir: 0, hp: 4, maxHp: 4, speed: 220, level: 0, lives: 3, dead: false,
+    respawnTimer: 0, stunned: 0, score: 0, nextLifeScore: 20000, stageKills: 0, kills: 0,
+    hullAngle: -Math.PI / 2, aimAngle: -Math.PI / 2, moving: false, vx: 0, vy: 0,
+    fireCooldown: 0, fireRate: 0.14, dashCooldown: 0, dashRecharge: 2.1,
+    dashTimer: 0, invulnerable: 0, pierce: 0, shotCount: 0, muzzleFlash: 0,
+  };
 }
 
-export function createGame({ mode = 'campaign', seed = 1 } = {}) {
+export function createGame({ mode = 'campaign', seed = 1, stage = 1, coop = false, customMap = null } = {}) {
+  const startStage = Math.max(1, Math.min(MAPS.length, Math.trunc(Number(stage)) || 1));
+  const customTerrain = customMap?.terrain ?? customMap;
+  if (customTerrain !== null && !validateMap(customTerrain)) throw new TypeError('Invalid custom battlefield');
+  const players = [makePlayer(0)];
+  if (coop) players.push(makePlayer(1));
   const game = {
-    mode: mode === 'endless' ? 'endless' : 'campaign',
-    seed: Number(seed) >>> 0,
-    rng: Number(seed) >>> 0,
-    status: 'ready', wave: 1, score: 0, kills: 0, combo: 0, comboTimer: 0, time: 0,
-    player: {
-      x: 112, y: 592, dir: 0, hp: 4, maxHp: 4, speed: 220,
-      hullAngle: -Math.PI / 2, aimAngle: -Math.PI / 2, moving: false,
-      fireCooldown: 0, fireRate: 0.14, dashCooldown: 0, dashRecharge: 2.1,
-      dashTimer: 0, invulnerable: 0, pierce: 0, shotCount: 0, muzzleFlash: 0,
-    },
-    base: { x: 480, y: 624, hp: 5, maxHp: 5 },
-    enemies: [], bullets: [], particles: [], pickups: [], terrain: makeTerrain(),
+    mode: mode === 'custom' || customTerrain !== null ? 'custom' : mode === 'endless' ? 'endless' : 'campaign',
+    seed: Number(seed) >>> 0, rng: Number(seed) >>> 0, startStage, coop: !!coop,
+    customMap: customTerrain === null ? null : customTerrain.map(row => [...row]),
+    status: 'ready', wave: startStage, stage: startStage,
+    stageName: customTerrain !== null ? 'CONSTRUCTION ZONE' : MAPS[startStage - 1].name,
+    score: 0, kills: 0, combo: 0, comboTimer: 0, time: 0,
+    players, player: players[0], base: { x: 480, y: 624, hp: 1, maxHp: 1 },
+    enemies: [], bullets: [], particles: [], pickups: [], terrain: makeTerrain(startStage, customTerrain), brickDamage: {},
     spawnPoints: [{ x: 112, y: 48 }, { x: 496, y: 48 }, { x: 848, y: 48 }],
-    waveTotal: 12, waveSpawned: 0, waveKills: 0, spawnTimer: 0.6,
+    waveTotal: 20, waveSpawned: 0, waveKills: 0, spawnTimer: 0.6,
     upgrades: [], upgradeChoices: [], empCharges: 2, empFx: 0, empRadius: 280,
     nextId: 1, event: 'DEFEND THE SIGNAL', previousEmp: false,
-    shots: 0, empCount: 0, shake: 0, hitFlash: 0,
+    shots: 0, empCount: 0, shake: 0, hitFlash: 0, freezeTimer: 0, fortifyTimer: 0,
+    stageBonus: { p1: 0, p2: 0 },
   };
-  for (const [index, point] of [
-    { x: 112, y: 80 }, { x: 304, y: 240 }, { x: 496, y: 144 },
-    { x: 656, y: 240 }, { x: 848, y: 80 },
-  ].entries()) {
-    const type = ['scout', 'striker', 'heavy', 'striker', 'scout'][index];
-    game.enemies.push(makeEnemy(game, point, type));
+  for (const [index, type] of ['basic', 'scout', 'power', 'heavy', 'basic'].entries()) {
+    game.enemies.push(makeEnemy(game, { x: 112 + index * 184, y: 48 }, type));
   }
   return game;
 }
 
 export function startGame(game) {
-  const fresh = createGame({ mode: game.mode, seed: game.seed });
-  Object.assign(game, fresh, { status: 'playing', enemies: [], nextId: 1, event: 'WAVE 01 // CONTACT INBOUND' });
+  const fresh = createGame({ mode: game.mode, seed: game.seed, stage: game.startStage, coop: game.coop, customMap: game.customMap });
+  Object.assign(game, fresh, { status: 'playing', enemies: [], nextId: 1, event: `STAGE ${String(fresh.wave).padStart(2, '0')} // CONTACT INBOUND` });
+  for (const player of game.players) player.invulnerable = 2.5;
   return game;
 }
 
@@ -99,26 +82,33 @@ export function togglePause(game) {
   return game;
 }
 
-function makeEnemy(game, point, type) {
+function makeEnemy(game, point, type, ordinal = 0) {
   return {
     id: game.nextId++, x: point.x, y: point.y, dir: 2, type,
     hp: ENEMY[type].hp, maxHp: ENEMY[type].hp, speed: ENEMY[type].speed,
-    fireCooldown: 0.4 + random(game), stunned: 0,
-    routeDir: 2, routeDistance: 0, flash: 0, moving: false,
+    fireCooldown: 0.4 + random(game), stunned: 0, carrier: [4, 11, 18].includes(ordinal), dropped: false,
+    routeDir: 2, routeDistance: 0, flash: 0, moving: false, vx: 0, vy: 0,
     hullAngle: Math.PI / 2, aimAngle: Math.PI / 2, shotCount: 0, muzzleFlash: 0,
   };
 }
 
 function solid(game, x, y) {
-  const type = game.terrain[Math.floor(y / TILE)]?.[Math.floor(x / TILE)];
+  const row = Math.floor(y / TILE), col = Math.floor(x / TILE);
+  const type = game.terrain[row]?.[col];
+  if (type === '#') {
+    const quadrant = (x - col * TILE >= 16 ? 1 : 0) + (y - row * TILE >= 16 ? 2 : 0);
+    return !((game.brickDamage[row * COLS + col] ?? 0) & (1 << quadrant));
+  }
   return type === undefined || type === '#' || type === 'S' || type === '~';
 }
 
-function canStand(game, x, y) {
-  return !solid(game, x - RADIUS, y - RADIUS)
-    && !solid(game, x + RADIUS, y - RADIUS)
-    && !solid(game, x - RADIUS, y + RADIUS)
-    && !solid(game, x + RADIUS, y + RADIUS);
+function canStand(game, x, y, tank) {
+  for (const dx of [-RADIUS, 0, RADIUS]) {
+    for (const dy of [-RADIUS, 0, RADIUS]) if (solid(game, x + dx, y + dy)) return false;
+  }
+  if (game.base.hp > 0 && Math.abs(x - game.base.x) < 34 && Math.abs(y - game.base.y) < 30) return false;
+  return ![...game.players, ...game.enemies].some(other => other !== tank && !other.dead
+    && Math.abs(x - other.x) < RADIUS * 2 && Math.abs(y - other.y) < RADIUS * 2);
 }
 
 function moveTank(game, tank, dx, dy, distance) {
@@ -128,29 +118,46 @@ function moveTank(game, tank, dx, dy, distance) {
   for (let step = 0; step < steps; step++) {
     const amount = distance / steps;
     const x = tank.x + dx * amount;
-    if (canStand(game, x, tank.y)) tank.x = x;
+    if (canStand(game, x, tank.y, tank)) tank.x = x;
     const y = tank.y + dy * amount;
-    if (canStand(game, tank.x, y)) tank.y = y;
+    if (canStand(game, tank.x, y, tank)) tank.y = y;
   }
   return Math.hypot(tank.x - startX, tank.y - startY);
 }
 
+function motion(game, tank, vx, vy, dt) {
+  const onIce = game.terrain[Math.floor(tank.y / TILE)]?.[Math.floor(tank.x / TILE)] === 'I';
+  const blend = onIce ? 1 - Math.exp(-dt * 5) : 1;
+  tank.vx = (tank.vx ?? 0) + (vx - (tank.vx ?? 0)) * blend;
+  tank.vy = (tank.vy ?? 0) + (vy - (tank.vy ?? 0)) * blend;
+  const speed = Math.hypot(tank.vx, tank.vy);
+  if (speed < 0.1) { tank.vx = 0; tank.vy = 0; return 0; }
+  const beforeX = tank.x;
+  const beforeY = tank.y;
+  const moved = moveTank(game, tank, tank.vx / speed, tank.vy / speed, speed * dt);
+  if (Math.abs(tank.x - beforeX) < 0.001) tank.vx = 0;
+  if (Math.abs(tank.y - beforeY) < 0.001) tank.vy = 0;
+  return moved;
+}
+
 function shoot(game, tank, owner) {
+  if (owner === 'player' && game.bullets.filter(bullet => !bullet.dead && bullet.owner === 'player'
+    && (bullet.shooterId ?? 'p1') === tank.id).length >= (tank.level >= 2 ? 2 : 1)) return false;
   const angle = owner === 'player' && Number.isFinite(tank.aimAngle)
     ? tank.aimAngle : Math.atan2(DIRECTIONS[tank.dir][1], DIRECTIONS[tank.dir][0]);
-  const dx = Math.cos(angle);
-  const dy = Math.sin(angle);
-  const speed = owner === 'player' ? 700 : 240;
+  const dx = Math.cos(angle), dy = Math.sin(angle);
+  const speed = owner === 'player' ? (tank.level >= 1 ? 950 : 700) : ENEMY[tank.type].bulletSpeed;
   tank.aimAngle = angle;
   tank.shotCount = (tank.shotCount ?? 0) + 1;
   tank.muzzleFlash = 0.075;
   game.shots++;
   if (owner === 'player') game.shake = Math.max(game.shake, 0.035);
-  game.bullets.push({
-    x: tank.x + dx * 17, y: tank.y + dy * 17,
-    dx: dx * speed, dy: dy * speed,
-    owner, damage: 1, pierce: owner === 'player' ? game.player.pierce : 0, hitIds: [],
-  });
+  const brickAhead = owner === 'enemy' && game.terrain[Math.floor((tank.y + dy * 24) / TILE)]?.[Math.floor((tank.x + dx * 24) / TILE)] === '#';
+  const breachOffset = brickAhead ? (tank.shotCount % 2 ? -8 : 8) : 0;
+  game.bullets.push({ x: tank.x + dx * 17 - dy * breachOffset, y: tank.y + dy * 17 + dx * breachOffset, dx: dx * speed, dy: dy * speed,
+    owner, shooterId: tank.id, damage: 1, pierce: owner === 'player' ? tank.pierce : 0,
+    steelBreak: owner === 'player' && tank.level >= 3, hitIds: [] });
+  return true;
 }
 
 function burst(game, x, y, color, count = 8, text = '', kind = 'spark') {
@@ -164,50 +171,77 @@ function burst(game, x, y, color, count = 8, text = '', kind = 'spark') {
   if (text) game.particles.push({ x, y, vx: 0, vy: -35, life: 0.85, maxLife: 0.85, color, text, glyph: '', kind: 'label' });
 }
 
-function destroyEnemy(game, enemy) {
+function addScore(game, player, points) {
+  game.score += points;
+  player.score += points;
+  while (player.score >= player.nextLifeScore) {
+    player.nextLifeScore += 20000;
+    player.lives++;
+    if (player.dead && player.respawnTimer <= 0) player.respawnTimer = 1.2;
+    game.event = `${player.id.toUpperCase()} EXTRA LIFE // ${player.lives} TANKS`;
+  }
+}
+
+function dropCarrier(game, enemy) {
+  if (!enemy.carrier || enemy.dropped) return;
+  enemy.dropped = true;
+  let point = { x: enemy.x, y: enemy.y };
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const col = 1 + Math.floor(random(game) * (COLS - 2));
+    const row = 2 + Math.floor(random(game) * (ROWS - 5));
+    if (['.', '%', 'I'].includes(game.terrain[row][col])) { point = { x: col * TILE + 16, y: row * TILE + 16 }; break; }
+  }
+  game.pickups.push({ ...point, type: PICKUPS[Math.floor(random(game) * PICKUPS.length)], life: 25 });
+  game.event = 'SUPPLY CARRIER HIT // POWER-UP DEPLOYED';
+}
+
+function destroyEnemy(game, enemy, player = game.player) {
   if (enemy.dead) return;
   enemy.dead = true;
   game.kills++;
   game.waveKills++;
+  player.stageKills++;
+  player.kills++;
   game.combo = game.comboTimer > 0 ? Math.min(5, game.combo + 1) : 1;
   game.comboTimer = 4;
-  const points = ENEMY[enemy.type].points * game.combo;
-  game.score += points;
+  const points = ENEMY[enemy.type].points;
+  addScore(game, player, points);
   burst(game, enemy.x, enemy.y, '#ffb25b', 28, `+${points}`, 'explosion');
   game.shake = Math.max(game.shake, 0.14);
-  if (game.kills % 3 === 0) {
-    const types = ['repair', 'credits', 'base', 'charge'];
-    game.pickups.push({ x: enemy.x, y: enemy.y, type: types[Math.floor(random(game) * types.length)], life: 20 });
-  }
-  game.event = game.combo > 1 ? `${game.combo}× CHAIN // +${points}` : `${enemy.type.toUpperCase()} ELIMINATED // +${points}`;
+  game.event = `${enemy.type.toUpperCase()} ELIMINATED // +${points}`;
 }
 
-export function activateEmp(game) {
-  if (game.status !== 'playing' || game.empCharges <= 0) return false;
+function damageEnemy(game, enemy, damage, player) {
+  dropCarrier(game, enemy);
+  enemy.hp -= damage;
+  enemy.flash = 0.12;
+  if (enemy.hp <= 0) destroyEnemy(game, enemy, player);
+}
+
+export function activateEmp(game, playerId = 'p1') {
+  const player = game.players.find(tank => tank.id === playerId && !tank.dead) ?? game.players.find(tank => !tank.dead);
+  if (game.status !== 'playing' || game.empCharges <= 0 || !player) return false;
   game.empCharges--;
   game.empCount++;
   game.empFx = 0.7;
+  game.empX = player.x; game.empY = player.y;
   game.shake = Math.max(game.shake, 0.2);
   for (const enemy of game.enemies) {
-    if (Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y) > game.empRadius) continue;
-    enemy.hp -= 2;
+    if (Math.hypot(enemy.x - player.x, enemy.y - player.y) > game.empRadius) continue;
+    damageEnemy(game, enemy, 2, player);
     enemy.stunned = 2;
-    enemy.flash = 0.2;
     burst(game, enemy.x, enemy.y, '#8df5ca', 5);
-    if (enemy.hp <= 0) destroyEnemy(game, enemy);
   }
   game.enemies = game.enemies.filter(enemy => !enemy.dead);
   game.bullets = game.bullets.filter(bullet => bullet.owner === 'player'
-    || Math.hypot(bullet.x - game.player.x, bullet.y - game.player.y) > game.empRadius);
+    || Math.hypot(bullet.x - player.x, bullet.y - player.y) > game.empRadius);
   game.event = 'EMP DISCHARGED // SYSTEMS DISRUPTED';
   return true;
 }
 
 function routeDirection(game, enemy, target) {
-  const startCol = Math.floor(enemy.x / TILE);
-  const startRow = Math.floor(enemy.y / TILE);
-  const endCol = Math.floor(target.x / TILE);
-  const endRow = Math.floor(target.y / TILE);
+  const startCol = Math.floor(enemy.x / TILE), startRow = Math.floor(enemy.y / TILE);
+  const endCol = Math.floor(target.x / TILE), endRow = Math.floor(target.y / TILE);
   const queue = [[startCol, startRow, -1]];
   const visited = new Set([startRow * COLS + startCol]);
   for (let index = 0; index < queue.length; index++) {
@@ -216,257 +250,346 @@ function routeDirection(game, enemy, target) {
     const order = enemy.id % 2 ? [2, 1, 3, 0] : [2, 3, 1, 0];
     for (const dir of order) {
       const [dx, dy] = DIRECTIONS[dir];
-      const nextCol = col + dx;
-      const nextRow = row + dy;
-      const key = nextRow * COLS + nextCol;
+      const nextCol = col + dx, nextRow = row + dy, key = nextRow * COLS + nextCol;
       if (nextCol < 1 || nextCol >= COLS - 1 || nextRow < 1 || nextRow >= ROWS - 1 || visited.has(key)) continue;
       const tile = game.terrain[nextRow][nextCol];
       if (tile === 'S' || tile === '~') continue;
+      const occupied = [...game.players, ...game.enemies].some(other => other !== enemy && !other.dead
+        && Math.abs(other.x - (nextCol * TILE + 16)) < RADIUS * 2 && Math.abs(other.y - (nextRow * TILE + 16)) < RADIUS * 2);
+      if (occupied && (nextCol !== endCol || nextRow !== endRow)) continue;
       visited.add(key);
       queue.push([nextCol, nextRow, firstDir === -1 ? dir : firstDir]);
     }
   }
-  const dx = target.x - enemy.x;
-  const dy = target.y - enemy.y;
+  const dx = target.x - enemy.x, dy = target.y - enemy.y;
   return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
 }
 
 function updateEnemies(game, dt) {
-  const playerInBrush = game.terrain[Math.floor(game.player.y / TILE)]?.[Math.floor(game.player.x / TILE)] === '%';
   for (const enemy of game.enemies) {
     enemy.moving = false;
     enemy.muzzleFlash = Math.max(0, (enemy.muzzleFlash ?? 0) - dt);
+    enemy.flash = Math.max(0, (enemy.flash ?? 0) - dt);
+    enemy.stunned = Math.max(0, (enemy.stunned ?? 0) - dt);
+    if (game.freezeTimer > 0 || enemy.stunned > 0 || enemy.dead) { enemy.vx = 0; enemy.vy = 0; continue; }
     enemy.fireCooldown -= dt;
-    enemy.flash = Math.max(0, enemy.flash - dt);
-    enemy.stunned = Math.max(0, enemy.stunned - dt);
-    if (enemy.stunned > 0 || enemy.dead) continue;
-    const hiddenPlayer = playerInBrush && Math.hypot(game.player.x - enemy.x, game.player.y - enemy.y) > 160;
-    const target = enemy.type === 'scout' && !hiddenPlayer ? game.player : game.base;
+    const visiblePlayers = game.players.filter(player => !player.dead
+      && (game.terrain[Math.floor(player.y / TILE)]?.[Math.floor(player.x / TILE)] !== '%'
+      || Math.hypot(player.x - enemy.x, player.y - enemy.y) <= 160));
+    visiblePlayers.sort((a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y));
+    const target = (enemy.type === 'scout' || enemy.type === 'power') && visiblePlayers.length ? visiblePlayers[0] : game.base;
     const nearTarget = (Math.abs(target.x - enemy.x) < 17 || Math.abs(target.y - enemy.y) < 17)
       && Math.hypot(target.x - enemy.x, target.y - enemy.y) < 56;
+    let vx = 0, vy = 0;
     if (!nearTarget) {
       if (enemy.routeDistance <= 0.01) {
         enemy.routeDir = routeDirection(game, enemy, target);
         const [dx, dy] = DIRECTIONS[enemy.routeDir];
-        enemy.routeDistance = dx
-          ? Math.abs((Math.floor(enemy.x / TILE) + dx + 0.5) * TILE - enemy.x)
+        enemy.routeDistance = dx ? Math.abs((Math.floor(enemy.x / TILE) + dx + 0.5) * TILE - enemy.x)
           : Math.abs((Math.floor(enemy.y / TILE) + dy + 0.5) * TILE - enemy.y);
       }
       enemy.dir = enemy.routeDir;
       enemy.hullAngle = Math.atan2(DIRECTIONS[enemy.dir][1], DIRECTIONS[enemy.dir][0]);
-      const distance = Math.min(enemy.routeDistance, enemy.speed * dt);
-      const [moveX, moveY] = DIRECTIONS[enemy.dir];
-      const moved = moveTank(game, enemy, moveX, moveY, distance);
-      enemy.moving = moved > 0.001;
-      enemy.routeDistance -= moved;
-      if (moved < distance * 0.8) enemy.routeDistance = 0;
+      const speed = Math.min(enemy.speed, enemy.routeDistance / dt);
+      vx = DIRECTIONS[enemy.dir][0] * speed; vy = DIRECTIONS[enemy.dir][1] * speed;
     }
-
-    const dx = target.x - enemy.x;
-    const dy = target.y - enemy.y;
+    const moved = motion(game, enemy, vx, vy, dt);
+    enemy.moving = moved > 0.001;
+    enemy.routeDistance = Math.max(0, enemy.routeDistance - moved);
+    if (!nearTarget && moved < Math.hypot(vx, vy) * dt * 0.8) enemy.routeDistance = 0;
+    const dx = target.x - enemy.x, dy = target.y - enemy.y;
     const aligned = Math.abs(dx) < 17 || Math.abs(dy) < 17;
-    enemy.aimAngle = aligned
-      ? (Math.abs(dx) < 17 ? (dy > 0 ? Math.PI / 2 : -Math.PI / 2) : (dx > 0 ? 0 : Math.PI))
-      : enemy.hullAngle;
+    enemy.aimAngle = aligned ? (Math.abs(dx) < 17 ? (dy > 0 ? Math.PI / 2 : -Math.PI / 2) : (dx > 0 ? 0 : Math.PI)) : enemy.hullAngle;
     if (enemy.fireCooldown <= 0) {
       if (aligned) enemy.dir = Math.abs(dx) < 17 ? (dy > 0 ? 2 : 0) : (dx > 0 ? 1 : 3);
       shoot(game, enemy, 'enemy');
-      enemy.fireCooldown = ENEMY[enemy.type].fireRate * Math.max(0.6, 1 - (game.wave - 1) * 0.06);
+      enemy.fireCooldown = ENEMY[enemy.type].fireRate * Math.max(0.65, 1 - (game.wave - 1) * 0.012);
     }
   }
 }
 
+function freePosition(game, tank, x = tank.spawnX, y = tank.spawnY) {
+  if (canStand(game, x, y, tank)) return { x, y };
+  const col = Math.floor(x / TILE), row = Math.floor(y / TILE);
+  for (let radius = 1; radius < Math.max(COLS, ROWS); radius++) {
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
+        const point = { x: (col + dx) * TILE + 16, y: (row + dy) * TILE + 16 };
+        if (canStand(game, point.x, point.y, tank)) return point;
+      }
+    }
+  }
+  return null;
+}
+
+function destroyPlayer(game, player) {
+  if (player.dead) return;
+  player.lives = Math.max(0, player.lives - 1);
+  player.dead = true; player.hp = 0; player.level = 0;
+  player.moving = false; player.vx = 0; player.vy = 0; player.dashTimer = 0;
+  player.respawnTimer = player.lives > 0 ? 1.2 : 0;
+  game.bullets = game.bullets.filter(bullet => bullet.shooterId !== player.id);
+  burst(game, player.x, player.y, '#ff7065', 32, 'TANK LOST', 'explosion');
+  game.event = `${player.id.toUpperCase()} TANK LOST // ${player.lives} REMAINING`;
+}
+
 function hitBullet(game, bullet) {
-  const col = Math.floor(bullet.x / TILE);
-  const row = Math.floor(bullet.y / TILE);
+  const col = Math.floor(bullet.x / TILE), row = Math.floor(bullet.y / TILE);
   const tile = game.terrain[row]?.[col];
   if (tile === undefined) { bullet.dead = true; return; }
-  if (tile === '#' || tile === 'S') {
-    if (tile === '#') {
-      game.terrain[row][col] = '.';
-      burst(game, bullet.x, bullet.y, '#b98c65', 4);
-    } else burst(game, bullet.x, bullet.y, '#bed3c6', 3);
-    if (tile === '#' && bullet.pierce > 0) bullet.pierce--;
+  if ((tile === '#' && solid(game, bullet.x, bullet.y)) || tile === 'S') {
+    const breakable = tile === '#' || (bullet.steelBreak && col > 0 && col < COLS - 1 && row > 0 && row < ROWS - 1);
+    if (breakable) {
+      if (tile === '#' && !bullet.steelBreak) {
+        const quadrant = (bullet.x - col * TILE >= 16 ? 1 : 0) + (bullet.y - row * TILE >= 16 ? 2 : 0);
+        game.brickDamage[row * COLS + col] = (game.brickDamage[row * COLS + col] ?? 0) | (1 << quadrant);
+      }
+      if (tile === 'S' || bullet.steelBreak || game.brickDamage[row * COLS + col] === 15) {
+        game.terrain[row][col] = '.'; delete game.brickDamage[row * COLS + col];
+      }
+      burst(game, bullet.x, bullet.y, '#b98c65', 5);
+    }
+    else burst(game, bullet.x, bullet.y, '#bed3c6', 3);
+    if (breakable && bullet.pierce > 0) bullet.pierce--;
     else bullet.dead = true;
   }
   if (bullet.dead) return;
+  const shooter = game.players.find(player => player.id === (bullet.shooterId ?? 'p1')) ?? game.player;
   if (bullet.owner === 'player') {
     for (const enemy of game.enemies) {
       if (enemy.dead || bullet.hitIds.includes(enemy.id) || Math.abs(bullet.x - enemy.x) > 14 || Math.abs(bullet.y - enemy.y) > 14) continue;
-      enemy.hp -= bullet.damage;
-      enemy.flash = 0.12;
+      damageEnemy(game, enemy, bullet.damage, shooter);
       bullet.hitIds.push(enemy.id);
       burst(game, bullet.x, bullet.y, '#ffd08a', 3);
-      if (enemy.hp <= 0) destroyEnemy(game, enemy);
       if (bullet.pierce > 0) bullet.pierce--;
       else { bullet.dead = true; break; }
     }
-  } else {
-    const player = game.player;
-    if (Math.abs(bullet.x - player.x) < 14 && Math.abs(bullet.y - player.y) < 14) {
+  }
+  if (!bullet.dead) {
+    for (const player of game.players) {
+      if (player.dead || (bullet.owner === 'player' && player === shooter)
+        || Math.abs(bullet.x - player.x) >= 14 || Math.abs(bullet.y - player.y) >= 14) continue;
       bullet.dead = true;
-      if (player.invulnerable <= 0) {
+      if (bullet.owner === 'player') {
+        player.stunned = Math.max(player.stunned, 1.5);
+        player.vx = 0; player.vy = 0; player.dashTimer = 0;
+        game.event = `${player.id.toUpperCase()} STUNNED // WATCH FRIENDLY FIRE`;
+      } else if (player.invulnerable <= 0) {
         player.hp = Math.max(0, player.hp - bullet.damage);
         player.invulnerable = 0.9;
-        game.hitFlash = 0.28;
-        game.shake = Math.max(game.shake, 0.28);
-        game.combo = 0;
-        game.comboTimer = 0;
+        game.hitFlash = 0.28; game.shake = Math.max(game.shake, 0.28);
+        game.combo = 0; game.comboTimer = 0;
         burst(game, player.x, player.y, '#ff7065', 24, '', 'explosion');
-        game.event = 'ARMOR HIT // KEEP MOVING';
+        game.event = `${player.id.toUpperCase()} ARMOR HIT // KEEP MOVING`;
+        if (player.hp <= 0) destroyPlayer(game, player);
       }
+      break;
     }
-    if (!bullet.dead && Math.abs(bullet.x - game.base.x) < 23 && Math.abs(bullet.y - game.base.y) < 21) {
-      bullet.dead = true;
-      game.base.hp = Math.max(0, game.base.hp - bullet.damage);
-      burst(game, game.base.x, game.base.y, '#ff7065', 28, '', 'explosion');
-      game.shake = Math.max(game.shake, 0.3);
-      game.event = 'HQ UNDER FIRE // PROTECT THE SIGNAL';
-    }
+  }
+  if (!bullet.dead && Math.abs(bullet.x - game.base.x) < 23 && Math.abs(bullet.y - game.base.y) < 21) {
+    bullet.dead = true;
+    game.base.hp = 0;
+    burst(game, game.base.x, game.base.y, '#ff7065', 32, 'SIGNAL LOST', 'explosion');
+    game.shake = Math.max(game.shake, 0.3);
+    game.event = 'HQ DESTROYED // SIGNAL LOST';
   }
 }
 
 function updateBullets(game, dt) {
-  for (const bullet of game.bullets) {
-    const steps = Math.max(1, Math.ceil(Math.hypot(bullet.dx, bullet.dy) * dt / 6));
-    for (let step = 0; step < steps && !bullet.dead; step++) {
-      bullet.x += bullet.dx * dt / steps;
-      bullet.y += bullet.dy * dt / steps;
-      hitBullet(game, bullet);
+  const fastest = Math.max(1, ...game.bullets.map(bullet => Math.hypot(bullet.dx, bullet.dy)));
+  const steps = Math.max(1, Math.ceil(fastest * dt / 4));
+  for (let step = 0; step < steps; step++) {
+    for (const bullet of game.bullets) {
+      if (bullet.dead) continue;
+      bullet.x += bullet.dx * dt / steps; bullet.y += bullet.dy * dt / steps;
     }
+    for (let index = 0; index < game.bullets.length; index++) {
+      const bullet = game.bullets[index];
+      if (bullet.dead) continue;
+      for (let next = index + 1; next < game.bullets.length; next++) {
+        const other = game.bullets[next];
+        if (other.dead || other.owner === bullet.owner || Math.hypot(other.x - bullet.x, other.y - bullet.y) > 7) continue;
+        bullet.dead = true; other.dead = true;
+        burst(game, bullet.x, bullet.y, '#d8f1d8', 4);
+        break;
+      }
+    }
+    for (const bullet of game.bullets) if (!bullet.dead) hitBullet(game, bullet);
   }
   game.bullets = game.bullets.filter(bullet => !bullet.dead);
   game.enemies = game.enemies.filter(enemy => !enemy.dead);
 }
 
+function setHQWalls(game, type) {
+  for (const [col, row] of HQ_WALLS) {
+    game.terrain[row][col] = type;
+    delete game.brickDamage[row * COLS + col];
+  }
+  for (const tank of [...game.players, ...game.enemies]) {
+    if (tank.dead || canStand(game, tank.x, tank.y, tank)) continue;
+    const point = freePosition(game, tank, tank.x, tank.y);
+    if (point) { tank.x = point.x; tank.y = point.y; tank.vx = 0; tank.vy = 0; }
+  }
+}
+
+function fortify(game) {
+  game.fortifyTimer = 20;
+  setHQWalls(game, 'S');
+}
+
 function updatePickups(game, dt) {
   for (const pickup of game.pickups) {
     pickup.life -= dt;
-    if (Math.hypot(pickup.x - game.player.x, pickup.y - game.player.y) > 25) continue;
+    const player = game.players.find(tank => !tank.dead && Math.hypot(pickup.x - tank.x, pickup.y - tank.y) <= 25);
+    if (!player || pickup.life <= 0) continue;
     pickup.life = 0;
-    if (pickup.type === 'repair') game.player.hp = Math.min(game.player.maxHp, game.player.hp + 2);
-    if (pickup.type === 'base') game.base.hp = Math.min(game.base.maxHp, game.base.hp + 1);
-    if (pickup.type === 'charge') game.empCharges = Math.min(5, game.empCharges + 1);
-    if (pickup.type === 'credits') game.score += 500;
-    burst(game, pickup.x, pickup.y, '#8df5ca', 6, pickup.type === 'credits' ? '+500' : '+SUPPLY');
-    game.event = `${pickup.type.toUpperCase()} SUPPLY COLLECTED`;
+    addScore(game, player, 500);
+    if (pickup.type === 'star') player.level = Math.min(3, player.level + 1);
+    if (pickup.type === 'helmet') player.invulnerable = Math.max(player.invulnerable, 12);
+    if (pickup.type === 'grenade') {
+      for (const enemy of game.enemies) {
+        if (enemy.x < 0 || enemy.x >= WIDTH || enemy.y < 0 || enemy.y >= HEIGHT) continue;
+        dropCarrier(game, enemy); destroyEnemy(game, enemy, player);
+      }
+      game.enemies = game.enemies.filter(enemy => !enemy.dead);
+      game.bullets = game.bullets.filter(bullet => bullet.owner === 'player');
+    }
+    if (pickup.type === 'timer') game.freezeTimer = 10;
+    if (pickup.type === 'shovel') fortify(game);
+    if (pickup.type === 'tank') player.lives++;
+    burst(game, pickup.x, pickup.y, '#8df5ca', 8, `+${pickup.type.toUpperCase()}`);
+    game.event = `${player.id.toUpperCase()} ${pickup.type.toUpperCase()} COLLECTED // +500`;
   }
   game.pickups = game.pickups.filter(pickup => pickup.life > 0);
 }
 
 function finishWave(game) {
   game.bullets = [];
-  if (game.mode === 'campaign' && game.wave >= 5) {
-    game.status = 'victory';
-    game.score += game.base.hp * 500 + game.player.hp * 250;
-    game.event = 'SECTOR SECURE // SIGNAL RESTORED';
-    return;
+  if (game.coop && game.players[0].stageKills !== game.players[1].stageKills) {
+    const winner = game.players[0].stageKills > game.players[1].stageKills ? game.players[0] : game.players[1];
+    addScore(game, winner, 1000);
+    game.stageBonus[winner.id] = 1000;
   }
-  game.status = 'upgrade';
-  game.empCharges = Math.min(5, game.empCharges + 1);
+  if (game.mode === 'custom' || (game.mode === 'campaign' && game.wave >= MAPS.length)) {
+    game.status = 'victory'; game.event = 'SECTOR SECURE // SIGNAL RESTORED'; return;
+  }
+  game.status = 'upgrade'; game.empCharges = Math.min(5, game.empCharges + 1);
   const choices = [...UPGRADES];
   for (let index = choices.length - 1; index > 0; index--) {
     const next = Math.floor(random(game) * (index + 1));
     [choices[index], choices[next]] = [choices[next], choices[index]];
   }
   game.upgradeChoices = choices.slice(0, 3);
-  game.event = `WAVE ${String(game.wave).padStart(2, '0')} CLEARED // SELECT UPGRADE`;
+  game.event = `STAGE ${String(game.wave).padStart(2, '0')} CLEARED // SELECT UPGRADE`;
 }
 
 export function chooseUpgrade(game, id) {
   if (game.status !== 'upgrade' || !game.upgradeChoices.some(choice => choice.id === id)) return false;
-  if (id === 'rapid-fire') game.player.fireRate = Math.max(0.08, game.player.fireRate * 0.7);
-  if (id === 'reinforced') { game.player.maxHp += 2; game.player.hp = game.player.maxHp; }
-  if (id === 'overdrive') { game.player.speed *= 1.2; game.player.dashRecharge *= 0.75; }
-  if (id === 'piercing') game.player.pierce++;
-  if (id === 'repair') { game.base.hp = Math.min(game.base.maxHp, game.base.hp + 2); game.empCharges = Math.min(5, game.empCharges + 1); }
-  game.upgrades.push(id);
-  game.wave++;
-  game.waveTotal = 9 + game.wave * 3;
-  game.waveSpawned = 0;
-  game.waveKills = 0;
-  game.spawnTimer = 1.2;
-  game.upgradeChoices = [];
-  game.status = 'playing';
-  game.player.invulnerable = 1.5;
-  game.event = `WAVE ${String(game.wave).padStart(2, '0')} // HOSTILES INBOUND`;
+  for (const player of game.players.filter(tank => tank.lives > 0)) {
+    if (id === 'rapid-fire') player.fireRate = Math.max(0.08, player.fireRate * 0.7);
+    if (id === 'reinforced') { player.maxHp = Math.min(10, player.maxHp + 2); player.hp = player.maxHp; }
+    if (id === 'overdrive') { player.speed = Math.min(360, player.speed * 1.2); player.dashRecharge = Math.max(0.8, player.dashRecharge * 0.75); }
+    if (id === 'piercing') player.pierce = Math.min(2, player.pierce + 1);
+  }
+  game.upgrades.push(id); game.wave++; game.stage = game.wave;
+  game.stageName = MAPS[(game.wave - 1) % MAPS.length].name;
+  game.terrain = makeTerrain(game.wave);
+  game.brickDamage = {};
+  game.enemies = []; game.bullets = []; game.pickups = []; game.particles = [];
+  game.freezeTimer = 0; game.fortifyTimer = 0; game.empFx = 0;
+  game.waveTotal = 20; game.waveSpawned = 0; game.waveKills = 0; game.spawnTimer = 0.8;
+  game.upgradeChoices = []; game.status = 'playing'; game.previousEmp = false;
+  game.stageBonus = { p1: 0, p2: 0 };
+  for (const player of game.players) {
+    player.stageKills = 0; player.stunned = 0; player.vx = 0; player.vy = 0;
+    player.dashTimer = 0; player.dashCooldown = 0; player.fireCooldown = 0; player.moving = false;
+    if (player.lives <= 0) continue;
+    player.hp = player.dead ? player.maxHp : Math.max(1, player.hp);
+    player.dead = false; player.respawnTimer = 0;
+    const point = freePosition(game, player);
+    if (point) { player.x = point.x; player.y = point.y; }
+    player.invulnerable = 2.5;
+  }
+  if (id === 'repair') { fortify(game); game.empCharges = Math.min(5, game.empCharges + 1); }
+  game.event = `STAGE ${String(game.wave).padStart(2, '0')} // ${game.stageName.toUpperCase()}`;
   return true;
 }
 
-export function updateGame(game, dt, input = {}) {
-  if (game.status !== 'playing') return game;
-  if (!Number.isFinite(dt) || dt <= 0) return game;
-  dt = Math.min(dt, 0.05);
-  game.time += dt;
-  game.shake = Math.max(0, game.shake - dt);
-  game.hitFlash = Math.max(0, game.hitFlash - dt);
-  game.empFx = Math.max(0, game.empFx - dt);
-  game.comboTimer = Math.max(0, game.comboTimer - dt);
-  if (game.comboTimer === 0) game.combo = 0;
-  const player = game.player;
+function updatePlayer(game, player, dt, input) {
   player.moving = false;
-  player.muzzleFlash = Math.max(0, player.muzzleFlash - dt);
-  player.fireCooldown = Math.max(0, player.fireCooldown - dt);
-  player.dashCooldown = Math.max(0, player.dashCooldown - dt);
-  player.invulnerable = Math.max(0, player.invulnerable - dt);
-  const moveX = Number(!!input.right) - Number(!!input.left);
-  const moveY = Number(!!input.down) - Number(!!input.up);
+  for (const field of ['muzzleFlash', 'fireCooldown', 'dashCooldown', 'invulnerable', 'stunned']) player[field] = Math.max(0, player[field] - dt);
+  if (player.dead) {
+    if (player.lives <= 0) return;
+    player.respawnTimer = Math.max(0, player.respawnTimer - dt);
+    if (player.respawnTimer > 0) return;
+    const point = freePosition(game, player);
+    if (!point) { player.respawnTimer = 0.1; return; }
+    Object.assign(player, point, { dead: false, hp: player.maxHp, level: 0, invulnerable: 2.5, stunned: 0, vx: 0, vy: 0, fireCooldown: 0 });
+    game.event = `${player.id.toUpperCase()} REDEPLOYED // SHIELD ACTIVE`;
+  }
+  if (player.stunned > 0) return;
+  const moveX = Number(!!input.right) - Number(!!input.left), moveY = Number(!!input.down) - Number(!!input.up);
   const moving = moveX !== 0 || moveY !== 0;
   if (moving) {
     player.hullAngle = Math.atan2(moveY, moveX);
     player.dir = Math.abs(moveX) > Math.abs(moveY) ? (moveX > 0 ? 1 : 3) : (moveY > 0 ? 2 : 0);
   }
   if (input.dash && player.dashCooldown === 0) {
-    player.dashTimer = 0.16;
-    player.dashCooldown = player.dashRecharge;
+    player.dashTimer = 0.16; player.dashCooldown = player.dashRecharge;
     player.invulnerable = Math.max(player.invulnerable, 0.28);
     burst(game, player.x, player.y, '#8df5ca', 6);
   }
-  if (moving || player.dashTimer > 0) {
-    const dashTime = Math.min(dt, player.dashTimer);
-    const distance = player.speed * (moving ? dt + dashTime * 2.5 : dashTime * 3.5);
-    player.moving = moveTank(game, player, Math.cos(player.hullAngle), Math.sin(player.hullAngle), distance) > 0.001;
-  }
+  const dashTime = Math.min(dt, player.dashTimer);
+  const distance = player.speed * (moving ? dt + dashTime * 2.5 : dashTime * 3.5);
+  player.moving = motion(game, player, Math.cos(player.hullAngle) * distance / dt, Math.sin(player.hullAngle) * distance / dt, dt) > 0.001;
   player.dashTimer = Math.max(0, player.dashTimer - dt);
   if (Number.isFinite(input.aimX) && Number.isFinite(input.aimY)) {
     if (input.aimX !== player.x || input.aimY !== player.y) player.aimAngle = Math.atan2(input.aimY - player.y, input.aimX - player.x);
   } else if (moving) player.aimAngle = player.hullAngle;
-  if (input.fire && player.fireCooldown === 0) {
-    shoot(game, player, 'player');
-    player.fireCooldown = player.fireRate;
+  if (input.fire && player.fireCooldown === 0 && shoot(game, player, 'player')) player.fireCooldown = player.fireRate;
+}
+
+export function updateGame(game, dt, input = {}) {
+  if (game.status !== 'playing' || !Number.isFinite(dt) || dt <= 0) return game;
+  dt = Math.min(dt, 0.05);
+  game.time += dt;
+  for (const field of ['shake', 'hitFlash', 'empFx', 'comboTimer', 'freezeTimer']) game[field] = Math.max(0, game[field] - dt);
+  if (game.comboTimer === 0) game.combo = 0;
+  if (game.fortifyTimer > 0) {
+    game.fortifyTimer = Math.max(0, game.fortifyTimer - dt);
+    if (game.fortifyTimer === 0) setHQWalls(game, '#');
   }
+  for (const [index, player] of game.players.entries()) updatePlayer(game, player, dt, index === 0 ? input : input.p2 ?? {});
   if (input.emp && !game.previousEmp) activateEmp(game);
   game.previousEmp = !!input.emp;
-
   game.spawnTimer -= dt;
   if (game.waveSpawned < game.waveTotal && game.spawnTimer <= 0 && game.enemies.length < 8) {
-    const candidates = game.spawnPoints.filter(point => !game.enemies.some(enemy => Math.hypot(enemy.x - point.x, enemy.y - point.y) < 45));
+    const candidates = game.spawnPoints.filter(point => canStand(game, point.x, point.y, null));
     if (candidates.length) {
       const point = candidates[Math.floor(random(game) * candidates.length)];
-      const roll = random(game);
-      const type = roll < 0.18 + Math.min(0.2, game.wave * 0.035) ? 'heavy' : roll < 0.65 ? 'striker' : 'scout';
-      game.enemies.push(makeEnemy(game, point, type));
+      const roster = ['basic', 'scout', 'basic', 'power', 'heavy', 'basic', 'scout', 'power'];
+      const ordinal = game.waveSpawned + 1;
+      const type = roster[(ordinal - 1 + (game.wave - 1) % 5) % roster.length];
+      game.enemies.push(makeEnemy(game, point, type, ordinal));
       game.waveSpawned++;
-      game.spawnTimer = Math.max(0.55, 1.15 - game.wave * 0.09);
+      game.spawnTimer = Math.max(0.55, 1.15 - Math.min(7, game.wave) * 0.09);
       burst(game, point.x, point.y, '#ffb25b', 5);
     }
   }
-  updateEnemies(game, dt);
-  updateBullets(game, dt);
-  updatePickups(game, dt);
+  updateEnemies(game, dt); updateBullets(game, dt); updatePickups(game, dt);
   for (const particle of game.particles) {
-    particle.life -= dt;
-    particle.x += particle.vx * dt;
-    particle.y += particle.vy * dt;
+    particle.life -= dt; particle.x += particle.vx * dt; particle.y += particle.vy * dt;
   }
-  game.particles = game.particles.filter(particle => particle.life > 0).slice(-240);
-  if (player.hp <= 0 || game.base.hp <= 0) {
-    game.status = 'gameover';
-    game.event = game.base.hp <= 0 ? 'SIGNAL LOST // HQ DESTROYED' : 'SIGNAL LOST // TANK DISABLED';
+  game.particles = game.particles.filter(particle => particle.life > 0).slice(-320);
+  if (game.base.hp <= 0 || game.players.every(player => player.lives <= 0)) {
+    game.status = 'gameover'; game.event = game.base.hp <= 0 ? 'SIGNAL LOST // HQ DESTROYED' : 'SIGNAL LOST // ALL TANKS LOST';
   } else if (game.waveSpawned >= game.waveTotal && game.enemies.length === 0) finishWave(game);
   return game;
 }
 
 export function snapshot(game) {
-  return JSON.parse(JSON.stringify(game));
+  const copy = JSON.parse(JSON.stringify(game));
+  if (copy.players) copy.player = copy.players[0];
+  return copy;
 }
