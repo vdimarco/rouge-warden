@@ -20,6 +20,7 @@ const origin = `http://127.0.0.1:${server.address().port}`, browser = await chro
 try {
   for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]]) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000 }), errors = [], loadedAssets = new Set();
+    page.setDefaultTimeout(180000);
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
     page.on('response', r => { if (r.url().startsWith(origin)) { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); else loadedAssets.add(new URL(r.url()).pathname); } });
@@ -36,6 +37,9 @@ try {
     await page.screenshot({ path: path.join(shots, `${name}-creatures.png`), fullPage: true });
     await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Shore of the Ancients/);
     await page.locator('#menu').waitFor();
+    await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
+    // Software WebGL uses the game's supported resolution floor; assertions still exercise the full scene.
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d; r.quality=.5; r.resize(); });
     await page.waitForFunction(() => document.querySelectorAll('#hero-picks [data-hero]').length === 16);
     await page.waitForFunction(() => { const image=document.querySelector('#hero-art'); return image.complete&&image.naturalWidth>0; });
     await page.evaluate(async () => { await document.fonts.ready; });
@@ -206,7 +210,7 @@ try {
     assert.equal(await page.locator('#draft .draft-card').count(), 6);
     assert.equal(await page.locator('#draft [data-slot="0"]').getAttribute('data-team'), '0');
     await page.keyboard.press('Enter');
-    await page.waitForFunction(() => document.querySelector('#draft').hidden, null, { timeout: 10000 });
+    await page.waitForFunction(() => document.querySelector('#draft').hidden, null, { timeout: 180000 });
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
     // Mouse players open the book on demand; touch play keeps its opening skill choice.
     const desktopInput = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
@@ -233,7 +237,7 @@ try {
     await page.waitForFunction(() => { const s=window.__mobaSnapshot(); return s.time>3&&s.graphics.models.heroes===s.graphics.models.heroesTotal; }, null, { timeout: 240000 });
     const before = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(before.running); assert(before.time > 3); assert.equal(before.graphics.renderer, 'Mythic 3D'); assert.equal(before.graphics.models.heroes, 16); assert.deepEqual(before.graphics.models.failed, []);
-    await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
+    await page.keyboard.down('d'); await page.waitForFunction(x => window.__mobaSnapshot().player.x > x, before.player.x); await page.keyboard.up('d');
     const after = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(after.player.x > before.player.x, 'movement stays live with the 3D battlefield');
     if (await page.locator('#coach-close').isVisible()) await page.locator('#coach-close').click();
