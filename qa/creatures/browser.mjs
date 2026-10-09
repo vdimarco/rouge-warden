@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { HERO_IDENTITIES, identitySkill } from '../../public/tidebreak/hero-identities.js';
 const require = createRequire(import.meta.url), { chromium } = require('playwright');
 const root = path.resolve('public'), shots = process.env.SHOTS || '/tmp/creature-browser'; fs.mkdirSync(shots, { recursive: true });
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf' };
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   let file = path.resolve(root, '.' + pathname);
