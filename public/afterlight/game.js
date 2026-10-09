@@ -15,8 +15,11 @@ import {
   actionChallenge,
   cancelChallenge,
   terrainAt,
+  dodge,
+  isSpatialChallenge,
 } from "./engine.js";
 import { WORLDS } from "./worlds.js";
+import { getMission } from "./missions.js";
 import { createWorldRuntime } from "./phaser-world.js";
 import { createInteractionUI } from "./interaction-ui.js";
 const $ = (id) => document.getElementById(id),
@@ -32,7 +35,8 @@ let state = createJourney(37),
   choiceSignature = "",
   modalKind = "",
   target = null,
-  menuResume = false;
+  menuResume = false,
+  missionSignature = "";
 const pointers = new Map();
 try {
   const raw = localStorage.getItem(saveKey);
@@ -135,6 +139,8 @@ function restorationCount() {
 }
 function sync() {
   operationUI?.sync();
+  const mission = getMission(state);
+  syncMission(mission);
   const world = WORLDS[state.region],
     ctx = getContext(state);
   setText("place", world.name);
@@ -150,10 +156,10 @@ function sync() {
     `${weather} · ${surface}${ground.friction < 0.9 ? " slows your pace" : ground.friction > 1.05 ? " carries you onward" : ""}`,
   );
   setText("chapter", world.name);
-  setText("objective", objectiveText());
+  setText("objective", mission.steps[0]?.label || mission.heading);
   setText(
     "vitals",
-    `hull ${Math.ceil(state.hull)} · light ${Math.ceil(state.energy)}/${state.maxEnergy ?? 100}`,
+    `health ${Math.ceil(state.hull)} · energy ${Math.ceil(state.energy)}/${state.maxEnergy ?? 100}`,
   );
   setText(
     "supplies",
@@ -161,7 +167,10 @@ function sync() {
       .map(([k, v]) => `${k} ${v}`)
       .join(" · "),
   );
-  setText("network", `${restorationCount()} / 6 beacons`);
+  setText(
+    "network",
+    `${mission.rescued}/3 crews home · ${restorationCount()}/6 beacons`,
+  );
   setText("message", state.message || "");
   setText("context-title", ctx?.title ?? "Along the way");
   setText(
@@ -190,6 +199,17 @@ function sync() {
   $("interact").disabled =
     state.phase !== "playing" || !(ctx?.choices ?? []).some((c) => !c.disabled);
   $("tool").disabled = state.phase !== "playing";
+  $("guide").disabled = state.phase !== "playing" || !mission.steps[0]?.target;
+  $("dodge").disabled =
+    state.phase !== "playing" ||
+    (state.dodge?.cooldown || 0) > 0 ||
+    (state.challenge && !isSpatialChallenge(state));
+  setText(
+    "dodge",
+    (state.dodge?.cooldown || 0) > 0
+      ? "[ dodge recovering ]"
+      : "[ dodge · Shift ]",
+  );
   setText(
     "tool",
     `[ ${state.region === "fjord" && state.tools.sonar ? "sonar" : state.region === "desert" && state.tools.compass ? "compass" : ["moon", "city"].includes(state.region) ? "inspect" : "lantern"} · Space ]`,
@@ -203,16 +223,16 @@ function sync() {
   if (intro) {
     $("intro").querySelector("h1").textContent =
       state.phase === "won"
-        ? "The world carries light."
+        ? "The rescue route is open."
         : state.phase === "lost"
           ? "Rest, then return."
           : "Afterlight";
     $("intro").querySelector("p").innerHTML =
       state.phase === "won"
-        ? "Six worlds changed by one journey.<br>Every beacon carries the journey you made."
+        ? "All three crews are home.<br>Six beacons guide the rescue route again."
         : state.phase === "lost"
           ? "The expedition exhausted you.<br>Your restored places will remain."
-          : "Six places share one broken light.<br>Find what each can give the next.";
+          : "You are the rescue courier.<br>Three boat crews are stranded. Repair six beacons and bring them home.";
     setText(
       "begin",
       state.phase === "won"
@@ -221,7 +241,7 @@ function sync() {
           ? "[ recover at camp ]"
           : loaded
             ? "[ continue your journey ]"
-            : "[ begin a journey ]",
+            : "[ start the rescue ]",
     );
     setText(
       "save-hint",
@@ -229,9 +249,55 @@ function sync() {
         ? "Explore what changed, or begin again with different choices."
         : loaded
           ? "Your inventory, routes and restored places are remembered."
-          : "Move toward a glowing landmark. E interacts; Space uses your tool.",
+          : "First: collect the courier pack. Then catch fireflies to power the forest beacon.",
     );
   }
+}
+function syncMission(mission) {
+  setText("mission-heading", mission.heading);
+  setText("mission-summary", mission.summary);
+  const signature = JSON.stringify([
+    state.region,
+    state.phase,
+    mission.steps.map((t) => [t.id, t.label, t.reason, t.done]),
+  ]);
+  if (signature === missionSignature) return;
+  missionSignature = signature;
+  $("mission-steps").replaceChildren();
+  for (const task of mission.steps.slice(0, 3)) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.mission = task.id;
+    button.textContent = task.label;
+    button.title = task.reason;
+    if (task === mission.steps[0]) {
+      const detail = document.createElement("small");
+      detail.textContent = task.reason;
+      button.append(detail);
+    }
+    button.disabled = state.phase !== "playing" || task.done;
+    button.onclick = () =>
+      guide(getMission(state).steps.find((current) => current.id === task.id));
+    $("mission-steps").append(button);
+  }
+}
+function guide(task = getMission(state).steps[0]) {
+  if (state.phase !== "playing" || !task?.target) return;
+  if (task.target.region !== state.region) {
+    openMenu("map");
+    return;
+  }
+  target = { x: task.target.x, y: task.target.y };
+  renderer?.setDestination(target);
+  focusArena();
+}
+function burst() {
+  if (state.phase !== "playing") return;
+  const steering = input();
+  dodge(state, steering.dx, steering.dy);
+  sync();
+  renderer?.render();
+  focusArena();
 }
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -351,6 +417,8 @@ $("explore").onclick = () => {
 };
 $("interact").onclick = () => action();
 $("tool").onclick = tool;
+$("guide").onclick = () => guide();
+$("dodge").onclick = burst;
 $("pause").onclick = togglePause;
 $("map").onclick = () => openMenu("map");
 $("journal").onclick = () => openMenu("journal");
@@ -397,7 +465,10 @@ addEventListener("keydown", (e) => {
   if ([" ", "e", "p", "m", "j", "enter", "escape"].includes(key))
     e.preventDefault();
   if (!e.repeat) {
-    if (key === "p" || key === "escape") togglePause();
+    if (key === "shift") {
+      e.preventDefault();
+      burst();
+    } else if (key === "p" || key === "escape") togglePause();
     else if (key === "m") openMenu("map");
     else if (key === "j") openMenu("journal");
     else if (key === "e" || key === "enter") {
@@ -464,6 +535,7 @@ function makeRuntime() {
       focusArena();
     },
     reducedMotion: motion.matches,
+    getMission: () => getMission(state),
   });
 }
 operationUI = createInteractionUI({
@@ -515,6 +587,11 @@ window.__afterlight = {
   },
   save,
   actionChallenge: operate,
+  guide: () => guide(),
+  dodge: burst,
+  get mission() {
+    return getMission(state);
+  },
   cancelChallenge: () => {
     cancelChallenge(state);
     sync();

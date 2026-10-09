@@ -21,6 +21,8 @@ import {
   cancelChallenge,
   getChallengeView,
   terrainAt,
+  dodge,
+  isSpatialChallenge,
 } from "../../public/afterlight/engine.js";
 function walk(s, id) {
   const landmark = () =>
@@ -41,9 +43,14 @@ function solve(s) {
   for (let guard = 0; s.challenge && guard < 100; guard++) {
     const c = s.challenge;
     if (c.type === "forest") {
-      while (c.angle !== c.targets[c.step])
-        assert(actionChallenge(s, "turn-right"));
-      assert(actionChallenge(s, "focus"));
+      for (const fly of c.fireflies.filter((f) => !f.caught)) {
+        walk(s, fly);
+        while (c.sweepCooldown > 0) update(s, {}, 0.1);
+        assert(actionChallenge(s, "sweep-lantern"));
+      }
+      assert.equal(c.carried, 3);
+      walk(s, c.anchor);
+      assert(actionChallenge(s, "deliver"));
     } else if (c.type === "city") {
       for (let i = 0; i < 3; i++) {
         while (c.cells[c.selected].rotation !== c.cells[c.selected].target)
@@ -85,6 +92,12 @@ function action(s, id, c, tool = false) {
     `Unavailable ${c} at ${id}: ${JSON.stringify(getContext(s))}`,
   );
   assert(interact(s, c));
+  if (c === "restore")
+    assert.equal(
+      s.challenge,
+      null,
+      "Final beacon activation must be a direct payoff",
+    );
   if (s.challenge) solve(s);
 }
 function complete(s, { nurture = false, coastFirst = false } = {}) {
@@ -346,40 +359,45 @@ test("Spatial terrain slows a living map and restoration opens faster paths", ()
   assert(s.paths[0].opened);
   assert.equal(s.paths[0].growth, 1);
 });
-test("Wrong focus provides explicit free retry; cancel preserves supplies and completion charges once", () => {
+test("Lantern catches require proximity; cancel preserves supplies and delivery pays once", () => {
   const s = createJourney();
   start(s);
   walk(s, "grove-a");
-  assert(useTool(s));
-  const inventory = { ...s.inventory },
-    energy = s.energy;
+  const inventory = { ...s.inventory };
   assert(interact(s, "gather"));
-  assert(s.challenge);
-  assert.equal(actionChallenge(s, "focus"), false);
-  assert.match(s.challenge.feedback, /needs.*retry is free/);
+  assert(isSpatialChallenge(s));
+  walk(s, { x: 35, y: 95 });
+  const energy = s.energy;
+  assert.equal(actionChallenge(s, "sweep-lantern"), false);
+  assert.match(s.challenge.feedback, /Move closer/);
   assert.deepEqual(s.inventory, inventory);
   assert.equal(s.energy, energy);
   assert.equal(s.worlds.forest.flags["grove-a"], undefined);
   assert(cancelChallenge(s));
   assert.deepEqual(s.inventory, inventory);
-  assert.equal(s.energy, energy);
+  walk(s, "grove-a");
   assert(interact(s, "gather"));
   solve(s);
   assert.equal(s.inventory.seeds, 2);
   assert.equal(s.worlds.forest.flags["grove-a"], true);
-  assert.equal(actionChallenge(s, "focus"), false);
+  assert.equal(actionChallenge(s, "deliver"), false);
   assert.equal(s.inventory.seeds, 2);
 });
-test("Focused operations immobilize the avatar fairly but let weather evolve; saving discards pending operations", () => {
+test("Focused circuit operations immobilize fairly while weather evolves and pending saves stay unpaid", () => {
   const s = createJourney();
   start(s);
-  walk(s, "grove-a");
-  useTool(s);
-  interact(s, "nurture");
+  restoreForest(s);
+  travel(s, "city");
+  action(s, "cache-a", "gather");
+  walk(s, "junction-a");
+  interact(s, "repair");
   const x = s.x,
     y = s.y,
     hull = s.hull,
-    wind = s.environment.wind;
+    wind = s.environment.wind,
+    supplies = { ...s.inventory };
+  assert.equal(isSpatialChallenge(s), false);
+  assert.equal(dodge(s, 1, 0), false);
   for (let i = 0; i < 50; i++) update(s, { dx: 1, dy: 1 }, 0.1);
   assert.equal(s.x, x);
   assert.equal(s.y, y);
@@ -389,8 +407,7 @@ test("Focused operations immobilize the avatar fairly but let weather evolve; sa
   const loaded = restore(serialize(s));
   assert(loaded);
   assert.equal(loaded.challenge, null);
-  assert.equal(loaded.inventory.seeds, 0);
-  assert.equal(loaded.maxEnergy, 100);
+  assert.deepEqual(loaded.inventory, supplies);
   assert.equal(loaded.phase, "ready");
 });
 test("Drifting crews must actually be tethered and escorted; premature release spends nothing", () => {
@@ -470,4 +487,92 @@ test("A tow line cannot attach to a remote crew; returning nearby restores the a
   assert(actionChallenge(s, "attach"));
   assert.equal(s.challenge.escort.tethered, true);
   assert.deepEqual(s.inventory, supplies);
+});
+
+test("Forest catching needs actual movement, three sweeps and a return delivery before any reward", () => {
+  const s = createJourney(9);
+  start(s);
+  walk(s, "grove-a");
+  assert.equal(s.worlds.forest.flags["grove-a-lit"], undefined);
+  assert(interact(s, "nurture"));
+  const c = s.challenge;
+  assert.equal(c.variant, "catch");
+  assert(isSpatialChallenge(s));
+  const original = c.fireflies.map((f) => ({ x: f.x, y: f.y }));
+  for (let i = 0; i < 6; i++) update(s, {}, 0.1);
+  assert(
+    c.fireflies.some(
+      (f, i) => Math.hypot(f.x - original[i].x, f.y - original[i].y) > 0.1,
+    ),
+  );
+  for (const fly of c.fireflies) {
+    walk(s, fly);
+    while (c.sweepCooldown > 0) update(s, {}, 0.1);
+    assert(actionChallenge(s, "sweep-lantern"));
+  }
+  assert.equal(c.carried, 3);
+  assert.equal(c.phase, "active");
+  assert.equal(s.inventory.seeds, 0);
+  assert.equal(s.maxEnergy, 100);
+  walk(s, { x: 35, y: 95 });
+  assert(c.deliveryDistance > 7);
+  assert.equal(c.choices.find((x) => x.id === "deliver").disabled, true);
+  assert.equal(actionChallenge(s, "deliver"), false);
+  assert.equal(s.inventory.seeds, 0);
+  walk(s, c.anchor);
+  assert(actionChallenge(s, "deliver"));
+  assert.equal(s.challenge, null);
+  assert.equal(s.inventory.seeds, 1);
+  assert.equal(s.maxEnergy, 110);
+  assert.equal(actionChallenge(s, "deliver"), false);
+  assert.equal(s.inventory.seeds, 1);
+});
+test("Dodge is a directional protected burst with cooldown, fair movement and no action resource charge", () => {
+  const s = createJourney(2);
+  start(s);
+  restoreForest(s);
+  travel(s, "coast");
+  walk(s, { x: 103, y: 81 });
+  const supplies = { ...s.inventory },
+    energy = s.energy,
+    hull = s.hull,
+    from = { x: s.x, y: s.y };
+  assert(dodge(s, 0, 1));
+  assert.equal(s.energy, energy);
+  assert.deepEqual(s.inventory, supplies);
+  assert.equal(s.dodge.remaining, 0.25);
+  assert.equal(dodge(s, 1, 0), false);
+  update(s, {}, 0.05);
+  assert(s.y - from.y > 2);
+  assert.equal(s.hull, hull);
+  assert(s.dodge.cooldown > 0);
+  assert.equal(dodge(s, 1, 0), false);
+  for (let i = 0; i < 13; i++) update(s, { dx: -1 }, 0.1);
+  assert.equal(s.dodge.remaining, 0);
+  assert.equal(s.dodge.cooldown, 0);
+  assert(dodge(s, -1, 0));
+  pause(s);
+  const frozen = serialize(s);
+  update(s, { dx: 1 }, 0.2);
+  assert.equal(serialize(s), frozen);
+  assert.equal(dodge(s, 1, 0), false);
+  const loaded = restore(frozen);
+  assert(loaded);
+  assert.equal(loaded.dodge.remaining, 0);
+  assert.equal(loaded.dodge.cooldown, 0);
+});
+test("All final beacons are direct paid rewards instead of another challenge", () => {
+  const s = createJourney();
+  start(s);
+  action(s, "cache", "gather");
+  for (const id of ["grove-a", "grove-b", "grove-c"]) action(s, id, "gather");
+  walk(s, "beacon");
+  const before = s.inventory.scrap;
+  assert(interact(s, "restore"));
+  assert.equal(s.challenge, null);
+  assert.equal(s.inventory.scrap, before - 1);
+  assert.equal(s.worlds.forest.restored, 1);
+  assert.match(s.message, /rescue|crews/);
+  assert.equal(interact(s, "restore"), false);
+  assert.equal(s.inventory.scrap, before - 1);
 });

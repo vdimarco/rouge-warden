@@ -10,10 +10,11 @@
     <title>Afterlight · Cottage Arcade</title>
     <meta
       name="description"
-      content="One journey through six changing ASCII worlds. Restore the beacons, open routes and carry what you learn between places."
+      content="Rescue three stranded crews by repairing the six-beacon network. Catch forest fireflies, guide the crews home, and reopen the rescue routes."
     />
     <link rel="icon" href="/icons/favicon.svg" />
     <link rel="stylesheet" href="/afterlight/style.css" />
+    <link rel="stylesheet" href="/afterlight/navigation.css" />
     <script src="/arcade/quiet.js"></script>
   </head>
   <body>
@@ -39,14 +40,17 @@
             <div id="intro">
               <h1>Afterlight</h1>
               <p>
-                Six places share one broken light.<br />Find what each can give
-                the next.
+                Three crews are stranded beyond the harbor.<br />Repair the
+                six-beacon rescue network and bring them home.
               </p>
               <button id="begin" type="button">[ begin a journey ]</button
               ><button id="explore" type="button" hidden>
                 [ explore the restored world ]
               </button>
-              <p id="save-hint"></p>
+              <p id="save-hint">
+                Collect the courier pack. Then catch fireflies to power the
+                forest beacon.
+              </p>
             </div>
           </div>
           <div class="movement" aria-label="Adventure controls">
@@ -58,23 +62,32 @@
             </div>
             <button id="interact">[ interact · E ]</button
             ><button id="tool">[ lantern · Space ]</button>
+            <button id="dodge" type="button">[ dodge · Shift ]</button>
+            <button id="guide" type="button">[ show next task ]</button>
           </div>
           <p id="conditions" class="hint"></p>
           <p class="hint">
-            arrows / WASD · E interact · space tool · M travel · J journal · P
-            pause
+            arrows / WASD move · E interact · Space lantern · Shift dodge · M
+            travel · J journal · P pause
           </p>
         </section>
         <aside>
-          <h2 id="chapter">A journey through changing worlds</h2>
+          <section class="mission" aria-labelledby="mission-heading">
+            <h2 id="mission-heading">Rescue the three stranded crews</h2>
+            <p id="mission-summary">
+              First, power the forest beacon to open the harbor route.
+            </p>
+            <div id="mission-steps" aria-label="Your next tasks"></div>
+          </section>
+          <h2 id="chapter">The Firefly Woods</h2>
           <p id="objective">
-            Explore, restore and return. What you carry matters.
+            Collect the courier pack, catch fireflies, and deliver their light.
           </p>
           <div class="context">
             <h3 id="context-title">Along the way</h3>
             <p id="context-text">
-              Walk toward a landmark or tap the scene to move. Actions appear
-              when you get close.
+              Tap Show next task to find your destination. Move close, then use
+              the action shown here.
             </p>
             <div id="choices"></div>
           </div>

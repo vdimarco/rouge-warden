@@ -1,4 +1,5 @@
 import { createRenderer } from "./render.js";
+import { getLandmarks } from "./simulation.js";
 import { WORLDS } from "./worlds.js";
 
 // Phaser owns the scene clock, input, camera and composition. The original ASCII
@@ -9,7 +10,12 @@ export function createWorldRuntime({
   step,
   onDestination,
   reducedMotion = false,
+  getMission = () => ({ steps: [] }),
 }) {
+  const labels = document.createElement("div");
+  labels.className = "world-labels";
+  parent.append(labels);
+  const labelNodes = new Map();
   const source = document.createElement("canvas");
   source.style.width = "1200px";
   const renderer = createRenderer(source, {
@@ -116,7 +122,10 @@ export function createWorldRuntime({
         state.challenge?.id || state.challenge?.landmarkId || "";
       if (operation !== lastOperation || regionChanged) {
         lastOperation = operation;
-        const focus = !!operation && state.challenge?.type !== "coast";
+        const focus =
+          !!operation &&
+          state.challenge?.type !== "coast" &&
+          state.challenge?.variant !== "catch";
         const zoom = focus ? 1.13 : 1;
         this.tweens.killTweensOf(this.cameras.main);
         this.tweens.add({
@@ -150,12 +159,79 @@ export function createWorldRuntime({
           );
         }
       }
+      this.updateLabels(state);
       this.game.canvas.dataset.region = state.region;
       this.game.canvas.dataset.engine = "Phaser 3.90.0";
       this.game.canvas.dataset.changedCells =
         source.dataset.changedCells || "0";
       for (const key of ["weather", "actors", "challenge", "restored"])
         this.game.canvas.dataset[key] = source.dataset[key] || "";
+    }
+    updateLabels(state) {
+      const task = getMission().steps[0],
+        goal = task?.target;
+      const all = getLandmarks(state).filter(
+        (l) =>
+          !(l.id.startsWith("boat") && state.worlds[state.region].flags[l.id]),
+      );
+      const display = all.map((l) => ({
+        ...l,
+        label:
+          l.id === "cache" && state.region === "forest"
+            ? "Courier pack"
+            : l.id.startsWith("boat")
+              ? "Crew " + (l.id.slice(-1).charCodeAt(0) - 96)
+              : l.id.startsWith("bell") &&
+                  !state.worlds[state.region].flags[l.id + "-revealed"]
+                ? "Sonar search"
+                : l.name,
+      }));
+      if (goal?.id === "firefly")
+        display.push({ ...goal, label: "Catch this firefly" });
+      display.push({ id: "you", x: state.x, y: state.y - 4, label: "YOU" });
+      const active = new Set();
+      for (const item of display) {
+        active.add(item.id);
+        let node = labelNodes.get(item.id);
+        if (!node) {
+          node = document.createElement(item.id === "you" ? "span" : "button");
+          node.className = "world-label";
+          node.dataset.landmark = item.id;
+          if (item.id !== "you") {
+            node.type = "button";
+            node.onclick = () => {
+              if (getState().phase !== "playing") return;
+              const current =
+                getLandmarks(getState()).find((l) => l.id === item.id) ||
+                getMission().steps[0]?.target;
+              if (!current) return;
+              destination = { x: current.x, y: current.y };
+              onDestination(destination);
+            };
+          }
+          labels.append(node);
+          labelNodes.set(item.id, node);
+        }
+        node.textContent = item.label;
+        const camera = this.cameras.main,
+          view = camera.worldView;
+        node.style.left =
+          (((item.x * 6 - view.x) * camera.zoom) / 1200) * 100 + "%";
+        node.style.top =
+          ((((item.y - 2) * 6 - view.y) * camera.zoom) / 600) * 100 + "%";
+        node.classList.toggle("you", item.id === "you");
+        node.classList.toggle("goal", goal?.id === item.id);
+        node.classList.toggle(
+          "completed",
+          !!state.worlds[state.region].flags[item.id],
+        );
+        node.hidden = ["ready", "won", "lost"].includes(state.phase);
+      }
+      for (const [id, node] of labelNodes)
+        if (!active.has(id)) {
+          node.remove();
+          labelNodes.delete(id);
+        }
     }
     update(time, delta) {
       // Fixed simulation steps keep towing and currents consistent when drawing
@@ -194,6 +270,9 @@ export function createWorldRuntime({
   });
   return {
     game,
+    setDestination(point) {
+      destination = point;
+    },
     movement() {
       const k = scene?.movementKeys;
       return k
@@ -219,6 +298,7 @@ export function createWorldRuntime({
     },
     dispose() {
       renderer.dispose();
+      labels.remove();
       game.destroy(true);
     },
   };

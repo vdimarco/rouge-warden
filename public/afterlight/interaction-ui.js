@@ -147,6 +147,35 @@ export function createInteractionUI({ getState, onAction, onCancel }) {
   }
   cancel.addEventListener("click", leave);
 
+  function catchInstrument(challenge) {
+    const carried = number(challenge.carried);
+    const needed = Math.max(1, number(challenge.needed, 3));
+    const bottle = element("div", "operation-firefly-bottle");
+    for (let i = 0; i < needed; i++) {
+      const firefly = element(
+        "span",
+        "bottle-firefly",
+        i < carried ? "●" : "·",
+      );
+      firefly.classList.toggle("caught", i < carried);
+      bottle.append(firefly);
+    }
+    instrument.append(bottle);
+    const state = getState();
+    const distance = Math.hypot(
+      number(state.x) - number(challenge.anchor?.x),
+      number(state.y) - number(challenge.anchor?.y),
+    );
+    setText(
+      readout,
+      carried < needed
+        ? `${carried} / ${needed} fireflies caught · move close and sweep the lantern`
+        : distance <= 7
+          ? "The grove is within reach. Deliver the fireflies."
+          : "Your bottle is full. Return to the marked grove and deliver.",
+    );
+    instrument.setAttribute("aria-label", readout.textContent);
+  }
   function angleInstrument(challenge) {
     const scale = challenge.type === "forest" ? 90 : 45;
     const angle = wrapAngle(number(challenge.angle) * scale);
@@ -330,7 +359,9 @@ export function createInteractionUI({ getState, onAction, onCancel }) {
   }
   function drawInstrument(challenge) {
     instrument.replaceChildren();
-    if (challenge.type === "forest" || challenge.type === "desert")
+    if (challenge.type === "forest" && challenge.variant === "catch")
+      catchInstrument(challenge);
+    else if (challenge.type === "forest" || challenge.type === "desert")
       angleInstrument(challenge);
     else if (challenge.type === "city") cityInstrument(challenge);
     else if (challenge.type === "fjord") fjordInstrument(challenge);
@@ -349,7 +380,8 @@ export function createInteractionUI({ getState, onAction, onCancel }) {
     document.body.classList.toggle("has-operation", Boolean(challenge));
     document.body.classList.toggle(
       "has-spatial-operation",
-      challenge?.type === "coast" && challenge?.variant === "escort",
+      (challenge?.type === "coast" && challenge?.variant === "escort") ||
+        (challenge?.type === "forest" && challenge?.variant === "catch"),
     );
     if (!challenge) {
       lastId = null;
@@ -357,28 +389,48 @@ export function createInteractionUI({ getState, onAction, onCancel }) {
       return;
     }
     panel.dataset.challengeType = challenge.type;
+    panel.dataset.challengeVariant = challenge.variant ?? "operation";
     panel.dataset.challengePhase = challenge.phase ?? "active";
     setText(
       title,
-      challenge.title ?? NAMES[challenge.type] ?? "Operate the landmark",
+      challenge.title ??
+        (challenge.type === "forest" && challenge.variant === "catch"
+          ? "Catch fireflies for the beacon"
+          : NAMES[challenge.type]) ??
+        "Operate the landmark",
     );
     setText(
       instruction,
       challenge.hint ??
-        TIPS[challenge.type] ??
+        (challenge.type === "forest" && challenge.variant === "catch"
+          ? "Move close to three fireflies and sweep the lantern. Return to the grove and deliver their light."
+          : TIPS[challenge.type]) ??
         "Follow the signal and choose an action.",
     );
-    const steps = Math.max(1, number(challenge.steps, 3));
-    const step = Math.max(0, Math.min(steps, number(challenge.step)));
+    const isCatch =
+      challenge.type === "forest" && challenge.variant === "catch";
+    const steps = Math.max(
+      1,
+      number(isCatch ? challenge.needed : challenge.steps, 3),
+    );
+    const step = Math.max(
+      0,
+      Math.min(steps, number(isCatch ? challenge.carried : challenge.step)),
+    );
     progress.value = Math.max(
       0,
-      Math.min(1, number(challenge.progress, step / steps)),
+      Math.min(
+        1,
+        isCatch ? step / steps : number(challenge.progress, step / steps),
+      ),
     );
     setText(
       stepLabel,
-      challenge.type === "city"
-        ? `${(challenge.cells ?? []).filter((cell) => cell.connected).length} / ${steps} aligned`
-        : `${Math.min(step + 1, steps)} / ${steps}`,
+      isCatch
+        ? `${step} / ${steps} caught`
+        : challenge.type === "city"
+          ? `${(challenge.cells ?? []).filter((cell) => cell.connected).length} / ${steps} aligned`
+          : `${Math.min(step + 1, steps)} / ${steps}`,
     );
     setText(
       status,

@@ -4,6 +4,7 @@ export { WORLDS, REGIONS };
 export const getLandmarks = simulation.getLandmarks;
 export const getChallengeView = simulation.getChallengeView;
 export const terrainAt = simulation.terrainAt;
+export const isSpatialChallenge = simulation.isSpatialChallenge;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x)),
   distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y),
   count = (s, prefix) =>
@@ -37,9 +38,12 @@ export function createJourney(seed = 1) {
       ]),
     ),
     unlocked: ["forest"],
-    message: "The beacons are silent. Wake the woods, then follow the network.",
+    message:
+      "You are the rescue courier. Reconnect six beacons to bring three stranded crews home. First, collect the fallen courier’s pack in the woods.",
     entities: [],
     pulse: 0,
+    dodge: { remaining: 0, cooldown: 0, dx: 1, dy: 0 },
+    lastDirection: { dx: 1, dy: 0 },
     checkpoint: { region: "forest", x: 35, y: 87 },
     ending: false,
   };
@@ -68,10 +72,7 @@ function entities(s) {
     radius:
       h.radius * (s.region === "moon" ? 1 - s.worlds.moon.stage * 0.16 : 1),
     active:
-      !(
-        s.challenge &&
-        !(s.challenge.type === "coast" && s.challenge.variant === "escort")
-      ) &&
+      !(s.challenge && !isSpatialChallenge(s)) &&
       !s.worlds[s.region].restored &&
       !(
         s.pulse > 0 && ["forest", "coast", "fjord", "desert"].includes(s.region)
@@ -82,11 +83,13 @@ export function update(s, input = {}, dt = 0) {
   if (s.phase !== "playing") return s;
   dt = clamp(Number(dt) || 0, 0, 0.25);
   s.time += dt;
+  s.dodge ??= { remaining: 0, cooldown: 0, dx: 1, dy: 0 };
+  const burstDt = Math.min(dt, s.dodge.remaining);
+  s.dodge.remaining = Math.max(0, s.dodge.remaining - dt);
+  s.dodge.cooldown = Math.max(0, s.dodge.cooldown - dt);
   s.pulse = Math.max(0, s.pulse - dt);
   const b = WORLDS[s.region].bounds;
-  const focused =
-    s.challenge &&
-    !(s.challenge.type === "coast" && s.challenge.variant === "escort");
+  const focused = s.challenge && !isSpatialChallenge(s);
   let dx = focused ? 0 : clamp(Number(input.dx) || 0, -1, 1),
     dy = focused ? 0 : clamp(Number(input.dy) || 0, -1, 1),
     length = Math.max(1, Math.hypot(dx, dy));
@@ -96,13 +99,22 @@ export function update(s, input = {}, dt = 0) {
     (towing ? 10 : 17) *
     ground.friction *
     (s.region === "moon" ? 0.88 + s.worlds.moon.stage * 0.05 : 1);
+  if (Math.hypot(dx, dy) > 0.05)
+    s.lastDirection = { dx: dx / length, dy: dy / length };
+  const moveDt = dt - burstDt;
   s.x = clamp(
-    s.x + ((dx / length) * speed + (focused ? 0 : ground.flowX)) * dt,
+    s.x +
+      (dx / length) * speed * moveDt +
+      (focused ? 0 : ground.flowX) * dt +
+      s.dodge.dx * 44 * burstDt,
     b.minX,
     b.maxX,
   );
   s.y = clamp(
-    s.y + ((dy / length) * speed + (focused ? 0 : ground.flowY)) * dt,
+    s.y +
+      (dy / length) * speed * moveDt +
+      (focused ? 0 : ground.flowY) * dt +
+      s.dodge.dy * 44 * burstDt,
     b.minY,
     b.maxY,
   );
@@ -114,8 +126,8 @@ export function update(s, input = {}, dt = 0) {
   entities(s);
   for (const h of s.entities)
     if (h.active && distance(s, h) < h.radius) {
-      s.hull = Math.max(0, s.hull - dt * (s.tools.shield ? 7 : 14));
-      s.energy = Math.max(0, s.energy - dt * 2);
+      s.hull = Math.max(0, s.hull - (dt - burstDt) * (s.tools.shield ? 7 : 14));
+      s.energy = Math.max(0, s.energy - (dt - burstDt) * 2);
     }
   if (s.hull <= 0 || s.energy <= 0) {
     s.phase = "lost";
@@ -172,7 +184,7 @@ function contextFor(s, l) {
     text =
       "A safe checkpoint. Rest freely, or turn spare salvage into lasting protection.";
     choices = [
-      choice("rest", "Rest · refill hull and energy"),
+      choice("rest", "Rest · refill health and energy"),
       choice(
         "upgrade",
         "Build shield · 2 scrap, halves hazard damage",
@@ -195,7 +207,7 @@ function contextFor(s, l) {
       choice(
         "gather",
         s.region === "forest"
-          ? "Gather pack · +2 scrap"
+          ? "Collect courier’s pack · +2 scrap"
           : "Gather salvage · +3 scrap",
         done(s, l.id),
       ),
@@ -211,17 +223,13 @@ function contextFor(s, l) {
   } else if (s.region === "forest" && l.id.startsWith("grove")) {
     text = done(s, l.id)
       ? "The grove is awake. Its seeds are traveling with you."
-      : "Use your lantern here to wake the grove, then gather its seeds.";
+      : "Catch three moving fireflies with your lantern, then carry them back here. Their light powers the rescue path; the grove supplies seeds for the journey.";
     choices = [
-      choice(
-        "gather",
-        "Gather awakened grove · +2 carried seeds",
-        done(s, l.id) || !done(s, l.id + "-lit"),
-      ),
+      choice("gather", "Catch fireflies · collect 2 seeds", done(s, l.id)),
       choice(
         "nurture",
-        "Nurture grove · +1 seed, permanent +10 energy capacity",
-        done(s, l.id) || !done(s, l.id + "-lit"),
+        "Catch fireflies · nurture grove (+10 energy, 1 seed)",
+        done(s, l.id),
       ),
     ];
   } else if (s.region === "forest") {
@@ -262,7 +270,7 @@ function contextFor(s, l) {
       choice(
         "rescue",
         "Rescue crew · 10 energy, +1 scrap",
-        done(s, l.id) || !done(s, l.id + "-lit") || s.energy < 10,
+        done(s, l.id) || s.energy < 10,
       ),
     ];
   } else if (s.region === "coast") {
@@ -450,6 +458,7 @@ function performInteraction(s, id, committed = false, landmarkId = null) {
   }
   if (
     !committed &&
+    c.id !== "restore" &&
     landmark.kind !== "camp" &&
     !landmark.id.startsWith("cache")
   )
@@ -555,11 +564,18 @@ function performInteraction(s, id, committed = false, landmarkId = null) {
     if (s.region === "city") s.tools.sonar = true;
     if (s.region === "fjord") s.tools.compass = true;
     if (s.region === "desert") s.inventory.seeds += 2;
-    s.message = next
-      ? s.region === "forest"
-        ? "The woods are restored. Choose the city workshops or rescue the coast first; the fjord will need the city sonar."
-        : `${WORLDS[s.region].name} is restored. The route to ${WORLDS[next].name} is open.`
-      : "All six beacons are connected. The world carries its own light again.";
+    s.message = {
+      forest:
+        "The rescue beacon is lit. Choose the city workshop or the stranded coastal crews; the fjord crossing will need city sonar.",
+      city: "The workshop is online. Your new sonar can chart the ice route after the coastal crews are safe.",
+      coast:
+        "All three crews are home in harbor. The lamp and your sonar now mark a safe route into the fjord.",
+      fjord:
+        "The ice crossing is open. You carry power crystals and a new compass to find desert water.",
+      desert:
+        "The oasis has water again. Food seeds are replenished and the route to the orbital gardens is open.",
+      moon: "The food gardens are growing. Your final rescue signal connects all six beacons; all three crews are safe.",
+    }[s.region];
     entities(s);
     if (s.region === "moon") {
       s.phase = "won";
@@ -568,6 +584,29 @@ function performInteraction(s, id, committed = false, landmarkId = null) {
     return true;
   }
   return false;
+}
+export function dodge(s, dx = 0, dy = 0) {
+  if (s.phase !== "playing" || (s.challenge && !isSpatialChallenge(s)))
+    return false;
+  s.dodge ??= { remaining: 0, cooldown: 0, dx: 1, dy: 0 };
+  if (s.dodge.cooldown > 0) return false;
+  dx = clamp(Number(dx) || 0, -1, 1);
+  dy = clamp(Number(dy) || 0, -1, 1);
+  let length = Math.hypot(dx, dy);
+  if (length < 0.01) {
+    dx = s.lastDirection?.dx ?? 1;
+    dy = s.lastDirection?.dy ?? 0;
+    length = Math.hypot(dx, dy) || 1;
+  }
+  s.dodge = {
+    remaining: 0.25,
+    cooldown: 1.2,
+    dx: dx / length,
+    dy: dy / length,
+  };
+  s.message =
+    "Dodge! A short protected burst. Wait a moment before dodging again.";
+  return true;
 }
 export function startChallenge(s, choiceId) {
   if (s.phase !== "playing" || s.challenge) return false;
@@ -588,7 +627,10 @@ export function startChallenge(s, choiceId) {
     landmarkId: landmark.id,
     choiceId: c.id,
   });
-  if (started) entities(s);
+  if (started) {
+    if (!isSpatialChallenge(s)) s.dodge.remaining = 0;
+    entities(s);
+  }
   return started;
 }
 function commitChallenge(s) {
@@ -627,6 +669,7 @@ export function travel(s, region) {
   if (s.phase === "lost" || !WORLDS[region] || !s.unlocked.includes(region))
     return false;
   cancelChallenge(s);
+  s.dodge = { remaining: 0, cooldown: 0, dx: 1, dy: 0 };
   if (s.phase === "won") s.phase = "playing";
   s.region = region;
   Object.assign(s, WORLDS[region].spawn);
@@ -646,6 +689,7 @@ export function recover(s) {
     hull: 100,
     energy: s.maxEnergy,
     phase: "ready",
+    dodge: { remaining: 0, cooldown: 0, dx: 1, dy: 0 },
   });
   s.message =
     "Recovered at camp. The network remembers every restored place. Begin when ready.";
@@ -663,17 +707,31 @@ export function getObjectives(s) {
       moon: "garden",
     }[s.region],
     names = {
-      forest: "Wake three groves; gather seeds or nurture lasting blooms",
-      city: "Repair both tram junctions with salvage",
-      coast: "Illuminate and rescue three stranded crews",
-      fjord: "Reveal and retrieve three bells with sonar",
-      desert: "Chart and align three waystones with the compass",
-      moon: "Plant three gardens from carried seeds and crystals",
+      forest: `Carry fireflies to three groves (${w.stage}/3). Their light opens the rescue route.`,
+      city: `Repair two power junctions (${w.stage}/2), then build sonar to chart the rescue route.`,
+      coast: `Bring three stranded crews into the western harbor (${w.stage}/3 rescued).`,
+      fjord: `Recover three ice bells (${w.stage}/3) for power crystals and a crossing compass.`,
+      desert: `Align three waystones (${w.stage}/3) to find water and grow food at the oasis.`,
+      moon: `Grow three food gardens (${w.stage}/3), then send the final rescue signal.`,
     };
   return [
     {
       id: "explore",
       text: names[s.region],
+      nextLandmark:
+        (s.region === "forest" && !w.flags.cache && s.inventory.scrap === 0
+          ? "cache"
+          : WORLDS[s.region].landmarks.find(
+              (l) => l.id.startsWith(prefix) && !w.flags[l.id],
+            )?.id) ??
+        {
+          forest: "beacon",
+          city: "station",
+          coast: "beacon",
+          fjord: "spire",
+          desert: "oasis",
+          moon: "relay",
+        }[s.region],
       done: w.stage >= (s.region === "city" ? 2 : 3),
       progress: w.stage,
       target: s.region === "city" ? 2 : 3,
@@ -682,7 +740,7 @@ export function getObjectives(s) {
       id: "restore",
       text: {
         forest:
-          "Repair the beacon: 1 scrap. Opens both city and coastal routes.",
+          "Light the rescue beacon: 1 scrap. Opens the city workshop and stranded coastal crews.",
         city: "Restore the workshop: 1 scrap after two junctions. Grants sonar.",
         coast: s.tools.sonar
           ? "Restore the harbor lamp: 2 scrap after three rescues. Opens the fjord."
@@ -691,13 +749,13 @@ export function getObjectives(s) {
           "Tune the spire: 1 crystal after three bells. Grants the desert compass.",
         desert:
           "Water the oasis: 2 scrap + 1 seed after three stones. Opens the lunar gateway.",
-        moon: "Connect the relay: 2 scrap + 1 crystal after three planted gardens.",
+        moon: "Send the final rescue signal: 2 scrap + 1 crystal after three food gardens.",
       }[s.region],
       done: !!w.restored,
     },
     {
       id: "network",
-      text: `Network ${REGIONS.filter((r) => s.worlds[r].restored).length} / 6 restored`,
+      text: `Rescue route: ${REGIONS.filter((r) => s.worlds[r].restored).length}/6 beacons · ${s.worlds.coast.stage}/3 crews home`,
       done: s.ending,
     },
   ];

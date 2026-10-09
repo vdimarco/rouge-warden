@@ -20,7 +20,7 @@ const directions = [
 const axisDirections = ["north", "east", "south", "west"];
 const moonActions = ["water", "root", "light"];
 const kindNames = {
-  forest: "Focus the living light",
+  forest: "Catch light for the rescue beacon",
   city: "Reconnect the circuit",
   coast: "Bring the crew home",
   fjord: "Listen beneath the ice",
@@ -263,9 +263,14 @@ function options(c) {
   const option = (id, label, extra = {}) => ({ id, label, ...extra });
   if (c.type === "forest")
     c.choices = [
-      option("turn-left", "Turn light left", { key: "A" }),
-      option("turn-right", "Turn light right", { key: "D" }),
-      option("focus", "Focus this branch", { key: "Space" }),
+      option("sweep-lantern", "Sweep lantern · catch a nearby firefly", {
+        key: "Space",
+        disabled: c.sweepCooldown > 0,
+      }),
+      option("deliver", "Deliver fireflies to this grove", {
+        key: "E",
+        disabled: c.carried < c.needed || c.deliveryDistance > 7,
+      }),
     ];
   if (c.type === "city")
     c.choices = [
@@ -332,14 +337,17 @@ function options(c) {
         { key: String(i + 1) },
       ),
     );
-  if (!(c.type === "coast" && c.variant === "escort"))
+  if (
+    !(c.type === "coast" && c.variant === "escort") &&
+    !(c.type === "forest" && c.variant === "catch")
+  )
     c.progress =
       c.type === "city"
         ? c.cells.filter((cell) => cell.rotation === cell.target).length / 3
         : c.step / c.steps;
   c.value =
     c.type === "forest"
-      ? c.angle / 3
+      ? c.progress
       : c.type === "desert"
         ? c.angle / 7
         : c.type === "fjord"
@@ -347,7 +355,7 @@ function options(c) {
           : c.progress;
   c.target =
     c.type === "forest"
-      ? c.targets[c.step] / 3
+      ? 1
       : c.type === "desert"
         ? c.targets[c.step] / 7
         : c.type === "fjord"
@@ -363,8 +371,16 @@ function describeChallenge(s) {
     c.progress = 1;
     return;
   }
-  if (c.type === "forest")
-    c.hint = `Branch ${c.step + 1}/3 needs ${axisDirections[c.targets[c.step]]} light. Your lantern faces ${axisDirections[c.angle]}. Turn it, then focus.`;
+  if (c.type === "forest") {
+    c.deliveryDistance = distance(s, c.anchor);
+    c.progress = (c.carried / c.needed) * 0.85;
+    c.hint =
+      c.carried < c.needed
+        ? `Catch ${c.needed - c.carried} more firefl${c.needed - c.carried === 1 ? "y" : "ies"} with your lantern (${c.carried}/${c.needed} carried). Move near the yellow lights and sweep. Carry them back to this grove to power the rescue beacon.`
+        : c.deliveryDistance > 7
+          ? "Three fireflies caught. Carry them back to the glowing grove marker, then deliver them to power the rescue beacon."
+          : "You brought three fireflies home. Deliver them to this grove to light the rescue path.";
+  }
   if (c.type === "city")
     c.hint = `Conductor ${c.selected + 1}/3 faces ${axisDirections[c.cells[c.selected].rotation]}; the marked socket faces ${axisDirections[c.cells[c.selected].target]}. Rotate each conductor to its socket, then test the whole circuit.`;
   if (c.type === "coast") {
@@ -412,7 +428,12 @@ export function startChallenge(s, descriptor) {
   const c = {
     id: `${s.region}:${l.id}`,
     type: s.region,
-    variant: l.id.startsWith("boat") ? "escort" : "operation",
+    variant:
+      s.region === "forest" && l.id.startsWith("grove")
+        ? "catch"
+        : l.id.startsWith("boat")
+          ? "escort"
+          : "operation",
     region: s.region,
     landmarkId: l.id,
     choiceId: descriptor.choiceId,
@@ -429,13 +450,40 @@ export function startChallenge(s, descriptor) {
     angle: 0,
     target: 0,
     choices: [],
-    anchor: { x: s.x, y: s.y },
+    anchor: { x: l.x, y: l.y },
     targets: [],
     pattern: [],
     mode: "active",
   };
   if (c.type === "forest") {
-    c.targets = [1 + (h % 3), (h + 2) % 4, (h + 1) % 4];
+    c.carried = 0;
+    c.needed = 3;
+    c.sweepCooldown = 0;
+    const bounds = WORLDS.forest.bounds;
+    c.fireflies = [0, 1, 2].map((i) => {
+      const angle = ((h % 17) / 17 + i / 3) * Math.PI * 2;
+      const radius = 10 + i * 3;
+      const baseX = clamp(
+        l.x + Math.cos(angle) * radius,
+        bounds.minX + 4,
+        bounds.maxX - 4,
+      );
+      const baseY = clamp(
+        l.y + Math.sin(angle) * radius,
+        bounds.minY + 3,
+        bounds.maxY - 3,
+      );
+      return {
+        id: `firefly-${i}`,
+        x: baseX,
+        y: baseY,
+        baseX,
+        baseY,
+        phase: i * 2 + (h % 7),
+        caught: false,
+      };
+    });
+    s.worlds.forest.flags[l.id + "-lit"] = true;
   }
   if (c.type === "city") {
     c.selected = 0;
@@ -486,6 +534,27 @@ export function advanceChallenge(s, dt, input = {}) {
   const c = s.challenge;
   if (!c || c.phase !== "active" || s.phase !== "playing") return false;
   c.elapsed += dt;
+  if (c.type === "forest" && c.variant === "catch") {
+    c.sweepCooldown = Math.max(0, c.sweepCooldown - dt);
+    c.sweepFlash = Math.max(0, (c.sweepFlash || 0) - dt);
+    const bounds = WORLDS.forest.bounds;
+    for (const [i, fly] of c.fireflies.entries()) {
+      fly.x = fly.caught
+        ? s.x + (i - 1) * 1.5
+        : clamp(
+            fly.baseX + Math.sin(s.time * 0.8 + fly.phase) * 2.8,
+            bounds.minX + 1,
+            bounds.maxX - 1,
+          );
+      fly.y = fly.caught
+        ? s.y - 2.5
+        : clamp(
+            fly.baseY + Math.cos(s.time * 0.63 + fly.phase) * 1.7,
+            bounds.minY + 1,
+            bounds.maxY - 1,
+          );
+    }
+  }
   if (c.type === "fjord" && c.mode === "returning" && !c.locked) {
     c.echoTime += dt;
     c.value = clamp(c.echoTime / 4, 0, 1);
@@ -516,19 +585,48 @@ export function actionChallenge(s, action) {
     describeChallenge(s);
     return false;
   }
+  if (
+    id === "deliver" &&
+    c.type === "forest" &&
+    c.variant === "catch" &&
+    (c.carried < c.needed || distance(s, c.anchor) > 7)
+  ) {
+    c.feedback =
+      c.carried < c.needed
+        ? "Catch three fireflies before delivering them. Your current catch stays with you."
+        : "Return to the glowing grove marker before delivering your catch.";
+    describeChallenge(s);
+    return false;
+  }
   const entry = c.choices.find((choice) => choice.id === id);
   if (!entry || entry.disabled) return false;
   let success = false;
   let failure = "";
   if (c.type === "forest") {
-    if (id === "turn-left") c.angle = (c.angle + 3) % 4;
-    if (id === "turn-right") c.angle = (c.angle + 1) % 4;
-    if (id === "focus") {
-      if (c.angle === c.targets[c.step]) {
-        c.step++;
+    if (id === "sweep-lantern") {
+      c.sweepCooldown = 0.35;
+      c.sweepFlash = 0.22;
+      const fly = c.fireflies
+        .filter((f) => !f.caught && distance(s, f) <= 8)
+        .sort((a, b) => distance(s, a) - distance(s, b))[0];
+      if (fly) {
+        fly.caught = true;
+        c.carried++;
+        c.step = c.carried;
         success = true;
       } else
-        failure = `This branch needs ${axisDirections[c.targets[c.step]]} light. Turn your lantern before focusing; retry is free.`;
+        failure =
+          "Your lantern found no firefly nearby. Move closer to a yellow light and sweep again; no supplies were spent.";
+    }
+    if (id === "deliver") {
+      if (c.carried >= c.needed && distance(s, c.anchor) <= 7) {
+        c.phase = "complete";
+        success = true;
+      } else
+        failure =
+          c.carried < c.needed
+            ? "Catch three fireflies before delivering them. Your current catch stays with you."
+            : "Return to the glowing grove marker before delivering your catch.";
     }
   } else if (c.type === "city") {
     if (id === "next-cell") c.selected = (c.selected + 1) % 3;
@@ -623,7 +721,7 @@ export function actionChallenge(s, action) {
     } else
       failure = `The plant needs ${c.pattern[c.step]} before it can grow. Choose that action; your seeds and crystals remain unspent.`;
   }
-  if (c.step >= c.steps) c.phase = "complete";
+  if (c.step >= c.steps && c.variant !== "catch") c.phase = "complete";
   describeChallenge(s);
   c.feedback =
     failure ||
@@ -660,6 +758,15 @@ export function cancelChallenge(s) {
   return true;
 }
 
+export function isSpatialChallenge(s) {
+  const c = s.challenge;
+  return (
+    !!c &&
+    ((c.type === "forest" && c.variant === "catch") ||
+      (c.type === "coast" && c.variant === "escort"))
+  );
+}
+
 export function getChallengeView(s) {
   const c = s.challenge;
   if (!c) return null;
@@ -678,7 +785,7 @@ export function getChallengeView(s) {
         c.type === "fjord"
           ? "Returning echo"
           : c.type === "forest"
-            ? "Lantern bearing"
+            ? "Fireflies carried"
             : c.type === "desert"
               ? "Compass bearing"
               : "Operation progress",

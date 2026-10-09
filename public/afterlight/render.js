@@ -79,6 +79,7 @@ export function createRenderer(
       JSON.stringify(state.challenge || {}),
       JSON.stringify(state.environment || {}),
       JSON.stringify(state.actors || []),
+      JSON.stringify(state.dodge || {}),
     ].join("|");
     if (key === signature) return false;
     signature = key;
@@ -225,11 +226,20 @@ export function createRenderer(
         line(p.x + 1, p.y, p.x + 1, p.y - 4 * size, c, 2);
         dot(p.x, p.y - 4 * size, 2, c);
       } else if (p.kind === "resource") {
-        for (let j = -1; j <= 1; j++) {
-          dot(p.x + j, p.y, 2, c);
-          dot(p.x + j, p.y - 1, 2, c);
+        if (p.id.startsWith("bell")) {
+          line(p.x, p.y - 3, p.x, p.y - 1, c, 2);
+          line(p.x - 2, p.y, p.x + 2, p.y, c, 2);
+          dot(p.x, p.y + 1, 1, extra);
+        } else {
+          // A low courier crate with a strapped lid, rather than a generic marker.
+          for (let y = -3; y <= 0; y++)
+            for (let x = -2; x <= 2; x++)
+              dot(p.x + x, p.y + y, x === 0 || y === -3 ? 2 : 1, c);
+          line(p.x - 2, p.y - 3, p.x + 2, p.y - 3, extra + 3, 2);
+          line(p.x, p.y - 3, p.x, p.y, extra, 2);
+          dot(p.x - 1, p.y - 4, 1, c);
+          dot(p.x + 1, p.y - 4, 1, c);
         }
-        dot(p.x, p.y - 2, 1, c);
       } else {
         line(p.x, p.y, p.x, p.y - 4 * size, c, 2);
         dot(p.x - 1, p.y - 3 * size, 2, c);
@@ -371,7 +381,46 @@ export function createRenderer(
         ) || { x: state.x, y: state.y },
         progress = clamp(Number(operation.progress) || 0, 0, 1),
         focus = operation.type || region;
-      if (focus === "forest") {
+      if (focus === "forest" && operation.variant === "catch") {
+        const carried = Number(operation.carried) || 0,
+          needed = Number(operation.needed) || 3;
+        for (const [index, fly] of (operation.fireflies || []).entries()) {
+          if (fly.caught) continue;
+          const sparkle = reducedMotion
+            ? 2
+            : Math.sin(clock * 6 + index * 1.9) > 0.15
+              ? 3
+              : 2;
+          dot(fly.x, fly.y, sparkle, extra + 2);
+          dot(fly.x - 1, fly.y, 1, extra + 1);
+          dot(fly.x + 1, fly.y, 1, extra + 1);
+          dot(fly.x, fly.y - 1, 1, extra + 1);
+        }
+        if ((operation.sweepFlash || 0) > 0 || (state.pulse || 0) > 0) {
+          const radius = operation.catchRadius || 8;
+          for (let j = 0; j < 20; j++) {
+            const a = (j / 20) * Math.PI * 2;
+            dot(
+              state.x + Math.cos(a) * radius,
+              state.y + Math.sin(a) * radius * 0.65,
+              1,
+              extra + 1,
+            );
+          }
+        }
+        if (carried >= needed) {
+          for (let j = 0; j < 12; j++) {
+            const a = (j / 12) * Math.PI * 2;
+            dot(
+              objective.x + Math.cos(a) * 4,
+              objective.y - 3 + Math.sin(a) * 2,
+              2,
+              extra + 2,
+            );
+          }
+          line(state.x, state.y + 1, objective.x, objective.y, extra + 1, 1, 4);
+        }
+      } else if (focus === "forest") {
         const angle =
             ((Number(operation.angle) || 0) * Math.PI) / 2 - Math.PI / 2,
           targetAngle =
@@ -534,15 +583,60 @@ export function createRenderer(
       py = state.y ?? 87,
       depth = clamp((py - (surface ? 60 : 45)) / (surface ? 38 : 52), 0, 1),
       ps = 0.65 + depth * 0.8;
-    if (surface || region === "desert") boat(px, py, ps, extra + 2);
-    else {
-      dot(px, py - 3 * ps, 3, extra + 2);
-      line(px, py - 2 * ps, px, py, extra + 2, 2);
-      dot(px - ps, py - ps, 1, extra + 2);
-      dot(px + ps, py - ps, 1, extra + 2);
-      dot(px - ps, py + ps, 2, extra + 2);
-      dot(px + ps, py + ps, 2, extra + 2);
-      footprint(px, py + 1, 3 * ps, extra + 3);
+    const travelerColor =
+      region === "forest"
+        ? extra + 2
+        : region === "city" || region === "coast"
+          ? extra
+          : region === "fjord"
+            ? Math.max(0, s.palette.indexOf("#ffd27c"))
+            : region === "desert"
+              ? 14
+              : extra + 3;
+    if ((state.dodge?.remaining || 0) > 0) {
+      const dx = state.dodge.dx || 0,
+        dy = state.dodge.dy || 0;
+      for (let j = 1; j < 5; j++) {
+        const x = px - dx * j * 2.2,
+          y = py - dy * j * 2.2;
+        dot(x, y - ps, 1, extra + 1);
+        dot(x - ps, y, 1, extra + 1);
+        dot(x + ps, y, 1, extra + 1);
+      }
+      dot(px - 2 * ps, py, 2, travelerColor);
+      dot(px + 2 * ps, py, 2, travelerColor);
+    }
+    if (surface || region === "desert") {
+      boat(px, py, ps * 1.25, travelerColor);
+      line(px - 2.5 * ps, py + ps, px + 2.5 * ps, py + ps, extra + 3, 2);
+      dot(px - ps, py - ps, 3, travelerColor);
+    } else {
+      // Hood, shoulders, satchel and boots make the traveler readable at phone scale.
+      dot(px, py - 4.5 * ps, 3, travelerColor);
+      dot(px - ps, py - 4 * ps, 2, travelerColor);
+      dot(px + ps, py - 4 * ps, 2, travelerColor);
+      for (let y = -3; y <= -1; y++)
+        for (let x = -1; x <= 1; x++)
+          dot(
+            px + x * ps,
+            py + y * ps,
+            2,
+            x === -1 ? extra + 3 : travelerColor,
+          );
+      dot(px - 2 * ps, py - 2 * ps, 2, extra + 3);
+      dot(px + 2 * ps, py - 2 * ps, 2, travelerColor);
+      line(px - ps, py - ps, px - 1.5 * ps, py + ps, travelerColor, 2);
+      line(px + ps, py - ps, px + 1.5 * ps, py + ps, travelerColor, 2);
+      footprint(px, py + ps, 4 * ps, extra + 3);
+      if (operation?.variant === "catch" && Number(operation.carried) > 0) {
+        const x = px + 3 * ps,
+          y = py - 2 * ps;
+        line(x - ps, y - 3 * ps, x - ps, y + ps, extra + 1, 1);
+        line(x + ps, y - 3 * ps, x + ps, y + ps, extra + 1, 1);
+        line(x - ps, y + ps, x + ps, y + ps, extra + 1, 1);
+        for (let j = 0; j < Math.min(3, operation.carried); j++)
+          dot(x, y - 2.3 * ps + j * 1.3 * ps, 3, travelerColor);
+      }
     }
     const atlas = atlasFor(s);
     function drawCell(k) {
