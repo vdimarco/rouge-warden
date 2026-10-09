@@ -152,7 +152,7 @@ export class ThreeRenderer {
     this.follow(s, p, dt, menu, time);
     if (!menu) this.heroScreen = this.project(p.x, p.y);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
-    this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
+    this.sky.update(s.phase, dt, this.showcase ? 1 : (this.zoom || 1)); this.props.setPhase(s.phase);
     const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, viewScale = this.cameraViewScale || 1;
     const rect = this.showcase || { x0: this.cam.x + f.minX * viewScale - 150, x1: this.cam.x + f.maxX * viewScale + 150, y0: this.cam.y + f.minY * viewScale - 150, y1: this.cam.y + f.maxY * viewScale + 150 };
     this.props.update(dt, time, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });

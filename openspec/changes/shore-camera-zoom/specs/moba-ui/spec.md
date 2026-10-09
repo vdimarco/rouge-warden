@@ -17,11 +17,11 @@ The 3D battlefield SHALL support wheel and two-finger pinch zoom between normal 
 
 #### Scenario: Accurate zoomed terrain selection
 - **WHEN** the player zooms and then targets visible ground
-- **THEN** picking follows the visible terrain and the camera footprint and pan scale match the new distance.
+- **THEN** picking follows the visible terrain and the camera footprint, pan scale and atmospheric fog distances match the new distance so terrain remains legible.
 
 ### Requirement: Top center Rift Jump
 Rift Jump SHALL appear at the top center of the battlefield with a touch target at least 44px high, remaining visible with a disabled Find a gate hint away from gates, and retaining its existing gate eligibility and action.
 
 #### Scenario: Responsive HUD
 - **WHEN** a match is displayed on desktop, portrait phone or landscape phone
-- **THEN** Rift Jump is centered, within safe areas and clear of the score, team lineup, objective clock, objective panel and minimap.
+- **THEN** Rift Jump is centered, within safe areas and clear of the score, team lineup, objective clock, objective panel, minimap and first-spell prompt.

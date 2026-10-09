@@ -343,3 +343,9 @@
 #hud #portal{left:50%;right:auto;top:calc(86px + env(safe-area-inset-top));bottom:auto;transform:translateX(-50%);width:112px;min-height:44px;z-index:4}
 @media(max-width:699px) and (min-height:521px){#hud #objective{top:calc(142px + env(safe-area-inset-top))}}
 @media(max-height:520px) and (min-width:600px){#hud #portal{top:calc(82px + env(safe-area-inset-top))}}
+
+/* Keep transient guidance and the software-renderer note clear of the centered Rift control. */
+#hud #notice{top:max(19%,calc(142px + env(safe-area-inset-top)))}
+#hud #gpu-note{top:calc(226px + env(safe-area-inset-top))}
+@media(max-width:699px) and (min-height:521px){#hud #notice{top:calc(226px + env(safe-area-inset-top))}}
+@media(max-height:520px) and (min-width:600px){#hud #notice{top:calc(138px + env(safe-area-inset-top))}}

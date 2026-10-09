@@ -53,18 +53,18 @@ try {
     const measure = () => page.evaluate(async () => {
       const m = await import('/tidebreak/main.js'), s = m.qaState(), p = s.units.find(u => u.player), r = document.querySelector('#battle').__shore3d;
       const screen = r.project(p.x,p.y), point = r.world(screen.x,screen.y);
-      return {zoom:r.stats().zoom,distance:r.distance,scale:r.scale,foot:r.foot,error:Math.hypot(point.x-p.x,point.y-p.y),order:p.order,player:{x:p.x,y:p.y},screen};
+      return {zoom:r.stats().zoom,distance:r.distance,scale:r.scale,fogNear:r.scene.fog.near,fogFar:r.scene.fog.far,foot:r.foot,error:Math.hypot(point.x-p.x,point.y-p.y),order:p.order,player:{x:p.x,y:p.y},screen};
     });
     const layout = await page.evaluate(() => {
       const rect = el => {const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};};
-      return {rift:rect(document.querySelector('#portal')),other:['.score','.lineup.ally','.lineup.enemy','#objective-clock','#objective','#map-button'].map(selector=>({selector,...rect(document.querySelector(selector))}))};
+      return {rift:rect(document.querySelector('#portal')),other:['.score','.lineup.ally','.lineup.enemy','#objective-clock','#objective','#map-button','#notice'].map(selector=>({selector,...rect(document.querySelector(selector))}))};
     });
     const b=layout.rift;
     assert(Math.abs(b.x+b.w/2-width/2)<1 && b.h>=44 && b.y>=0 && b.y+b.h<height/2,'Rift is centered near the top with a 44px target');
     for(const o of layout.other) assert(!(b.x<o.x+o.w && b.x+b.w>o.x && b.y<o.y+o.h && b.y+b.h>o.y),`Rift must not overlap ${o.selector}: ${JSON.stringify(layout)}`);
     const normal=await measure();
     await page.mouse.move(width/2,height*.45);await page.mouse.wheel(0,240);await page.waitForTimeout(100);await page.evaluate(()=>window.__pump(1));
-    const out=await measure();assert(out.zoom>1 && out.distance>normal.distance && out.scale<normal.scale,JSON.stringify({normal,out}));assert(out.error<1,'zoomed hero ground remains selectable');
+    const out=await measure();assert(out.zoom>1 && out.distance>normal.distance && out.scale<normal.scale,JSON.stringify({normal,out}));assert(out.error<1,'zoomed hero ground remains selectable');assert(Math.abs(out.fogFar/normal.fogFar-out.zoom)<.01,'atmospheric fog follows zoom');
     await page.mouse.wheel(0,-240);await page.waitForTimeout(100);assert(Math.abs((await measure()).zoom-1)<.01,'wheel reverses to normal');
     await page.evaluate(()=>document.querySelector('#battle').__shore3d.zoomBy(100));await page.evaluate(()=>window.__pump(1));assert.equal((await measure()).zoom,2.4);
     await page.screenshot({path:path.join(shots,`${name}-zoom-out.png`),timeout:120000});
