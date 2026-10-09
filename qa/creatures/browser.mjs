@@ -41,8 +41,9 @@ try {
     await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Shore of the Ancients/);
     await page.locator('#menu').waitFor();
     await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
-    // Software WebGL uses the game's supported resolution floor; assertions still exercise the full scene.
-    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d; r.quality=.5; r.resize(); const draw=r.draw; r.draw=function(...args){draw.apply(this,args); this.gl.getContext().finish();}; });
+    // Software WebGL uses the supported resolution floor. Suspended draws must not
+    // make adaptive resolution raise that budget or resize the canvas during capture.
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d; r.quality=.5; r.raiseAt=Infinity; r.resize(); const draw=r.draw; r.draw=function(...args){draw.apply(this,args); this.gl.getContext().finish();}; });
     await page.waitForFunction(() => document.querySelectorAll('#hero-picks [data-hero]').length === 16);
     await page.waitForFunction(() => { const image=document.querySelector('#hero-art'); return image.complete&&image.naturalWidth>0; });
     await page.evaluate(async () => { await document.fonts.ready; });
@@ -265,8 +266,14 @@ try {
     if (await page.locator('#coach-close').isVisible()) await page.locator('#coach-close').click();
     await page.locator('#pause').click(); assert(await page.locator('#sheet').isVisible());
     await page.getByRole('button', { name: 'Keep playing' }).click(); assert(!(await page.locator('#sheet').isVisible()));
-    // Capture the verified frame without continuous software rendering starving the compositor.
-    await page.evaluate(() => { document.getElementById('battle').__shore3d.draw = () => {}; });
+    // Finish one actual post-resume frame, then let the native compositor present it
+    // while repeated software draws remain suspended and the pixel budget stays fixed.
+    await page.evaluate(async () => {
+      const r=document.getElementById('battle').__shore3d, draw=r.draw;
+      r.draw=()=>{};
+      draw.call(r,(await import('/tidebreak/main.js')).qaState(),0);
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    });
     await page.screenshot({ path: path.join(shots, `${name}-moba.png`) });
     assert.deepEqual(errors, []); console.log(`PASS ${name}: gallery loads 18 originals; sixteen hero identities and source art; role filters, keyboard grid, hover and tap; Tidewarden skill training; 3D models, movement, pause and resume; no asset or page errors.`);
     await page.close();
