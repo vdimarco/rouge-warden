@@ -1,10 +1,10 @@
 # Afterlight
 
-A connected adventure at `/afterlight/` through the six original ASCII scene worlds. Supplies, health, tools, choices and restored terrain persist between places.
+You are a rescue courier: repair six beacons and bring three stranded boat crews home. The connected adventure at `/afterlight/` spans six evolving ASCII worlds. Supplies, health, tools, choices and restored terrain persist between places.
 
 ## Play
 
-Move with arrows/WASD or the touch pad; tap the scene to set a walking destination. Approach a glowing landmark and use E or its contextual action. Space uses a local tool. M opens travel, J opens the journal, and P pauses. Menus, hiding the page and game switching stop expedition time.
+Move with arrows/WASD or the touch pad; tap the scene to set a walking destination. Approach a glowing landmark and use E or its contextual action. Space uses a local tool. Shift or the Dodge button gives a short protected directional burst. Named landmarks, a YOU marker, and Show next task guide you through each rescue stop. M opens travel, J opens the journal, and P pauses. Menus, hiding the page and game switching stop expedition time.
 
 Wake the forest groves, reconnect the city, rescue coastal crews, recover fjord bells, revive a desert oasis and carry seeds into lunar gardens. Forest restoration opens both city and coast: choose which to explore first. Harbor restoration needs the city's sonar, so supplies and tools connect the branches again. The fjord compass reveals the desert's true route. Seeds harvested or nurtured in the forest are spent in the oasis and on the moon.
 
@@ -16,7 +16,7 @@ Your journey saves locally when storage is available. Reloads require a delibera
 
 Phaser 3.90.0 drives the scene clock, camera, dynamic ASCII texture, keyboard/pointer input, transitions and feedback tweens. The pinned runtime and MIT license are bundled locally. The deterministic campaign model remains independent for saves and checks.
 
-Landmark operations require active decisions: rotate and focus forest light, reconnect city conductors, tether and escort drifting crews, read fjord echo channels, align desert bearings, and meet a garden’s changing needs. Operation shortcuts are shown beside their native buttons. Leaving an operation keeps supplies. Rewards and costs apply once on successful completion. Movement stays available during coastal towing.
+Landmark operations require active decisions: chase drifting forest fireflies, sweep your lantern near them, and carry three back to the grove; reconnect city conductors, tether and escort drifting crews, read fjord echo channels, align desert bearings, and meet a garden’s changing needs. Operation shortcuts are shown beside their native buttons. Leaving an operation keeps supplies. Rewards and costs apply once on successful completion. Movement stays available during firefly catching and coastal towing. Final beacon activation pays off immediately after its local requirements are met.
 
 ## Living scenes
 
@@ -30,4 +30,4 @@ Original artwork and the refined Last Light dot-grid direction are the visual re
 
 The compositor check `node qa/afterlight/render.e2e.mjs` compares incremental and full redraws across all regions, travel, resizing and motion settings. The original `campaign.e2e.mjs` command remains a compatibility entry for the current browser campaign.
 
-See `qa/afterlight/living-worlds-review.md` for final verification details. Physical devices and other browser engines are not covered.
+The first-minute rescue flow is checked with `node qa/afterlight/rescue-mission.e2e.mjs`. See `qa/afterlight/rescue-review.md` for this iteration’s verification details. Physical devices and other browser engines are not covered.

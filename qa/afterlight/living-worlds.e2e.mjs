@@ -162,7 +162,41 @@ async function solve(page) {
   let actions = 0;
   while ((await state(page)).challenge && actions++ < 80) {
     const c = (await state(page)).challenge;
-    if (c.type === "forest") {
+    if (c.type === "forest" && c.variant === "catch") {
+      const fly = c.fireflies.find((f) => !f.caught);
+      if (fly) {
+        await page.evaluate(async (id) => {
+          const e = await import("/afterlight/engine.js"),
+            a = window.__afterlight;
+          for (let i = 0; i < 1200 && a.state.phase === "playing"; i++) {
+            const target = a.state.challenge?.fireflies.find(
+              (f) => f.id === id,
+            );
+            if (!target || target.caught) break;
+            const dx = target.x - a.state.x,
+              dy = target.y - a.state.y;
+            const distance = Math.hypot(dx, dy);
+            if (distance < 2) break;
+            e.update(
+              a.state,
+              { dx: dx / distance, dy: dy / distance },
+              Math.min(0.08, distance / 22),
+            );
+          }
+          a.render();
+        }, fly.id);
+        const sweep = page.locator('[data-challenge-action="sweep-lantern"]');
+        await page.waitForFunction(
+          () =>
+            !document.querySelector('[data-challenge-action="sweep-lantern"]')
+              ?.disabled,
+        );
+        await sweep.click();
+      } else {
+        await moveTo(page, c.anchor.x, c.anchor.y);
+        await op(page, "deliver");
+      }
+    } else if (c.type === "forest") {
       if (c.angle !== c.targets[c.step]) await op(page, "turn-right");
       else if (c.step === 0) {
         await page.locator("#arena").focus();
@@ -359,10 +393,10 @@ try {
         () =>
           Math.abs(
             window.__afterlight.game.scene.getScene("journey").cameras.main
-              .zoom - 1.13,
+              .zoom - 1,
           ) < 0.01,
       ),
-      "normal-motion camera focuses operation",
+      "spatial firefly collection keeps the full map visible",
     );
     await capture(normal, "operation-normal-desktop");
     await normal.locator("[data-challenge-cancel]").click();
@@ -597,7 +631,11 @@ try {
         }
         await walk(page, item.final);
         await choose(page, "restore");
-        if ((await state(page)).challenge) await solve(page);
+        assert.equal(
+          (await state(page)).challenge,
+          null,
+          "final beacon activates directly after prerequisites",
+        );
         assert.equal((await state(page)).worlds[item.region].restored, 1);
         await capture(page, item.region + "-restored");
         evidence.checks.push(

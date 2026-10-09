@@ -1163,3 +1163,222 @@ footer {
 .has-operation:not(.has-spatial-operation) .movement {
   display: none;
 }
+
+/* A clear rescue plan stays next to the world rather than becoming another menu. */
+.mission {
+  margin: 0 0 17px;
+}
+#mission-heading {
+  color: #ead9aa;
+  font-size: 15px;
+  line-height: 1.45;
+  margin: 0 0 8px;
+}
+#mission-summary {
+  color: #b3c3ba;
+  font-size: 11px;
+  line-height: 1.65;
+  margin: 0 0 10px;
+}
+#mission-steps {
+  display: grid;
+  gap: 6px;
+  counter-reset: task;
+}
+#mission-steps button {
+  counter-increment: task;
+  display: grid;
+  grid-template-columns: 19px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+  min-height: 44px;
+  width: 100%;
+  padding: 9px;
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: left;
+  color: #bfd0c4;
+  border-color: #385048;
+  background: #17271e66;
+}
+#mission-steps button::before {
+  content: counter(task) ".";
+  color: #d4c291;
+}
+#mission-steps button small {
+  display: block;
+  color: #89a398;
+  font-size: 10px;
+  margin-top: 3px;
+}
+#mission-steps button[data-done="true"],
+#mission-steps button.done {
+  color: #7e9e8e;
+  opacity: 0.65;
+}
+#mission-steps button[data-done="true"]::before,
+#mission-steps button.done::before {
+  content: "✓";
+}
+#chapter {
+  font-size: 11px;
+  color: #7f9895;
+  margin-bottom: 4px;
+}
+#objective {
+  font-size: 10px;
+}
+#guide {
+  color: #eed6a2;
+  border-color: #7b7053;
+}
+#dodge {
+  color: #bbd7d5;
+  border-color: #405d61;
+}
+#guide,
+#dodge,
+.operation-action,
+.operation-cancel {
+  min-height: 44px;
+}
+.has-operation #mission-steps {
+  display: none;
+}
+.has-operation #mission-summary {
+  margin-bottom: 6px;
+}
+.has-spatial-operation .movement > #dodge,
+.has-spatial-operation .movement > #guide {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.operation-firefly-bottle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  width: 150px;
+  height: 68px;
+  border: 1px solid #48634b;
+  border-radius: 8px 8px 16px 16px;
+  background: #183b2233;
+}
+.bottle-firefly {
+  font-size: 20px;
+  color: #426250;
+}
+.bottle-firefly.caught {
+  color: #e1e9a5;
+  text-shadow: 0 0 12px #d5ea8255;
+}
+.operation-panel[data-challenge-variant="catch"] .operation-instrument {
+  min-height: 76px;
+}
+.operation-panel[data-challenge-variant="catch"] .operation-readout {
+  color: #d5dfb6 !important;
+}
+@media (max-width: 760px) {
+  .mission {
+    margin-bottom: 12px;
+  }
+  #mission-heading {
+    font-size: 14px;
+  }
+  #mission-summary {
+    font-size: 11px;
+  }
+  #mission-steps button {
+    font-size: 11px;
+    padding: 9px;
+  }
+  .movement > button {
+    min-height: 44px;
+  }
+  .has-operation #mission-summary {
+    font-size: 10px;
+  }
+  .has-operation .mission {
+    margin-bottom: 5px;
+  }
+  .has-spatial-operation .movement {
+    display: flex;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .landscape {
+    width: min(100%, calc((100dvh - 211px) * 2));
+  }
+  .movement {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    max-width: 480px;
+    margin: 5px auto 0;
+  }
+  .directions {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+  .directions button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .movement > button {
+    min-height: 44px;
+    padding: 5px;
+    font-size: 9px;
+  }
+  #mission-heading {
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+  #mission-summary {
+    font-size: 10px;
+    line-height: 1.55;
+    margin-bottom: 7px;
+  }
+  #mission-steps button {
+    min-height: 44px;
+    font-size: 10px;
+    padding: 8px;
+  }
+  .mission {
+    margin-bottom: 10px;
+  }
+  .operation-action {
+    min-height: 44px;
+  }
+  .operation-cancel {
+    min-height: 44px;
+  }
+  .has-operation #mission-summary {
+    display: none;
+  }
+  .has-operation .mission {
+    margin-bottom: 5px;
+  }
+  .has-spatial-operation .movement {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .has-spatial-operation .directions {
+    grid-column: 1 / -1;
+  }
+  .operation-firefly-bottle {
+    height: 44px;
+    width: 132px;
+  }
+  .operation-panel[data-challenge-variant="catch"] .operation-instrument {
+    min-height: 50px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bottle-firefly.caught {
+    text-shadow: none;
+  }
+}
+#mission-steps button small {
+  grid-column: 2;
+}
