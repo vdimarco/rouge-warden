@@ -44,9 +44,10 @@ async function screenshot(page, name) {
   await page.evaluate(() => window.__flush());
   await page.screenshot({ path: path.join(shots, `${name}.png`), animations: 'disabled', timeout: 120000 });
 }
-async function press(page, selector, touch) {
+async function press(page, selector, touch, optional = false) {
   await page.evaluate(() => window.__flush());
   const box = await page.locator(selector).boundingBox();
+  if (optional && !box) return;
   assert(box && box.width > 0 && box.height > 0, `${selector} is visible and has an input target`);
   const x = box.x + box.width / 2, y = box.y + box.height / 2;
   const owner = await page.evaluate(({ selector, x, y }) => !!document.elementFromPoint(x, y)?.closest(selector), { selector, x, y });
@@ -137,8 +138,8 @@ try {
       }, true);
       for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'gotpointercapture', 'lostpointercapture', 'click']) window.addEventListener(type, e => {
         const button = e.target.closest?.('button');
-        if (!button) return;
-        window.__controlPointers.push({ type, pointerType: e.pointerType, pointerId: e.pointerId, button: e.button, detail: e.detail, target: e.target.id || e.target.tagName, control: button.id || button.dataset.destination || button.dataset.skill, x: e.clientX, y: e.clientY, captured: button.hasPointerCapture?.(e.pointerId), disabled: button.disabled, sheetOpen: document.querySelector('#sheet')?.open });
+        if (!button && type !== 'click') return;
+        window.__controlPointers.push({ type, pointerType: e.pointerType, pointerId: e.pointerId, button: e.button, detail: e.detail, target: e.target.id || e.target.tagName, control: button?.id || button?.dataset.destination || button?.dataset.skill || null, x: e.clientX, y: e.clientY, captured: button?.hasPointerCapture?.(e.pointerId), disabled: button?.disabled, sheetOpen: document.querySelector('#sheet')?.open });
         window.__controlPointers = window.__controlPointers.slice(-48);
       }, true);
       window.requestAnimationFrame = cb => { queue.push(cb); return queue.length; };
@@ -165,7 +166,7 @@ try {
     assert(await page.locator('#draft').isHidden(), `${name}: direct Play bypasses the draft`);
     assert.equal(await page.locator('#sheet').isVisible(), false, `${name}: the first match does not open a paused spellbook`);
     assert.equal((await snapshot(page)).paused, false, `${name}: direct Play starts a live match`);
-    if (await page.locator('#gpu-note-close').isVisible()) await press(page, '#gpu-note-close', touch);
+    await press(page, '#gpu-note-close', touch, true);
     const initial = await layout(page);
     for (const selector of ['#recall', '#coach', '#auto-status', '#mana-text']) {
       const b = initial[selector]; assert(b.shown, `${name}: ${selector} is visible`);
