@@ -3,6 +3,12 @@
 // The script finds those buttons, works out which game this page is from its URL, and opens the list.
 (() => {
   const GAMES = [
+    {"id": "lighthouse-keeper", "name": "Lighthouse Keeper", "sub": "Guide boats through the fog", "url": "/lighthouse-keeper/", "art": "/arcade/key/lighthouse-keeper.svg", "color": "#bdd5eb"},
+    {"id": "echoes-under-ice", "name": "Echoes Under Ice", "sub": "Recover the fjord’s lost bells", "url": "/echoes-under-ice/", "art": "/arcade/key/echoes-under-ice.svg", "color": "#b6e5ce"},
+    {"id": "last-train-home", "name": "Last Train Home", "sub": "Follow reflections before departure", "url": "/last-train-home/", "art": "/arcade/key/last-train-home.svg", "color": "#ff85b5"},
+    {"id": "firefly-courier", "name": "Firefly Courier", "sub": "Carry a little light through the forest", "url": "/firefly-courier/", "art": "/arcade/key/firefly-courier.svg", "color": "#f2c97e"},
+    {"id": "mirage-runner", "name": "Mirage Runner", "sub": "Sail the dunes beneath the stars", "url": "/mirage-runner/", "art": "/arcade/key/mirage-runner.svg", "color": "#f5c98e"},
+    {"id": "orbital-gardener", "name": "Orbital Gardener", "sub": "Grow a garden under Earthrise", "url": "/orbital-gardener/", "art": "/arcade/key/orbital-gardener.svg", "color": "#a8d3f6"},
     { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62" },
     { id: "tidebreak", name: "Shore of the Ancients", sub: "3v3 folklore MOBA", url: "/tidebreak/", art: "/tidebreak/art/shore-ancients-hero.webp", color: "#d2e46d" },
     { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/hero-chaos.webp", color: "#ffca51" },

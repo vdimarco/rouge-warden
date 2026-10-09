@@ -1,0 +1,6 @@
+- [x] Implement coastal beam and sonar games
+- [x] Implement rainy-city and firefly games
+- [x] Implement desert and orbital games
+- [x] Add all six arcade cabinets and shared switcher entries
+- [x] Verify gameplay outcomes, controls, layouts and scene fidelity
+- [x] Validate and archive OpenSpec

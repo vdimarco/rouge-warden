@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#030408" />
+    <meta
+      name="description"
+      content="Give starlight somewhere to grow. A scene-native ASCII game in Cottage Arcade."
+    />
+    <title>Orbital Gardener · Cottage Arcade</title>
+    <link rel="icon" href="/icons/favicon.svg" />
+    <link rel="stylesheet" href="/orbital-gardener/style.css" />
+    <script src="/arcade/quiet.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <a class="brand" href="/orbital-gardener/">Orbital Gardener</a
+        ><a href="/">[ arcade ]</a>
+      </header>
+      <div class="hud" id="stats" aria-live="off"></div>
+      <div class="sea" id="arena" tabindex="0" aria-label="Game area">
+        <canvas
+          id="scene"
+          aria-label="Animated ASCII earthrise landscape"
+        ></canvas
+        ><canvas
+          id="play"
+          aria-label="Game objects drawn as colored halftone dots"
+        ></canvas>
+      </div>
+      <section class="console">
+        <h1>Orbital Gardener</h1>
+        <p class="tagline">Give starlight somewhere to grow.</p>
+        <p id="status" role="status" aria-live="polite"></p>
+        <div class="actions">
+          <button id="primary">[ begin ]</button
+          ><button id="retry" hidden>[ retry ]</button>
+        </div>
+        <p class="instructions">
+          arrows / WASD steer · space plant in lower third · P pause
+        </p>
+        <div class="touch" aria-label="Touch controls">
+          <button data-key="left" aria-label="Steer left">←</button
+          ><button data-key="up" aria-label="Steer up">↑</button
+          ><button data-key="down" aria-label="Steer down">↓</button
+          ><button data-key="right" aria-label="Steer right">→</button
+          ><button data-key="action" aria-label="Plant seed">plant</button>
+        </div>
+        <p id="record" class="record"></p>
+      </section>
+      <footer>
+        <span
+          >scene by <a href="https://ascii.rest/earthrise/">ascii.rest</a> ·
+          <a href="/orbital-gardener/vendor/LICENSE">MIT</a></span
+        ><button data-switch>[ other games ]</button>
+      </footer>
+    </main>
+    <script type="module" src="/orbital-gardener/game.js"></script>
+    <script src="/arcade/switch.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+The six ASCII scene SVG previews are frame renders of bas3line/ascii source, https://github.com/bas3line/ascii, licensed MIT. Original scene names: night-coast, aurora-fjord, tokyo-rain, misty-forest, desert-night and earthrise. Each game vendors or imports the matching local scene and includes license attribution. The shared license is also at /last-light/vendor/LICENSE.
