@@ -9,5 +9,5 @@
 - [x] Verify both branch strategies, clean/partial/protected payouts, island contact, misses, returns and finite finishes across update rates and Rush.
 - [x] Run regression checks and rebuild the committed arcade output.
 - [x] Inspect real gameplay and labeled fixtures on desktop, portrait, landscape and fallback with stopped-state/resource checks.
-- [ ] Publish to GitHub main and verify READY arcade assets and live gameplay.
-- [ ] Merge canonical requirements, validate structure and archive completed work.
+- [x] Publish to GitHub main and verify READY arcade assets and live gameplay.
+- [x] Merge canonical requirements, validate structure and archive completed work.

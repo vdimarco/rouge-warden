@@ -1,0 +1,106 @@
+{
+  "passed": true,
+  "scope": "live",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-CxptSh1V.js",
+  "actualAppStateOrClockMutations": false,
+  "publicScoreWrites": 0,
+  "actual": [
+    {
+      "layout": "phone",
+      "passed": true,
+      "distance": 3388.290800000033,
+      "totalNaturalDistance": 3388.290800000033,
+      "naturalLevels": [
+        {
+          "levelIndex": 0,
+          "seed": 512590298,
+          "campaignSeed": 512590298,
+          "firstTime": 0.2,
+          "firstDistance": 10.411000000000001,
+          "profile": {
+            "seed": 512590298,
+            "length": 4200,
+            "mapIndex": 0
+          }
+        }
+      ],
+      "realNextRiverTransitions": [],
+      "strategies": [
+        {
+          "levelIndex": 0,
+          "id": 2,
+          "strategy": "safe",
+          "side": -1,
+          "earned": 200
+        },
+        {
+          "levelIndex": 0,
+          "id": 4,
+          "strategy": "risk",
+          "side": -1,
+          "earned": 600
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "resourcesAfter": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "maxVisibleCoins": 15,
+      "maxCoinOverflow": 0,
+      "maxEntities": 34,
+      "nativePointerCutbacks": [
+        {
+          "from": 0,
+          "to": 1,
+          "throughElement": "game-canvas",
+          "pointerEvents": "none",
+          "timeAdvanced": true
+        }
+      ],
+      "exactPause": true,
+      "physicalReceipts": 91,
+      "observedGpuBudget": {
+        "samples": 42,
+        "maxTriangles": 114045,
+        "maxDrawCalls": 44
+      },
+      "maxRewardContactGap": 0.00002934871603343936,
+      "untakenStreamMisses": 11,
+      "screenshots": [
+        "/tmp/river-rush-fork-production-b5d709c/phone-playing-fork-1.jpg",
+        "/tmp/river-rush-fork-production-b5d709c/phone-playing-fork-2.jpg",
+        "/tmp/river-rush-fork-production-b5d709c/phone-playing-cache-0-2.jpg",
+        "/tmp/river-rush-fork-production-b5d709c/phone-playing-cache-0-4.jpg",
+        "/tmp/river-rush-fork-production-b5d709c/phone-treasure-receipt-0-2.jpg",
+        "/tmp/river-rush-fork-production-b5d709c/phone-treasure-receipt-0-4.jpg"
+      ],
+      "error": null
+    }
+  ],
+  "rendererPath": "normal-backend-classification",
+  "actualBackend": null,
+  "isolatedRendererFixtures": {
+    "total": 0,
+    "passed": 0,
+    "maps": [],
+    "layouts": [],
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "richWaterShaderCompiled": null,
+  "gpuBudgetPreflight": {
+    "samples": 0,
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "errors": [],
+  "failure": null,
+  "limitations": [
+    "Chromium SwiftShader; hardware phone frame rate and human reaction difficulty are not measured.",
+    "Natural App runs retain the original game seed and clock. Source fixtures explicitly own isolated state."
+  ]
+}

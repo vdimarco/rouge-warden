@@ -14,13 +14,15 @@
           "id": 1,
           "strategy": "safe",
           "side": -1,
-          "earned": 200
+          "earned": 200,
+          "levelIndex": 0
         },
         {
           "id": 3,
           "strategy": "risk",
           "side": -1,
-          "earned": 600
+          "earned": 600,
+          "levelIndex": 0
         }
       ],
       "resourcesBefore": {
@@ -45,17 +47,25 @@
       ],
       "exactPause": true,
       "physicalReceipts": 80,
-      "maxRewardContactGap": 4.973755629578136e-7,
+      "maxRewardContactGap": 4.973755629578136e-07,
       "untakenStreamMisses": 11,
       "screenshots": [
-        "/tmp/river-rush-fork-natural-final-v2/phone-playing-fork-1.jpg",
-        "/tmp/river-rush-fork-natural-final-v2/phone-playing-fork-2.jpg",
-        "/tmp/river-rush-fork-natural-final-v2/phone-playing-cache-1.jpg",
-        "/tmp/river-rush-fork-natural-final-v2/phone-playing-cache-3.jpg",
-        "/tmp/river-rush-fork-natural-final-v2/phone-treasure-receipt-1.jpg",
-        "/tmp/river-rush-fork-natural-final-v2/phone-treasure-receipt-3.jpg"
+        "/tmp/river-rush-fork-natural-phone-final/phone-playing-fork-1.jpg",
+        "/tmp/river-rush-fork-natural-phone-final/phone-playing-fork-2.jpg",
+        "/tmp/river-rush-fork-natural-phone-final/phone-playing-cache-1.jpg",
+        "/tmp/river-rush-fork-natural-phone-final/phone-playing-cache-3.jpg",
+        "/tmp/river-rush-fork-natural-phone-final/phone-treasure-receipt-1.jpg",
+        "/tmp/river-rush-fork-natural-phone-final/phone-treasure-receipt-3.jpg"
       ],
-      "error": null
+      "error": null,
+      "totalNaturalDistance": 2796.690800000017,
+      "naturalLevels": null,
+      "realNextRiverTransitions": [],
+      "observedGpuBudget": {
+        "samples": 35,
+        "maxTriangles": 109668,
+        "maxDrawCalls": 43
+      }
     },
     {
       "layout": "desktop",
@@ -66,13 +76,15 @@
           "id": 1,
           "strategy": "risk",
           "side": 1,
-          "earned": 600
+          "earned": 600,
+          "levelIndex": 0
         },
         {
           "id": 3,
           "strategy": "safe",
           "side": 1,
-          "earned": 200
+          "earned": 200,
+          "levelIndex": 0
         }
       ],
       "resourcesBefore": {
@@ -89,7 +101,7 @@
       "nativePointerCutbacks": [],
       "exactPause": true,
       "physicalReceipts": 72,
-      "maxRewardContactGap": 0.000017995824634020607,
+      "maxRewardContactGap": 1.7995824634020607e-05,
       "untakenStreamMisses": 13,
       "screenshots": [
         "/tmp/river-rush-fork-natural-final-v3/desktop-playing-fork-1.jpg",
@@ -99,7 +111,28 @@
         "/tmp/river-rush-fork-natural-final-v3/desktop-treasure-receipt-0-1.jpg",
         "/tmp/river-rush-fork-natural-final-v3/desktop-treasure-receipt-0-3.jpg"
       ],
-      "error": null
+      "error": null,
+      "totalNaturalDistance": 2823.890800000018,
+      "naturalLevels": [
+        {
+          "levelIndex": 0,
+          "seed": 511928925,
+          "campaignSeed": 511928925,
+          "firstTime": 0.2,
+          "firstDistance": 10.411000000000001,
+          "profile": {
+            "seed": 511928925,
+            "length": 4200,
+            "mapIndex": 0
+          }
+        }
+      ],
+      "realNextRiverTransitions": [],
+      "observedGpuBudget": {
+        "samples": 35,
+        "maxTriangles": 120879,
+        "maxDrawCalls": 43
+      }
     },
     {
       "layout": "landscape",
@@ -110,13 +143,15 @@
           "id": 2,
           "strategy": "safe",
           "side": -1,
-          "earned": 200
+          "earned": 200,
+          "levelIndex": 0
         },
         {
           "id": 1,
           "strategy": "risk",
           "side": 1,
-          "earned": 600
+          "earned": 600,
+          "levelIndex": 1
         }
       ],
       "resourcesBefore": {
@@ -151,7 +186,59 @@
         "/tmp/river-rush-fork-natural-final-v3/landscape-treasure-receipt-0-2.jpg",
         "/tmp/river-rush-fork-natural-final-v3/landscape-treasure-receipt-1-1.jpg"
       ],
-      "error": null
+      "error": null,
+      "totalNaturalDistance": 5807.021000000001,
+      "naturalLevels": [
+        {
+          "levelIndex": 0,
+          "seed": 512041447,
+          "campaignSeed": 512041447,
+          "firstTime": 0.2,
+          "firstDistance": 10.411000000000001,
+          "profile": {
+            "seed": 512041447,
+            "length": 4200,
+            "mapIndex": 0
+          }
+        },
+        {
+          "levelIndex": 1,
+          "seed": 1621384692,
+          "campaignSeed": 512041447,
+          "firstTime": 0,
+          "firstDistance": 0,
+          "profile": {
+            "seed": 1621384692,
+            "length": 5400,
+            "mapIndex": 1
+          }
+        }
+      ],
+      "realNextRiverTransitions": [
+        {
+          "actualNextRiverButton": true,
+          "label": "Next: Redstone Rapids",
+          "before": {
+            "levelIndex": 0,
+            "campaignSeed": 512041447,
+            "distance": 4200,
+            "time": 66.04999999999839,
+            "phase": "won"
+          },
+          "after": {
+            "levelIndex": 1,
+            "campaignSeed": 512041447,
+            "distance": 12.41,
+            "time": 0.2,
+            "phase": "playing"
+          }
+        }
+      ],
+      "observedGpuBudget": {
+        "samples": 72,
+        "maxTriangles": 119109,
+        "maxDrawCalls": 44
+      }
     }
   ],
   "rendererPath": "normal-backend-classification",
