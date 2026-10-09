@@ -18,7 +18,9 @@ const server = http.createServer((req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
-  for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]]) {
+  const viewports = [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]];
+  assert(!process.env.CREATURE_VIEWPORT || viewports.some(([name]) => name === process.env.CREATURE_VIEWPORT), 'unknown viewport');
+  for (const [name, width, height] of viewports) {
     if (process.env.CREATURE_VIEWPORT && process.env.CREATURE_VIEWPORT !== name) continue;
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000 }), errors = [], loadedAssets = new Set();
     page.setDefaultTimeout(180000);
