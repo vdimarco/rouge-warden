@@ -1,3 +1,4 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
 import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
@@ -164,7 +165,7 @@ function naturalCourse(seed,index){
  const g=createGame(seed,index),items=new Map();
  while(g.phase==='playing'){
   for(const e of g.entities)items.set(e.id,{...e});
-  g.entities=[];updateGame(g,emptyInput(),.05);
+  g.entities=[];advanceCourseScanner(g);
  }
  return [...items.values()];
 }
@@ -182,11 +183,11 @@ test('all seeded maps offer three sparse species and reachable clear-water relic
   assert.equal(new Set(foes.map(e=>e.enemy)).size,3,`seed${seed} ${level.id} misses a species`);assert.ok(relics.length>0,`seed${seed} ${level.id} misses relics`);
   latestFirst=Math.max(latestFirst,foes[0].row);
   assert.ok(foes[0].d<level.length/3,'enemy variety arrives after the first third of the map');
-  assert.deepEqual(foes.slice(0,3).map(e=>e.enemy),['crocodile','bird','fish'],'the first three encounters must show different species');
+  assert.deepEqual(foes.filter(e=>e.adventureId===undefined).slice(0,3).map(e=>e.enemy),['crocodile','bird','fish'].slice(0,Math.min(3,foes.filter(e=>e.adventureId===undefined).length)),'ordinary encounters retain their diverse species order while themed forks have their own sequence');
   for(let i=0;i<special.length;i++){
    const e=special[i],row=entities.filter(h=>hazard(h)&&h.row===e.row);
-   assert.equal(row.length,1);assert.ok(e.row>=7);assert.ok(e.d<level.length-FINISH_RUNWAY);
-   if(i)assert.ok(e.row-special[i-1].row>=3,'special encounters overlap their cooldown');
+   assert.equal(row.filter(h=>e.adventureId===undefined||h.routeSide===e.routeSide).length,1);assert.ok(e.row>=7);assert.ok(e.d<level.length-FINISH_RUNWAY);
+   if(i&&e.adventureId===undefined&&special[i-1].adventureId===undefined)assert.ok(e.row-special[i-1].row>=3,'ordinary special encounters overlap their cooldown');
    assert.equal(entityLane(e,e.d),e.lane);assert.ok(e.motion.from!==e.motion.to);
    if(e.enemy){
     enemies++;assert.equal(e.type,e.enemy==='bird'?'branch':'log');
@@ -210,6 +211,7 @@ test('relic-chasing full maps remain reachable at early/late action leads and 30
   const g=createGame(seed,level.index),input=emptyInput(),handled=new Set();g.shield=false;
   let holdUntil=0;
   while(g.phase==='playing'){
+   chooseForkWater(g,input);
    const obstacles=g.entities.filter(e=>!e.done&&hazard(e)),first=obstacles[0];
    if(first){
     const row=obstacles.filter(e=>e.row===first.row),target=g.entities.find(e=>!e.done&&e.type==='target'&&e.row===first.row),coins=g.entities.filter(e=>e.type==='coin'&&e.primaryRoute!==false&&e.row===first.row);

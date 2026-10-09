@@ -1,3 +1,4 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
 import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
@@ -13,12 +14,13 @@ test('40 delayed-input players clear the longer escalating adventure unshielded 
    g.shield=false;
    let pending=null,handled=new Set(),maxEntities=0,lastHazard=0;
    for(let frame=0;frame<Math.ceil(level.length/level.startSpeed+10)*hz&&g.phase==='playing';frame++){
+    chooseForkWater(g,input);
     const obstacles=g.entities.filter(e=>!e.done&&['rock','log','branch'].includes(e.type));
     for(const e of obstacles){lastHazard=Math.max(lastHazard,e.d);assert.ok(e.d<level.length-FINISH_RUNWAY);}
     const next=obstacles.find(e=>hazardTouchesLane(e,g.lane));
     if(next&&!handled.has(next.id)&&timeToImpact(g,next.d)<.62&&!pending){
      const row=obstacles.filter(e=>e.row===next.row);
-     const safe=LANES.find(l=>!row.some(e=>hazardTouchesLane(e,l)));
+     const safe=waterLanes(g).find(l=>!row.some(e=>hazardTouchesLane(e,l)));
      assert.ok(next.type!=='rock'||safe!==undefined,'a rock row has no route');
      pending={id:next.id,at:g.time+.18+(seed%7)*.018,actions:next.type==='rock'?Array.from({length:Math.abs(safe-g.lane)},()=>safe>g.lane?'right':'left'):[next.type==='log'?'jump':'duck']};
     }
@@ -32,7 +34,7 @@ test('40 delayed-input players clear the longer escalating adventure unshielded 
    assert.equal(g.phase,'won',`seed ${seed}, map ${level.id} did not end`);
    assert.equal(g.distance,level.length);assert.ok(lastHazard<level.length-FINISH_RUNWAY);
    assert.ok(g.jumps+g.ducks>=5,`insufficient action choices: ${g.jumps+g.ducks}`);
-   assert.equal(new Set(g.patternsSeen.filter(p=>p!=='tutorial')).size,6);
+   assert.equal(new Set(g.patternsSeen.filter(p=>['slalom','coin-zigzag','mixed-hazards','jump-waves','low-canopy','split-current'].includes(p))).size,6);
    assert.ok(maxEntities<120,`unbounded active entities: ${maxEntities}`);
    const s=snapshot(g);assert.equal(s.campaign.levelsCleared,level.index+1);
    campaignScores.push(s.campaign.score);

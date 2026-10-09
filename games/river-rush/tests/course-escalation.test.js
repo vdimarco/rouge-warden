@@ -1,3 +1,4 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
 import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
@@ -34,7 +35,7 @@ test('seeded episodes cross four acts with varied lengths, recovery gaps and inc
  const episodeLengths=new Set();
  for(let seed=1;seed<=40;seed++)for(const level of LEVELS){
   const {g,rows}=inspectCourse(seed,level.index),episodes=new Map();
-  assert.equal(new Set(g.patternsSeen.filter(id=>id!=='tutorial')).size,6);
+  assert.equal(new Set(g.patternsSeen.filter(id=>['slalom','coin-zigzag','mixed-hazards','jump-waves','low-canopy','split-current'].includes(id))).size,6);
   assert.deepEqual([...new Set(rows.map(row=>row[0].act))],[0,1,2,3]);
   assert.ok(rows.filter(row=>row[0].recovery).length>=4,`seed ${seed}, ${level.id} has too few recovery beats`);
   assert.ok(rows.slice(0,3).every(row=>!actionWall(row)),'the three opening tutorial rows became mandatory walls');

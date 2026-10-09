@@ -4,6 +4,8 @@ import {RIVER_WIDTH_EXPANSION} from './lanes.js';
 import {courseIntensity,intensityDerivative,intensityIntegral,INTENSITY_GLSL} from './course-intensity.js';
 import {bankTerrainOffset,TERRAIN_GLSL} from './terrain-noise.js';
 import {terrainSection,SECTIONS_GLSL} from './course-sections.js';
+import {riverFork,FORK_GLSL,MAX_FORK_FAN_OFFSET} from './river-forks.js';
+export const MAX_RIVER_HALF_WIDTH=RIVER_WIDTH_EXPANSION+26.5+MAX_FORK_FAN_OFFSET;
 const mod=(x,n)=>((x%n)+n)%n;
 export const riverSeed=seed=>mod(typeof seed==='object'?seed?.seed??137:seed??137,251);
 export function createCourseProfile(seed=137,length=0,mapIndex=0){return Object.freeze({seed:riverSeed(seed),length:Number.isFinite(length)?Math.max(0,length):0,mapIndex:Math.max(0,Math.min(2,Math.trunc(mapIndex)||0))});}
@@ -18,7 +20,7 @@ function baseCenter(d,seed){return riverNoise(d/137+19,seed)*8+Math.sin(d*.023+r
 function baseTangent(d,seed){return noiseDerivative(d/137+19,seed)*8/137+Math.cos(d*.023+riverSeed(seed)*.031)*.207+noiseDerivative(d/331+73,seed)*4/331;}
 export function riverCenter(d,seed=137){const base=baseCenter(d,seed);if(!profiled(seed))return base;const s=riverIntensity(d,seed),broad=Math.sin(d*.0107+riverSeed(seed)*.047)*4.5+riverNoise(d/229+6,seed)*3.5;return base*(.52+.68*s)+broad*s;}
 export function riverTangent(d,seed=137){const tangent=baseTangent(d,seed);if(!profiled(seed))return tangent;const s=riverIntensity(d,seed),ds=riverIntensityDerivative(d,seed),broad=Math.sin(d*.0107+riverSeed(seed)*.047)*4.5+riverNoise(d/229+6,seed)*3.5,broadD=Math.cos(d*.0107+riverSeed(seed)*.047)*.04815+noiseDerivative(d/229+6,seed)*3.5/229;return tangent*(.52+.68*s)+baseCenter(d,seed)*.68*ds+broadD*s+broad*ds;}
-export function riverHalfWidth(d,seed=137){if(!profiled(seed))return RIVER_WIDTH_EXPANSION+17+riverNoise(d/61.7+31,seed)*2.8+riverNoise(d/193+87,seed)*2.4-rapidAt(d,seed)*1.2;const s=riverIntensity(d,seed),rapid=rapidAt(d,seed),section=terrainSection(d,seed),bias=section.type==='narrows'?-(3.1+.8*s):section.type==='wave-train'?-1.1:.7;return RIVER_WIDTH_EXPANSION+Math.max(11.8,Math.min(26.5,18.2+riverNoise(d/61.7+31,seed)*(1.6+s*.9)+riverNoise(d/193+87,seed)*2.6+(1-rapid)*3.2-rapid*(.5+s*1.5)+bias*section.strength));}
+export function riverHalfWidth(d,seed=137){if(!profiled(seed))return RIVER_WIDTH_EXPANSION+17+riverNoise(d/61.7+31,seed)*2.8+riverNoise(d/193+87,seed)*2.4-rapidAt(d,seed)*1.2;const s=riverIntensity(d,seed),rapid=rapidAt(d,seed),section=terrainSection(d,seed),bias=section.type==='narrows'?-(3.1+.8*s):section.type==='wave-train'?-1.1:.7;return RIVER_WIDTH_EXPANSION+Math.max(11.8,Math.min(26.5,18.2+riverNoise(d/61.7+31,seed)*(1.6+s*.9)+riverNoise(d/193+87,seed)*2.6+(1-rapid)*3.2-rapid*(.5+s*1.5)+bias*section.strength))+(riverFork(d,seed)?.fanOffset??0);}
 function dropBudget(cell,seed,span){return 2.55*cell+4.3/span*intensityIntegral(cell*span,seed.length,seed.mapIndex);}
 export function chuteAt(d,seed=137){
  if(profiled(seed)){
@@ -63,11 +65,12 @@ float rElevation(float d){vec4 c=rChute(d);float amp=rAmplitude(c.x);if(uCourseL
 float rGrade(float d){vec4 c=rChute(d);float u=clamp((c.y-c.z)/c.w,0.,1.);return (uCourseLength>0.?-.02:-.022)-rAmplitude(c.x)*6.*u*(1.-u)/c.w;}
 float rPulseD(float u,float width){return u>0.&&u<1.?6.*u*(1.-u)/width:0.;}
 ${SECTIONS_GLSL}
+${FORK_GLSL}
 vec2 rRecovery(float d){float cell=floor(d/320.),along=d-cell*320.,start=35.+rHash(cell+117.)*60.,len=35.+rHash(cell+173.)*45.,u=(along-start)/20.,v=(along-start-len)/30.,a=rSmooth(u),b=1.-rSmooth(v);return vec2(a*b,rPulseD(u,20.)*b-a*rPulseD(v,30.));}
 vec2 rSectionRapid(float d,float rapid,float derivative){vec3 section=rSection(d);float s=rIntensity(d),ds=rIntensityD(d),kind=section.x,scale=kind<.5?.45:kind<1.5?.75:.7,target=kind<.5?.14+.43*s:kind<1.5?.94*s:.055+.10*s,targetD=(kind<.5?.43:kind<1.5?.94:.10)*ds,q=section.y*scale,dq=section.z*scale;return vec2(rapid+(target-rapid)*q,derivative*(1.-q)+(target-rapid)*dq+targetD*q);}
 float rRapid(float d){vec4 c=rChute(d);float pulse=rSmooth((c.y-c.z+12.)/16.)*(1.-rSmooth((c.y-c.z-c.w-8.)/24.));if(uCourseLength<=0.)return .12+.88*pulse;float s=rIntensity(d),base=.045+.105*s,gain=1.-(.45-.2*s)*rRecovery(d).x;return rSectionRapid(d,base+(1.-base)*(.3+.7*s)*gain*pulse,0.).x;}
 float rRapidD(float d){vec4 c=rChute(d);float u=(c.y-c.z+12.)/16.,v=(c.y-c.z-c.w-8.)/24.,a=rSmooth(u),b=1.-rSmooth(v),dp=rPulseD(u,16.)*b-a*rPulseD(v,24.);if(uCourseLength<=0.)return .88*dp;float s=rIntensity(d),ds=rIntensityD(d),base=.045+.105*s,db=.105*ds;vec2 rec=rRecovery(d);float gain=1.-(.45-.2*s)*rec.x,dg=.2*ds*rec.x-(.45-.2*s)*rec.y,q=.3+.7*s,amp=(1.-base)*q*gain,rapid=base+amp*a*b,derivative=db+(-db*q*gain+(1.-base)*(.7*ds*gain+q*dg))*a*b+amp*dp;return rSectionRapid(d,rapid,derivative).y;}
-float rWidth(float d){float rapid=rRapid(d);if(uCourseLength<=0.)return ${RIVER_WIDTH_EXPANSION.toFixed(4)}+17.+rNoise(d/61.7+31.)*2.8+rNoise(d/193.+87.)*2.4-rapid*1.2;float s=rIntensity(d);vec3 section=rSection(d);float bias=section.x<.5?-(3.1+.8*s):section.x<1.5?-1.1:.7;return ${RIVER_WIDTH_EXPANSION.toFixed(4)}+clamp(18.2+rNoise(d/61.7+31.)*(1.6+s*.9)+rNoise(d/193.+87.)*2.6+(1.-rapid)*3.2-rapid*(.5+s*1.5)+bias*section.y,11.8,26.5);}
+float rWidth(float d){float rapid=rRapid(d);if(uCourseLength<=0.)return ${RIVER_WIDTH_EXPANSION.toFixed(4)}+17.+rNoise(d/61.7+31.)*2.8+rNoise(d/193.+87.)*2.4-rapid*1.2;float s=rIntensity(d);vec3 section=rSection(d);float bias=section.x<.5?-(3.1+.8*s):section.x<1.5?-1.1:.7;return ${RIVER_WIDTH_EXPANSION.toFixed(4)}+clamp(18.2+rNoise(d/61.7+31.)*(1.6+s*.9)+rNoise(d/193.+87.)*2.6+(1.-rapid)*3.2-rapid*(.5+s*1.5)+bias*section.y,11.8,26.5)+rFork(d).w;}
 float rLocalX(float d){return rCenter(d)-rCenter(uDistance)-rTangent(uDistance)*(d-uDistance);}
 float rLocalY(float d){return rElevation(d)-rElevation(uDistance);}
 float rBank(float cross,float d){float width=rWidth(d),a=max(0.,(abs(cross)-width)/32.),s=rIntensity(d),profileOn=step(.5,uCourseLength);return .16+pow(a,.8)*(6.+rNoise(d/103.+77.)*2.)*mix(1.,1.+s*.6,profileOn)+rNoise(d/29.+a*3.)*1.5*min(1.,a*3.)*mix(1.,.65+s*.55,profileOn)+tnBankOffset(cross,d,width,uSeed,uCourseMap*profileOn,s);}

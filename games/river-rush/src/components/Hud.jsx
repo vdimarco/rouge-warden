@@ -3,7 +3,9 @@ import { Icon } from './Icons.jsx';
 import { GameControls } from './Controls.jsx';
 import ScoreCapture from './ScoreCapture.jsx';
 import GestureGuide from './GestureGuide.jsx';
+import RiverAdventure from './RiverAdventure.jsx';
 import { queueAction, snapshot } from '../game/engine.js';
+import { adventureCue } from '../game/adventure-cues.js';
 import { COURSE_ACTS,courseAct } from '../game/course-intensity.js';
 import { FINISH_RUNWAY } from '../game/levels.js';
 
@@ -32,15 +34,18 @@ export default function Hud({ game, model, input, canvasRef, disabled }) {
   const act=courseAct(g.distance,g.level.length),finishing=g.level.remaining<=FINISH_RUNWAY;
   const openingNotice=g.time<4&&(g.notice==='Jump logs · Duck branches · Dodge rocks'||g.notice?.startsWith(`${g.level.name} ·`));
   const notice=openingNotice?'':g.notice;
-  // An upcoming fork must not displace the previous canopy's immediate cue.
+  const adventure=adventureCue(g,disabled);
+  const urgentHazard=!!g.adventure&&Number.isFinite(g.hint?.in)&&g.hint.in<=1.35;
+  // Route choices yield to the action the raft needs before the split.
   const earlierHazard=g.hint&&g.decision&&g.hint.in+.08<g.decision.in;
-  const decision=!disabled&&!earlierHazard?g.decision:null;
+  const decision=!disabled&&!earlierHazard&&!g.adventure?g.decision:null;
   return <>
     <div className="runner-top" aria-label="Run score"><div className={`score-stat ${score>=10000?'long-score':''}`}
 ><span>SCORE</span><b>{score>=1000000?`${(score/1000000).toFixed(2)}M`:score.toLocaleString().padStart(4,'0')}</b></div><div className="coin-stat"><Icon name="coin"/><b key={coins} className="reward-pop">{coins>=1000?`${(coins/1000).toFixed(1)}k`:coins}</b></div><div className="streak-stat"><b key={g.multiplier} className="reward-pop">×{g.multiplier}</b><span>STREAK</span><div className="streak-meter"><i style={{width:`${g.streakTime/2.8*100}%`}}/></div></div></div>
     <div className={`runner-distance act-${act} ${finishing?'finish-approach':''}`}><span>MAP {g.level.index+1} / 3 · {g.level.name}</span><b>{g.level.remaining.toLocaleString()} m to finish</b><div className="map-progress" role="progressbar" aria-label="Map progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(g.level.progress*100)}><i style={{width:`${g.level.progress*100}%`}}/></div><small className="course-stage"><i aria-hidden="true">{COURSE_ACTS.map((_,i)=><em key={i} className={i<=act?'reached':''}/>)}</i>{finishing?'Finish straight':g.terrain?.name??COURSE_ACTS[act].title}</small>{!finishing&&g.terrain&&<small className={`terrain-cue terrain-${g.terrain.type}`}><span>{g.terrain.cue}</span>{g.terrain.type==='wave-train'&&g.terrain.comboAvailable&&g.terrain.phase!=='recovery'&&<em>{g.terrain.comboClaimed?'JUMP CHAIN +350':`${g.terrain.comboProgress??0}/3 perfect jumps · +350`}</em>}</small>}<small className="run-goal">{g.goal.progress}/{g.goal.target} {g.goal.kind==='distance'?'m':g.goal.kind}<em>CHALLENGE +500</em></small></div>
     <div className="runner-side-status">
-      <GestureGuide variant="play" active={!disabled&&!decision} time={g.time} action={g.hint?.type} enemy={g.hint?.enemy} branchWidth={g.hint?.spanWidth} branchFullRiver={g.hint?.fullRiver}/>
+      <GestureGuide variant="play" active={!disabled&&!decision&&!adventure} force={urgentHazard} time={g.time} action={g.hint?.type} enemy={g.hint?.enemy} branchWidth={g.hint?.spanWidth} branchFullRiver={g.hint?.fullRiver}/>
+      {adventure&&<RiverAdventure adventure={adventure} islandWarning={g.hint?.type==='island'}/>}
       {decision&&<CoinDecision decision={decision}/>}
       <div className="power-status">{g.shield&&<span className="power-pill"><Icon name="shield"/>Shield</span>}{g.magnet>0&&<span className="power-pill magnet"><Icon name="coin"/>Gold ×2 · {Math.ceil(g.magnet)}s</span>}</div>
     </div>

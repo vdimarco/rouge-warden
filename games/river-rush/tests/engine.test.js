@@ -1,3 +1,4 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
 import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
@@ -28,7 +29,9 @@ test('seeded finite maps vary routes, stop hazards before the finish and use inc
    if(!rows.has(e.row))rows.set(e.row,[]);rows.get(e.row).push(e);
   }
   for(const row of rows.values())assert.ok(coveredLanes(row).length<LANE_COUNT||actionWall(row));
-  assert.equal(new Set(g.patternsSeen.filter(p=>p!=='tutorial')).size,6);
+  assert.ok(new Set(g.patternsSeen.filter(p=>['slalom','coin-zigzag','mixed-hazards','jump-waves','low-canopy','split-current'].includes(p))).size>=5,'forks erased normal action and avoidance variety');
+  assert.ok(new Set(g.patternsSeen.filter(p=>p!=='tutorial')).size>=7,'finite map lacks varied normal and authored fork encounters');
+  assert.ok(g.entities.filter(e=>e.type==='treasure').length>=2,'map lacks both physical stream objectives');
   assert.ok(g.entities.every(e=>e.d<level.length),'entities continue after the finish');
   const count=g.entities.length;g.distance=level.length+100;generateAhead(g);assert.equal(g.entities.length,count);
   assert.equal(speedAt(0,level.index),level.startSpeed);assert.equal(speedAt(99999,level.index),level.maxSpeed);

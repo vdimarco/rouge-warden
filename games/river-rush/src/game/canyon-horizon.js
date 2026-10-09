@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {COURSE_GLSL,riverPoint,riverBankHeight,riverHash,riverSeed} from './river-course.js';
+import {COURSE_GLSL,riverPoint,riverBankHeight,riverHash,riverSeed,MAX_RIVER_HALF_WIDTH} from './river-course.js';
 
 // The sky contains atmosphere only. Canyon walls belong to the projected
 // world, so they never leave a stationary second river behind the real one.
@@ -15,7 +15,7 @@ export function canyonSky(){
 }
 
 const smooth=(lo,hi,value)=>{const t=Math.max(0,Math.min(1,(value-lo)/(hi-lo)));return t*t*(3-2*t);};
-const mesaRadius=1.12,maximumBankWidth=27,cameraBehind=20;
+const mesaRadius=1.12,maximumBankWidth=MAX_RIVER_HALF_WIDTH,cameraBehind=20;
 export const CANYON_LAYERS=Object.freeze([
  Object.freeze({spacing:94,near:145,far:445,behind:125,cross:30,width:33,height:49,depth:67,color:'#ba8265',capacity:12}),
  Object.freeze({spacing:148,near:290,far:690,behind:180,cross:63,width:50,height:77,depth:105,color:'#b18e81',capacity:12}),

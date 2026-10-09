@@ -1,0 +1,179 @@
+{
+  "passed": true,
+  "scope": "natural",
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-CxptSh1V.js",
+  "actualAppStateOrClockMutations": false,
+  "publicScoreWrites": 0,
+  "actual": [
+    {
+      "layout": "phone",
+      "passed": true,
+      "distance": 2796.690800000017,
+      "strategies": [
+        {
+          "id": 1,
+          "strategy": "safe",
+          "side": -1,
+          "earned": 200
+        },
+        {
+          "id": 3,
+          "strategy": "risk",
+          "side": -1,
+          "earned": 600
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "resourcesAfter": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "maxVisibleCoins": 15,
+      "maxCoinOverflow": 0,
+      "maxEntities": 35,
+      "nativePointerCutbacks": [
+        {
+          "from": 0,
+          "to": 1,
+          "throughElement": "game-canvas",
+          "pointerEvents": "none",
+          "timeAdvanced": true
+        }
+      ],
+      "exactPause": true,
+      "physicalReceipts": 80,
+      "maxRewardContactGap": 4.973755629578136e-7,
+      "untakenStreamMisses": 11,
+      "screenshots": [
+        "/tmp/river-rush-fork-natural-final-v2/phone-playing-fork-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v2/phone-playing-fork-2.jpg",
+        "/tmp/river-rush-fork-natural-final-v2/phone-playing-cache-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v2/phone-playing-cache-3.jpg",
+        "/tmp/river-rush-fork-natural-final-v2/phone-treasure-receipt-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v2/phone-treasure-receipt-3.jpg"
+      ],
+      "error": null
+    },
+    {
+      "layout": "desktop",
+      "passed": true,
+      "distance": 2823.890800000018,
+      "strategies": [
+        {
+          "id": 1,
+          "strategy": "risk",
+          "side": 1,
+          "earned": 600
+        },
+        {
+          "id": 3,
+          "strategy": "safe",
+          "side": 1,
+          "earned": 200
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "resourcesAfter": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "maxVisibleCoins": 15,
+      "maxCoinOverflow": 0,
+      "maxEntities": 35,
+      "nativePointerCutbacks": [],
+      "exactPause": true,
+      "physicalReceipts": 72,
+      "maxRewardContactGap": 0.000017995824634020607,
+      "untakenStreamMisses": 13,
+      "screenshots": [
+        "/tmp/river-rush-fork-natural-final-v3/desktop-playing-fork-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/desktop-playing-fork-2.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/desktop-playing-cache-0-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/desktop-playing-cache-0-3.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/desktop-treasure-receipt-0-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/desktop-treasure-receipt-0-3.jpg"
+      ],
+      "error": null
+    },
+    {
+      "layout": "landscape",
+      "passed": true,
+      "distance": 1607.0210000000002,
+      "strategies": [
+        {
+          "id": 2,
+          "strategy": "safe",
+          "side": -1,
+          "earned": 200
+        },
+        {
+          "id": 1,
+          "strategy": "risk",
+          "side": 1,
+          "earned": 600
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "resourcesAfter": {
+        "uploads": 53,
+        "shaders": 80
+      },
+      "maxVisibleCoins": 16,
+      "maxCoinOverflow": 0,
+      "maxEntities": 35,
+      "nativePointerCutbacks": [
+        {
+          "from": 0,
+          "to": 1,
+          "throughElement": "game-canvas",
+          "pointerEvents": "none",
+          "timeAdvanced": true
+        }
+      ],
+      "exactPause": true,
+      "physicalReceipts": 179,
+      "maxRewardContactGap": 0.12440582700580238,
+      "untakenStreamMisses": 13,
+      "screenshots": [
+        "/tmp/river-rush-fork-natural-final-v3/landscape-playing-fork-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/landscape-playing-fork-2.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/landscape-playing-cache-0-2.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/landscape-playing-cache-1-1.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/landscape-treasure-receipt-0-2.jpg",
+        "/tmp/river-rush-fork-natural-final-v3/landscape-treasure-receipt-1-1.jpg"
+      ],
+      "error": null
+    }
+  ],
+  "rendererPath": "normal-backend-classification",
+  "actualBackend": null,
+  "isolatedRendererFixtures": {
+    "total": 0,
+    "passed": 0,
+    "maps": [],
+    "layouts": [],
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "richWaterShaderCompiled": null,
+  "gpuBudgetPreflight": {
+    "samples": 0,
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "errors": [],
+  "failure": null,
+  "limitations": [
+    "Chromium SwiftShader; hardware phone frame rate and human reaction difficulty are not measured.",
+    "Natural App runs retain the original game seed and clock. Source fixtures explicitly own isolated state."
+  ]
+}

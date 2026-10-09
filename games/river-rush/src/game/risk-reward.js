@@ -2,15 +2,15 @@ import {LANES,CENTER_LANE} from './lanes.js';
 
 export const ORDINARY_COIN_VALUE=10;
 export const GUARDED_COIN_VALUE=20;
-export const SAFE_COIN_OFFSETS=Object.freeze([-.08,0,.08]);
-export const GUARDED_DUCK_OFFSETS=Object.freeze([-.08,-.04,0,.04,.08]);
+export const SAFE_COIN_OFFSETS=Object.freeze([-.055,.055]);
+export const GUARDED_DUCK_OFFSETS=Object.freeze([-.12,0,.07]);
 const hash=(seed,row)=>Math.imul((seed^Math.imul(row+1,0x45d9f3b))>>>0,0x27d4eb2d)>>>0;
 
 // A choice is authored from the real, already-shaped hazards. No new action
 // walls or hidden collisions are inserted to manufacture its advertised risk.
 export function chooseGuardedRoute({seed,row,levelIndex,intensity,previousLane=CENTER_LANE,
  safe,coinLane,hazards,recovery,terrain,lastDecisionRow=-99,touches}){
- if(row<7||hazards.some(h=>h.fullRiver)||row-lastDecisionRow<(levelIndex===0&&intensity<.5?3:2)
+ if(row<7||hazards.some(h=>h.fullRiver)||row-lastDecisionRow<5
    ||terrain.type==='wave-train'&&terrain.comboAvailable&&terrain.phase==='active')return null;
  if(recovery&&!hazards.some(h=>h.enemy))return null;
  const clear=LANES.filter(lane=>Math.abs(lane-previousLane)<=1&&!hazards.some(h=>touches(h,lane)));
@@ -30,7 +30,7 @@ export function chooseGuardedRoute({seed,row,levelIndex,intensity,previousLane=C
   ||((a.lane+(mixed>>>4))%5)-((b.lane+(mixed>>>4))%5));
  const {guard,lane:riskLane,width}=candidates[0];
  return {safeLane,riskLane,entryLane:previousLane,action:guard.type==='log'?'jump':'duck',enemy:guard.enemy??null,
-  safeBasePoints:SAFE_COIN_OFFSETS.length*ORDINARY_COIN_VALUE,riskBasePoints:5*GUARDED_COIN_VALUE,
+  safeBasePoints:SAFE_COIN_OFFSETS.length*ORDINARY_COIN_VALUE,riskBasePoints:(guard.type==='log'?5:GUARDED_DUCK_OFFSETS.length)*GUARDED_COIN_VALUE,
   skillBasePoints:100,variant:width>1?'deep-fork':'guarded-fork',entryWidth:Math.abs(riskLane-previousLane),
   // Spacing is in maximum future Rush seconds, including a newly earned boost.
   returnSeconds:later?.98:1.10};

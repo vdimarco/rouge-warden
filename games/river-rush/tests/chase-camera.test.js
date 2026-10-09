@@ -5,15 +5,17 @@ import {chaseCameraPose,chaseCameraSettings,cameraEnvelope,RAFT_SCREEN_ENVELOPE}
 import {LANES,LANE_SPACING,laneToX,CENTER_LANE} from '../src/game/lanes.js';
 import {LEVELS} from '../src/game/levels.js';
 import {createCourseProfile,riverPoint} from '../src/game/river-course.js';
+import {riverFork,forkLaneCross} from '../src/game/river-forks.js';
 
 test('all five active raft bodies, jumps and upcoming routes remain in phone, desktop and landscape framing',()=>{
  for(const [w,h] of [[390,844],[360,640],[1365,900],[844,390]]){
   const camera=new THREE.PerspectiveCamera(chaseCameraSettings(w,h).fov,w/h,.3,1200),point=new THREE.Vector3();let bodyMax=0,routeMax=0;
   for(const seed of [0,137,98213])for(const level of LEVELS)for(let d=0;d<level.length;d+=73){
    const profile=createCourseProfile(seed,level.length,level.index);
-   for(const visualLane of LANES){const pose=chaseCameraPose(w,h,d,profile,visualLane);camera.position.set(pose.x,pose.y,pose.z);camera.lookAt(pose.look.x,pose.look.y,pose.look.z);camera.updateMatrixWorld();
-    for(const x of [laneToX(visualLane)-2.4,laneToX(visualLane)+2.4])for(const y of [-.3,3.7,7.45]){point.set(x,y,1.5).project(camera);bodyMax=Math.max(bodyMax,Math.abs(point.x));assert.ok(Math.abs(point.x)<.985,'the outer jumping body/paddle must stay on screen');assert.ok(Math.abs(point.y)<.9,'the rider remains within the vertical game view');}
-    for(const lane of LANES){const p=riverPoint(d,d+20,laneToX(lane),profile);point.set(p.x,p.y+1,p.z).project(camera);routeMax=Math.max(routeMax,Math.abs(point.x));assert.ok(Math.abs(point.x)<.9&&Math.abs(point.y)<.95,'upcoming outer routes stay visible');}
+   const fork=riverFork(d,profile);
+   for(const visualLane of LANES){if(fork&&visualLane===CENTER_LANE)continue;const pose=chaseCameraPose(w,h,d,profile,visualLane);camera.position.set(pose.x,pose.y,pose.z);camera.lookAt(pose.look.x,pose.look.y,pose.look.z);camera.updateMatrixWorld();
+    for(const x of [forkLaneCross(visualLane,d,profile)-2.4,forkLaneCross(visualLane,d,profile)+2.4])for(const y of [-.3,3.7,7.45]){point.set(x,y,1.5).project(camera);bodyMax=Math.max(bodyMax,Math.abs(point.x));assert.ok(Math.abs(point.x)<.985,'the outer jumping body/paddle must stay on screen');assert.ok(Math.abs(point.y)<.9,'the rider remains within the vertical game view');}
+    for(const lane of LANES){if(fork&&(lane===CENTER_LANE||(lane<2)!==(visualLane<2)))continue;const p=riverPoint(d,d+20,forkLaneCross(lane,d+20,profile),profile);point.set(p.x,p.y+1,p.z).project(camera);routeMax=Math.max(routeMax,Math.abs(point.x));assert.ok(Math.abs(point.x)<.9&&Math.abs(point.y)<.95,'upcoming routes stay visible');}
    }
   }
   console.log(JSON.stringify({layout:`${w}x${h}`,bodyMax,routeMax}));
