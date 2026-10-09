@@ -38,6 +38,7 @@
  #hud #coach strong{font-size:12px}
 }
 @media(pointer:coarse){
+ #hud #coach button{min-height:44px;padding:8px}
  #hud .abilities .ability-upgrade::before{content:"";position:absolute;inset:-5px;border-radius:50%}
 }
 @media(prefers-reduced-motion:reduce){#hud #recall{transition:none}}

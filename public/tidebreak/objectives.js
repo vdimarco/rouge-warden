@@ -47,10 +47,11 @@ export function nextObjective(s, team = 1, lane = 1) {
   const near = inner ? guardians(s, team).sort((a, b) => Math.hypot(a.x - inner.x, a.y - inner.y) - Math.hypot(b.x - inner.x, b.y - inner.y)) : guardians(s, team);
   return [...towers, ...near, ...s.units.filter(e => e.kind === 'core' && e.team === team)].find(e => e.hp > 0 && !structureProtected(s, e));
 }
-export function objectiveText(s, lane = 1) {
+export function objectiveText(s, lane = 1, compact = false) {
   const target = nextObjective(s, 1, lane), standing = wards(s, 1).filter(e => e.hp > 0).length, total = wards(s, 1).length;
   if (!target) return 'Push with your wisps.';
-  if (target.kind === 'core') return s.suddenDeath ? 'Sudden death. Every ward and the rift are open.' : 'Rift exposed. Push with your wisps.';
-  if (target.guardian) return `Break the rift guardians. ${guardians(s, 1).filter(e => e.hp > 0).length}/2 stand. Step out of their slam.`;
+  if (target.kind === 'core') return s.suddenDeath ? (compact ? 'Sudden death. All rifts open.' : 'Sudden death. Every ward and the rift are open.') : (compact ? 'Rift open. Push with wisps.' : 'Rift exposed. Push with your wisps.');
+  if (target.guardian) return compact ? `Guardians · ${guardians(s, 1).filter(e => e.hp > 0).length}/2. Dodge slam.` : `Break the rift guardians. ${guardians(s, 1).filter(e => e.hp > 0).length}/2 stand. Step out of their slam.`;
+  if (compact) return `${LANE_NAMES[lane]} lane: ${TIER_NAMES[target.tier]} ward · ${standing}/${total}`;
   return `${LANE_NAMES[lane]} lane: break the ${TIER_NAMES[target.tier]} ward. ${standing}/${total} enemy wards stand.`;
 }

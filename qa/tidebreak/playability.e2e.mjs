@@ -130,8 +130,15 @@ try {
       const real = requestAnimationFrame.bind(window); let queue = []; window.__auto = true; window.__ts = performance.now();
       window.__flush = () => new Promise(resolve => real(() => real(resolve)));
       window.__battleTouch = [];
+      window.__controlPointers = [];
       for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) window.addEventListener(type, e => {
         if (e.pointerType === 'touch' && e.target.id === 'battle') { window.__battleTouch.push({ type, x: e.clientX, y: e.clientY }); window.__battleTouch = window.__battleTouch.slice(-12); }
+      }, true);
+      for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'gotpointercapture', 'lostpointercapture', 'click']) window.addEventListener(type, e => {
+        const button = e.target.closest?.('button');
+        if (!button) return;
+        window.__controlPointers.push({ type, pointerType: e.pointerType, pointerId: e.pointerId, button: e.button, detail: e.detail, target: e.target.id || e.target.tagName, control: button.id || button.dataset.destination || button.dataset.skill, x: e.clientX, y: e.clientY, captured: button.hasPointerCapture?.(e.pointerId), disabled: button.disabled, sheetOpen: document.querySelector('#sheet')?.open });
+        window.__controlPointers = window.__controlPointers.slice(-48);
       }, true);
       window.requestAnimationFrame = cb => { queue.push(cb); return queue.length; };
       window.__pump = (n, ms = 16) => { for (let i = 0; i < n; i++) { window.__ts += ms; const q = queue; queue = []; q.forEach(cb => cb(window.__ts)); } };
@@ -169,6 +176,22 @@ try {
     }
     await screenshot(page, `${name}-first-match`);
     if (touch) {
+      const beforeBook = (await snapshot(page)).player;
+      assert.equal(beforeBook.skillPoints, 1, `${name}: a first skill point is ready before inspecting the Spellbook`);
+      await press(page, '#pause', touch);
+      await page.waitForFunction(() => document.querySelector('#sheet').open, null, { polling: 20, timeout: 5000 });
+      await advance(page);
+      await press(page, '#menu-spellbook', touch);
+      await page.waitForFunction(() => document.querySelector('#sheet').classList.contains('spellbook-sheet'), null, { polling: 20, timeout: 5000 });
+      assert(await page.locator('#train-selected').isVisible(), `${name}: the paused menu opens the inspectable Spellbook while a point is available`);
+      const inspecting = await snapshot(page);
+      assert.equal(inspecting.paused, true, `${name}: explicit Spellbook inspection pauses the match`);
+      assert.equal(inspecting.player.skillPoints, 1, `${name}: opening the Spellbook preserves the available point`);
+      assert.deepEqual(inspecting.player.skillRanks, beforeBook.skillRanks, `${name}: opening the Spellbook does not train a spell`);
+      assert.deepEqual(inspecting.player.cd, beforeBook.cd, `${name}: opening the Spellbook does not cast a spell`);
+      await screenshot(page, `${name}-optional-spellbook`);
+      await press(page, '#back-skills', touch); await advance(page);
+      assert.equal((await snapshot(page)).paused, false, `${name}: leaving the explicit Spellbook resumes play`);
       await press(page, '#skill-points', touch);
       await press(page, '[data-skill="0"]', touch);
     } else await press(page, '[data-upgrade="0"]', touch);
@@ -268,9 +291,26 @@ try {
     await advance(page);
     assert.match(await page.locator('#objective-sub').innerText(), /West lane/i, `${name}: HUD guides the lane the hero occupies`);
     assert.equal((await snapshot(page)).player.lane, 1, `${name}: HUD guidance does not change simulation lane assignment`);
-    if (touch) await press(page, '#map-button', touch); else await page.keyboard.press('m');
+    if (touch) {
+      await page.evaluate(async () => {
+        window.__controlPointers = [];
+        window.__mapBefore = { state: (await import('/tidebreak/main.js')).snapshot(), sheetOpen: document.querySelector('#sheet').open };
+      });
+      await press(page, '#map-button', touch);
+      await page.evaluate(async () => {
+        window.__mapAfter = { state: (await import('/tidebreak/main.js')).snapshot(), sheetOpen: document.querySelector('#sheet').open };
+      });
+    } else await page.keyboard.press('m');
     await page.waitForFunction(() => document.querySelector('#sheet').open, null, { polling: 20, timeout: 5000 });
     await advance(page);
+    const mapActions = await page.evaluate(() => [...document.querySelectorAll('[data-destination]')].map(button => {
+      const r = button.getBoundingClientRect();
+      return { action: button.dataset.destination, x: r.x, y: r.y, w: r.width, h: r.height };
+    }));
+    assert.equal(mapActions.length, 5, `${name}: the map shows its five destination actions`);
+    for (const b of mapActions) assert(b.w >= 44 && b.h >= 44 && b.x >= 0 && b.y >= 0 && b.x + b.w <= width + 1 && b.y + b.h <= height + 1, `${name}: map ${b.action} fits in the first view with a 44 px target: ${JSON.stringify(b)}`);
+    assert.equal(await page.locator('#sheet .panel-pagination').count(), 0, `${name}: map actions do not require another panel page`);
+    await screenshot(page, `${name}-map`);
     await press(page, '[data-destination="ward"]', touch); await advance(page);
     const ordered = (await snapshot(page)).player;
     assert.equal(ordered.order?.target, west.id, `${name}: map Next tower selects the West lane ward`);
@@ -287,13 +327,13 @@ try {
     try {
       const details = await page.evaluate(async () => {
         const { snapshot } = await import('/tidebreak/main.js'), state = snapshot();
-        const selectors = ['#coach', '#recall', '#auto-status', '#mana-text', '#skill-aim-status', '#skill-points', '.abilities', '#joystick', '#loadout', '#portal', '#objective', '#objective-clock', '#team-chat'];
+        const selectors = ['#coach', '#recall', '#auto-status', '#mana-text', '#skill-aim-status', '#skill-points', '.abilities', '#joystick', '#loadout', '#portal', '#objective', '#objective-clock', '#team-chat', '#map-button', '#minimap', '#sheet'];
         const rects = Object.fromEntries(selectors.map(selector => {
           const el = document.querySelector(selector); if (!el) return [selector, null];
           const r = el.getBoundingClientRect(), css = getComputedStyle(el);
           return [selector, { x: r.x, y: r.y, w: r.width, h: r.height, hidden: el.hidden, display: css.display, text: el.innerText }];
         }));
-        return { viewport: { width: innerWidth, height: innerHeight }, player: state.player, paused: state.paused, time: state.time, touchEvents: window.__battleTouch, rects };
+        return { viewport: { width: innerWidth, height: innerHeight }, player: state.player, paused: state.paused, time: state.time, touchEvents: window.__battleTouch, controlPointers: window.__controlPointers, mapBefore: window.__mapBefore, mapAfter: window.__mapAfter, rects };
       });
       console.error('FAILURE STATE', JSON.stringify(details));
       const name = process.env.VIEWPORT || `${details.viewport.width}x${details.viewport.height}`;

@@ -131,7 +131,7 @@ function pause() {
   const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
   const canFullscreen = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
   const screen = fullscreenLeft || !canFullscreen ? '' : `<button id="screen-mode" class="row-btn">${document.fullscreenElement ? 'Play windowed' : 'Play full screen'}</button>`;
-  const book = desktopInput.matches ? '<button id="menu-spellbook" class="row-btn">Spellbook <kbd>K</kbd></button>' : '';
+  const book = `<button id="menu-spellbook" class="row-btn">Spellbook${desktopInput.matches ? ' <kbd>K</kbd>' : ''}</button>`;
   sheet(`<h2>The hunt can wait</h2>${top}<button id="return-home" class="row-btn">Return home to heal</button>${book}${soundRowsHTML('pause')}${screen}<button id="perf-toggle" class="row-btn"></button><button id="quit" class="row-btn">Choose another creature</button><button id="menu-guide" class="row-btn">Control guide</button><p class="keyhint">${controlHelp()} F rift · G rally team · M map · B Recall · Esc menu</p>`);
   $('resume').onclick = () => { if (fullscreenLeft) playWindowed(); closeSheet(); };
   if ($('fullscreen-back')) $('fullscreen-back').onclick = () => { requestFullscreen(); closeSheet(); };
@@ -357,7 +357,8 @@ function updateUI() {
   // The enemy bots' team focus is the player: a mark under the health bar. The focus needs the enemy team to see the player.
   const hunt=state.botFocus?.[1-p.team];$('hunted').hidden=!(hunt&&hunt.id===p.id&&hunt.until>state.time&&p.hp>0);
   const towerThreat=state.units.find(t=>t.kind==='tower'&&t.team!==p.team&&t.towerTarget===p.id&&t.towerUntil>state.time&&t.hp>0);
-  dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : towerThreat?'Tower fire is growing. Leave its range.':concealed(state, p) ? 'Hidden. Your next strike is an ambush.' : objectiveText(state,currentLane=guidanceLane(p,currentLane));
+  const compactObjective = innerWidth <= 370;
+  dom.objective.textContent = p.recall ? `Returning in ${Math.ceil(p.recall)}…` : towerThreat ? (compactObjective ? 'Tower fire. Retreat.' : 'Tower fire is growing. Leave its range.') : concealed(state, p) ? (compactObjective ? 'Hidden. Next strike: ambush.' : 'Hidden. Your next strike is an ambush.') : objectiveText(state, currentLane = guidanceLane(p, currentLane), compactObjective);
   const rallyWait=Math.ceil(rallyReadyAt-state.time);$('rally').disabled=p.hp<=0||rallyWait>0;$('rally').querySelector('small').textContent=rallyWait>0?`${rallyWait}s`:'Call team';
   const recalling = p.recall > 0;
   $('recall').disabled = p.hp <= 0;
@@ -634,15 +635,16 @@ function graphicsFailure(message) {
   $('play').querySelector('span').textContent = '3D view unavailable';
 }
 async function openBattlefield() {
+  const loadStartedAt = performance.now();
   telemetry.load('started');
   try {
     renderer = await createBattlefield({ canvas: $('battle'), minimap: $('minimap'), onProgress: loadingText });
     $('play').disabled = false;
     $('play').querySelector('span').textContent = 'Start match';
-    telemetry.load('ready');
+    telemetry.load('ready', { elapsed_ms: performance.now() - loadStartedAt });
     requestAnimationFrame(frame);
   } catch (error) {
-    telemetry.load('failed',{reason:error.code || 'load_failed'});
+    telemetry.load('failed', { reason: error.code || 'load_failed', elapsed_ms: performance.now() - loadStartedAt });
     console.error('Shore 3D view could not load.', error);
     graphicsFailure(error.code === 'GRAPHICS_UNAVAILABLE' ? error.message : 'The 3D view could not load. Check your connection and reload.');
   }
