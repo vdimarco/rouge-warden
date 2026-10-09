@@ -3,6 +3,7 @@
 // The script finds those buttons, works out which game this page is from its URL, and opens the list.
 (() => {
   const GAMES = [
+    { id: "ascii-front", name: "ASCII Front", sub: "ASCII tank roguelite", url: "/ascii-front/", art: "/ascii-front/key.svg", color: "#d2f584" },
     { id: "battle-tanks", name: "Battle Tanks", sub: "Flank · bombard · extract", url: "/battle-tanks/", art: "/battle-tanks/key.svg", color: "#8df6d5" },
     { id: "afterlight", name: "Afterlight", sub: "One journey · six changing worlds", url: "/afterlight/", art: "/arcade/key/firefly-courier.svg", color: "#b6e5ce" },
     {"id": "lighthouse-keeper", "name": "Lighthouse Keeper", "sub": "Guide boats through the fog", "url": "/lighthouse-keeper/", "art": "/arcade/key/lighthouse-keeper.svg", "color": "#bdd5eb"},

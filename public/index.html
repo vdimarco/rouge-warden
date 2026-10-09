@@ -122,6 +122,7 @@ button { font: inherit; color: inherit; }
 .cab.mirage-runner { --c1: #34477a; --c2: #f5c98e; --glow: #f5c98e66; }
 .cab.orbital-gardener { --c1: #262f4a; --c2: #a8d3f6; --glow: #a8d3f666; }
 .cab.afterlight { --c1: #234c56; --c2: #b6e5ce; --glow: #b6e5ce66; }
+.cab.ascii-front { --c1: #263d2c; --c2: #d2f584; --glow: #d2f58466; }
 .cab.last-light { --c1: #552a74; --c2: #ffcd62; --glow: rgba(255, 205, 98, 0.45); }
 .cab.river-rush { --c1: #083d31; --c2: #f9c65b; --glow: rgba(249, 198, 91, 0.45); }
 /* the VR machine wears a headset badge on its screen */
@@ -506,6 +507,12 @@ button { font: inherit; color: inherit; }
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Afterlight"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Afterlight"><i></i><span>25¢</span></button></div><div class="kick"></div>
       </article>
+      <article class="cab ascii-front" data-game="ascii-front" data-url="/ascii-front/" aria-label="ASCII Front: ASCII tank roguelite">
+      <div class="marquee"><div><b>ASCII FRONT</b><small>ASCII TANK ROGUELITE</small></div></div>
+      <div class="bezel"><div class="screen"><img src="ascii-front/key.svg" alt="A green character-art tank defending HQ against orange tanks" loading="lazy" decoding="async"><div class="osd"><p class="hi">DEFEND · DASH · EVOLVE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div></div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into ASCII Front"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into ASCII Front"><i></i><span>25¢</span></button></div><div class="kick"></div>
+      </article>
       <article class="cab afterlight battle-tanks" data-game="battle-tanks" data-url="/battle-tanks/" aria-label="Battle Tanks: flank guarded relays and extract">
       <div class="marquee"><div><b>BATTLE TANKS</b><small>FLANK · BOMBARD · EXTRACT</small></div></div>
       <div class="bezel"><div class="screen"><img src="battle-tanks/key.svg" alt="A tank facing guarded relay guns" loading="lazy" decoding="async"><div class="osd"><p class="hi">DRIVE · AIM · EXTRACT</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div></div></div>
@@ -681,7 +688,7 @@ const machinePicker = $("#machinePicker");
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
   { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"] },
-  { id: "ascii", label: "ASCII Scenes", games: ["afterlight", "battle-tanks", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"] },
+  { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "afterlight", "battle-tanks", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"] },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"] },
   { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"] },
 ];
