@@ -14,6 +14,7 @@ import { rosterHTML, heroPreviewHTML, selectionSpellArt, hudSpellArt, ROLES, SEL
 import { HERO_IDENTITIES, identitySkill, assignIdentities } from './hero-identities.js';
 import { mountLineup } from './hero-lineup.js';
 import { pointerAction, movementPointer, abilityPointers, screenMovementPointer } from './pointer-action.js';
+import { wheelZoomFactor } from './camera-zoom.js';
 import { paginatePanel } from './panel-pager.js';
 import { manaCost, canAfford, canReturn } from './combat-rules.js';
 import { cursorSkillAim, dragSkillAim, skillAimPreview } from './skill-aim.js';
@@ -391,8 +392,13 @@ screenMovementControl=screenMovementPointer($('battle'),{
   enabled:()=>running&&!paused&&player(state).hp>0,
   onStart:()=>{sound.start();$('coach').hidden=true;},
   onDragStart:()=>{cancelOrder(player(state));orderQueue=undefined;target=0;},
-  onTap:e=>battlefieldTap(e)
+  onTap:e=>battlefieldTap(e),
+  onZoom:factor=>renderer?.zoomBy(factor)
 });
+$('battle').addEventListener('wheel',e=>{
+  if(!renderer||!running||paused||player(state).hp<=0)return;
+  e.preventDefault();renderer.zoomBy(wheelZoomFactor(e,innerHeight));
+},{passive:false});
 abilityControl=abilityPointers(skillButtons,{enabled:()=>running&&!paused,onStart:()=>sound.start(),onAim:value=>aim=abilityCluster.classList.contains('upgrade-mode')?null:value,onStatus:status=>updateAimStatus(abilityCluster.classList.contains('upgrade-mode')?null:status),onCast:command=>{
   if(abilityCluster.classList.contains('upgrade-mode')&&trainFromHUD(command.slot))return;
   castQueue=command;

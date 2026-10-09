@@ -44,10 +44,18 @@ export function abilityPointers(buttons,{enabled,onStart,onAim,onCast,onStatus=(
 }
 
 
-export function screenMovementPointer(surface,{movement,enabled,onStart,onDragStart=()=>{},onTap=()=>{},threshold=12,radius=46}) {
-  let pointer=null,origin=null,dragging=false;
-  const reset=()=>{pointer=null;origin=null;dragging=false;movement.x=movement.y=0;};
+export function screenMovementPointer(surface,{movement,enabled,onStart,onDragStart=()=>{},onTap=()=>{},onZoom,threshold=12,radius=46}) {
+  let pointer=null,origin=null,dragging=false,pinching=false,gap=0;
+  const touches=new Map();
+  const separation=()=>{const [a,b]=[...touches.values()];return Math.max(8,Math.hypot(a.x-b.x,a.y-b.y));};
+  const reset=()=>{pointer=null;origin=null;dragging=pinching=false;gap=0;touches.clear();movement.x=movement.y=0;};
   const update=e=>{
+    if(pinching){
+      if(!touches.has(e.pointerId))return;
+      touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(touches.size===2&&enabled()){const next=separation();onZoom(gap/next);gap=next;}
+      return;
+    }
     if(e.pointerId!==pointer)return;
     const x=e.clientX-origin.x,y=e.clientY-origin.y,dist=Math.hypot(x,y);
     if(!dragging&&dist>=threshold){dragging=true;onDragStart();}
@@ -56,16 +64,26 @@ export function screenMovementPointer(surface,{movement,enabled,onStart,onDragSt
     movement.x=x/denom;movement.y=y/denom;
   };
   surface.addEventListener('pointerdown',e=>{
-    if(e.pointerType==='mouse'||pointer!==null||e.button!==0||!enabled())return;
+    if(e.pointerType==='mouse'||e.button!==0||!enabled())return;
+    if(pointer!==null){
+      if(!onZoom||e.pointerType!=='touch'||!touches.size||touches.size>=2||touches.has(e.pointerId))return;
+      e.preventDefault();touches.set(e.pointerId,{x:e.clientX,y:e.clientY});surface.setPointerCapture?.(e.pointerId);
+      if(!pinching){if(dragging)movement.x=movement.y=0;dragging=false;pinching=true;onDragStart();}
+      gap=separation();return;
+    }
     e.preventDefault();onStart();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};dragging=false;
+    if(e.pointerType==='touch')touches.set(pointer,{x:e.clientX,y:e.clientY});
     surface.setPointerCapture?.(pointer);
   });
-  surface.addEventListener('pointermove',update);
+  surface.addEventListener('pointermove',e=>{if(!pinching&&touches.has(e.pointerId))touches.set(e.pointerId,{x:e.clientX,y:e.clientY});update(e);});
+  // Keep the surviving finger inert until the entire pinch has ended.
+  const finishPinch=e=>{if(!pinching||!touches.has(e.pointerId))return false;touches.delete(e.pointerId);if(!touches.size)reset();return true;};
   surface.addEventListener('pointerup',e=>{
-    if(e.pointerId!==pointer)return;
+    if(finishPinch(e))return;
+    if(e.pointerId!==pointer||pinching)return;
     if(!dragging)onTap(e);
     reset();
   });
-  for(const event of ['pointercancel','lostpointercapture'])surface.addEventListener(event,e=>{if(e.pointerId===pointer)reset();});
-  return {reset,get active(){return pointer!==null;},get dragging(){return dragging;}};
+  for(const event of ['pointercancel','lostpointercapture'])surface.addEventListener(event,e=>{if(finishPinch(e))return;if(e.pointerId===pointer&&!pinching)reset();});
+  return {reset,get active(){return pointer!==null;},get dragging(){return dragging;},get pinching(){return pinching;}};
 }

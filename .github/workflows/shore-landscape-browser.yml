@@ -23,6 +23,11 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/shore-landscape
+      - name: Verify wheel, pinch zoom and top-center Rift Jump in four layouts
+        run: node qa/tidebreak/camera-zoom.test.mjs && node qa/tidebreak/pointers.test.mjs && node qa/tidebreak/camera-zoom.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/shore-landscape/camera-zoom
       - uses: actions/upload-artifact@v4
         if: always()
         with:
