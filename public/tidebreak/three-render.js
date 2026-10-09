@@ -23,6 +23,7 @@ import { drawTells3D, overlayTells, HOSTILE } from './render3d/tells.js';
 import { elementOf, impact, hold, PALETTE } from './render3d/elements.js';
 import { drawUnitMarks } from './combat-tells-draw.js';
 import { graphicsSupport } from './render3d/choice.js';
+import { clampZoom } from './camera-zoom.js';
 export { preload };
 
 const { clamp, distance, visibleTo, concealed } = world;
@@ -88,9 +89,23 @@ export class ThreeRenderer {
     this.overlay.width = Math.round(this.width * this.dpr); this.overlay.height = Math.round(this.height * this.dpr); this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     // The footprint below is the gameplay camera's, so the hero select lens comes off first (it returns on its next frame).
     const aspect = this.width / Math.max(1, this.height); this.camera.aspect = aspect; this.gameLens();
-    // Landscape screens see about 1900 units of ground from top to bottom, like the 2D view; a narrow screen pulls the
-    // camera back so it still sees at least about 1250 units across.
-    this.distance = Math.max(2350, 2050 / aspect);
+    this.calibrateCamera();
+    const half = THREE.MathUtils.degToRad(FOV / 2);
+    this.effects?.setScale(this.height * this.dpr / (2 * Math.tan(half)));
+    OUTLINE.uResolution.value.set(this.width * this.dpr, this.height * this.dpr); OUTLINE.uWidth.value = Math.max(1, 1.35 * this.dpr * Math.min(1.4, Math.max(.8, this.height / 900)));
+    const q = this.quality, size = q >= .8 ? 2048 : q >= .6 ? 1536 : 1024; this.shadowSize = size;
+    if (this.props) { this.props.detail = q; this.props.view = null; }
+    this.restartTiming();
+  }
+  zoomBy(factor) {
+    if (!Number.isFinite(factor) || factor <= 0 || this.showcase) return;
+    const next = clampZoom((this.zoom || 1) * factor);
+    if (next === (this.zoom || 1)) return;
+    this.zoom = next; this.calibrateCamera();
+    if (this.props) this.props.view = null;
+  }
+  calibrateCamera() {
+    this.distance = Math.max(2350, 2050 / this.camera.aspect) * (this.zoom || 1);
     const half = THREE.MathUtils.degToRad(FOV / 2), row = Math.atan((1 - 2 * HERO_ROW) * Math.tan(half)), steep = PITCH - row;
     this.lead = this.distance * Math.cos(PITCH) - this.distance * Math.sin(PITCH) / Math.tan(steep);
     // Footprint of the screen corners around the camera point, for the edge clamp; scale is pixels per unit at the hero.
@@ -99,12 +114,7 @@ export class ThreeRenderer {
     this.foot = { minX: Math.min(...corners.map(c => c.x)), maxX: Math.max(...corners.map(c => c.x)), minY: Math.min(...corners.map(c => c.y)), maxY: Math.max(...corners.map(c => c.y)) };
     const a = this.project(-500, 0, 0, true), b = this.project(500, 0, 0, true), c = this.project(0, 100, 0, true); this.scale = (b.x - a.x) / 1000; this.squash = (c.y - a.y) / 100 / this.scale;
     this.calibrating = false;
-    this.effects?.setScale(this.height * this.dpr / (2 * Math.tan(half)));
-    OUTLINE.uResolution.value.set(this.width * this.dpr, this.height * this.dpr); OUTLINE.uWidth.value = Math.max(1, 1.35 * this.dpr * Math.min(1.4, Math.max(.8, this.height / 900)));
-    const q = this.quality, size = q >= .8 ? 2048 : q >= .6 ? 1536 : 1024; this.shadowSize = size;
-    if (this.props) { this.props.detail = q; this.props.view = null; }
-    this.placeCamera(this.cam.x, this.cam.y, 0, 0); // input between a resize and the next frame still maps to the ground
-    this.restartTiming();
+    this.placeCamera(this.cam.x, this.cam.y, 0, 0); // input immediately uses the new projection
   }
   placeCamera(x, y, sx, sy) {
     const c = this.camera, tx = x, tz = y - this.lead, height = this.calibrating ? 0 : this.groundHeight(x, y);
@@ -142,7 +152,7 @@ export class ThreeRenderer {
     this.follow(s, p, dt, menu, time);
     if (!menu) this.heroScreen = this.project(p.x, p.y);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
-    this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
+    this.sky.update(s.phase, dt, this.showcase ? 1 : (this.zoom || 1)); this.props.setPhase(s.phase);
     const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, viewScale = this.cameraViewScale || 1;
     const rect = this.showcase || { x0: this.cam.x + f.minX * viewScale - 150, x1: this.cam.x + f.maxX * viewScale + 150, y0: this.cam.y + f.minY * viewScale - 150, y1: this.cam.y + f.maxY * viewScale + 150 };
     this.props.update(dt, time, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
@@ -420,7 +430,7 @@ export class ThreeRenderer {
   }
   stats() {
     const structures = [...this.units.views.values()].filter(v => v.unit && (v.unit.kind === 'tower' || v.unit.kind === 'core')).map(v => ({ id: v.unit.id, kind: v.unit.kind, team: v.unit.team, tier: v.unit.tier ?? null, guardian: !!v.unit.guardian, height: v.height, visible: !!v.root.visible, alive: v.unit.hp > 0 }));
-    return { renderer: 'Mythic 3D', heroScreen: this.heroScreen, freeCam: !!this.freeCam, pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0,
+    return { renderer: 'Mythic 3D', zoom: this.zoom || 1, cameraDistance: this.distance, heroScreen: this.heroScreen, freeCam: !!this.freeCam, pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0,
       models: { world: Object.keys(assets.world).length, worldTotal: WORLD_MODELS.length, clips: assets.clips ? Object.keys(assets.clips).length : 0, heroes: assets.heroes.size, heroesTotal: HERO_IDENTITIES.length, failed: [...assets.failed] },
       drawCalls: this.drawCalls, triangles: this.triangles, shadowMap: this.shadowSize, grassTufts: this.props.grass.count, seeThrough: seeUniforms.uSeeAt.value.filter(v => v.w > 0).length, units: this.units.stats(), structures, scenerySeed: this.sceneSeed, sceneryCount: this.props.counts, crossings: this.terrain.bridges?.length || 0,
       terrain: this.terrain.relief ? { vertices: this.terrain.relief.heights.length, min: this.terrain.relief.minHeight, max: this.terrain.relief.maxHeight, landRange: this.terrain.relief.landMax - this.terrain.relief.landMin } : null,

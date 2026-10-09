@@ -1,8 +1,9 @@
 // Capture-only PostHog integration. No replay, autocapture, text or identify calls.
 (() => {
   const token = 'phc_v36Y6bWGWmKqp2iTsmN5APUMgnGvZwLJdesVWvipauaC';
-  const enabled = location.hostname === 'arcade.uptick.systems';
   const game = document.currentScript?.dataset.game;
+  const enabled = !navigator.webdriver && (location.hostname === 'arcade.uptick.systems' ||
+    game === 'tidebreak' && location.hostname === 'warden-alpha-wheat.vercel.app');
   const uuid = () => crypto.randomUUID();
   const read = key => { try { return localStorage.getItem(key); } catch { return null; } };
   const save = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
@@ -16,8 +17,8 @@
     if (!enabled) return;
     const body = JSON.stringify({ api_key: token, event, distinct_id: visitor,
       timestamp: new Date().toISOString(), properties: {
-        app: 'cottage_arcade', environment: 'production', game_id: id,
-        session_id: session, $insert_id: uuid(), $process_person_profile: false, ...extra,
+        ...extra, app: 'cottage_arcade', environment: 'production', game_id: id,
+        session_id: session, $insert_id: uuid(), $process_person_profile: false,
       } });
     // text/plain avoids a preflight and keepalive finishes small events on navigation.
     try { fetch('https://us.i.posthog.com/i/v0/e/', { method: 'POST',
@@ -25,6 +26,12 @@
     }).catch(() => {}); } catch {}
   }
   window.ArcadeAnalytics = {
+    // The game sends structured anonymous events through the same visitor and visit IDs.
+    // Other cabinets cannot enable capture on the Shore deployment.
+    captureShore(event, extra = {}) {
+      if (game !== 'tidebreak' || !/^shore_[a-z_]+$/.test(event)) return;
+      capture(event, 'tidebreak', extra);
+    },
     liked: id => likes.has(id),
     like(id) {
       if (!enabled || likes.has(id) || !window.GameSwitch?.GAMES.some(g => g.id === id)) return false;

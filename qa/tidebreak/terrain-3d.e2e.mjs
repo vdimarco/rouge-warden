@@ -57,9 +57,12 @@ try {
   await page.keyboard.press('Escape');
   console.log('PASS legacy preference and URL migrate to 3D; meaningful hero selection, no legacy battlefield downloads');
   await page.click('#play');
-  for (let i = 0; i < 120 && !await page.locator('#hud').isVisible(); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); }
+  await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running, null, { timeout: 10000 });
+  assert(await page.locator('#hud').isVisible(), 'direct Play shows the live match HUD');
+  assert(await page.locator('#draft').isHidden(), 'direct Play bypasses the optional draft');
+  assert.equal(await page.locator('#sheet').isVisible(), false, 'direct Play does not open an automatic Spellbook');
+  assert.equal(await read(page, 'return m.snapshot().paused;'), false, 'direct Play starts an unpaused match');
   await page.waitForFunction(() => !document.getElementById('battle').__shore3d.showcase, null, { timeout: 240000 });
-  if (await page.locator('#sheet').evaluate(e => e.open)) await page.keyboard.press('Escape');
   await page.evaluate(() => { window.__auto = false; });
   await read(page, 'p.x = p.px = 8396; p.y = p.py = 5930; r.recenter(); r.cam = { x: p.x, y: p.y }; r.draw(s, 0);');
   const nearby = await read(page, `const f=r.terrain.relief; return {lane:f.heightAt(8396,5930), hill:f.heightAt(7880,6120), pitch:r.stats().cameraPitch};`);
@@ -136,3 +139,4 @@ try {
   console.log('PASS desktop and phone viewport, both realms, no overflow or console/shader errors');
   await page.close();
 } finally { await browser.close(); }
+

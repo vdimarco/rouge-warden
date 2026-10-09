@@ -1,11 +1,9 @@
 // A card that explains a skill in the command bar: name, key, rank, mana, cooldown, tags, what it does and why it
 // cannot be used now. A mouse shows it while the pointer is over the skill (or the skill has keyboard focus). A touch
-// shows it while the finger is down and for a short time after release, so a tap still casts as before.
+// uses the spellbook for inspection, so reading a skill never releases a cast.
 // On the phone layouts of the bar the card is compact (one meta line and the first sentence of the text) and sits at
 // the left of the bar, above the items, away from the skills under the thumb.
-import { nearestSkill } from './skill-reach.js';
 
-const TOUCH_HOLD_MS = 1800;
 // The phone layouts of the command bar (see command-bar.css).
 const PHONE = '(max-height:599px) and (min-width:540px), (max-width:1039px) and (min-height:600px), (max-width:539px)';
 const compact = () => typeof matchMedia === 'function' && matchMedia(PHONE).matches;
@@ -58,7 +56,6 @@ export function skillCard(buttons, info) {
     clearInterval(refresh); refresh = setInterval(render, 250);
   };
   function hide() { clearTimeout(hideTimer); clearInterval(refresh); slot = -1; card.hidden = true; }
-  const hideSoon = ms => { clearTimeout(hideTimer); hideTimer = setTimeout(hide, ms); };
 
   buttons.forEach((b, i) => {
     b.removeAttribute('title');
@@ -68,16 +65,7 @@ export function skillCard(buttons, info) {
     b.addEventListener('focus', () => { if (b.matches(':focus-visible')) show(i); });
     b.addEventListener('blur', () => { if (slot === i) hide(); });
   });
-  // Touch: the press may land on a skill or on the reach layer between skills; both pick the nearest skill.
-  cluster.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse') return;
-    if (!e.target.closest?.('.ability,.skill-reach')) return;
-    const b = e.target.closest('.ability') || nearestSkill(buttons, e.clientX, e.clientY);
-    const i = buttons.indexOf(b); if (i < 0) return;
-    show(i);
-    const up = ev => { if (ev.pointerId !== e.pointerId) return; removeEventListener('pointerup', up, true); removeEventListener('pointercancel', up, true); hideSoon(TOUCH_HOLD_MS); };
-    addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true);
-  }, true);
+  // Touch inspection uses the spellbook, separate from release-to-cast controls.
   addEventListener('resize', () => { if (!card.hidden) place(); });
   return { show, hide, card };
 }

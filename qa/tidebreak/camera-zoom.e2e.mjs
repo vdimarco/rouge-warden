@@ -1,11 +1,11 @@
-// Real 3D shader compilation, geology, input and screenshot evidence in desktop and portrait Chromium.
+// Real wheel, multi-touch and responsive Rift Jump checks in Chromium.
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
-const root = path.resolve('public'), shots = process.env.SHOTS || '/tmp/shore-landscape';
+const root = path.resolve('public'), shots = process.env.SHOTS || '/tmp/shore-camera-zoom';
 fs.mkdirSync(shots, { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 const server = http.createServer((req, res) => {
@@ -19,7 +19,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
-  for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true]]) {
+  for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['landscape', 844, 390, true], ['small-phone', 320, 568, true]].filter(([name])=>!process.env.VIEWPORT || process.env.VIEWPORT===name)) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch }), errors = [];
     page.on('pageerror', e => { errors.push(e.message); console.error('PAGE ERROR', e.message); });
     page.on('console', m => { if (m.type() === 'error') { errors.push(m.text()); console.error('CONSOLE ERROR', m.text()); } });
@@ -67,38 +67,65 @@ try {
       const m = await import('/tidebreak/main.js'), s = m.qaState(), p = s.units.find(u => u.player);
       s.units = [p]; s.nextWave = 1e9; s.paused = true;
       p.hp = p.maxHp = 100000; p.shield = 100000; p.order = null;
+      window.__pump(1); // Leave the hero-selection lens before testing live input.
     });
-    for (const [id, phase] of [[0, 0], [2, 0], [3, 1]]) {
-      const view = await page.evaluate(async ([id, phase]) => {
-        const m = await import('/tidebreak/main.js'), world = await import('/tidebreak/world.js'), { geologySites } = await import('/tidebreak/geology.js');
-        const s = m.qaState(), p = s.units.find(u => u.player), r = document.querySelector('#battle').__shore3d;
-        const site = geologySites(world, phase).find(x => x.id === id);
-        s.phase = phase; s.time = phase * 40 + .1; p.x = site.x; p.y = site.z + site.d * .5 + 150; p.order = null; p.moving = false;
-        r.recenter(); r.cam = { x: p.x, y: p.y }; r.props.setPhase(phase, true); r.sky.blend = phase;
-        window.__pump(3);
-        const g = r.stats(), screen = r.project(p.x, p.y), point = r.world(screen.x, screen.y), kinds = r.props.sets[phase].kinds;
-        return { graphics: g, screen, error: Math.hypot(point.x - p.x, point.y - p.y), cavesInView: kinds.get('cave-shell').mesh.count,
-          groundShader: r.props.kinds['cave-floor'].materials[phase].customProgramCacheKey(), shadowShader: r.props.kinds['cave-shell'].depths[phase].customProgramCacheKey() };
-      }, [id, phase]);
-      assert.equal(view.graphics.renderer, 'Mythic 3D'); assert(view.graphics.terrain.landRange > 900);
-      assert.equal(view.graphics.geology[phase].caves, 6); assert.equal(view.graphics.geology[phase].cliffs, 2);
-      assert(view.graphics.geology[phase].trees > 500 && view.cavesInView > 0);
-      assert(view.graphics.drawCalls > 20 && view.graphics.triangles > 10000, 'the 3D scene draws');
-      assert(view.groundShader.includes('see') && view.groundShader.includes('grounded') && view.shadowShader.includes('grounded'));
-      assert(view.screen.x >= 0 && view.screen.x <= width && view.screen.y >= 0 && view.screen.y <= height, 'the hero remains in the viewport');
-      assert(view.error < 1, 'the visible hero ground remains selectable');
-      await page.screenshot({ path: path.join(shots, `${name}-bluff-${id}-realm-${phase}.png`), timeout: 120000 });
-      console.log('PASS', name, 'geology', id, phase, JSON.stringify({ ...view, graphics: { geology: view.graphics.geology, terrain: view.graphics.terrain, cameraLift: view.graphics.cameraLift } }));
+    const measure = () => page.evaluate(async () => {
+      const m = await import('/tidebreak/main.js'), s = m.qaState(), p = s.units.find(u => u.player), r = document.querySelector('#battle').__shore3d;
+      const screen = r.project(p.x,p.y), point = r.world(screen.x,screen.y);
+      return {zoom:r.stats().zoom,distance:r.distance,scale:r.scale,fogNear:r.scene.fog.near,fogFar:r.scene.fog.far,foot:r.foot,error:Math.hypot(point.x-p.x,point.y-p.y),order:p.order,player:{x:p.x,y:p.y},screen};
+    });
+    const layout = await page.evaluate(() => {
+      const rect = el => {const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};};
+      return {rift:rect(document.querySelector('#portal')),other:['.score','.lineup.ally','.lineup.enemy','#objective-clock','#objective','#map-button','#notice'].map(selector=>({selector,...rect(document.querySelector(selector))}))};
+    });
+    const b=layout.rift;
+    assert(Math.abs(b.x+b.w/2-width/2)<1 && b.h>=44 && b.y>=0 && b.y+b.h<height/2,'Rift is centered near the top with a 44px target');
+    for(const o of layout.other) assert(!(b.x<o.x+o.w && b.x+b.w>o.x && b.y<o.y+o.h && b.y+b.h>o.y),`Rift must not overlap ${o.selector}: ${JSON.stringify(layout)}`);
+    const normal=await measure();
+    await page.mouse.move(width/2,height*.45);await page.mouse.wheel(0,240);await page.waitForTimeout(100);await page.evaluate(()=>window.__pump(1));
+    const out=await measure();assert(out.zoom>1 && out.distance>normal.distance && out.scale<normal.scale,JSON.stringify({normal,out}));assert(out.error<1,'zoomed hero ground remains selectable');assert(Math.abs(out.fogFar/normal.fogFar-out.zoom)<.01,'atmospheric fog follows zoom');
+    await page.mouse.wheel(0,-240);await page.waitForTimeout(100);assert(Math.abs((await measure()).zoom-1)<.01,'wheel reverses to normal');
+    await page.evaluate(()=>document.querySelector('#battle').__shore3d.zoomBy(100));await page.evaluate(()=>window.__pump(1));assert.equal((await measure()).zoom,2.4);
+    await page.screenshot({path:path.join(shots,`${name}-zoom-out.png`),timeout:120000});
+    await page.evaluate(()=>document.querySelector('#battle').__shore3d.zoomBy(.001));assert.equal((await measure()).zoom,1);
+    if(touch){
+      await page.evaluate(async()=>{(await import('/tidebreak/main.js')).qaState().paused=false;});
+      const cdp=await page.context().newCDPSession(page), y=Math.round(height*.46), x=Math.round(width/2);
+      const touchEvent=(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y,radiusX:2,radiusY:2,force:1}))});
+      await touchEvent('touchStart',[[1,x-65,y]]);
+      await touchEvent('touchMove',[[1,x-40,y]]);await page.evaluate(()=>window.__pump(1));
+      await touchEvent('touchStart',[[1,x-40,y],[2,x+60,y]]);
+      await touchEvent('touchMove',[[1,x-15,y],[2,x+35,y]]);await page.evaluate(()=>window.__pump(1));
+      const pinched=await measure();assert(pinched.zoom>1.6,'real two-finger pinch zooms out');assert(!pinched.order,'pinch clears orders');
+      await touchEvent('touchEnd',[[2,x+35,y]]);
+      await touchEvent('touchMove',[[2,x+60,y]]);await page.evaluate(()=>window.__pump(1));
+      const held=await measure();assert(Math.hypot(held.player.x-pinched.player.x,held.player.y-pinched.player.y)<.01,'surviving pinch finger cannot move');
+      await touchEvent('touchEnd',[]);await page.evaluate(()=>window.__pump(1));assert(!(await measure()).order,'pinch release cannot issue a tap');
+      await cdp.detach();
     }
+    await page.evaluate(()=>{const r=document.querySelector('#battle').__shore3d;r.zoomBy(1.8/(r.zoom||1));r.recenter();r.resize();});
+    assert(Math.abs((await measure()).zoom-1.8)<.001,'resize and recenter retain zoom');
+    await page.keyboard.press('Escape');const pausedZoom=(await measure()).zoom;
+    await page.mouse.move(width/2,height*.4);await page.mouse.wheel(0,240);await page.waitForTimeout(100);assert.equal((await measure()).zoom,pausedZoom,'paused menus cannot zoom');await page.keyboard.press('Escape');
+    console.log('PASS camera controls',name,JSON.stringify({layout,normal:normal.zoom,out:out.zoom}));
     const before = await page.evaluate(async () => { const s = (await import('/tidebreak/main.js')).qaState(); s.paused = false; const p = s.units.find(u => u.player); return { x: p.x, y: p.y }; });
-    await page.keyboard.down('d'); await page.evaluate(() => window.__pump(18)); await page.keyboard.up('d');
+    await page.keyboard.down('d'); await page.evaluate(() => window.__pump(3)); await page.keyboard.up('d');
     const after = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(Math.hypot(after.player.x - before.x, after.player.y - before.y) > 3, 'movement stays live beside high terrain');
     await page.keyboard.press('k'); assert(await page.locator('#train-selected').isVisible(), 'skills remain reachable');
     await page.keyboard.press('Escape');
+    await page.evaluate(async()=>{
+      const s=(await import('/tidebreak/main.js')).qaState(),p=s.units.find(u=>u.player),{PORTALS}=await import('/tidebreak/world.js');
+      s.paused=false;p.x=PORTALS[0].x;p.y=PORTALS[0].y;p.portalCd=0;p.order=null;
+      window.__ts+=100;window.__pump(1);window.__ts+=100;window.__pump(1);
+    });
+    assert(await page.locator('#portal').isEnabled(),'Rift enables near a gate');
+    const gateButton=await page.locator('#portal').boundingBox();
+    await page.mouse.click(gateButton.x+gateButton.width/2,gateButton.y+gateButton.height/2);await page.evaluate(()=>window.__pump(2));
+    assert((await page.evaluate(async()=>(await import('/tidebreak/main.js')).snapshot())).player.portalCd>0,'top-center Rift Jump still activates');
     assert.deepEqual(errors, [], 'no asset, runtime or shader errors');
     await page.close();
   }
-  console.log('PASS: landscape and portrait 3D rendering, geology in both realms, grounding and shadow shaders, camera targeting, movement and spellbook controls.');
+  console.log('PASS: real wheel, pinch, terrain picking, input suppression, retained zoom and Rift layout in the selected viewports.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 
