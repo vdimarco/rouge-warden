@@ -32,10 +32,19 @@ for (const p of [...BASES, ...CAMPS, ...PORTALS, ...state.units.filter(u => u.ki
     assert(Math.abs(field.heightAt(p.x + dx, p.y + dz)) < 1e-6, `important pad ${p.x},${p.y} stays level`);
   }
 }
-for (const path of PATHS) for (const p of path) {
-  const b = riverSample(p.x, state.seed), bank = Math.min(Math.max(b.north - p.y, p.y - b.south), Math.max(b.north - (SIZE - p.y), (SIZE - p.y) - b.south));
-  if (bank > 300) assert(Math.abs(field.heightAt(p.x, p.y)) < 1e-6, 'dry road cores remain open, level valleys');
-}
+// Roads retain their shared topology and safe pads while dry ground now rises between defenses.
+const laneRanges = PATHS.map(path => {
+  const heights = path.filter(p => {
+    const b = riverSample(p.x, state.seed);
+    return Math.min(Math.max(b.north - p.y, p.y - b.south), Math.max(b.north - (SIZE - p.y), (SIZE - p.y) - b.south)) > 650;
+  }).map(p => field.heightAt(p.x, p.y));
+  return Math.max(...heights) - Math.min(...heights);
+});
+assert(laneRanges.every(range => range > 10), 'dry roads follow rolling ground instead of one level plane');
+assert(laneRanges[0] > 80 && laneRanges[2] > 80, 'side-lane hills are visible during lane travel');
+let flat = 0, sampled = 0;
+for (let x = 0; x <= SIZE; x += 100) for (let z = 0; z <= SIZE; z += 100) { sampled++; flat += Math.abs(field.heightAt(x, z)) < 10; }
+assert(flat / sampled < .4, 'level carving must not flatten most of the playable landscape');
 for (const b of riverCrossings(PATHS, state.seed)) for (const sign of [-1, 1]) {
   const reach = (b.span * 1.08 + 60) / 2 + 30;
   assert(Math.abs(field.heightAt(b.x + sign * b.dx * reach, b.y + sign * b.dy * reach)) < 1e-6, 'bridge landings meet low dry approach pads');
@@ -82,4 +91,4 @@ for (let i = 0; i < 1000; i++) {
 }
 assert(field.maxSlope < 1.6, `relief slopes remain traversable-looking (${field.maxSlope.toFixed(3)})`);
 assert(TERRAIN_HEIGHT_GLSL.includes('uTerrainHeight') && TERRAIN_HEIGHT_GLSL.includes('terrainHeightAt'), 'ground materials can share the sampled field');
-console.log('PASS: deterministic mirrored terrain, varied land, level pads, stable banks/bridges and exact mesh sampling.', JSON.stringify({ buildMs: Math.round(buildMs), vertices: field.heights.length, landRange: +(field.landMax - field.landMin).toFixed(1), maxSlope: +field.maxSlope.toFixed(3), meshError: +meshError.toFixed(6) }));
+console.log('PASS: deterministic mirrored terrain, varied land, rolling roads, level pads, stable banks/bridges and exact mesh sampling.', JSON.stringify({ laneRanges: laneRanges.map(n => +n.toFixed(1)), flatShare: +(flat / sampled).toFixed(3), buildMs: Math.round(buildMs), vertices: field.heights.length, landRange: +(field.landMax - field.landMin).toFixed(1), maxSlope: +field.maxSlope.toFixed(3), meshError: +meshError.toFixed(6) }));

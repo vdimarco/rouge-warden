@@ -1,6 +1,4 @@
-// Which battlefield renderer to start: the 3D one needs WebGL2 on a graphics card. This file does not import three.js,
-// so the 2D fallback never downloads it.
-const KEY = 'tidebreak.renderer';
+// Probe 3D graphics support. Shore has one battlefield renderer.
 let probe = null;
 // { webgl2, software, name }: one throwaway context, released at once.
 export function graphicsSupport() {
@@ -17,14 +15,3 @@ export function graphicsSupport() {
   } catch {}
   return probe;
 }
-// ?renderer=2d|3d wins, then the player's saved choice, then 3D where a graphics card draws WebGL2. A browser that draws
-// without the graphics card gets 2D, which stays playable there; ?renderer=3d still forces 3D (QA uses it).
-export function rendererChoice(search = location.search) {
-  const asked = /[?&]renderer=(2d|3d)/i.exec(search)?.[1]?.toLowerCase(), support = graphicsSupport();
-  if (asked) return asked === '3d' && support.webgl2 ? '3d' : '2d';
-  let saved = null; try { saved = localStorage.getItem(KEY); } catch {}
-  if (!support.webgl2) return '2d';
-  if (saved === '2d' || saved === '3d') return saved;
-  return support.software ? '2d' : '3d';
-}
-export function saveRendererChoice(mode) { try { localStorage.setItem(KEY, mode); } catch {} }

@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.TIDEBREAK_URL || 'http://127.0.0.1:8765/tidebreak/';
 const hit = (a, b) => a && b && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 let checks = 0;
 for (const [w, h] of [[1440, 900], [390, 844], [844, 390], [320, 568], [568, 320]]) {
   const touch = w < 900, page = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errors = [];

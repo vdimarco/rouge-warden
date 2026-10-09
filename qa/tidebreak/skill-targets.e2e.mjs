@@ -17,7 +17,7 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.SHORE_URL || 'http://127.0.0.1:8765/tidebreak/';
 const SHOTS = process.env.SHOTS;
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
-const browser = await chromium.launch({ executablePath });
+const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 // 600x500 is a small landscape window: it gets the phone cluster, and the market bar reaches close under C.
 // 640x360 and 568x320 are small phones on their side: a smaller minimap, and the point button is a pill beside it.
 // 1040x640 is the smallest window with the desktop command bar.
@@ -77,7 +77,7 @@ try {
     const phone = w <= 430 || h <= 520, name = `${w}x${h}`;
     const page = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: phone, isMobile: phone });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
-    await page.goto(URL + '?renderer=2d');
+    await page.goto(URL);
     await page.waitForFunction(() => !document.getElementById('play')?.disabled, null, { timeout: 90000 });
     await page.evaluate(() => document.getElementById('play').click());
     for (let i = 0; i < 150 && await page.evaluate(() => document.getElementById('hud').hidden); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); }
