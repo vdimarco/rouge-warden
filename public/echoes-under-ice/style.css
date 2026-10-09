@@ -1,0 +1,152 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #080b12;
+  color: #bec9dc;
+  font:
+    14px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+}
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+header,
+.hud,
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+h1 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+.hud {
+  margin: 18px 0 10px;
+  font-size: 12px;
+  color: #8a9cc4;
+}
+.water {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2;
+  touch-action: none;
+  outline: none;
+  border: 1px solid #223463;
+}
+canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+}
+#overlay {
+  pointer-events: none;
+}
+.message {
+  min-height: 48px;
+  margin: 18px 0 8px;
+  line-height: 1.6;
+}
+.controls {
+  justify-content: flex-start;
+}
+button {
+  font: inherit;
+  color: #d8dfea;
+  background: #15203d;
+  border: 1px solid #364e8b;
+  border-radius: 3px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #ffd27c;
+}
+button:disabled {
+  opacity: 0.4;
+}
+.help {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #8a9cc4;
+  max-width: 800px;
+}
+footer {
+  margin-top: 28px;
+  font-size: 11px;
+  color: #7089c0;
+}
+@media (max-width: 600px) {
+  main {
+    padding: 12px;
+  }
+  .water {
+    aspect-ratio: 2;
+  }
+  h1 {
+    font-size: 15px;
+  }
+  .hud {
+    gap: 6px;
+  }
+  button {
+    padding: 12px;
+  }
+  .message {
+    font-size: 13px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) and (min-width: 650px) {
+  main {
+    display: grid;
+    grid-template-columns: 1.7fr 1fr;
+    gap: 10px 18px;
+    padding: 12px;
+  }
+  header,
+  .hud {
+    grid-column: 1/-1;
+  }
+  .hud {
+    margin: 0;
+  }
+  .water {
+    grid-column: 1;
+    grid-row: 3/7;
+    align-self: start;
+    aspect-ratio: 2;
+  }
+  .message,
+  .controls,
+  .help,
+  footer {
+    grid-column: 2;
+    margin: 0;
+    font-size: 11px;
+  }
+  .controls {
+    gap: 6px;
+  }
+  button {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+  footer button {
+    margin-top: 7px;
+  }
+}

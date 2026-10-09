@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#080d11" />
+    <title>Firefly Courier · Warden</title>
+    <link rel="stylesheet" href="/firefly-courier/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div><h1>Firefly Courier</h1></div>
+        <a href="/">Arcade ↗</a>
+      </header>
+      <div class="stage">
+        <canvas id="scene" aria-hidden="true"></canvas
+        ><canvas
+          tabindex="0"
+          id="play"
+          class="overlay"
+          aria-label="Firefly Courier game scene"
+        ></canvas>
+        <section class="card" id="card">
+          <h2 id="heading">Firefly Courier</h2>
+          <p id="description">
+            Deliver your swarm to five forest lanterns. Release the fireflies to
+            reveal moss paths, then recall them before walking. Thorny ground
+            costs light.
+          </p>
+          <button id="start">Begin journey</button>
+        </section>
+      </div>
+      <div class="hud" aria-live="polite">
+        <span id="progress">Ready</span><span id="best">Best 0</span
+        ><span id="resource">Light awaits</span
+        ><span id="message">Deliver your swarm to five forest lanterns.</span>
+      </div>
+      <nav class="controls" aria-label="Game controls">
+        <button data-key="ArrowLeft" aria-label="Move left">←</button
+        ><button data-key="ArrowUp" aria-label="Move forward">↑</button
+        ><button data-key="ArrowDown" aria-label="Move back">↓</button
+        ><button data-key="ArrowRight" aria-label="Move right">→</button
+        ><button id="action">Release / recall</button
+        ><button id="pause">Pause</button>
+      </nav>
+      <p class="hint">
+        Arrow keys / WASD · Space release / recall · P pause · Enter begin or
+        retry
+      </p>
+      <div class="credits">
+        Original scene by
+        <a href="https://github.com/bas3line/ascii">bas3line/ascii</a> ·
+        <a href="/firefly-courier/vendor/LICENSE">MIT license</a>
+      </div>
+      <footer>
+        <button type="button" data-switch>[ switch game ]</button>
+      </footer>
+    </main>
+    <script src="/arcade/switch.js"></script>
+    <script type="module" src="/firefly-courier/game.js"></script>
+  </body>
+</html>

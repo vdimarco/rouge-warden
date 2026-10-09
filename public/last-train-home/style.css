@@ -1,0 +1,287 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #080d11;
+  color: #e9dfbf;
+  font-family: ui-monospace, monospace;
+}
+body {
+  display: grid;
+  place-items: center;
+}
+main {
+  width: min(1120px, 100%);
+  padding: 18px;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+h1 {
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 400;
+  margin: 5px 0;
+}
+a {
+  color: #9ea99a;
+  font-size: 12px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #a39883;
+}
+.stage {
+  position: relative;
+  margin-top: 15px;
+  aspect-ratio: 2/1;
+  overflow: hidden;
+  border: 1px solid #393a35;
+  background: #07060d;
+}
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.overlay {
+  z-index: 1;
+}
+.card {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  background: #080d11b8;
+  text-align: center;
+  z-index: 2;
+  padding: 20px;
+}
+.card[hidden] {
+  display: none;
+}
+.card h2 {
+  font-size: 22px;
+  font-weight: 400;
+}
+.card p {
+  max-width: 480px;
+  line-height: 1.6;
+  font-size: 13px;
+}
+button {
+  font: inherit;
+  background: #222d2b;
+  color: #f3e6c2;
+  border: 1px solid #6b735d;
+  padding: 12px 17px;
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: none;
+}
+button:focus-visible {
+  outline: 2px solid #ffe2a0;
+}
+.hud {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 13px 0;
+  font-size: 13px;
+}
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hint {
+  font-size: 12px;
+  color: #a5afa7;
+  text-align: center;
+  line-height: 1.6;
+}
+.credits {
+  font-size: 10px;
+  text-align: center;
+  color: #78847d;
+  padding-top: 12px;
+}
+.flash {
+  color: #ffe2a0;
+}
+@media (max-width: 600px) {
+  main {
+    padding: 12px;
+  }
+  .stage {
+    aspect-ratio: 2/1;
+  }
+  canvas {
+    object-fit: cover;
+  }
+  .card p {
+    font-size: 12px;
+  }
+  .hud {
+    font-size: 11px;
+  }
+  .controls button {
+    padding: 13px 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+  }
+}
+footer {
+  text-align: center;
+  padding-top: 14px;
+}
+footer button {
+  font-size: 11px;
+  background: transparent;
+  border-color: #424b43;
+}
+.card {
+  background: #080d118a;
+}
+.card h2 {
+  font-size: 20px;
+}
+.controls button {
+  background: #17221fe6;
+  border-color: #414b3e;
+}
+header h1 {
+  font-size: 24px;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 10px;
+  }
+  .card h2 {
+    font-size: 17px;
+    margin: 0;
+  }
+  .card p {
+    font-size: 11px;
+    line-height: 1.35;
+    margin: 8px 0;
+  }
+  .card button {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    height: 100vh;
+    overflow: hidden;
+  }
+  main {
+    width: 100%;
+    height: 100vh;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 245px;
+    grid-template-rows: 38px minmax(0, 1fr);
+    column-gap: 14px;
+    position: relative;
+  }
+  header {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  header h1 {
+    font-size: 20px;
+  }
+  .stage {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    align-self: center;
+    margin: 0;
+    max-height: calc(100vh - 62px);
+  }
+  .hud,
+  .controls,
+  .hint,
+  .credits,
+  footer {
+    position: absolute;
+    right: 10px;
+    width: 245px;
+    margin: 0;
+    padding: 0;
+  }
+  .hud {
+    top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .hud #message {
+    width: 100%;
+    line-height: 1.35;
+    min-height: 44px;
+  }
+  .controls {
+    top: 118px;
+    gap: 5px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .controls button {
+    padding: 9px 5px;
+    font-size: 12px;
+  }
+  .controls #action {
+    grid-column: 1/4;
+  }
+  .controls #pause {
+    grid-column: 4;
+  }
+  .hint {
+    top: 216px;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .credits {
+    bottom: 49px;
+    font-size: 9px;
+  }
+  footer {
+    bottom: 10px;
+  }
+  footer button {
+    padding: 6px 10px;
+  }
+  .card {
+    padding: 12px;
+  }
+  .card h2 {
+    margin: 0;
+    font-size: 17px;
+  }
+  .card p {
+    font-size: 11px;
+    line-height: 1.35;
+    margin: 9px 0;
+  }
+  .card button {
+    padding: 8px 12px;
+  }
+}
