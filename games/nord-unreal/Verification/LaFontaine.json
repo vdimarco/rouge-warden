@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "location": "spawn",
+      "surface_z_cm": 0.0
+    },
+    {
+      "location": "car",
+      "surface_z_cm": 0.0
+    },
+    {
+      "location": "address building",
+      "surface_z_cm": 960.0
+    }
+  ],
+  "counts": {
+    "buildings": 1663,
+    "roads": 157,
+    "paths": 1209,
+    "trees": 4571,
+    "ponds": 2
+  }
+}

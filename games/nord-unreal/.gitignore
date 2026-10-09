@@ -1,0 +1,15 @@
+Binaries/
+Builds/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+.idea/
+*.sln
+*.suo
+*.code-workspace
+__pycache__/
+
+# Rebuilt from the checked-in geographic snapshot.
+Data/LaFontaine/Geometry/
+Build/*/FileOpenOrder/

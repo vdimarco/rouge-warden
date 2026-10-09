@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "mode": "two-player in-process listen-server PIE",
+  "checks": [
+    "two connected players in server and client worlds",
+    "out-of-range client interaction rejected",
+    "authority teleport replicated to owning client",
+    "client RPC enters car; occupant, visibility and collision replicate",
+    "client drive RPC moves authority car",
+    "car movement replicates to client",
+    "client handbrake reaches server and stops car",
+    "handbrake holds against throttle",
+    "releasing handbrake restores acceleration",
+    "client RPC exits car and restores character on both peers",
+    "listen host approaches the empty car",
+    "listen host interaction enters car",
+    "listen host interaction exits and restores character",
+    "teleport to a future objective",
+    "future mission interaction rejected",
+    "teleport to objective 1",
+    "mission 1 advances and replicates",
+    "teleport to objective 2",
+    "mission 2 advances and replicates",
+    "teleport to objective 3",
+    "mission 3 advances and replicates",
+    "completed missions remain complete",
+    "fall reset returns both peers to Sherbrooke spawn"
+  ],
+  "skipped": [
+    "late join",
+    "disconnect/reconnect",
+    "external internet connectivity"
+  ],
+  "drive_displacement_cm": 885.3,
+  "replicated_car_error_cm": 39.2,
+  "elapsed_seconds": 12.74
+}
