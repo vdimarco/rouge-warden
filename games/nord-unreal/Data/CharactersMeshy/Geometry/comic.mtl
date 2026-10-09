@@ -1,0 +1,50 @@
+newmtl Paint
+Kd 0.035 0.26 0.24
+newmtl Ink
+Kd 0.018 0.012 0.028
+newmtl Cream
+Kd 0.72 0.65 0.43
+newmtl Glass
+Kd 0.045 0.16 0.25
+newmtl Gold
+Kd 0.55 0.3 0.05
+newmtl Fur
+Kd 0.21 0.24 0.28
+newmtl White
+Kd 0.78 0.75 0.61
+newmtl Berry
+Kd 0.36 0.045 0.075
+newmtl Orange
+Kd 0.52 0.18 0.035
+newmtl Wood
+Kd 0.16 0.075 0.032
+newmtl Grass
+Kd 0.075 0.18 0.055
+newmtl Stone
+Kd 0.35 0.32 0.26
+newmtl Roof
+Kd 0.045 0.11 0.1
+newmtl Bronze
+Kd 0.13 0.2 0.14
+newmtl Whale
+Kd 0.035 0.23 0.4
+newmtl Skin
+Kd 0.55 0.29 0.15
+newmtl Lime
+Kd 0.4 0.63 0.035
+newmtl Navy
+Kd 0.025 0.055 0.12
+newmtl Red
+Kd 0.44 0.025 0.045
+newmtl Hair
+Kd 0.06 0.027 0.012
+newmtl CrewFace
+Kd 1 1 1
+newmtl BrawlFace
+Kd 1 1 1
+newmtl Leaf0
+Kd 0.06 0.18 0.07
+newmtl Leaf1
+Kd 0.1 0.25 0.09
+newmtl Leaf2
+Kd 0.16 0.29 0.1

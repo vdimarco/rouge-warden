@@ -116,3 +116,7 @@ The municipal upgrade was checked with source triangulation tests (courtyard hol
 ![Comic Parc La Fontaine district](Preview/ParkComicOverview.png)
 
 ![Cottage crew models](Preview/CottageCrew.png)
+
+### Detailed cottage characters
+
+The eight cottage crew residents now use Meshy-generated textured skeletal bodies with walking and idle clips. Style 9 uses the updated smiling skull-shirt face supplied by the user. Original plumbing props follow their right hands. See [character sources and rebuild steps](Data/CharactersMeshy/README.md). The existing player avatar and three park mascots are unchanged.

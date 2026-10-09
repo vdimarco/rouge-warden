@@ -13,3 +13,6 @@ __pycache__/
 # Rebuilt from the checked-in geographic snapshot.
 Data/LaFontaine/Geometry/
 Build/*/FileOpenOrder/
+
+# FBX importer extracts embedded textures locally.
+Data/CharactersMeshy/**/*.fbm/

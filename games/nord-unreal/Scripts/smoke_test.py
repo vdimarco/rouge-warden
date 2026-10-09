@@ -249,18 +249,28 @@ def residents_ready():
     if len(server)!=14 or len(client)!=14:return False
     assert {a.get_editor_property('Style') for a in client}==set(range(11))
     for a in client:
-        assert sum(c.static_mesh is not None for c in a.get_components_by_class(u.StaticMeshComponent))==6
+        style=a.get_editor_property('Style')
+        if style>=3:
+            body=a.get_component_by_class(u.SkeletalMeshComponent)
+            assert body and body.get_editor_property('skeletal_mesh_asset') and body.is_visible()
+            assert body.get_editor_property('skeletal_mesh_asset').get_editor_property('skeleton')
+            props=[c for c in a.get_components_by_class(u.StaticMeshComponent) if c.is_visible() and c.static_mesh is not None]
+            assert len(props)==1 and distance(props[0].get_world_location(),body.get_socket_location('RightHand'))<3
+        else:
+            assert sum(c.static_mesh is not None for c in a.get_components_by_class(u.StaticMeshComponent))==6
     crew=[a for a in server if a.get_editor_property('Style')>=3]
     STATE['resident']=max(crew,key=lambda a:min(distance(a.get_actor_location(),b.get_actor_location()) for b in server if b!=a))
     style=STATE['resident'].get_editor_property('Style')
     STATE['resident_client']=next(a for a in client if a.get_editor_property('Style')==style)
     STATE['resident_start']=STATE['resident'].get_actor_location()
+    STATE['resident_foot']=STATE['resident_client'].get_component_by_class(u.SkeletalMeshComponent).get_socket_transform('RightFoot',u.RelativeTransformSpace.RTS_COMPONENT).translation
     return True
 
 
 def resident_moved():
     a=STATE['resident'];b=STATE['resident_client']
-    return distance(a.get_actor_location(),STATE['resident_start'])>65 and distance(a.get_actor_location(),b.get_actor_location())<60
+    foot=b.get_component_by_class(u.SkeletalMeshComponent).get_socket_transform('RightFoot',u.RelativeTransformSpace.RTS_COMPONENT).translation
+    return distance(a.get_actor_location(),STATE['resident_start'])>65 and distance(a.get_actor_location(),b.get_actor_location())<60 and distance(foot,STATE['resident_foot'])>2
 
 
 def approach_resident():
@@ -274,7 +284,7 @@ def resident_near():
 def resident_talked():
     caption=STATE['client_pc'].get_editor_property('ResidentCaption')
     if not caption:return False
-    names={3:'GREEN CAP 51',4:'MEMPHIS 33',5:'BLACK CAP',6:'WHITE CAP',7:'RED JERSEY',8:'LIME JACKET',9:'CURLY METALHEAD',10:'TOPKNOT PLUNGER'}
+    names={3:'GREEN CAP 51',4:'MEMPHIS 33',5:'BLACK CAP',6:'WHITE CAP',7:'RED JERSEY',8:'LIME JACKET',9:'SKULL SHIRT',10:'TOPKNOT PLUNGER'}
     assert names[STATE['resident'].get_editor_property('Style')] in caption,caption
     assert not STATE['host_pc'].get_editor_property('ResidentCaption'),'Dialogue leaked to another player'
     assert missions_equal(3)

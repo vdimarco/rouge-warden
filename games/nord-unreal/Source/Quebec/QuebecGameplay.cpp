@@ -2,6 +2,7 @@
 #include "LaFontaineMap.h"
 
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -178,6 +179,14 @@ AQuebecParkResident::AQuebecParkResident()
         Piece->SetCollisionProfileName(TEXT("NoCollision"));
         Pieces.Add(Piece);
     }
+    GeneratedBody = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GeneratedBody"));
+    GeneratedBody->SetupAttachment(RootComponent);
+    GeneratedBody->SetCollisionProfileName(TEXT("NoCollision"));
+    GeneratedBody->SetComponentTickEnabled(false);
+    HandProp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HandProp"));
+    HandProp->SetupAttachment(RootComponent);
+    HandProp->SetCollisionProfileName(TEXT("NoCollision"));
+    HandProp->SetUsingAbsoluteRotation(true);
     Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Name"));
     Label->SetupAttachment(RootComponent);
     Label->SetRelativeLocation(FVector(0.,0.,262.));
@@ -189,7 +198,7 @@ AQuebecParkResident::AQuebecParkResident()
 
 const TCHAR* AQuebecParkResident::NameForStyle(int32 Index)
 {
-    const TCHAR* Names[] = {TEXT("CAPITAINE BAGEL"), TEXT("RATON PHILOSOPHE"), TEXT("MADAME POUTINE"), TEXT("GREEN CAP 51"), TEXT("MEMPHIS 33"), TEXT("BLACK CAP"), TEXT("WHITE CAP"), TEXT("RED JERSEY"), TEXT("LIME JACKET"), TEXT("CURLY METALHEAD"), TEXT("TOPKNOT PLUNGER")};
+    const TCHAR* Names[] = {TEXT("CAPITAINE BAGEL"), TEXT("RATON PHILOSOPHE"), TEXT("MADAME POUTINE"), TEXT("GREEN CAP 51"), TEXT("MEMPHIS 33"), TEXT("BLACK CAP"), TEXT("WHITE CAP"), TEXT("RED JERSEY"), TEXT("LIME JACKET"), TEXT("SKULL SHIRT"), TEXT("TOPKNOT PLUNGER")};
     return Names[FMath::Clamp(Index, 0, 10)];
 }
 
@@ -207,6 +216,22 @@ void AQuebecParkResident::ApplyAppearance()
         const FString Path = FString::Printf(TEXT("/Game/ParkComic/SM_Resident%d%s.SM_Resident%d%s"), FMath::Clamp(Style,0,10), Names[I], FMath::Clamp(Style,0,10), Names[I]);
         if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path)) Pieces[I]->SetStaticMesh(Mesh);
     }
+    const FString Folder = FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), Style);
+    USkeletalMesh* GeneratedMesh = Style >= 3 && Style <= 10
+        ? LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")), nullptr, LOAD_NoWarn | LOAD_Quiet) : nullptr;
+    HandProp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+    GeneratedBody->SetSkeletalMesh(GeneratedMesh);
+    if (GeneratedMesh) HandProp->AttachToComponent(GeneratedBody, FAttachmentTransformRules::KeepRelativeTransform, TEXT("RightHand"));
+    GeneratedBody->SetVisibility(GeneratedMesh != nullptr);
+    for (UStaticMeshComponent* Piece : Pieces) Piece->SetVisibility(GeneratedMesh == nullptr);
+    WalkAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Walk.A_Walk"))) : nullptr;
+    IdleAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Idle.A_Idle"))) : nullptr;
+    CurrentAnimation = nullptr;
+    const TCHAR* PropPath = Style == 8 ? TEXT("/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube") : TEXT("/Game/ParkComic/Crew/SM_Plunger.SM_Plunger");
+    HandProp->SetStaticMesh(GeneratedMesh ? LoadObject<UStaticMesh>(nullptr, PropPath) : nullptr);
+    HandProp->SetVisibility(GeneratedMesh != nullptr);
+    GeneratedBody->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+    Label->SetRelativeLocation(FVector(0.,0.,GeneratedMesh ? 215. : 262.));
     Label->SetText(FText::FromString(NameForStyle(Style)));
     if (UMaterialInterface* TextMaterial = LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ParkComic/M_Text.M_Text"))) Label->SetTextMaterial(TextMaterial);
 }
@@ -250,6 +275,22 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
         }
     }
     const float Pose = FMath::FloorToFloat(Time * 12.f) / 12.f;
+    if (GeneratedBody->GetSkeletalMeshAsset())
+    {
+        UAnimSequence* Animation = bWalking ? WalkAnimation : IdleAnimation;
+        if (Animation)
+        {
+            if (CurrentAnimation != Animation)
+            {
+                GeneratedBody->SetAnimation(Animation);
+                CurrentAnimation = Animation;
+            }
+            GeneratedBody->SetPosition(FMath::Fmod(Pose, FMath::Max(Animation->GetPlayLength(), .01f)), false);
+            GeneratedBody->TickAnimation(0.f, false);
+            GeneratedBody->RefreshBoneTransforms();
+            HandProp->UpdateComponentToWorld();
+        }
+    }
     const float Swing = FMath::Sin(Pose * 6.f) * (bWalking ? 24.f : 5.f);
     Pieces[0]->SetRelativeLocation(FVector(0.,0.,bWalking ? FMath::Abs(FMath::Sin(Pose*6.f))*3.f : 0.f));
     Pieces[1]->SetRelativeRotation(FRotator(FMath::Sin(Pose*2.f)*5.f,FMath::Sin(Pose*.8f)*12.f,0.));

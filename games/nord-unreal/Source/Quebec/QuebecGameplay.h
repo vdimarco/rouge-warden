@@ -9,6 +9,8 @@
 #include "GameFramework/PlayerController.h"
 #include "QuebecGameplay.generated.h"
 
+class UAnimSequence;
+class USkeletalMeshComponent;
 class UBoxComponent;
 class UCameraComponent;
 class UMaterialInterface;
@@ -42,6 +44,11 @@ public:
     static const TCHAR* DialogueForStyle(int32 Index);
 private:
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Pieces;
+    UPROPERTY() TObjectPtr<USkeletalMeshComponent> GeneratedBody;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> HandProp;
+    UPROPERTY() TObjectPtr<UAnimSequence> WalkAnimation;
+    UPROPERTY() TObjectPtr<UAnimSequence> IdleAnimation;
+    UPROPERTY() TObjectPtr<UAnimSequence> CurrentAnimation;
     UPROPERTY() TObjectPtr<UTextRenderComponent> Label;
     float RouteLength = 0.f;
     UFUNCTION() void ApplyAppearance();

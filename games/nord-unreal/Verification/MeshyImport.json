@@ -1,0 +1,125 @@
+{
+  "passed": true,
+  "characters": [
+    {
+      "style": 3,
+      "name": "GreenCap51",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    },
+    {
+      "style": 4,
+      "name": "Memphis33",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    },
+    {
+      "style": 5,
+      "name": "BlackCap",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    },
+    {
+      "style": 6,
+      "name": "WhiteCap",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    },
+    {
+      "style": 7,
+      "name": "RedJersey",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    },
+    {
+      "style": 8,
+      "name": "LimeJacket",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    },
+    {
+      "style": 9,
+      "name": "CurlyMetalhead",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    },
+    {
+      "style": 10,
+      "name": "Topknot",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "passed": true,
+  "characters": [
+    {
+      "name": "GreenCap51",
+      "triangles": 31130,
+      "vertices": 35074,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    {
+      "name": "Memphis33",
+      "triangles": 31058,
+      "vertices": 31623,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    {
+      "name": "BlackCap",
+      "triangles": 31165,
+      "vertices": 30035,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    {
+      "name": "WhiteCap",
+      "triangles": 31122,
+      "vertices": 27998,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    {
+      "name": "RedJersey",
+      "triangles": 30931,
+      "vertices": 27714,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    {
+      "name": "LimeJacket",
+      "triangles": 31173,
+      "vertices": 32544,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    {
+      "name": "CurlyMetalhead",
+      "triangles": 31226,
+      "vertices": 40429,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    {
+      "name": "Topknot",
+      "triangles": 31064,
+      "vertices": 31383,
+      "bones": 24,
+      "height_m": 1.82
+    }
+  ],
+  "checks": "weighted geometry, bounds, UVs, texture resolution, source hashes and distinct original jobs"
+}

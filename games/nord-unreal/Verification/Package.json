@@ -4,13 +4,13 @@
   "separate_process_loopback": true,
   "port": 7791,
   "loaded_resident_parts": 66,
+  "loaded_skeletal_crew": 8,
+  "loaded_animation_clips": 16,
   "rendered_capture": true,
-  "elapsed_seconds": 32.8,
+  "elapsed_seconds": 30.43,
   "skipped": [
     "external internet",
     "non-Linux platforms",
     "latency and reconnect"
-  ],
-  "loaded_municipal_models": 1161,
-  "excluded_park_composite_absent": true
+  ]
 }
