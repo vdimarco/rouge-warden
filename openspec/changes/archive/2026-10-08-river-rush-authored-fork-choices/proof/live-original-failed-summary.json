@@ -1,0 +1,152 @@
+{
+  "passed": false,
+  "scope": "live",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-CqqlzDw1.js",
+  "actualAppStateOrClockMutations": false,
+  "publicScoreWrites": 0,
+  "actual": [
+    {
+      "layout": "phone",
+      "passed": false,
+      "totalNaturalDistance": 0,
+      "naturalLevels": [
+        {
+          "levelIndex": 0,
+          "seed": 521892993,
+          "campaignSeed": 521892993,
+          "firstTime": 0.2,
+          "firstDistance": 10.411000000000001,
+          "profile": {
+            "seed": 521892993,
+            "length": 4200,
+            "mapIndex": 0
+          }
+        }
+      ],
+      "realNextRiverTransitions": [],
+      "strategies": [
+        {
+          "levelIndex": 0,
+          "id": 1,
+          "strategy": "bank",
+          "side": 1
+        },
+        {
+          "levelIndex": 0,
+          "id": 5,
+          "strategy": "clean-skip",
+          "side": -1
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 55,
+        "shaders": 84
+      },
+      "resourcesAfter": {
+        "uploads": 55,
+        "shaders": 84
+      },
+      "maxVisibleCoins": 15,
+      "maxCoinOverflow": 0,
+      "maxEntities": 35,
+      "nativePointerCutbacks": [
+        {
+          "from": 3,
+          "to": 4,
+          "throughElement": "game-canvas",
+          "pointerEvents": "none",
+          "timeAdvanced": true
+        }
+      ],
+      "exactPause": false,
+      "physicalReceipts": 116,
+      "deliberateOpportunities": [
+        {
+          "id": "choice-0-1-wildlife-bank",
+          "family": "wildlife-bank",
+          "policy": "bank",
+          "take": true
+        },
+        {
+          "id": "choice-0-1-landing-detour",
+          "family": "landing-detour",
+          "policy": "bank",
+          "take": false
+        },
+        {
+          "id": "choice-0-5-wildlife-bank",
+          "family": "wildlife-bank",
+          "policy": "clean-skip",
+          "take": false
+        },
+        {
+          "id": "choice-0-5-landing-detour",
+          "family": "landing-detour",
+          "policy": "clean-skip",
+          "take": false
+        }
+      ],
+      "stashReceipts": [
+        {
+          "choiceId": "choice-0-1-wildlife-bank",
+          "family": "wildlife-bank",
+          "value": 120,
+          "levelIndex": 0
+        },
+        {
+          "choiceId": "choice-0-1-landing-detour",
+          "family": "landing-detour",
+          "value": 200,
+          "levelIndex": 0
+        }
+      ],
+      "observedGpuBudget": {
+        "samples": 48,
+        "maxTriangles": 116363,
+        "maxDrawCalls": 46
+      },
+      "maxRewardContactGap": 4.0754453145552816e-9,
+      "untakenStreamMisses": 8,
+      "screenshots": [
+        "/tmp/river-rush-authored-release-live-phone/phone-playing-fork-1.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-playing-fork-2.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-playing-cache-0-1.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-playing-cache-0-5.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-treasure-receipt-0-1.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-treasure-receipt-0-5.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-opportunity-choice-0-1-wildlife-bank.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-opportunity-choice-0-1-landing-detour.jpg",
+        "/tmp/river-rush-authored-release-live-phone/phone-opportunity-choice-0-5-wildlife-bank.jpg"
+      ],
+      "error": "Error: No water route around rock 231 at 3991.5647999999997\n    at tick (eval at evaluate (:311:30), <anonymous>:170:35)"
+    }
+  ],
+  "rendererPath": "normal-backend-classification",
+  "actualBackend": null,
+  "isolatedRendererFixtures": {
+    "total": 0,
+    "passed": 0,
+    "maps": [],
+    "layouts": [],
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "richWaterShaderCompiled": null,
+  "matchedAuthoredPolicies": {
+    "cases": 0,
+    "scoreOnlyCases": 0,
+    "composedBankPromotions": 0
+  },
+  "gpuBudgetPreflight": {
+    "samples": 0,
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "errors": [],
+  "captureWarnings": [],
+  "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Error: No water route around rock 231 at 3991.5647999999997\\n' +\n+   '    at tick (eval at evaluate (:311:30), <anonymous>:170:35)'\n- null\n\n    at natural (file:///workspace/rouge-warden/qa/river-rush/authored-fork-choices.e2e.mjs:526:12)\n    at async file:///workspace/rouge-warden/qa/river-rush/authored-fork-choices.e2e.mjs:1085:90",
+  "limitations": [
+    "Chromium SwiftShader; hardware phone frame rate and human reaction difficulty are not measured.",
+    "Natural App runs retain the original game seed and clock. Source fixtures explicitly own isolated state."
+  ]
+}

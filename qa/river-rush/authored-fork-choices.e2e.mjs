@@ -299,7 +299,11 @@ function naturalController({ stopAfter, minimumLevel, strategies, pointerCutback
           }
         } else target = future.find(e => e.type === 'coin' && e.primaryRoute !== false)?.lane ?? g.lane;
         const allowed = choice ? choice.side < 0 ? [0, 1] : [3, 4] : H.lanes.LANES;
-        const rock = future.find(e => e.type === 'rock' && e.guardId !== deliberateRockId && touches(e, target)
+        // Ordinary rows past this fork use five lanes. Wait for reunion before
+        // planning them instead of requiring an opening in the old stream.
+        const canPlanRock = e => !choice || e.adventureId === choice.id || e.d <= choice.end;
+        const rock = future.find(e => e.type === 'rock' && canPlanRock(e)
+          && e.guardId !== deliberateRockId && touches(e, target)
           && H.engine.timeToImpact(g, e.d) <= 1.1);
         if (rock) {
           const open = allowed.filter(lane => !future.some(e => e.type === 'rock' && Math.abs(e.d - rock.d) < 1 && touches(e, lane)));

@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "method": "direct Markdown structure/scenario and frozen product validation",
+  "cli": "unavailable; no CLI validation claimed",
+  "requirementsBefore": 57,
+  "scenariosBefore": 133,
+  "requirementsAfter": 58,
+  "scenariosAfter": 137,
+  "added": [
+    "Authored fork reward tradeoffs"
+  ],
+  "modified": [
+    "Diverging river adventures",
+    "Purposeful treasure encounters"
+  ],
+  "canonicalBeforeSha256": "157fd458c46b50bdd02ed911e502e7d0325770832293e0d25566f82325df57a4",
+  "canonicalAfterSha256": "983981070b208e1e2a2f137d9042f27dbb49553507d12ddc76b06dff1aabc2f5",
+  "completedTasks": true,
+  "productFilesUnchanged": 277,
+  "qaOnlyCorrection": {
+    "passed": true,
+    "scope": "QA-only post-fork lookahead regression",
+    "oldHarnessSha256": "f566218fc1f6d90074d172f45cd3215e50e8ee046df76c86912ef2eb7ac1bc74",
+    "newHarnessSha256": "f57392aae42d49eee4480c880a03d6533636f3bd9b2500f7dddae4bda2a4fea6",
+    "cases": {
+      "preservedPostForkRocksDeferred": 2,
+      "postReunionRowsAllowed": 2,
+      "actualWithinForkRocksUnchanged": 3,
+      "ordinaryWithinForkRockUnchanged": true,
+      "callerUsesPredicate": true
+    },
+    "forkEnd": 3948.4799999999996,
+    "postForkRockDistance": 3991.5647999999997,
+    "postForkContactPlaneHasNoIsland": true,
+    "actualAppStateOrClockMutations": false,
+    "productFilesEdited": false
+  },
+  "archive": "openspec/changes/archive/2026-10-08-river-rush-authored-fork-choices"
+}

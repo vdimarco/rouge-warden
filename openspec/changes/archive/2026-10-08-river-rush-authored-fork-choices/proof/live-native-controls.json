@@ -1,0 +1,2042 @@
+{
+  "passed": true,
+  "scope": "short-cold-production-native-controls-and-exact-pause",
+  "base": "https://arcade.uptick.systems/river-rush/?v=75a484d",
+  "codeCommit": "75a484ddd0d1a6db5929495e5f989ebef2f8d452",
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "pairedChoiceEvidence": "/tmp/river-rush-authored-release-live-phone/offline-live-gameplay-audit.json",
+  "errors": [],
+  "scoreWrites": [],
+  "limitations": [
+    "Chromium phone viewport on SwiftShader; hardware phone FPS and human fun are not measured.",
+    "This short run verifies native controls and pause. Paid fork choices are independently audited from the preserved preceding live trace."
+  ],
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-CqqlzDw1.js",
+  "coldReady": {
+    "screen": "menu",
+    "run": null,
+    "renderer": {
+      "kind": "webgl",
+      "software": true,
+      "models": {
+        "raft": "ready",
+        "bank": "ready",
+        "palm": "ready",
+        "temple": "ready",
+        "guardian": "ready",
+        "rider": "ready",
+        "canopy": "ready",
+        "harbor": "ready",
+        "driftwood": "ready",
+        "bough": "ready"
+      },
+      "background": "ready",
+      "drawCalls": 36,
+      "triangles": 79027,
+      "frames": 12,
+      "buoyancy": {
+        "height": 0.13834764300361435,
+        "pitch": 0.03488859792310525,
+        "roll": 0.03516130389005396,
+        "lift": 0,
+        "water": -0.1374021788366398
+      },
+      "contextLost": false,
+      "preparing": false,
+      "prepared": true,
+      "recoveries": 0,
+      "map": {
+        "id": "ruins",
+        "index": 2,
+        "name": "Moonlit Ruins",
+        "finishDistance": 6600,
+        "remaining": 70,
+        "background": "night-sky-and-projected-ruins"
+      },
+      "waterRows": {
+        "capacity": 205,
+        "submitted": 175,
+        "triangles": 11200
+      },
+      "rider": {
+        "name": "paddle",
+        "index": 3,
+        "direction": "downstream",
+        "animation": {
+          "kind": "skeletal",
+          "phase": 0.6699835307558359,
+          "handError": 4.9120672290449604e-8,
+          "duck": 0,
+          "jump": 0,
+          "balance": 0,
+          "blade": [
+            -1.92,
+            0.08,
+            -0.25515446015754106
+          ],
+          "grip": [
+            0.05,
+            2.75,
+            -0.1261275381594621
+          ],
+          "head": [
+            -0.0002209614244668293,
+            2.9964898000241273,
+            -0.1496908753398331
+          ],
+          "shoulder": [
+            0.3559274602848253,
+            2.843416229420289,
+            -0.06809728362576269
+          ]
+        }
+      },
+      "terrain": {
+        "kind": "periodic-gradient",
+        "map": "ruins",
+        "octaves": 2,
+        "poolPerBank": 6,
+        "scheduledAhead": 2,
+        "coveredAhead": 318,
+        "coveredBehind": 66,
+        "changedSlots": 6,
+        "matrixUpdates": 71,
+        "uploadFrames": 12,
+        "recycled": 65
+      },
+      "island": {
+        "capacity": 1,
+        "active": 0,
+        "rockCapacity": 48,
+        "rocks": 0,
+        "vegetationCapacity": 12,
+        "vegetation": 0,
+        "samples": [],
+        "geometry": "shared-procedural-land",
+        "waterMasked": true,
+        "surfaceStyle": "prepared-organic-mottle",
+        "landmarkCapacity": 3,
+        "rootCapacity": 18,
+        "reedCapacity": 72,
+        "landmarks": [],
+        "groundClumps": [],
+        "palette": {
+          "wet": "#414957",
+          "shore": "#b1b1bf",
+          "earth": "#686d83",
+          "ridge": "#858a9e",
+          "moss": "#476f69",
+          "stone": "#b0b8c5",
+          "accent": "#c9edff",
+          "foam": "#ceddf3",
+          "root": "#747281"
+        },
+        "meshTriangles": 0,
+        "leafClusters": 0,
+        "vegetationStyle": "existing-native-canopy",
+        "roots": 0,
+        "reeds": 0,
+        "landmarkParts": 0,
+        "detailTriangles": 0
+      },
+      "horizon": {
+        "kind": "procedural",
+        "id": "ruins",
+        "paintedRiver": false,
+        "instances": 18,
+        "ridgeInstances": 12,
+        "layers": [
+          {
+            "near": 155,
+            "far": 395,
+            "fadeNear": 24,
+            "fadeIn": 60,
+            "fadeFar": 72,
+            "capacity": 8,
+            "count": 5,
+            "samples": [
+              {
+                "id": "63:-1",
+                "course": 6678,
+                "x": -29.171512847126216,
+                "y": -50.6478870063647,
+                "z": -148,
+                "visibility": 0.1953425925925926,
+                "screen": [
+                  -0.42804644354625965,
+                  -0.10065670613251132
+                ]
+              },
+              {
+                "id": "63:1",
+                "course": 6717.22,
+                "x": 132.9157275122474,
+                "y": 0.9649713597585292,
+                "z": -187.22000000000025,
+                "visibility": 0.9885930940000015,
+                "screen": [
+                  1.4100395710284015,
+                  0.3403923152286455
+                ]
+              },
+              {
+                "id": "64:-1",
+                "course": 6784,
+                "x": -10.00739439600818,
+                "y": -3.153059129685026,
+                "z": -254,
+                "visibility": 1,
+                "screen": [
+                  -0.14970454292982494,
+                  0.272851664029103
+                ]
+              },
+              {
+                "id": "64:1",
+                "course": 6823.22,
+                "x": 142.68474604202652,
+                "y": -2.8896168283852646,
+                "z": -293.22000000000025,
+                "visibility": 1,
+                "screen": [
+                  0.9932451612067656,
+                  0.30354132625871183
+                ]
+              },
+              {
+                "id": "65:-1",
+                "course": 6890,
+                "x": 12.330228883587608,
+                "y": -36.63888704588308,
+                "z": -360,
+                "visibility": 0.4791720250342937,
+                "screen": [
+                  0.011162761500572159,
+                  0.14033045706389738
+                ]
+              }
+            ]
+          },
+          {
+            "near": 305,
+            "far": 585,
+            "fadeNear": 24,
+            "fadeIn": 60,
+            "fadeFar": 72,
+            "capacity": 8,
+            "count": 4,
+            "samples": [
+              {
+                "id": "44:-1",
+                "course": 6864,
+                "x": -29.168268874586303,
+                "y": -3.1586877520386034,
+                "z": -334,
+                "visibility": 0.9623425925925926,
+                "screen": [
+                  -0.25937073051802456,
+                  0.2974676745030949
+                ]
+              },
+              {
+                "id": "44:1",
+                "course": 6921.72,
+                "x": 230.82605843989649,
+                "y": 0.8803595672230955,
+                "z": -391.72000000000025,
+                "visibility": 1,
+                "screen": [
+                  1.24620417158251,
+                  0.32210656534255194
+                ]
+              },
+              {
+                "id": "45:-1",
+                "course": 7020,
+                "x": 39.02739159986176,
+                "y": -20.947092548316398,
+                "z": -490,
+                "visibility": 1,
+                "screen": [
+                  0.11534884542105486,
+                  0.26449403181874526
+                ]
+              },
+              {
+                "id": "45:1",
+                "course": 7077.72,
+                "x": 271.6540486857739,
+                "y": -54.32595283109005,
+                "z": -547.7200000000003,
+                "visibility": 0.5266554293552759,
+                "screen": [
+                  1.0260083900339867,
+                  0.15358883694069686
+                ]
+              }
+            ]
+          },
+          {
+            "near": 465,
+            "far": 750,
+            "fadeNear": 24,
+            "fadeIn": 60,
+            "fadeFar": 72,
+            "capacity": 8,
+            "count": 3,
+            "samples": [
+              {
+                "id": "33:-1",
+                "course": 6996,
+                "x": -13.419936366166723,
+                "y": -97.32907568834743,
+                "z": -466,
+                "visibility": 0.37615740740740744,
+                "screen": [
+                  -0.12401327386279418,
+                  0.057516257128668834
+                ]
+              },
+              {
+                "id": "33:1",
+                "course": 7074.44,
+                "x": 313.09746441947726,
+                "y": -15.46075698734247,
+                "z": -544.4399999999996,
+                "visibility": 1,
+                "screen": [
+                  1.229481773445002,
+                  0.2836028935290611
+                ]
+              },
+              {
+                "id": "34:-1",
+                "course": 7208,
+                "x": 52.962426952131864,
+                "y": -14.46428103895282,
+                "z": -678,
+                "visibility": 1,
+                "screen": [
+                  0.11563325731014959,
+                  0.3095229148888912
+                ]
+              }
+            ]
+          }
+        ],
+        "ruins": {
+          "near": 205,
+          "far": 525,
+          "count": 6,
+          "capacity": 8,
+          "samples": [
+            {
+              "id": "ruin:49:-1",
+              "course": 6713,
+              "x": 12.720139691716213,
+              "y": -13.386919285441122,
+              "z": -183,
+              "visibility": 0.003259259259259259,
+              "screen": [
+                0.0769029494399072,
+                0.10724937648126463
+              ]
+            },
+            {
+              "id": "ruin:49:1",
+              "course": 6763.69,
+              "x": 111.8502928150256,
+              "y": -8.038381858901523,
+              "z": -233.6899999999996,
+              "visibility": 0.9590867489907364,
+              "screen": [
+                0.9299135103363487,
+                0.18086416044069842
+              ]
+            },
+            {
+              "id": "ruin:50:-1",
+              "course": 6850,
+              "x": 29.94904520473513,
+              "y": -17.078215859700265,
+              "z": -320,
+              "visibility": 1,
+              "screen": [
+                0.13806908699909584,
+                0.16746437782260518
+              ]
+            },
+            {
+              "id": "ruin:50:1",
+              "course": 6900.69,
+              "x": 148.13338784444488,
+              "y": -17.944057865503574,
+              "z": -370.6899999999996,
+              "visibility": 1,
+              "screen": [
+                0.8001704436612506,
+                0.1736665054218384
+              ]
+            },
+            {
+              "id": "ruin:51:-1",
+              "course": 6987,
+              "x": 93.82165861727378,
+              "y": -24.079944294746372,
+              "z": -457,
+              "visibility": 0.9910836762688614,
+              "screen": [
+                0.38862904441010193,
+                0.1762553823829624
+              ]
+            },
+            {
+              "id": "ruin:51:1",
+              "course": 7037.69,
+              "x": 198.85059251166626,
+              "y": -42.502268462893966,
+              "z": -507.6899999999996,
+              "visibility": 0.14560827068866355,
+              "screen": [
+                0.7930273446174325,
+                0.13567462997680066
+              ]
+            }
+          ]
+        },
+        "drawCalls": 4
+      },
+      "branches": {
+        "trees": 3,
+        "scenery": 3,
+        "woodSegments": 33,
+        "leafClusters": 63,
+        "capacity": 32,
+        "perTree": 96,
+        "drawCalls": 2,
+        "style": "meshy-natural-oak",
+        "bark": "fal",
+        "foliage": "fal",
+        "origins": [],
+        "model": "meshy",
+        "meshyInstances": 0,
+        "meshyTriangles": 2915,
+        "meshySamples": []
+      },
+      "branchCoverage": {
+        "capacity": 32,
+        "instanceCapacity": 192,
+        "drawBatches": 1,
+        "active": 0,
+        "instances": 0,
+        "samples": []
+      },
+      "treasurePool": {
+        "capacity": 6,
+        "active": 0,
+        "samples": [],
+        "style": "wood-and-gold-treasure",
+        "prepared": true
+      },
+      "stashPool": {
+        "capacity": 6,
+        "active": 0,
+        "samples": [],
+        "style": "gold-pouch-and-loose-gold",
+        "prepared": true
+      },
+      "encounters": {
+        "capacity": 32,
+        "drawBatches": 6,
+        "active": 0,
+        "crocodiles": 0,
+        "birds": 0,
+        "fish": 0,
+        "targets": 0,
+        "bursts": 0,
+        "instances": 0,
+        "samples": [],
+        "counts": {
+          "body": 0,
+          "detail": 0,
+          "wing": 0,
+          "hoop": 0,
+          "marker": 0,
+          "trail": 0
+        }
+      },
+      "hazards": {
+        "rocks": 0,
+        "samples": []
+      },
+      "coinFeedback": {
+        "active": 0,
+        "attracted": 0,
+        "capacity": 24,
+        "worldCoins": 0,
+        "goldFlightInstances": 0,
+        "flights": []
+      },
+      "coinPool": {
+        "capacity": 64,
+        "visible": 0,
+        "rims": 0,
+        "overflow": 0,
+        "samples": []
+      },
+      "impact": {
+        "eventId": null,
+        "type": null,
+        "fatal": false,
+        "age": 10,
+        "active": false,
+        "strength": 0,
+        "recoil": 0,
+        "pitch": 0,
+        "roll": 0,
+        "brace": 0,
+        "flash": 0,
+        "shieldPulse": 0,
+        "shieldAge": 10,
+        "shakeX": 0,
+        "shakeY": 0,
+        "cameraShake": 0,
+        "splashParticles": 0,
+        "shieldShards": 0,
+        "side": 1,
+        "lane": 2,
+        "raft": {
+          "z": 0,
+          "y": 0.13834764300361435,
+          "pitch": 0.03488859792310525,
+          "roll": 0.03516130389005396
+        },
+        "riderBrace": 0,
+        "particleCapacity": 72
+      },
+      "readyFrames": 12,
+      "entities": 0,
+      "bankInstances": 26,
+      "templeInstances": 5,
+      "guardianInstances": 3,
+      "course": {
+        "seed": 138,
+        "act": 3,
+        "intensity": 0.998953744702664,
+        "profileLength": 6600,
+        "width": 54.399235969033654,
+        "rapid": 0.1498901431937797,
+        "grade": -0.02,
+        "dropAhead": -8.471327417159841,
+        "bendAhead": 26.117378901244866,
+        "shoals": 6,
+        "framing": [
+          {
+            "lane": 0,
+            "cross": -7.6,
+            "foot": [
+              -0.6444462940486263,
+              -0.23785223427439856
+            ],
+            "head": [
+              -0.6601070042646903,
+              -0.13158722655818106
+            ],
+            "route": [
+              -0.37548803462307084,
+              -0.04806844462587057
+            ],
+            "envelope": {
+              "left": -0.8928392752394766,
+              "right": -0.47525430743662256,
+              "bottom": -0.2929666169490722,
+              "top": -0.15062459216490384
+            },
+            "jumpEnvelope": {
+              "left": -0.9144164393560706,
+              "right": -0.4863195590714135,
+              "bottom": -0.19198611305250754,
+              "top": -0.04333576605229856
+            }
+          },
+          {
+            "lane": 1,
+            "cross": -3.8,
+            "foot": [
+              -0.35019619319742573,
+              -0.23624032242457027
+            ],
+            "head": [
+              -0.3586774882571175,
+              -0.13029632250827647
+            ],
+            "route": [
+              -0.19733666357093604,
+              -0.047470826366922486
+            ],
+            "envelope": {
+              "left": -0.5741422076754641,
+              "right": -0.16935055381559816,
+              "bottom": -0.291089598423057,
+              "top": -0.14920170155732718
+            },
+            "jumpEnvelope": {
+              "left": -0.587966680167888,
+              "right": -0.17327960789733524,
+              "bottom": -0.1904229594239329,
+              "top": -0.04226953258298058
+            }
+          },
+          {
+            "lane": 2,
+            "cross": 0,
+            "foot": [
+              -0.05788647581674218,
+              -0.2346390400600006
+            ],
+            "head": [
+              -0.059283676778710076,
+              -0.1290141365801269
+            ],
+            "route": [
+              -0.019899641719007766,
+              -0.046875604430398315
+            ],
+            "envelope": {
+              "left": -0.2577144026045482,
+              "right": 0.13877779190402412,
+              "bottom": -0.2892255267090027,
+              "top": -0.14778889719409835
+            },
+            "jumpEnvelope": {
+              "left": -0.2638971515716203,
+              "right": 0.142091906779107,
+              "bottom": -0.1888708380918366,
+              "top": -0.041211037664724566
+            }
+          },
+          {
+            "lane": 3,
+            "cross": 3.8,
+            "foot": [
+              0.23250198832315724,
+              -0.23304828238465414
+            ],
+            "head": [
+              0.238094982967637,
+              -0.12774058075418673
+            ],
+            "route": [
+              0.15682731891885482,
+              -0.04628276443202031
+            ],
+            "envelope": {
+              "left": 0.054706696649517446,
+              "right": 0.4501585462278567,
+              "bottom": -0.2873742683155437,
+              "top": -0.14638607220857197
+            },
+            "jumpEnvelope": {
+              "left": 0.055972642501603845,
+              "right": 0.4608697903485112,
+              "bottom": -0.1873296326726745,
+              "top": -0.0401601973544146
+            }
+          },
+          {
+            "lane": 4,
+            "cross": 7.6,
+            "foot": [
+              0.5209880788026191,
+              -0.231467945975561
+            ],
+            "head": [
+              0.5334787680345988,
+              -0.12647556819181538
+            ],
+            "route": [
+              0.33284847207830026,
+              -0.04569229210240573
+            ],
+            "envelope": {
+              "left": 0.3569754547520307,
+              "right": 0.7593475956618901,
+              "bottom": -0.28553569158022396,
+              "top": -0.14499312123849978
+            },
+            "jumpEnvelope": {
+              "left": 0.365207135112097,
+              "right": 0.777350706322277,
+              "bottom": -0.18579922841419338,
+              "top": -0.03911692891864603
+            }
+          }
+        ],
+        "playerEnvelope": {
+          "lane": 2,
+          "left": -0.2577144026045482,
+          "right": 0.13877779190402412,
+          "bottom": -0.2892255267090027,
+          "top": -0.14778889719409835
+        },
+        "camera": {
+          "x": 0,
+          "y": 14,
+          "z": 28,
+          "fov": 86
+        },
+        "fork": null,
+        "upcomingFork": null
+      },
+      "world": {
+        "district": "Moonlit Ruins",
+        "canopies": 2,
+        "harbors": 3,
+        "woodHazards": 0,
+        "falls": 0,
+        "cliffs": 0,
+        "mist": 0,
+        "birds": 0,
+        "flowers": 0,
+        "flags": 6,
+        "motionTime": 0,
+        "gorgeWalls": 0,
+        "gorgeLedges": 0,
+        "templeBlocks": 35,
+        "templeColumns": 14,
+        "glyphs": 14,
+        "fireflies": 48,
+        "finish": {
+          "visible": true,
+          "remaining": 70,
+          "kind": "navigation-gate",
+          "structureInstances": 31,
+          "accentInstances": 30,
+          "flags": 10,
+          "approachPairs": 3,
+          "banner": {
+            "width": 21.2,
+            "bottom": 8,
+            "top": 11.1,
+            "x": 13.626736075742432,
+            "y": 2.683191940948621,
+            "z": -69.76
+          },
+          "course": 6600,
+          "x": 13.626736075742432,
+          "y": -6.86680805905138,
+          "z": -70
+        }
+      },
+      "steering": {
+        "x": 0,
+        "velocity": 0,
+        "yaw": 0,
+        "lean": 0
+      },
+      "surfaceMaps": {
+        "rock": 1024,
+        "wood": 1024,
+        "ground": 1024,
+        "water": 1024,
+        "normals": 0
+      },
+      "reducedMotion": false,
+      "frameBudget": {
+        "scale": 1,
+        "meanMs": 0,
+        "dpr": 0.6862183421300453,
+        "pixels": 154593,
+        "water": "light"
+      },
+      "preparation": {
+        "ms": 8604.699999988079,
+        "textures": 48
+      }
+    },
+    "audio": {
+      "enabled": false,
+      "active": false,
+      "contextState": "uninitialized",
+      "musicState": "idle",
+      "musicPlaying": false,
+      "intensity": 0,
+      "rush": false,
+      "musicGain": 0,
+      "filterFrequency": 0,
+      "cueCounts": {},
+      "lastCue": null,
+      "activeVoices": 0,
+      "voiceLimit": 12
+    },
+    "presentation": {
+      "fatalElapsed": 0,
+      "duration": 0.6,
+      "active": false
+    }
+  },
+  "resourcesBefore": {
+    "uploads": 55,
+    "shaders": 84
+  },
+  "started": {
+    "seed": 522649919,
+    "campaignSeed": 522649919,
+    "time": 0.1,
+    "distance": 5.2033000000000005,
+    "phase": "playing",
+    "lane": 2,
+    "visualLane": 2,
+    "action": "",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "nativeKeyboard": {
+    "from": 2,
+    "to": 3,
+    "code": "ArrowRight",
+    "after": {
+      "seed": 522649919,
+      "campaignSeed": 522649919,
+      "time": 0.35,
+      "distance": 18.230800000000002,
+      "phase": "playing",
+      "lane": 3,
+      "visualLane": 2.993877996371311,
+      "action": "",
+      "shield": true,
+      "shieldsUsed": 0
+    }
+  },
+  "nativePointer": {
+    "from": 3,
+    "to": 2,
+    "point": {
+      "x": 195,
+      "y": 464.20000000000005,
+      "element": "game-canvas"
+    },
+    "after": {
+      "seed": 522649919,
+      "campaignSeed": 522649919,
+      "time": 1.1500000000000004,
+      "distance": 60.10360000000001,
+      "phase": "playing",
+      "lane": 2,
+      "visualLane": 2.0012340980408583,
+      "action": "",
+      "shield": true,
+      "shieldsUsed": 0
+    },
+    "actualAppHandler": true
+  },
+  "pause": {
+    "sameStatus": true,
+    "samePixels": true,
+    "sha256": "35efeae3c46d5fcf4bbf2ee1d7a152c3a93121cce99c1b24fc7efaa21f0a2b28",
+    "modalSettledAndHidden": true
+  },
+  "final": {
+    "seed": 522649919,
+    "campaignSeed": 522649919,
+    "time": 1.2000000000000004,
+    "distance": 62.730000000000004,
+    "phase": "playing",
+    "lane": 2,
+    "visualLane": 2.0002407141402503,
+    "action": "",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "status": {
+    "screen": "paused",
+    "run": {
+      "phase": "playing",
+      "laneCount": 5,
+      "coinPatterns": [
+        "low-passage",
+        "shelter"
+      ],
+      "time": 1.2000000000000004,
+      "distance": 62,
+      "lane": 2,
+      "visualLane": 2.0002407141402503,
+      "actionTime": 0,
+      "action": "",
+      "coins": 1,
+      "score": 135,
+      "streak": 1,
+      "multiplier": 1,
+      "charge": 2,
+      "rush": 0,
+      "magnet": 0,
+      "shield": true,
+      "speed": 52.528,
+      "streakTime": 1.7499999999999996,
+      "jumps": 0,
+      "ducks": 0,
+      "dodges": 0,
+      "reason": "",
+      "level": {
+        "index": 0,
+        "id": "canopy",
+        "name": "Canopy Run",
+        "length": 4200,
+        "remaining": 4138,
+        "progress": 0.014935714285714287,
+        "final": false,
+        "difficulty": "FLOW"
+      },
+      "campaign": {
+        "score": 135,
+        "coins": 1,
+        "distance": 62,
+        "jumps": 0,
+        "ducks": 0,
+        "levelsCleared": 0
+      },
+      "terrain": {
+        "id": "recovery",
+        "type": "recovery",
+        "name": "Open Water",
+        "cue": "Catch your breath · Build your streak",
+        "phase": "recovery",
+        "strength": 0,
+        "derivative": 0,
+        "start": -343.67999999999995,
+        "end": 295.36,
+        "comboAvailable": false,
+        "next": "Boulder Narrows",
+        "comboProgress": 0,
+        "comboClaimed": false
+      },
+      "goalsCleared": 0,
+      "goal": {
+        "kind": "tricks",
+        "start": 0,
+        "target": 3,
+        "progress": 0
+      },
+      "notice": "Jump logs · Duck branches · Dodge rocks",
+      "rewardChoice": null,
+      "adventure": null,
+      "decision": null,
+      "hint": {
+        "id": 7,
+        "guardId": null,
+        "localWall": false,
+        "fullStreamGate": false,
+        "type": "log",
+        "enemy": null,
+        "fullRiver": false,
+        "lane": 2,
+        "destinationLane": 2,
+        "in": 0.40785637924034357,
+        "safeLane": 0
+      }
+    },
+    "renderer": {
+      "kind": "webgl",
+      "software": true,
+      "models": {
+        "raft": "ready",
+        "bank": "ready",
+        "palm": "ready",
+        "temple": "ready",
+        "guardian": "ready",
+        "rider": "ready",
+        "canopy": "ready",
+        "harbor": "ready",
+        "driftwood": "ready",
+        "bough": "ready"
+      },
+      "background": "ready",
+      "drawCalls": 31,
+      "triangles": 93156,
+      "frames": 37,
+      "buoyancy": {
+        "height": 0.12958153243824522,
+        "pitch": -0.12196966294600371,
+        "roll": 0.036586629070060106,
+        "lift": 0,
+        "water": 0.028221959097806303
+      },
+      "contextLost": false,
+      "preparing": false,
+      "prepared": true,
+      "recoveries": 0,
+      "map": {
+        "id": "canopy",
+        "index": 0,
+        "name": "Canopy Run",
+        "finishDistance": 4200,
+        "remaining": 4137.27,
+        "background": "panorama"
+      },
+      "waterRows": {
+        "capacity": 205,
+        "submitted": 175,
+        "triangles": 11200
+      },
+      "rider": {
+        "name": "paddle",
+        "index": 1,
+        "direction": "downstream",
+        "animation": {
+          "kind": "skeletal",
+          "phase": 1.8717146928204151,
+          "handError": 3.5272748974096704e-8,
+          "duck": 0,
+          "jump": 0,
+          "balance": -0.000056488671031119334,
+          "blade": [
+            -1.9199689312309327,
+            0.3171179443938164,
+            0.17248280394568916
+          ],
+          "grip": [
+            0.05003106876906712,
+            2.779639743049227,
+            -0.03258188663688044
+          ],
+          "head": [
+            -0.00019439271543444676,
+            2.9941636498685393,
+            -0.15801358485415457
+          ],
+          "shoulder": [
+            0.3569690326541089,
+            2.840759547921461,
+            -0.08164474568309334
+          ]
+        }
+      },
+      "terrain": {
+        "kind": "periodic-gradient",
+        "map": "canopy",
+        "octaves": 2,
+        "poolPerBank": 6,
+        "scheduledAhead": 2,
+        "coveredAhead": 321.27,
+        "coveredBehind": 62.730000000000004,
+        "changedSlots": 0,
+        "matrixUpdates": 78,
+        "uploadFrames": 14,
+        "recycled": 72
+      },
+      "island": {
+        "capacity": 1,
+        "active": 0,
+        "rockCapacity": 48,
+        "rocks": 0,
+        "vegetationCapacity": 12,
+        "vegetation": 0,
+        "samples": [],
+        "geometry": "shared-procedural-land",
+        "waterMasked": true,
+        "surfaceStyle": "prepared-organic-mottle",
+        "landmarkCapacity": 3,
+        "rootCapacity": 18,
+        "reedCapacity": 72,
+        "landmarks": [],
+        "groundClumps": [],
+        "palette": {
+          "wet": "#425d42",
+          "shore": "#c7b17b",
+          "earth": "#697e3b",
+          "ridge": "#91a854",
+          "moss": "#355e32",
+          "stone": "#b9bd99",
+          "accent": "#ffd991",
+          "foam": "#d6f4de",
+          "root": "#69513b"
+        },
+        "meshTriangles": 0,
+        "leafClusters": 0,
+        "vegetationStyle": "existing-native-canopy",
+        "roots": 0,
+        "reeds": 0,
+        "landmarkParts": 0,
+        "detailTriangles": 0
+      },
+      "horizon": null,
+      "branches": {
+        "trees": 7,
+        "scenery": 6,
+        "woodSegments": 66,
+        "leafClusters": 126,
+        "capacity": 32,
+        "perTree": 96,
+        "drawCalls": 3,
+        "style": "meshy-natural-oak",
+        "bark": "fal",
+        "foliage": "fal",
+        "origins": [
+          {
+            "id": 13,
+            "lane": 2,
+            "course": 139.36390274466035,
+            "side": 1,
+            "root": {
+              "x": 28.432667784912628,
+              "y": 0.9918585282088578,
+              "d": 1.3814
+            },
+            "tip": {
+              "lane": 2,
+              "x": 0,
+              "y": 3.021070629751655,
+              "d": -0.3210853072352624
+            },
+            "span": {
+              "lanes": [
+                2,
+                3,
+                4
+              ],
+              "width": 3,
+              "minLane": 2,
+              "maxLane": 4,
+              "centerLane": 3,
+              "side": 1,
+              "minX": -1.9,
+              "maxX": 9.5,
+              "centerX": 3.8
+            },
+            "contacts": [
+              {
+                "lane": 2,
+                "x": 0,
+                "y": 3.021070629751655,
+                "d": -0.3210853072352624
+              },
+              {
+                "lane": 3,
+                "x": 3.8,
+                "y": 3.094531487795097,
+                "d": -0.07782922680889649
+              },
+              {
+                "lane": 4,
+                "x": 7.6,
+                "y": 3.237567241231188,
+                "d": 0.3349352941728373
+              }
+            ],
+            "passed": false
+          }
+        ],
+        "model": "meshy",
+        "meshyInstances": 1,
+        "meshyTriangles": 2915,
+        "meshySamples": [
+          {
+            "id": 13,
+            "lane": 2,
+            "side": 1,
+            "span": {
+              "lanes": [
+                2,
+                3,
+                4
+              ],
+              "width": 3,
+              "minLane": 2,
+              "maxLane": 4,
+              "centerLane": 3,
+              "side": 1,
+              "minX": -1.9,
+              "maxX": 9.5,
+              "centerX": 3.8
+            },
+            "root": {
+              "x": 28.432667784912628,
+              "y": 0.9918585282088578,
+              "d": 1.3814
+            },
+            "nativeRoot": {
+              "x": 28.432667784912628,
+              "y": 0.9918585282088578,
+              "d": 1.3814
+            },
+            "contact": {
+              "lane": 2,
+              "x": 0,
+              "y": 3.199968275801648,
+              "d": -0.015189096652868495
+            },
+            "contacts": [
+              {
+                "lane": 2,
+                "x": 0,
+                "y": 3.199968275801648,
+                "d": -0.015189096652868495
+              },
+              {
+                "lane": 3,
+                "x": 3.8000000000000007,
+                "y": 3.231947607925707,
+                "d": -0.029694013364561123
+              },
+              {
+                "lane": 4,
+                "x": 7.599999999999998,
+                "y": 3.3480841162726445,
+                "d": 0.04488311001742962
+              }
+            ],
+            "nativeFrame": {
+              "origin": {
+                "x": 28.432667784912628,
+                "y": 1.2303131941588048,
+                "d": 1.3814
+              },
+              "axisX": {
+                "x": -29.652667784912627,
+                "y": 0,
+                "d": -0.7687181476576875
+              },
+              "axisY": {
+                "x": 0,
+                "y": 12,
+                "d": 0
+              },
+              "axisZ": {
+                "x": 0,
+                "y": 0,
+                "d": -11.856
+              },
+              "rootLift": -0.23845466594994702,
+              "rootFade": 0.25,
+              "nativeXs": [
+                0.9588569902428564,
+                0.8307066319829006,
+                0.702556273722945
+              ],
+              "anatomy": {
+                "extent": 1,
+                "shaftY": 0.14844685886934658,
+                "shaftZ": 0.07175104407902072,
+                "rootFade": 0.25,
+                "shaft": [
+                  {
+                    "x": 0.35,
+                    "y": 0.1582336626034519,
+                    "z": 0.052650987312214945,
+                    "yMin": 0.13613691089900548,
+                    "yMax": 0.18033041430789834,
+                    "zMin": 0.027326593438445696,
+                    "zMax": 0.0779753811859842,
+                    "segments": 25,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.4,
+                    "y": 0.14226053042146003,
+                    "z": 0.06525670244659547,
+                    "yMin": 0.1155883151420408,
+                    "yMax": 0.16893274570087924,
+                    "zMin": 0.04434863219087312,
+                    "zMax": 0.08616477270231782,
+                    "segments": 24,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.45,
+                    "y": 0.111606411540105,
+                    "z": 0.07792235882106611,
+                    "yMin": 0.08967710450146568,
+                    "yMax": 0.13353571857874433,
+                    "zMin": 0.05671704119408979,
+                    "zMax": 0.09912767644804243,
+                    "segments": 23,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.5,
+                    "y": 0.0937438413306059,
+                    "z": 0.10144016249910828,
+                    "yMin": 0.07396352445060418,
+                    "yMax": 0.1135241582106076,
+                    "zMin": 0.06688304477389996,
+                    "zMax": 0.1359972802243166,
+                    "segments": 24,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.55,
+                    "y": 0.1012966991646936,
+                    "z": 0.07982319989281665,
+                    "yMin": 0.08403696557692583,
+                    "yMax": 0.11855643275246136,
+                    "zMin": 0.058700321100234,
+                    "zMax": 0.1009460786853993,
+                    "segments": 22,
+                    "wood": 0.9848484848484849
+                  },
+                  {
+                    "x": 0.6,
+                    "y": 0.13231616311439073,
+                    "z": 0.06834216739513213,
+                    "yMin": 0.1115177816213676,
+                    "yMax": 0.15311454460741386,
+                    "zMin": 0.048859493525292244,
+                    "zMax": 0.08782484126497202,
+                    "segments": 20,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.65,
+                    "y": 0.16465105622409212,
+                    "z": 0.06979766094118509,
+                    "yMin": 0.149781696807813,
+                    "yMax": 0.17952041564037124,
+                    "zMin": 0.04828437636837,
+                    "zMax": 0.09131094551400018,
+                    "segments": 19,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.7,
+                    "y": 0.1772183864513735,
+                    "z": 0.06716478388040603,
+                    "yMin": 0.16005533825813453,
+                    "yMax": 0.1943814346446125,
+                    "zMin": 0.0511430931553208,
+                    "zMax": 0.08318647460549125,
+                    "segments": 25,
+                    "wood": 0.9600000000000002
+                  },
+                  {
+                    "x": 0.75,
+                    "y": 0.1627935565006407,
+                    "z": 0.06740145210378815,
+                    "yMin": 0.13597225926311177,
+                    "yMax": 0.18961485373816966,
+                    "zMin": 0.044097651784886706,
+                    "zMax": 0.09070525242268959,
+                    "segments": 46,
+                    "wood": 0.8768115942028986
+                  },
+                  {
+                    "x": 0.8,
+                    "y": 0.16431979456880857,
+                    "z": 0.06929454436075515,
+                    "yMin": 0.15525725124177606,
+                    "yMax": 0.17338233789584107,
+                    "zMin": 0.059983571828802436,
+                    "zMax": 0.07860551689270785,
+                    "segments": 11,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.85,
+                    "y": 0.168363014363286,
+                    "z": 0.06255916276980045,
+                    "yMin": 0.16132034664173472,
+                    "yMax": 0.17540568208483726,
+                    "zMin": 0.054382521370555326,
+                    "zMax": 0.07073580416904555,
+                    "segments": 11,
+                    "wood": 0.9696969696969696
+                  },
+                  {
+                    "x": 0.9,
+                    "y": 0.16181376173073678,
+                    "z": 0.07360218430467078,
+                    "yMin": 0.1563746515643455,
+                    "yMax": 0.16725287189712806,
+                    "zMin": 0.06712390802978203,
+                    "zMax": 0.0800804605795595,
+                    "segments": 10,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.94,
+                    "y": 0.163208658013781,
+                    "z": 0.08473151644420282,
+                    "yMin": 0.16137732594618412,
+                    "yMax": 0.1650399900813779,
+                    "zMin": 0.08130016803251465,
+                    "zMax": 0.08816286485589099,
+                    "segments": 7,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.96,
+                    "y": 0.16419425056538978,
+                    "z": 0.05386146379645259,
+                    "yMin": 0.16210426475759565,
+                    "yMax": 0.16628423637318387,
+                    "zMin": 0.051566335764496096,
+                    "zMax": 0.05615659182840908,
+                    "segments": 7,
+                    "wood": 1
+                  },
+                  {
+                    "x": 0.98,
+                    "y": 0.16428357173360203,
+                    "z": 0.05682291581788525,
+                    "yMin": 0.1622064161536254,
+                    "yMax": 0.16636072731357865,
+                    "zMin": 0.05391914333723527,
+                    "zMax": 0.059726688298535224,
+                    "segments": 8,
+                    "wood": 0.7083333333333334
+                  }
+                ],
+                "source": "Measured actual native triangle-plane cross sections after uniform native-to-root transform; brown/gray texture-supported lower woody loops, upper canopy excluded",
+                "terminalNote": "Native main limb forks near x0.75. Lower terminal path tapers to fine connected twigs by x0.94–0.98; preserve those vertices in Lite rather than inflate or collapse them."
+              }
+            },
+            "fitStart": {
+              "x": 28.432667784912628,
+              "y": 0.9918585282088578,
+              "d": 1.3814
+            },
+            "fitEnd": {
+              "x": -1.2199999999999989,
+              "y": 1.2303131941588048,
+              "d": 0.6126818523423124
+            },
+            "terminal": {
+              "x": -4.8604119485073065,
+              "y": -2.4418695146538916,
+              "z": -77.24658459700267
+            },
+            "topology": "complete-native-tree",
+            "passed": false
+          }
+        ]
+      },
+      "branchCoverage": {
+        "capacity": 32,
+        "instanceCapacity": 192,
+        "drawBatches": 1,
+        "active": 1,
+        "instances": 6,
+        "samples": [
+          {
+            "id": 13,
+            "fullRiver": false,
+            "canopyLead": true,
+            "lanes": [
+              2,
+              3,
+              4
+            ],
+            "width": 3,
+            "side": 1,
+            "minLane": 2,
+            "maxLane": 4,
+            "centerLane": 3,
+            "contactBounds": [
+              1.3199999999999998,
+              4.68
+            ],
+            "labelPosition": [
+              0.2482135129757701,
+              -0.2978492808674149,
+              -76.63390274466035
+            ],
+            "markers": [
+              {
+                "lane": 2,
+                "position": [
+                  -3.551786487024228,
+                  -3.481314262363371,
+                  -76.63390274466035
+                ]
+              },
+              {
+                "lane": 3,
+                "position": [
+                  0.2482135129757701,
+                  -3.677849280867415,
+                  -76.63390274466035
+                ]
+              },
+              {
+                "lane": 4,
+                "position": [
+                  4.048213512975771,
+                  -3.6170602082754777,
+                  -76.63390274466035
+                ]
+              }
+            ],
+            "passed": false,
+            "label": "DUCK · 3 LANES ↓",
+            "labelVisible": true
+          }
+        ]
+      },
+      "treasurePool": {
+        "capacity": 6,
+        "active": 0,
+        "samples": [],
+        "style": "wood-and-gold-treasure",
+        "prepared": true
+      },
+      "stashPool": {
+        "capacity": 6,
+        "active": 0,
+        "samples": [],
+        "style": "gold-pouch-and-loose-gold",
+        "prepared": true
+      },
+      "encounters": {
+        "capacity": 32,
+        "drawBatches": 6,
+        "active": 0,
+        "crocodiles": 0,
+        "birds": 0,
+        "fish": 0,
+        "targets": 0,
+        "bursts": 0,
+        "instances": 0,
+        "samples": [],
+        "counts": {
+          "body": 0,
+          "detail": 0,
+          "wing": 0,
+          "hoop": 0,
+          "marker": 0,
+          "trail": 0
+        }
+      },
+      "hazards": {
+        "rocks": 1,
+        "samples": [
+          {
+            "id": 16,
+            "lane": 2,
+            "ahead": 132.17654890243716,
+            "resolved": false,
+            "kind": "rock",
+            "screen": [
+              -0.20831762166957266,
+              0.17222006595439138
+            ]
+          }
+        ]
+      },
+      "coinFeedback": {
+        "active": 0,
+        "attracted": 0,
+        "capacity": 24,
+        "worldCoins": 8,
+        "goldFlightInstances": 0,
+        "flights": []
+      },
+      "coinPool": {
+        "capacity": 64,
+        "visible": 8,
+        "rims": 16,
+        "overflow": 0,
+        "samples": [
+          {
+            "id": 8,
+            "lane": 2,
+            "position": [
+              0.01743014377426766,
+              1.4343461332006942,
+              -17.245278830485162
+            ],
+            "screen": [
+              0.003827222836816648,
+              0.0052749949306327565
+            ],
+            "coinPattern": "jump-arc",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          },
+          {
+            "id": 9,
+            "lane": 2,
+            "position": [
+              0.012370831109346003,
+              1.5312337830840193,
+              -19.35252551048066
+            ],
+            "screen": [
+              0.0035635599868975897,
+              0.019671256273394732
+            ],
+            "coinPattern": "jump-arc",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          },
+          {
+            "id": 10,
+            "lane": 2,
+            "position": [
+              0.003436371415431516,
+              1.6936538581892968,
+              -21.460476190476143
+            ],
+            "screen": [
+              0.0031452321876402696,
+              0.03427933459089887
+            ],
+            "coinPattern": "jump-arc",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          },
+          {
+            "id": 11,
+            "lane": 2,
+            "position": [
+              -0.010046124056285244,
+              1.5286942763134137,
+              -23.56913087047164
+            ],
+            "screen": [
+              0.002554551112029154,
+              0.041343439816958254
+            ],
+            "coinPattern": "jump-arc",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          },
+          {
+            "id": 12,
+            "lane": 2,
+            "position": [
+              -0.02874342087001125,
+              1.085194199628507,
+              -25.678489550467148
+            ],
+            "screen": [
+              0.0017862233566841874,
+              0.04260320892641095
+            ],
+            "coinPattern": "jump-arc",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          },
+          {
+            "id": 14,
+            "lane": 2,
+            "position": [
+              -3.10950331114016,
+              -2.3489853843955526,
+              -73.49230274466034
+            ],
+            "screen": [
+              -0.06760898707598753,
+              0.12507271944801743
+            ],
+            "coinPattern": "low-passage",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          },
+          {
+            "id": 15,
+            "lane": 2,
+            "position": [
+              -4.287466725495151,
+              -2.7020890629088994,
+              -81.57070274466035
+            ],
+            "screen": [
+              -0.08740016475560092,
+              0.13426422077888076
+            ],
+            "coinPattern": "low-passage",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          },
+          {
+            "id": 17,
+            "lane": 3,
+            "position": [
+              -11.569518002200038,
+              -5.145684991267568,
+              -135.76694890243715
+            ],
+            "screen": [
+              -0.16181950014135899,
+              0.17244899589193702
+            ],
+            "coinPattern": "shelter",
+            "primaryRoute": true,
+            "coinValue": 10,
+            "decisionId": null,
+            "routeRole": null,
+            "riskAction": null,
+            "riskEnemy": null,
+            "premium": false,
+            "appearance": "gold-coin",
+            "color": "#ffcf49",
+            "rimColor": "#ffcf49",
+            "renderScale": 1
+          }
+        ]
+      },
+      "impact": {
+        "eventId": null,
+        "type": null,
+        "fatal": false,
+        "age": 11.200000000000001,
+        "active": false,
+        "strength": 0,
+        "recoil": 0,
+        "pitch": 0,
+        "roll": 0,
+        "brace": 0,
+        "flash": 0,
+        "shieldPulse": 0,
+        "shieldAge": 10,
+        "shakeX": 0,
+        "shakeY": 0,
+        "cameraShake": 0,
+        "splashParticles": 0,
+        "shieldShards": 0,
+        "side": 1,
+        "lane": 2.0002407141402503,
+        "raft": {
+          "z": 0,
+          "y": 0.12958153243824522,
+          "pitch": -0.12196966294600371,
+          "roll": 0.036586629070060106
+        },
+        "riderBrace": 0,
+        "particleCapacity": 72
+      },
+      "readyFrames": 37,
+      "entities": 11,
+      "bankInstances": 26,
+      "templeInstances": 0,
+      "guardianInstances": 0,
+      "course": {
+        "seed": 149,
+        "act": 0,
+        "intensity": 0.12223839881833119,
+        "profileLength": 4200,
+        "width": 44.35168819905916,
+        "rapid": 0.2948788570489066,
+        "grade": -0.16908435104719746,
+        "dropAhead": -4.127251016872643,
+        "bendAhead": -7.477234934448447,
+        "shoals": 7,
+        "framing": [
+          {
+            "lane": 0,
+            "cross": -7.6,
+            "foot": [
+              -0.5739663134530282,
+              -0.18196980098197638
+            ],
+            "head": [
+              -0.590532780221298,
+              -0.07786249082524123
+            ],
+            "route": [
+              -0.3463914838711128,
+              -0.03964990078004355
+            ],
+            "envelope": {
+              "left": -0.8177125871446957,
+              "right": -0.40819268028002675,
+              "bottom": -0.23431691541328545,
+              "top": -0.09728443471924915
+            },
+            "jumpEnvelope": {
+              "left": -0.8412037419569796,
+              "right": -0.4194746646701784,
+              "bottom": -0.13607225637882278,
+              "top": 0.008767879677501185
+            }
+          },
+          {
+            "lane": 1,
+            "cross": -3.8,
+            "foot": [
+              -0.2856200538734635,
+              -0.1820468734464339
+            ],
+            "head": [
+              -0.2938652903746976,
+              -0.0779247835606702
+            ],
+            "route": [
+              -0.17151541877220006,
+              -0.03968293673026311
+            ],
+            "envelope": {
+              "left": -0.505973340051465,
+              "right": -0.10788721072146727,
+              "bottom": -0.23440583138280477,
+              "top": -0.09735323425212182
+            },
+            "jumpEnvelope": {
+              "left": -0.5205114518203455,
+              "right": -0.1108695979082024,
+              "bottom": -0.13614693910528325,
+              "top": 0.008715831054652163
+            }
+          },
+          {
+            "lane": 2,
+            "cross": 0,
+            "foot": [
+              0.002817772925133608,
+              -0.18212397038601813
+            ],
+            "head": [
+              0.002899129256163962,
+              -0.0779870966489238
+            ],
+            "route": [
+              0.0033943200061420653,
+              -0.039715979041799174
+            ],
+            "envelope": {
+              "left": -0.19412704996740432,
+              "right": 0.19993714231171839,
+              "bottom": -0.23449477675708194,
+              "top": -0.09742205740892965
+            },
+            "jumpEnvelope": {
+              "left": -0.1997058799025633,
+              "right": 0.2056842250564376,
+              "bottom": -0.13622164721237953,
+              "top": 0.008663764046076711
+            }
+          },
+          {
+            "lane": 3,
+            "cross": 3.8,
+            "foot": [
+              0.29134721056680973,
+              -0.18220109181238942
+            ],
+            "head": [
+              0.29976052618366256,
+              -0.0780494300999785
+            ],
+            "route": [
+              0.17833774219102397,
+              -0.03974902771648928
+            ],
+            "envelope": {
+              "left": 0.11345404950635889,
+              "right": 0.5120258912613259,
+              "bottom": -0.2345837515507059,
+              "top": -0.09749090420184253
+            },
+            "jumpEnvelope": {
+              "left": 0.11659071663051142,
+              "right": 0.5267463932754953,
+              "bottom": -0.136296380713052,
+              "top": 0.008611678642031285
+            }
+          },
+          {
+            "lane": 4,
+            "cross": 7.6,
+            "foot": [
+              0.5799683027033268,
+              -0.1822782377372154
+            ],
+            "head": [
+              0.5967189479512316,
+              -0.07811178392381721
+            ],
+            "route": [
+              0.3533148575133031,
+              -0.039782082756171705
+            ],
+            "envelope": {
+              "left": 0.41393203959838465,
+              "right": 0.8242218632821879,
+              "bottom": -0.23467275577827487,
+              "top": -0.09755977464303861
+            },
+            "jumpEnvelope": {
+              "left": 0.4253779745475908,
+              "right": 0.8479220393338898,
+              "bottom": -0.13637113962024996,
+              "top": 0.00855957483276534
+            }
+          }
+        ],
+        "playerEnvelope": {
+          "lane": 2.0002407141402503,
+          "left": -0.1940519712648891,
+          "right": 0.2000122535890859,
+          "bottom": -0.23449479817103236,
+          "top": -0.09742207397848164
+        },
+        "camera": {
+          "x": 0.00005295711085506305,
+          "y": 14,
+          "z": 28,
+          "fov": 86
+        },
+        "fork": null,
+        "upcomingFork": null
+      },
+      "world": {
+        "district": "Canopy Run",
+        "canopies": 7,
+        "harbors": 2,
+        "woodHazards": 1,
+        "falls": 0,
+        "cliffs": 2,
+        "mist": 0,
+        "birds": 12,
+        "flowers": 34,
+        "flags": 4,
+        "motionTime": 1.2000000000000004,
+        "gorgeWalls": 0,
+        "gorgeLedges": 0,
+        "templeBlocks": 0,
+        "templeColumns": 0,
+        "glyphs": 0,
+        "fireflies": 0,
+        "finish": {
+          "visible": false,
+          "remaining": 4137.27,
+          "kind": "navigation-gate",
+          "structureInstances": 0,
+          "accentInstances": 0,
+          "flags": 0,
+          "approachPairs": 0,
+          "banner": {
+            "width": 21.2,
+            "bottom": 8,
+            "top": 11.1,
+            "x": 13.626736075742432,
+            "y": 2.683191940948621,
+            "z": -69.76
+          },
+          "course": 4200,
+          "x": -537.7511473537736,
+          "y": -219.02287345535663,
+          "z": -4137.27
+        }
+      },
+      "steering": {
+        "x": 0.000914713732951089,
+        "velocity": -0.007931326926212472,
+        "yaw": 0.00004801537037645143,
+        "lean": -0.000056488671031119334
+      },
+      "surfaceMaps": {
+        "rock": 1024,
+        "wood": 1024,
+        "ground": 1024,
+        "water": 1024,
+        "normals": 0
+      },
+      "reducedMotion": false,
+      "frameBudget": {
+        "scale": 0.6723999999999999,
+        "meanMs": 133.39999999999782,
+        "dpr": 0.46141321324824236,
+        "pixels": 69631,
+        "water": "light"
+      },
+      "preparation": {
+        "ms": 8604.699999988079,
+        "textures": 48
+      }
+    },
+    "audio": {
+      "enabled": true,
+      "active": false,
+      "contextState": "suspended",
+      "musicState": "idle",
+      "musicPlaying": false,
+      "intensity": 0.12223839881833119,
+      "rush": false,
+      "musicGain": 0.3944000005722046,
+      "filterFrequency": 6640,
+      "cueCounts": {
+        "coin": 1
+      },
+      "lastCue": {
+        "type": "coin",
+        "at": 8.640725623582766,
+        "id": 1
+      },
+      "activeVoices": 0,
+      "voiceLimit": 12
+    },
+    "presentation": {
+      "fatalElapsed": 0,
+      "duration": 0.6,
+      "active": false
+    }
+  },
+  "resourcesAfter": {
+    "uploads": 55,
+    "shaders": 84
+  }
+}

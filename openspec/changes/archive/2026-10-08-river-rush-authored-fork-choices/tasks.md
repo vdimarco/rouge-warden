@@ -8,5 +8,5 @@
 - [x] Verify competing strategies, delayed physical return, strict misses and cache entitlement across rates, Rush and maps.
 - [x] Run relevant regressions and rebuild the committed arcade output.
 - [x] Inspect actual gameplay and map/renderer fixtures, exact pause, resource bounds and full/software graphics budgets.
-- [ ] Publish to GitHub main and verify READY production bytes and live gameplay.
-- [ ] Merge canonical requirements, validate structure and archive completed work.
+- [x] Publish to GitHub main and verify READY production bytes and live gameplay.
+- [x] Merge canonical requirements, validate structure and archive completed work.
