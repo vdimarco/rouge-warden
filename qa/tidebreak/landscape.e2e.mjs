@@ -21,8 +21,8 @@ const browser = await chromium.launch({ headless: true, args: ['--use-angle=swif
 try {
   for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true]]) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch }), errors = [];
-    page.on('pageerror', e => errors.push(e.message));
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', e => { errors.push(e.message); console.error('PAGE ERROR', e.message); });
+    page.on('console', m => { if (m.type() === 'error') { errors.push(m.text()); console.error('CONSOLE ERROR', m.text()); } });
     page.on('response', r => { if (r.url().startsWith(origin) && r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
     await page.addInitScript(() => {
       const real = requestAnimationFrame.bind(window); let queue = []; window.__auto = true; window.__ts = performance.now();
@@ -31,7 +31,12 @@ try {
       const tick = () => { if (window.__auto) { window.__ts = performance.now(); window.__pump(1); } real(tick); }; real(tick);
     });
     await page.goto(origin + '/tidebreak/');
-    await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
+    await page.waitForFunction(() => !document.querySelector('#play').disabled || document.querySelector('#play').textContent.includes('unavailable'), null, { timeout: 240000 });
+    if (await page.locator('#play').isDisabled()) {
+      console.error('STARTUP', await page.locator('body').innerText());
+      await page.screenshot({ path: path.join(shots, `${name}-startup-failure.png`) });
+      throw new Error('3D startup failed: ' + errors.join('\n'));
+    }
     await page.click('#play');
     for (let i = 0; i < 120 && await page.locator('#hud').isHidden(); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
     await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running);
