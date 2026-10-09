@@ -1,7 +1,7 @@
 # afterlight Specification
 
 ## Purpose
-A full-screen action-rescue campaign whose six original ASCII landscapes evolve through combat, survivor escorts, guardian encounters and restoration. The retained Classic mode provides the connected exploration adventure with shared tools, resources and restoration choices; exploration-specific requirements below continue to apply to Classic.
+A full-screen action-rescue campaign whose six ASCII-inspired 3D regions evolve through combat, survivor escorts, guardian encounters and restoration. The retained Classic mode provides the connected exploration adventure with shared tools, resources and restoration choices; exploration-specific requirements below continue to apply to Classic.
 
 ## Requirements
 
@@ -46,10 +46,10 @@ The adventure SHALL support deliberate start, keyboard and touch movement/action
 - **THEN** controls remain usable and expedition time freezes until deliberate resume
 
 ### Requirement: Game engine runtime
-Afterlight SHALL use a locally served Phaser game engine for scene lifecycle, rendering composition and input without a runtime CDN dependency.
+Afterlight SHALL use a locally served Three.js perspective renderer for the default action adventure and retain the locally served Phaser engine for Classic, without a runtime CDN dependency.
 #### Scenario: Load the adventure
 - **WHEN** the player opens Afterlight
-- **THEN** a Phaser scene starts and renders the original ASCII landscape with working controls
+- **THEN** a real perspective scene starts with working movement, raycast aiming and clear controls, while Classic remains independently playable
 
 ### Requirement: Living maps
 Each region SHALL simulate changing weather, spatial terrain effects and moving actors. Restoration SHALL visibly unfold and alter traversal or local activity. Simulation SHALL freeze while paused and reconstruct safely from existing saves.
@@ -125,7 +125,22 @@ Action mode SHALL support deliberate start, keyboard/pointer and touch movement/
 - **THEN** restored progress resumes deliberately or a fresh playable campaign is offered without corrupting Classic progress
 
 ### Requirement: Bounded cinematic rendering
-The action renderer SHALL cache broad lighting at bounded resolution while keeping gameplay objects animating independently. Resizing the display or master texture SHALL preserve a full-viewport picture and consistent pointer-to-world coordinates.
+The action renderer SHALL bound GPU render resolution and reuse scene geometry while animating gameplay objects independently. Resizing SHALL preserve a full-viewport picture and consistent raycast aiming coordinates.
 #### Scenario: Change render resolution
-- **WHEN** the viewport or bounded master texture changes size
-- **THEN** the world image still covers the entire viewport, game objects remain aligned with aiming, and the HUD remains readable
+- **WHEN** the viewport or bounded render target changes size
+- **THEN** the world covers the viewport, projected objects align with raycast aiming, and the HUD remains readable
+
+### Requirement: Real spatial action depth
+Afterlight action SHALL use real perspective 3D geometry with terrain, depth occlusion, camera tracking and layered cinematic lighting. Pointer aiming SHALL map through a ground-plane raycast. The full-screen scene SHALL retain golden/cyan/emerald/violet direction and readable character/threat silhouettes. Unsupported WebGL SHALL show a recoverable startup message.
+#### Scenario: Traverse depth
+- **WHEN** the courier walks toward and away from the camera through scenery
+- **THEN** projection, parallax, occlusion and apparent size change according to 3D positions rather than a flat background
+
+### Requirement: Tactical rescue combat
+Players SHALL break visible survivor tethers before escorting those survivors, manage weapon heat, and use an interrupting pulse with a cooldown. Threats SHALL communicate attack timing and provide reasons to move, target and time actions. Existing saves SHALL reconstruct safely without losing restored worlds.
+#### Scenario: Free a survivor
+- **WHEN** the player destroys a tether and approaches its survivor
+- **THEN** that survivor can follow to safety and rescue progress increases only after delivery
+#### Scenario: Pace and interrupt
+- **WHEN** sustained fire overheats the weapon or the player triggers a pulse near a warned attack
+- **THEN** firing pauses for recovery or the attack is interrupted with readable feedback and a cooldown

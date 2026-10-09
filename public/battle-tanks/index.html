@@ -7,37 +7,37 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <meta name="theme-color" content="#050a10" />
-    <title>Afterlight · Bring them home</title>
+    <title>Battle Tanks · Break their command</title>
     <meta
       name="description"
-      content="Break shadow tethers, rescue survivors and defeat guardians across six living 3D worlds."
+      content="Drive a tank, aim its turret, disable three guarded relay guns and reach extraction. Cover, smoke and artillery shape three tactical missions."
     />
     <link rel="icon" href="/icons/favicon.svg" />
-    <link rel="stylesheet" href="/afterlight/action.css" />
+    <link rel="stylesheet" href="/battle-tanks/style.css" />
     <script src="/arcade/quiet.js"></script>
   </head>
   <body>
     <main
       id="action-arena"
       tabindex="0"
-      aria-label="Afterlight rescue playfield. Move with WASD or arrows, aim and click to fire, Space fires toward enemies, Shift dodges, E interrupts attacks, release fire to cool the weapon and P pauses."
+      aria-label="Battle Tanks playfield. W and S drive, A and D turn the hull, aim and click to fire, Space autoaims, Shift deploys smoke, E calls artillery and P pauses."
     >
       <div
         id="action-scene"
-        aria-label="A living three-dimensional rescue landscape"
+        aria-label="Three-dimensional tactical battlefield"
       ></div>
-      <div id="action-world-labels" aria-hidden="true"></div>
+      <div id="tank-world-labels" aria-hidden="true"></div>
       <canvas
-        id="action-radar"
+        id="tank-radar"
         width="200"
         height="100"
-        role="img"
-        aria-label="Radar: gold is you and the beacon, peach is survivors, violet is tethers and enemies"
+        aria-label="Tactical radar: gold player, red relay guns, cyan extraction"
       ></canvas>
+      <div id="tank-reticle" aria-hidden="true">+</div>
       <header class="action-hud">
         <div class="action-identity">
-          <a class="action-brand" href="/afterlight/">Afterlight</a
-          ><span id="action-place">The Firefly Woods</span>
+          <a class="action-brand" href="/battle-tanks/">Battle Tanks</a
+          ><span id="action-place">Woodland Relay</span>
         </div>
         <div
           class="action-objective"
@@ -45,13 +45,12 @@
           aria-live="polite"
           aria-atomic="true"
         >
-          <span id="action-goal">Lead three survivors to the beacon</span
-          ><span id="action-progress">Rescued 0 / 3</span>
+          <span id="action-goal">Disable all three relay guns</span
+          ><span id="action-progress">Relays 0 / 3</span>
         </div>
         <div class="action-status">
           <span id="action-health" aria-label="Health">HP 100</span
-          ><span id="action-score">Score 0</span
-          ><span id="action-heat">Light heat 0%</span>
+          ><span id="action-score">Score 0</span>
         </div>
         <nav class="action-settings" aria-label="Game settings">
           <button id="action-sound" type="button" aria-pressed="false">
@@ -73,60 +72,63 @@
         aria-describedby="action-description"
       >
         <div class="action-overlay-content">
-          <h1 id="action-title">Bring them home.</h1>
+          <h1 id="action-title">Break their command.</h1>
           <p id="action-description">
-            Blast the shadows. Lead three survivors to the beacon. Defend it
-            until the rescue route opens.
+            Disable three guarded relay guns, then drive into the cyan
+            extraction zone. Cover blocks vehicles and shells.
           </p>
           <div class="action-overlay-buttons">
-            <button id="action-begin" type="button">Begin rescue</button
+            <button id="action-begin" type="button">Begin mission</button
             ><button id="action-restart" type="button" hidden>
               New campaign
             </button>
           </div>
           <p id="action-overlay-hint">
-            Move close to the orange survivors. They will follow you to the
-            golden beacon.
+            W/S drive · A/D turn · aim + click or Space fire · Shift smoke · E
+            artillery.
           </p>
         </div>
       </section>
       <div class="action-bottom">
         <div class="action-guidance">
-          <p id="action-tip">Survivors follow when you get close.</p>
+          <p id="action-tip">
+            Shell range 70m · artillery 55m. Flank the relays; smoke hides your
+            advance.
+          </p>
           <p class="action-instructions">
-            WASD / arrows move · aim + click / Space fire · Shift dodge · P
-            pause
+            W/S drive · A/D turn · Space fire · Shift smoke · E strike · P pause
           </p>
           <p id="action-message" role="status" aria-live="polite"></p>
         </div>
         <nav class="action-direction-pad" aria-label="Touch movement">
-          <button type="button" data-move="up" aria-label="Move up">↑</button
-          ><button type="button" data-move="left" aria-label="Move left">
+          <button type="button" data-move="up" aria-label="Drive forward">
+            ↑</button
+          ><button type="button" data-move="left" aria-label="Turn hull left">
             ←</button
-          ><button type="button" data-move="down" aria-label="Move down">
-            ↓</button
-          ><button type="button" data-move="right" aria-label="Move right">
+          ><button type="button" data-move="down" aria-label="Reverse">↓</button
+          ><button type="button" data-move="right" aria-label="Turn hull right">
             →
           </button>
         </nav>
-        <div class="action-combat" aria-label="Rescue actions">
-          <button
-            id="action-fire"
-            type="button"
-            aria-label="Fire light toward enemies"
-          >
+        <div class="action-combat" aria-label="Tank weapons and defenses">
+          <button id="action-fire" type="button" aria-label="Fire tank shell">
             <span class="action-glyph" aria-hidden="true">+</span
             ><span>Fire</span></button
           ><button
-            id="action-pulse"
+            id="action-dodge"
             type="button"
-            aria-label="Pulse to interrupt nearby threats"
+            aria-label="Deploy smoke cover"
           >
-            <span class="action-glyph" aria-hidden="true">◎</span
-            ><span>Pulse · E</span></button
-          ><button id="action-dodge" type="button" aria-label="Dodge danger">
             <span class="action-glyph" aria-hidden="true">»</span
-            ><span>Dodge</span>
+            ><span>Smoke</span>
+          </button>
+          <button
+            id="tank-artillery"
+            type="button"
+            aria-label="Call artillery strike"
+          >
+            <span class="action-glyph" aria-hidden="true">×</span
+            ><span>Strike</span>
           </button>
         </div>
       </div>
@@ -134,12 +136,12 @@
         <span
           >scenes by <a href="https://ascii.rest/">ascii.rest</a> ·
           <a href="/last-light/vendor/LICENSE">MIT</a></span
-        ><a href="/battle-tanks/">Battle Tanks</a
+        ><a href="/afterlight/">Afterlight</a
         ><a href="/afterlight/classic.html">Classic</a
         ><button type="button" data-switch>Other games</button>
       </div>
     </main>
     <script src="/arcade/switch.js"></script>
-    <script type="module" src="/afterlight/action-game.js"></script>
+    <script type="module" src="/battle-tanks/game.js"></script>
   </body>
 </html>

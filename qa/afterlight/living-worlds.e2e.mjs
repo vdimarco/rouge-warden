@@ -107,7 +107,7 @@ async function verifyDiscovery() {
   await p.keyboard.press("1");
   await p.waitForURL(base + "/afterlight/");
   await p.waitForFunction(() =>
-    window.__afterlightAction?.game?.scene?.isActive("action"),
+    window.__afterlightAction?.renderer?.canvas?.dataset.depth === "perspective",
   );
   await p.goto(base + "/afterlight/classic.html");
   await p.waitForFunction(() =>

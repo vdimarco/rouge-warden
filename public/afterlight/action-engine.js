@@ -127,11 +127,26 @@ function makeRegion(s, region) {
   s.guardianDefeated = false;
   s.defenseDuration = 18;
   s.defenseRemaining = 18;
+  const starter = config.survivors.reduce((best, v) =>
+    distance(s, v) < distance(s, best) ? v : best,
+  );
   s.survivors = config.survivors.map((v) => ({
     ...v,
     status: "stranded",
     followOrder: 0,
+    bound: v.id !== starter.id,
   }));
+  s.tethers = s.survivors
+    .filter((v) => v.bound)
+    .map((v) => ({
+      id: `tether-${v.id}`,
+      x: v.x,
+      y: v.y + 3,
+      hp: 3,
+      maxHp: 3,
+      survivorId: v.id,
+      radius: 3.3,
+    }));
   s.enemies = [];
   s.projectiles = [];
   s.effects = [];
@@ -142,10 +157,14 @@ function makeRegion(s, region) {
   s.lastMove = { dx: 0, dy: -1 };
   s.dodge = { remaining: 0, cooldown: 0, dx: 0, dy: -1 };
   s.fireCooldown = 0;
+  s.heat = 0;
+  s.overheated = false;
+  s.pulseCooldown = 0;
+  s.pulseRemaining = 0;
   s.powerRemaining = 0;
   s.hitCooldown = 0;
   s.spawnClock = 2.8;
-  s.message = `Find the three survivors in ${config.name}. Get close so they follow, then bring them to the bright beacon.`;
+  s.message = `Rescue three survivors in ${config.name}. The nearest is free; shoot the two visible shadow tethers, then escort everyone to the beacon.`;
 }
 export function createActionGame(seed = 1) {
   const parsed = Number(seed);
@@ -208,14 +227,21 @@ function aimAt(s, aimX, aimY) {
   if (Number.isFinite(aimX) && Number.isFinite(aimY))
     s.aim = { x: clamp(aimX, 0, 200), y: clamp(aimY, 0, 100) };
   else {
-    const nearest = [...s.enemies].sort(
-      (a, b) => distance(s, a) - distance(s, b),
-    )[0];
-    const guardian = s.enemies.find((e) => e.elite && distance(s, e) < 65);
+    const nearest = s.enemies
+      .filter((e) => e.hp > 0)
+      .sort((a, b) => distance(s, a) - distance(s, b))[0];
+    const guardian = s.enemies.find(
+      (e) => e.elite && e.hp > 0 && distance(s, e) < 65,
+    );
+    const tether = [...(s.tethers || [])]
+      .filter((t) => t.hp > 0 && distance(s, t) < 55)
+      .sort((a, b) => distance(s, a) - distance(s, b))[0];
     const target =
-      guardian && (!nearest || nearest.elite || distance(s, nearest) > 12)
-        ? guardian
-        : nearest;
+      !guardian && tether && (!nearest || distance(s, nearest) > 14)
+        ? tether
+        : guardian && (!nearest || nearest.elite || distance(s, nearest) > 12)
+          ? guardian
+          : nearest;
     if (target) s.aim = { x: target.x, y: target.y };
   }
   let dx = s.aim.x - s.x,
@@ -229,7 +255,7 @@ function aimAt(s, aimX, aimY) {
   return { dx: dx / norm, dy: dy / norm };
 }
 export function fireAction(s, aimX, aimY) {
-  if (s.phase !== "playing" || s.fireCooldown > 0) return false;
+  if (s.phase !== "playing" || s.fireCooldown > 0 || s.overheated) return false;
   const direction = aimAt(s, aimX, aimY);
   const powered = s.powerRemaining > 0;
   const bearing = Math.atan2(direction.dy, direction.dx);
@@ -250,6 +276,13 @@ export function fireAction(s, aimX, aimY) {
     });
   }
   s.fireCooldown = powered ? 0.13 : 0.19;
+  s.heat = Math.min(1, (s.heat || 0) + (powered ? 0.052 : 0.045));
+  if (s.heat >= 1) {
+    s.overheated = true;
+    effect(s, "overheat", s.x, s.y, 12, 0.55);
+    s.message =
+      "Weapon overheated. Let it cool, move or use your interrupting pulse.";
+  }
   effect(s, "shot", s.x, s.y, powered ? 5 : 3, 0.13);
   return true;
 }
@@ -265,6 +298,38 @@ export function dodgeAction(s, dx = 0, dy = 0) {
   }
   s.dodge = { remaining: 0.25, cooldown: 1.15, dx: dx / norm, dy: dy / norm };
   effect(s, "dodge", s.x, s.y, 10, 0.3);
+  return true;
+}
+
+export function pulseAction(s) {
+  if (s.phase !== "playing" || (s.pulseCooldown || 0) > 0) return false;
+  s.pulseCooldown = 5;
+  s.pulseRemaining = 0.35;
+  let interrupted = 0;
+  for (const e of s.enemies) {
+    const gap = distance(s, e);
+    if (gap > 22 || e.hp <= 0) continue;
+    e.hp -= e.elite ? 3 : 2;
+    if (e.mode === "windup" || e.mode === "charge") interrupted++;
+    e.mode = "approach";
+    e.timer = 1.2;
+    e.telegraph = null;
+    e.vx = 0;
+    e.vy = 0;
+    const dx = e.x - s.x,
+      dy = e.y - s.y,
+      n = Math.hypot(dx, dy) || 1;
+    e.x = clamp(e.x + (dx / n) * 9, bounds.minX, bounds.maxX);
+    e.y = clamp(e.y + (dy / n) * 9, bounds.minY, bounds.maxY);
+    effect(s, "interrupt", e.x, e.y, e.elite ? 18 : 10, 0.55);
+  }
+  s.projectiles = s.projectiles.filter(
+    (p) => p.owner !== "enemy" || distance(s, p) > 22,
+  );
+  effect(s, "pulse", s.x, s.y, 26, 0.6);
+  s.message = interrupted
+    ? "Pulse interrupted the marked attacks. Move while the shadows recover."
+    : "Pulse knocks nearby shadows back and clears incoming bolts. Ready again in five seconds.";
   return true;
 }
 
@@ -420,6 +485,7 @@ function hurtPlayer(s, damage) {
 }
 function updateEnemies(s, dt) {
   for (const e of s.enemies) {
+    if (e.hp <= 0) continue;
     e.timer -= dt;
     e.contactCooldown = Math.max(0, e.contactCooldown - dt);
     const target = s.stage === "defend" && e.targetsBeacon ? s.beacon : s;
@@ -503,13 +569,22 @@ function updateProjectiles(s, dt) {
     p.y += p.vy * dt;
     p.ttl -= dt;
     if (p.owner === "player") {
-      const e = s.enemies.find(
-        (e) => e.hp > 0 && distance(e, p) < e.radius + p.radius,
+      const tether = (s.tethers || []).find(
+        (t) => t.hp > 0 && distance(t, p) < t.radius + p.radius,
       );
-      if (e) {
-        e.hp -= p.damage;
+      if (tether) {
+        tether.hp -= p.damage;
         p.ttl = 0;
-        effect(s, "hit", e.x, e.y, 7, 0.3);
+        effect(s, "tether-hit", tether.x, tether.y, 9, 0.3);
+      } else {
+        const e = s.enemies.find(
+          (e) => e.hp > 0 && distance(e, p) < e.radius + p.radius,
+        );
+        if (e) {
+          e.hp -= p.damage;
+          p.ttl = 0;
+          effect(s, "hit", e.x, e.y, 7, 0.3);
+        }
       }
     } else {
       if (distance(s, p) < p.radius + 1.7) {
@@ -522,6 +597,14 @@ function updateProjectiles(s, dt) {
       }
     }
   }
+  for (const tether of (s.tethers || []).filter((t) => t.hp <= 0)) {
+    const survivor = s.survivors.find((v) => v.id === tether.survivorId);
+    if (survivor) {
+      survivor.bound = false;
+      effect(s, "released", survivor.x, survivor.y, 26, 0.75);
+    }
+  }
+  s.tethers = (s.tethers || []).filter((t) => t.hp > 0);
   const defeated = s.enemies.filter((e) => e.hp <= 0);
   for (const e of defeated) {
     s.kills++;
@@ -554,7 +637,7 @@ function updateProjectiles(s, dt) {
 function updateSurvivors(s, dt) {
   let order = 0;
   for (const v of s.survivors) {
-    if (v.status === "stranded" && distance(s, v) <= 7) {
+    if (v.status === "stranded" && !v.bound && distance(s, v) <= 7) {
       v.status = "following";
       v.followOrder = ++order;
       effect(s, "found", v.x, v.y, 13, 0.6);
@@ -613,6 +696,15 @@ function tick(s, input, dt) {
   s.fireCooldown = Math.max(0, s.fireCooldown - dt);
   s.powerRemaining = Math.max(0, s.powerRemaining - dt);
   s.hitCooldown = Math.max(0, s.hitCooldown - dt);
+  s.pulseCooldown = Math.max(0, (s.pulseCooldown || 0) - dt);
+  s.pulseRemaining = Math.max(0, (s.pulseRemaining || 0) - dt);
+  if (s.overheated || !input.fire)
+    s.heat = Math.max(0, (s.heat || 0) - dt * (s.overheated ? 0.45 : 0.33));
+  if (s.overheated && s.heat <= 0.25) {
+    s.overheated = false;
+    effect(s, "cooled", s.x, s.y, 8, 0.3);
+  }
+  if (input.pulse) pulseAction(s);
   const burst = Math.min(dt, s.dodge.remaining);
   s.dodge.remaining = Math.max(0, s.dodge.remaining - dt);
   s.dodge.cooldown = Math.max(0, s.dodge.cooldown - dt);
@@ -676,7 +768,7 @@ function tick(s, input, dt) {
       effect(s, "restore", s.beacon.x, s.beacon.y, 120, 2);
     }
   } else
-    s.message = `${s.rescued}/3 survivors home. Find the glowing survivors, let them follow, then return to the beacon.`;
+    s.message = `${s.rescued}/3 survivors home. Shoot shadow tethers to free bound survivors, then escort them to the beacon.`;
 }
 export function updateAction(s, input = {}, dt = 0) {
   if (s.phase !== "playing") return s;
@@ -778,8 +870,30 @@ export function restoreAction(raw) {
         y: clamp(v.y, 30, 92),
         status: v.status,
         followOrder: i + 1,
+        bound:
+          v.status === "stranded" &&
+          (typeof v.bound === "boolean" ? v.bound : s.survivors[i].bound),
       };
     }
+    s.tethers = s.survivors
+      .filter((v) => v.status === "stranded" && v.bound)
+      .map((v) => {
+        const savedTether = Array.isArray(saved.tethers)
+          ? saved.tethers.find((t) => t.survivorId === v.id)
+          : null;
+        return {
+          id: `tether-${v.id}`,
+          x: v.x,
+          y: v.y + 3,
+          hp:
+            savedTether && Number.isFinite(savedTether.hp)
+              ? clamp(savedTether.hp, 1, 3)
+              : 3,
+          maxHp: 3,
+          survivorId: v.id,
+          radius: 3.3,
+        };
+      });
     s.rescued = s.survivors.filter((v) => v.status === "safe").length;
     s.totalRescued = Math.min(
       18,

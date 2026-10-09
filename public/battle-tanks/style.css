@@ -1,0 +1,117 @@
+@import url("/afterlight/action.css");
+:root {
+  --action-gold: #ffd299;
+  --action-cyan: #aad7dc;
+  --action-edge: #b1c09b77;
+}
+.action-brand {
+  letter-spacing: 0.09em;
+  font-size: 20px;
+}
+#tank-artillery {
+  border-color: #f0a581;
+  color: #f0c497;
+  background: #422718b0;
+}
+@media (max-width: 700px) {
+  .action-brand {
+    font-size: 14px;
+  }
+  .action-combat {
+    gap: 6px;
+  }
+  .action-combat button {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    font-size: 10px;
+  }
+  .action-glyph {
+    font-size: 24px;
+  }
+  .action-guidance {
+    bottom: 108px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .action-combat button {
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+  }
+  .action-guidance {
+    right: 195px;
+  }
+  .action-brand {
+    font-size: 14px;
+  }
+}
+
+#tank-world-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+.tank-world-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font:
+    11px/1.2 ui-monospace,
+    monospace;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px #000;
+  background: #06110fd9;
+  padding: 4px 6px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+.tank-world-label.offscreen::before {
+  content: "↗ ";
+}
+#tank-radar {
+  position: absolute;
+  z-index: 3;
+  right: 24px;
+  top: 135px;
+  width: 144px;
+  height: 72px;
+  pointer-events: none;
+  opacity: 0.94;
+  border-radius: 3px;
+}
+#tank-reticle {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  font: 28px/1 monospace;
+  color: #ffddb1;
+  text-shadow: 0 0 3px #000;
+  border: 1px solid #ffddb188;
+  border-radius: 50%;
+  width: 27px;
+  height: 27px;
+  text-align: center;
+}
+@media (max-width: 700px) {
+  #tank-radar {
+    right: 12px;
+    top: 150px;
+    width: 94px;
+    height: 47px;
+  }
+  .tank-world-label {
+    font-size: 9px;
+    padding: 3px 4px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #tank-radar {
+    top: 90px;
+    right: 14px;
+    width: 100px;
+    height: 50px;
+  }
+}
