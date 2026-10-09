@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { withWorld, fowAtEnd, worldMapped, SEE_GLSL, seeUniforms } from './materials.js';
 import { foliageAtlas, broadleafGeometry, pineGeometry, bushGeometry, tuftGeometry, foliagePatch, foliageUniforms } from './foliage.js';
-import { geologySites, cliffGeometry, caveGeometry, rockHeightAt } from '../geology.js';
+import { geologySites, cliffGeometry, caveGeometry, rockHeightAt, caveApproachOverlaps } from '../geology.js';
 import { TERRAIN_HEIGHT_GLSL } from '../relief.js';
 
 function rockGeometry(data) {
@@ -117,7 +117,7 @@ export class Props {
     const solid = (m, sway = 0) => set => patch(m.clone(), this.grow[set], { sway, key: 'tree' });
     const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: `built-${scale}` }), this.grow[set], { key: 'built' });
     const geology = (color, key) => set => {
-      const m = worldMapped(textures.stone, { color, scale: 310, roughness: .98, key });
+      const m = worldMapped(textures.rock, { color, scale: 540, roughness: .98, key });
       m.vertexColors = true; m.flatShading = true; m.side = THREE.DoubleSide;
       return groundRock(patch(m, this.grow[set], { key, see: true }), heightUniforms);
     };
@@ -157,8 +157,10 @@ export class Props {
     this.counts = [0, 0, 0]; const seed = s.seed;
     for (const phase of [0, 1]) {
       const rand = random(seed * 31 + phase * 977), put = this.collector();
-      for (const p of scenery[phase].props) this.place(put, p, rand, world.OBSTACLES[phase]);
-      for (const site of geologySites(world, phase)) {
+      for (const p of scenery[phase].props) { put.solid = !!p.solid; this.place(put, p, rand, world.OBSTACLES[phase]); }
+      put.solid = false;
+      const sites = geologySites(world, phase);
+      for (const site of sites) {
         if (site.cave) for (const kind of ['cave-shell', 'cave-inside', 'cave-floor', 'cave-rear']) put(kind, site.x, site.z, site.w, site.height, site.d);
         else put('cliff', site.x, site.z, site.w, site.height, site.d);
         // Roots and mature crowns grow from the sides. Keep the cave mouth and the cliff silhouette open.
@@ -170,6 +172,11 @@ export class Props {
         }
       }
       if (phase === 1) for (const b of world.BRUSH || []) this.brush(put, b, rand);
+      // Decorative foliage frames the entrance. Collision cover and trees rooted on the roof remain represented.
+      for (const kind of ['pine', 'oak', 'bush', 'shrub']) {
+        const list = put.lists.get(kind);
+        if (list) put.lists.set(kind, list.filter(tree => tree.solid || !sites.some(site => caveApproachOverlaps(site, tree))));
+      }
       this.commit(put, phase);
     }
     // Both realms: a forest wall just outside the arena edge, so a wide view never shows bare ground.
@@ -180,7 +187,7 @@ export class Props {
     this.commit(put, 2);
     this.view = null; this.setPhase(s.phase, true);
   }
-  collector() { const lists = new Map(); const put = (kind, x, z, sx, sy, sz, rot = 0, color = '#ffffff', tilt = 0, lift = 0) => { let l = lists.get(kind); if (!l) lists.set(kind, l = []); l.push({ x, z, sx, sy, sz, rot, color, tilt, lift }); }; put.lists = lists; return put; }
+  collector() { const lists = new Map(); const put = (kind, x, z, sx, sy, sz, rot = 0, color = '#ffffff', tilt = 0, lift = 0) => { let l = lists.get(kind); if (!l) lists.set(kind, l = []); l.push({ x, z, sx, sy, sz, rot, color, tilt, lift, solid: !!put.solid }); }; put.lists = lists; return put; }
   // Keeps every instance's matrix and colour; the mesh holds only the ones in view.
   commit(put, set) {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();

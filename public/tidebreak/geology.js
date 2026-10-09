@@ -7,6 +7,14 @@ export function geologySites(world, phase) {
     height: Math.max(760, b.height * 1.75), cave: b.town !== 'cliff-ridge' || b.w > 350,
   }));
 }
+// A crown in front of the mouth can hide its full arch from the elevated follow camera.
+export function caveApproachOverlaps(site, tree) {
+  if (!site.cave || tree.lift > 0) return false;
+  const radius = Math.max(tree.sx, tree.sz) * .7;
+  return Math.abs(tree.x - site.x) < site.w * .6 + 180 + radius
+    && tree.z + radius > site.z + site.d * .15
+    && tree.z - radius < site.z + site.d * .5 + 800;
+}
 // The tallest intersected triangle supports trees on the rock roof, including its worn, sloped shelf.
 export function rockHeightAt(data, x, z, groundAt = () => 0) {
   let height = -Infinity;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as world from '../../public/tidebreak/world.js';
-import { cliffGeometry, caveGeometry, geologySites, rockHeightAt } from '../../public/tidebreak/geology.js';
+import { cliffGeometry, caveGeometry, geologySites, rockHeightAt, caveApproachOverlaps } from '../../public/tidebreak/geology.js';
 import { makeScenery, laneDistance } from '../../public/tidebreak/scenery.js';
 import { buildRelief } from '../../public/tidebreak/relief.js';
 
@@ -47,6 +47,12 @@ for (const phase of [0, 1]) {
     const cover = world.OBSTACLES[phase].find(b => b.id === site.id);
     assert(site.w <= cover.w && site.d <= cover.h, 'rocks use shared cover in each realm');
     assert(site.height >= 760 && site.height <= 1100, 'rock faces have a major silhouette');
+    const crown = { x: site.x, z: site.z + site.d * .5 + 500, sx: 400, sz: 400, lift: 0 };
+    if (site.cave) {
+      assert(caveApproachOverlaps(site, crown), 'a forward crown that projects over the mouth needs a clearing');
+      assert(!caveApproachOverlaps(site, { ...crown, x: site.x + site.w + 700 }), 'trees outside the entrance clearing remain');
+      assert(!caveApproachOverlaps(site, { ...crown, lift: 800, z: site.z - site.d * .3 }), 'roof trees remain on the bluff');
+    }
     const mirror = sites.find(s => s.x === site.x && Math.abs(s.z - (world.SIZE - site.z)) < 1e-6);
     assert(mirror && mirror.height === site.height && mirror.cave === site.cave, 'both teams get the same geological features');
     // The CPU roof sampler follows the same vertex displacement as the 3D material.

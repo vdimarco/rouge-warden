@@ -46,7 +46,7 @@ try {
     await page.evaluate(async () => {
       window.__auto = false;
       const m = await import('/tidebreak/main.js'), s = m.qaState(), p = s.units.find(u => u.player);
-      s.units = [p]; s.nextWave = s.objectiveAt = Infinity; s.paused = true;
+      s.units = [p]; s.nextWave = 1e9; s.paused = true;
       p.hp = p.maxHp = 100000; p.shield = 100000; p.order = null;
     });
     for (const [id, phase] of [[0, 0], [2, 0], [3, 1]]) {
@@ -54,7 +54,7 @@ try {
         const m = await import('/tidebreak/main.js'), world = await import('/tidebreak/world.js'), { geologySites } = await import('/tidebreak/geology.js');
         const s = m.qaState(), p = s.units.find(u => u.player), r = document.querySelector('#battle').__shore3d;
         const site = geologySites(world, phase).find(x => x.id === id);
-        s.phase = phase; p.x = site.x; p.y = site.z + site.d * .5 + 150; p.order = null; p.moving = false;
+        s.phase = phase; s.time = phase * 40 + .1; p.x = site.x; p.y = site.z + site.d * .5 + 150; p.order = null; p.moving = false;
         r.recenter(); r.cam = { x: p.x, y: p.y }; r.props.setPhase(phase, true); r.sky.blend = phase;
         window.__pump(3);
         const g = r.stats(), screen = r.project(p.x, p.y), point = r.world(screen.x, screen.y), kinds = r.props.sets[phase].kinds;
