@@ -16,7 +16,7 @@ Existing cover islands SHALL show tall rock faces with stepped strata, hollow ca
 
 #### Scenario: Approach a cave
 - **WHEN** a player approaches a rock cover island
-- **THEN** a recessed cave mouth appears in the rock face with visible depth and a dark rear, and the shared obstacle still defines the approach limit.
+- **THEN** a recessed cave mouth appears in natural rock with visible depth and a dark rear, decorative crowns leave its approach clear, and the shared obstacle still defines the approach limit.
 
 #### Scenario: Fight beside a cliff
 - **WHEN** a rock face stands between the camera and a visible hero
