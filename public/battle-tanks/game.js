@@ -1,5 +1,5 @@
 import * as engine from "./engine.js";
-import { createDepthRenderer } from "../afterlight/depth-render.js";
+import { createDepthRenderer } from "./dot-render.js";
 const $ = (id) => document.getElementById(id),
   arena = $("action-arena"),
   keys = new Set(),
@@ -13,7 +13,11 @@ let state = engine.create(),
   shooting = false,
   aimPoint = null,
   reduced = preference.matches,
-  graphicsError = false;
+  graphicsError = false,
+  visualTime = 0,
+  accumulator = 0,
+  sound = false,
+  audio = null;
 try {
   const saved = engine.restore(localStorage.getItem(engine.SAVE_KEY));
   if (saved) {
@@ -64,6 +68,25 @@ function sync() {
   text("action-health", `Health ${Math.ceil(state.hp)}`);
   $("action-health").style.setProperty("--health", state.hp + "%");
   text("action-score", "Score " + state.score);
+  const charge = Math.min(100, state.charge || 0);
+  text(
+    "tank-charge",
+    charge >= 100
+      ? "PIERCING SHOT READY"
+      : `Drive charge ${Math.floor(charge)}%`,
+  );
+  $("tank-charge").style.setProperty("--charge", charge + "%");
+  $("tank-charge").classList.toggle("ready", charge >= 100);
+  $("action-fire").classList.toggle("charged", charge >= 100);
+  const boost = state.weaponBoost || state.boostRemaining || 0;
+  text(
+    "action-tip",
+    boost > 0
+      ? `OVERDRIVE · ${Math.ceil(boost)}s · keep firing`
+      : charge >= 100
+        ? "Next shot pierces armor. Line up two targets."
+        : "Keep moving to charge a piercing shot. Break relays to power up.",
+  );
   text("action-message", state.message);
   text("action-pause", state.phase === "paused" ? "Resume" : "Pause");
   text("action-motion", reduced ? "Motion low" : "Motion full");
@@ -82,7 +105,7 @@ function sync() {
     const labels = {
       ready: [
         "Break their command.",
-        "Disable three guarded relay guns, then drive into the cyan extraction zone. Cover blocks vehicles and shells.",
+        "Drive to charge piercing shots. Break three relay guns to light up the sector and power your cannon, then reach cyan extraction. Cover stops shells.",
         loaded ? "Continue mission" : "Begin mission",
       ],
       paused: [
@@ -203,12 +226,16 @@ function guidance() {
     state.y + Math.sin(state.turretAngle) * 17,
   );
   c.stroke();
-  const p = renderer.project(
-      state.x + Math.cos(state.turretAngle) * 30,
-      state.y + Math.sin(state.turretAngle) * 30,
-      1,
-    ),
+  const target = aimPoint || {
+    x: state.x + Math.cos(state.turretAngle) * 30,
+    y: state.y + Math.sin(state.turretAngle) * 30,
+  };
+  const p = renderer.project(target.x, target.y, 0.5),
     reticle = $("tank-reticle");
+  reticle.classList.toggle(
+    "out-of-range",
+    Math.hypot(target.x - state.x, target.y - state.y) > 70,
+  );
   reticle.hidden = state.phase !== "playing" || !p.visible;
   reticle.style.left = p.x + "px";
   reticle.style.top = p.y + "px";
@@ -257,7 +284,41 @@ $("action-motion").onclick = () => {
   renderer?.setReducedMotion(reduced);
   sync();
 };
-$("action-sound").hidden = true;
+$("action-sound").onclick = () => {
+  sound = !sound;
+  text("action-sound", sound ? "Sound on" : "Sound off");
+  $("action-sound").setAttribute("aria-pressed", String(sound));
+  if (sound) {
+    audio ||= new (window.AudioContext || window.webkitAudioContext)();
+    audio.resume().catch(() => {});
+  }
+};
+const heard = new WeakSet();
+function feedback() {
+  for (const e of state.effects) {
+    if (heard.has(e)) continue;
+    heard.add(e);
+    if (
+      !sound ||
+      !audio ||
+      !["muzzle", "impact", "artillery", "relay", "destroy"].includes(e.kind)
+    )
+      continue;
+    const osc = audio.createOscillator(),
+      gain = audio.createGain();
+    const large = e.kind !== "muzzle",
+      t = audio.currentTime;
+    osc.type = large ? "triangle" : "sawtooth";
+    osc.frequency.setValueAtTime(large ? 140 : 240, t);
+    osc.frequency.exponentialRampToValueAtTime(large ? 24 : 70, t + 0.12);
+    gain.gain.setValueAtTime(large ? 0.045 : 0.018, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + (large ? 0.3 : 0.14));
+    osc.connect(gain);
+    gain.connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + 0.32);
+  }
+}
 for (const b of document.querySelectorAll("[data-move]")) {
   b.onpointerdown = (e) => {
     e.preventDefault();
@@ -367,10 +428,16 @@ preference.addEventListener("change", (e) => {
 });
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
+  const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
   last = now;
-  engine.update(state, inputs(), dt);
-  renderer?.render(state, state.time);
+  accumulator += dt;
+  while (accumulator >= 1 / 60) {
+    engine.update(state, inputs(), 1 / 60);
+    accumulator -= 1 / 60;
+  }
+  if (!["paused", "lost"].includes(state.phase)) visualTime += dt;
+  renderer?.render(state, visualTime);
+  feedback();
   guidance();
   sync();
   if (state.phase === "playing" && now - lastSave > 1800) {

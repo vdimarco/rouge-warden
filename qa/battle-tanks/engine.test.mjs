@@ -159,3 +159,129 @@ test("spawn bombardment cannot clear distant relays; out-of-range artillery cost
   assert.ok(s.relays.some((r) => r.hp > 0));
   assert.equal(s.completed[0], false);
 });
+
+test("charge requires actual travel, not turning or throttle against cover", () => {
+  const s = e.start(e.create());
+  s.enemies.forEach((t) => (t.hp = 0));
+  s.relays.forEach((t) => (t.cooldown = 1000));
+  for (let i = 0; i < 30; i++) e.update(s, { turn: 1 }, 0.05);
+  assert.equal(s.charge, 0);
+  s.x = 54.6;
+  s.y = 67;
+  s.hullAngle = 0;
+  s.speed = 0;
+  for (let i = 0; i < 100; i++) e.update(s, { throttle: 1 }, 0.05);
+  assert.equal(s.charge, 0);
+  s.x = 20;
+  s.y = 90;
+  s.speed = 0;
+  for (let i = 0; i < 70; i++) e.update(s, { throttle: 1 }, 0.05);
+  assert.equal(s.charge, 100);
+  e.fire(s);
+  assert.equal(s.charge, 0);
+  assert.equal(s.projectiles.at(-1).damage, 2);
+  assert.equal(s.projectiles.at(-1).remainingPierces, 1);
+});
+test("charged shell hits two aligned targets once each and stops at physical cover", () => {
+  const s = e.start(e.create());
+  s.cover.forEach((t) => (t.hp = 0));
+  s.relays.forEach((t) => (t.hp = 0));
+  s.enemies.forEach((t) => (t.hp = 0));
+  s.x = 20;
+  s.y = 20;
+  s.charge = 100;
+  for (const [i, x] of [35, 45].entries())
+    Object.assign(s.enemies[i], { x, y: 20, hp: 3, cooldown: 1000 });
+  e.aim(s, 70, 20);
+  e.fire(s);
+  for (let i = 0; i < 12; i++) e.update(s, {}, 0.05);
+  assert.equal(s.enemies[0].hp, 1);
+  assert.equal(s.enemies[1].hp, 1);
+  assert.equal(s.projectiles.filter((p) => p.owner === "player").length, 0);
+  s.shellCooldown = 0;
+  s.charge = 100;
+  Object.assign(s.cover[0], { x: 30, y: 20, w: 4, h: 8, hp: 12 });
+  e.fire(s);
+  for (let i = 0; i < 12; i++) e.update(s, {}, 0.05);
+  assert.equal(s.cover[0].hp, 11);
+  assert.equal(s.enemies[0].hp, 1);
+});
+test("relay destruction changes encounter once: repair drop, rapid fire, bolt clear and wreck", () => {
+  const s = e.start(e.create());
+  s.x = 55;
+  s.y = 50;
+  const r = s.relays[0];
+  r.hp = 1;
+  s.projectiles.push({
+    id: "fixture-hostile",
+    x: r.x,
+    y: r.y + 5,
+    vx: 0,
+    vy: 0,
+    owner: "tank-0",
+    life: 2,
+  });
+  assert.equal(e.artillery(s, r), true);
+  assert.equal(s.weaponBoost, 5);
+  assert.equal(s.pickups.filter((p) => p.id === "repair-relay-0").length, 1);
+  assert.equal(s.projectiles[0].life, 0);
+  assert.equal(s.wrecks.filter((w) => w.id === r.id).length, 1);
+  assert.equal(s.restorations[0].r, 24);
+  e.fire(s);
+  assert.equal(s.shellCooldown, 0.32);
+  s.artilleryCooldown = 0;
+  e.artillery(s, r);
+  assert.equal(s.pickups.filter((p) => p.id === "repair-relay-0").length, 1);
+  s.hp = 50;
+  s.x = r.x;
+  s.y = r.y;
+  e.update(s, {}, 0.05);
+  assert.equal(s.hp, 85);
+});
+test("enemy roles warn before their distinct attacks and old saves receive safe defaults", () => {
+  const s = e.start(e.create());
+  assert.deepEqual(
+    s.enemies.map((t) => t.role),
+    ["scout", "scatter", "bruiser"],
+  );
+  assert.equal(s.enemies[2].maxHp, 4);
+  s.cover.forEach((t) => (t.hp = 0));
+  s.x = 110;
+  s.y = 35;
+  for (const t of s.enemies) {
+    t.cooldown = 0;
+    t.warning = 0;
+  }
+  e.update(s, {}, 0.05);
+  assert.equal(s.projectiles.length, 0);
+  assert.ok(s.enemies.every((t) => t.warning > 0));
+  const scatter = s.enemies[1];
+  assert.equal(scatter.warning, 1.1);
+  scatter.warning = 0.01;
+  for (const t of s.enemies) if (t !== scatter) t.cooldown = 1000;
+  e.update(s, {}, 0.05);
+  assert.equal(s.projectiles.filter((p) => p.owner === scatter.id).length, 2);
+  const old = e.create();
+  delete old.charge;
+  delete old.weaponBoost;
+  delete old.wrecks;
+  delete old.restorations;
+  for (const t of old.enemies) {
+    delete t.role;
+    delete t.type;
+    delete t.maxHp;
+    t.hp = 3;
+  }
+  const loaded = e.restore(e.serialize(old));
+  assert.equal(loaded.charge, 0);
+  assert.equal(loaded.weaponBoost, 0);
+  assert.equal(loaded.enemies[2].role, "bruiser");
+  const current = e.create();
+  current.charge = 73;
+  current.weaponBoost = 2;
+  const saved = e.restore(e.serialize(current));
+  assert.equal(saved.charge, 73);
+  assert.equal(saved.weaponBoost, 2);
+  assert.equal(e.restore({ ...current, charge: 101 }), null);
+  assert.equal(e.restore({ ...current, weaponBoost: Infinity }), null);
+});

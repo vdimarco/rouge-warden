@@ -1,12 +1,72 @@
 @import url("/afterlight/action.css");
 :root {
-  --action-gold: #ffd299;
-  --action-cyan: #aad7dc;
-  --action-edge: #b1c09b77;
+  --action-gold: #ffe095;
+  --action-cyan: #7ffff0;
+  --action-edge: #91e7c377;
 }
 .action-brand {
   letter-spacing: 0.09em;
   font-size: 20px;
+}
+#tank-charge {
+  --charge: 0%;
+  min-width: 145px;
+  padding-bottom: 8px;
+  font-size: 10px;
+  color: #a4ffe5;
+  background: linear-gradient(
+      to right,
+      #68ffe2 var(--charge),
+      #244744 var(--charge)
+    )
+    left bottom / 100% 3px no-repeat;
+}
+#tank-charge.ready {
+  color: #ffe695;
+  background: linear-gradient(#ffe695, #ffe695) left bottom / 100% 3px no-repeat;
+  text-shadow: 0 0 9px #ffc05b8c;
+}
+#action-fire.charged {
+  border-color: #ffe295;
+  box-shadow:
+    0 0 25px #ffd24d44,
+    inset 0 0 18px #ffcd5522;
+}
+.action-hud {
+  background: linear-gradient(#020e19ea, #03141a94 60%, transparent);
+}
+.action-guidance {
+  text-shadow:
+    0 1px 3px #000,
+    0 0 12px #000;
+}
+.action-overlay-content {
+  border-color: #58eac577;
+  background: #02141bea;
+  box-shadow: 0 0 40px #00bca91a;
+}
+.action-overlay-content h1 {
+  color: #ffe5a0;
+  text-shadow: 0 0 15px #ffa85255;
+}
+@media (max-width: 700px) {
+  #action-score {
+    display: none;
+  }
+  #tank-charge {
+    min-width: 145px;
+  }
+  .action-status {
+    gap: 16px;
+  }
+  .action-settings button,
+  .action-settings a {
+    font-size: 8px;
+    padding: 4px;
+  }
+  .action-brand {
+    font-size: 13px;
+  }
 }
 #tank-artillery {
   border-color: #f0a581;
@@ -94,6 +154,10 @@
   width: 27px;
   height: 27px;
   text-align: center;
+}
+#tank-reticle.out-of-range {
+  color: #ff7d9e;
+  border-color: #ff7d9e;
 }
 @media (max-width: 700px) {
   #tank-radar {

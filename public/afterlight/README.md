@@ -16,7 +16,7 @@ The editable source is split into `action-engine.js` (deterministic campaign), `
 
 ## Battle Tanks
 
-The parallel game at `/battle-tanks/` uses the same perspective renderer with separate campaign saves. W/S accelerates and reverses, A/D turns the hull, and the pointer aims the turret independently. Space auto-aims fire, Shift deploys smoke, and E calls an artillery strike. Cover blocks shells and vehicles. Disable three guarded relay guns, then reach extraction; complete three sectors. Touch controls provide the same actions.
+The parallel game at `/battle-tanks/` uses a dedicated luminous 3D dot renderer with separate campaign saves. W/S accelerates and reverses, A/D turns the hull, and the pointer aims the turret independently. Space auto-aims fire, Shift deploys smoke, and E calls an artillery strike. Cover blocks shells and vehicles. Disable three guarded relay guns, then reach extraction; complete three sectors. Driving charges a double-damage piercing shot. Scouts, scatter tanks and bruisers have different warned attacks. Destroying a relay drops a repair and grants five seconds of rapid fire while its position lights up. Touch controls provide the same actions; optional cannon/impact sound is off until enabled.
 
 ## Classic
 
