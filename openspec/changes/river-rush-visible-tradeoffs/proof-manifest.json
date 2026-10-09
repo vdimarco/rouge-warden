@@ -1,0 +1,26 @@
+{
+  "unit.log": {
+    "bytes": 34781,
+    "sha256": "720f402e7a32c20046bb7834c60ef092d621499a9728c1291c5dc7aca15bbb85"
+  },
+  "build.log": {
+    "bytes": 1158,
+    "sha256": "42fccf5bb794b36f7486e917b24a56d6ccc070965a1b8ae404a9721d4db9452d"
+  },
+  "source.json.gz": {
+    "bytes": 448677,
+    "sha256": "bfedcf938bd0cc166c45a13116acb098df3310507fca44058b8c948e2dea646d"
+  },
+  "phone-map-0-landing-detour-unheld-webgl.jpg": {
+    "bytes": 59784,
+    "sha256": "8202a4bbccba966ec20966e30126c3542867696a364c43770703f946d0f74794"
+  },
+  "actual.json.gz": {
+    "bytes": 14280,
+    "sha256": "623cf0f59ef17a56e0c073f388cba28890fb299f5de72ade0ca81d6ec5c3caf1"
+  },
+  "phone-map-0-wildlife-bank-unheld-webgl.jpg": {
+    "bytes": 59373,
+    "sha256": "b3df39184a46335486b00ce7391983bf8f7fb4ba10f1cbd8a56609aa97830596"
+  }
+}

@@ -9,7 +9,7 @@ import {isBranchSpan,branchLanes,branchSpan,branchOverlap,BRANCH_LANE_RADIUS} fr
 import {LANES,LANE_COUNT,MIN_LANE,MAX_LANE,CENTER_LANE,LANE_SPACING,clampLane} from './lanes.js';
 import {riverHalfWidth} from './river-course.js';
 import {riverFork,nextRiverFork,forkLaneCross,islandContains} from './river-forks.js';
-import {createAdventure,adventureRoute,streamLanes,innerStreamLane,outerStreamLane,recordAdventureClear,finishAdventureStep,treasurePayout} from './river-adventures.js';
+import {createAdventure,adventureRoute,streamLanes,innerStreamLane,outerStreamLane,recordAdventureClear,finishAdventureStep,treasurePayout,BANK_COIN_COUNT} from './river-adventures.js';
 import {groundCoinLayout} from './coin-layouts.js';
 import {chooseGuardedRoute,linkDecisionExit,ORDINARY_COIN_VALUE,GUARDED_COIN_VALUE,SAFE_COIN_OFFSETS,GUARDED_DUCK_OFFSETS} from './risk-reward.js';
 export const JUMP_SECONDS = .66;
@@ -239,9 +239,9 @@ function spanBranches(hazards,safe,coinLane,seed,row,widthsSeen=0){
   return[...hazards.filter(h=>!isBranchSpan(h)&&!coverage.has(h.lane)),...replacements.filter(h=>!coverage.has(h.lane)),...spans];
 }
 function generateAdventureNode(g,packet,node,maxRushSpeed){
- if(node.kind==='stash'){
+ if(node.kind==='stash'||node.kind==='counterpart'){
   const choice=packet.choices.find(item=>item.id===node.choiceId);
-  add(g,'stash',node.lane,node.d,{value:node.value,motif:packet.theme,adventureId:packet.id,adventureStep:node.step,routeSide:node.side,routeRole:choice.routeRole,
+  add(g,node.kind==='stash'?'stash':node.type,node.lane,node.d,{value:node.value,coinCount:node.coinCount??0,groundedContact:true,motif:packet.theme,adventureId:packet.id,adventureStep:node.step,routeSide:node.side,routeRole:choice.routeRole,
    choiceId:choice.id,choiceFamily:choice.family,choiceRole:node.choiceRole,guardId:choice.guardId,returnLane:choice.exitLane,returnD:choice.exitD,sourceGuardD:choice.sourceGuardD??null});
   return;
  }
@@ -505,6 +505,16 @@ export function updateGame(g, input, dt) {
   const waveRows=new Map(crossed.filter(e=>e.type==='log'&&e.terrainActive&&e.sectionType==='wave-train').map(e=>[Number.isInteger(e.row)?`row:${e.row}`:`entity:${e.id}`,e.sectionId]));
   let fatalContact=null,lastContactCoinTime=null;
   let coinGoalDuringRush=false;
+  // A pouch uses exactly the same per-coin economics as a touched token;
+  // only the aggregate presentation receipt differs.
+  const awardCoin=(coinValue,boosted,elapsed)=>{
+    g.coins++;g.streak++;g.lastCoin=g.time;lastContactCoinTime=frame.time+elapsed;
+    if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
+    g.multiplier=Math.min(5,1+Math.floor(g.streak/8));
+    const value=coinValue*g.multiplier*(boosted?2:1);
+    g.bonus+=value;if(frame.rush<=elapsed)g.charge=Math.min(100,g.charge+2);
+    return value;
+  };
   for (const e of crossed) {
     e.done = true;
     // Sample the same analytic trajectory for coins and powers at their exact
@@ -521,12 +531,8 @@ export function updateGame(g, input, dt) {
       const boosted=boostUntil>elapsed;
       if (overlap&&coinTouchesAtHeight(e,action.action,action.time)) {
         e.collected=true;
-        g.coins++; g.streak++; g.lastCoin = g.time;lastContactCoinTime=frame.time+elapsed;
-        if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
-        g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
         const coinValue=e.coinValue===GUARDED_COIN_VALUE?GUARDED_COIN_VALUE:ORDINARY_COIN_VALUE;
-        const value=coinValue*g.multiplier*(boosted?2:1);
-        g.bonus += value; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
+        const value=awardCoin(coinValue,boosted,elapsed);
         emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high,jumpHeight:coinJumpHeight(e),coinPattern:e.coinPattern??null,primaryRoute:e.primaryRoute!==false,
           coinValue,choiceId:e.choiceId??null,choiceFamily:e.choiceFamily??null,choiceRole:e.choiceRole??null,guardId:e.guardId??null,adventureId:e.adventureId??null,adventureStep:e.adventureStep??null,routeSide:e.routeSide??null,decisionId:e.decisionId??null,row:e.row??null,routeRole:e.routeRole??null,riskAction:e.riskAction??null,riskEnemy:e.riskEnemy??null,
           distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,streak:g.streak,multiplier:g.multiplier,contactTime:frame.time+elapsed });
@@ -534,10 +540,12 @@ export function updateGame(g, input, dt) {
     } else if(e.type==='stash'){
       const action=crossingAction(frame,elapsed);
       if(overlap&&coinHeightTouches(false,action.action,action.time)){
-        const value=e.value===200?200:120;e.collected=true;g.bonus+=value;
+        const coinCount=e.choiceFamily==='wildlife-bank'&&e.coinCount===BANK_COIN_COUNT?BANK_COIN_COUNT:0,boosted=boostUntil>elapsed;
+        const coinValues=Array.from({length:coinCount},()=>awardCoin(ORDINARY_COIN_VALUE,boosted,elapsed));
+        const value=coinCount?coinValues.reduce((sum,points)=>sum+points,0):e.value===200?200:120;e.collected=true;if(!coinCount)g.bonus+=value;
         const packet=g.adventures.find(item=>item.id===e.adventureId),choice=packet?.choices.find(item=>item.id===e.choiceId);
-        if(choice){choice.collected=true;choice.earned=value;}
-        emit(g,'stash',`GOLD STASH +${value}`,obstacleLane,{entityId:e.id,value,choiceId:e.choiceId,choiceFamily:e.choiceFamily,choiceRole:e.choiceRole,
+        if(choice){choice.collected=true;choice.earned=value;choice.outcome='stash';}
+        emit(g,'stash',coinCount?`${coinCount} COINS · +${value}`:`GOLD STASH +${value}`,obstacleLane,{entityId:e.id,value,coinCount,coinValues,coinValue:coinCount?ORDINARY_COIN_VALUE:null,boosted:coinCount&&boosted,streak:g.streak,multiplier:g.multiplier,choiceId:e.choiceId,choiceFamily:e.choiceFamily,choiceRole:e.choiceRole,
           adventureId:e.adventureId,adventureStep:e.adventureStep,routeSide:e.routeSide,routeRole:e.routeRole,guardId:e.guardId,returnLane:e.returnLane,returnD:e.returnD,
           distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),contactTime:frame.time+elapsed});
       }
@@ -569,10 +577,14 @@ export function updateGame(g, input, dt) {
         emit(g,'target',`RELIC +${TARGET_VALUE}`,obstacleLane,{entityId:e.id,value:TARGET_VALUE,charge,distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),contactTime:frame.time+elapsed});
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
-      if (overlap) {
+      const action=crossingAction(frame,elapsed);
+      if (overlap&&(!e.groundedContact||coinHeightTouches(false,action.action,action.time))) {
         e.collected=true;
+        const shieldAlreadyHeld=e.type==='shield'&&g.shield;
         if (e.type === 'magnet') boostUntil=elapsed+8; else g.shield = true;
-        emit(g, 'power', e.type === 'magnet' ? 'GOLD BOOST ×2! Touch coins for double points' : 'SHIELD! One free hit', e.lane, {power:e.type,distance:e.d,playerLane:lane,contactTime:frame.time+elapsed});
+        const packet=g.adventures.find(item=>item.id===e.adventureId),choice=packet?.choices.find(item=>item.id===e.choiceId);
+        if(choice){choice.counterpartCollected=true;choice.counterpartEarned=e.type==='magnet'?8:shieldAlreadyHeld?0:1;choice.outcome='counterpart';choice.shieldAlreadyHeld=shieldAlreadyHeld;}
+        emit(g, 'power', e.type === 'magnet' ? 'GOLD BOOST ×2! Touch coins for double points' : shieldAlreadyHeld?'SHIELD ALREADY HELD':'SHIELD! One free hit', e.lane, {entityId:e.id,power:e.type,duration:e.type==='magnet'?8:0,shieldAlreadyHeld,choiceId:e.choiceId??null,choiceFamily:e.choiceFamily??null,choiceRole:e.choiceRole??null,adventureId:e.adventureId??null,adventureStep:e.adventureStep??null,routeSide:e.routeSide??null,routeRole:e.routeRole??null,guardId:e.guardId??null,returnLane:e.returnLane??null,returnD:e.returnD??null,distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),contactTime:frame.time+elapsed});
       }
     } else {
       if(!(e.fullRiver||e.localWall)||!passedCanopies.has(e.row))g.rowsPassed++;
@@ -614,6 +626,7 @@ export function updateGame(g, input, dt) {
     if (g.phase !== 'playing') break;
   }
   for(const e of crossed)if(e.adventureRequired&&e.done&&(!fatalContact||e.d<=fatalContact.distance))finishAdventureStep(g.adventures.find(item=>item.id===e.adventureId),e.routeSide,e.adventureStep);
+  for(const packet of g.adventures)for(const choice of packet.choices)if(choice.outcome==='pending'&&choice.choiceD<=(fatalContact?.distance??g.distance))choice.outcome='missed';
   if(rebound&&!fatalContact){const result=steeringAt(dt);g.visualLane=result.position;g.laneVelocity=result.velocity;}
   if(g.islandReboundSide!==null&&!islandContains(forkLaneCross(g.visualLane,g.distance,g.terrainProfile),g.distance,g.terrainProfile,ISLAND_RAFT_RADIUS))g.islandReboundSide=null;
   // A bypassed wave or a powered smash breaks the optional jump chain. Parts
@@ -667,16 +680,16 @@ export function snapshot(g) {
   const currentFork=riverFork(g.distance,g.terrainProfile),availableLanes=currentFork&&currentFork.islandHalfWidth>.035?streamLanes(g.visualLane<CENTER_LANE?-1:1):LANES;
   const impendingFork=nextRiverFork(g.distance,g.terrainProfile);
   const islandAhead=impendingFork&&g.lane>CENTER_LANE-.8&&g.lane<CENTER_LANE+.8&&g.distance<impendingFork.splitStart&&timeToImpact(g,impendingFork.start+12)<.9?{id:`island-${impendingFork.id}`,type:'island',enemy:null,fullRiver:false,lane:CENTER_LANE,destinationLane:CENTER_LANE,in:timeToImpact(g,impendingFork.start+12),safeLane:innerStreamLane(impendingFork.safeSide)}:null;
-  const adventure=g.phase==='playing'?g.adventures.find(packet=>packet.end>g.distance&&timeToImpact(g,packet.start)<=2.8):null;
+  const adventure=g.phase==='playing'?g.adventures.find(packet=>packet.end>g.distance&&timeToImpact(g,packet.start)<=4.2):null;
   const choiceSide=g.visualLane<1.5?-1:g.visualLane>2.5?1:null;
-  let choice=adventure?.choices.filter(item=>(choiceSide===null||item.routeSide===choiceSide)&&(item.choiceD>=g.distance||item.collected&&item.exitD>g.distance)&&timeToImpact(g,item.choiceD)<=2.6).sort((a,b)=>Math.max(g.distance,a.choiceD)-Math.max(g.distance,b.choiceD)||a.choiceD-b.choiceD)[0]??null;
-  if(choice?.collected&&choice.family==='landing-detour'){
+  let choice=adventure?.choices.filter(item=>(choiceSide===null||item.routeSide===choiceSide)&&(item.choiceD>=g.distance||(item.collected||item.counterpartCollected)&&item.exitD>g.distance)&&timeToImpact(g,item.choiceD)<=2.6).sort((a,b)=>Math.max(g.distance,a.choiceD)-Math.max(g.distance,b.choiceD)||a.choiceD-b.choiceD)[0]??null;
+  if((choice?.collected||choice?.counterpartCollected)&&choice.family==='landing-detour'){
     const bank=adventure.choices.find(item=>item.family==='wildlife-bank'&&item.guardId===choice.guardId&&!item.collected&&item.choiceD>=g.distance);
-    if(bank)choice={...bank,returnFromChoiceId:choice.id,returnFromValue:choice.earned};
+    if(bank)choice={...bank,returnFromChoiceId:choice.id,returnFromValue:choice.earned,returnFromCounterpart:choice.counterpartCollected?choice.counterpartType:null};
   }else if(choice?.collected&&choice.family==='wildlife-bank'){
     // A following detour shares this bank's pending exit. Show its fresh offer
     // and then its actual return, rather than keeping the older bank receipt.
-    const detour=adventure.choices.find(item=>item.family==='landing-detour'&&item.sourceGuardId===choice.guardId&&item.exitD===choice.exitD&&(item.choiceD>=g.distance||item.collected&&item.exitD>g.distance)&&timeToImpact(g,item.choiceD)<=2.6);
+    const detour=adventure.choices.find(item=>item.family==='landing-detour'&&item.sourceGuardId===choice.guardId&&item.exitD===choice.exitD&&(item.choiceD>=g.distance||(item.collected||item.counterpartCollected)&&item.exitD>g.distance)&&timeToImpact(g,item.choiceD)<=2.6);
     if(detour)choice={...detour,returnFromChoiceId:choice.id,returnFromValue:choice.earned};
   }
   const routeSnapshot=route=>({name:route.name,role:route.role,basePoints:route.basePoints,maxPoints:route.maxPoints,cleanClears:route.cleanClears,totalClears:route.totalClears,cleanEligible:route.cleanEligible,cacheLane:route.cacheLane,cacheD:route.cacheD,collected:route.collected,earned:route.earned});
@@ -690,7 +703,7 @@ export function snapshot(g) {
     terrain:{...terrain,comboProgress:terrain.comboAvailable&&sameCombo?g.terrainCombo.count:0,comboClaimed:terrain.comboAvailable&&sameCombo&&g.terrainCombo.claimed},
     goalsCleared: g.goalsCleared, goal: { ...g.goal, progress: Math.min(g.goal.target, Math.floor((g.goal.kind === 'tricks' ? g.jumps + g.ducks : g.goal.kind === 'coins' ? g.coins : g.distance) - g.goal.start)) },
     notice: g.time < g.noticeUntil ? g.notice : '',
-    rewardChoice:choice?{...choice,in:timeToImpact(g,choice.choiceD),guardIn:timeToImpact(g,choice.guardD),exitIn:timeToImpact(g,choice.exitD),expired:g.distance>choice.choiceD&&!choice.collected,cleanBonusAtRisk:choice.routeRole==='risk'&&adventureRoute(adventure,choice.routeSide).cleanEligible?400:0}:null,
+    rewardChoice:choice?{...choice,heldShield:g.shield,activeBoost:g.magnet,in:timeToImpact(g,choice.choiceD),guardIn:timeToImpact(g,choice.guardD),exitIn:timeToImpact(g,choice.exitD),expired:g.distance>choice.choiceD&&!choice.collected&&!choice.counterpartCollected,cleanBonusAtRisk:choice.routeRole==='risk'&&adventureRoute(adventure,choice.routeSide).cleanEligible?400:0}:null,
     adventure:adventure?{phrase:adventure.phrase,safePhrase:adventure.safePhrase,id:adventure.id,name:adventure.name,theme:adventure.theme,in:timeToImpact(g,adventure.start),phase:g.distance<adventure.splitStart?'approach':g.distance>adventure.splitEnd?'rejoin':'split',riskSide:adventure.riskSide,safeSide:adventure.safeSide,selectedSide:g.visualLane<1.5?-1:g.visualLane>2.5?1:null,requiredClears:3,left:routeSnapshot(adventure.left),right:routeSnapshot(adventure.right)}:null,
     decision:decision?{id:decision.id,in:timeToImpact(g,decision.d),action:decision.action,enemy:decision.enemy,safeLane:decision.safeLane,riskLane:decision.riskLane,
       exitLane:decision.exitLane,safeBasePoints:decision.safeBasePoints,riskBasePoints:decision.riskBasePoints,skillBasePoints:decision.skillBasePoints,
