@@ -16,9 +16,10 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream'); fs.createReadStream(file).pipe(res);
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
   for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]]) {
+    if (process.env.CREATURE_VIEWPORT && process.env.CREATURE_VIEWPORT !== name) continue;
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000 }), errors = [], loadedAssets = new Set();
     page.setDefaultTimeout(180000);
     page.on('pageerror', e => errors.push(e.message));
@@ -39,11 +40,14 @@ try {
     await page.locator('#menu').waitFor();
     await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
     // Software WebGL uses the game's supported resolution floor; assertions still exercise the full scene.
-    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d; r.quality=.5; r.resize(); });
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d; r.quality=.5; r.resize(); const draw=r.draw; r.draw=function(...args){draw.apply(this,args); this.gl.getContext().finish();}; });
     await page.waitForFunction(() => document.querySelectorAll('#hero-picks [data-hero]').length === 16);
     await page.waitForFunction(() => { const image=document.querySelector('#hero-art'); return image.complete&&image.naturalWidth>0; });
     await page.evaluate(async () => { await document.fonts.ready; });
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
+    // Exhaustive DOM assertions do not need hundreds of identical software-rendered frames.
+    // Keep selection, model loading and UI animation live; restore drawing for the final image and match.
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d, draw=r.draw; window.__resumeShoreDraw=()=>{r.draw=draw;}; r.draw=()=>{}; });
     assert.equal(await page.locator('#hero-name').textContent(), 'Tidewarden');
     const portraitBackgrounds=await page.locator('#hero-picks .reference-portrait').evaluateAll(portraits=>portraits.map(el=>getComputedStyle(el).backgroundImage));
     assert.equal(portraitBackgrounds.length, 16);
@@ -123,6 +127,7 @@ try {
     }
     for (const identity of HERO_IDENTITIES) {
       await page.locator(`#hero-picks [data-hero="${identity.id}"]`).click();
+      console.log(name, 'hero', identity.name);
       assert.equal(await page.locator('#hero-name').textContent(), identity.name);
       assert(await page.locator('#hero-name').evaluate(el=>{const r=el.getBoundingClientRect();return r.right<=innerWidth+1&&el.scrollWidth<=el.clientWidth+2;}), `${identity.name} title fits at ${width}x${height}`);
       assert.equal(await page.locator('#hero-role').textContent(), identity.subtitle);
@@ -201,6 +206,8 @@ try {
     assert(loadedAssets.has('/tidebreak/art/reference/shore-scene.webp'), 'clean shore scene artwork loads');
     assert.match(await page.locator('.reference-portrait').first().evaluate(el=>getComputedStyle(el).backgroundImage), /portraits\/tidewarden-bust\.webp/);
     assert(HERO_IDENTITIES.every(h=>loadedAssets.has(`/tidebreak/art/portraits/${h.slug}-bust.webp`)), 'every card portrait loads');
+    const renderedFrames = await page.evaluate(() => { window.__resumeShoreDraw(); return document.getElementById('battle').__shore3d.frames; });
+    await page.waitForFunction(n => document.getElementById('battle').__shore3d.frames > n, renderedFrames);
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
     if (width>=1000) { await page.locator('#hero-picks [data-hero="0"]').focus(); await page.keyboard.press('Enter'); }
