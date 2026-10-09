@@ -16,7 +16,7 @@ import { existsSync } from 'node:fs';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.SHORE_URL || 'http://127.0.0.1:8765/tidebreak/';
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
-const browser = await chromium.launch({ executablePath });
+const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const results = [];
 const pass = (name, data) => { results.push(name); console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 

@@ -20,15 +20,6 @@ assert.equal(intersectRelief({ origin: { x: 0, y: 100, z: 0 }, direction: { x: 0
 assert.equal(intersectRelief({ origin: { x: relief.origin - 20, y: 1000, z: 0 }, direction: { x: 0, y: -1, z: 0 } }, relief), null, 'parallel rays outside the mesh miss');
 assert.equal(intersectRelief({ origin: { x: 0, y: 1, z: 0 }, direction: { x: 0, y: -1, z: 0 } }, null), null, 'input remains safe before the landscape loads');
 
-// A shallow gameplay ray enters and exits a narrow ridge between the old half-cell sample positions. The first
-// contact must remain on that ridge rather than jumping about 163 units to the farther hillside.
-const grazing = intersectRelief({
-  origin: { x: 5320.833333333334, y: 938.2070925711703, z: 3508.333333333334 },
-  direction: { x: 0, y: -.6156614753256582, z: -.7880107536067219 },
-}, relief);
-assert(grazing, 'a grazing ridge contact is retained');
-assert(Math.hypot(grazing.x - 5320.833333333334, grazing.y - 156.9942342642596, grazing.z - 2508.426472381766) < .001, 'grazing input selects the first ridge contact');
-
 // Grid-boundary and corner rays exercise simultaneous cell advances and vertical traversal without a horizontal
 // direction. Their first contacts are checked independently against the actual triangle planes below.
 const vertices = relief.vertices, indices = relief.indices;
@@ -41,6 +32,8 @@ function triangleRayDistance(ray, offset) {
   return u >= -1e-9 && v >= -1e-9 && u + v <= 1 + 1e-9 && t >= 0 ? t : Infinity;
 }
 for (const ray of [
+  // Keep the shallow ridge regression checked against the first actual triangle as the landforms evolve.
+  { origin: { x: 5320.833333333334, y: 938.2070925711703, z: 3508.333333333334 }, direction: { x: 0, y: -.6156614753256582, z: -.7880107536067219 } },
   { origin: { x: 4800, y: 1000, z: 4800 }, direction: { x: 0, y: -1, z: 0 } },
   { origin: { x: 6000, y: 1700, z: 6000 }, direction: { x: -1, y: -1, z: -1 } },
   { origin: { x: 4800, y: 1300, z: 7300 }, direction: { x: 0, y: -.65, z: -1 } },

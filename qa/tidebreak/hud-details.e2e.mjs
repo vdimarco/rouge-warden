@@ -12,7 +12,7 @@ import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.SHORE_URL || 'http://127.0.0.1:8765/tidebreak/';
-const browser = await chromium.launch({ executablePath: existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined });
+const browser = await chromium.launch({ executablePath: existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const SIZES = [{ name: 'desktop', w: 1440, h: 900 }, { name: 'phone', w: 390, h: 844, touch: true }, { name: 'landscape', w: 844, h: 390, touch: true }];
 const player = fn => `(async () => { const s = (await import('/tidebreak/main.js')).qaState(), p = s.units.find(u => u.id === s.playerId); ${fn} })()`;
 let checks = 0;
@@ -20,7 +20,7 @@ try {
   for (const size of SIZES) {
     const page = await browser.newPage({ viewport: { width: size.w, height: size.h }, hasTouch: !!size.touch, isMobile: !!size.touch });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
-    await page.goto(URL + '?renderer=2d');
+    await page.goto(URL);
     await page.waitForFunction(() => !document.getElementById('play')?.disabled, null, { timeout: 90000 });
     await page.evaluate(() => document.getElementById('play').click());
     for (let i = 0; i < 150 && await page.evaluate(() => document.getElementById('hud').hidden); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); }

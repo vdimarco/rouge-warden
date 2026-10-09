@@ -3,7 +3,7 @@
 // either one. The minimap, the tactical map and the frame-rate rule are the 2D renderer's own code.
 // Coordinates: sim x -> three x, sim y -> three z, height is three y; one unit is one sim unit.
 import * as THREE from 'three';
-import { Renderer as Renderer2D, backingRatio } from './illustrated-render.js';
+import { BattlefieldOverlay, backingRatio } from './battlefield-overlay.js';
 import * as world from './world.js';
 import { player, HEROES, fortified } from './sim.js';
 import { makeScenery } from './scenery.js';
@@ -423,8 +423,8 @@ export class ThreeRenderer {
       cameraPitch: Math.round(THREE.MathUtils.radToDeg(this.showcase ? SHOW_PITCH : PITCH)), fov: this.camera.fov, showcase: !!this.showcase, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
   }
 }
-// Shared with the 2D renderer: the frame-rate rule, the minimap and tactical map, badges and result labels.
-for (const k of ['adapt', 'restartTiming', 'drawMap', 'drawHeroMarker', 'drawPings', 'rememberHeroes', 'drawBadges', 'drawResults']) ThreeRenderer.prototype[k] = Renderer2D.prototype[k];
+// Shared canvas overlay helpers: the frame-rate rule, the minimap and tactical map, badges and result labels.
+for (const k of ['adapt', 'restartTiming', 'drawMap', 'drawHeroMarker', 'drawPings', 'rememberHeroes', 'drawBadges', 'drawResults']) ThreeRenderer.prototype[k] = BattlefieldOverlay.prototype[k];
 // Starts parsing a hero model early, for example the hero picked on the select screen.
 export const warmHero = slug => { heroModel(slug); };
 

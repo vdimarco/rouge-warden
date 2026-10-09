@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Coherent variable terrain
-The 3D Shore battlefield SHALL show continuous hills, hollows, rocky rises and a lowered river bed instead of a flat floor. Landforms SHALL use a fixed map seed, riverbed carving SHALL follow the match's seeded banks, and each match's terrain SHALL remain stable across realms and renderer switches. Elevations SHALL mirror between the teams. Open traversable terrain SHALL remain readable and SHALL NOT imply additional collision barriers.
+The 3D Shore battlefield SHALL show continuous hills, hollows, rocky rises and a lowered river bed instead of a flat floor. Landforms SHALL use a fixed map seed, riverbed carving SHALL follow the match's seeded banks, and each match's terrain SHALL remain stable across realms. Elevations SHALL mirror between the teams. Open traversable terrain SHALL remain readable and SHALL NOT imply additional collision barriers.
 
 #### Scenario: Explore the jungle
 - **WHEN** the player follows a lane into the jungle in 3D
@@ -22,6 +22,6 @@ Pointer movement, skill aim and camera following SHALL use the rendered terrain 
 - **WHEN** the player clicks raised ground or aims a skill there on desktop or a phone viewport
 - **THEN** the movement or aim marker appears at the selected surface point and combat warnings remain visible on the terrain.
 
-#### Scenario: Graphics fallback
-- **WHEN** the player switches to the 2D renderer
-- **THEN** the same match, controls, winding roads and tactical map remain usable.
+#### Scenario: Shared tactical map
+- **WHEN** the player opens the tactical map during a 3D match
+- **THEN** it shows the same winding roads and live match state.
