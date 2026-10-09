@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#080d12" />
+    <title>Afterlight · Cottage Arcade</title>
+    <meta
+      name="description"
+      content="One journey through six changing ASCII worlds. Restore the beacons, open routes and carry what you learn between places."
+    />
+    <link rel="icon" href="/icons/favicon.svg" />
+    <link rel="stylesheet" href="/afterlight/style.css" />
+    <script src="/arcade/quiet.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <a class="brand" href="/afterlight/">Afterlight</a
+        ><span id="place">The long way home</span><a href="/">[ arcade ]</a>
+      </header>
+      <div class="hud">
+        <span id="vitals">A world waiting for light</span
+        ><span id="supplies"></span><span id="network">0 / 6 beacons</span>
+      </div>
+      <div class="layout">
+        <section class="scene-pane">
+          <div
+            class="landscape"
+            id="arena"
+            tabindex="0"
+            role="region"
+            aria-label="Adventure landscape. Move with arrows or WASD, interact with E, use your tool with Space."
+          >
+            <canvas
+              id="scene"
+              aria-label="An evolving ASCII landscape"
+            ></canvas>
+            <div id="intro">
+              <h1>Afterlight</h1>
+              <p>
+                Six places share one broken light.<br />Find what each can give
+                the next.
+              </p>
+              <button id="begin" type="button">[ begin a journey ]</button
+              ><button id="explore" type="button" hidden>
+                [ explore the restored world ]
+              </button>
+              <p id="save-hint"></p>
+            </div>
+          </div>
+          <div class="movement" aria-label="Adventure controls">
+            <div class="directions">
+              <button data-direction="left" aria-label="Move left">←</button
+              ><button data-direction="up" aria-label="Move up">↑</button
+              ><button data-direction="down" aria-label="Move down">↓</button
+              ><button data-direction="right" aria-label="Move right">→</button>
+            </div>
+            <button id="interact">[ interact · E ]</button
+            ><button id="tool">[ lantern · Space ]</button>
+          </div>
+          <p class="hint">
+            arrows / WASD · E interact · space tool · M travel · J journal · P
+            pause
+          </p>
+        </section>
+        <aside>
+          <h2 id="chapter">A journey through changing worlds</h2>
+          <p id="objective">
+            Explore, restore and return. What you carry matters.
+          </p>
+          <div class="context">
+            <h3 id="context-title">Along the way</h3>
+            <p id="context-text">
+              Walk toward a landmark or tap the scene to move. Actions appear
+              when you get close.
+            </p>
+            <div id="choices"></div>
+          </div>
+          <p id="message" role="status" aria-live="polite"></p>
+          <div class="menu-actions">
+            <button id="map">[ travel ]</button
+            ><button id="journal">[ journal ]</button
+            ><button id="pause">[ pause ]</button>
+          </div>
+        </aside>
+      </div>
+      <footer>
+        <span
+          >scenes by <a href="https://ascii.rest/">ascii.rest</a> ·
+          <a href="/last-light/vendor/LICENSE">MIT</a></span
+        ><span id="saved">saved locally when available</span
+        ><button data-switch>[ other games ]</button>
+      </footer>
+    </main>
+    <dialog id="menu">
+      <div class="dialog-top">
+        <h2 id="menu-title">Journey</h2>
+        <button id="close-menu" aria-label="Close menu and resume">
+          [ return ]
+        </button>
+      </div>
+      <div id="menu-content"></div>
+    </dialog>
+    <script src="/arcade/switch.js"></script>
+    <script type="module" src="/afterlight/game.js"></script>
+  </body>
+</html>

@@ -121,6 +121,7 @@ button { font: inherit; color: inherit; }
 .cab.firefly-courier { --c1: #274943; --c2: #f2c97e; --glow: #f2c97e66; }
 .cab.mirage-runner { --c1: #34477a; --c2: #f5c98e; --glow: #f5c98e66; }
 .cab.orbital-gardener { --c1: #262f4a; --c2: #a8d3f6; --glow: #a8d3f666; }
+.cab.afterlight { --c1: #234c56; --c2: #b6e5ce; --glow: #b6e5ce66; }
 .cab.last-light { --c1: #552a74; --c2: #ffcd62; --glow: rgba(255, 205, 98, 0.45); }
 .cab.river-rush { --c1: #083d31; --c2: #f9c65b; --glow: rgba(249, 198, 91, 0.45); }
 /* the VR machine wears a headset badge on its screen */
@@ -499,6 +500,12 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab afterlight" data-game="afterlight" data-url="/afterlight/" aria-label="Afterlight: one journey through six changing ASCII worlds">
+      <div class="marquee"><div><b>AFTERLIGHT</b><small>SIX CHANGING WORLDS</small></div></div>
+      <div class="bezel"><div class="screen"><img src="arcade/key/firefly-courier.svg" alt="A forest waiting for light" loading="lazy" decoding="async"><div class="osd"><p class="hi">EXPLORE · RESTORE · RETURN</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div></div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Afterlight"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Afterlight"><i></i><span>25¢</span></button></div><div class="kick"></div>
+      </article>
       <article class="cab lighthouse-keeper" data-game="lighthouse-keeper" data-url="/lighthouse-keeper/" aria-label="Lighthouse Keeper: Guide boats through the fog">
       <div class="marquee"><div><b>LIGHTHOUSE KEEPER</b><small>GUIDE BOATS THROUGH THE FOG</small></div></div>
       <div class="bezel"><div class="screen">
@@ -668,7 +675,7 @@ const machinePicker = $("#machinePicker");
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
   { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"] },
-  { id: "ascii", label: "ASCII Scenes", games: ["lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"] },
+  { id: "ascii", label: "ASCII Scenes", games: ["afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"] },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"] },
   { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"] },
 ];
