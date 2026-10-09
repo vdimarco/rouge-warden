@@ -4,7 +4,8 @@ import { createAudio, SCORE } from './audio.js';
 
 class Param {
   value = 0;
-  setValueAtTime(value, time) { assert.ok(Number.isFinite(value) && value >= 0 && Number.isFinite(time)); }
+  values = [];
+  setValueAtTime(value, time) { assert.ok(Number.isFinite(value) && value >= 0 && Number.isFinite(time)); this.values.push({ value, time }); }
   linearRampToValueAtTime(value, time) { this.setValueAtTime(value, time); }
   exponentialRampToValueAtTime(value, time) { assert.ok(value > 0); this.setValueAtTime(value, time); }
 }
@@ -13,7 +14,7 @@ class Node {
   frequency = new Param();
   connect() {}
   disconnect() { this.disconnected = true; }
-  start(time) { assert.ok(Number.isFinite(time)); }
+  start(time) { assert.ok(Number.isFinite(time)); this.startTime = time; }
   stop(time) { assert.ok(time === undefined || Number.isFinite(time)); if (time === undefined) this.stopped = true; }
 }
 class Context {
@@ -92,4 +93,62 @@ test('unsupported audio stays optional', async () => {
   assert.doesNotThrow(() => broken.sync({ status: 'playing' }, true));
   assert.doesNotThrow(() => broken.effect(240, 0.04, 0.01));
   broken.dispose();
+});
+
+test('rank chime observes actual new ranks without replaying historical or suppressed cues', async () => {
+  Context.instances = [];
+  const audio = createAudio(Context);
+  const game = { status: 'playing', wave: 1, enemies: [], rankUps: 2, player: { level: 2 } };
+  audio.sync(game, true);
+  game.rankUps++;
+  audio.sync(game, true);
+  assert.equal(Context.instances.length, 0, 'a rank cannot unlock audio');
+  await audio.unlock();
+  const context = Context.instances[0];
+  audio.sync(game, true);
+  const musicVoices = context.sources.length;
+  let count = context.sources.length;
+  game.player.level = 3;
+  audio.sync(game, true);
+  assert.equal(context.sources.length, count, 'changing a level without rankUps creates no cue');
+  game.rankUps++;
+  audio.sync(game, true);
+  const cue = context.sources.slice(count);
+  assert.equal(cue.length, 4, 'one new rank schedules one short four-note cue');
+  const frequencies = cue.map(node => node.frequency.values[0].value);
+  assert.ok(frequencies.every((value, index) => index === 0 || value > frequencies[index - 1]));
+  assert.ok(cue[3].startTime - cue[0].startTime < 0.15);
+  for (let i = 0; i < 100; i++) audio.sync(game, true);
+  assert.equal(context.sources.length, count + 4, 'the same rank count cannot schedule duplicates');
+  count = context.sources.length;
+  game.player.level = 0;
+  audio.sync(game, true);
+  assert.equal(context.sources.length, count, 'death or manual level changes have no rank cue');
+
+  audio.sync(game, false); game.rankUps++; audio.sync(game, false);
+  count = context.sources.length; audio.sync(game, true);
+  assert.equal(context.sources.length - count, musicVoices, 'muted ranks are consumed, not queued');
+  game.status = 'paused'; audio.sync(game, true); game.rankUps++; audio.sync(game, true);
+  game.status = 'playing'; count = context.sources.length; audio.sync(game, true);
+  assert.equal(context.sources.length - count, musicVoices, 'paused ranks do not replay on resume');
+  audio.suspend(); game.rankUps++; audio.sync(game, true); await audio.unlock();
+  count = context.sources.length; audio.sync(game, true);
+  assert.equal(context.sources.length - count, musicVoices, 'locked ranks do not replay after unlocking');
+
+  count = context.sources.length;
+  const historical = { ...game, rankUps: 100 };
+  audio.sync(historical, true); assert.equal(context.sources.length, count, 'a new game baselines historical counts');
+  audio.reset(); count = context.sources.length; audio.sync(historical, true);
+  assert.equal(context.sources.length - count, musicVoices, 'reset baselines the current count');
+  count = context.sources.length;
+  historical.rankUps++; audio.sync(historical, true);
+  assert.equal(context.sources.length, count + 4, 'new ranks still chime after reset');
+  count = context.sources.length; historical.rankUps += 2; audio.sync(historical, true);
+  assert.equal(context.sources.length, count + 4, 'simultaneous co-op ranks share one bounded cue');
+  count = context.sources.length; historical.rankUps = 0; audio.sync(historical, true);
+  assert.equal(context.sources.length, count, 'restarting the run cannot create a cue');
+  audio.sync(historical, false);
+  assert.ok(context.sources.every(node => node.stopped && node.disconnected), 'mute cancels every chime voice');
+  audio.dispose();
+  assert.equal(Context.instances.length, 1, 'rank cues reuse the music context');
 });

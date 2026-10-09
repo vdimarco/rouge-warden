@@ -13,6 +13,7 @@ const pitch = note => 440 * 2 ** ((note - 69) / 12);
 
 export function createAudio(Context = globalThis.AudioContext || globalThis.webkitAudioContext) {
   let context, master, noise, pendingSuspend, lastStatus, nextTime = 0, step = 0, music = false, enabled = false;
+  let lastGame, lastRankUps;
   const voices = new Set();
   function stop() {
     music = false;
@@ -96,6 +97,10 @@ export function createAudio(Context = globalThis.AudioContext || globalThis.webk
   }
   function sync(game, sound) {
     const changed = game.status !== lastStatus;
+    const rankUps = Number.isSafeInteger(game.rankUps) && game.rankUps >= 0 ? game.rankUps : 0;
+    const rankedUp = game === lastGame && lastRankUps !== undefined && rankUps > lastRankUps;
+    lastGame = game;
+    lastRankUps = rankUps;
     lastStatus = game.status;
     enabled = !!sound;
     if (!context || !master || !noise || context.state !== 'running') { stop(); return; }
@@ -116,6 +121,9 @@ export function createAudio(Context = globalThis.AudioContext || globalThis.webk
       nextTime = context.currentTime + 0.025;
     }
     while (nextTime < context.currentTime + 0.15) phrase(game);
+    if (rankedUp) {
+      [76, 79, 83, 88].forEach((value, index) => note(pitch(value), context.currentTime + 0.015 + index * 0.045, 0.11, 0.035, 'triangle'));
+    }
   }
   return {
     get state() {
@@ -136,7 +144,7 @@ export function createAudio(Context = globalThis.AudioContext || globalThis.webk
       stop();
       if (context?.state === 'running') pendingSuspend = context.suspend().catch(() => {});
     },
-    reset() { stop(); lastStatus = undefined; },
+    reset() { stop(); lastStatus = undefined; lastGame = undefined; lastRankUps = undefined; },
     dispose() { stop(); master?.disconnect(); context?.close().catch(() => {}); },
   };
 }

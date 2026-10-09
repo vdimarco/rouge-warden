@@ -117,6 +117,20 @@ function foliage(ctx, game, time, reducedMotion) {
 
 function tank(ctx, entity, isPlayer, game, time, reducedMotion) {
   const { x, y } = entity;
+  if (!isPlayer && entity.spawnTimer > 0 && game.status !== 'ready') {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = `12px ${FONT}`;
+    ctx.fillStyle = '#e5bc87';
+    ctx.globalAlpha = reducedMotion ? 0.75 : 0.6 + Math.sin(time * 6) * 0.15;
+    ctx.fillText('⌜   ⌝', x, y - 9);
+    ctx.fillText('+', x, y);
+    ctx.fillText('⌞   ⌟', x, y + 9);
+    ctx.font = `7px ${FONT}`;
+    ctx.fillText('INBOUND', x, y + 23);
+    ctx.restore();
+    return;
+  }
   const level = isPlayer ? Math.min(3, Math.max(0, entity.level || 0)) : 0;
   let palette = isPlayer ? COLORS[entity.id === 'p2' ? 'p2' : 'player'] : entity.type === 'heavy' ? ARMOR[Math.min(3, Math.max(0, Math.ceil(entity.hp) - 1))] : COLORS[entity.type] || COLORS.basic;
   const carrier = !isPlayer && entity.carrier && !entity.dropped;
@@ -326,6 +340,19 @@ export function renderGame(ctx, game, time = 0, { reducedMotion = false } = {}) 
       ctx.shadowBlur = 4 * life;
     }
     ctx.fillText(particle.text || particle.glyph || '+', particle.x, particle.y);
+    ctx.restore();
+  }
+  for (const unit of players) {
+    if (!(unit.rankFx > 0) || unit.dead || unit.respawnTimer > 0) continue;
+    ctx.save();
+    ctx.fillStyle = unit.id === 'p2' ? '#c4f5ff' : '#f5e8a3';
+    ctx.globalAlpha = Math.min(1, unit.rankFx);
+    ctx.font = `12px ${FONT}`;
+    const radius = reducedMotion ? 24 : 19 + (1 - unit.rankFx / 1.6) * 24;
+    for (let point = 0; point < 4; point++) {
+      const angle = Math.PI / 4 + point * Math.PI / 2;
+      ctx.fillText('★', unit.x + Math.cos(angle) * radius, unit.y + Math.sin(angle) * radius);
+    }
     ctx.restore();
   }
   if (game.status === 'ready' || game.status === 'editor' || players.length > 1) {
