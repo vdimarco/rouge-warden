@@ -43,8 +43,8 @@
 }
 @media(prefers-reduced-motion:reduce){#hud #recall{transition:none}}
 
-/* The tutorial takes the chat shelf until its short control lesson ends. */
-#hud:has(#coach:not([hidden])) #team-chat{display:none}
+/* Control guidance and cast feedback take priority over the chat shelf. */
+#hud:has(#coach:not([hidden])) #team-chat,#hud:has(#skill-aim-status:not([hidden])) #team-chat{display:none}
 
 /* Map routes stay beside the map rather than moving onto a later panel page. */
 dialog.map-sheet{width:min(760px,calc(100vw - 24px));max-width:calc(100vw - 24px);height:min(650px,calc(100dvh - 24px));max-height:calc(100dvh - 24px);padding:36px 16px 12px}

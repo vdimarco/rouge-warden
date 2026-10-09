@@ -3,5 +3,5 @@
 - [x] Expose Recall progress and cancel; fix lane guidance and input-specific help.
 - [x] Add spell rejection feedback and compact phone combat information.
 - [x] Add anonymous gameplay events with failure-safe tests.
-- [ ] Run Shore Node suites and browser interaction/layout checks; inspect screenshots.
-- [ ] Record verification, update canonical requirements and archive completed change.
+- [x] Run Shore Node suites and browser interaction/layout checks; inspect screenshots.
+- [x] Record verification, update canonical requirements and archive completed change.
