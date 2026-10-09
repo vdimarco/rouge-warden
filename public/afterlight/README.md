@@ -1,33 +1,25 @@
 # Afterlight
 
-You are a rescue courier: repair six beacons and bring three stranded boat crews home. The connected adventure at `/afterlight/` spans six evolving ASCII worlds. Supplies, health, tools, choices and restored terrain persist between places.
+A full-screen ASCII action-rescue game at `/afterlight/`. Blast shadow creatures, reach stranded survivors and lead them to the golden beacon. Bring three survivors home, protect the beacon, and defeat its guardian to open the next rescue route. Six distinct worlds connect into one campaign.
 
 ## Play
 
-Move with arrows/WASD or the touch pad; tap the scene to set a walking destination. Approach a glowing landmark and use E or its contextual action. Space uses a local tool. Shift or the Dodge button gives a short protected directional burst. Named landmarks, a YOU marker, and Show next task guide you through each rescue stop. M opens travel, J opens the journal, and P pauses. Menus, hiding the page and game switching stop expedition time.
+WASD/arrows move. Aim and hold click to fire; hold Space or the Fire button to aim at nearby threats automatically. Shift or Dodge bursts through danger with brief protection and a cooldown. Survivors follow when approached and reach safety at the beacon. Violet telegraphs warn of attacks. Each guardian alternates a spreading bolt fan with a charge; its visible health bar marks the final threat. Health and temporary triple-light pickups help the rescue. P/Escape pauses. Touch provides held movement/fire and dodge controls.
 
-Wake the forest groves, reconnect the city, rescue coastal crews, recover fjord bells, revive a desert oasis and carry seeds into lunar gardens. Forest restoration opens both city and coast: choose which to explore first. Harbor restoration needs the city's sonar, so supplies and tools connect the branches again. The fjord compass reveals the desert's true route. Seeds harvested or nurtured in the forest are spent in the oasis and on the moon.
+A lost rescue can restart the current world without erasing completed worlds. Valid progress saves locally, and continuation is deliberate. Hidden pages and the arcade switcher pause play. Motion can be reduced, and optional synthesized sound is off until enabled.
 
-Each grove offers more seeds or a permanent increase in energy capacity; the courier pack can become immediate salvage or a more efficient tool. A shield consumes salvage but reduces hazard damage. Camps refill resources and set checkpoints; emergency salvage prevents spent supplies from trapping the journey. Tool pulses briefly calm hazards. Lunar gardens progressively change the local debris field.
+## A living picture
 
-Your journey saves locally when storage is available. Reloads require a deliberate continuation. Invalid or blocked storage leaves the game playable. Exhaustion recovers at camp while retaining restoration. After the ending you can explore the restored network or begin a new journey.
+Phaser 3.90.0 renders locally bundled bas3line/ascii scenes with region-specific broad light, weather, cinematic depth, animated native-dot characters, projectile trails and expanding restoration effects. Forest, city, coast, fjord, desert and moon share the action loop but have distinct enemy behaviors and atmospheres. The playfield fills the viewport behind a compact HUD. Source artwork and licenses remain bundled; there is no raster replacement or runtime CDN.
 
-## Engine and operations
+The editable source is split into `action-engine.js` (deterministic campaign), `action-art.js` (scene composition), `action-game.js` (Phaser/input/lifecycle), and `action.css`/`index.html` (HUD and controls).
 
-Phaser 3.90.0 drives the scene clock, camera, dynamic ASCII texture, keyboard/pointer input, transitions and feedback tweens. The pinned runtime and MIT license are bundled locally. The deterministic campaign model remains independent for saves and checks.
+## Classic
 
-Landmark operations require active decisions: chase drifting forest fireflies, sweep your lantern near them, and carry three back to the grove; reconnect city conductors, tether and escort drifting crews, read fjord echo channels, align desert bearings, and meet a garden’s changing needs. Operation shortcuts are shown beside their native buttons. Leaving an operation keeps supplies. Rewards and costs apply once on successful completion. Movement stays available during firefly catching and coastal towing. Final beacon activation pays off immediately after its local requirements are met.
-
-## Living scenes
-
-Original locally bundled MIT scenes come from bas3line/ascii: misty-forest, tokyo-rain, night-coast, aurora-fjord, desert-night and earthrise. Imports reuse the existing copies beside the six standalone games, which retain source licenses. The adapter changes character cells, structures and colors in response to local progress. Weather cycles, spatial terrain, currents, moving crews and seed streams affect exploration while playing. Completed work unfolds into local growth and changes the landscape rather than switching only a static flag. Reduced motion freezes decorative changes in time while retaining permanent restoration and gameplay.
-
-Original artwork and the refined Last Light dot-grid direction are the visual reference; no raster assets replace the user's requested ASCII art. Gameplay silhouettes, landmarks and changed terrain share the source's 200×100 dot grid. Landscape phones put interaction choices beside the scene; portrait phones keep square dots and reachable controls.
+The previous exploration adventure remains at `/afterlight/classic.html`. It retains its original shared tools, supplies, spatial firefly tasks and three-crew story. Its storage is separate from action mode, so switching modes does not overwrite existing journeys. Its engine, rendering and browser checks remain available.
 
 ## Checks
 
-`node --test qa/afterlight/*.test.mjs` checks legal campaigns, alternate route/resource choices, loss/recovery, upgrades, tool protection, save validation, restoration cells, optional grove blooms and active weather. `node qa/afterlight/living-worlds.e2e.mjs` uses system Chromium and the static server at localhost:8765 for the connected UI journey, scene changes, storage, menus, keyboard/touch, arcade launch and desktop/phone views.
+`node --test qa/afterlight/*.test.mjs` checks both action and Classic models. `node qa/afterlight/action.e2e.mjs` checks the action UI in Chromium using the static server at localhost:8765. See `qa/afterlight/action-review.md` for actual verification and visual evidence.
 
-The compositor check `node qa/afterlight/render.e2e.mjs` compares incremental and full redraws across all regions, travel, resizing and motion settings. The original `campaign.e2e.mjs` command remains a compatibility entry for the current browser campaign.
-
-The first-minute rescue flow is checked with `node qa/afterlight/rescue-mission.e2e.mjs`. See `qa/afterlight/rescue-review.md` for this iteration’s verification details. Physical devices and other browser engines are not covered.
+For Classic, set `AFTERLIGHT_URL`/the relevant path as documented in its scripts or use the retained model and compositor checks. `qa/afterlight/rescue-review.md` records the previous iteration. Physical devices and other browser engines require separate verification.

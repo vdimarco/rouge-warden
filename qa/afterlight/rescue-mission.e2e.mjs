@@ -24,7 +24,7 @@ async function ready(p) {
     if (r.status() >= 400 && new URL(r.url()).origin === new URL(base).origin)
       errors.push(r.status() + " " + r.url());
   });
-  await p.goto(base + "/afterlight/");
+  await p.goto(base + "/afterlight/classic.html");
   await p.waitForFunction(() =>
     window.__afterlight?.game?.scene?.isActive("journey"),
   );
