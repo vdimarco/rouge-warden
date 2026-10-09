@@ -1,0 +1,31 @@
+name: Shore integration graphics QA
+on:
+  push:
+    branches: ['qa/shore-playability-integration']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - name: Start the static arcade
+        run: python3 -m http.server 8765 --bind 127.0.0.1 --directory public > /tmp/shore-integration-server.log 2>&1 &
+      - name: Verify missing graphics, model failure, terrain and context recovery
+        run: node qa/tidebreak/terrain-3d.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/shore-integration-recovery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shore-integration-recovery
+          path: test-results/shore-integration-recovery
+          retention-days: 14
