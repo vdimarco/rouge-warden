@@ -48,6 +48,7 @@ try {
       const m = await import('/tidebreak/main.js'), s = m.qaState(), p = s.units.find(u => u.player);
       s.units = [p]; s.nextWave = 1e9; s.paused = true;
       p.hp = p.maxHp = 100000; p.shield = 100000; p.order = null;
+      window.__pump(1); // Leave the hero-selection lens before testing live input.
     });
     const measure = () => page.evaluate(async () => {
       const m = await import('/tidebreak/main.js'), s = m.qaState(), p = s.units.find(u => u.player), r = document.querySelector('#battle').__shore3d;
@@ -63,7 +64,7 @@ try {
     for(const o of layout.other) assert(!(b.x<o.x+o.w && b.x+b.w>o.x && b.y<o.y+o.h && b.y+b.h>o.y),`Rift must not overlap ${o.selector}: ${JSON.stringify(layout)}`);
     const normal=await measure();
     await page.mouse.move(width/2,height*.45);await page.mouse.wheel(0,240);await page.waitForTimeout(100);await page.evaluate(()=>window.__pump(1));
-    const out=await measure();assert(out.zoom>1 && out.distance>normal.distance && out.scale<normal.scale);assert(out.error<1,'zoomed hero ground remains selectable');
+    const out=await measure();assert(out.zoom>1 && out.distance>normal.distance && out.scale<normal.scale,JSON.stringify({normal,out}));assert(out.error<1,'zoomed hero ground remains selectable');
     await page.mouse.wheel(0,-240);await page.waitForTimeout(100);assert(Math.abs((await measure()).zoom-1)<.01,'wheel reverses to normal');
     await page.evaluate(()=>document.querySelector('#battle').__shore3d.zoomBy(100));await page.evaluate(()=>window.__pump(1));assert.equal((await measure()).zoom,2.4);
     await page.screenshot({path:path.join(shots,`${name}-zoom-out.png`),timeout:120000});
