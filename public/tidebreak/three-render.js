@@ -75,7 +75,7 @@ export class ThreeRenderer {
   setScene(s) {
     if (s.seed !== this.sceneSeed) {
       this.sceneSeed = s.seed; this.scenery = [0, 1].map(phase => makeScenery(s.seed, phase));
-      this.terrain.build(world, s); this.bridges = this.terrain.bridges; this.props.ground = this.terrain.mask; this.props.build(world, s, this.scenery); // bridges: for the shared drawMap
+      this.terrain.build(world, s, this.scenery[0].landUse); this.bridges = this.terrain.bridges; this.props.ground = this.terrain.mask; this.props.zones = this.terrain.zones; this.props.build(world, s, this.scenery); // bridges: for the shared drawMap
       this.effects.setBridges(this.bridges);
       this.pickSurfaces = [this.terrain.water, ...this.terrain.group.children.filter(child => child.name === 'bridge').map(child => child.children[0])];
       this.restartTiming(); this.compiled = false;

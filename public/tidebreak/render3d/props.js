@@ -4,7 +4,7 @@
 // grows in about a second. Cover blocks (they stop movement and sight) fill their whole footprint, so they read solid.
 import * as THREE from 'three';
 import { withWorld, fowAtEnd, worldMapped, SEE_GLSL, seeUniforms } from './materials.js';
-import { foliageAtlas, broadleafGeometry, pineGeometry, bushGeometry, tuftGeometry, foliagePatch, foliageUniforms } from './foliage.js';
+import { foliageAtlas, broadleafGeometry, pineGeometry, cypressGeometry, bushGeometry, tuftGeometry, foliagePatch, foliageUniforms } from './foliage.js';
 import { geologySites, cliffGeometry, caveGeometry, rockHeightAt, caveApproachOverlaps } from '../geology.js';
 import { TERRAIN_HEIGHT_GLSL } from '../relief.js';
 
@@ -127,9 +127,13 @@ export class Props {
     this.kinds = {
       pine: { geometry: pineGeometry(7), material: leafy(.03), shadow: true },
       oak: { geometry: broadleafGeometry(5), material: leafy(.03), shadow: true },
+      cypress: { geometry: cypressGeometry(11), material: leafy(.02), shadow: true },
       bush: { geometry: bushGeometry(3), material: leafy(.05), shadow: false },
+      vine: { geometry: bushGeometry(13), material: leafy(.03), shadow: false },
       shrub: { geometry: bushGeometry(9), material: leafy(.05), shadow: false },
       boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: solid(materialOf(w.boulders)), shadow: true, bright: 1.55 },
+      // Pale limestone for outcrops and the stream bed; flat shading keeps the faces crisp from the high camera.
+      crag: { geometry: simplify(geometryOf(w.boulders), 22), material: set => { const m = worldMapped(textures.rock, { color: '#ffffff', scale: 260, roughness: .94, key: 'crag' }); m.vertexColors = false; m.flatShading = true; return patch(m, this.grow[set], { key: 'crag' }); }, shadow: true },
       cliff: { geometry: rockGeometry(cliff), material: geology('#c5cec3', 'cliff-strata'), shadow: true, grounded: true },
       'cave-shell': { geometry: rockGeometry(cave.shell), material: geology('#c5cec3', 'cave-shell'), shadow: true, grounded: true },
       'cave-inside': { geometry: rockGeometry(cave.inside), material: geology('#69776d', 'cave-inside'), shadow: false },
@@ -172,6 +176,7 @@ export class Props {
         }
       }
       if (phase === 1) for (const b of world.BRUSH || []) this.brush(put, b, rand);
+      else for (const f of scenery[0].landUse?.fields || []) this.vineyard(put, f, rand);
       // Decorative foliage frames the entrance. Collision cover and trees rooted on the roof remain represented.
       for (const kind of ['pine', 'oak', 'bush', 'shrub']) {
         const list = put.lists.get(kind);
@@ -184,6 +189,9 @@ export class Props {
     for (let d = -400; d < S + 400; d += 170) for (const [x, y] of [[d, -140 - rand() * 420], [d, S + 140 + rand() * 420], [-140 - rand() * 420, d], [S + 140 + rand() * 420, d]]) {
       const h = 560 + rand() * 360, oak = rand() < .3; put(oak ? 'oak' : 'pine', x + (rand() - .5) * 80, y, h * .6, h, h * .6, rand() * 6.3, oak ? oakTint(rand) : '#bcd4b4');
     }
+    const use = scenery[0].landUse, sites = [0, 1].flatMap(phase => geologySites(world, phase));
+    if (use) this.landmarks(put, use, rand);
+    put.lists.set('cypress', (put.lists.get('cypress') || []).filter(tree => !sites.some(site => caveApproachOverlaps(site, tree))));
     this.commit(put, 2);
     this.view = null; this.setPhase(s.phase, true);
   }
@@ -301,6 +309,36 @@ export class Props {
     for (let i = 0; i < 2; i++) put('log', x + (rand() - .5) * b.w, y + b.h * .45, 120, 40, 40, rand() * 3, '#ffffff');
     for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', x + Math.cos(a) * b.w * .55, y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#c0d89c'); }
   }
+  // A vineyard: rows of low vines along the field's long side, each row a chain of leafy segments.
+  vineyard(put, f, rand) {
+    const c = Math.cos(f.angle), s = Math.sin(f.angle), step = 62;
+    for (let r = 0; r < f.rows; r++) {
+      const v = (-1 + (2 * r + 1) / f.rows) * f.h / 2;
+      for (let u = -f.w / 2 + step / 2; u < f.w / 2; u += step) {
+        if (rand() < .04) continue; // a missing vine now and then
+        const h = 66 + rand() * 16, x = f.x + u * c - v * s, z = f.y + u * s + v * c;
+        put('vine', x, z, step * 2, h, 62 + rand() * 10, -f.angle + (rand() - .5) * .08, rand() < .5 ? '#a8cf74' : '#b9d982');
+      }
+    }
+  }
+  // Cypress lines, grey rock outcrops and stream boulders: shared by both realms.
+  landmarks(put, use, rand) {
+    const grey = () => ['#c9cbc5', '#bcbfba', '#b3b7b9', '#cfccc0'][Math.floor(rand() * 4)];
+    for (const t of use.cypress) { const h = t.height; put('cypress', t.x, t.y, h * .26, h, h * .26, rand() * 6.3, rand() < .5 ? '#94b48c' : '#86a882'); }
+    for (const o of use.outcrops) {
+      const n = 5 + Math.floor(rand() * 5);
+      put('crag', o.x, o.y, o.r * .9, o.r * .75, o.r * .7, rand() * 6.3, grey(), (rand() - .5) * .3);
+      for (let i = 0; i < n; i++) {
+        const a = i / n * Math.PI * 2 + rand() * .5, d = o.r * (.45 + rand() * .55), h = o.r * (.25 + rand() * .45), slab = rand() < .4;
+        put('crag', o.x + Math.cos(a) * d, o.y + Math.sin(a) * d * .8, h * (slab ? .7 : 1.4), h * (slab ? 1.5 : 1), h * (slab ? .45 : 1.2), rand() * 6.3, grey(), (rand() - .5) * .45);
+      }
+      for (let i = 0; i < 3; i++) { const a = rand() * 6.3, h = 60 + rand() * 50; put('bush', o.x + Math.cos(a) * o.r * 1.15, o.y + Math.sin(a) * o.r, h * 1.6, h, h * 1.6, rand() * 6.3, '#b7cf8e'); }
+    }
+    for (const p of use.stones) {
+      const sink = Math.max(0, -this.heightAt(p.x, p.y)), h = p.size * (.55 + rand() * .3);
+      put('crag', p.x, p.y, p.size * (1.1 + rand() * .5), h + sink, p.size * (.9 + rand() * .4), rand() * 6.3, grey(), (rand() - .5) * .3);
+    }
+  }
   brush(put, b, rand) {
     const n = Math.min(30, Math.round(b.radius * b.radius / 5200));
     for (let i = 0; i < n; i++) { const a = rand() * 6.3, r = Math.sqrt(rand()) * b.radius * .95, h = 100 + rand() * 60; put(rand() < .75 ? 'bush' : 'shrub', b.x + Math.cos(a) * r, b.y + Math.sin(a) * r, h * 1.6, h, h * 1.6, rand() * 6.3, rand() < .5 ? '#b0cc90' : '#cadca4'); }
@@ -334,6 +372,7 @@ export class Props {
       if (i < 0 || j < 0 || i >= g.size || j >= g.size) continue;
       const o = (i * g.size + j) * 4, bare = Math.max(g.data[o], g.data[o + 1], g.data[o + 2], g.data[o + 3] * 2);
       if (bare > 60) continue;
+      const z0 = this.zones; if (z0 && z0.data[(Math.floor(z / z0.world * z0.size) * z0.size + Math.floor(x / z0.world * z0.size)) * 4] > 90) continue; // no tufts in tilled soil
       const h = (24 + hash(cx, cz, k + 7) * 26) * (woods ? .8 : 1) * (1 - bare / 90), w = h * (1.2 + hash(cx, cz, k + 9) * .5);
       _q.setFromAxisAngle(_up, hash(cx, cz, k + 11) * 6.3); _m4.compose(_v.set(x, this.heightAt(x, z), z), _q, _s.set(w, h, w)); mesh.setMatrixAt(n, _m4);
       mesh.setColorAt(n, tones[Math.floor(hash(cx, cz, k + 13) * tones.length)]); n++;
