@@ -36,6 +36,11 @@ async function advance(page, frames = 3) {
   }, frames);
 }
 async function screenshot(page, name) {
+  if (await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches)) {
+    const { width, height } = page.viewportSize();
+    // Leave the ability hover card before capturing its separate cast status.
+    await page.mouse.move(width / 2, height * .4);
+  }
   await page.evaluate(() => window.__flush());
   await page.screenshot({ path: path.join(shots, `${name}.png`), animations: 'disabled', timeout: 120000 });
 }
@@ -264,6 +269,7 @@ try {
     assert.match(await page.locator('#objective-sub').innerText(), /West lane/i, `${name}: HUD guides the lane the hero occupies`);
     assert.equal((await snapshot(page)).player.lane, 1, `${name}: HUD guidance does not change simulation lane assignment`);
     if (touch) await press(page, '#map-button', touch); else await page.keyboard.press('m');
+    await page.waitForFunction(() => document.querySelector('#sheet').open, null, { polling: 20, timeout: 5000 });
     await advance(page);
     await press(page, '[data-destination="ward"]', touch); await advance(page);
     const ordered = (await snapshot(page)).player;

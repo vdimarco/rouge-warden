@@ -124,7 +124,7 @@ function updateAimStatus(status){
 }
 function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); castQueue = undefined; recallQueue = cancelRecallQueue = portalQueue = false; aim = null; $('thumb').style.transform = ''; }
 function closeSheet() { $('sheet').close(); paused = false; resetInput(); refreshGuide(); }
-function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet'); paused = running; resetInput(); refreshGuide(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet')&&!$('sheet').classList.contains('market'))paginatePanel($('sheet-content'));}); }
+function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet','map-sheet'); paused = running; resetInput(); refreshGuide(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet')&&!$('sheet').classList.contains('market')&&!$('sheet').classList.contains('map-sheet'))paginatePanel($('sheet-content'));}); }
 function pause() {
   if (!running || resultShown) return;
   // After full screen ended during play, the menu asks how to go on. Nothing returns to full screen without a choice.
@@ -278,6 +278,7 @@ function how() {
 }
 function map() {
   sheet('<h2>The shifting grounds</h2><p class="map-help">Choose a destination. Your hero will follow the route.</p><canvas id="tactical-map" width="640" height="640" aria-label="Arena map: green allies, red enemies, cyan rift gates"></canvas><p class="map-legend">● Allies &nbsp; <em>● Enemies in sight</em> &nbsp; ◌ Last seen &nbsp; ◯ Rift gates &nbsp; ! Fight or ward alarm</p><div class="map-destinations"><button data-destination="ward">Next tower</button><button data-destination="hunt">Wild Hunt</button><button data-destination="spirit">Spirit camp</button><button data-destination="gate">Nearest gate</button><button data-destination="rally">Call team here</button></div><button id="back-map" class="primary">Back to the hunt</button>');
+  $('sheet').classList.add('map-sheet');
   const mark = (point, enemy) => { waypoint = point; closeSheet(); if(player(state).hp>0)orderQueue=enemy?{type:'attack',target:enemy.id}:{type:'move',...point}; };
   $('tactical-map').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); mark({ x: (e.clientX - r.left) / r.width * SIZE, y: (e.clientY - r.top) / r.height * SIZE }); };
   document.querySelectorAll('[data-destination]').forEach(b => b.onclick = () => {
