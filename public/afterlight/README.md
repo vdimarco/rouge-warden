@@ -16,7 +16,7 @@ Your journey saves locally when storage is available. Reloads require a delibera
 
 Phaser 3.90.0 drives the scene clock, camera, dynamic ASCII texture, keyboard/pointer input, transitions and feedback tweens. The pinned runtime and MIT license are bundled locally. The deterministic campaign model remains independent for saves and checks.
 
-Landmark operations require active decisions: rotate and focus forest light, reconnect city conductors, tether and escort drifting crews, read fjord echo channels, align desert bearings, and meet a garden’s changing needs. Numeric keys select operation choices; all choices also have native buttons. Leaving an operation keeps supplies. Rewards and costs apply once on successful completion. Movement stays available during coastal towing.
+Landmark operations require active decisions: rotate and focus forest light, reconnect city conductors, tether and escort drifting crews, read fjord echo channels, align desert bearings, and meet a garden’s changing needs. Operation shortcuts are shown beside their native buttons. Leaving an operation keeps supplies. Rewards and costs apply once on successful completion. Movement stays available during coastal towing.
 
 ## Living scenes
 

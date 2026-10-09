@@ -81,6 +81,39 @@ async function travel(page, region) {
   assert.equal((await state(page)).region, region);
   assert.equal((await state(page)).phase, "playing");
 }
+async function verifyDiscovery() {
+  const p = await browser.newPage({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: "reduce",
+  });
+  monitor(p);
+  await p.goto(base + "/?machines");
+  await p.locator("#machinePicker").waitFor();
+  assert.equal(
+    await p.locator(".cab[data-game=afterlight]").getAttribute("data-url"),
+    "/afterlight/",
+  );
+  const option = await p
+    .locator("#machinePicker option")
+    .evaluateAll(
+      (es) =>
+        es.find((e) => e.textContent.trim().toLowerCase() === "afterlight")
+          ?.value,
+    );
+  assert.ok(option !== undefined, "Afterlight listed in machine picker");
+  await p.locator("#machinePicker").selectOption(option);
+  await p.locator("#machinePicker").evaluate((e) => e.blur());
+  await p.keyboard.press("5");
+  await p.keyboard.press("1");
+  await p.waitForURL(base + "/afterlight/");
+  await p.waitForFunction(() =>
+    window.__afterlight?.game?.scene?.isActive("journey"),
+  );
+  await p.close();
+  evidence.checks.push(
+    "Afterlight machine picker, token5/start1 cabinet launch and Phaser startup",
+  );
+}
 async function rest(page) {
   await walk(page, "camp");
   await choose(page, "rest");
@@ -201,7 +234,11 @@ async function solve(page) {
   });
 }
 try {
-  if (process.env.AFTERLIGHT_LIVING_DIAGNOSTICS_ONLY) {
+  if (process.env.AFTERLIGHT_DISCOVERY_ONLY) {
+    await verifyDiscovery();
+    assert.deepEqual(errors, []);
+    console.log("Afterlight cabinet token launch PASS");
+  } else if (process.env.AFTERLIGHT_LIVING_DIAGNOSTICS_ONLY) {
     for (const viewport of [
       { width: 1440, height: 900 },
       { width: 390, height: 844 },
@@ -437,6 +474,7 @@ try {
         "earned terminal save explores restored world and new journey resets progress",
       );
     }
+    await verifyDiscovery();
     assert.deepEqual(errors, []);
     await writeFile(
       directory + "/diagnostics.json",
@@ -657,6 +695,7 @@ try {
       await p.close();
     }
     evidence.checks.push("malformed and blocked storage startup");
+    await verifyDiscovery();
     assert.deepEqual(errors, []);
     await writeFile(
       directory +
