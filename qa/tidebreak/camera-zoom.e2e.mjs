@@ -101,10 +101,11 @@ try {
       window.__ts+=100;window.__pump(1);window.__ts+=100;window.__pump(1);
     });
     assert(await page.locator('#portal').isEnabled(),'Rift enables near a gate');
-    await page.locator('#portal').click();await page.evaluate(()=>window.__pump(2));
+    const gateButton=await page.locator('#portal').boundingBox();
+    await page.mouse.click(gateButton.x+gateButton.width/2,gateButton.y+gateButton.height/2);await page.evaluate(()=>window.__pump(2));
     assert((await page.evaluate(async()=>(await import('/tidebreak/main.js')).snapshot())).player.portalCd>0,'top-center Rift Jump still activates');
     assert.deepEqual(errors, [], 'no asset, runtime or shader errors');
     await page.close();
   }
-  console.log('PASS: real wheel, pinch, terrain picking, input suppression, retained zoom and Rift layout in four viewports.');
+  console.log('PASS: real wheel, pinch, terrain picking, input suppression, retained zoom and Rift layout in the selected viewports.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
