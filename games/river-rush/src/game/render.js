@@ -373,6 +373,9 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     else if(e.type==='coin'&&coinAppearance(e).premium)premiumCoin(ctx,p.x,bottom,size,reducedMotion?0:Math.sin(g.time*3+e.id)*.045,reducedMotion?1:.55+.45*Math.abs(Math.cos(g.time*5+e.id)));
     else sprite(ctx,art.sprites,e.type==='magnet'?indexes.coin:indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
     if(e.type==='magnet'){ctx.save();ctx.font=`900 ${Math.max(12,size*.3)}px system-ui`;ctx.textAlign='center';ctx.strokeStyle='#3f2e14';ctx.lineWidth=3;ctx.strokeText('×2',p.x,bottom-size*.32);ctx.fillStyle='#fff8d0';ctx.fillText('×2',p.x,bottom-size*.32);ctx.restore();}
+    if(!e.done&&e.choiceRole==='counterpart'&&z<g.speed*2.6&&size>=12){
+      hazardHint(ctx,{label:e.type==='shield'?'SHIELD · 1 HIT':'GOLD ×2 · 8s',x:p.x,y:bottom-size*.95-8,font:Math.max(10,14*p.scale),branch:false});
+    }
     if(!e.done&&['log','branch','rock'].includes(e.type)&&(!e.fullRiver||e.canopyLead!==false)&&z<g.speed*1.65&&z>10) {
       const span=isBranchSpan(e)?branchProjection(e,g,width,height):null;
       const label=span?span.label:e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
@@ -415,7 +418,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     ctx.save();ctx.globalAlpha=1-progress;ctx.strokeStyle=gold?'#ffe19c':'#99ffed';ctx.lineWidth=Math.max(2,heroWidth*.014);
     ctx.beginPath();ctx.ellipse(at.x,at.foot-heroWidth*.17,heroWidth*(.22+(reducedMotion?0:progress*.22)),heroWidth*.13,0,0,TAU);ctx.stroke();
     ctx.font=`900 ${Math.max(14,heroWidth*.15)}px system-ui`;ctx.textAlign='center';ctx.fillStyle=gold?'#fff1bf':'#d9fff2';ctx.strokeStyle='#123d35';ctx.lineWidth=3;
-    const y=at.foot-heroWidth*(.43+(reducedMotion?0:progress*.2)),text=`+${effect.value??200}${treasure&&effect.clean?' CLEAN':''}`;ctx.strokeText(text,at.x,y);ctx.fillText(text,at.x,y);ctx.restore();
+    const y=at.foot-heroWidth*(.43+(reducedMotion?0:progress*.2)),text=effect.coinCount?`+${effect.coinCount} COINS`:`+${effect.value??200}${treasure&&effect.clean?' CLEAN':''}`;ctx.strokeText(text,at.x,y);ctx.fillText(text,at.x,y);ctx.restore();
   }
   if(impact.active){
     // A local contact halo stays readable under reduced motion. It never

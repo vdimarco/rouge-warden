@@ -10,7 +10,7 @@
     <title>Afterlight · Bring them home</title>
     <meta
       name="description"
-      content="Blast the shadows, lead three survivors to the beacon, and defend the rescue route through six living ASCII worlds."
+      content="Break shadow tethers, rescue survivors and defeat guardians across six living 3D worlds."
     />
     <link rel="icon" href="/icons/favicon.svg" />
     <link rel="stylesheet" href="/afterlight/action.css" />
@@ -20,9 +20,20 @@
     <main
       id="action-arena"
       tabindex="0"
-      aria-label="Afterlight rescue playfield. Move with WASD or arrows, aim and click to fire, Space fires toward enemies, Shift dodges and P pauses."
+      aria-label="Afterlight rescue playfield. Move with WASD or arrows, aim and click to fire, Space fires toward enemies, Shift dodges, E interrupts attacks, release fire to cool the weapon and P pauses."
     >
-      <div id="action-scene" aria-label="A living ASCII rescue landscape"></div>
+      <div
+        id="action-scene"
+        aria-label="A living three-dimensional rescue landscape"
+      ></div>
+      <div id="action-world-labels" aria-hidden="true"></div>
+      <canvas
+        id="action-radar"
+        width="200"
+        height="100"
+        role="img"
+        aria-label="Radar: gold is you and the beacon, peach is survivors, violet is tethers and enemies"
+      ></canvas>
       <header class="action-hud">
         <div class="action-identity">
           <a class="action-brand" href="/afterlight/">Afterlight</a
@@ -39,7 +50,8 @@
         </div>
         <div class="action-status">
           <span id="action-health" aria-label="Health">HP 100</span
-          ><span id="action-score">Score 0</span>
+          ><span id="action-score">Score 0</span
+          ><span id="action-heat">Light heat 0%</span>
         </div>
         <nav class="action-settings" aria-label="Game settings">
           <button id="action-sound" type="button" aria-pressed="false">
@@ -105,6 +117,13 @@
           >
             <span class="action-glyph" aria-hidden="true">+</span
             ><span>Fire</span></button
+          ><button
+            id="action-pulse"
+            type="button"
+            aria-label="Pulse to interrupt nearby threats"
+          >
+            <span class="action-glyph" aria-hidden="true">◎</span
+            ><span>Pulse · E</span></button
           ><button id="action-dodge" type="button" aria-label="Dodge danger">
             <span class="action-glyph" aria-hidden="true">»</span
             ><span>Dodge</span>
@@ -115,12 +134,12 @@
         <span
           >scenes by <a href="https://ascii.rest/">ascii.rest</a> ·
           <a href="/last-light/vendor/LICENSE">MIT</a></span
+        ><a href="/battle-tanks/">Battle Tanks</a
         ><a href="/afterlight/classic.html">Classic</a
         ><button type="button" data-switch>Other games</button>
       </div>
     </main>
     <script src="/arcade/switch.js"></script>
-    <script src="/afterlight/vendor/phaser-3.90.0.min.js"></script>
     <script type="module" src="/afterlight/action-game.js"></script>
   </body>
 </html>

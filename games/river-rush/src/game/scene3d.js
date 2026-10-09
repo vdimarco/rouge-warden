@@ -208,8 +208,8 @@ export function createScene(canvas,art,onLost){
  }else{m=mesh(powerGeo,powerMats[e.type],g);}
  m.castShadow=e.type!=='coin';
  g.userData.type=e.type;g.userData.body=m;
- if(['rock','log','branch','magnet'].includes(e.type)){
- const text=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':e.type==='magnet'?'GOLD ×2':branchLabel(branchSpan(e).width,!!e.fullRiver);if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(e.enemy||isBranchSpan(e)?2.65:2.2,.55,1);g.add(sprite);g.userData.label=sprite;g.userData.labelText=text;}
+ if(['rock','log','branch','magnet','shield'].includes(e.type)){
+ const text=e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='rock'?'DODGE ↔':e.type==='log'?'JUMP ↑':e.type==='magnet'?'GOLD ×2 · 8s':e.type==='shield'?'SHIELD · 1 HIT':branchLabel(branchSpan(e).width,!!e.fullRiver);if(!labelMaterials.has(text))labelMaterials.set(text,new THREE.SpriteMaterial({map:label(text),depthTest:false}));const sprite=new THREE.Sprite(labelMaterials.get(text));sprite.position.y=e.type==='branch'?3.5:2.2;sprite.scale.set(e.enemy||isBranchSpan(e)||['shield','magnet'].includes(e.type)?2.65:2.2,.55,1);g.add(sprite);g.userData.label=sprite;g.userData.labelText=text;}
  scene.add(g);return g;}
  const sprayCount=120,sprayPositions=new Float32Array(sprayCount*3),sprayGeometry=new THREE.BufferGeometry();sprayGeometry.setAttribute('position',new THREE.BufferAttribute(sprayPositions,3));
  const spray= new THREE.Points(sprayGeometry,new THREE.PointsMaterial({color:'#e5fff2',size:.09,transparent:true,opacity:.72,depthWrite:false}));spray.frustumCulled=false;scene.add(spray);

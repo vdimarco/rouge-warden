@@ -123,9 +123,13 @@ function updateAimStatus(status){
   refreshGuide();
 }
 function resetInput() { cancelOrder(player(state)); target=0; orderQueue=undefined; keys.clear(); movement.x = movement.y = 0; movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); castQueue = undefined; recallQueue = cancelRecallQueue = portalQueue = false; aim = null; $('thumb').style.transform = ''; }
-function closeSheet() { $('sheet').close(); paused = false; resetInput(); refreshGuide(); }
+function closeSheet() {
+  if (renderer?.lost) return;
+  $('sheet').close(); paused = false; resetInput(); refreshGuide();
+}
 function sheet(html) { $('sheet').classList.remove('market','spellbook-sheet','map-sheet'); paused = running; resetInput(); refreshGuide(); $('sheet-content').innerHTML = html; if (!$('sheet').open) $('sheet').showModal(); requestAnimationFrame(()=>{if(!$('sheet').classList.contains('spellbook-sheet')&&!$('sheet').classList.contains('market')&&!$('sheet').classList.contains('map-sheet'))paginatePanel($('sheet-content'));}); }
 function pause() {
+  if (renderer?.lost) return;
   if (!running || resultShown) return;
   // After full screen ended during play, the menu asks how to go on. Nothing returns to full screen without a choice.
   const top = fullscreenLeft ? '<button id="fullscreen-back" class="primary">Back to full screen</button><button id="resume" class="row-btn">Keep playing windowed</button>' : '<button id="resume" class="primary">Keep playing</button>';
@@ -463,6 +467,7 @@ $('battle').addEventListener('pointerdown',e=>{
 $('battle').addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cursor={x:e.clientX,y:e.clientY};if(renderer&&running&&!paused)$('battle').style.cursor=renderer.pick(state,e.clientX,e.clientY)?'crosshair':'default';});
 const MOVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
 window.addEventListener('keydown', e => {
+  if ($('graphics-error').open) { if (e.key === 'Escape') e.preventDefault(); return; }
   // A held Esc repeats. Chrome tells the player to hold Esc to leave a keyboard-locked full screen, and each repeat
   // would open or close the menu again, so only the first press counts.
   if (e.key === 'Escape' && e.repeat) { e.preventDefault(); return; }
@@ -501,7 +506,7 @@ function autoPause() {
   autoPauseNote.innerHTML = lastPointer === 'mouse' ? '<b>Paused</b><small>Click to keep playing</small>' : '<b>Paused</b><small>Tap to keep playing</small>';
 }
 function autoResume() {
-  if (!autoPaused || document.hidden) return;
+  if (!autoPaused || document.hidden || renderer?.lost) return;
   autoPaused = false; autoPauseNote.hidden = true; if (!$('sheet').open) paused = false;
 }
 window.addEventListener('pointerdown', e => { lastPointer = e.pointerType; telemetry.input(e.pointerType); }, true);
@@ -516,15 +521,10 @@ document.addEventListener('visibilitychange', () => { sound.setHidden(document.h
 // A resize (full screen, zoom, devtools) keeps the hero's order and held keys; only pointer gestures in progress end.
 window.addEventListener('resize', () => { movementControl?.reset(); screenMovementControl?.reset(); abilityControl?.reset(); aim = null; $('thumb').style.transform = ''; renderer?.resize(); });
 window.addEventListener('contextmenu', e => e.preventDefault());
-let graphicsPaused = false;
 function frame(now) {
-  const interrupted = !!renderer?.lost;
-  $('graphics-interrupted').hidden = !interrupted;
-  if (interrupted) { if (running && !paused) { graphicsPaused = true; paused = true; resetInput(); } last = now; requestAnimationFrame(frame); return; }
-  if (graphicsPaused) { graphicsPaused = false; paused = $('sheet').open; last = now; }
   const frameMs = Math.max(0, now - last), dt = Math.min(frameMs / 1000, .05); last = now;
   let steps = 0;
-  if (running && !paused && !window.GameSwitch?.isOpen) {
+  if (running && !paused && !renderer?.lost && !window.GameSwitch?.isOpen) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
       steps++;
@@ -578,7 +578,7 @@ function frame(now) {
 }
 // The hero select arena (3D only): the selected hero stands alone near the allied base, with only the structures and no
 // match clock. three-render.js frames it with a low camera in the box of the portrait. The painted stage and portrait
-// stay for the 2D view, until the first hero model is ready, when a model fails and when the WebGL context is lost. A new
+// stay until the first hero model is ready, when a model fails and when the WebGL context is lost. A new
 // pick keeps the last hero on stage while its model parses, then swaps. Idle frames parse the nearest other heroes one at
 // a time, so later picks swap at once. It draws at most 30 frames a second. A slow draw waits twice its own time (up to
 // 2 s), so the menu keeps about half of the main thread. It never draws while the tab is hidden, and stops when the draft
@@ -625,31 +625,43 @@ function drawBetweenSteps(dt) {
   try { renderer.draw(state, dt, false, aim ? skillAimPreview(state, player(state), aim.slot, dragSkillAim(player(state), aim.slot, aim, (x, y) => renderer.screenDirection(x, y))) : null, waypoint); }
   finally { state.time = time; for (let i = 0; i < moved.length; i += 3) { moved[i].x = moved[i + 1]; moved[i].y = moved[i + 2]; } }
 }
-// Every match uses the 3D battlefield. Old 2D URLs and saved preferences have no effect.
+// 3D is the only battlefield. Old links/preferences cannot silently select another view.
+try { localStorage.removeItem('tidebreak.renderer'); } catch {}
 const loadingText = (done, total) => { if ($('play').disabled) $('play').querySelector('span').textContent = `Opening the shore… ${Math.round(done / total * 100)}%`; };
-function graphicsFailure(message) {
-  $('load-error-message').textContent = message;
-  $('load-error').hidden = false;
-  $('play').disabled = true;
-  $('select-key').disabled = true;
-  $('play').querySelector('span').textContent = '3D view unavailable';
+function graphicsMessage(message, visible = true) {
+  $('graphics-error-text').textContent = message;
+  const dialog = $('graphics-error');
+  if (visible && !dialog.open) dialog.showModal();
+  if (!visible && dialog.open) dialog.close();
 }
-async function openBattlefield() {
+async function startGraphics() {
   const loadStartedAt = performance.now();
   telemetry.load('started');
   try {
     renderer = await createBattlefield({ canvas: $('battle'), minimap: $('minimap'), onProgress: loadingText });
+    renderer.canvas.addEventListener('webglcontextlost', () => {
+      if (running) { paused = true; resetInput(); accumulator = 0; }
+      $('play').disabled = true;
+      graphicsMessage('3D graphics were interrupted. Your match is paused while graphics recover. If this continues, reload Shore.');
+    });
+    renderer.canvas.addEventListener('webglcontextrestored', () => {
+      $('play').disabled = false;
+      graphicsMessage('', false);
+      if (running) { paused = true; pause(); }
+    });
     $('play').disabled = false;
     $('play').querySelector('span').textContent = 'Start match';
     telemetry.load('ready', { elapsed_ms: performance.now() - loadStartedAt });
     requestAnimationFrame(frame);
   } catch (error) {
     telemetry.load('failed', { reason: error.code || 'load_failed', elapsed_ms: performance.now() - loadStartedAt });
-    console.error('Shore 3D view could not load.', error);
-    graphicsFailure(error.code === 'GRAPHICS_UNAVAILABLE' ? error.message : 'The 3D view could not load. Check your connection and reload.');
+    console.error('Shore 3D could not start.', error);
+    graphicsMessage(error.code === 'GRAPHICS_UNAVAILABLE' ? error.message : 'Shore’s 3D world could not load. Check your connection and reload to try again.');
+    $('play').querySelector('span').textContent = 'Shore unavailable';
   }
 }
-openBattlefield();
+$('graphics-error').addEventListener('cancel', event => event.preventDefault());
+startGraphics();
 document.addEventListener('error',e=>{if(e.target.tagName!=='IMG')return;const picture=e.target.closest('picture');if(picture?.querySelector('source')?.hasAttribute('srcset')){picture.querySelector('source').removeAttribute('srcset');e.target.src=e.target.getAttribute('src');}},true);
 try { const hero = Number(localStorage.getItem('tidebreak.hero')); if(Number.isInteger(hero)&&HERO_IDENTITIES[hero]) selectedIdentity=hero; } catch {}
 choose(selectedIdentity);
@@ -663,4 +675,5 @@ export const qaState = () => state;
 const wakeSound = () => { if (!sound.context || sound.context.state !== 'running' || sound.scoreBlocked()) { soundWokeAt = performance.now(); sound.start(); } };
 window.addEventListener('pointerdown', wakeSound, { capture: true });
 window.addEventListener('keydown', wakeSound, { capture: true });
+
 

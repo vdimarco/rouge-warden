@@ -17,7 +17,7 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
   for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true]]) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch }), errors = [];
@@ -37,6 +37,15 @@ try {
       await page.screenshot({ path: path.join(shots, `${name}-startup-failure.png`) });
       throw new Error('3D startup failed: ' + errors.join('\n'));
     }
+    // Use the supported resolution floor and finish each actual draw so forced 3D
+    // does not leave an unbounded software GPU queue behind native input/screenshots.
+    await page.evaluate(() => {
+      const r = document.querySelector('#battle').__shore3d, draw = r.draw;
+      r.quality = .5; r.resize();
+      r.draw = function(...args) { draw.apply(this, args); this.gl.getContext().finish(); };
+    });
+    assert.equal((await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot())).graphics.renderer, 'Mythic 3D');
+    assert.equal(await page.locator('#graphics-error').evaluate(el => el.open), false, '3D starts without a graphics failure');
     await page.click('#play');
     for (let i = 0; i < 120 && await page.locator('#hud').isHidden(); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
     await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running);
@@ -92,3 +101,4 @@ try {
   }
   console.log('PASS: landscape and portrait 3D rendering, geology in both realms, grounding and shadow shaders, camera targeting, movement and spellbook controls.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+

@@ -4,14 +4,28 @@ on:
     branches: ['codex/shared-procedural-creatures']
     paths: ['public/arcade/creatures/**', 'public/tidebreak/**', 'qa/creatures/**', 'qa/tidebreak/creatures.test.mjs', '.github/workflows/creature-browser.yml']
   pull_request:
-    paths: ['public/arcade/creatures/**', 'public/tidebreak/**', 'qa/creatures/**', 'qa/tidebreak/creatures.test.mjs']
+    paths: ['public/arcade/creatures/**', 'public/tidebreak/**', 'qa/creatures/**', 'qa/tidebreak/creatures.test.mjs', '.github/workflows/creature-browser.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  browser:
+  simulation:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exports, neutral behavior and full matches
+        run: node qa/creatures/shared.test.mjs && node qa/tidebreak/creatures.test.mjs && node qa/tidebreak/base-attacks.test.mjs && node qa/tidebreak/hero-identities.test.mjs && node qa/tidebreak/legends.test.mjs && node qa/tidebreak/sim.test.mjs
+  viewport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, phone, small-phone, landscape, compact-desktop, short-desktop]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,16 +33,25 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix qa/browser
       - run: cd qa/browser && npx playwright install --with-deps chromium
-      - name: Verify exports, neutral behavior and full matches
-        run: node qa/creatures/shared.test.mjs && node qa/tidebreak/creatures.test.mjs && node qa/tidebreak/base-attacks.test.mjs && node qa/tidebreak/hero-identities.test.mjs && node qa/tidebreak/legends.test.mjs && node qa/tidebreak/sim.test.mjs
-      - name: Verify reference selection, creature display and controls at six viewport sizes
+      - name: Verify reference selection, creature display and controls
         run: node qa/creatures/browser.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/creatures
+          CREATURE_VIEWPORT: ${{ matrix.viewport }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: creatures-phone-landscape-desktop
+          name: creatures-${{ matrix.viewport }}
           path: test-results/creatures
           retention-days: 14
+  browser:
+    needs: [simulation, viewport]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require simulation and every viewport
+        env:
+          SIMULATION_RESULT: ${{ needs.simulation.result }}
+          VIEWPORT_RESULT: ${{ needs.viewport.result }}
+        run: test "$SIMULATION_RESULT" = success && test "$VIEWPORT_RESULT" = success

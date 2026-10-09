@@ -38,3 +38,8 @@ The existing Shared creatures browser job times out at its unchanged hero-menu s
 The OpenSpec CLI is unavailable. Required files, requirement headings, canonical requirement presence and observable WHEN/THEN scenarios were checked directly. Canonical requirements are updated and the completed change is archived.
 
 PostHog recording read permission is unavailable. This change adds capture-only anonymous gameplay events and load timing on the known production Shore host, without a replay SDK. Preview, localhost and WebDriver sessions do not send production events. Event capture failures are tested to leave play usable. Combat balance, match timing and cave navigation remain separate playtest work.
+
+
+## Integration with current main
+
+Merged main `23c7b8bc5351e74457259f250bb7bf09eaa697a6` into the playability branch before final merge. The combined runtime retains the 3D-only terrain changes, graphics failure dialog, context-loss pause and explicit resume after restoration, together with playability telemetry, guide state and Recall cancellation. Shared creature and terrain checks now explicitly verify direct start and optional Spellbook access. Camera, landscape and playability checks use the existing software rendering resolution floor and finish actual GPU draws; all geometry, input and gameplay assertions remain. The five affected browser scripts and combined runtime pass syntax checks. The PR's latest workflow runs record validation of this combined revision.

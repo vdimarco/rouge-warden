@@ -19,7 +19,7 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ headless: true, args: ['--disable-dev-shm-usage', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--disable-dev-shm-usage', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const sizes = [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['landscape', 844, 390, true], ['small-phone', 320, 568, true]];
 
 // Pump the real frame loop. A long clock advance draws only its final frames so
@@ -152,6 +152,15 @@ try {
       await screenshot(page, `${name}-startup-failure`);
       throw new Error('3D startup failed: ' + errors.join('\n'));
     }
+    // Use the supported resolution floor and finish each actual draw so forced 3D
+    // does not leave an unbounded software GPU queue behind native input/screenshots.
+    await page.evaluate(() => {
+      const r = document.querySelector('#battle').__shore3d, draw = r.draw;
+      r.quality = .5; r.resize();
+      r.draw = function(...args) { draw.apply(this, args); this.gl.getContext().finish(); };
+    });
+    assert.equal((await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot())).graphics.renderer, 'Mythic 3D');
+    assert.equal(await page.locator('#graphics-error').evaluate(el => el.open), false, '3D starts without a graphics failure');
     await page.evaluate(() => { window.__auto = false; });
     assert.equal(await page.locator('[data-difficulty="apprentice"]').getAttribute('aria-checked'), 'true', `${name}: new players start on Apprentice`);
     await press(page, '#hero-settings', touch);
@@ -370,3 +379,4 @@ try {
   }
   throw error;
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+

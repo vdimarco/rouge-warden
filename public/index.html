@@ -500,11 +500,17 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into River Rush"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
-      <article class="cab afterlight" data-game="afterlight" data-url="/afterlight/" aria-label="Afterlight: one journey through six changing ASCII worlds">
+      <article class="cab afterlight" data-game="afterlight" data-url="/afterlight/" aria-label="Afterlight: rescue survivors across six living 3D worlds">
       <div class="marquee"><div><b>AFTERLIGHT</b><small>SIX CHANGING WORLDS</small></div></div>
-      <div class="bezel"><div class="screen"><img src="arcade/key/firefly-courier.svg" alt="A forest waiting for light" loading="lazy" decoding="async"><div class="osd"><p class="hi">EXPLORE · RESTORE · RETURN</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div></div></div>
+      <div class="bezel"><div class="screen"><img src="arcade/key/firefly-courier.svg" alt="A forest waiting for light" loading="lazy" decoding="async"><div class="osd"><p class="hi">RESCUE · FIGHT · RESTORE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div></div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Afterlight"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Afterlight"><i></i><span>25¢</span></button></div><div class="kick"></div>
+      </article>
+      <article class="cab afterlight battle-tanks" data-game="battle-tanks" data-url="/battle-tanks/" aria-label="Battle Tanks: flank guarded relays and extract">
+      <div class="marquee"><div><b>BATTLE TANKS</b><small>FLANK · BOMBARD · EXTRACT</small></div></div>
+      <div class="bezel"><div class="screen"><img src="battle-tanks/key.svg" alt="A tank facing guarded relay guns" loading="lazy" decoding="async"><div class="osd"><p class="hi">DRIVE · AIM · EXTRACT</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div></div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Battle Tanks"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Battle Tanks"><i></i><span>25¢</span></button></div><div class="kick"></div>
       </article>
       <article class="cab lighthouse-keeper" data-game="lighthouse-keeper" data-url="/lighthouse-keeper/" aria-label="Lighthouse Keeper: Guide boats through the fog">
       <div class="marquee"><div><b>LIGHTHOUSE KEEPER</b><small>GUIDE BOATS THROUGH THE FOG</small></div></div>
@@ -675,7 +681,7 @@ const machinePicker = $("#machinePicker");
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
   { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"] },
-  { id: "ascii", label: "ASCII Scenes", games: ["afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"] },
+  { id: "ascii", label: "ASCII Scenes", games: ["afterlight", "battle-tanks", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"] },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"] },
   { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"] },
 ];

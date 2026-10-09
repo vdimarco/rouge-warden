@@ -8,6 +8,7 @@ import {
   updateAction,
   fireAction,
   dodgeAction,
+  pulseAction,
   pauseAction,
   resumeAction,
   retryAction,
@@ -16,7 +17,7 @@ import {
   restoreAction,
 } from "../../public/afterlight/action-engine.js";
 const gap = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-function frame(s, target, fire = true) {
+function frame(s, target, fire = true, aim = null) {
   const dx = target.x - s.x,
     dy = target.y - s.y,
     n = Math.hypot(dx, dy) || 1;
@@ -24,13 +25,20 @@ function frame(s, target, fire = true) {
     (p) => p.owner === "enemy" && gap(s, p) < 12,
   );
   const charge = s.enemies.find((e) => e.mode === "windup" && gap(s, e) < 22);
+  if (charge && s.pulseCooldown <= 0) pulseAction(s);
   if ((incoming || charge) && s.dodge.cooldown <= 0) {
     const threat = incoming || charge;
     dodgeAction(s, -(threat.y - s.y), threat.x - s.x);
   }
   updateAction(
     s,
-    { dx: n > 1 ? dx / n : 0, dy: n > 1 ? dy / n : 0, fire },
+    {
+      dx: n > 1 ? dx / n : 0,
+      dy: n > 1 ? dy / n : 0,
+      fire: fire && !s.overheated && s.heat < 0.8,
+      aimX: aim?.x,
+      aimY: aim?.y,
+    },
     0.05,
   );
   assert.equal(
@@ -39,15 +47,26 @@ function frame(s, target, fire = true) {
     `Action failure ${s.region} ${s.stage}: hp${s.hp}, beacon${s.beacon.hp}`,
   );
 }
-function walk(s, target) {
+function walk(s, target, fire = true) {
   for (let i = 0; i < 800 && gap(s, target) > 1 && s.phase === "playing"; i++)
-    frame(s, target);
+    frame(s, target, fire);
   assert(gap(s, target) < 2, `Could not walk to ${JSON.stringify(target)}`);
+}
+function freeSurvivor(s, v) {
+  if (v.status !== "stranded") return;
+  walk(s, v);
+  for (let i = 0; i < 250 && v.bound; i++) {
+    const tether = s.tethers.find((t) => t.survivorId === v.id);
+    assert(tether, "Bound survivor must have a visible tether");
+    frame(s, v, true, tether);
+  }
+  assert.equal(v.bound, false, "The weapon must break this survivor’s tether");
+  for (let i = 0; i < 40 && v.status === "stranded"; i++) frame(s, v);
 }
 function completeRegion(s) {
   for (const v of [...s.survivors].sort((a, b) => gap(s, a) - gap(s, b))) {
     if (v.status === "safe") continue;
-    if (v.status === "stranded") walk(s, v);
+    if (v.status === "stranded") freeSurvivor(s, v);
     assert.notEqual(v.status, "stranded");
     walk(s, s.beacon);
     for (let i = 0; i < 60 && v.status !== "safe"; i++) frame(s, s.beacon);
@@ -250,7 +269,7 @@ test("Triple-light power creates a visible fan while restoration requires the fu
   assert(fireAction(s, 100, 30));
   assert.equal(s.projectiles.length - before, 3);
   for (const v of s.survivors) {
-    if (v.status === "stranded") walk(s, v);
+    if (v.status === "stranded") freeSurvivor(s, v);
     walk(s, s.beacon);
     for (let i = 0; i < 50 && v.status !== "safe"; i++) frame(s, s.beacon);
   }
@@ -282,7 +301,7 @@ test("A charged beacon cannot restore its region while the visible guardian rema
   const s = createActionGame(37);
   startAction(s);
   for (const v of s.survivors) {
-    if (v.status === "stranded") walk(s, v);
+    if (v.status === "stranded") freeSurvivor(s, v);
     walk(s, s.beacon);
     for (let i = 0; i < 50 && v.status !== "safe"; i++) frame(s, s.beacon);
   }
@@ -338,7 +357,7 @@ test("Saving an undefeated guardian reconstructs it and cannot bypass the climax
   const s = createActionGame(3);
   startAction(s);
   for (const v of s.survivors) {
-    if (v.status === "stranded") walk(s, v);
+    if (v.status === "stranded") freeSurvivor(s, v);
     walk(s, s.beacon);
     for (let i = 0; i < 50 && v.status !== "safe"; i++) frame(s, s.beacon);
   }
@@ -359,4 +378,133 @@ test("Saving an undefeated guardian reconstructs it and cannot bypass the climax
   assert.equal(loaded.guardianSpawned, true);
   assert(loaded.enemies.some((e) => e.elite && e.hp > 0));
   assert.equal(advanceAction(loaded), false);
+});
+
+test("Sustained fire overheats after about four seconds and deliberate cooling restores the weapon", () => {
+  const s = createActionGame(5);
+  startAction(s);
+  for (let i = 0; i < 260 && !s.overheated && s.phase === "playing"; i++)
+    updateAction(s, { fire: true, aimX: 199, aimY: 10 }, 0.025);
+  assert.equal(s.phase, "playing");
+  assert(s.overheated);
+  assert.equal(s.heat, 1);
+  assert(s.time >= 4 && s.time <= 5.5);
+  assert.equal(fireAction(s, 199, 10), false);
+  const before = s.heat;
+  updateAction(s, { dx: -1, fire: false }, 0.25);
+  assert(s.heat < before);
+  assert(s.overheated);
+  for (let i = 0; i < 120 && s.overheated; i++)
+    updateAction(s, { dx: -1, fire: false }, 0.025);
+  assert.equal(s.overheated, false);
+  assert(s.heat <= 0.25);
+  assert(fireAction(s, 199, 10));
+});
+test("An interrupting pulse breaks marked attacks, knocks shadows away and has a real cooldown", () => {
+  const s = createActionGame(8);
+  startAction(s);
+  s.enemies = [
+    {
+      id: "pulse-guardian",
+      kind: "guardian",
+      elite: true,
+      x: s.x + 10,
+      y: s.y,
+      hp: 24,
+      maxHp: 24,
+      radius: 5.5,
+      mode: "windup",
+      timer: 0.6,
+      contactCooldown: 0,
+      telegraph: {
+        kind: "ring",
+        x: s.x + 10,
+        y: s.y,
+        targetX: s.x,
+        targetY: s.y,
+        total: 0.9,
+        remaining: 0.6,
+      },
+      vx: 0,
+      vy: 0,
+      targetsBeacon: false,
+      orbit: 0,
+      attackPhase: "fan",
+    },
+  ];
+  s.projectiles.push({
+    id: "incoming-pulse-test",
+    owner: "enemy",
+    x: s.x + 8,
+    y: s.y,
+    vx: -20,
+    vy: 0,
+    radius: 1,
+    damage: 9,
+    ttl: 3,
+  });
+  const e = s.enemies[0],
+    before = gap(s, e);
+  assert(pulseAction(s));
+  assert.equal(e.mode, "approach");
+  assert.equal(e.telegraph, null);
+  assert.equal(e.hp, 21);
+  assert(gap(s, e) > before);
+  assert.equal(e.timer, 1.2);
+  assert(!s.projectiles.some((p) => p.id === "incoming-pulse-test"));
+  assert.equal(s.pulseCooldown, 5);
+  assert(s.effects.some((e) => e.kind === "pulse"));
+  assert.equal(pulseAction(s), false);
+  pauseAction(s);
+  const frozen = serializeAction(s);
+  updateAction(s, { pulse: true }, 0.25);
+  assert.equal(serializeAction(s), frozen);
+});
+test("Bound survivors cannot follow until their visible tether is destroyed by actual light projectiles", () => {
+  const s = createActionGame(12);
+  startAction(s);
+  assert.equal(s.tethers.length, 2);
+  assert.equal(s.survivors.filter((v) => v.bound).length, 2);
+  const v = s.survivors.find((v) => v.bound);
+  walk(s, v, false);
+  assert.equal(v.status, "stranded");
+  assert.equal(s.rescued, 0);
+  const tether = s.tethers.find((t) => t.survivorId === v.id);
+  assert(tether);
+  for (let i = 0; i < 200 && v.bound; i++) frame(s, v, true, tether);
+  assert.equal(v.bound, false);
+  assert(!s.tethers.some((t) => t.survivorId === v.id));
+  assert.equal(v.status, "following");
+  assert.equal(s.rescued, 0);
+  walk(s, s.beacon);
+  for (let i = 0; i < 60 && v.status !== "safe"; i++) frame(s, s.beacon);
+  assert.equal(v.status, "safe");
+  assert.equal(s.rescued, 1);
+});
+test("Old action saves reconstruct only remaining bindings while delivered and following survivors stay free", () => {
+  const s = createActionGame(15);
+  startAction(s);
+  const first = s.survivors.find((v) => !v.bound);
+  walk(s, first);
+  walk(s, s.beacon);
+  for (let i = 0; i < 60 && first.status !== "safe"; i++) frame(s, s.beacon);
+  const raw = JSON.parse(serializeAction(s));
+  delete raw.tethers;
+  delete raw.heat;
+  delete raw.overheated;
+  delete raw.pulseCooldown;
+  for (const v of raw.survivors) delete v.bound;
+  const loaded = restoreAction(raw);
+  assert(loaded);
+  assert.equal(loaded.rescued, 1);
+  assert(loaded.survivors.find((v) => v.status === "safe").bound === false);
+  assert.equal(loaded.tethers.length, 2);
+  assert.equal(loaded.heat, 0);
+  assert.equal(loaded.overheated, false);
+  assert.equal(loaded.pulseCooldown, 0);
+  assert(
+    loaded.survivors
+      .filter((v) => v.status === "stranded")
+      .every((v) => v.bound),
+  );
 });

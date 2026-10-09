@@ -236,14 +236,14 @@ export function createStashVisuals(scene,mat){
  for(const p of parts){p.mesh=new THREE.InstancedMesh(p.geometry,p.material,STASH_CAPACITY*p.repeat);p.mesh.count=0;p.mesh.frustumCulled=false;p.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(p.mesh);}
  let atlas=null;
  if(typeof document!=='undefined'){
-  const canvas=document.createElement('canvas');canvas.width=384;canvas.height=96;const ctx=canvas.getContext('2d');ctx.font='800 66px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=9;ctx.strokeStyle='#533819';ctx.fillStyle='#fff0b5';
-  for(const [i,value] of [120,200].entries()){ctx.strokeText(String(value),i*192+96,48);ctx.fillText(String(value),i*192+96,48);}atlas=new THREE.CanvasTexture(canvas);atlas.colorSpace=THREE.SRGBColorSpace;
+  const canvas=document.createElement('canvas');canvas.width=768;canvas.height=96;const ctx=canvas.getContext('2d');ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=7;ctx.strokeStyle='#533819';ctx.fillStyle='#fff0b5';
+  for(const [i,value] of ['+120 PTS','+200 PTS','8 COINS'].entries()){ctx.font='800 43px sans-serif';ctx.strokeText(value,i*256+128,48);ctx.fillText(value,i*256+128,48);}atlas=new THREE.CanvasTexture(canvas);atlas.colorSpace=THREE.SRGBColorSpace;
  }
- const plateGeo=new THREE.PlaneGeometry(1.45,.48),values=new THREE.InstancedBufferAttribute(new Float32Array(STASH_CAPACITY),1);values.setUsage(THREE.DynamicDrawUsage);plateGeo.setAttribute('stashValue',values);
- const plateMat=new THREE.MeshBasicMaterial({color:'#ffffff',map:atlas,alphaTest:.18,side:THREE.DoubleSide,toneMapped:false});plateMat.customProgramCacheKey=()=> 'river-stash-value-v1';
+ const plateGeo=new THREE.PlaneGeometry(2.6,.65),values=new THREE.InstancedBufferAttribute(new Float32Array(STASH_CAPACITY),1);values.setUsage(THREE.DynamicDrawUsage);plateGeo.setAttribute('stashValue',values);
+ const plateMat=new THREE.MeshBasicMaterial({color:'#ffffff',map:atlas,alphaTest:.18,side:THREE.DoubleSide,toneMapped:false});plateMat.customProgramCacheKey=()=> 'river-stash-value-v2';
  plateMat.onBeforeCompile=shader=>{shader.vertexShader='attribute float stashValue;\n'+shader.vertexShader.replace('#include <uv_vertex>',`#include <uv_vertex>
   #ifdef USE_MAP
-   vMapUv.x=(vMapUv.x+stashValue)*.5;
+   vMapUv.x=(vMapUv.x+stashValue)/3.;
   #endif`);};
  const plates=new THREE.InstancedMesh(plateGeo,plateMat,STASH_CAPACITY);plates.count=0;plates.frustumCulled=false;plates.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(plates);
  const pose=new THREE.Object3D(),projected=new THREE.Vector3();let count=0;
@@ -251,7 +251,7 @@ export function createStashVisuals(scene,mat){
  function begin(){count=0;state.samples=[];}
  function add(e,position,time,reduced,camera,opening=0){
   if(count>=STASH_CAPACITY)return;
-  const value=e.value??120,rich=value>=200,clock=reduced?0:time,bob=reduced?0:Math.sin(clock*3.8+(e.entityId??e.id))*.035,scale=rich?1.18:1.08;
+  const value=e.value??120,coinCount=e.coinCount===8?8:0,rich=value>=200||coinCount>0,clock=reduced?0:time,bob=reduced?0:Math.sin(clock*3.8+(e.entityId??e.id))*.035,scale=rich?1.3:1.18;
   for(const part of parts)for(let j=0;j<part.repeat;j++){
    let x=0,y=.55,z=0,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1;
    if(part.name==='pouch'){sx=.92;sy=.96-opening*.3;sz=.8;ry=Math.sin((e.entityId??e.id)*1.7)*.3;}
@@ -261,9 +261,9 @@ export function createStashVisuals(scene,mat){
    }
    pose.position.set(position.x+x*scale,position.y+(y+bob)*scale,position.z+z*scale);pose.rotation.set(rx,ry,rz);pose.scale.set(sx*scale,sy*scale,sz*scale);pose.updateMatrix();part.mesh.setMatrixAt(count*part.repeat+j,pose.matrix);
   }
-  pose.position.set(position.x,position.y+1.58*scale,position.z);pose.quaternion.copy(camera.quaternion);pose.scale.setScalar(scale);pose.updateMatrix();plates.setMatrixAt(count,pose.matrix);values.setX(count,rich?1:0);
+  pose.position.set(position.x,position.y+1.58*scale,position.z);pose.quaternion.copy(camera.quaternion);pose.scale.setScalar(scale);pose.updateMatrix();plates.setMatrixAt(count,pose.matrix);values.setX(count,coinCount?2:value===200?1:0);
   projected.set(position.x,position.y+1.1,position.z).project(camera);
-  state.samples.push({id:e.entityId??e.id,position:[position.x,position.y,position.z],screen:[projected.x,projected.y],value,choiceId:e.choiceId,choiceFamily:e.choiceFamily,choiceRole:e.choiceRole,routeSide:e.routeSide,routeRole:e.routeRole,returnLane:e.returnLane,returnD:e.returnD,opening});count++;
+  state.samples.push({id:e.entityId??e.id,position:[position.x,position.y,position.z],screen:[projected.x,projected.y],value,coinCount,label:coinCount?'8 COINS':`+${value} PTS`,choiceId:e.choiceId,choiceFamily:e.choiceFamily,choiceRole:e.choiceRole,routeSide:e.routeSide,routeRole:e.routeRole,returnLane:e.returnLane,returnD:e.returnD,opening});count++;
  }
  function finish(){for(const part of parts){part.mesh.count=count*part.repeat;part.mesh.instanceMatrix.needsUpdate=true;}plates.count=count;plates.instanceMatrix.needsUpdate=true;values.needsUpdate=true;state.active=count;}
  return {begin,add,finish,state};
