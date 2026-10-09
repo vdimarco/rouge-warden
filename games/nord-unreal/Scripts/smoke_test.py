@@ -20,7 +20,7 @@ ORIGINAL_MODE = {"PIE_Standalone": 0, "PIE_ListenServer": 1, "PIE_Client": 2}[
     PLAY_CONFIG.get("/Script/UnrealEd.LevelEditorPlaySettings", "PlayNetMode", fallback="PIE_Standalone")]
 SYSTEM = u.get_default_object(u.load_class(None, "/Script/Engine.KismetSystemLibrary"))
 CLASSES = {name: u.load_class(None, "/Script/Quebec.Quebec" + name)
-           for name in ("Controller", "Character", "Car")}
+           for name in ("Controller", "Character", "Car", "ParkResident")}
 LAYOUT = json.loads((Path(u.Paths.project_dir()) / "Data/LaFontaine/layout.json").read_text())
 TARGETS = [u.Vector(*p) for p in LAYOUT["missions"]]
 REPORT = {"passed": False, "mode": "two-player in-process listen-server PIE", "checks": [],
@@ -243,6 +243,49 @@ step("fall reset returns both peers to Sherbrooke spawn", lambda: teleport(u.Vec
                  for side in ("server", "client")))
 
 
+
+def residents_ready():
+    server=actors(STATE['server'],'ParkResident');client=actors(STATE['client'],'ParkResident')
+    if len(server)!=14 or len(client)!=14:return False
+    assert {a.get_editor_property('Style') for a in client}==set(range(11))
+    for a in client:
+        assert sum(c.static_mesh is not None for c in a.get_components_by_class(u.StaticMeshComponent))==6
+    crew=[a for a in server if a.get_editor_property('Style')>=3]
+    STATE['resident']=max(crew,key=lambda a:min(distance(a.get_actor_location(),b.get_actor_location()) for b in server if b!=a))
+    style=STATE['resident'].get_editor_property('Style')
+    STATE['resident_client']=next(a for a in client if a.get_editor_property('Style')==style)
+    STATE['resident_start']=STATE['resident'].get_actor_location()
+    return True
+
+
+def resident_moved():
+    a=STATE['resident'];b=STATE['resident_client']
+    return distance(a.get_actor_location(),STATE['resident_start'])>65 and distance(a.get_actor_location(),b.get_actor_location())<60
+
+
+def approach_resident():
+    a=STATE['resident'];teleport(a.get_actor_location()+a.get_actor_right_vector()*150+u.Vector(0,0,100))
+
+
+def resident_near():
+    return distance(STATE['client_char'].get_actor_location(),STATE['resident_client'].get_actor_location())<350
+
+
+def resident_talked():
+    caption=STATE['client_pc'].get_editor_property('ResidentCaption')
+    if not caption:return False
+    names={3:'GREEN CAP 51',4:'MEMPHIS 33',5:'BLACK CAP',6:'WHITE CAP',7:'RED JERSEY',8:'LIME JACKET',9:'CURLY METALHEAD',10:'TOPKNOT PLUNGER'}
+    assert names[STATE['resident'].get_editor_property('Style')] in caption,caption
+    assert not STATE['host_pc'].get_editor_property('ResidentCaption'),'Dialogue leaked to another player'
+    assert missions_equal(3)
+    return True
+
+step('fourteen residents and all eight cottage crew styles replicate',lambda:None,residents_ready)
+step('resident route movement replicates',lambda:None,resident_moved)
+step('client approaches cottage crew member',approach_resident,resident_near)
+step('client E talks to crew without changing completed missions or host dialogue',interact,resident_talked)
+
+
 def finish(error=None):
     STATE["finished"] = True
     REPORT["passed"] = error is None
@@ -271,7 +314,7 @@ def tick(delta_seconds):
         return
     try:
         now = time.monotonic()
-        assert now - STATE["started"] < 85, "Timeout while testing: " + STEPS[max(STATE["step"], 0)][0]
+        assert now - STATE["started"] < 110, "Timeout while testing: " + STEPS[max(STATE["step"], 0)][0]
         if STATE["step"] == -1:
             if now - STATE["started"] < 1:
                 return

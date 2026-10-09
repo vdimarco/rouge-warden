@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "inventory_trees": 4586,
+  "park_inventory_trees": 2409,
+  "mapped_furniture": 566,
+  "sports_pitches": 21,
+  "instanced_details": 10859,
+  "residents": 14,
+  "parked_cars": 8,
+  "original_meshes": 73,
+  "landmark_overrides": [
+    "27395538",
+    "27394465",
+    "433686251"
+  ]
+}

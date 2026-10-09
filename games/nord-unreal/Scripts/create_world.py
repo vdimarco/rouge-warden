@@ -21,7 +21,13 @@ def material(name, color, glow=False):
         node.set_editor_property("parameter_name", "Tint")
         node.set_editor_property("default_value", u.LinearColor(0.5, 0.5, 0.5, 1))
         prop = u.MaterialProperty.MP_EMISSIVE_COLOR if glow else u.MaterialProperty.MP_BASE_COLOR
-        u.MaterialEditingLibrary.connect_material_property(node, "", prop)
+        if glow:
+            scale = u.MaterialEditingLibrary.create_material_expression(parent, u.MaterialExpressionMultiply)
+            scale.set_editor_property("const_b", 3500.)
+            assert u.MaterialEditingLibrary.connect_material_expressions(node, "", scale, "A")
+            assert u.MaterialEditingLibrary.connect_material_property(scale, "", prop)
+        else:
+            u.MaterialEditingLibrary.connect_material_property(node, "", prop)
         if glow:
             parent.set_editor_property("shading_model", u.MaterialShadingModel.MSM_UNLIT)
         else:

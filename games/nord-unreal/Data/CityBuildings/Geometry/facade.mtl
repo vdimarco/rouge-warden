@@ -1,0 +1,4 @@
+newmtl Facade
+Kd 1 1 1
+newmtl EstimatedWall
+Kd .5 .4 .3

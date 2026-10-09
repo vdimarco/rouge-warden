@@ -24,14 +24,18 @@
     "teleport to objective 3",
     "mission 3 advances and replicates",
     "completed missions remain complete",
-    "fall reset returns both peers to Sherbrooke spawn"
+    "fall reset returns both peers to Sherbrooke spawn",
+    "fourteen residents and all eight cottage crew styles replicate",
+    "resident route movement replicates",
+    "client approaches cottage crew member",
+    "client E talks to crew without changing completed missions or host dialogue"
   ],
   "skipped": [
     "late join",
     "disconnect/reconnect",
     "external internet connectivity"
   ],
-  "drive_displacement_cm": 885.3,
-  "replicated_car_error_cm": 39.2,
-  "elapsed_seconds": 12.74
+  "drive_displacement_cm": 906.6,
+  "replicated_car_error_cm": 9.8,
+  "elapsed_seconds": 15.99
 }

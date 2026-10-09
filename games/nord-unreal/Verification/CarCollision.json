@@ -17,28 +17,28 @@
   ],
   "cases": {
     "saved_street_marking": {
-      "x_cm": 37833.15,
-      "z_cm": 100.01,
-      "max_z_cm": 100.01
+      "x_cm": 37833.44,
+      "z_cm": 100.03,
+      "max_z_cm": 100.03
     },
     "2cm_strip": {
-      "x_cm": 403.23,
-      "z_cm": 100.13,
+      "x_cm": 408.44,
+      "z_cm": 100.11,
       "max_z_cm": 102.96
     },
     "18cm_curb_forward": {
-      "x_cm": 705.09,
+      "x_cm": 705.12,
       "z_cm": 118.01,
       "max_z_cm": 118.96
     },
     "18cm_curb_reverse": {
-      "x_cm": 696.4,
+      "x_cm": 696.07,
       "z_cm": 118.01,
       "max_z_cm": 118.96
     },
     "600cm_wall": {
-      "x_cm": -220.04,
-      "z_cm": 100.04
+      "x_cm": -220.0,
+      "z_cm": 100.03
     }
   },
   "mode": "standalone authoritative PIE",
@@ -47,5 +47,5 @@
     "network latency",
     "Chaos suspension"
   ],
-  "elapsed_seconds": 27.64
+  "elapsed_seconds": 28.09
 }

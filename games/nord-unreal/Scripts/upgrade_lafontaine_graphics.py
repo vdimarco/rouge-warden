@@ -150,3 +150,6 @@ u.log('LAFONTAINE_FURNITURE benches='+str(count))
 
 assets.save_directory('/Game/Art');assert levels.save_current_level()
 u.log('LAFONTAINE_GRAPHICS_OK detailed_trees='+str(len(layout['detailed_trees'])))
+
+# Persist usage flags; game mode cannot repair missing Nanite permutations.
+exec((ROOT/"Scripts/fix_tree_material_usage.py").read_text())

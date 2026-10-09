@@ -8,6 +8,9 @@
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/TextRenderComponent.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "Engine/ScopedMovementUpdate.h"
@@ -19,7 +22,10 @@
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/MaterialInterface.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Net/UnrealNetwork.h"
+#include "UnrealClient.h"
 #include "UObject/ConstructorHelpers.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -145,6 +151,123 @@ void AQuebecCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(AQuebecCharacter, bInVehicle);
 }
 
+AQuebecParkInstances::AQuebecParkInstances()
+{
+    PrimaryActorTick.bCanEverTick = false;
+    Instances = CreateDefaultSubobject<UHierarchicalInstancedStaticMeshComponent>(TEXT("Instances"));
+    Instances->SetMobility(EComponentMobility::Static);
+    Instances->SetCollisionProfileName(TEXT("NoCollision"));
+    RootComponent = Instances;
+}
+
+AQuebecParkResident::AQuebecParkResident()
+{
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.TickInterval = 1.f / 24.f;
+    bReplicates = true;
+    SetReplicateMovement(true);
+    SetNetUpdateFrequency(12.f);
+    RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+    const TCHAR* Names[] = {TEXT("Body"), TEXT("Head"), TEXT("LeftArm"), TEXT("RightArm"), TEXT("LeftLeg"), TEXT("RightLeg")};
+    const FVector Pivots[] = {FVector::ZeroVector, FVector(0.,0.,145.), FVector(0.,-43.,126.), FVector(0.,43.,126.), FVector(0.,-20.,68.), FVector(0.,20.,68.)};
+    for (int32 I = 0; I < 6; ++I)
+    {
+        UStaticMeshComponent* Piece = CreateDefaultSubobject<UStaticMeshComponent>(Names[I]);
+        Piece->SetupAttachment(RootComponent);
+        Piece->SetRelativeLocation(Pivots[I]);
+        Piece->SetCollisionProfileName(TEXT("NoCollision"));
+        Pieces.Add(Piece);
+    }
+    Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Name"));
+    Label->SetupAttachment(RootComponent);
+    Label->SetRelativeLocation(FVector(0.,0.,262.));
+    Label->SetWorldSize(25.f);
+    Label->SetHorizontalAlignment(EHTA_Center);
+    Label->SetTextRenderColor(FColor(255,238,173));
+    Label->SetCollisionProfileName(TEXT("NoCollision"));
+}
+
+const TCHAR* AQuebecParkResident::NameForStyle(int32 Index)
+{
+    const TCHAR* Names[] = {TEXT("CAPITAINE BAGEL"), TEXT("RATON PHILOSOPHE"), TEXT("MADAME POUTINE"), TEXT("GREEN CAP 51"), TEXT("MEMPHIS 33"), TEXT("BLACK CAP"), TEXT("WHITE CAP"), TEXT("RED JERSEY"), TEXT("LIME JACKET"), TEXT("CURLY METALHEAD"), TEXT("TOPKNOT PLUNGER")};
+    return Names[FMath::Clamp(Index, 0, 10)];
+}
+
+const TCHAR* AQuebecParkResident::DialogueForStyle(int32 Index)
+{
+    const TCHAR* Lines[] = {TEXT("My superpower? A hole lot of courage."), TEXT("I came for the picnic. I stayed for the existential crumbs."), TEXT("Stay cheesy, Montreal. The fries are counting on you."), TEXT("Team cottage! Montreal is our warm-up lap."), TEXT("Thirty-three points. One plunger. No refunds."), TEXT("I brought backup. It is mostly plumbing supplies."), TEXT("White cap, black coffee, questionable plan."), TEXT("I only swing for the fences. And blocked drains."), TEXT("This jacket is visible from orbit. You are welcome."), TEXT("Heavy metal. Light luggage. Emergency plunger."), TEXT("The bag has everything. Except a sensible explanation.")};
+    return Lines[FMath::Clamp(Index, 0, 10)];
+}
+
+void AQuebecParkResident::ApplyAppearance()
+{
+    const TCHAR* Names[] = {TEXT("Body"), TEXT("Head"), TEXT("LeftArm"), TEXT("RightArm"), TEXT("LeftLeg"), TEXT("RightLeg")};
+    for (int32 I = 0; I < Pieces.Num(); ++I)
+    {
+        const FString Path = FString::Printf(TEXT("/Game/ParkComic/SM_Resident%d%s.SM_Resident%d%s"), FMath::Clamp(Style,0,10), Names[I], FMath::Clamp(Style,0,10), Names[I]);
+        if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path)) Pieces[I]->SetStaticMesh(Mesh);
+    }
+    Label->SetText(FText::FromString(NameForStyle(Style)));
+    if (UMaterialInterface* TextMaterial = LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ParkComic/M_Text.M_Text"))) Label->SetTextMaterial(TextMaterial);
+}
+
+void AQuebecParkResident::BeginPlay()
+{
+    Super::BeginPlay();
+    ApplyAppearance();
+    for (int32 I = 1; I < Route.Num(); ++I) RouteLength += FVector::Distance(Route[I-1],Route[I]);
+}
+
+void AQuebecParkResident::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    const AGameStateBase* State = GetWorld()->GetGameState();
+    const float Time = (State ? State->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds()) + Phase;
+    bool bWalking = false;
+    if (Route.Num() > 1 && RouteLength > 1.f)
+    {
+        const float Duration = RouteLength / 85.f;
+        const float Cycle = FMath::Fmod(Time, 2.f * (Duration + 4.f));
+        const bool bReturn = Cycle > Duration + 4.f;
+        const float LegTime = bReturn ? Cycle - Duration - 4.f : Cycle;
+        bWalking = LegTime < Duration;
+        float Distance = FMath::Clamp(LegTime * 85.f, 0.f, RouteLength);
+        if (bReturn) Distance = RouteLength - Distance;
+        if (HasAuthority())
+        {
+            for (int32 I = 1; I < Route.Num(); ++I)
+            {
+                const float Length = FVector::Distance(Route[I-1],Route[I]);
+                if (Distance <= Length || I == Route.Num()-1)
+                {
+                    const FVector Direction = Route[I]-Route[I-1];
+                    SetActorLocation(FMath::Lerp(Route[I-1],Route[I],FMath::Clamp(Distance/FMath::Max(Length,1.f),0.f,1.f)));
+                    SetActorRotation((bReturn ? -Direction : Direction).Rotation());
+                    break;
+                }
+                Distance -= Length;
+            }
+        }
+    }
+    const float Pose = FMath::FloorToFloat(Time * 12.f) / 12.f;
+    const float Swing = FMath::Sin(Pose * 6.f) * (bWalking ? 24.f : 5.f);
+    Pieces[0]->SetRelativeLocation(FVector(0.,0.,bWalking ? FMath::Abs(FMath::Sin(Pose*6.f))*3.f : 0.f));
+    Pieces[1]->SetRelativeRotation(FRotator(FMath::Sin(Pose*2.f)*5.f,FMath::Sin(Pose*.8f)*12.f,0.));
+    for (int32 I = 2; I < 6; ++I) Pieces[I]->SetRelativeRotation(FRotator(Swing * (I%2 ? 1.f : -1.f) * (I<4 ? -1.f : 1.f),0.,0.));
+    if (APlayerController* Player = GetWorld()->GetFirstPlayerController(); Player && Player->IsLocalController())
+    {
+        const FVector Eye = Player->PlayerCameraManager ? Player->PlayerCameraManager->GetCameraLocation() : GetActorLocation();
+        Label->SetVisibility(FVector::DistSquared(Eye,GetActorLocation()) < FMath::Square(1800.f));
+        Label->SetWorldRotation((Eye-Label->GetComponentLocation()).Rotation());
+    }
+}
+
+void AQuebecParkResident::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AQuebecParkResident, Style);
+}
+
 AQuebecCar::AQuebecCar()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -177,8 +300,8 @@ AQuebecCar::AQuebecCar()
     Part(TEXT("FrontRightWheel"), Cylinder.Object, FVector(155., 95., -64.), FVector(.72, .72, .26), FRotator(0., 0., 90.));
     Part(TEXT("RearLeftWheel"), Cylinder.Object, FVector(-155., -95., -64.), FVector(.72, .72, .26), FRotator(0., 0., 90.));
     Part(TEXT("RearRightWheel"), Cylinder.Object, FVector(-155., 95., -64.), FVector(.72, .72, .26), FRotator(0., 0., 90.));
-    Part(TEXT("LeftHeadlight"), Cube.Object, FVector(222., -58., -20.), FVector(.06, .42, .20));
-    Part(TEXT("RightHeadlight"), Cube.Object, FVector(222., 58., -20.), FVector(.06, .42, .20));
+    Part(TEXT("LeftHeadlight"), Cylinder.Object, FVector(222., -58., -20.), FVector(.35, .35, .08), FRotator(90.,0.,0.));
+    Part(TEXT("RightHeadlight"), Cylinder.Object, FVector(222., 58., -20.), FVector(.35, .35, .08), FRotator(90.,0.,0.));
     Part(TEXT("LeftTaillight"), Cube.Object, FVector(-222., -58., -20.), FVector(.06, .42, .20));
     Part(TEXT("RightTaillight"), Cube.Object, FVector(-222., 58., -20.), FVector(.06, .42, .20));
     Part(TEXT("FrontBumper"), Cube.Object, FVector(220., 0., -51.), FVector(.16, 1.72, .12));
@@ -218,13 +341,29 @@ void AQuebecCar::BeginPlay()
     for (UStaticMeshComponent* Part : Parts)
     {
         const FString Name = Part->GetName();
-        const TCHAR* MaterialName = Name.Contains(TEXT("Rim")) || Name.Contains(TEXT("Bumper")) ? TEXT("M_White") :
+        const TCHAR* MeshName = Name == TEXT("Body") ? TEXT("CarShell") : Name == TEXT("Glass") ? TEXT("CarCabin") : Name == TEXT("Roof") ? TEXT("CarRoof") : nullptr;
+        if (MeshName)
+        {
+            const FString MeshPath = FString::Printf(TEXT("/Game/ParkComic/SM_%s.SM_%s"), MeshName, MeshName);
+            if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr,*MeshPath))
+            {
+                Part->SetStaticMesh(Mesh);
+                Part->SetRelativeLocation(FVector::ZeroVector);
+                Part->SetRelativeScale3D(FVector::OneVector);
+            }
+        }
+        const TCHAR* MaterialName = Name.Contains(TEXT("Rim")) || Name.Contains(TEXT("Bumper")) || Name == TEXT("Roof") ? TEXT("M_White") :
             Name.Contains(TEXT("Wheel")) || Name.Contains(TEXT("Trim")) ? TEXT("M_Dark") :
             Name.Contains(TEXT("Glass")) ? TEXT("M_Glass") :
             Name.Contains(TEXT("Headlight")) ? TEXT("M_Light") :
             Name.Contains(TEXT("Taillight")) ? TEXT("M_Tail") : TEXT("M_CarBody");
         const FString Path = FString::Printf(TEXT("/Game/Materials/%s.%s"), MaterialName, MaterialName);
         if (UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, *Path)) Part->SetMaterial(0, Material);
+        if (Name == TEXT("Body") && PaintStyle > 0)
+        {
+            const FString PaintPath = FString::Printf(TEXT("/Game/ParkComic/M_CarPaint%d.M_CarPaint%d"), PaintStyle % 4, PaintStyle % 4);
+            if (UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr,*PaintPath)) Part->SetMaterial(0,Paint);
+        }
     }
 }
 
@@ -378,10 +517,85 @@ void AQuebecGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(AQuebecGameState, MissionIndex);
 }
 
+
 void AQuebecController::SetupInputComponent()
 {
     Super::SetupInputComponent();
     InputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AQuebecController::Interact);
+    InputComponent->BindAction(TEXT("ComicStyle"), IE_Pressed, this, &AQuebecController::ToggleComicStyle);
+}
+
+void AQuebecController::ToggleComicStyle() { bComicStyle = !bComicStyle; }
+
+void AQuebecController::PlayerTick(float DeltaTime)
+{
+    Super::PlayerTick(DeltaTime);
+    if (!IsLocalController()) return;
+    ApplyComicStyle();
+    static const bool bCapture = FParse::Param(FCommandLine::Get(), TEXT("NordCapture"));
+    if (bCapture) TickCapture(DeltaTime);
+}
+
+void AQuebecController::ApplyComicStyle()
+{
+    // The look is local: each player's view target cameras carry the blendable at weight 0 or 1.
+    // Loaded lazily so the editor can regenerate the asset without a rooted reference.
+    if (!ComicMaterial) ComicMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Art/Comic/M_ComicInk.M_ComicInk"));
+    const float Weight = bComicStyle ? 1.f : 0.f;
+    if (AActor* Target = GetViewTarget(); Target && ComicMaterial)
+    {
+        TArray<UCameraComponent*> Cameras;
+        Target->GetComponents(Cameras);
+        for (UCameraComponent* Camera : Cameras)
+        {
+            TArray<FWeightedBlendable>& Blendables = Camera->PostProcessSettings.WeightedBlendables.Array;
+            FWeightedBlendable* Entry = Blendables.FindByPredicate([this](const FWeightedBlendable& B) { return B.Object == ComicMaterial; });
+            if (Entry) Entry->Weight = Weight;
+            else Blendables.Add(FWeightedBlendable(Weight, ComicMaterial));
+        }
+    }
+    // Animation on twos: poses step at 12 per second while movement stays smooth.
+    for (TActorIterator<AQuebecCharacter> It(GetWorld()); It; ++It)
+        It->GetMesh()->SetComponentTickInterval(bComicStyle ? 1.f / 12.f : 0.f);
+}
+
+void AQuebecController::TickCapture(float DeltaTime)
+{
+    // -NordCapture: fixed reference shots from spawn for reviewing the look, then quit.
+    CaptureClock += DeltaTime;
+    struct FShot { float Time; float Yaw; bool bComic; const TCHAR* Name; };
+    static const FShot Shots[] = {
+        {8.f, 0.f, true, TEXT("NordComic_East")}, {10.f, 90.f, true, TEXT("NordComic_North")},
+        {12.f, 200.f, true, TEXT("NordComic_West")}, {14.f, 0.f, false, TEXT("NordRealistic_East")},
+        {16.f, 90.f, false, TEXT("NordRealistic_North")}, {18.f, 0.f, true, TEXT("NordComic_Jump")},
+        {21.f, 0.f, true, TEXT("NordComic_Car")},
+    };
+    if (CaptureStep < UE_ARRAY_COUNT(Shots))
+    {
+        const FShot& Shot = Shots[CaptureStep];
+        if (CaptureClock > Shot.Time - 1.5f)
+        {
+            bComicStyle = Shot.bComic;
+            if (FCString::Strcmp(Shot.Name, TEXT("NordComic_Jump")) == 0 && CaptureClock > Shot.Time - .35f)
+                if (ACharacter* Walker = Cast<ACharacter>(GetPawn())) Walker->Jump();
+            if (!GetPawn() || !GetPawn()->IsA<AQuebecCar>()) SetControlRotation(FRotator(-6.f, Shot.Yaw, 0.f));
+            if (CaptureStep == UE_ARRAY_COUNT(Shots) - 1 && HasAuthority() && GetPawn() && GetPawn()->IsA<AQuebecCharacter>())
+            {
+                if (TActorIterator<AQuebecCar> Car(GetWorld()); Car)
+                {
+                    GetPawn()->SetActorLocation(Car->GetActorLocation() + Car->GetActorRightVector() * 260. + FVector(0., 0., 20.));
+                    ServerInteract();
+                }
+            }
+        }
+        if (CaptureClock > Shot.Time)
+        {
+            FScreenshotRequest::RequestScreenshot(Shot.Name, false, false);
+            UE_LOG(LogTemp, Display, TEXT("NORD_CAPTURE %s"), Shot.Name);
+            ++CaptureStep;
+        }
+    }
+    else if (CaptureClock > 24.f) ConsoleCommand(TEXT("quit"));
 }
 
 void AQuebecController::Interact() { ServerInteract(); }
@@ -408,6 +622,33 @@ AQuebecCar* AQuebecController::FindInteractableCar() const
     return NearestCar;
 }
 
+AQuebecParkResident* AQuebecController::FindInteractableResident() const
+{
+    const AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
+    if (!Character) return nullptr;
+    AQuebecParkResident* Nearest = nullptr;
+    double Best = FMath::Square(450.f);
+    for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
+    {
+        const double Distance = FVector::DistSquared(Character->GetActorLocation(),It->GetActorLocation()+FVector(0.,0.,100.));
+        if (Distance > Best) continue;
+        FHitResult Hit;
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(TalkResident),false,Character);
+        Query.AddIgnoredActor(*It);
+        if (GetWorld()->LineTraceSingleByChannel(Hit,Character->GetActorLocation(),It->GetActorLocation()+FVector(0.,0.,130.),ECC_Visibility,Query)) continue;
+        Best=Distance;
+        Nearest=*It;
+    }
+    return Nearest;
+}
+
+void AQuebecController::ClientResidentDialogue_Implementation(int32 Style)
+{
+    if (Style < 0 || Style > 10) return;
+    ResidentCaption = FString(AQuebecParkResident::NameForStyle(Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Style);
+    ResidentCaptionUntil = GetWorld()->GetTimeSeconds()+7.f;
+}
+
 void AQuebecController::ServerInteract_Implementation()
 {
     if (!HasAuthority()) return;
@@ -430,7 +671,8 @@ void AQuebecController::ServerInteract_Implementation()
         return;
     }
     if (AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>())
-        State->AdvanceMissionNear(Character->GetActorLocation());
+        if (State->AdvanceMissionNear(Character->GetActorLocation())) return;
+    if (AQuebecParkResident* Resident = FindInteractableResident()) ClientResidentDialogue(Resident->Style);
 }
 
 void AQuebecController::ExitCar(AQuebecCar* Car)
@@ -501,18 +743,28 @@ void AQuebecHUD::DrawHUD()
     const AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>();
     const float Scale = FMath::Clamp(Canvas->SizeY / 720.f, .75f, 1.5f);
     const float Margin = 28.f * Scale;
-    const FLinearColor Ink(.89f, .94f, .97f, 1.f);
-    const FLinearColor Muted(.58f, .69f, .76f, 1.f);
-    const FLinearColor Accent(.18f, .9f, .76f, 1.f);
-    const FLinearColor Panel(.018f, .035f, .052f, .92f);
+    // Comic caption palette: yellow captions and white paper with ink borders and an off-register cyan shadow.
+    // Canvas colours are linear: these display as near-black ink, dark plum and deep magenta.
+    const FLinearColor Ink(0.f, 0.f, .004f, 1.f);
+    const FLinearColor Muted(.045f, .025f, .06f, 1.f);
+    const FLinearColor Accent(.62f, 0.f, .16f, 1.f);
+    const FLinearColor Panel(1.f, .84f, .16f, 1.f);
+    const FLinearColor Paper(.98f, .96f, .88f, 1.f);
     UFont* Font = GEngine->GetMediumFont();
     const auto Text = [this, Font, Scale](const FString& Value, FLinearColor Color, float X, float Y, float Size = 1.f)
     {
         DrawText(Value, Color, X, Y, Font, Size * Scale);
     };
+    const auto Box = [this, Scale, Ink](FLinearColor Fill, float X, float Y, float W, float H)
+    {
+        const float Border = 3.f * Scale;
+        DrawRect(FLinearColor(.05f, .8f, .95f), X + 7.f * Scale, Y + 7.f * Scale, W, H);
+        DrawRect(Ink, X - Border, Y - Border, W + Border * 2.f, H + Border * 2.f);
+        DrawRect(Fill, X, Y, W, H);
+    };
 
-    DrawRect(Panel, Margin, Margin, 400.f * Scale, 165.f * Scale);
-    DrawRect(Accent, Margin, Margin, 4.f * Scale, 165.f * Scale);
+    Box(Panel, Margin, Margin, 400.f * Scale, 165.f * Scale);
+    DrawRect(Ink, Margin, Margin, 6.f * Scale, 165.f * Scale);
     Text(TEXT("NORD / MONTRÉAL"), Ink, Margin + 20.f * Scale, Margin + 14.f * Scale, 1.55f);
     Text(TEXT("PARC LA FONTAINE / SHERBROOKE EST"), Muted, Margin + 21.f * Scale, Margin + 49.f * Scale, .72f);
     if (State && State->MissionIndex < AQuebecGameState::MissionCount)
@@ -524,7 +776,7 @@ void AQuebecHUD::DrawHUD()
             Margin + 21.f * Scale, Margin + 77.f * Scale, 1.f);
         Text(FString::Printf(TEXT("%dm to the next beacon"), FMath::RoundToInt(Meters)), Muted,
             Margin + 21.f * Scale, Margin + 106.f * Scale, .83f);
-        Text(Meters <= 5.f ? (Car ? TEXT("STEP OUT + E  /  Complete objective") : TEXT("E  /  Complete objective")) : TEXT("Follow the turquoise diamond"),
+        Text(Meters <= 5.f ? (Car ? TEXT("STEP OUT + E  /  Complete objective") : TEXT("E  /  Complete objective")) : TEXT("Follow the pink diamond"),
             Accent, Margin + 21.f * Scale, Margin + 133.f * Scale, .83f);
         FVector2D Marker;
         if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
@@ -546,7 +798,7 @@ void AQuebecHUD::DrawHUD()
 
     const float MapSize = 188.f * Scale;
     const float MapX = Canvas->SizeX - Margin - MapSize;
-    DrawRect(Panel, MapX, Margin, MapSize, MapSize + 32.f * Scale);
+    Box(Paper, MapX, Margin, MapSize, MapSize + 32.f * Scale);
     const FVector Here = Pawn->GetActorLocation();
     const auto MapPoint = [MapX, Margin, MapSize](FVector Position)
     {
@@ -558,8 +810,10 @@ void AQuebecHUD::DrawHUD()
         const FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
         DrawLine(A.X, A.Y, B.X, B.Y, Muted.CopyWithNewOpacity(.55f), 1.4f * Scale);
     }
+    DrawRect(Paper, MapX - 3.f * Scale, Margin + MapSize + 36.f * Scale, MapSize + 6.f * Scale, 48.f * Scale);
     Text(TEXT("© OpenStreetMap contributors / ODbL"), Muted, MapX, Margin + MapSize + 38.f * Scale, .6f);
     Text(TEXT("openstreetmap.org/copyright"), Muted, MapX, Margin + MapSize + 52.f * Scale, .6f);
+    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Muted, MapX, Margin + MapSize + 66.f * Scale, .6f);
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
         if (*It == Pawn) continue;
@@ -582,24 +836,77 @@ void AQuebecHUD::DrawHUD()
         MapX + 13.f * Scale, Margin + MapSize + 4.f * Scale, .8f);
 
     const float Bottom = Canvas->SizeY - Margin - 58.f * Scale;
-    DrawRect(Panel, Margin, Bottom, Canvas->SizeX - Margin * 2.f, 58.f * Scale);
-    Text(Car ? TEXT("W/S  Drive     A/D  Steer     SPACE  Handbrake     E  Exit     Mouse  Look") :
-        TEXT("WASD  Move     Mouse  Look     SPACE  Jump     SHIFT  Sprint     E  Interact"),
+    Box(Paper, Margin, Bottom, Canvas->SizeX - Margin * 2.f - 8.f * Scale, 58.f * Scale);
+    Text(Car ? TEXT("W/S  Drive     A/D  Steer     SPACE  Handbrake     E  Exit     Mouse  Look     F2  Comic look") :
+        TEXT("WASD  Move     Mouse  Look     SPACE  Jump     SHIFT  Sprint     E  Interact     F2  Comic look"),
         Ink, Margin + 18.f * Scale, Bottom + 18.f * Scale, .82f);
+    if (const AQuebecController* Controller = Cast<AQuebecController>(PlayerOwner))
+    {
+        if (Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds())
+        {
+            Box(Paper, Margin, Bottom-112.f*Scale, Canvas->SizeX-Margin*2.f-8.f*Scale, 72.f*Scale);
+            Text(Controller->ResidentCaption, Ink, Margin+18.f*Scale, Bottom-88.f*Scale, .82f);
+        }
+        else if (!Car && !Controller->FindInteractableCar())
+        {
+            if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
+            {
+                Box(Panel,Margin,Bottom-70.f*Scale,420.f*Scale,44.f*Scale);
+                Text(FString(TEXT("E  /  Talk to "))+AQuebecParkResident::NameForStyle(Resident->Style),Ink,Margin+15.f*Scale,Bottom-58.f*Scale,.85f);
+            }
+        }
+    }
     if (Car)
     {
         Text(FString::Printf(TEXT("%03d KM/H"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Accent,
             Canvas->SizeX - Margin - 150.f * Scale, Bottom + 14.f * Scale, 1.1f);
-        if (Car->bHandbrake) Text(TEXT("HANDBRAKE"), FLinearColor(1.f, .55f, .25f), Canvas->SizeX - Margin - 150.f * Scale, Bottom - 28.f * Scale, .9f);
+        if (Car->bHandbrake) Text(TEXT("HANDBRAKE"), Accent, Canvas->SizeX - Margin - 150.f * Scale, Bottom - 30.f * Scale, .9f);
     }
     else if (const AQuebecController* Controller = Cast<AQuebecController>(PlayerOwner))
     {
         if (Controller->FindInteractableCar())
         {
             const float X = Canvas->SizeX * .5f - 120.f * Scale;
-            DrawRect(Panel, X, Bottom - 65.f * Scale, 240.f * Scale, 44.f * Scale);
+            Box(Panel, X, Bottom - 65.f * Scale, 240.f * Scale, 44.f * Scale);
             Text(TEXT("[ E ]  ENTER CAR"), Accent, X + 32.f * Scale, Bottom - 53.f * Scale, 1.f);
         }
+    }
+    if (const ACharacter* Walker = Cast<ACharacter>(Pawn))
+    {
+        const bool bFalling = Walker->GetCharacterMovement()->IsFalling();
+        if (bFalling && !bWasFalling && Walker->GetVelocity().Z > 300.f) TriggerSoundWord(TEXT("HOP!"));
+        bWasFalling = bFalling;
+    }
+    if (Car)
+    {
+        if (Car->bHandbrake && !bWasHandbrake && FMath::Abs(Car->Speed) > 300.f) TriggerSoundWord(TEXT("SKRRT!"));
+        if (LastCarSpeed < 900.f && Car->Speed >= 900.f) TriggerSoundWord(TEXT("VROOM!"));
+        bWasHandbrake = Car->bHandbrake;
+        LastCarSpeed = Car->Speed;
+    }
+    const float WordAge = GetWorld()->GetTimeSeconds() - SoundWordTime;
+    if (WordAge < .9f)
+    {
+        // A held burst: radiating ink spikes behind outlined lettering, popping in over 0.12 s.
+        const float Pop = FMath::Min(WordAge / .12f, 1.f) * (WordAge > .75f ? (.9f - WordAge) / .15f : 1.f);
+        const FVector2D Burst(Canvas->SizeX * .5f + 150.f * Scale, Canvas->SizeY * .42f);
+        UFont* Large = GEngine->GetLargeFont();
+        const float Size = 3.2f * Pop * Scale;
+        // Ink spikes first, then slightly shorter yellow spikes, so the burst has an outline.
+        for (int32 Pass = 0; Pass < 2; ++Pass)
+            for (int32 Spike = 0; Spike < 30; ++Spike)
+            {
+                const float Angle = Spike * PI * 2.f / 30.f + .2f;
+                const float Length = ((Spike % 2 ? 80.f : 125.f) - Pass * 8.f) * Scale * Pop;
+                DrawLine(Burst.X, Burst.Y, Burst.X + FMath::Cos(Angle) * Length, Burst.Y + FMath::Sin(Angle) * Length * .7f,
+                    Pass ? Panel : Ink, (Pass ? 12.f : 18.f) * Scale);
+            }
+        float Width = 0.f, Height = 0.f;
+        GetTextSize(SoundWord, Width, Height, Large, Size);
+        const float X = Burst.X - Width * .5f, Y = Burst.Y - Height * .5f;
+        for (const FVector2D Offset : {FVector2D(-3, 0), FVector2D(3, 0), FVector2D(0, -3), FVector2D(0, 3), FVector2D(5, 5)})
+            DrawText(SoundWord, Ink, X + Offset.X * Scale, Y + Offset.Y * Scale, Large, Size);
+        DrawText(SoundWord, Accent, X, Y, Large, Size);
     }
     if (State)
     {
@@ -608,11 +915,17 @@ void AQuebecHUD::DrawHUD()
         if (GetWorld()->GetTimeSeconds() - CompletionTime < 4.f)
         {
             const float X = Canvas->SizeX * .5f - 160.f * Scale;
-            DrawRect(Panel, X, Margin, 320.f * Scale, 70.f * Scale);
+            Box(Panel, X, Margin, 320.f * Scale, 70.f * Scale);
             Text(TEXT("MISSION COMPLETE"), Accent, X + 27.f * Scale, Margin + 12.f * Scale, 1.15f);
             Text(FString::Printf(TEXT("%d / 3 completed together"), State->MissionIndex), Ink, X + 27.f * Scale, Margin + 42.f * Scale, .8f);
         }
     }
+}
+
+void AQuebecHUD::TriggerSoundWord(const TCHAR* Word)
+{
+    SoundWord = Word;
+    SoundWordTime = GetWorld()->GetTimeSeconds();
 }
 
 AQuebecGameMode::AQuebecGameMode()

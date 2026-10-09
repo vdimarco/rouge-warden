@@ -14,3 +14,7 @@ Local origin: latitude 45.525, longitude -73.5699. Unreal X is east, Y is north,
 The address node for 1334 Rue Sherbrooke Est is OSM node 11972684994. Spawn is the nearest mapped pedestrian path and the car is on nearby Rue Sherbrooke Est. This is an exterior neighborhood, not a reconstructed private interior. Missions are public park exploration objectives, not inferred personal ambitions.
 
 Regeneration: close this project's editor, preserve the existing LaFontaine map, run the preparation script, then run `Scripts/create_lafontaine.py` with UnrealEditor-Cmd -ExecutePythonScript. The Unreal generator refuses to overwrite the map. Rebuild C++ after preparing because the HUD and recovery points use the generated header.
+
+## Municipal model overlay
+
+The expanded district now replaces 1,299 overlapping OSM building footprints with 1,161 [municipal LOD2 models](../CityBuildings/README.md). Those models have surveyed roof shapes and photo textures where captured; remaining buildings retain the procedural limitations above. `layout.json` records the replacement count. Roads, paths and gameplay coordinates are unchanged. The park pass replaces the OSM tree placeholders with municipal inventory trees and adds mapped landmarks; see [park provenance](../ParkComic/README.md).

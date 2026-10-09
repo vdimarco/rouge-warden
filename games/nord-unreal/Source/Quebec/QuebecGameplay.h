@@ -11,8 +11,41 @@
 
 class UBoxComponent;
 class UCameraComponent;
+class UMaterialInterface;
 class USpringArmComponent;
 class UStaticMeshComponent;
+class UTextRenderComponent;
+class UHierarchicalInstancedStaticMeshComponent;
+
+UCLASS()
+class QUEBEC_API AQuebecParkInstances : public AActor
+{
+    GENERATED_BODY()
+public:
+    AQuebecParkInstances();
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> Instances;
+};
+
+UCLASS()
+class QUEBEC_API AQuebecParkResident : public AActor
+{
+    GENERATED_BODY()
+public:
+    AQuebecParkResident();
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyAppearance) int32 Style = 0;
+    UPROPERTY(EditAnywhere) TArray<FVector> Route;
+    UPROPERTY(EditAnywhere) float Phase = 0.f;
+    static const TCHAR* NameForStyle(int32 Index);
+    static const TCHAR* DialogueForStyle(int32 Index);
+private:
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Pieces;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> Label;
+    float RouteLength = 0.f;
+    UFUNCTION() void ApplyAppearance();
+};
 
 UCLASS()
 class QUEBEC_API AQuebecCharacter : public ACharacter
@@ -52,6 +85,7 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<AQuebecCharacter> Occupant;
     UPROPERTY(Replicated) float Speed = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) bool bHandbrake = false;
+    UPROPERTY(EditAnywhere) int32 PaintStyle = 0;
     void StopInput();
 
 private:
@@ -94,14 +128,27 @@ class QUEBEC_API AQuebecController : public APlayerController
     GENERATED_BODY()
 public:
     virtual void SetupInputComponent() override;
+    virtual void PlayerTick(float DeltaTime) override;
     virtual void PawnLeavingGame() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     AQuebecCar* FindInteractableCar() const;
+    AQuebecParkResident* FindInteractableResident() const;
+    bool IsComicStyle() const { return bComicStyle; }
+    UPROPERTY(VisibleAnywhere, Transient) FString ResidentCaption;
+    UPROPERTY(VisibleAnywhere, Transient) float ResidentCaptionUntil = 0.f;
 
 private:
     UPROPERTY() TObjectPtr<AQuebecCharacter> WalkingCharacter;
+    UPROPERTY() TObjectPtr<UMaterialInterface> ComicMaterial;
+    bool bComicStyle = true;
+    float CaptureClock = 0.f;
+    int32 CaptureStep = 0;
+    void ToggleComicStyle();
+    void ApplyComicStyle();
+    void TickCapture(float DeltaTime);
     UFUNCTION() void Interact();
     UFUNCTION(Server, Reliable) void ServerInteract();
+    UFUNCTION(Client, Reliable) void ClientResidentDialogue(int32 Style);
     void ExitCar(AQuebecCar* Car);
 };
 
@@ -114,6 +161,12 @@ public:
 private:
     int32 LastMissionIndex = -1;
     float CompletionTime = -10.f;
+    FString SoundWord;
+    float SoundWordTime = -10.f;
+    bool bWasFalling = false;
+    bool bWasHandbrake = false;
+    float LastCarSpeed = 0.f;
+    void TriggerSoundWord(const TCHAR* Word);
 };
 
 UCLASS()

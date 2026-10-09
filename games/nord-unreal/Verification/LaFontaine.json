@@ -2,6 +2,10 @@
   "passed": true,
   "checks": [
     {
+      "surveyed_buildings": 1161,
+      "replaced_generic_footprints": 1299
+    },
+    {
       "location": "spawn",
       "surface_z_cm": 0.0
     },
@@ -10,8 +14,12 @@
       "surface_z_cm": 0.0
     },
     {
-      "location": "address building",
-      "surface_z_cm": 960.0
+      "location": "address",
+      "surface_z_cm": 2039.1829833984375
+    },
+    {
+      "surveyed_roof_z_cm": 2039.1829833984366,
+      "model": "PC-28878"
     }
   ],
   "counts": {

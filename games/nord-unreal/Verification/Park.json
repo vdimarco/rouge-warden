@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "trunks": 4586,
+  "crowns": 4586,
+  "residents": 14,
+  "crew_styles": 8,
+  "original_meshes": 73,
+  "roof_collision": [
+    {
+      "landmark": "ESPACE LA FONTAINE",
+      "roof_z_cm": 480.0
+    },
+    {
+      "landmark": "CENTRE CALIXA-LAVALL\u00c9E",
+      "roof_z_cm": 700.0
+    },
+    {
+      "landmark": "TH\u00c9\u00c2TRE DE VERDURE",
+      "roof_z_cm": 637.5000014373959
+    },
+    {
+      "landmark": "OSM 1299562301 service building",
+      "roof_z_cm": 320.0
+    }
+  ],
+  "checked": "fresh saved scene counts, collision, assets, old tree removal"
+}
