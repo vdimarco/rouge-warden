@@ -1,6 +1,6 @@
 # Design
 
-Keep the bronze and gold HUD. Center Rift Jump beneath the score and objective clocks; move the portrait objective panel below it so both stay readable. Keep a 44px touch target and safe-area offsets.
+Keep the bronze and gold HUD. Center Rift Jump beneath the score and objective clocks; move the portrait objective panel below it so both stay readable. Keep a 44px touch target and safe-area offsets. Keep the button visible away from gates with a disabled Find a gate hint; preserve cooldown and gate activation.
 
 Zoom uses a distance multiplier from 1 to 2.4. Wheel down and fingers moving together reveal more terrain; wheel up and fingers spreading restore the closer view. Apply changes immediately and recalibrate the footprint, ground projection and pan scale without resizing WebGL buffers. Resize, recenter and realm changes retain the zoom. Hero selection retains its own lens.
 

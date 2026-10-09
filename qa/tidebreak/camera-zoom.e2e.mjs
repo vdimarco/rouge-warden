@@ -94,6 +94,14 @@ try {
     assert(Math.hypot(after.player.x - before.x, after.player.y - before.y) > 3, 'movement stays live beside high terrain');
     await page.keyboard.press('k'); assert(await page.locator('#train-selected').isVisible(), 'skills remain reachable');
     await page.keyboard.press('Escape');
+    await page.evaluate(async()=>{
+      const s=(await import('/tidebreak/main.js')).qaState(),p=s.units.find(u=>u.player),{PORTALS}=await import('/tidebreak/world.js');
+      s.paused=false;p.x=PORTALS[0].x;p.y=PORTALS[0].y;p.portalCd=0;p.order=null;
+      window.__pump(20);
+    });
+    assert(await page.locator('#portal').isEnabled(),'Rift enables near a gate');
+    await page.locator('#portal').click();await page.evaluate(()=>window.__pump(2));
+    assert((await page.evaluate(async()=>(await import('/tidebreak/main.js')).snapshot())).player.portalCd>0,'top-center Rift Jump still activates');
     assert.deepEqual(errors, [], 'no asset, runtime or shader errors');
     await page.close();
   }

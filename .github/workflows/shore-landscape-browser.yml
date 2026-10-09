@@ -23,14 +23,31 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/shore-landscape
-      - name: Verify wheel, pinch zoom and top-center Rift Jump in four layouts
-        run: node qa/tidebreak/camera-zoom.test.mjs && node qa/tidebreak/pointers.test.mjs && node qa/tidebreak/camera-zoom.e2e.mjs
-        env:
-          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/shore-landscape/camera-zoom
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: shore-landscape-desktop-portrait
           path: test-results/shore-landscape
+          retention-days: 14
+
+  camera:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - name: Verify wheel, pinch zoom and top-center Rift Jump in four layouts
+        run: node qa/tidebreak/camera-zoom.test.mjs && node qa/tidebreak/pointers.test.mjs && node qa/tidebreak/camera-zoom.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/shore-camera-zoom
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shore-camera-zoom-four-layouts
+          path: test-results/shore-camera-zoom
           retention-days: 14

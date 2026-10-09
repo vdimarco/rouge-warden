@@ -311,8 +311,7 @@ function updateUI() {
   $('realm-fill').style.width = `${(1 - state.time % SHIFT / SHIFT) * 100}%`;
   $('objective').classList.toggle('shifting', until <= 6);
   $('portal').disabled = distance(p, gate) >= 150 || p.portalCd > 0 || p.hp <= 0;
-  $('portal').hidden = distance(p, gate) >= 180 && p.portalCd <= 0;
-  $('portal').querySelector('small').textContent = p.portalCd > 0 ? `${Math.ceil(p.portalCd)}s` : (gate.choices ? 'Jump to the river you face' : 'Jump across the map');
+  $('portal').querySelector('small').textContent = p.portalCd > 0 ? `${Math.ceil(p.portalCd)}s` : distance(p, gate) >= 150 ? 'Find a gate' : (gate.choices ? 'Jump to the river you face' : 'Jump across the map');
   const focus = state.units.find(e => e.id === p.target && e.hp > 0);
   $('auto-status').textContent = p.hp <= 0 ? 'RESPAWNING' : p.order?.type==='attack' && focus ? `${distance(p,focus)>p.range+focus.radius?'APPROACH':'ATTACK'} · ${focus.name} · ${p.attackVariant+1||1}/3` : p.order?.type==='move' ? 'MOVING · CLICK ENEMY TO ATTACK' : focus ? `AUTO ${p.attackVariant + 1 || 1}/3 · ${BASIC_ATTACKS[p.hero][p.attackVariant || 0]}` : 'AUTO · CLICK ENEMY TO ATTACK';
   $('auto-status').classList.toggle('engaged', !!focus);

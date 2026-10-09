@@ -20,7 +20,7 @@ The 3D battlefield SHALL support wheel and two-finger pinch zoom between normal 
 - **THEN** picking follows the visible terrain and the camera footprint and pan scale match the new distance.
 
 ### Requirement: Top center Rift Jump
-Rift Jump SHALL appear at the top center of the battlefield with a touch target at least 44px high, retaining its existing gate eligibility and action.
+Rift Jump SHALL appear at the top center of the battlefield with a touch target at least 44px high, remaining visible with a disabled Find a gate hint away from gates, and retaining its existing gate eligibility and action.
 
 #### Scenario: Responsive HUD
 - **WHEN** a match is displayed on desktop, portrait phone or landscape phone
