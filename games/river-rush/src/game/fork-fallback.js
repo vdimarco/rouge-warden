@@ -3,6 +3,7 @@ import {riverHalfWidth,riverHash} from './river-course.js';
 import {riverFork,forkLaneCross,nextRiverFork,islandHeight} from './river-forks.js';
 import {levelAt} from './levels.js';
 import {currentDistance} from './hydrodynamics.js';
+import {FORK_PALETTES,islandLandmarks,islandShoreClusters,islandGroundClumps} from './fork-art-direction.js';
 
 const TAU=Math.PI*2;
 const patternCache=new WeakMap();
@@ -57,6 +58,16 @@ export function forkFallbackGeometry(g,width,height,view=245){
  }
  return result.reverse();
 }
+export function islandRelief2D(g,width,height,geometry){
+ const fractions=[-1,-.96,-.88,-.42,0,.42,.88,.96,1];
+ return geometry.innerLeft.map(edge=>{
+  const fork=riverFork(edge.course,g.terrainProfile);if(!fork)return[];
+  return fractions.map(fraction=>{
+   const cross=fork.islandCenter+fork.islandHalfWidth*fraction,point=projectPhysical(width,height,cross,edge.course-g.distance,g),surfaceHeight=islandHeight(cross,edge.course,g.terrainProfile);
+   return{...point,cross,course:edge.course,fraction,height:surfaceHeight,waterY:point.y,y:point.y-surfaceHeight*point.unit};
+  });
+ });
+}
 function pathBetween(ctx,left,right){
  ctx.beginPath();ctx.moveTo(left[0].x,left[0].y);for(let i=1;i<left.length;i++)ctx.lineTo(left[i].x,left[i].y);
  for(let i=right.length-1;i>=0;i--)ctx.lineTo(right[i].x,right[i].y);ctx.closePath();
@@ -78,6 +89,115 @@ function islandPlant(ctx,x,y,size,variant,moon){
   ctx.fillStyle=moon?'#9ba5ac':'#c6bf98';ctx.beginPath();ctx.moveTo(.02,-.54);ctx.lineTo(.4,-.32);ctx.lineTo(.13,-.27);ctx.closePath();ctx.fill();
  }
  ctx.restore();
+}
+function landmark2D(ctx,type,x,y,unit,scale,palette,turn){
+ ctx.save();ctx.translate(x,y);ctx.scale(unit*scale,unit*scale);ctx.lineJoin='round';ctx.lineCap='round';
+ const flip=Math.cos(turn)>=0?1:-1;ctx.scale(flip,1);
+ if(type==='root-grove'){
+  ctx.strokeStyle=palette.root;
+  for(let i=0;i<5;i++){
+   const side=i%2?-1:1,reach=.65+(i%3)*.38;ctx.lineWidth=.18-i*.025;
+   ctx.beginPath();ctx.moveTo(.05,-.85);ctx.bezierCurveTo(side*.3,-.3,side*reach,-.13,side*(reach+.15),.02);ctx.stroke();
+  }
+  for(const [offset,sway,h] of [[-.12,-.32,3.7],[.32,.52,2.9]]){
+   ctx.strokeStyle=palette.root;ctx.lineWidth=.28;ctx.beginPath();ctx.moveTo(offset,-.3);ctx.bezierCurveTo(offset+.1,-1.1,offset+sway,-2,offset+sway*.8,-h);ctx.stroke();
+   ctx.strokeStyle=palette.moss;ctx.lineWidth=.06;ctx.beginPath();ctx.moveTo(offset+.08,-.5);ctx.quadraticCurveTo(offset+sway*.7,-1.5,offset+sway*.8,-h);ctx.stroke();
+   for(let j=0;j<6;j++){
+    const a=j*Math.PI/3+.2,reach=1.04+(j%2)*.2,tx=offset+sway*.8,ty=-h;
+    ctx.strokeStyle=palette.moss;ctx.lineWidth=.12;ctx.beginPath();ctx.moveTo(tx,ty);ctx.quadraticCurveTo(tx+Math.cos(a)*reach*.7,ty-Math.sin(a)*.25,tx+Math.cos(a)*reach,ty+.33+Math.sin(a)*.5);ctx.stroke();
+    ctx.strokeStyle=palette.earth;ctx.lineWidth=.025;ctx.stroke();
+   }
+  }
+  for(let j=0;j<7;j++){
+   const side=j%2?-1:1,reach=.6+j*.065,base=.5;ctx.strokeStyle=palette.moss;ctx.lineWidth=.045;ctx.beginPath();ctx.moveTo(base,0);ctx.quadraticCurveTo(base+side*reach*.55,-.8,base+side*reach,-.15);ctx.stroke();
+   for(let k=1;k<5;k++){const t=k/5,px=base+side*reach*t,py=-Math.sin(t*Math.PI)*.44;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px-side*.12,py-.15);ctx.moveTo(px,py);ctx.lineTo(px+side*.12,py+.09);ctx.stroke();}
+  }
+ }else if(type==='sandstone-shelf'){
+  for(let step=0;step<4;step++){
+   const spread=1.65-step*.24,top=-.36-step*.42,y=-step*.36;
+   ctx.fillStyle=step%2?palette.earth:palette.ridge;ctx.beginPath();ctx.moveTo(-spread,y);ctx.lineTo(-spread*.86,top);ctx.lineTo(spread*.47,top-.16);ctx.lineTo(spread,top+.04);ctx.lineTo(spread*.84,y);ctx.closePath();ctx.fill();
+   ctx.strokeStyle=palette.shore;ctx.lineWidth=.07;ctx.beginPath();ctx.moveTo(-spread*.86,top+.02);ctx.lineTo(spread*.47,top-.13);ctx.lineTo(spread,top+.06);ctx.stroke();
+   ctx.strokeStyle=palette.wet;ctx.lineWidth=.035;ctx.beginPath();ctx.moveTo(-spread*.8,y-.05);ctx.lineTo(spread*.84,y-.05);ctx.stroke();
+  }
+  ctx.strokeStyle=palette.wet;ctx.lineWidth=.035;ctx.beginPath();ctx.moveTo(-.3,-1.55);ctx.lineTo(-.17,-.86);ctx.lineTo(-.42,-.28);ctx.stroke();
+ }else{
+  ctx.fillStyle=palette.stone;ctx.beginPath();ctx.moveTo(-.55,0);ctx.lineTo(-.44,-3.25);ctx.lineTo(-.09,-3.63);ctx.lineTo(.08,-3.23);ctx.lineTo(.32,-3.5);ctx.lineTo(.48,-3.06);ctx.lineTo(.59,0);ctx.closePath();ctx.fill();
+  ctx.fillStyle=palette.ridge;ctx.beginPath();ctx.moveTo(-.44,-3.25);ctx.lineTo(-.09,-3.63);ctx.lineTo(.01,-.12);ctx.lineTo(-.55,0);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=palette.wet;ctx.lineWidth=.07;ctx.beginPath();ctx.moveTo(.04,-3.31);ctx.lineTo(-.07,-2.44);ctx.lineTo(.13,-2.08);ctx.lineTo(-.18,-1.72);ctx.lineTo(-.07,-.7);ctx.stroke();
+  ctx.strokeStyle=palette.accent;ctx.lineWidth=.055;ctx.beginPath();ctx.moveTo(-.25,-2.4);ctx.lineTo(.24,-2.4);ctx.moveTo(0,-2.65);ctx.lineTo(0,-2.16);ctx.stroke();
+  ctx.fillStyle=palette.moss;ctx.beginPath();ctx.ellipse(-.31,-.26,.35,.12,.2,0,TAU);ctx.ellipse(.29,-1.36,.18,.07,-.3,0,TAU);ctx.fill();
+  ctx.fillStyle=palette.stone;ctx.beginPath();ctx.moveTo(-1.1,.1);ctx.lineTo(-.93,-.31);ctx.lineTo(-.61,-.25);ctx.lineTo(-.51,.05);ctx.closePath();ctx.fill();
+ }
+ ctx.restore();
+}
+
+function drawIslandRelief(ctx,g,width,height,geometry,palette,pattern){
+ const rows=islandRelief2D(g,width,height,geometry).filter(row=>row.length===9);
+ ctx.save();pathBetween(ctx,geometry.innerLeft,geometry.innerRight);ctx.fillStyle=palette.wet;ctx.fill();
+ if(rows.length>1)for(let band=0;band<8;band++){
+  const left=rows.map(row=>row[band]),right=rows.map(row=>row[band+1]);
+  pathBetween(ctx,left,right);ctx.fillStyle=palette.earth;ctx.fill();
+  ctx.save();ctx.clip();ctx.globalAlpha=.94;ctx.fillStyle=pattern;const offset=g.distance*2%256;ctx.translate(0,offset);ctx.fillRect(0,-offset,width,height+256);ctx.translate(0,-offset);
+  // One continuous material follows the height mesh. Lighting is restrained;
+  // boundaries between the mesh strips cannot become colored road markings.
+  ctx.fillStyle=band<4?'#fff5cc':'#1e2c31';ctx.globalAlpha=band===0||band===7?.06:.025;ctx.fill();ctx.restore();
+ }
+ ctx.restore();
+}
+export function islandGroundPatches(geometry,profile){
+ return islandGroundClumps(geometry,profile).map(clump=>({...clump,fraction:clump.crossFraction}));
+}
+function drawGroundPatches(ctx,g,width,height,geometry,palette){
+ const patches=islandGroundPatches(geometry,g.terrainProfile);
+ for(const patch of patches){
+  if(patch.d<geometry.near-8||patch.d>geometry.far+8)continue;
+  const center=riverFork(patch.d,g.terrainProfile);if(!center||center.strength<.45)continue;
+  const color=patch.kind===0?palette.moss:patch.kind===1?palette.shore:palette.ridge;
+  ctx.save();ctx.fillStyle=color;ctx.globalAlpha=patch.kind===1?.26:.35;ctx.beginPath();
+  for(let point=0;point<9;point++){
+   const angle=point*TAU/9+patch.turn,warp=.7+riverHash(point+Math.floor(patch.d)+47,g.terrainProfile)*.3,course=patch.d+Math.sin(angle)*patch.length*warp;
+   const fork=riverFork(course,g.terrainProfile);if(!fork)continue;
+   const fraction=clamp(patch.fraction+Math.cos(angle)*patch.width*warp/fork.islandHalfWidth,-.97,.97),cross=fork.islandCenter+fraction*fork.islandHalfWidth,at=projectPhysical(width,height,cross,course-g.distance,g),y=at.y-islandHeight(cross,course,g.terrainProfile)*at.unit;
+   if(point===0)ctx.moveTo(at.x,y);else ctx.lineTo(at.x,y);
+  }
+  ctx.closePath();ctx.fill();ctx.restore();
+ }
+}
+function drawGroundClumps(ctx,g,art,width,height,geometry,palette){
+ const patches=islandGroundPatches(geometry,g.terrainProfile).filter(patch=>patch.d>=geometry.near&&patch.d<=geometry.far).sort((a,b)=>b.d-a.d);
+ for(const patch of patches){
+  const fork=riverFork(patch.d,g.terrainProfile);if(!fork||fork.strength<.45)continue;
+  const cross=fork.islandCenter+patch.fraction*fork.islandHalfWidth,at=projectPhysical(width,height,cross,patch.d-g.distance,g),y=at.y-islandHeight(cross,patch.d,g.terrainProfile)*at.unit;
+  const stone=(patch.kind===1?1.1:.67)*at.unit,moon=(g.levelIndex??0)===2;
+  ctx.save();ctx.globalAlpha=Math.min(1,at.scale*5);
+  const rock=art.fork2d?.rocks?.[g.levelIndex??0],plantArt=art.fork2d?.plants?.[g.levelIndex??0]??art.branchLeaves;
+  if(rock||art.sprites){
+   // The same detailed mossy stone used by the river atlas sits entirely on
+   // land. Fixed world clumps replace the empty, uniformly painted median.
+   ctx.save();ctx.translate(at.x,y);ctx.rotate((patch.turn-Math.PI)*.045);
+   if(rock)ctx.drawImage(rock,-stone*.5,-stone*.825,stone,stone*.825);else ctx.drawImage(art.sprites,0,545,430,355,-stone*.5,-stone*.825,stone,stone*.825);ctx.restore();
+   if(patch.kind===1){const x=at.x-patch.side*stone*.7-stone*.28;if(rock)ctx.drawImage(rock,x,y-stone*.5,stone*.56,stone*.46);else ctx.drawImage(art.sprites,0,545,430,355,x,y-stone*.5,stone*.56,stone*.46);}
+  }else islandPlant(ctx,at.x,y,stone,1,moon);
+  if((g.levelIndex??0)!==1&&patch.kind!==1){
+   const plantCross=cross-patch.side*.3,plant=projectPhysical(width,height,plantCross,patch.d-g.distance+.7,g),plantY=plant.y-islandHeight(plantCross,patch.d+.7,g.terrainProfile)*plant.unit,size=plant.unit*(moon?.8:1.2);
+   if(plantArt){
+    ctx.globalAlpha*=moon?.8:.9;ctx.drawImage(plantArt,plant.x-size*.5,plantY-size*.44,size,size*.63);
+   }else islandPlant(ctx,plant.x,plantY,size,0,moon);
+  }
+  ctx.restore();
+ }
+}
+
+function drawForkEddies(ctx,g,width,height,geometry,palette,reduced){
+ for(const course of [geometry.start+38,geometry.end-38]){
+  if(course<g.distance-12||course>g.distance+245)continue;
+  const fork=riverFork(course,g.terrainProfile);if(!fork)continue;
+  for(const side of [-1,1]){
+   const cross=fork.islandCenter+side*(fork.islandHalfWidth+1.1),at=projectPhysical(width,height,cross,course-g.distance,g),phase=reduced?0:g.time*.7+side*.4;
+   ctx.save();ctx.strokeStyle=palette.foam;ctx.lineWidth=Math.max(.6,at.unit*.035);ctx.globalAlpha=.4*fork.strength;
+   for(let ring=0;ring<2;ring++){ctx.beginPath();ctx.ellipse(at.x,at.y,(.8+ring*.3)*at.unit,(.2+ring*.05)*at.unit,side*.08,phase+ring*.5,phase+ring*.5+Math.PI*1.4);ctx.stroke();}ctx.restore();
+  }
+ }
 }
 
 // Normal and fork water use one screen-registered surface and flow phase. The
@@ -105,9 +225,9 @@ export function drawFallbackWaterSurface(ctx,g,art,width,height,reducedMotion=fa
 // All stations and texture patterns are bounded and derive from world distance.
 export function drawForkFallback(ctx,g,art,width,height,reducedMotion=false){
  const geometry=forkFallbackGeometry(g,width,height);if(!geometry.length)return false;
- const level=levelAt(g.levelIndex),profile=profileOf(g);
+ const level=levelAt(g.levelIndex),profile=profileOf(g),palette=FORK_PALETTES[level.index];
  let patterns=patternCache.get(ctx);if(!patterns){patterns={ground:[],water:[]};patternCache.set(ctx,patterns);}
- patterns.ground[level.index]??=ctx.createPattern(art.map2d?.grounds?.[level.index]??art.surfaceground,'repeat');
+ patterns.ground[level.index]??=ctx.createPattern(art.fork2d?.grounds?.[level.index]??art.map2d?.grounds?.[level.index]??art.surfaceground,'repeat');
  for(const fork of geometry){
   for(const [left,right] of [[fork.outerLeft,fork.innerLeft],[fork.innerRight,fork.outerRight]]){
    ctx.save();pathBetween(ctx,left,right);ctx.clip();
@@ -118,27 +238,32 @@ export function drawForkFallback(ctx,g,art,width,height,reducedMotion=false){
     const course=n*8+riverHash(n+79,profile)*5,water=riverFork(course,profile);if(!water||water.id!==fork.id)continue;
     const side=left===fork.outerLeft?-1:1,inner=water.islandCenter+side*water.islandHalfWidth,outer=side*fallbackShoreHalfWidth(course,profile),t=.22+riverHash(n+91+side,profile)*.53;
     const at=projectPhysical(width,height,inner+(outer-inner)*t,course-g.distance,g),length=(1.4+riverHash(n+29,profile)*2.2)*at.unit;
-    ctx.strokeStyle=level.index===2?'#c4d4f68c':'#d1fff08c';ctx.lineWidth=Math.max(.65,at.unit*.055);ctx.globalAlpha=Math.min(.65,at.scale*.8);
+    ctx.strokeStyle=palette.foam;ctx.lineWidth=Math.max(.65,at.unit*.055);ctx.globalAlpha=Math.min(.5,at.scale*.65);
     ctx.beginPath();ctx.moveTo(at.x-length/2,at.y);ctx.quadraticCurveTo(at.x,at.y-at.unit*.1,at.x+length/2,at.y-at.unit*.035);ctx.stroke();
    }
    ctx.restore();
   }
-  ctx.save();pathBetween(ctx,fork.innerLeft,fork.innerRight);ctx.clip();
-  const soil=ctx.createLinearGradient(0,fork.innerLeft[0].y,0,fork.innerLeft.at(-1).y);
-  soil.addColorStop(0,level.index===1?'#b78955':level.index===2?'#77758c':'#97a45b');soil.addColorStop(.5,level.ground);soil.addColorStop(1,level.index===1?'#725344':level.index===2?'#424b5d':'#4a6c3b');ctx.fillStyle=soil;ctx.fillRect(0,0,width,height);
-  ctx.globalAlpha=.32;ctx.fillStyle=patterns.ground[level.index];const drift=g.distance*2%256;ctx.translate(0,drift);ctx.fillRect(0,-drift,width,height+256);ctx.restore();
+  drawIslandRelief(ctx,g,width,height,fork,palette,patterns.ground[level.index]);
+  drawGroundPatches(ctx,g,width,height,fork,palette);
   // Ochre banks with broken froth stay organic and never form white poles.
   for(const edge of [fork.innerLeft,fork.innerRight]){
-   ctx.save();ctx.strokeStyle=level.index===2?'#8c98ac80':'#b1ad7790';ctx.lineWidth=Math.max(1,width*.003);ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(edge[0].x,edge[0].y);for(let i=1;i<edge.length;i++)ctx.lineTo(edge[i].x,edge[i].y);ctx.stroke();
-   ctx.strokeStyle=level.index===2?'#b4c6e078':'#cbf3d578';ctx.lineWidth=1;
+   ctx.save();ctx.strokeStyle=palette.shore;ctx.globalAlpha=.7;ctx.lineWidth=Math.max(1,width*.003);ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(edge[0].x,edge[0].y);for(let i=1;i<edge.length;i++)ctx.lineTo(edge[i].x,edge[i].y);ctx.stroke();
+   ctx.strokeStyle=palette.foam;ctx.globalAlpha=.42;ctx.lineWidth=1;
    for(let i=2;i<edge.length-1;i+=3){const p=edge[i],side=edge===fork.innerLeft?-1:1;ctx.beginPath();ctx.moveTo(p.x+side*p.unit*.15,p.y);ctx.quadraticCurveTo(p.x+side*p.unit*.3,p.y-p.unit*.06,p.x+side*p.unit*.6,p.y+p.unit*.04);ctx.stroke();}ctx.restore();
   }
-  const first=Math.ceil(fork.near/28),last=Math.floor(fork.far/28);
-  for(let n=last;n>=first;n--){
-   const course=n*28,atFork=riverFork(course,profile);if(!atFork||atFork.strength<.6)continue;
-   const cross=atFork.islandCenter+(riverHash(n+57,profile)-.5)*atFork.islandHalfWidth*.85,at=projectPhysical(width,height,cross,course-g.distance,g);
-   const lift=islandHeight(cross,course,profile)*at.unit*.24,size=(1.4+riverHash(n+103,profile)*1.3)*at.unit;
-   ctx.save();ctx.globalAlpha=Math.min(1,at.scale*4);ctx.fillStyle='#122e2845';ctx.beginPath();ctx.ellipse(at.x,at.y-lift,size*.44,size*.09,0,0,TAU);ctx.fill();islandPlant(ctx,at.x,at.y-lift,size,level.index===1?1:n%3===0?1:0,level.index===2);ctx.restore();
+  drawForkEddies(ctx,g,width,height,fork,palette,reducedMotion);
+  drawGroundClumps(ctx,g,art,width,height,fork,palette);
+  const details=[...islandLandmarks(fork,profile),...islandShoreClusters(fork,profile)].filter(mark=>mark.d>=fork.near&&mark.d<=fork.far).sort((a,b)=>b.d-a.d);
+  for(const mark of details){
+   const atFork=riverFork(mark.d,profile);if(!atFork||atFork.strength<.4||atFork.islandHalfWidth<2.3)continue;
+   const cross=atFork.islandCenter+mark.crossFraction*atFork.islandHalfWidth,at=projectPhysical(width,height,cross,mark.d-g.distance,g),lift=islandHeight(cross,mark.d,profile)*at.unit;
+   ctx.save();ctx.globalAlpha=Math.min(1,at.scale*4);ctx.fillStyle='#122e2845';ctx.beginPath();ctx.ellipse(at.x,at.y-lift,at.unit*mark.scale*.7,at.unit*.12,0,0,TAU);ctx.fill();
+   if(mark.type)landmark2D(ctx,mark.type,at.x,at.y-lift,at.unit,mark.scale,palette,mark.turn);
+   else for(let member=0;member<3;member++){
+    const px=cross-mark.side*member*.23,plant=projectPhysical(width,height,px,mark.d-g.distance+member*.25,g),y=plant.y-islandHeight(px,mark.d+member*.25,profile)*plant.unit;
+    islandPlant(ctx,plant.x,y,plant.unit*mark.scale*(member===0?1:.65),level.index===0&&member===2?0:1,level.index===2);
+   }
+   ctx.restore();
   }
  }
  return true;
@@ -147,6 +272,26 @@ export function drawForkFallback(ctx,g,art,width,height,reducedMotion=false){
 export function treasurePresentation(entity){
  const base=entity.treasureBase??200,bonus=entity.treasureCleanBonus??0;
  return{base,bonus,payoff:base+bonus,risk:bonus>0,label:bonus>0?'CLEAN TREASURE':'TREASURE',color:bonus>0?'#ffc779':'#91eed3'};
+}
+export function stashPresentation(entity){
+ const value=entity.value===200?200:entity.value===120?120:0;
+ return{value,label:value?`+${value}`:'STASH',color:value===200?'#ffe3a1':'#ffd075',cloth:value===200?'#965542':'#746143'};
+}
+export function drawStash2D(ctx,entity,point,size,time,reducedMotion){
+ const style=stashPresentation(entity),pulse=reducedMotion?1:1+Math.sin(time*3.4+entity.id)*.04;
+ ctx.save();ctx.translate(point.x,point.y);ctx.scale(size,size);
+ ctx.fillStyle='#082d3b70';ctx.beginPath();ctx.ellipse(0,.025,.47,.095,0,0,TAU);ctx.fill();
+ ctx.save();ctx.globalAlpha=.22;ctx.strokeStyle=style.color;ctx.lineWidth=.035;ctx.beginPath();ctx.ellipse(0,0,.52*pulse,.14*pulse,0,0,TAU);ctx.stroke();ctx.restore();
+ ctx.fillStyle=style.cloth;ctx.beginPath();ctx.moveTo(-.19,-.6);ctx.bezierCurveTo(-.19,-.45,-.48,-.4,-.43,-.17);ctx.quadraticCurveTo(-.38,.06,0,.015);ctx.quadraticCurveTo(.43,.025,.44,-.2);ctx.quadraticCurveTo(.44,-.44,.2,-.59);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='#3f362d';ctx.lineWidth=.028;ctx.beginPath();ctx.moveTo(-.22,-.38);ctx.quadraticCurveTo(-.35,-.18,-.2,-.03);ctx.moveTo(.13,-.42);ctx.quadraticCurveTo(.3,-.18,.2,-.05);ctx.stroke();
+ ctx.fillStyle='#dac18a';ctx.fillRect(-.22,-.59,.43,.075);ctx.strokeStyle='#e9d5a5';ctx.lineWidth=.035;ctx.beginPath();ctx.moveTo(.16,-.555);ctx.quadraticCurveTo(.49,-.56,.33,-.38);ctx.moveTo(.15,-.55);ctx.lineTo(.34,-.23);ctx.stroke();
+ for(const [x,y] of [[-.13,-.69],[.08,-.72],[.23,-.66]]){
+  ctx.fillStyle=style.color;ctx.strokeStyle='#a96828';ctx.lineWidth=.015;ctx.beginPath();ctx.ellipse(x,y,.11,.066,-.2,0,0,TAU);ctx.fill();ctx.stroke();
+ }
+ ctx.fillStyle=style.color;ctx.beginPath();ctx.moveTo(0,-.36);ctx.lineTo(.1,-.24);ctx.lineTo(0,-.12);ctx.lineTo(-.1,-.24);ctx.closePath();ctx.fill();ctx.restore();
+ if(size>=12&&style.value){
+  ctx.save();ctx.textAlign='center';ctx.font=`900 ${Math.max(10,size*.26)}px system-ui`;ctx.strokeStyle='#3a3329';ctx.fillStyle=style.color;ctx.lineWidth=3;const y=point.y-size*.88;ctx.strokeText(style.label,point.x,y);ctx.fillText(style.label,point.x,y);ctx.restore();
+ }
 }
 export function drawTreasure2D(ctx,entity,point,size,time,reducedMotion){
  const style=treasurePresentation(entity),pulse=reducedMotion?0:Math.sin(time*3.2+entity.id)*.06;

@@ -94,3 +94,44 @@
 @media(max-width:700px){.river-adventure{padding:6px 7px;font-size:10px}.river-adventure header{font-size:7px;letter-spacing:0}.adventure-route>b{font-size:9px}.adventure-route>small,.adventure-island-cue,.adventure-clear-progress small{font-size:7px}.adventure-preview .adventure-route+.adventure-route{margin-top:5px;padding-top:4px}.adventure-island-cue{margin-top:5px;padding-top:4px}}
 @media(max-height:550px) and (min-width:701px){.river-adventure{padding:6px 8px}.adventure-preview .adventure-route+.adventure-route{margin-top:4px;padding-top:4px}}
 @media(min-width:701px) and (max-aspect-ratio:3/4){.river-adventure{padding:10px 11px;font-size:13px}.river-adventure header{font-size:10px}.adventure-route>b{font-size:12px}.adventure-route>small,.adventure-island-cue,.adventure-clear-progress small{font-size:10px}}
+
+/* One nearby opportunity replaces a long list of future rewards. */
+.adventure-compact-payoff{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:4px 0 0;font-size:10px;font-weight:800;color:#ffe180;font-variant-numeric:tabular-nums}
+.adventure-compact-payoff>span{display:flex;align-items:center;gap:3px}
+.adventure-compact-payoff svg{width:12px;height:12px;flex:none}
+.compact-clean>b{font-size:8px}
+.compact-clean>i{display:flex;gap:3px}
+.compact-clean em{height:3px;width:8px;background:#ffffff38;border-radius:2px}
+.compact-clean em.cleared{background:#ffe180}
+.compact-clean.clean-lost{color:#bacbbe}
+.compact-clean.clean-lost>i{display:none}
+.reward-opportunity{border-top:1px solid #e5f3cf44;padding-top:6px;margin-top:6px;pointer-events:none;min-width:0;color:#dffff3;font-size:10px;line-height:1.2}
+.reward-opportunity>div{display:flex;align-items:center;gap:4px;min-width:0}
+.reward-opportunity svg{width:13px;height:13px;flex:none}
+.reward-opportunity b{font-size:10px;font-weight:900;min-width:0}
+.reward-opportunity small{font-size:8px;font-weight:600}
+.reward-action-line{color:#ffd1a0}
+.reward-action-line>span{min-width:0}
+.reward-action-line>span>b,.reward-action-line>span>small{display:block}
+.reward-action-line>span>small{margin-top:1px}
+.reward-stash-line{color:#ffe180;margin-top:4px}
+.reward-stash-line>small{order:-1;color:#c9e4d4}
+.reward-return-line{margin-top:5px;color:#bdffe7}
+.reward-return-line>span{font-size:9px;font-weight:700}
+.reward-return-line b{font-size:9px}
+.reward-hold{width:13px;text-align:center;font-size:12px;font-weight:700;flex:none}
+.reward-opportunity>.reward-choice-cost{display:block;margin-top:4px;color:#eacba1;font-size:7px}
+@media(max-width:700px){.adventure-compact-payoff{font-size:9px}.compact-clean>b{font-size:7px}.compact-clean em{width:7px}.reward-opportunity{padding-top:5px;margin-top:5px}.reward-opportunity b{font-size:9px}.reward-opportunity svg{width:12px;height:12px}.reward-opportunity small{font-size:7px}.reward-return-line>span,.reward-return-line b{font-size:8px}.reward-opportunity>.reward-choice-cost{font-size:7px}}
+@media(min-width:701px) and (max-aspect-ratio:3/4){.adventure-compact-payoff{font-size:12px}.compact-clean>b{font-size:10px}.reward-opportunity{font-size:12px}.reward-opportunity b{font-size:12px}.reward-opportunity small{font-size:10px}.reward-return-line>span,.reward-return-line b{font-size:11px}.reward-opportunity>.reward-choice-cost{font-size:9px}}
+.adventure-compact>b{font-size:11px}
+.adventure-compact-payoff{font-size:11px}
+.compact-clean>b{font-size:9px}
+.reward-opportunity b{font-size:11px}
+.reward-opportunity small{font-size:9px}
+.reward-return-line>span,.reward-return-line b{font-size:10px}
+.reward-opportunity>.reward-choice-cost{font-size:9px}
+.reward-compare-line{flex-wrap:wrap;justify-content:space-between}
+.reward-compare-line>span{display:flex;align-items:center;gap:2px;white-space:nowrap}
+.reward-compare-line .reward-stash-line{margin-top:0}
+.reward-opportunity-compact{padding-top:4px;margin-top:4px}
+@media(max-width:700px){.adventure-compact>b{font-size:10px}.adventure-compact-payoff{font-size:10px}.compact-clean>b{font-size:8px}.reward-opportunity b{font-size:11px}.reward-opportunity small{font-size:9px}.reward-return-line>span,.reward-return-line b{font-size:10px}.reward-opportunity>.reward-choice-cost{font-size:8px}.reward-compare-line svg{width:11px;height:11px}.reward-compare-line b{font-size:11px}.reward-compare-line>small{font-size:8px}}

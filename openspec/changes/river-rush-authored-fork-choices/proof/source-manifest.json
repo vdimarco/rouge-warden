@@ -1,0 +1,1391 @@
+{
+  "files": [
+    {
+      "path": "games/river-rush/.gitignore",
+      "bytes": 56,
+      "sha256": "355014b57a89281d6ab4d268350afeffc8cf5806d3f911607142556c5c220a38"
+    },
+    {
+      "path": "games/river-rush/docs/adventure-art-sources.json",
+      "bytes": 4736,
+      "sha256": "41525fe458c5050f54bc13a64d4d6dec9f3e21aa0ee55abff09d75d7604514be"
+    },
+    {
+      "path": "games/river-rush/docs/adventure-verification.json",
+      "bytes": 27389,
+      "sha256": "1443af342536bca4cb270bcf16b973de6bf4c8595d2fd4c59a532611c5b5abfb"
+    },
+    {
+      "path": "games/river-rush/docs/branched-boughs-verification.json",
+      "bytes": 14931,
+      "sha256": "96d3ed44683e7ef251440e3412711aaa6489b3aad5788f650426193ceff75746"
+    },
+    {
+      "path": "games/river-rush/docs/branched-boughs.md",
+      "bytes": 1644,
+      "sha256": "c62a393a6b85414709f0c5efe6c32ae8bfb6e1d23bfb89e14b5f841864c0bf6b"
+    },
+    {
+      "path": "games/river-rush/docs/canopy-bank-lines-verification.json",
+      "bytes": 18905,
+      "sha256": "d8e68328c8591e70f2146e4e7eb18d79861cd7c72e18a5b6f5c4b52b3cc86695"
+    },
+    {
+      "path": "games/river-rush/docs/canopy-bank-lines.md",
+      "bytes": 1904,
+      "sha256": "c7814f04f55639a255f89b406e3061f55fe4a53bd87611051e3b7d67d7a68979"
+    },
+    {
+      "path": "games/river-rush/docs/concepts/endless-runner.png",
+      "bytes": 3266231,
+      "sha256": "917708a2f8464b975d16b430b25364f0642e925b59507e52aeff7d107a6a7f6b"
+    },
+    {
+      "path": "games/river-rush/docs/death-screen-verification.json",
+      "bytes": 3396,
+      "sha256": "5ba45db1f83b581c96d40ba9b3f0b7701c1f2072680e53c53c586eee91d02a25"
+    },
+    {
+      "path": "games/river-rush/docs/death-screen.md",
+      "bytes": 1475,
+      "sha256": "cc553dfa256901d78ea4d5da4ba6d969b3100145a58263dbbf8d0a0f96ba6caa"
+    },
+    {
+      "path": "games/river-rush/docs/design.md",
+      "bytes": 17127,
+      "sha256": "49a44310a2d78dcd7901935c8c9305dfe0482d7e73bef0189026e0df2522f7af"
+    },
+    {
+      "path": "games/river-rush/docs/downstream-art.json",
+      "bytes": 2986,
+      "sha256": "05cadfdf08fd7f97b7f853d200671995ef1b4461d8d7bb4e70c6a16b8cf31b75"
+    },
+    {
+      "path": "games/river-rush/docs/downstream-verification.json",
+      "bytes": 3428,
+      "sha256": "f1bb35a353e4467b6cc56b5b537b2740722b0729bc2d8adcbeb2d4b647ab2275"
+    },
+    {
+      "path": "games/river-rush/docs/epic-music-measurements.json",
+      "bytes": 1904,
+      "sha256": "4d9138bd0bf1507bf2c4c905938cbe2d413094033f0b1d85b29976595ba0018f"
+    },
+    {
+      "path": "games/river-rush/docs/epic-music-source.json",
+      "bytes": 4058,
+      "sha256": "11f6fa4c9e25d7f882d556b40e200fc950173f3755e5f7b1cac0ee020ad27def"
+    },
+    {
+      "path": "games/river-rush/docs/epic-music-verification.json",
+      "bytes": 161734,
+      "sha256": "b5381735dc40324e6166cc27143ca752d2c149eaebf149a7a89bf2f6f8a92bb3"
+    },
+    {
+      "path": "games/river-rush/docs/epic-music.md",
+      "bytes": 2414,
+      "sha256": "f79a497803cc0bbc7b82047112735a8125b6d165eeefb962ec677cfa9aae4e9f"
+    },
+    {
+      "path": "games/river-rush/docs/leaderboard-longer-rivers.sql",
+      "bytes": 910,
+      "sha256": "dcac93346862ce8f5a4a8b121b0bd61739ae65ac7418194d3e274946c80c9943"
+    },
+    {
+      "path": "games/river-rush/docs/leaderboard-schema.sql",
+      "bytes": 2603,
+      "sha256": "fb3086aed50fadf1a449388480945e58d10663e6baff564f13291551f8e87260"
+    },
+    {
+      "path": "games/river-rush/docs/leaderboard-wild-finale.sql",
+      "bytes": 888,
+      "sha256": "4046cc16f5f0ba083491a4ac0fa0f918a07e098f49354bdc1010c97373759a85"
+    },
+    {
+      "path": "games/river-rush/docs/longer-rapids-verification.json",
+      "bytes": 60321,
+      "sha256": "a32a6f938d0c51c3c95f28616cd44e339c3a93eafc6eace962ee1efedbc888e1"
+    },
+    {
+      "path": "games/river-rush/docs/longer-rapids.md",
+      "bytes": 2089,
+      "sha256": "fa266418dad2d1e3bde134213d2b0590063a390bf414cd364d673a094c972bad"
+    },
+    {
+      "path": "games/river-rush/docs/low-duck-texture-sources.json",
+      "bytes": 6216,
+      "sha256": "0016ab2ce9dfb73135e1fc7e520ee8d7507ed09f8452823e25ff09b4f816819e"
+    },
+    {
+      "path": "games/river-rush/docs/low-duck-verification.json",
+      "bytes": 6194,
+      "sha256": "2f6f27613b0afb8b8e62ea0fc90bcb13493cdb6da211f94c0eb346689bc0ce59"
+    },
+    {
+      "path": "games/river-rush/docs/media.json",
+      "bytes": 6818,
+      "sha256": "00d1a812801e5e36ebaaa2ee4260c872a88627737ea9c0fddbf044cef6657b22"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-bough-sources.json",
+      "bytes": 6437,
+      "sha256": "b908aac5486bd7d36e36456ba25ef552a1896cb13760009ecfcefc77a19bf797"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-boughs.md",
+      "bytes": 3677,
+      "sha256": "3e82c31f7fbe45f31a8c3b29ea2fec633238f24cea1c9349b921c7cfd8c7b139"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-river-oak-concept.png",
+      "bytes": 5348539,
+      "sha256": "5a50007a6234940e1a07d4069833e9fdc09276955d7b02d1f291bcbbcd3f0c01"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-river-oak-native.json",
+      "bytes": 12923,
+      "sha256": "93dc41204c84ef41eceba5e23e7f9dd6d11e0b43fa41b30892c8678006887612"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-river-oak-preview.png",
+      "bytes": 78619,
+      "sha256": "910686fcddf58615e9ebecb90bf7ea9bc7ae2742d1905734c5aff7dcfbc0db4f"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-river-oak-sources.json",
+      "bytes": 27040,
+      "sha256": "a0a951be6b9da0341b026fafaa18b52e52558445a779bb2e88e15c581799cf7a"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-river-oak.md",
+      "bytes": 4066,
+      "sha256": "4590550d58fbf08e893093c85feecf9fb7b12e5781faeb7177a9f3695b651712"
+    },
+    {
+      "path": "games/river-rush/docs/meshy-sources.json",
+      "bytes": 14132,
+      "sha256": "786b1418a242b823cd68524762a966ec1f0b2fef075e4ce56a062bd1356a4029"
+    },
+    {
+      "path": "games/river-rush/docs/pickup-contact-verification.json",
+      "bytes": 12165,
+      "sha256": "4c70aadb6d811004238273c905f3b084cad63249c0f62efc79a6ad17fe635480"
+    },
+    {
+      "path": "games/river-rush/docs/procedural-rapids-verification.json",
+      "bytes": 75505,
+      "sha256": "d9a61e41f4c36f2ec8ed0fb2e9b0085b8671c989fa90e97e12cb40b459b5902c"
+    },
+    {
+      "path": "games/river-rush/docs/procedural-rapids.md",
+      "bytes": 2930,
+      "sha256": "adfb9ac3d3c39aa33c4675205394d7f0a681ba5132e8533336410d9c9122eab6"
+    },
+    {
+      "path": "games/river-rush/docs/shoreline-branches-verification.json",
+      "bytes": 10904,
+      "sha256": "1d9334a13197909e51818a431a226d16ebfd6902fcdcf01a31b4ebae5aeea8c5"
+    },
+    {
+      "path": "games/river-rush/docs/shoreline-branches.md",
+      "bytes": 1716,
+      "sha256": "ba51cd88ca4327fc1518bc8314a68f186d5e692b6a596d8487099ee57f02abbf"
+    },
+    {
+      "path": "games/river-rush/docs/stall-recovery-verification.json",
+      "bytes": 43431,
+      "sha256": "d55446195ebfc7c052a9a3c86f560c348e28d0d90d41c73b56757e67bca4df2e"
+    },
+    {
+      "path": "games/river-rush/docs/stall-recovery.md",
+      "bytes": 4820,
+      "sha256": "8db51f513efb26fc2be256c7b039771f80facda2d44a07dcf9d5bde2ec771967"
+    },
+    {
+      "path": "games/river-rush/docs/subway-surfers-study.md",
+      "bytes": 6216,
+      "sha256": "3221a57c620c76b8c7a124d87bbff38ad44db61bf6ab93195b48df837403725e"
+    },
+    {
+      "path": "games/river-rush/docs/temple-rig-sources.json",
+      "bytes": 26311,
+      "sha256": "9f9112a7565fe7aa40a25c51a852f7d7af948acf8c62959d6aaa1a6cee53d98d"
+    },
+    {
+      "path": "games/river-rush/docs/temple-rig-verification.json",
+      "bytes": 14761,
+      "sha256": "968cbdfd9a1ee798a8123be77db4e4ccb83b3073ad8e0098628d8cac9a504e7f"
+    },
+    {
+      "path": "games/river-rush/docs/tree-realism-sources.json",
+      "bytes": 3027,
+      "sha256": "15240b04b9908ee78ef75ece45bc9d7a2ed603af99bcca7cddf28266bc3eef02"
+    },
+    {
+      "path": "games/river-rush/docs/tree-realism-verification.json",
+      "bytes": 20655,
+      "sha256": "00f8f6e227855fd16f0cb146ec2137c388eeaee828174906c0d97643ddc15e0c"
+    },
+    {
+      "path": "games/river-rush/docs/tree-realism.md",
+      "bytes": 2389,
+      "sha256": "3a8f1b7dffff3c55c341174794a864a790cdb8defca1f242aadfe4cf74d99ece"
+    },
+    {
+      "path": "games/river-rush/docs/verification.md",
+      "bytes": 27629,
+      "sha256": "33c098836c00d16acf9779986c09e2f36656338dfbdf13924e50fcf7d5e77a6c"
+    },
+    {
+      "path": "games/river-rush/docs/wild-finale-verification.json",
+      "bytes": 53092,
+      "sha256": "bce7b3e8dfd22211a3883fc1681f69dee521abe09ee2ea31a459444b0fa1d5d7"
+    },
+    {
+      "path": "games/river-rush/docs/world-art-sources.json",
+      "bytes": 36948,
+      "sha256": "eeef41fc75120a01519f923c0b34f641eefc0907263d5d853cd49713de573e7d"
+    },
+    {
+      "path": "games/river-rush/docs/world-art.md",
+      "bytes": 4878,
+      "sha256": "3318279770f869e82e2c4922440a66cb06c52f874cf4afdcc19df58860390f76"
+    },
+    {
+      "path": "games/river-rush/docs/world-direction-verification.json",
+      "bytes": 27854,
+      "sha256": "b4c7b894def1c8983e0b022130077b4eb3922f8a9d8aad37915f974ecf9a3169"
+    },
+    {
+      "path": "games/river-rush/index.html",
+      "bytes": 733,
+      "sha256": "bd93d48b867a8c2868ffb89e270c115b41c7087e74919e7403dd0810cff62adf"
+    },
+    {
+      "path": "games/river-rush/package-lock.json",
+      "bytes": 80649,
+      "sha256": "abe91ee7a0b1cb8cf58aa4f6d1960e6209e6b69ee0147bb61605a2e739cb4a3d"
+    },
+    {
+      "path": "games/river-rush/package.json",
+      "bytes": 748,
+      "sha256": "45e488637c9430d03f0f95f7ef4b9c792517bb564ce0f0d97776c556298dddd3"
+    },
+    {
+      "path": "games/river-rush/public/art/map-canyon.webp",
+      "bytes": 155706,
+      "sha256": "20ae88b0c5986cbf53948781f46e7267ce88b6c50b67aa5ef644180a844e1e78"
+    },
+    {
+      "path": "games/river-rush/public/art/map-ruins.webp",
+      "bytes": 161306,
+      "sha256": "6be7d33e3182485c22847bad3dc9d44bfeaf9a343fca6a464ea5528caf65561c"
+    },
+    {
+      "path": "games/river-rush/public/art/menu-loop.mp4",
+      "bytes": 2263778,
+      "sha256": "2ed39fe7aaa92f8577f9b4191a5005c3afe4de3658765f49154de52ec5801b0b"
+    },
+    {
+      "path": "games/river-rush/public/art/menu.png",
+      "bytes": 2676425,
+      "sha256": "49d7010137943e1d425168a0abd549be89283b9cbbb3606831c7f2943ebdf6b5"
+    },
+    {
+      "path": "games/river-rush/public/art/paddle-frames.png",
+      "bytes": 2188687,
+      "sha256": "8e21ddc2009bb7794cdb3313a05b525a91cde5f1ae4b742a846961c59d671110"
+    },
+    {
+      "path": "games/river-rush/public/art/rider-downstream.png",
+      "bytes": 1483496,
+      "sha256": "e89f4f6b84938c6e7196c57c4fd88461f94c6945cbfc242154631b7acf34f36f"
+    },
+    {
+      "path": "games/river-rush/public/art/rider-low-duck.png",
+      "bytes": 149560,
+      "sha256": "9e6f05baf5992df14084c4cb059e742af5246621427e2b23b026dc19566f4603"
+    },
+    {
+      "path": "games/river-rush/public/art/river-landscape-flow.mp4",
+      "bytes": 885435,
+      "sha256": "90e73c66fa1ef50565f62adfe2a14aaf3bbc7013d5b4c038fdf35b079a7dd807"
+    },
+    {
+      "path": "games/river-rush/public/art/river-landscape-loop.mp4",
+      "bytes": 2659873,
+      "sha256": "b9d938ac4f835e900d9467e62ebc7f8e36ab3a9ae0e33da79bea0e43637c038b"
+    },
+    {
+      "path": "games/river-rush/public/art/river-portrait-flow.mp4",
+      "bytes": 1242254,
+      "sha256": "e2f1461162c7d5d4a0ef37065f36aa35de2f11988dbb01033590901de0554e9b"
+    },
+    {
+      "path": "games/river-rush/public/art/river-portrait-loop.mp4",
+      "bytes": 3442472,
+      "sha256": "eb009a2a5ee4e637639123822942b8f605c2cd41841c53bfa82b314b29431c49"
+    },
+    {
+      "path": "games/river-rush/public/art/river.png",
+      "bytes": 3861452,
+      "sha256": "db5c3e900de82f6095bbd33021e713cdef82c2fad0f8f5df6affdf30a0cab492"
+    },
+    {
+      "path": "games/river-rush/public/art/runner-portrait.png",
+      "bytes": 3208590,
+      "sha256": "bbf34e1ab0b87a761d1a9de3c68e1643ac802160788583d5d6f0a1657c953eb3"
+    },
+    {
+      "path": "games/river-rush/public/art/runner-river.png",
+      "bytes": 1577115,
+      "sha256": "2bf76bfa12cc7bb2190bafdc75ac982cc5497a514bdabd7bad89b8f2f0802277"
+    },
+    {
+      "path": "games/river-rush/public/art/runner-sprites.png",
+      "bytes": 2326881,
+      "sha256": "014a02690031577fa1aeb3f6c65b5557de3673b465ac8adb58f5b6d190a1f3d9"
+    },
+    {
+      "path": "games/river-rush/public/art/sprites.png",
+      "bytes": 2887250,
+      "sha256": "c0d7d0c6e7c226231fffc7d68d43ec358fda00a73bd2ab3984d2ccfb65525db2"
+    },
+    {
+      "path": "games/river-rush/public/art/surface-ground-normal.png",
+      "bytes": 318872,
+      "sha256": "517796858f43811702e54987bdaef69f437fbfef1fb523f59212c8100a6ea633"
+    },
+    {
+      "path": "games/river-rush/public/art/surface-ground.webp",
+      "bytes": 109712,
+      "sha256": "bc40d72d770048b945a347b8ad4b672b2028617880ecf7a404a0d297b8e4f440"
+    },
+    {
+      "path": "games/river-rush/public/art/surface-rock-normal.png",
+      "bytes": 689565,
+      "sha256": "88d8a6fe4dbf6386f70b8e5c0f04d1e78f0321401ce83d22b0c205815b56c90e"
+    },
+    {
+      "path": "games/river-rush/public/art/surface-rock.webp",
+      "bytes": 463754,
+      "sha256": "134892f15a96ef389c81d5d2038b2683d1eff5c285e1f25b6566ac730e9f35e5"
+    },
+    {
+      "path": "games/river-rush/public/art/surface-water.webp",
+      "bytes": 116070,
+      "sha256": "0ab3af5bef2efb3c3cc2c7451ffdad7132819ea381042395a9ae6f33a77c471e"
+    },
+    {
+      "path": "games/river-rush/public/art/surface-wood-normal.png",
+      "bytes": 624055,
+      "sha256": "0e452cb2ddc59970418c101ec64ff63b6b76c44a0fbadda5bfbaf1886727307c"
+    },
+    {
+      "path": "games/river-rush/public/art/surface-wood.webp",
+      "bytes": 321272,
+      "sha256": "6977e9058884efcaa6a41ab29926195ab2e6b664808137d10fbb522945288495"
+    },
+    {
+      "path": "games/river-rush/public/art/tree-bark-normal.webp",
+      "bytes": 536952,
+      "sha256": "e8533790102db671ca34721c1ca9f2882fd9ebb6eb9df33307574b3cf0fea825"
+    },
+    {
+      "path": "games/river-rush/public/art/tree-bark.webp",
+      "bytes": 454760,
+      "sha256": "01a05056af68f139e93a17d264bd32a3e3d1d49ba05066902ced22c3b6115a13"
+    },
+    {
+      "path": "games/river-rush/public/art/tree-foliage.webp",
+      "bytes": 99296,
+      "sha256": "57dc3bed01746f8f5bf502fbd5866a0465e9088cbe8958d2c57ded65b7bea7ce"
+    },
+    {
+      "path": "games/river-rush/public/art/valley-vista.webp",
+      "bytes": 412202,
+      "sha256": "4a4ce6ab17088d6f8611cd644ad05a9637956a35881d7e5ba4582cdd34691aa4"
+    },
+    {
+      "path": "games/river-rush/public/audio/river-rush-adventure.mp3",
+      "bytes": 1494295,
+      "sha256": "85d06b70bd67827b6ca4a939859cfdd74b2202ad42844758376bb4ab2db2e982"
+    },
+    {
+      "path": "games/river-rush/public/favicon.svg",
+      "bytes": 294,
+      "sha256": "b2b1ab3ee2273b6ab833a5cc7ecd01ced1476e1264e68f5abb22dc1c053c3c21"
+    },
+    {
+      "path": "games/river-rush/public/models/fal-canopy-lite.glb",
+      "bytes": 118724,
+      "sha256": "9adae338e41f3d4e94604948acb3670c62d38ae7e7044133f1a59f86fb36ecdb"
+    },
+    {
+      "path": "games/river-rush/public/models/fal-canopy.glb",
+      "bytes": 388620,
+      "sha256": "2c0bd26f50344cb0fcd479d8e26dc3dcd84f39eb5ce8041fc4717f9932574c0a"
+    },
+    {
+      "path": "games/river-rush/public/models/fal-driftwood-lite.glb",
+      "bytes": 110812,
+      "sha256": "11b29b8ef3863100047cde0bbf381a8a565ff2a0def25c694a99f46e1bec6ad8"
+    },
+    {
+      "path": "games/river-rush/public/models/fal-driftwood.glb",
+      "bytes": 235600,
+      "sha256": "9ded69c20f75df498d7e11dbd6d5a8729b82a8dce4b7461c0c0852b91dcec2ee"
+    },
+    {
+      "path": "games/river-rush/public/models/fal-harbor-lite.glb",
+      "bytes": 158348,
+      "sha256": "319aa17cd57b4f08344465632c135f0e9cf3cc15fe0e721c6ad6e4993084ace9"
+    },
+    {
+      "path": "games/river-rush/public/models/fal-harbor.glb",
+      "bytes": 459912,
+      "sha256": "6dc3b0b6a4897db26c339d5ef6c8a9a9a148136110116225eff8c265cb19b377"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-bank-lite.glb",
+      "bytes": 93172,
+      "sha256": "4eae31dfe50076aaa3da4e19d6be61a407e457c42e46ef2414426473b89a8cf6"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-bank.glb",
+      "bytes": 265716,
+      "sha256": "30cce241291fb9b10a269d633058f8a6bff7da4e9b8ce0bbf26dea21415a7b81"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-bough-lite.glb",
+      "bytes": 112516,
+      "sha256": "16a5c1a41707ff596bc1e717a9de52403bd78e61ae97928ea3f39150dd3e2b9b"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-bough.glb",
+      "bytes": 388268,
+      "sha256": "6e6d4e77beb4ae7575af7bb262f5d36bc33e60db5ed4116cd5ff223cb4096375"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-guardian-lite.glb",
+      "bytes": 176980,
+      "sha256": "3765b111d46e260760552047aad7c68678178acb7c8b23fb22b306127529f3e2"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-guardian.glb",
+      "bytes": 356280,
+      "sha256": "04b4794a3b06fd474361169c9a2cb44aca7f75da0111a9ccf1f70a4106a4069d"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-palm-lite.glb",
+      "bytes": 89424,
+      "sha256": "a693d8e8aa2135bd3e76379d026e2fc3951fcdb21d2fc36b8ec30c66b5708e68"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-palm.glb",
+      "bytes": 177816,
+      "sha256": "54e5414f8c52927eae66dddcc76d27e62969591dd22b9aa46699b40fde0879ef"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-raft.glb",
+      "bytes": 185968,
+      "sha256": "9c00fb20f45bbe452a2fcfb1147549db0240d68894e6503150713e541d50d1a6"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-rider.glb",
+      "bytes": 741008,
+      "sha256": "5c182182fd13c2f7e4e5fcbdf827ce8ec5dae1535d361e4e52b621aa8eb15177"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-river-oak-lite.glb",
+      "bytes": 207516,
+      "sha256": "f562abd55a0e50531191add35cabf64d47657939490f342706baa97257bdf4b3"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-river-oak.glb",
+      "bytes": 2004232,
+      "sha256": "5c4a91aafe30e2d97f5907dd465c9b647f483be0e446f23c1012653219caf7c5"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-temple-lite.glb",
+      "bytes": 229088,
+      "sha256": "1c169c9b83854db380a6d26de6b31c8b2bf9f37b7daf02159c54bf75b3c20412"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-temple-raft.glb",
+      "bytes": 413288,
+      "sha256": "ee97a02012a9880640c16dcd022915d926b9b33d1b29d21d60fc1b33275adbb3"
+    },
+    {
+      "path": "games/river-rush/public/models/meshy-temple.glb",
+      "bytes": 483748,
+      "sha256": "83b0d1c98460d2db9c04b977dfc039f33025ca9a7de966ec4ca9465ccd2b3f86"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-bough.mjs",
+      "bytes": 4541,
+      "sha256": "b9ff895d993730a975e0599f809a7374a1a745cce608cf84b01267607b6432fa"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-ground.mjs",
+      "bytes": 1479,
+      "sha256": "54b2a4cdb97402af62ed25965049c130dd4991b3d4abbb970034590941845567"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-low-duck.mjs",
+      "bytes": 1744,
+      "sha256": "1ad3254594421d2ce0515569f89808b41a5c095d861d78d5bcef3b3c92f8acf7"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-prop.mjs",
+      "bytes": 5179,
+      "sha256": "e923cf2eec46b0ab0700ec6d36bc93d6183a555a0a513d4d8d17867305de3c60"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-rider.mjs",
+      "bytes": 1419,
+      "sha256": "8efede3a5cb6240620b42748d7bc4e9c87230c3e61900d47485b3cb0e8641640"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-rig.mjs",
+      "bytes": 1485,
+      "sha256": "95a90f77503ae4ea2e1e759d07596f569511127f948e7f7ba32d0fb43d0dac3c"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-river-oak.mjs",
+      "bytes": 5701,
+      "sha256": "dba333d1f91a5341c9ef9375ad8ed540eb2152777dd7144d687a7efc0b46d316"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-surfaces.mjs",
+      "bytes": 2216,
+      "sha256": "5f77b16b8e278168f7663d4865d28c811380dd4140a816a2e265bc9d015595bc"
+    },
+    {
+      "path": "games/river-rush/scripts/pack-tree-textures.mjs",
+      "bytes": 1982,
+      "sha256": "1df3293e77014f5ae5e8acab64ab439f242543a78b37e92b5021638166c3c81a"
+    },
+    {
+      "path": "games/river-rush/scripts/prepare-music.py",
+      "bytes": 8450,
+      "sha256": "d8a7414b2d7e9f161a14f95f4bb12f349f88f63ff0a714197ec3c2781471a12b"
+    },
+    {
+      "path": "games/river-rush/src/App.jsx",
+      "bytes": 25875,
+      "sha256": "c85f7d06bedde7320a44b5b2706f67a2e95abc3102cdafd514179e72c71cc198"
+    },
+    {
+      "path": "games/river-rush/src/components/Controls.jsx",
+      "bytes": 830,
+      "sha256": "5a499ed37b1e1d692e9273569079e2a64fbbc678d55178764c5b57d59f44eb57"
+    },
+    {
+      "path": "games/river-rush/src/components/GestureGuide.jsx",
+      "bytes": 2860,
+      "sha256": "0fca19e0e2afe47a8f349c1f41923618a1bd15076cbe761816b9f00161c7c27c"
+    },
+    {
+      "path": "games/river-rush/src/components/Hud.jsx",
+      "bytes": 6211,
+      "sha256": "5bc733e1cc9bfca41a6484d8cf503a06f2bcca46176e87375131d8548b7094f6"
+    },
+    {
+      "path": "games/river-rush/src/components/Icons.jsx",
+      "bytes": 1656,
+      "sha256": "012cdf4ccb852e9d72ea0292db8a47a7d52c7d970f81f4ba83fb9fefc4b364f7"
+    },
+    {
+      "path": "games/river-rush/src/components/Leaderboard.jsx",
+      "bytes": 7000,
+      "sha256": "f0b7cb8f68ae1ee7b0f9fabacdc5e33b2ed0feae6e03fb83b0ef047a5b6bc444"
+    },
+    {
+      "path": "games/river-rush/src/components/LivingScene.jsx",
+      "bytes": 1646,
+      "sha256": "85a1a977fee6fd2e86c6c170633efd313043d6c432e3dd54646216e4fdc5cb50"
+    },
+    {
+      "path": "games/river-rush/src/components/Menu.jsx",
+      "bytes": 2684,
+      "sha256": "7e4b97d8b7a175101dbf6adad6db339444c8ec4e70ce22aab790f4ca23cf06f9"
+    },
+    {
+      "path": "games/river-rush/src/components/Modal.jsx",
+      "bytes": 445,
+      "sha256": "f0dfccd94e799f74956cff2588bd9eee4973e7cc68ad8765e64811d369f7f69d"
+    },
+    {
+      "path": "games/river-rush/src/components/RewardOpportunity.jsx",
+      "bytes": 3758,
+      "sha256": "25d89a016069829e85cdf7022517bf2f748d9755d545ae4a45a6745b924d4211"
+    },
+    {
+      "path": "games/river-rush/src/components/RiverAdventure.jsx",
+      "bytes": 4269,
+      "sha256": "cb0b92b93a15e33896bca82720efc94d35fc96ee60504fc7d27ca8a9ba984d2a"
+    },
+    {
+      "path": "games/river-rush/src/components/ScoreCapture.jsx",
+      "bytes": 9618,
+      "sha256": "7f5beb28ac17494aca3e8cb21e6f86b7d44e79fe20f71e324b0c1231eedb6f00"
+    },
+    {
+      "path": "games/river-rush/src/components/adventure-extras.css",
+      "bytes": 10424,
+      "sha256": "f6cb7083b5f32c796f142f66cfa12b48de579e5460a19ba4d087356e0d4546cf"
+    },
+    {
+      "path": "games/river-rush/src/game/adventure-cues.js",
+      "bytes": 3102,
+      "sha256": "657c77bfe32a780ec5d247d94f5b18c8567312f172c391001e72d9380904c770"
+    },
+    {
+      "path": "games/river-rush/src/game/audio.js",
+      "bytes": 14508,
+      "sha256": "211961e7641a4662d720a78a3464b869483f3bf7ceeadf6b0beff6ffe8047201"
+    },
+    {
+      "path": "games/river-rush/src/game/branch-spans.js",
+      "bytes": 1293,
+      "sha256": "6ffa03e2b7e1a5c238b877f70df09d1ff95d802d983dede7edfd39b807d63154"
+    },
+    {
+      "path": "games/river-rush/src/game/branch-trees.js",
+      "bytes": 6431,
+      "sha256": "1b00e517e92e51e3351a622889b9dd1d788a49bccf8a1eb35d1489bb338be9fb"
+    },
+    {
+      "path": "games/river-rush/src/game/canyon-horizon.js",
+      "bytes": 9571,
+      "sha256": "f24aa2f058bfa0dd101837ca2c28c438a3f187eec3b40bc6e4ec707c2024a947"
+    },
+    {
+      "path": "games/river-rush/src/game/chase-camera.js",
+      "bytes": 2102,
+      "sha256": "0e2087900158f4a02373f80019293dc42594f90fa77ae6ae0ee425f91ad890e7"
+    },
+    {
+      "path": "games/river-rush/src/game/chunk-stream.js",
+      "bytes": 3024,
+      "sha256": "60f1c837e30a53e00b75a8c5d3d2d7f094125bf8ea5c0eb42308db486cb1d79e"
+    },
+    {
+      "path": "games/river-rush/src/game/coin-layouts.js",
+      "bytes": 1182,
+      "sha256": "121aae34977e25ea9f12ffefa922c9f5ef98bd1b199dfcc068d1431a5a3b0da8"
+    },
+    {
+      "path": "games/river-rush/src/game/coin-presentation.js",
+      "bytes": 1265,
+      "sha256": "385000e26a0a24d2f6ac1bca67116b9259b20130327efdebba4fb67d760cabb5"
+    },
+    {
+      "path": "games/river-rush/src/game/course-intensity.js",
+      "bytes": 3295,
+      "sha256": "0ba9a0e371d3f4575c91a0dce9f21ea5fc72219b5c46310f9f74b517390df4fd"
+    },
+    {
+      "path": "games/river-rush/src/game/course-sections.js",
+      "bytes": 4587,
+      "sha256": "f5c1d6ae22512362a68ad289af3048647842434bd5420d3f2aef32c31f8d3d70"
+    },
+    {
+      "path": "games/river-rush/src/game/districts.js",
+      "bytes": 1364,
+      "sha256": "26654d1a1d90b9e49e87c3b5d828294a893ec180bf11e39167a77f9a497aef7c"
+    },
+    {
+      "path": "games/river-rush/src/game/engine.js",
+      "bytes": 59889,
+      "sha256": "43f38b37a790dfef43aa1975712927f8f14f880d2771641f1372b6840e378477"
+    },
+    {
+      "path": "games/river-rush/src/game/finish-line.js",
+      "bytes": 8587,
+      "sha256": "dec6f68a193428e35757f59146e9f9babc1a63d5d85b9c7c2bc44b9e9a8d8b4c"
+    },
+    {
+      "path": "games/river-rush/src/game/fork-art-direction.js",
+      "bytes": 4575,
+      "sha256": "3a81cc89e6a701b5b380571e61612960d4cc7fbe1a54e52e3c03cc21aa15f115"
+    },
+    {
+      "path": "games/river-rush/src/game/fork-fallback-art.js",
+      "bytes": 2663,
+      "sha256": "6db5df5dd47397d5061d5e2df8dabc3fd5167d465c7db64594c2d9c6e811d30d"
+    },
+    {
+      "path": "games/river-rush/src/game/fork-fallback.js",
+      "bytes": 23868,
+      "sha256": "963f3487cd20700f4db09c306d90736ad7bd8e052779d4c7f1f4ee6fe37f1b01"
+    },
+    {
+      "path": "games/river-rush/src/game/fork-visuals.js",
+      "bytes": 24176,
+      "sha256": "ea0d5720916971a17112e381ec49b952cc2c9fb726dd7e9c9d2f43eda7f65ad6"
+    },
+    {
+      "path": "games/river-rush/src/game/hydrodynamics.js",
+      "bytes": 4598,
+      "sha256": "d8f907f7718742f850a6f7d78bd8923936fb7fc205ca504c3d550ac4684202da"
+    },
+    {
+      "path": "games/river-rush/src/game/impact-feedback.js",
+      "bytes": 2697,
+      "sha256": "c9e193135b0ea1afca9111b474d0b0423a65d941ef8ecdeb4cb9389970eea9ef"
+    },
+    {
+      "path": "games/river-rush/src/game/input.js",
+      "bytes": 466,
+      "sha256": "a88416bc867e2c53d7a216f501b5c60347b77d1efe3e70932a3320d1b84e286b"
+    },
+    {
+      "path": "games/river-rush/src/game/jump-rewards.js",
+      "bytes": 534,
+      "sha256": "ed1b81c2ef9b9575503cee8a9c48bb83b16ad4dfbf92cfc243ffb7c001981d3d"
+    },
+    {
+      "path": "games/river-rush/src/game/lanes.js",
+      "bytes": 683,
+      "sha256": "6b2da3514e312fddcd02f8ac0c1c2d5c8bb356defd8aa9daad78d30f4af5a1ff"
+    },
+    {
+      "path": "games/river-rush/src/game/levels.js",
+      "bytes": 2102,
+      "sha256": "5ab7d79f9839c7f7078586f74b229a8f85fd52f6ce511343b6c5bc1b41311551"
+    },
+    {
+      "path": "games/river-rush/src/game/map-2d.js",
+      "bytes": 23130,
+      "sha256": "b7a3795f73af8661a27112a158273368f02f8942ff4657c4e701449a767b362e"
+    },
+    {
+      "path": "games/river-rush/src/game/map-world.js",
+      "bytes": 6019,
+      "sha256": "3b14e72ac0247fd7efaa30cf972e78362b7614f860605b4e7bbcc9b8e84866b1"
+    },
+    {
+      "path": "games/river-rush/src/game/meshy-bough-shape.js",
+      "bytes": 7802,
+      "sha256": "bc4588a3091d05d2edadd82adc025b21e8cb6e448fadecc968787feb4bc1d19e"
+    },
+    {
+      "path": "games/river-rush/src/game/meshy-boughs.js",
+      "bytes": 6020,
+      "sha256": "e0fb31e7611f48cbf87f6cfce5b1bdda25c8f0c0071d6d155597012e744413bc"
+    },
+    {
+      "path": "games/river-rush/src/game/moonlit-horizon.js",
+      "bytes": 9996,
+      "sha256": "7e468d1529c576d74c7b3d95db94328c953be0abe49141874e8b720d70e1fbfb"
+    },
+    {
+      "path": "games/river-rush/src/game/motion.js",
+      "bytes": 1760,
+      "sha256": "bc48f3c34475f5f136655dbe1ed1957fa7ad1e87b77cbe5c6a4a6de18524afd1"
+    },
+    {
+      "path": "games/river-rush/src/game/moving-encounters.js",
+      "bytes": 4454,
+      "sha256": "dbd2b6e05bc2cb20232471196bcd15db28228ddfde1bb9c94bad99e44eb49ecc"
+    },
+    {
+      "path": "games/river-rush/src/game/moving-visuals.js",
+      "bytes": 11673,
+      "sha256": "433a15f883791415d8ede1e1915c647a98b41ea1ad89f0faf3e2a8868822e638"
+    },
+    {
+      "path": "games/river-rush/src/game/quality.js",
+      "bytes": 1622,
+      "sha256": "eb7d6319071472087724a91c7cc568e2b616d588b111f187f183f67dccb5266d"
+    },
+    {
+      "path": "games/river-rush/src/game/render.js",
+      "bytes": 36531,
+      "sha256": "4494fd58e4c625cb8803b936b800d00a4d3debef5d831f08097a9edb2e90e70d"
+    },
+    {
+      "path": "games/river-rush/src/game/rider.js",
+      "bytes": 701,
+      "sha256": "2b33383d6a97376d841c897024d2cb9292c1ecda9dec1660fbfbc8ffd0053f1d"
+    },
+    {
+      "path": "games/river-rush/src/game/risk-reward.js",
+      "bytes": 2886,
+      "sha256": "172b0313ddd31f3953672d6b711eaab2698b4dd426ee966d5a6057eb6e2c695a"
+    },
+    {
+      "path": "games/river-rush/src/game/river-adventures.js",
+      "bytes": 6094,
+      "sha256": "8feb625168772a054f5cc0c951ae6b6be2e8c1127a44a1f7b5763816a42d7d8e"
+    },
+    {
+      "path": "games/river-rush/src/game/river-course.js",
+      "bytes": 11930,
+      "sha256": "03b3697d0f95bd579085d7a6a99e99f927d2a247fd635391558d500a4fc726a1"
+    },
+    {
+      "path": "games/river-rush/src/game/river-forks.js",
+      "bytes": 6996,
+      "sha256": "1c21abd44712d5c0ae3fd06fe2e2ab48c7e050b3aaa4973e6becd1413a5a9d82"
+    },
+    {
+      "path": "games/river-rush/src/game/river-water.js",
+      "bytes": 8292,
+      "sha256": "ae05fb6315a17b58c56a072d305cab7aadf430937d46a0bf249363ade98c33d4"
+    },
+    {
+      "path": "games/river-rush/src/game/run-feedback.js",
+      "bytes": 338,
+      "sha256": "8122166aa1af45c55c1e12f7bebe73a47c1bfe39794dabf276eee5ec039e4cb0"
+    },
+    {
+      "path": "games/river-rush/src/game/scene3d.js",
+      "bytes": 64050,
+      "sha256": "a19f682da700ca3c8e587ba15515e4effe035127ce682044048c5df5cf3e8856"
+    },
+    {
+      "path": "games/river-rush/src/game/shoreline-branch.js",
+      "bytes": 10306,
+      "sha256": "c74bffd331886ccd19ae5b6aed4219b9358c1913a1a4984b6ec81780d95bdbf3"
+    },
+    {
+      "path": "games/river-rush/src/game/skeletal-rider.js",
+      "bytes": 7069,
+      "sha256": "9637a0cff2a13d323f8db415b99b9e7f7fc491ba4150b17dd114eef18446745d"
+    },
+    {
+      "path": "games/river-rush/src/game/stroke.js",
+      "bytes": 1033,
+      "sha256": "ed639614971cddced3267ed5bec41d71d0be47e08248f2a848553d3a1b50ba49"
+    },
+    {
+      "path": "games/river-rush/src/game/terrain-noise.js",
+      "bytes": 4959,
+      "sha256": "779a684e7218d88644035f88e68bd78d7cef0e7e412f84eecc4eb5b3d88da930"
+    },
+    {
+      "path": "games/river-rush/src/game/water.js",
+      "bytes": 7222,
+      "sha256": "53f4fa1f639129bd3055e84a3435f91127ae9ecfb8e33aa7780d7affd9c831d8"
+    },
+    {
+      "path": "games/river-rush/src/game/world-details.js",
+      "bytes": 7970,
+      "sha256": "cc3ca42e08bd382abd464bc22290231155bb3fa427d5c7ed52675c99c5de7239"
+    },
+    {
+      "path": "games/river-rush/src/game/world.js",
+      "bytes": 2739,
+      "sha256": "58396daec621cd83b03a4c066c06a9f9a72cf5cdc7aae73d386686db7a9066bc"
+    },
+    {
+      "path": "games/river-rush/src/main.jsx",
+      "bytes": 187,
+      "sha256": "1f72c3f64a2b8ddd7e76262255a6beb45e0d59e80012066ac92e73cdd81f38c1"
+    },
+    {
+      "path": "games/river-rush/src/styles.css",
+      "bytes": 33622,
+      "sha256": "6f35c1017c4a524c4f2088fbffa1473a9ee5b334c02f388b9af8e950ca019208"
+    },
+    {
+      "path": "games/river-rush/tests/action-routes.test.js",
+      "bytes": 13189,
+      "sha256": "9dadb43d699555932a616ed9eba30671d60f88f69540589d713bb72fbf8bfd46"
+    },
+    {
+      "path": "games/river-rush/tests/adventure-cues.test.js",
+      "bytes": 6643,
+      "sha256": "2254cfe1bc3d4a5e7d4bc5fdbd6155b387761a6db3c414d16380926dbe3e8a69"
+    },
+    {
+      "path": "games/river-rush/tests/audio.test.js",
+      "bytes": 21735,
+      "sha256": "0d75e014a5fea50ca373f17b864ea40309ae1ac6daf6c6dfd733e4a907b8972d"
+    },
+    {
+      "path": "games/river-rush/tests/authored-fork-choices.test.js",
+      "bytes": 20486,
+      "sha256": "912c98f53cb89afce25c73796354ff6c8935e7e909997a792cab521c36886b43"
+    },
+    {
+      "path": "games/river-rush/tests/branch-fallback.test.js",
+      "bytes": 4321,
+      "sha256": "3f4c3631c35d382c5c95525fa26b5a0740b31e9e1eea0df4913ade2e34ff3ee9"
+    },
+    {
+      "path": "games/river-rush/tests/branch-spans.test.js",
+      "bytes": 7507,
+      "sha256": "fc383c0f547abeb47dd5a47cf2558bfcd645f0fde30525c208c91edaa8057e28"
+    },
+    {
+      "path": "games/river-rush/tests/browser-check.mjs",
+      "bytes": 44,
+      "sha256": "530ffd49fbd6d0938c3640b99da982424481c369d9a69d68d36e5cdf2319396a"
+    },
+    {
+      "path": "games/river-rush/tests/canyon-horizon.test.js",
+      "bytes": 6866,
+      "sha256": "948c3d8e245f92cd52e9e2df779bc43f3f75f40a143d4bbc69e9dc5a225f8736"
+    },
+    {
+      "path": "games/river-rush/tests/chase-camera.test.js",
+      "bytes": 3805,
+      "sha256": "146fe1de1566e1a5c34d57d6b1f7ed7a282aef6337edaeb2882aa5bb733433f8"
+    },
+    {
+      "path": "games/river-rush/tests/chunk-stream.test.js",
+      "bytes": 6279,
+      "sha256": "516e8cd7c74f3373baf58b3059345c3cc9147e994d316c6757f21305b27e5b4c"
+    },
+    {
+      "path": "games/river-rush/tests/course-controls.js",
+      "bytes": 1359,
+      "sha256": "23a20cea06895086c5f1ab86ff5d7655aedbceaa60849a3e55b396233496d465"
+    },
+    {
+      "path": "games/river-rush/tests/course-escalation.test.js",
+      "bytes": 4131,
+      "sha256": "bfa99b832c0989628c902ea849ab0889d6b66b99568291fe1ce363e4f8566f29"
+    },
+    {
+      "path": "games/river-rush/tests/course-sections.test.js",
+      "bytes": 10328,
+      "sha256": "fb80305ab4c60a5083d322fe2e36547a271daf47c8fc55797c76bd5ba858a26c"
+    },
+    {
+      "path": "games/river-rush/tests/districts.test.js",
+      "bytes": 1407,
+      "sha256": "c82801bdc0ff4382a72b7d5ceeff0a2c226c57ae36fa44594477c12e755f706c"
+    },
+    {
+      "path": "games/river-rush/tests/engine.test.js",
+      "bytes": 11332,
+      "sha256": "8983803e692e9116252bfd1b818fa03d51fcb2b42822897aaa232c058fcbc423"
+    },
+    {
+      "path": "games/river-rush/tests/fallback-five-lanes.test.js",
+      "bytes": 2837,
+      "sha256": "f774569567a30ca326a0ef930997c308beff19c3247990b7b38aee99fc810d41"
+    },
+    {
+      "path": "games/river-rush/tests/finish-line.test.js",
+      "bytes": 2137,
+      "sha256": "de00f6c5dbe7e5f4b350185b4afca1d8f173012368c825033102ae811ababa5a"
+    },
+    {
+      "path": "games/river-rush/tests/five-lane-coins.test.js",
+      "bytes": 9282,
+      "sha256": "47c1fbc100aaa0998c1e7008bc6a3160a80f5d466d4128b0f4f87bba4fc5cc1f"
+    },
+    {
+      "path": "games/river-rush/tests/fork-fallback.test.js",
+      "bytes": 20339,
+      "sha256": "d66fb043311e1db548a00a1c4ce1d62edb720af4ce681e639ecbf254b3af0a0c"
+    },
+    {
+      "path": "games/river-rush/tests/fork-graphics.test.js",
+      "bytes": 16214,
+      "sha256": "6785dfe3403711b0b7e3402178eaa3322c59d72237a352cab8f14b52d819dd9f"
+    },
+    {
+      "path": "games/river-rush/tests/hazard-contact.test.js",
+      "bytes": 7887,
+      "sha256": "503a2b31e28d1f70c40a06860ff5a5e2290dc6d96c2d5da22c8a9b5f7bcf5731"
+    },
+    {
+      "path": "games/river-rush/tests/hydrodynamics.test.js",
+      "bytes": 6132,
+      "sha256": "9e12966a151dfc2e82789601bf834ac9a8fbe4d100d5d4a1b2974e035d304279"
+    },
+    {
+      "path": "games/river-rush/tests/impact-feedback.test.js",
+      "bytes": 3993,
+      "sha256": "e5c0c8beec1be635a943c1acdee5e3fb5914fa1bbf799cfe3974a5e854eba030"
+    },
+    {
+      "path": "games/river-rush/tests/leaderboard-api.test.js",
+      "bytes": 11772,
+      "sha256": "1735fc343e5190e3afb06658b8e3843519ff62a2691a682c25be181b7a243703"
+    },
+    {
+      "path": "games/river-rush/tests/meshy-bough.test.js",
+      "bytes": 10280,
+      "sha256": "44f4743d91b93d7bf318d8eaffbdfc070725d28ba2ea9b9425556ff0ef96689c"
+    },
+    {
+      "path": "games/river-rush/tests/moonlit-horizon.test.js",
+      "bytes": 15247,
+      "sha256": "45265b43d3e4f9578d05654477a4100ade89a03d06a4c6548a794e1f60a53d8b"
+    },
+    {
+      "path": "games/river-rush/tests/motion.test.js",
+      "bytes": 2662,
+      "sha256": "6e7a4bccb62464f8694c63c2e9541f922893a89d6749469ab7be60813d98d5d2"
+    },
+    {
+      "path": "games/river-rush/tests/moving-encounters.test.js",
+      "bytes": 18823,
+      "sha256": "a9488a19d62475c3683454752cdd9bb0bf1761611afa93c14d0980856e209494"
+    },
+    {
+      "path": "games/river-rush/tests/moving-visuals.test.js",
+      "bytes": 8548,
+      "sha256": "ed8a98adff2126e1afd38f651892d81c895cc6efa7aea8a36c1a056a21452de0"
+    },
+    {
+      "path": "games/river-rush/tests/playtest.test.js",
+      "bytes": 4789,
+      "sha256": "31f78bf816f2045e4f3cdad1efa66eca93fd1adcbbc99a48506a602172d300e6"
+    },
+    {
+      "path": "games/river-rush/tests/rider.test.js",
+      "bytes": 1159,
+      "sha256": "c010ac402b0413d8ddd1aebcba37578877a87debd0435027526d1171874bc9a2"
+    },
+    {
+      "path": "games/river-rush/tests/risk-coin-presentation.test.js",
+      "bytes": 2278,
+      "sha256": "b58cee0b1c5acdde3ea68ebc90109bb1cd278d0198daab1bfc1759b473161576"
+    },
+    {
+      "path": "games/river-rush/tests/risk-reward.test.js",
+      "bytes": 15787,
+      "sha256": "0e3356e665795a7a5b309fd23610813f8ff018f177b9d54f26b5d44465b7ebe2"
+    },
+    {
+      "path": "games/river-rush/tests/river-adventures.test.js",
+      "bytes": 14469,
+      "sha256": "9da5d734846f7cde80ba0a3a20b5d9f6dc39979f41ce6c095e145539ceea781e"
+    },
+    {
+      "path": "games/river-rush/tests/river-course.test.js",
+      "bytes": 10456,
+      "sha256": "9605e2afcd64f951ee6f0938517d4b06efc05bd08feff6e6b7d8d2bf86b73fca"
+    },
+    {
+      "path": "games/river-rush/tests/river-forks.test.js",
+      "bytes": 9775,
+      "sha256": "77025fa94ca8fccdde8f6639f2b9503281eb8d45eb75f8f51fff2866e7cfa099"
+    },
+    {
+      "path": "games/river-rush/tests/rock-visibility.test.js",
+      "bytes": 4721,
+      "sha256": "14b7228cb317042b007439e288d3513494d472a1d7efbc6d388570850d782473"
+    },
+    {
+      "path": "games/river-rush/tests/route-coverage.js",
+      "bytes": 466,
+      "sha256": "f2b690e093e3733256e5735a0c551c6e62daf82b1d405ec1d83a888c7c9d7020"
+    },
+    {
+      "path": "games/river-rush/tests/run-feedback.test.js",
+      "bytes": 1818,
+      "sha256": "46f07f216d96013f4e9f95afa7ad2000f9f7591233007eafbfb9659cc908bcad"
+    },
+    {
+      "path": "games/river-rush/tests/section-order.test.js",
+      "bytes": 1537,
+      "sha256": "3f82757baaf9987c70789bb481b76f45f20cd8c4fe44c9ec252b13c4a7193868"
+    },
+    {
+      "path": "games/river-rush/tests/shoreline-branch.test.js",
+      "bytes": 5833,
+      "sha256": "9069ec3aa34543d237b3844cb9532c2da8bece92377cd272fb81f45d504dfae1"
+    },
+    {
+      "path": "games/river-rush/tests/snappy.test.js",
+      "bytes": 16740,
+      "sha256": "3b161d4bd20facc5ef499a7c9b57159af751a3e64a7a094d830f2dc383982e43"
+    },
+    {
+      "path": "games/river-rush/tests/stroke.test.js",
+      "bytes": 2245,
+      "sha256": "3cff1ada07259dee05bb9c4d45856f34243a33c60d83eb9249240010b3eeaed3"
+    },
+    {
+      "path": "games/river-rush/tests/terrain-noise.test.js",
+      "bytes": 4391,
+      "sha256": "2c1109fe892fe01e983ed46d69ffe82c2c69d4accff7e1960a200ac3e0ab4841"
+    },
+    {
+      "path": "games/river-rush/tests/wildlife-fallback.test.js",
+      "bytes": 4438,
+      "sha256": "bc75005558b89f1c32ad36ddeb58f334874dcafa9179c8083fb4f4cd8d9cbce3"
+    },
+    {
+      "path": "games/river-rush/tests/world.test.js",
+      "bytes": 2948,
+      "sha256": "654b0baac7be77fec34f16e486b8bd3c3ea97bf0fc65b54c010786ff933dd060"
+    },
+    {
+      "path": "public/river-rush/art/map-canyon.webp",
+      "bytes": 155706,
+      "sha256": "20ae88b0c5986cbf53948781f46e7267ce88b6c50b67aa5ef644180a844e1e78"
+    },
+    {
+      "path": "public/river-rush/art/map-ruins.webp",
+      "bytes": 161306,
+      "sha256": "6be7d33e3182485c22847bad3dc9d44bfeaf9a343fca6a464ea5528caf65561c"
+    },
+    {
+      "path": "public/river-rush/art/menu-loop.mp4",
+      "bytes": 2263778,
+      "sha256": "2ed39fe7aaa92f8577f9b4191a5005c3afe4de3658765f49154de52ec5801b0b"
+    },
+    {
+      "path": "public/river-rush/art/menu.png",
+      "bytes": 2676425,
+      "sha256": "49d7010137943e1d425168a0abd549be89283b9cbbb3606831c7f2943ebdf6b5"
+    },
+    {
+      "path": "public/river-rush/art/paddle-frames.png",
+      "bytes": 2188687,
+      "sha256": "8e21ddc2009bb7794cdb3313a05b525a91cde5f1ae4b742a846961c59d671110"
+    },
+    {
+      "path": "public/river-rush/art/rider-downstream.png",
+      "bytes": 1483496,
+      "sha256": "e89f4f6b84938c6e7196c57c4fd88461f94c6945cbfc242154631b7acf34f36f"
+    },
+    {
+      "path": "public/river-rush/art/rider-low-duck.png",
+      "bytes": 149560,
+      "sha256": "9e6f05baf5992df14084c4cb059e742af5246621427e2b23b026dc19566f4603"
+    },
+    {
+      "path": "public/river-rush/art/river-landscape-flow.mp4",
+      "bytes": 885435,
+      "sha256": "90e73c66fa1ef50565f62adfe2a14aaf3bbc7013d5b4c038fdf35b079a7dd807"
+    },
+    {
+      "path": "public/river-rush/art/river-landscape-loop.mp4",
+      "bytes": 2659873,
+      "sha256": "b9d938ac4f835e900d9467e62ebc7f8e36ab3a9ae0e33da79bea0e43637c038b"
+    },
+    {
+      "path": "public/river-rush/art/river-portrait-flow.mp4",
+      "bytes": 1242254,
+      "sha256": "e2f1461162c7d5d4a0ef37065f36aa35de2f11988dbb01033590901de0554e9b"
+    },
+    {
+      "path": "public/river-rush/art/river-portrait-loop.mp4",
+      "bytes": 3442472,
+      "sha256": "eb009a2a5ee4e637639123822942b8f605c2cd41841c53bfa82b314b29431c49"
+    },
+    {
+      "path": "public/river-rush/art/river.png",
+      "bytes": 3861452,
+      "sha256": "db5c3e900de82f6095bbd33021e713cdef82c2fad0f8f5df6affdf30a0cab492"
+    },
+    {
+      "path": "public/river-rush/art/runner-portrait.png",
+      "bytes": 3208590,
+      "sha256": "bbf34e1ab0b87a761d1a9de3c68e1643ac802160788583d5d6f0a1657c953eb3"
+    },
+    {
+      "path": "public/river-rush/art/runner-river.png",
+      "bytes": 1577115,
+      "sha256": "2bf76bfa12cc7bb2190bafdc75ac982cc5497a514bdabd7bad89b8f2f0802277"
+    },
+    {
+      "path": "public/river-rush/art/runner-sprites.png",
+      "bytes": 2326881,
+      "sha256": "014a02690031577fa1aeb3f6c65b5557de3673b465ac8adb58f5b6d190a1f3d9"
+    },
+    {
+      "path": "public/river-rush/art/sprites.png",
+      "bytes": 2887250,
+      "sha256": "c0d7d0c6e7c226231fffc7d68d43ec358fda00a73bd2ab3984d2ccfb65525db2"
+    },
+    {
+      "path": "public/river-rush/art/surface-ground-normal.png",
+      "bytes": 318872,
+      "sha256": "517796858f43811702e54987bdaef69f437fbfef1fb523f59212c8100a6ea633"
+    },
+    {
+      "path": "public/river-rush/art/surface-ground.webp",
+      "bytes": 109712,
+      "sha256": "bc40d72d770048b945a347b8ad4b672b2028617880ecf7a404a0d297b8e4f440"
+    },
+    {
+      "path": "public/river-rush/art/surface-rock-normal.png",
+      "bytes": 689565,
+      "sha256": "88d8a6fe4dbf6386f70b8e5c0f04d1e78f0321401ce83d22b0c205815b56c90e"
+    },
+    {
+      "path": "public/river-rush/art/surface-rock.webp",
+      "bytes": 463754,
+      "sha256": "134892f15a96ef389c81d5d2038b2683d1eff5c285e1f25b6566ac730e9f35e5"
+    },
+    {
+      "path": "public/river-rush/art/surface-water.webp",
+      "bytes": 116070,
+      "sha256": "0ab3af5bef2efb3c3cc2c7451ffdad7132819ea381042395a9ae6f33a77c471e"
+    },
+    {
+      "path": "public/river-rush/art/surface-wood-normal.png",
+      "bytes": 624055,
+      "sha256": "0e452cb2ddc59970418c101ec64ff63b6b76c44a0fbadda5bfbaf1886727307c"
+    },
+    {
+      "path": "public/river-rush/art/surface-wood.webp",
+      "bytes": 321272,
+      "sha256": "6977e9058884efcaa6a41ab29926195ab2e6b664808137d10fbb522945288495"
+    },
+    {
+      "path": "public/river-rush/art/tree-bark-normal.webp",
+      "bytes": 536952,
+      "sha256": "e8533790102db671ca34721c1ca9f2882fd9ebb6eb9df33307574b3cf0fea825"
+    },
+    {
+      "path": "public/river-rush/art/tree-bark.webp",
+      "bytes": 454760,
+      "sha256": "01a05056af68f139e93a17d264bd32a3e3d1d49ba05066902ced22c3b6115a13"
+    },
+    {
+      "path": "public/river-rush/art/tree-foliage.webp",
+      "bytes": 99296,
+      "sha256": "57dc3bed01746f8f5bf502fbd5866a0465e9088cbe8958d2c57ded65b7bea7ce"
+    },
+    {
+      "path": "public/river-rush/art/valley-vista.webp",
+      "bytes": 412202,
+      "sha256": "4a4ce6ab17088d6f8611cd644ad05a9637956a35881d7e5ba4582cdd34691aa4"
+    },
+    {
+      "path": "public/river-rush/assets/index-7Wkt89hS.css",
+      "bytes": 43116,
+      "sha256": "4594911eaa69615bf1a852416213b07de689d82a152874263e23ab98ac3bcd6a"
+    },
+    {
+      "path": "public/river-rush/assets/index-CqqlzDw1.js",
+      "bytes": 1192674,
+      "sha256": "79487d4875fd2c46593a5d0bf8bfca33bf37c7c2644b824e31f5497c337c5c24"
+    },
+    {
+      "path": "public/river-rush/audio/river-rush-adventure.mp3",
+      "bytes": 1494295,
+      "sha256": "85d06b70bd67827b6ca4a939859cfdd74b2202ad42844758376bb4ab2db2e982"
+    },
+    {
+      "path": "public/river-rush/favicon.svg",
+      "bytes": 294,
+      "sha256": "b2b1ab3ee2273b6ab833a5cc7ecd01ced1476e1264e68f5abb22dc1c053c3c21"
+    },
+    {
+      "path": "public/river-rush/index.html",
+      "bytes": 865,
+      "sha256": "05f3fa3f8f4cfbd59c23574561b3c828d0a635e7f3ca67fd34050a36049c92c1"
+    },
+    {
+      "path": "public/river-rush/models/fal-canopy-lite.glb",
+      "bytes": 118724,
+      "sha256": "9adae338e41f3d4e94604948acb3670c62d38ae7e7044133f1a59f86fb36ecdb"
+    },
+    {
+      "path": "public/river-rush/models/fal-canopy.glb",
+      "bytes": 388620,
+      "sha256": "2c0bd26f50344cb0fcd479d8e26dc3dcd84f39eb5ce8041fc4717f9932574c0a"
+    },
+    {
+      "path": "public/river-rush/models/fal-driftwood-lite.glb",
+      "bytes": 110812,
+      "sha256": "11b29b8ef3863100047cde0bbf381a8a565ff2a0def25c694a99f46e1bec6ad8"
+    },
+    {
+      "path": "public/river-rush/models/fal-driftwood.glb",
+      "bytes": 235600,
+      "sha256": "9ded69c20f75df498d7e11dbd6d5a8729b82a8dce4b7461c0c0852b91dcec2ee"
+    },
+    {
+      "path": "public/river-rush/models/fal-harbor-lite.glb",
+      "bytes": 158348,
+      "sha256": "319aa17cd57b4f08344465632c135f0e9cf3cc15fe0e721c6ad6e4993084ace9"
+    },
+    {
+      "path": "public/river-rush/models/fal-harbor.glb",
+      "bytes": 459912,
+      "sha256": "6dc3b0b6a4897db26c339d5ef6c8a9a9a148136110116225eff8c265cb19b377"
+    },
+    {
+      "path": "public/river-rush/models/meshy-bank-lite.glb",
+      "bytes": 93172,
+      "sha256": "4eae31dfe50076aaa3da4e19d6be61a407e457c42e46ef2414426473b89a8cf6"
+    },
+    {
+      "path": "public/river-rush/models/meshy-bank.glb",
+      "bytes": 265716,
+      "sha256": "30cce241291fb9b10a269d633058f8a6bff7da4e9b8ce0bbf26dea21415a7b81"
+    },
+    {
+      "path": "public/river-rush/models/meshy-bough-lite.glb",
+      "bytes": 112516,
+      "sha256": "16a5c1a41707ff596bc1e717a9de52403bd78e61ae97928ea3f39150dd3e2b9b"
+    },
+    {
+      "path": "public/river-rush/models/meshy-bough.glb",
+      "bytes": 388268,
+      "sha256": "6e6d4e77beb4ae7575af7bb262f5d36bc33e60db5ed4116cd5ff223cb4096375"
+    },
+    {
+      "path": "public/river-rush/models/meshy-guardian-lite.glb",
+      "bytes": 176980,
+      "sha256": "3765b111d46e260760552047aad7c68678178acb7c8b23fb22b306127529f3e2"
+    },
+    {
+      "path": "public/river-rush/models/meshy-guardian.glb",
+      "bytes": 356280,
+      "sha256": "04b4794a3b06fd474361169c9a2cb44aca7f75da0111a9ccf1f70a4106a4069d"
+    },
+    {
+      "path": "public/river-rush/models/meshy-palm-lite.glb",
+      "bytes": 89424,
+      "sha256": "a693d8e8aa2135bd3e76379d026e2fc3951fcdb21d2fc36b8ec30c66b5708e68"
+    },
+    {
+      "path": "public/river-rush/models/meshy-palm.glb",
+      "bytes": 177816,
+      "sha256": "54e5414f8c52927eae66dddcc76d27e62969591dd22b9aa46699b40fde0879ef"
+    },
+    {
+      "path": "public/river-rush/models/meshy-raft.glb",
+      "bytes": 185968,
+      "sha256": "9c00fb20f45bbe452a2fcfb1147549db0240d68894e6503150713e541d50d1a6"
+    },
+    {
+      "path": "public/river-rush/models/meshy-rider.glb",
+      "bytes": 741008,
+      "sha256": "5c182182fd13c2f7e4e5fcbdf827ce8ec5dae1535d361e4e52b621aa8eb15177"
+    },
+    {
+      "path": "public/river-rush/models/meshy-river-oak-lite.glb",
+      "bytes": 207516,
+      "sha256": "f562abd55a0e50531191add35cabf64d47657939490f342706baa97257bdf4b3"
+    },
+    {
+      "path": "public/river-rush/models/meshy-river-oak.glb",
+      "bytes": 2004232,
+      "sha256": "5c4a91aafe30e2d97f5907dd465c9b647f483be0e446f23c1012653219caf7c5"
+    },
+    {
+      "path": "public/river-rush/models/meshy-temple-lite.glb",
+      "bytes": 229088,
+      "sha256": "1c169c9b83854db380a6d26de6b31c8b2bf9f37b7daf02159c54bf75b3c20412"
+    },
+    {
+      "path": "public/river-rush/models/meshy-temple-raft.glb",
+      "bytes": 413288,
+      "sha256": "ee97a02012a9880640c16dcd022915d926b9b33d1b29d21d60fc1b33275adbb3"
+    },
+    {
+      "path": "public/river-rush/models/meshy-temple.glb",
+      "bytes": 483748,
+      "sha256": "83b0d1c98460d2db9c04b977dfc039f33025ca9a7de966ec4ca9465ccd2b3f86"
+    }
+  ],
+  "javascript": "index-CqqlzDw1.js",
+  "css": "index-7Wkt89hS.css"
+}

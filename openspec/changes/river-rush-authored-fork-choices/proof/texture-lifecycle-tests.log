@@ -1,0 +1,21 @@
+{"forkFraming":"390x844","samples":4376,"maximum":0.9494773140267553}
+{"forkFraming":"360x640","samples":4376,"maximum":0.7799813638134483}
+{"forkFraming":"1365x900","samples":4376,"maximum":0.7787827188843217}
+{"forkFraming":"844x390","samples":4376,"maximum":0.5457938130569626}
+✔ split river frames the full chosen stream hero and previews both choices before commitment (306.924221ms)
+✔ fork canopy spans are rooted outside their own stream with native contacts over the two physical lanes (118.930176ms)
+✔ fork chase framing changes continuously through divergence and confluence (3.560332ms)
+✔ prepared treasure graphics reuse a bounded pool through many rewards and freeze cosmetic motion (13.520086ms)
+✔ shared themed island stations remain on real land and retain absolute identities through camera travel (2.368155ms)
+✔ stash purses preserve fixed payouts and world metadata with bounded prepared resources and stopped cosmetics (7.736683ms)
+✔ themed island detail keeps native slot capacities and adds at most4000 prepared triangles with all stashes (287.852615ms)
+✔ island draw ranges retain every visible land row and omit the empty prepared corridor (229.639168ms)
+✔ course row culling retains visible wave and land vertices on every camera layout (7925.343491ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9023.495108

@@ -27,7 +27,7 @@ import {entityPose} from './moving-encounters.js';
 import {createMovingEncounterVisuals} from './moving-visuals.js';
 import {isBranchSpan,branchSpan,BRANCH_LANE_RADIUS} from './branch-spans.js';
 import {riverFork,forkLaneCross,islandContains} from './river-forks.js';
-import {createForkIslands,createTreasureVisuals,visibleCourseDrawRange} from './fork-visuals.js';
+import {createForkIslands,createTreasureVisuals,createStashVisuals,visibleCourseDrawRange} from './fork-visuals.js';
 
 const base=import.meta.env.BASE_URL, TAU=Math.PI*2;
 let softwareMaterials=false;
@@ -97,7 +97,7 @@ export function createScene(canvas,art,onLost){
  const sun=new THREE.DirectionalLight('#fff1d1',2.9);sun.position.set(-25,32,12);sun.castShadow=true;
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:20,bottom:-18,near:1,far:100});sun.shadow.bias=-.001;sun.shadow.normalBias=.07;scene.add(sun);
  const waterGeo=new THREE.PlaneGeometry(2,330,software?32:56,software?205:270);waterGeo.rotateX(-Math.PI/2);waterGeo.translate(0,0,-95);
- const uniforms={uTime:{value:0},uDistance:{value:0},uSeed:{value:137},uCourseLength:{value:LEVELS[0].length},uCourseMap:{value:0},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uDetail:{value:waterDetail},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))},uWaterDeep:{value:new THREE.Color(levelAt(0).waterDeep)},uWaterEdge:{value:new THREE.Color(levelAt(0).waterEdge)},uWaterSky:{value:new THREE.Color(levelAt(0).fog)},uWaterFoam:{value:new THREE.Color('#d7f7ed')},uGroundTint:{value:new THREE.Color(levelAt(0).ground)},uMapIndex:{value:0}};
+ const uniforms={uTime:{value:0},uDistance:{value:0},uSeed:{value:137},uCourseLength:{value:LEVELS[0].length},uCourseMap:{value:0},uForkBounds:{value:new THREE.Vector2(-100000,-100000)},uMotion:{value:1},uSpeed:{value:42},uRush:{value:0},uDetail:{value:waterDetail},uRaft:{value:new THREE.Vector2()},uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10,0))},uWaterDeep:{value:new THREE.Color(levelAt(0).waterDeep)},uWaterEdge:{value:new THREE.Color(levelAt(0).waterEdge)},uWaterSky:{value:new THREE.Color(levelAt(0).fog)},uWaterFoam:{value:new THREE.Color('#d7f7ed')},uGroundTint:{value:new THREE.Color(levelAt(0).ground)},uMapIndex:{value:0}};
  const waterMaterial=new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(software)});
  const cheapWaterMaterial=software?waterMaterial:new THREE.ShaderMaterial({uniforms,vertexShader:waterVertex,fragmentShader:waterFragment(true)});
  const water=mesh(waterGeo,waterMaterial,scene);water.frustumCulled=false;
@@ -231,6 +231,7 @@ export function createScene(canvas,art,onLost){
  const movingVisuals=createMovingEncounterVisuals(scene,mat,software);
  const forkIslands=createForkIslands(scene,uniforms,groundMaterial,rockMat,logMat,mat,art,software);
  const treasureVisuals=createTreasureVisuals(scene,logMat,mat);
+ const stashVisuals=createStashVisuals(scene,mat);
  const bankTrees=Array.from({length:8},(_,i)=>({id:7000+i,side:i%2?1:-1}));
  const mapPanoramas=LEVELS.map(level=>{
   if(level.index===1){const t=canyonSky();surfaceTextures.push(t);return {texture:t,painted:false};}
@@ -308,7 +309,7 @@ export function createScene(canvas,art,onLost){
     for(const distance of [0,780,forkDistance,level.length-70]){
      await new Promise(requestAnimationFrame);if(disposed||status.contextLost)return;
      warm.distance=distance;if(distance)warm.entities=[];
-     if(distance===forkDistance)warm.entities=[{id:-1040,type:'treasure',lane:0,d:distance+42,routeSide:-1,routeRole:'safe',treasureBase:200},{id:-1041,type:'treasure',lane:4,d:distance+58,routeSide:1,routeRole:'risk',treasureBase:200,treasureCleanBonus:400}];
+     if(distance===forkDistance)warm.entities=[{id:-1040,type:'treasure',lane:0,d:distance+42,routeSide:-1,routeRole:'safe',treasureBase:200},{id:-1041,type:'treasure',lane:4,d:distance+58,routeSide:1,routeRole:'risk',treasureBase:200,treasureCleanBonus:400},{id:-1042,type:'stash',lane:1,d:distance+26,value:120,choiceFamily:'wildlife-bank'},{id:-1043,type:'stash',lane:3,d:distance+64,value:200,choiceFamily:'landing-detour'}];
      // Exercise the feedback instance buffer during preparation as well.
      warm.effects=distance?[]:[{id:-1,type:'coin',time:0,contactTime:0,lane:CENTER_LANE,playerLane:CENTER_LANE,playerHeight:0,distance:0,value:10},{id:-2,type:'target',time:0,contactTime:0,lane:CENTER_LANE,playerLane:CENTER_LANE,playerHeight:0,distance:0,value:200}];
      render(warm,w,h,false,0);
@@ -425,11 +426,13 @@ export function createScene(canvas,art,onLost){
  branchMarkerCount=0;branchCoverage.active=0;branchCoverage.samples=[];
  movingVisuals.begin();
  treasureVisuals.begin();
+ stashVisuals.begin();
  for(const e of g.entities){const z=e.d-g.distance;
  if(e.type==='branch'&&!e.enemy&&z>=-16&&z<=VIEW_DISTANCE)branchTrees.add(e,travel,travel+z,seed);
  if(!worldEntityVisible(e,g.distance,VIEW_DISTANCE))continue;alive.add(e.id);visible++;
  const course=travel+z,pose=entityPose(e,g.distance),currentLane=pose.lane,cross=forkLaneCross(currentLane,course,seed),p=point(course,cross),wy=p.y+waterHeight(cross,course);
  if(e.type==='treasure'){treasureVisuals.add(e,{x:p.x,y:wy,z:p.z},g.time,reduced,camera);continue;}
+ if(e.type==='stash'){stashVisuals.add(e,{x:p.x,y:wy,z:p.z},g.time,reduced,camera);continue;}
  const span=isBranchSpan(e)?branchSpan(e):null;
  if(span)addBranchCoverage(e,span,course,point,waterHeight);
  if(e.type==='coin'){
@@ -467,8 +470,10 @@ export function createScene(canvas,art,onLost){
  for(const e of g.effects){const age=g.time-(e.contactTime??e.time),course=travel+(e.distance??g.distance)-g.distance,cross=forkLaneCross(e.lane,course,seed),p=point(course,cross);p.y+=waterHeight(cross,course);
   if(e.type==='target')movingVisuals.burst(e,p,age,reduced);
   if(e.type==='treasure'&&age>=0&&age<.65)treasureVisuals.add(e,p,g.time,reduced,camera,reduced?1:Math.min(1,age/.22));
+  if(e.type==='stash'&&age>=0&&age<.55)stashVisuals.add(e,p,g.time,reduced,camera,reduced?1:Math.min(1,age/.28));
  }
  treasureVisuals.finish();status.treasurePool=treasureVisuals.state;
+ stashVisuals.finish();status.stashPool=stashVisuals.state;
  movingVisuals.finish();status.encounters=movingVisuals.state;
  status.hazards={rocks:rockSamples.length,samples:rockSamples};
  for(const [id,obj] of entities)if(!alive.has(id)){scene.remove(obj);entities.delete(id);}

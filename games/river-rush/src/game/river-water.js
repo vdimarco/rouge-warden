@@ -36,7 +36,7 @@ const fineNormal=`vec3 fineSurface(float x,float d){vec3 s=vec3(0.);${wave}
 const common=`
 uniform float uTime,uMotion,uRush;uniform sampler2D uDetail;
 uniform vec3 uWaterDeep,uWaterEdge,uWaterSky,uWaterFoam;
-uniform vec2 uRaft;uniform vec4 uRipples[4];
+uniform vec2 uRaft,uForkBounds;uniform vec4 uRipples[4];
 ${varyings}
 float square(float x){return x*x;}
 float streak(float p,float width){return 1.-smoothstep(width,width+.12,abs(sin(p)));}
@@ -52,10 +52,22 @@ function foamCode(simple){return `float foamAt(vec2 p,float grain){
  ${simple?'float chop=0.;':'float chop=streak(flow*.81+x*1.7+sin(x*2.),.045)*smoothstep(.5,.85,grain)*vRapid;'}
  float edge=smoothstep(vProfile.x-2.2,vProfile.x-.15,abs(x));
  float islandEdge=abs(x-vFork.y)-vFork.x;
- float innerFoam=(1.-smoothstep(.18,1.45,islandEdge))*step(.035,vFork.x)*smoothstep(.25,.8,grain);
+ float shoreBreak=smoothstep(.30,.68,noise(vec2(d*.12,x*.30)));
+ float innerFoam=(1.-smoothstep(.18,1.45,islandEdge))*step(.035,vFork.x)*smoothstep(.25,.8,grain)*shoreBreak;
+ float forkOn=smoothstep(.08,.75,vFork.z);
+ float braid=channelX*.93+sin(d*.052+channelX*.24)*1.35+sin(flow*.095-channelX*.47)*.42;
+ float braidFoam=streak(braid,.065)*smoothstep(.34,.79,grain)*forkOn;
+ // Finite headland and confluence fans soften the bank without drawing a
+ // continuous white rail. Their course bounds come from the actual island.
+ float nose=d-uForkBounds.x,tail=d-uForkBounds.y;
+ vec2 head=vec2(x-vFork.y,nose*.2-5.),join=vec2(channelX,tail*.23+7.);
+ float headR=length(head),joinR=length(join);
+ float headCurl=streak(atan(head.x,head.y)*2.5+headR*.9-flow*.07,.12)*exp(-square((nose-29.)/39.))*smoothstep(.3,.78,grain);
+ float joinCurl=streak(join.x*.65+sin(join.y*.7)*1.35-flow*.045,.09)*exp(-square((tail+21.)/39.))*smoothstep(.38,.82,grain);
+ float islandFans=(headCurl+joinCurl)*step(.5,uForkBounds.y-uForkBounds.x);
  float breaker=square(square(max(sin(d*.54+sin(x*.5+d*.08)*1.2),0.)))*smoothstep(.42,.7,grain)*vRapid;
  float wild=vIntensity.x*vIntensity.z;
- float foam=threads*(.055+vRapid*.19)+crest*(.52+wild*.18)+chop*(.32+wild*.1)+breaker*(.75+wild*.2)+edge*(.12+grain*.4)+innerFoam*(.2+vRapid*.35);
+ float foam=threads*(.055+vRapid*.19)+crest*(.52+wild*.18)+chop*(.32+wild*.1)+breaker*(.75+wild*.2)+edge*(.12+grain*.4)+innerFoam*(.19+vRapid*.28)+braidFoam*.23+islandFans*.27;
  // The wet boulders and their downstream eddies share vertex-sampled positions.
  for(int j=0;j<2;j++){vec2 rock=j==0?vShoal0:vShoal1;float tail=d-rock.y;
  if(tail>0.&&tail<17.){float xx=x-rock.x,spread=.75+tail*.1;
@@ -86,6 +98,8 @@ void main(){vec2 p=vCourse;
  float fresnel=pow(1.-max(dot(view,n),0.),3.),edge=smoothstep(.45,1.,abs(p.x)/vProfile.x);
  edge=max(edge,(1.-smoothstep(.1,3.2,abs(p.x-vFork.y)-vFork.x))*step(.035,vFork.x)*.8);
  vec3 color=mix(uWaterDeep,uWaterEdge,edge*.55+vRapid*.22+grain*.18);
+ float channels=smoothstep(.08,.85,vFork.z),flowRibbon=.5+.5*sin(channelX*.64+sin(p.y*.063)*1.3+flow*.032);
+ color=mix(color,uWaterEdge,channels*flowRibbon*.12);
  color=mix(color,uWaterSky,fresnel*.3);
  ${simple?'':'float sun=pow(max(dot(reflect(-normalize(vec3(-.5,.8,.35)),n),view),0.),90.);color+=vec3(1.,.88,.56)*sun*.6;'}
  color=mix(color,uWaterFoam,foamAt(p,grain)*.88);

@@ -185,6 +185,11 @@ export class RiverAudio {
         { frequency: pitch, volume: .15, duration: .16, attack: .003 },
         { frequency: pitch * 2.76, volume: .065, duration: .085, attack: .002 }
       ];
+    } else if (event === 'stash') {
+      notes = [
+        { waveform: 'triangle', frequency: 784, endFrequency: 988, volume: .15, duration: .15, attack: .003 },
+        { frequency: 1568, offset: .04, volume: .095, duration: .2, attack: .003 }
+      ];
     } else if (event === 'treasure') {
       const clean = detail.clean === true;
       notes = [
@@ -211,7 +216,7 @@ export class RiverAudio {
       notes = (patterns[event] || []).map((frequency, i) => ({ frequency, offset: i * (combo ? .075 : .13), volume: .13, duration: combo ? .21 : .3, attack: combo ? .006 : .02 }));
     }
     if (!notes.length) return false;
-    const priority = event === 'lose' ? 4 : impact ? 3 : event === 'terrain-combo' || event === 'target' || event === 'treasure' ? 2 : 1;
+    const priority = event === 'lose' ? 4 : impact ? 3 : event === 'terrain-combo' || event === 'target' || event === 'treasure' || event === 'stash' ? 2 : 1;
     // Repeated contacts replace quiet tails; a full coin burst cannot swallow a crash.
     while (this.voices.size + notes.length > VOICE_LIMIT) {
       let oldest;

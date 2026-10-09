@@ -1,0 +1,172 @@
+{
+  "kind": "independent-offline-audit-of-preserved-failed-natural-phone-report",
+  "originalReport": "/tmp/river-rush-authored-release-natural-phone/authored-fork-choices.json",
+  "originalReportSha256": "4674300ef6927a76ebacc06ecca15be2e342ca741e7a75f00d61c0b8357ef955",
+  "originalHarnessPassed": false,
+  "originalFailure": "AssertionError [ERR_ASSERTION]: Capture an actual running opportunity on naturally reached map 1\n    at natural (file:///workspace/rouge-warden/qa/river-rush/authored-fork-choices.e2e.mjs:517:16)\n    at async file:///workspace/rouge-warden/qa/river-rush/authored-fork-choices.e2e.mjs:1066:90",
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-CqqlzDw1.js",
+  "validatedSavedGameplayChecksPassed": true,
+  "checks": [
+    "Raw failed harness provenance preserved",
+    "Natural controller completed without an internal error",
+    "Both finite map finishes and original Next controls advance the same campaign",
+    "Normal game controls generated left/right/jump/duck actions",
+    "Native pointer input passes through the route card and advances actual play",
+    "No fatal/protected impact or shield consumption during saved gameplay",
+    "No new counted GPU texture uploads/shader compiles, GPU errors or public score writes",
+    "Bounded coin/entity/adventure pools",
+    "Every saved local cue and route card fits phone viewport and allows pointer input",
+    "All 342 reward receipts independently satisfy real entity geometry, 0.95m contact and compatible height",
+    "Every completed chosen adventure pays its cache once with correct real clear/bank/detour entitlement",
+    "Same-plane composed bank does not also earn its skipped guard clear/contact-plane guarded coin",
+    "Untaken opposite stream rewards really remain uncollected",
+    "Selected water route and wildlife geography independently agree with island topology",
+    "All recorded software render samples and full raft envelopes obey canonical budgets/framing",
+    "Recorded spring response matches analytic continuous motion",
+    "Registered running fork/cache/receipt captures exist across every naturally reached map"
+  ],
+  "failures": [],
+  "summary": {
+    "completeNaturalMaps": [
+      4200,
+      5400
+    ],
+    "thirdMapObservedDistance": 2124.5651999999955,
+    "totalObservedNaturalDistance": 11724.565199999995,
+    "adventures": 6,
+    "distinctPolicies": [
+      "detour-bank",
+      "clean-detour"
+    ],
+    "strategyResults": [
+      {
+        "map": 0,
+        "id": 1,
+        "policy": "detour-bank",
+        "stash": [
+          {
+            "family": "landing-detour",
+            "value": 200
+          }
+        ],
+        "cache": 600,
+        "clean": true,
+        "actualGuardClears": 3
+      },
+      {
+        "map": 0,
+        "id": 5,
+        "policy": "clean-detour",
+        "stash": [
+          {
+            "family": "landing-detour",
+            "value": 200
+          }
+        ],
+        "cache": 600,
+        "clean": true,
+        "actualGuardClears": 3
+      },
+      {
+        "map": 1,
+        "id": 1,
+        "policy": "detour-bank",
+        "stash": [
+          {
+            "family": "landing-detour",
+            "value": 200
+          }
+        ],
+        "cache": 600,
+        "clean": true,
+        "actualGuardClears": 3
+      },
+      {
+        "map": 1,
+        "id": 3,
+        "policy": "clean-detour",
+        "stash": [
+          {
+            "family": "landing-detour",
+            "value": 200
+          }
+        ],
+        "cache": 600,
+        "clean": true,
+        "actualGuardClears": 3
+      },
+      {
+        "map": 1,
+        "id": 7,
+        "policy": "detour-bank",
+        "stash": [
+          {
+            "family": "landing-detour",
+            "value": 200
+          },
+          {
+            "family": "wildlife-bank",
+            "value": 120
+          }
+        ],
+        "cache": 200,
+        "clean": false,
+        "actualGuardClears": 2
+      },
+      {
+        "map": 2,
+        "id": 2,
+        "policy": "clean-detour",
+        "stash": [
+          {
+            "family": "landing-detour",
+            "value": 200
+          }
+        ],
+        "cache": 600,
+        "clean": true,
+        "actualGuardClears": 3
+      }
+    ],
+    "rewardReceipts": 342,
+    "recomputedMaxRewardGap": 0.4326084602055751,
+    "heightMatches": 342,
+    "untakenOtherStreamMisses": 24,
+    "geographySamples": 435,
+    "enemySamples": 85,
+    "localCueSamples": 33,
+    "localCueSamplesByMap": {
+      "0": 12,
+      "1": 16,
+      "2": 5
+    },
+    "renderSamples": 145,
+    "maxTriangles": 114629,
+    "maxDrawCalls": 53,
+    "preparedGpuCounters": {
+      "uploads": 55,
+      "shaders": 84
+    },
+    "nativePointerCutbacks": 1,
+    "normalKeyboardEvents": 187,
+    "registeredCaptureCounts": {
+      "captures": 5,
+      "treasureCaptures": 6,
+      "receiptCaptures": 6,
+      "opportunityCaptures": 1
+    },
+    "originalRowStatus": "paused"
+  },
+  "notRecoverableFromThisSavedReport": [
+    "Exact pause status/pixel comparison result and canvas hash were not persisted as row.pause. A paused final status alone does not prove identical pixels.",
+    "Dedicated opportunity captures for maps 1 and 2 failed post-capture identity registration. Standalone full/detail image files exist, but their paired before/after metadata was not saved.",
+    "This phone run exercises only clean-detour and detour-bank policies, without standalone bank, sheltered snatch/open or clean-skip natural policies.",
+    "The third finite map was observed through its first complete fork/cache rather than its finish.",
+    "No protected collision/cache entitlement, forced incompatible-height stash miss, full-renderer/fallback matrix, all refresh rates or hardware phone performance can be established from this natural phone trace."
+  ],
+  "recoveredCoverageLimitations": [
+    "GPU preparation counters cover non-FLOAT texture uploads and shader compile calls recorded by the harness, not all possible JavaScript allocations.",
+    "Saved per-cue geometry/pointer metadata exists on all maps; visual readability still requires screenshot review.",
+    "Natural controller uses normal handlers with automated perfect-route planning. It does not prove human reaction difficulty or enjoyment."
+  ]
+}

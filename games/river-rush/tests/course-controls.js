@@ -6,7 +6,11 @@ import {LANES} from '../src/game/lanes.js';
 export function chooseForkWater(g,input,role='safe'){
  const fork=nextRiverFork(g.distance,g.terrainProfile);
  if(fork&&g.distance>=fork.start-g.speed*.18&&g.distance<fork.splitStart){
-  const side=role==='risk'?fork.riskSide:fork.safeSide,lane=side<0?1:3;
+  const side=role==='risk'?fork.riskSide:fork.safeSide,packet=g.adventures.find(item=>item.id===fork.id),entry=packet?.nodes.find(node=>node.kind==='beat'&&node.step===0);
+  // The authored opening can be either water lane. Picking its actual clear
+  // line avoids fighting a delayed first-rock dodge with an obsolete inner
+  // lane assumption throughout the approach. This remains ordinary input.
+  const lane=(role==='risk'?entry?.riskLane:entry?.safeLane)??(side<0?1:3);
   for(let n=0;n<Math.abs(g.lane-lane);n++)queueAction(input,lane>g.lane?'right':'left');
  }
 }

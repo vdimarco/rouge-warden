@@ -1,14 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {projection,branchProjection,fallbackRiderWidth,encounterProjection,renderGame} from '../src/game/render.js';
-import {forkFallbackGeometry,projectPhysical,fallbackCamera,fallbackShoreHalfWidth,drawForkFallback,treasurePresentation,drawTreasure2D} from '../src/game/fork-fallback.js';
+import {forkFallbackGeometry,islandRelief2D,islandGroundPatches,projectPhysical,fallbackCamera,fallbackShoreHalfWidth,drawForkFallback,treasurePresentation,drawTreasure2D,stashPresentation,drawStash2D} from '../src/game/fork-fallback.js';
 import {createCourseProfile,riverHalfWidth} from '../src/game/river-course.js';
-import {nextRiverFork,riverFork,forkLaneCross,islandContains} from '../src/game/river-forks.js';
+import {nextRiverFork,riverFork,forkLaneCross,islandContains,islandHeight} from '../src/game/river-forks.js';
 import {LEVELS} from '../src/game/levels.js';
 import {HAZARD_LANE_RADIUS,createGame,updateGame} from '../src/game/engine.js';
 import {RIDER_SIZE} from '../src/game/rider.js';
 import {LANE_SPACING} from '../src/game/lanes.js';
 import {drawWater} from '../src/game/water.js';
+import {FORK_PALETTES,islandLandmarks,islandSurfaceTile,ISLAND_SURFACE_TILE_SIZE} from '../src/game/fork-art-direction.js';
+import {prepareForkFallbackArt} from '../src/game/fork-fallback-art.js';
 
 const layouts=[[390,844],[360,640],[1365,900],[844,390]],close=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} differs from ${b}`);
 const fixture=(seed=137,index=0)=>{const level=LEVELS[index],terrainProfile=createCourseProfile(seed,level.length,index),fork=nextRiverFork(0,terrainProfile);assert.ok(fork);return{seed,levelIndex:index,terrainProfile,distance:(fork.splitStart+fork.splitEnd)/2,visualLane:1,time:20,fork};};
@@ -84,12 +86,43 @@ test('fork shores smooth into the approved normal apron and reach shared physica
 });
 
 function recordingContext(){
- const calls=[],gradient={addColorStop(...args){calls.push(['color',...args]);}},target={calls,createPattern(){return'prepared-pattern';},createLinearGradient(){return gradient;},createRadialGradient(){return gradient;}};
+ const calls=[],gradient={addColorStop(...args){calls.push(['color',...args]);}},target={calls,createPattern(source){calls.push(['pattern',source]);return'prepared-pattern';},createLinearGradient(){return gradient;},createRadialGradient(){return gradient;}};
  return new Proxy(target,{get(object,key){if(key in object)return object[key];return(...args)=>calls.push([key,...args]);},set(object,key,value){calls.push(['set',key,value===gradient?'gradient':value]);object[key]=value;return true;}});
 }
+// The runtime prepares both the sprite atlas and independent foliage before
+// starting a run. Resource bounds must include those actual detailed images.
+function preparedArt(){
+ const card={width:1024,height:1024};return{surfaceground:card,surfacewater:card,portrait:card,environment:card,sprites:{width:1280,height:1280},branchLeaves:{width:512,height:512}};
+}
+
+test('organic island material is seamless shared data and themed fallback cards are prepared only before play',()=>{
+ const tile=islandSurfaceTile();assert.equal(tile,islandSurfaceTile(),'the shared resource is prepared exactly once');
+ assert.equal(tile.width,ISLAND_SURFACE_TILE_SIZE);assert.equal(tile.height,ISLAND_SURFACE_TILE_SIZE);assert.equal(tile.data.length,tile.width*tile.height*4);
+ for(const channel of [0,1]){
+  let edge=0,min=255,max=0;
+  for(let y=0;y<tile.height;y++)for(let x=0;x<tile.width;x++){
+   const index=(y*tile.width+x)*4,value=tile.data[index+channel];min=Math.min(min,value);max=Math.max(max,value);assert.equal(tile.data[index+3],255);
+   if(x===0)edge=Math.max(edge,Math.abs(value-tile.data[(y*tile.width+tile.width-1)*4+channel]));
+   if(y===0)edge=Math.max(edge,Math.abs(value-tile.data[((tile.height-1)*tile.width+x)*4+channel]));
+  }
+  assert.ok(max-min>120,'the material has irregular patches across its full tile');assert.ok(edge<10,'seamless broad and medium fields do not form tile boundary stripes');
+ }
+ const art=preparedArt(),canvases=[];
+ const createCanvas=()=>{
+  const context=recordingContext();context.createImageData=(width,height)=>({width,height,data:new Uint8ClampedArray(width*height*4)});
+  const canvas={width:0,height:0,getContext:()=>context};canvases.push(canvas);return canvas;
+ };
+ art.fork2d=prepareForkFallbackArt(art,createCanvas);assert.equal(canvases.length,9);assert.equal(art.fork2d.grounds.length,3);assert.equal(art.fork2d.rocks.length,3);assert.equal(art.fork2d.plants.length,3);
+ for(const level of LEVELS){
+  const g=fixture(137,level.index),ctx=recordingContext();drawForkFallback(ctx,g,art,390,844);const stopped=recordingContext();drawForkFallback(stopped,{...g,phase:'paused'},art,390,844);
+  assert.deepEqual(ctx.calls,stopped.calls);assert.ok(ctx.calls.some(call=>call[0]==='pattern'&&call[1]===art.fork2d.grounds[level.index]),'terrain selects its prepared thematic material');
+  assert.ok(ctx.calls.some(call=>call[0]==='drawImage'&&call[1]===art.fork2d.rocks[level.index]),'actual island clumps use the prepared mineral colors and detailed silhouette');
+ }
+ assert.equal(canvases.length,9,'rendering and changing map never create an extra art canvas');
+});
 
 test('fork fallback freezes exactly from game time and distance with bounded reusable patterns',()=>{
- const g=fixture(),art={surfaceground:{},surfacewater:{}};g.levelIndex=0;
+ const g=fixture(),art=preparedArt();g.levelIndex=0;
  const first=recordingContext();assert.equal(drawForkFallback(first,g,art,390,844),true);const count=first.calls.length;assert.ok(count<4000);
  const paused=recordingContext();assert.equal(drawForkFallback(paused,{...g,phase:'paused'},art,390,844),true);assert.deepEqual(paused.calls,first.calls);
  for(let i=0;i<8;i++){const context=recordingContext();drawForkFallback(context,{...g,distance:g.distance+i*14},art,390,844);assert.ok(context.calls.length<4000);}
@@ -108,6 +141,75 @@ test('Canopy fork noses and reunions preserve the normal whitewater surface inst
   assert.ok(baseline);assert.ok(channelPaints.length>=2,'both actual stream masks receive the same whitewater art');
   for(const image of channelPaints)assert.deepEqual(image,baseline,'fork clipping cannot change the surface color or image registration at the transition');
   assert.ok(fork.calls.filter(call=>call[0]==='clip').length>=3,'solid island land still has its own physical mask beside the two water masks');
+ }
+});
+
+test('fallback island relief rises from actual land height without moving contact shores or changing camera registration',()=>{
+ for(const level of LEVELS)for(const [width,height] of layouts){
+  const g=fixture(137,level.index),geometry=forkFallbackGeometry(g,width,height);let peaks=0;
+  for(const island of geometry){
+   const rows=islandRelief2D(g,width,height,island);assert.ok(rows.length<=33);
+   for(const row of rows){
+    if(!row.length)continue;assert.equal(row.length,9);
+    for(const point of row){const water=projectPhysical(width,height,point.cross,point.course-g.distance,g);close(point.x,water.x);close(point.waterY,water.y);close(point.height,islandHeight(point.cross,point.course,g.terrainProfile));close(point.y,water.y-point.height*water.unit);}
+    assert.ok(row[0].height<=.081&&row.at(-1).height<=.081,'wet edges remain at physical land contact');
+    if(row[4].height>2){assert.ok(row[4].y<row[4].waterY-2*row[4].unit);peaks++;}
+   }
+  }
+  assert.ok(peaks>0,'the island must have observable relief, not just a flat colored median');
+  for(const island of geometry)assert.deepEqual(islandRelief2D({...g,phase:'paused'},width,height,island),islandRelief2D(g,width,height,island));
+ }
+});
+
+test('fallback island materials and landmarks retain all three map identities with bounded stopped drawing',()=>{
+ const identities=[];
+ for(const level of LEVELS){
+  const g=fixture(137,level.index),art=preparedArt(),a=recordingContext(),b=recordingContext();
+  drawForkFallback(a,g,art,390,844);drawForkFallback(b,{...g,phase:'paused'},art,390,844);assert.deepEqual(a.calls,b.calls);
+  const colors=a.calls.filter(call=>call[0]==='set'&&(call[1]==='fillStyle'||call[1]==='strokeStyle')).map(call=>call[2]);
+  assert.ok(colors.includes(FORK_PALETTES[level.index].wet)&&colors.includes(FORK_PALETTES[level.index].shore)&&colors.includes(FORK_PALETTES[level.index].ridge));
+  identities.push(islandLandmarks(g.fork,g.terrainProfile)[0].type);assert.ok(a.calls.length<4000,'relief and prepared detailed ground clumps keep the fallback drawing bounded');
+ }
+ assert.deepEqual(identities,['root-grove','sandstone-shelf','broken-obelisk']);
+});
+
+test('both island coasts have bounded seeded soil and detailed ground clumps instead of uninterrupted color strips',()=>{
+ let count=0;
+ for(const level of LEVELS)for(const seed of [0,137,98213]){
+  const g=fixture(seed,level.index),patches=islandGroundPatches(g.fork,g.terrainProfile);
+  assert.ok(patches.length>24&&patches.length<=52,'a finite island has a small, bounded set of authored ground patches');
+  assert.deepEqual(patches,islandGroundPatches(riverFork(g.fork.splitStart+20,g.terrainProfile),g.terrainProfile),'absolute ground identities do not change with the camera');
+  assert.equal(new Set(patches.map(patch=>patch.id)).size,patches.length);
+  for(const side of [-1,1]){
+   const coast=patches.filter(patch=>patch.side===side);
+   for(let i=1;i<coast.length;i++)assert.ok(coast[i].d-coast[i-1].d<35,'neither visible coast stays bare for a long straight stretch');
+  }
+  for(const patch of patches){
+   const fork=riverFork(patch.d,g.terrainProfile),cross=fork.islandCenter+patch.fraction*fork.islandHalfWidth;
+   assert.ok(islandContains(cross,patch.d,g.terrainProfile));
+   if(fork.strength>.45)assert.ok(islandContains(cross-.6,patch.d,g.terrainProfile)&&islandContains(cross+.6,patch.d,g.terrainProfile),'detailed low clumps fit entirely on actual land');
+   assert.ok(Number.isFinite(patch.turn)&&patch.length>3&&patch.length<8);count++;
+  }
+  const art=preparedArt(),ctx=recordingContext();drawForkFallback(ctx,g,art,390,844);
+  const stones=ctx.calls.filter(call=>call[0]==='drawImage'&&call[1]===art.sprites);
+  assert.ok(stones.length>=12,'the committed stream sees detailed atlas stones along its island coast');
+  if(level.index!==1)assert.ok(ctx.calls.some(call=>call[0]==='drawImage'&&call[1]===art.branchLeaves),'root groves or moonlit scrub break the earth surface');
+ }
+ assert.ok(count>300);
+});
+
+test('gold stashes have a stationary ground silhouette and truthful fixed-value receipt distinct from the final chest',()=>{
+ for(const value of [120,200]){
+  const e={id:91,type:'stash',value,lane:1,d:1200},a=recordingContext(),b=recordingContext(),chest=recordingContext(),point={x:190,y:610};
+  assert.equal(stashPresentation(e).value,value);drawStash2D(a,e,point,42,1,true);drawStash2D(b,e,point,42,60,true);assert.deepEqual(a.calls,b.calls);
+  assert.ok(a.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value}`));drawTreasure2D(chest,{id:92,treasureBase:200,treasureCleanBonus:400},point,42,1,true);assert.notDeepEqual(a.calls,chest.calls,'a low gold purse must not promise the clean-cache chest');
+  const g=createGame(137,1),fork=nextRiverFork(0,g.terrainProfile);g.distance=(fork.splitStart+fork.splitEnd)/2;g.time=20;g.lane=g.visualLane=1;g.laneVelocity=0;g.nextRow=Infinity;g.entities=[{...e,d:g.distance+1,collected:false}];g.streak=18;g.multiplier=3;g.lastCoin=20;g.magnet=6;g.charge=37;
+  const card={width:512,height:704},art={surfaceground:card,surfacewater:card,sprites:card,paddleFrames:[{width:448,height:380}],downstreamFrames:Array(9).fill(card),world:{foam:Array(3).fill(card)},map2d:{grounds:Array(3).fill(card),rivers:Array(3).fill(card),canyonSkyline:[card,card],props:[null,null,null],finish:null}},beforeRender=recordingContext();
+  assert.doesNotThrow(()=>renderGame(beforeRender,g,art,390,844,false,true));assert.ok(beforeRender.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value}`),'the actual approaching purse advertises its fixed payout');
+  const before={bonus:g.bonus,coins:g.coins,streak:g.streak,charge:g.charge};updateGame(g,{actions:[]},1/60);
+  assert.equal(g.bonus-before.bonus,value);assert.equal(g.coins,before.coins);assert.equal(g.streak,before.streak);assert.equal(g.charge,before.charge);
+  const receipt=g.effects.find(effect=>effect.type==='stash');assert.equal(receipt.value,value);assert.equal(receipt.entityId,e.id);
+  const afterRender=recordingContext();assert.doesNotThrow(()=>renderGame(afterRender,g,art,390,844,false,true));assert.ok(afterRender.calls.some(call=>call[0]==='fillText'&&call[1]===`+${value}`),'the physically collected purse has its own visible receipt');
  }
 });
 
