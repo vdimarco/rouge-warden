@@ -19,12 +19,18 @@ function noise(x, y, scale, salt) {
 }
 function landform(x, z, size) {
   z = Math.abs(z - size / 2);
-  const broad = noise(x + 1370, z + 780, 1900, 0) * 330;
-  const hills = noise(x - 520, z + 1910, 790, 731) * 165;
+  const broad = noise(x + 1370, z + 780, 2200, 0) * 510;
+  const hills = noise(x - 520, z + 1910, 1050, 731) * 240;
   const ridge = 1 - Math.abs(noise(x + 3010, z - 910, 1050, 1511) * 2 - 1);
-  const rock = ridge ** 5 * 165;
-  const folds = (noise(x, z, 340, 3761) - .5) * 42;
-  return clamp(22 + broad + hills + rock + folds - 120, -22, 590);
+  const rock = ridge ** 5 * 130;
+  const folds = (noise(x, z, 420, 3761) - .5) * 58;
+  // Broad authored crests give the map a recognizable silhouette. Each mound mirrors with the noise field.
+  let highlands = 0;
+  for (const [cx, cz, rx, rz, height] of [[.14, .30, .22, .28, 760], [.78, .25, .23, .25, 910], [.44, .18, .2, .2, 640], [.56, .49, .23, .2, 560]]) {
+    const r2 = ((x / size - cx) / rx) ** 2 + ((z / size - cz) / rz) ** 2;
+    highlands += Math.max(0, 1 - r2) ** 2 * height;
+  }
+  return clamp(24 + broad + hills + rock + folds + highlands - 170, -22, 1450);
 }
 const segmentDistance = (x, z, a, b) => {
   const dx = b.x - a.x, dz = b.y - a.y, t = clamp(((x - a.x) * dx + (z - a.y) * dz) / (dx * dx + dz * dz || 1), 0, 1);
@@ -91,7 +97,7 @@ export function buildRelief(world, state = {}, { segments = RELIEF_SEGMENTS, mar
       for (const p of rockPads) { const w = padWeight(p, x, z); h += (p.height - h) * w; }
       // Dry roads retain rolling ground. Wide level corridors previously hid the landscape during lane play.
       const road = Math.min(distanceToRoad(x, z), distanceToRoad(x, size - z));
-      h *= .7 + .3 * smooth(laneCore, laneOuter, road);
+      h *= .85 + .15 * smooth(laneCore, laneOuter, road);
       let level = 0; for (const p of pads) level = Math.max(level, padWeight(p, x, z), padWeight(p, x, size - z));
       h *= 1 - level;
       // The live banks are intentionally asymmetric. Carving their mirrored union preserves fair relief and keeps

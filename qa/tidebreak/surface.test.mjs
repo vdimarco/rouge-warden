@@ -2,13 +2,15 @@
 import assert from 'node:assert/strict';
 import * as world from '../../public/tidebreak/world.js';
 import { buildRelief } from '../../public/tidebreak/relief.js';
-import { bridgeSurface, intersectRelief, BRIDGE_DECK, waterMaskAt } from '../../public/tidebreak/surface.js';
+import { bridgeSurface, intersectRelief, BRIDGE_DECK, waterMaskAt, cameraLift } from '../../public/tidebreak/surface.js';
 
 const relief = buildRelief(world, { seed: 49 });
 let queries = 0;
 for (const x of [450, 1500, 2800, 4100, 6000, 7800, 9000]) for (const z of [650, 2100, 3800, 5600, 7300, 9000]) {
   const target = { x, y: relief.heightAt(x, z), z };
-  const offset = { x: 120, y: 1100, z: 650 }, length = Math.hypot(offset.x, offset.y, offset.z);
+  const offset = { x: 120, y: 1100, z: 650 };
+  offset.y += cameraLift(relief.heightAt, x, z, target.y, offset.x, offset.z, offset.y);
+  const length = Math.hypot(offset.x, offset.y, offset.z);
   const ray = { origin: { x: x + offset.x, y: target.y + offset.y, z: z + offset.z }, direction: { x: -offset.x / length, y: -offset.y / length, z: -offset.z / length } };
   const hit = intersectRelief(ray, relief);
   assert(hit, 'downward pointer ray intersects the terrain');
@@ -19,6 +21,8 @@ for (const x of [450, 1500, 2800, 4100, 6000, 7800, 9000]) for (const z of [650,
 assert.equal(intersectRelief({ origin: { x: 0, y: 100, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, relief), null, 'upward rays do not select ground behind the camera');
 assert.equal(intersectRelief({ origin: { x: relief.origin - 20, y: 1000, z: 0 }, direction: { x: 0, y: -1, z: 0 } }, relief), null, 'parallel rays outside the mesh miss');
 assert.equal(intersectRelief({ origin: { x: 0, y: 1, z: 0 }, direction: { x: 0, y: -1, z: 0 } }, null), null, 'input remains safe before the landscape loads');
+assert.equal(cameraLift(() => 0, 0, 0, 0, 0, 1200, 1930), 0, 'flat ground retains the normal camera');
+assert(cameraLift((x, z) => z * 2.3, 0, 0, 0, 0, 1200, 1930) > 800, 'a steep shoulder raises the camera above its hero');
 
 // Grid-boundary and corner rays exercise simultaneous cell advances and vertical traversal without a horizontal
 // direction. Their first contacts are checked independently against the actual triangle planes below.

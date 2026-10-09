@@ -38,7 +38,7 @@ export class Sky {
     scene.environment = skyEnvironment(gl);
     this.hemi = new THREE.HemisphereLight('#9db6d6', '#5d4a30', 1); scene.add(this.hemi);
     this.sun = new THREE.DirectionalLight('#ffc985', 3); this.sun.castShadow = true; scene.add(this.sun, this.sun.target);
-    const shadow = this.sun.shadow; shadow.bias = -.0004; shadow.normalBias = 2.5; shadow.radius = 2.5; shadow.camera.near = 10; shadow.camera.far = 9000;
+    const shadow = this.sun.shadow; shadow.bias = -.0004; shadow.normalBias = 2.5; shadow.radius = 2.5; shadow.camera.near = 10; shadow.camera.far = 12000;
     scene.fog = new THREE.Fog('#b9a585', 3800, 11500); scene.background = new THREE.Color('#b9a585');
     this.color = new THREE.Color(); this.dir = new THREE.Vector3(); this.apply(0);
   }
@@ -65,7 +65,7 @@ export class Sky {
   fitShadow(center, radius, mapSize) {
     const sun = this.sun, cam = sun.shadow.camera, texel = radius * 2 / mapSize;
     const x = Math.round(center.x / texel) * texel, z = Math.round(center.z / texel) * texel;
-    sun.target.position.set(x, 0, z); sun.position.set(x + this.dir.x * 4000, this.dir.y * 4000, z + this.dir.z * 4000);
+    sun.target.position.set(x, center.y, z); sun.position.set(x + this.dir.x * 5000, center.y + this.dir.y * 5000, z + this.dir.z * 5000);
     if (cam.right !== radius) { cam.left = cam.bottom = -radius; cam.right = cam.top = radius; cam.updateProjectionMatrix(); }
     if (sun.shadow.mapSize.x !== mapSize) { sun.shadow.mapSize.set(mapSize, mapSize); sun.shadow.map?.dispose(); sun.shadow.map = null; }
     sun.target.updateMatrixWorld(); sun.updateMatrixWorld();

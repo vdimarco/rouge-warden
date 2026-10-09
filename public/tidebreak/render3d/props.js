@@ -5,6 +5,30 @@
 import * as THREE from 'three';
 import { withWorld, fowAtEnd, worldMapped, SEE_GLSL, seeUniforms } from './materials.js';
 import { foliageAtlas, broadleafGeometry, pineGeometry, bushGeometry, tuftGeometry, foliagePatch, foliageUniforms } from './foliage.js';
+import { geologySites, cliffGeometry, caveGeometry, rockHeightAt, caveApproachOverlaps } from '../geology.js';
+import { TERRAIN_HEIGHT_GLSL } from '../relief.js';
+
+function rockGeometry(data) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(data.colors, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(data.positions.length / 3 * 2), 2));
+  g.setIndex(new THREE.BufferAttribute(data.indices, 1)); g.computeVertexNormals(); g.computeBoundingSphere(); return g;
+}
+export function groundRock(material, uniforms) {
+  const base = material.onBeforeCompile, key = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    base(shader, renderer); Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\n' + TERRAIN_HEIGHT_GLSL)
+      .replace('#include <project_vertex>', `
+        #ifdef USE_INSTANCING
+          vec4 rockWorld = instanceMatrix * vec4( transformed, 1. );
+          transformed.y += ( terrainHeightAt( rockWorld.xz ) - instanceMatrix[3].y ) / max( length( instanceMatrix[1].xyz ), .001 );
+        #endif
+        #include <project_vertex>`);
+  };
+  material.customProgramCacheKey = () => key + '-grounded'; return material;
+}
 
 const random = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const geometryOf = gltf => { let g = null; gltf.scene.traverse(o => { if (!g && o.isMesh) g = o.geometry; }); return g; };
@@ -83,15 +107,21 @@ const oakTint = rand => TINTS.oak[Math.floor(rand() * TINTS.oak.length)];
 // Small things are thinned: the 2D map's confetti of ferns and twigs would hide the ground the light falls on.
 const MAX_TUFTS = 2400, TUFT_TONES = [['#d4e49a', '#c4da90', '#e0e4a2', '#ece0a0'], ['#9cb486', '#8ea87c', '#a8bc8a']].map(l => l.map(c => new THREE.Color(c)));
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0), _v = new THREE.Vector3(), _s = new THREE.Vector3();
-const KEEP = { ferns: .38, mushrooms: .22, branch: .15, 'hollow-log': .45, boulders: .65, birches: .35, juniper: .6, willow: .4, oak: .35, pines: .85 };
+const KEEP = { ferns: .38, mushrooms: .22, branch: .15, 'hollow-log': .45, boulders: .65, birches: .85, juniper: .88, willow: .8, oak: .85, pines: 1 };
 export class Props {
-  constructor(scene, assets, textures, { coverage = true, heightAt = () => 0 } = {}) {
+  constructor(scene, assets, textures, { coverage = true, heightAt = () => 0, heightUniforms = {} } = {}) {
     this.scene = scene; this.heightAt = heightAt; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
     const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
     this.atlas = foliageAtlas();
     const leafy = sway => set => patch(new THREE.MeshStandardMaterial({ map: this.atlas, alphaTest: coverage ? .42 : .5, alphaToCoverage: coverage, side: THREE.DoubleSide, roughness: .8, metalness: 0 }), this.grow[set], { sway, key: 'foliage', foliage: true });
     const solid = (m, sway = 0) => set => patch(m.clone(), this.grow[set], { sway, key: 'tree' });
     const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: `built-${scale}` }), this.grow[set], { key: 'built' });
+    const geology = (color, key) => set => {
+      const m = worldMapped(textures.rock, { color, scale: 540, roughness: .98, key });
+      m.vertexColors = true; m.flatShading = true; m.side = THREE.DoubleSide;
+      return groundRock(patch(m, this.grow[set], { key, see: true }), heightUniforms);
+    };
+    const cave = caveGeometry(), cliff = cliffGeometry(); this.geologyRoof = { cave: cave.shell, cliff };
     const plain = (color, rough) => set => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }), this.grow[set], { see: false, key: 'plain' });
     // Every kind: geometry, a material per realm set, whether it casts a shadow, and its footprint radius for culling.
     this.kinds = {
@@ -100,6 +130,11 @@ export class Props {
       bush: { geometry: bushGeometry(3), material: leafy(.05), shadow: false },
       shrub: { geometry: bushGeometry(9), material: leafy(.05), shadow: false },
       boulder: { geometry: simplify(geometryOf(w.boulders), 22), material: solid(materialOf(w.boulders)), shadow: true, bright: 1.55 },
+      cliff: { geometry: rockGeometry(cliff), material: geology('#c5cec3', 'cliff-strata'), shadow: true, grounded: true },
+      'cave-shell': { geometry: rockGeometry(cave.shell), material: geology('#c5cec3', 'cave-shell'), shadow: true, grounded: true },
+      'cave-inside': { geometry: rockGeometry(cave.inside), material: geology('#69776d', 'cave-inside'), shadow: false },
+      'cave-floor': { geometry: rockGeometry(cave.floor), material: geology('#a9ad99', 'cave-floor'), shadow: false },
+      'cave-rear': { geometry: rockGeometry(cave.rear), material: set => groundRock(patch(new THREE.MeshBasicMaterial({ color: '#354440', vertexColors: true, side: THREE.DoubleSide }), this.grow[set], { key: 'cave-rear', see: true }), heightUniforms), shadow: false },
       arch: { geometry: simplify(geometryOf(w.arch), 28), material: solid(materialOf(w.arch)), shadow: true },
       wall: { geometry: new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), material: built(textures.stone, '#c9bfae', 230), shadow: true },
       pillar: { geometry: new THREE.CylinderGeometry(.42, .5, 1, 10).translate(0, .5, 0), material: built(textures.stone, '#d3c9b6', 200), shadow: true },
@@ -108,7 +143,10 @@ export class Props {
       reeds: { geometry: reedGeometry(), material: plain('#8a8a52', .9), shadow: false },
       tuft: { geometry: tuftGeometry(), material: leafy(.22), shadow: false, selfShadow: true },
     };
-    for (const k of Object.values(this.kinds)) k.materials = [0, 1, 2].map(set => k.material(set));
+    for (const k of Object.values(this.kinds)) {
+      k.materials = [0, 1, 2].map(set => k.material(set));
+      if (k.grounded) k.depths = [0, 1, 2].map(set => groundRock(patch(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide }), this.grow[set], { key: 'rock-depth', see: false }), heightUniforms));
+    }
     this.sets = [0, 1, 2].map(() => ({ group: new THREE.Group(), kinds: new Map() })); for (const s of this.sets) this.root.add(s.group);
     this.phase = 0; this.blend = [1, 0]; this.view = null; this.counts = [0, 0, 0];
     this.grass = new THREE.InstancedMesh(this.kinds.tuft.geometry, this.kinds.tuft.materials[2], MAX_TUFTS); this.grass.count = 0; this.grass.frustumCulled = false; this.grass.receiveShadow = true; this.grass.name = 'grass';
@@ -119,8 +157,26 @@ export class Props {
     this.counts = [0, 0, 0]; const seed = s.seed;
     for (const phase of [0, 1]) {
       const rand = random(seed * 31 + phase * 977), put = this.collector();
-      for (const p of scenery[phase].props) this.place(put, p, rand, world.OBSTACLES[phase]);
+      for (const p of scenery[phase].props) { put.solid = !!p.solid; this.place(put, p, rand, world.OBSTACLES[phase]); }
+      put.solid = false;
+      const sites = geologySites(world, phase);
+      for (const site of sites) {
+        if (site.cave) for (const kind of ['cave-shell', 'cave-inside', 'cave-floor', 'cave-rear']) put(kind, site.x, site.z, site.w, site.height, site.d);
+        else put('cliff', site.x, site.z, site.w, site.height, site.d);
+        // Roots and mature crowns grow from the sides. Keep the cave mouth and the cliff silhouette open.
+        for (const sign of [-1, 1]) {
+          const h = 420 + rand() * 280, x = sign * .18, z = -.3, roof = this.geologyRoof[site.cave ? 'cave' : 'cliff'];
+          const treeX = site.x + x * site.w, treeZ = site.z + z * site.d;
+          const roofHeight = rockHeightAt(roof, x, z, (u, v) => this.heightAt(site.x + u * site.w, site.z + v * site.d) / site.height) * site.height;
+          put('pine', treeX, treeZ, h * .43, h, h * .43, rand() * 6.3, '#bcd4b4', 0, roofHeight - this.heightAt(treeX, treeZ));
+        }
+      }
       if (phase === 1) for (const b of world.BRUSH || []) this.brush(put, b, rand);
+      // Decorative foliage frames the entrance. Collision cover and trees rooted on the roof remain represented.
+      for (const kind of ['pine', 'oak', 'bush', 'shrub']) {
+        const list = put.lists.get(kind);
+        if (list) put.lists.set(kind, list.filter(tree => tree.solid || !sites.some(site => caveApproachOverlaps(site, tree))));
+      }
       this.commit(put, phase);
     }
     // Both realms: a forest wall just outside the arena edge, so a wide view never shows bare ground.
@@ -131,20 +187,21 @@ export class Props {
     this.commit(put, 2);
     this.view = null; this.setPhase(s.phase, true);
   }
-  collector() { const lists = new Map(); const put = (kind, x, z, sx, sy, sz, rot = 0, color = '#ffffff', tilt = 0) => { let l = lists.get(kind); if (!l) lists.set(kind, l = []); l.push({ x, z, sx, sy, sz, rot, color, tilt }); }; put.lists = lists; return put; }
+  collector() { const lists = new Map(); const put = (kind, x, z, sx, sy, sz, rot = 0, color = '#ffffff', tilt = 0, lift = 0) => { let l = lists.get(kind); if (!l) lists.set(kind, l = []); l.push({ x, z, sx, sy, sz, rot, color, tilt, lift, solid: !!put.solid }); }; put.lists = lists; return put; }
   // Keeps every instance's matrix and colour; the mesh holds only the ones in view.
   commit(put, set) {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
     for (const [kind, list] of put.lists) {
       const def = this.kinds[kind], n = list.length, matrices = new Float32Array(n * 16), colors = new Float32Array(n * 3), spots = new Float32Array(n * 5);
       list.forEach((it, i) => {
-        const base = this.heightAt(it.x, it.z);
+        const base = this.heightAt(it.x, it.z) + it.lift;
         e.set(it.tilt, it.rot, it.tilt * .6); q.setFromEuler(e); m4.compose(v.set(it.x, base, it.z), q, sc.set(it.sx, it.sy, it.sz)); m4.toArray(matrices, i * 16);
         col.set(it.color).multiplyScalar(def.bright || 1).toArray(colors, i * 3); spots.set([it.x, it.z, Math.max(it.sx, it.sz) * .7, it.sy, base], i * 5);
       });
       const mesh = new THREE.InstancedMesh(def.geometry, def.materials[set], n); mesh.count = 0; mesh.frustumCulled = false;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.setColorAt(0, col); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
       mesh.castShadow = def.shadow; mesh.receiveShadow = def.selfShadow !== false; mesh.name = kind;
+      if (def.depths) mesh.customDepthMaterial = def.depths[set];
       set === 2 ? this.sets[2].group.add(mesh) : this.sets[set].group.add(mesh);
       this.sets[set].kinds.set(kind, { mesh, matrices, colors, spots, n }); this.counts[set] += n;
     }
@@ -174,7 +231,7 @@ export class Props {
   place(put, p, rand, obstacles) {
     const tree = TREE[p.name], r = rand() * Math.PI * 2;
     if (p.solid) { const b = obstacles.find(o => o.id === p.id) || { x: p.x, y: p.y, w: 300, h: 220, biome: p.biome }; this.cover(put, b, p.name, p.height, rand); return; }
-    if ((KEEP[p.name] ?? 1) < rand()) return;
+    if (!p.canopy && (KEEP[p.name] ?? 1) < rand()) return;
     if (tree) { const [kind, k, wide] = tree, h = p.height * k, tints = TINTS[p.name]; put(kind, p.x, p.y, h * wide, h, h * wide, r, tints[Math.floor(rand() * tints.length)]); return; }
     switch (p.name) {
       case 'forest-island': for (let i = 0; i < 3; i++) { const h = p.height * (1.25 + rand() * .45), a = rand() * 6.3; put('pine', p.x + Math.cos(a) * 75 * i, p.y + Math.sin(a) * 65 * i, h * .6, h, h * .6, rand() * 6.3, '#c8e0c0'); } return;
@@ -189,6 +246,8 @@ export class Props {
   }
   // A cover block filled edge to edge.
   cover(put, b, name, height, rand) {
+    // These islands are built once by the rock/cave pass, using the shared collision footprint.
+    if (['cliff-ridge', 'rock-shelf', 'ruin-yard'].includes(b.town)) return;
     const rocky = ['cliff-ridge', 'rock-shelf'].includes(name), grove = ['forest-island', 'root-arch', 'greenhouse', 'willow', 'oak', 'juniper', 'hollow-log'].includes(name) || b.biome === 'grove';
     const village = ['house-a', 'house-b', 'market', 'mill-yard', 'mill', 'pier'].includes(name) || (!rocky && !grove && b.biome === 'village');
     if (rocky) this.rocks(put, b, height, rand);
@@ -206,7 +265,7 @@ export class Props {
     for (let i = 0; i < 4; i++) { const a = rand() * 6.3, h = 70 + rand() * 50; put('bush', b.x + Math.cos(a) * b.w * .55, b.y + Math.sin(a) * b.h * .55, h * 1.6, h, h * 1.6, rand() * 6.3, '#c0d89c'); }
   }
   grove(put, b, height, rand, name) {
-    const step = 125, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
+    const step = 110, nx = Math.max(1, Math.round(b.w / step)), ny = Math.max(1, Math.round(b.h / step));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
       const x = b.x + ((i + .5) / nx - .5) * b.w + (rand() - .5) * 70, y = b.y + ((j + .5) / ny - .5) * b.h + (rand() - .5) * 70, h = height * (.9 + rand() * .45), oak = name === 'oak' || name === 'willow' || rand() < .12;
       put(oak ? 'oak' : 'pine', x, y, h * (oak ? .68 : .55), h, h * (oak ? .68 : .55), rand() * 6.3, oak ? (name === 'willow' ? TINTS.willow[0] : oakTint(rand)) : '#c4dcbc');

@@ -74,3 +74,12 @@ export function intersectRelief(ray, relief) {
   }
   return null;
 }
+// Raise the follow camera only where a nearby crest would hide its ground target. Flat ground keeps its lens.
+export function cameraLift(heightAt, x, z, height, dx, dz, up) {
+  let lift = 0;
+  for (let i = 1; i < 40; i++) {
+    const t = i / 40, h = heightAt(x + dx * t, z + dz * t);
+    lift = Math.max(lift, (h - height + 20) / t - up);
+  }
+  return Math.min(2600, Math.max(0, lift));
+}
