@@ -218,6 +218,8 @@ try {
     await page.locator('#draft .draft-card').first().waitFor();
     assert.equal(await page.locator('#draft .draft-card').count(), 6);
     assert.equal(await page.locator('#draft [data-slot="0"]').getAttribute('data-team'), '0');
+    // Advance the real simulation and exercise HUD controls without filling the software GPU queue.
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d, draw=r.draw; window.__resumeMatchDraw=()=>{r.draw=draw;}; r.draw=()=>{}; });
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.querySelector('#draft').hidden, null, { timeout: 180000 });
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
@@ -244,6 +246,8 @@ try {
     await page.locator('#back-skills').click();
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), false);
     await page.waitForFunction(() => { const s=window.__mobaSnapshot(); return s.time>3&&s.graphics.models.heroes===s.graphics.models.heroesTotal; }, null, { timeout: 240000 });
+    const matchFrames = await page.evaluate(() => { window.__resumeMatchDraw(); return document.getElementById('battle').__shore3d.frames; });
+    await page.waitForFunction(n => document.getElementById('battle').__shore3d.frames > n, matchFrames);
     const before = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(before.running); assert(before.time > 3); assert.equal(before.graphics.renderer, 'Mythic 3D'); assert.equal(before.graphics.models.heroes, 16); assert.deepEqual(before.graphics.models.failed, []);
     await page.keyboard.down('d'); await page.waitForFunction(x => window.__mobaSnapshot().player.x > x, before.player.x); await page.keyboard.up('d');
