@@ -29,11 +29,15 @@ async function advance(page, frames = 3) {
     const renderer = document.querySelector('#battle').__shore3d, draw = renderer.draw;
     try {
       for (let i = 0; i < frames; i++) {
-        renderer.draw = i < frames - 2 ? () => {} : draw;
+        renderer.draw = i < frames - 1 ? () => {} : draw;
         window.__pump(1, 50);
       }
     } finally { renderer.draw = draw; }
   }, frames);
+}
+async function screenshot(page, name) {
+  await page.evaluate(() => window.__flush());
+  await page.screenshot({ path: path.join(shots, `${name}.png`), animations: 'disabled', timeout: 120000 });
 }
 async function press(page, selector, touch) {
   const box = await page.locator(selector).boundingBox();
@@ -48,9 +52,10 @@ async function resetCombat(page) {
   await page.evaluate(async () => {
     const { qaState } = await import('/tidebreak/main.js'), s = qaState(), p = s.units.find(u => u.player);
     window.__enemyTemplate ||= { ...s.units.find(u => u.kind === 'hero' && u.team === 1) };
-    s.units = s.units.filter(u => u === p || u.kind === 'tower' || u.kind === 'core');
+    window.__structureTemplates ||= s.units.filter(u => u.kind === 'tower' || u.kind === 'core');
+    s.units = [p];
     s.nextWave = 1e9; s.messages = []; s.effects = []; s.missiles = []; s.zones = []; s.traps = [];
-    Object.assign(p, { hp: p.maxHp, shield: 100000, recall: 0, order: null, target: 0, selectedTarget: 0, pendingAttack: null, attackCd: 1000, castIntent: null, queuedCast: null, recoveryUntil: 0, stun: 0, fear: 0, silencedUntil: 0, lastHit: -100 });
+    Object.assign(p, { hp: p.maxHp, shield: 100000, recall: 0, order: null, target: 0, selectedTarget: 0, pendingAttack: null, attackCd: 1000, castIntent: null, queuedCast: null, recoveryUntil: 0, travel: null, motion: null, returnAnchor: null, commit: null, stun: 0, fear: 0, silencedUntil: 0, lastHit: -100 });
     document.querySelector('.abilities').classList.remove('upgrade-mode');
   });
   await advance(page);
@@ -77,10 +82,13 @@ async function dragMovement(page, touch) {
     }
   });
   assert(point, 'there is an unobstructed battlefield area for movement');
+  await page.evaluate(() => { window.__battleTouch = []; });
   const cdp = await page.context().newCDPSession(page);
   const send = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y]) => ({ id: 1, x, y, radiusX: 2, radiusY: 2, force: 1 })) });
   await send('touchStart', [[point.x, point.y]]);
-  await send('touchMove', [[point.x + 35, point.y]]); await advance(page, 5);
+  await send('touchMove', [[point.x + 35, point.y]]);
+  await page.waitForFunction(({ x, y }) => window.__battleTouch.some(e => e.type === 'pointermove' && Math.abs(e.x - x - 35) < 1 && Math.abs(e.y - y) < 1), point, { polling: 20, timeout: 5000 });
+  await advance(page, 5);
   await send('touchEnd', []); await cdp.detach();
 }
 async function cancelAim(page, touch) {
@@ -89,8 +97,9 @@ async function cancelAim(page, touch) {
     const cdp = await page.context().newCDPSession(page);
     const send = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y]) => ({ id: 1, x, y, radiusX: 2, radiusY: 2, force: 1 })) });
     await send('touchStart', [[x, y]]); await send('touchMove', [[x - 40, y - 45]]);
-    assert(await page.locator('#skill-aim-status').isVisible(), 'native spell drag shows aim instructions');
+    await page.waitForFunction(() => !document.querySelector('#skill-aim-status').hidden, null, { polling: 20, timeout: 5000 });
     await send('touchMove', [[x, y]]);
+    await page.waitForFunction(() => /cancel/i.test(document.querySelector('#skill-aim-status').textContent), null, { polling: 20, timeout: 5000 });
     assert.match(await page.locator('#skill-aim-status').innerText(), /cancel/i, 'returning to the icon offers cancellation');
     await send('touchEnd', []); await cdp.detach();
   } else {
@@ -114,6 +123,11 @@ try {
     await page.addInitScript(() => {
       localStorage.setItem('tidebreak.fullscreen', 'off');
       const real = requestAnimationFrame.bind(window); let queue = []; window.__auto = true; window.__ts = performance.now();
+      window.__flush = () => new Promise(resolve => real(() => real(resolve)));
+      window.__battleTouch = [];
+      for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) window.addEventListener(type, e => {
+        if (e.pointerType === 'touch' && e.target.id === 'battle') { window.__battleTouch.push({ type, x: e.clientX, y: e.clientY }); window.__battleTouch = window.__battleTouch.slice(-12); }
+      }, true);
       window.requestAnimationFrame = cb => { queue.push(cb); return queue.length; };
       window.__pump = (n, ms = 16) => { for (let i = 0; i < n; i++) { window.__ts += ms; const q = queue; queue = []; q.forEach(cb => cb(window.__ts)); } };
       const tick = () => { if (window.__auto) { window.__ts = performance.now(); window.__pump(1); } real(tick); }; real(tick);
@@ -121,7 +135,7 @@ try {
     await page.goto(origin + '/tidebreak/', { waitUntil: 'domcontentloaded', timeout: 120000 });
     await page.waitForFunction(() => !document.querySelector('#play').disabled || document.querySelector('#play').textContent.includes('unavailable'), null, { timeout: 240000 });
     if (await page.locator('#play').isDisabled()) {
-      await page.screenshot({ path: path.join(shots, `${name}-startup-failure.png`), timeout: 120000 });
+      await screenshot(page, `${name}-startup-failure`);
       throw new Error('3D startup failed: ' + errors.join('\n'));
     }
     await page.evaluate(() => { window.__auto = false; });
@@ -148,7 +162,7 @@ try {
     for (const selector of ['#skill-points', '.abilities', '#joystick', '#loadout', '#recall', '#portal']) {
       const b = initial[selector]; if (b.shown) assert(!overlaps(initial['#coach'], b), `${name}: contextual guidance does not cover ${selector}`);
     }
-    await page.screenshot({ path: path.join(shots, `${name}-first-match.png`), timeout: 120000 });
+    await screenshot(page, `${name}-first-match`);
     if (touch) {
       await press(page, '#skill-points', touch);
       await press(page, '[data-skill="0"]', touch);
@@ -164,7 +178,7 @@ try {
     assert(await page.locator('#skill-aim-status').isVisible(), `${name}: a rejected spell has visible feedback`);
     assert.match(await page.locator('#skill-aim-status').innerText(), /mana/i, `${name}: a rejected spell explains missing mana`);
     assert.equal((await snapshot(page)).player.cd[0], 0, `${name}: rejected spells do not start a cooldown`);
-    await page.screenshot({ path: path.join(shots, `${name}-spell-feedback.png`), timeout: 120000 });
+    await screenshot(page, `${name}-spell-feedback`);
 
     // A real press inside the final recovery window remains buffered even though
     // the HUD marks the spell unavailable until recovery finishes.
@@ -205,14 +219,14 @@ try {
     const beforeMove = (await snapshot(page)).player;
     await dragMovement(page, touch);
     const moved = (await snapshot(page)).player;
-    assert(Math.hypot(moved.x - beforeMove.x, moved.y - beforeMove.y) > 1, `${name}: native movement actually moves the player`);
+    assert(Math.hypot(moved.x - beforeMove.x, moved.y - beforeMove.y) > 1, `${name}: native movement actually moves the player: ${JSON.stringify({ before: { x: beforeMove.x, y: beforeMove.y, order: beforeMove.order }, after: { x: moved.x, y: moved.y, order: moved.order, selectedTarget: moved.selectedTarget, castIntent: moved.castIntent, recoveryUntil: moved.recoveryUntil, stun: moved.stun, fear: moved.fear } })}`);
     assert.equal(moved.selectedTarget, staged.id, `${name}: movement retains manual selection`);
     assert.equal(moved.target, staged.id, `${name}: nearby hero does not replace the selected wisp`);
     assert(!moved.order, `${name}: movement cancels pursuit`);
     await advance(page);
     assert(!(await snapshot(page)).player.order, `${name}: movement release does not resume pursuit`);
     assert.match(await page.locator('#auto-status').innerText(), /Selected wisp/i, `${name}: the HUD identifies the retained selection`);
-    await page.screenshot({ path: path.join(shots, `${name}-target-status.png`), timeout: 120000 });
+    await screenshot(page, `${name}-target-status`);
     await page.evaluate(async () => {
       const p = (await import('/tidebreak/main.js')).qaState().units.find(u => u.player);
       p.cd[0] = 0; p.mana = p.maxMana; p.castIntent = null; p.queuedCast = null; p.recoveryUntil = 0;
@@ -221,7 +235,7 @@ try {
     assert.equal((await snapshot(page)).player.cd[0], 0, `${name}: native return-to-icon cancellation does not cast`);
     assert.equal((await snapshot(page)).player.castIntent, null, `${name}: native cancellation does not leave a cast intent`);
     assert.equal(await page.locator('#coach').getAttribute('data-step'), 'push', `${name}: native learning, movement and aim cancellation advance the guide`);
-    await page.screenshot({ path: path.join(shots, `${name}-aim-cancel.png`), timeout: 120000 });
+    await screenshot(page, `${name}-aim-cancel`);
     if (await page.locator('#coach-close').isVisible()) await press(page, '#coach-close', touch);
     await resetCombat(page);
 
@@ -229,7 +243,7 @@ try {
     await press(page, '#recall', touch); await advance(page);
     assert((await snapshot(page)).player.recall > 0, `${name}: native Recall starts its channel`);
     assert.match(await page.locator('#recall').innerText(), /cancel/i, `${name}: active Recall offers a cancel action`);
-    await page.screenshot({ path: path.join(shots, `${name}-recall-channel.png`), timeout: 120000 });
+    await screenshot(page, `${name}-recall-channel`);
     await press(page, '#recall', touch); await advance(page);
     assert.equal((await snapshot(page)).player.recall, 0, `${name}: native Recall cancel stops its channel`);
     await press(page, '#recall', touch); await advance(page); await dragMovement(page, touch);
@@ -242,7 +256,8 @@ try {
     // HUD and tactical map use the occupied lane without changing sim assignment.
     const west = await page.evaluate(async () => {
       const { qaState } = await import('/tidebreak/main.js'), { laneFrom, pointAtArc } = await import('/tidebreak/world.js'), { nextObjective } = await import('/tidebreak/objectives.js');
-      const s = qaState(), p = s.units.find(u => u.player); Object.assign(p, pointAtArc(laneFrom(0, 0), 3750)); p.px = p.x; p.py = p.y; p.lane = 1;
+      const s = qaState(), p = s.units.find(u => u.player); s.units = [p, ...window.__structureTemplates];
+      Object.assign(p, pointAtArc(laneFrom(0, 0), 3750)); p.px = p.x; p.py = p.y; p.lane = 1;
       const tower = nextObjective(s, 1, 0); return { id: tower.id, x: tower.x, y: tower.y };
     });
     await advance(page);
@@ -253,11 +268,32 @@ try {
     await press(page, '[data-destination="ward"]', touch); await advance(page);
     const ordered = (await snapshot(page)).player;
     assert.equal(ordered.order?.target, west.id, `${name}: map Next tower selects the West lane ward`);
-    await page.screenshot({ path: path.join(shots, `${name}-west-lane.png`), timeout: 120000 });
+    await screenshot(page, `${name}-west-lane`);
     assert.deepEqual(telemetry, [], `${name}: local QA sends no production PostHog traffic`);
     assert.deepEqual(errors, [], `${name}: no asset, runtime or shader errors`);
     console.log('PASS playability', name, JSON.stringify({ initial, selectedTarget: staged.id, nextTower: west.id }));
     await page.close();
   }
   console.log('PASS: direct start, optional draft, contextual guide, spell feedback, retained selection, Recall and lane guidance.');
+} catch (error) {
+  for (const page of browser.contexts().flatMap(context => context.pages())) {
+    if (page.isClosed()) continue;
+    try {
+      const details = await page.evaluate(async () => {
+        const { snapshot } = await import('/tidebreak/main.js'), state = snapshot();
+        const selectors = ['#coach', '#recall', '#auto-status', '#mana-text', '#skill-aim-status', '#skill-points', '.abilities', '#joystick', '#loadout', '#portal', '#objective', '#objective-clock', '#team-chat'];
+        const rects = Object.fromEntries(selectors.map(selector => {
+          const el = document.querySelector(selector); if (!el) return [selector, null];
+          const r = el.getBoundingClientRect(), css = getComputedStyle(el);
+          return [selector, { x: r.x, y: r.y, w: r.width, h: r.height, hidden: el.hidden, display: css.display, text: el.innerText }];
+        }));
+        return { viewport: { width: innerWidth, height: innerHeight }, player: state.player, paused: state.paused, time: state.time, touchEvents: window.__battleTouch, rects };
+      });
+      console.error('FAILURE STATE', JSON.stringify(details));
+      const name = process.env.VIEWPORT || `${details.viewport.width}x${details.viewport.height}`;
+      fs.writeFileSync(path.join(shots, `${name}-failure.json`), JSON.stringify(details, null, 2));
+      await screenshot(page, `${name}-failure`);
+    } catch (captureError) { console.error('Failure capture unavailable:', captureError.message); }
+  }
+  throw error;
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

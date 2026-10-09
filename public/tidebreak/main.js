@@ -90,10 +90,10 @@ document.addEventListener('fullscreenchange', () => {
 });
 const dom = { clock: $('clock'), level: $('level'), healthFill: $('health-fill'), healthText: $('health-text'), xp: $('xp-fill'), gold: $('gold'), shop: $('shop'), notice: $('notice'), respawn: $('respawn'), objective: $('objective-sub') };
 const skillButtons = [...document.querySelectorAll('[data-skill]')];
-// The skill card explains a skill on mouse hover, keyboard focus or touch, with live rank, cost, cooldown and status.
+// Hover and keyboard focus inspect live skill details. Touch inspection uses the spellbook.
 skillCard(skillButtons, slot => {
   if (!running) return null;
-  const p = player(state), a = identitySkill(selectedIdentity, slot), rank = p.skillRanks[slot], cost = manaCost(p, slot);
+  const p = player(state), a = identitySkill(selectedIdentity, slot), rank = p.skillRanks[slot], cost = slot===0&&canReturn(state,p)?0:manaCost(p, slot);
   const cd = Math.round(cooldownFor({ ...p, skillRanks: p.skillRanks.map((r, i) => i === slot ? Math.max(1, r) : r) }, slot) * 10) / 10;
   const feedback=castFeedback(state,p,slot);
   const status = !rank ? (canLearn(p,slot) ? 'Not learned yet. Press + to learn it.' : `Learn at level ${rankGate(slot,0)}`) : feedback.outcome==='accepted' ? feedback.returning ? 'Return to your decoy' : 'Ready' : feedback.message;
@@ -391,7 +391,7 @@ $('map-button').addEventListener('pointerdown',e=>{
   if(e.pointerType!=='mouse'||!hudReady())return;
   e.preventDefault();e.stopImmediatePropagation();
   const point=minimapPoint(e);
-  if(e.button===2){if(player(state).hp>0){cancelOrder(player(state));target=0;orderQueue={type:'move',...point};waypoint=point;}return;}
+  if(e.button===2){if(player(state).hp>0){cancelPursuit(player(state));target=0;orderQueue={type:'move',...point};waypoint=point;}return;}
   if(e.button!==0)return;
   minimapDrag=e.pointerId;$('map-button').setPointerCapture(e.pointerId);renderer?.lookAt(point.x,point.y);
 },{capture:true});
