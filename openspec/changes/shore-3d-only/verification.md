@@ -7,6 +7,7 @@
 - Startup checks exercise missing WebGL2, software WebGL2, failed required models and failed context creation. No alternate renderer is constructed. Tactical maps tolerate missing optional icons.
 
 - All 32 `qa/tidebreak/*.test.mjs` suites pass, including six full simulation matches. All updated JavaScript files pass syntax checks; `git diff --check` passes. The complete 3D module dependency graph imports in Node with browser paths mapped to local files.
+- The Vercel preview build for the first implementation commit succeeded. Its browser entry requires Vercel authentication. The shared creature browser suite now uses SwiftShader and checks 3D model loading instead of the retired battlefield sprite statistics; this suite remains pending on CI.
 
 ## Limits
 The available cloud browser reports no WebGL2 and cannot reach the local server. The local Chromium download was empty, and the package installation could not write its cache. Actual GPU rendering, gameplay controls and phone views remain unverified. Updated browser checks are committed for a WebGL2-capable runner. OpenSpec CLI is unavailable; Markdown structure is checked directly.

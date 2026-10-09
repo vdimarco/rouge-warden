@@ -16,7 +16,7 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream'); fs.createReadStream(file).pipe(res);
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true });
+const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
   for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]]) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000 }), errors = [], loadedAssets = new Set();
@@ -198,7 +198,7 @@ try {
     assert.match(await page.locator('.reference-portrait').first().evaluate(el=>getComputedStyle(el).backgroundImage), /portraits\/tidewarden-bust\.webp/);
     assert(HERO_IDENTITIES.every(h=>loadedAssets.has(`/tidebreak/art/portraits/${h.slug}-bust.webp`)), 'every card portrait loads');
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
-    await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled);
+    await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
     if (width>=1000) { await page.locator('#hero-picks [data-hero="0"]').focus(); await page.keyboard.press('Enter'); }
     else await page.locator('#play').click();
     // Play opens the draft: six heroes lock one by one, then the match starts. Enter skips the remaining picks.
@@ -230,17 +230,17 @@ try {
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().player.skillRanks.reduce((sum, rank) => sum + rank, 0)), initialRank + 1);
     await page.locator('#back-skills').click();
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), false);
-    await page.waitForFunction(() => window.__mobaSnapshot().time > 3 && window.__mobaSnapshot().graphics.creatures.loaded > 0);
+    await page.waitForFunction(() => { const s=window.__mobaSnapshot(); return s.time>3&&s.graphics.models.heroes===s.graphics.models.heroesTotal; }, null, { timeout: 240000 });
     const before = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
-    assert(before.running); assert(before.time > 3); assert(before.graphics.creatures.loaded > 0); assert.equal(before.graphics.creatures.failed, 0);
+    assert(before.running); assert(before.time > 3); assert.equal(before.graphics.renderer, 'Mythic 3D'); assert.equal(before.graphics.models.heroes, 16); assert.deepEqual(before.graphics.models.failed, []);
     await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
     const after = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
-    assert(after.player.x > before.player.x, 'movement stays live with procedural creatures');
+    assert(after.player.x > before.player.x, 'movement stays live with the 3D battlefield');
     if (await page.locator('#coach-close').isVisible()) await page.locator('#coach-close').click();
     await page.locator('#pause').click(); assert(await page.locator('#sheet').isVisible());
     await page.getByRole('button', { name: 'Keep playing' }).click(); assert(!(await page.locator('#sheet').isVisible()));
     await page.screenshot({ path: path.join(shots, `${name}-moba.png`) });
-    assert.deepEqual(errors, []); console.log(`PASS ${name}: gallery loads 18 originals; sixteen hero identities and source art; role filters, keyboard grid, hover and tap; Tidewarden skill training; MOBA creature sprites, movement, pause and resume; no asset or page errors.`);
+    assert.deepEqual(errors, []); console.log(`PASS ${name}: gallery loads 18 originals; sixteen hero identities and source art; role filters, keyboard grid, hover and tap; Tidewarden skill training; 3D models, movement, pause and resume; no asset or page errors.`);
     await page.close();
   }
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
