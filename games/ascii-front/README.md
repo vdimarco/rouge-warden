@@ -1,44 +1,40 @@
 # ASCII FRONT
 
-A playable Battle City inspired tank roguelite, rendered in ASCII characters. Aesthetic reference: [bas3line/ascii](https://github.com/bas3line/ascii). All game art and logic are original.
+A fast character-art tank defense game inspired by Battle City and [bas3line/ascii](https://github.com/bas3line/ascii). Maps, music, art and game code are original.
 
-## Play locally
+Play on [Warden Arcade](https://arcade.uptick.systems/ascii-front/).
+
+## Play
+
+Choose one of 35 stages, campaign or endless play, and optional local co-op. Each stage has 20 enemies. Defend the one-hit HQ, collect supplies, keep your lives and choose permanent upgrades between stages. Construction mode lets you paint and save a map locally, then test it immediately.
+
+- P1: WASD/arrows move, mouse aims, left click/Space fires, Shift dashes, E activates EMP.
+- P2: IJKL move, U fires, O dashes. Co-op uses one shared keyboard.
+- Enter deploys/resumes, Escape pauses, R retries the selected starting stage.
+- Phones have P1 touch controls. Co-op requires a keyboard.
+- SOUND controls the original chiptune soundtrack and effects. Music begins after interaction and stops while paused, hidden or muted.
+
+Stars visibly evolve Scout → Gunner → Twin → Siege: faster shells, two active shells, then steel destruction. Helmet shields, grenade clears the field, timer freezes enemies, shovel temporarily fortifies HQ and tank grants a life. Rank resets after destruction; permanent upgrades survive. Brick breaks in quarters, water blocks vehicles, forest conceals tanks and ice slides. Friendly fire can destroy HQ and stuns a teammate.
+
+See [MECHANICS.md](MECHANICS.md) for the original mechanics and deliberate modern adaptations. Campaign ends after stage 35; endless repeats the map set. Runs reset on refresh; saved construction maps stay on this device.
+
+## Develop and build
+
+From this directory:
 
 ```sh
-npm install
-npm run dev
-```
-
-Open the URL Vite prints. `npm run build` creates the static site in `dist/`. `npm run preview` serves that build.
-
-WASD or arrows move freely, including diagonally. Aim independently with the mouse and hold left click or Space to fire. Keyboard-only aim follows movement. Shift dashes; E triggers a limited-charge EMP; Enter deploys/resumes; Escape pauses; R resets. Phones get touch controls. Switching modes starts a new run.
-
-Protect HQ through five campaign waves, or choose endless mode. Faster movement, rapid cannon fire, shorter dash recharge and denser waves keep combat moving. Scouts pursue your tank, strikers and heavies push HQ. Brick cover is destructible; steel and water block movement; brush conceals your tank from scouts beyond 160 pixels. EMP damages/stuns nearby enemies and destroys hostile projectiles. Every third kill drops supplies. Chains multiply score. Between waves choose rapid fire, reactive armor, overdrive, rail rounds, or field engineer. Runs are local and reset on refresh.
-
-All battlefield art is drawn with characters: shaded tank hulls and rotating turrets, animated tracks, highlighted terrain, shimmering water, swaying brush, muzzle flashes, projectile trails and expanding debris. The canvas supports high-density displays, while combat runs at a fixed 120 Hz. Reduced-motion preferences disable camera shake, flashes and cosmetic pulses.
-
-## Warden arcade build
-
-From the Warden repository root:
-
-```sh
-cd games/ascii-front
 npm ci
-npm run build:arcade
+npm run dev
+npm test
+npm run build
 ```
 
-`build:arcade` must run from `games/ascii-front`; its relative output path writes to Warden's `public/ascii-front/` and includes the arcade shell scripts. The standalone project should use `npm run build` instead.
+The standalone build writes `dist/`. In the Warden checkout, run `npm run build:arcade` from `games/ascii-front` to rebuild the committed `public/ascii-front/` bundle with the shared Arcade menu, audio lifecycle and analytics scripts. Building alone does not publish.
 
-Deployment target: [arcade.uptick.systems/ascii-front/](https://arcade.uptick.systems/ascii-front/). Building locally does not publish the game.
+Checks cover 35 unique connected maps, protected editor cells and saved-map validation, combat and all supplies, ranks/lives/co-op, collision and campaign progression, state-pure rendering and audio scheduling/cleanup. Browser checks cover stage selection, co-op controls, editor save/load/test, sound pause/mute/resume and responsive layouts.
 
-## Checks
+Rendering uses local ASCII fonts, HiDPI canvas and a fixed 120 Hz simulation. Reduced-motion preferences disable shake, flashes and cosmetic pulses. No external assets, API, account or network multiplayer are required to play.
 
-`npm test` covers normalized diagonal movement, wall sliding, independent mouse aim, projectile collision and firing cadence, plus damage, invulnerability, pause, EMP, upgrades, campaign/endless progression, seeded restart, concealment and HQ siege paths. Renderer checks cover finite coordinates, engine-state purity, independent turret rotation and reduced-motion behavior. Run `npm run build` to validate the standalone production bundle.
+Fonts: iA Writer Mono S ([iA Fonts](https://github.com/iaolo/iA-Fonts)) and Press Start2P ([Google Fonts](https://fonts.google.com/specimen/Press+Start+2P)), under SIL Open Font License files in `public/licenses/`.
 
-Browser verification used the Codex in-app browser at 1536×1024, default 1280×720, and 390×844. Tested deploy, keyboard movement/fire/dash/EMP, pause/resume, restart, help/focus, sound toggle, mode switching, and mobile action controls. Source engine tests cover upgrade/campaign endings.
-
-Native ASCII glyph art preserves the requested aesthetic. No external service, account, AI API, multiplayer, or cloud save is needed.
-
-Fonts: iA Writer Mono S ([iA Fonts](https://github.com/iaolo/iA-Fonts)) and Press Start2P ([Google Fonts](https://fonts.google.com/specimen/Press+Start+2P)), under the SIL Open Font License. Font license files are included under public/licenses.
-
-Balance has automated functional checks; extended human playtesting remains useful.
+Physical phone audio/performance and extended campaign balance remain unverified.

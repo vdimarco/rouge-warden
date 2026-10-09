@@ -1,9 +1,4 @@
-# ascii-front Specification
-
-## Purpose
-An original character-art tank roguelite with headquarters defense, responsive movement and aim, between-wave upgrades, campaign/endless play and Warden Arcade discovery.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Character-art tank defense
 ASCII Front SHALL offer 35 distinct original maps with stage selection and 20 enemies per stage, four enemy roles, a vulnerable headquarters, campaign completion after stage 35 and repeating endless play. Character-drawn terrain and tanks SHALL retain a bright green first player, cyan second player and warm enemy colors. Modern player armor, dash, EMP and roguelite upgrades SHALL remain available.
@@ -51,16 +46,7 @@ The game SHALL support normalized movement, independent pointer aiming, dash, EM
 - **WHEN** viewed on desktop or portrait/landscape phone layouts, or paused/hidden
 - **THEN** actions fit without horizontal overflow and paused gameplay does not continue in the background
 
-### Requirement: Warden Arcade discovery
-Warden Arcade SHALL expose ASCII Front at `/ascii-front/`, in the ASCII Scenes collection and shared game switcher, with the same id, name and original local cabinet art. The game SHALL offer an arcade return and shared switcher action.
-
-#### Scenario: Find and launch ASCII Front
-- **WHEN** a player chooses ASCII Front in the arcade or shared switcher
-- **THEN** `/ascii-front/` loads its bundled assets and presents the game
-
-#### Scenario: Return to the arcade
-- **WHEN** the player chooses the arcade return action
-- **THEN** the arcade opens without changing another game's saves or catalog entry
+## ADDED Requirements
 
 ### Requirement: Classic pickups and visible tank ranks
 Flashing carriers SHALL yield the six classic pickup types: star, helmet, grenade, timer, shovel and tank. Three star ranks SHALL visibly change the tank and successively improve projectile speed, simultaneous shots and steel destruction. Every pickup SHALL have an observable effect and score value; score milestones SHALL award lives.
