@@ -256,6 +256,8 @@ try {
     if (await page.locator('#coach-close').isVisible()) await page.locator('#coach-close').click();
     await page.locator('#pause').click(); assert(await page.locator('#sheet').isVisible());
     await page.getByRole('button', { name: 'Keep playing' }).click(); assert(!(await page.locator('#sheet').isVisible()));
+    // Capture the verified frame without continuous software rendering starving the compositor.
+    await page.evaluate(() => { document.getElementById('battle').__shore3d.draw = () => {}; });
     await page.screenshot({ path: path.join(shots, `${name}-moba.png`) });
     assert.deepEqual(errors, []); console.log(`PASS ${name}: gallery loads 18 originals; sixteen hero identities and source art; role filters, keyboard grid, hover and tap; Tidewarden skill training; 3D models, movement, pause and resume; no asset or page errors.`);
     await page.close();
