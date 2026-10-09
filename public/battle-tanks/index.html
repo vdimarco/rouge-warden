@@ -10,7 +10,7 @@
     <title>Battle Tanks · Break their command</title>
     <meta
       name="description"
-      content="Drive a tank, aim its turret, disable three guarded relay guns and reach extraction. Cover, smoke and artillery shape three tactical missions."
+      content="A luminous dot battlefield. Drive to charge piercing shots, break enemy relays for rapid fire and repairs, then reach extraction."
     />
     <link rel="icon" href="/icons/favicon.svg" />
     <link rel="stylesheet" href="/battle-tanks/style.css" />
@@ -24,7 +24,7 @@
     >
       <div
         id="action-scene"
-        aria-label="Three-dimensional tactical battlefield"
+        aria-label="Luminous dot battlefield with three-dimensional depth"
       ></div>
       <div id="tank-world-labels" aria-hidden="true"></div>
       <canvas
@@ -50,7 +50,12 @@
         </div>
         <div class="action-status">
           <span id="action-health" aria-label="Health">HP 100</span
-          ><span id="action-score">Score 0</span>
+          ><span id="action-score">Score 0</span
+          ><span
+            id="tank-charge"
+            aria-label="Piercing shot charge earned by driving"
+            >Drive charge 0%</span
+          >
         </div>
         <nav class="action-settings" aria-label="Game settings">
           <button id="action-sound" type="button" aria-pressed="false">
@@ -74,8 +79,9 @@
         <div class="action-overlay-content">
           <h1 id="action-title">Break their command.</h1>
           <p id="action-description">
-            Disable three guarded relay guns, then drive into the cyan
-            extraction zone. Cover blocks vehicles and shells.
+            Drive to charge piercing shots. Break three relay guns to light up
+            the sector and power your cannon, then reach cyan extraction. Cover
+            stops shells.
           </p>
           <div class="action-overlay-buttons">
             <button id="action-begin" type="button">Begin mission</button
@@ -134,7 +140,7 @@
       </div>
       <div class="action-links">
         <span
-          >scenes by <a href="https://ascii.rest/">ascii.rest</a> ·
+          >inspired by <a href="https://ascii.rest/">ascii.rest</a> ·
           <a href="/last-light/vendor/LICENSE">MIT</a></span
         ><a href="/afterlight/">Afterlight</a
         ><a href="/afterlight/classic.html">Classic</a

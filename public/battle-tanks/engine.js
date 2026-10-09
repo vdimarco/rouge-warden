@@ -88,6 +88,11 @@ export function create(missionIndex = 0) {
     smokeCooldown: 0,
     artilleryCooldown: 0,
     score: 0,
+    charge: 0,
+    weaponBoost: 0,
+    wrecks: [],
+    restorations: [],
+    lastEvent: "Drive to charge a piercing shell.",
     completed: [false, false, false],
     cover: m.cover.map(([x, y, w, h], i) => ({
       id: "cover-" + i,
@@ -112,7 +117,10 @@ export function create(missionIndex = 0) {
       id: "tank-" + i,
       x,
       y,
-      hp: 3,
+      type: ["scout", "scatter", "bruiser"][i % 3],
+      role: ["scout", "scatter", "bruiser"][i % 3],
+      hp: i % 3 === 2 ? 4 : 3,
+      maxHp: i % 3 === 2 ? 4 : 3,
       angle: Math.PI,
       turretAngle: Math.PI,
       cooldown: 1 + i * 0.7,
@@ -204,7 +212,18 @@ export function fire(s, autoAim = false) {
     const t = nearestTarget(s);
     if (t) aim(s, t.x, t.y);
   }
+  const charged = s.charge >= 100;
+  if (charged) {
+    s.charge = 0;
+    s.message = s.lastEvent =
+      "Charged shell: double damage, pierces one target.";
+  }
   s.projectiles.push({
+    damage: charged ? 2 : 1,
+    piercing: charged ? 1 : 0,
+    remainingPierces: charged ? 1 : 0,
+    charged,
+    hitIds: [],
     id: "shell-" + s.nextId++,
     x: s.x + Math.cos(s.turretAngle) * 3.6,
     y: s.y + Math.sin(s.turretAngle) * 3.6,
@@ -213,7 +232,7 @@ export function fire(s, autoAim = false) {
     owner: "player",
     life: 70 / 59,
   });
-  s.shellCooldown = 0.6;
+  s.shellCooldown = s.weaponBoost > 0 ? 0.32 : 0.6;
   s.recoil = 0.2;
   s.shots++;
   s.effects.push({
@@ -245,16 +264,18 @@ export function artillery(s, target) {
   }
   const x = clamp(t.x, 5, 195),
     y = clamp(t.y, 10, 95);
+  const wreckCount = s.wrecks.length;
   s.effects.push({ kind: "artillery", x, y, r: 12, life: 0.75 });
   for (const e of [...s.enemies, ...s.relays])
     if (e.hp > 0 && dist(e, { x, y }) < 12) {
       e.hp = Math.max(0, e.hp - 2);
-      if (e.hp === 0) s.score += e.id.startsWith("relay") ? 350 : 150;
+      if (e.hp === 0) destroyTarget(s, e);
     }
   for (const c of s.cover)
     if (c.hp > 0 && dist(c, { x, y }) < 14) c.hp = Math.max(0, c.hp - 6);
   s.artilleryCooldown = 14;
-  s.message = "Artillery arcs over cover. Relocate while it reloads.";
+  if (s.wrecks.length === wreckCount)
+    s.message = "Artillery arcs over cover. Relocate while it reloads.";
   return true;
 }
 function move(s, p, dx, dy, r = 2.4) {
@@ -264,25 +285,44 @@ function move(s, p, dx, dy, r = 2.4) {
   if (!blocked(s, ny, r)) p.y = ny.y;
 }
 function enemyShot(s, e) {
-  const angle = Math.atan2(e.aimY - e.y, e.aimX - e.x);
-  s.projectiles.push({
-    id: "hostile-" + s.nextId++,
-    x: e.x + Math.cos(angle) * 3,
-    y: e.y + Math.sin(angle) * 3,
-    vx: Math.cos(angle) * 34,
-    vy: Math.sin(angle) * 34,
-    owner: e.id,
-    life: 4,
-  });
-  e.cooldown = e.id.startsWith("relay") ? 2.6 : 2.2;
+  const angle = Math.atan2(e.aimY - e.y, e.aimX - e.x),
+    offsets = e.type === "scatter" ? [-0.13, 0.13] : [0];
+  for (const offset of offsets) {
+    const yaw = angle + offset;
+    s.projectiles.push({
+      id: "hostile-" + s.nextId++,
+      x: e.x + Math.cos(yaw) * 3,
+      y: e.y + Math.sin(yaw) * 3,
+      vx: Math.cos(yaw) * (e.type === "bruiser" ? 28 : 34),
+      vy: Math.sin(yaw) * (e.type === "bruiser" ? 28 : 34),
+      owner: e.id,
+      damage: e.type === "bruiser" ? 12 : e.type === "scatter" ? 6 : 8,
+      life: 4,
+    });
+  }
+  e.cooldown =
+    e.type === "bruiser"
+      ? 3.5
+      : e.type === "scatter"
+        ? 3.2
+        : e.id.startsWith("relay")
+          ? 2.8
+          : 2.7;
   e.warning = 0;
-  s.effects.push({ kind: "muzzle", x: e.x, y: e.y, r: 2, life: 0.15 });
+  s.effects.push({
+    kind: "muzzle",
+    x: e.x,
+    y: e.y,
+    r: e.type === "bruiser" ? 4 : 2,
+    life: 0.2,
+  });
 }
 function tickEnemies(s, dt) {
   for (const e of [...s.enemies, ...s.relays]) {
     if (e.hp <= 0) continue;
     e.cooldown -= dt;
-    const visible = dist(e, s) < 90 && !lineBlocked(s, e, s);
+    const distance = dist(e, s),
+      visible = distance < 90 && !lineBlocked(s, e, s);
     e.turretAngle = Math.atan2(s.y - e.y, s.x - e.x);
     if (e.warning > 0) {
       e.warning -= dt;
@@ -294,17 +334,63 @@ function tickEnemies(s, dt) {
       continue;
     }
     if (e.cooldown <= 0 && visible) {
-      e.warning = 0.9;
+      e.warning =
+        e.type === "bruiser" ? 1.35 : e.type === "scatter" ? 1.1 : 0.9;
       e.aimX = s.x;
       e.aimY = s.y;
       e.cooldown = 99;
     }
-    if (e.id.startsWith("tank") && (dist(e, s) > 37 || !visible)) {
-      const angle = Math.atan2(s.y - e.y, s.x - e.x) + (!visible ? 0.45 : 0);
+    if (
+      e.id.startsWith("tank") &&
+      (distance > 37 || !visible || e.type === "scout")
+    ) {
+      const flank =
+        e.type === "scout" && distance < 55
+          ? distance < 22
+            ? 1.9
+            : 1.15
+          : !visible
+            ? 0.45
+            : 0;
+      const angle = Math.atan2(s.y - e.y, s.x - e.x) + flank;
       e.angle = angle;
-      move(s, e, Math.cos(angle) * 5 * dt, Math.sin(angle) * 5 * dt, 2.4);
+      const speed = e.type === "scout" ? 7 : e.type === "bruiser" ? 3.2 : 4.5;
+      move(
+        s,
+        e,
+        Math.cos(angle) * speed * dt,
+        Math.sin(angle) * speed * dt,
+        2.4,
+      );
     }
   }
+}
+function destroyTarget(s, t) {
+  s.score += t.id.startsWith("relay") ? 350 : 150;
+  s.wrecks.push({
+    id: t.id,
+    x: t.x,
+    y: t.y,
+    kind: t.id.startsWith("relay") ? "relay" : "tank",
+    type: t.type,
+  });
+  if (t.id.startsWith("relay")) {
+    s.weaponBoost = 5;
+    for (const p of s.projectiles)
+      if (p.owner !== "player" && dist(t, p) < 24) p.life = 0;
+    s.pickups.push({
+      id: "repair-" + t.id,
+      x: t.x,
+      y: t.y,
+      kind: "repair",
+      used: false,
+    });
+    s.restorations.push({ x: t.x, y: t.y, r: 24, life: 1.2 });
+    s.message = s.lastEvent =
+      "Relay broken! Repair dropped · rapid fire for 5 seconds.";
+  } else
+    s.message = s.lastEvent =
+      (t.type === "bruiser" ? "Bruiser" : "Enemy tank") + " destroyed.";
 }
 function tickShells(s, dt) {
   for (const p of s.projectiles) {
@@ -326,17 +412,21 @@ function tickShells(s, dt) {
       }
       if (p.owner === "player") {
         const t = [...s.enemies, ...s.relays].find(
-          (t) => t.hp > 0 && dist(t, p) < 3.2,
+          (t) => t.hp > 0 && !p.hitIds?.includes(t.id) && dist(t, p) < 3.2,
         );
         if (t) {
-          t.hp--;
-          p.life = 0;
+          t.hp = Math.max(0, t.hp - (p.damage || 1));
+          (p.hitIds ??= []).push(t.id);
+          if (p.piercing > 0) {
+            p.piercing--;
+            p.remainingPierces = p.piercing;
+          } else p.life = 0;
           s.score += 25;
-          if (t.hp <= 0) s.score += t.id.startsWith("relay") ? 350 : 150;
+          if (t.hp <= 0) destroyTarget(s, t);
           s.effects.push({ kind: "impact", x: t.x, y: t.y, r: 5, life: 0.45 });
         }
       } else if (dist(s, p) < 2.7) {
-        s.hp = Math.max(0, s.hp - 9);
+        s.hp = Math.max(0, s.hp - (p.damage || 8));
         p.life = 0;
         s.message = "Hit. Break line of sight or deploy smoke.";
         s.effects.push({ kind: "impact", x: s.x, y: s.y, r: 5, life: 0.4 });
@@ -353,6 +443,9 @@ export function update(s, input = {}, dt = 0) {
   s.smokeCooldown = Math.max(0, s.smokeCooldown - dt);
   s.artilleryCooldown = Math.max(0, s.artilleryCooldown - dt);
   s.recoil = Math.max(0, s.recoil - dt);
+  s.weaponBoost = Math.max(0, s.weaponBoost - dt);
+  const oldX = s.x,
+    oldY = s.y;
   const throttle = clamp(Number(input.throttle) || 0, -1, 1),
     turn = clamp(Number(input.turn) || 0, -1, 1);
   s.hullAngle = wrap(s.hullAngle + turn * 1.65 * dt);
@@ -364,12 +457,19 @@ export function update(s, input = {}, dt = 0) {
     Math.cos(s.hullAngle) * s.speed * dt,
     Math.sin(s.hullAngle) * s.speed * dt,
   );
+  const wasCharged = s.charge >= 100;
+  s.charge = Math.min(100, s.charge + Math.hypot(s.x - oldX, s.y - oldY) * 4.6);
+  if (!wasCharged && s.charge >= 100)
+    s.message = s.lastEvent =
+      "Piercing shell ready. Fire through two lined-up enemies.";
   if (input.aim) aim(s, input.aim.x, input.aim.y);
   if (input.fire) fire(s, Boolean(input.autoAim));
   tickEnemies(s, dt);
   tickShells(s, dt);
   for (const c of s.smoke) c.life -= dt;
   s.smoke = s.smoke.filter((c) => c.life > 0);
+  for (const r of s.restorations) r.life -= dt;
+  s.restorations = s.restorations.filter((r) => r.life > 0);
   for (const e of s.effects) e.life -= dt;
   s.effects = s.effects.filter((e) => e.life > 0);
   for (const p of s.pickups)
@@ -468,7 +568,7 @@ export function restore(raw) {
           !old ||
           !Number.isFinite(old.hp) ||
           old.hp < 0 ||
-          old.hp > (key === "cover" ? 12 : 3)
+          old.hp > (key === "cover" ? 12 : item.maxHp || 3)
         )
           return null;
         item.hp = old.hp;
@@ -514,11 +614,48 @@ export function restore(raw) {
           ? "lost"
           : "ready";
     if (blocked(s, s, 2.4)) return null;
-    if (!Array.isArray(v.pickups) || v.pickups.length !== s.pickups.length)
+    for (const [key, max] of [
+      ["charge", 100],
+      ["weaponBoost", 5],
+    ]) {
+      if (
+        v[key] !== undefined &&
+        (!Number.isFinite(v[key]) || v[key] < 0 || v[key] > max)
+      )
+        return null;
+      s[key] = v[key] ?? 0;
+    }
+    s.wrecks = [...s.enemies, ...s.relays]
+      .filter((t) => t.hp <= 0)
+      .map((t) => ({
+        id: t.id,
+        x: t.x,
+        y: t.y,
+        kind: t.id.startsWith("relay") ? "relay" : "tank",
+        type: t.type,
+      }));
+    for (const r of s.relays)
+      if (r.hp <= 0)
+        s.pickups.push({
+          id: "repair-" + r.id,
+          x: r.x,
+          y: r.y,
+          kind: "repair",
+          used: false,
+        });
+    if (
+      !Array.isArray(v.pickups) ||
+      v.pickups.length < 2 ||
+      v.pickups.length > s.pickups.length ||
+      new Set(v.pickups.map((p) => p.id)).size !== v.pickups.length ||
+      !["repair-a", "repair-b"].every((id) =>
+        v.pickups.some((p) => p.id === id),
+      )
+    )
       return null;
-    for (const p of s.pickups) {
-      const old = v.pickups.find((e) => e.id === p.id);
-      if (!old || typeof old.used !== "boolean") return null;
+    for (const old of v.pickups) {
+      const p = s.pickups.find((p) => p.id === old.id);
+      if (!p || typeof old.used !== "boolean") return null;
       p.used = old.used;
     }
     return s;
