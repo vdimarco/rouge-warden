@@ -12,14 +12,22 @@ Each grove offers more seeds or a permanent increase in energy capacity; the cou
 
 Your journey saves locally when storage is available. Reloads require a deliberate continuation. Invalid or blocked storage leaves the game playable. Exhaustion recovers at camp while retaining restoration. After the ending you can explore the restored network or begin a new journey.
 
+## Engine and operations
+
+Phaser 3.90.0 drives the scene clock, camera, dynamic ASCII texture, keyboard/pointer input, transitions and feedback tweens. The pinned runtime and MIT license are bundled locally. The deterministic campaign model remains independent for saves and checks.
+
+Landmark operations require active decisions: rotate and focus forest light, reconnect city conductors, tether and escort drifting crews, read fjord echo channels, align desert bearings, and meet a garden’s changing needs. Numeric keys select operation choices; all choices also have native buttons. Leaving an operation keeps supplies. Rewards and costs apply once on successful completion. Movement stays available during coastal towing.
+
 ## Living scenes
 
-Original locally bundled MIT scenes come from bas3line/ascii: misty-forest, tokyo-rain, night-coast, aurora-fjord, desert-night and earthrise. Imports reuse the existing copies beside the six standalone games, which retain source licenses. The adapter changes character cells, structures and colors in response to local progress. Active weather and seed streams move while playing. Reduced motion freezes decorative changes in time while retaining permanent restoration and gameplay.
+Original locally bundled MIT scenes come from bas3line/ascii: misty-forest, tokyo-rain, night-coast, aurora-fjord, desert-night and earthrise. Imports reuse the existing copies beside the six standalone games, which retain source licenses. The adapter changes character cells, structures and colors in response to local progress. Weather cycles, spatial terrain, currents, moving crews and seed streams affect exploration while playing. Completed work unfolds into local growth and changes the landscape rather than switching only a static flag. Reduced motion freezes decorative changes in time while retaining permanent restoration and gameplay.
 
 Original artwork and the refined Last Light dot-grid direction are the visual reference; no raster assets replace the user's requested ASCII art. Gameplay silhouettes, landmarks and changed terrain share the source's 200×100 dot grid. Landscape phones put interaction choices beside the scene; portrait phones keep square dots and reachable controls.
 
 ## Checks
 
-`node --test qa/afterlight/*.test.mjs` checks legal campaigns, alternate route/resource choices, loss/recovery, upgrades, tool protection, save validation, restoration cells, optional grove blooms and active weather. `node qa/afterlight/campaign.e2e.mjs` uses system Chromium and the static server at localhost:8765 for the connected UI journey, scene changes, storage, menus, keyboard/touch, arcade launch and desktop/phone views.
+`node --test qa/afterlight/*.test.mjs` checks legal campaigns, alternate route/resource choices, loss/recovery, upgrades, tool protection, save validation, restoration cells, optional grove blooms and active weather. `node qa/afterlight/living-worlds.e2e.mjs` uses system Chromium and the static server at localhost:8765 for the connected UI journey, scene changes, storage, menus, keyboard/touch, arcade launch and desktop/phone views.
 
-See `qa/afterlight/review.md` for final verification details. Physical devices and other browser engines are not covered.
+The compositor check `node qa/afterlight/render.e2e.mjs` compares incremental and full redraws across all regions, travel, resizing and motion settings. The original `campaign.e2e.mjs` command remains a compatibility entry for the current browser campaign.
+
+See `qa/afterlight/living-worlds-review.md` for final verification details. Physical devices and other browser engines are not covered.

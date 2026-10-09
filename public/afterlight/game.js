@@ -12,25 +12,28 @@ import {
   getObjectives,
   serialize,
   restore,
+  actionChallenge,
+  cancelChallenge,
+  terrainAt,
 } from "./engine.js";
 import { WORLDS } from "./worlds.js";
-import { createRenderer } from "./render.js";
+import { createWorldRuntime } from "./phaser-world.js";
+import { createInteractionUI } from "./interaction-ui.js";
 const $ = (id) => document.getElementById(id),
   arena = $("arena"),
   motion = matchMedia("(prefers-reduced-motion: reduce)"),
   saveKey = "afterlight:journey:v1";
 let state = createJourney(37),
   loaded = false,
-  renderer = createRenderer($("scene"), { reducedMotion: motion.matches }),
-  last = 0,
+  renderer = null,
+  operationUI = null,
   lastDraw = 0,
   lastSave = 0,
   choiceSignature = "",
   modalKind = "",
   target = null,
   menuResume = false;
-const keys = new Set(),
-  pointers = new Map();
+const pointers = new Map();
 try {
   const raw = localStorage.getItem(saveKey);
   if (raw) {
@@ -43,9 +46,9 @@ try {
   }
 } catch {}
 function clearInputs() {
-  keys.clear();
   pointers.clear();
   target = null;
+  renderer?.clearDestination();
   document.querySelectorAll(".held").forEach((b) => b.classList.remove("held"));
 }
 function save() {
@@ -80,9 +83,19 @@ function togglePause() {
 }
 function action(choice) {
   if (state.phase !== "playing") return;
+  const pending = state.challenge;
   interact(state, choice);
+  if (Boolean(pending) !== Boolean(state.challenge)) clearInputs();
   sync();
   save();
+}
+function operate(id) {
+  const pending = state.challenge;
+  actionChallenge(state, id);
+  if (pending && !state.challenge) clearInputs();
+  sync();
+  save();
+  renderer?.render();
 }
 function tool() {
   if (state.phase !== "playing") return;
@@ -121,9 +134,21 @@ function restorationCount() {
   ).length;
 }
 function sync() {
+  operationUI?.sync();
   const world = WORLDS[state.region],
     ctx = getContext(state);
   setText("place", world.name);
+  const ground = terrainAt(state),
+    weather = state.environment?.weather || "";
+  const surface = ground.kinds.length
+    ? ground.kinds.join(" / ")
+    : ["coast", "fjord"].includes(state.region)
+      ? "open water"
+      : "open ground";
+  setText(
+    "conditions",
+    `${weather} · ${surface}${ground.friction < 0.9 ? " slows your pace" : ground.friction > 1.05 ? " carries you onward" : ""}`,
+  );
   setText("chapter", world.name);
   setText("objective", objectiveText());
   setText(
@@ -347,25 +372,6 @@ for (const button of document.querySelectorAll("[data-direction]")) {
       button.classList.remove("held");
     });
 }
-function point(e) {
-  const box = arena.getBoundingClientRect();
-  return {
-    x: ((e.clientX - box.left) / box.width) * 200,
-    y: ((e.clientY - box.top) / box.height) * 100,
-  };
-}
-arena.addEventListener("pointerdown", (e) => {
-  if (state.phase !== "playing" || e.target.closest("button")) return;
-  arena.setPointerCapture(e.pointerId);
-  target = point(e);
-  focusArena();
-});
-arena.addEventListener("pointermove", (e) => {
-  if (e.buttons && state.phase === "playing") target = point(e);
-});
-arena.addEventListener("pointercancel", () => {
-  target = null;
-});
 addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
   if (
@@ -374,25 +380,21 @@ addEventListener("keydown", (e) => {
   )
     return;
   if ($("menu").open) return;
+  // The operation panel owns its declared shortcuts. Do not also trigger the
+  // generic interact/tool action for the same key.
   if (
-    [
-      "arrowleft",
-      "arrowright",
-      "arrowup",
-      "arrowdown",
-      "w",
-      "a",
-      "s",
-      "d",
-      " ",
-      "e",
-      "p",
-      "m",
-      "j",
-      "enter",
-      "escape",
-    ].includes(key)
+    state.challenge &&
+    state.challenge.choices?.some(
+      (c) =>
+        String(c.key || "").toLowerCase() === (key === " " ? "space" : key),
+    )
   )
+    return;
+  if (state.challenge && ["e", "enter", " "].includes(key)) {
+    e.preventDefault();
+    return;
+  }
+  if ([" ", "e", "p", "m", "j", "enter", "escape"].includes(key))
     e.preventDefault();
   if (!e.repeat) {
     if (key === "p" || key === "escape") togglePause();
@@ -403,10 +405,8 @@ addEventListener("keydown", (e) => {
       else action();
     } else if (key === " ") tool();
   }
-  keys.add(key);
   target = null;
 });
-addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 function suspend() {
   if (state.phase === "playing") pause(state);
   clearInputs();
@@ -421,18 +421,18 @@ document.addEventListener("visibilitychange", () => {
 document.querySelector("[data-switch]").addEventListener("click", suspend);
 motion.addEventListener("change", () => {
   renderer.dispose();
-  renderer = createRenderer($("scene"), { reducedMotion: motion.matches });
-  renderer.render(state, state.time);
+  renderer = makeRuntime();
 });
-new ResizeObserver(() => renderer.resize()).observe(arena);
+new ResizeObserver(() => renderer?.resize()).observe(arena);
 function input() {
   const held = new Set(pointers.values());
+  const engineInput = renderer?.movement() || { dx: 0, dy: 0 };
   let dx =
-      Number(keys.has("arrowright") || keys.has("d") || held.has("right")) -
-      Number(keys.has("arrowleft") || keys.has("a") || held.has("left")),
+      Number(engineInput.dx > 0 || held.has("right")) -
+      Number(engineInput.dx < 0 || held.has("left")),
     dy =
-      Number(keys.has("arrowdown") || keys.has("s") || held.has("down")) -
-      Number(keys.has("arrowup") || keys.has("w") || held.has("up"));
+      Number(engineInput.dy > 0 || held.has("down")) -
+      Number(engineInput.dy < 0 || held.has("up"));
   if (target && !dx && !dy) {
     dx = target.x - state.x;
     dy = target.y - state.y;
@@ -443,13 +443,9 @@ function input() {
   }
   return { dx, dy };
 }
-function frame(now) {
-  requestAnimationFrame(frame);
-  const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
-  last = now;
+function tick(dt, now) {
   update(state, input(), dt);
-  if (now - lastDraw > 85) {
-    renderer.render(state, state.time);
+  if (now - lastDraw > 75) {
     sync();
     lastDraw = now;
   }
@@ -458,6 +454,30 @@ function frame(now) {
     lastSave = now;
   }
 }
+function makeRuntime() {
+  return createWorldRuntime({
+    parent: $("scene"),
+    getState: () => state,
+    step: tick,
+    onDestination: (p) => {
+      target = p;
+      focusArena();
+    },
+    reducedMotion: motion.matches,
+  });
+}
+operationUI = createInteractionUI({
+  getState: () => state,
+  onAction: operate,
+  onCancel: () => {
+    cancelChallenge(state);
+    clearInputs();
+    sync();
+    save();
+    focusArena();
+  },
+});
+renderer = makeRuntime();
 window.__afterlight = {
   get state() {
     return state;
@@ -494,7 +514,14 @@ window.__afterlight = {
     sync();
   },
   save,
+  actionChallenge: operate,
+  cancelChallenge: () => {
+    cancelChallenge(state);
+    sync();
+  },
+  get game() {
+    return renderer.game;
+  },
 };
 sync();
 renderer.render(state, state.time);
-requestAnimationFrame(frame);
