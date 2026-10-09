@@ -11,7 +11,7 @@ assert.equal(field.resolution, RELIEF_SEGMENTS + 1);
 assert.equal(field.vertices.length / 3, field.heights.length);
 assert.equal(field.indices.length / 3, RELIEF_SEGMENTS ** 2 * 2);
 assert(field.heights.length < 40000, 'the sampled field stays bounded');
-assert(field.landMax - field.landMin >= 250, `off-lane land has ${field.landMax - field.landMin} units of relief`);
+assert(field.landMax - field.landMin >= 900, `off-lane land has ${field.landMax - field.landMin} units of relief`);
 assert(field.minHeight < 0 && field.maxHeight > 300, 'lowered beds and real raised landforms exist');
 assert.deepEqual(buildRelief(world, state).heights, field.heights, 'identical geometry and seed produce identical relief');
 assert.throws(() => buildRelief(world, state, { segments: 191 }), /even/, 'triangulation requires a mirror axis');
@@ -41,7 +41,7 @@ const laneRanges = PATHS.map(path => {
   return Math.max(...heights) - Math.min(...heights);
 });
 assert(laneRanges.every(range => range > 10), 'dry roads follow rolling ground instead of one level plane');
-assert(laneRanges[0] > 80 && laneRanges[2] > 80, 'side-lane hills are visible during lane travel');
+assert(laneRanges[0] > 300 && laneRanges[2] > 300, 'side lanes climb visibly into the highlands');
 let flat = 0, sampled = 0;
 for (let x = 0; x <= SIZE; x += 100) for (let z = 0; z <= SIZE; z += 100) { sampled++; flat += Math.abs(field.heightAt(x, z)) < 10; }
 assert(flat / sampled < .4, 'level carving must not flatten most of the playable landscape');
@@ -89,6 +89,6 @@ for (let i = 0; i < 1000; i++) {
   const x = (i * 791.43) % SIZE, z = (i * 617.17) % SIZE, epsilon = .001;
   assert(Math.abs(field.heightAt(x + epsilon, z + epsilon) - field.heightAt(x - epsilon, z - epsilon)) <= field.maxSlope * epsilon * 2 * Math.SQRT2 + 1e-6, 'the sampled surface is continuous across cells and triangles');
 }
-assert(field.maxSlope < 1.6, `relief slopes remain traversable-looking (${field.maxSlope.toFixed(3)})`);
+assert(field.maxSlope < 3.2, `highland banks have bounded slopes (${field.maxSlope.toFixed(3)})`);
 assert(TERRAIN_HEIGHT_GLSL.includes('uTerrainHeight') && TERRAIN_HEIGHT_GLSL.includes('terrainHeightAt'), 'ground materials can share the sampled field');
 console.log('PASS: deterministic mirrored terrain, varied land, rolling roads, level pads, stable banks/bridges and exact mesh sampling.', JSON.stringify({ laneRanges: laneRanges.map(n => +n.toFixed(1)), flatShare: +(flat / sampled).toFixed(3), buildMs: Math.round(buildMs), vertices: field.heights.length, landRange: +(field.landMax - field.landMin).toFixed(1), maxSlope: +field.maxSlope.toFixed(3), meshError: +meshError.toFixed(6) }));
