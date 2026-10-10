@@ -64,6 +64,41 @@ Environment improvements SHALL preserve municipal building massing and mapped pa
 - **AND** current-build warmed performance is measured at unchanged Epic/100% settings against the existing p95 below 16.67 ms requirement, with failed gates kept open
 - **AND** dated official references, source assumptions, preservation checks and remaining terrain/construction/likeness limits are retained
 
+### Requirement: Save the park story campaign
+The proposed campaign SHALL deliver the eight-mission [One More Tomorrow treatment](../../../../../games/nord-unreal/Design/SaveThePark.md), preserving the comic direction, recognizable park setting and freely selectable crew. This requirement is planned; the narrative treatment does not establish implemented gameplay.
+
+#### Scenario: Discover the Curator's trap
+- **WHEN** the crew completes the first four festival events and the theatre performance
+- **THEN** recurring collector marks and captured closing cues foreshadow the revelation that their endings charge the Boogeyman's master book
+- **AND** the crew's established backstage position explains how the player-controlled characters escape capture
+- **AND** the early rescues retain value through released people and equipment that support the comeback
+
+#### Scenario: Play varied encounters and finish the story
+- **WHEN** a player follows the full campaign from the chalet to the final theatre confrontation
+- **THEN** meaningful actions include a light/plunger rescue, a street race, a pond reflection puzzle, a court skill encounter, a staged performance, resident rescues, convoy interception and a phased finale
+- **AND** worklights reveal seams, plungers open exposed clamps and the stolen projector creates blank-panel gaps according to taught rules
+- **AND** the finale exposes and breaks the master binding before the show ends voluntarily, leaving visible park restoration and continued free-roam
+- **AND** story completion requires neither performance medals nor a particular supplied character choice
+
+### Requirement: Resumable solo and shared campaign
+The proposed campaign SHALL support solo and the supported multiplayer party sizes with host-owned progression, banked retries and mission-boundary saves. These capabilities remain unimplemented in the current exploration-objective build.
+
+#### Scenario: Play alone or change the party
+- **WHEN** a solo player undertakes a driving/runner encounter, or a peer joins or disconnects during a mission
+- **THEN** required actions can be completed sequentially without passenger seats or simultaneous mandatory switches
+- **AND** completed subgoals remain banked, late joiners receive the active phase/restoration state and an absent player's avatar or car cannot permanently block progression
+- **AND** checkpoint retry and mission-boundary reload preserve the intended progress without duplicating rewards or restoring removed clamps/captives incorrectly
+- **AND** E entry/exit, C selection, private F2, collision, authoritative driving and disconnect recovery retain their existing behavior
+- **AND** tools/captive identity are independent of CrewStyle, parked-car clamp access avoids the existing car-entry radius and the unique shared projector remains recoverable without duplication
+- **AND** the theatre capture cue waits for active players in its safe unframed area and places late joiners there safely
+
+#### Scenario: Accept the first playable story slice
+- **WHEN** missions 1 and 2 are implemented and reviewed solo and with peers
+- **THEN** actual play establishes a comprehensible opening mystery, usable worklight/plunger actions and enjoyable racing-style handling rather than two renamed proximity markers
+- **AND** objectives, captions and hazard telegraphs remain readable at 1280×720 and 1920×1080, with visual alternatives to essential sound cues
+- **AND** playtest findings separately assess handling enjoyment, pacing, variety, retry frustration and story comprehension
+- **AND** current native/package checks pass and performance is measured against the unchanged frame-time gate before any implemented slice is accepted
+
 ## MODIFIED Requirements
 
 ### Requirement: Textured cottage crew

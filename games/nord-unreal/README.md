@@ -2,6 +2,8 @@
 
 A playable Unreal Engine 5.8.3 neighborhood centered on Parc La Fontaine and **1334 Rue Sherbrooke Est**. Walk, drive, and complete three shared park exploration objectives with friends.
 
+The proposed story campaign, [NORD: One More Tomorrow](Design/SaveThePark.md), follows the crew saving the park from a Boogeyman who traps perfect days inside comic-book panels. Its eight-mission treatment, midpoint reversal, crew roles and solo/co-op design are written; campaign gameplay is not yet implemented.
+
 The base OpenStreetMap snapshot records: 1,663 building footprints, two ponds, 157 road ways, 1,209 pedestrian/cycle path ways, and 4,571 mapped trees across approximately 1.1 km². Spawn is on the pedestrian path nearest the address, with the car on Rue Sherbrooke Est. The minimap, objectives, and recovery points use the same coordinates.
 
 The district now uses **1,161 municipal LOD2 building models**, replacing 1,299 overlapping generic footprints across the playable area. Surveyed roof shapes, setbacks and available roof photo textures are retained. Façades use estimated comic masonry, trim and window spacing. The park adds **4,586 municipal inventory trees** (2,409 in Parc La Fontaine), **566 mapped furniture points**, **21 sports pitches**, pond coping, theatre seating and three illustrated landmark buildings. Tree heights/crowns and landmark elevations are estimates. See [building provenance](Data/CityBuildings/README.md) and [park sources, art and regeneration](Data/ParkComic/README.md).
