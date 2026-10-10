@@ -110,25 +110,36 @@ public:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<AQuebecCharacter> Occupant;
-    UPROPERTY(Replicated) float Speed = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float Speed = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float LateralSpeed = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) bool bHandbrake = false;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 PaintStyle = 0;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 BodyProfile = 0;
     UPROPERTY(VisibleAnywhere, Replicated) bool bTraffic = false;
     void SetTrafficRoute(int32 Segment, bool bForward, const TArray<bool>& AllowedRoads);
     void StopInput();
+    void ResetMotion();
 
 private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Collision;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Parts;
+    UPROPERTY() TObjectPtr<class UAudioComponent> DriveAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> DriveWave;
     float LastDriveInputTime = 0.f;
     float Throttle = 0.f;
     float Steering = 0.f;
     float VerticalSpeed = 0.f;
     float LastLookTime = -10.f;
     float WheelAngle = 0.f;
+    float DriveThrottle = 0.f;
+    float SteeringState = 0.f;
+    float WheelSteering = 0.f;
+    float AudioPhase = 0.f;
+    float AudioFrequency = 35.f;
+    float TirePhase = 0.f;
+    uint32 AudioNoise = 0x35a72f19;
     UPROPERTY(Replicated) float VisualSteering = 0.f;
     int32 TrafficSegment = INDEX_NONE;
     bool bTrafficForward = true;
@@ -138,6 +149,9 @@ private:
     bool bJunctionReserved = false;
     bool bJunctionEntered = false;
     void UpdateTraffic();
+    void SimulateDrive(float Step, bool bFailsafe);
+    void MoveWithCollision(float Step, const FVector& Travel);
+    void UpdateDriveAudio(float DeltaSeconds);
     UFUNCTION() void ApplyPaint();
     UFUNCTION() void MoveForward(float Value);
     UFUNCTION() void MoveRight(float Value);
@@ -174,6 +188,7 @@ public:
     AQuebecCar* FindInteractableCar() const;
     AQuebecParkResident* FindInteractableResident() const;
     bool IsComicStyle() const { return bComicStyle; }
+    void ShowInteractionMessage(const FString& Message) { ClientInteractionMessage(Message); }
     UPROPERTY(VisibleAnywhere, Transient) FString ResidentCaption;
     UPROPERTY(VisibleAnywhere, Transient) float ResidentCaptionUntil = 0.f;
 
@@ -183,6 +198,12 @@ private:
     bool bComicStyle = true;
     float CaptureClock = 0.f;
     int32 CaptureStep = 0;
+    float CampaignAimElapsed = 0.f;
+    UFUNCTION() void RetryCampaign();
+    UFUNCTION() void ReplayCampaign();
+    UFUNCTION(Server, Reliable) void ServerRetryCampaign();
+    UFUNCTION(Server, Reliable) void ServerReplayCampaign();
+    UFUNCTION(Server, Unreliable) void ServerCampaignAim(float Yaw, float Pitch);
     UFUNCTION() void NextCharacter();
     UFUNCTION(Server, Reliable) void ServerNextCharacter();
     UFUNCTION() void ToggleComicStyle();

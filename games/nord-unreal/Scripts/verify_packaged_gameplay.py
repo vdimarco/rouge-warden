@@ -24,7 +24,7 @@ args = parser.parse_args()
 assert 0 <= args.soak_seconds <= 2400
 assert RUNNER.is_file(), "Build the Linux Development package first"
 OUT.mkdir(parents=True, exist_ok=True)
-REPORT = {"passed": False, "mode": "separate Linux Development processes, native console input handlers",
+REPORT = {"passed": False, "mode": "separate Linux Development processes, native console input handlers; legacy exploration regression (-NordNoCampaign)",
           "checks": [], "soak_cycles": 0, "skipped": ["external internet", "physical input devices", "other platforms"]}
 PEERS = []
 SAVED_RESIDENT_NAMES = set()
@@ -59,7 +59,7 @@ def launch(name, address, commands_dir):
     write_commands(peer, "")
     peer["stdout"] = (OUT / (name + ".stdout.log")).open("w")
     # Separate profiler paths avoid same-second filename collisions between concurrent peers.
-    peer["process"] = subprocess.Popen(["bash", str(RUNNER), address, "-port=7793", "-nullrhi", "-unattended", "-nosound",
+    peer["process"] = subprocess.Popen(["bash", str(RUNNER), address, "-port=7793", "-nullrhi", "-unattended", "-nosound", "-NordNoCampaign",
         "-saveddirsuffix=NativeQA_" + name,
         "-ExecCmds=t.MaxFPS 60", "-csvCaptureFrames=180000",
         "-csvExecCmds=r30:exec " + str(peer["commands"]), "-abslog=" + str(path)],

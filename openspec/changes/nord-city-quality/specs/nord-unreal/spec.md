@@ -65,7 +65,7 @@ Environment improvements SHALL preserve municipal building massing and mapped pa
 - **AND** dated official references, source assumptions, preservation checks and remaining terrain/construction/likeness limits are retained
 
 ### Requirement: Save the park story campaign
-The proposed campaign SHALL deliver the eight-mission [One More Tomorrow treatment](../../../../../games/nord-unreal/Design/SaveThePark.md), preserving the comic direction, recognizable park setting and freely selectable crew. This requirement is planned; the narrative treatment does not establish implemented gameplay.
+The proposed campaign SHALL deliver the eight-mission [One More Tomorrow treatment](../../../../../games/nord-unreal/Design/SaveThePark.md), preserving the comic direction, recognizable park setting and freely selectable crew. Missions 1 and 2 have a native prototype with passing automated progression and bounded presentation checks; physical play acceptance remains pending. Missions 3–8 and full-campaign completion remain planned. The narrative treatment alone does not establish implemented or verified gameplay.
 
 #### Scenario: Discover the Curator's trap
 - **WHEN** the crew completes the first four festival events and the theatre performance
@@ -81,7 +81,7 @@ The proposed campaign SHALL deliver the eight-mission [One More Tomorrow treatme
 - **AND** story completion requires neither performance medals nor a particular supplied character choice
 
 ### Requirement: Resumable solo and shared campaign
-The proposed campaign SHALL support solo and the supported multiplayer party sizes with host-owned progression, banked retries and mission-boundary saves. These capabilities remain unimplemented in the current exploration-objective build.
+The proposed campaign SHALL support solo and the supported multiplayer party sizes with host-owned progression, banked retries and mission-boundary saves. The first two native encounters pass automated retry, replication and actual save/reload checks; physical co-op acceptance remains pending. The remaining campaign's recovery and restoration behavior is planned. The three exploration objectives remain available only in explicit legacy mode.
 
 #### Scenario: Play alone or change the party
 - **WHEN** a solo player undertakes a driving/runner encounter, or a peer joins or disconnects during a mission
@@ -98,6 +98,43 @@ The proposed campaign SHALL support solo and the supported multiplayer party siz
 - **AND** objectives, captions and hazard telegraphs remain readable at 1280×720 and 1920×1080, with visual alternatives to essential sound cues
 - **AND** playtest findings separately assess handling enjoyment, pacing, variety, retry frustration and story comprehension
 - **AND** current native/package checks pass and performance is measured against the unchanged frame-time gate before any implemented slice is accepted
+
+
+### Requirement: First story slice observable acceptance
+The first two campaign missions SHALL be accepted through actual native interactions, authoritative progression and separately reviewed solo/co-op play. Automated native actions, save/reload, bounded visual inspection, packaged startup and six static performance scenes pass as recorded in the verification report. Physical solo/co-op play, audio and full packaged campaign/save flow remain unverified, so overall slice acceptance stays open.
+
+#### Scenario: Learn and perform the terrace rescue
+- **WHEN** a player attempts the chalet worklight/plunger actions from the wrong phase, outside the permitted range or while driving, then performs the taught sequence correctly on foot
+- **THEN** invalid attempts do not advance the host-owned campaign or free captives
+- **AND** the valid native actions visibly reveal and release the intended fixtures in order, with shared completion replicated to peers
+- **AND** C changes appearance without removing campaign tools or changing progress, and F2 remains private
+
+#### Scenario: Race, retry and change the party
+- **WHEN** the player starts the street race in an eligible car, attempts a later gate first, follows the ordered route and retries after a mistake
+- **THEN** skipped/out-of-order gates cannot grant completion, while valid native driven crossings advance the expected checkpoint
+- **AND** retry returns to a safe documented checkpoint without erasing banked story work or duplicating rewards
+- **AND** joining or departing peers receive or release the correct shared phase, vehicle occupancy and appearance without permanently blocking solo completion
+
+#### Scenario: Resume and inspect the first slice
+- **WHEN** an isolated test session ends and the host reloads its campaign save, and the slice is inspected at both supported resolutions
+- **THEN** mission-boundary progress and the documented unfinished-encounter reset policy load from actual saved state while the production slot remains unchanged
+- **AND** native 1280×720 and 1920×1080 captures separately pass completion checks and visual review of prompts, objectives, telegraphs and restored terrace/race states
+- **AND** manual physical-control solo/co-op findings assess story comprehension, racing enjoyment, mission variety and retry frustration separately from automated progression
+- **AND** current gameplay/package regressions pass and performance is measured against the unchanged requirement before playable acceptance
+
+### Requirement: Responsive racing-style driving
+Player-controlled cars SHALL provide progressive acceleration, braking before reverse, speed-sensitive steering, controllable handbrake slip and recovery, speed-responsive camera feedback and local engine/tire feedback while preserving authoritative control, tested collision and ambient traffic behavior.
+
+#### Scenario: Brake, corner and recover
+- **WHEN** a driver accelerates, holds S while moving forward, steers at different speeds and releases a handbrake turn
+- **THEN** braking stops forward motion before reverse, steering remains controllable at speed and lateral momentum settles after release
+- **AND** the follow camera widens with speed while retaining manual look and the existing grace period
+- **AND** native handling checks reject non-finite input and verify bounded motion, and a representative street circuit receives a separate subjective handling review
+
+#### Scenario: Retain safe shared driving
+- **WHEN** peers drive over a marking/curb, encounter a tall wall, lose driving packets or disconnect
+- **THEN** tested curb traversal, wall blocking, stale-input clearing, occupancy cleanup and recovery still work
+- **AND** ambient traffic retains its route/yield behavior and local audio does not create an audible fleet of unoccupied cars
 
 ## MODIFIED Requirements
 

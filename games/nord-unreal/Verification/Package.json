@@ -3,6 +3,8 @@
   "package": "Linux Development",
   "separate_process_loopback": true,
   "port": 7791,
+  "fresh_campaign_on_both_peers": true,
+  "campaign_save_disabled_for_package_startup": true,
   "native_crew_cycle_calls": 8,
   "restored_capture_crew_style": 9,
   "loaded_resident_parts": 66,
@@ -15,10 +17,11 @@
     1600,
     900
   ],
-  "elapsed_seconds": 30.55,
+  "elapsed_seconds": 30.86,
   "skipped": [
     "external internet",
     "non-Linux platforms",
-    "latency and reconnect"
+    "latency and reconnect",
+    "full packaged campaign/save flow (covered in native PIE)"
   ]
 }

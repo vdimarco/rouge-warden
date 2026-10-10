@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "mode": "separate Linux Development processes, native console input handlers",
+  "mode": "separate Linux Development processes, native console input handlers; legacy exploration regression (-NordNoCampaign)",
   "checks": [
     "native host E completes the three ordered shared objectives",
     "late-joining package receives completed progress, eleven resident styles and eight runtime bodies",
@@ -39,7 +39,7 @@
     "original_position_cm": [
       37529.800229,
       -7243.479359,
-      100.24745
+      100.100278
     ],
     "original_yaw_degrees": 77.5308,
     "forward_lane_offset_cm": 145,
@@ -51,9 +51,9 @@
           "position_cm": [
             37529.800229,
             -7243.479359,
-            100.10027
+            100.100278
           ],
-          "position_error_cm": 0.14718,
+          "position_error_cm": 0.0,
           "yaw_degrees": 77.5308,
           "yaw_error_degrees": 0.0
         },
@@ -63,7 +63,7 @@
             -7243.48,
             100.11
           ],
-          "position_error_cm": 0.137452,
+          "position_error_cm": 0.009746,
           "yaw_degrees": 77.34375,
           "yaw_error_degrees": 0.18705
         },
@@ -78,9 +78,9 @@
           "position_cm": [
             37529.800229,
             -7243.479359,
-            100.10027
+            100.100278
           ],
-          "position_error_cm": 0.14718,
+          "position_error_cm": 0.0,
           "yaw_degrees": 77.5308,
           "yaw_error_degrees": 0.0
         },
@@ -90,7 +90,7 @@
             -7243.48,
             100.11
           ],
-          "position_error_cm": 0.137452,
+          "position_error_cm": 0.009746,
           "yaw_degrees": 77.34375,
           "yaw_error_degrees": 0.18705
         },
@@ -104,9 +104,9 @@
   "soak": {
     "requested_seconds": 0,
     "elapsed_seconds": 0.0,
-    "host_rss_baseline_mb": 2850.7,
-    "host_rss_peak_mb": 2850.7,
-    "host_rss_final_mb": 2850.7
+    "host_rss_baseline_mb": 2966.9,
+    "host_rss_peak_mb": 2966.9,
+    "host_rss_final_mb": 2966.9
   },
-  "elapsed_seconds": 88.3
+  "elapsed_seconds": 87.3
 }

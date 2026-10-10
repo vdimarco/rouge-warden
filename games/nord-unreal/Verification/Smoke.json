@@ -75,12 +75,12 @@
   ],
   "foot_displacement_cm": {
     "MoveForward": [
-      393.0,
-      400.5
+      392.9,
+      404.1
     ],
     "MoveRight": [
-      633.3,
-      645.8
+      619.4,
+      644.5
     ]
   },
   "driving_fixture": {
@@ -88,12 +88,12 @@
     "production_spawn_verified": true,
     "ambient_traffic_enabled": true
   },
-  "drive_displacement_cm": 886.4,
+  "drive_displacement_cm": 948.9,
   "replicated_car_error_limit_cm": 150,
-  "replicated_car_error_cm": 29.0,
+  "replicated_car_error_cm": 50.5,
   "steering_yaw_change_degrees": [
-    27.3,
-    26.5
+    20.7,
+    19.5
   ],
-  "elapsed_seconds": 36.77
+  "elapsed_seconds": 38.44
 }

@@ -1,5 +1,5 @@
 {
-  "passed": false,
+  "passed": true,
   "hardware": {
     "platform": "Linux",
     "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
@@ -23,16 +23,16 @@
         720
       ],
       "frames": 2398,
-      "sample_seconds": 30.98,
-      "median_ms": 13.29,
-      "p95_ms": 17.02,
-      "p99_ms": 19.11,
-      "average_fps": 77.4,
+      "sample_seconds": 26.42,
+      "median_ms": 11.03,
+      "p95_ms": 14.71,
+      "p99_ms": 15.86,
+      "average_fps": 90.7,
       "over_33ms_percent": 0.0,
-      "median_gpu_ms": 12.87,
-      "csv": "Profile(20261010_100642).csv",
+      "median_gpu_ms": 10.43,
+      "csv": "Profile(20261010_125218).csv",
       "screenshot": "Preview/PerformanceSherbrooke1280.png",
-      "frame_budget_passed": false
+      "frame_budget_passed": true
     },
     {
       "scene": "Pond",
@@ -41,16 +41,16 @@
         720
       ],
       "frames": 2398,
-      "sample_seconds": 31.72,
-      "median_ms": 13.62,
-      "p95_ms": 17.26,
-      "p99_ms": 19.77,
-      "average_fps": 75.6,
+      "sample_seconds": 26.73,
+      "median_ms": 11.23,
+      "p95_ms": 14.64,
+      "p99_ms": 15.99,
+      "average_fps": 89.7,
       "over_33ms_percent": 0.0,
-      "median_gpu_ms": 13.04,
-      "csv": "Profile(20261010_100728).csv",
+      "median_gpu_ms": 10.72,
+      "csv": "Profile(20261010_125259).csv",
       "screenshot": "Preview/PerformancePond1280.png",
-      "frame_budget_passed": false
+      "frame_budget_passed": true
     },
     {
       "scene": "NorthPark",
@@ -59,16 +59,16 @@
         720
       ],
       "frames": 2398,
-      "sample_seconds": 31.36,
-      "median_ms": 13.57,
-      "p95_ms": 17.2,
-      "p99_ms": 19.31,
-      "average_fps": 76.5,
-      "over_33ms_percent": 0.0,
-      "median_gpu_ms": 12.98,
-      "csv": "Profile(20261010_100815).csv",
+      "sample_seconds": 26.96,
+      "median_ms": 11.22,
+      "p95_ms": 15.04,
+      "p99_ms": 16.66,
+      "average_fps": 89.0,
+      "over_33ms_percent": 0.04,
+      "median_gpu_ms": 10.57,
+      "csv": "Profile(20261010_125340).csv",
       "screenshot": "Preview/PerformanceNorthPark1280.png",
-      "frame_budget_passed": false
+      "frame_budget_passed": true
     },
     {
       "scene": "Sherbrooke",
@@ -77,16 +77,16 @@
         1080
       ],
       "frames": 2398,
-      "sample_seconds": 36.41,
-      "median_ms": 15.52,
-      "p95_ms": 19.28,
-      "p99_ms": 21.52,
-      "average_fps": 65.9,
+      "sample_seconds": 30.72,
+      "median_ms": 13.05,
+      "p95_ms": 16.02,
+      "p99_ms": 17.31,
+      "average_fps": 78.1,
       "over_33ms_percent": 0.0,
-      "median_gpu_ms": 15.4,
-      "csv": "Profile(20261010_100902).csv",
+      "median_gpu_ms": 12.87,
+      "csv": "Profile(20261010_125421).csv",
       "screenshot": "Preview/PerformanceSherbrooke1920.png",
-      "frame_budget_passed": false
+      "frame_budget_passed": true
     },
     {
       "scene": "Pond",
@@ -95,16 +95,16 @@
         1080
       ],
       "frames": 2398,
-      "sample_seconds": 36.67,
-      "median_ms": 15.6,
-      "p95_ms": 19.6,
-      "p99_ms": 21.64,
-      "average_fps": 65.4,
-      "over_33ms_percent": 0.0,
-      "median_gpu_ms": 15.52,
-      "csv": "Profile(20261010_100955).csv",
+      "sample_seconds": 31.73,
+      "median_ms": 13.6,
+      "p95_ms": 16.36,
+      "p99_ms": 18.08,
+      "average_fps": 75.6,
+      "over_33ms_percent": 0.04,
+      "median_gpu_ms": 13.46,
+      "csv": "Profile(20261010_125507).csv",
       "screenshot": "Preview/PerformancePond1920.png",
-      "frame_budget_passed": false
+      "frame_budget_passed": true
     },
     {
       "scene": "NorthPark",
@@ -113,16 +113,16 @@
         1080
       ],
       "frames": 2398,
-      "sample_seconds": 36.76,
-      "median_ms": 15.6,
-      "p95_ms": 19.48,
-      "p99_ms": 21.91,
-      "average_fps": 65.2,
-      "over_33ms_percent": 0.0,
-      "median_gpu_ms": 15.52,
-      "csv": "Profile(20261010_101048).csv",
+      "sample_seconds": 31.69,
+      "median_ms": 13.51,
+      "p95_ms": 16.37,
+      "p99_ms": 17.8,
+      "average_fps": 75.7,
+      "over_33ms_percent": 0.04,
+      "median_gpu_ms": 13.45,
+      "csv": "Profile(20261010_125554).csv",
       "screenshot": "Preview/PerformanceNorthPark1920.png",
-      "frame_budget_passed": false
+      "frame_budget_passed": true
     }
   ]
 }

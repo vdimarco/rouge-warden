@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "package": "Linux Development",
+  "build_cook_stage_pak_archive_seconds": 79.74,
+  "source_sha256": {
+    "Source/Quebec/LaFontaineMap.h": "d2146d9458628121fbdd93c8c881216d46886ccded8179295c817deb2428a0ab",
+    "Source/Quebec/Quebec.Build.cs": "cbdeed8b4295aba2283b6da46bfa89943a874adb273c30a1ac14af5f6cded498",
+    "Source/Quebec/Quebec.cpp": "bfa80510f164ae216ed79f7efa9e93c54ac6f3caa1c1a4e3fe634027a64badad",
+    "Source/Quebec/QuebecCampaign.cpp": "d3607e1ecbb330830caa8ecaafc3710d89936934e5ab23d159369b9964e5b25a",
+    "Source/Quebec/QuebecCampaign.h": "2cc5037f0c152439e83e3768bd1ebd7afa65622c2cc7cb77c2c0df9d2e8fc4dd",
+    "Source/Quebec/QuebecCampaignSaveTests.cpp": "dcbeb910e523e2b2193983a41713ce9e66a1c34b47c1375b7b92491c6a7a8b68",
+    "Source/Quebec/QuebecCarHandlingTests.cpp": "8f6c4f6f11b01cdb91b47b6289f3f67f3a284d86ce7626c596e4e74846b137ff",
+    "Source/Quebec/QuebecGameplay.cpp": "ee66253de932ebfa3e618613761bfb8374eca4fa15619f0c540568d0f230191f",
+    "Source/Quebec/QuebecGameplay.h": "21e2abebb3b50567ec84bbe802fb4afa345556b037476deb788dec8876bc7e49",
+    "Source/Quebec.Target.cs": "66ade2a3374d3c4355ce63ba416ba56e28f8888ec1725b7cd190f86e427a4c0f",
+    "Source/QuebecEditor.Target.cs": "2604b30dd335f7478471f674ce23cb0a779ced1288e4c9838df7c229774438a1"
+  },
+  "map_assets_changed_by_gameplay_pass": false,
+  "runtime_checks": "See Package.json, PackagedGameplay.json and StorySlice*.json; build success alone is not runtime acceptance."
+}

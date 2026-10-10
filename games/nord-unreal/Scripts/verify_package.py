@@ -15,27 +15,30 @@ for name in shots:(screenshots/(name+'.png')).unlink(missing_ok=True)
 commands=['ke QuebecController NextCharacter']*8+[
  'getall QuebecParkResident Style','getall StaticMeshComponent StaticMesh',
  'getall SkeletalMeshComponent SkinnedAsset','getall AnimSequence Skeleton',
- 'getall QuebecCharacter CrewStyle']
+ 'getall QuebecCharacter CrewStyle','getall QuebecCampaign CompletedMissions']
 bad_command=r'Bad or missing property|Failed to find function|Failed to find an object named|Unrecognized command'
 cycle_pattern=r"Called 'NextCharacter' on (\d+) instance\(s\) of class '/Script/Quebec.QuebecController' \((\d+) succeeded\)"
 host=client=None
 try:
- host=subprocess.Popen(['bash',str(runner),'/Game/Maps/LaFontaine?listen','-port=7791','-RenderOffscreen','-ForceRes','-windowed','-ResX=1600','-ResY=900','-NordCapture','-unattended','-nosound','-ExecCmds='+','.join(commands),'-abslog='+str(host_log)],stdout=host_out,stderr=subprocess.STDOUT,start_new_session=True)
+ host=subprocess.Popen(['bash',str(runner),'/Game/Maps/LaFontaine?listen','-port=7791','-RenderOffscreen','-ForceRes','-windowed','-ResX=1600','-ResY=900','-NordCapture','-NordNoCampaignSave','-unattended','-nosound','-ExecCmds='+','.join(commands),'-abslog='+str(host_log)],stdout=host_out,stderr=subprocess.STDOUT,start_new_session=True)
  start=time.monotonic()
  while time.monotonic()-start<50:
   text=host_log.read_text(errors='replace') if host_log.exists() else ''
   assert not re.search(bad_command,text,re.I),'Packaged startup console command failed'
   if 'listening on port 7791' in text and re.search(r'\.CrewStyle = 9\b',text):
    assert re.findall(cycle_pattern,text)==[('1','1')]*8,'Native crew cycling did not visit all eight styles'
+   assert re.search(r'\.QuebecCampaign_\d+\.CompletedMissions = 0\b',text),'Fresh packaged campaign did not start'
    break
   assert host.poll() is None,'Packaged host exited before listening'
   time.sleep(.5)
  else:raise AssertionError('Packaged host never listened and completed the crew dependency cycle')
- client=subprocess.Popen(['bash',str(runner),'127.0.0.1:7791','-nullrhi','-unattended','-nosound','-abslog='+str(client_log)],stdout=client_out,stderr=subprocess.STDOUT,start_new_session=True)
+ client=subprocess.Popen(['bash',str(runner),'127.0.0.1:7791','-nullrhi','-NordNoCampaignSave','-unattended','-nosound',
+  '-ExecCmds=t.MaxFPS 60','-csvCaptureFrames=6000','-csvExecCmds=r120:getall QuebecCampaign CompletedMissions',
+  '-abslog='+str(client_log)],stdout=client_out,stderr=subprocess.STDOUT,start_new_session=True)
  while time.monotonic()-start<80:
   ct=client_log.read_text(errors='replace') if client_log.exists() else ''
   ht=host_log.read_text(errors='replace')
-  if 'Welcomed by server' in ct and 'Join succeeded' in ht:break
+  if 'Welcomed by server' in ct and 'Join succeeded' in ht and re.search(r'\.QuebecCampaign_\d+\.CompletedMissions = 0\b',ct):break
   assert host.poll() is None and client.poll() is None,'A packaged peer exited before connecting'
   time.sleep(.5)
  else:raise AssertionError('Packaged client did not join')
@@ -55,7 +58,7 @@ try:
  expected={b['id'] for b in json.loads((root/'Data/CityBuildings/manifest.json').read_text())['buildings']}
  assert city==expected and '2316936' not in city, ('Cooked surveyed buildings',len(city),len(expected))
  assert not re.search(r'Failed to find object.*ParkComic|Failed to load.*ParkComic|Missing cached shader map|'+bad_command,text,re.I)
- report={'passed':True,'package':'Linux Development','separate_process_loopback':True,'port':7791,'native_crew_cycle_calls':8,'restored_capture_crew_style':9,'loaded_resident_parts':len(models),'loaded_skeletal_crew':len(crew),'loaded_animation_clips':len(animations),'surveyed_buildings':len(city),'rendered_capture':True,'rendered_capture_count':len(shots),'viewport':[1600,900],'elapsed_seconds':round(time.monotonic()-start,2),'skipped':['external internet','non-Linux platforms','latency and reconnect']}
+ report={'passed':True,'package':'Linux Development','separate_process_loopback':True,'port':7791,'fresh_campaign_on_both_peers':True,'campaign_save_disabled_for_package_startup':True,'native_crew_cycle_calls':8,'restored_capture_crew_style':9,'loaded_resident_parts':len(models),'loaded_skeletal_crew':len(crew),'loaded_animation_clips':len(animations),'surveyed_buildings':len(city),'rendered_capture':True,'rendered_capture_count':len(shots),'viewport':[1600,900],'elapsed_seconds':round(time.monotonic()-start,2),'skipped':['external internet','non-Linux platforms','latency and reconnect','full packaged campaign/save flow (covered in native PIE)']}
  (root/'Verification/Package.json').write_text(json.dumps(report,indent=2));print('NORD_PACKAGE_PLAY_OK',json.dumps(report))
 finally:
  for process in (client,host):

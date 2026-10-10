@@ -45,7 +45,7 @@ try:
                 log_path = OUT / (tag + ".log")
                 with (OUT / (tag + ".stdout.log")).open("w") as output:
                     process = subprocess.Popen(["bash", str(RUNNER), "/Game/Maps/LaFontaine", "-RenderOffscreen", "-windowed", "-ForceRes",
-                        f"-ResX={width}", f"-ResY={height}", "-unattended", "-nosound", "-csvGpuStats", "-csvCompression=0",
+                        f"-ResX={width}", f"-ResY={height}", "-NordNoCampaignSave", "-unattended", "-nosound", "-csvGpuStats", "-csvCompression=0",
                         "-csvCaptureFrames=3000", "-ExitAfterCsvProfiling",
                         f"-ExecCmds=Scalability 3,t.MaxFPS 0,r.VSync 0,r.ScreenPercentage 100,r.SetRes {width}x{height}w",
                         f'-csvExecCmds=60:exec {macro},180:shot showui -nosuffix filename={screenshot}', "-abslog=" + str(log_path)],

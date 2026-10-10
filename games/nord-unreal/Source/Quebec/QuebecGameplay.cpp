@@ -1,10 +1,12 @@
 #include "QuebecGameplay.h"
+#include "QuebecCampaign.h"
 #include "LaFontaineMap.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -17,6 +19,7 @@
 #include "Engine/ScopedMovementUpdate.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -26,6 +29,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Net/UnrealNetwork.h"
+#include "Sound/SoundWaveProcedural.h"
 #include "UnrealClient.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -39,6 +43,11 @@ namespace
     const FVector MansionSpawn = LaFontaine::Spawn;
     constexpr float MissionRadius = 500.f;
     constexpr float CarEnterRadius = 450.f;
+    AQuebecCampaign* CampaignFor(UWorld* World)
+    {
+        TActorIterator<AQuebecCampaign> It(World);
+        return It ? *It : nullptr;
+    }
 }
 
 const FVector AQuebecGameState::MissionLocations[MissionCount] = {
@@ -530,6 +539,10 @@ AQuebecCar::AQuebecCar()
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     Camera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
     Camera->FieldOfView = 85.f;
+    DriveAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("DriveAudio"));
+    DriveAudio->SetupAttachment(RootComponent);
+    DriveAudio->bAutoActivate = false;
+    DriveAudio->bAllowSpatialization = false;
 }
 
 void AQuebecCar::BeginPlay()
@@ -578,6 +591,7 @@ void AQuebecCar::PossessedBy(AController* NewController)
     bJunctionReserved = bJunctionEntered = false;
     SetActorTickInterval(0.f);
     LastDriveInputTime = GetWorld()->GetTimeSeconds();
+    LateralSpeed = DriveThrottle = SteeringState = 0.f;
     // Server-only driving needs movement replication for the owning client too.
     SetAutonomousProxy(false);
     NewController->SetControlRotation(GetActorRotation() + FRotator(-12., 0., 0.));
@@ -603,8 +617,8 @@ void AQuebecCar::PawnClientRestart()
     StopInput();
 }
 
-void AQuebecCar::MoveForward(float Value) { Throttle = Value; }
-void AQuebecCar::MoveRight(float Value) { Steering = Value; }
+void AQuebecCar::MoveForward(float Value) { Throttle = FMath::IsFinite(Value) ? FMath::Clamp(Value,-1.f,1.f) : 0.f; }
+void AQuebecCar::MoveRight(float Value) { Steering = FMath::IsFinite(Value) ? FMath::Clamp(Value,-1.f,1.f) : 0.f; }
 void AQuebecCar::ApplyHandbrake() { bHandbrake = true; }
 void AQuebecCar::ReleaseHandbrake() { bHandbrake = false; }
 void AQuebecCar::LookYaw(float Value)
@@ -617,7 +631,16 @@ void AQuebecCar::LookPitch(float Value)
     if (Value != 0.f) LastLookTime = GetWorld()->GetTimeSeconds();
     AddControllerPitchInput(Value);
 }
-void AQuebecCar::StopInput() { Throttle = Steering = 0.f; bHandbrake = false; }
+void AQuebecCar::StopInput() { Throttle = Steering = DriveThrottle = 0.f; bHandbrake = false; }
+
+void AQuebecCar::ResetMotion()
+{
+    if (!HasAuthority()) return;
+    StopInput();
+    Speed = LateralSpeed = VerticalSpeed = SteeringState = WheelSteering = VisualSteering = 0.f;
+    LastDriveInputTime = GetWorld()->GetTimeSeconds();
+    ForceNetUpdate();
+}
 
 void AQuebecCar::ApplyPaint()
 {
@@ -834,43 +857,122 @@ void AQuebecCar::ServerSetDrive_Implementation(float NewThrottle, float NewSteer
 void AQuebecCar::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    const float DisplaySteering = IsLocallyControlled() ? Steering : VisualSteering;
-    WheelAngle = FMath::Fmod(WheelAngle + FMath::RadiansToDegrees(Speed * DeltaSeconds / 36.f), 360.f);
+    if (!FMath::IsFinite(DeltaSeconds) || DeltaSeconds <= 0.f) return;
+    const float SpeedRatio = FMath::Clamp(FMath::Abs(Speed)/3000.f,0.f,1.f);
+    WheelSteering = FMath::FInterpTo(WheelSteering,IsLocallyControlled() ? Steering : VisualSteering,DeltaSeconds,10.f);
+    WheelAngle = FMath::Fmod(WheelAngle+FMath::RadiansToDegrees(Speed*DeltaSeconds/36.f),360.f);
+    const float WheelLock = bTraffic ? 28.f : FMath::Lerp(30.f,4.2f,FMath::SmoothStep(0.f,2400.f,FMath::Abs(Speed)));
     for (UStaticMeshComponent* Part : Parts)
+        if (Part->GetName().Contains(TEXT("Wheel")))
+            Part->SetRelativeRotation(FRotator(0.,Part->GetName().StartsWith(TEXT("Front")) ? WheelSteering*WheelLock : 0.,0.).Quaternion()*
+                FQuat(FVector::RightVector,FMath::DegreesToRadians(WheelAngle))*FRotator(0.,0.,90.).Quaternion());
+    if (IsLocallyControlled() && Controller)
     {
-        if (Part->GetName().Contains(TEXT("Wheel")) && (FMath::Abs(Speed) > 1.f || FMath::Abs(DisplaySteering) > .01f))
-            Part->SetRelativeRotation(FRotator(0., Part->GetName().StartsWith(TEXT("Front")) ? DisplaySteering * 28.f : 0., 0.).Quaternion() *
-                FQuat(FVector::RightVector, FMath::DegreesToRadians(WheelAngle)) * FRotator(0., 0., 90.).Quaternion());
+        Camera->SetFieldOfView(FMath::FInterpTo(Camera->FieldOfView,85.f+12.f*SpeedRatio,DeltaSeconds,3.f));
+        CameraArm->TargetArmLength = FMath::FInterpTo(CameraArm->TargetArmLength,690.f+130.f*SpeedRatio,DeltaSeconds,3.f);
+        CameraArm->SocketOffset.Z = FMath::FInterpTo(CameraArm->SocketOffset.Z,90.f+25.f*SpeedRatio,DeltaSeconds,3.f);
+        if (FMath::Abs(Speed)>100.f && GetWorld()->GetTimeSeconds()-LastLookTime>1.8f)
+        {
+            const float SlipLook = FMath::RadiansToDegrees(FMath::Atan2(LateralSpeed,FMath::Max(300.f,FMath::Abs(Speed))));
+            const FRotator Target(-12.f,GetActorRotation().Yaw+FMath::Clamp(SlipLook,-16.f,16.f)*.35f,0.f);
+            Controller->SetControlRotation(FMath::RInterpTo(Controller->GetControlRotation(),Target,DeltaSeconds,3.f+SpeedRatio*1.5f));
+        }
+        if (!HasAuthority()) ServerSetDrive(Throttle,Steering,bHandbrake);
     }
-    Camera->SetFieldOfView(FMath::FInterpTo(Camera->FieldOfView, 85.f + FMath::Abs(Speed) / 2400.f * 9.f, DeltaSeconds, 3.f));
-    if (IsLocallyControlled() && Controller && FMath::Abs(Speed) > 100.f && GetWorld()->GetTimeSeconds() - LastLookTime > 2.f)
-        Controller->SetControlRotation(FMath::RInterpTo(Controller->GetControlRotation(), GetActorRotation() + FRotator(-12., 0., 0.), DeltaSeconds, 2.5f));
-    if (IsLocallyControlled() && !HasAuthority()) ServerSetDrive(Throttle, Steering, bHandbrake);
+    UpdateDriveAudio(DeltaSeconds);
     if (!HasAuthority()) return;
-    const float Step = FMath::Min(DeltaSeconds, .05f);
     if (bTraffic && !Controller) UpdateTraffic();
-    // A lost connection must not hold its last throttle until the network timeout.
-    if (!bTraffic && (!Controller || (!IsLocallyControlled() && GetWorld()->GetTimeSeconds() - LastDriveInputTime > .5f))) StopInput();
-    VisualSteering = Steering;
-    if (bHandbrake) Speed = FMath::FInterpConstantTo(Speed, 0.f, Step, 3200.f);
+    // Lost input/disconnected occupancy brakes safely instead of retaining throttle.
+    const bool bFailsafe = !bTraffic && (!Controller || (!IsLocallyControlled() && GetWorld()->GetTimeSeconds()-LastDriveInputTime>.5f));
+    if (bFailsafe) StopInput();
+    if (bTraffic)
+    {
+        // Keep the already-tested route follower and junction timing unchanged.
+        SimulateDrive(FMath::Min(DeltaSeconds,.05f),false);
+    }
     else
     {
-        const float Acceleration = Throttle * Speed < 0.f ? 2400.f : 1250.f;
-        Speed = FMath::Clamp(Speed + Throttle * Acceleration * Step, -850.f, 2400.f);
-        if (FMath::IsNearlyZero(Throttle)) Speed = FMath::FInterpConstantTo(Speed, 0.f, Step, 800.f);
+        // Small swept steps keep steering/grip stable at both high and low render rates.
+        float Remaining = FMath::Min(DeltaSeconds,.15f);
+        while (Remaining>UE_SMALL_NUMBER)
+        {
+            const float Step = FMath::Min(Remaining,1.f/60.f);
+            SimulateDrive(Step,bFailsafe);
+            Remaining -= Step;
+        }
     }
-    if (FMath::Abs(Speed) > 15.f)
+    VisualSteering = bTraffic ? Steering : SteeringState;
+}
+
+void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
+{
+    if (bTraffic)
     {
-        const float Turn = Steering * (bTraffic ? 140.f : 70.f) * FMath::Clamp(Speed / (bTraffic ? 300.f : 750.f), -1.f, 1.f) * Step;
-        // shortcut: the car uses an arcade box sweep, upgrade to Chaos Vehicles for suspension and tire physics.
-        const FQuat Rotation = (GetActorRotation() + FRotator(0., Turn, 0.)).Quaternion();
-        FCollisionQueryParams Query(SCENE_QUERY_STAT(CarSteering), false, this);
-        if (!GetWorld()->OverlapBlockingTestByChannel(GetActorLocation(), Rotation, ECC_Pawn,
-            FCollisionShape::MakeBox(Collision->GetScaledBoxExtent() - FVector(1.)), Query))
-            SetActorRotation(Rotation);
+        LateralSpeed = 0.f;
+        if (bHandbrake) Speed = FMath::FInterpConstantTo(Speed,0.f,Step,3200.f);
+        else
+        {
+            Speed = FMath::Clamp(Speed+Throttle*(Throttle*Speed<0.f ? 2400.f : 1250.f)*Step,-850.f,2400.f);
+            if (FMath::IsNearlyZero(Throttle)) Speed = FMath::FInterpConstantTo(Speed,0.f,Step,800.f);
+        }
     }
+    else
+    {
+        DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,5.f);
+        SteeringState = FMath::FInterpTo(SteeringState,Steering,Step,10.f);
+        if (bFailsafe || bHandbrake)
+            Speed = FMath::FInterpConstantTo(Speed,0.f,Step,bFailsafe ? 1600.f : 2300.f);
+        else if (Throttle*Speed<0.f)
+        {
+            // S first uses the service brake; reverse engages only after stopping.
+            Speed = FMath::FInterpConstantTo(Speed,0.f,Step,3200.f*FMath::Abs(Throttle));
+            if (Speed == 0.f) DriveThrottle = 0.f;
+        }
+        else if (!FMath::IsNearlyZero(Throttle,.01f))
+        {
+            const float Power = FMath::Lerp(1850.f,1000.f,FMath::Clamp(FMath::Abs(Speed)/3000.f,0.f,1.f));
+            const float RequestedPower = FMath::Max(0.f,DriveThrottle*FMath::Sign(Throttle))*FMath::Sign(Throttle);
+            Speed += RequestedPower*Power*Step;
+            Speed = FMath::FInterpConstantTo(Speed,0.f,Step,100.f+FMath::Square(Speed)*.000035f);
+        }
+        else Speed = FMath::FInterpConstantTo(Speed,0.f,Step,170.f+FMath::Square(Speed)*.000035f);
+        Speed = FMath::Clamp(Speed,-950.f,3000.f);
+    }
+    const FVector Momentum = GetActorForwardVector()*Speed+GetActorRightVector()*LateralSpeed;
+    if (FMath::Abs(Speed)>15.f)
+    {
+        float Turn = Steering*140.f*FMath::Clamp(Speed/300.f,-1.f,1.f)*Step;
+        if (!bTraffic)
+        {
+            const float Lock = FMath::Lerp(30.f,4.2f,FMath::SmoothStep(0.f,2400.f,FMath::Abs(Speed)));
+            float YawRate = FMath::RadiansToDegrees(Speed/310.f*FMath::Tan(FMath::DegreesToRadians(SteeringState*Lock)));
+            if (bHandbrake && FMath::Abs(Speed)>450.f) YawRate *= 1.4f;
+            Turn = FMath::Clamp(YawRate,-110.f,110.f)*Step;
+        }
+        const FQuat Rotation = (GetActorRotation()+FRotator(0.,Turn,0.)).Quaternion();
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(CarSteering),false,this);
+        if (!GetWorld()->OverlapBlockingTestByChannel(GetActorLocation(),Rotation,ECC_Pawn,
+            FCollisionShape::MakeBox(Collision->GetScaledBoxExtent()-FVector(1.)),Query)) SetActorRotation(Rotation);
+    }
+    if (!bTraffic)
+    {
+        Speed = FVector::DotProduct(Momentum,GetActorForwardVector());
+        LateralSpeed = FVector::DotProduct(Momentum,GetActorRightVector());
+        const bool bCounterSteering = Steering*LateralSpeed>50.f;
+        const float Grip = bHandbrake && !bFailsafe ? 1.15f : (bCounterSteering ? 11.f : 8.f);
+        LateralSpeed = FMath::FInterpTo(LateralSpeed,0.f,Step,Grip);
+        LateralSpeed = FMath::Clamp(LateralSpeed,-FMath::Abs(Speed)*.7f-80.f,FMath::Abs(Speed)*.7f+80.f);
+        if (bFailsafe || FMath::Abs(Speed)<100.f)
+            LateralSpeed = FMath::FInterpConstantTo(LateralSpeed,0.f,Step,3600.f);
+        if (FMath::Abs(Speed)<1.f && FMath::Abs(Throttle)<.01f) Speed=0.f;
+    }
+    MoveWithCollision(Step,(GetActorForwardVector()*Speed+GetActorRightVector()*LateralSpeed)*Step);
+}
+
+void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
+{
+    // shortcut: the car uses an arcade box sweep, upgrade to Chaos Vehicles for suspension and tire physics.
     FHitResult Hit;
-    const FVector Travel = GetActorForwardVector() * Speed * Step;
     AddActorWorldOffset(Travel, true, &Hit);
     bool bSteppedUp = false;
     if (Hit.IsValidBlockingHit() && FMath::IsNearlyZero(VerticalSpeed) && !Travel.IsNearlyZero())
@@ -892,15 +994,55 @@ void AQuebecCar::Tick(float DeltaSeconds)
         }
         if (!bSteppedUp) CurbMove.RevertMove();
     }
-    if (Hit.bBlockingHit && !bSteppedUp) Speed *= .1f;
+    if (Hit.bBlockingHit && !bSteppedUp) { Speed *= .1f; LateralSpeed *= .1f; }
     VerticalSpeed -= 980.f * Step;
     AddActorWorldOffset(FVector(0., 0., VerticalSpeed * Step), true, &Hit);
     if (Hit.bBlockingHit) VerticalSpeed = 0.f;
     if (GetActorLocation().Z < -1500.)
     {
         SetActorLocation(LaFontaine::CarSpawn);
-        Speed = VerticalSpeed = 0.f;
+        Speed = LateralSpeed = VerticalSpeed = 0.f;
     }
+}
+
+void AQuebecCar::UpdateDriveAudio(float DeltaSeconds)
+{
+    if (!GetWorld()->AllowAudioPlayback() || GetNetMode()==NM_DedicatedServer) return;
+    if (!IsLocallyControlled() || !Controller || !Occupant)
+    {
+        if (DriveAudio->IsPlaying()) { DriveAudio->Stop(); if (DriveWave) DriveWave->ResetAudio(); }
+        return;
+    }
+    if (!DriveWave)
+    {
+        DriveWave=NewObject<USoundWaveProcedural>(this);
+        DriveWave->SetSampleRate(24000);
+        DriveWave->NumChannels=1;
+        DriveWave->Duration=INDEFINITELY_LOOPING_DURATION;
+        DriveAudio->SetSound(DriveWave);
+    }
+    const float SpeedRatio=FMath::Clamp(FMath::Abs(Speed)/3000.f,0.f,1.f);
+    const float GearPhase=Speed<0.f ? FMath::Abs(Speed)/1900.f : FMath::Fmod(FMath::Abs(Speed),650.f)/650.f;
+    const float Load=bHandbrake ? 0.f : FMath::Max(0.f,Throttle);
+    AudioFrequency=FMath::FInterpTo(AudioFrequency,32.f+45.f*SpeedRatio+38.f*GearPhase+12.f*Load,DeltaSeconds,8.f);
+    const float Tire=FMath::Clamp(FMath::Abs(LateralSpeed)/450.f+(bHandbrake ? SpeedRatio*.3f : 0.f),0.f,1.f);
+    const int32 Frames=FMath::Clamp(3600-DriveWave->GetAvailableAudioByteCount()/2,0,3600);
+    if (Frames>0)
+    {
+        TArray<int16> PCM; PCM.SetNumUninitialized(Frames);
+        for (int16& Sample : PCM)
+        {
+            AudioPhase=FMath::Fmod(AudioPhase+AudioFrequency/24000.f,1.f);
+            TirePhase=FMath::Fmod(TirePhase+(750.f+700.f*Tire)/24000.f,1.f);
+            AudioNoise=AudioNoise*1664525u+1013904223u;
+            const float Noise=float(AudioNoise>>8)/8388607.5f-1.f;
+            const float Engine=(FMath::Sin(AudioPhase*2.f*PI)+.4f*FMath::Sin(AudioPhase*4.f*PI)+.18f*FMath::Sin(AudioPhase*8.f*PI))*(.045f+.025f*Load+.015f*SpeedRatio);
+            const float Squeal=Tire*.045f*(Noise*.35f+FMath::Sin(TirePhase*2.f*PI)*.65f);
+            Sample=int16(FMath::Clamp(Engine+Squeal,-1.f,1.f)*32767.f);
+        }
+        DriveWave->QueueAudio(reinterpret_cast<const uint8*>(PCM.GetData()),PCM.Num()*sizeof(int16));
+    }
+    if (!DriveAudio->IsPlaying()) DriveAudio->Play();
 }
 
 void AQuebecCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -908,6 +1050,7 @@ void AQuebecCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AQuebecCar, Occupant);
     DOREPLIFETIME(AQuebecCar, Speed);
+    DOREPLIFETIME(AQuebecCar, LateralSpeed);
     DOREPLIFETIME_CONDITION(AQuebecCar, bHandbrake, COND_SkipOwner);
     DOREPLIFETIME(AQuebecCar, VisualSteering);
     DOREPLIFETIME(AQuebecCar, PaintStyle);
@@ -942,6 +1085,23 @@ void AQuebecController::SetupInputComponent()
     InputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AQuebecController::Interact);
     InputComponent->BindAction(TEXT("ComicStyle"), IE_Pressed, this, &AQuebecController::ToggleComicStyle);
     InputComponent->BindAction(TEXT("NextCharacter"), IE_Pressed, this, &AQuebecController::NextCharacter);
+    InputComponent->BindAction(TEXT("RetryCampaign"), IE_Pressed, this, &AQuebecController::RetryCampaign);
+    InputComponent->BindAction(TEXT("ReplayCampaign"), IE_Pressed, this, &AQuebecController::ReplayCampaign);
+}
+
+void AQuebecController::RetryCampaign() { ServerRetryCampaign(); }
+void AQuebecController::ReplayCampaign() { ServerReplayCampaign(); }
+void AQuebecController::ServerRetryCampaign_Implementation()
+{
+    if (AQuebecCampaign* Campaign = CampaignFor(GetWorld())) Campaign->RequestRetry(this);
+}
+void AQuebecController::ServerReplayCampaign_Implementation()
+{
+    if (AQuebecCampaign* Campaign = CampaignFor(GetWorld())) Campaign->RequestReplay(this);
+}
+void AQuebecController::ServerCampaignAim_Implementation(float Yaw, float Pitch)
+{
+    if (AQuebecCampaign* Campaign = CampaignFor(GetWorld())) Campaign->LightAim(this, Yaw, Pitch);
 }
 
 void AQuebecController::NextCharacter() { ServerNextCharacter(); }
@@ -959,6 +1119,20 @@ void AQuebecController::PlayerTick(float DeltaTime)
     Super::PlayerTick(DeltaTime);
     if (!IsLocalController()) return;
     ApplyComicStyle();
+    CampaignAimElapsed += DeltaTime;
+    if (CampaignAimElapsed >= .1f)
+    {
+        CampaignAimElapsed = 0.f;
+        // Keep aim updates flowing while the server's ownership reply is in flight.
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(GetPawn());
+        if (AQuebecCampaign* Campaign = CampaignFor(GetWorld()); Campaign && Walker &&
+            Campaign->Phase == EQuebecCampaignPhase::AimWorklight &&
+            FVector::DistSquared(Walker->GetActorLocation(),Campaign->WorklightLocation) <= FMath::Square(280.f))
+        {
+            const FRotator Aim = GetControlRotation();
+            ServerCampaignAim(Aim.Yaw, Aim.Pitch);
+        }
+    }
     static const bool bCapture = FParse::Param(FCommandLine::Get(), TEXT("NordCapture"));
     if (bCapture) TickCapture(DeltaTime);
 }
@@ -1097,7 +1271,11 @@ void AQuebecController::ServerInteract_Implementation()
         Possess(NearestCar);
         return;
     }
-    if (AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>())
+    if (AQuebecCampaign* Campaign = CampaignFor(GetWorld()))
+    {
+        if (Campaign->HandleInteract(this)) return;
+    }
+    else if (AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>())
         if (State->AdvanceMissionNear(Character->GetActorLocation())) return;
     if (AQuebecParkResident* Resident = FindInteractableResident())
         ClientInteractionMessage(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Resident->Style));
@@ -1171,8 +1349,9 @@ void AQuebecHUD::DrawHUD()
     const AQuebecCar* Car = Cast<AQuebecCar>(Pawn);
     const AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>();
     const AQuebecController* Controller = Cast<AQuebecController>(PlayerOwner);
+    const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
     const AQuebecCar* NearbyCar = Controller && !Car ? Controller->FindInteractableCar() : nullptr;
-    const bool bCanComplete = State && AQuebecGameState::CanAdvanceMission(State->MissionIndex, Pawn->GetActorLocation());
+    const bool bCanComplete = !Campaign && State && AQuebecGameState::CanAdvanceMission(State->MissionIndex, Pawn->GetActorLocation());
     const float Scale = FMath::Clamp(Canvas->SizeY / 720.f, .75f, 1.5f);
     const float Margin = 28.f * Scale;
     // Comic caption palette: yellow captions and white paper with ink borders and an off-register cyan shadow.
@@ -1194,12 +1373,54 @@ void AQuebecHUD::DrawHUD()
         DrawRect(Ink, X - Border, Y - Border, W + Border * 2.f, H + Border * 2.f);
         DrawRect(Fill, X, Y, W, H);
     };
+    const auto Paragraph = [this, Font, Scale, &Text](const FString& Value, FLinearColor Color, float X, float Y, float Width)
+    {
+        TArray<FString> Words;
+        Value.ParseIntoArrayWS(Words);
+        FString Line;
+        int32 Row = 0;
+        for (const FString& Word : Words)
+        {
+            const FString Candidate = Line.IsEmpty() ? Word : Line + TEXT(" ") + Word;
+            float W = 0.f, H = 0.f;
+            GetTextSize(Candidate, W, H, Font, .82f * Scale);
+            if (W > Width && !Line.IsEmpty())
+            {
+                Text(Line, Color, X, Y + Row++ * 22.f * Scale, .82f);
+                Line = Word;
+                if (Row == 2) break;
+            }
+            else Line = Candidate;
+        }
+        if (Row < 2 && !Line.IsEmpty()) Text(Line, Color, X, Y + Row * 22.f * Scale, .82f);
+    };
 
     Box(Panel, Margin, Margin, 400.f * Scale, 165.f * Scale);
     DrawRect(Ink, Margin, Margin, 6.f * Scale, 165.f * Scale);
     Text(TEXT("NORD / MONTRÉAL"), Ink, Margin + 20.f * Scale, Margin + 14.f * Scale, 1.55f);
     Text(TEXT("PARC LA FONTAINE / SHERBROOKE EST"), Muted, Margin + 21.f * Scale, Margin + 49.f * Scale, .72f);
-    if (State && State->MissionIndex < AQuebecGameState::MissionCount)
+    if (Campaign)
+    {
+        Text(Campaign->GetMissionTitle(), Ink, Margin + 21.f * Scale, Margin + 77.f * Scale, .93f);
+        Text(Campaign->GetObjectiveText(), Muted, Margin + 21.f * Scale, Margin + 106.f * Scale, .8f);
+        Text(Campaign->GetStatusText(), Accent, Margin + 21.f * Scale, Margin + 133.f * Scale, .76f);
+        if (!Campaign->IsCampaignComplete())
+        {
+            const FVector Target = Campaign->GetObjectiveLocation();
+            const float Meters = FVector::Distance(Pawn->GetActorLocation(), Target) / 100.f;
+            FVector2D Marker;
+            if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
+                Marker.X > 15.f && Marker.X < Canvas->SizeX - 15.f && Marker.Y > 230.f * Scale && Marker.Y < Canvas->SizeY - 280.f * Scale)
+            {
+                DrawLine(Marker.X, Marker.Y - 12.f, Marker.X + 12.f, Marker.Y, Accent, 3.f);
+                DrawLine(Marker.X + 12.f, Marker.Y, Marker.X, Marker.Y + 12.f, Accent, 3.f);
+                DrawLine(Marker.X, Marker.Y + 12.f, Marker.X - 12.f, Marker.Y, Accent, 3.f);
+                DrawLine(Marker.X - 12.f, Marker.Y, Marker.X, Marker.Y - 12.f, Accent, 3.f);
+                Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Paper, Marker.X - 15.f, Marker.Y + 20.f, .8f);
+            }
+        }
+    }
+    else if (State && State->MissionIndex < AQuebecGameState::MissionCount)
     {
         const int32 Index = FMath::Max(0, State->MissionIndex);
         const FVector Target = AQuebecGameState::MissionLocations[Index];
@@ -1264,7 +1485,12 @@ void AQuebecHUD::DrawHUD()
     }
     const FVector2D Home = MapPoint(MansionSpawn);
     DrawRect(Ink, Home.X - 3.f, Home.Y - 3.f, 6.f, 6.f);
-    if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
+    if (Campaign && !Campaign->IsCampaignComplete())
+    {
+        const FVector2D Goal = MapPoint(Campaign->GetObjectiveLocation());
+        DrawRect(Accent, Goal.X - 5.f, Goal.Y - 5.f, 10.f, 10.f);
+    }
+    else if (!Campaign && State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {
         const FVector2D Goal = MapPoint(AQuebecGameState::MissionLocations[State->MissionIndex]);
         DrawRect(Accent, Goal.X - 5.f, Goal.Y - 5.f, 10.f, 10.f);
@@ -1279,18 +1505,25 @@ void AQuebecHUD::DrawHUD()
 
     const float Bottom = Canvas->SizeY - Margin - 58.f * Scale;
     Box(Paper, Margin, Bottom, Canvas->SizeX - Margin * 2.f - 8.f * Scale, 58.f * Scale);
-    Text(Car ? TEXT("W/S  Drive     A/D  Steer     SPACE  Handbrake     E  Exit     Mouse  Look     F2  Comic look") :
+    Text(Car ? TEXT("W/S  Drive     A/D  Steer     SPACE  Handbrake     E  Exit     Mouse  Look     F2  Comic") :
         TEXT("WASD  Move     Mouse  Look     SPACE  Jump     SHIFT  Sprint     E  Interact     F2  Comic look"),
         Ink, Margin + 18.f * Scale, Bottom + 18.f * Scale, .82f);
     const AQuebecCharacter* Avatar = Car ? Car->Occupant.Get() : Cast<AQuebecCharacter>(Pawn);
     if (Avatar) Text(FString::Printf(TEXT("C  /  CHARACTER: %s"), AQuebecParkResident::NameForStyle(Avatar->CrewStyle)),
         Ink, Margin + 18.f * Scale, Bottom + 38.f * Scale, .75f);
+    if (Campaign) Text(Campaign->IsCampaignComplete() ? TEXT("T  Replay street race") : TEXT("R  Recover at checkpoint"),
+        Accent, Margin + 450.f * Scale, Bottom + 38.f * Scale, .75f);
     if (Controller)
     {
         if (Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds())
         {
             Box(Paper, Margin, Bottom-112.f*Scale, Canvas->SizeX-Margin*2.f-8.f*Scale, 72.f*Scale);
-            Text(Controller->ResidentCaption, Ink, Margin+18.f*Scale, Bottom-88.f*Scale, .82f);
+            Paragraph(Controller->ResidentCaption, Ink, Margin+18.f*Scale, Bottom-96.f*Scale, Canvas->SizeX-Margin*2.f-46.f*Scale);
+        }
+        else if (Campaign)
+        {
+            Box(Paper, Margin, Bottom-112.f*Scale, Canvas->SizeX-Margin*2.f-8.f*Scale, 72.f*Scale);
+            Paragraph(Campaign->GetBriefingText(), Ink, Margin+18.f*Scale, Bottom-96.f*Scale, Canvas->SizeX-Margin*2.f-46.f*Scale);
         }
         else if (!Car && !NearbyCar && !bCanComplete)
         {
@@ -1299,6 +1532,18 @@ void AQuebecHUD::DrawHUD()
                 Box(Panel,Margin,Bottom-70.f*Scale,420.f*Scale,44.f*Scale);
                 Text(FString(TEXT("E  /  Talk to "))+AQuebecParkResident::NameForStyle(Resident->Style),Ink,Margin+15.f*Scale,Bottom-58.f*Scale,.85f);
             }
+        }
+    }
+    if (Campaign && Controller && !Car && !NearbyCar)
+    {
+        FString Prompt = Campaign->GetInteractionPrompt(Controller);
+        if (Prompt.IsEmpty())
+            if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
+                Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
+        if (!Prompt.IsEmpty())
+        {
+            Box(Panel, Margin, Bottom-172.f*Scale, 520.f*Scale, 42.f*Scale);
+            Text(Prompt, Accent, Margin+15.f*Scale, Bottom-160.f*Scale, .82f);
         }
     }
     if (Car)
@@ -1312,8 +1557,9 @@ void AQuebecHUD::DrawHUD()
         if (NearbyCar)
         {
             const float X = Canvas->SizeX * .5f - 120.f * Scale;
-            Box(Panel, X, Bottom - 65.f * Scale, 240.f * Scale, 44.f * Scale);
-            Text(TEXT("[ E ]  ENTER CAR"), Accent, X + 32.f * Scale, Bottom - 53.f * Scale, 1.f);
+            const float Y = Bottom - (Campaign || Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds() ? 172.f : 65.f) * Scale;
+            Box(Panel, X, Y, 240.f * Scale, 44.f * Scale);
+            Text(TEXT("[ E ]  ENTER CAR"), Accent, X + 32.f * Scale, Y + 12.f * Scale, 1.f);
         }
     }
     if (const ACharacter* Walker = Cast<ACharacter>(Pawn))
@@ -1355,14 +1601,15 @@ void AQuebecHUD::DrawHUD()
     }
     if (State)
     {
-        if (LastMissionIndex >= 0 && State->MissionIndex > LastMissionIndex) CompletionTime = GetWorld()->GetTimeSeconds();
-        LastMissionIndex = State->MissionIndex;
+        const int32 Completed = Campaign ? Campaign->GetCompletedMissionCount() : State->MissionIndex;
+        if (LastMissionIndex >= 0 && Completed > LastMissionIndex) CompletionTime = GetWorld()->GetTimeSeconds();
+        LastMissionIndex = Completed;
         if (GetWorld()->GetTimeSeconds() - CompletionTime < 4.f)
         {
             const float X = Canvas->SizeX * .5f - 160.f * Scale;
             Box(Panel, X, Margin, 320.f * Scale, 70.f * Scale);
             Text(TEXT("MISSION COMPLETE"), Accent, X + 27.f * Scale, Margin + 12.f * Scale, 1.15f);
-            Text(FString::Printf(TEXT("%d / 3 completed together"), State->MissionIndex), Ink, X + 27.f * Scale, Margin + 42.f * Scale, .8f);
+            Text(FString::Printf(TEXT("%d / %d completed together"), Completed, Campaign ? 2 : 3), Ink, X + 27.f * Scale, Margin + 42.f * Scale, .8f);
         }
     }
 }
@@ -1385,6 +1632,14 @@ void AQuebecGameMode::BeginPlay()
 {
     Super::BeginPlay();
     if (!GetWorld()->GetMapName().Contains(TEXT("LaFontaine"))) return;
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+    {
+        GetWorld()->SpawnActor<AQuebecCampaign>();
+        for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
+            if (const UMaterialInterface* Material = It->GetStaticMeshComponent()->GetMaterial(0);
+                Material && Material->GetName().Contains(TEXT("Beacon")))
+                It->SetActorHiddenInGame(true);
+    }
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
 
     // Runtime population stays bounded and uses the surveyed streets and existing park paths.
@@ -1454,7 +1709,7 @@ void AQuebecGameMode::BeginPlay()
     {
         AQuebecCar* Car = *It;
         const FVector Original = Car->GetActorLocation();
-        if (Car->Occupant || Car->GetController() ||
+        if (Car->Occupant || Car->GetController() || Car->ActorHasTag(TEXT("CampaignLoan")) ||
             FVector::DistSquared2D(Original,LaFontaine::CarSpawn) < FMath::Square(300.f)) continue;
         TArray<int32> ParkingRoads;
         for (int32 I : NearRoads)
