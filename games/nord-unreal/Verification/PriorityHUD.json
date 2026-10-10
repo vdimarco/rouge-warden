@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "mode": "actual Linux Development package, current objective beside available car",
+  "shots": 2,
+  "resolutions": [
+    [
+      1280,
+      720
+    ],
+    [
+      1920,
+      1080
+    ]
+  ],
+  "source": "Saved/Tests/PackagedPriority.log",
+  "note": "Car E takes priority and preserves mission zero"
+}

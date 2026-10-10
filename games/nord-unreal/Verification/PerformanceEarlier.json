@@ -1,0 +1,123 @@
+{
+  "passed": true,
+  "hardware": {
+    "platform": "Linux",
+    "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "gpudriver": "610.57",
+    "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+    "shaderplatform": "VULKAN_SM6"
+  },
+  "settings": "Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+  "method": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends",
+  "limits": [
+    "static camera scenes",
+    "one GPU",
+    "not external multiplayer performance"
+  ],
+  "scenes": [
+    {
+      "scene": "Sherbrooke",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 21.07,
+      "median_ms": 8.86,
+      "p95_ms": 12.2,
+      "p99_ms": 13.34,
+      "average_fps": 113.8,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.3,
+      "csv": "Profile(20261009_192617).csv",
+      "screenshot": "Preview/PerformanceSherbrooke1280.png"
+    },
+    {
+      "scene": "Pond",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 21.67,
+      "median_ms": 9.11,
+      "p95_ms": 12.54,
+      "p99_ms": 13.77,
+      "average_fps": 110.7,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.5,
+      "csv": "Profile(20261009_192650).csv",
+      "screenshot": "Preview/PerformancePond1280.png"
+    },
+    {
+      "scene": "NorthPark",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 22.09,
+      "median_ms": 9.21,
+      "p95_ms": 12.77,
+      "p99_ms": 13.89,
+      "average_fps": 108.5,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.69,
+      "csv": "Profile(20261009_192724).csv",
+      "screenshot": "Preview/PerformanceNorthPark1280.png"
+    },
+    {
+      "scene": "Sherbrooke",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 25.54,
+      "median_ms": 10.77,
+      "p95_ms": 13.96,
+      "p99_ms": 14.81,
+      "average_fps": 93.9,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.33,
+      "csv": "Profile(20261009_192759).csv",
+      "screenshot": "Preview/PerformanceSherbrooke1920.png"
+    },
+    {
+      "scene": "Pond",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 25.8,
+      "median_ms": 10.77,
+      "p95_ms": 14.05,
+      "p99_ms": 14.94,
+      "average_fps": 92.9,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.34,
+      "csv": "Profile(20261009_192838).csv",
+      "screenshot": "Preview/PerformancePond1920.png"
+    },
+    {
+      "scene": "NorthPark",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 26.13,
+      "median_ms": 10.93,
+      "p95_ms": 14.12,
+      "p99_ms": 14.94,
+      "average_fps": 91.8,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.49,
+      "csv": "Profile(20261009_192917).csv",
+      "screenshot": "Preview/PerformanceNorthPark1920.png"
+    }
+  ],
+  "conditions": "Captured 2026-10-09 23:26\u201323:29 UTC, before Dota 2 started. Epic settings (all groups 3) verified in saved GameUserSettings; 100% screen percentage explicitly set. A headless multiplayer endurance run and ordinary desktop apps ran concurrently."
+}

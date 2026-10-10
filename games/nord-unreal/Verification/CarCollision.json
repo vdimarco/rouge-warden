@@ -22,17 +22,17 @@
       "max_z_cm": 100.03
     },
     "2cm_strip": {
-      "x_cm": 408.44,
+      "x_cm": 408.41,
       "z_cm": 100.11,
       "max_z_cm": 102.96
     },
     "18cm_curb_forward": {
-      "x_cm": 705.12,
+      "x_cm": 705.05,
       "z_cm": 118.01,
       "max_z_cm": 118.96
     },
     "18cm_curb_reverse": {
-      "x_cm": 696.07,
+      "x_cm": 699.53,
       "z_cm": 118.01,
       "max_z_cm": 118.96
     },
@@ -47,5 +47,5 @@
     "network latency",
     "Chaos suspension"
   ],
-  "elapsed_seconds": 28.09
+  "elapsed_seconds": 28.24
 }

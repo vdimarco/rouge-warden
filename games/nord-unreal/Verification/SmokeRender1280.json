@@ -1,0 +1,121 @@
+{
+  "passed": true,
+  "mode": "two-player in-process listen-server PIE",
+  "checks": [
+    "two connected players in server and client worlds",
+    "walking fixture reaches owning client",
+    "native client forward walking reaches authority",
+    "client sprint predicts locally and reaches authority",
+    "native client strafing while sprinting reaches authority",
+    "sprint release restores walking speed on both peers",
+    "client jump moves both authority and owning client",
+    "jump lands on saved-map ground",
+    "client disables comic view without affecting host",
+    "restore far-interaction fixture",
+    "out-of-range client interaction rejected",
+    "authority teleport replicated to owning client",
+    "wall between player and car rejects entry",
+    "remove entry barrier",
+    "client RPC enters car; occupant, visibility and collision replicate",
+    "host cannot steal an occupied car",
+    "car camera preserves client standard view and host comic view",
+    "client drive RPC moves authority car",
+    "car movement replicates to client",
+    "client handbrake reaches server and stops car",
+    "handbrake holds against throttle",
+    "releasing handbrake restores acceleration",
+    "native client steering turns the authority and replicated car",
+    "stop car before placing blocked-exit fixtures",
+    "all blocked car exits preserve driver safely",
+    "remove exit barriers",
+    "client RPC exits car and restores character on both peers",
+    "client restores comic view after exiting",
+    "place available car beside the current objective",
+    "car interaction takes priority without completing the nearby objective",
+    "priority-test driver exits with objective progress preserved",
+    "restore parked car after interaction priority check",
+    "listen host approaches the empty car",
+    "listen host interaction enters car",
+    "listen host interaction exits and restores character",
+    "teleport to a future objective",
+    "future mission interaction rejected",
+    "teleport to objective 1",
+    "mission 1 advances and replicates",
+    "teleport to objective 2",
+    "mission 2 advances and replicates",
+    "teleport to objective 3",
+    "mission 3 advances and replicates",
+    "completed missions remain complete",
+    "fall reset returns both peers to Sherbrooke spawn",
+    "fourteen residents and all eight cottage crew styles replicate",
+    "resident route movement replicates",
+    "client approaches cottage crew member",
+    "client E talks to crew without changing completed missions or host dialogue",
+    "client approaches car before disconnect test",
+    "client enters car before disconnect",
+    "disconnecting driver releases car and destroys hidden pawn",
+    "reconnecting client receives completed missions and all residents",
+    "rejoined player approaches abandoned car",
+    "rejoined client can take the released car",
+    "rejoined client exits with completed missions preserved"
+  ],
+  "skipped": [
+    "external internet connectivity",
+    "physical keyboard and mouse input"
+  ],
+  "foot_displacement_cm": {
+    "MoveForward": [
+      391.8,
+      405.6
+    ],
+    "MoveRight": [
+      621.4,
+      640.0
+    ]
+  },
+  "render_captures": [
+    {
+      "path": "Preview/Quality1280_StandardFoot.png",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "Preview/Quality1280_CarPrompt.png",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "Preview/Quality1280_StandardCar.png",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "Preview/Quality1280_BlockedExit.png",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "Preview/Quality1280_InteractionPriority.png",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "Preview/Quality1280_MissionComplete.png",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "Preview/Quality1280_CrewDialogue.png",
+      "width": 1280,
+      "height": 720
+    }
+  ],
+  "drive_displacement_cm": 900.6,
+  "replicated_car_error_limit_cm": 150,
+  "replicated_car_error_cm": 34.1,
+  "steering_yaw_change_degrees": [
+    27.0,
+    26.5
+  ],
+  "elapsed_seconds": 48.83
+}

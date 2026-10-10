@@ -6,8 +6,14 @@
   "loaded_resident_parts": 66,
   "loaded_skeletal_crew": 8,
   "loaded_animation_clips": 16,
+  "surveyed_buildings": 1161,
   "rendered_capture": true,
-  "elapsed_seconds": 30.43,
+  "rendered_capture_count": 7,
+  "viewport": [
+    1600,
+    900
+  ],
+  "elapsed_seconds": 31.34,
   "skipped": [
     "external internet",
     "non-Linux platforms",

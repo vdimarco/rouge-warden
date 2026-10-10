@@ -64,11 +64,12 @@ def tick(dt):
             for other in state['residents']:
                 other.set_actor_hidden_in_game(resident is not None and other!=resident)
             if resident:
-                p=resident.get_actor_location()+resident.get_actor_forward_vector()*300+resident.get_actor_right_vector()*60+u.Vector(0,0,110)
-                target=resident.get_actor_location()+u.Vector(0,0,98)
+                p=resident.get_actor_location()+resident.get_actor_forward_vector()*400+resident.get_actor_right_vector()*60+u.Vector(0,0,115)
+                target=resident.get_actor_location()+u.Vector(0,0,105)
             aim(p,target)
             if now-state['ready'] > (20 if state['shot']==0 else 5):
                 path=out/(name+'.png')
+                path.unlink(missing_ok=True)
                 u.SystemLibrary.execute_console_command(state['world'],'HighResShot 1600x900 filename="'+str(path)+'"',state['pc'])
                 state.update(phase=3,ready=now)
             if now-state['ready']>2:state['frames'].append(dt)

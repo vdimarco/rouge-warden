@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "mode": "separate Linux Development processes, native console input handlers",
+  "checks": [
+    "native host E completes the three ordered shared objectives",
+    "late-joining package receives completed progress, eleven resident styles and eight runtime bodies",
+    "native client E RPC occupies the available car on the host",
+    "native client throttle drives the authority car",
+    "packaged driving camera widens with speed",
+    "native handbrake stops and holds against throttle",
+    "native handbrake release restores acceleration",
+    "abrupt client process loss clears stale driving input",
+    "network timeout releases the crashed driver's occupancy",
+    "rejoined package can enter and exit the released car",
+    "clean departure removes the remote controller"
+  ],
+  "soak_cycles": 0,
+  "skipped": [
+    "external internet",
+    "physical input devices",
+    "other platforms"
+  ],
+  "soak": {
+    "requested_seconds": 0,
+    "elapsed_seconds": 0.0,
+    "host_rss_baseline_mb": 2840.7,
+    "host_rss_peak_mb": 2840.7,
+    "host_rss_final_mb": 2840.7
+  },
+  "elapsed_seconds": 79.7
+}

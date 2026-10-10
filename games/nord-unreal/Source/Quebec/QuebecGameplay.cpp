@@ -411,6 +411,7 @@ void AQuebecCar::BeginPlay()
 void AQuebecCar::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
+    LastDriveInputTime = GetWorld()->GetTimeSeconds();
     // Server-only driving needs movement replication for the owning client too.
     SetAutonomousProxy(false);
     NewController->SetControlRotation(GetActorRotation() + FRotator(-12., 0., 0.));
@@ -454,6 +455,7 @@ void AQuebecCar::StopInput() { Throttle = Steering = 0.f; bHandbrake = false; }
 void AQuebecCar::ServerSetDrive_Implementation(float NewThrottle, float NewSteering, bool bNewHandbrake)
 {
     if (!Controller || !Occupant || !FMath::IsFinite(NewThrottle) || !FMath::IsFinite(NewSteering)) return;
+    LastDriveInputTime = GetWorld()->GetTimeSeconds();
     Throttle = FMath::Clamp(NewThrottle, -1.f, 1.f);
     Steering = FMath::Clamp(NewSteering, -1.f, 1.f);
     bHandbrake = bNewHandbrake;
@@ -476,7 +478,8 @@ void AQuebecCar::Tick(float DeltaSeconds)
     if (IsLocallyControlled() && !HasAuthority()) ServerSetDrive(Throttle, Steering, bHandbrake);
     if (!HasAuthority()) return;
     const float Step = FMath::Min(DeltaSeconds, .05f);
-    if (!Controller) StopInput();
+    // A lost connection must not hold its last throttle until the network timeout.
+    if (!Controller || (!IsLocallyControlled() && GetWorld()->GetTimeSeconds() - LastDriveInputTime > .5f)) StopInput();
     VisualSteering = Steering;
     if (bHandbrake) Speed = FMath::FInterpConstantTo(Speed, 0.f, Step, 3200.f);
     else
@@ -683,11 +686,10 @@ AQuebecParkResident* AQuebecController::FindInteractableResident() const
     return Nearest;
 }
 
-void AQuebecController::ClientResidentDialogue_Implementation(int32 Style)
+void AQuebecController::ClientInteractionMessage_Implementation(const FString& Message)
 {
-    if (Style < 0 || Style > 10) return;
-    ResidentCaption = FString(AQuebecParkResident::NameForStyle(Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Style);
-    ResidentCaptionUntil = GetWorld()->GetTimeSeconds()+7.f;
+    ResidentCaption = Message;
+    ResidentCaptionUntil = Message.IsEmpty() ? 0.f : GetWorld()->GetTimeSeconds() + 7.f;
 }
 
 void AQuebecController::ServerInteract_Implementation()
@@ -702,6 +704,7 @@ void AQuebecController::ServerInteract_Implementation()
     if (!Character) return;
     if (AQuebecCar* NearestCar = FindInteractableCar())
     {
+        ClientInteractionMessage(TEXT(""));
         WalkingCharacter = Character;
         Character->SetInVehicle(true);
         Character->SetActorLocation(NearestCar->GetActorLocation());
@@ -713,7 +716,8 @@ void AQuebecController::ServerInteract_Implementation()
     }
     if (AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>())
         if (State->AdvanceMissionNear(Character->GetActorLocation())) return;
-    if (AQuebecParkResident* Resident = FindInteractableResident()) ClientResidentDialogue(Resident->Style);
+    if (AQuebecParkResident* Resident = FindInteractableResident())
+        ClientInteractionMessage(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Resident->Style));
 }
 
 void AQuebecController::ExitCar(AQuebecCar* Car)
@@ -733,6 +737,7 @@ void AQuebecController::ExitCar(AQuebecCar* Car)
         Location.Z = Floor.ImpactPoint.Z + 100.;
         if (GetWorld()->OverlapBlockingTestByChannel(Location, FQuat::Identity, ECC_Pawn,
             FCollisionShape::MakeCapsule(42.f, 96.f), Query)) continue;
+        ClientInteractionMessage(TEXT(""));
         WalkingCharacter->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
         WalkingCharacter->SetActorLocationAndRotation(Location, Car->GetActorRotation());
         WalkingCharacter->SetInVehicle(false);
@@ -744,7 +749,7 @@ void AQuebecController::ExitCar(AQuebecCar* Car)
         WalkingCharacter = nullptr;
         return;
     }
-    ClientMessage(TEXT("The door is blocked. Move to an open spot to get out."));
+    ClientInteractionMessage(TEXT("DOORS BLOCKED  /  Move the car to an open spot, then press E to get out."));
 }
 
 void AQuebecController::PawnLeavingGame()
@@ -782,6 +787,9 @@ void AQuebecHUD::DrawHUD()
     const APawn* Pawn = PlayerOwner->GetPawn();
     const AQuebecCar* Car = Cast<AQuebecCar>(Pawn);
     const AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>();
+    const AQuebecController* Controller = Cast<AQuebecController>(PlayerOwner);
+    const AQuebecCar* NearbyCar = Controller && !Car ? Controller->FindInteractableCar() : nullptr;
+    const bool bCanComplete = State && AQuebecGameState::CanAdvanceMission(State->MissionIndex, Pawn->GetActorLocation());
     const float Scale = FMath::Clamp(Canvas->SizeY / 720.f, .75f, 1.5f);
     const float Margin = 28.f * Scale;
     // Comic caption palette: yellow captions and white paper with ink borders and an off-register cyan shadow.
@@ -817,11 +825,12 @@ void AQuebecHUD::DrawHUD()
             Margin + 21.f * Scale, Margin + 77.f * Scale, 1.f);
         Text(FString::Printf(TEXT("%dm to the next beacon"), FMath::RoundToInt(Meters)), Muted,
             Margin + 21.f * Scale, Margin + 106.f * Scale, .83f);
-        Text(Meters <= 5.f ? (Car ? TEXT("STEP OUT + E  /  Complete objective") : TEXT("E  /  Complete objective")) : TEXT("Follow the pink diamond"),
+        Text(Meters <= 5.f ? (Car ? TEXT("STEP OUT + E  /  Complete objective") : NearbyCar ? TEXT("Move away from car to complete objective") : TEXT("E  /  Complete objective")) : TEXT("Follow the pink diamond"),
             Accent, Margin + 21.f * Scale, Margin + 133.f * Scale, .83f);
         FVector2D Marker;
         if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
-            Marker.X > 15.f && Marker.X < Canvas->SizeX - 15.f && Marker.Y > 15.f && Marker.Y < Canvas->SizeY - 80.f)
+            Marker.X > 15.f && Marker.X < Canvas->SizeX - 15.f && Marker.Y > 15.f && Marker.Y < Canvas->SizeY - 80.f &&
+            !(Marker.X < Margin + 420.f * Scale && Marker.Y < Margin + 205.f * Scale))
         {
             constexpr float Radius = 12.f;
             DrawLine(Marker.X, Marker.Y - Radius, Marker.X + Radius, Marker.Y, Accent, 2.f);
@@ -881,14 +890,14 @@ void AQuebecHUD::DrawHUD()
     Text(Car ? TEXT("W/S  Drive     A/D  Steer     SPACE  Handbrake     E  Exit     Mouse  Look     F2  Comic look") :
         TEXT("WASD  Move     Mouse  Look     SPACE  Jump     SHIFT  Sprint     E  Interact     F2  Comic look"),
         Ink, Margin + 18.f * Scale, Bottom + 18.f * Scale, .82f);
-    if (const AQuebecController* Controller = Cast<AQuebecController>(PlayerOwner))
+    if (Controller)
     {
         if (Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds())
         {
             Box(Paper, Margin, Bottom-112.f*Scale, Canvas->SizeX-Margin*2.f-8.f*Scale, 72.f*Scale);
             Text(Controller->ResidentCaption, Ink, Margin+18.f*Scale, Bottom-88.f*Scale, .82f);
         }
-        else if (!Car && !Controller->FindInteractableCar())
+        else if (!Car && !NearbyCar && !bCanComplete)
         {
             if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
             {
@@ -903,9 +912,9 @@ void AQuebecHUD::DrawHUD()
             Canvas->SizeX - Margin - 150.f * Scale, Bottom + 14.f * Scale, 1.1f);
         if (Car->bHandbrake) Text(TEXT("HANDBRAKE"), Accent, Canvas->SizeX - Margin - 150.f * Scale, Bottom - 30.f * Scale, .9f);
     }
-    else if (const AQuebecController* Controller = Cast<AQuebecController>(PlayerOwner))
+    else if (Controller)
     {
-        if (Controller->FindInteractableCar())
+        if (NearbyCar)
         {
             const float X = Canvas->SizeX * .5f - 120.f * Scale;
             Box(Panel, X, Bottom - 65.f * Scale, 240.f * Scale, 44.f * Scale);

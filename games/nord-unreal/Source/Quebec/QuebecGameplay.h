@@ -69,10 +69,10 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_InVehicle) bool bInVehicle = false;
-    void MoveForward(float Value);
-    void MoveRight(float Value);
-    void StartSprint();
-    void StopSprint();
+    UFUNCTION() void MoveForward(float Value);
+    UFUNCTION() void MoveRight(float Value);
+    UFUNCTION() void StartSprint();
+    UFUNCTION() void StopSprint();
     UFUNCTION(Server, Reliable) void ServerSetSprint(bool bSprint);
     UFUNCTION() void OnRep_InVehicle();
 };
@@ -100,6 +100,7 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Parts;
+    float LastDriveInputTime = 0.f;
     float Throttle = 0.f;
     float Steering = 0.f;
     float VerticalSpeed = 0.f;
@@ -107,7 +108,7 @@ private:
     float WheelAngle = 0.f;
     UPROPERTY(Replicated) float VisualSteering = 0.f;
     UFUNCTION() void MoveForward(float Value);
-    void MoveRight(float Value);
+    UFUNCTION() void MoveRight(float Value);
     void LookYaw(float Value);
     void LookPitch(float Value);
     UFUNCTION() void ApplyHandbrake();
@@ -150,12 +151,12 @@ private:
     bool bComicStyle = true;
     float CaptureClock = 0.f;
     int32 CaptureStep = 0;
-    void ToggleComicStyle();
+    UFUNCTION() void ToggleComicStyle();
     void ApplyComicStyle();
     void TickCapture(float DeltaTime);
     UFUNCTION() void Interact();
     UFUNCTION(Server, Reliable) void ServerInteract();
-    UFUNCTION(Client, Reliable) void ClientResidentDialogue(int32 Style);
+    UFUNCTION(Client, Reliable) void ClientInteractionMessage(const FString& Message);
     void ExitCar(AQuebecCar* Car);
 };
 

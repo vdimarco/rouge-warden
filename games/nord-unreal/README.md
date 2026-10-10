@@ -6,7 +6,7 @@ The base OpenStreetMap snapshot records: 1,663 building footprints, two ponds, 1
 
 The district now uses **1,161 municipal LOD2 building models**, replacing 1,299 overlapping generic footprints across the playable area. Surveyed roof shapes, setbacks and available roof photo textures are retained. Façades use estimated comic masonry, trim and window spacing. The park adds **4,586 municipal inventory trees** (2,409 in Parc La Fontaine), **566 mapped furniture points**, **21 sports pitches**, pond coping, theatre seating and three illustrated landmark buildings. Tree heights/crowns and landmark elevations are estimates. See [building provenance](Data/CityBuildings/README.md) and [park sources, art and regeneration](Data/ParkComic/README.md).
 
-The user-supplied cottage crew references are included as **eight distinctive animated, talkable residents**, alongside three original bagel/raccoon/poutine designs (14 residents total). Matching clothes, caps, hair and plunger props use original 3D pieces; faces use the supplied illustration atlases. Names are temporary descriptive labels. Cars have shaped hatchback bodies, wheel arches, sloped windows, round lights and a fleet of four colours, while retaining the tested driving collision and controls.
+The user-supplied cottage crew references are included as **eight distinctive animated, talkable residents**, alongside three original bagel/raccoon/poutine designs (14 residents total). The eight supplied designs use Meshy-generated textured skeletal bodies with walking and idle clips; original plumbing props follow their right wrists. The skull-shirt resident uses the revised smiling face reference. Names are temporary descriptive labels. Cars have shaped hatchback bodies, wheel arches, sloped windows, round lights and a fleet of four colours, while retaining the tested driving collision and controls.
 
 Lumen lighting/reflections, virtual shadow maps, moving water and a restrained comic ink/halftone filter render the scene. A Vulkan SM6 GPU is required. Ground remains flat and street widths are simplified; buildings have no interiors. No GTA source or Google imagery is included. Ponds are visual surfaces; swimming is not implemented. See [geographic limitations](Data/LaFontaine/README.md).
 
@@ -97,8 +97,9 @@ Google photorealistic streaming through [Cesium for Unreal](https://cesium.com/l
 
 ## Testing
 
-The editor and Linux package build successfully. Map generation checks confirm four player starts; source validation checks both ponds, the address, and geographic feature counts. The mission proximity automation test and launcher checks pass. All 27 two-player listen-server smoke checks pass, including host/client entry and exit, replicated driving, camera follow/FOV, handbrake hold/release, mission progression, and fall recovery; the report is saved to `Saved/Tests/Smoke.json`. Current reports, including packaged host/client and cooked model checks, are preserved in `Verification/`. Separate packaged host/client processes also connected successfully on loopback.
+The editor module and Linux Development package build successfully. The current two-player suite covers sprint/jump, private F2 rendering, car entry/exit, steering and driving, camera follow/FOV, handbrake hold/release, ordered shared missions, fall recovery and resident animation/dialogue. It also rejects through-wall and occupied-car entry, retains a safely hidden driver when all exits are blocked, displays a private blocked-door caption, and verifies departure/reconnection cleanup. See the [requirement audit](Verification/QualityAudit.md) for the evidence and remaining scope.
 
+Run the same suite with `-NordLag` for 100 ms outgoing packet lag and 2% loss on both peers, `-NordDropout` for a complete client packet interruption, or `-NordPackagedPeer` for a separate Linux package joining the ongoing PIE session. These modes write separate reports in `Saved/Tests/`. Run PIE tests serially; they share port 17777. `-NordRenderChecks -NordCaptureWidth=1280` (or `1920`) additionally captures the HUD states and car/objective priority overlap. Current reports are retained in `Verification/`.
 All 13 vehicle collision checks pass: the car crosses an existing street marking, a colliding 2 cm strip, and an 18 cm curb forward and in reverse, while a tall wall still blocks it. Results are saved to `Saved/Tests/CarCollision.json`. Decorative meshes use explicit collision profiles so loading the map preserves their settings. The arcade car can step onto low surfaces with a 30 cm trial lift.
 
 Run the gameplay smoke test with this project's editor closed:
@@ -109,7 +110,17 @@ Run the gameplay smoke test with this project's editor closed:
 python3 Scripts/test_launcher.py
 ```
 
-Internet connectivity, latency/packet loss, late join, and disconnect/reconnect have not been verified. Only Linux is packaged. The arcade car uses server movement without client prediction, so driving may feel delayed over a high-latency connection. The upgraded renderer requires Vulkan SM6; performance on other computers has not been verified. Scripts/verify_lafontaine.py validates map orientation, scale, and actual collision at the spawn, car, and address building; its report is Saved/Tests/LaFontaine.json.
+Local loopback, late join, disconnect/reconnect, abrupt client crashes and the configured simulated lag/loss have been verified. External internet connectivity remains unverified. Only Linux is packaged. The arcade car uses server movement without client prediction, so driving may feel delayed over a high-latency connection. If remote drive updates stop for half a second, the server clears stale controls and the car coasts to a stop. The upgraded renderer requires Vulkan SM6; performance on other computers has not been verified. Scripts/verify_lafontaine.py validates map orientation, scale, and actual collision at the spawn, car, and address building; its report is Saved/Tests/LaFontaine.json.
+
+Additional package checks use native Unreal Development-build console handlers, not new game test commands:
+
+```bash
+python3 Scripts/verify_package.py
+python3 Scripts/verify_packaged_gameplay.py --soak-seconds 1800
+python3 Scripts/profile_package.py
+```
+
+The first checks cooked models, clips and separate-process connection with seven rendered views. The second exercises native controls, late join, abrupt process loss, released-car reuse and repeated joins. The third profiles uncapped Epic-quality Vulkan rendering at 720p and 1080p, verifying the actual viewport dimensions. Results are in `Verification/Package.json`, `PackagedGameplay.json` and `Performance.json`. The profiler enforces a 16.67 ms 95th-percentile reference-scene frame budget. Close other game/editor rendering sessions before profiling; profiling is a hardware-specific measurement, not a minimum-spec guarantee.
 
 The municipal upgrade was checked with source triangulation tests (courtyard holes and vertical faces), surveyed mesh placement/height checks, roof collision traces, and rendered comic/realistic reference views. Detailed tree materials now persist their Nanite usage flags for game mode. See `Verification/CityBuildings.json` for this pass’s checks.
 
