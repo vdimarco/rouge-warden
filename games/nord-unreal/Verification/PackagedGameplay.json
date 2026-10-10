@@ -23,9 +23,9 @@
   "soak": {
     "requested_seconds": 0,
     "elapsed_seconds": 0.0,
-    "host_rss_baseline_mb": 2840.7,
-    "host_rss_peak_mb": 2840.7,
-    "host_rss_final_mb": 2840.7
+    "host_rss_baseline_mb": 2839.1,
+    "host_rss_peak_mb": 2839.1,
+    "host_rss_final_mb": 2839.1
   },
-  "elapsed_seconds": 79.7
+  "elapsed_seconds": 81.7
 }

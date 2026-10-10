@@ -393,8 +393,27 @@ def restore_priority_fixture():
     teleport(STATE.pop("priority_character_position"))
 
 
+def next_character():
+    u.SystemLibrary.set_timer_for_next_tick(STATE["client_pc"], "NextCharacter")
+
+
+def crew_ready(style):
+    for side in ("server", "client"):
+        character = STATE[side + "_char"]
+        if character.get_editor_property("CrewStyle") != style:
+            return False
+        mesh = character.get_component_by_class(u.SkeletalMeshComponent).get_editor_property("skinned_asset")
+        if not mesh or f"/Crew/Resident{style}/SK_Body" not in mesh.get_path_name():
+            return False
+    assert STATE["host_char"].get_editor_property("CrewStyle") == 9, "Client changed host appearance"
+    assert missions_equal(0), "Appearance switching changed missions"
+    return True
+
+
 step("two connected players in server and client worlds", begin, discover)
 WALK_START = u.Vector(*LAYOUT["car"]) + u.Vector(math.cos(math.radians(LAYOUT["car_yaw"])), math.sin(math.radians(LAYOUT["car_yaw"])), 0) * 1000
+for crew_style in (10, 3, 4, 5, 6, 7, 8, 9):
+    step(f"client selects supplied crew {crew_style}; appearance replicates independently", next_character, lambda style=crew_style: crew_ready(style))
 step("walking fixture reaches owning client", lambda: teleport(WALK_START), lambda: teleported(WALK_START))
 step("native client forward walking reaches authority", lambda: begin_foot_move("MoveForward"), foot_move_replicated)
 step("client sprint predicts locally and reaches authority", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_char"], "StartSprint"), lambda: speed_equal(800))
@@ -412,6 +431,7 @@ step("remove entry barrier", remove_barriers, lambda: True)
 step("client RPC enters car; occupant, visibility and collision replicate", interact, entered)
 step("host cannot steal an occupied car", occupied_attempt, occupied_rejected)
 step("car camera preserves client standard view and host comic view", lambda: None, lambda: comic_weights(0, 1))
+step("client switches avatar while driving and retains occupancy", next_character, lambda: crew_ready(10) and entered())
 step("client drive RPC moves authority car", start_drive, drive)
 
 def begin_input_dropout():
@@ -535,8 +555,8 @@ def start_packaged_peer():
     log.unlink(missing_ok=True)
     output = (root / "Saved/Tests/PackagedLateJoin.stdout.log").open("w")
     process = subprocess.Popen(["bash", str(runner), "127.0.0.1:17777", "-nullrhi", "-unattended", "-nosound",
-        "-csvCaptureFrames=1800",
-        "-csvExecCmds=" + ",".join("r180:" + command for command in ("getall QuebecGameState MissionIndex", "getall QuebecParkResident Style", "getall SkeletalMeshComponent SkinnedAsset")),
+        "-ExecCmds=t.MaxFPS 60", "-csvCaptureFrames=1800",
+        "-csvExecCmds=" + ",".join("r180:" + command for command in ("getall QuebecGameState MissionIndex", "getall QuebecParkResident Style", "getall SkeletalMeshComponent SkinnedAsset", "getall QuebecCharacter CrewStyle")),
         "-abslog=" + str(log)], stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
     STATE.update(packaged_peer=process, packaged_output=output, packaged_log=log)
 
@@ -550,9 +570,11 @@ def packaged_peer_joined():
         return False
     if not re.search(r"MissionIndex = 3", text):
         return False
-    styles = set(re.findall(r"Style = (\d+)", text))
+    styles = set(re.findall(r"(?<!Crew)Style = (\d+)", text))
     bodies = set(re.findall(r"/Game/ParkComic/Crew/Resident(\d+)/SK_Body", text))
     if styles != set(map(str, range(11))) or bodies != set(map(str, range(3, 11))):
+        return False
+    if "CrewStyle = 10" not in text or "CrewStyle = 9" not in text:
         return False
     REPORT["packaged_late_join"] = {"mission_index": 3, "resident_styles": 11, "skeletal_crew": 8, "server_players": 3}
     return True
@@ -646,6 +668,11 @@ def capture_check(name):
         "all blocked car exits preserve driver safely": "BlockedExit",
         "mission 1 advances and replicates": "MissionComplete",
         "client E talks to crew without changing completed missions or host dialogue": "CrewDialogue"}
+    if name.startswith("client selects supplied crew "):
+        style = STATE["client_char"].get_editor_property("CrewStyle")
+        shots[name] = "PlayableCrew" + str(style)
+        yaw = STATE["client_char"].get_actor_rotation().yaw + 180
+        STATE["client_pc"].set_control_rotation(u.Rotator(pitch=-8, yaw=yaw))
     if name not in shots:
         return
     import re

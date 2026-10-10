@@ -6,7 +6,7 @@ The base OpenStreetMap snapshot records: 1,663 building footprints, two ponds, 1
 
 The district now uses **1,161 municipal LOD2 building models**, replacing 1,299 overlapping generic footprints across the playable area. Surveyed roof shapes, setbacks and available roof photo textures are retained. Façades use estimated comic masonry, trim and window spacing. The park adds **4,586 municipal inventory trees** (2,409 in Parc La Fontaine), **566 mapped furniture points**, **21 sports pitches**, pond coping, theatre seating and three illustrated landmark buildings. Tree heights/crowns and landmark elevations are estimates. See [building provenance](Data/CityBuildings/README.md) and [park sources, art and regeneration](Data/ParkComic/README.md).
 
-The user-supplied cottage crew references are included as **eight distinctive animated, talkable residents**, alongside three original bagel/raccoon/poutine designs (14 residents total). The eight supplied designs use Meshy-generated textured skeletal bodies with walking and idle clips; original plumbing props follow their right wrists. The skull-shirt resident uses the revised smiling face reference. Names are temporary descriptive labels. Cars have shaped hatchback bodies, wheel arches, sloped windows, round lights and a fleet of four colours, while retaining the tested driving collision and controls.
+The user-supplied cottage crew references are included as **eight playable characters and animated, talkable residents**, alongside three original bagel/raccoon/poutine designs (14 residents total). The eight supplied designs use Meshy-generated textured skeletal bodies with walking and idle clips; original plumbing props follow their right wrists. The skull-shirt resident uses the revised smiling face reference. Names are temporary descriptive labels. Cars have shaped hatchback bodies, wheel arches, sloped windows, round lights and a fleet of four colours, while retaining the tested driving collision and controls.
 
 Lumen lighting/reflections, virtual shadow maps, moving water and a restrained comic ink/halftone filter render the scene. A Vulkan SM6 GPU is required. Ground remains flat and street widths are simplified; buildings have no interiors. No GTA source or Google imagery is included. Ponds are visual surfaces; swimming is not implemented. See [geographic limitations](Data/LaFontaine/README.md).
 
@@ -31,6 +31,7 @@ The verified Linux build is in local `Builds/Linux/` (excluded from Git). Share 
 | Space | Jump on foot; hold handbrake while driving |
 | E | Enter/exit a nearby car; interact with a mission marker within 5 m; talk to a nearby resident |
 | S in car | Brake/reverse |
+| C | Cycle through the eight supplied characters, on foot or while driving |
 | F2 | Switch the comic-book look on or off (for you only) |
 
 Follow the on-screen mission objective. Progress is shared for the current server session and resets when the host restarts the map.
@@ -130,4 +131,4 @@ The municipal upgrade was checked with source triangulation tests (courtyard hol
 
 ### Detailed cottage characters
 
-The eight cottage crew residents now use Meshy-generated textured skeletal bodies with walking and idle clips. Style 9 uses the updated smiling skull-shirt face supplied by the user. Original plumbing props follow their right hands. See [character sources and rebuild steps](Data/CharactersMeshy/README.md). The existing player avatar and three park mascots are unchanged.
+The eight cottage crew residents now use Meshy-generated textured skeletal bodies with walking and idle clips. Style 9 uses the updated smiling skull-shirt face supplied by the user. Original plumbing props follow their right hands. See [character sources and rebuild steps](Data/CharactersMeshy/README.md). Press **C** to cycle through all eight supplied characters. You start as the revised skull-shirt character; the HUD names your current choice. Each player chooses independently, the choice replicates to peers, and switching preserves your position, objectives and car occupancy. Choices reset on a new connection. The three park mascots remain NPCs. The supplied rigs have idle and walking clips; sprint speeds up the walking clip, and jumping retains the current pose.

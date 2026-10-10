@@ -78,6 +78,41 @@ AQuebecCharacter::AQuebecCharacter()
     static ConstructorHelpers::FClassFinder<UAnimInstance> AnimAsset(
         TEXT("/Game/Characters/Mannequins/Anims/Unarmed/ABP_Unarmed"));
     if (AnimAsset.Succeeded()) GetMesh()->SetAnimInstanceClass(AnimAsset.Class);
+    CrewProp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CrewProp"));
+    CrewProp->SetupAttachment(GetMesh(), TEXT("RightHand"));
+    CrewProp->SetCollisionProfileName(TEXT("NoCollision"));
+    CrewProp->SetUsingAbsoluteRotation(true);
+}
+
+void AQuebecCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    ApplyCrewAppearance();
+}
+
+void AQuebecCharacter::CycleCrew()
+{
+    if (!HasAuthority()) return;
+    CrewStyle = CrewStyle >= 10 ? 3 : FMath::Clamp(CrewStyle + 1, 3, 10);
+    ApplyCrewAppearance();
+    ForceNetUpdate();
+}
+
+void AQuebecCharacter::ApplyCrewAppearance()
+{
+    if (CrewStyle < 3 || CrewStyle > 10) return;
+    const FString Folder = FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), CrewStyle);
+    USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")));
+    if (!Body) return;
+    GetMesh()->SetAnimInstanceClass(nullptr);
+    GetMesh()->SetSkeletalMesh(Body);
+    GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
+    GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+    CrewWalk = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Walk.A_Walk")));
+    CrewIdle = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Idle.A_Idle")));
+    CrewAnimation = nullptr;
+    CrewProp->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, CrewStyle == 8
+        ? TEXT("/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube") : TEXT("/Game/ParkComic/Crew/SM_Plunger.SM_Plunger")));
 }
 
 void AQuebecCharacter::SetupPlayerInputComponent(UInputComponent* Input)
@@ -139,6 +174,23 @@ void AQuebecCharacter::OnRep_InVehicle()
 void AQuebecCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    if (!bInVehicle && CrewIdle)
+    {
+        const float Speed = GetVelocity().Size2D();
+        UAnimSequence* Animation = Speed > 5.f ? CrewWalk : CrewIdle;
+        if (Animation)
+        {
+            if (CrewAnimation != Animation) { GetMesh()->SetAnimation(Animation); CrewAnimation = Animation; }
+            const AGameStateBase* State = GetWorld()->GetGameState();
+            float Time = State ? State->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+            const float Interval = GetMesh()->GetComponentTickInterval();
+            if (Interval > 0.f) Time = FMath::FloorToFloat(Time / Interval) * Interval;
+            GetMesh()->SetPosition(FMath::Fmod(Time * (Speed > 5.f ? FMath::Clamp(Speed / 180.f, .8f, 2.f) : 1.f), Animation->GetPlayLength()), false);
+            GetMesh()->TickAnimation(0.f, false);
+            GetMesh()->RefreshBoneTransforms();
+            CrewProp->UpdateComponentToWorld();
+        }
+    }
     if (HasAuthority() && !bInVehicle && GetActorLocation().Z < -1500.)
     {
         GetCharacterMovement()->StopMovementImmediately();
@@ -150,6 +202,7 @@ void AQuebecCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AQuebecCharacter, bInVehicle);
+    DOREPLIFETIME(AQuebecCharacter, CrewStyle);
 }
 
 AQuebecParkInstances::AQuebecParkInstances()
@@ -567,6 +620,15 @@ void AQuebecController::SetupInputComponent()
     Super::SetupInputComponent();
     InputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AQuebecController::Interact);
     InputComponent->BindAction(TEXT("ComicStyle"), IE_Pressed, this, &AQuebecController::ToggleComicStyle);
+    InputComponent->BindAction(TEXT("NextCharacter"), IE_Pressed, this, &AQuebecController::NextCharacter);
+}
+
+void AQuebecController::NextCharacter() { ServerNextCharacter(); }
+void AQuebecController::ServerNextCharacter_Implementation()
+{
+    AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
+    if (!Character) Character = WalkingCharacter;
+    if (Character) Character->CycleCrew();
 }
 
 void AQuebecController::ToggleComicStyle() { bComicStyle = !bComicStyle; }
@@ -890,6 +952,9 @@ void AQuebecHUD::DrawHUD()
     Text(Car ? TEXT("W/S  Drive     A/D  Steer     SPACE  Handbrake     E  Exit     Mouse  Look     F2  Comic look") :
         TEXT("WASD  Move     Mouse  Look     SPACE  Jump     SHIFT  Sprint     E  Interact     F2  Comic look"),
         Ink, Margin + 18.f * Scale, Bottom + 18.f * Scale, .82f);
+    const AQuebecCharacter* Avatar = Car ? Car->Occupant.Get() : Cast<AQuebecCharacter>(Pawn);
+    if (Avatar) Text(FString::Printf(TEXT("C  /  CHARACTER: %s"), AQuebecParkResident::NameForStyle(Avatar->CrewStyle)),
+        Ink, Margin + 18.f * Scale, Bottom + 38.f * Scale, .75f);
     if (Controller)
     {
         if (Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds())

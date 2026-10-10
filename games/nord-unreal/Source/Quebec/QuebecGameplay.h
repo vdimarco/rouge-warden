@@ -60,6 +60,9 @@ class QUEBEC_API AQuebecCharacter : public ACharacter
     GENERATED_BODY()
 public:
     AQuebecCharacter();
+    virtual void BeginPlay() override;
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=ApplyCrewAppearance) int32 CrewStyle = 9;
+    void CycleCrew();
     virtual void Tick(float DeltaSeconds) override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -69,6 +72,11 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_InVehicle) bool bInVehicle = false;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CrewProp;
+    UPROPERTY() TObjectPtr<UAnimSequence> CrewWalk;
+    UPROPERTY() TObjectPtr<UAnimSequence> CrewIdle;
+    UPROPERTY() TObjectPtr<UAnimSequence> CrewAnimation;
+    UFUNCTION() void ApplyCrewAppearance();
     UFUNCTION() void MoveForward(float Value);
     UFUNCTION() void MoveRight(float Value);
     UFUNCTION() void StartSprint();
@@ -151,6 +159,8 @@ private:
     bool bComicStyle = true;
     float CaptureClock = 0.f;
     int32 CaptureStep = 0;
+    UFUNCTION() void NextCharacter();
+    UFUNCTION(Server, Reliable) void ServerNextCharacter();
     UFUNCTION() void ToggleComicStyle();
     void ApplyComicStyle();
     void TickCapture(float DeltaTime);
