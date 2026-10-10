@@ -80,9 +80,35 @@ body[data-art-style="painted"] #pullStrength i { background: #65966c; }
 @keyframes rod-turn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { #rodCue *, #crankBox::after { animation: none !important; } }
 
-/* The urgent prompt: the words sit on a darker red, so they read at 4.5:1 or more (the bright red stays for strokes) */
+/* The urgent cue has a darker red card, with a triangle marker on the art. */
 #prompt.hot .p1 { background: #b8352b; }
 body[data-art-style="painted"] #prompt.hot .p1 { background: #a54332; }
+/* The corner card is a gesture picture. Words remain in the DOM for the live
+   announcement and for assistive technology, without occupying lake space. */
+#prompt .p1 { position: relative; display: block; width: 100%; max-width: none; padding: 4px; border-radius: 14px; }
+#prompt .cue-art { position: relative; width: 100%; }
+#prompt .p1 .cue-art svg { display: block; width: 100%; height: auto; aspect-ratio: 138 / 82; overflow: hidden; animation: none !important; transform: none !important; }
+#prompt .cue-art svg text { display: none; }
+#prompt .cue-art .g-dot { fill: #ff7866; stroke: #ffe7de; stroke-width: 2; }
+#prompt .cue-art .g-trail, #prompt .cue-art .cue-dir { fill: none; stroke: #e8b64a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+#prompt .cue-art .g-trail { stroke-dasharray: 3 5; }
+#prompt .cue-art .g-pause { fill: #ffdfaa; }
+#prompt .cue-key { position: absolute; right: 2px; bottom: 1px; min-width: 18px; padding: 1px 4px; border-radius: 4px; border: 1px solid #f6efd9; background: #092229; color: #f6efd9; font: 900 10px/1.2 var(--body); text-align: center; }
+#prompt .cue-wheel { position: absolute; right: 3px; bottom: 1px; width: 16px; height: 24px; border: 2px solid #f6efd9; border-radius: 9px; background: #092229; }
+#prompt .cue-wheel i { position: absolute; width: 3px; height: 6px; left: 5px; top: 3px; border-radius: 2px; background: #e8b64a; animation: cue-wheel-roll .9s ease-in infinite; }
+@keyframes cue-wheel-roll { 0% { transform: translateY(0); opacity: 1; } 80%, 100% { transform: translateY(8px); opacity: .3; } }
+#prompt .cue-pointer { position: absolute; right: 2px; bottom: 1px; width: 18px; height: 23px; background: #f6efd9; clip-path: polygon(9% 0, 9% 95%, 35% 72%, 52% 100%, 69% 91%, 52% 64%, 88% 63%); filter: drop-shadow(0 1px 1px #092229); }
+#prompt .cue-speed { position: absolute; left: 3px; bottom: 2px; display: flex; align-items: end; gap: 2px; padding: 2px; border-radius: 3px; background: #092229; }
+#prompt .cue-speed i { display: block; width: 3px; height: 6px; border-radius: 2px; background: #f6efd9; }
+#prompt .cue-speed i:nth-child(2) { height: 9px; }
+#prompt .cue-speed i:nth-child(3) { height: 12px; }
+#prompt .cue-speed i:nth-child(4) { height: 15px; }
+#prompt .cue-urgent { position: absolute; right: 2px; top: 2px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 15px solid #fff1bf; filter: drop-shadow(0 1px 1px #092229); }
+#prompt .cue-urgent::after { content: ""; position: absolute; left: -1px; top: 6px; width: 2px; height: 5px; border-radius: 1px; background: #a54332; }
+#prompt .p1 .cue-words, #prompt .p2 { position: absolute !important; width: 1px !important; height: 1px !important; margin: -1px !important; padding: 0 !important; overflow: hidden !important; clip-path: inset(50%); white-space: nowrap; border: 0 !important; background: none; }
+#prompt[data-action="nibble"] .p1 { border-color: #e8b64a; }
+html[data-calm="1"] #prompt .cue-wheel i { animation: none; }
+@media (prefers-reduced-motion: reduce) { #prompt .cue-wheel i { animation: none; } }
 /* the painted main button keeps its own red (white on it reads at 5:1) */
 body[data-art-style="painted"] .btn.go { background: #b45038; }
 
@@ -106,8 +132,6 @@ html[data-calm="1"] #rodCue *, html[data-calm="1"] #crankBox::after { animation:
    main.js grows the gauge's words as well. Every screen still fits a 360 x 640 phone: the lists scroll in their cards */
 #game { --ui-scale: 1; }
 #game[data-text="large"] { --ui-scale: 1.25; --gauge-w: min(42vmin, 220px); --gauge-h: min(28vmin, 140px); }
-#game[data-text="large"] #prompt .p1 { font-size: calc(16px * var(--ui-scale)); }
-#game[data-text="large"] #prompt .p2 { font-size: calc(12px * var(--ui-scale)); }
 #game[data-text="large"] #toast { font-size: calc(14px * var(--ui-scale)); }
 #game[data-text="large"] .chip { font-size: calc(13px * var(--ui-scale)); padding-left: 9px; padding-right: 9px; }
 #game[data-text="large"] #report .verdict { font-size: calc(15px * var(--ui-scale)); }
