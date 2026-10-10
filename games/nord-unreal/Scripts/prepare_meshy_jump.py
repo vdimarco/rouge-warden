@@ -1,18 +1,31 @@
 """Author original jump clips on the retained rigs; run Blender --background --python this_file.
 
 CPU asset processing only. No rendering, service calls, or modification of source bodies/textures.
+Neutral pilot: blender --background --factory-startup --python this_file --
+              --source-root Data/CharactersNeutral --names CurlyMetalhead
 """
+import argparse
 import hashlib
 import json
 import math
 from pathlib import Path
+import sys
 
 import bpy
 from mathutils import Quaternion, Vector
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "Data/CharactersMeshy"
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--source-root', type=Path, default=Path('Data/CharactersMeshy'))
+parser.add_argument('--names', nargs='+', help='Author only these character folders on their own retained body rigs.')
+parser.add_argument('--report', type=Path, help='Optional isolated verification JSON path.')
+args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
+SOURCE = (ROOT / args.source_root).resolve()
+assert SOURCE.is_dir(), SOURCE
+if args.names:
+    assert len(set(args.names)) == len(args.names) and all(Path(n).name == n and n not in ('.', '..') for n in args.names)
+folders = [SOURCE / name for name in args.names] if args.names else sorted(SOURCE.iterdir())
 # Seconds, hip drop in cm, thigh/knee/ankle/arm/elbow/spine pitch in degrees.
 POSES = (
     (0.00, 0, 0, 0, 0, 0, 0, 0),
@@ -33,10 +46,12 @@ def interpolate(seconds):
 
 
 reports = []
-for folder in sorted(SOURCE.iterdir()):
+for folder in folders:
     body = folder / "body.fbx"
     if not body.is_file():
+        assert not args.names, body
         continue
+    assert folder.resolve().parent == SOURCE and not body.is_symlink(), body
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.fbx(filepath=str(body), use_anim=False, automatic_bone_orientation=False)
     armature = next(obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE")
@@ -116,6 +131,10 @@ for folder in sorted(SOURCE.iterdir()):
               "actor_root_motion": False, "fbx_round_trip_passed": True, "samples": samples}
     (folder / "jump.json").write_text(json.dumps(report, indent=2) + "\n")
     reports.append({key: value for key, value in report.items() if key != "samples"})
-assert len(reports) == 8, len(reports)
-(ROOT / "Verification/MeshyJumpSources.json").write_text(json.dumps({"passed": True, "characters": reports}, indent=2) + "\n")
+assert len(reports) == (len(args.names) if args.names else 8), len(reports)
+original = SOURCE == (ROOT / 'Data/CharactersMeshy').resolve()
+report_path = ROOT / args.report if args.report else ROOT / 'Verification' / ('MeshyJumpSources.json' if original else SOURCE.name + 'JumpSources.json')
+report_path.parent.mkdir(parents=True, exist_ok=True)
+report_path.write_text(json.dumps({"passed": True, "source_root": str(SOURCE.relative_to(ROOT)) if SOURCE.is_relative_to(ROOT) else str(SOURCE),
+                                   "characters": reports}, indent=2) + "\n")
 print("NORD_MESHY_JUMP_SOURCES_OK", len(reports))

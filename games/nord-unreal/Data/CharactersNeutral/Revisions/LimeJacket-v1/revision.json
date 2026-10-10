@@ -1,0 +1,27 @@
+{
+  "reason": "Rejected strongly furrowed brow after native front and three-quarter review",
+  "former_source_root": "Data/CharactersNeutral/LimeJacket",
+  "files": {
+    "base_color.png": "a42c4ebb2ca9f4130ee8d557b9fd05d4b1e4382bb217ad1164c7e464ab589e85",
+    "body.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "body.fbx": "20d283d2274fc24f52ce248f02ab1b4165671145b051d39fbea6b1903cdb4071",
+    "body.glb": "da5ad9a835b7df8a4f8b4c46f5f2b218727ec9bfa4026f3ec360ff06ea66ef7f",
+    "files-before.json": "e7a149aa507f0e86762b13f072113a3ee0797bcf07bb62f306f3acaf8719bf0d",
+    "idle.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "idle.fbx": "54dc3dec8fbf98e1d60921ea9b97f064b94bba097dbe48d751c7d3218cbe5d96",
+    "jump.fbx": "66dcc1c2b54bdce28685a874bdb8fdf9a6b1c88df4e570cbfa6d0baeaad39734",
+    "jump.json": "228209a09fa4999497bda81caa35be34b2b724774356d7ca1e011646cf1e8251",
+    "metallic.png": "adee7f7353d316872af8f4b02e6807449fc0a33ddf07d66f05f8493b16dab5d4",
+    "normal.png": "4c6cefa9fd545ac8842cb8d0ec82f98545bcae3bca3865fdf4785dd4c4e285e2",
+    "preview.png": "72b46d8cf42a9fa620408f27deee8508780fafff0482d1588d8d3625c45cb4ff",
+    "reference.png": "d8254aafff0b1a63f7add67d3a6946699f40d317196733c46a5836e37b328ebd",
+    "request.json": "66e4e6f3d32db82ecfd38f670a07c60b3d45f82a079b701a69766d19250d07ec",
+    "result.json": "e8985e93552e558e8b8b2729733684bc8b2452a7dbe87746b535a4a9ea2a4cc0",
+    "roughness.png": "3b773abbcbd33af15fbdaf63dc8b41e0553fc934804cfbbd5277e3226f367df1",
+    "run.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "run.fbx": "af6577da293481172bec771fda61c37f90f305ee1db23be34a437e2de0804643",
+    "run.glb": "a172683a5bbaf59396bb482f05385ce636642d4565e1866a95827933ac89bd5a",
+    "walk.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "walk.fbx": "44691c3beead19e8a601ae357c9616cdeb017de92711d1816327909bc2d65d46"
+  }
+}

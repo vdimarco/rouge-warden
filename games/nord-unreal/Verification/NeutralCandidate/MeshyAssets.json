@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "candidate": true,
+  "source": "Data/CharactersNeutral",
+  "characters": [
+    {
+      "style": 9,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/CrewNeutral/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 5.1619135632563484e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 253,
+        "source_bind_max_distance_error_cm": 5.5078409729958366e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/body.fbx",
+          "sha256": "71c636200855ee3747586e42dfc460730258c6ad88d2fbc2bd5200a04a58e4c3",
+          "saved_md5": "695cc4b66703f80d9051e63801181cc0"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/walk.fbx",
+          "sha256": "81164edb631d62d92fdebdeb7e6895d20528e6c66b76890d66ddcba32a72d459",
+          "saved_md5": "d50ad3ba86f122ace1d2c1eb5715449f"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/idle.fbx",
+          "sha256": "76fa07af7e50bbe3517ff6c7f22b20d9b38b49f0cbe912882813a57e8f4c8279",
+          "saved_md5": "409310525a917a8a7f712b013f9fe0b1"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/run.fbx",
+          "sha256": "edd6a60193010153cb7f73de287a040383bb9accb818430e4051439423bc0cef",
+          "saved_md5": "d7c2d10e848818e2fbcf23c734b304ad"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/jump.fbx",
+          "sha256": "82cd0c4336e0c505d4b2db6b4d8d65e25b42568215d841491fdd2b6d97ad47c0",
+          "saved_md5": "0fef07771f89bdc2b95c944ea006fafe"
+        }
+      }
+    }
+  ]
+}

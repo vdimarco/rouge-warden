@@ -1,0 +1,102 @@
+{
+  "passed": true,
+  "source_root": "Data/CharactersNeutral",
+  "characters": [
+    {
+      "name": "BlackCap",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "bbadf9714665fb71f7981307261926de682c615eb33503d2ccbfa6e7aca71a37",
+      "jump_sha256": "7b04c5b9289b19960f24f46825bf7898b9069b47bd6456a4a693c75313e67059",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    },
+    {
+      "name": "CurlyMetalhead",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "71c636200855ee3747586e42dfc460730258c6ad88d2fbc2bd5200a04a58e4c3",
+      "jump_sha256": "82cd0c4336e0c505d4b2db6b4d8d65e25b42568215d841491fdd2b6d97ad47c0",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    },
+    {
+      "name": "GreenCap51",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "3a65c20c923852a0bf16baf7130792ad951a9e72069e079339b4aa71349fcee3",
+      "jump_sha256": "88bf3bf0f523c3cff7ba5b07a573dfd034a1addea8ea5ff8acd77b1a0ae6cd19",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    },
+    {
+      "name": "LimeJacket",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "e3bccdf06bac149803a86cd86a98d085e6f5bccc40997b933e8fd0ed4097d24b",
+      "jump_sha256": "1bf34250260b671e4a71612993d966b84f51c665173b2170f6aa9a8fe96256da",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    },
+    {
+      "name": "Memphis33",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "c246f2b61487ad8bc5a411f5300b27648ed9b73aa001e6c4f5c76a8cd480f055",
+      "jump_sha256": "59f917e31ab4330d92045990285c8d13159cd949fc479d783dee378301ae5a7c",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    },
+    {
+      "name": "RedJersey",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "a019dd99a3a783d14bed1c60672d977688dd9955fcddc25f73127e2d541e5295",
+      "jump_sha256": "92d3ce2cd48cfe34b6c406d9b8e930630f523d1dc9ec0712e2a05f7a96696a0b",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    },
+    {
+      "name": "Topknot",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "5adc8300b149cc8cae9d1b483c649f05f4265aa47cda65e4d3068e737cb39176",
+      "jump_sha256": "781e957841c7ad080fe37e37dbe0d3926aeccd4ba49a6e4929d03a5705639494",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    },
+    {
+      "name": "WhiteCap",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "7b687a80ca150b3b011bfb3ba33f880da391a835ecdb2236f04627ad40950b44",
+      "jump_sha256": "58ddd18878713598901943082d6bab210e846474a9556f5e69eac606f9c5312c",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    }
+  ]
+}

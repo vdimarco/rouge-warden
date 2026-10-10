@@ -1,0 +1,5590 @@
+{
+  "passed": true,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "mode": "actual possessed pawn; native MoveForward, StartSprint/StopSprint and Jump/StopJumping callbacks",
+  "setup": "PIE-only relocation to a clear soccer pitch; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose",
+  "captures": "actual gameplay poses; world paused only for screenshot completion",
+  "not_checked": [
+    "physical keyboard delivery",
+    "native C-key crew selection (covered separately by smoke_test)",
+    "external networking",
+    "exact likeness to the supplied photographs",
+    "pixel identity after BC7 GPU compression, lighting and postprocessing"
+  ],
+  "characters": [
+    {
+      "style": 9,
+      "name": "CurlyMetalhead",
+      "states": {
+        "Idle": {
+          "world_time": 13.1856,
+          "clip": "A_Idle",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Idle.A_Idle",
+          "clip_time": 0.78466,
+          "location_cm": [
+            5738.54596,
+            40802.49067,
+            98.15001
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -2.95893,
+                0.04389,
+                96.09242
+              ],
+              "rotation_xyzw": [
+                0.00964,
+                -0.052516,
+                0.222047,
+                0.973573
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                3.49705,
+                0.0002,
+                147.0702
+              ],
+              "rotation_xyzw": [
+                0.068659,
+                0.101266,
+                -0.366364,
+                0.922393
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.9241,
+                -9.38348,
+                145.77765
+              ],
+              "rotation_xyzw": [
+                0.68515,
+                -0.285561,
+                0.605074,
+                0.287941
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                24.24959,
+                -2.45811,
+                53.09355
+              ],
+              "rotation_xyzw": [
+                -0.418113,
+                0.90408,
+                -0.081071,
+                -0.035316
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                -11.14831,
+                16.04625,
+                47.20272
+              ],
+              "rotation_xyzw": [
+                0.434431,
+                -0.850779,
+                -0.008289,
+                0.295594
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                24.41588,
+                -9.89908,
+                11.50536
+              ],
+              "rotation_xyzw": [
+                -0.300206,
+                0.79759,
+                0.215148,
+                0.476904
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -32.25969,
+                6.00206,
+                13.05892
+              ],
+              "rotation_xyzw": [
+                0.387475,
+                -0.762796,
+                -0.283481,
+                -0.433179
+              ]
+            }
+          },
+          "cached_camera": {
+            "position_cm": [
+              6238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          }
+        },
+        "Face": {
+          "world_time": 13.65,
+          "clip": "A_Idle",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Idle.A_Idle",
+          "clip_time": 1.18466,
+          "location_cm": [
+            5738.54596,
+            40802.49067,
+            98.15001
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -2.01638,
+                0.16452,
+                94.49224
+              ],
+              "rotation_xyzw": [
+                -0.022656,
+                -0.053679,
+                -0.107905,
+                0.992452
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.66349,
+                -3.71065,
+                145.83676
+              ],
+              "rotation_xyzw": [
+                0.115757,
+                0.066137,
+                -0.763818,
+                0.631513
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                -2.70997,
+                -15.82857,
+                144.25096
+              ],
+              "rotation_xyzw": [
+                0.470946,
+                -0.583738,
+                0.38453,
+                0.538142
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                22.08107,
+                -8.00266,
+                53.93382
+              ],
+              "rotation_xyzw": [
+                -0.412653,
+                0.910352,
+                -0.031174,
+                0.002232
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                -7.27072,
+                11.23597,
+                45.50178
+              ],
+              "rotation_xyzw": [
+                0.2135,
+                -0.905512,
+                -0.04239,
+                0.364238
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                23.33974,
+                -10.32281,
+                11.76742
+              ],
+              "rotation_xyzw": [
+                -0.290847,
+                0.799082,
+                0.213587,
+                0.480892
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -35.31636,
+                7.97682,
+                15.24959
+              ],
+              "rotation_xyzw": [
+                0.17409,
+                -0.866823,
+                -0.19095,
+                -0.426438
+              ]
+            }
+          },
+          "cached_camera": {
+            "position_cm": [
+              5702.85107,
+              40669.25773,
+              162.06242
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              74.44354248046875,
+              -9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          }
+        },
+        "FaceThreeQuarter": {
+          "world_time": 14.0655,
+          "clip": "A_Idle",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Idle.A_Idle",
+          "clip_time": 1.66455,
+          "location_cm": [
+            5738.54596,
+            40802.49067,
+            98.15001
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.24778,
+                0.73033,
+                95.23581
+              ],
+              "rotation_xyzw": [
+                -0.001073,
+                -0.071446,
+                0.099443,
+                0.992474
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                1.86234,
+                -1.25679,
+                146.06642
+              ],
+              "rotation_xyzw": [
+                0.177532,
+                0.172498,
+                0.182783,
+                0.951481
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.78792,
+                2.47398,
+                143.92137
+              ],
+              "rotation_xyzw": [
+                0.764582,
+                -0.003084,
+                0.61434,
+                -0.194913
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                23.9524,
+                -4.57149,
+                53.52591
+              ],
+              "rotation_xyzw": [
+                -0.411692,
+                0.90888,
+                -0.062479,
+                -0.023309
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                -10.47684,
+                15.16112,
+                46.25544
+              ],
+              "rotation_xyzw": [
+                0.208062,
+                -0.916983,
+                0.00999,
+                0.340225
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                24.33573,
+                -10.18063,
+                11.65271
+              ],
+              "rotation_xyzw": [
+                -0.294578,
+                0.797713,
+                0.21211,
+                0.481547
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -36.12484,
+                8.54442,
+                14.46276
+              ],
+              "rotation_xyzw": [
+                0.179926,
+                -0.857068,
+                -0.172614,
+                -0.45085
+              ]
+            }
+          },
+          "cached_camera": {
+            "position_cm": [
+              5848.63013,
+              40873.01345,
+              160.93691
+            ],
+            "rotation_degrees": [
+              -1.3748347759246826,
+              -142.20083618164065,
+              9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          }
+        },
+        "Walk": {
+          "world_time": 15.26693,
+          "clip": "A_Walk",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Walk.A_Walk",
+          "clip_time": 0.2544,
+          "location_cm": [
+            6234.09847,
+            40802.49067,
+            98.15001
+          ],
+          "velocity_cm_s": [
+            450.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -1.46344,
+                -2.59754,
+                99.70333
+              ],
+              "rotation_xyzw": [
+                0.017262,
+                0.001449,
+                0.023593,
+                0.999572
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.05475,
+                -4.2988,
+                151.85823
+              ],
+              "rotation_xyzw": [
+                0.08007,
+                0.039821,
+                -0.000109,
+                0.995994
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                12.65964,
+                -5.52393,
+                152.45401
+              ],
+              "rotation_xyzw": [
+                0.687863,
+                -0.057861,
+                0.723469,
+                0.009385
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                21.36043,
+                -12.12607,
+                56.05569
+              ],
+              "rotation_xyzw": [
+                -0.031231,
+                0.982937,
+                -0.007132,
+                0.181131
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                -15.01137,
+                8.07381,
+                52.60794
+              ],
+              "rotation_xyzw": [
+                0.094739,
+                -0.948215,
+                -0.035736,
+                0.301057
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                36.42327,
+                -12.24047,
+                16.58328
+              ],
+              "rotation_xyzw": [
+                0.050488,
+                0.831946,
+                0.045202,
+                0.550703
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -38.91731,
+                8.51771,
+                18.83393
+              ],
+              "rotation_xyzw": [
+                0.026079,
+                -0.955487,
+                -0.004271,
+                -0.293847
+              ]
+            }
+          },
+          "cached_camera": {
+            "position_cm": [
+              6728.65951,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          }
+        },
+        "Run": {
+          "world_time": 16.47759,
+          "clip": "A_Run",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Run.A_Run",
+          "clip_time": 0.29725,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            98.15001
+          ],
+          "velocity_cm_s": [
+            800.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -4.28237,
+                -0.66279,
+                96.95644
+              ],
+              "rotation_xyzw": [
+                -0.056565,
+                0.081778,
+                -0.07173,
+                0.992455
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                6.8164,
+                -0.24322,
+                147.82666
+              ],
+              "rotation_xyzw": [
+                0.045046,
+                0.007777,
+                0.0617,
+                0.997047
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                19.39342,
+                0.1272,
+                149.38242
+              ],
+              "rotation_xyzw": [
+                0.662265,
+                0.007029,
+                0.749104,
+                -0.014108
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                -9.58595,
+                -15.83392,
+                48.59568
+              ],
+              "rotation_xyzw": [
+                0.043835,
+                0.923755,
+                0.108008,
+                -0.364815
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                24.82744,
+                7.31541,
+                59.31595
+              ],
+              "rotation_xyzw": [
+                -0.0142,
+                0.713381,
+                0.064327,
+                -0.697673
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -37.66167,
+                -6.05208,
+                18.5783
+              ],
+              "rotation_xyzw": [
+                0.049022,
+                0.957463,
+                0.022656,
+                0.283459
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -16.43922,
+                10.29338,
+                58.56162
+              ],
+              "rotation_xyzw": [
+                0.055974,
+                0.961482,
+                0.104537,
+                -0.247975
+              ]
+            }
+          },
+          "cached_camera": {
+            "position_cm": [
+              7655.02217,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          }
+        },
+        "Airborne": {
+          "world_time": 17.7019,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.4894,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            280.80097
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -44.7674
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                1.16621,
+                0.00145,
+                154.85756
+              ],
+              "rotation_xyzw": [
+                -0.047451,
+                -0.153827,
+                -0.040262,
+                -0.986136
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.65777,
+                0.00953,
+                152.68963
+              ],
+              "rotation_xyzw": [
+                -0.765178,
+                -0.000226,
+                -0.643818,
+                0.000227
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                33.02934,
+                -15.79095,
+                76.60656
+              ],
+              "rotation_xyzw": [
+                0.041025,
+                -0.888616,
+                0.018174,
+                0.456453
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                32.7962,
+                14.83541,
+                76.87296
+              ],
+              "rotation_xyzw": [
+                -0.038616,
+                -0.906168,
+                -0.018014,
+                0.420765
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.18093,
+                -18.73786,
+                51.99057
+              ],
+              "rotation_xyzw": [
+                -0.007161,
+                -0.938981,
+                -0.006269,
+                -0.343837
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.29805,
+                17.53111,
+                50.17136
+              ],
+              "rotation_xyzw": [
+                -0.035717,
+                -0.957922,
+                -0.02951,
+                -0.283265
+              ]
+            }
+          },
+          "cached_camera": {
+            "position_cm": [
+              7675.20265,
+              40867.49067,
+              310.17667
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          }
+        },
+        "Landing": {
+          "world_time": 18.3379,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.99651,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            98.15
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.20048,
+                -0.46252,
+                93.71753
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                2.59841,
+                -0.06751,
+                145.29453
+              ],
+              "rotation_xyzw": [
+                -0.048418,
+                -0.178191,
+                -0.039166,
+                -0.982023
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                14.96739,
+                -0.05713,
+                142.51112
+              ],
+              "rotation_xyzw": [
+                -0.780878,
+                -0.000291,
+                -0.624683,
+                0.000292
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                18.09776,
+                -15.79673,
+                50.11573
+              ],
+              "rotation_xyzw": [
+                0.038071,
+                -0.93805,
+                0.022881,
+                0.343641
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                17.98473,
+                14.82925,
+                50.48413
+              ],
+              "rotation_xyzw": [
+                -0.036524,
+                -0.951046,
+                -0.022824,
+                0.306033
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -9.06677,
+                -18.7158,
+                17.88933
+              ],
+              "rotation_xyzw": [
+                -0.006933,
+                -0.911566,
+                -0.006672,
+                -0.411041
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -6.03418,
+                17.55082,
+                16.89753
+              ],
+              "rotation_xyzw": [
+                -0.033744,
+                -0.934822,
+                -0.031937,
+                -0.352063
+              ]
+            }
+          },
+          "cached_camera": {
+            "position_cm": [
+              7675.20265,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 51
+          }
+        }
+      },
+      "jump_samples": [
+        {
+          "world_time": 17.04398,
+          "clip": "A_Idle",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Idle.A_Idle",
+          "clip_time": 0.56639,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            98.15001
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.29453,
+                -0.32431,
+                96.50936
+              ],
+              "rotation_xyzw": [
+                0.01656,
+                -0.05394,
+                0.334994,
+                0.940529
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                3.21299,
+                1.23927,
+                147.37372
+              ],
+              "rotation_xyzw": [
+                0.054561,
+                0.137136,
+                -0.188427,
+                0.970934
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                14.40917,
+                -4.38366,
+                145.4328
+              ],
+              "rotation_xyzw": [
+                0.743092,
+                -0.156078,
+                0.629131,
+                0.166279
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                24.61367,
+                -0.83706,
+                52.7857
+              ],
+              "rotation_xyzw": [
+                -0.416969,
+                0.902942,
+                -0.094997,
+                -0.042523
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                -12.62153,
+                17.54154,
+                48.09964
+              ],
+              "rotation_xyzw": [
+                0.527928,
+                -0.806294,
+                0.001129,
+                0.266798
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                24.71634,
+                -9.58318,
+                11.45208
+              ],
+              "rotation_xyzw": [
+                -0.300289,
+                0.797794,
+                0.213774,
+                0.477129
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -30.37569,
+                5.80924,
+                12.60995
+              ],
+              "rotation_xyzw": [
+                0.480404,
+                -0.706027,
+                -0.315237,
+                -0.41396
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.14815,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.27084,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            155.33686
+          ],
+          "velocity_cm_s": [
+            -0.0,
+            -0.0,
+            497.90939
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -5.4962,
+                0.0003,
+                155.16246
+              ],
+              "rotation_xyzw": [
+                -0.042404,
+                -0.035663,
+                -0.045173,
+                -0.997441
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                7.15439,
+                -0.00282,
+                156.00018
+              ],
+              "rotation_xyzw": [
+                -0.683347,
+                8.7e-05,
+                -0.730094,
+                -8.7e-05
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                10.79101,
+                -15.71358,
+                55.8137
+              ],
+              "rotation_xyzw": [
+                0.033944,
+                -0.977325,
+                0.027862,
+                0.207141
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                10.73331,
+                14.91263,
+                56.20032
+              ],
+              "rotation_xyzw": [
+                -0.033416,
+                -0.984814,
+                -0.027934,
+                0.168059
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -6.2352,
+                -18.60858,
+                17.25594
+              ],
+              "rotation_xyzw": [
+                -0.006869,
+                -0.902714,
+                -0.006794,
+                -0.430133
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -2.8871,
+                17.65417,
+                17.22156
+              ],
+              "rotation_xyzw": [
+                -0.033134,
+                -0.927221,
+                -0.032622,
+                -0.371618
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.24598,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.30919,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            199.35787
+          ],
+          "velocity_cm_s": [
+            -0.0,
+            -0.0,
+            402.03556
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -4.19275,
+                6e-05,
+                155.22771
+              ],
+              "rotation_xyzw": [
+                -0.043439,
+                -0.058826,
+                -0.044262,
+                -0.99634
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                8.48309,
+                -0.00087,
+                155.47699
+              ],
+              "rotation_xyzw": [
+                -0.700121,
+                2.6e-05,
+                -0.714024,
+                -2.6e-05
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                16.37956,
+                -15.7233,
+                58.4286
+              ],
+              "rotation_xyzw": [
+                0.035555,
+                -0.965071,
+                0.026078,
+                0.258252
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                16.28193,
+                14.90282,
+                58.80384
+              ],
+              "rotation_xyzw": [
+                -0.034648,
+                -0.974622,
+                -0.026104,
+                0.219612
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -4.60164,
+                -18.62574,
+                21.87264
+              ],
+              "rotation_xyzw": [
+                -0.006931,
+                -0.910587,
+                -0.006689,
+                -0.413206
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -1.35739,
+                17.63814,
+                21.47092
+              ],
+              "rotation_xyzw": [
+                -0.033672,
+                -0.933949,
+                -0.032026,
+                -0.354373
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.28511,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.32452,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            214.33642
+          ],
+          "velocity_cm_s": [
+            -0.0,
+            -0.0,
+            363.69579
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -3.54695,
+                2e-05,
+                155.23759
+              ],
+              "rotation_xyzw": [
+                -0.043942,
+                -0.070277,
+                -0.043803,
+                -0.995596
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                9.13128,
+                0.00018,
+                155.1954
+              ],
+              "rotation_xyzw": [
+                -0.708283,
+                -4e-06,
+                -0.705929,
+                5e-06
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                18.98103,
+                -15.72923,
+                60.03583
+              ],
+              "rotation_xyzw": [
+                0.036318,
+                -0.957988,
+                0.025166,
+                0.283385
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                18.86307,
+                14.89693,
+                60.40241
+              ],
+              "rotation_xyzw": [
+                -0.035223,
+                -0.968554,
+                -0.025169,
+                0.245008
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -3.88114,
+                -18.63602,
+                24.62615
+              ],
+              "rotation_xyzw": [
+                -0.006962,
+                -0.914384,
+                -0.006639,
+                -0.404733
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -0.70323,
+                17.62868,
+                24.0421
+              ],
+              "rotation_xyzw": [
+                -0.033935,
+                -0.937198,
+                -0.031726,
+                -0.345691
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.49559,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.40703,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            269.18055
+          ],
+          "velocity_cm_s": [
+            -0.0,
+            -0.0,
+            157.41708
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -0.03633,
+                0.0008,
+                155.03081
+              ],
+              "rotation_xyzw": [
+                -0.046581,
+                -0.132464,
+                -0.041199,
+                -0.989235
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                12.53729,
+                0.00686,
+                153.40501
+              ],
+              "rotation_xyzw": [
+                -0.751078,
+                -0.000169,
+                -0.660214,
+                0.00017
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                30.49316,
+                -15.77334,
+                71.90194
+              ],
+              "rotation_xyzw": [
+                0.04002,
+                -0.908259,
+                0.019926,
+                0.416014
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                30.28292,
+                14.85284,
+                72.19889
+              ],
+              "rotation_xyzw": [
+                -0.03792,
+                -0.924186,
+                -0.019807,
+                0.37954
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.36685,
+                -18.70937,
+                44.31041
+              ],
+              "rotation_xyzw": [
+                -0.007113,
+                -0.93346,
+                -0.006363,
+                -0.358555
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.31516,
+                17.55889,
+                42.77235
+              ],
+              "rotation_xyzw": [
+                -0.035308,
+                -0.953343,
+                -0.030056,
+                -0.298306
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.52197,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.41155,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            272.99233
+          ],
+          "velocity_cm_s": [
+            -0.0,
+            -0.0,
+            131.56385
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.10479,
+                0.00086,
+                155.01323
+              ],
+              "rotation_xyzw": [
+                -0.046684,
+                -0.134967,
+                -0.04109,
+                -0.988896
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                12.67001,
+                0.00716,
+                153.32379
+              ],
+              "rotation_xyzw": [
+                -0.752746,
+                -0.000176,
+                -0.658311,
+                0.000176
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                30.84662,
+                -15.77547,
+                72.47452
+              ],
+              "rotation_xyzw": [
+                0.040153,
+                -0.905858,
+                0.019706,
+                0.421214
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                30.63328,
+                14.85072,
+                72.76783
+              ],
+              "rotation_xyzw": [
+                -0.038013,
+                -0.921993,
+                -0.01958,
+                0.384839
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.32753,
+                -18.71292,
+                45.2501
+              ],
+              "rotation_xyzw": [
+                -0.007118,
+                -0.934188,
+                -0.006351,
+                -0.356655
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.32946,
+                17.55551,
+                43.67581
+              ],
+              "rotation_xyzw": [
+                -0.035361,
+                -0.953944,
+                -0.029986,
+                -0.296381
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.54887,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.41155,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            276.17667
+          ],
+          "velocity_cm_s": [
+            -0.0,
+            -0.0,
+            105.20336
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.10479,
+                0.00086,
+                155.01323
+              ],
+              "rotation_xyzw": [
+                -0.046684,
+                -0.134967,
+                -0.04109,
+                -0.988896
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                12.67001,
+                0.00716,
+                153.32379
+              ],
+              "rotation_xyzw": [
+                -0.752746,
+                -0.000176,
+                -0.658311,
+                0.000176
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                30.84662,
+                -15.77547,
+                72.47452
+              ],
+              "rotation_xyzw": [
+                0.040153,
+                -0.905858,
+                0.019706,
+                0.421214
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                30.63328,
+                14.85072,
+                72.76783
+              ],
+              "rotation_xyzw": [
+                -0.038013,
+                -0.921993,
+                -0.01958,
+                0.384839
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.32753,
+                -18.71292,
+                45.2501
+              ],
+              "rotation_xyzw": [
+                -0.007118,
+                -0.934188,
+                -0.006351,
+                -0.356655
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.32946,
+                17.55551,
+                43.67581
+              ],
+              "rotation_xyzw": [
+                -0.035361,
+                -0.953944,
+                -0.029986,
+                -0.296381
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.7019,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.4894,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            280.80097
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -44.7674
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                1.16621,
+                0.00145,
+                154.85756
+              ],
+              "rotation_xyzw": [
+                -0.047451,
+                -0.153827,
+                -0.040262,
+                -0.986136
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.65777,
+                0.00953,
+                152.68963
+              ],
+              "rotation_xyzw": [
+                -0.765178,
+                -0.000226,
+                -0.643818,
+                0.000227
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                33.02934,
+                -15.79095,
+                76.60656
+              ],
+              "rotation_xyzw": [
+                0.041025,
+                -0.888616,
+                0.018174,
+                0.456453
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                32.7962,
+                14.83541,
+                76.87296
+              ],
+              "rotation_xyzw": [
+                -0.038616,
+                -0.906168,
+                -0.018014,
+                0.420765
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.18093,
+                -18.73786,
+                51.99057
+              ],
+              "rotation_xyzw": [
+                -0.007161,
+                -0.938981,
+                -0.006269,
+                -0.343837
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.29805,
+                17.53111,
+                50.17136
+              ],
+              "rotation_xyzw": [
+                -0.035717,
+                -0.957922,
+                -0.02951,
+                -0.283265
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.74658,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.4894,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            277.82294
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -88.54976
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                1.16621,
+                0.00145,
+                154.85756
+              ],
+              "rotation_xyzw": [
+                -0.047451,
+                -0.153827,
+                -0.040262,
+                -0.986136
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.65777,
+                0.00953,
+                152.68963
+              ],
+              "rotation_xyzw": [
+                -0.765178,
+                -0.000226,
+                -0.643818,
+                0.000227
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                33.02934,
+                -15.79095,
+                76.60656
+              ],
+              "rotation_xyzw": [
+                0.041025,
+                -0.888616,
+                0.018174,
+                0.456453
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                32.7962,
+                14.83541,
+                76.87296
+              ],
+              "rotation_xyzw": [
+                -0.038616,
+                -0.906168,
+                -0.018014,
+                0.420765
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.18093,
+                -18.73786,
+                51.99057
+              ],
+              "rotation_xyzw": [
+                -0.007161,
+                -0.938981,
+                -0.006269,
+                -0.343837
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.29805,
+                17.53111,
+                50.17136
+              ],
+              "rotation_xyzw": [
+                -0.035717,
+                -0.957922,
+                -0.02951,
+                -0.283265
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.77386,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.51995,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            275.04323
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -115.27915
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.93842,
+                0.00131,
+                154.89446
+              ],
+              "rotation_xyzw": [
+                -0.047287,
+                -0.149775,
+                -0.040441,
+                -0.98676
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.44737,
+                0.00901,
+                152.82921
+              ],
+              "rotation_xyzw": [
+                -0.762528,
+                -0.000216,
+                -0.646955,
+                0.000216
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                31.99038,
+                -15.78308,
+                74.49311
+              ],
+              "rotation_xyzw": [
+                0.04054,
+                -0.898431,
+                0.019034,
+                0.436824
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                31.76664,
+                14.84323,
+                74.77301
+              ],
+              "rotation_xyzw": [
+                -0.038285,
+                -0.915197,
+                -0.018893,
+                0.40074
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.10617,
+                -18.7244,
+                48.39828
+              ],
+              "rotation_xyzw": [
+                -0.007139,
+                -0.936127,
+                -0.006314,
+                -0.351533
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.47315,
+                17.54401,
+                46.71262
+              ],
+              "rotation_xyzw": [
+                -0.035504,
+                -0.955559,
+                -0.029797,
+                -0.291132
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.81029,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.51995,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            270.19215
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -150.9881
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.93842,
+                0.00131,
+                154.89446
+              ],
+              "rotation_xyzw": [
+                -0.047287,
+                -0.149775,
+                -0.040441,
+                -0.98676
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.44737,
+                0.00901,
+                152.82921
+              ],
+              "rotation_xyzw": [
+                -0.762528,
+                -0.000216,
+                -0.646955,
+                0.000216
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                31.99038,
+                -15.78308,
+                74.49311
+              ],
+              "rotation_xyzw": [
+                0.04054,
+                -0.898431,
+                0.019034,
+                0.436824
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                31.76664,
+                14.84323,
+                74.77301
+              ],
+              "rotation_xyzw": [
+                -0.038285,
+                -0.915197,
+                -0.018893,
+                0.40074
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.10617,
+                -18.7244,
+                48.39828
+              ],
+              "rotation_xyzw": [
+                -0.007139,
+                -0.936127,
+                -0.006314,
+                -0.351533
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.47315,
+                17.54401,
+                46.71262
+              ],
+              "rotation_xyzw": [
+                -0.035504,
+                -0.955559,
+                -0.029797,
+                -0.291132
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.85396,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.55397,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            262.66427
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -193.78352
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.51419,
+                0.00107,
+                154.95809
+              ],
+              "rotation_xyzw": [
+                -0.046981,
+                -0.142236,
+                -0.040773,
+                -0.987876
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.05321,
+                0.00806,
+                153.08408
+              ],
+              "rotation_xyzw": [
+                -0.757566,
+                -0.000196,
+                -0.652758,
+                0.000196
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                29.74268,
+                -15.76911,
+                70.75317
+              ],
+              "rotation_xyzw": [
+                0.039598,
+                -0.915486,
+                0.020604,
+                0.399865
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                29.53856,
+                14.85708,
+                71.05681
+              ],
+              "rotation_xyzw": [
+                -0.037623,
+                -0.930754,
+                -0.020499,
+                0.363127
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.12063,
+                -18.70086,
+                42.05067
+              ],
+              "rotation_xyzw": [
+                -0.007092,
+                -0.930617,
+                -0.006405,
+                -0.365869
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.6304,
+                17.56678,
+                40.62382
+              ],
+              "rotation_xyzw": [
+                -0.035098,
+                -0.950993,
+                -0.03032,
+                -0.305713
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.8818,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.55397,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            256.88894
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -221.06942
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26698,
+                -0.39259,
+                103.01867
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.51419,
+                0.00107,
+                154.95809
+              ],
+              "rotation_xyzw": [
+                -0.046981,
+                -0.142236,
+                -0.040773,
+                -0.987876
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                13.05321,
+                0.00806,
+                153.08408
+              ],
+              "rotation_xyzw": [
+                -0.757566,
+                -0.000196,
+                -0.652758,
+                0.000196
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                29.74268,
+                -15.76911,
+                70.75317
+              ],
+              "rotation_xyzw": [
+                0.039598,
+                -0.915486,
+                0.020604,
+                0.399865
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                29.53856,
+                14.85708,
+                71.05681
+              ],
+              "rotation_xyzw": [
+                -0.037623,
+                -0.930754,
+                -0.020499,
+                0.363127
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.12063,
+                -18.70086,
+                42.05067
+              ],
+              "rotation_xyzw": [
+                -0.007092,
+                -0.930617,
+                -0.006405,
+                -0.365869
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.6304,
+                17.56678,
+                40.62382
+              ],
+              "rotation_xyzw": [
+                -0.035098,
+                -0.950993,
+                -0.03032,
+                -0.305713
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.92134,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.58259,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            247.3836
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -259.81179
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26697,
+                -0.3926,
+                103.01686
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.07154,
+                0.00084,
+                155.01562
+              ],
+              "rotation_xyzw": [
+                -0.04666,
+                -0.134377,
+                -0.041116,
+                -0.988977
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                12.63877,
+                0.00708,
+                153.34119
+              ],
+              "rotation_xyzw": [
+                -0.752353,
+                -0.000175,
+                -0.65876,
+                0.000175
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                26.9834,
+                -15.75568,
+                67.14315
+              ],
+              "rotation_xyzw": [
+                0.038548,
+                -0.931619,
+                0.0222,
+                0.360703
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                26.80196,
+                14.87054,
+                67.46858
+              ],
+              "rotation_xyzw": [
+                -0.036865,
+                -0.945291,
+                -0.022129,
+                0.323382
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.33881,
+                -18.67816,
+                35.92961
+              ],
+              "rotation_xyzw": [
+                -0.007042,
+                -0.924708,
+                -0.006495,
+                -0.380558
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.57003,
+                17.58844,
+                34.78314
+              ],
+              "rotation_xyzw": [
+                -0.034666,
+                -0.94602,
+                -0.030852,
+                -0.32077
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.95466,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.58259,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            238.18216
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -292.46707
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26697,
+                -0.3926,
+                103.01686
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.07154,
+                0.00084,
+                155.01562
+              ],
+              "rotation_xyzw": [
+                -0.04666,
+                -0.134377,
+                -0.041116,
+                -0.988977
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                12.63877,
+                0.00708,
+                153.34119
+              ],
+              "rotation_xyzw": [
+                -0.752353,
+                -0.000175,
+                -0.65876,
+                0.000175
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                26.9834,
+                -15.75568,
+                67.14315
+              ],
+              "rotation_xyzw": [
+                0.038548,
+                -0.931619,
+                0.0222,
+                0.360703
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                26.80196,
+                14.87054,
+                67.46858
+              ],
+              "rotation_xyzw": [
+                -0.036865,
+                -0.945291,
+                -0.022129,
+                0.323382
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.33881,
+                -18.67816,
+                35.92961
+              ],
+              "rotation_xyzw": [
+                -0.007042,
+                -0.924708,
+                -0.006495,
+                -0.380558
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.57003,
+                17.58844,
+                34.78314
+              ],
+              "rotation_xyzw": [
+                -0.034666,
+                -0.94602,
+                -0.030852,
+                -0.32077
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 17.98217,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.58259,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            229.76658
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -319.42374
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26697,
+                -0.3926,
+                103.01686
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                0.07154,
+                0.00084,
+                155.01562
+              ],
+              "rotation_xyzw": [
+                -0.04666,
+                -0.134377,
+                -0.041116,
+                -0.988977
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                12.63877,
+                0.00708,
+                153.34119
+              ],
+              "rotation_xyzw": [
+                -0.752353,
+                -0.000175,
+                -0.65876,
+                0.000175
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                26.9834,
+                -15.75568,
+                67.14315
+              ],
+              "rotation_xyzw": [
+                0.038548,
+                -0.931619,
+                0.0222,
+                0.360703
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                26.80196,
+                14.87054,
+                67.46858
+              ],
+              "rotation_xyzw": [
+                -0.036865,
+                -0.945291,
+                -0.022129,
+                0.323382
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -1.33881,
+                -18.67816,
+                35.92961
+              ],
+              "rotation_xyzw": [
+                -0.007042,
+                -0.924708,
+                -0.006495,
+                -0.380558
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.57003,
+                17.58844,
+                34.78314
+              ],
+              "rotation_xyzw": [
+                -0.034666,
+                -0.94602,
+                -0.030852,
+                -0.32077
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.02822,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.62797,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            214.01687
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -364.55584
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26695,
+                -0.39262,
+                103.01487
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -0.67732,
+                0.0005,
+                155.0978
+              ],
+              "rotation_xyzw": [
+                -0.046111,
+                -0.121098,
+                -0.041689,
+                -0.990692
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.93031,
+                0.00549,
+                153.76105
+              ],
+              "rotation_xyzw": [
+                -0.74345,
+                -0.000139,
+                -0.668791,
+                0.000139
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                21.46181,
+                -15.7359,
+                61.84177
+              ],
+              "rotation_xyzw": [
+                0.036615,
+                -0.955043,
+                0.024805,
+                0.29315
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                21.32162,
+                14.89032,
+                62.19607
+              ],
+              "rotation_xyzw": [
+                -0.03544,
+                -0.965978,
+                -0.024797,
+                0.254981
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -2.11841,
+                -18.64464,
+                26.90632
+              ],
+              "rotation_xyzw": [
+                -0.006954,
+                -0.914144,
+                -0.006645,
+                -0.405276
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.00966,
+                17.62062,
+                26.24687
+              ],
+              "rotation_xyzw": [
+                -0.033922,
+                -0.937044,
+                -0.031737,
+                -0.346108
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.06109,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.62797,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            201.5033
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -396.77141
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26695,
+                -0.39262,
+                103.01487
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -0.67732,
+                0.0005,
+                155.0978
+              ],
+              "rotation_xyzw": [
+                -0.046111,
+                -0.121098,
+                -0.041689,
+                -0.990692
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.93031,
+                0.00549,
+                153.76105
+              ],
+              "rotation_xyzw": [
+                -0.74345,
+                -0.000139,
+                -0.668791,
+                0.000139
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                21.46181,
+                -15.7359,
+                61.84177
+              ],
+              "rotation_xyzw": [
+                0.036615,
+                -0.955043,
+                0.024805,
+                0.29315
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                21.32162,
+                14.89032,
+                62.19607
+              ],
+              "rotation_xyzw": [
+                -0.03544,
+                -0.965978,
+                -0.024797,
+                0.254981
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -2.11841,
+                -18.64464,
+                26.90632
+              ],
+              "rotation_xyzw": [
+                -0.006954,
+                -0.914144,
+                -0.006645,
+                -0.405276
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                1.00966,
+                17.62062,
+                26.24687
+              ],
+              "rotation_xyzw": [
+                -0.033922,
+                -0.937044,
+                -0.031737,
+                -0.346108
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.09566,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.65662,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            187.2007
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -430.65142
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26695,
+                -0.39262,
+                103.01487
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.09883,
+                0.00036,
+                155.13625
+              ],
+              "rotation_xyzw": [
+                -0.045799,
+                -0.113631,
+                -0.042007,
+                -0.991578
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.52751,
+                0.00464,
+                153.9896
+              ],
+              "rotation_xyzw": [
+                -0.738391,
+                -0.000119,
+                -0.674373,
+                0.00012
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                17.94398,
+                -15.72662,
+                59.35808
+              ],
+              "rotation_xyzw": [
+                0.035445,
+                -0.966047,
+                0.026213,
+                0.254579
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                17.83183,
+                14.89947,
+                59.72693
+              ],
+              "rotation_xyzw": [
+                -0.034558,
+                -0.975443,
+                -0.026241,
+                0.215937
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -2.75854,
+                -18.62879,
+                22.64356
+              ],
+              "rotation_xyzw": [
+                -0.006906,
+                -0.907993,
+                -0.006723,
+                -0.418874
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                0.47442,
+                17.63546,
+                22.26216
+              ],
+              "rotation_xyzw": [
+                -0.033488,
+                -0.931752,
+                -0.032239,
+                -0.360109
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.12222,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.65662,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            175.42061
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -456.67233
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26695,
+                -0.39262,
+                103.01487
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.09883,
+                0.00036,
+                155.13625
+              ],
+              "rotation_xyzw": [
+                -0.045799,
+                -0.113631,
+                -0.042007,
+                -0.991578
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.52751,
+                0.00464,
+                153.9896
+              ],
+              "rotation_xyzw": [
+                -0.738391,
+                -0.000119,
+                -0.674373,
+                0.00012
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                17.94398,
+                -15.72662,
+                59.35808
+              ],
+              "rotation_xyzw": [
+                0.035445,
+                -0.966047,
+                0.026213,
+                0.254579
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                17.83183,
+                14.89947,
+                59.72693
+              ],
+              "rotation_xyzw": [
+                -0.034558,
+                -0.975443,
+                -0.026241,
+                0.215937
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -2.75854,
+                -18.62879,
+                22.64356
+              ],
+              "rotation_xyzw": [
+                -0.006906,
+                -0.907993,
+                -0.006723,
+                -0.418874
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                0.47442,
+                17.63546,
+                22.26216
+              ],
+              "rotation_xyzw": [
+                -0.033488,
+                -0.931752,
+                -0.032239,
+                -0.360109
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.15592,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.65662,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            159.47157
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -489.70373
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26695,
+                -0.39262,
+                103.01487
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.09883,
+                0.00036,
+                155.13625
+              ],
+              "rotation_xyzw": [
+                -0.045799,
+                -0.113631,
+                -0.042007,
+                -0.991578
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.52751,
+                0.00464,
+                153.9896
+              ],
+              "rotation_xyzw": [
+                -0.738391,
+                -0.000119,
+                -0.674373,
+                0.00012
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                17.94398,
+                -15.72662,
+                59.35808
+              ],
+              "rotation_xyzw": [
+                0.035445,
+                -0.966047,
+                0.026213,
+                0.254579
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                17.83183,
+                14.89947,
+                59.72693
+              ],
+              "rotation_xyzw": [
+                -0.034558,
+                -0.975443,
+                -0.026241,
+                0.215937
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -2.75854,
+                -18.62879,
+                22.64356
+              ],
+              "rotation_xyzw": [
+                -0.006906,
+                -0.907993,
+                -0.006723,
+                -0.418874
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                0.47442,
+                17.63546,
+                22.26216
+              ],
+              "rotation_xyzw": [
+                -0.033488,
+                -0.931752,
+                -0.032239,
+                -0.360109
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.19066,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.68918,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            141.87022
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -523.74458
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26695,
+                -0.39262,
+                103.01487
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.46563,
+                0.00026,
+                155.16451
+              ],
+              "rotation_xyzw": [
+                -0.045526,
+                -0.107135,
+                -0.042282,
+                -0.992301
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.17464,
+                0.00392,
+                154.1833
+              ],
+              "rotation_xyzw": [
+                -0.73396,
+                -0.000102,
+                -0.679193,
+                0.000102
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                14.68784,
+                -15.71995,
+                57.52023
+              ],
+              "rotation_xyzw": [
+                0.034381,
+                -0.974331,
+                0.027397,
+                0.220786
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                14.60125,
+                14.90628,
+                57.89906
+              ],
+              "rotation_xyzw": [
+                -0.033751,
+                -0.982371,
+                -0.027458,
+                0.181805
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -3.40968,
+                -18.61688,
+                19.45369
+              ],
+              "rotation_xyzw": [
+                -0.006867,
+                -0.902439,
+                -0.006794,
+                -0.43071
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -0.10333,
+                17.64649,
+                19.31614
+              ],
+              "rotation_xyzw": [
+                -0.033109,
+                -0.926967,
+                -0.03266,
+                -0.37225
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.22566,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.68918,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            122.93602
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -558.04965
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26695,
+                -0.39262,
+                103.01487
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.46563,
+                0.00026,
+                155.16451
+              ],
+              "rotation_xyzw": [
+                -0.045526,
+                -0.107135,
+                -0.042282,
+                -0.992301
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                11.17464,
+                0.00392,
+                154.1833
+              ],
+              "rotation_xyzw": [
+                -0.73396,
+                -0.000102,
+                -0.679193,
+                0.000102
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                14.68784,
+                -15.71995,
+                57.52023
+              ],
+              "rotation_xyzw": [
+                0.034381,
+                -0.974331,
+                0.027397,
+                0.220786
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                14.60125,
+                14.90628,
+                57.89906
+              ],
+              "rotation_xyzw": [
+                -0.033751,
+                -0.982371,
+                -0.027458,
+                0.181805
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -3.40968,
+                -18.61688,
+                19.45369
+              ],
+              "rotation_xyzw": [
+                -0.006867,
+                -0.902439,
+                -0.006794,
+                -0.43071
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -0.10333,
+                17.64649,
+                19.31614
+              ],
+              "rotation_xyzw": [
+                -0.033109,
+                -0.926967,
+                -0.03266,
+                -0.37225
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.25381,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.72378,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            106.837
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            -585.63939
+          ],
+          "falling": true,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26692,
+                -0.39267,
+                103.0072
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.6469,
+                0.00016,
+                155.16903
+              ],
+              "rotation_xyzw": [
+                -0.04539,
+                -0.103924,
+                -0.042417,
+                -0.992643
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                10.99945,
+                0.00351,
+                154.26959
+              ],
+              "rotation_xyzw": [
+                -0.731759,
+                -9.4e-05,
+                -0.681563,
+                9.4e-05
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                12.99881,
+                -15.7168,
+                56.71008
+              ],
+              "rotation_xyzw": [
+                0.033837,
+                -0.978036,
+                0.027975,
+                0.203761
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                12.92246,
+                14.9092,
+                57.09169
+              ],
+              "rotation_xyzw": [
+                -0.033334,
+                -0.985384,
+                -0.028053,
+                0.164681
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -3.76043,
+                -18.61127,
+                18.0355
+              ],
+              "rotation_xyzw": [
+                -0.006843,
+                -0.899553,
+                -0.00683,
+                -0.436706
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -0.43022,
+                17.65131,
+                18.02045
+              ],
+              "rotation_xyzw": [
+                -0.032921,
+                -0.9245,
+                -0.032863,
+                -0.378332
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.29809,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.72378,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            98.15
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26692,
+                -0.39267,
+                103.0072
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.6469,
+                0.00016,
+                155.16903
+              ],
+              "rotation_xyzw": [
+                -0.04539,
+                -0.103924,
+                -0.042417,
+                -0.992643
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                10.99945,
+                0.00351,
+                154.26959
+              ],
+              "rotation_xyzw": [
+                -0.731759,
+                -9.4e-05,
+                -0.681563,
+                9.4e-05
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                12.99881,
+                -15.7168,
+                56.71008
+              ],
+              "rotation_xyzw": [
+                0.033837,
+                -0.978036,
+                0.027975,
+                0.203761
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                12.92246,
+                14.9092,
+                57.09169
+              ],
+              "rotation_xyzw": [
+                -0.033334,
+                -0.985384,
+                -0.028053,
+                0.164681
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -3.76043,
+                -18.61127,
+                18.0355
+              ],
+              "rotation_xyzw": [
+                -0.006843,
+                -0.899553,
+                -0.00683,
+                -0.436706
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -0.43022,
+                17.65131,
+                18.02045
+              ],
+              "rotation_xyzw": [
+                -0.032921,
+                -0.9245,
+                -0.032863,
+                -0.378332
+              ]
+            }
+          }
+        },
+        {
+          "world_time": 18.32611,
+          "clip": "A_Jump",
+          "clip_path": "/Game/ParkComic/CrewNeutral/Resident9/A_Jump.A_Jump",
+          "clip_time": 0.72378,
+          "location_cm": [
+            7175.20265,
+            40802.49067,
+            98.15
+          ],
+          "velocity_cm_s": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "falling": false,
+          "mesh_relative_cm": [
+            0.0,
+            0.0,
+            -96.0
+          ],
+          "bones": {
+            "Hips": {
+              "translation_cm": [
+                -3.26692,
+                -0.39267,
+                103.0072
+              ],
+              "rotation_xyzw": [
+                0.002676,
+                0.003598,
+                0.002676,
+                -0.999986
+              ]
+            },
+            "Head": {
+              "translation_cm": [
+                -1.6469,
+                0.00016,
+                155.16903
+              ],
+              "rotation_xyzw": [
+                -0.04539,
+                -0.103924,
+                -0.042417,
+                -0.992643
+              ]
+            },
+            "headfront": {
+              "translation_cm": [
+                10.99945,
+                0.00351,
+                154.26959
+              ],
+              "rotation_xyzw": [
+                -0.731759,
+                -9.4e-05,
+                -0.681563,
+                9.4e-05
+              ]
+            },
+            "LeftLeg": {
+              "translation_cm": [
+                12.99881,
+                -15.7168,
+                56.71008
+              ],
+              "rotation_xyzw": [
+                0.033837,
+                -0.978036,
+                0.027975,
+                0.203761
+              ]
+            },
+            "RightLeg": {
+              "translation_cm": [
+                12.92246,
+                14.9092,
+                57.09169
+              ],
+              "rotation_xyzw": [
+                -0.033334,
+                -0.985384,
+                -0.028053,
+                0.164681
+              ]
+            },
+            "LeftFoot": {
+              "translation_cm": [
+                -3.76043,
+                -18.61127,
+                18.0355
+              ],
+              "rotation_xyzw": [
+                -0.006843,
+                -0.899553,
+                -0.00683,
+                -0.436706
+              ]
+            },
+            "RightFoot": {
+              "translation_cm": [
+                -0.43022,
+                17.65131,
+                18.02045
+              ],
+              "rotation_xyzw": [
+                -0.032921,
+                -0.9245,
+                -0.032863,
+                -0.378332
+              ]
+            }
+          }
+        }
+      ],
+      "locomotion_samples": {
+        "Walk": [
+          {
+            "world_time": 14.287222484592348,
+            "clip_time": 0.25809353590011597,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5793.23074,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.11285,
+              -12.18114,
+              16.34067
+            ]
+          },
+          {
+            "world_time": 14.296829971950501,
+            "clip_time": 0.25809353590011597,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5797.55411,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.11285,
+              -12.18114,
+              16.34067
+            ]
+          },
+          {
+            "world_time": 14.304917296860367,
+            "clip_time": 0.25809353590011597,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5801.1934,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.11285,
+              -12.18114,
+              16.34067
+            ]
+          },
+          {
+            "world_time": 14.337080656085163,
+            "clip_time": 0.41888147592544556,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5815.66692,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              13.45618,
+              -12.04918,
+              14.84969
+            ]
+          },
+          {
+            "world_time": 14.375779206398875,
+            "clip_time": 0.41888147592544556,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5833.08126,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              13.45618,
+              -12.04918,
+              14.84969
+            ]
+          },
+          {
+            "world_time": 14.403410623315722,
+            "clip_time": 0.41888147592544556,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5845.5154,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              13.45618,
+              -12.04918,
+              14.84969
+            ]
+          },
+          {
+            "world_time": 14.417109968606383,
+            "clip_time": 0.5789401531219482,
+            "speed_cm_s": 450.00000000000006,
+            "actor_cm": [
+              5851.68011,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -11.28745,
+              -12.33563,
+              15.03336
+            ]
+          },
+          {
+            "world_time": 14.43339927541092,
+            "clip_time": 0.5789401531219482,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5859.01029,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -11.28745,
+              -12.33563,
+              15.03336
+            ]
+          },
+          {
+            "world_time": 14.441150900442153,
+            "clip_time": 0.5789401531219482,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5862.49853,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -11.28745,
+              -12.33563,
+              15.03336
+            ]
+          },
+          {
+            "world_time": 14.452667935285717,
+            "clip_time": 0.5789401531219482,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5867.68119,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -11.28745,
+              -12.33563,
+              15.03336
+            ]
+          },
+          {
+            "world_time": 14.462406715843827,
+            "clip_time": 0.5789401531219482,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5872.06364,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -11.28745,
+              -12.33563,
+              15.03336
+            ]
+          },
+          {
+            "world_time": 14.473498788196594,
+            "clip_time": 0.5789401531219482,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5877.05507,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -11.28745,
+              -12.33563,
+              15.03336
+            ]
+          },
+          {
+            "world_time": 14.51977001177147,
+            "clip_time": 0.7842602133750916,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5897.87713,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -40.57519,
+              -11.68437,
+              18.8342
+            ]
+          },
+          {
+            "world_time": 14.566833775956184,
+            "clip_time": 0.7842602133750916,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5919.05582,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -40.57519,
+              -11.68437,
+              18.8342
+            ]
+          },
+          {
+            "world_time": 14.580868399236351,
+            "clip_time": 0.7842602133750916,
+            "speed_cm_s": 449.99999999999994,
+            "actor_cm": [
+              5925.3714,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -40.57519,
+              -11.68437,
+              18.8342
+            ]
+          },
+          {
+            "world_time": 14.592143428046256,
+            "clip_time": 0.9290070533752441,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5930.44516,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -31.80799,
+              -9.82048,
+              33.13388
+            ]
+          },
+          {
+            "world_time": 14.60180291114375,
+            "clip_time": 0.9290070533752441,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5934.79193,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -31.80799,
+              -9.82048,
+              33.13388
+            ]
+          },
+          {
+            "world_time": 14.608451351057738,
+            "clip_time": 0.9290070533752441,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5937.78373,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -31.80799,
+              -9.82048,
+              33.13388
+            ]
+          },
+          {
+            "world_time": 14.618329252582043,
+            "clip_time": 0.9290070533752441,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5942.22878,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -31.80799,
+              -9.82048,
+              33.13388
+            ]
+          },
+          {
+            "world_time": 14.62769201816991,
+            "clip_time": 0.9290070533752441,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5946.44203,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -31.80799,
+              -9.82048,
+              33.13388
+            ]
+          },
+          {
+            "world_time": 14.636376922484487,
+            "clip_time": 0.9290070533752441,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5950.35024,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -31.80799,
+              -9.82048,
+              33.13388
+            ]
+          },
+          {
+            "world_time": 14.651761300396174,
+            "clip_time": 0.9290070533752441,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5957.27321,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -31.80799,
+              -9.82048,
+              33.13388
+            ]
+          },
+          {
+            "world_time": 14.683099895250052,
+            "clip_time": 0.11091994494199753,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5971.37557,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              28.70084,
+              -11.87257,
+              18.9887
+            ]
+          },
+          {
+            "world_time": 14.732839378993958,
+            "clip_time": 0.11091994494199753,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              5993.75834,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              28.70084,
+              -11.87257,
+              18.9887
+            ]
+          },
+          {
+            "world_time": 14.751517915632576,
+            "clip_time": 0.2477559894323349,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6002.16368,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.97883,
+              -12.34774,
+              17.02768
+            ]
+          },
+          {
+            "world_time": 14.766376711893827,
+            "clip_time": 0.2477559894323349,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6008.85014,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.97883,
+              -12.34774,
+              17.02768
+            ]
+          },
+          {
+            "world_time": 14.777686967048794,
+            "clip_time": 0.2477559894323349,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6013.93976,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.97883,
+              -12.34774,
+              17.02768
+            ]
+          },
+          {
+            "world_time": 14.784788858145475,
+            "clip_time": 0.2477559894323349,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6017.13561,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.97883,
+              -12.34774,
+              17.02768
+            ]
+          },
+          {
+            "world_time": 14.798461055383086,
+            "clip_time": 0.2477559894323349,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6023.28809,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.97883,
+              -12.34774,
+              17.02768
+            ]
+          },
+          {
+            "world_time": 14.81026653200388,
+            "clip_time": 0.2477559894323349,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6028.60056,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.97883,
+              -12.34774,
+              17.02768
+            ]
+          },
+          {
+            "world_time": 14.851646564900875,
+            "clip_time": 0.4480132758617401,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6047.22157,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              8.95618,
+              -12.10665,
+              14.89229
+            ]
+          },
+          {
+            "world_time": 14.888618592172861,
+            "clip_time": 0.4480132758617401,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6063.85899,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              8.95618,
+              -12.10665,
+              14.89229
+            ]
+          },
+          {
+            "world_time": 14.907419759780169,
+            "clip_time": 0.4480132758617401,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6072.31951,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              8.95618,
+              -12.10665,
+              14.89229
+            ]
+          },
+          {
+            "world_time": 14.922562202438712,
+            "clip_time": 0.5898445844650269,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6079.13361,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -12.99583,
+              -12.34008,
+              15.04164
+            ]
+          },
+          {
+            "world_time": 14.930481739342213,
+            "clip_time": 0.5898445844650269,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6082.6974,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -12.99583,
+              -12.34008,
+              15.04164
+            ]
+          },
+          {
+            "world_time": 14.936578552704304,
+            "clip_time": 0.5898445844650269,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6085.44097,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -12.99583,
+              -12.34008,
+              15.04164
+            ]
+          },
+          {
+            "world_time": 14.950697579886764,
+            "clip_time": 0.5898445844650269,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6091.79453,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -12.99583,
+              -12.34008,
+              15.04164
+            ]
+          },
+          {
+            "world_time": 14.957441637292504,
+            "clip_time": 0.5898445844650269,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6094.82936,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -12.99583,
+              -12.34008,
+              15.04164
+            ]
+          },
+          {
+            "world_time": 14.96534154843539,
+            "clip_time": 0.5898445844650269,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6098.38432,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -12.99583,
+              -12.34008,
+              15.04164
+            ]
+          },
+          {
+            "world_time": 14.981690063141286,
+            "clip_time": 0.5898445844650269,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6105.74115,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -12.99583,
+              -12.34008,
+              15.04164
+            ]
+          },
+          {
+            "world_time": 15.040003183297813,
+            "clip_time": 0.8247265815734863,
+            "speed_cm_s": 449.99999999999994,
+            "actor_cm": [
+              6131.98205,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -42.79702,
+              -11.03669,
+              22.37693
+            ]
+          },
+          {
+            "world_time": 15.066658177413046,
+            "clip_time": 0.8247265815734863,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6143.9768,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -42.79702,
+              -11.03669,
+              22.37693
+            ]
+          },
+          {
+            "world_time": 15.116999697871506,
+            "clip_time": 0.9787195920944214,
+            "speed_cm_s": 450.00000000000006,
+            "actor_cm": [
+              6166.63048,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -21.93742,
+              -9.33783,
+              30.72448
+            ]
+          },
+          {
+            "world_time": 15.120676681632176,
+            "clip_time": 0.9787195920944214,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6168.28513,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -21.93742,
+              -9.33783,
+              30.72448
+            ]
+          },
+          {
+            "world_time": 15.12490469426848,
+            "clip_time": 0.9787195920944214,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6170.18773,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -21.93742,
+              -9.33783,
+              30.72448
+            ]
+          },
+          {
+            "world_time": 15.128215896431357,
+            "clip_time": 0.9787195920944214,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6171.67777,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -21.93742,
+              -9.33783,
+              30.72448
+            ]
+          },
+          {
+            "world_time": 15.13536687195301,
+            "clip_time": 0.9787195920944214,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6174.89571,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -21.93742,
+              -9.33783,
+              30.72448
+            ]
+          },
+          {
+            "world_time": 15.148466313257813,
+            "clip_time": 0.9787195920944214,
+            "speed_cm_s": 450.00000000000006,
+            "actor_cm": [
+              6180.79046,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -21.93742,
+              -9.33783,
+              30.72448
+            ]
+          },
+          {
+            "world_time": 15.20964896120131,
+            "clip_time": 0.1640181690454483,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6208.32265,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              39.77195,
+              -13.43054,
+              21.51188
+            ]
+          },
+          {
+            "world_time": 15.227432556450367,
+            "clip_time": 0.1640181690454483,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6216.32527,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              39.77195,
+              -13.43054,
+              21.51188
+            ]
+          },
+          {
+            "world_time": 15.254841975867748,
+            "clip_time": 0.2544041872024536,
+            "speed_cm_s": 450.0,
+            "actor_cm": [
+              6228.65951,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.42327,
+              -12.24047,
+              16.58328
+            ]
+          },
+          {
+            "world_time": 15.266928560100496,
+            "clip_time": 0.2544041872024536,
+            "speed_cm_s": 449.99999999999994,
+            "actor_cm": [
+              6234.09847,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              36.42327,
+              -12.24047,
+              16.58328
+            ]
+          }
+        ],
+        "Run": [
+          {
+            "world_time": 15.455821503419429,
+            "clip_time": 0.18147653341293335,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6357.78658,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              20.56728,
+              -5.5934,
+              15.44553
+            ]
+          },
+          {
+            "world_time": 15.488933917600662,
+            "clip_time": 0.18147653341293335,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6384.27651,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              20.56728,
+              -5.5934,
+              15.44553
+            ]
+          },
+          {
+            "world_time": 15.555047531146556,
+            "clip_time": 0.3137779235839844,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6437.1674,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -43.86411,
+              -5.35003,
+              20.76918
+            ]
+          },
+          {
+            "world_time": 15.557433407753706,
+            "clip_time": 0.3137779235839844,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6439.07611,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -43.86411,
+              -5.35003,
+              20.76918
+            ]
+          },
+          {
+            "world_time": 15.559542427305132,
+            "clip_time": 0.3137779235839844,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6440.76332,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -43.86411,
+              -5.35003,
+              20.76918
+            ]
+          },
+          {
+            "world_time": 15.57493719784543,
+            "clip_time": 0.3137779235839844,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6453.07914,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -43.86411,
+              -5.35003,
+              20.76918
+            ]
+          },
+          {
+            "world_time": 15.627072903793305,
+            "clip_time": 0.40981173515319824,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6494.7877,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -65.19422,
+              -5.27084,
+              54.86103
+            ]
+          },
+          {
+            "world_time": 15.647094595711678,
+            "clip_time": 0.40981173515319824,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6510.80506,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -65.19422,
+              -5.27084,
+              54.86103
+            ]
+          },
+          {
+            "world_time": 15.654495434369892,
+            "clip_time": 0.40981173515319824,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6516.72573,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -65.19422,
+              -5.27084,
+              54.86103
+            ]
+          },
+          {
+            "world_time": 15.662288282532245,
+            "clip_time": 0.40981173515319824,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6522.96001,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -65.19422,
+              -5.27084,
+              54.86103
+            ]
+          },
+          {
+            "world_time": 15.671213581692427,
+            "clip_time": 0.4686659574508667,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6530.10024,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -56.18464,
+              -6.45872,
+              76.09546
+            ]
+          },
+          {
+            "world_time": 15.679720331449062,
+            "clip_time": 0.4686659574508667,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6536.90564,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -56.18464,
+              -6.45872,
+              76.09546
+            ]
+          },
+          {
+            "world_time": 15.696653983090073,
+            "clip_time": 0.4686659574508667,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6550.45257,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -56.18464,
+              -6.45872,
+              76.09546
+            ]
+          },
+          {
+            "world_time": 15.740320532117039,
+            "clip_time": 0.4686659574508667,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6585.3858,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -56.18464,
+              -6.45872,
+              76.09546
+            ]
+          },
+          {
+            "world_time": 15.780548191163689,
+            "clip_time": 0.01444542407989502,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6617.56793,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -13.81089,
+              -10.98688,
+              48.7127
+            ]
+          },
+          {
+            "world_time": 15.803648096043617,
+            "clip_time": 0.01444542407989502,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6636.04786,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -13.81089,
+              -10.98688,
+              48.7127
+            ]
+          },
+          {
+            "world_time": 15.814642796758562,
+            "clip_time": 0.01444542407989502,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6644.84362,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -13.81089,
+              -10.98688,
+              48.7127
+            ]
+          },
+          {
+            "world_time": 15.822603025939316,
+            "clip_time": 0.01444542407989502,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6651.2118,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -13.81089,
+              -10.98688,
+              48.7127
+            ]
+          },
+          {
+            "world_time": 15.830104327760637,
+            "clip_time": 0.01444542407989502,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6657.21284,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -13.81089,
+              -10.98688,
+              48.7127
+            ]
+          },
+          {
+            "world_time": 15.846854186616838,
+            "clip_time": 0.10285341739654541,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6670.61273,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              21.93728,
+              -9.73812,
+              21.56317
+            ]
+          },
+          {
+            "world_time": 15.878607816062868,
+            "clip_time": 0.10285341739654541,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6696.01563,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              21.93728,
+              -9.73812,
+              21.56317
+            ]
+          },
+          {
+            "world_time": 15.90393000189215,
+            "clip_time": 0.10285341739654541,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6716.27338,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              21.93728,
+              -9.73812,
+              21.56317
+            ]
+          },
+          {
+            "world_time": 15.940639992244542,
+            "clip_time": 0.2279011607170105,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6745.64137,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -2.00756,
+              -5.151,
+              14.89664
+            ]
+          },
+          {
+            "world_time": 15.973508519120514,
+            "clip_time": 0.2279011607170105,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6771.93619,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -2.00756,
+              -5.151,
+              14.89664
+            ]
+          },
+          {
+            "world_time": 15.987271497957408,
+            "clip_time": 0.2279011607170105,
+            "speed_cm_s": 800.0000000000001,
+            "actor_cm": [
+              6782.94658,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -2.00756,
+              -5.151,
+              14.89664
+            ]
+          },
+          {
+            "world_time": 15.999292162247002,
+            "clip_time": 0.2279011607170105,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6792.56311,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -2.00756,
+              -5.151,
+              14.89664
+            ]
+          },
+          {
+            "world_time": 16.01154940482229,
+            "clip_time": 0.3224470317363739,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6802.3689,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -46.97918,
+              -4.92889,
+              22.33864
+            ]
+          },
+          {
+            "world_time": 16.042194039560854,
+            "clip_time": 0.3224470317363739,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6826.88461,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -46.97918,
+              -4.92889,
+              22.33864
+            ]
+          },
+          {
+            "world_time": 16.068533410318196,
+            "clip_time": 0.3224470317363739,
+            "speed_cm_s": 800.0000000000001,
+            "actor_cm": [
+              6847.95611,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -46.97918,
+              -4.92889,
+              22.33864
+            ]
+          },
+          {
+            "world_time": 16.098466548137367,
+            "clip_time": 0.4383365511894226,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6871.90262,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -62.61725,
+              -6.06548,
+              66.4758
+            ]
+          },
+          {
+            "world_time": 16.122800956480205,
+            "clip_time": 0.4383365511894226,
+            "speed_cm_s": 799.9999999999999,
+            "actor_cm": [
+              6891.37014,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -62.61725,
+              -6.06548,
+              66.4758
+            ]
+          },
+          {
+            "world_time": 16.139885400421917,
+            "clip_time": 0.4383365511894226,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6905.0377,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -62.61725,
+              -6.06548,
+              66.4758
+            ]
+          },
+          {
+            "world_time": 16.148315496742725,
+            "clip_time": 0.4383365511894226,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6911.78178,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -62.61725,
+              -6.06548,
+              66.4758
+            ]
+          },
+          {
+            "world_time": 16.154444103129208,
+            "clip_time": 0.4383365511894226,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6916.68466,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -62.61725,
+              -6.06548,
+              66.4758
+            ]
+          },
+          {
+            "world_time": 16.169262015260756,
+            "clip_time": 0.5327305197715759,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6928.53899,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -34.80017,
+              -7.24145,
+              85.27336
+            ]
+          },
+          {
+            "world_time": 16.212582022882998,
+            "clip_time": 0.5327305197715759,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6963.195,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -34.80017,
+              -7.24145,
+              85.27336
+            ]
+          },
+          {
+            "world_time": 16.233753659762442,
+            "clip_time": 0.5327305197715759,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6980.13231,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -34.80017,
+              -7.24145,
+              85.27336
+            ]
+          },
+          {
+            "world_time": 16.257001080550253,
+            "clip_time": 0.04971587657928467,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              6998.73024,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              2.14291,
+              -11.26169,
+              33.7655
+            ]
+          },
+          {
+            "world_time": 16.278171609155834,
+            "clip_time": 0.04971587657928467,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7015.66667,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              2.14291,
+              -11.26169,
+              33.7655
+            ]
+          },
+          {
+            "world_time": 16.293067559599876,
+            "clip_time": 0.04971587657928467,
+            "speed_cm_s": 800.0000000000001,
+            "actor_cm": [
+              7027.58343,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              2.14291,
+              -11.26169,
+              33.7655
+            ]
+          },
+          {
+            "world_time": 16.298759592231363,
+            "clip_time": 0.04971587657928467,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7032.13705,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              2.14291,
+              -11.26169,
+              33.7655
+            ]
+          },
+          {
+            "world_time": 16.316067926120013,
+            "clip_time": 0.04971587657928467,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7045.98372,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              2.14291,
+              -11.26169,
+              33.7655
+            ]
+          },
+          {
+            "world_time": 16.34723593806848,
+            "clip_time": 0.17002901434898376,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7070.91813,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              25.06995,
+              -6.10081,
+              16.32526
+            ]
+          },
+          {
+            "world_time": 16.360151566099375,
+            "clip_time": 0.17002901434898376,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7081.25063,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              25.06995,
+              -6.10081,
+              16.32526
+            ]
+          },
+          {
+            "world_time": 16.37335738213733,
+            "clip_time": 0.17002901434898376,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7091.81528,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              25.06995,
+              -6.10081,
+              16.32526
+            ]
+          },
+          {
+            "world_time": 16.416412052232772,
+            "clip_time": 0.17002901434898376,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7126.25902,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              25.06995,
+              -6.10081,
+              16.32526
+            ]
+          },
+          {
+            "world_time": 16.442649530712515,
+            "clip_time": 0.29724714159965515,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7147.249,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -37.66167,
+              -6.05208,
+              18.5783
+            ]
+          },
+          {
+            "world_time": 16.45236598374322,
+            "clip_time": 0.29724714159965515,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7155.02217,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -37.66167,
+              -6.05208,
+              18.5783
+            ]
+          },
+          {
+            "world_time": 16.47759158955887,
+            "clip_time": 0.29724714159965515,
+            "speed_cm_s": 800.0,
+            "actor_cm": [
+              7175.20265,
+              40802.49067,
+              98.15001
+            ],
+            "left_foot_component_cm": [
+              -37.66167,
+              -6.05208,
+              18.5783
+            ]
+          }
+        ]
+      },
+      "clips": {
+        "Idle": {
+          "seconds": 4.0,
+          "sample_period_seconds": 0.033333,
+          "net_pelvis_horizontal_cm": 2.3e-05,
+          "vertical_loop_closure_cm": 8e-06,
+          "horizontal_closure_tolerance_cm": 0.5,
+          "vertical_closure_tolerance_cm": 0.5,
+          "closure_rule": "one boundary sample of cyclic bob, capped at 2cm XY and 5cm Z; live actor drift checked independently",
+          "root_motion": false,
+          "force_root_lock": true
+        },
+        "Walk": {
+          "seconds": 1.0,
+          "sample_period_seconds": 0.033333,
+          "net_pelvis_horizontal_cm": 0.905744,
+          "vertical_loop_closure_cm": 1.2705,
+          "horizontal_closure_tolerance_cm": 1.357363,
+          "vertical_closure_tolerance_cm": 2.28003,
+          "closure_rule": "one boundary sample of cyclic bob, capped at 2cm XY and 5cm Z; live actor drift checked independently",
+          "root_motion": false,
+          "force_root_lock": true
+        },
+        "Run": {
+          "seconds": 0.6,
+          "sample_period_seconds": 0.033333,
+          "net_pelvis_horizontal_cm": 1.975797,
+          "vertical_loop_closure_cm": 0.114669,
+          "horizontal_closure_tolerance_cm": 2.0,
+          "vertical_closure_tolerance_cm": 2.41198,
+          "closure_rule": "one boundary sample of cyclic bob, capped at 2cm XY and 5cm Z; live actor drift checked independently",
+          "root_motion": false,
+          "force_root_lock": true
+        },
+        "Jump": {
+          "seconds": 1.2,
+          "sample_period_seconds": 0.033333,
+          "net_pelvis_horizontal_cm": 2.6e-05,
+          "vertical_loop_closure_cm": 0.000137,
+          "horizontal_closure_tolerance_cm": 0.5,
+          "vertical_closure_tolerance_cm": 3.938679,
+          "closure_rule": "one boundary sample of cyclic bob, capped at 2cm XY and 5cm Z; live actor drift checked independently",
+          "root_motion": false,
+          "force_root_lock": false
+        }
+      },
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "walk_run_knee_difference_degrees": 74.112,
+      "face_texture": {
+        "source_sha256": "3ee07417a3c4d084f1c8b4ada7800bce28a7a52813ad91ea952e3b723df562ba",
+        "source_rgb_sha256": "30fdcfe53cd4a9a397e4d1738ef662d43efa705ac5e2afbc45e3bbdc91322671",
+        "imported_rgb_sha256": "30fdcfe53cd4a9a397e4d1738ef662d43efa705ac5e2afbc45e3bbdc91322671",
+        "identical_source_pixels": true,
+        "texture": "/Game/ParkComic/CrewNeutral/Resident9/T_base_color.T_base_color",
+        "compression": "BC7",
+        "source_dimensions": [
+          2048,
+          2048
+        ],
+        "prior_render": "Preview/SkullShirtFace.png"
+      },
+      "vertical_jump_fixture": {
+        "location_cm": [
+          7175.20265,
+          40802.49067,
+          98.15001
+        ],
+        "velocity_cm_s": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pending_input_cleared": true,
+        "landing_camera_anchor": "fixed jump origin and orientation; actor drift asserted independently"
+      },
+      "observed_locomotion_cadence": {
+        "Walk": {
+          "observed_world_seconds": 0.9797,
+          "samples": 52,
+          "render_samples_per_world_second": 52.056,
+          "observation_global_time_dilation": 0.25,
+          "held_pose_pairs": 39,
+          "held_pairs_with_continuous_actor_motion": 39,
+          "pose_changes": 12,
+          "pose_changes_per_world_second": 12.249,
+          "largest_forward_phase_advance_seconds": 0.23488
+        },
+        "Run": {
+          "observed_world_seconds": 1.0218,
+          "samples": 49,
+          "render_samples_per_world_second": 46.977,
+          "observation_global_time_dilation": 0.25,
+          "held_pose_pairs": 36,
+          "held_pairs_with_continuous_actor_motion": 36,
+          "pose_changes": 12,
+          "pose_changes_per_world_second": 11.744,
+          "largest_forward_phase_advance_seconds": 0.14578
+        }
+      },
+      "observed_motion": {
+        "jump_peak_cm": 182.651,
+        "actor_horizontal_drift_cm": 0.0,
+        "pelvis_horizontal_range_cm": 0.07373,
+        "pelvis_balance_tolerance_cm": 5.0,
+        "actor_drift_tolerance_cm": 0.5,
+        "airborne_vs_idle_knee_degrees": 66.114,
+        "mesh_relative_transform_stable": true,
+        "recovered_clip": "A_Idle"
+      }
+    }
+  ],
+  "screenshots": [
+    "Preview/NeutralCandidate1920/Resident9_Idle.png",
+    "Preview/NeutralCandidate1920/Resident9_Face.png",
+    "Preview/NeutralCandidate1920/Resident9_FaceThreeQuarter.png",
+    "Preview/NeutralCandidate1920/Resident9_Walk.png",
+    "Preview/NeutralCandidate1920/Resident9_Run.png",
+    "Preview/NeutralCandidate1920/Resident9_Airborne.png",
+    "Preview/NeutralCandidate1920/Resident9_Landing.png"
+  ],
+  "asset_selection": {
+    "candidate": true,
+    "styles": [
+      9
+    ],
+    "source": "Data/CharactersNeutral",
+    "asset_folder": "/Game/ParkComic/CrewNeutral",
+    "pie_mesh_and_clip_overrides": true
+  },
+  "pre_pie_mesh_build_flags": {
+    "9": {
+      "recompute_normals": false,
+      "recompute_tangents": true,
+      "use_mikk_t_space": true,
+      "compute_weighted_normals": false,
+      "use_full_precision_u_vs": true,
+      "use_high_precision_tangent_basis": true
+    }
+  },
+  "wall_seconds": 39.1
+}
