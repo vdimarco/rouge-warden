@@ -96,6 +96,43 @@ def traffic_blocker(car):
             "car_yaw": round(car.get_actor_rotation().yaw, 1), "blocker_yaw": round(actor.get_actor_rotation().yaw, 1)}
 
 
+def car_profile(car):
+    cabin = next(part for part in car.get_components_by_class(u.StaticMeshComponent) if part.get_name() == "Glass")
+    scale = cabin.get_editor_property("RelativeScale3D")
+    return [round(value, 3) for value in (scale.x, scale.y, scale.z)]
+
+
+def measure_crowd(now):
+    previous = STATE.get("crowd_sample_time", now)
+    if now <= previous:
+        return
+    for ped in STATE["crowd"]:
+        name, point = ped.get_name(), ped.get_actor_location()
+        sample = STATE["crowd_motion"][name]
+        travelled = distance(point, sample["last"])
+        pace = ped.get_editor_property("Pace")
+        # Slate samples independently of resident ticks; allow one tick of quantization.
+        sample_dt, tick_interval = now - previous, ped.get_actor_tick_interval()
+        limit = pace * (sample_dt + tick_interval) + 2.  # cm-scale position tolerance
+        diagnostic = {"name": name, "activity": ped.get_editor_property("Activity"),
+                      "sample_dt_s": round(sample_dt, 6), "actor_tick_interval_s": round(tick_interval, 6),
+                      "pace_cm_s": pace, "travelled_cm": round(travelled, 4),
+                      "unquantized_limit_cm": round(pace * sample_dt, 4),
+                      "quantized_limit_cm": round(limit, 4),
+                      "excess_over_sample_time_cm": round(travelled - pace * sample_dt, 4)}
+        worst = REPORT.get("crowd_continuity_max_excess")
+        if worst is None or diagnostic["excess_over_sample_time_cm"] > worst["excess_over_sample_time_cm"]:
+            REPORT["crowd_continuity_max_excess"] = diagnostic
+        assert travelled <= limit, "Pedestrian root teleported: " + json.dumps(diagnostic)
+        sample["path_cm"] += travelled
+        sample["moving_samples"] += travelled / (now - previous) > 20
+        sample["idle_samples"] += travelled / (now - previous) < 5
+        sample["last"] = point
+        if ped.get_editor_property("Activity") == 2:
+            assert distance(point, STATE["initial"][name]) < 1, "A social resident drifted from its pair"
+    STATE["crowd_sample_time"] = now
+
+
 def measure_traffic():
     # Measure actual authority displacement; internal throttle/speed properties are intentionally unexposed.
     if "server" not in STATE:
@@ -103,6 +140,7 @@ def measure_traffic():
     now = u.GameplayStatics.get_time_seconds(STATE["server"])
     previous = STATE.get("speed_sample_time", now)
     if "speed_positions" not in STATE or now - previous >= .25:
+        measure_crowd(now)
         positions = {car.get_name(): car.get_actor_location() for car in STATE["traffic"]}
         if "speed_positions" in STATE:
             STATE["measured_speeds"] = {name: distance(point, STATE["speed_positions"][name]) / (now - previous)
@@ -159,10 +197,51 @@ def discover():
     for ped in crowd:
         body = ped.get_component_by_class(u.SkeletalMeshComponent)
         assert body.get_editor_property("bRenderCustomDepth") and body.get_editor_property("CustomDepthStencilValue") == 255
+    modes = {mode: [ped for ped in crowd if ped.get_editor_property("Activity") == mode] for mode in range(3)}
+    REPORT["activity_counts"] = {label: len(modes[mode]) for mode, label in enumerate(("walk", "jog", "social"))}
+    assert REPORT["activity_counts"] == {"walk": 72, "jog": 16, "social": 8}, REPORT["activity_counts"]
+    paces = {label: sorted({round(ped.get_editor_property("Pace"), 2) for ped in modes[mode]})
+             for mode, label in enumerate(("walk", "jog"))}
+    pauses = sorted({round(ped.get_editor_property("PauseSeconds"), 2) for ped in crowd})
+    REPORT["pace_cm_s"], REPORT["pause_seconds"] = paces, pauses
+    assert len(paces["walk"]) >= 4 and len(paces["jog"]) >= 3 and len(pauses) >= 4
+    assert min(paces["jog"]) > max(paces["walk"]), "Jogging must be visibly faster than walking"
+    profiles = {car.get_editor_property("BodyProfile"): car_profile(car) for car in parked + traffic}
+    REPORT["vehicle_cabin_profiles"] = profiles
+    assert set(profiles) == {0, 1, 2} and len({tuple(scale) for scale in profiles.values()}) == 3
+    for car in parked + traffic:
+        assert car_profile(car) == {0: [1., 1., 1.], 1: [.78, 1., .85], 2: [1.27, 1., 1.08]}[car.get_editor_property("BodyProfile")]
+    hubs = {tag: [ped for ped in crowd if ped.actor_has_tag(tag)] for tag in ("CityChalet", "CityPond", "CitySherbrooke")}
+    REPORT["hub_residents"] = {tag: {"count": len(group), "styles": sorted({ped.get_editor_property("Style") for ped in group})}
+                              for tag, group in hubs.items()}
+    assert len(hubs["CityChalet"]) >= 8 and len(hubs["CityPond"]) >= 8
+    assert len(hubs["CitySherbrooke"]) >= 4 and all(len(item["styles"]) >= 4 for item in REPORT["hub_residents"].values()), REPORT["hub_residents"]
+    assert all(distance(ped.get_actor_location(), u.Vector(*LAYOUT["spawn"])) < 6500 for ped in hubs["CitySherbrooke"])
+    REPORT["hub_endpoint_clearance"] = {}
+    for tag in ("CityChalet", "CityPond", "CitySports", "CityTheatre"):
+        group = [ped for ped in crowd if ped.actor_has_tag(tag) and ped.get_editor_property("Activity") != 2]
+        assert len(group) >= 4, "A mapped park hub lost its mobile appearances: " + tag
+        endpoints = [point for ped in group for point in (ped.get_editor_property("Route")[0], ped.get_editor_property("Route")[-1])]
+        separation = min(distance(a, b) for i, a in enumerate(endpoints) for b in endpoints[i + 1:])
+        social = [ped for ped in modes[2] if ped.actor_has_tag(tag)]
+        social_gap = min((distance(point, ped.get_actor_location()) for point in endpoints for ped in social), default=None)
+        REPORT["hub_endpoint_clearance"][tag] = {"mobile": len(group), "minimum_endpoint_cm": round(separation, 2),
+                                                 "minimum_social_gap_cm": round(social_gap, 2) if social_gap is not None else None}
+        assert separation >= 70, "Mobile turnaround capsules overlap: " + tag
+        assert social_gap is None or social_gap >= 70, "Turnaround capsule overlaps a social pair: " + tag
+    for ped in modes[2]:
+        partner = min((other for other in modes[2] if other != ped), key=lambda other: distance(ped.get_actor_location(), other.get_actor_location()))
+        toward = partner.get_actor_location() - ped.get_actor_location()
+        forward = ped.get_actor_forward_vector()
+        assert 120 < distance(ped.get_actor_location(), partner.get_actor_location()) < 200
+        assert (toward.x * forward.x + toward.y * forward.y) / distance(ped.get_actor_location(), partner.get_actor_location()) > .95
     STATE.update(server=server, client=client, remote=remote, local=local, parked=parked, traffic=traffic, crowd=crowd,
+                 mobile=modes[0] + modes[1], social=modes[2], hubs=hubs,
                  character=remote.get_controlled_pawn(), client_character=local.get_controlled_pawn())
     STATE["population_started"] = u.GameplayStatics.get_time_seconds(server)
     STATE["initial"] = {a.get_name(): a.get_actor_location() for a in traffic + crowd}
+    STATE["crowd_motion"] = {ped.get_name(): {"last": ped.get_actor_location(), "path_cm": 0., "moving_samples": 0, "idle_samples": 0} for ped in crowd}
+    STATE["crowd_sample_time"] = u.GameplayStatics.get_time_seconds(server)
     return True
 
 
@@ -173,7 +252,9 @@ def moving():
               for kind in ("traffic", "crowd")}
     REPORT["moved_over_150cm"] = counts
     assert counts["traffic"] >= 12, "Traffic must visibly circulate, including near the player"
-    assert counts["crowd"] >= 80, "Pedestrians must walk rather than remain spawn decorations"
+    mobile_moved = sum(STATE["crowd_motion"][ped.get_name()]["path_cm"] > 150 for ped in STATE["mobile"])
+    REPORT["mobile_moved_over_150cm_in_8s"] = mobile_moved
+    assert mobile_moved >= 72, "Most mobile pedestrians must move even while others pause or socialize"
     return True
 
 
@@ -198,7 +279,13 @@ def lasting_circulation():
     assert moved >= 12, "Traffic jammed after its initial straight segment"
     assert all(sample["road_distance_cm"] < 700 for sample in samples), "Traffic wandered away from surveyed streets"
     assert all(car.get_actor_location().z >= 90 for car in STATE["traffic"]), "Traffic left the mapped ground"
-    STATE["sample"] = min(STATE["crowd"], key=lambda a: distance(a.get_actor_location(), STATE["character"].get_actor_location()))
+    motion = {ped.get_name(): {key: round(value, 1) if isinstance(value, float) else value
+                              for key, value in STATE["crowd_motion"][ped.get_name()].items() if key != "last"} for ped in STATE["crowd"]}
+    REPORT["minute_pedestrian_activity"] = motion
+    assert all(motion[ped.get_name()]["path_cm"] > 500 for ped in STATE["mobile"]), "A mobile resident never completed a visible walk/jog"
+    assert all(motion[ped.get_name()]["idle_samples"] > 0 for ped in STATE["mobile"]), "A mobile resident never paused at a route endpoint"
+    assert all(motion[ped.get_name()]["path_cm"] < 1 for ped in STATE["social"]), "Stationary social pairs moved"
+    STATE["sample"] = next(ped for ped in STATE["hubs"]["CityChalet"] if ped.get_editor_property("Activity") == 1)
     STATE["character"].set_actor_location(STATE["sample"].get_actor_location() + u.Vector(0, 300, 120), False, True)
     return True
 
@@ -262,6 +349,17 @@ def replicated_crowd():
     assert sample.get_editor_property("Style") == remote.get_editor_property("Style")
     assert abs(sample.get_editor_property("Phase") - remote.get_editor_property("Phase")) < .01
     assert distance(sample.get_actor_location(), remote.get_actor_location()) < 150, "Client pedestrian movement did not replicate"
+    matched_modes = set()
+    for authority in STATE["hubs"]["CityChalet"]:
+        replica = next((ped for ped in client_crowd if ped.get_editor_property("Style") == authority.get_editor_property("Style") and
+                        abs(ped.get_editor_property("Phase") - authority.get_editor_property("Phase")) < .01), None)
+        if not replica:
+            return False
+        for name in ("Activity", "Pace", "PauseSeconds"):
+            assert abs(replica.get_editor_property(name) - authority.get_editor_property(name)) < .01, "Client resident profile differs: " + name
+        matched_modes.add(replica.get_editor_property("Activity"))
+    assert matched_modes == {0, 1, 2}, "Peer did not receive all three nearby activities"
+    REPORT["peer_activity_modes"] = sorted(matched_modes)
     car = next((car for car in STATE["traffic"] if speed(car) > 300), None)
     assert car, "No traffic car remained in motion for the yield test"
     STATE["yield_car"] = car
@@ -320,6 +418,8 @@ def entered():
     assert not car.get_editor_property("bTraffic"), "Player possession must stop ambient driving"
     assert distance(car.get_actor_location(), client_car.get_actor_location()) < 150, "The client possessed a different car"
     assert car.get_editor_property("PaintStyle") == client_car.get_editor_property("PaintStyle"), "Parked paint did not replicate"
+    assert car.get_editor_property("BodyProfile") == client_car.get_editor_property("BodyProfile"), "Vehicle silhouette did not replicate"
+    assert car_profile(car) == car_profile(client_car), "Client cabin shape differs"
     return True
 
 
@@ -330,11 +430,11 @@ def exited():
 
 
 STEPS.extend([
-    ("bounded population and eight supplied crowd styles", begin, discover),
+    ("bounded population, eight appearances, three activities, hub coverage and vehicle profiles", begin, discover),
     ("server traffic and pedestrians visibly move", lambda: None, moving),
-    ("traffic still circulates after sixty world seconds", lambda: None, lasting_circulation),
+    ("traffic circulates and all 88 mobile residents move and pause over a minute", lambda: None, lasting_circulation),
     ("following starter queue and all sixteen cars recover when the obstruction clears", clear_starter_queue, cleared_traffic_recovers),
-    ("nearby pedestrian appearance, phase, route and movement replicate", lambda: None, replicated_crowd),
+    ("nearby pedestrian appearance, activity, pace, pauses, route and movement replicate", lambda: None, replicated_crowd),
     ("traffic yields before reaching a player", lambda: None, yield_stops),
     ("traffic resumes after player clears lane", lambda: None, yield_resumes),
     ("moving traffic stops within remote player's reach", stop_for_claim, traffic_claim_ready),

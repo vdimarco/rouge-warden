@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "name": "Population",
+      "passed": true,
+      "checks": 13,
+      "elapsed_seconds": 88.17,
+      "report": "Verification/Population.json",
+      "log": "/tmp/nord-final-Population.log"
+    },
+    {
+      "name": "Smoke",
+      "passed": true,
+      "checks": 66,
+      "elapsed_seconds": 49.9,
+      "report": "Verification/Smoke.json",
+      "log": "/tmp/nord-final-Smoke.log"
+    },
+    {
+      "name": "SmokeLag",
+      "passed": true,
+      "checks": 66,
+      "elapsed_seconds": 51.46,
+      "report": "Verification/SmokeLag.json",
+      "log": "/tmp/nord-final-SmokeLag.log"
+    },
+    {
+      "name": "CarCollision",
+      "passed": true,
+      "checks": 13,
+      "elapsed_seconds": 41.43,
+      "report": "Verification/CarCollision.json",
+      "log": "/tmp/nord-final-CarCollision.log"
+    },
+    {
+      "name": "LaFontaine",
+      "passed": true,
+      "checks": 5,
+      "elapsed_seconds": 13.29,
+      "report": "Verification/LaFontaine.json",
+      "log": "/tmp/nord-final-LaFontaine.log"
+    },
+    {
+      "name": "Park",
+      "passed": true,
+      "checks": 0,
+      "elapsed_seconds": 12.84,
+      "report": "Verification/Park.json",
+      "log": "/tmp/nord-neighbourhood-final-portal-park.log"
+    },
+    {
+      "name": "AutomationQuebec",
+      "passed": true,
+      "checks": 5,
+      "elapsed_seconds": 16.24,
+      "report": "Verification/AutomationQuebec.json",
+      "log": "/tmp/nord-final-AutomationQuebec.log"
+    }
+  ],
+  "started": 1791640013.6555076,
+  "elapsed_seconds": 273.33,
+  "scope": "Native/source assertions; visual assessment, package and performance are separate gates.",
+  "source_checks": [
+    "test_environment_refresh.py",
+    "test_neighbourhood_details.py"
+  ],
+  "automation_succeeded": 5,
+  "automation_failed": 0,
+  "appearance_reimport": "190 cm portals; fresh saved-map assertions passed after reimport; collision profile remains NoCollision"
+}

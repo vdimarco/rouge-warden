@@ -40,6 +40,10 @@ public:
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyAppearance) int32 Style = 0;
     UPROPERTY(EditAnywhere, ReplicatedUsing=UpdateRouteLength) TArray<FVector> Route;
     UPROPERTY(EditAnywhere, Replicated) float Phase = 0.f;
+    // 0 walks, 1 jogs, 2 stays with a social pair. Shared time drives all peers.
+    UPROPERTY(EditAnywhere, Replicated, meta=(ClampMin="0", ClampMax="2")) int32 Activity = 0;
+    UPROPERTY(EditAnywhere, Replicated, meta=(ClampMin="40", ClampMax="260")) float Pace = 85.f;
+    UPROPERTY(EditAnywhere, Replicated, meta=(ClampMin="1", ClampMax="10")) float PauseSeconds = 4.f;
     static const TCHAR* NameForStyle(int32 Index);
     static const TCHAR* DialogueForStyle(int32 Index);
 private:
@@ -47,6 +51,7 @@ private:
     UPROPERTY() TObjectPtr<USkeletalMeshComponent> GeneratedBody;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> HandProp;
     UPROPERTY() TObjectPtr<UAnimSequence> WalkAnimation;
+    UPROPERTY() TObjectPtr<UAnimSequence> RunAnimation;
     UPROPERTY() TObjectPtr<UAnimSequence> IdleAnimation;
     UPROPERTY() TObjectPtr<UAnimSequence> CurrentAnimation;
     UPROPERTY() TObjectPtr<UTextRenderComponent> Label;
@@ -108,6 +113,7 @@ public:
     UPROPERTY(Replicated) float Speed = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) bool bHandbrake = false;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 PaintStyle = 0;
+    UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 BodyProfile = 0;
     UPROPERTY(VisibleAnywhere, Replicated) bool bTraffic = false;
     void SetTrafficRoute(int32 Segment, bool bForward, const TArray<bool>& AllowedRoads);
     void StopInput();

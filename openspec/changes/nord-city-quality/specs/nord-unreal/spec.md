@@ -30,9 +30,17 @@ The neighborhood SHALL contain additional parked cars, moving traffic and pedest
 
 #### Scenario: Explore the streets and park
 - **WHEN** the map starts and a player explores the mapped roads and paths
-- **THEN** at least 32 additional parked cars, 16 moving traffic cars and 96 additional walkers populate valid ground routes
+- **THEN** at least 32 additional parked cars, 16 moving traffic cars and 96 additional ambient people populate valid ground routes/activity points
 - **AND** traffic follows connected roads, yields to obstructions and becomes player-controlled only at a safe speed
 - **AND** peers observe the same population and original controls/objectives remain usable
+
+#### Scenario: Observe varied neighbourhood activity
+- **WHEN** a host and joining peer observe Sherbrooke, the chalet vicinity and park paths for at least one minute
+- **THEN** the 96 ambient people comprise 72 walkers, 16 joggers and eight stationary social residents, with at least four visibly different appearances, replicated pace/endpoint pauses and retained Idle/Walk/Run clips
+- **AND** all 88 mobile actors show sustained minute-long movement while the eight social actors hold their assigned positions; selected existing residents use clear mapped chalet/spawn-adjacent routes with staggered turnaround points and focused nearby labels
+- **AND** the fleet shows three cosmetic cabin/roof silhouettes and deterministic cruise-speed variation, with existing collision footprints and wheels unchanged
+- **AND** animation phases/activity timing vary, routes remain clear and traffic/mobile people resume after a temporary obstruction
+- **AND** peers share authoritative activity modes/pace profiles/vehicle state while safe car entry/exit, E interactions, C selection, F2 and shared objectives remain usable
 
 ### Requirement: Recognizable park district appearance
 Environment improvements SHALL preserve municipal building massing and mapped park geometry while improving its comic rendition.
@@ -42,6 +50,19 @@ Environment improvements SHALL preserve municipal building massing and mapped pa
 - **THEN** mature irregular canopy replaces repeated balloon crowns and masonry has subdued varied brick/stone detail
 - **AND** two-pond/path arrangement, survey roofs/footprints and tree XY positions remain preserved
 - **AND** primary reference sources and estimated facade/landmark details are documented without claiming identical Street View geometry
+
+#### Scenario: Read local details at walking height
+- **WHEN** the player walks from the Sherbrooke spawn toward the chalet/theatre and sports areas at either supported resolution
+- **THEN** the closest residential facades show readable entrances, basement/window/cornice variation and restrained ironwork, with institutional fronts treated distinctly
+- **AND** contextual street/park furniture and chalet terrace/theatre details contribute visible local identity without obstructing routes or changing protected shell/roof, pond/path or tree inventory positions
+- **AND** fourteen retained tennis footprints show the documented carpet/acrylic distinction and two illustrated volleyball playing areas use retained in-park sand way `311018514`, with inferred arrangement/numbering documented, fine tennis nets replacing legacy backing/grid/posts and the replaced single-volleyball-net dressing suppressed
+
+#### Scenario: Verify the neighbourhood correction
+- **WHEN** the new surroundings/activity pass is built and reviewed
+- **THEN** a fresh twenty-one-view native matrix at each supported size receives separate completion and visual-review verdicts: the existing seven cameras, seven ground-level comic views of the four park-edge streets/chalet/tennis/sand courts and those same seven after actual F2
+- **AND** native interaction/replication/collision and current packaged lifecycle checks pass with the new details/population enabled
+- **AND** current-build warmed performance is measured at unchanged Epic/100% settings against the existing p95 below 16.67 ms requirement, with failed gates kept open
+- **AND** dated official references, source assumptions, preservation checks and remaining terrain/construction/likeness limits are retained
 
 ## MODIFIED Requirements
 

@@ -2,6 +2,7 @@
 from datetime import datetime
 import hashlib
 import json
+import math
 from pathlib import Path
 import shutil
 import sys
@@ -9,12 +10,17 @@ import unreal as u
 
 ROOT = Path(u.Paths.project_dir()).resolve()
 sys.path.insert(0, str(ROOT / 'Scripts'))
-from prepare_environment_refresh import tree_profile
+from prepare_environment_refresh import tree_profile, retired_tennis_parts
 
 data = json.loads((ROOT / 'Data/EnvironmentRefresh/layout.json').read_text())
 park = json.loads((ROOT / 'Data/ParkComic/layout.json').read_text())
-for name,path in (('park','Data/ParkComic/layout.json'),('city','Data/CityBuildings/manifest.json')):
+neighbourhood = json.loads((ROOT / 'Data/NeighbourhoodDetails/layout.json').read_text())
+for path,digest in neighbourhood['source_sha256'].items():
+    assert hashlib.sha256((ROOT/path).read_bytes()).hexdigest()==digest, 'Reprepare neighbourhood details: '+path
+for name,path in (('park','Data/ParkComic/layout.json'),('city','Data/CityBuildings/manifest.json'),('osm','Data/LaFontaine/osm.xml'),('district','Data/LaFontaine/layout.json')):
     assert hashlib.sha256((ROOT/path).read_bytes()).hexdigest() == data['source_sha256'][name], 'Reprepare environment sources'
+for ident,digest in data['source_wall_sha256'].items():
+    assert hashlib.sha256((ROOT/'Data/CityBuildings/Geometry'/f'{ident}.obj').read_bytes()).hexdigest()==digest, 'Reprepare wall accents: '+ident
 assets = u.EditorAssetLibrary
 M = u.MaterialEditingLibrary
 tools = u.AssetToolsHelpers.get_asset_tools()
@@ -27,8 +33,8 @@ backup = ROOT/'Saved/Recovery'/('environment-'+datetime.now().strftime('%Y%m%d-%
 assert not backup.exists()
 backup.mkdir(parents=True)
 shutil.copy2(ROOT/'Content/Maps/LaFontaine.umap',backup/'LaFontaine.umap')
-for folder in ('ParkComic','CityBuildings','Art'):
-    shutil.copytree(ROOT/'Content'/folder,backup/folder)
+for folder in ('ParkComic','CityBuildings','Art','EnvironmentRefresh','NeighbourhoodDetails'):
+    if (ROOT/'Content'/folder).exists():shutil.copytree(ROOT/'Content'/folder,backup/folder)
 
 def gameplay_snapshot():
     result={}
@@ -43,6 +49,11 @@ def gameplay_snapshot():
     return result
 
 before = gameplay_snapshot()
+protected_paths=[ROOT/'Data/ParkComic/layout.json',ROOT/'Data/LaFontaine/layout.json',ROOT/'Data/LaFontaine/osm.xml',ROOT/'Data/CityBuildings/manifest.json',ROOT/'Source/Quebec/LaFontaineMap.h']
+for folder in ('Data/CharactersMeshy','Data/CharactersNeutral','Data/CityBuildings/Geometry','Content/ParkComic/Crew'):
+    protected_paths.extend(p for p in (ROOT/folder).rglob('*') if p.is_file())
+protected_paths.extend((ROOT/'Content/CityBuildings').glob('SM_*.uasset'))
+protected_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in protected_paths}
 parent = assets.load_asset('/Game/ParkComic/M_Palette')
 assert parent
 def material(name,color):
@@ -69,9 +80,10 @@ meshes={}
 for model in data['models']:
     name=Path(model['file']).stem
     mesh=mesh_import(ROOT/'Data/EnvironmentRefresh/Geometry'/model['file'],'/Game/EnvironmentRefresh','SM_'+name,import_normals=name.startswith('Canopy'))
-    if name.startswith('Canopy'):
+    if name.startswith('Canopy') or name=='ArchitectureAccents':
         settings=mesh.get_editor_property('nanite_settings');settings.set_editor_property('enabled',True)
         u.get_editor_subsystem(u.StaticMeshEditorSubsystem).set_nanite_settings(mesh,settings,True)
+    if name.startswith('Canopy'):
         for i,slot in enumerate(mesh.get_editor_property('static_materials')):
             label=str(slot.material_slot_name)
             mesh.set_material(i,leaf_mats[0,int(label[-1])] if label.startswith('Leaf') else mats['Wood'])
@@ -109,10 +121,74 @@ for (style,variant,color),transforms in crowns.items():
 assert sum(a.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent).get_instance_count() for a in new)==len(park['trees'])
 for actor in old_crowns:editor.destroy_actor(actor)
 for actor in actors:
-    if actor.get_actor_label()=='Environment architecture accents':editor.destroy_actor(actor)
-accents=editor.spawn_actor_from_class(u.StaticMeshActor,u.Vector());accents.set_actor_label('Environment architecture accents')
-accents.static_mesh_component.set_static_mesh(meshes['ArchitectureAccents'])
-accents.static_mesh_component.set_collision_profile_name('NoCollision')
+    if actor.get_actor_label() in ('Environment architecture accents','Environment court surfaces','Environment court details') or actor.get_actor_label().startswith('Neighbourhood detail '):editor.destroy_actor(actor)
+for name,label in (('ArchitectureAccents','Environment architecture accents'),('CourtSurfaces','Environment court surfaces'),('CourtDetails','Environment court details')):
+    actor=editor.spawn_actor_from_class(u.StaticMeshActor,u.Vector());actor.set_actor_label(label)
+    actor.static_mesh_component.set_static_mesh(meshes[name])
+    actor.static_mesh_component.set_collision_profile_name('NoCollision')
+
+# Replace the old single volleyball net/posts without rebuilding any park actors.
+volley=next(court for court in data['courts'] if court['osm']=='311018514')
+center=volley['center']
+old_net_parts=[row for row in park['details'] if math.dist(row['position'][:2],center)<2500 and
+               ((row['mesh']=='Cube' and row['material']=='Ink' and row['position'][2]==210 and row['size'][2]==80) or
+                (row['mesh']=='Cylinder' and row['material']=='Paint' and row['position'][2]==125 and row['size'][2]==250))]
+assert len(old_net_parts)==3, 'Unexpected original volleyball dressing'
+tennis_centers=[court['center'] for court in data['courts'] if court['sport']=='tennis']
+tennis_backings=[row for row in park['details'] if row['mesh']=='Cube' and row['material']=='Ink' and
+                 row['position'][2]==60 and row['size'][2]==100 and
+                 any(math.dist(row['position'][:2],center)<.1 for center in tennis_centers)]
+assert len(tennis_backings)==14, 'Unexpected original tennis net backing'
+tennis_parts=retired_tennis_parts(park,data['courts'])
+assert len(tennis_parts)>14 and all(row in tennis_parts for row in tennis_backings)
+removed_net_parts=0
+removed_tennis_backings=0
+removed_tennis_parts=0
+def at_position(comp,i,position):
+    p=comp.get_instance_transform(i,True).translation
+    return math.dist((p.x,p.y,p.z),position)<.1
+for row in old_net_parts+tennis_parts:
+    actor=next(a for a in editor.get_all_level_actors() if a.get_actor_label()=='Comic park '+row['mesh']+' '+row['material'])
+    comp=actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
+    matches=[i for i in range(comp.get_instance_count()) if at_position(comp,i,row['position'])]
+    assert len(matches)<=1
+    for i in matches:
+        assert comp.remove_instance(i)
+        if row in tennis_parts:
+            removed_tennis_parts+=1
+            if row in tennis_backings:removed_tennis_backings+=1
+        else:removed_net_parts+=1
+    assert all(not at_position(comp,i,row['position']) for i in range(comp.get_instance_count()))
+
+# Reuse shared meshes and bound small decoration/text drawing to the local block.
+detail_mats={name:material('Neighbourhood_'+name,color) for name,color in neighbourhood['palette'].items()}
+detail_meshes={}
+for model in neighbourhood['models']:
+    name=Path(model['file']).stem
+    mesh=mesh_import(ROOT/'Data/NeighbourhoodDetails/Geometry'/model['file'],'/Game/NeighbourhoodDetails','SM_'+name)
+    for i,slot in enumerate(mesh.get_editor_property('static_materials')):mesh.set_material(i,detail_mats[str(slot.material_slot_name)])
+    assert assets.save_loaded_asset(mesh)
+    detail_meshes[name]=mesh
+detail_counts={}
+for name,mesh in detail_meshes.items():
+    rows=[row for row in neighbourhood['instances'] if row['model']==name]
+    actor=editor.spawn_actor_from_class(instances,u.Vector());actor.set_actor_label('Neighbourhood detail '+name)
+    comp=actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
+    comp.set_static_mesh(mesh);comp.set_collision_profile_name('NoCollision')
+    comp.set_cull_distances(6500,8500);comp.set_cast_shadow(False)
+    comp.set_affect_distance_field_lighting(False)
+    comp.add_instances([u.Transform(u.Vector(*row['position']),u.Rotator(yaw=row['yaw']),u.Vector(1,1,1)) for row in rows],False,True,False)
+    assert comp.get_instance_count()==len(rows)
+    detail_counts[name]=len(rows)
+text_material=assets.load_asset('/Game/ParkComic/M_Text')
+assert text_material
+for sign in neighbourhood['signs']:
+    actor=editor.spawn_actor_from_class(u.TextRenderActor,u.Vector(*sign['position']),u.Rotator(yaw=sign['yaw']))
+    actor.set_actor_label('Neighbourhood detail sign '+sign['osm']+' '+sign['text'])
+    comp=actor.get_component_by_class(u.TextRenderComponent)
+    comp.set_text(sign['text']);comp.set_world_size(sign['size']);comp.set_horizontal_alignment(u.HorizTextAligment.EHTA_CENTER)
+    comp.set_text_render_color(u.Color(244,246,230,255));comp.set_text_material(text_material)
+    comp.set_cull_distance(5000);comp.set_cast_shadow(False);comp.set_collision_profile_name('NoCollision')
 for actor in editor.get_all_level_actors():
     if actor.get_actor_label()=='OSM Grass':actor.static_mesh_component.set_material(0,material('Grass',(.095,.185,.075)))
     if actor.get_actor_label()=='Comic park mapped landmarks':
@@ -157,8 +233,18 @@ if differences:
     u.log_error('NORD_ENVIRONMENT_GAMEPLAY_DIFF '+json.dumps(differences))
     raise AssertionError('Appearance refresh changed gameplay actors; see '+str(failure_path))
 assert levels.save_current_level()
+for path,digest in protected_hashes.items():
+    assert hashlib.sha256((ROOT/path).read_bytes()).hexdigest()==digest, 'Preserved source or crew/survey mesh changed: '+path
 report={'passed':True,'trees':len(park['trees']),'crown_batches':len(new),'facade_edges':len(data['sherbrooke_facades']),
-        'gameplay_actors_preserved':len(before),'backup':str(backup),'limits':data['limits']}
+        'perimeter_facade_edges':len(data['street_facades']),'entrances':data['entries'],
+        'balconies':sum(f.get('balconies',0) for f in data['street_facades']),
+        'exterior_stairs':sum(f.get('exterior_stairs',0) for f in data['street_facades']),
+        'gameplay_actors_preserved':len(before),'backup':str(backup),'limits':data['limits'],
+        'neighbourhood_instances':detail_counts,'neighbourhood_signs':len(neighbourhood['signs']),
+        'court_models':['CourtSurfaces','CourtDetails'],'replaced_volleyball_net_parts':removed_net_parts,
+        'removed_opaque_tennis_backings':removed_tennis_backings,
+        'replaced_tennis_net_parts':removed_tennis_parts,
+        'protected_file_sha256':protected_hashes}
 (ROOT/'Saved/Tests').mkdir(parents=True,exist_ok=True)
 (ROOT/'Saved/Tests/EnvironmentRefresh.json').write_text(json.dumps(report,indent=2)+'\n')
 u.log('NORD_ENVIRONMENT_REFRESH_OK '+json.dumps(report))

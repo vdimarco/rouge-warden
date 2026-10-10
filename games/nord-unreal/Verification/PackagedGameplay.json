@@ -27,11 +27,11 @@
     },
     "Client": {
       "saved": 14,
-      "ambient": 24
+      "ambient": 20
     },
     "Rejoined": {
       "saved": 14,
-      "ambient": 24
+      "ambient": 20
     }
   },
   "driving_fixture": {
@@ -39,7 +39,7 @@
     "original_position_cm": [
       37529.800229,
       -7243.479359,
-      100.100482
+      100.24745
     ],
     "original_yaw_degrees": 77.5308,
     "forward_lane_offset_cm": 145,
@@ -51,9 +51,9 @@
           "position_cm": [
             37529.800229,
             -7243.479359,
-            100.100482
+            100.10027
           ],
-          "position_error_cm": 0.0,
+          "position_error_cm": 0.14718,
           "yaw_degrees": 77.5308,
           "yaw_error_degrees": 0.0
         },
@@ -63,7 +63,7 @@
             -7243.48,
             100.11
           ],
-          "position_error_cm": 0.009542,
+          "position_error_cm": 0.137452,
           "yaw_degrees": 77.34375,
           "yaw_error_degrees": 0.18705
         },
@@ -78,9 +78,9 @@
           "position_cm": [
             37529.800229,
             -7243.479359,
-            100.100482
+            100.10027
           ],
-          "position_error_cm": 0.0,
+          "position_error_cm": 0.14718,
           "yaw_degrees": 77.5308,
           "yaw_error_degrees": 0.0
         },
@@ -90,7 +90,7 @@
             -7243.48,
             100.11
           ],
-          "position_error_cm": 0.009542,
+          "position_error_cm": 0.137452,
           "yaw_degrees": 77.34375,
           "yaw_error_degrees": 0.18705
         },
@@ -104,9 +104,9 @@
   "soak": {
     "requested_seconds": 0,
     "elapsed_seconds": 0.0,
-    "host_rss_baseline_mb": 2877.9,
-    "host_rss_peak_mb": 2877.9,
-    "host_rss_final_mb": 2877.9
+    "host_rss_baseline_mb": 2850.7,
+    "host_rss_peak_mb": 2850.7,
+    "host_rss_final_mb": 2850.7
   },
-  "elapsed_seconds": 89.1
+  "elapsed_seconds": 88.3
 }

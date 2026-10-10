@@ -242,6 +242,75 @@ AQuebecParkInstances::AQuebecParkInstances()
     RootComponent = Instances;
 }
 
+namespace
+{
+    struct FResidentTravel
+    {
+        float Distance = 0.f;
+        float AnimationTime = 0.f;
+        bool bMoving = false;
+        bool bReturn = false;
+    };
+
+    FResidentTravel SampleResidentTravel(float Time, float Length, float Pace, float Pause)
+    {
+        FResidentTravel Result;
+        if (Length <= 1.f) return Result;
+        Pace = FMath::Clamp(Pace,40.f,260.f);
+        // A short acceleration/deceleration at each end avoids an instantaneous
+        // full-speed jog into the idle pose. Position is continuous through both pauses.
+        const float Ramp = FMath::Min(.45f,Length/Pace*.25f);
+        const float Duration = Length/Pace+Ramp;
+        Pause = FMath::Clamp(Pause,1.f,10.f);
+        const float Cycle = FMath::Fmod(FMath::Max(Time,0.f),2.f*(Duration+Pause));
+        Result.bReturn = Cycle >= Duration+Pause;
+        const float Leg = Result.bReturn ? Cycle-Duration-Pause : Cycle;
+        Result.bMoving = Leg < Duration;
+        const float TravelTime = FMath::Clamp(Leg,0.f,Duration);
+        if (TravelTime < Ramp) Result.Distance = .5f*Pace/Ramp*FMath::Square(TravelTime);
+        else if (TravelTime < Duration-Ramp) Result.Distance = Pace*(TravelTime-.5f*Ramp);
+        else Result.Distance = Length-.5f*Pace/Ramp*FMath::Square(Duration-TravelTime);
+        Result.AnimationTime = Result.bMoving ? Result.Distance/Pace : Leg-Duration;
+        if (Result.bReturn) Result.Distance = Length-Result.Distance;
+        return Result;
+    }
+
+    FVector ResidentPointOnRoute(const TArray<FVector>& Route, float Distance, FVector& Direction)
+    {
+        for (int32 I = 1; I < Route.Num(); ++I)
+        {
+            const float Length = FVector::Distance(Route[I-1],Route[I]);
+            if (Distance <= Length || I == Route.Num()-1)
+            {
+                Direction = (Route[I]-Route[I-1]).GetSafeNormal2D();
+                return FMath::Lerp(Route[I-1],Route[I],FMath::Clamp(Distance/FMath::Max(Length,1.f),0.f,1.f));
+            }
+            Distance -= Length;
+        }
+        Direction = FVector::ForwardVector;
+        return Route.Num() ? Route[0] : FVector::ZeroVector;
+    }
+
+    TArray<FVector> TrimResidentRoute(const TArray<FVector>& Route, float StartTrim, float EndTrim)
+    {
+        float Length = 0.f;
+        for (int32 I = 1; I < Route.Num(); ++I) Length += FVector::Distance(Route[I-1],Route[I]);
+        const float Start = FMath::Max(0.f,StartTrim), End = Length-FMath::Max(0.f,EndTrim);
+        TArray<FVector> Result;
+        if (Route.Num() < 2 || End <= Start) return Result;
+        FVector Direction;
+        Result.Add(ResidentPointOnRoute(Route,Start,Direction));
+        float Along = 0.f;
+        for (int32 I = 1; I < Route.Num(); ++I)
+        {
+            Along += FVector::Distance(Route[I-1],Route[I]);
+            if (Along > Start && Along < End) Result.Add(Route[I]);
+        }
+        Result.Add(ResidentPointOnRoute(Route,End,Direction));
+        return Result;
+    }
+}
+
 AQuebecParkResident::AQuebecParkResident()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -309,6 +378,7 @@ void AQuebecParkResident::ApplyAppearance()
     for (UStaticMeshComponent* Piece : Pieces) Piece->SetVisibility(GeneratedMesh == nullptr);
     WalkAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Walk.A_Walk"))) : nullptr;
     IdleAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Idle.A_Idle"))) : nullptr;
+    RunAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Run.A_Run"))) : nullptr;
     CurrentAnimation = nullptr;
     const TCHAR* PropPath = Style == 8 ? TEXT("/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube") : TEXT("/Game/ParkComic/Crew/SM_Plunger.SM_Plunger");
     HandProp->SetStaticMesh(GeneratedMesh ? LoadObject<UStaticMesh>(nullptr, PropPath) : nullptr);
@@ -341,41 +411,31 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     const AGameStateBase* State = GetWorld()->GetGameState();
     const float Time = (State ? State->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds()) + Phase;
-    bool bWalking = false;
-    if (Route.Num() > 1 && RouteLength > 1.f)
+    const FResidentTravel Travel = SampleResidentTravel(Time,RouteLength,Pace,PauseSeconds);
+    const bool bWalking = Activity != 2 && Route.Num() > 1 && Travel.bMoving;
+    if (Activity != 2 && Route.Num() > 1 && HasAuthority())
     {
-        const float Duration = RouteLength / 85.f;
-        const float Cycle = FMath::Fmod(Time, 2.f * (Duration + 4.f));
-        const bool bReturn = Cycle > Duration + 4.f;
-        const float LegTime = bReturn ? Cycle - Duration - 4.f : Cycle;
-        bWalking = LegTime < Duration;
-        float Distance = FMath::Clamp(LegTime * 85.f, 0.f, RouteLength);
-        if (bReturn) Distance = RouteLength - Distance;
-        if (HasAuthority())
-        {
-            for (int32 I = 1; I < Route.Num(); ++I)
-            {
-                const float Length = FVector::Distance(Route[I-1],Route[I]);
-                if (Distance <= Length || I == Route.Num()-1)
-                {
-                    const FVector Direction = Route[I]-Route[I-1];
-                    SetActorLocation(FMath::Lerp(Route[I-1],Route[I],FMath::Clamp(Distance/FMath::Max(Length,1.f),0.f,1.f)));
-                    SetActorRotation((bReturn ? -Direction : Direction).Rotation());
-                    break;
-                }
-                Distance -= Length;
-            }
-        }
+        FVector Direction;
+        SetActorLocation(ResidentPointOnRoute(Route,Travel.Distance,Direction));
+        const FRotator Facing = (Travel.bReturn ? -Direction : Direction).Rotation();
+        SetActorRotation(FMath::RInterpTo(GetActorRotation(),Facing,DeltaSeconds,6.f));
     }
     APlayerController* Player = GetWorld()->GetFirstPlayerController();
     const bool bLocalView = Player && Player->IsLocalController() && Player->PlayerCameraManager;
     const FVector Eye = bLocalView ? Player->PlayerCameraManager->GetCameraLocation() : FVector::ZeroVector;
-    Label->SetVisibility(bLocalView && FVector::DistSquared(Eye,GetActorLocation()) < FMath::Square(1800.f));
+    // Nearby, focused names stay legible; the E prompt still identifies the
+    // closest resident throughout the existing 450 cm interaction range.
+    const FVector TowardLabel = Label->GetComponentLocation()-Eye;
+    const FVector View = bLocalView ? Player->PlayerCameraManager->GetCameraRotation().Vector() : FVector::ZeroVector;
+    Label->SetVisibility(bLocalView && TowardLabel.SizeSquared() < FMath::Square(900.f) &&
+        FVector::DotProduct(View,TowardLabel.GetSafeNormal()) > .99f);
     if (!bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
-    const float Pose = FMath::FloorToFloat(Time * 12.f) / 12.f;
+    const float AnimationClock = Activity == 2 ? Time :
+        Travel.AnimationTime*(bWalking ? Pace/(Activity == 1 ? 260.f : 120.f) : 1.f)+Phase;
+    const float Pose = FMath::FloorToFloat(AnimationClock * 12.f) / 12.f;
     if (GeneratedBody->GetSkeletalMeshAsset())
     {
-        UAnimSequence* Animation = bWalking ? WalkAnimation : IdleAnimation;
+        UAnimSequence* Animation = bWalking ? (Activity == 1 && RunAnimation ? RunAnimation : WalkAnimation) : IdleAnimation;
         if (Animation)
         {
             if (CurrentAnimation != Animation)
@@ -402,6 +462,9 @@ void AQuebecParkResident::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(AQuebecParkResident, Style);
     DOREPLIFETIME(AQuebecParkResident, Route);
     DOREPLIFETIME(AQuebecParkResident, Phase);
+    DOREPLIFETIME(AQuebecParkResident, Activity);
+    DOREPLIFETIME(AQuebecParkResident, Pace);
+    DOREPLIFETIME(AQuebecParkResident, PauseSeconds);
 }
 
 AQuebecCar::AQuebecCar()
@@ -504,6 +567,7 @@ void AQuebecCar::BeginPlay()
             if (UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr,*PaintPath)) Part->SetMaterial(0,Paint);
         }
     }
+    ApplyPaint();
 }
 
 void AQuebecCar::PossessedBy(AController* NewController)
@@ -560,9 +624,23 @@ void AQuebecCar::ApplyPaint()
     const FString Path = PaintStyle > 0
         ? FString::Printf(TEXT("/Game/ParkComic/M_CarPaint%d.M_CarPaint%d"), PaintStyle % 4, PaintStyle % 4)
         : TEXT("/Game/Materials/M_CarBody.M_CarBody");
-    if (UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr, *Path))
-        for (UStaticMeshComponent* Part : Parts)
-            if (Part->GetName() == TEXT("Body")) Part->SetMaterial(0, Paint);
+    UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr,*Path);
+    const int32 Profile = FMath::Clamp(BodyProfile,0,2);
+    // Hatch, lower compact sedan, and long-roof wagon use the existing artwork.
+    // Only the upper cabin changes: tires, body/wheel arches and collision stay aligned.
+    const FVector CabinScale = Profile == 1 ? FVector(.78,1.,.85) : Profile == 2 ? FVector(1.27,1.,1.08) : FVector::OneVector;
+    const FVector CabinOffset = Profile == 1 ? FVector(18.,0.,1.35) : Profile == 2 ? FVector(-12.,0.,-.72) : FVector::ZeroVector;
+    for (UStaticMeshComponent* Part : Parts)
+    {
+        const FString Name = Part->GetName();
+        if (Name == TEXT("Body") && Paint) Part->SetMaterial(0,Paint);
+        if ((Name == TEXT("Glass") || Name == TEXT("Roof")) && Part->GetStaticMesh() &&
+            Part->GetStaticMesh()->GetName().StartsWith(TEXT("SM_Car")))
+        {
+            Part->SetRelativeScale3D(CabinScale);
+            Part->SetRelativeLocation(CabinOffset);
+        }
+    }
 }
 
 namespace
@@ -716,7 +794,7 @@ void AQuebecCar::UpdateTraffic()
     Target = LaneStart+Direction*Along;
     const float Error = FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw, (Target - GetActorLocation()).Rotation().Yaw);
     Steering = FMath::Clamp(Error / 35.f, -1.f, 1.f);
-    float DesiredSpeed = bWaitForJunction ? 0.f : (FMath::Abs(Error) > 35.f ? 230.f : 650.f);
+    float DesiredSpeed = bWaitForJunction ? 0.f : (FMath::Abs(Error) > 35.f ? 230.f : 570.f+40.f*(FMath::Abs(PaintStyle)%4));
     FCollisionQueryParams Query(SCENE_QUERY_STAT(TrafficYield), false, this);
     FHitResult Ahead;
     for (int32 Attempt = 0; Attempt < 4; ++Attempt)
@@ -833,6 +911,7 @@ void AQuebecCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
     DOREPLIFETIME_CONDITION(AQuebecCar, bHandbrake, COND_SkipOwner);
     DOREPLIFETIME(AQuebecCar, VisualSteering);
     DOREPLIFETIME(AQuebecCar, PaintStyle);
+    DOREPLIFETIME(AQuebecCar, BodyProfile);
     DOREPLIFETIME(AQuebecCar, bTraffic);
 }
 
@@ -1317,6 +1396,13 @@ void AQuebecGameMode::BeginPlay()
     for (int32 I = 0; I < UE_ARRAY_COUNT(LaFontaine::RoadSegments); ++I)
         if (FVector::DistSquared2D(LaFontaine::RoadSegments[I][0],LaFontaine::RoadSegments[I][1]) > FMath::Square(1800.f))
             NearRoads.Add(I);
+    TArray<int32> StreetRoads = NearRoads;
+    StreetRoads.Sort([](int32 A, int32 B)
+    {
+        const FVector PointA = FMath::ClosestPointOnSegment(MansionSpawn,LaFontaine::RoadSegments[A][0],LaFontaine::RoadSegments[A][1]);
+        const FVector PointB = FMath::ClosestPointOnSegment(MansionSpawn,LaFontaine::RoadSegments[B][0],LaFontaine::RoadSegments[B][1]);
+        return FVector::DistSquared2D(PointA,MansionSpawn) < FVector::DistSquared2D(PointB,MansionSpawn);
+    });
     NearRoads.Sort([](int32 A, int32 B)
     {
         const FVector MidA = (LaFontaine::RoadSegments[A][0]+LaFontaine::RoadSegments[A][1])*.5;
@@ -1454,6 +1540,7 @@ void AQuebecGameMode::BeginPlay()
         AQuebecCar* Car = GetWorld()->SpawnActorDeferred<AQuebecCar>(AQuebecCar::StaticClass(),Transform,nullptr,nullptr,ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
         if (!Car) return false;
         Car->PaintStyle = Style % 4;
+        Car->BodyProfile = Style % 3;
         Car->Tags.Add(Road == INDEX_NONE ? TEXT("CityParked") : TEXT("CityTraffic"));
         if (Road != INDEX_NONE) Car->SetTrafficRoute(Road,bForward,TrafficRoads);
         Car->FinishSpawning(Transform);
@@ -1475,32 +1562,127 @@ void AQuebecGameMode::BeginPlay()
         }
         return true;
     };
-    const auto SpawnResident = [this](const TArray<FVector>& Route, int32 Index)
+    int32 ResidentIndex = 0, MobileIndex = 0;
+    const auto SpawnResident = [this,&ResidentIndex,&MobileIndex](const TArray<FVector>& Route, bool bSocial, FName Hub = NAME_None)
     {
-        const float Phase = Index * 7.91f;
-        const float Duration = FVector::Distance(Route[0],Route.Last())/85.f;
-        const float Cycle = FMath::Fmod(GetWorld()->GetTimeSeconds()+Phase,2.f*(Duration+4.f));
-        const bool bReturn = Cycle > Duration+4.f;
-        const float Alpha = FMath::Clamp((bReturn ? Cycle-Duration-4.f : Cycle)/Duration,0.f,1.f);
-        const FVector Point = FMath::Lerp(Route[0],Route.Last(),bReturn ? 1.f-Alpha : Alpha);
-        const FTransform Transform((Route.Last()-Route[0]).Rotation(),Point);
+        const int32 Index = ResidentIndex;
+        const int32 Activity = bSocial ? 2 : (MobileIndex%11 < 2 ? 1 : 0);
+        const float Pace = Activity == 1 ? 185.f+12.f*(Index%5) : 78.f+8.f*(Index%6);
+        const float Pause = 2.f+.7f*(Index%8);
+        const float Phase = Index*7.91f;
+        float Length = 0.f;
+        for (int32 I = 1; I < Route.Num(); ++I) Length += FVector::Distance(Route[I-1],Route[I]);
+        const FResidentTravel Travel = SampleResidentTravel(GetWorld()->GetTimeSeconds()+Phase,Length,Pace,Pause);
+        FVector Direction;
+        const FVector Point = ResidentPointOnRoute(Route,bSocial ? 0.f : Travel.Distance,Direction);
+        if (!bSocial && Travel.bReturn) Direction *= -1.;
+        const FTransform Transform(Direction.Rotation(),Point);
         AQuebecParkResident* Resident = GetWorld()->SpawnActorDeferred<AQuebecParkResident>(AQuebecParkResident::StaticClass(),Transform,
             nullptr,nullptr,ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
         if (!Resident) return false;
-        Resident->Style = 3 + Index % 8;
+        Resident->Style = 3+Index%8;
         Resident->Route = Route;
         Resident->Phase = Phase;
+        Resident->Activity = Activity;
+        Resident->Pace = Pace;
+        Resident->PauseSeconds = Pause;
         Resident->Tags.Add(TEXT("CityCrowd"));
+        Resident->Tags.Add(Activity == 2 ? TEXT("CitySocial") : Activity == 1 ? TEXT("CityJog") : TEXT("CityWalk"));
+        if (!Hub.IsNone()) Resident->Tags.Add(Hub);
         Resident->FinishSpawning(Transform);
+        ++ResidentIndex;
+        if (!bSocial) ++MobileIndex;
         return true;
     };
-
+    const auto StreetRoute = [](int32 Road, int32 Side, bool bNearSpawn)
+    {
+        const FVector Start = LaFontaine::RoadSegments[Road][0], End = LaFontaine::RoadSegments[Road][1];
+        const FVector Direction = (End-Start).GetSafeNormal2D();
+        const FVector Right = FVector::CrossProduct(FVector::UpVector,Direction);
+        const float Length = FVector::Dist2D(Start,End);
+        const float HalfLength = FMath::Min(Length*.5f-400.f,1300.f);
+        const float Along = bNearSpawn ? FMath::Clamp(float(FVector::DotProduct(MansionSpawn-Start,Direction)),
+            HalfLength+400.f,Length-HalfLength-400.f) : Length*.5f;
+        const FVector Center = Start+Direction*Along+Right*(Side*(LaFontaine::RoadSegmentWidths[Road]*.5f+150.f));
+        return TArray<FVector>{Center-Direction*HalfLength,Center+Direction*HalfLength};
+    };
+    // Exact subset of surveyed ParkComic/layout.json paths[170], beside the
+    // pond-facing chalet edge. Use the path itself, not a line across the terrace or pond.
+    TArray<TArray<FVector>> HubRoutes;
+    HubRoutes.Add(TArray<FVector>{FVector(5365.751,1054.200,7.),FVector(5414.885,1361.444,7.),FVector(5387.588,1745.498,7.),
+        FVector(5282.301,2022.684,7.),FVector(4103.084,4124.406,7.)});
+    for (int32 Mission : {0,2,1})
+    {
+        int32 Best = INDEX_NONE;
+        double BestDistance = TNumericLimits<double>::Max();
+        for (int32 I = 0; I < ParkRoutes.Num(); ++I)
+        {
+            const FVector Center = (ParkRoutes[I][0]+ParkRoutes[I].Last())*.5;
+            const double Distance = FVector::DistSquared2D(Center,AQuebecGameState::MissionLocations[Mission]);
+            if (Distance < BestDistance) { Best = I; BestDistance = Distance; }
+        }
+        if (Best != INDEX_NONE) HubRoutes.Add(ParkRoutes[Best]);
+    }
+    const FName ParkHubNames[] = {TEXT("CityChalet"),TEXT("CityPond"),TEXT("CitySports"),TEXT("CityTheatre")};
+    TArray<FVector> SpawnStreet;
+    for (int32 Road : StreetRoads)
+    {
+        for (int32 Side : {-1,1})
+        {
+            TArray<FVector> Route = StreetRoute(Road,Side,true);
+            if (ClearRoute(Route)) { SpawnStreet = Route; break; }
+        }
+        if (SpawnStreet.Num()) break;
+    }
     int32 Parked = 0, Traffic = 0, ParkCrowd = 0, StreetCrowd = 0;
+    int32 SocialCount = 0;
+    const auto SocialPair = [&ClearRoute,&SpawnResident,&SocialCount](const TArray<FVector>& Base, FName Hub)
+    {
+        if (Base.Num() < 2) return false;
+        float Length = 0.f;
+        for (int32 I = 1; I < Base.Num(); ++I) Length += FVector::Distance(Base[I-1],Base[I]);
+        FVector Direction;
+        const FVector Center = ResidentPointOnRoute(Base,Length*.5f,Direction);
+        const FVector Right = FVector::CrossProduct(FVector::UpVector,Direction);
+        for (float Offset : {125.f,-125.f,180.f,-180.f,0.f})
+        {
+            TArray<FVector> Pair = {Center+Right*Offset-Direction*80.f,Center+Right*Offset+Direction*80.f};
+            if (!ClearRoute(Pair)) continue;
+            if (!SpawnResident(Pair,true,Hub)) return false;
+            Pair.Swap(0,1);
+            if (!SpawnResident(Pair,true,Hub)) return false;
+            SocialCount += 2;
+            return true;
+        }
+        return false;
+    };
+    // Four small social pairs reuse eight slots. The remaining 88 residents move.
+    for (int32 I : {0,1,2})
+        if (HubRoutes.IsValidIndex(I) && SocialPair(HubRoutes[I],ParkHubNames[I])) ParkCrowd += 2;
+    if (SocialPair(SpawnStreet,TEXT("CitySherbrooke"))) StreetCrowd += 2;
+    for (int32 I = 0; SocialCount < 8 && I < ParkRoutes.Num(); ++I)
+        if (SocialPair(ParkRoutes[I],NAME_None)) ParkCrowd += 2;
+    // Stagger turnaround points along the surveyed polyline, keeping separate
+    // 110 cm walking lanes and enough distance for a useful walk between pauses.
+    // Static capsule sweeps still validate each complete route and its bends.
+    for (int32 Hub = 0; Hub < HubRoutes.Num(); ++Hub)
+    {
+        float Length = 0.f;
+        for (int32 I = 1; I < HubRoutes[Hub].Num(); ++I) Length += FVector::Distance(HubRoutes[Hub][I-1],HubRoutes[Hub][I]);
+        const int32 Count = FMath::Clamp(FMath::FloorToInt((Length-600.f)/120.f)+1,1,6);
+        for (int32 I = 0; I < Count; ++I)
+        {
+            TArray<FVector> Route = TrimResidentRoute(HubRoutes[Hub],I*120.f,(Count-1-I)*120.f);
+            const FVector Right = FVector::CrossProduct(FVector::UpVector,(Route.Last()-Route[0]).GetSafeNormal2D());
+            for (FVector& Point : Route) Point += Right*(I%2 ? -55.f : 55.f);
+            if (ClearRoute(Route) && SpawnResident(Route,false,ParkHubNames[Hub])) ++ParkCrowd;
+        }
+    }
+
     for (int32 Pass = 0; Pass < 2; ++Pass)
     {
         const int32 ParkedLimit = Pass ? ParkedGoal : ParkedGoal/2;
         const int32 TrafficLimit = Pass ? TrafficGoal : TrafficGoal/2;
-        const int32 StreetLimit = Pass ? StreetCrowdGoal : StreetCrowdGoal/2;
         for (int32 Road : (Pass ? DistrictRoads : NearRoads))
         {
             const FVector Start = LaFontaine::RoadSegments[Road][0], End = LaFontaine::RoadSegments[Road][1];
@@ -1517,15 +1699,24 @@ void AQuebecGameMode::BeginPlay()
                     }
                 FVector Moving = FMath::Lerp(Start,End,Side > 0 ? .65 : .35)+Right*(Side*145.);
                 if (Traffic < TrafficLimit && TrafficRoads[Road] && ClearCar(Moving,Facing.Quaternion()) && SpawnCar(Moving,Facing,Traffic+1,Road,Side > 0)) ++Traffic;
-                if (StreetCrowd < StreetLimit)
-                {
-                    const FVector Center = FMath::Lerp(Start,End,.5)+Right*(Side*700.);
-                    const float HalfLength = FMath::Min(float((End-Start).Size2D()*.5-400.),1300.f);
-                    TArray<FVector> Route = {Center-Direction*HalfLength,Center+Direction*HalfLength};
-                    if (HalfLength > 400.f && ClearRoute(Route) && SpawnResident(Route,ParkCrowdGoal+StreetCrowd)) ++StreetCrowd;
-                }
+
             }
-            if (Parked == ParkedLimit && Traffic == TrafficLimit && StreetCrowd == StreetLimit) break;
+            if (Parked == ParkedLimit && Traffic == TrafficLimit) break;
+        }
+    }
+    for (int32 Pass = 0; Pass < 2; ++Pass)
+    {
+        const int32 Limit = Pass ? StreetCrowdGoal : StreetCrowdGoal/2;
+        for (int32 Road : (Pass ? DistrictRoads : StreetRoads))
+        {
+            for (int32 Side : {-1,1})
+            {
+                if (StreetCrowd >= Limit) break;
+                TArray<FVector> Route = StreetRoute(Road,Side,Pass == 0);
+                const bool bNearSpawn = FVector::DistSquared2D((Route[0]+Route.Last())*.5,MansionSpawn) < FMath::Square(5000.f);
+                if (ClearRoute(Route) && SpawnResident(Route,false,bNearSpawn ? FName(TEXT("CitySherbrooke")) : NAME_None)) ++StreetCrowd;
+            }
+            if (StreetCrowd == Limit) break;
         }
     }
     // Stagger walkers on both sides of the existing mapped park paths; no navigation or path finding per frame.
@@ -1535,15 +1726,55 @@ void AQuebecGameMode::BeginPlay()
         const FVector Right = FVector::CrossProduct(FVector::UpVector,(Route.Last()-Route[0]).GetSafeNormal2D());
         const float Offset = (Attempt/ParkRoutes.Num()%2 ? -1.f : 1.f)*(25.f+15.f*(Attempt/ParkRoutes.Num()%3));
         for (FVector& Point : Route) Point += Right*Offset;
-        if (ClearRoute(Route) && SpawnResident(Route,ParkCrowd)) ++ParkCrowd;
+        if (ClearRoute(Route) && SpawnResident(Route,false)) ++ParkCrowd;
     }
     UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION parked=%d/%d traffic=%d/%d pedestrians=%d/%d"),
         Parked,ParkedGoal,Traffic,TrafficGoal,ParkCrowd+StreetCrowd,ParkCrowdGoal+StreetCrowdGoal);
+    UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION social=%d mobile=%d"),SocialCount,MobileIndex);
     if (Parked < ParkedGoal || Traffic < TrafficGoal || ParkCrowd < ParkCrowdGoal || StreetCrowd < StreetCrowdGoal)
         UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION some placements were blocked by world collision"));
 }
 
 #if WITH_DEV_AUTOMATION_TESTS
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecResidentRouteTest, "Quebec.Residents.RouteContinuity", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecResidentRouteTest::RunTest(const FString& Parameters)
+{
+    constexpr float Length = 1800.f, Pace = 210.f, Pause = 6.2f;
+    const float Duration = Length/Pace+.45f;
+    TestTrue(TEXT("Pause holds the far endpoint"),FMath::IsNearlyEqual(SampleResidentTravel(Duration+Pause*.5f,Length,Pace,Pause).Distance,Length,.01f));
+    TestFalse(TEXT("Endpoint pause uses idle"),SampleResidentTravel(Duration+Pause*.5f,Length,Pace,Pause).bMoving);
+    TestTrue(TEXT("Return starts at the same endpoint"),FMath::IsNearlyEqual(SampleResidentTravel(Duration+Pause,Length,Pace,Pause).Distance,Length,.01f));
+    for (float Seam : {0.f,Duration,Duration+Pause,2.f*Duration+Pause,2.f*(Duration+Pause)})
+    {
+        const float Before = SampleResidentTravel(FMath::Max(0.f,Seam-.001f),Length,Pace,Pause).Distance;
+        const float After = SampleResidentTravel(Seam+.001f,Length,Pace,Pause).Distance;
+        TestTrue(TEXT("Root is continuous through endpoint/phase boundaries"),FMath::Abs(Before-After) < .5f);
+    }
+    FVector Direction;
+    const TArray<FVector> Corner = {FVector(0.,0.,7.),FVector(300.,0.,7.),FVector(300.,400.,7.)};
+    TestTrue(TEXT("Curved route uses accumulated segment length"),ResidentPointOnRoute(Corner,500.f,Direction).Equals(FVector(300.,200.,7.),.01f));
+    TestTrue(TEXT("Curved route follows the current segment"),Direction.Equals(FVector::RightVector,.01f));
+    const TArray<FVector> Trimmed = TrimResidentRoute(Corner,100.f,100.f);
+    TestEqual(TEXT("Trim keeps surveyed interior bends"),Trimmed.Num(),3);
+    TestTrue(TEXT("Trim starts on the first mapped segment"),Trimmed[0].Equals(FVector(100.,0.,7.),.01f));
+    TestTrue(TEXT("Trim preserves the original corner"),Trimmed[1].Equals(Corner[1],.01f));
+    TestTrue(TEXT("Trim ends on the final mapped segment"),Trimmed.Last().Equals(FVector(300.,300.,7.),.01f));
+    const TArray<FVector> Straight = {FVector::ZeroVector,FVector(1800.,0.,0.)};
+    TArray<FVector> Starts, Ends;
+    for (int32 I = 0; I < 6; ++I)
+    {
+        const TArray<FVector> Route = TrimResidentRoute(Straight,I*120.f,(5-I)*120.f);
+        const FVector Offset(0.,I%2 ? -55. : 55.,0.);
+        for (int32 J = 0; J < Starts.Num(); ++J)
+        {
+            TestTrue(TEXT("Hub start capsules do not overlap"),FVector::Dist2D(Route[0]+Offset,Starts[J]) >= 70.f);
+            TestTrue(TEXT("Hub end capsules do not overlap"),FVector::Dist2D(Route.Last()+Offset,Ends[J]) >= 70.f);
+        }
+        Starts.Add(Route[0]+Offset); Ends.Add(Route.Last()+Offset);
+    }
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecTrafficBlockedApproachTest, "Quebec.Traffic.BlockedApproach", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FQuebecTrafficBlockedApproachTest::RunTest(const FString& Parameters)
 {

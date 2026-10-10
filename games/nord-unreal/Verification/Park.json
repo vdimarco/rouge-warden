@@ -23,5 +23,16 @@
       "roof_z_cm": 320.0
     }
   ],
-  "checked": "fresh saved scene counts, collision, assets, old tree removal"
+  "checked": "fresh saved scene counts, collision, assets, old tree removal",
+  "neighbourhood_instances": {
+    "BikeRack": 182,
+    "CityBicycle": 121,
+    "BusStop": 45,
+    "BusShelter": 14,
+    "StreetNames": 77,
+    "TerraceTable": 6
+  },
+  "neighbourhood_signs": 199,
+  "municipal_tree_positions_preserved": true,
+  "retired_net_parts_absent": 734
 }
