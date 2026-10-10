@@ -47,7 +47,7 @@ const TUNE = {
 
 // A pattern may cut one of the same or a lower priority, never a higher one.
 // The hook set may cut the strike's buzz: a quick set must be felt in full.
-const PRIO = { tick: 0, tension: 1, throb: 1, drag: 2, rub: 2, bail: 3, bump: 3, splash: 3, load: 3, shutter: 3, turn: 4, big: 4, hookset: 5, thump: 5, land: 5, jolt: 6 };
+const PRIO = { tick: 0, tension: 1, throb: 1, drag: 2, rub: 2, bail: 3, bump: 3, splash: 3, load: 3, release: 3, home: 3, shutter: 3, miss: 4, turn: 4, big: 4, hookset: 5, thump: 5, land: 5, jolt: 6 };
 
 const HAS_DOM = typeof window !== "undefined" && typeof document !== "undefined";
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -282,6 +282,17 @@ export const Haptics = {
     const w = 6 + 12 * s;
     return emit(s > 0.55 ? [w, 90, w * 0.6] : [w], PRIO.bump, false, [hit(0, s > 0.5 ? "MEDIUM" : "LIGHT")]);
   },
+  // A fish testing the lure: two light taps, distinct from a crank tick and the heavy strike.
+  nibble(s) {
+    s = clamp(num(s, 0.5), 0, 1);
+    return emit([10 + 8 * s, 70, 8 + 5 * s], PRIO.bump, false, [hit(0, "LIGHT"), hit(80, "LIGHT")]);
+  },
+  // The line leaves the finger. A sweet cast uses its own stronger cue instead.
+  release() { return emit([16], PRIO.release, false, [hit(0, "MEDIUM")]); },
+  // The empty lure reaches the rod: a quick rising pair, unlike a bite or a missed chance.
+  home() { return emit([9, 32, 15], PRIO.home, false, [hit(0, "LIGHT"), hit(40, "MEDIUM")]); },
+  // A fish slips away, or the lure hits land: a descending pair, less forceful than a snap.
+  miss() { return emit([20, 65, 8], PRIO.miss, false, [hit(0, "MEDIUM"), hit(85, "LIGHT")]); },
   // the strike, and only the strike: s is how hard it hit (a soft biter 0.3, a slammer 1). Left out: [45, 25, 90].
   // The web buzz grows with s; the iPhone app always gets its two heavy impacts
   thump(s = 0.75) {

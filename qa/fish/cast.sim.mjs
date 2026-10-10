@@ -124,14 +124,21 @@ console.log("\nLine and spool");
     if (i === 2) first = r.spool;
     if (!r.done) maxSpool = Math.max(maxSpool, r.spool);
     const straight = Math.hypot(r.x - tip.x, r.y - tip.y, r.z - tip.z);
-    if (r.lineOut + 1e-6 < straight || r.lineOut + 1e-9 < last) ok = false;
+    if (r.lineOut + 1e-6 < straight || (!r.done && r.lineOut + 1e-9 < last)) ok = false;
     last = r.lineOut;
     if (r.done) break;
   }
   const endR = f.step(1 / 60);
-  check(ok, "line out never shrinks and is never shorter than the straight line");
+  check(ok, "line out grows during flight and is never shorter than the straight line");
   check(maxSpool > 15 && endR.spool === 0, `the spool whirrs (${maxSpool.toFixed(1)} m/s peak, ${first.toFixed(1)} m/s at the start) and then stops`);
   check(endR.lineOut > endR.lineOut / 1.1 && endR.lineOut < Math.hypot(endR.x - tip.x, endR.y - tip.y, endR.z - tip.z) * 1.08 + 0.5, `line out is the distance plus a little sag (${endR.lineOut.toFixed(1)} m)`);
+  // A steep cast reaches farther in the air than its final splash. The reel starts at the splash span.
+  const lobTip = tipAt(110), lob = new Flight(lobTip, { v0: 30, pitch: 75, yaw: 0 });
+  let splash;
+  do { splash = lob.step(1 / 60); } while (!splash.done);
+  const castDistance = Math.hypot(splash.x, splash.z);
+  check(splash.land === "water" && splash.lineOut <= castDistance * 1.1,
+    `a ${castDistance.toFixed(1)} m high lob starts the reel with about that much line (${splash.lineOut.toFixed(1)} m)`);
 }
 
 // 6. bad input never breaks it

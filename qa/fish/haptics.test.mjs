@@ -22,7 +22,7 @@ function check(name, fn) {
   check("plain node: kind is none and every call is a safe no-op", () => {
     assert.equal(Haptics.kind, "none");
     assert.equal(Haptics.enabled, true);
-    Haptics.unlock(); Haptics.tick(); Haptics.bail(); Haptics.bail(true); Haptics.bump(0.4); Haptics.thump(); Haptics.hookset();
+    Haptics.unlock(); Haptics.tick(); Haptics.bail(); Haptics.bail(true); Haptics.bump(0.4); Haptics.nibble(0.4); Haptics.release(); Haptics.home(); Haptics.miss(); Haptics.thump(); Haptics.hookset();
     Haptics.jolt(); Haptics.land(); Haptics.land(2); Haptics.splash(0.5); Haptics.load(); Haptics.setTension(0.9, 1, true); Haptics.setCrank(2);
     Haptics.throb(); Haptics.rub(0.8); Haptics.thrash(); Haptics.charge(); Haptics.phase();
     Haptics.thump(0.3); Haptics.turn(); Haptics.big(); Haptics.shutter(); Haptics.surge();
@@ -85,7 +85,7 @@ check("detects an Android phone as kind vibrate, enabled by default", () => {
 });
 
 check("no vibrate before the first gesture (unlock or a finger lift)", () => {
-  run(2000, () => { H.tick(); H.bail(); H.bump(1); H.thump(); H.jolt(); H.land(); H.setTension(0.9, 0, true); H.setCrank(2); });
+  run(2000, () => { H.tick(); H.bail(); H.bump(1); H.nibble(1); H.release(); H.home(); H.miss(); H.thump(); H.jolt(); H.land(); H.setTension(0.9, 0, true); H.setCrank(2); });
   assert.equal(calls.length, 0, "calls before unlock: " + calls.length);
   H.unlock();
   T += 1000;
@@ -103,11 +103,30 @@ check("navigator.userActivation wins: hasBeenActive false blocks even after unlo
   delete phone.userActivation;
 });
 
+check("a nibble has two light taps that a strike can interrupt", () => {
+  fresh();
+  assert.equal(H.nibble(0.2), true);
+  assert.deepEqual(pulses()[0].p, [12, 70, 9]);
+  T += 20;
+  assert.equal(H.thump(), true, "strike could not cut the nibble");
+  T += 1000;
+  assert.equal(H.nibble(0.8), true);
+  assert.deepEqual(pulses().at(-1).p, [16, 70, 12]);
+});
+
+check("release, empty-home and missed chances have short distinct patterns", () => {
+  fresh(); assert.equal(H.release(), true); assert.deepEqual(pulses()[0].p, [16]);
+  fresh(); assert.equal(H.home(), true); assert.deepEqual(pulses()[0].p, [9, 32, 15]);
+  fresh(); assert.equal(H.miss(), true); assert.deepEqual(pulses()[0].p, [20, 65, 8]);
+  fresh(); H.home(); T += 10; assert.equal(H.miss(), true, "a missed chance could not cut the empty-home cue");
+  fresh(); H.thump(); T += 10; assert.equal(H.miss(), false, "a miss cut the strike");
+});
+
 check("priorities: a tick or a nibble does not cut a strike; a quick hook set and a snap do; the snap leaves a silence", () => {
   fresh();
   assert.equal(H.thump(), true);                        // [45, 25, 90] = 160 ms
   T += 20; assert.equal(H.tick(), false, "tick cut the strike");
-  T += 20; assert.equal(H.bump(0.8), false, "nibble cut the strike");
+  T += 20; assert.equal(H.nibble(0.8), false, "nibble cut the strike");
   T += 20; assert.equal(H.bail(), false, "bail cut the strike");
   T += 20; assert.equal(H.hookset(), true, "a quick hook set could not cut the strike");
   T += 10; assert.equal(H.jolt(), true, "snap did not cut the hook set");
@@ -118,7 +137,7 @@ check("priorities: a tick or a nibble does not cut a strike; a quick hook set an
   T += 200; assert.equal(H.thump(), true, "strike after the silence");
   // a strong effect preempts a weak one that is still playing
   T += 1000; H.land(); T += 5; assert.equal(H.jolt(), true);
-  T += 1000; H.bump(0.2); T += 2; assert.equal(H.thump(), true, "strike could not preempt a nibble");
+  T += 1000; H.nibble(0.2); T += 2; assert.equal(H.thump(), true, "strike could not preempt a nibble");
   T += 1000; H.tick(); T += 2; assert.equal(H.bail(), true, "bail could not preempt a tick");
 });
 
@@ -243,7 +262,7 @@ check("setEnabled(false) silences everything and is saved in fish.haptics", () =
   assert.equal(calls[calls.length - 1].p, 0, "the playing pattern was not stopped");
   assert.equal(store.get("fish.haptics"), "false");
   calls.length = 0;
-  run(3000, () => { H.tick(); H.bail(); H.bump(1); H.thump(); H.hookset(); H.jolt(); H.land(); H.splash(1); H.load(); H.setTension(0.95, 2, true); H.setCrank(3); });
+  run(3000, () => { H.tick(); H.bail(); H.bump(1); H.nibble(1); H.release(); H.home(); H.miss(); H.thump(); H.hookset(); H.jolt(); H.land(); H.splash(1); H.load(); H.setTension(0.95, 2, true); H.setCrank(3); });
   assert.equal(calls.length, 0);
   assert.equal(H.enabled, false);
   H.setEnabled(true);
@@ -402,7 +421,7 @@ check("the last run: its buzz is not the snap, and the drag buzz keeps going und
   assert.ok(surge.n >= 8, "drag pulses in the first second: " + surge.n);
   assert.ok(snap.at >= 700, "the snap no longer leaves its silence");
   // a nibble does not cut the warning
-  fresh(); H.surge(); T += 30; assert.equal(H.bump(0.5), false);
+  fresh(); H.surge(); T += 30; assert.equal(H.nibble(0.5), false);
 });
 
 /* ---------- the big moments: the strike alone thumps, the hook set buzzes longest, each event has its own pattern ---------- */
@@ -427,7 +446,8 @@ check("it turned, a big one and the shutter each have their own light pattern, n
 
 check("no two named events share a pattern (but the strengths of bump and splash)", () => {
   const table = {
-    tick: () => H.tick(), bail: () => H.bail(), bailOpen: () => H.bail(true), bailShut: () => H.bail(false), nibble: () => H.bump(0.5),
+    tick: () => H.tick(), bail: () => H.bail(), bailOpen: () => H.bail(true), bailShut: () => H.bail(false), nibble: () => H.nibble(0.5),
+    release: () => H.release(), home: () => H.home(), miss: () => H.miss(),
     strike: () => H.thump(), softStrike: () => H.thump(0.3), hookset: () => H.hookset(), snap: () => H.jolt(), lastrun: () => H.surge(),
     land: () => H.land(0), trophy: () => H.land(1), legend: () => H.land(2), thrash: () => H.thrash(), charge: () => H.charge(), phase: () => H.phase(),
     splash: () => H.splash(0.5), load: () => H.load(), turn: () => H.turn(), big: () => H.big(), shutter: () => H.shutter(),
@@ -471,6 +491,21 @@ check("no two named events share a pattern (but the strengths of bump and splash
     assert.equal(calls.length, 0, "navigator.vibrate was called");
   });
 
+  check("the iPhone app: a nibble is two light impacts, 80 ms apart", () => {
+    nfresh();
+    assert.equal(H.nibble(0.2), true);
+    wait(200);
+    assert.deepEqual(steps(), [[0, "LIGHT"], [80, "LIGHT"]]);
+    assert.equal(calls.length, 0, "navigator.vibrate was called");
+  });
+
+  check("the iPhone app: release, empty-home and miss use distinct light impact sequences", () => {
+    nfresh(); H.release(); wait(200); assert.deepEqual(steps(), [[0, "MEDIUM"]]);
+    nfresh(); H.home(); wait(200); assert.deepEqual(steps(), [[0, "LIGHT"], [40, "MEDIUM"]]);
+    nfresh(); H.miss(); wait(200); assert.deepEqual(steps(), [[0, "MEDIUM"], [85, "LIGHT"]]);
+    assert.equal(calls.length, 0, "navigator.vibrate was called");
+  });
+
   check("the iPhone app: the hook set is heavy, medium, heavy (longer than the strike); land(2) is SUCCESS and 4 heavy taps; the snap is ERROR", () => {
     nfresh(); H.hookset(); wait(300); assert.deepEqual(steps(), [[0, "HEAVY"], [40, "MEDIUM"], [110, "HEAVY"]]);
     nfresh(); H.land(2); wait(1000); assert.deepEqual(words(), ["notification:SUCCESS", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY", "impact:HEAVY"]);
@@ -509,7 +544,7 @@ check("no two named events share a pattern (but the strengths of bump and splash
   check("the iPhone app: the same gates as the web buzz (priority, the snap silence)", () => {
     nfresh();
     H.thump(); T += 20;
-    assert.equal(H.tick(), false); assert.equal(H.bump(0.8), false); assert.equal(H.turn(), false);
+    assert.equal(H.tick(), false); assert.equal(H.nibble(0.8), false); assert.equal(H.turn(), false);
     assert.equal(H.jolt(), true);
     T += 300; assert.equal(H.thump(), false, "a strike in the snap silence");
     wait(1000);
@@ -521,7 +556,7 @@ check("no two named events share a pattern (but the strengths of bump and splash
     nfresh(); H.thump(); H.setEnabled(false); wait(300);
     assert.deepEqual(words(), ["impact:HEAVY"], "the second strike impact came after Buzz and taps went off");
     hx.length = 0;
-    run(2000, () => { H.tick(); H.bail(); H.bump(1); H.thump(); H.jolt(); H.land(2); H.surge(); H.setTension(0.95, 2, true); H.setCrank(3); H.throb(); H.rub(0.8); });
+    run(2000, () => { H.tick(); H.bail(); H.bump(1); H.nibble(1); H.release(); H.home(); H.miss(); H.thump(); H.jolt(); H.land(2); H.surge(); H.setTension(0.95, 2, true); H.setCrank(3); H.throb(); H.rub(0.8); });
     wait(1000);
     assert.equal(hx.length, 0, "with Buzz and taps off: " + words());
     nfresh(); globalThis.document = { visibilityState: "hidden" };
@@ -623,7 +658,7 @@ async function iosPads() {
     };
     window.ready = true;
   </script>`;
-  const browser = await pw.chromium.launch();
+  const browser = await pw.chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined });
   const errors = [];
   try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
