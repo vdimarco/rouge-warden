@@ -6,118 +6,140 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <meta name="theme-color" content="#080d12" />
-    <title>Afterlight · Cottage Arcade</title>
+    <meta name="theme-color" content="#050a10" />
+    <title>Afterlight · Bring them home</title>
     <meta
       name="description"
-      content="Rescue three stranded crews by repairing the six-beacon network. Catch forest fireflies, guide the crews home, and reopen the rescue routes."
+      content="Break shadow tethers, rescue survivors and defeat guardians across six living 3D worlds."
     />
     <link rel="icon" href="/icons/favicon.svg" />
-    <link rel="stylesheet" href="/afterlight/style.css" />
-    <link rel="stylesheet" href="/afterlight/navigation.css" />
+    <link rel="stylesheet" href="/afterlight/action.css" />
     <script src="/arcade/quiet.js"></script>
   </head>
   <body>
-    <main>
-      <header>
-        <a class="brand" href="/afterlight/">Afterlight</a
-        ><span id="place">The long way home</span><a href="/">[ arcade ]</a>
-      </header>
-      <div class="hud">
-        <span id="vitals">A world waiting for light</span
-        ><span id="supplies"></span><span id="network">0 / 6 beacons</span>
-      </div>
-      <div class="layout">
-        <section class="scene-pane">
-          <div
-            class="landscape"
-            id="arena"
-            tabindex="0"
-            role="region"
-            aria-label="Adventure landscape. Move with arrows or WASD, interact with E, use your tool with Space."
+    <main
+      id="action-arena"
+      tabindex="0"
+      aria-label="Afterlight rescue playfield. Move with WASD or arrows, aim and click to fire, Space fires toward enemies, Shift dodges, E interrupts attacks, release fire to cool the weapon and P pauses."
+    >
+      <div
+        id="action-scene"
+        aria-label="A living three-dimensional rescue landscape"
+      ></div>
+      <div id="action-world-labels" aria-hidden="true"></div>
+      <canvas
+        id="action-radar"
+        width="200"
+        height="100"
+        role="img"
+        aria-label="Radar: gold is you and the beacon, peach is survivors, violet is tethers and enemies"
+      ></canvas>
+      <header class="action-hud">
+        <div class="action-identity">
+          <a class="action-brand" href="/afterlight/">Afterlight</a
+          ><span id="action-place">The Firefly Woods</span>
+        </div>
+        <div
+          class="action-objective"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span id="action-goal">Lead three survivors to the beacon</span
+          ><span id="action-progress">Rescued 0 / 3</span>
+        </div>
+        <div class="action-status">
+          <span id="action-health" aria-label="Health">HP 100</span
+          ><span id="action-score">Score 0</span
+          ><span id="action-heat">Light heat 0%</span>
+        </div>
+        <nav class="action-settings" aria-label="Game settings">
+          <button id="action-sound" type="button" aria-pressed="false">
+            Sound off</button
+          ><button
+            id="action-motion"
+            type="button"
+            aria-pressed="false"
+            aria-label="Reduce decorative motion"
           >
-            <div id="scene" aria-label="An evolving ASCII landscape"></div>
-            <div id="intro">
-              <h1>Afterlight</h1>
-              <p>
-                Three crews are stranded beyond the harbor.<br />Repair the
-                six-beacon rescue network and bring them home.
-              </p>
-              <button id="begin" type="button">[ begin a journey ]</button
-              ><button id="explore" type="button" hidden>
-                [ explore the restored world ]
-              </button>
-              <p id="save-hint">
-                Collect the courier pack. Then catch fireflies to power the
-                forest beacon.
-              </p>
-            </div>
-          </div>
-          <div class="movement" aria-label="Adventure controls">
-            <div class="directions">
-              <button data-direction="left" aria-label="Move left">←</button
-              ><button data-direction="up" aria-label="Move up">↑</button
-              ><button data-direction="down" aria-label="Move down">↓</button
-              ><button data-direction="right" aria-label="Move right">→</button>
-            </div>
-            <button id="interact">[ interact · E ]</button
-            ><button id="tool">[ lantern · Space ]</button>
-            <button id="dodge" type="button">[ dodge · Shift ]</button>
-            <button id="guide" type="button">[ show next task ]</button>
-          </div>
-          <p id="conditions" class="hint"></p>
-          <p class="hint">
-            arrows / WASD move · E interact · Space lantern · Shift dodge · M
-            travel · J journal · P pause
+            Motion</button
+          ><button id="action-pause" type="button">Pause</button
+          ><a href="/">Arcade</a>
+        </nav>
+      </header>
+      <section
+        id="action-overlay"
+        aria-labelledby="action-title"
+        aria-describedby="action-description"
+      >
+        <div class="action-overlay-content">
+          <h1 id="action-title">Bring them home.</h1>
+          <p id="action-description">
+            Blast the shadows. Lead three survivors to the beacon. Defend it
+            until the rescue route opens.
           </p>
-        </section>
-        <aside>
-          <section class="mission" aria-labelledby="mission-heading">
-            <h2 id="mission-heading">Rescue the three stranded crews</h2>
-            <p id="mission-summary">
-              First, power the forest beacon to open the harbor route.
-            </p>
-            <div id="mission-steps" aria-label="Your next tasks"></div>
-          </section>
-          <h2 id="chapter">The Firefly Woods</h2>
-          <p id="objective">
-            Collect the courier pack, catch fireflies, and deliver their light.
+          <div class="action-overlay-buttons">
+            <button id="action-begin" type="button">Begin rescue</button
+            ><button id="action-restart" type="button" hidden>
+              New campaign
+            </button>
+          </div>
+          <p id="action-overlay-hint">
+            Move close to the orange survivors. They will follow you to the
+            golden beacon.
           </p>
-          <div class="context">
-            <h3 id="context-title">Along the way</h3>
-            <p id="context-text">
-              Tap Show next task to find your destination. Move close, then use
-              the action shown here.
-            </p>
-            <div id="choices"></div>
-          </div>
-          <p id="message" role="status" aria-live="polite"></p>
-          <div class="menu-actions">
-            <button id="map">[ travel ]</button
-            ><button id="journal">[ journal ]</button
-            ><button id="pause">[ pause ]</button>
-          </div>
-        </aside>
+        </div>
+      </section>
+      <div class="action-bottom">
+        <div class="action-guidance">
+          <p id="action-tip">Survivors follow when you get close.</p>
+          <p class="action-instructions">
+            WASD / arrows move · aim + click / Space fire · Shift dodge · P
+            pause
+          </p>
+          <p id="action-message" role="status" aria-live="polite"></p>
+        </div>
+        <nav class="action-direction-pad" aria-label="Touch movement">
+          <button type="button" data-move="up" aria-label="Move up">↑</button
+          ><button type="button" data-move="left" aria-label="Move left">
+            ←</button
+          ><button type="button" data-move="down" aria-label="Move down">
+            ↓</button
+          ><button type="button" data-move="right" aria-label="Move right">
+            →
+          </button>
+        </nav>
+        <div class="action-combat" aria-label="Rescue actions">
+          <button
+            id="action-fire"
+            type="button"
+            aria-label="Fire light toward enemies"
+          >
+            <span class="action-glyph" aria-hidden="true">+</span
+            ><span>Fire</span></button
+          ><button
+            id="action-pulse"
+            type="button"
+            aria-label="Pulse to interrupt nearby threats"
+          >
+            <span class="action-glyph" aria-hidden="true">◎</span
+            ><span>Pulse · E</span></button
+          ><button id="action-dodge" type="button" aria-label="Dodge danger">
+            <span class="action-glyph" aria-hidden="true">»</span
+            ><span>Dodge</span>
+          </button>
+        </div>
       </div>
-      <footer>
+      <div class="action-links">
         <span
           >scenes by <a href="https://ascii.rest/">ascii.rest</a> ·
           <a href="/last-light/vendor/LICENSE">MIT</a></span
-        ><span id="saved">saved locally when available</span
-        ><button data-switch>[ other games ]</button>
-      </footer>
-    </main>
-    <dialog id="menu">
-      <div class="dialog-top">
-        <h2 id="menu-title">Journey</h2>
-        <button id="close-menu" aria-label="Close menu and resume">
-          [ return ]
-        </button>
+        ><a href="/battle-tanks/">Battle Tanks</a
+        ><a href="/afterlight/classic.html">Classic</a
+        ><button type="button" data-switch>Other games</button>
       </div>
-      <div id="menu-content"></div>
-    </dialog>
+    </main>
     <script src="/arcade/switch.js"></script>
-    <script src="/afterlight/vendor/phaser-3.90.0.min.js"></script>
-    <script type="module" src="/afterlight/game.js"></script>
+    <script type="module" src="/afterlight/action-game.js"></script>
   </body>
 </html>

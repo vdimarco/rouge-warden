@@ -9,7 +9,7 @@ import {isBranchSpan,branchLanes,branchSpan,branchOverlap,BRANCH_LANE_RADIUS} fr
 import {LANES,LANE_COUNT,MIN_LANE,MAX_LANE,CENTER_LANE,LANE_SPACING,clampLane} from './lanes.js';
 import {riverHalfWidth} from './river-course.js';
 import {riverFork,nextRiverFork,forkLaneCross,islandContains} from './river-forks.js';
-import {createAdventure,adventureRoute,streamLanes,innerStreamLane,outerStreamLane,recordAdventureClear,finishAdventureStep,treasurePayout} from './river-adventures.js';
+import {createAdventure,adventureRoute,streamLanes,innerStreamLane,outerStreamLane,recordAdventureClear,finishAdventureStep,treasurePayout,BANK_COIN_COUNT} from './river-adventures.js';
 import {groundCoinLayout} from './coin-layouts.js';
 import {chooseGuardedRoute,linkDecisionExit,ORDINARY_COIN_VALUE,GUARDED_COIN_VALUE,SAFE_COIN_OFFSETS,GUARDED_DUCK_OFFSETS} from './risk-reward.js';
 export const JUMP_SECONDS = .66;
@@ -239,6 +239,12 @@ function spanBranches(hazards,safe,coinLane,seed,row,widthsSeen=0){
   return[...hazards.filter(h=>!isBranchSpan(h)&&!coverage.has(h.lane)),...replacements.filter(h=>!coverage.has(h.lane)),...spans];
 }
 function generateAdventureNode(g,packet,node,maxRushSpeed){
+ if(node.kind==='stash'||node.kind==='counterpart'){
+  const choice=packet.choices.find(item=>item.id===node.choiceId);
+  add(g,node.kind==='stash'?'stash':node.type,node.lane,node.d,{value:node.value,coinCount:node.coinCount??0,groundedContact:true,motif:packet.theme,adventureId:packet.id,adventureStep:node.step,routeSide:node.side,routeRole:choice.routeRole,
+   choiceId:choice.id,choiceFamily:choice.family,choiceRole:node.choiceRole,guardId:choice.guardId,returnLane:choice.exitLane,returnD:choice.exitD,sourceGuardD:choice.sourceGuardD??null});
+  return;
+ }
  const row=g.row++,terrain=terrainSection(node.d,g.terrainProfile),common={row,motif:packet.theme,act:courseAct(node.d,levelAt(g.levelIndex).length),episode:-2,beat:node.step??3,recovery:node.kind==='treasure',adventureId:packet.id,adventureStep:node.step??null,sectionId:terrain.id,sectionType:terrain.type,sectionPhase:terrain.phase,terrainActive:terrain.phase==='active'};
  if(!g.patternsSeen.includes(packet.theme))g.patternsSeen.push(packet.theme);
  if(node.kind==='treasure'){
@@ -247,21 +253,23 @@ function generateAdventureNode(g,packet,node,maxRushSpeed){
   return;
  }
  const risk=packet.riskSide,safe=packet.safeSide,branch=node.guard==='branch'||node.guard==='bird',type=branch?'branch':'log',enemy=['crocodile','fish','bird'].includes(node.guard)?node.guard:null;
- const guardMeta={...common,adventureStep:node.step,adventureRequired:true,adventureRouteLane:node.riskLane,routeSide:risk,streamSide:risk,routeRole:'risk',riskAction:branch?'duck':'jump'};
+ const guardChoice=packet.choices.find(choice=>choice.family==='wildlife-bank'&&choice.step===node.step);
+ const guardMeta={...common,guardId:node.guardId,...(guardChoice?{choiceId:guardChoice.id,choiceFamily:guardChoice.family,choiceRole:'guard'}:{}),adventureStep:node.step,adventureRequired:true,adventureRouteLane:node.riskLane,routeSide:risk,streamSide:risk,routeRole:'risk',riskAction:branch?'duck':'jump'};
  const motion=enemy?encounterMotion(node.riskLane,node.d,maxRushSpeed,enemy,g.seed^row,g.levelIndex,streamLanes(risk),enemy==='bird'?(risk*(riverHalfWidth(node.d,g.terrainProfile)+2)-risk*(riverFork(node.d,g.terrainProfile)?.fanOffset??0)-(riverFork(node.d,g.terrainProfile)?.islandCenter??0))/LANE_SPACING+CENTER_LANE:null):null;
  if(enemy){g.encounters.adventureEnemySeen=true;add(g,type,node.riskLane,node.d,{...guardMeta,enemy,motion});}
  else if(branch){add(g,'branch',node.riskLane,node.d,{...guardMeta,branchLanes:streamLanes(risk),branchSide:risk,localWall:true});g.branchWidthsSeen|=1<<2;}
  else for(const lane of streamLanes(risk))add(g,'log',lane,node.d,{...guardMeta,localWall:true});
- const blocked=streamLanes(safe).find(lane=>lane!==node.safeLane);
- add(g,'rock',blocked,node.d,{...common,routeSide:safe,streamSide:safe,routeRole:'safe',adventureRouteLane:node.safeLane});
+ const blocked=streamLanes(safe).find(lane=>lane!==node.safeLane),snatchChoice=packet.choices.find(choice=>choice.family==='boulder-snatch'&&choice.step===node.step),rockChoice=snatchChoice?{choiceId:snatchChoice.id,choiceFamily:snatchChoice.family}:{};
+ add(g,'rock',blocked,node.d,{...common,...rockChoice,choiceRole:snatchChoice?'guard':null,guardId:`rock-${g.levelIndex}-${packet.id}-${node.step}`,routeSide:safe,streamSide:safe,routeRole:'safe',adventureRouteLane:node.safeLane});
  // A single clue at the safe rock opening. The larger stream reward is earned
  // by the required action itself, with two or three height-matched tokens.
- add(g,'coin',node.safeLane,node.d,{...common,routeSide:safe,routeRole:'safe',coinPattern:'shelter',primaryRoute:true});
+ add(g,'coin',node.safeLane,node.d,{...common,...rockChoice,choiceRole:snatchChoice?'hold':null,guardId:`rock-${g.levelIndex}-${packet.id}-${node.step}`,routeSide:safe,routeRole:'safe',coinPattern:'shelter',primaryRoute:true});
+ const rewardChoice=guardChoice?{choiceId:guardChoice.id,choiceFamily:guardChoice.family,choiceRole:'guard'}:{};
  const predicted=timeToImpact(g,node.d),at=relative=>g.distance+forecastTravel(g,predicted+relative);
  if(!branch){
   g.lastJumpRewardD=node.d;
-  for(const offset of [-.04,0,.04])add(g,'coin',node.riskLane,at(offset),{...common,routeSide:risk,routeRole:'risk',coinValue:GUARDED_COIN_VALUE,primaryRoute:false,coinPattern:'jump-arc',high:true,jumpHeight:jumpArcHeight(JUMP_REWARD_LEAD+offset),jumpOffset:offset});
- }else for(const offset of [-.035,.055])add(g,'coin',node.riskLane,node.d+maxRushSpeed*offset,{...common,routeSide:risk,routeRole:'risk',coinValue:GUARDED_COIN_VALUE,primaryRoute:false,coinPattern:'low-passage'});
+  for(const offset of [-.04,0,.04])add(g,'coin',node.riskLane,at(offset),{...common,...rewardChoice,guardId:node.guardId,routeSide:risk,routeRole:'risk',coinValue:GUARDED_COIN_VALUE,primaryRoute:false,coinPattern:'jump-arc',high:true,jumpHeight:jumpArcHeight(JUMP_REWARD_LEAD+offset),jumpOffset:offset});
+ }else for(const offset of [-.035,.055])add(g,'coin',node.riskLane,node.d+maxRushSpeed*offset,{...common,...rewardChoice,guardId:node.guardId,routeSide:risk,routeRole:'risk',coinValue:GUARDED_COIN_VALUE,primaryRoute:false,coinPattern:'low-passage'});
  g.rewardLane=node.safeLane;g.routeLane=node.safeLane;
 }
 export function generateAhead(g) {
@@ -497,6 +505,16 @@ export function updateGame(g, input, dt) {
   const waveRows=new Map(crossed.filter(e=>e.type==='log'&&e.terrainActive&&e.sectionType==='wave-train').map(e=>[Number.isInteger(e.row)?`row:${e.row}`:`entity:${e.id}`,e.sectionId]));
   let fatalContact=null,lastContactCoinTime=null;
   let coinGoalDuringRush=false;
+  // A pouch uses exactly the same per-coin economics as a touched token;
+  // only the aggregate presentation receipt differs.
+  const awardCoin=(coinValue,boosted,elapsed)=>{
+    g.coins++;g.streak++;g.lastCoin=g.time;lastContactCoinTime=frame.time+elapsed;
+    if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
+    g.multiplier=Math.min(5,1+Math.floor(g.streak/8));
+    const value=coinValue*g.multiplier*(boosted?2:1);
+    g.bonus+=value;if(frame.rush<=elapsed)g.charge=Math.min(100,g.charge+2);
+    return value;
+  };
   for (const e of crossed) {
     e.done = true;
     // Sample the same analytic trajectory for coins and powers at their exact
@@ -513,15 +531,23 @@ export function updateGame(g, input, dt) {
       const boosted=boostUntil>elapsed;
       if (overlap&&coinTouchesAtHeight(e,action.action,action.time)) {
         e.collected=true;
-        g.coins++; g.streak++; g.lastCoin = g.time;lastContactCoinTime=frame.time+elapsed;
-        if(g.goal.kind==='coins'&&g.coins-g.goal.start>=g.goal.target&&frame.rush>elapsed)coinGoalDuringRush=true;
-        g.multiplier = Math.min(5, 1 + Math.floor(g.streak / 8));
         const coinValue=e.coinValue===GUARDED_COIN_VALUE?GUARDED_COIN_VALUE:ORDINARY_COIN_VALUE;
-        const value=coinValue*g.multiplier*(boosted?2:1);
-        g.bonus += value; if (frame.rush<=elapsed) g.charge = Math.min(100, g.charge + 2);
+        const value=awardCoin(coinValue,boosted,elapsed);
         emit(g, 'coin', g.streak % 8 === 0 ? `COIN STREAK ×${g.multiplier}` : '', e.lane, { entityId:e.id,high: !!e.high,jumpHeight:coinJumpHeight(e),coinPattern:e.coinPattern??null,primaryRoute:e.primaryRoute!==false,
-          coinValue,adventureId:e.adventureId??null,adventureStep:e.adventureStep??null,routeSide:e.routeSide??null,decisionId:e.decisionId??null,row:e.row??null,routeRole:e.routeRole??null,riskAction:e.riskAction??null,riskEnemy:e.riskEnemy??null,
+          coinValue,choiceId:e.choiceId??null,choiceFamily:e.choiceFamily??null,choiceRole:e.choiceRole??null,guardId:e.guardId??null,adventureId:e.adventureId??null,adventureStep:e.adventureStep??null,routeSide:e.routeSide??null,decisionId:e.decisionId??null,row:e.row??null,routeRole:e.routeRole??null,riskAction:e.riskAction??null,riskEnemy:e.riskEnemy??null,
           distance:e.d, playerLane:lane, playerHeight:jumpHeightAt(action.action,action.time),attracted:false,boosted,value,streak:g.streak,multiplier:g.multiplier,contactTime:frame.time+elapsed });
+      }
+    } else if(e.type==='stash'){
+      const action=crossingAction(frame,elapsed);
+      if(overlap&&coinHeightTouches(false,action.action,action.time)){
+        const coinCount=e.choiceFamily==='wildlife-bank'&&e.coinCount===BANK_COIN_COUNT?BANK_COIN_COUNT:0,boosted=boostUntil>elapsed;
+        const coinValues=Array.from({length:coinCount},()=>awardCoin(ORDINARY_COIN_VALUE,boosted,elapsed));
+        const value=coinCount?coinValues.reduce((sum,points)=>sum+points,0):e.value===200?200:120;e.collected=true;if(!coinCount)g.bonus+=value;
+        const packet=g.adventures.find(item=>item.id===e.adventureId),choice=packet?.choices.find(item=>item.id===e.choiceId);
+        if(choice){choice.collected=true;choice.earned=value;choice.outcome='stash';}
+        emit(g,'stash',coinCount?`${coinCount} COINS · +${value}`:`GOLD STASH +${value}`,obstacleLane,{entityId:e.id,value,coinCount,coinValues,coinValue:coinCount?ORDINARY_COIN_VALUE:null,boosted:coinCount&&boosted,streak:g.streak,multiplier:g.multiplier,choiceId:e.choiceId,choiceFamily:e.choiceFamily,choiceRole:e.choiceRole,
+          adventureId:e.adventureId,adventureStep:e.adventureStep,routeSide:e.routeSide,routeRole:e.routeRole,guardId:e.guardId,returnLane:e.returnLane,returnD:e.returnD,
+          distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),contactTime:frame.time+elapsed});
       }
     } else if(e.type==='treasure'){
       const action=crossingAction(frame,elapsed),packet=g.adventures.find(item=>item.id===e.adventureId);
@@ -551,10 +577,14 @@ export function updateGame(g, input, dt) {
         emit(g,'target',`RELIC +${TARGET_VALUE}`,obstacleLane,{entityId:e.id,value:TARGET_VALUE,charge,distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),contactTime:frame.time+elapsed});
       }
     } else if (e.type === 'magnet' || e.type === 'shield') {
-      if (overlap) {
+      const action=crossingAction(frame,elapsed);
+      if (overlap&&(!e.groundedContact||coinHeightTouches(false,action.action,action.time))) {
         e.collected=true;
+        const shieldAlreadyHeld=e.type==='shield'&&g.shield;
         if (e.type === 'magnet') boostUntil=elapsed+8; else g.shield = true;
-        emit(g, 'power', e.type === 'magnet' ? 'GOLD BOOST ×2! Touch coins for double points' : 'SHIELD! One free hit', e.lane, {power:e.type,distance:e.d,playerLane:lane,contactTime:frame.time+elapsed});
+        const packet=g.adventures.find(item=>item.id===e.adventureId),choice=packet?.choices.find(item=>item.id===e.choiceId);
+        if(choice){choice.counterpartCollected=true;choice.counterpartEarned=e.type==='magnet'?8:shieldAlreadyHeld?0:1;choice.outcome='counterpart';choice.shieldAlreadyHeld=shieldAlreadyHeld;}
+        emit(g, 'power', e.type === 'magnet' ? 'GOLD BOOST ×2! Touch coins for double points' : shieldAlreadyHeld?'SHIELD ALREADY HELD':'SHIELD! One free hit', e.lane, {entityId:e.id,power:e.type,duration:e.type==='magnet'?8:0,shieldAlreadyHeld,choiceId:e.choiceId??null,choiceFamily:e.choiceFamily??null,choiceRole:e.choiceRole??null,adventureId:e.adventureId??null,adventureStep:e.adventureStep??null,routeSide:e.routeSide??null,routeRole:e.routeRole??null,guardId:e.guardId??null,returnLane:e.returnLane??null,returnD:e.returnD??null,distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),contactTime:frame.time+elapsed});
       }
     } else {
       if(!(e.fullRiver||e.localWall)||!passedCanopies.has(e.row))g.rowsPassed++;
@@ -564,7 +594,7 @@ export function updateGame(g, input, dt) {
         if((e.fullRiver||e.localWall)&&canopyContacts.has(e.row))continue;
         if(e.fullRiver||e.localWall)canopyContacts.add(e.row);
         const action=crossingAction(frame,elapsed);
-        const contact={entityId:e.id,adventureId:e.adventureId??null,adventureStep:e.adventureStep??null,routeSide:e.routeSide??null,row:e.row??null,decisionId:e.decisionId??null,obstacle:e.type,enemy:e.enemy??null,obstacleLane,...(isBranchSpan(e)?{branchLanes:branchLanes(e),spanWidth:branchSpan(e).width}:{}),distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),action:action.action,actionTime:action.time,contactTime:frame.time+elapsed};
+        const contact={entityId:e.id,guardId:e.guardId??null,choiceId:e.choiceId??null,choiceFamily:e.choiceFamily??null,choiceRole:e.choiceRole??null,adventureId:e.adventureId??null,adventureStep:e.adventureStep??null,routeSide:e.routeSide??null,row:e.row??null,decisionId:e.decisionId??null,obstacle:e.type,enemy:e.enemy??null,obstacleLane,...(isBranchSpan(e)?{branchLanes:branchLanes(e),spanWidth:branchSpan(e).width}:{}),distance:e.d,playerLane:lane,playerHeight:jumpHeightAt(action.action,action.time),action:action.action,actionTime:action.time,contactTime:frame.time+elapsed};
         const cleared = (e.type === 'log' && jumpClearsAt(action.action,action.time)) || (e.type === 'branch' && action.action === 'duck');
         if (cleared && !rushAtCrossing && graceUntil<=elapsed) {
           // Between lanes a raft can overlap two parts of one action wave.
@@ -596,6 +626,7 @@ export function updateGame(g, input, dt) {
     if (g.phase !== 'playing') break;
   }
   for(const e of crossed)if(e.adventureRequired&&e.done&&(!fatalContact||e.d<=fatalContact.distance))finishAdventureStep(g.adventures.find(item=>item.id===e.adventureId),e.routeSide,e.adventureStep);
+  for(const packet of g.adventures)for(const choice of packet.choices)if(choice.outcome==='pending'&&choice.choiceD<=(fatalContact?.distance??g.distance))choice.outcome='missed';
   if(rebound&&!fatalContact){const result=steeringAt(dt);g.visualLane=result.position;g.laneVelocity=result.velocity;}
   if(g.islandReboundSide!==null&&!islandContains(forkLaneCross(g.visualLane,g.distance,g.terrainProfile),g.distance,g.terrainProfile,ISLAND_RAFT_RADIUS))g.islandReboundSide=null;
   // A bypassed wave or a powered smash breaks the optional jump chain. Parts
@@ -649,7 +680,18 @@ export function snapshot(g) {
   const currentFork=riverFork(g.distance,g.terrainProfile),availableLanes=currentFork&&currentFork.islandHalfWidth>.035?streamLanes(g.visualLane<CENTER_LANE?-1:1):LANES;
   const impendingFork=nextRiverFork(g.distance,g.terrainProfile);
   const islandAhead=impendingFork&&g.lane>CENTER_LANE-.8&&g.lane<CENTER_LANE+.8&&g.distance<impendingFork.splitStart&&timeToImpact(g,impendingFork.start+12)<.9?{id:`island-${impendingFork.id}`,type:'island',enemy:null,fullRiver:false,lane:CENTER_LANE,destinationLane:CENTER_LANE,in:timeToImpact(g,impendingFork.start+12),safeLane:innerStreamLane(impendingFork.safeSide)}:null;
-  const adventure=g.phase==='playing'?g.adventures.find(packet=>packet.end>g.distance&&timeToImpact(g,packet.start)<=2.8):null;
+  const adventure=g.phase==='playing'?g.adventures.find(packet=>packet.end>g.distance&&timeToImpact(g,packet.start)<=4.2):null;
+  const choiceSide=g.visualLane<1.5?-1:g.visualLane>2.5?1:null;
+  let choice=adventure?.choices.filter(item=>(choiceSide===null||item.routeSide===choiceSide)&&(item.choiceD>=g.distance||(item.collected||item.counterpartCollected)&&item.exitD>g.distance)&&timeToImpact(g,item.choiceD)<=2.6).sort((a,b)=>Math.max(g.distance,a.choiceD)-Math.max(g.distance,b.choiceD)||a.choiceD-b.choiceD)[0]??null;
+  if((choice?.collected||choice?.counterpartCollected)&&choice.family==='landing-detour'){
+    const bank=adventure.choices.find(item=>item.family==='wildlife-bank'&&item.guardId===choice.guardId&&!item.collected&&item.choiceD>=g.distance);
+    if(bank)choice={...bank,returnFromChoiceId:choice.id,returnFromValue:choice.earned,returnFromCounterpart:choice.counterpartCollected?choice.counterpartType:null};
+  }else if(choice?.collected&&choice.family==='wildlife-bank'){
+    // A following detour shares this bank's pending exit. Show its fresh offer
+    // and then its actual return, rather than keeping the older bank receipt.
+    const detour=adventure.choices.find(item=>item.family==='landing-detour'&&item.sourceGuardId===choice.guardId&&item.exitD===choice.exitD&&(item.choiceD>=g.distance||(item.collected||item.counterpartCollected)&&item.exitD>g.distance)&&timeToImpact(g,item.choiceD)<=2.6);
+    if(detour)choice={...detour,returnFromChoiceId:choice.id,returnFromValue:choice.earned};
+  }
   const routeSnapshot=route=>({name:route.name,role:route.role,basePoints:route.basePoints,maxPoints:route.maxPoints,cleanClears:route.cleanClears,totalClears:route.totalClears,cleanEligible:route.cleanEligible,cacheLane:route.cacheLane,cacheD:route.cacheD,collected:route.collected,earned:route.earned});
   const decision=g.phase==='playing'&&!adventure?g.decisions.find(packet=>packet.endD>g.distance&&timeToImpact(g,packet.startD)<=2.8):null;
   return { phase: g.phase,laneCount:LANE_COUNT,coinPatterns:[...g.coinPatternsSeen], time: g.time, distance: Math.floor(g.distance), lane: g.lane, visualLane: g.visualLane, actionTime: g.actionTime,
@@ -661,12 +703,13 @@ export function snapshot(g) {
     terrain:{...terrain,comboProgress:terrain.comboAvailable&&sameCombo?g.terrainCombo.count:0,comboClaimed:terrain.comboAvailable&&sameCombo&&g.terrainCombo.claimed},
     goalsCleared: g.goalsCleared, goal: { ...g.goal, progress: Math.min(g.goal.target, Math.floor((g.goal.kind === 'tricks' ? g.jumps + g.ducks : g.goal.kind === 'coins' ? g.coins : g.distance) - g.goal.start)) },
     notice: g.time < g.noticeUntil ? g.notice : '',
-    adventure:adventure?{id:adventure.id,name:adventure.name,theme:adventure.theme,in:timeToImpact(g,adventure.start),phase:g.distance<adventure.splitStart?'approach':g.distance>adventure.splitEnd?'rejoin':'split',riskSide:adventure.riskSide,safeSide:adventure.safeSide,selectedSide:g.visualLane<1.5?-1:g.visualLane>2.5?1:null,requiredClears:3,left:routeSnapshot(adventure.left),right:routeSnapshot(adventure.right)}:null,
+    rewardChoice:choice?{...choice,heldShield:g.shield,activeBoost:g.magnet,in:timeToImpact(g,choice.choiceD),guardIn:timeToImpact(g,choice.guardD),exitIn:timeToImpact(g,choice.exitD),expired:g.distance>choice.choiceD&&!choice.collected&&!choice.counterpartCollected,cleanBonusAtRisk:choice.routeRole==='risk'&&adventureRoute(adventure,choice.routeSide).cleanEligible?400:0}:null,
+    adventure:adventure?{phrase:adventure.phrase,safePhrase:adventure.safePhrase,id:adventure.id,name:adventure.name,theme:adventure.theme,in:timeToImpact(g,adventure.start),phase:g.distance<adventure.splitStart?'approach':g.distance>adventure.splitEnd?'rejoin':'split',riskSide:adventure.riskSide,safeSide:adventure.safeSide,selectedSide:g.visualLane<1.5?-1:g.visualLane>2.5?1:null,requiredClears:3,left:routeSnapshot(adventure.left),right:routeSnapshot(adventure.right)}:null,
     decision:decision?{id:decision.id,in:timeToImpact(g,decision.d),action:decision.action,enemy:decision.enemy,safeLane:decision.safeLane,riskLane:decision.riskLane,
       exitLane:decision.exitLane,safeBasePoints:decision.safeBasePoints,riskBasePoints:decision.riskBasePoints,skillBasePoints:decision.skillBasePoints,
       variant:decision.variant,entryWidth:decision.entryWidth,exitWidth:decision.exitWidth??null,
       committed:Math.abs(g.visualLane-decision.riskLane)<=COIN_LANE_RADIUS&&timeToImpact(g,decision.d)<.8}:null,
-    hint: islandAhead??(next && next.d - g.distance < g.speed*(next.enemy?1.6:1.1) ? { id: next.id, type: next.type, enemy:next.enemy??null,fullRiver:!!next.fullRiver, lane:isBranchSpan(next)?branchSpan(next).centerLane:entityLane(next,g.distance),destinationLane:isBranchSpan(next)?branchSpan(next).centerLane:entityLane(next,next.d),...(isBranchSpan(next)?{spanLanes:branchLanes(next),spanWidth:branchSpan(next).width}:{}),in: timeToImpact(g,next.d), safeLane: availableLanes.find(lane => !g.entities.some(e => e.row === next.row && hazardTouchesLane(e,lane,HAZARD_LANE_RADIUS,g.terrainProfile) && ['rock','log','branch'].includes(e.type))) } : null) };
+    hint: islandAhead??(next && next.d - g.distance < g.speed*(next.enemy?1.6:1.1) ? { id: next.id,guardId:next.guardId??null,localWall:!!next.localWall,fullStreamGate:!!next.localWall&&!!currentFork, type: next.type, enemy:next.enemy??null,fullRiver:!!next.fullRiver, lane:isBranchSpan(next)?branchSpan(next).centerLane:entityLane(next,g.distance),destinationLane:isBranchSpan(next)?branchSpan(next).centerLane:entityLane(next,next.d),...(isBranchSpan(next)?{spanLanes:branchLanes(next),spanWidth:branchSpan(next).width}:{}),in: timeToImpact(g,next.d), safeLane: availableLanes.find(lane => !g.entities.some(e => e.row === next.row && hazardTouchesLane(e,lane,HAZARD_LANE_RADIUS,g.terrainProfile) && ['rock','log','branch'].includes(e.type))) } : null) };
 }
 export function validBest(value) {
   return value?.version===3&&Number.isSafeInteger(value.score)&&value.score>0

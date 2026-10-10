@@ -47,7 +47,7 @@ test('dodging a single wildlife guard sacrifices the clean cache bonus while pre
  assert.ok(found);const {g,fork}=found,input=emptyInput(),side=fork.riskSide,handled=new Set(),events=[];let last=0;
  while(g.phase==='playing'&&g.distance<fork.end){
   const guards=g.entities.filter(e=>!e.done&&e.adventureId===fork.id&&e.routeSide===side&&['log','branch'].includes(e.type)),guard=guards[0],cache=g.entities.find(e=>!e.done&&e.type==='treasure'&&e.routeSide===side);
-  if(guard){const lane=guard.adventureStep===1?(side<0?1:3):guard.adventureRouteLane;steer(g,input,lane);if(guard.adventureStep!==1&&!handled.has(guard.row)&&timeToImpact(g,guard.d)<=.31){queueAction(input,guard.type==='log'?'jump':'duck');handled.add(guard.row);}}
+  if(guard){const lane=guard.adventureStep===1?([side<0?0:3,side<0?1:4].find(lane=>lane!==guard.adventureRouteLane)):guard.adventureRouteLane;steer(g,input,lane);if(guard.adventureStep!==1&&!handled.has(guard.row)&&timeToImpact(g,guard.d)<=.31){queueAction(input,guard.type==='log'?'jump':'duck');handled.add(guard.row);}}
   else if(cache)steer(g,input,cache.lane);else steer(g,input,side<0?1:3);
   updateGame(g,input,1/60);for(const e of g.effects)if(e.id>last){events.push(e);last=e.id;}assert.notEqual(g.phase,'lost');
  }

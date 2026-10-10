@@ -66,6 +66,25 @@ function paintMasks(world, s, seed) {
   const t = new THREE.DataTexture(data, MASK, MASK); t.userData.mask = { data, size: MASK, world: SIZE }; t.flipY = false; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;
   return t;
 }
+// Land use as three soft masks (see makeLandUse in scenery.js): R tilled vineyard soil, G lush meadow, B heath and
+// leaf litter round the rock outcrops. Half the size of the lane masks; the shapes are large and soft.
+const ZONES = 512;
+function paintZones(world, use) {
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = ZONES;
+  const c = canvas.getContext('2d', { willReadFrequently: true }), k = ZONES / world.SIZE;
+  c.fillStyle = '#000'; c.fillRect(0, 0, ZONES, ZONES); c.setTransform(k, 0, 0, k, 0, 0); c.globalCompositeOperation = 'lighten';
+  for (const m of use.meadows) { c.fillStyle = '#00ff00'; c.beginPath(); c.ellipse(m.x, m.y, m.rx * 1.1, m.ry * 1.1, m.angle, 0, Math.PI * 2); c.fill(); }
+  for (const o of use.outcrops) { c.fillStyle = '#0000ff'; c.beginPath(); c.ellipse(o.x, o.y, o.r * 2.3, o.r * 1.9, 0, 0, Math.PI * 2); c.fill(); }
+  for (const f of use.fields) { c.save(); c.translate(f.x, f.y); c.rotate(f.angle); c.fillStyle = '#ff0000'; c.fillRect(-f.w / 2 - 25, -f.h / 2 - 25, f.w + 50, f.h + 50); c.restore(); }
+  const src = c.getImageData(0, 0, ZONES, ZONES).data, data = new Uint8Array(src);
+  // The blur in paintMasks works on MASK-sized data; a small separable pass is enough here.
+  for (const ch of [0, 1, 2]) for (const vertical of [false, true]) for (let a = 0; a < ZONES; a++) {
+    const line = new Float32Array(ZONES); for (let b = 0; b < ZONES; b++) line[b] = data[((vertical ? b * ZONES + a : a * ZONES + b) << 2) + ch];
+    const r = ch ? 6 : 2; for (let b = 0; b < ZONES; b++) { let sum = 0; for (let d = -r; d <= r; d++) sum += line[Math.min(ZONES - 1, Math.max(0, b + d))]; data[((vertical ? b * ZONES + a : a * ZONES + b) << 2) + ch] = sum / (2 * r + 1); }
+  }
+  const t = new THREE.DataTexture(data, ZONES, ZONES); t.userData.zones = { data, size: ZONES, world: world.SIZE }; t.flipY = false; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearFilter; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;
+  return t;
+}
 const GROUND_FRAGMENT = `
   vec2 wp = vWorldP.xz;
   vec2 muv = wp / uSize; float inside = step( 0., muv.x ) * step( muv.x, 1. ) * step( 0., muv.y ) * step( muv.y, 1. );
@@ -79,6 +98,12 @@ const GROUND_FRAGMENT = `
   float mossW = clamp( uRealm * .85 + ( 1. - inside ) + smoothstep( .55, .8, macro.g ) * .35, 0., 1. );
   vec4 ground = mix( mix( grass, dry, dryW ), moss, mossW );
   ground.rgb *= .86 + macro2.r * .28;
+  // Land use (town realm mostly): lush meadow green, heath of dry grass and litter, tilled soil under the vines.
+  vec4 zone = texture2D( uZones, clamp( muv, 0., 1. ) ) * inside; float town = 1. - uRealm * .75;
+  ground.rgb = mix( ground.rgb, grass.rgb * vec3( .9, 1.14, .74 ) * ( .92 + macro2.g * .22 ), zone.g * .75 * town );
+  ground.rgb = mix( ground.rgb, mix( dry.rgb, texture2D( uDirt, r / 260. ).rgb, .3 + macro.b * .3 ) * vec3( 1.06, .95, .78 ), zone.b * .7 );
+  vec4 soil = texture2D( uDirt, wp / 240. ); soil.rgb *= vec3( 1.04, .9, .76 );
+  ground = mix( ground, soil, smoothstep( .15, .7, zone.r ) * town );
   // Height blending: each layer wins where its mask and its own height together beat what lies below.
   vec4 dirt = texture2D( uDirt, wp / 380. ), stone = texture2D( uStone, wp / 330. ), sand = texture2D( uSand, wp / 300. );
   float h = ground.a; vec3 col = ground.rgb; float rough = .96;
@@ -87,7 +112,7 @@ const GROUND_FRAGMENT = `
   vec3 surfaceN = normalize( cross( dFdx( vWorldP ), dFdy( vWorldP ) ) );
   float slope = 1. - abs( surfaceN.y );
   float rocky = max( smoothstep( .025, .19, slope ) * .8, smoothstep( 300., 480., vWorldP.y ) * smoothstep( .44, .7, macro2.g ) * .5 );
-  rocky *= 1. - max( mask.r, max( mask.g, mask.b ) );
+  rocky *= ( 1. - max( mask.r, max( mask.g, mask.b ) ) ) * ( 1. - max( zone.r, zone.g * .7 ) );
   vec3 fellStone = stone.rgb * vec3( .8, .84, .83 );
   col = mix( col, fellStone, rocky ); h = mix( h, stone.a, rocky );
   float sheltered = ( 1. - smoothstep( 70., 180., vWorldP.y ) ) * smoothstep( .48, .78, macro.g ) * .2;
@@ -118,26 +143,27 @@ export class Terrain {
     this.scene = scene; this.textures = textures;
     this.relief = null;
     this.heightUniforms = { uTerrainHeight: { value: null }, uTerrainOrigin: { value: new THREE.Vector2() }, uTerrainSpan: { value: 1 }, uTerrainSegments: { value: 1 } };
-    this.uniforms = { uMask: { value: null }, uMacro: { value: macro }, uGrass: { value: textures.grass }, uDry: { value: textures.dry }, uMoss: { value: textures.moss }, uDirt: { value: textures.dirt }, uStone: { value: textures.stone }, uSand: { value: textures.sand }, uRealm: { value: 0 } };
+    this.uniforms = { uMask: { value: null }, uZones: { value: null }, uMacro: { value: macro }, uGrass: { value: textures.grass }, uDry: { value: textures.dry }, uMoss: { value: textures.moss }, uDirt: { value: textures.dirt }, uStone: { value: textures.stone }, uSand: { value: textures.sand }, uRealm: { value: 0 } };
     const material = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, metalness: 0 });
     material.onBeforeCompile = shader => {
       withWorld(shader); fowAtEnd(shader); Object.assign(shader.uniforms, this.uniforms);
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
-        uniform sampler2D uMask, uMacro, uGrass, uDry, uMoss, uDirt, uStone, uSand; uniform float uRealm;`)
+        uniform sampler2D uMask, uZones, uMacro, uGrass, uDry, uMoss, uDirt, uStone, uSand; uniform float uRealm;`)
         .replace('#include <map_fragment>', 'float groundH = .5, groundRough = .95;\n' + GROUND_FRAGMENT)
         .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = groundRough;')
         .replace('#include <normal_fragment_maps>', BUMP);
     };
     material.customProgramCacheKey = () => 'shore-ground-relief';
-    this.ground = new THREE.Mesh(new THREE.BufferGeometry(), material); this.ground.receiveShadow = true;
+    this.ground = new THREE.Mesh(new THREE.BufferGeometry(), material); this.ground.castShadow = this.ground.receiveShadow = true;
     this.ground.name = 'ground'; scene.add(this.ground);
     this.stone = worldMapped(textures.stone, { color: '#b9b1a1', scale: 240, key: 'stone-built' });
     this.group = new THREE.Group(); scene.add(this.group);
   }
-  // Rebuilt for each match seed: masks, river and bridges follow the live geometry.
-  build(world, s) {
+  // Rebuilt for each match seed: masks, land use, river and bridges follow the live geometry.
+  build(world, s, landUse = { fields: [], meadows: [], outcrops: [] }) {
     const { PATHS } = world, seed = s.seed;
     this.uniforms.uMask.value?.dispose(); this.uniforms.uMask.value = paintMasks(world, s, seed); this.mask = this.uniforms.uMask.value.userData.mask;
+    this.uniforms.uZones.value?.dispose(); this.uniforms.uZones.value = paintZones(world, landUse); this.zones = this.uniforms.uZones.value.userData.zones;
     this.relief = buildRelief(world, s);
     const { vertices, indices, heights, resolution, origin, span, segments } = this.relief;
     const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3)); geometry.setIndex(new THREE.BufferAttribute(indices, 1)); geometry.computeVertexNormals(); geometry.computeBoundingBox(); geometry.computeBoundingSphere();

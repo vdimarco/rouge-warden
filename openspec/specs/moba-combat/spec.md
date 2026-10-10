@@ -93,3 +93,14 @@ Wisp experience SHALL go to living nearby allied heroes. A hero who lands the fi
 #### Scenario: Farm and disengage
 - **WHEN** a hero finishes a lane wisp and stays under hostile tower fire
 - **THEN** finishing gold is visible, nearby allies gain experience, distant heroes gain none, and repeated tower hits punish staying in range.
+
+### Requirement: Stable selected target
+Manual selection SHALL persist while the player moves directly. Movement SHALL end pursuit, and SHALL NOT silently replace a selected wisp with an enemy hero. Selected targets SHALL clear on explicit stop, Recall, death or lost sight.
+
+#### Scenario: Move while attacking a wisp
+- **WHEN** a player selects a visible wisp near an enemy hero and then moves with keys, the pad or a battlefield drag
+- **THEN** pursuit ends, the selected wisp remains selected, attacks in range use it and releasing movement does not restart pursuit.
+
+#### Scenario: Lose or cancel a target
+- **WHEN** the target dies, leaves team sight or the player explicitly stops or Recalls
+- **THEN** selection clears and normal automatic targeting can resume without revealing hidden units.

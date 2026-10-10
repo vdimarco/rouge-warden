@@ -26,7 +26,7 @@ function monitor(page) {
 }
 async function ready(page) {
   monitor(page);
-  await page.goto(base + "/afterlight/");
+  await page.goto(base + "/afterlight/classic.html");
   await page.waitForFunction(() =>
     window.__afterlight?.game?.scene?.isActive("journey"),
   );
@@ -107,11 +107,15 @@ async function verifyDiscovery() {
   await p.keyboard.press("1");
   await p.waitForURL(base + "/afterlight/");
   await p.waitForFunction(() =>
+    window.__afterlightAction?.renderer?.canvas?.dataset.depth === "perspective",
+  );
+  await p.goto(base + "/afterlight/classic.html");
+  await p.waitForFunction(() =>
     window.__afterlight?.game?.scene?.isActive("journey"),
   );
   await p.close();
   evidence.checks.push(
-    "Afterlight machine picker, token5/start1 cabinet launch and Phaser startup",
+    "Afterlight machine picker/token launch, action startup and Classic Phaser startup",
   );
 }
 async function rest(page) {

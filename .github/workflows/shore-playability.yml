@@ -1,0 +1,44 @@
+name: Shore playability QA
+on:
+  pull_request:
+    paths: ['public/tidebreak/**', 'public/arcade/analytics.js', 'qa/tidebreak/**', '.github/workflows/shore-playability.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gameplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run all Shore simulation and input suites
+        run: for f in qa/tidebreak/*.test.mjs; do node "$f"; done
+  playability:
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, portrait, landscape, small-phone]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - name: Verify direct start, target retention, Recall, spell feedback and lane guidance
+        run: node qa/tidebreak/playability.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          VIEWPORT: ${{ matrix.viewport }}
+          SHOTS: ${{ github.workspace }}/test-results/shore-playability
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shore-playability-${{ matrix.viewport }}
+          path: test-results/shore-playability
+          retention-days: 14

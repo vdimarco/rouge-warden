@@ -746,7 +746,7 @@ After the tutorial, occasional eligible partial-action or moving-enemy stations 
 - **THEN** rewards, route actions and attainable payoffs are readable before contact, and edge cues yield to immediate hazards without blocking river or gestures
 
 ### Requirement: Diverging river adventures
-Seeded maps SHALL sometimes split around visible island land into two genuine streams, then smoothly reunite into the five-lane river. Left lanes0–1 and right lanes3–4 SHALL remain on their respective water surfaces; center lane2 SHALL be land only within the island footprint. A shared distance topology SHALL drive raft, rewards, enemies, water, terrain and both renderers. Steering SHALL remain continuous and responsive, with explicit player choice and a hazard-free approach rather than involuntary target-lane changes. Actual island contact SHALL produce coherent collision/protection feedback; protected contact SHALL rebound toward water without teleporting through land. Moving enemies and rooted branch anatomy SHALL remain in their own stream. Tutorial, promised wave chains, finite finishes, accepted speed/action timing and fixed resource bounds SHALL remain intact.
+Seeded maps SHALL sometimes split around visible island land into two genuine streams, then smoothly reunite into the five-lane river. Left lanes 0–1 and right lanes 3–4 SHALL remain on their respective water surfaces; center lane 2 SHALL be land only within the island footprint. A shared distance topology SHALL drive raft, rewards, enemies, water, terrain and both renderers. Steering SHALL remain continuous and responsive, with explicit player choice and a hazard-free approach rather than involuntary target-lane changes. Actual island contact SHALL produce coherent collision/protection feedback; protected contact SHALL rebound toward water without teleporting through land. Moving enemies and rooted branch anatomy SHALL remain in their own stream. Island presentation SHALL visibly distinguish Canopy, Redstone and Moonlight through layered shore materials, asymmetric scenery clusters and landmarks. Split currents, nose eddies and reunion foam SHALL follow actual geography without hiding actionable hazards/rewards or introducing moving seams. Tutorial, promised wave chains, finite finishes, accepted speed/action timing and fixed resource bounds SHALL remain intact.
 
 #### Scenario: Choose and ride a stream
 - **WHEN** a fork approaches and the player steers into either stream
@@ -762,14 +762,14 @@ Seeded maps SHALL sometimes split around visible island land into two genuine st
 
 #### Scenario: Read the split and reunion
 - **WHEN** a player rides a fork on desktop, portrait, short landscape or fallback
-- **THEN** the fork nose, two water channels, island and reunion are visually clear, cues do not obstruct the central river or gestures, and stopped motion and resource usage remain bounded
+- **THEN** the fork nose, two water channels, themed island shore/landmarks and reunion are visually clear, cues do not obstruct the central river or gestures, and stopped motion and resource usage remain bounded
 
 ### Requirement: Purposeful treasure encounters
-Reward placement SHALL express coherent challenges through sparse approach clues, action rewards, attainable landing pockets and visible treasure caches instead of cycling arbitrary geometric scatter. Fork encounters SHALL vary their seeded theme, side and multi-beat action/avoidance sequence. A calmer stream SHALL offer a smaller payoff; a richer stream SHALL offer greater exposure and a larger clean-completion cache reward. Clean completion SHALL depend on actual required unprotected clears. Any physical impact during the chosen adventure SHALL invalidate its clean bonus while preserving the base prize. Partial or protected play SHALL pay only earned rewards. Cache contact SHALL require physical ground-height overlap, have distinct visual and sound feedback, and occur after the preceding action has landed, including maximum future Rush. Normal recoveries, strictly contacted coin streaks and finite finishes SHALL remain attainable.
+Reward placement SHALL express coherent challenges through sparse approach clues, action rewards, attainable landing pockets, voluntary exposed stashes and visible treasure caches instead of cycling arbitrary geometric scatter. Fork encounters SHALL vary their seeded theme, side and complete authored movement/action phrase. A calmer stream SHALL offer an easier base line with optional exposed grabs; a richer stream SHALL offer greater exposure, local alternative income and a larger clean-completion cache reward. Clean completion SHALL depend on actual required unprotected clears. Any physical impact during the chosen adventure SHALL invalidate its clean bonus while preserving the base prize. Optional stash collection alone SHALL NOT invalidate that bonus. Partial or protected play SHALL pay only earned rewards. Cache contact SHALL require physical ground-height overlap, have distinct visual and sound feedback, and occur after the preceding action has landed, including maximum future Rush. Normal recoveries, strictly contacted coin streaks and finite finishes SHALL remain attainable.
 
 #### Scenario: Judge a remembered objective
 - **WHEN** a player approaches either stream's treasure encounter
-- **THEN** its reward and required challenge are readable before commitment, actions form a coherent sequence, and the visible end prize agrees with its actual attainable payout
+- **THEN** its reward and required challenge are readable before commitment, actions and optional grabs form a coherent sequence, and the visible end prize agrees with its actual attainable payout
 
 #### Scenario: Earn a clean or partial prize
 - **WHEN** the player touches a cache after clean required clears, protected play or an incomplete route
@@ -778,3 +778,22 @@ Reward placement SHALL express coherent challenges through sparse approach clues
 #### Scenario: Land into treasure
 - **WHEN** the player completes a jump or duck sequence at normal or future-Rush speed
 - **THEN** the landing pocket and cache remain reachable with existing steering and action durations instead of hiding ground rewards under an airborne raft
+
+### Requirement: Authored fork reward tradeoffs
+Both fork streams SHALL offer voluntary authored reward opportunities with real competing benefits, actual hazards and attainable exits. A wildlife bank SHALL pay eight actual ordinary coins at grounded contact, applying individual coin streak, multiplier, boost, charge and coin-goal semantics; its lane bypasses the required clear and therefore forfeits an otherwise eligible clean bonus. A +200-point landing-detour stash SHALL compete with eight seconds of Gold Boost in the other stream lane at the exact same distance. A +120-point sheltered boulder-snatch SHALL compete with a single nonstacking shield in the clear lane at the exact same distance. Competing pickups SHALL require grounded physical contact within 0.95m and SHALL NOT both be earned on one trajectory. Stashes without coins SHALL retain their fixed point semantics. Optional collection alone SHALL NOT invalidate clean qualification. Seeded variation SHALL select complete authored phrases rather than random reward coordinates; full-stream gates SHALL NOT advertise an action-free bypass. Existing action timing, continuous steering, reachable delayed returns, pool limits and geometry SHALL remain intact. Unsupported promises SHALL be omitted, unrelated imminent hazards SHALL take cue priority, and metadata, world rewards and receipts SHALL agree. Visible cues and world rewards SHALL distinguish actual coins, fixed points, boost duration and shield redundancy before commitment.
+
+#### Scenario: Take coins or preserve clean completion
+- **WHEN** the player takes the eight-coin bank instead of facing its wildlife guard
+- **THEN** contacted coins advance coin goals, streak and Rush using ordinary coin rules, the uncontacted action gold is missed, and the bypassed clear removes the clean-cache bonus
+
+#### Scenario: Choose immediate points or future gold
+- **WHEN** the player reaches the landing-detour alternatives
+- **THEN** the stash pays fixed points or the opposite-lane Gold Boost activates for eight seconds, both cannot pay, and a successful required return remains eligible for clean completion
+
+#### Scenario: Choose score or protection
+- **WHEN** the player reaches the sheltered snatch alternatives
+- **THEN** the exposed stash requires a cutback while holding the clear lane offers one shield, the benefits cannot both pay, and the cue discloses an already-held shield rather than promising another life
+
+#### Scenario: Read the decision at speed
+- **WHEN** a fork or its next reward decision approaches on portrait, desktop, short landscape or fallback
+- **THEN** distinct competing benefits and required exits appear legibly before contact, actual world labels agree with receipts, unrelated urgent dangers take priority, paused/reduced motion remains stable, and drag gestures work through the guidance

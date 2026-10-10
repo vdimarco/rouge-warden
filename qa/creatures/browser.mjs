@@ -16,10 +16,14 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream'); fs.createReadStream(file).pipe(res);
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
-  for (const [name, width, height] of [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]]) {
+  const viewports = [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]];
+  assert(!process.env.CREATURE_VIEWPORT || viewports.some(([name]) => name === process.env.CREATURE_VIEWPORT), 'unknown viewport');
+  for (const [name, width, height] of viewports) {
+    if (process.env.CREATURE_VIEWPORT && process.env.CREATURE_VIEWPORT !== name) continue;
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000 }), errors = [], loadedAssets = new Set();
+    page.setDefaultTimeout(180000);
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
     page.on('response', r => { if (r.url().startsWith(origin)) { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); else loadedAssets.add(new URL(r.url()).pathname); } });
@@ -36,10 +40,17 @@ try {
     await page.screenshot({ path: path.join(shots, `${name}-creatures.png`), fullPage: true });
     await page.goto(origin + '/tidebreak/'); assert.match(await page.title(), /Shore of the Ancients/);
     await page.locator('#menu').waitFor();
+    await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
+    // Software WebGL uses the supported resolution floor. Suspended draws must not
+    // make adaptive resolution raise that budget or resize the canvas during capture.
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d; r.quality=.5; r.raiseAt=Infinity; r.resize(); const draw=r.draw; r.draw=function(...args){draw.apply(this,args); this.gl.getContext().finish();}; });
     await page.waitForFunction(() => document.querySelectorAll('#hero-picks [data-hero]').length === 16);
     await page.waitForFunction(() => { const image=document.querySelector('#hero-art'); return image.complete&&image.naturalWidth>0; });
     await page.evaluate(async () => { await document.fonts.ready; });
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
+    // Exhaustive DOM assertions do not need hundreds of identical software-rendered frames.
+    // Keep selection, model loading and UI animation live; restore drawing for the final image and match.
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d, draw=r.draw; window.__resumeShoreDraw=()=>{r.draw=draw;}; r.draw=()=>{}; });
     assert.equal(await page.locator('#hero-name').textContent(), 'Tidewarden');
     const portraitBackgrounds=await page.locator('#hero-picks .reference-portrait').evaluateAll(portraits=>portraits.map(el=>getComputedStyle(el).backgroundImage));
     assert.equal(portraitBackgrounds.length, 16);
@@ -119,6 +130,7 @@ try {
     }
     for (const identity of HERO_IDENTITIES) {
       await page.locator(`#hero-picks [data-hero="${identity.id}"]`).click();
+      console.log(name, 'hero', identity.name);
       assert.equal(await page.locator('#hero-name').textContent(), identity.name);
       assert(await page.locator('#hero-name').evaluate(el=>{const r=el.getBoundingClientRect();return r.right<=innerWidth+1&&el.scrollWidth<=el.clientWidth+2;}), `${identity.name} title fits at ${width}x${height}`);
       assert.equal(await page.locator('#hero-role').textContent(), identity.subtitle);
@@ -197,26 +209,39 @@ try {
     assert(loadedAssets.has('/tidebreak/art/reference/shore-scene.webp'), 'clean shore scene artwork loads');
     assert.match(await page.locator('.reference-portrait').first().evaluate(el=>getComputedStyle(el).backgroundImage), /portraits\/tidewarden-bust\.webp/);
     assert(HERO_IDENTITIES.every(h=>loadedAssets.has(`/tidebreak/art/portraits/${h.slug}-bust.webp`)), 'every card portrait loads');
+    // The full draft remains an explicit option in Game settings.
+    await page.locator('#hero-settings').click();
+    await page.locator('#draft-preview').click();
+    await page.locator('#draft .draft-card').first().waitFor();
+    assert.equal(await page.locator('#draft .draft-card').count(), 6);
+    assert.equal(await page.locator('#draft [data-slot="0"]').getAttribute('data-team'), '0');
+    await page.locator('#draft-back').click();
+    assert(await page.locator('#draft').isHidden(), 'optional draft can return to the roster');
+    assert(await page.locator('#menu').isVisible(), 'draft Back restores hero selection');
+    const renderedFrames = await page.evaluate(() => { window.__resumeShoreDraw(); return document.getElementById('battle').__shore3d.frames; });
+    await page.waitForFunction(n => document.getElementById('battle').__shore3d.frames > n, renderedFrames);
     await page.screenshot({ path: path.join(shots, `${name}-shore-select.png`), fullPage: true });
     await page.locator('#play').waitFor(); await page.waitForFunction(() => !document.querySelector('#play').disabled, null, { timeout: 240000 });
     if (width>=1000) { await page.locator('#hero-picks [data-hero="0"]').focus(); await page.keyboard.press('Enter'); }
     else await page.locator('#play').click();
-    // Play opens the draft: six heroes lock one by one, then the match starts. Enter skips the remaining picks.
-    await page.locator('#draft .draft-card').first().waitFor();
-    assert.equal(await page.locator('#draft .draft-card').count(), 6);
-    assert.equal(await page.locator('#draft [data-slot="0"]').getAttribute('data-team'), '0');
-    await page.keyboard.press('Enter');
-    await page.waitForFunction(() => document.querySelector('#draft').hidden, null, { timeout: 10000 });
+    // Direct Play keeps the selected hero and starts live without a draft or Spellbook.
+    // Advance the real simulation and exercise HUD controls without filling the software GPU queue.
+    await page.evaluate(() => { const r=document.getElementById('battle').__shore3d, draw=r.draw; window.__resumeMatchDraw=()=>{r.draw=draw;}; r.draw=()=>{}; });
     await page.evaluate(async () => { window.__mobaSnapshot = (await import('/tidebreak/main.js')).snapshot; });
-    // Mouse players open the book on demand; touch play keeps its opening skill choice.
+    await page.waitForFunction(() => window.__mobaSnapshot().running, null, { timeout: 180000 });
+    assert(await page.locator('#draft').isHidden(), 'direct Play bypasses the optional draft');
+    assert.equal(await page.locator('#sheet').isVisible(), false, 'all input modes start without an automatic Spellbook');
+    assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), false, 'direct Play starts an unpaused match');
+    const beforeBook = await page.evaluate(() => window.__mobaSnapshot().player);
     const desktopInput = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
-    if (desktopInput) {
-      assert.equal(await page.locator('#sheet').isVisible(), false, 'mouse play starts without an automatic spellbook');
-      assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), false, 'mouse play starts unpaused');
-      await page.keyboard.press('k');
-    } else {
-      assert.equal(await page.locator('#sheet').isVisible(), true, 'touch play retains the opening spellbook');
+    if (desktopInput) await page.keyboard.press('k');
+    else {
+      await page.locator('#pause').tap();
+      await page.locator('#menu-spellbook').tap();
     }
+    const inspecting = await page.evaluate(() => window.__mobaSnapshot().player);
+    assert.equal(inspecting.skillPoints, beforeBook.skillPoints, 'explicit Spellbook inspection spends no point');
+    assert.deepEqual(inspecting.skillRanks, beforeBook.skillRanks, 'explicit Spellbook inspection trains no skill');
     await page.locator('#train-selected').waitFor();
     // The spellbook pauses play while the player trains a skill.
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), true);
@@ -231,16 +256,27 @@ try {
     await page.locator('#back-skills').click();
     assert.equal(await page.evaluate(() => window.__mobaSnapshot().paused), false);
     await page.waitForFunction(() => { const s=window.__mobaSnapshot(); return s.time>3&&s.graphics.models.heroes===s.graphics.models.heroesTotal; }, null, { timeout: 240000 });
+    const matchFrames = await page.evaluate(() => { window.__resumeMatchDraw(); return document.getElementById('battle').__shore3d.frames; });
+    await page.waitForFunction(n => document.getElementById('battle').__shore3d.frames > n, matchFrames);
     const before = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(before.running); assert(before.time > 3); assert.equal(before.graphics.renderer, 'Mythic 3D'); assert.equal(before.graphics.models.heroes, 16); assert.deepEqual(before.graphics.models.failed, []);
-    await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
+    await page.keyboard.down('d'); await page.waitForFunction(x => window.__mobaSnapshot().player.x > x, before.player.x); await page.keyboard.up('d');
     const after = await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot());
     assert(after.player.x > before.player.x, 'movement stays live with the 3D battlefield');
     if (await page.locator('#coach-close').isVisible()) await page.locator('#coach-close').click();
     await page.locator('#pause').click(); assert(await page.locator('#sheet').isVisible());
     await page.getByRole('button', { name: 'Keep playing' }).click(); assert(!(await page.locator('#sheet').isVisible()));
+    // Finish one actual post-resume frame, then let the native compositor present it
+    // while repeated software draws remain suspended and the pixel budget stays fixed.
+    await page.evaluate(async () => {
+      const r=document.getElementById('battle').__shore3d, draw=r.draw;
+      r.draw=()=>{};
+      draw.call(r,(await import('/tidebreak/main.js')).qaState(),0);
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    });
     await page.screenshot({ path: path.join(shots, `${name}-moba.png`) });
     assert.deepEqual(errors, []); console.log(`PASS ${name}: gallery loads 18 originals; sixteen hero identities and source art; role filters, keyboard grid, hover and tap; Tidewarden skill training; 3D models, movement, pause and resume; no asset or page errors.`);
     await page.close();
   }
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+

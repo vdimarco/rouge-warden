@@ -9,7 +9,7 @@ realms SHALL blend over about one second. The scene SHALL use natural, muted col
 #### Scenario: Start a match in 3D
 - **WHEN** the player starts a match in a browser with WebGL2
 - **THEN** the hero, minions, towers, cores, camps, scenery and river appear as lit 3D models with shadows, and the camera follows the hero
-  as in the 2D view, including the mouse push toward the screen edge.
+  including the mouse push toward the screen edge.
 
 #### Scenario: Realm shift
 - **WHEN** the realm shifts
@@ -30,7 +30,7 @@ inside the 3D world.
 - **THEN** it plays a death motion, stays down briefly and fades, and it appears again at respawn.
 
 ### Requirement: Readable 3D combat information
-Ground telegraphs, aim previews, zones and traps SHALL appear as shapes on the 3D ground with the same meaning and timing as in 2D. Health and
+Ground telegraphs, aim previews, zones and traps SHALL appear as shapes on the 3D ground with their existing gameplay meaning and timing. Health and
 mana bars, names, tower state, status badges, damage numbers and result labels SHALL stay in screen space above their units and stay readable
 over a bright scene. Enemy units outside the player's team vision SHALL stay hidden.
 
@@ -46,26 +46,24 @@ over a bright scene. Enemy units outside the player's team vision SHALL stay hid
 - **WHEN** the player approaches a tower that is still protected
 - **THEN** its label and ward show that it is protected and why.
 
-### Requirement: 2D fallback and graphics choice
-When WebGL2 is not available, when the browser draws WebGL in software without a graphics card, or when the address has `?renderer=2d`,
-the game SHALL use the painted 2D renderer with the same controls, camera behaviour, minimap and HUD. `?renderer=3d` SHALL force the 3D view.
-The pause menu and the game settings SHALL let the player switch between 3D and 2D during play, and the choice SHALL be remembered.
+### Requirement: 3D-only graphics
+The game SHALL render its battlefield exclusively in 3D. Old renderer URLs and preferences SHALL NOT select 2D. Browsers without WebGL2 SHALL receive an actionable graphics message and SHALL NOT start a match. Settings and pause SHALL NOT offer renderer switching.
 
 #### Scenario: Play without WebGL2
 - **WHEN** the browser cannot create a WebGL2 context
-- **THEN** the match starts in the 2D view and remains fully playable.
+- **THEN** Play stays disabled and the player is asked to enable graphics acceleration or use a WebGL2 browser.
 
 #### Scenario: Play on a browser that draws in software
-- **WHEN** WebGL2 works only through a software renderer
-- **THEN** the match starts in the 2D view, and the Graphics choice can still switch it to 3D.
+- **WHEN** WebGL2 works through a software renderer
+- **THEN** the game uses 3D with adaptive resolution.
 
-#### Scenario: Switch the view during a match
-- **WHEN** the player changes Graphics from 3D to 2D in the pause menu and resumes
-- **THEN** the same match continues in the 2D view with the same controls, and the next match starts in 2D.
+#### Scenario: Open an old link
+- **WHEN** the player opens renderer=2d or returns with a saved 2D preference
+- **THEN** the game starts in 3D and removes the old preference.
 
 ### Requirement: 3D performance
 The 3D view SHALL keep a smooth frame rate on a mid-range desktop GPU at 1440x900 and on a 3440x1440 ultra-wide screen. It SHALL lower its
-render resolution when frames are slow, by the same rule the 2D renderer uses, and raise it again when frames recover. World models and
+render resolution when frames are slow, using adaptive resolution, and raise it again when frames recover. World models and
 animations SHALL load before the Play button is ready, and the button SHALL show the progress. Hero models SHALL load in the background; a
 hero whose model is still loading SHALL show a stand-in and the match SHALL not wait for it.
 
@@ -180,7 +178,7 @@ reads against the bright stage art.
 - **AND** the card busts keep their dark warm style
 
 ### Requirement: 3D arena behind the hero select
-When the battlefield renderer is 3D, the hero select SHALL draw the live arena behind the menu. A low cinematic camera (15° pitch, 30° lens, slow sway) SHALL frame the selected hero's model, playing its idle, in the stage area where the portrait stands, lit by the golden sun with only a faint team rim light. The roster, the skill panel, Play and keyboard focus SHALL stay readable and usable over the scene. The painted stage and portrait SHALL show in the 2D view, in the default 2D view of software rendering, until the first hero model is ready, when the selected model fails to load, and when the WebGL context is lost. The arena SHALL draw at most 30 frames a second, and a slow frame SHALL wait twice its own time (at most 2 s) before the next one. It SHALL NOT draw while the tab is hidden, SHALL stop when the draft or a match starts, and SHALL never start the match clock. qa/tidebreak/hero-select-3d.e2e.mjs checks this in SwiftShader.
+When the battlefield renderer is 3D, the hero select SHALL draw the live arena behind the menu. A low cinematic camera (15° pitch, 30° lens, slow sway) SHALL frame the selected hero's model, playing its idle, in the stage area where the portrait stands, lit by the golden sun with only a faint team rim light. The roster, the skill panel, Play and keyboard focus SHALL stay readable and usable over the scene. The painted stage and portrait SHALL show until the first hero model is ready, when the selected model fails to load, and when the WebGL context is lost. The arena SHALL draw at most 30 frames a second, and a slow frame SHALL wait twice its own time (at most 2 s) before the next one. It SHALL NOT draw while the tab is hidden, SHALL stop when the draft or a match starts, and SHALL never start the match clock. qa/tidebreak/hero-select-3d.e2e.mjs checks this in SwiftShader.
 
 #### Scenario: See the selected hero in the arena
 - **WHEN** the player opens the hero select in the 3D view and the selected hero's model has loaded
@@ -206,6 +204,6 @@ When the battlefield renderer is 3D, the hero select SHALL draw the live arena b
 - **WHEN** the player presses Play
 - **THEN** the arena stops drawing during the draft, and the match draws with the gameplay camera.
 
-#### Scenario: 2D view
-- **WHEN** the renderer is 2D (?renderer=2d, no WebGL2, or the software-rendering default)
-- **THEN** the hero select shows the painted stage and the full-length portrait.
+#### Scenario: Legacy renderer link
+- **WHEN** the player opens ?renderer=2d in a WebGL2 browser
+- **THEN** the hero select shows the live 3D arena after the selected model loads.

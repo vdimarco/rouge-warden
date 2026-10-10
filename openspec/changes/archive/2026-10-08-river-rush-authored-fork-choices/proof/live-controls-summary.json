@@ -1,0 +1,124 @@
+{
+  "passed": true,
+  "scope": "short-cold-production-native-controls-and-exact-pause",
+  "productionUrl": "https://arcade.uptick.systems/river-rush/?v=75a484d",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-CqqlzDw1.js",
+  "codeCommit": "75a484ddd0d1a6db5929495e5f989ebef2f8d452",
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "coldDetailedModelsReady": true,
+  "nativeKeyboard": {
+    "from": 2,
+    "to": 3,
+    "code": "ArrowRight",
+    "after": {
+      "seed": 522649919,
+      "campaignSeed": 522649919,
+      "time": 0.35,
+      "distance": 18.230800000000002,
+      "phase": "playing",
+      "lane": 3,
+      "visualLane": 2.993877996371311,
+      "action": "",
+      "shield": true,
+      "shieldsUsed": 0
+    }
+  },
+  "nativePointer": {
+    "from": 3,
+    "to": 2,
+    "point": {
+      "x": 195,
+      "y": 464.20000000000005,
+      "element": "game-canvas"
+    },
+    "after": {
+      "seed": 522649919,
+      "campaignSeed": 522649919,
+      "time": 1.1500000000000004,
+      "distance": 60.10360000000001,
+      "phase": "playing",
+      "lane": 2,
+      "visualLane": 2.0012340980408583,
+      "action": "",
+      "shield": true,
+      "shieldsUsed": 0
+    },
+    "actualAppHandler": true
+  },
+  "naturalStateAtPause": {
+    "seed": 522649919,
+    "campaignSeed": 522649919,
+    "time": 1.2000000000000004,
+    "distance": 62.730000000000004,
+    "phase": "playing",
+    "lane": 2,
+    "visualLane": 2.0002407141402503,
+    "action": "",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "exactPause": {
+    "sameStatus": true,
+    "samePixels": true,
+    "sha256": "35efeae3c46d5fcf4bbf2ee1d7a152c3a93121cce99c1b24fc7efaa21f0a2b28",
+    "modalSettledAndHidden": true
+  },
+  "resourcesBefore": {
+    "uploads": 55,
+    "shaders": 84
+  },
+  "resourcesAfter": {
+    "uploads": 55,
+    "shaders": 84
+  },
+  "pausedRender": {
+    "kind": "webgl",
+    "software": true,
+    "triangles": 93156,
+    "drawCalls": 31,
+    "frames": 37,
+    "contextLost": false
+  },
+  "pageErrors": [],
+  "scoreWrites": [],
+  "browserClosed": true,
+  "reportSha256": "c6ec4a2b4680a08d10a15f528a99bb71c752ba9db9419d155673279e121016e3",
+  "temporarySmokeScriptSha256": "2eb5e74262d7159ac2ab50baed53b56019789a1b31285caf426b6c81dab37df3",
+  "preservedShortSmokeFailure": {
+    "path": "/tmp/river-rush-authored-release-live-controls/live-native-controls-start-lane-failure.json",
+    "sha256": "71258229e9c26a56ca00a5c82f91a86a9384e2027821f98c682b6908b46eef7a",
+    "cause": "Temporary smoke assumed initial lane 1. Actual native Start initializes lane 2; final smoke derives the lane."
+  },
+  "preservedPaidChoiceAudit": {
+    "path": "/tmp/river-rush-authored-release-live-phone/offline-live-gameplay-audit.json",
+    "checks": 16,
+    "passed": true,
+    "originalHarnessPassed": false,
+    "originalReportSha256": "434f172c1639da9e2d4369843c5842dd9a7d209b3c0086a3fcc34d467e3a7d94",
+    "pauseFromPaidTrace": false
+  },
+  "qaControllerCorrection": {
+    "passed": true,
+    "scope": "QA-only post-fork lookahead regression",
+    "oldHarnessSha256": "f566218fc1f6d90074d172f45cd3215e50e8ee046df76c86912ef2eb7ac1bc74",
+    "newHarnessSha256": "f57392aae42d49eee4480c880a03d6533636f3bd9b2500f7dddae4bda2a4fea6",
+    "cases": {
+      "preservedPostForkRocksDeferred": 2,
+      "postReunionRowsAllowed": 2,
+      "actualWithinForkRocksUnchanged": 3,
+      "ordinaryWithinForkRockUnchanged": true,
+      "callerUsesPredicate": true
+    },
+    "forkEnd": 3948.4799999999996,
+    "postForkRockDistance": 3991.5647999999997,
+    "postForkContactPlaneHasNoIsland": true,
+    "actualAppStateOrClockMutations": false,
+    "productFilesEdited": false
+  },
+  "limitations": [
+    "Chromium phone viewport on SwiftShader; hardware phone FPS and human fun are not measured.",
+    "This short run verifies native controls and pause. Paid fork choices are independently audited from the preserved preceding live trace."
+  ],
+  "counterScope": "GPU instrumentation counts non-FLOAT texture uploads and shader compilation; score instrumentation watches non-GET leaderboard requests."
+}

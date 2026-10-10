@@ -1,6 +1,6 @@
 ## ADDED Requirements
 ### Requirement: Ranked default catalog
-The home page SHALL open All Games using shared PostHog aggregates from the last 30 days. Plays SHALL be the default ranking; views, likes and active time SHALL be selectable. Ties SHALL preserve catalog order. Search SHALL filter titles and subtitles. Local launch counts SHALL NOT appear as global activity. Players SHALL be able to open the original machines and the 3D room.
+The home page SHALL open All Games using shared PostHog aggregates from the last 30 days. Featured SHALL be the default order: Reel It In, Shore of the Ancients, Breath of the Lake, In Full Swing, Crimson Rogue, River Rush, then remaining games by plays. Explicit plays, views, likes and active time filters SHALL rank solely by the selected PostHog metric. Ties SHALL preserve catalog order. Search SHALL filter titles and subtitles. Local launch counts SHALL NOT appear as global activity. Players SHALL be able to open the original machines and the 3D room.
 #### Scenario: Shared popularity
 - **WHEN** PostHog returns activity for multiple games
 - **THEN** all visitors see the same ranking and can sort by each metric
@@ -31,3 +31,12 @@ The room SHALL show lit cabinets with game artwork, neon signs and a cinematic e
 - **THEN** an error and a link to All Games remain visible
 ### Requirement: Visual checks
 Desktop and phone-sized browser checks SHALL verify page identity, meaningful content, console health, filtering, ranking persistence, rendering, movement and navigation. Rendered screenshots SHALL be reviewed for clipping and artwork.
+
+### Requirement: Compact catalog entrance
+A small floating sticky header SHALL hold search, compact sorting controls and a menu. Games SHALL begin within 150 pixels of the viewport top at 1363×936 and 390×844. The first three featured games SHALL show artwork and title in the initial viewport. Statistics and metric explanations SHALL be below the games; menu actions SHALL remain reachable while scrolling.
+#### Scenario: First screen
+- **WHEN** a visitor opens home without scrolling
+- **THEN** the three featured games appear first with visible artwork and titles, without a large hero or statistics block above them
+#### Scenario: Browse and filter
+- **WHEN** the visitor scrolls or selects Plays
+- **THEN** the floating header stays reachable and the catalog sorts by actual plays

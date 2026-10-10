@@ -13,7 +13,8 @@ import {entityPose} from './moving-encounters.js';
 import {isBranchSpan,branchSpan} from './branch-spans.js';
 import {LANES,CENTER_LANE,LANE_SPACING} from './lanes.js';
 import {forkLaneCross,riverFork} from './river-forks.js';
-import {projectLane,projectPhysical,fallbackShoreHalfWidth,drawForkFallback,drawTreasure2D,treasurePresentation} from './fork-fallback.js';
+import {projectLane,projectPhysical,fallbackShoreHalfWidth,drawForkFallback,drawTreasure2D,treasurePresentation,drawStash2D} from './fork-fallback.js';
+import {prepareForkFallbackArt} from './fork-fallback-art.js';
 const motions=new WeakMap();
 const branchShapes=new WeakMap();
 const courseProfiles=new WeakMap();
@@ -56,6 +57,7 @@ async function prepareHeroArt(art){
   art.world=prepareWorldArt();
   art.map2d=prepareMap2D(art);
   art.branchLeaves=art.treeleaves??branchLeafArt();
+  art.fork2d=prepareForkFallbackArt(art);
   function frame(source,rect,anchor,raftWidth){
     const canvas=document.createElement('canvas');canvas.width=448;canvas.height=480;
     const scale=300/raftWidth,ctx=canvas.getContext('2d');
@@ -331,12 +333,13 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     }
   }
   // Distant entities draw first. The player is inserted at collision depth.
-  const visible=g.entities.filter(e=>worldEntityVisible(e,g.distance,VIEW_DISTANCE)&&!(e.type==='treasure'&&e.collected)).sort((a,b)=>b.d-a.d),branchHints=[];
+  const visible=g.entities.filter(e=>worldEntityVisible(e,g.distance,VIEW_DISTANCE)&&!(['treasure','stash'].includes(e.type)&&e.collected)).sort((a,b)=>b.d-a.d),branchHints=[];
   for(const e of visible) {
     const encounter=!!e.enemy||e.type==='target';
     const z=e.d-g.distance, p=encounter?encounterProjection(e,g,width,height):project(width,height,e.lane,z);
     let size;
     if(e.type==='coin') size=heroWidth*.28*p.scale*coinAppearance(e).scale;
+    else if(e.type==='stash')size=p.laneSpacing*.55;
     else if(e.type==='treasure')size=p.laneSpacing*.64;
     else if(e.type==='target')size=heroWidth*.4*p.scale;
     else if(e.type==='magnet'||e.type==='shield') size=heroWidth*.52*p.scale;
@@ -355,6 +358,7 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
       else relicTarget(ctx,p,size,g.time,reducedMotion);
       ctx.restore();
     }
+    else if(e.type==='stash')drawStash2D(ctx,e,p,size,g.time,reducedMotion);
     else if(e.type==='treasure'){
       drawTreasure2D(ctx,e,p,size,g.time,reducedMotion);
       if(z<g.speed*1.8&&z>12){
@@ -369,6 +373,9 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
     else if(e.type==='coin'&&coinAppearance(e).premium)premiumCoin(ctx,p.x,bottom,size,reducedMotion?0:Math.sin(g.time*3+e.id)*.045,reducedMotion?1:.55+.45*Math.abs(Math.cos(g.time*5+e.id)));
     else sprite(ctx,art.sprites,e.type==='magnet'?indexes.coin:indexes[e.type],p.x,bottom,size,e.type==='coin' && !reducedMotion?Math.sin(g.time*3+e.id)*.045:0,1,e.type==='coin'&&!reducedMotion?.28+.72*Math.abs(Math.cos(g.time*5+e.id)):1);
     if(e.type==='magnet'){ctx.save();ctx.font=`900 ${Math.max(12,size*.3)}px system-ui`;ctx.textAlign='center';ctx.strokeStyle='#3f2e14';ctx.lineWidth=3;ctx.strokeText('×2',p.x,bottom-size*.32);ctx.fillStyle='#fff8d0';ctx.fillText('×2',p.x,bottom-size*.32);ctx.restore();}
+    if(!e.done&&e.choiceRole==='counterpart'&&z<g.speed*2.6&&size>=12){
+      hazardHint(ctx,{label:e.type==='shield'?'SHIELD · 1 HIT':'GOLD ×2 · 8s',x:p.x,y:bottom-size*.95-8,font:Math.max(10,14*p.scale),branch:false});
+    }
     if(!e.done&&['log','branch','rock'].includes(e.type)&&(!e.fullRiver||e.canopyLead!==false)&&z<g.speed*1.65&&z>10) {
       const span=isBranchSpan(e)?branchProjection(e,g,width,height):null;
       const label=span?span.label:e.enemy==='crocodile'?'CROC · JUMP ↑':e.enemy==='bird'?'BIRD · DUCK ↓':e.enemy==='fish'?'FISH · JUMP ↑':e.type==='log'?'JUMP ↑':e.type==='branch'?'DUCK ↓':'DODGE ↔';
@@ -404,14 +411,14 @@ export function renderGame(ctx,g,art,width,height,reducedMotion=false,active=tru
   const frame=art.downstreamFrames[pose.index];
   hero(ctx,frame,art.paddleFrames[0],player.x+shake,bottom,heroWidth,roll,alpha,landing+Math.abs(impact.pitch),impact.brace);
   for(const effect of g.effects){
-    if(effect.type!=='target'&&effect.type!=='treasure')continue;
+    if(effect.type!=='target'&&effect.type!=='treasure'&&effect.type!=='stash')continue;
     const age=g.time-(effect.contactTime??effect.time),duration=reducedMotion?.28:.55;
     if(age<0||age>=duration)continue;
-    const at=project(width,height,effect.lane,0),progress=age/duration,treasure=effect.type==='treasure';
-    ctx.save();ctx.globalAlpha=1-progress;ctx.strokeStyle=treasure?'#ffe19c':'#99ffed';ctx.lineWidth=Math.max(2,heroWidth*.014);
+    const at=project(width,height,effect.lane,0),progress=age/duration,treasure=effect.type==='treasure',gold=treasure||effect.type==='stash';
+    ctx.save();ctx.globalAlpha=1-progress;ctx.strokeStyle=gold?'#ffe19c':'#99ffed';ctx.lineWidth=Math.max(2,heroWidth*.014);
     ctx.beginPath();ctx.ellipse(at.x,at.foot-heroWidth*.17,heroWidth*(.22+(reducedMotion?0:progress*.22)),heroWidth*.13,0,0,TAU);ctx.stroke();
-    ctx.font=`900 ${Math.max(14,heroWidth*.15)}px system-ui`;ctx.textAlign='center';ctx.fillStyle=treasure?'#fff1bf':'#d9fff2';ctx.strokeStyle='#123d35';ctx.lineWidth=3;
-    const y=at.foot-heroWidth*(.43+(reducedMotion?0:progress*.2)),text=`+${effect.value??200}${treasure&&effect.clean?' CLEAN':''}`;ctx.strokeText(text,at.x,y);ctx.fillText(text,at.x,y);ctx.restore();
+    ctx.font=`900 ${Math.max(14,heroWidth*.15)}px system-ui`;ctx.textAlign='center';ctx.fillStyle=gold?'#fff1bf':'#d9fff2';ctx.strokeStyle='#123d35';ctx.lineWidth=3;
+    const y=at.foot-heroWidth*(.43+(reducedMotion?0:progress*.2)),text=effect.coinCount?`+${effect.coinCount} COINS`:`+${effect.value??200}${treasure&&effect.clean?' CLEAN':''}`;ctx.strokeText(text,at.x,y);ctx.fillText(text,at.x,y);ctx.restore();
   }
   if(impact.active){
     // A local contact halo stays readable under reduced motion. It never

@@ -1,0 +1,7 @@
+- [x] Preserve selected targets independently of movement and check cancellation cases.
+- [x] Add direct match start, saved hero and a compact first-match guide.
+- [x] Expose Recall progress and cancel; fix lane guidance and input-specific help.
+- [x] Add spell rejection feedback and compact phone combat information.
+- [x] Add anonymous gameplay events with failure-safe tests.
+- [x] Run Shore Node suites and browser interaction/layout checks; inspect screenshots.
+- [x] Record verification, update canonical requirements and archive completed change.
