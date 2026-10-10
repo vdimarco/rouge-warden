@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-10",
+  "scope": "Isolated browser save QA followed by unchanged normal public two-stream lifecycle",
+  "normalPublicHostObservedRunningThroughUtc": "2026-10-10T22:30:15Z",
+  "gpuFailure": {
+    "coredump": 2927984,
+    "thread": "RenderThread",
+    "allocation": "Vulkan transient heap",
+    "budgetMiBBefore": 4531,
+    "budgetMiBAfter": 3749,
+    "allocatedMiB": 3580,
+    "failedRequestsMiB": [128, 1],
+    "actualGuardRefusalFreeMiB": 10206,
+    "freeMiBRequiredAtLaunch": 12000,
+    "causeLimit": "Competing GPU work observed; no specific application, leak or driver defect established"
+  },
+  "recovery": {
+    "preflightFreeMiB": 12787,
+    "noOtherRenderedUnrealJobsBeforeLaunch": true,
+    "qualityOrAssetChanges": false,
+    "guardBypassed": false,
+    "isolatedStartupSeconds": 45,
+    "isolatedStartupMinimumFreeMiB": 1278,
+    "nativeVulkanOomOrUnknownArgument": false,
+    "rawStartupSamples": "Saved/BrowserStreaming/SaveQA/gpu-startup.json"
+  },
+  "missionOne": {
+    "isolatedHostSaveSuffix": "BrowserSaveQA",
+    "guestCampaignSaveDisabled": true,
+    "productionAndGuestSaveHashesUnchanged": true,
+    "observationMacrosReadOnly": true,
+    "fixtureRelocationOrDirectPhaseSaveCommand": false,
+    "firstCarEntryAttemptFailed": true,
+    "laterCarPossessionObservedUtc": "2026-10-10T22:26:19Z",
+    "drivenCarParkedAt": [5700, 2168.204704, 100.000364],
+    "completedUtc": "2026-10-10T22:26:59Z",
+    "bothPeersPhase": "RaceReady",
+    "bothPeersCompletedMissions": 1,
+    "saveBytes": 2104,
+    "saveSha256": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e",
+    "reloadedBothPeersUtc": "2026-10-10T22:28:03Z",
+    "saveHashUnchangedAfterReload": true,
+    "rawObservations": "Saved/BrowserStreaming/SaveQA/observations.json",
+    "rawSaveBoundary": "Saved/BrowserStreaming/SaveQA/saved-boundary.json",
+    "rawSavePreservation": "Saved/BrowserStreaming/SaveQA/save-preservation.json"
+  },
+  "input": {
+    "backquoteRenderedNoConsole": true,
+    "nativeTildeSettingAccepted": true,
+    "crewStyleChangedFrom": 9,
+    "crewStyleChangedTo": 10,
+    "friendObservedCrewStyle": 10,
+    "heldSprintSpeed": 800,
+    "speedAfterBrowserClose": 450,
+    "velocityAfterBrowserClose": 0,
+    "nativeInputReleaseLogged": true,
+    "friendMediaContinued": true,
+    "rawHeldDisconnect": "Saved/BrowserStreaming/SaveQA/held-disconnect.json"
+  },
+  "normalPublicRegression": {
+    "source": "Browser/.qa/live-2026-10-10T22-29-01-803Z/summary.json",
+    "startedAt": "2026-10-10T22:29:01.804Z",
+    "finishedAt": "2026-10-10T22:29:23.421Z",
+    "passedChecks": 7,
+    "totalChecks": 7,
+    "decodedFpsSamples": {
+      "host": 23.3,
+      "friend": 22.0,
+      "recoveredSlot": 21.3,
+      "reconnectedHost": 22.6,
+      "friendStillConnected": 23.3
+    },
+    "normalArgumentsNoQaSuffixOrCommands": true,
+    "nativeLogsNoVulkanOomFatalOrUnknownArgument": true,
+    "normalProof": "Saved/BrowserStreaming/SaveQA/normal-host-proof.json",
+    "normalAlivenessSample": "Saved/BrowserStreaming/SaveQA/normal-runtime.json",
+    "normalAlivenessLastUtc": "2026-10-10T22:30:15Z",
+    "normalAlivenessReadings": 12,
+    "normalAlivenessMinimumFreeMiB": 2431,
+    "allThreeChildrenAliveThroughout": true,
+    "demoAndFunnelTransientUnitsRunning": true,
+    "serviceAutoRestart": false
+  },
+  "remaining": [
+    "off-LAN browser media and input",
+    "audible sound",
+    "manual driving feel and sustained input latency",
+    "full Mission 2 browser campaign/reload",
+    "sustained resource stability under competing GPU use"
+  ]
+}

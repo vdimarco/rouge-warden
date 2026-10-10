@@ -903,7 +903,7 @@
     "maxBrowsersPerStream": 1,
     "ice": "STUN only; no TURN",
     "currentInputKeyFilterArgument": "-PixelStreamingKeyFilter=Tilde",
-    "currentInputKeyFilterValidation": "Native setting parsed as Tilde/LastSetByCommandline by isolated existing-package NullRHI check; rendered filtering deferred.",
+    "currentInputKeyFilterValidation": "Native setting parsed as Tilde/LastSetByCommandline in isolated NullRHI check and accepted in both normal rendered peer logs; a bounded rendered Backquote check showed no console, while C still changed crew style.",
     "previousLiveInputKeyFilterArgument": "-PixelStreamingInputKeyFilter=Tilde",
     "previousLiveInputKeyFilterEffective": false
   },
@@ -929,22 +929,21 @@
     ],
     "limits": [
       "Audible sound and subjective handling enjoyment are unverified.",
-      "Off-LAN media and full browser-package campaign save/reload are unverified."
+      "Off-LAN media and full Mission 2 browser campaign progression/reload are unverified."
     ]
   },
   "hostStatus": {
-    "state": "stopped",
+    "state": "running at 2026-10-10T22:30:15Z check",
     "playerPageDeployed": true,
-    "demoUnitRunning": false,
-    "funnelUnitRunning": false,
-    "nordUnitsRemain": false,
-    "tailscaleServeConfiguration": {},
-    "lifecyclePhase": "stopped",
-    "reason": "Later transient-service restart hit Vulkan OOM after another GPU application started; current headroom is below the launch threshold.",
-    "latestObservedFreeMiB": 10096,
+    "demoUnitRunning": true,
+    "funnelUnitRunning": true,
+    "lifecyclePhase": "running",
+    "reason": "Recovered with sufficient GPU headroom, then passed a fresh seven-check public regression. Earlier transient-service restart failed with Vulkan OOM.",
+    "launchPreflightFreeMiB": 12787,
+    "normalAlivenessSampleMinimumFreeMiB": 2431,
     "requiredFreeMiB": 12000,
     "adapter": 0,
-    "postRestartMediaAccepted": false,
+    "postRestartMediaAccepted": true,
     "ownedUnitCleanupPassed": true,
     "unrelatedApplicationsPreserved": true,
     "friendFailure": {
@@ -963,7 +962,8 @@
     "limits": [
       "Threshold is specific to this two-process build on NVIDIA adapter0.",
       "Preflight does not reserve GPU memory or prevent later competing allocations.",
-      "The passed live/performance evidence predates this restart failure."
+      "Earlier 30-second performance evidence predates the restart failure; a fresh seven-check regression passed after recovery.",
+      "The current status is a point-in-time observation, not automatic recovery or uptime acceptance."
     ]
   },
   "keyFilterCheck": {
@@ -976,9 +976,21 @@
     "queriedValue": "Tilde",
     "lastSetBy": "Commandline",
     "unknownArgumentWarning": false,
-    "renderedBrowserVerified": false,
-    "saveIsolation": "SavedBrowserArgsQA with NordNoCampaignSave",
+    "renderedBrowserVerified": true,
+    "saveIsolation": "Saved_BrowserArgsQA with NordNoCampaignSave",
     "selfCheckPassed": true,
     "pythonSyntaxPassed": true
+  },
+  "gpuRecoveryAndMissionOne": "BrowserGpuRecovery.json",
+  "freshNormalPublicRegression": {
+    "rawSummary": "Browser/.qa/live-2026-10-10T22-29-01-803Z/summary.json",
+    "startedAt": "2026-10-10T22:29:01.804Z",
+    "finishedAt": "2026-10-10T22:29:23.421Z",
+    "passed": true,
+    "checksPassed": 7,
+    "decodedFpsSamples": [23.3, 22.0, 21.3, 22.6, 23.3],
+    "normalAlivenessLastUtc": "2026-10-10T22:30:15Z",
+    "normalAlivenessMinimumFreeMiB": 2431,
+    "normalAlivenessAllThreeChildrenAlive": true
   }
 }
