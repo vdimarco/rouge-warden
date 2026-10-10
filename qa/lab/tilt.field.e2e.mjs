@@ -47,9 +47,10 @@ async function watchFieldTransition(page) {
     const count = text => /^Field (\d+)$/.exec(text)?.[1];
     const reward = text => /^Gravity charge gained · (\d+)\/\d+$/.exec(text)?.[1];
     // Rewards announce their new count immediately; button text updates at 10 Hz.
-    // These watchers start in a fresh run, or after cancellation before any
-    // deployment. A visible reward count has therefore never been reduced by a spend.
-    let before = Math.max(Number(count(button.textContent)), Number(reward(message.textContent) || 0));
+    // A fresh voyage resets the button but retains the previous voyage's hidden
+    // message text. Only a still-visible reward can outrun the 10 Hz button.
+    const visibleReward = message.classList.contains('visible') ? reward(message.textContent) : 0;
+    let before = Math.max(Number(count(button.textContent)), Number(visibleReward || 0));
     let aiming = false;
     window.__fieldTransition = null;
     const observer = new MutationObserver(records => {
