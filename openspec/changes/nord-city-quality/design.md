@@ -1,0 +1,9 @@
+Reuse completed Meshy running outputs and the exact retained rigs for locally authored jump/landing clips. Keep player movement authoritative; integrate local animation phase from observed speed and hold comic bone poses at 12 updates per world second. Preserve source corner normals/full UV precision and protect face interiors with stencil-aware filtering.
+
+The generated base-color atlases contain tiny disconnected UV islands; default reduced mips bleed neighboring colors and erase painted face detail. A lit no-mip candidate restores all eight faces. Preserve the existing lit material/emission and original atlas pixels; set only base-color mip generation to NoMipmaps, NeverStream on and LOD bias zero, including future imports. Require fresh native player captures at both supported sizes and recooked performance evidence. The candidate's explicit mip-0 sampler and forced sole mesh LOD are diagnostic overrides, not required production changes.
+
+Add bounded authority traffic and walkers using mapped roads and existing paths. Validate both full traffic lanes against this world's collision, prune blocked branches and reserve junction space before turns. Park only on sufficiently wide mapped asphalt; shift the starter 145 cm into its forward lane. Keep native nearest-car interaction unchanged.
+
+Refresh canopy, masonry and pond shading while retaining survey building massing, pond/path layouts, tree XY/diameters and saved gameplay actor transforms. Crown dimensions, trunk heights, facades and landmark detail remain estimates. Back up assets before regeneration and document the remaining terrain/court gaps.
+
+Verify sources, actual native movement and replication, minute-long circulation/recovery, rendered faces/poses and both desktop layouts. Use a smaller nonmaximized editor inspection window to fit the shared GPU, and benchmark the separate package at actual Epic settings. No paid generation or new dependencies.

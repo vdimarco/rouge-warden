@@ -1,7 +1,7 @@
 {
   "passed": true,
   "test": "Quebec.Missions.Proximity",
-  "duration_seconds": 0.00821265485137701,
+  "duration_seconds": 0.007432226091623306,
   "assertions": 6,
   "warnings": 0,
   "errors": 0

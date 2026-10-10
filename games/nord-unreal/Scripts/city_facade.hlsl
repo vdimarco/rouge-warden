@@ -1,18 +1,30 @@
-// Estimated facade art: a three-metre window rhythm, independent of survey roof imagery.
-float BrickTone = floor(saturate(dot(Brick, float3(0.299, 0.587, 0.114))) * 3.0) / 3.0;
-float3 Paper = lerp(float3(0.28, 0.085, 0.055), float3(0.48, 0.24, 0.14), BrickTone);
+// Estimated Montreal masonry; surveyed roof imagery is a separate material section.
+float Seed = frac(sin(dot(Center.xy, float2(0.00113, 0.00197))) * 43758.5453);
+float Stone = step(Seed, 0.56);
+float Tone = floor(saturate(dot(Brick, float3(0.299, 0.587, 0.114))) * 4.0) / 4.0;
+float3 Paper = lerp(float3(0.19, 0.085, 0.055), float3(0.29, 0.15, 0.095), Tone);
+Paper = lerp(Paper, lerp(float3(0.25, 0.265, 0.25), float3(0.40, 0.39, 0.345), Tone), Stone);
 if (abs(Normal.z) > 0.7) return Paper;
-float2 P = abs(frac(UV) - 0.5);
-float Outer = step(P.x, 0.245) * step(P.y, 0.3);
-float Trim = step(P.x, 0.225) * step(P.y, 0.28);
-float Glass = step(P.x, 0.195) * step(P.y, 0.25);
-float3 Color = lerp(Paper, float3(0.035, 0.018, 0.055), Outer);
-Color = lerp(Color, float3(0.7, 0.61, 0.42), Trim);
-Color = lerp(Color, float3(0.045, 0.13, 0.2), Glass);
-// Ink mullions and a small flat highlight make each window readable from the street.
-float Mullion = Glass * max(step(P.x, 0.009), step(P.y, 0.009));
-Color = lerp(Color, float3(0.035, 0.018, 0.055), Mullion);
-float Highlight = Glass * step(frac(UV.x), 0.36) * step(0.56, frac(UV.y));
-Color = lerp(Color, float3(0.25, 0.4, 0.46), Highlight * 0.55);
-float StoreyLine = step(frac(UV.y), 0.018);
-return lerp(Color, float3(0.14, 0.065, 0.09), StoreyLine);
+float Height = max(200.0, Center.z + Bounds.z);
+float Z = Position.z;
+float2 Cell = float2(frac(UV.x + Seed * 0.3), frac((Z - 100.0) / 320.0));
+float2 P = abs(Cell - 0.5);
+float Wall = step(110.0, Z) * step(Z, Height - 90.0);
+float Outer = step(P.x, 0.215) * step(P.y, 0.32) * Wall;
+float Trim = step(P.x, 0.198) * step(P.y, 0.30) * Wall;
+float Glass = step(P.x, 0.175) * step(P.y, 0.275) * Wall;
+float Course = max(step(frac(Z / 28.0), 0.025), step(frac(UV.x * 4.0 + floor(Z / 28.0) * 0.5), 0.018));
+float3 Color = Paper * (1.0 - Course * 0.12);
+Color = lerp(Color, float3(0.31, 0.315, 0.28), step(Z, 110.0));
+Color = lerp(Color, float3(0.025, 0.035, 0.035), Outer);
+Color = lerp(Color, float3(0.50, 0.475, 0.405), Trim);
+Color = lerp(Color, float3(0.055, 0.095, 0.105), Glass);
+float Sash = Glass * max(step(P.x, 0.006), step(abs(Cell.y - 0.56), 0.008));
+Color = lerp(Color, float3(0.36, 0.355, 0.315), Sash);
+float Lintel = step(P.x, 0.23) * step(abs(Cell.y - 0.83), 0.025) * Wall;
+float Sill = step(P.x, 0.23) * step(abs(Cell.y - 0.18), 0.018) * Wall;
+Color = lerp(Color, float3(0.44, 0.425, 0.36), max(Lintel, Sill));
+float Basement = step(Z, 82.0) * step(28.0, Z) * step(P.x, 0.15);
+Color = lerp(Color, float3(0.045, 0.055, 0.05), Basement);
+float Cornice = step(Height - 65.0, Z);
+return lerp(Color, float3(0.19, 0.21, 0.195), Cornice);

@@ -21,7 +21,8 @@ def download(item):
 files=[]
 for record in sorted(ROOT.glob('*/result.json')):
     source=record.parent;r=json.loads(record.read_text())
-    outputs={'body.glb':r['rigged_character_glb'],'body.fbx':r['rigged_character_fbx'],'walk.fbx':r['basic_animations']['walking_fbx'],'idle.fbx':r['animation_fbx'],'preview.png':r['thumbnail']}
+    outputs={'body.glb':r['rigged_character_glb'],'body.fbx':r['rigged_character_fbx'],'walk.fbx':r['basic_animations']['walking_fbx'],'idle.fbx':r['animation_fbx'],'preview.png':r['thumbnail'],
+             'run.fbx':r['basic_animations']['running_fbx'],'run.glb':r['basic_animations']['running_armature_glb']}
     assert len(r['texture_urls'])==1,'Expected one texture atlas'
     outputs.update({channel+'.png':r['texture_urls'][0][channel] for channel in ('base_color','normal','roughness','metallic')})
     files.extend((source/name,remote) for name,remote in outputs.items())

@@ -13,6 +13,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     },
@@ -28,6 +36,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     },
@@ -43,6 +59,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     },
@@ -58,6 +82,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     },
@@ -73,6 +105,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     },
@@ -88,6 +128,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     },
@@ -103,6 +151,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     },
@@ -118,6 +174,14 @@
         {
           "name": "Idle",
           "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
         }
       ]
     }

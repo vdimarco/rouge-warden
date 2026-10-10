@@ -46,10 +46,20 @@ class Mesh:
             return (c[0]+minor*math.sin(b),c[1]+(major+minor*math.cos(b))*math.cos(a),c[2]+(major+minor*math.cos(b))*math.sin(a))
         for i in range(segments):
             for j in range(sides):self.face([p(i,j),p(i+1,j),p(i+1,j+1),p(i,j+1)],mat)
-    def save(self,name):
-        path=OUT/'Geometry'/f'{name}.obj';index=1;count=0
+    def save(self,name,directory=None,smooth=False):
+        path=(directory or OUT/'Geometry')/f'{name}.obj';index=1;count=0
+        normals={}
+        if smooth:
+            # Export explicit shared-vertex normals; OBJ smoothing groups alone are
+            # discarded by some FBX import defaults and leave faceted foliage.
+            for faces in self.faces.values():
+                for face in faces:
+                    normal=np.cross(np.subtract(face[1],face[0]),np.subtract(face[2],face[0]))
+                    for point in face:
+                        key=tuple(round(v,4) for v in point)
+                        normals[key]=normals.get(key,np.zeros(3))+normal
         with path.open('w') as f:
-            f.write('mtllib comic.mtl\ns off\no '+name+'\n')
+            f.write('mtllib comic.mtl\ns '+('1' if smooth else 'off')+'\no '+name+'\n')
             for mat,faces in self.faces.items():
                 f.write('usemtl '+mat+'\n')
                 for face in faces:
@@ -58,8 +68,12 @@ class Mesh:
                     uvs=self.uvs.get(id(face))
                     if uvs is None:uvs=np.delete(np.asarray(face),np.argmax(np.abs(normal)),axis=1)/100
                     for uv in uvs:f.write(f'vt {uv[0]:.5f} {uv[1]:.5f}\n')
+                    if smooth:
+                        for point in face:
+                            n=normals[tuple(round(v,4) for v in point)];n=n/max(np.linalg.norm(n),1.e-12)
+                            f.write(f'vn {n[0]:.6f} {-n[1]:.6f} {n[2]:.6f}\n')
                     for tri in triangles([face]):
-                        f.write('f '+' '.join(f'{index+i}/{index+i}' for i in reversed(tri))+'\n');count+=1
+                        f.write('f '+' '.join(f'{index+i}/{index+i}'+(f'/{index+i}' if smooth else '') for i in reversed(tri))+'\n');count+=1
                     index+=len(face)
         assert count>0,name
         return {'file':path.name,'triangles':count,'materials':list(self.faces)}

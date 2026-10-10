@@ -32,7 +32,17 @@ for name,style in styles.items():
     options.import_materials=False;options.import_textures=False;options.create_physics_asset=False
     options.skeletal_mesh_import_data.force_front_x_axis=True
     options.skeletal_mesh_import_data.convert_scene=True;options.skeletal_mesh_import_data.convert_scene_unit=True
+    # Preserve the normals the generated normal atlas was baked against. FBX has
+    # authored normals, but no smoothing/tangent layers; recompute only Mikk tangents.
+    options.skeletal_mesh_import_data.normal_import_method=u.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS
+    options.skeletal_mesh_import_data.normal_generation_method=u.FBXNormalGenerationMethod.MIKK_T_SPACE
+    options.skeletal_mesh_import_data.compute_weighted_normals=False
     mesh=load_file(source/'body.fbx',folder,'SK_Body',options);assert isinstance(mesh,u.SkeletalMesh)
+    build=u.SkeletalMeshEditorSubsystem.get_lod_build_settings(mesh,0)
+    for key,value in {'recompute_normals':False,'recompute_tangents':True,'use_mikk_t_space':True,
+                      'compute_weighted_normals':False,'use_full_precision_u_vs':True,
+                      'use_high_precision_tangent_basis':True}.items():build.set_editor_property(key,value)
+    u.SkeletalMeshEditorSubsystem.set_lod_build_settings(mesh,0,build)
     skeleton=mesh.get_editor_property('skeleton');assert skeleton
     u.EditorAssetLibrary.save_loaded_asset(skeleton,only_if_is_dirty=False)
     material=tools.create_asset('M_Crew',folder,u.Material,u.MaterialFactoryNew()) if not u.EditorAssetLibrary.does_asset_exist(folder+'/M_Crew') else u.load_asset(folder+'/M_Crew')
@@ -40,7 +50,14 @@ for name,style in styles.items():
     for channel,prop in [('base_color',u.MaterialProperty.MP_BASE_COLOR),('normal',u.MaterialProperty.MP_NORMAL),('roughness',u.MaterialProperty.MP_ROUGHNESS),('metallic',u.MaterialProperty.MP_METALLIC)]:
         texture=load_file(source/(channel+'.png'),folder,'T_'+channel)
         texture.set_editor_property('srgb',channel=='base_color')
-        if channel=='normal':
+        if channel=='base_color':
+            texture.set_editor_property('compression_settings',u.TextureCompressionSettings.TC_BC7)
+            texture.set_editor_property('lod_group',u.TextureGroup.TEXTUREGROUP_CHARACTER)
+            # shortcut: tiny UV islands bleed in mips; keep full atlases until UVs are repacked with padding.
+            texture.set_editor_property('mip_gen_settings',u.TextureMipGenSettings.TMGS_NO_MIPMAPS)
+            texture.set_editor_property('never_stream',True)
+            texture.set_editor_property('lod_bias',0)
+        elif channel=='normal':
             texture.set_editor_property('compression_settings',u.TextureCompressionSettings.TC_NORMALMAP)
             texture.set_editor_property('flip_green_channel',True)
         elif channel!='base_color':texture.set_editor_property('compression_settings',u.TextureCompressionSettings.TC_MASKS)
@@ -49,8 +66,18 @@ for name,style in styles.items():
         node.texture=texture
         if channel=='normal':node.sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL
         elif channel!='base_color':node.sampler_type=u.MaterialSamplerType.SAMPLERTYPE_MASKS
-        assert materials.connect_material_property(node,'RGB' if channel in ('normal','base_color') else 'R',prop)
-    # Baked comic inks stay readable under the park's deep tree shadows.
+        if channel=='normal':
+            # Dense generated skin normals overwhelm painted eyes/mouth; retain 35% of their strength.
+            flat=materials.create_material_expression(material,u.MaterialExpressionConstant3Vector,-400,250)
+            flat.set_editor_property('constant',u.LinearColor(0,0,1,1))
+            detail=materials.create_material_expression(material,u.MaterialExpressionLinearInterpolate,-150,250)
+            detail.set_editor_property('const_alpha',.65)
+            assert materials.connect_material_expressions(node,'RGB',detail,'A')
+            assert materials.connect_material_expressions(flat,'',detail,'B')
+            assert materials.connect_material_property(detail,'',prop)
+        else:
+            assert materials.connect_material_property(node,'RGB' if channel=='base_color' else 'R',prop)
+    # Retain the existing emission calibrated to the daylight exposure; source colour pixels stay unchanged.
     base=materials.get_material_property_input_node(material,u.MaterialProperty.MP_BASE_COLOR)
     fill=materials.create_material_expression(material,u.MaterialExpressionMultiply,-150,400);fill.set_editor_property('const_b',250.)
     assert materials.connect_material_expressions(base,'RGB',fill,'A')
@@ -62,7 +89,7 @@ for name,style in styles.items():
         slot.material_interface=material;slots[i]=slot
     mesh.set_editor_property('materials',slots);u.EditorAssetLibrary.save_loaded_asset(mesh)
     clips=[]
-    for kind in ('Walk','Idle'):
+    for kind in ('Walk','Idle','Run','Jump'):
         options=u.FbxImportUI();options.automated_import_should_detect_type=False
         options.mesh_type_to_import=u.FBXImportType.FBXIT_ANIMATION
         options.import_as_skeletal=True;options.import_mesh=False;options.import_animations=True
@@ -72,7 +99,8 @@ for name,style in styles.items():
         options.anim_sequence_import_data.set_editor_property('use_default_sample_rate',True)
         clip=load_file(source/(kind.lower()+'.fbx'),folder,'A_'+kind,options)
         assert isinstance(clip,u.AnimSequence) and clip.get_play_length()>.1,kind
-        clip.set_editor_property('force_root_lock',True)
+        clip.set_editor_property('force_root_lock',kind!='Jump')
+        clip.set_editor_property('enable_root_motion',False)
         u.EditorAssetLibrary.save_loaded_asset(clip);clips.append({'name':kind,'seconds':clip.get_play_length()})
     u.EditorAssetLibrary.save_directory(folder,only_if_is_dirty=False,recursive=True)
     reports.append({'style':style,'name':name,'materials':len(slots),'clips':clips})

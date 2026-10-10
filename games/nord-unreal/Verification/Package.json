@@ -3,9 +3,11 @@
   "package": "Linux Development",
   "separate_process_loopback": true,
   "port": 7791,
+  "native_crew_cycle_calls": 8,
+  "restored_capture_crew_style": 9,
   "loaded_resident_parts": 66,
   "loaded_skeletal_crew": 8,
-  "loaded_animation_clips": 16,
+  "loaded_animation_clips": 32,
   "surveyed_buildings": 1161,
   "rendered_capture": true,
   "rendered_capture_count": 7,
@@ -13,7 +15,7 @@
     1600,
     900
   ],
-  "elapsed_seconds": 29.71,
+  "elapsed_seconds": 31.21,
   "skipped": [
     "external internet",
     "non-Linux platforms",

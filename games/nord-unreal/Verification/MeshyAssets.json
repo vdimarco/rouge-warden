@@ -5,48 +5,168 @@
       "style": 3,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident3/SK_Body_Skeleton.SK_Body_Skeleton"
     },
     {
       "style": 4,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident4/SK_Body_Skeleton.SK_Body_Skeleton"
     },
     {
       "style": 5,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident5/SK_Body_Skeleton.SK_Body_Skeleton"
     },
     {
       "style": 6,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident6/SK_Body_Skeleton.SK_Body_Skeleton"
     },
     {
       "style": 7,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident7/SK_Body_Skeleton.SK_Body_Skeleton"
     },
     {
       "style": 8,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident8/SK_Body_Skeleton.SK_Body_Skeleton"
     },
     {
       "style": 9,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident9/SK_Body_Skeleton.SK_Body_Skeleton"
     },
     {
       "style": 10,
       "height_cm": 182.0,
       "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
       "saved_skeleton": "/Game/ParkComic/Crew/Resident10/SK_Body_Skeleton.SK_Body_Skeleton"
     }
   ]

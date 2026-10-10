@@ -1,0 +1,346 @@
+{
+  "passed": true,
+  "applied": true,
+  "characters": [
+    {
+      "style": 3,
+      "name": "GreenCap51",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "4aec590c67fc5115bdca8289db7d6d3edcaf2820a93f1161288c44e6b27873f1",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    },
+    {
+      "style": 4,
+      "name": "Memphis33",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "77399866124e140135e2cccf945cefb7547a6ffcad945600d7a9a1721483d0fc",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    },
+    {
+      "style": 5,
+      "name": "BlackCap",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "8ddcfca9b11a36f913a7207fcc91716587f423055721190cfe83a6b2ca98187f",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    },
+    {
+      "style": 6,
+      "name": "WhiteCap",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "361d39092624623b7344b6aa042e8b703b46d03726964460ef2cf090fc4b9de6",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    },
+    {
+      "style": 7,
+      "name": "RedJersey",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "060b9b2d79b99d1a9b5c20c9a2c4b1c11a156ea81adfc5d14ec4376df1e38bfb",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    },
+    {
+      "style": 8,
+      "name": "LimeJacket",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "a1a66f32bbdf8ade8b53a7799d2a1698db276de887cbc9d0051dee237fe97282",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    },
+    {
+      "style": 9,
+      "name": "CurlyMetalhead",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "4edeedca0186d415e85bbc2277791b4a89dafc4fadd53d6d8924a2a018f72c77",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    },
+    {
+      "style": 10,
+      "name": "Topknot",
+      "before": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP: 0>",
+        "never_stream": false,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          32,
+          32
+        ]
+      },
+      "after": {
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "never_stream": true,
+        "lod_bias": 0,
+        "max_texture_size": 0,
+        "compression": "<TextureCompressionSettings.TC_BC7: 11>",
+        "platform_dimensions": [
+          2048,
+          2048
+        ]
+      },
+      "changed": true,
+      "source_rgb_sha256": "99ac7b756c6912b85b0e2644a48e3ca544e60b22815d9beca5193b21b76d6beb",
+      "imported_rgb_identical": true,
+      "skeletal_nanite_enabled": false
+    }
+  ],
+  "reason": "default mips blend neighbouring tiny disconnected UV islands, causing triangle color patches and lost painted eyes",
+  "scope": "three base-color texture build settings only; BC7 and original source pixels preserved",
+  "visual_validation_pending": false,
+  "backup_manifest": "Verification/MeshyFaceMipsBackup.json",
+  "protected_assets_unchanged": true,
+  "protected_asset_sha256": {
+    "Content/ParkComic/Crew/SM_Plunger.uasset": "be37718aeadaa8ddc9fc407a4fbbe45fd5251a79897f36a9272e78e73a607e56",
+    "Content/ParkComic/Crew/SM_PVCTube.uasset": "ef9183762d262d319de2bd207b324593139843154154ce922339839aef20142d",
+    "Content/ParkComic/Crew/Resident8/A_Jump.uasset": "058cfdf7c6c752c8fdc10c6bf9b832b5fe71459908fd34641a7f8a50d8926f87",
+    "Content/ParkComic/Crew/Resident8/A_Run.uasset": "edad36dca061867a9d5ec5c46ae57f6271c568c8fe10661809f58848a5c59aca",
+    "Content/ParkComic/Crew/Resident8/M_Crew.uasset": "4f0421977ede9a464e4ca7a7458d9434839be9c33d1e193275c5dffdb08c4d1c",
+    "Content/ParkComic/Crew/Resident8/T_roughness.uasset": "ce216b88ec925dfaa64161c73fb034a6c5d0be5ab086795c412e96d28abdbb8e",
+    "Content/ParkComic/Crew/Resident8/T_normal.uasset": "8dd851646ab6f78a53e7d4e0b72b4c09817caa4390c52dfa0f0e8aa87ea5ad70",
+    "Content/ParkComic/Crew/Resident8/T_metallic.uasset": "3cb8c29a629675ef255c3a3175dbc1db6e1713a14ef05e8595c6e749276f62ef",
+    "Content/ParkComic/Crew/Resident8/SK_Body_Skeleton.uasset": "6d9b44dc326dc9aab71a9a31970dbabd1dd7b8a76df393aa415af8904bdf07b7",
+    "Content/ParkComic/Crew/Resident8/A_Idle.uasset": "f73f0f5a72fa0f47db96cda5b933b379a94ab75afb06f4ccfe49d464d6302a30",
+    "Content/ParkComic/Crew/Resident8/A_Walk.uasset": "8360c6c134beeb1f044e7be385901fa10910fdaed3d1e9cfd4fb6004a0a23fd0",
+    "Content/ParkComic/Crew/Resident8/SK_Body.uasset": "ca3c04a06ab1349c7fe4c6ec3815cd8e714a62f46923971e1ff31d702bfc8a7a",
+    "Content/ParkComic/Crew/Resident3/A_Walk.uasset": "54c17c378ced885e85fa7352a2689f9a2030d0cf6589c6ff1853841d7b0329be",
+    "Content/ParkComic/Crew/Resident3/SK_Body_Skeleton.uasset": "ae5f8ba6880e6be7fe1331a1865de73958d4fd183d283429e3958a559105f454",
+    "Content/ParkComic/Crew/Resident3/T_metallic.uasset": "3b06cdd9225a0c6ccf602f88fd33429cb45c704acda6f586da910009c960dc5b",
+    "Content/ParkComic/Crew/Resident3/T_normal.uasset": "516118fb460c5d0e4ced9350f13051c31bdfac9497743c53fb1230e290e03012",
+    "Content/ParkComic/Crew/Resident3/T_roughness.uasset": "3f20d3a8701f7a51bf1ed311dd5626048fd9bbeaa27dcc987eb17e82b14d6b45",
+    "Content/ParkComic/Crew/Resident3/M_Crew.uasset": "cc777d7359d04fe0c37b8e0917e1ba8e12107d21d34d13ed1630ccd308400c47",
+    "Content/ParkComic/Crew/Resident3/A_Jump.uasset": "6bb727811ce2b5dfa11a000a758c8533b6cda950709c9e4180d8de14a0ab0212",
+    "Content/ParkComic/Crew/Resident3/A_Run.uasset": "05cd5e88de75bae01f481b70f1a69324ee6697795b56b75fba94e620519cebf3",
+    "Content/ParkComic/Crew/Resident3/A_Idle.uasset": "1fd6a70600486b3d6ffd8c656f8eea301f97ccd271fcf5eb20ec7c3c307eb840",
+    "Content/ParkComic/Crew/Resident3/SK_Body.uasset": "8d9e6b542f69953993dfc137058d0939034e60fc1969b1cb12ff17661b687b2f",
+    "Content/ParkComic/Crew/Resident4/A_Jump.uasset": "5fd58d990e2ae809522cfcfd1f9db893edf2030297a2702bf3e6774e0758adeb",
+    "Content/ParkComic/Crew/Resident4/A_Run.uasset": "fcb8210a28eb39fd1bfe4c9740945f82854a4fbdda2b1ec42d4707c038aaa6d5",
+    "Content/ParkComic/Crew/Resident4/M_Crew.uasset": "88d6f58ad8eef9c9b618e78f51b410eb23edfc3f9c9799b3cc1f9edda76b2ced",
+    "Content/ParkComic/Crew/Resident4/T_roughness.uasset": "0907822ef8c3ceaf87fb54a5e253ff6ab0db928934c69fe9302ca90f7469c932",
+    "Content/ParkComic/Crew/Resident4/T_normal.uasset": "0c41022ff4692847172cd91f84f6ee24865291cc84bb74481a65eddd162189b6",
+    "Content/ParkComic/Crew/Resident4/T_metallic.uasset": "d1b4f1f18d6cbcaeef84e833a7ad9f86859e8acbff765d512e7a631b9be8e6d7",
+    "Content/ParkComic/Crew/Resident4/SK_Body_Skeleton.uasset": "5dad378bbd916477dce4d01e0a817450e7797df6c9f47293f5c204601c68bec9",
+    "Content/ParkComic/Crew/Resident4/A_Idle.uasset": "17d9cb061e9e5154e0630ccf2f7e60f26abffa9cc7a5961f04f3e968438b6a89",
+    "Content/ParkComic/Crew/Resident4/A_Walk.uasset": "6d6b290f95450545b7218912afab784d9bed134b82880a8aff6a42434772bda5",
+    "Content/ParkComic/Crew/Resident4/SK_Body.uasset": "b944753dcf4e3996175b3822040174372b9a6715fe1b04d3cb1f80c9bdfe418a",
+    "Content/ParkComic/Crew/Resident5/A_Jump.uasset": "f9e7a095bba8bea210ac67df4cf53234c676102000a8d65aa22b4f3ce5327209",
+    "Content/ParkComic/Crew/Resident5/A_Run.uasset": "39b71b9307e8aaec4a2237b84d9aa7093c5efbb21201e00a1ec9fe2ce6c4ef29",
+    "Content/ParkComic/Crew/Resident5/M_Crew.uasset": "4ebd5f3f133efd287639ed0e77aeecd618b722989a927a3529e58d869ba78604",
+    "Content/ParkComic/Crew/Resident5/T_roughness.uasset": "48a2ab992d0aebc99c5929c82356a1d678211824e6ba3c52796f544c24b478ed",
+    "Content/ParkComic/Crew/Resident5/T_normal.uasset": "da8c028fb931b86b1a28a00f48692d6665514af3f6c13ab8bf5424627a5598ac",
+    "Content/ParkComic/Crew/Resident5/T_metallic.uasset": "2745f3a4694261328be2f22ab09e3d776a227af574cdbddbe062e410babb1117",
+    "Content/ParkComic/Crew/Resident5/SK_Body_Skeleton.uasset": "d41efa80b873cafbae27a6442b328c32dcd5550e5a25b7a3c050f340be12a030",
+    "Content/ParkComic/Crew/Resident5/A_Idle.uasset": "a5d5950f923e4082ae0932df05e9a90889d0f98f90d8a4ea0ba6759164d4e638",
+    "Content/ParkComic/Crew/Resident5/A_Walk.uasset": "4515026e073bfc7acfacf12212457aba8ba23f0a15e8e3d0f6852f84db23b37a",
+    "Content/ParkComic/Crew/Resident5/SK_Body.uasset": "fff0bffb92bfd3447775c3d893b6d2f4104f63699f6d89101724134536c72630",
+    "Content/ParkComic/Crew/Resident6/A_Jump.uasset": "4919e882200c2a64aa9786dac00a639eb29e65e21f285e579f8d3177c545295c",
+    "Content/ParkComic/Crew/Resident6/A_Run.uasset": "f1b1cda1d7e8c365c41ade10bd32d4d31c76954e8bb9c0a0d8206647f64fe8c4",
+    "Content/ParkComic/Crew/Resident6/M_Crew.uasset": "8669214ceaf0c0d6b8fc0dd9109c50a494458c0623903198e99da72f7db0eaa7",
+    "Content/ParkComic/Crew/Resident6/T_roughness.uasset": "6ae6ef89ac92b5c6360596308480957f2f659847796385707458716492833857",
+    "Content/ParkComic/Crew/Resident6/T_normal.uasset": "5ea1f1eb9b8729a780cc7f17f46fb9cd22f660eb405aeb04478db1388170a960",
+    "Content/ParkComic/Crew/Resident6/T_metallic.uasset": "a20d69ee5d19bf646a58e7c883203b05118533152396030f1d686a2d8e17fa13",
+    "Content/ParkComic/Crew/Resident6/SK_Body_Skeleton.uasset": "40d2976f010b82e8f2aabd1bdddadd72ae91194badc1319fca9221889f3b2779",
+    "Content/ParkComic/Crew/Resident6/A_Idle.uasset": "faad0782e99500446e5b90fc8cf8130b07f37390decf45837d42264f6863f269",
+    "Content/ParkComic/Crew/Resident6/A_Walk.uasset": "f98d8a61f1aed1bbd8ad7aa952c9cfcead72f2f670f57d5ca367ea75de6e0855",
+    "Content/ParkComic/Crew/Resident6/SK_Body.uasset": "a8833adb1a5151f7e58bf7d74c456979f0befe9f0175e3ffeca7b35f474900c5",
+    "Content/ParkComic/Crew/Resident7/A_Jump.uasset": "f16e389952f44737c20d369b494b2ae61f223c2571d8e0a22449e12c38fc9a41",
+    "Content/ParkComic/Crew/Resident7/A_Run.uasset": "37d3989da81b2134b9374632dbd8c8d9a029ce86831af8078586b63ce18ec272",
+    "Content/ParkComic/Crew/Resident7/M_Crew.uasset": "6dc1d43f9fcd5a2d6586dfe6e39e1b0c499fc258db3c61c755adeef8610db35f",
+    "Content/ParkComic/Crew/Resident7/T_roughness.uasset": "57aff9e15cf96360f1088d80a44914133d1a39b7bab5d9bf558a669679400973",
+    "Content/ParkComic/Crew/Resident7/T_normal.uasset": "97291ca8835c8969a88fb5fc6c8f4374bb776babbc83b30e94ed0b3989756b49",
+    "Content/ParkComic/Crew/Resident7/T_metallic.uasset": "5c3bddd81b01715ef5a1a4cf32e97f8ecba420a3b176c6a6dcec1ef34584e79d",
+    "Content/ParkComic/Crew/Resident7/SK_Body_Skeleton.uasset": "3b7b86a79614295b01cc8e12ec658c4ade44402df24e1d69575dab043e580596",
+    "Content/ParkComic/Crew/Resident7/A_Idle.uasset": "a70532490f0841e6aa5353d4db8acf6d33b21d2ed67c0c744273a8efc25d74a6",
+    "Content/ParkComic/Crew/Resident7/A_Walk.uasset": "fd8a6ec75f5bfc7958e759cbf5a0b08ebce2f795bf9a8b6191b9a03cb1581491",
+    "Content/ParkComic/Crew/Resident7/SK_Body.uasset": "3b84e8e510b0cf6e2094483f97dc8dd92a29b1065f63ef9bce9c038b83cca842",
+    "Content/ParkComic/Crew/Resident9/A_Jump.uasset": "e6d6e63eb85fd6043de9820cff455a230c943f12bd80cdd0975857ea6cdd1995",
+    "Content/ParkComic/Crew/Resident9/A_Run.uasset": "e75e5e7386ec27bd9d526a70d2c8cea6da687a583fb80ce33fb50607de0b89b4",
+    "Content/ParkComic/Crew/Resident9/M_Crew.uasset": "ad0ffd90b143ce7fd3e96ed18efa66e9666fdb5dd73c45396c0b6e781e39a857",
+    "Content/ParkComic/Crew/Resident9/T_roughness.uasset": "4ac8f48871e1a57631c56111f6a17ba38e9464ad6ad9fd33a9a6f19a5cedd8a9",
+    "Content/ParkComic/Crew/Resident9/T_normal.uasset": "b2e1a042c6ff7abd10fffc1544a23ee5eb29aac25242e2b0bb8b89af4ee53a63",
+    "Content/ParkComic/Crew/Resident9/T_metallic.uasset": "8241fca2c90f4e2ff7bf5e4911d8c30a15b8f707f44d2232fdcef09f26df90a8",
+    "Content/ParkComic/Crew/Resident9/SK_Body_Skeleton.uasset": "d3f0fa371a6b4f27188abf4f90fc5caca3c9afa0a4a78ab47dbc142f3a1cd291",
+    "Content/ParkComic/Crew/Resident9/A_Idle.uasset": "796e4460e0b09211fff3edc772a561c86303898d5eeba56fdf4a217202d2aaf6",
+    "Content/ParkComic/Crew/Resident9/A_Walk.uasset": "53fe56224d9f959f125d1b98f26df3faba4de568a85b1648498c9047cb5fc599",
+    "Content/ParkComic/Crew/Resident9/SK_Body.uasset": "b9b361e0f2c1b75c7da94115ebf9286263adddb15a14fe7f19c72319f9907d3f",
+    "Content/ParkComic/Crew/Resident10/A_Jump.uasset": "75ae250825c5af2d8ca8bb367aa19b82986c335dde99ec822893c2b70e79a4f6",
+    "Content/ParkComic/Crew/Resident10/A_Run.uasset": "7ed828561909bfd57f1c9754143b5691989f03411d5b8d13d5bad73612b1a59c",
+    "Content/ParkComic/Crew/Resident10/M_Crew.uasset": "655dd53a53074346ee8cdc9f67014e6068b49340f4f4e3375c3336fddb774a4d",
+    "Content/ParkComic/Crew/Resident10/T_roughness.uasset": "a2e55165b395e55f13fa3313d3f67b5d62f0643da6741fbf1580866185cd187b",
+    "Content/ParkComic/Crew/Resident10/T_normal.uasset": "0e8b13b9098dc3bf2aba1683be0baed2daaef11ed7d3040291177558b556cad0",
+    "Content/ParkComic/Crew/Resident10/T_metallic.uasset": "5ae86e273373852e8fe08b81fb1c5f291785221bdc70e88487cf05f32645b01c",
+    "Content/ParkComic/Crew/Resident10/SK_Body_Skeleton.uasset": "ebbf115b21c13bbddad167237cf1ad3213c1c1b01e356eb310aa5276d0c8fc1b",
+    "Content/ParkComic/Crew/Resident10/A_Idle.uasset": "a674d77d5202c898cb87864930bc24973bb6c5c2e639effda02e428f743e1b0c",
+    "Content/ParkComic/Crew/Resident10/A_Walk.uasset": "3eda0f6382958f41a88c8ae7ce9c4f3a65887894865b9b5c2841fca3b1d1361e",
+    "Content/ParkComic/Crew/Resident10/SK_Body.uasset": "f1c157bfaf15d6e76383d9d68df3dc643db06ad9b64e01d123000c4f5768b457"
+  },
+  "retained_sources_unchanged": true,
+  "visual_review": {
+    "file": "Verification/FaceVisualReview.md",
+    "accepted_utc": "2026-10-10T03:59:27.896641+00:00",
+    "official_reports": [
+      "Verification/PlayerQuality/PlayerQuality1280.json",
+      "Verification/PlayerQuality/PlayerQuality1920.json"
+    ],
+    "scope": "all eight face close-ups at both resolutions; representative run/airborne/landing for styles 3, 5 and 9; saved assets without candidate overrides"
+  },
+  "platform_dimension_probe_note": "Before-apply 32x32 may be asynchronous placeholder dimensions; this is not evidence of the mip sampled in previous rendered frames."
+}

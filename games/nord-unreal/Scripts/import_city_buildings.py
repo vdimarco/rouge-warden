@@ -16,7 +16,7 @@ M = u.MaterialEditingLibrary
 assert '/Maps/LaFontaine.' in u.EditorLevelLibrary.get_editor_world().get_path_name()
 
 
-def mesh_import(filename, folder, name):
+def mesh_import(filename, folder, name, import_normals=False):
     task = u.AssetImportTask()
     task.filename = str(filename); task.destination_path = folder; task.destination_name = name
     task.automated = True; task.replace_existing = True; task.save = True
@@ -25,6 +25,8 @@ def mesh_import(filename, folder, name):
     options.import_as_skeletal = False
     options.static_mesh_import_data.combine_meshes = True
     options.static_mesh_import_data.auto_generate_collision = False
+    if import_normals:
+        options.static_mesh_import_data.normal_import_method = u.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS
     task.options = options
     tools.import_asset_tasks([task])
     assert task.imported_object_paths, str(filename)
@@ -65,14 +67,17 @@ brick = M.create_material_expression(estimated_material, u.MaterialExpressionTex
 brick.set_editor_property('texture', assets.load_asset('/Game/Art/Textures/brick_wall_001_diff'))
 uv = M.create_material_expression(estimated_material, u.MaterialExpressionTextureCoordinate)
 normal = M.create_material_expression(estimated_material, u.MaterialExpressionVertexNormalWS)
+center = M.create_material_expression(estimated_material, u.MaterialExpressionObjectPositionWS)
+bounds = M.create_material_expression(estimated_material, u.MaterialExpressionObjectBounds)
+position = M.create_material_expression(estimated_material, u.MaterialExpressionWorldPosition)
 facade = M.create_material_expression(estimated_material, u.MaterialExpressionCustom)
 facade.set_editor_property('code', (ROOT/'Scripts/city_facade.hlsl').read_text())
 facade.set_editor_property('output_type', u.CustomMaterialOutputType.CMOT_FLOAT3)
 inputs=[]
-for name in ('Brick','UV','Normal'):
+for name in ('Brick','UV','Normal','Center','Bounds','Position'):
     entry=u.CustomInput();entry.set_editor_property('input_name',name);inputs.append(entry)
 facade.set_editor_property('inputs',inputs)
-for node, output, name in ((brick,'RGB','Brick'),(uv,'','UV'),(normal,'','Normal')):
+for node, output, name in ((brick,'RGB','Brick'),(uv,'','UV'),(normal,'','Normal'),(center,'','Center'),(bounds,'','Bounds'),(position,'','Position')):
     assert M.connect_material_expressions(node,output,facade,name)
 assert M.connect_material_property(facade,'',u.MaterialProperty.MP_BASE_COLOR)
 rough = M.create_material_expression(estimated_material, u.MaterialExpressionConstant)

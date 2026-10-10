@@ -2,12 +2,15 @@
 import json
 import math
 from pathlib import Path
+import re
+import sys
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / 'Data/LaFontaine'
 ORIGIN = (45.525, -73.5699)
 BOUNDS = (45.5208, -73.5755, 45.5312, -73.5628)
+ROAD_HIGHWAYS = ('residential','tertiary','secondary','primary','service','unclassified','living_street')
 
 
 def xy(lat, lon):
@@ -21,6 +24,60 @@ def tags(e):
 
 def inside(p):
     return BOUNDS[0] <= p[0] <= BOUNDS[2] and BOUNDS[1] <= p[1] <= BOUNDS[3]
+
+
+def road_width_cm(road_tags):
+    """The illustrated road strip width, matching the existing geometry formula."""
+    width=max(400,min(float(road_tags.get('lanes','2').split(';')[0])*310,1400))
+    return 380 if road_tags.get('highway')=='service' else width
+
+
+def source_road_metadata():
+    """Return road polylines and widths in the original OSM way/segment order."""
+    root=ET.parse(DATA/'osm.xml').getroot()
+    nodes={e.get('id'):(float(e.get('lat')),float(e.get('lon'))) for e in root.findall('node')}
+    roads=[];widths=[]
+    for way in root.findall('way'):
+        refs=[nodes[n.get('ref')] for n in way.findall('nd') if n.get('ref') in nodes]
+        if len(refs)<2 or not all(inside(p) for p in refs):continue
+        road_tags=tags(way)
+        if road_tags.get('highway') not in ROAD_HIGHWAYS:continue
+        roads.append([list(xy(*point)) for point in refs]);widths.append(road_width_cm(road_tags))
+    return roads,widths
+
+
+def road_segments_text(roads):
+    vec=lambda p:'FVector('+','.join(f'{v:.3f}' for v in p)+')'
+    return 'const FVector RoadSegments[][2] = {\n'+',\n'.join('{'+vec([*a,0])+','+vec([*b,0])+'}' for road in roads for a,b in zip(road,road[1:]))+'\n};\n'
+
+
+def road_widths_text(roads,widths):
+    assert len(roads)==len(widths)
+    values=[width for road,width in zip(roads,widths) for a,b in zip(road,road[1:])]
+    return 'const float RoadSegmentWidths[] = {\n'+','.join(f'{width:.3f}f' for width in values)+'\n};\n'
+
+
+def update_road_width_metadata():
+    """Add width metadata without regenerating any geometry or gameplay placement."""
+    layout_path=DATA/'layout.json';layout_text=layout_path.read_text();data=json.loads(layout_text)
+    roads,widths=source_road_metadata()
+    assert roads==data['roads'], 'OSM road ordering/coordinates changed; metadata-only update refused'
+    header_path=ROOT/'Source/Quebec/LaFontaineMap.h';header=header_path.read_text()
+    assert road_segments_text(roads) in header, 'Header road rows do not match the current source'
+    array=road_widths_text(roads,widths)
+    if 'const float RoadSegmentWidths[]' in header:
+        header,count=re.subn(r'const float RoadSegmentWidths\[\] = \{\n[^}]*\};\n',lambda _:array,header)
+        assert count==1
+    else:
+        assert header.endswith('}\n')
+        header=header[:-2]+array+'}\n'
+    if 'road_widths' in data:
+        assert data['road_widths']==widths
+    else:
+        end=layout_text.rfind('}')
+        layout_path.write_text(layout_text[:end]+', "road_widths": '+json.dumps(widths)+layout_text[end:])
+    header_path.write_text(header)
+    print('NORD_ROAD_WIDTHS_READY',len(roads),'roads',sum(len(r)-1 for r in roads),'segment widths')
 
 
 def nearest(point, lines):
@@ -68,7 +125,7 @@ def main():
         nx,ny=-dy/length*width/2,dx/length*width/2
         polygon(mat,[(a[0]+nx,a[1]+ny),(a[0]-nx,a[1]-ny),(b[0]-nx,b[1]-ny),(b[0]+nx,b[1]+ny)],z)
     def points(e): return [xy(*nodes[n.get('ref')]) for n in e.findall('nd') if n.get('ref') in nodes]
-    roads=[]; paths=[]; road_names=set(); counts={'buildings':0,'roads':0,'paths':0,'trees':0,'ponds':0}
+    roads=[];road_widths=[]; paths=[]; road_names=set(); counts={'buildings':0,'roads':0,'paths':0,'trees':0,'ponds':0}
     for ident,e in ways.items():
         refs=[nodes[n.get('ref')] for n in e.findall('nd') if n.get('ref') in nodes]
         if not refs or not all(inside(p) for p in refs): continue
@@ -78,11 +135,9 @@ def main():
             polygon('Court' if t.get('leisure')=='pitch' else 'Path',p,4)
         h=t.get('highway')
         if h and len(p)>1:
-            isroad=h in ('residential','tertiary','secondary','primary','service','unclassified','living_street')
+            isroad=h in ROAD_HIGHWAYS
             if not isroad and h not in ('footway','path','cycleway','pedestrian','steps'):continue
-            width=(float(t.get('lanes','2').split(';')[0])*310 if isroad else 230)
-            width=max(400,min(width,1400)) if isroad else width
-            if h=='service': width=380
+            width=road_width_cm(t) if isroad else 230
             for a,b in zip(p,p[1:]):
                 strip('Road' if isroad else 'Path',a,b,width,6 if isroad else 5)
                 if isroad and h!='service':
@@ -91,6 +146,7 @@ def main():
                         q=lambda v:(a[0]+(b[0]-a[0])*v/length,a[1]+(b[1]-a[1])*v/length)
                         strip('Marking',q(d),q(d+180),10,8)
             (roads if isroad else paths).append(p)
+            if isroad:road_widths.append(width)
             counts['roads' if isroad else 'paths']+=1
             if isroad and t.get('name'):road_names.add(t['name'])
         if 'building' in t and len(p)>3 and p[0]==p[-1]:
@@ -163,7 +219,7 @@ def main():
     landmarks=[xy(45.5247,-73.5683),xy(45.5254601,-73.5711498),xy(45.5288,-73.569)]
     missions=[[*nearest(p,paths)[0],110] for p in landmarks]
     data={'origin':ORIGIN,'bounds':BOUNDS,'address':'1334 Rue Sherbrooke Est','address_xy':address,
-          'spawn':[*spawn,120],'car':[*car,115],'car_yaw':yaw,'missions':missions,'roads':roads,'counts':counts,'surveyed_replacements':replaced,'street_names':sorted(road_names),'detailed_trees':[[*xy(*nodes[e.get('id')]),int(e.get('id'))] for e in root.findall('node') if tags(e).get('natural')=='tree' and inside(nodes[e.get('id')]) and math.dist(xy(*nodes[e.get('id')]),address)<14000]}
+          'spawn':[*spawn,120],'car':[*car,115],'car_yaw':yaw,'missions':missions,'roads':roads,'road_widths':road_widths,'counts':counts,'surveyed_replacements':replaced,'street_names':sorted(road_names),'detailed_trees':[[*xy(*nodes[e.get('id')]),int(e.get('id'))] for e in root.findall('node') if tags(e).get('natural')=='tree' and inside(nodes[e.get('id')]) and math.dist(xy(*nodes[e.get('id')]),address)<14000]}
     assert counts['ponds']==2 and counts['buildings']>100 and counts['roads']>50 and counts['trees']>100
     assert math.dist(address,spawn)<3000,'Spawn too far from address'
     (DATA/'layout.json').write_text(json.dumps(data,ensure_ascii=False,indent=2))
@@ -183,8 +239,10 @@ def main():
     header='// Generated by Scripts/prepare_lafontaine.py. OSM contributors, ODbL 1.0.\n#pragma once\nnamespace LaFontaine {\n'
     header+='const FVector Spawn='+vec(data['spawn'])+';\nconst FVector CarSpawn='+vec(data['car'])+';\n'
     header+='const FVector Missions[] = {'+','.join(vec(p) for p in missions)+'};\n'
-    header+='const FVector RoadSegments[][2] = {\n'+',\n'.join('{'+vec([*a,0])+','+vec([*b,0])+'}' for r in roads for a,b in zip(r,r[1:]))+'\n};\n}\n'
+    header+=road_segments_text(roads)+road_widths_text(roads,road_widths)+'}\n'
     (ROOT/'Source/Quebec/LaFontaineMap.h').write_text(header)
     print(json.dumps({**counts,'spawn':data['spawn'],'car':data['car'],'yaw':yaw},indent=2))
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    if '--road-widths-only' in sys.argv:update_road_width_metadata()
+    else:main()

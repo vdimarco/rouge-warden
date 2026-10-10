@@ -91,10 +91,14 @@ def discover():
     if any(len(u.GameplayStatics.get_game_state(world).get_editor_property("PlayerArray")) < 2
            for world in (server, client)):
         return False
+    server_car = min(actors(server, "Car"), key=lambda car: distance(car.get_actor_location(), u.Vector(*LAYOUT["car"])))
+    client_car = next((car for car in actors(client, "Car") if car.get_name() == server_car.get_name()), None)
+    if not client_car:
+        return False
     STATE.update(server=server, client=client, server_pc=remote, client_pc=local,
                  host_pc=host, host_char=host.get_controlled_pawn(),
                  server_char=remote.get_controlled_pawn(), client_char=local.get_controlled_pawn(),
-                 server_car=actors(server, "Car")[0], client_car=actors(client, "Car")[0])
+                 server_car=server_car, client_car=client_car)
     assert not STATE["server_car"].get_controller(), "Parked car must not have an automatic AI driver"
     assert mission(server) == mission(client) == 0, "Fresh PIE must start at mission zero"
     if "-NordLag" in u.SystemLibrary.get_command_line():
@@ -141,6 +145,32 @@ def start_drive():
 def stop_drive():
     STATE["client_car"].call_method("MoveForward", (0.0,))
     STATE["client_car"].enable_input(STATE["client_pc"])
+
+
+def check_driving_lane():
+    car = STATE["server_car"]
+    STATE["drive_lane"] = u.Vector(*LAYOUT["car"]) + car.get_actor_right_vector() * 145
+    STATE["drive_lane"].z = car.get_actor_location().z
+    assert distance(car.get_actor_location(), STATE["drive_lane"]) < 3, "Starter is not in its mapped forward lane"
+    REPORT["driving_fixture"] = {"right_lane_offset_cm": 145, "production_spawn_verified": True,
+                                 "ambient_traffic_enabled": True}
+
+
+def approach_target_car():
+    car = STATE["server_car"]
+    right, forward = car.get_actor_right_vector(), car.get_actor_forward_vector()
+    for offset in (right * 185, right * -185, forward * 300, forward * -300):
+        point = car.get_actor_location() + offset
+        if any(other != car and distance(other.get_actor_location(), point) <= distance(car.get_actor_location(), point) + 10
+               for other in actors(STATE["server"], "Car")):
+            continue
+        if u.SystemLibrary.capsule_trace_single_by_profile(STATE["server"], point, point + u.Vector(0, 0, .1),
+                42, 88, "Pawn", False, [STATE["server_char"]], u.DrawDebugTrace.NONE, True):
+            continue
+        teleport(point)
+        STATE["car_approach"] = point
+        return
+    raise AssertionError("No clear standing position selects the target car as nearest")
 
 
 def drive():
@@ -424,6 +454,8 @@ step("jump lands on saved-map ground", lambda: u.SystemLibrary.set_timer_for_nex
 step("client disables comic view without affecting host", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_pc"], "ToggleComicStyle"), lambda: comic_weights(0, 1))
 step("restore far-interaction fixture", lambda: teleport(u.Vector(*LAYOUT["spawn"])), lambda: teleported(u.Vector(*LAYOUT["spawn"])))
 step("out-of-range client interaction rejected", interact, far_rejected)
+step("starter spawns in its mapped forward driving lane", check_driving_lane,
+     lambda: distance(STATE["client_car"].get_actor_location(), STATE["drive_lane"]) < 120)
 step("authority teleport replicated to owning client", lambda: teleport(STATE["server_car"].get_actor_location() + u.Vector(0, 260, 0)),
      lambda: distance(STATE["client_pc"].get_controlled_pawn().get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
 step("wall between player and car rejects entry", block_car_view, blocked_entry)
@@ -494,8 +526,14 @@ step("fall reset returns both peers to Sherbrooke spawn", lambda: teleport(u.Vec
 
 def residents_ready():
     server=actors(STATE['server'],'ParkResident');client=actors(STATE['client'],'ParkResident')
-    if len(server)!=14 or len(client)!=14:return False
-    assert {a.get_editor_property('Style') for a in client}==set(range(11))
+    saved=[a for a in server if not a.actor_has_tag('CityCrowd')]
+    ambient=[a for a in server if a.actor_has_tag('CityCrowd')]
+    assert len(saved)==14 and len(ambient)==96, {'saved_residents':len(saved),'ambient_residents':len(ambient)}
+    saved_names={a.get_name() for a in saved}
+    client_saved=[a for a in client if a.get_name() in saved_names]
+    if len(client_saved)!=14:return False
+    assert {a.get_editor_property('Style') for a in client_saved}==set(range(11))
+    assert {a.get_editor_property('Style') for a in ambient}==set(range(3,11))
     for a in client:
         style=a.get_editor_property('Style')
         if style>=3:
@@ -506,10 +544,16 @@ def residents_ready():
             assert len(props)==1 and distance(props[0].get_world_location(),body.get_socket_location('RightHand'))<3
         else:
             assert sum(c.static_mesh is not None for c in a.get_components_by_class(u.StaticMeshComponent))==6
-    crew=[a for a in server if a.get_editor_property('Style')>=3]
-    STATE['resident']=max(crew,key=lambda a:min(distance(a.get_actor_location(),b.get_actor_location()) for b in server if b!=a))
-    style=STATE['resident'].get_editor_property('Style')
-    STATE['resident_client']=next(a for a in client if a.get_editor_property('Style')==style)
+    if STATE.get('resident_client_world')!=STATE['client']:
+        crew=[a for a in saved if a.get_editor_property('Style')>=3]
+        STATE['resident']=max(crew,key=lambda a:min(distance(a.get_actor_location(),b.get_actor_location()) for b in server if b!=a))
+        STATE['resident_client_world']=STATE['client']
+        # Distance culling deliberately skips remote poses; approach before recording a foot pose.
+        teleport(STATE['resident'].get_actor_location()+STATE['resident'].get_actor_right_vector()*150+u.Vector(0,0,100))
+        return False
+    STATE['resident_client']=next((a for a in client_saved if a.get_name()==STATE['resident'].get_name()),None)
+    if not STATE['resident_client'] or not resident_near():return False
+    if distance(STATE['resident'].get_actor_location(),STATE['resident_client'].get_actor_location())>60:return False
     STATE['resident_start']=STATE['resident'].get_actor_location()
     STATE['resident_foot']=STATE['resident_client'].get_component_by_class(u.SkeletalMeshComponent).get_socket_transform('RightFoot',u.RelativeTransformSpace.RTS_COMPONENT).translation
     return True
@@ -538,7 +582,7 @@ def resident_talked():
     assert missions_equal(3)
     return True
 
-step('fourteen residents and all eight cottage crew styles replicate',lambda:None,residents_ready)
+step('fourteen saved residents plus ninety-six ambient walkers and supplied crew styles',lambda:None,residents_ready)
 step('resident route movement replicates',lambda:None,resident_moved)
 step('client approaches cottage crew member',approach_resident,resident_near)
 step('client E talks to crew without changing completed missions or host dialogue',interact,resident_talked)
@@ -548,6 +592,9 @@ step('client E talks to crew without changing completed missions or host dialogu
 
 def start_packaged_peer():
     import subprocess
+    assert STATE["host_char"].get_editor_property("CrewStyle") == 9
+    # Give the late peer two distinct native player selections to verify.
+    u.SystemLibrary.set_timer_for_next_tick(STATE["host_pc"], "NextCharacter")
     root = Path(u.Paths.project_dir()).resolve()
     runner = root / "Builds/Linux/Quebec.sh"
     assert runner.is_file(), "Build the Linux package before -NordPackagedPeer"
@@ -640,19 +687,22 @@ def rejoined():
         return False
     if len(u.GameplayStatics.get_game_state(client).get_editor_property("PlayerArray")) != 2:
         return False
+    client_car = next((car for car in actors(client, "Car") if car.get_name() == STATE["server_car"].get_name()), None)
+    if not client_car:
+        return False
     STATE.update(client=client, client_pc=local, server_pc=remote,
                  server_char=remote.get_controlled_pawn(), client_char=local.get_controlled_pawn(),
-                 client_car=actors(client, "Car")[0])
+                 client_car=client_car)
     assert not STATE["client_char"].get_editor_property("bHidden")
     return residents_ready()
 
-step("client approaches car before disconnect test", lambda: teleport(STATE["server_car"].get_actor_location() + u.Vector(0, 260, 0)),
-     lambda: distance(STATE["client_char"].get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
+step("client approaches car before disconnect test", approach_target_car,
+     lambda: teleported(STATE["car_approach"]) and distance(STATE["client_char"].get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
 step("client enters car before disconnect", interact, entered)
 step("disconnecting driver releases car and destroys hidden pawn", disconnect_driver, driver_cleaned_up)
 step("reconnecting client receives completed missions and all residents", reconnect, rejoined)
-step("rejoined player approaches abandoned car", lambda: teleport(STATE["server_car"].get_actor_location() + u.Vector(0, 260, 0)),
-     lambda: distance(STATE["client_char"].get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
+step("rejoined player approaches abandoned car", approach_target_car,
+     lambda: teleported(STATE["car_approach"]) and distance(STATE["client_char"].get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
 step("rejoined client can take the released car", interact, entered)
 step("rejoined client exits with completed missions preserved", interact, lambda: exited() and missions_equal(3))
 

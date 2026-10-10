@@ -4,6 +4,7 @@ Uses Unreal's Development-build console/CSV frame commands; no test hooks are ad
 """
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -26,6 +27,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 REPORT = {"passed": False, "mode": "separate Linux Development processes, native console input handlers",
           "checks": [], "soak_cycles": 0, "skipped": ["external internet", "physical input devices", "other platforms"]}
 PEERS = []
+SAVED_RESIDENT_NAMES = set()
 started = time.monotonic()
 
 
@@ -116,6 +118,66 @@ def occupied(text):
     return values[-1] if values else None
 
 
+def car_transforms(text):
+    positions = dict((name, tuple(map(float, xyz))) for name, *xyz in re.findall(
+        r"\.(QuebecCar_\d+)\.Collision.RelativeLocation = \(X=([-\d.]+),Y=([-\d.]+),Z=([-\d.]+)\)", text))
+    rotations = dict((name, float(yaw)) for name, yaw in re.findall(
+        r"\.(QuebecCar_\d+)\.Collision.RelativeRotation = \(Pitch=[-\d.]+,Yaw=([-\d.]+),Roll=[-\d.]+\)", text))
+    if "QuebecCar_0" not in positions or positions.keys() != rotations.keys():
+        return None
+    return {name: (position, math.radians(rotations[name])) for name, position in positions.items()}
+
+
+def send_car(peer, commands):
+    # HandleKismetEventCommand accepts an object name; a class name broadcasts
+    # to every matching actor and would also teleport/modify ambient traffic.
+    offset = len(log(peer))
+    send(peer, "\n".join("ke QuebecCar_0 " + command for command in commands.splitlines()))
+    for command in commands.splitlines():
+        pattern = r"Called '" + re.escape(command) + r"' on instance '[^']*\.QuebecCar_0' \(call succeeded\)"
+        wait_for(lambda pattern=pattern: re.search(pattern, log(peer)[offset:]))
+
+
+def reset_driving_fixture(host, client, label):
+    fixture = REPORT["driving_fixture"]
+    position, yaw = fixture["original_position_cm"], fixture["original_yaw_degrees"]
+    occupant = observe(host, "getall QuebecCar Occupant", lambda text: occupied(text) if occupied(text) != "None" else None)
+    client_occupant = observe(client, "getall QuebecCar Occupant", lambda text: occupied(text) if occupied(text) != "None" else None)
+    send_car(client, "ApplyHandbrake")
+    observe(host, "getall QuebecCar Speed\ngetall QuebecCar bHandbrake",
+            lambda text: car_speed(text) == 0 and ".QuebecCar_0.bHandbrake = True" in text)
+    command = ('K2_SetActorLocationAndRotation "(X=%s,Y=%s,Z=%s)" '
+               '"(Pitch=0,Yaw=%s,Roll=0)" false () true') % (*position, yaw)
+    send_car(host, command)
+
+    def reset_state(text, authority=False):
+        transforms = car_transforms(text)
+        if not transforms or occupied(text) != (occupant if authority else client_occupant):
+            return None
+        actual, angle = transforms["QuebecCar_0"]
+        error = math.dist(actual, position)
+        yaw_error = abs((math.degrees(angle) - yaw + 180) % 360 - 180)
+        # RepMovement defaults to 8-bit rotation: client yaw rounds within 180/256 degrees.
+        yaw_tolerance = .05 if authority else 180 / 256 + .01
+        if error > 2 or yaw_error > yaw_tolerance:
+            return None
+        if authority and not (car_speed(text) == 0 and ".QuebecCar_0.bHandbrake = True" in text and
+                              ".QuebecCar_0.bActorEnableCollision = True" in text and
+                              sum(value == "True" for value in dict(re.findall(
+                                  r"\.(QuebecCar_\d+)\.bTraffic = (True|False)", text)).values()) == 16):
+            return None
+        return {"position_cm": actual, "position_error_cm": round(error, 6),
+                "yaw_degrees": math.degrees(angle), "yaw_error_degrees": round(yaw_error, 6)}
+
+    transforms_command = "getall BoxComponent RelativeLocation\ngetall BoxComponent RelativeRotation\ngetall QuebecCar Occupant"
+    server_state = observe(host, transforms_command + "\ngetall QuebecCar Speed\ngetall QuebecCar bHandbrake\ngetall QuebecCar bActorEnableCollision\ngetall QuebecCar bTraffic",
+                           lambda text: reset_state(text, True))
+    client_state = observe(client, transforms_command, reset_state)
+    fixture.setdefault("resets", []).append({"window": label, "host": server_state, "client": client_state,
+                                             "occupant": occupant, "stopped_with_native_handbrake": True,
+                                             "collision_enabled": True, "ambient_traffic_enabled": True})
+
+
 def teleport_command(position):
     return 'ke QuebecCharacter K2_SetActorLocation "(X=%s,Y=%s,Z=%s)" false () true' % tuple(position)
 
@@ -125,12 +187,44 @@ def checked(name):
     print("NORD_PACKAGED_CHECK", name, flush=True)
 
 
+def resident_tags(text):
+    # GETALL exports array elements on separate numbered lines (CoreUObject/Obj.cpp).
+    tags, current = {}, None
+    for line in text.splitlines():
+        header = re.search(r"\.(QuebecParkResident_\d+)\.Tags =", line)
+        if header:
+            current = header[1]
+            tags[current] = False
+        elif current and re.search(r"\b\d+:\s*CityCrowd\b", line):
+            tags[current] = True
+    return tags
+
+
+def resident_population(text):
+    tags = resident_tags(text)
+    return {"saved": sum(not ambient for ambient in tags.values()), "ambient": sum(tags.values())}
+
+
+def resident_styles(text):
+    return {name: int(style) for name, style in re.findall(r"\.(QuebecParkResident_\d+)\.Style = (\d+)", text)}
+
+
 def connected(peer):
     wait_for(lambda: "Welcomed by server" in log(peer))
-    observe(peer, "getall QuebecGameState MissionIndex\ngetall QuebecParkResident Style\ngetall SkeletalMeshComponent SkinnedAsset",
-        lambda text: "MissionIndex = 3" in text and len(re.findall(r"Style = (\d+)", text.rsplit("CsvExecCommand", 1)[-1])) == 14
-        and set(re.findall(r"Style = (\d+)", text)) == set(map(str, range(11)))
-        and set(re.findall(r"/Game/ParkComic/Crew/Resident(\d+)/SK_Body\.SK_Body", text)) == set(map(str, range(3, 11))))
+    def ready(text):
+        styles = resident_styles(text)
+        if ("MissionIndex = 3" not in text or not SAVED_RESIDENT_NAMES.issubset(styles) or
+                len(styles) <= 14 or {styles[name] for name in SAVED_RESIDENT_NAMES} != set(range(11))):
+            return False
+        # Runtime Actor Tags are authority-only. Saved map names are stable across
+        # peers; require each original skeletal resident's own mesh as well.
+        return all(re.search(r"\." + re.escape(name) + r"\.GeneratedBody\.SkinnedAsset = [^\r\n]*/Game/ParkComic/Crew/Resident" +
+                   str(styles[name]) + r"/SK_Body\.SK_Body", text)
+                   for name in SAVED_RESIDENT_NAMES if styles[name] >= 3)
+    observe(peer, "getall QuebecGameState MissionIndex\ngetall QuebecParkResident Style\ngetall SkeletalMeshComponent SkinnedAsset", ready)
+    styles = resident_styles(log(peer))
+    REPORT.setdefault("resident_population", {})[peer["log"].stem] = {
+        "saved": len(SAVED_RESIDENT_NAMES & styles.keys()), "ambient": len(styles.keys() - SAVED_RESIDENT_NAMES)}
 
 
 def only_host_remains(host):
@@ -142,11 +236,34 @@ def only_host_remains(host):
 
 
 def approach_car(host):
-    text = observe(host, "getall BoxComponent RelativeLocation",
-        lambda text: re.findall(r"\.QuebecCar_0\.Collision.RelativeLocation = \(X=([-\d.]+),Y=([-\d.]+),Z=([-\d.]+)\)", text))
-    position = list(map(float, text[-1]))
-    position[1] += 260
-    send(host, teleport_command(position))
+    cars = observe(host, "getall BoxComponent RelativeLocation\ngetall BoxComponent RelativeRotation", car_transforms)
+    position, yaw = cars["QuebecCar_0"]
+    if "driving_fixture" not in REPORT:
+        expected = (LAYOUT["car"][0] - math.sin(yaw) * 145, LAYOUT["car"][1] + math.cos(yaw) * 145)
+        assert math.dist(position[:2], expected) < 3, "Starter is outside its verified forward driving lane"
+        assert abs((math.degrees(yaw) - LAYOUT["car_yaw"] + 180) % 360 - 180) < .05
+        REPORT["driving_fixture"] = {"actor": "QuebecCar_0", "original_position_cm": position,
+                                     "original_yaw_degrees": math.degrees(yaw),
+                                     "forward_lane_offset_cm": 145, "reset_method": "native actor teleport while occupied and handbraked"}
+    # Use the actual car orientation, and keep the standing capsule clear of
+    # every vehicle while ensuring native E still selects this car as nearest.
+    for lateral in (185, -185):
+        target = (position[0] - math.sin(yaw) * lateral, position[1] + math.cos(yaw) * lateral, position[2])
+        clear = True
+        for name, (other, angle) in cars.items():
+            dx, dy = target[0]-other[0], target[1]-other[1]
+            along, across = dx*math.cos(angle)+dy*math.sin(angle), -dx*math.sin(angle)+dy*math.cos(angle)
+            if ((abs(along) < 264 and abs(across) < 152 and abs(target[2]-other[2]) < 190) or
+                    (name != "QuebecCar_0" and math.hypot(dx,dy) < abs(lateral)+100)):
+                clear = False
+                break
+        if clear:
+            send(host, teleport_command(target))
+            observe(host, "getall CapsuleComponent RelativeLocation", lambda text: (points := re.findall(
+                r"\.QuebecCharacter_\d+\.CollisionCylinder.RelativeLocation = \(X=([-\d.]+),Y=([-\d.]+),Z=([-\d.]+)\)", text))
+                and all(math.dist(tuple(map(float, point)), target) < 120 for point in points))
+            return
+    raise AssertionError("No clear side position selects the native target car as nearest")
 
 
 def enter(client, host):
@@ -176,6 +293,11 @@ try:
         commands_dir = Path(directory)
         host = launch("Host", "/Game/Maps/LaFontaine?listen", commands_dir)
         wait_for(lambda: "listening on port 7793" in log(host), 30)
+        observe(host, "getall QuebecParkResident Tags",
+            lambda text: resident_population(text) == {"saved": 14, "ambient": 96})
+        SAVED_RESIDENT_NAMES.update(name for name, ambient in resident_tags(log(host)).items() if not ambient)
+        assert len(SAVED_RESIDENT_NAMES) == 14
+        REPORT.setdefault("resident_population", {})["Host"] = {"saved": 14, "ambient": 96}
         for index, target in enumerate(LAYOUT["missions"], 1):
             send(host, teleport_command(target) + "\nke QuebecController Interact")
             observe(host, "getall QuebecGameState MissionIndex", lambda text, index=index: f"MissionIndex = {index}" in text)
@@ -186,17 +308,20 @@ try:
         enter(client, host)
         checked("native client E RPC occupies the available car on the host")
         send(host, teleport_command(LAYOUT["spawn"]))
-        send(client, "ke QuebecCar DisableInput None\nke QuebecCar MoveForward 1.0")
+        send_car(client, "DisableInput None")
+        reset_driving_fixture(host, client, "initial throttle")
+        send_car(client, "ReleaseHandbrake\nMoveForward 1.0")
         observe(host, "getall QuebecCar Speed", lambda text: car_speed(text) is not None and car_speed(text) > 1000)
         checked("native client throttle drives the authority car")
         observe(client, "getall CameraComponent FieldOfView", lambda text: any(float(v) > 85.5 for v in re.findall(r"FieldOfView = ([-\d.]+)", text)))
         checked("packaged driving camera widens with speed")
-        send(client, "ke QuebecCar ApplyHandbrake")
+        send_car(client, "ApplyHandbrake")
         observe(host, "getall QuebecCar Speed\ngetall QuebecCar bHandbrake", lambda text: car_speed(text) == 0 and ".QuebecCar_0.bHandbrake = True" in text)
         time.sleep(1)
         observe(host, "getall QuebecCar Speed", lambda text: car_speed(text) == 0)
         checked("native handbrake stops and holds against throttle")
-        send(client, "ke QuebecCar ReleaseHandbrake")
+        reset_driving_fixture(host, client, "handbrake release acceleration")
+        send_car(client, "ReleaseHandbrake")
         observe(host, "getall QuebecCar Speed", lambda text: car_speed(text) is not None and car_speed(text) > 1000)
         checked("native handbrake release restores acceleration")
         stop(client, abrupt=True)

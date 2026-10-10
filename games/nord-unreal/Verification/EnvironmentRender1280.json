@@ -1,0 +1,172 @@
+{
+  "passed": true,
+  "resolution": [
+    1280,
+    720
+  ],
+  "views": [
+    {
+      "name": "EnvironmentTheatre",
+      "file": "Preview/Environment1280/EnvironmentTheatre.png",
+      "position_cm": [
+        -11500.0,
+        1700.0,
+        750.0
+      ],
+      "target_cm": [
+        -9750.0,
+        5100.0,
+        250.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1327557,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentChalet",
+      "file": "Preview/Environment1280/EnvironmentChalet.png",
+      "position_cm": [
+        6367.0,
+        2761.0,
+        900.0
+      ],
+      "target_cm": [
+        2920.0,
+        2150.0,
+        280.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1329108,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentCentre",
+      "file": "Preview/Environment1280/EnvironmentCentre.png",
+      "position_cm": [
+        7510.0,
+        22944.0,
+        1000.0
+      ],
+      "target_cm": [
+        4010.0,
+        22944.0,
+        350.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1345438,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentCourts",
+      "file": "Preview/Environment1280/EnvironmentCourts.png",
+      "position_cm": [
+        35000.0,
+        36000.0,
+        9000.0
+      ],
+      "target_cm": [
+        22000.0,
+        28000.0,
+        0.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1771120,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentPond",
+      "file": "Preview/Environment1280/EnvironmentPond.png",
+      "position_cm": [
+        17000.0,
+        -21000.0,
+        300.0
+      ],
+      "target_cm": [
+        1100.0,
+        1000.0,
+        120.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1282183,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentOverview",
+      "file": "Preview/Environment1280/EnvironmentOverview.png",
+      "position_cm": [
+        64000.0,
+        -62000.0,
+        74000.0
+      ],
+      "target_cm": [
+        3000.0,
+        14000.0,
+        0.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1775170,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentSherbrooke",
+      "file": "Preview/Environment1280/EnvironmentSherbrooke.png",
+      "position_cm": [
+        38793.01654,
+        -7522.8152,
+        190.0
+      ],
+      "target_cm": [
+        40304.41972,
+        -687.92965,
+        190.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1296186,
+        "signature_ihdr_iend_complete": true
+      }
+    }
+  ],
+  "original_play_net_mode": 1,
+  "play_settings_restored": true
+}

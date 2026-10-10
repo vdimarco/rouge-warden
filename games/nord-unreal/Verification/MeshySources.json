@@ -6,57 +6,81 @@
       "triangles": 31130,
       "vertices": 35074,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     },
     {
       "name": "Memphis33",
       "triangles": 31058,
       "vertices": 31623,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     },
     {
       "name": "BlackCap",
       "triangles": 31165,
       "vertices": 30035,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     },
     {
       "name": "WhiteCap",
       "triangles": 31122,
       "vertices": 27998,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     },
     {
       "name": "RedJersey",
       "triangles": 30931,
       "vertices": 27714,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     },
     {
       "name": "LimeJacket",
       "triangles": 31173,
       "vertices": 32544,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     },
     {
       "name": "CurlyMetalhead",
       "triangles": 31226,
       "vertices": 40429,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     },
     {
       "name": "Topknot",
       "triangles": 31064,
       "vertices": 31383,
       "bones": 24,
-      "height_m": 1.82
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2
     }
   ],
-  "checks": "weighted geometry, bounds, UVs, texture resolution, source hashes and distinct original jobs"
+  "checks": "weighted geometry, bounds, UVs, original source hashes, true running motion and locally authored jump FBX round trips"
 }

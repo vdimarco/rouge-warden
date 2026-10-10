@@ -51,22 +51,19 @@ for label,asset,tint in [('Road','asphalt_02',(1,1,1)),('Brick','brick_wall_001'
         M.connect_material_property(sample,'',prop)
     M.recompile_material(mat);materials[label]=mat
 # Reflective paint/glass improve the existing car without changing its collision body.
-for name,color,rough,metal in [('CarBody',(.025,.22,.29),.23,.65),('Glass',(.025,.065,.085),.1,.35),('Water',(.018,.15,.19),.12,.2)]:
+for name,color,rough,metal in [('CarBody',(.025,.22,.29),.23,.65),('Glass',(.025,.065,.085),.1,.35),('Water',(.035,.085,.075),.28,0.)]:
     mat=material('M_'+name+'_Finish')
     M.connect_material_property(node(mat,u.MaterialExpressionConstant3Vector,constant=u.LinearColor(*color,1)),'',u.MaterialProperty.MP_BASE_COLOR)
     scalar(mat,rough,u.MaterialProperty.MP_ROUGHNESS);scalar(mat,metal,u.MaterialProperty.MP_METALLIC)
     if name=='Water':
-        # Two world-space sine waves give the pond a subtle moving normal.
-        world=node(mat,u.MaterialExpressionWorldPosition)
-        mask=node(mat,u.MaterialExpressionComponentMask,r=True,g=True,b=False,a=False)
-        link(world,'',mask,'')
-        scale=node(mat,u.MaterialExpressionMultiply,const_b=.015);link(mask,'',scale,'A')
-        time=node(mat,u.MaterialExpressionTime);add=node(mat,u.MaterialExpressionAdd)
-        link(scale,'',add,'A');link(time,'',add,'B')
-        sine=node(mat,u.MaterialExpressionSine);link(add,'',sine,'')
-        strength=node(mat,u.MaterialExpressionMultiply,const_b=.09);link(sine,'',strength,'A')
-        append=node(mat,u.MaterialExpressionAppendVector);link(strength,'',append,'A');link(node(mat,u.MaterialExpressionConstant,r=1.),'',append,'B')
-        M.connect_material_property(append,'',u.MaterialProperty.MP_NORMAL)
+        normal=node(mat,u.MaterialExpressionCustom,code=(ROOT/'Scripts/pond_normal.hlsl').read_text(),output_type=u.CustomMaterialOutputType.CMOT_FLOAT3,description='Quiet pond ripples')
+        inputs=[]
+        for input_name in ('Position','Seconds'):
+            entry=u.CustomInput();entry.set_editor_property('input_name',input_name);inputs.append(entry)
+        normal.set_editor_property('inputs',inputs)
+        link(node(mat,u.MaterialExpressionWorldPosition),'',normal,'Position')
+        link(node(mat,u.MaterialExpressionTime),'',normal,'Seconds')
+        assert M.connect_material_property(normal,'',u.MaterialProperty.MP_NORMAL)
     M.recompile_material(mat);materials[name]=mat
     if name in ('CarBody','Glass'):
         mi=assets.load_asset('/Game/Materials/M_'+name)

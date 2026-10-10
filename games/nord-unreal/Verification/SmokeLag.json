@@ -21,6 +21,7 @@
     "client disables comic view without affecting host",
     "restore far-interaction fixture",
     "out-of-range client interaction rejected",
+    "starter spawns in its mapped forward driving lane",
     "authority teleport replicated to owning client",
     "wall between player and car rejects entry",
     "remove entry barrier",
@@ -56,7 +57,7 @@
     "mission 3 advances and replicates",
     "completed missions remain complete",
     "fall reset returns both peers to Sherbrooke spawn",
-    "fourteen residents and all eight cottage crew styles replicate",
+    "fourteen saved residents plus ninety-six ambient walkers and supplied crew styles",
     "resident route movement replicates",
     "client approaches cottage crew member",
     "client E talks to crew without changing completed missions or host dialogue",
@@ -79,20 +80,25 @@
   },
   "foot_displacement_cm": {
     "MoveForward": [
-      348.0,
-      400.5
+      351.5,
+      403.8
     ],
     "MoveRight": [
-      537.6,
-      642.9
+      548.7,
+      648.6
     ]
   },
-  "drive_displacement_cm": 728.4,
+  "driving_fixture": {
+    "right_lane_offset_cm": 145,
+    "production_spawn_verified": true,
+    "ambient_traffic_enabled": true
+  },
+  "drive_displacement_cm": 742.0,
   "replicated_car_error_limit_cm": 750.0,
-  "replicated_car_error_cm": 147.8,
+  "replicated_car_error_cm": 191.3,
   "steering_yaw_change_degrees": [
-    24.5,
+    24.4,
     20.9
   ],
-  "elapsed_seconds": 36.35
+  "elapsed_seconds": 37.75
 }

@@ -7,6 +7,32 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 NAMES=('GreenCap51','Memphis33','BlackCap','WhiteCap','RedJersey','LimeJacket','CurlyMetalhead','Topknot')
 
+def inspect_run(path):
+    raw=path.read_bytes();magic,version,length=struct.unpack_from('<III',raw)
+    assert magic==0x46546c67 and version==2 and length==len(raw),path
+    count,kind=struct.unpack_from('<II',raw,12);assert kind==0x4e4f534a
+    data=json.loads(raw[20:20+count]);start=28+count
+    def values(index):
+        a=data['accessors'][index];v=data['bufferViews'][a['bufferView']]
+        assert a['componentType']==5126 and a['type'] in ('SCALAR','VEC3','VEC4')
+        width={'SCALAR':1,'VEC3':3,'VEC4':4}[a['type']];item=struct.Struct('<'+'f'*width)
+        offset=start+v.get('byteOffset',0)+a.get('byteOffset',0);stride=v.get('byteStride',item.size)
+        result=[item.unpack_from(raw,offset+i*stride) for i in range(a['count'])]
+        assert all(math.isfinite(x) for row in result for x in row)
+        return result
+    channels=data['animations'][0]['channels'];samplers=data['animations'][0]['samplers']
+    assert len(channels)>=40
+    knees=[]
+    for channel in channels:
+        sampler=samplers[channel['sampler']];times=values(sampler['input']);poses=values(sampler['output'])
+        assert len(times)==len(poses)>10 and all(a[0]<=b[0] for a,b in zip(times,times[1:]))
+        assert .6<times[-1][0]<.75, times[-1]
+        if data['nodes'][channel['target']['node']]['name'] in ('LeftLeg','RightLeg') and channel['target']['path']=='rotation':
+            swing=max(max(row[i] for row in poses)-min(row[i] for row in poses) for i in range(4))
+            assert swing>.3,'Running clip lacks a knee bend';knees.append(swing)
+    assert len(knees)==2
+    return {'run_seconds':round(times[-1][0],3),'run_tracks':len(channels)}
+
 def inspect_glb(path):
     raw=path.read_bytes();magic,version,length=struct.unpack_from('<III',raw)
     assert magic==0x46546c67 and version==2 and length==len(raw),path
@@ -48,7 +74,15 @@ if __name__=='__main__':
         assert request['status']=='submitted' and request['endpoint_id']=='meshy/v7.1/image-to-3d'
         assert request['request_id'] not in requests;requests.add(request['request_id'])
         assert request['recipe']['input']['enable_rigging'] and request['recipe']['input']['animation_action_id']==0
-        reports.append({'name':name,**inspect_glb(folder/'body.glb')})
+        jump=json.loads((folder/'jump.json').read_text())
+        assert jump['body_sha256']==hashlib.sha256((folder/'body.fbx').read_bytes()).hexdigest()
+        assert jump['jump_sha256']==hashlib.sha256((folder/'jump.fbx').read_bytes()).hexdigest()
+        assert jump['head_and_neck_unchanged'] and jump['fbx_round_trip_passed'] and not jump['actor_root_motion']
+        assert jump['seconds']==1.2 and len(jump['samples'])==37
+        assert jump['samples'][0]['hip_drop_cm']==jump['samples'][-1]['hip_drop_cm']==0
+        assert min(frame['thigh_degrees'] for frame in jump['samples'])<-55
+        assert max(frame['knee_degrees'] for frame in jump['samples'])>95
+        reports.append({'name':name,**inspect_glb(folder/'body.glb'),**inspect_run(folder/'run.glb'),'jump_seconds':jump['seconds']})
         for filename in ('reference.png','base_color.png','normal.png','metallic.png','roughness.png'):
             raw=(folder/filename).read_bytes();assert raw[:8]==b'\x89PNG\r\n\x1a\n'
             width,height=struct.unpack_from('>II',raw,16)
@@ -56,5 +90,5 @@ if __name__=='__main__':
     for f in json.loads((source/'files.json').read_text()):
         p=source/f['file'];assert p.stat().st_size==f['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==f['sha256'],p
     assert hashlib.sha256((source/'CurlyMetalhead/face-reference.png').read_bytes()).hexdigest()=='4484d17008dc64d56e1a94d5784ca12420d243d385add978d9f8136a568ea76e'
-    report={'passed':True,'characters':reports,'checks':'weighted geometry, bounds, UVs, texture resolution, source hashes and distinct original jobs'}
+    report={'passed':True,'characters':reports,'checks':'weighted geometry, bounds, UVs, original source hashes, true running motion and locally authored jump FBX round trips'}
     (ROOT/'Verification/MeshySources.json').write_text(json.dumps(report,indent=2)+'\n');print('NORD_MESHY_SOURCE_OK',len(reports))

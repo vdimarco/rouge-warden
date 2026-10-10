@@ -25,6 +25,16 @@
     "sha256": "34ee6c85bf40a1fd96a92509ebfd9c401ccdc31e8c5bc92abc7dfb004abb81d2"
   },
   {
+    "file": "BlackCap/run.fbx",
+    "bytes": 5661516,
+    "sha256": "b6b42dd5aa80ce62fbc5ecfec59bb54f668e218105fbbba550ab162a3f6c7baf"
+  },
+  {
+    "file": "BlackCap/run.glb",
+    "bytes": 79312,
+    "sha256": "324e40191f05659b5799d2a7f29e42e17896625f7f94628caf38a3093814a02c"
+  },
+  {
     "file": "BlackCap/base_color.png",
     "bytes": 6440141,
     "sha256": "2e675e1ce159c062177459bb46257c1b37d81a6413de13bea0c497607e4098b5"
@@ -68,6 +78,16 @@
     "file": "CurlyMetalhead/preview.png",
     "bytes": 98299,
     "sha256": "a9730d177ea0e1f6a5aaa7cd96d52d4f8b1156acb725774612f8130b6796e61c"
+  },
+  {
+    "file": "CurlyMetalhead/run.fbx",
+    "bytes": 6138204,
+    "sha256": "cfe9a5aadf7201f7d17f3a46fc41f66548c5e1f9e5170568c5ff1febc02697a3"
+  },
+  {
+    "file": "CurlyMetalhead/run.glb",
+    "bytes": 79192,
+    "sha256": "4c12d7584f66a9f56b26c9f4da19437b70e89c08833cc475b7ebac4697c18170"
   },
   {
     "file": "CurlyMetalhead/base_color.png",
@@ -115,6 +135,16 @@
     "sha256": "94a606d6af115db47f206908df3d99bc7585bedacbcb4df834f1abf8525ed5f0"
   },
   {
+    "file": "GreenCap51/run.fbx",
+    "bytes": 6178428,
+    "sha256": "b7720f214bfd98bad8fa65b6c3462ec0738a1ef30dc08f7bc4e049a94ac8dc35"
+  },
+  {
+    "file": "GreenCap51/run.glb",
+    "bytes": 79576,
+    "sha256": "da69541c70b7002043bd3033230dc055dc76d57480ce39800dbce60c09257813"
+  },
+  {
     "file": "GreenCap51/base_color.png",
     "bytes": 6633526,
     "sha256": "261fb5715f4c6f3efae3c6d1af648adad7299fcc53cbb7ed1174d800f25ff62a"
@@ -158,6 +188,16 @@
     "file": "LimeJacket/preview.png",
     "bytes": 102090,
     "sha256": "adc0cb8e72245759a317370f9dca7cbf527d575a0bf8c42445398d1675479bc1"
+  },
+  {
+    "file": "LimeJacket/run.fbx",
+    "bytes": 6042748,
+    "sha256": "ed50b9e5153169dfa217f22281d856edf34a6bbd02636ef9ca99882250993091"
+  },
+  {
+    "file": "LimeJacket/run.glb",
+    "bytes": 79736,
+    "sha256": "5596889e482faaee742d6bbaf66dfc64b47f0ccbf80b6630e3b744e52455a0a6"
   },
   {
     "file": "LimeJacket/base_color.png",
@@ -205,6 +245,16 @@
     "sha256": "e561b99ae0080c94633efc02128a8dce2cfff3e1cd3438efef777f7fe97012ed"
   },
   {
+    "file": "Memphis33/run.fbx",
+    "bytes": 6201340,
+    "sha256": "49c528a74ee48f9ed00df3a84ab5e3be0ecb8bef7b27fbec13dd1461a266b73e"
+  },
+  {
+    "file": "Memphis33/run.glb",
+    "bytes": 79504,
+    "sha256": "19adeee52d0d509f1a1189892f5d7d8df91568168986ea215fb47dfba59bd5ad"
+  },
+  {
     "file": "Memphis33/base_color.png",
     "bytes": 6865657,
     "sha256": "bfd7fb5e447783876fb19156df48664b0eefa6a304fde8c853b5836fafc113ef"
@@ -248,6 +298,16 @@
     "file": "RedJersey/preview.png",
     "bytes": 90447,
     "sha256": "a99caa5c61883b8e302aa2638b7fdf8938e855ec35e29fcdfb74a4039f59e0c5"
+  },
+  {
+    "file": "RedJersey/run.fbx",
+    "bytes": 5871884,
+    "sha256": "1f5fdb15fc3ea44a03e342fce62b124a441cf4a268b456cced16db67d6b68eca"
+  },
+  {
+    "file": "RedJersey/run.glb",
+    "bytes": 78856,
+    "sha256": "2df3aa4ea4316c25140816a261bf0aa0b6b0eb0b8dfd91ed18031858f6e3a1a4"
   },
   {
     "file": "RedJersey/base_color.png",
@@ -295,6 +355,16 @@
     "sha256": "16e4d3cb00ec65cebf608d4621ccfbd39988a5a06ab58c5a4d431f3c8fa37ce3"
   },
   {
+    "file": "Topknot/run.fbx",
+    "bytes": 5978732,
+    "sha256": "34e7a08a819eb0825f4a914cc9afd1ed138ea44af65b2aa2444705f5bb3235a3"
+  },
+  {
+    "file": "Topknot/run.glb",
+    "bytes": 79176,
+    "sha256": "11603b9abc682aa46cca5c729b574e26b23c13026a3f566387d99303ed7cc125"
+  },
+  {
     "file": "Topknot/base_color.png",
     "bytes": 6567969,
     "sha256": "3cca84706714b942782204bd8839e2d5f1597dbec248922eae3666798be18dfd"
@@ -338,6 +408,16 @@
     "file": "WhiteCap/preview.png",
     "bytes": 87810,
     "sha256": "97ebbb6bf1b32937d8547bb541ab326342d5f6ce6d13b9fb28a2305510f8dc44"
+  },
+  {
+    "file": "WhiteCap/run.fbx",
+    "bytes": 5577260,
+    "sha256": "5a6ffe26b3f1eebc3cd95d685452421f0e29e59926194999f716bed0fd320d54"
+  },
+  {
+    "file": "WhiteCap/run.glb",
+    "bytes": 78884,
+    "sha256": "577b135da348a32627b724c412a25a43a2e1eff7baf8652ac2eadda8df8e4566"
   },
   {
     "file": "WhiteCap/base_color.png",

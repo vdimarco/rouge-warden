@@ -1,0 +1,482 @@
+{
+  "passed": true,
+  "checks": [
+    "bounded population and eight supplied crowd styles",
+    "server traffic and pedestrians visibly move",
+    "traffic still circulates after sixty world seconds",
+    "following starter queue and all sixteen cars recover when the obstruction clears",
+    "nearby pedestrian appearance, phase, route and movement replicate",
+    "traffic yields before reaching a player",
+    "traffic resumes after player clears lane",
+    "moving traffic stops within remote player's reach",
+    "native remote E claims a stopped traffic car and ends ambient driving",
+    "native remote E exits the claimed traffic car safely",
+    "remote player approaches an added parked car",
+    "native remote E enters an added car and its paint replicates",
+    "native remote E exits the added car safely"
+  ],
+  "skipped": [
+    "rendered crowd appearance",
+    "frame-time performance"
+  ],
+  "current_check": "native remote E exits the added car safely",
+  "counts": {
+    "added_parked": 32,
+    "traffic": 16,
+    "added_pedestrians": 96
+  },
+  "starter_lane_offset_cm": 145.0,
+  "asphalt_parking": {
+    "QuebecCar_9": {
+      "road_segment": 315,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_10": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_11": {
+      "road_segment": 397,
+      "width_cm": 1240.0,
+      "asphalt_margin_cm": 35.0
+    },
+    "QuebecCar_12": {
+      "road_segment": 397,
+      "width_cm": 1240.0,
+      "asphalt_margin_cm": 35.0
+    },
+    "QuebecCar_13": {
+      "road_segment": 349,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_14": {
+      "road_segment": 318,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_15": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_16": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_1": {
+      "road_segment": 355,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_2": {
+      "road_segment": 355,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_7": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_8": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_17": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_18": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_19": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_20": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_22": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_23": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_24": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_26": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_27": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_28": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_31": {
+      "road_segment": 333,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_32": {
+      "road_segment": 333,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_41": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_42": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_43": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_44": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_45": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_46": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_47": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_48": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_49": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_50": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_51": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_52": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_53": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_54": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_55": {
+      "road_segment": 328,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_56": {
+      "road_segment": 328,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    }
+  },
+  "moved_over_150cm": {
+    "traffic": 16,
+    "crowd": 89
+  },
+  "traffic_blocks": [
+    {
+      "car": "QuebecCar_29",
+      "blocker": "QuebecCar_0",
+      "label": "Your first car",
+      "class": "QuebecCar",
+      "component": "Collision",
+      "mesh": null,
+      "distance_cm": 449.5,
+      "car_yaw": 77.5,
+      "blocker_yaw": 77.5
+    },
+    {
+      "car": "QuebecCar_3",
+      "blocker": "QuebecCharacter_1",
+      "label": "QuebecCharacter1",
+      "class": "QuebecCharacter",
+      "component": "CollisionCylinder",
+      "mesh": null,
+      "distance_cm": 149.0,
+      "car_yaw": -32.1,
+      "blocker_yaw": 77.5
+    }
+  ],
+  "lasting_traffic": {
+    "world_seconds": 60.0,
+    "cars_moving_in_final_8s": 15,
+    "samples": [
+      {
+        "name": "QuebecCar_3",
+        "position": [
+          27513.3,
+          -1394.2,
+          100.0
+        ],
+        "displacement_cm": 3793.1,
+        "measured_speed_cm_s": 580.0,
+        "yielding": false,
+        "road_distance_cm": 130.1
+      },
+      {
+        "name": "QuebecCar_4",
+        "position": [
+          27579.6,
+          -1783.0,
+          100.0
+        ],
+        "displacement_cm": 2619.2,
+        "measured_speed_cm_s": 601.1,
+        "yielding": false,
+        "road_distance_cm": 141.6
+      },
+      {
+        "name": "QuebecCar_5",
+        "position": [
+          33891.7,
+          -36330.9,
+          100.0
+        ],
+        "displacement_cm": 4813.8,
+        "measured_speed_cm_s": 583.4,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_6",
+        "position": [
+          31517.7,
+          660.5,
+          100.0
+        ],
+        "displacement_cm": 3516.8,
+        "measured_speed_cm_s": 592.1,
+        "yielding": false,
+        "road_distance_cm": 144.4
+      },
+      {
+        "name": "QuebecCar_21",
+        "position": [
+          24899.6,
+          -1869.8,
+          100.0
+        ],
+        "displacement_cm": 3909.4,
+        "measured_speed_cm_s": 595.0,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_25",
+        "position": [
+          24241.8,
+          -32423.2,
+          100.0
+        ],
+        "displacement_cm": 4745.1,
+        "measured_speed_cm_s": 595.1,
+        "yielding": false,
+        "road_distance_cm": 142.7
+      },
+      {
+        "name": "QuebecCar_29",
+        "position": [
+          37337.7,
+          -8112.0,
+          100.0
+        ],
+        "displacement_cm": 0.0,
+        "measured_speed_cm_s": 0.0,
+        "yielding": true,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_30",
+        "position": [
+          33954.8,
+          -33170.7,
+          100.0
+        ],
+        "displacement_cm": 4785.9,
+        "measured_speed_cm_s": 586.2,
+        "yielding": false,
+        "road_distance_cm": 145.5
+      },
+      {
+        "name": "QuebecCar_33",
+        "position": [
+          34172.2,
+          -24776.2,
+          100.0
+        ],
+        "displacement_cm": 4797.9,
+        "measured_speed_cm_s": 584.5,
+        "yielding": false,
+        "road_distance_cm": 144.9
+      },
+      {
+        "name": "QuebecCar_34",
+        "position": [
+          19158.3,
+          -29106.1,
+          100.0
+        ],
+        "displacement_cm": 4789.0,
+        "measured_speed_cm_s": 585.6,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_35",
+        "position": [
+          9172.7,
+          -22167.6,
+          100.0
+        ],
+        "displacement_cm": 3924.1,
+        "measured_speed_cm_s": 588.5,
+        "yielding": false,
+        "road_distance_cm": 137.1
+      },
+      {
+        "name": "QuebecCar_36",
+        "position": [
+          -29640.5,
+          -20723.1,
+          100.0
+        ],
+        "displacement_cm": 4795.8,
+        "measured_speed_cm_s": 585.6,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_37",
+        "position": [
+          -18296.2,
+          -38470.6,
+          100.0
+        ],
+        "displacement_cm": 4184.3,
+        "measured_speed_cm_s": 602.9,
+        "yielding": false,
+        "road_distance_cm": 102.8
+      },
+      {
+        "name": "QuebecCar_38",
+        "position": [
+          33744.7,
+          -40179.0,
+          100.0
+        ],
+        "displacement_cm": 4519.1,
+        "measured_speed_cm_s": 197.8,
+        "yielding": false,
+        "road_distance_cm": 41.3
+      },
+      {
+        "name": "QuebecCar_39",
+        "position": [
+          -20453.5,
+          -36779.0,
+          100.0
+        ],
+        "displacement_cm": 4791.1,
+        "measured_speed_cm_s": 595.0,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_40",
+        "position": [
+          -27815.9,
+          15144.4,
+          100.0
+        ],
+        "displacement_cm": 4022.5,
+        "measured_speed_cm_s": 268.9,
+        "yielding": false,
+        "road_distance_cm": 128.9
+      }
+    ]
+  },
+  "starter_queue": {
+    "waiting_cars": [
+      "QuebecCar_29"
+    ],
+    "clearance_fixture": "starter temporarily raised with ticking disabled",
+    "displacements_after_8s_cm": {
+      "QuebecCar_3": 4041.8,
+      "QuebecCar_4": 4059.7,
+      "QuebecCar_5": 3925.1,
+      "QuebecCar_6": 4808.2,
+      "QuebecCar_21": 989.0,
+      "QuebecCar_25": 4843.0,
+      "QuebecCar_29": 4607.1,
+      "QuebecCar_30": 4831.3,
+      "QuebecCar_33": 4821.8,
+      "QuebecCar_34": 4826.3,
+      "QuebecCar_35": 4859.4,
+      "QuebecCar_36": 4826.6,
+      "QuebecCar_37": 4788.9,
+      "QuebecCar_38": 4435.3,
+      "QuebecCar_39": 3590.9,
+      "QuebecCar_40": 4611.0
+    }
+  },
+  "elapsed_seconds": 74.68
+}

@@ -38,8 +38,8 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyAppearance) int32 Style = 0;
-    UPROPERTY(EditAnywhere) TArray<FVector> Route;
-    UPROPERTY(EditAnywhere) float Phase = 0.f;
+    UPROPERTY(EditAnywhere, ReplicatedUsing=UpdateRouteLength) TArray<FVector> Route;
+    UPROPERTY(EditAnywhere, Replicated) float Phase = 0.f;
     static const TCHAR* NameForStyle(int32 Index);
     static const TCHAR* DialogueForStyle(int32 Index);
 private:
@@ -51,6 +51,7 @@ private:
     UPROPERTY() TObjectPtr<UAnimSequence> CurrentAnimation;
     UPROPERTY() TObjectPtr<UTextRenderComponent> Label;
     float RouteLength = 0.f;
+    UFUNCTION() void UpdateRouteLength();
     UFUNCTION() void ApplyAppearance();
 };
 
@@ -75,6 +76,12 @@ private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> CrewProp;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewWalk;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewIdle;
+    UPROPERTY() TObjectPtr<UAnimSequence> CrewRun;
+    UPROPERTY() TObjectPtr<UAnimSequence> CrewJump;
+    bool bCrewWasFalling = false;
+    float CrewLandingTime = 1.f;
+    float CrewAnimationTime = 0.f;
+    float CrewPoseElapsed = 0.f;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewAnimation;
     UFUNCTION() void ApplyCrewAppearance();
     UFUNCTION() void MoveForward(float Value);
@@ -100,7 +107,9 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<AQuebecCharacter> Occupant;
     UPROPERTY(Replicated) float Speed = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) bool bHandbrake = false;
-    UPROPERTY(EditAnywhere) int32 PaintStyle = 0;
+    UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 PaintStyle = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bTraffic = false;
+    void SetTrafficRoute(int32 Segment, bool bForward, const TArray<bool>& AllowedRoads);
     void StopInput();
 
 private:
@@ -115,6 +124,15 @@ private:
     float LastLookTime = -10.f;
     float WheelAngle = 0.f;
     UPROPERTY(Replicated) float VisualSteering = 0.f;
+    int32 TrafficSegment = INDEX_NONE;
+    bool bTrafficForward = true;
+    int32 TrafficTurns = 0;
+    TArray<bool> TrafficRoadMask;
+    FVector TrafficJunction = FVector::ZeroVector;
+    bool bJunctionReserved = false;
+    bool bJunctionEntered = false;
+    void UpdateTraffic();
+    UFUNCTION() void ApplyPaint();
     UFUNCTION() void MoveForward(float Value);
     UFUNCTION() void MoveRight(float Value);
     void LookYaw(float Value);
@@ -193,4 +211,5 @@ class QUEBEC_API AQuebecGameMode : public AGameModeBase
     GENERATED_BODY()
 public:
     AQuebecGameMode();
+    virtual void BeginPlay() override;
 };

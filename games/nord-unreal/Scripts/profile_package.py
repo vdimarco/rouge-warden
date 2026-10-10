@@ -84,9 +84,10 @@ try:
                           "over_33ms_percent": round(sum(v > 33.33 for v in timings) * 100 / len(timings), 2),
                           "median_gpu_ms": round(statistics.median(gpu), 2), "csv": source.name,
                           "screenshot": str(screenshot.relative_to(ROOT))}
+                result["frame_budget_passed"] = result["p95_ms"] < 16.67
                 report["scenes"].append(result)
                 print("NORD_PERFORMANCE", json.dumps(result), flush=True)
-                assert result["p95_ms"] < 16.67, "Reference-scene 60 FPS frame-time budget failed: " + tag
-    report["passed"] = True
+    report["passed"] = len(report["scenes"]) == 6 and all(scene["frame_budget_passed"] for scene in report["scenes"])
+    assert report["passed"], "Reference-scene 60 FPS frame-time budget failed; see all six measured scenes"
 finally:
     (ROOT / "Verification/Performance.json").write_text(json.dumps(report, indent=2) + "\n")

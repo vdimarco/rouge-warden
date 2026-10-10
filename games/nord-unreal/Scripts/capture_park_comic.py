@@ -1,24 +1,69 @@
-"""Capture actual PIE car, resident and park views, then exit automatically."""
+"""Capture actual PIE car, resident and park views, then exit automatically.
+
+-NordEnvironmentOnly -NordCaptureWidth=1280|1920 writes seven fixed views to
+Preview/Environment{width}/ and Verification/EnvironmentRender{width}.json.
+Omitting the width preserves the original 1600x900 Preview/ output.
+"""
+import configparser
 import json
 import math
+import re
+import struct
 import time
 from pathlib import Path
 import unreal as u
-root=Path(u.Paths.project_dir()).resolve();out=root/'Preview';out.mkdir(exist_ok=True)
+root=Path(u.Paths.project_dir()).resolve();command=u.SystemLibrary.get_command_line()
+environment_only='-NordEnvironmentOnly' in command
+width_flag=re.search(r'(?:^|\s)-NordCaptureWidth=(\S+)',command)
+width=int(width_flag.group(1)) if width_flag else 1600
+assert not width_flag or width in (1280,1920), 'NordCaptureWidth must be 1280 or 1920'
+height=width*9//16
+out=root/'Preview'
+if environment_only and width_flag:out=out/f'Environment{width}'
+out.mkdir(parents=True,exist_ok=True)
 data=json.loads((root/'Data/ParkComic/layout.json').read_text())
 levels=u.get_editor_subsystem(u.LevelEditorSubsystem)
 settings=u.get_default_object(u.load_class(None,'/Script/UnrealEd.LevelEditorPlaySettings'))
 script=u.get_default_object(u.load_class(None,'/Script/PythonScriptPlugin.EditorPythonScriptingLibrary'))
 system=u.get_default_object(u.load_class(None,'/Script/Engine.KismetSystemLibrary'))
 gameplay=u.get_default_object(u.load_class(None,'/Script/Engine.GameplayStatics'))
-old=settings.get_editor_property('PlayNumberOfClients');settings.set_editor_property('PlayNumberOfClients',1)
+old=settings.get_editor_property('PlayNumberOfClients')
+# EPlayNetMode is not exported to Python. Match capture_player_quality.py's
+# cold-start settings read before changing the mode for this capture.
+config=configparser.ConfigParser(strict=False)
+config.read(Path(u.Paths.project_saved_dir())/'Config/LinuxEditor/EditorPerProjectUserSettings.ini')
+old_mode={'PIE_Standalone':0,'PIE_ListenServer':1,'PIE_Client':2}[
+    config.get('/Script/UnrealEd.LevelEditorPlaySettings','PlayNetMode',fallback='PIE_Standalone')]
+settings.set_editor_property('PlayNumberOfClients',1)
 script.call_method('SetKeepPythonScriptAlive',(True,))
 system.call_method('SetBytePropertyByName',(settings,'PlayNetMode',0))
-state={'phase':0,'start':time.monotonic(),'shot':0,'frames':[]};shots=[]
-def finish():
-    levels.editor_request_end_play();settings.set_editor_property('PlayNumberOfClients',old)
-    system.call_method('SetBytePropertyByName',(settings,'PlayNetMode',1));u.unregister_slate_post_tick_callback(state['callback'])
-    script.call_method('SetKeepPythonScriptAlive',(False,))
+state={'phase':0,'start':time.monotonic(),'shot':0,'frames':[],'finished':False};shots=[]
+report={'passed':False,'resolution':[width,height],'views':[],
+        'original_play_net_mode':old_mode,'play_settings_restored':False}
+def finish(error=None):
+    if state['finished']:return
+    state['finished']=True
+    if error:report['error']=error
+    try:
+        levels.editor_request_end_play()
+    finally:
+        settings.set_editor_property('PlayNumberOfClients',old)
+        system.call_method('SetBytePropertyByName',(settings,'PlayNetMode',old_mode))
+        report['play_settings_restored']=True
+        u.unregister_slate_post_tick_callback(state['callback'])
+        script.call_method('SetKeepPythonScriptAlive',(False,))
+        if environment_only:
+            report['passed']=not error and len(report['views'])==7
+            verify=root/'Verification';verify.mkdir(exist_ok=True)
+            (verify/f'EnvironmentRender{width}.json').write_text(json.dumps(report,indent=2)+'\n')
+def complete_png(path):
+    if not path.exists():return None
+    image=path.read_bytes()
+    if len(image)<10000 or not image.endswith(b'\x00\x00\x00\x00IEND\xaeB\x60\x82'):return None
+    assert image[:8]==b'\x89PNG\r\n\x1a\n' and image[12:16]==b'IHDR',str(path)
+    assert struct.unpack('>II',image[16:24])==(width,height),str(path)
+    return {'dimensions':[width,height],'bytes':len(image),'signature_ihdr_iend_complete':True}
+def vec(value):return [round(value.x,5),round(value.y,5),round(value.z,5)]
 def aim(position,target):
     delta=target-position;yaw=math.degrees(math.atan2(delta.y,delta.x));pitch=math.degrees(math.atan2(delta.z,math.hypot(delta.x,delta.y)))
     state['camera'].set_actor_location_and_rotation(position,u.Rotator(pitch=pitch,yaw=yaw),False,True)
@@ -40,13 +85,14 @@ def tick(dt):
             u.SystemLibrary.execute_console_command(world,'showhud',pc)
             residents=u.GameplayStatics.get_all_actors_of_class(world,u.load_class(None,'/Script/Quebec.QuebecParkResident'))
             cars=u.GameplayStatics.get_all_actors_of_class(world,u.load_class(None,'/Script/Quebec.QuebecCar'))
-            assert len(residents)==len(data['residents']) and len(cars)>=4
+            if not environment_only:assert len(residents)==len(data['residents']) and len(cars)>=4
             state.update(world=world,pc=pc,camera=camera,residents=residents,car=cars[0])
             c=cars[0].get_actor_location();f=cars[0].get_actor_forward_vector();r=cars[0].get_actor_right_vector()
-            shots.extend([('ParkComicCar',c+f*580+r*430+u.Vector(0,0,240),c+u.Vector(0,0,10),None)])
-            for style in range(11):
-                resident=next(a for a in residents if a.get_editor_property('Style')==style)
-                shots.append(('ParkComicResident'+str(style),None,None,resident))
+            if not environment_only:
+                shots.extend([('ParkComicCar',c+f*580+r*430+u.Vector(0,0,240),c+u.Vector(0,0,10),None)])
+                for style in range(11):
+                    resident=next(a for a in residents if a.get_editor_property('Style')==style)
+                    shots.append(('ParkComicResident'+str(style),None,None,resident))
             shots.extend([
                 ('ParkComicTheatre',u.Vector(-11500,1700,750),u.Vector(-9750,5100,250),None),
                 ('ParkComicChalet',u.Vector(6367,2761,900),u.Vector(2920,2150,280),None),
@@ -54,6 +100,12 @@ def tick(dt):
                 ('ParkComicCourts',u.Vector(35000,36000,9000),u.Vector(22000,28000,0),None),
                 ('ParkComicPond',u.Vector(17000,-21000,300),u.Vector(1100,1000,120),None),
                 ('ParkComicOverview',u.Vector(64000,-62000,74000),u.Vector(3000,14000,0),None)])
+            if environment_only:
+                layout=json.loads((root/'Data/LaFontaine/layout.json').read_text())
+                p=u.Vector(*layout['spawn'])+u.Vector(0,0,70)
+                angle=math.radians(layout['car_yaw']);facing=u.Vector(math.cos(angle),math.sin(angle),0)
+                shots.append(('ParkComicSherbrooke',p,p+facing*7000,None))
+                shots[:]=[(name.replace('ParkComic','Environment'),p,target,resident) for name,p,target,resident in shots]
             state.update(phase=2,ready=now)
         elif state['phase']==2:
             name,p,target,resident=shots[state['shot']]
@@ -63,15 +115,22 @@ def tick(dt):
             aim(p,target)
             if now-state['ready'] > (20 if state['shot']==0 else 5):
                 path=out/(name+'.png')
-                u.SystemLibrary.execute_console_command(state['world'],'HighResShot 1600x900 filename="'+str(path)+'"',state['pc'])
+                path.unlink(missing_ok=True)
+                u.SystemLibrary.execute_console_command(state['world'],f'HighResShot {width}x{height} filename="{path}"',state['pc'])
+                state['capture']={'name':name,'file':str(path.relative_to(root)),
+                    'position_cm':vec(p),'target_cm':vec(target),'horizontal_fov_degrees':65.}
                 state.update(phase=3,ready=now)
             if now-state['ready']>2:state['frames'].append(dt)
         elif state['phase']==3 and now-state['ready']>2:
-            path=out/(shots[state['shot']][0]+'.png');assert path.exists() and path.stat().st_size>10000,str(path)
+            path=out/(shots[state['shot']][0]+'.png')
+            assert now-state['ready']<20,('Screenshot incomplete or missing',str(path))
+            png=complete_png(path)
+            if not png:return
+            report['views'].append({**state['capture'],'png':png})
             u.log('NORD_PARK_SHOT '+str(path));state['shot']+=1
             if state['shot']==len(shots):
                 u.log('NORD_PARK_PREVIEW_OK '+str(len(shots))+' shots');finish()
             else:state.update(phase=2,ready=now)
     except Exception as exc:
-        u.log_error('NORD_PARK_PREVIEW_FAILED '+repr(exc));finish()
+        u.log_error('NORD_PARK_PREVIEW_FAILED '+repr(exc));finish(repr(exc))
 state['callback']=u.register_slate_post_tick_callback(tick)
