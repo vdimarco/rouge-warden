@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b0a16">
+    <title>NORD / Montréal — Play</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./player.js"></script>
+  </head>
+  <body data-state="offline">
+    <header>
+      <div class="brand"><strong>NORD / MONTRÉAL</strong><span>Save Park La Fontaine · Two player co-op</span></div>
+      <div class="toolbar" aria-label="Stream controls">
+        <label for="streamer">Player</label>
+        <select id="streamer" disabled><option>Not connected</option></select>
+        <button id="mute" disabled aria-pressed="false">Mute</button>
+        <button id="fullscreen" disabled>Fullscreen</button>
+        <button id="disconnect" disabled>Disconnect</button>
+      </div>
+    </header>
+    <main id="frame" aria-label="NORD game">
+      <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
+      <section id="overlay" aria-labelledby="status-title">
+        <div class="caption" role="status" aria-live="polite">
+          <p class="eyebrow" id="status-label">HOST OFFLINE</p>
+          <h1 id="status-title">The city is taking a breather.</h1>
+          <p id="status-detail">The game host hasn’t been connected to this page yet.</p>
+          <div class="actions">
+            <button id="connect" disabled>Connect</button>
+            <button id="play" hidden>Play with sound</button>
+          </div>
+          <p class="small">Choose a free player. Each player slot accepts one browser.</p>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <p id="input-note">Desktop keyboard + mouse required. The host PC must stay online.</p>
+      <p class="controls"><b>WASD</b> Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>C</b> Crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
+    </footer>
+  </body>
+</html>

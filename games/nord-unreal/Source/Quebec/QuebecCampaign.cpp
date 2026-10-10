@@ -349,6 +349,15 @@ void AQuebecCampaign::StopAiming()
     LightHoldProgress = 0.f;
 }
 
+void AQuebecCampaign::ReleaseBrowserInput(AQuebecController* Controller)
+{
+    if (HasAuthority() && IsAimingLight(Controller))
+    {
+        StopAiming();
+        ForceNetUpdate();
+    }
+}
+
 void AQuebecCampaign::TickTerrace(float DeltaSeconds)
 {
     if (Phase == EQuebecCampaignPhase::AimWorklight)

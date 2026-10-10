@@ -24,6 +24,8 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerState.h"
+#include "IPixelStreaming2Module.h"
+#include "PixelStreaming2Delegates.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/CommandLine.h"
@@ -34,6 +36,10 @@
 #include "UObject/ConstructorHelpers.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/InputSettings.h"
+#include "GameFramework/PlayerInput.h"
+#include "InputKeyEventArgs.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/ScopeExit.h"
 #endif
@@ -47,6 +53,19 @@ namespace
     {
         TActorIterator<AQuebecCampaign> It(World);
         return It ? *It : nullptr;
+    }
+
+    void ReleasePawnInput(APawn* Pawn)
+    {
+        if (!Pawn) return;
+        Pawn->ConsumeMovementInputVector();
+        if (AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn))
+        {
+            Walker->StopJumping();
+            Walker->GetCharacterMovement()->MaxWalkSpeed = 450.f;
+            Walker->GetCharacterMovement()->StopMovementImmediately();
+        }
+        else if (AQuebecCar* Car = Cast<AQuebecCar>(Pawn)) Car->StopInput();
     }
 }
 
@@ -1079,6 +1098,56 @@ void AQuebecGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 }
 
 
+void AQuebecController::BeginPlay()
+{
+    Super::BeginPlay();
+    BindBrowserInputRelease();
+}
+
+void AQuebecController::BindBrowserInputRelease()
+{
+    if (!IsLocalController() || !IPixelStreaming2Module::IsAvailable()) return;
+    BrowserStreamerId = IPixelStreaming2Module::Get().GetDefaultStreamerID();
+    if (UPixelStreaming2Delegates* Delegates = UPixelStreaming2Delegates::Get())
+    {
+        Delegates->OnDataTrackClosedNative.AddUObject(this, &AQuebecController::BrowserDataTrackClosed);
+        Delegates->OnAllConnectionsClosedNative.AddUObject(this, &AQuebecController::BrowserDisconnected);
+        Delegates->OnDisconnectedFromSignallingServerNative.AddUObject(this, &AQuebecController::BrowserDisconnected);
+    }
+}
+
+void AQuebecController::UnbindBrowserInputRelease()
+{
+    if (UPixelStreaming2Delegates* Delegates = UPixelStreaming2Delegates::Get())
+    {
+        Delegates->OnDataTrackClosedNative.RemoveAll(this);
+        Delegates->OnAllConnectionsClosedNative.RemoveAll(this);
+        Delegates->OnDisconnectedFromSignallingServerNative.RemoveAll(this);
+    }
+}
+
+void AQuebecController::BrowserDataTrackClosed(FString StreamerId, FString PlayerId)
+{
+    BrowserDisconnected(StreamerId);
+}
+
+void AQuebecController::BrowserDisconnected(FString StreamerId)
+{
+    if (!IsLocalController() || BrowserStreamerId.IsEmpty() || BrowserStreamerId != StreamerId) return;
+    // A browser leaving does not destroy its Unreal client. Release its latched
+    // controls on both peers while retaining possession and campaign progress.
+    FlushPressedKeys();
+    ReleasePawnInput(GetPawn());
+    ServerReleaseBrowserInput();
+    UE_LOG(LogTemp, Display, TEXT("NORD_BROWSER_INPUT_RELEASE streamer=%s pawn=%s"), *StreamerId, *GetNameSafe(GetPawn()));
+}
+
+void AQuebecController::ServerReleaseBrowserInput_Implementation()
+{
+    ReleasePawnInput(GetPawn());
+    if (AQuebecCampaign* Campaign = CampaignFor(GetWorld())) Campaign->ReleaseBrowserInput(this);
+}
+
 void AQuebecController::SetupInputComponent()
 {
     Super::SetupInputComponent();
@@ -1328,6 +1397,7 @@ void AQuebecController::PawnLeavingGame()
 
 void AQuebecController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    UnbindBrowserInputRelease();
     if (HasAuthority())
     {
         if (AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()))
@@ -2129,6 +2199,92 @@ bool FQuebecTrafficCircuitTest::RunTest(const FString& Parameters)
         }
     TestTrue(TEXT("Surveyed grid provides enough circulating streets"), Active >= 100);
     TestEqual(TEXT("Every traffic endpoint has an onward road"), DeadEnds, 0);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecBrowserInputReleaseTest, "Quebec.Browser.InputRelease", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecBrowserInputReleaseTest::RunTest(const FString& Parameters)
+{
+    // Feed actual engine key events/bindings and the plugin's native close
+    // delegates in an isolated world. No browser, saved map or save slot is used.
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game,false);
+    if (!TestNotNull(TEXT("Isolated browser-input world"),World)) return false;
+    ON_SCOPE_EXIT { World->DestroyWorld(false); };
+    // Actor::ProcessEvent drops reflected RPC calls before this initialization.
+    // BeginPlay is intentionally omitted so this fixture never loads/saves progress.
+    World->InitializeActorsForPlay(FURL());
+    if (!TestTrue(TEXT("Fixture supports the real RPC call path"),World->AreActorsInitialized())) return false;
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AQuebecController* Controller = World->SpawnActor<AQuebecController>();
+    AQuebecController* Other = World->SpawnActor<AQuebecController>();
+    AQuebecCampaign* Campaign = World->SpawnActor<AQuebecCampaign>();
+    if (!TestNotNull(TEXT("Local controller"),Controller) || !TestNotNull(TEXT("Other controller"),Other) ||
+        !TestNotNull(TEXT("Campaign"),Campaign)) return false;
+    Controller->Player = NewObject<ULocalPlayer>(GEngine);
+    Controller->PlayerInput = NewObject<UPlayerInput>(Controller,UInputSettings::GetDefaultPlayerInputClass());
+    Controller->PlayerState = World->SpawnActor<APlayerState>();
+    Other->PlayerState = World->SpawnActor<APlayerState>();
+    AQuebecCharacter* Walker = World->SpawnActor<AQuebecCharacter>(Campaign->WorklightLocation+FVector(0.,-175.,10.),FRotator::ZeroRotator,Spawn);
+    AQuebecCar* Car = World->SpawnActor<AQuebecCar>(FVector(5000.,5000.,102.),FRotator::ZeroRotator,Spawn);
+    if (!TestNotNull(TEXT("Walker"),Walker) || !TestNotNull(TEXT("Car"),Car)) return false;
+    Controller->Possess(Walker);
+    Controller->BindBrowserInputRelease();
+    Controller->BrowserStreamerId = TEXT("QuebecBrowserInputReleaseTest");
+    ON_SCOPE_EXIT { Controller->UnbindBrowserInputRelease(); };
+    UPixelStreaming2Delegates* Delegates = UPixelStreaming2Delegates::Get();
+    if (!TestNotNull(TEXT("Native streaming delegates"),Delegates)) return false;
+    UInputComponent* WalkerInput = NewObject<UInputComponent>(Walker,UInputSettings::GetDefaultInputComponentClass());
+    Walker->SetupPlayerInputComponent(WalkerInput);
+    const TArray<UInputComponent*> WalkerStack = {WalkerInput};
+    const auto Press = [Controller](FKey Key)
+    {
+        Controller->PlayerInput->InputKey(FInputKeyEventArgs::CreateSimulated(Key,IE_Pressed,1.f,1));
+    };
+    Press(EKeys::W); Press(EKeys::LeftShift); Press(EKeys::SpaceBar);
+    Controller->PlayerInput->ProcessInputStack(WalkerStack,.016f,false);
+    TestTrue(TEXT("Native W key is held"),Controller->PlayerInput->IsPressed(EKeys::W));
+    TestEqual(TEXT("Native sprint binding is active"),Walker->GetCharacterMovement()->MaxWalkSpeed,800.f);
+    TestTrue(TEXT("Native movement creates pending input"),!Walker->GetPendingMovementInputVector().IsNearlyZero());
+    if (!TestTrue(TEXT("Controller acquires actual worklight"),Campaign->HandleInteract(Controller))) return false;
+    TestTrue(TEXT("Worklight belongs to departing controller"),Campaign->IsAimingLight(Controller));
+    Other->ServerReleaseBrowserInput_Implementation();
+    TestTrue(TEXT("Other controller cannot release this worklight"),Campaign->IsAimingLight(Controller));
+    Delegates->OnAllConnectionsClosedNative.Broadcast(TEXT("UnrelatedStreamer"));
+    TestTrue(TEXT("Other streamer cannot flush local keys"),Controller->PlayerInput->IsPressed(EKeys::W));
+    TestTrue(TEXT("Other streamer cannot release worklight"),Campaign->IsAimingLight(Controller));
+    const FVector WalkerLocation = Walker->GetActorLocation();
+    const EQuebecCampaignPhase Phase = Campaign->Phase;
+    const int32 Completed = Campaign->CompletedMissions;
+    Delegates->OnDataTrackClosedNative.Broadcast(Controller->BrowserStreamerId,TEXT("BrowserPeer"));
+    TestFalse(TEXT("Data loss flushes W"),Controller->PlayerInput->IsPressed(EKeys::W));
+    TestFalse(TEXT("Data loss flushes sprint"),Controller->PlayerInput->IsPressed(EKeys::LeftShift));
+    TestFalse(TEXT("Data loss flushes jump"),Controller->PlayerInput->IsPressed(EKeys::SpaceBar));
+    TestTrue(TEXT("Data loss clears pending movement"),Walker->GetPendingMovementInputVector().IsNearlyZero());
+    TestEqual(TEXT("Sprint returns to walking speed"),Walker->GetCharacterMovement()->MaxWalkSpeed,450.f);
+    TestNull(TEXT("Only departing operator is released"),Campaign->LightOperator.Get());
+    TestTrue(TEXT("Campaign phase is preserved"),Campaign->Phase==Phase);
+    TestEqual(TEXT("Completed missions are preserved"),Campaign->CompletedMissions,Completed);
+    TestTrue(TEXT("Walker remains possessed for reconnect"),Controller->GetPawn()==Walker && Walker->GetActorLocation().Equals(WalkerLocation));
+    Controller->PlayerInput->ProcessInputStack(WalkerStack,.016f,false);
+    Walker->SetInVehicle(true);
+    Car->Occupant = Walker;
+    Controller->Possess(Car);
+    UInputComponent* CarInput = NewObject<UInputComponent>(Car,UInputSettings::GetDefaultInputComponentClass());
+    Car->SetupPlayerInputComponent(CarInput);
+    const TArray<UInputComponent*> CarStack = {CarInput};
+    Press(EKeys::W); Press(EKeys::D); Press(EKeys::SpaceBar);
+    Controller->PlayerInput->ProcessInputStack(CarStack,.016f,false);
+    TestTrue(TEXT("Native drive bindings hold throttle, steering and brake"),Car->Throttle==1.f && Car->Steering==1.f && Car->bHandbrake);
+    Delegates->OnAllConnectionsClosedNative.Broadcast(Controller->BrowserStreamerId);
+    TestTrue(TEXT("Last viewer loss releases car controls"),Car->Throttle==0.f && Car->Steering==0.f && Car->DriveThrottle==0.f && !Car->bHandbrake);
+    TestTrue(TEXT("Car, occupant and possession survive browser loss"),IsValid(Car) && Car->Occupant==Walker && Controller->GetPawn()==Car);
+    Controller->PlayerInput->ProcessInputStack(CarStack,.016f,false);
+    Press(EKeys::W);
+    Controller->PlayerInput->ProcessInputStack(CarStack,.016f,false);
+    TestEqual(TEXT("New browser input works on the retained pawn"),Car->Throttle,1.f);
+    Delegates->OnDisconnectedFromSignallingServerNative.Broadcast(Controller->BrowserStreamerId);
+    TestEqual(TEXT("Signalling loss also releases throttle"),Car->Throttle,0.f);
     return true;
 }
 

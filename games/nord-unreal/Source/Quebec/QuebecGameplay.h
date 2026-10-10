@@ -101,6 +101,7 @@ UCLASS()
 class QUEBEC_API AQuebecCar : public APawn
 {
     GENERATED_BODY()
+    friend class FQuebecBrowserInputReleaseTest;
 public:
     AQuebecCar();
     virtual void BeginPlay() override;
@@ -180,7 +181,9 @@ UCLASS()
 class QUEBEC_API AQuebecController : public APlayerController
 {
     GENERATED_BODY()
+    friend class FQuebecBrowserInputReleaseTest;
 public:
+    virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
     virtual void PawnLeavingGame() override;
@@ -199,6 +202,12 @@ private:
     float CaptureClock = 0.f;
     int32 CaptureStep = 0;
     float CampaignAimElapsed = 0.f;
+    FString BrowserStreamerId;
+    void BindBrowserInputRelease();
+    void UnbindBrowserInputRelease();
+    void BrowserDataTrackClosed(FString StreamerId, FString PlayerId);
+    void BrowserDisconnected(FString StreamerId);
+    UFUNCTION(Server, Reliable) void ServerReleaseBrowserInput();
     UFUNCTION() void RetryCampaign();
     UFUNCTION() void ReplayCampaign();
     UFUNCTION(Server, Reliable) void ServerRetryCampaign();

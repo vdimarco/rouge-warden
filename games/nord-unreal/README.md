@@ -14,7 +14,9 @@ Lumen lighting/reflections, virtual shadow maps, moving water and a restrained c
 
 ## Play
 
-Run from the project directory:
+[Open the temporary browser player](https://nord-montreal.vercel.app/) on desktop. **The PC streams are currently stopped pending sufficient GPU memory; the page alone cannot provide gameplay.** When the host is running, choose Player 1 (`NordHost`) or Player 2 (`NordFriend1`), then **Play with sound** and click the video to capture input; **Esc** releases it. Each slot accepts one browser and controls a separate Unreal instance in the same native session. The deployed two-stream regression passed before another GPU application started; a bounded 30-second sample averaged 23.1/24.2 decoded FPS, and car entry/driving/exit are visually checked. Sustained/remote responsiveness, off-LAN reachability, audible sound, handling enjoyment and full browser-package campaign save/reload remain open. See [browser verification](Verification/BrowserStreaming.md), [player setup](Browser/README.md) and [temporary hosting](Browser/HOSTING.md).
+
+For the native Linux game, run from the project directory:
 
 ```bash
 ./Scripts/launch.sh play
@@ -73,7 +75,7 @@ To take reference screenshots, run the game with `-NordCapture`: comic and stand
 
 The host runs `./Scripts/launch.sh host`. Friends run the same build with `./Scripts/launch.sh join HOST:7777`, replacing `HOST` with the host's reachable IPv4 address or hostname. Use a LAN address for local play or a reachable public address for internet play. The host must accept incoming UDP traffic on port 7777; router/NAT and firewall configuration may be required. The launcher does not change network settings.
 
-This is direct-IP listen-server support. Matchmaking, accounts, invite links, relay/NAT traversal, persistent servers, and public deployment are not implemented. A local test does not verify internet connectivity. The session ends when the host exits.
+The native launcher uses direct-IP listen-server support. The separate [browser demo](Browser/README.md) provides a public player page and two temporary streaming slots; it keeps the native multiplayer connection on the host PC. Neither path supplies matchmaking, accounts, reservations or persistent servers. Browser media has no TURN relay, and an off-LAN test remains unverified. A local test does not verify internet connectivity. The session ends when the host exits.
 
 ## Build and regenerate the map
 
@@ -117,7 +119,7 @@ Run the gameplay smoke test with this project's editor closed:
 python3 Scripts/test_launcher.py
 ```
 
-Native story QA verifies local late join, active-tool departure/recovery, disk checkpoints and simulated lag/loss; current package startup verifies separate-process loopback. The earlier legacy packaged lifecycle run covers abrupt client loss, timeout, rejoin and exit. Full packaged campaign progression/save-reload remains unverified. External internet connectivity remains unverified. Only Linux is packaged. The arcade car uses server movement without client prediction, so driving may feel delayed over a high-latency connection. If remote drive updates stop for half a second, the server clears stale controls and the car coasts to a stop. The upgraded renderer requires Vulkan SM6; performance on other computers has not been verified. Scripts/verify_lafontaine.py validates map orientation, scale, and actual collision at the spawn, car, and address building; its report is Saved/Tests/LaFontaine.json.
+Native story QA verifies local late join, active-tool departure/recovery, disk checkpoints and simulated lag/loss; current package startup verifies separate-process loopback. The earlier legacy packaged lifecycle run covers abrupt client loss, timeout, rejoin and exit. Full packaged campaign progression/save-reload remains unverified. The [deployed browser regression](Verification/BrowserStreaming.md) verifies two real streams through the public endpoint from this PC; off-LAN internet media reachability remains unverified. Only Linux is packaged. The arcade car uses server movement without client prediction, so driving may feel delayed over a high-latency connection. If remote drive updates stop for half a second, the server clears stale controls and the car coasts to a stop. The upgraded renderer requires Vulkan SM6; performance on other computers has not been verified. Scripts/verify_lafontaine.py validates map orientation, scale, and actual collision at the spawn, car, and address building; its report is Saved/Tests/LaFontaine.json.
 
 Additional package checks use native Unreal Development-build console handlers, not new game test commands:
 

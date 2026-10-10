@@ -1,0 +1,984 @@
+{
+  "startedAt": "2026-10-10T21:38:43.225Z",
+  "playerUrl": "https://nord-montreal.vercel.app/",
+  "passed": true,
+  "checks": [
+    {
+      "name": "host real stream",
+      "passed": true,
+      "durationMs": 2711
+    },
+    {
+      "name": "friend independent real stream",
+      "passed": true,
+      "durationMs": 2682
+    },
+    {
+      "name": "host native input and Escape release",
+      "passed": true,
+      "durationMs": 3016
+    },
+    {
+      "name": "friend native input and Escape release",
+      "passed": true,
+      "durationMs": 2965
+    },
+    {
+      "name": "occupied host slot rejects a third browser",
+      "passed": true,
+      "durationMs": 480
+    },
+    {
+      "name": "occupied browser reconnects after host frees its slot",
+      "passed": true,
+      "durationMs": 4490
+    },
+    {
+      "name": "original host reconnects and retains Disconnect control",
+      "passed": true,
+      "durationMs": 4911
+    }
+  ],
+  "media": {
+    "host": {
+      "currentTime": 1.608,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 33,
+      "framesPerSecond": 21,
+      "videoBytes": 1469568,
+      "audioPackets": 101,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1504,
+      "observedDecodedFps": 20.611702127659573
+    },
+    "friend": {
+      "currentTime": 1.625,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 34,
+      "framesPerSecond": 20,
+      "videoBytes": 1571178,
+      "audioPackets": 104,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1508,
+      "observedDecodedFps": 20.55702917771883
+    },
+    "recovered-slot": {
+      "currentTime": 1.552,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 29,
+      "framesPerSecond": 19,
+      "videoBytes": 946417,
+      "audioPackets": 87,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1503,
+      "observedDecodedFps": 17.964071856287426
+    },
+    "host-reconnected": {
+      "currentTime": 1.576,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 37,
+      "framesPerSecond": 25,
+      "videoBytes": 943997,
+      "audioPackets": 86,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1503,
+      "observedDecodedFps": 22.62142381902861
+    },
+    "friend-still-connected": {
+      "currentTime": 17.605,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 374,
+      "framesPerSecond": 23,
+      "videoBytes": 21315556,
+      "audioPackets": 913,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1503,
+      "observedDecodedFps": 22.62142381902861
+    }
+  },
+  "limits": [
+    "Input screenshots require visual review; native position/story progress are not asserted.",
+    "Headless playback does not verify audible sound or driving feel.",
+    "Testing from the host PC does not establish external NAT reachability."
+  ],
+  "finishedAt": "2026-10-10T21:39:06.156Z",
+  "performanceSample": {
+    "startedAt": "2026-10-10T21:43:21.335Z",
+    "playerUrl": "https://nord-montreal.vercel.app/",
+    "browserPath": "Installed Playwright / system Chromium; Browser plugin unavailable",
+    "passed": true,
+    "targetSeconds": 30,
+    "peers": {
+      "host": {
+        "id": "NordHost",
+        "title": "NORD / Montr\u00e9al \u2014 Play",
+        "url": "https://nord-montreal.vercel.app/",
+        "before": {
+          "measuredAt": 1791668606026,
+          "currentTime": 2.984,
+          "readyState": 4,
+          "width": 1280,
+          "height": 720,
+          "video": [
+            {
+              "id": "IT01V183520481",
+              "codec": "video/VP8",
+              "framesDecoded": 72,
+              "framesReceived": 72,
+              "framesDropped": 0,
+              "framesPerSecond": 25,
+              "bytesReceived": 2711862,
+              "packetsReceived": 2390,
+              "packetsLost": 0,
+              "jitter": 0.031,
+              "totalDecodeTime": 0.291336,
+              "totalProcessingDelay": 2.9735639999999997,
+              "jitterBufferDelay": 2.678738,
+              "jitterBufferTargetDelay": 1.843875,
+              "jitterBufferEmittedCount": 72,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0
+            }
+          ],
+          "audio": [
+            {
+              "id": "IT01A3781981722",
+              "codec": "audio/OPUS",
+              "packetsReceived": 154,
+              "packetsLost": 0,
+              "jitter": 0.002,
+              "bytesReceived": 456
+            }
+          ],
+          "candidatePairs": [
+            {
+              "id": "CPNejAEkIe_YitN4Ycs",
+              "currentRoundTripTime": 0,
+              "totalRoundTripTime": 0.002,
+              "responsesReceived": 5,
+              "bytesSent": 12272,
+              "bytesReceived": 2829638,
+              "availableOutgoingBitrate": 300000
+            }
+          ]
+        },
+        "after": {
+          "measuredAt": 1791668636029,
+          "currentTime": 32.966,
+          "readyState": 4,
+          "width": 1280,
+          "height": 720,
+          "video": [
+            {
+              "id": "IT01V183520481",
+              "codec": "video/VP8",
+              "framesDecoded": 764,
+              "framesReceived": 764,
+              "framesDropped": 0,
+              "framesPerSecond": 24,
+              "bytesReceived": 39263340,
+              "packetsReceived": 33833,
+              "packetsLost": 0,
+              "jitter": 0.035,
+              "totalDecodeTime": 3.5225999999999997,
+              "totalProcessingDelay": 43.722685,
+              "jitterBufferDelay": 40.161622,
+              "jitterBufferTargetDelay": 17.069232,
+              "jitterBufferEmittedCount": 764,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0
+            }
+          ],
+          "audio": [
+            {
+              "id": "IT01A3781981722",
+              "codec": "audio/OPUS",
+              "packetsReceived": 1674,
+              "packetsLost": 0,
+              "jitter": 0.002,
+              "bytesReceived": 5010
+            }
+          ],
+          "candidatePairs": [
+            {
+              "id": "CP/5DAtVHz_eaf4jTtD",
+              "currentRoundTripTime": 0,
+              "totalRoundTripTime": 0.005,
+              "responsesReceived": 15,
+              "bytesSent": 50896,
+              "bytesReceived": 35393219,
+              "availableOutgoingBitrate": 300000
+            },
+            {
+              "id": "CP5I7w1Mx4_VBnjKaGR",
+              "currentRoundTripTime": 0.002,
+              "totalRoundTripTime": 0.002,
+              "responsesReceived": 1,
+              "bytesSent": 0,
+              "bytesReceived": 0
+            },
+            {
+              "id": "CPNejAEkIe_YitN4Ycs",
+              "currentRoundTripTime": 0,
+              "totalRoundTripTime": 0.003,
+              "responsesReceived": 6,
+              "bytesSent": 17025,
+              "bytesReceived": 5183911
+            }
+          ]
+        },
+        "summary": {
+          "seconds": 30.003,
+          "decodedFrames": 692,
+          "averageDecodedFps": 23.0643602306436,
+          "videoMbps": 9.746086191380861,
+          "droppedFrames": 0,
+          "packetLossDelta": 0,
+          "currentTimeAdvance": 29.982,
+          "jitterSecondsAtEnd": [
+            0.035
+          ],
+          "candidateRttSecondsAtEnd": [
+            0,
+            0.002,
+            0
+          ],
+          "freezeCountDelta": 0,
+          "freezeDurationSecondsDelta": 0,
+          "averageDecodeMs": 4.669456647398844,
+          "averageProcessingDelayMs": 58.88601300578035,
+          "averageJitterBufferMs": 54.16601734104046
+        }
+      },
+      "friend": {
+        "id": "NordFriend1",
+        "title": "NORD / Montr\u00e9al \u2014 Play",
+        "url": "https://nord-montreal.vercel.app/",
+        "before": {
+          "measuredAt": 1791668606026,
+          "currentTime": 0.417,
+          "readyState": 4,
+          "width": 1280,
+          "height": 720,
+          "video": [
+            {
+              "id": "IT01V243034794",
+              "codec": "video/VP8",
+              "framesDecoded": 9,
+              "framesReceived": 9,
+              "framesDropped": 0,
+              "framesPerSecond": 21,
+              "bytesReceived": 163463,
+              "packetsReceived": 320,
+              "packetsLost": 0,
+              "jitter": 0.011,
+              "totalDecodeTime": 0.030612,
+              "totalProcessingDelay": 0.21051299999999998,
+              "jitterBufferDelay": 0.17931999999999998,
+              "jitterBufferTargetDelay": 0.255716,
+              "jitterBufferEmittedCount": 9,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0
+            }
+          ],
+          "audio": [
+            {
+              "id": "IT01A700443458",
+              "codec": "audio/OPUS",
+              "packetsReceived": 28,
+              "packetsLost": 0,
+              "jitter": 0.002,
+              "bytesReceived": 75
+            }
+          ],
+          "candidatePairs": [
+            {
+              "id": "CPBPhSyZp+_c3OuMyTp",
+              "currentRoundTripTime": 0,
+              "totalRoundTripTime": 0.001,
+              "responsesReceived": 3,
+              "bytesSent": 6235,
+              "bytesReceived": 66356
+            },
+            {
+              "id": "CPvNlmPFHM_2+aCoHyN",
+              "currentRoundTripTime": 0.001,
+              "totalRoundTripTime": 0.001,
+              "responsesReceived": 3,
+              "bytesSent": 591,
+              "bytesReceived": 164595,
+              "availableOutgoingBitrate": 300000
+            }
+          ]
+        },
+        "after": {
+          "measuredAt": 1791668636029,
+          "currentTime": 30.403,
+          "readyState": 4,
+          "width": 1280,
+          "height": 720,
+          "video": [
+            {
+              "id": "IT01V243034794",
+              "codec": "video/VP8",
+              "framesDecoded": 735,
+              "framesReceived": 736,
+              "framesDropped": 0,
+              "framesPerSecond": 23,
+              "bytesReceived": 36266696,
+              "packetsReceived": 31374,
+              "packetsLost": 0,
+              "jitter": 0.033,
+              "totalDecodeTime": 3.352934,
+              "totalProcessingDelay": 45.222167,
+              "jitterBufferDelay": 41.893406,
+              "jitterBufferTargetDelay": 23.010669999999998,
+              "jitterBufferEmittedCount": 736,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0
+            }
+          ],
+          "audio": [
+            {
+              "id": "IT01A700443458",
+              "codec": "audio/OPUS",
+              "packetsReceived": 1549,
+              "packetsLost": 0,
+              "jitter": 0.002,
+              "bytesReceived": 4626
+            }
+          ],
+          "candidatePairs": [
+            {
+              "id": "CPBPhSyZp+_c3OuMyTp",
+              "currentRoundTripTime": 0,
+              "totalRoundTripTime": 0.001,
+              "responsesReceived": 3,
+              "bytesSent": 6235,
+              "bytesReceived": 66356
+            },
+            {
+              "id": "CPfvF51jcn_udHSUPwx",
+              "currentRoundTripTime": 0,
+              "totalRoundTripTime": 0.005,
+              "responsesReceived": 14,
+              "bytesSent": 46354,
+              "bytesReceived": 32141544,
+              "availableOutgoingBitrate": 300000
+            },
+            {
+              "id": "CPvNlmPFHM_2+aCoHyN",
+              "currentRoundTripTime": 0,
+              "totalRoundTripTime": 0.002,
+              "responsesReceived": 7,
+              "bytesSent": 9645,
+              "bytesReceived": 5306928
+            }
+          ]
+        },
+        "summary": {
+          "seconds": 30.003,
+          "decodedFrames": 726,
+          "averageDecodedFps": 24.197580241975803,
+          "videoMbps": 9.626566143385661,
+          "droppedFrames": 0,
+          "packetLossDelta": 0,
+          "currentTimeAdvance": 29.985999999999997,
+          "jitterSecondsAtEnd": [
+            0.033
+          ],
+          "candidateRttSecondsAtEnd": [
+            0,
+            0,
+            0
+          ],
+          "freezeCountDelta": 0,
+          "freezeDurationSecondsDelta": 0,
+          "averageDecodeMs": 4.576201101928374,
+          "averageProcessingDelayMs": 61.99952341597796,
+          "averageJitterBufferMs": 57.37838514442917
+        }
+      }
+    },
+    "console": [
+      {
+        "name": "host",
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "name": "host",
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "name": "friend",
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "screenshots": [
+      "host-before.png",
+      "friend-before.png",
+      "host-motion.png",
+      "friend-motion.png",
+      "host-after.png",
+      "friend-after.png"
+    ],
+    "limits": [
+      "One bounded host-PC sample, not a sustained soak or off-LAN test.",
+      "Decoded frame rate does not measure native input latency or audible sound.",
+      "Trusted movement/jump inputs are sent without asserting native position or mission state."
+    ],
+    "intermediate": [
+      {
+        "atSeconds": 10.004,
+        "samples": {
+          "host": {
+            "measuredAt": 1791668616030,
+            "currentTime": 12.968,
+            "readyState": 4,
+            "width": 1280,
+            "height": 720,
+            "video": [
+              {
+                "id": "IT01V183520481",
+                "codec": "video/VP8",
+                "framesDecoded": 289,
+                "framesReceived": 289,
+                "framesDropped": 0,
+                "framesPerSecond": 21,
+                "bytesReceived": 14147936,
+                "packetsReceived": 12231,
+                "packetsLost": 0,
+                "jitter": 0.039,
+                "totalDecodeTime": 1.3502349999999999,
+                "totalProcessingDelay": 15.369098,
+                "jitterBufferDelay": 14.001394999999999,
+                "jitterBufferTargetDelay": 6.757512999999999,
+                "jitterBufferEmittedCount": 289,
+                "freezeCount": 0,
+                "totalFreezesDuration": 0
+              }
+            ],
+            "audio": [
+              {
+                "id": "IT01A3781981722",
+                "codec": "audio/OPUS",
+                "packetsReceived": 663,
+                "packetsLost": 0,
+                "jitter": 0.002,
+                "bytesReceived": 1977
+              }
+            ],
+            "candidatePairs": [
+              {
+                "id": "CP/5DAtVHz_eaf4jTtD",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.003,
+                "responsesReceived": 7,
+                "bytesSent": 13898,
+                "bytesReceived": 9457806,
+                "availableOutgoingBitrate": 300000
+              },
+              {
+                "id": "CP5I7w1Mx4_VBnjKaGR",
+                "currentRoundTripTime": 0.002,
+                "totalRoundTripTime": 0.002,
+                "responsesReceived": 1,
+                "bytesSent": 0,
+                "bytesReceived": 0
+              },
+              {
+                "id": "CPNejAEkIe_YitN4Ycs",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.003,
+                "responsesReceived": 6,
+                "bytesSent": 17025,
+                "bytesReceived": 5183911
+              }
+            ]
+          },
+          "friend": {
+            "measuredAt": 1791668616030,
+            "currentTime": 10.435,
+            "readyState": 4,
+            "width": 1280,
+            "height": 720,
+            "video": [
+              {
+                "id": "IT01V243034794",
+                "codec": "video/VP8",
+                "framesDecoded": 237,
+                "framesReceived": 237,
+                "framesDropped": 0,
+                "framesPerSecond": 22,
+                "bytesReceived": 10743223,
+                "packetsReceived": 9429,
+                "packetsLost": 0,
+                "jitter": 0.038,
+                "totalDecodeTime": 1.0667849999999999,
+                "totalProcessingDelay": 12.206444999999999,
+                "jitterBufferDelay": 11.126446,
+                "jitterBufferTargetDelay": 5.570053,
+                "jitterBufferEmittedCount": 237,
+                "freezeCount": 0,
+                "totalFreezesDuration": 0
+              }
+            ],
+            "audio": [
+              {
+                "id": "IT01A700443458",
+                "codec": "audio/OPUS",
+                "packetsReceived": 538,
+                "packetsLost": 0,
+                "jitter": 0.002,
+                "bytesReceived": 1593
+              }
+            ],
+            "candidatePairs": [
+              {
+                "id": "CPBPhSyZp+_c3OuMyTp",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.001,
+                "responsesReceived": 3,
+                "bytesSent": 6235,
+                "bytesReceived": 66356
+              },
+              {
+                "id": "CPfvF51jcn_udHSUPwx",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.003,
+                "responsesReceived": 6,
+                "bytesSent": 8964,
+                "bytesReceived": 5786774,
+                "availableOutgoingBitrate": 300000
+              },
+              {
+                "id": "CPvNlmPFHM_2+aCoHyN",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.002,
+                "responsesReceived": 6,
+                "bytesSent": 9645,
+                "bytesReceived": 5306928
+              }
+            ]
+          }
+        }
+      },
+      {
+        "atSeconds": 20.005,
+        "samples": {
+          "host": {
+            "measuredAt": 1791668626030,
+            "currentTime": 22.97,
+            "readyState": 4,
+            "width": 1280,
+            "height": 720,
+            "video": [
+              {
+                "id": "IT01V183520481",
+                "codec": "video/VP8",
+                "framesDecoded": 520,
+                "framesReceived": 521,
+                "framesDropped": 0,
+                "framesPerSecond": 23,
+                "bytesReceived": 26562195,
+                "packetsReceived": 22907,
+                "packetsLost": 0,
+                "jitter": 0.034,
+                "totalDecodeTime": 2.421283,
+                "totalProcessingDelay": 29.591960999999998,
+                "jitterBufferDelay": 27.142274999999998,
+                "jitterBufferTargetDelay": 11.659433,
+                "jitterBufferEmittedCount": 520,
+                "freezeCount": 0,
+                "totalFreezesDuration": 0
+              }
+            ],
+            "audio": [
+              {
+                "id": "IT01A3781981722",
+                "codec": "audio/OPUS",
+                "packetsReceived": 1169,
+                "packetsLost": 0,
+                "jitter": 0.003,
+                "bytesReceived": 3495
+              }
+            ],
+            "candidatePairs": [
+              {
+                "id": "CP/5DAtVHz_eaf4jTtD",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.004,
+                "responsesReceived": 11,
+                "bytesSent": 32246,
+                "bytesReceived": 22277579,
+                "availableOutgoingBitrate": 300000
+              },
+              {
+                "id": "CP5I7w1Mx4_VBnjKaGR",
+                "currentRoundTripTime": 0.002,
+                "totalRoundTripTime": 0.002,
+                "responsesReceived": 1,
+                "bytesSent": 0,
+                "bytesReceived": 0
+              },
+              {
+                "id": "CPNejAEkIe_YitN4Ycs",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.003,
+                "responsesReceived": 6,
+                "bytesSent": 17025,
+                "bytesReceived": 5183911
+              }
+            ]
+          },
+          "friend": {
+            "measuredAt": 1791668626030,
+            "currentTime": 20.441,
+            "readyState": 4,
+            "width": 1280,
+            "height": 720,
+            "video": [
+              {
+                "id": "IT01V243034794",
+                "codec": "video/VP8",
+                "framesDecoded": 484,
+                "framesReceived": 485,
+                "framesDropped": 0,
+                "framesPerSecond": 26,
+                "bytesReceived": 23573697,
+                "packetsReceived": 20461,
+                "packetsLost": 0,
+                "jitter": 0.034,
+                "totalDecodeTime": 2.213664,
+                "totalProcessingDelay": 29.520557,
+                "jitterBufferDelay": 27.279638,
+                "jitterBufferTargetDelay": 13.79197,
+                "jitterBufferEmittedCount": 484,
+                "freezeCount": 0,
+                "totalFreezesDuration": 0
+              }
+            ],
+            "audio": [
+              {
+                "id": "IT01A700443458",
+                "codec": "audio/OPUS",
+                "packetsReceived": 1044,
+                "packetsLost": 0,
+                "jitter": 0.003,
+                "bytesReceived": 3111
+              }
+            ],
+            "candidatePairs": [
+              {
+                "id": "CPBPhSyZp+_c3OuMyTp",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.001,
+                "responsesReceived": 3,
+                "bytesSent": 6235,
+                "bytesReceived": 66356
+              },
+              {
+                "id": "CPfvF51jcn_udHSUPwx",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.004,
+                "responsesReceived": 10,
+                "bytesSent": 27740,
+                "bytesReceived": 19034862,
+                "availableOutgoingBitrate": 300000
+              },
+              {
+                "id": "CPvNlmPFHM_2+aCoHyN",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.002,
+                "responsesReceived": 7,
+                "bytesSent": 9645,
+                "bytesReceived": 5306928
+              }
+            ]
+          }
+        }
+      },
+      {
+        "atSeconds": 30.004,
+        "samples": {
+          "host": {
+            "measuredAt": 1791668636029,
+            "currentTime": 32.966,
+            "readyState": 4,
+            "width": 1280,
+            "height": 720,
+            "video": [
+              {
+                "id": "IT01V183520481",
+                "codec": "video/VP8",
+                "framesDecoded": 764,
+                "framesReceived": 764,
+                "framesDropped": 0,
+                "framesPerSecond": 24,
+                "bytesReceived": 39263340,
+                "packetsReceived": 33833,
+                "packetsLost": 0,
+                "jitter": 0.035,
+                "totalDecodeTime": 3.5225999999999997,
+                "totalProcessingDelay": 43.722685,
+                "jitterBufferDelay": 40.161622,
+                "jitterBufferTargetDelay": 17.069232,
+                "jitterBufferEmittedCount": 764,
+                "freezeCount": 0,
+                "totalFreezesDuration": 0
+              }
+            ],
+            "audio": [
+              {
+                "id": "IT01A3781981722",
+                "codec": "audio/OPUS",
+                "packetsReceived": 1674,
+                "packetsLost": 0,
+                "jitter": 0.002,
+                "bytesReceived": 5010
+              }
+            ],
+            "candidatePairs": [
+              {
+                "id": "CP/5DAtVHz_eaf4jTtD",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.005,
+                "responsesReceived": 15,
+                "bytesSent": 50896,
+                "bytesReceived": 35393219,
+                "availableOutgoingBitrate": 300000
+              },
+              {
+                "id": "CP5I7w1Mx4_VBnjKaGR",
+                "currentRoundTripTime": 0.002,
+                "totalRoundTripTime": 0.002,
+                "responsesReceived": 1,
+                "bytesSent": 0,
+                "bytesReceived": 0
+              },
+              {
+                "id": "CPNejAEkIe_YitN4Ycs",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.003,
+                "responsesReceived": 6,
+                "bytesSent": 17025,
+                "bytesReceived": 5183911
+              }
+            ]
+          },
+          "friend": {
+            "measuredAt": 1791668636029,
+            "currentTime": 30.403,
+            "readyState": 4,
+            "width": 1280,
+            "height": 720,
+            "video": [
+              {
+                "id": "IT01V243034794",
+                "codec": "video/VP8",
+                "framesDecoded": 735,
+                "framesReceived": 736,
+                "framesDropped": 0,
+                "framesPerSecond": 23,
+                "bytesReceived": 36266696,
+                "packetsReceived": 31374,
+                "packetsLost": 0,
+                "jitter": 0.033,
+                "totalDecodeTime": 3.352934,
+                "totalProcessingDelay": 45.222167,
+                "jitterBufferDelay": 41.893406,
+                "jitterBufferTargetDelay": 23.010669999999998,
+                "jitterBufferEmittedCount": 736,
+                "freezeCount": 0,
+                "totalFreezesDuration": 0
+              }
+            ],
+            "audio": [
+              {
+                "id": "IT01A700443458",
+                "codec": "audio/OPUS",
+                "packetsReceived": 1549,
+                "packetsLost": 0,
+                "jitter": 0.002,
+                "bytesReceived": 4626
+              }
+            ],
+            "candidatePairs": [
+              {
+                "id": "CPBPhSyZp+_c3OuMyTp",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.001,
+                "responsesReceived": 3,
+                "bytesSent": 6235,
+                "bytesReceived": 66356
+              },
+              {
+                "id": "CPfvF51jcn_udHSUPwx",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.005,
+                "responsesReceived": 14,
+                "bytesSent": 46354,
+                "bytesReceived": 32141544,
+                "availableOutgoingBitrate": 300000
+              },
+              {
+                "id": "CPvNlmPFHM_2+aCoHyN",
+                "currentRoundTripTime": 0,
+                "totalRoundTripTime": 0.002,
+                "responsesReceived": 7,
+                "bytesSent": 9645,
+                "bytesReceived": 5306928
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "finishedAt": "2026-10-10T21:43:56.524Z"
+  },
+  "deployment": {
+    "id": "dpl_8YPVCPwL3AY6HNgy1P9DgeQaimdt",
+    "state": "READY",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "gitLinked": false,
+    "method": "Prebuilt configured static output upload",
+    "thirdPartyNoticesPublished": true,
+    "playerJsSha256": "3421fc9426e1701abd6668500d6a50495cced03f452709f7f1f6b72982d1c103",
+    "uniqueUrl": "https://nord-montreal-djatpm7ha-vdimarcos-projects.vercel.app/",
+    "noticesBytes": 15768,
+    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
+    "noticesLicenses": [
+      "Epic frontend/common MIT",
+      "sdp MIT",
+      "@protobuf-ts/runtime Apache-2.0",
+      "Daniel Wirtz UTF8 decoder BSD-3-Clause",
+      "Google varint encoder/decoder BSD-3-Clause"
+    ]
+  },
+  "runtime": {
+    "outputWidth": 1280,
+    "outputHeight": 720,
+    "qualityBase": 2,
+    "globalIlluminationQuality": 1,
+    "reflectionQuality": 1,
+    "shadowQuality": 1,
+    "virtualShadows": false,
+    "screenPercentage": 75,
+    "renderFpsCap": 30,
+    "experimentalMediaIOScheduling": false,
+    "codec": "VP8",
+    "webRtcFps": 30,
+    "videoStartBitrate": 8000000,
+    "videoMaxBitrate": 12000000,
+    "noDebugExecBindings": true,
+    "allowPixelStreamingCommands": false,
+    "players": [
+      "NordHost",
+      "NordFriend1"
+    ],
+    "maxBrowsersPerStream": 1,
+    "ice": "STUN only; no TURN",
+    "currentInputKeyFilterArgument": "-PixelStreamingKeyFilter=Tilde",
+    "currentInputKeyFilterValidation": "Native setting parsed as Tilde/LastSetByCommandline by isolated existing-package NullRHI check; rendered filtering deferred.",
+    "previousLiveInputKeyFilterArgument": "-PixelStreamingInputKeyFilter=Tilde",
+    "previousLiveInputKeyFilterEffective": false
+  },
+  "visualReview": {
+    "sampleFiles": [
+      "host-before.png",
+      "friend-before.png",
+      "host-motion.png",
+      "friend-motion.png",
+      "host-after.png",
+      "friend-after.png"
+    ],
+    "carFiles": [
+      "Saved/BrowserStreaming/CarQA/entered.png",
+      "Saved/BrowserStreaming/CarQA/driving.png",
+      "Saved/BrowserStreaming/CarQA/braked.png",
+      "Saved/BrowserStreaming/CarQA/exit-recheck.png"
+    ],
+    "conclusions": [
+      "Separate host/friend scenes display real game content and readable browser/HUD controls.",
+      "Bounded movement captures show pose/view changes; full jump/animation/facial quality is not accepted.",
+      "Car driving HUD shows 045 KM/H; follow-up exit shows native character and on-foot controls."
+    ],
+    "limits": [
+      "Audible sound and subjective handling enjoyment are unverified.",
+      "Off-LAN media and full browser-package campaign save/reload are unverified."
+    ]
+  },
+  "hostStatus": {
+    "state": "stopped",
+    "playerPageDeployed": true,
+    "demoUnitRunning": false,
+    "funnelUnitRunning": false,
+    "nordUnitsRemain": false,
+    "tailscaleServeConfiguration": {},
+    "lifecyclePhase": "stopped",
+    "reason": "Later transient-service restart hit Vulkan OOM after another GPU application started; current headroom is below the launch threshold.",
+    "latestObservedFreeMiB": 10096,
+    "requiredFreeMiB": 12000,
+    "adapter": 0,
+    "postRestartMediaAccepted": false,
+    "ownedUnitCleanupPassed": true,
+    "unrelatedApplicationsPreserved": true,
+    "friendFailure": {
+      "timeUtc": "2026-10-10T21:51:43Z",
+      "requestedBytes": 134217728,
+      "log": "Saved/BrowserStreaming/friend-20261010-215114-2922917.log"
+    },
+    "memoryGuardChecks": {
+      "mockRejectMiB": 9500,
+      "mockPassMiB": 13000,
+      "actualRefusedMiB": 10206,
+      "actualRefusalLaunchedChildren": false,
+      "selfCheckPassed": true,
+      "pythonSyntaxPassed": true
+    },
+    "limits": [
+      "Threshold is specific to this two-process build on NVIDIA adapter0.",
+      "Preflight does not reserve GPU memory or prevent later competing allocations.",
+      "The passed live/performance evidence predates this restart failure."
+    ]
+  },
+  "keyFilterCheck": {
+    "passed": true,
+    "exitCode": 0,
+    "argument": "-PixelStreamingKeyFilter=Tilde",
+    "log": "Saved/BrowserStreaming/keyfilter-check.log",
+    "settingTimeUtc": "2026-10-10T22:01:07Z",
+    "queryTimeUtc": "2026-10-10T22:01:11Z",
+    "queriedValue": "Tilde",
+    "lastSetBy": "Commandline",
+    "unknownArgumentWarning": false,
+    "renderedBrowserVerified": false,
+    "saveIsolation": "SavedBrowserArgsQA with NordNoCampaignSave",
+    "selfCheckPassed": true,
+    "pythonSyntaxPassed": true
+  }
+}

@@ -51,6 +51,7 @@ public:
     bool HandleInteract(AQuebecController* Controller);
     bool IsAimingLight(const AQuebecController* Controller) const;
     void LightAim(AQuebecController* Controller, float Yaw, float Pitch);
+    void ReleaseBrowserInput(AQuebecController* Controller);
     void RequestRetry(AQuebecController* Controller);
     void RequestReplay(AQuebecController* Controller);
     FString GetInteractionPrompt(const AQuebecController* Controller) const;
