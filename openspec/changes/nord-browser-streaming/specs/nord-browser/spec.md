@@ -15,6 +15,12 @@ NORD SHALL use the existing Unreal game through an official UE5.8-compatible bro
 - **THEN** the player sees an actionable offline/connection error rather than simulated gameplay or a successful play claim
 - **AND** production endpoints require WSS and arbitrary query-string endpoint overrides are disabled
 
+#### Scenario: Ordinary browser on the hosting PC
+- **WHEN** the hosting PC opens the deployed HTTPS player using normal browser DNS and security settings
+- **THEN** the public signalling endpoint connects without resolving to a private tailnet address
+- **AND** both free streams can play real media, receive input and reconnect
+- **AND** a QA run using a DNS override is explicitly labelled and does not count as ordinary-browser acceptance
+
 ### Requirement: Independent browser co-op
 The temporary deployment SHALL distinguish independent player streams from multiple viewers controlling the same pawn.
 

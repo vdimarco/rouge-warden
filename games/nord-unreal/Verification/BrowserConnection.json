@@ -1,0 +1,384 @@
+{
+  "dateUtc": "2026-10-11",
+  "before": {
+    "playerUrl": "https://nord-montreal.vercel.app/",
+    "endpoint": "wss://omarchy.tail7b97f6.ts.net",
+    "hostPcDns": "100.118.148.62",
+    "error": "net::ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS",
+    "webRtcPeersCreated": 0,
+    "normalRunPassed": false,
+    "rawEvidence": "/tmp/nord-connect-qa/normal-dns.json",
+    "previousScopedDnsChecksAreOrdinaryAcceptance": false
+  },
+  "repair": {
+    "endpoint": "wss://reports-rec-encouraged-taught.trycloudflare.com",
+    "resolvedIpv4": [
+      "104.16.231.132",
+      "104.16.230.132"
+    ],
+    "target": "http://127.0.0.1:9010",
+    "unit": "nord-browser-public.service",
+    "cloudflaredVersion": "2026.9.3",
+    "transient": true,
+    "restart": "on-failure",
+    "restartSeconds": 5,
+    "hostnameChangesOnTunnelProcessRecreation": true,
+    "originalFunnelPreserved": true,
+    "nativeLifecycleRestarted": false,
+    "nativeQualityOrVramGuardChanged": false
+  },
+  "deployment": {
+    "id": "dpl_5nXnqkFxfDRz71iG7BQJBL44RbKt",
+    "state": "READY",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "target": "production",
+    "gitLinked": false,
+    "method": "Configured static output upload; exact preview-tested files",
+    "thirdPartyNoticesPublished": true,
+    "playerJsSha256": "ee95fc0410b3534443422e9a833a2342780692c9544f1f7041d32da5123cf924",
+    "uniqueUrl": "https://nord-montreal-igot6tusl-vdimarcos-projects.vercel.app/",
+    "publicUrl": "https://nord-montreal.vercel.app/",
+    "signallingUrl": "wss://reports-rec-encouraged-taught.trycloudflare.com",
+    "noticesBytes": 15768,
+    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+  },
+  "preview": {
+    "id": "dpl_6ih4ASATT6CspNEuZZ9qka5qrCRK",
+    "url": "https://nord-montreal-bai6j7818-vdimarcos-projects.vercel.app/",
+    "liveReport": {
+      "startedAt": "2026-10-11T00:57:59.106Z",
+      "playerUrl": "https://nord-montreal-bai6j7818-vdimarcos-projects.vercel.app/",
+      "networkMode": "ordinary",
+      "dnsOverride": null,
+      "passed": true,
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2199
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2141
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2870
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2874
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 275
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 4167
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 4576
+        }
+      ],
+      "media": {
+        "host": {
+          "currentTime": 1.566,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 32,
+          "framesPerSecond": 21,
+          "videoBytes": 909063,
+          "audioPackets": 85,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 19.307589880159785
+        },
+        "friend": {
+          "currentTime": 1.602,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 31,
+          "framesPerSecond": 21,
+          "videoBytes": 1019643,
+          "audioPackets": 86,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1501,
+          "observedDecodedFps": 18.65423051299134
+        },
+        "recovered-slot": {
+          "currentTime": 1.582,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 32,
+          "framesPerSecond": 21,
+          "videoBytes": 951921,
+          "audioPackets": 87,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 19.29474384564205
+        },
+        "host-reconnected": {
+          "currentTime": 1.593,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 35,
+          "framesPerSecond": 23,
+          "videoBytes": 1058879,
+          "audioPackets": 87,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 21.290751829673987
+        },
+        "friend-still-connected": {
+          "currentTime": 16.381,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 352,
+          "framesPerSecond": 22,
+          "videoBytes": 18722433,
+          "audioPackets": 837,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 22.63648468708389
+        }
+      },
+      "diagnostics": [
+        {
+          "player": "host",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        },
+        {
+          "player": "host",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        },
+        {
+          "player": "friend",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        },
+        {
+          "player": "occupied",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        }
+      ],
+      "limits": [
+        "Input screenshots require visual review; native position/story progress are not asserted.",
+        "Headless playback does not verify audible sound or driving feel.",
+        "Testing from the host PC does not establish external NAT reachability."
+      ],
+      "finishedAt": "2026-10-11T00:58:19.172Z"
+    }
+  },
+  "productionLiveReport": {
+    "startedAt": "2026-10-11T00:58:47.891Z",
+    "playerUrl": "https://nord-montreal.vercel.app/",
+    "networkMode": "ordinary",
+    "dnsOverride": null,
+    "passed": true,
+    "checks": [
+      {
+        "name": "host real stream",
+        "passed": true,
+        "durationMs": 2418
+      },
+      {
+        "name": "friend independent real stream",
+        "passed": true,
+        "durationMs": 2004
+      },
+      {
+        "name": "host native input and Escape release",
+        "passed": true,
+        "durationMs": 2885
+      },
+      {
+        "name": "friend native input and Escape release",
+        "passed": true,
+        "durationMs": 2872
+      },
+      {
+        "name": "occupied host slot rejects a third browser",
+        "passed": true,
+        "durationMs": 234
+      },
+      {
+        "name": "occupied browser reconnects after host frees its slot",
+        "passed": true,
+        "durationMs": 4237
+      },
+      {
+        "name": "original host reconnects and retains Disconnect control",
+        "passed": true,
+        "durationMs": 5058
+      }
+    ],
+    "media": {
+      "host": {
+        "currentTime": 1.57,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 33,
+        "framesPerSecond": 22,
+        "videoBytes": 992483,
+        "audioPackets": 86,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 19.960079840319363
+      },
+      "friend": {
+        "currentTime": 1.575,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 32,
+        "framesPerSecond": 21,
+        "videoBytes": 1040066,
+        "audioPackets": 87,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 19.960079840319363
+      },
+      "recovered-slot": {
+        "currentTime": 1.6,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 31,
+        "framesPerSecond": 21,
+        "videoBytes": 865820,
+        "audioPackets": 86,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1502,
+        "observedDecodedFps": 18.641810918774965
+      },
+      "host-reconnected": {
+        "currentTime": 1.589,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 33,
+        "framesPerSecond": 21,
+        "videoBytes": 1056056,
+        "audioPackets": 86,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 19.960079840319363
+      },
+      "friend-still-connected": {
+        "currentTime": 16.896,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 361,
+        "framesPerSecond": 22,
+        "videoBytes": 19265951,
+        "audioPackets": 863,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1502,
+        "observedDecodedFps": 21.97070572569907
+      }
+    },
+    "diagnostics": [
+      {
+        "player": "host",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "host",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "friend",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "occupied",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "limits": [
+      "Input screenshots require visual review; native position/story progress are not asserted.",
+      "Headless playback does not verify audible sound or driving feel.",
+      "Testing from the host PC does not establish external NAT reachability."
+    ],
+    "finishedAt": "2026-10-11T00:59:08.987Z"
+  },
+  "preserved": {
+    "lifecycle": {
+      "launcher_pid": 2695048,
+      "phase": "running",
+      "infrastructure_sha": "e5e243ed038313d3dad4e3fb9087d4393a5df192",
+      "children": [
+        {
+          "name": "signalling",
+          "pid": 2695156,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261011-003218-2695048.stdout.log"
+        },
+        {
+          "name": "host",
+          "pid": 2695666,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261011-003218-2695048.stdout.log"
+        },
+        {
+          "name": "friend",
+          "pid": 2698970,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261011-003218-2695048.stdout.log"
+        }
+      ]
+    },
+    "hashes": {
+      "Content/Maps/Quebec.umap": "33f25a46d1fa4c39a1b846526b391192ffa19ee425addbde1533f414fc567a3a",
+      "Content/Maps/LaFontaine.umap": "d0f8db3d707c6cd5f417d82280ced1066c4172c5fa6afd14cb2018efa6b4b1d2",
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    }
+  },
+  "limits": [
+    "Same-PC ordinary Chromium, not external NAT acceptance.",
+    "STUN only; no TURN relay.",
+    "Headless QA does not verify audible sound, manual driving feel or sustained responsiveness.",
+    "Temporary tunnel has no uptime guarantee; recreation requires endpoint rebuild/redeploy.",
+    "PC and GPU sessions must remain running."
+  ]
+}

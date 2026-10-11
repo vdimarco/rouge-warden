@@ -1,17 +1,17 @@
 # Browser streaming verification — 2026-10-10
 
-**Current status: player deployed and both PC streams running at the 2026-10-10 22:30 UTC check.** The fresh normal public-player regression passed seven real-stream checks after GPU recovery. A prior bounded 30-second dual-stream sample averaged **23.1 FPS for the host and 24.2 FPS for the friend**. Real browser controls completed Mission 1 and an isolated browser-package restart loaded its save on both peers; see [the GPU recovery and checkpoint record](BrowserGpuRecovery.md). **Overall browser-play acceptance remains open:** smooth sustained/remote driving, off-LAN media reachability, audible sound, manual handling enjoyment and full Mission 2 browser progression remain unverified.
+**Current status: both PC streams passed seven checks from the deployed HTTPS player in ordinary Chromium at 2026-10-11 00:58:47–00:59:09 UTC.** The Tailscale MagicDNS/Chrome local-network failure was reproduced and the deployed signalling setting replaced with a public-only temporary Cloudflare Tunnel. No DNS/security override is used for this result. See [connection repair evidence](BrowserConnection.md). Earlier “normal public” checks below used a scoped DNS override and did not verify ordinary-browser access. Overall acceptance remains open for off-LAN media, audible sound, sustained/manual driving and full Mission 2 browser progression.
 
 ## Deployment and runtime
 
 | Item | Recorded configuration |
 | --- | --- |
 | Public player | [nord-montreal.vercel.app](https://nord-montreal.vercel.app/) |
-| Latest READY deployment | `dpl_8YPVCPwL3AY6HNgy1P9DgeQaimdt`, including the disconnected player-selection fix and expanded third-party notices. |
+| Latest READY deployment | `dpl_5nXnqkFxfDRz71iG7BQJBL44RbKt`, public-only signalling repair; prior player functionality/notices retained. |
 | Separate Vercel project / team | `prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ` / `team_eiZs2QejkAGnsji7iQVwMLy9` |
 | Deployment method | Configured prebuilt `dist` and static deployment configuration, uploaded without Git linkage. Commits do not automatically redeploy it. |
-| Final publication check | Player and [third-party license notices](https://nord-montreal.vercel.app/THIRD_PARTY_NOTICES.txt) return HTTP 200. Deployed player JavaScript SHA-256 `3421fc9426e1701abd6668500d6a50495cced03f452709f7f1f6b72982d1c103` matches the current local build. Expanded notices are 15,768 bytes, SHA-256 `2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8`, also matching local output. The final publication adds notices with player source unchanged from the tested version. |
-| Temporary player signalling | Configured `wss://omarchy.tail7b97f6.ts.net`, Tailscale Funnel to PC port 9010; observed running at 22:30 UTC. Streamer/native multiplayer ports are not public Funnel targets. The hosting method uses transient `nord-browser-demo` / `nord-browser-funnel` user services; no automatic restart or reboot persistence. |
+| Final publication check | Player and [third-party license notices](https://nord-montreal.vercel.app/THIRD_PARTY_NOTICES.txt) return HTTP 200. Deployed player JavaScript SHA-256 `ee95fc0410b3534443422e9a833a2342780692c9544f1f7041d32da5123cf924` matches the current local build. Expanded notices are 15,768 bytes, SHA-256 `2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8`, also matching local output. The latest configured bundle is byte-identical to the tested public preview; third-party notices remain unchanged. |
+| Temporary player signalling | Configured `wss://reports-rec-encouraged-taught.trycloudflare.com`, temporary `nord-browser-public` Cloudflare Tunnel to unchanged PC player port 9010. Native lifecycle and original Funnel remain running. The tunnel hostname changes on process recreation; rebuild/redeploy if that happens. No reboot persistence. |
 | Capacity | `NordHost` and `NordFriend1`: two separate 1280×720 Unreal processes in one native listen-server session, one browser subscriber per stream. |
 | Host | Existing Linux PC, UE5.8.3, Intel Core i9-14900K / NVIDIA RTX 4090 / Vulkan SM6. It must remain powered on, connected and running. |
 | Frontend / bundler | Official `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` 0.1.2 / esbuild 0.28.2, lockfile pinned. |
@@ -25,7 +25,7 @@ The existing map/assets and previous `Builds/Linux` package/saves are retained. 
 
 ## Recorded checks
 
-The [verification JSON](BrowserStreaming.json) retains the original seven-check deployed regression at **21:38:43–21:39:06 UTC**, its later 30-second performance sample and exact runtime settings. A fresh [normal-host regression](../Browser/.qa/live-2026-10-10T22-29-01-803Z/summary.json) at **22:29:01–22:29:23 UTC** repeated all seven checks after the recovery. Both target the public HTTPS player. All seven checks pass:
+The [verification JSON](BrowserStreaming.json) retains the original scoped-DNS seven-check deployed regression at **21:38:43–21:39:06 UTC**, its later 30-second performance sample and exact runtime settings. A fresh [normal-host regression](../Browser/.qa/live-2026-10-10T22-29-01-803Z/summary.json) at **22:29:01–22:29:23 UTC** repeated all seven checks after the recovery. Both target the public HTTPS player with a scoped DNS override; ordinary-browser access was verified only by the later [connection repair](BrowserConnection.md). All seven checks pass:
 
 | Check | Evidence / scope |
 | --- | --- |
@@ -97,4 +97,4 @@ Both owned services were then stopped through `systemctl --user stop`; the lifec
 
 After other rendered Unreal work exited externally, the unchanged guard passed at 12,787 MiB free. The isolated campaign QA completed Mission 1 and reloaded its save on both peers. The unchanged normal lifecycle and Funnel then restarted. A fresh public-endpoint seven-check regression passed, and all three children remained alive through the 22:30:15 UTC bounded check, at least 2,431 MiB free. No renderer quality, game assets, deployment or guard bypass changed. This is [documented in detail](BrowserGpuRecovery.md). The original 30-second performance result remains historical; the fresh regression observed brief samples around 21.3–23.3 decoded FPS, not sustained performance acceptance.
 
-Use [HOSTING.md](../Browser/HOSTING.md) for pinned preparation, transient-service/manual start/stop, preserved services and network limits, and the [browser README](../Browser/README.md) for repeatable static/live checks. Stopping the PC, game, signalling or Funnel ends availability; the Vercel page alone does not keep the game running.
+Use [HOSTING.md](../Browser/HOSTING.md) for pinned preparation, transient-service/manual start/stop, preserved services and network limits, and the [browser README](../Browser/README.md) for repeatable static/live checks. Stopping the PC, game, signalling or current Quick Tunnel ends availability; the Vercel page alone does not keep the game running.

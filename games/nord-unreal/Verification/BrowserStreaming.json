@@ -860,24 +860,20 @@
     "finishedAt": "2026-10-10T21:43:56.524Z"
   },
   "deployment": {
-    "id": "dpl_8YPVCPwL3AY6HNgy1P9DgeQaimdt",
+    "id": "dpl_5nXnqkFxfDRz71iG7BQJBL44RbKt",
     "state": "READY",
     "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
     "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "target": "production",
     "gitLinked": false,
-    "method": "Prebuilt configured static output upload",
+    "method": "Configured static output upload; exact preview-tested files",
     "thirdPartyNoticesPublished": true,
-    "playerJsSha256": "3421fc9426e1701abd6668500d6a50495cced03f452709f7f1f6b72982d1c103",
-    "uniqueUrl": "https://nord-montreal-djatpm7ha-vdimarcos-projects.vercel.app/",
+    "playerJsSha256": "ee95fc0410b3534443422e9a833a2342780692c9544f1f7041d32da5123cf924",
+    "uniqueUrl": "https://nord-montreal-igot6tusl-vdimarcos-projects.vercel.app/",
+    "publicUrl": "https://nord-montreal.vercel.app/",
+    "signallingUrl": "wss://reports-rec-encouraged-taught.trycloudflare.com",
     "noticesBytes": 15768,
-    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
-    "noticesLicenses": [
-      "Epic frontend/common MIT",
-      "sdp MIT",
-      "@protobuf-ts/runtime Apache-2.0",
-      "Daniel Wirtz UTF8 decoder BSD-3-Clause",
-      "Google varint encoder/decoder BSD-3-Clause"
-    ]
+    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
   },
   "runtime": {
     "outputWidth": 1280,
@@ -988,9 +984,36 @@
     "finishedAt": "2026-10-10T22:29:23.421Z",
     "passed": true,
     "checksPassed": 7,
-    "decodedFpsSamples": [23.3, 22.0, 21.3, 22.6, 23.3],
+    "decodedFpsSamples": [
+      23.3,
+      22.0,
+      21.3,
+      22.6,
+      23.3
+    ],
     "normalAlivenessLastUtc": "2026-10-10T22:30:15Z",
     "normalAlivenessMinimumFreeMiB": 2431,
     "normalAlivenessAllThreeChildrenAlive": true
-  }
+  },
+  "priorDeploymentBeforeConnectionRepair": {
+    "id": "dpl_8YPVCPwL3AY6HNgy1P9DgeQaimdt",
+    "state": "READY",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "gitLinked": false,
+    "method": "Prebuilt configured static output upload",
+    "thirdPartyNoticesPublished": true,
+    "playerJsSha256": "3421fc9426e1701abd6668500d6a50495cced03f452709f7f1f6b72982d1c103",
+    "uniqueUrl": "https://nord-montreal-djatpm7ha-vdimarcos-projects.vercel.app/",
+    "noticesBytes": 15768,
+    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
+    "noticesLicenses": [
+      "Epic frontend/common MIT",
+      "sdp MIT",
+      "@protobuf-ts/runtime Apache-2.0",
+      "Daniel Wirtz UTF8 decoder BSD-3-Clause",
+      "Google varint encoder/decoder BSD-3-Clause"
+    ]
+  },
+  "connectionRepairEvidence": "BrowserConnection.json"
 }

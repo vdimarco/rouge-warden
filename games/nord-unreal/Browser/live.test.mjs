@@ -19,10 +19,14 @@ if (process.env.NORD_FUNNEL_PUBLIC_IP) {
 const { chromium } = await import(pathToFileURL(resolve(process.env.NORD_PLAYWRIGHT_PATH || '../../../qa/browser/node_modules/playwright/index.mjs')));
 const output = resolve('.qa', 'live-' + new Date().toISOString().replace(/[:.]/g, '-'));
 await mkdir(output, { recursive: true });
-const report = { startedAt: new Date().toISOString(), playerUrl: playerUrl.href, passed: false, checks: [], media: {},
+const report = { startedAt: new Date().toISOString(), playerUrl: playerUrl.href,
+  networkMode: process.env.NORD_FUNNEL_PUBLIC_IP ? 'scoped-dns-override' : 'ordinary',
+  dnsOverride: process.env.NORD_FUNNEL_PUBLIC_IP || null,
+  passed: false, checks: [], media: {}, diagnostics: [],
   limits: ['Input screenshots require visual review; native position/story progress are not asserted.',
     'Headless playback does not verify audible sound or driving feel.',
     'Testing from the host PC does not establish external NAT reachability.'] };
+console.log(`Network mode: ${report.networkMode}; external NAT reachability is not asserted.`);
 const contexts = [];
 let browser;
 
@@ -54,6 +58,11 @@ async function newPlayer(name) {
   });
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
+  page.on('console', message => {
+    if (message.type() === 'error') report.diagnostics.push({ player: name, type: 'console', message: message.text() });
+  });
+  page.on('websocket', socket => socket.on('socketerror', error =>
+    report.diagnostics.push({ player: name, type: 'websocket', message: String(error) })));
   page.on('pageerror', error => report.checks.push({ name: `${name} page error`, passed: false, error: error.message }));
   await page.goto(playerUrl.href);
   await page.waitForFunction(() => document.body.dataset.state === 'idle');
