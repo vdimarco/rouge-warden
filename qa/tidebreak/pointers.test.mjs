@@ -50,3 +50,85 @@ console.log('All 16 heroes: concurrent movement, full-icon upgrades, aiming, can
  screen.reset();
 }
 console.log('Anywhere-drag screen movement preserves taps and releases cleanly.');
+
+{
+ const movement={x:0,y:0},surface=new Control(),factors=[],taps=[];let enabled=true,stops=0;
+ const input=screenMovementPointer(surface,{movement,enabled:()=>enabled,onStart(){},onDragStart(){stops++;},onTap:e=>taps.push(e.pointerId),onZoom:f=>factors.push(f)});
+ surface.send('pointerdown',41,10,50);surface.send('pointermove',41,60,50);assert.equal(movement.x,1);
+ surface.send('pointerdown',42,160,50);assert(input.pinching);assert.deepEqual(movement,{x:0,y:0});assert.equal(stops,2);
+ surface.send('pointermove',42,110,50);assert.equal(factors.at(-1),2,'fingers together zoom out');
+ surface.send('pointermove',42,160,50);assert.equal(factors.at(-1),.5,'fingers apart zoom in');
+ const count=factors.length;surface.send('pointermove',99,300,50);assert.equal(factors.length,count);
+ enabled=false;surface.send('pointermove',42,110,50);assert.equal(factors.length,count,'inactive gestures cannot zoom');enabled=true;
+ surface.send('pointercancel',41);surface.send('lostpointercapture',41);surface.send('pointerup',41);
+ surface.send('pointermove',42,200,50);assert.deepEqual(movement,{x:0,y:0});surface.send('pointerup',42);assert.equal(taps.length,0);assert(!input.active);
+ surface.send('pointerdown',43,10,50);surface.send('pointerup',43);assert.deepEqual(taps,[43],'fresh single touch still taps');
+ surface.send('pointerdown',44,10,50);surface.send('pointerdown',45,110,50);surface.send('lostpointercapture',45);surface.send('pointerup',44);assert.deepEqual(taps,[43]);assert(!input.active);
+ surface.send('pointerdown',46,10,50);surface.send('pointerdown',47,110,50);input.reset();surface.send('pointerup',46);surface.send('pointerup',47);assert(!input.pinching);assert.deepEqual(taps,[43]);
+ const pad=new Control(),thumb=new Control(),skill=new Control(),casts=[];
+ movementPointer(pad,{movement,thumb,enabled:()=>true,onStart(){}});abilityPointers([skill],{enabled:()=>true,onStart(){},onAim(){},onCast:c=>casts.push(c)});
+ pad.send('pointerdown',51);pad.send('pointermove',51,88,50);skill.send('pointerdown',52);skill.send('pointerup',52);
+ assert.equal(movement.x,1);assert.equal(casts.length,1);assert(!input.pinching,'control touches do not enter battlefield pinch');
+ pad.send('pointerup',51);
+}
+console.log('Battlefield pinch: ratios, movement suppression, unrelated touches, inactive states and cancellation pass.');
+
+// A modal can replace the original pointer target between pointerup and click.
+// Route the event through document capture before its new target, as the browser does.
+{
+ const doc=new EventTarget(),otherDoc=new EventTarget(),map=new Control(),otherMap=new Control(),close=new EventTarget();
+ map.ownerDocument=doc;otherMap.ownerDocument=otherDoc;
+ let open=false,opens=0,closes=0,immediateClick=false;
+ close.addEventListener('click',()=>{open=false;closes++;});
+ const route=(document,target,type,id=71,x=50,y=50,detail=1)=>{
+  const e=new Event(type,{cancelable:true});
+  Object.assign(e,{clientX:x,clientY:y,button:0,pointerType:'touch',detail});
+  if(id!==undefined&&id!==null)Object.assign(e,{pointerId:id});
+  document.dispatchEvent(e);
+  if(!e.defaultPrevented)target.dispatchEvent(e);
+  return e;
+ };
+ const release=(id=71)=>{route(doc,map,'pointerdown',id);route(doc,map,'pointerup',id);};
+ pointerAction(map,()=>{open=true;opens++;if(immediateClick)route(doc,close,'click',71);});
+ pointerAction(otherMap,()=>{});
+ release();assert.equal(opens,1,'pointerup opens the modal once');
+ const retargeted=route(doc,close,'click',71);
+ assert(retargeted.defaultPrevented,'matching compatibility click is stopped at document capture');
+ assert(open&&closes===0,'the retargeted click cannot close the new modal');
+ route(doc,close,'click',71);assert.equal(closes,1,'only one matching click is consumed');
+
+ // The guard must be armed before the action replaces its DOM, not after it returns.
+ immediateClick=true;release();assert(open&&closes===1,'a click triggered as the action changes the UI is already guarded');immediateClick=false;
+
+ release(72);
+ route(doc,close,'click',99);assert.equal(closes,2,'a different pointer is not suppressed at matching coordinates');
+ open=true;assert(route(doc,close,'click',72).defaultPrevented,'the original pointer still owns its pending compatibility click');
+ assert(open,'unrelated input does not replace the pending pointer identity');
+
+ release(73);route(doc,map,'click',-1,50,50,0);
+ assert.equal(opens,5,'keyboard activation still runs the pointerAction callback exactly once');
+ const keyboard=route(doc,close,'click',-1,50,50,0);assert(!keyboard.defaultPrevented&&closes===3,'keyboard dismissal remains available');
+
+ release(74);route(doc,close,'pointerdown',80);route(doc,close,'pointerup',80);
+ assert(!route(doc,close,'click',74).defaultPrevented,'the next real pointerdown clears the old guard');
+ assert.equal(closes,4,'a distinct press can close the modal even at the same coordinates');
+
+ // Safari can deliver a MouseEvent with no pointer ID. Its location and short deadline identify the old click.
+ release(75);const safari=route(doc,close,'click',null,51,50);
+ assert(safari.defaultPrevented&&open,'nearby MouseEvent fallback consumes the compatibility click');
+ release(76);assert(!route(doc,close,'click',null,90,90).defaultPrevented,'a different MouseEvent location stays available');
+
+ const originalPerformance=Object.getOwnPropertyDescriptor(globalThis,'performance');let clock=0;
+ try{
+  Object.defineProperty(globalThis,'performance',{configurable:true,value:{now:()=>clock}});
+  release(77);clock=501;
+  assert(!route(doc,close,'click',null).defaultPrevented,'an expired fallback cannot suppress a future click');
+ }finally{if(originalPerformance)Object.defineProperty(globalThis,'performance',originalPerformance);else delete globalThis.performance;}
+
+ release(78);assert(!route(otherDoc,close,'click',78).defaultPrevented,'another document has an independent guard');
+ map.disabled=true;route(doc,map,'pointerdown',79);route(doc,map,'pointerup',79);open=true;
+ assert(!route(doc,close,'click',79).defaultPrevented,'a rejected action does not arm click suppression');
+ map.disabled=false;route(doc,map,'pointerdown',81);route(doc,map,'pointercancel',81);route(doc,map,'pointerup',81);
+ assert(!route(doc,close,'click',81).defaultPrevented,'a cancelled pointer does not arm click suppression');
+}
+console.log('Pointer actions: retargeted compatibility clicks, keyboard activation, distinct presses, legacy MouseEvents and per-document guards pass.');

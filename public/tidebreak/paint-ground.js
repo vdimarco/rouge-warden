@@ -3,6 +3,7 @@ import { LENGTH_SCALE } from './arena.js';
 import { sceneryRandom, laneDistance } from './scenery.js';
 import { riverSample, riverOutline, shoreRibbon } from './river.js';
 import { paintBaseCourt } from './bases.js';
+import { paintRoads } from './paint-roads.js';
 const TAU = Math.PI * 2;
 const texture = (image, column, row, scale = 600) => {
   const c = document.createElement('canvas'); c.width = c.height = scale;
@@ -12,18 +13,6 @@ const texture = (image, column, row, scale = 600) => {
 function outline(c, points) {
   c.beginPath(); c.moveTo((points.at(-1).x + points[0].x) / 2, (points.at(-1).y + points[0].y) / 2);
   for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; c.quadraticCurveTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2); } c.closePath();
-}
-function ribbon(path, seed, lane, spread = 0) {
-  const left = [], right = [];
-  for (let i = 0; i < path.length; i++) {
-    const p = path[i], a = path[Math.max(0, i - 1)], b = path[Math.min(path.length - 1, i + 1)], length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-    const nx = -(b.y - a.y) / length, ny = (b.x - a.x) / length;
-    // Long variations form clearings; independent banks prevent a machined road.
-    const width = (lane === 1 ? 79 : 73) + Math.sin(i * .21 + seed % 13) * 17 + Math.sin(i * .57 + lane) * 8;
-    const l = width + spread + Math.sin(i * 1.3) * 9, r = width + spread + Math.cos(i * .9) * 10;
-    left.push({ x: p.x + nx * l, y: p.y + ny * l }); right.push({ x: p.x - nx * r, y: p.y - ny * r });
-  }
-  return [...left, ...right.reverse()];
 }
 // Cached terrain combines Higgsfield materials, curved tracks and region masks.
 export function paintGround(tiles, scene, surfaces) {
@@ -51,20 +40,7 @@ export function paintGround(tiles, scene, surfaces) {
     c.beginPath();c.moveTo(a.x,a.y);c.bezierCurveTo(a.x+(nearest.x-a.x)*.3,a.y+95,a.x+(nearest.x-a.x)*.7,nearest.y-80,nearest.x,nearest.y);
     c.strokeStyle = '#aa966b44';c.lineWidth = 64;c.stroke();c.strokeStyle = '#bda77c4a';c.lineWidth = 32;c.stroke();
   }
-  for (const [lane,path] of PATHS.entries()) {
-    outline(c,ribbon(path,scene.seed,lane,20));c.fillStyle = '#7a785750';c.fill();
-    c.save();outline(c,ribbon(path,scene.seed,lane));c.clip();
-    c.fillStyle = c.createPattern(materials[1],'repeat');c.fillRect(0,0,SIZE,SIZE);
-    c.fillStyle = '#c0a88320';c.fillRect(0,0,SIZE,SIZE);
-    c.restore();
-    // Grass and small broken slabs interrupt the path edge at uneven intervals.
-    for(let i=3;i<path.length-3;i++) {
-      const p=path[i],q=path[i+1],a=Math.atan2(q.y-p.y,q.x-p.x),side=rand()<.5?-1:1,offset=65+rand()*31;
-      const x=p.x-Math.sin(a)*offset*side,y=p.y+Math.cos(a)*offset*side;
-      const edge=c.createRadialGradient(x,y,0,x,y,25);edge.addColorStop(0,'#71835766');edge.addColorStop(1,'#71835700');c.fillStyle=edge;c.fillRect(x-25,y-25,50,50);
-      if(rand()<.23){c.save();c.translate(p.x+(rand()-.5)*90,p.y+(rand()-.5)*60);c.rotate(a+rand());c.fillStyle='#a7a78a9e';c.strokeStyle='#6f775a99';c.lineWidth=2;c.beginPath();c.moveTo(-7,-4);c.lineTo(5,-5);c.lineTo(8,3);c.lineTo(-3,7);c.closePath();c.fill();c.stroke();c.restore();}
-    }
-  }
+  paintRoads(c, PATHS, materials, scene.seed);
   // Water and shore fills cover the river's real extent (plus its widest shelf) at any map size.
   const riverTop = Math.min(...scene.river.samples.map(p => p.north)) - 160, riverHeight = Math.max(...scene.river.samples.map(p => p.south)) + 160 - riverTop;
   // Feather damp soil into the grass without a constant-width river border.

@@ -53,8 +53,8 @@ function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
   return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
 }
-// seen: the comic scenes already played (cutscene.js), so each plays once
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, districts: [] }, jobs: { sludge: false, done: {} }, settings: defaultSettings() }; }
+// seen: the comic scenes already played (cutscene.js), so each plays once, and the phone's gesture card (mobile.js)
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, done: {} }, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
@@ -64,7 +64,7 @@ function loadSave() {
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
   if (raw.seen && typeof raw.seen === "object") {
-    for (const k of ["opening", "king", "finale", "mission2"]) s.seen[k] = raw.seen[k] === true;
+    for (const k of ["opening", "king", "finale", "mission2", "phoneCoach"]) s.seen[k] = raw.seen[k] === true;
     s.seen.districts = ints(raw.seen.districts).filter((d) => d < 6);
   }
   if (raw.jobs && typeof raw.jobs === "object") {
@@ -176,7 +176,7 @@ function createWorld() {
   combat = G.combat = createCombat(city);
   cars = G.cars = createCars(city);
   jobs = G.jobs = createJobs({ city, combat, cars });
-  actionView = G.actionView = createActionView(scene, { cars, jobs });
+  actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
   hands = G.hands = createHands(rig, scene, settings);
@@ -530,7 +530,7 @@ function exitCar() {
   placeRig(G.rigYaw, o.x, o.y, o.z);
   audio.sfx("door", { pos: o });
 }
-const DRIVE_IN = { throttle: 0, steer: 0, handbrake: false };
+const DRIVE_IN = { throttle: 0, steer: 0, handbrake: false }, TRAFFIC_IN = { T: null, t: 0 };
 let carWant = 0; // a car press with no car in reach waits this long (s) for one to come
 // the car key, or a press still waiting: get into a parked car or steal a street car
 function tryCar() {
@@ -557,7 +557,8 @@ function actionFrame(dt, inp) {
     DRIVE_IN.steer = -(inp.move.x || 0) + (T.left ? 1 : 0) - (T.right ? 1 : 0);
     DRIVE_IN.handbrake = !!inp.jumpHeld;
   }
-  cars.update(dt, P.pos, driving ? DRIVE_IN : null);
+  TRAFFIC_IN.T = view.traffic ? view.traffic() : null; TRAFFIC_IN.t = G.time;
+  cars.update(dt, P.pos, driving ? DRIVE_IN : null, TRAFFIC_IN);
   const car = cars.driving;
   if (driving && car) {
     // the body rides in the car: the camera, the people and the gang all see the car's place
@@ -570,6 +571,7 @@ function actionFrame(dt, inp) {
   for (const e of cars.events) {
     if (e.type === "bump") { audio.sfx("bump", { vol: Math.min(1.5, e.speed / 8) }); haptic(0, 0.6, 60); }
     else if (e.type === "release") view.hideTraffic(e.traffic, false); // a stolen car is gone: its traffic car drives again
+    else if (e.type === "struck") view.hideTraffic(e.traffic, true); // the driven car hit a street car: it is a real car now
   }
   cars.events.length = 0;
   // the gang guards the clogs once Mission 1 is done
@@ -681,6 +683,7 @@ function hudFrame(dt, inp) {
   const fight = combat.hits > 0 || combat.focus > 0 || combat.fighting > 0;
   actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt),
     combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(),
+    wall: !!P.wall,
     air: G.state === "play" && !P.onGround && !P.wall && !driving && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached",
     throwable: combat.fighting > 0 && !!combat.throwTarget(throwFrom()) });
 }
@@ -1087,6 +1090,11 @@ function tick(dt, frame, time) {
   // 2. input
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
   if (flatOn && !isXR()) flatInput(inp);
+  // a phone's move stick: walk (and sprint, pushed to the rim) on the ground, steer in the air, climb on a wall
+  if (inp.easySwing && actHud && !driving) {
+    const T = actHud.touch;
+    if (T.stick) { inp.move.x = clamp(inp.move.x + T.sx, -1, 1); inp.move.y = clamp(inp.move.y + T.sy, -1, 1); if (Math.hypot(T.sx, T.sy) > PHONE.stick.sprint) inp.sprintHeld = true; }
+  }
   // 3. test overrides
   applyOverrides(inp);
   // a comic scene holds the game still
@@ -1301,7 +1309,7 @@ function shoot(i, h, a) {
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
   fire(P, i, h.aimPos, a);
   toggled[i] = true;
-  if (phone) { firedAt[i] = G.time; handoffT[i] = -1; } // a rope thrown again is not the one that lets go
+  if (phone) { firedAt[i] = G.time; handoffT[i] = -1; firedPair[i] = !!(G.input.phonePair && G.input.phonePair[i]); } // a rope thrown again is not the one that lets go
   latch[i] = real; // a real press keeps the cup in flight, and earns the kick
   if (real) picker.fired(i);
   if (phone && P.onGround) {
@@ -1373,6 +1381,8 @@ function physics(dt, inp) {
   P.rollReady = flatOn && !isXR() && hero.diving;
   P.face = HERO_FACE; HERO_FACE.x = -Math.sin(hero.yaw || 0); HERO_FACE.z = -Math.cos(hero.yaw || 0);
   const wasGround = P.onGround;
+  // a phone finger that held a rope lifted: the rope lets go with its fling before physics drops it (the hand holds no more)
+  if (!intro && inp.easySwing) for (let i = 0; i < 2; i++) phoneLift(i);
   for (let k = 0; k < n; k++) step(P, h, physIn);
   if (!intro && inp.easySwing) phoneRelease(dt);
   if (!intro && !wasGround && P.onGround && !P.dead) {
@@ -1392,19 +1402,33 @@ let fovKick = 0, climbTold = false;
 function phoneRelease(dt) {
   for (let i = 0; i < 2; i++) phoneReleaseRope(i, dt);
 }
+// a finger that held a plunger down lifted: that rope lets go now, with the fling of an arc's let-go (in the air)
+const phoneHeld = (i) => !!(G.input.phoneHeld && G.input.phoneHeld[i]);
+function phoneLift(i) {
+  if (!(G.input.phoneLetGo && G.input.phoneLetGo[i])) return;
+  const r = P.ropes[i];
+  if (r.state === "flying") { release(P, i); phoneClear(i); return; }
+  if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) return;
+  pushRing({ type: "letgo", side: i });
+  if (P.onGround) { release(P, i); phoneClear(i); return; }
+  phoneLetGo(i, false);
+}
 function phoneClear(i) { phoneRopeT[i] = phoneGroundT[i] = phoneSlowT[i] = 0; handoffT[i] = -1; }
 function phoneReleaseRope(i, dt) {
   const r = P.ropes[i], R = PHONE.release;
   if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) { phoneClear(i); return; }
-  if (handoffT[i] >= 0 && (handoffT[i] -= dt) <= 0) { release(P, i); phoneClear(i); D.mobile.released(i); return; }
+  // a finger holds it down: no hand-off, and no let-go at the bottom of the arc or while it hangs still (only a roof ends it)
+  const held = phoneHeld(i);
+  if (held) handoffT[i] = -1;
+  if (handoffT[i] >= 0 && (handoffT[i] -= dt) <= 0) { release(P, i); phoneClear(i); D.mobile.released(i); pushRing({ type: "handoff", side: i }); return; }
   phoneRopeT[i] += dt;
   if (P.onGround) phoneGroundT[i] += dt; // all the time on roofs since the rope caught: a rope that drags you over them lets go
   phoneSlowT[i] = Math.hypot(P.vel.x, P.vel.y, P.vel.z) < R.stallSpeed ? phoneSlowT[i] + dt : 0;
   // landed on a roof, or hanging still: let go with no fling, so the next tap jumps and swings at once
-  if (phoneRopeT[i] >= R.minT && (phoneGroundT[i] >= R.ground || phoneSlowT[i] >= R.stall)) {
+  if (phoneRopeT[i] >= R.minT && (phoneGroundT[i] >= R.ground || (!held && phoneSlowT[i] >= R.stall))) {
     release(P, i); phoneClear(i); D.mobile.released(i); return;
   }
-  if (phoneRopeT[i] < R.minT || P.onGround) return;
+  if (held || phoneRopeT[i] < R.minT || P.onGround) return;
   const A = r.anchor, cx = P.pos.x - A.x, cy = P.pos.y + P.chest - A.y, cz = P.pos.z - A.z;
   const d = Math.sqrt(cx * cx + cy * cy + cz * cz), v = P.vel;
   if (d < 1e-3) return;
@@ -1413,6 +1437,11 @@ function phoneReleaseRope(i, dt) {
   const past = Math.acos(clamp(-cy / d, -1, 1)) / DEG; // degrees from straight down
   const vault = d < R.close;
   if (!vault && !(away && past >= R.angle) && !(cy > -R.overTop && v.y > 0)) return;
+  phoneLetGo(i, vault);
+}
+// rope i lets go and flings you on (vault: reeled up to the anchor, so up and over), unless the other plunger still holds
+function phoneLetGo(i, vault) {
+  const v = P.vel, R = PHONE.release;
   release(P, i);
   phoneClear(i);
   D.mobile.released(i);
@@ -1448,10 +1477,12 @@ function releaseBoost(i) {
   if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
   pushRing({ type: "boost", side: i, speed: Math.hypot(v.x, v.y, v.z) });
 }
-// A new phone plunger on side i caught a building: the other one lets go soon, unless the two were thrown as a pair
+// A new phone plunger on side i caught a building: the other one lets go soon, unless the two were thrown as a pair (close in
+// time, or by two fingers that were down together)
+const firedPair = [false, false];
 function phoneHandoff(i) {
   const j = 1 - i, o = P.ropes[j];
-  if (o.state !== "attached" || o.sticky || SPECIAL_TAGS[o.target.tag] || Math.abs(firedAt[i] - firedAt[j]) <= PHONE.pair) return;
+  if (phoneHeld(j) || o.state !== "attached" || o.sticky || SPECIAL_TAGS[o.target.tag] || Math.abs(firedAt[i] - firedAt[j]) <= PHONE.pair || (firedPair[i] && firedPair[j])) return;
   handoffT[j] = PHONE.handoff;
 }
 // A rope that catches gives at least `speed` across the rope, toward where you look: the phone's PHONE.attachSpeed, or the

@@ -1,0 +1,343 @@
+{
+  "passed": true,
+  "sourceViews": "matrix",
+  "policies": 21,
+  "maps": [
+    0,
+    1,
+    2
+  ],
+  "layouts": [
+    "desktop",
+    "landscape",
+    "phone"
+  ],
+  "captures": 20,
+  "webglCaptures": 17,
+  "fallbackCaptures": 3,
+  "exactStoppedCanvasCaptures": 20,
+  "maxReducedTriangles": 117313,
+  "maxNormalTriangles": 117313,
+  "maxCalls": 54,
+  "resourcesBefore": {
+    "uploads": 56,
+    "shaders": 84
+  },
+  "resourcesAfter": {
+    "uploads": 56,
+    "shaders": 84
+  },
+  "errors": [],
+  "scoreWrites": [],
+  "limitations": [
+    "Chromium phone viewport on SwiftShader; hardware phone FPS and human enjoyment are not measured.",
+    "Source fixtures explicitly own isolated state and clock. Actual App retains its native seed, clock and protection.",
+    "Representative browser policies use 60Hz; rate, maximum Rush and delayed-return matrices are separate engine unit checks."
+  ],
+  "reportSha256": "3935b00a9f8962bd01c9f23560e07ee87d1b14fa416057537bf4f71f26b2e304",
+  "bank": [
+    {
+      "map": 0,
+      "stash": [
+        {
+          "family": "wildlife-bank",
+          "coins": 8,
+          "points": 120
+        }
+      ],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 200,
+      "clears": 2
+    },
+    {
+      "map": 1,
+      "stash": [
+        {
+          "family": "wildlife-bank",
+          "coins": 8,
+          "points": 280
+        }
+      ],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 200,
+      "clears": 2
+    },
+    {
+      "map": 2,
+      "stash": [
+        {
+          "family": "wildlife-bank",
+          "coins": 8,
+          "points": 240
+        }
+      ],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 200,
+      "clears": 2
+    }
+  ],
+  "guard": [
+    {
+      "map": 0,
+      "stash": [],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 600,
+      "clears": 3
+    },
+    {
+      "map": 1,
+      "stash": [],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 600,
+      "clears": 3
+    },
+    {
+      "map": 2,
+      "stash": [],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 600,
+      "clears": 3
+    }
+  ],
+  "detour": [
+    {
+      "map": 0,
+      "stash": [
+        {
+          "family": "landing-detour",
+          "coins": 0,
+          "points": 200
+        }
+      ],
+      "powers": [],
+      "cache": 600,
+      "clears": 3
+    },
+    {
+      "map": 1,
+      "stash": [
+        {
+          "family": "landing-detour",
+          "coins": 0,
+          "points": 200
+        }
+      ],
+      "powers": [],
+      "cache": 600,
+      "clears": 3
+    },
+    {
+      "map": 2,
+      "stash": [
+        {
+          "family": "landing-detour",
+          "coins": 0,
+          "points": 200
+        }
+      ],
+      "powers": [],
+      "cache": 600,
+      "clears": 3
+    }
+  ],
+  "boost": [
+    {
+      "map": 0,
+      "stash": [],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 600,
+      "clears": 3
+    },
+    {
+      "map": 1,
+      "stash": [],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 600,
+      "clears": 3
+    },
+    {
+      "map": 2,
+      "stash": [],
+      "powers": [
+        {
+          "power": "magnet",
+          "duration": 8,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 600,
+      "clears": 3
+    }
+  ],
+  "snatch": [
+    {
+      "map": 0,
+      "stash": [
+        {
+          "family": "boulder-snatch",
+          "coins": 0,
+          "points": 120
+        }
+      ],
+      "powers": [],
+      "cache": 200,
+      "clears": 0
+    },
+    {
+      "map": 1,
+      "stash": [
+        {
+          "family": "boulder-snatch",
+          "coins": 0,
+          "points": 120
+        }
+      ],
+      "powers": [],
+      "cache": 200,
+      "clears": 0
+    },
+    {
+      "map": 2,
+      "stash": [
+        {
+          "family": "boulder-snatch",
+          "coins": 0,
+          "points": 120
+        }
+      ],
+      "powers": [],
+      "cache": 200,
+      "clears": 0
+    }
+  ],
+  "shield": [
+    {
+      "map": 0,
+      "stash": [],
+      "powers": [
+        {
+          "power": "shield",
+          "duration": 0,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 200,
+      "clears": 0
+    },
+    {
+      "map": 1,
+      "stash": [],
+      "powers": [
+        {
+          "power": "shield",
+          "duration": 0,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 200,
+      "clears": 0
+    },
+    {
+      "map": 2,
+      "stash": [],
+      "powers": [
+        {
+          "power": "shield",
+          "duration": 0,
+          "alreadyHeld": false
+        }
+      ],
+      "cache": 200,
+      "clears": 0
+    }
+  ],
+  "shield-held": [
+    {
+      "map": 0,
+      "stash": [],
+      "powers": [
+        {
+          "power": "shield",
+          "duration": 0,
+          "alreadyHeld": true
+        }
+      ],
+      "cache": 200,
+      "clears": 0
+    },
+    {
+      "map": 1,
+      "stash": [],
+      "powers": [
+        {
+          "power": "shield",
+          "duration": 0,
+          "alreadyHeld": true
+        }
+      ],
+      "cache": 200,
+      "clears": 0
+    },
+    {
+      "map": 2,
+      "stash": [],
+      "powers": [
+        {
+          "power": "shield",
+          "duration": 0,
+          "alreadyHeld": true
+        }
+      ],
+      "cache": 200,
+      "clears": 0
+    }
+  ]
+}

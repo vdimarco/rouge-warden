@@ -1,0 +1,33 @@
+{
+  "sha": "d676c7b250237a0238d74f26111d249b5ce4dd1a",
+  "checks": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "mime": "text/html; charset=utf-8",
+      "bytes": 865,
+      "sha256": "b7ac35f50c9feae03c24f1e79ad362f983bd5c2d5a6361b67741ba3f0ca88e14"
+    },
+    {
+      "path": "assets/index-DDzMwcui.js",
+      "status": 200,
+      "mime": "application/javascript; charset=utf-8",
+      "bytes": 1122375,
+      "sha256": "b28b79530a22d386fedaa3fde737981a3a72ebca149f146957fed62f579712b1"
+    },
+    {
+      "path": "assets/index-CMCYypmh.css",
+      "status": 200,
+      "mime": "text/css; charset=utf-8",
+      "bytes": 37126,
+      "sha256": "02f4b53b0ff5da91539fc82c8b8345f29c271873d78f877cb57826a5fc9c0fae"
+    },
+    {
+      "path": "art/menu.png",
+      "status": 200,
+      "mime": "image/png",
+      "bytes": 2676425,
+      "sha256": "49d7010137943e1d425168a0abd549be89283b9cbbb3606831c7f2943ebdf6b5"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#080b12" />
+    <title>Lighthouse Keeper · Cottage Arcade</title>
+    <link rel="stylesheet" href="/lighthouse-keeper/style.css" />
+    <script src="/arcade/quiet.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Lighthouse Keeper</h1>
+        <a href="/">[ arcade ]</a>
+      </header>
+      <div class="hud">
+        <span id="progress">Ready for your watch</span
+        ><span id="resource"></span><span id="clock"></span
+        ><span id="best"></span>
+      </div>
+      <div
+        class="water"
+        id="water"
+        tabindex="0"
+        aria-label="Interactive coastal game"
+      >
+        <canvas id="scene" aria-label="Animated ASCII landscape"></canvas
+        ><canvas
+          id="overlay"
+          aria-label="Game boats and water markers"
+        ></canvas>
+      </div>
+      <p class="message" id="message" aria-live="polite">
+        Eight boats. One beam. Bring them safely home.
+      </p>
+      <div class="controls">
+        <button id="start">Begin</button
+        ><button id="pause" disabled>Pause</button
+        ><button id="action">Sweep beam</button
+        ><button id="mute" aria-pressed="true">Sound off</button>
+      </div>
+      <p class="help">
+        A / D sweep · N selects a lit boat · arrows steer · Enter charts harbor.
+        Tap a lit boat, then tap its destination. Avoid the reef. P pauses · R
+        restarts.
+      </p>
+      <footer>
+        Scene: <a href="https://ascii.rest/">ascii.rest</a> / bas3line ·
+        <a href="/last-light/vendor/LICENSE">MIT</a>. Gameplay: Cottage Arcade.
+        <button data-switch>[ switch game ]</button>
+      </footer>
+    </main>
+    <script type="module" src="/lighthouse-keeper/game.js"></script>
+    <script src="/arcade/switch.js"></script>
+  </body>
+</html>

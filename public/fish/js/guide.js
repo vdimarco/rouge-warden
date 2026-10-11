@@ -16,7 +16,19 @@ const PAD = `<rect x="32" y="8" width="43" height="65" rx="12" fill="#174a55" st
 
 export function sceneMarkup(kind, motion) {
   let body;
-  if (kind === "strength") {
+  if (kind === "nibble") {
+    body = `${CRANK}<g class="g-pause"><rect x="105" y="11" width="5" height="19" rx="2"/><rect x="115" y="11" width="5" height="19" rx="2"/></g>
+      <path d="M92 66q12-5 24 0t20 0" fill="none" stroke="#658a8c" stroke-width="2"/>
+      <g class="g-bite"><path d="M94 50q13-12 25 0-12 12-25 0Zm25 0 11-8v16Z" fill="#e8b64a"/><circle cx="101" cy="48" r="2" fill="#0a2933"/></g>
+      <g class="g-bite-ring" fill="none" stroke="#f6efd9" stroke-width="1.8"><ellipse cx="108" cy="66" rx="11" ry="3"/><ellipse cx="108" cy="66" rx="20" ry="5"/></g>`;
+  } else if (kind === "feather") {
+    body = `<path d="M8 63q12-5 24 0t24 0t24 0t24 0t24 0" fill="none" stroke="#658a8c" stroke-width="2"/>
+      <path class="g-trail" d="M16 53Q58-6 105 53"/><g class="g-flight"><circle cx="16" cy="53" r="5" fill="#e8b64a"/><path d="M16 58v6q0 6 5 2" fill="none" stroke="#f6efd9" stroke-width="2"/></g>
+      <g class="g-tap"><circle cx="86" cy="39" r="15" fill="#174a55" stroke="#f6efd9" stroke-width="2"/><circle class="g-dot" cx="86" cy="39" r="6"/></g>`;
+  } else if (kind === "tap" || kind === "upright") {
+    body = `<g class="${kind === "upright" ? "g-upright" : ""}">${PHONE}${HAND}${kind === "tap" ? `<g class="g-tap">${DOT}</g>` : ""}</g>`;
+    if (kind === "upright") body += `<path class="g-trail" d="M89 64V17m-6 6 6-6 6 6"/>`;
+  } else if (kind === "strength") {
     body = `<circle cx="17" cy="23" r="9" fill="#d6b796"/><path d="M6 70V47q0-15 13-15q11 0 15 15l7 12h27" fill="none" stroke="#658a8c" stroke-width="9" stroke-linecap="round"/>
       <rect x="58" y="8" width="26" height="48" rx="5" fill="none" stroke="#658a8c" stroke-dasharray="3 4"/>
       <g class="g-strength-phone"><rect x="58" y="8" width="26" height="48" rx="5" fill="#174a55" stroke="#f6efd9" stroke-width="2"/><circle cx="71" cy="35" r="8" fill="#092229" stroke="#e8b64a"/><g class="g-strength-crank"><path d="M71 35l5-5" stroke="#e8b64a" stroke-width="2"/><circle cx="76" cy="30" r="3" fill="#ff7866"/></g><path d="M61 57l-5-13q-1-4 2-4l7 9 12-2 5 7-5 11H65Z" fill="#d6b796" stroke="#f6efd9"/></g>
@@ -69,7 +81,10 @@ export function poseAt(kind, time) {
     "g-lift": { transform: turn(lift) }, "g-pump": { transform: turn(lift) },
     "g-low": { transform: turn(6 - lift) },
     "g-steer": { transform: turn(track([[0, -20], [.5, 20], [1, -20]])) },
-    "g-crank": { transform: turn(kind === "stop" ? 0 : Math.min(1, p / .7) * 360, 62, 41) },
+    "g-crank": { transform: turn(kind === "stop" || kind === "nibble" ? 0 : Math.min(1, p / .7) * 360, 62, 41) },
+    "g-bite": { transform: travel(track([[0, 0], [.2, -3], [.5, 1], [.8, -2], [1, 0]])) },
+    "g-bite-ring": { opacity: track([[0, .15], [.25, 1], [.75, .65], [1, .15]]) },
+    "g-upright": { transform: turn(track([[0, -8], [.5, 0], [1, -8]])) },
     "g-flight": { transform: `translate(${(flight * 90).toFixed(3)} ${(-Math.sin(flight * Math.PI) * 30).toFixed(3)})`, opacity: track([[0, 0], [.08, 1], [.8, 1], [.96, 0], [1, 0]]) },
     "g-pump-reel": { transform: turn(track([[0, 0], [.48, 0], [.95, 360], [1, 360]]), 106, 49) },
   };

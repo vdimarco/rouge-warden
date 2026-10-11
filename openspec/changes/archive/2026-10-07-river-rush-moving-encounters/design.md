@@ -1,0 +1,11 @@
+# Design
+
+Decorate selected single-log or single-branch rows after the tutorial and early required actions with crocodile or bird enemies. Their existing low/high action rules remain jump/dodge and duck/dodge. A shared deterministic distance-based smooth lane path places both the physical entity and its WebGL/fallback drawing. Enemies settle in a clearly marked destination at least .8 seconds before crossing at maximum boosted speed; full-width action waves and advertised jump chains retain their rules.
+
+Place drifting collectible relic targets only in clear recovery space, separated from adjacent jump/duck hazards. Show their destination and let them settle before contact. Physical ground-height and .25-lane contact awards 200 points and 10 charge outside active Rush once with a distinct sound and visual burst. Passing beside one does not reward it. Use one shared special-encounter cooldown so enemies and relics do not crowd each other.
+
+Use prepared bounded animated visual pools for articulated tails, jaws, wings and relic facets. No gameplay-time model, texture or shader loading. Pause and hidden state freeze simulation-registered motion; reduced motion quiets decorative animation while keeping physical position readable. Keep existing mobile gestures, buttons, speed, art direction, soundtrack, impact/retry and score storage behavior.
+
+Full-course bonus chasing revealed an inherited conflict when Rush begins after rows were generated: consecutive jump requests can buffer behind the previous .66-second jump and miss raised gold. Reserve .90 seconds at maximum boosted speed between jump-reward rows, covering .20 seconds of early/late input variation and 30 Hz quantization without changing speed, action duration or pickup tolerances. A bounded preview plans each station before emission so its terrain and motif bookkeeping uses the final distance. Recheck advertised jump-chain availability against the wider recovery spacing.
+
+At Rush expiry, integrate the boosted and unboosted portions of a frame separately and derive exact contact elapsed time from the same piecewise travel. Clamp floating-point expiry residue to zero. This prevents a phantom boost frame and keeps action timing, physical pickup, protection expiry and predicted impact time in agreement.

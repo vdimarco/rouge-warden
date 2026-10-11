@@ -1,0 +1,231 @@
+{
+  "passed": true,
+  "sourceSHA": "1b0190af3152b6a0e9a5ca2c6f11192c6abbff52",
+  "deployment": "dpl_FET2qLpKXVxBW6WgyZoQY6CFHciN",
+  "layout": "1365x900 desktop",
+  "base": "https://arcade.uptick.systems/river-rush/?v=1b0190af",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-D6GsolDK.js",
+  "assetRequests": [
+    "https://arcade.uptick.systems/river-rush/models/meshy-river-oak-lite.glb"
+  ],
+  "sourceReceipt": "/tmp/river-natural-oak-production-desktop/branch-spans.json",
+  "allThreeWidths": [
+    1,
+    2,
+    3
+  ],
+  "actualDuckContacts": [
+    {
+      "width": 2,
+      "branchLanes": [
+        1,
+        2
+      ],
+      "physicalPlayerLane": 0.9999999999999503,
+      "contactTime": 2.649808226193699,
+      "action": "duck"
+    },
+    {
+      "width": 3,
+      "branchLanes": [
+        0,
+        1,
+        2
+      ],
+      "physicalPlayerLane": 1.8204298964851677e-14,
+      "contactTime": 7.395225587285088,
+      "action": "duck"
+    },
+    {
+      "width": 3,
+      "branchLanes": [
+        0,
+        1,
+        2
+      ],
+      "physicalPlayerLane": 7.385497108514514e-32,
+      "contactTime": 8.528571263991285,
+      "action": "duck"
+    },
+    {
+      "width": 2,
+      "branchLanes": [
+        1,
+        2
+      ],
+      "physicalPlayerLane": 0.9999999999999682,
+      "contactTime": 10.846053423067968,
+      "action": "duck"
+    },
+    {
+      "width": 3,
+      "branchLanes": [
+        0,
+        1,
+        2
+      ],
+      "physicalPlayerLane": 3.810000560191153e-14,
+      "contactTime": 14.74082137304257,
+      "action": "duck"
+    },
+    {
+      "width": 2,
+      "branchLanes": [
+        1,
+        2
+      ],
+      "physicalPlayerLane": 0.9999999999999908,
+      "contactTime": 15.881389225957768,
+      "action": "duck"
+    },
+    {
+      "width": 1,
+      "branchLanes": [
+        2
+      ],
+      "physicalPlayerLane": 1.9999999999999727,
+      "contactTime": 17.400331518319007,
+      "action": "duck"
+    }
+  ],
+  "newNativeOakProof": [
+    {
+      "width": 1,
+      "model": "meshy",
+      "style": "meshy-natural-oak",
+      "topology": "complete-native-tree",
+      "side": 1,
+      "contacts": [
+        {
+          "lane": 2,
+          "x": 3.8000000000000007,
+          "y": 3.26,
+          "d": 0
+        }
+      ],
+      "nativeRoot": {
+        "x": 17.981799831333827,
+        "y": 1.1481893811499375,
+        "d": 1.722
+      },
+      "originRoot": {
+        "x": 17.981799831333827,
+        "y": 1.1481893811499375,
+        "d": 1.722
+      }
+    },
+    {
+      "width": 2,
+      "model": "meshy",
+      "style": "meshy-natural-oak",
+      "topology": "complete-native-tree",
+      "side": 1,
+      "contacts": [
+        {
+          "lane": 1,
+          "x": 0,
+          "y": 3.258591690207576,
+          "d": -0.10973790534368688
+        },
+        {
+          "lane": 2,
+          "x": 3.8000000000000007,
+          "y": 3.261408309792424,
+          "d": 0.10973790534368666
+        }
+      ],
+      "nativeRoot": {
+        "x": 21.916043646631586,
+        "y": 1.0151573795250464,
+        "d": 1.709
+      },
+      "originRoot": {
+        "x": 21.916043646631586,
+        "y": 1.0151573795250464,
+        "d": 1.709
+      }
+    },
+    {
+      "width": 3,
+      "model": "meshy",
+      "style": "meshy-natural-oak",
+      "topology": "complete-native-tree",
+      "side": 1,
+      "contacts": [
+        {
+          "lane": 0,
+          "x": -3.8000000000000007,
+          "y": 3.2003874396112924,
+          "d": 0.008140182172496013
+        },
+        {
+          "lane": 1,
+          "x": 0,
+          "y": 3.232559287690991,
+          "d": -0.02969923340877534
+        },
+        {
+          "lane": 2,
+          "x": 3.8000000000000007,
+          "y": 3.347053272697715,
+          "d": 0.021559051236279325
+        }
+      ],
+      "nativeRoot": {
+        "x": 24.673515062749384,
+        "y": 0.933908367266371,
+        "d": 1.2306
+      },
+      "originRoot": {
+        "x": 24.673515062749384,
+        "y": 0.933908367266371,
+        "d": 1.2306
+      }
+    }
+  ],
+  "sharedCoverageError": 0,
+  "final": {
+    "time": 17.950000000000117,
+    "distance": 1004.4816333347999,
+    "phase": "playing",
+    "shield": true,
+    "shieldsUsed": 0
+  },
+  "hits": [],
+  "pause": {
+    "sameStatus": true,
+    "samePixels": true
+  },
+  "resourcesBefore": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "resourcesAfter": {
+    "uploads": 51,
+    "shaders": 76
+  },
+  "gpuErrors": [],
+  "screenshots": [
+    {
+      "width": 2,
+      "screenshot": "/tmp/river-natural-oak-production-desktop/desktop-natural-width2.png"
+    },
+    {
+      "width": 3,
+      "screenshot": "/tmp/river-natural-oak-production-desktop/desktop-natural-width3.png"
+    },
+    {
+      "width": 1,
+      "screenshot": "/tmp/river-natural-oak-production-desktop/desktop-natural-width1.png"
+    }
+  ],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrWallClock": false,
+  "leaderboardWrites": false,
+  "limitations": [
+    "Chromium uses SwiftShader; physical phone FPS and human reaction feel are not measured.",
+    "Visual fixtures set their own game states and clocks. Natural App runs retain Date.now seeds and use the real keyboard and pointer handlers."
+  ],
+  "artAcceptanceReceipt": "/tmp/river-natural-oak-art-acceptance.json",
+  "localPhoneReceipt": "/tmp/river-natural-oak-local-phone/compact-receipt.json"
+}

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#050a10" />
+    <title>Battle Tanks · Break their command</title>
+    <meta
+      name="description"
+      content="A luminous dot battlefield. Drive to charge piercing shots, break enemy relays for rapid fire and repairs, then reach extraction."
+    />
+    <link rel="icon" href="/icons/favicon.svg" />
+    <link rel="stylesheet" href="/battle-tanks/style.css" />
+    <script src="/arcade/quiet.js"></script>
+  </head>
+  <body>
+    <main
+      id="action-arena"
+      tabindex="0"
+      aria-label="Battle Tanks playfield. W and S drive, A and D turn the hull, aim and click to fire, Space autoaims, Shift deploys smoke, E calls artillery and P pauses."
+    >
+      <div
+        id="action-scene"
+        aria-label="Luminous dot battlefield with three-dimensional depth"
+      ></div>
+      <div id="tank-world-labels" aria-hidden="true"></div>
+      <canvas
+        id="tank-radar"
+        width="200"
+        height="100"
+        aria-label="Tactical radar: gold player, red relay guns, cyan extraction"
+      ></canvas>
+      <div id="tank-reticle" aria-hidden="true">+</div>
+      <header class="action-hud">
+        <div class="action-identity">
+          <a class="action-brand" href="/battle-tanks/">Battle Tanks</a
+          ><span id="action-place">Woodland Relay</span>
+        </div>
+        <div
+          class="action-objective"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span id="action-goal">Disable all three relay guns</span
+          ><span id="action-progress">Relays 0 / 3</span>
+        </div>
+        <div class="action-status">
+          <span id="action-health" aria-label="Health">HP 100</span
+          ><span id="action-score">Score 0</span
+          ><span
+            id="tank-charge"
+            aria-label="Piercing shot charge earned by driving"
+            >Drive charge 0%</span
+          >
+        </div>
+        <nav class="action-settings" aria-label="Game settings">
+          <button id="action-sound" type="button" aria-pressed="false">
+            Sound off</button
+          ><button
+            id="action-motion"
+            type="button"
+            aria-pressed="false"
+            aria-label="Reduce decorative motion"
+          >
+            Motion</button
+          ><button id="action-pause" type="button">Pause</button
+          ><a href="/">Arcade</a>
+        </nav>
+      </header>
+      <section
+        id="action-overlay"
+        aria-labelledby="action-title"
+        aria-describedby="action-description"
+      >
+        <div class="action-overlay-content">
+          <h1 id="action-title">Break their command.</h1>
+          <p id="action-description">
+            Drive to charge piercing shots. Break three relay guns to light up
+            the sector and power your cannon, then reach cyan extraction. Cover
+            stops shells.
+          </p>
+          <div class="action-overlay-buttons">
+            <button id="action-begin" type="button">Begin mission</button
+            ><button id="action-restart" type="button" hidden>
+              New campaign
+            </button>
+          </div>
+          <p id="action-overlay-hint">
+            W/S drive · A/D turn · aim + click or Space fire · Shift smoke · E
+            artillery.
+          </p>
+        </div>
+      </section>
+      <div class="action-bottom">
+        <div class="action-guidance">
+          <p id="action-tip">
+            Shell range 70m · artillery 55m. Flank the relays; smoke hides your
+            advance.
+          </p>
+          <p class="action-instructions">
+            W/S drive · A/D turn · Space fire · Shift smoke · E strike · P pause
+          </p>
+          <p id="action-message" role="status" aria-live="polite"></p>
+        </div>
+        <nav class="action-direction-pad" aria-label="Touch movement">
+          <button type="button" data-move="up" aria-label="Drive forward">
+            ↑</button
+          ><button type="button" data-move="left" aria-label="Turn hull left">
+            ←</button
+          ><button type="button" data-move="down" aria-label="Reverse">↓</button
+          ><button type="button" data-move="right" aria-label="Turn hull right">
+            →
+          </button>
+        </nav>
+        <div class="action-combat" aria-label="Tank weapons and defenses">
+          <button id="action-fire" type="button" aria-label="Fire tank shell">
+            <span class="action-glyph" aria-hidden="true">+</span
+            ><span>Fire</span></button
+          ><button
+            id="action-dodge"
+            type="button"
+            aria-label="Deploy smoke cover"
+          >
+            <span class="action-glyph" aria-hidden="true">»</span
+            ><span>Smoke</span>
+          </button>
+          <button
+            id="tank-artillery"
+            type="button"
+            aria-label="Call artillery strike"
+          >
+            <span class="action-glyph" aria-hidden="true">×</span
+            ><span>Strike</span>
+          </button>
+        </div>
+      </div>
+      <div class="action-links">
+        <span
+          >inspired by <a href="https://ascii.rest/">ascii.rest</a> ·
+          <a href="/last-light/vendor/LICENSE">MIT</a></span
+        ><a href="/afterlight/">Afterlight</a
+        ><a href="/afterlight/classic.html">Classic</a
+        ><button type="button" data-switch>Other games</button>
+      </div>
+    </main>
+    <script src="/arcade/switch.js"></script>
+    <script type="module" src="/battle-tanks/game.js"></script>
+  </body>
+</html>

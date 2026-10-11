@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "1b0190af3152b6a0e9a5ca2c6f11192c6abbff52",
+  "originalTestedCommit": "e751422339e868258001ade0d629dd7eb57d8467",
+  "integratedParent": "08e1128f2cd8deaf1078074dd8cded52bae8d526",
+  "testedFilesPreservedThroughIntegration": true,
+  "publicationForced": false,
+  "deploymentId": "dpl_FET2qLpKXVxBW6WgyZoQY6CFHciN",
+  "state": "READY",
+  "productionAlias": "arcade.uptick.systems",
+  "aliasMatchesSourceCommit": true
+}

@@ -57,7 +57,7 @@ The title scene SHALL use a Higgsfield-generated silent looping video based on t
 - **THEN** the approved still image and all menu actions remain usable
 
 ### Requirement: Runner perspective art
-River Rush SHALL present a three-lane forward-perspective river with generated environment, approved character likeness, long hair and only a modest loincloth. Lane swaps, raft jumps, ducks and obstacle depth SHALL clearly communicate their gameplay state at 1536×1024, 390×844 and 844×390.
+River Rush SHALL present a five-lane forward-perspective river with generated environment, approved character likeness, long hair and only a modest loincloth. Lane swaps, raft jumps, ducks and obstacle depth SHALL clearly communicate their gameplay state at 1536×1024, 390×844 and 844×390.
 #### Scenario: Chain actions
 - **WHEN** the player swaps lane, jumps a log and ducks a branch
 - **THEN** the raft and character visibly perform the actions while upcoming hazards remain readable
@@ -69,7 +69,7 @@ Coins, successful obstacle actions, power-ups, shield impacts and fatal collisio
 - **THEN** a shield burst communicates protection consumed, the streak breaks and the run continues with brief collision grace
 
 ### Requirement: Endless runner controls and retry
-The finite adventure SHALL offer three lanes, immediate lane changes, jump,
+The finite adventure SHALL offer five lanes, immediate lane changes, jump,
 duck and Rush through keyboard/buttons and screen-wide directional gestures.
 Inputs SHALL consume each tap once. A fatal collision SHALL show cumulative
 score, distance, coins, cause and one-action current-map retry. Map clears SHALL
@@ -86,38 +86,34 @@ show Next map or final victory rather than a wipeout.
   harder map starts with cumulative totals carried exactly once
 
 ### Requirement: Fair escalating obstacle course
-Each seeded finite course SHALL vary slalom, coin zigzags, mixed obstacles,
-jump waves, low canopy and split-current motifs. Later maps SHALL increase
-speed/complexity while each row retains a clear lane or traversable action
-barrier and enough time for the existing jump/duck durations. Hazards SHALL
-stop before the finish runway and active course entities SHALL remain bounded.
+Each seeded finite five-lane course SHALL vary slalom, mixed obstacles, jump waves, low canopy and genuine split-current adventures. Later maps SHALL increase speed and complexity while each normal row or individual split stream retains a clear route or traversable action barrier with enough time for the existing jump/duck durations. Calmer fork streams MAY trade fewer required actions for a smaller payoff. Hazards SHALL stop before the finish runway and active course entities SHALL remain bounded.
 
 #### Scenario: Choose an action
-- **WHEN** a player jumps a log, ducks a branch or avoids a rock
-- **THEN** the matching action safely clears the hazard and rewards its points
+- **WHEN** a player jumps a log, ducks a branch or avoids a rock on the main river or chosen stream
+- **THEN** the matching response safely clears that hazard and only qualified physical actions earn their rewards
 
 #### Scenario: Finish a varied map
 - **WHEN** a player survives to the finish of any of the three maps
-- **THEN** multiple route motifs appear, a legal route remains, the last 90 m
-  is hazard-free, and simulation stops at the stated distance
+- **THEN** varied encounters and genuine split streams appear, each selected route remains legal, the last 90m is hazard-free, and simulation stops at the stated distance
 
 ### Requirement: Coins streaks and power-ups
-Coin trails and successful actions SHALL reward points and Rush charge.
-Streaks SHALL increase the multiplier and expire after a collection gap.
-The eight-second coin power SHALL boost rewards for physically collected
-coins, with a clear name and HUD feedback. Shield SHALL absorb one impact.
-Rush SHALL grant four seconds of faster invulnerable riding, SHALL NOT collect
-remote coins or recharge itself, and SHALL use Shift or its touch control.
+Coin trails and successful actions SHALL reward points and Rush charge. Streaks SHALL increase the multiplier and expire after a collection gap. Physically contacted coins SHALL add one coin and advance the streak once. Ordinary coins SHALL award ten base points and guarded premium coins SHALL award twenty base points, multiplied by the current streak multiplier and contacted Gold Boost. The eight-second coin power SHALL boost rewards for physically collected coins, with a clear name and HUD feedback, and SHALL NOT attract adjacent coins. Shield SHALL absorb one impact. Rush SHALL grant four seconds of faster invulnerable riding, SHALL NOT collect remote coins or recharge itself, and SHALL use Shift or its touch control. Perfect-action points SHALL remain separate from coin values and SHALL NOT be awarded for protected impacts.
 
 #### Scenario: Use the contact coin boost
 - **WHEN** a raft acquires the timed coin power by actual overlap
-- **THEN** touched coins earn a clearly communicated bonus for eight seconds
-  while adjacent coins remain missed
+- **THEN** touched coins earn a clearly communicated bonus for eight seconds while adjacent coins remain missed
 
 #### Scenario: Use Rush
 - **WHEN** a player activates full Rush charge
-- **THEN** charge spends once, speed/protection activate and expire normally,
-  and coins continue to require contact
+- **THEN** charge spends once, speed/protection activate and expire normally, and coins continue to require contact
+
+#### Scenario: Compare coin values under the same boost
+- **WHEN** ordinary and guarded coins are physically touched at the same streak multiplier and Gold Boost state
+- **THEN** guarded coins pay twice the coin points while each advances coin count, streak and charge only once
+
+#### Scenario: Miss or protect a guarded route
+- **WHEN** the raft passes beside guarded gold or uses protection to collide with its hazard
+- **THEN** adjacent gold remains uncollected and protected impacts do not receive perfect-action points
 
 ### Requirement: Active runner challenges
 The runner SHALL offer rotating trick, coin and distance challenges with visible progress, a one-time 500-point reward, and a fresh target relative to the start of each challenge.
@@ -251,11 +247,7 @@ The primary view SHALL use a fal-generated humanoid skeletal rider with long dar
 - **THEN** the existing registered rear-facing character art and usable geometric substitutes keep the course playable
 
 ### Requirement: Layered adventurous world presentation
-The primary view SHALL distinguish jungle canopy, sandstone gorge and moonlit
-temple maps using locally hosted fal panoramas, prepared palettes, textured
-trees, rock/temple landmarks and driftwood. Near scenery SHALL move with the
-course and the distant environment SHALL provide atmospheric depth. Decorative
-landmarks SHALL remain outside playable lanes and preserve hazard readability.
+The primary view SHALL distinguish jungle canopy, sandstone gorge and moonlit temple maps using prepared sky/background palettes, textured trees, rock/temple landmarks and driftwood. Jungle MAY retain its locally hosted fal panorama. Redstone and Moonlit SHALL use atmosphere-only skies and course-registered landscape layers. Near scenery SHALL move with the course and the distant environment SHALL provide atmospheric depth. Decorative landmarks SHALL remain outside playable lanes and preserve hazard readability.
 
 #### Scenario: Discover the rivers
 - **WHEN** a player advances through all three maps on a supported layout
@@ -272,7 +264,7 @@ landmarks SHALL remain outside playable lanes and preserve hazard readability.
 The primary view SHALL use a run-seeded continuous river profile with bends, varying width, quiet pools and downhill chutes. The channel SHALL be wider than the previous 19-unit strip and the chase framing SHALL make the raft smaller relative to the environment. Elevation ahead SHALL descend along the course. Terrain, water, hazards and decorative objects SHALL follow the same profile. Near scenery SHALL approach coherently in the downstream chase view with irregular spacing and asymmetry.
 #### Scenario: Ride through pools and chutes
 - **WHEN** the player rides through successive generated sections on phone, desktop or landscape
-- **THEN** water width, bends, drop grade and bank composition visibly change, the raft points downstream and upcoming hazards remain legible across the three lanes
+- **THEN** water width, bends, drop grade and bank composition visibly change, the raft points downstream and upcoming hazards remain legible across the five lanes
 #### Scenario: Cross procedural boundaries
 - **WHEN** the course advances through a chute or terrain segment boundary
 - **THEN** elevation and channel edges remain continuous, hazards remain on the river and the raft does not teleport or change logical lanes
@@ -305,7 +297,7 @@ Renderer preparation SHALL avoid repeated model texture/program work in active s
 - **THEN** resource preparation remains bounded, animation scheduling continues and the accepted river visuals and controls are available
 #### Scenario: Sustained slow rendering
 - **WHEN** active frame times remain slow or the viewport changes size
-- **THEN** rendering cost reduces with bounded buffer changes, while all three lanes remain readable on phone, desktop and landscape
+- **THEN** rendering cost reduces with bounded buffer changes, while all five lanes remain readable on phone, desktop and landscape
 #### Scenario: Pause and visibility
 - **WHEN** the player pauses or hides the page and later resumes
 - **THEN** paused pixels remain unchanged, hidden time does not lower quality or advance the run, and resumed rendering continues
@@ -337,61 +329,50 @@ The control row SHALL present Left lane, Jump, Duck and Right lane in that order
 - **AND** tapping any control performs its intended action once without layout overflow
 
 ### Requirement: Shoreline ducking branches
-Duck hazards SHALL visibly grow from rooted shoreline trees in WebGL and the
-2D fallback, with textured tapering limbs and foliage. Their low tips SHALL
-align to the existing branch lane and collision distance. Connecting limbs
-crossing other lanes SHALL stay above the standing rider. The existing speed,
-duck window and collision outcomes SHALL remain unchanged. Tree geometry SHALL
-remain bounded and use locally available resources prepared before active play.
+Duck hazards SHALL visibly grow from rooted shoreline trees in WebGL and fallback. Normal river trees SHALL offer contiguous widths of one, two or three lanes, originate from their declared bank, and vary the bank carrying the three-lane tree in full-river rows. Full five-lane canopy rows SHALL use two opposite-bank native trees rather than stretching a single variant. Inside a fork, each native tree SHALL attach to its own stream's shoreline and cover only that stream's declared contiguous lanes; wood SHALL NOT stretch across the island into the other stream. One tree SHALL present each coherent span. Visible low wood, markers, hints and physical coverage SHALL agree, including between covered lanes. A timely duck SHALL clear covered lanes; uncovered water SHALL remain traversable. Each successful row SHALL reward once. Partial trees SHALL NOT be labeled as full river. Existing speed, inputs, actions, impact feedback, finite finishes and prepared bounded resources SHALL remain.
 
-#### Scenario: Approach and duck a shoreline limb
-- **WHEN** a player approaches a branch on phone, desktop or short landscape
-- **THEN** its tree is grounded on a shoreline, its limb reaches into the marked
-  lane, and a correctly timed duck clears it with the existing reward
+#### Scenario: Read and react to three widths
+- **WHEN** one-, two- or three-lane branches approach on phone, desktop or short landscape
+- **THEN** each visibly rooted tree covers its marked contiguous water lanes with a readable duck cue, and a timely duck clears it
 
-#### Scenario: Safe route and passed tree
-- **WHEN** a player avoids the branch lane or passes below its tip
-- **THEN** connecting wood stays overhead outside the hazard lane and the rooted
-  tree continues past before being removed within the existing entity bounds
+#### Scenario: Physical span contact
+- **WHEN** the standing raft crosses a covered lane or between covered lanes
+- **THEN** that single branch triggers impact once, coins still require physical pickup contact, and a perfect duck earns one row reward
 
-#### Scenario: Fallback and inactive play
-- **WHEN** WebGL is unavailable, reduced motion is enabled, or the run pauses
-- **THEN** rooted branches remain readable in fallback and reduced motion, and
-  pause preserves the rendered scene without decorative branch movement
+#### Scenario: Safe routes and stopped state
+- **WHEN** seeded play completes all three maps, pauses or falls back
+- **THEN** full normal five-lane canopies remain duckable, fork trees stay attached to their own stream, partial spans retain a fair clear or duck route, stopped pixels freeze and fallback agrees within resource bounds
 
 ### Requirement: Natural tree anatomy and materials
-Shoreline trees SHALL have smooth curved, tapering limbs, rooted broad trunks,
-irregular fuller crowns, detailed bark and natural individual leaf textures.
-The duck bough SHALL have substantial structural thickness and multiple
-connected woody forks with leafy offshoots along its span. Its terminal
-silhouette SHALL descend naturally without a curled upward hook.
-Matching decorative trees SHALL be placed outside the playable river. Curved
-low limbs SHALL remain confined to their duck lane. Texture and geometry work
-SHALL finish before active play; missing new textures SHALL retain usable local
-materials. All trees SHALL share a bounded renderer budget and retain existing
-speed, action windows, inputs and collision outcomes.
+Shoreline duck trees SHALL resemble the supplied oak-over-water and mossy
+jungle-limb references: a rooted leaning bank trunk continuously grows into a
+thick crooked tapering limb with broad asymmetric lateral forks, recursively
+smaller twigs, airy broadleaf foliage and hanging strands. They SHALL NOT read
+as a straight rail with repeated upright prongs, a detached beam/stump or tiny
+foliage balls at equally spaced tips. The visible bank root, branch collar and
+low river limb SHALL form one coherent connected tree. One/two/three-lane
+coverage SHALL vary by natural reach rather than a decorative fixed fork count.
+The primary view SHALL use an optimized locally hosted complete Meshy tree
+with recorded provenance and preserve its native topology/proportions. Low
+blocking wood SHALL register to covered lanes and remain above a ducking raft;
+uncovered lanes SHALL stay open. Native and procedural fallback trees SHALL
+retain the same span rules, speed, actions and inputs. Decorative trees SHALL
+remain outside playable water. Resources SHALL be prepared before play and
+recycled within fixed limits; failed assets SHALL retain a natural playable
+fallback.
 
-#### Scenario: Read a natural duck tree
-- **WHEN** a player approaches and ducks a shoreline branch at phone, desktop
-  or short landscape size
-- **THEN** the tree has a continuous curved limb, recognizable bark and leaves,
-  and a successful timed duck preserves protection and earns the existing reward
+#### Scenario: Read a naturally attached canopy
+- **WHEN** one-, two- or three-lane trees approach from either bank in phone or desktop chase framing
+- **THEN** a visible grounded trunk and broad collar support irregular crooked tapering wood, sideways forks, hanging twigs and sparse foliage like the supplied references
+- **AND** the tree remains visibly attached without a repeated rail/antenna silhouette or counted lollipop tips
 
-#### Scenario: Travel through a fuller riverbank
-- **WHEN** a run advances through its bank scenery
-- **THEN** matching detailed trees remain outside playable lanes, recycle within
-  fixed counts and do not obscure low hazard tips with crown foliage
+#### Scenario: Preserve physical branch play
+- **WHEN** a player ducks through a covered lane or passes beside a partial tree
+- **THEN** the blocking limb agrees with its contact marker, ducking clears the wood and uncovered lanes remain open with existing reward/input behavior
 
-#### Scenario: Pause or use fallback
-- **WHEN** the run pauses, reduced motion is active, WebGL fails or a new texture
-  cannot load
-- **THEN** paused pixels stay fixed, reduced motion preserves readable trees,
-  and the fallback remains playable with the same branch geometry and controls
-
-#### Scenario: Read a substantial branched bough
-- **WHEN** a player approaches a duck tree on phone, desktop or landscape
-- **THEN** a thick supporting bough has multiple clearly connected leafy forks,
-  its low end tapers without curling upward, and a timed duck clears the wood
+#### Scenario: Prepared native tree and fallback
+- **WHEN** the run pauses, enables reduced motion, advances through all maps or cannot load the new native model
+- **THEN** paused pixels stay unchanged, essential coverage remains readable, native proportions or matching organic fallback remain intact and tree/texture/shader resources stay bounded
 
 ### Requirement: Three finite adventure maps
 River Rush SHALL offer exactly three maps in order: Canopy Run, Redstone Rapids
@@ -437,6 +418,9 @@ The game SHALL offer a button to save a legible PNG score image with the map,
 score and adventure progress. Animated visual guidance SHALL demonstrate
 horizontal lane swipes, upward jumping and downward ducking; reduced motion
 SHALL retain still diagrams. Guides SHALL not capture gameplay gestures.
+Active phone guidance SHALL be compact at the HUD edge and leave the central
+river, raft, upcoming hazards and gameplay controls visible. Enemy guidance
+SHALL distinguish weaving crocodiles, leaping fish and bank-diving birds.
 
 #### Scenario: Save a score
 - **WHEN** a player chooses Save score image during a run or on a result screen
@@ -447,6 +431,12 @@ SHALL retain still diagrams. Guides SHALL not capture gameplay gestures.
 - **WHEN** a player opens instructions or starts an early run
 - **THEN** directional swipe/jump/duck guides visibly show the required gesture,
   remain readable at phone size, respect reduced motion and permit screen-wide input
+
+#### Scenario: Keep the river view open
+- **WHEN** opening or enemy hints appear at 390x844, 360x640 or short landscape size
+- **THEN** the compact card remains beside the HUD without overlapping score,
+  distance, power badges or controls and leaves the central hazard corridor open
+- **AND** a drag beginning on the hint still steers the raft through the normal whole-screen gesture handler
 
 ### Requirement: Public guest leaderboard
 The game SHALL show a shared persistent high-score leaderboard visible to
@@ -548,3 +538,262 @@ landscape and desktop layouts in primary 3D and 2D fallback views.
 - **WHEN** a raft approaches the last hazard-free stretch and crosses the gate
 - **THEN** increasing approach cues make the finish unmistakable, all lanes
   pass safely beneath it and the clear bonus/result occur once at the exact end
+
+### Requirement: Readable bank rocks and physical hazard contact
+Decorative bank rocks SHALL remain outside navigable lanes throughout the seeded curved course. Canopy, Redstone and Moonlit riverbanks SHALL NOT show detached white vertical cards or stripes from bank effects. Hazard outcomes SHALL follow the raft position at the hazard crossing, rather than the lane selected before the raft has moved there. Rocks SHALL remain dodge-only; jump, duck, shield and Rush behaviors SHALL retain their readable action rules and fair traversable routes.
+
+#### Scenario: Swipe toward a neighboring rock
+- **WHEN** a player selects a neighboring rock lane immediately before its crossing but the raft remains clear of the rock
+- **THEN** the rock passes without an invisible hit or shield consumption
+
+#### Scenario: Swipe away from a contacted rock
+- **WHEN** a player selects another lane while the raft still overlaps a rock at its crossing
+- **THEN** contact produces the normal protection or wipeout feedback rather than target-lane immunity
+
+#### Scenario: Ride every riverbank
+- **WHEN** a player rides through opening and late sections of Canopy, Redstone and Moonlit on phone, desktop or short landscape
+- **THEN** rock scenery remains outside playable lanes, banks have no detached white vertical strips, and upcoming hazards remain readable
+
+#### Scenario: Preserved action and rendering lifecycle
+- **WHEN** the player jumps, ducks, activates protection, pauses or uses reduced motion
+- **THEN** controls respond immediately, stopped frames remain unchanged, action barriers stay traversable, and the correction adds no active shader or texture preparation
+
+#### Scenario: A dodged rock passes beside the raft
+- **WHEN** the raft successfully passes beside a rock or jumps over a log
+- **THEN** the obstacle remains solid as it passes the raft and retires after leaving the near viewport behind the raft; only an actual shield or Rush impact removes it, without reappearing when feedback expires
+
+### Requirement: Seamless varied terrain with bounded forward chunks
+Riverbanks SHALL use deterministic seamlessly periodic two-dimensional noise with bounded layered relief. Canopy SHALL have rounded hills, Redstone SHALL have eroded terraced rock formations, and Moonlit SHALL have broken stepped ridges. CPU scenery placement and GPU bank geometry SHALL use matching terrain heights, with additional relief fading to zero at the navigable channel.
+
+Terrain SHALL reuse a fixed pool of six 64 m chunks per bank, retain contiguous visible coverage, schedule terrain ahead of travel, and recycle only chunks no longer needed behind the camera. Forward movement SHALL use the prepared shader; terrain instance matrices SHALL update only when chunk identities change. Resources and active counts SHALL remain bounded independent of distance and stage transitions.
+
+#### Scenario: Cross a terrain chunk or noise period
+- **WHEN** the raft passes a chunk boundary or the procedural noise wraps
+- **THEN** terrain height and surface slope remain continuous with no crack, popping bank edge or displaced scenery foot
+
+#### Scenario: Compare three river environments
+- **WHEN** a player rides opening and late portions of all maps on supported layouts
+- **THEN** seeded bank shapes visibly vary across the course, each map has its stated terrain character, and playable lanes and upcoming hazards remain clear
+
+#### Scenario: Recycle the visible corridor
+- **WHEN** the raft advances, changes maps or restarts a river
+- **THEN** six prepared slots per bank cover the visible corridor and enough upcoming terrain, old slots recycle without memory growth, and no play-time terrain texture or shader work occurs
+
+#### Scenario: Keep controls and stopped frames
+- **WHEN** the player steers, jumps, ducks, pauses or enables reduced motion
+- **THEN** accepted speed and action rules remain, scenery stays registered to the shared terrain, and stopped frames remain unchanged
+
+### Requirement: Coherent Moonlit landscape depth
+Moonlit Ruins SHALL use an atmosphere-only night sky and prepared bounded course-registered landscape silhouettes. Near, middle and far landscape layers SHALL move with coherent perspective and relative depth; the background SHALL NOT contain a stationary painted river or near temple scene. Moonlight, violet mist and ruin identity SHALL remain, and landscape silhouettes SHALL stay outside playable lanes.
+
+#### Scenario: Advance through Moonlit Ruins
+- **WHEN** a player advances and steers through opening, middle and late Moonlit sections on phone, desktop or short landscape
+- **THEN** nearer scenery advances faster than distant silhouettes, shared landscape anchors follow the course, no fixed duplicate river remains, and hazards stay readable
+
+#### Scenario: Cross horizon sections
+- **WHEN** a horizon slot enters or leaves the visible course
+- **THEN** its silhouette enters or recedes gradually without a sudden replacement, and instance/resource counts stay bounded
+
+#### Scenario: Pause, reduce motion and restart
+- **WHEN** the player pauses, enables reduced motion, retries or changes maps
+- **THEN** stopped frames are stable, decorative motion reduces, controls retain their timing, and prepared resources introduce no play-time terrain texture or shader work
+
+#### Scenario: Use graphics fallback
+- **WHEN** WebGL cannot initialize
+- **THEN** Moonlit remains playable with a coherent night environment and no fixed painted near river
+
+### Requirement: Epic adaptive gameplay soundtrack
+River Rush SHALL play a locally hosted original instrumental adventure loop during active gameplay, with a smoothly fuller mix as course intensity and Rush increase. Action cues SHALL remain distinct. Playback SHALL reuse bounded resources and SHALL NOT delay the frame loop.
+
+#### Scenario: Start and build momentum
+- **WHEN** a new player starts a run on desktop or portrait/landscape touch layouts
+- **THEN** the score begins from that gesture, loops continuously and smoothly increases in energy with the rapids while jump, duck and pickup sounds remain available
+
+#### Scenario: Pause, hide, finish and retry
+- **WHEN** a sounding run pauses, the page hides, a map completes, its brief wipeout presentation ends or the player returns to the menu
+- **THEN** playback becomes silent and stays silent until an explicit sounding Start or Resume; retry does not create duplicate media elements or contexts
+
+#### Scenario: Persist mute
+- **WHEN** the player mutes sound and retries a map or reloads the page
+- **THEN** the preference remains muted until the player explicitly enables sound
+
+#### Scenario: Soundtrack unavailable
+- **WHEN** the soundtrack cannot load or browser audio playback is rejected
+- **THEN** the game, pause, retry and keyboard/swipe controls continue to work without an unhandled rejection or repeated allocation
+
+### Requirement: Terrain-linked river encounters
+Each seeded course SHALL alternate visually distinct narrows, rough-water jump sections, low-canopy passages and calmer recoveries. Their shared distance profile SHALL connect river shape and obstacle/coin routes, rather than decorating an unrelated obstacle sequence. Terrain SHALL preserve the three existing finite maps, accepted speed and immediate keyboard/buttons/screen-wide gestures. Every obstacle row SHALL provide either an adjacent clear lane or a consistent jump/duck wave with sufficient action spacing. Wave-train sections SHALL offer raised coin ribbons; complete encounters SHALL provide at least three eligible jump rows and a one-time 350-point bonus for three perfect unprotected jumps within that section. Truncated final encounters SHALL show their pickup route without advertising an unreachable chain objective. A collision or a new section SHALL reset incomplete progress; Rush or collision grace SHALL NOT farm the chain reward. Resources SHALL remain bounded at late-course distances.
+
+#### Scenario: Follow changing terrain
+- **WHEN** the player proceeds through each map on desktop, phone or short landscape
+- **THEN** narrow boulder slaloms, rough-water jumps, low duck passages and calm recoveries have distinct visible course shapes and corresponding routes, with safe traversable choices and the existing finish
+
+#### Scenario: Collect within a terrain encounter
+- **WHEN** the player touches or passes beside a coin while steering or jumping through a terrain section
+- **THEN** only physical contact rewards once, raised coins require jump contact, and control and power rules remain consistent
+
+#### Scenario: Chain whitewater jumps
+- **WHEN** the player performs three perfect unprotected jumps in a wave-train section with an advertised chain objective
+- **THEN** the visible chain fills and awards 350 points once; additional clears or powered contact do not duplicate it, and a collision or next section resets incomplete progress
+
+### Requirement: Audible and tangible contact
+Collected coins SHALL produce a distinct short pickup chime at contact. Protected and fatal collisions SHALL produce a distinct impact sound with readable raft/rider recoil and splash. Each emitted contact SHALL be handled once even when a frame also crosses other rewards. A fatal contact SHALL stop the simulation at impact, show a short wipeout beat, and then provide the existing result and one-action retry. Protected impacts SHALL NOT lock controls. Persisted mute, audio failure, pause and hidden state SHALL retain their existing behavior.
+
+#### Scenario: Hit a protected or unprotected obstacle
+- **WHEN** the raft physically collides with a hazard with or without protection
+- **THEN** contact produces a visible impact and audible transient when sound is enabled, protection remains responsive, and a fatal hit gives a brief wipeout followed by the score/retry screen
+
+#### Scenario: Collect rapid coins
+- **WHEN** several physically touched coins and another reward occur in one update
+- **THEN** pickup audio remains audible and bounded without skipped contacts or duplicate rewards, while passing beside coins stays silent
+
+#### Scenario: Pause, mute or reduce motion
+- **WHEN** the player pauses, hides the page, mutes, retries, or uses reduced motion on a supported layout
+- **THEN** pause/hidden/mute stop the appropriate audio, paused pixels freeze, retry resets the impact beat, reduced motion suppresses shake while retaining clear contact feedback, and a failed sound resource cannot stop play
+
+### Requirement: Reachable action reward routes
+Generated log rewards SHALL form a speed-aware coin arc that a single well-timed .66-second jump can collect while clearing its log. A separate safe bypass MAY offer ground coins in another clear lane as a mutually exclusive choice. Within the selected jump route, low coins SHALL NOT compete with that jump or demand a near-instant lane change; subsequent low ribbons and finish gold SHALL be reachable after landing, including earned Rush. WebGL and fallback SHALL render the shared generated heights. Physical lateral pickup tolerance, missed-coin behavior, powers and accepted action timings SHALL remain unchanged.
+
+#### Scenario: Collect a jump reward path
+- **WHEN** a player follows a generated log route at normal early or late jump timing on any map
+- **THEN** one jump clears the log and collects the arc with no incompatible low coin hidden beneath the airborne raft; subsequent low gold remains reachable after landing
+
+#### Scenario: Preserve physical pickup
+- **WHEN** the raft passes beside an arc or beneath raised gold without jumping, including powered play
+- **THEN** only actual compatible height and lateral contact reward once, and a missed coin passes silently
+
+### Requirement: Varied required action beats
+After the readable three-row tutorial, each seeded map SHALL introduce required jumping and ducking early and bound subsequent action droughts on the normal river. Courses SHALL combine short varied action, weave and recovery encounters. Forks SHALL deliberately contrast a calmer route with fewer required actions and a richer multi-beat action route; they SHALL NOT force both streams to play identically. Full-width normal formations and within-stream action gates SHALL share a traversable action with human reaction time and preserve accepted speed and continuous controls. Seeded terrain ordering SHALL agree between CPU and shader and preserve attainable advertised jump-chain objectives.
+
+#### Scenario: Learn actions early
+- **WHEN** a player leaves the opening tutorial or begins a harder map
+- **THEN** jumping and ducking become necessary soon and camping one lane or only steering cannot finish the opening
+
+#### Scenario: Read changing combinations
+- **WHEN** a player proceeds through a seeded river and chooses fork streams
+- **THEN** short jump, duck, weave and recovery beats vary in order, the streams offer different exposure and payoff, realistic delayed input remains viable, and every advertised chain offers enough eligible jumps
+
+### Requirement: Readable moving river enemies
+Each seeded river SHALL include sparse crocodile, leaping-fish and swooping-bird enemies after its tutorial and early required actions. Crocodiles SHALL repeatedly weave back and forth across lanes, remain moving near contact and weave faster on later maps. Crocodiles and fish SHALL allow jumping or dodging; birds SHALL allow ducking or dodging. Fish SHALL visibly leap from water, and birds SHALL descend into the river from either shoreline. Their visible lane and height SHALL use a shared deterministic pose; physical crossing SHALL use that pose's contact lane. A clear action tell and predicted contact-lane marker SHALL provide enough warning for a timed response. Generation SHALL preserve reachable action rewards, attainable advertised chains, clear routes and finite finishes. Prepared animation resources and active entities SHALL remain bounded.
+
+#### Scenario: React to weaving and leaping wildlife
+- **WHEN** a crocodile or fish approaches on desktop, portrait touch or short landscape
+- **THEN** the crocodile reverses repeatedly without settling before contact, the fish visibly launches out of water, and their jump/dodge cues and contact markers agree with the physical crossing lane
+- **AND** a correctly timed jump clears the enemy and reaches its raised reward without requiring an adjacent-lane coin pickup
+
+#### Scenario: Duck a bank-diving bird
+- **WHEN** a bird approaches from either side of the river
+- **THEN** its trajectory begins beyond the bank and visibly descends into its marked high contact envelope, with a readable duck/dodge tell and enough response time
+
+#### Scenario: Contact and stopped state
+- **WHEN** the raft overlaps an enemy, pauses, retries or enables reduced motion
+- **THEN** physical contact uses its shared visible lane and existing protection/wipeout feedback, paused positions remain unchanged, retry resets encounters, and reduced motion keeps essential collision motion clear without extra shake
+
+#### Scenario: Preserve complete varied courses
+- **WHEN** delayed-input play proceeds through all three maps including Rush and advertised jump chains
+- **THEN** all three species appear, routes and raised coin arcs remain attainable, finishes remain finite, and entities and prepared graphics resources stay within fixed bounds
+
+### Requirement: Drifting bonus relic targets
+Courses SHALL offer sparse drifting relic targets in clear recovery space using existing steering controls. Both renderers SHALL show their shared moving position and destination. Actual compatible ground-height contact within the fixed 0.95m physical pickup radius SHALL award 200 points once and 10 charge outside active Rush with distinct visual and audible feedback; adjacent, opposite-stream or airborne misses SHALL pass silently. Bonus routes SHALL NOT conflict with preceding jump arcs or demand an immediate lane change into another hazard.
+
+#### Scenario: Collect or miss a drifting relic
+- **WHEN** a player physically steers over a target or passes beside or above it
+- **THEN** only compatible contact awards once, emits one cue and burst, and preserves ordinary coin contact rules
+
+#### Scenario: Keep accessible feedback and bounded play
+- **WHEN** a player mutes, pauses, hides, retries or uses fallback
+- **THEN** sound preferences and stopped motion remain correct, targets stay distinct and attainable, and resources do not grow with course distance
+
+### Requirement: Varied five-lane coin routes
+Seeded maps SHALL place sparse approach clues, meaningful action rewards and reachable landing/recovery pockets across the normal five-lane river instead of cycling arbitrary geometric token shapes. Real fork streams SHALL offer coherent alternatives with visible treasure objectives. Raised gold SHALL retain reachable speed-aware jump arcs. Each selected route SHALL remain attainable with the existing steering spring, including maximum future Rush. Simultaneous alternatives SHALL NOT imply that every reward can be collected. No ground reward SHALL bait a rock collision or conflict with its selected jump. All reward contact SHALL use actual compatible height and a fixed physical pickup radius without collecting adjacent tokens across a widened stream or island gap. Entity and render pools SHALL remain bounded.
+
+#### Scenario: Follow meaningful gold
+- **WHEN** a player rides a complete seeded map
+- **THEN** pickups mark approach, action, landing and recovery opportunities rather than repeated decorative chains, and gold remains reachable in every normal river lane
+
+#### Scenario: Choose a reward branch
+- **WHEN** the player chooses one of two genuine streams and follows its treasure encounter
+- **THEN** physically touched rewards pay normally while the other stream's rewards and adjacent coins remain uncollected
+
+#### Scenario: Move across the wider river
+- **WHEN** keyboard or continuous whole-screen dragging moves between lanes and reverses
+- **THEN** five normal lane centers remain visible and usable, split-stream steering is continuous within its water and actual land contact is coherent, and both renderers agree with contact geometry
+
+### Requirement: Tactical coin decisions
+After the tutorial, occasional eligible partial-action or moving-enemy stations SHALL offer a sparse ordinary-coin bypass and richer guarded rewards. Guarded coins SHALL be visually distinct and pay twice the base points of ordinary coins under the same streak and Gold Boost. A protected collision SHALL NOT earn the existing perfect-action reward. Choices SHALL vary their lanes and required jump or duck action. Later maps and later course sections SHALL introduce harder entry or exit commitments with enough physical steering and action time. Both strategies SHALL be playable without protection; untaken alternatives SHALL remain uncollected. Real fork adventures SHALL carry richer multi-beat decisions to visible treasure rather than duplicating an isolated one-row choice at every station. Tutorial beats, full-river mandatory action walls outside forks, promised wave chains and finish runway SHALL retain their existing behavior. Choice metadata, visual cues and scoring SHALL describe the same routes and actual values within bounded pools.
+
+#### Scenario: Choose safety or a richer enemy route
+- **GIVEN** an approaching decision station with a safe bypass and guarded premium rewards
+- **WHEN** the player takes the bypass or enters the guarded route and times its required action
+- **THEN** the bypass yields a smaller payout without contacting its guard, while the guarded route pays double-value touched coins and the existing unprotected perfect-action reward
+- **AND** coins beside the raft and untaken alternatives remain uncollected
+
+#### Scenario: Commit or bail out
+- **WHEN** the player reads a guarded route ahead, then commits or changes to the shown safe alternative before its pickups
+- **THEN** both choices remain physically attainable at the current speed, mutually exclusive payouts do not demand late returns, and exposure matches the warning
+
+#### Scenario: Grab partial treasure and escape
+- **WHEN** the player physically touches an approach token and leaves its guard before contact
+- **THEN** only contacted rewards pay, missed tokens remain uncollected, and no perfect-action reward is granted for bypassing the guard
+
+#### Scenario: Harder later decisions
+- **WHEN** the player reaches later maps or later sections
+- **THEN** guarded decisions and fork adventures vary actions, wildlife, entry and reachable exit commitments instead of adding equally safe decorative coins
+- **AND** mandatory wave chains, calm recoveries and finite finishes remain attainable
+
+#### Scenario: Read choices on supported screens
+- **WHEN** a decision approaches on desktop, portrait, short landscape or fallback
+- **THEN** rewards, route actions and attainable payoffs are readable before contact, and edge cues yield to immediate hazards without blocking river or gestures
+
+### Requirement: Diverging river adventures
+Seeded maps SHALL sometimes split around visible island land into two genuine streams, then smoothly reunite into the five-lane river. Left lanes 0–1 and right lanes 3–4 SHALL remain on their respective water surfaces; center lane 2 SHALL be land only within the island footprint. A shared distance topology SHALL drive raft, rewards, enemies, water, terrain and both renderers. Steering SHALL remain continuous and responsive, with explicit player choice and a hazard-free approach rather than involuntary target-lane changes. Actual island contact SHALL produce coherent collision/protection feedback; protected contact SHALL rebound toward water without teleporting through land. Moving enemies and rooted branch anatomy SHALL remain in their own stream. Island presentation SHALL visibly distinguish Canopy, Redstone and Moonlight through layered shore materials, asymmetric scenery clusters and landmarks. Split currents, nose eddies and reunion foam SHALL follow actual geography without hiding actionable hazards/rewards or introducing moving seams. Tutorial, promised wave chains, finite finishes, accepted speed/action timing and fixed resource bounds SHALL remain intact.
+
+#### Scenario: Choose and ride a stream
+- **WHEN** a fork approaches and the player steers into either stream
+- **THEN** water and playable routes visibly separate around land, the chosen stream has its own coherent challenges and treasure, the rider retains normal readable scale, and the raft returns smoothly to five-lane play at the confluence
+
+#### Scenario: Cross visible island land
+- **WHEN** the actual raft trajectory reaches the island footprint
+- **THEN** terrain contact is sampled along the continuous motion, normal impact feedback occurs, and protection rebounds the raft toward water rather than allowing a silent land crossing
+
+#### Scenario: Preserve physical contact and enemy geography
+- **WHEN** the raft passes beside rewards or wildlife moves within a split stream
+- **THEN** only actual compatible height and physical proximity collect a reward, aquatic enemies remain over their stream, birds enter from that stream's own bank, and branch wood/markers agree with stream coverage
+
+#### Scenario: Read the split and reunion
+- **WHEN** a player rides a fork on desktop, portrait, short landscape or fallback
+- **THEN** the fork nose, two water channels, themed island shore/landmarks and reunion are visually clear, cues do not obstruct the central river or gestures, and stopped motion and resource usage remain bounded
+
+### Requirement: Purposeful treasure encounters
+Reward placement SHALL express coherent challenges through sparse approach clues, action rewards, attainable landing pockets, voluntary exposed stashes and visible treasure caches instead of cycling arbitrary geometric scatter. Fork encounters SHALL vary their seeded theme, side and complete authored movement/action phrase. A calmer stream SHALL offer an easier base line with optional exposed grabs; a richer stream SHALL offer greater exposure, local alternative income and a larger clean-completion cache reward. Clean completion SHALL depend on actual required unprotected clears. Any physical impact during the chosen adventure SHALL invalidate its clean bonus while preserving the base prize. Optional stash collection alone SHALL NOT invalidate that bonus. Partial or protected play SHALL pay only earned rewards. Cache contact SHALL require physical ground-height overlap, have distinct visual and sound feedback, and occur after the preceding action has landed, including maximum future Rush. Normal recoveries, strictly contacted coin streaks and finite finishes SHALL remain attainable.
+
+#### Scenario: Judge a remembered objective
+- **WHEN** a player approaches either stream's treasure encounter
+- **THEN** its reward and required challenge are readable before commitment, actions and optional grabs form a coherent sequence, and the visible end prize agrees with its actual attainable payout
+
+#### Scenario: Earn a clean or partial prize
+- **WHEN** the player touches a cache after clean required clears, protected play or an incomplete route
+- **THEN** the larger completion reward is granted only for qualified physical play, contacted partial rewards pay once, and untaken or adjacent treasure remains uncollected
+
+#### Scenario: Land into treasure
+- **WHEN** the player completes a jump or duck sequence at normal or future-Rush speed
+- **THEN** the landing pocket and cache remain reachable with existing steering and action durations instead of hiding ground rewards under an airborne raft
+
+### Requirement: Authored fork reward tradeoffs
+Both fork streams SHALL offer voluntary authored reward opportunities with real competing benefits, actual hazards and attainable exits. A wildlife bank SHALL pay eight actual ordinary coins at grounded contact, applying individual coin streak, multiplier, boost, charge and coin-goal semantics; its lane bypasses the required clear and therefore forfeits an otherwise eligible clean bonus. A +200-point landing-detour stash SHALL compete with eight seconds of Gold Boost in the other stream lane at the exact same distance. A +120-point sheltered boulder-snatch SHALL compete with a single nonstacking shield in the clear lane at the exact same distance. Competing pickups SHALL require grounded physical contact within 0.95m and SHALL NOT both be earned on one trajectory. Stashes without coins SHALL retain their fixed point semantics. Optional collection alone SHALL NOT invalidate clean qualification. Seeded variation SHALL select complete authored phrases rather than random reward coordinates; full-stream gates SHALL NOT advertise an action-free bypass. Existing action timing, continuous steering, reachable delayed returns, pool limits and geometry SHALL remain intact. Unsupported promises SHALL be omitted, unrelated imminent hazards SHALL take cue priority, and metadata, world rewards and receipts SHALL agree. Visible cues and world rewards SHALL distinguish actual coins, fixed points, boost duration and shield redundancy before commitment.
+
+#### Scenario: Take coins or preserve clean completion
+- **WHEN** the player takes the eight-coin bank instead of facing its wildlife guard
+- **THEN** contacted coins advance coin goals, streak and Rush using ordinary coin rules, the uncontacted action gold is missed, and the bypassed clear removes the clean-cache bonus
+
+#### Scenario: Choose immediate points or future gold
+- **WHEN** the player reaches the landing-detour alternatives
+- **THEN** the stash pays fixed points or the opposite-lane Gold Boost activates for eight seconds, both cannot pay, and a successful required return remains eligible for clean completion
+
+#### Scenario: Choose score or protection
+- **WHEN** the player reaches the sheltered snatch alternatives
+- **THEN** the exposed stash requires a cutback while holding the clear lane offers one shield, the benefits cannot both pay, and the cue discloses an already-held shield rather than promising another life
+
+#### Scenario: Read the decision at speed
+- **WHEN** a fork or its next reward decision approaches on portrait, desktop, short landscape or fallback
+- **THEN** distinct competing benefits and required exits appear legibly before contact, actual world labels agree with receipts, unrelated urgent dangers take priority, paused/reduced motion remains stable, and drag gestures work through the guidance

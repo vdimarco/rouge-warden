@@ -1,0 +1,6 @@
+- [x] Implement connected campaign, resources, tools and environmental restoration
+- [x] Implement evolving original-scene rendering and scene-grounded objects
+- [x] Build travel/inventory/quest UI, keyboard/touch controls and persistence
+- [x] Integrate arcade and shared switcher
+- [x] Verify complete journeys, state-driven scene changes and layouts
+- [x] Validate and archive the specification

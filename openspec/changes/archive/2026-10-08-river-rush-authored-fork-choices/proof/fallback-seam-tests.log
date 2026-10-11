@@ -1,0 +1,22 @@
+✔ fallback lanes, enemies and two water channels share actual fork geography on every map and layout (66.582256ms)
+✔ island camera keeps complete banking riders visible and reunites without a position jump (11.081868ms)
+✔ committed stream keeps the full-size rider and a stable camera during within-stream steering (5.25317ms)
+✔ fork branch contact strips use physical meter margins rather than stretching into the island (9.156681ms)
+✔ fork shores smooth into the approved normal apron and reach shared physical core banks (0.443496ms)
+✔ organic island material is seamless shared data and themed fallback cards are prepared only before play (165.566891ms)
+✔ fork fallback freezes exactly from game time and distance with bounded reusable patterns (68.230431ms)
+✔ Canopy fork noses and reunions preserve the normal whitewater surface instead of cutting in a darker rectangle (23.539357ms)
+✔ fallback island relief rises from actual land height without moving contact shores or changing camera registration (75.938002ms)
+✔ fallback island materials and landmarks retain all three map identities with bounded stopped drawing (32.551361ms)
+✔ both island coasts have bounded seeded soil and detailed ground clumps instead of uninterrupted color strips (45.343566ms)
+✔ gold stashes have a stationary ground silhouette and truthful fixed-value receipt distinct from the final chest (39.438052ms)
+✔ treasure silhouettes and promise distinguish the actual completion bonus from a route label (0.356788ms)
+✔ a real protected island rebound renders impact feedback without trying to explode missing terrain art (6.823348ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 741.420142

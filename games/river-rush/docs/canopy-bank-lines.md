@@ -1,0 +1,9 @@
+# Canopy bank line correction
+
+This small restoration uses the existing OpenSpec requirement **Readable bank rocks and physical hazard contact**. The detached vertical waterfall/mist cards were previously suppressed in Redstone and Moonlit but still enabled in Canopy. The cards extend outside their supporting cliff footprint and begin at a different elevation, exposing narrow white sections through bank geometry.
+
+Suppress these same panels on all three maps. Solid cliffs and the bounded scenery pool remain; river surface waves, flowing foam, raft wakes, music and gameplay controls retain their existing behavior. The canonical bank requirement now explicitly covers Canopy. The existing world-direction check expects solid cascade cliffs without vertical cards or mist panels.
+
+Rendered before/after checks identify the detached panels and confirm their removal. The desktop bank at 100 m drops from 822 bright pixels to 1 in the panel region; the phone bank at 40 m drops from 824 to 0. Fixed source scenes cover seven distances from 0 to 3,000 m across desktop, phone and short landscape, with no waterfall or mist cards and solid cliffs retained. Eight matched crops of river water, wake and raft are pixel-identical. The actual rebuilt app passes lane steering, jump, duck, exact paused pixels and resume on all three layouts, with no errors or GPU preparation during play.
+
+The arcade build and six focused world/district tests pass. The canonical specification passes manual structural checks with 47 unique requirements; the OpenSpec CLI is unavailable. The machine-readable receipt records the local browser checks and new bundle hash. Production delivery is checked separately against the committed public files after publication. This is a localized correction; no new feature or gameplay behavior is introduced. Physical phone/GPU performance is not measured by browser layout checks.

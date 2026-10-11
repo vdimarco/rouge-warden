@@ -21,3 +21,13 @@ On upright phones the team chat moves to the right, above the point button, so i
 The skill reach layer in `skill-reach.js` measures the buttons, so it follows the new row without change.
 
 The death recap moves with the bar on phones. In landscape it sits above the bar, between the movement pad and the skill column. Upright, it sits right of the movement pad and above the point button.
+
+## Compact phone bars and the new look
+The player said the phone bar took up too much space. The landscape row went from 98 px to 82 px high and from 516 px to 458 px wide. The upright bar went from 160 px to 124 px: the bars became a 10 px strip along the top, the skills went from 60 px to 52 px, and the items went into one 32 px row. The movement pad moved down with it, from 214 px to 134 px above the bottom edge.
+
+The look stays inside the game's bronze, gold and parchment palette, with the cyan of selection feedback as the accent:
+- The frame (`#hud::before`) has cut top corners from `clip-path`, a top bevel, an inner dark rim and a faint diagonal texture from a repeating gradient. Box shadows outside the frame are clipped, so it uses inset shadows only.
+- The gold trim (`#hud::after`) is a gradient line with an inline SVG jewel at its centre. Each layout sets the frame box in `--fx`, `--fw` and `--fh`, so the frame and the trim always line up.
+- A skill that can be used now has a gold ring and a soft glow; the ultimate uses the hero colour. Unlearned skills are desaturated. A cooldown is a dark veil with a large number.
+- The mana track is the `::before` of the bar box, because the mana fill sits outside that box. Health ticks repeat every 24 px, so they do not stretch as the fill changes.
+- The "+" badges are gold coins. They pulse unless the player asks for reduced motion.

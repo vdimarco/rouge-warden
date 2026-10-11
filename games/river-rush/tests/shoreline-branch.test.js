@@ -1,97 +1,81 @@
+import {laneToX,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {shorelineBranch,limbPoint,scenicTree} from '../src/game/shoreline-branch.js';
-import {riverHalfWidth,riverBankHeight} from '../src/game/river-course.js';
-
-const scenarios=()=>[0,7,137,250,98213].flatMap(seed=>
- [110,580,1380,4872].flatMap(d=>[0,1,2].map(lane=>({seed,d,lane,id:Math.floor(d)+lane}))));
+import {shorelineBranch,limbPoint,scenicTree,BRANCH_TREE_PARTS} from '../src/game/shoreline-branch.js';
+import {riverHalfWidth,riverBankHeight,createCourseProfile} from '../src/game/river-course.js';
+import {LEVELS} from '../src/game/levels.js';
+const layouts=[[0],[4],[0,1],[3,4],[0,1,2],[2,3,4],[1],[2],[3]];
+const profiles=[0,137,98213,...LEVELS.map(l=>createCourseProfile(137,l.length,l.index))];
+const scenarios=()=>profiles.flatMap(seed=>[110,580,1380,4872].flatMap(d=>layouts.flatMap(branchLanes=>[-1,1].map(branchSide=>({seed,d,e:{type:'branch',id:d+branchLanes.length,d,lane:branchLanes[0],branchLanes,branchSide}})))));
 const radiusAt=(limb,t)=>limb.r+(limb.rEnd-limb.r)*t;
-const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,a.d-b.d);
+const close=(a,b,epsilon=1e-6)=>assert.ok(Math.abs(a-b)<epsilon,`${a} differs from ${b}`);
 
-test('duck limbs stay rooted on changing shorelines and only dip into their hazard lane',()=>{
-  for(const {seed,d,lane,id} of scenarios()){
-    const tree=shorelineBranch({id,lane,d},d,seed);
-    assert.ok(Math.abs(tree.root.x)>riverHalfWidth(d+tree.root.d,seed));
-    assert.equal(tree.root.y,riverBankHeight(tree.root.x,d+tree.root.d,seed));
-    assert.equal(tree.tip.x,(lane-1)*3.8);assert.equal(tree.tip.d,0);assert.equal(tree.tip.y,2.42);
-    assert.ok(tree.wood.length<=32&&tree.leaves.length<=32);
-    for(const limb of tree.wood)for(let i=0;i<=128;i++){
-      const t=i/128,{x,y,d:depth}=limbPoint(limb,t),r=radiusAt(limb,t);
-      assert.ok(Number.isFinite(x)&&Number.isFinite(y)&&Number.isFinite(depth)&&r>0);
-      assert.ok(limb.rEnd>0&&limb.rEnd<=limb.r);
-      // Root wood is beyond the navigable corridor. Inside it, wood below a
-      // standing rider must be confined to the existing hazard's lane.
-      if(Math.abs(x)<=5.7&&y-r<4.2)assert.ok(Math.abs(x-tree.lane)+r<1.9,`low wood crosses safe route: seed ${seed}, course ${d}, lane ${lane}, x ${x}, y ${y}, r ${r}`);
-    }
+test('natural trees have grounded roots, a joined trunk collar and exact one/two/three-lane contacts',()=>{
+ for(const {seed,d,e} of scenarios()){
+  const tree=shorelineBranch(e,d,seed);
+  assert.ok(Math.abs(tree.root.x)>riverHalfWidth(d+tree.root.d,seed));
+  assert.equal(tree.root.y,riverBankHeight(tree.root.x,d+tree.root.d,seed));
+  assert.equal(tree.anatomy,'rooted-recursive-oak');
+  assert.equal(tree.span.width,e.branchLanes.length);assert.deepEqual(tree.span.lanes,e.branchLanes);
+  assert.deepEqual(tree.contacts.map(p=>p.lane),e.branchLanes);
+  assert.ok(tree.wood.length<=BRANCH_TREE_PARTS&&tree.leaves.length<=BRANCH_TREE_PARTS);
+  const trunks=tree.wood.filter(p=>p.kind==='trunk'),arms=tree.wood.filter(p=>p.kind==='arm'),shaft=tree.wood.filter(p=>p.kind==='span');
+  assert.equal(trunks[0].a,tree.root);assert.equal(trunks[0].b,trunks[1].a);
+  assert.equal(trunks.at(-1).b,arms[0].a);assert.equal(arms[0].b,arms[1].a);assert.equal(arms.at(-1).b,shaft[0].a);
+  assert.ok(tree.wood.filter(p=>p.kind==='root').every(p=>p.b===trunks[0].b));
+  for(const contact of tree.contacts){
+   close(contact.x,laneToX(contact.lane));assert.ok(Math.abs(contact.d)<.5);assert.ok(contact.y>2.75&&contact.y<3.5);
+   assert.ok(shaft.some(p=>p.a.x===contact.x||p.b.x===contact.x),'covered lanes have a physical vertex of the continuous limb');
   }
-});
-
-test('duck boughs are substantial connected limbs with multiple leafy forks',()=>{
- for(const {seed,d,lane,id} of scenarios()){
-  const tree=shorelineBranch({id,lane,d},d,seed),bough=tree.wood.filter(limb=>limb.kind==='bough');
-  assert.ok(bough.length>0);
-  const contact=bough.find(limb=>limb.b===tree.tip);
-  assert.ok(contact,'the hazard contact must be part of the structural bough');
-  assert.ok(contact.rEnd>=.3,'the contact must read as a woody limb rather than a twig');
-  assert.ok(bough[0].r>=contact.rEnd*1.5,'the limb needs a substantial tapered attachment to the tree');
-  for(let i=1;i<bough.length;i++){
-   assert.equal(bough[i-1].b,bough[i].a,'the primary bough must be connected');
-   assert.ok(bough[i].r<=bough[i-1].r,'the bough must taper toward the river');
-  }
-  const boughNodes=new Set(bough.flatMap(limb=>[limb.a,limb.b]));
-  const forks=tree.wood.filter(limb=>limb.kind==='fork'&&boughNodes.has(limb.a));
-  assert.ok(forks.length>=3,'several visible forks must grow from the main limb');
-  const depths=new Set();
-  for(const fork of forks){
-   assert.ok(fork.r>=.2,'forks must be substantial wood, not decorative hairs');
-   const extension=tree.wood.find(limb=>limb.kind==='fork'&&limb.a===fork.b);
-   assert.ok(extension,'forks need connected secondary limbs');
-   assert.ok(distance(fork.a,extension.b)>=2,'forks must extend visibly beyond the main limb');
-   assert.ok(extension.b.y>fork.a.y,'secondary limbs must open the crown above the bough');
-   assert.ok(tree.leaves.some(leaf=>distance(leaf.p,extension.b)<.01),'fork ends must support foliage');
-   depths.add(Math.sign(extension.b.d-fork.a.d));
-  }
-  assert.ok(depths.has(-1)&&depths.has(1),'forks must fan into different depths');
  }
 });
 
-test('low boughs descend through the contact instead of curling into an upturned hook',()=>{
- for(const {seed,d,lane,id} of scenarios()){
-  const tree=shorelineBranch({id,lane,d},d,seed),bough=tree.wood.filter(limb=>limb.kind==='bough');
-  let previous=null;
-  for(const limb of bough)for(let i=0;i<=64;i++){
-   const p=limbPoint(limb,i/64);
-   if(p.y<=5.2){
-    if(previous){
-     assert.ok(p.y<=previous.y+1e-8,'the low limb must continue descending');
-     assert.ok((p.x-previous.x)*tree.side<=1e-8,'the low limb must continue into the river');
-    }
-    previous=p;
+test('crooked main limbs clear a ducked rider and keep low wood out of uncovered routes',()=>{
+ for(const {seed,d,e} of scenarios()){
+  const tree=shorelineBranch(e,d,seed),shaft=tree.wood.filter(p=>p.kind==='span');let minY=Infinity,maxY=-Infinity,minD=Infinity,maxD=-Infinity;
+  for(const limb of tree.wood)for(let i=0;i<=64;i++){
+   const t=i/64,p=limbPoint(limb,t),r=radiusAt(limb,t);
+   assert.ok([p.x,p.y,p.d,r].every(Number.isFinite)&&r>0);assert.ok(limb.rEnd>0&&limb.rEnd<=limb.r);
+   if(limb.kind==='span'){assert.ok(p.y-r>=2.02,'a ducked rider clears the entire natural primary limb');minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);minD=Math.min(minD,p.d);maxD=Math.max(maxD,p.d);}
+   if(Math.abs(p.x)<=PLAYABLE_HALF_WIDTH&&p.y-r<3.5&&Math.abs(p.d)<1.25){
+    assert.ok(Math.max(-PLAYABLE_HALF_WIDTH,p.x-r)>=tree.span.minX-.1,`low wood enters left clear lane: ${JSON.stringify({p,r,span:tree.span,kind:limb.kind})}`);
+    assert.ok(Math.min(PLAYABLE_HALF_WIDTH,p.x+r)<=tree.span.maxX+.1,`low wood enters right clear lane: ${JSON.stringify({p,r,span:tree.span,kind:limb.kind})}`);
    }
   }
-  const end=bough.at(-1).b;
-  assert.ok(end.y<tree.tip.y,'the terminal limb must end below the contact');
-  assert.ok((end.x-tree.tip.x)*tree.side<0,'the terminal limb must extend beyond the contact');
+  for(let i=1;i<shaft.length;i++)assert.equal(shaft[i-1].b,shaft[i].a);
+  assert.ok(maxY-minY>.2,'the branch has naturally changing height');assert.ok(maxD-minD>.25,'the branch bends in depth rather than lying on a flat rail');
  }
 });
 
-test('shoreline morphology is reproducible and centre-lane trees use both banks',()=>{
-  const sides=new Set();
-  for(let id=1;id<=30;id++){
-    const e={id,lane:1,d:100+id*45};
-    assert.deepEqual(shorelineBranch(e,e.d,137),shorelineBranch(e,e.d,137));
-    sides.add(shorelineBranch(e,e.d,137).side);
+test('recursive connected forks have varied directions and foliage follows real branches',()=>{
+ const counts=new Set(),directions=new Set();
+ for(const {seed,d,e} of scenarios()){
+  const tree=shorelineBranch(e,d,seed),shaft=tree.wood.filter(l=>l.kind==='span'),parents=new Set(shaft.flatMap(l=>[l.a,l.b]));
+  const forks=tree.wood.filter(l=>l.kind==='fork'&&parents.has(l.a));counts.add(forks.length);
+  assert.ok(forks.length>=3&&forks.length<=5);
+  for(const fork of forks){
+   const extension=tree.wood.find(l=>l.kind==='fork'&&l.a===fork.b);assert.ok(extension,'major limbs have a connected secondary limb');
+   assert.ok(Math.abs(fork.b.d-fork.a.d)>=.8,'major limbs spread sideways into depth');
+   assert.ok(fork.r>=.16&&extension.r<fork.r);
+   assert.ok(tree.wood.filter(l=>l.kind==='twig'&&(l.a===fork.b||l.a===extension.b)).length>=2,'secondary limbs have recursive twigs');
+   directions.add(Math.sign(extension.b.d-fork.a.d));
   }
-  assert.deepEqual([...sides].sort(),[-1,1]);
+  const ends=new Set(tree.wood.map(p=>p.b));
+  assert.ok(tree.leaves.filter(l=>!ends.has(l.p)).length>tree.leaves.length*.8,'foliage spreads along woody stems rather than only at spherical tips');
+ }
+ assert.ok(counts.size>1,'fork count varies by tree instead of being tied to lane width');assert.ok(directions.has(-1)&&directions.has(1));
 });
 
-test('decorative trees remain outside the navigation corridor with bounded crowns',()=>{
- for(const seed of [0,137,98213])for(const d of [110,580,1380,4872])for(const side of [-1,1]){
-  const tree=scenicTree({id:21,d,side},d,seed);
-  assert.ok(tree.wood.length<=32&&tree.leaves.length<=32);
-  for(const limb of tree.wood)for(let i=0;i<=64;i++){
-   const t=i/64,p=limbPoint(limb,t);assert.ok(Math.abs(p.x)-radiusAt(limb,t)>5.7);
-   assert.ok(limb.rEnd>0&&limb.rEnd<=limb.r);
-  }
+test('natural anatomy is reproducible and independent of reward lane',()=>{
+ for(const {seed,d,e} of scenarios()){
+  const tree=shorelineBranch(e,d,seed);assert.deepEqual(tree,shorelineBranch(e,d,seed));
+  for(const lane of e.branchLanes){const alternate=shorelineBranch({...e,lane},d,seed);assert.deepEqual(alternate.root,tree.root);assert.deepEqual(alternate.wood,tree.wood);assert.equal(alternate.nativeReach,tree.nativeReach);}
+ }
+});
+
+test('decorative trees remain outside the corridor with bounded resources',()=>{
+ for(const seed of profiles)for(const d of [110,580,1380,4872])for(const side of [-1,1]){
+  const tree=scenicTree({id:21,d,side},d,seed);assert.ok(tree.wood.length<=BRANCH_TREE_PARTS&&tree.leaves.length<=BRANCH_TREE_PARTS);
+  for(const limb of tree.wood)for(let i=0;i<=64;i++){const t=i/64,p=limbPoint(limb,t);assert.ok(Math.abs(p.x)-radiusAt(limb,t)>PLAYABLE_HALF_WIDTH);assert.ok(limb.rEnd>0&&limb.rEnd<=limb.r);}
  }
 });

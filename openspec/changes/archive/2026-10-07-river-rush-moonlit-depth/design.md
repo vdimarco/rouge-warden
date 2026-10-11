@@ -1,0 +1,7 @@
+# Design
+
+The primary Moonlit view currently maps a complete painted river/ruin landscape to `scene.background`; only its UVs move slightly during steering. Its landmarks stay stationary as actual banks approach. The geometric fallback mountains are also fixed in camera-local coordinates.
+
+Use a prepared atmosphere-only night texture with moonlight, stars and haze. Replace both static landscape paths on this map with bounded instanced ridge layers and distant broken ruin silhouettes at absolute course coordinates. Share the bank/elevation/profile field with nearby scenery; separate near/mid/far spacing gives depth. Bury or fade entering/exiting silhouettes before slot replacement. Keep the moon at infinity, and drive world motion by course travel rather than moving a whole screen image.
+
+Create resources before scene preparation and exercise the map's variants during existing warm-up. Retain the existing preparation, reduced-motion, pause and disposal lifecycle, visual budgets (65 calls, 125,000 software / 300,000 hardware triangles), action timings and river speed. Check opening/mid/late plus boundary transitions in phone, desktop and short landscape. Compare matching absolute landmark IDs across nearby frames, check skyline readability and pixels while paused/reduced, and instrument post-prepare GPU texture/shader work. Keep fallback playable and remove its fixed painted Moonlit river if that path uses one.

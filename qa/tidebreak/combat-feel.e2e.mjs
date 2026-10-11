@@ -13,7 +13,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.SHORE_URL || 'http://127.0.0.1:8765/tidebreak/', SHOTS = process.env.SHOTS;
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
-const browser = await chromium.launch({ executablePath });
+const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const CONTROLS = ['#joystick', '.abilities', '#shop', '#recall', '#portal', '#rally', '#minimap', '#map-button', '#pause', '#hud-sound', '#quick-buy', '#inventory'];
 const SIZES = [{ name: 'desktop', width: 1440, height: 900 }, { name: 'phone', width: 390, height: 844, touch: true }, { name: 'landscape', width: 844, height: 390, touch: true }];

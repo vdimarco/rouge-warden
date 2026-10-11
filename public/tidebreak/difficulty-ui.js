@@ -1,12 +1,17 @@
 // Enemy difficulty control on the selection screen and the badge in the match.
 import { DIFFICULTIES, DIFFICULTY_LABELS, DIFFICULTY_HINTS, normalDifficulty, setDifficulty } from './bot-difficulty.js';
+import { browserStorage, hasMatchExperience } from './first-match.js';
 
 const KEY = 'tidebreak.difficulty';
 // The choice lives here. Storage only remembers it between visits, so a blocked or full
 // storage never locks the picker on Veteran.
 let chosen = null;
 export function savedDifficulty() {
-  if (chosen === null) { try { chosen = normalDifficulty(localStorage.getItem(KEY)); } catch { chosen = normalDifficulty(); } }
+  if (chosen === null) {
+    const storage = browserStorage(); let saved = null;
+    try { saved = storage?.getItem(KEY); } catch {}
+    chosen = DIFFICULTIES.includes(saved) ? saved : hasMatchExperience(storage) ? normalDifficulty() : 'apprentice';
+  }
   return chosen;
 }
 function choose(id) { chosen = normalDifficulty(id); try { localStorage.setItem(KEY, chosen); } catch {} }
@@ -51,6 +56,7 @@ function placeBadge(badge) {
 // Applies the chosen difficulty to a new match and shows it next to the minimap.
 export function applyDifficulty(s, badge) {
   const id = savedDifficulty();
+  choose(id);
   setDifficulty(s, id);
   if (badge) {
     placeBadge(badge);

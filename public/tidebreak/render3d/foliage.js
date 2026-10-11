@@ -178,6 +178,23 @@ export function pineGeometry(seed, { tiers = 9 } = {}) {
   for (const a of [0, Math.PI / 2]) b.card(V(0, top - .04, 0), V(0, .07, 0), V(Math.cos(a), 0, Math.sin(a)).multiplyScalar(.035), REGION.needle, soft, .6);
   return b.build();
 }
+// A cypress: a tall, narrow flame of upright needle sprays around a short trunk, widest a third of the way up; about
+// 1 high and .25 wide, so the scenery code scales it like any other tree.
+export function cypressGeometry(seed) {
+  const b = new Builder(), rand = random(seed);
+  b.tube(V(0, -.02, 0), V(0, .2, 0), .02, .014, 5);
+  const radius = y => .13 * Math.pow(Math.sin(Math.PI * Math.min(1, Math.pow((y - .06) / .96, .78))), .9) + .012;
+  const soft = p => V(p.x * 3, .45, p.z * 3).normalize();
+  for (let i = 0; i < 110; i++) {
+    const y = .1 + .86 * Math.pow(rand(), .85), a = rand() * Math.PI * 2, r = radius(y) * (.55 + rand() * .45), out = V(Math.cos(a), 0, Math.sin(a));
+    const at = V(out.x * r, y, out.z * r), len = .07 + radius(y) * .6, up = V(out.x * .35, 1, out.z * .35).normalize().multiplyScalar(len);
+    const side = V(-out.z, 0, out.x).multiplyScalar(len * .55 + .012);
+    b.card(at, side, up, REGION.needle, soft, .75);
+  }
+  // The tip: two crossed sprays.
+  for (const a of [0, Math.PI / 2]) b.card(V(0, .97, 0), V(Math.cos(a), 0, Math.sin(a)).multiplyScalar(.03), V(0, .05, 0), REGION.needle, soft, .6);
+  return b.build();
+}
 // A shrub: leaf clusters in a low dome, about 1 wide and 1 high.
 export function bushGeometry(seed) {
   const b = new Builder(), rand = random(seed), C = V(0, .42, 0), R = V(.46, .4, .46);

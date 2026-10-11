@@ -1,0 +1,149 @@
+{
+  "passed": true,
+  "scope": "natural",
+  "bundle": "http://127.0.0.1:8765/river-rush/assets/index-CqqlzDw1.js",
+  "actualAppStateOrClockMutations": false,
+  "publicScoreWrites": 0,
+  "actual": [
+    {
+      "layout": "landscape",
+      "passed": true,
+      "distance": 2888.4908000000196,
+      "totalNaturalDistance": 2888.4908000000196,
+      "naturalLevels": [
+        {
+          "levelIndex": 0,
+          "seed": 521612551,
+          "campaignSeed": 521612551,
+          "firstTime": 0.2,
+          "firstDistance": 10.411000000000001,
+          "profile": {
+            "seed": 521612551,
+            "length": 4200,
+            "mapIndex": 0
+          }
+        }
+      ],
+      "realNextRiverTransitions": [],
+      "strategies": [
+        {
+          "levelIndex": 0,
+          "id": 1,
+          "strategy": "clean-skip",
+          "side": -1,
+          "earned": 600
+        },
+        {
+          "levelIndex": 0,
+          "id": 3,
+          "strategy": "bank",
+          "side": 1,
+          "earned": 200
+        }
+      ],
+      "resourcesBefore": {
+        "uploads": 55,
+        "shaders": 84
+      },
+      "resourcesAfter": {
+        "uploads": 55,
+        "shaders": 84
+      },
+      "maxVisibleCoins": 15,
+      "maxCoinOverflow": 0,
+      "maxEntities": 35,
+      "nativePointerCutbacks": [
+        {
+          "from": 1,
+          "to": 0,
+          "throughElement": "game-canvas",
+          "pointerEvents": "none",
+          "timeAdvanced": true
+        }
+      ],
+      "exactPause": true,
+      "physicalReceipts": 74,
+      "deliberateOpportunities": [
+        {
+          "id": "choice-0-1-wildlife-bank",
+          "family": "wildlife-bank",
+          "policy": "clean-skip",
+          "take": false
+        },
+        {
+          "id": "choice-0-1-landing-detour",
+          "family": "landing-detour",
+          "policy": "clean-skip",
+          "take": false
+        },
+        {
+          "id": "choice-0-3-landing-detour",
+          "family": "landing-detour",
+          "policy": "bank",
+          "take": false
+        },
+        {
+          "id": "choice-0-3-wildlife-bank",
+          "family": "wildlife-bank",
+          "policy": "bank",
+          "take": true
+        }
+      ],
+      "stashReceipts": [
+        {
+          "choiceId": "choice-0-3-wildlife-bank",
+          "family": "wildlife-bank",
+          "value": 120,
+          "levelIndex": 0
+        }
+      ],
+      "observedGpuBudget": {
+        "samples": 36,
+        "maxTriangles": 121003,
+        "maxDrawCalls": 50
+      },
+      "maxRewardContactGap": 0.6533942811295939,
+      "untakenStreamMisses": 8,
+      "screenshots": [
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-playing-fork-1.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-playing-fork-2.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-playing-cache-0-1.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-playing-cache-0-3.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-treasure-receipt-0-1.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-treasure-receipt-0-3.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-opportunity-choice-0-1-wildlife-bank.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-opportunity-choice-0-3-landing-detour.jpg",
+        "/tmp/river-rush-authored-release-natural-landscape/landscape-opportunity-choice-0-3-wildlife-bank.jpg"
+      ],
+      "error": null
+    }
+  ],
+  "rendererPath": "normal-backend-classification",
+  "actualBackend": null,
+  "isolatedRendererFixtures": {
+    "total": 0,
+    "passed": 0,
+    "maps": [],
+    "layouts": [],
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "richWaterShaderCompiled": null,
+  "matchedAuthoredPolicies": {
+    "cases": 0,
+    "scoreOnlyCases": 0,
+    "composedBankPromotions": 0
+  },
+  "gpuBudgetPreflight": {
+    "samples": 0,
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "errors": [],
+  "captureWarnings": [],
+  "failure": null,
+  "limitations": [
+    "Chromium SwiftShader; hardware phone frame rate and human reaction difficulty are not measured.",
+    "Natural App runs retain the original game seed and clock. Source fixtures explicitly own isolated state."
+  ]
+}

@@ -52,3 +52,8 @@ dialog{width:min(92vw,450px);max-height:86dvh;border:1px solid var(--gold);backg
 #auto-pause{position:absolute;inset:0;z-index:30;display:grid;place-content:center;gap:6px;border:0;background:#0e0c0aa8;color:#eae4d7;font:inherit;text-align:center;pointer-events:auto;backdrop-filter:blur(2px)}#auto-pause[hidden]{display:none}#auto-pause b{font-size:34px;letter-spacing:6px;text-transform:uppercase}#auto-pause small{font-size:14px;color:#d1d5cc;letter-spacing:.5px}
 /* The build names are Cinzel, which runs wider than Barlow: narrow screens get a smaller size so all four fit. */
 @media(max-width:430px){.market-builds button{font-size:12px;letter-spacing:0}}
+
+/* A graphics outage must be readable above hero select, match HUD and dialogs. */
+#graphics-error[open] { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; background: #101b25f5; color: #f3e8cf; text-align: center; }
+#graphics-error p { max-width: 34rem; line-height: 1.6; }
+#graphics-error button { padding: .8rem 1.4rem; color: #17202a; background: #e3cd92; border: 0; font: inherit; cursor: pointer; }

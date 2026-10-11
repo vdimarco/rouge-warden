@@ -1,0 +1,78 @@
+.world-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+.world-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font:
+    10px/1.25 ui-monospace,
+    monospace;
+  color: #bac9c4;
+  background: #080d12e8;
+  border: 0;
+  border-bottom: 1px solid #53655a;
+  padding: 4px 6px;
+  min-height: 0;
+  max-width: 126px;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 5px #05090baa;
+}
+.world-label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid #53655a;
+}
+.world-label.goal {
+  color: #fff0b9;
+  border-color: #ffe0a2;
+  background: #17241bf0;
+}
+.world-label.goal::after {
+  border-top-color: #ffe0a2;
+}
+.world-label.you {
+  color: #fff6df;
+  border-color: #fff6df;
+  pointer-events: none;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 6px;
+}
+.world-label.completed {
+  opacity: 0.6;
+}
+.world-label:focus-visible {
+  outline: 2px solid #ffe0a2;
+  outline-offset: 3px;
+}
+#intro {
+  z-index: 4;
+}
+@media (max-width: 760px) {
+  .world-label {
+    font-size: 9px;
+    padding: 3px 4px;
+    max-width: 100px;
+  }
+  .world-label:not(.goal):not(.you) {
+    font-size: 8px;
+    opacity: 0.85;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .world-label {
+    font-size: 8px;
+    padding: 2px 3px;
+    max-width: 98px;
+  }
+}

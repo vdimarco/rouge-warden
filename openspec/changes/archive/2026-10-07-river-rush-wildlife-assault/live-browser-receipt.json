@@ -1,0 +1,273 @@
+{
+  "passed": true,
+  "kind": "wildlife-browser-proof",
+  "base": "https://arcade.uptick.systems/river-rush/?verify=e17a94b66ce3093d88f64d6c929e2232bd79b87c",
+  "layout": "desktop",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-CoJTEH3z.js",
+  "actualAppStateOrClockMutations": false,
+  "fixedWallClockOrSeed": false,
+  "final": {
+    "phase": "playing",
+    "shield": true,
+    "shieldsUsed": 0,
+    "bonus": 15240,
+    "time": 38.04999999999998,
+    "distance": 2296.890391120407
+  },
+  "enemyContacts": [
+    {
+      "type": "perfect",
+      "time": 15.766600000000087,
+      "lane": 1.0000000000000417,
+      "id": 64,
+      "distance": 872.0606881003141,
+      "playerLane": 1.0000000000000417,
+      "entityId": 89,
+      "obstacle": "log",
+      "enemy": "crocodile",
+      "obstacleLane": 1,
+      "playerHeight": 0.994163057616699,
+      "action": "jump",
+      "actionTime": 0.3047880380465645,
+      "contactTime": 15.721388038046651
+    },
+    {
+      "type": "perfect",
+      "time": 24.6665000000002,
+      "lane": 1.9999999999999618,
+      "id": 111,
+      "distance": 1414.1006956963834,
+      "playerLane": 1.9999999999999618,
+      "entityId": 144,
+      "obstacle": "branch",
+      "enemy": "bird",
+      "obstacleLane": 2,
+      "playerHeight": 0,
+      "action": "duck",
+      "actionTime": 0.3072955098268949,
+      "contactTime": 24.623795509827097
+    },
+    {
+      "type": "perfect",
+      "time": 38.04999999999998,
+      "lane": 0.9999999999999688,
+      "id": 181,
+      "distance": 2296.643251185803,
+      "playerLane": 0.9999999999999688,
+      "entityId": 229,
+      "obstacle": "log",
+      "enemy": "fish",
+      "obstacleLane": 1,
+      "playerHeight": 0.9896118127634072,
+      "action": "jump",
+      "actionTime": 0.29636558919699996,
+      "contactTime": 38.04636558919699
+    }
+  ],
+  "targetContacts": [
+    {
+      "type": "target",
+      "time": 20.883200000000155,
+      "lane": 2,
+      "id": 92,
+      "distance": 1180.2461991170812,
+      "playerLane": 1.9999999999999754,
+      "entityId": 128,
+      "value": 200,
+      "charge": 0,
+      "playerHeight": 0,
+      "contactTime": 20.852909371030147
+    }
+  ],
+  "targetBonus": [
+    {
+      "entityId": 128,
+      "before": 6440,
+      "after": 6640,
+      "otherEmittedBonus": 0,
+      "net": 200
+    }
+  ],
+  "maxLaneError": 0,
+  "maxLiftError": 0,
+  "resourcesBefore": {
+    "uploads": 49,
+    "shaders": 76
+  },
+  "resourcesAfter": {
+    "uploads": 49,
+    "shaders": 76
+  },
+  "gpuErrors": [],
+  "pauseExactStatus": true,
+  "pauseExactPixels": true,
+  "shots": [
+    {
+      "kind": "crocodile",
+      "path": "/tmp/river-wildlife-production-desktop/desktop-actual-crocodile.png"
+    },
+    {
+      "kind": "target",
+      "path": "/tmp/river-wildlife-production-desktop/desktop-actual-target.png"
+    },
+    {
+      "kind": "bird-from-bank",
+      "path": "/tmp/river-wildlife-production-desktop/desktop-actual-bird-from-bank.png"
+    },
+    {
+      "kind": "bird-dive",
+      "path": "/tmp/river-wildlife-production-desktop/desktop-actual-bird-dive.png"
+    },
+    {
+      "kind": "fish-swimming",
+      "path": "/tmp/river-wildlife-production-desktop/desktop-actual-fish-swimming.png"
+    },
+    {
+      "kind": "fish-leap",
+      "path": "/tmp/river-wildlife-production-desktop/desktop-actual-fish-leap.png"
+    }
+  ],
+  "models": {
+    "raft": "ready",
+    "bank": "ready",
+    "palm": "ready",
+    "temple": "ready",
+    "guardian": "ready",
+    "rider": "ready",
+    "canopy": "ready",
+    "harbor": "ready",
+    "driftwood": "ready",
+    "bough": "ready"
+  },
+  "layouts": [
+    {
+      "layout": "desktop",
+      "hint": {
+        "x": 24,
+        "y": 96,
+        "right": 208,
+        "bottom": 148,
+        "width": 184,
+        "height": 52
+      },
+      "score": {
+        "x": 287.5,
+        "y": 16,
+        "right": 1017.5,
+        "bottom": 74,
+        "width": 730,
+        "height": 58
+      },
+      "map": {
+        "x": 1145,
+        "y": 96,
+        "right": 1341,
+        "bottom": 247.5,
+        "width": 196,
+        "height": 151.5
+      },
+      "openingNotice": null,
+      "capture": {
+        "x": 1305,
+        "y": 280,
+        "right": 1345,
+        "bottom": 321,
+        "width": 40,
+        "height": 41
+      },
+      "rush": {
+        "x": 540,
+        "y": 721,
+        "right": 825,
+        "bottom": 790,
+        "width": 285,
+        "height": 69
+      },
+      "powers": [
+        {
+          "x": 24,
+          "y": 156,
+          "right": 111,
+          "bottom": 192,
+          "width": 87,
+          "height": 36
+        }
+      ],
+      "buttons": [
+        {
+          "x": 20,
+          "y": 806,
+          "right": 114,
+          "bottom": 881,
+          "width": 94,
+          "height": 75
+        },
+        {
+          "x": 581.5,
+          "y": 806,
+          "right": 675.5,
+          "bottom": 881,
+          "width": 94,
+          "height": 75
+        },
+        {
+          "x": 689.5,
+          "y": 806,
+          "right": 783.5,
+          "bottom": 881,
+          "width": 94,
+          "height": 75
+        },
+        {
+          "x": 1251,
+          "y": 806,
+          "right": 1345,
+          "bottom": 881,
+          "width": 94,
+          "height": 75
+        }
+      ],
+      "pointerEvents": "none",
+      "viewport": {
+        "width": 1365,
+        "height": 900
+      },
+      "time": 0.2,
+      "corridor": {
+        "x": 477.74999999999994,
+        "right": 887.25,
+        "y": 216,
+        "bottom": 702
+      },
+      "screenshot": "/tmp/river-wildlife-production-desktop/desktop-opening-hint.png",
+      "disjointHudAndCoreSightline": true
+    }
+  ],
+  "limitations": [
+    "Chromium uses SwiftShader. Physical phone frame rate and human reaction feel were not measured.",
+    "Natural runs retain the Date.now campaign seed and use the actual App keyboard handler. Isolated renderer fixtures explicitly set their own states and clocks."
+  ],
+  "motionRanges": {
+    "crocodile": {
+      "samples": 65,
+      "minLane": 0.005510039559563196,
+      "maxLane": 1.9988522631653067,
+      "minLift": 0,
+      "maxLift": 0
+    },
+    "bird": {
+      "samples": 58,
+      "minLane": 1.9816749696616824,
+      "maxLane": 2.85,
+      "minLift": 0.0035586748521774683,
+      "maxLift": 2.7
+    },
+    "fish": {
+      "samples": 40,
+      "minLane": 0,
+      "maxLane": 1,
+      "minLift": 0,
+      "maxLift": 0.7053069552146505
+    }
+  }
+}

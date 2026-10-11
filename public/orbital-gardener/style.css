@@ -1,0 +1,152 @@
+@import url("/last-light/style.css");
+:root {
+  --bg: #030408;
+  --ink: #e8f0fa;
+  --muted: #8b9fbc;
+  --line: #262f4a;
+  --gold: #a8d3f6;
+}
+h1 {
+  color: var(--ink);
+}
+#primary {
+  color: var(--gold);
+}
+main {
+  max-width: 1260px;
+}
+.sea {
+  position: relative;
+  width: min(100%, calc((100dvh - 330px) * 2));
+  aspect-ratio: 2;
+  margin: auto;
+  overflow: hidden;
+}
+.sea canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.console {
+  padding: 12px 0 0;
+}
+.console h1 {
+  font-size: 23px;
+  margin: 0;
+}
+.tagline {
+  margin: 2px 0 5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+#status {
+  min-height: 21px;
+  margin: 0;
+  font-size: 12px;
+}
+.instructions {
+  font-size: 11px;
+  margin: 5px 0;
+}
+.record {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 4px;
+}
+.touch {
+  margin: 5px 0;
+  gap: 5px;
+}
+.touch button {
+  border: 1px solid var(--line);
+  min-width: 44px;
+}
+.hud {
+  font-size: 12px;
+  min-height: 33px;
+  padding: 7px 0;
+}
+button.held {
+  color: var(--gold);
+}
+@media (max-width: 600px) {
+  main {
+    padding: 0 10px;
+  }
+  .sea {
+    width: 100%;
+    margin-top: 24px;
+  }
+  .console {
+    padding-top: 25px;
+  }
+  .console h1 {
+    font-size: 22px;
+  }
+  .tagline {
+    margin-bottom: 12px;
+  }
+  .instructions {
+    max-width: 300px;
+    margin: 8px auto;
+  }
+  .touch {
+    margin: 12px 0;
+  }
+  header .brand {
+    font-size: 16px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  main {
+    grid-template-columns: minmax(0, 1fr) 245px;
+  }
+  .sea {
+    grid-row: 3;
+    max-height: calc(100dvh - 108px);
+    width: 100%;
+    margin: 0 auto;
+  }
+  .console {
+    grid-row: 3;
+    align-self: center;
+    padding: 0;
+  }
+  .console h1 {
+    font-size: 19px;
+  }
+  .console .tagline {
+    display: none;
+  }
+  .instructions {
+    font-size: 10px;
+  }
+  .touch {
+    display: flex;
+    gap: 3px;
+    flex-wrap: nowrap;
+  }
+  .touch button {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 2px;
+  }
+  .record {
+    margin: 0;
+  }
+  footer {
+    grid-row: 4;
+  }
+  .hud {
+    min-height: 26px;
+  }
+  #status {
+    font-size: 11px;
+    min-height: 40px;
+  }
+  .actions button {
+    font-size: 12px;
+    min-height: 35px;
+  }
+}

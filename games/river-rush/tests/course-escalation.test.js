@@ -1,8 +1,11 @@
+import {chooseForkWater,waterLanes,advanceCourseScanner} from './course-controls.js';
 import test from 'node:test';
+import {LANES,LANE_COUNT,CENTER_LANE,MAX_LANE,RIVER_WIDTH_EXPANSION,PLAYABLE_HALF_WIDTH} from '../src/game/lanes.js';
 import assert from 'node:assert/strict';
 import {createGame,generateAhead} from '../src/game/engine.js';
 import {LEVELS,FINISH_RUNWAY} from '../src/game/levels.js';
 import {courseAct} from '../src/game/course-intensity.js';
+import {coveredLanes,actionWall} from './route-coverage.js';
 
 const hazardTypes=new Set(['rock','log','branch']);
 function inspectCourse(seed,index){
@@ -21,8 +24,8 @@ test('each finite river is 50 percent longer and has a clean 150 m finish approa
   const {g,rows}=inspectCourse(139,level.index);
   assert.ok(rows.every(row=>row[0].d<level.length-FINISH_RUNWAY));
   const approach=g.entities.filter(e=>e.motif==='finish-runway');
-  assert.equal(approach[0].d,level.length-130);assert.equal(approach.at(-1).d,level.length-15);
-  assert.ok(approach.every(e=>e.type==='coin'&&e.lane===1));
+  assert.equal(approach[0].d,level.length-90);assert.equal(approach.at(-1).d,level.length-15);
+  assert.ok(approach.every(e=>e.type==='coin'&&e.lane===CENTER_LANE));
   assert.ok(g.entities.every(e=>e.d<level.length));
  }
 });
@@ -32,13 +35,15 @@ test('seeded episodes cross four acts with varied lengths, recovery gaps and inc
  const episodeLengths=new Set();
  for(let seed=1;seed<=40;seed++)for(const level of LEVELS){
   const {g,rows}=inspectCourse(seed,level.index),episodes=new Map();
-  assert.equal(new Set(g.patternsSeen.filter(id=>id!=='tutorial')).size,6);
+  assert.equal(new Set(g.patternsSeen.filter(id=>['slalom','coin-zigzag','mixed-hazards','jump-waves','low-canopy','split-current'].includes(id))).size,6);
   assert.deepEqual([...new Set(rows.map(row=>row[0].act))],[0,1,2,3]);
-  for(const act of [0,1,2,3])assert.ok(rows.some(row=>row[0].act===act&&row[0].recovery),`seed ${seed}, ${level.id}, act ${act} has no recovery`);
+  assert.ok(rows.filter(row=>row[0].recovery).length>=4,`seed ${seed}, ${level.id} has too few recovery beats`);
+  assert.ok(rows.slice(0,3).every(row=>!actionWall(row)),'the three opening tutorial rows became mandatory walls');
+  for(const type of ['log','branch'])assert.ok(rows.some(row=>actionWall(row)&&row[0].type===type&&row[0].d<=650),`${level.id} seed${seed} postpones required ${type}`);
   for(let i=0;i<rows.length;i++){
    const row=rows[i],item=row[0],act=courseAct(item.d,level.length),stats=totals[act];
-   assert.equal(item.act,act);stats.rows++;stats.paired+=row.length>1?1:0;stats.waves+=row.length===3?1:0;
-   assert.ok(row.length<3||row.every(e=>e.type===row[0].type&&e.type!=='rock'),'mixed wall has no safe route');
+   assert.equal(item.act,act);stats.rows++;stats.paired+=coveredLanes(row).length>1?1:0;stats.waves+=actionWall(row)?1:0;
+   assert.ok(coveredLanes(row).length<LANE_COUNT||actionWall(row),'mixed wall has no safe route');
    if(item.episode>=0){
     if(!episodes.has(item.episode))episodes.set(item.episode,[]);episodes.get(item.episode).push(item);
     const next=rows[i+1]?.[0];
@@ -52,8 +57,8 @@ test('seeded episodes cross four acts with varied lengths, recovery gaps and inc
   assert.ok(rows.some(row=>row[0].recovery),'no recovery between bursts');
  }
  assert.ok(episodeLengths.size>=4,'episodes repeat one fixed row count');
- assert.equal(totals[0].waves,0,'opening contains full-width action waves');
+ assert.ok(totals[0].waves>0,'the opening lets dodging-only players skip actions');
  assert.ok(totals[3].waves/totals[3].rows>totals[1].waves/totals[1].rows,'late action waves do not intensify');
- assert.ok(totals[3].paired/totals[3].rows>totals[0].paired/totals[0].rows+.15,'late formations do not become more demanding');
+ assert.ok(totals[3].paired/totals[3].rows>totals[0].paired/totals[0].rows+.08,'late formations do not become more demanding');
  assert.ok(totals.every(act=>act.gaps>0),'one act lacks recovery stretches');
 });

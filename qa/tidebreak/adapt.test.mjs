@@ -2,7 +2,7 @@
 // pixel count on common screens, it steps down only when fewer pixels make frames faster, it comes back up on 50, 60
 // and 144 Hz screens, and a stall or a slow patch does not latch it low.
 import assert from 'node:assert/strict';
-import { Renderer, backingRatio } from '../../public/tidebreak/illustrated-render.js';
+import { BattlefieldOverlay as Renderer, backingRatio } from '../../public/tidebreak/battlefield-overlay.js';
 
 // A renderer with only the timing state on a given screen; resize() sets the real backing ratio and restarts the timing
 // window as the real one does. pixels() is the backing pixel count as a share of the full-quality count.

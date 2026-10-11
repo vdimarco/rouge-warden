@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "sourceSHA": "9bb7e46c5e03c17b4b8e0aa637a915d77072de2d",
+  "deployment": "dpl_9LNJmBqwPEMSGfzNdJ9pYfMNVKy5",
+  "base": "https://arcade.uptick.systems/river-rush/?v=9bb7e46",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-C0jiCQVD.js",
+  "heroRequests": [
+    "https://arcade.uptick.systems/river-rush/art/title-hero-reference-v1.webp",
+    "https://arcade.uptick.systems/river-rush/art/title-hero-reference-v1.webp"
+  ],
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "faceAndStartVisible": true,
+  "sourceImageDimensions": [
+    1672,
+    941
+  ],
+  "objectFit": "cover",
+  "objectPosition": "70% 35%",
+  "imageVisibility": "visible",
+  "noTitleVideo": true,
+  "start": {
+    "left": 27.296875,
+    "top": 527.8125,
+    "right": 362.703125,
+    "bottom": 586.8125,
+    "width": 335.40625,
+    "height": 59
+  },
+  "realActions": [
+    {
+      "layout": "phone",
+      "steps": [
+        "Open Help through visible button",
+        "Close Help back to title",
+        "Open public Leaderboard, read only",
+        "Close Leaderboard back to title",
+        "Start ready run through real button",
+        "Pause and return to title through real buttons"
+      ],
+      "titleRestored": true,
+      "imageLoadedOnReturn": true
+    }
+  ],
+  "errors": [],
+  "scoreWrites": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedSeedOrClock": false,
+  "screenshot": "openspec/changes/river-rush-restyled-title-hero/qa/live/phone-title.jpg",
+  "fullReceipt": "openspec/changes/river-rush-restyled-title-hero/qa/live/title-hero-phone.json",
+  "scope": "One live phone title/menu smoke only; no campaign, failure or reduced-motion repeats",
+  "browserClosed": true,
+  "limitations": [
+    "Chromium uses SwiftShader; no physical device FPS or campaign/gameplay regression claim.",
+    "Readability and face crop need actual-image review; rectangle and hit-target checks are recorded separately."
+  ],
+  "paintDiagnostic": {
+    "originalLiveJpegEqualsAcceptedLocalJpeg": true,
+    "sha256": "00658c4bebd6387a180da75e67ec102d1bbaa7f69d0455bffa377a5be4056840",
+    "titleControlsOpacity": "1",
+    "titleControlsVisibility": "visible",
+    "startBackgroundPixelRgb": [
+      255,
+      205,
+      98
+    ],
+    "outcome": "No runtime paint issue; original JPEG contains the full painted title controls."
+  }
+}

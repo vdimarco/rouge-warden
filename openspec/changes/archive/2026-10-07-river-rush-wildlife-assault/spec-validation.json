@@ -1,0 +1,12 @@
+{
+  "delta_requirements": 3,
+  "delta_scenarios": 11,
+  "canonical_requirements_before": 53,
+  "canonical_scenarios_before": 114,
+  "expected_merged_requirements": 53,
+  "expected_merged_scenarios": 117,
+  "unique_title_matches": true,
+  "all_scenarios_when_then": true,
+  "cli_available": false,
+  "independent_review": "wildlife_engine passed read-only validation"
+}

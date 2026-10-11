@@ -1,0 +1,18 @@
+{
+  "passed": false,
+  "base": "http://127.0.0.1:8765/river-rush/",
+  "dev": "http://127.0.0.1:3001/",
+  "scope": "fallback",
+  "controls": [],
+  "natural": [],
+  "fixtures": [],
+  "errors": [],
+  "scoreWrites": [],
+  "actualAppStateOrClockMutations": false,
+  "fixedNaturalSeedOrClock": false,
+  "limitations": [
+    "SwiftShader Chromium; no physical hardware FPS or human reaction-time claim.",
+    "Actual App tests retain natural seeds, clocks and states; isolated visual fixtures declare their own state."
+  ],
+  "failure": "page.evaluate: TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:3001/src/game/engine.js\n    at sourcePage (/workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:349:11)\n    at async visualFixtures (/workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:419:13)\n    at async file:///workspace/rouge-warden/qa/river-rush/five-lane-coins.e2e.mjs:488:37"
+}

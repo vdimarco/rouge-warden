@@ -1,0 +1,8 @@
+{
+  "approvedCommit": "c167d978b69ea0b308a6b731cb7dd4165c7d111e",
+  "sourceExactlyRestored": {
+    "games/river-rush/src/components/Menu.jsx": "7e4b97d8b7a175101dbf6adad6db339444c8ec4e70ce22aab790f4ca23cf06f9",
+    "games/river-rush/src/styles.css": "0b18a0f9fa12011aaf76fb0d3e17acc0fe51e1536497785c25c8378ed335d5cd"
+  },
+  "rejectedRuntimeArtRemoved": true
+}

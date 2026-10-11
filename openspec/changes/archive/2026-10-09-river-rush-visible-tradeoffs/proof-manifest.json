@@ -1,0 +1,74 @@
+{
+  "code-deployment.json": {
+    "bytes": 361,
+    "sha256": "6a10ea922225fe5fe0c7a2843f8264ed481edc09532cb30c80cbf477b554e333"
+  },
+  "phone-map-0-landing-detour-unheld-webgl-refresh.jpg": {
+    "bytes": 60376,
+    "sha256": "efcde8011af30dfafc1c67834ac0883e410b64f3f6ed3c9805f2eef5e4e62213"
+  },
+  "unit.log": {
+    "bytes": 34781,
+    "sha256": "720f402e7a32c20046bb7834c60ef092d621499a9728c1291c5dc7aca15bbb85"
+  },
+  "build.log": {
+    "bytes": 1158,
+    "sha256": "42fccf5bb794b36f7486e917b24a56d6ccc070965a1b8ae404a9721d4db9452d"
+  },
+  "phone-map-0-boulder-snatch-held-webgl.jpg": {
+    "bytes": 56979,
+    "sha256": "64e06d8c0afa12886add7426fcd486d8a9250aa0cbe576e9e2a2f778a134c05f"
+  },
+  "code-live-bytes.json": {
+    "bytes": 1037,
+    "sha256": "230abc33a1c66027aab183cce1d8c18917a7567b4b5cb0b1f770dbc3d58c74ec"
+  },
+  "code-publish.json": {
+    "bytes": 135,
+    "sha256": "098e8537933edd2e5e4750dc83d499d739102644d17523a1eede60c10e80feb6"
+  },
+  "live-native-controls.json.gz": {
+    "bytes": 12743,
+    "sha256": "fb649e5f4476fcb8e931ebf4d269e2f26ada706016ddf522e3d9f913011d3485"
+  },
+  "failed-node-request-network.json.gz": {
+    "bytes": 791,
+    "sha256": "76697201d163762def4c03e95a6e176bb295078caa5ecf483eab32b70af4f4ea"
+  },
+  "browser-summary.json": {
+    "bytes": 6008,
+    "sha256": "a11ae8a016229f50a031395f167ef7bffa2db7d267fa3a5e1cf978b00ea76152"
+  },
+  "source.json.gz": {
+    "bytes": 448677,
+    "sha256": "bfedcf938bd0cc166c45a13116acb098df3310507fca44058b8c948e2dea646d"
+  },
+  "live-native-summary.json": {
+    "bytes": 3547,
+    "sha256": "ad3a64967b92c44dfb8d0a85932f773a8348d1d0bd38fef2935cee00492878f4"
+  },
+  "phone-map-0-landing-detour-unheld-webgl.jpg": {
+    "bytes": 59784,
+    "sha256": "8202a4bbccba966ec20966e30126c3542867696a364c43770703f946d0f74794"
+  },
+  "phone-live-native-controls-paused.jpg": {
+    "bytes": 47392,
+    "sha256": "1cd2015aa0546a7ff5ede21a7add57d24dfcd1a9aebdff5f33f7d44f813b15e3"
+  },
+  "actual.json.gz": {
+    "bytes": 14280,
+    "sha256": "623cf0f59ef17a56e0c073f388cba28890fb299f5de72ade0ca81d6ec5c3caf1"
+  },
+  "final-copy-state.json.gz": {
+    "bytes": 143577,
+    "sha256": "e3ddd560458cef8a67d09b090b4480743fd50d82345d49d4113188e5843cc306"
+  },
+  "product-manifest.json": {
+    "bytes": 13551,
+    "sha256": "de95dbc4d67b6c84d854aa58443e69f4507343995419c4951fd22e94056a3b5e"
+  },
+  "phone-map-0-wildlife-bank-unheld-webgl.jpg": {
+    "bytes": 59373,
+    "sha256": "b3df39184a46335486b00ce7391983bf8f7fb4ba10f1cbd8a56609aa97830596"
+  }
+}

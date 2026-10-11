@@ -69,4 +69,28 @@ active=false;m.sample(.016);assert(panel.hidden);active=true;m.sample(.016);
 win.DeviceOrientationEvent.requestPermission=async()=>'denied';win.DeviceMotionEvent.requestPermission=async()=>'denied';await m.start();m.tap(1);assert(m.sample(.016).holds[1],'denied sensors still playable');
 m.miss(1);assert(!held(m.sample(.016)),'miss clears that plunger');
 send(win,'devicemotion',{acceleration:null,accelerationIncludingGravity:{z:9.8}});assert.equal(m.sample(.016).yank,0);
-console.log('PASS: left and right taps throw their own plungers, two fingers at once, chained taps, screen aim (one frame), drag beside a tap, a cancelled finger, a rocking thumb, a lost up, no pinch, tap(side), released(side), gyro, optional pull, cooldown, blur, denied sensors, miss, gravity rejection');
+// a hold: a finger still for 120 ms throws while it is down, its rope holds while it stays, and a lift after 350 ms lets go
+active=true;m.reset();m.sample(.016);
+send(canvas,'pointerdown',{pointerId:40,clientX:320,clientY:300});p=m.sample(.016);assert(!p.fires[1],'a finger just down throws nothing yet (it may be a drag)');
+now+=130;p=m.sample(.016);assert(p.fires[1]&&p.holds[1]&&p.presses[1]&&!p.presses[0],'a finger still for 120 ms throws its plunger while it is down');
+assert(Math.abs(p.aims[1].x-.6)<1e-9&&Math.abs(p.aims[1].y-.25)<1e-9,'it aims where the finger is');
+now+=100;send(win,'pointermove',{pointerId:40,clientX:360,clientY:330});p=m.sample(.016);assert(p.turn!==0&&p.presses[1]&&!p.fires[1],'a held finger drags to look and keeps its rope');
+now+=200;send(win,'pointerup',{pointerId:40,clientX:360,clientY:330});p=m.sample(.016);assert(p.lets[1]&&!p.holds[1]&&!p.presses[1],'a finger lifted after 350 ms lets go of its rope');
+p=m.sample(.016);assert(!p.lets[1],'the let-go is an edge');
+// a quick press that threw while down is still a tap: the rope stays and lets go by itself
+m.reset();send(canvas,'pointerdown',{pointerId:41,clientX:80,clientY:300});now+=130;p=m.sample(.016);assert(p.fires[0]&&p.presses[0]);
+now+=60;send(win,'pointerup',{pointerId:41,clientX:80,clientY:300});p=m.sample(.016);assert(!p.lets[0]&&p.holds[0]&&!p.presses[0],'a finger lifted within 350 ms keeps the rope (a tap)');
+// a drag that starts within 120 ms looks and never throws, however long it stays down
+m.reset();send(canvas,'pointerdown',{pointerId:42,clientX:200,clientY:300});now+=40;send(win,'pointermove',{pointerId:42,clientX:240,clientY:300});
+now+=600;p=m.sample(.016);assert(!p.fires[0]&&!p.fires[1]&&!p.presses[0]&&!p.presses[1],'a drag throws nothing');
+send(win,'pointerup',{pointerId:42,clientX:240,clientY:300});p=m.sample(.016);assert(!p.fires[0]&&!p.fires[1]&&!p.lets[0]&&!p.lets[1],'a drag lifted throws nothing and lets nothing go');
+// the browser cancels a held finger: the rope keeps going as after a tap
+m.reset();send(canvas,'pointerdown',{pointerId:43,clientX:320,clientY:300});now+=500;p=m.sample(.016);assert(p.fires[1]&&p.presses[1]);
+send(win,'pointercancel',{pointerId:43});p=m.sample(.016);assert(!p.lets[1]&&p.holds[1]&&!p.presses[1],'a cancelled hold keeps its rope');
+// two thumbs held together: both throw, both stay pressed, each lift lets its own rope go
+m.reset();send(canvas,'pointerdown',{pointerId:44,clientX:60,clientY:300});send(canvas,'pointerdown',{pointerId:45,clientX:340,clientY:300});now+=130;p=m.sample(.016);
+assert(p.fires[0]&&p.fires[1]&&p.pairs[0]&&p.pairs[1]&&p.presses[0]&&p.presses[1],'two thumbs held together throw a pair and both hold');
+now+=400;send(win,'pointerup',{pointerId:44,clientX:60,clientY:300});p=m.sample(.016);assert(p.lets[0]&&!p.lets[1]&&p.presses[1]&&p.holds[1],'lifting one thumb lets only its rope go');
+send(win,'pointerup',{pointerId:45,clientX:340,clientY:300});p=m.sample(.016);assert(p.lets[1],'then the other');
+m.reset();m.sample(.016);
+console.log('PASS: left and right taps throw their own plungers, two fingers at once, chained taps, screen aim (one frame), drag beside a tap, a cancelled finger, a rocking thumb, a lost up, no pinch, tap(side), released(side), gyro, optional pull, cooldown, blur, denied sensors, miss, gravity rejection, hold to keep and lift to let go, a held finger looks, a drag never throws, a cancelled hold, two held thumbs');

@@ -1,0 +1,847 @@
+{
+  "diagnostic": {
+    "passed": true,
+    "kind": "same-frame waterfall-mesh isolation",
+    "rows": [
+      {
+        "layout": {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        "distance": 0,
+        "before_falls": 2,
+        "hidden_falls": 2,
+        "changed_bank_pixels": 354,
+        "removed_bright_bank_pixels": 288,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 0,
+            "x0": 200,
+            "x1": 211,
+            "y0": 98,
+            "y1": 147,
+            "brightPixels": 221,
+            "maxVerticalRun": 30,
+            "cssMaxVerticalRun": 95.70093457943925
+          },
+          {
+            "id": 1,
+            "x0": 306,
+            "x1": 315,
+            "y0": 104,
+            "y1": 140,
+            "brightPixels": 80,
+            "maxVerticalRun": 14,
+            "cssMaxVerticalRun": 44.66043613707165
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 0,
+            "x0": 200,
+            "x1": 211,
+            "y0": 98,
+            "y1": 147,
+            "brightPixels": 13,
+            "maxVerticalRun": 4,
+            "cssMaxVerticalRun": 12.7601246105919
+          },
+          {
+            "id": 1,
+            "x0": 306,
+            "x1": 315,
+            "y0": 104,
+            "y1": 140,
+            "brightPixels": 0,
+            "maxVerticalRun": 0,
+            "cssMaxVerticalRun": 0
+          }
+        ]
+      },
+      {
+        "layout": {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        "distance": 40,
+        "before_falls": 2,
+        "hidden_falls": 2,
+        "changed_bank_pixels": 841,
+        "removed_bright_bank_pixels": 538,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 0,
+            "x0": 144,
+            "x1": 165,
+            "y0": 73,
+            "y1": 147,
+            "brightPixels": 365,
+            "maxVerticalRun": 16,
+            "cssMaxVerticalRun": 51.0404984423676
+          },
+          {
+            "id": 1,
+            "x0": 297,
+            "x1": 310,
+            "y0": 84,
+            "y1": 133,
+            "brightPixels": 181,
+            "maxVerticalRun": 21,
+            "cssMaxVerticalRun": 66.99065420560747
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 0,
+            "x0": 144,
+            "x1": 165,
+            "y0": 73,
+            "y1": 147,
+            "brightPixels": 8,
+            "maxVerticalRun": 2,
+            "cssMaxVerticalRun": 6.38006230529595
+          },
+          {
+            "id": 1,
+            "x0": 297,
+            "x1": 310,
+            "y0": 84,
+            "y1": 133,
+            "brightPixels": 0,
+            "maxVerticalRun": 0,
+            "cssMaxVerticalRun": 0
+          }
+        ]
+      },
+      {
+        "layout": {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        "distance": 100,
+        "before_falls": 2,
+        "hidden_falls": 2,
+        "changed_bank_pixels": 1411,
+        "removed_bright_bank_pixels": 821,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 1,
+            "x0": 344,
+            "x1": 373,
+            "y0": 63,
+            "y1": 164,
+            "brightPixels": 822,
+            "maxVerticalRun": 24,
+            "cssMaxVerticalRun": 76.5607476635514
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 1,
+            "x0": 344,
+            "x1": 373,
+            "y0": 63,
+            "y1": 164,
+            "brightPixels": 1,
+            "maxVerticalRun": 1,
+            "cssMaxVerticalRun": 3.190031152647975
+          }
+        ]
+      },
+      {
+        "layout": {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        "distance": 180,
+        "before_falls": 0,
+        "hidden_falls": 0,
+        "changed_bank_pixels": 0,
+        "removed_bright_bank_pixels": 0,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [],
+        "hidden_metrics": []
+      },
+      {
+        "layout": {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        "distance": 420,
+        "before_falls": 1,
+        "hidden_falls": 1,
+        "changed_bank_pixels": 8,
+        "removed_bright_bank_pixels": 8,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 0,
+            "x0": 262,
+            "x1": 268,
+            "y0": 108,
+            "y1": 136,
+            "brightPixels": 13,
+            "maxVerticalRun": 3,
+            "cssMaxVerticalRun": 9.570093457943925
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 0,
+            "x0": 262,
+            "x1": 268,
+            "y0": 108,
+            "y1": 136,
+            "brightPixels": 4,
+            "maxVerticalRun": 3,
+            "cssMaxVerticalRun": 9.570093457943925
+          }
+        ]
+      },
+      {
+        "layout": {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        "distance": 0,
+        "before_falls": 2,
+        "hidden_falls": 2,
+        "changed_bank_pixels": 541,
+        "removed_bright_bank_pixels": 440,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 0,
+            "x0": 85,
+            "x1": 98,
+            "y0": 205,
+            "y1": 264,
+            "brightPixels": 327,
+            "maxVerticalRun": 36,
+            "cssMaxVerticalRun": 52.476683937823836
+          },
+          {
+            "id": 1,
+            "x0": 215,
+            "x1": 227,
+            "y0": 210,
+            "y1": 255,
+            "brightPixels": 126,
+            "maxVerticalRun": 17,
+            "cssMaxVerticalRun": 24.780656303972368
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 0,
+            "x0": 85,
+            "x1": 98,
+            "y0": 205,
+            "y1": 264,
+            "brightPixels": 11,
+            "maxVerticalRun": 4,
+            "cssMaxVerticalRun": 5.8307426597582035
+          },
+          {
+            "id": 1,
+            "x0": 215,
+            "x1": 227,
+            "y0": 210,
+            "y1": 255,
+            "brightPixels": 2,
+            "maxVerticalRun": 1,
+            "cssMaxVerticalRun": 1.4576856649395509
+          }
+        ]
+      },
+      {
+        "layout": {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        "distance": 40,
+        "before_falls": 2,
+        "hidden_falls": 2,
+        "changed_bank_pixels": 1284,
+        "removed_bright_bank_pixels": 824,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 0,
+            "x0": 16,
+            "x1": 41,
+            "y0": 172,
+            "y1": 263,
+            "brightPixels": 547,
+            "maxVerticalRun": 18,
+            "cssMaxVerticalRun": 26.238341968911918
+          },
+          {
+            "id": 1,
+            "x0": 204,
+            "x1": 220,
+            "y0": 184,
+            "y1": 245,
+            "brightPixels": 277,
+            "maxVerticalRun": 26,
+            "cssMaxVerticalRun": 37.89982728842833
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 0,
+            "x0": 16,
+            "x1": 41,
+            "y0": 172,
+            "y1": 263,
+            "brightPixels": 0,
+            "maxVerticalRun": 0,
+            "cssMaxVerticalRun": 0
+          },
+          {
+            "id": 1,
+            "x0": 204,
+            "x1": 220,
+            "y0": 184,
+            "y1": 245,
+            "brightPixels": 0,
+            "maxVerticalRun": 0,
+            "cssMaxVerticalRun": 0
+          }
+        ]
+      },
+      {
+        "layout": {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        "distance": 100,
+        "before_falls": 2,
+        "hidden_falls": 2,
+        "changed_bank_pixels": 374,
+        "removed_bright_bank_pixels": 150,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 1,
+            "x0": 257,
+            "x1": 266,
+            "y0": 164,
+            "y1": 287,
+            "brightPixels": 182,
+            "maxVerticalRun": 22,
+            "cssMaxVerticalRun": 32.06908462867012
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 1,
+            "x0": 257,
+            "x1": 266,
+            "y0": 164,
+            "y1": 287,
+            "brightPixels": 32,
+            "maxVerticalRun": 16,
+            "cssMaxVerticalRun": 23.322970639032814
+          }
+        ]
+      },
+      {
+        "layout": {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        "distance": 180,
+        "before_falls": 0,
+        "hidden_falls": 0,
+        "changed_bank_pixels": 0,
+        "removed_bright_bank_pixels": 0,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [],
+        "hidden_metrics": []
+      },
+      {
+        "layout": {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        "distance": 420,
+        "before_falls": 1,
+        "hidden_falls": 1,
+        "changed_bank_pixels": 18,
+        "removed_bright_bank_pixels": 17,
+        "added_bright_bank_pixels": 0,
+        "before_metrics": [
+          {
+            "id": 0,
+            "x0": 157,
+            "x1": 164,
+            "y0": 214,
+            "y1": 249,
+            "brightPixels": 32,
+            "maxVerticalRun": 5,
+            "cssMaxVerticalRun": 7.288428324697755
+          }
+        ],
+        "hidden_metrics": [
+          {
+            "id": 0,
+            "x0": 157,
+            "x1": 164,
+            "y0": 214,
+            "y1": 249,
+            "brightPixels": 15,
+            "maxVerticalRun": 5,
+            "cssMaxVerticalRun": 7.288428324697755
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "actual_app_before": {
+    "passed": true,
+    "layouts": [
+      "desktop",
+      "phone"
+    ]
+  },
+  "actual_app_after": {
+    "passed": true,
+    "state_or_clock_mutations": false,
+    "rows": [
+      {
+        "layout": {
+          "name": "desktop",
+          "width": 1536,
+          "height": 1024
+        },
+        "bundle": "index-CiLmk9Mw.js",
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "controls": [
+          "left lane",
+          "jump",
+          "duck",
+          "pause",
+          "resume"
+        ],
+        "pause_exact_pixels": true,
+        "no_active_gpu_preparation": true
+      },
+      {
+        "layout": {
+          "name": "phone",
+          "width": 390,
+          "height": 844
+        },
+        "bundle": "index-CiLmk9Mw.js",
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "controls": [
+          "left lane",
+          "jump",
+          "duck",
+          "pause",
+          "resume"
+        ],
+        "pause_exact_pixels": true,
+        "no_active_gpu_preparation": true
+      },
+      {
+        "layout": {
+          "name": "landscape",
+          "width": 844,
+          "height": 390
+        },
+        "bundle": "index-CiLmk9Mw.js",
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "controls": [
+          "left lane",
+          "jump",
+          "duck",
+          "pause",
+          "resume"
+        ],
+        "pause_exact_pixels": true,
+        "no_active_gpu_preparation": true
+      }
+    ],
+    "errors": []
+  },
+  "build": {
+    "javascript": "index-CiLmk9Mw.js",
+    "sha256": "2320104292cdc2f62fbaeec5e8ca07d407135a26c0d0c3d1dfab518364681c12"
+  },
+  "limits": {
+    "renderer": "Chromium SwiftShader",
+    "physical_phone_or_device_fps_tested": false
+  },
+  "fixed_source_frames": {
+    "passed": true,
+    "actual_app": false,
+    "rows": [
+      {
+        "layout": "desktop",
+        "distance": 0,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 95895
+      },
+      {
+        "layout": "desktop",
+        "distance": 40,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 90373
+      },
+      {
+        "layout": "desktop",
+        "distance": 100,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 91983
+      },
+      {
+        "layout": "desktop",
+        "distance": 180,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 0,
+        "draw_calls": 20,
+        "triangles": 91093
+      },
+      {
+        "layout": "desktop",
+        "distance": 420,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 1,
+        "draw_calls": 21,
+        "triangles": 98061
+      },
+      {
+        "layout": "desktop",
+        "distance": 900,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 5,
+        "draw_calls": 21,
+        "triangles": 82725
+      },
+      {
+        "layout": "desktop",
+        "distance": 3000,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 0,
+        "draw_calls": 22,
+        "triangles": 91579
+      },
+      {
+        "layout": "phone",
+        "distance": 0,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 95895
+      },
+      {
+        "layout": "phone",
+        "distance": 40,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 90373
+      },
+      {
+        "layout": "phone",
+        "distance": 100,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 91983
+      },
+      {
+        "layout": "phone",
+        "distance": 180,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 0,
+        "draw_calls": 20,
+        "triangles": 91093
+      },
+      {
+        "layout": "phone",
+        "distance": 420,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 1,
+        "draw_calls": 21,
+        "triangles": 98061
+      },
+      {
+        "layout": "phone",
+        "distance": 900,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 5,
+        "draw_calls": 21,
+        "triangles": 82725
+      },
+      {
+        "layout": "phone",
+        "distance": 3000,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 0,
+        "draw_calls": 22,
+        "triangles": 91579
+      },
+      {
+        "layout": "landscape",
+        "distance": 0,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 95895
+      },
+      {
+        "layout": "landscape",
+        "distance": 40,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 90373
+      },
+      {
+        "layout": "landscape",
+        "distance": 100,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 2,
+        "draw_calls": 23,
+        "triangles": 91983
+      },
+      {
+        "layout": "landscape",
+        "distance": 180,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 0,
+        "draw_calls": 20,
+        "triangles": 91093
+      },
+      {
+        "layout": "landscape",
+        "distance": 420,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 1,
+        "draw_calls": 21,
+        "triangles": 98061
+      },
+      {
+        "layout": "landscape",
+        "distance": 900,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 5,
+        "draw_calls": 21,
+        "triangles": 82725
+      },
+      {
+        "layout": "landscape",
+        "distance": 3000,
+        "falls": 0,
+        "mist": 0,
+        "cliffs": 0,
+        "draw_calls": 22,
+        "triangles": 91579
+      }
+    ],
+    "errors": []
+  },
+  "unchanged_water_raft_wake_crops": {
+    "kind": "same-fixed-seed-time-central-water-crop-PNG-comparison",
+    "rows": [
+      {
+        "layout": "desktop",
+        "distance": 0,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 112976,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      },
+      {
+        "layout": "desktop",
+        "distance": 40,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 112976,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      },
+      {
+        "layout": "desktop",
+        "distance": 100,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 112976,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      },
+      {
+        "layout": "desktop",
+        "distance": 420,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 112976,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      },
+      {
+        "layout": "phone",
+        "distance": 0,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 23184,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      },
+      {
+        "layout": "phone",
+        "distance": 40,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 23184,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      },
+      {
+        "layout": "phone",
+        "distance": 100,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 23184,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      },
+      {
+        "layout": "phone",
+        "distance": 420,
+        "region": {
+          "x": [
+            0.38,
+            0.62
+          ],
+          "y": [
+            0.58,
+            0.88
+          ]
+        },
+        "pixels": 23184,
+        "changedPixels": 0,
+        "maxChannelDifference": 0
+      }
+    ]
+  },
+  "validation": {
+    "build": "npm run build:arcade --prefix games/river-rush: passed",
+    "focused_tests": {
+      "command": "node --test games/river-rush/tests/world.test.js games/river-rush/tests/districts.test.js",
+      "passed": 6,
+      "failed": 0
+    },
+    "canonical_spec": {
+      "manual_structure_check": "passed",
+      "unique_requirements": 47,
+      "openspec_cli_used": false
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "scope": "budgets",
+  "bundle": null,
+  "actualAppStateOrClockMutations": false,
+  "publicScoreWrites": 0,
+  "actual": [],
+  "rendererPath": "forced-full-source-renderer-on-SwiftShader",
+  "actualBackend": {
+    "classificationOverride": true,
+    "observedRenderers": [
+      "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    ]
+  },
+  "isolatedRendererFixtures": {
+    "total": 0,
+    "passed": 0,
+    "maps": [],
+    "layouts": [],
+    "maxDrawCalls": 0,
+    "maxTriangles": 0
+  },
+  "richWaterShaderCompiled": true,
+  "matchedAuthoredPolicies": {
+    "cases": 0,
+    "scoreOnlyCases": 0,
+    "composedBankPromotions": 0
+  },
+  "gpuBudgetPreflight": {
+    "samples": 78,
+    "maxDrawCalls": 53,
+    "maxTriangles": 287071,
+    "violations": []
+  },
+  "islandContacts": [],
+  "errors": [],
+  "failure": null,
+  "limitations": [
+    "Chromium SwiftShader; hardware phone frame rate and human reaction difficulty are not measured.",
+    "Natural App runs retain the original game seed and clock. Source fixtures explicitly own isolated state.",
+    "Only the isolated source renderer classification is overridden; the actual backend remains SwiftShader. Full assets, shaders, shadows and tessellation are exercised, without measuring hardware frame rate."
+  ]
+}

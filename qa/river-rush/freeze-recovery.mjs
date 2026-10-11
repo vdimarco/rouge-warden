@@ -5,7 +5,7 @@ const {chromium}=createRequire(new URL('../../games/river-rush/package.json',imp
 const url=process.env.GAME_URL||new URL('river-rush/',process.env.ARCADE_URL||'http://localhost:8765/').href;
 const browser=await chromium.launch({args:['--no-sandbox','--enable-unsafe-swiftshader']});
 const errors=[],results=[];
-const selected=process.env.CASE||'all';assert.ok(['all','hung-assets'].includes(selected),`Unknown CASE=${selected}`);
+const selected=process.env.CASE||'all';assert.ok(['all','hung-assets','audio'].includes(selected),`Unknown CASE=${selected}`);
 
 function installFaults(){
   window.__tools={};
@@ -44,7 +44,7 @@ async function until(p,predicate,timeout=20000){
 async function open(viewport={width:390,height:844}){
   const p=await browser.newPage({viewport});p.on('pageerror',e=>errors.push(e.message));
   await p.addInitScript(installFaults);await p.goto(url,{waitUntil:'networkidle'});
-  await p.getByRole('button',{name:'Start run',exact:true}).waitFor();
+  await p.waitForFunction(()=>{const button=document.querySelector('button[aria-label="Start run"]');return button&&!button.disabled;},{},{timeout:90000});
   assert.equal((await state(p)).renderer.prepared,true);
   p.preparedResources=await p.evaluate(()=>({uploads:window.__faults.uploads,shaderCompiles:window.__faults.shaderCompiles}));
   await p.getByRole('button',{name:'Start run',exact:true}).click();
@@ -54,7 +54,7 @@ async function open(viewport={width:390,height:844}){
 }
 async function restart(p){
   if((await state(p)).screen==='playing')await p.keyboard.press('Escape');
-  await p.getByRole('button',{name:'Restart run',exact:true}).click();
+  await p.getByRole('button',{name:'Restart this map',exact:true}).click();
   await p.keyboard.press('ArrowLeft');await until(p,s=>s.run.lane===0);
 }
 async function controls(p){
@@ -62,6 +62,18 @@ async function controls(p){
   await p.keyboard.press('Space');await until(p,s=>s.run.action==='jump');
   await p.keyboard.press('ArrowDown');await until(p,s=>s.run.action==='duck');
   await p.keyboard.press('ArrowLeft');await until(p,s=>s.run.lane===0);
+}
+
+async function audioFailure(){
+  const p=await open();await restart(p);
+  const enable=p.getByRole('button',{name:'Enable sound',exact:true});if(await enable.count())await enable.click();
+  const beforeAudio=await state(p);
+  await p.evaluate(()=>{window.__faults.audio=true;});await p.keyboard.press('Space');
+  await until(p,s=>s.run.time>beforeAudio.run.time+.1&&s.screen==='playing');
+  await p.getByRole('button',{name:'Enable sound',exact:true}).waitFor();
+  assert.equal(await p.evaluate(()=>window.__faults.audioHits),1);await controls(p);
+  results.push({audioFailure:{soundDisabled:true,timeAdvanced:true,laneJumpDuck:true}});
+  return p;
 }
 
 async function hungAssets(){
@@ -105,6 +117,7 @@ async function hungAssets(){
 }
 
 try{
+ if(selected==='audio'){const p=await audioFailure();await p.close();}
  if(selected==='all'){
   for(const [name,viewport] of [['phone',{width:390,height:844}],['desktop',{width:1536,height:1024}]]){
     const p=await open(viewport);await restart(p);
@@ -131,14 +144,7 @@ try{
     await p.close();
   }
 
-  const p=await open();await restart(p);
-  await p.getByRole('button',{name:'Enable sound',exact:true}).click();
-  const beforeAudio=await state(p);
-  await p.evaluate(()=>{window.__faults.audio=true;});await p.keyboard.press('Space');
-  await until(p,s=>s.run.time>beforeAudio.run.time+.1&&s.screen==='playing');
-  await p.getByRole('button',{name:'Enable sound',exact:true}).waitFor();
-  assert.equal(await p.evaluate(()=>window.__faults.audioHits),1);await controls(p);
-  results.push({audioFailure:{soundDisabled:true,timeAdvanced:true,laneJumpDuck:true}});
+  const p=await audioFailure();
 
   await restart(p);
   await p.evaluate(()=>window.dispatchEvent(new Event('blur')));
@@ -177,7 +183,7 @@ try{
   assert.deepEqual(await p.evaluate(()=>({uploads:window.__faults.uploads,shaderCompiles:window.__faults.shaderCompiles})),p.preparedResources);
   results.push({homeStart:{cycles:3,timeAdvanced:true,laneInput:true,retainedCanvas:true,noMenuFrameWork:true,extraModelRequests:extraModels,noActiveResourcePreparation:true}});await p.close();
  }
-  await hungAssets();
+  if(selected!=='audio')await hungAssets();
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({passed:true,url,results,errors,renderer:'Headless SwiftShader; recovery and lifecycle checks, not a physical device FPS claim.'}));
 }finally{await browser.close();}

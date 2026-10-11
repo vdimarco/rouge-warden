@@ -1,0 +1,10 @@
+# Direction
+Use the generated concept at /workspace/generated_images/exec-37f0b77d-2b0f-4a09-8774-0160406f1281.png as the reference. The missing dimension is actual spatial depth: foreground occludes middle distance, objects shrink toward the horizon, a camera follows traversal, terrain has volume and warm/cool lighting crosses several depth planes. Full-screen golden beacon, cyan mist, emerald forest and violet threats remain. A mild screen-space dot treatment preserves ASCII inspiration without replacing geometry with a flat picture. This is a real 3D implementation; inspect real screenshots and projection/occlusion before claiming fidelity.
+
+A locally bundled Three.js scene renderer is shared by the courier action and a separately routed tank variant. Deterministic gameplay models remain independent. Browser pointer aiming uses a ground-plane raycast, not flat viewport percentages. Projection informs readable world labels. WebGL startup failure must produce a useful recoverable message. Rendering remains bounded, reduced motion is respected, and controls/lifecycle stay native accessible overlays.
+
+Afterlight's tactical layer uses breakable tethers, weapon heat and an interrupting pulse so players choose approach, target and timing. Tanks uses acceleration/hull steering, separately aimed turret, cover collisions/line of sight, projectile impacts, enemy guns/tanks and explicit extraction after disabling relays. Both need meaningful core-gameplay tests and visual browser checks. No destructive changes to Classic saves.
+
+Tank range limits require movement between firing positions: shells70/artillery55 worldunits; outofrange strikes spend no cooldown. The campaign solver must traverse flank waypoints rather than bombard from spawn.
+
+Rendering cost is bounded separately for detected hardware (640px/250k pixels) and software WebGL (240px/34k pixels). Instanced terrain and bounded transient pools reduce overhead; software speed is recorded from actual browser frames rather than inferred from simulation throughput. Smoke is translucent so the vehicle remains visible.

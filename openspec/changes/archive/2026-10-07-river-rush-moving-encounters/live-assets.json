@@ -1,0 +1,43 @@
+{
+  "verified_commit": "043d0c519b0084ad87986b1e6c07b7bbb4d0c255",
+  "base": "https://arcade.uptick.systems/river-rush/",
+  "assets": [
+    {
+      "path": "river-rush/index.html",
+      "bytes": 798,
+      "sha256": "c3475d483a05741f3f3de7fad25878569d5b8d35ae313b1219949f9ccbf92902",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "matches_local": true
+    },
+    {
+      "path": "river-rush/assets/index-Bkn1MAT_.js",
+      "bytes": 1085871,
+      "sha256": "58a1b0681884151a8e5063914e96f4e275d1f31d3e2e35b3362c27220155f3d1",
+      "http_status": 200,
+      "content_type": "application/javascript; charset=utf-8",
+      "matches_local": true
+    },
+    {
+      "path": "river-rush/assets/index-BttXBCLJ.css",
+      "bytes": 33889,
+      "sha256": "6517ad030e1900dda887e6c15822a45cddd2b54f4d3d26b35d922f109d30ed95",
+      "http_status": 200,
+      "content_type": "text/css; charset=utf-8",
+      "matches_local": true
+    },
+    {
+      "path": "river-rush/audio/river-rush-adventure.mp3",
+      "bytes": 1494295,
+      "sha256": "85d06b70bd67827b6ca4a939859cfdd74b2202ad42844758376bb4ab2db2e982",
+      "http_status": 200,
+      "content_type": "audio/mpeg",
+      "matches_local": true
+    }
+  ],
+  "audio_range_request": {
+    "status": 206,
+    "content_range": "bytes 0-1023/1494295",
+    "bytes": 1024
+  }
+}

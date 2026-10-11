@@ -40,7 +40,7 @@ function capStub() { window.Capacitor = { isNativePlatform: () => true, getPlatf
 
 // a page: phone (touch and the virtual sensors) or a computer; save: a first save; local: first web storage keys
 async function launch({ width = 390, height = 844, phone = true, query = "", save = null, local = null, init = [], scale = 1 } = {}) {
-  const browser = await chromium.launch({ args: ARGS });
+  const browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined });
   const ctx = await browser.newContext(phone ? { viewport: { width, height }, deviceScaleFactor: scale, isMobile: true, hasTouch: true } : { viewport: { width, height }, deviceScaleFactor: scale });
   const page = await ctx.newPage();
   page.setDefaultTimeout(120000);
@@ -180,8 +180,8 @@ if (part("1")) {
     });
     check(loop.wrapped && loop.lessons.join() === "back,cast,hold", "the first cast screen's guide goes round hold, back and cast only, 1 / 3 to 3 / 3 (" + JSON.stringify(loop) + ")");
     // the HUD behind a screen: no focus, no taps; the prompt headline reaches the live region
-    await waitFor(page, "prompt headline in the live region", () => document.querySelector("#say").textContent === "Hold your thumb on the rod.");
-    check((await page.evaluate(() => document.querySelector("#say").textContent)) === "Hold your thumb on the rod.", "the live region says the prompt's headline");
+    await waitFor(page, "full prompt in the live region", () => document.querySelector("#say").textContent === "Hold your thumb on the rod. Turn to aim.");
+    check((await page.evaluate(() => document.querySelector("#say").textContent)) === "Hold your thumb on the rod. Turn to aim.", "the live region says the prompt and its action");
     await page.evaluate(() => document.querySelector("#pauseBtn").click());
     await shown(page, "pause");
     check(await page.evaluate(() => document.querySelector("#hud").inert && document.querySelector("#castUI").inert && document.querySelector("#reelUI").inert), "while Pause is open, the HUD and the play controls are inert");
@@ -366,9 +366,18 @@ if (part("4")) {
     await stage(page, { fish: { id: "walleye", kg: 2, cm: 50, x: 0, y: -1, z: -20, heading: 0, len: 0.5, stamina: 0.6, move: "sulk", jump: 0, near: 0.5, known: true } });
     await waitFor(page, "rod cue words for a fish on the bottom, with the fish name on the gauge", (t) => document.querySelector("#rodCue span").textContent === t && FISH.gauge.box && FISH.gauge.box.name, PUMP);
     await settled(page, "Larger text fight");
-    const pr = await page.evaluate(() => ({ px: parseFloat(getComputedStyle(document.querySelector("#prompt .p1")).fontSize), toast: parseFloat(getComputedStyle(document.querySelector("#toast")).fontSize), name: FISH.gauge.box && FISH.gauge.box.name }));
+    const pr = await page.evaluate(() => {
+      const card = document.querySelector("#prompt .p1"), svg = card.querySelector(".cue-art svg");
+      const c = card.getBoundingClientRect(), a = svg?.getBoundingClientRect();
+      const artFits = !!a && getComputedStyle(svg).display !== "none" && a.width >= 100 && a.height >= 50
+        && a.left >= c.left - 1 && a.top >= c.top - 1 && a.right <= c.right + 1 && a.bottom <= c.bottom + 1
+        && c.left >= 0 && c.right <= innerWidth && c.width <= 160;
+      return { artFits, card: [Math.round(c.width), Math.round(c.height)], art: a && [Math.round(a.width), Math.round(a.height)],
+        toast: parseFloat(getComputedStyle(document.querySelector("#toast")).fontSize), name: FISH.gauge.box && FISH.gauge.box.name };
+    });
     const gw = await page.evaluate(async () => { const { GAUGE } = await import("/fish/js/reel.js"); return [GAUGE.WORD_PX, GAUGE.LABEL_PX]; });
-    check(pr.px >= 20 && pr.toast >= 17 && gw[0] >= 15 && gw[1] >= 12, `Larger text: the prompt is ${pr.px.toFixed(1)} px (20 or more), the toast ${pr.toast.toFixed(1)} px, the gauge words ${gw.join(" and ")} px`);
+    check(pr.artFits, `Larger text: the action picture fits inside the visible card (${pr.art?.join(" x ") || "none"} px in ${pr.card.join(" x ")} px)`);
+    check(pr.toast >= 17 && gw[0] >= 15 && gw[1] >= 12, `Larger text: the toast is ${pr.toast.toFixed(1)} px, the gauge words ${gw.join(" and ")} px`);
     check(!!pr.name && pr.name.px >= 15 && pr.name.w <= pr.name.max + 0.5, "Larger text: the gauge draws the fish name at 15 px or more, and it fits (" + JSON.stringify(pr.name) + ")");
     const L = { prompt: await rect(page, "#prompt .p1"), crank: await rect(page, "#crankBox"), gauge: await rect(page, "#gaugeBox"), drag: await rect(page, "#dragBar"), hud: await rect(page, "#hud"), cue: await rect(page, "#rodCue span") };
     const over = Object.keys(L).flatMap((a, i) => Object.keys(L).slice(i + 1).filter((b) => hit(L[a], L[b])).map((b) => a + "/" + b));
