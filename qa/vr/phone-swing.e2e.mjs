@@ -42,14 +42,14 @@ try {
     // many frames ran before this point
     if (G.flatcam) { G.flatcam.reset(G.rigYaw, G.flatcam.pitch); G.test.step(1 / 60, 1); }
     G.desktop.level(0.35); G.test.step(1 / 60, 2);
-    const M = G.desktop.mobile, badge = document.querySelector('.phone-side[data-side="1"]'), p0 = { ...G.P.pos };
+    const M = G.desktop.mobile, panelEl = document.querySelector('#phoneControls'), p0 = { ...G.P.pos };
     let sum = 0, max = 0, flings = 0, wide = 0, rush = 0, pressedAfterFling = null;
     for (let f = 0; f < 720; f++) {
       if (G.P.ropes[1].state === 'idle' && f % 10 === 0) M.tap(1);
       const before = G.test.events().filter((e) => e.type === 'fling').length;
       G.test.step(1 / 60, 1);
       const now = G.test.events().filter((e) => e.type === 'fling').length;
-      if (now > before) { flings++; pressedAfterFling = String(badge.classList.contains('held')); }
+      if (now > before) { flings++; pressedAfterFling = String(panelEl.classList.contains('holding')); }
       const v = G.P.vel, sp = Math.hypot(v.x, v.y, v.z);
       sum += sp; max = Math.max(max, sp);
       if (sp > 28) { wide = Math.max(wide, G.camera.fov); rush = Math.max(rush, +document.querySelector('.phone-rush').style.opacity || 0); }
@@ -59,7 +59,7 @@ try {
   });
   assert(run.mean >= 15, 'taps alone average at least 15 m/s: ' + JSON.stringify(run));
   assert(run.dist >= 140, 'taps alone cover at least 140 m in 12 s: ' + JSON.stringify(run));
-  assert(run.flings >= 1 && run.pressedAfterFling === 'false', 'the rope lets go by itself and its badge goes dark: ' + JSON.stringify(run));
+  assert(run.flings >= 1 && run.pressedAfterFling === 'false', 'the rope lets go by itself and the panel shows no plunger holding: ' + JSON.stringify(run));
   assert(run.wide > 85 && run.rush > 0.5, 'the view widens and the speed lines show at speed: ' + JSON.stringify(run));
   assert.equal(run.dead, null);
   console.log('PASS taps alone chain fast swings', JSON.stringify({ mean: +run.mean.toFixed(1), max: +run.max.toFixed(1), dist: Math.round(run.dist), flings: run.flings, fov: Math.round(run.wide), rush: run.rush }));

@@ -77,8 +77,8 @@ function install() {
       [".phone-crosshair", () => "centre ring"],
       [".phone-hint", () => "hint"],
       [".phone-bottom", () => "hint panel"],
-      [".phone-side", (e) => "plunger badge " + e.textContent.trim()],
-      [".phone-climb button", (e) => "climb pad " + (e.dataset.climb || e.dataset.action)],
+      [".phone-stick", () => "move stick"],
+      [".phone-climb button", (e) => "JUMP button"],
     ];
     const items = {};
     for (const [sel, name] of NAMED) {
@@ -258,7 +258,7 @@ async function run(w, h, touch) {
   check(S.W === w && S.H === h, `[${tag}] the window is ${w} by ${h}`, { W: S.W, H: S.H });
   check(S.touch === touch, `[${tag}] the phone panel ${touch ? "shows" : "is hidden"}`);
   const must = ["score row", "score pill Loonies", "score pill Clogs", "spoken line with its tail", "toast"];
-  if (touch) must.push("top button MOTION", "top button CENTER", "top button VIEW", "top button PAUSE", "hint panel", "hint", "plunger badge L", "plunger badge R", "phone ring or arrow");
+  if (touch) must.push("top button MOTION", "top button CENTER", "top button VIEW", "top button PAUSE", "hint panel", "hint", "move stick", "phone ring or arrow");
   else must.push("key strip");
   checkBoxes(tag, S, must);
   // the toast starts under the tail of the spoken line (the tail hangs 27 px under the box of the line, and the toast is tilted a little)
@@ -294,7 +294,7 @@ async function run(w, h, touch) {
   }
   await shot(page, "layout-" + tag + "-hud");
 
-  /* ---------------- a wall: the climb pad of the phone, and the arrow behind the camera ---------------- */
+  /* ---------------- a wall: the JUMP button of the phone, and the arrow behind the camera ---------------- */
   // On a wall in third person the target lies behind the camera: the marker is an arrow on the bottom border of the safe window. The training card
   // and the spoken line draw over the marker, so the arrow must not lie under one of them.
   const held = await page.evaluate(() => LAY.wallSetup());
@@ -305,13 +305,12 @@ async function run(w, h, touch) {
     await sleep(160);
     await page.evaluate(() => G.test.step(1 / 60, 3));
     S = await page.evaluate(() => LAY.scan());
-    checkBoxes(tag + " on a wall", S, touch ? ["climb pad up", "climb pad down", "climb pad left", "climb pad right", "climb pad hop", "hint panel"] : ["edge arrow"]);
-    if (touch) check(!S.items["plunger badge L"] && !S.items["plunger badge R"], `[${tag} on a wall] the plunger badges hide while the climb pad shows`, Object.keys(S.items).filter((n) => /badge/.test(n)));
+    checkBoxes(tag + " on a wall", S, touch ? ["JUMP button", "move stick", "hint panel"] : ["edge arrow"]);
     const wallLine = S.items["spoken line with its tail"], wallToast = S.items["toast"];
     check(!!wallLine && !!wallToast && !hit(wallLine, wallToast), `[${tag} on a wall] the toast does not overlap the spoken line or its tail`, wallLine && wallToast && { line: round(wallLine), toast: round(wallToast), toastCoversTail: Math.round(wallLine.b - wallToast.t) });
     const arrow = S.items[touch ? "phone ring or arrow" : "edge arrow"];
-    // (the spec keeps the marker clear of the pills, the top buttons, the spoken line, the hint panel and the climb pad, and the code also keeps it out of the training card and the key strip: the toast is in none of these lists)
-    const over = Object.entries(S.items).filter(([name, b]) => /^(score pill|training card|spoken line|key strip|climb pad|hint panel|hint|plunger badge|top button)/.test(name) && arrow && hit(b, arrow)).map(([name]) => name);
+    // (the spec keeps the marker clear of the pills, the top buttons, the spoken line, the hint panel and the JUMP button, and the code also keeps it out of the training card and the key strip: the toast is in none of these lists)
+    const over = Object.entries(S.items).filter(([name, b]) => /^(score pill|training card|spoken line|key strip|JUMP button|hint panel|hint|top button)/.test(name) && arrow && hit(b, arrow)).map(([name]) => name);
     check(!!arrow && over.length === 0, `[${tag} on a wall] the arrow behind the camera shows and no HUD box covers it`, { arrow: round(arrow), under: over });
     await shot(page, "layout-" + tag + "-wall");
   }

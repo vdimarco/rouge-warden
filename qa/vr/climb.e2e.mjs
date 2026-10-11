@@ -1,5 +1,5 @@
 // Wall climbing in flat play and the roof antennas: fly into a wall and hold on, W or the up arrow climbs, D goes along
-// the wall, Space jumps off, the top steps on to the roof, a phone gets a climb pad, and a rope catches a roof antenna
+// the wall, Space jumps off, the top steps on to the roof, on a phone the left thumb climbs and a JUMP button shows, and a rope catches a roof antenna
 // that you can then climb. The hero climbs with both hands and both feet on holds that stay put in the world, stepping in
 // diagonal pairs. Run from the repo root (the server is our own, see lib.mjs).
 import assert from 'node:assert/strict';
@@ -262,24 +262,31 @@ try {
     };
     await page.evaluate(() => G.test.step(1 / 60, 3));
     const rest = await hintOf();
-    assert(/^Tap left or right to swing/.test(rest), 'off the wall the hint says to tap left or right: ' + rest);
+    assert(/^Left thumb moves\. Right thumb swings/.test(rest), 'off the wall the hint says which thumb does what: ' + rest);
+    // the left thumb on the city: a stick under it; dy px up (negative) or down
+    const stick = (id, dy) => page.evaluate(([id, dy]) => {
+      const c = G.renderer.domElement;
+      c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: id, clientX: 100, clientY: 600, bubbles: true, cancelable: true }));
+      window.dispatchEvent(new PointerEvent('pointermove', { pointerId: id, clientX: 100, clientY: 600 + dy }));
+    }, [id, dy]);
+    const lift = (id) => page.evaluate((id) => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: id, clientX: 100, clientY: 600 })), id);
     const pad = page.locator('.phone-climb');
-    assert(await pad.isHidden(), 'no climb pad off the wall');
+    assert(await pad.isHidden(), 'no JUMP button off the wall');
     assert(await page.evaluate(() => QA.flyIn()), 'a phone holds the wall too');
     await page.evaluate(() => G.test.step(1 / 60, 1));
-    assert(await pad.isVisible(), 'the climb pad shows on the wall');
+    assert(await pad.isVisible(), 'the JUMP button shows on the wall');
     const wallHint = await hintOf();
-    assert(/^On the wall\. Hold the arrows to climb/.test(wallHint), 'on the wall the hint over SWING says how to climb: ' + wallHint);
-    const up = page.locator('[data-climb=up]'), box = await up.boundingBox();
+    assert(/^On the wall\. Left thumb climbs/.test(wallHint), 'on the wall the hint says how to climb: ' + wallHint);
+    const box = await page.locator('.phone-climb [data-action=hop]').boundingBox();
     const y0 = await page.evaluate(() => G.P.pos.y);
-    await up.dispatchEvent('pointerdown', { pointerId: 7, isPrimary: true });
+    await stick(7, -60);
     await page.evaluate(() => G.test.step(1 / 60, 30));
-    await up.dispatchEvent('pointerup', { pointerId: 7, isPrimary: true });
-    const y1 = await page.evaluate(() => { G.test.step(1 / 60, 10); return G.P.pos.y; });
-    assert(Math.abs(y1 - y0 - 3) < 0.3, 'holding the up arrow climbs, letting go stops: ' + (y1 - y0));
-    console.log('PASS the phone climb pad shows on a wall and its up arrow climbs', (y1 - y0).toFixed(2) + ' m');
     await page.screenshot({ path: out + '/climb-phone.png' });
-    assert(box.x < 195, 'the climb pad sits on the left, clear of the SWING button');
+    await lift(7);
+    const y1 = await page.evaluate(() => { G.test.step(1 / 60, 10); return G.P.pos.y; });
+    assert(Math.abs(y1 - y0 - 3) < 0.3, 'the left thumb pushed up climbs, and lifting it stops: ' + (y1 - y0));
+    console.log('PASS on a wall the left thumb climbs', (y1 - y0).toFixed(2) + ' m');
+    assert(box.x > 195, 'the JUMP button sits on the right, clear of the left thumb');
     await page.locator('.phone-climb [data-action=hop]').click();
     const off = await page.evaluate(() => { G.test.step(1 / 60, 2); return { wall: !!G.P.wall, vx: G.P.vel.x }; });
     assert(!off.wall && off.vx > 3, 'JUMP leaves the wall: ' + JSON.stringify(off));
@@ -298,21 +305,20 @@ try {
     console.log('PASS a tap swings you off the wall');
     assert(/^Swinging/.test(swing.hint), 'after a tap swung you off the wall the hint says swinging, not the resting line: ' + swing.hint);
     console.log('PASS after a tap swings you off the wall the hint keeps the swing line');
-    // the other ways off the wall: hold an arrow until the hero is off (over the top, down to the street)
+    // the other ways off the wall: push the left thumb until the hero is off (over the top, down to the street)
     const leave = async (arrow, id, y) => {
       assert(await page.evaluate((y) => { const ok = QA.flyIn(y); G.test.step(1 / 60, 2); return ok; }, y), 'a phone holds the wall (' + arrow + ')');
       assert(/^On the wall/.test(await hintOf()), 'on the wall again the hint says how to climb (' + arrow + ')');
-      const b = page.locator('[data-climb=' + arrow + ']');
-      await b.dispatchEvent('pointerdown', { pointerId: id, isPrimary: true });
+      await stick(id, arrow === 'up' ? -60 : 60);
       const r = await page.evaluate(() => { for (let i = 0; i < 24 && G.P.wall; i++) G.test.step(1 / 60, 10); G.test.step(1 / 60, 2); return { wall: !!G.P.wall, ground: G.P.onGround, y: G.P.pos.y }; });
-      await b.dispatchEvent('pointerup', { pointerId: id, isPrimary: true });
+      await lift(id);
       return r;
     };
     const top = await leave('up', 21, await page.evaluate(() => QA.B.maxY - 3));
-    assert(!top.wall && top.ground && top.y > built.h - 0.5, 'the up arrow takes the hero over the top and on to the roof: ' + JSON.stringify(top));
+    assert(!top.wall && top.ground && top.y > built.h - 0.5, 'the left thumb pushed up takes the hero over the top and on to the roof: ' + JSON.stringify(top));
     await back('going over the top on to the roof', rest);
     const down = await leave('down', 22, 4);
-    assert(!down.wall && down.ground && down.y < 1, 'the down arrow takes the hero to the street: ' + JSON.stringify(down));
+    assert(!down.wall && down.ground && down.y < 1, 'the left thumb pushed down takes the hero to the street: ' + JSON.stringify(down));
     await back('climbing down to the street', rest);
     // motion aim on: the line of before is the motion line
     await page.evaluate(() => { window.__sensors = 'granted'; return G.desktop.mobile.start(); });
