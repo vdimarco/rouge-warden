@@ -28,15 +28,25 @@ Each catalog destination SHALL record one view per page visit and one play on th
 - **WHEN** a game has views or plays but no active-time events, or an event has no game id
 - **THEN** the endpoint returns zero active time for that game, skips the event without a game id, and still returns every other game
 ### Requirement: Walkable neon room
-The room SHALL show lit cabinets with game artwork, neon signs and a cinematic entrance. Desktop and touch controls SHALL move and turn the player, with collision boundaries and a selected-game launch control.
-#### Scenario: Walk to a cabinet
-- **WHEN** the player moves near a cabinet and points at it
-- **THEN** its name appears and the play control opens its game
+The room SHALL show every catalog game as a lit cabinet, plus neon signs and a cinematic entrance. The hall SHALL grow with the catalog so that no cabinet stands in a wall. Cabinets SHALL have a shaped side profile with clearcoat paint in the game's color, a neon edge, a CRT-style screen with the game's artwork, controls, a coin door and a lit marquee. The hall SHALL have neon bloom, a glossy floor that mirrors the room, a blacklight carpet on the aisle, light shafts and drifting dust. Quality SHALL step down by itself when frames are slow: first pixel ratio, then the floor mirror, then bloom.
+On touch screens, a drag that starts on the left half SHALL show a floating stick: up and down walk, left and right strafe. A drag on the right half SHALL turn the view. Both SHALL work at the same time. A tap on the floor SHALL walk to that spot without turning the view. A tap on a cabinet SHALL walk to its front and turn to face it. A drag SHALL NOT count as a tap. On desktop, WASD and the arrow keys SHALL walk and strafe, Shift SHALL run, a mouse drag SHALL turn the view, and a click SHALL walk like a tap. Movement SHALL respect room and cabinet collision. A play control SHALL launch the selected game.
+#### Scenario: Strafe with the stick
+- **WHEN** the player drags right from a point on the left half of a phone screen
+- **THEN** the stick appears under the thumb and the player moves sideways without turning
+#### Scenario: Walk and look together
+- **WHEN** one thumb drags up on the left half while another drags across the right half
+- **THEN** the player walks forward and turns at the same time
+#### Scenario: Tap a cabinet
+- **WHEN** the player taps a cabinet down the hall
+- **THEN** the player walks to its front, faces its screen, its name appears and the play control opens its game
+#### Scenario: Tap the floor
+- **WHEN** the player taps the floor ahead
+- **THEN** a ring marks the spot and the player walks there with the view unchanged
 #### Scenario: Phone layout
 - **WHEN** the room opens at 390 by 844
-- **THEN** the move pad and play control remain usable without horizontal overflow
+- **THEN** the view uses a wider lens, the touch hints and the play control remain usable, and nothing overflows horizontally
 #### Scenario: Rendering unavailable
-- **WHEN** WebGL cannot initialize
+- **WHEN** WebGL or the room's scripts cannot start
 - **THEN** an error and a link to All Games remain visible
 ### Requirement: Visual checks
 Desktop and phone-sized browser checks SHALL verify page identity, meaningful content, console health, filtering, ranking persistence, rendering, movement and navigation. Rendered screenshots SHALL be reviewed for clipping and artwork.
