@@ -18,3 +18,9 @@ The user provided the capture key for new PostHog project arcade (653362). Captu
 - [x] Condense header and move summary below the games.
 - [x] Add Featured default order and preserve genuine metric sorts.
 - [ ] Verify rendered first viewport, sticky header, search and menu; report untested phone checks.
+
+- [x] Fix the leaderboard endpoint: a null active-time sum and an event without a game id made every request fail with 503, so Plays and Likes sorting had no data. Checked the fixed query against PostHog project 653362.
+- [x] Add the analytics script to the nine games that did not record views, plays or likes.
+- [x] Make Plays, Views, Likes and Time report when ranking is not available, and ask for activity again.
+- [x] Add a visible Old arcade control to the header. Checked in Chromium at 1363×936 and 390×844: no overflow, overlay closes, ALL GAMES reopens it, sorts reorder with mocked PostHog data. Physical phone not checked.
+- [ ] Confirm the live endpoint returns 200 after deployment.

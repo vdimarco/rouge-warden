@@ -28,17 +28,18 @@ assert.equal(api.rankGames(api.GAMES,sample.games,'plays')[0].id,'brawl');assert
 assert.throws(()=>api.validateMetrics({...sample,source:'local'}));assert.throws(()=>api.validateMetrics({...sample,games:{fish:{plays:-1}}}));assert.equal(api.duration(90),'1m');assert.equal(api.duration(7200),'2.0h');
 console.log('PASS catalog coverage, four metric sorts, stable ties, malformed data and duration labels');
 async function server(){
-  const oldFetch=global.fetch,oldKey=process.env.POSTHOG_PERSONAL_API_KEY;let fetches=0,fail=false,bad=false;
+  const oldFetch=global.fetch,oldKey=process.env.POSTHOG_PERSONAL_API_KEY;let fetches=0,fail=false,bad=false,nulls=false;
   const path=require.resolve('../../api/arcade-leaderboard');delete require.cache[path];const handler=require(path);
   function res(){return {headers:{},setHeader(k,v){this.headers[k]=v;},status(s){this.code=s;return this;},json(data){this.data=data;return this;}};}
   delete process.env.POSTHOG_PERSONAL_API_KEY;let r=res();await handler({method:'GET'},r);assert.equal(r.code,503);
   process.env.posthog_personal_api_key='test-private-key';r=res();await handler({method:'POST'},r);assert.equal(r.code,405);
-  global.fetch=async(url,options)=>{fetches++;assert.equal(url,'https://us.posthog.com/api/projects/653362/query/');assert.equal(options.headers.Authorization,'Bearer test-private-key');assert.ok(JSON.parse(options.body).query.query.includes('INTERVAL 30 DAY'));if(fail)throw Error('private secret');return {ok:true,json:async()=>({results:bad?[['fish',-1,2,3,4]]:[['fish',90,12,2,100.5]]})};};
+  global.fetch=async(url,options)=>{fetches++;assert.equal(url,'https://us.posthog.com/api/projects/653362/query/');assert.equal(options.headers.Authorization,'Bearer test-private-key');assert.ok(JSON.parse(options.body).query.query.includes('INTERVAL 30 DAY'));if(fail)throw Error('private secret');return {ok:true,json:async()=>({results:bad?[['fish',-1,2,3,4]]:nulls?[['brawl',1,0,0,null],[null,4,4,0,9]]:[['fish',90,12,2,100.5]]})};};
   const a=res(),b=res();await Promise.all([handler({method:'GET',query:{sql:'DROP'}},a),handler({method:'GET'},b)]);assert.equal(fetches,1);assert.equal(a.data.games.fish.plays,12);assert.equal(a.data.games.fish.active_seconds,101);assert.equal(JSON.stringify(a.data).includes('test-private-key'),false);
   r=res();await handler({method:'GET'},r);assert.equal(fetches,1);assert.equal(r.code,200);
   delete require.cache[path];fail=true;r=res();await require(path)({method:'GET'},r);assert.equal(r.code,503);assert.equal(JSON.stringify(r.data).includes('secret'),false);
   delete require.cache[path];fail=false;bad=true;r=res();await require(path)({method:'GET'},r);assert.equal(r.code,503);
+  delete require.cache[path];bad=false;nulls=true;r=res();await require(path)({method:'GET'},r);assert.equal(r.code,200);assert.deepEqual(r.data.games,{brawl:{views:1,plays:0,likes:0,active_seconds:0}});
   global.fetch=oldFetch;if(oldKey)process.env.POSTHOG_PERSONAL_API_KEY=oldKey;else delete process.env.POSTHOG_PERSONAL_API_KEY;delete process.env.posthog_personal_api_key;
-  console.log('PASS aggregate API: missing key, methods, bounded query, coalesced requests, cache, private credential isolation, upstream and malformed response failures');
+  console.log('PASS aggregate API: missing key, methods, bounded query, coalesced requests, cache, private credential isolation, upstream and malformed response failures, null sums and events without a game');
 }
 server().catch(e=>{console.error(e);process.exitCode=1;});

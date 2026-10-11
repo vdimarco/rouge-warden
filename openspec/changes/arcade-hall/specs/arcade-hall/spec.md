@@ -1,12 +1,18 @@
 ## ADDED Requirements
 ### Requirement: Ranked default catalog
-The home page SHALL open All Games using shared PostHog aggregates from the last 30 days. Featured SHALL be the default order: Reel It In, Shore of the Ancients, Breath of the Lake, In Full Swing, Crimson Rogue, River Rush, then remaining games by plays. Explicit plays, views, likes and active time filters SHALL rank solely by the selected PostHog metric. Ties SHALL preserve catalog order. Search SHALL filter titles and subtitles. Local launch counts SHALL NOT appear as global activity. Players SHALL be able to open the original machines and the 3D room.
+The home page SHALL open All Games using shared PostHog aggregates from the last 30 days. Featured SHALL be the default order: Reel It In, Shore of the Ancients, Breath of the Lake, In Full Swing, Crimson Rogue, River Rush, then remaining games by plays. Explicit plays, views, likes and active time filters SHALL rank solely by the selected PostHog metric. Ties SHALL preserve catalog order. Search SHALL filter titles and subtitles. Local launch counts SHALL NOT appear as global activity. Players SHALL be able to open the original machines and the 3D room from visible header controls.
 #### Scenario: Shared popularity
 - **WHEN** PostHog returns activity for multiple games
 - **THEN** all visitors see the same ranking and can sort by each metric
 #### Scenario: No activity or unavailable analytics
 - **WHEN** no production events exist or the read service is unavailable
 - **THEN** the catalog stays playable, reports collecting or unavailable status, and does not fabricate ranks or numbers
+#### Scenario: Sort while analytics are unavailable
+- **WHEN** the read service is unavailable and the visitor selects Plays, Views, Likes or Time
+- **THEN** the button shows as selected, the status line says that ranking by that metric is not available now, and the page asks for the activity again
+#### Scenario: Open the old arcade
+- **WHEN** the visitor selects Old arcade in the header at 1363×936 or 390×844
+- **THEN** All Games closes and the original machines show, and ALL GAMES opens the list again
 ### Requirement: Anonymous game analytics
 Each catalog destination SHALL record one view per page visit and one play on the first player interaction. Active time SHALL count only visible, focused, recently interacted time, excluding the switch dialog. Likes SHALL be a one-time anonymous browser action, deduplicated by anonymous visitor in PostHog. The page SHALL explain these definitions. Preview and local traffic SHALL NOT enter production rankings. Analytics failures and disabled storage SHALL NOT block games. No session replay, input text or personal identifiers SHALL be collected.
 #### Scenario: Play and leave
@@ -18,6 +24,9 @@ Each catalog destination SHALL record one view per page visit and one play on th
 #### Scenario: Secure aggregate reads
 - **WHEN** a visitor requests leaderboard data
 - **THEN** only aggregate game metrics are returned and the private PostHog credential remains server-side
+#### Scenario: Game without active time
+- **WHEN** a game has views or plays but no active-time events, or an event has no game id
+- **THEN** the endpoint returns zero active time for that game, skips the event without a game id, and still returns every other game
 ### Requirement: Walkable neon room
 The room SHALL show lit cabinets with game artwork, neon signs and a cinematic entrance. Desktop and touch controls SHALL move and turn the player, with collision boundaries and a selected-game launch control.
 #### Scenario: Walk to a cabinet
