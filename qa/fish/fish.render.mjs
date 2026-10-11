@@ -190,7 +190,8 @@ window.catchFrame = ({ id, kg, portrait }) => {
 window.ready = true;
 </script></body></html>`;
 
-const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
+  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const errors = [];
 let failed = false, checks = 0;
 const fail = (msg) => { failed = true; console.log("FAIL " + msg); };

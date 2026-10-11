@@ -270,14 +270,23 @@ function eyeTexture(iris, glassy) {
 export function fxUniforms() {
   return { uWag: { value: new THREE.Vector4(0, 0, 0, 0) }, uUnder: { value: 0 }, uWater: { value: new THREE.Color(0x224455) }, uAlpha: { value: 1 }, uKey: { value: 0 } };
 }
-export function fx(mat, u, { wag = true } = {}) {
+export function fx(mat, u, { wag = true, finFlutter = false } = {}) {
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     if (wag) sh.vertexShader = "uniform vec4 uWag;\n" + sh.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>
       {
-        float zz = transformed.z, k = smoothstep(-0.3, 0.5, zz);
-        transformed.x += uWag.y * sin(uWag.x - zz * 7.0) * k * k * 0.11 + uWag.z * (zz + 0.15) * (zz + 0.15) * 0.7;
-        transformed.y += uWag.w * (zz + 0.1) * (zz + 0.1) * 0.5;
+        float zz = transformed.z;
+        // Keep the hooked mouth still while a wave travels through the body to the tail.
+        float body = smoothstep(-0.35, 0.46, zz);
+        float tail = smoothstep(0.04, 0.46, zz);
+        transformed.x += uWag.y * (sin(uWag.x - zz * 5.4) * body * body * 0.10
+          + sin(uWag.x - 2.2) * tail * tail * 0.04);
+        transformed.x += uWag.z * body * body * 0.08;
+        // A smaller lift makes the stroke readable when the fish is broadside to the camera.
+        transformed.y += uWag.y * sin(uWag.x - zz * 4.6 + 1.2) * body * body * 0.05;
+        ${finFlutter ? `// Paired fins paddle in a second rhythm; their roots stay on the body.
+        float pec = (1.0 - smoothstep(0.045, 0.15, abs(zz + 0.28))) * smoothstep(0.02, 0.09, abs(transformed.x));
+        transformed.y += uWag.w * sin(uWag.x * 1.7 + sign(transformed.x) * 1.3) * pec * 0.05;` : ""}
       }`);
     sh.fragmentShader = "uniform float uUnder, uAlpha, uKey; uniform vec3 uWater;\n" + sh.fragmentShader.replace("#include <opaque_fragment>", `
       {
@@ -290,7 +299,7 @@ export function fx(mat, u, { wag = true } = {}) {
       }
       #include <opaque_fragment>`);
   };
-  mat.customProgramCacheKey = () => "fishfx" + (wag ? 1 : 0);
+  mat.customProgramCacheKey = () => "fishfx" + (wag ? 1 : 0) + (finFlutter ? "f" : "");
   return storyMaterial(mat);
 }
 
@@ -521,7 +530,7 @@ function fishParts(sp) {
     g[k].setAttribute("storyNormal", cartoon[k].attributes.normal.clone());
     g[k].computeBoundingSphere(); cartoon[k].computeBoundingSphere();
     g[k].boundingSphere.union(cartoon[k].boundingSphere);
-    g[k].boundingSphere.radius *= 1.1; // include swimming motion around both silhouettes
+    g[k].boundingSphere.radius *= 1.3; // include the fighting tail stroke around both silhouettes
     cartoon[k].dispose();
   }
   geoCache.set(sp.id, g);
@@ -532,7 +541,7 @@ function buildFish(sp) {
   const u = fxUniforms(), lk = sp.look, gold = lk.pattern === "gold";
   const G = fishParts(sp);
   const body = fx(new THREE.MeshPhongMaterial({ map: skinTexture(sp), shininess: gold ? 80 : 45, specular: gold ? 0x806020 : 0x383838, emissive: gold ? 0x6a4a08 : 0x000000, transparent: true }), u);
-  const fins = fx(new THREE.MeshPhongMaterial({ map: finTexture(), vertexColors: true, shininess: 20, specular: 0x222222, side: THREE.DoubleSide, transparent: true, depthWrite: false, alphaTest: 0.02, emissive: gold ? 0x4a3400 : 0x000000 }), u);
+  const fins = fx(new THREE.MeshPhongMaterial({ map: finTexture(), vertexColors: true, shininess: 20, specular: 0x222222, side: THREE.DoubleSide, transparent: true, depthWrite: false, alphaTest: 0.02, emissive: gold ? 0x4a3400 : 0x000000 }), u, { finFlutter: true });
   fins.userData.fin = true;
   // flat sheets: one pass is enough, so a fish is 3 draw calls (three.js draws a see-through, double-sided material twice)
   fins.forceSinglePass = true;

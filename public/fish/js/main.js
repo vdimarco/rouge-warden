@@ -1501,7 +1501,7 @@ function syncSettings() {
   $("#optSound").checked = Sound.isOn();
   $("#optVoice").checked = VoiceCues.enabled;
   $("#optVoice").disabled = !VoiceCues.available();
-  $("#voiceNote").textContent = VoiceCues.available() ? "Bite and hook-set cues. Requires Sound." : "Spoken cues are unavailable on this device.";
+  $("#voiceNote").textContent = VoiceCues.available() ? "British wildlife-style cues. Requires Sound." : "Spoken cues are unavailable on this device.";
   $("#optHaptics").checked = Haptics.enabled;
   $("#optHaptics").disabled = Haptics.kind === "none";
   $("#hapticNote").textContent = Native.onMac ? "This Mac cannot buzz." : Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Taps for controls, casts, bites, and catches; buzz for line pull.";
@@ -1968,7 +1968,7 @@ function reelUpdate(dt) {
   if (s.fish) {
     const f = s.fish;
     // roll: the body turned about its length, in radians
-    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
+    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near, speed: f.speed || 0, move: f.move, reel: crankRate, tension: s.tfrac || 0 });
     world.setLure({ x: L.x, y: L.y, z: L.z, visible: false });
     world.setLine({ from: tip, to: { x: f.x, y: f.jump ? f.y : Math.max(f.y, -0.25), z: f.z }, slack: s.slack ? 1 : clamp(0.5 - s.tfrac * 2, 0, 0.5), visible: true });
   } else {
