@@ -74,35 +74,26 @@ footer p { margin: 0; }
   .look-stick { right: max(16px, env(safe-area-inset-right)); bottom: max(140px, calc(env(safe-area-inset-bottom) + 118px)); }
   #frame:fullscreen .touch-secondary { left: 50%; transform: translateX(-50%); display: flex; }
 
-  /* Fullscreen leaves dedicated touch rails, including on 16:9 phones where
-     the unadjusted stream has no side gutters for the native HUD. */
-  .touch-input #frame:fullscreen {
-    --touch-left-rail: max(4px, env(safe-area-inset-left));
-    --touch-right-rail: max(4px, env(safe-area-inset-right));
-  }
-  .touch-input #frame:fullscreen #video {
-    left: calc(var(--touch-left-rail) + 76px);
-    right: calc(var(--touch-right-rail) + 76px);
-    width: auto;
-  }
+  /* Fill retains every native HUD pixel; wide displays stretch the 16:9 stream. */
+  .touch-input #frame:fullscreen #video video { object-fit: fill; }
   .touch-input #frame:fullscreen .touch-stick { width: 72px; height: 72px; }
-  .touch-input #frame:fullscreen .move-stick { left: var(--touch-left-rail); bottom: max(4px, env(safe-area-inset-bottom)); }
+  .touch-input #frame:fullscreen .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: calc(35% + 8px); }
   .touch-input #frame:fullscreen .stick-label { font-size: 8px; letter-spacing: 0; white-space: nowrap; }
-  .touch-input #frame:fullscreen .look-stick { right: var(--touch-right-rail); top: 80px; bottom: auto; }
+  .touch-input #frame:fullscreen .look-stick { right: max(16px, env(safe-area-inset-right)); top: auto; bottom: calc(35% + 8px); }
   .touch-input #frame:fullscreen .touch-secondary {
-    top: max(54px, calc(env(safe-area-inset-top) + 50px));
-    left: var(--touch-left-rail); right: auto; transform: none;
-    display: grid; grid-template-columns: 72px; gap: 4px;
+    top: max(4px, env(safe-area-inset-top));
+    left: calc(59% - 82px); right: auto; transform: none;
+    display: flex; gap: 4px;
   }
-  .touch-input #frame:fullscreen .touch-secondary button { min-width: 72px; min-height: 44px; padding: 4px; font-size: 10px; }
+  .touch-input #frame:fullscreen .touch-secondary button { width: 52px; min-width: 52px; min-height: 44px; padding: 4px; font-size: 10px; }
   .touch-input #frame:fullscreen .touch-primary {
-    right: var(--touch-right-rail); left: auto; bottom: max(4px, env(safe-area-inset-bottom));
-    grid-template-columns: 72px; gap: 4px;
+    right: auto; left: 42%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(3, 72px); gap: 6px;
   }
   .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 4px; font-size: 11px; }
   .touch-input #frame:fullscreen .touch-primary button:last-child { grid-column: auto; }
   .touch-input #frame:fullscreen .touch-exit {
-    top: max(4px, env(safe-area-inset-top)); left: var(--touch-left-rail); width: 72px; min-width: 72px;
-    min-height: 44px; padding: 4px; font-size: 10px;
+    top: max(4px, env(safe-area-inset-top)); left: calc(59% - 138px); width: 52px; min-width: 52px;
+    min-height: 44px; padding: 2px; font-size: 9px;
   }
 }

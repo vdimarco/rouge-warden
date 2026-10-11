@@ -140,6 +140,7 @@ async function layout(name) {
 }
 
 async function fullscreenClearance(name) {
+  await advancingMedia(`${name}Fullscreen`);
   const geometry = await page.evaluate(() => {
     const bounds = element => {
       const { x, y, width, height } = element.getBoundingClientRect();
@@ -147,21 +148,40 @@ async function fullscreenClearance(name) {
     };
     const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]',
       ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const video = document.querySelector('#video video');
+    const image = bounds(video);
+    // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
+    const hud = [
+      ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
+      ['radar and credits', 0, 480, 280, 240], ['objective', 790, 470, 490, 160],
+      ['speed', 1040, 620, 240, 100], ['prompt', 400, 620, 640, 100],
+      ['completion', 490, 150, 310, 100], ['movement hint', 280, 620, 340, 40]
+    ].map(([name, x, y, width, height]) => ({ name,
+      x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
+      width: width * image.width / 1280, height: height * image.height / 720 }));
     return {
       viewport: { width: innerWidth, height: innerHeight },
-      video: bounds(document.querySelector('#video')),
+      video: bounds(document.querySelector('#video')), image, objectFit: getComputedStyle(video).objectFit, hud,
       targets: selectors.map(selector => ({ selector, ...bounds(document.querySelector(selector)) }))
     };
   });
   const overlap = (a, b) => Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 1 &&
     Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 1;
   assert.equal(await page.evaluate(() => Boolean(document.fullscreenElement)), true);
+  assert.equal(geometry.objectFit, 'fill', 'the complete frame must fill the display without letterboxing or cropping');
+  for (const image of [geometry.video, geometry.image]) {
+    assert.ok(Math.abs(image.x) <= 1 && Math.abs(image.y) <= 1 &&
+      Math.abs(image.width - geometry.viewport.width) <= 1 && Math.abs(image.height - geometry.viewport.height) <= 1,
+    'video container and image must reach all four fullscreen edges');
+  }
   for (const [index, target] of geometry.targets.entries()) {
     assert.ok(target.width >= 44 && target.height >= 44,
       `${target.selector} must remain a >=44 px target (measured ${target.width}×${target.height})`);
     assert.ok(target.x >= 0 && target.y >= 0 && target.x + target.width <= geometry.viewport.width + 1 &&
       target.y + target.height <= geometry.viewport.height + 1, `${target.selector} must fit the viewport`);
-    assert.equal(overlap(target, geometry.video), false, `${target.selector} must leave the native HUD unobscured`);
+    for (const region of geometry.hud) {
+      assert.equal(overlap(target, region), false, `${target.selector} must leave native ${region.name} unobscured`);
+    }
     for (const other of geometry.targets.slice(0, index)) {
       assert.equal(overlap(target, other), false, `${target.selector} must not overlap ${other.selector}`);
     }

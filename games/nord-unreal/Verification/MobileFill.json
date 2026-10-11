@@ -1,0 +1,140 @@
+{
+  "change": "Mobile fullscreen image fills the display",
+  "date_utc": "2026-10-11T14:35:02.737458+00:00",
+  "baseline_commit": "3b7e43fdd6d7d8766c44f30fc01356cd0b9aa4c9",
+  "source_sha256": {
+    "Browser/styles.css": "f36a515acbfb211b8028b252ada602d777723aaa1ea68cac669d3ffa1ae01d9b",
+    "Browser/mobile.test.mjs": "c3523051cd77a9c9b65b63d984e0ba3074221295125fd6aaa91674970e3354ea",
+    "Browser/player.js": "7239d7521d15a5adff3789765346fb7e65b0891d7cdf7bf9d14b0327844e1d75",
+    "Browser/touch-controls.js": "4f14c4dabec5c1202cafde7120f080de3c0ebf904c5cba2ed2d58e0fb4e3e082",
+    "Source/Quebec/QuebecGameplay.cpp": "4d831c4373bf7de2807fa2d0a73e5a8b029605448aefde07e60aadea7910df2a"
+  },
+  "static_sha256": {
+    "index.html": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+    "styles.css": "f36a515acbfb211b8028b252ada602d777723aaa1ea68cac669d3ffa1ae01d9b",
+    "player.js": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+    "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+  },
+  "scope": "CSS and mobile regression only; native game, input bindings, resolution, host and relay unchanged",
+  "rendering": {
+    "mode": "object-fit: fill",
+    "source_resolution": [
+      1280,
+      720
+    ],
+    "horizontal_stretch_at_800x360": 1.25,
+    "cropped": false,
+    "fullscreen_video_edges": "Match viewport within 1px in local measured layouts",
+    "touch_targets": "All ten targets at least 44px, onscreen, pairwise separated and clear of eight mapped native HUD regions"
+  },
+  "checks": {
+    "build": "PASS",
+    "unit_tests": {
+      "result": "PASS",
+      "count": 12
+    },
+    "local_browser": {
+      "desktop": {
+        "path": "Browser/.qa/live-2026-10-11T14-26-04-345Z/summary.json",
+        "sha256": "c2a33ccb13a2bde28efcf727e5f233d4cd4c2baf2a76b199c7a5324d7eb4fa6e",
+        "checks": 7,
+        "passed": true
+      },
+      "mobile": {
+        "path": "Browser/.qa/mobile-2026-10-11T14-24-36-780Z/summary.json",
+        "sha256": "7b9849179de651c6feeb61a08427271a5008d8576a1f6d416433ca09340a8fca",
+        "checks": 6,
+        "passed": true
+      }
+    },
+    "visual_review": {
+      "root": "PASS at 800x360 and 667x375",
+      "independent": "PASS: hud_visual reviewed both actual local fullscreen PNGs; full image, uncropped HUD, readable labels and clear controls; static pixels only",
+      "images": [
+        {
+          "path": "Browser/.qa/mobile-2026-10-11T14-24-36-780Z/landscape-fullscreen.png",
+          "sha256": "105b323f490a8b5af7b9f01796e6a15c23a0bd12d6402250718b7bdb242f445c"
+        },
+        {
+          "path": "Browser/.qa/mobile-2026-10-11T14-24-36-780Z/narrow-landscape-fullscreen.png",
+          "sha256": "b295a9d50c4fb318490e6a314451649beb1ecd419c0a74fc569328aeecab41ff"
+        }
+      ],
+      "deployment_owner": "PASS: fresh preview/public fullscreen at both landscape sizes, portrait and desktop before/after; complete HUD and image coverage",
+      "independent_owner_audit": "PASS: deployment owner browser_player audit of source and local fullscreen, portrait and windowed screenshots"
+    },
+    "preview_and_production": {
+      "preview": {
+        "url": "https://nord-montreal-hvtoiqq6m-vdimarcos-projects.vercel.app",
+        "deployment_id": "dpl_DXFTdRMwuyxDa26QDxzJWYeszNUw",
+        "state": "READY",
+        "static_file_and_header_parity": {
+          "passed": true,
+          "path": "Saved/Tests/MobileFillDelivery/preview-parity.json",
+          "sha256": "5d0c3cb3712a1bfc2a6b6a8507e763b15ace219c7bffcc8fff6ba28a1f79298a"
+        },
+        "browser": {
+          "desktop": {
+            "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/summary.json",
+            "sha256": "ad8e432f2efcba4df7106d2421710393fae022c0f9e54f564b334eb166643154",
+            "checks": 7,
+            "passed": true
+          },
+          "mobile": {
+            "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/summary.json",
+            "sha256": "c5b071a0f3ff66e57485e778ef970bc35f1ce49e8382676503cf839cd74ed8cd",
+            "checks": 6,
+            "passed": true
+          }
+        }
+      },
+      "production": {
+        "url": "https://nord-montreal.vercel.app",
+        "deployment_id": "dpl_55cYWdcQFtXjSYahvpgnZ1NJnM9e",
+        "state": "READY",
+        "static_file_and_header_parity": {
+          "passed": true,
+          "path": "Saved/Tests/MobileFillDelivery/production-parity.json",
+          "sha256": "d767af141839209756024dd21b2572684b91f14f09b45817cb591a4f9bcec343"
+        },
+        "browser": {
+          "desktop": {
+            "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/summary.json",
+            "sha256": "04c9f3e072cc9cd599a8b70cd811aa3205b35561629e2ae0b21d789c9e3cbc30",
+            "checks": 7,
+            "passed": true
+          },
+          "mobile": {
+            "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/summary.json",
+            "sha256": "f3ed02e88a31e65cd564168e5fac0f8bbfa7ae71cd0881e8c157b40f513aa208",
+            "checks": 6,
+            "passed": true
+          }
+        }
+      }
+    }
+  },
+  "initial_attempt": {
+    "report": "Browser/.qa/mobile-2026-10-11T14-24-01-489Z/summary.json",
+    "result": "Local HTTP server absent; no native stream reached. Started owned loopback server and reran successfully."
+  },
+  "cleanup": {
+    "qa_clients_closed": true,
+    "owned_http_server_stopped": true,
+    "no_unreal_jobs_launched": true,
+    "deployment_owner_qa_clients_closed": true,
+    "native_host_restart": false
+  },
+  "not_checked": [
+    "Physical phones",
+    "Off-LAN network path",
+    "Acoustic listening",
+    "All dynamic HUD states and physical-phone safe-area insets"
+  ],
+  "openspec": {
+    "change": "openspec/changes/archive/2026-10-11-nord-mobile-fill",
+    "manual_validation": "PASS: 17 unique requirements, one exact replacement with other requirements and first six scenarios unchanged, seven delta scenarios, four archive files, six completed tasks, six resolving evidence links",
+    "cli": "Unavailable"
+  },
+  "delivery_evidence": "Verification/MobileFillDelivery.json"
+}
