@@ -232,6 +232,10 @@ public:
     virtual void DrawHUD() override;
 private:
     int32 LastMissionIndex = -1;
+    float FirstHUDTime = -1.f;
+    FString LastBriefing;
+    float BriefingUntil = 0.f;
+    float BriefingPausedAt = -1.f;
     float CompletionTime = -10.f;
     FString SoundWord;
     float SoundWordTime = -10.f;

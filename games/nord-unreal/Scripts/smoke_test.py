@@ -80,6 +80,12 @@ def discover():
     worlds = u.EditorLevelLibrary.get_pie_worlds(True)
     server = next((world for world in worlds if u.GameplayStatics.get_game_mode(world)), None)
     client = next((world for world in worlds if not u.GameplayStatics.get_game_mode(world)), None)
+    if "-NordRenderChecks" in u.SystemLibrary.get_command_line():
+        # Render one peer, as in story inspection, to avoid duplicate GPU buffers.
+        if server:
+            u.GameplayStatics.set_enable_world_rendering(server, False)
+        if client:
+            u.GameplayStatics.set_enable_world_rendering(client, True)
     if not server or not client:
         return False
     server_pcs, client_pcs = actors(server, "Controller"), actors(client, "Controller")
@@ -283,6 +289,9 @@ def completed():
 
 
 def begin():
+    if "-NordRenderChecks" in u.SystemLibrary.get_command_line():
+        LEVELS.editor_set_viewport_realtime(False)
+        STATE["viewport_realtime_override"] = True
     SYSTEM.call_method("SetBytePropertyByName", (SETTINGS, "PlayNetMode", 1))
     SETTINGS.set_editor_property("PlayNumberOfClients", 2)
     SETTINGS.set_editor_property("RunUnderOneProcess", True)
@@ -725,6 +734,8 @@ def capture_check(name):
         STATE["client_pc"].set_control_rotation(u.Rotator(pitch=-8, yaw=yaw))
     if name not in shots:
         return
+    assert u.GameplayStatics.get_enable_world_rendering(STATE["client"]), "Inspection client must render"
+    assert not u.GameplayStatics.get_enable_world_rendering(STATE["server"]), "Inspection host rendering must be disabled"
     import re
     commandline = u.SystemLibrary.get_command_line()
     match = re.search(r"-NordCaptureWidth=(1280|1920)(?: |$)", commandline)
@@ -761,6 +772,9 @@ def finish(error=None):
             SETTINGS.set_editor_property(name, value)
         SYSTEM.call_method("SetBytePropertyByName", (SETTINGS, "PlayNetMode", ORIGINAL_MODE))
     finally:
+        if STATE.pop("viewport_realtime_override", False):
+            LEVELS.editor_set_viewport_realtime(True)
+            REPORT["editor_viewport_realtime_override_released"] = True
         commandline = u.SystemLibrary.get_command_line()
         name = "SmokePackagedPeer" if "-NordPackagedPeer" in commandline else "SmokeDropout" if "-NordDropout" in commandline else "SmokeLag" if "-NordLag" in commandline else "SmokeRender" + str(REPORT["render_captures"][0]["width"]) if REPORT.get("render_captures") else "Smoke"
         path = Path(u.Paths.project_saved_dir()) / "Tests" / (name + ".json")
