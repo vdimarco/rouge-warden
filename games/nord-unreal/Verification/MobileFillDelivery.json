@@ -1,0 +1,2391 @@
+{
+  "change": "nord-mobile-fill",
+  "accepted_at_utc": "2026-10-11T14:36:44.223026+00:00",
+  "baseline_commit": "3b7e43fdd6d7d8766c44f30fc01356cd0b9aa4c9",
+  "scope": "CSS fullscreen presentation and real-media layout regression; no native/package/map/input protocol changes",
+  "local_handoff": {
+    "baseline": "3b7e43fdd6d7d8766c44f30fc01356cd0b9aa4c9",
+    "source_sha256": {
+      "Browser/styles.css": "f36a515acbfb211b8028b252ada602d777723aaa1ea68cac669d3ffa1ae01d9b",
+      "Browser/mobile.test.mjs": "c3523051cd77a9c9b65b63d984e0ba3074221295125fd6aaa91674970e3354ea",
+      "Browser/player.js": "7239d7521d15a5adff3789765346fb7e65b0891d7cdf7bf9d14b0327844e1d75",
+      "Browser/touch-controls.js": "4f14c4dabec5c1202cafde7120f080de3c0ebf904c5cba2ed2d58e0fb4e3e082",
+      "Source/Quebec/QuebecGameplay.cpp": "4d831c4373bf7de2807fa2d0a73e5a8b029605448aefde07e60aadea7910df2a"
+    },
+    "static_sha256": {
+      "index.html": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+      "styles.css": "f36a515acbfb211b8028b252ada602d777723aaa1ea68cac669d3ffa1ae01d9b",
+      "player.js": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+      "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+    },
+    "local_reports": {
+      "desktop": {
+        "path": "Browser/.qa/live-2026-10-11T14-26-04-345Z/summary.json",
+        "sha256": "c2a33ccb13a2bde28efcf727e5f233d4cd4c2baf2a76b199c7a5324d7eb4fa6e",
+        "checks": 7,
+        "passed": true
+      },
+      "mobile": {
+        "path": "Browser/.qa/mobile-2026-10-11T14-24-36-780Z/summary.json",
+        "sha256": "7b9849179de651c6feeb61a08427271a5008d8576a1f6d416433ca09340a8fca",
+        "checks": 6,
+        "passed": true
+      }
+    },
+    "unit_checks": 12,
+    "local_visual_review": "RootPASS800x360/667x375; independentreviewpending",
+    "limitations": [
+      "16:9stream stretches25%horizontallyat800x360;noHUDcrop",
+      "physicalphone/offLAN/audio notchecked"
+    ],
+    "qa_clients_closed": true,
+    "owned_http_server_stopped": true
+  },
+  "deployment": {
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "method": "Uploaded exact prebuilt static files plus generated static-only vercel.json; preview accepted before identical production payload",
+    "manifest": [
+      {
+        "file": "games/nord-unreal/Browser/dist/index.html",
+        "target": "index.html",
+        "size": 3555,
+        "sha": "7a0b256e85cf64301e5319f61984878df87ad49b",
+        "sha256": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8"
+      },
+      {
+        "file": "games/nord-unreal/Browser/dist/styles.css",
+        "target": "styles.css",
+        "size": 8313,
+        "sha": "c13d9cfa8c1ecef59140fa87a57a4dca0e41c158",
+        "sha256": "f36a515acbfb211b8028b252ada602d777723aaa1ea68cac669d3ffa1ae01d9b"
+      },
+      {
+        "file": "games/nord-unreal/Browser/dist/player.js",
+        "target": "player.js",
+        "size": 240907,
+        "sha": "219b3f335b3ed550ffc182335374064f9d85b81e",
+        "sha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d"
+      },
+      {
+        "file": "games/nord-unreal/Browser/dist/THIRD_PARTY_NOTICES.txt",
+        "target": "THIRD_PARTY_NOTICES.txt",
+        "size": 15768,
+        "sha": "7e713433082d23c87a2fd32540a99234ae4764b0",
+        "sha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+      },
+      {
+        "file": "games/nord-unreal/Saved/Tests/MobileFillDelivery/vercel-static.json",
+        "target": "vercel.json",
+        "size": 595,
+        "sha": "977f4d59d5369caaacd78dabd3cc1645846e967a",
+        "sha256": "5cb3fe71375eecf4d5e4097c940a279fda15cefd17bd94ac18b4172b2f6775d6"
+      }
+    ],
+    "preview": {
+      "id": "dpl_DXFTdRMwuyxDa26QDxzJWYeszNUw",
+      "name": "nord-montreal",
+      "url": "nord-montreal-hvtoiqq6m-vdimarcos-projects.vercel.app",
+      "type": "LAMBDAS",
+      "state": "READY",
+      "createdAt": 1791729031371,
+      "creator": {
+        "uid": "tTXh59Wp8pwwu78jSEoQJres",
+        "username": "vdimarco"
+      },
+      "project": {
+        "id": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+        "name": "nord-montreal",
+        "framework": null
+      },
+      "meta": {},
+      "alias": [],
+      "target": null,
+      "regions": [
+        "iad1"
+      ],
+      "buildingAt": 1791729032272,
+      "ready": 1791729033419,
+      "readyState": "READY",
+      "aliasError": null
+    },
+    "production": {
+      "id": "dpl_55cYWdcQFtXjSYahvpgnZ1NJnM9e",
+      "name": "nord-montreal",
+      "url": "nord-montreal-pisuazfp4-vdimarcos-projects.vercel.app",
+      "type": "LAMBDAS",
+      "state": "READY",
+      "createdAt": 1791729121935,
+      "creator": {
+        "uid": "tTXh59Wp8pwwu78jSEoQJres",
+        "username": "vdimarco"
+      },
+      "project": {
+        "id": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+        "name": "nord-montreal",
+        "framework": null
+      },
+      "meta": {},
+      "alias": [
+        "nord-montreal.vercel.app",
+        "nord-montreal-vdimarcos-projects.vercel.app"
+      ],
+      "target": "production",
+      "regions": [
+        "iad1"
+      ],
+      "buildingAt": 1791729122879,
+      "ready": 1791729124397,
+      "readyState": "READY",
+      "aliasError": null
+    },
+    "preview_file_parity": {
+      "url": "https://nord-montreal-hvtoiqq6m-vdimarcos-projects.vercel.app",
+      "at": "2026-10-11T14:31:02.828182+00:00",
+      "passed": true,
+      "files": [
+        {
+          "file": "index.html",
+          "status": 200,
+          "size": 3555,
+          "sha256": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        },
+        {
+          "file": "styles.css",
+          "status": 200,
+          "size": 8313,
+          "sha256": "f36a515acbfb211b8028b252ada602d777723aaa1ea68cac669d3ffa1ae01d9b",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        },
+        {
+          "file": "player.js",
+          "status": 200,
+          "size": 240907,
+          "sha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        },
+        {
+          "file": "THIRD_PARTY_NOTICES.txt",
+          "status": 200,
+          "size": 15768,
+          "sha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        }
+      ]
+    },
+    "production_file_parity": {
+      "url": "https://nord-montreal.vercel.app",
+      "at": "2026-10-11T14:32:32.872968+00:00",
+      "passed": true,
+      "files": [
+        {
+          "file": "index.html",
+          "status": 200,
+          "size": 3555,
+          "sha256": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        },
+        {
+          "file": "styles.css",
+          "status": 200,
+          "size": 8313,
+          "sha256": "f36a515acbfb211b8028b252ada602d777723aaa1ea68cac669d3ffa1ae01d9b",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        },
+        {
+          "file": "player.js",
+          "status": 200,
+          "size": 240907,
+          "sha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        },
+        {
+          "file": "THIRD_PARTY_NOTICES.txt",
+          "status": 200,
+          "size": 15768,
+          "sha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
+          "headers": {
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "no-referrer",
+            "permissions-policy": "camera=(), microphone=()",
+            "cache-control": "public, max-age=0, must-revalidate"
+          }
+        }
+      ]
+    }
+  },
+  "checks": {
+    "preview": {
+      "desktop": {
+        "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/summary.json",
+        "sha256": "ad8e432f2efcba4df7106d2421710393fae022c0f9e54f564b334eb166643154",
+        "startedAt": "2026-10-11T14:31:03.115Z",
+        "finishedAt": "2026-10-11T14:31:23.767Z",
+        "playerUrl": "https://nord-montreal-hvtoiqq6m-vdimarcos-projects.vercel.app/",
+        "passed": true,
+        "checks": [
+          {
+            "name": "host real stream",
+            "passed": true,
+            "durationMs": 2417
+          },
+          {
+            "name": "friend independent real stream",
+            "passed": true,
+            "durationMs": 2042
+          },
+          {
+            "name": "host native input and Escape release",
+            "passed": true,
+            "durationMs": 2892
+          },
+          {
+            "name": "friend native input and Escape release",
+            "passed": true,
+            "durationMs": 2899
+          },
+          {
+            "name": "occupied host slot rejects a third browser",
+            "passed": true,
+            "durationMs": 465
+          },
+          {
+            "name": "occupied browser reconnects after host frees its slot",
+            "passed": true,
+            "durationMs": 4205
+          },
+          {
+            "name": "original host reconnects and retains Disconnect control",
+            "passed": true,
+            "durationMs": 4647
+          }
+        ],
+        "media": {
+          "host": {
+            "currentTime": 1.586,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 46,
+            "framesPerSecond": 29,
+            "videoBytes": 1269710,
+            "audioPackets": 160,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 27.29693741677763
+          },
+          "friend": {
+            "currentTime": 1.597,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 46,
+            "framesPerSecond": 30,
+            "videoBytes": 1338596,
+            "audioPackets": 157,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 29.274783765801732
+          },
+          "recovered-slot": {
+            "currentTime": 1.61,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 44,
+            "framesPerSecond": 29,
+            "videoBytes": 1157709,
+            "audioPackets": 209,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 27.29693741677763
+          },
+          "host-reconnected": {
+            "currentTime": 1.598,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 45,
+            "framesPerSecond": 30,
+            "videoBytes": 1281959,
+            "audioPackets": 186,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 27.96271637816245
+          },
+          "friend-still-connected": {
+            "currentTime": 16.925,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 503,
+            "framesPerSecond": 30,
+            "videoBytes": 20173168,
+            "audioPackets": 932,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 29.274783765801732
+          }
+        },
+        "diagnostics": [
+          {
+            "player": "host",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          },
+          {
+            "player": "host",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          },
+          {
+            "player": "friend",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          },
+          {
+            "player": "occupied",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          }
+        ],
+        "limits": [
+          "Input screenshots require visual review; native position/story progress are not asserted.",
+          "Headless playback does not verify audible sound or driving feel.",
+          "Testing from the host PC does not establish external NAT reachability."
+        ],
+        "networkMode": "ordinary",
+        "dnsOverride": null
+      },
+      "mobile": {
+        "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/summary.json",
+        "sha256": "c5b071a0f3ff66e57485e778ef970bc35f1ce49e8382676503cf839cd74ed8cd",
+        "startedAt": "2026-10-11T14:31:30.131Z",
+        "finishedAt": "2026-10-11T14:31:39.937Z",
+        "playerUrl": "https://nord-montreal-hvtoiqq6m-vdimarcos-projects.vercel.app/",
+        "passed": true,
+        "checks": [
+          {
+            "name": "real mobile media",
+            "passed": true,
+            "durationMs": 1204
+          },
+          {
+            "name": "portrait controls fit and meet target size",
+            "passed": true,
+            "durationMs": 33
+          },
+          {
+            "name": "simultaneous move, look and jump use the native data channel",
+            "passed": true,
+            "durationMs": 2193
+          },
+          {
+            "name": "landscape controls fit and fullscreen exit works",
+            "passed": true,
+            "durationMs": 4117
+          },
+          {
+            "name": "action buttons support keyboard activation without duplicate touch clicks",
+            "passed": true,
+            "durationMs": 535
+          },
+          {
+            "name": "touch release on disconnect leaves no held native key",
+            "passed": true,
+            "durationMs": 288
+          }
+        ],
+        "media": {
+          "initial": {
+            "before": {
+              "currentTime": 0.099,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 4,
+              "videoBytes": 54229,
+              "audioPackets": 88,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 1.315,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 38,
+              "videoBytes": 965250,
+              "audioPackets": 149,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "duringTouch": {
+            "before": {
+              "currentTime": 2.128,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 61,
+              "videoBytes": 1911936,
+              "audioPackets": 191,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 3.35,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 98,
+              "videoBytes": 3185104,
+              "audioPackets": 252,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "landscapeFullscreen": {
+            "before": {
+              "currentTime": 3.681,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 109,
+              "videoBytes": 3605763,
+              "audioPackets": 270,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 4.88,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 145,
+              "videoBytes": 5106774,
+              "audioPackets": 331,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "narrowLandscape": {
+            "before": {
+              "currentTime": 5.18,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 153,
+              "videoBytes": 5367396,
+              "audioPackets": 346,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 6.373,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 189,
+              "videoBytes": 6206939,
+              "audioPackets": 407,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "narrow-landscapeFullscreen": {
+            "before": {
+              "currentTime": 6.373,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 189,
+              "videoBytes": 6206939,
+              "audioPackets": 407,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 7.573,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 225,
+              "videoBytes": 7732884,
+              "audioPackets": 468,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          }
+        },
+        "diagnostics": [
+          {
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()",
+            "location": {
+              "url": "https://nord-montreal-hvtoiqq6m-vdimarcos-projects.vercel.app/favicon.ico",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          },
+          {
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()",
+            "location": {
+              "url": "https://nord-montreal-hvtoiqq6m-vdimarcos-projects.vercel.app/favicon.ico",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          }
+        ],
+        "limits": [
+          "Chromium touch emulation is not a physical iOS or Android device.",
+          "This PC cannot establish a phone carrier or off-LAN media path.",
+          "Decoded video and input packets do not establish audible sound or driving feel."
+        ],
+        "layout_geometry": {
+          "portraitLayout": {
+            "viewport": {
+              "width": 360,
+              "height": 800
+            },
+            "overflowX": false,
+            "visible": true,
+            "targets": [
+              {
+                "selector": "[data-stick=\"move\"]",
+                "width": 112,
+                "height": 112,
+                "x": 16,
+                "y": 548.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "width": 112,
+                "height": 112,
+                "x": 232,
+                "y": 548.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "width": 105.328125,
+                "height": 45,
+                "x": 16,
+                "y": 691.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "width": 105.328125,
+                "height": 45,
+                "x": 127.328125,
+                "y": 691.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "width": 105.34375,
+                "height": 45,
+                "x": 238.65625,
+                "y": 691.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "width": 49.34375,
+                "height": 44,
+                "x": 107.90625,
+                "y": 99,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "width": 67.375,
+                "height": 44,
+                "x": 163.25,
+                "y": 99,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "width": 48.6875,
+                "height": 44,
+                "x": 236.625,
+                "y": 99,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "width": 56.6875,
+                "height": 44,
+                "x": 291.3125,
+                "y": 99,
+                "displayed": true
+              }
+            ]
+          },
+          "landscapeLayout": {
+            "viewport": {
+              "width": 800,
+              "height": 360
+            },
+            "overflowX": false,
+            "visible": true,
+            "targets": [
+              {
+                "selector": "[data-stick=\"move\"]",
+                "width": 100,
+                "height": 100,
+                "x": 16,
+                "y": 238,
+                "displayed": true
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "width": 100,
+                "height": 100,
+                "x": 684,
+                "y": 120,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "width": 62,
+                "height": 45,
+                "x": 658,
+                "y": 242,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "width": 62,
+                "height": 45,
+                "x": 726,
+                "y": 242,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "width": 130,
+                "height": 45,
+                "x": 658,
+                "y": 293,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 119,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 119,
+                "displayed": true
+              }
+            ]
+          },
+          "landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 800,
+              "height": 360
+            },
+            "video": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 360
+            },
+            "image": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 360
+            },
+            "objectFit": "fill",
+            "hud": [
+              {
+                "name": "briefing",
+                "x": 0,
+                "y": 0,
+                "width": 300,
+                "height": 100
+              },
+              {
+                "name": "identity",
+                "x": 650,
+                "y": 0,
+                "width": 150,
+                "height": 60
+              },
+              {
+                "name": "radar and credits",
+                "x": 0,
+                "y": 240,
+                "width": 175,
+                "height": 120
+              },
+              {
+                "name": "objective",
+                "x": 493.75,
+                "y": 235,
+                "width": 306.25,
+                "height": 80
+              },
+              {
+                "name": "speed",
+                "x": 650,
+                "y": 310,
+                "width": 150,
+                "height": 50
+              },
+              {
+                "name": "prompt",
+                "x": 250,
+                "y": 310,
+                "width": 400,
+                "height": 50
+              },
+              {
+                "name": "completion",
+                "x": 306.25,
+                "y": 75,
+                "width": 193.75,
+                "height": 50
+              },
+              {
+                "name": "movement hint",
+                "x": 175,
+                "y": 310,
+                "width": 212.5,
+                "height": 20
+              }
+            ],
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 333.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 16,
+                "y": 154,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 712,
+                "y": 154,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 222,
+                "y": 258.40625,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 300,
+                "y": 258.40625,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 378,
+                "y": 258.40625,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 389.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 445.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 501.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 557.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              }
+            ]
+          },
+          "narrowLandscapeLayout": {
+            "viewport": {
+              "width": 667,
+              "height": 375
+            },
+            "overflowX": false,
+            "visible": true,
+            "targets": [
+              {
+                "selector": "[data-stick=\"move\"]",
+                "width": 100,
+                "height": 100,
+                "x": 16,
+                "y": 253,
+                "displayed": true
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "width": 100,
+                "height": 100,
+                "x": 551,
+                "y": 135,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "width": 62,
+                "height": 45,
+                "x": 525,
+                "y": 257,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "width": 62,
+                "height": 45,
+                "x": 593,
+                "y": 257,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "width": 130,
+                "height": 45,
+                "x": 525,
+                "y": 308,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 119,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 119,
+                "displayed": true
+              }
+            ]
+          },
+          "narrow-landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 667,
+              "height": 375
+            },
+            "video": {
+              "x": 0,
+              "y": 0,
+              "width": 667,
+              "height": 375
+            },
+            "image": {
+              "x": 0,
+              "y": 0,
+              "width": 667,
+              "height": 375
+            },
+            "objectFit": "fill",
+            "hud": [
+              {
+                "name": "briefing",
+                "x": 0,
+                "y": 0,
+                "width": 250.125,
+                "height": 104.16666666666667
+              },
+              {
+                "name": "identity",
+                "x": 541.9375,
+                "y": 0,
+                "width": 125.0625,
+                "height": 62.5
+              },
+              {
+                "name": "radar and credits",
+                "x": 0,
+                "y": 250,
+                "width": 145.90625,
+                "height": 125
+              },
+              {
+                "name": "objective",
+                "x": 411.6640625,
+                "y": 244.79166666666666,
+                "width": 255.3359375,
+                "height": 83.33333333333333
+              },
+              {
+                "name": "speed",
+                "x": 541.9375,
+                "y": 322.9166666666667,
+                "width": 125.0625,
+                "height": 52.083333333333336
+              },
+              {
+                "name": "prompt",
+                "x": 208.4375,
+                "y": 322.9166666666667,
+                "width": 333.5,
+                "height": 52.083333333333336
+              },
+              {
+                "name": "completion",
+                "x": 255.3359375,
+                "y": 78.125,
+                "width": 161.5390625,
+                "height": 52.083333333333336
+              },
+              {
+                "name": "movement hint",
+                "x": 145.90625,
+                "y": 322.9166666666667,
+                "width": 177.171875,
+                "height": 20.833333333333332
+              }
+            ],
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 255.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 16,
+                "y": 163.75,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 579,
+                "y": 163.75,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 166.125,
+                "y": 271,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 244.125,
+                "y": 271,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 322.125,
+                "y": 271,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 311.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 367.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 423.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 479.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              }
+            ]
+          }
+        },
+        "input_result": {
+          "three_finger_mean_rgb_delta": 22.800636574074073,
+          "real_three_finger_packet_count": 4,
+          "comic_activation": {
+            "keyboard": [
+              {
+                "id": 60,
+                "bytes": [
+                  60,
+                  113,
+                  0
+                ],
+                "readyState": "open",
+                "label": "Player41",
+                "at": 8679.899999976158
+              },
+              {
+                "id": 61,
+                "bytes": [
+                  61,
+                  113
+                ],
+                "readyState": "open",
+                "label": "Player41",
+                "at": 8800.099999964237
+              }
+            ],
+            "touch": [
+              {
+                "id": 60,
+                "bytes": [
+                  60,
+                  113,
+                  0
+                ],
+                "readyState": "open",
+                "label": "Player41",
+                "at": 9020.5
+              },
+              {
+                "id": 61,
+                "bytes": [
+                  61,
+                  113
+                ],
+                "readyState": "open",
+                "label": "Player41",
+                "at": 9020.800000011921
+              }
+            ]
+          },
+          "disconnect_packet_count": 2
+        },
+        "logging": {
+          "context": {
+            "level": 2,
+            "stack": false
+          },
+          "spam": []
+        }
+      }
+    },
+    "production": {
+      "desktop": {
+        "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/summary.json",
+        "sha256": "04c9f3e072cc9cd599a8b70cd811aa3205b35561629e2ae0b21d789c9e3cbc30",
+        "startedAt": "2026-10-11T14:32:33.133Z",
+        "finishedAt": "2026-10-11T14:32:54.282Z",
+        "playerUrl": "https://nord-montreal.vercel.app/",
+        "passed": true,
+        "checks": [
+          {
+            "name": "host real stream",
+            "passed": true,
+            "durationMs": 2742
+          },
+          {
+            "name": "friend independent real stream",
+            "passed": true,
+            "durationMs": 1946
+          },
+          {
+            "name": "host native input and Escape release",
+            "passed": true,
+            "durationMs": 2915
+          },
+          {
+            "name": "friend native input and Escape release",
+            "passed": true,
+            "durationMs": 2929
+          },
+          {
+            "name": "occupied host slot rejects a third browser",
+            "passed": true,
+            "durationMs": 273
+          },
+          {
+            "name": "occupied browser reconnects after host frees its slot",
+            "passed": true,
+            "durationMs": 4394
+          },
+          {
+            "name": "original host reconnects and retains Disconnect control",
+            "passed": true,
+            "durationMs": 4777
+          }
+        ],
+        "media": {
+          "host": {
+            "currentTime": 1.583,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 46,
+            "framesPerSecond": 30,
+            "videoBytes": 1260752,
+            "audioPackets": 209,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 28.60944777112442
+          },
+          "friend": {
+            "currentTime": 1.603,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 45,
+            "framesPerSecond": 30,
+            "videoBytes": 1222811,
+            "audioPackets": 116,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 28.62849533954727
+          },
+          "recovered-slot": {
+            "currentTime": 1.606,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 45,
+            "framesPerSecond": 30,
+            "videoBytes": 1212719,
+            "audioPackets": 186,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 27.96271637816245
+          },
+          "host-reconnected": {
+            "currentTime": 1.583,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 44,
+            "framesPerSecond": 29,
+            "videoBytes": 1199656,
+            "audioPackets": 163,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 27.278775781769795
+          },
+          "friend-still-connected": {
+            "currentTime": 16.929,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 505,
+            "framesPerSecond": 30,
+            "videoBytes": 20122507,
+            "audioPackets": 894,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 30.605455755156356
+          }
+        },
+        "diagnostics": [
+          {
+            "player": "host",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          },
+          {
+            "player": "host",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          },
+          {
+            "player": "friend",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          },
+          {
+            "player": "occupied",
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()"
+          }
+        ],
+        "limits": [
+          "Input screenshots require visual review; native position/story progress are not asserted.",
+          "Headless playback does not verify audible sound or driving feel.",
+          "Testing from the host PC does not establish external NAT reachability."
+        ],
+        "networkMode": "ordinary",
+        "dnsOverride": null
+      },
+      "mobile": {
+        "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/summary.json",
+        "sha256": "f3ed02e88a31e65cd564168e5fac0f8bbfa7ae71cd0881e8c157b40f513aa208",
+        "startedAt": "2026-10-11T14:33:06.975Z",
+        "finishedAt": "2026-10-11T14:33:16.765Z",
+        "playerUrl": "https://nord-montreal.vercel.app/",
+        "passed": true,
+        "checks": [
+          {
+            "name": "real mobile media",
+            "passed": true,
+            "durationMs": 1203
+          },
+          {
+            "name": "portrait controls fit and meet target size",
+            "passed": true,
+            "durationMs": 48
+          },
+          {
+            "name": "simultaneous move, look and jump use the native data channel",
+            "passed": true,
+            "durationMs": 2211
+          },
+          {
+            "name": "landscape controls fit and fullscreen exit works",
+            "passed": true,
+            "durationMs": 4136
+          },
+          {
+            "name": "action buttons support keyboard activation without duplicate touch clicks",
+            "passed": true,
+            "durationMs": 534
+          },
+          {
+            "name": "touch release on disconnect leaves no held native key",
+            "passed": true,
+            "durationMs": 289
+          }
+        ],
+        "media": {
+          "initial": {
+            "before": {
+              "currentTime": 0.118,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 4,
+              "videoBytes": 41767,
+              "audioPackets": 68,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 1.331,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 37,
+              "videoBytes": 901346,
+              "audioPackets": 129,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "duringTouch": {
+            "before": {
+              "currentTime": 2.171,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 60,
+              "videoBytes": 1909669,
+              "audioPackets": 172,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 3.346,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 97,
+              "videoBytes": 3108123,
+              "audioPackets": 234,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "landscapeFullscreen": {
+            "before": {
+              "currentTime": 3.673,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 107,
+              "videoBytes": 3493517,
+              "audioPackets": 251,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 4.871,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 143,
+              "videoBytes": 4805814,
+              "audioPackets": 314,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "narrowLandscape": {
+            "before": {
+              "currentTime": 5.165,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 152,
+              "videoBytes": 5073662,
+              "audioPackets": 327,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 6.392,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 188,
+              "videoBytes": 5957136,
+              "audioPackets": 388,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "narrow-landscapeFullscreen": {
+            "before": {
+              "currentTime": 6.392,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 188,
+              "videoBytes": 5957136,
+              "audioPackets": 388,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 7.591,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 224,
+              "videoBytes": 7465510,
+              "audioPackets": 450,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          }
+        },
+        "diagnostics": [
+          {
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()",
+            "location": {
+              "url": "https://nord-montreal.vercel.app/favicon.ico",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          },
+          {
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()",
+            "location": {
+              "url": "https://nord-montreal.vercel.app/favicon.ico",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          }
+        ],
+        "limits": [
+          "Chromium touch emulation is not a physical iOS or Android device.",
+          "This PC cannot establish a phone carrier or off-LAN media path.",
+          "Decoded video and input packets do not establish audible sound or driving feel."
+        ],
+        "layout_geometry": {
+          "portraitLayout": {
+            "viewport": {
+              "width": 360,
+              "height": 800
+            },
+            "overflowX": false,
+            "visible": true,
+            "targets": [
+              {
+                "selector": "[data-stick=\"move\"]",
+                "width": 112,
+                "height": 112,
+                "x": 16,
+                "y": 548.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "width": 112,
+                "height": 112,
+                "x": 232,
+                "y": 548.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "width": 105.328125,
+                "height": 45,
+                "x": 16,
+                "y": 691.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "width": 105.328125,
+                "height": 45,
+                "x": 127.328125,
+                "y": 691.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "width": 105.34375,
+                "height": 45,
+                "x": 238.65625,
+                "y": 691.3125,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "width": 49.34375,
+                "height": 44,
+                "x": 107.90625,
+                "y": 99,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "width": 67.375,
+                "height": 44,
+                "x": 163.25,
+                "y": 99,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "width": 48.6875,
+                "height": 44,
+                "x": 236.625,
+                "y": 99,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "width": 56.6875,
+                "height": 44,
+                "x": 291.3125,
+                "y": 99,
+                "displayed": true
+              }
+            ]
+          },
+          "landscapeLayout": {
+            "viewport": {
+              "width": 800,
+              "height": 360
+            },
+            "overflowX": false,
+            "visible": true,
+            "targets": [
+              {
+                "selector": "[data-stick=\"move\"]",
+                "width": 100,
+                "height": 100,
+                "x": 16,
+                "y": 238,
+                "displayed": true
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "width": 100,
+                "height": 100,
+                "x": 684,
+                "y": 120,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "width": 62,
+                "height": 45,
+                "x": 658,
+                "y": 242,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "width": 62,
+                "height": 45,
+                "x": 726,
+                "y": 242,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "width": 130,
+                "height": 45,
+                "x": 658,
+                "y": 293,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 119,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 119,
+                "displayed": true
+              }
+            ]
+          },
+          "landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 800,
+              "height": 360
+            },
+            "video": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 360
+            },
+            "image": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 360
+            },
+            "objectFit": "fill",
+            "hud": [
+              {
+                "name": "briefing",
+                "x": 0,
+                "y": 0,
+                "width": 300,
+                "height": 100
+              },
+              {
+                "name": "identity",
+                "x": 650,
+                "y": 0,
+                "width": 150,
+                "height": 60
+              },
+              {
+                "name": "radar and credits",
+                "x": 0,
+                "y": 240,
+                "width": 175,
+                "height": 120
+              },
+              {
+                "name": "objective",
+                "x": 493.75,
+                "y": 235,
+                "width": 306.25,
+                "height": 80
+              },
+              {
+                "name": "speed",
+                "x": 650,
+                "y": 310,
+                "width": 150,
+                "height": 50
+              },
+              {
+                "name": "prompt",
+                "x": 250,
+                "y": 310,
+                "width": 400,
+                "height": 50
+              },
+              {
+                "name": "completion",
+                "x": 306.25,
+                "y": 75,
+                "width": 193.75,
+                "height": 50
+              },
+              {
+                "name": "movement hint",
+                "x": 175,
+                "y": 310,
+                "width": 212.5,
+                "height": 20
+              }
+            ],
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 333.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 16,
+                "y": 154,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 712,
+                "y": 154,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 222,
+                "y": 258.40625,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 300,
+                "y": 258.40625,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 378,
+                "y": 258.40625,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 389.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 445.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 501.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 557.984375,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              }
+            ]
+          },
+          "narrowLandscapeLayout": {
+            "viewport": {
+              "width": 667,
+              "height": 375
+            },
+            "overflowX": false,
+            "visible": true,
+            "targets": [
+              {
+                "selector": "[data-stick=\"move\"]",
+                "width": 100,
+                "height": 100,
+                "x": 16,
+                "y": 253,
+                "displayed": true
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "width": 100,
+                "height": 100,
+                "x": 551,
+                "y": 135,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "width": 62,
+                "height": 45,
+                "x": 525,
+                "y": 257,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "width": 62,
+                "height": 45,
+                "x": 593,
+                "y": 257,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "width": 130,
+                "height": 45,
+                "x": 525,
+                "y": 308,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 69,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "width": 52,
+                "height": 44,
+                "x": 12,
+                "y": 119,
+                "displayed": true
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "width": 52,
+                "height": 44,
+                "x": 70,
+                "y": 119,
+                "displayed": true
+              }
+            ]
+          },
+          "narrow-landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 667,
+              "height": 375
+            },
+            "video": {
+              "x": 0,
+              "y": 0,
+              "width": 667,
+              "height": 375
+            },
+            "image": {
+              "x": 0,
+              "y": 0,
+              "width": 667,
+              "height": 375
+            },
+            "objectFit": "fill",
+            "hud": [
+              {
+                "name": "briefing",
+                "x": 0,
+                "y": 0,
+                "width": 250.125,
+                "height": 104.16666666666667
+              },
+              {
+                "name": "identity",
+                "x": 541.9375,
+                "y": 0,
+                "width": 125.0625,
+                "height": 62.5
+              },
+              {
+                "name": "radar and credits",
+                "x": 0,
+                "y": 250,
+                "width": 145.90625,
+                "height": 125
+              },
+              {
+                "name": "objective",
+                "x": 411.6640625,
+                "y": 244.79166666666666,
+                "width": 255.3359375,
+                "height": 83.33333333333333
+              },
+              {
+                "name": "speed",
+                "x": 541.9375,
+                "y": 322.9166666666667,
+                "width": 125.0625,
+                "height": 52.083333333333336
+              },
+              {
+                "name": "prompt",
+                "x": 208.4375,
+                "y": 322.9166666666667,
+                "width": 333.5,
+                "height": 52.083333333333336
+              },
+              {
+                "name": "completion",
+                "x": 255.3359375,
+                "y": 78.125,
+                "width": 161.5390625,
+                "height": 52.083333333333336
+              },
+              {
+                "name": "movement hint",
+                "x": 145.90625,
+                "y": 322.9166666666667,
+                "width": 177.171875,
+                "height": 20.833333333333332
+              }
+            ],
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 255.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 16,
+                "y": 163.75,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 579,
+                "y": 163.75,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 166.125,
+                "y": 271,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 244.125,
+                "y": 271,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 322.125,
+                "y": 271,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 311.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 367.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 423.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 479.515625,
+                "y": 4,
+                "width": 52,
+                "height": 44
+              }
+            ]
+          }
+        },
+        "input_result": {
+          "three_finger_mean_rgb_delta": 26.930266203703702,
+          "real_three_finger_packet_count": 4,
+          "comic_activation": {
+            "keyboard": [
+              {
+                "id": 60,
+                "bytes": [
+                  60,
+                  113,
+                  0
+                ],
+                "readyState": "open",
+                "label": "Player47",
+                "at": 8663.300000011921
+              },
+              {
+                "id": 61,
+                "bytes": [
+                  61,
+                  113
+                ],
+                "readyState": "open",
+                "label": "Player47",
+                "at": 8783.600000023842
+              }
+            ],
+            "touch": [
+              {
+                "id": 60,
+                "bytes": [
+                  60,
+                  113,
+                  0
+                ],
+                "readyState": "open",
+                "label": "Player47",
+                "at": 9004.200000047684
+              },
+              {
+                "id": 61,
+                "bytes": [
+                  61,
+                  113
+                ],
+                "readyState": "open",
+                "label": "Player47",
+                "at": 9004.5
+              }
+            ]
+          },
+          "disconnect_packet_count": 2
+        },
+        "logging": {
+          "context": {
+            "level": 2,
+            "stack": false
+          },
+          "spam": []
+        }
+      }
+    }
+  },
+  "screenshots": [
+    {
+      "target": "preview",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/friend-after-input.png",
+      "sha256": "ad1102f1434592e3fc6f6233efd810fd62b9aa0737469be23a68c0423ba8ab34"
+    },
+    {
+      "target": "preview",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/friend-before-input.png",
+      "sha256": "62f68f4a48e7a22b6244e822956b7b8dc8369b0e91836b39d84967c5c0329118"
+    },
+    {
+      "target": "preview",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/host-after-input.png",
+      "sha256": "207cf308868fc8644fc9b3e37f37faa9b025912ea224e58a19dd61d64e780279"
+    },
+    {
+      "target": "preview",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/host-before-input.png",
+      "sha256": "9e26fba0cdc6747c531b796d36c173722335178c4488f354d9f56c7a0fa8890f"
+    },
+    {
+      "target": "preview",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/host-reconnected.png",
+      "sha256": "30046a70f6d101dbc90466037b6dbfbe093ad8fdd22095f06a1185c9b2a31107"
+    },
+    {
+      "target": "preview",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/occupied-slot.png",
+      "sha256": "0642e1fba758fb9a15ae36e6f8616170649ef3cf8c6514a58270101160048fcb"
+    },
+    {
+      "target": "preview",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-31-03-114Z/recovered-slot.png",
+      "sha256": "edd1164721b055c54799537e544abb4b49e09528ce90956ff409e3a6dcbcb3e1"
+    },
+    {
+      "target": "preview",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/landscape-disconnected.png",
+      "sha256": "8fbf326f1f3c4dcb6e236cbb59b0b766fde279d4646f3f0f741b610c4df65c6e"
+    },
+    {
+      "target": "preview",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/landscape-fullscreen.png",
+      "sha256": "519f322801b48b77247e7d5228439a52b3da14ddf231bde87938f742e6b7d0af"
+    },
+    {
+      "target": "preview",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/landscape-playing.png",
+      "sha256": "30f51c9f2ea155c57be8722f26ab99f63f4d4e2cc37100f9759d6d801d182274"
+    },
+    {
+      "target": "preview",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/narrow-landscape-fullscreen.png",
+      "sha256": "a8c7a16a88ceb580c7d564d26db36fde8e03f1d819e1396ff0b210452f8adba5"
+    },
+    {
+      "target": "preview",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/narrowLandscape-playing.png",
+      "sha256": "08ec4dd8aaf4b65fd61e8ca91b0b34ae29d201fd9d2a98cbdc281c6228ef68a7"
+    },
+    {
+      "target": "preview",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/portrait-playing.png",
+      "sha256": "e0cc9f12ac681d5ad1c0bad2297d7cdda84fa0a860c18d47d792ff076431984e"
+    },
+    {
+      "target": "preview",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-31-30-130Z/portrait-three-finger-held.png",
+      "sha256": "017d1e9c59135cec1a7c569c42ec4d936d932b722630c470c413212eb022ee16"
+    },
+    {
+      "target": "production",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/friend-after-input.png",
+      "sha256": "23312971fc0c296d22e619a09cc159afa9b865ab3d3b05ebe680626982beea47"
+    },
+    {
+      "target": "production",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/friend-before-input.png",
+      "sha256": "5b1dea6b4143ee15b0384cfc117032ae79f750474e9a95f67be83fbc7f469bdd"
+    },
+    {
+      "target": "production",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/host-after-input.png",
+      "sha256": "a6603459869adb065a2c638b247169bb6e9ee2e0d10c30abdb723d77a14ae555"
+    },
+    {
+      "target": "production",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/host-before-input.png",
+      "sha256": "302c54f9e60769aa1aac515000042d0a285a8f0c2acd88b7d35b13fea5f61d88"
+    },
+    {
+      "target": "production",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/host-reconnected.png",
+      "sha256": "2be9a3246ddf4d0ad436a50923cee84759ddbf6fe9a4ca035a878cd0c6382ef2"
+    },
+    {
+      "target": "production",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/occupied-slot.png",
+      "sha256": "0642e1fba758fb9a15ae36e6f8616170649ef3cf8c6514a58270101160048fcb"
+    },
+    {
+      "target": "production",
+      "kind": "desktop",
+      "path": "Browser/.qa/live-2026-10-11T14-32-33-132Z/recovered-slot.png",
+      "sha256": "e8d6682bc82292fe222672a42d584ff4cdc191690801651d2a61bb271f3187e1"
+    },
+    {
+      "target": "production",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/landscape-disconnected.png",
+      "sha256": "8fbf326f1f3c4dcb6e236cbb59b0b766fde279d4646f3f0f741b610c4df65c6e"
+    },
+    {
+      "target": "production",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/landscape-fullscreen.png",
+      "sha256": "484ef92c073e4ae5d7093b11eaee536b7cfc525a4059efdc733b7e77fb162189"
+    },
+    {
+      "target": "production",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/landscape-playing.png",
+      "sha256": "f6cb22d49239307c570140efbac36a7c1521caab32cd7f1afa47ba5ba60833ef"
+    },
+    {
+      "target": "production",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/narrow-landscape-fullscreen.png",
+      "sha256": "3f77a23aed628df60e2f48b89e230fb025a35e33a90541a41f2c032206ca267e"
+    },
+    {
+      "target": "production",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/narrowLandscape-playing.png",
+      "sha256": "4567cf173ee538752d175a314d22d5606c1776ed97048a3c0b7a347a701bef72"
+    },
+    {
+      "target": "production",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/portrait-playing.png",
+      "sha256": "81ecc81b2d8caa6375a8110e98205dbd5dfd583115d85203d517b70d61e3a8ee"
+    },
+    {
+      "target": "production",
+      "kind": "mobile",
+      "path": "Browser/.qa/mobile-2026-10-11T14-33-06-974Z/portrait-three-finger-held.png",
+      "sha256": "8e6b1b7fc6f68531216876ddb78e6e308de88c50d84ef5ac1d633339fe6818f5"
+    }
+  ],
+  "visual_acceptance": {
+    "root": "PASS preview/public fullscreen800x360+667x375, portrait and previewdesktop input comparisons",
+    "independent": "PASS local and public fullscreen/portrait/windowed plus final desktop input/occupied/reconnect screenshots",
+    "observations": "Complete frame reaches all fullscreen edges; floating controls clear reviewed HUD. Distinct peer views and visible movement/camera/crew changes accepted; no story progression asserted.",
+    "limits": "Mapped HUD rectangles and captured current mission/context are bounded coverage, not all dynamic HUD states or physical safe areas."
+  },
+  "diagnostics": "Mobile reports identify favicon.ico404 only. Desktop reports retain four generic404 notices without URL; no reported page errors. Do not infer every desktop notice is favicon.",
+  "preservation": {
+    "normal_host_before_and_after": {
+      "ActiveState": "active",
+      "InvocationID": "e38748a159504da494f29bedac1ca6cc",
+      "MainPID": "2416661"
+    },
+    "no_host_restart": true,
+    "no_unreal_job_launched": true,
+    "no_package_or_quality_changes": true,
+    "no_save_or_settings_mutations_by_this_change": true,
+    "qa_clients_closed": true,
+    "owned_worker_loopback_server_stopped": true,
+    "prior_CompactHUD_evidence_unchanged": true
+  },
+  "rendering": {
+    "source": [
+      1280,
+      720
+    ],
+    "fullscreen_object_fit": "fill",
+    "complete_frame": true,
+    "horizontal_stretch_at_800x360": 1.25,
+    "minimum_target_dimension_px": 44,
+    "target_count": 10,
+    "hud_regions_checked": 8,
+    "windowed_and_portrait": "Prior containment retained"
+  },
+  "not_checked": [
+    "Physical iOS/Android device and safe areas",
+    "Off-LAN or carrier NAT media path",
+    "Audible playback",
+    "Sustained remote latency/FPS and driving enjoyment",
+    "Other dynamic mission HUD states and full manual story progression"
+  ],
+  "openspec": {
+    "archive": "openspec/changes/archive/2026-10-11-nord-mobile-fill/",
+    "canonical": "openspec/specs/nord-unreal/spec.md",
+    "validation": "Manual PASS:17 unique requirements,one exact replacement,7scenarios,4archivefiles,6completed tasks,6resolving links",
+    "cli": "Unavailable"
+  },
+  "related_reports": [
+    "MobileFill.md",
+    "MobileFill.json",
+    "CompactHUDDelivery.json",
+    "UnifiedDelivery.json"
+  ],
+  "source_and_spec_commit": "3e4ffa5f5fb57783ee6f9cd7b0c900352b3bb16a"
+}
