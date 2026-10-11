@@ -99,7 +99,10 @@ def traffic_blocker(car):
 def car_profile(car):
     cabin = next(part for part in car.get_components_by_class(u.StaticMeshComponent) if part.get_name() == "Glass")
     scale = cabin.get_editor_property("RelativeScale3D")
-    return [round(value, 3) for value in (scale.x, scale.y, scale.z)]
+    assert [round(value, 3) for value in (scale.x, scale.y, scale.z)] == [1., 1., 1.], 'Period cabin must retain authored mesh dimensions'
+    mesh = cabin.get_editor_property("static_mesh")
+    assert mesh, 'Cabin mesh missing'
+    return mesh.get_path_name()
 
 
 def measure_crowd(now):
@@ -208,9 +211,9 @@ def discover():
     assert min(paces["jog"]) > max(paces["walk"]), "Jogging must be visibly faster than walking"
     profiles = {car.get_editor_property("BodyProfile"): car_profile(car) for car in parked + traffic}
     REPORT["vehicle_cabin_profiles"] = profiles
-    assert set(profiles) == {0, 1, 2} and len({tuple(scale) for scale in profiles.values()}) == 3
+    assert set(profiles) == {0, 1, 2} and len(set(profiles.values())) == 3
     for car in parked + traffic:
-        assert car_profile(car) == {0: [1., 1., 1.], 1: [.78, 1., .85], 2: [1.27, 1., 1.08]}[car.get_editor_property("BodyProfile")]
+        assert car_profile(car) == f'/Game/ParkComic/SM_Car70Cabin{car.get_editor_property("BodyProfile")}.SM_Car70Cabin{car.get_editor_property("BodyProfile")}'
     hubs = {tag: [ped for ped in crowd if ped.actor_has_tag(tag)] for tag in ("CityChalet", "CityPond", "CitySherbrooke")}
     REPORT["hub_residents"] = {tag: {"count": len(group), "styles": sorted({ped.get_editor_property("Style") for ped in group})}
                               for tag, group in hubs.items()}

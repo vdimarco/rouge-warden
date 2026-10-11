@@ -6,9 +6,9 @@
     {
       "actor": "QuebecCharacter_0",
       "from_cm": [
-        38953.0165,
+        38793.0165,
         -7522.8152,
-        98.15
+        116.15
       ],
       "to_cm": [
         35144.1596,
@@ -20,73 +20,73 @@
   "gate_crossings": [
     {
       "gate": 1,
-      "world_seconds": 1.7556,
+      "world_seconds": 1.7054,
       "position_cm": [
-        34579.773,
-        -20921.2966,
+        34573.8228,
+        -20929.4372,
         100.0014
       ],
-      "travel_cm": 690.34
+      "travel_cm": 700.43
     },
     {
       "gate": 2,
-      "world_seconds": 3.904,
+      "world_seconds": 3.8576,
       "position_cm": [
-        32609.3722,
-        -23585.3229,
+        32598.4469,
+        -23600.5246,
         100.0014
       ],
-      "travel_cm": 4003.9
+      "travel_cm": 4022.62
     },
     {
       "gate": 3,
-      "world_seconds": 7.5553,
+      "world_seconds": 7.5061,
       "position_cm": [
-        30476.1897,
-        -27232.2899,
-        100.0014
+        30473.0884,
+        -27237.5448,
+        100.0002
       ],
-      "travel_cm": 8242.66
+      "travel_cm": 8248.77
     },
     {
       "gate": 4,
-      "world_seconds": 17.9503,
+      "world_seconds": 17.9521,
       "position_cm": [
-        31399.6068,
-        -26816.8406,
+        31400.5955,
+        -26820.7001,
         100.0002
       ],
-      "travel_cm": 11462.56
+      "travel_cm": 11455.03
     },
     {
       "gate": 5,
-      "world_seconds": 29.4525,
+      "world_seconds": 29.5056,
       "position_cm": [
-        34205.6035,
-        -26303.8325,
+        34204.0162,
+        -26303.4481,
         100.0002
       ],
-      "travel_cm": 14908.47
+      "travel_cm": 14898.21
     },
     {
       "gate": 6,
-      "world_seconds": 36.1521,
+      "world_seconds": 36.1073,
       "position_cm": [
-        34346.5951,
-        -22583.515,
+        34346.4737,
+        -22582.3764,
         100.0002
       ],
-      "travel_cm": 18763.53
+      "travel_cm": 18754.92
     },
     {
       "gate": 7,
-      "world_seconds": 51.4564,
+      "world_seconds": 51.3514,
       "position_cm": [
-        34324.6211,
-        -20697.7299,
+        34325.1612,
+        -20687.2173,
         100.0002
       ],
-      "travel_cm": 23911.74
+      "travel_cm": 23893.58
     }
   ],
   "blocking_hit_callbacks": [],
@@ -95,653 +95,653 @@
   "collision_observer_available": false,
   "samples": [
     {
-      "world_seconds": 1.406,
+      "world_seconds": 1.403,
       "position_cm": [
-        34771.7295,
-        -20665.1488,
+        34747.2695,
+        -20697.5172,
         100.0014
       ],
-      "speed_cm_s": 576.21,
+      "speed_cm_s": 606.48,
       "throttle": 1.0,
-      "steer": 0.033,
-      "path_error_cm": 35.57,
+      "steer": 0.029,
+      "path_error_cm": 29.58,
       "gate": 0
     },
     {
-      "world_seconds": 2.407,
+      "world_seconds": 2.405,
       "position_cm": [
-        33988.5119,
-        -21723.8721,
+        33933.3444,
+        -21798.6855,
         100.0014
       ],
-      "speed_cm_s": 1641.65,
+      "speed_cm_s": 1647.01,
       "throttle": 0.0,
-      "steer": -0.014,
-      "path_error_cm": 0.04,
+      "steer": -0.013,
+      "path_error_cm": 0.45,
       "gate": 1
     },
     {
-      "world_seconds": 3.409,
+      "world_seconds": 3.412,
       "position_cm": [
-        33056.3158,
-        -22976.994,
+        32999.6568,
+        -23053.0044,
         100.0014
       ],
-      "speed_cm_s": 1541.88,
+      "speed_cm_s": 1543.59,
       "throttle": 0.0,
-      "steer": 0.037,
-      "path_error_cm": 0.35,
+      "steer": 0.046,
+      "path_error_cm": 0.27,
       "gate": 1
     },
     {
-      "world_seconds": 4.41,
+      "world_seconds": 4.418,
       "position_cm": [
-        32166.1136,
-        -24216.4207,
+        32107.2034,
+        -24301.7345,
         100.0014
       ],
-      "speed_cm_s": 1534.87,
+      "speed_cm_s": 1535.77,
       "throttle": 0.0,
-      "steer": 0.001,
-      "path_error_cm": 4.78,
+      "steer": -0.003,
+      "path_error_cm": 4.33,
       "gate": 2
     },
     {
-      "world_seconds": 5.413,
+      "world_seconds": 5.425,
       "position_cm": [
-        31317.1632,
-        -25485.9043,
-        100.0014
+        31262.1965,
+        -25579.9893,
+        100.0002
       ],
-      "speed_cm_s": 1520.33,
+      "speed_cm_s": 1521.95,
       "throttle": 0.0,
-      "steer": 0.221,
-      "path_error_cm": 7.64,
+      "steer": 0.22,
+      "path_error_cm": 12.14,
       "gate": 2
     },
     {
-      "world_seconds": 6.419,
+      "world_seconds": 6.429,
       "position_cm": [
-        30662.7352,
-        -26851.2461,
-        100.0014
+        30633.3528,
+        -26918.9321,
+        100.0002
       ],
-      "speed_cm_s": 1440.31,
+      "speed_cm_s": 1309.78,
       "throttle": -1.0,
-      "steer": -0.278,
-      "path_error_cm": 13.64,
+      "steer": -0.245,
+      "path_error_cm": 12.93,
       "gate": 2
     },
     {
-      "world_seconds": 7.42,
+      "world_seconds": 7.43,
       "position_cm": [
-        30514.1198,
-        -27163.2078,
-        100.0014
+        30493.9679,
+        -27199.7093,
+        100.0002
       ],
-      "speed_cm_s": 367.94,
-      "throttle": 1.0,
-      "steer": -0.137,
-      "path_error_cm": 22.42,
+      "speed_cm_s": 452.49,
+      "throttle": 0.0,
+      "steer": -0.148,
+      "path_error_cm": 25.97,
       "gate": 2
     },
     {
-      "world_seconds": 8.424,
+      "world_seconds": 8.434,
       "position_cm": [
-        30320.6075,
-        -27514.565,
-        100.0014
+        30311.8386,
+        -27539.674,
+        100.0002
       ],
-      "speed_cm_s": 248.6,
+      "speed_cm_s": 288.11,
+      "throttle": 0.0,
+      "steer": 1.0,
+      "path_error_cm": 4.6,
+      "gate": 3
+    },
+    {
+      "world_seconds": 9.44,
+      "position_cm": [
+        30290.7925,
+        -27836.6888,
+        100.0002
+      ],
+      "speed_cm_s": 285.58,
+      "throttle": 0.0,
+      "steer": 1.0,
+      "path_error_cm": 221.97,
+      "gate": 3
+    },
+    {
+      "world_seconds": 10.44,
+      "position_cm": [
+        30408.4281,
+        -28081.146,
+        100.0002
+      ],
+      "speed_cm_s": 274.57,
+      "throttle": 0.0,
+      "steer": 1.0,
+      "path_error_cm": 492.22,
+      "gate": 3
+    },
+    {
+      "world_seconds": 11.448,
+      "position_cm": [
+        30628.952,
+        -28241.7314,
+        100.0002
+      ],
+      "speed_cm_s": 276.89,
+      "throttle": 0.0,
+      "steer": 1.0,
+      "path_error_cm": 738.52,
+      "gate": 3
+    },
+    {
+      "world_seconds": 12.453,
+      "position_cm": [
+        30897.5865,
+        -28279.091,
+        100.0002
+      ],
+      "speed_cm_s": 267.01,
       "throttle": 1.0,
-      "steer": 1.0,
-      "path_error_cm": 6.65,
+      "steer": 0.994,
+      "path_error_cm": 940.18,
       "gate": 3
     },
     {
-      "world_seconds": 9.427,
+      "world_seconds": 13.456,
       "position_cm": [
-        30286.2365,
-        -27820.7775,
-        100.0014
+        31153.6826,
+        -28184.8656,
+        100.0002
       ],
-      "speed_cm_s": 271.39,
+      "speed_cm_s": 276.06,
       "throttle": 0.0,
-      "steer": 1.0,
-      "path_error_cm": 205.43,
+      "steer": 0.949,
+      "path_error_cm": 1057.78,
       "gate": 3
     },
     {
-      "world_seconds": 10.431,
+      "world_seconds": 14.458,
       "position_cm": [
-        30399.1149,
-        -28072.6696,
-        100.0014
+        31338.9936,
+        -27986.2265,
+        100.0002
       ],
-      "speed_cm_s": 277.47,
+      "speed_cm_s": 276.18,
       "throttle": 0.0,
-      "steer": 1.0,
-      "path_error_cm": 480.87,
+      "steer": 0.786,
+      "path_error_cm": 1051.81,
       "gate": 3
     },
     {
-      "world_seconds": 11.434,
+      "world_seconds": 15.464,
       "position_cm": [
-        30615.131,
-        -28238.2105,
-        100.0014
+        31435.9281,
+        -27728.393,
+        100.0002
       ],
-      "speed_cm_s": 272.45,
+      "speed_cm_s": 275.21,
       "throttle": 0.0,
-      "steer": 1.0,
-      "path_error_cm": 728.02,
+      "steer": 0.563,
+      "path_error_cm": 941.23,
       "gate": 3
     },
     {
-      "world_seconds": 12.439,
+      "world_seconds": 16.467,
       "position_cm": [
-        30884.4188,
-        -28281.7952,
-        100.0014
+        31455.2234,
+        -27421.8288,
+        100.0002
       ],
-      "speed_cm_s": 277.65,
+      "speed_cm_s": 403.22,
       "throttle": 0.0,
-      "steer": 0.996,
-      "path_error_cm": 932.66,
-      "gate": 3
-    },
-    {
-      "world_seconds": 13.448,
-      "position_cm": [
-        31141.6759,
-        -28193.8619,
-        100.0014
-      ],
-      "speed_cm_s": 265.47,
-      "throttle": 1.0,
-      "steer": 0.953,
-      "path_error_cm": 1055.46,
-      "gate": 3
-    },
-    {
-      "world_seconds": 14.455,
-      "position_cm": [
-        31333.3957,
-        -27995.4008,
-        100.0014
-      ],
-      "speed_cm_s": 280.08,
-      "throttle": 0.0,
-      "steer": 0.793,
-      "path_error_cm": 1054.2,
-      "gate": 3
-    },
-    {
-      "world_seconds": 15.458,
-      "position_cm": [
-        31432.9346,
-        -27740.0767,
-        100.0014
-      ],
-      "speed_cm_s": 274.14,
-      "throttle": 0.0,
-      "steer": 0.572,
-      "path_error_cm": 947.25,
-      "gate": 3
-    },
-    {
-      "world_seconds": 16.466,
-      "position_cm": [
-        31454.9635,
-        -27447.1482,
-        100.0008
-      ],
-      "speed_cm_s": 360.62,
-      "throttle": 1.0,
-      "steer": 0.296,
-      "path_error_cm": 758.54,
+      "steer": 0.273,
+      "path_error_cm": 741.05,
       "gate": 3
     },
     {
       "world_seconds": 17.469,
       "position_cm": [
-        31411.4042,
-        -27000.0079,
-        100.0008
+        31412.9459,
+        -27003.2547,
+        100.0002
       ],
-      "speed_cm_s": 387.69,
-      "throttle": 0.0,
-      "steer": -0.312,
-      "path_error_cm": 415.22,
+      "speed_cm_s": 362.44,
+      "throttle": 1.0,
+      "steer": -0.301,
+      "path_error_cm": 418.59,
       "gate": 3
     },
     {
-      "world_seconds": 18.469,
+      "world_seconds": 18.471,
       "position_cm": [
-        31413.5605,
-        -26638.486,
+        31411.3236,
+        -26663.4095,
         100.0002
       ],
-      "speed_cm_s": 327.03,
+      "speed_cm_s": 286.51,
       "throttle": 0.0,
-      "steer": -0.746,
-      "path_error_cm": 155.02,
+      "steer": -0.738,
+      "path_error_cm": 172.17,
       "gate": 4
     },
     {
-      "world_seconds": 19.47,
+      "world_seconds": 19.472,
       "position_cm": [
-        31512.0032,
-        -26383.6537,
+        31504.03,
+        -26403.0665,
         100.0002
       ],
-      "speed_cm_s": 271.49,
+      "speed_cm_s": 281.27,
       "throttle": 0.0,
-      "steer": -0.679,
-      "path_error_cm": 29.87,
+      "steer": -0.686,
+      "path_error_cm": 39.09,
       "gate": 4
     },
     {
       "world_seconds": 20.478,
       "position_cm": [
-        31691.1908,
-        -26169.4244,
+        31672.841,
+        -26189.656,
         100.0002
       ],
-      "speed_cm_s": 281.81,
-      "throttle": 0.0,
-      "steer": -0.594,
-      "path_error_cm": 67.41,
-      "gate": 4
-    },
-    {
-      "world_seconds": 21.482,
-      "position_cm": [
-        31918.1864,
-        -26017.9061,
-        100.0002
-      ],
-      "speed_cm_s": 268.25,
+      "speed_cm_s": 265.42,
       "throttle": 1.0,
-      "steer": -0.522,
-      "path_error_cm": 104.36,
+      "steer": -0.596,
+      "path_error_cm": 57.24,
       "gate": 4
     },
     {
-      "world_seconds": 22.485,
+      "world_seconds": 21.478,
       "position_cm": [
-        32178.3659,
-        -25926.0897,
+        31899.0311,
+        -26030.2475,
         100.0002
       ],
-      "speed_cm_s": 280.21,
+      "speed_cm_s": 282.23,
       "throttle": 0.0,
-      "steer": -0.493,
-      "path_error_cm": 113.04,
+      "steer": -0.531,
+      "path_error_cm": 101.64,
       "gate": 4
     },
     {
-      "world_seconds": 23.493,
+      "world_seconds": 22.484,
       "position_cm": [
-        32449.7557,
-        -25895.3794,
+        32156.3232,
+        -25933.0406,
         100.0002
       ],
-      "speed_cm_s": 271.34,
+      "speed_cm_s": 272.38,
       "throttle": 0.0,
-      "steer": -0.455,
-      "path_error_cm": 139.4,
+      "steer": -0.494,
+      "path_error_cm": 106.44,
       "gate": 4
     },
     {
-      "world_seconds": 24.497,
+      "world_seconds": 23.491,
       "position_cm": [
-        32722.2202,
-        -25922.3277,
+        32429.5261,
+        -25896.7683,
         100.0002
       ],
-      "speed_cm_s": 267.12,
+      "speed_cm_s": 272.46,
+      "throttle": 0.0,
+      "steer": -0.46,
+      "path_error_cm": 138.33,
+      "gate": 4
+    },
+    {
+      "world_seconds": 24.492,
+      "position_cm": [
+        32705.1173,
+        -25919.765,
+        100.0002
+      ],
+      "speed_cm_s": 281.56,
+      "throttle": 0.0,
+      "steer": -0.396,
+      "path_error_cm": 110.92,
+      "gate": 4
+    },
+    {
+      "world_seconds": 25.499,
+      "position_cm": [
+        32968.745,
+        -25993.0322,
+        100.0002
+      ],
+      "speed_cm_s": 266.17,
       "throttle": 1.0,
-      "steer": -0.391,
-      "path_error_cm": 108.23,
+      "steer": -0.325,
+      "path_error_cm": 97.72,
       "gate": 4
     },
     {
-      "world_seconds": 25.505,
+      "world_seconds": 26.502,
       "position_cm": [
-        32987.6696,
-        -25999.8716,
+        33361.5806,
+        -26184.9226,
         100.0002
       ],
-      "speed_cm_s": 275.01,
+      "speed_cm_s": 420.6,
       "throttle": 0.0,
-      "steer": -0.319,
-      "path_error_cm": 95.73,
+      "steer": -0.088,
+      "path_error_cm": 104.12,
       "gate": 4
     },
     {
-      "world_seconds": 26.543,
+      "world_seconds": 27.507,
       "position_cm": [
-        33388.5543,
-        -26202.8548,
+        33676.6156,
+        -26366.9273,
         100.0002
       ],
-      "speed_cm_s": 416.82,
-      "throttle": 0.0,
-      "steer": -0.021,
-      "path_error_cm": 106.78,
-      "gate": 4
-    },
-    {
-      "world_seconds": 27.545,
-      "position_cm": [
-        33704.7386,
-        -26378.4836,
-        100.0002
-      ],
-      "speed_cm_s": 332.25,
+      "speed_cm_s": 334.99,
       "throttle": 0.0,
       "steer": 1.0,
-      "path_error_cm": 165.08,
+      "path_error_cm": 156.7,
       "gate": 4
     },
     {
-      "world_seconds": 28.55,
+      "world_seconds": 28.513,
       "position_cm": [
-        33977.4166,
-        -26396.0449,
+        33948.6425,
+        -26398.8551,
         100.0002
       ],
-      "speed_cm_s": 278.94,
-      "throttle": 0.0,
-      "steer": 0.955,
-      "path_error_cm": 15.53,
-      "gate": 4
-    },
-    {
-      "world_seconds": 29.553,
-      "position_cm": [
-        34227.3372,
-        -26288.6039,
-        100.0002
-      ],
-      "speed_cm_s": 270.56,
-      "throttle": 0.0,
-      "steer": 1.0,
-      "path_error_cm": 274.18,
-      "gate": 5
-    },
-    {
-      "world_seconds": 30.556,
-      "position_cm": [
-        34401.0279,
-        -26079.8233,
-        100.0002
-      ],
-      "speed_cm_s": 274.89,
-      "throttle": 0.0,
-      "steer": 1.0,
-      "path_error_cm": 415.73,
-      "gate": 5
-    },
-    {
-      "world_seconds": 31.557,
-      "position_cm": [
-        34455.981,
-        -25814.2558,
-        100.0002
-      ],
-      "speed_cm_s": 277.34,
-      "throttle": 0.0,
-      "steer": 0.868,
-      "path_error_cm": 431.56,
-      "gate": 5
-    },
-    {
-      "world_seconds": 32.561,
-      "position_cm": [
-        34364.4644,
-        -25464.2207,
-        100.0002
-      ],
-      "speed_cm_s": 464.02,
-      "throttle": 0.0,
-      "steer": -0.05,
-      "path_error_cm": 290.21,
-      "gate": 5
-    },
-    {
-      "world_seconds": 33.565,
-      "position_cm": [
-        34229.1032,
-        -25091.7016,
-        100.0002
-      ],
-      "speed_cm_s": 383.84,
-      "throttle": 0.0,
-      "steer": -0.436,
-      "path_error_cm": 102.21,
-      "gate": 5
-    },
-    {
-      "world_seconds": 34.571,
-      "position_cm": [
-        34177.3492,
-        -24714.3763,
-        100.0002
-      ],
-      "speed_cm_s": 409.09,
+      "speed_cm_s": 269.4,
       "throttle": 1.0,
-      "steer": -0.246,
-      "path_error_cm": 3.76,
-      "gate": 5
+      "steer": 0.954,
+      "path_error_cm": 13.38,
+      "gate": 4
     },
     {
-      "world_seconds": 35.581,
+      "world_seconds": 29.514,
       "position_cm": [
-        34264.5653,
-        -23491.7667,
+        34205.933,
+        -26302.1727,
         100.0002
       ],
-      "speed_cm_s": 1619.09,
+      "speed_cm_s": 280.72,
       "throttle": 0.0,
-      "steer": 0.093,
-      "path_error_cm": 2.36,
+      "steer": 1.0,
+      "path_error_cm": 251.79,
       "gate": 5
     },
     {
-      "world_seconds": 36.585,
+      "world_seconds": 30.52,
       "position_cm": [
-        34391.2869,
-        -22322.1555,
+        34388.8594,
+        -26102.7094,
         100.0002
       ],
-      "speed_cm_s": 426.92,
+      "speed_cm_s": 265.09,
+      "throttle": 1.0,
+      "steer": 1.0,
+      "path_error_cm": 407.02,
+      "gate": 5
+    },
+    {
+      "world_seconds": 31.527,
+      "position_cm": [
+        34456.7521,
+        -25835.3664,
+        100.0002
+      ],
+      "speed_cm_s": 280.32,
+      "throttle": 0.0,
+      "steer": 0.92,
+      "path_error_cm": 435.39,
+      "gate": 5
+    },
+    {
+      "world_seconds": 32.531,
+      "position_cm": [
+        34376.9784,
+        -25493.6245,
+        100.0002
+      ],
+      "speed_cm_s": 478.15,
+      "throttle": 0.0,
+      "steer": 0.007,
+      "path_error_cm": 306.86,
+      "gate": 5
+    },
+    {
+      "world_seconds": 33.533,
+      "position_cm": [
+        34235.0933,
+        -25108.8633,
+        100.0002
+      ],
+      "speed_cm_s": 373.89,
+      "throttle": 0.0,
+      "steer": -0.423,
+      "path_error_cm": 110.63,
+      "gate": 5
+    },
+    {
+      "world_seconds": 34.539,
+      "position_cm": [
+        34178.3483,
+        -24724.7794,
+        100.0002
+      ],
+      "speed_cm_s": 427.42,
+      "throttle": 1.0,
+      "steer": -0.254,
+      "path_error_cm": 1.26,
+      "gate": 5
+    },
+    {
+      "world_seconds": 35.541,
+      "position_cm": [
+        34264.2257,
+        -23477.422,
+        100.0002
+      ],
+      "speed_cm_s": 1624.14,
+      "throttle": 0.0,
+      "steer": 0.091,
+      "path_error_cm": 3.51,
+      "gate": 5
+    },
+    {
+      "world_seconds": 36.542,
+      "position_cm": [
+        34392.4024,
+        -22316.3122,
+        100.0002
+      ],
+      "speed_cm_s": 431.33,
       "throttle": 0.0,
       "steer": -0.13,
-      "path_error_cm": 9.8,
+      "path_error_cm": 10.45,
       "gate": 6
     },
     {
-      "world_seconds": 37.589,
+      "world_seconds": 37.548,
       "position_cm": [
-        34486.5027,
-        -22001.0001,
+        34489.0767,
+        -21992.1583,
         100.0002
       ],
-      "speed_cm_s": 530.27,
+      "speed_cm_s": 536.01,
       "throttle": 0.0,
-      "steer": -0.258,
-      "path_error_cm": 12.83,
+      "steer": -0.265,
+      "path_error_cm": 12.96,
       "gate": 6
     },
     {
-      "world_seconds": 38.594,
+      "world_seconds": 38.555,
       "position_cm": [
-        34656.2531,
-        -21601.2679,
+        34663.8067,
+        -21586.9995,
         100.0002
       ],
-      "speed_cm_s": 372.45,
+      "speed_cm_s": 377.77,
       "throttle": 0.0,
-      "steer": -0.243,
-      "path_error_cm": 4.38,
+      "steer": -0.237,
+      "path_error_cm": 2.13,
       "gate": 6
     },
     {
-      "world_seconds": 39.597,
+      "world_seconds": 39.56,
       "position_cm": [
-        34858.3861,
-        -21285.8905,
+        34869.1198,
+        -21270.5701,
         100.0002
       ],
-      "speed_cm_s": 372.16,
+      "speed_cm_s": 371.72,
       "throttle": 0.0,
-      "steer": -0.085,
-      "path_error_cm": 16.96,
+      "steer": -0.078,
+      "path_error_cm": 17.25,
       "gate": 6
     },
     {
-      "world_seconds": 40.6,
+      "world_seconds": 40.563,
       "position_cm": [
-        35083.9381,
-        -20984.0021,
+        35094.1821,
+        -20970.5146,
         100.0002
       ],
-      "speed_cm_s": 376.84,
+      "speed_cm_s": 377.97,
       "throttle": 0.0,
-      "steer": 0.006,
-      "path_error_cm": 11.42,
+      "steer": 0.009,
+      "path_error_cm": 11.04,
       "gate": 6
     },
     {
-      "world_seconds": 41.601,
+      "world_seconds": 41.569,
       "position_cm": [
-        35316.4851,
-        -20677.7026,
+        35320.3803,
+        -20672.5259,
         100.0002
       ],
-      "speed_cm_s": 388.85,
-      "throttle": 0.0,
+      "speed_cm_s": 365.19,
+      "throttle": 1.0,
       "steer": 0.024,
-      "path_error_cm": 2.81,
+      "path_error_cm": 2.69,
       "gate": 6
     },
     {
-      "world_seconds": 42.602,
+      "world_seconds": 42.574,
       "position_cm": [
-        35524.7065,
-        -20380.0447,
+        35528.5983,
+        -20372.627,
         100.0002
       ],
-      "speed_cm_s": 336.82,
+      "speed_cm_s": 336.75,
       "throttle": 0.0,
       "steer": 1.0,
-      "path_error_cm": 8.82,
+      "path_error_cm": 10.02,
       "gate": 6
     },
     {
-      "world_seconds": 43.611,
+      "world_seconds": 43.579,
       "position_cm": [
-        35585.0165,
-        -20111.3087,
+        35585.3476,
+        -20105.4107,
         100.0002
       ],
-      "speed_cm_s": 263.56,
+      "speed_cm_s": 267.87,
       "throttle": 1.0,
       "steer": 1.0,
-      "path_error_cm": 116.93,
+      "path_error_cm": 121.68,
       "gate": 6
     },
     {
-      "world_seconds": 44.617,
+      "world_seconds": 44.582,
       "position_cm": [
-        35508.5758,
-        -19846.2633,
+        35507.2147,
+        -19842.04,
         100.0002
       ],
-      "speed_cm_s": 277.72,
+      "speed_cm_s": 276.8,
       "throttle": 0.0,
       "steer": 1.0,
-      "path_error_cm": 384.87,
+      "path_error_cm": 389.28,
       "gate": 6
     },
     {
-      "world_seconds": 45.62,
+      "world_seconds": 45.583,
       "position_cm": [
-        35320.4391,
-        -19653.5515,
+        35316.6491,
+        -19650.1343,
         100.0002
       ],
-      "speed_cm_s": 267.5,
-      "throttle": 1.0,
-      "steer": 1.0,
-      "path_error_cm": 644.84,
-      "gate": 6
-    },
-    {
-      "world_seconds": 46.628,
-      "position_cm": [
-        35056.4795,
-        -19570.8307,
-        100.0002
-      ],
-      "speed_cm_s": 280.53,
+      "speed_cm_s": 276.12,
       "throttle": 0.0,
       "steer": 1.0,
-      "path_error_cm": 858.71,
+      "path_error_cm": 649.77,
       "gate": 6
     },
     {
-      "world_seconds": 47.634,
+      "world_seconds": 46.587,
       "position_cm": [
-        34790.6267,
-        -19622.2897,
+        35054.878,
+        -19569.8709,
         100.0002
       ],
-      "speed_cm_s": 269.97,
-      "throttle": 1.0,
-      "steer": 0.978,
-      "path_error_cm": 961.42,
+      "speed_cm_s": 276.77,
+      "throttle": 0.0,
+      "steer": 1.0,
+      "path_error_cm": 860.39,
       "gate": 6
     },
     {
-      "world_seconds": 48.639,
+      "world_seconds": 47.588,
       "position_cm": [
-        34574.1654,
-        -19793.7828,
+        34789.8123,
+        -19622.1281,
         100.0002
       ],
-      "speed_cm_s": 279.88,
+      "speed_cm_s": 270.62,
+      "throttle": 0.0,
+      "steer": 0.977,
+      "path_error_cm": 962.01,
+      "gate": 6
+    },
+    {
+      "world_seconds": 48.59,
+      "position_cm": [
+        34574.3716,
+        -19793.4944,
+        100.0002
+      ],
+      "speed_cm_s": 280.37,
       "throttle": 0.0,
       "steer": 0.761,
-      "path_error_cm": 936.68,
+      "path_error_cm": 936.8,
       "gate": 6
     },
     {
-      "world_seconds": 49.645,
+      "world_seconds": 49.592,
       "position_cm": [
-        34440.2521,
-        -20031.2426,
+        34441.2315,
+        -20029.2288,
         100.0002
       ],
-      "speed_cm_s": 272.97,
-      "throttle": 0.0,
-      "steer": 0.504,
-      "path_error_cm": 811.5,
+      "speed_cm_s": 265.37,
+      "throttle": 1.0,
+      "steer": 0.507,
+      "path_error_cm": 812.65,
       "gate": 6
     },
     {
-      "world_seconds": 50.648,
+      "world_seconds": 50.594,
       "position_cm": [
-        34357.5958,
-        -20376.9296,
+        34355.6935,
+        -20389.8822,
         100.0002
       ],
-      "speed_cm_s": 464.2,
+      "speed_cm_s": 466.92,
       "throttle": 0.0,
-      "steer": 0.158,
-      "path_error_cm": 567.71,
+      "steer": 0.148,
+      "path_error_cm": 557.93,
       "gate": 6
     }
   ],
@@ -756,7 +756,7 @@
     "collision contact counts (Python sparse-delegate binding unavailable)"
   ],
   "collision_observation": "Native OnActorHit binding unavailable; contact counts were not measured. Actor collision stays enabled and actual continuous swept driving is required.",
-  "seeded_save_sha256": "f32de4835c6bfc0b74528d811556a857f31c1141fd0d46d89a131288f093ddc4",
+  "seeded_save_sha256": "61796840248705b2886abf572e89fdee2bd671af6e0f1c5f8b725f066758e865",
   "route_cm": [
     [
       34953.92110059191,
@@ -923,20 +923,20 @@
   "route_length_cm": 22633.468453915535,
   "gate_count": 7,
   "ambient_traffic_count": 16,
-  "car": "QuebecCar_2",
+  "car": "QuebecCar_10",
   "car_initial_position_cm": [
     34995.7478,
     -20370.3645,
     102.0
   ],
   "collision_observer_error": "SystemError: <method 'get_editor_property' of '_ObjectBase' objects> returned NULL without setting an exception",
-  "world_seconds": 51.056,
-  "actual_travel_cm": 23911.74,
+  "world_seconds": 50.951,
+  "actual_travel_cm": 23893.58,
   "completed_missions": 2,
   "saved_completed_missions": 2,
   "all_gates_crossed_in_order": true,
   "actor_collision_enabled_throughout": true,
   "production_saves_unchanged": true,
   "qa_save_restored": true,
-  "wall_seconds": 52.325
+  "wall_seconds": 52.003
 }

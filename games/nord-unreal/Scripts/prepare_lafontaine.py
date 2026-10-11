@@ -32,6 +32,44 @@ def road_width_cm(road_tags):
     return 380 if road_tags.get('highway')=='service' else width
 
 
+def road_width(road_tags):
+    """Width for Plateau context streets; leave the Warden traffic graph unchanged."""
+    highway = road_tags.get('highway')
+    fallback = 380 if highway == 'service' else 230 if highway in (
+        'footway', 'path', 'cycleway', 'pedestrian', 'steps') else 680
+    try:
+        if 'width' in road_tags:
+            return max(100, min(2400, float(road_tags['width'].split()[0]) * 100))
+        lanes = float(road_tags.get('lanes', '2').split(';')[0])
+        return max(680, min(1400, lanes * 310)) if fallback == 680 else fallback
+    except ValueError:
+        return fallback
+
+
+def clip_segment(a, b, bounds=None):
+    """Clip a crossing Plateau street to the district rectangle in centimetres."""
+    if bounds is None:
+        lo, hi = xy(BOUNDS[0], BOUNDS[1]), xy(BOUNDS[2], BOUNDS[3])
+        bounds = (*lo, *hi)
+    low, high = 0., 1.
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    for p, q in [(-dx, a[0] - bounds[0]), (dx, bounds[2] - a[0]),
+                 (-dy, a[1] - bounds[1]), (dy, bounds[3] - a[1])]:
+        if abs(p) < 1e-9:
+            if q < 0:
+                return None
+        elif p < 0:
+            low = max(low, q / p)
+        else:
+            high = min(high, q / p)
+        if low > high:
+            return None
+    if math.hypot(dx, dy) * (high - low) < 1:
+        return None
+    return [(a[0] + dx * low, a[1] + dy * low),
+            (a[0] + dx * high, a[1] + dy * high)]
+
+
 def source_road_metadata():
     """Return road polylines and widths in the original OSM way/segment order."""
     root=ET.parse(DATA/'osm.xml').getroot()

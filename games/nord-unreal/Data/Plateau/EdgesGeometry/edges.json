@@ -1,0 +1,278 @@
+{
+  "source": "Data/LaFontaine/osm.xml",
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "closures_illustrative": true,
+  "closures": [
+    {
+      "source": "way/490998043",
+      "street": "Rue Panet",
+      "mapped_exit_xy": [
+        55373.30293126712,
+        -15194.011797595113
+      ],
+      "interior_reference_xy": [
+        54888.20160134625,
+        -14873.465199956201
+      ],
+      "outward_direction": [
+        0.8343090427469433,
+        -0.5512970353545166
+      ],
+      "across_road_direction": [
+        0.5512970353545166,
+        0.8343090427469433
+      ],
+      "closure_center_xy": [
+        55164.72567058039,
+        -15056.187538756483
+      ],
+      "inset_cm": 250.0,
+      "yaw": 56.54395940862958,
+      "road_width_cm": 680,
+      "illustrative": true,
+      "route_clearance_cm": 13972.562422103245,
+      "sign": {
+        "text": "RUE BARRÉE",
+        "position": [
+          55160.30383265383,
+          -15053.265664469105,
+          145
+        ],
+        "normal": [
+          -0.8343090427469433,
+          0.5512970353545166
+        ],
+        "yaw": 146.54395940862958,
+        "size": 19.0
+      },
+      "barrier_span_cm": 600.0
+    },
+    {
+      "source": "way/19938440",
+      "street": "Rue de la Visitation",
+      "mapped_exit_xy": [
+        55373.30293126712,
+        -25751.739891552836
+      ],
+      "interior_reference_xy": [
+        51784.956920206074,
+        -23329.332399979365
+      ],
+      "outward_direction": [
+        0.8288193325423168,
+        -0.5595163214814279
+      ],
+      "across_road_direction": [
+        0.5595163214814279,
+        0.8288193325423168
+      ],
+      "closure_center_xy": [
+        55166.098098131544,
+        -25611.86081118248
+      ],
+      "inset_cm": 250.0,
+      "yaw": 55.97764525184472,
+      "road_width_cm": 680,
+      "illustrative": true,
+      "route_clearance_cm": 17674.896694544037,
+      "sign": {
+        "text": "RUE BARRÉE",
+        "position": [
+          55161.70535566907,
+          -25608.89537467863,
+          145
+        ],
+        "normal": [
+          -0.8288193325423168,
+          0.5595163214814279
+        ],
+        "yaw": 145.97764525184473,
+        "size": 19.0
+      },
+      "barrier_span_cm": 600.0
+    }
+  ],
+  "materials": {
+    "ConstructionOrange_XP005_YM003": {
+      "material": "ConstructionOrange",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 58,
+      "triangles": 148,
+      "bounds_cm": [
+        [
+          54947.88800999283,
+          -25859.14964074019,
+          11.0
+        ],
+        [
+          55334.61579695395,
+          -25324.978455223238,
+          168.5
+        ]
+      ]
+    },
+    "ConstructionOrange_XP005_YM002": {
+      "material": "ConstructionOrange",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 58,
+      "triangles": 148,
+      "bounds_cm": [
+        [
+          54948.72068344092,
+          -15305.072555033319,
+          11.0
+        ],
+        [
+          55330.82967469494,
+          -14768.014489731953,
+          168.5
+        ]
+      ]
+    },
+    "Iron_XP005_YM003": {
+      "material": "Iron",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 260,
+      "triangles": 728,
+      "bounds_cm": [
+        [
+          54992.9518023924,
+          -25852.62189239685,
+          9.536963341888066
+        ],
+        [
+          55339.244393870686,
+          -25371.099729968108,
+          124.0
+        ]
+      ]
+    },
+    "Iron_XP005_YM002": {
+      "material": "Iron",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 260,
+      "triangles": 728,
+      "bounds_cm": [
+        [
+          54993.702928994906,
+          -15298.26695354488,
+          9.537916526335751
+        ],
+        [
+          55335.74841216587,
+          -14814.108123968086,
+          124.0
+        ]
+      ]
+    },
+    "Rubber_XP005_YM003": {
+      "material": "Rubber",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 136,
+      "triangles": 304,
+      "bounds_cm": [
+        [
+          54930.40294733419,
+          -25871.466924081848,
+          6.0
+        ],
+        [
+          55352.082468395114,
+          -25307.493392564596,
+          76.6
+        ]
+      ]
+    },
+    "Rubber_XP005_YM002": {
+      "material": "Rubber",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 136,
+      "triangles": 304,
+      "bounds_cm": [
+        [
+          54931.309319332184,
+          -15317.66818906139,
+          6.0
+        ],
+        [
+          55348.54321502433,
+          -14750.603125623213,
+          76.6
+        ]
+      ]
+    },
+    "White_XP005_YM003": {
+      "material": "White",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 86,
+      "triangles": 236,
+      "bounds_cm": [
+        [
+          54947.588009992825,
+          -25854.281861423206,
+          25.0
+        ],
+        [
+          55329.66303199386,
+          -25324.67845522324,
+          163.5
+        ]
+      ]
+    },
+    "White_XP005_YM002": {
+      "material": "White",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 86,
+      "triangles": 236,
+      "bounds_cm": [
+        [
+          54948.42068344092,
+          -15300.55682495265,
+          25.0
+        ],
+        [
+          55325.95143228103,
+          -14767.714489731954,
+          163.5
+        ]
+      ]
+    }
+  },
+  "tile_size_cm": 10000,
+  "triangles": 2832,
+  "original_boundary_actor_count": 4,
+  "original_boundary_collision": "preserve BlockAll",
+  "new_collision": false
+}

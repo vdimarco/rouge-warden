@@ -10,14 +10,30 @@
   "loaded_resident_parts": 66,
   "loaded_skeletal_crew": 8,
   "loaded_animation_clips": 32,
-  "surveyed_buildings": 1161,
+  "plateau": {
+    "mesh_families": {
+      "Meshes": 721,
+      "Context": 742,
+      "Background": 418,
+      "Landmarks": 13,
+      "Park": 284,
+      "Edges": 8,
+      "Wayfinding": 4
+    },
+    "loaded_meshes": 2190,
+    "pedestrian_actors": 12,
+    "vegetation_actors": 1,
+    "mapped_tree_mesh": "/Game/Art/Tree/tree_small_02/StaticMeshes/tree_small_02.tree_small_02",
+    "civilian_rigs": 6,
+    "tree_instance_count_source": "verified on saved map by verify_plateau.py, not inferred from package log"
+  },
   "rendered_capture": true,
   "rendered_capture_count": 7,
   "viewport": [
     1600,
     900
   ],
-  "elapsed_seconds": 30.86,
+  "elapsed_seconds": 30.51,
   "skipped": [
     "external internet",
     "non-Linux platforms",

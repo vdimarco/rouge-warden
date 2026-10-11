@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "checks": [
+    "saved-map road surfaces and markings do not collide",
+    "authoritative PIE world and isolated collision floor",
+    "host enters the actual car through native interaction",
+    "settle on saved-map avenue",
+    "drive fully across an existing decorative street marking",
+    "settle before 2cm_strip",
+    "drive across 2cm_strip",
+    "settle before 18cm_curb_forward",
+    "drive across 18cm_curb_forward",
+    "settle before 18cm_curb_reverse",
+    "drive across 18cm_curb_reverse",
+    "settle before tall wall",
+    "tall wall still blocks the car"
+  ],
+  "cases": {
+    "saved_street_marking": {
+      "x_cm": 37832.19,
+      "z_cm": 100.01,
+      "max_z_cm": 100.01
+    },
+    "2cm_strip": {
+      "x_cm": 403.5,
+      "z_cm": 100.03,
+      "max_z_cm": 102.96
+    },
+    "18cm_curb_forward": {
+      "x_cm": 714.13,
+      "z_cm": 118.01,
+      "max_z_cm": 118.96
+    },
+    "18cm_curb_reverse": {
+      "x_cm": 699.57,
+      "z_cm": 118.01,
+      "max_z_cm": 118.96
+    },
+    "600cm_wall": {
+      "x_cm": -220.1,
+      "z_cm": 100.03
+    }
+  },
+  "mode": "standalone authoritative PIE",
+  "skipped": [
+    "remote-client driving",
+    "network latency",
+    "Chaos suspension"
+  ],
+  "elapsed_seconds": 28.84
+}

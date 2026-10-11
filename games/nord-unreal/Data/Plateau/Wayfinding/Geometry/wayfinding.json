@@ -1,0 +1,359 @@
+{
+  "version": 1,
+  "cartography_manifest_sha256": "6f6fdd49ddad2b565ba3d3b88362c14907af0cbee781228f241c50bfd17ef9c3",
+  "cartography_directory": "Data/Plateau/Cartography",
+  "source": "Data/LaFontaine/osm.xml",
+  "attribution": "© OpenStreetMap contributors · ODbL 1.0",
+  "licence_url": "https://www.openstreetmap.org/copyright",
+  "boards": [
+    {
+      "id": "EntreeCalixa",
+      "location": "Entrée Calixa-Lavallée",
+      "position_cm": [
+        36115,
+        -609,
+        0.0
+      ],
+      "facing_normal_xy": [
+        -0.5369054967469234,
+        -0.8436423931755322
+      ],
+      "facing_yaw_degrees": -122.47323002017056,
+      "viewer_right_xy": [
+        -0.8436423931755322,
+        0.5369054967469234
+      ],
+      "image_size_cm": [
+        105.0,
+        140.0
+      ],
+      "image_bottom_cm": 75.0,
+      "image_top_cm": 215.0,
+      "frame_size_cm": [
+        112.0,
+        148.0
+      ],
+      "panel_offset_cm": 1.15,
+      "panel_corners_cm": [
+        [
+          36158.67378432046,
+          -638.1577273313653,
+          75.0
+        ],
+        [
+          36158.67378432046,
+          -638.1577273313653,
+          215.0
+        ],
+        [
+          36070.091333037024,
+          -581.7826501729385,
+          215.0
+        ],
+        [
+          36070.091333037024,
+          -581.7826501729385,
+          75.0
+        ]
+      ],
+      "obj_uvs": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ],
+        [
+          0.75,
+          1.0
+        ],
+        [
+          0.75,
+          0.0
+        ]
+      ],
+      "panel_mesh_name": "Wayfinding_EntreeCalixa",
+      "texture_source": "EntreeCalixa.png",
+      "texture_sha256": "b964df4a16dff62b8b41c8d3139bfb37ef715416cfcedb5fcefc57329bd05702",
+      "image_size_pixels": [
+        1536,
+        2048
+      ],
+      "texture_built_size_pixels": [
+        2048,
+        2048
+      ],
+      "texture_uv_bounds": [
+        0.0,
+        0.0,
+        0.75,
+        1.0
+      ],
+      "texture_padding": "PadToPowerOfTwo, right/bottom, repeated border pixels",
+      "texture_asset": "/Game/Plateau/Wayfinding/T_Wayfinding_EntreeCalixa",
+      "material_asset": "/Game/Plateau/Wayfinding/M_Wayfinding_EntreeCalixa",
+      "path_edge_clearance_cm": 291.41,
+      "nearest_path": "way/1091849051",
+      "nearest_path_point_cm": [
+        35896.79411454179,
+        -951.8680401454694
+      ],
+      "steel_footprint_cm": [
+        [
+          36166.00231249506,
+          -633.161211065599
+        ],
+        [
+          36071.5143644594,
+          -573.0277954299436
+        ],
+        [
+          36065.9842378429,
+          -581.7173120796516
+        ],
+        [
+          36160.47218587856,
+          -641.850727715307
+        ]
+      ],
+      "minimum_capsule_edge_clearance_cm": 234.97419576191018,
+      "frame_collision": true,
+      "panel_collision": false,
+      "frame_batches": [
+        "Iron_Collision_XP010_YM001"
+      ]
+    },
+    {
+      "id": "PromenadeEtangs",
+      "location": "Promenade des étangs",
+      "position_cm": [
+        13500,
+        -8000,
+        0.0
+      ],
+      "facing_normal_xy": [
+        0.557176965880346,
+        0.8303937792953242
+      ],
+      "facing_yaw_degrees": 56.139209927233594,
+      "viewer_right_xy": [
+        0.8303937792953242,
+        -0.557176965880346
+      ],
+      "image_size_cm": [
+        105.0,
+        140.0
+      ],
+      "image_bottom_cm": 75.0,
+      "image_top_cm": 215.0,
+      "frame_size_cm": [
+        112.0,
+        148.0
+      ],
+      "panel_offset_cm": 1.15,
+      "panel_corners_cm": [
+        [
+          13457.045080097758,
+          -7969.793256445092,
+          75.0
+        ],
+        [
+          13457.045080097758,
+          -7969.793256445092,
+          215.0
+        ],
+        [
+          13544.236426923768,
+          -8028.296837862529,
+          215.0
+        ],
+        [
+          13544.236426923768,
+          -8028.296837862529,
+          75.0
+        ]
+      ],
+      "obj_uvs": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ],
+        [
+          0.75,
+          1.0
+        ],
+        [
+          0.75,
+          0.0
+        ]
+      ],
+      "panel_mesh_name": "Wayfinding_PromenadeEtangs",
+      "texture_source": "PromenadeEtangs.png",
+      "texture_sha256": "b59339f7d4964209c6284aba862d2344150b493ba79799a73c2c32da35d8e1b1",
+      "image_size_pixels": [
+        1536,
+        2048
+      ],
+      "texture_built_size_pixels": [
+        2048,
+        2048
+      ],
+      "texture_uv_bounds": [
+        0.0,
+        0.0,
+        0.75,
+        1.0
+      ],
+      "texture_padding": "PadToPowerOfTwo, right/bottom, repeated border pixels",
+      "texture_asset": "/Game/Plateau/Wayfinding/T_Wayfinding_PromenadeEtangs",
+      "material_asset": "/Game/Plateau/Wayfinding/M_Wayfinding_PromenadeEtangs",
+      "path_edge_clearance_cm": 372.51,
+      "nearest_path": "way/107915087",
+      "nearest_path_point_cm": [
+        13771.632055866772,
+        -7595.170684967966
+      ],
+      "steel_footprint_cm": [
+        [
+          13449.5977095983,
+          -7974.610846365767
+        ],
+        [
+          13542.601812879377,
+          -8037.014666544366
+        ],
+        [
+          13548.340735627944,
+          -8028.4616106176245
+        ],
+        [
+          13455.336632346867,
+          -7966.057790439026
+        ]
+      ],
+      "minimum_capsule_edge_clearance_cm": 316.0741957619101,
+      "frame_collision": true,
+      "panel_collision": false,
+      "frame_batches": [
+        "Iron_Collision_XP003_YM003"
+      ]
+    }
+  ],
+  "batches": {
+    "Iron_Collision_XP003_YM003": {
+      "material": "Iron",
+      "collision": true,
+      "tile": [
+        3,
+        -3
+      ],
+      "faces": 110,
+      "triangles": 284,
+      "bounds_cm": {
+        "min": [
+          13452.940771393582,
+          -8033.1144277832045,
+          2.0
+        ],
+        "max": [
+          13548.173582538178,
+          -7966.306908572815,
+          219.0
+        ]
+      },
+      "mesh_asset": "/Game/Plateau/Wayfinding/SM_Iron_Collision_XP003_YM003",
+      "actor_label": "Plateau wayfinding frame Iron_Collision_XP003_YM003",
+      "board_ids": [
+        "PromenadeEtangs"
+      ],
+      "sha256": "358535a62f8011d8f3789079f2d999855f5df8324f60e3f78a38ff8048cd8c91"
+    },
+    "Iron_Collision_XP010_YM001": {
+      "material": "Iron",
+      "collision": true,
+      "tile": [
+        10,
+        -1
+      ],
+      "faces": 110,
+      "triangles": 284,
+      "bounds_cm": {
+        "min": [
+          36066.14530949193,
+          -641.5976349973542,
+          2.0
+        ],
+        "max": [
+          36162.78087951458,
+          -576.786133907172,
+          219.0
+        ]
+      },
+      "mesh_asset": "/Game/Plateau/Wayfinding/SM_Iron_Collision_XP010_YM001",
+      "actor_label": "Plateau wayfinding frame Iron_Collision_XP010_YM001",
+      "board_ids": [
+        "EntreeCalixa"
+      ],
+      "sha256": "91c98a45644366a5ec24c156a7de9090c902115ae3573f7e79a2b0acaecafd56"
+    },
+    "Wayfinding_EntreeCalixa": {
+      "material": "Wayfinding_EntreeCalixa",
+      "collision": false,
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": {
+        "min": [
+          36070.091333037024,
+          -638.1577273313653,
+          75.0
+        ],
+        "max": [
+          36158.67378432046,
+          -581.7826501729385,
+          215.0
+        ]
+      },
+      "sha256": "0a4c411dff04d2c0a8ce8cf0524245b390780caba5e54bd458bda83ee6f850a6",
+      "mesh_asset": "/Game/Plateau/Wayfinding/SM_Wayfinding_EntreeCalixa",
+      "actor_label": "Plateau wayfinding EntreeCalixa",
+      "board_ids": [
+        "EntreeCalixa"
+      ]
+    },
+    "Wayfinding_PromenadeEtangs": {
+      "material": "Wayfinding_PromenadeEtangs",
+      "collision": false,
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": {
+        "min": [
+          13457.045080097758,
+          -8028.296837862529,
+          75.0
+        ],
+        "max": [
+          13544.236426923768,
+          -7969.793256445092,
+          215.0
+        ]
+      },
+      "sha256": "0527384e11a5e6956e0b8632d6784c5a4316d910c1c618c4b915d10c7de76835",
+      "mesh_asset": "/Game/Plateau/Wayfinding/SM_Wayfinding_PromenadeEtangs",
+      "actor_label": "Plateau wayfinding PromenadeEtangs",
+      "board_ids": [
+        "PromenadeEtangs"
+      ]
+    }
+  },
+  "tile_size_cm": 3500,
+  "triangles": 572,
+  "collision": "Complex BlockAll steel frame/backplate/posts; NoCollision printed faces",
+  "destination": "/Game/Plateau/Wayfinding",
+  "label_prefix": "Plateau wayfinding "
+}

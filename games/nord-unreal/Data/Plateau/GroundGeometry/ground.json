@@ -1,0 +1,133 @@
+{
+  "source": "Data/LaFontaine/osm.xml",
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "source_url": "https://www.openstreetmap.org/way/4767368",
+  "bounds_xy": [
+    -43674.71780490094,
+    -46754.399999970134,
+    55373.30293126712,
+    69018.39999999733
+  ],
+  "surfaces": [
+    {
+      "source": "relation/14474534",
+      "source_way_ids": [
+        "433686252"
+      ],
+      "name": "",
+      "kind": "pond_island",
+      "triangles": 60,
+      "z": 9.0,
+      "area_square_metres": 1216.0167877717504,
+      "bounds_xy": [
+        -11757.857957589675,
+        3590.0700000321704,
+        -6931.80164016447,
+        6839.500800038479
+      ]
+    },
+    {
+      "source": "way/4767368",
+      "source_way_ids": [
+        "4767368"
+      ],
+      "name": "Parc La Fontaine",
+      "kind": "park",
+      "triangles": 236,
+      "z": 2.0,
+      "area_square_metres": 360035.0408878805,
+      "bounds_xy": [
+        -31199.34662615831,
+        -32099.121999953466,
+        45186.1750032611,
+        59796.65120004114
+      ]
+    },
+    {
+      "source": "way/222715838",
+      "source_way_ids": [
+        "222715838"
+      ],
+      "name": "Parc Judith-Jasmin",
+      "kind": "park",
+      "triangles": 16,
+      "z": 2.0,
+      "area_square_metres": 458.4040219058275,
+      "bounds_xy": [
+        49915.523016953644,
+        -38212.81639997355,
+        53013.30835847065,
+        -35286.21360002225
+      ]
+    },
+    {
+      "source": "way/222838303",
+      "source_way_ids": [
+        "222838303"
+      ],
+      "name": "Parc Victor-Théodule-Daubigny",
+      "kind": "park",
+      "triangles": 12,
+      "z": 2.0,
+      "area_square_metres": 496.83549482643605,
+      "bounds_xy": [
+        51472.21474444333,
+        -42951.70879998437,
+        54696.34480524932,
+        -39918.23879997068
+      ]
+    },
+    {
+      "source": "way/311021953",
+      "source_way_ids": [
+        "311021953"
+      ],
+      "name": "Place Urbain-Baudreau-Graveline",
+      "kind": "park",
+      "triangles": 20,
+      "z": 2.0,
+      "area_square_metres": 3097.8267220447124,
+      "bounds_xy": [
+        27715.507975561104,
+        -38385.3624000125,
+        32727.18184372045,
+        -26948.34559995428
+      ]
+    },
+    {
+      "source": "way/345483708",
+      "source_way_ids": [
+        "345483708"
+      ],
+      "name": "Parc Félix-Antoine-Savard",
+      "kind": "park",
+      "triangles": 18,
+      "z": 2.0,
+      "area_square_metres": 1748.2753434974313,
+      "bounds_xy": [
+        37341.88372322078,
+        -36536.337199998256,
+        43879.83299746303,
+        -30395.92599998235
+      ]
+    },
+    {
+      "source": "way/345813401",
+      "source_way_ids": [
+        "345813401"
+      ],
+      "name": "Parc Monseigneur-Lartigue",
+      "kind": "park",
+      "triangles": 10,
+      "z": 2.0,
+      "area_square_metres": 535.10005801422,
+      "bounds_xy": [
+        44899.94962053953,
+        -13803.67999995201,
+        48067.1465670084,
+        -10225.85519998384
+      ]
+    }
+  ],
+  "new_collision": false
+}

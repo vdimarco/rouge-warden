@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0a16">
+  <meta name="description" content="NORD / Montréal is a comic-book adventure around Parc La Fontaine. Play the PC-hosted game in your browser with a friend.">
+  <title>NORD / Montréal — Save Parc La Fontaine</title>
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <a class="back" href="/" aria-label="Back to Cottage Arcade"><span aria-hidden="true">←</span> COTTAGE ARCADE</a>
+      <span class="edition">MONTRÉAL • TWO-PLAYER CO-OP</span>
+    </header>
+
+    <main class="hero">
+      <div class="copy">
+        <h1><span>NORD</span><span class="slash">/</span><span>MONTRÉAL</span></h1>
+        <p class="lead">The park is in trouble.<br>Bring your crew.</p>
+        <p class="description">Race through the streets around Parc La Fontaine, find your friends, and save the neighbourhood from the Boogeyman in a playable comic-book Montréal.</p>
+        <a class="play" href="https://nord-montreal.vercel.app/">PLAY IN BROWSER <span aria-hidden="true">↗</span></a>
+        <p class="availability">The game streams from a host PC. The player page shows when the host is offline or both slots are occupied.</p>
+      </div>
+
+      <section class="feature" aria-labelledby="preview-title">
+        <div class="frame">
+          <div class="scene">
+            <span class="issue">N° 01<br>PARC LA FONTAINE</span>
+            <div class="scene-copy">
+              <span class="place">SHERBROOKE EST → THE PARK</span>
+              <h2 id="preview-title">THE CITY<br>IS YOURS.</h2>
+            </div>
+          </div>
+          <div class="trailer" aria-label="Merged-game trailer">
+            <button id="trailer-open" type="button" hidden>WATCH THE TRAILER <span aria-hidden="true">↗</span></button>
+            <p id="trailer-pending">New gameplay trailer being captured from the merged build.</p>
+          </div>
+        </div>
+        <p class="frame-caption" id="frame-caption">Actual merged-game footage will appear here after capture.</p>
+      </section>
+    </main>
+
+    <dialog id="trailer-dialog" aria-label="NORD / Montréal gameplay trailer">
+      <button id="trailer-close" type="button" aria-label="Close trailer">CLOSE ×</button>
+      <video id="game-trailer" controls playsinline preload="none"></video>
+    </dialog>
+
+    <footer class="controls" aria-label="How to play">
+      <div><strong>ON FOOT / IN THE CAR</strong><span><b>WASD</b> move & drive <i>·</i> <b>Mouse</b> look <i>·</i> <b>Shift</b> sprint <i>·</i> <b>Space</b> jump & brake</span></div>
+      <div><strong>YOUR CREW</strong><span><b>E</b> interact & enter car <i>·</i> <b>C</b> switch character <i>·</i> <b>R</b> recover</span></div>
+      <p>On a phone, use the game’s touch controls. Each friend needs a separate player slot.</p>
+    </footer>
+  </div>
+  <script src="./title.js" defer></script>
+</body>
+</html>

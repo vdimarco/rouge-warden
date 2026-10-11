@@ -10,8 +10,9 @@ import { fileURLToPath } from "url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PUB = path.join(ROOT, "public");
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
+const GTA_URL = "/gta/";
 const SHOTS = process.env.SHOTS || ""; // a folder for screenshots; none are taken without it
-const PARTS = (process.env.PARTS || "walk,layout,switcher,saves,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
+const PARTS = (process.env.PARTS || "gta,walk,layout,switcher,saves,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
 setTimeout(() => { console.log("  FAIL the run did not finish in 30 minutes"); process.exit(1); }, 30 * 60 * 1000).unref();
@@ -115,6 +116,7 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
 }
 // the arcade page opens the same grid as ALL GAMES
 check(/<button[^>]*class="all-games"[^>]*data-switch/.test(html) && html.includes('<script src="/arcade/switch.js"></script>'), "the arcade page has an ALL GAMES button that opens the game grid");
+check(/<button[^>]*data-section="gta"[^>]*>GTA<\/button>/.test(html) && /id: "gta", label: "GTA", games: \["gta"\]/.test(html), "GTA has a collection button and its Montréal cabinet in the picker group");
 check(/^\s*<script src="\/arcade\/quiet\.js"><\/script>/m.test(html.slice(html.indexOf("<head>"), html.indexOf("</head>"))) && html.indexOf("/arcade/quiet.js") < html.search(/<script(?![^>]*quiet)/), "quiet.js is the first script on the arcade page");
 
 /* ---------------- the page ---------------- */
@@ -152,9 +154,46 @@ async function settle(page) {
 const sel = (page) => page.evaluate(() => [...document.querySelectorAll(".cab")].findIndex((c) => c.classList.contains("on")));
 
 if (chromium) {
-  let browser = await chromium.launch({ args: ARGS });
+  let browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined });
   // a fresh browser for each part: a headless browser with a software GPU slows down over a long run and can stop answering mouse moves
-  const relaunch = async () => { await browser.close().catch(() => {}); browser = await chromium.launch({ args: ARGS }); };
+  const relaunch = async () => { await browser.close().catch(() => {}); browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined }); };
+
+  /* ----- the Montréal cabinet: collection, artwork, pointer and keyboard launch ----- */
+  for (const vp of PARTS.includes("gta") ? [{ width: 390, height: 844 }, { width: 1280, height: 720 }] : []) {
+    const tag = `${vp.width}x${vp.height}`;
+    const { ctx, page, errors, moves } = await open(browser, vp);
+    check(page.url() === BASE && await page.title() === "Cottage Arcade" && await page.locator(".sign h1").innerText() === "COTTAGE ARCADE", `${tag}: the arcade identity and heading render before choosing GTA`);
+    await page.locator('[data-section="gta"]').click();
+    await settle(page);
+    const cabinet = await page.locator('.cab.gta').evaluate((c) => {
+      const r = c.getBoundingClientRect(), img = c.querySelector("img");
+      return { selected: c.classList.contains("on"), loaded: img.complete && img.naturalWidth > 0, inside: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, group: document.querySelector("#machinePicker option:checked").parentElement.label };
+    });
+    check(cabinet.selected && cabinet.loaded && cabinet.inside && cabinet.group === "GTA", `${tag}: GTA selects the Montréal cabinet, its icon loads, and it fits the viewport in the GTA picker group`);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `gta-${tag}-cabinet.png`) });
+    for (const method of ["cabinet click", "5 + Enter", "All Games + Enter"]) {
+      moves.length = 0;
+      await page.evaluate(() => document.activeElement?.blur());
+      if (method === "cabinet click") await page.locator('.cab.gta .marquee').click();
+      else if (method === "5 + Enter") {
+        await page.keyboard.press("5");
+        await page.waitForFunction(() => document.querySelector('.cab.gta .credit').textContent === "CREDIT 1");
+        await page.keyboard.press("Enter");
+      } else {
+        await page.locator("[data-switch]").click();
+        const tile = page.locator(`.gsw-game[href="${GTA_URL}"]`);
+        await tile.focus();
+        check(await tile.locator("b").textContent() === "GTA Montréal", `${tag}: All Games names the same Montréal game`);
+        await page.keyboard.press("Enter");
+      }
+      const until = Date.now() + 6000;
+      while (!moves.length && Date.now() < until) await page.waitForTimeout(50);
+      check(moves.length === 1 && moves[0] === GTA_URL, `${tag}: ${method} launches the same-origin GTA Montréal title page`);
+      await page.evaluate(() => { document.querySelectorAll(".boot").forEach((b) => b.remove()); GameSwitch.close(); });
+    }
+    check(errors.length === 0, `${tag}: Montréal cabinet causes no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
+    await ctx.close();
+  }
 
   await relaunch();
   /* ----- walk to every machine, put a token in, start it, and see where it goes ----- */
@@ -279,7 +318,7 @@ if (chromium) {
     const { ctx, page, errors } = await open(browser, { width, height });
     await page.addScriptTag({ url: new URL("arcade/switch.js", BASE).href });
     // the page answers to a game's address, so the switcher can work out where it is
-    const here = { "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus" };
+    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus" };
     for (const [p, name] of Object.entries(here)) {
       await page.evaluate((p) => { history.replaceState({}, "", p); GameSwitch.close(); GameSwitch.open(); }, p);
       await page.waitForSelector(".gsw-game");

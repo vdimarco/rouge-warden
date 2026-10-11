@@ -1,0 +1,350 @@
+{
+  "source": "Data/LaFontaine/osm.xml",
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "references": [
+    "https://lemay.com/projects/theatre-de-verdure/",
+    "https://montreal.ca/lieux/theatre-de-verdure"
+  ],
+  "interpretation": "Illustrative closed timber-and-metal stage envelope; not an exact reconstruction.",
+  "source_mass": {
+    "id": "433686251",
+    "footprint_cm": [
+      [
+        -11460.713895400124,
+        4911.438400049775
+      ],
+      [
+        -8801.235543306073,
+        3711.4088000263905
+      ],
+      [
+        -8258.421193419274,
+        4915.891200022714
+      ],
+      [
+        -8050.186378231201,
+        5377.8692000427955
+      ],
+      [
+        -10709.664730214421,
+        6576.785600053171
+      ]
+    ],
+    "height_cm": 960.0000000000001,
+    "preserved": true,
+    "original_collision_unchanged": true
+  },
+  "new_collision": false,
+  "enterable": false,
+  "walls": [
+    {
+      "a": [
+        -11460.713895400124,
+        4911.438400049775
+      ],
+      "b": [
+        -8801.235543306073,
+        3711.4088000263905
+      ],
+      "normal": [
+        -0.41129486833511814,
+        -0.9115023484781583
+      ],
+      "length_cm": 2917.686780000412,
+      "backing_front_cm": 18,
+      "fin_front_max_cm": 47,
+      "opaque_height_cm": 960.0000000000001,
+      "fins": 85,
+      "yaw": -24.286202394813397
+    },
+    {
+      "a": [
+        -8801.235543306073,
+        3711.4088000263905
+      ],
+      "b": [
+        -8258.421193419274,
+        4915.891200022714
+      ],
+      "normal": [
+        0.911695536814714,
+        -0.410866460242413
+      ],
+      "length_cm": 1321.145438755299,
+      "backing_front_cm": 18,
+      "fin_front_max_cm": 47,
+      "opaque_height_cm": 960.0000000000001,
+      "fins": 38,
+      "yaw": 65.74072389263735
+    },
+    {
+      "a": [
+        -8258.421193419274,
+        4915.891200022714
+      ],
+      "b": [
+        -8050.186378231201,
+        5377.8692000427955
+      ],
+      "normal": [
+        0.9116667623816599,
+        -0.41093030354129645
+      ],
+      "length_cm": 506.7399833829627,
+      "backing_front_cm": 18,
+      "fin_front_max_cm": 47,
+      "opaque_height_cm": 960.0000000000001,
+      "fins": 14,
+      "yaw": 65.7367115780509
+    },
+    {
+      "a": [
+        -8050.186378231201,
+        5377.8692000427955
+      ],
+      "b": [
+        -10709.664730214421,
+        6576.785600053171
+      ],
+      "normal": [
+        0.4109778004111139,
+        0.9116453518607127
+      ],
+      "length_cm": 2917.229102912766,
+      "backing_front_cm": 18,
+      "fin_front_max_cm": 47,
+      "opaque_height_cm": 960.0000000000001,
+      "fins": 85,
+      "yaw": 155.7337264937543
+    },
+    {
+      "a": [
+        -10709.664730214421,
+        6576.785600053171
+      ],
+      "b": [
+        -11460.713895400124,
+        4911.438400049775
+      ],
+      "normal": [
+        -0.9115846579368275,
+        0.4111124072734818
+      ],
+      "length_cm": 1826.8705879413826,
+      "backing_front_cm": 18,
+      "fin_front_max_cm": 47,
+      "opaque_height_cm": 960.0000000000001,
+      "fins": 53,
+      "yaw": -114.27473366217963
+    }
+  ],
+  "vertical_fins": 275,
+  "backing_ring_cm": [
+    [
+      -11484.520961480592,
+      4902.433183656539
+    ],
+    [
+      -8792.224096322718,
+      3687.594970103989
+    ],
+    [
+      -8242.010932706387,
+      4908.495029139593
+    ],
+    [
+      -8026.380016401656,
+      5386.881601370496
+    ],
+    [
+      -10718.674323315208,
+      6600.5917245629535
+    ]
+  ],
+  "roof_overhang_cm": 55,
+  "roof_ring_cm": [
+    [
+      -11533.457708423774,
+      4883.922461070441
+    ],
+    [
+      -8773.700566412484,
+      3638.644319707942
+    ],
+    [
+      -8208.2787301299,
+      4893.291788990955
+    ],
+    [
+      -7977.444717085367,
+      5405.407092988549
+    ],
+    [
+      -10737.194042466826,
+      6649.526536055284
+    ]
+  ],
+  "bounds_cm": [
+    [
+      -11533.457708423774,
+      3638.644319707942,
+      0
+    ],
+    [
+      -7977.444717085367,
+      6649.526536055284,
+      974.0000000000001
+    ]
+  ],
+  "signs": [
+    {
+      "id": "TheatreVerdure",
+      "text": "THÉÂTRE DE VERDURE",
+      "position": [
+        -8477.861722764233,
+        4290.230611790735,
+        340
+      ],
+      "normal": [
+        0.911695536814714,
+        -0.410866460242413
+      ],
+      "yaw": -24.259276107362652,
+      "size": 34
+    }
+  ],
+  "materials": {
+    "Iron_XM003_YP000": {
+      "material": "Iron",
+      "collision": false,
+      "tile": [
+        -3,
+        0
+      ],
+      "faces": 17,
+      "triangles": 34
+    },
+    "Iron_XM003_YP001": {
+      "material": "Iron",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 53,
+      "triangles": 109
+    },
+    "Iron_XM002_YP000": {
+      "material": "Iron",
+      "collision": false,
+      "tile": [
+        -2,
+        0
+      ],
+      "faces": 30,
+      "triangles": 60
+    },
+    "Iron_XM002_YP001": {
+      "material": "Iron",
+      "collision": false,
+      "tile": [
+        -2,
+        1
+      ],
+      "faces": 34,
+      "triangles": 68
+    },
+    "Roof_XM003_YP001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 1,
+      "triangles": 3
+    },
+    "Trim_XM003_YP000": {
+      "material": "Trim",
+      "collision": false,
+      "tile": [
+        -3,
+        0
+      ],
+      "faces": 1,
+      "triangles": 2
+    },
+    "Trim_XM003_YP001": {
+      "material": "Trim",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 2,
+      "triangles": 4
+    },
+    "Trim_XM002_YP000": {
+      "material": "Trim",
+      "collision": false,
+      "tile": [
+        -2,
+        0
+      ],
+      "faces": 1,
+      "triangles": 2
+    },
+    "Trim_XM002_YP001": {
+      "material": "Trim",
+      "collision": false,
+      "tile": [
+        -2,
+        1
+      ],
+      "faces": 1,
+      "triangles": 2
+    },
+    "Wood_XM003_YP000": {
+      "material": "Wood",
+      "collision": false,
+      "tile": [
+        -3,
+        0
+      ],
+      "faces": 316,
+      "triangles": 632
+    },
+    "Wood_XM003_YP001": {
+      "material": "Wood",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 806,
+      "triangles": 1612
+    },
+    "Wood_XM002_YP000": {
+      "material": "Wood",
+      "collision": false,
+      "tile": [
+        -2,
+        0
+      ],
+      "faces": 184,
+      "triangles": 368
+    },
+    "Wood_XM002_YP001": {
+      "material": "Wood",
+      "collision": false,
+      "tile": [
+        -2,
+        1
+      ],
+      "faces": 344,
+      "triangles": 688
+    }
+  },
+  "tile_size_cm": 4500,
+  "triangles": 3584
+}

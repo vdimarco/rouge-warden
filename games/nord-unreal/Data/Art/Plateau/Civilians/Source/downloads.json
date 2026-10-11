@@ -1,0 +1,288 @@
+[
+  {
+    "Title": "Casual Character",
+    "UploadDate": "2022-02-22T02:33:41.500Z",
+    "ResourceID": "90a9e2d4-053f-42f1-99a2-8f5e1180ea7f",
+    "PublicID": "kZ3DmIoGip",
+    "Likes": 19,
+    "CommentCount": 0,
+    "Tris": 3350,
+    "Views": "4.16k",
+    "Downloads": "7.75k",
+    "Creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg",
+      "Socials": {
+        "Twitter": "quaternius",
+        "Pateron": "quaternius",
+        "Website": "https://quaternius.com/"
+      }
+    },
+    "Category": "Objects",
+    "Tags": [
+      "Pants",
+      "Long Sleeve",
+      "Man"
+    ],
+    "Orbit": {
+      "phi": "1.32476",
+      "radius": "100%",
+      "theta": "0.33899"
+    },
+    "Background": {
+      "one": "#5e35b1",
+      "two": "hsl(260deg, 54%, 15%)",
+      "type": "Radial"
+    },
+    "Visibility": "Public",
+    "Type": "FBX",
+    "Licence": "CC0 1.0",
+    "Animated": true,
+    "local_file": "Data/Art/Plateau/Civilians/Source/MenCasual.glb",
+    "download_url": "https://static.poly.pizza/90a9e2d4-053f-42f1-99a2-8f5e1180ea7f.glb",
+    "source_page": "https://poly.pizza/m/kZ3DmIoGip",
+    "sha256": "fea7e71271203e7073f1a073fa1208de7402df276f87f80e149bf7589b5d46b4",
+    "bytes": 1430660
+  },
+  {
+    "Title": "Hoodie Character",
+    "UploadDate": "2022-02-22T02:33:43.776Z",
+    "ResourceID": "bcd66ec5-5e81-4901-a222-47abc875fe2a",
+    "PublicID": "gKLBoRsyKe",
+    "Likes": 45,
+    "CommentCount": 1,
+    "Tris": 4318,
+    "Views": "15.11k",
+    "Downloads": "8.88k",
+    "Creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg",
+      "Socials": {
+        "Twitter": "quaternius",
+        "Pateron": "quaternius",
+        "Website": "https://quaternius.com/"
+      }
+    },
+    "Category": "People & Characters",
+    "Tags": [
+      "Sleeve",
+      "Clothing",
+      "Long Sleeve",
+      "Person",
+      "Man"
+    ],
+    "Orbit": {
+      "phi": "1.32476",
+      "radius": "100%",
+      "theta": "0.33899"
+    },
+    "Background": {
+      "one": "#5e35b1",
+      "two": "hsl(260deg, 54%, 15%)",
+      "type": "Radial"
+    },
+    "Visibility": "Public",
+    "Type": "FBX",
+    "Licence": "CC0 1.0",
+    "Animated": true,
+    "local_file": "Data/Art/Plateau/Civilians/Source/MenHoodie.glb",
+    "download_url": "https://static.poly.pizza/bcd66ec5-5e81-4901-a222-47abc875fe2a.glb",
+    "source_page": "https://poly.pizza/m/gKLBoRsyKe",
+    "sha256": "0de1bcd789d409214cf82f66f61daeb53d2f7de6d914b23e7b3660bfb3dee61e",
+    "bytes": 1456760
+  },
+  {
+    "Title": "Business Man",
+    "Description": " ",
+    "UploadDate": "2022-02-22T02:43:17.211Z",
+    "ResourceID": "e599abbe-7d73-488c-9d7e-3ead281e705c",
+    "PublicID": "JFrLIKqvCH",
+    "Likes": 52,
+    "CommentCount": 0,
+    "Tris": 4162,
+    "Views": "14.53k",
+    "Downloads": "9.66k",
+    "Creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg",
+      "Socials": {
+        "Twitter": "quaternius",
+        "Pateron": "quaternius",
+        "Website": "https://quaternius.com/"
+      }
+    },
+    "Category": "People & Characters",
+    "Tags": [
+      "Suit",
+      "Person",
+      "Formal",
+      "Spy"
+    ],
+    "Orbit": {
+      "phi": "1.29323",
+      "radius": "2.5911913612006563",
+      "theta": "0.35476"
+    },
+    "Background": {
+      "one": "#3949ab",
+      "two": "hsl(232deg, 50%, 15%)",
+      "type": "Radial"
+    },
+    "Visibility": "Public",
+    "Type": "FBX",
+    "Licence": "CC0 1.0",
+    "Animated": true,
+    "local_file": "Data/Art/Plateau/Civilians/Source/MenSuit.glb",
+    "download_url": "https://static.poly.pizza/e599abbe-7d73-488c-9d7e-3ead281e705c.glb",
+    "source_page": "https://poly.pizza/m/JFrLIKqvCH",
+    "sha256": "82b81257c1e94cd9ee48cb1dcbe5ff506e81c9ce67cd0c5af542d8712dca546e",
+    "bytes": 1529248
+  },
+  {
+    "Title": "Animated Woman",
+    "UploadDate": "2022-04-10T08:56:32.754Z",
+    "ResourceID": "46d6db5a-3c9f-4238-8cdf-8eb7194498dc",
+    "PublicID": "nIItLV9nxS",
+    "Likes": 28,
+    "CommentCount": 0,
+    "Tris": 3282,
+    "Views": "7.24k",
+    "Downloads": "9.66k",
+    "Creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg",
+      "Socials": {
+        "Twitter": "quaternius",
+        "Pateron": "quaternius",
+        "Website": "https://quaternius.com/"
+      }
+    },
+    "Category": "People & Characters",
+    "Tags": [
+      "Dress",
+      "Clothing",
+      "Female",
+      "Girl",
+      "Character",
+      "Girl",
+      "Woman"
+    ],
+    "Orbit": {
+      "phi": "1.35630",
+      "radius": "100%",
+      "theta": "0.25227"
+    },
+    "Background": {
+      "one": "#3949ab",
+      "two": "hsl(232deg, 50%, 15%)",
+      "type": "Radial"
+    },
+    "Visibility": "Public",
+    "Type": "FBX",
+    "Licence": "CC0 1.0",
+    "Animated": true,
+    "local_file": "Data/Art/Plateau/Civilians/Source/WomenFormal.glb",
+    "download_url": "https://static.poly.pizza/46d6db5a-3c9f-4238-8cdf-8eb7194498dc.glb",
+    "source_page": "https://poly.pizza/m/nIItLV9nxS",
+    "sha256": "a6522fe53d15de21130a957d1bf2b8a9a58d4e4e9a12af646645b667a9bb2d17",
+    "bytes": 1491780
+  },
+  {
+    "Title": "Punk",
+    "UploadDate": "2022-04-10T08:56:34.089Z",
+    "ResourceID": "1d368679-1d9a-4d5c-9095-877144b02d00",
+    "PublicID": "djXoqejw6w",
+    "Likes": 9,
+    "CommentCount": 0,
+    "Tris": 3850,
+    "Views": "1.38k",
+    "Downloads": "3.3k",
+    "Creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg",
+      "Socials": {
+        "Twitter": "quaternius",
+        "Pateron": "quaternius",
+        "Website": "https://quaternius.com/"
+      }
+    },
+    "Category": "People & Characters",
+    "Tags": [
+      "Clothing",
+      "Apparel",
+      "Figurine",
+      "Person",
+      "Girl",
+      "Character",
+      "Girl",
+      "Woman"
+    ],
+    "Orbit": {
+      "phi": "1.35630",
+      "radius": "100%",
+      "theta": "0.25227"
+    },
+    "Background": {
+      "one": "#3949ab",
+      "two": "hsl(232deg, 50%, 15%)",
+      "type": "Radial"
+    },
+    "Visibility": "Public",
+    "Type": "FBX",
+    "Licence": "CC0 1.0",
+    "Animated": true,
+    "local_file": "Data/Art/Plateau/Civilians/Source/WomenPunk.glb",
+    "download_url": "https://static.poly.pizza/1d368679-1d9a-4d5c-9095-877144b02d00.glb",
+    "source_page": "https://poly.pizza/m/djXoqejw6w",
+    "sha256": "77cbb6838bf207fc948848ddb389ea43d4bb30c52ec62c5a2fc84bbf35c88c52",
+    "bytes": 1474996
+  },
+  {
+    "Title": "Animated Woman",
+    "UploadDate": "2022-04-10T08:56:30.960Z",
+    "ResourceID": "ba7a1955-ea51-4cb9-a561-188bdef0a6c7",
+    "PublicID": "qJ2gsTUBHL",
+    "Likes": 28,
+    "CommentCount": 0,
+    "Tris": 3410,
+    "Views": "9.53k",
+    "Downloads": "9.95k",
+    "Creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg",
+      "Socials": {
+        "Twitter": "quaternius",
+        "Pateron": "quaternius",
+        "Website": "https://quaternius.com/"
+      }
+    },
+    "Category": "People & Characters",
+    "Tags": [
+      "Sleeve",
+      "Clothing",
+      "Person",
+      "Character",
+      "Girl",
+      "Woman"
+    ],
+    "Orbit": {
+      "phi": "1.35630",
+      "radius": "100%",
+      "theta": "0.25227"
+    },
+    "Background": {
+      "one": "#3949ab",
+      "two": "hsl(232deg, 50%, 15%)",
+      "type": "Radial"
+    },
+    "Visibility": "Public",
+    "Type": "FBX",
+    "Licence": "CC0 1.0",
+    "Animated": true,
+    "local_file": "Data/Art/Plateau/Civilians/Source/WomenCasual.glb",
+    "download_url": "https://static.poly.pizza/ba7a1955-ea51-4cb9-a561-188bdef0a6c7.glb",
+    "source_page": "https://poly.pizza/m/qJ2gsTUBHL",
+    "sha256": "a2212729826b718e59e698211ed3951c22459b48733b1ee6a24fac0abf74dca8",
+    "bytes": 1530616
+  }
+]

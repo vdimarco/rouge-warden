@@ -11,3 +11,7 @@ mods/*/.claude-plugin/types/
 !.env.example
 *.swp
 *~
+
+# Published trailer media is uploaded to the arcade deployment separately.
+public/gta/*.mp4
+public/gta/*poster*.webp

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+  <rect width="640" height="480" fill="#f5c66e"/>
+  <path d="M0 30h640v218H0z" fill="#73bcc1"/>
+  <circle cx="494" cy="93" r="48" fill="#ffe9a4"/>
+  <path d="M0 241q115-100 234-5t406-9v114H0z" fill="#83a958" stroke="#142e37" stroke-width="8"/>
+  <path d="M307 265q100-38 256 1l77 30-253 26z" fill="#85cbd0" stroke="#142e37" stroke-width="6"/>
+  <g stroke="#142e37" stroke-width="7" stroke-linejoin="round">
+    <path d="M20 270V130l54-17 65 17v140z" fill="#b64e35"/>
+    <path d="M139 270V112l61-17 60 17v158z" fill="#e1bb85"/>
+    <path d="M17 130h125m-7-18h128M74 115V89m125 7V73" fill="none"/>
+    <path d="M40 155h29v36H40zm52 0h27v36H92zm-52 57h29v37H40zm52 0h27v37H92zm69-76h28v35h-28zm49 0h28v35h-28zm-49 56h28v35h-28zm49 0h28v35h-28z" fill="#294858"/>
+    <path d="M75 267v-43h50l-14 15 24 12-24 12 22 10m56-11v-33h54l-13 14 23 12-22 12" fill="none"/>
+    <path d="M535 262v-92m64 116v-90m-306 69v-65" fill="none"/>
+    <path d="M493 176q-9-47 30-53-10-52 31-47 43-2 35 44 38 4 30 49-53 31-126 7zm73 33q-18-40 14-52 7-39 37-18 35 1 23 44v29zm-301 1q-17-36 12-45 5-33 31-17 32 3 22 33 19 34-65 29z" fill="#d58c38"/>
+    <path d="M0 327l640-16v169H0z" fill="#39434c"/>
+    <path d="M0 327l640-16M0 337l640-15" fill="none" stroke="#f3dec0"/>
+    <path d="M15 428l104-7m365-21 130-8" fill="none" stroke="#f2cb62" stroke-width="9"/>
+    <ellipse cx="325" cy="418" rx="220" ry="22" fill="#192a32" stroke="none"/>
+    <path d="m119 363 72-15 56-58 135-6 74 56 69 13 16 54-416 15z" fill="#e8a838"/>
+    <path d="m208 347 47-45 118-4 59 42z" fill="#79b6be"/>
+    <path d="m316 300 2 44m-109 11 222-12m-96 12 3 43m-109-37-16 40m132-45 17-1" fill="none" stroke-width="5"/>
+    <path d="m125 391 414-17 4 25-417 20z" fill="#d8dbcb"/>
+    <path d="m134 365 47-8 1 20-45 5zm339-8 41 6 5 18-43-4z" fill="#fff0b9"/>
+    <path d="m188 380 280-12" fill="none" stroke-width="11"/>
+    <circle cx="215" cy="403" r="34" fill="#192a32"/>
+    <circle cx="215" cy="403" r="17" fill="#bcc8bf"/>
+    <circle cx="461" cy="393" r="34" fill="#192a32"/>
+    <circle cx="461" cy="393" r="17" fill="#bcc8bf"/>
+  </g>
+  <path d="m22 54 207-8-10 55-197 9z" fill="#142e37"/>
+  <text x="38" y="88" fill="#ffe9a4" font-family="Impact,Arial Black,sans-serif" font-size="33" font-weight="900">MONTRÉAL</text>
+</svg>

@@ -1458,15 +1458,13 @@ void AQuebecHUD::DrawHUD()
     const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
     const AQuebecCar* NearbyCar = Controller && !Car ? Controller->FindInteractableCar() : nullptr;
     const bool bCanComplete = !Campaign && State && AQuebecGameState::CanAdvanceMission(State->MissionIndex, Pawn->GetActorLocation());
-    const float Scale = FMath::Clamp(Canvas->SizeY / 720.f, .75f, 1.5f);
-    const float Margin = 28.f * Scale;
-    // Comic caption palette: yellow captions and white paper with ink borders and an off-register cyan shadow.
-    // Canvas colours are linear: these display as near-black ink, dark plum and deep magenta.
-    const FLinearColor Ink(0.f, 0.f, .004f, 1.f);
-    const FLinearColor Muted(.045f, .025f, .06f, 1.f);
-    const FLinearColor Accent(.62f, 0.f, .16f, 1.f);
-    const FLinearColor Panel(1.f, .84f, .16f, 1.f);
-    const FLinearColor Paper(.98f, .96f, .88f, 1.f);
+    const float Scale = FMath::Clamp(FMath::Min(Canvas->SizeY / 720.f, Canvas->SizeX / 1280.f), .6f, 1.5f);
+    const float Margin = 22.f * Scale;
+    const FLinearColor Ink(.004f, .006f, .009f, .88f);
+    const FLinearColor Muted(.55f, .59f, .6f, 1.f);
+    const FLinearColor Accent(.95f, .61f, .12f, 1.f);
+    const FLinearColor Panel(.016f, .022f, .026f, .9f);
+    const FLinearColor Paper(.95f, .94f, .87f, 1.f);
     UFont* Font = GEngine->GetMediumFont();
     const auto Text = [this, Font, Scale](const FString& Value, FLinearColor Color, float X, float Y, float Size = 1.f)
     {
@@ -1474,49 +1472,53 @@ void AQuebecHUD::DrawHUD()
     };
     const auto Box = [this, Scale, Ink](FLinearColor Fill, float X, float Y, float W, float H)
     {
-        const float Border = 3.f * Scale;
-        DrawRect(FLinearColor(.05f, .8f, .95f), X + 7.f * Scale, Y + 7.f * Scale, W, H);
-        DrawRect(Ink, X - Border, Y - Border, W + Border * 2.f, H + Border * 2.f);
+        DrawRect(Ink, X - Scale, Y - Scale, W + Scale * 2.f, H + Scale * 2.f);
         DrawRect(Fill, X, Y, W, H);
     };
-    const auto Paragraph = [this, Font, Scale, &Text](const FString& Value, FLinearColor Color, float X, float Y, float Width)
+    const auto WrappedLines = [this, Font, Scale](const FString& Value, float Width, float Size)
     {
         TArray<FString> Words;
+        TArray<FString> Lines;
         Value.ParseIntoArrayWS(Words);
         FString Line;
-        int32 Row = 0;
         for (const FString& Word : Words)
         {
             const FString Candidate = Line.IsEmpty() ? Word : Line + TEXT(" ") + Word;
             float W = 0.f, H = 0.f;
-            GetTextSize(Candidate, W, H, Font, .82f * Scale);
+            GetTextSize(Candidate, W, H, Font, Size * Scale);
             if (W > Width && !Line.IsEmpty())
             {
-                Text(Line, Color, X, Y + Row++ * 22.f * Scale, .82f);
+                Lines.Add(Line);
                 Line = Word;
-                if (Row == 2) break;
             }
             else Line = Candidate;
         }
-        if (Row < 2 && !Line.IsEmpty()) Text(Line, Color, X, Y + Row * 22.f * Scale, .82f);
+        if (!Line.IsEmpty()) Lines.Add(Line);
+        return Lines;
     };
 
-    Box(Panel, Margin, Margin, 400.f * Scale, 165.f * Scale);
-    DrawRect(Ink, Margin, Margin, 6.f * Scale, 165.f * Scale);
-    Text(TEXT("NORD / MONTRÉAL"), Ink, Margin + 20.f * Scale, Margin + 14.f * Scale, 1.55f);
-    Text(TEXT("PARC LA FONTAINE / SHERBROOKE EST"), Muted, Margin + 21.f * Scale, Margin + 49.f * Scale, .72f);
+    const float MissionWidth = 430.f * Scale;
+    Box(Panel, Margin, Margin, MissionWidth, 116.f * Scale);
+    DrawRect(Accent, Margin, Margin, 3.f * Scale, 116.f * Scale);
+    Text(TEXT("PARC LA FONTAINE  /  STORY"), Muted, Margin + 15.f * Scale, Margin + 10.f * Scale, .67f);
+    const float IdentityX = Canvas->SizeX - Margin - 246.f * Scale;
+    Box(Panel, IdentityX, Margin, 246.f * Scale, 90.f * Scale);
+    Text(TEXT("GTA"), Paper, IdentityX + 14.f * Scale, Margin + 6.f * Scale, 1.75f);
+    Text(TEXT("MONTRÉAL EDITION"), Accent, IdentityX + 14.f * Scale, Margin + 39.f * Scale, .92f);
+    Text(FString::Printf(TEXT("NORD  /  SHERBROOKE EST  /  %d ONLINE"), State ? State->PlayerArray.Num() : 1),
+        Muted, IdentityX + 14.f * Scale, Margin + 68.f * Scale, .59f);
     if (Campaign)
     {
-        Text(Campaign->GetMissionTitle(), Ink, Margin + 21.f * Scale, Margin + 77.f * Scale, .93f);
-        Text(Campaign->GetObjectiveText(), Muted, Margin + 21.f * Scale, Margin + 106.f * Scale, .8f);
-        Text(Campaign->GetStatusText(), Accent, Margin + 21.f * Scale, Margin + 133.f * Scale, .76f);
+        Text(Campaign->GetMissionTitle(), Paper, Margin + 15.f * Scale, Margin + 35.f * Scale, 1.f);
+        Text(Campaign->GetObjectiveText(), Paper, Margin + 15.f * Scale, Margin + 65.f * Scale, .8f);
+        Text(Campaign->GetStatusText(), Accent, Margin + 15.f * Scale, Margin + 91.f * Scale, .76f);
         if (!Campaign->IsCampaignComplete())
         {
             const FVector Target = Campaign->GetObjectiveLocation();
             const float Meters = FVector::Distance(Pawn->GetActorLocation(), Target) / 100.f;
             FVector2D Marker;
             if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
-                Marker.X > 15.f && Marker.X < Canvas->SizeX - 15.f && Marker.Y > 230.f * Scale && Marker.Y < Canvas->SizeY - 280.f * Scale)
+                Marker.X > 15.f && Marker.X < Canvas->SizeX - 15.f && Marker.Y > 250.f * Scale && Marker.Y < Canvas->SizeY - 110.f * Scale)
             {
                 DrawLine(Marker.X, Marker.Y - 12.f, Marker.X + 12.f, Marker.Y, Accent, 3.f);
                 DrawLine(Marker.X + 12.f, Marker.Y, Marker.X, Marker.Y + 12.f, Accent, 3.f);
@@ -1531,49 +1533,49 @@ void AQuebecHUD::DrawHUD()
         const int32 Index = FMath::Max(0, State->MissionIndex);
         const FVector Target = AQuebecGameState::MissionLocations[Index];
         const float Meters = FVector::Distance(Pawn->GetActorLocation(), Target) / 100.f;
-        Text(FString::Printf(TEXT("0%d  /  %s"), Index + 1, AQuebecGameState::MissionLabels[Index]), Ink,
-            Margin + 21.f * Scale, Margin + 77.f * Scale, 1.f);
+        Text(FString::Printf(TEXT("0%d  /  %s"), Index + 1, AQuebecGameState::MissionLabels[Index]), Paper,
+            Margin + 15.f * Scale, Margin + 35.f * Scale, 1.f);
         Text(FString::Printf(TEXT("%dm to the next beacon"), FMath::RoundToInt(Meters)), Muted,
-            Margin + 21.f * Scale, Margin + 106.f * Scale, .83f);
-        Text(Meters <= 5.f ? (Car ? TEXT("STEP OUT + E  /  Complete objective") : NearbyCar ? TEXT("Move away from car to complete objective") : TEXT("E  /  Complete objective")) : TEXT("Follow the pink diamond"),
-            Accent, Margin + 21.f * Scale, Margin + 133.f * Scale, .83f);
+            Margin + 15.f * Scale, Margin + 65.f * Scale, .83f);
+        Text(Meters <= 5.f ? (Car ? TEXT("STEP OUT + E  /  Complete objective") : NearbyCar ? TEXT("Move away from car to complete objective") : TEXT("E  /  Complete objective")) : TEXT("Follow the gold diamond"),
+            Accent, Margin + 15.f * Scale, Margin + 91.f * Scale, .76f);
         FVector2D Marker;
         if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
             Marker.X > 15.f && Marker.X < Canvas->SizeX - 15.f && Marker.Y > 15.f && Marker.Y < Canvas->SizeY - 80.f &&
-            !(Marker.X < Margin + 420.f * Scale && Marker.Y < Margin + 205.f * Scale))
+            !(Marker.X < Margin + MissionWidth && Marker.Y < Margin + 250.f * Scale))
         {
             constexpr float Radius = 12.f;
             DrawLine(Marker.X, Marker.Y - Radius, Marker.X + Radius, Marker.Y, Accent, 2.f);
             DrawLine(Marker.X + Radius, Marker.Y, Marker.X, Marker.Y + Radius, Accent, 2.f);
             DrawLine(Marker.X, Marker.Y + Radius, Marker.X - Radius, Marker.Y, Accent, 2.f);
             DrawLine(Marker.X - Radius, Marker.Y, Marker.X, Marker.Y - Radius, Accent, 2.f);
-            Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Ink, Marker.X - 15.f, Marker.Y + 20.f, .8f);
+            Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Paper, Marker.X - 15.f, Marker.Y + 20.f, .8f);
         }
     }
     else
     {
-        Text(TEXT("THE CITY IS YOURS"), Ink, Margin + 21.f * Scale, Margin + 80.f * Scale, 1.1f);
-        Text(TEXT("All three missions complete. Keep exploring."), Muted, Margin + 21.f * Scale, Margin + 122.f * Scale, .76f);
+        Text(TEXT("THE CITY IS YOURS"), Paper, Margin + 15.f * Scale, Margin + 38.f * Scale, 1.1f);
+        Text(TEXT("All three missions complete. Keep exploring."), Muted, Margin + 15.f * Scale, Margin + 76.f * Scale, .76f);
     }
 
-    const float MapSize = 188.f * Scale;
-    const float MapX = Canvas->SizeX - Margin - MapSize;
-    Box(Paper, MapX, Margin, MapSize, MapSize + 32.f * Scale);
+    const float MapSize = 170.f * Scale;
+    const float MapX = Margin;
+    const float MapY = Canvas->SizeY - Margin - MapSize - 50.f * Scale;
+    Box(Panel, MapX, MapY, MapSize, MapSize + 50.f * Scale);
     const FVector Here = Pawn->GetActorLocation();
-    const auto MapPoint = [MapX, Margin, MapSize](FVector Position)
+    const auto MapPoint = [MapX, MapY, MapSize](FVector Position)
     {
         return FVector2D(MapX + MapSize * (.5f + FMath::Clamp((Position.X - 6000.) / 125000., -.46, .46)),
-            Margin + MapSize * (.5f - FMath::Clamp((Position.Y - 11000.) / 125000., -.46, .46)));
+            MapY + MapSize * (.5f - FMath::Clamp((Position.Y - 11000.) / 125000., -.46, .46)));
     };
     for (const auto& Segment : LaFontaine::RoadSegments)
     {
         const FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
-        DrawLine(A.X, A.Y, B.X, B.Y, Muted.CopyWithNewOpacity(.55f), 1.4f * Scale);
+        DrawLine(A.X, A.Y, B.X, B.Y, Muted.CopyWithNewOpacity(.7f), 1.4f * Scale);
     }
-    DrawRect(Paper, MapX - 3.f * Scale, Margin + MapSize + 36.f * Scale, MapSize + 6.f * Scale, 48.f * Scale);
-    Text(TEXT("© OpenStreetMap contributors / ODbL"), Muted, MapX, Margin + MapSize + 38.f * Scale, .6f);
-    Text(TEXT("openstreetmap.org/copyright"), Muted, MapX, Margin + MapSize + 52.f * Scale, .6f);
-    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Muted, MapX, Margin + MapSize + 66.f * Scale, .6f);
+    Text(TEXT("© OpenStreetMap contributors / ODbL"), Muted, MapX + 5.f * Scale, MapY + MapSize + 5.f * Scale, .56f);
+    Text(TEXT("openstreetmap.org/copyright"), Muted, MapX + 5.f * Scale, MapY + MapSize + 19.f * Scale, .56f);
+    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Muted, MapX + 5.f * Scale, MapY + MapSize + 33.f * Scale, .56f);
     TArray<AQuebecCar*> MapCars;
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
@@ -1590,7 +1592,7 @@ void AQuebecHUD::DrawHUD()
         DrawRect(FLinearColor(1.f, .7f, .3f), Vehicle.X - 3.f, Vehicle.Y - 2.f, 6.f, 4.f);
     }
     const FVector2D Home = MapPoint(MansionSpawn);
-    DrawRect(Ink, Home.X - 3.f, Home.Y - 3.f, 6.f, 6.f);
+    DrawRect(Paper, Home.X - 3.f, Home.Y - 3.f, 6.f, 6.f);
     if (Campaign && !Campaign->IsCampaignComplete())
     {
         const FVector2D Goal = MapPoint(Campaign->GetObjectiveLocation());
@@ -1603,40 +1605,40 @@ void AQuebecHUD::DrawHUD()
     }
     const FVector2D Center = MapPoint(Here);
     const FVector Facing = Pawn->GetActorForwardVector();
-    DrawLine(Center.X, Center.Y, Center.X + Facing.X * 12.f, Center.Y - Facing.Y * 12.f, Ink, 3.f);
-    DrawRect(Ink, Center.X - 2.f, Center.Y - 2.f, 4.f, 4.f);
-    Text(TEXT("N"), Ink, MapX + MapSize / 2.f - 5.f, Margin + 3.f, .7f);
-    Text(FString::Printf(TEXT("%d ONLINE"), State ? State->PlayerArray.Num() : 1), Accent,
-        MapX + 13.f * Scale, Margin + MapSize + 4.f * Scale, .8f);
+    DrawLine(Center.X, Center.Y, Center.X + Facing.X * 12.f, Center.Y - Facing.Y * 12.f, Paper, 3.f);
+    DrawRect(Paper, Center.X - 2.f, Center.Y - 2.f, 4.f, 4.f);
+    Text(TEXT("N"), Paper, MapX + MapSize / 2.f - 5.f, MapY + 3.f * Scale, .7f);
 
-    const float Bottom = Canvas->SizeY - Margin - 58.f * Scale;
-    Box(Paper, Margin, Bottom, Canvas->SizeX - Margin * 2.f - 8.f * Scale, 58.f * Scale);
-    Text(Car ? TEXT("W/S  Drive     A/D  Steer     SPACE  Handbrake     E  Exit     Mouse  Look     F2  Comic") :
-        TEXT("WASD  Move     Mouse  Look     SPACE  Jump     SHIFT  Sprint     E  Interact     F2  Comic look"),
-        Ink, Margin + 18.f * Scale, Bottom + 18.f * Scale, .82f);
+    const float Bottom = Canvas->SizeY - Margin - 50.f * Scale;
+    const float ControlsX = Margin + MapSize + 24.f * Scale;
+    const float ControlsWidth = Canvas->SizeX - Margin - ControlsX - (Car ? 168.f : 0.f) * Scale;
+    Box(Panel, ControlsX, Bottom, ControlsWidth, 50.f * Scale);
+    Text(Car ? TEXT("W/S  Drive   A/D  Steer   SPACE  Handbrake   E  Exit   Mouse  Look   F2  Comic") :
+        TEXT("WASD  Move   Mouse  Look   SPACE  Jump   SHIFT  Sprint   E  Interact   F2  Comic"),
+        Paper, ControlsX + 12.f * Scale, Bottom + 8.f * Scale, .74f);
     const AQuebecCharacter* Avatar = Car ? Car->Occupant.Get() : Cast<AQuebecCharacter>(Pawn);
     if (Avatar) Text(FString::Printf(TEXT("C  /  CHARACTER: %s"), AQuebecParkResident::NameForStyle(Avatar->CrewStyle)),
-        Ink, Margin + 18.f * Scale, Bottom + 38.f * Scale, .75f);
+        Muted, ControlsX + 12.f * Scale, Bottom + 29.f * Scale, .71f);
     if (Campaign) Text(Campaign->IsCampaignComplete() ? TEXT("T  Replay street race") : TEXT("R  Recover at checkpoint"),
-        Accent, Margin + 450.f * Scale, Bottom + 38.f * Scale, .75f);
+        Accent, ControlsX + 320.f * Scale, Bottom + 29.f * Scale, .71f);
     if (Controller)
     {
-        if (Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds())
+        const FString Caption = Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds()
+            ? Controller->ResidentCaption : Campaign ? Campaign->GetBriefingText() : FString();
+        if (!Caption.IsEmpty())
         {
-            Box(Paper, Margin, Bottom-112.f*Scale, Canvas->SizeX-Margin*2.f-8.f*Scale, 72.f*Scale);
-            Paragraph(Controller->ResidentCaption, Ink, Margin+18.f*Scale, Bottom-96.f*Scale, Canvas->SizeX-Margin*2.f-46.f*Scale);
-        }
-        else if (Campaign)
-        {
-            Box(Paper, Margin, Bottom-112.f*Scale, Canvas->SizeX-Margin*2.f-8.f*Scale, 72.f*Scale);
-            Paragraph(Campaign->GetBriefingText(), Ink, Margin+18.f*Scale, Bottom-96.f*Scale, Canvas->SizeX-Margin*2.f-46.f*Scale);
+            const TArray<FString> Lines = WrappedLines(Caption, MissionWidth - 30.f * Scale, .78f);
+            const float CaptionY = Margin + 124.f * Scale;
+            Box(Panel, Margin, CaptionY, MissionWidth, (20.f + Lines.Num() * 18.f) * Scale);
+            for (int32 Row = 0; Row < Lines.Num(); ++Row)
+                Text(Lines[Row], Paper, Margin + 15.f * Scale, CaptionY + (10.f + Row * 18.f) * Scale, .78f);
         }
         else if (!Car && !NearbyCar && !bCanComplete)
         {
             if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
             {
-                Box(Panel,Margin,Bottom-70.f*Scale,420.f*Scale,44.f*Scale);
-                Text(FString(TEXT("E  /  Talk to "))+AQuebecParkResident::NameForStyle(Resident->Style),Ink,Margin+15.f*Scale,Bottom-58.f*Scale,.85f);
+                Box(Panel,ControlsX,Bottom-52.f*Scale,420.f*Scale,38.f*Scale);
+                Text(FString(TEXT("E  /  Talk to "))+AQuebecParkResident::NameForStyle(Resident->Style),Paper,ControlsX+12.f*Scale,Bottom-41.f*Scale,.85f);
             }
         }
     }
@@ -1648,22 +1650,26 @@ void AQuebecHUD::DrawHUD()
                 Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
         if (!Prompt.IsEmpty())
         {
-            Box(Panel, Margin, Bottom-172.f*Scale, 520.f*Scale, 42.f*Scale);
-            Text(Prompt, Accent, Margin+15.f*Scale, Bottom-160.f*Scale, .82f);
+            const float X = Canvas->SizeX * .5f - 250.f * Scale;
+            Box(Panel, X, Bottom-52.f*Scale, 500.f*Scale, 38.f*Scale);
+            Text(Prompt, Accent, X+12.f*Scale, Bottom-41.f*Scale, .82f);
         }
     }
     if (Car)
     {
-        Text(FString::Printf(TEXT("%03d KM/H"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Accent,
-            Canvas->SizeX - Margin - 150.f * Scale, Bottom + 14.f * Scale, 1.1f);
-        if (Car->bHandbrake) Text(TEXT("HANDBRAKE"), Accent, Canvas->SizeX - Margin - 150.f * Scale, Bottom - 30.f * Scale, .9f);
+        const float SpeedX = Canvas->SizeX - Margin - 156.f * Scale;
+        Box(Panel, SpeedX, Bottom, 156.f * Scale, 50.f * Scale);
+        Text(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper,
+            SpeedX + 12.f * Scale, Bottom + 5.f * Scale, 1.65f);
+        Text(TEXT("KM/H"), Muted, SpeedX + 98.f * Scale, Bottom + 22.f * Scale, .69f);
+        if (Car->bHandbrake) Text(TEXT("HANDBRAKE"), Accent, SpeedX + 12.f * Scale, Bottom - 24.f * Scale, .8f);
     }
     else if (Controller)
     {
         if (NearbyCar)
         {
             const float X = Canvas->SizeX * .5f - 120.f * Scale;
-            const float Y = Bottom - (Campaign || Controller->ResidentCaptionUntil > GetWorld()->GetTimeSeconds() ? 172.f : 65.f) * Scale;
+            const float Y = Bottom - 52.f * Scale;
             Box(Panel, X, Y, 240.f * Scale, 44.f * Scale);
             Text(TEXT("[ E ]  ENTER CAR"), Accent, X + 32.f * Scale, Y + 12.f * Scale, 1.f);
         }
@@ -1696,14 +1702,14 @@ void AQuebecHUD::DrawHUD()
                 const float Angle = Spike * PI * 2.f / 30.f + .2f;
                 const float Length = ((Spike % 2 ? 80.f : 125.f) - Pass * 8.f) * Scale * Pop;
                 DrawLine(Burst.X, Burst.Y, Burst.X + FMath::Cos(Angle) * Length, Burst.Y + FMath::Sin(Angle) * Length * .7f,
-                    Pass ? Panel : Ink, (Pass ? 12.f : 18.f) * Scale);
+                    Pass ? Accent : Ink, (Pass ? 12.f : 18.f) * Scale);
             }
         float Width = 0.f, Height = 0.f;
         GetTextSize(SoundWord, Width, Height, Large, Size);
         const float X = Burst.X - Width * .5f, Y = Burst.Y - Height * .5f;
         for (const FVector2D Offset : {FVector2D(-3, 0), FVector2D(3, 0), FVector2D(0, -3), FVector2D(0, 3), FVector2D(5, 5)})
             DrawText(SoundWord, Ink, X + Offset.X * Scale, Y + Offset.Y * Scale, Large, Size);
-        DrawText(SoundWord, Accent, X, Y, Large, Size);
+        DrawText(SoundWord, Paper, X, Y, Large, Size);
     }
     if (State)
     {
@@ -1715,7 +1721,7 @@ void AQuebecHUD::DrawHUD()
             const float X = Canvas->SizeX * .5f - 160.f * Scale;
             Box(Panel, X, Margin, 320.f * Scale, 70.f * Scale);
             Text(TEXT("MISSION COMPLETE"), Accent, X + 27.f * Scale, Margin + 12.f * Scale, 1.15f);
-            Text(FString::Printf(TEXT("%d / %d completed together"), Completed, Campaign ? 2 : 3), Ink, X + 27.f * Scale, Margin + 42.f * Scale, .8f);
+            Text(FString::Printf(TEXT("%d / %d completed together"), Completed, Campaign ? 2 : 3), Paper, X + 27.f * Scale, Margin + 42.f * Scale, .8f);
         }
     }
 }
@@ -1978,6 +1984,15 @@ void AQuebecGameMode::BeginPlay()
         double BestDistance = TNumericLimits<double>::Max();
         for (int32 I = 0; I < ParkRoutes.Num(); ++I)
         {
+            const FVector Right = FVector::CrossProduct(FVector::UpVector,(ParkRoutes[I].Last()-ParkRoutes[I][0]).GetSafeNormal2D());
+            bool bClear = true;
+            for (float Offset : {-55.f,55.f})
+            {
+                TArray<FVector> Lane = ParkRoutes[I];
+                for (FVector& Point : Lane) Point += Right*Offset;
+                if (!ClearRoute(Lane)) { bClear = false; break; }
+            }
+            if (!bClear) continue;
             const FVector Center = (ParkRoutes[I][0]+ParkRoutes[I].Last())*.5;
             const double Distance = FVector::DistSquared2D(Center,AQuebecGameState::MissionLocations[Mission]);
             if (Distance < BestDistance) { Best = I; BestDistance = Distance; }

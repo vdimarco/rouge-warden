@@ -1,0 +1,75 @@
+{
+  "actual_native_save_inventory_excluding_recovery_backups": {
+    "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+  },
+  "additional_nonbaseline_saves_at_snapshot": [],
+  "baseline_save_files_unchanged": 1,
+  "current_integrated_map_and_hud": {
+    "Content/Maps/LaFontaine.umap": {
+      "bytes": 6321762,
+      "sha256": "7e638da09f9bf6c329d2244ade75419ab42f57fc3296b495f93eafb681ed2db1"
+    },
+    "Source/Quebec/QuebecGameplay.cpp": {
+      "bytes": 122852,
+      "sha256": "0a10a9a66e0796e5096f586a7667c1d51785e0ed87ed4c2fed7fd896eaa1c0d4"
+    },
+    "Source/Quebec/QuebecGameplay.h": {
+      "bytes": 10038,
+      "sha256": "74b8a22d7d0fd11130a3f047381efe9ef89ea821cbf3f5302ed999c6ac22772b"
+    }
+  },
+  "limits": [
+    "Hashes do not establish visual likeness or package contents.",
+    "The integrated map and HUD hashes are a point-in-time snapshot; later QA edits require a fresh snapshot."
+  ],
+  "passed": true,
+  "production_campaign_save_present": false,
+  "recorded_at_utc": "2026-10-11T03:31:48+00:00",
+  "scope": "Point-in-time CPU hash comparison; no Unreal/editor process or client launched.",
+  "source_checkout": "Separate GTA-NORD checkout; source Scripts intentionally excluded because they changed independently.",
+  "source_commit": "eddc54c978534adafc571e31ab0bdbd8d785883c",
+  "source_protected_paths": {
+    "all_sha256_match": true,
+    "bytes": 1000734772,
+    "files": 4938,
+    "manifest_sha256": "47ed92624780cc4c9ccaa0c0d82a780ef2b06bc4e787d50207d92222132f2a1c"
+  },
+  "warden_gameplay_graph_unchanged": {
+    "Data/LaFontaine/layout.json": {
+      "matches_destination_commit": true,
+      "sha256": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250"
+    },
+    "Source/Quebec/LaFontaineMap.h": {
+      "matches_destination_commit": true,
+      "sha256": "d2146d9458628121fbdd93c8c881216d46886ccded8179295c817deb2428a0ab"
+    }
+  },
+  "warden_import": {
+    "Content/Plateau": {
+      "all_sha256_match": true,
+      "bytes": 210998761,
+      "files": 2376,
+      "manifest_sha256": "3e29c7640b53759afe2aeda468c039b14a6bac10de8710fd6ff6981380e7ef3c"
+    },
+    "Data/Plateau/BaseGeometry_from_source_Data/LaFontaine/Geometry": {
+      "all_sha256_match": true,
+      "bytes": 48392253,
+      "files": 16,
+      "manifest_sha256": "82d9deb49a3c49942dde63d5d865c607d35800427fde33b78822c21efd3449ff"
+    },
+    "Data/Plateau_excluding_adapted_README": {
+      "all_sha256_match": true,
+      "bytes": 315164588,
+      "files": 2260,
+      "manifest_sha256": "cd78447cfacb192f26b0fbf3e250d80bc3440aae9a9ae5c94b10a6beb48a2e82"
+    },
+    "adapted_Data/Plateau/README.md_sha256": "9544f8c8045e88c553a6410de6e3811f08f94502fe74e937465a2ec6bd71ee7a"
+  },
+  "warden_premerge_commit": "e7901824903383a72d8a292c0cb9f003f112d16b",
+  "warden_recovery_copies": {
+    "all_sha256_match": true,
+    "bytes": 55289536,
+    "files": 16,
+    "manifest_sha256": "054633bfcace50b8992983498bf54ff210fd1b0b5dc9e0315920c85106a1d8a4"
+  }
+}
