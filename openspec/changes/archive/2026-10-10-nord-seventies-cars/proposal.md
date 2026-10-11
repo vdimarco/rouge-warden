@@ -1,0 +1,9 @@
+# Seventies cars for NORD
+
+Replace the current generic hatchback fleet artwork with recognizable 1970s-inspired coupe, sedan and station-wagon forms. The user wants cars that look like real cars from the period while retaining NORD's illustrated comic finish. Use original designs rather than copying a branded vehicle or adding a new licensed asset dependency.
+
+The existing fleet shares one car class, replicated paint/body profiles, fixed wheel positions and tested collision/driving behavior. Before this change, its profile variation only stretched the upper cabin. The new artwork gives the three profiles their own coherent body, roof and window shapes, supported by period chrome, grilles, round headlights, wheel treatment and restrained paint choices.
+
+Apply the same artwork to the starter car, existing parked cars and circulating traffic. Preserve their placements, population, controls, handling, authoritative occupancy, campaign state and browser-player behavior. Work stays in the gameplay/streaming checkout; the separate Plateau map/assets are outside this change.
+
+Acceptance requires source and native checks plus actual rendered front, rear and side/three-quarter views of all three profiles at 1280×720 and 1920×1080. The artwork is implemented, imported and packaged; all eighteen profile views passed bounded visual review, with a nineteenth stationary possessed view and fixture-assisted native entry/exit. Three existing native driving tests and all seven normal browser checks pass, and maps/save-file sets and hashes match their baseline. A successful import or build alone does not establish visual quality or sustained driving feel. The validated art change is archived. The final normal host was restored after both coordinated GPU windows and passed a second seven-check browser regression; the completed checklist and verification record retain the remaining manual, off-LAN and sustained-session limits.

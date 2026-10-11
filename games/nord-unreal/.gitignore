@@ -3,6 +3,8 @@ Builds/
 DerivedDataCache/
 Intermediate/
 Saved/
+Saved_*/
+Preview/SeventiesCars/
 .vs/
 .idea/
 *.sln

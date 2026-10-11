@@ -1,0 +1,29 @@
+newmtl Paint
+Kd 0.035 0.26 0.24
+
+newmtl Chrome
+Kd 0.65 0.7 0.73
+
+newmtl Ink
+Kd 0.012 0.017 0.021
+
+newmtl Rubber
+Kd 0.022 0.025 0.028
+
+newmtl Glass
+Kd 0.045 0.105 0.14
+
+newmtl Lens
+Kd 0.78 0.73 0.53
+
+newmtl Red
+Kd 0.42 0.018 0.025
+
+newmtl Amber
+Kd 0.7 0.24 0.018
+
+newmtl Cream
+Kd 0.72 0.66 0.48
+
+newmtl Vinyl
+Kd 0.035 0.028 0.022

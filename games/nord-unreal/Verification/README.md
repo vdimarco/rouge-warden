@@ -1,3 +1,5 @@
+[Latest car-art verification](SeventiesCars.md): original 1970s coupe/sedan/wagon, nineteen reviewed native views, three handling tests and fresh two-player browser regression. Prior environment/story performance figures below predate this art pass.
+
 # Current verification — 2026-10-10
 
 Checked in Warden on Linux, Unreal 5.8.3, Intel Core i9-14900K / RTX 4090 / Vulkan SM6. [CityQuality.md](CityQuality.md) describes this correction; [QualityAudit.md](QualityAudit.md) maps requirements to evidence and limits.

@@ -663,11 +663,47 @@ void AQuebecCar::ResetMotion()
 
 void AQuebecCar::ApplyPaint()
 {
+    const int32 Profile = FMath::Clamp(BodyProfile,0,2);
+    const FString BodyPath = FString::Printf(TEXT("/Game/ParkComic/SM_Car70Body%d.SM_Car70Body%d"),Profile,Profile);
+    if (UStaticMesh* BodyMesh = LoadObject<UStaticMesh>(nullptr,*BodyPath))
+    {
+        const FString PaintPath = FString::Printf(TEXT("/Game/ParkComic/M_Car70_Paint%d.M_Car70_Paint%d"),PaintStyle % 4,PaintStyle % 4);
+        UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr,*PaintPath);
+        for (UStaticMeshComponent* Part : Parts)
+        {
+            const FString Name = Part->GetName();
+            FString MeshName;
+            if (Name == TEXT("Body")) MeshName = FString::Printf(TEXT("Car70Body%d"),Profile);
+            else if (Name == TEXT("Glass")) MeshName = FString::Printf(TEXT("Car70Cabin%d"),Profile);
+            else if (Name == TEXT("Roof")) MeshName = FString::Printf(TEXT("Car70Roof%d"),Profile);
+            else if (Name.EndsWith(TEXT("Wheel"))) MeshName = TEXT("Car70Tire");
+            else if (Name.EndsWith(TEXT("WheelRim"))) MeshName = TEXT("Car70Rim");
+            // Lamps, bumpers, mirrors and grille are now authored into the body mesh.
+            Part->SetVisibility(!MeshName.IsEmpty());
+            if (MeshName.IsEmpty()) continue;
+            const FString MeshPath = FString::Printf(TEXT("/Game/ParkComic/SM_%s.SM_%s"),*MeshName,*MeshName);
+            if (UStaticMesh* Mesh = Name == TEXT("Body") ? BodyMesh : LoadObject<UStaticMesh>(nullptr,*MeshPath))
+            {
+                Part->SetStaticMesh(Mesh);
+                Part->SetRelativeScale3D(FVector::OneVector);
+                if (!Name.Contains(TEXT("Wheel"))) Part->SetRelativeLocation(FVector::ZeroVector);
+                else if (Name.EndsWith(TEXT("WheelRim")))
+                {
+                    FVector Location = Part->GetRelativeLocation();
+                    Location.Y = Location.Y < 0. ? -106.5 : 106.5;
+                    Part->SetRelativeLocation(Location);
+                }
+                const TArray<FStaticMaterial>& Materials = Mesh->GetStaticMaterials();
+                for (int32 I = 0; I < Materials.Num(); ++I)
+                    Part->SetMaterial(I,Paint && Materials[I].MaterialSlotName == TEXT("Paint") ? Paint : Mesh->GetMaterial(I));
+            }
+        }
+        return;
+    }
     const FString Path = PaintStyle > 0
         ? FString::Printf(TEXT("/Game/ParkComic/M_CarPaint%d.M_CarPaint%d"), PaintStyle % 4, PaintStyle % 4)
         : TEXT("/Game/Materials/M_CarBody.M_CarBody");
     UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr,*Path);
-    const int32 Profile = FMath::Clamp(BodyProfile,0,2);
     // Hatch, lower compact sedan, and long-roof wagon use the existing artwork.
     // Only the upper cabin changes: tires, body/wheel arches and collision stay aligned.
     const FVector CabinScale = Profile == 1 ? FVector(.78,1.,.85) : Profile == 2 ? FVector(1.27,1.,1.08) : FVector::OneVector;

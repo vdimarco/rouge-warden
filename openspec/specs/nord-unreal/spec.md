@@ -121,11 +121,11 @@ The game SHALL include goofy original park residents with readable silhouettes a
 - **AND** only the interacting player receives the dialogue, without changing completed mission progress
 
 ### Requirement: Illustrated cars
-The game SHALL give cars a shaped comic hatchback body, distinct windows, wheel arches, lights and trim while preserving the existing collision box and driving controls.
+The game SHALL give its existing fleet original 1970s-inspired coupe, sedan and station-wagon bodies, distinct windows, aligned wheel arches, round headlamps, grilles and chrome trim in the comic art direction while preserving the existing collision box and driving controls.
 
 #### Scenario: Drive the upgraded car
 - **WHEN** a player enters with E and drives with W/S and A/D
-- **THEN** the new car art follows the vehicle and its wheels animate
+- **THEN** the selected period body and paint follow the vehicle and its wheels animate
 - **AND** street marking and tested curb traversal, handbraking and exit still pass the driving checks
 
 ### Requirement: Textured cottage crew
