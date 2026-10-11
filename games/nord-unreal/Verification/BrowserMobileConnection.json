@@ -477,7 +477,7 @@
     }
   },
   "limits": [
-    "Physical Android5G confirmation pending.",
+    "User confirmed phone video loads; new touch controls are verified separately in BrowserTouchControls.",
     "Scoped public TURN DNS override used only in forced-relay QA; ordinary public regression uses normal DNS.",
     "Android Chromium emulation is not a physical phone test.",
     "Touch controls remain unsupported in this connection correction.",
@@ -485,5 +485,10 @@
     "Funnel has bandwidth/uptime limits; short relay samples10.7\u201325.3decodedFPS are not sustained performance acceptance.",
     "DHCP change of the co-located relay/game interface requires configuration update/retest.",
     "No full campaign re-completion; unchanged save hashes were checked after lifecycle restart."
-  ]
+  ],
+  "userConfirmation": {
+    "source": "User message after connection repair",
+    "statement": "Looks good. It loads and everything looks good",
+    "scope": "Phone video loads; user requests touch controls next. New touch controls and physical iOS acceptance not established."
+  }
 }

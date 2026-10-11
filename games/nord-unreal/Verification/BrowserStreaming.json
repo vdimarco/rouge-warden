@@ -860,7 +860,7 @@
     "finishedAt": "2026-10-10T21:43:56.524Z"
   },
   "deployment": {
-    "id": "dpl_5nXnqkFxfDRz71iG7BQJBL44RbKt",
+    "id": "dpl_Gn2Q2mVh2m1D42FuD7DhDth62Jah",
     "state": "READY",
     "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
     "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
@@ -868,8 +868,8 @@
     "gitLinked": false,
     "method": "Configured static output upload; exact preview-tested files",
     "thirdPartyNoticesPublished": true,
-    "playerJsSha256": "ee95fc0410b3534443422e9a833a2342780692c9544f1f7041d32da5123cf924",
-    "uniqueUrl": "https://nord-montreal-igot6tusl-vdimarcos-projects.vercel.app/",
+    "playerJsSha256": "e6480c777c782c3a794ebb001c0d9610f4bc299791d9981d4b0eda976ce41855",
+    "uniqueUrl": "https://nord-montreal-d33zcinh7-vdimarcos-projects.vercel.app/",
     "publicUrl": "https://nord-montreal.vercel.app/",
     "signallingUrl": "wss://reports-rec-encouraged-taught.trycloudflare.com",
     "noticesBytes": 15768,
@@ -1016,5 +1016,22 @@
     ]
   },
   "connectionRepairEvidence": "BrowserConnection.json",
-  "mobileConnectionEvidence": "BrowserMobileConnection.json"
+  "mobileConnectionEvidence": "BrowserMobileConnection.json",
+  "priorDeploymentBeforeTouchControls": {
+    "id": "dpl_5nXnqkFxfDRz71iG7BQJBL44RbKt",
+    "state": "READY",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "target": "production",
+    "gitLinked": false,
+    "method": "Configured static output upload; exact preview-tested files",
+    "thirdPartyNoticesPublished": true,
+    "playerJsSha256": "ee95fc0410b3534443422e9a833a2342780692c9544f1f7041d32da5123cf924",
+    "uniqueUrl": "https://nord-montreal-igot6tusl-vdimarcos-projects.vercel.app/",
+    "publicUrl": "https://nord-montreal.vercel.app/",
+    "signallingUrl": "wss://reports-rec-encouraged-taught.trycloudflare.com",
+    "noticesBytes": 15768,
+    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+  },
+  "touchControlsEvidence": "BrowserTouchControls.json"
 }

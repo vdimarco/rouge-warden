@@ -43,3 +43,19 @@ The browser rollout SHALL use Vercel for the player and the existing PC for GPU 
 - **THEN** the deployment preserves the existing arcade, map/assets and unrelated computer services
 - **AND** stopping the host terminates only owned processes and makes the browser report unavailability
 - **AND** verified local/public reachability and remaining ICE/TURN or capacity limits are reported separately from Vercel deployment status
+
+### Requirement: Mobile touch gameplay
+The browser player SHALL provide touch controls on touch-capable devices using the existing native keyboard and camera bindings without changing the game package or desktop controls.
+
+#### Scenario: Move, look and act on a phone
+- **WHEN** a touch-capable browser plays a connected stream in portrait or landscape
+- **THEN** a left stick moves or steers, a right pad looks around, and clearly labelled buttons provide sprint, jump/handbrake, interact/car, crew, recovery, race replay and comic view
+- **AND** simultaneous fingers can move, look and hold an action without capturing the desktop mouse
+- **AND** controls remain within the viewport, have at least 44-pixel touch targets and remain available in fullscreen
+- **AND** action buttons accept keyboard or assistive click activation without duplicating ordinary touch actions
+
+#### Scenario: Release interrupted touch input
+- **WHEN** a held touch is lifted, cancelled or loses capture, or the page loses focus, is hidden, rotates or disconnects
+- **THEN** all affected touch-held native keys are released and the stick returns to its centre
+- **AND** an offline, connecting or disconnected player cannot send touch gameplay input
+- **AND** desktop mouse/keyboard, occupied-slot refusal and reconnect continue working

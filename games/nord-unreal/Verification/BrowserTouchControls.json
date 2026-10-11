@@ -1,0 +1,316 @@
+{
+  "dateUtc": "2026-10-11",
+  "scope": "Touch controls for existing browser player; no native rebuild/restart or service configuration change",
+  "userPhoneVideoConfirmation": "User reports that phone video loads and looks good before this touch update; new physical touch controls not yet reviewed",
+  "implementation": {
+    "movement": "Left stick digital WASD with deadzone and diagonals",
+    "camera": "Right drag pad uses Epic signed video-coordinate normalization",
+    "actions": {
+      "Sprint": 16,
+      "Jump / handbrake": 32,
+      "Use / car / worklight toggle": 69,
+      "Crew": 67,
+      "Recover": 82,
+      "Race replay": 84,
+      "Comic": 113
+    },
+    "simultaneousPointers": true,
+    "releaseOn": [
+      "pointerup",
+      "pointercancel",
+      "lostpointercapture",
+      "blur",
+      "hidden document",
+      "resize / rotation",
+      "disconnect",
+      "pagehide"
+    ],
+    "desktopPointerLockPreserved": true,
+    "rawNativeTouchInput": false,
+    "newDependencies": false,
+    "accessibleActionActivation": "Keyboard/assistive click holds a native action for 120 ms, respects overlapping touch holds, and releases on lifecycle interruptions; ordinary touch clicks do not duplicate input."
+  },
+  "sourceChecks": {
+    "unitTestsPassed": 11,
+    "staticBrowserChecksPassed": true,
+    "whitespacePassed": true,
+    "openSpecManualStructure": "4 requirements / 8 observable scenarios",
+    "openSpecCliAvailable": false
+  },
+  "preview": {
+    "id": "dpl_F9FxF2y9KLSmrfTgBqF2eYAzNFEL",
+    "url": "https://nord-montreal-qd9w4d41s-vdimarcos-projects.vercel.app/",
+    "state": "READY"
+  },
+  "deployment": {
+    "id": "dpl_Gn2Q2mVh2m1D42FuD7DhDth62Jah",
+    "url": "https://nord-montreal.vercel.app/",
+    "uniqueUrl": "https://nord-montreal-d33zcinh7-vdimarcos-projects.vercel.app/",
+    "state": "READY",
+    "target": "production",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "sameBytesAsTestedPreview": true
+  },
+  "sha256": {
+    "index.html": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+    "player.js": "e6480c777c782c3a794ebb001c0d9610f4bc299791d9981d4b0eda976ce41855",
+    "styles.css": "d2b7e81a9b81add38618a18441c5c0322d978304be0cc17db32fc61fd3663d65",
+    "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+  },
+  "mobileRuns": {
+    "preview": {
+      "startedAt": "2026-10-11T01:32:15.107Z",
+      "finishedAt": "2026-10-11T01:32:21.658Z",
+      "playerUrl": "https://nord-montreal-qd9w4d41s-vdimarcos-projects.vercel.app/",
+      "slot": "NordFriend1",
+      "passed": true,
+      "checks": [
+        {
+          "name": "real mobile media",
+          "passed": true
+        },
+        {
+          "name": "portrait controls fit and meet target size",
+          "passed": true
+        },
+        {
+          "name": "simultaneous move, look and jump use the native data channel",
+          "passed": true
+        },
+        {
+          "name": "landscape controls fit and fullscreen exit works",
+          "passed": true
+        },
+        {
+          "name": "action buttons support keyboard activation without duplicate touch clicks",
+          "passed": true
+        },
+        {
+          "name": "touch release on disconnect leaves no held native key",
+          "passed": true
+        }
+      ],
+      "rawReport": ".qa/mobile-2026-10-11T01-32-15-106Z/summary.json",
+      "media": {
+        "initial": {
+          "width": 1280,
+          "height": 720,
+          "codec": [
+            "video/VP8"
+          ],
+          "framesDecodedBefore": 3,
+          "framesDecodedAfter": 32,
+          "videoTimeAdvanced": true,
+          "audioPacketsAfter": 71
+        },
+        "duringTouch": {
+          "width": 1280,
+          "height": 720,
+          "codec": [
+            "video/VP8"
+          ],
+          "framesDecodedBefore": 50,
+          "framesDecodedAfter": 81,
+          "videoTimeAdvanced": true,
+          "audioPacketsAfter": 171
+        }
+      },
+      "threeFinger": {
+        "meanRgbDelta": 26.236689814814813,
+        "nativeInputMessages": [
+          60,
+          70,
+          74
+        ]
+      },
+      "disconnectKeyUpCodes": [
+        87,
+        16
+      ],
+      "layouts": {
+        "portraitLayout": {
+          "viewport": {
+            "width": 360,
+            "height": 800
+          },
+          "overflowX": false,
+          "allTargetsAtLeast44px": true
+        },
+        "landscapeLayout": {
+          "viewport": {
+            "width": 800,
+            "height": 360
+          },
+          "overflowX": false,
+          "allTargetsAtLeast44px": true
+        }
+      },
+      "pageErrors": [],
+      "console404Urls": [
+        "https://nord-montreal-qd9w4d41s-vdimarcos-projects.vercel.app/favicon.ico"
+      ]
+    },
+    "production": {
+      "startedAt": "2026-10-11T01:33:09.797Z",
+      "finishedAt": "2026-10-11T01:33:15.555Z",
+      "playerUrl": "https://nord-montreal.vercel.app/",
+      "slot": "NordFriend1",
+      "passed": true,
+      "checks": [
+        {
+          "name": "real mobile media",
+          "passed": true
+        },
+        {
+          "name": "portrait controls fit and meet target size",
+          "passed": true
+        },
+        {
+          "name": "simultaneous move, look and jump use the native data channel",
+          "passed": true
+        },
+        {
+          "name": "landscape controls fit and fullscreen exit works",
+          "passed": true
+        },
+        {
+          "name": "action buttons support keyboard activation without duplicate touch clicks",
+          "passed": true
+        },
+        {
+          "name": "touch release on disconnect leaves no held native key",
+          "passed": true
+        }
+      ],
+      "rawReport": ".qa/mobile-2026-10-11T01-33-09-796Z/summary.json",
+      "media": {
+        "initial": {
+          "width": 1280,
+          "height": 720,
+          "codec": [
+            "video/VP8"
+          ],
+          "framesDecodedBefore": 3,
+          "framesDecodedAfter": 30,
+          "videoTimeAdvanced": true,
+          "audioPacketsAfter": 72
+        },
+        "duringTouch": {
+          "width": 1280,
+          "height": 720,
+          "codec": [
+            "video/VP8"
+          ],
+          "framesDecodedBefore": 50,
+          "framesDecodedAfter": 78,
+          "videoTimeAdvanced": true,
+          "audioPacketsAfter": 173
+        }
+      },
+      "threeFinger": {
+        "meanRgbDelta": 26.01345486111111,
+        "nativeInputMessages": [
+          60,
+          70,
+          74
+        ]
+      },
+      "disconnectKeyUpCodes": [
+        87,
+        16
+      ],
+      "layouts": {
+        "portraitLayout": {
+          "viewport": {
+            "width": 360,
+            "height": 800
+          },
+          "overflowX": false,
+          "allTargetsAtLeast44px": true
+        },
+        "landscapeLayout": {
+          "viewport": {
+            "width": 800,
+            "height": 360
+          },
+          "overflowX": false,
+          "allTargetsAtLeast44px": true
+        }
+      },
+      "pageErrors": [],
+      "console404Urls": [
+        "https://nord-montreal.vercel.app/favicon.ico"
+      ]
+    }
+  },
+  "ordinaryProductionDesktopRegression": {
+    "startedAt": "2026-10-11T01:33:15.767Z",
+    "finishedAt": "2026-10-11T01:33:35.625Z",
+    "passed": true,
+    "networkMode": "ordinary",
+    "checks": [
+      {
+        "name": "host real stream",
+        "passed": true,
+        "durationMs": 1989
+      },
+      {
+        "name": "friend independent real stream",
+        "passed": true,
+        "durationMs": 2022
+      },
+      {
+        "name": "host native input and Escape release",
+        "passed": true,
+        "durationMs": 2925
+      },
+      {
+        "name": "friend native input and Escape release",
+        "passed": true,
+        "durationMs": 2863
+      },
+      {
+        "name": "occupied host slot rejects a third browser",
+        "passed": true,
+        "durationMs": 278
+      },
+      {
+        "name": "occupied browser reconnects after host frees its slot",
+        "passed": true,
+        "durationMs": 4194
+      },
+      {
+        "name": "original host reconnects and retains Disconnect control",
+        "passed": true,
+        "durationMs": 4638
+      }
+    ],
+    "rawReport": ".qa/live-2026-10-11T01-33-15-767Z/summary.json"
+  },
+  "preservation": {
+    "mapAndSaveSha256": {
+      "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Content/Maps/Quebec.umap": "33f25a46d1fa4c39a1b846526b391192ffa19ee425addbde1533f414fc567a3a",
+      "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Content/Maps/LaFontaine.umap": "d0f8db3d707c6cd5f417d82280ced1066c4172c5fa6afd14cb2018efa6b4b1d2",
+      "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "allUnchanged": true,
+    "nativeServicesRestarted": false,
+    "nativeQualityChanged": false,
+    "gpuJobLaunched": false,
+    "separatePlateauProjectEdited": false
+  },
+  "limits": [
+    "Chromium touch emulation, no physical iOS or new phone-controls review.",
+    "Data-channel input and scene change are verified; native position, mission outcomes and driving enjoyment are not independently asserted.",
+    "Headless audio packets do not establish audible sound.",
+    "No new sustained performance or external-network input acceptance.",
+    "The PC and temporary signalling/relay services must remain online."
+  ],
+  "initialPublicationBeforeAccessibility": {
+    "id": "dpl_GyJQy6Bo3Xt2qtZnirma5BFG2agD",
+    "localRawReport": ".qa/mobile-2026-10-11T01-26-07-875Z/summary.json",
+    "productionRawReport": ".qa/mobile-2026-10-11T01-28-09-694Z/summary.json",
+    "note": "Initial five-check touch rollout; superseded by final six-check accessible controls below."
+  }
+}

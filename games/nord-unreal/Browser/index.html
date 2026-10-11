@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0a16">
     <title>NORD / Montréal — Play</title>
     <link rel="stylesheet" href="./styles.css">
@@ -21,6 +21,26 @@
     </header>
     <main id="frame" aria-label="NORD game">
       <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
+      <div id="touch-controls" aria-label="Touch game controls" hidden>
+        <button id="touch-exit-fullscreen" class="touch-exit" hidden>Exit fullscreen</button>
+        <div class="touch-secondary">
+          <button data-key="67" aria-label="Switch crew character">Crew</button>
+          <button data-key="82" aria-label="Recover vehicle or character">Recover</button>
+          <button data-key="84" aria-label="Replay race">Race</button>
+          <button data-key="113" aria-label="Toggle comic view">Comic</button>
+        </div>
+        <div class="touch-stick move-stick" data-stick="move" role="group" aria-label="Movement and steering touch stick">
+          <span class="stick-knob"></span><span class="stick-label">MOVE / DRIVE</span>
+        </div>
+        <div class="touch-stick look-stick" data-stick="look" role="group" aria-label="Drag to look around">
+          <span class="look-cross">+</span><span class="stick-label">LOOK</span>
+        </div>
+        <div class="touch-primary">
+          <button data-key="16" aria-label="Hold to sprint">Sprint</button>
+          <button data-key="32" aria-label="Jump on foot or hold handbrake in car">Jump<span> / brake</span></button>
+          <button data-key="69" aria-label="Interact, enter or exit car, toggle worklight">Use<span> / car</span></button>
+        </div>
+      </div>
       <section id="overlay" aria-labelledby="status-title">
         <div class="caption" role="status" aria-live="polite">
           <p class="eyebrow" id="status-label">HOST OFFLINE</p>
@@ -35,7 +55,7 @@
       </section>
     </main>
     <footer>
-      <p id="input-note">Desktop keyboard + mouse required. The host PC must stay online.</p>
+      <p id="input-note">Keyboard, mouse and touch supported. The host PC must stay online.</p>
       <p class="controls"><b>WASD</b> Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>C</b> Crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
     </footer>
   </body>

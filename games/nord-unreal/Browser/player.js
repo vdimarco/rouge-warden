@@ -1,5 +1,6 @@
 import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, TextParameters } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8';
 import { signallingUrl } from './config.mjs';
+import { setupTouchControls } from './touch-controls.js';
 
 const element = id => document.getElementById(id);
 const frame = element('frame');
@@ -11,7 +12,11 @@ const streamSelect = element('streamer');
 const disconnectButton = element('disconnect');
 const muteButton = element('mute');
 const fullscreenButton = element('fullscreen');
+const touchRoot = element('touch-controls');
+const touchMode = navigator.maxTouchPoints > 0;
+document.body.classList.toggle('touch-input', touchMode);
 let stream;
+let touchControls;
 let started = false;
 let timeout;
 let muted = false;
@@ -36,9 +41,12 @@ function updateInput() {
   const playing = document.body.dataset.state === 'playing';
   const locked = document.pointerLockElement === videoParent;
   stream?.config.setFlagEnabled(Flags.KeyboardInput, playing && locked);
+  touchRoot.hidden = !touchMode || !playing;
+  touchControls?.setEnabled(touchMode && playing);
   element('input-note').textContent = playing
-    ? (locked ? 'You’re in control. Esc releases the mouse.' : 'Click the game to control it. Esc releases the mouse.')
-    : 'Desktop keyboard + mouse required. The host PC must stay online.';
+    ? (touchMode ? 'Left stick: move / steer · Right pad: look · Use: interact / car / worklight. Landscape recommended.'
+      : locked ? 'You’re in control. Esc releases the mouse.' : 'Click the game to control it. Esc releases the mouse.')
+    : `${touchMode ? 'Touch controls appear when you play.' : 'Keyboard + mouse supported.'} The host PC must stay online.`;
 }
 
 function setMuted(value) {
@@ -64,7 +72,9 @@ function waitForConnection() {
 
 function readyToPlay() {
   stopTimeout();
-  status('ready', 'Your player is ready.', 'Click Play with sound, then click the game to take control.');
+  status('ready', 'Your player is ready.', touchMode
+    ? 'Tap Play with sound. Use the touch sticks and buttons to play; turn your phone sideways for a wider view.'
+    : 'Click Play with sound, then click the game to take control.');
 }
 
 function fail(title, detail, state = 'error') {
@@ -101,6 +111,7 @@ if (endpoint) {
       }
     });
     stream = new PixelStreaming(config, { videoElementParent: videoParent });
+    touchControls = setupTouchControls({ root: touchRoot, stream });
     connectButton.disabled = false;
     status('idle', 'The city is waiting.', 'Connect to a free player and help save Park La Fontaine.');
 
@@ -173,6 +184,7 @@ if (endpoint) {
     disconnectButton.addEventListener('click', () => {
       stopTimeout();
       streamSelect.disabled = true;
+      touchControls.setEnabled(false);
       stream.disconnect();
       disconnectButton.disabled = true;
       status('disconnected', 'You left the game.', 'Reconnect when you’re ready to return.');
@@ -180,9 +192,12 @@ if (endpoint) {
     muteButton.addEventListener('click', () => {
       setMuted(!muted);
     });
-    window.addEventListener('pagehide', () => stream.disconnect());
+    window.addEventListener('pagehide', () => {
+      touchControls.setEnabled(false);
+      stream.disconnect();
+    });
   } catch {
-    status('error', 'This browser couldn’t start the game.', 'Use a current desktop Chrome, Edge, Firefox or Safari browser with WebRTC enabled.');
+    status('error', 'This browser couldn’t start the game.', 'Use a current Chrome, Edge, Firefox or Safari browser with WebRTC enabled.');
   }
 }
 
@@ -203,4 +218,6 @@ fullscreenButton.addEventListener('click', async () => {
 });
 document.addEventListener('fullscreenchange', () => {
   fullscreenButton.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+  element('touch-exit-fullscreen').hidden = !document.fullscreenElement;
 });
+element('touch-exit-fullscreen').addEventListener('click', () => fullscreenButton.click());
