@@ -58,7 +58,7 @@ The Cottage Arcade SHALL offer a GTA machine that opens the Montréal title page
 - **AND** the existing recovery, replay and subsequent-objective information remains available.
 
 #### Scenario: Review the streamed HUD on phone layouts
-- **WHEN** the existing 1280×720 game stream is displayed in 360×800 portrait, 800×360 landscape or landscape fullscreen with touch controls
+- **WHEN** the existing 1280×720 game stream is displayed in 360×800 portrait, 800×360 landscape or 800×360 / 667×375 landscape fullscreen with touch controls
 - **THEN** decoded video retains the objective, contextual feedback, speed and geographic attribution without cropping or collision with touch controls in the reviewed layouts
-- **AND** the touch controls retain their existing usable targets and input behavior
+- **AND** fullscreen touch targets remain outside the contained video with minimum dimension 44 px while portrait/non-fullscreen layouts and input behavior remain usable
 - **AND** recorded results distinguish browser emulation from physical-phone and off-LAN testing.

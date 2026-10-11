@@ -760,8 +760,29 @@
     }
   ],
   "visual_review": {
-    "status": "Independent story matrix and final affected 720p/1080p proofs PASS; independent legacy review still pending",
-    "evidence": "Saved/Tests/CompactHUD/visual-review.json"
+    "status": "PASS independent native visual review",
+    "report": "Saved/Tests/CompactHUD/visual-review.json",
+    "report_sha256": "038dece980f58b21e7301174f80edcdba1761d02f6f85e9f079a4829c706738f",
+    "images_reviewed": {
+      "typography_story_stage": 42,
+      "legacy": 30,
+      "final_affected_proofs": 6
+    },
+    "findings": [
+      "Outlined typography and all three radar attribution lines readable at native resolution. No text clipping, overlapping HUD text, missing private feedback or missing save warning found.",
+      "Phase briefing reappears after private action feedback. Quiet HUD removes the transient briefing and early movement hints; action/progress/distance remain.",
+      "Legacy blocked-exit instructions and car-first interaction priority remain visible; standard rendering has no comic soundwords.",
+      "Mission completion count is scoped correctly: 1/2 and 2/2 in story, 1/3 and three-mission completion in legacy.",
+      "Smaller SKRRT burst now leaves a visible gap below the completion backplate at both resolutions. R Recover header fits at both resolutions."
+    ],
+    "imperfections": [
+      "Transient completion fade-in is faint in immediate SliceComplete capture; delayed HUDCompletion proves full-opacity readable title and shared count. This is expected animation.",
+      "Prototype story geometry, world text and character presentation are unchanged and outside this HUD audit."
+    ],
+    "limits": [
+      "Live decoded browser stream, mobile browser controls and physical phone readability are not verified by this reviewer.",
+      "Unchanged layouts were not visually repeated after spacing-only and one-line recovery-hint edits; affected proof images were reviewed."
+    ]
   },
   "failed_attempts_retained": [
     {
@@ -778,7 +799,7 @@
     }
   ],
   "delivery": {
-    "status": "Package verified; owner checking remaining Epic profiles and browser decoded media/mobile touch clearance",
+    "status": "PASS current package, native visual review, six Epic profiles, normal two-player host, public desktop/mobile tests and decoded fullscreen HUD clearance",
     "owner_chat": "01a12129-c0c2-77e1-9ab5-5cd2e05e1912",
     "gpu_released": true,
     "gpu_free_mib_at_release": 16555,
@@ -793,13 +814,66 @@
     "package_evidence": [
       "Verification/CompactHUDPackage.json",
       "Verification/CompactHUDPackageIdentity.json"
-    ]
+    ],
+    "performance_report": "Verification/CompactHUDPerformance.json",
+    "performance_scenes": 6,
+    "performance_scope": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends; Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+    "normal_host_restored_utc": "2026-10-11T05:50:59Z",
+    "public_live_checks": 7,
+    "public_live_result": "PASS",
+    "public_live_evidence": "Browser/.qa/live-2026-10-11T06-00-49-062Z/summary.json",
+    "preservation_report": "Verification/CompactHUDPreservation.json",
+    "browser_mobile_status": "PASS fullscreen side rails keep all targets outside game image; portrait/non-fullscreen retained",
+    "public_player_url": "https://nord-montreal.vercel.app/",
+    "production_deployment": "dpl_EPZzH974H9YeWt1X6nbUAqKGfJPg",
+    "production_files_exact": 4,
+    "public_browser": {
+      "desktop": {
+        "result": "PASS",
+        "checks": 7,
+        "report": "Browser/.qa/live-2026-10-11T06-00-49-062Z/summary.json",
+        "report_sha256": "d05a954d4ec66e477a001337c7cdeee8f3ff5f530af8d3f9bfa9d0771b5730c3",
+        "url": "https://nord-montreal.vercel.app/"
+      },
+      "mobile": {
+        "result": "PASS",
+        "checks": 6,
+        "report": "Browser/.qa/mobile-2026-10-11T06-01-09-657Z/summary.json",
+        "report_sha256": "0e0ec1570c8ae74c036b91e232719e85bb6515ffe49303ae093b414ebff27531",
+        "url": "https://nord-montreal.vercel.app/"
+      }
+    },
+    "reviewed_mobile_viewports": [
+      [
+        360,
+        800
+      ],
+      [
+        800,
+        360
+      ],
+      [
+        667,
+        375
+      ]
+    ],
+    "minimum_touch_target_px": 44,
+    "touch_targets_clear_of_video": true,
+    "delivery_evidence": "Verification/CompactHUDDelivery.json"
   },
   "not_checked": [
     "Physical phone",
     "Off-LAN play",
     "Acoustic listening",
-    "Full manual naturally driven story",
-    "OpenSpec CLI unavailable"
-  ]
+    "Full manual solo/co-op story acceptance",
+    "OpenSpec CLI unavailable; manual structure validation used"
+  ],
+  "source_commit": "626932470ec595f02d1cbfa28ba14c9bb515e386",
+  "completed_utc": "2026-10-11T06:02:31.846049+00:00",
+  "openspec": {
+    "manual_validation": "PASS",
+    "cli_validation": "Unavailable; openspec CLI not installed",
+    "archive": "openspec/changes/archive/2026-10-11-nord-compact-hud",
+    "canonical_spec": "openspec/specs/nord-unreal/spec.md"
+  }
 }

@@ -9,9 +9,12 @@ The user rejects the current HUD and asks for a more GTA-inspired presentation. 
 - Retain brief jump, acceleration and handbrake sound words in comic view only, using the existing local comic-style getter.
 - Preserve campaign and legacy objective presentation, car interaction priority, both geographic credits, controls and shared progress. Keep the existing R recovery control discoverable during an unfinished campaign even when alignment feedback or a save warning occupies the status row.
 - Check actual native presentation at 1280×720 and 1920×1080 and decoded browser video in phone-emulated layouts.
+- Keep landscape fullscreen touch controls outside the contained video in browser side rails, preserving the existing target sizes, input behavior, portrait and non-fullscreen layouts.
 
 No map, character, car, gameplay progression, input binding or project configuration changes are required. This change adds no health, armour, currency, wanted level or unsupported mission features. Existing trailer footage and Arcade navigation are outside this HUD change.
 
 ## Acceptance
 
 The implemented HUD must keep the player and immediate action unobstructed, preserve the existing feedback priorities and render without overlapping text, controls or credits in the tested states. Source checks and screenshot creation alone do not establish readability. Physical phone use, audible sound and handling enjoyment remain separate manual checks.
+
+Native review, scoped automated regression, package/parity, all six Epic profiles and final browser delivery pass. The owner accepts the fullscreen side rails at 800×360 and 667×375; final public desktop checks pass 7/7 and phone-emulated checks pass 6/6. The two modified requirements are merged and this completed change is archived on 2026-10-11. OpenSpec CLI validation is unavailable; manual structure review is recorded with the verification evidence.
