@@ -1,0 +1,417 @@
+{
+  "passed": true,
+  "checked_at_utc": "2026-10-11T03:49:34Z",
+  "qa_save_restart": {
+    "baseline": {
+      "started_at_utc": "2026-10-11T03:42:14Z",
+      "save": "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav",
+      "sha256": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e",
+      "size": 2104,
+      "source_map_sha256": "7e638da09f9bf6c329d2244ade75419ab42f57fc3296b495f93eafb681ed2db1"
+    },
+    "cycles": [
+      {
+        "cycle": 1,
+        "qa_save_sha256": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e",
+        "peers": {
+          "host": {
+            "log": "Saved/BrowserStreaming/host-20261011-034214-1402393.log",
+            "phase": "RaceReady",
+            "completed": 1,
+            "save_disabled": false,
+            "qa_save_dir": true,
+            "fatal": false
+          },
+          "friend": {
+            "log": "Saved/BrowserStreaming/friend-20261011-034214-1402393.log",
+            "phase": "RaceReady",
+            "completed": 1,
+            "save_disabled": true,
+            "qa_save_dir": false,
+            "fatal": false
+          }
+        },
+        "gpu_samples": [
+          {
+            "utc": "2026-10-11T03:44:01Z",
+            "free_mib": 9648
+          },
+          {
+            "utc": "2026-10-11T03:44:06Z",
+            "free_mib": 9661
+          },
+          {
+            "utc": "2026-10-11T03:44:11Z",
+            "free_mib": 9661
+          },
+          {
+            "utc": "2026-10-11T03:44:16Z",
+            "free_mib": 9659
+          },
+          {
+            "utc": "2026-10-11T03:44:21Z",
+            "free_mib": 9614
+          }
+        ]
+      },
+      {
+        "cycle": 2,
+        "qa_save_sha256": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e",
+        "peers": {
+          "host": {
+            "log": "Saved/BrowserStreaming/host-20261011-034428-1695973.log",
+            "phase": "RaceReady",
+            "completed": 1,
+            "save_disabled": false,
+            "qa_save_dir": true,
+            "fatal": false
+          },
+          "friend": {
+            "log": "Saved/BrowserStreaming/friend-20261011-034428-1695973.log",
+            "phase": "RaceReady",
+            "completed": 1,
+            "save_disabled": true,
+            "qa_save_dir": false,
+            "fatal": false
+          }
+        },
+        "utc": "2026-10-11T03:44:58Z"
+      }
+    ],
+    "bytes_unchanged": true,
+    "scope": "Existing real Mission1 boundary save loaded by both packaged browser peers through normal lifecycle with isolated QA savedir; full M1 actions covered by current native render suite."
+  },
+  "browser_runs": [
+    {
+      "path": "Browser/.qa/live-2026-10-11T03-43-28-650Z/summary.json",
+      "passed": true,
+      "checks": 7,
+      "media": {
+        "host": {
+          "currentTime": 1.642,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 46,
+          "framesPerSecond": 26,
+          "videoBytes": 2248946,
+          "audioPackets": 302,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 25.96537949400799
+        },
+        "friend": {
+          "currentTime": 1.594,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 45,
+          "framesPerSecond": 26,
+          "videoBytes": 2308054,
+          "audioPackets": 301,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 25.96537949400799
+        },
+        "recovered-slot": {
+          "currentTime": 1.583,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 37,
+          "framesPerSecond": 24,
+          "videoBytes": 1162760,
+          "audioPackets": 187,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 22.63648468708389
+        },
+        "host-reconnected": {
+          "currentTime": 1.575,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 37,
+          "framesPerSecond": 25,
+          "videoBytes": 1224997,
+          "audioPackets": 208,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1501,
+          "observedDecodedFps": 22.651565622918056
+        },
+        "friend-still-connected": {
+          "currentTime": 16.645,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 425,
+          "framesPerSecond": 27,
+          "videoBytes": 20410499,
+          "audioPackets": 1064,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 25.96537949400799
+        }
+      },
+      "limits": [
+        "Input screenshots require visual review; native position/story progress are not asserted.",
+        "Headless playback does not verify audible sound or driving feel.",
+        "Testing from the host PC does not establish external NAT reachability."
+      ]
+    },
+    {
+      "path": "Browser/.qa/live-2026-10-11T03-44-57-612Z/summary.json",
+      "passed": true,
+      "checks": 7,
+      "media": {
+        "host": {
+          "currentTime": 1.6,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 45,
+          "framesPerSecond": 26,
+          "videoBytes": 2228904,
+          "audioPackets": 300,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 25.94810379241517
+        },
+        "friend": {
+          "currentTime": 1.625,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 45,
+          "framesPerSecond": 26,
+          "videoBytes": 2304486,
+          "audioPackets": 298,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 25.94810379241517
+        },
+        "recovered-slot": {
+          "currentTime": 1.606,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 36,
+          "framesPerSecond": 25,
+          "videoBytes": 1214946,
+          "audioPackets": 209,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 22.63648468708389
+        },
+        "host-reconnected": {
+          "currentTime": 1.586,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 35,
+          "framesPerSecond": 24,
+          "videoBytes": 1079886,
+          "audioPackets": 99,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 21.97070572569907
+        },
+        "friend-still-connected": {
+          "currentTime": 16.723,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 430,
+          "framesPerSecond": 25,
+          "videoBytes": 20224546,
+          "audioPackets": 1065,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 25.94810379241517
+        }
+      },
+      "limits": [
+        "Input screenshots require visual review; native position/story progress are not asserted.",
+        "Headless playback does not verify audible sound or driving feel.",
+        "Testing from the host PC does not establish external NAT reachability."
+      ]
+    },
+    {
+      "path": "Browser/.qa/live-2026-10-11T03-46-16-004Z/summary.json",
+      "passed": true,
+      "checks": 7,
+      "media": {
+        "host": {
+          "currentTime": 1.624,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 46,
+          "framesPerSecond": 28,
+          "videoBytes": 2325519,
+          "audioPackets": 301,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 27.278775781769795
+        },
+        "friend": {
+          "currentTime": 1.584,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 45,
+          "framesPerSecond": 25,
+          "videoBytes": 2102132,
+          "audioPackets": 313,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 25.29960053262317
+        },
+        "recovered-slot": {
+          "currentTime": 1.601,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 35,
+          "framesPerSecond": 24,
+          "videoBytes": 1219157,
+          "audioPackets": 209,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 21.9560878243513
+        },
+        "host-reconnected": {
+          "currentTime": 1.577,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 37,
+          "framesPerSecond": 25,
+          "videoBytes": 1230930,
+          "audioPackets": 197,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 22.63648468708389
+        },
+        "friend-still-connected": {
+          "currentTime": 16.53,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 424,
+          "framesPerSecond": 26,
+          "videoBytes": 19929437,
+          "audioPackets": 1071,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1501,
+          "observedDecodedFps": 25.982678214523652
+        }
+      },
+      "limits": [
+        "Input screenshots require visual review; native position/story progress are not asserted.",
+        "Headless playback does not verify audible sound or driving feel.",
+        "Testing from the host PC does not establish external NAT reachability."
+      ]
+    },
+    {
+      "path": "Browser/.qa/mobile-2026-10-11T03-47-35-037Z/summary.json",
+      "passed": true,
+      "checks": 6,
+      "media": {
+        "initial": {
+          "before": {
+            "currentTime": 0.04,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 3,
+            "videoBytes": 95210,
+            "audioPackets": 25,
+            "codecs": [
+              "video/VP8"
+            ]
+          },
+          "after": {
+            "currentTime": 1.303,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 31,
+            "videoBytes": 947211,
+            "audioPackets": 86,
+            "codecs": [
+              "video/VP8"
+            ]
+          }
+        },
+        "duringTouch": {
+          "before": {
+            "currentTime": 2.159,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 52,
+            "videoBytes": 1730201,
+            "audioPackets": 128,
+            "codecs": [
+              "video/VP8"
+            ]
+          },
+          "after": {
+            "currentTime": 3.353,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 82,
+            "videoBytes": 2957701,
+            "audioPackets": 189,
+            "codecs": [
+              "video/VP8"
+            ]
+          }
+        }
+      },
+      "limits": [
+        "Chromium touch emulation is not a physical iOS or Android device.",
+        "This PC cannot establish a phone carrier or off-LAN media path.",
+        "Decoded video and input packets do not establish audible sound or driving feel."
+      ]
+    }
+  ],
+  "normal_service_active_at_check": true,
+  "limits": [
+    "same-PC browser and emulated touch checks; physical phone/off-LAN not checked",
+    "headless audio RTP is not listening acceptance",
+    "stream is capped at30FPS and briefdecode samples are not sustained latency acceptance"
+  ]
+}

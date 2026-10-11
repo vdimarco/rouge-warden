@@ -58,9 +58,9 @@ for (const [d, a] of Object.entries(ALLOW)) check(fs.existsSync(path.join(PUB, d
 const html = read("public/index.html");
 const sw = read("public/arcade/switch.js");
 const machineUrls = [...html.matchAll(/<article class="cab[^"]*"[^>]*data-url="([^"]+)"/g)].map((m) => m[1]);
-const switchUrls = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/url:\s*"([^"]+)"/g)].map((m) => m[1]);
-const switchIds = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/id:\s*"([^"]+)"/g)].map((m) => m[1]);
-const switchArt = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/art:\s*"([^"]+)"/g)].map((m) => m[1]);
+const switchUrls = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?url"?:\s*"([^"]+)"/g)].map((m) => m[1]);
+const switchIds = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?id"?:\s*"([^"]+)"/g)].map((m) => m[1]);
+const switchArt = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?art"?:\s*"([^"]+)"/g)].map((m) => m[1]);
 
 for (const g of games) {
   const allowed = ALLOW[g.dir];
@@ -85,7 +85,7 @@ for (const u of switchUrls) check(machineUrls.includes(u), `switch.js entry ${u}
 // renamed on one side only fails here, and the walk below could not see it (it trusts each machine's own address).
 {
   const gamesText = sw.slice(sw.indexOf("const GAMES")).split("];")[0];
-  const entries = [...gamesText.matchAll(/\{\s*id:\s*"([^"]+)",\s*name:\s*"([^"]+)"[^\n]*?url:\s*"([^"]+)"/g)].map((m) => ({ id: m[1], name: m[2], url: m[3] }));
+  const entries = [...gamesText.matchAll(/\{\s*"?id"?:\s*"([^"]+)",\s*"?name"?:\s*"([^"]+)"[^\n]*?"?url"?:\s*"([^"]+)"/g)].map((m) => ({ id: m[1], name: m[2], url: m[3] }));
   const norm = (t) => t.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#0?39;|&apos;/g, "'").trim().toLowerCase();
   let matched = 0;
   for (const m of html.matchAll(/<article class="cab[^"]*"[^>]*?data-game="([^"]+)"[^>]*?data-url="([^"]+)"[\s\S]*?<div class="marquee">[\s\S]*?<b>([^<]*)<\/b>/g)) {
@@ -125,7 +125,7 @@ try { ({ chromium } = createRequire(import.meta.url)("playwright")); } catch (e)
 const ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"];
 
 // a new page with the errors collected. The only thing allowed to fail to load is the Google font.
-async function open(browser, { width, height, store = {}, mobile = width < 800 }) {
+async function open(browser, { width, height, store = {}, mobile = width < 800, machines = true }) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: mobile ? 2 : 1, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
   const page = await ctx.newPage();
   const errors = [], moves = [];
@@ -133,6 +133,8 @@ async function open(browser, { width, height, store = {}, mobile = width < 800 }
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
   page.on("response", (r) => { if (r.status() >= 400 && !/fonts\.g/.test(r.url())) errors.push(r.status() + " " + r.url()); });
   await page.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ body: "", contentType: "text/css" }));
+  // This static routing suite has no Vercel API; use valid empty activity without hiding unexpected responses.
+  await page.route(new URL("/api/arcade-leaderboard", BASE).href, (r) => r.fulfill({ json: { source: "posthog", days: 30, updatedAt: "2026-10-10T00:00:00Z", games: {} } }));
   // a page change to a game is stopped and noted; the arcade stays where it is
   await page.route((u) => u.origin === new URL(BASE).origin && u.pathname !== new URL(BASE).pathname && /\/$/.test(u.pathname), (r) => {
     if (r.request().isNavigationRequest()) { const u = new URL(r.request().url()); moves.push(u.pathname + u.hash); r.abort("aborted"); } else r.continue();
@@ -141,6 +143,10 @@ async function open(browser, { width, height, store = {}, mobile = width < 800 }
   await page.goto(BASE);
   await page.waitForSelector(".cab.on");
   await page.waitForTimeout(600);
+  if (machines) {
+    await page.locator(".board-menu summary").click();
+    await page.getByRole("button", { name: "Original machines", exact: true }).click();
+  }
   return { ctx, page, errors, moves };
 }
 // the row slides for about half a second after a pick: wait until every move on the page has ended and two frames have been drawn
@@ -161,8 +167,17 @@ if (chromium) {
   /* ----- the Montréal cabinet: collection, artwork, pointer and keyboard launch ----- */
   for (const vp of PARTS.includes("gta") ? [{ width: 390, height: 844 }, { width: 1280, height: 720 }] : []) {
     const tag = `${vp.width}x${vp.height}`;
-    const { ctx, page, errors, moves } = await open(browser, vp);
+    const { ctx, page, errors, moves } = await open(browser, { ...vp, machines: false });
     check(page.url() === BASE && await page.title() === "Cottage Arcade" && await page.locator(".sign h1").innerText() === "COTTAGE ARCADE", `${tag}: the arcade identity and heading render before choosing GTA`);
+    const defaultTile = page.locator(`.scoreboard .board-launch[href="${GTA_URL}"]`);
+    check(await page.locator(".scoreboard").isVisible() && await defaultTile.locator("b").textContent() === "GTA Montréal", `${tag}: the default scoreboard contains the GTA Montréal launch link`);
+    await defaultTile.click();
+    const until = Date.now() + 6000;
+    while (!moves.length && Date.now() < until) await page.waitForTimeout(50);
+    check(moves.length === 1 && moves[0] === GTA_URL, `${tag}: clicking GTA in the default scoreboard launches its same-origin title page`);
+    await page.locator(".board-menu summary").click();
+    await page.getByRole("button", { name: "Original machines", exact: true }).click();
+    check(!await page.locator(".scoreboard").isVisible(), `${tag}: Menu → Original machines exposes the cabinets`);
     await page.locator('[data-section="gta"]').click();
     await settle(page);
     const cabinet = await page.locator('.cab.gta').evaluate((c) => {
@@ -181,7 +196,7 @@ if (chromium) {
         await page.keyboard.press("Enter");
       } else {
         await page.locator("[data-switch]").click();
-        const tile = page.locator(`.gsw-game[href="${GTA_URL}"]`);
+        const tile = page.locator(`.gsw .board-launch[href="${GTA_URL}"]`);
         await tile.focus();
         check(await tile.locator("b").textContent() === "GTA Montréal", `${tag}: All Games names the same Montréal game`);
         await page.keyboard.press("Enter");
@@ -316,29 +331,28 @@ if (chromium) {
   for (const [width, height] of PARTS.includes("switcher") ? [[360, 740], [1280, 720]] : []) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
-    await page.addScriptTag({ url: new URL("arcade/switch.js", BASE).href });
     // the page answers to a game's address, so the switcher can work out where it is
     const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus" };
     for (const [p, name] of Object.entries(here)) {
-      await page.evaluate((p) => { history.replaceState({}, "", p); GameSwitch.close(); GameSwitch.open(); }, p);
+      await page.evaluate(async (p) => { history.replaceState({}, "", p); GameSwitch.close(); await GameSwitch.open(); }, p);
       await page.waitForSelector(".gsw-game");
       const marked = await page.$$eval(".gsw-game.here b", (bs) => bs.map((b) => b.textContent));
       check(marked.length === 1 && marked[0] === name, `${tag}: on ${p} the switcher marks ${name} (marked: ${marked.join(", ") || "none"})`);
     }
-    await page.evaluate(() => { history.replaceState({}, "", "/"); GameSwitch.close(); GameSwitch.open(); });
+    await page.evaluate(async () => { history.replaceState({}, "", "/"); GameSwitch.close(); await GameSwitch.open(); });
     await page.waitForTimeout(800);
     const info = await page.evaluate(() => {
-      const tiles = [...document.querySelectorAll(".gsw-game")], box = document.querySelector(".gsw"), row = document.querySelector(".gsw-row").getBoundingClientRect();
-      return { n: tiles.length, hrefs: tiles.map((t) => t.getAttribute("href")), small: tiles.filter((t) => { const r = t.getBoundingClientRect(); return r.height < 44 || r.width < 44; }).length, scrolls: box.scrollHeight > box.clientHeight, rowIn: row.top >= 0 && row.bottom <= innerHeight + 1, vh: innerHeight };
+      const box = document.querySelector(".gsw:not([hidden])"), tiles = [...box.querySelectorAll(".gsw-game")], links = tiles.map((t) => t.matches("a") ? t : t.querySelector("a.board-launch")), controls = box.querySelector(".gsw-row, .board-head").getBoundingClientRect();
+      return { n: tiles.length, hrefs: links.map((a) => a.getAttribute("href")), small: links.filter((a) => { const r = a.getBoundingClientRect(); return r.height < 44 || r.width < 44; }).length, scrolls: box.scrollHeight > box.clientHeight, controlsIn: controls.top >= 0 && controls.bottom <= innerHeight + 1, vh: innerHeight };
     });
     check(info.n === switchUrls.length && switchUrls.every((u) => info.hrefs.includes(u) || u === "/wild/"), `${tag}: the switcher shows a tile for each of the ${switchUrls.length} games (${info.n})`);
     check(info.small === 0, `${tag}: every tile is at least 44 pixels each way`);
-    check(info.rowIn, `${tag}: Back to the arcade and Keep playing stay in the window while the list is at the top`);
+    check(info.controlsIn, `${tag}: switcher navigation controls stay in the window while the list is at the top`);
     check(info.scrolls || width > 800, `${tag}: a long list scrolls`);
     await page.evaluate(() => { const b = document.querySelector(".gsw"); b.scrollTop = b.scrollHeight; });
     await page.waitForTimeout(600);
-    const end = await page.evaluate(() => { const last = [...document.querySelectorAll(".gsw-game")].pop().getBoundingClientRect(), row = document.querySelector(".gsw-row").getBoundingClientRect(); return { lastTop: last.top, lastBottom: last.bottom, rowTop: row.top, rowBottom: row.bottom, vh: innerHeight }; });
-    check(end.lastBottom <= end.rowTop + 1 && end.rowBottom <= end.vh + 1, `${tag}: at the end of the list the last tile is clear of the exit buttons`);
+    const end = await page.evaluate(() => { const box = document.querySelector(".gsw:not([hidden])"), last = [...box.querySelectorAll(".gsw-game")].pop().getBoundingClientRect(), controls = box.querySelector(".gsw-row, .board-head"), row = controls.getBoundingClientRect(); return { lastTop: last.top, lastBottom: last.bottom, controlsTop: row.top, controlsBottom: row.bottom, header: controls.matches(".board-head"), vh: innerHeight }; });
+    check(end.controlsTop >= 0 && end.controlsBottom <= end.vh + 1 && (end.header ? end.lastTop >= end.controlsBottom - 1 && end.lastBottom <= end.vh + 1 : end.lastBottom <= end.controlsTop + 1), `${tag}: at the end of the list the last tile is clear of the navigation controls and inside the viewport`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `switcher-${tag}-end.png`) });
     check(errors.length === 0, `${tag}: the switcher causes no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
     await ctx.close();

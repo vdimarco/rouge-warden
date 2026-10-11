@@ -8,7 +8,8 @@
 - [x] Run integrated-map native story/save/reload and continuous seven-gate driving checks.
 - [x] Run meaningful rendered integrated-map story/HUD checks at 720p/1080p and 13 environment views; retain bounded visual limits.
 - [x] Build/cook matching native/browser Linux packages while preserving saves; verify 48-file identity and separate-process native startup/join.
-- [ ] Verify packaged media/input/restart and guarded browser delivery.
+- [x] Profile six warmed Epic/100% integrated-package static views at 720p/1080p; record hardware, frame samples and non-moving/co-op limits in `Verification/UnifiedPerformance.json`.
+- [x] Verify guarded two-slot public media/input/reconnect with three 7-check same-PC runs and six touch-emulation checks; load the isolated existing Mission 1 save on both peers across a full browser-package restart without changing its bytes. Record browser, network, audio and full-campaign limits in `Verification/UnifiedBrowser.json`.
 - [ ] Record evidence, fidelity/performance limits, local launch path and scoped commit.
 
 ## Human follow-ups
