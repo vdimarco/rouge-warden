@@ -8,6 +8,8 @@ FROM events
 WHERE timestamp >= now() - INTERVAL 30 DAY
   AND properties.app = 'cottage_arcade' AND properties.environment = 'production'
   AND event IN ('arcade_game_view', 'arcade_game_play', 'arcade_game_like', 'arcade_active_time')
+  -- two likes sent by a browser test against production on 2026-10-11, not by players
+  AND NOT (event = 'arcade_game_like' AND distinct_id IN ('6598c8a2-94b6-4cef-a58b-8f85143aa8e2', '82dec738-8411-4bfd-a17a-48a403ef3406'))
 GROUP BY game_id LIMIT 100`;
 let cached = null, pending = null;
 const TTL = 5 * 60 * 1000;
