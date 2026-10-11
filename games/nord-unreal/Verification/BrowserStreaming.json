@@ -899,7 +899,7 @@
       "NordFriend1"
     ],
     "maxBrowsersPerStream": 1,
-    "ice": "STUN only; no TURN",
+    "ice": "STUN plus TURN/TLS relay; private ICE credentials retained unchanged across restoration",
     "currentInputKeyFilterArgument": "-PixelStreamingKeyFilter=Tilde",
     "currentInputKeyFilterValidation": "Native setting parsed as Tilde/LastSetByCommandline in isolated NullRHI check and accepted in both normal rendered peer logs; a bounded rendered Backquote check showed no console, while C still changed crew style.",
     "previousLiveInputKeyFilterArgument": "-PixelStreamingInputKeyFilter=Tilde",
@@ -1052,5 +1052,34 @@
     "noticesBytes": 15768,
     "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
   },
-  "performanceInvestigationEvidence": "BrowserPerformance.json"
+  "performanceInvestigationEvidence": "BrowserPerformance.json",
+  "currentAvailability": {
+    "nativeDemo": "online",
+    "verifiedAtUtc": "2026-10-11T02:23:25.495382+00:00",
+    "reason": "Normal lifecycle restored after the complete unchanged 12000MiB launch preflight passed with12459MiB; both real public streams/input and desktop reconnect verified",
+    "publicSignalling": "online via normal nord-browser-demo.service; temporary capture signalling stopped",
+    "turnAndTunnels": "preserved/running; public hostname unchanged",
+    "sourceMapsSavesUnchanged": true,
+    "exactSaveInventoryUnchanged": true,
+    "captureWindowEvidence": "BrowserPerformance.json",
+    "latestChecks": {
+      "desktop": {
+        "startedAt": "2026-10-11T02:18:41.320Z",
+        "finishedAt": "2026-10-11T02:19:01.970Z",
+        "passed": true,
+        "rawLocalPath": "Browser/.qa/live-2026-10-11T02-18-41-319Z/summary.json",
+        "checksPassed": 7
+      },
+      "mobileEmulation": {
+        "startedAt": "2026-10-11T02:20:32.712Z",
+        "finishedAt": "2026-10-11T02:20:38.636Z",
+        "passed": true,
+        "rawLocalPath": "Browser/.qa/mobile-2026-10-11T02-20-32-711Z/summary.json",
+        "checksPassed": 6
+      }
+    },
+    "performanceAccepted": false,
+    "remaining": "Sustained physical-phone performance, mobile reconnect, audible sound, carrier/off-LAN media and full-story acceptance remain unverified.",
+    "detailedRestorationEvidence": "BrowserPerformance.json:coordinatedCaptureWindow.restorationQa"
+  }
 }

@@ -1,8 +1,8 @@
 {
   "dateUtc": "2026-10-11",
-  "scope": "Diagnose reported browser lag and remove production per-control debug/stack logging; native game and runtime unchanged",
+  "scope": "Diagnose reported browser lag, remove production per-control debug/stack logging, and restore the unchanged native demo after an authorized capture window",
   "performanceAccepted": false,
-  "conclusion": "Low native frame supply corroborated; upstream render/capture under shared GPU load is the leading inference. Exact native render/GPU frame-time split and phone/carrier responsiveness remain unmeasured.",
+  "conclusion": "Initial low native frame supply corroborated under shared GPU load. After guarded restoration, brief desktop samples reach 25.97\u201328.61 FPS; sustained phone responsiveness and the exact native render/GPU frame-time split remain unmeasured. View/load/restart changes prevent attributing FPS differences to logging suppression.",
   "implementation": {
     "logger": "Existing Epic common Logger initialized at Warning with includeStack=false before PixelStreaming construction",
     "directDependency": "Already-installed @epicgames-ps/lib-pixelstreamingcommon-ue5.8 pinned at existing 0.1.0; no new package",
@@ -768,7 +768,8 @@
     "nativeServicesRestarted": false,
     "nativeQualityChanged": false,
     "gpuJobLaunched": false,
-    "separatePlateauProjectEdited": false
+    "separatePlateauProjectEdited": false,
+    "stage": "Logging correction only; later guarded native restart and final preservation checks are in coordinatedCaptureWindow"
   },
   "runtime": {
     "demoMainPid": 477314,
@@ -783,7 +784,8 @@
     "nativeGraphicsDefaultsChanged": false,
     "launchGuardChanged": false,
     "userAskedToCloseCompetingApps": true,
-    "userAnswerReceived": false
+    "userAnswerReceived": false,
+    "stage": "Historical logging-correction verification before the coordinated capture pause; current lifecycle is in coordinatedCaptureWindow.normalLifecycle"
   },
   "remaining": [
     "Controlled same-view performance comparison after user closes competing GPU applications.",
@@ -833,5 +835,358 @@
     },
     "keyThreadEndpointStates": "Sleeping/futex_do_wait in both native game/render/RHI threads",
     "interpretation": "No sampled native CPU thread saturated a core; waiting dominates key thread wall time. Does not identify wait dependency, GPU frame time or active-encoder throughput."
+  },
+  "coordinatedCaptureWindow": {
+    "phase": "restored-and-browser-verified",
+    "releasedUtc": "2026-10-11T02:06:26.514824+00:00",
+    "requestedReleaseDeadlineUtc": "2026-10-11T02:16:26.514824+00:00",
+    "captureReleaseReportedUtc": "2026-10-11T02:15:08.585409+00:00",
+    "reportedCapturePidsExited": [
+      590293,
+      683782,
+      963412,
+      1236098
+    ],
+    "sourceMapSavesUnchangedAfterCapture": true,
+    "unchangedGpuGuardPassed": true,
+    "guardRequiredMiB": 12000,
+    "blockedSnapshot": {
+      "timestampUtc": "2026-10-11T02:15:08.585409+00:00",
+      "gpuUtilUsedFree": [
+        63,
+        12854,
+        11212
+      ],
+      "renderedJobs": [],
+      "processes": [
+        {
+          "pid": 107094,
+          "name": "quickshell",
+          "vramMiB": 2423
+        },
+        {
+          "pid": 871550,
+          "name": "dota2",
+          "vramMiB": 3011
+        }
+      ],
+      "sourceMapsSavesUnchanged": true,
+      "processesScope": "Relevant competing GPU applications; full local snapshot retained in rawLocalState"
+    },
+    "userAskedToCloseDota2Utc": "2026-10-11T02:16:05.219079+00:00",
+    "normalLifecycleRelaunched": true,
+    "temporarySignallingUnit": "nord-browser-signalling-capture.service",
+    "temporarySignallingPid": 497773,
+    "publicTunnelPid": 3916930,
+    "temporarySignallingRemainsActive": false,
+    "captureOwnerThread": "01a127df-bee5-7303-87cd-523985629232",
+    "completeNormalPreflightPassed": true,
+    "restorationGuardPassedUtc": "2026-10-11T02:17:35.832368+00:00",
+    "freeGpuMiBBeforeNormalLaunch": 12459,
+    "normalLaunchUtc": "2026-10-11T02:17:59.062163+00:00",
+    "restorationVerifiedUtc": "2026-10-11T02:23:25.495382+00:00",
+    "normalLifecycle": {
+      "launcher_pid": 2068252,
+      "phase": "running",
+      "infrastructure_sha": "e5e243ed038313d3dad4e3fb9087d4393a5df192",
+      "children": [
+        {
+          "name": "signalling",
+          "pid": 2068416,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261011-021759-2068252.stdout.log"
+        },
+        {
+          "name": "host",
+          "pid": 2069661,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261011-021759-2068252.stdout.log"
+        },
+        {
+          "name": "friend",
+          "pid": 2077911,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261011-021759-2068252.stdout.log"
+        }
+      ]
+    },
+    "postQaSaveSha256": {
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "postQaSourceMapProjectHashesUnchanged": true,
+    "protectedSourceMapProjectFileCount": 11,
+    "restorationQa": {
+      "desktop": {
+        "startedAt": "2026-10-11T02:18:41.320Z",
+        "finishedAt": "2026-10-11T02:19:01.970Z",
+        "passed": true,
+        "checks": [
+          {
+            "name": "host real stream",
+            "passed": true,
+            "durationMs": 2430
+          },
+          {
+            "name": "friend independent real stream",
+            "passed": true,
+            "durationMs": 2120
+          },
+          {
+            "name": "host native input and Escape release",
+            "passed": true,
+            "durationMs": 2909
+          },
+          {
+            "name": "friend native input and Escape release",
+            "passed": true,
+            "durationMs": 2869
+          },
+          {
+            "name": "occupied host slot rejects a third browser",
+            "passed": true,
+            "durationMs": 241
+          },
+          {
+            "name": "occupied browser reconnects after host frees its slot",
+            "passed": true,
+            "durationMs": 4322
+          },
+          {
+            "name": "original host reconnects and retains Disconnect control",
+            "passed": true,
+            "durationMs": 4587
+          }
+        ],
+        "limits": [
+          "Input screenshots require visual review; native position/story progress are not asserted.",
+          "Headless playback does not verify audible sound or driving feel.",
+          "Testing from the host PC does not establish external NAT reachability."
+        ],
+        "rawLocalPath": "Browser/.qa/live-2026-10-11T02-18-41-319Z/summary.json",
+        "networkMode": "ordinary",
+        "dnsOverride": null,
+        "media": {
+          "host": {
+            "currentTime": 1.609,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 46,
+            "framesPerSecond": 30,
+            "videoBytes": 1381466,
+            "audioPackets": 91,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 28.60944777112442
+          },
+          "friend": {
+            "currentTime": 1.593,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 44,
+            "framesPerSecond": 29,
+            "videoBytes": 1313460,
+            "audioPackets": 91,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 26.63115845539281
+          },
+          "recovered-slot": {
+            "currentTime": 1.59,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 45,
+            "framesPerSecond": 30,
+            "videoBytes": 1060438,
+            "audioPackets": 85,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1504,
+            "observedDecodedFps": 27.26063829787234
+          },
+          "host-reconnected": {
+            "currentTime": 1.596,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 43,
+            "framesPerSecond": 28,
+            "videoBytes": 1093556,
+            "audioPackets": 86,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 25.96537949400799
+          },
+          "friend-still-connected": {
+            "currentTime": 16.649,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 466,
+            "framesPerSecond": 28,
+            "videoBytes": 19476849,
+            "audioPackets": 855,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1501,
+            "observedDecodedFps": 27.98134576948701
+          }
+        }
+      },
+      "mobileEmulation": {
+        "startedAt": "2026-10-11T02:20:32.712Z",
+        "finishedAt": "2026-10-11T02:20:38.636Z",
+        "passed": true,
+        "checks": [
+          {
+            "name": "real mobile media",
+            "passed": true,
+            "durationMs": 1206
+          },
+          {
+            "name": "portrait controls fit and meet target size",
+            "passed": true,
+            "durationMs": 69
+          },
+          {
+            "name": "simultaneous move, look and jump use the native data channel",
+            "passed": true,
+            "durationMs": 2217
+          },
+          {
+            "name": "landscape controls fit and fullscreen exit works",
+            "passed": true,
+            "durationMs": 289
+          },
+          {
+            "name": "action buttons support keyboard activation without duplicate touch clicks",
+            "passed": true,
+            "durationMs": 535
+          },
+          {
+            "name": "touch release on disconnect leaves no held native key",
+            "passed": true,
+            "durationMs": 321
+          }
+        ],
+        "limits": [
+          "Chromium touch emulation is not a physical iOS or Android device.",
+          "This PC cannot establish a phone carrier or off-LAN media path.",
+          "Decoded video and input packets do not establish audible sound or driving feel."
+        ],
+        "rawLocalPath": "Browser/.qa/mobile-2026-10-11T02-20-32-711Z/summary.json",
+        "logging": {
+          "context": {
+            "level": 2,
+            "stack": false
+          },
+          "spam": []
+        },
+        "media": {
+          "initial": {
+            "before": {
+              "currentTime": 0.112,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 4,
+              "videoBytes": 41421,
+              "audioPackets": 12,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 1.308,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 34,
+              "videoBytes": 820450,
+              "audioPackets": 72,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "duringTouch": {
+            "before": {
+              "currentTime": 2.177,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 59,
+              "videoBytes": 1722339,
+              "audioPackets": 116,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 3.373,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 90,
+              "videoBytes": 3009399,
+              "audioPackets": 177,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          }
+        },
+        "portraitViewport": {
+          "width": 360,
+          "height": 800
+        },
+        "landscapeViewport": {
+          "width": 800,
+          "height": 360
+        },
+        "threeFingerMeanRgbDelta": 31.78298611111111,
+        "diagnostics": [
+          {
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()",
+            "location": {
+              "url": "https://nord-montreal.vercel.app/favicon.ico",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          },
+          {
+            "type": "console",
+            "message": "Failed to load resource: the server responded with a status of 404 ()",
+            "location": {
+              "url": "https://nord-montreal.vercel.app/favicon.ico",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          }
+        ]
+      }
+    },
+    "publicTunnelAndTurnPreserved": true,
+    "nativeQualityAndCodecUnchanged": true,
+    "unrelatedApplicationsStopped": false,
+    "furtherCaptureWindowReleased": false,
+    "rawLocalState": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/capture-window-20261011T020502Z/state.json",
+    "originalSavesBackedUp": true,
+    "priorGuardRefusalMiB": [
+      11225,
+      11212
+    ],
+    "noUnrealJobsAtRestorationPreflight": true,
+    "competingGpuApplicationsStillRunning": true,
+    "headroomChangeCauseEstablished": false,
+    "noRedeploymentForNativeRestoration": true
   }
 }
