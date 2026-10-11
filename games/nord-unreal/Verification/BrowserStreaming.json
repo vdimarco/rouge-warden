@@ -1055,6 +1055,42 @@
   "performanceInvestigationEvidence": "BrowserPerformance.json",
   "currentAvailability": {
     "nativeDemo": "online",
+    "verifiedAtUtc": "2026-10-11T02:42:51.491332+00:00",
+    "reason": "Normal lifecycle restored after second authorized six-minute capture window; complete unchanged12000MiB preflight passed with13041MiB, then real public streams/input and desktop reconnect passed",
+    "publicSignalling": "online via normal nord-browser-demo.service; temporary capture signalling stopped",
+    "turnAndTunnels": "preserved/running; public hostname unchanged",
+    "sourceMapsSavesUnchanged": true,
+    "exactSaveInventoryUnchanged": true,
+    "captureWindowEvidence": "BrowserPerformance.json:additionalCaptureWindows[0]",
+    "latestChecks": {
+      "desktop": {
+        "startedAt": "2026-10-11T02:41:09.778Z",
+        "finishedAt": "2026-10-11T02:41:31.285Z",
+        "passed": true,
+        "checksPassed": 7,
+        "rawLocalPath": "Browser/.qa/live-2026-10-11T02-41-09-777Z/summary.json"
+      },
+      "mobileEmulation": {
+        "startedAt": "2026-10-11T02:41:37.088Z",
+        "finishedAt": "2026-10-11T02:41:42.777Z",
+        "passed": true,
+        "checksPassed": 6,
+        "rawLocalPath": "Browser/.qa/mobile-2026-10-11T02-41-37-087Z/summary.json"
+      }
+    },
+    "shortDesktopDecodedFpsRange": [
+      27.26063829787234,
+      29.940119760479043
+    ],
+    "sampleDurationMsRange": [
+      1502,
+      1504
+    ],
+    "performanceAccepted": false,
+    "remaining": "Sustained physical-phone performance, mobile reconnect, audible sound, carrier/off-LAN media and full-story acceptance remain unverified."
+  },
+  "availabilityBeforeSecondCapture": {
+    "nativeDemo": "online",
     "verifiedAtUtc": "2026-10-11T02:23:25.495382+00:00",
     "reason": "Normal lifecycle restored after the complete unchanged 12000MiB launch preflight passed with12459MiB; both real public streams/input and desktop reconnect verified",
     "publicSignalling": "online via normal nord-browser-demo.service; temporary capture signalling stopped",
