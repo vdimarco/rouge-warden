@@ -1015,5 +1015,6 @@
       "Google varint encoder/decoder BSD-3-Clause"
     ]
   },
-  "connectionRepairEvidence": "BrowserConnection.json"
+  "connectionRepairEvidence": "BrowserConnection.json",
+  "mobileConnectionEvidence": "BrowserMobileConnection.json"
 }

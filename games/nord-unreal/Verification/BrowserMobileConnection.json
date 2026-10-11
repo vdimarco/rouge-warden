@@ -1,0 +1,489 @@
+{
+  "dateUtc": "2026-10-11",
+  "symptom": {
+    "device": "User-supplied Android 5G screenshot, custom browser tab",
+    "ui": "Connecting, then Your game disconnected",
+    "signallingConnected": true,
+    "attempts": [
+      "Player22 at01:03:59UTC",
+      "Player23 at01:04:55UTC"
+    ],
+    "dataTrackActive": false,
+    "diagnosis": "Direct media/control route failed; no active data track. STUN-only configuration had no fallback."
+  },
+  "repair": {
+    "paidHosting": false,
+    "routerOrFirewallChanged": false,
+    "frontendDeploymentChanged": false,
+    "fallback": "turns:omarchy.tail7b97f6.ts.net:8443?transport=tcp",
+    "localListener": "127.0.0.1:3478 TCP",
+    "coLocatedRelayIp": "192.168.86.39",
+    "relayPorts": "49160-49179 UDP",
+    "allowedPeerIps": [
+      "192.168.86.39"
+    ],
+    "allOtherPeerIpsDenied": true,
+    "denialObserved": true,
+    "auth": "Private local username/password, intentionally distributed only as restricted demo ICE credentials; values omitted",
+    "configFileMode": "0600",
+    "configDirectoryMode": "0700",
+    "quota": 8,
+    "maxBytesPerSecondPerAllocation": 2000000,
+    "combinedBytesPerSecond": 8000000,
+    "container": "nord-browser-turn",
+    "image": "sha256:bbefd3e1fdfdc0d58770fe01b581fd8b00d9f3a5580d00acb77cf719a6bc78e3",
+    "repoDigest": "coturn/coturn@sha256:bbefd3e1fdfdc0d58770fe01b581fd8b00d9f3a5580d00acb77cf719a6bc78e3",
+    "readOnlyRoot": true,
+    "user": "1000:1000",
+    "capDrop": [
+      "ALL"
+    ],
+    "capAdd": [
+      "CAP_NET_BIND_SERVICE"
+    ],
+    "newTunnelUnit": "nord-browser-turn-funnel.service",
+    "original443FunnelAndCloudflarePreserved": true,
+    "launchFreeVramMiB": 14337,
+    "vramGuardUnchanged": true,
+    "nativeQualityUnchanged": true
+  },
+  "publicTlsProbe": {
+    "publicEndpoint": "omarchy.tail7b97f6.ts.net:8443",
+    "publicIp": "199.38.181.54",
+    "certificateVerified": true,
+    "tls": "TLSv1.3",
+    "stunBindingResponse": "success"
+  },
+  "authenticationCheck": {
+    "passed": true,
+    "results": [
+      {
+        "valid": true,
+        "relayCandidate": true
+      },
+      {
+        "valid": false,
+        "relayCandidate": false
+      }
+    ]
+  },
+  "androidEmulationForcedRelay": {
+    "startedAt": "2026-10-11T01:10:54.921Z",
+    "mode": "Android Chromium emulation, published ICE configuration, forced relay with scoped public TURN DNS override",
+    "passed": true,
+    "diagnostics": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "media": {
+      "width": 1280,
+      "height": 720,
+      "currentTime": 2.619,
+      "peers": [
+        {
+          "connection": "closed",
+          "ice": "closed",
+          "framesDecoded": 0
+        },
+        {
+          "connection": "connected",
+          "ice": "connected",
+          "localType": "relay",
+          "relayProtocol": "tls",
+          "remoteType": "host",
+          "framesDecoded": 64
+        }
+      ]
+    },
+    "finishedAt": "2026-10-11T01:10:59.876Z"
+  },
+  "ordinaryPublicRegression": {
+    "startedAt": "2026-10-11T01:11:12.034Z",
+    "playerUrl": "https://nord-montreal.vercel.app/",
+    "networkMode": "ordinary",
+    "dnsOverride": null,
+    "passed": true,
+    "checks": [
+      {
+        "name": "host real stream",
+        "passed": true,
+        "durationMs": 2044
+      },
+      {
+        "name": "friend independent real stream",
+        "passed": true,
+        "durationMs": 2494
+      },
+      {
+        "name": "host native input and Escape release",
+        "passed": true,
+        "durationMs": 2846
+      },
+      {
+        "name": "friend native input and Escape release",
+        "passed": true,
+        "durationMs": 2863
+      },
+      {
+        "name": "occupied host slot rejects a third browser",
+        "passed": true,
+        "durationMs": 589
+      },
+      {
+        "name": "occupied browser reconnects after host frees its slot",
+        "passed": true,
+        "durationMs": 4284
+      },
+      {
+        "name": "original host reconnects and retains Disconnect control",
+        "passed": true,
+        "durationMs": 4686
+      }
+    ],
+    "media": {
+      "host": {
+        "currentTime": 1.595,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 41,
+        "framesPerSecond": 27,
+        "videoBytes": 1372881,
+        "audioPackets": 87,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 25.282767797737858
+      },
+      "friend": {
+        "currentTime": 1.607,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 39,
+        "framesPerSecond": 25,
+        "videoBytes": 1394010,
+        "audioPackets": 98,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 23.952095808383234
+      },
+      "recovered-slot": {
+        "currentTime": 1.595,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 39,
+        "framesPerSecond": 26,
+        "videoBytes": 1036407,
+        "audioPackets": 86,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 23.952095808383234
+      },
+      "host-reconnected": {
+        "currentTime": 1.608,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 37,
+        "framesPerSecond": 25,
+        "videoBytes": 1152414,
+        "audioPackets": 86,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 22.62142381902861
+      },
+      "friend-still-connected": {
+        "currentTime": 16.847,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 415,
+        "framesPerSecond": 23,
+        "videoBytes": 19977038,
+        "audioPackets": 874,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1502,
+        "observedDecodedFps": 23.30226364846871
+      }
+    },
+    "diagnostics": [
+      {
+        "player": "host",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "host",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "friend",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "occupied",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "limits": [
+      "Input screenshots require visual review; native position/story progress are not asserted.",
+      "Headless playback does not verify audible sound or driving feel.",
+      "Testing from the host PC does not establish external NAT reachability."
+    ],
+    "finishedAt": "2026-10-11T01:11:32.703Z"
+  },
+  "dualForcedRelayRegression": {
+    "startedAt": "2026-10-11T01:11:36.367Z",
+    "playerUrl": "https://nord-montreal.vercel.app/",
+    "networkMode": "forced-relay-public-dns-override",
+    "dnsOverride": null,
+    "passed": true,
+    "checks": [
+      {
+        "name": "host real stream",
+        "passed": true,
+        "durationMs": 2792
+      },
+      {
+        "name": "friend independent real stream",
+        "passed": true,
+        "durationMs": 3802
+      },
+      {
+        "name": "host native input and Escape release",
+        "passed": true,
+        "durationMs": 2825
+      },
+      {
+        "name": "friend native input and Escape release",
+        "passed": true,
+        "durationMs": 2830
+      },
+      {
+        "name": "occupied host slot rejects a third browser",
+        "passed": true,
+        "durationMs": 294
+      },
+      {
+        "name": "occupied browser reconnects after host frees its slot",
+        "passed": true,
+        "durationMs": 4784
+      },
+      {
+        "name": "original host reconnects and retains Disconnect control",
+        "passed": true,
+        "durationMs": 6753
+      }
+    ],
+    "media": {
+      "host": {
+        "currentTime": 1.472,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 38,
+        "framesPerSecond": 22,
+        "videoBytes": 194149,
+        "audioPackets": 76,
+        "codecs": [
+          "video/VP8"
+        ],
+        "localCandidateTypes": [
+          "relay"
+        ],
+        "relayProtocols": [
+          "tls"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 23.286759813705924
+      },
+      "friend": {
+        "currentTime": 1.617,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 41,
+        "framesPerSecond": 26,
+        "videoBytes": 239580,
+        "audioPackets": 91,
+        "codecs": [
+          "video/VP8"
+        ],
+        "localCandidateTypes": [
+          "relay"
+        ],
+        "relayProtocols": [
+          "tls"
+        ],
+        "sampleDurationMs": 1502,
+        "observedDecodedFps": 25.29960053262317
+      },
+      "recovered-slot": {
+        "currentTime": 1.598,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 27,
+        "framesPerSecond": 16,
+        "videoBytes": 336646,
+        "audioPackets": 68,
+        "codecs": [
+          "video/VP8"
+        ],
+        "localCandidateTypes": [
+          "relay"
+        ],
+        "relayProtocols": [
+          "tls"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 15.96806387225549
+      },
+      "host-reconnected": {
+        "currentTime": 1.464,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 18,
+        "framesPerSecond": 8,
+        "videoBytes": 124482,
+        "audioPackets": 40,
+        "codecs": [
+          "video/VP8"
+        ],
+        "localCandidateTypes": [
+          "relay"
+        ],
+        "relayProtocols": [
+          "tls"
+        ],
+        "sampleDurationMs": 1502,
+        "observedDecodedFps": 10.652463382157125
+      },
+      "friend-still-connected": {
+        "currentTime": 19.117,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 406,
+        "framesPerSecond": 4,
+        "videoBytes": 2852447,
+        "audioPackets": 978,
+        "codecs": [
+          "video/VP8"
+        ],
+        "localCandidateTypes": [
+          "relay"
+        ],
+        "relayProtocols": [
+          "tls"
+        ],
+        "sampleDurationMs": 1502,
+        "observedDecodedFps": 11.984021304926765
+      }
+    },
+    "diagnostics": [
+      {
+        "player": "host",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "host",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "friend",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      },
+      {
+        "player": "occupied",
+        "type": "console",
+        "message": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "limits": [
+      "Input screenshots require visual review; native position/story progress are not asserted.",
+      "Headless playback does not verify audible sound or driving feel.",
+      "Testing from the host PC does not establish external NAT reachability."
+    ],
+    "finishedAt": "2026-10-11T01:12:01.512Z"
+  },
+  "preserved": {
+    "mapAndSaveHashes": {
+      "Content/Maps/Quebec.umap": "33f25a46d1fa4c39a1b846526b391192ffa19ee425addbde1533f414fc567a3a",
+      "Content/Maps/LaFontaine.umap": "d0f8db3d707c6cd5f417d82280ced1066c4172c5fa6afd14cb2018efa6b4b1d2",
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "beforeLifecycle": {
+      "launcher_pid": 2695048,
+      "phase": "running",
+      "infrastructure_sha": "e5e243ed038313d3dad4e3fb9087d4393a5df192",
+      "children": [
+        {
+          "name": "signalling",
+          "pid": 2695156,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261011-003218-2695048.stdout.log"
+        },
+        {
+          "name": "host",
+          "pid": 2695666,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261011-003218-2695048.stdout.log"
+        },
+        {
+          "name": "friend",
+          "pid": 2698970,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261011-003218-2695048.stdout.log"
+        }
+      ]
+    },
+    "afterLifecycle": {
+      "launcher_pid": 477314,
+      "phase": "running",
+      "infrastructure_sha": "e5e243ed038313d3dad4e3fb9087d4393a5df192",
+      "children": [
+        {
+          "name": "signalling",
+          "pid": 477392,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261011-011020-477314.stdout.log"
+        },
+        {
+          "name": "host",
+          "pid": 477900,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261011-011020-477314.stdout.log"
+        },
+        {
+          "name": "friend",
+          "pid": 480805,
+          "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261011-011020-477314.stdout.log"
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Physical Android5G confirmation pending.",
+    "Scoped public TURN DNS override used only in forced-relay QA; ordinary public regression uses normal DNS.",
+    "Android Chromium emulation is not a physical phone test.",
+    "Touch controls remain unsupported in this connection correction.",
+    "TURN quotas/auth/destination restriction bound this temporary demo; no account-based admission.",
+    "Funnel has bandwidth/uptime limits; short relay samples10.7\u201325.3decodedFPS are not sustained performance acceptance.",
+    "DHCP change of the co-located relay/game interface requires configuration update/retest.",
+    "No full campaign re-completion; unchanged save hashes were checked after lifecycle restart."
+  ]
+}

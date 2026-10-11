@@ -21,6 +21,12 @@ NORD SHALL use the existing Unreal game through an official UE5.8-compatible bro
 - **AND** both free streams can play real media, receive input and reconnect
 - **AND** a QA run using a DNS override is explicitly labelled and does not count as ordinary-browser acceptance
 
+#### Scenario: Direct media blocked on a mobile network
+- **WHEN** the phone reaches signalling but cannot establish the direct video/control path
+- **THEN** the configured authenticated fallback relay can carry the media/control path to the game PC
+- **AND** relay access is limited to the game host and unrelated network destinations remain denied
+- **AND** a remaining network failure is identified separately from host availability and unsupported touch controls
+
 ### Requirement: Independent browser co-op
 The temporary deployment SHALL distinguish independent player streams from multiple viewers controlling the same pawn.
 

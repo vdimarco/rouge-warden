@@ -12,6 +12,7 @@ import socket
 import subprocess
 import sys
 import time
+from urllib.parse import urlsplit
 
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -79,7 +80,48 @@ def check_gpu_memory():
             "Close other GPU games/jobs before starting; no processes were launched.")
 
 
+def load_ice_config():
+    configured = os.environ.get("NORD_ICE_CONFIG")
+    if configured is None:
+        return {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    require(bool(configured), "NORD_ICE_CONFIG must name a readable JSON file.")
+    try:
+        options = json.loads(Path(configured).expanduser().read_text())
+    except (OSError, ValueError) as error:
+        raise RuntimeError("NORD_ICE_CONFIG must name a readable JSON file.") from error
+    require(isinstance(options, dict) and isinstance(options.get("iceServers"), list) and options["iceServers"],
+            "NORD_ICE_CONFIG must contain an object with nonempty iceServers.")
+    require(options.get("iceTransportPolicy", "all") in ("all", "relay"),
+            "NORD_ICE_CONFIG iceTransportPolicy must be all or relay.")
+    for server in options["iceServers"]:
+        require(isinstance(server, dict), "NORD_ICE_CONFIG iceServers entries must be objects.")
+        urls = server.get("urls")
+        urls = [urls] if isinstance(urls, str) else urls
+        require(isinstance(urls, list) and urls, "NORD_ICE_CONFIG servers need nonempty urls.")
+        for url in urls:
+            require(isinstance(url, str) and not any(character.isspace() for character in url),
+                    "NORD_ICE_CONFIG urls must be valid STUN or TURN addresses.")
+            try:
+                parsed = urlsplit(url)
+                address = urlsplit("//" + parsed.path)
+                port = address.port
+            except ValueError as error:
+                raise RuntimeError("NORD_ICE_CONFIG urls must be valid STUN or TURN addresses.") from error
+            turn = parsed.scheme in ("turn", "turns")
+            require(parsed.scheme in ("stun", "stuns", "turn", "turns") and address.hostname
+                    and not parsed.netloc and not parsed.fragment and not address.path
+                    and address.username is None and address.password is None and port != 0
+                    and parsed.query in (("", "transport=udp", "transport=tcp") if turn else ("",)),
+                    "NORD_ICE_CONFIG urls must be valid STUN or TURN addresses.")
+            if turn:
+                require(all(isinstance(server.get(key), str) and server[key].strip()
+                            for key in ("username", "credential")) and server.get("credentialType", "password") == "password",
+                        "NORD_ICE_CONFIG TURN servers need a username and password credential.")
+    return options
+
+
 def preflight():
+    ice_config = load_ice_config()
     require(sys.platform.startswith("linux"), "This helper targets the existing Linux package.")
     require(shutil.which("node") and shutil.which("git"), "Node.js and Git must be installed.")
     require((PACKAGE / "Quebec.sh").is_file() and BINARY.is_file() and os.access(BINARY, os.X_OK),
@@ -98,6 +140,7 @@ def preflight():
     check_gpu_memory()
     for port, kind in ((8888, socket.SOCK_STREAM), (9010, socket.SOCK_STREAM), (8889, socket.SOCK_STREAM), (7791, socket.SOCK_DGRAM)):
         free_port(port, kind)
+    return ice_config
 
 
 def game_command(friend, log):
@@ -119,10 +162,11 @@ def run():
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise RuntimeError("Another browser streaming lifecycle is already running.") from error
-        preflight()
+        ice_config = preflight()
         stamp = time.strftime("%Y%m%d-%H%M%S", time.gmtime()) + f"-{os.getpid()}"
         ice = OUT / ("ice-" + stamp + ".json")
-        ice.write_text(json.dumps({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}))
+        with os.fdopen(os.open(ice, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as handle:
+            json.dump(ice_config, handle)
         children = []
         logs = []
         state = {"launcher_pid": os.getpid(), "phase": "starting", "infrastructure_sha": INFRA_SHA, "children": []}
@@ -213,8 +257,36 @@ def run():
 
 
 def self_check():
+    from tempfile import TemporaryDirectory
     from unittest.mock import patch
 
+    with patch.dict(os.environ, {}, clear=True):
+        assert load_ice_config() == {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    with TemporaryDirectory() as directory:
+        path = Path(directory) / "ice.json"
+        valid = {"iceServers": [{"urls": ["stun:stun.example:3478", "stuns:stun.example:5349"]},
+                                {"urls": "turns:relay.example:8443?transport=tcp", "username": "test-user",
+                                 "credential": "test-password"}], "iceTransportPolicy": "relay"}
+        with patch.dict(os.environ, {"NORD_ICE_CONFIG": str(path)}):
+            path.write_text(json.dumps(valid))
+            assert load_ice_config() == valid
+            invalid = [None, "{", "[]", '{}', '{"iceServers": []}',
+                       json.dumps({"iceServers": [{"urls": "https://relay.example"}]}),
+                       json.dumps({"iceServers": [{"urls": "turns:relay.example:8443?transport=tcp"}]}),
+                       json.dumps({"iceServers": [{"urls": "stun:relay.example:99999"}]}),
+                       json.dumps({"iceServers": [{"urls": [42]}]}),
+                       json.dumps({**valid, "iceTransportPolicy": "invalid"})]
+            for contents in invalid:
+                if contents is None:
+                    path.unlink()
+                else:
+                    path.write_text(contents)
+                try:
+                    load_ice_config()
+                except RuntimeError as error:
+                    assert "NORD_ICE_CONFIG" in str(error) and "test-password" not in str(error)
+                else:
+                    raise AssertionError("Invalid ICE configuration must prevent launch")
     assert is_rendered_unreal("Quebec", ["Quebec", "-RenderOffscreen"])
     assert is_rendered_unreal("UnrealEditor-Cm", ["UnrealEditor-Cmd", "-RenderOffscreen"])
     assert not is_rendered_unreal("Quebec", ["Quebec", "-NuLlRhI"])
@@ -244,7 +316,7 @@ def self_check():
                 pass
             else:
                 raise AssertionError("Occupied ports must be rejected")
-    print("Self-check passed: rendered job/GPU memory guards, separate players/save ownership, occupied-port rejection.")
+    print("Self-check passed: ICE configuration validation, rendered job/GPU memory guards, separate players/save ownership, occupied-port rejection.")
 
 
 if __name__ == "__main__":

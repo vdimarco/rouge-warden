@@ -1,5 +1,7 @@
 # Browser connection repair — 2026-10-11 UTC
 
+This records the initial signalling correction at00:59UTC. The later [mobile media fallback](BrowserMobileConnection.md) supersedes its STUN-only runtime limitation.
+
 The deployed player now connects in ordinary Chromium on the hosting PC. The production alias [nord-montreal.vercel.app](https://nord-montreal.vercel.app/) passed all seven real-stream checks at **00:58:47–00:59:09 UTC**, without a DNS override or browser-security changes. Both native game processes stayed running throughout. Full structured evidence is in [BrowserConnection.json](BrowserConnection.json).
 
 ## Cause and correction

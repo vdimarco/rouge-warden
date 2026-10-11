@@ -1,0 +1,22 @@
+# Mobile connection correction — 2026-10-11 UTC
+
+The reported Android 5G attempts reached the signalling server but never activated a video/control data track. The screenshot showed Connecting followed by “Your game disconnected.” This was a media-path failure after signalling, with no relay configured. An authenticated TURN/TLS fallback now runs on the same game PC. **Physical phone confirmation is still pending.** [Structured evidence](BrowserMobileConnection.json) records the exact checks without relay credentials.
+
+The public Vercel player and Cloudflare signalling endpoint are unchanged. Coturn 4.18.0-r0, pinned by image digest, listens only on loopback TCP 3478. A separate owned TLS-terminated Tailscale Funnel forwards 8443 to it. Relay destinations are restricted to the game PC's 192.168.86.39 interface; all other IPv4/IPv6 destinations are denied. Authentication, an eight-allocation quota, bounded bandwidth, a read-only unprivileged container and private local configuration bound this temporary demo. The existing443 Funnel is preserved. No router/firewall changes, paid hosting, map/assets or graphics changes were made.
+
+`Scripts/browser_streaming.py` now accepts an optional validated `NORD_ICE_CONFIG` JSON path. Default behavior remains GoogleSTUN. Invalid shape/URI/credentials fail before launching children; generated per-run configuration uses 0600. The owned native lifecycle restarted only after its unchanged 12,000 MiB guard passed at 14,337 MiB free. Both peers rejoined, and all discovered map/campaign-save hashes were unchanged. Full campaign re-completion was unnecessary for this network configuration correction and was not performed.
+
+| Check | Result |
+| --- | --- |
+| Public relay TLS endpoint | Verified certificate, TLS 1.3, successful STUN binding through public 199.38.181.54:8443. |
+| Real forced relay before activation | Actual 1280×720 VP8 video decoded with selected local candidate type`relay`, transport`tls`, connection/ICE connected. |
+| Android Chromium emulation after activation | Trusted Connect/Play taps receive actual 1280×720 video using the published ICE configuration; 64 decoded frames in the bounded sample. No injected TURN credentials. |
+| Ordinary public regression after restart | Seven of seven existing live checks passed,01:11:12–01:11:31UTC, normal DNS and browser security. |
+| Two-player forced-relay regression | Seven of seven checks passed,01:11:36–01:12:01UTC. Host/friend, released-slot recovery and original-host reconnect each selected a real TLS relay candidate. Trusted mouse/keyboard input, Escape and occupied-slot refusal passed. |
+| Authentication / destination limits | Valid credentials produce a relay candidate; an incorrect password produces none. Coturn logs deny disallowed native tailnet/public candidates, while the permitted LAN path succeeds. |
+| Source checks | Existing self-check extended for optional ICE configuration; self-check, Python syntax and Git whitespace checks pass. |
+| Preservation | Native quality and12GB guard unchanged; both map hashes and every discovered campaign-save hash match the pre-correction baseline. Separate Plateau project untouched. |
+
+Forced-relay QA used a scoped public DNS mapping for the Tailscale TURN hostname to exercise the public route from this PC; it is explicitly labelled and does not count as ordinary/external-network acceptance. The ordinary public regression did not use that mapping. Android Chromium emulation does not reproduce a physical carrier network. Temporary scripts, screenshots and raw relay tests remain outside the repo at`/tmp/nord-mobile-qa`; the ordinary runner output remains in ignored`Browser/.qa/live-2026-10-11T01-11-12-033Z/`.
+
+Brief forced-relay decoded FPS samples varied from 10.7 to 25.3; they do not establish sustained responsiveness. [Tailscale Funnel](https://tailscale.com/docs/features/tailscale-funnel) has bandwidth limits. The PC, container and user services must remain available. A change to the PC's LAN address requires reconfiguration/retest of this co-located relay. Touch controls are still disabled, so successful phone video is not full phone gameplay acceptance. Audible sound, handling enjoyment and existing Mission 2 acceptance remain open. [HOSTING.md](../Browser/HOSTING.md) records current start/stop details.
