@@ -50,7 +50,7 @@
   // the longest matching address wins, so /lab/worlds/ is Small Worlds and not The Lab
   const thisGame = () => (GAMES.filter((g) => location.pathname.startsWith(g.url)).sort((a, b) => b.url.length - a.url.length)[0] || {}).id;
   // the arcade look: a dark room, a neon heading, and each game as a small lit screen with its own glow
-  const css = `.board-launch{color:inherit;text-decoration:none;display:block;}.board-detail{display:block;color:#aeb8c4;font:12px/1.6 system-ui;margin-top:10px;}.board-like{align-self:flex-start;margin:10px 4px 4px;background:#201126;border:1px solid #80516b;border-radius:5px;padding:10px 14px;min-height:44px;color:#ffb1d4;font:10px var(--pixel);cursor:pointer;}.board-like:disabled{opacity:.55;cursor:default;}.board-sort{display:flex;flex-wrap:wrap;gap:8px;}.board-sort button,.board-refresh{min-height:44px;border:1px solid #3a4658;background:#101622;border-radius:5px;padding:10px 16px;color:#bccad4;font:14px system-ui;cursor:pointer;}.board-sort button[aria-pressed="true"]{background:#ffcf4a;color:#191006;border-color:#ffcf4a;}.board-live{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:16px 0 8px;font:13px/1.5 system-ui;color:#aeb8c4;}.board-definitions{margin:0 0 28px;font:13px/1.7 system-ui;color:#aeb8c4;}.board-definitions summary{cursor:pointer;color:#6df7e5;}.board-definitions div{max-width:850px;padding-top:10px;}.board-launch:focus-visible,.board-like:focus-visible,.board-sort button:focus-visible,.board-refresh:focus-visible{outline:2px solid #6df7e5;outline-offset:4px;}
+  const css = `.board-launch{color:inherit;text-decoration:none;display:block;}.board-detail{display:block;color:#aeb8c4;font:12px/1.6 system-ui;margin-top:10px;}.board-like{align-self:flex-start;margin:10px 4px 4px;background:#201126;border:1px solid #80516b;border-radius:5px;padding:10px 14px;min-height:44px;color:#ffb1d4;font:10px var(--pixel);cursor:pointer;}.board-like:disabled{opacity:.55;cursor:default;}.board-like.liked{opacity:1;cursor:default;background:#ff3fa4;border-color:#ff8fc8;color:#fff;box-shadow:0 0 16px #ff3fa466;}.board-like.pop{animation:like-pop .45s ease-out;}@keyframes like-pop{40%{transform:scale(1.18);}100%{transform:scale(1);}}@media(prefers-reduced-motion:reduce){.board-like.pop{animation:none;}}.board-sort{display:flex;flex-wrap:wrap;gap:8px;}.board-sort button,.board-refresh{min-height:44px;border:1px solid #3a4658;background:#101622;border-radius:5px;padding:10px 16px;color:#bccad4;font:14px system-ui;cursor:pointer;}.board-sort button[aria-pressed="true"]{background:#ffcf4a;color:#191006;border-color:#ffcf4a;}.board-live{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:16px 0 8px;font:13px/1.5 system-ui;color:#aeb8c4;}.board-definitions{margin:0 0 28px;font:13px/1.7 system-ui;color:#aeb8c4;}.board-definitions summary{cursor:pointer;color:#6df7e5;}.board-definitions div{max-width:850px;padding-top:10px;}.board-launch:focus-visible,.board-like:focus-visible,.board-sort button:focus-visible,.board-refresh:focus-visible{outline:2px solid #6df7e5;outline-offset:4px;}
 .gsw.scoreboard { background: radial-gradient(ellipse at 15% 0%,#311740,transparent 55%),radial-gradient(ellipse at 100% 30%,#07333e,transparent 55%),#080b13; }
 .scoreboard .gsw-card { width:min(1240px,100%); }
 .board-head { display:flex;align-items:center;justify-content:space-between;gap:18px;margin:12px 0 44px; }
@@ -158,10 +158,17 @@
   }
   // a sort that cannot rank says so, so the button does not seem dead
   const unavailable = () => metric === 'featured' ? 'Shared activity is unavailable. All games are ready to play.' : 'Ranking by ' + metricNames[metric].toLowerCase() + ' is not available now. Games still play.';
+  // A like reaches the shared count only after PostHog stores it and the five-minute cache expires.
+  // Until then this visitor's own like is added once, so the count moves when they press the button.
+  // A like sent more than a minute before the counts were read is assumed to be in them already.
+  function pendingLike(id) {
+    const at = window.ArcadeAnalytics?.likedAt?.(id);
+    return at && (!metrics || at > Date.parse(metrics.updatedAt) - 60000) ? 1 : 0;
+  }
   function render() {
     const list = box.querySelector('.gsw-list'); list.innerHTML = '';
     const shown = home ? rankGames(boardGames, metrics?.games, metric) : boardGames;
-    const value = (id, key) => metrics?.games[id]?.[key] || 0;
+    const value = (id, key) => (metrics?.games[id]?.[key] || 0) + (key === 'likes' ? pendingLike(id) : 0);
     if (home) {
       const total = key => shown.reduce((sum,g) => sum + value(g.id,key),0);
       box.querySelector('.board-stats').innerHTML = `<div><strong>${shown.length}</strong><span>GAMES TO EXPLORE</span></div><div><strong>${metrics ? total('plays').toLocaleString() : '—'}</strong><span>PLAYS / LAST 30 DAYS</span></div><div><strong>${metrics ? duration(total('active_seconds')) : '—'}</strong><span>ACTIVE TIME</span></div>`;
@@ -190,11 +197,17 @@
         detail.textContent = metrics ? value(g.id,'views').toLocaleString() + ' views · ' + value(g.id,'plays').toLocaleString() + ' plays · ' + value(g.id,'likes').toLocaleString() + ' likes · ' + duration(value(g.id,'active_seconds')) + ' active' : 'Views · Plays · Likes · Active time';
         a.querySelector('.gsw-txt').append(detail);
         const like = document.createElement('button'); like.type = 'button'; like.className = 'board-like'; like.dataset.arcadeLike = g.id;
-        const liked = window.ArcadeAnalytics?.liked(g.id);
-        like.textContent = liked ? '♥ LIKED' : '♡ LIKE'; like.setAttribute('aria-label', (liked ? 'Liked ' : 'Like ') + g.name);
-        like.disabled = !!liked || !window.ArcadeAnalytics?.enabled;
-        if (!window.ArcadeAnalytics?.enabled) like.title = 'Likes are available on the live arcade.';
-        like.onclick = () => { if (window.ArcadeAnalytics?.like(g.id)) { like.textContent = '♥ LIKED'; like.disabled = true; like.setAttribute('aria-label','Liked ' + g.name); box.querySelector('.board-status').textContent = 'Thanks for the like! Shared counts refresh every few minutes.'; } };
+        const liked = window.ArcadeAnalytics?.liked(g.id), likeCount = metrics ? ' · ' + value(g.id,'likes').toLocaleString() : '';
+        like.textContent = (liked ? '♥ LIKED' : '♡ LIKE') + likeCount; like.setAttribute('aria-label', (liked ? 'You liked ' : 'Like ') + g.name + (metrics ? ', ' + value(g.id,'likes') + ' likes' : ''));
+        // a liked button stays lit and focusable; it only does nothing more
+        if (liked) { like.classList.add('liked'); like.setAttribute('aria-disabled', 'true'); }
+        else if (!window.ArcadeAnalytics?.enabled) { like.disabled = true; like.title = 'Likes are available on the live arcade.'; }
+        like.onclick = () => {
+          if (liked || !window.ArcadeAnalytics?.like(g.id)) return;
+          render(); // the count, and the order when sorted by likes, change at once
+          const again = box.querySelector(`[data-arcade-like="${g.id}"]`); again?.classList.add('pop'); again?.focus({ preventScroll: true });
+          box.querySelector('.board-status').textContent = 'Thanks for liking ' + g.name + '!';
+        };
         tile.append(like);
       }
       a.addEventListener('click', () => { if (g.id !== here) record(g.id); });

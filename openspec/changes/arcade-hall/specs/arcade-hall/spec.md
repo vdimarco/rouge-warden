@@ -19,8 +19,11 @@ Each catalog destination SHALL record one view per page visit and one play on th
 - **WHEN** a player interacts with a game, then hides its tab
 - **THEN** one play is recorded and active time stops while hidden
 #### Scenario: Like a game
-- **WHEN** a visitor likes a cabinet
-- **THEN** the control shows saved feedback without pretending the cached global count has refreshed
+- **WHEN** a visitor presses Like on a game
+- **THEN** the button turns lit pink and reads LIKED, its count and the game's like total rise by one at once, the order changes when sorted by likes, and the button keeps focus
+#### Scenario: Own like not yet in the shared count
+- **WHEN** a visitor reloads the page within the cache window after liking
+- **THEN** the count still includes their like once, and a like sent more than a minute before the counts were read is not added again
 #### Scenario: Secure aggregate reads
 - **WHEN** a visitor requests leaderboard data
 - **THEN** only aggregate game metrics are returned and the private PostHog credential remains server-side

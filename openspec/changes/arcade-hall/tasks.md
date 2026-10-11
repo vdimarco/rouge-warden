@@ -30,3 +30,5 @@ The user provided the capture key for new PostHog project arcade (653362). Captu
 - [x] Add adaptive quality steps and a script-load error fallback.
 - [x] Check in Node (`qa/arcade/room-controls.test.mjs`, `qa/arcade/room-logic.test.cjs`) and in Chromium with SwiftShader at 1363×936 and 390×844: no errors, stick strafes and walks, two thumbs work together, taps walk, the cabinet close-up selects and enables play.
 - [ ] Check frame rate and visuals on a physical phone and a hardware GPU. SwiftShader cannot measure real performance.
+
+- [x] Make Like visibly work: a liked button stays lit and focusable instead of greying out, the button shows the count, and the visitor's own like is added at once until the cached shared count includes it. Checked in Chromium at 1363×936 and 390×844 with local files served under the production host and PostHog blocked: 3 → 4 on press, kept after reload, re-ranked under Likes.

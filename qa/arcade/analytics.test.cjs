@@ -14,7 +14,7 @@ t.fire('pointermove',{buttons:0});t.fire('keydown',{key:'Tab'});t.fire('keydown'
 t.fire('keydown',{key:'a'});t.fire('pointerdown');assert.equal(t.events.filter(e=>e.event==='arcade_game_play').length,1);
 t.advance(45);assert.equal(t.events.filter(e=>e.event==='arcade_active_time').reduce((n,e)=>n+e.properties.active_seconds,0),30);
 t.hide();t.advance(60);t.show();t.fire('pointerdown');t.advance(15);t.blur();t.advance(60);assert.equal(t.events.filter(e=>e.event==='arcade_active_time').reduce((n,e)=>n+e.properties.active_seconds,0),45);
-assert.equal(t.api.like('fish'),true);assert.equal(t.api.like('fish'),false);assert.equal(t.api.like('unknown'),false);assert.equal(t.events.filter(e=>e.event==='arcade_game_like').length,1);
+assert.equal(t.api.likedAt('fish'),null);assert.equal(t.api.like('fish'),true);assert.ok(t.api.likedAt('fish')>0);assert.ok(JSON.parse(t.saved['arcade-like-times']).fish>0);assert.equal(t.api.like('fish'),false);assert.equal(t.api.like('unknown'),false);assert.equal(t.events.filter(e=>e.event==='arcade_game_like').length,1);
 for(const e of t.events){assert.equal(e.properties.app,'cottage_arcade');assert.equal(e.properties.environment,'production');assert.equal(e.properties.game_id,'fish');assert.equal(e.properties.$process_person_profile,false);assert.equal(e.properties.$current_url,undefined);}
 const preview=tracker({host:'warden-preview.vercel.app'});preview.fire('pointerdown');preview.advance(45);assert.equal(preview.api.like('fish'),false);assert.equal(preview.events.length,0);
 const noStorage=tracker({storageFails:true});noStorage.fire('pointerdown');assert.equal(noStorage.events.length,2);
