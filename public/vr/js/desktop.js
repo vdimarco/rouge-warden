@@ -6,7 +6,7 @@
 // resting it near an edge keeps turning, so a lost or refused lock never leaves the mouse stuck at the edge of the screen.
 import * as THREE from "three";
 import { createMobile } from "./mobile.js";
-import { COMFORT, PAD, DESKTOP } from "./config.js";
+import { COMFORT, PAD, DESKTOP, PHONE } from "./config.js";
 import { createInput, clearEdges } from "./xr.js";
 
 const SENS = 0.0022; // radians of look per pixel of mouse travel
@@ -126,7 +126,8 @@ export function createDesktop(canvas, camera, settings) {
     get padInUse() { return usingPad; },
   };
 
-  const mobile = D.mobile = createMobile(canvas, () => D.active && window.G?.state !== "paused");
+  // the left thumb moves only in play: in the opening there is nothing to walk, and a tap anywhere throws
+  const mobile = D.mobile = createMobile(canvas, () => D.active && window.G?.state !== "paused", { stick: PHONE.stick, canMove: () => window.G?.state === "play" });
 
   /* ---------------- the pointer lock ---------------- */
   // Raw mouse (no system acceleration) where the browser has it; a system without it says NotSupportedError, and then a
@@ -297,7 +298,7 @@ export function createDesktop(canvas, camera, settings) {
     let grip = keys.has("ShiftLeft") || keys.has("ShiftRight") || wheel > 0 || phone.reel, yank = Q.yank;
     let jump = Q.jump || phone.jump, menu = Q.menu || phone.menu, map = Q.map, view = !!phone.view, car = Q.car || !!phone.car, thr = Q.throw;
     // Shift: on the ground with no rope out it sprints (main decides); a pad's left stick click does the same
-    let sprint = keys.has("ShiftLeft") || keys.has("ShiftRight");
+    let sprint = keys.has("ShiftLeft") || keys.has("ShiftRight") || !!phone.sprint;
     // the two swing inputs: a mouse button, E or Q, a trigger
     let s0 = mouse[0] && !skip[0] || keys.has("KeyE"), s1 = mouse[1] && !skip[1] || keys.has("KeyQ");
     if (gp) {

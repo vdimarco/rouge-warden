@@ -2,7 +2,7 @@
 // index.html registers it with scope "./". A plain classic worker (no modules, no importScripts), so every browser runs it.
 // VERSION must equal VERSION in js/config.js (qa/vr/pwa.mjs checks it). A new VERSION makes a new cache and drops the old one.
 
-const VERSION = "1.20.0";
+const VERSION = "1.21.0";
 const PREFIX = "fullswing-";
 const CACHE = PREFIX + VERSION;
 
@@ -48,6 +48,7 @@ const PRECACHE = [
   ...LIB.map((f) => "./lib/" + f),
   "/wild/models/king.glb",
   "/wild/models/crew5.glb",
+  "/arcade/analytics.js", // the arcade-wide play counter (index.html loads it): offline it must load from the cache
 ];
 const INDEX = new URL("./index.html", self.location.href).href;
 

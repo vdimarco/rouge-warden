@@ -221,8 +221,8 @@ async function phone(w, h) {
   });
   if (!found) await page.evaluate(() => { G.desktop.mobile.marker(null); });
   await sleep(200);
-  s = await page.evaluate(() => { const b = [...document.querySelectorAll(".phone-side")]; return { ring: __s.vis(".phone-target"), ready: document.querySelector("#phoneControls").classList.contains("target-ready"), badges: b.length, lit: b.some((e) => e.classList.contains("held")), swing: !!document.querySelector("[data-action=throw]") }; });
-  check(!s.ring && !s.ready && s.badges === 2 && !s.lit && !s.swing, `[${tag}] no target (${found || "taken by hand: no place in play had no target"}): no ring shows, the panel is not target-ready, and the two plunger badges stay dark`, s);
+  s = await page.evaluate(() => { const b = [...document.querySelectorAll(".phone-side")]; return { ring: __s.vis(".phone-target"), ready: document.querySelector("#phoneControls").classList.contains("target-ready"), badges: b.length, lit: document.querySelector("#phoneControls").classList.contains("holding"), swing: !!document.querySelector("[data-action=throw]") }; });
+  check(!s.ring && !s.ready && s.badges === 0 && !s.lit && !s.swing, `[${tag}] no target (${found || "taken by hand: no place in play had no target"}): no ring shows, the panel is not target-ready, and no plunger holds`, s);
   await shot(page, w, h, "5-no-target");
   // 6. the VIEW button in first person: it turns yellow, and the centre ring shows
   await page.evaluate(() => { __s.roof(); G.ui.say("", 0); });
