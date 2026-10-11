@@ -495,7 +495,7 @@
         "sha256": "3b038be136fa005aa07c357e366fa70c589a36fdb190feddbdf99322ad71bb78",
         "bytes": 19731
       },
-      "note": "Application and snapshot assertions only; final rendered/runtime acceptance remains pending.",
+      "note": "Historical intermediate checkpoint: Application and snapshot assertions only; final rendered/runtime acceptance remains pending. Final347-addition fresh load and both complete normal-exit render sets subsequently passed; see final_gates.native_fresh_load and final_gates.rendered_visual_acceptance.",
       "original_actors": 2701,
       "original_actor_state_sha256": "c876fae628df82336432f3100470df884b81328f82b2521f3af7daeeca09cdee",
       "map_sha256": "cd61e7eca4a08d8bf214b6c62c2c697391b3105960923e9f06f27c6ad5dc943b",
@@ -538,8 +538,10 @@
       "failure": "Initial leaf graph warnings and bounds assertion",
       "evidence": "Saved/Tests/EnvironmentPolish/tree-candidate.log",
       "observed": "Incomplete graph compile warnings (Linear Color instead of Masks; missing Desaturation input), then rounded render-bounds equality assertion. No tree candidate captures accepted.",
-      "recovery_status": "property_checks_passed_render_pending",
-      "recovery": "Final node explicitly uses Masks with TC_MASKS. Source guards compare all raw vertex positions/counts and exact rebuilt source bounds; fresh Vulkan compile/render remains required."
+      "recovery_status": "historical_checkpoint_property_checks_passed_render_pending",
+      "recovery": "Final node explicitly uses Masks with TC_MASKS. Source guards compare all raw vertex positions/counts and exact rebuilt source bounds; fresh Vulkan compile/render remains required.",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Final saved foliage alpha/material readbacks, all17 Plateau checks and both clean normal-exit full render sets pass; see final_gates.native_fresh_load and rendered_visual_acceptance. Original graph/bounds failures remain retained."
     },
     {
       "failure": "Nanite bounds representation diagnosis",
@@ -558,8 +560,10 @@
       "failure": "Rendered bulk material authoring RHI assertion",
       "evidence": "Saved/Tests/EnvironmentPolish/apply-capture-candidate.log",
       "observed": "2026-10-11 15:24:07 UTC: NumRefs >= 0 / RHIResources.h:164 reference underflow, FRHIUniformBufferLayout/FMaterialShaderMap cleanup during MaterialEditingLibrary.RecompileMaterial. Stopped before perimeter OBJ import/map save.",
-      "recovery_status": "offline_authoring_passed_fresh_vulkan_pending",
-      "recovery": "Same graphs/imports completed in a fresh NullRHI authoring process, with all 2,701 original actor states unchanged and both landmark/property verifiers passing. Logs close at 15:31:44 UTC. Separate normal Vulkan fresh load/material compilation/render remains mandatory; runtime quality defaults unchanged."
+      "recovery_status": "historical_checkpoint_offline_authoring_passed_fresh_vulkan_pending",
+      "recovery": "Same graphs/imports completed in a fresh NullRHI authoring process, with all 2,701 original actor states unchanged and both landmark/property verifiers passing. Logs close at 15:31:44 UTC. Separate normal Vulkan fresh load/material compilation/render remains mandatory; runtime quality defaults unchanged.",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Offline authoring completed; subsequent final720/1080 Vulkan renders, clean dependency/shader/fatal guards and current packaged checks pass. Original material RHI authoring assertion logs remain retained."
     },
     {
       "category": "cpu_temporary_fixture",
@@ -593,7 +597,7 @@
     },
     {
       "category": "missing_owned_roof_material_parents",
-      "status": "explicit_parent_instance_save_and_fresh_render_pending",
+      "status": "historical_checkpoint_explicit_parent_instance_save_and_fresh_render_pending",
       "description": "Both roof instances referenced missing owned parent packages. The renamed saved-map property/inventory report passed, but LoadErrors in the Vulkan log invalidate rendered evidence. Root canceled only owned PID 2328939 via SIGTERM; process exited 139 during teardown after cancellation. Partial images are retained and rejected.",
       "parent_assets": [
         "/Game/Plateau/Materials/M_LeNeuvilleRoofParent",
@@ -620,7 +624,9 @@
         "sha256": "76c01dd7bdc906174afe8a941c7f144ef0c77a0d37472e195bd958ee95e864bf",
         "bytes": 1712
       },
-      "guard_rejection_note": "Guard failure captured the same dependency errors while this job was still running; final closed-log identity is recorded separately."
+      "guard_rejection_note": "Guard failure captured the same dependency errors while this job was still running; final closed-log identity is recorded separately.",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Both owned roof parents and exact MI identity are persisted and fresh-load verified; both final full render logs pass with no missing dependencies. Canceled partial roof-parent capture and exit139 remain rejected evidence."
     },
     {
       "category": "remaining_side_planes",
@@ -630,7 +636,9 @@
         "sha256": "5acf646179adad48787380d44de79f639f58a411e58b60f9715795d8a3df6075",
         "bytes": 11772
       },
-      "status": "final347_actor_full_matched_views_pending"
+      "status": "historical_checkpoint_final347_actor_full_matched_views_pending",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Exactly347 approved additions pass fresh saved-property verification; both42-frame matched final resolution sets complete normally0, with independent scoped visual acceptance. The pre-side-repair42-frame candidate remains rejected and retained."
     },
     {
       "category": "straight_reverse_preflight_rejected",
@@ -640,7 +648,9 @@
         "sha256": "30f669f2a087c1de7f42b7a562d830eb102794ca5fa3f64cbfcba61d67d73384",
         "bytes": 18158
       },
-      "status": "preserved_final_guidance_pending"
+      "status": "historical_checkpoint_preserved_final_guidance_pending",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Final minimal950cm final-gate guidance passes all7 gates in63.153seconds with traffic/collision active, zero checkpoint retries and saves restored; all32 original assertions remain unchanged. Both traffic stalls and conservative reverse preflight rejections remain retained; unneeded reverse helpers were removed."
     },
     {
       "stage": "final_performance_parent",
@@ -1419,7 +1429,7 @@
     },
     "canonical": "openspec/specs/nord-unreal/spec.md"
   },
-  "qa_scope": "Frozen CPU and strict source/property preservation passed; previous completed720 candidate rejected for two remaining side planes. Final347-actor Vulkan views, continuous native race, package, performance, protected-state restoration and browser acceptance remain pending.",
+  "qa_scope": "Accepted final bounded environment polish: all seven final gates pass with frozen-source CPU, strict saved-property preservation, matched normal-exit720p/1080p Vulkan review, native race/story/save regression, fresh package identity, six unchanged strict Epic/100% performance profiles, protected-state restoration and real two-player/mobile-emulated browser evidence. Static appearance, one GPU and same-PC browser/emulation evidence do not establish exact-site reconstruction, temporal shimmer, physical-phone/off-LAN, audible quality or subjective handling; explicit visual limits remain.",
   "offline_authoring_logs": [
     {
       "path": "Saved/Tests/EnvironmentPolish/apply-buildings-offline.log",
