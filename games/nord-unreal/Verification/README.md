@@ -1,3 +1,5 @@
+[Latest compact HUD delivery](CompactHUD.md): current native presentation, matching local/browser package, [six Epic profiles](CompactHUDPerformance.json) and [save/settings preservation](CompactHUDPreservation.json). [Public delivery](CompactHUDDelivery.json) passes seven live checks and six mobile-emulated checks after publication, including fullscreen HUD/control clearance at both landscape sizes. Earlier unified release reports below retain their original scope.
+
 [Latest integrated-map verification](UnifiedPlateau.md): the baked Plateau environment plus Warden's authored routes, parked cars and native campaign pass 17 fresh saved-map checks, 118 story/save checks, 13 population checks, all seven continuous race gates and 13 car-collision checks. Both story render sizes, 13 environment views, the cooked Linux package, separate-process join, six static-view performance profiles and bounded public-browser delivery have passed. The fresh 38-second Cinematic3 trailer and [public title page](https://arcade.uptick.systems/gta/) have passed actual-media and public Arcade navigation checks; see [UnifiedDelivery.json](UnifiedDelivery.json). [Car-art verification](SeventiesCars.md) and most older reports below describe earlier map/package revisions.
 
 # Verification — integrated Plateau checkpoint
@@ -56,20 +58,22 @@ The surroundings/liveliness follow-up is in progress. [NeighbourhoodReferences.m
 | Native packaged gameplay | Current `PackagedGameplay.json` passes eleven separate-process/native-input checks in 88.30 seconds, with collision/traffic enabled: movement/driving/camera/handbrake, objectives, abrupt driver loss, timeout release, rejoin and clean exit. Two occupied-starter resets isolate acceleration windows on the verified clear lane; host/client transform, occupancy and traffic assertions remain enabled. |
 | Repository checks | Launcher/geographic/crew/environment/road-width source tests, Python syntax and whitespace checks. OpenSpec structure/scenarios checked manually; CLI unavailable. |
 
-## Integrated packaged performance
+## Current compact-HUD packaged performance
 
-The current integrated-map six-scene [Performance.json](Performance.json), also retained as [UnifiedPerformance.json](UnifiedPerformance.json), records **`passed: true`**. All six p95 values are below the 16.67 ms reference-scene budget on this build.
+[CompactHUDPerformance.json](CompactHUDPerformance.json) records the rebuilt HUD package at Epic quality (3), 100% screen percentage, comic on, VSync off and uncapped. All six p95 values pass the unchanged 16.67 ms reference-scene budget.
 
 | View | Resolution | Median (ms) | p95 (ms) | Average FPS | Frames >33.33 ms | p95 gate |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Sherbrooke | 1280×720 | 8.86 | 11.95 | 110.0 | 0.04% | Pass |
-| Pond | 1280×720 | 9.09 | 12.02 | 108.0 | 0.00% | Pass |
-| NorthPark | 1280×720 | 8.74 | 11.57 | 112.4 | 0.00% | Pass |
-| Sherbrooke | 1920×1080 | 10.62 | 13.64 | 92.6 | 0.04% | Pass |
-| Pond | 1920×1080 | 11.31 | 13.93 | 87.7 | 0.00% | Pass |
-| NorthPark | 1920×1080 | 10.70 | 13.47 | 92.4 | 0.00% | Pass |
+| Sherbrooke | 1280×720 | 8.96 | 11.80 | 110.3 | 0.00% | Pass |
+| Pond | 1280×720 | 9.17 | 12.10 | 107.4 | 0.00% | Pass |
+| NorthPark | 1280×720 | 8.76 | 11.52 | 112.6 | 0.00% | Pass |
+| Sherbrooke | 1920×1080 | 10.58 | 13.62 | 93.1 | 0.00% | Pass |
+| Pond | 1920×1080 | 11.17 | 14.19 | 88.2 | 0.00% | Pass |
+| NorthPark | 1920×1080 | 10.76 | 13.54 | 91.6 | 0.00% | Pass |
 
-Measured on the hardware above at packaged Epic quality (3), 100% screen percentage, comic on, VSync off and uncapped, with verified viewport sizes. Each static scene retains 2,398 frames after discarding the first 600 and last two of 3,000 CSV frames. This hardware-specific result is not a minimum-hardware guarantee or proof of moving-scene, driving/co-op or external-multiplayer performance. Physical handling, moving-scene comprehension/audio and remaining art/campaign acceptance stay open. The smaller story inspection budgets are not used for these package measurements.
+Measured on the RTX 4090/i9-14900K Vulkan SM6 reference PC. Each static scene retains 2,398 frames after discarding the first 600 and last two of 3,000 CSV frames. This does not establish moving-scene/co-op performance, remote latency, handling enjoyment or minimum hardware. Inspection budgets were not used for this package measurement. Fresh screenshots and CSVs remain in ignored local evidence; their paths/hashes are recorded in the report.
+
+[Performance.json](Performance.json) and [UnifiedPerformance.json](UnifiedPerformance.json), plus their tracked Preview images, retain the preceding integrated-release measurements unchanged. They are historical evidence for the earlier HUD.
 
 ## Limits and retained evidence
 

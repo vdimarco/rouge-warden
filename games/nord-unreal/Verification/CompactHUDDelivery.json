@@ -1,0 +1,1090 @@
+{
+  "change": "Compact NORD HUD and fullscreen mobile clearance",
+  "passed": true,
+  "scope": "Automated current-package delivery and actual decoded browser/layout review; manual game acceptance remains open.",
+  "utc": "2026-10-11T06:02:12.038482+00:00",
+  "native_implementation_commit": "626932470ec595f02d1cbfa28ba14c9bb515e386",
+  "source_sha256": {
+    "Source/Quebec/QuebecGameplay.cpp": "4d831c4373bf7de2807fa2d0a73e5a8b029605448aefde07e60aadea7910df2a",
+    "Source/Quebec/QuebecGameplay.h": "764e32fe8848ecd53f7a3fb44d18a4687c684a3f9062a7a8fcbbd490059d4b46",
+    "Browser/styles.css": "7cf04e523a372a11373c50a4582110b8bda33e672275735e0fe73f8ad322d4ac",
+    "Browser/mobile.test.mjs": "2593cffc38634578c7b000dd478af8c34fde0e10ca40584bb90dd04e089b63b0"
+  },
+  "native_evidence": "Verification/CompactHUD.json",
+  "native_visual_review": "Saved/Tests/CompactHUD/visual-review.json",
+  "package_and_preservation": [
+    {
+      "path": "Verification/CompactHUDPackage.json",
+      "sha256": "374fb32810b3341244b27c48a299d0078e58c06f20c01603348efd7f509b8e52"
+    },
+    {
+      "path": "Verification/CompactHUDPackageIdentity.json",
+      "sha256": "8ccb007cd64d5b8686b5909e89aaa54c8667a8ccb576a536cba99bcf4a5ff339"
+    },
+    {
+      "path": "Verification/CompactHUDPerformance.json",
+      "sha256": "ca73e22d6eae7b8463c2436e699b3813808fd224709a31f0e1b3d1e4da5b74be"
+    },
+    {
+      "path": "Verification/CompactHUDPreservation.json",
+      "sha256": "1946b187bc3e3e16f3cfa7c34fa45bda613ddd3374f39a21a659947bec06f5e2"
+    }
+  ],
+  "package_rendered_views": [
+    {
+      "path": "Builds/Linux/Quebec/Saved/Screenshots/Linux/NordComic_Car.png",
+      "sha256": "29d109bf29928540acbb36eec9226e7fb8261ab6ccbfdce2041f5d1f459133a9",
+      "viewport": [
+        1600,
+        900
+      ]
+    },
+    {
+      "path": "Builds/Linux/Quebec/Saved/Screenshots/Linux/NordComic_East.png",
+      "sha256": "fa1a6497ac6275713b6fc7a931b8c7e5134b9ac1ec4385b0893530c0b46884b3",
+      "viewport": [
+        1600,
+        900
+      ]
+    },
+    {
+      "path": "Builds/Linux/Quebec/Saved/Screenshots/Linux/NordComic_Jump.png",
+      "sha256": "d31fac23c44cc6ecedf47d12561021ae2c4d6e8cf89b62919382189631b8413c",
+      "viewport": [
+        1600,
+        900
+      ]
+    },
+    {
+      "path": "Builds/Linux/Quebec/Saved/Screenshots/Linux/NordComic_North.png",
+      "sha256": "ac3adf76cd2e0307cf03506ac0f7134d55d4593fb186b44714e52313938e6176",
+      "viewport": [
+        1600,
+        900
+      ]
+    },
+    {
+      "path": "Builds/Linux/Quebec/Saved/Screenshots/Linux/NordComic_West.png",
+      "sha256": "456785f1b92c6c49cba4d764378d00444bd471f6fd1fa656ecf8e99de43a4a1f",
+      "viewport": [
+        1600,
+        900
+      ]
+    },
+    {
+      "path": "Builds/Linux/Quebec/Saved/Screenshots/Linux/NordRealistic_East.png",
+      "sha256": "3e19ef76b4ca19a08c04b2a1088414f6d52af7f2c4f1a34b476202e91de00c2e",
+      "viewport": [
+        1600,
+        900
+      ]
+    },
+    {
+      "path": "Builds/Linux/Quebec/Saved/Screenshots/Linux/NordRealistic_North.png",
+      "sha256": "359cd16c0d083661d12d5fa71cefd456120d7cbc130a9e345f9dcc6155b5c6e0",
+      "viewport": [
+        1600,
+        900
+      ]
+    }
+  ],
+  "host": {
+    "service": "nord-browser-demo.service",
+    "ActiveState": "active",
+    "InvocationID": "e38748a159504da494f29bedac1ca6cc",
+    "MainPID": "2416661",
+    "restored_at_utc": "2026-10-11T05:50:59Z",
+    "startup_minimum_free_vram_mib": 12000,
+    "preflight_passed_before_restore": true,
+    "guard_unchanged": true,
+    "tunnel_and_turn_preserved": true,
+    "settings_and_save_restored_before_host_start": true
+  },
+  "browser": {
+    "cpu_checks": {
+      "npm_test_passed": 12,
+      "fixture_browser_passed": true,
+      "reported_by": "browser_player agent; no native gameplay asserted by fixture UI checks"
+    },
+    "production_before": "dpl_2q2TYmdCX8BZcPTdHKokxBP5SYmm",
+    "prebuilt_files": [
+      {
+        "file": "games/nord-unreal/Browser/dist/index.html",
+        "target": "index.html",
+        "size": 3555,
+        "sha": "7a0b256e85cf64301e5319f61984878df87ad49b",
+        "sha256": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8"
+      },
+      {
+        "file": "games/nord-unreal/Browser/dist/player.js",
+        "target": "player.js",
+        "size": 240907,
+        "sha": "219b3f335b3ed550ffc182335374064f9d85b81e",
+        "sha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d"
+      },
+      {
+        "file": "games/nord-unreal/Browser/dist/styles.css",
+        "target": "styles.css",
+        "size": 8633,
+        "sha": "aa4648bc0a540f0bb40a0f6a0c8087dab6da288b",
+        "sha256": "7cf04e523a372a11373c50a4582110b8bda33e672275735e0fe73f8ad322d4ac"
+      },
+      {
+        "file": "games/nord-unreal/Browser/dist/THIRD_PARTY_NOTICES.txt",
+        "target": "THIRD_PARTY_NOTICES.txt",
+        "size": 15768,
+        "sha": "7e713433082d23c87a2fd32540a99234ae4764b0",
+        "sha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+      },
+      {
+        "file": "games/nord-unreal/Saved/Tests/CompactHUDDelivery/vercel-static.json",
+        "target": "vercel.json",
+        "size": 595,
+        "sha": "977f4d59d5369caaacd78dabd3cc1645846e967a",
+        "sha256": "5cb3fe71375eecf4d5e4097c940a279fda15cefd17bd94ac18b4172b2f6775d6"
+      }
+    ],
+    "preview": {
+      "deployment_id": "dpl_G4wTHU3aEkukQzxrUpJQnvVQJCjs",
+      "integrity": {
+        "passed": true,
+        "url": "https://nord-montreal-tihmnegi5-vdimarcos-projects.vercel.app/",
+        "files": [
+          {
+            "file": "index.html",
+            "bytes": 3555,
+            "sha256": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+            "status": 200
+          },
+          {
+            "file": "player.js",
+            "bytes": 240907,
+            "sha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+            "status": 200
+          },
+          {
+            "file": "styles.css",
+            "bytes": 8633,
+            "sha256": "7cf04e523a372a11373c50a4582110b8bda33e672275735e0fe73f8ad322d4ac",
+            "status": 200
+          },
+          {
+            "file": "THIRD_PARTY_NOTICES.txt",
+            "bytes": 15768,
+            "sha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
+            "status": 200
+          }
+        ]
+      },
+      "live": {
+        "path": "Browser/.qa/live-2026-10-11T05-59-03-886Z/summary.json",
+        "sha256": "70b84136323f85559b62fad0c4b3039a0df714b53f16b4e14a6b3d7007d90d1b",
+        "url": "https://nord-montreal-tihmnegi5-vdimarcos-projects.vercel.app/",
+        "checks": [
+          {
+            "name": "host real stream",
+            "passed": true,
+            "durationMs": 2220
+          },
+          {
+            "name": "friend independent real stream",
+            "passed": true,
+            "durationMs": 1984
+          },
+          {
+            "name": "host native input and Escape release",
+            "passed": true,
+            "durationMs": 2880
+          },
+          {
+            "name": "friend native input and Escape release",
+            "passed": true,
+            "durationMs": 2929
+          },
+          {
+            "name": "occupied host slot rejects a third browser",
+            "passed": true,
+            "durationMs": 342
+          },
+          {
+            "name": "occupied browser reconnects after host frees its slot",
+            "passed": true,
+            "durationMs": 4391
+          },
+          {
+            "name": "original host reconnects and retains Disconnect control",
+            "passed": true,
+            "durationMs": 4726
+          }
+        ],
+        "limits": [
+          "Input screenshots require visual review; native position/story progress are not asserted.",
+          "Headless playback does not verify audible sound or driving feel.",
+          "Testing from the host PC does not establish external NAT reachability."
+        ],
+        "network_mode": "ordinary",
+        "media": {
+          "host": {
+            "currentTime": 1.603,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 38,
+            "framesPerSecond": 25,
+            "videoBytes": 1228514,
+            "audioPackets": 147,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 23.286759813705924
+          },
+          "friend": {
+            "currentTime": 1.608,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 38,
+            "framesPerSecond": 26,
+            "videoBytes": 1266539,
+            "audioPackets": 213,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 23.30226364846871
+          },
+          "recovered-slot": {
+            "currentTime": 1.587,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 36,
+            "framesPerSecond": 24,
+            "videoBytes": 948611,
+            "audioPackets": 99,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 21.9560878243513
+          },
+          "host-reconnected": {
+            "currentTime": 1.606,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 37,
+            "framesPerSecond": 25,
+            "videoBytes": 1207213,
+            "audioPackets": 212,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 22.62142381902861
+          },
+          "friend-still-connected": {
+            "currentTime": 16.921,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 440,
+            "framesPerSecond": 26,
+            "videoBytes": 19751431,
+            "audioPackets": 991,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 25.94810379241517
+          }
+        }
+      },
+      "mobile": {
+        "path": "Browser/.qa/mobile-2026-10-11T05-59-24-743Z/summary.json",
+        "sha256": "3db6cd20f74c29395f8d09ff1730edeaf92a5f5a3889c508c846d68f21783a5f",
+        "url": "https://nord-montreal-tihmnegi5-vdimarcos-projects.vercel.app/",
+        "checks": [
+          {
+            "name": "real mobile media",
+            "passed": true,
+            "durationMs": 1205
+          },
+          {
+            "name": "portrait controls fit and meet target size",
+            "passed": true,
+            "durationMs": 53
+          },
+          {
+            "name": "simultaneous move, look and jump use the native data channel",
+            "passed": true,
+            "durationMs": 2204
+          },
+          {
+            "name": "landscape controls fit and fullscreen exit works",
+            "passed": true,
+            "durationMs": 1687
+          },
+          {
+            "name": "action buttons support keyboard activation without duplicate touch clicks",
+            "passed": true,
+            "durationMs": 534
+          },
+          {
+            "name": "touch release on disconnect leaves no held native key",
+            "passed": true,
+            "durationMs": 289
+          }
+        ],
+        "limits": [
+          "Chromium touch emulation is not a physical iOS or Android device.",
+          "This PC cannot establish a phone carrier or off-LAN media path.",
+          "Decoded video and input packets do not establish audible sound or driving feel."
+        ],
+        "media": {
+          "initial": {
+            "before": {
+              "currentTime": 0.109,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 4,
+              "videoBytes": 51275,
+              "audioPackets": 18,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 1.325,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 31,
+              "videoBytes": 785167,
+              "audioPackets": 79,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "duringTouch": {
+            "before": {
+              "currentTime": 2.146,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 53,
+              "videoBytes": 1641858,
+              "audioPackets": 122,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 3.352,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 84,
+              "videoBytes": 2889064,
+              "audioPackets": 182,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "narrowLandscape": {
+            "before": {
+              "currentTime": 3.957,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 99,
+              "videoBytes": 3617415,
+              "audioPackets": 212,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 5.148,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 131,
+              "videoBytes": 5145886,
+              "audioPackets": 276,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          }
+        },
+        "fullscreen_clearance": {
+          "landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 800,
+              "height": 360
+            },
+            "video": {
+              "x": 80,
+              "y": 0,
+              "width": 640,
+              "height": 360
+            },
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 4,
+                "y": 4,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 4,
+                "y": 284,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 724,
+                "y": 80,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 724,
+                "y": 216,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 724,
+                "y": 264,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 724,
+                "y": 312,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 4,
+                "y": 54,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 4,
+                "y": 102,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 4,
+                "y": 150,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 4,
+                "y": 198,
+                "width": 72,
+                "height": 44
+              }
+            ]
+          },
+          "narrow-landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 667,
+              "height": 375
+            },
+            "video": {
+              "x": 80,
+              "y": 0,
+              "width": 507,
+              "height": 375
+            },
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 4,
+                "y": 4,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 4,
+                "y": 299,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 591,
+                "y": 80,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 591,
+                "y": 231,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 591,
+                "y": 279,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 591,
+                "y": 327,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 4,
+                "y": 54,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 4,
+                "y": 102,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 4,
+                "y": 150,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 4,
+                "y": 198,
+                "width": 72,
+                "height": 44
+              }
+            ]
+          }
+        }
+      }
+    },
+    "production": {
+      "deployment_id": "dpl_EPZzH974H9YeWt1X6nbUAqKGfJPg",
+      "state": "READY",
+      "url": "https://nord-montreal.vercel.app/",
+      "integrity": {
+        "passed": true,
+        "url": "https://nord-montreal.vercel.app/",
+        "files": [
+          {
+            "file": "index.html",
+            "bytes": 3555,
+            "sha256": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+            "status": 200
+          },
+          {
+            "file": "player.js",
+            "bytes": 240907,
+            "sha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+            "status": 200
+          },
+          {
+            "file": "styles.css",
+            "bytes": 8633,
+            "sha256": "7cf04e523a372a11373c50a4582110b8bda33e672275735e0fe73f8ad322d4ac",
+            "status": 200
+          },
+          {
+            "file": "THIRD_PARTY_NOTICES.txt",
+            "bytes": 15768,
+            "sha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
+            "status": 200
+          }
+        ]
+      },
+      "live": {
+        "path": "Browser/.qa/live-2026-10-11T06-00-49-062Z/summary.json",
+        "sha256": "d05a954d4ec66e477a001337c7cdeee8f3ff5f530af8d3f9bfa9d0771b5730c3",
+        "url": "https://nord-montreal.vercel.app/",
+        "checks": [
+          {
+            "name": "host real stream",
+            "passed": true,
+            "durationMs": 2265
+          },
+          {
+            "name": "friend independent real stream",
+            "passed": true,
+            "durationMs": 1980
+          },
+          {
+            "name": "host native input and Escape release",
+            "passed": true,
+            "durationMs": 2909
+          },
+          {
+            "name": "friend native input and Escape release",
+            "passed": true,
+            "durationMs": 2873
+          },
+          {
+            "name": "occupied host slot rejects a third browser",
+            "passed": true,
+            "durationMs": 246
+          },
+          {
+            "name": "occupied browser reconnects after host frees its slot",
+            "passed": true,
+            "durationMs": 4354
+          },
+          {
+            "name": "original host reconnects and retains Disconnect control",
+            "passed": true,
+            "durationMs": 4790
+          }
+        ],
+        "limits": [
+          "Input screenshots require visual review; native position/story progress are not asserted.",
+          "Headless playback does not verify audible sound or driving feel.",
+          "Testing from the host PC does not establish external NAT reachability."
+        ],
+        "network_mode": "ordinary",
+        "media": {
+          "host": {
+            "currentTime": 1.58,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 39,
+            "framesPerSecond": 25,
+            "videoBytes": 1266246,
+            "audioPackets": 199,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 23.952095808383234
+          },
+          "friend": {
+            "currentTime": 1.594,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 39,
+            "framesPerSecond": 27,
+            "videoBytes": 1291868,
+            "audioPackets": 240,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1501,
+            "observedDecodedFps": 24.650233177881415
+          },
+          "recovered-slot": {
+            "currentTime": 1.582,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 37,
+            "framesPerSecond": 24,
+            "videoBytes": 1186866,
+            "audioPackets": 196,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1502,
+            "observedDecodedFps": 23.30226364846871
+          },
+          "host-reconnected": {
+            "currentTime": 1.566,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 36,
+            "framesPerSecond": 26,
+            "videoBytes": 1110066,
+            "audioPackets": 190,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1501,
+            "observedDecodedFps": 22.651565622918056
+          },
+          "friend-still-connected": {
+            "currentTime": 16.737,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "framesDecoded": 427,
+            "framesPerSecond": 26,
+            "videoBytes": 19526062,
+            "audioPackets": 1010,
+            "codecs": [
+              "video/VP8"
+            ],
+            "sampleDurationMs": 1503,
+            "observedDecodedFps": 26.613439787092485
+          }
+        }
+      },
+      "mobile": {
+        "path": "Browser/.qa/mobile-2026-10-11T06-01-09-657Z/summary.json",
+        "sha256": "0e0ec1570c8ae74c036b91e232719e85bb6515ffe49303ae093b414ebff27531",
+        "url": "https://nord-montreal.vercel.app/",
+        "checks": [
+          {
+            "name": "real mobile media",
+            "passed": true,
+            "durationMs": 1205
+          },
+          {
+            "name": "portrait controls fit and meet target size",
+            "passed": true,
+            "durationMs": 70
+          },
+          {
+            "name": "simultaneous move, look and jump use the native data channel",
+            "passed": true,
+            "durationMs": 2207
+          },
+          {
+            "name": "landscape controls fit and fullscreen exit works",
+            "passed": true,
+            "durationMs": 1714
+          },
+          {
+            "name": "action buttons support keyboard activation without duplicate touch clicks",
+            "passed": true,
+            "durationMs": 534
+          },
+          {
+            "name": "touch release on disconnect leaves no held native key",
+            "passed": true,
+            "durationMs": 288
+          }
+        ],
+        "limits": [
+          "Chromium touch emulation is not a physical iOS or Android device.",
+          "This PC cannot establish a phone carrier or off-LAN media path.",
+          "Decoded video and input packets do not establish audible sound or driving feel."
+        ],
+        "media": {
+          "initial": {
+            "before": {
+              "currentTime": 0.119,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 4,
+              "videoBytes": 89597,
+              "audioPackets": 135,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 1.288,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 31,
+              "videoBytes": 929015,
+              "audioPackets": 195,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "duringTouch": {
+            "before": {
+              "currentTime": 2.177,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 53,
+              "videoBytes": 1833056,
+              "audioPackets": 239,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 3.394,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 85,
+              "videoBytes": 2985920,
+              "audioPackets": 300,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          },
+          "narrowLandscape": {
+            "before": {
+              "currentTime": 4.037,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 102,
+              "videoBytes": 3780447,
+              "audioPackets": 332,
+              "codecs": [
+                "video/VP8"
+              ]
+            },
+            "after": {
+              "currentTime": 5.217,
+              "width": 1280,
+              "height": 720,
+              "readyState": 4,
+              "framesDecoded": 134,
+              "videoBytes": 5277906,
+              "audioPackets": 396,
+              "codecs": [
+                "video/VP8"
+              ]
+            }
+          }
+        },
+        "fullscreen_clearance": {
+          "landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 800,
+              "height": 360
+            },
+            "video": {
+              "x": 80,
+              "y": 0,
+              "width": 640,
+              "height": 360
+            },
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 4,
+                "y": 4,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 4,
+                "y": 284,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 724,
+                "y": 80,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 724,
+                "y": 216,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 724,
+                "y": 264,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 724,
+                "y": 312,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 4,
+                "y": 54,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 4,
+                "y": 102,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 4,
+                "y": 150,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 4,
+                "y": 198,
+                "width": 72,
+                "height": 44
+              }
+            ]
+          },
+          "narrow-landscapeFullscreenClearance": {
+            "viewport": {
+              "width": 667,
+              "height": 375
+            },
+            "video": {
+              "x": 80,
+              "y": 0,
+              "width": 507,
+              "height": 375
+            },
+            "targets": [
+              {
+                "selector": "#touch-exit-fullscreen",
+                "x": 4,
+                "y": 4,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-stick=\"move\"]",
+                "x": 4,
+                "y": 299,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-stick=\"look\"]",
+                "x": 591,
+                "y": 80,
+                "width": 72,
+                "height": 72
+              },
+              {
+                "selector": "[data-key=\"16\"]",
+                "x": 591,
+                "y": 231,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"32\"]",
+                "x": 591,
+                "y": 279,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"69\"]",
+                "x": 591,
+                "y": 327,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"67\"]",
+                "x": 4,
+                "y": 54,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"82\"]",
+                "x": 4,
+                "y": 102,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"84\"]",
+                "x": 4,
+                "y": 150,
+                "width": 72,
+                "height": 44
+              },
+              {
+                "selector": "[data-key=\"113\"]",
+                "x": 4,
+                "y": 198,
+                "width": 72,
+                "height": 44
+              }
+            ]
+          }
+        }
+      }
+    },
+    "deployment_note": "Direct preview promotion returned HTTP422. An identical prebuilt file manifest was deployed to the production target and rechecked; no source rebuild or endpoint change.",
+    "visual_review": {
+      "accepted": true,
+      "viewports": [
+        [
+          360,
+          800
+        ],
+        [
+          800,
+          360
+        ],
+        [
+          667,
+          375
+        ]
+      ],
+      "fullscreen_targets_outside_video": true,
+      "minimum_touch_target_css_px": 44,
+      "portrait_and_nonfullscreen_retained": true,
+      "narrow_landscape_tradeoff": "The contained stream is smaller to reserve control rails.",
+      "temporary_resize_artifact": "A screenshot taken before video advanced after resizing showed a transient rectangle. Capturing after real decoded frames advanced removed it; final preview/production checks use that sequence."
+    }
+  },
+  "title_and_trailer": {
+    "url": "https://arcade.uptick.systems/gta/",
+    "unchanged_during_hud_delivery": true,
+    "evidence": "Verification/UnifiedDelivery.json"
+  },
+  "limits": [
+    "Physical iOS/Android phones and off-LAN media path not checked.",
+    "Host PC and GPU must remain online; no permanent GPU hosting.",
+    "Headless decoded media does not establish human acoustic acceptance, remote responsiveness or handling enjoyment.",
+    "Static native Epic profiles do not establish sustained moving/co-op performance.",
+    "Full naturally driven packaged two-mission story acceptance remains open; native automated save/story evidence has its recorded scope.",
+    "OpenSpec CLI unavailable; structure/scenarios checked manually."
+  ],
+  "native_evidence_sha256": "1eca560399120f6be48206ee0404375cb3233707870a294fdac1ff9776cea9f2",
+  "spec_archive_commit": "3025063d005f539067b2af877629e010a5a8f24b",
+  "spec_archive": "openspec/changes/archive/2026-10-11-nord-compact-hud",
+  "spec_validation": "Manual structure/scenario/canonical checks passed; OpenSpec CLI unavailable."
+}

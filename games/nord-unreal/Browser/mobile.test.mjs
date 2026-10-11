@@ -139,6 +139,37 @@ async function layout(name) {
   await page.screenshot({ path: resolve(output, `${name}-playing.png`) });
 }
 
+async function fullscreenClearance(name) {
+  const geometry = await page.evaluate(() => {
+    const bounds = element => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    };
+    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]',
+      ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      video: bounds(document.querySelector('#video')),
+      targets: selectors.map(selector => ({ selector, ...bounds(document.querySelector(selector)) }))
+    };
+  });
+  const overlap = (a, b) => Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 1 &&
+    Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 1;
+  assert.equal(await page.evaluate(() => Boolean(document.fullscreenElement)), true);
+  for (const [index, target] of geometry.targets.entries()) {
+    assert.ok(target.width >= 44 && target.height >= 44,
+      `${target.selector} must remain a >=44 px target (measured ${target.width}×${target.height})`);
+    assert.ok(target.x >= 0 && target.y >= 0 && target.x + target.width <= geometry.viewport.width + 1 &&
+      target.y + target.height <= geometry.viewport.height + 1, `${target.selector} must fit the viewport`);
+    assert.equal(overlap(target, geometry.video), false, `${target.selector} must leave the native HUD unobscured`);
+    for (const other of geometry.targets.slice(0, index)) {
+      assert.equal(overlap(target, other), false, `${target.selector} must not overlap ${other.selector}`);
+    }
+  }
+  report.input[`${name}FullscreenClearance`] = geometry;
+  await page.screenshot({ path: resolve(output, `${name}-fullscreen.png`) });
+}
+
 async function center(selector, dx = 0, dy = 0) {
   const bounds = await page.locator(selector).boundingBox();
   assert.ok(bounds, `${selector} must have bounds`);
@@ -288,11 +319,20 @@ try {
       assert.equal(await page.locator('#touch-exit-fullscreen').isVisible(), true);
       const exitBounds = await page.locator('#touch-exit-fullscreen').boundingBox();
       assert.ok(exitBounds.width >= 44 && exitBounds.height >= 44, 'fullscreen exit must have a >=44 px target');
-      await page.screenshot({ path: resolve(output, 'landscape-fullscreen.png') });
+      await fullscreenClearance('landscape');
       await page.locator('#touch-exit-fullscreen').tap();
       await page.waitForFunction(() => !document.fullscreenElement);
       await page.waitForFunction(() => document.querySelector('#touch-exit-fullscreen').hidden);
       assert.equal(await page.locator('#touch-exit-fullscreen').isVisible(), false);
+      await page.setViewportSize({ width: 667, height: 375 });
+      await layout('narrowLandscape');
+      await page.locator('#fullscreen').tap();
+      await page.waitForFunction(() => Boolean(document.fullscreenElement));
+      await page.waitForFunction(() => !document.querySelector('#touch-exit-fullscreen').hidden);
+      await advancingMedia('narrowLandscape');
+      await fullscreenClearance('narrow-landscape');
+      await page.locator('#touch-exit-fullscreen').tap();
+      await page.waitForFunction(() => !document.fullscreenElement);
     });
     await check('action buttons support keyboard activation without duplicate touch clicks', async () => {
       const comic = page.locator('[data-key="113"]'); // Native F2 toggles Comic view.

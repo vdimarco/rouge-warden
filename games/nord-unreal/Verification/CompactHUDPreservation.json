@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "utc": "2026-10-11T05:50:51.810645+00:00",
+  "saved_files": [
+    {
+      "path": "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav",
+      "bytes": 2104,
+      "sha256": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    }
+  ],
+  "save_inventory_unchanged": true,
+  "save_directories_checked": [
+    "Saved/SaveGames",
+    "Builds/Linux/Quebec/Saved/SaveGames",
+    "Builds/Linux/Quebec/Saved_NativeQA_Host/SaveGames",
+    "Builds/Linux/Quebec/Saved_NativeQA_Client/SaveGames",
+    "Builds/Linux/Quebec/Saved_NativeQA_Rejoined/SaveGames",
+    "Builds/Browser/Linux/Quebec/Saved/SaveGames",
+    "Builds/Browser/Linux/Quebec/Saved_BrowserGuest/SaveGames",
+    "Builds/Browser/Linux/Quebec/Saved_BrowserArgsQA/SaveGames",
+    "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames"
+  ],
+  "package_settings": [
+    {
+      "path": "Builds/Browser/Linux/Quebec/Saved/Config/Linux/GameUserSettings.ini",
+      "existed": true,
+      "sha256": "5afaf0ff2440f7349ac3be538c77e3855e2ec3efe73d30c4ffbe7a17e6978041",
+      "restored_sha256": "5afaf0ff2440f7349ac3be538c77e3855e2ec3efe73d30c4ffbe7a17e6978041"
+    },
+    {
+      "path": "Builds/Linux/Quebec/Saved/Config/Linux/GameUserSettings.ini",
+      "existed": true,
+      "sha256": "d40937f11df9b5ddc53d73c2aa83326c5afa8f534ce5da8c613dce67176ccf27",
+      "restored_sha256": "d40937f11df9b5ddc53d73c2aa83326c5afa8f534ce5da8c613dce67176ccf27"
+    }
+  ],
+  "historical_reports_and_pngs_restored": 8,
+  "map_sha256": "7e638da09f9bf6c329d2244ade75419ab42f57fc3296b495f93eafb681ed2db1",
+  "note": "Checked only actual project/package SaveGames directories while browser host stopped; recovery/archive copies are outside that scope. Package/profile tests used NordNoCampaignSave; settings restored before normal service."
+}
