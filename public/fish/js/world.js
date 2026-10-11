@@ -151,6 +151,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     line: { from: null, to: null, slack: 0, visible: false, flying: false },
     lure: { x: 0, y: 1, z: -1, visible: false, spin: 0, vel: new THREE.Vector3(), prev: null, prevT: 0 },
     fish: null, jumpWas: 0, jumpSplashed: false,
+    fishTrack: { id: null, x: 0, z: 0, vx: 0, vz: 0 },
     follower: null, followA: 0,
     rings: [], aim: { yaw: 0, visible: false, a: 0 },
     rip: 0,
@@ -420,6 +421,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     rod.mesh.matrixWorldNeedsUpdate = true;
     return S.tip;
   }
+  const fishHook = new THREE.Vector3(), hookedLineTo = { x: 0, y: 0, z: 0 };
   function drawLine(dt) {
     const Ln = S.line;
     const show = Ln.visible && Ln.from && Ln.to && firstPerson() && !cutFn;
@@ -427,7 +429,17 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (!show) { line.motion.reset(); return; }
     // if the caller drew the line from the tip we returned, follow the tip as the camera settles this frame
     const from = Math.hypot(Ln.from.x - S.lastTip.x, Ln.from.y - S.lastTip.y, Ln.from.z - S.lastTip.z) < 0.25 ? S.tip : Ln.from;
-    line.build(from, Ln.to, Ln.slack, Ln.flying, camera.position, pxAngle(), dt);
+    let to = Ln.to;
+    const hooked = S.fish && fishCache.get(S.fish.id);
+    if (S.view.mode === "reel" && hooked && hooked.visible && hooked.userData.kind === "fish") {
+      // The simulation tracks the fish's centre. Draw the line at its mouth without moving the physics endpoint.
+      fishHook.set(0, -0.025, -0.48).multiplyScalar(hooked.scale.x).applyEuler(hooked.rotation).add(hooked.position);
+      hookedLineTo.x = fishHook.x;
+      hookedLineTo.y = fishHook.y;
+      hookedLineTo.z = fishHook.z;
+      to = hookedLineTo;
+    }
+    line.build(from, to, Ln.slack, Ln.flying, camera.position, pxAngle(), dt);
   }
 
   /* ---------------- lure ---------------- */
@@ -496,7 +508,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
   function drawFish(dt) {
     const f = S.fish;
     for (const [id, m] of fishCache) if (!f || id !== f.id) m.visible = false;
-    if (!f) { S.jumpWas = 0; return; }
+    if (!f) { S.jumpWas = 0; S.fishTrack.id = null; S.fishTrack.vx = S.fishTrack.vz = 0; return; }
     const m = getFish(f.id);
     if (!m) return;
     const u = m.userData.fx, len = f.len || 0.4;
@@ -529,10 +541,25 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     m.rotation.set(0, 0, 0, "YXZ");
     m.rotation.order = "YXZ";
     m.rotation.y = -heading; m.rotation.x = pitch; m.rotation.z = roll;
-    // swimming: a tail beat that gets wild when it thrashes
-    const th = f.thrash || 0;
-    m.userData.phase += dt * (7 + th * 18);
-    u.uWag.value.set(m.userData.phase, 0.25 + th * 0.9, j > 0 ? Math.sin(j * Math.PI) * 0.25 * (f.thrash || 0.4) : 0, 0);
+    // The swimming stroke follows what the fish is doing and how hard the player is reeling. Its head stays put so the
+    // line meets the mouth, while the body, tail and paired fins carry the movement.
+    const th = clamp(f.thrash || 0, 0, 1), speed = clamp(f.speed || 0, 0, 4);
+    const effort = clamp(Math.max(speed / 3.5, th * 0.7) + clamp(f.reel || 0, 0, 3.5) * 0.12
+      + clamp(f.tension || 0, 0, 1) * 0.1 + (["run", "surge", "charge", "thrash", "shake"].includes(f.move) ? 0.12 : 0), 0, 1);
+    const resting = f.move === "rest" || f.move === "hold", calm = isCalm();
+    const hz = calm ? 1.05 : resting ? 1.1 : 1.3 + effort * 2.1;
+    m.userData.phase += dt * hz * Math.PI * 2;
+    u.uWag.value.set(m.userData.phase, calm ? 0.28 : resting ? 0.24 : 0.48 + effort * 0.8,
+      j > 0 ? Math.sin(j * Math.PI) * 0.25 * (f.thrash || 0.4) : 0,
+      calm ? 0.1 : resting ? 0.12 : 0.25 + effort * 0.75);
+    const track = S.fishTrack;
+    if (track.id !== f.id || dt <= 0) { track.id = f.id; track.vx = track.vz = 0; }
+    else {
+      const k = 1 - Math.exp(-dt * 10);
+      track.vx += (clamp((f.x - track.x) / dt, -5, 5) - track.vx) * k;
+      track.vz += (clamp((f.z - track.z) / dt, -5, 5) - track.vz) * k;
+    }
+    track.x = f.x; track.z = f.z;
     u.uKey.value = j > 0 ? 0.45 : 0;
     // under the water: tint and fade with depth and with how close it is to the surface
     const depth = -y;
@@ -771,6 +798,13 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     if (rod.mesh.visible) poseRod();
     drawLine(S.lureDt || 1 / 60);
     drawLure(S.lureDt || 1 / 60);
+    // The hidden lure's existing wake slot follows a hooked fish that skims the surface; no extra water pass is needed.
+    // drawLure clears it every frame, including after a catch, a leap, or a cutscene.
+    const f = S.fish, track = S.fishTrack;
+    if (f && !cutFn && S.view.mode === "reel" && !isCalm() && (f.jump || 0) <= 0 && f.y > -0.45
+      && (f.near == null || f.near > 0.2) && fishCache.get(f.id)?.visible && Math.hypot(track.vx, track.vz) > 0.3) {
+      WU.uLure.value.set(f.x, f.z, track.vx * 1.25, track.vz * 1.25);
+    }
     shadow.visible = shadow.visible && S.view.mode !== "catch";
     spray.u.uScale.value = (S.h * renderer.getPixelRatio()) / (2 * Math.tan(camera.fov * DEG / 2));
     if (flies) flies.userData.u.uScale.value = spray.u.uScale.value;
@@ -908,7 +942,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       if (!visible) L.prev = null;
       Object.assign(L, { x, y, z, visible, spin });
     },
-    setFish(f) { S.fish = f ? { ...f } : null; },
+    setFish(f) { if (!f || !S.fish || S.fish.id !== f.id) S.fishTrack.id = null; S.fish = f ? { ...f } : null; },
     setFollower(f) { S.follower = f ? { ...f } : null; },
     setRings(list) {
       S.rings = (list || []).slice(0, E.RINGS);

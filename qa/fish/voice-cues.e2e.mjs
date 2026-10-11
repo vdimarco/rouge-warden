@@ -33,10 +33,19 @@ await page.addInitScript((save) => {
   // Keep speaking=true until cancel() so a strike must interrupt the nibble rather than queue after it.
   const calls = window.__speechCalls = [];
   let speaking = false;
+  const voices = [
+    { name: "US Default", lang: "en-US", localService: true },
+    { name: "Daniel", lang: "en-GB", localService: true },
+  ];
   const synthesis = {
     pending: false,
     get speaking() { return speaking; },
-    speak(utterance) { calls.push({ kind: "speak", text: utterance.text, lang: utterance.lang }); speaking = true; },
+    getVoices() { return voices; },
+    speak(utterance) {
+      calls.push({ kind: "speak", text: utterance.text, lang: utterance.lang,
+        voice: utterance.voice?.name, rate: utterance.rate, pitch: utterance.pitch });
+      speaking = true;
+    },
     cancel() { calls.push({ kind: "cancel" }); speaking = false; },
   };
   Object.defineProperty(window, "speechSynthesis", { configurable: true, value: synthesis });
@@ -98,9 +107,11 @@ try {
 
   await settings(async () => { await page.locator("#optSound").check(); });
   await emit("nibble");
-  await until(page, () => window.__speechCalls.some((call) => call.text === "Nibble. Hold steady."));
+  await until(page, () => window.__speechCalls.some((call) => call.text === "A nibble. Hold steady."));
   const nibbleCalls = await page.evaluate(() => window.__speechCalls.slice(-1));
-  check(nibbleCalls[0]?.kind === "speak" && nibbleCalls[0].lang === "en-US", "a nibble speaks its short English hint");
+  check(nibbleCalls[0]?.kind === "speak" && nibbleCalls[0].lang === "en-GB"
+    && nibbleCalls[0].voice === "Daniel" && nibbleCalls[0].rate === 0.9 && nibbleCalls[0].pitch === 0.9,
+  "a nibble selects the British voice and measured delivery");
 
   await emit("strike");
   await until(page, () => window.__speechCalls.some((call) => call.text === "Set the hook!"));
