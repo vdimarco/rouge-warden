@@ -180,12 +180,12 @@ button, a { font: inherit; color: inherit; cursor: pointer; }
 @container (max-width: 399px) { #clock .ampm { display: none; } }
 
 /* The action picture sits opposite the gauge, below the HUD and pull meter. */
-#prompt { --prompt-top: calc(var(--sat) + 58px); position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--prompt-top) + var(--pull-h, 0px)); width: min(46%, 160px); pointer-events: none; z-index: 4; }
+#prompt { --prompt-top: calc(var(--sat) + 58px); position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--prompt-top) + var(--pull-h, 0px)); width: min(49%, 176px); pointer-events: none; z-index: 4; }
 #prompt .p1 { position: relative; width: 100%; padding: 4px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
 #prompt.hot .p1 { background: var(--red); border-color: #ffb0a8; animation: hot 0.6s ease-out; }
 #prompt.good .p1 { background: #2d7a45; border-color: #9fe0a8; }
 @keyframes hot { 40% { box-shadow: 0 0 0 6px rgba(255, 90, 74, 0.5), 0 0 20px rgba(255, 90, 74, 0.7); } }
-#game.l-tall-reel #prompt { --prompt-top: calc(var(--sat) + 52px); width: min(calc(100% - var(--sal) - var(--sar) - var(--gauge-w) - 30px), 160px); }
+#game.l-tall-reel #prompt { --prompt-top: calc(var(--sat) + 52px); width: min(calc(100% - var(--sal) - var(--sar) - var(--gauge-w) - 30px), 176px); }
 #game.motion[data-reel-side="left"] #prompt { right: auto; left: calc(var(--sal) + 10px); }
 #game:has(#report:not([hidden])) #prompt { visibility: hidden; }
 
@@ -576,7 +576,7 @@ html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[da
   </div>
 
   <div id="banner" hidden aria-live="polite"><b></b><span></span></div>
-  <div id="prompt" hidden><div class="p1"><div class="cue-art" aria-hidden="true"></div><span class="cue-words"></span></div><div class="p2"></div></div>
+  <div id="prompt" hidden><div class="p1"><div class="cue-art" aria-hidden="true"></div><div class="cue-caption" aria-hidden="true"><strong></strong><span></span></div><span class="cue-words"></span></div><div class="p2"></div></div>
   <div id="report" hidden><div class="dist"></div><div class="verdict"></div><div class="zone"></div></div>
   <div id="flash"></div>
   <div id="toast" role="status" aria-live="polite"></div>
@@ -698,6 +698,7 @@ html[data-calm="1"] #unlock .badge, html[data-calm="1"] #cbadges .badge, html[da
         <label><span>Graphics</span><select id="optQuality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select></label>
         <h3 class="sethead">Easier play</h3>
         <label><span>Larger text<small>Bigger words in play and on the cards.</small></span><input type="checkbox" id="optText"></label>
+        <label><span>Voice hints<small id="voiceNote">Bite and hook-set cues. Requires Sound.</small></span><input type="checkbox" id="optVoice"></label>
         <label><span>Calm effects<small id="calmNote">Fewer flashes and less motion.</small></span><input type="checkbox" id="optCalm"></label>
         <div class="setlinks"><button type="button" class="btn alt" id="aboutBtn">About <small id="aboutVer"></small></button><button type="button" class="btn alt" id="privacyRow">Privacy</button></div>
       </div>

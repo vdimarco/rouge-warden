@@ -1,7 +1,7 @@
 // The action card and the big fish, in the real page (the fish-feedback spec, "Action card in the corner", and the
 // fish-fight spec, "Heavy fish look heavy"). A fight is staged with the game's QA hooks, as store-shots.mjs does:
-// 1. a jump at 360x640 in motion play: the card is in the top right, at most 160 px wide, clear of the gauge and the HUD,
-//    shows a moving lower-the-rod gesture with no visible prose. The gauge is at most 190 x 120 px.
+// 1. a jump at 360x640 in motion play: the card is in the top right, at most 176 px wide, clear of the gauge and the HUD,
+//    shows a moving lower-the-rod gesture and one short label; full instruction prose is visually clipped.
 // 2. the reel on the left at 412x915: the gauge is in the top right and the card in the top left.
 // 3. Larger text at 360x640: the card is clear of the gauge and the HUD; the gauge is at most 220 x 140 px.
 // 4. a 0.2 kg and a 5 kg fish 15 m out are drawn about 1.7x and 2.7x their length; 2 m from the rod, at their length.
@@ -67,7 +67,10 @@ function look() {
   const box = (s) => { const e = document.querySelector(s); if (!e || e.closest("[hidden]") || !e.getClientRects().length || getComputedStyle(e).visibility === "hidden") return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
   const svg = document.querySelector("#prompt .p1 svg");
   const words = document.querySelector("#prompt .cue-words");
-  return { card: box("#prompt .p1"), sub: box("#prompt .p2"), gauge: box("#gaugeBox"), hud: box("#hud"), text: words?.textContent || "",
+  const caption = document.querySelector("#prompt .cue-caption");
+  return { card: box("#prompt .p1"), sub: box("#prompt .p2"), gauge: box("#gaugeBox"), hud: box("#hud"), toast: document.querySelector("#toast").classList.contains("on") ? box("#toast") : null,
+    text: words?.textContent || "", label: document.querySelector("#prompt .cue-caption strong")?.textContent || "",
+    detail: document.querySelector("#prompt .cue-caption span")?.textContent || "", captionFits: !!caption && caption.scrollWidth <= caption.clientWidth,
     icon: document.querySelector("#prompt").dataset.icon, action: document.querySelector("#prompt").dataset.action,
     hiddenWords: !!words && getComputedStyle(words).clipPath === "inset(50%)",
     pose: svg ? [...svg.querySelectorAll("[transform]")].map(e => e.getAttribute("transform")) : [], W: innerWidth };
@@ -79,15 +82,15 @@ async function cardCheck(page, tag, { side, gaugeMax }) {
   const s = await page.evaluate(look);
   const c = s.card, g = s.gauge;
   const corner = c && (side === "right" ? s.W - c.r < 16 : c.x < 16) && c.y < 140;
-  check(corner && c.w <= 160, `${tag}: the card is in the top ${side} (${c ? Math.round(c.x) + "-" + Math.round(c.r) + " x " + Math.round(c.y) + "-" + Math.round(c.b) : "none"}), ${c ? Math.round(c.w) : "-"} px wide`);
-  check(!hit(c, g) && !hit(c, s.hud) && !hit(s.sub, g) && !hit(s.sub, s.hud), `${tag}: the card is clear of the gauge and the HUD`);
+  check(corner && c.w <= 176, `${tag}: the card is in the top ${side} (${c ? Math.round(c.x) + "-" + Math.round(c.r) + " x " + Math.round(c.y) + "-" + Math.round(c.b) : "none"}), ${c ? Math.round(c.w) : "-"} px wide`);
+  check(!hit(c, g) && !hit(c, s.hud) && !hit(s.sub, g) && !hit(s.sub, s.hud) && !hit(c, s.toast), `${tag}: the card is clear of the gauge, HUD, and visible toast`);
   check(!!g && (side === "right" ? g.x < s.W / 2 : g.r > s.W / 2) && g.w <= gaugeMax[0] + 0.5 && g.h <= gaugeMax[1] + 0.5, `${tag}: the gauge is on the other side, ${g ? Math.round(g.w) + " x " + Math.round(g.h) : "none"} px`);
   const moved = await until(page, (before) => {
     const svg = document.querySelector("#prompt .cue-art svg");
     return svg && JSON.stringify([...svg.querySelectorAll("[transform]")].map(e => e.getAttribute("transform"))) !== before;
   }, JSON.stringify(s.pose)).then(() => true, () => false);
-  check(/lower/i.test(s.text) && s.icon === "low" && s.action === "low" && s.hiddenWords && moved,
-    `${tag}: the lower-rod gesture moves and its instructions are visually hidden`);
+  check(/lower/i.test(s.text) && s.icon === "low" && s.action === "low" && s.hiddenWords && s.label === "LOWER" && !s.detail && moved,
+    `${tag}: the lower-rod gesture moves, with one visible action word and full instructions available to screen readers`);
 }
 
 {
@@ -96,8 +99,8 @@ async function cardCheck(page, tag, { side, gaugeMax }) {
   await page.evaluate(() => { FISH.G.hold = null; });
   await stage(page, { phase: "retrieve", follower: null, empty: false }, [{ type: "nibble", s: .6 }]);
   const nibble = await page.evaluate(look);
-  check(nibble.action === "nibble" && nibble.hiddenWords && !!nibble.card,
-    `a nibble shows the animated fish-and-wait cue without visible prose (action ${nibble.action}, headline ${nibble.text})`);
+  check(nibble.action === "nibble" && nibble.hiddenWords && nibble.label === "WAIT" && nibble.detail === "FOR STRIKE" && nibble.captionFits && !!nibble.card,
+    `a nibble shows fish-and-wait art with a brief cue label (action ${nibble.action}, headline ${nibble.text})`);
   // the big fish: a light and a heavy one 15 m out, then the heavy one 2 m from the rod
   const eye = await page.evaluate(() => FISH.place.stand.eye);
   for (const [id, kg, len, want] of [["pumpkinseed", 0.2, 0.17, 1.7], ["walleye", 5, 0.66, 2.7]]) {
@@ -112,6 +115,12 @@ async function cardCheck(page, tag, { side, gaugeMax }) {
   await browser.close();
 }
 {
+  const { browser, page, errors } = await open({ W: 320, H: 568 });
+  await cardCheck(page, "320x568", { side: "right", gaugeMax: [190, 120] });
+  check(!errors.length, "320x568: no page errors" + (errors.length ? " (" + errors.slice(0, 3).join(" | ") + ")" : ""));
+  await browser.close();
+}
+{
   const { browser, page, errors } = await open({ W: 412, H: 915, reelSide: "left" });
   await cardCheck(page, "412x915, reel on the left", { side: "left", gaugeMax: [190, 120] });
   check(!errors.length, "reel on the left: no page errors" + (errors.length ? " (" + errors.slice(0, 3).join(" | ") + ")" : ""));
@@ -120,6 +129,16 @@ async function cardCheck(page, tag, { side, gaugeMax }) {
 {
   const { browser, page, errors } = await open({ W: 360, H: 640, large: true });
   await cardCheck(page, "360x640, Larger text", { side: "right", gaugeMax: [220, 140] });
+  const labelPx = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("#prompt .cue-caption strong")).fontSize));
+  check(labelPx >= 16, `Larger text: the visible action word is ${labelPx.toFixed(1)} px`);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.waitForFunction(() => matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const frame = await page.evaluate(() => FISH.G.frame);
+  await until(page, f => FISH.G.frame >= f + 2, frame);
+  const still = await page.evaluate(look);
+  await sleep(400);
+  const later = await page.evaluate(look);
+  check(still.action === "low" && still.label === "LOWER" && JSON.stringify(still.pose) === JSON.stringify(later.pose), "reduced motion keeps a readable, still action pose");
   check(!errors.length, "Larger text: no page errors" + (errors.length ? " (" + errors.slice(0, 3).join(" | ") + ")" : ""));
   await browser.close();
 }

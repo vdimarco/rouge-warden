@@ -1,6 +1,6 @@
 // A cue must show the action the player can take in the current game state.
 import assert from "node:assert/strict";
-import { selectAction } from "../../public/fish/js/action-cues.js";
+import { selectAction, cueCaption } from "../../public/fish/js/action-cues.js";
 
 const cases = [
   ["hold the line", { phase: "cast", step: "ready", text: "Hold your thumb on the rod.", icon: "thumb" }, "hold", 0],
@@ -19,4 +19,17 @@ const cases = [
 for (const [name, cue, kind, side] of cases) {
   assert.deepEqual(selectAction(cue), { kind, side }, name);
   console.log(`ok   ${name}`);
+}
+
+for (const [kind, side, pace, expected] of [
+  ["low", 0, "", { label: "LOWER", detail: "" }],
+  ["nibble", 0, "", { label: "WAIT", detail: "FOR STRIKE" }],
+  ["hook", 0, "", { label: "SNAP!", detail: "" }],
+  ["turn", -1, "", { label: "TURN", detail: "LEFT" }],
+  ["turn", 1, "", { label: "TURN", detail: "RIGHT" }],
+  ["reel", 0, "slow", { label: "REEL", detail: "SLOW" }],
+  ["reel", 0, "fast", { label: "REEL", detail: "FAST" }],
+]) {
+  assert.deepEqual(cueCaption(kind, side, pace), expected, `visible ${kind} cue`);
+  console.log(`ok   visible ${kind} cue`);
 }

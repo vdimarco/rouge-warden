@@ -133,8 +133,8 @@ if (part("1")) {
       input: document.querySelector("#inputNote").textContent, about: document.querySelector("#aboutBtn").textContent, privacy: !!document.querySelector("#privacyRow"),
       head: document.querySelector("#settings .sethead").textContent, calm: document.querySelector("#calmNote").textContent,
     }));
-    check(["Sound", "Buzz and taps", "Easy mode", "Controls", "Reel side", "Art style", "Graphics", "Larger text", "Calm effects"].every((r) => st.rows.some((x) => x.startsWith(r))) && st.head === "Easier play",
-      "Settings has the rows, with Larger text and Calm effects under Easier play (" + st.rows.join(" | ") + ")");
+    check(["Sound", "Buzz and taps", "Easy mode", "Controls", "Reel side", "Art style", "Graphics", "Larger text", "Voice hints", "Calm effects"].every((r) => st.rows.some((x) => x.startsWith(r))) && st.head === "Easier play",
+      "Settings has the rows, with Larger text, Voice hints and Calm effects under Easier play (" + st.rows.join(" | ") + ")");
     check(st.art === "original:Original,painted:Painted" && st.artNow === "painted", "the art style is Original or Painted, and Painted is chosen (" + st.art + ")");
     check(st.input === "You choose when you start.", "Controls on a phone that has not chosen: \"You choose when you start.\" (" + st.input + ")");
     check(new RegExp("About\\s*" + VERSION.replace(/\./g, "\\.")).test(st.about) && st.privacy, "an About row with the version, and a Privacy row (" + st.about + ")");
@@ -212,19 +212,20 @@ if (part("1")) {
     await waitFor(page, "strike flash and hot prompt", () => document.querySelector("#flash").classList.contains("go") && document.querySelector("#prompt").classList.contains("hot"));
     const fl = await page.evaluate(() => ({ go: document.querySelector("#flash").classList.contains("go"), vis: getComputedStyle(document.querySelector("#flash")).visibility, anim: getComputedStyle(document.querySelector("#flash")).animationName }));
     check(fl.go && fl.vis === "visible" && fl.anim !== "none", "a strike with calm effects off: the red flash runs (" + JSON.stringify(fl) + ")");
-    const hot = await page.evaluate(() => { const p = document.querySelector("#prompt .p1"); return getComputedStyle(p).backgroundColor; });
-    check(hot === "rgb(165, 67, 50)", "the urgent prompt sits on the darker red of the painted style, 5.6:1 with its words (" + hot + ")");
-    // the words on the red, in both styles: the urgent prompt and the main button read at 4.5:1 or more
+    const hot = await page.evaluate(() => { const p = document.querySelector("#prompt .p1"); return getComputedStyle(p).backgroundImage; });
+    check(/linear-gradient/.test(hot) && /165, 67, 50/.test(hot), "the urgent action picture sits on the darker painted-red gradient (" + hot + ")");
+    // short cue words sit on the solid footer; check that text and the red buttons read at 4.5:1 or more
     const ratios = await page.evaluate(() => {
       const rgb = (s) => s.match(/[\d.]+/g).slice(0, 3).map(Number), lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
       const L = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b), cr = (a, b) => (Math.max(L(a), L(b)) + 0.05) / (Math.min(L(a), L(b)) + 0.05);
       const of = (sel) => { const cs = getComputedStyle(document.querySelector(sel)); return +cr(rgb(cs.color), rgb(cs.backgroundColor)).toFixed(2); };
+      const cue = (sel) => { const fg = getComputedStyle(document.querySelector(sel)).color, bg = getComputedStyle(document.querySelector("#prompt .cue-caption")).backgroundColor; return +cr(rgb(fg), rgb(bg)).toFixed(2); };
       const out = {};
-      for (const style of ["painted", "original"]) { document.body.dataset.artStyle = style; out[style] = { prompt: of("#prompt .p1"), go: of("#settings .btn.go"), title: of("#freeBtn") }; }
+      for (const style of ["painted", "original"]) { document.body.dataset.artStyle = style; out[style] = { cueWord: cue("#prompt .cue-caption strong"), cueDetail: cue("#prompt .cue-caption span"), go: of("#settings .btn.go"), title: of("#freeBtn") }; }
       document.body.dataset.artStyle = FISH.save.artStyle;
       return out;
     });
-    check(Object.values(ratios).every((r) => Object.values(r).every((v) => v >= 4.5)), "the urgent prompt and the red buttons read at 4.5:1 or more in both styles (" + JSON.stringify(ratios) + ")");
+    check(Object.values(ratios).every((r) => Object.values(r).every((v) => v >= 4.5)), "the short cue words and red buttons read at 4.5:1 or more in both styles (" + JSON.stringify(ratios) + ")");
 
     // the first fish landed: the guide goes away (the player never chose)
     await stage(page, { phase: "caught", catch: { id: "perch", name: "Yellow Perch", kg: 0.3, cm: 26, junk: false }, fish: null });
@@ -368,15 +369,16 @@ if (part("4")) {
     await settled(page, "Larger text fight");
     const pr = await page.evaluate(() => {
       const card = document.querySelector("#prompt .p1"), svg = card.querySelector(".cue-art svg");
+      const caption = card.querySelector(".cue-caption");
       const c = card.getBoundingClientRect(), a = svg?.getBoundingClientRect();
       const artFits = !!a && getComputedStyle(svg).display !== "none" && a.width >= 100 && a.height >= 50
         && a.left >= c.left - 1 && a.top >= c.top - 1 && a.right <= c.right + 1 && a.bottom <= c.bottom + 1
-        && c.left >= 0 && c.right <= innerWidth && c.width <= 160;
-      return { artFits, card: [Math.round(c.width), Math.round(c.height)], art: a && [Math.round(a.width), Math.round(a.height)],
+        && c.left >= 0 && c.right <= innerWidth && c.width <= 176;
+      return { artFits, captionFits: caption.scrollWidth <= caption.clientWidth, card: [Math.round(c.width), Math.round(c.height)], art: a && [Math.round(a.width), Math.round(a.height)],
         toast: parseFloat(getComputedStyle(document.querySelector("#toast")).fontSize), name: FISH.gauge.box && FISH.gauge.box.name };
     });
     const gw = await page.evaluate(async () => { const { GAUGE } = await import("/fish/js/reel.js"); return [GAUGE.WORD_PX, GAUGE.LABEL_PX]; });
-    check(pr.artFits, `Larger text: the action picture fits inside the visible card (${pr.art?.join(" x ") || "none"} px in ${pr.card.join(" x ")} px)`);
+    check(pr.artFits && pr.captionFits, `Larger text: the action picture and short cue words fit inside the visible card (${pr.art?.join(" x ") || "none"} px in ${pr.card.join(" x ")} px)`);
     check(pr.toast >= 17 && gw[0] >= 15 && gw[1] >= 12, `Larger text: the toast is ${pr.toast.toFixed(1)} px, the gauge words ${gw.join(" and ")} px`);
     check(!!pr.name && pr.name.px >= 15 && pr.name.w <= pr.name.max + 0.5, "Larger text: the gauge draws the fish name at 15 px or more, and it fits (" + JSON.stringify(pr.name) + ")");
     const L = { prompt: await rect(page, "#prompt .p1"), crank: await rect(page, "#crankBox"), gauge: await rect(page, "#gaugeBox"), drag: await rect(page, "#dragBar"), hud: await rect(page, "#hud"), cue: await rect(page, "#rodCue span") };

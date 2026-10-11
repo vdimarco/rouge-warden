@@ -10,12 +10,12 @@ For Reel It In, the common tasks are: start a game, cast, reel, fight and land a
 | --- | --- | --- |
 | Sufficient Contrast | **Yes**, after the check | The menus use light text on dark cards. The fish-store-polish change makes the gauge text larger. |
 | Reduced Motion | **Yes**, after the check | The game follows the system Reduce Motion setting (`prefers-reduced-motion`), and Settings has "Calm effects" for the same result. |
-| Differentiate Without Color Alone | **Yes**, after the check | The fish-store-polish change gives the gauge words and patterns as well as colours (SLACK, the rub band, the drag), and every prompt is a word. |
+| Differentiate Without Color Alone | **Yes**, after the check | The gauge has words and patterns as well as colours (SLACK, the rub band, the drag). The action card has a pictured gesture, a direction mark, and a short action label. |
 | Larger Text | No | The game does not follow Dynamic Type. Its "Larger text" switch in Settings has one step: it makes the text 1.25 times larger. Apple's criterion needs text at least 200% larger without clipped controls. |
 | Dark Interface | No | The menus are dark, but the lake is a bright day scene in most places. Apple's criterion is about a dark appearance for the whole app. |
 | VoiceOver | No | The cast and the fight are motion and timing games on a 3D view. A VoiceOver user cannot do the common tasks. The buttons have labels, but that is not enough for the claim. |
 | Voice Control | No | The controls are gestures and phone motion. |
-| Captions | No claim needed | The game has no speech. The guide clips have no voice. |
+| Captions | No | Two optional spoken hints announce a nibble and hook set. The action card shows the corresponding move, but there is no timed caption for the speech. Do not claim this label without checking Apple's criteria on a device. The guide clips have no voice. |
 | Audio Descriptions | No claim needed | The guide clips are short silent loops beside text that says the same thing. |
 
 The same answers apply to iPhone, iPad and Mac. On a Mac the game plays with the mouse and the keys, so Voice Control and VoiceOver stay No for the same reasons. Apple Vision Pro is turned off. Check the app on an iPad and a Mac before review (see the device checklist in `apps/fish/README.md`).
@@ -27,7 +27,7 @@ Run these on the build you submit. If one fails, take the label off until it pas
 ### Sufficient Contrast
 
 - Text: every text over 4.5:1 against its background (3:1 for text of 18 pt, or 14 pt bold, and larger). This covers the title menu, the cards, the HUD chip, the prompts, the gauge words and the toasts.
-- On Linux: the contrast check in `qa/fish/menus.e2e.mjs` (part 1) must pass. It measures three elements at 390x844, in both art styles: the urgent prompt (`#prompt .p1`), the red button in Settings (`#settings .btn.go`) and "Go fishing" (`#freeBtn`). It does not measure the other screens. Check them by eye on the screenshots of every screen at the six sizes (`qa/fish/shots.mjs`).
+- On Linux: the contrast check in `qa/fish/menus.e2e.mjs` (part 1) must pass. It measures the urgent cue's main word and qualifier against their solid footer, the red button in Settings (`#settings .btn.go`), and "Go fishing" (`#freeBtn`) at 390x844 in both art styles. It does not measure the other screens. Check them by eye on the screenshots of every screen at the six sizes (`qa/fish/shots.mjs`).
 - On a phone: Settings > Accessibility > Display & Text Size > Increase Contrast on, then play one derby. Nothing must get harder to read.
 
 ### Reduced Motion
@@ -38,7 +38,7 @@ Run these on the build you submit. If one fails, take the label off until it pas
 ### Differentiate Without Color Alone
 
 - In a fight, each gauge state has a word or a pattern as well as a colour: tension, the drag slipping, slack, the rub band and the tired fish.
-- Prompts name the move ("Lower the rod", "Reel", "Steer left").
+- The action card names the move with a short label ("LOWER", "REEL SLOW", "TURN LEFT") and shows its direction or gesture without relying on colour.
 - Check: screenshots of a fight in grayscale (`page.emulateMedia` with a CSS `filter: grayscale(1)` on `html`, or the phone's Color Filters > Grayscale). Every state must still read.
 
 ### Larger Text (not claimed)
