@@ -36,7 +36,7 @@ const note = (page, fn, arg, ms = 60000) => until(page, fn, arg, ms).then(() => 
 // A phone page with no help from lib.mjs: nothing is routed, so three.js and the fonts come from the game's own files.
 // offline: abort every request to another host. init: scripts to run before the page (fn, arg). save: a first save.
 async function launch({ offline = false, init = [], route = null, query = "", save = null, phone = true, waitTitle = true } = {}) {
-  const browser = await chromium.launch({ args: ARGS });
+  const browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined });
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
   page.setDefaultTimeout(120000);
@@ -411,15 +411,15 @@ if (part("4")) {
   await browser.close();
 }
 if (part("4")) {
-  // the phone cleared web storage: the save and the two switches come back from native storage
+  // the phone cleared web storage: the save and the independent switches come back from native storage
   const kept = { v: 1, input: "touch", casts: 30, caught: 4, journal: { perch: { n: 3, kg: 0.6, cm: 30 } }, place: "stumps", places: { loon: { open: 1, d: 0, kg: 3.8, id: "pike", n: 4, lg: 0 }, stumps: { open: 1, d: 0, kg: 0, id: null, n: 0, lg: 0 } }, seen: { "at.stumps": 1, "opened.stumps": 1 }, quality: "low", reelSide: "left" };
-  const prefs = { "fish.v1": JSON.stringify(kept), "fish.haptics": "false", "arcade.sound": "false", "reel-it-in-guide-v1": "shown" };
+  const prefs = { "fish.v1": JSON.stringify(kept), "fish.haptics": "false", "arcade.sound": "false", "fish.voiceHints": "false", "reel-it-in-guide-v1": "shown" };
   const { browser, page, errors } = await launch({ init: [[capStub, { prefs }]] });
   try {
     const r = await page.evaluate(() => ({ j: FISH.save.journal.perch, open: FISH.save.places.stumps && FISH.save.places.stumps.open, place: FISH.G.place.id, side: FISH.save.reelSide, q: FISH.save.quality,
-      hx: FISH.Haptics.enabled, snd: FISH.Sound.isOn(), ls: !!localStorage.getItem("fish.v1"), kick: document.getElementById("tkick").textContent }));
+      hx: FISH.Haptics.enabled, snd: FISH.Sound.isOn(), voice: localStorage.getItem("fish.voiceHints"), ls: !!localStorage.getItem("fish.v1"), kick: document.getElementById("tkick").textContent }));
     check(r.j && r.j.n === 3 && r.open === 1 && r.place === "stumps" && r.side === "left" && r.q === "low", "web storage cleared: the journal, the places and the settings are back (" + JSON.stringify(r) + ")");
-    check(r.hx === false && r.snd === false && (await page.evaluate(() => localStorage.getItem("reel-it-in-guide-v1"))) === "shown", "and the buzz, sound and guide switches are back");
+    check(r.hx === false && r.snd === false && r.voice === "false" && (await page.evaluate(() => localStorage.getItem("reel-it-in-guide-v1"))) === "shown", "and the buzz, sound, voice and guide switches are back");
     check(r.ls, "and the save is written back to web storage");
     check(await page.evaluate(() => window.__cap.calls.includes("Preferences.get:fish.v1")), "an empty web storage asked native storage for the save");
   } catch (e) { check(false, "exception in part 4c: " + (e && e.message)); }

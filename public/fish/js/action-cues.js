@@ -1,6 +1,6 @@
-// The small action picture in the corner uses the same timed gestures as the moves guide.
-// Keep the prompt's words in the DOM for assistive technology and game diagnostics; only
-// the picture is visible during play.
+// The corner card uses the guide's timed gestures, with a larger movement mark and
+// one or two short visible words. The full prompt stays in the DOM for assistive
+// technology and game diagnostics.
 import { sceneMarkup, poseAt, LENGTH } from "./guide.js";
 import { isCalm } from "./calm.js";
 
@@ -28,9 +28,39 @@ export function selectAction({ text = "", sub = "", icon = "", phase = "", step 
 
 const KEY = { hold: "SPACE", back: "SPACE", cast: "SPACE", reel: "R", hook: "SPACE", pump: "W · S+R", low: "S", raise: "W", turn: "A · D", land: "W", drag: "+" };
 const SPEED = { slow: .55, steady: 1, faster: 1.35, fast: 1.8 };
+const LABEL = {
+  hold: "HOLD", back: "BACK", cast: "FLICK", flight: "WATCH", feather: "TAP",
+  upright: "UPRIGHT", tap: "TAP", reel: "REEL", nibble: "WAIT", hook: "SNAP!",
+  pump: "PUMP", raise: "RAISE", low: "LOWER", turn: "TURN", stop: "PAUSE",
+  drag: "TIGHTEN", land: "LIFT",
+};
+
+export function cueCaption(kind, side = 0, pace = "") {
+  const detail = kind === "turn" ? side < 0 ? "LEFT" : side > 0 ? "RIGHT" : "SIDEWAYS"
+    : kind === "reel" ? { slow: "SLOW", steady: "STEADY", faster: "FASTER", fast: "FAST" }[pace] || ""
+    : { nibble: "FOR STRIKE", pump: "REEL", land: "HOLD", feather: "TO STOP", drag: "DRAG" }[kind] || "";
+  return { label: LABEL[kind] || "REEL", detail };
+}
+
+function motionMark(kind, side) {
+  if (["back", "low"].includes(kind)) return `<g class="cue-vector g-down"><path d="M104 17v38m-10-11 10 11 10-11"/></g>`;
+  if (["cast", "hook", "raise", "land", "pump"].includes(kind)) return `<g class="cue-vector g-up"><path d="M104 61V24m-10 11 10-11 10 11"/></g>`;
+  if (kind === "turn") {
+    const right = `<path d="M85 41h42m-10-10 10 10-10 10"/>`;
+    const left = `<path d="M37 41H9m10-10L9 41l10 10"/>`;
+    return `<g class="cue-vector cue-lateral">${side < 0 ? left : side > 0 ? right : left + right}</g>`;
+  }
+  if (["hold", "tap", "feather"].includes(kind)) {
+    const x = kind === "feather" ? 86 : 53, y = kind === "feather" ? 39 : 47;
+    return `<g class="cue-halo g-tap"><circle cx="${x}" cy="${y}" r="15"/><circle cx="${x}" cy="${y}" r="22"/></g>`;
+  }
+  if (kind === "reel") return `<circle class="cue-reel-ring" cx="62" cy="41" r="31"/>`;
+  return "";
+}
 
 export function createActionCue(prompt) {
   const art = prompt.querySelector(".cue-art");
+  const caption = prompt.querySelector(".cue-caption");
   let kind = "", side = 0, parts = [], started = 0, speed = 1;
 
   function set({ text, sub, icon, tone, phase, step, fishPhase, input, pace = "" }) {
@@ -42,13 +72,11 @@ export function createActionCue(prompt) {
     prompt.dataset.action = kind;
     prompt.dataset.side = action.side < 0 ? "left" : action.side > 0 ? "right" : "either";
     prompt.dataset.pace = pace || "steady";
-    let markup = sceneMarkup(kind, input === "motion");
-    if (kind === "turn" && action.side) {
-      const arrow = action.side > 0
-        ? `<path class="cue-dir" d="M104 70h25m-7-7 7 7-7 7"/>`
-        : `<path class="cue-dir" d="M34 70H9m7-7-7 7 7 7"/>`;
-      markup = markup.replace("</svg>", `${arrow}</svg>`);
-    }
+    const words = cueCaption(kind, action.side, pace);
+    caption.querySelector("strong").textContent = words.label;
+    caption.querySelector("span").textContent = words.detail;
+    caption.querySelector("span").hidden = !words.detail;
+    const markup = sceneMarkup(kind, input === "motion").replace("</svg>", `${motionMark(kind, action.side)}</svg>`);
     const key = input === "keys" ? KEY[kind] : "";
     const wheel = input === "mouse" && kind === "reel";
     const pointer = input === "mouse" && kind !== "reel";
