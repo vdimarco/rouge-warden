@@ -29,3 +29,8 @@
 - [x] Deploy the tested player to the existing production target, record evidence and remaining physical-device limits.
 
 - [ ] Review new touch gameplay on a physical phone and physical iOS device; emulated Chromium checks and prior phone video confirmation do not establish this.
+
+- [x] Diagnose reported lag with a bounded ordinary-browser probe and current GPU/native process evidence; distinguish low native frame supply from local decoding/loss. Preserve other applications, native quality and VRAM guard.
+- [x] Remove production per-control debug logging/stack capture through Epic's shared logger; verify warnings/errors remain and actual browser initialization is correct. Twelve unit tests and the static browser checks pass.
+- [x] Deploy and recheck the logging correction on the existing player, recording real-media/input evidence and measured performance separately. Preview/production mobile6/6, ordinary desktop7/7, byte-identical publication and final19.37FPS read-only probe pass their bounded checks; host contention and sustained phone performance remain open in BrowserPerformance.md/JSON.
+- [ ] Establish acceptable sustained phone responsiveness after resolving host contention; same-PC connection and touch checks do not establish this.

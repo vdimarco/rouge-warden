@@ -1,6 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { signallingUrl } from './config.mjs';
+import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
+
+test('production logger suppresses input spam and preserves warnings and errors without stacks', t => {
+  const messages = [];
+  for (const method of ['log', 'warn', 'error']) t.mock.method(console, method, message => messages.push([method, message]));
+  Logger.InitLogging(LogLevel.Warning, false);
+  try {
+    Logger.Debug('debug input');
+    Logger.Info('Message Sent: 74,0,128');
+    Logger.Warning('connection warning');
+    Logger.Error('connection error');
+    assert.deepEqual(messages, [['warn', '[Warning] - connection warning'], ['error', '[Error] - connection error']]);
+  } finally {
+    Logger.InitLogging(LogLevel.Debug, true);
+  }
+});
 
 test('missing host remains explicitly offline', () => {
   assert.equal(signallingUrl('', 'game.vercel.app'), '');

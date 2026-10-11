@@ -1,0 +1,837 @@
+{
+  "dateUtc": "2026-10-11",
+  "scope": "Diagnose reported browser lag and remove production per-control debug/stack logging; native game and runtime unchanged",
+  "performanceAccepted": false,
+  "conclusion": "Low native frame supply corroborated; upstream render/capture under shared GPU load is the leading inference. Exact native render/GPU frame-time split and phone/carrier responsiveness remain unmeasured.",
+  "implementation": {
+    "logger": "Existing Epic common Logger initialized at Warning with includeStack=false before PixelStreaming construction",
+    "directDependency": "Already-installed @epicgames-ps/lib-pixelstreamingcommon-ue5.8 pinned at existing 0.1.0; no new package",
+    "warningsAndErrorsPreserved": true,
+    "perInputLoggingSuppressed": true
+  },
+  "probes": [
+    {
+      "startedAt": "2026-10-11T01:46:09.712Z",
+      "url": "https://nord-montreal.vercel.app/",
+      "targetSlot": "NordFriend1",
+      "networkMode": "ordinary",
+      "durationTargetSec": 15,
+      "skipped": false,
+      "passed": true,
+      "limits": [
+        "Same-PC Chromium does not reproduce a physical phone or off-LAN path.",
+        "WebRTC stats partition receiver/network stages; they do not directly measure native game render latency.",
+        "A single 15-second sample is not a sustained performance guarantee."
+      ],
+      "summary": {
+        "elapsedSec": 15.028400000035763,
+        "decodedFrames": 154,
+        "decodedFps": 10.247265177905401,
+        "droppedFrames": 0,
+        "droppedFps": 0,
+        "videoReceiveKbps": 6943.332357386793,
+        "avgDecodeMs": 6.6651233766233755,
+        "avgProcessingMs": 86.98856493506493,
+        "avgJitterBufferMs": 80.26040259740259,
+        "freezes": 1,
+        "frozenSec": 0.346,
+        "videoElementFps": 10.247265177905401,
+        "candidate": {
+          "local": {
+            "candidateType": "host",
+            "protocol": "udp",
+            "networkType": "unknown"
+          },
+          "remote": {
+            "candidateType": "host",
+            "protocol": "udp"
+          },
+          "rttMs": 0
+        }
+      },
+      "finishedAt": "2026-10-11T01:46:26.796Z",
+      "rawLocalPath": "/tmp/nord-lag-qa/report-2026-10-11T01-46-09-712Z.json",
+      "counterEndpoints": [
+        {
+          "wallTime": "2026-10-11T01:46:11.478Z",
+          "monotonicMs": 1384.5999999642372,
+          "peer": {
+            "connectionState": "connected",
+            "iceConnectionState": "connected"
+          },
+          "videoElement": {
+            "currentTime": 0.147,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "playbackQuality": {
+              "totalVideoFrames": 3,
+              "droppedVideoFrames": 1,
+              "corruptedVideoFrames": 0
+            }
+          },
+          "inboundVideo": {
+            "framesDecoded": 3,
+            "framesDropped": 0,
+            "framesReceived": 4,
+            "framesPerSecond": 16,
+            "bytesReceived": 57660,
+            "packetsReceived": 100,
+            "packetsLost": 0,
+            "jitter": 0.009,
+            "jitterBufferDelay": 0.059937,
+            "jitterBufferEmittedCount": 3,
+            "totalDecodeTime": 0.013441,
+            "totalProcessingDelay": 0.07373299999999999,
+            "totalInterFrameDelay": 0.135,
+            "freezeCount": 0,
+            "totalFreezesDuration": 0,
+            "pauseCount": 0,
+            "totalPausesDuration": 0,
+            "nackCount": 0,
+            "pliCount": 0,
+            "keyFramesDecoded": 1,
+            "frameWidth": 1280,
+            "frameHeight": 720,
+            "qpSum": 267
+          },
+          "inboundAudio": {
+            "packetsReceived": 16,
+            "packetsLost": 0,
+            "jitter": 0.002,
+            "jitterBufferDelay": 307.2,
+            "jitterBufferEmittedCount": 12480,
+            "concealedSamples": 0,
+            "concealmentEvents": 0
+          },
+          "selectedPair": {
+            "state": "succeeded",
+            "nominated": true,
+            "currentRoundTripTime": 0.001,
+            "bytesReceived": 88216,
+            "bytesSent": 6434,
+            "requestsSent": 3,
+            "responsesReceived": 3,
+            "consentRequestsSent": 2
+          },
+          "localCandidate": {
+            "candidateType": "prflx",
+            "protocol": "udp",
+            "networkType": "unknown"
+          },
+          "remoteCandidate": {
+            "candidateType": "host",
+            "protocol": "udp"
+          }
+        },
+        {
+          "wallTime": "2026-10-11T01:46:26.506Z",
+          "monotonicMs": 16413,
+          "peer": {
+            "connectionState": "connected",
+            "iceConnectionState": "connected"
+          },
+          "videoElement": {
+            "currentTime": 15.065,
+            "width": 1280,
+            "height": 720,
+            "readyState": 4,
+            "playbackQuality": {
+              "totalVideoFrames": 157,
+              "droppedVideoFrames": 1,
+              "corruptedVideoFrames": 0
+            }
+          },
+          "inboundVideo": {
+            "framesDecoded": 157,
+            "framesDropped": 0,
+            "framesReceived": 157,
+            "framesPerSecond": 17,
+            "bytesReceived": 13101057,
+            "packetsReceived": 11378,
+            "packetsLost": 0,
+            "jitter": 0.052,
+            "jitterBufferDelay": 12.420039,
+            "jitterBufferEmittedCount": 157,
+            "totalDecodeTime": 1.0398699999999999,
+            "totalProcessingDelay": 13.469972,
+            "totalInterFrameDelay": 15.2,
+            "freezeCount": 1,
+            "totalFreezesDuration": 0.346,
+            "pauseCount": 0,
+            "totalPausesDuration": 0,
+            "nackCount": 0,
+            "pliCount": 0,
+            "keyFramesDecoded": 1,
+            "frameWidth": 1280,
+            "frameHeight": 720,
+            "qpSum": 842
+          },
+          "inboundAudio": {
+            "packetsReceived": 774,
+            "packetsLost": 0,
+            "jitter": 0.002,
+            "jitterBufferDelay": 54412.8,
+            "jitterBufferEmittedCount": 737280,
+            "concealedSamples": 0,
+            "concealmentEvents": 0
+          },
+          "selectedPair": {
+            "state": "succeeded",
+            "nominated": true,
+            "currentRoundTripTime": 0,
+            "bytesReceived": 10289938,
+            "bytesSent": 16434,
+            "requestsSent": 8,
+            "responsesReceived": 8,
+            "consentRequestsSent": 7
+          },
+          "localCandidate": {
+            "candidateType": "host",
+            "protocol": "udp",
+            "networkType": "unknown"
+          },
+          "remoteCandidate": {
+            "candidateType": "host",
+            "protocol": "udp"
+          }
+        }
+      ]
+    },
+    {
+      "startedAt": "2026-10-11T01:52:45.139Z",
+      "url": "https://nord-montreal.vercel.app/",
+      "targetSlot": "NordFriend1",
+      "networkMode": "ordinary",
+      "qaProtocol": "Epic UE5.8 LatencyTest ID 6",
+      "durationTargetSec": 15,
+      "requests": [
+        {
+          "sent": {
+            "at": 1791683566155,
+            "label": "Player35",
+            "byteLength": 57
+          },
+          "response": {
+            "at": 1791683566157,
+            "label": "Player35",
+            "raw": {
+              "ReceiptTimeMs": 476630382.84,
+              "EncodeMs": -1,
+              "CaptureToSendMs": 0,
+              "TransmissionTimeMs": 476630383.22
+            }
+          }
+        },
+        {
+          "sent": {
+            "at": 1791683571168,
+            "label": "Player35",
+            "byteLength": 57
+          },
+          "response": {
+            "at": 1791683571172,
+            "label": "Player35",
+            "raw": {
+              "ReceiptTimeMs": 476635395.22,
+              "EncodeMs": 11.88,
+              "CaptureToSendMs": 4.49,
+              "TransmissionTimeMs": 476635398.65
+            }
+          }
+        },
+        {
+          "sent": {
+            "at": 1791683576182,
+            "label": "Player35",
+            "byteLength": 57
+          },
+          "response": {
+            "at": 1791683576185,
+            "label": "Player35",
+            "raw": {
+              "ReceiptTimeMs": 476640409.23,
+              "EncodeMs": 11.88,
+              "CaptureToSendMs": 4.49,
+              "TransmissionTimeMs": 476640410.95
+            }
+          }
+        }
+      ],
+      "skipped": false,
+      "summary": {
+        "seconds": 15.04130000001192,
+        "decodedFrames": 276,
+        "decodedFps": 18.349477771188745,
+        "avgDecodeMs": 5.42336956521739,
+        "avgProcessingMs": 85.89521739130434,
+        "nativeEncodeMs": [
+          -1,
+          11.88,
+          11.88
+        ],
+        "nativePacketSendDelayMisnamedCaptureToSendMs": [
+          0,
+          4.49,
+          4.49
+        ]
+      },
+      "passed": true,
+      "finishedAt": "2026-10-11T01:53:01.350Z",
+      "rawLocalPath": "/tmp/nord-lag-qa/latency-2026-10-11T01-52-45-139Z.json",
+      "counterEndpoints": [
+        {
+          "at": 1791683566151,
+          "monotonicMs": 755.8000000119209,
+          "framesDecoded": 2,
+          "framesDropped": 0,
+          "packetsLost": 0,
+          "totalDecodeTime": 0.007921,
+          "totalProcessingDelay": 0.042072,
+          "jitterBufferDelay": 0.033776,
+          "jitterBufferEmittedCount": 2,
+          "roundTripTime": 0,
+          "channelLabels": [
+            {
+              "label": "Player35",
+              "state": "open"
+            }
+          ]
+        },
+        {
+          "at": 1791683581192,
+          "monotonicMs": 15797.100000023842,
+          "framesDecoded": 278,
+          "framesDropped": 0,
+          "packetsLost": 0,
+          "totalDecodeTime": 1.5047709999999999,
+          "totalProcessingDelay": 23.749152,
+          "jitterBufferDelay": 22.223978,
+          "jitterBufferEmittedCount": 278,
+          "roundTripTime": 0,
+          "channelLabels": [
+            {
+              "label": "Player35",
+              "state": "open"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "startedAt": "2026-10-11T01:55:20.564Z",
+      "url": "https://nord-montreal.vercel.app/",
+      "targetSlot": "NordFriend1",
+      "networkMode": "ordinary",
+      "qaProtocol": "Epic UE5.8 LatencyTest ID 6",
+      "durationTargetSec": 15,
+      "requests": [
+        {
+          "sent": {
+            "at": 1791683722978,
+            "label": "Player43",
+            "byteLength": 57
+          },
+          "response": {
+            "at": 1791683722979,
+            "label": "Player43",
+            "raw": {
+              "ReceiptTimeMs": 476787205.38,
+              "EncodeMs": -1,
+              "CaptureToSendMs": 0,
+              "TransmissionTimeMs": 476787205.64
+            }
+          }
+        },
+        {
+          "sent": {
+            "at": 1791683727487,
+            "label": "Player43",
+            "byteLength": 57
+          },
+          "response": {
+            "at": 1791683727490,
+            "label": "Player43",
+            "raw": {
+              "ReceiptTimeMs": 476791714.48,
+              "EncodeMs": 8.92,
+              "CaptureToSendMs": 4.57,
+              "TransmissionTimeMs": 476791714.61
+            }
+          }
+        },
+        {
+          "sent": {
+            "at": 1791683731999,
+            "label": "Player43",
+            "byteLength": 57
+          },
+          "response": {
+            "at": 1791683731999,
+            "label": "Player43",
+            "raw": {
+              "ReceiptTimeMs": 476796225.95,
+              "EncodeMs": 8.92,
+              "CaptureToSendMs": 4.57,
+              "TransmissionTimeMs": 476796226.06
+            }
+          }
+        }
+      ],
+      "skipped": false,
+      "deployedPlayerJsSha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+      "deployedPlayerJsStatus": 200,
+      "logger": {
+        "logLevel": 2,
+        "includeStack": false
+      },
+      "summary": {
+        "seconds": 13.527400000035763,
+        "decodedFrames": 262,
+        "decodedFps": 19.368097343118954,
+        "avgDecodeMs": 5.3115725190839695,
+        "avgProcessingMs": 85.67035877862595,
+        "nativeEncodeMs": [
+          -1,
+          8.92,
+          8.92
+        ],
+        "nativePacketSendDelayMisnamedCaptureToSendMs": [
+          0,
+          4.57,
+          4.57
+        ]
+      },
+      "infoDebugMessages": [],
+      "passed": true,
+      "finishedAt": "2026-10-11T01:55:36.647Z",
+      "rawLocalPath": "/tmp/nord-lag-qa/latency-2026-10-11T01-55-20-564Z.json",
+      "counterEndpoints": [
+        {
+          "at": 1791683722976,
+          "monotonicMs": 1932.3999999761581,
+          "framesDecoded": 19,
+          "framesDropped": 0,
+          "packetsLost": 0,
+          "totalDecodeTime": 0.06977599999999999,
+          "totalProcessingDelay": 0.440393,
+          "jitterBufferDelay": 0.369403,
+          "jitterBufferEmittedCount": 19,
+          "roundTripTime": 0,
+          "channelLabels": [
+            {
+              "label": "Player43",
+              "state": "open"
+            }
+          ]
+        },
+        {
+          "at": 1791683736504,
+          "monotonicMs": 15459.800000011921,
+          "framesDecoded": 281,
+          "framesDropped": 0,
+          "packetsLost": 0,
+          "totalDecodeTime": 1.461408,
+          "totalProcessingDelay": 22.886027,
+          "jitterBufferDelay": 21.406651999999998,
+          "jitterBufferEmittedCount": 281,
+          "roundTripTime": 0,
+          "channelLabels": [
+            {
+              "label": "Player43",
+              "state": "open"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "interpretationLimits": [
+    "Before/after views and shared GPU load are uncontrolled; frame-rate changes cannot be attributed to logging correction.",
+    "Same-PC ordinary DNS used a direct UDP route; this does not measure phone carrier/TURN responsiveness.",
+    "totalProcessingDelay includes jitter buffering and decode; these numbers must not be summed as separate latency stages.",
+    "Native CaptureToSendMs is mislabeled by installed UE5.8: its MeanSendDelay collector is totalPacketSendDelay/packetsSent, not actual capture-to-send latency.",
+    "Native encode values are reported averages, not worst-case encoder throughput."
+  ],
+  "nativeFrameCounterEvidence": {
+    "counterSource": "Installed Runtime/Core/Private/Misc/OutputDeviceHelper.cpp:39, GFrameCounter%1000",
+    "capBasis": "Applied t.MaxFPS30 in hostlog1695/friendlog1671, no later FPS change found; excludes extra wraps in these intervals",
+    "friend": {
+      "log": "Saved/BrowserStreaming/friend-20261011-011020-477314.log",
+      "lines": [
+        1888,
+        1896
+      ],
+      "timeUtc": [
+        "2026-10-11T01:46:11.077Z",
+        "2026-10-11T01:46:26.530Z"
+      ],
+      "counter": [
+        419,
+        591
+      ],
+      "frames": 172,
+      "seconds": 15.453,
+      "fps": 11.130524817187602
+    },
+    "host": {
+      "log": "Saved/BrowserStreaming/host-20261011-011020-477314.log",
+      "lines": [
+        1994,
+        2004
+      ],
+      "timeUtc": [
+        "2026-10-11T01:43:54.827Z",
+        "2026-10-11T01:44:33.598Z"
+      ],
+      "counter": [
+        778,
+        283
+      ],
+      "frames": 505,
+      "seconds": 38.771,
+      "fps": 13.025199246859765
+    },
+    "newOomOrFatalInCurrentLogs": false
+  },
+  "hostSnapshot": {
+    "timestampUtc": "2026-10-11T01:55:25.805869+00:00",
+    "gpuFields": [
+      "utilizationPercent",
+      "usedMiB",
+      "freeMiB",
+      "temperatureC"
+    ],
+    "gpuValues": [
+      97,
+      22692,
+      1374,
+      61
+    ],
+    "selectedProcesses": [
+      {
+        "pid": 46092,
+        "name": "quickshell",
+        "vramMiB": 3796
+      },
+      {
+        "pid": 477900,
+        "name": "Quebec",
+        "vramMiB": 5535
+      },
+      {
+        "pid": 480805,
+        "name": "Quebec",
+        "vramMiB": 5085
+      },
+      {
+        "pid": 1936642,
+        "name": "dota2",
+        "vramMiB": 2287
+      }
+    ]
+  },
+  "checks": {
+    "previewMobile": {
+      "startedAt": "2026-10-11T01:53:00.397Z",
+      "finishedAt": "2026-10-11T01:53:06.970Z",
+      "passed": true,
+      "checks": [
+        {
+          "name": "real mobile media",
+          "passed": true,
+          "durationMs": 1206
+        },
+        {
+          "name": "portrait controls fit and meet target size",
+          "passed": true,
+          "durationMs": 48
+        },
+        {
+          "name": "simultaneous move, look and jump use the native data channel",
+          "passed": true,
+          "durationMs": 2257
+        },
+        {
+          "name": "landscape controls fit and fullscreen exit works",
+          "passed": true,
+          "durationMs": 330
+        },
+        {
+          "name": "action buttons support keyboard activation without duplicate touch clicks",
+          "passed": true,
+          "durationMs": 551
+        },
+        {
+          "name": "touch release on disconnect leaves no held native key",
+          "passed": true,
+          "durationMs": 340
+        }
+      ],
+      "rawLocalPath": "Browser/.qa/mobile-2026-10-11T01-53-00-396Z/summary.json",
+      "logging": {
+        "context": {
+          "level": 2,
+          "stack": false
+        },
+        "spam": []
+      },
+      "diagnostics": [
+        {
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "location": {
+            "url": "https://nord-montreal-nevbib3l2-vdimarcos-projects.vercel.app/favicon.ico",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "location": {
+            "url": "https://nord-montreal-nevbib3l2-vdimarcos-projects.vercel.app/favicon.ico",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ]
+    },
+    "productionMobile": {
+      "startedAt": "2026-10-11T01:54:08.753Z",
+      "finishedAt": "2026-10-11T01:54:15.044Z",
+      "passed": true,
+      "checks": [
+        {
+          "name": "real mobile media",
+          "passed": true,
+          "durationMs": 1206
+        },
+        {
+          "name": "portrait controls fit and meet target size",
+          "passed": true,
+          "durationMs": 70
+        },
+        {
+          "name": "simultaneous move, look and jump use the native data channel",
+          "passed": true,
+          "durationMs": 2248
+        },
+        {
+          "name": "landscape controls fit and fullscreen exit works",
+          "passed": true,
+          "durationMs": 289
+        },
+        {
+          "name": "action buttons support keyboard activation without duplicate touch clicks",
+          "passed": true,
+          "durationMs": 536
+        },
+        {
+          "name": "touch release on disconnect leaves no held native key",
+          "passed": true,
+          "durationMs": 323
+        }
+      ],
+      "rawLocalPath": "Browser/.qa/mobile-2026-10-11T01-54-08-753Z/summary.json",
+      "logging": {
+        "context": {
+          "level": 2,
+          "stack": false
+        },
+        "spam": []
+      },
+      "diagnostics": [
+        {
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "location": {
+            "url": "https://nord-montreal.vercel.app/favicon.ico",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "location": {
+            "url": "https://nord-montreal.vercel.app/favicon.ico",
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ]
+    },
+    "productionDesktop": {
+      "startedAt": "2026-10-11T01:54:28.772Z",
+      "finishedAt": "2026-10-11T01:54:49.619Z",
+      "passed": true,
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2273
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 1953
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2937
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2973
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 293
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 4210
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 4928
+        }
+      ],
+      "rawLocalPath": "Browser/.qa/live-2026-10-11T01-54-28-771Z/summary.json",
+      "networkMode": "ordinary",
+      "diagnostics": [
+        {
+          "player": "host",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        },
+        {
+          "player": "host",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        },
+        {
+          "player": "friend",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        },
+        {
+          "player": "occupied",
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()"
+        }
+      ]
+    },
+    "unit": {
+      "passed": 12,
+      "failed": 0
+    },
+    "staticBrowser": {
+      "passed": true,
+      "scope": "offline/configured logger context, layout, connection states, ignored query overrides and reconnect; no Unreal launched"
+    }
+  },
+  "preview": {
+    "id": "dpl_E97e3XvcQb283YY2XHxQyxHRNjgT",
+    "url": "https://nord-montreal-nevbib3l2-vdimarcos-projects.vercel.app/",
+    "state": "READY"
+  },
+  "deployment": {
+    "id": "dpl_2q2TYmdCX8BZcPTdHKokxBP5SYmm",
+    "url": "https://nord-montreal.vercel.app/",
+    "uniqueUrl": "https://nord-montreal-kot0z807d-vdimarcos-projects.vercel.app/",
+    "state": "READY",
+    "target": "production",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "sameBytesAsTestedPreview": true
+  },
+  "sha256": {
+    "player.js": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+    "index.html": "13135f66f30edea76ec27b45609e34b8affd713f2cd59d6e111aab4fece943a8",
+    "styles.css": "d2b7e81a9b81add38618a18441c5c0322d978304be0cc17db32fc61fd3663d65",
+    "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+  },
+  "preservation": {
+    "mapAndSaveSha256": {
+      "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Content/Maps/Quebec.umap": "33f25a46d1fa4c39a1b846526b391192ffa19ee425addbde1533f414fc567a3a",
+      "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Content/Maps/LaFontaine.umap": "d0f8db3d707c6cd5f417d82280ced1066c4172c5fa6afd14cb2018efa6b4b1d2",
+      "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "allUnchanged": true,
+    "nativeServicesRestarted": false,
+    "nativeQualityChanged": false,
+    "gpuJobLaunched": false,
+    "separatePlateauProjectEdited": false
+  },
+  "runtime": {
+    "demoMainPid": 477314,
+    "hostPid": 477900,
+    "friendPid": 480805,
+    "signallingPid": 477392,
+    "publicTunnelPid": 3916930,
+    "turnFunnelPid": 368520,
+    "nativeServicesRestarted": false,
+    "unrelatedApplicationsStopped": false,
+    "newNativeGpuJob": false,
+    "nativeGraphicsDefaultsChanged": false,
+    "launchGuardChanged": false,
+    "userAskedToCloseCompetingApps": true,
+    "userAnswerReceived": false
+  },
+  "remaining": [
+    "Controlled same-view performance comparison after user closes competing GPU applications.",
+    "Native render/game/GPU frame-time profiling if low FPS persists with host contention removed; requires a coordinated guarded diagnostic window.",
+    "Physical phone controls, carrier/TURN latency, audible sound and sustained driving responsiveness.",
+    "Existing Mission2/fullstory manual acceptance remains open; this frontend-only correction does not change gameplay or saves."
+  ],
+  "openSpec": {
+    "manualRequirements": 4,
+    "manualScenarios": 9,
+    "cliAvailable": false
+  },
+  "passiveCpuSample": {
+    "startedAtUtc": "2026-10-11T01:57:47.409571Z",
+    "seconds": 5.012,
+    "method": "Read-only /proc task stat/schedstat/wchan endpoints; no new browser subscriber or GPU job",
+    "cpuPercentBasis": "One CPU core, not total32-core capacity",
+    "host": {
+      "pid": 477900,
+      "threads": 100,
+      "totalCpuPercent": 102.84,
+      "gameRenderRhiCpuPercent": [
+        15.56,
+        15.56,
+        4.99
+      ],
+      "gameRenderRhiRunqueueWaitMs": [
+        57.24,
+        33.64,
+        69.94
+      ]
+    },
+    "friend": {
+      "pid": 480805,
+      "threads": 100,
+      "totalCpuPercent": 84.07,
+      "gameRenderRhiCpuPercent": [
+        8.78,
+        13.37,
+        3.79
+      ],
+      "gameRenderRhiRunqueueWaitMs": [
+        66.9,
+        30.49,
+        23.15
+      ]
+    },
+    "keyThreadEndpointStates": "Sleeping/futex_do_wait in both native game/render/RHI threads",
+    "interpretation": "No sampled native CPU thread saturated a core; waiting dominates key thread wall time. Does not identify wait dependency, GPU frame time or active-encoder throughput."
+  }
+}

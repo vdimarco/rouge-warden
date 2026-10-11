@@ -11,6 +11,7 @@
     "test:mobile": "node mobile.test.mjs"
   },
   "dependencies": {
+    "@epicgames-ps/lib-pixelstreamingcommon-ue5.8": "0.1.0",
     "@epicgames-ps/lib-pixelstreamingfrontend-ue5.8": "0.1.2"
   },
   "devDependencies": {

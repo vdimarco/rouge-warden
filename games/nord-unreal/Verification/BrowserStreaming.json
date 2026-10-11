@@ -860,20 +860,22 @@
     "finishedAt": "2026-10-10T21:43:56.524Z"
   },
   "deployment": {
-    "id": "dpl_Gn2Q2mVh2m1D42FuD7DhDth62Jah",
+    "id": "dpl_2q2TYmdCX8BZcPTdHKokxBP5SYmm",
     "state": "READY",
     "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
     "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
     "target": "production",
     "gitLinked": false,
-    "method": "Configured static output upload; exact preview-tested files",
+    "method": "Configured prebuilt static output upload; exact preview-tested files",
     "thirdPartyNoticesPublished": true,
-    "playerJsSha256": "e6480c777c782c3a794ebb001c0d9610f4bc299791d9981d4b0eda976ce41855",
-    "uniqueUrl": "https://nord-montreal-d33zcinh7-vdimarcos-projects.vercel.app/",
+    "playerJsSha256": "1c63ff77ba224a03e077240ea6fa46100af9504044af83831569ffce32cf156d",
+    "uniqueUrl": "https://nord-montreal-kot0z807d-vdimarcos-projects.vercel.app/",
     "publicUrl": "https://nord-montreal.vercel.app/",
     "signallingUrl": "wss://reports-rec-encouraged-taught.trycloudflare.com",
     "noticesBytes": 15768,
-    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8",
+    "url": "https://nord-montreal.vercel.app/",
+    "sameBytesAsTestedPreview": true
   },
   "runtime": {
     "outputWidth": 1280,
@@ -1033,5 +1035,22 @@
     "noticesBytes": 15768,
     "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
   },
-  "touchControlsEvidence": "BrowserTouchControls.json"
+  "touchControlsEvidence": "BrowserTouchControls.json",
+  "priorDeploymentBeforeLoggingCorrection": {
+    "id": "dpl_Gn2Q2mVh2m1D42FuD7DhDth62Jah",
+    "state": "READY",
+    "project": "prj_WxSPmxW7fhy7iszj54rAC7Hn5GqJ",
+    "team": "team_eiZs2QejkAGnsji7iQVwMLy9",
+    "target": "production",
+    "gitLinked": false,
+    "method": "Configured static output upload; exact preview-tested files",
+    "thirdPartyNoticesPublished": true,
+    "playerJsSha256": "e6480c777c782c3a794ebb001c0d9610f4bc299791d9981d4b0eda976ce41855",
+    "uniqueUrl": "https://nord-montreal-d33zcinh7-vdimarcos-projects.vercel.app/",
+    "publicUrl": "https://nord-montreal.vercel.app/",
+    "signallingUrl": "wss://reports-rec-encouraged-taught.trycloudflare.com",
+    "noticesBytes": 15768,
+    "noticesSha256": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+  },
+  "performanceInvestigationEvidence": "BrowserPerformance.json"
 }

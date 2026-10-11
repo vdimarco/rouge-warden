@@ -15,6 +15,7 @@ await mkdir(output, { recursive: true });
 const report = {
   startedAt: new Date().toISOString(), playerUrl: playerUrl.href, selectedSlot: 'NordFriend1',
   passed: false, skipped: false, checks: [], media: {}, input: {}, diagnostics: [],
+  logging: { context: null, spam: [] },
   limits: ['Chromium touch emulation is not a physical iOS or Android device.',
     'This PC cannot establish a phone carrier or off-LAN media path.',
     'Decoded video and input packets do not establish audible sound or driving feel.']
@@ -198,6 +199,7 @@ try {
   page.setDefaultTimeout(30000);
   page.on('pageerror', error => report.diagnostics.push({ type: 'pageerror', message: error.message }));
   page.on('console', message => {
+    if (/\[(?:Info|Debug)\]|Message Sent:/.test(message.text())) report.logging.spam.push(message.text());
     if (message.type() === 'error') report.diagnostics.push({ type: 'console', message: message.text(),
       location: message.location() });
   });
@@ -232,6 +234,9 @@ try {
   await page.goto(playerUrl.href);
   await page.waitForFunction(() => document.body.dataset.state === 'idle');
   assert.ok(await page.evaluate(() => navigator.maxTouchPoints > 0), 'touch emulation must be active');
+  report.logging.context = await page.evaluate(() => ({ level: window.loggerContext.logLevel,
+    stack: window.loggerContext.includeStack }));
+  assert.deepEqual(report.logging.context, { level: 2, stack: false }, 'production logger suppresses info/debug and stacks');
 
   if (await connectFriend()) {
     await check('real mobile media', () => advancingMedia('initial'));
@@ -337,6 +342,7 @@ try {
       await page.screenshot({ path: resolve(output, 'landscape-disconnected.png') });
     });
     assert.deepEqual(report.diagnostics.filter(item => item.type === 'pageerror'), [], 'no page errors');
+    assert.deepEqual(report.logging.spam, [], 'real touch input must not log per-packet messages');
     report.passed = true;
   }
 } catch (error) {

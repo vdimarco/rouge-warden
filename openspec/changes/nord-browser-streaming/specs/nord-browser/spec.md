@@ -27,6 +27,11 @@ NORD SHALL use the existing Unreal game through an official UE5.8-compatible bro
 - **AND** relay access is limited to the game host and unrelated network destinations remain denied
 - **AND** a remaining network failure is identified separately from host availability and unsupported touch controls
 
+#### Scenario: Diagnose sluggish playback without adding input overhead
+- **WHEN** a player sends movement or camera input through the production browser
+- **THEN** the shared streaming logger suppresses debug/info packet logs and stack capture while retaining warnings and errors
+- **AND** a sluggish-playback investigation measures incoming frames, loss, decoding and host load separately rather than treating connection success as smooth-play acceptance
+
 ### Requirement: Independent browser co-op
 The temporary deployment SHALL distinguish independent player streams from multiple viewers controlling the same pawn.
 

@@ -45,7 +45,11 @@ signalling.on('connection', socket => {
 const browser = await chromium.launch({ executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--disable-gpu'] });
 const page = await browser.newPage();
 const errors = [];
+const loggingSpam = [];
 page.on('pageerror', error => errors.push(error.message));
+page.on('console', message => {
+  if (/\[(?:Info|Debug)\]|Message Sent:/.test(message.text())) loggingSpam.push(message.text());
+});
 await page.addInitScript(() => {
   const NativeWebSocket = window.WebSocket;
   window.__nordQaSocketUrls = [];
@@ -67,12 +71,16 @@ try {
     assert.equal(await page.locator('#play').isVisible(), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.equal(await page.evaluate(() => window.__nordQaSocketUrls.length), 0, 'query parameters must not establish a connection');
+    assert.deepEqual(await page.evaluate(() => ({ level: window.loggerContext.logLevel, stack: window.loggerContext.includeStack })),
+      { level: 2, stack: false }, 'offline pages initialize warning-only logging without stack capture');
     await page.screenshot({ path: `.qa/offline-${width}.png`, fullPage: true });
   }
   build('ws://127.0.0.1:40999');
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${url}/?ss=wss://untrusted.example&AutoConnect=true`);
   await page.waitForFunction(() => document.body.dataset.state === 'idle');
+  assert.deepEqual(await page.evaluate(() => ({ level: window.loggerContext.logLevel, stack: window.loggerContext.includeStack })),
+    { level: 2, stack: false }, 'configured players retain production logging settings');
   assert.equal(await page.evaluate(() => window.__nordQaSocketUrls.length), 0, 'a configured player still requires an explicit click');
   await page.locator('#connect').click();
   await page.waitForFunction(() => ['disconnected', 'error', 'offline'].includes(document.body.dataset.state));
@@ -104,7 +112,8 @@ try {
   assert.deepEqual(subscriptions, ['NordHost', 'NordFriend1', 'NordFriend1']);
   await page.screenshot({ path: '/tmp/nord-browser-slot-reconnect.png', fullPage: true });
   assert.deepEqual(errors, []);
-  console.log('Browser UI checks passed: offline, desktop/mobile layout, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No live game asserted.');
+  assert.deepEqual(loggingSpam, [], 'production logging suppresses debug/info and per-packet messages');
+  console.log('Browser UI checks passed: offline, desktop/mobile layout, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No live game asserted.');
 } finally {
   await browser.close();
   signalling.close();

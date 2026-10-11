@@ -1,6 +1,9 @@
 import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, TextParameters } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8';
+import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
 import { signallingUrl } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
+
+Logger.InitLogging(LogLevel.Warning, false);
 
 const element = id => document.getElementById(id);
 const frame = element('frame');
