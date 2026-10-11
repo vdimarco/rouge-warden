@@ -54,6 +54,10 @@ def main():
         directory = root/'Data/Plateau/BackgroundGeometry'
         directory.mkdir(parents=True)
         (directory/'layout.json').write_text(json.dumps(manifest))
+        visual_directory = root/'Data/Plateau/LandmarkVisualGeometry'
+        visual_directory.mkdir(parents=True)
+        visual_path = visual_directory/'visuals.json'
+        visual_path.write_text(json.dumps({'replacements': []}))
         state = {'checks': []}
         namespace = {'ROOT':root,'u':fake,'REPORT':state,'json':json,'math':math}
         exec(compile(branch,'verify_plateau.py','exec'),namespace)
@@ -77,6 +81,20 @@ def main():
             except AssertionError: pass
             else: raise AssertionError('Background verifier accepted corrupt '+key)
             finally: setattr(obj,key,saved)
+        first_label = 'Plateau background ' + next(iter(manifest['batches']))
+        first_actor = labels[first_label]
+        visual_path.write_text(json.dumps({'replacements': [{'source_actor_label': first_label}]}))
+        first.visible = False
+        first_actor.hidden = True
+        verify(labels)
+        first.visible = True
+        try: verify(labels)
+        except AssertionError: pass
+        else: raise AssertionError('Background verifier accepted a visible replaced source')
+        first.visible = False
+        assert any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                   and isinstance(n.func.value, ast.Name) and n.func.value.id == 'plateau_landmark_visuals'
+                   and n.func.attr == 'verify' for n in ast.walk(syntax)), 'Native entrypoint must verify filtered copies separately'
     print('Saved-background verifier checks passed: '+str(len(manifest['batches']))+' production batches; corrupt bounds/material/collision/Nanite/cards/visibility/lighting/triangles rejected')
 
 

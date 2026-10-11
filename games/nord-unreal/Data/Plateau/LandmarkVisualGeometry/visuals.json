@@ -1,0 +1,360 @@
+{
+  "targets": [
+    "27395533",
+    "355385456"
+  ],
+  "source_sha256": {
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/Plateau/BackgroundGeometry/layout.json": "aee26186d07e8f91a664a47e205d548995a0aa07cb1736161ce752be306f3589",
+    "Data/Plateau/LandmarkVisualGeometry/bindings.json": "22576268a60bba19f60fffd174a8a3621aad70d30e1329e8df6d2443d0ce9924",
+    "Data/Plateau/BackgroundGeometry/Cream_XP001_YP000.obj": "65eab7d59a44b736a54bf44ede29949ea8bdeedf10faea732f1c1a171e3f67a3",
+    "Content/Plateau/Background/SM_Cream_XP001_YP000.uasset": "c03b96fb3e5bf50b5463fddeb6644141ccbc97072d4626cbbe3fd5217b9dd288",
+    "Data/Plateau/BackgroundGeometry/Cream_XP002_YP000.obj": "632a413d855cbf8de3b3d059cc4ad22ae3647f75c9b6ff97ea4f7cbe41fa077c",
+    "Content/Plateau/Background/SM_Cream_XP002_YP000.uasset": "cedb32f21a5c75b6678f6dae1bfbd064596342dca8b1e885be6c8d65514ce3ce",
+    "Data/Plateau/BackgroundGeometry/Roof_XM004_YP001.obj": "4a694d268cabe0e888ca15bfef864d25892590b67a6563f3f069d33a669a8b90",
+    "Content/Plateau/Background/SM_Roof_XM004_YP001.uasset": "e545bdfbead666cbebd2dd27b9a03b862adaf862469451be98f505003715bfdf",
+    "Data/Plateau/BackgroundGeometry/Roof_XP001_YP000.obj": "719311e2acf52bd3f3e810dd19a992d80c6f0add6742da04a7465eba6ce28970",
+    "Content/Plateau/Background/SM_Roof_XP001_YP000.uasset": "70be37a96b0b5b7acc68db956444b4bc33377f5b75aa127d512dab9989b4ade1",
+    "Data/Plateau/BackgroundGeometry/Sage_XM004_YP000.obj": "2e3c9a2f4e5eae3d5e0302e786c12f1e69a61e3d257525add8c5800d3efff996",
+    "Content/Plateau/Background/SM_Sage_XM004_YP000.uasset": "19fee748e688970f42c957241d290ce89f86753d0782b006ff55f510ac919b9f",
+    "Data/Plateau/BackgroundGeometry/Sage_XM004_YP001.obj": "1da11b5d497b45a2af09588b000d7da277752a67c6374eb7a67df18b59d37c67",
+    "Content/Plateau/Background/SM_Sage_XM004_YP001.uasset": "b1b9195a97efca5d3897ae77036c343b1a4edceb773839a75579104b1458ec62",
+    "Data/Plateau/BaseGeometry/Glass.obj": "a4eceaed1ff52c8fe4df0747fdc627bdc1ebda335afbf0e7a7ae8d5bd266ba1e",
+    "Content/LaFontaine/SM_Glass.uasset": "e670e1920270991bc91a60ed805b5a0ddee5d0d0d5815bbba6f4f45caece9150"
+  },
+  "replacements": [
+    {
+      "name": "Cream_XP001_YP000",
+      "material": "Cream",
+      "source": "Data/Plateau/BackgroundGeometry/Cream_XP001_YP000.obj",
+      "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1181",
+      "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1181.StaticMeshComponent0",
+      "source_asset": "/Game/Plateau/Background/SM_Cream_XP001_YP000.SM_Cream_XP001_YP000",
+      "original_visible": true,
+      "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+      "original_profile": "NoCollision",
+      "original_materials": [
+        "/Game/Plateau/Materials/M_CreamBackground.M_CreamBackground"
+      ],
+      "source_actor_label": "Plateau background Cream_XP001_YP000",
+      "target_actor_label": null,
+      "target_asset": null,
+      "geometry": null,
+      "geometry_sha256": null,
+      "source_faces": 14,
+      "retained_faces": 0,
+      "removed_faces": 14,
+      "source_face_sha256": "cb188d28995e49b7afce7988d54907dee3eadb15e58b4e333b176b2b6f4eda07",
+      "retained_face_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "removed_face_sha256": {
+        "27395533": "cb188d28995e49b7afce7988d54907dee3eadb15e58b4e333b176b2b6f4eda07",
+        "355385456": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "source_triangles": 28,
+      "retained_triangles": 0,
+      "removed_triangles": 28,
+      "bounds_cm": null,
+      "transition": {
+        "component_visible": false,
+        "actor_hidden": true,
+        "cast_shadow": false,
+        "affect_distance_field_lighting": false,
+        "affect_dynamic_indirect_lighting": false
+      }
+    },
+    {
+      "name": "Cream_XP002_YP000",
+      "material": "Cream",
+      "source": "Data/Plateau/BackgroundGeometry/Cream_XP002_YP000.obj",
+      "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1187",
+      "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1187.StaticMeshComponent0",
+      "source_asset": "/Game/Plateau/Background/SM_Cream_XP002_YP000.SM_Cream_XP002_YP000",
+      "original_visible": true,
+      "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+      "original_profile": "NoCollision",
+      "original_materials": [
+        "/Game/Plateau/Materials/M_CreamBackground.M_CreamBackground"
+      ],
+      "source_actor_label": "Plateau background Cream_XP002_YP000",
+      "target_actor_label": null,
+      "target_asset": null,
+      "geometry": null,
+      "geometry_sha256": null,
+      "source_faces": 7,
+      "retained_faces": 0,
+      "removed_faces": 7,
+      "source_face_sha256": "985e58128ff15071ccb4415489474c1b2101e0be262134fb60d95e2debb99bd9",
+      "retained_face_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "removed_face_sha256": {
+        "27395533": "985e58128ff15071ccb4415489474c1b2101e0be262134fb60d95e2debb99bd9",
+        "355385456": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "source_triangles": 14,
+      "retained_triangles": 0,
+      "removed_triangles": 14,
+      "bounds_cm": null,
+      "transition": {
+        "component_visible": false,
+        "actor_hidden": true,
+        "cast_shadow": false,
+        "affect_distance_field_lighting": false,
+        "affect_dynamic_indirect_lighting": false
+      }
+    },
+    {
+      "name": "Roof_XM004_YP001",
+      "material": "Roof",
+      "source": "Data/Plateau/BackgroundGeometry/Roof_XM004_YP001.obj",
+      "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1241",
+      "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1241.StaticMeshComponent0",
+      "source_asset": "/Game/Plateau/Background/SM_Roof_XM004_YP001.SM_Roof_XM004_YP001",
+      "original_visible": true,
+      "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+      "original_profile": "NoCollision",
+      "original_materials": [
+        "/Game/Materials/M_Roof.M_Roof"
+      ],
+      "source_actor_label": "Plateau background Roof_XM004_YP001",
+      "target_actor_label": "Plateau survey context Roof_XM004_YP001",
+      "target_asset": "/Game/Plateau/Perimeter/SM_LandmarkContext_Roof_XM004_YP001.SM_LandmarkContext_Roof_XM004_YP001",
+      "geometry": "LandmarkContext_Roof_XM004_YP001.obj",
+      "geometry_sha256": "c4a1d176f81cad9dd2117bc34fa661391ac1983b315058f58803e5815800fb2b",
+      "source_faces": 24,
+      "retained_faces": 23,
+      "removed_faces": 1,
+      "source_face_sha256": "13860dca5c8b94c66c6294280a0b40dd46a41c19d96791ff16f78fd59bc42796",
+      "retained_face_sha256": "8a471cd1b42eeb53c595f4f4f3df8f4790b30ac3a1303d4b9de693b9859cbae4",
+      "removed_face_sha256": {
+        "27395533": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "355385456": "27b41886e3edadda13cb0d313f0f02c2a6f467a91b9d5dbe7a31cefd61291e80"
+      },
+      "source_triangles": 126,
+      "retained_triangles": 117,
+      "removed_triangles": 9,
+      "bounds_cm": [
+        [
+          -40660.382,
+          11422.545,
+          640.0
+        ],
+        [
+          -29625.497,
+          21249.875,
+          1280.0
+        ]
+      ],
+      "transition": {
+        "component_visible": false,
+        "actor_hidden": true,
+        "cast_shadow": false,
+        "affect_distance_field_lighting": false,
+        "affect_dynamic_indirect_lighting": false
+      }
+    },
+    {
+      "name": "Roof_XP001_YP000",
+      "material": "Roof",
+      "source": "Data/Plateau/BackgroundGeometry/Roof_XP001_YP000.obj",
+      "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1299",
+      "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1299.StaticMeshComponent0",
+      "source_asset": "/Game/Plateau/Background/SM_Roof_XP001_YP000.SM_Roof_XP001_YP000",
+      "original_visible": true,
+      "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+      "original_profile": "NoCollision",
+      "original_materials": [
+        "/Game/Materials/M_Roof.M_Roof"
+      ],
+      "source_actor_label": "Plateau background Roof_XP001_YP000",
+      "target_actor_label": null,
+      "target_asset": null,
+      "geometry": null,
+      "geometry_sha256": null,
+      "source_faces": 1,
+      "retained_faces": 0,
+      "removed_faces": 1,
+      "source_face_sha256": "7fa80fa2b34b815b83cd8e97be2f6d8e305bc49050879fd603eefb4ba89a7254",
+      "retained_face_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "removed_face_sha256": {
+        "27395533": "7fa80fa2b34b815b83cd8e97be2f6d8e305bc49050879fd603eefb4ba89a7254",
+        "355385456": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "source_triangles": 19,
+      "retained_triangles": 0,
+      "removed_triangles": 19,
+      "bounds_cm": null,
+      "transition": {
+        "component_visible": false,
+        "actor_hidden": true,
+        "cast_shadow": false,
+        "affect_distance_field_lighting": false,
+        "affect_dynamic_indirect_lighting": false
+      }
+    },
+    {
+      "name": "Sage_XM004_YP000",
+      "material": "Sage",
+      "source": "Data/Plateau/BackgroundGeometry/Sage_XM004_YP000.obj",
+      "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1359",
+      "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1359.StaticMeshComponent0",
+      "source_asset": "/Game/Plateau/Background/SM_Sage_XM004_YP000.SM_Sage_XM004_YP000",
+      "original_visible": true,
+      "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+      "original_profile": "NoCollision",
+      "original_materials": [
+        "/Game/Plateau/Materials/M_SageBackground.M_SageBackground"
+      ],
+      "source_actor_label": "Plateau background Sage_XM004_YP000",
+      "target_actor_label": "Plateau survey context Sage_XM004_YP000",
+      "target_asset": "/Game/Plateau/Perimeter/SM_LandmarkContext_Sage_XM004_YP000.SM_LandmarkContext_Sage_XM004_YP000",
+      "geometry": "LandmarkContext_Sage_XM004_YP000.obj",
+      "geometry_sha256": "5aedd19f14f1bd2f1e7357b168e2e8b73509311e6aae5129352321b65a54e233",
+      "source_faces": 43,
+      "retained_faces": 38,
+      "removed_faces": 5,
+      "source_face_sha256": "b39d7382bb234ee0f97d3ad3547aebfbacf42b28f4abba387247038bd9524576",
+      "retained_face_sha256": "32a4a7b34a6c54a26365419cac69dda28cf5a6a7b5e765bd6990c4df5695fcef",
+      "removed_face_sha256": {
+        "27395533": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "355385456": "fc12538eccc3ea86d88ea8a40e525945186860737470888dd536a65321ecbf42"
+      },
+      "source_triangles": 86,
+      "retained_triangles": 76,
+      "removed_triangles": 10,
+      "bounds_cm": [
+        [
+          -40020.08,
+          -129.131,
+          0.0
+        ],
+        [
+          -32658.55,
+          9810.632,
+          960.0
+        ]
+      ],
+      "transition": {
+        "component_visible": false,
+        "actor_hidden": true,
+        "cast_shadow": false,
+        "affect_distance_field_lighting": false,
+        "affect_dynamic_indirect_lighting": false
+      }
+    },
+    {
+      "name": "Sage_XM004_YP001",
+      "material": "Sage",
+      "source": "Data/Plateau/BackgroundGeometry/Sage_XM004_YP001.obj",
+      "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1360",
+      "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1360.StaticMeshComponent0",
+      "source_asset": "/Game/Plateau/Background/SM_Sage_XM004_YP001.SM_Sage_XM004_YP001",
+      "original_visible": true,
+      "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+      "original_profile": "NoCollision",
+      "original_materials": [
+        "/Game/Plateau/Materials/M_SageBackground.M_SageBackground"
+      ],
+      "source_actor_label": "Plateau background Sage_XM004_YP001",
+      "target_actor_label": "Plateau survey context Sage_XM004_YP001",
+      "target_asset": "/Game/Plateau/Perimeter/SM_LandmarkContext_Sage_XM004_YP001.SM_LandmarkContext_Sage_XM004_YP001",
+      "geometry": "LandmarkContext_Sage_XM004_YP001.obj",
+      "geometry_sha256": "159b3f055faf8c6edf99b3fcf15a34489f640aff7b77a4acd2c6089df25a8fb4",
+      "source_faces": 90,
+      "retained_faces": 84,
+      "removed_faces": 6,
+      "source_face_sha256": "f7cc57bbca26f765aa6016392dcdf4ec6c305166fdb278c46383ea3687c02c91",
+      "retained_face_sha256": "90cddcf523c2c3afb6a9008a59d0d290ec9bcdc902813b19154372c38c4e0576",
+      "removed_face_sha256": {
+        "27395533": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "355385456": "386ce24bda9c20db8296435697712bb858f6010d28281ec7811521f6a8a519eb"
+      },
+      "source_triangles": 180,
+      "retained_triangles": 168,
+      "removed_triangles": 12,
+      "bounds_cm": [
+        [
+          -40046.597,
+          9298.56,
+          0.0
+        ],
+        [
+          -29655.133,
+          20262.466,
+          1280.0
+        ]
+      ],
+      "transition": {
+        "component_visible": false,
+        "actor_hidden": true,
+        "cast_shadow": false,
+        "affect_distance_field_lighting": false,
+        "affect_dynamic_indirect_lighting": false
+      }
+    },
+    {
+      "name": "Glass",
+      "material": "Glass",
+      "source": "Data/Plateau/BaseGeometry/Glass.obj",
+      "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_6",
+      "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_6.StaticMeshComponent0",
+      "source_asset": "/Game/LaFontaine/SM_Glass.SM_Glass",
+      "original_visible": true,
+      "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+      "original_profile": "NoCollision",
+      "original_materials": [
+        "/Game/Art/M_Glass_Finish.M_Glass_Finish"
+      ],
+      "source_actor_label": "OSM Glass",
+      "target_actor_label": "Plateau survey context Glass",
+      "target_asset": "/Game/Plateau/Perimeter/SM_LandmarkContext_Glass.SM_LandmarkContext_Glass",
+      "geometry": "LandmarkContext_Glass.obj",
+      "geometry_sha256": "6d89c48e4596e11620b825a658af07f105f222c24c9c175ef247f598593643f3",
+      "source_faces": 75339,
+      "retained_faces": 74946,
+      "removed_faces": 393,
+      "source_face_sha256": "596763c1319054830321127ea8e0de1884f890c7615c8a8caef8acdd1d60cfd6",
+      "retained_face_sha256": "7b49566517e74add1fb051a5e0118123c692c25da422a69b88771d4dbe44b86f",
+      "removed_face_sha256": {
+        "27395533": "8ec86ac683b0572e1d602ace054efa409e370b0f69665ce5bbcd27095884e592",
+        "355385456": "f11bf98153dc090e1b78e0e0a55cde54803c45b83046473571ee2d7ccb56eefc"
+      },
+      "source_triangles": 150678,
+      "retained_triangles": 149892,
+      "removed_triangles": 786,
+      "bounds_cm": [
+        [
+          -43557.059,
+          -46671.919,
+          180.0
+        ],
+        [
+          55256.812,
+          68931.307,
+          5920.0
+        ]
+      ],
+      "transition": {
+        "component_visible": false,
+        "actor_hidden": true,
+        "cast_shadow": false,
+        "affect_distance_field_lighting": false,
+        "affect_dynamic_indirect_lighting": false
+      }
+    }
+  ],
+  "removed_by_target_material": {
+    "27395533": {
+      "Cream": 21,
+      "Roof": 1,
+      "Glass": 312
+    },
+    "355385456": {
+      "Roof": 1,
+      "Sage": 11,
+      "Glass": 81
+    }
+  },
+  "collision_changed": false,
+  "visible_copy_triangles": 150253,
+  "removed_triangles": 878,
+  "limits": "Exact original OSM wall edges, roof vertices and 3 cm window cards for only the two approved landmarks. All other ordered face/UV tokens are preserved. Original mesh assets and collision components remain unchanged."
+}

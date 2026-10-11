@@ -179,7 +179,7 @@ def discover():
     assert car.get_actor_enable_collision(), 'Keep actual vehicle collision enabled'
     fleet = [a for a in actors(world, 'Car') if a.get_editor_property('bTraffic')]
     assert len(fleet) >= 1, 'Traffic must remain active'
-    REPORT.update(route_cm=route, guidance='actual native RaceRoute; +145 cm forward lane, modest inside-tip guidance, exposed side-gate center, wide finish approach',
+    REPORT.update(route_cm=route, guidance='actual native RaceRoute; +145 cm forward lane, modest inside-tip guidance, exposed side-gate center, wide finish approach with 950 cm final-gate lookahead',
                   native_route_cm=[vec(v) for v in campaign.get_editor_property('RaceRoute')],
                   route_length_cm=lengths[-1], gate_count=len(gates), ambient_traffic_count=len(fleet),
                   car=car.get_name(), car_initial_position_cm=vec(car.get_actor_location()))
@@ -329,6 +329,10 @@ def drive():
         lookahead = 450.
     elif STATE['last_gate'] == 4:
         lookahead = 1100.
+    elif STATE['last_gate'] == len(STATE['gates']) - 1:
+        # Earlier aim along the return leg avoids the old outside hairpin arc
+        # where stationary traffic now blocks the otherwise unchanged route.
+        lookahead = 950.
     target = point_along(STATE['progress']+lookahead)
     heading = math.radians(car.get_actor_rotation().yaw)
     angle = math.atan2(target[1]-position[1], target[0]-position[0])-heading

@@ -2,6 +2,7 @@
 import subprocess,time,os,signal,json,re,struct
 from pathlib import Path
 from package_inventory import verify_plateau_inventory
+from render_log_guard import assert_render_log_clean
 root=Path(__file__).resolve().parents[1];runner=root/'Builds/Linux/Quebec.sh'
 assert runner.is_file(), 'Build the Linux Development package first'
 output=root/'Saved/Tests';output.mkdir(parents=True,exist_ok=True)
@@ -57,8 +58,10 @@ try:
  animations=set(re.findall(r'/Game/ParkComic/Crew/Resident(\d+)/(A_Walk|A_Idle|A_Run|A_Jump)',text))
  assert len(animations)==32,('Cooked clips',len(animations))
  plateau=verify_plateau_inventory(text,root)
+ render_logs={'host':assert_render_log_clean(text),
+              'client':assert_render_log_clean(client_log.read_text(errors='replace'))}
  assert not re.search(r'Failed to find object.*ParkComic|Failed to load.*ParkComic|Missing cached shader map|'+bad_command,text,re.I)
- report={'passed':True,'package':'Linux Development','separate_process_loopback':True,'port':7791,'fresh_campaign_on_both_peers':True,'campaign_save_disabled_for_package_startup':True,'native_crew_cycle_calls':8,'restored_capture_crew_style':9,'loaded_resident_parts':len(models),'loaded_skeletal_crew':len(crew),'loaded_animation_clips':len(animations),'plateau':plateau,'rendered_capture':True,'rendered_capture_count':len(shots),'viewport':[1600,900],'elapsed_seconds':round(time.monotonic()-start,2),'skipped':['external internet','non-Linux platforms','latency and reconnect','full packaged campaign/save flow (covered in native PIE)']}
+ report={'passed':True,'package':'Linux Development','separate_process_loopback':True,'port':7791,'fresh_campaign_on_both_peers':True,'campaign_save_disabled_for_package_startup':True,'native_crew_cycle_calls':8,'restored_capture_crew_style':9,'loaded_resident_parts':len(models),'loaded_skeletal_crew':len(crew),'loaded_animation_clips':len(animations),'plateau':plateau,'render_logs':render_logs,'rendered_capture':True,'rendered_capture_count':len(shots),'viewport':[1600,900],'elapsed_seconds':round(time.monotonic()-start,2),'skipped':['external internet','non-Linux platforms','latency and reconnect','full packaged campaign/save flow (covered in native PIE)']}
  (root/'Verification/Package.json').write_text(json.dumps(report,indent=2));print('NORD_PACKAGE_PLAY_OK',json.dumps(report))
 finally:
  for process in (client,host):

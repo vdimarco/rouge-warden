@@ -102,6 +102,9 @@ def apply(u, preserve_warden_trees=False):
         warden_tree_instances = 0
     report = {'nanite_city_batches':len(enabled),'mapped_tree_instances':mapped_tree_instances,
               'warden_tree_instances':warden_tree_instances,'tree_mesh':tree.get_path_name()}
+    if not preserve_warden_trees:
+        from refine_plateau_trees import apply as refine_trees
+        report['tree_appearance'] = refine_trees(u)
     output = ROOT/'Saved/Tests/PlateauRendering.json'; output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(report,indent=2))
     return report

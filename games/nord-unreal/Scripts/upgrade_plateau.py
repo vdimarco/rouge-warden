@@ -23,6 +23,9 @@ from plateau_context import apply as apply_context
 from plateau_landmarks import apply as apply_landmarks
 from plateau_wayfinding import apply as apply_wayfinding
 from plateau_edges import apply as apply_edges
+from plateau_perimeter import apply as apply_perimeter
+from plateau_landmark_visuals import apply as apply_landmark_visuals
+from plateau_facade_finish import apply as apply_facade_finish
 
 assets = u.EditorAssetLibrary
 tools = u.AssetToolsHelpers.get_asset_tools()
@@ -276,6 +279,9 @@ assert report['context']['building_count'] >= len(json.loads((ROOT/'Data/CityBui
 report['landmarks'] = apply_landmarks(u,materials,import_mesh,nanite)
 report['wayfinding'] = apply_wayfinding(u,materials,expression,import_mesh,nanite)
 report['edges'] = apply_edges(u,materials,import_mesh,nanite)
+report['perimeter'] = apply_perimeter(u,import_mesh,nanite)
+report['landmark_visuals'] = apply_landmark_visuals(u,import_mesh,nanite,regenerate_bindings=True)
+report['facade_finish'] = apply_facade_finish(u,import_mesh,nanite)
 assert gameplay_snapshot() == (warden_counts, warden_actors), 'Plateau upgrade changed Warden gameplay actors'
 report['warden_preserved'] = warden_counts
 assets.save_directory('/Game/Plateau'); assets.save_directory('/Game/LaFontaine')

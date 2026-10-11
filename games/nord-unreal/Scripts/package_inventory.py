@@ -37,10 +37,43 @@ def verify_plateau_inventory(log, root):
         'Park': ('Data/Plateau/ParkGeometry/park.json', 'materials'),
         'Edges': ('Data/Plateau/EdgesGeometry/edges.json', 'materials'),
         'Wayfinding': ('Data/Plateau/Wayfinding/Geometry/wayfinding.json', 'batches'),
+        'Perimeter': ('Data/Plateau/PerimeterGeometry/perimeter.json', 'materials'),
     }
     meshes = {}
     for folder, (manifest, key) in manifests.items():
-        expected = set(json.loads((root / manifest).read_text())[key])
+        data = json.loads((root / manifest).read_text())
+        expected = set(data[key])
+        if folder == 'Perimeter':
+            assert data['survey_landmark']['city_id'] == '2317003', 'Le Neuville survey identity changed'
+            assert data['survey_school']['city_id'] == '2316935', 'École Le Plateau survey identity changed'
+            expected.update(('LeNeuvilleSurvey', 'LePlateauSchoolSurvey'))
+            visuals = json.loads((root / 'Data/Plateau/LandmarkVisualGeometry/visuals.json').read_text())
+            assert set(visuals['targets']) == {'27395533', '355385456'}, 'Landmark visual repair targets changed'
+            assert visuals['collision_changed'] is False, 'Landmark visual repair changed collision'
+            assert len(visuals['replacements']) == 7, 'Landmark visual repair source count changed'
+            copies = set()
+            for record in visuals['replacements']:
+                if record['target_asset'] is None:
+                    assert record['target_actor_label'] is None
+                    continue
+                asset = re.fullmatch(r'/Game/Plateau/Perimeter/SM_(LandmarkContext_[A-Za-z0-9_]+)\.SM_\1',
+                                     record['target_asset'])
+                assert asset, 'Invalid landmark visual copy asset path'
+                name = asset.group(1)
+                assert record['target_actor_label'] == 'Plateau survey context ' + name.removeprefix('LandmarkContext_')
+                assert name not in copies, 'Duplicate landmark visual copy'
+                copies.add(name)
+            assert len(copies) == 4, 'Landmark visual copy count changed'
+            expected.update(copies)
+            finish = json.loads((root / 'Data/Plateau/FacadeFinishGeometry/finish.json').read_text())
+            assert finish['new_collision'] is False and finish['corner_osm_id'] == '356350796', 'Facade finish scope changed'
+            side_edges = [(record['id'], record['edge_index']) for record in finish['corner_edges']]
+            assert len(side_edges) == 4 and set(side_edges) == {
+                ('356350796', 1), ('356350796', 2), ('345835052', 4), ('356350765', 2)
+            }, 'Facade finish confirmed side edges changed'
+            assert 0 < len(finish['materials']) <= 48 and finish['triangles'] < 15000, 'Facade finish budget changed'
+            assert all(record['collision'] is False for record in finish['materials'].values()), 'Facade finish collision changed'
+            expected.update('FacadeFinish_' + name for name in finish['materials'])
         loaded = loaded_mesh_names(log, folder)
         missing, extra = expected - loaded, loaded - expected
         assert not missing and not extra, (

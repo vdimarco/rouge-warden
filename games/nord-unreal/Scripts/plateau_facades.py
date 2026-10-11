@@ -176,7 +176,11 @@ def _candidates(buildings, roads, focus):
 def build_facades(mesh, buildings, roads, focus):
     """Return authored fronts and French sign placements for the shared scene importer."""
     assert focus and all(len(p) >= 2 for p in focus), 'A walking route is required'
-    fronts = _candidates(buildings, roads, focus)
+    return _author_facades(mesh, _candidates(buildings, roads, focus))
+
+
+def _author_facades(mesh, fronts, storefronts=True):
+    """Share the established facade geometry with the decorative park perimeter."""
     signs = []
     counts = {'fronts': len(fronts), 'windows': 0, 'balconies': 0, 'exterior_stairs': 0,
               'raised_entrances': 0, 'storefronts': 0, 'corner_returns': 0, 'cafe_tables': 0,
@@ -184,7 +188,7 @@ def build_facades(mesh, buildings, roads, focus):
               'side_surfaces': 0, 'parapets': 0, 'rear_doors': 0, 'garage_doors': 0, 'chimneys': 0,
               'recessed_windows': 0, 'curtained_windows': 0, 'blind_windows': 0,
               'warm_windows': 0, 'domestic_balcony_details': 0}
-    commercial = [f for f in fronts if f['kind'] == 'front' and any(name in f['street'] for name in ('Sherbrooke', 'Gauthier', 'Marquette', 'Panet', 'Visitation')) and 650 <= f['width'] <= 1800 and f['setback'] >= 330]
+    commercial = [f for f in fronts if storefronts and f['kind'] == 'front' and any(name in f['street'] for name in ('Sherbrooke', 'Gauthier', 'Marquette', 'Panet', 'Visitation')) and 650 <= f['width'] <= 1800 and f['setback'] >= 330]
     corner = (38405, -3924)
     hero = min(commercial, key=lambda f: math.dist(((f['a'][0] + f['b'][0]) / 2, (f['a'][1] + f['b'][1]) / 2), corner)) if commercial else None
     shops = [hero] if hero else []
@@ -210,6 +214,7 @@ def build_facades(mesh, buildings, roads, focus):
         seed = sum((i + 1) * ord(c) for i, c in enumerate(front['id']))
         institutional = bool(front['tags'].get('name') or front['tags'].get('religion'))
         masonry = ('BrickRed', 'BrickRed', 'BrickBrown', 'BrickOchre', 'Limestone')[seed % 5]
+        masonry = front.get('masonry', masonry)
         if institutional:
             masonry = 'Limestone'
         door_material = 'DoorTeal' if seed % 3 else 'DoorBurgundy'
@@ -219,6 +224,9 @@ def build_facades(mesh, buildings, roads, focus):
         bays = max(1, min(36, round(width / 250)))
         centres = [(i + .5) * width / bays for i in range(bays)]
         window_width = min(128, width / bays * .53)
+        if front.get('perimeter'):
+            window_width = min(window_width, floor_height * .30)
+            front['window_width_cm'] = round(window_width, 3)
         is_shop = any(front is shop for shop in shops)
         side_only = front.get('return', False)
         rear = front['kind'] == 'rear'

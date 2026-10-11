@@ -117,6 +117,8 @@ def verify_ground(labels):
 
 def verify_background(labels):
     from plateau_background import SOURCES
+    visual_manifest = json.loads((ROOT / 'Data/Plateau/LandmarkVisualGeometry/visuals.json').read_text())
+    corrected_visuals = {record['source_actor_label'] for record in visual_manifest['replacements']}
     manifest = json.loads((ROOT / 'Data/Plateau/BackgroundGeometry/layout.json').read_text())
     batches = manifest['batches']
     assert 0 < len(batches) <= 599
@@ -164,7 +166,10 @@ def verify_background(labels):
         assert str(component.get_collision_profile_name()) == 'NoCollision', name
         assert component.get_collision_enabled() == u.CollisionEnabled.NO_COLLISION, name
         assert component.get_material(0) == originals[metadata['material']].get_material(0), name
-        assert component.is_visible() and not actor.get_editor_property('hidden'), name
+        if 'Plateau background ' + name in corrected_visuals:
+            assert not component.is_visible() and actor.get_editor_property('hidden'), name
+        else:
+            assert component.is_visible() and not actor.get_editor_property('hidden'), name
         assert mesh.get_editor_property('nanite_settings').get_editor_property('enabled'), name
         assert subsystem.get_lod_build_settings(mesh, 0).get_editor_property('max_lumen_mesh_cards') == 64, name
         bounds = mesh.get_bounds()
@@ -361,6 +366,10 @@ def run():
     REPORT['checks'].append('saved mesh batches, triangle bounds, materials and collision profiles')
     verify_ground(labels)
     verify_background(labels)
+    import plateau_landmark_visuals
+    REPORT['landmark_visuals'] = plateau_landmark_visuals.verify(u)
+    import plateau_facade_finish
+    REPORT['facade_finish'] = plateau_facade_finish.verify(u)
     verify_park(labels)
     from verify_plateau_context import verify as verify_context
     REPORT['context'] = verify_context(u, labels, ROOT)

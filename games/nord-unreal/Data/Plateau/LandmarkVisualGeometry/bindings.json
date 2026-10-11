@@ -1,0 +1,79 @@
+{
+  "Plateau background Cream_XP001_YP000": {
+    "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1181",
+    "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1181.StaticMeshComponent0",
+    "source_asset": "/Game/Plateau/Background/SM_Cream_XP001_YP000.SM_Cream_XP001_YP000",
+    "original_visible": true,
+    "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+    "original_profile": "NoCollision",
+    "original_materials": [
+      "/Game/Plateau/Materials/M_CreamBackground.M_CreamBackground"
+    ]
+  },
+  "Plateau background Cream_XP002_YP000": {
+    "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1187",
+    "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1187.StaticMeshComponent0",
+    "source_asset": "/Game/Plateau/Background/SM_Cream_XP002_YP000.SM_Cream_XP002_YP000",
+    "original_visible": true,
+    "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+    "original_profile": "NoCollision",
+    "original_materials": [
+      "/Game/Plateau/Materials/M_CreamBackground.M_CreamBackground"
+    ]
+  },
+  "Plateau background Roof_XM004_YP001": {
+    "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1241",
+    "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1241.StaticMeshComponent0",
+    "source_asset": "/Game/Plateau/Background/SM_Roof_XM004_YP001.SM_Roof_XM004_YP001",
+    "original_visible": true,
+    "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+    "original_profile": "NoCollision",
+    "original_materials": [
+      "/Game/Materials/M_Roof.M_Roof"
+    ]
+  },
+  "Plateau background Roof_XP001_YP000": {
+    "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1299",
+    "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1299.StaticMeshComponent0",
+    "source_asset": "/Game/Plateau/Background/SM_Roof_XP001_YP000.SM_Roof_XP001_YP000",
+    "original_visible": true,
+    "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+    "original_profile": "NoCollision",
+    "original_materials": [
+      "/Game/Materials/M_Roof.M_Roof"
+    ]
+  },
+  "Plateau background Sage_XM004_YP000": {
+    "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1359",
+    "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1359.StaticMeshComponent0",
+    "source_asset": "/Game/Plateau/Background/SM_Sage_XM004_YP000.SM_Sage_XM004_YP000",
+    "original_visible": true,
+    "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+    "original_profile": "NoCollision",
+    "original_materials": [
+      "/Game/Plateau/Materials/M_SageBackground.M_SageBackground"
+    ]
+  },
+  "Plateau background Sage_XM004_YP001": {
+    "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1360",
+    "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1360.StaticMeshComponent0",
+    "source_asset": "/Game/Plateau/Background/SM_Sage_XM004_YP001.SM_Sage_XM004_YP001",
+    "original_visible": true,
+    "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+    "original_profile": "NoCollision",
+    "original_materials": [
+      "/Game/Plateau/Materials/M_SageBackground.M_SageBackground"
+    ]
+  },
+  "OSM Glass": {
+    "source_actor_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_6",
+    "source_component_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_6.StaticMeshComponent0",
+    "source_asset": "/Game/LaFontaine/SM_Glass.SM_Glass",
+    "original_visible": true,
+    "original_collision": "<CollisionEnabled.NO_COLLISION: 0>",
+    "original_profile": "NoCollision",
+    "original_materials": [
+      "/Game/Art/M_Glass_Finish.M_Glass_Finish"
+    ]
+  }
+}
