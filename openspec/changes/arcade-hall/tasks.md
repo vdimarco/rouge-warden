@@ -18,3 +18,15 @@ The user provided the capture key for new PostHog project arcade (653362). Captu
 - [x] Condense header and move summary below the games.
 - [x] Add Featured default order and preserve genuine metric sorts.
 - [ ] Verify rendered first viewport, sticky header, search and menu; report untested phone checks.
+
+- [x] Fix the leaderboard endpoint: a null active-time sum and an event without a game id made every request fail with 503, so Plays and Likes sorting had no data. Checked the fixed query against PostHog project 653362.
+- [x] Add the analytics script to the nine games that did not record views, plays or likes.
+- [x] Make Plays, Views, Likes and Time report when ranking is not available, and ask for activity again.
+- [x] Add a visible Old arcade control to the header. Checked in Chromium at 1363×936 and 390×844: no overflow, overlay closes, ALL GAMES reopens it, sorts reorder with mocked PostHog data. Physical phone not checked.
+- [ ] Confirm the live endpoint returns 200 after deployment.
+
+- [x] Raise 3D room quality: shaped clearcoat cabinets with neon edges, CRT screens, lit marquees, bloom, mirrored glossy floor, blacklight carpet, light shafts, wall signs, reflection lighting and merged geometry. The hall now grows with the catalog; before, 16 cabinets stood past the back wall.
+- [x] Replace the touch D-pad with a floating left-half stick for walking and strafing, right-half look, tap to walk to a cabinet or the floor, click to walk on desktop, and Shift to run.
+- [x] Add adaptive quality steps and a script-load error fallback.
+- [x] Check in Node (`qa/arcade/room-controls.test.mjs`, `qa/arcade/room-logic.test.cjs`) and in Chromium with SwiftShader at 1363×936 and 390×844: no errors, stick strafes and walks, two thumbs work together, taps walk, the cabinet close-up selects and enables play.
+- [ ] Check frame rate and visuals on a physical phone and a hardware GPU. SwiftShader cannot measure real performance.
