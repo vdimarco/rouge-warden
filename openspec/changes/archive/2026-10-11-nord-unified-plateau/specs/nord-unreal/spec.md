@@ -38,3 +38,14 @@ The release SHALL publish a responsive title page and a new trailer captured fro
 - **WHEN** release checks have passed and a player opens the title page
 - **THEN** Play opens the existing player and Watch Trailer plays reviewed integrated-game footage
 - **AND** the page works at desktop and phone sizes, identifies PC-host availability, and preserves the existing Arcade and API routes.
+
+## MODIFIED Requirements
+
+### Requirement: Repository hygiene
+The import SHALL exclude local credentials, packaged builds, engine caches, recovery data, trailer binaries and regenerated base OSM geographic OBJ files. Processed municipal mesh inputs, roof atlases and authored comic meshes SHALL be retained as reproducible source assets.
+
+#### Scenario: Inspect the commit
+- **WHEN** the integrated release is staged
+- **THEN** only the project, source assets, documentation, focused QA/specification files and authorized GTA Arcade entry/title-page changes are included
+- **AND** unrelated Arcade games and API sources remain preserved
+- **AND** deployed trailer/poster hashes and provenance are recorded without committing media binaries.

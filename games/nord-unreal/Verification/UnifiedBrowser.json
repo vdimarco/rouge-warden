@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "checked_at_utc": "2026-10-11T03:49:34Z",
+  "checked_at_utc": "2026-10-11T04:07:44.686Z",
   "qa_save_restart": {
     "baseline": {
       "started_at_utc": "2026-10-11T03:42:14Z",
@@ -405,6 +405,106 @@
         "Chromium touch emulation is not a physical iOS or Android device.",
         "This PC cannot establish a phone carrier or off-LAN media path.",
         "Decoded video and input packets do not establish audible sound or driving feel."
+      ]
+    },
+    {
+      "path": "Browser/.qa/live-2026-10-11T04-07-23-398Z/summary.json",
+      "passed": true,
+      "checks": 7,
+      "networkMode": "ordinary",
+      "media": {
+        "host": {
+          "currentTime": 1.606,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 47,
+          "framesPerSecond": 27,
+          "videoBytes": 2192469,
+          "audioPackets": 300,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 27.29693741677763
+        },
+        "friend": {
+          "currentTime": 1.609,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 45,
+          "framesPerSecond": 26,
+          "videoBytes": 2328563,
+          "audioPackets": 301,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 25.94810379241517
+        },
+        "recovered-slot": {
+          "currentTime": 1.607,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 38,
+          "framesPerSecond": 25,
+          "videoBytes": 1249697,
+          "audioPackets": 159,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 23.286759813705924
+        },
+        "host-reconnected": {
+          "currentTime": 1.613,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 37,
+          "framesPerSecond": 24,
+          "videoBytes": 1140732,
+          "audioPackets": 172,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 21.97070572569907
+        },
+        "friend-still-connected": {
+          "currentTime": 16.841,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 437,
+          "framesPerSecond": 26,
+          "videoBytes": 20559426,
+          "audioPackets": 1074,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 25.29960053262317
+        }
+      },
+      "visual_review": {
+        "reviewed": true,
+        "paths": [
+          "Browser/.qa/live-2026-10-11T04-07-23-398Z/host-before-input.png",
+          "Browser/.qa/live-2026-10-11T04-07-23-398Z/host-after-input.png",
+          "Browser/.qa/live-2026-10-11T04-07-23-398Z/friend-before-input.png",
+          "Browser/.qa/live-2026-10-11T04-07-23-398Z/friend-after-input.png",
+          "Browser/.qa/live-2026-10-11T04-07-23-398Z/host-reconnected.png"
+        ],
+        "scope": "Both before/after views show Skull Shirt to Topknot Plunger crew change with distinct host/friend cameras; host reconnect again shows live scene and HUD. Screenshots do not measure native position or story progress."
+      },
+      "nonfatal_console_404_count": 4,
+      "limits": [
+        "Input screenshots require visual review; native position/story progress are not asserted.",
+        "Headless playback does not verify audible sound or driving feel.",
+        "Testing from the host PC does not establish external NAT reachability."
       ]
     }
   ],

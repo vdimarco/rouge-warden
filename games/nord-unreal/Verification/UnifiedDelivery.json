@@ -1,0 +1,691 @@
+{
+  "passed": true,
+  "publication_pending": false,
+  "checked_at_utc": "2026-10-11T04:49:48.978472+00:00",
+  "game_commit": "71aceffa3d88a69007037425f67179451ed44445",
+  "map_sha256": "7e638da09f9bf6c329d2244ade75419ab42f57fc3296b495f93eafb681ed2db1",
+  "trailer": {
+    "capture": "Cinematic3",
+    "clips": [
+      "story_aerial",
+      "cast_crew_a",
+      "cast_crew_b",
+      "cast_neighbours",
+      "worklight",
+      "sprint_jump",
+      "plunger_pull",
+      "car_enter_new",
+      "car_light",
+      "table_rescue",
+      "race_start"
+    ],
+    "capture_passed": true,
+    "all_eleven_cast_styles_checked": true,
+    "current_car_meshes": {
+      "QuebecCar_9": {
+        "body_profile": 1,
+        "body_mesh": "SM_Car70Body1"
+      },
+      "QuebecCar_10": {
+        "body_profile": 1,
+        "body_mesh": "SM_Car70Body1"
+      }
+    },
+    "native_mission_boundary": [
+      {
+        "completed_missions": 1,
+        "session": 1,
+        "sha256": "027d2ba9b56c972f92957508a6f61d28f0dd5bdf186739ef23371ea47a267d26"
+      }
+    ],
+    "native_driven_race_gate": [
+      {
+        "gate_fixture": 0,
+        "next_gate": 1,
+        "native_displacement_cm": 678.03,
+        "authority_position_cm": [
+          34590.9532,
+          -20914.2941,
+          100.0
+        ]
+      }
+    ],
+    "protected_files_unchanged": 11537,
+    "qa_save_restored": true,
+    "production_saves_unchanged": true,
+    "trailer_source_commit": "3550b745c203e4b4063470562e093765a7113bda",
+    "trailer_source_merge_commit": "d45c4f57bdb57d71c0dc9d93ef245d475e3d23b8",
+    "provenance": {
+      "passed": true,
+      "capture": "Cinematic3",
+      "trailer_commit": "3550b745c203e4b4063470562e093765a7113bda",
+      "merge_commit": "d45c4f57bdb57d71c0dc9d93ef245d475e3d23b8",
+      "checks": [
+        {
+          "master": "NORD-trailer.mp4",
+          "root_bytes": 21775526,
+          "worktree_bytes": 21775526,
+          "sha256": "d04bc1d479357200c4c1e5ac3110ebb8d7b54bfeee634656bde674f94ea0f24b",
+          "root_equals_worktree_equals_web_input": true,
+          "handoff_bytes": 8326231,
+          "handoff_note": "Intentional1600kbit/s2pass copy of this freshmaster;9MBDrivecap. Fullqualitymaster is21.8/23.5MB."
+        },
+        {
+          "master": "NORD-trailer-vertical.mp4",
+          "root_bytes": 23475344,
+          "worktree_bytes": 23475344,
+          "sha256": "d52c50d3edbc62bfd6edfce7b00946495a5655e9bb7cee0f1f58153f0c67f3d1",
+          "root_equals_worktree_equals_web_input": true,
+          "handoff_bytes": 8348117,
+          "handoff_note": "Intentional1600kbit/s2pass copy of this freshmaster;9MBDrivecap. Fullqualitymaster is21.8/23.5MB."
+        }
+      ]
+    },
+    "master_review": {
+      "accepted": true,
+      "game_commit": "71aceffa3d88a69007037425f67179451ed44445",
+      "trailer_commit": "3550b745c203e4b4063470562e093765a7113bda",
+      "merge_commit": "d45c4f57bdb57d71c0dc9d93ef245d475e3d23b8",
+      "technical": [
+        {
+          "file": "NORD-trailer.mp4",
+          "bytes": 21775526,
+          "duration": "38.000000",
+          "video": {
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080,
+            "r_frame_rate": "30/1",
+            "sample_aspect_ratio": "1:1",
+            "pix_fmt": "yuv420p"
+          },
+          "audio": {
+            "codec_name": "aac",
+            "sample_rate": "48000",
+            "channels": 2
+          },
+          "checks": [
+            "[Parsed_volumedetect_0 @ 0x72c2cc002c80] mean_volume: -30.2 dB",
+            "[Parsed_volumedetect_0 @ 0x72c2cc002c80] max_volume: -5.9 dB"
+          ]
+        },
+        {
+          "file": "NORD-trailer-vertical.mp4",
+          "bytes": 23475344,
+          "duration": "38.000000",
+          "video": {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "r_frame_rate": "30/1",
+            "sample_aspect_ratio": "1:1",
+            "pix_fmt": "yuv420p"
+          },
+          "audio": {
+            "codec_name": "aac",
+            "sample_rate": "48000",
+            "channels": 2
+          },
+          "checks": [
+            "[Parsed_volumedetect_0 @ 0x761650002c80] mean_volume: -30.2 dB",
+            "[Parsed_volumedetect_0 @ 0x761650002c80] max_volume: -5.9 dB"
+          ]
+        }
+      ],
+      "visual_review": "Exact skill contacts, all16 edited shots, both25-33s sheets and full1920x1080 completion-notice frame reviewed. No original black mission disc, editor panels or capture cursor; cast/story cards/OSM attribution verified.",
+      "playback": "Both played to EOF with software wlshm video and PulseAudio, exit0.",
+      "human_acoustic_listening_confirmed": false,
+      "preview_stills": [],
+      "gpu_released": true,
+      "protected_files_unchanged": 11537
+    },
+    "published_media": {
+      "public/gta/trailer.mp4": {
+        "bytes": 11556693,
+        "sha256": "f86ae8faeb1974c475a464f4518948d698368929d66a8520dc6eb10b7a6dde49",
+        "probe": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "index": 0,
+              "codec_name": "h264",
+              "profile": "High",
+              "codec_type": "video",
+              "width": 1920,
+              "height": 1080,
+              "pix_fmt": "yuv420p",
+              "avg_frame_rate": "30/1",
+              "bit_rate": "2296441"
+            },
+            {
+              "index": 1,
+              "codec_name": "aac",
+              "profile": "LC",
+              "codec_type": "audio",
+              "sample_rate": "48000",
+              "channels": 2,
+              "avg_frame_rate": "0/0",
+              "bit_rate": "127377"
+            }
+          ],
+          "format": {
+            "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+            "duration": "38.000000",
+            "size": "11556693"
+          }
+        },
+        "mp4_atoms": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "faststart": true
+      },
+      "public/gta/poster.webp": {
+        "bytes": 77340,
+        "sha256": "0762b28e02bd33d81db09c509eb9b8f203ce96bf6418352558d8864f2ae45e7a",
+        "probe": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "index": 0,
+              "codec_name": "webp",
+              "codec_type": "video",
+              "width": 1280,
+              "height": 720,
+              "pix_fmt": "yuv420p",
+              "avg_frame_rate": "25/1"
+            }
+          ],
+          "format": {
+            "format_name": "webp_pipe",
+            "size": "77340"
+          }
+        }
+      }
+    }
+  },
+  "local_title_qa": {
+    "pageUrl": "http://127.0.0.1:8877/gta/",
+    "posterUrl": "http://127.0.0.1:8877/gta/poster.webp",
+    "trailerUrl": "http://127.0.0.1:8877/gta/trailer.mp4",
+    "passed": true,
+    "results": [
+      {
+        "viewport": {
+          "width": 360,
+          "height": 800
+        },
+        "passed": true,
+        "poster": {
+          "width": 1280,
+          "height": 720
+        },
+        "first": {
+          "time": 0.50902,
+          "width": 1920,
+          "height": 1080,
+          "decodedFrames": 21,
+          "currentSrc": "http://127.0.0.1:8877/gta/trailer.mp4"
+        },
+        "second": {
+          "time": 1.01721,
+          "decodedFrames": 36
+        },
+        "closeAndEscape": true,
+        "errors": []
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "passed": true,
+        "poster": {
+          "width": 1280,
+          "height": 720
+        },
+        "first": {
+          "time": 0.516508,
+          "width": 1920,
+          "height": 1080,
+          "decodedFrames": 21,
+          "currentSrc": "http://127.0.0.1:8877/gta/trailer.mp4"
+        },
+        "second": {
+          "time": 1.017628,
+          "decodedFrames": 36
+        },
+        "closeAndEscape": true,
+        "errors": []
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "passed": true,
+        "poster": {
+          "width": 1280,
+          "height": 720
+        },
+        "first": {
+          "time": 0.520621,
+          "width": 1920,
+          "height": 1080,
+          "decodedFrames": 21,
+          "currentSrc": "http://127.0.0.1:8877/gta/trailer.mp4"
+        },
+        "second": {
+          "time": 1.017063,
+          "decodedFrames": 36
+        },
+        "closeAndEscape": true,
+        "errors": []
+      }
+    ]
+  },
+  "protected_preview_title_qa": {
+    "pageUrl": "https://warden-p9rlg3hc3-vdimarcos-projects.vercel.app/gta/",
+    "authorizedPreview": true,
+    "posterUrl": "https://warden-p9rlg3hc3-vdimarcos-projects.vercel.app/gta/poster.webp",
+    "trailerUrl": "https://warden-p9rlg3hc3-vdimarcos-projects.vercel.app/gta/trailer.mp4",
+    "passed": true,
+    "results": [
+      {
+        "viewport": {
+          "width": 360,
+          "height": 800
+        },
+        "passed": true,
+        "poster": {
+          "width": 1280,
+          "height": 720
+        },
+        "first": {
+          "time": 0.513831,
+          "width": 1920,
+          "height": 1080,
+          "decodedFrames": 21,
+          "currentSrc": "https://warden-p9rlg3hc3-vdimarcos-projects.vercel.app/gta/trailer.mp4"
+        },
+        "second": {
+          "time": 1.026454,
+          "decodedFrames": 37
+        },
+        "closeAndEscape": true,
+        "errors": []
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "passed": true,
+        "poster": {
+          "width": 1280,
+          "height": 720
+        },
+        "first": {
+          "time": 0.507585,
+          "width": 1920,
+          "height": 1080,
+          "decodedFrames": 21,
+          "currentSrc": "https://warden-p9rlg3hc3-vdimarcos-projects.vercel.app/gta/trailer.mp4"
+        },
+        "second": {
+          "time": 1.006586,
+          "decodedFrames": 36
+        },
+        "closeAndEscape": true,
+        "errors": []
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "passed": true,
+        "poster": {
+          "width": 1280,
+          "height": 720
+        },
+        "first": {
+          "time": 0.517278,
+          "width": 1920,
+          "height": 1080,
+          "decodedFrames": 21,
+          "currentSrc": "https://warden-p9rlg3hc3-vdimarcos-projects.vercel.app/gta/trailer.mp4"
+        },
+        "second": {
+          "time": 1.013812,
+          "decodedFrames": 36
+        },
+        "closeAndEscape": true,
+        "mediaDelivery": {
+          "rangeStatus": 206,
+          "contentRange": "bytes 0-1023/11556693",
+          "rangeBytes": 1024,
+          "trailerBytes": 11556693,
+          "trailerSha256": "f86ae8faeb1974c475a464f4518948d698368929d66a8520dc6eb10b7a6dde49",
+          "posterBytes": 77340,
+          "posterSha256": "0762b28e02bd33d81db09c509eb9b8f203ce96bf6418352558d8864f2ae45e7a"
+        },
+        "errors": []
+      }
+    ]
+  },
+  "arcade_static_qa": {
+    "passed": true,
+    "checks": 420,
+    "evidence": "420 assertions passed on the reconciled main Arcade; public no-fixture delivery checks are recorded separately in production.",
+    "scope": "Reconciled main Arcade + GTA at desktop/mobile, default scoreboard, original cabinet click/keyboard/menu and switcher; static fixture API response."
+  },
+  "production": {
+    "deployment_id": "dpl_3UrVNRh1EpdQkwvtsL6WV22TE95s",
+    "state": "READY",
+    "target": "production",
+    "title_url": "https://arcade.uptick.systems/gta/",
+    "arcade_url": "https://arcade.uptick.systems/",
+    "player_url": "https://nord-montreal.vercel.app/",
+    "files": 1695,
+    "source_bytes": 249431214,
+    "manifest_sha256": "abccffd3c293ba1c2200e042b0ed2c36e8168cbcceb38f68917755011775546c",
+    "baseline_main_sha": "2ae94970a795a890dedeba069e68c9ac891af924",
+    "source_hashes_match": true,
+    "preserved_api_status_note": "Leaderboard API returned503 before and after publication; this unrelated pre-existing failure is not counted as a passing API check.",
+    "arcade_qa": {
+      "arcade": "https://arcade.uptick.systems/",
+      "authorizedPreview": false,
+      "gta": "https://arcade.uptick.systems/gta/",
+      "apiStatus": 503,
+      "apiContentType": "application/json; charset=utf-8",
+      "apiError": null,
+      "preservedRoutes": {
+        "/ascii-front/": 200,
+        "/vr/": 200,
+        "/tidebreak/": 200
+      },
+      "passed": true,
+      "results": [
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "method": "scoreboard",
+          "passed": true,
+          "path": "/gta/",
+          "title": "NORD / Montr\u00e9al \u2014 Save Parc La Fontaine",
+          "posterAndTrailerReady": true,
+          "pageErrors": []
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "method": "cabinet click",
+          "passed": true,
+          "path": "/gta/",
+          "title": "NORD / Montr\u00e9al \u2014 Save Parc La Fontaine",
+          "posterAndTrailerReady": true,
+          "pageErrors": []
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "method": "5 + Enter",
+          "passed": true,
+          "path": "/gta/",
+          "title": "NORD / Montr\u00e9al \u2014 Save Parc La Fontaine",
+          "posterAndTrailerReady": true,
+          "pageErrors": []
+        },
+        {
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "method": "scoreboard",
+          "passed": true,
+          "path": "/gta/",
+          "title": "NORD / Montr\u00e9al \u2014 Save Parc La Fontaine",
+          "posterAndTrailerReady": true,
+          "pageErrors": []
+        },
+        {
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "method": "cabinet click",
+          "passed": true,
+          "path": "/gta/",
+          "title": "NORD / Montr\u00e9al \u2014 Save Parc La Fontaine",
+          "posterAndTrailerReady": true,
+          "pageErrors": []
+        },
+        {
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "method": "5 + Enter",
+          "passed": true,
+          "path": "/gta/",
+          "title": "NORD / Montr\u00e9al \u2014 Save Parc La Fontaine",
+          "posterAndTrailerReady": true,
+          "pageErrors": []
+        }
+      ]
+    },
+    "title_media_qa": {
+      "pageUrl": "https://arcade.uptick.systems/gta/",
+      "authorizedPreview": false,
+      "posterUrl": "https://arcade.uptick.systems/gta/poster.webp",
+      "trailerUrl": "https://arcade.uptick.systems/gta/trailer.mp4",
+      "passed": true,
+      "results": [
+        {
+          "viewport": {
+            "width": 360,
+            "height": 800
+          },
+          "passed": true,
+          "poster": {
+            "width": 1280,
+            "height": 720
+          },
+          "layout": {
+            "viewportWidth": 360,
+            "documentWidth": 360,
+            "bodyWidth": 360,
+            "targets": {
+              "h1": {
+                "left": 20,
+                "right": 197.484375
+              },
+              ".play": {
+                "left": 19.477096557617188,
+                "right": 258.49163818359375
+              },
+              ".feature": {
+                "left": 20,
+                "right": 340
+              },
+              ".frame": {
+                "left": 16.55864906311035,
+                "right": 343.44133949279785
+              },
+              "#trailer-open": {
+                "left": 28.807327270507812,
+                "right": 325.7476348876953
+              }
+            }
+          },
+          "first": {
+            "time": 0.516415,
+            "width": 1920,
+            "height": 1080,
+            "decodedFrames": 21,
+            "currentSrc": "https://arcade.uptick.systems/gta/trailer.mp4"
+          },
+          "second": {
+            "time": 1.023282,
+            "decodedFrames": 36
+          },
+          "closeAndEscape": true,
+          "errors": []
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "passed": true,
+          "poster": {
+            "width": 1280,
+            "height": 720
+          },
+          "layout": {
+            "viewportWidth": 390,
+            "documentWidth": 390,
+            "bodyWidth": 390,
+            "targets": {
+              "h1": {
+                "left": 20,
+                "right": 212.25
+              },
+              ".play": {
+                "left": 19.477096557617188,
+                "right": 258.49163818359375
+              },
+              ".feature": {
+                "left": 20,
+                "right": 370
+              },
+              ".frame": {
+                "left": 16.443647384643555,
+                "right": 373.5563793182373
+              },
+              "#trailer-open": {
+                "left": 28.692323684692383,
+                "right": 355.626070022583
+              }
+            }
+          },
+          "first": {
+            "time": 0.508329,
+            "width": 1920,
+            "height": 1080,
+            "decodedFrames": 21,
+            "currentSrc": "https://arcade.uptick.systems/gta/trailer.mp4"
+          },
+          "second": {
+            "time": 1.012345,
+            "decodedFrames": 36
+          },
+          "closeAndEscape": true,
+          "errors": []
+        },
+        {
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "passed": true,
+          "poster": {
+            "width": 1280,
+            "height": 720
+          },
+          "layout": {
+            "viewportWidth": 1280,
+            "documentWidth": 1280,
+            "bodyWidth": 1280,
+            "targets": {
+              "h1": {
+                "left": 51.1875,
+                "right": 340.171875
+              },
+              ".play": {
+                "left": 50.667415618896484,
+                "right": 326.707576751709
+              },
+              ".feature": {
+                "left": 629.59375,
+                "right": 1228.8125
+              },
+              ".frame": {
+                "left": 624.5621337890625,
+                "right": 1233.8441162109375
+              },
+              "#trailer-open": {
+                "left": 640.8936767578125,
+                "right": 1208.9932861328125
+              }
+            }
+          },
+          "first": {
+            "time": 0.519566,
+            "width": 1920,
+            "height": 1080,
+            "decodedFrames": 21,
+            "currentSrc": "https://arcade.uptick.systems/gta/trailer.mp4"
+          },
+          "second": {
+            "time": 1.020832,
+            "decodedFrames": 36
+          },
+          "closeAndEscape": true,
+          "mediaDelivery": {
+            "rangeStatus": 206,
+            "contentRange": "bytes 0-1023/11556693",
+            "rangeBytes": 1024,
+            "trailerBytes": 11556693,
+            "trailerSha256": "f86ae8faeb1974c475a464f4518948d698368929d66a8520dc6eb10b7a6dde49",
+            "posterBytes": 77340,
+            "posterSha256": "0762b28e02bd33d81db09c509eb9b8f203ce96bf6418352558d8864f2ae45e7a"
+          },
+          "errors": []
+        }
+      ]
+    },
+    "full_preview": {
+      "deployment_id": "dpl_GJ8wQKRHDZo39amQbJW2WajzdRqf",
+      "arcade_qa_passed": true,
+      "title_media_qa_passed": true
+    },
+    "game_host": {
+      "service": "nord-browser-demo.service",
+      "restored_at_utc": "2026-10-11T04:07:23Z",
+      "post_restore_live_checks": 7,
+      "post_restore_passed": true,
+      "startup_free_vram_required_mib": 12000,
+      "guard_unchanged": true
+    }
+  },
+  "limits": [
+    "Physical phones and off-LAN streaming not checked.",
+    "Headless media decoding and application playback are not human acoustic acceptance.",
+    "Only the existing native two-mission opening is implemented; six later missions remain design.",
+    "Static native performance and bounded browser checks do not establish sustained moving/co-op latency or handling enjoyment.",
+    "Mostly flat terrain and estimated architecture; no Google Street View parity.",
+    "Packaged browser QA reloaded an existing Mission1 boundary across restart, not a full fresh two-mission playthrough.",
+    "Full Plateau regeneration was not run end-to-end; its preflight and saved-map checks passed.",
+    "OpenSpec CLI unavailable; structure/scenarios manually checked."
+  ],
+  "final_map_hud_save_hashes": {
+    "Content/Maps/LaFontaine.umap": "7e638da09f9bf6c329d2244ade75419ab42f57fc3296b495f93eafb681ed2db1",
+    "Source/Quebec/QuebecGameplay.cpp": "0a10a9a66e0796e5096f586a7667c1d51785e0ed87ed4c2fed7fd896eaa1c0d4",
+    "Source/Quebec/QuebecGameplay.h": "74b8a22d7d0fd11130a3f047381efe9ef89ea821cbf3f5302ed999c6ac22772b",
+    "qa_save": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+  },
+  "scope": "Automated integrated-game release and actual public title/trailer delivery. Manual, external-device and full packaged campaign acceptance remain bounded below.",
+  "overall_manual_game_acceptance": "open"
+}
