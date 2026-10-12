@@ -1,0 +1,9 @@
+{
+  "game": "Olympus: Last Flame",
+  "about": "The shared start of all six prompts in public/olympus/art/sources.json (fal-ai/nano-banana-pro).",
+  "prompt": "Beautiful premium hand-painted Greek myth action RPG artwork, painterly gouache texture, elegant Hades-inspired readable silhouettes with storybook animation charm, antique gold accents, soft lighting from upper left, crisp silhouette, detailed painting without pixel art or text.",
+  "references": [
+    "public/olympus/art/asphodel.webp",
+    "public/olympus/art/hero-0.png"
+  ]
+}

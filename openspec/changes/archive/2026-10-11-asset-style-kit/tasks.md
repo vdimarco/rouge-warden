@@ -1,0 +1,16 @@
+# Tasks
+- [x] Add the research rule for rendering and art techniques to `AGENTS.md`.
+- [x] Add `higgsfield/seamless.ts` and move River Rush's `pack-ground.mjs`, `pack-surfaces.mjs` and `pack-tree-textures.mjs` onto it.
+- [x] Add `higgsfield/swatch.ts` (`npm run swatch`) with `--size`, `--band` and `--preview`.
+- [x] Add `higgsfield/style.ts`, and `--style` and `--dry-run` to `gen.ts`.
+- [x] Save `<name>.request.json` beside the outputs when `--out` is given.
+- [x] Write style files for Shore of the Ancients, In Full Swing, Breath of the Lake, River Rush, Reel It In and Olympus from recorded text. Leave out games with no recorded prompt.
+- [x] Add `sharp` ^0.35.5 and `higgsfield/.npmrc`, and check that a clean `npm ci --prefix higgsfield` installs it.
+- [x] Add `npm test --prefix higgsfield`, and document the kit in `higgsfield/README.md` and `AGENTS.md`.
+- [x] Run River Rush's three pack scripts before and after on the same inputs, and compare the files.
+- [x] Validate the change with the OpenSpec CLI.
+- [x] Make one paid generation with `--style` and `--out`, and check its request record and swatch preview.
+- [x] The user kept the brick swatch and asked for the repeat-aligned crop in the tool.
+- [x] Add `--repeat` to `npm run swatch`: a square repeat search (`repeat.ts`) and a blend with the image past each edge (`wrapTile` in `seamless.ts`).
+- [x] Test `--repeat` on synthetic running bond, on an exact repeat, and on the generated brick.
+- [x] Validate and archive this change.

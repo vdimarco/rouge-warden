@@ -1,0 +1,9 @@
+{
+  "game": "Shore of the Ancients",
+  "about": "The current mythic look. Text from public/tidebreak/models/sources.json (style) and openspec/changes/shore-grand-arena/proposal.md (mythic realism). shore-scene.webp is the menu backdrop; the shore-grand-arena art research calls the painted reference heroes already in the target style. The Monster Mash look in higgsfield/monster-*.json is superseded.",
+  "prompt": "Grounded mythic painterly realism (Dota 2, The Witcher 3): weathered natural materials, muted colours with one accent each. Golden-hour light, weathered stone, natural greens.",
+  "references": [
+    "public/tidebreak/art/reference/shore-scene.webp",
+    "public/tidebreak/art/reference/tidewarden.webp"
+  ]
+}

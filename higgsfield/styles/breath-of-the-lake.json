@@ -1,0 +1,9 @@
+{
+  "game": "Breath of the Lake",
+  "about": "The cartoon direction in docs/botl-art.md (the Ghibli facade restyle) and README.md. cottage-facade.webp is the restyled facade and summer-sky.webp the sky it was made with.",
+  "prompt": "A soft, hand-painted look like a Studio Ghibli film: clean ink contours and broad gouache shapes in seafoam, mint, honey oak and cream, with sunlit summer light. Simplified detail, without realistic grain or grunge.",
+  "references": [
+    "public/wild/tex/cottage-facade.webp",
+    "public/wild/tex/summer-sky.webp"
+  ]
+}

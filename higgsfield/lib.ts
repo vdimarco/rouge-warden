@@ -237,7 +237,11 @@ export async function download(url: string, dir: string, name: string): Promise<
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = Buffer.from(await res.arrayBuffer());
   const type = (res.headers.get('content-type') ?? '').split(';')[0].trim();
-  const ext = extname(new URL(url).pathname) || EXT[type] || '';
+  return saveNew(dir, name, extname(new URL(url).pathname) || EXT[type] || '', data);
+}
+
+// Write a new file as <name><ext>, or <name>_2<ext> and so on when the name is taken, and return its path.
+export async function saveNew(dir: string, name: string, ext: string, data: string | Buffer): Promise<string> {
   await mkdir(dir, { recursive: true });
   for (let n = 1; ; n++) {
     const path = join(dir, (n === 1 ? name : `${name}_${n}`) + ext);
