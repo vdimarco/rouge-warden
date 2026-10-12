@@ -5,14 +5,6 @@
   const GAMES = [
     { id: "ascii-front", name: "ASCII Front", sub: "ASCII tank roguelite", url: "/ascii-front/", art: "/ascii-front/key.svg", color: "#d2f584" },
     { id: "battle-tanks", name: "Battle Tanks", sub: "Flank · bombard · extract", url: "/battle-tanks/", art: "/battle-tanks/key.svg", color: "#8df6d5" },
-    { id: "afterlight", name: "Afterlight", sub: "One journey · six changing worlds", url: "/afterlight/", art: "/arcade/key/firefly-courier.svg", color: "#b6e5ce" },
-    {"id": "lighthouse-keeper", "name": "Lighthouse Keeper", "sub": "Guide boats through the fog", "url": "/lighthouse-keeper/", "art": "/arcade/key/lighthouse-keeper.svg", "color": "#bdd5eb"},
-    {"id": "echoes-under-ice", "name": "Echoes Under Ice", "sub": "Recover the fjord’s lost bells", "url": "/echoes-under-ice/", "art": "/arcade/key/echoes-under-ice.svg", "color": "#b6e5ce"},
-    {"id": "last-train-home", "name": "Last Train Home", "sub": "Follow reflections before departure", "url": "/last-train-home/", "art": "/arcade/key/last-train-home.svg", "color": "#ff85b5"},
-    {"id": "firefly-courier", "name": "Firefly Courier", "sub": "Carry a little light through the forest", "url": "/firefly-courier/", "art": "/arcade/key/firefly-courier.svg", "color": "#f2c97e"},
-    {"id": "mirage-runner", "name": "Mirage Runner", "sub": "Sail the dunes beneath the stars", "url": "/mirage-runner/", "art": "/arcade/key/mirage-runner.svg", "color": "#f5c98e"},
-    {"id": "orbital-gardener", "name": "Orbital Gardener", "sub": "Grow a garden under Earthrise", "url": "/orbital-gardener/", "art": "/arcade/key/orbital-gardener.svg", "color": "#a8d3f6"},
-    { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62" },
     { id: "tidebreak", name: "Shore of the Ancients", sub: "3v3 folklore MOBA", url: "/tidebreak/", art: "/tidebreak/art/shore-ancients-hero.webp", color: "#d2e46d" },
     { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/hero-chaos.webp", color: "#ffca51" },
     { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/arcade/worlds.webp", color: "#c7e5ac" },
@@ -31,14 +23,24 @@
     { id: "river-rush", name: "River Rush", sub: "Three wild rivers", url: "/river-rush/", art: "/arcade/key/river-rush.webp", color: "#f9c65b" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.
+  // labOnly: a game that stands only in the Lab. All Games leaves it out (the Lab tile covers it), and so do the Crimson Rogue credits.
     { id: "lab", name: "The Lab", sub: "Early prototypes and toys", url: "/lab/", art: "/arcade/key/lab.webp", color: "#f0b848" },
     { id: "neon", name: "Neon Ronin", sub: "Gyro sword duels", url: "/neon/", art: "/arcade/key/neon.webp", color: "#caff54" },
-    { id: "echo", name: "Loon Echo", sub: "Rescue the flock", url: "/echo/", art: "/arcade/echo.webp", color: "#9ff2de" },
+    { id: "echo", name: "Loon Echo", sub: "Rescue the flock", url: "/echo/", art: "/arcade/echo.webp", color: "#9ff2de", labOnly: true },
     { id: "tellme", name: "Tell Me", sub: "A card game with critters", url: "/tellme/", art: "/arcade/tellme.webp", color: "#f4e4bd" },
-    { id: "plunge", name: "Take the Plunge", sub: "Dive and fly south", url: "/lab/plunge/", art: "/arcade/plunge.webp", color: "#ffce7e", credits: false },
-    { id: "creek", name: "Up the Creek", sub: "Your phone is the paddle", url: "/lab/creek/", art: "/arcade/creek.webp", color: "#92e8ce", credits: false },
+    { id: "plunge", name: "Take the Plunge", sub: "Dive and fly south", url: "/lab/plunge/", art: "/arcade/plunge.webp", color: "#ffce7e", credits: false, labOnly: true },
+    { id: "creek", name: "Up the Creek", sub: "Your phone is the paddle", url: "/lab/creek/", art: "/arcade/creek.webp", color: "#92e8ce", credits: false, labOnly: true },
     { id: "tilt", name: "Full Tilt", sub: "A pinball voyage", url: "/lab/tilt/", art: "/arcade/tilt.webp", color: "#f5a6e5", credits: false },
     { id: "rules", name: "House Rules", sub: "Build a Down the Drain layer", url: "/lab/rules/", art: "/arcade/rules.webp", color: "#ffd56b", credits: false },
+    // ASCII sketches: small scene games that live in the Lab
+    { id: "afterlight", name: "Afterlight", sub: "One journey · six changing worlds", url: "/afterlight/", art: "/arcade/key/firefly-courier.svg", color: "#b6e5ce", labOnly: true },
+    { id: "lighthouse-keeper", name: "Lighthouse Keeper", sub: "Guide boats through the fog", url: "/lighthouse-keeper/", art: "/arcade/key/lighthouse-keeper.svg", color: "#bdd5eb", labOnly: true },
+    { id: "echoes-under-ice", name: "Echoes Under Ice", sub: "Recover the fjord’s lost bells", url: "/echoes-under-ice/", art: "/arcade/key/echoes-under-ice.svg", color: "#b6e5ce", labOnly: true },
+    { id: "last-train-home", name: "Last Train Home", sub: "Follow reflections before departure", url: "/last-train-home/", art: "/arcade/key/last-train-home.svg", color: "#ff85b5", labOnly: true },
+    { id: "firefly-courier", name: "Firefly Courier", sub: "Carry a little light through the forest", url: "/firefly-courier/", art: "/arcade/key/firefly-courier.svg", color: "#f2c97e", labOnly: true },
+    { id: "mirage-runner", name: "Mirage Runner", sub: "Sail the dunes beneath the stars", url: "/mirage-runner/", art: "/arcade/key/mirage-runner.svg", color: "#f5c98e", labOnly: true },
+    { id: "orbital-gardener", name: "Orbital Gardener", sub: "Grow a garden under Earthrise", url: "/orbital-gardener/", art: "/arcade/key/orbital-gardener.svg", color: "#a8d3f6", labOnly: true },
+    { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62", labOnly: true },
   ];
   const home = location.pathname === "/" || location.pathname === "/index.html";
   const readPlays = () => { try { const v = JSON.parse(localStorage.getItem('cottage-plays') || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; } };
@@ -254,7 +256,7 @@
     if (!box) build();
     here = current || thisGame();
     const shown = [];
-    for (const g of GAMES) if (!g.probe || g.id === here || (await live[g.id])) shown.push(g);
+    for (const g of GAMES) if ((!g.labOnly || !home) && (!g.probe || g.id === here || (await live[g.id]))) shown.push(g);
     boardGames = shown;
     render();
     if (home) refresh();

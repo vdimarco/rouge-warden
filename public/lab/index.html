@@ -23,6 +23,15 @@ header a { color: var(--ink); }
 .toy .time { margin: 12px 0 12px; color: var(--muted); font-size: 14px; }
 .toy .play { margin-top: auto; display: block; text-align: center; font: 700 18px/1 var(--body); padding: 13px; border-radius: 12px; background: var(--gold); color: #1d1606; text-decoration: none; }
 footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
+.sketches { margin-top: 28px; }
+.sketches h2 { font: 700 28px/1.1 var(--title); color: var(--gold); margin: 0 0 4px; }
+.sketches > p { color: var(--muted); margin: 0 0 12px; }
+.sketches ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.sketches a { display: flex; flex-direction: column; height: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; color: var(--ink); text-decoration: none; }
+.sketches a:hover, .sketches a:focus-visible { border-color: var(--gold); }
+.sketches img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #000; }
+.sketches b { display: block; font: 700 16px/1.2 var(--body); padding: 8px 10px 2px; }
+.sketches small { display: block; color: var(--muted); font-size: 13px; padding: 0 10px 10px; }
 </style>
 </head>
 <body>
@@ -115,6 +124,21 @@ footer { color: var(--muted); font-size: 14px; margin-top: 22px; }
       <p class="time"></p>
       <a class="play" href="/lab/rules/">Build</a>
     </article>
+  </section>
+
+  <section class="sketches" aria-labelledby="sketches-title">
+    <h2 id="sketches-title">ASCII sketches</h2>
+    <p>Small scene games drawn in characters. Each one is a short loop, and none is a finished game yet.</p>
+    <ul>
+      <li><a href="/afterlight/"><img src="/arcade/key/firefly-courier.svg" alt="" loading="lazy" decoding="async"><b>Afterlight</b><small>Rescue survivors across six worlds</small></a></li>
+      <li><a href="/last-light/"><img src="/last-light/art/sunset.svg" alt="" loading="lazy" decoding="async"><b>Last Light</b><small>An ASCII sailing adventure</small></a></li>
+      <li><a href="/lighthouse-keeper/"><img src="/arcade/key/lighthouse-keeper.svg" alt="" loading="lazy" decoding="async"><b>Lighthouse Keeper</b><small>Guide boats through the fog</small></a></li>
+      <li><a href="/echoes-under-ice/"><img src="/arcade/key/echoes-under-ice.svg" alt="" loading="lazy" decoding="async"><b>Echoes Under Ice</b><small>Recover the fjord’s lost bells</small></a></li>
+      <li><a href="/last-train-home/"><img src="/arcade/key/last-train-home.svg" alt="" loading="lazy" decoding="async"><b>Last Train Home</b><small>Follow reflections before departure</small></a></li>
+      <li><a href="/firefly-courier/"><img src="/arcade/key/firefly-courier.svg" alt="" loading="lazy" decoding="async"><b>Firefly Courier</b><small>Carry a little light through the forest</small></a></li>
+      <li><a href="/mirage-runner/"><img src="/arcade/key/mirage-runner.svg" alt="" loading="lazy" decoding="async"><b>Mirage Runner</b><small>Sail the dunes beneath the stars</small></a></li>
+      <li><a href="/orbital-gardener/"><img src="/arcade/key/orbital-gardener.svg" alt="" loading="lazy" decoding="async"><b>Orbital Gardener</b><small>Grow a garden under Earthrise</small></a></li>
+    </ul>
   </section>
 
   <footer>The toys keep your play time in this browser only. The ideas behind them are in <code>docs/game-ideas.md</code>, and the latest review of every game is in <code>docs/lab-fun.md</code>.</footer>

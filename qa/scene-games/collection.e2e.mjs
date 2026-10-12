@@ -263,7 +263,7 @@ try {
     assert.equal(await cab.count(), 1, "cabinet " + route);
     assert.equal(await cab.getAttribute("data-url"), "/" + route + "/");
     const option = await arcade
-      .locator('#machinePicker optgroup[label="ASCII Scenes"] option')
+      .locator('#machinePicker optgroup[label="Lab"] option')
       .evaluateAll(
         (els, slug) =>
           els.find(

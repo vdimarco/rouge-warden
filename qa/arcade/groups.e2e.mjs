@@ -155,12 +155,12 @@ for (const size of SIZES) {
   await page.goto(BASE + "#lab");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 9 && s.on === "lab", "/#lab opens the Lab with its nine machines");
+  check(s.visible.length === 17 && s.on === "lab", "/#lab opens the Lab with its nine toys and eight ASCII sketches");
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, size.name + "-lab.png") });
   await page.goto(BASE + "#ascii");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 10 && s.on === "afterlight", "/#ascii opens ASCII Scenes with its ten machines");
+  check(s.visible.length === 2 && s.on === "ascii-front", "/#ascii opens ASCII Scenes with ASCII Front and Battle Tanks");
 
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
   await ctx.close();
