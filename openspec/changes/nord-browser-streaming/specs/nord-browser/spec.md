@@ -85,3 +85,14 @@ The player page SHALL present the GTA: NORTH trailer on its title screen without
 #### Scenario: Game starts playing
 - **WHEN** the stream reaches the playing state
 - **THEN** the background trailer is hidden and paused so its sound and video do not compete with the game
+
+### Requirement: Phone controls do not hide the map
+On a touch screen, the move stick and the game's map SHALL NOT cover each other.
+
+#### Scenario: Player moves with the touch stick
+- **WHEN** a player holds the move stick on a phone
+- **THEN** the stick becomes invisible while held and shows again on release, and movement input continues while it is hidden
+
+#### Scenario: Player looks at the map
+- **WHEN** the game draws its HUD map on any screen
+- **THEN** the map sits in the top-right corner under the name and player count, clear of the lower-left move stick, and the bottom prompts start at the left margin

@@ -1571,8 +1571,9 @@ void AQuebecHUD::DrawHUD()
             Text(Lines[Row], Paper, Margin + 14.f * Scale, Margin + (11.f + Row * 22.f) * Scale, 1.05f);
     }
 
+    // Top right, under the name and player count: the lower-left corner is where the phone move stick sits.
     const float MapWidth = 240.f * Scale, MapHeight = 150.f * Scale;
-    const float MapX = Margin, MapY = Canvas->SizeY - Margin - MapHeight - 58.f * Scale;
+    const float MapX = Right - MapWidth, MapY = Margin + 74.f * Scale;
     DrawRect(Panel.CopyWithNewOpacity(.72f), MapX, MapY, MapWidth, MapHeight + 58.f * Scale);
     const FVector Here = Pawn->GetActorLocation();
     const FVector2D MapMin(MapX + 7.f * Scale, MapY + 7.f * Scale);
@@ -1701,7 +1702,7 @@ void AQuebecHUD::DrawHUD()
             if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
                 Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
     }
-    const float LowerLeft = MapX + MapWidth + 26.f * Scale;
+    const float LowerLeft = Margin;
     const float LowerRight = Right - (Car ? 190.f : 0.f) * Scale;
     if (!Prompt.IsEmpty())
     {

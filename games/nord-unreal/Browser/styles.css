@@ -43,6 +43,9 @@ footer p { margin: 0; }
 .look-stick { right: max(164px, calc(env(safe-area-inset-right) + 148px)); bottom: max(22px, env(safe-area-inset-bottom)); border-style: dashed; }
 .stick-knob { width: 44px; height: 44px; border: 2px solid var(--yellow); border-radius: 50%; background: #ffe33f80; transform: translate(var(--stick-x, 0px), var(--stick-y, 0px)); }
 .stick-label { position: absolute; bottom: 10px; font-size: 9px; letter-spacing: 1px; font-weight: 900; text-shadow: 0 1px 3px #000; pointer-events: none; }
+/* While a thumb holds the move stick, hide it so it does not cover the game. */
+.move-stick { transition: opacity .15s; }
+.move-stick[data-pressed="true"] { opacity: 0; }
 .look-cross { color: #fffaf099; font-size: 32px; pointer-events: none; }
 .touch-primary { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, 62px); gap: 6px; }
 .touch-primary button:last-child { grid-column: 1 / -1; }
