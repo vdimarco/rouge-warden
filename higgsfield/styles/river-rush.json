@@ -1,0 +1,9 @@
+{
+  "game": "River Rush",
+  "about": "The shared start of the world art prompts in games/river-rush/docs/world-art-sources.json (style: sculpted jungle river adventure: jade, sandstone, turquoise, coral). valley-vista.webp is the backdrop scene3d.js loads. Later tree, bark and rider prompts asked for photorealism, so the shipped look is mixed; this file keeps the stylized direction.",
+  "prompt": "Premium stylized 3D adventure game art, sculpted expressive shapes, smooth bevels, rich hand-painted PBR texture detail, lush emerald and jade greens, warm golden sandstone, turquoise accents, small coral-red accents, high quality animated feature-film look, strong readable silhouette, NOT low-poly, not photorealistic, no lettering, no logo.",
+  "references": [
+    "games/river-rush/public/art/valley-vista.webp",
+    "games/river-rush/public/art/map-canyon.webp"
+  ]
+}
