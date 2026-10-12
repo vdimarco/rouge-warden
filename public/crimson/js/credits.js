@@ -306,7 +306,7 @@ export function rollCredits(opts) {
   const grid = fin.querySelector('.games');
   const games = (window.GameSwitch && window.GameSwitch.GAMES) || [];
   for (const g of games) {
-    if (g.id === 'crimson' || g.credits === false) continue;
+    if (g.id === 'crimson' || g.credits === false || g.labOnly) continue;
     const a = el('a', 'game', `<img alt=""><span><b></b><small></small></span>`);
     a.href = g.url; a.style.setProperty('--c', g.color || '#e9e6df');
     a.querySelector('img').src = g.art; a.querySelector('b').textContent = g.name; a.querySelector('small').textContent = g.sub;
