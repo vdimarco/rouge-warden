@@ -190,7 +190,8 @@ window.catchFrame = ({ id, kg, portrait }) => {
 window.ready = true;
 </script></body></html>`;
 
-const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
+  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const errors = [];
 let failed = false, checks = 0;
 const fail = (msg) => { failed = true; console.log("FAIL " + msg); };
@@ -350,5 +351,5 @@ await browser.close();
 stop();
 const bad = errors.filter((e) => !/GPU stall due to ReadPixels|Automatic fallback to software WebGL|GroupMarkerNotSet|Multiple readback operations using getImageData/.test(e));
 if (bad.length) fail("console errors:\n  " + bad.join("\n  "));
-console.log(failed ? `fish.render: FAILED (${checks} checks)` : `fish.render: OK (${checks} checks, pictures in ${SHOTS})`);
+console.log(failed ? `fish.render: FAILED (${checks} checks, pictures in ${SHOTS})` : `fish.render: OK (${checks} checks, pictures in ${SHOTS})`);
 process.exit(failed ? 1 : 0);

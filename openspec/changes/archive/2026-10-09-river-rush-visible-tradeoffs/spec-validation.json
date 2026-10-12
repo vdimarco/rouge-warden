@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "requirements": 58,
+  "scenarios": 137,
+  "modifiedRequirementPresent": true,
+  "deltaScenarios": 4,
+  "uniqueRequirementNames": true,
+  "openspecCliAvailable": false,
+  "validation": "Direct Markdown structure and canonical delta validation; OpenSpec CLI absent."
+}

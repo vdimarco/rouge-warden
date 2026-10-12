@@ -1,0 +1,106 @@
+{
+  "command": "node --test tests/shoreline-branch.test.js tests/meshy-bough.test.js",
+  "result": "9 passed, 0 failed",
+  "log": "/tmp/river-branch-spans-final/branch-geometry-tests.log",
+  "coverage": {
+    "variants": [
+      "full",
+      "Lite"
+    ],
+    "layouts": [
+      [
+        0
+      ],
+      [
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        1
+      ]
+    ],
+    "banks": [
+      -1,
+      1
+    ],
+    "profiles": "3 numerical seeds and all 3 campaign map profiles",
+    "courses": [
+      110,
+      580,
+      1380,
+      4872
+    ],
+    "installedVertexConfigurations": 576
+  },
+  "bounds": {
+    "trees": 32,
+    "partsPerTree": 48,
+    "maximumCurrentWoodParts": 43,
+    "maximumCurrentLeafClusters": 33,
+    "generatedInstances": 32
+  },
+  "files": [
+    {
+      "file": "src/game/shoreline-branch.js",
+      "bytes": 7527,
+      "sha256": "9506c87ea0c8461c51458b48bb58c880b85300f46e7ea5968d20160f898c46d4"
+    },
+    {
+      "file": "src/game/meshy-bough-shape.js",
+      "bytes": 2809,
+      "sha256": "635d5070bef3847995166eea62e820194335e19aa0ca74ee738a2813f3efc646"
+    },
+    {
+      "file": "src/game/meshy-boughs.js",
+      "bytes": 5504,
+      "sha256": "ec4d165705209d3786a1f29051ec3b7eba24453ad5ba81f451ec2c947ba51b39"
+    },
+    {
+      "file": "src/game/branch-trees.js",
+      "bytes": 6126,
+      "sha256": "2e50ed0191b20be6a559414563e8ad26e45ef65734d0f79271ed54d96e9a8fe0"
+    },
+    {
+      "file": "tests/shoreline-branch.test.js",
+      "bytes": 6666,
+      "sha256": "1ca7704b0fadf2b7f9d365f2e40461bdd3d9864d905f57b93d51f7609bb880c2"
+    },
+    {
+      "file": "tests/meshy-bough.test.js",
+      "bytes": 7315,
+      "sha256": "e6226926b0fa23c610e143d65fc9dfd496a55a384495d762d95c2d1e957008b5"
+    },
+    {
+      "file": "docs/meshy-boughs.md",
+      "bytes": 3348,
+      "sha256": "246dd7c43d3a8bbcef8d834e62a0aef0c83580b4e3151f173fc19f942ee3d8ea"
+    },
+    {
+      "file": "docs/meshy-bough-sources.json",
+      "bytes": 6240,
+      "sha256": "ee74fbd4129244c56731cdd2df44a2235c312ade24202f507b6f7f25096c406c"
+    },
+    {
+      "file": "public/models/meshy-bough.glb",
+      "bytes": 388268,
+      "sha256": "6e6d4e77beb4ae7575af7bb262f5d36bc33e60db5ed4116cd5ff223cb4096375"
+    },
+    {
+      "file": "public/models/meshy-bough-lite.glb",
+      "bytes": 112516,
+      "sha256": "16a5c1a41707ff596bc1e717a9de52403bd78e61ae97928ea3f39150dd3e2b9b"
+    }
+  ]
+}

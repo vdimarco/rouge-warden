@@ -1,0 +1,237 @@
+{
+  "passed": true,
+  "kind": "final-built-moving-encounters-browser-verification",
+  "bundle": {
+    "file": "index-Bkn1MAT_.js",
+    "bytes": 1085871,
+    "sha256": "58a1b0681884151a8e5063914e96f4e275d1f31d3e2e35b3362c27220155f3d1"
+  },
+  "actual": [
+    {
+      "layout": "phone",
+      "bundle": "http://127.0.0.1:8765/river-rush/assets/index-Bkn1MAT_.js",
+      "kind": "actual-App-natural-seed-keyboard-handler",
+      "passed": true,
+      "mutatedAppStateOrClock": false,
+      "fixedWallClockOrSeed": false,
+      "simulation": {
+        "phase": "playing",
+        "shield": true,
+        "shieldsUsed": 0,
+        "bonus": 11070,
+        "time": 31.250000000000313,
+        "distance": 1840.1871333348026
+      },
+      "enemyContacts": [
+        {
+          "kind": "bird",
+          "action": "duck",
+          "playerLane": 1,
+          "obstacleLane": 1,
+          "actionTime": 0.3251846183433649,
+          "contactTime": 10.791784618343382
+        },
+        {
+          "kind": "crocodile",
+          "action": "jump",
+          "playerLane": 0.9999999999999537,
+          "obstacleLane": 1,
+          "actionTime": 0.3018396317092073,
+          "contactTime": 31.201839631709518
+        }
+      ],
+      "targetContacts": [
+        {
+          "entityId": 143,
+          "value": 200,
+          "charge": 0,
+          "playerLane": 1.0000000000000282,
+          "lane": 1,
+          "playerHeight": 0,
+          "contactTime": 22.349249450935467
+        }
+      ],
+      "targetScore": [
+        {
+          "entityId": 143,
+          "before": 7190,
+          "after": 7390,
+          "frameDelta": 200,
+          "otherEmittedBonus": 0,
+          "otherRelicBonus": 0,
+          "net": 200
+        }
+      ],
+      "targetCueCount": 1,
+      "maximumLaneAgreementError": 0,
+      "movingKinds": [
+        "bird",
+        "target",
+        "crocodile"
+      ],
+      "pauseExactStatusAndPixels": true,
+      "noHitOrShieldRescue": true,
+      "noActiveGpuPreparation": null,
+      "resourcesBefore": null,
+      "resourcesAfter": {
+        "uploads": 47,
+        "shaders": 74
+      },
+      "gpuErrors": [],
+      "drawCalls": 31,
+      "triangles": 114637,
+      "screenshots": [
+        "/tmp/river-moving-encounters/built/phone-actual-bird.png",
+        "/tmp/river-moving-encounters/built/phone-actual-target.png",
+        "/tmp/river-moving-encounters/built/phone-actual-crocodile.png"
+      ],
+      "externalInterruption": "Workspace exec-server disconnected after result checkpoint; initialGPUcounters were not serialized in this first probe."
+    },
+    {
+      "layout": "desktop",
+      "bundle": "http://127.0.0.1:8765/river-rush/assets/index-Bkn1MAT_.js",
+      "kind": "actual-App-natural-seed-keyboard-handler",
+      "passed": true,
+      "mutatedAppStateOrClock": false,
+      "fixedWallClockOrSeed": false,
+      "simulation": {
+        "phase": "playing",
+        "shield": true,
+        "shieldsUsed": 0,
+        "bonus": 11300,
+        "time": 27.750000000000256,
+        "distance": 1612.7186333348013
+      },
+      "enemyContacts": [
+        {
+          "kind": "bird",
+          "action": "duck",
+          "playerLane": 1.00000000000003,
+          "obstacleLane": 1,
+          "actionTime": 0.31417630051357304,
+          "contactTime": 14.88077630051364
+        },
+        {
+          "kind": "crocodile",
+          "action": "jump",
+          "playerLane": 2.2337753760725525e-14,
+          "obstacleLane": 0,
+          "actionTime": 0.29247827503234164,
+          "contactTime": 27.742478275032596
+        }
+      ],
+      "targetContacts": [
+        {
+          "entityId": 146,
+          "value": 200,
+          "charge": 0,
+          "playerLane": 2,
+          "lane": 2,
+          "playerHeight": 0,
+          "contactTime": 22.26139638327698
+        }
+      ],
+      "targetScore": [
+        {
+          "entityId": 146,
+          "before": 8200,
+          "after": 8450,
+          "frameDelta": 250,
+          "otherEmittedBonus": 50,
+          "otherRelicBonus": 0,
+          "net": 200
+        }
+      ],
+      "targetCueCount": 1,
+      "maximumLaneAgreementError": 0,
+      "movingKinds": [
+        "bird",
+        "target",
+        "crocodile"
+      ],
+      "pauseExactStatusAndPixels": true,
+      "noHitOrShieldRescue": true,
+      "noActiveGpuPreparation": true,
+      "resourcesBefore": {
+        "uploads": 47,
+        "shaders": 74
+      },
+      "resourcesAfter": {
+        "uploads": 47,
+        "shaders": 74
+      },
+      "gpuErrors": [],
+      "drawCalls": 30,
+      "triangles": 104483,
+      "screenshots": [
+        "/tmp/river-moving-encounters/desktop/desktop-actual-bird.png",
+        "/tmp/river-moving-encounters/desktop/desktop-actual-target.png",
+        "/tmp/river-moving-encounters/desktop/desktop-actual-crocodile.png"
+      ],
+      "externalInterruption": null
+    }
+  ],
+  "isolated": {
+    "kind": "source-real-3D-and-real-2D-renderer-fixtures",
+    "actualAppStateMutations": false,
+    "fixtureStatesAndClocksExplicitlySet": true,
+    "layouts": [
+      {
+        "layout": "phone",
+        "sharedPhysicalRenderedLane": true,
+        "liveDistanceChangesLane": true,
+        "reducedRegisteredMotion": true,
+        "stoppedPixels": true,
+        "fallbackStoppedPixels": true,
+        "drawCalls": 31,
+        "triangles": 103793,
+        "instances": 94,
+        "capacity": 32,
+        "preparedBatches": 6,
+        "close3D": "/tmp/river-moving-encounters/phone-close3D.png",
+        "close2D": "/tmp/river-moving-encounters/phone-close2D.png"
+      },
+      {
+        "layout": "desktop",
+        "sharedPhysicalRenderedLane": true,
+        "liveDistanceChangesLane": true,
+        "reducedRegisteredMotion": true,
+        "stoppedPixels": true,
+        "fallbackStoppedPixels": true,
+        "drawCalls": 31,
+        "triangles": 103793,
+        "instances": 94,
+        "capacity": 32,
+        "preparedBatches": 6,
+        "close3D": "/tmp/river-moving-encounters/desktop-close3D.png",
+        "close2D": "/tmp/river-moving-encounters/desktop-close2D.png"
+      },
+      {
+        "layout": "landscape",
+        "sharedPhysicalRenderedLane": true,
+        "liveDistanceChangesLane": true,
+        "reducedRegisteredMotion": true,
+        "stoppedPixels": true,
+        "fallbackStoppedPixels": true,
+        "drawCalls": 31,
+        "triangles": 103793,
+        "instances": 94,
+        "capacity": 32,
+        "preparedBatches": 6,
+        "close3D": "/tmp/river-moving-encounters/landscape-close3D.png",
+        "close2D": "/tmp/river-moving-encounters/landscape-close2D.png"
+      }
+    ],
+    "poolFrames": 40,
+    "noActiveGpuPreparation": true,
+    "physicalRelicBonus": 200,
+    "physicalRelicCharge": 10,
+    "physicalRelicBursts": 1,
+    "gpuErrors": []
+  },
+  "limitations": [
+    "Chromium with SwiftShader; physical phone frame rate and human reaction feel were not measured.",
+    "Actual play dispatches synthetic keyboard events through the real App handler, retaining natural Date.now campaign seeds. Isolated renderer fixtures explicitly set their own states and clocks.",
+    "The first phone browser process was terminated by a workspace exec-server disconnection after its completed gameplay checkpoint. Persisted gameplay/pause proof was independently asserted; initial GPU counters were not serialized in that probe. Complete initial/final GPU proofs come from desktop App and all source fixtures. A fresh live phone probe will follow publication."
+  ]
+}

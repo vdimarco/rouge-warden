@@ -7,3 +7,69 @@
 @media(max-height:550px) and (min-width:701px){.gesture-guide-play{top:110px;padding:2px 11px 5px}.gesture-guide-play .gesture-motion{height:42px;width:52px}.gesture-guide-play .gesture-card b{font-size:11px}.gesture-guide-play .gesture-card small{font-size:9px}.gesture-guide-menu{display:none}.river-leaderboard .leaderboard-heading h2{font-size:30px}.leaderboard-intro{margin-bottom:10px}.leaderboard-table td,.leaderboard-table tbody th{padding-top:8px;padding-bottom:8px}.leaderboard-submit{margin-top:14px;padding-top:12px}}
 @media(prefers-reduced-motion:reduce){.gesture-finger{animation:none!important;transform:none!important}.adventure-extra-button{transition:none}}
 .in-game[data-paused="true"] .gesture-finger{animation-play-state:paused}
+
+/* Keep active guidance alongside the HUD, above the open river view. */
+.runner-side-status{
+  position:absolute;
+  z-index:3;
+  top:96px;
+  left:24px;
+  width:184px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  pointer-events:none;
+}
+.runner-side-status .power-status{
+  position:static;
+  align-items:flex-start;
+}
+.runner-side-status .gesture-guide-play{
+  position:relative;
+  inset:auto;
+  translate:none;
+  width:100%;
+  max-width:none;
+  padding:6px 8px;
+  border-radius:9px;
+  background:#033c3be6;
+  box-shadow:0 2px 9px #002e2f26;
+}
+.runner-side-status .gesture-guide-play .gesture-motion{
+  width:32px;
+  height:38px;
+}
+.runner-side-status .gesture-guide-play .gesture-card>span{min-width:0}
+.runner-side-status .gesture-guide-play .gesture-card b{
+  font-size:11px;
+  line-height:1.2;
+  white-space:normal;
+}
+.runner-side-status .gesture-guide-play .gesture-card small{
+  font-size:9px;
+  line-height:1.35;
+  margin-top:3px;
+}
+@media(max-width:700px){
+  .runner-side-status{
+    top:78px;
+    left:15px;
+    width:min(174px,calc(100% - 216px));
+    gap:6px;
+  }
+  .runner-side-status .gesture-guide-play{padding:5px 7px}
+  .runner-side-status .gesture-guide-play .gesture-motion{width:30px;height:34px}
+  .runner-side-status .gesture-guide-play .gesture-card b{font-size:10px}
+  .runner-side-status .gesture-guide-play .gesture-card small{font-size:8px}
+}
+@media(max-height:550px) and (min-width:701px){
+  .runner-side-status{top:80px;left:20px;width:184px;gap:6px}
+}
+@media(min-width:701px) and (max-aspect-ratio:3/4){
+  .runner-side-status{top:155px;left:32px;width:220px;gap:10px}
+  .runner-side-status .gesture-guide-play{padding:9px 11px}
+  .runner-side-status .gesture-guide-play .gesture-motion{width:38px;height:44px}
+  .runner-side-status .gesture-guide-play .gesture-card b{font-size:13px}
+  .runner-side-status .gesture-guide-play .gesture-card small{font-size:11px}
+}

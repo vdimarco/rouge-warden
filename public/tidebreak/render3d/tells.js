@@ -36,6 +36,7 @@ export function drawTells3D(r, s, p, time, near) {
 // Overlay text: TOWER LOCK over the player while a tower locks on.
 export function overlayTells(r, s, p) {
   if (p.hp <= 0 || !s.units.some(e => (e.kind === 'tower' || e.kind === 'core') && e.lockTarget === p.id && s.time < e.lockAt)) return;
-  const v = r.units.views.get(p.id), at = r.project(p.x, p.y, (v?.height || 300) + (v?.root?.position.y || 0) + 70);
+  const v = r.units.views.get(p.id), at = r.project(p.x, p.y, (v?.height || 300) + (v?.root?.position.y || 0) + 70, true);
   r.label('TOWER LOCK', at.x, at.y, HOSTILE, '700 12px Barlow');
 }
+

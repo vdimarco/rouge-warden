@@ -7,6 +7,8 @@ import path from "path";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
+// ?machines skips the All games board the home page opens on load (public/arcade/switch.js), which covers the row
+const HOME = BASE + "?machines";
 const SHOTS = process.env.SHOTS || "";
 const SIZES = [
   { name: "desktop", width: 1280, height: 800, touch: false },
@@ -49,12 +51,12 @@ for (const size of SIZES) {
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(BASE);
+  await page.goto(HOME);
   await settle(page);
 
   let s = await state(page);
-  check(s.groupsVisible === 4 && s.visible.length === 4, "hall shows exactly the four group cabinets: " + s.visible.join(", "));
-  check(JSON.stringify(s.visible) === JSON.stringify(["cottage", "action", "strategy", "lab"]), "the groups stand in order: Cottage, Action, Strategy, Lab");
+  check(s.groupsVisible === 5 && s.visible.length === 5, "hall shows exactly the five group cabinets: " + s.visible.join(", "));
+  check(JSON.stringify(s.visible) === JSON.stringify(["cottage", "action", "ascii", "strategy", "lab"]), "the groups stand in order: Cottage, Action, ASCII Scenes, Strategy, Lab");
   check(s.on === "cottage", "first group is selected");
   check(s.back === null, "no back control in the hall");
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, size.name + "-hall.png") });
@@ -84,7 +86,7 @@ for (const size of SIZES) {
   await page.keyboard.press("Escape");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 4 && s.on === "action" && s.hash === "", "Escape returns to the hall with Action selected");
+  check(s.visible.length === 5 && s.on === "action" && s.hash === "", "Escape returns to the hall with Action selected");
 
   // a click opens a group; the browser's back button returns to the hall
   await page.evaluate(() => document.querySelector('.cab[data-opens="strategy"]').click());
@@ -94,7 +96,7 @@ for (const size of SIZES) {
   await page.goBack();
   await settle(page);
   s = await state(page);
-  check(s.groupsVisible === 4 && s.on === "strategy" && page.url() === BASE, "browser back returns to the hall");
+  check(s.groupsVisible === 5 && s.on === "strategy" && page.url() === HOME, "browser back returns to the hall");
 
   // the sign's collection buttons open their group
   const nav = page.locator('.section-nav button[data-section="cottage"]');
@@ -115,18 +117,18 @@ for (const size of SIZES) {
   await page.click("#backBtn");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 4 && s.on === "action", "the back control returns to the hall with Action selected");
+  check(s.visible.length === 5 && s.on === "action", "the back control returns to the hall with Action selected");
   await page.keyboard.press("Enter");
   await settle(page);
   await page.keyboard.press("Backspace");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 4 && s.on === "action", "Backspace returns to the hall");
+  check(s.visible.length === 5 && s.on === "action", "Backspace returns to the hall");
 
   // play a game from a group, then come back to it
   await page.evaluate(() => { localStorage.setItem("arcade.tokens", "3"); sessionStorage.removeItem("arcade.last"); });
   // a hash-only goto would not reload the page (it keeps the group's earlier selection), so reload for a fresh start
-  await page.goto(BASE + "#strategy");
+  await page.goto(HOME + "#strategy");
   await page.reload();
   await settle(page);
   s = await state(page);
@@ -145,7 +147,7 @@ for (const size of SIZES) {
   check(s.hash === "#strategy" && s.on === "follow-suit", "returning from a game reopens its group with it selected (" + s.hash + ", " + s.on + ")");
 
   // group links
-  await page.goto(BASE + "#lab");
+  await page.goto(HOME + "#lab");
   await settle(page);
   s = await state(page);
   check(s.visible.length === 9 && s.on === "lab", "/#lab opens the Lab with its nine machines");

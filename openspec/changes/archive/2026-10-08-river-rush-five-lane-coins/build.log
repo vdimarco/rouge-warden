@@ -1,0 +1,21 @@
+
+> river-rush@1.0.0 build:arcade
+> vite build --base=/river-rush/ --outDir=../../public/river-rush --emptyOutDir
+
+vite v7.3.6 building client environment for production...
+<script src="/arcade/quiet.js"> in "/index.html" can't be bundled without type="module" attribute
+<script src="/arcade/switch.js"> in "/index.html" can't be bundled without type="module" attribute
+<script src="/arcade/analytics.js"> in "/index.html" can't be bundled without type="module" attribute
+transforming...
+✓ 80 modules transformed.
+rendering chunks...
+computing gzip size...
+../../public/river-rush/index.html                     0.87 kB │ gzip:   0.49 kB
+../../public/river-rush/assets/index-CBusqfet.css     35.57 kB │ gzip:   8.27 kB
+../../public/river-rush/assets/index-CM2Lutz-.js   1,115.01 kB │ gzip: 330.16 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.41s

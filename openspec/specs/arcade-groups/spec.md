@@ -1,7 +1,7 @@
 # Arcade groups
 
 ## Purpose
-The Cottage Arcade opens on a hall of group cabinets, one per game group. Playing a group cabinet opens a row of that group's machines, with a way back to the hall. The groups are the `GROUPS` table in `public/index.html`: Cottage, Action, Strategy and Lab.
+The Cottage Arcade opens on a hall of group cabinets, one per game group. Playing a group cabinet opens a row of that group's machines, with a way back to the hall. The groups are the `GROUPS` table in `public/index.html`: Cottage, Action, ASCII Scenes, Strategy and Lab.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ The arcade SHALL open on one group cabinet per group instead of every game machi
 
 #### Scenario: Opening the arcade
 - **WHEN** a player opens the arcade at `/` with no group in the address
-- **THEN** the row shows exactly four group cabinets (Cottage, Action, Strategy, Lab), the first is selected, and no game machine is visible
+- **THEN** the row shows exactly five group cabinets (Cottage, Action, ASCII Scenes, Strategy, Lab), the first is selected, and no game machine is visible
 
 #### Scenario: Choosing a group cabinet
 - **WHEN** the player clicks a group cabinet, presses its Start, presses 1 or Enter with it selected, or presses 5 with it selected

@@ -1,0 +1,40 @@
+✔ approaching mesas retain their complete forms across the former near deletion thresholds (26.214658ms)
+✔ mesas recycle only when their entire rotated footprint is behind both chase cameras (3.385141ms)
+✔ course windows include every retained mesa and never truncate the prepared12-instance layers (598.68997ms)
+✔ actual mesa vertices follow the curved downhill course and stay outside all playable banks (1388.670861ms)
+✔ far-edge emergence has no exposed zero-height plates and approaching forms stay stable (0.620674ms)
+✔ updates reuse all prepared canyon resources, uniforms and shader variants on every layout (33.561991ms)
+{"layout":"390x844","bodyMax":0.9414742733766978,"routeMax":0.5015815358208628}
+{"layout":"360x640","bodyMax":0.7734069860282508,"routeMax":0.412041703991862}
+{"layout":"1365x900","bodyMax":0.7717331391235811,"routeMax":0.32267470991119085}
+{"layout":"844x390","bodyMax":0.5408532604165855,"routeMax":0.2261399181427363}
+✔ all five active raft bodies, jumps and upcoming routes remain in phone, desktop and landscape framing (992.424765ms)
+✔ camera uses the shared center for all steering positions and reduced motion freezes its chase origin (0.594255ms)
+✔ framing diagnostics contain every projected hull, rider and paddle corner for the active lane (3.830197ms)
+✔ fallback lanes, enemies and two water channels share actual fork geography on every map and layout (78.58916ms)
+✔ island camera keeps complete banking riders visible and reunites without a position jump (29.408116ms)
+✔ committed stream keeps the full-size rider and a stable camera during within-stream steering (6.790796ms)
+✔ fork branch contact strips use physical meter margins rather than stretching into the island (1.452221ms)
+✔ fork shores smooth into the approved normal apron and reach shared physical core banks (0.438236ms)
+✔ fork fallback freezes exactly from game time and distance with bounded reusable patterns (29.598769ms)
+✔ Canopy fork noses and reunions preserve the normal whitewater surface instead of cutting in a darker rectangle (69.343097ms)
+✔ treasure silhouettes and promise distinguish the actual completion bonus from a route label (0.696898ms)
+✔ a real protected island rebound renders impact feedback without trying to explode missing terrain art (72.134756ms)
+{"forkFraming":"390x844","samples":4376,"maximum":0.9494773140267553}
+{"forkFraming":"360x640","samples":4376,"maximum":0.7799813638134483}
+{"forkFraming":"1365x900","samples":4376,"maximum":0.7787827188843217}
+{"forkFraming":"844x390","samples":4376,"maximum":0.5457938130569626}
+✔ split river frames the full chosen stream hero and previews both choices before commitment (752.028205ms)
+✔ fork canopy spans are rooted outside their own stream with native contacts over the two physical lanes (257.001992ms)
+✔ fork chase framing changes continuously through divergence and confluence (14.559151ms)
+✔ prepared treasure graphics reuse a bounded pool through many rewards and freeze cosmetic motion (27.607251ms)
+✔ island draw ranges retain every visible land row and omit the empty prepared corridor (401.608124ms)
+✔ course row culling retains visible wave and land vertices on every camera layout (9878.319489ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12323.000444

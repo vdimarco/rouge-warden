@@ -104,3 +104,8 @@ dialog:not(.spellbook-sheet) #sheet-content{height:100%;min-height:0;display:gri
 
 /* The spellbook header shows the hero's bust in a bronze ring. */
 .spellbook-heading>img{height:auto;aspect-ratio:1;border:2px solid #7d6240;border-radius:50%;object-fit:cover;background:#14110e;box-shadow:0 0 0 1px #000,0 0 0 2px #c9a66b40,0 4px 12px #000a}
+/* The Night Market is not cut into pages: the pager put a long relic detail and the item list on later pages, so a
+   category opened on an empty page. The whole market scrolls as one panel instead. */
+dialog.market #sheet-content{display:block;height:auto;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;touch-action:pan-y}
+dialog.market .market-grid{max-height:none}
+@media(max-width:649px){dialog.market .market-layout{display:flex;flex-direction:column;gap:8px}dialog.market .market-grid{order:-1;margin:0}}

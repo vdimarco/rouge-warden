@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createMatch, player, step, damage } from '../../public/tidebreak/sim.js';
+import { createMatch, player, step, damage, MELEE, isMelee, isRanged } from '../../public/tidebreak/sim.js';
 import { BASES } from '../../public/tidebreak/world.js';
 import { BASE_HEAL_RADIUS, BASE_STYLES } from '../../public/tidebreak/bases.js';
 import { attackPose } from '../../public/tidebreak/combat-motion.js';
@@ -22,7 +22,8 @@ for (let kind = 0; kind < 4; kind++) {
     amounts.push(before - foe.hp);
   }
   assert.deepEqual(order,[0,1,2,0]);
-  assert(Math.abs(amounts.slice(0,3).reduce((a,b)=>a+b,0) - p.damage*3)<.001,'average damage is preserved');
+  // A ranged hero's shots at a melee hero are reduced by the melee shot guard; the three-hit average is otherwise preserved.
+  assert(Math.abs(amounts.slice(0,3).reduce((a,b)=>a+b,0) - p.damage*3*(isRanged(p)&&isMelee(foe)?1-MELEE.shotGuard:1))<.001,'average damage is preserved');
   // A pause and a missed attack each start a fresh sequence.
   for(let i=0;i<270;i++)step(s,{attack:false},1/120);
   step(s,{},1/120); assert.equal(p.pendingAttack.variant,0);

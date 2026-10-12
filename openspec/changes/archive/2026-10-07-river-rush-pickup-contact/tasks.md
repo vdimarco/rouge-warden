@@ -1,0 +1,4 @@
+- [x] Reproduce adjacent power acquisition and its remote coin award.
+- [x] Use visible crossing contact for all pickups and chronological attraction.
+- [x] Check refresh rates, primary 3D input/feedback and fallback compatibility.
+- [x] Publish, verify the live version and reconcile the completed specification.

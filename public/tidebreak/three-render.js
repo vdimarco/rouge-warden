@@ -3,7 +3,7 @@
 // either one. The minimap, the tactical map and the frame-rate rule are the 2D renderer's own code.
 // Coordinates: sim x -> three x, sim y -> three z, height is three y; one unit is one sim unit.
 import * as THREE from 'three';
-import { Renderer as Renderer2D, backingRatio } from './illustrated-render.js';
+import { BattlefieldOverlay, backingRatio } from './battlefield-overlay.js';
 import * as world from './world.js';
 import { player, HEROES, fortified } from './sim.js';
 import { makeScenery } from './scenery.js';
@@ -13,6 +13,7 @@ import { assets, preload, WORLD_MODELS, heroModel } from './render3d/assets.js';
 import { groundTextures, macroTexture, glowTexture, sparkAtlas, softAtlas } from './render3d/textures.js';
 import { Sky, installGrade } from './render3d/sky.js';
 import { Terrain } from './render3d/terrain.js';
+import { bridgeSurface, intersectRelief, waterMaskAt, cameraLift } from './surface.js';
 import { Props } from './render3d/props.js';
 import { Units, TEAM3D, NEUTRAL, PLAYER, TOWER_HEIGHT, OUTLINE, HERO_HEIGHT } from './render3d/units.js';
 import { Effects } from './render3d/effects.js';
@@ -22,6 +23,7 @@ import { drawTells3D, overlayTells, HOSTILE } from './render3d/tells.js';
 import { elementOf, impact, hold, PALETTE } from './render3d/elements.js';
 import { drawUnitMarks } from './combat-tells-draw.js';
 import { graphicsSupport } from './render3d/choice.js';
+import { clampZoom } from './camera-zoom.js';
 export { preload };
 
 const { clamp, distance, visibleTo, concealed } = world;
@@ -54,9 +56,9 @@ export class ThreeRenderer {
     this.sky = new Sky(this.gl, this.scene);
     this.textures = { ...groundTextures(), macro: macroTexture(), glow: glowTexture(), sparks: sparkAtlas(), soft: softAtlas() };
     this.terrain = new Terrain(this.scene, this.textures, this.textures.macro);
-    this.props = new Props(this.scene, assets, this.textures, { coverage: !graphicsSupport().software }); // alpha to coverage is slow in software WebGL
-    this.effects = new Effects(this.scene, this.textures);
-    this.units = new Units(this.scene, this.effects); this.units.init(this.textures);
+    this.props = new Props(this.scene, assets, this.textures, { coverage: !graphicsSupport().software, heightAt: (x, z) => this.terrain.heightAt(x, z), heightUniforms: this.terrain.heightUniforms }); // alpha to coverage is slow in software WebGL
+    this.effects = new Effects(this.scene, this.textures, { heightAt: (x, z) => this.effectHeight(x, z), heightUniforms: this.terrain.heightUniforms, surfaceUniforms: { uSurfaceMask: this.terrain.uniforms.uMask, uSurfaceSize: { value: world.SIZE } } });
+    this.units = new Units(this.scene, this.effects, { heightAt: (x, z) => this.groundHeight(x, z) }); this.units.init(this.textures);
     this.fowCanvas = Object.assign(document.createElement('canvas'), { width: 128, height: 128 }); this.fowCanvas.getContext('2d', { willReadFrequently: true }); this.fowTex = new THREE.CanvasTexture(this.fowCanvas); this.fowTex.colorSpace = THREE.NoColorSpace; this.fowTex.flipY = false; fow.uFow.value = this.fowTex;
     this.vignette = vignette();
     this.cam = { x: world.CENTER.x, y: world.CENTER.y + 600 }; this.visible = new Set(); this.hitBoxes = []; this.lastPoses = []; this.frames = 0; this.menuTime = 0;
@@ -73,7 +75,9 @@ export class ThreeRenderer {
   setScene(s) {
     if (s.seed !== this.sceneSeed) {
       this.sceneSeed = s.seed; this.scenery = [0, 1].map(phase => makeScenery(s.seed, phase));
-      this.terrain.build(world, s); this.bridges = this.terrain.bridges; this.props.ground = this.terrain.mask; this.props.build(world, s, this.scenery); // bridges: for the shared drawMap
+      this.terrain.build(world, s, this.scenery[0].landUse); this.bridges = this.terrain.bridges; this.props.ground = this.terrain.mask; this.props.zones = this.terrain.zones; this.props.build(world, s, this.scenery); // bridges: for the shared drawMap
+      this.effects.setBridges(this.bridges);
+      this.pickSurfaces = [this.terrain.water, ...this.terrain.group.children.filter(child => child.name === 'bridge').map(child => child.children[0])];
       this.restartTiming(); this.compiled = false;
     }
     if (this.stateRef !== s) { this.stateRef = s; this.units.clear(); this.effects.clear(); this.props.setPhase(s.phase, true); this.sky.blend = s.phase ? 1 : 0; this.seenEffects = new WeakSet(); }
@@ -85,32 +89,54 @@ export class ThreeRenderer {
     this.overlay.width = Math.round(this.width * this.dpr); this.overlay.height = Math.round(this.height * this.dpr); this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     // The footprint below is the gameplay camera's, so the hero select lens comes off first (it returns on its next frame).
     const aspect = this.width / Math.max(1, this.height); this.camera.aspect = aspect; this.gameLens();
-    // Landscape screens see about 1900 units of ground from top to bottom, like the 2D view; a narrow screen pulls the
-    // camera back so it still sees at least about 1250 units across.
-    this.distance = Math.max(2350, 2050 / aspect);
-    const half = THREE.MathUtils.degToRad(FOV / 2), row = Math.atan((1 - 2 * HERO_ROW) * Math.tan(half)), steep = PITCH - row;
-    this.lead = this.distance * Math.cos(PITCH) - this.distance * Math.sin(PITCH) / Math.tan(steep);
-    // Footprint of the screen corners around the camera point, for the edge clamp; scale is pixels per unit at the hero.
-    this.placeCamera(0, 0, 0, 0); const corners = [[0, 0], [this.width, 0], [0, this.height], [this.width, this.height]].map(([x, y]) => this.world(x, y));
-    this.foot = { minX: Math.min(...corners.map(c => c.x)), maxX: Math.max(...corners.map(c => c.x)), minY: Math.min(...corners.map(c => c.y)), maxY: Math.max(...corners.map(c => c.y)) };
-    const a = this.project(-500, 0), b = this.project(500, 0), c = this.project(0, 100); this.scale = (b.x - a.x) / 1000; this.squash = (c.y - a.y) / 100 / this.scale;
+    this.calibrateCamera();
+    const half = THREE.MathUtils.degToRad(FOV / 2);
     this.effects?.setScale(this.height * this.dpr / (2 * Math.tan(half)));
     OUTLINE.uResolution.value.set(this.width * this.dpr, this.height * this.dpr); OUTLINE.uWidth.value = Math.max(1, 1.35 * this.dpr * Math.min(1.4, Math.max(.8, this.height / 900)));
     const q = this.quality, size = q >= .8 ? 2048 : q >= .6 ? 1536 : 1024; this.shadowSize = size;
     if (this.props) { this.props.detail = q; this.props.view = null; }
-    this.placeCamera(this.cam.x, this.cam.y, 0, 0); // input between a resize and the next frame still maps to the ground
     this.restartTiming();
   }
+  zoomBy(factor) {
+    if (!Number.isFinite(factor) || factor <= 0 || this.showcase) return;
+    const next = clampZoom((this.zoom || 1) * factor);
+    if (next === (this.zoom || 1)) return;
+    this.zoom = next; this.calibrateCamera();
+    if (this.props) this.props.view = null;
+  }
+  calibrateCamera() {
+    this.distance = Math.max(2350, 2050 / this.camera.aspect) * (this.zoom || 1);
+    const half = THREE.MathUtils.degToRad(FOV / 2), row = Math.atan((1 - 2 * HERO_ROW) * Math.tan(half)), steep = PITCH - row;
+    this.lead = this.distance * Math.cos(PITCH) - this.distance * Math.sin(PITCH) / Math.tan(steep);
+    // Footprint of the screen corners around the camera point, for the edge clamp; scale is pixels per unit at the hero.
+    this.calibrating = true;
+    this.placeCamera(0, 0, 0, 0); const corners = [[0, 0], [this.width, 0], [0, this.height], [this.width, this.height]].map(([x, y]) => this.world(x, y, true));
+    this.foot = { minX: Math.min(...corners.map(c => c.x)), maxX: Math.max(...corners.map(c => c.x)), minY: Math.min(...corners.map(c => c.y)), maxY: Math.max(...corners.map(c => c.y)) };
+    const a = this.project(-500, 0, 0, true), b = this.project(500, 0, 0, true), c = this.project(0, 100, 0, true); this.scale = (b.x - a.x) / 1000; this.squash = (c.y - a.y) / 100 / this.scale;
+    this.calibrating = false;
+    this.placeCamera(this.cam.x, this.cam.y, 0, 0); // input immediately uses the new projection
+  }
   placeCamera(x, y, sx, sy) {
-    const c = this.camera, tx = x, tz = y - this.lead;
-    c.position.set(tx, Math.sin(PITCH) * this.distance, tz + Math.cos(PITCH) * this.distance); c.lookAt(tx, 0, tz);
+    const c = this.camera, tx = x, tz = y - this.lead, height = this.calibrating ? 0 : this.groundHeight(x, y);
+    const up = Math.sin(PITCH) * this.distance, cameraZ = tz + Math.cos(PITCH) * this.distance;
+    this.cameraLift = this.calibrating ? 0 : cameraLift((x, z) => this.groundHeight(x, z), x, y, height, 0, cameraZ - y, up);
+    this.cameraViewScale = 1 + this.cameraLift / up;
+    c.position.set(tx, height + up + this.cameraLift, cameraZ); c.lookAt(tx, height, tz);
     if (sx || sy) { c.translateX(sx); c.translateY(sy); }
     c.updateMatrixWorld(); c.matrixWorldInverse.copy(c.matrixWorld).invert();
   }
-  project(x, y, height = 0) { v3.set(x, height, y).project(this.camera); return { x: (v3.x + 1) / 2 * this.width, y: (1 - v3.y) / 2 * this.height }; }
-  world(x, y) {
+  groundHeight(x, z) { return bridgeSurface(this.terrain.bridges, x, z, this.terrain.heightAt(x, z)); }
+  effectHeight(x, z) { const h = this.groundHeight(x, z); return waterMaskAt(this.terrain.mask, x, z) ? Math.max(3, h) : h; }
+  project(x, y, height = 0, absolute = false) { v3.set(x, height + (absolute ? 0 : this.groundHeight(x, y)), y).project(this.camera); return { x: (v3.x + 1) / 2 * this.width, y: (1 - v3.y) / 2 * this.height }; }
+  world(x, y, flat = false) {
     ndc.set(x / this.width * 2 - 1, 1 - y / this.height * 2); ray.setFromCamera(ndc, this.camera);
-    const hit = ray.ray.intersectPlane(ground, v3b); return hit ? { x: hit.x, y: hit.z } : { x: this.cam.x, y: this.cam.y };
+    let hit = flat ? null : intersectRelief(ray.ray, this.terrain.relief);
+    if (!flat && this.pickSurfaces) {
+      for (const surface of this.pickSurfaces) surface.updateWorldMatrix(true, false);
+      const top = ray.intersectObjects(this.pickSurfaces, false)[0];
+      if (top && (!hit || top.distance < ray.ray.origin.distanceTo(v3.set(hit.x, hit.y, hit.z)))) hit = top.point;
+    }
+    hit ||= ray.ray.intersectPlane(ground, v3b); return hit ? { x: hit.x, y: hit.z } : { x: this.cam.x, y: this.cam.y };
   }
   // A screen direction (pointer drag, WASD) to a ground direction of the same length: the ground is foreshortened.
   screenDirection(x, y) { const m = Math.hypot(x, y); y /= this.squash || .85; const f = m / (Math.hypot(x, y) || 1); return { x: x * f, y: y * f }; }
@@ -126,8 +152,9 @@ export class ThreeRenderer {
     this.follow(s, p, dt, menu, time);
     if (!menu) this.heroScreen = this.project(p.x, p.y);
     this.visible = new Set(s.units.filter(e => visibleTo(s, 0, e)).map(e => e.id)); this.rememberHeroes(s);
-    this.sky.update(s.phase, dt); this.props.setPhase(s.phase);
-    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, rect = this.showcase || { x0: this.cam.x + f.minX - 150, x1: this.cam.x + f.maxX + 150, y0: this.cam.y + f.minY - 150, y1: this.cam.y + f.maxY + 150 };
+    this.sky.update(s.phase, dt, this.showcase ? 1 : (this.zoom || 1)); this.props.setPhase(s.phase);
+    const f = this.foot, sd = this.sky.dir, flat = Math.hypot(sd.x, sd.z) || 1, viewScale = this.cameraViewScale || 1;
+    const rect = this.showcase || { x0: this.cam.x + f.minX * viewScale - 150, x1: this.cam.x + f.maxX * viewScale + 150, y0: this.cam.y + f.minY * viewScale - 150, y1: this.cam.y + f.maxY * viewScale + 150 };
     this.props.update(dt, time, this.reducedMotion, rect, { x: sd.x / flat, z: sd.z / flat, k: flat / Math.max(.2, sd.y) });
     foliageUniforms.uSunView.value.copy(sd).transformDirection(this.camera.matrixWorldInverse); foliageUniforms.uSunColor.value.copy(this.sky.sun.color).multiplyScalar(this.sky.sun.intensity * .25);
     this.terrain.update(time, this.sky.blend, this.sky.dir, this.sky.hemi.color);
@@ -142,8 +169,8 @@ export class ThreeRenderer {
     this.seeThrough(s, p, menu);
     this.drawWorldEffects(s, p, time, dt, menu, aim, waypoint);
     this.updateFog(s, menu);
-    const view = this.camTarget, show = this.showcase, radius = show ? show.radius : Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55);
-    this.sky.fitShadow(show ? v3.set(show.cx, 0, show.cy) : v3.set(view.x, 0, view.y + (this.foot.minY + this.foot.maxY) / 2), radius, this.shadowSize);
+    const view = this.camTarget, show = this.showcase, radius = show ? show.radius : Math.max(1400, Math.hypot(this.foot.maxX - this.foot.minX, this.foot.maxY - this.foot.minY) * .55) * viewScale;
+    this.sky.fitShadow(show ? v3.set(show.cx, this.groundHeight(show.cx, show.cy), show.cy) : v3.set(view.x, this.groundHeight(view.x, view.y), view.y + (this.foot.minY + this.foot.maxY) / 2), radius, this.shadowSize);
     this.gl.toneMappingExposure = this.sky.exposure;
     if (!this.compiled) { this.gl.compile(this.scene, this.camera); this.compiled = true; }
     this.gl.render(this.scene, this.camera);
@@ -162,7 +189,7 @@ export class ThreeRenderer {
   // the hero, so a tree beside the camera never fills the view.
   showcaseCamera(p, stage, time) {
     const c = this.camera, tall = this.units.views.get(p.id)?.height || HERO_HEIGHT * 1.1, half = Math.tan(THREE.MathUtils.degToRad(SHOW_FOV / 2));
-    const yaw = p.facing + (this.reducedMotion ? 0 : Math.sin(time * .12) * SHOW_SWAY), dist = tall * .9 * this.height / (2 * half * Math.max(60, stage.feet - stage.head)), look = tall * .55;
+    const yaw = p.facing + (this.reducedMotion ? 0 : Math.sin(time * .12) * SHOW_SWAY), dist = tall * .9 * this.height / (2 * half * Math.max(60, stage.feet - stage.head)), look = this.groundHeight(p.x, p.y) + tall * .55;
     const fx = Math.cos(yaw), fz = Math.sin(yaw), ground = dist * Math.cos(SHOW_PITCH);
     c.fov = SHOW_FOV; c.near = dist * .5; c.clearViewOffset(); c.position.set(p.x + fx * ground, look + dist * Math.sin(SHOW_PITCH), p.y + fz * ground); c.lookAt(p.x, look, p.y);
     c.updateMatrixWorld(); c.matrixWorldInverse.copy(c.matrixWorld).invert();
@@ -201,7 +228,7 @@ export class ThreeRenderer {
   // structures between the camera and one of them thin out around it (materials.js SEE_GLSL).
   seeThrough(s, p, menu) {
     const at = seeUniforms.uSeeAt.value; let n = 0;
-    const add = (e, radius) => { if (n >= SEE_POINTS) return; const v = this.units.views.get(e.id); if (!v?.root?.visible) return; at[n++].set(e.x, (v.height || 200) * .5, e.y, radius); };
+    const add = (e, radius) => { if (n >= SEE_POINTS) return; const v = this.units.views.get(e.id); if (!v?.root?.visible) return; at[n++].set(e.x, v.root.position.y + (v.height || 200) * .5, e.y, radius); };
     if (!menu) {
       if (p.hp > 0) add(p, 200);
       for (const e of s.units) if (e.kind === 'hero' && !e.player && e.hp > 0 && this.visible.has(e.id)) add(e, 165);
@@ -346,7 +373,7 @@ export class ThreeRenderer {
     for (const v of this.units.views.values()) {
       const e = v.unit; if (!e || e.hp <= 0 || !v.root?.visible) continue;
       const foot = this.project(e.x, e.y, 0); if (foot.x < -200 || foot.x > this.width + 200 || foot.y < -300 || foot.y > this.height + 300) continue;
-      const lift = v.root.position.y, height = (v.height || 170) + (v.guardian ? 50 : 0), head = this.project(e.x, e.y, height + lift), w = Math.max(26, (foot.y - head.y) * (e.kind === 'tower' || e.kind === 'core' ? .5 : .55));
+      const lift = v.root.position.y, height = (v.height || 170) + (v.guardian ? 50 : 0), head = this.project(e.x, e.y, height + lift, true), w = Math.max(26, (foot.y - head.y) * (e.kind === 'tower' || e.kind === 'core' ? .5 : .55));
       list.push({ e, v, foot, head, w, depth: foot.y });
     }
     list.sort((a, b) => a.depth - b.depth);
@@ -403,13 +430,16 @@ export class ThreeRenderer {
   }
   stats() {
     const structures = [...this.units.views.values()].filter(v => v.unit && (v.unit.kind === 'tower' || v.unit.kind === 'core')).map(v => ({ id: v.unit.id, kind: v.unit.kind, team: v.unit.team, tier: v.unit.tier ?? null, guardian: !!v.unit.guardian, height: v.height, visible: !!v.root.visible, alive: v.unit.hp > 0 }));
-    return { renderer: 'Mythic 3D', heroScreen: this.heroScreen, freeCam: !!this.freeCam, pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0,
+    return { renderer: 'Mythic 3D', zoom: this.zoom || 1, cameraDistance: this.distance, heroScreen: this.heroScreen, freeCam: !!this.freeCam, pixelRatio: this.dpr, quality: this.quality, look: this.look || 0, push: this.push || 0,
       models: { world: Object.keys(assets.world).length, worldTotal: WORLD_MODELS.length, clips: assets.clips ? Object.keys(assets.clips).length : 0, heroes: assets.heroes.size, heroesTotal: HERO_IDENTITIES.length, failed: [...assets.failed] },
       drawCalls: this.drawCalls, triangles: this.triangles, shadowMap: this.shadowSize, grassTufts: this.props.grass.count, seeThrough: seeUniforms.uSeeAt.value.filter(v => v.w > 0).length, units: this.units.stats(), structures, scenerySeed: this.sceneSeed, sceneryCount: this.props.counts, crossings: this.terrain.bridges?.length || 0,
-      cameraPitch: Math.round(THREE.MathUtils.radToDeg(this.showcase ? SHOW_PITCH : PITCH)), fov: this.camera.fov, showcase: !!this.showcase, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
+      terrain: this.terrain.relief ? { vertices: this.terrain.relief.heights.length, min: this.terrain.relief.minHeight, max: this.terrain.relief.maxHeight, landRange: this.terrain.relief.landMax - this.terrain.relief.landMin } : null,
+      geology: this.props.sets.map(set => ({ caves: set.kinds.get('cave-shell')?.n || 0, cliffs: set.kinds.get('cliff')?.n || 0, trees: (set.kinds.get('pine')?.n || 0) + (set.kinds.get('oak')?.n || 0) })), cameraLift: this.cameraLift || 0,
+      cameraPitch: Math.round(THREE.MathUtils.radToDeg(this.showcase ? SHOW_PITCH : Math.atan2(Math.sin(PITCH) * this.distance + (this.cameraLift || 0), Math.cos(PITCH) * this.distance))), fov: this.camera.fov, showcase: !!this.showcase, realmBlend: this.sky.blend, attackPoses: this.lastPoses.map(p => ({ ...p })), canvas: `${this.canvas.width}x${this.canvas.height}` };
   }
 }
-// Shared with the 2D renderer: the frame-rate rule, the minimap and tactical map, badges and result labels.
-for (const k of ['adapt', 'restartTiming', 'drawMap', 'drawHeroMarker', 'drawPings', 'rememberHeroes', 'drawBadges', 'drawResults']) ThreeRenderer.prototype[k] = Renderer2D.prototype[k];
+// Shared canvas overlay helpers: the frame-rate rule, the minimap and tactical map, badges and result labels.
+for (const k of ['adapt', 'restartTiming', 'drawMap', 'drawHeroMarker', 'drawPings', 'rememberHeroes', 'drawBadges', 'drawResults']) ThreeRenderer.prototype[k] = BattlefieldOverlay.prototype[k];
 // Starts parsing a hero model early, for example the hero picked on the select screen.
 export const warmHero = slug => { heroModel(slug); };
+

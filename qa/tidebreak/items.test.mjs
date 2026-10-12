@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createMatch, player, buy, sell, damage, heal, cast, step, HEROES, setBuild, autoTarget, heroSpeed } from '../../public/tidebreak/sim.js';
+import { createMatch, player, buy, sell, damage, heal, cast, step, HEROES, setBuild, autoTarget, heroSpeed, MELEE, isRanged } from '../../public/tidebreak/sim.js';
 import { quote, recalculate, nextPurchase, nextItem, ITEMS, hasItem, synergies } from '../../public/tidebreak/items.js';
 import { near } from './open-ground.mjs';
 const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s.units.find(e => e.kind === 'hero' && e.team === 1); p.skillRanks=[1,1,1,0]; s.units = [p, foe]; s.nextWave = s.objectiveAt = 9999; s.campTimers = [9999, 9999]; Object.assign(p, { ...near(2400, 2800), gold: 9999 }); Object.assign(foe, { ...near(2400, 2660), gold: 0, nextShop: 9999, stun: 100 }); return { s, p, foe }; };
@@ -19,7 +19,7 @@ const duel = (kind = 0) => { const s = createMatch(kind), p = player(s), foe = s
 }
 {
  const { s, p, foe } = duel(); buy(s, 'blood'); p.hp -= 500; const hp = p.hp; damage(s, p, foe, 100, 'attack'); assert.equal(p.hp, hp + 16);
- buy(s, 'iron'); const before = p.hp; damage(s, foe, p, 112, 'attack'); assert.equal(p.hp, before - 100);
+ buy(s, 'iron'); const before = p.hp; damage(s, foe, p, 112, 'attack'); assert.equal(p.hp, before - 100 * (isRanged(foe) ? 1 - MELEE.shotGuard : 1));
 }
 {
  const { s, p, foe } = duel(2); buy(s, 'lantern'); buy(s, 'frost'); const hp = foe.hp; damage(s, p, foe, 100); assert.ok(foe.hp < hp - 100); assert.ok(foe.burn); assert.equal(foe.slow, 1.2);

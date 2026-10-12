@@ -29,6 +29,12 @@ import { BASIC_ATTACKS } from './basic-attacks.js';
 export const RANGED_REACH = 1.5;
 // A hero must still step inside a ward's (or the core's) own reach to hit it, so wards keep out-ranging heroes.
 export const reach = (e, t) => e.kind === 'hero' && (t.kind === 'tower' || t.kind === 'core') ? Math.max(120, Math.min(e.range, t.range - t.radius - 30)) : e.range;
+// Melee heroes must walk into reach, so ranged heroes shoot them on the way in. When a ranged hero's basic attack hits
+// a melee hero, the melee hero takes shotGuard less damage and moves closeSpeed faster for closeTime seconds.
+// The rule follows the hero's attack type, so the player and the bots get it in the same way.
+export const MELEE = { shotGuard: .25, closeSpeed: .15, closeTime: 1.5 };
+export const isMelee = e => e?.kind === 'hero' && HEROES[e.hero]?.attackType === 'Melee';
+export const isRanged = e => e?.kind === 'hero' && HEROES[e.hero]?.attackType === 'Ranged';
 export const HEROES = [
   { name: 'Mothman', slug: 'mothman', role: 'Ambush hunter', note: 'Vanish into the fog. Strike from the unseen.', hp: 1550, speed: 340, range: 150, damage: 126, rate: .62, color: '#e9dca6', sprite: 0 },
   { name: 'Nessie', slug: 'nessie', role: 'River bruiser', note: 'Dive through the river. Pull the fight to you.', hp: 2200, speed: 300, range: 155, damage: 118, rate: .8, color: '#74e6b7', sprite: 1 },
@@ -63,7 +69,7 @@ export const respawnTime = (level, sudden = false) => Math.round(Math.min(PACE.r
 // Every hero moves by the same rules: out-of-combat sprint, slows, haste effects and Nessie in water.
 export function heroSpeed(s, e) {
   const sprint = s.time - e.lastHit > 3 && s.time > e.revealedUntil ? 1.35 : 1;
-  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.windUntil > s.time ? 1.25 : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
+  return e.speed * sprint * (e.slow > 0 ? .52 : 1) * (e.frenzy > s.time ? 1.25 : 1) * (e.huntUntil > s.time ? 1.2 : 1) * (e.pursuitUntil > s.time ? 1.3 : 1) * (e.rushUntil > s.time ? 1.3 : 1) * (e.rallyUntil > s.time ? 1.2 : 1) * (e.windUntil > s.time ? 1.25 : 1) * (e.closeUntil > s.time ? 1 + MELEE.closeSpeed : 1) * (e.hero === 1 && inWater(e, s) ? 1.4 : 1);
 }
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function add(s, data) {
@@ -73,7 +79,7 @@ function add(s, data) {
 function hero(s, team, kind, lane, human = false) {
   // Each hero starts on its lane a short walk behind its outer ward.
   const h = HEROES[kind], front = pointAtArc(laneFrom(team, lane), TOWER_ARC[lane][0] - 220);
-  return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: PACE.startGold, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
+  return add(s, { kind: 'hero', team, hero: kind, name: h.name, attribute:h.attribute, manaRegen:0, sprite: kind, x: front.x + (human ? 0 : 36), y: front.y, hp: h.hp, maxHp: h.hp, mana:manaCapacity(h),maxMana:manaCapacity(h), speed: h.speed, range: h.range, damage: h.damage, rate: h.rate, lane, waypoint: 2, player: human, level: 1, xp: 0, gold: PACE.startGold, kills: 0, deaths: 0, lastHits:0, respawn: 0, cd: [0, 0, 0, 0], skillRanks: [0,0,0,0], skillPoints: 1, haste: 1, inventory: [], build: BUILDS[h.build].id, power: 0, armor: 0, regen: 0, lifesteal: 0, itemState: {}, recall: 0, selectedTarget: 0, target: 0, attackAnim: 0, portalCd: 0, cloak: 0, sightUntil: 0, frenzy: 0, ambushReady: false });
 }
 // A drafted lineup replaces the default picks: { allies:[kit,kit], enemies:[kit,kit,kit] }.
 export function createMatch(kind = 0, seed = 49, lineup = null) {
@@ -149,6 +155,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
   const armor = target.armor || 0;
   amount *= armor >= 0 ? 100 / (100 + armor) : 2 - 100 / (100 - armor);
   if(target.scaleGuardUntil>s.time)amount*=.65;
+  if (kind === 'attack' && isMelee(target) && isRanged(source)) { amount *= 1 - MELEE.shotGuard; target.closeUntil = s.time + MELEE.closeTime; }
   const shieldMultiplier = kind === 'attack' && hasItem(source, 'reaper') ? 1.5 : 1;
   if (shieldMultiplier > 1) target.woundedUntil = s.time + 4;
   if (target.kind === 'hero' && hasItem(target, 'mirror') && source.kind === 'hero' && s.time >= (target.itemState.mirror || 0)) {
@@ -192,7 +199,7 @@ export function damage(s, source, target, amount, kind = 'spell') {
     if (credit?.kind === 'hero' && hasItem(credit, 'tidecoin')) { credit.itemState.coin = Math.min(hasItem(credit, 'hoard') ? 20 : 10, (credit.itemState.coin || 0) + 1); recalculate(credit, HEROES[credit.hero]); }
     if (hasItem(target, 'tidecoin') && !hasItem(target, 'hoard') && target.itemState.coin) { target.itemState.coin = Math.floor(target.itemState.coin / 2); recalculate(target, HEROES[target.hero]); }
     onBanish(s, target);
-    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
+    target.bloom=null;target.disarmedUntil=0; target.burn = null; target.bleed = null; target.omen = null; target.soulThread=null;target.brineUntil=target.chillUntil=target.spiritUntil=target.guardUntil=target.silencedUntil=target.rebirthUntil=0; target.travel=target.returnAnchor=target.castIntent=null;target.chaseUntil=target.scaleGuardUntil=target.closeUntil=0; target.wetUntil = 0; target.snaredUntil = 0; target.pursuitUntil = 0; target.frenzy = 0; target.cloak = 0; target.motion = null; target.pendingAttack = null; target.comboNext = 0; target.comboUntil = 0; target.attackStarted = undefined; target.castStarted = undefined; target.woundedUntil = 0; target.frostMarks = {}; target.exposedUntil = 0; target.commit = null; target.queuedCast = null; target.damageLog = []; target.controlLog = []; target.deaths++; target.respawn = respawnTime(target.level, s.suddenDeath); target.recall = 0; target.ambushReady = false;
     if (source.team >= 0) { s.score[source.team]++; reward(s, source.team, 95, PACE.killGold); if (credit?.kind === 'hero') credit.kills++; }
     recordKill(s, credit, target);
     if (target.player) announce(s, 'The veil takes you', `Respawn in ${target.respawn} seconds.`);
@@ -239,14 +246,24 @@ export function wardFallText(s, ward) {
 // A wisp or the Wild Hunt of this team stands at the structure, so heroes may siege it.
 export const escorted = (s, team, t) => s.units.some(a => a.team === team && a.hp > 0 && (a.kind === 'minion' || a.kind === 'leviathan') && distance(a, t) < t.range + 150);
 function hostile(s, a, b) { return b.hp > 0 && a.id !== b.id && a.team !== b.team && !structureProtected(s, b) && (b.team !== -1 || a.kind === 'hero' || a.team === -1); }
-export function cancelOrder(e) { e.order=null;e.orderRoute=null;e.target=0; }
+// Direct movement releases pursuit without discarding the player's attack focus.
+export function cancelPursuit(e) { e.order=null;e.orderRoute=null; }
+export function cancelOrder(e) { cancelPursuit(e);e.selectedTarget=0;e.target=0; }
+function selectedTarget(s,e) {
+  if(!e.selectedTarget)return null;
+  const t=s.units.find(u=>u.id===e.selectedTarget&&hostile(s,e,u)&&visibleTo(s,e.team,u)&&!(u.kind==='camp'&&u.leash));
+  if(t)return t;
+  e.selectedTarget=0;e.target=0;
+  if(e.order?.type==='attack')cancelPursuit(e);
+  return null;
+}
 export function commandOrder(s,e,command) {
-  cancelOrder(e);
+  if(command?.type==='move')cancelPursuit(e);else cancelOrder(e);
   if(e.hp<=0)return false;
   if(command?.type==='attack'){
     const t=s.units.find(u=>u.id===command.target);
     if(!t||!hostile(s,e,t)||!visibleTo(s,e.team,t)||(t.kind==='camp'&&t.leash))return false;
-    e.order={type:'attack',target:t.id};e.target=t.id;if(e.pendingAttack?.target!==t.id)e.pendingAttack=null;
+    e.order={type:'attack',target:t.id};e.selectedTarget=t.id;e.target=t.id;if(e.pendingAttack?.target!==t.id)e.pendingAttack=null;
   }else if(command?.type==='move'&&Number.isFinite(command.x)&&Number.isFinite(command.y)){const point={x:command.x,y:command.y,radius:e.radius};resolveBody(s,point);e.order={type:'move',x:point.x,y:point.y};}
   else return false;
   e.recall=0;return true;
@@ -353,6 +370,11 @@ export function requestCast(s,e,slot,aim,{bot=false}={}) {
   e.castIntent={slot,aim:locked,target:target?.id,origin:{x:e.x,y:e.y},start:s.time,at:s.time+timing.windup,recovery:timing.recovery,shape,heroAim:target?.kind==='hero'&&insideWarning(target,shape,20)};
   e.pendingAttack=null;e.facing=angle;e.revealedUntil=s.time+timing.windup+1;e.recall=0;
   return true;
+}
+function requestInputCast(s,e,input) {
+  const before=e.queuedCast,accepted=requestCast(s,e,input.cast,input.aim);
+  if(e.player&&!input.autopilot)e.lastCastRequest={slot:input.cast,at:s.time,outcome:accepted?'accepted':e.queuedCast&&e.queuedCast!==before?'queued':'rejected'};
+  return accepted;
 }
 export function cast(s, e, slot, aim, {lockedTarget}={}) {
   if (e.kind !== 'hero' || ![0,1,2,3].includes(slot) || !e.skillRanks[slot] || spellBlocked(s,e,slot) || s.winner !== null) return false;
@@ -596,6 +618,10 @@ export function step(s, input = {}, dt = 1 / 60) {
       if(e.hp>0&&s.time>=e.healAt){e.healAt=s.time+1;for(const a of s.units)if(a.kind==='hero'&&a.team===e.team&&a.hp>0&&distance(e,a)<260)heal(s,a,e.healing);}
     }
     if (e.kind === 'hero') {
+      if(e.player&&input.cancelRecall)e.recall=0;
+      // A control effect can skip the request path. Record that press as rejected
+      // first, then replace it with the real outcome if the request runs below.
+      if(e.player&&!input.autopilot&&input.cast!==undefined)e.lastCastRequest={slot:input.cast,at:s.time,outcome:'rejected'};
       e.cd = e.cd.map(c => Math.max(0, c - dt)); e.portalCd = Math.max(0, e.portalCd - dt); e.gold += dt * PACE.passiveGold;
       if(!e.player||input.autopilot)trainBot(e);
       if ((!e.player || input.autopilot) && s.time >= (e.nextShop || 0)) { const id = nextPurchase(e); if (id) buy(s, id, e); e.nextShop = s.time + 2; }
@@ -604,6 +630,7 @@ export function step(s, input = {}, dt = 1 / 60) {
         if (e.respawn <= 0) { Object.assign(e, BASES[e.team]); e.hp = e.maxHp;e.mana=e.maxMana; e.shield = 140; e.waypoint = 1; e.cd = [0,0,0,Math.min(6,e.cd[3])]; e.cloak = 0; e.revealedUntil = -1; if (e.player) announce(s, 'A legend returns', 'Leave the rift or take a portal to rejoin the hunt.'); }
         continue;
       }
+      if(e.player&&!input.autopilot)selectedTarget(s,e);
       // The court heals quickly, but not in sudden death: a defended base can still fall.
       if (distance(e, BASES[e.team]) < BASE_HEAL_RADIUS) heal(s, e, e.maxHp * (s.suddenDeath ? .02 : .24) * dt);
       else if (s.time - e.lastHit > 5) heal(s, e, 12 * dt);
@@ -617,11 +644,12 @@ export function step(s, input = {}, dt = 1 / 60) {
       if (e.fear > 0) {e.travel=null; move(s, e, e.x + (e.x - e.fearX), e.y + (e.y - e.fearY), dt, e.speed * .8); continue; }
       const taunt = taunter(s, e);
       if (taunt) { e.travel = null; e.target = taunt.id; if (distance(e, taunt) > e.range + taunt.radius - 8) move(s, e, taunt.x, taunt.y, dt, heroSpeed(s, e)); attack(s, e, taunt); continue; }
-      if(tickHeroMechanic({s,e,dt,damage,heal,hostile})){if(e.player&&input.cast!==undefined)requestCast(s,e,input.cast,input.aim);continue;}
+      if(tickHeroMechanic({s,e,dt,damage,heal,hostile})){if(e.player&&input.cast!==undefined)requestInputCast(s,e,input);continue;}
       if (!e.player || input.autopilot) { bot(s, e, dt); continue; }
       if(input.order)commandOrder(s,e,input.order);
       const dx = input.x || 0, dy = input.y || 0, moving = Math.hypot(dx, dy) > .12;
-      if(moving||input.stop||input.recall||input.portal)cancelOrder(e);
+      if(moving)cancelPursuit(e);
+      if(input.stop||input.recall||input.portal)cancelOrder(e);
       if (moving) {
         const mag = Math.max(1, Math.hypot(dx, dy));
         move(s, e, e.x + dx / mag * 250, e.y + dy / mag * 250, dt, heroSpeed(s, e)); e.recall = 0;
@@ -631,9 +659,9 @@ export function step(s, input = {}, dt = 1 / 60) {
       if (input.recall && !e.recall) e.recall = 2.5;
       if (e.recall > 0) {
         if (moving || s.time - e.lastHit < .2) e.recall = 0;
-        else { e.recall -= dt; if (e.recall <= 0) { Object.assign(e, BASES[0]); burst(s, e.x, e.y, '#e4f5ac', 180); } }
+        else { e.recall -= dt; if (e.recall <= 0) { e.recall=0;e.recallCompletedAt=s.time;Object.assign(e, BASES[0]); burst(s, e.x, e.y, '#e4f5ac', 180); } }
       }
-      if (input.cast !== undefined) requestCast(s, e, input.cast, input.aim);
+      if (input.cast !== undefined) requestInputCast(s,e,input);
       if (!e.recall) {
         let ordered=null;
         if(e.order?.type==='attack'){
@@ -644,9 +672,9 @@ export function step(s, input = {}, dt = 1 / 60) {
           const destination=ordered||e.order;
           const inRange=ordered&&distance(e,ordered)<=reach(e,ordered)+ordered.radius-8&&lineOfSight(s,e,ordered);
           if(!inRange){const next=followOrder(s,e,destination,dt);if(next)move(s,e,next.x,next.y,dt,heroSpeed(s,e));}
-          if(e.order.type==='move'&&distance(e,e.order)<10)cancelOrder(e);
+          if(e.order.type==='move'&&distance(e,e.order)<10)cancelPursuit(e);
         }
-        const t = ordered||autoTarget(s, e, input.target); e.target = t?.id || 0;
+        const t = ordered||selectedTarget(s,e)||autoTarget(s, e, input.target); e.target = t?.id || 0;
         if (input.attack !== false) attack(s, e, t);
       }
     } else {

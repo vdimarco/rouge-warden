@@ -1,9 +1,8 @@
 // Register the fal cutout to one deck anchor without stretching action poses.
 // Usage: node scripts/pack-rider.mjs /path/to/fal-cutout.png
-import {createRequire} from 'node:module';
+import sharp from 'sharp';
 import {fileURLToPath} from 'node:url';
 import {RIDER_SIZE} from '../src/game/rider.js';
-const sharp=createRequire(new URL('../../../higgsfield/package.json',import.meta.url))('sharp');
 const source=process.argv[2];if(!source)throw new Error('Pass the downloaded RGBA fal atlas.');
 const metadata=await sharp(source).metadata();if(metadata.width!==2528||metadata.height!==1696||!metadata.hasAlpha)throw new Error('Expected 2528×1696 transparent atlas.');
 const {width,height,foot}=RIDER_SIZE,scale=.72,baseline=[770,770,770,770,790,775,788,796],cells=[];

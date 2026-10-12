@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "kind": "first-natural-enemy-and-relic-production-smoke",
+  "scope": "first-enemy-and-first-relic",
+  "url": "https://arcade.uptick.systems/river-rush/?verify=043d0c51",
+  "commit": "043d0c519b0084ad87986b1e6c07b7bbb4d0c255",
+  "bundle": "https://arcade.uptick.systems/river-rush/assets/index-Bkn1MAT_.js",
+  "bundleSha256": "58a1b0681884151a8e5063914e96f4e275d1f31d3e2e35b3362c27220155f3d1",
+  "layout": "phone",
+  "actualAppStateOrClockMutations": false,
+  "fixedWallClockOrSeed": false,
+  "syntheticInputsThroughActualAppHandler": true,
+  "simulation": {
+    "phase": "playing",
+    "shield": true,
+    "shieldsUsed": 0,
+    "bonus": 9750,
+    "time": 26.933400000000255,
+    "distance": 1560.4225905348019
+  },
+  "enemyContacts": [
+    {
+      "type": "perfect",
+      "time": 15.666700000000098,
+      "lane": 1.4982362989774088e-14,
+      "id": 76,
+      "distance": 867.9015913168088,
+      "playerLane": 1.4982362989774088e-14,
+      "entityId": 98,
+      "obstacle": "branch",
+      "enemy": "bird",
+      "obstacleLane": 0,
+      "playerHeight": 0,
+      "action": "duck",
+      "actionTime": 0.2840894154159402,
+      "contactTime": 15.650789415416037
+    }
+  ],
+  "targetContacts": [
+    {
+      "type": "target",
+      "time": 26.383400000000247,
+      "lane": 2,
+      "id": 120,
+      "distance": 1524.629886047724,
+      "playerLane": 2,
+      "entityId": 174,
+      "value": 200,
+      "charge": 0,
+      "playerHeight": 0,
+      "contactTime": 26.371839918858544
+    }
+  ],
+  "targetScore": [
+    {
+      "entityId": 174,
+      "before": 9150,
+      "after": 9450,
+      "frameDelta": 300,
+      "otherEmittedBonus": 100,
+      "otherRelicBonus": 0,
+      "net": 200
+    }
+  ],
+  "targetCueCount": 1,
+  "maximumLaneAgreementError": 0,
+  "movingKinds": [
+    "bird",
+    "target"
+  ],
+  "pauseExactStatusAndPixels": true,
+  "noHitsOrShieldRescue": true,
+  "resourcesBefore": {
+    "uploads": 47,
+    "shaders": 74
+  },
+  "resourcesAfter": {
+    "uploads": 47,
+    "shaders": 74
+  },
+  "noActiveGpuPreparation": true,
+  "gpuErrors": [],
+  "pageErrors": [],
+  "drawCalls": 28,
+  "triangles": 101589,
+  "screenshots": [
+    "/tmp/river-moving-encounters/live/phone-actual-bird.png",
+    "/tmp/river-moving-encounters/live/phone-actual-target.png"
+  ],
+  "limitations": [
+    "Chromium with SwiftShader; physical phone frame rate and human reaction feel were not measured.",
+    "Actual play dispatches synthetic keyboard events through the real App handler, retaining natural Date.now campaign seeds. Isolated renderer fixtures explicitly set their own states and clocks.",
+    "Production smoke clears the first naturally generated enemy and collects the first relic. Both species were verified together in local exact-built phone and desktop runs; this smoke does not repeat a full campaign."
+  ]
+}

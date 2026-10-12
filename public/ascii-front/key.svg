@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">ASCII Front</title>
+  <desc id="desc">A bright green character-art tank defends its headquarters against orange tanks among brick walls and dotted terrain.</desc>
+  <defs>
+    <radialGradient id="light"><stop stop-color="#24372b"/><stop offset="1" stop-color="#101512"/></radialGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><text x="8" y="17" fill="#26352a" font-family="monospace" font-size="15">.</text></pattern>
+    <symbol id="wall" viewBox="0 0 96 64"><g fill="#6f5944" font-family="monospace" font-size="20" font-weight="bold"><text x="0" y="18">#######</text><text x="0" y="39">#######</text><text x="0" y="60">#######</text></g></symbol>
+    <symbol id="enemy" viewBox="0 0 96 82"><g fill="#ffa461" font-family="monospace" font-size="22" font-weight="bold" xml:space="preserve"><text x="0" y="20">H###H</text><text x="0" y="40">H[O]H</text><text x="0" y="60">H###H</text><text x="0" y="80">  |  </text></g></symbol>
+  </defs>
+  <rect width="960" height="540" fill="#101512"/>
+  <rect x="400" width="560" height="540" fill="url(#light)"/>
+  <rect x="32" y="30" width="896" height="480" fill="url(#dots)" stroke="#344238"/>
+  <g font-family="monospace" font-weight="bold">
+    <text x="60" y="76" fill="#7b8d7f" font-size="14" letter-spacing="3">01 / SIGNAL DEFENSE</text>
+    <text x="56" y="172" fill="#d2f584" font-size="68" letter-spacing="-5">ASCII</text>
+    <text x="56" y="239" fill="#d2f584" font-size="68" letter-spacing="-5">FRONT</text>
+    <text x="61" y="300" fill="#b5c0ae" font-size="17">DEFEND. EVOLVE.</text>
+    <text x="61" y="327" fill="#b5c0ae" font-size="17">BREAK THE LINE.</text>
+    <text x="61" y="460" fill="#70806e" font-size="13" letter-spacing="2">A TANK ROGUELITE</text>
+  </g>
+  <g opacity=".9"><use href="#wall" x="434" y="238" width="126" height="84"/><use href="#wall" x="764" y="312" width="126" height="84"/><use href="#wall" x="620" y="92" width="126" height="84"/></g>
+  <use href="#enemy" x="472" y="88" width="88" height="76"/>
+  <use href="#enemy" x="798" y="152" width="76" height="66"/>
+  <g font-family="monospace" font-size="24" font-weight="bold" fill="#d2f584" xml:space="preserve">
+    <text x="616" y="290">   |   </text><text x="616" y="315">H#####H</text><text x="616" y="340">H[===]H</text><text x="616" y="365">H[#O#]H</text><text x="616" y="390">H#####H</text>
+  </g>
+  <g fill="#d2f584"><rect x="665" y="239" width="5" height="11"/><rect x="665" y="212" width="5" height="8"/></g>
+  <g fill="#ffbe7d"><rect x="516" y="187" width="4" height="11"/><rect x="516" y="215" width="4" height="6"/></g>
+  <g font-family="monospace" font-weight="bold" text-anchor="middle"><text x="671" y="458" fill="#8da28b" font-size="25">[ HQ ]</text><text x="671" y="480" fill="#5f735e" font-size="11" letter-spacing="3">KEEP THE SIGNAL ALIVE</text></g>
+  <path d="M392 55V485" stroke="#344238" stroke-dasharray="2 10"/>
+</svg>

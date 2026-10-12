@@ -3,20 +3,22 @@ import {WAVES,CURRENT_FLOW_SPEED,WAVE_CADENCE} from './hydrodynamics.js';
 
 const wave=WAVES.map(w=>`{float p=x*${w.kx}+d*${w.kz}-uTime*${w.omega}+${w.phase.toFixed(1)};s+=vec3(${w.amplitude}*sin(p),${w.amplitude*w.kx}*cos(p),${w.amplitude*w.kz}*cos(p));}`).join('\n');
 const waterSample=`vec3 surface(float x,float d){vec3 s=vec3(0.);${wave}
- float rapid=rRapid(d),dr=rRapidD(d),energy=.65+rapid*1.15,p=d*.68+x*.23;
- return vec3(s.x*energy+.24*rapid*sin(p),s.y*energy+.24*rapid*.23*cos(p),s.z*energy+s.x*1.15*dr+.24*(dr*sin(p)+rapid*.68*cos(p)))*uMotion;}`;
-const varyings=`varying vec3 vWorld,vNormal;varying vec2 vCourse;flat varying vec2 vShoal0,vShoal1;
-varying vec4 vProfile;varying float vRapid;`;
+ float rapid=rRapid(d),dr=rRapidD(d),wild=rIntensity(d),dw=rIntensityD(d),profileOn=step(.5,uCourseLength),p=d*.68+x*.23;
+ float energy=mix(.65+rapid*1.15,.55+rapid*(1.+.35*wild),profileOn),de=mix(1.15*dr,dr*(1.+.35*wild)+rapid*.35*dw,profileOn);
+ float crest=mix(.24*rapid,(.2+.14*wild)*rapid,profileOn),dc=mix(.24*dr,(.2+.14*wild)*dr+.14*dw*rapid,profileOn);
+ return vec3(s.x*energy+crest*sin(p),s.y*energy+crest*.23*cos(p),s.z*energy+s.x*de+dc*sin(p)+crest*.68*cos(p))*uMotion;}`;
+const varyings=`varying vec3 vWorld,vNormal;varying vec2 vCourse;flat varying vec2 vShoal0,vShoal1;varying vec4 vFork;
+varying vec4 vProfile;varying float vRapid;varying vec3 vIntensity;`;
 export const waterVertex=`
 ${COURSE_GLSL}
 uniform float uTime,uMotion;
 ${varyings}
 ${waterSample}
 vec2 shoal(float cell){float d=cell*34.+8.+rHash(cell+17.)*18.,side=rHash(cell+53.)>.5?1.:-1.;return vec2(side*(rWidth(d)-.65),d);}
-void main(){float d=uDistance-position.z,width=rWidth(d),x=position.x*width;vec3 s=surface(x,d);
+void main(){float d=uDistance-position.z,width=rWidth(d),x=position.x*width;vec3 s=surface(x,d);vec4 fork=rFork(d);vFork=vec4(fork.y,fork.z,fork.x,fork.w);
  vec3 p=vec3(x+rLocalX(d),rLocalY(d)+s.x,position.z);
  float grade=rGrade(d),tangent=rTangent(d)-rTangent(uDistance);
- vWorld=p;vCourse=vec2(x,d);vRapid=rRapid(d);
+ vWorld=p;vCourse=vec2(x,d);vRapid=rRapid(d);vIntensity=vec3(rIntensity(d),rIntensityD(d),step(.5,uCourseLength));
  vProfile=vec4(width,grade,rRapidD(d),tangent);
  vNormal=normalize(vec3(-s.y,1.,grade+s.z-s.y*tangent));
  // Shoal identities are discrete. Flat varyings prevent interpolation from
@@ -27,12 +29,14 @@ void main(){float d=uDistance-position.z,width=rWidth(d),x=position.x*width;vec3
 // Seeded geography belongs at mesh vertices, not at every covered pixel. The
 // fine native normal remains analytic so wide water does not become faceted.
 const fineNormal=`vec3 fineSurface(float x,float d){vec3 s=vec3(0.);${wave}
- float energy=.65+vRapid*1.15,p=d*.68+x*.23;
- return vec3(s.x*energy+.24*vRapid*sin(p),s.y*energy+.24*vRapid*.23*cos(p),s.z*energy+s.x*1.15*vProfile.z+.24*(vProfile.z*sin(p)+vRapid*.68*cos(p)))*uMotion;}`;
+ float wild=vIntensity.x,dw=vIntensity.y,profileOn=vIntensity.z,dr=vProfile.z,p=d*.68+x*.23;
+ float energy=mix(.65+vRapid*1.15,.55+vRapid*(1.+.35*wild),profileOn),de=mix(1.15*dr,dr*(1.+.35*wild)+vRapid*.35*dw,profileOn);
+ float crest=mix(.24*vRapid,(.2+.14*wild)*vRapid,profileOn),dc=mix(.24*dr,(.2+.14*wild)*dr+.14*dw*vRapid,profileOn);
+ return vec3(s.x*energy+crest*sin(p),s.y*energy+crest*.23*cos(p),s.z*energy+s.x*de+dc*sin(p)+crest*.68*cos(p))*uMotion;}`;
 const common=`
 uniform float uTime,uMotion,uRush;uniform sampler2D uDetail;
 uniform vec3 uWaterDeep,uWaterEdge,uWaterSky,uWaterFoam;
-uniform vec2 uRaft;uniform vec4 uRipples[4];
+uniform vec2 uRaft,uForkBounds;uniform vec4 uRipples[4];
 ${varyings}
 float square(float x){return x*x;}
 float streak(float p,float width){return 1.-smoothstep(width,width+.12,abs(sin(p)));}
@@ -41,13 +45,29 @@ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(ha
 `;
 function foamCode(simple){return `float foamAt(vec2 p,float grain){
  float x=p.x,d=p.y,flow=d-uTime*${CURRENT_FLOW_SPEED.toFixed(1)}*uMotion;
- float bend=x*.78+sin(d*.11+x*.3)*.8+sin(d*.037-x*.27)*1.1;
+ float channelX=x-vFork.y-sign(x-vFork.y)*vFork.w;
+ float bend=channelX*.78+sin(d*.11+channelX*.3)*.8+sin(d*.037-channelX*.27)*1.1;
  float threads=streak(bend,.07)*smoothstep(.28,.72,.5+.5*sin(flow*.42+x*2.));
  float crest=streak(d*.68+x*.23+sin(x*.63+d*.08)*1.1+sin(x*.27-d*.14)*.55,.16)*smoothstep(.3,.76,grain)*vRapid;
  ${simple?'float chop=0.;':'float chop=streak(flow*.81+x*1.7+sin(x*2.),.045)*smoothstep(.5,.85,grain)*vRapid;'}
  float edge=smoothstep(vProfile.x-2.2,vProfile.x-.15,abs(x));
+ float islandEdge=abs(x-vFork.y)-vFork.x;
+ float shoreBreak=smoothstep(.30,.68,noise(vec2(d*.12,x*.30)));
+ float innerFoam=(1.-smoothstep(.18,1.45,islandEdge))*step(.035,vFork.x)*smoothstep(.25,.8,grain)*shoreBreak;
+ float forkOn=smoothstep(.08,.75,vFork.z);
+ float braid=channelX*.93+sin(d*.052+channelX*.24)*1.35+sin(flow*.095-channelX*.47)*.42;
+ float braidFoam=streak(braid,.065)*smoothstep(.34,.79,grain)*forkOn;
+ // Finite headland and confluence fans soften the bank without drawing a
+ // continuous white rail. Their course bounds come from the actual island.
+ float nose=d-uForkBounds.x,tail=d-uForkBounds.y;
+ vec2 head=vec2(x-vFork.y,nose*.2-5.),join=vec2(channelX,tail*.23+7.);
+ float headR=length(head),joinR=length(join);
+ float headCurl=streak(atan(head.x,head.y)*2.5+headR*.9-flow*.07,.12)*exp(-square((nose-29.)/39.))*smoothstep(.3,.78,grain);
+ float joinCurl=streak(join.x*.65+sin(join.y*.7)*1.35-flow*.045,.09)*exp(-square((tail+21.)/39.))*smoothstep(.38,.82,grain);
+ float islandFans=(headCurl+joinCurl)*step(.5,uForkBounds.y-uForkBounds.x);
  float breaker=square(square(max(sin(d*.54+sin(x*.5+d*.08)*1.2),0.)))*smoothstep(.42,.7,grain)*vRapid;
- float foam=threads*(.055+vRapid*.19)+crest*.52+chop*.32+breaker*.75+edge*(.12+grain*.4);
+ float wild=vIntensity.x*vIntensity.z;
+ float foam=threads*(.055+vRapid*.19)+crest*(.52+wild*.18)+chop*(.32+wild*.1)+breaker*(.75+wild*.2)+edge*(.12+grain*.4)+innerFoam*(.19+vRapid*.28)+braidFoam*.23+islandFans*.27;
  // The wet boulders and their downstream eddies share vertex-sampled positions.
  for(int j=0;j<2;j++){vec2 rock=j==0?vShoal0:vShoal1;float tail=d-rock.y;
  if(tail>0.&&tail<17.){float xx=x-rock.x,spread=.75+tail*.1;
@@ -65,13 +85,21 @@ function foamCode(simple){return `float foamAt(vec2 p,float grain){
 export function waterFragment(simple=false){return `${common}
 ${simple?'':fineNormal}
 ${foamCode(simple)}
-void main(){vec2 p=vCourse;float flow=p.y-uTime*${CURRENT_FLOW_SPEED.toFixed(1)}*uMotion;
- vec3 detail=texture2D(uDetail,vec2(p.x*.09,flow*.045)).rgb;
- float grain=${simple?'detail.g':'noise(vec2(p.x*1.15,flow*.44))*.75+detail.g*.25'};
+void main(){vec2 p=vCourse;
+ // Real dry land separates the channels. This vertex-sampled outline exactly
+ // matches the recycled island mesh instead of painting an island over water.
+ if(vFork.x>.035&&abs(p.x-vFork.y)<vFork.x)discard;
+ float flow=p.y-uTime*${CURRENT_FLOW_SPEED.toFixed(1)}*uMotion;
+ float channelX=p.x-vFork.y-sign(p.x-vFork.y)*vFork.w;
+ vec3 detail=texture2D(uDetail,vec2(channelX*.09,flow*.045)).rgb;
+ float grain=${simple?'detail.g':'noise(vec2(channelX*1.15,flow*.44))*.75+detail.g*.25'};
  ${simple?'vec3 n=normalize(vNormal+vec3(detail.r-.4,0.,detail.g-.4)*.12*uMotion);':`vec3 s=fineSurface(p.x,p.y);vec3 n=normalize(vec3(-s.y,1.,vProfile.y+s.z-s.y*vProfile.w)+vec3(detail.r-.4,0.,detail.g-.4)*.08*uMotion);`}
  vec3 view=normalize(cameraPosition-vWorld);
  float fresnel=pow(1.-max(dot(view,n),0.),3.),edge=smoothstep(.45,1.,abs(p.x)/vProfile.x);
+ edge=max(edge,(1.-smoothstep(.1,3.2,abs(p.x-vFork.y)-vFork.x))*step(.035,vFork.x)*.8);
  vec3 color=mix(uWaterDeep,uWaterEdge,edge*.55+vRapid*.22+grain*.18);
+ float channels=smoothstep(.08,.85,vFork.z),flowRibbon=.5+.5*sin(channelX*.64+sin(p.y*.063)*1.3+flow*.032);
+ color=mix(color,uWaterEdge,channels*flowRibbon*.12);
  color=mix(color,uWaterSky,fresnel*.3);
  ${simple?'':'float sun=pow(max(dot(reflect(-normalize(vec3(-.5,.8,.35)),n),view),0.),90.);color+=vec3(1.,.88,.56)*sun*.6;'}
  color=mix(color,uWaterFoam,foamAt(p,grain)*.88);

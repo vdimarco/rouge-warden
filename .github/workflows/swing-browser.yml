@@ -30,6 +30,11 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/swing
+      - name: Tap, hold and drag on a phone
+        run: node qa/vr/phone-hold.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
       - name: Trial rings, full screen and the flat map
         run: node qa/vr/rings-map.e2e.mjs
         env:

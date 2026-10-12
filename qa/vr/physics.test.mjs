@@ -4,7 +4,7 @@
 // Exit code 1 on failure.
 import { generate } from "../../public/vr/js/city.js";
 import { createPlayer, fire, release, step, teleport } from "../../public/vr/js/physics.js";
-import { SWING, GAME, WORLD, CLIMB } from "../../public/vr/js/config.js";
+import { SWING, GAME, WORLD, CLIMB, MOVES } from "../../public/vr/js/config.js";
 
 const fails = [];
 let passes = 0;
@@ -482,6 +482,71 @@ section("Wall climbing");
     run(Q, 120, () => inp({ hands: [hand({ holding: false }), hand({ holding: false })] }), { watch: false });
     check(!Q.wall, "headset play does not climb");
   }
+}
+
+/* ---------------- the glide and the wall run (flat play) ---------------- */
+section("Glide and wall run");
+{
+  const FLAT = { ...SWING, climb: CLIMB, moves: MOVES }, G = MOVES.glide, RN = CLIMB.run;
+  const free = [hand({ holding: false }), hand({ holding: false })];
+  // the glide: from a fall in open sky, holding glide eases the fall to the sink rate and keeps the speed along the ground
+  const P = createPlayer(city, FLAT);
+  teleport(P, SKY.x, SKY.y, SKY.z);
+  P.vel.x = 0; P.vel.y = -12; P.vel.z = -6;
+  run(P, 240, () => inp({ glide: true, hands: free }));
+  const hs = Math.hypot(P.vel.x, P.vel.z);
+  check(P.gliding && Math.abs(P.vel.y + G.sink) < 0.6, `the glide eases the fall to ${f2(-P.vel.y)} m/s down (sink ${G.sink})`);
+  check(hs >= G.min - 0.01 && hs <= G.max + 0.01, `the glide keeps ${f2(hs)} m/s along the ground (${G.min} to ${G.max})`);
+  // it turns with the move input
+  const yaw0 = Math.atan2(P.vel.x, P.vel.z);
+  run(P, 120, () => inp({ glide: true, move: { x: 1, z: 0 }, hands: free }));
+  const yaw1 = Math.atan2(P.vel.x, P.vel.z);
+  check(Math.abs(Math.atan2(Math.sin(yaw1 - yaw0), Math.cos(yaw1 - yaw0))) > 0.8, `the move input turns the glide (${f2(yaw1 - yaw0)} rad in 1 s)`);
+  // with no glide input, the same fall drops fast
+  const Q = createPlayer(city, FLAT);
+  teleport(Q, SKY.x, SKY.y, SKY.z); Q.vel.y = -12; Q.vel.z = -6;
+  run(Q, 240, () => inp({ hands: free }));
+  check(!Q.gliding && Q.vel.y < -20, `with no glide the fall is ${f2(-Q.vel.y)} m/s`);
+  // a rope out: no glide
+  const R2 = createPlayer(city, FLAT);
+  teleport(R2, SKY.x, SKY.y, SKY.z); R2.vel.y = -12;
+  run(R2, 60, () => inp({ glide: true, hands: free }));
+  check(R2.gliding, "gliding before the rope");
+
+  // the wall run: the same one-box building as the climb
+  const one = city.colliders.filter((c) => c.type === "box" && c.tag === "building" && c.minY === 0 && c.maxY > 25 && c.maxY < 90 &&
+    city.colliders.filter((d) => d.bid === c.bid).length === 1);
+  const B = one.find((c) => {
+    const z = (c.minZ + c.maxZ) / 2;
+    for (let y = 0.5; y < c.maxY + 3; y += 1) if (city.collideSphere(c.maxX + 2, y, z, 1.6)) return false;
+    return !city.isWater(c.maxX + 1, z) && city.groundY(c.maxX + 1, z) < 0.5;
+  });
+  if (B) {
+    const z = (B.minZ + B.maxZ) / 2, W = createPlayer(city, FLAT);
+    teleport(W, B.maxX + 4, 6, z); W.vel.x = -16; W.vel.y = 2; W.vel.z = 0;
+    let started = null;
+    run(W, 30, () => inp({ move: { x: -1, z: 0 }, hands: free }), { watch: false });
+    started = W.events.find((e) => e.type === "wallrun");
+    check(!!started && started.dir === 1 && W.wall, `a fast jump at a wall with the move input toward it is a wall run up (${started ? f2(started.speed) : "-"} m/s)`);
+    const y0 = W.pos.y;
+    run(W, 30, () => inp({ climb: { up: 0, x: 0, z: 0 }, hands: free }), { watch: false });
+    const rate = (W.pos.y - y0) / (30 * h);
+    check(rate > CLIMB.speed + 2, `the run climbs at ${f2(rate)} m/s (the climb is ${CLIMB.speed})`);
+    // a jump off the run: a big leap
+    run(W, 1, () => inp({ jump: true, hands: free }), { watch: false });
+    check(!W.wall && W.vel.y > CLIMB.jump.up + 1, `a jump off the run leaps ${f2(W.vel.y)} m/s up (a plain jump is ${CLIMB.jump.up})`);
+    // a slow touch still clings
+    const S2 = createPlayer(city, FLAT);
+    teleport(S2, B.maxX + 2, 6, z); S2.vel.x = -5;
+    run(S2, 60, () => inp({ hands: free }), { watch: false });
+    check(S2.wall && !S2.wallRun, "a slow touch still clings, with no run");
+    // a run that reaches the top fast leaps off it
+    const T = createPlayer(city, FLAT);
+    teleport(T, B.maxX + 4, B.maxY - 6, z); T.vel.x = -20; T.vel.y = 2;
+    run(T, 120, (P2) => inp({ move: { x: -1, z: 0 }, hands: free }), { watch: false });
+    const leap = T.events.find((e) => e.type === "leap");
+    check(!!leap && leap.speed > 6, `a fast run off the top of the wall leaps up (${leap ? f2(leap.speed) : "-"} m/s)`);
+  } else check(false, "a building for the wall run");
 }
 
 /* ---------------- invariants ---------------- */

@@ -1,6 +1,7 @@
 // Light and air: a low golden sun that casts the one shadow map, a cool sky fill, an environment map for metal, and a
 // light haze toward the horizon. Each realm has its own mood and the change blends over about a second.
 import * as THREE from 'three';
+import { clampZoom } from '../camera-zoom.js';
 
 // Town: warm late afternoon. Woods: cooler misty dusk under the canopy.
 export const MOODS = [
@@ -34,11 +35,11 @@ function skyEnvironment(gl) {
 }
 export class Sky {
   constructor(gl, scene) {
-    this.scene = scene; this.blend = 0; this.target = 0;
+    this.scene = scene; this.blend = 0; this.target = 0; this.zoom = 1;
     scene.environment = skyEnvironment(gl);
     this.hemi = new THREE.HemisphereLight('#9db6d6', '#5d4a30', 1); scene.add(this.hemi);
     this.sun = new THREE.DirectionalLight('#ffc985', 3); this.sun.castShadow = true; scene.add(this.sun, this.sun.target);
-    const shadow = this.sun.shadow; shadow.bias = -.0004; shadow.normalBias = 2.5; shadow.radius = 2.5; shadow.camera.near = 10; shadow.camera.far = 9000;
+    const shadow = this.sun.shadow; shadow.bias = -.0004; shadow.normalBias = 2.5; shadow.radius = 2.5; shadow.camera.near = 10; shadow.camera.far = 12000;
     scene.fog = new THREE.Fog('#b9a585', 3800, 11500); scene.background = new THREE.Color('#b9a585');
     this.color = new THREE.Color(); this.dir = new THREE.Vector3(); this.apply(0);
   }
@@ -48,24 +49,25 @@ export class Sky {
     col(a.sun, b.sun, this.sun.color); this.sun.intensity = mix(a.sunIntensity, b.sunIntensity);
     col(a.sky, b.sky, this.hemi.color); col(a.ground, b.ground, this.hemi.groundColor); this.hemi.intensity = mix(a.hemi, b.hemi);
     col(a.fog, b.fog, this.scene.fog.color); this.scene.background.copy(this.scene.fog.color);
-    this.scene.fog.near = mix(a.fogNear, b.fogNear); this.scene.fog.far = mix(a.fogFar, b.fogFar);
+    this.scene.fog.near = mix(a.fogNear, b.fogNear) * this.zoom; this.scene.fog.far = mix(a.fogFar, b.fogFar) * this.zoom;
     this.scene.environmentIntensity = mix(a.env, b.env); this.exposure = mix(a.exposure, b.exposure); this.rim = mix(a.rim, b.rim);
     // The sun comes from the south-west and low, so shadows fall up and to the right on screen.
     const el = THREE.MathUtils.degToRad(mix(a.elevation, b.elevation)), az = THREE.MathUtils.degToRad(mix(a.azimuth, b.azimuth));
     this.dir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
     this.mood = m;
   }
-  update(phase, dt) {
+  update(phase, dt, zoom = 1) {
+    const nextZoom = clampZoom(zoom), zoomChanged = nextZoom !== this.zoom; this.zoom = nextZoom;
     this.target = phase ? 1 : 0;
     if (this.blend !== this.target) { const step = dt / 1.1; this.blend = this.target > this.blend ? Math.min(this.target, this.blend + step) : Math.max(this.target, this.blend - step); }
-    const m = this.blend * this.blend * (3 - 2 * this.blend); if (m !== this.mood) this.apply(m);
+    const m = this.blend * this.blend * (3 - 2 * this.blend); if (m !== this.mood || zoomChanged) this.apply(m);
   }
   // Fits the shadow camera around the ground the view can see. Snapping to whole shadow texels keeps edges still
   // while the camera glides.
   fitShadow(center, radius, mapSize) {
     const sun = this.sun, cam = sun.shadow.camera, texel = radius * 2 / mapSize;
     const x = Math.round(center.x / texel) * texel, z = Math.round(center.z / texel) * texel;
-    sun.target.position.set(x, 0, z); sun.position.set(x + this.dir.x * 4000, this.dir.y * 4000, z + this.dir.z * 4000);
+    sun.target.position.set(x, center.y, z); sun.position.set(x + this.dir.x * 5000, center.y + this.dir.y * 5000, z + this.dir.z * 5000);
     if (cam.right !== radius) { cam.left = cam.bottom = -radius; cam.right = cam.top = radius; cam.updateProjectionMatrix(); }
     if (sun.shadow.mapSize.x !== mapSize) { sun.shadow.mapSize.set(mapSize, mapSize); sun.shadow.map?.dispose(); sun.shadow.map = null; }
     sun.target.updateMatrixWorld(); sun.updateMatrixWorld();

@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.15.0";
+export const VERSION = "1.21.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -62,6 +62,14 @@ export const SWING = {
 export const MOVES = {
   sprint: 2.2, drain: 0.2, fill: 0.16, wait: 0.8, minEnergy: 0.12,
   roll: { time: 0.62, minSpeed: 6, friction: 1.4, fall: 13 },
+  // the release boost (mouse and pad): a rope let go while the GO cue shows adds forward m/s along the flight and up m/s, widens
+  // the view by kick degrees and flips the hero over flip s. One boost per cool s.
+  release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6 },
+  // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
+  finisher: { slow: 0.3, time: 0.7, zoom: 10 },
+  // the glide (hold jump in the air with no rope, after minAir s): the fall eases to sink m/s, lift of the fall it stops turns into
+  // speed along the ground, which stays between min and max m/s; the move input turns it at turn rad/s
+  glide: { sink: 3.2, min: 14, max: 32, lift: 0.6, turn: 1.6, minAir: 0.25, grow: 8 },
 };
 
 /* ---------------- wall climbing (flat play) ---------------- */
@@ -81,6 +89,10 @@ export const CLIMB = {
   // counting a fall) goes into it: a swing that brushes a wall keeps going
   head: 1.7, headR: 0.25, // the head sphere over the feet: a ceiling it meets on the way up is an overhang
   lip: 1, lipReach: 40, // under an overhang you move out to its face (found up to lipReach m out) and up lip m
+  // the wall run: a wall met at min m/s or more with the move input toward it (or head-on) is run up (down, when falling faster
+  // than down m/s) at keep times that speed (at most max), slowing by decay m/s² to the climb speed. Space jumps off it with
+  // jump.out m/s out and 6 + jump.k times the run speed up (at most jump.max); at the top, a run faster than top m/s leaps up.
+  run: { min: 9, keep: 0.85, max: 24, decay: 7, down: 6, top: 10, jump: { out: 5, k: 0.5, max: 16 }, leap: 0.8 },
 };
 
 /* ---------------- one-tap phone swinging ---------------- */
@@ -98,10 +110,13 @@ export const PHONE = {
   // The marker prefers a building point at least y m up and up m over the chest: it wins over any lower one (bonus to the score)
   high: { y: 22, up: 8, bonus: 1 },
   handoff: 0.12, // s: when a new plunger catches, the other one lets go this much later (so taps on alternate sides chain)
-  pair: 0.3, // s: two plungers thrown this close together hold together (a double swing)
+  pair: 0.3, // s: two plungers thrown this close together hold together (a double swing), as do two thrown by fingers that were down together
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
   buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
-  follow: { speed: 6, idle: 0.7, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly
+  follow: { speed: 6, idle: 2.5, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly, idle s after the last drag
+  // the move stick (under the left thumb, mobile.js): r px from the middle is full push; pushed further than sprint (0..1) on the
+  // ground, the hero sprints. It also steers in the air, climbs a wall and drives a car (up is gas, down brakes)
+  stick: { r: 46, dead: 0.12, sprint: 0.9 },
   fov: { base: 75, wide: 24, from: 12, to: 42 }, // the view widens by up to wide degrees over this speed range (m/s)
   lines: { from: 13, to: 34 }, // the phone's comic speed lines at the screen edges grow over this speed range (m/s)
 };
@@ -213,10 +228,10 @@ export const TRAINING = {
   touch: [
     { id: "rope", text: "Swing at the gold ring", keys: ["TAP"], line: 0 },
     { id: "swing", text: "Swing out", keys: ["IT LETS GO"], line: 1 },
-    { id: "again", text: "Tap the other side before you land", keys: ["L", "R"], line: 2 },
-    { id: "fast", text: "Fly fast: tap left, right, left", keys: ["L", "R"], line: 4 },
-    { id: "look", text: "Look around", keys: ["DRAG"], line: 5 },
-    { id: "climb", text: "Climb a wall", keys: ["ARROWS"], say: "Fly into a wall, then hold the arrows to climb." },
+    { id: "again", text: "Tap again before you land", keys: ["TAP"], line: 2 },
+    { id: "fast", text: "Fly fast: tap, tap, tap", keys: ["TAP"], line: 4 },
+    { id: "look", text: "Look around", keys: ["DRAG RIGHT"], line: 5 },
+    { id: "climb", text: "Climb a wall", keys: ["LEFT THUMB"], say: "Fly into a wall, then drag your left thumb to climb." },
     { id: "plunge", text: "Plunge a clog: tap it, hold on", keys: ["TAP"], of: 3, line: 7 },
   ],
 };
@@ -262,8 +277,8 @@ export const LINES_PAD = {
 // Phone play: one tap swings, the rope lets go by itself, and a rope on a clog plunges by itself.
 export const LINES_PHONE = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Tap it.", "It plunges by itself. Hold on!"],
-  tutorial: ["Tap left or right to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap the other side before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
+  tutorial: ["Tap right to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag on the right side to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
   clog: ["That's a clog. Tap it to plunge.", "Hold on. It plunges by itself.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
-  wall: ["On the wall. Hold the arrows to climb. Tap JUMP to jump off."],
+  wall: ["On the wall. Left thumb climbs. JUMP jumps off."],
 };

@@ -221,7 +221,7 @@ export class Flight {
     this.t += h;
     if (p.y > this.apex) this.apex = p.y;
     const nd = Math.hypot(p.x - this.tip.x, p.y - this.tip.y, p.z - this.tip.z);
-    // line only leaves the spool during the flight; it never winds back on by itself
+    // Keep the peak airborne span until the lure lands; the landing settles that airborne slack.
     this.lineOut = Math.min(C.SPOOL_MAX, Math.max(this.lineOut, nd * (1 + C.SAG) + C.SAG_M * Math.min(1, this.t)));
     const g = ground(p.x, p.z);
     // falling into the pines: the lure hangs in a tree
@@ -232,6 +232,13 @@ export class Flight {
 
   stop(kind, y) {
     this.p.y = y;
+    if (kind === "water") {
+      const C = CAST;
+      // A high lob can pass far beyond its splash point before it falls. Start the reel from the visible landed
+      // rod-to-lure span, with the usual small sag, rather than making the player wind in the peak airborne span.
+      const d = Math.hypot(this.p.x - this.tip.x, this.p.y - this.tip.y, this.p.z - this.tip.z);
+      this.lineOut = Math.min(C.SPOOL_MAX, d * (1 + C.SAG) + C.SAG_M * Math.min(1, this.t));
+    }
     this.v.x = this.v.y = this.v.z = 0;
     this.done = true;
     this.land = kind;

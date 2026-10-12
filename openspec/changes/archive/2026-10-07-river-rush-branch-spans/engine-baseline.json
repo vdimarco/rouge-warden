@@ -1,0 +1,11 @@
+{
+  "baselineCommit": "a2111ab691e53717e40b838cecc4cea8db795c65",
+  "seedMaps": 300,
+  "identicalCoinPositionsAndHeights": 108959,
+  "identicalGeneratorRngAndRows": true,
+  "traceSha256": "4d793863b02f732cea838231f94a11fbc6f4ea50af76e6d4134f0d456fcec3fa",
+  "method": "Read the prechange engine from git HEAD, rewrite its relative imports to absolute file URLs, import it separately, and compare its natural simulation traces with the current engine at 50 ms steps for seeds 1 through 100 on all three maps. Coin tuples contain row, lane, exact distance, jump height and jump offset; entity ids are excluded because coherent branch consolidation changes entity counts. Final generator RNG and row counts are also compared by deep equality.",
+  "exitCode": 0,
+  "receiptSavedFromCompletedToolOutput": true,
+  "testsRepeatedToSaveReceipt": false
+}

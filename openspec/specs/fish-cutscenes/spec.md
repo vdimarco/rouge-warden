@@ -6,11 +6,15 @@ Reel It In has short cutscenes drawn in its own scene: the opening, the arrival 
 ## Requirements
 
 ### Requirement: Short in-engine cutscenes
-The game SHALL have four kinds of short cutscenes, drawn live in the game's own scene and art: the opening, the arrival at a new place, a legend's reveal, and a legend landed (with a finale after the last legend). Each SHALL last from 4 to 9 s, show letterbox bars and one short caption in the game's voice, and play its own sound. The cutscenes SHALL need no network and no new video files. A legend's reveal SHALL never play after the player has hooked or landed that legend.
+The game SHALL have four kinds of short cutscenes, drawn live in the game's own scene and art: the opening, the arrival at a new place, a legend's reveal, and a legend landed (with a finale after the last legend). Each SHALL last from 4 to 9 s, show letterbox bars and one short caption in the game's voice, and play its own sound. The cutscenes SHALL need no network and no new video files. A legend's reveal SHALL never play after the player has hooked or landed that legend. When a cutscene ends, by itself or by a skip, the first frame after it SHALL show the game's own view, with no camera flight back from the shot, at any frame rate.
 
 #### Scenario: Opening
 - **WHEN** a player with a fresh save taps "Go fishing" for the first time
 - **THEN** the camera glides low over Loon Lake at dawn and settles on the dock in the cast view, the caption names the place, and the cast starts when it ends.
+
+#### Scenario: Camera back on the dock
+- **WHEN** the opening or a legend's reveal ends by itself or by a skip, also on a slow frame
+- **THEN** the first frame after it shows the cast view from the dock.
 
 #### Scenario: Arrival
 - **WHEN** the player travels to a place for the first time

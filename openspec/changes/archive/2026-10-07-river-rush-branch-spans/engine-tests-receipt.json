@@ -1,0 +1,24 @@
+{
+  "command": "node --test games/river-rush/tests/{branch-spans,action-routes,moving-encounters,playtest,engine,hazard-contact,snappy,course-sections,course-escalation,section-order}.test.js",
+  "exitCode": 0,
+  "tests": 81,
+  "passed": 81,
+  "failed": 0,
+  "durationMs": 18157.274403,
+  "testFiles": [
+    "games/river-rush/tests/branch-spans.test.js",
+    "games/river-rush/tests/action-routes.test.js",
+    "games/river-rush/tests/moving-encounters.test.js",
+    "games/river-rush/tests/playtest.test.js",
+    "games/river-rush/tests/engine.test.js",
+    "games/river-rush/tests/hazard-contact.test.js",
+    "games/river-rush/tests/snappy.test.js",
+    "games/river-rush/tests/course-sections.test.js",
+    "games/river-rush/tests/course-escalation.test.js",
+    "games/river-rush/tests/section-order.test.js"
+  ],
+  "sharedTestHelper": "games/river-rush/tests/route-coverage.js",
+  "log": "/tmp/river-branch-spans-final/engine-tests.log",
+  "receiptSavedFromCompletedToolOutput": true,
+  "testsRepeatedToSaveReceipt": false
+}

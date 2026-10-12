@@ -1,0 +1,1733 @@
+{
+  "checkedAt": "2026-10-07T15:32:06.740819+00:00",
+  "sourceBaseCommit": "d12fc3faa8d158f49db1afde99ab5a0fd32329b6",
+  "integratedUpstreamCommit": "4a0a8f75c2d46fe5a53fae0f5ccf86034161c5b3",
+  "behavior": {
+    "mapLengths": [
+      4200,
+      5400,
+      6600
+    ],
+    "adventureDistance": 16200,
+    "courseActs": [
+      "Open water",
+      "River bends",
+      "Whitewater chutes",
+      "Wild rapids"
+    ],
+    "actProgress": [
+      0,
+      0.2,
+      0.48,
+      0.76
+    ],
+    "hazardFreeRunway": 150,
+    "strictCoinContactDuringEveryPower": true,
+    "coinPower": "Gold Boost doubles touched coin points for eight seconds",
+    "groundCoinMaximumJumpHeight": 0.28,
+    "contactHudSameSimulationFrame": true
+  },
+  "liveBaseline": {
+    "bundle": "/river-rush/assets/index-BCth4l5Z.js",
+    "actualInputOnly": true,
+    "stateOrClockMutated": false,
+    "causes": [
+      "Rush/Magnet explicitly awarded remote coins",
+      "Low coins were awarded underneath an airborne raft",
+      "The polled counter updated after the raft moved away from a valid contact"
+    ],
+    "errors": []
+  },
+  "unitTests": {
+    "passed": 88,
+    "failed": 0,
+    "refreshRates": [
+      30,
+      60,
+      120
+    ]
+  },
+  "simulation": {
+    "campaigns": 240,
+    "stages": 720,
+    "seeds": 40,
+    "totalDistance": 3888000,
+    "reactionDelayMs": "180\u2013288",
+    "shieldUseRequired": false,
+    "tricks": 14171,
+    "rushes": 1903,
+    "maxEntities": 59
+  },
+  "finishGeometry": {
+    "passed": true,
+    "actualSourceLayout": true,
+    "profileCases": 1800,
+    "finishExactlyRegistered": true,
+    "reducedMotionRegistered": true,
+    "outerRaftEnvelopeClear": true,
+    "fullJumpClear": true,
+    "maxRaftHeight": 0.7897131644029113,
+    "minJumpClearance": 0.35028683559708895,
+    "gateWidth": 13.6,
+    "bannerBottom": 8,
+    "bannerTop": 11.1,
+    "visibilityFrom": 300,
+    "approachOffsets": [
+      120,
+      80,
+      40,
+      15
+    ],
+    "browserCheckPending": false
+  },
+  "storageMigration": {
+    "passed": true,
+    "activeChange": "openspec/changes/river-rush-wild-finale",
+    "migration": {
+      "name": "river_rush_wild_finale_distance_bounds",
+      "project": "xindosmlyugxhndebabi",
+      "applied": true,
+      "sql": "games/river-rush/docs/leaderboard-wild-finale.sql"
+    },
+    "before": {
+      "row_count": 0,
+      "legacy_5400_count": 0,
+      "legacy_10800_count": 0,
+      "constraints": [
+        {
+          "name": "river_rush_coin_bounds",
+          "definition": "CHECK (((coins >= 0) AND (coins <= 5000)))"
+        },
+        {
+          "name": "river_rush_distance_bounds",
+          "definition": "CHECK (((distance >= 0) AND (distance <= 10800)))"
+        },
+        {
+          "name": "river_rush_level_bounds",
+          "definition": "CHECK ((((level_index >= 0) AND (level_index <= 2)) AND ((levels_cleared >= 0) AND (levels_cleared <= 3)) AND (levels_cleared <= (level_index + 1))))"
+        },
+        {
+          "name": "river_rush_name_characters",
+          "definition": "CHECK ((name ~ '^[[:alnum:] _.''-]+$'::text))"
+        },
+        {
+          "name": "river_rush_name_length",
+          "definition": "CHECK (((char_length(name) >= 1) AND (char_length(name) <= 20)))"
+        },
+        {
+          "name": "river_rush_name_spacing",
+          "definition": "CHECK ((name = regexp_replace(btrim(name), '[[:space:]]+'::text, ' '::text, 'g'::text)))"
+        },
+        {
+          "name": "river_rush_score_bounds",
+          "definition": "CHECK (((score >= 1) AND (score <= 1000000)))"
+        },
+        {
+          "name": "river_rush_scores_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "river_rush_scores_run_id_key",
+          "definition": "UNIQUE (run_id)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "river_rush_guest_submit",
+          "roles": [
+            "anon",
+            "authenticated"
+          ],
+          "command": "INSERT",
+          "using": null,
+          "check": "(((char_length(name) >= 1) AND (char_length(name) <= 20)) AND (name ~ '^[[:alnum:] _.''-]+$'::text) AND (name = regexp_replace(btrim(name), '[[:space:]]+'::text, ' '::text, 'g'::text)) AND ((score >= 1) AND (score <= 1000000)) AND ((coins >= 0) AND (coins <= 5000)) AND ((level_index >= 0) AND (level_index <= 2)) AND ((levels_cleared >= 0) AND (levels_cleared <= 3)) AND (levels_cleared <= (level_index + 1)) AND ((distance >= 0) AND (distance <= 10800)))"
+        },
+        {
+          "name": "river_rush_public_read",
+          "roles": [
+            "anon",
+            "authenticated"
+          ],
+          "command": "SELECT",
+          "using": "true",
+          "check": null
+        }
+      ],
+      "rls": true
+    },
+    "after": {
+      "row_count": 0,
+      "legacy_5400_count": 0,
+      "legacy_10800_count": 0,
+      "constraints": [
+        {
+          "name": "river_rush_coin_bounds",
+          "definition": "CHECK (((coins >= 0) AND (coins <= 5000)))"
+        },
+        {
+          "name": "river_rush_distance_bounds",
+          "definition": "CHECK (((distance >= 0) AND (distance <= 16200)))"
+        },
+        {
+          "name": "river_rush_level_bounds",
+          "definition": "CHECK ((((level_index >= 0) AND (level_index <= 2)) AND ((levels_cleared >= 0) AND (levels_cleared <= 3)) AND (levels_cleared <= (level_index + 1))))"
+        },
+        {
+          "name": "river_rush_name_characters",
+          "definition": "CHECK ((name ~ '^[[:alnum:] _.''-]+$'::text))"
+        },
+        {
+          "name": "river_rush_name_length",
+          "definition": "CHECK (((char_length(name) >= 1) AND (char_length(name) <= 20)))"
+        },
+        {
+          "name": "river_rush_name_spacing",
+          "definition": "CHECK ((name = regexp_replace(btrim(name), '[[:space:]]+'::text, ' '::text, 'g'::text)))"
+        },
+        {
+          "name": "river_rush_score_bounds",
+          "definition": "CHECK (((score >= 1) AND (score <= 1000000)))"
+        },
+        {
+          "name": "river_rush_scores_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "river_rush_scores_run_id_key",
+          "definition": "UNIQUE (run_id)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "river_rush_guest_submit",
+          "roles": [
+            "anon",
+            "authenticated"
+          ],
+          "command": "INSERT",
+          "using": null,
+          "check": "(((char_length(name) >= 1) AND (char_length(name) <= 20)) AND (name ~ '^[[:alnum:] _.''-]+$'::text) AND (name = regexp_replace(btrim(name), '[[:space:]]+'::text, ' '::text, 'g'::text)) AND ((score >= 1) AND (score <= 1000000)) AND ((coins >= 0) AND (coins <= 5000)) AND ((level_index >= 0) AND (level_index <= 2)) AND ((levels_cleared >= 0) AND (levels_cleared <= 3)) AND (levels_cleared <= (level_index + 1)) AND ((distance >= 0) AND (distance <= 16200)))"
+        },
+        {
+          "name": "river_rush_public_read",
+          "roles": [
+            "anon",
+            "authenticated"
+          ],
+          "command": "SELECT",
+          "using": "true",
+          "check": null
+        }
+      ],
+      "rls": true
+    },
+    "privileges": [
+      {
+        "role_name": "anon",
+        "can_read": true,
+        "can_update": false,
+        "can_delete": false,
+        "can_submit_distance": true,
+        "can_set_timestamp": false,
+        "can_set_id": false
+      },
+      {
+        "role_name": "authenticated",
+        "can_read": true,
+        "can_update": false,
+        "can_delete": false,
+        "can_submit_distance": true,
+        "can_set_timestamp": false,
+        "can_set_id": false
+      }
+    ],
+    "checks": {
+      "onlyDistanceConstraintChanged": true,
+      "onlyDistanceTermInSubmitPolicyChanged": true,
+      "rlsEnabled": true,
+      "guestRightsUnchanged": true,
+      "scoreCeilingUnchanged": 1000000,
+      "coinCeilingUnchanged": 5000,
+      "rowsBefore": 0,
+      "rowsAfter": 0,
+      "historical5400And10800ApiChecks": true,
+      "sharedMapSumBoundaryApiCheck": true,
+      "apiTestsPassed": 15,
+      "guestUuidRetryAndConflictChecks": true,
+      "tableSecurityAdvisorFindings": 0,
+      "productionQaRowsInserted": 0
+    },
+    "productionScoreSubmission": {
+      "performed": false,
+      "reason": "Deferred until actual campaign completion and production deployment."
+    }
+  },
+  "build": {
+    "passed": true,
+    "assets": {
+      "index.html": "7758ca9f6ec032710b145e117f4b6c0c23cca02f2eafcfa4a05ef729d99d56ac",
+      "assets/index-aD_k1wTR.css": "d2bb8fc0e83bf5ecf0a628811d380fd855648e7132600d3c0c9bb7c623693eac",
+      "assets/index-DEoGJXuO.js": "19ca9d38abe3508585642ef2fe0396c775ff948157a26667546375dcea8bfe2f"
+    }
+  },
+  "browser": {
+    "verifiedAcrossSeparateRuns": true,
+    "finalPresentation": {
+      "passed": true,
+      "bundle": {
+        "js": [
+          "http://127.0.0.1:8765/river-rush/assets/index-DEoGJXuO.js"
+        ],
+        "css": [
+          "http://127.0.0.1:8765/river-rush/assets/index-aD_k1wTR.css"
+        ]
+      },
+      "actualPlay": [
+        {
+          "name": "phone",
+          "kind": "actual-App-keyboard-handler-and-pointer-input",
+          "renderer": "webgl",
+          "directCoins": 6,
+          "adjacentCoins": 0,
+          "airborne": {
+            "coins": 0,
+            "action": "jump",
+            "time": 0.3,
+            "starter": [
+              {
+                "d": 7,
+                "done": true,
+                "collected": false
+              },
+              {
+                "d": 12,
+                "done": true,
+                "collected": false
+              }
+            ]
+          },
+          "hudLayout": {
+            "course": {
+              "x": 237,
+              "y": 78,
+              "right": 375,
+              "bottom": 161.4375,
+              "width": 138,
+              "height": 83.4375
+            },
+            "stage": {
+              "x": 246,
+              "y": 128.1875,
+              "right": 366,
+              "bottom": 138.1875,
+              "width": 120,
+              "height": 10
+            },
+            "capture": {
+              "x": 342,
+              "y": 205,
+              "right": 375,
+              "bottom": 238,
+              "width": 33,
+              "height": 33
+            },
+            "viewport": {
+              "width": 390,
+              "height": 844
+            }
+          },
+          "screenWideGesture": true,
+          "pauseExactPixels": true,
+          "noActiveGpuPreparation": true,
+          "allShadersCompiledAndProgramsLinked": true,
+          "observedCoinEvents": 6,
+          "maximumCoinHudDelaySeconds": 0.0
+        },
+        {
+          "name": "desktop",
+          "kind": "actual-App-keyboard-handler-and-pointer-input",
+          "renderer": "webgl",
+          "directCoins": 6,
+          "adjacentCoins": 0,
+          "airborne": {
+            "coins": 0,
+            "action": "jump",
+            "time": 0.3,
+            "starter": [
+              {
+                "d": 7,
+                "done": true,
+                "collected": false
+              },
+              {
+                "d": 12,
+                "done": true,
+                "collected": false
+              }
+            ]
+          },
+          "hudLayout": {
+            "course": {
+              "x": 1191,
+              "y": 96,
+              "right": 1341,
+              "bottom": 227.5,
+              "width": 150,
+              "height": 131.5
+            },
+            "stage": {
+              "x": 1202,
+              "y": 163.5,
+              "right": 1330,
+              "bottom": 176.5,
+              "width": 128,
+              "height": 13
+            },
+            "capture": {
+              "x": 1305,
+              "y": 244,
+              "right": 1345,
+              "bottom": 285,
+              "width": 40,
+              "height": 41
+            },
+            "viewport": {
+              "width": 1365,
+              "height": 900
+            }
+          },
+          "screenWideGesture": true,
+          "pauseExactPixels": true,
+          "noActiveGpuPreparation": true,
+          "allShadersCompiledAndProgramsLinked": true,
+          "observedCoinEvents": 6,
+          "maximumCoinHudDelaySeconds": 0.0
+        },
+        {
+          "name": "landscape",
+          "kind": "actual-App-keyboard-handler-and-pointer-input",
+          "renderer": "webgl",
+          "directCoins": 6,
+          "adjacentCoins": 0,
+          "airborne": {
+            "coins": 0,
+            "action": "jump",
+            "time": 0.3,
+            "starter": [
+              {
+                "d": 7,
+                "done": true,
+                "collected": false
+              },
+              {
+                "d": 12,
+                "done": true,
+                "collected": false
+              }
+            ]
+          },
+          "hudLayout": {
+            "course": {
+              "x": 674,
+              "y": 80,
+              "right": 824,
+              "bottom": 211.5,
+              "width": 150,
+              "height": 131.5
+            },
+            "stage": {
+              "x": 685,
+              "y": 147.5,
+              "right": 813,
+              "bottom": 160.5,
+              "width": 128,
+              "height": 13
+            },
+            "capture": {
+              "x": 784,
+              "y": 212,
+              "right": 824,
+              "bottom": 253,
+              "width": 40,
+              "height": 41
+            },
+            "viewport": {
+              "width": 844,
+              "height": 390
+            }
+          },
+          "screenWideGesture": true,
+          "pauseExactPixels": true,
+          "noActiveGpuPreparation": true,
+          "allShadersCompiledAndProgramsLinked": true,
+          "observedCoinEvents": 6,
+          "maximumCoinHudDelaySeconds": 0.0
+        }
+      ],
+      "isolatedFixtures": {
+        "contactCases": 57,
+        "powers": [
+          "ordinary",
+          "Gold Boost",
+          "Rush",
+          "shield"
+        ],
+        "refreshRates": [
+          30,
+          60,
+          120
+        ],
+        "maps": [
+          {
+            "layout": "phone",
+            "map": "canopy",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.142,
+                "width": 39.83191282591701,
+                "rapid": 0.43538194599999996,
+                "grade": -0.15992061616341144,
+                "drawCalls": 20,
+                "triangles": 88663
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.28304854227405246,
+                "width": 37.32527846865663,
+                "rapid": 0.0747200969387755,
+                "grade": -0.02,
+                "drawCalls": 23,
+                "triangles": 82757
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5399113702623908,
+                "width": 41.05494796793419,
+                "rapid": 0.7106886715859059,
+                "grade": -0.045813595716958394,
+                "drawCalls": 22,
+                "triangles": 90983
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8392103009259259,
+                "width": 45.732893531358,
+                "rapid": 0.22646590883145018,
+                "grade": -0.02,
+                "drawCalls": 25,
+                "triangles": 92159
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "phone",
+            "map": "canyon",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.181,
+                "width": 46.82395224793051,
+                "rapid": 0.06400499999999999,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 67933
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.3156372448979592,
+                "width": 40.48918273603295,
+                "rapid": 0.08388025619032884,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 65253
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5608244897959184,
+                "width": 34.656064261135896,
+                "rapid": 0.7245142494644897,
+                "grade": -0.22795158103754104,
+                "drawCalls": 26,
+                "triangles": 60835
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8465189236111111,
+                "width": 30.832483714361494,
+                "rapid": 0.8979916880314361,
+                "grade": -0.02,
+                "drawCalls": 24,
+                "triangles": 65849
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "phone",
+            "map": "ruins",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.22000000000000003,
+                "width": 34.74314233576403,
+                "rapid": 0.4911825999999999,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 77598
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.34822594752186586,
+                "width": 39.4863560955502,
+                "rapid": 0.0815637244897959,
+                "grade": -0.02,
+                "drawCalls": 30,
+                "triangles": 76519
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5817376093294462,
+                "width": 38.430102208556114,
+                "rapid": 0.7382755356334861,
+                "grade": -0.26859316793446525,
+                "drawCalls": 30,
+                "triangles": 87005
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8538275462962963,
+                "width": 35.148189082841434,
+                "rapid": 0.9114569606589967,
+                "grade": -0.3023135908147878,
+                "drawCalls": 30,
+                "triangles": 75984
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "desktop",
+            "map": "canopy",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.142,
+                "width": 39.83191282591701,
+                "rapid": 0.43538194599999996,
+                "grade": -0.15992061616341144,
+                "drawCalls": 20,
+                "triangles": 88663
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.28304854227405246,
+                "width": 37.32527846865663,
+                "rapid": 0.0747200969387755,
+                "grade": -0.02,
+                "drawCalls": 23,
+                "triangles": 82757
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5399113702623908,
+                "width": 41.05494796793419,
+                "rapid": 0.7106886715859059,
+                "grade": -0.045813595716958394,
+                "drawCalls": 22,
+                "triangles": 90983
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8392103009259259,
+                "width": 45.732893531358,
+                "rapid": 0.22646590883145018,
+                "grade": -0.02,
+                "drawCalls": 25,
+                "triangles": 92159
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "desktop",
+            "map": "canyon",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.181,
+                "width": 46.82395224793051,
+                "rapid": 0.06400499999999999,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 67933
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.3156372448979592,
+                "width": 40.48918273603295,
+                "rapid": 0.08388025619032884,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 65253
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5608244897959184,
+                "width": 34.656064261135896,
+                "rapid": 0.7245142494644897,
+                "grade": -0.22795158103754104,
+                "drawCalls": 26,
+                "triangles": 60835
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8465189236111111,
+                "width": 30.832483714361494,
+                "rapid": 0.8979916880314361,
+                "grade": -0.02,
+                "drawCalls": 24,
+                "triangles": 65849
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "desktop",
+            "map": "ruins",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.22000000000000003,
+                "width": 34.74314233576403,
+                "rapid": 0.4911825999999999,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 77598
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.34822594752186586,
+                "width": 39.4863560955502,
+                "rapid": 0.0815637244897959,
+                "grade": -0.02,
+                "drawCalls": 30,
+                "triangles": 76519
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5817376093294462,
+                "width": 38.430102208556114,
+                "rapid": 0.7382755356334861,
+                "grade": -0.26859316793446525,
+                "drawCalls": 30,
+                "triangles": 87005
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8538275462962963,
+                "width": 35.148189082841434,
+                "rapid": 0.9114569606589967,
+                "grade": -0.3023135908147878,
+                "drawCalls": 30,
+                "triangles": 75984
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "landscape",
+            "map": "canopy",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.142,
+                "width": 39.83191282591701,
+                "rapid": 0.43538194599999996,
+                "grade": -0.15992061616341144,
+                "drawCalls": 20,
+                "triangles": 88663
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.28304854227405246,
+                "width": 37.32527846865663,
+                "rapid": 0.0747200969387755,
+                "grade": -0.02,
+                "drawCalls": 23,
+                "triangles": 82757
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5399113702623908,
+                "width": 41.05494796793419,
+                "rapid": 0.7106886715859059,
+                "grade": -0.045813595716958394,
+                "drawCalls": 22,
+                "triangles": 90983
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8392103009259259,
+                "width": 45.732893531358,
+                "rapid": 0.22646590883145018,
+                "grade": -0.02,
+                "drawCalls": 25,
+                "triangles": 92159
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "landscape",
+            "map": "canyon",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.181,
+                "width": 46.82395224793051,
+                "rapid": 0.06400499999999999,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 67933
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.3156372448979592,
+                "width": 40.48918273603295,
+                "rapid": 0.08388025619032884,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 65253
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5608244897959184,
+                "width": 34.656064261135896,
+                "rapid": 0.7245142494644897,
+                "grade": -0.22795158103754104,
+                "drawCalls": 26,
+                "triangles": 60835
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8465189236111111,
+                "width": 30.832483714361494,
+                "rapid": 0.8979916880314361,
+                "grade": -0.02,
+                "drawCalls": 24,
+                "triangles": 65849
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          },
+          {
+            "layout": "landscape",
+            "map": "ruins",
+            "actSamples": [
+              {
+                "progress": 0.05,
+                "act": 0,
+                "intensity": 0.22000000000000003,
+                "width": 34.74314233576403,
+                "rapid": 0.4911825999999999,
+                "grade": -0.02,
+                "drawCalls": 27,
+                "triangles": 77598
+              },
+              {
+                "progress": 0.25,
+                "act": 1,
+                "intensity": 0.34822594752186586,
+                "width": 39.4863560955502,
+                "rapid": 0.0815637244897959,
+                "grade": -0.02,
+                "drawCalls": 30,
+                "triangles": 76519
+              },
+              {
+                "progress": 0.52,
+                "act": 2,
+                "intensity": 0.5817376093294462,
+                "width": 38.430102208556114,
+                "rapid": 0.7382755356334861,
+                "grade": -0.26859316793446525,
+                "drawCalls": 30,
+                "triangles": 87005
+              },
+              {
+                "progress": 0.83,
+                "act": 3,
+                "intensity": 0.8538275462962963,
+                "width": 35.148189082841434,
+                "rapid": 0.9114569606589967,
+                "grade": -0.3023135908147878,
+                "drawCalls": 30,
+                "triangles": 75984
+              }
+            ],
+            "finishRemaining": [
+              120,
+              45,
+              0
+            ],
+            "finishExactlyRegistered": true,
+            "staticFixturePixels": true
+          }
+        ],
+        "feedback": {
+          "active": 1,
+          "attracted": 0,
+          "capacity": 24,
+          "worldCoins": 0,
+          "goldFlightInstances": 0,
+          "flights": [
+            {
+              "id": 1,
+              "entityId": 999,
+              "attracted": false,
+              "boosted": false,
+              "value": 10,
+              "contactTime": 0.0019229142149510428,
+              "playerLane": 1,
+              "playerHeight": 0,
+              "phase": "to-score",
+              "progress": 0.022436349402913773,
+              "appearance": "white-score-token",
+              "color": "#fff5d8",
+              "pixelSize": 14.775636505970862,
+              "maxDiameterPixels": 14.775636505970862,
+              "position": [
+                -0.0003781386619419514,
+                1.4387280160707405,
+                0.44264634226703703
+              ],
+              "caught": [
+                0,
+                1.3614369423389348,
+                0.18
+              ]
+            }
+          ]
+        },
+        "flightMeasurements": [
+          {
+            "progress": 0.04,
+            "nominalDiameterPixels": 14.6,
+            "measuredCssDiameter": null
+          },
+          {
+            "progress": 0.28,
+            "nominalDiameterPixels": 12.2,
+            "measuredCssDiameter": null
+          },
+          {
+            "progress": 0.55,
+            "nominalDiameterPixels": 9.5,
+            "measuredCssDiameter": 10.224719101123595,
+            "changedPixels": 34,
+            "pixelMeasurement": "WebGL-framebuffer-difference-with-contact-flash-expired"
+          },
+          {
+            "progress": 0.88,
+            "nominalDiameterPixels": 6.199999999999999,
+            "measuredCssDiameter": 7.288428324697755,
+            "changedPixels": 18,
+            "pixelMeasurement": "WebGL-framebuffer-difference-with-contact-flash-expired"
+          },
+          {
+            "progress": 0.97,
+            "nominalDiameterPixels": 5.300000000000001,
+            "measuredCssDiameter": 4.382022471910112,
+            "changedPixels": 5,
+            "pixelMeasurement": "WebGL-framebuffer-difference-with-contact-flash-expired"
+          }
+        ],
+        "reducedMotionExactPixels": true,
+        "fallbackMissedPickupPixels": 9854,
+        "fallbackFinishCases": 9,
+        "noActiveGpuPreparation": true,
+        "compiledMaterials": {
+          "richWater": 1,
+          "simpleWater": 1,
+          "ground": 1
+        },
+        "allShadersCompiledAndProgramsLinked": true
+      },
+      "errors": [],
+      "physicalDeviceFrameRateMeasured": false
+    },
+    "actualFullCampaign": {
+      "kind": "actual-App-full-three-level-3D-campaign",
+      "stateOrClockMutations": false,
+      "totalDistance": 16200,
+      "stages": [
+        {
+          "level": {
+            "index": 0,
+            "id": "canopy",
+            "name": "Canopy Run",
+            "length": 4200,
+            "remaining": 0,
+            "progress": 1,
+            "final": false,
+            "difficulty": "FLOW"
+          },
+          "totals": {
+            "score": 22440,
+            "coins": 152,
+            "distance": 4200,
+            "jumps": 8,
+            "ducks": 7,
+            "levelsCleared": 1
+          },
+          "approach": [
+            {
+              "requestedRemaining": 120,
+              "actualRemaining": 116,
+              "finish": {
+                "visible": true,
+                "remaining": 115.34788058959748,
+                "kind": "navigation-gate",
+                "structureInstances": 34,
+                "accentInstances": 36,
+                "flags": 12,
+                "approachPairs": 4,
+                "banner": {
+                  "width": 13.6,
+                  "bottom": 8,
+                  "top": 11.1,
+                  "x": -7.777984076166056,
+                  "y": 0.11168101950629605,
+                  "z": -115.10788058959749
+                },
+                "course": 4200,
+                "x": -7.777984076166056,
+                "y": -9.438318980493705,
+                "z": -115.34788058959748
+              }
+            },
+            {
+              "requestedRemaining": 45,
+              "actualRemaining": 38,
+              "finish": {
+                "visible": true,
+                "remaining": 37.37228058960045,
+                "kind": "navigation-gate",
+                "structureInstances": 30,
+                "accentInstances": 28,
+                "flags": 8,
+                "approachPairs": 2,
+                "banner": {
+                  "width": 13.6,
+                  "bottom": 8,
+                  "top": 11.1,
+                  "x": -3.665116021714638,
+                  "y": 8.802554388208012,
+                  "z": -37.13228058960045
+                },
+                "course": 4200,
+                "x": -3.665116021714638,
+                "y": -0.7474456117919885,
+                "z": -37.37228058960045
+              }
+            }
+          ],
+          "shieldRescues": 0
+        },
+        {
+          "level": {
+            "index": 1,
+            "id": "canyon",
+            "name": "Redstone Rapids",
+            "length": 5400,
+            "remaining": 0,
+            "progress": 1,
+            "final": false,
+            "difficulty": "RAPIDS"
+          },
+          "totals": {
+            "score": 47980,
+            "coins": 315,
+            "distance": 9600,
+            "jumps": 20,
+            "ducks": 13,
+            "levelsCleared": 2
+          },
+          "approach": [
+            {
+              "requestedRemaining": 120,
+              "actualRemaining": 116,
+              "finish": {
+                "visible": true,
+                "remaining": 115.53442272784469,
+                "kind": "navigation-gate",
+                "structureInstances": 36,
+                "accentInstances": 36,
+                "flags": 12,
+                "approachPairs": 4,
+                "banner": {
+                  "width": 13.6,
+                  "bottom": 8,
+                  "top": 11.1,
+                  "x": 0.8784222075826875,
+                  "y": 4.848373699135596,
+                  "z": -115.29442272784469
+                },
+                "course": 5400,
+                "x": 0.8784222075826875,
+                "y": -4.701626300864405,
+                "z": -115.53442272784469
+              }
+            },
+            {
+              "requestedRemaining": 45,
+              "actualRemaining": 39,
+              "finish": {
+                "visible": true,
+                "remaining": 38.190422727843725,
+                "kind": "navigation-gate",
+                "structureInstances": 32,
+                "accentInstances": 28,
+                "flags": 8,
+                "approachPairs": 2,
+                "banner": {
+                  "width": 13.6,
+                  "bottom": 8,
+                  "top": 11.1,
+                  "x": -4.571941181513024,
+                  "y": 8.786191545443149,
+                  "z": -37.95042272784372
+                },
+                "course": 5400,
+                "x": -4.571941181513024,
+                "y": -0.7638084545568518,
+                "z": -38.190422727843725
+              }
+            }
+          ],
+          "shieldRescues": 0
+        },
+        {
+          "level": {
+            "index": 2,
+            "id": "ruins",
+            "name": "Moonlit Ruins",
+            "length": 6600,
+            "remaining": 0,
+            "progress": 1,
+            "final": true,
+            "difficulty": "EXPERT"
+          },
+          "totals": {
+            "score": 79560,
+            "coins": 528,
+            "distance": 16200,
+            "jumps": 29,
+            "ducks": 18,
+            "levelsCleared": 3
+          },
+          "approach": [
+            {
+              "requestedRemaining": 120,
+              "actualRemaining": 112,
+              "finish": {
+                "visible": true,
+                "remaining": 111.19080760723409,
+                "kind": "navigation-gate",
+                "structureInstances": 33,
+                "accentInstances": 34,
+                "flags": 12,
+                "approachPairs": 4,
+                "banner": {
+                  "width": 13.6,
+                  "bottom": 8,
+                  "top": 11.1,
+                  "x": 5.67045158064138,
+                  "y": -1.3870715406402603,
+                  "z": -110.9508076072341
+                },
+                "course": 6600,
+                "x": 5.67045158064138,
+                "y": -10.937071540640261,
+                "z": -111.19080760723409
+              }
+            },
+            {
+              "requestedRemaining": 45,
+              "actualRemaining": 37,
+              "finish": {
+                "visible": true,
+                "remaining": 36.31090360723556,
+                "kind": "navigation-gate",
+                "structureInstances": 29,
+                "accentInstances": 26,
+                "flags": 8,
+                "approachPairs": 2,
+                "banner": {
+                  "width": 13.6,
+                  "bottom": 8,
+                  "top": 11.1,
+                  "x": 1.6441224371217913,
+                  "y": 2.7879824612616524,
+                  "z": -36.07090360723556
+                },
+                "course": 6600,
+                "x": 1.6441224371217913,
+                "y": -6.762017538738348,
+                "z": -36.31090360723556
+              }
+            }
+          ],
+          "shieldRescues": 0
+        }
+      ],
+      "inputActions": 137,
+      "coinEvents": 528,
+      "rushActivations": 16,
+      "boostedContacts": 41,
+      "maximumCoinLaneGap": 0.14024262937652915,
+      "maximumGroundCoinJumpHeight": 0,
+      "persistentUnlocks": true,
+      "noActiveGpuPreparation": true
+    },
+    "campaignBundle": "index-CEMywiuQ.js",
+    "campaignJavaScriptSha256": "7cdab6e7fd0fd7f251167f2dbcb2d8d742c61b97cfb72d7f4d19602e4dc30225",
+    "campaignEngineSha256": "657d19fbd64edec253c14e34eb87fac129d72de44df97f0b0a0438f84ed4aa59",
+    "campaignAfterwardChanges": "Only score-token rendering and score-capture layout changed; engine source is identical.",
+    "detailedPreDeploymentEvidenceCommit": "d33cd0a4aea6a219a8620bf3c8e1c2f2154e97e7",
+    "allActHudLabels": {
+      "passed": true,
+      "kind": "isolated-real-Hud-component-and-current-stylesheet",
+      "states": 36,
+      "maps": 3,
+      "acts": 4,
+      "layouts": [
+        "phone",
+        "desktop",
+        "landscape"
+      ],
+      "lateGoal": "499/500 m",
+      "textWrapping": false,
+      "courseCaptureOverlap": false,
+      "minimumLandscapeGapPixels": 0.5,
+      "gameplayOrWebGLRun": false,
+      "runtimeErrors": [],
+      "developmentWebsocketDiagnosticsRecordedSeparately": true
+    }
+  },
+  "publication": {
+    "pending": false,
+    "implementationCommit": "d33cd0a4aea6a219a8620bf3c8e1c2f2154e97e7",
+    "exactLiveAssets": {
+      "passed": true,
+      "url": "https://arcade.uptick.systems/river-rush/",
+      "checkedAt": "2026-10-07T15:23:46.726223+00:00",
+      "deployment": {
+        "id": "dpl_6JRS8uvexTFxZeLthtsHRcsfSB7W",
+        "state": "READY",
+        "sha": "d33cd0a4aea6a219a8620bf3c8e1c2f2154e97e7",
+        "alias": [
+          "arcade.uptick.systems",
+          "warden-alpha-wheat.vercel.app",
+          "warden-vdimarcos-projects.vercel.app",
+          "warden-git-main-vdimarcos-projects.vercel.app"
+        ],
+        "project": "prj_BQCikzM1ACj7viaGxsQIX0LTHyLy"
+      },
+      "exactAssets": {
+        "index.html": {
+          "sha256": "7758ca9f6ec032710b145e117f4b6c0c23cca02f2eafcfa4a05ef729d99d56ac",
+          "bytes": 798,
+          "status": 200
+        },
+        "assets/index-aD_k1wTR.css": {
+          "sha256": "d2bb8fc0e83bf5ecf0a628811d380fd855648e7132600d3c0c9bb7c623693eac",
+          "bytes": 32995,
+          "status": 200
+        },
+        "assets/index-DEoGJXuO.js": {
+          "sha256": "19ca9d38abe3508585642ef2fe0396c775ff948157a26667546375dcea8bfe2f",
+          "bytes": 1026053,
+          "status": 200
+        }
+      }
+    },
+    "liveBrowser": {
+      "passed": true,
+      "base": "https://arcade.uptick.systems/",
+      "bundle": {
+        "js": [
+          "https://arcade.uptick.systems/river-rush/assets/index-DEoGJXuO.js"
+        ],
+        "css": [
+          "https://arcade.uptick.systems/river-rush/assets/index-aD_k1wTR.css"
+        ]
+      },
+      "actualPlay": [
+        {
+          "name": "phone",
+          "kind": "actual-App-keyboard-handler-and-pointer-input",
+          "renderer": "webgl",
+          "directCoins": 6,
+          "adjacentCoins": 0,
+          "airborne": {
+            "coins": 0,
+            "action": "jump",
+            "time": 0.3,
+            "starter": [
+              {
+                "d": 7,
+                "done": true,
+                "collected": false
+              },
+              {
+                "d": 12,
+                "done": true,
+                "collected": false
+              }
+            ]
+          },
+          "hudLayout": {
+            "course": {
+              "x": 237,
+              "y": 78,
+              "right": 375,
+              "bottom": 161.4375,
+              "width": 138,
+              "height": 83.4375
+            },
+            "stage": {
+              "x": 246,
+              "y": 128.1875,
+              "right": 366,
+              "bottom": 138.1875,
+              "width": 120,
+              "height": 10
+            },
+            "capture": {
+              "x": 342,
+              "y": 205,
+              "right": 375,
+              "bottom": 238,
+              "width": 33,
+              "height": 33
+            },
+            "viewport": {
+              "width": 390,
+              "height": 844
+            }
+          },
+          "screenWideGesture": true,
+          "pauseExactPixels": true,
+          "noActiveGpuPreparation": true,
+          "allShadersCompiledAndProgramsLinked": true,
+          "observedCoinEvents": 6,
+          "maximumCoinHudDelaySeconds": 0.0
+        },
+        {
+          "name": "desktop",
+          "kind": "actual-App-keyboard-handler-and-pointer-input",
+          "renderer": "webgl",
+          "directCoins": 6,
+          "adjacentCoins": 0,
+          "airborne": {
+            "coins": 0,
+            "action": "jump",
+            "time": 0.3,
+            "starter": [
+              {
+                "d": 7,
+                "done": true,
+                "collected": false
+              },
+              {
+                "d": 12,
+                "done": true,
+                "collected": false
+              }
+            ]
+          },
+          "hudLayout": {
+            "course": {
+              "x": 1191,
+              "y": 96,
+              "right": 1341,
+              "bottom": 227.5,
+              "width": 150,
+              "height": 131.5
+            },
+            "stage": {
+              "x": 1202,
+              "y": 163.5,
+              "right": 1330,
+              "bottom": 176.5,
+              "width": 128,
+              "height": 13
+            },
+            "capture": {
+              "x": 1305,
+              "y": 244,
+              "right": 1345,
+              "bottom": 285,
+              "width": 40,
+              "height": 41
+            },
+            "viewport": {
+              "width": 1365,
+              "height": 900
+            }
+          },
+          "screenWideGesture": true,
+          "pauseExactPixels": true,
+          "noActiveGpuPreparation": true,
+          "allShadersCompiledAndProgramsLinked": true,
+          "observedCoinEvents": 6,
+          "maximumCoinHudDelaySeconds": 0.0
+        },
+        {
+          "name": "landscape",
+          "kind": "actual-App-keyboard-handler-and-pointer-input",
+          "renderer": "webgl",
+          "directCoins": 6,
+          "adjacentCoins": 0,
+          "airborne": {
+            "coins": 0,
+            "action": "jump",
+            "time": 0.3,
+            "starter": [
+              {
+                "d": 7,
+                "done": true,
+                "collected": false
+              },
+              {
+                "d": 12,
+                "done": true,
+                "collected": false
+              }
+            ]
+          },
+          "hudLayout": {
+            "course": {
+              "x": 674,
+              "y": 80,
+              "right": 824,
+              "bottom": 211.5,
+              "width": 150,
+              "height": 131.5
+            },
+            "stage": {
+              "x": 685,
+              "y": 147.5,
+              "right": 813,
+              "bottom": 160.5,
+              "width": 128,
+              "height": 13
+            },
+            "capture": {
+              "x": 784,
+              "y": 212,
+              "right": 824,
+              "bottom": 253,
+              "width": 40,
+              "height": 41
+            },
+            "viewport": {
+              "width": 844,
+              "height": 390
+            }
+          },
+          "screenWideGesture": true,
+          "pauseExactPixels": true,
+          "noActiveGpuPreparation": true,
+          "allShadersCompiledAndProgramsLinked": true,
+          "observedCoinEvents": 6,
+          "maximumCoinHudDelaySeconds": 0.0
+        }
+      ],
+      "errors": []
+    },
+    "liveLeaderboard": {
+      "passed": true,
+      "startedAt": "2026-10-07T15:24:19.799Z",
+      "source": {
+        "kind": "actual-App-full-three-level-3D-campaign",
+        "report": "/tmp/river-wild-finale-campaign/wild-finale.json",
+        "base": "http://127.0.0.1:8765/",
+        "sha256": "b85cc465650c30caa242ff82daf57de9af4231eab2ebbd4aba939b12414fe22c",
+        "exactMapLengths": [
+          4200,
+          5400,
+          6600
+        ],
+        "actualTotals": {
+          "score": 79560,
+          "coins": 528,
+          "distance": 16200,
+          "jumps": 29,
+          "ducks": 18,
+          "levelsCleared": 3
+        },
+        "stateOrClockMutations": false
+      },
+      "production": {
+        "endpoint": "https://arcade.uptick.systems/api/river-rush-leaderboard",
+        "browserUiVerificationPerformed": false,
+        "creation": {
+          "status": 201,
+          "submitted": true,
+          "entry": {
+            "name": "QA Wild muy9d51x",
+            "score": 79560,
+            "coins": 528,
+            "levelsCleared": 3,
+            "levelIndex": 2,
+            "distance": 16200,
+            "createdAt": "2026-10-07T15:24:20.150Z",
+            "rank": 1
+          }
+        },
+        "retry": {
+          "status": 200,
+          "duplicate": true
+        },
+        "excessDistance": {
+          "status": 400,
+          "distance": 16201
+        },
+        "independentHttpRead": {
+          "status": 200,
+          "separateProcess": true,
+          "matchingEntries": 1,
+          "entry": {
+            "rank": 1,
+            "name": "QA Wild muy9d51x",
+            "score": 79560,
+            "coins": 528,
+            "levelsCleared": 3,
+            "levelIndex": 2,
+            "distance": 16200,
+            "createdAt": "2026-10-07T15:24:20.150Z"
+          }
+        }
+      },
+      "submission": {
+        "name": "QA Wild muy9d51x",
+        "runId": "11d99e52-25ea-4987-9593-8dbb5f1c0231",
+        "score": 79560,
+        "coins": 528,
+        "levelsCleared": 3,
+        "levelIndex": 2,
+        "distance": 16200
+      },
+      "browserWorkPerformed": false,
+      "cleanupSql": "/tmp/river-wild-live-score/cleanup.sql",
+      "finishedAt": "2026-10-07T15:24:21.440Z"
+    },
+    "publicLeaderboardUi": {
+      "passed": true,
+      "kind": "fresh-independent-browser-context-public-Leaderboard-UI-read",
+      "base": "https://arcade.uptick.systems/river-rush/",
+      "name": "QA Wild muy9d51x",
+      "runId": "11d99e52-25ea-4987-9593-8dbb5f1c0231",
+      "visibleRow": "1\tQA Wild muy9d51x\t3/3\t79,560",
+      "rowText": "1QA Wild muy9d51x3/379,560",
+      "freshContext": true,
+      "publicGetWithoutAuthorization": true,
+      "screenshot": "/tmp/river-wild-finale-live/public-earned-score.png",
+      "responses": [
+        {
+          "url": "https://arcade.uptick.systems/api/river-rush-leaderboard",
+          "status": 200,
+          "method": "GET",
+          "authorizationPresent": false,
+          "body": {
+            "entries": [
+              {
+                "rank": 1,
+                "name": "QA Wild muy9d51x",
+                "score": 79560,
+                "coins": 528,
+                "levelsCleared": 3,
+                "levelIndex": 2,
+                "distance": 16200,
+                "createdAt": "2026-10-07T15:24:20.150Z"
+              }
+            ]
+          }
+        }
+      ],
+      "errors": []
+    },
+    "leaderboardCleanup": {
+      "passed": true,
+      "endpoint": "https://arcade.uptick.systems/api/river-rush-leaderboard",
+      "submittedActualCampaign": {
+        "score": 79560,
+        "coins": 528,
+        "distance": 16200,
+        "levelsCleared": 3,
+        "source": "/tmp/river-wild-finale-campaign/wild-finale.json"
+      },
+      "liveApiProof": "/tmp/river-wild-live-score/live-campaign-leaderboard.json",
+      "independentBrowserUiProof": {
+        "passed": true,
+        "kind": "fresh-independent-browser-context-public-Leaderboard-UI-read",
+        "base": "https://arcade.uptick.systems/river-rush/",
+        "name": "QA Wild muy9d51x",
+        "runId": "11d99e52-25ea-4987-9593-8dbb5f1c0231",
+        "visibleRow": "1\tQA Wild muy9d51x\t3/3\t79,560",
+        "rowText": "1QA Wild muy9d51x3/379,560",
+        "freshContext": true,
+        "publicGetWithoutAuthorization": true,
+        "screenshot": "/tmp/river-wild-finale-live/public-earned-score.png",
+        "responses": [
+          {
+            "url": "https://arcade.uptick.systems/api/river-rush-leaderboard",
+            "status": 200,
+            "method": "GET",
+            "authorizationPresent": false,
+            "body": {
+              "entries": [
+                {
+                  "rank": 1,
+                  "name": "QA Wild muy9d51x",
+                  "score": 79560,
+                  "coins": 528,
+                  "levelsCleared": 3,
+                  "levelIndex": 2,
+                  "distance": 16200,
+                  "createdAt": "2026-10-07T15:24:20.150Z"
+                }
+              ]
+            }
+          }
+        ],
+        "errors": []
+      },
+      "cleanup": {
+        "qaName": "QA Wild muy9d51x",
+        "runId": "11d99e52-25ea-4987-9593-8dbb5f1c0231",
+        "performedOnlyAfterFreshContextUiConfirmation": true,
+        "ownerDelete": {
+          "deleted_count": 1,
+          "deleted_rows": [
+            {
+              "id": "8e19934f-5e3b-4b67-97ad-5547eb6e09d8",
+              "run_id": "11d99e52-25ea-4987-9593-8dbb5f1c0231",
+              "name": "QA Wild muy9d51x",
+              "distance": 16200
+            }
+          ]
+        },
+        "databaseAfter": {
+          "qa_rows_remaining": 0,
+          "public_row_count": 0,
+          "anon_can_update": false,
+          "anon_can_delete": false,
+          "authenticated_can_update": false,
+          "authenticated_can_delete": false
+        },
+        "independentPublicReadAfter": {
+          "passed": true,
+          "checkedAt": "2026-10-07T15:28:01.391Z",
+          "endpoint": "https://arcade.uptick.systems/api/river-rush-leaderboard",
+          "name": "QA Wild muy9d51x",
+          "runId": "11d99e52-25ea-4987-9593-8dbb5f1c0231",
+          "publicScoreAbsent": true,
+          "verificationScope": "Independent public top-20 API read; owner SQL row-count verification remains separate.",
+          "productionRowsDeletedByHarness": 0
+        },
+        "guestRightsUnchanged": true,
+        "otherRowsDeleted": 0
+      },
+      "browserWorkPerformedByThisAgent": false
+    }
+  },
+  "limitations": [
+    "Physical device frame rates were not measured; browser graphics checks use Chromium/SwiftShader.",
+    "OpenSpec CLI was unavailable; Markdown structure and scenarios were checked separately."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "files": {
+    "index.html": {
+      "bytes": 865,
+      "sha256": "4b7f1e9fbe5105b67962d946ffffaed116d21ed61187fab3c23d3ff8bb47c88e"
+    },
+    "assets/index-CM2Lutz-.js": {
+      "bytes": 1115013,
+      "sha256": "064a73e0a208bb064c3b617bcc01315575885141a39f697ee874aee3307bc3f0"
+    },
+    "assets/index-CBusqfet.css": {
+      "bytes": 35573,
+      "sha256": "a4d4955834844e197547c0a4894ae9f20571dac45da7cd0af3ac195d6dbedd17"
+    },
+    "art/menu.png": {
+      "bytes": 2676425,
+      "sha256": "49d7010137943e1d425168a0abd549be89283b9cbbb3606831c7f2943ebdf6b5"
+    },
+    "art/menu-loop.mp4": {
+      "bytes": 2263778,
+      "sha256": "2ed39fe7aaa92f8577f9b4191a5005c3afe4de3658765f49154de52ec5801b0b"
+    }
+  },
+  "rejectedRuntimeArtRemoved": true,
+  "analyticsLoaderPreserved": true
+}

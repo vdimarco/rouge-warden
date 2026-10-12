@@ -1,0 +1,34 @@
+{
+  "assets": [
+    {
+      "path": "public/river-rush/index.html",
+      "bytes": 798,
+      "sha256": "a5cbef20f1074aeff22c98f8c99ee2deed4a4b453c3cd3a5a452d49ea6c10073"
+    },
+    {
+      "path": "public/river-rush/assets/index-CBusqfet.css",
+      "bytes": 35573,
+      "sha256": "a4d4955834844e197547c0a4894ae9f20571dac45da7cd0af3ac195d6dbedd17"
+    },
+    {
+      "path": "public/river-rush/assets/index-CoJTEH3z.js",
+      "bytes": 1097863,
+      "sha256": "40e5918af294e209737a529bb8c76ad48855a29b17557028290c241190b5edd6"
+    },
+    {
+      "path": "public/river-rush/models/meshy-bough.glb",
+      "bytes": 388268,
+      "sha256": "6e6d4e77beb4ae7575af7bb262f5d36bc33e60db5ed4116cd5ff223cb4096375"
+    },
+    {
+      "path": "public/river-rush/models/meshy-bough-lite.glb",
+      "bytes": 112516,
+      "sha256": "16a5c1a41707ff596bc1e717a9de52403bd78e61ae97928ea3f39150dd3e2b9b"
+    },
+    {
+      "path": "public/river-rush/audio/river-rush-adventure.mp3",
+      "bytes": 1494295,
+      "sha256": "85d06b70bd67827b6ca4a939859cfdd74b2202ad42844758376bb4ab2db2e982"
+    }
+  ]
+}

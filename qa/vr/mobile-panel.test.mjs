@@ -1,5 +1,5 @@
 // The phone panel in Node (task B1 of openspec/changes/swing-controls): the VIEW edge, the lock-on ring and its arrow, the safe
-// window, the side badges and the classes on the panel, the vibration, the catch pop, Center with motion aim, use(false) and the stub of a
+// window, the holding class and the classes on the panel, the vibration, the catch pop, Center with motion aim, use(false) and the stub of a
 // device with no touch point. The DOM is a small fake, so this needs no browser. mobile.test.mjs keeps the old checks on a poorer fake.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/mobile-panel.test.mjs
 import assert from "node:assert/strict";
@@ -47,7 +47,7 @@ const send = (target, type, data = {}) => { const ev = new Event(type); Object.a
 const m = createMobile(canvas, () => active);
 const el = (sel) => panel.querySelector(sel);
 const btn = (name) => el(`[data-action="${name}"]`);
-const ring = el(".phone-target"), arrow = el(".pt-arrow"), safe = el(".phone-safe"), badge = [el('.phone-side[data-side="0"]'), el('.phone-side[data-side="1"]')];
+const ring = el(".phone-target"), arrow = el(".pt-arrow"), safe = el(".phone-safe");
 const centre = (r) => { const t = /translate\(([-\d.]+)px,([-\d.]+)px\)/.exec(r.style.transform || ""); return t ? { x: +t[1] + 28, y: +t[2] + 28 } : null; };
 const near = (a, b, tol, msg) => assert(Math.abs(a - b) <= tol, `${msg}: ${a} is not within ${tol} of ${b}`);
 
@@ -181,7 +181,7 @@ for (const ny of [0.3, 0.5, 0.9]) { m.marker({ x: 0, y: ny, kind: "swing" }); co
 toast.classList.remove("on"); send(win, "resize"); m.marker({ x: 0, y: 0.2, kind: "swing" });
 assert.equal(m.safe().b, 560 - 8, "and the toast no longer cuts the window once it fades");
 
-// a landscape phone, 844 by 390: the spoken line is high, the SWING panel is in the right corner, the climb pad shows on the left
+// a landscape phone, 844 by 390: the spoken line is high, the SWING panel is in the right corner, the JUMP button shows
 canvas.rect = box(0, 0, 844, 390);
 frame(8, 8, 836, 382);
 el(".phone-top").rect = box(0, 0, 844, 58);
@@ -234,13 +234,13 @@ navigator_vibrate = keep;
 
 /* ---------------- the dead-latch safety stays in target() ---------------- */
 active = true; m.reset();
-/* ---------------- the side badges light while their plunger holds ---------------- */
+/* ---------------- the panel says when a plunger holds (no side badges: the game picks the plunger) ---------------- */
 m.tap(0); m.sample(0.016);
-assert(badge[0].classList.contains("held") && !badge[1].classList.contains("held"), "the left badge lights while the left plunger holds");
-m.tap(1); m.sample(0.016);
-assert(badge[0].classList.contains("held") && badge[1].classList.contains("held"), "both badges light with both plungers out");
-m.released(0);
-assert(!badge[0].classList.contains("held") && badge[1].classList.contains("held"), "a rope that lets go darkens only its badge");
+assert(panel.classList.contains("holding"), "the panel has the class holding while a plunger holds");
+m.tap(1); m.sample(0.016); m.released(0);
+assert(panel.classList.contains("holding"), "it keeps it while the other one still holds");
+m.released(1);
+assert(!panel.classList.contains("holding"), "and drops it when both let go");
 m.sample(0.016);
 win.G = { P: { dead: { why: "test" } } };
 m.target(false, false);
@@ -286,7 +286,7 @@ const said2 = () => el(".phone-hint").textContent;
 win.DeviceOrientationEvent.requestPermission = async () => "denied"; win.DeviceMotionEvent.requestPermission = async () => "denied";
 m.reset(); await m.start();
 const resting = said2();
-assert(/^Tap left or right/.test(resting), "with motion aim off the resting hint says to tap left or right: " + resting);
+assert(/^Left thumb moves\. Right thumb swings/.test(resting), "with motion aim off the resting hint says which thumb does what: " + resting);
 m.climbing(true);
 assert(/^On the wall/.test(said2()), "on a wall the hint says how to climb: " + said2());
 m.climbing(false);
@@ -325,4 +325,4 @@ assert.equal(s.view, false, "the stub's sample has a view field");
 assert.equal(stub.safe(), null, "the stub has no window");
 setTouch(true);
 
-console.log("PASS: mobile panel: view edge, Center with motion aim, safe window, ring and arrow (up, side, behind), hide, side badges, class names, box reads at 10 Hz, pop, vibration, dead-latch safety, use(false), the hint off the wall, stub");
+console.log("PASS: mobile panel: view edge, Center with motion aim, safe window, ring and arrow (up, side, behind), hide, the holding class, class names, box reads at 10 Hz, pop, vibration, dead-latch safety, use(false), the hint off the wall, stub");

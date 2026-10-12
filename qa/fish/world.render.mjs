@@ -89,7 +89,8 @@ window.fits = () => {
 window.ready = true;
 </script></body></html>`;
 
-const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
+  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const errors = [], results = [];
 let failed = false;
 const fail = (msg) => { failed = true; console.log("FAIL " + msg); };
@@ -224,6 +225,110 @@ function fitsOrFail(name, lid, f, freeRight, freeBottom = -1) {
 }
 
 try {
+  // A hooked fish actively swims when the fight and reel accelerate, while the line stays by its mouth. The wake uses
+  // the lure's existing water slot and disappears for a leap, Calm effects, reduced motion and an empty line.
+  if (wanted("swim")) {
+    const { ctx, page } = await open(844, 390, "low", "loon");
+    const active = await page.evaluate(() => {
+      const f = { id: "largemouth", x: 1.5, y: -0.14, z: -8, heading: Math.PI / 2, len: 0.9, kg: 3,
+        jump: 0, near: 1, thrash: 0, speed: 0, move: "rest", reel: 0, tension: 0 };
+      W.setHour(18.3); W.setView({ mode: "reel", look: { x: f.x, y: 0, z: f.z } });
+      W.setLure({ visible: false });
+      const tip = W.setRod({ theta: 48, bend: 0.45, pull: f, visible: true });
+      const state = () => {
+        const mesh = W.scene.children.find((o) => o.userData?.id === f.id && o.userData?.kind === "fish");
+        const water = W.scene.children.find((o) => o.material?.uniforms?.uLure);
+        const line = W.scene.children.find((o) => o.isMesh && o.renderOrder === 3);
+        const a = line.geometry.attributes.position.array, n = a.length;
+        const end = new THREE.Vector3((a[n - 6] + a[n - 3]) / 2, (a[n - 5] + a[n - 2]) / 2, (a[n - 4] + a[n - 1]) / 2);
+        const mouth = new THREE.Vector3(0, -0.025, -0.48).multiplyScalar(mesh.scale.x).applyEuler(mesh.rotation).add(mesh.position);
+        return { phase: mesh.userData.fx.uWag.value.x, amp: mesh.userData.fx.uWag.value.y, fin: mesh.userData.fx.uWag.value.w,
+          wake: water.material.uniforms.uLure.value.toArray(), lineError: end.distanceTo(mouth),
+          visible: mesh.visible, calls: W.info().calls };
+      };
+      W.setFish(f); W.setLine({ from: tip, to: f, visible: true }); W.update(1 / 30); W.render();
+      const rest = state();
+      for (let i = 0; i < 30; i++) {
+        f.x += 0.04;
+        W.setFish({ ...f, speed: 2.5, move: "run", reel: 2.2, tension: 0.5, thrash: 0.6 });
+        W.setLine({ from: tip, to: { x: f.x, y: f.y, z: f.z }, visible: true });
+        W.update(1 / 30); W.render();
+      }
+      return { rest, active: state(), fish: f, tip };
+    });
+    await page.screenshot({ path: path.join(SHOTS, "world-swim-wide-a.png") });
+    const nextStroke = async (fish, tip) => page.evaluate(({ fish, tip }) => {
+      for (let i = 0; i < 3; i++) {
+        W.setFish({ ...fish, speed: 2.5, move: "run", reel: 2.2, tension: 0.5, thrash: 0.6 });
+        W.setLine({ from: tip, to: fish, visible: true });
+        W.update(1 / 30); W.render();
+      }
+      return W.scene.children.find((o) => o.userData?.id === fish.id && o.userData?.kind === "fish").userData.fx.uWag.value.x;
+    }, { fish, tip });
+    const widePhaseB = await nextStroke(active.fish, active.tip);
+    await page.screenshot({ path: path.join(SHOTS, "world-swim-wide-b.png") });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const portraitPhaseA = await page.evaluate(({ fish, tip }) => {
+      W.resize(innerWidth, innerHeight);
+      W.setView({ mode: "reel", look: { x: fish.x, y: 0, z: fish.z }, portrait: true });
+      W.setFish({ ...fish, speed: 2.5, move: "run", reel: 2.2, tension: 0.5, thrash: 0.6 });
+      W.setLine({ from: tip, to: fish, visible: true }); W.update(1 / 30); W.render();
+      return W.scene.children.find((o) => o.userData?.id === fish.id && o.userData?.kind === "fish").userData.fx.uWag.value.x;
+    }, { fish: active.fish, tip: active.tip });
+    await page.screenshot({ path: path.join(SHOTS, "world-swim-portrait-a.png") });
+    const portraitPhaseB = await nextStroke(active.fish, active.tip);
+    await page.screenshot({ path: path.join(SHOTS, "world-swim-portrait-b.png") });
+    if (!(widePhaseB - active.active.phase > 1 && portraitPhaseB - portraitPhaseA > 1)) fail("the hooked fish should keep cycling its stroke in both views");
+    if (!(active.active.amp > active.rest.amp * 2 && active.active.fin > active.rest.fin * 2)) fail("active fish should beat its tail and paddle fins more than a resting fish");
+    if (!(active.active.visible && Math.hypot(...active.active.wake.slice(2)) > 0.3)) fail("a hooked fish swimming just below the surface should leave a wake");
+    if (!(active.active.lineError < 0.05)) fail(`the visual line misses the swimming fish's mouth by ${active.active.lineError.toFixed(3)} m`);
+    if (active.active.calls > active.rest.calls) fail("swimming should not add draw calls");
+    const calm = await page.evaluate(({ fish, tip }) => {
+      document.documentElement.dataset.calm = "1";
+      fish.x += 0.04;
+      W.setFish({ ...fish, speed: 2.5, move: "run", reel: 2.2, tension: 0.5, thrash: 0.6 });
+      W.setLine({ from: tip, to: fish, visible: true }); W.update(1 / 30); W.render();
+      const mesh = W.scene.children.find((o) => o.userData?.id === fish.id && o.userData?.kind === "fish");
+      const water = W.scene.children.find((o) => o.material?.uniforms?.uLure);
+      return { amp: mesh.userData.fx.uWag.value.y, wake: water.material.uniforms.uLure.value.toArray(), visible: mesh.visible };
+    }, { fish: active.fish, tip: active.tip });
+    if (!(calm.visible && calm.amp < active.active.amp * 0.4 && calm.wake.every((v) => v === 0))) fail("Calm effects should keep the fish visible with a restrained swim and no wake");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const quiet = await page.evaluate(({ fish, tip }) => {
+      delete document.documentElement.dataset.calm;
+      W.setFish({ ...fish, speed: 2.5, move: "run", reel: 2.2, tension: 0.5, thrash: 0.6 });
+      W.setLine({ from: tip, to: fish, visible: true }); W.update(1 / 30); W.render();
+      const mesh = W.scene.children.find((o) => o.userData?.id === fish.id && o.userData?.kind === "fish");
+      const water = W.scene.children.find((o) => o.material?.uniforms?.uLure);
+      return { amp: mesh.userData.fx.uWag.value.y, wake: water.material.uniforms.uLure.value.toArray() };
+    }, { fish: active.fish, tip: active.tip });
+    if (!(quiet.amp === calm.amp && quiet.wake.every((v) => v === 0))) fail("system reduced motion should use the restrained swim without a wake");
+    await page.emulateMedia({ reducedMotion: null });
+    const hidden = await page.evaluate(({ fish, tip }) => {
+      const wake = () => W.scene.children.find((o) => o.material?.uniforms?.uLure).material.uniforms.uLure.value.toArray();
+      fish.x += 0.12;
+      W.setFish({ ...fish, speed: 2.5, move: "run", reel: 2, tension: 0.5 });
+      W.setLine({ from: tip, to: fish, visible: true }); W.update(1 / 30); W.render();
+      const swimming = wake();
+      W.setFish({ ...fish, y: 0.3, jump: 0.4, speed: 2.5, move: "jump", reel: 2 }); W.update(1 / 30); W.render();
+      const jumping = wake();
+      W.cutCamera(() => null);
+      W.setFish({ ...fish, speed: 2.5, move: "run", reel: 2 }); W.update(1 / 30); W.render();
+      const cutscene = wake();
+      W.cutCamera(null); W.setView({ mode: "catch" }); W.update(1 / 30); W.render();
+      const catchView = wake();
+      return { swimming, jumping, cutscene, catchView };
+    }, { fish: active.fish, tip: active.tip });
+    if (!(Math.hypot(...hidden.swimming.slice(2)) > 0.3
+      && [hidden.jumping, hidden.cutscene, hidden.catchView].every((v) => v.every((n) => n === 0)))) {
+      fail("the fish wake should clear during a leap, cutscene or catch view");
+    }
+    const gone = await page.evaluate(() => { W.setFish(null); W.setLure({ visible: false }); W.setLine({ visible: false }); W.update(1 / 30); W.render();
+      return W.scene.children.find((o) => o.material?.uniforms?.uLure).material.uniforms.uLure.value.toArray(); });
+    if (!gone.every((v) => v === 0)) fail("the fish wake should clear when the fish disappears");
+    console.log(`swim: tail ${active.rest.amp.toFixed(2)} idle / ${active.active.amp.toFixed(2)} fighting / ${calm.amp.toFixed(2)} Calm; mouth gap ${active.active.lineError.toFixed(3)} m; ${active.active.calls} calls`);
+    await ctx.close();
+  }
   for (const id of IDS) {
     const S = SCENES[id];
     const [lid, lkg] = S.legend;
@@ -425,6 +530,6 @@ await browser.close();
 stop();
 const bad = errors.filter((e) => !/GPU stall due to ReadPixels|Automatic fallback to software WebGL|GroupMarkerNotSet/.test(e));
 if (bad.length) { fail("console errors:\n  " + bad.join("\n  ")); }
-console.log(failed ? "world.render: FAILED" : `world.render: OK (${results.length} shots in ${SHOTS})`);
+console.log(failed ? `world.render: FAILED (shots in ${SHOTS})` : `world.render: OK (${results.length} shots in ${SHOTS})`);
 process.exit(failed ? 1 : 0);
 

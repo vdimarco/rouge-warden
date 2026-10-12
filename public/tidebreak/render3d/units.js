@@ -122,12 +122,12 @@ class HeroView {
     // little. A respawn resets it.
     if (dead) { this.deadAt ??= time; } else this.deadAt = null;
     const since = dead ? time - this.deadAt : 0, burn = dead ? Math.max(0, Math.min(1, (since - 1.6) / 1.1)) : 0;
-    r.position.set(x, lift - burn * 24, y); r.visible = vis && burn < 1;
+    r.position.set(x, this.units.heightAt(x, y) + lift - burn * 24, y); r.visible = vis && burn < 1;
     u.uFade.value = !dead && this.concealed ? .5 : 1; u.uDissolve.value = burn; u.uDissolveBase.value = r.position.y;
     // The shadow pass knows nothing of the dissolve: a burning body drops its shadow instead of keeping it whole.
     const shadow = burn === 0; if (this.model && this.shadow !== shadow) { this.shadow = shadow; this.model.traverse(o => { if (o.isMesh && o.name !== 'outline') o.castShadow = shadow; }); }
     if (this.outline) this.outline.visible = !dead && !this.concealed;
-    if (burn > 0 && burn < .95 && vis && !this.units.reduced && Math.random() < dt * 30) this.units.effects.sparks.emit({ x: x + (Math.random() - .5) * 60, y: this.height * (1 - burn) * (.6 + Math.random() * .4), z: y + (Math.random() - .5) * 60, vx: (Math.random() - .5) * 40, vy: 60 + Math.random() * 50, vz: (Math.random() - .5) * 40, life: .9, size: 16, color: '#ffbf7a', drag: .6 });
+    if (burn > 0 && burn < .95 && vis && !this.units.reduced && Math.random() < dt * 30) this.units.effects.sparks.emit({ x: x + (Math.random() - .5) * 60, y: lift - burn * 24 + this.height * (1 - burn) * (.6 + Math.random() * .4), z: y + (Math.random() - .5) * 60, vx: (Math.random() - .5) * 40, vy: 60 + Math.random() * 50, vz: (Math.random() - .5) * 40, life: .9, size: 16, color: '#ffbf7a', drag: .6 });
     u.uFlash.value = e.hit > 0 ? e.hit / .16 * .22 : 0;
     u.uRimPower.value = this.units.rimPower * (e.player ? 1.2 : 1);
     if (!this.rig || !r.visible) return;
@@ -168,7 +168,7 @@ class MinionView {
     this.height = SOLDIER[role]?.height || 170; model.scale.setScalar(this.height / units.minionHeight); this.root.add(model); this.model = model;
     this.rig = new Rig(model, units.minionClips, ['idle', 'run', 'thrust', 'slam', 'cast', 'death', 'hit']); this.team = team; this.role = role; this.clip = SOLDIER[role]?.clip || 'thrust';
   }
-  reset(e) { this.yaw = yawOf(e.facing); this.lx = e.x; this.ly = e.y; this.speed = 0; this.deadAt = null; this.root.visible = true; for (const k in this.rig.weights) this.rig.weights[k] = 0; this.root.position.set(e.x, 0, e.y); }
+  reset(e) { this.yaw = yawOf(e.facing); this.lx = e.x; this.ly = e.y; this.speed = 0; this.deadAt = null; this.root.visible = true; for (const k in this.rig.weights) this.rig.weights[k] = 0; this.root.position.set(e.x, this.units.heightAt(e.x, e.y), e.y); }
   update(e, s, time, dt, vis, gone) {
     const r = this.root, dead = gone || e.hp <= 0;
     const moved = Math.hypot(e.x - this.lx, e.y - this.ly); this.lx = e.x; this.ly = e.y;
@@ -177,7 +177,7 @@ class MinionView {
     this.yaw += angleTo(this.yaw, yawOf(e.facing)) * (1 - Math.exp(-dt * 10)); r.rotation.y = this.yaw;
     if (dead) this.deadAt ??= time;
     const since = dead ? time - this.deadAt : 0, sink = Math.max(0, since - 1.3);
-    r.position.set(e.x, -sink * 70, e.y); r.visible = vis && sink < 1.4;
+    r.position.set(e.x, this.units.heightAt(e.x, e.y) - sink * 70, e.y); r.visible = vis && sink < 1.4;
     if (!r.visible) return dead && since > 2.7;
     // Far soldiers animate at a lower rate; the view is drawn every frame.
     this.acc = (this.acc || 0) + dt; if (!this.units.near(e) && this.acc < 1 / 20) return false;
@@ -207,14 +207,14 @@ class StructureView {
     // The crystal's glow: a sprite in the team colour that breathes. It is drawn behind the crystal, so it shows as a halo.
     const glow = new THREE.Sprite(units.glowMaterial(e.team, true)); glow.position.y = (core ? .86 : .9) * this.height + (this.guardian ? 50 : 0); glow.scale.setScalar(core ? 380 : 260); this.glow = glow; this.root.add(glow);
     this.ward = new THREE.Mesh(units.wardGeometry, units.wardMaterial(e.team)); this.ward.scale.set(core ? 520 : 170, this.height * 1.05, core ? 520 : 170); this.ward.visible = false; this.root.add(this.ward);
-    this.root.position.set(e.x, 0, e.y); this.root.rotation.y = core ? (e.team ? Math.PI : 0) : (e.id * 1.7) % TAU;
+    this.root.position.set(e.x, units.heightAt(e.x, e.y), e.y); this.root.rotation.y = core ? (e.team ? Math.PI : 0) : (e.id * 1.7) % TAU;
   }
   get top() { return this.glow.position.y; }
   update(e, s, time, dt, vis) {
     const ratio = Math.max(0, e.hp / e.maxHp), dead = e.hp <= 0, u = this.uniforms;
     if (dead) this.deadAt ??= time; else this.deadAt = null;
     const since = dead ? time - this.deadAt : 0, fall = dead ? ease(Math.min(1, since / 1.6)) : 0;
-    this.root.visible = vis;
+    this.root.position.set(e.x, this.units.heightAt(e.x, e.y), e.y); this.root.visible = vis;
     // Damage darkens the stone; a low structure smokes; a fallen one sinks to a stump and leaves rubble.
     this.mesh.material.color.setScalar(.55 + .45 * ratio);
     this.mesh.position.y = (this.guardian ? 50 : 0) - fall * this.height * .78; this.mesh.rotation.z = fall * .09; this.mesh.rotation.x = fall * .05;
@@ -252,7 +252,7 @@ class CreatureView {
     this.body.position.set(0, Math.abs(Math.sin(t * 7)) * 10 * walk, lunge * this.height * .22);
     this.body.rotation.x = -lunge * .12 + Math.sin(t * 7) * .02 * walk; this.body.scale.set(1, 1 + breathe, 1);
     if (dead) { const f = ease(Math.min(1, since / .9)); this.body.rotation.z = f * 1.35; this.body.position.y = -Math.max(0, since - 1.4) * 60; }
-    r.position.set(e.x, 0, e.y); r.visible = vis && since < 2.6;
+    r.position.set(e.x, this.units.heightAt(e.x, e.y), e.y); r.visible = vis && since < 2.6;
     u.uFlash.value = e.hit > 0 ? e.hit / .16 * .2 : 0;
     const special = e.specialIntent; u.uRimPower.value = (e.kind === 'leviathan' ? 1.4 : .35) + (special ? .8 + Math.sin(time * 14) * .3 : 0);
     return dead && since > 2.6;
@@ -264,14 +264,14 @@ class TotemView {
     this.units = units; this.root = new THREE.Group(); this.root.name = 'summon'; units.group.add(this.root); this.height = 190;
     const stone = new THREE.Mesh(units.totemGeometry, units.stone); stone.scale.set(46, 150, 46); stone.castShadow = true; this.root.add(stone);
     this.glow = new THREE.Sprite(units.glowMaterial(e.team)); this.glow.position.y = 175; this.glow.scale.setScalar(120); this.root.add(this.glow);
-    this.root.position.set(e.x, 0, e.y);
+    this.root.position.set(e.x, units.heightAt(e.x, e.y), e.y);
   }
-  update(e, s, time, dt, vis, gone) { const since = gone || e.hp <= 0 ? (this.deadAt ??= time, time - this.deadAt) : 0; this.root.position.set(e.x, -since * 160, e.y); this.root.visible = vis && since < 1; this.glow.scale.setScalar(120 + Math.sin(time * 3) * 12); return since >= 1; }
+  update(e, s, time, dt, vis, gone) { const since = gone || e.hp <= 0 ? (this.deadAt ??= time, time - this.deadAt) : 0; this.root.position.set(e.x, this.units.heightAt(e.x, e.y) - since * 160, e.y); this.root.visible = vis && since < 1; this.glow.scale.setScalar(120 + Math.sin(time * 3) * 12); return since >= 1; }
   dispose() { this.units.group.remove(this.root); }
 }
 export class Units {
-  constructor(scene, effects) {
-    this.scene = scene; this.effects = effects; this.group = new THREE.Group(); this.group.name = 'units'; scene.add(this.group);
+  constructor(scene, effects, { heightAt = () => 0 } = {}) {
+    this.scene = scene; this.effects = effects; this.heightAt = heightAt; this.group = new THREE.Group(); this.group.name = 'units'; scene.add(this.group);
     this.views = new Map(); this.pool = {}; this.frame = 0; this.poses = []; this.rimPower = 1; this.reduced = false; this.focus = { x: 0, y: 0 };
     this.plinth = new THREE.CylinderGeometry(1, 1.12, 1, 24).translate(0, .5, 0); this.totemGeometry = new THREE.CylinderGeometry(.55, .8, 1, 6).translate(0, .5, 0);
     this.wardGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1, true).translate(0, .5, 0);
@@ -348,3 +348,4 @@ export class Units {
   clear() { for (const v of this.views.values()) this.release(v); this.views.clear(); }
   stats() { let heroes = 0, placeholders = 0; for (const v of this.views.values()) if (v instanceof HeroView) { heroes++; if (!v.model && !assets.failed.has(v.slug)) placeholders++; } return { views: this.views.size, heroes, placeholders }; }
 }
+

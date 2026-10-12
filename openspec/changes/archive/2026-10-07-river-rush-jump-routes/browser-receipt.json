@@ -1,0 +1,153 @@
+{
+  "passed": true,
+  "kind": "River Rush natural mandatory-action and physically reachable jump-gold verification",
+  "actualAppStateOrClockMutations": false,
+  "fixedActualAppSeed": false,
+  "precedingCandidate": {
+    "js": "index-DY9HJsGj.js",
+    "passed": true,
+    "unchangedArcFormulaAndContactsRetainedInRelease": true,
+    "runs": [
+      {
+        "layout": "phone",
+        "requestedLeadSeconds": 0.22,
+        "actualLeadSeconds": 0.227811,
+        "requiredJumpRow": 3,
+        "requiredDuckRow": 4,
+        "physicalArcCoins": 5,
+        "matchingRenderedArcFlights": 5,
+        "maxNormalizedHeightError": 0.212915,
+        "shieldIntact": true,
+        "noCollisionOrSmash": true,
+        "coinCuesPerPhysicalContact": true,
+        "noActiveGpuPreparation": true,
+        "screenshot": "/tmp/river-jump-routes/final/phone-lead-0.22-arc.png"
+      },
+      {
+        "layout": "phone",
+        "requestedLeadSeconds": 0.32,
+        "actualLeadSeconds": 0.327811,
+        "requiredJumpRow": 3,
+        "requiredDuckRow": 5,
+        "physicalArcCoins": 5,
+        "matchingRenderedArcFlights": 5,
+        "maxNormalizedHeightError": 0.029824,
+        "shieldIntact": true,
+        "noCollisionOrSmash": true,
+        "coinCuesPerPhysicalContact": true,
+        "noActiveGpuPreparation": true,
+        "screenshot": "/tmp/river-jump-routes/final/phone-lead-0.32-arc.png"
+      },
+      {
+        "layout": "phone",
+        "requestedLeadSeconds": 0.42,
+        "actualLeadSeconds": 0.427811,
+        "requiredJumpRow": 3,
+        "requiredDuckRow": 5,
+        "physicalArcCoins": 5,
+        "matchingRenderedArcFlights": 5,
+        "maxNormalizedHeightError": 0.257223,
+        "shieldIntact": true,
+        "noCollisionOrSmash": true,
+        "coinCuesPerPhysicalContact": true,
+        "noActiveGpuPreparation": true,
+        "screenshot": "/tmp/river-jump-routes/final/phone-lead-0.42-arc.png"
+      },
+      {
+        "layout": "desktop",
+        "requestedLeadSeconds": 0.22,
+        "actualLeadSeconds": 0.227811,
+        "requiredJumpRow": 3,
+        "requiredDuckRow": 5,
+        "physicalArcCoins": 5,
+        "matchingRenderedArcFlights": 5,
+        "maxNormalizedHeightError": 0.212915,
+        "shieldIntact": true,
+        "noCollisionOrSmash": true,
+        "coinCuesPerPhysicalContact": true,
+        "noActiveGpuPreparation": true,
+        "screenshot": "/tmp/river-jump-routes/final/desktop-lead-0.22-arc.png"
+      },
+      {
+        "layout": "desktop",
+        "requestedLeadSeconds": 0.32,
+        "actualLeadSeconds": 0.327811,
+        "requiredJumpRow": 3,
+        "requiredDuckRow": 5,
+        "physicalArcCoins": 5,
+        "matchingRenderedArcFlights": 5,
+        "maxNormalizedHeightError": 0.029824,
+        "shieldIntact": true,
+        "noCollisionOrSmash": true,
+        "coinCuesPerPhysicalContact": true,
+        "noActiveGpuPreparation": true,
+        "screenshot": "/tmp/river-jump-routes/final/desktop-lead-0.32-arc.png"
+      },
+      {
+        "layout": "desktop",
+        "requestedLeadSeconds": 0.42,
+        "actualLeadSeconds": 0.427811,
+        "requiredJumpRow": 3,
+        "requiredDuckRow": 5,
+        "physicalArcCoins": 5,
+        "matchingRenderedArcFlights": 5,
+        "maxNormalizedHeightError": 0.257223,
+        "shieldIntact": true,
+        "noCollisionOrSmash": true,
+        "coinCuesPerPhysicalContact": true,
+        "noActiveGpuPreparation": true,
+        "screenshot": "/tmp/river-jump-routes/final/desktop-lead-0.42-arc.png"
+      }
+    ]
+  },
+  "finalExactBuild": {
+    "js": "index-CzEJCImM.js",
+    "css": "index-BttXBCLJ.css",
+    "passed": true,
+    "runs": [
+      {
+        "layout": "phone",
+        "requestedLeadSeconds": 0.32,
+        "actualLeadSeconds": 0.327811,
+        "requiredJumpRow": 3,
+        "requiredDuckRow": 5,
+        "physicalArcCoins": 5,
+        "matchingRenderedArcFlights": 5,
+        "maxNormalizedHeightError": 0.029824,
+        "shieldIntact": true,
+        "noCollisionOrSmash": true,
+        "coinCuesPerPhysicalContact": true,
+        "noActiveGpuPreparation": true,
+        "screenshot": "/tmp/river-jump-routes/release/phone-lead-0.32-arc.png"
+      }
+    ]
+  },
+  "fallback2D": {
+    "passed": true,
+    "kind": "isolated-real-2D-renderer-height-and-pickup-flight",
+    "isolatedModelAndClocksExplicitlySet": true,
+    "twoHighFlagCoinsWithDistinctNumericHeights": [
+      0.35,
+      0.95
+    ],
+    "measuredVerticalDifferencePixels": 36.057831,
+    "spriteCoordinateTolerancePixels": 0.001,
+    "physicalNumericPickupHeight": 0.95,
+    "matchingScoreTokenStartY": 518.23277,
+    "screenshots": [
+      "/tmp/river-jump-routes/fallback/fallback-height.png",
+      "/tmp/river-jump-routes/fallback/fallback-flight.png"
+    ]
+  },
+  "errors": [],
+  "rawProofs": {
+    "sixNaturalRuns": "/tmp/river-jump-routes/final/jump-routes.json",
+    "finalExactPhone": "/tmp/river-jump-routes/release/jump-routes.json",
+    "isolatedFallback": "/tmp/river-jump-routes/fallback/jump-routes.json"
+  },
+  "limitations": [
+    "Headless Chromium/SwiftShader; physical-device FPS and human play feel were not measured.",
+    "Requested leads are quantized to the nearest real simulation frame; actual applied leads are reported.",
+    "The fallback proof uses an isolated production renderer and explicitly constructed model, not a full fallback adventure."
+  ]
+}

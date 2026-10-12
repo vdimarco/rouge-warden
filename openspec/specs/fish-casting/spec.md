@@ -68,11 +68,15 @@ While a finger holds the line in touch play, the rail beside the finger SHALL sh
 - **THEN** the rail, LOAD, and LET GO show beside the finger, clear of the guide.
 
 ### Requirement: Sensors that stop
-When motion samples stop for 3 s after the player said yes to motion, the game SHALL offer touch play.
+When motion samples stop for 3 s after the player said yes to motion, the game SHALL offer touch play. The game SHALL count the 3 s by its clock from the last sample. A slow frame SHALL count in full, also a frame longer than 1 s. A pause, or time in another phase, SHALL count 1 s at most.
 
 #### Scenario: Sensor stall
 - **WHEN** no motion sample arrives for 3 s in the cast phase
 - **THEN** the game says "The motion sensors stopped. Play with touch?" and a tap switches to touch.
+
+#### Scenario: Sensor stall on slow frames
+- **WHEN** no motion sample arrives in the cast phase, and the frames come more than 1 s apart
+- **THEN** the offer comes in the first frame 3 s or more after the last sample, not one frame later.
 
 ### Requirement: Quick turnaround to the next cast
 The next cast SHALL be ready soon after the lure comes home, lands on the shore, or loses a fish. "Nothing this time" SHALL wait about 1 s and a cast onto the shore about 0.9 s. A cast input SHALL skip any of these beats after a short minimum, and the same press SHALL go on into the next cast. After 3 s of an empty retrieve (no fish coming), the lure SHALL skip home: each crank turn SHALL wind in at least 4 times as much line, and any turn of the crank SHALL bring the lure home in about 3 s, however far out it is. A crank faster than 1.5 turns a second SHALL shorten the 3 s wait to as little as 1 s. After the short minimum, a press on the crank or the gauge SHALL end the beat and SHALL NOT cast. After a lost fish, a press on the drawn rod SHALL do the same. After "Nothing this time", a press on the drawn rod SHALL go on into the next cast, as a press on the lake does.
@@ -107,3 +111,18 @@ On a computer, holding the mouse button SHALL cast the same way as holding Space
 #### Scenario: Aim while holding
 - **WHEN** the player moves the mouse to the left while holding
 - **THEN** the aim turns left before the cast.
+
+### Requirement: Unhooked line matches the cast
+After the lure lands, the line shown and wound in during the sink and retrieve SHALL start from the landed rod-tip-to-lure span plus only a small sag allowance, not the farthest span reached in flight. With no fish pulling line, reeling SHALL only reduce the remaining line, and the lure SHALL come home after no more than that landed length has been wound in. The empty-retrieve fast finish SHALL preserve this limit. A fish that takes line during a fight MAY increase LINE OUT beyond the cast.
+
+#### Scenario: High lob lands closer than its airborne reach
+- **WHEN** a high lob reaches about 31 m of line during flight but splashes about 21 m from the rod and no fish comes
+- **THEN** LINE OUT starts at the final landed span plus the usual small sag, not the more than 30 m paid out in the air; it falls as the player reels and never rises during the retrieve.
+
+#### Scenario: Empty cast at a short and a long distance
+- **WHEN** a player casts 15 m or 50 m into water with no fish coming and steadily turns the crank
+- **THEN** LINE OUT starts at each landed span plus the same small sag, falls as line is wound in, and the lure is home before the total line wound exceeds that landed length.
+
+#### Scenario: A fish runs after the cast
+- **WHEN** a fish strikes a 30 m cast and then pulls against the drag
+- **THEN** LINE OUT may rise above 30 m while the spool slips, and the player's subsequent retrieve accounts for that extra line.

@@ -50,7 +50,7 @@ try {
  assert(face.roof>3,'the start roof faces more than 3 degrees from the gold ring, or a skipped turn would not fail the check '+JSON.stringify(face));
  console.log('PASS the phone starts facing the gold ring',JSON.stringify({cam:+face.cam.toFixed(2),hero:+face.hero.toFixed(2),roof:+face.roof.toFixed(1)}));
  await page.evaluate(()=>{G.test.hold(true);const s=G.city.start;G.test.teleport(s.x,s.y,s.z);G.test.step(1/60,1);});
- assert.equal(await page.locator('.phone-stick').count(),0);
+ assert.equal(await page.locator('.phone-stick').count(),1,'one move stick, for the left thumb');
  // Aim at the guaranteed clear first-swing building, then press the real action button.
  assert.equal(await page.evaluate(()=>G.test.aim(1)?.valid),true,'first view has a usable swing target');
  // The chase camera settles behind and above the hero, looking down 20 degrees. The phone start must not tip it up into the roof.
@@ -63,11 +63,12 @@ try {
  const first=await page.evaluate(()=>{const a=G.test.aim(1);return a&&{valid:a.valid,ny:a.ny,y:a.y,head:G.test.state().head.y};});
  assert(first&&first.valid&&!(first.ny>.7&&first.y<first.head-.3),'the first swing aim is not the roof under the hero '+JSON.stringify(first));
  console.log('PASS phone camera settles to the chase view and the first aim is not the floor');
- // a tap on the canvas throws the plunger of its half: the left (0) or the right (1). The checks read the rope of the side tapped.
- // (a tap within 3 px of the middle line moves 3 px off it, so the side the test reads is the side the page sees)
- const tapAt=async(x,y)=>{const w=await page.evaluate(()=>innerWidth);if(Math.abs(x-w/2)<3)x=w/2+(x<w/2?-3:3);await page.evaluate(x=>{window.__side=x<innerWidth/2?0:1;},x);await page.mouse.click(x,y);};
- // tap(1) is a tap on the right half at the marked target (the old SWING button)
- const tapRight=()=>page.evaluate(()=>{window.__side=1;G.desktop.mobile.tap(1);});
+ // a tap on the right half of the canvas throws a plunger: the game picks the free one. window.__side reads the plunger that
+ // fired since the tap (the last fire event from that frame on), so the checks read the rope that tap threw.
+ await page.evaluate(()=>{Object.defineProperty(window,'__side',{configurable:true,get(){const e=G.test.events().filter(e=>e.type==='fire'&&e.frame>=window.__f0).pop();return e?e.side:1;}});});
+ const tapAt=async(x,y)=>{const w=await page.evaluate(()=>innerWidth);assert(x>w/2+2,'the test taps the right half (the left half moves): '+x);await page.evaluate(()=>{window.__f0=G.frame;});await page.mouse.click(x,y);};
+ // tap(1) throws plunger 1 at the marked target, from code
+ const tapRight=()=>page.evaluate(()=>{window.__f0=G.frame;G.desktop.mobile.tap(1);});
  assert.equal(await page.locator('[data-action=throw]').count(),0,'no SWING button: the city is the control');
  await tapRight();
  // Step frame by frame to catch the anchor at the attach: the rope may let go by itself before 0.6 s.
@@ -90,11 +91,13 @@ try {
   // the ring sits near the middle, so the tap may land on either half: let the ropes of the swings above go first (a tap on a
   // side whose rope still flies does nothing)
   for(let k=0;k<180&&G.P.ropes.some(r=>r.state!=='idle');k++){G.test.step(1/60,1);G.test.teleport(S.x,S.y,S.z);}
-  G.rigYaw=Math.atan2(-(R.x-S.x),-(R.z-S.z));G.test.look(0,.45);G.test.step(1/60,30);G.camera.updateMatrixWorld(true);
+  // turn a little left, so the ring shows on the right half (the half that swings)
+  G.rigYaw=Math.atan2(-(R.x-S.x),-(R.z-S.z))+.18;G.test.look(0,.45);G.test.step(1/60,30);G.camera.updateMatrixWorld(true);
   const v=new G.camera.position.constructor(R.x,R.y,R.z).project(G.camera);
   return {x:(v.x*.5+.5)*innerWidth,y:(.5-v.y*.5)*innerHeight,ndcY:v.y};
  });
  assert(target.y>60&&target.y<600,'target is inside canvas');
+ assert(target.x>(await page.evaluate(()=>innerWidth))/2+2,'the ring shows on the right half '+target.x);
  const before=await page.evaluate(({x,y})=>{const e=document.elementFromPoint(x,y);window.__ev0=G.test.events().length;return {under:e&&(e.id||e.className||e.tagName),w:innerWidth,ropes:G.P.ropes.map(r=>r.state),ground:G.P.onGround,state:G.state};},target);
  await tapAt(target.x,target.y);
  await page.evaluate(()=>G.test.step(1/60,30));
@@ -105,12 +108,12 @@ try {
  await page.evaluate(()=>{const s=G.P.pos;G.test.aimAt(1,s.x,s.y+1000,s.z);G.QA_ray=G.city.raycast;G.city.raycast=()=>null;});
  const held=await page.evaluate(()=>window.__side);
  await page.evaluate(i=>{const s=G.P.pos;G.test.aimAt(i,s.x,s.y+1000,s.z);},held);
- await tapAt(held?300:90,200);await page.evaluate(()=>G.test.step(1/60,2));
+ await tapAt(300,200);await page.evaluate(()=>G.test.step(1/60,2));
  assert.equal(await page.evaluate(i=>{G.city.raycast=G.QA_ray;G.test.aimAt(i,null);return G.P.ropes[i].state;},held),'attached');console.log('PASS invalid retarget keeps the current rope');
  // Miss must not auto-jump or leave the button latched.
  await page.evaluate(()=>{const s=G.city.start;G.test.teleport(s.x,s.y,s.z);G.desktop.mobile.reset();G.test.aimAt(1,s.x,s.y+1000,s.z);G.test.step(1/60,2);G.QA_ray=G.city.raycast;G.city.raycast=()=>null;});
  await tapRight();await page.evaluate(()=>{G.test.step(1/60,30);G.city.raycast=G.QA_ray;});
- assert.equal(await page.evaluate(()=>G.P.onGround),true);assert.equal(await page.evaluate(()=>document.querySelector('.phone-side[data-side="1"]').classList.contains('held')),false);console.log('PASS miss stays on roof and resets action');
+ assert.equal(await page.evaluate(()=>G.P.onGround),true);assert.equal(await page.evaluate(()=>document.querySelector('#phoneControls').classList.contains('holding')),false);console.log('PASS miss stays on roof and resets action');
  await page.locator('[data-action=menu]').click();await page.evaluate(()=>G.test.step(1/60,1));assert.equal(await page.evaluate(()=>G.state),'paused');
  // The pause menu covers the city on a phone, so its RESUME button goes back to play.
  await page.locator('#fsMenu button[data-id=resume]').click();await page.evaluate(()=>G.test.step(1/60,2));assert.equal(await page.evaluate(()=>G.state),'play');console.log('PASS pause/resume');
@@ -118,14 +121,18 @@ try {
  // ray comes from the view the player sees, so the rope lands on that building and not on what sits at the centre. Third person first,
  // then first person (V).
  await page.setViewportSize({width:844,height:390});await page.waitForFunction(()=>G.camera.aspect>2);
- const pick=skip=>page.evaluate(skip=>{
+ // a second building for the switch: with only the right half to tap, turn the view left a little at a time until one shows there
+ const pickTurn=async(skip)=>{for(let k=0;k<8;k++){const t=await pick(skip,.1);if(t)return t;await page.evaluate(()=>{G.test.look(.25,0);G.test.step(1/60,2);});}return null;};
+ // minA: the least NDC across (the switch target may sit nearer the middle; the right half is half the view)
+ const pick=(skip,minA=.4)=>page.evaluate(([skip,minA])=>{
   const c=G.city,cam=G.camera,V3=cam.position.constructor,f=Math.tan(cam.fov*Math.PI/360),h0=G.test.state().head,cen=G.test.aim(1),found=[];
   cam.updateMatrixWorld(true);
   const ray=(nx,ny,far)=>{const d=new V3(nx*f*cam.aspect,ny*f,-1).normalize().applyQuaternion(cam.quaternion);return c.raycast(cam.position.x,cam.position.y,cam.position.z,d.x,d.y,d.z,far,{});};
   // the buildings a centre aim could take (the rope aim now, and what the middle pixel shows) are not the one to tap
   const mid=ray(0,0,400);
   skip=skip.concat(cen?[cen.id]:[],mid&&mid.collider?[mid.collider.id]:[]);
-  for(let a=.4;a<=.9;a+=.05)for(const sx of [1,-1])for(let ny=-.3;ny<=.7;ny+=.1){
+  // only the right half swings: the left half is the move stick
+  for(let a=minA;a<=.9;a+=.05)for(const sx of [1])for(let ny=-.3;ny<=.7;ny+=.1){
    const nx=sx*a,h=ray(nx,ny,90);
    if(!h||h.collider.tag!=='building'||skip.includes(h.collider.id)||Math.abs(h.ny)>.5||h.y<h0.y+4)continue;
    const dx=h.x-h0.x,dy=h.y-h0.y,dz=h.z-h0.z,l=Math.hypot(dx,dy,dz);
@@ -137,7 +144,7 @@ try {
    found.push({nx,ny,id:h.collider.id,x:h.x,y:h.y,z:h.z,px,py,centre:cen&&cen.id});
   }
   return found[found.length>>1]||null;
- },skip);
+ },[skip,minA]);
  const tapFrom=async(label)=>{
   await page.evaluate(()=>{const s=G.city.start;G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=s.yaw;G.test.step(1/60,90);});
   const t=await pick([]);assert(t,label+': a building well off the screen centre is in view');
@@ -154,7 +161,7 @@ try {
  await page.evaluate(()=>{const s=G.city.start;G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=s.yaw;G.test.step(1/60,90);});
  const mid=await page.evaluate(()=>({x:innerWidth/2,y:innerHeight/2,canvas:document.elementFromPoint(innerWidth/2,innerHeight/2)===G.renderer.domElement}));
  assert(mid.canvas,'the middle of the view is the canvas');
- await tapAt(mid.x,mid.y);
+ await tapAt(mid.x+8,mid.y);
  // read the anchor when the rope catches: on a phone the rope lets go by itself past the bottom of the arc
  const roofTap=await page.evaluate(()=>{let y=null;for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[window.__side];if(y===null&&s.state==='attached')y=s.anchor.y;}return {caught:y!==null,y,roof:G.city.start.y};});
  assert(roofTap.caught&&roofTap.y>roofTap.roof+5,'a tap on the hero and the roof anchors on a building above, not on the roof '+JSON.stringify(roofTap));
@@ -162,7 +169,7 @@ try {
  const tp=await tapFrom('third person');console.log('PASS tap a building off the screen centre in third person',JSON.stringify({nx:+tp.nx.toFixed(2),ny:+tp.ny.toFixed(2),id:tp.id}));
  // with a rope attached, a tap on another building off the centre switches to that building
  const cur=await page.evaluate(()=>G.test.state().ropes[window.__side].id);
- const t2=await pick([tp.id,cur]);assert(t2,'a second building is in view');
+ const t2=await pickTurn([tp.id,cur]);assert(t2,'a second building is in view');
  await tapAt(t2.px,t2.py);
  const sw=await page.evaluate((first)=>{for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[window.__side];if(s.state==='attached'&&s.id!==first)return {state:s.state,id:s.id};}const s=G.test.state().ropes[window.__side];return {state:s.state,id:s.id};},tp.id);
  assert(sw.state==='attached'&&sw.id===t2.id,'a tap on another building switches the rope to it '+JSON.stringify({want:t2.id,got:sw}));
@@ -182,7 +189,7 @@ try {
   const roofs=await page.evaluate(()=>G.city.safe.length);
   for(let roof=0;roof<roofs;roof++)for(let turn=0;turn<8;turn++){
    await standAt({roof,turn});
-   const a=await pick([]);if(a&&await pick([a.id]))return {roof,turn};
+   const a=await pick([]);if(a&&await pick([a.id],.1))return {roof,turn};
   }
   return null;
  };
@@ -204,7 +211,7 @@ try {
  const ptp=await uprightTap('portrait third person',at3);console.log('PASS tap a building off the screen centre in portrait, third person',JSON.stringify({...at3,nx:+ptp.nx.toFixed(2),ny:+ptp.ny.toFixed(2),id:ptp.id}));
  // with a rope attached, a tap on another building off the centre switches to that building
  const pcur=await page.evaluate(()=>G.test.state().ropes[window.__side].id);
- const pt2=await pick([ptp.id,pcur]);assert(pt2,'portrait: a second building is in view');
+ const pt2=await pickTurn([ptp.id,pcur]);assert(pt2,'portrait: a second building is in view');
  await tapAt(pt2.px,pt2.py);
  const psw=await page.evaluate((first)=>{for(let k=0;k<45;k++){G.test.step(1/60,1);const s=G.test.state().ropes[window.__side];if(s.state==='attached'&&s.id!==first)return {state:s.state,id:s.id};}const s=G.test.state().ropes[window.__side];return {state:s.state,id:s.id};},ptp.id);
  assert(psw.state==='attached'&&psw.id===pt2.id,'portrait: a tap on another building switches the rope to it '+JSON.stringify({want:pt2.id,got:psw}));

@@ -1,0 +1,181 @@
+@import url("/afterlight/action.css");
+:root {
+  --action-gold: #ffe095;
+  --action-cyan: #7ffff0;
+  --action-edge: #91e7c377;
+}
+.action-brand {
+  letter-spacing: 0.09em;
+  font-size: 20px;
+}
+#tank-charge {
+  --charge: 0%;
+  min-width: 145px;
+  padding-bottom: 8px;
+  font-size: 10px;
+  color: #a4ffe5;
+  background: linear-gradient(
+      to right,
+      #68ffe2 var(--charge),
+      #244744 var(--charge)
+    )
+    left bottom / 100% 3px no-repeat;
+}
+#tank-charge.ready {
+  color: #ffe695;
+  background: linear-gradient(#ffe695, #ffe695) left bottom / 100% 3px no-repeat;
+  text-shadow: 0 0 9px #ffc05b8c;
+}
+#action-fire.charged {
+  border-color: #ffe295;
+  box-shadow:
+    0 0 25px #ffd24d44,
+    inset 0 0 18px #ffcd5522;
+}
+.action-hud {
+  background: linear-gradient(#020e19ea, #03141a94 60%, transparent);
+}
+.action-guidance {
+  text-shadow:
+    0 1px 3px #000,
+    0 0 12px #000;
+}
+.action-overlay-content {
+  border-color: #58eac577;
+  background: #02141bea;
+  box-shadow: 0 0 40px #00bca91a;
+}
+.action-overlay-content h1 {
+  color: #ffe5a0;
+  text-shadow: 0 0 15px #ffa85255;
+}
+@media (max-width: 700px) {
+  #action-score {
+    display: none;
+  }
+  #tank-charge {
+    min-width: 145px;
+  }
+  .action-status {
+    gap: 16px;
+  }
+  .action-settings button,
+  .action-settings a {
+    font-size: 8px;
+    padding: 4px;
+  }
+  .action-brand {
+    font-size: 13px;
+  }
+}
+#tank-artillery {
+  border-color: #f0a581;
+  color: #f0c497;
+  background: #422718b0;
+}
+@media (max-width: 700px) {
+  .action-brand {
+    font-size: 14px;
+  }
+  .action-combat {
+    gap: 6px;
+  }
+  .action-combat button {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    font-size: 10px;
+  }
+  .action-glyph {
+    font-size: 24px;
+  }
+  .action-guidance {
+    bottom: 108px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .action-combat button {
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+  }
+  .action-guidance {
+    right: 195px;
+  }
+  .action-brand {
+    font-size: 14px;
+  }
+}
+
+#tank-world-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+.tank-world-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font:
+    11px/1.2 ui-monospace,
+    monospace;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px #000;
+  background: #06110fd9;
+  padding: 4px 6px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+.tank-world-label.offscreen::before {
+  content: "↗ ";
+}
+#tank-radar {
+  position: absolute;
+  z-index: 3;
+  right: 24px;
+  top: 135px;
+  width: 144px;
+  height: 72px;
+  pointer-events: none;
+  opacity: 0.94;
+  border-radius: 3px;
+}
+#tank-reticle {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  font: 28px/1 monospace;
+  color: #ffddb1;
+  text-shadow: 0 0 3px #000;
+  border: 1px solid #ffddb188;
+  border-radius: 50%;
+  width: 27px;
+  height: 27px;
+  text-align: center;
+}
+#tank-reticle.out-of-range {
+  color: #ff7d9e;
+  border-color: #ff7d9e;
+}
+@media (max-width: 700px) {
+  #tank-radar {
+    right: 12px;
+    top: 150px;
+    width: 94px;
+    height: 47px;
+  }
+  .tank-world-label {
+    font-size: 9px;
+    padding: 3px 4px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #tank-radar {
+    top: 90px;
+    right: 14px;
+    width: 100px;
+    height: 50px;
+  }
+}

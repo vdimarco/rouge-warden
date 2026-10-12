@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "url": "https://arcade.uptick.systems/river-rush/?verify=15ac31ed",
+  "sourceCommit": "15ac31ed76d0e522dd2960348ecc2bee371d9728",
+  "deployment": "dpl_dAnhNHBAkRgdqQz6PT428M1gwZHw",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "js": "index-wW83rlHd.js",
+  "css": "index-BttXBCLJ.css",
+  "stateOrClockMutations": false,
+  "starterCoins": 6,
+  "starterCoinCues": 6,
+  "protectedImpactRms": {
+    "wood": 0.0739,
+    "splash": 0.00811
+  },
+  "controls": [
+    "Start",
+    "keyboard lane change after protected hit",
+    "Pause",
+    "Resume",
+    "Home"
+  ],
+  "pausedStatusAndSettledPixelsExact": true,
+  "homeAudioInactive": true,
+  "noActiveGpuPreparation": true,
+  "errors": [],
+  "screenshot": "/tmp/river-terrain-feedback/live/phone-hud.png",
+  "limitations": [
+    "Headless Chromium with SwiftShader; no physical-device FPS or speaker audition."
+  ]
+}

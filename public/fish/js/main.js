@@ -8,9 +8,11 @@ import { normalizeStyle } from "./art-style.js";
 import { PullStrength } from "./pull.js";
 import { Motion } from "./motion.js";
 import { createGuide, moveWords, inputOf } from "./guide.js";
+import { createActionCue } from "./action-cues.js";
 import { createRodCues } from "./rod-cues.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
+import { VoiceCues } from "./voice-cues.js";
 import { createWorld } from "./world.js";
 import { createCutscenes, opening as openingCut, arrival as arrivalCut, reveal as revealCut, landed as landedCut, finale as finaleCut, ringSpot, arriveId, revealId, landedId } from "./cutscenes.js";
 import { HangingLure } from "./line-motion.js";
@@ -64,9 +66,9 @@ const store = {
   raw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { const json = JSON.stringify(v); try { localStorage.setItem(k, json); } catch (e) { /* storage off */ } if (mirror) Native.prefs.set(k, json); },
 };
-// the switches that live outside the save (haptics.js, audio.js and guide.js keep them, and Settings keeps Larger text and
-// Calm effects): mirrored when the app goes away
-const SWITCHES = ["fish.haptics", "arcade.sound", "reel-it-in-guide-v1", "fish.text", "fish.calm"];
+// the switches that live outside the save (haptics.js, audio.js, voice-cues.js and guide.js keep them, and Settings
+// keeps Larger text and Calm effects): mirrored when the app goes away
+const SWITCHES = ["fish.haptics", "arcade.sound", "reel-it-in-guide-v1", "fish.text", "fish.calm", "fish.voiceHints"];
 const mirrorSwitches = () => { if (mirror) for (const k of SWITCHES) { const v = store.raw(k); if (v != null) Native.prefs.set(k, v); } };
 // in web storage while a read of native storage has not come back: the next start reads it again
 const UNREAD = "fish.native-unread";
@@ -76,8 +78,12 @@ const progress = (s) => s.caught * 1e6 + s.casts;
 function putSwitches([, hx, sound, ...kept]) {
   if (hx != null && store.raw("fish.haptics") == null) Haptics.setEnabled(hx !== "false");
   if (sound != null && store.raw("arcade.sound") == null && (sound !== "false") !== Sound.isOn()) Sound.toggle();
-  // the guide, Larger text and Calm effects are read from web storage
-  SWITCHES.slice(2).forEach((k, i) => { if (kept[i] != null && store.raw(k) == null) { try { localStorage.setItem(k, kept[i]); } catch (e) { /* storage off */ } } });
+  // the guide, Larger text and Calm effects are read from web storage. Voice cues cache their switch in the module.
+  SWITCHES.slice(2).forEach((k, i) => {
+    if (kept[i] == null || store.raw(k) != null) return;
+    if (k === "fish.voiceHints") VoiceCues.setEnabled(kept[i] !== "false");
+    else { try { localStorage.setItem(k, kept[i]); } catch (e) { /* storage off */ } }
+  });
 }
 // The app with no save in web storage (or with a native read that never came back): ask native storage, and keep the
 // save with more in it. The answer has 400 ms, so a slow phone does not hold up the boot. A later answer is read when
@@ -119,6 +125,7 @@ function takeComeback() {
 if (late) late.then((got) => {
   putSwitches(got);
   applyAccess();
+  setTimeout(syncSettings, 0);
   const theirs = got[0] && loadSave(got[0]), json = theirs && JSON.stringify(theirs);
   const fresh = webRaw == null && JSON.stringify(save) === startJson;
   if (theirs && (progress(theirs) > progress(save) || (fresh && json !== startJson))) { comeback = json; takeComeback(); return; }
@@ -163,12 +170,13 @@ const G = {
 };
 let world = null, rises = null, reelPanel = null, crank = null, rodPad = null, gauge = null, crankPad = null;
 const rodCues = createRodCues(game);
+const actionCue = createActionCue($("#prompt"));
 const castRail = createCastRail(game);
 let cardT = 0, countT = 0;   // the catch card: the timer of the photo beat, the timer of the count-up
 let cuts = null;             // the cutscene player (cutscenes.js, made in boot); heldToasts wait for the one playing
 const heldToasts = [];
 
-/* ---------------- icons for the prompts and the help ---------------- */
+/* ---------------- icons for the help ---------------- */
 const PHONE = "<rect x='14' y='5' width='12' height='22' rx='2.5' fill='none' stroke='currentColor' stroke-width='2.4'/>";
 const ICON = {
   bail: "<svg viewBox='0 0 40 40'><circle cx='20' cy='22' r='9' fill='none' stroke='currentColor' stroke-width='2.4'/><path d='M8 16 Q20 4 32 16' fill='none' stroke='#e8b64a' stroke-width='3' stroke-linecap='round'/><path d='M20 31 v6 m-3 -3 l3 3 l3 -3' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round'/></svg>",
@@ -221,6 +229,14 @@ game.addEventListener("click", (e) => {
   if (tapShown && now() - shownAt < 300 && e.target.closest && e.target.closest(".screen button, .screen a")) { e.preventDefault(); e.stopPropagation(); return; }
   tapAt = now();
 }, true);
+// A quiet selection click confirms menu actions, whether pressed by touch, mouse or keyboard.
+// Drag controls have their own gear click; gameplay and catch effects keep their stronger patterns.
+game.addEventListener("click", (e) => {
+  const button = e.target.closest?.(".screen button, #guideToggle");
+  if (e.defaultPrevented || !button || (button.id === "catchGo" && G.cardWait)) return;
+  Haptics.unlock();
+  Haptics.tick();
+}, true);
 for (const b of $$("[data-close]")) b.addEventListener("click", () => { Sound.sfx("uiBack"); closeOverlay(); });
 
 // A toast stays up at least TOAST_MIN ms before the next one takes its place. The next ones wait in a short queue: when it
@@ -270,26 +286,27 @@ function nextToast() {
   if (toastQ.length) toastNextT = setTimeout(nextToast, TOAST_MIN);
 }
 let promptKey = "";
-function prompt(text, sub = "", icon = "", tone = "") {
-  guideCue = { text, sub, icon, tone };
+function prompt(text, sub = "", icon = "", tone = "", pace = "") {
+  guideCue = { text, sub, icon, tone, pace };
   // on a computer with a mouse the crank is the wheel: the card shows the wheel rolling
-  if (icon === "crank" && inputOf(sensing(), touchDevice, G.desk) === "mouse") icon = "wheel";
+  const input = inputOf(sensing(), touchDevice, G.desk);
+  if (icon === "crank" && input === "mouse") icon = "wheel";
   const p = $("#prompt");
   if (!text) { p.hidden = true; promptKey = ""; return; }
-  const key = text + "|" + sub + "|" + icon + "|" + tone;
+  const key = text + "|" + sub + "|" + icon + "|" + tone + "|" + pace + "|" + input + "|" + G.step + "|" + (G.sim?.state.phase || "");
   p.hidden = false;
   if (key === promptKey) return;
   promptKey = key;
   // a hot prompt glows once when it changes: start its animation again
   if (tone === "hot" && p.classList.contains("hot")) { p.className = ""; void p.querySelector(".p1").offsetWidth; }
   p.className = tone;
-  p.dataset.icon = ICON[icon] ? icon : "";
-  p.querySelector(".p1").innerHTML = (ICON[icon] || "") + "<span></span>";
-  p.querySelector(".p1 span").textContent = text;
+  p.dataset.icon = icon;
+  p.querySelector(".p1 .cue-words").textContent = text;
   p.querySelector(".p2").textContent = sub;
-  say(text);
+  actionCue.set({ text, sub, icon, tone, phase: G.phase, step: G.step, fishPhase: G.sim?.state.phase, input, pace });
+  say(text + (sub ? " " + sub : ""));
 }
-// The prompt's headline for screen readers (#say, a polite live region): each new one, at most every 1.5 s. One that
+// The prompt and its action for screen readers (#say, a polite live region): each new one, at most every 1.5 s. One that
 // comes sooner waits its turn, and a newer one takes its place
 let sayAt = -1e9, sayT = 0;
 function say(text) {
@@ -555,7 +572,7 @@ function stopPlay() {
   hideReport();
   clearTimeout(cardT); clearInterval(countT); clearInterval(resT); banner("");
   if (world) { world.hideCatch(); world.setLure({ x: 0, y: -5, z: 0, visible: false }); world.setLine({ visible: false }); world.setFish(null); world.setFollower(null); world.setAim({ visible: false }); world.setRod({ theta: 70, yaw: 0, visible: false }); }
-  Sound.stopLoops(); Haptics.stop();
+  Sound.stopLoops(); Haptics.stop(); VoiceCues.stop();
 }
 function toTitle() {
   stopPlay();
@@ -934,6 +951,7 @@ function launch(t, tEnd, held, finger, sounded = false) {
   if (!sounded) Sound.sfx("release");
   // a sweet release says so at once, before the lure lands (the grade is fixed, so the buzz cannot spoil it)
   if (params.verdict === "sweet" && !held) { report(null, "Sweet!", "", true, true, 900); Sound.sfx("zing"); Haptics.bump(0.6); }
+  else Haptics.release();
   seen("cast");
   updateHud();
   relayout();
@@ -982,7 +1000,7 @@ function landed(r) {
     // casts in the water here while the goal that opens the next place is not met: short ones, and all of them in free fishing
     if (goalOpen && dist < SHORT_M) G.shortN = (G.shortN || 0) + 1;
     if (goalOpen && G.mode === "free") { if (!G.dry || G.dry.at !== G.place.id) G.dry = { at: G.place.id, n: 0 }; G.dry.n++; }
-    for (const t of noteGoals({ kind: "cast", dist })) toast(t, 3000, () => Sound.sfx("record"));
+    const goalNews = noteGoals({ kind: "cast", dist });
     // G.force lets a test pick the fish: { species, kg, bite }. A brand-new player's first cast in the water gets a sure bite
     // from a small, easy fish (firstBite in fish.js). It is used up when that fish strikes (handleEvent), so a cast that ends
     // before the strike keeps it for the next one; the casts after the strike have the normal odds
@@ -1007,9 +1025,12 @@ function landed(r) {
     if (G.ring) { Sound.sfx("ringHit", G.ring.gold ? 1 : 0); Haptics.bump(0.5); world.sparkle(r.x, r.z, 8); }
     // straight to the reel: the first turn of the crank closes the bail, like a real reel
     enterReel();
+    // the goals this cast finished, with the record sting: after the report and the reel layout, so in the reel layouts
+    // they wait until the report goes (the report covers the toast). Kept, so the wait does not drop them
+    for (const t of goalNews) toast(t, 3000, () => Sound.sfx("record"), true);
     return;
   } else {
-    Sound.sfx("plop");
+    Sound.sfx("plop"); Haptics.miss();
     const msg = r.land === "tree" ? (G.place.id === "loon" ? "You caught a pine tree." : "You caught a tree.") : r.land === "dock" ? STAND_HIT[G.place.stand.kind] || "You hooked the dock." : "You cast onto the shore.";
     // a derby gives back a cast that did not reach the water: a fumble is not a cast at a fish
     const back = G.mode === "derby";
@@ -1044,6 +1065,7 @@ function outcome(kind, msg, sub = "") {
   const d = f ? Math.hypot(f.x, f.z) || 1 : 1;
   G.gone = f && !s.junk ? { fish: { id: f.id, x: f.x, y: Math.min(f.y, -0.1), z: f.z, len: f.len || 0.4 }, dx: f.x / d, dz: f.z / d, limp: s.reason === "thrown" } : null;
   G.phase = "lost";
+  VoiceCues.stop();
   G.outcomeAt = now();
   prompt(msg, sub, kind === "home" ? "crank" : "stop", "");
   relayout();
@@ -1109,7 +1131,8 @@ function ringNews(e) {
 /* ---------------- the catch ---------------- */
 // the photo beat of a trophy, a legend or a fish that opens a place: the fish shows alone (world.js pushes the camera
 // in), the flash and the shutter come, then the card slides up. Seconds, on the wall clock: the flash comes as the
-// push-in ends, and the card as the fish's hold ends (world.js runs both on this clock too)
+// push-in ends, after a frame shows the photo's pose, and the card as the fish's hold ends (world.js runs both on this
+// clock too)
 const PHOTO = { flash: WORLD.PHOTO.push, card: WORLD.PHOTO.push + WORLD.PHOTO.freeze };
 // the call of each place, after a legend's fanfare
 const PLACE_CALL = { loon: "loonWail", stumps: "frogs", river: "rapids", sea: "gulls" };
@@ -1136,6 +1159,7 @@ function caught(c) {
   const goals = noteGoals(ctx), news = [!junk && save.caught === 1 ? "Your first fish!" : day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
   if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null, true);
   G.phase = "catch";
+  VoiceCues.stop();
   prompt("");
   G.big = null; G.walk = false;
   world.setFish(null); world.setFollower(null);
@@ -1190,7 +1214,9 @@ function caught(c) {
   show("catch");
   updateHud();
   if (!photo) { countUp(c, junk, rank); return; }
-  cardT = setTimeout(() => {
+  cardT = setTimeout(function snap() {
+    // on slow frames the timer can come before the frame that brings the camera to the photo's pose: wait for that frame
+    if (!world.posed()) { cardT = setTimeout(snap, 16); return; }
     flash("photo"); Sound.sfx("shutter"); Haptics.shutter();
     cardT = setTimeout(() => { G.cardWait = false; $("#catch").classList.remove("wait"); countUp(c, junk, rank); }, (PHOTO.card - PHOTO.flash) * 1000);
   }, PHOTO.flash * 1000);
@@ -1244,7 +1270,7 @@ $("#catchGo").addEventListener("click", () => {
 function endDerby() {
   releaseAwake();
   G.phase = "results";
-  Sound.stopLoops(); Haptics.stop();
+  Sound.stopLoops(); Haptics.stop(); VoiceCues.stop();
   prompt("");
   const id = G.place.id, J = journeyOf(id);
   const total = G.bag.reduce((a, b) => a + b.kg, 0);
@@ -1473,9 +1499,12 @@ markPlace();
 /* ---------------- settings ---------------- */
 function syncSettings() {
   $("#optSound").checked = Sound.isOn();
+  $("#optVoice").checked = VoiceCues.enabled;
+  $("#optVoice").disabled = !VoiceCues.available();
+  $("#voiceNote").textContent = VoiceCues.available() ? "British wildlife-style cues. Requires Sound." : "Spoken cues are unavailable on this device.";
   $("#optHaptics").checked = Haptics.enabled;
   $("#optHaptics").disabled = Haptics.kind === "none";
-  $("#hapticNote").textContent = Native.onMac ? "This Mac cannot buzz." : Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Buzz for bites, strikes, and line pull.";
+  $("#hapticNote").textContent = Native.onMac ? "This Mac cannot buzz." : Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Taps for controls, casts, bites, and catches; buzz for line pull.";
   $("#optAssist").checked = !!save.assist;
   // after stalled sensors switched this visit to touch (G.stallTouch), the saved choice is still motion: show touch, so
   // picking Motion turns the sensors back on
@@ -1490,8 +1519,13 @@ function syncSettings() {
   syncArtStyle();
   syncAccess();
 }
-$("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); });
+$("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); if (!Sound.isOn()) VoiceCues.stop(); });
+$("#optVoice").addEventListener("change", (e) => VoiceCues.setEnabled(e.target.checked));
 $("#optHaptics").addEventListener("change", (e) => { Haptics.unlock(); Haptics.setEnabled(e.target.checked); if (e.target.checked) Haptics.bump(0.6); });
+$("#settings").addEventListener("change", (e) => {
+  if (!e.target.matches?.("input, select") || e.target.id === "optHaptics") return;
+  Haptics.unlock(); Haptics.tick();
+});
 $("#optAssist").addEventListener("change", (e) => { save.assist = e.target.checked; persist(); });
 $("#optQuality").addEventListener("change", (e) => { save.quality = e.target.value; persist(); applyQuality(); });
 // the reel side mirrors the reel controls in motion play: the crank, the drag and the gauge (index.html)
@@ -1583,7 +1617,7 @@ function pause() {
   G.paused = true;
   pullStrength.reset();
   releaseAwake();
-  Sound.stopLoops(); Haptics.stop();
+  Sound.stopLoops(); Haptics.stop(); Haptics.bump(0.2); VoiceCues.stop();
   // a thumb on the line when the game stops: the line goes back, and the next press starts the cast again
   if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) { G.pin = null; G.step = "ready"; G.bail = "closed"; G.drop = 0; }
   reelPanel?._cancelAll();
@@ -1604,7 +1638,7 @@ $("#pHelp").addEventListener("click", openHelp);
 $("#pJournal").addEventListener("click", () => { renderJournal(); overlay("journal"); });
 $("#pSet").addEventListener("click", () => { syncSettings(); overlay("settings"); });
 // the page or the app goes away: play pauses, the loops and the buzz stop
-function away() { $("#pullDemoVideo").pause(); pause(); Sound.stopLoops(); Haptics.stop(); mirrorSwitches(); }
+function away() { $("#pullDemoVideo").pause(); pause(); Sound.stopLoops(); Haptics.stop(); VoiceCues.stop(); mirrorSwitches(); }
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) away();
   else if (!G.paused && G.phase !== "title" && G.phase !== "results") keepAwake();
@@ -1736,9 +1770,10 @@ function syncPadKeys() {
 }
 const DRAGS = ["DRAG: LIGHT", "DRAG: MED", "DRAG: HEAVY"];
 function setDrag(d) {
-  G.drag = clamp(d, 0, 2);
+  const next = clamp(d, 0, 2), changed = next !== G.drag;
+  G.drag = next;
   $("#dragName").textContent = DRAGS[G.drag];
-  Sound.sfx("tick"); Haptics.tick();
+  if (changed) { Sound.sfx("tick"); Haptics.tick(); }
 }
 $("#dragDown").addEventListener("click", () => setDrag(G.drag - 1));
 $("#dragUp").addEventListener("click", () => setDrag(G.drag + 1));
@@ -1766,11 +1801,12 @@ function castUpdate(dt) {
   const p = Motion.pose;
   // the sensors went quiet after the player chose motion (a call, a system sheet): after STALL_S the game offers touch.
   // Counted by the clock from the last sample (pose.t; Motion.live turns false LIVE_MS after it), so slow frames count in
-  // full; a pause or another phase counts a second at most
-  const quiet = G.input === "motion" && !Motion.live, gap = G.quietT ? Math.min(1, (t - G.quietT) / 1000) : 0;
+  // full, also a frame longer than a second; a pause or another phase (no cast step in the frame before) counts a second at most
+  const cap = G.quietF >= G.frame - 1 ? Infinity : 1;
+  const quiet = G.input === "motion" && !Motion.live, gap = G.quietT ? Math.min(cap, (t - G.quietT) / 1000) : 0;
   const since = (t - Motion.pose.t) / 1000, live = Motion.tune.LIVE_MS / 1000;
-  G.quietT = t;
-  G.quiet = quiet ? (G.quiet ? G.quiet + gap : Number.isFinite(since) ? clamp(since, live, 1) : live) : 0;
+  G.quietT = t; G.quietF = G.frame;
+  G.quiet = quiet ? (G.quiet ? G.quiet + gap : Number.isFinite(since) ? clamp(since, live, cap) : live) : 0;
   // a motion lift that waits for the rod to reach 11 o'clock, and no sample came: the wait ends here
   if (G.lift) frameLift();
   // touch mode: the finger on the rod is the rod. Drag down = rod back; flick up = forward
@@ -1899,10 +1935,18 @@ function reelUpdate(dt) {
   if (G.hookReq) { hookset = true; G.hookReq = false; }
   const s = sim.state;
   const pullActive = s.phase === "fight" && s.fish?.move !== "jump" && s.fish?.move !== "sulk" && (s.slip || 0) < 0.15;
-  const pull = pullStrength.step(dt, { theta, enabled: G.input === "motion" && Motion.live,
+  // the sensors are live while a sample came in the last LIVE_MS (Motion.live), or in the last LIVE_MS of game time: the
+  // frames since the last sample count, and a frame moves the game on 0.25 s at most. A slow frame holds the samples back,
+  // and that alone must not hide the pull meter or start the pull strength again from a new rest angle
+  const sampleAt = Motion.lastSample;
+  if (sampleAt > 0 && sampleAt !== G.sampleAt) { G.sampleAt = sampleAt; G.sampleFrame = G.frame; G.sensorQuiet = 0; }
+  else if (G.frame !== G.sampleFrame) G.sensorQuiet = (G.sensorQuiet || 0) + dt;
+  // (only after a first sample: sensors that never sent one are not live)
+  const live = G.input === "motion" && (Motion.live || (G.sampleAt > 0 && G.sensorQuiet * 1000 < Motion.tune.LIVE_MS));
+  const pull = pullStrength.step(dt, { theta, enabled: live,
     active: pullActive, crank: crankRate, tension: s.tfrac || 0, session: sim });
   // (no "Tip back as you reel" while the prompt says to stop reeling)
-  pullMeter.hidden = G.input !== "motion" || !Motion.live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85 || guideCue.icon === "stop";
+  pullMeter.hidden = !live || s.phase !== "fight" || !pullActive || (s.tfrac || 0) > 0.85 || guideCue.icon === "stop";
   pullMeter.querySelector("span").textContent = pull > 0.03 ? "Pull strength +" + Math.round(pull * 35) + "%" : "Tip back as you reel";
   pullMeter.querySelector("i").style.transform = "scaleX(" + pull.toFixed(3) + ")";
   const pullTo = s.fish ? { x: s.fish.x, y: Math.max(s.fish.y, -0.3), z: s.fish.z } : s.lure;
@@ -1924,7 +1968,7 @@ function reelUpdate(dt) {
   if (s.fish) {
     const f = s.fish;
     // roll: the body turned about its length, in radians
-    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
+    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near, speed: f.speed || 0, move: f.move, reel: crankRate, tension: s.tfrac || 0 });
     world.setLure({ x: L.x, y: L.y, z: L.z, visible: false });
     world.setLine({ from: tip, to: { x: f.x, y: f.jump ? f.y : Math.max(f.y, -0.25), z: f.z }, slack: s.slack ? 1 : clamp(0.5 - s.tfrac * 2, 0, 0.5), visible: true });
   } else {
@@ -1973,7 +2017,7 @@ function reelPrompt(s, crankRate, theta) {
   if (!H || key !== H.key) G.hold = { key, at: t };
   // a jump at the hook set: the "Fish on!" banner gives way, so the words to lower the rod show at once
   if (w.icon === "low" && !$("#banner").hidden) banner("");
-  prompt(w.text, w.sub, w.icon, w.tone);
+  prompt(w.text, w.sub, w.icon, w.tone, w.pace);
   // the guide and the rod cue say the crank's pace the prompt asks for ("Reel fast."), never their own
   guideCue.pace = w.pace;
 }
@@ -2067,8 +2111,8 @@ function handleEvent(e) {
   const fz = e.z != null ? e.z : s && s.fish ? s.fish.z : s ? s.lure.z : 0;
   switch (type) {
     // a nibble taps the rod tip; the strike pulls it down hard, with its own buzz and sound as hard as it hit
-    case "nibble": Sound.sfx("nibble", e.s); Haptics.bump(e.s == null ? 0.5 : e.s); world.twitch(0.12 + 0.15 * (e.s == null ? 0.5 : e.s)); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
-    case "strike": Sound.sfx("strike", e.s); Haptics.thump(e.s); flash(); world.twitch(0.7, 60); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); if (G.gift) G.gifted = true; break;
+    case "nibble": Sound.sfx("nibble", e.s); Haptics.nibble(e.s == null ? 0.5 : e.s); VoiceCues.say("nibble"); world.twitch(0.12 + 0.15 * (e.s == null ? 0.5 : e.s)); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
+    case "strike": Sound.sfx("strike", e.s); Haptics.thump(e.s); VoiceCues.say("hook"); flash(); world.twitch(0.7, 60); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); if (G.gift) G.gifted = true; break;
     case "hooked": {
       if (e.junk) { Sound.sfx("junk"); toast("Something heavy is on the line. Reel it in.", 2200); }
       else {
@@ -2095,8 +2139,8 @@ function handleEvent(e) {
       break;
     }
     case "drag": sayBig(); break;
-    case "missed": case "spooked": Sound.sfx("miss"); break;
-    case "refuse": Sound.sfx("miss"); toast("Too fast. It turned away. Reel slower.", 2600); break;
+    case "missed": case "spooked": Sound.sfx("miss"); Haptics.miss(); break;
+    case "refuse": Sound.sfx("miss"); Haptics.miss(); toast("Too fast. It turned away. Reel slower.", 2600); break;
     case "slack": Sound.sfx("slip"); Haptics.bump(0.3); break;
     // a leap: the view zooms in on the fish as it comes up, and eases back after it lands (world.js)
     case "jump": Sound.sfx("jump", e.size); Haptics.splash(0.8); world.splash(fx, fz, e.size || 0.8); world.jumpZoom(); break;
@@ -2136,7 +2180,7 @@ function handleEvent(e) {
       Sound.sfx(e.reason === "weeds" || e.reason === "rocks" || e.reason === "stump" || e.reason === "logs" ? "thrown" : "snap"); Haptics.jolt(); flash(); break;
     // (a slack line in a head shake has its own tip: keep reeling slowly)
     case "thrown": G.thrownBy = e.jump ? "jump" : e.thrash ? "thrash" : e.charge ? "charge" : s && s.fish && /shake|thrash/.test(s.fish.move) ? "shake" : "slack"; Sound.sfx("thrown"); Haptics.jolt(); break;
-    case "home": Sound.sfx("plop"); break;
+    case "home": Sound.sfx("plop"); Haptics.home(); break;
   }
 }
 // what went wrong, and the one move that would have saved it (journey.js has the lines)
@@ -2289,6 +2333,7 @@ function frame() {
   guide.update({ phase: G.phase, step: G.step, motion: sensing(), touch: touchDevice, desk: G.desk, hold: !!(G.pin && G.pin.key),
     pullAvailable: !pullMeter.hidden && (G.sim?.state.tfrac || 0) < 0.65,
     fishPhase: G.sim && G.sim.state.phase, paused: G.paused, cue: guideCue }, t / 1000);
+  actionCue.update(t / 1000);
   dt = Math.min(dt, 0.05);
   // under the pause menu, the dimmed screens and the painted title the lake stands still: draw it once, then let the
   // GPU rest. A lost GL context draws nothing until it is back. The title over the live lake draws it less often
@@ -2303,11 +2348,10 @@ function frame() {
     held: !!G.pin || !!rodPad?.drag, hold: !!(G.pin && G.pin.key) });
   // a computer: the crank's hint says to scroll the mouse wheel
   if (crank) crank.wheelHint = !touchDevice && !sensing();
-  // the action card stands under the pull meter while it shows
-  const pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6;
+  // the action card stands under the pull meter while it shows, and then the toasts of the tall reel stand under the card
+  const card = $("#prompt .p1"), pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6, cardH = card.offsetParent ? card.offsetHeight : 0;
   if (pullH !== G.pullH) { G.pullH = pullH; game.style.setProperty("--pull-h", pullH + "px"); }
-  // the action card's how-to stays away while the rod cue over the reel shows the same words
-  { const sub = $("#prompt .p2"), rc = $("#rodCue"); sub.classList.toggle("same", !!rc && !rc.hidden && !!sub.textContent && rc.querySelector("span").textContent === sub.textContent); }
+  if (cardH !== G.cardH) { G.cardH = cardH; game.style.setProperty("--card-h", cardH + "px"); }
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A
   // hold cast (Space, the mouse button) moves the rod by the clock: its rail stands where all of it shows
   const railPin = !still && G.phase === "cast" && !sensing() && G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded") ? G.pin : null;
@@ -2316,8 +2360,10 @@ function frame() {
   if (DEBUG) debug();
 }
 function step(dt) {
-  // a cutscene holds the fish, the clock, the derby and the cast, and moves itself on
-  if (cuts && cuts.playing) { cuts.update(dt); return; }
+  // a cutscene holds the fish, the clock, the derby and the cast, and moves itself on. The step it ends in goes on with no
+  // time, so play sets its view before the frame draws: the last step of a slow frame must not draw the title view first
+  // and fly the camera home from there
+  if (cuts && cuts.playing) { cuts.update(dt); if (cuts.playing) return; dt = 0; }
   const inPlay = G.phase === "cast" || G.phase === "reel" || G.phase === "lost";
   if (inPlay) {
     // the day goes by: an hour every 75 s in free fishing; the derby stays at golden hour (journey.js has the clock)

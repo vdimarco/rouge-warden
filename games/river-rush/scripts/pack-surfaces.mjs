@@ -1,8 +1,7 @@
 // Extract fal's four material tiles, stitch borders and derive detail normals.
 // Usage: node scripts/pack-surfaces.mjs /path/to/atlas.png
-import {createRequire} from 'node:module';
+import sharp from 'sharp';
 import {fileURLToPath} from 'node:url';
-const sharp=createRequire(new URL('../../../higgsfield/package.json',import.meta.url))('sharp');
 const source=process.argv[2];if(!source)throw new Error('Pass a downloaded four-quadrant atlas.');
 const size=1024,meta=await sharp(source).metadata();if(meta.width!==2048||meta.height!==2048)throw new Error('Expected 2048 square atlas.');
 const output=name=>fileURLToPath(new URL(`../public/art/surface-${name}.${name.endsWith('-normal')?'png':'webp'}`,import.meta.url));

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {createMatch,player,cast,step,damage,heroSpeed} from '../../public/tidebreak/sim.js';
+import {createMatch,player,cast,step,damage,heroSpeed,isRanged,MELEE} from '../../public/tidebreak/sim.js';
 import {spellBlocked} from '../../public/tidebreak/combat-state.js';
 import {launchSkill} from '../../public/tidebreak/skill-events.js';
 import {HERO_IDENTITIES} from '../../public/tidebreak/hero-identities.js';
@@ -27,7 +27,7 @@ assert.deepEqual(['Irontide','Bloodwake','Zephyrs','Coral Sage'].map(kit),[12,13
 {
  const {s,p}=setup(12),t=hero(s,p,{y:p.y-200});
  cast(s,p,2);assert(t.tauntUntil>s.time&&t.tauntBy===p.id,'Challenge taunts');assert(spellBlocked(s,t,1),'a taunted hero cannot cast');
- p.shield=0;const hp=p.hp;damage(s,t,p,100,'attack');assert(Math.abs(hp-p.hp-70)<1,'Challenge reduces damage taken by 30%');
+ p.shield=0;const hp=p.hp;damage(s,t,p,100,'attack');assert(Math.abs(hp-p.hp-70*(isRanged(t)?1-MELEE.shotGuard:1))<1,'Challenge reduces damage taken by 30% (Irontide is melee: a ranged hero\'s shot is also guarded)');
 }
 {
  const {s,p}=setup(12),t=unit(s,p,{y:p.y-400});

@@ -1,0 +1,7 @@
+Verified 2026-10-07. The old live 3D game activated a magnet 7.587 m beside the visible raft after two late right inputs, then awarded nine remote coins. The corrected engine samples actual steering contact for all pickups and resolves acquisition in travel order.
+
+All 77 tests pass, including the two-input/nine-coin regression at 30/60/120 Hz and 80 unshielded campaigns across 240 stages. The arcade build succeeds. Primary 3D phone and desktop play collect six aligned opening coins and zero adjacent coins; gestures, exact paused pixels and prepared GPU resources pass. Nine isolated browser fixtures verify contact/order, missed powers in both renderers, attraction through the raft and reduced motion.
+
+Implementation commit `7f1802b773cab12cee216e68844e5b912dae894a` reached READY production deployment `dpl_AD6ij8XqUqHVLfpPCR6Vd2HQnBx9`. The arcade alias and all three built HTML/JS/CSS asset hashes match. Actual live input on a curved section at 2,125 m misses an adjacent magnet and the following coin, with no power activation or unintended attraction and no JavaScript errors.
+
+Detailed measurements and reproducible commands: `games/river-rush/docs/pickup-contact-verification.json`; browser harness: `qa/river-rush/pickup-contact.e2e.mjs`. Real input runs and isolated fixtures are labeled separately. Physical-device frame rate was not measured. OpenSpec CLI is unavailable; artifact/scenario structure and canonical reconciliation were checked manually.

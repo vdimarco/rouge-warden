@@ -1,0 +1,147 @@
+{
+  "passed": true,
+  "scope": "fixtures",
+  "bundle": null,
+  "actualAppStateOrClockMutations": false,
+  "publicScoreWrites": 0,
+  "actual": [],
+  "isolatedRendererFixtures": {
+    "total": 90,
+    "passed": 90,
+    "maps": [
+      0,
+      1,
+      2
+    ],
+    "layouts": [
+      "phone",
+      "desktop",
+      "landscape"
+    ],
+    "maxDrawCalls": 44,
+    "maxTriangles": 112261
+  },
+  "richWaterShaderCompiled": true,
+  "gpuBudgetPreflight": {
+    "samples": 72,
+    "maxDrawCalls": 45,
+    "maxTriangles": 112261,
+    "violations": []
+  },
+  "islandContacts": [
+    {
+      "hz": 30,
+      "power": "none",
+      "phase": "lost",
+      "finalLane": 1.3487715548642327,
+      "impacts": [
+        {
+          "type": "lose",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 30,
+      "power": "shield",
+      "phase": "playing",
+      "finalLane": 1.0000000000000062,
+      "impacts": [
+        {
+          "type": "hit",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 30,
+      "power": "rush",
+      "phase": "playing",
+      "finalLane": 1.0000000000000062,
+      "impacts": [
+        {
+          "type": "smash",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 60,
+      "power": "none",
+      "phase": "lost",
+      "finalLane": 1.348771548392616,
+      "impacts": [
+        {
+          "type": "lose",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 60,
+      "power": "shield",
+      "phase": "playing",
+      "finalLane": 1.0000000000000062,
+      "impacts": [
+        {
+          "type": "hit",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 60,
+      "power": "rush",
+      "phase": "playing",
+      "finalLane": 1.0000000000000062,
+      "impacts": [
+        {
+          "type": "smash",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 120,
+      "power": "none",
+      "phase": "lost",
+      "finalLane": 1.3487715425951257,
+      "impacts": [
+        {
+          "type": "lose",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 120,
+      "power": "shield",
+      "phase": "playing",
+      "finalLane": 1.0000000000000062,
+      "impacts": [
+        {
+          "type": "hit",
+          "obstacle": "island"
+        }
+      ]
+    },
+    {
+      "hz": 120,
+      "power": "rush",
+      "phase": "playing",
+      "finalLane": 1.0000000000000062,
+      "impacts": [
+        {
+          "type": "smash",
+          "obstacle": "island"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "failure": null,
+  "limitations": [
+    "Chromium SwiftShader; hardware phone frame rate and human reaction difficulty are not measured.",
+    "Natural App runs retain the original game seed and clock. Source fixtures explicitly own isolated state."
+  ]
+}

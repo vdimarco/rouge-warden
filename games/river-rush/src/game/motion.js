@@ -23,6 +23,6 @@ export function advanceMotion(m,g,reduced=false){
 export function paddleFrame(time,reduced=false){return reduced?0:Math.floor(time*12)%PADDLE_FRAMES;}
 export function landingPulse(m,time,reduced=false){const t=time-m.landAt;return !reduced&&t>=0&&t<.4?Math.sin(t/.4*Math.PI)*Math.exp(-t*7):0;}
 export function impactPulse(m,time,reduced=false){const t=time-m.hitAt;return !reduced&&t>=0&&t<.36?Math.sin(t*55)*Math.exp(-t*9):0;}
-export function pickupProgress(effect,time){return clamp((time-effect.time)/.36,0,1);}
+export function pickupProgress(effect,time){return clamp((time-(effect.contactTime??effect.time))/.36,0,1);}
 
 export function paddleSample(distance,reduced=false){const phase=reduced?0:distance*.4,index=Math.floor(phase)%8;return{index,next:(index+1)%8,blend:phase-Math.floor(phase)};}

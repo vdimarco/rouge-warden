@@ -1,4 +1,7 @@
+import {MAX_LANE,LANE_SPACING,PLAYABLE_HALF_WIDTH} from './lanes.js';
 import {riverHash,riverHalfWidth,riverBankHeight} from './river-course.js';
+import {branchSpan} from './branch-spans.js';
+import {forkLaneCross,riverFork} from './river-forks.js';
 
 let leafArt;
 export function branchLeafArt(){
@@ -17,47 +20,95 @@ export function branchLeafArt(){
   return leafArt=c;
 }
 
-// Heights are relative to the river at each node's course offset. Only the
-// terminal limb dips to duck height; the long reach stays over standing heads.
+export const BRANCH_TREE_PARTS=96;
+// A branch is an entire rooted tree, not a pole holding a separate beam. The
+// main limb wanders in height and depth; its connected forks grow sideways,
+// uphill and downriver at irregular intervals. Width controls reach only.
 export function shorelineBranch(e,course=e.d,seed=137){
-  const side=e.lane===0?-1:e.lane===2?1:riverHash(e.id+19,seed)>.5?1:-1;
-  const lane=(e.lane-1)*3.8,d=4+e.lane*3+riverHash(e.id+31,seed)*2;
-  const x=side*(riverHalfWidth(course+d,seed)+1.8),ground=riverBankHeight(x,course+d,seed);
-  const wood=[],leaves=[],node=(x,y,d=0)=>({x,y,d});
-  const limb=(a,b,r,kind)=>wood.push({a,b,r,kind});
-  const root=node(x,ground,d),fork=node(x-side*.9,7.2+ground*.4,d-.7);
-  const trunk=[root,node(x-side*.15,ground+2.2,d-.2),node(x-side*.45,ground+4.5,d-.5),fork,node(x-side*.2,9.5+ground*.3,d+.5)];
-  for(let i=1;i<trunk.length;i++)limb(trunk[i-1],trunk[i],[1.16,.98,.84,.64][i-1]);
-  for(const sign of [-1,1]){
-    const rx=x+side*.75,rd=d+sign*1.15;
-    limb(node(rx,riverBankHeight(rx,course+rd,seed),rd),trunk[1],.34);
-    limb(fork,node(x+sign*1.6,8.7,d+sign*1.4),.19);
+  const declared=branchSpan(e),side=declared.side,lane=forkLaneCross(e.lane,course,seed);
+  const minCenter=forkLaneCross(declared.minLane,course,seed),maxCenter=forkLaneCross(declared.maxLane,course,seed);
+  const span={...declared,minX:minCenter-LANE_SPACING/2,maxX:maxCenter+LANE_SPACING/2,centerX:(minCenter+maxCenter)/2};
+  const rand=n=>riverHash(e.id+n,seed),node=(x,y,d=0)=>({x,y,d});
+  const rootD=1.15+rand(31)*.65,x=side*(riverHalfWidth(course+rootD,seed)+1.5),ground=riverBankHeight(x,course+rootD,seed);
+  const root=node(x,ground,rootD),wood=[],leaves=[];
+  const limb=(a,b,r,kind='fork')=>{const part={a,b,r,kind};wood.push(part);return part;};
+  const collar=node(x-side*(2.15+rand(34)*1.05),Math.max(6.35,ground+4.25),rootD-.65);
+  const knee=node(x-side*.32,ground+(collar.y-ground)*.46,rootD+.33);
+  limb(root,knee,1.35,'trunk');limb(knee,collar,1.05,'trunk');
+  // Irregular roots share the trunk foot and are buried in the actual bank.
+  for(let i=0;i<4;i++){
+    const a=i*1.51+.4,rx=x+side*(.45+rand(40+i)*1.2),rd=rootD+Math.sin(a)*(1.25+rand(45+i));
+    limb(node(rx,riverBankHeight(rx,course+rd,seed)-.04,rd),knee,.26+rand(50+i)*.12,'root');
   }
-  let previous=fork;
-  for(let i=1;i<=5;i++){
-    const t=i/5,p=node(fork.x+(lane+side*1.25-fork.x)*t,7.2+ground*.4-(2.2+ground*.4)*t+Math.sin(t*Math.PI)*.45,(d-.7)*(1-t)+Math.sin(t*Math.PI)*1.1);
-    limb(previous,p,.84-t*.28,'bough');
-    // Substantial lateral forks branch from shared wood nodes. The fan opens
-    // into multiple depths so it reads as a tree in the downstream chase view.
-    if(i>=2){
-      const fan=i%2?1:-1,spread=2.2+riverHash(e.id+i+54,seed)*1.6;
-      const elbow=node(p.x-side*(1.0+i*.12),p.y+1.4+i*.1,p.d+fan*spread*.6);
-      const end=node(elbow.x-side*1.0,p.y+2.6+i*.15,p.d+fan*spread);
-      limb(p,elbow,.47-i*.028,'fork');limb(elbow,end,.29-i*.012,'fork');
-      limb(elbow,node(elbow.x+side*.9,elbow.y+.75,elbow.d+fan*.65),.15,'twig');
-      leaves.push({p:end,size:[1.15,.95,1.05],turn:e.id+i},{p:elbow,size:[.62,.52,.6],turn:e.id-i});
+  const far=side<0?span.maxX-.68:span.minX+.68;
+  const legacyCenter=declared.minLane>0&&declared.maxLane<MAX_LANE;
+  const nearEdge=side<0?span.minX:span.maxX;
+  const start=node(legacyCenter?nearEdge-side*.98:side*(PLAYABLE_HALF_WIDTH+.95+rand(59)*.3+(riverFork(course,seed)?.fanOffset??0)),3.27+rand(61)*.14,.28+rand(63)*.24);
+  // The long bank-reaching arm has a real collar and a crooked elbow, rather
+  // than two cylinders meeting at a sharp angle over the navigation corridor.
+  const elbow=node(x-side*(Math.abs(x-start.x)*.45),legacyCenter?9.5:4.75+rand(68)*.5,.9+rand(71)*.5);
+  limb(collar,elbow,.86,'arm');limb(elbow,start,legacyCenter?.42:.69,'arm');
+  const spanLength=Math.abs(far-start.x),stationTs=[0,.15+rand(77)*.035,.34+rand(79)*.035,.55+rand(83)*.035,.75+rand(89)*.035,1];
+  for(const covered of declared.lanes){const t=(forkLaneCross(covered,course,seed)-start.x)/(far-start.x);if(t>0&&t<1)stationTs.push(t);}
+  const ts=[...new Set(stationTs)].sort((a,b)=>a-b),stations=[];
+  const pointAt=t=>node(start.x+(far-start.x)*t,3.12+.22*Math.sin(t*6.5+rand(94))+.12*Math.sin(t*13+rand(96)*2),.28*Math.sin(t*5.5+rand(98))+.18*Math.sin(t*11));
+  for(const t of ts)stations.push({t,p:t===0?start:pointAt(t)});
+  for(let i=1;i<stations.length;i++)limb(stations[i-1].p,stations[i].p,.64-stations[i-1].t*.43,'span');
+  // Seeded forks are not counted by the number of lanes. Their differing
+  // lengths, directions and branching depths produce a living-tree silhouette.
+  const forkCount=3+Math.floor(rand(101)*3);
+  for(let i=0;i<forkCount;i++){
+    const index=1+Math.floor((i+.4)/forkCount*(stations.length-2)),station=stations[index],p=station.p;
+    const fan=rand(110+i)>.5?1:-1,major=i===0||i===2;
+    // Broad oblique first limbs have visible lateral reach in the camera,
+    // not just foreshortened depth. Upper limbs can grow over a clear lane.
+    const backwards=major&&station.t>.55?side:-side;
+    const length=major?2.8+rand(121+i)*1.6:1.25+rand(123+i)*1.3;
+    const y=major?4.9+rand(131+i)*1.1:p.y+.35+rand(133+i)*.4;
+    const rawX=p.x+backwards*length;
+    const b=node(major?rawX:Math.max(span.minX+.35,Math.min(span.maxX-.35,rawX)),y,p.d+fan*(.8+rand(141+i)*1.2));
+    const c=node(major?b.x-side*(2.1+rand(151+i)*2):Math.max(span.minX+.2,Math.min(span.maxX-.2,b.x-side*.9)),b.y+(major?.65:0)+(rand(153+i)-.4)*.9,b.d+fan*(.8+rand(161+i)));
+    const radius=major?.32+rand(171+i)*.1:.16+rand(173+i)*.1;
+    limb(p,b,radius,'fork');limb(b,c,radius*.58,'fork');
+    const twigCount=2+Math.floor(rand(181+i)*2);
+    for(let j=0;j<twigCount;j++){
+      const origin=j===0?b:c,dir=j%2?side:-side;
+      const ty=Math.max(3.12,origin.y+(rand(211+i*3+j)-.55)*1.4),tx=origin.x+dir*(.8+rand(191+i*4+j)*1.3);
+      const t1=node(ty>4.2?tx:Math.max(span.minX+.2,Math.min(span.maxX-.2,tx)),ty,origin.d-fan*(.45+rand(231+i*3+j)*.9));
+      const ty2=t1.y-.08+rand(251+i*3+j)*.42,tx2=t1.x+dir*.43;
+      const t2=node(ty2>4.2?tx2:Math.max(span.minX+.2,Math.min(span.maxX-.2,tx2)),ty2,t1.d+fan*.35);
+      limb(origin,t1,radius*.26,'twig');limb(t1,t2,radius*.11,'twig');
+      for(const [at,k] of [[.28,0],[.63,1]]){
+        const q=node(origin.x+(t1.x-origin.x)*at,origin.y+(t1.y-origin.y)*at,origin.d+(t1.d-origin.d)*at),size=.24+rand(271+i*6+j*2+k)*.3;
+        leaves.push({p:q,size:[size*2.3,size*.75,size*1.2],turn:rand(301+i*6+j*2+k)*Math.PI*2});
+      }
     }
-    previous=p;
+    if(rand(341+i)>.4&&Math.abs(c.d)>2){
+      const hanging=node(c.x+side*.12,c.y-.45-rand(347+i)*.55,c.d+fan*.1);
+      const end=node(hanging.x-side*(.08+rand(353+i)*.25),Math.max(2.2,hanging.y-.65-rand(359+i)*.85),hanging.d-fan*.2);
+      limb(c,hanging,.046,'vine');limb(hanging,end,.023,'vine');
+    }
   }
-  // A descending end replaces the old vertical hook and its upturned prongs.
-  const dip=[node(lane+side*.9,4.05,.35),node(lane+side*.5,3.1,.12),node(lane+side*.2,2.55,.02)];
-  for(let i=0;i<dip.length;i++){limb(previous,dip[i],[.55,.49,.44][i],'bough');previous=dip[i];}
-  const middle=node(lane,2.42,0),tip=node(lane-side*1.0,2.22,-.18);
-  limb(previous,middle,.42,'bough');limb(middle,tip,.34,'bough');
-  crown(leaves,x,d,e.id,seed,ground,18);
-  leaves.push({p:node(lane+side*1.8,5.45,.8),size:[.72,.55,.65],turn:e.id});
+  // The parent trunk continues beyond the lateral collar. A second broad
+  // upper daughter stretches toward the river and carries a loose canopy.
+  const crownBase=node(collar.x-side*1.35,collar.y+2.65,collar.d+.4),crownTop=node(crownBase.x+side*.55,crownBase.y+2.1,crownBase.d+.65);
+  limb(collar,crownBase,.68,'crown');limb(crownBase,crownTop,.39,'crown');
+  const upperA=node(collar.x-side*5.5,collar.y+1.3,collar.d+1.35),upperB=node(upperA.x-side*(3.5+rand(367)*2),upperA.y-.6,upperA.d+1.4);
+  limb(collar,upperA,.56,'crown');limb(upperA,upperB,.34,'crown');
+  const crownLimbs=[[crownBase,crownTop],[collar,upperA],[upperA,upperB]];
+  for(let i=0;i<3;i++){
+    const a=crownLimbs[i][0],b=crownLimbs[i][1];
+    for(let j=0;j<3;j++){
+      const t=.21+j*.27,base=node(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.d+(b.d-a.d)*t),end=node(base.x+(j%2?side:-side)*(1.15+rand(381+i*3+j)*1.2),base.y+.55+(j%2?-.3:.4),base.d+(j%2?1:-1)*1.1);
+      limb(base,end,.09+rand(389+i*3+j)*.055,'twig');
+      leaves.push({p:node((base.x+end.x)*.5,(base.y+end.y)*.5,(base.d+end.d)*.5),size:[1.65,.73,1.1],turn:rand(397+i*3+j)*6});
+    }
+  }
   curveLimbs(wood);
-  return {side,root,tip:middle,lane,wood,leaves};
+  if(legacyCenter){const arm=wood.filter(p=>p.kind==='arm').at(-1);arm.c2=node(start.x+side*1.7,5.35,start.d+.12);}
+  const contacts=declared.lanes.map(covered=>({lane:covered,...stations.find(s=>Math.abs(s.p.x-forkLaneCross(covered,course,seed))<1e-6)?.p}));
+  const contact=contacts.find(p=>p.lane===e.lane)??contacts[Math.floor(contacts.length/2)];
+  return {side,root,tip:contact,lane,wood,leaves,span,contacts,spanLength,nativeReach:far,variation:rand(397),anatomy:'rooted-recursive-oak',legacyCenter,course,profile:seed};
 }
 
 // Endpoint tangents follow adjoining limbs. Tubes share endpoints and taper;

@@ -1,0 +1,55 @@
+{
+  "commit": "1b0190af3152b6a0e9a5ca2c6f11192c6abbff52",
+  "host": "arcade.uptick.systems",
+  "assets": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "bytes": 798,
+      "sha256": "d5690dc56776326a5109302ccfb35c8506c49988c4fde82efe73f16cd6619d6b",
+      "contentType": "text/html; charset=utf-8",
+      "matchesLocal": true
+    },
+    {
+      "file": "favicon.svg",
+      "status": 200,
+      "bytes": 294,
+      "sha256": "b2b1ab3ee2273b6ab833a5cc7ecd01ced1476e1264e68f5abb22dc1c053c3c21",
+      "contentType": "image/svg+xml",
+      "matchesLocal": true
+    },
+    {
+      "file": "assets/index-D6GsolDK.js",
+      "status": 200,
+      "bytes": 1109472,
+      "sha256": "795c96838854e4fb02c2081d1b0484c55ec827886ba5bde183866e4878dbf3a3",
+      "contentType": "application/javascript; charset=utf-8",
+      "matchesLocal": true
+    },
+    {
+      "file": "assets/index-CBusqfet.css",
+      "status": 200,
+      "bytes": 35573,
+      "sha256": "a4d4955834844e197547c0a4894ae9f20571dac45da7cd0af3ac195d6dbedd17",
+      "contentType": "text/css; charset=utf-8",
+      "matchesLocal": true
+    },
+    {
+      "file": "models/meshy-river-oak.glb",
+      "status": 200,
+      "bytes": 2004232,
+      "sha256": "5c4a91aafe30e2d97f5907dd465c9b647f483be0e446f23c1012653219caf7c5",
+      "contentType": "model/gltf-binary",
+      "matchesLocal": true
+    },
+    {
+      "file": "models/meshy-river-oak-lite.glb",
+      "status": 200,
+      "bytes": 207516,
+      "sha256": "f562abd55a0e50531191add35cabf64d47657939490f342706baa97257bdf4b3",
+      "contentType": "model/gltf-binary",
+      "matchesLocal": true
+    }
+  ],
+  "exactLocalBytes": true
+}

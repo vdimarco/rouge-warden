@@ -1,0 +1,27 @@
+✔ one-, two- and full-width fallback branch cues match exact continuous physical coverage (22.276432ms)
+✔ wider branch cues grow from either bank without moving the representative reward lane (0.973497ms)
+✔ branch projection stays deterministic while paused and does not change wildlife pose (2.721335ms)
+{"seedMaps":150,"trees":3396,"fullRiverTrees":1744,"jumpRewardArcs":3344,"bankWidthVariants":6}
+✔ coverage is contiguous, bank anchored and compatible with legacy centered trees and single-lane birds (4.164164ms)
+✔ covered lanes and their seams hit standing rafts and clear with one duck at 30/60/120 Hz (21.721596ms)
+✔ continuous span boundaries preserve physical raft coverage, shield once and Rush protection without farming (2.947083ms)
+✔ span hints show every covered lane and wide wood never widens coin pickup (2.47871ms)
+✔ all seeded maps emit all three widths as coherent trees with fair uncovered routes and unchanged jump rewards (303.210024ms)
+✔ native tree placements remain rooted with registered wood contacts for all bank spans (8160.336532ms)
+✔ whole native limb proportions are affine beyond bank seating with no collapsed fork domain (26.813402ms)
+✔ new complete oak retains Meshy provenance, embedded PBR and bounded full/Lite topology (9.919998ms)
+✔ complete native batches recycle the fixed pool and replace all old wood overlays (196.188012ms)
+✔ native prepared winding keeps an outward surface lit after the course Z reflection (1.710209ms)
+✔ natural trees have grounded roots, a joined trunk collar and exact one/two/three-lane contacts (175.04973ms)
+✔ crooked main limbs clear a ducked rider and keep low wood out of uncovered routes (2255.751922ms)
+✔ recursive connected forks have varied directions and foliage follows real branches (61.314705ms)
+✔ natural anatomy is reproducible and independent of reward lane (384.753985ms)
+✔ decorative trees remain outside the corridor with bounded resources (54.413658ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8679.253793
