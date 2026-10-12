@@ -1,9 +1,8 @@
 // Register the standalone low brace; rotate its top-down deck heading away
 // from the camera, then scale uniformly. No anatomical image compression.
-import {createRequire} from 'node:module';
+import sharp from 'sharp';
 import {fileURLToPath} from 'node:url';
 import {RIDER_SIZE} from '../src/game/rider.js';
-const sharp=createRequire(new URL('../../../higgsfield/package.json',import.meta.url))('sharp');
 const source=process.argv[2];if(!source)throw new Error('Pass the downloaded transparent duck cutout.');
 const {data,info}=await sharp(source).ensureAlpha().raw().toBuffer({resolveWithObject:true});
 let x0=info.width,y0=info.height,x1=0,y1=0;
