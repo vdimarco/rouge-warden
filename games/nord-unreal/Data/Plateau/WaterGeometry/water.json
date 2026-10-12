@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "png": "pond_shore.png",
+  "png_sha256": "44294c7296d63810b7aca8adeb975f21005dba3e1fc3627637028ec226089213",
+  "size": [
+    2048,
+    2048
+  ],
+  "format": "RGBA8 PNG, linear: import with sRGB off, clamp addressing",
+  "bounds_cm": {
+    "min": [
+      -20095.393771453953,
+      -22111.115600016445
+    ],
+    "max": [
+      19806.048766106414,
+      13106.440799986769
+    ]
+  },
+  "padding_cm": 200.0,
+  "texel_cm": [
+    19.48312623904315,
+    17.19607246093907
+  ],
+  "layout": "row 0 = minimum y, column 0 = minimum x, texel centre = min + (index + .5) * texel_cm",
+  "uv": "u = (x - min x) / (max x - min x), v = (y - min y) / (max y - min y)",
+  "encoding": {
+    "R": "distance to the nearest shore or island edge, 0-600 cm as 0-255, clamped; 0 outside water",
+    "G": "distance to the nearest shore or island edge, 0-3000 cm as 0-255, clamped; 0 outside water",
+    "B": "255 inside water, 0 outside (islands are outside)",
+    "A": "255"
+  },
+  "near_range_cm": 600.0,
+  "far_range_cm": 3000.0,
+  "shore": "boundary of the union of both ponds, island included; the edge the two relations share is open water",
+  "shore_rings": 2,
+  "shore_edges": 326,
+  "sources": [
+    {
+      "relation": "relation/14474534",
+      "outer_rings": 1,
+      "inner_rings": 1,
+      "vertices": 132
+    },
+    {
+      "relation": "relation/14482536",
+      "outer_rings": 1,
+      "inner_rings": 0,
+      "vertices": 196
+    }
+  ],
+  "osm": "Data/LaFontaine/osm.xml",
+  "osm_sha256": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "water_area_square_metres": 28818.113081354946,
+  "water_texels": 860161,
+  "largest_distance_cm": 3475.7505302283917,
+  "texture_asset": "/Game/Plateau/Water/T_PondShore"
+}
