@@ -137,11 +137,11 @@ On a touch screen in portrait, the game SHALL render a tall frame shaped like th
 #### Scenario: Player holds the phone upright
 - **WHEN** a phone is in portrait while playing
 - **THEN** the page asks the game for a frame of the play area's shape (720 wide up to 9:16, otherwise 1280 high and narrower, never more pixels than 1280x720), and once the game sends it the frame fills the play area
-- **AND** the footer hides, and the touch buttons sit in two rows at the bottom with the sticks above them, all in the bottom 40%
+- **AND** the footer hides, and the touch buttons sit in two rows at the bottom with the sticks above them, all in the bottom 40%; on short phones the sticks shrink (not below 64 px), and the open crew list sits above the sticks
 
 #### Scenario: Game draws its HUD on a tall frame
 - **WHEN** the game's frame is taller than it is wide
-- **THEN** the mission card sits top left and the map top right with its credits, the caption and the action prompt rest just above the bottom 40%, keyboard hints are left out, and in a car the speed sits at the left of the prompt row
+- **THEN** the mission card sits top left and the map top right with its credits, the caption and then the action prompt stack under them so the middle of the view stays clear for the player, keyboard hints and the exit-car prompt are left out, and in a car the speed sits at the left just above the bottom 40%
 - **AND** the camera keeps its field of view on the longer side, so the tall view does not stretch
 
 #### Scenario: Player turns the phone sideways or uses a computer

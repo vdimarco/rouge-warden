@@ -66,11 +66,12 @@ function setMuted(value) {
 // A phone held upright asks the game for a tall frame shaped like the play area; anything else asks for the standard 1280x720.
 function wantedSize() {
   const width = frame.clientWidth, height = frame.clientHeight;
-  if (!NORD_PORTRAIT_STREAM || !touchMode || !width || height <= width * 1.05) return [1280, 720];
+  if (!NORD_PORTRAIT_STREAM || !touchMode || !width || !height) return [1280, 720];
   const tall = height / width;
   // Never more pixels than 1280x720: 720 wide up to 9:16, then 1280 high and narrower.
-  const [w, h] = tall >= 16 / 9 ? [1280 / tall, 1280] : [720, 720 * tall];
-  return [Math.round(w / 2) * 2, Math.round(h / 2) * 2];
+  const [w, h] = (tall >= 16 / 9 ? [1280 / tall, 1280] : [720, 720 * tall]).map(value => Math.round(value / 2) * 2);
+  // Only clearly tall frames: the game and the page switch layouts at 1.1, well below this.
+  return h >= w * 1.15 ? [w, h] : [1280, 720];
 }
 
 function requestStreamSize() {
@@ -188,7 +189,7 @@ if (endpoint) {
     });
     // Lay the controls out for the frame the game actually sends: a tall frame puts them all under its HUD.
     video.addEventListener('resize', () => {
-      document.body.classList.toggle('portrait-stream', video.videoHeight > video.videoWidth * 1.05);
+      document.body.classList.toggle('portrait-stream', video.videoHeight > video.videoWidth * 1.1);
     });
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);

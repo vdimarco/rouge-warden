@@ -1557,7 +1557,8 @@ void AQuebecHUD::DrawHUD()
     const float Now = GetWorld()->GetTimeSeconds();
     if (FirstHUDTime < 0.f) FirstHUDTime = Now;
     // A phone held upright streams a tall frame: panels stack at the top and the lower 40% stays clear for the touch controls.
-    const bool bPortrait = Canvas->SizeY > Canvas->SizeX * 1.05f;
+    // The page asks for tall frames at least 1.15 times taller than wide, so this threshold never sits on a rounding edge.
+    const bool bPortrait = Canvas->SizeY > Canvas->SizeX * 1.1f;
     const float Scale = bPortrait ? FMath::Clamp(FMath::Min(Canvas->SizeX / 720.f * 1.3f, Canvas->SizeY / 900.f * 1.15f), .6f, 2.f)
         : FMath::Clamp(FMath::Min(Canvas->SizeY / 720.f, Canvas->SizeX / 1280.f), .6f, 1.5f);
     const float Margin = 22.f * Scale;
@@ -1667,7 +1668,8 @@ void AQuebecHUD::DrawHUD()
     const float TopClear = bPortrait ? FMath::Max(MissionY + MissionHeight, MapY + MapBlock) + 12.f * Scale : Margin;
 
     FString Prompt;
-    if (Car) Prompt = TEXT("[ E ]  EXIT CAR");
+    // On a tall screen the Use button already says car; an always-on exit prompt would only cover the view.
+    if (Car) Prompt = bPortrait ? FString() : TEXT("[ E ]  EXIT CAR");
     else if (NearbyCar) Prompt = TEXT("[ E ]  ENTER CAR");
     else if (bCanComplete) Prompt = TEXT("[ E ]  COMPLETE OBJECTIVE");
     else if (Controller)
@@ -1677,17 +1679,12 @@ void AQuebecHUD::DrawHUD()
             if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
                 Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
     }
-    // On a tall screen the prompt sits just above the touch controls; the speed takes its left end.
-    const float LowerLeft = Margin + (bPortrait && Car ? 150.f * Scale : 0.f);
+    const float LowerLeft = Margin;
     const float LowerRight = Right - (!bPortrait && Car ? 190.f * Scale : 0.f);
     const float PromptWidth = FMath::Min(480.f * Scale, LowerRight - LowerLeft);
     const TArray<FString> PromptLines = Prompt.IsEmpty() ? TArray<FString>() : WrappedLines(Prompt, PromptWidth - 24.f * Scale, 1.1f);
     const float PromptX = (LowerLeft + LowerRight - PromptWidth) * .5f;
     const float PromptHeight = (20.f + PromptLines.Num() * 24.f) * Scale;
-    const float PromptY = (bPortrait ? ControlsTop - 8.f * Scale : Canvas->SizeY - Margin) - PromptHeight;
-    // The caption on a tall screen rests on the prompt (or on the speed in a car), under the open view.
-    float StackBottom = (Prompt.IsEmpty() ? ControlsTop : PromptY) - 8.f * Scale;
-    if (Car) StackBottom = FMath::Min(StackBottom, ControlsTop - 74.f * Scale);
 
     const FString Briefing = Campaign ? Campaign->GetBriefingText() : FString();
     const bool bPrivateCaption = Controller && Controller->ResidentCaptionUntil > Now && !Controller->ResidentCaption.IsEmpty();
@@ -1705,20 +1702,21 @@ void AQuebecHUD::DrawHUD()
         BriefingPausedAt = -1.f;
     }
     const FString Caption = bPrivateCaption ? Controller->ResidentCaption : Now < BriefingUntil ? Briefing : FString();
-    float ViewBottom = StackBottom;
+    // A tall screen stacks the caption and then the prompt under the mission card and map, so the middle stays clear for the player.
+    float CaptionBottom = TopClear;
     if (!Caption.IsEmpty())
     {
-        // Top left on a wide screen; full width just above the prompt on a tall one.
         const float Width = bPortrait ? Canvas->SizeX - 2.f * Margin : 440.f * Scale;
         const TArray<FString> Lines = WrappedLines(Caption, Width - 28.f * Scale, 1.05f);
         const float Height = (22.f + Lines.Num() * 22.f) * Scale;
-        const float Y = bPortrait ? FMath::Max(TopClear, StackBottom - Height) : Margin;
-        DrawRect(Panel, Margin, Y, Width, Height);
-        DrawRect(Accent, Margin, Y, 2.f * Scale, Height);
+        DrawRect(Panel, Margin, TopClear, Width, Height);
+        DrawRect(Accent, Margin, TopClear, 2.f * Scale, Height);
         for (int32 Row = 0; Row < Lines.Num(); ++Row)
-            Text(Lines[Row], Paper, Margin + 14.f * Scale, Y + (11.f + Row * 22.f) * Scale, 1.05f);
-        ViewBottom = Y - 8.f * Scale;
+            Text(Lines[Row], Paper, Margin + 14.f * Scale, TopClear + (11.f + Row * 22.f) * Scale, 1.05f);
+        CaptionBottom = TopClear + Height + 8.f * Scale;
     }
+    const float PromptY = bPortrait ? CaptionBottom : Canvas->SizeY - Margin - PromptHeight;
+    const float ViewTop = bPortrait ? PromptY + (Prompt.IsEmpty() ? 0.f : PromptHeight + 8.f * Scale) : 280.f * Scale;
 
     DrawRect(Panel.CopyWithNewOpacity(.72f), MapX, MapY, MapWidth, MapBlock);
     const FVector2D MapMin(MapX + 7.f * Scale, MapY + 7.f * Scale);
@@ -1784,7 +1782,7 @@ void AQuebecHUD::DrawHUD()
         FVector2D Marker;
         if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
             Marker.X > Margin + 20.f * Scale && Marker.X < Right - 20.f * Scale &&
-            Marker.Y > (bPortrait ? TopClear : 280.f * Scale) && Marker.Y < (bPortrait ? ViewBottom : Canvas->SizeY - 250.f * Scale))
+            Marker.Y > ViewTop && Marker.Y < (bPortrait ? ControlsTop : Canvas->SizeY - 250.f * Scale))
         {
             const float R = 10.f * Scale;
             DrawLine(Marker.X, Marker.Y - R, Marker.X + R, Marker.Y, Accent, 2.f * Scale);

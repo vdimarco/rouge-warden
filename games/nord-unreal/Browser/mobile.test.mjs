@@ -80,8 +80,9 @@ async function advancingMedia(label) {
   const before = await media();
   await page.waitForTimeout(1200);
   const after = await media();
-  assert.equal(after.width, 1280, 'native stream width');
-  assert.equal(after.height, 720, 'native stream height');
+  // The page asks for 1280x720, or for a tall frame on a phone held upright.
+  const wanted = await page.evaluate(() => document.body.dataset.streamSize || '1280x720');
+  assert.equal(`${after.width}x${after.height}`, wanted, 'native stream size');
   assert.ok(after.readyState > 2 && after.currentTime > before.currentTime,
     'the real video element must advance');
   assert.ok(after.framesDecoded > before.framesDecoded && after.videoBytes > before.videoBytes,
@@ -234,17 +235,25 @@ async function connectFriend() {
   assert.equal(await page.locator('#streamer').inputValue(), 'NordFriend1');
   await page.locator('#play').tap();
   await page.waitForFunction(() => document.body.dataset.state === 'playing');
-  await streamSettled();
   return true;
 }
 
 // The page asks the game for a frame shaped like the play area on a phone held upright, else 1280x720.
 async function streamSettled() {
-  await page.waitForFunction(() => {
-    const video = document.querySelector('#video video');
-    const size = document.body.dataset.streamSize;
-    return size && video?.readyState > 2 && `${video.videoWidth}x${video.videoHeight}` === size;
-  }, null, { timeout: 20000 });
+  try {
+    await page.waitForFunction(() => {
+      const video = document.querySelector('#video video');
+      const size = document.body.dataset.streamSize;
+      return size && video?.readyState > 2 && `${video.videoWidth}x${video.videoHeight}` === size;
+    }, null, { timeout: 20000 });
+  } catch {
+    const state = await page.evaluate(() => {
+      const video = document.querySelector('#video video');
+      return { asked: document.body.dataset.streamSize, got: `${video?.videoWidth}x${video?.videoHeight}` };
+    });
+    throw new Error(`The game did not send the requested frame (asked ${state.asked}, got ${state.got}). ` +
+      'Check that the host accepts Pixel Streaming resolution commands, or build the page with NORD_PORTRAIT_STREAM=0.');
+  }
   report.media.streamSize = await page.evaluate(() => document.body.dataset.streamSize);
 }
 
@@ -297,6 +306,7 @@ try {
   assert.deepEqual(report.logging.context, { level: 2, stack: false }, 'production logger suppresses info/debug and stacks');
 
   if (await connectFriend()) {
+    await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));
     await check('portrait controls fit and meet target size', () => layout('portrait'));
     await check('a phone held upright gets a tall game frame with every control in its bottom 42%', async () => {
@@ -310,6 +320,10 @@ try {
           frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
       });
       report.input.portraitStream = geometry;
+      if (await page.evaluate(() => document.body.dataset.streamSize) === '1280x720') {
+        report.input.portraitStream.note = 'Not requested: this page was built with NORD_PORTRAIT_STREAM=0.';
+        return;
+      }
       assert.ok(geometry.portraitStream && geometry.height > geometry.width, 'the game must send a tall frame');
       assert.ok(Math.abs(geometry.video - geometry.frame.height) <= 1, 'the tall frame must fill the play area');
       for (const control of geometry.controls) {
