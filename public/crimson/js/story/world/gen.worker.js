@@ -731,11 +731,14 @@ function simplexCache(seed) { let s = simplexMemo.get(seed); if (!s) simplexMemo
 /* ------------------------------------------------------------------ tiles */
 // One tile at a level of detail: the grid (5, 10 or 20 m cells), 8 m skirts on its edges, and the rocks
 // whose centre falls in it. Returns transferable arrays and the bounds.
-export function buildTile(ctx, ti, tj, lod) {
+// fine: the Midgley tile's nearest level at 2.5 m cells (the half cells lie on the 5 m surface; they only
+// smooth its shading and the trail's paint), else 5 m like every tile (QUALITY tileFine). Returned as
+// tile.fine for that one level (null for every other tile and level, which it does not change).
+export function buildTile(ctx, ti, tj, lod, fine = true) {
   const { H, col, rock, rocks } = ctx;
   // Preserve the turnout and canyon approaches even in establishing shots.
   const nearBridge = ti === 3 && tj === 1;
-  const step = nearBridge ? [0.5, 1, 2][lod] : [1, 2, 4][lod], n = TILE_CELLS / step, i0 = ti * TILE_CELLS, j0 = tj * TILE_CELLS, nv = (n + 1) * (n + 1);
+  const step = nearBridge ? [fine ? 0.5 : 1, 1, 2][lod] : [1, 2, 4][lod], n = TILE_CELLS / step, i0 = ti * TILE_CELLS, j0 = tj * TILE_CELLS, nv = (n + 1) * (n + 1);
   const mine = rocks.filter((r) => Math.floor((r.f.x + HALF) / 400) === ti && Math.floor((r.f.z + HALF) / 400) === tj).map((r) => (lod === 0 ? r.hi : r.lo));
   let rv = 0, ri = 0; for (const m of mine) { rv += m.pos.length / 3; ri += m.idx.length; }
   const total = nv + 4 * (n + 1) + rv;
@@ -804,7 +807,7 @@ export function buildTile(ctx, ti, tj, lod) {
   const x0 = gx(i0), z0 = gx(j0), sz = TILE_CELLS * CELL;
   let bx0 = x0, bx1 = x0 + sz, bz0 = z0, bz1 = z0 + sz;
   for (let q = nv + 4 * (n + 1); q < v; q++) { bx0 = Math.min(bx0, pos[q * 3]); bx1 = Math.max(bx1, pos[q * 3]); bz0 = Math.min(bz0, pos[q * 3 + 2]); bz1 = Math.max(bz1, pos[q * 3 + 2]); }
-  return { i: ti, j: tj, lod, pos, nrm, col: cl, rock: rk, idx, box: [bx0, minY, bz0, bx1, maxY, bz1] };
+  return { i: ti, j: tj, lod, fine: nearBridge && lod === 0 ? !!fine : null, pos, nrm, col: cl, rock: rk, idx, box: [bx0, minY, bz0, bx1, maxY, bz1] };
 }
 export const tileTransfer = (t) => [t.pos.buffer, t.nrm.buffer, t.col.buffer, t.rock.buffer, t.idx.buffer];
 
@@ -825,7 +828,7 @@ if (inWorker) {
         const msg = { type: 'init', heights: H, types: g.types, mask: g.mask, ground: g.ground, lotIds: g.lotIds, map: g.map, scatter: g.scatter, rockColliders: g.rockColliders, creek: g.creek, wash: g.wash, bridges: g.bridges, tiles, ms: { ...g.ms, worker: performance.now() - t0 } };
         self.postMessage(msg, [H.buffer, g.types.buffer, g.mask.buffer, g.ground.buffer, g.lotIds.buffer, g.map.buffer, g.scatter.data.buffer, g.scatter.cells.buffer, ...tiles.flatMap(tileTransfer)]);
       } else if (m.tile && ctx) {
-        const t = buildTile(ctx, m.tile.i, m.tile.j, m.tile.lod);
+        const t = buildTile(ctx, m.tile.i, m.tile.j, m.tile.lod, m.tile.fine !== false);
         self.postMessage({ type: 'tile', tile: t, req: m.tile.req }, tileTransfer(t));
       }
     } catch (e) { self.postMessage({ type: 'error', message: String(e && e.stack || e) }); }
