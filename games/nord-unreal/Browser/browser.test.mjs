@@ -15,7 +15,7 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'styles.css', 'hero.css', 'intro.css'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
@@ -42,6 +42,10 @@ signalling.on('connection', socket => {
     }
   });
 });
+// The player, sound, fullscreen and disconnect buttons live in the menu.
+async function openMenu(target) {
+  if (await target.locator('#menu').isHidden()) await target.locator('[data-menu-toggle]:visible').first().click();
+}
 const browser = await chromium.launch({ executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--disable-gpu'] });
 const page = await browser.newPage();
 const errors = [];
@@ -89,6 +93,18 @@ try {
   await page.locator('#close-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);
   assert.equal(await page.locator('#trailer-video').evaluate(video => video.paused), true, 'closing the trailer stops it');
+  // The header keeps only the title and the menu button; the menu holds the stream buttons.
+  for (const id of ['streamer', 'mute', 'fullscreen', 'disconnect']) {
+    assert.equal(await page.locator(`#${id}`).isHidden(), true, `${id} is in the closed menu, not on top`);
+  }
+  await page.locator('#menu-toggle').click();
+  assert.equal(await page.locator('#menu').isVisible(), true);
+  assert.equal(await page.locator('#menu-toggle').getAttribute('aria-expanded'), 'true');
+  for (const id of ['streamer', 'mute', 'fullscreen', 'disconnect']) assert.equal(await page.locator(`#${id}`).isVisible(), true);
+  assert.equal(await page.locator('.menu-game').isHidden(), true, 'game buttons show only while playing on a touch screen');
+  await page.screenshot({ path: '.qa/menu-1280.png' });
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#menu').isHidden(), true, 'Escape closes the menu');
   // Start screen: three story panels, then the crew choice; each layout fits without sideways scrolling.
   for (const [width, height] of [[360, 800], [800, 360], [1280, 720]]) {
     await page.setViewportSize({ width, height });
@@ -173,6 +189,32 @@ try {
   await setState('disconnected');
   await phonePage.waitForTimeout(800);
   assert.deepEqual(await phonePage.evaluate(() => window.__crewClicks), ['56', '56'], 'nothing is sent after the stream stops');
+  // While playing on a phone the header hides and the ☰ next to Sprint, Jump and Use opens the menu with the game buttons.
+  await phonePage.evaluate(() => {
+    document.body.dataset.state = 'playing';
+    document.querySelector('#overlay').hidden = true;
+    document.querySelector('#touch-controls').hidden = false;
+    window.__keyClicks = [];
+    document.querySelector('.touch-keys').addEventListener('click', event => window.__keyClicks.push(event.target.dataset.key), true);
+  });
+  assert.equal(await phonePage.locator('header').isHidden(), true, 'the header hides while playing on a phone');
+  const menuButton = await phonePage.locator('#touch-menu').boundingBox();
+  assert.ok(menuButton.width >= 44 && menuButton.height >= 44, 'the ☰ button is a >=44 px target');
+  await phonePage.locator('#touch-menu').click();
+  assert.equal(await phonePage.locator('.menu-game').isVisible(), true);
+  await phonePage.screenshot({ path: '.qa/menu-390-playing.png' });
+  await phonePage.locator('[data-send="82"]').click();
+  assert.deepEqual(await phonePage.evaluate(() => window.__keyClicks), ['82'], 'Recover presses the R key button once');
+  assert.equal(await phonePage.locator('#menu').isHidden(), true, 'a game button closes the menu');
+  await phonePage.locator('#touch-menu').click();
+  await phonePage.locator('#crew-toggle').click();
+  assert.equal(await phonePage.locator('#crew-picker').isVisible(), true, 'Crew opens the crew list');
+  assert.equal(await phonePage.locator('#menu').isHidden(), true);
+  await phonePage.evaluate(() => {
+    document.body.dataset.state = 'disconnected';
+    document.querySelector('#overlay').hidden = false;
+    document.querySelector('#touch-controls').hidden = true;
+  });
   // A phone on its side fits the whole crew choice without scrolling.
   await phonePage.setViewportSize({ width: 667, height: 375 });
   await phonePage.evaluate(() => localStorage.setItem('gta-north-intro', 'seen'));
@@ -205,10 +247,13 @@ try {
   await page.waitForFunction(() => document.querySelector('#status-title').textContent === 'This player is unavailable.');
   assert.deepEqual(subscriptions, ['NordHost']);
   assert.equal(await page.locator('#streamer').isEnabled(), true, 'occupied-slot refusal keeps the live socket selector usable');
+  await openMenu(page);
   await page.locator('#streamer').selectOption('NordFriend1');
+  assert.equal(await page.locator('#menu').isHidden(), true, 'choosing a player closes the menu');
   await page.waitForFunction(() => document.body.dataset.state === 'error');
   assert.deepEqual(subscriptions, ['NordHost', 'NordFriend1'], 'another slot subscribes over the same open signalling socket');
   assert.equal(connections, 1);
+  await openMenu(page);
   await page.locator('#disconnect').click();
   await page.waitForFunction(() => document.body.dataset.state === 'disconnected');
   assert.equal(await page.locator('#streamer').isDisabled(), true, 'disconnected slots require Reconnect');

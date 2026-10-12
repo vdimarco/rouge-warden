@@ -69,10 +69,23 @@ async function newPlayer(name) {
   return page;
 }
 
+// The player and disconnect buttons live in the menu.
+async function openMenu(page) {
+  if (await page.locator('#menu').isHidden()) await page.locator('[data-menu-toggle]:visible').first().click();
+}
+
+async function disconnect(page) {
+  await openMenu(page);
+  await page.locator('#disconnect').click();
+}
+
 async function selectPlayer(page, id) {
   await page.locator('#connect').click();
   await page.waitForFunction(streamId => Array.from(document.querySelector('#streamer').options).some(option => option.value === streamId), id);
-  if (await page.locator('#streamer').inputValue() !== id) await page.locator('#streamer').selectOption(id);
+  if (await page.locator('#streamer').inputValue() !== id) {
+    await openMenu(page);
+    await page.locator('#streamer').selectOption(id);
+  }
   await play(page, id);
 }
 
@@ -172,7 +185,7 @@ try {
     await occupied.screenshot({ path: resolve(output, 'occupied-slot.png') });
   });
   await check('occupied browser reconnects after host frees its slot', async () => {
-    await host.locator('#disconnect').click();
+    await disconnect(host);
     await host.waitForFunction(() => document.body.dataset.state === 'disconnected');
     await occupied.locator('#connect').click();
     await play(occupied, 'NordHost');
@@ -181,7 +194,7 @@ try {
     await occupied.screenshot({ path: resolve(output, 'recovered-slot.png') });
   });
   await check('original host reconnects and retains Disconnect control', async () => {
-    await occupied.locator('#disconnect').click();
+    await disconnect(occupied);
     await occupied.waitForFunction(() => document.body.dataset.state === 'disconnected');
     await occupied.waitForTimeout(1000); // Allow the signalling server to release the previous subscriber.
     await host.locator('#connect').click();

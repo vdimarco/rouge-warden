@@ -1,4 +1,4 @@
-// Crew choice in game. The Crew button opens eight choices; each sends keys 1-8 through the touch controls.
+// Crew choice in game. Crew in the menu opens eight choices; each sends keys 1-8 through the touch controls.
 // The crew member picked on the start screen (body data-crew, slot 0-7) is sent the same way when each connection starts playing.
 const toggle = document.getElementById('crew-toggle');
 const picker = document.getElementById('crew-picker');

@@ -8,21 +8,17 @@
     <link rel="stylesheet" href="./styles.css">
     <link rel="stylesheet" href="./hero.css">
     <link rel="stylesheet" href="./intro.css">
+    <link rel="stylesheet" href="./menu.css">
     <script type="module" src="./player.js"></script>
     <script type="module" src="./hero.js"></script>
     <script type="module" src="./crew.js"></script>
     <script type="module" src="./intro.js"></script>
+    <script type="module" src="./menu.js"></script>
   </head>
   <body data-state="offline">
     <header>
       <div class="brand"><strong>GTA: NORTH</strong><span>Le Plateau · Toronto · Two player co-op</span></div>
-      <div class="toolbar" aria-label="Stream controls">
-        <label for="streamer">Player</label>
-        <select id="streamer" disabled><option>Not connected</option></select>
-        <button id="mute" disabled aria-pressed="false">Mute</button>
-        <button id="fullscreen" disabled>Fullscreen</button>
-        <button id="disconnect" disabled>Disconnect</button>
-      </div>
+      <button id="menu-toggle" class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu">☰ Menu</button>
     </header>
     <main id="frame" aria-label="NORD game">
       <video id="hero-video" class="hero-video" loop playsinline preload="auto" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg" aria-hidden="true"
@@ -32,11 +28,11 @@
       <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
       <div id="touch-controls" aria-label="Touch game controls" hidden>
         <button id="touch-exit-fullscreen" class="touch-exit" hidden>Exit fullscreen</button>
-        <div class="touch-secondary">
-          <button id="crew-toggle" type="button" aria-expanded="false" aria-controls="crew-picker">Crew</button>
-          <button data-key="82" aria-label="Recover vehicle or character">Recover</button>
-          <button data-key="84" aria-label="Replay race">Race</button>
-          <button data-key="113" aria-label="Toggle comic view">Comic</button>
+        <!-- Key senders for the menu's game buttons; touch-controls.js holds a key for a click on them. -->
+        <div class="touch-keys" hidden>
+          <button data-key="82" tabindex="-1">Recover</button>
+          <button data-key="84" tabindex="-1">Race</button>
+          <button data-key="113" tabindex="-1">Comic</button>
         </div>
         <div id="crew-picker" class="crew-picker" role="group" aria-label="Choose your crew member" hidden>
           <button data-key="49">1 · GREEN CAP 51</button>
@@ -58,6 +54,7 @@
           <button data-key="16" aria-label="Hold to sprint">Sprint</button>
           <button data-key="32" aria-label="Jump on foot or hold handbrake in car">Jump<span> / brake</span></button>
           <button data-key="69" aria-label="Interact, enter or exit car, toggle worklight">Use<span> / car</span></button>
+          <button id="touch-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu" aria-label="Menu">☰</button>
         </div>
       </div>
       <section id="overlay" aria-labelledby="status-title">
@@ -77,7 +74,7 @@
             <button id="connect" disabled>Connect</button>
             <button id="play" hidden>Play with sound</button>
           </div>
-          <p class="small">Choose a free player. Each player slot accepts one browser.</p>
+          <p class="small">Each player slot accepts one browser. Change slot, sound and fullscreen in the menu.</p>
         </div>
       </section>
       <section id="intro" class="intro" aria-label="Start screen" hidden>
@@ -97,7 +94,7 @@
         </div>
         <div id="intro-crew" class="intro-crew" hidden>
           <h2>CHOOSE YOUR CREW</h2>
-          <p class="crew-hint">Each player is a different crew member. Change any time with Crew or keys 1–8.</p>
+          <p class="crew-hint">Each player is a different crew member. Change any time with Crew in the menu or keys 1–8.</p>
           <div id="crew-grid" class="crew-grid" role="group" aria-label="Crew members">
             <button type="button" data-slot="0" data-role="The wheelman. Always knows a faster route." aria-pressed="false" style="--slot: 0"><span class="crew-face"></span><b>GREEN CAP 51</b></button>
             <button type="button" data-slot="1" data-role="The hype man. Turns any setback into a chant." aria-pressed="false" style="--slot: 1"><span class="crew-face"></span><b>MEMPHIS 33</b></button>
@@ -115,6 +112,27 @@
           </div>
         </div>
         <p id="intro-status" class="intro-status" role="status"></p>
+      </section>
+      <section id="menu" class="menu" aria-label="Menu" hidden>
+        <div class="menu-panel">
+          <h2>MENU</h2>
+          <label class="menu-player">Player <select id="streamer" disabled><option>Not connected</option></select></label>
+          <div class="menu-grid">
+            <button id="mute" type="button" disabled aria-pressed="false">Mute</button>
+            <button id="fullscreen" type="button" disabled>Fullscreen</button>
+            <button id="disconnect" type="button" disabled>Disconnect</button>
+          </div>
+          <div class="menu-game">
+            <h3>GAME</h3>
+            <div class="menu-grid">
+              <button id="crew-toggle" type="button" aria-expanded="false" aria-controls="crew-picker">Crew</button>
+              <button type="button" data-send="82">Recover</button>
+              <button type="button" data-send="84">Race replay</button>
+              <button type="button" data-send="113">Comic view</button>
+            </div>
+          </div>
+          <button id="menu-close" class="menu-close" type="button">Close</button>
+        </div>
       </section>
     </main>
     <dialog id="trailer-dialog" aria-label="GTA: NORTH trailer">

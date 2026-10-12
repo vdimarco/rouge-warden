@@ -151,3 +151,22 @@ On a touch screen in portrait, the game SHALL render a tall frame shaped like th
 #### Scenario: The game sends a 16:9 frame to a phone held upright
 - **WHEN** the game build or host does not honor the request
 - **THEN** the 16:9 picture sits at the top of the play area under the small buttons, with the sticks below it
+
+### Requirement: One menu for stream and game buttons
+The page SHALL keep only the title and a menu button at the top, and SHALL offer the player slot, sound, fullscreen and disconnect, and while playing on a touch screen the crew, recover, race replay and comic view buttons, in one menu.
+
+#### Scenario: Player opens the menu
+- **WHEN** a player taps ☰ Menu in the header, or ☰ next to Sprint, Jump and Use while playing on a touch screen
+- **THEN** the menu opens over the game, also in fullscreen, and closes with Close, Escape, a tap outside it or any choice
+
+#### Scenario: Player uses a game button in the menu
+- **WHEN** a player taps Recover, Race replay or Comic view in the menu
+- **THEN** the page presses the matching key once (R, T or F2) for 120 ms, and Crew opens the crew list
+
+#### Scenario: Page asks the player to choose a slot
+- **WHEN** the page is in the selecting state
+- **THEN** the menu opens with the player list, and closes when the game starts playing
+
+#### Scenario: Player plays on a touch screen
+- **WHEN** the game is playing on a touch screen
+- **THEN** the header hides, and no button row sits at the top of the game

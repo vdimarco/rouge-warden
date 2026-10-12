@@ -21,5 +21,5 @@ await build({
     NORD_PORTRAIT_STREAM: JSON.stringify(process.env.NORD_PORTRAIT_STREAM !== '0')
   }
 });
-await Promise.all(['index.html', 'styles.css', 'hero.css', 'intro.css', 'hero.js', 'crew.js', 'intro.js', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
+await Promise.all(['index.html', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
 console.log(`NORD browser player built (${endpoint ? 'signalling configured' : 'host offline'}).`);

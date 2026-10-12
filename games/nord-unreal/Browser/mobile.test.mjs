@@ -115,7 +115,7 @@ function frameDifference(before, after) {
 
 async function layout(name) {
   const geometry = await page.evaluate(() => {
-    const names = ['[data-stick="move"]', '[data-stick="look"]', '#crew-toggle', ...['16', '32', '69', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const names = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
       visible: !document.querySelector('#touch-controls').hidden,
@@ -147,8 +147,8 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]', '#crew-toggle',
-      ...['16', '32', '69', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]', '#touch-menu',
+      ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
     const video = document.querySelector('#video video');
     const image = bounds(video);
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
@@ -212,11 +212,17 @@ async function releaseAllTouches() {
   await touch('touchCancel', []);
 }
 
+// The player, fullscreen, disconnect and game buttons live in the menu (☰).
+async function openMenu() {
+  if (await page.locator('#menu').isHidden()) await page.locator('[data-menu-toggle]:visible').first().click();
+}
+
 async function connectFriend() {
   await page.locator('#connect').tap();
   await page.waitForFunction(() => [...document.querySelector('#streamer').options]
     .some(option => option.value === 'NordFriend1'));
   if (await page.locator('#streamer').inputValue() !== 'NordFriend1') {
+    await openMenu();
     await page.locator('#streamer').selectOption('NordFriend1');
   }
   try {
@@ -314,7 +320,7 @@ try {
         const box = selector => document.querySelector(selector).getBoundingClientRect();
         const video = document.querySelector('#video video');
         const frame = box('#frame');
-        const controls = ['[data-stick="move"]', '[data-stick="look"]', '#crew-toggle', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
+        const controls = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
           .map(selector => ({ selector, top: box(selector).top }));
         return { portraitStream: document.body.classList.contains('portrait-stream'), width: video.videoWidth, height: video.videoHeight,
           frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
@@ -373,6 +379,7 @@ try {
       await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720');
       await streamSettled();
       await layout('landscape');
+      await openMenu();
       await page.locator('#fullscreen').tap();
       await page.waitForFunction(() => Boolean(document.fullscreenElement));
       await page.waitForFunction(() => !document.querySelector('#touch-exit-fullscreen').hidden);
@@ -386,6 +393,7 @@ try {
       assert.equal(await page.locator('#touch-exit-fullscreen').isVisible(), false);
       await page.setViewportSize({ width: 667, height: 375 });
       await layout('narrowLandscape');
+      await openMenu();
       await page.locator('#fullscreen').tap();
       await page.waitForFunction(() => Boolean(document.fullscreenElement));
       await page.waitForFunction(() => !document.querySelector('#touch-exit-fullscreen').hidden);
@@ -394,8 +402,8 @@ try {
       await page.locator('#touch-exit-fullscreen').tap();
       await page.waitForFunction(() => !document.fullscreenElement);
     });
-    await check('action buttons support keyboard activation without duplicate touch clicks', async () => {
-      const comic = page.locator('[data-key="113"]'); // Native F2 toggles Comic view.
+    await check('menu game buttons support keyboard activation without duplicate touch clicks', async () => {
+      const comic = page.locator('[data-send="113"]'); // Comic view in the menu presses native F2.
       const activationPackets = async since => (await sends()).slice(since)
         .filter(record => [60, 61].includes(record.id) && record.bytes[1] === 113 && record.readyState === 'open');
       const assertSinglePulse = async (since, label) => {
@@ -408,10 +416,12 @@ try {
         return packets;
       };
       const keyboardStart = (await sends()).length;
+      await openMenu();
       await comic.focus();
       await page.keyboard.press('Enter');
       const keyboard = await assertSinglePulse(keyboardStart, 'keyboard activation');
       const touchStart = (await sends()).length;
+      await openMenu();
       await comic.tap();
       const tapPackets = await assertSinglePulse(touchStart, 'touch tap');
       report.input.comicActivation = { keyboard, touch: tapPackets };
@@ -427,6 +437,7 @@ try {
       await waitForPacket(60, 87, since);
       await waitForPacket(60, 16, since);
       const beforeDisconnect = (await sends()).length;
+      await openMenu();
       await page.locator('#disconnect').click();
       await page.waitForFunction(() => document.body.dataset.state === 'disconnected');
       const after = (await sends()).slice(beforeDisconnect);
@@ -454,7 +465,10 @@ try {
   try {
     if (page) await page.evaluate(() => document.fullscreenElement && document.exitFullscreen());
     if (page && ['playing', 'ready', 'connecting'].includes(await page.locator('body').getAttribute('data-state')) &&
-      await page.locator('#disconnect').isEnabled()) await page.locator('#disconnect').click({ timeout: 1500 });
+      await page.locator('#disconnect').isEnabled()) {
+      await openMenu();
+      await page.locator('#disconnect').click({ timeout: 1500 });
+    }
   } catch (error) { report.cleanupError = error.message; }
   await context?.close();
   await browser?.close();

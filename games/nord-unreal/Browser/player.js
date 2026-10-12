@@ -49,7 +49,7 @@ function updateInput() {
   touchRoot.hidden = !touchMode || !playing;
   touchControls?.setEnabled(touchMode && playing);
   element('input-note').textContent = playing
-    ? (touchMode ? 'Left stick: move / steer · Right pad: look · Use: interact / car / worklight. Landscape recommended.'
+    ? (touchMode ? 'Left stick: move / steer · Right pad: look · Use: interact / car / worklight · ☰: menu.'
       : locked ? 'You’re in control. Esc releases the mouse.' : 'Click the game to control it. Esc releases the mouse.')
     : `${touchMode ? 'Touch controls appear when you play.' : 'Keyboard + mouse supported.'} The host PC must stay online.`;
 }
@@ -163,7 +163,7 @@ if (endpoint) {
       streamSelect.value = event.data.autoSelectedStreamerId || '';
       if (!event.data.autoSelectedStreamerId) {
         stopTimeout();
-        status('selecting', 'Choose your player.', 'Select an available player above. Each friend needs a different player.');
+        status('selecting', 'Choose your player.', 'Pick a free player in the menu. Each friend needs a different player.');
       }
     });
     stream.addEventListener('webRtcConnecting', () => {
@@ -179,7 +179,7 @@ if (endpoint) {
       disconnectButton.disabled = true;
       fail('Your game disconnected.', 'Reconnect to continue when the host is available.', 'disconnected');
     });
-    stream.addEventListener('subscribeFailed', event => fail('This player is unavailable.', `${event.data.message} Choose another player above, or reconnect.`));
+    stream.addEventListener('subscribeFailed', event => fail('This player is unavailable.', `${event.data.message} Choose another player in the menu, or reconnect.`));
     stream.addEventListener('dataChannelError', () => fail('The controls disconnected.', 'Reconnect before continuing to play.'));
     const video = stream.webRtcController.videoPlayer.getVideoElement();
     video.addEventListener('playing', () => {
