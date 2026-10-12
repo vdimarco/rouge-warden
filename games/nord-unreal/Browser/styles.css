@@ -111,3 +111,5 @@ footer p { margin: 0; }
 #trailer-video { display: block; width: 100%; max-height: 80dvh; background: #000; }
 #close-trailer { position: absolute; top: -48px; right: -4px; background: var(--yellow); color: var(--ink); border-color: var(--yellow); }
 @media (max-width: 900px) { #overlay { gap: 14px; } .hero-tagline { margin: 8px 0 12px; letter-spacing: 1px; } }
+.hero-sound { position: absolute; top: 12px; right: 12px; z-index: 2; background: var(--yellow); color: var(--ink); border-color: var(--ink); }
+.touch-input .hero-sound { min-height: 44px; }

@@ -15,7 +15,7 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  const trailerFiles = ['trailer/hero-loop.mp4', 'trailer/gta-nord-trailer.mp4', 'trailer/hero-poster.jpg'];
+  const trailerFiles = ['trailer/gta-nord-trailer.mp4', 'trailer/hero-poster.jpg'];
   if (!['index.html', 'player.js', 'styles.css', ...trailerFiles].includes(file)) {
     response.writeHead(404).end();
     return;
@@ -78,6 +78,8 @@ try {
     assert.equal(await page.locator('.hero-title').isVisible(), true, 'the title screen shows the game title');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
+    assert.equal(await page.locator('#hero-video source').getAttribute('src'), './trailer/gta-nord-trailer.mp4', 'the title screen loops the full trailer with its sound track');
+    assert.equal(await page.locator('#hero-video').evaluate(video => video.loop && !video.hasAttribute('muted')), true);
     assert.equal(await page.locator('#connect').isVisible(), true, 'the start card stays reachable under the hero');
     await page.screenshot({ path: `.qa/offline-${width}.png`, fullPage: true });
   }

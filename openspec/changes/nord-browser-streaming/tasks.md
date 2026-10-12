@@ -39,4 +39,5 @@
 
 - [x] Add the title-screen trailer: muted 12 s loop (960x540, 2.2 MB) behind the start card, GTA: NORD title and tagline, and a modal full trailer (1280x720, 14.5 MB, loaded on click). Loop pauses while playing, for reduced motion and for data saver.
 - [x] Verify with the static browser checks: hero, Watch the trailer, Connect visible at 1280, 1920 and 360 widths with no horizontal scroll; the modal opens, closes and stops playback. Unit tests pass. Headless Chromium cannot decode H.264, so these checks show the poster; real-browser video playback and the live mobile checks (need the game host) did not run here.
+- [x] On user request ("no mute"), loop the full trailer with sound in place of the muted loop. Autoplay with sound falls back to muted with a Sound on button; the first click, tap or key press unmutes. Checked in Chromium with a WebM copy: muted with the button before the click, unmuted and still playing after it.
 - [ ] Deploy the player to the existing nord-montreal production target and confirm the loop and trailer play in a real desktop and phone browser.

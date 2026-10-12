@@ -20,9 +20,10 @@
       </div>
     </header>
     <main id="frame" aria-label="NORD game">
-      <video id="hero-video" class="hero-video" muted loop playsinline preload="metadata" poster="./trailer/hero-poster.jpg" aria-hidden="true">
-        <source src="./trailer/hero-loop.mp4" type="video/mp4">
+      <video id="hero-video" class="hero-video" loop playsinline preload="auto" poster="./trailer/hero-poster.jpg" aria-hidden="true">
+        <source src="./trailer/gta-nord-trailer.mp4" type="video/mp4">
       </video>
+      <button id="hero-sound" class="hero-sound" type="button" hidden>🔊 Sound on</button>
       <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
       <div id="touch-controls" aria-label="Touch game controls" hidden>
         <button id="touch-exit-fullscreen" class="touch-exit" hidden>Exit fullscreen</button>
