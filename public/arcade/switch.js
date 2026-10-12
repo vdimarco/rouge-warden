@@ -5,14 +5,6 @@
   const GAMES = [
     { id: "ascii-front", name: "ASCII Front", sub: "ASCII tank roguelite", url: "/ascii-front/", art: "/ascii-front/key.svg", color: "#d2f584" },
     { id: "battle-tanks", name: "Battle Tanks", sub: "Flank · bombard · extract", url: "/battle-tanks/", art: "/battle-tanks/key.svg", color: "#8df6d5" },
-    { id: "afterlight", name: "Afterlight", sub: "One journey · six changing worlds", url: "/afterlight/", art: "/arcade/key/firefly-courier.svg", color: "#b6e5ce" },
-    {"id": "lighthouse-keeper", "name": "Lighthouse Keeper", "sub": "Guide boats through the fog", "url": "/lighthouse-keeper/", "art": "/arcade/key/lighthouse-keeper.svg", "color": "#bdd5eb"},
-    {"id": "echoes-under-ice", "name": "Echoes Under Ice", "sub": "Recover the fjord’s lost bells", "url": "/echoes-under-ice/", "art": "/arcade/key/echoes-under-ice.svg", "color": "#b6e5ce"},
-    {"id": "last-train-home", "name": "Last Train Home", "sub": "Follow reflections before departure", "url": "/last-train-home/", "art": "/arcade/key/last-train-home.svg", "color": "#ff85b5"},
-    {"id": "firefly-courier", "name": "Firefly Courier", "sub": "Carry a little light through the forest", "url": "/firefly-courier/", "art": "/arcade/key/firefly-courier.svg", "color": "#f2c97e"},
-    {"id": "mirage-runner", "name": "Mirage Runner", "sub": "Sail the dunes beneath the stars", "url": "/mirage-runner/", "art": "/arcade/key/mirage-runner.svg", "color": "#f5c98e"},
-    {"id": "orbital-gardener", "name": "Orbital Gardener", "sub": "Grow a garden under Earthrise", "url": "/orbital-gardener/", "art": "/arcade/key/orbital-gardener.svg", "color": "#a8d3f6"},
-    { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62" },
     { id: "tidebreak", name: "Shore of the Ancients", sub: "3v3 folklore MOBA", url: "/tidebreak/", art: "/tidebreak/art/shore-ancients-hero.webp", color: "#d2e46d" },
     { id: "brawl", name: "Cottage Brawl", sub: "8-fighter platform battle", url: "/brawl/", art: "/brawl/art/hero-chaos.webp", color: "#ffca51" },
     { id: "worlds", name: "Small Worlds", sub: "Six mobile experiments", url: "/lab/worlds/", art: "/arcade/worlds.webp", color: "#c7e5ac" },
@@ -39,6 +31,15 @@
     { id: "creek", name: "Up the Creek", sub: "Your phone is the paddle", url: "/lab/creek/", art: "/arcade/creek.webp", color: "#92e8ce", credits: false },
     { id: "tilt", name: "Full Tilt", sub: "A pinball voyage", url: "/lab/tilt/", art: "/arcade/tilt.webp", color: "#f5a6e5", credits: false },
     { id: "rules", name: "House Rules", sub: "Build a Down the Drain layer", url: "/lab/rules/", art: "/arcade/rules.webp", color: "#ffd56b", credits: false },
+    // ASCII sketches: small scene games that live in the Lab. All Games leaves them out (the Lab tile covers them), and so do the Crimson Rogue credits.
+    { id: "afterlight", name: "Afterlight", sub: "One journey · six changing worlds", url: "/afterlight/", art: "/arcade/key/firefly-courier.svg", color: "#b6e5ce", sketch: true },
+    { id: "lighthouse-keeper", name: "Lighthouse Keeper", sub: "Guide boats through the fog", url: "/lighthouse-keeper/", art: "/arcade/key/lighthouse-keeper.svg", color: "#bdd5eb", sketch: true },
+    { id: "echoes-under-ice", name: "Echoes Under Ice", sub: "Recover the fjord’s lost bells", url: "/echoes-under-ice/", art: "/arcade/key/echoes-under-ice.svg", color: "#b6e5ce", sketch: true },
+    { id: "last-train-home", name: "Last Train Home", sub: "Follow reflections before departure", url: "/last-train-home/", art: "/arcade/key/last-train-home.svg", color: "#ff85b5", sketch: true },
+    { id: "firefly-courier", name: "Firefly Courier", sub: "Carry a little light through the forest", url: "/firefly-courier/", art: "/arcade/key/firefly-courier.svg", color: "#f2c97e", sketch: true },
+    { id: "mirage-runner", name: "Mirage Runner", sub: "Sail the dunes beneath the stars", url: "/mirage-runner/", art: "/arcade/key/mirage-runner.svg", color: "#f5c98e", sketch: true },
+    { id: "orbital-gardener", name: "Orbital Gardener", sub: "Grow a garden under Earthrise", url: "/orbital-gardener/", art: "/arcade/key/orbital-gardener.svg", color: "#a8d3f6", sketch: true },
+    { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62", sketch: true },
   ];
   const home = location.pathname === "/" || location.pathname === "/index.html";
   const readPlays = () => { try { const v = JSON.parse(localStorage.getItem('cottage-plays') || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; } };
@@ -254,7 +255,7 @@
     if (!box) build();
     here = current || thisGame();
     const shown = [];
-    for (const g of GAMES) if (!g.probe || g.id === here || (await live[g.id])) shown.push(g);
+    for (const g of GAMES) if ((!g.sketch || !home) && (!g.probe || g.id === here || (await live[g.id]))) shown.push(g);
     boardGames = shown;
     render();
     if (home) refresh();
