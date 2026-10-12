@@ -489,7 +489,9 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     // A player's crew member is never also a resident: hide the matching residents on every machine.
-    const bool bPlayerWears = AQuebecCharacter::IsCrewTaken(GetWorld(), Style);
+    // The server sees every player character; clients follow the worn crew the game state shares.
+    const AQuebecGameState* Game = GetWorld()->GetGameState<AQuebecGameState>();
+    const bool bPlayerWears = HasAuthority() ? AQuebecCharacter::IsCrewTaken(GetWorld(), Style) : Game && Game->IsCrewWorn(Style);
     if (bPlayerWears != IsHidden())
     {
         SetActorHiddenInGame(bPlayerWears);
@@ -1185,10 +1187,27 @@ bool AQuebecGameState::AdvanceMissionNear(const FVector& Position)
     return true;
 }
 
+AQuebecGameState::AQuebecGameState()
+{
+    PrimaryActorTick.bCanEverTick = true;
+}
+
+void AQuebecGameState::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    if (!HasAuthority()) return;
+    // A client loses a player character that is far away or parked while its player drives; the game state always replicates.
+    int32 Mask = 0;
+    for (int32 Style = 3; Style <= 10; ++Style)
+        if (AQuebecCharacter::IsCrewTaken(GetWorld(), Style)) Mask |= 1 << Style;
+    WornCrewMask = Mask;
+}
+
 void AQuebecGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AQuebecGameState, MissionIndex);
+    DOREPLIFETIME(AQuebecGameState, WornCrewMask);
 }
 
 
@@ -1537,8 +1556,12 @@ void AQuebecHUD::DrawHUD()
     const bool bComic = Controller && Controller->IsComicStyle();
     const float Now = GetWorld()->GetTimeSeconds();
     if (FirstHUDTime < 0.f) FirstHUDTime = Now;
-    const float Scale = FMath::Clamp(FMath::Min(Canvas->SizeY / 720.f, Canvas->SizeX / 1280.f), .6f, 1.5f);
+    // A phone held upright streams a tall frame: panels stack at the top and the lower 40% stays clear for the touch controls.
+    const bool bPortrait = Canvas->SizeY > Canvas->SizeX * 1.05f;
+    const float Scale = bPortrait ? FMath::Clamp(FMath::Min(Canvas->SizeX / 720.f * 1.3f, Canvas->SizeY / 900.f * 1.15f), .6f, 2.f)
+        : FMath::Clamp(FMath::Min(Canvas->SizeY / 720.f, Canvas->SizeX / 1280.f), .6f, 1.5f);
     const float Margin = 22.f * Scale;
+    const float ControlsTop = Canvas->SizeY * .6f;
     const FLinearColor Ink(.004f, .006f, .009f, .95f);
     const FLinearColor Muted(.78f, .81f, .82f, 1.f);
     const FLinearColor Accent(1.f, .75f, .22f, 1.f);
@@ -1595,7 +1618,76 @@ void AQuebecHUD::DrawHUD()
     const float Right = Canvas->SizeX - Margin;
     RightText(FString::Printf(TEXT("NORD · MONTRÉAL  /  %d ONLINE"), State ? State->PlayerArray.Num() : 1), Paper, Right, Margin, .92f);
     if (Avatar) RightText(AQuebecParkResident::NameForStyle(Avatar->CrewStyle), Paper, Right, Margin + 23.f * Scale, 1.f);
-    RightText(Campaign && !Campaign->IsCampaignComplete() ? TEXT("C  Character   /   F2  Look   /   R  Recover") : TEXT("C  Character   /   F2  Look"), Muted, Right, Margin + 48.f * Scale, .85f);
+    // Phones have touch buttons for these keys.
+    if (!bPortrait)
+        RightText(Campaign && !Campaign->IsCampaignComplete() ? TEXT("C  Character   /   F2  Look   /   R  Recover") : TEXT("C  Character   /   F2  Look"), Muted, Right, Margin + 48.f * Scale, .85f);
+
+    const FVector Here = Pawn->GetActorLocation();
+    FString Title, Action, Status;
+    FVector Target = FVector::ZeroVector;
+    bool bHasObjective = false;
+    if (Campaign)
+    {
+        Title = Campaign->GetMissionTitle();
+        Action = Campaign->GetObjectiveText();
+        Status = Campaign->GetStatusText();
+        Target = Campaign->GetObjectiveLocation();
+        bHasObjective = !Campaign->IsCampaignComplete();
+    }
+    else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
+    {
+        const int32 Index = State->MissionIndex;
+        Title = FString::Printf(TEXT("0%d  /  PARK EXPLORATION"), Index + 1);
+        Action = AQuebecGameState::MissionLabels[Index];
+        Target = AQuebecGameState::MissionLocations[Index];
+        bHasObjective = true;
+        Status = bCanComplete ? Car ? TEXT("Step out to complete the objective") : NearbyCar ? TEXT("Move away from car to complete objective") : TEXT("E  /  Complete objective") : TEXT("Follow the gold diamond");
+    }
+    else
+    {
+        Title = TEXT("THE CITY IS YOURS");
+        Action = TEXT("All three missions complete. Keep exploring.");
+    }
+    const float Meters = bHasObjective ? FVector::Distance(Here, Target) / 100.f : 0.f;
+
+    // Map: top right, under the name and player count, clear of the phone move stick in the lower left.
+    const float MapWidth = bPortrait ? Canvas->SizeX * .4f : 240.f * Scale;
+    const float MapHeight = bPortrait ? MapWidth * .55f : 150.f * Scale;
+    const float MapX = Right - MapWidth, MapY = Margin + (bPortrait ? 50.f : 74.f) * Scale;
+    const float CreditSize = bPortrait ? .62f : .85f, CreditStep = (bPortrait ? 15.f : 18.f) * Scale;
+    const float MapBlock = MapHeight + 4.f * Scale + 3.f * CreditStep;
+    // Mission card: bottom right on a wide screen, top left beside the map on a tall one.
+    const float MissionWidth = bPortrait ? MapX - Margin - 12.f * Scale : 460.f * Scale;
+    const float MissionX = bPortrait ? Margin : Right - MissionWidth;
+    const TArray<FString> Titles = WrappedLines(Title, MissionWidth - 24.f * Scale, .9f);
+    const TArray<FString> Actions = WrappedLines(Action, MissionWidth - 24.f * Scale, 1.15f);
+    const TArray<FString> Statuses = WrappedLines(Status, MissionWidth - 24.f * Scale, .9f);
+    const float MissionHeight = (20.f + Titles.Num() * 20.f + Actions.Num() * 25.f + Statuses.Num() * 20.f + (bHasObjective ? 20.f : 0.f)) * Scale;
+    const float MissionY = bPortrait ? Margin : Canvas->SizeY - Margin - 78.f * Scale - MissionHeight;
+    const float TopClear = bPortrait ? FMath::Max(MissionY + MissionHeight, MapY + MapBlock) + 12.f * Scale : Margin;
+
+    FString Prompt;
+    if (Car) Prompt = TEXT("[ E ]  EXIT CAR");
+    else if (NearbyCar) Prompt = TEXT("[ E ]  ENTER CAR");
+    else if (bCanComplete) Prompt = TEXT("[ E ]  COMPLETE OBJECTIVE");
+    else if (Controller)
+    {
+        if (Campaign) Prompt = Campaign->GetInteractionPrompt(Controller);
+        if (Prompt.IsEmpty())
+            if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
+                Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
+    }
+    // On a tall screen the prompt sits just above the touch controls; the speed takes its left end.
+    const float LowerLeft = Margin + (bPortrait && Car ? 150.f * Scale : 0.f);
+    const float LowerRight = Right - (!bPortrait && Car ? 190.f * Scale : 0.f);
+    const float PromptWidth = FMath::Min(480.f * Scale, LowerRight - LowerLeft);
+    const TArray<FString> PromptLines = Prompt.IsEmpty() ? TArray<FString>() : WrappedLines(Prompt, PromptWidth - 24.f * Scale, 1.1f);
+    const float PromptX = (LowerLeft + LowerRight - PromptWidth) * .5f;
+    const float PromptHeight = (20.f + PromptLines.Num() * 24.f) * Scale;
+    const float PromptY = (bPortrait ? ControlsTop - 8.f * Scale : Canvas->SizeY - Margin) - PromptHeight;
+    // The caption on a tall screen rests on the prompt (or on the speed in a car), under the open view.
+    float StackBottom = (Prompt.IsEmpty() ? ControlsTop : PromptY) - 8.f * Scale;
+    if (Car) StackBottom = FMath::Min(StackBottom, ControlsTop - 74.f * Scale);
 
     const FString Briefing = Campaign ? Campaign->GetBriefingText() : FString();
     const bool bPrivateCaption = Controller && Controller->ResidentCaptionUntil > Now && !Controller->ResidentCaption.IsEmpty();
@@ -1613,21 +1705,22 @@ void AQuebecHUD::DrawHUD()
         BriefingPausedAt = -1.f;
     }
     const FString Caption = bPrivateCaption ? Controller->ResidentCaption : Now < BriefingUntil ? Briefing : FString();
+    float ViewBottom = StackBottom;
     if (!Caption.IsEmpty())
     {
-        const float Width = 440.f * Scale;
+        // Top left on a wide screen; full width just above the prompt on a tall one.
+        const float Width = bPortrait ? Canvas->SizeX - 2.f * Margin : 440.f * Scale;
         const TArray<FString> Lines = WrappedLines(Caption, Width - 28.f * Scale, 1.05f);
-        DrawRect(Panel, Margin, Margin, Width, (22.f + Lines.Num() * 22.f) * Scale);
-        DrawRect(Accent, Margin, Margin, 2.f * Scale, (22.f + Lines.Num() * 22.f) * Scale);
+        const float Height = (22.f + Lines.Num() * 22.f) * Scale;
+        const float Y = bPortrait ? FMath::Max(TopClear, StackBottom - Height) : Margin;
+        DrawRect(Panel, Margin, Y, Width, Height);
+        DrawRect(Accent, Margin, Y, 2.f * Scale, Height);
         for (int32 Row = 0; Row < Lines.Num(); ++Row)
-            Text(Lines[Row], Paper, Margin + 14.f * Scale, Margin + (11.f + Row * 22.f) * Scale, 1.05f);
+            Text(Lines[Row], Paper, Margin + 14.f * Scale, Y + (11.f + Row * 22.f) * Scale, 1.05f);
+        ViewBottom = Y - 8.f * Scale;
     }
 
-    // Top right, under the name and player count: the lower-left corner is where the phone move stick sits.
-    const float MapWidth = 240.f * Scale, MapHeight = 150.f * Scale;
-    const float MapX = Right - MapWidth, MapY = Margin + 74.f * Scale;
-    DrawRect(Panel.CopyWithNewOpacity(.72f), MapX, MapY, MapWidth, MapHeight + 58.f * Scale);
-    const FVector Here = Pawn->GetActorLocation();
+    DrawRect(Panel.CopyWithNewOpacity(.72f), MapX, MapY, MapWidth, MapBlock);
     const FVector2D MapMin(MapX + 7.f * Scale, MapY + 7.f * Scale);
     const FVector2D MapMax(MapX + MapWidth - 7.f * Scale, MapY + MapHeight - 7.f * Scale);
     const FVector2D Center(MapX + MapWidth * .5f, MapY + MapHeight * .5f);
@@ -1649,9 +1742,9 @@ void AQuebecHUD::DrawHUD()
     }
     DrawLine(MapX, MapY, MapX + MapWidth, MapY, Muted.CopyWithNewOpacity(.6f), Scale);
     DrawLine(MapX, MapY + MapHeight, MapX + MapWidth, MapY + MapHeight, Muted.CopyWithNewOpacity(.6f), Scale);
-    Text(TEXT("© OpenStreetMap contributors / ODbL"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale, .85f);
-    Text(TEXT("openstreetmap.org/copyright"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 22.f * Scale, .85f);
-    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 40.f * Scale, .85f);
+    Text(TEXT("© OpenStreetMap contributors / ODbL"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale, CreditSize);
+    Text(TEXT("openstreetmap.org/copyright"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale + CreditStep, CreditSize);
+    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale + 2.f * CreditStep, CreditSize);
     TArray<AQuebecCar*> MapCars;
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
@@ -1680,32 +1773,6 @@ void AQuebecHUD::DrawHUD()
     DrawLine(TailB.X, TailB.Y, TailA.X, TailA.Y, Paper, 2.f * Scale);
     Text(TEXT("N"), Paper, Center.X - 5.f * Scale, MapY + 8.f * Scale, .9f);
 
-    FString Title, Action, Status;
-    FVector Target = FVector::ZeroVector;
-    bool bHasObjective = false;
-    if (Campaign)
-    {
-        Title = Campaign->GetMissionTitle();
-        Action = Campaign->GetObjectiveText();
-        Status = Campaign->GetStatusText();
-        Target = Campaign->GetObjectiveLocation();
-        bHasObjective = !Campaign->IsCampaignComplete();
-    }
-    else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
-    {
-        const int32 Index = State->MissionIndex;
-        Title = FString::Printf(TEXT("0%d  /  PARK EXPLORATION"), Index + 1);
-        Action = AQuebecGameState::MissionLabels[Index];
-        Target = AQuebecGameState::MissionLocations[Index];
-        bHasObjective = true;
-        Status = bCanComplete ? Car ? TEXT("Step out to complete the objective") : NearbyCar ? TEXT("Move away from car to complete objective") : TEXT("E  /  Complete objective") : TEXT("Follow the gold diamond");
-    }
-    else
-    {
-        Title = TEXT("THE CITY IS YOURS");
-        Action = TEXT("All three missions complete. Keep exploring.");
-    }
-    const float Meters = bHasObjective ? FVector::Distance(Here, Target) / 100.f : 0.f;
     if (bHasObjective)
     {
         const FVector2D Goal = MapMarker(Target);
@@ -1717,7 +1784,7 @@ void AQuebecHUD::DrawHUD()
         FVector2D Marker;
         if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
             Marker.X > Margin + 20.f * Scale && Marker.X < Right - 20.f * Scale &&
-            Marker.Y > 280.f * Scale && Marker.Y < Canvas->SizeY - 250.f * Scale)
+            Marker.Y > (bPortrait ? TopClear : 280.f * Scale) && Marker.Y < (bPortrait ? ViewBottom : Canvas->SizeY - 250.f * Scale))
         {
             const float R = 10.f * Scale;
             DrawLine(Marker.X, Marker.Y - R, Marker.X + R, Marker.Y, Accent, 2.f * Scale);
@@ -1728,13 +1795,6 @@ void AQuebecHUD::DrawHUD()
         }
     }
 
-    const float MissionWidth = 460.f * Scale;
-    const float MissionX = Right - MissionWidth;
-    const TArray<FString> Titles = WrappedLines(Title, MissionWidth - 24.f * Scale, .9f);
-    const TArray<FString> Actions = WrappedLines(Action, MissionWidth - 24.f * Scale, 1.15f);
-    const TArray<FString> Statuses = WrappedLines(Status, MissionWidth - 24.f * Scale, .9f);
-    const float MissionHeight = (20.f + Titles.Num() * 20.f + Actions.Num() * 25.f + Statuses.Num() * 20.f + (bHasObjective ? 20.f : 0.f)) * Scale;
-    const float MissionY = Canvas->SizeY - Margin - 78.f * Scale - MissionHeight;
     DrawRect(Panel, MissionX, MissionY, MissionWidth, MissionHeight);
     DrawRect(Accent, MissionX, MissionY, 2.f * Scale, MissionHeight);
     float RowY = MissionY + 10.f * Scale;
@@ -1743,30 +1803,18 @@ void AQuebecHUD::DrawHUD()
     for (const FString& Line : Statuses) { Text(Line, Muted, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     if (bHasObjective) Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Paper, MissionX + 12.f * Scale, RowY, .9f);
 
-    FString Prompt;
-    if (Car) Prompt = TEXT("[ E ]  EXIT CAR");
-    else if (NearbyCar) Prompt = TEXT("[ E ]  ENTER CAR");
-    else if (bCanComplete) Prompt = TEXT("[ E ]  COMPLETE OBJECTIVE");
-    else if (Controller)
-    {
-        if (Campaign) Prompt = Campaign->GetInteractionPrompt(Controller);
-        if (Prompt.IsEmpty())
-            if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
-                Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
-    }
-    const float LowerLeft = Margin;
-    const float LowerRight = Right - (Car ? 190.f : 0.f) * Scale;
     if (!Prompt.IsEmpty())
     {
-        const float Width = FMath::Min(480.f * Scale, LowerRight - LowerLeft);
-        const TArray<FString> Lines = WrappedLines(Prompt, Width - 24.f * Scale, 1.1f);
-        const float X = (LowerLeft + LowerRight - Width) * .5f;
-        const float Height = (20.f + Lines.Num() * 24.f) * Scale;
-        const float Y = Canvas->SizeY - Margin - Height;
-        DrawRect(Panel, X, Y, Width, Height);
-        for (int32 I = 0; I < Lines.Num(); ++I) Text(Lines[I], Paper, X + 12.f * Scale, Y + (10.f + I * 24.f) * Scale, 1.1f);
+        DrawRect(Panel, PromptX, PromptY, PromptWidth, PromptHeight);
+        for (int32 I = 0; I < PromptLines.Num(); ++I) Text(PromptLines[I], Paper, PromptX + 12.f * Scale, PromptY + (10.f + I * 24.f) * Scale, 1.1f);
     }
-    if (Car)
+    if (Car && bPortrait)
+    {
+        const float Y = ControlsTop - 66.f * Scale;
+        Text(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, Margin, Y, 1.8f);
+        Text(Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h"), Car->bHandbrake ? Accent : Muted, Margin, Y + 38.f * Scale, .85f);
+    }
+    else if (Car)
     {
         const float X = Right - 164.f * Scale;
         const float Y = Canvas->SizeY - Margin - 74.f * Scale;
@@ -1775,7 +1823,7 @@ void AQuebecHUD::DrawHUD()
         Text(TEXT("W/S Drive   A/D Steer"), Muted, X, Y + 42.f * Scale, .85f);
         Text(Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake"), Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
-    else if (Now - FirstHUDTime < 10.f)
+    else if (!bPortrait && Now - FirstHUDTime < 10.f)
     {
         Text(TEXT("SPACE  Jump   /   SHIFT  Sprint"), Muted, LowerLeft, Canvas->SizeY - Margin - 68.f * Scale, .9f);
     }
@@ -1800,7 +1848,7 @@ void AQuebecHUD::DrawHUD()
     {
         // A held burst: radiating ink spikes behind outlined lettering, popping in over 0.12 s.
         const float Pop = FMath::Min(WordAge / .12f, 1.f) * (WordAge > .75f ? (.9f - WordAge) / .15f : 1.f);
-        const FVector2D Burst(Canvas->SizeX * .5f + 150.f * Scale, Canvas->SizeY * .47f);
+        const FVector2D Burst(Canvas->SizeX * .5f + (bPortrait ? 0.f : 150.f * Scale), Canvas->SizeY * (bPortrait ? .42f : .47f));
         UFont* Large = GEngine->GetLargeFont();
         const float Size = 2.4f * Pop * Scale;
         // Ink spikes first, then slightly shorter yellow spikes, so the burst has an outline.
@@ -1832,7 +1880,8 @@ void AQuebecHUD::DrawHUD()
             float W = 0.f, H = 0.f;
             GetTextSize(Banner, W, H, Font, 2.f * Scale);
             const float X = Canvas->SizeX * .5f - W * .5f;
-            const float Y = Canvas->SizeY * .23f;
+            // On a tall screen the banner briefly covers the mission card, which is changing anyway.
+            const float Y = bPortrait ? Margin + 40.f * Scale : Canvas->SizeY * .23f;
             DrawRect(Panel.CopyWithNewOpacity(.4f * Alpha), X - 25.f * Scale, Y - 10.f * Scale, W + 50.f * Scale, 85.f * Scale);
             Text(Banner, Accent.CopyWithNewOpacity(Alpha), X, Y, 2.f);
             const FString Together = FString::Printf(TEXT("%d / %d completed together"), Completed, Campaign ? 2 : 3);

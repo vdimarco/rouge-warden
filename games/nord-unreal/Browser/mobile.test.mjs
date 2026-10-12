@@ -233,12 +233,19 @@ async function connectFriend() {
   }
   assert.equal(await page.locator('#streamer').inputValue(), 'NordFriend1');
   await page.locator('#play').tap();
+  await page.waitForFunction(() => document.body.dataset.state === 'playing');
+  await streamSettled();
+  return true;
+}
+
+// The page asks the game for a frame shaped like the play area on a phone held upright, else 1280x720.
+async function streamSettled() {
   await page.waitForFunction(() => {
     const video = document.querySelector('#video video');
-    return document.body.dataset.state === 'playing' && video?.readyState > 2 &&
-      video.videoWidth === 1280 && video.videoHeight === 720;
-  });
-  return true;
+    const size = document.body.dataset.streamSize;
+    return size && video?.readyState > 2 && `${video.videoWidth}x${video.videoHeight}` === size;
+  }, null, { timeout: 20000 });
+  report.media.streamSize = await page.evaluate(() => document.body.dataset.streamSize);
 }
 
 try {
@@ -292,6 +299,23 @@ try {
   if (await connectFriend()) {
     await check('real mobile media', () => advancingMedia('initial'));
     await check('portrait controls fit and meet target size', () => layout('portrait'));
+    await check('a phone held upright gets a tall game frame with every control in its bottom 42%', async () => {
+      const geometry = await page.evaluate(() => {
+        const box = selector => document.querySelector(selector).getBoundingClientRect();
+        const video = document.querySelector('#video video');
+        const frame = box('#frame');
+        const controls = ['[data-stick="move"]', '[data-stick="look"]', '#crew-toggle', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
+          .map(selector => ({ selector, top: box(selector).top }));
+        return { portraitStream: document.body.classList.contains('portrait-stream'), width: video.videoWidth, height: video.videoHeight,
+          frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
+      });
+      report.input.portraitStream = geometry;
+      assert.ok(geometry.portraitStream && geometry.height > geometry.width, 'the game must send a tall frame');
+      assert.ok(Math.abs(geometry.video - geometry.frame.height) <= 1, 'the tall frame must fill the play area');
+      for (const control of geometry.controls) {
+        assert.ok(control.top >= geometry.frame.top + geometry.frame.height * .58, `${control.selector} must sit under the game HUD`);
+      }
+    });
     await check('simultaneous move, look and jump use the native data channel', async () => {
       const beforeFrame = await framePixels();
       const since = (await sends()).length;
@@ -332,6 +356,8 @@ try {
     });
     await check('landscape controls fit and fullscreen exit works', async () => {
       await page.setViewportSize({ width: 800, height: 360 });
+      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720');
+      await streamSettled();
       await layout('landscape');
       await page.locator('#fullscreen').tap();
       await page.waitForFunction(() => Boolean(document.fullscreenElement));

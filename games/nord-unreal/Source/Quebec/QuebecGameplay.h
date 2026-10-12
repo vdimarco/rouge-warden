@@ -176,6 +176,11 @@ public:
     static const FVector MissionLocations[MissionCount];
     static const TCHAR* MissionLabels[MissionCount];
     UPROPERTY(Replicated, BlueprintReadOnly) int32 MissionIndex = 0;
+    // Crew styles 3-10 that a player wears, one bit per style. The server sets it; clients cannot see every player character.
+    UPROPERTY(Replicated) int32 WornCrewMask = 0;
+    AQuebecGameState();
+    virtual void Tick(float DeltaSeconds) override;
+    bool IsCrewWorn(int32 Style) const { return Style >= 3 && Style <= 10 && (WornCrewMask & (1 << Style)) != 0; }
     static bool CanAdvanceMission(int32 Index, const FVector& Position);
     bool AdvanceMissionNear(const FVector& Position);
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

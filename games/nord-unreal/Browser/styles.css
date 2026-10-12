@@ -111,3 +111,16 @@ footer p { margin: 0; }
   .touch-input .touch-stick { width: 100px; height: 100px; }
   .touch-input .move-stick, .touch-input .look-stick { bottom: max(72px, calc(env(safe-area-inset-bottom) + 60px)); }
 }
+
+/* While playing on a touch screen, the play area takes the footer's space too. */
+.touch-input[data-state="playing"] footer { display: none; }
+/* A tall frame from the game fills the play area, and every control sits in its bottom 40%, under the game's HUD. */
+.touch-input.portrait-stream #video { top: 0; bottom: 0; height: auto; }
+.touch-input.portrait-stream #touch-controls button { background: #0b0a1699; }
+.touch-input.portrait-stream .touch-primary { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); grid-template-columns: repeat(3, 1fr); }
+.touch-input.portrait-stream .touch-primary button:last-child { grid-column: auto; }
+.touch-input.portrait-stream .touch-secondary { top: auto; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(64px, calc(env(safe-area-inset-bottom) + 52px)); display: grid; grid-template-columns: repeat(4, 1fr); }
+.touch-input.portrait-stream .move-stick, .touch-input.portrait-stream .look-stick { bottom: max(118px, calc(env(safe-area-inset-bottom) + 106px)); }
+.touch-input.portrait-stream .look-stick { right: max(16px, env(safe-area-inset-right)); }
+.touch-input.portrait-stream .crew-picker { top: auto; bottom: max(118px, calc(env(safe-area-inset-bottom) + 106px)); }
+.touch-input.portrait-stream .touch-exit { top: auto; bottom: max(226px, calc(env(safe-area-inset-bottom) + 214px)); }

@@ -101,8 +101,9 @@ On a touch screen, the move stick and the game's map SHALL NOT cover each other.
 A crew member SHALL appear in the game either as one player's character or as residents, never both, and each player SHALL choose their own crew member.
 
 #### Scenario: Player plays a crew member
-- **WHEN** a player wears a crew style, on foot or parked while driving
+- **WHEN** a player wears a crew style, on foot or parked while driving, near the other player or far from them
 - **THEN** every resident with that style is hidden and cannot be talked to on all machines, and reappears once no player wears it
+- **AND** the server shares the worn styles through the game state, because a client does not see a far or parked player character
 
 #### Scenario: Second player joins
 - **WHEN** a player joins while another player wears the default style
@@ -130,9 +131,23 @@ The title screen SHALL offer Start, which opens a short story and then a crew ch
 - **WHEN** the page loads
 - **THEN** no story or crew picture loads until Start is pressed, about 300 KB in all
 
-### Requirement: Phone held upright keeps the game picture clear
-On a touch screen in portrait, the game picture SHALL sit at the top of the play area under the small buttons, with the sticks below it.
+### Requirement: Phone held upright plays a tall game
+On a touch screen in portrait, the game SHALL render a tall frame shaped like the play area, with its HUD in the top 60% and every touch control in the bottom 40%.
 
 #### Scenario: Player holds the phone upright
-- **WHEN** a phone up to 700 px wide is in portrait while playing
-- **THEN** the game picture starts 62 px below the top of the play area and the 100 px sticks sit 72 px above the bottom, so on a 485 x 652 screen no control covers the picture
+- **WHEN** a phone is in portrait while playing
+- **THEN** the page asks the game for a frame of the play area's shape (720 wide up to 9:16, otherwise 1280 high and narrower, never more pixels than 1280x720), and once the game sends it the frame fills the play area
+- **AND** the footer hides, and the touch buttons sit in two rows at the bottom with the sticks above them, all in the bottom 40%
+
+#### Scenario: Game draws its HUD on a tall frame
+- **WHEN** the game's frame is taller than it is wide
+- **THEN** the mission card sits top left and the map top right with its credits, the caption and the action prompt rest just above the bottom 40%, keyboard hints are left out, and in a car the speed sits at the left of the prompt row
+- **AND** the camera keeps its field of view on the longer side, so the tall view does not stretch
+
+#### Scenario: Player turns the phone sideways or uses a computer
+- **WHEN** the play area is wider than tall, or the browser is on a computer
+- **THEN** the page asks for the standard 1280x720 frame and the existing landscape layout and HUD apply
+
+#### Scenario: The game sends a 16:9 frame to a phone held upright
+- **WHEN** the game build or host does not honor the request
+- **THEN** the 16:9 picture sits at the top of the play area under the small buttons, with the sticks below it

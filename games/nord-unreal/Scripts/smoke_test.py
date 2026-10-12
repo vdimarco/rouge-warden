@@ -274,6 +274,18 @@ def host_exited():
     return True
 
 
+def host_drive_hides_crew():
+    # The client drops the host's parked character after about 5 s; the replicated worn crew still hides that resident.
+    if elapsed() < 6:
+        return False
+    worn = {STATE[side + "_char"].get_editor_property("CrewStyle") for side in ("host", "client")}
+    for resident in actors(STATE["client"], "ParkResident"):
+        if not resident.actor_has_tag("CityCrowd"):
+            assert resident.get_editor_property("hidden") == (resident.get_editor_property("Style") in worn), \
+                "Client shows a resident wearing a player's crew member"
+    return True
+
+
 def missions_equal(index):
     return mission(STATE["server"]) == mission(STATE["client"]) == index
 
@@ -522,6 +534,7 @@ step("listen host approaches the empty car",
      lambda: STATE["host_char"].set_actor_location(STATE["server_car"].get_actor_location() + u.Vector(0, -260, 0), False, True),
      lambda: distance(STATE["host_char"].get_actor_location(), STATE["server_car"].get_actor_location()) < 450)
 step("listen host interaction enters car", host_interact, host_entered)
+step("client keeps the driving host's crew member off the residents", lambda: None, host_drive_hides_crew)
 step("listen host interaction exits and restores character", host_interact, host_exited)
 step("teleport to a future objective", lambda: teleport(TARGETS[1]), lambda: teleported(TARGETS[1]))
 step("future mission interaction rejected", interact, reject_wrong_mission)
@@ -798,7 +811,7 @@ def tick(delta_seconds):
     STATE["ticking"] = True
     try:
         now = time.monotonic()
-        assert now - STATE["started"] < 110, "Timeout while testing: " + STEPS[max(STATE["step"], 0)][0]
+        assert now - STATE["started"] < 120, "Timeout while testing: " + STEPS[max(STATE["step"], 0)][0]
         if now < STATE.get("capture_until", 0) or (STATE.get("capture_path") and not STATE["capture_path"].exists()):
             return
         if STATE["step"] == -1:
