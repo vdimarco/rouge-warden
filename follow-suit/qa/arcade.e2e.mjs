@@ -135,7 +135,9 @@ await check('Arcade on the run end screen opens the arcade', async () => {
   await quietFonts(page);
   await page.getByRole('link', { name: 'Arcade', exact: true }).tap();
   await page.waitForURL(arcade);
-  await page.waitForSelector('.cab[data-game="follow-suit"]');
+  // the arcade opens on its hall of groups; the Follow Suit machine waits inside Strategy
+  await page.waitForSelector('.cab.on');
+  await page.waitForSelector('.cab[data-game="follow-suit"]', { state: 'attached' });
   await page.context().close();
 });
 

@@ -544,7 +544,7 @@ function tryCar() {
 // 11b. After the physics and its events: the cars, the fights, the jobs, the rope targets and the screen bits
 function actionFrame(dt, inp) {
   if (!actionOn()) return;
-  const tc = actHud.takeCar(), T = actHud.touch;
+  const tc = actHud.takeCar();
   if (inp.carDown || tc) {
     if (driving) { exitCar(); carWant = 0; }
     else carWant = tryCar() ? 0 : CAR.stealBuffer;
@@ -553,8 +553,9 @@ function actionFrame(dt, inp) {
     if (carWant > 0 && tryCar()) carWant = 0;
   }
   if (driving) {
-    DRIVE_IN.throttle = (inp.move.y || 0) + (T.gas ? 1 : 0) - (T.brake ? 1 : 0);
-    DRIVE_IN.steer = -(inp.move.x || 0) + (T.left ? 1 : 0) - (T.right ? 1 : 0);
+    // W/S or the stick (a phone's left thumb) drive: up is gas, down brakes, sideways steers
+    DRIVE_IN.throttle = inp.move.y || 0;
+    DRIVE_IN.steer = -(inp.move.x || 0);
     DRIVE_IN.handbrake = !!inp.jumpHeld;
   }
   TRAFFIC_IN.T = view.traffic ? view.traffic() : null; TRAFFIC_IN.t = G.time;
@@ -1090,11 +1091,6 @@ function tick(dt, frame, time) {
   // 2. input
   const inp = (G.input = isXR() ? X.update(frame, time) : D.update(dt));
   if (flatOn && !isXR()) flatInput(inp);
-  // a phone's move stick: walk (and sprint, pushed to the rim) on the ground, steer in the air, climb on a wall
-  if (inp.easySwing && actHud && !driving) {
-    const T = actHud.touch;
-    if (T.stick) { inp.move.x = clamp(inp.move.x + T.sx, -1, 1); inp.move.y = clamp(inp.move.y + T.sy, -1, 1); if (Math.hypot(T.sx, T.sy) > PHONE.stick.sprint) inp.sprintHeld = true; }
-  }
   // 3. test overrides
   applyOverrides(inp);
   // a comic scene holds the game still
@@ -1244,7 +1240,8 @@ function aimAndFire(dt, inp) {
     if (tap && h.connected && !ui.blocking(i)) {
       const a = (lastAim[i] = phoneAim(i, h, inp));
       D.mobile.target(!!a?.valid && !a.same, false);
-      if (a?.valid && !a.same) shoot(i, h, a); else dryFire(i, h, PHONE_DIR);
+      // only the building the other rope holds is in reach: that rope stays, and this plunger stays home
+      if (a?.valid && !a.same) shoot(i, h, a); else if (a?.same) D.mobile.miss(i, false, true); else dryFire(i, h, PHONE_DIR);
       fireWait[i] = 0;
       continue;
     }

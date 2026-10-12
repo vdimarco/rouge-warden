@@ -1,0 +1,9 @@
+{
+  "game": "In Full Swing",
+  "about": "The city is drawn as a comic book in the look of keyart.webp (public/vr/js/cityview.js line 1). Text from public/vr/art/cutscene/CREDITS.md, public/vr/art/rooms-sources.json and openspec/specs/swing-facades-2/spec.md. No full prompt is committed.",
+  "prompt": "A bold comic style with ink outlines and halftone shading: flat colour bands, ink lines and halftone dots, in the game's sunset colours. No words in the picture.",
+  "references": [
+    "public/vr/art/keyart.webp",
+    "public/vr/art/cutscene/city.webp"
+  ]
+}

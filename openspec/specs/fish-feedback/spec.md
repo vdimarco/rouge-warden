@@ -89,19 +89,19 @@ In play, no message SHALL cover the lure on the water: the prompt and its sub, t
 - **THEN** no message is within 22 px of the lure, and the card is clear of the gauge and the HUD.
 
 ### Requirement: Action card in the corner
-In play, the prompt SHALL be a visual action card in the top corner opposite the gauge. Its illustrated pose, direction marker, and animation SHALL show the active input and next move without visible instruction prose. Pace and urgency SHALL have non-color marks. Instruction words SHALL remain available to assistive technology and the optional guide. Calm and reduced-motion settings SHALL show a meaningful still pose. The card SHALL stay clear of controls and the lure.
+In play, the top-corner action card opposite the gauge SHALL illustrate the active input and next move with a pose, direction mark, and animation. It SHALL show a short action label and MAY add a brief pace, direction, or timing qualifier. Pace and urgency SHALL have marks beyond color. The full instruction SHALL stay available to assistive technology and the optional guide. Calm and reduced-motion settings SHALL keep a readable still pose. The card SHALL clear controls and the lure.
 
 #### Scenario: Cast, nibble, and strike on a phone
 - **WHEN** a touch player at 390x844 loads and releases a cast, then a fish nibbles and strikes
-- **THEN** the top-right card changes from a downward load gesture to an upward release gesture, then a wait or nibble picture, then an urgent upward hook-set gesture; no visible instruction sentence appears in the card.
+- **THEN** the top-right card changes from a downward load gesture to an upward release gesture, then a wait or nibble picture, then an urgent upward hook-set gesture; it shows short action labels rather than instruction sentences.
 
 #### Scenario: Reel and fight moves
 - **WHEN** a player reels, pumps, steers, lets a running fish go, or lifts a fish out, using touch, motion, the mouse, or keys
-- **THEN** the card demonstrates that move with the active input method, shows the reel pace or urgency with non-color marks, and is no more than 210 px wide.
+- **THEN** the card demonstrates that move with the active input method, shows the reel pace or urgency with non-color marks, and is no more than 176 px wide.
 
 #### Scenario: A jump in motion play
 - **WHEN** a fish jumps in a fight at 360x640 in motion play
-- **THEN** the card in the top right shows the phone lowering with a downward direction marker, stays clear of the gauge and HUD, and its hidden words and screen-reader announcement instruct the player to lower the rod.
+- **THEN** the card in the top right shows the phone lowering with a downward direction marker and a short action label, stays clear of the gauge and HUD, and its full words and screen-reader announcement instruct the player to lower the rod.
 
 #### Scenario: The reel on the left
 - **WHEN** the reel is on the left in motion play at 412x915
@@ -129,7 +129,11 @@ In play, the prompt SHALL be a visual action card in the top corner opposite the
 
 #### Scenario: Still cues
 - **WHEN** Calm effects or reduced motion is enabled while the game asks the player to steer or lower the rod
-- **THEN** animation stops and the static gesture and direction marker still show which way to move.
+- **THEN** animation stops and the static gesture, direction marker, and brief label still show which way to move.
+
+#### Scenario: Narrow portrait phone
+- **WHEN** a player uses a 320px or 360px wide phone during a fight
+- **THEN** the gesture and brief label remain visible within the screen and clear of the gauge, HUD, rod cue, and controls.
 
 ### Requirement: Feel a fish nibble
 When a fish tests the lure, a phone that supports haptics and has Buzz and taps enabled SHALL give a light nibble pattern distinct from a reel tick and the stronger strike pattern. Repeated nibbles SHALL remain perceptible without a continuous buzz, and a nibble SHALL NOT suppress a strike or an urgent warning. With vibration disabled or unavailable, the existing visual and sound nibble cues SHALL still play.
@@ -172,3 +176,30 @@ On a supported phone with Buzz and taps enabled, meaningful controls and gamepla
 #### Scenario: Haptics unavailable
 - **WHEN** Buzz and taps is off, or the game runs on a device without working haptics
 - **THEN** these new cues make no haptic call and the controls and game outcomes remain visually and audibly understandable.
+
+### Requirement: Brief spoken action hints
+When Voice hints and Sound are enabled and speech synthesis is available, the game SHALL speak brief nibble and hook-set hints in a measured British wildlife-narrator style. It SHALL prefer an installed British English voice, fall back when unavailable, avoid repeated or queued speech, prioritize the hook-set hint, and stop when play pauses, the page hides, or either setting is disabled. Visual, haptic, sound, and screen-reader feedback SHALL remain available without speech synthesis.
+
+#### Scenario: Nibble followed by strike
+- **WHEN** a fish nibbles and then strikes while Voice hints and Sound are enabled and a British English voice is installed
+- **THEN** the game uses that voice with measured pacing for a brief hold-steady hint and a short hook-set command; the command can interrupt the nibble hint.
+
+#### Scenario: Repeated nibble
+- **WHEN** repeated nibble events arrive within a short interval
+- **THEN** the game does not queue or speak the same instruction for every event.
+
+#### Scenario: Speech disabled or interrupted
+- **WHEN** the player turns off Voice hints or Sound, pauses, or leaves the page while a hint is speaking
+- **THEN** the speech stops, while the on-screen cue and screen-reader instruction remain available.
+
+#### Scenario: No speech support
+- **WHEN** speech synthesis is unavailable on a device
+- **THEN** gameplay proceeds without an error and the other cues still communicate what to do.
+
+#### Scenario: Voices load after play begins
+- **WHEN** the speech engine first reports no British English voice but adds one later
+- **THEN** subsequent hints can use the newly available voice without restarting the game.
+
+#### Scenario: No British voice
+- **WHEN** no British English voice is installed but speech synthesis is available
+- **THEN** the game uses an understandable available voice for the same short hints.

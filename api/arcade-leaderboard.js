@@ -3,11 +3,13 @@ const QUERY = `SELECT properties.game_id AS game_id,
   uniqExactIf(properties.session_id, event = 'arcade_game_view') AS views,
   uniqExactIf(properties.session_id, event = 'arcade_game_play') AS plays,
   uniqExactIf(distinct_id, event = 'arcade_game_like') AS likes,
-  sumIf(toFloat(ifNull(properties.active_seconds, 0)), event = 'arcade_active_time') AS active_seconds
+  sumIf(ifNull(toFloat(properties.active_seconds), 0), event = 'arcade_active_time') AS active_seconds
 FROM events
 WHERE timestamp >= now() - INTERVAL 30 DAY
   AND properties.app = 'cottage_arcade' AND properties.environment = 'production'
   AND event IN ('arcade_game_view', 'arcade_game_play', 'arcade_game_like', 'arcade_active_time')
+  -- two likes sent by a browser test against production on 2026-10-11, not by players
+  AND NOT (event = 'arcade_game_like' AND distinct_id IN ('6598c8a2-94b6-4cef-a58b-8f85143aa8e2', '82dec738-8411-4bfd-a17a-48a403ef3406'))
 GROUP BY game_id LIMIT 100`;
 let cached = null, pending = null;
 const TTL = 5 * 60 * 1000;
@@ -21,8 +23,13 @@ async function load(key, project) {
   if (!Array.isArray(data.results) || data.results.length > 100 || data.error || data.hasMore) throw new Error('unexpected analytics response');
   const games = {};
   for (const row of data.results) {
-    if (!Array.isArray(row) || row.length !== 5 || !/^[a-z0-9-]{1,40}$/.test(row[0]) || row.slice(1).some(n => (typeof n !== 'number' && (typeof n !== 'string' || !/^\d+(\.\d+)?$/.test(n))) || !Number.isFinite(Number(n)) || Number(n) < 0 || Number(n) > Number.MAX_SAFE_INTEGER)) throw new Error('unexpected analytics row');
-    games[row[0]] = { views: Math.floor(Number(row[1])), plays: Math.floor(Number(row[2])), likes: Math.floor(Number(row[3])), active_seconds: Math.round(Number(row[4])) };
+    if (!Array.isArray(row) || row.length !== 5) throw new Error('unexpected analytics row');
+    // an event without a game id is skipped; one stray event must not hide every game's counts
+    if (typeof row[0] !== 'string' || !/^[a-z0-9-]{1,40}$/.test(row[0])) continue;
+    // a sum over no matching events can come back null; that is zero
+    const counts = row.slice(1).map(n => n ?? 0);
+    if (counts.some(n => (typeof n !== 'number' && (typeof n !== 'string' || !/^\d+(\.\d+)?$/.test(n))) || !Number.isFinite(Number(n)) || Number(n) < 0 || Number(n) > Number.MAX_SAFE_INTEGER)) throw new Error('unexpected analytics row');
+    games[row[0]] = { views: Math.floor(Number(counts[0])), plays: Math.floor(Number(counts[1])), likes: Math.floor(Number(counts[2])), active_seconds: Math.round(Number(counts[3])) };
   }
   return { source: 'posthog', days: 30, updatedAt: new Date().toISOString(), games };
 }

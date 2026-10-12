@@ -1,0 +1,12 @@
+# Verification
+
+All browser checks used system Chromium 152 against `public/` served locally. Playwright 1.51's own headless shell was not installed.
+
+- `qa/arcade/groups.e2e.mjs` passes at 1280×800, 390×844 and 844×390. It checks the hall's four group cabinets in order. Opening a group by keys, click, or the sign's COTTAGE button spends no token. It also checks the group's games, selection, address, subtitle and back control; arrows within a group; and Escape, Backspace, the back control and the browser back button, which return to the hall with the group selected. The picker jumps into a group. A coin inside a group spends a token and adds a credit. Follow Suit launched from Strategy powers on and loads, and coming back reopens Strategy with Follow Suit selected. It checks the `/#strategy` and `/#lab` links, that the back control and tray never cover the selected machine, and that there are no page errors.
+- `qa/arcade/machines.mjs`: the static checks pass. The walk passes at 390×844 and 1280×720: every game in every group gets a token and START, goes to its own address, and Escape returns to the hall. Layout passes at all seven sizes, in the hall and in the Lab (the largest group). The switcher and saves parts pass.
+  - Tab focus at 390×844 misses 1 to 3 of 70 stops on some runs, in the hall and in a group. Upstream's page (before this change) misses 4 of 70 under the same probe in this environment, so this check is timing-sensitive here and is not new with this change. At 1280×720 it passes.
+  - The Crimson Rogue credits part reported page errors in `/crimson/` (`createPattern` on a zero-size canvas, an aborted signal). That page is not touched by this change.
+- `follow-suit/qa/arcade.e2e.mjs` (with `BASE_URL` set to the local server) passes 9 of 9. `qa/river-rush/arcade.mjs` passes.
+- Screenshots of the hall, Action and Lab at desktop, portrait and landscape sizes were reviewed by eye. The first version wrapped the group count beside the picker on phones; the count now drops the group name there. In landscape (844×390) the selected machine's marquee runs under the sign's collection buttons inside a group. Upstream's single row does the same at that size, and the hall does not.
+- `git diff --check`: pass. The OpenSpec CLI is not installed, so the requirement and scenario headings were reviewed by hand.
+- Not run: a physical phone (touch feel, swipe on a real screen) and sound.

@@ -12,6 +12,7 @@ import { createActionCue } from "./action-cues.js";
 import { createRodCues } from "./rod-cues.js";
 import { Haptics } from "./haptics.js";
 import { Sound } from "./audio.js";
+import { VoiceCues } from "./voice-cues.js";
 import { createWorld } from "./world.js";
 import { createCutscenes, opening as openingCut, arrival as arrivalCut, reveal as revealCut, landed as landedCut, finale as finaleCut, ringSpot, arriveId, revealId, landedId } from "./cutscenes.js";
 import { HangingLure } from "./line-motion.js";
@@ -65,9 +66,9 @@ const store = {
   raw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { const json = JSON.stringify(v); try { localStorage.setItem(k, json); } catch (e) { /* storage off */ } if (mirror) Native.prefs.set(k, json); },
 };
-// the switches that live outside the save (haptics.js, audio.js and guide.js keep them, and Settings keeps Larger text and
-// Calm effects): mirrored when the app goes away
-const SWITCHES = ["fish.haptics", "arcade.sound", "reel-it-in-guide-v1", "fish.text", "fish.calm"];
+// the switches that live outside the save (haptics.js, audio.js, voice-cues.js and guide.js keep them, and Settings
+// keeps Larger text and Calm effects): mirrored when the app goes away
+const SWITCHES = ["fish.haptics", "arcade.sound", "reel-it-in-guide-v1", "fish.text", "fish.calm", "fish.voiceHints"];
 const mirrorSwitches = () => { if (mirror) for (const k of SWITCHES) { const v = store.raw(k); if (v != null) Native.prefs.set(k, v); } };
 // in web storage while a read of native storage has not come back: the next start reads it again
 const UNREAD = "fish.native-unread";
@@ -77,8 +78,12 @@ const progress = (s) => s.caught * 1e6 + s.casts;
 function putSwitches([, hx, sound, ...kept]) {
   if (hx != null && store.raw("fish.haptics") == null) Haptics.setEnabled(hx !== "false");
   if (sound != null && store.raw("arcade.sound") == null && (sound !== "false") !== Sound.isOn()) Sound.toggle();
-  // the guide, Larger text and Calm effects are read from web storage
-  SWITCHES.slice(2).forEach((k, i) => { if (kept[i] != null && store.raw(k) == null) { try { localStorage.setItem(k, kept[i]); } catch (e) { /* storage off */ } } });
+  // the guide, Larger text and Calm effects are read from web storage. Voice cues cache their switch in the module.
+  SWITCHES.slice(2).forEach((k, i) => {
+    if (kept[i] == null || store.raw(k) != null) return;
+    if (k === "fish.voiceHints") VoiceCues.setEnabled(kept[i] !== "false");
+    else { try { localStorage.setItem(k, kept[i]); } catch (e) { /* storage off */ } }
+  });
 }
 // The app with no save in web storage (or with a native read that never came back): ask native storage, and keep the
 // save with more in it. The answer has 400 ms, so a slow phone does not hold up the boot. A later answer is read when
@@ -120,6 +125,7 @@ function takeComeback() {
 if (late) late.then((got) => {
   putSwitches(got);
   applyAccess();
+  setTimeout(syncSettings, 0);
   const theirs = got[0] && loadSave(got[0]), json = theirs && JSON.stringify(theirs);
   const fresh = webRaw == null && JSON.stringify(save) === startJson;
   if (theirs && (progress(theirs) > progress(save) || (fresh && json !== startJson))) { comeback = json; takeComeback(); return; }
@@ -566,7 +572,7 @@ function stopPlay() {
   hideReport();
   clearTimeout(cardT); clearInterval(countT); clearInterval(resT); banner("");
   if (world) { world.hideCatch(); world.setLure({ x: 0, y: -5, z: 0, visible: false }); world.setLine({ visible: false }); world.setFish(null); world.setFollower(null); world.setAim({ visible: false }); world.setRod({ theta: 70, yaw: 0, visible: false }); }
-  Sound.stopLoops(); Haptics.stop();
+  Sound.stopLoops(); Haptics.stop(); VoiceCues.stop();
 }
 function toTitle() {
   stopPlay();
@@ -1059,6 +1065,7 @@ function outcome(kind, msg, sub = "") {
   const d = f ? Math.hypot(f.x, f.z) || 1 : 1;
   G.gone = f && !s.junk ? { fish: { id: f.id, x: f.x, y: Math.min(f.y, -0.1), z: f.z, len: f.len || 0.4 }, dx: f.x / d, dz: f.z / d, limp: s.reason === "thrown" } : null;
   G.phase = "lost";
+  VoiceCues.stop();
   G.outcomeAt = now();
   prompt(msg, sub, kind === "home" ? "crank" : "stop", "");
   relayout();
@@ -1152,6 +1159,7 @@ function caught(c) {
   const goals = noteGoals(ctx), news = [!junk && save.caught === 1 ? "Your first fish!" : day1 && day1.first ? "Your first fish today." : "", ...goals, day1 && day1.done ? dayDoneText(day1.run) : ""].filter(Boolean);
   if (news.length) toast(news.join("\n"), 1800 + 1200 * news.length, goals.length || (day1 && day1.done) ? () => Sound.sfx("record") : null, true);
   G.phase = "catch";
+  VoiceCues.stop();
   prompt("");
   G.big = null; G.walk = false;
   world.setFish(null); world.setFollower(null);
@@ -1262,7 +1270,7 @@ $("#catchGo").addEventListener("click", () => {
 function endDerby() {
   releaseAwake();
   G.phase = "results";
-  Sound.stopLoops(); Haptics.stop();
+  Sound.stopLoops(); Haptics.stop(); VoiceCues.stop();
   prompt("");
   const id = G.place.id, J = journeyOf(id);
   const total = G.bag.reduce((a, b) => a + b.kg, 0);
@@ -1491,6 +1499,9 @@ markPlace();
 /* ---------------- settings ---------------- */
 function syncSettings() {
   $("#optSound").checked = Sound.isOn();
+  $("#optVoice").checked = VoiceCues.enabled;
+  $("#optVoice").disabled = !VoiceCues.available();
+  $("#voiceNote").textContent = VoiceCues.available() ? "British wildlife-style cues. Requires Sound." : "Spoken cues are unavailable on this device.";
   $("#optHaptics").checked = Haptics.enabled;
   $("#optHaptics").disabled = Haptics.kind === "none";
   $("#hapticNote").textContent = Native.onMac ? "This Mac cannot buzz." : Haptics.kind === "none" ? (Native.isStore ? "This phone cannot buzz." : "This browser cannot buzz.") : Haptics.kind === "ios" ? "Light taps on iPhone." : "Taps for controls, casts, bites, and catches; buzz for line pull.";
@@ -1508,7 +1519,8 @@ function syncSettings() {
   syncArtStyle();
   syncAccess();
 }
-$("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); });
+$("#optSound").addEventListener("change", (e) => { if (e.target.checked !== Sound.isOn()) Sound.toggle(); if (!Sound.isOn()) VoiceCues.stop(); });
+$("#optVoice").addEventListener("change", (e) => VoiceCues.setEnabled(e.target.checked));
 $("#optHaptics").addEventListener("change", (e) => { Haptics.unlock(); Haptics.setEnabled(e.target.checked); if (e.target.checked) Haptics.bump(0.6); });
 $("#settings").addEventListener("change", (e) => {
   if (!e.target.matches?.("input, select") || e.target.id === "optHaptics") return;
@@ -1605,7 +1617,7 @@ function pause() {
   G.paused = true;
   pullStrength.reset();
   releaseAwake();
-  Sound.stopLoops(); Haptics.stop(); Haptics.bump(0.2);
+  Sound.stopLoops(); Haptics.stop(); Haptics.bump(0.2); VoiceCues.stop();
   // a thumb on the line when the game stops: the line goes back, and the next press starts the cast again
   if (G.pin && !G.pin.feather && (G.step === "pinned" || G.step === "loaded")) { G.pin = null; G.step = "ready"; G.bail = "closed"; G.drop = 0; }
   reelPanel?._cancelAll();
@@ -1626,7 +1638,7 @@ $("#pHelp").addEventListener("click", openHelp);
 $("#pJournal").addEventListener("click", () => { renderJournal(); overlay("journal"); });
 $("#pSet").addEventListener("click", () => { syncSettings(); overlay("settings"); });
 // the page or the app goes away: play pauses, the loops and the buzz stop
-function away() { $("#pullDemoVideo").pause(); pause(); Sound.stopLoops(); Haptics.stop(); mirrorSwitches(); }
+function away() { $("#pullDemoVideo").pause(); pause(); Sound.stopLoops(); Haptics.stop(); VoiceCues.stop(); mirrorSwitches(); }
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) away();
   else if (!G.paused && G.phase !== "title" && G.phase !== "results") keepAwake();
@@ -1956,7 +1968,7 @@ function reelUpdate(dt) {
   if (s.fish) {
     const f = s.fish;
     // roll: the body turned about its length, in radians
-    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near });
+    world.setFish({ id: f.id, x: f.x, y: f.y, z: f.z, heading: f.heading, len: f.len || 0.4, kg: f.kg, jump: f.jump || 0, thrash: f.thrash != null ? f.thrash : f.move === "shake" || f.move === "thrash" ? 1 : 0, roll: G.roll, near: f.near == null ? 0.5 : f.near, speed: f.speed || 0, move: f.move, reel: crankRate, tension: s.tfrac || 0 });
     world.setLure({ x: L.x, y: L.y, z: L.z, visible: false });
     world.setLine({ from: tip, to: { x: f.x, y: f.jump ? f.y : Math.max(f.y, -0.25), z: f.z }, slack: s.slack ? 1 : clamp(0.5 - s.tfrac * 2, 0, 0.5), visible: true });
   } else {
@@ -2099,8 +2111,8 @@ function handleEvent(e) {
   const fz = e.z != null ? e.z : s && s.fish ? s.fish.z : s ? s.lure.z : 0;
   switch (type) {
     // a nibble taps the rod tip; the strike pulls it down hard, with its own buzz and sound as hard as it hit
-    case "nibble": Sound.sfx("nibble", e.s); Haptics.nibble(e.s == null ? 0.5 : e.s); world.twitch(0.12 + 0.15 * (e.s == null ? 0.5 : e.s)); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
-    case "strike": Sound.sfx("strike", e.s); Haptics.thump(e.s); flash(); world.twitch(0.7, 60); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); if (G.gift) G.gifted = true; break;
+    case "nibble": Sound.sfx("nibble", e.s); Haptics.nibble(e.s == null ? 0.5 : e.s); VoiceCues.say("nibble"); world.twitch(0.12 + 0.15 * (e.s == null ? 0.5 : e.s)); if (crankPad) crankPad.forceTick(); if (s) world.ripple(s.lure.x, s.lure.z, 0.3); seen("bite"); break;
+    case "strike": Sound.sfx("strike", e.s); Haptics.thump(e.s); VoiceCues.say("hook"); flash(); world.twitch(0.7, 60); if (crankPad) crankPad.forceTick(); if (s) world.splash(s.lure.x, s.lure.z, 0.35); if (G.gift) G.gifted = true; break;
     case "hooked": {
       if (e.junk) { Sound.sfx("junk"); toast("Something heavy is on the line. Reel it in.", 2200); }
       else {
@@ -2337,7 +2349,7 @@ function frame() {
   // a computer: the crank's hint says to scroll the mouse wheel
   if (crank) crank.wheelHint = !touchDevice && !sensing();
   // the action card stands under the pull meter while it shows, and then the toasts of the tall reel stand under the card
-  const card = $("#prompt .p1"), pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6, cardH = pullH && card.offsetParent ? card.offsetHeight : 0;
+  const card = $("#prompt .p1"), pullH = pullMeter.hidden || !pullMeter.offsetParent ? 0 : pullMeter.offsetHeight + 6, cardH = card.offsetParent ? card.offsetHeight : 0;
   if (pullH !== G.pullH) { G.pullH = pullH; game.style.setProperty("--pull-h", pullH + "px"); }
   if (cardH !== G.cardH) { G.cardH = cardH; game.style.setProperty("--card-h", cardH + "px"); }
   // the touch rail beside the finger while it holds the line (for the keys, beside the reel box: it times the release). A

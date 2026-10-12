@@ -30,7 +30,7 @@ try {
 
   /* ---- the gesture card ---- */
   const card = await page.evaluate(() => ({ shown: G.desktop.mobile.coach(), text: document.querySelector(".phone-coach").textContent, seen: G.save.seen.phoneCoach }));
-  check(card.shown && /TAP/.test(card.text) && /HOLD/.test(card.text) && /DRAG/.test(card.text) && !card.seen, "phone play opens with the gesture card: TAP, HOLD, DRAG", card);
+  check(card.shown && /LEFT\s*Drag to walk/.test(card.text) && /RIGHT\s*Tap to swing\. Hold to keep the rope\. Drag to look/.test(card.text) && !card.seen, "phone play opens with the card: left thumb moves, right thumb swings", card);
   await page.evaluate(() => G.test.render());
   await page.screenshot({ path: out + "/phone-coach.png" });
 

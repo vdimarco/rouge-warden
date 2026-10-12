@@ -12,6 +12,7 @@ import { staticVehicleGeometry, wheelSpots } from '../vehicles/meshes.js';
 import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, PORCH, up } from './places.js';
 import { at } from './roads.js';
 import { finishFleetLot, FLEET_BAYS } from './fleet-lot.js';
+import { pal, hexRGB } from '../look/palette.js';
 
 const lin = (v) => Math.pow(v, 2.2);
 export const ATLAS = 1024;
@@ -36,8 +37,11 @@ const SIGNS = {
   pharmacy: ['PHARMACY', '#f2f0ea', '#3a5a6c'], hardware: ['HARDWARE', '#7a2a1a', '#f4e6cc'],
 };
 const SIGN_KEYS = Object.keys(SIGNS);
-// sign cells: 3 columns of 336 x 60 from y = 528
-const signUV = (key) => { const i = Math.max(0, SIGN_KEYS.indexOf(key)), c = i % 3, r = Math.floor(i / 3); return rect(4 + c * 340, 528 + r * 62, 332, 56); };
+// sign cells: 3 columns of 332 x 52 from y = 528 on a 55 px row pitch, so nine rows (27 signs) end at y = 1020
+const SIGN_W = 332, SIGN_H = 52;
+const signCell = (i) => [4 + (i % 3) * 340, 528 + Math.floor(i / 3) * 55];
+if (signCell(SIGN_KEYS.length - 1)[1] + SIGN_H > ATLAS) console.error(`[town] ${SIGN_KEYS.length} signs overflow the ${ATLAS} px atlas`);
+const signUV = (key) => { const [x, y] = signCell(Math.max(0, SIGN_KEYS.indexOf(key))); return rect(x, y, SIGN_W, SIGN_H); };
 
 /* ------------------------------------------------------------------ geometry builder */
 export class Geo {
@@ -150,13 +154,13 @@ export function paintAtlas(THREE) {
   win(896 + 14, 400 + 14, 84, 84, true, 2);
   // signs
   SIGN_KEYS.forEach((k, i) => {
-    const [text, bg, fg] = SIGNS[k], cx = 4 + (i % 3) * 340, cy = 528 + Math.floor(i / 3) * 62;
-    g.fillStyle = '#2a2420'; g.fillRect(cx, cy, 332, 56);
-    g.fillStyle = bg; g.fillRect(cx + 4, cy + 4, 324, 48);
+    const [text, bg, fg] = SIGNS[k], [cx, cy] = signCell(i);
+    g.fillStyle = '#2a2420'; g.fillRect(cx, cy, SIGN_W, SIGN_H);
+    g.fillStyle = bg; g.fillRect(cx + 4, cy + 4, SIGN_W - 8, SIGN_H - 8);
     g.fillStyle = fg; let size = 30; g.font = `bold ${size}px Georgia, serif`;
     while (g.measureText(text).width > 300 && size > 12) { size -= 1; g.font = `bold ${size}px Georgia, serif`; }
-    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, cx + 166, cy + 30);
-    ge.fillStyle = 'rgb(70,60,50)'; ge.fillRect(cx + 4, cy + 4, 324, 48);
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, cx + SIGN_W / 2, cy + SIGN_H / 2 + 2);
+    ge.fillStyle = 'rgb(70,60,50)'; ge.fillRect(cx + 4, cy + 4, SIGN_W - 8, SIGN_H - 8);
   });
   const map = new THREE.CanvasTexture(c), glow = new THREE.CanvasTexture(e);
   for (const t of [map, glow]) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; }
@@ -164,11 +168,13 @@ export function paintAtlas(THREE) {
 }
 
 /* ------------------------------------------------------------------ the town */
+// wall colours by style, named in LOOK's palette (sRGB 0..1); each building picks one, seeded
+const rgb = (name) => hexRGB(pal(name));
 const STYLE = {
-  stucco: [[0.8, 0.66, 0.52], [0.78, 0.6, 0.46], [0.74, 0.55, 0.42]], adobe: [[0.72, 0.47, 0.33], [0.66, 0.42, 0.3]], wood: [[0.56, 0.4, 0.28], [0.48, 0.34, 0.25], [0.62, 0.5, 0.38]],
-  block: [[0.66, 0.63, 0.58], [0.6, 0.58, 0.54]], metal: [[0.72, 0.74, 0.74], [0.6, 0.58, 0.54]],
+  stucco: ['stucco', 'stuccoTan', 'stuccoClay'].map(rgb), adobe: ['adobe', 'adobeDeep'].map(rgb), wood: ['siding', 'sidingDark', 'sidingPale'].map(rgb),
+  block: ['block', 'blockDark'].map(rgb), metal: ['metalWall', 'blockDark'].map(rgb),
 };
-const TRIM = [0.42, 0.28, 0.2], ROOF = [0.36, 0.33, 0.31], DARK = [0.14, 0.13, 0.13], WHITE = [1, 1, 1];
+const TRIM = rgb('porch'), ROOF = rgb('roofDark'), DARK = [0.14, 0.13, 0.13], WHITE = [1, 1, 1];
 
 export function* createTown(S, { THREE, group, colliders, height, net, glbBase = '/wild/models/' }) {
   const root = new THREE.Group(); root.name = 'town'; group.add(root);
@@ -187,7 +193,7 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
     if (++nb % 12 === 0) yield;
     const g = geo(b.district), c = Math.cos(b.yaw), s = Math.sin(b.yaw);
     const fx = b.x + s * b.d / 2, fz = b.z + c * b.d / 2, base = height(fx, fz);
-    const pal = STYLE[b.style] || STYLE.stucco, col = pal[Math.floor(R() * pal.length)];
+    const walls = STYLE[b.style] || STYLE.stucco, col = walls[Math.floor(R() * walls.length)];
     const two = b.h > 6.2, face = b.style === 'adobe' ? UV.adobe : b.style === 'metal' && b.sign !== 'diner' ? UV.garage : b.sign === 'diner' ? UV.diner : b.motel ? UV.motel : b.ranch ? UV.planks : two ? UV.twostory : UV.shop;
     const lp = (lx, lz) => [b.x + lx * c + lz * s, b.z - lx * s + lz * c];
     // the body sits 2 m into the ground so a slope never shows a gap
@@ -461,18 +467,19 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
         const h = fit(outhouse, { height: 3.25, rot: -Math.PI / 2 }); h.updateMatrixWorld(true);
         let mesh = null; h.traverse((m) => { if (m.isMesh && !mesh) mesh = m; });
         if (mesh) {
-          // one instanced mesh, but only the outhouses in view (or near enough to throw a shadow into it) are
-          // written each frame (they stand kilometres apart: drawing all five wherever the camera looks costs
-          // triangles and shadows for nothing)
+          // one instanced mesh, but only the outhouses in view (in the frustum and within the view distance, or
+          // near enough to throw a shadow into it) are written each frame (they stand kilometres apart: drawing
+          // all five wherever the camera looks costs triangles and shadows for nothing; past the view distance
+          // the fog has hidden them, C8)
           const inst = new THREE.InstancedMesh(mesh.geometry, mesh.material, outhouseAt.length);
           const mats = outhouseAt.map((o) => new THREE.Matrix4().makeRotationY(o.yaw).setPosition(o.x, height(o.x, o.z), o.z).multiply(mesh.matrixWorld));
           const spheres = mats.map((m) => { const s = new THREE.Sphere(); mesh.geometry.computeBoundingSphere(); s.copy(mesh.geometry.boundingSphere).applyMatrix4(m); return s; });
           inst.name = 'outhouses'; inst.castShadow = true; inst.userData.kind = 'town'; inst.userData.managed = true; inst.count = 0; inst.visible = false;
           const fr = new THREE.Frustum(), pm = new THREE.Matrix4();
-          outhouseCull = (cam) => {
+          outhouseCull = (cam, view) => {
             cam.updateMatrixWorld(); pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
             let n = 0;
-            mats.forEach((m, i) => { if (fr.intersectsSphere(spheres[i]) || spheres[i].center.distanceTo(cam.position) < 40) inst.setMatrixAt(n++, m); });
+            mats.forEach((m, i) => { const d = spheres[i].center.distanceTo(cam.position); if ((fr.intersectsSphere(spheres[i]) && d - spheres[i].radius < view) || d < 40) inst.setMatrixAt(n++, m); });
             inst.count = n; inst.visible = n > 0 && root.visible; inst.instanceMatrix.needsUpdate = true;
             if (n) inst.computeBoundingSphere();
           };
@@ -526,8 +533,9 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   return {
     root, material, districts, glb, parkedCars, pumps: pumpPoints, ranch: ranchApi, atlas, hotTub,
     // night: 0 day .. 1 night. Windows and lamps glow; the ranch floodlights burn while it has power.
-    update(night, t) {
-      if (outhouseCull && S.camera) outhouseCull(S.camera);
+    // view: how far the world draws now (m)
+    update(night, t, view = Infinity) {
+      if (outhouseCull && S.camera) outhouseCull(S.camera, view);
       if (S.camera) for (const m of lots) { const b = m.geometry.boundingSphere; m.visible = !parkedCars.some(p => p.taken && districts[p.id] === m) && S.camera.position.distanceTo(m.localToWorld(b.center.clone())) - b.radius < LOT_VIEW; }
       material.emissiveIntensity = night * 0.9;
       lampMat.color.setRGB(0.23 + night * 0.9, 0.21 + night * 0.72, 0.2 + night * 0.46);

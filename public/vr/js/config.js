@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.20.0";
+export const VERSION = "1.21.0";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -114,7 +114,8 @@ export const PHONE = {
   pumpYank: 3.5, // a rope on a clog or a pipe pumps by itself at this pull (m/s), once per yank cooldown
   buzz: { attach: 15, yank: 25, pump: 40 }, // vibration (ms) on a catch, where the browser has it
   follow: { speed: 6, idle: 2.5, yawRate: 2.4, pitch: 0.14, pitchRate: 1.2 }, // the camera turns toward where you fly, idle s after the last drag
-  // the move stick (bottom left): r px from the middle is full push; pushed further than sprint (0..1) on the ground, the hero sprints
+  // the move stick (under the left thumb, mobile.js): r px from the middle is full push; pushed further than sprint (0..1) on the
+  // ground, the hero sprints. It also steers in the air, climbs a wall and drives a car (up is gas, down brakes)
   stick: { r: 46, dead: 0.12, sprint: 0.9 },
   fov: { base: 75, wide: 24, from: 12, to: 42 }, // the view widens by up to wide degrees over this speed range (m/s)
   lines: { from: 13, to: 34 }, // the phone's comic speed lines at the screen edges grow over this speed range (m/s)
@@ -227,10 +228,10 @@ export const TRAINING = {
   touch: [
     { id: "rope", text: "Swing at the gold ring", keys: ["TAP"], line: 0 },
     { id: "swing", text: "Swing out", keys: ["IT LETS GO"], line: 1 },
-    { id: "again", text: "Tap the other side before you land", keys: ["L", "R"], line: 2 },
-    { id: "fast", text: "Fly fast: tap left, right, left", keys: ["L", "R"], line: 4 },
-    { id: "look", text: "Look around", keys: ["DRAG"], line: 5 },
-    { id: "climb", text: "Climb a wall", keys: ["ARROWS"], say: "Fly into a wall, then hold the arrows to climb." },
+    { id: "again", text: "Tap again before you land", keys: ["TAP"], line: 2 },
+    { id: "fast", text: "Fly fast: tap, tap, tap", keys: ["TAP"], line: 4 },
+    { id: "look", text: "Look around", keys: ["DRAG RIGHT"], line: 5 },
+    { id: "climb", text: "Climb a wall", keys: ["LEFT THUMB"], say: "Fly into a wall, then drag your left thumb to climb." },
     { id: "plunge", text: "Plunge a clog: tap it, hold on", keys: ["TAP"], of: 3, line: 7 },
   ],
 };
@@ -276,8 +277,8 @@ export const LINES_PAD = {
 // Phone play: one tap swings, the rope lets go by itself, and a rope on a clog plunges by itself.
 export const LINES_PHONE = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Tap it.", "It plunges by itself. Hold on!"],
-  tutorial: ["Tap left or right to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap the other side before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
+  tutorial: ["Tap right to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag on the right side to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
   clog: ["That's a clog. Tap it to plunge.", "Hold on. It plunges by itself.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
-  wall: ["On the wall. Hold the arrows to climb. Tap JUMP to jump off."],
+  wall: ["On the wall. Left thumb climbs. JUMP jumps off."],
 };

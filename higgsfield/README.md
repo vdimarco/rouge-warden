@@ -1,6 +1,6 @@
 # Higgsfield API tools
 
-Server-side tools that call the Higgsfield API. Nothing here ships with the game site.
+Server-side tools that call the Higgsfield API, and the local art steps around them. Nothing here ships with the game site.
 All Higgsfield generation for this project goes through these tools and the API key,
 not through the Higgsfield app or its MCP connector.
 
@@ -38,10 +38,24 @@ or committed, and the gallery contains only static assets.
 
 - `npm run models [-- <filter>]` lists the API's models (free). The API makes images and video only.
   It has no 3D models.
-- `npm run gen -- <model> <input JSON or @file.json> [--out <dir>] [--name <base>] [--wait <minutes>]`
+- `npm run gen -- <model> <input JSON or @file.json> [--style <game>] [--out <dir>] [--name <base>] [--wait <minutes>] [--dry-run]`
   runs one model once. It prints each output URL on stdout and, with `--out`, saves the files.
   Under a key that ends in `url` or `urls`, a value `"@path/to/file.png"` is uploaded first
   (JPEG, PNG, WebP, GIF, WAV or MP4). Each run is a paid generation.
+  - `--style <game>` gives the request a game's look (see [Style files](#style-files)).
+  - `--dry-run` prints the input that would be sent, with the style applied, and stops. Nothing is uploaded or paid for.
+  - With `--out`, `<name>.request.json` is saved next to the files. It holds the model, the input as given, the
+    style that was applied, the request id and the output URLs, so the same command can make the asset again.
+- `npm run swatch -- <in> <out.webp|.png|.jpg> [--size 1024] [--band 48] [--repeat] [--preview <file>]` turns a
+  generated texture into a square tile (no API call). It crossfades each edge with the opposite edge over `--band`
+  pixels, the step River Rush used for its ground, surface and bark tiles (`seamless.ts`). `--preview` saves the
+  tile 2 by 2, with the seams in the middle. Look at it before you use the swatch.
+  - Use `--repeat` for a regular pattern such as brick courses, shingles or floor tiles. The crossfade alone
+    shows a doubled band there, because the pattern does not line up at the edges. `--repeat` first crops the
+    square, at least half the shorter side, whose edges continue into the same place in the pattern (`repeat.ts`),
+    then blends each edge with the image just past the opposite edge. It prints the crop and its mean seam
+    difference (0 is an exact repeat).
+- `npm test` checks the style files, the dry run and the swatch step without calling the API.
 - `npm run example` sends one Seedance 2.5 text-to-video request ("A cinematic scene at sunset",
   5 s, 720p, 16:9) and prints the video URL.
 - `npm run typecheck` checks the TypeScript.
@@ -52,6 +66,45 @@ Example:
 npm run gen -- alibaba/qwen-image-3/edit \
   '{"prompt":"ink drawing","image_urls":["@../scratch/concept.png"],"resolution":"1k"}' \
   --out out --name ink
+```
+
+## Style files
+
+`styles/<game>.json` holds a game's look, so a new asset starts in that look without restating it:
+
+```json
+{
+  "game": "In Full Swing",
+  "about": "Where this look is recorded in the repository.",
+  "prompt": "The style text.",
+  "references": ["public/vr/art/keyart.webp"]
+}
+```
+
+`--style in-full-swing` adds `Style: <prompt>` after the request's own prompt and the reference images after its
+own `image_urls`, so use it with models that take reference images in `image_urls`. Reference paths are relative
+to the repository root and must be JPEG, PNG, WebP or GIF. A style with a missing image fails before anything is sent.
+
+| Style | Game |
+| --- | --- |
+| `shore-of-the-ancients` | Shore of the Ancients (mythic painterly realism) |
+| `in-full-swing` | In Full Swing (comic ink, cel bands, halftone) |
+| `breath-of-the-lake` | Breath of the Lake (Ghibli-like gouache) |
+| `river-rush` | River Rush (stylized jungle adventure) |
+| `reel-it-in` | Reel It In (hand-painted storybook) |
+| `olympus` | Olympus: Last Flame (painterly Greek myth) |
+
+Each style uses text the repository already recorded for that game; `about` says where. Crimson Rogue, Down the Drain,
+Get Plunger'd and the arcade key art have no recorded prompt, so they have no style file yet. When a game's look
+changes, change its style file in the same commit.
+
+Example: a brick swatch in the In Full Swing look, then a tile and a preview to judge. Run the first command
+with `--dry-run` before you pay for it.
+
+```sh
+npm run gen -- <model> '{"prompt":"square tileable red brick wall texture, front on, even light"}' \
+  --style in-full-swing --out ../scratch --name brick
+npm run swatch -- ../scratch/brick.png ../scratch/brick-tile.webp --repeat --band 32 --preview ../scratch/brick-preview.webp
 ```
 
 ## How a run behaves

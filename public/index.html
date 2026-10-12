@@ -244,8 +244,23 @@ button { font: inherit; color: inherit; }
 .cab.live .screen canvas.lenia-screen { opacity: 1; }
 .machine-picker { display: flex; align-items: center; gap: 8px; font-family: var(--pixel); font-size: 9px; color: var(--muted); }
 .machine-picker select { min-height: 44px; max-width: 190px; padding: 8px; border: 1px solid #5b4e78; border-radius: 8px; color: var(--ink); background: #140c24; font: 13px system-ui, sans-serif; }
-@media (max-width: 760px) { .tray { gap: 8px; } .help { display: none; } .machine-picker { flex-basis: 100%; justify-content: center; } }
-@media (max-height: 520px) { .machine-picker { flex-basis: auto; } }
+@media (max-width: 760px) { .tray { gap: 8px; } .help { display: none; } .where { flex-basis: 100%; justify-content: center; } .where:has(.back:not([hidden])) .word { display: none; } }
+@media (max-height: 520px) { .where { flex-basis: auto; } .where:has(.back:not([hidden])) .word { display: none; } .where:has(.back:not([hidden])) select { max-width: 150px; } }
+/* groups: the hall shows one cabinet per group; playing one opens a row of its games */
+.cab[hidden] { display: none; }
+.cab.group .door { flex-direction: column; gap: 6%; padding: 6% 5%; text-align: center; font-family: var(--pixel); }
+.cab.group .door b { font-weight: 400; font-size: calc(var(--h) * 0.02); color: var(--c2); text-shadow: 0 0 8px var(--glow); }
+.cab.group .door small { font-size: calc(var(--h) * 0.011); line-height: 1.7; color: var(--muted); text-wrap: balance; }
+/* the way back to the hall sits in the tray, beside the machine picker, so it never covers a cabinet */
+.where { display: flex; align-items: center; gap: 10px; }
+#machineCount { white-space: nowrap; }
+@media (max-width: 760px) { #machineCount .grp { display: none; } }
+.back { min-height: 44px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gold); background: rgba(20, 12, 36, 0.85); font-family: var(--pixel); font-size: 10px; color: var(--gold); cursor: pointer; white-space: nowrap; }
+.back:hover { background: rgba(60, 30, 100, 0.9); }
+.back[hidden] { display: none; }
+.row.enter { animation: rowin 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes rowin { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .row.enter { animation: none; } }
 </style>
 </head>
 <body>
@@ -606,10 +621,10 @@ button { font: inherit; color: inherit; }
   </main>
 
   <footer class="tray">
-    <label class="machine-picker">MACHINE <select id="machinePicker" aria-label="Choose a game machine"></select><span id="machineCount" aria-live="polite"></span></label>
+    <div class="where"><button class="back" id="backBtn" type="button" hidden>◀ ARCADE</button><label class="machine-picker"><span class="word">MACHINE</span> <select id="machinePicker" aria-label="Choose a game machine"></select><span id="machineCount" aria-live="polite"></span></label></div>
     <div class="purse"><span class="label">TOKENS</span><div class="stack" id="stack" aria-label="Your tokens. Drag one into a coin slot."></div><span class="count" id="count">0</span></div>
     <button class="change" id="changeBtn" type="button">CHANGE<br>MACHINE</button>
-    <p class="help"><span class="keys"><b>◀ ▶</b> pick a machine · <b>5</b> drops a token · <b>1</b> or <b>Enter</b> plays<br></span>Click a machine to play it, or drop a token in by hand.</p>
+    <p class="help"><span class="keys"><b>◀ ▶</b> pick a machine · <b>5</b> drops a token · <b>1</b> or <b>Enter</b> plays · <b>Esc</b> goes back<br></span>Pick a group, then click a machine to play it, or drop a token in by hand.</p>
   </footer>
 </div>
 <div class="tools"><button type="button" id="soundBtn" aria-label="Sound off" aria-pressed="false">🔇</button></div>
@@ -654,6 +669,8 @@ const SFX = (() => {
     reject() { noise(0.12, 0.2, 0, 800); tone("sawtooth", 110, 70, 0.3, 0.1, 0.02); },
     change() { for (let k = 0; k < 7; k++) { noise(0.04, 0.18, k * 0.07, 3500); tone("triangle", 1800 + Math.random() * 900, 0, 0.05, 0.04, k * 0.07); } },
     tick() { tone("square", 660, 0, 0.04, 0.05); },
+    open() { [392, 523, 659, 784].forEach((f, i) => tone("square", f, 0, 0.09, 0.06, i * 0.05)); },
+    back() { [659, 523, 392].forEach((f, i) => tone("square", f, 0, 0.08, 0.05, i * 0.05)); },
     start() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone("square", f, 0, 0.12, 0.07, i * 0.08)); tone("sawtooth", 80, 40, 0.8, 0.06, 0.5); },
   };
 })();
@@ -694,57 +711,109 @@ $("#changeBtn").onclick = () => {
   if (!reduceMotion) $$(".token", stack).forEach((t, k) => t.animate([{ transform: "translateY(-40px)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 300, delay: k * 50, easing: "cubic-bezier(.3,1.6,.5,1)", fill: "backwards" }));
 };
 
-/* ---------------- the machines ---------------- */
-const cabs = $$(".cab");
-const machinePicker = $("#machinePicker");
+/* ---------------- the machines, in groups ---------------- */
+// The hall shows one cabinet per group. Playing a group cabinet opens a row of its games.
+// Every game cabinet stays in the page (hidden while its group is closed), so its attract screen and high score keep working.
 const GROUPS = [
-  { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"] },
-  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"] },
-  { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "afterlight", "battle-tanks", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"] },
-  { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"] },
-  { id: "gta", label: "GTA", games: ["gta"] },
-  { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"] },
+  { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr"], c1: "#d2332a", c2: "#ffcf4a", glow: "rgba(255, 90, 60, 0.55)", art: "arcade/plungerd.webp", art2: "arcade/plungerd-bosses.webp" },
+  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
+  { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "afterlight", "battle-tanks", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
+  { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
+  { id: "gta", label: "GTA", games: ["gta"], c1: "#5a3410", c2: "#f2c14e", glow: "rgba(242, 193, 78, 0.5)", art: "arcade/gta.svg" },
+  { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules"], c1: "#17414c", c2: "#f0b848", glow: "rgba(240, 184, 72, 0.5)", art: "arcade/lab.webp", art2: "arcade/worlds.webp" },
 ];
-const gameGroup = new Map(GROUPS.flatMap((group) => group.games.map((game) => [game, group])));
-for (const group of GROUPS) {
+const games = $$(".cab");
+// a machine that no group names still gets a group, so none is ever out of reach
+{
+  const loose = games.filter((c) => !GROUPS.some((g) => g.games.includes(c.dataset.game)));
+  if (loose.length) GROUPS.push({ id: "more", label: "More", games: loose.map((c) => c.dataset.game), c1: "#3a2a5c", c2: "#d6fcff", glow: "rgba(63, 240, 255, 0.4)", art: ($(".screen img", loose[0]) || {}).src });
+}
+const members = (g) => games.filter((c) => g.games.includes(c.dataset.game));
+const groupOf = (c) => GROUPS.find((g) => g.games.includes(c.dataset.game));
+const row = $("#row"), signLine = $(".sign p"), signText = signLine.textContent;
+const groupCabs = GROUPS.map((g) => {
+  const ms = members(g);
+  const c = document.createElement("article");
+  c.className = "cab group credit";
+  c.dataset.opens = g.id;
+  c.setAttribute("aria-label", g.label + ": " + ms.length + " games");
+  c.style.cssText = "--c1: " + g.c1 + "; --c2: " + g.c2 + "; --glow: " + g.glow;
+  c.innerHTML = "<div class='marquee'><div><b></b><small></small></div></div>"
+    + "<div class='bezel'><div class='screen'><img alt=''>" + (g.art2 ? "<img class='art2' alt=''>" : "")
+    + "<div class='osd'><p class='hi'></p><p class='press'>PRESS START</p></div></div></div>"
+    + "<div class='panel'><span class='stick'></span><span class='pbtn a'></span><span class='pbtn b'></span><button class='start' type='button'>START</button></div>"
+    + "<div class='door'><b>FREE ENTRY</b><small></small></div><div class='kick'></div>";
+  $(".marquee b", c).textContent = g.label.toUpperCase();
+  $(".marquee small", c).textContent = ms.length + " GAMES";
+  const imgs = $$(".screen img", c);
+  if (g.art) imgs[0].src = g.art;
+  if (g.art2) imgs[1].src = g.art2;
+  $(".hi", c).textContent = ms.length + " GAMES INSIDE";
+  $(".door small", c).textContent = ms.map((m) => $(".marquee b", m).textContent).join(" · ");
+  return c;
+});
+row.prepend(...groupCabs);
+// the group cabinets flip between their two pictures, like the game machines do
+setInterval(() => { if (!document.hidden) for (const c of groupCabs) if (!c.hidden && $(".art2", c)) $(".screen", c).classList.toggle("flip"); }, 3800);
+
+let view = "hall", cabs = [], sel = 0;
+const lastPick = {};
+const sectionBtns = $$(".section-nav button[data-section]");
+// show the hall or one group; select a cabinet by index or by game or group id
+function setView(v, opts = {}) {
+  if (v !== "hall" && !GROUPS.some((g) => g.id === v)) v = "hall";
+  if (cabs.length) lastPick[view] = sel;
+  view = v;
+  const g = GROUPS.find((x) => x.id === v);
+  for (const c of groupCabs) c.hidden = !!g;
+  for (const c of games) c.hidden = !g || !g.games.includes(c.dataset.game);
+  cabs = g ? members(g) : groupCabs;
+  $("#backBtn").hidden = !g;
+  signLine.textContent = g ? g.label.toUpperCase() + " · " + cabs.length + " GAMES" : signText;
+  sectionBtns.forEach((button) => button.classList.toggle("on", !!g && button.dataset.section === g.id));
+  let i = opts.select != null ? opts.select : lastPick[v] || 0;
+  if (typeof i === "string") i = Math.max(0, cabs.findIndex((c) => c.dataset.game === i || c.dataset.opens === i));
+  if (opts.animate && !reduceMotion) { row.classList.remove("enter"); void row.offsetWidth; row.classList.add("enter"); }
+  fitRow();
+  pick(i, true);
+}
+function openGroup(id, select) {
+  if (view === id) { if (select != null) pick(Math.max(0, cabs.findIndex((c) => c.dataset.game === select))); return; }
+  SFX.open();
+  history.pushState({ view: id, pushed: true }, "", "#" + id);
+  setView(id, { select: select != null ? select : 0, animate: true });
+}
+function goBack() {
+  if (view === "hall") return;
+  SFX.back();
+  // a group opened from the hall goes back through history, so the browser's back button agrees
+  if (history.state && history.state.pushed && history.state.view === view) { history.back(); return; }
+  const from = view;
+  history.replaceState(null, "", location.pathname + location.search);
+  setView("hall", { select: from, animate: true });
+}
+addEventListener("popstate", () => {
+  const from = view, v = location.hash.slice(1);
+  setView(v, { select: !GROUPS.some((g) => g.id === v) ? from : undefined, animate: true });
+});
+$("#backBtn").onclick = goBack;
+sectionBtns.forEach((button) => { button.onclick = () => openGroup(button.dataset.section); });
+
+// the picker lists every game under its group
+const machinePicker = $("#machinePicker");
+machinePicker.add(new Option("The arcade: all groups", "hall"));
+for (const g of GROUPS) {
   const optgroup = document.createElement("optgroup");
-  optgroup.label = group.label;
-  cabs.forEach((cab, index) => {
-    if (!group.games.includes(cab.dataset.game)) return;
-    const option = document.createElement("option");
-    option.value = String(index);
-    option.textContent = $(".marquee b", cab).textContent;
-    optgroup.appendChild(option);
-  });
+  optgroup.label = g.label;
+  for (const c of members(g)) optgroup.appendChild(new Option($(".marquee b", c).textContent, c.dataset.game));
   machinePicker.appendChild(optgroup);
 }
-// a machine that no group names still shows in the picker, so none is ever out of reach
-{
-  const loose = cabs.map((cab, index) => [cab, index]).filter(([cab]) => !gameGroup.has(cab.dataset.game));
-  if (loose.length) {
-    const optgroup = document.createElement("optgroup");
-    optgroup.label = "More";
-    for (const [cab, index] of loose) {
-      const option = document.createElement("option");
-      option.value = String(index);
-      option.textContent = $(".marquee b", cab).textContent;
-      optgroup.appendChild(option);
-    }
-    machinePicker.appendChild(optgroup);
-  }
-}
-const sectionBtns = $$(".section-nav button[data-section]");
-sectionBtns.forEach((button) => {
-  button.onclick = () => {
-    const i = cabs.findIndex((cab) => {
-      const group = gameGroup.get(cab.dataset.game);
-      return group && group.id === button.dataset.section;
-    });
-    if (i >= 0) pick(i);
-  };
-});
-machinePicker.onchange = () => pick(Number(machinePicker.value));
-let sel = 1;
+machinePicker.onchange = () => {
+  const v = machinePicker.value;
+  if (v === "hall") { goBack(); return; }
+  const c = games.find((x) => x.dataset.game === v);
+  if (c) openGroup(groupOf(c).id, v);
+};
 const credits = {};
 // the sliding row: always on phones, and on any screen where the machines do not all fit side by side
 const phone = matchMedia("(max-width: 760px), (max-aspect-ratio: 5/6)");
@@ -758,16 +827,14 @@ function fitRow() {
 const carousel = () => $("#stage").classList.contains("slide");
 const rowX = (i) => $("#stage").clientWidth / 2 - (cabs[i].offsetLeft + cabs[i].offsetWidth / 2);
 function pick(i, quiet) {
+  if (!cabs.length) return;
   sel = (i + cabs.length) % cabs.length;
-  machinePicker.value = String(sel);
-  const currentGroup = gameGroup.get(cabs[sel].dataset.game);
-  const groupCabs = currentGroup ? cabs.filter((cab) => currentGroup.games.includes(cab.dataset.game)) : cabs;
-  const groupPos = groupCabs.indexOf(cabs[sel]) + 1;
-  $("#machineCount").textContent = currentGroup ? currentGroup.label.toUpperCase() + " · " + groupPos + " / " + groupCabs.length : (sel + 1) + " / " + cabs.length;
-  sectionBtns.forEach((button) => button.classList.toggle("on", !!currentGroup && button.dataset.section === currentGroup.id));
-  cabs.forEach((c, k) => c.classList.toggle("on", k === sel));
+  const g = GROUPS.find((x) => x.id === view);
+  machinePicker.value = g ? cabs[sel].dataset.game : "hall";
+  // the group's name drops out of the count on a phone, where the sign above already names it
+  $("#machineCount").innerHTML = (g ? "<span class='grp'>" + g.label.toUpperCase() + " · </span>" : "") + (sel + 1) + " / " + cabs.length;
+  for (const c of [...groupCabs, ...games]) c.classList.toggle("on", c === cabs[sel]);
   // on a phone the row slides so the chosen machine is centered
-  const row = $("#row");
   row.style.transform = carousel() ? "translateX(" + rowX(sel) + "px)" : "";
   if (!quiet) SFX.tick();
 }
@@ -806,8 +873,10 @@ function pick(i, quiet) {
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
 }
 // tabbing to a machine brings it to the middle (a mouse click on a side machine is left alone)
-cabs.forEach((c, k) => c.addEventListener("focusin", (e) => { if (sel !== k && e.target.matches(":focus-visible")) pick(k, true); }));
-cabs.forEach((c, k) => c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && sel !== k && !dragging && !carousel()) pick(k); }));
+for (const c of [...groupCabs, ...games]) {
+  c.addEventListener("focusin", (e) => { const k = cabs.indexOf(c); if (k >= 0 && sel !== k && e.target.matches(":focus-visible")) pick(k, true); });
+  c.addEventListener("pointerenter", (e) => { const k = cabs.indexOf(c); if (k >= 0 && e.pointerType === "mouse" && sel !== k && !dragging && !carousel()) pick(k); });
+}
 $("#prevBtn").onclick = () => pick(sel - 1);
 $("#nextBtn").onclick = () => pick(sel + 1);
 // a scroll wheel or a two-finger trackpad swipe steps one machine per flick
@@ -835,6 +904,8 @@ function showCredit(c) {
 }
 // a token lands in a machine
 function insert(c, slot, from, then) {
+  // a group cabinet takes no token: it just opens
+  if (c.dataset.opens) { openGroup(c.dataset.opens); return; }
   pick(cabs.indexOf(c), true);
   if (tokens <= 0) { SFX.reject(); toast("NO TOKENS. TRY THE CHANGE MACHINE."); return; }
   const done = () => {
@@ -866,12 +937,14 @@ function insert(c, slot, from, then) {
 }
 // click anywhere on a machine to play it: a token goes in if you need one, then it starts
 function play(c) {
+  if (c.dataset.opens) { openGroup(c.dataset.opens); return; }
   if (c.dataset.game === "broken") { start(c); return; }
   if (credits[c.dataset.game] > 0) { start(c); return; }
   if (tokens <= 0) { credits[c.dataset.game] = 1; showCredit(c); toast("FREE PLAY"); start(c); return; }
   insert(c, $(".slot", c), null, () => setTimeout(() => start(c), 250));
 }
 function start(c) {
+  if (c.dataset.opens) { openGroup(c.dataset.opens); return; }
   pick(cabs.indexOf(c), true);
   if (c.dataset.game === "broken") { SFX.reject(); toast("OUT OF ORDER. PLUNGER'D 3 IS COMING SOON."); return; }
   if (!(credits[c.dataset.game] > 0)) { SFX.reject(); toast("INSERT COIN FIRST"); return; }
@@ -891,6 +964,8 @@ $$(".cab").forEach((c) => {
 function boot(c) {
   if (window.Chip) Chip.stop(0.8);
   const url = c.dataset.url;
+  // coming back to the arcade reopens this game's group with this game selected
+  try { sessionStorage.setItem("arcade.last", c.dataset.game); } catch (e) { /* storage off */ }
   window.GameSwitch?.record(c.dataset.game);
   if (reduceMotion) { location.href = url; return; }
   const scr = $(".screen", c), r = scr.getBoundingClientRect();
@@ -960,6 +1035,7 @@ addEventListener("keydown", (e) => {
   const k = e.key;
   if (k === "ArrowLeft" || k === "a") { pick(sel - 1); e.preventDefault(); }
   else if (k === "ArrowRight" || k === "d") { pick(sel + 1); e.preventDefault(); }
+  else if (k === "Escape" || k === "Backspace") { if (view !== "hall") { goBack(); e.preventDefault(); } }
   else if (k === "5" || k === "c") { const c = cabs[sel]; insert(c, $(".slot", c)); }
   else if (k === "1" || (k === "Enter" && !(document.activeElement && document.activeElement.closest("button")))) play(cabs[sel]);
 });
@@ -968,14 +1044,14 @@ addEventListener("keydown", (e) => {
 // high scores from the games, kept in this browser
 try {
   const gp = store.get("plungerd.meta.v1", null), dd = store.get("plungerd.drain.v1", null);
-  $(".hi", cabs[0]).textContent = gp && gp.bestDay ? "BEST DAY " + gp.bestDay + (gp.kingKills ? " · KING " + gp.kingKills + "X" : "") : "HI-SCORE: NONE YET";
+  $(".hi", $('.cab[data-game="plungerd"]')).textContent = gp && gp.bestDay ? "BEST DAY " + gp.bestDay + (gp.kingKills ? " · KING " + gp.kingKills + "X" : "") : "HI-SCORE: NONE YET";
   const ds = store.get("plungerd.drain.scores.v1", null), top = Array.isArray(ds) && ds[0];
   const wd = store.get("plungerd.wild.v1", null), wc = $(".cab.wild");
   if (wc) $(".hi", wc).textContent = wd && wd.intro ? (wd.done ? "KING FLUSHED" : "BLIGHTS " + (wd.bosses || []).filter((b) => b !== "king").length + "/3") + " · LOONIES " + (wd.loonies || []).length + "/30" : "HI-SCORE: NONE YET";
-  $(".hi", cabs[1]).textContent = top ? "HI " + top.name + " " + top.score.toLocaleString() + (dd && dd.deepest ? " · DEEPEST " + dd.deepest : "") : dd && dd.deepest ? "DEEPEST " + dd.deepest + (dd.hands ? " · BOSSES " + dd.hands : "") : "HI-SCORE: NONE YET";
+  $(".hi", $('.cab[data-game="drain"]')).textContent = top ? "HI " + top.name + " " + top.score.toLocaleString() + (dd && dd.deepest ? " · DEEPEST " + dd.deepest : "") : dd && dd.deepest ? "DEEPEST " + dd.deepest + (dd.hands ? " · BOSSES " + dd.hands : "") : "HI-SCORE: NONE YET";
 } catch (e) { /* a save that cannot be read leaves the plain lines */ }
 // Get Plunger'd flips between its title and its bosses
-setInterval(() => { if (!document.hidden) $(".screen", cabs[0]).classList.toggle("flip"); }, 3200);
+setInterval(() => { if (!document.hidden) $(".screen", $('.cab[data-game="plungerd"]')).classList.toggle("flip"); }, 3200);
 // Each new cabinet has its own animated attract screen.
 for (const cv of $$(".mini-game")) {
   const g = cv.getContext("2d"), scene = cv.dataset.scene;
@@ -1310,8 +1386,17 @@ try {
   if (best?.version === 3 && Number.isSafeInteger(best.score) && best.score > 0) $(".hi", $('.cab[data-game="river-rush"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " PTS";
 } catch (e) { /* a broken save leaves the plain line */ }
 drawTokens();
-cabs.forEach(showCredit);
-pick(1, true);
+games.forEach(showCredit);
+// open on the hall, or on the group in the address; back from a game, that game is selected
+{
+  const v = location.hash.slice(1);
+  let last = null;
+  try { last = sessionStorage.getItem("arcade.last"); } catch (e) { /* storage off */ }
+  const lc = games.find((c) => c.dataset.game === last);
+  setView(v, { select: lc && groupOf(lc).id === v ? last : 0 });
+  // a group link, or coming back from one of its games, shows that group rather than All Games over it (switch.js opens it after this runs)
+  if (GROUPS.some((g) => g.id === v)) document.documentElement.dataset.machines = "";
+}
 </script>
 </body>
 </html>

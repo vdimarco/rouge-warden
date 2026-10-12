@@ -140,13 +140,10 @@ async function open(browser, { width, height, store = {}, mobile = width < 800, 
     if (r.request().isNavigationRequest()) { const u = new URL(r.request().url()); moves.push(u.pathname + u.hash); r.abort("aborted"); } else r.continue();
   });
   await page.addInitScript((store) => { try { localStorage.clear(); for (const [k, v] of Object.entries(store)) localStorage.setItem(k, v); } catch (e) { /* storage off */ } }, { "arcade.tokens": "99", "arcade.sound": "false", ...store });
-  await page.goto(BASE);
-  await page.waitForSelector(".cab.on");
+  // ?machines is Old arcade: the machines, without All Games over them; machines: false opens the default All Games scoreboard
+  await page.goto(machines ? BASE + "?machines" : BASE);
+  await page.waitForSelector(machines ? ".cab.on" : ".scoreboard .board-launch");
   await page.waitForTimeout(600);
-  if (machines) {
-    await page.locator(".board-menu summary").click();
-    await page.getByRole("button", { name: "Original machines", exact: true }).click();
-  }
   return { ctx, page, errors, moves };
 }
 // the row slides for about half a second after a pick: wait until every move on the page has ended and two frames have been drawn
@@ -157,7 +154,11 @@ async function settle(page) {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   });
 }
-const sel = (page) => page.evaluate(() => [...document.querySelectorAll(".cab")].findIndex((c) => c.classList.contains("on")));
+// the row shows the hall (one cabinet per group) or one group's machines; a selection is counted among the cabinets on show
+const SHOWN = ".cab:not([hidden])";
+const sel = (page) => page.evaluate((q) => [...document.querySelectorAll(q)].findIndex((c) => c.classList.contains("on")), SHOWN);
+// open a group the way its address does
+async function enter(page, id) { await page.evaluate((id) => { location.hash = id; }, id); await page.waitForFunction((id) => location.hash === "#" + id && !document.querySelector("#backBtn").hidden, id); await settle(page); }
 
 if (chromium) {
   let browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined });
@@ -175,9 +176,8 @@ if (chromium) {
     const until = Date.now() + 6000;
     while (!moves.length && Date.now() < until) await page.waitForTimeout(50);
     check(moves.length === 1 && moves[0] === GTA_URL, `${tag}: clicking GTA in the default scoreboard launches its same-origin title page`);
-    await page.locator(".board-menu summary").click();
-    await page.getByRole("button", { name: "Original machines", exact: true }).click();
-    check(!await page.locator(".scoreboard").isVisible(), `${tag}: Menu → Original machines exposes the cabinets`);
+    await page.locator(".scoreboard .machines-link").click();
+    check(!await page.locator(".scoreboard").isVisible(), `${tag}: Old arcade exposes the cabinets`);
     await page.locator('[data-section="gta"]').click();
     await settle(page);
     const cabinet = await page.locator('.cab.gta').evaluate((c) => {
@@ -217,54 +217,68 @@ if (chromium) {
   for (const vp of PARTS.includes("walk") ? [{ width: 390, height: 844 }, { width: 1280, height: 720 }] : []) {
     const tag = `${vp.width}x${vp.height}`;
     const { ctx, page, errors, moves } = await open(browser, vp);
-    const names = await page.$$eval(".cab", (cs) => cs.map((c) => ({ game: c.dataset.game, url: c.dataset.url, name: c.querySelector(".marquee b").textContent })));
+    const names = await page.$$eval(".cab[data-game]", (cs) => cs.map((c) => ({ game: c.dataset.game, url: c.dataset.url, name: c.querySelector(".marquee b").textContent })));
     check(names.length === machineUrls.length, `${tag}: the page has ${names.length} machines (the file has ${machineUrls.length})`);
-    const opts = await page.$$eval("#machinePicker option", (os) => os.map((o) => Number(o.value)).sort((a, b) => a - b));
-    check(opts.length === names.length && opts.every((v, i) => v === i), `${tag}: the machine picker lists every machine once`);
-    // go to the first machine, then step with the next arrow
-    await page.keyboard.press("ArrowLeft");
-    await settle(page);
+    const opts = await page.$$eval("#machinePicker option", (os) => os.map((o) => o.value).filter((v) => v !== "hall").sort());
+    check(opts.length === names.length && opts.join() === names.map((m) => m.game).sort().join(), `${tag}: the machine picker lists every machine once`);
+    const groups = await page.$$eval(".cab[data-opens]", (cs) => cs.map((c) => c.dataset.opens));
+    check(await sel(page) === 0 && groups.length > 1, `${tag}: the arcade opens on the hall of ${groups.length} groups, the first selected`);
+    // walk the hall with the arrows; in each group, step through its machines with the next arrow, then go back
     const reached = [];
-    for (let i = 0; i < names.length; i++) {
-      const m = names[i];
-      const at = await sel(page);
-      if (at !== i) { check(false, `${tag}: arrow ${i} selects ${m.game} (selected ${at})`); break; }
-      const method = (i + (vp.width === 390 ? 0 : 1)) % METHODS.length;
-      const tokens0 = Number(await page.textContent("#count"));
-      const credit = () => page.evaluate((i) => document.querySelectorAll(".cab")[i].querySelector(".credit").textContent + "|" + document.querySelectorAll(".cab")[i].querySelector(".press").textContent, i);
-      await page.evaluate(() => document.activeElement && document.activeElement.blur());
-      if (method === 0) {
-        const a = await page.locator(".stack .token").last().boundingBox();
-        const b = await page.locator(".cab.on .slot i").first().boundingBox();
-        await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
-        await page.mouse.down();
-        await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
-        await page.mouse.up();
-      } else if (method === 3) await page.locator(".cab.on .slot").first().click();
-      else await page.keyboard.press("5");
-      try { await page.waitForFunction((i) => /CREDIT 1/.test(document.querySelectorAll(".cab")[i].querySelector(".credit").textContent), i, { timeout: 4000 }); } catch (e) { /* reported below */ }
-      const c1 = await credit();
-      const tokens1 = Number(await page.textContent("#count"));
-      const lit = await page.evaluate((i) => document.querySelectorAll(".cab")[i].classList.contains("credit"), i);
-      const ok1 = c1 === "CREDIT 1|PRESS START" && tokens1 === tokens0 - 1 && lit;
-      if (SHOTS && (i === names.length - 1 || i === 11)) await page.screenshot({ path: path.join(SHOTS, `machines-${tag}-${m.game}-credit.png`) });
-      moves.length = 0;
-      if (method === 1) await page.keyboard.press("1");
-      else if (method === 2) await page.keyboard.press("Enter");
-      else await page.locator(".cab.on .start").click();
-      try { await page.waitForFunction(() => document.querySelector(".boot"), null, { timeout: 2000 }); } catch (e) { /* the power-on may be too quick to catch */ }
-      const t0 = Date.now();
-      while (!moves.length && Date.now() - t0 < 6000) await page.waitForTimeout(50);
-      const credit0 = await credit();
-      check(ok1 && moves.length === 1 && moves[0].replace(/#.*$/, "") === m.url && credit0 === "CREDIT 0|INSERT COIN",
-        `${tag}: ${m.name} (${METHODS[method]}): the token goes in (${c1}, tokens ${tokens0} to ${tokens1}), START goes to ${m.url} (went to ${moves.join(",") || "nowhere"})`);
-      reached.push(m.url);
-      await page.evaluate(() => document.querySelectorAll(".boot").forEach((b) => b.remove()));
+    let i = 0;
+    for (let gi = 0; gi < groups.length; gi++) {
+      if (!check(await sel(page) === gi, `${tag}: the arrows in the hall reach the ${groups[gi]} group`)) break;
+      await page.keyboard.press("1");
+      await settle(page);
+      const members = await page.$$eval(".cab[data-game]:not([hidden])", (cs) => cs.map((c) => c.dataset.game));
+      check(members.length > 0 && !(await page.$(".cab[data-opens]:not([hidden])")), `${tag}: playing the ${groups[gi]} cabinet opens its ${members.length} machines`);
+      for (let k = 0; k < members.length; k++, i++) {
+        const m = names.find((x) => x.game === members[k]);
+        const at = await sel(page);
+        if (at !== k) { check(false, `${tag}: arrow ${k} in ${groups[gi]} selects ${m.game} (selected ${at})`); break; }
+        const method = (i + (vp.width === 390 ? 0 : 1)) % METHODS.length;
+        const tokens0 = Number(await page.textContent("#count"));
+        const credit = () => page.evaluate((g) => { const c = document.querySelector('.cab[data-game="' + g + '"]'); return c.querySelector(".credit").textContent + "|" + c.querySelector(".press").textContent; }, m.game);
+        await page.evaluate(() => document.activeElement && document.activeElement.blur());
+        if (method === 0) {
+          const a = await page.locator(".stack .token").last().boundingBox();
+          const b = await page.locator(".cab.on .slot i").first().boundingBox();
+          await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+          await page.mouse.down();
+          await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+          await page.mouse.up();
+        } else if (method === 3) await page.locator(".cab.on .slot").first().click();
+        else await page.keyboard.press("5");
+        try { await page.waitForFunction((g) => /CREDIT 1/.test(document.querySelector('.cab[data-game="' + g + '"] .credit').textContent), m.game, { timeout: 4000 }); } catch (e) { /* reported below */ }
+        const c1 = await credit();
+        const tokens1 = Number(await page.textContent("#count"));
+        const lit = await page.evaluate((g) => document.querySelector('.cab[data-game="' + g + '"]').classList.contains("credit"), m.game);
+        const ok1 = c1 === "CREDIT 1|PRESS START" && tokens1 === tokens0 - 1 && lit;
+        if (SHOTS && k === members.length - 1) await page.screenshot({ path: path.join(SHOTS, `machines-${tag}-${m.game}-credit.png`) });
+        moves.length = 0;
+        if (method === 1) await page.keyboard.press("1");
+        else if (method === 2) await page.keyboard.press("Enter");
+        else await page.locator(".cab.on .start").click();
+        try { await page.waitForFunction(() => document.querySelector(".boot"), null, { timeout: 2000 }); } catch (e) { /* the power-on may be too quick to catch */ }
+        const t0 = Date.now();
+        while (!moves.length && Date.now() - t0 < 6000) await page.waitForTimeout(50);
+        const credit0 = await credit();
+        check(ok1 && moves.length === 1 && moves[0].replace(/#.*$/, "") === m.url && credit0 === "CREDIT 0|INSERT COIN",
+          `${tag}: ${m.name} (${METHODS[method]}): the token goes in (${c1}, tokens ${tokens0} to ${tokens1}), START goes to ${m.url} (went to ${moves.join(",") || "nowhere"})`);
+        reached.push(m.url);
+        await page.evaluate(() => document.querySelectorAll(".boot").forEach((b) => b.remove()));
+        await page.locator("#nextBtn").click();
+        await page.waitForTimeout(60);
+        await settle(page);
+      }
+      check(await sel(page) === 0, `${tag}: in ${groups[gi]} the next arrow after the last machine comes back to the first`);
+      await page.keyboard.press("Escape");
+      await settle(page);
+      check(await sel(page) === gi && !!(await page.$(`.cab.on[data-opens="${groups[gi]}"]`)), `${tag}: Escape goes back to the hall with ${groups[gi]} selected`);
       await page.locator("#nextBtn").click();
       await page.waitForTimeout(60);
       await settle(page);
     }
-    check(await sel(page) === 0, `${tag}: the next arrow after the last machine comes back to the first`);
     // every game with a machine was reached by the arrows
     for (const g of games) if (!ALLOW[g.dir]) check(reached.includes(g.url), `${tag}: the arrows reach the machine for ${g.url}`);
     check(errors.length === 0, `${tag}: no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
@@ -277,10 +291,15 @@ if (chromium) {
   for (const [width, height] of PARTS.includes("layout") ? SIZES : []) {
     // Each swipe-heavy size gets a fresh software GPU, as do the larger test parts.
     await relaunch();
-    const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
-    const n = await page.$$eval(".cab", (cs) => cs.length);
-    await page.keyboard.press("ArrowLeft"); await settle(page);
+    // the hall first, then the group with the most machines
+    const biggest = await page.$$eval(".cab[data-opens]", (cs) => cs.map((c) => [c.dataset.opens, Number(c.querySelector(".marquee small").textContent.match(/\d+/)[0])]).sort((a, b) => b[1] - a[1])[0][0]);
+    for (const where of ["hall", biggest]) {
+    if (where !== "hall") await enter(page, where);
+    const tag = `${width}x${height} ${where}`;
+    const n = await page.$$eval(SHOWN, (cs) => cs.length);
+    // the hall and each group open on their first cabinet
+    check(await sel(page) === 0, `${tag}: opens on the first cabinet`);
     await page.keyboard.press("ArrowLeft"); await settle(page);
     check(await sel(page) === n - 1, `${tag}: the left key from the first machine wraps to the last (${n - 1})`);
     const box = await page.evaluate(() => {
@@ -295,12 +314,13 @@ if (chromium) {
     // the machines next to it do not overlap it
     const over = await page.evaluate(() => {
       const on = document.querySelector(".cab.on").getBoundingClientRect();
-      return [...document.querySelectorAll(".cab:not(.on)")].filter((c) => { const b = c.getBoundingClientRect(); return b.right > on.left + 2 && b.left < on.right - 2; }).length;
+      return [...document.querySelectorAll(".cab:not(.on):not([hidden])")].filter((c) => { const b = c.getBoundingClientRect(); return b.right > on.left + 2 && b.left < on.right - 2; }).length;
     });
     check(over === 0, `${tag}: no machine overlaps the chosen one`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `machines-${tag}-last.png`) });
-    // by swipe (a finger on a phone, the mouse on a computer) from the first machine to the last
-    {
+    // by swipe (a finger on a phone, the mouse on a computer) from the first machine to the last.
+    // The hall's few cabinets fit side by side on a big screen, and there the mouse picks by pointing, not by swiping.
+    if (await page.evaluate(() => document.querySelector("#stage").classList.contains("slide"))) {
       await page.keyboard.press("ArrowRight"); await settle(page);
       check(await sel(page) === 0, `${tag}: the right key goes back to the first machine`);
       const y = Math.round(box.stage.t + (box.stage.b - box.stage.t) * 0.25);
@@ -313,16 +333,22 @@ if (chromium) {
       }
       check(await sel(page) === n - 1, `${tag}: ${n + 1} swipes left end on the last machine, and do not go past it (${await sel(page)})`);
     }
-    // the machine list under the machines, and the scroll wheel
-    await page.selectOption("#machinePicker", "0"); await settle(page);
-    const first = await sel(page);
-    await page.selectOption("#machinePicker", String(n - 1)); await settle(page);
-    check(first === 0 && await sel(page) === n - 1, `${tag}: the machine list goes to the first machine and to the last`);
-    await page.selectOption("#machinePicker", "0"); await settle(page);
-    await page.mouse.move(width / 2, box.stage.t + 40);
+    // the machine list under the machines (inside a group), and the scroll wheel
+    if (where !== "hall") {
+      const ids = await page.$$eval(".cab[data-game]:not([hidden])", (cs) => cs.map((c) => c.dataset.game));
+      await page.selectOption("#machinePicker", ids[0]); await settle(page);
+      const first = await sel(page);
+      await page.selectOption("#machinePicker", ids[n - 1]); await settle(page);
+      check(first === 0 && await sel(page) === n - 1, `${tag}: the machine list goes to the first machine and to the last`);
+    }
+    await page.keyboard.press("ArrowRight"); await settle(page);
+    await page.mouse.move(width / 2, box.stage.t + 40); await settle(page);
+    // pointing at a machine may choose it (where the row does not slide): count the flick from there
+    const before = await sel(page);
     await page.mouse.wheel(0, 120); await page.waitForTimeout(400); await settle(page);
-    check(await sel(page) === 1, `${tag}: one flick of the scroll wheel moves one machine`);
-    check(errors.length === 0, `${tag}: no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
+    check(await sel(page) === (before + 1) % n, `${tag}: one flick of the scroll wheel moves one machine`);
+    }
+    check(errors.length === 0, `${width}x${height}: no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
     await ctx.close();
   }
 
@@ -362,7 +388,7 @@ if (chromium) {
   /* ----- the high-score lines: a game's own save shows, and junk never throws ----- */
   const JUNK = ["not json", "null", "[]", "{}", "[1,2]", "-5", "0", "1e999", "\"x\"", "{\"best\":\"x\",\"ms\":[],\"runs\":{}}", "true"];
   const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1"];
-  const lines = (page) => page.$$eval(".cab", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
+  const lines = (page) => page.$$eval(".cab[data-game]", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
   if (PARTS.includes("saves")) {
     const clean = await open(browser, { width: 390, height: 844 });
     const plain = await lines(clean.page);
@@ -430,8 +456,9 @@ if (chromium) {
 
   await relaunch();
   /* ----- keyboard: tabbing through the machines keeps the focused control in the window ----- */
-  for (const [width, height] of PARTS.includes("focus") ? [[390, 844], [1280, 720]] : []) {
+  for (const [width, height, where] of PARTS.includes("focus") ? [[390, 844, "hall"], [1280, 720, "hall"], [390, 844, "lab"], [1280, 720, "lab"]] : []) {
     const { ctx, page, errors } = await open(browser, { width, height });
+    if (where !== "hall") await enter(page, where);
     await settle(page);
     let outside = 0, stops = 0, seen = new Set();
     for (let i = 0; i < 70; i++) {
@@ -443,13 +470,13 @@ if (chromium) {
         prev = x;
         await page.waitForTimeout(100);
       }
-      const r = await page.evaluate(() => { const a = document.activeElement, b = a.getBoundingClientRect(); const cab = a.closest(".cab"); return { left: b.left, right: b.right, vw: innerWidth, game: cab ? cab.dataset.game : "", on: cab ? cab.classList.contains("on") : true, scroll: document.querySelector(".room").scrollLeft }; });
+      const r = await page.evaluate(() => { const a = document.activeElement, b = a.getBoundingClientRect(); const cab = a.closest(".cab"); return { left: b.left, right: b.right, vw: innerWidth, game: cab ? cab.dataset.game || cab.dataset.opens : "", on: cab ? cab.classList.contains("on") : true, scroll: document.querySelector(".room").scrollLeft }; });
       stops++;
       if (r.game) seen.add(r.game);
       if (r.left < -1 || r.right > r.vw + 1 || r.scroll !== 0 || !r.on) outside++;
     }
-    check(outside === 0, `${width}x${height}: after each of ${stops} Tab presses the focused control is in the window, and its machine is the chosen one (${outside} not)`);
-    check(seen.size >= 3, `${width}x${height}: Tab reached controls of ${seen.size} different machines`);
+    check(outside === 0, `${width}x${height} ${where}: after each of ${stops} Tab presses the focused control is in the window, and its machine is the chosen one (${outside} not)`);
+    check(seen.size >= 3, `${width}x${height} ${where}: Tab reached controls of ${seen.size} different machines`);
     check(errors.length === 0, `${width}x${height}: no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
     await ctx.close();
   }

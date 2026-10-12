@@ -13,6 +13,10 @@
   let likes;
   try { likes = JSON.parse(read('arcade-likes') || '[]'); } catch { likes = []; }
   likes = new Set(Array.isArray(likes) ? likes.filter(id => typeof id === 'string') : []);
+  // when each like was sent, so the list can add it to a shared count that does not include it yet
+  let likeTimes;
+  try { likeTimes = JSON.parse(read('arcade-like-times') || '{}'); } catch { likeTimes = {}; }
+  if (!likeTimes || typeof likeTimes !== 'object' || Array.isArray(likeTimes)) likeTimes = {};
   function capture(event, id, extra = {}) {
     if (!enabled) return;
     const body = JSON.stringify({ api_key: token, event, distinct_id: visitor,
@@ -33,9 +37,11 @@
       capture(event, 'tidebreak', extra);
     },
     liked: id => likes.has(id),
+    likedAt: id => Number.isFinite(likeTimes[id]) ? likeTimes[id] : null,
     like(id) {
       if (!enabled || likes.has(id) || !window.GameSwitch?.GAMES.some(g => g.id === id)) return false;
       likes.add(id); save('arcade-likes', JSON.stringify([...likes]));
+      likeTimes[id] = Date.now(); save('arcade-like-times', JSON.stringify(likeTimes));
       capture('arcade_game_like', id); return true;
     }, enabled,
   };
