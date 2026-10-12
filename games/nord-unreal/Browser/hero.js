@@ -1,4 +1,4 @@
-// Title-screen trailer: the full trailer loops with sound behind the start card, and opens in a modal player on request.
+// Title-screen trailer: a light 15 s clip loops with sound behind the start card; the full trailer loads only in the modal player.
 const heroVideo = document.getElementById('hero-video');
 const soundButton = document.getElementById('hero-sound');
 const dialog = document.getElementById('trailer-dialog');
@@ -25,7 +25,7 @@ async function playHero() {
   }
 }
 
-export function setHeroActive(active) {
+function setHeroActive(active) {
   heroActive = active;
   heroVideo.hidden = !active;
   if (active && !dialog.open && !stillOnly()) playHero();
@@ -53,5 +53,10 @@ dialog.addEventListener('close', () => {
   setHeroActive(heroActive);
 });
 reducedMotion.addEventListener('change', () => setHeroActive(heroActive));
-// Start on load: the offline page never changes state, so it does not call setHeroActive itself.
+// Follow the player's state without touching player.js: stop the trailer while the game plays.
+const syncHero = () => {
+  const active = document.body.dataset.state !== 'playing';
+  if (active !== heroActive) setHeroActive(active);
+};
+new MutationObserver(syncHero).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
 setHeroActive(document.body.dataset.state !== 'playing');

@@ -2,7 +2,6 @@ import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, Tex
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
 import { signallingUrl } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
-import { setHeroActive } from './hero.js';
 
 Logger.InitLogging(LogLevel.Warning, false);
 
@@ -31,7 +30,6 @@ function status(state, title, detail) {
   element('status-title').textContent = title;
   element('status-detail').textContent = detail;
   overlay.hidden = state === 'playing';
-  setHeroActive(state !== 'playing');
   connectButton.hidden = ['connecting', 'ready', 'playing'].includes(state);
   connectButton.textContent = started ? 'Reconnect' : 'Connect';
   playButton.hidden = state !== 'ready';

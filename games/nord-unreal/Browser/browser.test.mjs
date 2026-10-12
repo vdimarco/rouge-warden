@@ -15,13 +15,11 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  const trailerFiles = ['trailer/gta-nord-trailer.mp4', 'trailer/hero-poster.jpg'];
-  if (!['index.html', 'player.js', 'styles.css', ...trailerFiles].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'styles.css', 'hero.css'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
-  response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css'
-    : file.endsWith('.mp4') ? 'video/mp4' : file.endsWith('.jpg') ? 'image/jpeg' : 'text/html');
+  response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html');
   response.end(await readFile(`dist/${file}`));
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -78,7 +76,7 @@ try {
     assert.equal(await page.locator('.hero-title').isVisible(), true, 'the title screen shows the game title');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
-    assert.equal(await page.locator('#hero-video source').getAttribute('src'), './trailer/gta-nord-trailer.mp4', 'the title screen loops the full trailer with its sound track');
+    assert.equal(await page.locator('#hero-video source').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4', 'the title screen loops a light 15 s trailer clip with sound');
     assert.equal(await page.locator('#hero-video').evaluate(video => video.loop && !video.hasAttribute('muted')), true);
     assert.equal(await page.locator('#connect').isVisible(), true, 'the start card stays reachable under the hero');
     await page.screenshot({ path: `.qa/offline-${width}.png`, fullPage: true });
@@ -86,7 +84,7 @@ try {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.locator('#watch-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'Watch the trailer opens the player');
-  assert.equal(await page.locator('#trailer-video source').getAttribute('src'), './trailer/gta-nord-trailer.mp4');
+  assert.equal(await page.locator('#trailer-video source').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a375f7b2-2dd0-4757-8cdf-8bd1b94f1a8f.mp4');
   await page.screenshot({ path: '.qa/trailer-1280.png' });
   await page.locator('#close-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);

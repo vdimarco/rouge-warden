@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { copyFile, cp, mkdir, rm } from 'node:fs/promises';
+import { copyFile, mkdir, rm } from 'node:fs/promises';
 import { signallingUrl } from './config.mjs';
 
 const endpoint = process.env.NORD_SIGNALLING_URL || '';
@@ -19,6 +19,5 @@ await build({
     NORD_DEFAULT_STREAMER_ID: JSON.stringify(process.env.NORD_DEFAULT_STREAMER_ID || 'NordHost')
   }
 });
-await Promise.all(['index.html', 'styles.css', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
-await cp('trailer', 'dist/trailer', { recursive: true });
+await Promise.all(['index.html', 'styles.css', 'hero.css', 'hero.js', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
 console.log(`NORD browser player built (${endpoint ? 'signalling configured' : 'host offline'}).`);

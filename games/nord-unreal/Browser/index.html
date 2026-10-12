@@ -6,7 +6,9 @@
     <meta name="theme-color" content="#0b0a16">
     <title>GTA: NORD — Play</title>
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./hero.css">
     <script type="module" src="./player.js"></script>
+    <script type="module" src="./hero.js"></script>
   </head>
   <body data-state="offline">
     <header>
@@ -20,8 +22,8 @@
       </div>
     </header>
     <main id="frame" aria-label="NORD game">
-      <video id="hero-video" class="hero-video" loop playsinline preload="auto" poster="./trailer/hero-poster.jpg" aria-hidden="true">
-        <source src="./trailer/gta-nord-trailer.mp4" type="video/mp4">
+      <video id="hero-video" class="hero-video" loop playsinline preload="auto" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg" aria-hidden="true">
+        <source src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4" type="video/mp4">
       </video>
       <button id="hero-sound" class="hero-sound" type="button" hidden>🔊 Sound on</button>
       <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
@@ -65,8 +67,8 @@
     </main>
     <dialog id="trailer-dialog" aria-label="GTA: NORD trailer">
       <button id="close-trailer" type="button" aria-label="Close trailer">Close</button>
-      <video id="trailer-video" controls playsinline preload="none" poster="./trailer/hero-poster.jpg">
-        <source src="./trailer/gta-nord-trailer.mp4" type="video/mp4">
+      <video id="trailer-video" controls playsinline preload="none" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg">
+        <source src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a375f7b2-2dd0-4757-8cdf-8bd1b94f1a8f.mp4" type="video/mp4">
       </video>
     </dialog>
     <footer>
