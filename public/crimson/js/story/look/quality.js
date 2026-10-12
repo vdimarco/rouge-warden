@@ -10,15 +10,16 @@ const T = (o) => Object.freeze(o);
 // pr: the pixel-ratio range; msaa: scene samples; tris/draws: main-pass budgets
 // shadow: half-size of the sun's shadow box (m), its map size, and the filter
 // flora: density scale; grass: the camera patch radius (m, 0 = off); lodBias: tile LOD distance scale
+// tileFine: the Midgley tile's nearest level at 2.5 m cells (else 5 m, as every tile; world/gen.worker.js buildTile)
 // actors: full skinned actors; hull: outline hull distance (m); traffic/peds: ambient counts
 // pano: the day panorama's width in pixels (C6)
 export const QUALITY = Object.freeze([
   T({ q: 0, name: 'Q0 low', view: T({ day: 450, night: 160 }), pr: T([0.55, 1.0]), msaa: 0, tris: 150e3, draws: 100, actors: 4, hull: 12, traffic: 5, peds: 3,
-    shadow: T({ box: 15, map: 1024, type: 'pcf' }), flora: 0.35, grass: 0, lodBias: 0.6, pano: 2048 }),
+    shadow: T({ box: 15, map: 1024, type: 'pcf' }), flora: 0.35, grass: 0, lodBias: 0.6, tileFine: false, pano: 2048 }),
   T({ q: 1, name: 'Q1 phone', view: T({ day: 700, night: 220 }), pr: T([0.6, 1.25]), msaa: 2, tris: 220e3, draws: 130, actors: 6, hull: 12, traffic: 8, peds: 6,
-    shadow: T({ box: 20, map: 1024, type: 'pcf' }), flora: 0.6, grass: 25, lodBias: 0.8, pano: 2048 }),
+    shadow: T({ box: 20, map: 1024, type: 'pcf' }), flora: 0.6, grass: 25, lodBias: 0.8, tileFine: false, pano: 2048 }),
   T({ q: 2, name: 'Q2 desktop', view: T({ day: 1100, night: 300 }), pr: T([0.75, 1.5]), msaa: 4, tris: 450e3, draws: 200, actors: 10, hull: 25, traffic: 14, peds: 12,
-    shadow: T({ box: 30, map: 2048, type: 'soft' }), flora: 1, grass: 55, lodBias: 1, pano: 3876 }),
+    shadow: T({ box: 30, map: 2048, type: 'soft' }), flora: 1, grass: 55, lodBias: 1, tileFine: true, pano: 3876 }),
 ]);
 export const tierOf = (q) => QUALITY[Math.max(0, Math.min(2, Math.round(q) || 0))];
 

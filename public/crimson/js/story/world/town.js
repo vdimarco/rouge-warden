@@ -467,18 +467,19 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
         const h = fit(outhouse, { height: 3.25, rot: -Math.PI / 2 }); h.updateMatrixWorld(true);
         let mesh = null; h.traverse((m) => { if (m.isMesh && !mesh) mesh = m; });
         if (mesh) {
-          // one instanced mesh, but only the outhouses in view (or near enough to throw a shadow into it) are
-          // written each frame (they stand kilometres apart: drawing all five wherever the camera looks costs
-          // triangles and shadows for nothing)
+          // one instanced mesh, but only the outhouses in view (in the frustum and within the view distance, or
+          // near enough to throw a shadow into it) are written each frame (they stand kilometres apart: drawing
+          // all five wherever the camera looks costs triangles and shadows for nothing; past the view distance
+          // the fog has hidden them, C8)
           const inst = new THREE.InstancedMesh(mesh.geometry, mesh.material, outhouseAt.length);
           const mats = outhouseAt.map((o) => new THREE.Matrix4().makeRotationY(o.yaw).setPosition(o.x, height(o.x, o.z), o.z).multiply(mesh.matrixWorld));
           const spheres = mats.map((m) => { const s = new THREE.Sphere(); mesh.geometry.computeBoundingSphere(); s.copy(mesh.geometry.boundingSphere).applyMatrix4(m); return s; });
           inst.name = 'outhouses'; inst.castShadow = true; inst.userData.kind = 'town'; inst.userData.managed = true; inst.count = 0; inst.visible = false;
           const fr = new THREE.Frustum(), pm = new THREE.Matrix4();
-          outhouseCull = (cam) => {
+          outhouseCull = (cam, view) => {
             cam.updateMatrixWorld(); pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
             let n = 0;
-            mats.forEach((m, i) => { if (fr.intersectsSphere(spheres[i]) || spheres[i].center.distanceTo(cam.position) < 40) inst.setMatrixAt(n++, m); });
+            mats.forEach((m, i) => { const d = spheres[i].center.distanceTo(cam.position); if ((fr.intersectsSphere(spheres[i]) && d - spheres[i].radius < view) || d < 40) inst.setMatrixAt(n++, m); });
             inst.count = n; inst.visible = n > 0 && root.visible; inst.instanceMatrix.needsUpdate = true;
             if (n) inst.computeBoundingSphere();
           };
@@ -532,8 +533,9 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
   return {
     root, material, districts, glb, parkedCars, pumps: pumpPoints, ranch: ranchApi, atlas, hotTub,
     // night: 0 day .. 1 night. Windows and lamps glow; the ranch floodlights burn while it has power.
-    update(night, t) {
-      if (outhouseCull && S.camera) outhouseCull(S.camera);
+    // view: how far the world draws now (m)
+    update(night, t, view = Infinity) {
+      if (outhouseCull && S.camera) outhouseCull(S.camera, view);
       if (S.camera) for (const m of lots) { const b = m.geometry.boundingSphere; m.visible = !parkedCars.some(p => p.taken && districts[p.id] === m) && S.camera.position.distanceTo(m.localToWorld(b.center.clone())) - b.radius < LOT_VIEW; }
       material.emissiveIntensity = night * 0.9;
       lampMat.color.setRGB(0.23 + night * 0.9, 0.21 + night * 0.72, 0.2 + night * 0.46);

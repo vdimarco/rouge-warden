@@ -6,6 +6,8 @@ Use [OpenSpec](https://openspec.dev/) for new features, changes to gameplay beha
 
 Before implementation, inspect the affected game and existing specs. Reuse a relevant active change or create `openspec/changes/<change-name>/` with a proposal, capability specs, design decisions, and a task checklist. Keep the documents proportional to the work. A small correction that restores intended behavior can use an existing spec and a focused check.
 
+Before you build a rendering or art technique, such as grass, trees, water, outlines, a painted look or a texture step, look up how others already solve it: talks, breakdowns, papers, engine documentation or open shaders. In the change's `design.md`, name the source you adapted, or say that none fit.
+
 Write scenarios that describe observable player behavior. For game changes, cover the affected controls, gameplay states, and supported screen layouts. Define a concrete way to check visual or performance requirements. Preserve the user's requested art direction and input preferences in the relevant change.
 
 Implement the tasks and keep the specs current as the design develops. Check off work only when complete. Validate the spec structure and separately test the code against its scenarios. State clearly when browser, phone, audio, or motion-sensor checks could not run. Archive completed changes and review the resulting canonical specs in `openspec/specs/`.
@@ -40,6 +42,6 @@ The Cottage Arcade is static files in `public/`. There is no root package. `inst
 - Olympus: `npm test --prefix games/olympus`. After editing that game, rebuild the committed bundle with `npm run build --prefix games/olympus`.
 - Follow Suit: `npm run check --prefix follow-suit`. Browser checks: `npm run qa --prefix follow-suit` and `npm run qa:arcade --prefix follow-suit`. After editing that game, rebuild the arcade copy in `public/follow-suit/` with `npm run build:arcade --prefix follow-suit`.
 - Claude Code mods: `node mods/check.mjs` (needs the `claude` CLI; set `CLAUDE_CODE_TYPES` to `claude-code.d.ts` for the type check) and `node mods/qa/frames.mjs`. After editing `public/lab/tilt/physics.js` or `table.js`, `public/primordia/lenia.js` or `species.js`, `public/fish/js/species.js`, the clips in `public/tidebreak/audio/announcer/`, or `mods/shared/`, run `node mods/sync.mjs`.
-- Higgsfield typecheck: `npm run typecheck --prefix higgsfield`. Generation needs `HF_CREDENTIALS` in `higgsfield/.env.local`. The arcade plays without that key. `/api/warden` is a Vercel function and is not part of this static server; games use their local stand-in.
+- Higgsfield: `npm run typecheck --prefix higgsfield` and `npm test --prefix higgsfield`. Generation needs `HF_CREDENTIALS` in `higgsfield/.env.local`. Give art requests a game's look with `--style <game>` (files in `higgsfield/styles/`) and check the request with `--dry-run` first. Make a generated texture tile with `npm run swatch --prefix higgsfield`. The arcade plays without that key. `/api/warden` is a Vercel function and is not part of this static server; games use their local stand-in.
 
 - Shore highlands and caves: `node qa/tidebreak/geology.test.mjs`; `node qa/tidebreak/landscape.e2e.mjs` covers desktop and portrait landscape rendering. Startup and optional map icons: `node qa/tidebreak/graphics-startup.test.mjs`.

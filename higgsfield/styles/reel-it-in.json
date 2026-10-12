@@ -1,0 +1,8 @@
+{
+  "game": "Reel It In",
+  "about": "public/fish/art/README.md: the film-lake.webp concept supplied the style reference for the painted forest, and its brief set the look.",
+  "prompt": "The look of a hand-painted storybook: gouache forest layers and foliage, warm highlights and blue-green shadows, cream clouds and broad turquoise ripples on a Canadian lake. No text, UI or people.",
+  "references": [
+    "public/fish/art/film-lake.webp"
+  ]
+}
