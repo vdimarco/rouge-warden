@@ -1,5 +1,6 @@
 #include "QuebecCampaign.h"
 #include "QuebecGameplay.h"
+#include "QuebecSky.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -762,6 +763,8 @@ void AQuebecCampaign::UpdatePresentation()
     LightRay->SetWorldRotation(FRotationMatrix::MakeFromZ(Direction).Rotator());
     LightRay->SetVisibility(bTerrace);
     Worklight->SetVisibility(bTerrace);
+    // The 300,000 cd worklight was tuned for the afternoon exposure; at night it would blow out.
+    Worklight->SetIntensity(300000.f * AQuebecSky::LightScale(GetWorld()));
     const bool bCarBeam = Phase == EQuebecCampaignPhase::ParkCarLight || Phase == EQuebecCampaignPhase::ReleaseTable;
     CarRay->SetVisibility(bCarBeam && IsValid(LightCar));
     if (IsValid(LightCar))

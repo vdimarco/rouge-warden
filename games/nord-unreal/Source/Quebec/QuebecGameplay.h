@@ -192,6 +192,10 @@ public:
     AQuebecParkResident* FindInteractableResident() const;
     bool IsComicStyle() const { return bComicStyle; }
     void ShowInteractionMessage(const FString& Message) { ClientInteractionMessage(Message); }
+    // Console commands for the shared sky. The host applies them; they do nothing without a sky.
+    UFUNCTION(Exec) void NordWeather(const FString& Weather);
+    UFUNCTION(Exec) void NordTime(float Hours);
+    UFUNCTION(Exec) void NordSkyFreeze(int32 Frozen);
     UPROPERTY(VisibleAnywhere, Transient) FString ResidentCaption;
     UPROPERTY(VisibleAnywhere, Transient) float ResidentCaptionUntil = 0.f;
 
@@ -199,6 +203,7 @@ private:
     UPROPERTY() TObjectPtr<AQuebecCharacter> WalkingCharacter;
     UPROPERTY() TObjectPtr<UMaterialInterface> ComicMaterial;
     bool bComicStyle = false;
+    bool bSkyGrading = false;
     float CaptureClock = 0.f;
     int32 CaptureStep = 0;
     float CampaignAimElapsed = 0.f;
@@ -217,6 +222,10 @@ private:
     UFUNCTION(Server, Reliable) void ServerNextCharacter();
     UFUNCTION() void ToggleComicStyle();
     void ApplyComicStyle();
+    void ApplySkyGrading();
+    UFUNCTION(Server, Reliable) void ServerNordWeather(const FString& Weather);
+    UFUNCTION(Server, Reliable) void ServerNordTime(float Hours);
+    UFUNCTION(Server, Reliable) void ServerNordSkyFreeze(bool bFrozen);
     void TickCapture(float DeltaTime);
     UFUNCTION() void Interact();
     UFUNCTION(Server, Reliable) void ServerInteract();
