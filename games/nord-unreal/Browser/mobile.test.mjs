@@ -114,7 +114,7 @@ function frameDifference(before, after) {
 
 async function layout(name) {
   const geometry = await page.evaluate(() => {
-    const names = ['[data-stick="move"]', '[data-stick="look"]', ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const names = ['[data-stick="move"]', '[data-stick="look"]', '#crew-toggle', ...['16', '32', '69', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
       visible: !document.querySelector('#touch-controls').hidden,
@@ -146,16 +146,16 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]',
-      ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]', '#crew-toggle',
+      ...['16', '32', '69', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
     const video = document.querySelector('#video video');
     const image = bounds(video);
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
-      ['radar and credits', 0, 480, 280, 240], ['objective', 790, 470, 490, 160],
+      ['radar and credits', 1018, 96, 262, 212], ['objective', 790, 470, 490, 160],
       ['speed', 1040, 620, 240, 100], ['prompt', 400, 620, 640, 100],
-      ['completion', 490, 150, 310, 100], ['movement hint', 280, 620, 340, 40]
+      ['completion', 490, 150, 310, 100], ['movement hint', 22, 620, 340, 40]
     ].map(([name, x, y, width, height]) => ({ name,
       x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
       width: width * image.width / 1280, height: height * image.height / 720 }));

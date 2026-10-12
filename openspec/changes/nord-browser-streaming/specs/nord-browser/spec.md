@@ -112,3 +112,27 @@ A crew member SHALL appear in the game either as one player's character or as re
 - **WHEN** a player presses 1-8, or taps Crew and picks a name on a phone
 - **THEN** their character becomes that crew member, unless the other player already is, in which case the game says so and nothing changes
 - **AND** C still steps to the next free crew member and skips the one the other player wears
+
+### Requirement: Start screen with story and crew choice
+The title screen SHALL offer Start, which opens a short story and then a crew choice, and connects to the game in the background meanwhile.
+
+#### Scenario: First visit
+- **WHEN** a player taps Start for the first time
+- **THEN** three comic story panels show one after another, with Next and Skip story, then the eight crew members with portraits and names
+- **AND** the title trailer stops behind the start screen, and the start screen shows the connection state
+
+#### Scenario: Player picks a crew member
+- **WHEN** the player picks a crew member and taps Play as that crew member
+- **THEN** the start screen closes, the stream starts at once if the game is ready (otherwise the status card shows Play with sound when it is), and once the stream plays the page presses the matching key 1-8 once for that connection: on a touch screen through the touch key buttons, on a computer once the mouse is captured
+- **AND** the choice is kept for the next visit, which goes straight to the crew choice; Story replays the panels
+
+#### Scenario: Pictures stay light
+- **WHEN** the page loads
+- **THEN** no story or crew picture loads until Start is pressed, about 300 KB in all
+
+### Requirement: Phone held upright keeps the game picture clear
+On a touch screen in portrait, the game picture SHALL sit at the top of the play area under the small buttons, with the sticks below it.
+
+#### Scenario: Player holds the phone upright
+- **WHEN** a phone up to 700 px wide is in portrait while playing
+- **THEN** the game picture starts 62 px below the top of the play area and the 100 px sticks sit 72 px above the bottom, so on a 485 x 652 screen no control covers the picture

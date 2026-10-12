@@ -104,3 +104,10 @@ footer p { margin: 0; }
 /* Phone crew picker: eight crew members in two columns, under the top buttons. */
 .crew-picker { position: absolute; top: 64px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
 #touch-controls .crew-picker button { min-height: 44px; font-size: 11px; text-align: left; }
+
+/* Phones held upright: the game sits at the top, under the small buttons, and the sticks sit in the space below it, clear of the map and mission text. */
+@media (orientation: portrait) and (max-width: 700px) {
+  .touch-input #video { top: 62px; bottom: auto; height: min(calc(100vw * 9 / 16), calc(100% - 62px)); }
+  .touch-input .touch-stick { width: 100px; height: 100px; }
+  .touch-input .move-stick, .touch-input .look-stick { bottom: max(72px, calc(env(safe-area-inset-bottom) + 60px)); }
+}
