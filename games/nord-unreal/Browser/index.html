@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="./hero.css">
     <script type="module" src="./player.js"></script>
     <script type="module" src="./hero.js"></script>
+    <script type="module" src="./crew.js"></script>
   </head>
   <body data-state="offline">
     <header>
@@ -30,10 +31,20 @@
       <div id="touch-controls" aria-label="Touch game controls" hidden>
         <button id="touch-exit-fullscreen" class="touch-exit" hidden>Exit fullscreen</button>
         <div class="touch-secondary">
-          <button data-key="67" aria-label="Switch crew character">Crew</button>
+          <button id="crew-toggle" type="button" aria-expanded="false" aria-controls="crew-picker">Crew</button>
           <button data-key="82" aria-label="Recover vehicle or character">Recover</button>
           <button data-key="84" aria-label="Replay race">Race</button>
           <button data-key="113" aria-label="Toggle comic view">Comic</button>
+        </div>
+        <div id="crew-picker" class="crew-picker" role="group" aria-label="Choose your crew member" hidden>
+          <button data-key="49">1 · GREEN CAP 51</button>
+          <button data-key="50">2 · MEMPHIS 33</button>
+          <button data-key="51">3 · BLACK CAP</button>
+          <button data-key="52">4 · WHITE CAP</button>
+          <button data-key="53">5 · RED JERSEY</button>
+          <button data-key="54">6 · LIME JACKET</button>
+          <button data-key="55">7 · SKULL SHIRT</button>
+          <button data-key="56">8 · TOPKNOT</button>
         </div>
         <div class="touch-stick move-stick" data-stick="move" role="group" aria-label="Movement and steering touch stick">
           <span class="stick-knob"></span><span class="stick-label">MOVE / DRIVE</span>
@@ -73,7 +84,7 @@
     </dialog>
     <footer>
       <p id="input-note">Keyboard, mouse and touch supported. The host PC must stay online.</p>
-      <p class="controls"><b>WASD</b> Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>C</b> Crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
+      <p class="controls"><b>WASD</b> Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>1–8</b> Choose crew &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
     </footer>
   </body>
 </html>

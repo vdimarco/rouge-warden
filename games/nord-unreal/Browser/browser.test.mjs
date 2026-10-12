@@ -15,7 +15,7 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'styles.css', 'hero.css'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'styles.css', 'hero.css'].includes(file)) {
     response.writeHead(404).end();
     return;
   }

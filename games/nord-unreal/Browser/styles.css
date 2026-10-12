@@ -100,3 +100,7 @@ footer p { margin: 0; }
     min-height: 44px; padding: 2px; font-size: 9px;
   }
 }
+
+/* Phone crew picker: eight crew members in two columns, under the top buttons. */
+.crew-picker { position: absolute; top: 64px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
+#touch-controls .crew-picker button { min-height: 44px; font-size: 11px; text-align: left; }

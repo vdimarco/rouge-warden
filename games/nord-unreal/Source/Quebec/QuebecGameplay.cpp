@@ -140,15 +140,42 @@ AQuebecCharacter::AQuebecCharacter()
 void AQuebecCharacter::BeginPlay()
 {
     Super::BeginPlay();
+    // A new player starts as a crew member nobody else is playing.
+    if (HasAuthority() && IsCrewTaken(GetWorld(), CrewStyle, this))
+        for (int32 Step = 1; Step < 8; ++Step)
+        {
+            const int32 Next = 3 + (CrewStyle - 3 + Step) % 8;
+            if (!IsCrewTaken(GetWorld(), Next, this)) { CrewStyle = Next; break; }
+        }
     ApplyCrewAppearance();
+}
+
+bool AQuebecCharacter::IsCrewTaken(const UWorld* World, int32 Style, const AQuebecCharacter* Except)
+{
+    if (!World) return false;
+    // Every AQuebecCharacter in play belongs to a player, including one parked while its player drives.
+    for (TActorIterator<AQuebecCharacter> It(World); It; ++It)
+        if (*It != Except && !It->IsPendingKillPending() && It->CrewStyle == Style) return true;
+    return false;
+}
+
+bool AQuebecCharacter::ChooseCrew(int32 Style)
+{
+    if (!HasAuthority() || Style < 3 || Style > 10) return false;
+    if (Style == CrewStyle) return true;
+    if (IsCrewTaken(GetWorld(), Style, this)) return false;
+    CrewStyle = Style;
+    ApplyCrewAppearance();
+    ForceNetUpdate();
+    return true;
 }
 
 void AQuebecCharacter::CycleCrew()
 {
     if (!HasAuthority()) return;
-    CrewStyle = CrewStyle >= 10 ? 3 : FMath::Clamp(CrewStyle + 1, 3, 10);
-    ApplyCrewAppearance();
-    ForceNetUpdate();
+    // Skip crew members the other player is wearing.
+    for (int32 Step = 1; Step <= 8; ++Step)
+        if (ChooseCrew(3 + (FMath::Clamp(CrewStyle, 3, 10) - 3 + Step) % 8)) return;
 }
 
 void AQuebecCharacter::ApplyCrewAppearance()
@@ -461,6 +488,13 @@ void AQuebecParkResident::UpdateRouteLength()
 void AQuebecParkResident::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    // A player's crew member is never also a resident: hide the matching residents on every machine.
+    const bool bPlayerWears = AQuebecCharacter::IsCrewTaken(GetWorld(), Style);
+    if (bPlayerWears != IsHidden())
+    {
+        SetActorHiddenInGame(bPlayerWears);
+        SetActorEnableCollision(!bPlayerWears);
+    }
     const AGameStateBase* State = GetWorld()->GetGameState();
     const float Time = (State ? State->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds()) + Phase;
     const FResidentTravel Travel = SampleResidentTravel(Time,RouteLength,Pace,PauseSeconds);
@@ -1214,6 +1248,13 @@ void AQuebecController::SetupInputComponent()
     InputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AQuebecController::Interact);
     InputComponent->BindAction(TEXT("ComicStyle"), IE_Pressed, this, &AQuebecController::ToggleComicStyle);
     InputComponent->BindAction(TEXT("NextCharacter"), IE_Pressed, this, &AQuebecController::NextCharacter);
+    const FKey CrewKeys[] = {EKeys::One, EKeys::Two, EKeys::Three, EKeys::Four, EKeys::Five, EKeys::Six, EKeys::Seven, EKeys::Eight};
+    for (int32 Slot = 0; Slot < 8; ++Slot)
+    {
+        FInputKeyBinding Binding(FInputChord(CrewKeys[Slot]), IE_Pressed);
+        Binding.KeyDelegate.GetDelegateForManualSet().BindUObject(this, &AQuebecController::ChooseCrewKey, Slot);
+        InputComponent->KeyBindings.Add(Binding);
+    }
     InputComponent->BindAction(TEXT("RetryCampaign"), IE_Pressed, this, &AQuebecController::RetryCampaign);
     InputComponent->BindAction(TEXT("ReplayCampaign"), IE_Pressed, this, &AQuebecController::ReplayCampaign);
 }
@@ -1239,6 +1280,16 @@ void AQuebecController::ServerNextCharacter_Implementation()
     AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
     if (!Character) Character = WalkingCharacter;
     if (Character) Character->CycleCrew();
+}
+
+void AQuebecController::ChooseCrewKey(int32 Slot) { ServerChooseCrew(3 + Slot); }
+void AQuebecController::ServerChooseCrew_Implementation(int32 Style)
+{
+    if (Style < 3 || Style > 10) return;
+    AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
+    if (!Character) Character = WalkingCharacter;
+    if (Character && !Character->ChooseCrew(Style))
+        ClientInteractionMessage(FString(AQuebecParkResident::NameForStyle(Style)) + TEXT("  /  The other player is already this crew member."));
 }
 
 void AQuebecController::ToggleComicStyle() { bComicStyle = !bComicStyle; }
@@ -1360,6 +1411,7 @@ AQuebecParkResident* AQuebecController::FindInteractableResident() const
     double Best = FMath::Square(450.f);
     for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
     {
+        if (It->IsHidden()) continue;
         const double Distance = FVector::DistSquared(Character->GetActorLocation(),It->GetActorLocation()+FVector(0.,0.,100.));
         if (Distance > Best) continue;
         FHitResult Hit;

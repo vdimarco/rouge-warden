@@ -96,3 +96,19 @@ On a touch screen, the move stick and the game's map SHALL NOT cover each other.
 #### Scenario: Player looks at the map
 - **WHEN** the game draws its HUD map on any screen
 - **THEN** the map sits in the top-right corner under the name and player count, clear of the lower-left move stick, and the bottom prompts start at the left margin
+
+### Requirement: Each crew member appears once
+A crew member SHALL appear in the game either as one player's character or as residents, never both, and each player SHALL choose their own crew member.
+
+#### Scenario: Player plays a crew member
+- **WHEN** a player wears a crew style, on foot or parked while driving
+- **THEN** every resident with that style is hidden and cannot be talked to on all machines, and reappears once no player wears it
+
+#### Scenario: Second player joins
+- **WHEN** a player joins while another player wears the default style
+- **THEN** the new player starts as a crew member nobody else is playing
+
+#### Scenario: Player chooses a crew member
+- **WHEN** a player presses 1-8, or taps Crew and picks a name on a phone
+- **THEN** their character becomes that crew member, unless the other player already is, in which case the game says so and nothing changes
+- **AND** C still steps to the next free crew member and skips the one the other player wears
