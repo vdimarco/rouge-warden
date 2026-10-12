@@ -1,0 +1,292 @@
+{
+  "passed": true,
+  "applied": true,
+  "visual_validation_pending": false,
+  "characters": [
+    {
+      "style": 3,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident3/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident3/M_Crew.M_Crew"
+      ]
+    },
+    {
+      "style": 4,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident4/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident4/M_Crew.M_Crew"
+      ]
+    },
+    {
+      "style": 5,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident5/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident5/M_Crew.M_Crew"
+      ]
+    },
+    {
+      "style": 6,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident6/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident6/M_Crew.M_Crew"
+      ]
+    },
+    {
+      "style": 7,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident7/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident7/M_Crew.M_Crew"
+      ]
+    },
+    {
+      "style": 8,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident8/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident8/M_Crew.M_Crew"
+      ]
+    },
+    {
+      "style": 9,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident9/M_Crew.M_Crew"
+      ]
+    },
+    {
+      "style": 10,
+      "before": {
+        "recompute_normals": true,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": true,
+        "use_full_precision_u_vs": false,
+        "use_high_precision_tangent_basis": false
+      },
+      "after": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "changed": true,
+      "normal_import_before": "<FBXNormalImportMethod.FBXNIM_COMPUTE_NORMALS: 0>",
+      "normal_import_after": "<FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS: 1>",
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident10/SK_Body_Skeleton.SK_Body_Skeleton",
+      "material_paths": [
+        "/Game/ParkComic/Crew/Resident10/M_Crew.M_Crew"
+      ]
+    }
+  ],
+  "backup_manifest": "Verification/MeshyFaceBuildBackup.json",
+  "baseline_face": {
+    "file": "Saved/Recovery/face-build-20261010T015815574557Z/Resident9_Face_Before.png",
+    "sha256": "3b0dc672b3a7f947d16ee519859c4ecc9e4902381cd6b17e516d957099555eeb",
+    "resolution": [
+      1280,
+      720
+    ]
+  },
+  "protected_dependencies_unchanged": true,
+  "protected_file_sha256": {
+    "Data/CharactersMeshy/GreenCap51/body.fbx": "e60a0381c97b5299fcf031f66c41e46dd28ffee2132c6e4462521c5f02469c2b",
+    "Data/CharactersMeshy/GreenCap51/base_color.png": "261fb5715f4c6f3efae3c6d1af648adad7299fcc53cbb7ed1174d800f25ff62a",
+    "Content/ParkComic/Crew/Resident3/A_Idle.uasset": "1fd6a70600486b3d6ffd8c656f8eea301f97ccd271fcf5eb20ec7c3c307eb840",
+    "Content/ParkComic/Crew/Resident3/A_Walk.uasset": "54c17c378ced885e85fa7352a2689f9a2030d0cf6589c6ff1853841d7b0329be",
+    "Content/ParkComic/Crew/Resident3/A_Run.uasset": "05cd5e88de75bae01f481b70f1a69324ee6697795b56b75fba94e620519cebf3",
+    "Content/ParkComic/Crew/Resident3/A_Jump.uasset": "6bb727811ce2b5dfa11a000a758c8533b6cda950709c9e4180d8de14a0ab0212",
+    "Content/ParkComic/Crew/Resident3/T_base_color.uasset": "44449306e3ac0b6bfe903efbfeff7b05d7f4ec9ddb2c2654267bf4c2b99cbcdd",
+    "Data/CharactersMeshy/Memphis33/body.fbx": "013f474db0f1c2bbe0ba57bc48f53f7593eb0eaa56a9f14f3bf09b6cdfcda7f4",
+    "Data/CharactersMeshy/Memphis33/base_color.png": "bfd7fb5e447783876fb19156df48664b0eefa6a304fde8c853b5836fafc113ef",
+    "Content/ParkComic/Crew/Resident4/A_Idle.uasset": "17d9cb061e9e5154e0630ccf2f7e60f26abffa9cc7a5961f04f3e968438b6a89",
+    "Content/ParkComic/Crew/Resident4/A_Walk.uasset": "6d6b290f95450545b7218912afab784d9bed134b82880a8aff6a42434772bda5",
+    "Content/ParkComic/Crew/Resident4/A_Run.uasset": "fcb8210a28eb39fd1bfe4c9740945f82854a4fbdda2b1ec42d4707c038aaa6d5",
+    "Content/ParkComic/Crew/Resident4/A_Jump.uasset": "5fd58d990e2ae809522cfcfd1f9db893edf2030297a2702bf3e6774e0758adeb",
+    "Content/ParkComic/Crew/Resident4/T_base_color.uasset": "4fdaae4719a981e53e7d7fb88d1c6baa4a4599fe5097795c973a54e2de665c8b",
+    "Data/CharactersMeshy/BlackCap/body.fbx": "72d2c30ab37fc75f11538e88c2115176495b156bb93ef74a1f40cbb4745e6696",
+    "Data/CharactersMeshy/BlackCap/base_color.png": "2e675e1ce159c062177459bb46257c1b37d81a6413de13bea0c497607e4098b5",
+    "Content/ParkComic/Crew/Resident5/A_Idle.uasset": "a5d5950f923e4082ae0932df05e9a90889d0f98f90d8a4ea0ba6759164d4e638",
+    "Content/ParkComic/Crew/Resident5/A_Walk.uasset": "4515026e073bfc7acfacf12212457aba8ba23f0a15e8e3d0f6852f84db23b37a",
+    "Content/ParkComic/Crew/Resident5/A_Run.uasset": "39b71b9307e8aaec4a2237b84d9aa7093c5efbb21201e00a1ec9fe2ce6c4ef29",
+    "Content/ParkComic/Crew/Resident5/A_Jump.uasset": "f9e7a095bba8bea210ac67df4cf53234c676102000a8d65aa22b4f3ce5327209",
+    "Content/ParkComic/Crew/Resident5/T_base_color.uasset": "0f1d3a79b37bd7007b79d4e0311b68cee7ed5933fc1080e401ea855511a5feea",
+    "Data/CharactersMeshy/WhiteCap/body.fbx": "9a8d30abe9ad1ce20aaa190946ef1495b15b93a607f640af3abb5ef58db3b3da",
+    "Data/CharactersMeshy/WhiteCap/base_color.png": "7f5bbe36670f3de243739bf1faab221f4190be8c12cba07a18f13cf5a28819d8",
+    "Content/ParkComic/Crew/Resident6/A_Idle.uasset": "faad0782e99500446e5b90fc8cf8130b07f37390decf45837d42264f6863f269",
+    "Content/ParkComic/Crew/Resident6/A_Walk.uasset": "f98d8a61f1aed1bbd8ad7aa952c9cfcead72f2f670f57d5ca367ea75de6e0855",
+    "Content/ParkComic/Crew/Resident6/A_Run.uasset": "f1b1cda1d7e8c365c41ade10bd32d4d31c76954e8bb9c0a0d8206647f64fe8c4",
+    "Content/ParkComic/Crew/Resident6/A_Jump.uasset": "4919e882200c2a64aa9786dac00a639eb29e65e21f285e579f8d3177c545295c",
+    "Content/ParkComic/Crew/Resident6/T_base_color.uasset": "843c7e80da4f6788e89474ee075bdb81d9894a764c24326be9d0ec4cb9bea87e",
+    "Data/CharactersMeshy/RedJersey/body.fbx": "d56e560531f9c5f590c214a696667b0810449dd4ea5e3429578e1c2d5429d52d",
+    "Data/CharactersMeshy/RedJersey/base_color.png": "d5386b4fcff78cca5683b8d1427dc2362b1438d2a64035a3cd9a0d2b7b95e812",
+    "Content/ParkComic/Crew/Resident7/A_Idle.uasset": "a70532490f0841e6aa5353d4db8acf6d33b21d2ed67c0c744273a8efc25d74a6",
+    "Content/ParkComic/Crew/Resident7/A_Walk.uasset": "fd8a6ec75f5bfc7958e759cbf5a0b08ebce2f795bf9a8b6191b9a03cb1581491",
+    "Content/ParkComic/Crew/Resident7/A_Run.uasset": "37d3989da81b2134b9374632dbd8c8d9a029ce86831af8078586b63ce18ec272",
+    "Content/ParkComic/Crew/Resident7/A_Jump.uasset": "f16e389952f44737c20d369b494b2ae61f223c2571d8e0a22449e12c38fc9a41",
+    "Content/ParkComic/Crew/Resident7/T_base_color.uasset": "a2ecac393ecf9895b7cbe3933e37d05e5baf9b9b4fb968b59b5264dda906c4cf",
+    "Data/CharactersMeshy/LimeJacket/body.fbx": "d3405dc0ee5cc3b539c6d46cd3d440b3a36d5b75ff6f269a6be13fd0e7537789",
+    "Data/CharactersMeshy/LimeJacket/base_color.png": "56a693ab407e20c7d1a5d68cd3b160f428ae752ea342239a08c306c79b7e320b",
+    "Content/ParkComic/Crew/Resident8/A_Idle.uasset": "f73f0f5a72fa0f47db96cda5b933b379a94ab75afb06f4ccfe49d464d6302a30",
+    "Content/ParkComic/Crew/Resident8/A_Walk.uasset": "8360c6c134beeb1f044e7be385901fa10910fdaed3d1e9cfd4fb6004a0a23fd0",
+    "Content/ParkComic/Crew/Resident8/A_Run.uasset": "edad36dca061867a9d5ec5c46ae57f6271c568c8fe10661809f58848a5c59aca",
+    "Content/ParkComic/Crew/Resident8/A_Jump.uasset": "058cfdf7c6c752c8fdc10c6bf9b832b5fe71459908fd34641a7f8a50d8926f87",
+    "Content/ParkComic/Crew/Resident8/T_base_color.uasset": "ec00b128e4f76d0e66d26067d2096e1157c30c6880799095b3e3cbc5f2886104",
+    "Data/CharactersMeshy/CurlyMetalhead/body.fbx": "05b54691fb653b5890657b9542082ba6f40f883a7c24185ed0263c663bd2628c",
+    "Data/CharactersMeshy/CurlyMetalhead/base_color.png": "90d78f8cfad95d36eeb11abe603da4f165668fe22b60f0fef6d75b8b40fd7492",
+    "Content/ParkComic/Crew/Resident9/A_Idle.uasset": "796e4460e0b09211fff3edc772a561c86303898d5eeba56fdf4a217202d2aaf6",
+    "Content/ParkComic/Crew/Resident9/A_Walk.uasset": "53fe56224d9f959f125d1b98f26df3faba4de568a85b1648498c9047cb5fc599",
+    "Content/ParkComic/Crew/Resident9/A_Run.uasset": "e75e5e7386ec27bd9d526a70d2c8cea6da687a583fb80ce33fb50607de0b89b4",
+    "Content/ParkComic/Crew/Resident9/A_Jump.uasset": "e6d6e63eb85fd6043de9820cff455a230c943f12bd80cdd0975857ea6cdd1995",
+    "Content/ParkComic/Crew/Resident9/T_base_color.uasset": "e52ecac351a345d0b25087604379d41c896d1b9a6ddffc8aa0b0b8aa80f242ad",
+    "Data/CharactersMeshy/Topknot/body.fbx": "1e9f90fdedc2683927f5ae1b5459a84f9c92e70ec15b40e4131c2345fdfdf798",
+    "Data/CharactersMeshy/Topknot/base_color.png": "3cca84706714b942782204bd8839e2d5f1597dbec248922eae3666798be18dfd",
+    "Content/ParkComic/Crew/Resident10/A_Idle.uasset": "a674d77d5202c898cb87864930bc24973bb6c5c2e639effda02e428f743e1b0c",
+    "Content/ParkComic/Crew/Resident10/A_Walk.uasset": "3eda0f6382958f41a88c8ae7ce9c4f3a65887894865b9b5c2841fca3b1d1361e",
+    "Content/ParkComic/Crew/Resident10/A_Run.uasset": "7ed828561909bfd57f1c9754143b5691989f03411d5b8d13d5bad73612b1a59c",
+    "Content/ParkComic/Crew/Resident10/A_Jump.uasset": "75ae250825c5af2d8ca8bb367aa19b82986c335dde99ec822893c2b70e79a4f6",
+    "Content/ParkComic/Crew/Resident10/T_base_color.uasset": "ea94e1e8b99d6a32f12d29daa038bfa02eda9be68ca9470c338343180e90cc85"
+  },
+  "visual_review": {
+    "file": "Verification/FaceVisualReview.md",
+    "accepted_utc": "2026-10-10T03:59:27.896641+00:00",
+    "official_reports": [
+      "Verification/PlayerQuality/PlayerQuality1280.json",
+      "Verification/PlayerQuality/PlayerQuality1920.json"
+    ],
+    "scope": "all eight face close-ups at both resolutions; representative run/airborne/landing for styles 3, 5 and 9; saved assets without candidate overrides"
+  }
+}

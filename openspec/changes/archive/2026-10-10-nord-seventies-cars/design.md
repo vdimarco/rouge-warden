@@ -1,0 +1,47 @@
+# Seventies fleet design
+
+## Existing integration
+
+`AQuebecCar` in `games/nord-unreal/Source/Quebec/QuebecGameplay.cpp` retains its named visual parts and replicated paint/`BodyProfile`. `ApplyPaint` now selects the three `SM_Car70BodyN`, `SM_Car70CabinN` and `SM_Car70RoofN` assemblies plus shared tire/rim meshes. Body artwork incorporates the lamps, bumpers, mirrors and grille, so their older primitive parts are hidden. The prior hatchback artwork remains a fallback when the new body asset is absent. No second vehicle system was added.
+
+`Scripts/prepare_seventies_cars.py` writes original centimeter-scale OBJ geometry and its material/paint manifest under `Data/SeventiesCars`. `Scripts/build_seventies_cars.py` imports eleven meshes and their lit material family into `/Game/ParkComic` without saving a level or changing actors. Existing car profile assignment and dynamic cook-directory inclusion deliver the artwork to starter, parked, traffic and mission cars.
+
+The visual changes must reach the source geometry, corresponding Unreal assets/materials, runtime profile selection, cook inclusion and visual evidence. Any source validity checks that enumerate generated models must stay consistent. Existing handling/collision/replication checks remain the authority for gameplay regressions.
+
+## Form and materials
+
+- Coupe: lower two-door cabin, long horizontal hood and a clearly separate rear deck, with a strong shoulder line.
+- Sedan: upright four-door window rhythm, distinct hood/cabin/trunk volumes and a more formal roofline.
+- Wagon: extended long roof, rear cargo glazing and a near-vertical tailgate, visibly different from the coupe and sedan.
+
+Each profile needs coherent body, cabin, roof, pillars and trim; stretching the old hatchback cabin alone is insufficient. Keep visual overhangs close to the tested footprint and align the wheel arches with the existing wheel centers. Give the fronts a broad recessed grille, round headlamp lenses and substantial chrome bumper framing. Distinguish the rear lamps, trunk/tailgate seam, door seams/handles, mirrors and period-style steel-wheel/hubcap detail at ordinary gameplay distance. Details must not float, intersect the tires or hide the windows.
+
+Use restrained period-inspired colors, dark readable glazing, rubber tires and chrome with a clear lit value contrast. Preserve the established comic lighting and ink treatment. Readability comes from geometry and material separation rather than extreme gloss, tiny high-frequency decorations or new global rendering defaults. Dark opaque glass retains the existing exterior-only approach; detailed interiors are outside this art pass. These are original period-inspired vehicles, not exact makes/models or a historical reconstruction of today's Montréal traffic.
+
+## Gameplay and delivery boundaries
+
+Keep the collision extent `(220, 108, 100)`, tire centers, actor origin, population and saved placements unchanged. The smaller hubcaps move inward to Y ±106.5 to meet the new tire faces; tire/axle centers remain X ±155, Y ±95, Z -64. Visual meshes retain `NoCollision`; the root collision box remains authoritative. Preserve wheel spin/steering, paint/profile replication, E entry/exit, C crew selection while driving, W/S/A/D/Space driving, recovery, safe exits, traffic yielding and disconnect cleanup. No handling constants, campaign schemas or production save files change for this art pass.
+
+Do not edit the separate Plateau project's map/assets. Do not add car actors or change routes to demonstrate variety; use the existing profiles across starter/parked/traffic cars. Rebuild the existing Linux browser package only if needed to deliver the changed native artwork, using the owned streaming lifecycle and existing 12,000 MiB preflight. Preserve project quality defaults and the deployed static browser player; a frontend redeployment is unnecessary for a native art-only change.
+
+## Validation and current status
+
+Source geometry checks must cover finite nondegenerate triangles, valid material/UV references and profile bounds/wheel-arch alignment. Native checks must confirm all three profiles load with non-colliding visual parts and unchanged root/wheel transforms. Review actual lit comic renders of each profile from front, rear and side/three-quarter views at both supported resolutions, recording visible defects separately from capture completion. Include at least one on-street parked/traffic composition and a possessed driving view.
+
+Run the relevant existing handling, collision, occupancy/replication and package/browser media/input/reconnect checks after integration. Confirm existing campaign saves remain unchanged. Check current GPU processes before rendered work, coordinate other owned jobs and retain the launch guard; do not weaken quality or checks to obtain a pass. Record actual results and remaining limits before checking off acceptance.
+
+## Recorded implementation evidence
+
+- `Saved/Tests/SeventiesCarsImport.json` reports successful import with `level_or_actor_changes=false`.
+- The final `Scripts/test_seventies_cars.py` run passes with `NORD_CAR70_SOURCE_OK`: eleven meshes, three distinct silhouettes, wheel axis/radius, bounded body, materials and normals. Source checks include finite nondegenerate geometry and valid OBJ references.
+- `Saved/Tests/SeventiesCarsRender.json` passes nineteen views, restored editor settings and native entry/exit. All fifty-nine existing cars load their corresponding body profile (25 coupe, 19 sedan, 15 wagon), including sixteen traffic cars. All eleven visible parts per inspected profile use the new meshes with `NoCollision`, and all three retain the original root extent and tire centers.
+- Independent review of the eighteen front/rear/side profile views at both resolutions found readable distinct period silhouettes, aligned wheel arches and attached trim/lamps/mirrors. An initial window-header/frame gap was corrected before this accepted matrix. The shared front/rear styling and opaque illustrated tint remain deliberate limits of the original designs.
+- The nineteenth view shows the actual possessed coupe with readable chase-camera controls/HUD. Entry is fixture-assisted: temporary PIE moves the walking avatar to the existing interaction radius, invokes the ordinary `ServerInteract` entry and exit, and asserts possession. The shot is stationary at 000 KM/H and partly covered by the existing story caption; it establishes neither rendered wheel motion nor sustained driving feel. No source map is saved.
+- `Saved/Tests/SeventiesCarsDrivingFinal/index.json` records a repeat on the final compiled module: Success for all three existing driving tests, FrameRateConsistency, SteeringHandbrakeRecovery and ThrottleBrakeValidation, with zero errors/warnings.
+- The C++ diff is confined to `ApplyPaint`. Collision/driving constants, traffic routes, campaign/save logic and replicated properties are unchanged; the existing `BodyProfile` OnRep callback continues to call `ApplyPaint`. This source preservation is separate from fresh browser two-peer verification.
+- The existing Linux browser-package build passes in 45.21 seconds with AutomationTool exit 0. That same package is copied to `Builds/Linux` without deletion and with every `Saved*` directory excluded.
+- The ordinary browser lifecycle passes its unchanged guard with 13,944 MiB free. The public player passes all seven checks at 00:11:58–00:12:19 UTC on October 11 (October 10 locally): two independent 1280×720 VP8 streams with advancing media/audio counters, trusted input/Escape, occupied-slot refusal and two reconnect paths. Brief decoded samples range from 21.3 to 24.0 FPS. Six GPU readings across thirty seconds retain all three children with at least 2,719 MiB free; native logs show no Vulkan OOM/fatal/missing new car assets. Same-PC checks do not establish external-network reachability or audible sound.
+- `Saved/Tests/SeventiesCarsPreservation.json` passes complete map and save-file-set/hash comparison, including initially absent production saves and the existing isolated Mission 1 save. No fresh full campaign/save-reload, collision or multiplayer car-occupancy suite is claimed: those behaviors retain unchanged code, historical evidence and this pass's focused component/handling/entry-exit/browser checks.
+- The validated build/browser delivery is recorded in `games/nord-unreal/Verification/SeventiesCars.json` and its companion Markdown report. After the coordinated GPU windows, both tasks explicitly released their rendered jobs. The unchanged preflight passed at 00:32:18 UTC with 14,378 MiB observed free immediately before it. The normal demo was restored and a second public regression passed all seven checks at 00:32:30–00:32:52 UTC (20.6–24.0 decoded FPS samples). Eight readings over 35 seconds through 00:34:21 retained all three children with at least 2,957 MiB free. Demo and preserved Funnel remained active, native logs showed no OOM/fatal/missing-car-asset failure and final recursive map/save equality passed. The static Vercel frontend is not redeployed.
+
+The OpenSpec CLI is unavailable in this checkout; manual artifact structure checks do not claim CLI validation. Final bounded normal-lifecycle restoration results are recorded in the verification JSON and the completed checklist. No claim of off-LAN access, a detailed interior, exact manufacturer likeness, moving-wheel visual inspection or new subjective handling acceptance is made by this visual pass.

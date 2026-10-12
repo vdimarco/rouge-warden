@@ -1,0 +1,29 @@
+{
+  "status": "submitted",
+  "recipe": {
+    "endpoint_id": "meshy/v7.1/image-to-3d",
+    "input": {
+      "image_url": "https://v3b.fal.media/files/b/0aadc65f/TE_5l2ZFQ9cvIBXvExbE6_BlackCapNeutral.png",
+      "model_type": "standard",
+      "target_polycount": 30000,
+      "should_texture": true,
+      "enable_pbr": true,
+      "pose_mode": "a-pose",
+      "geometry_resolution": "2k",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.82,
+      "enable_animation": true,
+      "animation_action_id": 0,
+      "texture_prompt": "Painted comic-book character. Preserve the man's identity and outfit in the image. Calm natural resting face, gently closed lips, no visible teeth, relaxed cheeks and brows, attentive eyes. Upright head and natural anatomy. Forward black cap, blue rectangular eyeglasses, medium brown skin, full black beard, heavy-set mature build, black T-shirt, charcoal cargo shorts and dark trainers."
+    },
+    "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+  },
+  "request_id": "01a12427-4ca8-7282-a6e6-3159289962df",
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "status_url": "https://queue.fal.run/meshy/v7.1/requests/01a12427-4ca8-7282-a6e6-3159289962df/status",
+  "response_url": "https://queue.fal.run/meshy/v7.1/requests/01a12427-4ca8-7282-a6e6-3159289962df",
+  "cancel_url": "https://queue.fal.run/meshy/v7.1/requests/01a12427-4ca8-7282-a6e6-3159289962df/cancel",
+  "poll_after_seconds": 20,
+  "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+  "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes."
+}

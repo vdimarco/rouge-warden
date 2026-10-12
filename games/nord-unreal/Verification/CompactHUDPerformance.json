@@ -1,0 +1,134 @@
+{
+  "passed": true,
+  "hardware": {
+    "platform": "Linux",
+    "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "gpudriver": "610.57",
+    "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+    "shaderplatform": "VULKAN_SM6"
+  },
+  "settings": "Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+  "method": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends",
+  "limits": [
+    "static camera scenes",
+    "one GPU",
+    "not external multiplayer performance"
+  ],
+  "scenes": [
+    {
+      "scene": "Sherbrooke",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 21.75,
+      "median_ms": 8.96,
+      "p95_ms": 11.8,
+      "p99_ms": 13.24,
+      "average_fps": 110.3,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.48,
+      "csv": "Profile(20261011_014631).csv",
+      "screenshot": "Saved/Tests/CompactHUDDelivery/Performance/PerformanceSherbrooke1280.png",
+      "frame_budget_passed": true,
+      "screenshot_sha256": "9cedf7b18bc8b5b0e66ddd9f755781068294b28e7c8e66273575945ef058a37c"
+    },
+    {
+      "scene": "Pond",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 22.33,
+      "median_ms": 9.17,
+      "p95_ms": 12.1,
+      "p99_ms": 13.23,
+      "average_fps": 107.4,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.72,
+      "csv": "Profile(20261011_014706).csv",
+      "screenshot": "Saved/Tests/CompactHUDDelivery/Performance/PerformancePond1280.png",
+      "frame_budget_passed": true,
+      "screenshot_sha256": "71a28823f7defd1a9c8ea157cf36d51c97b7e9d2870b2ae1d9dc9d508e0fc475"
+    },
+    {
+      "scene": "NorthPark",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 21.29,
+      "median_ms": 8.76,
+      "p95_ms": 11.52,
+      "p99_ms": 12.89,
+      "average_fps": 112.6,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.33,
+      "csv": "Profile(20261011_014740).csv",
+      "screenshot": "Saved/Tests/CompactHUDDelivery/Performance/PerformanceNorthPark1280.png",
+      "frame_budget_passed": true,
+      "screenshot_sha256": "bcfc3ed0a8ec01588e9d92921c54b80b0fdd0148eeff249e1e324b030146864d"
+    },
+    {
+      "scene": "Sherbrooke",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 25.76,
+      "median_ms": 10.58,
+      "p95_ms": 13.62,
+      "p99_ms": 15.03,
+      "average_fps": 93.1,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.08,
+      "csv": "Profile(20261011_014814).csv",
+      "screenshot": "Saved/Tests/CompactHUDDelivery/Performance/PerformanceSherbrooke1920.png",
+      "frame_budget_passed": true,
+      "screenshot_sha256": "54087f384b7fdbd483774883743d6f051b75070ce74f3faea6eac487dffb4a1c"
+    },
+    {
+      "scene": "Pond",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 27.17,
+      "median_ms": 11.17,
+      "p95_ms": 14.19,
+      "p99_ms": 15.63,
+      "average_fps": 88.2,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.7,
+      "csv": "Profile(20261011_014852).csv",
+      "screenshot": "Saved/Tests/CompactHUDDelivery/Performance/PerformancePond1920.png",
+      "frame_budget_passed": true,
+      "screenshot_sha256": "f1c58be744a1627a4ea6c2e164ef9edd88d4f15948748bfd31156dd8e03bbbff"
+    },
+    {
+      "scene": "NorthPark",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 26.17,
+      "median_ms": 10.76,
+      "p95_ms": 13.54,
+      "p99_ms": 14.95,
+      "average_fps": 91.6,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.21,
+      "csv": "Profile(20261011_014933).csv",
+      "screenshot": "Saved/Tests/CompactHUDDelivery/Performance/PerformanceNorthPark1920.png",
+      "frame_budget_passed": true,
+      "screenshot_sha256": "602aff9485b2e7390d91ba8883119ecb0a0696c84d797e6e86e260fe4e9465a2"
+    }
+  ]
+}

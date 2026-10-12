@@ -1,0 +1,23 @@
+Binaries/
+Builds/
+DerivedDataCache/
+Intermediate/
+Saved/
+Saved_*/
+Preview/SeventiesCars/
+.vs/
+.idea/
+*.sln
+*.suo
+*.code-workspace
+__pycache__/
+
+# Rebuilt from the checked-in geographic snapshot.
+Data/LaFontaine/Geometry/
+Build/*/FileOpenOrder/
+
+# FBX importer extracts embedded textures locally.
+Data/CharactersMeshy/**/*.fbm/
+
+# PixelStreaming2 copies these UE server-download helpers during packaging.
+Samples/PixelStreaming2/WebServers/

@@ -1,0 +1,19 @@
+# Parc La Fontaine comic art and sources
+
+Prepared 2026-10-09. The saved scene contains 4,586 municipal inventory trees across the district (2,409 labelled LA FONTAINE), 566 mapped furniture points, 21 sports pitches, pond coping, theatre seating, three illustrated landmark buildings, eight additional driveable cars and 14 wandering residents. Shared hierarchical instances keep trees and furniture grouped rather than creating thousands of individual actors.
+
+Tree positions, species, trunk diameters and inventory dates: [Ville de Montréal — Arbres publics](https://www.donneesquebec.ca/recherche/dataset/vmtl-arbres), CC BY 4.0. The source download SHA256 is recorded in `layout.json`. Heights and crown dimensions are estimates derived from diameter; crowns are original broadleaf/umbrella/conifer forms and seasonal colours. The inventory can include older entries and is not a current photographic tree survey.
+
+Paths, ponds, pitches, furniture points and landmark footprints: the checked-in `Data/LaFontaine/osm.xml`, © OpenStreetMap contributors, ODbL 1.0. Residents follow short mapped path segments. Furniture shape, court equipment and monuments are original approximations. Espace La Fontaine and Centre Calixa-Lavallée follow mapped footprints with estimated 4.8 m and 7 m heights. Théâtre de Verdure uses its mapped stage/seating location with an estimated contemporary canopy. Reference pages: [Montréal park](https://montreal.ca/en/places/parc-la-fontaine), [Théâtre de Verdure architect](https://lemay.com/projects/theatre-de-verdure/), [chalet architect](https://www.ekmarchitecture.com/data-projects/1021-lafontaine-eng). Terrain, materials, façades, stairs and interiors are simplified; this is a geographic comic rendition rather than an exact Street View copy.
+
+## Cottage crew
+
+The user supplied the three original PNG references retained unchanged in `References/`. The eight distinctive clothing/hair/cap designs have separate 3D body, head, arm and leg meshes. Head meshes sample the supplied face illustrations using atlas UVs. These are stylized game models; the face patches are illustrated projections and do not constitute full sculpted likenesses. Temporary descriptive names avoid assigning the names printed on a poster to the wrong person. Red plungers and the lime character's white tube are attached to animated arms. Original bagel, raccoon and poutine residents remain alongside the crew.
+
+E talks to a nearby resident on foot when a car or current mission interaction does not take priority. Movement is server-authoritative, with replicated style and location; dialogue is sent only to the interacting client. Residents are decorative and have no combat or player selection controls.
+
+## Regenerate
+
+With the editor closed, run `Scripts/prepare_park_comic.py /path/to/arbres-publics.csv` using the geographic Python environment (`numpy`, `shapely`, `pyproj`, `mapbox-earcut`, `Pillow`). Run `Scripts/test_park_comic.py`. Build the editor C++ module, then run `Scripts/build_park_comic.py` through UnrealEditor-Cmd with `/Game/Maps/LaFontaine` loaded. It backs up the level and replaces only its own actor groups and the earlier placeholder trees/furniture. The municipal buildings remain untouched. The landmark footprints must first be excluded by `prepare_lafontaine.py`; the park importer refreshes the five generic building batches.
+
+Run `Scripts/brighten_comic_lights.py` and `Scripts/apply_comic_style.py` to restore the daylight lamp treatment and global ink filter. Run `Scripts/verify_park_comic.py`, `Scripts/verify_lafontaine.py`, `Scripts/smoke_test.py` and `Scripts/car_collision_test.py` through Unreal. `Scripts/capture_park_comic.py` captures actual rendered PIE views. `Config/DefaultGame.ini` includes dynamically loaded crew/car/comic materials in cooked builds.

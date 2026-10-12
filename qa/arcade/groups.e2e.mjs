@@ -58,8 +58,8 @@ for (const size of SIZES) {
 
   let s = await state(page);
   check(!(await page.isVisible(".gsw.scoreboard")), "Old arcade closes All Games and shows the hall");
-  check(s.groupsVisible === 5 && s.visible.length === 5, "hall shows exactly the five group cabinets: " + s.visible.join(", "));
-  check(JSON.stringify(s.visible) === JSON.stringify(["cottage", "action", "ascii", "strategy", "lab"]), "the groups stand in order: Cottage, Action, ASCII Scenes, Strategy, Lab");
+  check(s.groupsVisible === 6 && s.visible.length === 6, "hall shows exactly the six group cabinets: " + s.visible.join(", "));
+  check(JSON.stringify(s.visible) === JSON.stringify(["cottage", "action", "ascii", "strategy", "gta", "lab"]), "the groups stand in order: Cottage, Action, ASCII Scenes, Strategy, GTA, Lab");
   check(s.on === "cottage", "first group is selected");
   check(s.back === null, "no back control in the hall");
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, size.name + "-hall.png") });
@@ -89,7 +89,7 @@ for (const size of SIZES) {
   await page.keyboard.press("Escape");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 5 && s.on === "action" && s.hash === "", "Escape returns to the hall with Action selected");
+  check(s.visible.length === 6 && s.on === "action" && s.hash === "", "Escape returns to the hall with Action selected");
 
   // a click opens a group; the browser's back button returns to the hall
   await page.evaluate(() => document.querySelector('.cab[data-opens="strategy"]').click());
@@ -99,7 +99,7 @@ for (const size of SIZES) {
   await page.goBack();
   await settle(page);
   s = await state(page);
-  check(s.groupsVisible === 5 && s.on === "strategy" && page.url() === BASE, "browser back returns to the hall");
+  check(s.groupsVisible === 6 && s.on === "strategy" && page.url() === BASE, "browser back returns to the hall");
 
   // the sign's collection buttons open their group
   const nav = page.locator('.section-nav button[data-section="cottage"]');
@@ -120,13 +120,13 @@ for (const size of SIZES) {
   await page.click("#backBtn");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 5 && s.on === "action", "the back control returns to the hall with Action selected");
+  check(s.visible.length === 6 && s.on === "action", "the back control returns to the hall with Action selected");
   await page.keyboard.press("Enter");
   await settle(page);
   await page.keyboard.press("Backspace");
   await settle(page);
   s = await state(page);
-  check(s.visible.length === 5 && s.on === "action", "Backspace returns to the hall");
+  check(s.visible.length === 6 && s.on === "action", "Backspace returns to the hall");
 
   // play a game from a group, then come back to it
   await page.evaluate(() => { localStorage.setItem("arcade.tokens", "3"); sessionStorage.removeItem("arcade.last"); });

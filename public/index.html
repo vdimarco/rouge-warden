@@ -125,6 +125,7 @@ button { font: inherit; color: inherit; }
 .cab.ascii-front { --c1: #263d2c; --c2: #d2f584; --glow: #d2f58466; }
 .cab.last-light { --c1: #552a74; --c2: #ffcd62; --glow: rgba(255, 205, 98, 0.45); }
 .cab.river-rush { --c1: #083d31; --c2: #f9c65b; --glow: rgba(249, 198, 91, 0.45); }
+.cab.gta { --c1: #174b4a; --c2: #ffc65b; --glow: rgba(255, 198, 91, 0.45); }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: calc(var(--h) * 0.016); line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
 .cab.broken { --c1: #3a3448; --c2: #7a7090; --glow: rgba(120, 110, 150, 0.2); }
@@ -272,6 +273,7 @@ button { font: inherit; color: inherit; }
       <button type="button" data-section="cottage">COTTAGE</button>
       <button type="button" data-section="action">ACTION</button>
       <button type="button" data-section="strategy">STRATEGY</button>
+      <button type="button" data-section="gta">GTA</button>
       <a href="/lab/">LAB ↗</a>
       <button type="button" class="all-games" data-switch>ALL GAMES ▦</button>
     </nav>
@@ -344,6 +346,16 @@ button { font: inherit; color: inherit; }
         <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into In Full Swing"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
+      </article>
+      <article class="cab gta" data-game="gta" data-url="/gta/" aria-label="GTA Montréal: Park La Fontaine">
+      <div class="marquee"><div><b>GTA MONTRÉAL</b><small>PARK LA FONTAINE</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="/arcade/gta.svg" alt="A gold seventies car beside Montréal rowhouses and Park La Fontaine">
+      <div class="osd"><p class="hi">EXPLORE · DRIVE · SAVE THE PARK</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into GTA Montréal"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into GTA Montréal"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
       </article>
       <article class="cab olympus" data-game="olympus" data-url="/olympus/" aria-label="Olympus: Last Flame">
       <div class="marquee"><div><b>OLYMPUS</b><small>LAST FLAME</small></div></div>
@@ -707,6 +719,7 @@ const GROUPS = [
   { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
   { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "battle-tanks"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
+  { id: "gta", label: "GTA", games: ["gta"], c1: "#5a3410", c2: "#f2c14e", glow: "rgba(242, 193, 78, 0.5)", art: "arcade/gta.svg" },
   { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "last-light", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener"], c1: "#17414c", c2: "#f0b848", glow: "rgba(240, 184, 72, 0.5)", art: "arcade/lab.webp", art2: "arcade/worlds.webp" },
 ];
 const games = $$(".cab");

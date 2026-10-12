@@ -1,0 +1,2773 @@
+{
+  "passed": true,
+  "mode": "two-player listen-server PIE; native input callbacks",
+  "checks": [
+    "fresh two-player campaign in isolated save slot",
+    "out-of-range E cannot advance opening",
+    "fixture approaches future table clamp",
+    "future clamp E cannot skip worklight",
+    "fixture places loan car beside worklight",
+    "E enters nearby car before tool action",
+    "vehicle E exits without operating worklight",
+    "restore loan car after interaction priority fixture",
+    "approach worklight with deliberately wrong aim",
+    "native E acquires worklight without completing aim",
+    "C changes only owning appearance while tool remains usable",
+    "F2 standard view is private and preserves worklight",
+    "F2 restores comic view with tool preserved",
+    "distant host R preserves client worklight ownership and opening phase",
+    "delay host ownership replication and release worklight on both peers",
+    "authority keeps native aim alive before delayed ownership reaches client",
+    "restore host packet lag and observe replicated light ownership",
+    "native control rotation holds aligned worklight on authority",
+    "unfinished M1 does not write completed mission",
+    "stop unfinished M1 session",
+    "actual reload discards unfinished M1 phase",
+    "client approaches worklight before active-owner departure",
+    "client acquires worklight before disconnect",
+    "active light owner departure releases shared tool",
+    "remaining host acquires shared worklight",
+    "remaining host actually advances opening while peer is absent",
+    "client late-joins new shared opening phase",
+    "return host helper to surveyed spawn clear of later car approach",
+    "approach clamp before doing sprint and jump",
+    "E cannot replace required sprint and airborne cable crossing",
+    "fixture starts before blocking cable",
+    "native sprint builds actual authority velocity",
+    "native jump crosses blocking cable while airborne",
+    "native jumper lands safely",
+    "approach exposed first clamp",
+    "observe safe interior of closed clamp beat",
+    "closed-beat E cannot pull clamp",
+    "observe safe interior of green clamp beat",
+    "green-beat native plunger action advances first latch",
+    "select and approach car-light loaner",
+    "inspect light-car prompt beside active briefing before E",
+    "client enters car for second beam",
+    "fixture parks car backwards in light bay",
+    "arrange clear bay approach without advancing mission",
+    "native throttle physically approaches light bay",
+    "native brake and stable aligned car unlock table release",
+    "vehicle E exits without pulling distant table clamp",
+    "approach table clamp after car exit",
+    "fixture turns parked car away from table",
+    "table E rejects invalid parked beam",
+    "restore physical parked beam direction",
+    "wait for green table release beat",
+    "native final clamp rescues guests and writes actual save1",
+    "select and approach race loaner",
+    "native E enters race loaner",
+    "place race car before actual start plane",
+    "native driving crosses start and begins timed race",
+    "stop race car before retry check",
+    "native R restores banked start without erasing M1",
+    "unfinished race retains actual save1",
+    "stop unfinished race session",
+    "actual reload returns unfinished race to ready boundary1",
+    "select and approach fresh race loaner",
+    "client enters race after boundary reload",
+    "restore actual start approach after reload",
+    "drive through start after boundary reload",
+    "brake before future-gate rejection fixture",
+    "arrange future gate3 while gate1 is required",
+    "driving through a future gate cannot skip ordered gate1",
+    "brake after rejected future gate",
+    "arrange native approach to ordered gate1",
+    "native drive crosses required gate1",
+    "brake after ordered gate1",
+    "arrange native approach to ordered gate2",
+    "native drive crosses required gate2",
+    "brake after ordered gate2",
+    "arrange native approach to ordered gate3",
+    "native drive crosses required gate3",
+    "brake after ordered gate3",
+    "arrange native approach to ordered gate4",
+    "native drive crosses required gate4",
+    "brake after ordered gate4",
+    "arrange native approach to ordered gate5",
+    "native drive crosses required gate5",
+    "brake after ordered gate5",
+    "arrange native approach to ordered gate6",
+    "native drive crosses required gate6",
+    "brake after ordered gate6",
+    "second mission writes actual completed save2",
+    "client departs completed shared slice",
+    "late join receives both banked missions and final gate",
+    "stop completed slice session",
+    "actual reload restores both completed missions",
+    "ordinary E cannot increment completed campaign",
+    "native T offers race replay while preserving saved2",
+    "stop replay session before unsupported-save fixture",
+    "seed native-format future Version2 isolated save",
+    "future save reload opens fresh session with replicated warning",
+    "future-save / approach worklight with deliberately wrong aim",
+    "future-save / native E acquires worklight without completing aim",
+    "future-save / native control rotation holds aligned worklight on authority",
+    "future-save / fixture starts before blocking cable",
+    "future-save / native sprint builds actual authority velocity",
+    "future-save / native jump crosses blocking cable while airborne",
+    "future-save / native jumper lands safely",
+    "future-save / approach exposed first clamp",
+    "future-save / observe safe interior of green clamp beat",
+    "future-save / green-beat native plunger action advances first latch",
+    "future-save / select and approach car-light loaner",
+    "future-save / client enters car for second beam",
+    "future-save / arrange clear bay approach without advancing mission",
+    "future-save / native throttle physically approaches light bay",
+    "future-save / native brake and stable aligned car unlock table release",
+    "future-save / vehicle E exits without pulling distant table clamp",
+    "future-save / approach table clamp after car exit",
+    "future-save / wait for green table release beat",
+    "future-save / native final clamp completes M1 but preserves future save",
+    "future save remains byte-identical after attempted M1 boundary write"
+  ],
+  "trace": [
+    {
+      "step": "fresh two-player campaign in isolated save slot",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 2.7846
+    },
+    {
+      "step": "out-of-range E cannot advance opening",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 2.7847,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "out-of-range E cannot advance opening",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 3.1363
+    },
+    {
+      "step": "fixture approaches future table clamp",
+      "session": 1,
+      "kind": "fixture_relocation",
+      "wall_seconds": 3.1364,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        39113.0165,
+        -7522.8152,
+        98.15
+      ],
+      "target_cm": [
+        5395.0,
+        3520.0,
+        130.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "fixture approaches future table clamp",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 3.4955
+    },
+    {
+      "step": "future clamp E cannot skip worklight",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 3.4955,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "future clamp E cannot skip worklight",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 3.8503
+    },
+    {
+      "step": "fixture places loan car beside worklight",
+      "session": 1,
+      "kind": "select_campaign_car",
+      "wall_seconds": 3.8504,
+      "property": "LightCar",
+      "server_actor": "QuebecCar_9",
+      "client_actor": "QuebecCar_36",
+      "identity": "replicated campaign object reference"
+    },
+    {
+      "step": "fixture places loan car beside worklight",
+      "session": 1,
+      "kind": "fixture_relocation",
+      "wall_seconds": 3.8504,
+      "actor": "QuebecCar_9",
+      "before_cm": [
+        5550.0,
+        1700.0,
+        100.0007
+      ],
+      "target_cm": [
+        5550.0,
+        2360.0,
+        102.0
+      ],
+      "yaw": 90
+    },
+    {
+      "step": "fixture places loan car beside worklight",
+      "session": 1,
+      "kind": "fixture_relocation",
+      "wall_seconds": 3.8511,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        5395.0,
+        3520.0,
+        98.15
+      ],
+      "target_cm": [
+        5365.0,
+        2360.0,
+        102.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "fixture places loan car beside worklight",
+      "session": 1,
+      "kind": "priority_fixture_clearance",
+      "wall_seconds": 3.8512,
+      "character_to_car_cm": 185.0,
+      "character_to_worklight_cm": 210.64,
+      "capsule_clear": true
+    },
+    {
+      "step": "fixture places loan car beside worklight",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 4.207
+    },
+    {
+      "step": "E enters nearby car before tool action",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 4.207,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "E enters nearby car before tool action",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 4.5597
+    },
+    {
+      "step": "vehicle E exits without operating worklight",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 4.5598,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "vehicle E exits without operating worklight",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 4.9129
+    },
+    {
+      "step": "restore loan car after interaction priority fixture",
+      "session": 1,
+      "kind": "fixture_relocation",
+      "wall_seconds": 4.913,
+      "actor": "QuebecCar_9",
+      "before_cm": [
+        5550.0,
+        2360.0,
+        100.0174
+      ],
+      "target_cm": [
+        5550.0,
+        1700.0,
+        100.0007
+      ],
+      "yaw": 89.99999999999999
+    },
+    {
+      "step": "restore loan car after interaction priority fixture",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 5.2675
+    },
+    {
+      "step": "approach worklight with deliberately wrong aim",
+      "session": 1,
+      "kind": "fixture_relocation",
+      "wall_seconds": 5.2676,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        5340.0,
+        2360.0,
+        98.15
+      ],
+      "target_cm": [
+        5710.0,
+        2390.0,
+        110.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "approach worklight with deliberately wrong aim",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 5.6259
+    },
+    {
+      "step": "native E acquires worklight without completing aim",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 5.6259,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "native E acquires worklight without completing aim",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 5.985
+    },
+    {
+      "step": "C changes only owning appearance while tool remains usable",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 5.985,
+      "actor": "QuebecController_0",
+      "method": "NextCharacter"
+    },
+    {
+      "step": "C changes only owning appearance while tool remains usable",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 6.3357
+    },
+    {
+      "step": "F2 standard view is private and preserves worklight",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 6.3357,
+      "actor": "QuebecController_0",
+      "method": "ToggleComicStyle"
+    },
+    {
+      "step": "F2 standard view is private and preserves worklight",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 6.6922
+    },
+    {
+      "step": "F2 restores comic view with tool preserved",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 6.6922,
+      "actor": "QuebecController_0",
+      "method": "ToggleComicStyle"
+    },
+    {
+      "step": "F2 restores comic view with tool preserved",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 7.0459
+    },
+    {
+      "step": "distant host R preserves client worklight ownership and opening phase",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 7.046,
+      "actor": "QuebecController_0",
+      "method": "RetryCampaign"
+    },
+    {
+      "step": "distant host R preserves client worklight ownership and opening phase",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 7.4025
+    },
+    {
+      "step": "delay host ownership replication and release worklight on both peers",
+      "session": 1,
+      "kind": "network_emulation_override",
+      "wall_seconds": 7.4026,
+      "peer": "host",
+      "outgoing_lag_ms": 900,
+      "purpose": "delayed ownership replication; client outgoing lag stays at baseline"
+    },
+    {
+      "step": "delay host ownership replication and release worklight on both peers",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 7.4026,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "delay host ownership replication and release worklight on both peers",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 8.3217
+    },
+    {
+      "step": "authority keeps native aim alive before delayed ownership reaches client",
+      "session": 1,
+      "kind": "native_input_callback",
+      "wall_seconds": 8.3218,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "authority keeps native aim alive before delayed ownership reaches client",
+      "session": 1,
+      "kind": "delayed_ownership_authority_acquired",
+      "wall_seconds": 8.3448,
+      "state": {
+        "phase": 0,
+        "completed_missions": 0,
+        "race_gate": 0,
+        "race_elapsed": 0.0,
+        "race_retried": false,
+        "light_operator": "PlayerState_1",
+        "light_yaw": 65.0006,
+        "light_pitch": 0.0,
+        "light_alignment": 0.0,
+        "light_hold_progress": 0.0
+      }
+    },
+    {
+      "step": "authority keeps native aim alive before delayed ownership reaches client",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 8.9984
+    },
+    {
+      "step": "restore host packet lag and observe replicated light ownership",
+      "session": 1,
+      "kind": "network_emulation_override_restored",
+      "wall_seconds": 8.9985,
+      "peer": "host",
+      "outgoing_lag_ms": 0
+    },
+    {
+      "step": "restore host packet lag and observe replicated light ownership",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 9.3523
+    },
+    {
+      "step": "native control rotation holds aligned worklight on authority",
+      "session": 1,
+      "kind": "native_aim_control_rotation",
+      "wall_seconds": 9.3523,
+      "yaw": 90.0,
+      "pitch": 2.827124578161273
+    },
+    {
+      "step": "native control rotation holds aligned worklight on authority",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 10.5648
+    },
+    {
+      "step": "unfinished M1 does not write completed mission",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 10.9191
+    },
+    {
+      "step": "stop unfinished M1 session",
+      "session": 1,
+      "kind": "check_passed",
+      "wall_seconds": 11.2732
+    },
+    {
+      "step": "actual reload discards unfinished M1 phase",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 12.3284
+    },
+    {
+      "step": "client approaches worklight before active-owner departure",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 12.3285,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        38633.0165,
+        -7522.8152,
+        98.15
+      ],
+      "target_cm": [
+        5710.0,
+        2390.0,
+        110.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "client approaches worklight before active-owner departure",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 12.6765
+    },
+    {
+      "step": "client acquires worklight before disconnect",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 12.6765,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "client acquires worklight before disconnect",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 13.0344
+    },
+    {
+      "step": "active light owner departure releases shared tool",
+      "session": 2,
+      "kind": "network_disconnect",
+      "wall_seconds": 13.0345
+    },
+    {
+      "step": "active light owner departure releases shared tool",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 13.5629
+    },
+    {
+      "step": "remaining host acquires shared worklight",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 13.563,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        38793.0165,
+        -7522.8152,
+        116.15
+      ],
+      "target_cm": [
+        5710.0,
+        2390.0,
+        110.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "remaining host acquires shared worklight",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 13.5631,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "remaining host acquires shared worklight",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 13.9198
+    },
+    {
+      "step": "remaining host actually advances opening while peer is absent",
+      "session": 2,
+      "kind": "native_aim_control_rotation",
+      "wall_seconds": 13.9199,
+      "yaw": 90.0,
+      "pitch": 2.827124578161273
+    },
+    {
+      "step": "remaining host actually advances opening while peer is absent",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 15.1473
+    },
+    {
+      "step": "client late-joins new shared opening phase",
+      "session": 2,
+      "kind": "network_reconnect",
+      "wall_seconds": 15.1474,
+      "endpoint": "127.0.0.1:17777"
+    },
+    {
+      "step": "client late-joins new shared opening phase",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 15.8681
+    },
+    {
+      "step": "return host helper to surveyed spawn clear of later car approach",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 15.8682,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        5710.0,
+        2390.0,
+        98.15
+      ],
+      "target_cm": [
+        38793.0165,
+        -7522.8152,
+        120.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "return host helper to surveyed spawn clear of later car approach",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 16.2235
+    },
+    {
+      "step": "approach clamp before doing sprint and jump",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 16.2236,
+      "actor": "QuebecCharacter_2",
+      "before_cm": [
+        39113.0165,
+        -7522.8152,
+        98.15
+      ],
+      "target_cm": [
+        5395.0,
+        3270.0,
+        130.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "approach clamp before doing sprint and jump",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 16.5815
+    },
+    {
+      "step": "E cannot replace required sprint and airborne cable crossing",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 16.5815,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "E cannot replace required sprint and airborne cable crossing",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 16.9315
+    },
+    {
+      "step": "fixture starts before blocking cable",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 16.9316,
+      "actor": "QuebecCharacter_2",
+      "before_cm": [
+        5395.0,
+        3270.0,
+        98.15
+      ],
+      "target_cm": [
+        5550.0,
+        2420.0,
+        110.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "fixture starts before blocking cable",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 17.2912
+    },
+    {
+      "step": "native sprint builds actual authority velocity",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 17.2912,
+      "actor": "QuebecCharacter_0",
+      "method": "StartSprint"
+    },
+    {
+      "step": "native sprint builds actual authority velocity",
+      "session": 2,
+      "kind": "native_foot_movement_window",
+      "wall_seconds": 17.2912,
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        5550.0,
+        2420.0,
+        98.15
+      ]
+    },
+    {
+      "step": "native sprint builds actual authority velocity",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 17.5956
+    },
+    {
+      "step": "native jump crosses blocking cable while airborne",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 17.5956,
+      "actor": "QuebecCharacter_0",
+      "method": "Jump"
+    },
+    {
+      "step": "native jump crosses blocking cable while airborne",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 18.0457,
+      "actor": "QuebecCharacter_0",
+      "method": "StopSprint"
+    },
+    {
+      "step": "native jump crosses blocking cable while airborne",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 18.0458,
+      "actor": "QuebecCharacter_0",
+      "method": "StopJumping"
+    },
+    {
+      "step": "native jump crosses blocking cable while airborne",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 18.0458
+    },
+    {
+      "step": "native jumper lands safely",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 18.8493
+    },
+    {
+      "step": "approach exposed first clamp",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 18.8494,
+      "actor": "QuebecCharacter_2",
+      "before_cm": [
+        5550.0,
+        3483.1748,
+        98.15
+      ],
+      "target_cm": [
+        5395.0,
+        3270.0,
+        130.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "approach exposed first clamp",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 19.2002
+    },
+    {
+      "step": "observe safe interior of closed clamp beat",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 20.3972
+    },
+    {
+      "step": "closed-beat E cannot pull clamp",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 20.3972,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "closed-beat E cannot pull clamp",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 20.7453
+    },
+    {
+      "step": "observe safe interior of green clamp beat",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 23.4795
+    },
+    {
+      "step": "green-beat native plunger action advances first latch",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 23.4795,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "green-beat native plunger action advances first latch",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 23.6315
+    },
+    {
+      "step": "select and approach car-light loaner",
+      "session": 2,
+      "kind": "select_campaign_car",
+      "wall_seconds": 23.6315,
+      "property": "LightCar",
+      "server_actor": "QuebecCar_9",
+      "client_actor": "QuebecCar_36",
+      "identity": "replicated campaign object reference"
+    },
+    {
+      "step": "select and approach car-light loaner",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 23.6321,
+      "actor": "QuebecCharacter_2",
+      "before_cm": [
+        5395.0,
+        3270.0,
+        98.15
+      ],
+      "target_cm": [
+        5365.0,
+        1700.0,
+        100.0003
+      ],
+      "yaw": null
+    },
+    {
+      "step": "select and approach car-light loaner",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 23.9923
+    },
+    {
+      "step": "inspect light-car prompt beside active briefing before E",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 24.3471
+    },
+    {
+      "step": "client enters car for second beam",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 24.3471,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "client enters car for second beam",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 24.6991
+    },
+    {
+      "step": "fixture parks car backwards in light bay",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 24.6992,
+      "actor": "QuebecCar_9",
+      "before_cm": [
+        5550.0,
+        1700.0,
+        100.0003
+      ],
+      "target_cm": [
+        5700.0,
+        2200.0,
+        102.0
+      ],
+      "yaw": 276.4830736928972
+    },
+    {
+      "step": "fixture parks car backwards in light bay",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 26.003
+    },
+    {
+      "step": "arrange clear bay approach without advancing mission",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 26.003,
+      "actor": "QuebecCar_9",
+      "before_cm": [
+        5700.0,
+        2200.0,
+        100.0027
+      ],
+      "target_cm": [
+        5773.3913,
+        1554.1566,
+        102.0
+      ],
+      "yaw": 96.48307369289724
+    },
+    {
+      "step": "arrange clear bay approach without advancing mission",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 26.3542
+    },
+    {
+      "step": "native throttle physically approaches light bay",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 26.3543,
+      "actor": "QuebecCar_36",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native throttle physically approaches light bay",
+      "session": 2,
+      "kind": "native_drive_window",
+      "wall_seconds": 26.3543,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        5773.3913,
+        1554.1566,
+        100.0263
+      ]
+    },
+    {
+      "step": "native throttle physically approaches light bay",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 27.0829,
+      "actor": "QuebecCar_36",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native throttle physically approaches light bay",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 27.083
+    },
+    {
+      "step": "native brake and stable aligned car unlock table release",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 28.3047
+    },
+    {
+      "step": "vehicle E exits without pulling distant table clamp",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 28.3048,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "vehicle E exits without pulling distant table clamp",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 28.6448
+    },
+    {
+      "step": "approach table clamp after car exit",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 28.6449,
+      "actor": "QuebecCharacter_2",
+      "before_cm": [
+        5503.367,
+        2070.4768,
+        98.15
+      ],
+      "target_cm": [
+        5395.0,
+        3520.0,
+        130.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "approach table clamp after car exit",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 29.0096
+    },
+    {
+      "step": "fixture turns parked car away from table",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 29.0097,
+      "actor": "QuebecCar_9",
+      "before_cm": [
+        5712.0241,
+        2094.1878,
+        100.009
+      ],
+      "target_cm": [
+        5712.0241,
+        2094.1878,
+        100.009
+      ],
+      "yaw": 276.4830736928972
+    },
+    {
+      "step": "fixture turns parked car away from table",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 29.3551
+    },
+    {
+      "step": "table E rejects invalid parked beam",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 29.3552,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "table E rejects invalid parked beam",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 29.7118
+    },
+    {
+      "step": "restore physical parked beam direction",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 29.7119,
+      "actor": "QuebecCar_9",
+      "before_cm": [
+        5712.0241,
+        2094.1878,
+        100.0057
+      ],
+      "target_cm": [
+        5712.0241,
+        2094.1878,
+        100.0057
+      ],
+      "yaw": 96.48307369289724
+    },
+    {
+      "step": "restore physical parked beam direction",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 30.0725
+    },
+    {
+      "step": "wait for green table release beat",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 35.4833
+    },
+    {
+      "step": "native final clamp rescues guests and writes actual save1",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 35.4834,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "native final clamp rescues guests and writes actual save1",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 35.84
+    },
+    {
+      "step": "select and approach race loaner",
+      "session": 2,
+      "kind": "select_campaign_car",
+      "wall_seconds": 35.84,
+      "property": "LoanCar",
+      "server_actor": "QuebecCar_10",
+      "client_actor": "QuebecCar_35",
+      "identity": "replicated campaign object reference"
+    },
+    {
+      "step": "select and approach race loaner",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 35.8407,
+      "actor": "QuebecCharacter_2",
+      "before_cm": [
+        5395.0,
+        3520.0,
+        98.15
+      ],
+      "target_cm": [
+        35144.1596,
+        -20480.8132,
+        100.0003
+      ],
+      "yaw": null
+    },
+    {
+      "step": "select and approach race loaner",
+      "session": 2,
+      "kind": "refresh_campaign_car_replica",
+      "wall_seconds": 36.7096,
+      "property": "LoanCar",
+      "client_actor": "QuebecCar_40",
+      "identity": "current replicated campaign object reference"
+    },
+    {
+      "step": "select and approach race loaner",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 36.7096
+    },
+    {
+      "step": "native E enters race loaner",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 36.7096,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "native E enters race loaner",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 37.0552
+    },
+    {
+      "step": "place race car before actual start plane",
+      "session": 2,
+      "kind": "fixture_relocation",
+      "wall_seconds": 37.0553,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        34995.7478,
+        -20370.3645,
+        100.0003
+      ],
+      "target_cm": [
+        34995.7478,
+        -20370.3645,
+        102.0
+      ],
+      "yaw": -126.65677331735974
+    },
+    {
+      "step": "place race car before actual start plane",
+      "session": 2,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 37.0555,
+      "gate": 0,
+      "point_cm": [
+        34491.3619,
+        -20805.2437,
+        102.0
+      ],
+      "direction": [
+        -0.597,
+        -0.8022,
+        0.0
+      ]
+    },
+    {
+      "step": "place race car before actual start plane",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 37.4058
+    },
+    {
+      "step": "native driving crosses start and begins timed race",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 37.4058,
+      "actor": "QuebecCar_40",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native driving crosses start and begins timed race",
+      "session": 2,
+      "kind": "native_drive_window",
+      "wall_seconds": 37.4059,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        34995.7478,
+        -20370.3645,
+        100.0119
+      ]
+    },
+    {
+      "step": "native driving crosses start and begins timed race",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 38.4419,
+      "actor": "QuebecCar_40",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native driving crosses start and begins timed race",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 38.4419
+    },
+    {
+      "step": "stop race car before retry check",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 39.0764
+    },
+    {
+      "step": "native R restores banked start without erasing M1",
+      "session": 2,
+      "kind": "native_input_callback",
+      "wall_seconds": 39.0765,
+      "actor": "QuebecController_0",
+      "method": "RetryCampaign"
+    },
+    {
+      "step": "native R restores banked start without erasing M1",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 39.4226
+    },
+    {
+      "step": "unfinished race retains actual save1",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 39.7799
+    },
+    {
+      "step": "stop unfinished race session",
+      "session": 2,
+      "kind": "check_passed",
+      "wall_seconds": 40.1364
+    },
+    {
+      "step": "actual reload returns unfinished race to ready boundary1",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 41.1786
+    },
+    {
+      "step": "select and approach fresh race loaner",
+      "session": 3,
+      "kind": "select_campaign_car",
+      "wall_seconds": 41.1786,
+      "property": "LoanCar",
+      "server_actor": "QuebecCar_10",
+      "client_actor": "QuebecCar_35",
+      "identity": "replicated campaign object reference"
+    },
+    {
+      "step": "select and approach fresh race loaner",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 41.1802,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        38953.0165,
+        -7522.8152,
+        98.15
+      ],
+      "target_cm": [
+        35144.1596,
+        -20480.8132,
+        100.0113
+      ],
+      "yaw": null
+    },
+    {
+      "step": "select and approach fresh race loaner",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 41.5273
+    },
+    {
+      "step": "client enters race after boundary reload",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 41.5273,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "client enters race after boundary reload",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 41.8812
+    },
+    {
+      "step": "restore actual start approach after reload",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 41.8812,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        34995.7478,
+        -20370.3645,
+        100.0045
+      ],
+      "target_cm": [
+        34995.7478,
+        -20370.3645,
+        102.0
+      ],
+      "yaw": -126.65677331735974
+    },
+    {
+      "step": "restore actual start approach after reload",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 41.8814,
+      "gate": 0,
+      "point_cm": [
+        34491.3619,
+        -20805.2437,
+        102.0
+      ],
+      "direction": [
+        -0.597,
+        -0.8022,
+        0.0
+      ]
+    },
+    {
+      "step": "restore actual start approach after reload",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 42.2386
+    },
+    {
+      "step": "drive through start after boundary reload",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 42.2387,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "drive through start after boundary reload",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 42.2387,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        34995.7478,
+        -20370.3645,
+        100.0301
+      ]
+    },
+    {
+      "step": "drive through start after boundary reload",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 43.3027,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "drive through start after boundary reload",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 43.3028
+    },
+    {
+      "step": "brake before future-gate rejection fixture",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 43.9692
+    },
+    {
+      "step": "arrange future gate3 while gate1 is required",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 43.9694,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        34280.5058,
+        -21331.4476,
+        100.0281
+      ],
+      "target_cm": [
+        30722.7313,
+        -27044.7779,
+        102.0
+      ],
+      "yaw": 41.61330053971107
+    },
+    {
+      "step": "arrange future gate3 while gate1 is required",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 43.9696,
+      "gate": 3,
+      "point_cm": [
+        31304.9943,
+        -26721.5214,
+        102.0
+      ],
+      "direction": [
+        0.7476,
+        0.6641,
+        0.0
+      ]
+    },
+    {
+      "step": "arrange future gate3 while gate1 is required",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 44.3178
+    },
+    {
+      "step": "driving through a future gate cannot skip ordered gate1",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 44.3179,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "driving through a future gate cannot skip ordered gate1",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 44.3179,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        30722.7313,
+        -27044.7779,
+        100.0079
+      ]
+    },
+    {
+      "step": "driving through a future gate cannot skip ordered gate1",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 45.4046,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "driving through a future gate cannot skip ordered gate1",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 45.4046
+    },
+    {
+      "step": "brake after rejected future gate",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 46.0724
+    },
+    {
+      "step": "arrange native approach to ordered gate1",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 46.0725,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        31656.6651,
+        -26215.2049,
+        100.0066
+      ],
+      "target_cm": [
+        33015.9433,
+        -23005.1959,
+        102.0
+      ],
+      "yaw": -124.8696329003597
+    },
+    {
+      "step": "arrange native approach to ordered gate1",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 46.0726,
+      "gate": 1,
+      "point_cm": [
+        32525.3651,
+        -23455.5935,
+        102.0
+      ],
+      "direction": [
+        -0.5717,
+        -0.8205,
+        0.0
+      ]
+    },
+    {
+      "step": "arrange native approach to ordered gate1",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 46.4266
+    },
+    {
+      "step": "native drive crosses required gate1",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 46.4267,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate1",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 46.4267,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        33015.9433,
+        -23005.1959,
+        100.0472
+      ]
+    },
+    {
+      "step": "native drive crosses required gate1",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 47.458,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate1",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 47.458
+    },
+    {
+      "step": "brake after ordered gate1",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 48.0876
+    },
+    {
+      "step": "arrange native approach to ordered gate2",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 48.0877,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        32372.6071,
+        -23928.439,
+        100.0472
+      ],
+      "target_cm": [
+        30776.6326,
+        -26629.1356,
+        102.0
+      ],
+      "yaw": -114.01654770480091
+    },
+    {
+      "step": "arrange native approach to ordered gate2",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 48.0878,
+      "gate": 2,
+      "point_cm": [
+        30379.6352,
+        -27163.8487,
+        102.0
+      ],
+      "direction": [
+        -0.407,
+        -0.9134,
+        0.0
+      ]
+    },
+    {
+      "step": "arrange native approach to ordered gate2",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 48.4443
+    },
+    {
+      "step": "native drive crosses required gate2",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 48.4443,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate2",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 48.4443,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        30776.6326,
+        -26629.1356,
+        100.0325
+      ]
+    },
+    {
+      "step": "native drive crosses required gate2",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 49.5023,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate2",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 49.5023
+    },
+    {
+      "step": "brake after ordered gate2",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 50.1382
+    },
+    {
+      "step": "arrange native approach to ordered gate3",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 50.1383,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        30306.1663,
+        -27684.9993,
+        100.0325
+      ],
+      "target_cm": [
+        30722.7313,
+        -27044.7779,
+        102.0
+      ],
+      "yaw": 41.61330053971107
+    },
+    {
+      "step": "arrange native approach to ordered gate3",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 50.1385,
+      "gate": 3,
+      "point_cm": [
+        31304.9943,
+        -26721.5214,
+        102.0
+      ],
+      "direction": [
+        0.7476,
+        0.6641,
+        0.0
+      ]
+    },
+    {
+      "step": "arrange native approach to ordered gate3",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 50.4936
+    },
+    {
+      "step": "native drive crosses required gate3",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 50.4937,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate3",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 50.4937,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        30722.7313,
+        -27044.7779,
+        100.0324
+      ]
+    },
+    {
+      "step": "native drive crosses required gate3",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 51.5537,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate3",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 51.5537
+    },
+    {
+      "step": "brake after ordered gate3",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 52.2089
+    },
+    {
+      "step": "arrange native approach to ordered gate4",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 52.209,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        31609.2447,
+        -26257.3264,
+        100.0304
+      ],
+      "target_cm": [
+        33889.2599,
+        -26933.3107,
+        102.0
+      ],
+      "yaw": 84.49949972591575
+    },
+    {
+      "step": "arrange native approach to ordered gate4",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 52.2091,
+      "gate": 4,
+      "point_cm": [
+        34095.8976,
+        -26300.2026,
+        102.0
+      ],
+      "direction": [
+        0.0959,
+        0.9954,
+        0.0
+      ]
+    },
+    {
+      "step": "arrange native approach to ordered gate4",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 52.5628
+    },
+    {
+      "step": "native drive crosses required gate4",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 52.5629,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate4",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 52.5629,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        33889.2599,
+        -26933.3107,
+        100.0321
+      ]
+    },
+    {
+      "step": "native drive crosses required gate4",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 53.6043,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate4",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 53.6043
+    },
+    {
+      "step": "brake after ordered gate4",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 54.2344
+    },
+    {
+      "step": "arrange native approach to ordered gate5",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 54.2346,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        33997.2643,
+        -25811.745,
+        100.0321
+      ],
+      "target_cm": [
+        34229.1151,
+        -23239.9088,
+        102.0
+      ],
+      "yaw": 82.17092103109425
+    },
+    {
+      "step": "arrange native approach to ordered gate5",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 54.2347,
+      "gate": 5,
+      "point_cm": [
+        34317.657,
+        -22595.9676,
+        102.0
+      ],
+      "direction": [
+        0.1362,
+        0.9907,
+        0.0
+      ]
+    },
+    {
+      "step": "arrange native approach to ordered gate5",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 54.5889
+    },
+    {
+      "step": "native drive crosses required gate5",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 54.589,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate5",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 54.589,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        34229.1151,
+        -23239.9088,
+        100.0325
+      ]
+    },
+    {
+      "step": "native drive crosses required gate5",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 55.6659,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate5",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 55.6659
+    },
+    {
+      "step": "brake after ordered gate5",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 56.3358
+    },
+    {
+      "step": "arrange native approach to ordered gate6",
+      "session": 3,
+      "kind": "fixture_relocation",
+      "wall_seconds": 56.336,
+      "actor": "QuebecCar_10",
+      "before_cm": [
+        34395.69,
+        -22028.4553,
+        100.02
+      ],
+      "target_cm": [
+        34995.7478,
+        -20370.3645,
+        102.0
+      ],
+      "yaw": -126.65677331735974
+    },
+    {
+      "step": "arrange native approach to ordered gate6",
+      "session": 3,
+      "kind": "race_gate_fixture",
+      "wall_seconds": 56.3362,
+      "gate": 6,
+      "point_cm": [
+        34491.3619,
+        -20805.2437,
+        102.0
+      ],
+      "direction": [
+        -0.597,
+        -0.8022,
+        0.0
+      ]
+    },
+    {
+      "step": "arrange native approach to ordered gate6",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 56.6855
+    },
+    {
+      "step": "native drive crosses required gate6",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 56.6856,
+      "actor": "QuebecCar_35",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate6",
+      "session": 3,
+      "kind": "native_drive_window",
+      "wall_seconds": 56.6857,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        34995.7478,
+        -20370.3645,
+        100.032
+      ]
+    },
+    {
+      "step": "native drive crosses required gate6",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 57.7553,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "native drive crosses required gate6",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 57.7553
+    },
+    {
+      "step": "brake after ordered gate6",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 58.4124
+    },
+    {
+      "step": "second mission writes actual completed save2",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 58.7627
+    },
+    {
+      "step": "client departs completed shared slice",
+      "session": 3,
+      "kind": "native_input_callback",
+      "wall_seconds": 58.7628,
+      "actor": "QuebecCar_35",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "client departs completed shared slice",
+      "session": 3,
+      "kind": "network_disconnect",
+      "wall_seconds": 58.7628
+    },
+    {
+      "step": "client departs completed shared slice",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 59.3586
+    },
+    {
+      "step": "late join receives both banked missions and final gate",
+      "session": 3,
+      "kind": "network_reconnect",
+      "wall_seconds": 59.3586,
+      "endpoint": "127.0.0.1:17777"
+    },
+    {
+      "step": "late join receives both banked missions and final gate",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 60.131
+    },
+    {
+      "step": "stop completed slice session",
+      "session": 3,
+      "kind": "check_passed",
+      "wall_seconds": 60.4839
+    },
+    {
+      "step": "actual reload restores both completed missions",
+      "session": 4,
+      "kind": "check_passed",
+      "wall_seconds": 61.5387
+    },
+    {
+      "step": "ordinary E cannot increment completed campaign",
+      "session": 4,
+      "kind": "native_input_callback",
+      "wall_seconds": 61.5387,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "ordinary E cannot increment completed campaign",
+      "session": 4,
+      "kind": "check_passed",
+      "wall_seconds": 61.8863
+    },
+    {
+      "step": "native T offers race replay while preserving saved2",
+      "session": 4,
+      "kind": "native_input_callback",
+      "wall_seconds": 61.8863,
+      "actor": "QuebecController_0",
+      "method": "ReplayCampaign"
+    },
+    {
+      "step": "native T offers race replay while preserving saved2",
+      "session": 4,
+      "kind": "check_passed",
+      "wall_seconds": 62.2394
+    },
+    {
+      "step": "stop replay session before unsupported-save fixture",
+      "session": 4,
+      "kind": "check_passed",
+      "wall_seconds": 62.5967
+    },
+    {
+      "step": "seed native-format future Version2 isolated save",
+      "session": 4,
+      "kind": "isolated_save_fixture",
+      "wall_seconds": 62.597,
+      "slot": "NordCampaign_StorySliceQA_v1",
+      "version": 2,
+      "completed_missions": 1,
+      "sha256": "cd09acc815844031145932d3b86086391d6d44ab169a3b1a67d24b26c3c70ad5",
+      "format": "native SaveGameToSlot"
+    },
+    {
+      "step": "seed native-format future Version2 isolated save",
+      "session": 4,
+      "kind": "check_passed",
+      "wall_seconds": 62.9546
+    },
+    {
+      "step": "future save reload opens fresh session with replicated warning",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 64.0335
+    },
+    {
+      "step": "future-save / approach worklight with deliberately wrong aim",
+      "session": 5,
+      "kind": "fixture_relocation",
+      "wall_seconds": 64.0336,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        39113.0165,
+        -7522.8152,
+        98.15
+      ],
+      "target_cm": [
+        5710.0,
+        2390.0,
+        110.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "future-save / approach worklight with deliberately wrong aim",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 64.3837
+    },
+    {
+      "step": "future-save / native E acquires worklight without completing aim",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 64.3837,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "future-save / native E acquires worklight without completing aim",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 64.7391
+    },
+    {
+      "step": "future-save / native control rotation holds aligned worklight on authority",
+      "session": 5,
+      "kind": "native_aim_control_rotation",
+      "wall_seconds": 64.7392,
+      "yaw": 90.0,
+      "pitch": 2.827124578161273
+    },
+    {
+      "step": "future-save / native control rotation holds aligned worklight on authority",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 65.9303
+    },
+    {
+      "step": "future-save / fixture starts before blocking cable",
+      "session": 5,
+      "kind": "fixture_relocation",
+      "wall_seconds": 65.9304,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        5710.0,
+        2390.0,
+        98.15
+      ],
+      "target_cm": [
+        5550.0,
+        2420.0,
+        110.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "future-save / fixture starts before blocking cable",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 66.2801
+    },
+    {
+      "step": "future-save / native sprint builds actual authority velocity",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 66.2801,
+      "actor": "QuebecCharacter_0",
+      "method": "StartSprint"
+    },
+    {
+      "step": "future-save / native sprint builds actual authority velocity",
+      "session": 5,
+      "kind": "native_foot_movement_window",
+      "wall_seconds": 66.2802,
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        5550.0,
+        2420.0,
+        98.15
+      ]
+    },
+    {
+      "step": "future-save / native sprint builds actual authority velocity",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 66.5893
+    },
+    {
+      "step": "future-save / native jump crosses blocking cable while airborne",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 66.5893,
+      "actor": "QuebecCharacter_0",
+      "method": "Jump"
+    },
+    {
+      "step": "future-save / native jump crosses blocking cable while airborne",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 67.0228,
+      "actor": "QuebecCharacter_0",
+      "method": "StopSprint"
+    },
+    {
+      "step": "future-save / native jump crosses blocking cable while airborne",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 67.0228,
+      "actor": "QuebecCharacter_0",
+      "method": "StopJumping"
+    },
+    {
+      "step": "future-save / native jump crosses blocking cable while airborne",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 67.0228
+    },
+    {
+      "step": "future-save / native jumper lands safely",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 67.8404
+    },
+    {
+      "step": "future-save / approach exposed first clamp",
+      "session": 5,
+      "kind": "fixture_relocation",
+      "wall_seconds": 67.8406,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        5550.0,
+        3487.2082,
+        98.15
+      ],
+      "target_cm": [
+        5395.0,
+        3270.0,
+        130.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "future-save / approach exposed first clamp",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 68.1907
+    },
+    {
+      "step": "future-save / observe safe interior of green clamp beat",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 69.1682
+    },
+    {
+      "step": "future-save / green-beat native plunger action advances first latch",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 69.1682,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "future-save / green-beat native plunger action advances first latch",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 69.3246
+    },
+    {
+      "step": "future-save / select and approach car-light loaner",
+      "session": 5,
+      "kind": "select_campaign_car",
+      "wall_seconds": 69.3247,
+      "property": "LightCar",
+      "server_actor": "QuebecCar_9",
+      "client_actor": "QuebecCar_36",
+      "identity": "replicated campaign object reference"
+    },
+    {
+      "step": "future-save / select and approach car-light loaner",
+      "session": 5,
+      "kind": "fixture_relocation",
+      "wall_seconds": 69.3254,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        5395.0,
+        3270.0,
+        98.15
+      ],
+      "target_cm": [
+        5365.0,
+        1700.0,
+        100.0006
+      ],
+      "yaw": null
+    },
+    {
+      "step": "future-save / select and approach car-light loaner",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 69.6741
+    },
+    {
+      "step": "future-save / client enters car for second beam",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 69.6742,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "future-save / client enters car for second beam",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 70.0248
+    },
+    {
+      "step": "future-save / arrange clear bay approach without advancing mission",
+      "session": 5,
+      "kind": "fixture_relocation",
+      "wall_seconds": 70.0249,
+      "actor": "QuebecCar_9",
+      "before_cm": [
+        5550.0,
+        1700.0,
+        100.0001
+      ],
+      "target_cm": [
+        5773.3913,
+        1554.1566,
+        102.0
+      ],
+      "yaw": 96.48307369289724
+    },
+    {
+      "step": "future-save / arrange clear bay approach without advancing mission",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 70.386
+    },
+    {
+      "step": "future-save / native throttle physically approaches light bay",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 70.3861,
+      "actor": "QuebecCar_36",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "step": "future-save / native throttle physically approaches light bay",
+      "session": 5,
+      "kind": "native_drive_window",
+      "wall_seconds": 70.3861,
+      "player": "client",
+      "method": "MoveForward",
+      "axis": 1.0,
+      "start_cm": [
+        5773.3913,
+        1554.1566,
+        100.0325
+      ]
+    },
+    {
+      "step": "future-save / native throttle physically approaches light bay",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 71.1203,
+      "actor": "QuebecCar_36",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "step": "future-save / native throttle physically approaches light bay",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 71.1203
+    },
+    {
+      "step": "future-save / native brake and stable aligned car unlock table release",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 72.3258
+    },
+    {
+      "step": "future-save / vehicle E exits without pulling distant table clamp",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 72.3258,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "future-save / vehicle E exits without pulling distant table clamp",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 72.682
+    },
+    {
+      "step": "future-save / approach table clamp after car exit",
+      "session": 5,
+      "kind": "fixture_relocation",
+      "wall_seconds": 72.6821,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        5504.2708,
+        2062.5234,
+        98.15
+      ],
+      "target_cm": [
+        5395.0,
+        3520.0,
+        130.0
+      ],
+      "yaw": null
+    },
+    {
+      "step": "future-save / approach table clamp after car exit",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 73.0369
+    },
+    {
+      "step": "future-save / wait for green table release beat",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 75.1672
+    },
+    {
+      "step": "future-save / native final clamp completes M1 but preserves future save",
+      "session": 5,
+      "kind": "native_input_callback",
+      "wall_seconds": 75.1672,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "step": "future-save / native final clamp completes M1 but preserves future save",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 75.5277
+    },
+    {
+      "step": "future save remains byte-identical after attempted M1 boundary write",
+      "session": 5,
+      "kind": "check_passed",
+      "wall_seconds": 75.8742
+    }
+  ],
+  "captures": [],
+  "save_slot": "NordCampaign_StorySliceQA_v1",
+  "setup": "Authority-only actor relocation arranges fixtures; actions and observed driven crossings advance gameplay. No phase/index writes.",
+  "not_checked": [
+    "physical keyboard/mouse delivery",
+    "handling enjoyment",
+    "complete naturally driven race",
+    "audio presentation",
+    "external internet",
+    "remaining six campaign missions",
+    "performance acceptance"
+  ],
+  "source_sha256": {
+    "Source/Quebec/QuebecCampaign.h": "59154cdfeddcf61bb5dd664bbbee6c202943a4bcbfa171379d51a465d9a7733b",
+    "Source/Quebec/QuebecCampaign.cpp": "b8eba61ec86abf0bf1542952407af15f949a344d55a75a2caddb803b2ae990a5",
+    "Source/Quebec/QuebecGameplay.cpp": "570cf3152c079eb4be122020b06074cd9623cf32c6bc645b84c76961f11efbfe"
+  },
+  "friend_recovery_preserved_light_operator": true,
+  "delayed_ownership_bootstrap": {
+    "authority_outgoing_lag_ms": 900,
+    "client_outgoing_lag_ms": 0,
+    "observed_authority_hold_before_client_ownership_seconds": 0.6518,
+    "client_ownership_still_absent": true,
+    "native_client_E": true,
+    "server": {
+      "phase": 0,
+      "completed_missions": 0,
+      "race_gate": 0,
+      "race_elapsed": 0.0,
+      "race_retried": false,
+      "light_operator": "PlayerState_1",
+      "light_yaw": 65.0,
+      "light_pitch": 0.0,
+      "light_alignment": 0.0,
+      "light_hold_progress": 0.0
+    },
+    "client": {
+      "phase": 0,
+      "completed_missions": 0,
+      "race_gate": 0,
+      "race_elapsed": 0.0,
+      "race_retried": false,
+      "light_operator": null,
+      "light_yaw": 65.0,
+      "light_pitch": 0.0,
+      "light_alignment": 0.0,
+      "light_hold_progress": 0.0
+    },
+    "authority_lag_restored_ms": 0
+  },
+  "active_light_operator_disconnect_released": true,
+  "cable_crossing": {
+    "native_displacement_cm": 441.16,
+    "sprint_and_airborne_observed_by_authority": true,
+    "authority_position_cm": [
+      5550.0,
+      2829.8787,
+      261.3228
+    ],
+    "still_airborne_when_replicated_phase_observed": true
+  },
+  "phase_feedback_cleared": [
+    {
+      "step": "native jump crosses blocking cable while airborne",
+      "phase": 2,
+      "captions": {
+        "client": "",
+        "host": ""
+      }
+    },
+    {
+      "step": "future-save / native jump crosses blocking cable while airborne",
+      "phase": 2,
+      "captions": {
+        "client": "",
+        "host": ""
+      }
+    }
+  ],
+  "car_light_drive_cm": 313.59,
+  "race_ready_projection": [
+    {
+      "step": "native final clamp rescues guests and writes actual save1",
+      "peers": [
+        {
+          "peer": "server",
+          "position_cm": [
+            34383.8983,
+            -20949.6444,
+            102.0
+          ],
+          "distance_to_start_cm": 180.0,
+          "facing_dot": 1.0
+        },
+        {
+          "peer": "client",
+          "position_cm": [
+            34383.8983,
+            -20949.6444,
+            102.0
+          ],
+          "distance_to_start_cm": 180.0,
+          "facing_dot": 1.0
+        }
+      ]
+    },
+    {
+      "step": "actual reload returns unfinished race to ready boundary1",
+      "peers": [
+        {
+          "peer": "server",
+          "position_cm": [
+            34383.8983,
+            -20949.6444,
+            102.0
+          ],
+          "distance_to_start_cm": 180.0,
+          "facing_dot": 1.0
+        },
+        {
+          "peer": "client",
+          "position_cm": [
+            34383.8983,
+            -20949.6444,
+            102.0
+          ],
+          "distance_to_start_cm": 180.0,
+          "facing_dot": 1.0
+        }
+      ]
+    },
+    {
+      "step": "native T offers race replay while preserving saved2",
+      "peers": [
+        {
+          "peer": "server",
+          "position_cm": [
+            34383.8983,
+            -20949.6444,
+            102.0
+          ],
+          "distance_to_start_cm": 180.0,
+          "facing_dot": 1.0
+        },
+        {
+          "peer": "client",
+          "position_cm": [
+            34383.8983,
+            -20949.6444,
+            102.0
+          ],
+          "distance_to_start_cm": 180.0,
+          "facing_dot": 1.0
+        }
+      ]
+    }
+  ],
+  "saved_boundaries": [
+    {
+      "completed_missions": 1,
+      "session": 2,
+      "sha256": "15c1ee76b81fb156739a6df4944894926af76a571cbdcfd11b5d6e1e12ae25e8"
+    },
+    {
+      "completed_missions": 1,
+      "session": 3,
+      "sha256": "15c1ee76b81fb156739a6df4944894926af76a571cbdcfd11b5d6e1e12ae25e8"
+    },
+    {
+      "completed_missions": 2,
+      "session": 3,
+      "sha256": "c2ec8f2006cee008fa0311eed5fb60d3904fb49ea144a0794415425c904ae299"
+    },
+    {
+      "completed_missions": 2,
+      "session": 4,
+      "sha256": "c2ec8f2006cee008fa0311eed5fb60d3904fb49ea144a0794415425c904ae299"
+    },
+    {
+      "completed_missions": 2,
+      "session": 4,
+      "sha256": "c2ec8f2006cee008fa0311eed5fb60d3904fb49ea144a0794415425c904ae299"
+    }
+  ],
+  "driven_gates": [
+    {
+      "gate_fixture": 0,
+      "next_gate": 1,
+      "native_displacement_cm": 669.52,
+      "authority_position_cm": [
+        34596.0311,
+        -20907.4708,
+        100.0119
+      ]
+    },
+    {
+      "gate_fixture": 0,
+      "next_gate": 1,
+      "native_displacement_cm": 722.27,
+      "authority_position_cm": [
+        34564.5368,
+        -20949.7902,
+        100.0301
+      ]
+    },
+    {
+      "gate_fixture": 1,
+      "next_gate": 2,
+      "native_displacement_cm": 667.92,
+      "authority_position_cm": [
+        32634.0881,
+        -23553.191,
+        100.0472
+      ]
+    },
+    {
+      "gate_fixture": 2,
+      "next_gate": 3,
+      "native_displacement_cm": 700.17,
+      "authority_position_cm": [
+        30491.6634,
+        -27268.6896,
+        100.0325
+      ]
+    },
+    {
+      "gate_fixture": 3,
+      "next_gate": 4,
+      "native_displacement_cm": 712.42,
+      "authority_position_cm": [
+        31255.3674,
+        -26571.6602,
+        100.0304
+      ]
+    },
+    {
+      "gate_fixture": 4,
+      "next_gate": 5,
+      "native_displacement_cm": 674.96,
+      "authority_position_cm": [
+        33953.958,
+        -26261.4565,
+        100.0321
+      ]
+    },
+    {
+      "gate_fixture": 5,
+      "next_gate": 6,
+      "native_displacement_cm": 724.54,
+      "authority_position_cm": [
+        34327.8112,
+        -22522.1187,
+        100.0294
+      ]
+    },
+    {
+      "gate_fixture": 6,
+      "next_gate": 7,
+      "native_displacement_cm": 720.13,
+      "authority_position_cm": [
+        34565.8165,
+        -20948.0706,
+        100.032
+      ]
+    }
+  ],
+  "native_retry": {
+    "banked_next_gate": 1,
+    "completed_missions": 1,
+    "position_cm": [
+      35276.527,
+      -20579.3215,
+      100.0324
+    ],
+    "peer_position_error_cm": 0.0083,
+    "camera_first": {
+      "camera_position_cm": [
+        35684.7618,
+        -20025.0945,
+        191.9498
+      ],
+      "car_position_cm": [
+        35276.53,
+        -20579.32,
+        100.04
+      ],
+      "camera_distance_from_car_cm": 694.4541,
+      "control_rotation": {
+        "yaw": 233.3441,
+        "pitch": 0.0
+      },
+      "target_arm_length_cm": 698.7246704101562,
+      "collision_test_enabled": true,
+      "collision_fix_applied": false,
+      "unfixed_camera_position_cm": [
+        35684.7618,
+        -20025.0945,
+        191.9498
+      ]
+    },
+    "camera_after_settle": {
+      "camera_position_cm": [
+        35684.7618,
+        -20025.0945,
+        191.9498
+      ],
+      "car_position_cm": [
+        35276.53,
+        -20579.32,
+        100.04
+      ],
+      "camera_distance_from_car_cm": 694.4541,
+      "control_rotation": {
+        "yaw": 233.3441,
+        "pitch": 0.0
+      },
+      "target_arm_length_cm": 698.7246704101562,
+      "collision_test_enabled": true,
+      "collision_fix_applied": false,
+      "unfixed_camera_position_cm": [
+        35684.7618,
+        -20025.0945,
+        191.9498
+      ]
+    }
+  },
+  "skipped_future_gate_rejected": 3,
+  "unsupported_save_preservation": {
+    "slot": "NordCampaign_StorySliceQA_v1",
+    "fixture_version": 2,
+    "fixture_completed_missions": 1,
+    "native_m1_completion_attempted": true,
+    "live_completed_missions": 1,
+    "original_sha256": "cd09acc815844031145932d3b86086391d6d44ab169a3b1a67d24b26c3c70ad5",
+    "unchanged_after_completion": true,
+    "warning_on_both_peers": true
+  },
+  "qa_slot_restored": true,
+  "production_save_hashes_unchanged": true,
+  "editor_play_settings_restored": true,
+  "restored_play_net_mode": 1,
+  "elapsed_seconds": 76.08
+}

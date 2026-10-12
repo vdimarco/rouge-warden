@@ -1,0 +1,1062 @@
+{
+  "date": "2026-10-10",
+  "scope": "Original period-inspired exterior fleet art; existing gameplay and maps retained",
+  "source": {
+    "passed": true,
+    "models": 11,
+    "triangles": 30432,
+    "profiles": [
+      "fastback coupe",
+      "notchback sedan",
+      "long-roof wagon"
+    ],
+    "original_art": true,
+    "source_check": "Scripts/test_seventies_cars.py",
+    "native_assets": 26
+  },
+  "import": {
+    "passed": true,
+    "source": "Data/SeventiesCars/manifest.json",
+    "destination": "/Game/ParkComic",
+    "parent_material": "/Game/ParkComic/M_Car70_Surface",
+    "paint_variants": [
+      "/Game/ParkComic/M_Car70_Paint0",
+      "/Game/ParkComic/M_Car70_Paint1",
+      "/Game/ParkComic/M_Car70_Paint2",
+      "/Game/ParkComic/M_Car70_Paint3"
+    ],
+    "models": [
+      {
+        "asset": "/Game/ParkComic/SM_Car70Body0",
+        "file": "Data/SeventiesCars/Geometry/Car70Body0.obj",
+        "source_triangles": 8260,
+        "material_slots": [
+          "Paint",
+          "Chrome",
+          "Ink",
+          "Amber",
+          "Red",
+          "Glass",
+          "Lens",
+          "Cream"
+        ],
+        "bounds_origin_cm": [
+          0.0,
+          0.0,
+          -17.544151306152344
+        ],
+        "bounds_extent_cm": [
+          233.0,
+          110.0,
+          46.544151306152344
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Cabin0",
+        "file": "Data/SeventiesCars/Geometry/Car70Cabin0.obj",
+        "source_triangles": 424,
+        "material_slots": [
+          "Glass",
+          "Chrome",
+          "Ink"
+        ],
+        "bounds_origin_cm": [
+          -42.0,
+          0.0,
+          34.000000953674316
+        ],
+        "bounds_extent_cm": [
+          125.05000305175781,
+          82.53730010986328,
+          22.909300804138184
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Roof0",
+        "file": "Data/SeventiesCars/Geometry/Car70Roof0.obj",
+        "source_triangles": 452,
+        "material_slots": [
+          "Paint",
+          "Chrome"
+        ],
+        "bounds_origin_cm": [
+          -43.025699615478516,
+          0.0,
+          34.99999976158142
+        ],
+        "bounds_extent_cm": [
+          126.97430038452148,
+          87.24150085449219,
+          28.708099603652954
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Body1",
+        "file": "Data/SeventiesCars/Geometry/Car70Body1.obj",
+        "source_triangles": 8388,
+        "material_slots": [
+          "Paint",
+          "Chrome",
+          "Ink",
+          "Amber",
+          "Red",
+          "Glass",
+          "Lens",
+          "Cream"
+        ],
+        "bounds_origin_cm": [
+          0.0,
+          0.0,
+          -17.544151306152344
+        ],
+        "bounds_extent_cm": [
+          233.0,
+          110.0,
+          46.544151306152344
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Cabin1",
+        "file": "Data/SeventiesCars/Geometry/Car70Cabin1.obj",
+        "source_triangles": 424,
+        "material_slots": [
+          "Glass",
+          "Chrome",
+          "Ink"
+        ],
+        "bounds_origin_cm": [
+          -32.0,
+          0.0,
+          37.000000953674316
+        ],
+        "bounds_extent_cm": [
+          115.05000305175781,
+          82.56780242919922,
+          25.909300804138184
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Roof1",
+        "file": "Data/SeventiesCars/Geometry/Car70Roof1.obj",
+        "source_triangles": 448,
+        "material_slots": [
+          "Paint",
+          "Chrome"
+        ],
+        "bounds_origin_cm": [
+          -32.590797424316406,
+          0.0,
+          38.000001430511475
+        ],
+        "bounds_extent_cm": [
+          116.7500991821289,
+          87.10040283203125,
+          30.493101596832275
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Body2",
+        "file": "Data/SeventiesCars/Geometry/Car70Body2.obj",
+        "source_triangles": 8368,
+        "material_slots": [
+          "Paint",
+          "Chrome",
+          "Ink",
+          "Amber",
+          "Red",
+          "Glass",
+          "Lens",
+          "Cream"
+        ],
+        "bounds_origin_cm": [
+          0.0,
+          0.0,
+          -17.544151306152344
+        ],
+        "bounds_extent_cm": [
+          233.0,
+          110.0,
+          46.544151306152344
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Cabin2",
+        "file": "Data/SeventiesCars/Geometry/Car70Cabin2.obj",
+        "source_triangles": 480,
+        "material_slots": [
+          "Glass",
+          "Chrome",
+          "Ink"
+        ],
+        "bounds_origin_cm": [
+          -61.0,
+          0.0,
+          38.500000953674316
+        ],
+        "bounds_extent_cm": [
+          144.0500030517578,
+          83.07230377197266,
+          27.409300804138184
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Roof2",
+        "file": "Data/SeventiesCars/Geometry/Car70Roof2.obj",
+        "source_triangles": 616,
+        "material_slots": [
+          "Paint",
+          "Chrome"
+        ],
+        "bounds_origin_cm": [
+          -61.93115234375,
+          0.0,
+          42.14744853973389
+        ],
+        "bounds_extent_cm": [
+          146.16184997558594,
+          87.23380279541016,
+          34.5525484085083
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Tire",
+        "file": "Data/SeventiesCars/Geometry/Car70Tire.obj",
+        "source_triangles": 1632,
+        "material_slots": [
+          "Rubber",
+          "Ink",
+          "Cream"
+        ],
+        "bounds_origin_cm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bounds_extent_cm": [
+          36.119998931884766,
+          36.119998931884766,
+          13.0
+        ]
+      },
+      {
+        "asset": "/Game/ParkComic/SM_Car70Rim",
+        "file": "Data/SeventiesCars/Geometry/Car70Rim.obj",
+        "source_triangles": 940,
+        "material_slots": [
+          "Chrome",
+          "Ink"
+        ],
+        "bounds_origin_cm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bounds_extent_cm": [
+          23.0,
+          23.0,
+          3.6500000953674316
+        ]
+      }
+    ],
+    "level_or_actor_changes": false
+  },
+  "render": {
+    "passed": true,
+    "views": [
+      {
+        "profile": 0,
+        "view": "front",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/0-front-1280.png",
+        "bytes": 1607446
+      },
+      {
+        "profile": 0,
+        "view": "rear",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/0-rear-1280.png",
+        "bytes": 1560606
+      },
+      {
+        "profile": 0,
+        "view": "side",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/0-side-1280.png",
+        "bytes": 1497098
+      },
+      {
+        "profile": 1,
+        "view": "front",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/1-front-1280.png",
+        "bytes": 1603186
+      },
+      {
+        "profile": 1,
+        "view": "rear",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/1-rear-1280.png",
+        "bytes": 1540639
+      },
+      {
+        "profile": 1,
+        "view": "side",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/1-side-1280.png",
+        "bytes": 1478872
+      },
+      {
+        "profile": 2,
+        "view": "front",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/2-front-1280.png",
+        "bytes": 1594936
+      },
+      {
+        "profile": 2,
+        "view": "rear",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/2-rear-1280.png",
+        "bytes": 1547576
+      },
+      {
+        "profile": 2,
+        "view": "side",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/2-side-1280.png",
+        "bytes": 1478854
+      },
+      {
+        "profile": 0,
+        "view": "front",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/0-front-1920.png",
+        "bytes": 3343097
+      },
+      {
+        "profile": 0,
+        "view": "rear",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/0-rear-1920.png",
+        "bytes": 3240159
+      },
+      {
+        "profile": 0,
+        "view": "side",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/0-side-1920.png",
+        "bytes": 3123689
+      },
+      {
+        "profile": 1,
+        "view": "front",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/1-front-1920.png",
+        "bytes": 3356751
+      },
+      {
+        "profile": 1,
+        "view": "rear",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/1-rear-1920.png",
+        "bytes": 3237500
+      },
+      {
+        "profile": 1,
+        "view": "side",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/1-side-1920.png",
+        "bytes": 3116819
+      },
+      {
+        "profile": 2,
+        "view": "front",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/2-front-1920.png",
+        "bytes": 3340641
+      },
+      {
+        "profile": 2,
+        "view": "rear",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/2-rear-1920.png",
+        "bytes": 3238132
+      },
+      {
+        "profile": 2,
+        "view": "side",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "file": "Preview/SeventiesCars/2-side-1920.png",
+        "bytes": 3097412
+      },
+      {
+        "view": "possessed",
+        "resolution": [
+          1280,
+          720
+        ],
+        "file": "Preview/SeventiesCars/possessed-1280.png",
+        "bytes": 1011155
+      }
+    ],
+    "reviewed_views": 19,
+    "profiles": 3,
+    "root_collision_extent_cm": [
+      220,
+      108,
+      100
+    ],
+    "visible_components_per_car": 11,
+    "visual_collision_profile": "NoCollision",
+    "fleet_cars": 59,
+    "fleet_profiles": [
+      25,
+      19,
+      15
+    ],
+    "traffic_cars": 16,
+    "native_entry_exit": true,
+    "fixture_assisted_entry_exit": true,
+    "possessed_capture_stationary": true,
+    "settings_restored": true,
+    "raw": "Saved/Tests/SeventiesCarsRender.json",
+    "committed_images": [
+      {
+        "file": "Verification/Images/SeventiesCars/coupe.png",
+        "sha256": "73392dc3f369a6adbb3105a1e3cfb2cd0f2fab2dd60debea117f3b2541b798d1"
+      },
+      {
+        "file": "Verification/Images/SeventiesCars/sedan.png",
+        "sha256": "915fd811fa1c618a4fc9772fa977e4ec6f6fcc54f7534a4d9cdb7b242b095a59"
+      },
+      {
+        "file": "Verification/Images/SeventiesCars/wagon.png",
+        "sha256": "5ff3655c9ad270a57862c87f3bdbef5c974c49d2b4168f5672b0990df1269f54"
+      }
+    ],
+    "component_assertions": [
+      "11 visible Car70-prefixed meshes",
+      "Body/Cabin/Roof mesh names per profile",
+      "NoCollision on each visual",
+      "root box extent 220/108/100"
+    ],
+    "component_recorded_and_reviewed": [
+      "per-part materials",
+      "unit scales and part locations",
+      "tire and rim meshes/transforms"
+    ]
+  },
+  "driving": {
+    "succeeded": 3,
+    "failed": 0,
+    "not_run": 0,
+    "tests": [
+      {
+        "name": "Quebec.Driving.FrameRateConsistency",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Driving.SteeringHandbrakeRecovery",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Driving.ThrottleBrakeValidation",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      }
+    ],
+    "raw": "Saved/Tests/SeventiesCarsDrivingFinal/index.json",
+    "scope": "Final compiled car-art module; existing native simulation assertions"
+  },
+  "build": {
+    "editor": "Success",
+    "linux_browser_package": "Success",
+    "build_cook_stage_pak_archive_seconds": 45.21,
+    "automation_tool_exit_code": 0,
+    "native_package_copy": "rsync -a --exclude=Saved* Builds/Browser/Linux/ Builds/Linux/ (no delete)",
+    "frontend_redeployed": false
+  },
+  "browser": {
+    "first_regression": {
+      "startedAt": "2026-10-11T00:11:58.377Z",
+      "playerUrl": "https://nord-montreal.vercel.app/",
+      "passed": true,
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2551
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2733
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2826
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2845
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 439
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 4345
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 4838
+        }
+      ],
+      "media": {
+        "host": {
+          "currentTime": 1.609,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 35,
+          "framesPerSecond": 23,
+          "videoBytes": 1433290,
+          "audioPackets": 97,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1501,
+          "observedDecodedFps": 21.31912058627582
+        },
+        "friend": {
+          "currentTime": 1.58,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 35,
+          "framesPerSecond": 23,
+          "videoBytes": 1555843,
+          "audioPackets": 99,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 21.9560878243513
+        },
+        "recovered-slot": {
+          "currentTime": 1.587,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 39,
+          "framesPerSecond": 26,
+          "videoBytes": 1002268,
+          "audioPackets": 86,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 23.952095808383234
+        },
+        "host-reconnected": {
+          "currentTime": 1.591,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 38,
+          "framesPerSecond": 25,
+          "videoBytes": 1007904,
+          "audioPackets": 86,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 23.30226364846871
+        },
+        "friend-still-connected": {
+          "currentTime": 16.858,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 402,
+          "framesPerSecond": 24,
+          "videoBytes": 20351983,
+          "audioPackets": 876,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1501,
+          "observedDecodedFps": 23.984010659560294
+        }
+      },
+      "limits": [
+        "Input screenshots require visual review; native position/story progress are not asserted.",
+        "Headless playback does not verify audible sound or driving feel.",
+        "Testing from the host PC does not establish external NAT reachability."
+      ],
+      "finishedAt": "2026-10-11T00:12:19.816Z"
+    },
+    "raw": "Browser/.qa/live-2026-10-11T00-11-58-376Z/summary.json",
+    "guard_required_free_mib": 12000,
+    "guard_unchanged": true,
+    "quality_defaults_unchanged": true,
+    "gpu_sample": {
+      "samples": [
+        {
+          "at": "2026-10-11T00:12:11.477176+00:00",
+          "free_mib": 2719,
+          "used_mib": 21347,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:12:16.506106+00:00",
+          "free_mib": 3149,
+          "used_mib": 20917,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:12:21.529439+00:00",
+          "free_mib": 3247,
+          "used_mib": 20819,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:12:26.552582+00:00",
+          "free_mib": 3255,
+          "used_mib": 20810,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:12:31.577741+00:00",
+          "free_mib": 3211,
+          "used_mib": 20854,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:12:36.602038+00:00",
+          "free_mib": 2720,
+          "used_mib": 21345,
+          "utilization_percent": 97,
+          "children_alive": true
+        }
+      ],
+      "minimum_free_mib": 2719,
+      "all_children_alive": true
+    },
+    "native_logs_no_oom_fatal_or_missing_car_assets": true,
+    "normal_lifecycle_restored_after_coordinated_gpu_handoff": true,
+    "observed_free_mib_before_first_preflight": 13944,
+    "final_preflight": {
+      "observed_at": "2026-10-11T00:32:18.200182+00:00",
+      "observed_free_mib_before_preflight": 14378,
+      "preflight_exit_code": 0,
+      "preflight_output": "Preflight passed; no processes launched.",
+      "preflight_error": ""
+    },
+    "final_regression": {
+      "startedAt": "2026-10-11T00:32:30.541Z",
+      "playerUrl": "https://nord-montreal.vercel.app/",
+      "passed": true,
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2484
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2446
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2851
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2927
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 723
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 4916
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 4968
+        }
+      ],
+      "media": {
+        "host": {
+          "currentTime": 1.608,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 34,
+          "framesPerSecond": 23,
+          "videoBytes": 1147555,
+          "audioPackets": 93,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1510,
+          "observedDecodedFps": 21.192052980132452
+        },
+        "friend": {
+          "currentTime": 1.603,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 34,
+          "framesPerSecond": 22,
+          "videoBytes": 1438812,
+          "audioPackets": 99,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 20.625415834996677
+        },
+        "recovered-slot": {
+          "currentTime": 1.609,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 35,
+          "framesPerSecond": 23,
+          "videoBytes": 1087076,
+          "audioPackets": 87,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 21.290751829673987
+        },
+        "host-reconnected": {
+          "currentTime": 1.629,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 39,
+          "framesPerSecond": 25,
+          "videoBytes": 1208476,
+          "audioPackets": 89,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1503,
+          "observedDecodedFps": 23.952095808383234
+        },
+        "friend-still-connected": {
+          "currentTime": 18.053,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 400,
+          "framesPerSecond": 24,
+          "videoBytes": 21733078,
+          "audioPackets": 935,
+          "codecs": [
+            "video/VP8"
+          ],
+          "sampleDurationMs": 1502,
+          "observedDecodedFps": 23.30226364846871
+        }
+      },
+      "limits": [
+        "Input screenshots require visual review; native position/story progress are not asserted.",
+        "Headless playback does not verify audible sound or driving feel.",
+        "Testing from the host PC does not establish external NAT reachability."
+      ],
+      "finishedAt": "2026-10-11T00:32:52.873Z"
+    },
+    "final_regression_raw": "Browser/.qa/live-2026-10-11T00-32-30-541Z/summary.json",
+    "final_native_logs": [
+      {
+        "file": "Saved/BrowserStreaming/host-20261011-003218-2695048.log",
+        "no_oom_fatal_or_missing_car_assets": true
+      },
+      {
+        "file": "Saved/BrowserStreaming/friend-20261011-003218-2695048.log",
+        "no_oom_fatal_or_missing_car_assets": true
+      }
+    ],
+    "final_runtime": {
+      "checked_at": "2026-10-11T00:34:21.085158+00:00",
+      "lifecycle": {
+        "launcher_pid": 2695048,
+        "phase": "running",
+        "infrastructure_sha": "e5e243ed038313d3dad4e3fb9087d4393a5df192",
+        "children": [
+          {
+            "name": "signalling",
+            "pid": 2695156,
+            "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261011-003218-2695048.stdout.log"
+          },
+          {
+            "name": "host",
+            "pid": 2695666,
+            "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261011-003218-2695048.stdout.log"
+          },
+          {
+            "name": "friend",
+            "pid": 2698970,
+            "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261011-003218-2695048.stdout.log"
+          }
+        ]
+      },
+      "commands": {
+        "signalling": [
+          "/home/von/.local/share/mise/installs/node/26.7.0/bin/node",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/PixelStreamingInfrastructure/SignallingWebServer/dist/index.js",
+          "--no_config",
+          "--streamer_port",
+          "8888",
+          "--player_port",
+          "9010",
+          "--max_players",
+          "1",
+          "--peer_options_file",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/ice-20261011-003218-2695048.json",
+          "--player_keepalive_timeout",
+          "30000",
+          "--log_level_console",
+          "info",
+          "--log_folder",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/server-logs"
+        ],
+        "host": [
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Browser/Linux/Quebec/Binaries/Linux/Quebec",
+          "Quebec",
+          "/Game/Maps/LaFontaine?listen",
+          "-RenderOffscreen",
+          "-ForceRes",
+          "-ResX=1280",
+          "-ResY=720",
+          "-AudioMixer",
+          "-Unattended",
+          "-NoDebugExecBindings",
+          "-PixelStreamingConnectionURL=ws://127.0.0.1:8888",
+          "-PixelStreamingEncoderCodec=VP8",
+          "-PixelStreamingWebRTCFps=30",
+          "-PixelStreamingWebRTCMaxBitrate=12000000",
+          "-PixelStreamingWebRTCStartBitrate=8000000",
+          "-PixelStreamingKeyFilter=Tilde",
+          "-PixelStreamingID=NordHost",
+          "-ExecCmds=sg.ViewDistanceQuality 2,sg.AntiAliasingQuality 2,sg.ShadowQuality 2,sg.GlobalIlluminationQuality 2,sg.ReflectionQuality 2,sg.PostProcessQuality 2,sg.TextureQuality 2,sg.EffectsQuality 2,sg.FoliageQuality 2,sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 30,MediaIO.EnableExperimentalScheduling 0",
+          "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261011-003218-2695048.log",
+          "-port=7791"
+        ],
+        "friend": [
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Browser/Linux/Quebec/Binaries/Linux/Quebec",
+          "Quebec",
+          "127.0.0.1:7791",
+          "-RenderOffscreen",
+          "-ForceRes",
+          "-ResX=1280",
+          "-ResY=720",
+          "-AudioMixer",
+          "-Unattended",
+          "-NoDebugExecBindings",
+          "-PixelStreamingConnectionURL=ws://127.0.0.1:8888",
+          "-PixelStreamingEncoderCodec=VP8",
+          "-PixelStreamingWebRTCFps=30",
+          "-PixelStreamingWebRTCMaxBitrate=12000000",
+          "-PixelStreamingWebRTCStartBitrate=8000000",
+          "-PixelStreamingKeyFilter=Tilde",
+          "-PixelStreamingID=NordFriend1",
+          "-ExecCmds=sg.ViewDistanceQuality 2,sg.AntiAliasingQuality 2,sg.ShadowQuality 2,sg.GlobalIlluminationQuality 2,sg.ReflectionQuality 2,sg.PostProcessQuality 2,sg.TextureQuality 2,sg.EffectsQuality 2,sg.FoliageQuality 2,sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 30,MediaIO.EnableExperimentalScheduling 0",
+          "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261011-003218-2695048.log",
+          "-NordNoCampaignSave",
+          "-saveddirsuffix=BrowserGuest"
+        ]
+      },
+      "units": [
+        {
+          "Id": "nord-browser-demo.service",
+          "ActiveState": "active",
+          "MainPID": "2695048"
+        },
+        {
+          "Id": "nord-browser-funnel.service",
+          "ActiveState": "active",
+          "MainPID": "159991"
+        }
+      ],
+      "samples": [
+        {
+          "at": "2026-10-11T00:33:45.900144+00:00",
+          "free_mib": 3487,
+          "used_mib": 20578,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:33:50.937276+00:00",
+          "free_mib": 3522,
+          "used_mib": 20543,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:33:55.962146+00:00",
+          "free_mib": 3040,
+          "used_mib": 21026,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:34:00.985502+00:00",
+          "free_mib": 3129,
+          "used_mib": 20937,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:34:06.007366+00:00",
+          "free_mib": 3514,
+          "used_mib": 20552,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:34:11.030607+00:00",
+          "free_mib": 3539,
+          "used_mib": 20527,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:34:16.054826+00:00",
+          "free_mib": 3538,
+          "used_mib": 20528,
+          "utilization_percent": 97,
+          "children_alive": true
+        },
+        {
+          "at": "2026-10-11T00:34:21.079194+00:00",
+          "free_mib": 2957,
+          "used_mib": 21109,
+          "utilization_percent": 97,
+          "children_alive": true
+        }
+      ],
+      "minimum_free_mib": 2957,
+      "all_children_alive": true,
+      "normal_arguments": true,
+      "funnel_pid_preserved": true
+    },
+    "final_runtime_raw": "Saved/Tests/SeventiesCarsFinalRuntime.json"
+  },
+  "preservation": {
+    "checked_at": "2026-10-11T00:34:16.122799+00:00",
+    "passed": true,
+    "hashes": {
+      "Content/Maps/Quebec.umap": "33f25a46d1fa4c39a1b846526b391192ffa19ee425addbde1533f414fc567a3a",
+      "Content/Maps/LaFontaine.umap": "d0f8db3d707c6cd5f417d82280ced1066c4172c5fa6afd14cb2018efa6b4b1d2",
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "scanned_save_roots": [
+      ".",
+      "Builds/Browser/Linux/Quebec",
+      "Builds/Linux/Quebec"
+    ],
+    "recursive_save_glob": "Saved*/SaveGames/**/*",
+    "expected_save_files": {
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "discovered_save_files": {
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "comparison": "Exact full dictionary equality with before-work baseline; extra/missing files or different hashes fail.",
+    "initial_absences_preserved": true,
+    "native_package_updated": true,
+    "copy_saved_directories_excluded": true
+  },
+  "limitations": [
+    "Original stylized 1970s-inspired designs, not branded replicas; opaque glass and no detailed interiors.",
+    "Stationary chase/HUD capture and fixture-assisted native entry/exit; no new sustained driving or dynamic wheel-motion visual review.",
+    "Public endpoint tested from host PC; off-LAN reachability, audible sound and manual driving enjoyment remain unverified.",
+    "No new full campaign/save-reload suite: maps and all prior save-file sets/hashes preserved; previous Mission 1 checkpoint evidence retained.",
+    "Short media and GPU samples do not establish sustained frame rate or reserve GPU memory.",
+    "OpenSpec CLI unavailable; Markdown structure and scenarios checked manually."
+  ]
+}

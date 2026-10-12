@@ -1,0 +1,252 @@
+{
+  "passed": true,
+  "source_commit": "eddc54c",
+  "baked_plateau_actors": 2679,
+  "merged_actors": 2701,
+  "restored_warden_actors": {
+    "Comic resident 0": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          27821.45125459725,
+          -16845.023120183192,
+          7.0
+        ],
+        [
+          29320.67774782406,
+          -17841.17567978782,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 1": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          11699.176164164084,
+          -1293.8930534301016,
+          7.0
+        ],
+        [
+          10747.289070665316,
+          -2821.607346493588,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 2": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          -9243.626359903557,
+          10832.72457110336,
+          7.0
+        ],
+        [
+          -8208.3229313756,
+          11048.334628878236,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 3": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          19375.166165542316,
+          32899.17564881121,
+          7.0
+        ],
+        [
+          18437.78058550538,
+          31362.520751204454,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 4": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          11255.060355337848,
+          39382.45697005952,
+          7.0
+        ],
+        [
+          9598.05758512148,
+          40085.55142992624,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 5": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          27297.24424369638,
+          19141.0843522353,
+          7.0
+        ],
+        [
+          26701.08498233878,
+          20839.493647752006,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 6": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          39936.74847323327,
+          18877.757248915204,
+          7.0
+        ],
+        [
+          39544.998686334744,
+          17120.904351127527,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 7": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          -9607.784515096264,
+          14739.556946538085,
+          7.0
+        ],
+        [
+          -11308.505785062975,
+          15329.088253495416,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 8": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          -6979.022590055531,
+          2954.9317569195205,
+          7.0
+        ],
+        [
+          -5940.8948234728305,
+          3422.5910431779744,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 9": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          12278.646066205376,
+          26258.226076346484,
+          7.0
+        ],
+        [
+          13808.418859916994,
+          25309.650723715098,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 10": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          6959.960356734596,
+          37753.95384888217,
+          7.0
+        ],
+        [
+          6480.934047744587,
+          37464.970151200774,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 11": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          32383.784825296265,
+          23060.983930294013,
+          7.0
+        ],
+        [
+          30585.019475687957,
+          22994.32646973264,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 12": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          34329.08415018282,
+          1602.1297549615479,
+          7.0
+        ],
+        [
+          33414.30269362346,
+          3152.3474450732087,
+          7.0
+        ]
+      ]
+    },
+    "Comic resident 13": {
+      "class": "QuebecParkResident",
+      "route": [
+        [
+          8867.852735221131,
+          -1188.798663961947,
+          7.0
+        ],
+        [
+          9817.127428538639,
+          340.5402640154167,
+          7.0
+        ]
+      ]
+    },
+    "Comic parked car 0": {
+      "class": "QuebecCar",
+      "route": null
+    },
+    "Comic parked car 1": {
+      "class": "QuebecCar",
+      "route": null
+    },
+    "Comic parked car 2": {
+      "class": "QuebecCar",
+      "route": null
+    },
+    "Comic parked car 3": {
+      "class": "QuebecCar",
+      "route": null
+    },
+    "Comic parked car 4": {
+      "class": "QuebecCar",
+      "route": null
+    },
+    "Comic parked car 5": {
+      "class": "QuebecCar",
+      "route": null
+    },
+    "Comic parked car 6": {
+      "class": "QuebecCar",
+      "route": null
+    },
+    "Comic parked car 7": {
+      "class": "QuebecCar",
+      "route": null
+    }
+  },
+  "retained_gameplay": "Warden campaign, handling, crew, traffic graph and native classes",
+  "environment": "exact baked Plateau actor layer; old Warden environment omitted"
+}

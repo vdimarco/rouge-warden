@@ -1,0 +1,128 @@
+{
+  "passed": true,
+  "hardware": {
+    "platform": "Linux",
+    "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "gpudriver": "610.57",
+    "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+    "shaderplatform": "VULKAN_SM6"
+  },
+  "settings": "Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+  "method": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends",
+  "limits": [
+    "static camera scenes",
+    "one GPU",
+    "not external multiplayer performance"
+  ],
+  "scenes": [
+    {
+      "scene": "Sherbrooke",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 21.8,
+      "median_ms": 8.86,
+      "p95_ms": 11.95,
+      "p99_ms": 13.32,
+      "average_fps": 110.0,
+      "over_33ms_percent": 0.04,
+      "median_gpu_ms": 8.42,
+      "csv": "Profile(20261010_233737).csv",
+      "screenshot": "Preview/PerformanceSherbrooke1280.png",
+      "frame_budget_passed": true
+    },
+    {
+      "scene": "Pond",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 22.21,
+      "median_ms": 9.09,
+      "p95_ms": 12.02,
+      "p99_ms": 13.45,
+      "average_fps": 108.0,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.7,
+      "csv": "Profile(20261010_233811).csv",
+      "screenshot": "Preview/PerformancePond1280.png",
+      "frame_budget_passed": true
+    },
+    {
+      "scene": "NorthPark",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 21.33,
+      "median_ms": 8.74,
+      "p95_ms": 11.57,
+      "p99_ms": 12.85,
+      "average_fps": 112.4,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 8.3,
+      "csv": "Profile(20261010_233846).csv",
+      "screenshot": "Preview/PerformanceNorthPark1280.png",
+      "frame_budget_passed": true
+    },
+    {
+      "scene": "Sherbrooke",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 25.89,
+      "median_ms": 10.62,
+      "p95_ms": 13.64,
+      "p99_ms": 14.71,
+      "average_fps": 92.6,
+      "over_33ms_percent": 0.04,
+      "median_gpu_ms": 10.15,
+      "csv": "Profile(20261010_233919).csv",
+      "screenshot": "Preview/PerformanceSherbrooke1920.png",
+      "frame_budget_passed": true
+    },
+    {
+      "scene": "Pond",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 27.34,
+      "median_ms": 11.31,
+      "p95_ms": 13.93,
+      "p99_ms": 15.33,
+      "average_fps": 87.7,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.92,
+      "csv": "Profile(20261010_233958).csv",
+      "screenshot": "Preview/PerformancePond1920.png",
+      "frame_budget_passed": true
+    },
+    {
+      "scene": "NorthPark",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 2398,
+      "sample_seconds": 25.95,
+      "median_ms": 10.7,
+      "p95_ms": 13.47,
+      "p99_ms": 14.61,
+      "average_fps": 92.4,
+      "over_33ms_percent": 0.0,
+      "median_gpu_ms": 10.21,
+      "csv": "Profile(20261010_234040).csv",
+      "screenshot": "Preview/PerformanceNorthPark1920.png",
+      "frame_budget_passed": true
+    }
+  ]
+}

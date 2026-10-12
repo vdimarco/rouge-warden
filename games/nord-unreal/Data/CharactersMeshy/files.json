@@ -1,0 +1,442 @@
+[
+  {
+    "file": "BlackCap/body.glb",
+    "bytes": 13888372,
+    "sha256": "61bf87a3c835eb6df24d8082a34cd40a8738e949e486e33d0f2ae3cfe87b3764"
+  },
+  {
+    "file": "BlackCap/body.fbx",
+    "bytes": 5640748,
+    "sha256": "72d2c30ab37fc75f11538e88c2115176495b156bb93ef74a1f40cbb4745e6696"
+  },
+  {
+    "file": "BlackCap/walk.fbx",
+    "bytes": 5678652,
+    "sha256": "4847f839396c06b9dc9e54f6b3067eea7b7a89b2d6127a8999707a6cf0c5fff7"
+  },
+  {
+    "file": "BlackCap/idle.fbx",
+    "bytes": 5761724,
+    "sha256": "b28ed4ac285f3a14d25bad07288bddc7e40a59fd3486e9447259efca45a871a7"
+  },
+  {
+    "file": "BlackCap/preview.png",
+    "bytes": 96589,
+    "sha256": "34ee6c85bf40a1fd96a92509ebfd9c401ccdc31e8c5bc92abc7dfb004abb81d2"
+  },
+  {
+    "file": "BlackCap/run.fbx",
+    "bytes": 5661516,
+    "sha256": "b6b42dd5aa80ce62fbc5ecfec59bb54f668e218105fbbba550ab162a3f6c7baf"
+  },
+  {
+    "file": "BlackCap/run.glb",
+    "bytes": 79312,
+    "sha256": "324e40191f05659b5799d2a7f29e42e17896625f7f94628caf38a3093814a02c"
+  },
+  {
+    "file": "BlackCap/base_color.png",
+    "bytes": 6440141,
+    "sha256": "2e675e1ce159c062177459bb46257c1b37d81a6413de13bea0c497607e4098b5"
+  },
+  {
+    "file": "BlackCap/normal.png",
+    "bytes": 5679635,
+    "sha256": "4ae6ea519aa5e67775afdb5811a2e6d110839a364046f0041c2c5010886a573f"
+  },
+  {
+    "file": "BlackCap/roughness.png",
+    "bytes": 1402543,
+    "sha256": "bd9010471fff80996acfef8f2301eb83c7cb79be54ad970d114d1b347051f1e2"
+  },
+  {
+    "file": "BlackCap/metallic.png",
+    "bytes": 40970,
+    "sha256": "3b31915eac0c09c1874665332e1ec6d0f04aa95b0ff687ee49b27053a7f0bb63"
+  },
+  {
+    "file": "CurlyMetalhead/body.glb",
+    "bytes": 15510976,
+    "sha256": "11c1671fe5eb9faab0726af0092dc7a355e085c026dff501c6a70d390f88faa0"
+  },
+  {
+    "file": "CurlyMetalhead/body.fbx",
+    "bytes": 6117420,
+    "sha256": "05b54691fb653b5890657b9542082ba6f40f883a7c24185ed0263c663bd2628c"
+  },
+  {
+    "file": "CurlyMetalhead/walk.fbx",
+    "bytes": 6155324,
+    "sha256": "39d58bb1ef7e3deaa63f795b40f7200347e726825f49c3e2ad0d65febdade763"
+  },
+  {
+    "file": "CurlyMetalhead/idle.fbx",
+    "bytes": 6238124,
+    "sha256": "406b1d3a2b19b3c395bae90563c4295d68f651b8a452b2a84400e1a34482400e"
+  },
+  {
+    "file": "CurlyMetalhead/preview.png",
+    "bytes": 98299,
+    "sha256": "a9730d177ea0e1f6a5aaa7cd96d52d4f8b1156acb725774612f8130b6796e61c"
+  },
+  {
+    "file": "CurlyMetalhead/run.fbx",
+    "bytes": 6138204,
+    "sha256": "cfe9a5aadf7201f7d17f3a46fc41f66548c5e1f9e5170568c5ff1febc02697a3"
+  },
+  {
+    "file": "CurlyMetalhead/run.glb",
+    "bytes": 79192,
+    "sha256": "4c12d7584f66a9f56b26c9f4da19437b70e89c08833cc475b7ebac4697c18170"
+  },
+  {
+    "file": "CurlyMetalhead/base_color.png",
+    "bytes": 6195872,
+    "sha256": "90d78f8cfad95d36eeb11abe603da4f165668fe22b60f0fef6d75b8b40fd7492"
+  },
+  {
+    "file": "CurlyMetalhead/normal.png",
+    "bytes": 6201765,
+    "sha256": "2a727bc40ce80366ccde7332a31de8c9b2e988d192aec9ef79b7a8e87a577160"
+  },
+  {
+    "file": "CurlyMetalhead/roughness.png",
+    "bytes": 1424980,
+    "sha256": "7697da207acf47da2333aaa64eff614ed4c2bdaadc3b902a4e220501f3416a68"
+  },
+  {
+    "file": "CurlyMetalhead/metallic.png",
+    "bytes": 35842,
+    "sha256": "8e6b21afb7519e179f6429456c8cd261c497bb2534be5729d2f34d0f0622e20c"
+  },
+  {
+    "file": "GreenCap51/body.glb",
+    "bytes": 15175940,
+    "sha256": "7425bd1119a1ccd2eea4264a6ed9e0b11060f01d80dbcbb8159fdda1be2584dd"
+  },
+  {
+    "file": "GreenCap51/body.fbx",
+    "bytes": 6157644,
+    "sha256": "e60a0381c97b5299fcf031f66c41e46dd28ffee2132c6e4462521c5f02469c2b"
+  },
+  {
+    "file": "GreenCap51/walk.fbx",
+    "bytes": 6195548,
+    "sha256": "ce079a12895e380608a8466aa6894090ebd3917b09951446fc7f45c47370b39f"
+  },
+  {
+    "file": "GreenCap51/idle.fbx",
+    "bytes": 6279052,
+    "sha256": "d126da02ddc1bd25837d0ec752db3e7029acda26da38a427bdc82bc552e9f419"
+  },
+  {
+    "file": "GreenCap51/preview.png",
+    "bytes": 101223,
+    "sha256": "94a606d6af115db47f206908df3d99bc7585bedacbcb4df834f1abf8525ed5f0"
+  },
+  {
+    "file": "GreenCap51/run.fbx",
+    "bytes": 6178428,
+    "sha256": "b7720f214bfd98bad8fa65b6c3462ec0738a1ef30dc08f7bc4e049a94ac8dc35"
+  },
+  {
+    "file": "GreenCap51/run.glb",
+    "bytes": 79576,
+    "sha256": "da69541c70b7002043bd3033230dc055dc76d57480ce39800dbce60c09257813"
+  },
+  {
+    "file": "GreenCap51/base_color.png",
+    "bytes": 6633526,
+    "sha256": "261fb5715f4c6f3efae3c6d1af648adad7299fcc53cbb7ed1174d800f25ff62a"
+  },
+  {
+    "file": "GreenCap51/normal.png",
+    "bytes": 6083499,
+    "sha256": "845afac869d86f1d4d99e8a2a0003ce053c8382cec10dd7b8a53d5a1560eedc5"
+  },
+  {
+    "file": "GreenCap51/roughness.png",
+    "bytes": 1477019,
+    "sha256": "cb5fd5f9f8025f4e5882464d9037059adef4987fcbe3da18b20fea0bc7de8707"
+  },
+  {
+    "file": "GreenCap51/metallic.png",
+    "bytes": 63450,
+    "sha256": "2c6661a14629242a9feaa3377b762c33aa37c28d2fefce2c9399794ca09a094b"
+  },
+  {
+    "file": "LimeJacket/body.glb",
+    "bytes": 14982064,
+    "sha256": "947f0646a07cde9a93d9d6f07ae8e7d8aa33b85867a27e3ab18d344dd9bf0329"
+  },
+  {
+    "file": "LimeJacket/body.fbx",
+    "bytes": 6021980,
+    "sha256": "d3405dc0ee5cc3b539c6d46cd3d440b3a36d5b75ff6f269a6be13fd0e7537789"
+  },
+  {
+    "file": "LimeJacket/walk.fbx",
+    "bytes": 6059868,
+    "sha256": "ef206b024bad864b0c97f5d09cf4e79637f06c50e64a434ac651f050d54ab2de"
+  },
+  {
+    "file": "LimeJacket/idle.fbx",
+    "bytes": 6143260,
+    "sha256": "3f4d905b4b80192d7ce05baeeeb1850707b46119bb72df7aa20f50c7055e0204"
+  },
+  {
+    "file": "LimeJacket/preview.png",
+    "bytes": 102090,
+    "sha256": "adc0cb8e72245759a317370f9dca7cbf527d575a0bf8c42445398d1675479bc1"
+  },
+  {
+    "file": "LimeJacket/run.fbx",
+    "bytes": 6042748,
+    "sha256": "ed50b9e5153169dfa217f22281d856edf34a6bbd02636ef9ca99882250993091"
+  },
+  {
+    "file": "LimeJacket/run.glb",
+    "bytes": 79736,
+    "sha256": "5596889e482faaee742d6bbaf66dfc64b47f0ccbf80b6630e3b744e52455a0a6"
+  },
+  {
+    "file": "LimeJacket/base_color.png",
+    "bytes": 6684591,
+    "sha256": "56a693ab407e20c7d1a5d68cd3b160f428ae752ea342239a08c306c79b7e320b"
+  },
+  {
+    "file": "LimeJacket/normal.png",
+    "bytes": 5948451,
+    "sha256": "bdcaf7cf91ca78cc9e0a276798fcdbdf562ba460469bceca238567fabe45eca7"
+  },
+  {
+    "file": "LimeJacket/roughness.png",
+    "bytes": 1577322,
+    "sha256": "9f9573ce29fe1b1571a7a1f58d9c0e98e9cc80303ea7455788e5e8f3d93578dc"
+  },
+  {
+    "file": "LimeJacket/metallic.png",
+    "bytes": 65035,
+    "sha256": "3bcf56039266a7e25537d18c6c79d8ca58b7d6a60c42deb88034eba49f4293a5"
+  },
+  {
+    "file": "Memphis33/body.glb",
+    "bytes": 14849732,
+    "sha256": "46c2d2ad9306e98ed27a8cf5e12f492de20908519ce88ae22988ff043c201213"
+  },
+  {
+    "file": "Memphis33/body.fbx",
+    "bytes": 6180572,
+    "sha256": "013f474db0f1c2bbe0ba57bc48f53f7593eb0eaa56a9f14f3bf09b6cdfcda7f4"
+  },
+  {
+    "file": "Memphis33/walk.fbx",
+    "bytes": 6218476,
+    "sha256": "9db02a4242e1927294c4f60f2be22f5d3b01b863e470628916375420f82c13ff"
+  },
+  {
+    "file": "Memphis33/idle.fbx",
+    "bytes": 6301804,
+    "sha256": "30f7833d439bba5c943777d9ed8bf95134641863cefa401931faf33ef401d98d"
+  },
+  {
+    "file": "Memphis33/preview.png",
+    "bytes": 83634,
+    "sha256": "e561b99ae0080c94633efc02128a8dce2cfff3e1cd3438efef777f7fe97012ed"
+  },
+  {
+    "file": "Memphis33/run.fbx",
+    "bytes": 6201340,
+    "sha256": "49c528a74ee48f9ed00df3a84ab5e3be0ecb8bef7b27fbec13dd1461a266b73e"
+  },
+  {
+    "file": "Memphis33/run.glb",
+    "bytes": 79504,
+    "sha256": "19adeee52d0d509f1a1189892f5d7d8df91568168986ea215fb47dfba59bd5ad"
+  },
+  {
+    "file": "Memphis33/base_color.png",
+    "bytes": 6865657,
+    "sha256": "bfd7fb5e447783876fb19156df48664b0eefa6a304fde8c853b5836fafc113ef"
+  },
+  {
+    "file": "Memphis33/normal.png",
+    "bytes": 5987276,
+    "sha256": "e2810fa997eb6c53fe3248a5589c7567b3438dd58f1170c9813b3bbdf7ae6566"
+  },
+  {
+    "file": "Memphis33/roughness.png",
+    "bytes": 1376385,
+    "sha256": "5c856a5d41f204aa22883828e68dbeb8e6be2c00c5cdfe23de1b2ae032f50736"
+  },
+  {
+    "file": "Memphis33/metallic.png",
+    "bytes": 32465,
+    "sha256": "ee8f9c6f987fa78899d4898bafda17019a50fe83d1d35cc304e3503a162875bb"
+  },
+  {
+    "file": "RedJersey/body.glb",
+    "bytes": 13805876,
+    "sha256": "ae4303d458a1c8e160af8a07d324ce046726b8903897521ba3aa2072d1e5ce7c"
+  },
+  {
+    "file": "RedJersey/body.fbx",
+    "bytes": 5851100,
+    "sha256": "d56e560531f9c5f590c214a696667b0810449dd4ea5e3429578e1c2d5429d52d"
+  },
+  {
+    "file": "RedJersey/walk.fbx",
+    "bytes": 5889004,
+    "sha256": "e7f71eb949723761049fa644efae3bf2a564b75c0f6339d1bbef290683b55fef"
+  },
+  {
+    "file": "RedJersey/idle.fbx",
+    "bytes": 5972716,
+    "sha256": "8843605b757a828b1e1b666f86de9b1920d9dfe9059ee8b438ede5d46f297288"
+  },
+  {
+    "file": "RedJersey/preview.png",
+    "bytes": 90447,
+    "sha256": "a99caa5c61883b8e302aa2638b7fdf8938e855ec35e29fcdfb74a4039f59e0c5"
+  },
+  {
+    "file": "RedJersey/run.fbx",
+    "bytes": 5871884,
+    "sha256": "1f5fdb15fc3ea44a03e342fce62b124a441cf4a268b456cced16db67d6b68eca"
+  },
+  {
+    "file": "RedJersey/run.glb",
+    "bytes": 78856,
+    "sha256": "2df3aa4ea4316c25140816a261bf0aa0b6b0eb0b8dfd91ed18031858f6e3a1a4"
+  },
+  {
+    "file": "RedJersey/base_color.png",
+    "bytes": 7038821,
+    "sha256": "d5386b4fcff78cca5683b8d1427dc2362b1438d2a64035a3cd9a0d2b7b95e812"
+  },
+  {
+    "file": "RedJersey/normal.png",
+    "bytes": 5535438,
+    "sha256": "6f52c79cdcd681ba2e9cdbbc2d0f338545ac4d227737c628d6ae7a19ff359b2d"
+  },
+  {
+    "file": "RedJersey/roughness.png",
+    "bytes": 1374174,
+    "sha256": "40f487a9566b232ce58736c18597a541344662e76fce733d3e806bbe8d11fc56"
+  },
+  {
+    "file": "RedJersey/metallic.png",
+    "bytes": 37694,
+    "sha256": "224b2c616ce84f7aa34910af7e6c5acf8c667b10e7979fc389bf09731d3cad68"
+  },
+  {
+    "file": "Topknot/body.glb",
+    "bytes": 14481576,
+    "sha256": "a16a8496998c981be5b8a8320b58029de161793e93c97abdef0ff83dbeac9adf"
+  },
+  {
+    "file": "Topknot/body.fbx",
+    "bytes": 5957948,
+    "sha256": "1e9f90fdedc2683927f5ae1b5459a84f9c92e70ec15b40e4131c2345fdfdf798"
+  },
+  {
+    "file": "Topknot/walk.fbx",
+    "bytes": 5995852,
+    "sha256": "4d7b8fda803e7a75be3dee25533758fc1404b484cbff548d5f842b5bc8b2edbe"
+  },
+  {
+    "file": "Topknot/idle.fbx",
+    "bytes": 6078716,
+    "sha256": "7d3f7329a4c8c614a14c1c7025952584d9adff159b96e92ee26cbadef0037edf"
+  },
+  {
+    "file": "Topknot/preview.png",
+    "bytes": 88040,
+    "sha256": "16e4d3cb00ec65cebf608d4621ccfbd39988a5a06ab58c5a4d431f3c8fa37ce3"
+  },
+  {
+    "file": "Topknot/run.fbx",
+    "bytes": 5978732,
+    "sha256": "34e7a08a819eb0825f4a914cc9afd1ed138ea44af65b2aa2444705f5bb3235a3"
+  },
+  {
+    "file": "Topknot/run.glb",
+    "bytes": 79176,
+    "sha256": "11603b9abc682aa46cca5c729b574e26b23c13026a3f566387d99303ed7cc125"
+  },
+  {
+    "file": "Topknot/base_color.png",
+    "bytes": 6567969,
+    "sha256": "3cca84706714b942782204bd8839e2d5f1597dbec248922eae3666798be18dfd"
+  },
+  {
+    "file": "Topknot/normal.png",
+    "bytes": 5823514,
+    "sha256": "d596d60ce18fd292b1903defdec48cc159727b3d8f02b09b7cd009f87d74b66d"
+  },
+  {
+    "file": "Topknot/roughness.png",
+    "bytes": 1410008,
+    "sha256": "c8a77e107b598a08dbec24f09cd9c5a53bcf0e20683984fc44f1635a88ecafae"
+  },
+  {
+    "file": "Topknot/metallic.png",
+    "bytes": 30754,
+    "sha256": "05dab78d2323308aad8ec225def758a4a245504cfbe126dcae8dbbcd793179c0"
+  },
+  {
+    "file": "WhiteCap/body.glb",
+    "bytes": 13314576,
+    "sha256": "9e11da9aaca568ee74126f35ef3e0e39aa589f24b2c34620f1a3623863dd183b"
+  },
+  {
+    "file": "WhiteCap/body.fbx",
+    "bytes": 5556476,
+    "sha256": "9a8d30abe9ad1ce20aaa190946ef1495b15b93a607f640af3abb5ef58db3b3da"
+  },
+  {
+    "file": "WhiteCap/walk.fbx",
+    "bytes": 5594380,
+    "sha256": "4c9e8ad99824182d6b95f0e63d398cf59c76d3ebd9f7158819923ebaf38126ee"
+  },
+  {
+    "file": "WhiteCap/idle.fbx",
+    "bytes": 5677660,
+    "sha256": "1721a934fd2ff41f7cab0e08b91c548e537c175dfc4021c138ddbf6d7b9b6726"
+  },
+  {
+    "file": "WhiteCap/preview.png",
+    "bytes": 87810,
+    "sha256": "97ebbb6bf1b32937d8547bb541ab326342d5f6ce6d13b9fb28a2305510f8dc44"
+  },
+  {
+    "file": "WhiteCap/run.fbx",
+    "bytes": 5577260,
+    "sha256": "5a6ffe26b3f1eebc3cd95d685452421f0e29e59926194999f716bed0fd320d54"
+  },
+  {
+    "file": "WhiteCap/run.glb",
+    "bytes": 78884,
+    "sha256": "577b135da348a32627b724c412a25a43a2e1eff7baf8652ac2eadda8df8e4566"
+  },
+  {
+    "file": "WhiteCap/base_color.png",
+    "bytes": 6541518,
+    "sha256": "7f5bbe36670f3de243739bf1faab221f4190be8c12cba07a18f13cf5a28819d8"
+  },
+  {
+    "file": "WhiteCap/normal.png",
+    "bytes": 5489566,
+    "sha256": "e6aedde8aea09729be56c58d68846350183956191ce5df145a12dd2d22ed0aea"
+  },
+  {
+    "file": "WhiteCap/roughness.png",
+    "bytes": 1324650,
+    "sha256": "450ef8d05beda2d548e2d3ecd01783cdd83517a50b02b2174f21c60ad3c70bb3"
+  },
+  {
+    "file": "WhiteCap/metallic.png",
+    "bytes": 46918,
+    "sha256": "c06801ec123a80b414bd85c1154239dfbf86c891cdca52801147e3c25d2bbdc5"
+  }
+]

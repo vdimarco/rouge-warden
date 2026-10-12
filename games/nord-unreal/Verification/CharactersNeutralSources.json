@@ -1,0 +1,151 @@
+{
+  "passed": true,
+  "source_root": "Data/CharactersNeutral",
+  "characters": [
+    {
+      "name": "GreenCap51",
+      "triangles": 31065,
+      "vertices": 29109,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a12427-65ed-7d13-914b-51a44f227459",
+      "rig_task_id": "01a12429-bb16-7193-9a09-aa9cac0fe8b6",
+      "clip_sha256": {
+        "idle": "5d6e820fa4f9b652a2ec813f1577734d3da4d97006f16d5689eb987ee9e5125b",
+        "walk": "739a555e6ea88e8b8a95b8585a6c390612cca4d2168f26ab77466e1bb9a04d76",
+        "run": "d23ef3e92f09fe3eee4dfc6b9f3b1d71d3dc05a6648cf98818e724e486884710",
+        "jump": "88bf3bf0f523c3cff7ba5b07a573dfd034a1addea8ea5ff8acd77b1a0ae6cd19"
+      }
+    },
+    {
+      "name": "Memphis33",
+      "triangles": 31028,
+      "vertices": 32988,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a12427-3fda-7722-bc10-940c1a8e4f75",
+      "rig_task_id": "01a1242a-e6c3-75e4-a37a-e1a69d32c36e",
+      "clip_sha256": {
+        "idle": "5e351f16116da1b2aa33f2fc1664d733de549f600abe47f3853cb9c19a57135a",
+        "walk": "4362f3c3caad46e6899289c24d9a5bc6b2124aac2d894def4da8dcda3a60e06f",
+        "run": "c7b962895148afc5bca13102ee71ae6555ce4c2d9c578bd6e3c3aa56feb39233",
+        "jump": "59f917e31ab4330d92045990285c8d13159cd949fc479d783dee378301ae5a7c"
+      }
+    },
+    {
+      "name": "BlackCap",
+      "triangles": 31110,
+      "vertices": 27739,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a12427-4ca8-7282-a6e6-3159289962df",
+      "rig_task_id": "01a12429-9e70-70d5-9373-5902920361e9",
+      "clip_sha256": {
+        "idle": "ae5d4840d9e08427c153cc0d48c7a17059cfbc47f677def455b5bafd16ba8b4d",
+        "walk": "22c0b2794cbe1ef088b1f1f645217a5c7d652d9c4a1a516d076e0da024e015fb",
+        "run": "7af8c9a855da5b72487234af75dac0921713c188c22eb65903e0c61ee6c5c62c",
+        "jump": "7b04c5b9289b19960f24f46825bf7898b9069b47bd6456a4a693c75313e67059"
+      }
+    },
+    {
+      "name": "WhiteCap",
+      "triangles": 31075,
+      "vertices": 27906,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a12427-6dbf-7b72-b5f7-2d5f08b48a13",
+      "rig_task_id": "01a12429-ee31-76b9-afb0-60862995b3d6",
+      "clip_sha256": {
+        "idle": "d8b855ee066aaf808ddfda19923bdf8974b2887da5861b57e011a7ff6bb6f6f5",
+        "walk": "b6c1cd7afba9010bcc0d43b2da82c6ba6acc88120938b49e7c8685274b7b919e",
+        "run": "c404e1d9ddeca84d2fc23604454e2ddd4252155ea353f9dbfd019bbc155af422",
+        "jump": "58ddd18878713598901943082d6bab210e846474a9556f5e69eac606f9c5312c"
+      }
+    },
+    {
+      "name": "RedJersey",
+      "triangles": 31025,
+      "vertices": 29568,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a12427-5e25-7261-ac04-b7ae55fc9f8f",
+      "rig_task_id": "01a1242a-1fda-7192-bd4a-c69b0ff1b699",
+      "clip_sha256": {
+        "idle": "4e30c9b44f7f5d52cb976fee0dcc098e0b18119c484d91787fef3be70c67c56b",
+        "walk": "e384488866bcf2e963a9a2fd4ccae76632d4462f93f0d887d40258815ac4d668",
+        "run": "a9225af857a434da7e7827edb2a51e77c0aeb0c53214e800f740244b429eeabb",
+        "jump": "92d3ce2cd48cfe34b6c406d9b8e930630f523d1dc9ec0712e2a05f7a96696a0b"
+      }
+    },
+    {
+      "name": "LimeJacket",
+      "triangles": 31132,
+      "vertices": 33791,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a12447-8c57-7212-a7de-93c4be38d37b",
+      "rig_task_id": "01a1244b-b9bc-7012-a325-41726ac88956",
+      "clip_sha256": {
+        "idle": "519b4763069274602880cd9de4f9106ec3895c1ffc1c5369f34fcb1c76b5abcf",
+        "walk": "a91105b299958b2a52a8f63936d3943642cfbc1818c2a6457f4216a45f14d9dc",
+        "run": "a1b45476d41e8c50f5f240148610e41a2bf514d5457f358fad5c0485b2b5d248",
+        "jump": "1bf34250260b671e4a71612993d966b84f51c665173b2170f6aa9a8fe96256da"
+      }
+    },
+    {
+      "name": "CurlyMetalhead",
+      "triangles": 31205,
+      "vertices": 43414,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a1240d-f464-7332-975b-a78e58bac5ca",
+      "rig_task_id": "01a12411-b488-7363-b267-96204f2ff7f6",
+      "clip_sha256": {
+        "idle": "76fa07af7e50bbe3517ff6c7f22b20d9b38b49f0cbe912882813a57e8f4c8279",
+        "walk": "81164edb631d62d92fdebdeb7e6895d20528e6c66b76890d66ddcba32a72d459",
+        "run": "edd6a60193010153cb7f73de287a040383bb9accb818430e4051439423bc0cef",
+        "jump": "82cd0c4336e0c505d4b2db6b4d8d65e25b42568215d841491fdd2b6d97ad47c0"
+      }
+    },
+    {
+      "name": "Topknot",
+      "triangles": 31100,
+      "vertices": 36156,
+      "bones": 24,
+      "height_m": 1.82,
+      "run_seconds": 0.667,
+      "run_tracks": 66,
+      "jump_seconds": 1.2,
+      "request_id": "01a12427-56d8-7ba2-80a9-838f221846f1",
+      "rig_task_id": "01a12429-cf30-7111-86e5-5b8205bef4b5",
+      "clip_sha256": {
+        "idle": "8e3d9f685a72a4c4c95761a9d11852baf2f737cfeb8c194ff4eac917df650ec8",
+        "walk": "5df55560593ff167c202fc6b7e1b8650a2e38b788a286044772fe8f7204b4bd5",
+        "run": "24ec14cd8e3d613074a8a0fed2d409f74a751b2968bc051ccdb0ee1dd41a4917",
+        "jump": "781e957841c7ad080fe37e37dbe0d3926aeccd4ba49a6e4929d03a5705639494"
+      }
+    }
+  ],
+  "checks": "weighted geometry, bounds, UVs, completed output hashes, own body/clip bone hierarchies and bind poses, true running motion and locally authored jump FBX round trips"
+}

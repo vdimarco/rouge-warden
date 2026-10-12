@@ -3,6 +3,7 @@
 // The script finds those buttons, works out which game this page is from its URL, and opens the list.
 (() => {
   const GAMES = [
+    { id: "gta", name: "GTA Montréal", sub: "Park La Fontaine · streamed co-op", url: "/gta/", art: "/arcade/gta.svg", color: "#ffc65b" },
     { id: "ascii-front", name: "ASCII Front", sub: "ASCII tank roguelite", url: "/ascii-front/", art: "/ascii-front/key.svg", color: "#d2f584" },
     { id: "battle-tanks", name: "Battle Tanks", sub: "Flank · bombard · extract", url: "/battle-tanks/", art: "/battle-tanks/key.svg", color: "#8df6d5" },
     { id: "tidebreak", name: "Shore of the Ancients", sub: "3v3 folklore MOBA", url: "/tidebreak/", art: "/tidebreak/art/shore-ancients-hero.webp", color: "#d2e46d" },
@@ -280,4 +281,3 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.GameSwitch = { open, close, wire, record, count, get isOpen() { return !!box && !box.hidden; }, GAMES, rankGames, validateMetrics, duration };
 })();
-

@@ -1,0 +1,879 @@
+{
+  "change": "Compact GTA-inspired NORD HUD",
+  "date_utc": "2026-10-11T05:45:59.614509+00:00",
+  "baseline_commit": "db92dffb113cc81e2c871bd4884e669c923388e4",
+  "source_sha256": {
+    "Source/Quebec/QuebecGameplay.cpp": "4d831c4373bf7de2807fa2d0a73e5a8b029605448aefde07e60aadea7910df2a",
+    "Source/Quebec/QuebecGameplay.h": "764e32fe8848ecd53f7a3fb44d18a4687c684a3f9062a7a8fcbbd490059d4b46",
+    "Scripts/test_compact_hud.py": "207068abce3b72f45a00babf7c42053b86e55f9eb11966a29ae842938815ac7b",
+    "Scripts/smoke_test.py": "24375e249800635826cb56f0cfe739aaac1c44f7edaa8c8730e3b4c9efef621c"
+  },
+  "editor_build": {
+    "result": "PASS",
+    "seconds": 8.65,
+    "log": "Saved/Tests/CompactHUD/editor-build.log"
+  },
+  "native_automation": {
+    "result": "PASS",
+    "scope": "Before R-only header text; tested functional logic unchanged",
+    "tests": [
+      {
+        "name": "Quebec.Browser.InputRelease",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Campaign.SaveRoundTrip",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Campaign.SaveValidation",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Driving.FrameRateConsistency",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Driving.SteeringHandbrakeRecovery",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Driving.ThrottleBrakeValidation",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Editor.ShutdownCleanup",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.HUD.RadarClip",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Missions.Proximity",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Residents.Movement",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Residents.RouteContinuity",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Traffic.BlockedApproach",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Traffic.ClosedRoadGraph",
+        "result": "Success",
+        "warnings": 0,
+        "errors": 0
+      }
+    ],
+    "seconds": 0.15118318796157837,
+    "report": "Saved/Tests/CompactHUD/Automation/index.json",
+    "clean_exit_code": 0
+  },
+  "rendered_runs": [
+    {
+      "report": "Saved/Tests/CompactHUD/CompactHUD1280.json",
+      "result": "PASS",
+      "scope": "Final burst spacing; before R-only header text",
+      "checks": 121,
+      "captures": 21,
+      "elapsed_seconds": 104.3,
+      "clean_exit_code": 0,
+      "cleanup": {
+        "qa_slot_restored": true,
+        "production_save_hashes_unchanged": true,
+        "editor_play_settings_restored": true,
+        "editor_viewport_realtime_override_released": true
+      }
+    },
+    {
+      "report": "Saved/Tests/CompactHUD/recovery-header-1280.json",
+      "result": "PASS",
+      "scope": "Current source; focused startup and quiet header only",
+      "checks": 2,
+      "captures": 1,
+      "elapsed_seconds": 16.38,
+      "clean_exit_code": 0,
+      "cleanup": {
+        "qa_slot_restored": true,
+        "production_save_hashes_unchanged": true,
+        "editor_play_settings_restored": true,
+        "editor_viewport_realtime_override_released": true
+      }
+    },
+    {
+      "report": "Saved/Tests/CompactHUD/CompactHUD1920.json",
+      "result": "PASS",
+      "scope": "Current source; full story suite",
+      "checks": 121,
+      "captures": 21,
+      "elapsed_seconds": 105.14,
+      "clean_exit_code": 0,
+      "cleanup": {
+        "qa_slot_restored": true,
+        "production_save_hashes_unchanged": true,
+        "editor_play_settings_restored": true,
+        "editor_viewport_realtime_override_released": true
+      }
+    },
+    {
+      "report": "Saved/Tests/CompactHUD/SmokeRender1280.json",
+      "result": "PASS",
+      "scope": "Before R-only header text and three burst presentation constants; functional HUD logic identical",
+      "checks": 66,
+      "captures": 15,
+      "elapsed_seconds": 69.87,
+      "clean_exit_code": 0,
+      "cleanup": {
+        "editor_viewport_realtime_override_released": true
+      }
+    },
+    {
+      "report": "Saved/Tests/CompactHUD/SmokeRender1920.json",
+      "result": "PASS",
+      "scope": "Before R-only header text and three burst presentation constants; functional HUD logic identical",
+      "checks": 66,
+      "captures": 15,
+      "elapsed_seconds": 69.92,
+      "clean_exit_code": 0,
+      "cleanup": {
+        "editor_viewport_realtime_override_released": true
+      }
+    }
+  ],
+  "source_comparison": {
+    "result": "PASS",
+    "full_720_diff": "Final R hint expression only",
+    "legacy_diff": "Final R hint expression and burst center Y, font size and spike radii only",
+    "method": "Revert exact presentation expressions in memory and compare SHA256 to recorded run source hashes"
+  },
+  "protected_files": {
+    "unchanged": 11535,
+    "changed": 0,
+    "inventory": "Saved/Tests/CompactHUD/protected_after.json"
+  },
+  "editor_saves": {
+    "before": 0,
+    "after": 0,
+    "unchanged": true
+  },
+  "capture_archive": [
+    {
+      "label": "HUDQuiet",
+      "original_path": "Preview/CompactHUD1280/HUDQuiet.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/HUDQuiet.png",
+      "sha256": "8202aac61aeece6701ca434a7fa7b7d1eaeb0d26cb466bb68e4d143b4d3815ca",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "WorklightAim",
+      "original_path": "Preview/CompactHUD1280/WorklightAim.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/WorklightAim.png",
+      "sha256": "155fc49db3d856f302e43e126c06f75f44303916977027adc2ebcaa506950f4c",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "AlignedWorklight",
+      "original_path": "Preview/CompactHUD1280/AlignedWorklight.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/AlignedWorklight.png",
+      "sha256": "47963ede6beb105cf036fe255fd058eaf1ac3834812312cc2591950d3e50c5da",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FirstClamp",
+      "original_path": "Preview/CompactHUD1280/FirstClamp.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FirstClamp.png",
+      "sha256": "7a7417ce242fd46c74009a46df0a99923b4b6de7e64897fc32658f7b410c889e",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FirstClampPull",
+      "original_path": "Preview/CompactHUD1280/FirstClampPull.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FirstClampPull.png",
+      "sha256": "80fe94640fa81246a906d4a1ccf89a46154240939b56554d63b3a9b57b170e21",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "HUDDelayedBriefing",
+      "original_path": "Preview/CompactHUD1280/HUDDelayedBriefing.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/HUDDelayedBriefing.png",
+      "sha256": "0fad96794688a255db4e5e16f4c66c26608835f388d097c774bdc0df36fc145a",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "CarEntryPrompt",
+      "original_path": "Preview/CompactHUD1280/CarEntryPrompt.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/CarEntryPrompt.png",
+      "sha256": "5fe7ef111c2f527fce95ec2d78039fe902d7b8c5f6317a9c6c2267ef5076514c",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "CarLightBay",
+      "original_path": "Preview/CompactHUD1280/CarLightBay.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/CarLightBay.png",
+      "sha256": "50acef0e1f769b6047eedfeec12b94061318e2b031676cf5c8af0daa5c7b3934",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "TerraceRestored",
+      "original_path": "Preview/CompactHUD1280/TerraceRestored.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/TerraceRestored.png",
+      "sha256": "a2fec1c9dbad21af11d153aae9384a1cc7571a853deaedf76b24f94f5824b9e6",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "RaceStarted",
+      "original_path": "Preview/CompactHUD1280/RaceStarted.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/RaceStarted.png",
+      "sha256": "0ac479f7cf7804c9d424448dc20fa7cb44b31790acf7b107350dbf5b06e0c634",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "RaceRetry",
+      "original_path": "Preview/CompactHUD1280/RaceRetry.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/RaceRetry.png",
+      "sha256": "826b49c2970c548ac638a8bfa8161c166293d3f2bb595c5da180dab8639cf3fd",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "BlueAlternativeGate",
+      "original_path": "Preview/CompactHUD1280/BlueAlternativeGate.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/BlueAlternativeGate.png",
+      "sha256": "0e4b05ffe70ae2135c6ddc66300edaaab3486c567eb0861978252d386cc5c869",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "SliceComplete",
+      "original_path": "Preview/CompactHUD1280/SliceComplete.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/SliceComplete.png",
+      "sha256": "aaabf4972dd52d1593a1ff85a036f207649c38f64885096b44afa5c3159f289a",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "HUDCompletion",
+      "original_path": "Preview/CompactHUD1280/HUDCompletion.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/HUDCompletion.png",
+      "sha256": "9fb18848c37b6b0ecc739f8ef8238197e9452865ac931c84a12cc7901fa81af6",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FutureSaveWarning",
+      "original_path": "Preview/CompactHUD1280/FutureSaveWarning.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FutureSaveWarning.png",
+      "sha256": "99c6cbf2cd97e0afd81bc6695505e7c7071e15c89fbd0f869431ea7534860982",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FutureSaveWorklightAim",
+      "original_path": "Preview/CompactHUD1280/FutureSaveWorklightAim.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FutureSaveWorklightAim.png",
+      "sha256": "f514f687422a9fa0d940cb3f3fe522df1ea8277dbd6ce841b321bf6f7ff0d0ea",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FutureSaveAlignedWorklight",
+      "original_path": "Preview/CompactHUD1280/FutureSaveAlignedWorklight.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FutureSaveAlignedWorklight.png",
+      "sha256": "0e72c75c4fa5f8421c6d57d84f92dfae5df9584e65c916581e6e3c44944497af",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FutureSaveFirstClamp",
+      "original_path": "Preview/CompactHUD1280/FutureSaveFirstClamp.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FutureSaveFirstClamp.png",
+      "sha256": "23ea07975a9d6bf7c163e0a0d729a26cb3360b0fca9b188bf6c0d6094c3ac393",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FutureSaveFirstClampPull",
+      "original_path": "Preview/CompactHUD1280/FutureSaveFirstClampPull.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FutureSaveFirstClampPull.png",
+      "sha256": "6ae39af7c205d213509339a11492a55aa398ef31bafacf6f239824c9d37aad1a",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FutureSaveCarLightBay",
+      "original_path": "Preview/CompactHUD1280/FutureSaveCarLightBay.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FutureSaveCarLightBay.png",
+      "sha256": "8d3e78b0acb7061f667de824d4e1d258a575b31fe1d991f8a4ba04b2aa62ab59",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "FutureSaveTerraceRestored",
+      "original_path": "Preview/CompactHUD1280/FutureSaveTerraceRestored.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/story/FutureSaveTerraceRestored.png",
+      "sha256": "2a49c566d3d1c625b3af83ebdc7a7e206fcd808cc22b5d2609cd80dd5b8edc3f",
+      "dimensions": [
+        1280,
+        720
+      ]
+    },
+    {
+      "label": "HUDQuiet",
+      "original_path": "Preview/CompactHUD1920/HUDQuiet.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/HUDQuiet.png",
+      "sha256": "a41369a800fa2f7b2c983407ee7713e1dd789b716f07b8ae16d63a80b5477d19",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "WorklightAim",
+      "original_path": "Preview/CompactHUD1920/WorklightAim.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/WorklightAim.png",
+      "sha256": "24b59246a400e58976a1102d30f30a4f9eca8156ed7382c2bd0a1a4d69490de4",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "AlignedWorklight",
+      "original_path": "Preview/CompactHUD1920/AlignedWorklight.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/AlignedWorklight.png",
+      "sha256": "9ac0e21d66348e6e819b12b0b815e5b774988e151e4f92d59822572e87dcec16",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FirstClamp",
+      "original_path": "Preview/CompactHUD1920/FirstClamp.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FirstClamp.png",
+      "sha256": "d3890da5bb9eb782abc8a38cc1193ec356cede15dc7ab33a6bfec3e0689ecd75",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FirstClampPull",
+      "original_path": "Preview/CompactHUD1920/FirstClampPull.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FirstClampPull.png",
+      "sha256": "93e973fde1268215c044d407bfd471da708da92f1230d04606b5f11c1ad02b60",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "HUDDelayedBriefing",
+      "original_path": "Preview/CompactHUD1920/HUDDelayedBriefing.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/HUDDelayedBriefing.png",
+      "sha256": "94b68a482fdd8839b7a26c9e4256cee9467e2baea7fb2eda405add6ec69cfd77",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "CarEntryPrompt",
+      "original_path": "Preview/CompactHUD1920/CarEntryPrompt.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/CarEntryPrompt.png",
+      "sha256": "fa34e9c57f01a820c8ea501c63f571234dcbfe700dcc27468ac0b11b6a0a3577",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "CarLightBay",
+      "original_path": "Preview/CompactHUD1920/CarLightBay.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/CarLightBay.png",
+      "sha256": "266c099f47f0ad08c051c2cc6d60fde482739cd8f17072c205373ab377a7ad65",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "TerraceRestored",
+      "original_path": "Preview/CompactHUD1920/TerraceRestored.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/TerraceRestored.png",
+      "sha256": "c6dee90bfac235db44501bcce7855fe64fce6baac91e1a1bd6d79f3af258b6b1",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "RaceStarted",
+      "original_path": "Preview/CompactHUD1920/RaceStarted.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/RaceStarted.png",
+      "sha256": "29bbfd5ce4ad19e90cdf78f91aae3320645d8c3b818ba65269a4ec22a5ae52bc",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "RaceRetry",
+      "original_path": "Preview/CompactHUD1920/RaceRetry.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/RaceRetry.png",
+      "sha256": "bf3de9d48b81730a5f1916ab33729a3db7fc38fbc7392bb26ac4b8cd73d43ad8",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "BlueAlternativeGate",
+      "original_path": "Preview/CompactHUD1920/BlueAlternativeGate.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/BlueAlternativeGate.png",
+      "sha256": "17b2019968e5f98677c1b0e8d98b462e65c9e5e91a955be2c158ba5cd64c594e",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "SliceComplete",
+      "original_path": "Preview/CompactHUD1920/SliceComplete.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/SliceComplete.png",
+      "sha256": "39ec6c36bcdfc08160857942583f2ff2d3067c81cb9d78b8d021e760b3b67e55",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "HUDCompletion",
+      "original_path": "Preview/CompactHUD1920/HUDCompletion.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/HUDCompletion.png",
+      "sha256": "75d1f26d947a5e06de8d4029da1d3739fb54555c4be6b836b55795c179d82af3",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FutureSaveWarning",
+      "original_path": "Preview/CompactHUD1920/FutureSaveWarning.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FutureSaveWarning.png",
+      "sha256": "629a71417e0f41636f9f6df31c91d20423b11e8af6d984983b0be075f7dee996",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FutureSaveWorklightAim",
+      "original_path": "Preview/CompactHUD1920/FutureSaveWorklightAim.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FutureSaveWorklightAim.png",
+      "sha256": "49aae13aef848b8ecb8d3e4056c9b9ed396a290d9e36982a55371bda564bd310",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FutureSaveAlignedWorklight",
+      "original_path": "Preview/CompactHUD1920/FutureSaveAlignedWorklight.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FutureSaveAlignedWorklight.png",
+      "sha256": "0afbb8a24dd8192c53e2e2426e9a7c863873b65197d35b4747658adab567ce9c",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FutureSaveFirstClamp",
+      "original_path": "Preview/CompactHUD1920/FutureSaveFirstClamp.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FutureSaveFirstClamp.png",
+      "sha256": "de76e6baa3923e26a065d6d2515ef64856d024b5b8efce8758fa9fe906a991d1",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FutureSaveFirstClampPull",
+      "original_path": "Preview/CompactHUD1920/FutureSaveFirstClampPull.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FutureSaveFirstClampPull.png",
+      "sha256": "265705ece32cb85dded33177db52fa9890301b2a88b559e62055d4fe1ccbf909",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FutureSaveCarLightBay",
+      "original_path": "Preview/CompactHUD1920/FutureSaveCarLightBay.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FutureSaveCarLightBay.png",
+      "sha256": "faeb156a718f7f83f4f83ccb0debddde78915618c7d4c1600b5e431ca44b007e",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FutureSaveTerraceRestored",
+      "original_path": "Preview/CompactHUD1920/FutureSaveTerraceRestored.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/story/FutureSaveTerraceRestored.png",
+      "sha256": "1165da7ff9d43214df5038a231d1f311d4676819dda2f7b542ecd094688153ff",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew10.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew10.png",
+      "sha256": "98225c444f7281e0d9bf354698413f1d89479c128584cfbe7599503e0c64729c"
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew3.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew3.png",
+      "sha256": "44d95b4cb561fb5bfc0853342a17ac31b072e5b2f296586f8a38f2a36f02fcd2"
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew4.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew4.png",
+      "sha256": "048b2d896d67023928773fb3ad77b8f93922f3341ebe0971de39b7b38a22e77c"
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew5.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew5.png",
+      "sha256": "d41a4f20cf8e136ecb2dbb1582310596ee48f92b3251b916c7f6f8b5d772a895"
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew6.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew6.png",
+      "sha256": "dc46d961051667aa1e04f292918c6b0d967baac11a19885f768f3254235f1a78"
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew7.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew7.png",
+      "sha256": "341e94b7b7e3ed224a452063986e9ac7b4017d0788c830a36bfa1b66dc713a7e"
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew8.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew8.png",
+      "sha256": "a96cf36b1334981d541be7f4dd199a96493f6731244252239ffce2591db7ee8f"
+    },
+    {
+      "original_path": "Preview/Quality1280_PlayableCrew9.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_PlayableCrew9.png",
+      "sha256": "b8bb5bc5194e372e9478e92f02951eb459e1b2740572bcac55faeaa675954611"
+    },
+    {
+      "original_path": "Preview/Quality1280_StandardFoot.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_StandardFoot.png",
+      "sha256": "c9ab4728ee99355490cc3d7aa46109eb3e9345ed2249925b5042a03d158456f9"
+    },
+    {
+      "original_path": "Preview/Quality1280_CarPrompt.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_CarPrompt.png",
+      "sha256": "709c546520d32e6b1422a3e68ed0ddb11c99fb85af521c92727a03a6b044f0ee"
+    },
+    {
+      "original_path": "Preview/Quality1280_StandardCar.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_StandardCar.png",
+      "sha256": "b409088bf240879d3d0084389fba7b037e6b507c18f6616edd11011b2b998eea"
+    },
+    {
+      "original_path": "Preview/Quality1280_BlockedExit.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_BlockedExit.png",
+      "sha256": "3327deac949f58d915f30fc69e881f974eb251895ba2f7136ba08e78fd611da4"
+    },
+    {
+      "original_path": "Preview/Quality1280_InteractionPriority.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_InteractionPriority.png",
+      "sha256": "320e433a7a13128f8c1a39faadd3f8566ffd46fe980e2e354db8ac9170951154"
+    },
+    {
+      "original_path": "Preview/Quality1280_MissionComplete.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_MissionComplete.png",
+      "sha256": "2433567ca07473748fe73998274e0cdb2a6a3e0d89499d6a231e80ffe662f35b"
+    },
+    {
+      "original_path": "Preview/Quality1280_CrewDialogue.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1280/legacy/Quality1280_CrewDialogue.png",
+      "sha256": "ed4a21510c38277377ec7f1c78f1f5c1543663928b34ca094dc99db7bc4eb5bb"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew10.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew10.png",
+      "sha256": "93b8d07eef8b5162c9aa06f5a6a3d4c3b1b291aa99e7500dba4f259626fd2d85"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew3.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew3.png",
+      "sha256": "dcf9432a90390023e353eaff0f929eb1f3c7ca050008dd9629f96b9696e134f9"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew4.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew4.png",
+      "sha256": "013cc024597fe9d826a9fb08eb6c26db5e65468e65d9fb4a1d2efeb10407a7bd"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew5.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew5.png",
+      "sha256": "c1fbbb996f749b8cec11244984b59ce175512565f064c47578a00e0299e6b9cc"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew6.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew6.png",
+      "sha256": "a70d7826506f6ef61dd1542705e0304fd93b940c4549e14a08b3bcfb56a84aa3"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew7.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew7.png",
+      "sha256": "3166264c205acf1bd57378dca45941c7e2dda5d088e98b4b10fb22033fab7a97"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew8.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew8.png",
+      "sha256": "c3013025e57d4243ca83369656393c10f893d77892546f8fc4bb9678a283eb61"
+    },
+    {
+      "original_path": "Preview/Quality1920_PlayableCrew9.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_PlayableCrew9.png",
+      "sha256": "dbf26136886b5962a8e7df45b3da3f5b01cf82e27a97d74003bb571b9e6ecacb"
+    },
+    {
+      "original_path": "Preview/Quality1920_StandardFoot.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_StandardFoot.png",
+      "sha256": "7b687c282bbb6d89bb2f69ba1a6c0823f05453fb142e2c648ad98659396b6e3f"
+    },
+    {
+      "original_path": "Preview/Quality1920_CarPrompt.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_CarPrompt.png",
+      "sha256": "724a97117f4a988cfdf56983522b7a003cd24aa4a8b9140c0ae430f2d39c9053"
+    },
+    {
+      "original_path": "Preview/Quality1920_StandardCar.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_StandardCar.png",
+      "sha256": "2bf46fbb2f06015ede7b361a1d7dcf1852539d795c4148167b41b118f89c0398"
+    },
+    {
+      "original_path": "Preview/Quality1920_BlockedExit.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_BlockedExit.png",
+      "sha256": "6d758fc6267baa8bfa5526348f51089a4702fedb07b3b4371d489ec3fe3c1f35"
+    },
+    {
+      "original_path": "Preview/Quality1920_InteractionPriority.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_InteractionPriority.png",
+      "sha256": "bfff95fa07dd66e3b84abb84233555a58da519bf0bd07fbc3af93e7f2cdabe2c"
+    },
+    {
+      "original_path": "Preview/Quality1920_MissionComplete.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_MissionComplete.png",
+      "sha256": "d60922695ef950754b42d0b0d038f2995a2dfca1a6672f0fea9b286159b8f237"
+    },
+    {
+      "original_path": "Preview/Quality1920_CrewDialogue.png",
+      "path": "Saved/Tests/CompactHUD/Captures/1920/legacy/Quality1920_CrewDialogue.png",
+      "sha256": "7e8b40c68fe3ba4e7fdc34fba5388bd8d621e58f3548517178f8975223061180"
+    }
+  ],
+  "visual_review": {
+    "status": "PASS independent native visual review",
+    "report": "Saved/Tests/CompactHUD/visual-review.json",
+    "report_sha256": "038dece980f58b21e7301174f80edcdba1761d02f6f85e9f079a4829c706738f",
+    "images_reviewed": {
+      "typography_story_stage": 42,
+      "legacy": 30,
+      "final_affected_proofs": 6
+    },
+    "findings": [
+      "Outlined typography and all three radar attribution lines readable at native resolution. No text clipping, overlapping HUD text, missing private feedback or missing save warning found.",
+      "Phase briefing reappears after private action feedback. Quiet HUD removes the transient briefing and early movement hints; action/progress/distance remain.",
+      "Legacy blocked-exit instructions and car-first interaction priority remain visible; standard rendering has no comic soundwords.",
+      "Mission completion count is scoped correctly: 1/2 and 2/2 in story, 1/3 and three-mission completion in legacy.",
+      "Smaller SKRRT burst now leaves a visible gap below the completion backplate at both resolutions. R Recover header fits at both resolutions."
+    ],
+    "imperfections": [
+      "Transient completion fade-in is faint in immediate SliceComplete capture; delayed HUDCompletion proves full-opacity readable title and shared count. This is expected animation.",
+      "Prototype story geometry, world text and character presentation are unchanged and outside this HUD audit."
+    ],
+    "limits": [
+      "Live decoded browser stream, mobile browser controls and physical phone readability are not verified by this reviewer.",
+      "Unchanged layouts were not visually repeated after spacing-only and one-line recovery-hint edits; affected proof images were reviewed."
+    ]
+  },
+  "failed_attempts_retained": [
+    {
+      "path": "Saved/Tests/CompactHUD/final-720-gate6-timeout",
+      "checks": 88,
+      "captures": 12,
+      "reason": "Native gate6 fixture stalled after approximately 52 cm; blocker actor not established. Unchanged retry passed; no gameplay or fixture altered."
+    },
+    {
+      "path": "Saved/Tests/CompactHUD/smoke-1280-initial",
+      "checks": 61,
+      "captures": 15,
+      "reason": "New inspection assertion ran after client destruction; assertion moved under actual capture guard. Both final smoke runs passed."
+    }
+  ],
+  "delivery": {
+    "status": "PASS current package, native visual review, six Epic profiles, normal two-player host, public desktop/mobile tests and decoded fullscreen HUD clearance",
+    "owner_chat": "01a12129-c0c2-77e1-9ab5-5cd2e05e1912",
+    "gpu_released": true,
+    "gpu_free_mib_at_release": 16555,
+    "package_build_seconds": 77.42,
+    "package_verifier_seconds": 30.36,
+    "package_views": 7,
+    "package_viewport": [
+      1600,
+      900
+    ],
+    "non_save_package_files_identical": 48,
+    "package_evidence": [
+      "Verification/CompactHUDPackage.json",
+      "Verification/CompactHUDPackageIdentity.json"
+    ],
+    "performance_report": "Verification/CompactHUDPerformance.json",
+    "performance_scenes": 6,
+    "performance_scope": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends; Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+    "normal_host_restored_utc": "2026-10-11T05:50:59Z",
+    "public_live_checks": 7,
+    "public_live_result": "PASS",
+    "public_live_evidence": "Browser/.qa/live-2026-10-11T06-00-49-062Z/summary.json",
+    "preservation_report": "Verification/CompactHUDPreservation.json",
+    "browser_mobile_status": "PASS fullscreen side rails keep all targets outside game image; portrait/non-fullscreen retained",
+    "public_player_url": "https://nord-montreal.vercel.app/",
+    "production_deployment": "dpl_EPZzH974H9YeWt1X6nbUAqKGfJPg",
+    "production_files_exact": 4,
+    "public_browser": {
+      "desktop": {
+        "result": "PASS",
+        "checks": 7,
+        "report": "Browser/.qa/live-2026-10-11T06-00-49-062Z/summary.json",
+        "report_sha256": "d05a954d4ec66e477a001337c7cdeee8f3ff5f530af8d3f9bfa9d0771b5730c3",
+        "url": "https://nord-montreal.vercel.app/"
+      },
+      "mobile": {
+        "result": "PASS",
+        "checks": 6,
+        "report": "Browser/.qa/mobile-2026-10-11T06-01-09-657Z/summary.json",
+        "report_sha256": "0e0ec1570c8ae74c036b91e232719e85bb6515ffe49303ae093b414ebff27531",
+        "url": "https://nord-montreal.vercel.app/"
+      }
+    },
+    "reviewed_mobile_viewports": [
+      [
+        360,
+        800
+      ],
+      [
+        800,
+        360
+      ],
+      [
+        667,
+        375
+      ]
+    ],
+    "minimum_touch_target_px": 44,
+    "touch_targets_clear_of_video": true,
+    "delivery_evidence": "Verification/CompactHUDDelivery.json"
+  },
+  "not_checked": [
+    "Physical phone",
+    "Off-LAN play",
+    "Acoustic listening",
+    "Full manual solo/co-op story acceptance",
+    "OpenSpec CLI unavailable; manual structure validation used"
+  ],
+  "source_commit": "626932470ec595f02d1cbfa28ba14c9bb515e386",
+  "completed_utc": "2026-10-11T06:02:31.846049+00:00",
+  "openspec": {
+    "manual_validation": "PASS",
+    "cli_validation": "Unavailable; openspec CLI not installed",
+    "archive": "openspec/changes/archive/2026-10-11-nord-compact-hud",
+    "canonical_spec": "openspec/specs/nord-unreal/spec.md"
+  }
+}

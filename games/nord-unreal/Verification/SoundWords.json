@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "mode": "actual Linux Development package, native jump/throttle/handbrake handlers",
+  "shots": 6,
+  "resolutions": [
+    [
+      1280,
+      720
+    ],
+    [
+      1920,
+      1080
+    ]
+  ],
+  "source": "Saved/Tests/PackagedSoundWords.log",
+  "note": "HOP, VROOM and SKRRT visually reviewed after capture"
+}

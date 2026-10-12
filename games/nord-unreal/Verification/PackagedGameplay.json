@@ -1,0 +1,112 @@
+{
+  "passed": true,
+  "mode": "separate Linux Development processes, native console input handlers; legacy exploration regression (-NordNoCampaign)",
+  "checks": [
+    "native host E completes the three ordered shared objectives",
+    "late-joining package receives completed progress, eleven resident styles and eight runtime bodies",
+    "native client E RPC occupies the available car on the host",
+    "native client throttle drives the authority car",
+    "packaged driving camera widens with speed",
+    "native handbrake stops and holds against throttle",
+    "native handbrake release restores acceleration",
+    "abrupt client process loss clears stale driving input",
+    "network timeout releases the crashed driver's occupancy",
+    "rejoined package can enter and exit the released car",
+    "clean departure removes the remote controller"
+  ],
+  "soak_cycles": 0,
+  "skipped": [
+    "external internet",
+    "physical input devices",
+    "other platforms"
+  ],
+  "resident_population": {
+    "Host": {
+      "saved": 14,
+      "ambient": 96
+    },
+    "Client": {
+      "saved": 14,
+      "ambient": 20
+    },
+    "Rejoined": {
+      "saved": 14,
+      "ambient": 20
+    }
+  },
+  "driving_fixture": {
+    "actor": "QuebecCar_0",
+    "original_position_cm": [
+      37529.800229,
+      -7243.479359,
+      100.100278
+    ],
+    "original_yaw_degrees": 77.5308,
+    "forward_lane_offset_cm": 145,
+    "reset_method": "native actor teleport while occupied and handbraked",
+    "resets": [
+      {
+        "window": "initial throttle",
+        "host": {
+          "position_cm": [
+            37529.800229,
+            -7243.479359,
+            100.100278
+          ],
+          "position_error_cm": 0.0,
+          "yaw_degrees": 77.5308,
+          "yaw_error_degrees": 0.0
+        },
+        "client": {
+          "position_cm": [
+            37529.8,
+            -7243.48,
+            100.11
+          ],
+          "position_error_cm": 0.009746,
+          "yaw_degrees": 77.34375,
+          "yaw_error_degrees": 0.18705
+        },
+        "occupant": "/Script/Quebec.QuebecCharacter'/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482056'",
+        "stopped_with_native_handbrake": true,
+        "collision_enabled": true,
+        "ambient_traffic_enabled": true
+      },
+      {
+        "window": "handbrake release acceleration",
+        "host": {
+          "position_cm": [
+            37529.800229,
+            -7243.479359,
+            100.100278
+          ],
+          "position_error_cm": 0.0,
+          "yaw_degrees": 77.5308,
+          "yaw_error_degrees": 0.0
+        },
+        "client": {
+          "position_cm": [
+            37529.8,
+            -7243.48,
+            100.11
+          ],
+          "position_error_cm": 0.009746,
+          "yaw_degrees": 77.34375,
+          "yaw_error_degrees": 0.18705
+        },
+        "occupant": "/Script/Quebec.QuebecCharacter'/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482056'",
+        "stopped_with_native_handbrake": true,
+        "collision_enabled": true,
+        "ambient_traffic_enabled": true
+      }
+    ]
+  },
+  "soak": {
+    "requested_seconds": 0,
+    "elapsed_seconds": 0.0,
+    "host_rss_baseline_mb": 2966.9,
+    "host_rss_peak_mb": 2966.9,
+    "host_rss_final_mb": 2966.9
+  },
+  "elapsed_seconds": 87.3
+}

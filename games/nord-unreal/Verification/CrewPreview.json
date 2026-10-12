@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "mode": "actual Linux Development package, fixed native animation pose, 1600x900",
+  "shots": 10,
+  "source": "Saved/Tests/PackagedCrew.log",
+  "note": "Preview fixtures only; gameplay animation unchanged"
+}

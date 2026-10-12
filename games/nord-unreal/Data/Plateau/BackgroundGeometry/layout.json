@@ -1,0 +1,10057 @@
+{
+  "tile_size_cm": 10000,
+  "batches": {
+    "Brick_XM005_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        -5
+      ],
+      "faces": 12,
+      "triangles": 24,
+      "bounds_cm": [
+        [
+          -43148.281,
+          -44975.506,
+          0.0
+        ],
+        [
+          -39790.788,
+          -40897.855,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        -4
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          -42682.678,
+          -40897.855,
+          0.0
+        ],
+        [
+          -39609.07,
+          -29689.044,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        -3
+      ],
+      "faces": 43,
+      "triangles": 86,
+      "bounds_cm": [
+        [
+          -43414.229,
+          -30165.494,
+          0.0
+        ],
+        [
+          -40010.721,
+          -19858.375,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        -2
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          -43414.229,
+          -20207.92,
+          0.0
+        ],
+        [
+          -39721.376,
+          -13478.626,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YM001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        -1
+      ],
+      "faces": 3,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          -41370.097,
+          -2878.735,
+          0.0
+        ],
+        [
+          -39053.777,
+          -710.222,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YP001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        1
+      ],
+      "faces": 21,
+      "triangles": 42,
+      "bounds_cm": [
+        [
+          -43278.526,
+          14974.766,
+          0.0
+        ],
+        [
+          -40040.357,
+          17998.218,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YP002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        2
+      ],
+      "faces": 24,
+      "triangles": 48,
+      "bounds_cm": [
+        [
+          -43639.622,
+          20046.506,
+          0.0
+        ],
+        [
+          -39357.16,
+          30006.306,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        3
+      ],
+      "faces": 32,
+      "triangles": 64,
+      "bounds_cm": [
+        [
+          -42588.309,
+          29603.328,
+          0.0
+        ],
+        [
+          -39790.788,
+          39864.805,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        4
+      ],
+      "faces": 14,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          -42574.271,
+          39491.883,
+          0.0
+        ],
+        [
+          -39547.457,
+          47348.849,
+          640.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM005_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -5,
+        6
+      ],
+      "faces": 26,
+      "triangles": 52,
+      "bounds_cm": [
+        [
+          -43362.756,
+          62319.162,
+          0.0
+        ],
+        [
+          -39836.022,
+          67930.804,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        -5
+      ],
+      "faces": 44,
+      "triangles": 88,
+      "bounds_cm": [
+        [
+          -40350.76,
+          -46618.59,
+          0.0
+        ],
+        [
+          -31452.036,
+          -39430.657,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        -4
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -40321.903,
+          -40206.558,
+          0.0
+        ],
+        [
+          -31071.442,
+          -30064.192,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        -3
+      ],
+      "faces": 76,
+      "triangles": 152,
+      "bounds_cm": [
+        [
+          -40300.846,
+          -30238.965,
+          0.0
+        ],
+        [
+          -29737.803,
+          -19551.132,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        -2
+      ],
+      "faces": 45,
+      "triangles": 90,
+      "bounds_cm": [
+        [
+          -40015.4,
+          -20161.165,
+          0.0
+        ],
+        [
+          -29878.966,
+          -10588.758,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YM001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        -1
+      ],
+      "faces": 52,
+      "triangles": 104,
+      "bounds_cm": [
+        [
+          -40822.603,
+          -8174.228,
+          0.0
+        ],
+        [
+          -29801.756,
+          631.184,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YP000": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        0
+      ],
+      "faces": 7,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          -39397.715,
+          -16.698,
+          0.0
+        ],
+        [
+          -31434.878,
+          2306.55,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YP001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        1
+      ],
+      "faces": 42,
+      "triangles": 84,
+      "bounds_cm": [
+        [
+          -38755.073,
+          12461.161,
+          0.0
+        ],
+        [
+          -31310.093,
+          19876.186,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YP002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        2
+      ],
+      "faces": 71,
+      "triangles": 142,
+      "bounds_cm": [
+        [
+          -40177.621,
+          19055.758,
+          0.0
+        ],
+        [
+          -30042.747,
+          30232.286,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        3
+      ],
+      "faces": 51,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          -40010.721,
+          29751.383,
+          0.0
+        ],
+        [
+          -30852.289,
+          40030.672,
+          6000.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        4
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          -40210.377,
+          39625.467,
+          0.0
+        ],
+        [
+          -29870.387,
+          49879.152,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        5
+      ],
+      "faces": 51,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          -38937.571,
+          49811.247,
+          0.0
+        ],
+        [
+          -29983.474,
+          60441.194,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM004_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -4,
+        6
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -40142.525,
+          59804.444,
+          0.0
+        ],
+        [
+          -29198.889,
+          67238.393,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        -5
+      ],
+      "faces": 45,
+      "triangles": 90,
+      "bounds_cm": [
+        [
+          -29430.521,
+          -46628.608,
+          0.0
+        ],
+        [
+          -21532.416,
+          -39652.184,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        -4
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          -27065.847,
+          -39964.993,
+          0.0
+        ],
+        [
+          -20285.347,
+          -31334.354,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        -3
+      ],
+      "faces": 81,
+      "triangles": 162,
+      "bounds_cm": [
+        [
+          -30649.513,
+          -29879.401,
+          0.0
+        ],
+        [
+          -19506.221,
+          -20392.711,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        -2
+      ],
+      "faces": 49,
+      "triangles": 98,
+      "bounds_cm": [
+        [
+          -30373.427,
+          -20397.164,
+          0.0
+        ],
+        [
+          -20273.648,
+          -9495.596,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YM001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        -1
+      ],
+      "faces": 57,
+      "triangles": 114,
+      "bounds_cm": [
+        [
+          -30267.359,
+          -11099.717,
+          0.0
+        ],
+        [
+          -20132.485,
+          -736.938,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YP001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 17,
+      "triangles": 34,
+      "bounds_cm": [
+        [
+          -29453.138,
+          17136.601,
+          0.0
+        ],
+        [
+          -27291.239,
+          19988.619,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YP002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        2
+      ],
+      "faces": 38,
+      "triangles": 76,
+      "bounds_cm": [
+        [
+          -29920.301,
+          21146.347,
+          0.0
+        ],
+        [
+          -20055.274,
+          30166.607,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        3
+      ],
+      "faces": 85,
+      "triangles": 170,
+      "bounds_cm": [
+        [
+          -29945.258,
+          29492.008,
+          0.0
+        ],
+        [
+          -19760.47,
+          40232.161,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        4
+      ],
+      "faces": 74,
+      "triangles": 148,
+      "bounds_cm": [
+        [
+          -30080.962,
+          39613.222,
+          0.0
+        ],
+        [
+          -19688.719,
+          50424.62,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        5
+      ],
+      "faces": 76,
+      "triangles": 152,
+      "bounds_cm": [
+        [
+          -30371.087,
+          49972.661,
+          0.0
+        ],
+        [
+          -19872.777,
+          60306.497,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM003_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -3,
+        6
+      ],
+      "faces": 48,
+      "triangles": 96,
+      "bounds_cm": [
+        [
+          -29784.598,
+          59653.048,
+          0.0
+        ],
+        [
+          -19439.149,
+          67879.596,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        -5
+      ],
+      "faces": 68,
+      "triangles": 136,
+      "bounds_cm": [
+        [
+          -17575.174,
+          -46222.29,
+          0.0
+        ],
+        [
+          -9764.419,
+          -39285.941,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        -4
+      ],
+      "faces": 69,
+      "triangles": 138,
+      "bounds_cm": [
+        [
+          -19148.244,
+          -40706.384,
+          0.0
+        ],
+        [
+          -9659.912,
+          -29518.724,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        -3
+      ],
+      "faces": 43,
+      "triangles": 86,
+      "bounds_cm": [
+        [
+          -20320.442,
+          -30163.267,
+          0.0
+        ],
+        [
+          -9804.974,
+          -19577.848,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        -2
+      ],
+      "faces": 81,
+      "triangles": 162,
+      "bounds_cm": [
+        [
+          -19331.522,
+          -20656.539,
+          0.0
+        ],
+        [
+          -10015.549,
+          -10519.74,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        3
+      ],
+      "faces": 21,
+      "triangles": 42,
+      "bounds_cm": [
+        [
+          -19829.102,
+          34415.691,
+          0.0
+        ],
+        [
+          -16396.737,
+          39791.334,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        4
+      ],
+      "faces": 77,
+      "triangles": 154,
+      "bounds_cm": [
+        [
+          -20432.749,
+          40252.199,
+          0.0
+        ],
+        [
+          -9744.921,
+          49718.852,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        5
+      ],
+      "faces": 68,
+      "triangles": 136,
+      "bounds_cm": [
+        [
+          -20183.179,
+          50648.374,
+          0.0
+        ],
+        [
+          -9863.467,
+          60583.684,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM002_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -2,
+        6
+      ],
+      "faces": 46,
+      "triangles": 92,
+      "bounds_cm": [
+        [
+          -20275.208,
+          59724.293,
+          0.0
+        ],
+        [
+          -9355.748,
+          68947.155,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        -5
+      ],
+      "faces": 58,
+      "triangles": 116,
+      "bounds_cm": [
+        [
+          -10375.865,
+          -46585.194,
+          0.0
+        ],
+        [
+          216.034,
+          -39354.96,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        -4
+      ],
+      "faces": 57,
+      "triangles": 114,
+      "bounds_cm": [
+        [
+          -10771.277,
+          -40652.951,
+          0.0
+        ],
+        [
+          -34.316,
+          -30120.966,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        -3
+      ],
+      "faces": 93,
+      "triangles": 186,
+      "bounds_cm": [
+        [
+          -10261.219,
+          -30188.871,
+          0.0
+        ],
+        [
+          127.905,
+          -19341.85,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        -2
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          -10165.291,
+          -20502.918,
+          0.0
+        ],
+        [
+          -1175.318,
+          -14104.244,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YP000": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        0
+      ],
+      "faces": 3,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          -695.676,
+          3765.956,
+          0.0
+        ],
+        [
+          -6.239,
+          4871.363,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        3
+      ],
+      "faces": 5,
+      "triangles": 10,
+      "bounds_cm": [
+        [
+          -8989.973,
+          37084.032,
+          0.0
+        ],
+        [
+          -7202.429,
+          37827.649,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        4
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          -10102.898,
+          44381.058,
+          0.0
+        ],
+        [
+          -9744.921,
+          44917.62,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        5
+      ],
+      "faces": 50,
+      "triangles": 100,
+      "bounds_cm": [
+        [
+          -9848.649,
+          50306.621,
+          0.0
+        ],
+        [
+          -1596.467,
+          60393.326,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XM001_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        -1,
+        6
+      ],
+      "faces": 27,
+      "triangles": 54,
+      "bounds_cm": [
+        [
+          -10166.07,
+          59688.671,
+          0.0
+        ],
+        [
+          290.905,
+          68947.155,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP000_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        0,
+        -5
+      ],
+      "faces": 80,
+      "triangles": 160,
+      "bounds_cm": [
+        [
+          -423.489,
+          -46631.948,
+          0.0
+        ],
+        [
+          7950.358,
+          -39796.9,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP000_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        0,
+        -4
+      ],
+      "faces": 89,
+      "triangles": 178,
+      "bounds_cm": [
+        [
+          -34.316,
+          -40304.519,
+          0.0
+        ],
+        [
+          10047.525,
+          -30370.322,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP000_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        0,
+        -3
+      ],
+      "faces": 51,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          102.948,
+          -29662.327,
+          0.0
+        ],
+        [
+          9371.347,
+          -20067.656,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP000_YM001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        0,
+        -1
+      ],
+      "faces": 19,
+      "triangles": 38,
+      "bounds_cm": [
+        [
+          2652.459,
+          -2194.117,
+          0.0
+        ],
+        [
+          4450.142,
+          138.037,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP000_YP000": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        0,
+        0
+      ],
+      "faces": 35,
+      "triangles": 70,
+      "bounds_cm": [
+        [
+          -273.747,
+          -80.15,
+          0.0
+        ],
+        [
+          5158.296,
+          4999.381,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP000_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        0,
+        5
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          8881.566,
+          59182.165,
+          0.0
+        ],
+        [
+          9833.051,
+          59699.803,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP000_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        0,
+        6
+      ],
+      "faces": 30,
+      "triangles": 60,
+      "bounds_cm": [
+        [
+          -43.675,
+          59699.803,
+          0.0
+        ],
+        [
+          10253.42,
+          67388.675,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP001_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        1,
+        -5
+      ],
+      "faces": 58,
+      "triangles": 116,
+      "bounds_cm": [
+        [
+          10279.937,
+          -45519.861,
+          0.0
+        ],
+        [
+          18649.884,
+          -39658.863,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP001_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        1,
+        -4
+      ],
+      "faces": 73,
+      "triangles": 146,
+      "bounds_cm": [
+        [
+          10076.381,
+          -40018.427,
+          0.0
+        ],
+        [
+          20748.611,
+          -30110.947,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP001_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        1,
+        -3
+      ],
+      "faces": 2,
+      "triangles": 4,
+      "bounds_cm": [
+        [
+          10089.64,
+          -30240.078,
+          0.0
+        ],
+        [
+          11158.89,
+          -29655.648,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP001_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        1,
+        5
+      ],
+      "faces": 8,
+      "triangles": 16,
+      "bounds_cm": [
+        [
+          16067.617,
+          54518.97,
+          0.0
+        ],
+        [
+          20357.098,
+          58038.908,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP001_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        1,
+        6
+      ],
+      "faces": 87,
+      "triangles": 174,
+      "bounds_cm": [
+        [
+          9833.051,
+          59182.165,
+          0.0
+        ],
+        [
+          20118.447,
+          68319.31,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP002_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        2,
+        -5
+      ],
+      "faces": 51,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          20754.85,
+          -45874.972,
+          0.0
+        ],
+        [
+          30012.33,
+          -39573.147,
+          2880.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP002_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        2,
+        -4
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          19220.775,
+          -40094.124,
+          0.0
+        ],
+        [
+          30085.641,
+          -33185.605,
+          2880.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP002_YP002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        2,
+        2
+      ],
+      "faces": 8,
+      "triangles": 16,
+      "bounds_cm": [
+        [
+          23869.013,
+          21592.74,
+          0.0
+        ],
+        [
+          25045.891,
+          22583.488,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP002_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        2,
+        4
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          23911.908,
+          45633.408,
+          0.0
+        ],
+        [
+          31006.71,
+          49834.624,
+          6000.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP002_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        2,
+        5
+      ],
+      "faces": 72,
+      "triangles": 144,
+      "bounds_cm": [
+        [
+          19823.642,
+          49318.1,
+          0.0
+        ],
+        [
+          30252.541,
+          60220.78,
+          6000.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP002_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        2,
+        6
+      ],
+      "faces": 76,
+      "triangles": 152,
+      "bounds_cm": [
+        [
+          19743.312,
+          59852.311,
+          0.0
+        ],
+        [
+          30364.848,
+          68922.665,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        -5
+      ],
+      "faces": 16,
+      "triangles": 32,
+      "bounds_cm": [
+        [
+          29792.397,
+          -43934.664,
+          0.0
+        ],
+        [
+          31988.611,
+          -39897.088,
+          2880.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        -4
+      ],
+      "faces": 25,
+      "triangles": 50,
+      "bounds_cm": [
+        [
+          30085.641,
+          -40044.03,
+          0.0
+        ],
+        [
+          40209.597,
+          -30030.796,
+          2880.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        -3
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          35901.398,
+          -30157.701,
+          0.0
+        ],
+        [
+          39495.983,
+          -20126.656,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        -2
+      ],
+      "faces": 5,
+      "triangles": 10,
+      "bounds_cm": [
+        [
+          36985.467,
+          -20347.07,
+          0.0
+        ],
+        [
+          40824.163,
+          -11366.885,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        3
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          38875.958,
+          39162.376,
+          0.0
+        ],
+        [
+          39864.099,
+          39809.145,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        4
+      ],
+      "faces": 31,
+      "triangles": 62,
+      "bounds_cm": [
+        [
+          30460.776,
+          39809.145,
+          0.0
+        ],
+        [
+          40450.588,
+          50846.523,
+          6000.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        5
+      ],
+      "faces": 71,
+      "triangles": 142,
+      "bounds_cm": [
+        [
+          29563.105,
+          49417.174,
+          0.0
+        ],
+        [
+          40356.219,
+          60199.63,
+          6000.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP003_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        3,
+        6
+      ],
+      "faces": 62,
+      "triangles": 124,
+      "bounds_cm": [
+        [
+          29785.378,
+          59624.105,
+          0.0
+        ],
+        [
+          39130.987,
+          67729.314,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        -5
+      ],
+      "faces": 4,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          46267.124,
+          -41485.624,
+          0.0
+        ],
+        [
+          48191.152,
+          -39702.278,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        -4
+      ],
+      "faces": 55,
+      "triangles": 110,
+      "bounds_cm": [
+        [
+          39633.247,
+          -39970.559,
+          0.0
+        ],
+        [
+          50424.022,
+          -30932.488,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        -3
+      ],
+      "faces": 72,
+      "triangles": 144,
+      "bounds_cm": [
+        [
+          40949.727,
+          -30038.589,
+          0.0
+        ],
+        [
+          49878.867,
+          -19298.435,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        -2
+      ],
+      "faces": 63,
+      "triangles": 126,
+      "bounds_cm": [
+        [
+          40594.87,
+          -20230.184,
+          0.0
+        ],
+        [
+          50024.71,
+          -10058.875,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YM001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        -1
+      ],
+      "faces": 64,
+      "triangles": 128,
+      "bounds_cm": [
+        [
+          40642.445,
+          -10140.139,
+          0.0
+        ],
+        [
+          50118.298,
+          132.471,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YP002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        2
+      ],
+      "faces": 33,
+      "triangles": 66,
+      "bounds_cm": [
+        [
+          46419.206,
+          22743.789,
+          0.0
+        ],
+        [
+          50003.652,
+          30556.227,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        3
+      ],
+      "faces": 22,
+      "triangles": 44,
+      "bounds_cm": [
+        [
+          39864.099,
+          30487.208,
+          0.0
+        ],
+        [
+          50544.127,
+          39985.031,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        4
+      ],
+      "faces": 50,
+      "triangles": 100,
+      "bounds_cm": [
+        [
+          39825.883,
+          39985.031,
+          0.0
+        ],
+        [
+          48093.663,
+          49837.964,
+          3840.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        5
+      ],
+      "faces": 62,
+      "triangles": 124,
+      "bounds_cm": [
+        [
+          39833.682,
+          51272.879,
+          0.0
+        ],
+        [
+          50083.203,
+          60223.007,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP004_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        4,
+        6
+      ],
+      "faces": 13,
+      "triangles": 26,
+      "bounds_cm": [
+        [
+          40275.889,
+          59491.634,
+          0.0
+        ],
+        [
+          50183.811,
+          62817.876,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YM005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        -5
+      ],
+      "faces": 14,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          50418.562,
+          -44092.739,
+          0.0
+        ],
+        [
+          52295.795,
+          -40318.991,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YM004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        -4
+      ],
+      "faces": 15,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          49719.767,
+          -40479.292,
+          0.0
+        ],
+        [
+          52018.929,
+          -33535.15,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YM003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 17,
+      "triangles": 34,
+      "bounds_cm": [
+        [
+          49816.475,
+          -27371.362,
+          0.0
+        ],
+        [
+          54052.923,
+          -20435.012,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YM002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 4,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          51829.412,
+          -12280.822,
+          0.0
+        ],
+        [
+          53333.07,
+          -10655.55,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YM001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        -1
+      ],
+      "faces": 9,
+      "triangles": 18,
+      "bounds_cm": [
+        [
+          50098.801,
+          -7564.194,
+          0.0
+        ],
+        [
+          54205.004,
+          -3800.465,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YP001": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        1
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          50384.246,
+          17837.917,
+          0.0
+        ],
+        [
+          54267.397,
+          19984.166,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YP002": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        2
+      ],
+      "faces": 26,
+      "triangles": 52,
+      "bounds_cm": [
+        [
+          49865.609,
+          19439.812,
+          0.0
+        ],
+        [
+          53360.366,
+          27341.305,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YP003": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        3
+      ],
+      "faces": 7,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          49594.202,
+          35394.194,
+          0.0
+        ],
+        [
+          51467.535,
+          37227.634,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YP004": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        4
+      ],
+      "faces": 51,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          50538.668,
+          40080.766,
+          0.0
+        ],
+        [
+          54802.412,
+          50286.584,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YP005": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        5
+      ],
+      "faces": 27,
+      "triangles": 54,
+      "bounds_cm": [
+        [
+          49611.36,
+          50019.416,
+          0.0
+        ],
+        [
+          54917.838,
+          59886.82,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Brick_XP005_YP006": {
+      "material": "Brick",
+      "collision": false,
+      "tile": [
+        5,
+        6
+      ],
+      "faces": 22,
+      "triangles": 44,
+      "bounds_cm": [
+        [
+          49618.379,
+          61158.095,
+          0.0
+        ],
+        [
+          52769.978,
+          68490.743,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Brick",
+      "oversized_face": false
+    },
+    "Cream_XM005_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        -4
+      ],
+      "faces": 28,
+      "triangles": 56,
+      "bounds_cm": [
+        [
+          -43454.004,
+          -36960.466,
+          0.0
+        ],
+        [
+          -40084.032,
+          -30356.964,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        -3
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          -42745.07,
+          -28797.371,
+          0.0
+        ],
+        [
+          -39999.802,
+          -18889.891,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        -2
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          -43043.774,
+          -19951.884,
+          0.0
+        ],
+        [
+          -39454.648,
+          -10400.628,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YM001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        -1
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          -41389.594,
+          -10400.628,
+          0.0
+        ],
+        [
+          -39742.433,
+          -4077.652,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YP000": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        0
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          -42422.189,
+          447.506,
+          0.0
+        ],
+        [
+          -39933.51,
+          7892.588,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YP001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        1
+      ],
+      "faces": 19,
+      "triangles": 38,
+      "bounds_cm": [
+        [
+          -42985.281,
+          14538.392,
+          0.0
+        ],
+        [
+          -39634.806,
+          20018.676,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YP002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        2
+      ],
+      "faces": 14,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          -42794.204,
+          22269.566,
+          0.0
+        ],
+        [
+          -39978.745,
+          29982.929,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        3
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          -43571.77,
+          29980.702,
+          0.0
+        ],
+        [
+          -39951.448,
+          39781.315,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        4
+      ],
+      "faces": 18,
+      "triangles": 36,
+      "bounds_cm": [
+        [
+          -43361.976,
+          44999.997,
+          0.0
+        ],
+        [
+          -39517.821,
+          50294.376,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        5
+      ],
+      "faces": 4,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          -42910.41,
+          55607.68,
+          0.0
+        ],
+        [
+          -41389.594,
+          57413.29,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM005_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -5,
+        6
+      ],
+      "faces": 17,
+      "triangles": 34,
+      "bounds_cm": [
+        [
+          -43619.345,
+          59891.273,
+          0.0
+        ],
+        [
+          -40342.961,
+          67429.864,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        -5
+      ],
+      "faces": 83,
+      "triangles": 166,
+      "bounds_cm": [
+        [
+          -40188.539,
+          -46754.4,
+          0.0
+        ],
+        [
+          -29917.182,
+          -39430.657,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        -4
+      ],
+      "faces": 91,
+      "triangles": 182,
+      "bounds_cm": [
+        [
+          -40166.702,
+          -39966.106,
+          0.0
+        ],
+        [
+          -29885.206,
+          -30356.964,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        -3
+      ],
+      "faces": 70,
+      "triangles": 140,
+      "bounds_cm": [
+        [
+          -40210.377,
+          -28797.371,
+          0.0
+        ],
+        [
+          -30115.278,
+          -19551.132,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        -2
+      ],
+      "faces": 48,
+      "triangles": 96,
+      "bounds_cm": [
+        [
+          -40593.31,
+          -20325.919,
+          0.0
+        ],
+        [
+          -30200.287,
+          -9566.841,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YM001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        -1
+      ],
+      "faces": 75,
+      "triangles": 150,
+      "bounds_cm": [
+        [
+          -40023.199,
+          -8669.602,
+          0.0
+        ],
+        [
+          -29809.555,
+          631.184,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP000": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        0
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          -40463.066,
+          -165.867,
+          0.0
+        ],
+        [
+          -30743.102,
+          7892.588,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        1
+      ],
+      "faces": 37,
+      "triangles": 74,
+      "bounds_cm": [
+        [
+          -39990.443,
+          11592.865,
+          0.0
+        ],
+        [
+          -29664.492,
+          20262.466,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        2
+      ],
+      "faces": 78,
+      "triangles": 156,
+      "bounds_cm": [
+        [
+          -39345.461,
+          20191.222,
+          0.0
+        ],
+        [
+          -29764.32,
+          30186.644,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP003_P000": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        3
+      ],
+      "faces": 2,
+      "triangles": 4,
+      "bounds_cm": [
+        [
+          -36659.466,
+          38042.497,
+          0.0
+        ],
+        [
+          -32032.286,
+          41623.661,
+          640.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP003_P001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        3
+      ],
+      "faces": 85,
+      "triangles": 170,
+      "bounds_cm": [
+        [
+          -39978.745,
+          29575.498,
+          0.0
+        ],
+        [
+          -29751.062,
+          40030.672,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        4
+      ],
+      "faces": 69,
+      "triangles": 138,
+      "bounds_cm": [
+        [
+          -40165.922,
+          39536.411,
+          0.0
+        ],
+        [
+          -29870.387,
+          50269.886,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        5
+      ],
+      "faces": 46,
+      "triangles": 92,
+      "bounds_cm": [
+        [
+          -41252.331,
+          49182.289,
+          0.0
+        ],
+        [
+          -30251.761,
+          60182.932,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM004_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -4,
+        6
+      ],
+      "faces": 12,
+      "triangles": 24,
+      "bounds_cm": [
+        [
+          -38465.728,
+          60982.209,
+          0.0
+        ],
+        [
+          -33973.471,
+          64869.504,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        -5
+      ],
+      "faces": 63,
+      "triangles": 126,
+      "bounds_cm": [
+        [
+          -30243.182,
+          -46356.988,
+          0.0
+        ],
+        [
+          -19765.15,
+          -39816.938,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        -4
+      ],
+      "faces": 83,
+      "triangles": 166,
+      "bounds_cm": [
+        [
+          -30212.766,
+          -40039.578,
+          0.0
+        ],
+        [
+          -19949.207,
+          -29514.272,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        -3
+      ],
+      "faces": 90,
+      "triangles": 180,
+      "bounds_cm": [
+        [
+          -30649.513,
+          -30244.531,
+          0.0
+        ],
+        [
+          -19679.36,
+          -19896.224,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        -2
+      ],
+      "faces": 40,
+      "triangles": 80,
+      "bounds_cm": [
+        [
+          -30240.843,
+          -18627.176,
+          0.0
+        ],
+        [
+          -19866.537,
+          -11577.28,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YM001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        -1
+      ],
+      "faces": 75,
+      "triangles": 150,
+      "bounds_cm": [
+        [
+          -30581.661,
+          -10154.61,
+          0.0
+        ],
+        [
+          -20389.854,
+          84.603,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YP001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          -29958.517,
+          15286.462,
+          0.0
+        ],
+        [
+          -26416.965,
+          20107.732,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YP002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        2
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -30230.704,
+          19819.413,
+          0.0
+        ],
+        [
+          -21551.913,
+          30172.173,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        3
+      ],
+      "faces": 102,
+      "triangles": 204,
+      "bounds_cm": [
+        [
+          -30288.417,
+          29936.174,
+          0.0
+        ],
+        [
+          -19760.47,
+          40219.916,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        4
+      ],
+      "faces": 63,
+      "triangles": 126,
+      "bounds_cm": [
+        [
+          -30208.866,
+          40219.916,
+          0.0
+        ],
+        [
+          -19843.92,
+          49556.324,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        5
+      ],
+      "faces": 65,
+      "triangles": 130,
+      "bounds_cm": [
+        [
+          -29233.204,
+          50357.828,
+          0.0
+        ],
+        [
+          -19831.442,
+          60916.53,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM003_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -3,
+        6
+      ],
+      "faces": 50,
+      "triangles": 100,
+      "bounds_cm": [
+        [
+          -29574.803,
+          59747.67,
+          0.0
+        ],
+        [
+          -20026.418,
+          68873.684,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        -5
+      ],
+      "faces": 24,
+      "triangles": 48,
+      "bounds_cm": [
+        [
+          -20173.04,
+          -44265.285,
+          0.0
+        ],
+        [
+          -10375.865,
+          -40824.384,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        -4
+      ],
+      "faces": 78,
+      "triangles": 156,
+      "bounds_cm": [
+        [
+          -20011.6,
+          -40068.521,
+          0.0
+        ],
+        [
+          -9742.582,
+          -29518.724,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        -3
+      ],
+      "faces": 119,
+      "triangles": 238,
+      "bounds_cm": [
+        [
+          -20321.222,
+          -30834.527,
+          0.0
+        ],
+        [
+          -9511.73,
+          -19479.887,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        -2
+      ],
+      "faces": 86,
+      "triangles": 172,
+      "bounds_cm": [
+        [
+          -20024.078,
+          -20452.824,
+          0.0
+        ],
+        [
+          -10144.233,
+          -9652.557,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YM001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        -1
+      ],
+      "faces": 15,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          -18993.823,
+          -10302.666,
+          0.0
+        ],
+        [
+          -15174.625,
+          -7950.474,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        3
+      ],
+      "faces": 64,
+      "triangles": 128,
+      "bounds_cm": [
+        [
+          -20564.553,
+          31449.013,
+          0.0
+        ],
+        [
+          -13911.957,
+          40070.747,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        4
+      ],
+      "faces": 105,
+      "triangles": 210,
+      "bounds_cm": [
+        [
+          -20284.567,
+          39893.748,
+          0.0
+        ],
+        [
+          -9744.921,
+          50377.866,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        5
+      ],
+      "faces": 52,
+      "triangles": 104,
+      "bounds_cm": [
+        [
+          -20016.279,
+          49815.7,
+          0.0
+        ],
+        [
+          -9863.467,
+          60583.684,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM002_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -2,
+        6
+      ],
+      "faces": 34,
+      "triangles": 68,
+      "bounds_cm": [
+        [
+          -20275.208,
+          59832.274,
+          0.0
+        ],
+        [
+          -9888.424,
+          67748.239,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        -5
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          -10860.966,
+          -46175.536,
+          0.0
+        ],
+        [
+          -80.33,
+          -39919.352,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        -4
+      ],
+      "faces": 94,
+      "triangles": 188,
+      "bounds_cm": [
+        [
+          -10178.549,
+          -40508.235,
+          0.0
+        ],
+        [
+          581.81,
+          -29702.402,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        -3
+      ],
+      "faces": 70,
+      "triangles": 140,
+      "bounds_cm": [
+        [
+          -10201.166,
+          -30960.318,
+          0.0
+        ],
+        [
+          1009.198,
+          -19341.85,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        -2
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          -10144.233,
+          -19798.262,
+          0.0
+        ],
+        [
+          -577.13,
+          -14665.297,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YP001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        1
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          -3203.073,
+          13638.926,
+          0.0
+        ],
+        [
+          -1803.922,
+          14850.088,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        3
+      ],
+      "faces": 5,
+      "triangles": 10,
+      "bounds_cm": [
+        [
+          -7512.831,
+          37775.329,
+          0.0
+        ],
+        [
+          -5580.225,
+          40155.35,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        4
+      ],
+      "faces": 8,
+      "triangles": 16,
+      "bounds_cm": [
+        [
+          -10533.406,
+          39721.202,
+          0.0
+        ],
+        [
+          -5580.225,
+          50306.621,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        5
+      ],
+      "faces": 41,
+      "triangles": 82,
+      "bounds_cm": [
+        [
+          -10283.056,
+          49674.324,
+          0.0
+        ],
+        [
+          -718.293,
+          60393.326,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XM001_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        -1,
+        6
+      ],
+      "faces": 46,
+      "triangles": 92,
+      "bounds_cm": [
+        [
+          -10324.391,
+          59654.162,
+          0.0
+        ],
+        [
+          -3231.929,
+          68487.404,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP000_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        0,
+        -5
+      ],
+      "faces": 46,
+      "triangles": 92,
+      "bounds_cm": [
+        [
+          792.384,
+          -45881.651,
+          0.0
+        ],
+        [
+          10286.176,
+          -39772.41,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP000_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        0,
+        -4
+      ],
+      "faces": 75,
+      "triangles": 150,
+      "bounds_cm": [
+        [
+          -242.551,
+          -40304.519,
+          0.0
+        ],
+        [
+          9306.614,
+          -30174.399,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP000_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        0,
+        -3
+      ],
+      "faces": 69,
+      "triangles": 138,
+      "bounds_cm": [
+        [
+          -116.986,
+          -29104.614,
+          0.0
+        ],
+        [
+          10493.631,
+          -20502.918,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP000_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        0,
+        -2
+      ],
+      "faces": 4,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          1023.236,
+          -13938.377,
+          0.0
+        ],
+        [
+          1410.069,
+          -13548.757,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP000_YP002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        0,
+        2
+      ],
+      "faces": 23,
+      "triangles": 46,
+      "bounds_cm": [
+        [
+          2095.607,
+          21348.95,
+          0.0
+        ],
+        [
+          5918.704,
+          24529.362,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP000_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        0,
+        5
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          8227.225,
+          59699.803,
+          0.0
+        ],
+        [
+          8881.566,
+          60169.573,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP000_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        0,
+        6
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          5741.666,
+          59699.803,
+          0.0
+        ],
+        [
+          9933.659,
+          66997.942,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP001_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        1,
+        -5
+      ],
+      "faces": 69,
+      "triangles": 138,
+      "bounds_cm": [
+        [
+          9786.256,
+          -46193.347,
+          0.0
+        ],
+        [
+          18335.582,
+          -39996.163,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP001_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        1,
+        -4
+      ],
+      "faces": 95,
+      "triangles": 190,
+      "bounds_cm": [
+        [
+          10215.205,
+          -39425.091,
+          0.0
+        ],
+        [
+          20748.611,
+          -29690.157,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP001_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        1,
+        -3
+      ],
+      "faces": 16,
+      "triangles": 32,
+      "bounds_cm": [
+        [
+          9855.668,
+          -30085.343,
+          0.0
+        ],
+        [
+          13749.737,
+          -26219.2,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP001_YP000": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        1,
+        0
+      ],
+      "faces": 14,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          14898.538,
+          -114.66,
+          0.0
+        ],
+        [
+          20031.097,
+          7554.175,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP001_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        1,
+        3
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          19904.753,
+          33119.926,
+          0.0
+        ],
+        [
+          20039.676,
+          33331.434,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP001_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        1,
+        5
+      ],
+      "faces": 63,
+      "triangles": 126,
+      "bounds_cm": [
+        [
+          10471.793,
+          53690.749,
+          0.0
+        ],
+        [
+          19793.226,
+          60248.61,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP001_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        1,
+        6
+      ],
+      "faces": 60,
+      "triangles": 120,
+      "bounds_cm": [
+        [
+          9882.185,
+          59825.594,
+          0.0
+        ],
+        [
+          19793.226,
+          68724.515,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP002_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        2,
+        -5
+      ],
+      "faces": 15,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          22299.063,
+          -44129.474,
+          0.0
+        ],
+        [
+          28379.988,
+          -39784.655,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP002_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        2,
+        -4
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          19220.775,
+          -40094.124,
+          0.0
+        ],
+        [
+          28905.644,
+          -33961.506,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP002_YP000": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        2,
+        0
+      ],
+      "faces": 7,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          19921.131,
+          1442.707,
+          0.0
+        ],
+        [
+          23255.227,
+          4594.176,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP002_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        2,
+        3
+      ],
+      "faces": 3,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          19904.753,
+          32917.324,
+          0.0
+        ],
+        [
+          20357.098,
+          33331.434,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP002_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        2,
+        5
+      ],
+      "faces": 66,
+      "triangles": 132,
+      "bounds_cm": [
+        [
+          21147.142,
+          49805.681,
+          0.0
+        ],
+        [
+          30190.149,
+          59292.372,
+          4160.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP002_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        2,
+        6
+      ],
+      "faces": 50,
+      "triangles": 100,
+      "bounds_cm": [
+        [
+          21034.056,
+          60158.441,
+          0.0
+        ],
+        [
+          30424.9,
+          68825.816,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        -5
+      ],
+      "faces": 3,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          35874.101,
+          -40706.384,
+          0.0
+        ],
+        [
+          38006.363,
+          -40195.426,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        -4
+      ],
+      "faces": 5,
+      "triangles": 10,
+      "bounds_cm": [
+        [
+          35874.101,
+          -40706.384,
+          0.0
+        ],
+        [
+          38783.149,
+          -37443.595,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        -3
+      ],
+      "faces": 8,
+      "triangles": 16,
+      "bounds_cm": [
+        [
+          36828.706,
+          -21341.157,
+          0.0
+        ],
+        [
+          39360.28,
+          -20347.07,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        -2
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          38513.302,
+          -14499.43,
+          0.0
+        ],
+        [
+          40313.324,
+          -9736.047,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YM001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        -1
+      ],
+      "faces": 5,
+      "triangles": 10,
+      "bounds_cm": [
+        [
+          39248.753,
+          -9736.047,
+          0.0
+        ],
+        [
+          40488.803,
+          -7422.818,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        3
+      ],
+      "faces": 4,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          34553.721,
+          31084.997,
+          0.0
+        ],
+        [
+          35900.618,
+          32434.195,
+          320.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        4
+      ],
+      "faces": 33,
+      "triangles": 66,
+      "bounds_cm": [
+        [
+          30973.954,
+          40932.364,
+          0.0
+        ],
+        [
+          39975.625,
+          50086.208,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        5
+      ],
+      "faces": 101,
+      "triangles": 202,
+      "bounds_cm": [
+        [
+          29831.392,
+          49666.531,
+          0.0
+        ],
+        [
+          40356.219,
+          60229.686,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP003_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        3,
+        6
+      ],
+      "faces": 70,
+      "triangles": 140,
+      "bounds_cm": [
+        [
+          29831.392,
+          59480.502,
+          0.0
+        ],
+        [
+          40217.396,
+          68469.592,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        -5
+      ],
+      "faces": 17,
+      "triangles": 34,
+      "bounds_cm": [
+        [
+          41852.078,
+          -45080.147,
+          0.0
+        ],
+        [
+          49529.47,
+          -40558.329,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        -4
+      ],
+      "faces": 45,
+      "triangles": 90,
+      "bounds_cm": [
+        [
+          43603.746,
+          -38606.889,
+          0.0
+        ],
+        [
+          50466.136,
+          -29908.344,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        -3
+      ],
+      "faces": 47,
+      "triangles": 94,
+      "bounds_cm": [
+        [
+          39970.166,
+          -29327.254,
+          0.0
+        ],
+        [
+          49974.016,
+          -19713.659,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        -2
+      ],
+      "faces": 39,
+      "triangles": 78,
+      "bounds_cm": [
+        [
+          40279.788,
+          -20112.184,
+          0.0
+        ],
+        [
+          50288.318,
+          -10014.347,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YM001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        -1
+      ],
+      "faces": 107,
+      "triangles": 214,
+      "bounds_cm": [
+        [
+          39248.753,
+          -10704.531,
+          0.0
+        ],
+        [
+          50118.298,
+          -505.393,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YP002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        2
+      ],
+      "faces": 35,
+      "triangles": 70,
+      "bounds_cm": [
+        [
+          46178.215,
+          20868.047,
+          0.0
+        ],
+        [
+          50148.715,
+          29047.841,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        3
+      ],
+      "faces": 27,
+      "triangles": 54,
+      "bounds_cm": [
+        [
+          42257.629,
+          33053.134,
+          0.0
+        ],
+        [
+          50544.127,
+          39939.39,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        4
+      ],
+      "faces": 50,
+      "triangles": 100,
+      "bounds_cm": [
+        [
+          39822.764,
+          39743.466,
+          0.0
+        ],
+        [
+          46030.813,
+          50509.224,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        5
+      ],
+      "faces": 45,
+      "triangles": 90,
+      "bounds_cm": [
+        [
+          40026.319,
+          49552.985,
+          0.0
+        ],
+        [
+          49386.747,
+          58208.115,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP004_YP006": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        4,
+        6
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          39666.003,
+          63774.115,
+          0.0
+        ],
+        [
+          44001.498,
+          68685.553,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YM005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        -5
+      ],
+      "faces": 7,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          50299.237,
+          -41165.023,
+          0.0
+        ],
+        [
+          52524.308,
+          -39806.919,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YM004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        -4
+      ],
+      "faces": 31,
+      "triangles": 62,
+      "bounds_cm": [
+        [
+          49630.078,
+          -40479.292,
+          0.0
+        ],
+        [
+          55300.772,
+          -30757.716,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YM003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 48,
+      "triangles": 96,
+      "bounds_cm": [
+        [
+          49179.292,
+          -30983.696,
+          0.0
+        ],
+        [
+          55227.461,
+          -19544.452,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YM002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 47,
+      "triangles": 94,
+      "bounds_cm": [
+        [
+          49415.603,
+          -19695.848,
+          0.0
+        ],
+        [
+          54832.828,
+          -9638.086,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YM001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        -1
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          49997.413,
+          -9638.086,
+          0.0
+        ],
+        [
+          51524.468,
+          -4265.782,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YP001": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        1
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          52249.001,
+          18216.405,
+          0.0
+        ],
+        [
+          53486.711,
+          19932.959,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YP002": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        2
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          49745.504,
+          19843.903,
+          0.0
+        ],
+        [
+          51306.095,
+          28303.11,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YP003": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        3
+      ],
+      "faces": 13,
+      "triangles": 26,
+      "bounds_cm": [
+        [
+          49186.311,
+          33053.134,
+          0.0
+        ],
+        [
+          52231.843,
+          40513.801,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YP004": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        4
+      ],
+      "faces": 33,
+      "triangles": 66,
+      "bounds_cm": [
+        [
+          50015.351,
+          39627.694,
+          0.0
+        ],
+        [
+          55185.346,
+          50047.246,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Cream_XP005_YP005": {
+      "material": "Cream",
+      "collision": false,
+      "tile": [
+        5,
+        5
+      ],
+      "faces": 17,
+      "triangles": 34,
+      "bounds_cm": [
+        [
+          52366.767,
+          49948.171,
+          0.0
+        ],
+        [
+          54516.187,
+          52535.248,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Cream",
+      "oversized_face": false
+    },
+    "Roof_XM005_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        -5
+      ],
+      "faces": 5,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          -43564.751,
+          -44546.924,
+          960.0
+        ],
+        [
+          -39320.504,
+          -39015.434,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        -4
+      ],
+      "faces": 13,
+      "triangles": 37,
+      "bounds_cm": [
+        [
+          -43454.004,
+          -38846.227,
+          960.0
+        ],
+        [
+          -39687.84,
+          -29987.382,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        -3
+      ],
+      "faces": 7,
+      "triangles": 39,
+      "bounds_cm": [
+        [
+          -43411.11,
+          -30447.133,
+          960.0
+        ],
+        [
+          -39471.806,
+          -24809.888,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YM002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        -2
+      ],
+      "faces": 8,
+      "triangles": 47,
+      "bounds_cm": [
+        [
+          -43414.229,
+          -21238.743,
+          960.0
+        ],
+        [
+          -38919.633,
+          -9566.841,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YM001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        -1
+      ],
+      "faces": 3,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          -41740.552,
+          -7348.233,
+          960.0
+        ],
+        [
+          -39697.979,
+          -3702.503,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YP000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        0
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          -43478.182,
+          817.089,
+          960.0
+        ],
+        [
+          -41751.47,
+          2265.362,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YP001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        1
+      ],
+      "faces": 5,
+      "triangles": 31,
+      "bounds_cm": [
+        [
+          -43278.526,
+          14538.392,
+          960.0
+        ],
+        [
+          -39634.806,
+          20018.676,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YP002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        2
+      ],
+      "faces": 9,
+      "triangles": 34,
+      "bounds_cm": [
+        [
+          -43639.622,
+          20046.506,
+          640.0
+        ],
+        [
+          -39357.16,
+          28651.542,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        3
+      ],
+      "faces": 11,
+      "triangles": 56,
+      "bounds_cm": [
+        [
+          -43571.77,
+          29603.328,
+          640.0
+        ],
+        [
+          -39663.663,
+          40514.914,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YP004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        4
+      ],
+      "faces": 6,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          -43361.976,
+          42493.07,
+          640.0
+        ],
+        [
+          -39547.457,
+          48945.178,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        5
+      ],
+      "faces": 4,
+      "triangles": 10,
+      "bounds_cm": [
+        [
+          -43545.253,
+          54001.332,
+          960.0
+        ],
+        [
+          -40032.558,
+          57825.174,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM005_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -5,
+        6
+      ],
+      "faces": 11,
+      "triangles": 40,
+      "bounds_cm": [
+        [
+          -43619.345,
+          59380.314,
+          960.0
+        ],
+        [
+          -39099.791,
+          67930.804,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -5
+      ],
+      "faces": 28,
+      "triangles": 110,
+      "bounds_cm": [
+        [
+          -40456.827,
+          -46754.4,
+          960.0
+        ],
+        [
+          -29404.004,
+          -39430.657,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM004_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -4
+      ],
+      "faces": 30,
+      "triangles": 137,
+      "bounds_cm": [
+        [
+          -40712.636,
+          -40656.29,
+          640.0
+        ],
+        [
+          -29907.823,
+          -29741.364,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM004_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -4
+      ],
+      "faces": 1,
+      "triangles": 16,
+      "bounds_cm": [
+        [
+          -31522.228,
+          -35831.682,
+          960.0
+        ],
+        [
+          -28641.256,
+          -32500.987,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -3
+      ],
+      "faces": 28,
+      "triangles": 165,
+      "bounds_cm": [
+        [
+          -40522.339,
+          -30611.887,
+          640.0
+        ],
+        [
+          -29312.755,
+          -19159.285,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM002_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -2
+      ],
+      "faces": 17,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          -40406.913,
+          -20571.936,
+          960.0
+        ],
+        [
+          -31147.093,
+          -13897.189,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM002_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -2
+      ],
+      "faces": 7,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          -39454.648,
+          -17357.014,
+          960.0
+        ],
+        [
+          -29924.981,
+          -8429.15,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM001_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -1
+      ],
+      "faces": 21,
+      "triangles": 117,
+      "bounds_cm": [
+        [
+          -41370.097,
+          -8658.47,
+          960.0
+        ],
+        [
+          -29520.99,
+          1058.653,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YM001_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        -1
+      ],
+      "faces": 3,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          -31685.228,
+          -5402.36,
+          960.0
+        ],
+        [
+          -29304.956,
+          84.603,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        0
+      ],
+      "faces": 13,
+      "triangles": 71,
+      "bounds_cm": [
+        [
+          -42422.189,
+          -1006.333,
+          960.0
+        ],
+        [
+          -32658.55,
+          10853.7,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        1
+      ],
+      "faces": 24,
+      "triangles": 126,
+      "bounds_cm": [
+        [
+          -40660.382,
+          9582.426,
+          640.0
+        ],
+        [
+          -29625.497,
+          21249.875,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP002_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        2
+      ],
+      "faces": 34,
+      "triangles": 169,
+      "bounds_cm": [
+        [
+          -40177.621,
+          19055.758,
+          640.0
+        ],
+        [
+          -28461.878,
+          30562.906,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP002_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        2
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          -40666.622,
+          19629.056,
+          960.0
+        ],
+        [
+          -38712.958,
+          22058.058,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        3
+      ],
+      "faces": 38,
+      "triangles": 132,
+      "bounds_cm": [
+        [
+          -40625.287,
+          29178.085,
+          640.0
+        ],
+        [
+          -29391.525,
+          40613.989,
+          6000.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP004_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        4
+      ],
+      "faces": 11,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          -40668.181,
+          38042.497,
+          640.0
+        ],
+        [
+          -30208.866,
+          49879.152,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP004_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        4
+      ],
+      "faces": 9,
+      "triangles": 32,
+      "bounds_cm": [
+        [
+          -34253.457,
+          42847.068,
+          640.0
+        ],
+        [
+          -29222.286,
+          50482.507,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP005_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        5
+      ],
+      "faces": 23,
+      "triangles": 86,
+      "bounds_cm": [
+        [
+          -41252.331,
+          49182.289,
+          640.0
+        ],
+        [
+          -30048.986,
+          60755.116,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP005_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        5
+      ],
+      "faces": 3,
+      "triangles": 9,
+      "bounds_cm": [
+        [
+          -36267.954,
+          51879.573,
+          640.0
+        ],
+        [
+          -29244.903,
+          59674.199,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM004_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -4,
+        6
+      ],
+      "faces": 17,
+      "triangles": 78,
+      "bounds_cm": [
+        [
+          -40142.525,
+          59130.958,
+          960.0
+        ],
+        [
+          -28801.137,
+          67769.39,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        -5
+      ],
+      "faces": 19,
+      "triangles": 99,
+      "bounds_cm": [
+        [
+          -30243.182,
+          -46628.608,
+          960.0
+        ],
+        [
+          -19765.15,
+          -39075.546,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        -4
+      ],
+      "faces": 25,
+      "triangles": 153,
+      "bounds_cm": [
+        [
+          -31071.442,
+          -41022.533,
+          960.0
+        ],
+        [
+          -19813.504,
+          -29339.499,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YM003_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        -3
+      ],
+      "faces": 21,
+      "triangles": 119,
+      "bounds_cm": [
+        [
+          -31004.37,
+          -30831.187,
+          960.0
+        ],
+        [
+          -20013.16,
+          -20716.652,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YM003_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        -3
+      ],
+      "faces": 10,
+      "triangles": 44,
+      "bounds_cm": [
+        [
+          -30207.307,
+          -24146.421,
+          960.0
+        ],
+        [
+          -18975.105,
+          -19601.226,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YM002_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        -2
+      ],
+      "faces": 27,
+      "triangles": 105,
+      "bounds_cm": [
+        [
+          -30810.174,
+          -20848.01,
+          960.0
+        ],
+        [
+          -19166.182,
+          -10258.138,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YM002_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        -2
+      ],
+      "faces": 2,
+      "triangles": 9,
+      "bounds_cm": [
+        [
+          -25753.265,
+          -15752.893,
+          960.0
+        ],
+        [
+          -22904.27,
+          -8757.544,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YM001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        -1
+      ],
+      "faces": 25,
+      "triangles": 138,
+      "bounds_cm": [
+        [
+          -30489.632,
+          -11099.717,
+          960.0
+        ],
+        [
+          -19094.431,
+          -736.938,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YP001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 3,
+      "triangles": 19,
+      "bounds_cm": [
+        [
+          -29453.138,
+          17136.601,
+          960.0
+        ],
+        [
+          -27291.239,
+          19988.619,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YP002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        2
+      ],
+      "faces": 19,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          -30453.757,
+          19057.984,
+          640.0
+        ],
+        [
+          -20224.514,
+          30604.094,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        3
+      ],
+      "faces": 40,
+      "triangles": 193,
+      "bounds_cm": [
+        [
+          -30360.168,
+          29492.008,
+          640.0
+        ],
+        [
+          -19152.924,
+          40428.084,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YP004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        4
+      ],
+      "faces": 32,
+      "triangles": 133,
+      "bounds_cm": [
+        [
+          -30405.403,
+          39091.131,
+          640.0
+        ],
+        [
+          -18837.062,
+          50424.62,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        5
+      ],
+      "faces": 36,
+      "triangles": 143,
+      "bounds_cm": [
+        [
+          -30371.087,
+          49546.306,
+          640.0
+        ],
+        [
+          -19777.628,
+          60916.53,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM003_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -3,
+        6
+      ],
+      "faces": 21,
+      "triangles": 85,
+      "bounds_cm": [
+        [
+          -29784.598,
+          59653.048,
+          640.0
+        ],
+        [
+          -19439.149,
+          68873.684,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        -5
+      ],
+      "faces": 8,
+      "triangles": 67,
+      "bounds_cm": [
+        [
+          -18914.272,
+          -46222.29,
+          960.0
+        ],
+        [
+          -10288.516,
+          -40824.384,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YM004_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        -4
+      ],
+      "faces": 20,
+      "triangles": 105,
+      "bounds_cm": [
+        [
+          -20570.792,
+          -41187.287,
+          960.0
+        ],
+        [
+          -9038.327,
+          -31932.142,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YM004_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        -4
+      ],
+      "faces": 14,
+      "triangles": 59,
+      "bounds_cm": [
+        [
+          -17914.433,
+          -35927.417,
+          960.0
+        ],
+        [
+          -9742.582,
+          -28997.747,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        -3
+      ],
+      "faces": 27,
+      "triangles": 158,
+      "bounds_cm": [
+        [
+          -21012.999,
+          -30035.249,
+          960.0
+        ],
+        [
+          -9634.955,
+          -18606.025,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YM002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        -2
+      ],
+      "faces": 32,
+      "triangles": 164,
+      "bounds_cm": [
+        [
+          -20653.462,
+          -21068.423,
+          960.0
+        ],
+        [
+          -9511.73,
+          -9227.315,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YM001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        -1
+      ],
+      "faces": 4,
+      "triangles": 27,
+      "bounds_cm": [
+        [
+          -20187.078,
+          -11493.79,
+          960.0
+        ],
+        [
+          -16485.646,
+          -7534.138,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YP000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        0
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          -12131.433,
+          231.546,
+          960.0
+        ],
+        [
+          -11381.164,
+          927.296,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        3
+      ],
+      "faces": 11,
+      "triangles": 98,
+      "bounds_cm": [
+        [
+          -21025.477,
+          31449.013,
+          960.0
+        ],
+        [
+          -13911.957,
+          40212.124,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YP004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        4
+      ],
+      "faces": 32,
+      "triangles": 157,
+      "bounds_cm": [
+        [
+          -20284.567,
+          39893.748,
+          640.0
+        ],
+        [
+          -9280.098,
+          50760.807,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YP005_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        5
+      ],
+      "faces": 29,
+      "triangles": 138,
+      "bounds_cm": [
+        [
+          -20453.806,
+          49318.1,
+          640.0
+        ],
+        [
+          -9492.232,
+          60928.776,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YP005_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        5
+      ],
+      "faces": 3,
+      "triangles": 16,
+      "bounds_cm": [
+        [
+          -20518.538,
+          55654.434,
+          640.0
+        ],
+        [
+          -15781.391,
+          61341.773,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM002_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -2,
+        6
+      ],
+      "faces": 18,
+      "triangles": 93,
+      "bounds_cm": [
+        [
+          -20484.223,
+          60315.402,
+          640.0
+        ],
+        [
+          -9355.748,
+          68646.591,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        -5
+      ],
+      "faces": 19,
+      "triangles": 108,
+      "bounds_cm": [
+        [
+          -10860.966,
+          -46585.194,
+          960.0
+        ],
+        [
+          541.255,
+          -38703.738,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        -4
+      ],
+      "faces": 25,
+      "triangles": 140,
+      "bounds_cm": [
+        [
+          -10771.277,
+          -40508.235,
+          960.0
+        ],
+        [
+          -330.68,
+          -28686.051,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YM003_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        -3
+      ],
+      "faces": 26,
+      "triangles": 135,
+      "bounds_cm": [
+        [
+          -10512.349,
+          -31013.752,
+          960.0
+        ],
+        [
+          249.57,
+          -19479.887,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YM003_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        -3
+      ],
+      "faces": 5,
+      "triangles": 29,
+      "bounds_cm": [
+        [
+          -3058.01,
+          -22487.753,
+          960.0
+        ],
+        [
+          796.284,
+          -18905.476,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YM002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        -2
+      ],
+      "faces": 12,
+      "triangles": 62,
+      "bounds_cm": [
+        [
+          -10803.253,
+          -20879.179,
+          960.0
+        ],
+        [
+          -1812.501,
+          -14104.244,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        0
+      ],
+      "faces": 1,
+      "triangles": 3,
+      "bounds_cm": [
+        [
+          -11460.714,
+          3711.409,
+          960.0
+        ],
+        [
+          -8050.186,
+          6576.786,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        1
+      ],
+      "faces": 1,
+      "triangles": 4,
+      "bounds_cm": [
+        [
+          -3203.073,
+          13638.926,
+          960.0
+        ],
+        [
+          -1803.922,
+          14850.088,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        3
+      ],
+      "faces": 2,
+      "triangles": 5,
+      "bounds_cm": [
+        [
+          -8989.973,
+          37084.032,
+          960.0
+        ],
+        [
+          -5740.886,
+          39805.806,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        4
+      ],
+      "faces": 4,
+      "triangles": 16,
+      "bounds_cm": [
+        [
+          -10566.162,
+          39721.202,
+          960.0
+        ],
+        [
+          -5580.225,
+          51150.427,
+          3200.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        5
+      ],
+      "faces": 18,
+      "triangles": 95,
+      "bounds_cm": [
+        [
+          -10283.056,
+          49674.324,
+          640.0
+        ],
+        [
+          -718.293,
+          60867.55,
+          2560.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP006_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        6
+      ],
+      "faces": 6,
+      "triangles": 18,
+      "bounds_cm": [
+        [
+          -10526.387,
+          58699.036,
+          960.0
+        ],
+        [
+          382.154,
+          68033.218,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP006_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        6
+      ],
+      "faces": 11,
+      "triangles": 51,
+      "bounds_cm": [
+        [
+          -8232.684,
+          60309.836,
+          960.0
+        ],
+        [
+          1576.969,
+          66886.622,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XM001_YP006_P002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        -1,
+        6
+      ],
+      "faces": 3,
+      "triangles": 17,
+      "bounds_cm": [
+        [
+          -10436.698,
+          61119.133,
+          640.0
+        ],
+        [
+          -6756.323,
+          68947.155,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        -5
+      ],
+      "faces": 31,
+      "triangles": 114,
+      "bounds_cm": [
+        [
+          -423.489,
+          -46631.948,
+          960.0
+        ],
+        [
+          10310.353,
+          -39359.412,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YM004_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        -4
+      ],
+      "faces": 23,
+      "triangles": 145,
+      "bounds_cm": [
+        [
+          -2843.536,
+          -40304.519,
+          640.0
+        ],
+        [
+          8577.403,
+          -28971.03,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YM004_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        -4
+      ],
+      "faces": 10,
+      "triangles": 51,
+      "bounds_cm": [
+        [
+          5999.814,
+          -39407.28,
+          960.0
+        ],
+        [
+          10408.621,
+          -29406.291,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        -3
+      ],
+      "faces": 26,
+      "triangles": 129,
+      "bounds_cm": [
+        [
+          -705.035,
+          -30609.66,
+          960.0
+        ],
+        [
+          10493.631,
+          -20502.918,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YM002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        -2
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          1023.236,
+          -13938.377,
+          960.0
+        ],
+        [
+          1410.069,
+          -13548.757,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YP000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        0
+      ],
+      "faces": 1,
+      "triangles": 55,
+      "bounds_cm": [
+        [
+          -695.676,
+          -2194.117,
+          960.0
+        ],
+        [
+          5158.296,
+          4999.381,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YP002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        2
+      ],
+      "faces": 1,
+      "triangles": 21,
+      "bounds_cm": [
+        [
+          2095.607,
+          21348.95,
+          960.0
+        ],
+        [
+          5918.704,
+          24529.362,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP000_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        0,
+        6
+      ],
+      "faces": 13,
+      "triangles": 75,
+      "bounds_cm": [
+        [
+          4680.994,
+          59699.803,
+          960.0
+        ],
+        [
+          10780.636,
+          67921.898,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP001_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        1,
+        -5
+      ],
+      "faces": 25,
+      "triangles": 125,
+      "bounds_cm": [
+        [
+          9078.102,
+          -46193.347,
+          960.0
+        ],
+        [
+          18649.884,
+          -39528.619,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP001_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        1,
+        -4
+      ],
+      "faces": 32,
+      "triangles": 223,
+      "bounds_cm": [
+        [
+          9661.472,
+          -40990.25,
+          960.0
+        ],
+        [
+          20748.611,
+          -29053.407,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP001_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        1,
+        -3
+      ],
+      "faces": 5,
+      "triangles": 31,
+      "bounds_cm": [
+        [
+          9265.279,
+          -30730.999,
+          960.0
+        ],
+        [
+          13749.737,
+          -26623.291,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP001_YP000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        1,
+        0
+      ],
+      "faces": 1,
+      "triangles": 19,
+      "bounds_cm": [
+        [
+          14898.538,
+          -114.66,
+          960.0
+        ],
+        [
+          23255.227,
+          7554.175,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP001_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        1,
+        5
+      ],
+      "faces": 13,
+      "triangles": 76,
+      "bounds_cm": [
+        [
+          10471.793,
+          52603.153,
+          960.0
+        ],
+        [
+          20756.41,
+          61119.133,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP001_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        1,
+        6
+      ],
+      "faces": 30,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          8881.566,
+          58746.904,
+          640.0
+        ],
+        [
+          20780.587,
+          68777.949,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP002_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        -5
+      ],
+      "faces": 8,
+      "triangles": 46,
+      "bounds_cm": [
+        [
+          20229.973,
+          -46275.724,
+          960.0
+        ],
+        [
+          26944.181,
+          -39664.429,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP002_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        -4
+      ],
+      "faces": 9,
+      "triangles": 53,
+      "bounds_cm": [
+        [
+          18846.421,
+          -40775.403,
+          960.0
+        ],
+        [
+          28905.644,
+          -33185.605,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP002_YM001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        -1
+      ],
+      "faces": 1,
+      "triangles": 50,
+      "bounds_cm": [
+        [
+          18239.654,
+          -13387.343,
+          960.0
+        ],
+        [
+          34056.921,
+          -1556.254,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": true
+    },
+    "Roof_XP002_YP002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        2
+      ],
+      "faces": 1,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          23869.013,
+          21592.74,
+          960.0
+        ],
+        [
+          25045.891,
+          22583.488,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP002_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        3
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          19904.753,
+          32917.324,
+          960.0
+        ],
+        [
+          20357.098,
+          33331.434,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP002_YP004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        4
+      ],
+      "faces": 1,
+      "triangles": 9,
+      "bounds_cm": [
+        [
+          24597.445,
+          45633.408,
+          6000.0
+        ],
+        [
+          33251.278,
+          51181.596,
+          6000.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP002_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        5
+      ],
+      "faces": 28,
+      "triangles": 109,
+      "bounds_cm": [
+        [
+          19531.178,
+          49318.1,
+          640.0
+        ],
+        [
+          30252.541,
+          60605.948,
+          4160.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP002_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        2,
+        6
+      ],
+      "faces": 26,
+      "triangles": 105,
+      "bounds_cm": [
+        [
+          19743.312,
+          59555.087,
+          640.0
+        ],
+        [
+          30424.9,
+          69005.042,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        -5
+      ],
+      "faces": 6,
+      "triangles": 70,
+      "bounds_cm": [
+        [
+          28547.667,
+          -46469.421,
+          960.0
+        ],
+        [
+          39547.457,
+          -39447.355,
+          2880.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        -4
+      ],
+      "faces": 4,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          35707.201,
+          -40706.384,
+          960.0
+        ],
+        [
+          40209.597,
+          -29136.897,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        -3
+      ],
+      "faces": 4,
+      "triangles": 35,
+      "bounds_cm": [
+        [
+          35814.828,
+          -30582.944,
+          960.0
+        ],
+        [
+          41489.422,
+          -19602.339,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YM002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        -2
+      ],
+      "faces": 7,
+      "triangles": 25,
+      "bounds_cm": [
+        [
+          37097.773,
+          -20126.656,
+          960.0
+        ],
+        [
+          40824.163,
+          -11366.885,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        3
+      ],
+      "faces": 1,
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          34553.721,
+          31084.997,
+          320.0
+        ],
+        [
+          35900.618,
+          32434.195,
+          320.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YP004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        4
+      ],
+      "faces": 15,
+      "triangles": 75,
+      "bounds_cm": [
+        [
+          30973.954,
+          39162.376,
+          960.0
+        ],
+        [
+          41795.925,
+          50803.108,
+          3840.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        5
+      ],
+      "faces": 41,
+      "triangles": 144,
+      "bounds_cm": [
+        [
+          29473.415,
+          49666.531,
+          640.0
+        ],
+        [
+          40869.397,
+          60646.023,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP003_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        3,
+        6
+      ],
+      "faces": 29,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          29390.745,
+          59159.901,
+          640.0
+        ],
+        [
+          40385.076,
+          68469.592,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        -5
+      ],
+      "faces": 6,
+      "triangles": 34,
+      "bounds_cm": [
+        [
+          40034.118,
+          -46703.193,
+          960.0
+        ],
+        [
+          49529.47,
+          -39702.278,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        -4
+      ],
+      "faces": 24,
+      "triangles": 71,
+      "bounds_cm": [
+        [
+          39633.247,
+          -40608.423,
+          960.0
+        ],
+        [
+          50714.926,
+          -29199.236,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        -3
+      ],
+      "faces": 21,
+      "triangles": 114,
+      "bounds_cm": [
+        [
+          38948.489,
+          -30038.589,
+          960.0
+        ],
+        [
+          50544.907,
+          -19478.774,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YM002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        -2
+      ],
+      "faces": 22,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          38978.126,
+          -20869.16,
+          960.0
+        ],
+        [
+          50024.71,
+          -9040.297,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YM001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        -1
+      ],
+      "faces": 32,
+      "triangles": 179,
+      "bounds_cm": [
+        [
+          39248.753,
+          -10704.531,
+          960.0
+        ],
+        [
+          50805.395,
+          132.471,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        0
+      ],
+      "faces": 1,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          41265.589,
+          -578.864,
+          960.0
+        ],
+        [
+          43184.157,
+          1930.289,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        2
+      ],
+      "faces": 8,
+      "triangles": 76,
+      "bounds_cm": [
+        [
+          46178.215,
+          20273.598,
+          960.0
+        ],
+        [
+          50409.983,
+          30556.227,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        3
+      ],
+      "faces": 6,
+      "triangles": 42,
+      "bounds_cm": [
+        [
+          41106.488,
+          32070.179,
+          640.0
+        ],
+        [
+          50402.184,
+          39634.373,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP004_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        4
+      ],
+      "faces": 4,
+      "triangles": 27,
+      "bounds_cm": [
+        [
+          40296.946,
+          38272.929,
+          960.0
+        ],
+        [
+          46746.766,
+          44422.246,
+          3840.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP004_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        4
+      ],
+      "faces": 20,
+      "triangles": 76,
+      "bounds_cm": [
+        [
+          39822.764,
+          43396.989,
+          640.0
+        ],
+        [
+          48093.663,
+          50537.054,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        5
+      ],
+      "faces": 33,
+      "triangles": 125,
+      "bounds_cm": [
+        [
+          39307.246,
+          49381.552,
+          640.0
+        ],
+        [
+          50526.969,
+          60658.268,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP006_P000": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        6
+      ],
+      "faces": 7,
+      "triangles": 49,
+      "bounds_cm": [
+        [
+          39666.003,
+          59685.331,
+          960.0
+        ],
+        [
+          51342.75,
+          68685.553,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP004_YP006_P001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        4,
+        6
+      ],
+      "faces": 3,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          39125.528,
+          59491.634,
+          960.0
+        ],
+        [
+          41689.858,
+          66689.586,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YM005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        -5
+      ],
+      "faces": 6,
+      "triangles": 32,
+      "bounds_cm": [
+        [
+          49169.153,
+          -44840.809,
+          960.0
+        ],
+        [
+          53134.194,
+          -39189.093,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YM004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        -4
+      ],
+      "faces": 12,
+      "triangles": 45,
+      "bounds_cm": [
+        [
+          49603.561,
+          -40479.292,
+          960.0
+        ],
+        [
+          55300.772,
+          -28663.787,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YM003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 11,
+      "triangles": 49,
+      "bounds_cm": [
+        [
+          49179.292,
+          -30983.696,
+          960.0
+        ],
+        [
+          55227.461,
+          -19258.36,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YM002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 8,
+      "triangles": 40,
+      "bounds_cm": [
+        [
+          49415.603,
+          -17591.9,
+          960.0
+        ],
+        [
+          54832.828,
+          -9638.086,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YM001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        -1
+      ],
+      "faces": 4,
+      "triangles": 18,
+      "bounds_cm": [
+        [
+          49509.972,
+          -10788.021,
+          960.0
+        ],
+        [
+          54205.004,
+          -4265.782,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YP001": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        1
+      ],
+      "faces": 4,
+      "triangles": 17,
+      "bounds_cm": [
+        [
+          50974.635,
+          17837.917,
+          960.0
+        ],
+        [
+          54267.397,
+          20831.312,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YP002": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        2
+      ],
+      "faces": 5,
+      "triangles": 36,
+      "bounds_cm": [
+        [
+          49575.484,
+          19439.812,
+          960.0
+        ],
+        [
+          53360.366,
+          28421.109,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YP003": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        3
+      ],
+      "faces": 7,
+      "triangles": 27,
+      "bounds_cm": [
+        [
+          48991.335,
+          31224.147,
+          640.0
+        ],
+        [
+          53085.84,
+          40513.801,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YP004": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        4
+      ],
+      "faces": 13,
+      "triangles": 94,
+      "bounds_cm": [
+        [
+          50538.668,
+          40080.766,
+          640.0
+        ],
+        [
+          55185.346,
+          50286.584,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YP005": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        5
+      ],
+      "faces": 5,
+      "triangles": 37,
+      "bounds_cm": [
+        [
+          52366.767,
+          49948.171,
+          960.0
+        ],
+        [
+          55260.997,
+          56341.278,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Roof_XP005_YP006": {
+      "material": "Roof",
+      "collision": false,
+      "tile": [
+        5,
+        6
+      ],
+      "faces": 4,
+      "triangles": 40,
+      "bounds_cm": [
+        [
+          48744.885,
+          60540.269,
+          960.0
+        ],
+        [
+          55004.408,
+          69013.947,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Roof",
+      "oversized_face": false
+    },
+    "Sage_XM005_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        -5
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          -43564.751,
+          -45477.56,
+          0.0
+        ],
+        [
+          -39790.788,
+          -42952.822,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        -4
+      ],
+      "faces": 14,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          -42690.477,
+          -38110.402,
+          0.0
+        ],
+        [
+          -40302.406,
+          -32288.366,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        -3
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          -43043.774,
+          -28010.338,
+          0.0
+        ],
+        [
+          -40711.076,
+          -25176.131,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        -2
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          -41269.489,
+          -18896.57,
+          0.0
+        ],
+        [
+          -40051.276,
+          -17418.24,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        -1
+      ],
+      "faces": 11,
+      "triangles": 22,
+      "bounds_cm": [
+        [
+          -41740.552,
+          -7348.233,
+          0.0
+        ],
+        [
+          -39697.979,
+          447.506,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YP000": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        0
+      ],
+      "faces": 4,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          -43478.182,
+          817.089,
+          0.0
+        ],
+        [
+          -41751.47,
+          2265.362,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YP001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        1
+      ],
+      "faces": 3,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          -40666.622,
+          14150.998,
+          0.0
+        ],
+        [
+          -39634.806,
+          20046.506,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YP002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        2
+      ],
+      "faces": 13,
+      "triangles": 26,
+      "bounds_cm": [
+        [
+          -43450.105,
+          20046.506,
+          0.0
+        ],
+        [
+          -39357.16,
+          28651.542,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YP003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        3
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          -41905.112,
+          33835.714,
+          0.0
+        ],
+        [
+          -39989.663,
+          36308.131,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        4
+      ],
+      "faces": 15,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          -42911.97,
+          42493.07,
+          0.0
+        ],
+        [
+          -40165.922,
+          45707.992,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        5
+      ],
+      "faces": 16,
+      "triangles": 32,
+      "bounds_cm": [
+        [
+          -43545.253,
+          54001.332,
+          0.0
+        ],
+        [
+          -39697.199,
+          59891.273,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM005_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -5,
+        6
+      ],
+      "faces": 15,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          -42837.879,
+          59380.314,
+          0.0
+        ],
+        [
+          -39556.816,
+          66903.32,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        -5
+      ],
+      "faces": 39,
+      "triangles": 78,
+      "bounds_cm": [
+        [
+          -39984.204,
+          -46157.725,
+          0.0
+        ],
+        [
+          -29805.655,
+          -40196.539,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        -4
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -39951.448,
+          -40196.539,
+          0.0
+        ],
+        [
+          -30088.761,
+          -29906.118,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        -3
+      ],
+      "faces": 67,
+      "triangles": 134,
+      "bounds_cm": [
+        [
+          -40088.712,
+          -30238.965,
+          0.0
+        ],
+        [
+          -29737.803,
+          -20363.768,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        -2
+      ],
+      "faces": 48,
+      "triangles": 96,
+      "bounds_cm": [
+        [
+          -39970.946,
+          -18646.1,
+          0.0
+        ],
+        [
+          -29924.981,
+          -8560.508,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        -1
+      ],
+      "faces": 51,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          -40822.603,
+          -10176.874,
+          0.0
+        ],
+        [
+          -30558.264,
+          579.977,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YP000": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        0
+      ],
+      "faces": 43,
+      "triangles": 86,
+      "bounds_cm": [
+        [
+          -40020.08,
+          -129.131,
+          0.0
+        ],
+        [
+          -32658.55,
+          10112.309,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YP001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        1
+      ],
+      "faces": 90,
+      "triangles": 180,
+      "bounds_cm": [
+        [
+          -40046.597,
+          9298.56,
+          0.0
+        ],
+        [
+          -29655.133,
+          20262.466,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YP002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        2
+      ],
+      "faces": 87,
+      "triangles": 174,
+      "bounds_cm": [
+        [
+          -40023.199,
+          19629.056,
+          0.0
+        ],
+        [
+          -29800.976,
+          30104.268,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YP003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        3
+      ],
+      "faces": 75,
+      "triangles": 150,
+      "bounds_cm": [
+        [
+          -40010.721,
+          29575.498,
+          0.0
+        ],
+        [
+          -29861.808,
+          39231.394,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        4
+      ],
+      "faces": 16,
+      "triangles": 32,
+      "bounds_cm": [
+        [
+          -31700.826,
+          42572.108,
+          0.0
+        ],
+        [
+          -29895.344,
+          45185.901,
+          640.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        5
+      ],
+      "faces": 45,
+      "triangles": 90,
+      "bounds_cm": [
+        [
+          -39697.199,
+          51879.573,
+          0.0
+        ],
+        [
+          -29843.871,
+          60182.932,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM004_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -4,
+        6
+      ],
+      "faces": 41,
+      "triangles": 82,
+      "bounds_cm": [
+        [
+          -40342.961,
+          60182.932,
+          0.0
+        ],
+        [
+          -30385.905,
+          67769.39,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        -5
+      ],
+      "faces": 32,
+      "triangles": 64,
+      "bounds_cm": [
+        [
+          -29805.655,
+          -46322.478,
+          0.0
+        ],
+        [
+          -19813.504,
+          -39264.79,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        -4
+      ],
+      "faces": 74,
+      "triangles": 148,
+      "bounds_cm": [
+        [
+          -30485.733,
+          -40246.633,
+          0.0
+        ],
+        [
+          -19813.504,
+          -29776.987,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        -3
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -30176.89,
+          -30382.568,
+          0.0
+        ],
+        [
+          -24524.914,
+          -19830.545,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        -2
+      ],
+      "faces": 78,
+      "triangles": 156,
+      "bounds_cm": [
+        [
+          -28759.022,
+          -20338.164,
+          0.0
+        ],
+        [
+          -19701.197,
+          -9338.635,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        -1
+      ],
+      "faces": 60,
+      "triangles": 120,
+      "bounds_cm": [
+        [
+          -29930.44,
+          -9908.593,
+          0.0
+        ],
+        [
+          -19760.47,
+          -5031.664,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YP001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        1
+      ],
+      "faces": 14,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          -30097.34,
+          17864.634,
+          0.0
+        ],
+        [
+          -27720.967,
+          20074.336,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YP002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        2
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          -30156.613,
+          20065.43,
+          0.0
+        ],
+        [
+          -22385.633,
+          30166.607,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YP003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        3
+      ],
+      "faces": 85,
+      "triangles": 170,
+      "bounds_cm": [
+        [
+          -30288.417,
+          29544.328,
+          0.0
+        ],
+        [
+          -19592.79,
+          40219.916,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        4
+      ],
+      "faces": 60,
+      "triangles": 120,
+      "bounds_cm": [
+        [
+          -30405.403,
+          39613.222,
+          0.0
+        ],
+        [
+          -21187.697,
+          50024.982,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        5
+      ],
+      "faces": 77,
+      "triangles": 154,
+      "bounds_cm": [
+        [
+          -30371.087,
+          51879.573,
+          0.0
+        ],
+        [
+          -19872.777,
+          60339.893,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM003_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -3,
+        6
+      ],
+      "faces": 36,
+      "triangles": 72,
+      "bounds_cm": [
+        [
+          -29103.74,
+          59747.67,
+          0.0
+        ],
+        [
+          -20984.142,
+          68177.934,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        -4
+      ],
+      "faces": 71,
+      "triangles": 142,
+      "bounds_cm": [
+        [
+          -20011.6,
+          -36643.204,
+          0.0
+        ],
+        [
+          -9888.424,
+          -29894.986,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        -3
+      ],
+      "faces": 48,
+      "triangles": 96,
+      "bounds_cm": [
+        [
+          -19679.36,
+          -28920.936,
+          0.0
+        ],
+        [
+          -9511.73,
+          -19479.887,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        -2
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -20043.576,
+          -19154.832,
+          0.0
+        ],
+        [
+          -10040.506,
+          -9740.5,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        -1
+      ],
+      "faces": 21,
+      "triangles": 42,
+      "bounds_cm": [
+        [
+          -20132.485,
+          -10755.738,
+          0.0
+        ],
+        [
+          -16485.646,
+          -7115.574,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YP000": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        0
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          -12131.433,
+          231.546,
+          0.0
+        ],
+        [
+          -8801.236,
+          6576.786,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YP003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        3
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          -20412.471,
+          30141.003,
+          0.0
+        ],
+        [
+          -15619.171,
+          39189.093,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        4
+      ],
+      "faces": 42,
+      "triangles": 84,
+      "bounds_cm": [
+        [
+          -19570.173,
+          40883.383,
+          0.0
+        ],
+        [
+          -9579.581,
+          50087.321,
+          3200.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        5
+      ],
+      "faces": 85,
+      "triangles": 170,
+      "bounds_cm": [
+        [
+          -20127.026,
+          49650.946,
+          0.0
+        ],
+        [
+          -9900.123,
+          60264.195,
+          3200.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM002_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -2,
+        6
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -19376.756,
+          59808.896,
+          0.0
+        ],
+        [
+          -9774.558,
+          68646.591,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        -5
+      ],
+      "faces": 54,
+      "triangles": 108,
+      "bounds_cm": [
+        [
+          -9587.38,
+          -45425.239,
+          0.0
+        ],
+        [
+          -1160.5,
+          -39899.314,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        -4
+      ],
+      "faces": 52,
+      "triangles": 104,
+      "bounds_cm": [
+        [
+          -10077.161,
+          -40508.235,
+          0.0
+        ],
+        [
+          -2190.755,
+          -29715.761,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        -3
+      ],
+      "faces": 70,
+      "triangles": 140,
+      "bounds_cm": [
+        [
+          -9847.869,
+          -31013.752,
+          0.0
+        ],
+        [
+          249.57,
+          -19760.413,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        -2
+      ],
+      "faces": 20,
+      "triangles": 40,
+      "bounds_cm": [
+        [
+          -10046.745,
+          -20121.09,
+          0.0
+        ],
+        [
+          102.948,
+          -15588.14,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YP000": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        0
+      ],
+      "faces": 3,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          -10709.665,
+          3711.409,
+          0.0
+        ],
+        [
+          -8050.186,
+          6576.786,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        4
+      ],
+      "faces": 12,
+      "triangles": 24,
+      "bounds_cm": [
+        [
+          -10533.406,
+          45730.256,
+          0.0
+        ],
+        [
+          -6531.71,
+          49674.324,
+          3200.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        5
+      ],
+      "faces": 43,
+      "triangles": 86,
+      "bounds_cm": [
+        [
+          -9900.123,
+          49674.324,
+          0.0
+        ],
+        [
+          382.154,
+          60511.326,
+          3200.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XM001_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        -1,
+        6
+      ],
+      "faces": 46,
+      "triangles": 92,
+      "bounds_cm": [
+        [
+          -10166.07,
+          59980.329,
+          0.0
+        ],
+        [
+          382.154,
+          66475.851,
+          1280.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP000_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        0,
+        -5
+      ],
+      "faces": 49,
+      "triangles": 98,
+      "bounds_cm": [
+        [
+          1381.993,
+          -46294.648,
+          0.0
+        ],
+        [
+          9878.285,
+          -40133.086,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP000_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        0,
+        -4
+      ],
+      "faces": 93,
+      "triangles": 186,
+      "bounds_cm": [
+        [
+          842.298,
+          -38797.246,
+          0.0
+        ],
+        [
+          10331.41,
+          -29827.081,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP000_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        0,
+        -3
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          -116.986,
+          -30207.795,
+          0.0
+        ],
+        [
+          9695.007,
+          -20944.858,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP000_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        0,
+        6
+      ],
+      "faces": 37,
+      "triangles": 74,
+      "bounds_cm": [
+        [
+          4680.994,
+          61937.335,
+          0.0
+        ],
+        [
+          10780.636,
+          67921.898,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP001_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        1,
+        -5
+      ],
+      "faces": 55,
+      "triangles": 110,
+      "bounds_cm": [
+        [
+          11934.897,
+          -45815.972,
+          0.0
+        ],
+        [
+          19931.269,
+          -39848.107,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP001_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        1,
+        -4
+      ],
+      "faces": 107,
+      "triangles": 214,
+      "bounds_cm": [
+        [
+          9805.754,
+          -40415.839,
+          0.0
+        ],
+        [
+          20339.16,
+          -29812.609,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP001_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        1,
+        -3
+      ],
+      "faces": 22,
+      "triangles": 44,
+      "bounds_cm": [
+        [
+          10989.651,
+          -30356.964,
+          0.0
+        ],
+        [
+          15062.318,
+          -27674.152,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP001_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        1,
+        -1
+      ],
+      "faces": 3,
+      "triangles": 6,
+      "bounds_cm": [
+        [
+          18239.654,
+          -7766.796,
+          0.0
+        ],
+        [
+          19442.269,
+          -6058.034,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP001_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        1,
+        5
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          9833.051,
+          52603.153,
+          0.0
+        ],
+        [
+          20180.839,
+          60061.593,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP001_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        1,
+        6
+      ],
+      "faces": 31,
+      "triangles": 62,
+      "bounds_cm": [
+        [
+          9833.051,
+          59182.165,
+          0.0
+        ],
+        [
+          20118.447,
+          68777.949,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP002_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        2,
+        -5
+      ],
+      "faces": 7,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          20229.973,
+          -46275.724,
+          0.0
+        ],
+        [
+          22483.901,
+          -44763.998,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP002_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        2,
+        -4
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          19675.46,
+          -40259.991,
+          0.0
+        ],
+        [
+          22679.657,
+          -33185.605,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP002_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        2,
+        -2
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          18239.654,
+          -13387.343,
+          0.0
+        ],
+        [
+          29769.0,
+          -7766.796,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP002_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        2,
+        -1
+      ],
+      "faces": 26,
+      "triangles": 52,
+      "bounds_cm": [
+        [
+          19442.269,
+          -11165.396,
+          0.0
+        ],
+        [
+          30094.22,
+          -1556.254,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP002_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        2,
+        5
+      ],
+      "faces": 35,
+      "triangles": 70,
+      "bounds_cm": [
+        [
+          19606.829,
+          52603.153,
+          0.0
+        ],
+        [
+          27938.561,
+          60061.593,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP002_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        2,
+        6
+      ],
+      "faces": 38,
+      "triangles": 76,
+      "bounds_cm": [
+        [
+          19743.312,
+          61364.037,
+          0.0
+        ],
+        [
+          30177.67,
+          69005.042,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP003_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        3,
+        -5
+      ],
+      "faces": 51,
+      "triangles": 102,
+      "bounds_cm": [
+        [
+          34946.793,
+          -46469.421,
+          0.0
+        ],
+        [
+          39547.457,
+          -42802.54,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP003_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        3,
+        -3
+      ],
+      "faces": 30,
+      "triangles": 60,
+      "bounds_cm": [
+        [
+          35814.828,
+          -30582.944,
+          0.0
+        ],
+        [
+          40753.191,
+          -21203.12,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP003_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        3,
+        -2
+      ],
+      "faces": 34,
+      "triangles": 68,
+      "bounds_cm": [
+        [
+          29949.158,
+          -20126.656,
+          0.0
+        ],
+        [
+          40279.788,
+          -9848.48,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP003_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        3,
+        -1
+      ],
+      "faces": 23,
+      "triangles": 46,
+      "bounds_cm": [
+        [
+          29425.061,
+          -10174.648,
+          0.0
+        ],
+        [
+          39996.683,
+          -2239.758,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP003_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        3,
+        4
+      ],
+      "faces": 34,
+      "triangles": 68,
+      "bounds_cm": [
+        [
+          34068.62,
+          41756.132,
+          0.0
+        ],
+        [
+          39849.28,
+          50381.206,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP003_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        3,
+        5
+      ],
+      "faces": 50,
+      "triangles": 100,
+      "bounds_cm": [
+        [
+          30800.035,
+          49958.19,
+          0.0
+        ],
+        [
+          37786.43,
+          60229.686,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP003_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        3,
+        6
+      ],
+      "faces": 52,
+      "triangles": 104,
+      "bounds_cm": [
+        [
+          29785.378,
+          59624.105,
+          0.0
+        ],
+        [
+          40385.076,
+          67713.73,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        -5
+      ],
+      "faces": 29,
+      "triangles": 58,
+      "bounds_cm": [
+        [
+          40034.118,
+          -46703.193,
+          0.0
+        ],
+        [
+          50353.83,
+          -39702.278,
+          1600.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        -4
+      ],
+      "faces": 14,
+      "triangles": 28,
+      "bounds_cm": [
+        [
+          43826.799,
+          -39744.58,
+          0.0
+        ],
+        [
+          50335.892,
+          -29908.344,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        -3
+      ],
+      "faces": 44,
+      "triangles": 88,
+      "bounds_cm": [
+        [
+          39970.166,
+          -30582.944,
+          0.0
+        ],
+        [
+          47895.567,
+          -19843.903,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        -2
+      ],
+      "faces": 61,
+      "triangles": 122,
+      "bounds_cm": [
+        [
+          40130.047,
+          -20231.297,
+          0.0
+        ],
+        [
+          47245.126,
+          -9606.916,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        -1
+      ],
+      "faces": 65,
+      "triangles": 130,
+      "bounds_cm": [
+        [
+          39761.151,
+          -10704.531,
+          0.0
+        ],
+        [
+          49353.211,
+          132.471,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YP000": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        0
+      ],
+      "faces": 9,
+      "triangles": 18,
+      "bounds_cm": [
+        [
+          41265.589,
+          31.17,
+          0.0
+        ],
+        [
+          43184.157,
+          1930.289,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YP002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        2
+      ],
+      "faces": 26,
+      "triangles": 52,
+      "bounds_cm": [
+        [
+          47108.642,
+          20273.598,
+          0.0
+        ],
+        [
+          50021.59,
+          27630.737,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YP003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        3
+      ],
+      "faces": 21,
+      "triangles": 42,
+      "bounds_cm": [
+        [
+          40296.946,
+          32070.179,
+          0.0
+        ],
+        [
+          50053.566,
+          40474.839,
+          2240.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        4
+      ],
+      "faces": 50,
+      "triangles": 100,
+      "bounds_cm": [
+        [
+          39822.764,
+          38941.962,
+          0.0
+        ],
+        [
+          47869.051,
+          50230.924,
+          2240.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        5
+      ],
+      "faces": 72,
+      "triangles": 144,
+      "bounds_cm": [
+        [
+          40712.636,
+          49552.985,
+          0.0
+        ],
+        [
+          49729.126,
+          60218.554,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP004_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        4,
+        6
+      ],
+      "faces": 40,
+      "triangles": 80,
+      "bounds_cm": [
+        [
+          39726.055,
+          59784.406,
+          0.0
+        ],
+        [
+          50785.898,
+          68177.934,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YM005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        -5
+      ],
+      "faces": 18,
+      "triangles": 36,
+      "bounds_cm": [
+        [
+          50093.342,
+          -44840.809,
+          0.0
+        ],
+        [
+          53134.194,
+          -40780.969,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YM004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        -4
+      ],
+      "faces": 25,
+      "triangles": 50,
+      "bounds_cm": [
+        [
+          49719.767,
+          -39654.41,
+          0.0
+        ],
+        [
+          54937.336,
+          -29429.668,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YM003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        -3
+      ],
+      "faces": 2,
+      "triangles": 4,
+      "bounds_cm": [
+        [
+          50957.477,
+          -31302.071,
+          0.0
+        ],
+        [
+          53900.841,
+          -28663.787,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YM002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        -2
+      ],
+      "faces": 7,
+      "triangles": 14,
+      "bounds_cm": [
+        [
+          50288.318,
+          -12769.517,
+          0.0
+        ],
+        [
+          54080.219,
+          -9638.086,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YM001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        -1
+      ],
+      "faces": 6,
+      "triangles": 12,
+      "bounds_cm": [
+        [
+          50732.864,
+          -10146.818,
+          0.0
+        ],
+        [
+          53401.701,
+          -4725.534,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YP001": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        1
+      ],
+      "faces": 4,
+      "triangles": 8,
+      "bounds_cm": [
+        [
+          51589.981,
+          18607.138,
+          0.0
+        ],
+        [
+          53123.275,
+          19932.959,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YP002": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        2
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          49745.504,
+          19770.432,
+          0.0
+        ],
+        [
+          53123.275,
+          28421.109,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YP003": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        3
+      ],
+      "faces": 15,
+      "triangles": 30,
+      "bounds_cm": [
+        [
+          49186.311,
+          31224.147,
+          0.0
+        ],
+        [
+          53085.84,
+          38118.194,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YP004": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        4
+      ],
+      "faces": 37,
+      "triangles": 74,
+      "bounds_cm": [
+        [
+          50698.548,
+          42948.369,
+          0.0
+        ],
+        [
+          54152.751,
+          49555.211,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YP005": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        5
+      ],
+      "faces": 10,
+      "triangles": 20,
+      "bounds_cm": [
+        [
+          49611.36,
+          54723.799,
+          0.0
+        ],
+        [
+          55260.997,
+          59886.82,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    },
+    "Sage_XP005_YP006": {
+      "material": "Sage",
+      "collision": false,
+      "tile": [
+        5,
+        6
+      ],
+      "faces": 24,
+      "triangles": 48,
+      "bounds_cm": [
+        [
+          49240.125,
+          59685.331,
+          0.0
+        ],
+        [
+          55004.408,
+          69013.947,
+          960.0
+        ]
+      ],
+      "source_actor": "OSM Sage",
+      "oversized_face": false
+    }
+  },
+  "sources": {
+    "Brick": {
+      "faces": 3859,
+      "triangles": 7718
+    },
+    "Cream": {
+      "faces": 4176,
+      "triangles": 8352
+    },
+    "Sage": {
+      "faces": 3601,
+      "triangles": 7202
+    },
+    "Roof": {
+      "faces": 1663,
+      "triangles": 8310
+    }
+  },
+  "faces": 13299,
+  "triangles": 31582
+}

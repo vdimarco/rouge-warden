@@ -1,0 +1,536 @@
+{
+  "passed": true,
+  "resolution": [
+    1280,
+    720
+  ],
+  "views": [
+    {
+      "name": "EnvironmentTheatre",
+      "file": "Preview/Environment1280/EnvironmentTheatre.png",
+      "position_cm": [
+        -11500.0,
+        1700.0,
+        750.0
+      ],
+      "target_cm": [
+        -9750.0,
+        5100.0,
+        250.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1362481,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentChalet",
+      "file": "Preview/Environment1280/EnvironmentChalet.png",
+      "position_cm": [
+        6367.0,
+        2761.0,
+        900.0
+      ],
+      "target_cm": [
+        2920.0,
+        2150.0,
+        280.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1389983,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentCentre",
+      "file": "Preview/Environment1280/EnvironmentCentre.png",
+      "position_cm": [
+        7510.0,
+        22944.0,
+        1000.0
+      ],
+      "target_cm": [
+        4010.0,
+        22944.0,
+        350.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1354415,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentCourts",
+      "file": "Preview/Environment1280/EnvironmentCourts.png",
+      "position_cm": [
+        35000.0,
+        36000.0,
+        9000.0
+      ],
+      "target_cm": [
+        22000.0,
+        28000.0,
+        0.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1863021,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentPond",
+      "file": "Preview/Environment1280/EnvironmentPond.png",
+      "position_cm": [
+        17000.0,
+        -21000.0,
+        300.0
+      ],
+      "target_cm": [
+        1100.0,
+        1000.0,
+        120.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1310595,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentOverview",
+      "file": "Preview/Environment1280/EnvironmentOverview.png",
+      "position_cm": [
+        64000.0,
+        -62000.0,
+        74000.0
+      ],
+      "target_cm": [
+        3000.0,
+        14000.0,
+        0.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1795826,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentSherbrooke",
+      "file": "Preview/Environment1280/EnvironmentSherbrooke.png",
+      "position_cm": [
+        38793.01654,
+        -7522.8152,
+        190.0
+      ],
+      "target_cm": [
+        40304.41972,
+        -687.92965,
+        190.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1328406,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentStreetCorner",
+      "file": "Preview/Environment1280/EnvironmentStreetCorner.png",
+      "position_cm": [
+        37627.17784,
+        -1725.6096,
+        220.0
+      ],
+      "target_cm": [
+        40551.49962,
+        -3002.31236,
+        600.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1428695,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentChaletTerrace",
+      "file": "Preview/Environment1280/EnvironmentChaletTerrace.png",
+      "position_cm": [
+        6253.32,
+        2785.14,
+        230.0
+      ],
+      "target_cm": [
+        4370.0,
+        2900.0,
+        140.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1155421,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentSportsGround",
+      "file": "Preview/Environment1280/EnvironmentSportsGround.png",
+      "position_cm": [
+        19077.38282,
+        29275.96994,
+        180.0
+      ],
+      "target_cm": [
+        19877.72471,
+        30474.61064,
+        90.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1385045,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentRachel",
+      "file": "Preview/Environment1280/EnvironmentRachel.png",
+      "position_cm": [
+        -34454.67387,
+        5560.97383,
+        220.0
+      ],
+      "target_cm": [
+        -35692.01019,
+        3741.90845,
+        349.73415
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1175960,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentParcLaFontaine",
+      "file": "Preview/Environment1280/EnvironmentParcLaFontaine.png",
+      "position_cm": [
+        -29791.4118,
+        3547.91837,
+        220.0
+      ],
+      "target_cm": [
+        -31729.26205,
+        557.26839,
+        600.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1346721,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentPapineau",
+      "file": "Preview/Environment1280/EnvironmentPapineau.png",
+      "position_cm": [
+        46436.47808,
+        30065.07731,
+        220.0
+      ],
+      "target_cm": [
+        49244.23535,
+        32580.42832,
+        600.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1348233,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentSandCourts",
+      "file": "Preview/Environment1280/EnvironmentSandCourts.png",
+      "position_cm": [
+        8441.97114,
+        25613.73138,
+        180.0
+      ],
+      "target_cm": [
+        10228.23634,
+        24417.17104,
+        130.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": true,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1298320,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentStreetCorner_F2",
+      "file": "Preview/Environment1280/EnvironmentStreetCorner_F2.png",
+      "position_cm": [
+        37627.17784,
+        -1725.6096,
+        220.0
+      ],
+      "target_cm": [
+        40551.49962,
+        -3002.31236,
+        600.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": false,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1231947,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentChaletTerrace_F2",
+      "file": "Preview/Environment1280/EnvironmentChaletTerrace_F2.png",
+      "position_cm": [
+        6253.32,
+        2785.14,
+        230.0
+      ],
+      "target_cm": [
+        4370.0,
+        2900.0,
+        140.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": false,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 959475,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentSportsGround_F2",
+      "file": "Preview/Environment1280/EnvironmentSportsGround_F2.png",
+      "position_cm": [
+        19077.38282,
+        29275.96994,
+        180.0
+      ],
+      "target_cm": [
+        19877.72471,
+        30474.61064,
+        90.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": false,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1081347,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentRachel_F2",
+      "file": "Preview/Environment1280/EnvironmentRachel_F2.png",
+      "position_cm": [
+        -34454.67387,
+        5560.97383,
+        220.0
+      ],
+      "target_cm": [
+        -35692.01019,
+        3741.90845,
+        349.73415
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": false,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 862947,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentParcLaFontaine_F2",
+      "file": "Preview/Environment1280/EnvironmentParcLaFontaine_F2.png",
+      "position_cm": [
+        -29791.4118,
+        3547.91837,
+        220.0
+      ],
+      "target_cm": [
+        -31729.26205,
+        557.26839,
+        600.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": false,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 854600,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentPapineau_F2",
+      "file": "Preview/Environment1280/EnvironmentPapineau_F2.png",
+      "position_cm": [
+        46436.47808,
+        30065.07731,
+        220.0
+      ],
+      "target_cm": [
+        49244.23535,
+        32580.42832,
+        600.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": false,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1124464,
+        "signature_ihdr_iend_complete": true
+      }
+    },
+    {
+      "name": "EnvironmentSandCourts_F2",
+      "file": "Preview/Environment1280/EnvironmentSandCourts_F2.png",
+      "position_cm": [
+        8441.97114,
+        25613.73138,
+        180.0
+      ],
+      "target_cm": [
+        10228.23634,
+        24417.17104,
+        130.0
+      ],
+      "horizontal_fov_degrees": 65.0,
+      "comic": false,
+      "png": {
+        "dimensions": [
+          1280,
+          720
+        ],
+        "bytes": 1225064,
+        "signature_ihdr_iend_complete": true
+      }
+    }
+  ],
+  "original_play_net_mode": 0,
+  "play_settings_restored": true,
+  "camera_source_checks": {
+    "StreetCorner": {
+      "building": "2316654",
+      "clear": true
+    },
+    "ChaletTerrace": {
+      "clear": true
+    },
+    "Rachel": {
+      "building": "2316735",
+      "clear": true
+    },
+    "ParcLaFontaine": {
+      "building": "PC-08606",
+      "clear": true
+    },
+    "Papineau": {
+      "building": "1565511",
+      "clear": true
+    }
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "devices": [
+    {
+      "deviceName": "omarchy",
+      "instance": "01A126923C6D7E2C9802609A316C746A",
+      "instanceName": "omarchy-2611341",
+      "platform": "LinuxEditor",
+      "oSVersion": "Omarchy 7.2.5-3-omarchy",
+      "model": "Default",
+      "gPU": "NVIDIA GeForce RTX 4090 (NVIDIA UNIX Open Kernel Module for x86_64  610.57.04  Release Build  (root@omarchy))",
+      "cPUModel": "Intel(R) Core(TM) i9-14900K",
+      "rAMInGB": 94,
+      "renderMode": "SM6",
+      "rHI": "",
+      "appInstanceLog": ""
+    }
+  ],
+  "reportCreatedOn": "2026.10.10-16.08.19",
+  "succeeded": 10,
+  "succeededWithWarnings": 0,
+  "failed": 0,
+  "notRun": 0,
+  "inProcess": 0,
+  "totalDuration": 0.14043281972408295,
+  "comparisonExported": false,
+  "comparisonExportDirectory": "",
+  "tests": [
+    {
+      "testDisplayName": "SaveRoundTrip",
+      "fullTestPath": "Quebec.Campaign.SaveRoundTrip",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.008329136297106743,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "SaveValidation",
+      "fullTestPath": "Quebec.Campaign.SaveValidation",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.006712332833558321,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "FrameRateConsistency",
+      "fullTestPath": "Quebec.Driving.FrameRateConsistency",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.022398149594664574,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "30Hz speed=2431.383 position=X=2525.699 Y=615.386 Z=100.100 yaw=21.914; 120Hz speed=2426.494 position=X=2506.262 Y=601.474 Z=100.026 yaw=21.839",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "SteeringHandbrakeRecovery",
+      "fullTestPath": "Quebec.Driving.SteeringHandbrakeRecovery",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.01740379072725773,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "City yaw=17.296 fast yaw=9.143 fast speed=2446.505",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Dry lateral=76.567 handbrake lateral=209.919 speed=1205.533",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Recovered lateral=-0.718 speed=1036.566",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Handbrake release speed=1499.736 lateral=0.000",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "ThrottleBrakeValidation",
+      "fullTestPath": "Quebec.Driving.ThrottleBrakeValidation",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.03658285364508629,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "Acceleration speed=1964.090 travel=X=1511.745 Y=0.000 Z=100.100 local=1 authority=1 initialized=1",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Top speed=3000.000",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Braking stopped=1 subsequent reverse speed=-950.000",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Reverse response after 0.1s speed=-40.168 no_forward_twitch=1",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.10-16.08.19"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "ShutdownCleanup",
+      "fullTestPath": "Quebec.Editor.ShutdownCleanup",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.005506626795977354,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "Proximity",
+      "fullTestPath": "Quebec.Missions.Proximity",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.008242502808570862,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "RouteContinuity",
+      "fullTestPath": "Quebec.Residents.RouteContinuity",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.007248565088957548,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "BlockedApproach",
+      "fullTestPath": "Quebec.Traffic.BlockedApproach",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.022073587402701378,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "ClosedRoadGraph",
+      "fullTestPath": "Quebec.Traffic.ClosedRoadGraph",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A126923C6D7E2C9802609A316C746A"
+      ],
+      "duration": 0.005935267079621553,
+      "dateTime": "2026.10.10-16.08.19",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    }
+  ],
+  "scope": "Native save-format/validation and driving calibration regressions, plus retained mission/traffic/resident/lifecycle tests; not physical input or handling enjoyment."
+}

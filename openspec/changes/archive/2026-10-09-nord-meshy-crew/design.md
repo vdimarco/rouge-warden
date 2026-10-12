@@ -1,0 +1,4 @@
+# Design
+Use Meshy image-to-3D through the connected fal account. Start with one character and inspect geometry, textures, scale and animation before the remaining seven. Preserve source references, generated model files and request provenance. Import skeletal meshes and walking/idle clips into ParkComic; retain the existing three mascot models and existing routes, dialogue and server movement. Generated likeness is an approximation and must be visually reviewed.
+
+The user supplied a revised skull-shirt face during generation. Style 9 now uses short tousled hair, short full beard and broad smile, with the existing graphic shirt/teal shorts; its old internal folder name remains for style continuity. Separate original props follow updated wrist transforms after each manual pose sample. A small base-colour emission fill keeps facial inks readable under tree shadows.

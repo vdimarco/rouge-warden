@@ -1,0 +1,29 @@
+{
+  "status": "submitted",
+  "recipe": {
+    "endpoint_id": "meshy/v7.1/image-to-3d",
+    "input": {
+      "image_url": "https://v3b.fal.media/files/b/0aadc62f/MeMeeS0yJe4PbycAYPvzf_SkullShirtNeutral.png",
+      "model_type": "standard",
+      "target_polycount": 30000,
+      "should_texture": true,
+      "enable_pbr": true,
+      "pose_mode": "a-pose",
+      "geometry_resolution": "2k",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.82,
+      "enable_animation": true,
+      "animation_action_id": 0,
+      "texture_prompt": "Painted comic book character with a calm natural resting expression. Lips gently closed, no visible teeth, relaxed cheeks and brows, softly open attentive eyes. Preserve the man's warm tan face, dark eyebrows, short tousled wavy brown hair, moustache and short full beard. Black red skull graphic T-shirt, teal palm print swim shorts, bare feet. Preserve identity, natural facial anatomy and painted cloth details."
+    },
+    "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+  },
+  "request_id": "01a1240d-f464-7332-975b-a78e58bac5ca",
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "status_url": "https://queue.fal.run/meshy/v7.1/requests/01a1240d-f464-7332-975b-a78e58bac5ca/status",
+  "response_url": "https://queue.fal.run/meshy/v7.1/requests/01a1240d-f464-7332-975b-a78e58bac5ca",
+  "cancel_url": "https://queue.fal.run/meshy/v7.1/requests/01a1240d-f464-7332-975b-a78e58bac5ca/cancel",
+  "poll_after_seconds": 20,
+  "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+  "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes."
+}

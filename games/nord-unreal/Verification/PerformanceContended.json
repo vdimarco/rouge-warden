@@ -1,0 +1,38 @@
+{
+  "passed": false,
+  "hardware": {
+    "platform": "Linux",
+    "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "gpudriver": "610.57",
+    "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+    "shaderplatform": "VULKAN_SM6"
+  },
+  "settings": "Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+  "method": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends",
+  "limits": [
+    "static camera scenes",
+    "one GPU",
+    "not external multiplayer performance"
+  ],
+  "scenes": [
+    {
+      "scene": "Sherbrooke",
+      "resolution": [
+        1280,
+        720
+      ],
+      "frames": 2398,
+      "sample_seconds": 39.31,
+      "median_ms": 16.29,
+      "p95_ms": 22.8,
+      "p99_ms": 26.73,
+      "average_fps": 61.0,
+      "over_33ms_percent": 0.17,
+      "median_gpu_ms": 15.84,
+      "csv": "Profile(20261009_194055).csv",
+      "screenshot": "Preview/PerformanceSherbrooke1280.png"
+    }
+  ],
+  "conditions": "Shared GPU with Dota 2, started 2026-10-09 23:32:08 UTC; reference frame-time gate correctly failed. Not comparable to the earlier reference measurements."
+}

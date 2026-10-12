@@ -1,0 +1,21 @@
+{
+  "files": {
+    "Content/ParkComic/Crew/Resident3/SK_Body.uasset": "84e692186aa72a664d3b47e05b5022bec1f675ccc636b7a3b077afcd19f191c1",
+    "Content/ParkComic/Crew/Resident4/SK_Body.uasset": "610ad82a2cf4e0e7fad2307e9966628d35bad1efcad441331c1ecbf5b340de7e",
+    "Content/ParkComic/Crew/Resident5/SK_Body.uasset": "775e032fb01c6766d4e38ec5caf862bc05723ae594995a6e49d5d81f495ce2f2",
+    "Content/ParkComic/Crew/Resident6/SK_Body.uasset": "a24977ff4e36f2d166b25954caf107edb7f8340434bdb1d6c02129e75fd4dfeb",
+    "Content/ParkComic/Crew/Resident7/SK_Body.uasset": "9e0bc53d1581c4c500649b09aa844040b34ebca9fab2b4ba209d0a3cfb810c26",
+    "Content/ParkComic/Crew/Resident8/SK_Body.uasset": "976046678240ddfe2c9334e04b146019ed9609cfffed2c82178df930552e7230",
+    "Content/ParkComic/Crew/Resident9/SK_Body.uasset": "71ee2199a07500842a98e0bca1d51944bd11d00f5224e847e647e79ebef231a3",
+    "Content/ParkComic/Crew/Resident10/SK_Body.uasset": "71776f1bbb5b49d2162d0c95a2b801162c5a1175a121181f4ea19102e01c791f"
+  },
+  "baseline_face": {
+    "file": "Saved/Recovery/face-build-20261010T015815574557Z/Resident9_Face_Before.png",
+    "sha256": "3b0dc672b3a7f947d16ee519859c4ecc9e4902381cd6b17e516d957099555eeb",
+    "resolution": [
+      1280,
+      720
+    ]
+  },
+  "backup_directory": "Saved/Recovery/face-build-20261010T015815574557Z"
+}

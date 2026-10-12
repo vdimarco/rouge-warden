@@ -1,0 +1,495 @@
+{
+  "passed": true,
+  "candidate": false,
+  "source": "Data/CharactersNeutral",
+  "characters": [
+    {
+      "style": 3,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident3/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 2.9802322387695312e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 276,
+        "source_bind_max_distance_error_cm": 1.967418256754172e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/GreenCap51/body.fbx",
+          "sha256": "3a65c20c923852a0bf16baf7130792ad951a9e72069e079339b4aa71349fcee3",
+          "saved_md5": "0affff8804fd070bd9979c544cd8d92e"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/GreenCap51/walk.fbx",
+          "sha256": "739a555e6ea88e8b8a95b8585a6c390612cca4d2168f26ab77466e1bb9a04d76",
+          "saved_md5": "9a1f5cb482b3179140adb1ffcec3ab17"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/GreenCap51/idle.fbx",
+          "sha256": "5d6e820fa4f9b652a2ec813f1577734d3da4d97006f16d5689eb987ee9e5125b",
+          "saved_md5": "cf361af785d1b753cc6ec502b764354f"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/GreenCap51/run.fbx",
+          "sha256": "d23ef3e92f09fe3eee4dfc6b9f3b1d71d3dc05a6648cf98818e724e486884710",
+          "saved_md5": "4e20eb2b05a29a1e8743c8b90cfbe82e"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/GreenCap51/jump.fbx",
+          "sha256": "88bf3bf0f523c3cff7ba5b07a573dfd034a1addea8ea5ff8acd77b1a0ae6cd19",
+          "saved_md5": "737217999e0f0f32fe1b05f6c6cef358"
+        }
+      }
+    },
+    {
+      "style": 4,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident4/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 4.214684778958144e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 276,
+        "source_bind_max_distance_error_cm": 2.7639401299239807e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/Memphis33/body.fbx",
+          "sha256": "c246f2b61487ad8bc5a411f5300b27648ed9b73aa001e6c4f5c76a8cd480f055",
+          "saved_md5": "2463184fffa4ac12415af5f9e46b185d"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/Memphis33/walk.fbx",
+          "sha256": "4362f3c3caad46e6899289c24d9a5bc6b2124aac2d894def4da8dcda3a60e06f",
+          "saved_md5": "54f92911c713694fe62201126822d5ce"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/Memphis33/idle.fbx",
+          "sha256": "5e351f16116da1b2aa33f2fc1664d733de549f600abe47f3853cb9c19a57135a",
+          "saved_md5": "6d5d59a13531b4aaf3fcc10ee6d36085"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/Memphis33/run.fbx",
+          "sha256": "c7b962895148afc5bca13102ee71ae6555ce4c2d9c578bd6e3c3aa56feb39233",
+          "saved_md5": "b7ceea4e1385f1873655076e4da5ad2d"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/Memphis33/jump.fbx",
+          "sha256": "59f917e31ab4330d92045990285c8d13159cd949fc479d783dee378301ae5a7c",
+          "saved_md5": "dbd32e361bd6fabea1bf4514a391b80d"
+        }
+      }
+    },
+    {
+      "style": 5,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident5/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 4.214684778958144e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 276,
+        "source_bind_max_distance_error_cm": 5.456236070244813e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/BlackCap/body.fbx",
+          "sha256": "bbadf9714665fb71f7981307261926de682c615eb33503d2ccbfa6e7aca71a37",
+          "saved_md5": "06b1661202db32535e888ba7367c8174"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/BlackCap/walk.fbx",
+          "sha256": "22c0b2794cbe1ef088b1f1f645217a5c7d652d9c4a1a516d076e0da024e015fb",
+          "saved_md5": "cd318d47645efc5f6838d37b7f82121f"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/BlackCap/idle.fbx",
+          "sha256": "ae5d4840d9e08427c153cc0d48c7a17059cfbc47f677def455b5bafd16ba8b4d",
+          "saved_md5": "148edac51e2bcc859f2788ca289b5661"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/BlackCap/run.fbx",
+          "sha256": "7af8c9a855da5b72487234af75dac0921713c188c22eb65903e0c61ee6c5c62c",
+          "saved_md5": "6e995ad4801afd26e5d700446bedccad"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/BlackCap/jump.fbx",
+          "sha256": "7b04c5b9289b19960f24f46825bf7898b9069b47bd6456a4a693c75313e67059",
+          "saved_md5": "f460f25346d9279d991900135445d8ab"
+        }
+      }
+    },
+    {
+      "style": 6,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident6/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 5.960464477539063e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 253,
+        "source_bind_max_distance_error_cm": 2.000384677103284e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/WhiteCap/body.fbx",
+          "sha256": "7b687a80ca150b3b011bfb3ba33f880da391a835ecdb2236f04627ad40950b44",
+          "saved_md5": "797809cce2b11d336ec8916208f7ac7c"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/WhiteCap/walk.fbx",
+          "sha256": "b6c1cd7afba9010bcc0d43b2da82c6ba6acc88120938b49e7c8685274b7b919e",
+          "saved_md5": "397f58abe27ffa5aebfd5cc921ff1ba0"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/WhiteCap/idle.fbx",
+          "sha256": "d8b855ee066aaf808ddfda19923bdf8974b2887da5861b57e011a7ff6bb6f6f5",
+          "saved_md5": "09f056ec72568829302543703747446c"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/WhiteCap/run.fbx",
+          "sha256": "c404e1d9ddeca84d2fc23604454e2ddd4252155ea353f9dbfd019bbc155af422",
+          "saved_md5": "1f5e8228db05d5a9bbb337d548aca334"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/WhiteCap/jump.fbx",
+          "sha256": "58ddd18878713598901943082d6bab210e846474a9556f5e69eac606f9c5312c",
+          "saved_md5": "80b88570ec36cb1977ba99745c83f8ff"
+        }
+      }
+    },
+    {
+      "style": 7,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident7/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 5.1619135632563484e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 276,
+        "source_bind_max_distance_error_cm": 5.111220593789767e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/RedJersey/body.fbx",
+          "sha256": "a019dd99a3a783d14bed1c60672d977688dd9955fcddc25f73127e2d541e5295",
+          "saved_md5": "a31e1bc0b405201e31e8c1938d57e69a"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/RedJersey/walk.fbx",
+          "sha256": "e384488866bcf2e963a9a2fd4ccae76632d4462f93f0d887d40258815ac4d668",
+          "saved_md5": "f1b2a4110eff33d11a05278c5fa25f6d"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/RedJersey/idle.fbx",
+          "sha256": "4e30c9b44f7f5d52cb976fee0dcc098e0b18119c484d91787fef3be70c67c56b",
+          "saved_md5": "f782477f32c9f2fea3ecd3dac909fcba"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/RedJersey/run.fbx",
+          "sha256": "a9225af857a434da7e7827edb2a51e77c0aeb0c53214e800f740244b429eeabb",
+          "saved_md5": "fdb5576de723b2e8928a6db2180e1927"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/RedJersey/jump.fbx",
+          "sha256": "92d3ce2cd48cfe34b6c406d9b8e930630f523d1dc9ec0712e2a05f7a96696a0b",
+          "saved_md5": "c31b76e8ca54b339c25fba013fa5196d"
+        }
+      }
+    },
+    {
+      "style": 8,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident8/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 4.214684778958144e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 253,
+        "source_bind_max_distance_error_cm": 3.448033541531004e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/LimeJacket/body.fbx",
+          "sha256": "e3bccdf06bac149803a86cd86a98d085e6f5bccc40997b933e8fd0ed4097d24b",
+          "saved_md5": "7b07c09aca15a8f287d3fe2c06a9782d"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/LimeJacket/walk.fbx",
+          "sha256": "a91105b299958b2a52a8f63936d3943642cfbc1818c2a6457f4216a45f14d9dc",
+          "saved_md5": "59fecd0d579c0b26cff0807e4204b9aa"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/LimeJacket/idle.fbx",
+          "sha256": "519b4763069274602880cd9de4f9106ec3895c1ffc1c5369f34fcb1c76b5abcf",
+          "saved_md5": "2dc68f7395255d33f21d423a3ba9e92c"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/LimeJacket/run.fbx",
+          "sha256": "a1b45476d41e8c50f5f240148610e41a2bf514d5457f358fad5c0485b2b5d248",
+          "saved_md5": "eb160bce37f8d581915c654e1c755c62"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/LimeJacket/jump.fbx",
+          "sha256": "1bf34250260b671e4a71612993d966b84f51c665173b2170f6aa9a8fe96256da",
+          "saved_md5": "0337d8bae64f4ca7523081ec0bd6e4b2"
+        }
+      }
+    },
+    {
+      "style": 9,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 5.1619135632563484e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 253,
+        "source_bind_max_distance_error_cm": 5.5078409729958366e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/body.fbx",
+          "sha256": "71c636200855ee3747586e42dfc460730258c6ad88d2fbc2bd5200a04a58e4c3",
+          "saved_md5": "695cc4b66703f80d9051e63801181cc0"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/walk.fbx",
+          "sha256": "81164edb631d62d92fdebdeb7e6895d20528e6c66b76890d66ddcba32a72d459",
+          "saved_md5": "d50ad3ba86f122ace1d2c1eb5715449f"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/idle.fbx",
+          "sha256": "76fa07af7e50bbe3517ff6c7f22b20d9b38b49f0cbe912882813a57e8f4c8279",
+          "saved_md5": "409310525a917a8a7f712b013f9fe0b1"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/run.fbx",
+          "sha256": "edd6a60193010153cb7f73de287a040383bb9accb818430e4051439423bc0cef",
+          "saved_md5": "d7c2d10e848818e2fbcf23c734b304ad"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/CurlyMetalhead/jump.fbx",
+          "sha256": "82cd0c4336e0c505d4b2db6b4d8d65e25b42568215d841491fdd2b6d97ad47c0",
+          "saved_md5": "0fef07771f89bdc2b95c944ea006fafe"
+        }
+      }
+    },
+    {
+      "style": 10,
+      "height_cm": 182.0,
+      "material_slots": 1,
+      "mesh_build_flags": {
+        "recompute_normals": false,
+        "recompute_tangents": true,
+        "use_mikk_t_space": true,
+        "compute_weighted_normals": false,
+        "use_full_precision_u_vs": true,
+        "use_high_precision_tangent_basis": true
+      },
+      "base_color": {
+        "mipmaps": false,
+        "never_stream": true,
+        "lod_bias": 0,
+        "compression": "BC7",
+        "shading": "DEFAULT_LIT"
+      },
+      "saved_skeleton": "/Game/ParkComic/Crew/Resident10/SK_Body_Skeleton.SK_Body_Skeleton",
+      "reference_pose": {
+        "bones": 25,
+        "source_wrapper_roots": [
+          "Armature"
+        ],
+        "mesh_skeleton_max_errors": {
+          "translation_cm": 0.0,
+          "rotation_radians": 5.1619135632563484e-08,
+          "scale": 0.0
+        },
+        "source_bind_pairs": 276,
+        "source_bind_max_distance_error_cm": 6.41283281908045e-05
+      },
+      "source_provenance": {
+        "body": {
+          "file": "Data/CharactersNeutral/Topknot/body.fbx",
+          "sha256": "5adc8300b149cc8cae9d1b483c649f05f4265aa47cda65e4d3068e737cb39176",
+          "saved_md5": "df7e9c9f3061a6a114cd2f4445fea8ba"
+        },
+        "A_Walk": {
+          "file": "Data/CharactersNeutral/Topknot/walk.fbx",
+          "sha256": "5df55560593ff167c202fc6b7e1b8650a2e38b788a286044772fe8f7204b4bd5",
+          "saved_md5": "28dd41d926182b075ed5ea9fd048611b"
+        },
+        "A_Idle": {
+          "file": "Data/CharactersNeutral/Topknot/idle.fbx",
+          "sha256": "8e3d9f685a72a4c4c95761a9d11852baf2f737cfeb8c194ff4eac917df650ec8",
+          "saved_md5": "5cf46c6bfaaddb3350a22dbca5a7f278"
+        },
+        "A_Run": {
+          "file": "Data/CharactersNeutral/Topknot/run.fbx",
+          "sha256": "24ec14cd8e3d613074a8a0fed2d409f74a751b2968bc051ccdb0ee1dd41a4917",
+          "saved_md5": "146d2ea229477dbfcc6602d144bcb764"
+        },
+        "A_Jump": {
+          "file": "Data/CharactersNeutral/Topknot/jump.fbx",
+          "sha256": "781e957841c7ad080fe37e37dbe0d3926aeccd4ba49a6e4929d03a5705639494",
+          "saved_md5": "bbc79648fbb050da126d724e741fca8f"
+        }
+      }
+    }
+  ]
+}

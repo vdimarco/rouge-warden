@@ -1,0 +1,1097 @@
+{
+  "passed": true,
+  "checks": [
+    "bounded population, eight appearances, three activities, hub coverage and vehicle profiles",
+    "server traffic and pedestrians visibly move",
+    "traffic circulates and all 88 mobile residents move and pause over a minute",
+    "following starter queue and all sixteen cars recover when the obstruction clears",
+    "nearby pedestrian appearance, activity, pace, pauses, route and movement replicate",
+    "traffic yields before reaching a player",
+    "traffic resumes after player clears lane",
+    "moving traffic stops within remote player's reach",
+    "native remote E claims a stopped traffic car and ends ambient driving",
+    "native remote E exits the claimed traffic car safely",
+    "remote player approaches an added parked car",
+    "native remote E enters an added car and its paint replicates",
+    "native remote E exits the added car safely"
+  ],
+  "skipped": [
+    "rendered crowd appearance",
+    "frame-time performance"
+  ],
+  "current_check": "native remote E exits the added car safely",
+  "counts": {
+    "added_parked": 32,
+    "traffic": 16,
+    "added_pedestrians": 96
+  },
+  "starter_lane_offset_cm": 145.0,
+  "asphalt_parking": {
+    "QuebecCar_9": {
+      "road_segment": 315,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_10": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_11": {
+      "road_segment": 397,
+      "width_cm": 1240.0,
+      "asphalt_margin_cm": 35.0
+    },
+    "QuebecCar_12": {
+      "road_segment": 397,
+      "width_cm": 1240.0,
+      "asphalt_margin_cm": 35.0
+    },
+    "QuebecCar_13": {
+      "road_segment": 349,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_14": {
+      "road_segment": 318,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_15": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_16": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_1": {
+      "road_segment": 355,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_2": {
+      "road_segment": 355,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_7": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_8": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_17": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_18": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_19": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_20": {
+      "road_segment": 352,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_22": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_23": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_24": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_26": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_27": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_28": {
+      "road_segment": 283,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_31": {
+      "road_segment": 333,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_32": {
+      "road_segment": 333,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_41": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_42": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_43": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_44": {
+      "road_segment": 27,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_45": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_46": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_47": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_48": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_49": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_50": {
+      "road_segment": 323,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_51": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_52": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_53": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_54": {
+      "road_segment": 324,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_55": {
+      "road_segment": 328,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    },
+    "QuebecCar_56": {
+      "road_segment": 328,
+      "width_cm": 1400,
+      "asphalt_margin_cm": 115.0
+    }
+  },
+  "activity_counts": {
+    "walk": 72,
+    "jog": 16,
+    "social": 8
+  },
+  "pace_cm_s": {
+    "walk": [
+      78.0,
+      86.0,
+      94.0,
+      102.0,
+      110.0,
+      118.0
+    ],
+    "jog": [
+      185.0,
+      197.0,
+      209.0,
+      221.0,
+      233.0
+    ]
+  },
+  "pause_seconds": [
+    2.0,
+    2.7,
+    3.4,
+    4.1,
+    4.8,
+    5.5,
+    6.2,
+    6.9
+  ],
+  "vehicle_cabin_profiles": {
+    "0": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "1": [
+      0.78,
+      1.0,
+      0.85
+    ],
+    "2": [
+      1.27,
+      1.0,
+      1.08
+    ]
+  },
+  "hub_residents": {
+    "CityChalet": {
+      "count": 8,
+      "styles": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "CityPond": {
+      "count": 8,
+      "styles": [
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ]
+    },
+    "CitySherbrooke": {
+      "count": 7,
+      "styles": [
+        3,
+        4,
+        5,
+        9,
+        10
+      ]
+    }
+  },
+  "hub_endpoint_clearance": {
+    "CityChalet": {
+      "mobile": 6,
+      "minimum_endpoint_cm": 111.25,
+      "minimum_social_gap_cm": 1015.02
+    },
+    "CityPond": {
+      "mobile": 6,
+      "minimum_endpoint_cm": 162.79,
+      "minimum_social_gap_cm": 230.87
+    },
+    "CitySports": {
+      "mobile": 6,
+      "minimum_endpoint_cm": 162.79,
+      "minimum_social_gap_cm": 230.87
+    },
+    "CityTheatre": {
+      "mobile": 4,
+      "minimum_endpoint_cm": 162.79,
+      "minimum_social_gap_cm": null
+    }
+  },
+  "crowd_continuity_max_excess": {
+    "name": "QuebecParkResident_78",
+    "activity": 1,
+    "sample_dt_s": 0.25104,
+    "actor_tick_interval_s": 0.041667,
+    "pace_cm_s": 233.0,
+    "travelled_cm": 66.2708,
+    "unquantized_limit_cm": 58.4924,
+    "quantized_limit_cm": 70.2008,
+    "excess_over_sample_time_cm": 7.7783
+  },
+  "moved_over_150cm": {
+    "traffic": 16,
+    "crowd": 80
+  },
+  "mobile_moved_over_150cm_in_8s": 85,
+  "traffic_blocks": [
+    {
+      "car": "QuebecCar_29",
+      "blocker": "QuebecCar_0",
+      "label": "Your first car",
+      "class": "QuebecCar",
+      "component": "Collision",
+      "mesh": null,
+      "distance_cm": 448.4,
+      "car_yaw": 77.5,
+      "blocker_yaw": 77.5
+    },
+    {
+      "car": "QuebecCar_5",
+      "blocker": "QuebecCar_38",
+      "label": "QuebecCar38",
+      "class": "QuebecCar",
+      "component": "Collision",
+      "mesh": null,
+      "distance_cm": 277.9,
+      "car_yaw": -91.1,
+      "blocker_yaw": 115.3
+    },
+    {
+      "car": "QuebecCar_3",
+      "blocker": "QuebecCharacter_1",
+      "label": "QuebecCharacter1",
+      "class": "QuebecCharacter",
+      "component": "CollisionCylinder",
+      "mesh": null,
+      "distance_cm": 153.9,
+      "car_yaw": 54.7,
+      "blocker_yaw": 77.5
+    }
+  ],
+  "lasting_traffic": {
+    "world_seconds": 60.1,
+    "cars_moving_in_final_8s": 15,
+    "samples": [
+      {
+        "name": "QuebecCar_3",
+        "position": [
+          25062.3,
+          -1976.9,
+          100.0
+        ],
+        "displacement_cm": 3357.0,
+        "measured_speed_cm_s": 0.0,
+        "yielding": true,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_4",
+        "position": [
+          25435.5,
+          -3505.7,
+          100.0
+        ],
+        "displacement_cm": 4751.2,
+        "measured_speed_cm_s": 627.7,
+        "yielding": false,
+        "road_distance_cm": 153.1
+      },
+      {
+        "name": "QuebecCar_5",
+        "position": [
+          33840.3,
+          -39079.4,
+          100.0
+        ],
+        "displacement_cm": 5175.2,
+        "measured_speed_cm_s": 668.9,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_6",
+        "position": [
+          29364.5,
+          1580.7,
+          100.0
+        ],
+        "displacement_cm": 4181.6,
+        "measured_speed_cm_s": 542.8,
+        "yielding": false,
+        "road_distance_cm": 137.0
+      },
+      {
+        "name": "QuebecCar_21",
+        "position": [
+          23246.7,
+          -786.3,
+          100.0
+        ],
+        "displacement_cm": 1471.2,
+        "measured_speed_cm_s": 591.1,
+        "yielding": false,
+        "road_distance_cm": 140.6
+      },
+      {
+        "name": "QuebecCar_25",
+        "position": [
+          23542.9,
+          -31969.1,
+          100.0
+        ],
+        "displacement_cm": 4831.5,
+        "measured_speed_cm_s": 603.6,
+        "yielding": false,
+        "road_distance_cm": 144.6
+      },
+      {
+        "name": "QuebecCar_29",
+        "position": [
+          37338.0,
+          -8110.9,
+          100.0
+        ],
+        "displacement_cm": 0.0,
+        "measured_speed_cm_s": 0.0,
+        "yielding": true,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_30",
+        "position": [
+          34107.4,
+          -28887.5,
+          100.0
+        ],
+        "displacement_cm": 4239.6,
+        "measured_speed_cm_s": 523.5,
+        "yielding": false,
+        "road_distance_cm": 145.1
+      },
+      {
+        "name": "QuebecCar_33",
+        "position": [
+          33862.4,
+          -27507.2,
+          100.0
+        ],
+        "displacement_cm": 2441.3,
+        "measured_speed_cm_s": 550.2,
+        "yielding": false,
+        "road_distance_cm": 142.8
+      },
+      {
+        "name": "QuebecCar_34",
+        "position": [
+          18750.9,
+          -28840.1,
+          100.0
+        ],
+        "displacement_cm": 4859.9,
+        "measured_speed_cm_s": 629.3,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_35",
+        "position": [
+          13330.9,
+          -24953.8,
+          100.0
+        ],
+        "displacement_cm": 5158.4,
+        "measured_speed_cm_s": 664.1,
+        "yielding": false,
+        "road_distance_cm": 145.3
+      },
+      {
+        "name": "QuebecCar_36",
+        "position": [
+          -31966.0,
+          -24253.7,
+          100.0
+        ],
+        "displacement_cm": 4184.1,
+        "measured_speed_cm_s": 509.3,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_37",
+        "position": [
+          -16213.8,
+          -36945.5,
+          100.0
+        ],
+        "displacement_cm": 4559.2,
+        "measured_speed_cm_s": 583.4,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_38",
+        "position": [
+          33761.5,
+          -40002.8,
+          100.0
+        ],
+        "displacement_cm": 3978.3,
+        "measured_speed_cm_s": 233.4,
+        "yielding": false,
+        "road_distance_cm": 62.8
+      },
+      {
+        "name": "QuebecCar_39",
+        "position": [
+          -18099.0,
+          -38303.1,
+          100.0
+        ],
+        "displacement_cm": 5189.6,
+        "measured_speed_cm_s": 629.8,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      },
+      {
+        "name": "QuebecCar_40",
+        "position": [
+          -28525.1,
+          11822.2,
+          100.0
+        ],
+        "displacement_cm": 4244.9,
+        "measured_speed_cm_s": 523.6,
+        "yielding": false,
+        "road_distance_cm": 145.0
+      }
+    ]
+  },
+  "minute_pedestrian_activity": {
+    "QuebecParkResident_0": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_1": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_2": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_3": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_4": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_5": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_20": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_21": {
+      "path_cm": 0.0,
+      "moving_samples": 0,
+      "idle_samples": 239
+    },
+    "QuebecParkResident_22": {
+      "path_cm": 11071.5,
+      "moving_samples": 207,
+      "idle_samples": 30
+    },
+    "QuebecParkResident_23": {
+      "path_cm": 11019.5,
+      "moving_samples": 196,
+      "idle_samples": 41
+    },
+    "QuebecParkResident_24": {
+      "path_cm": 5742.2,
+      "moving_samples": 211,
+      "idle_samples": 27
+    },
+    "QuebecParkResident_25": {
+      "path_cm": 5994.7,
+      "moving_samples": 206,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_26": {
+      "path_cm": 4263.2,
+      "moving_samples": 219,
+      "idle_samples": 19
+    },
+    "QuebecParkResident_27": {
+      "path_cm": 4128.3,
+      "moving_samples": 193,
+      "idle_samples": 44
+    },
+    "QuebecParkResident_28": {
+      "path_cm": 3600.0,
+      "moving_samples": 156,
+      "idle_samples": 83
+    },
+    "QuebecParkResident_29": {
+      "path_cm": 3861.4,
+      "moving_samples": 155,
+      "idle_samples": 81
+    },
+    "QuebecParkResident_30": {
+      "path_cm": 5242.3,
+      "moving_samples": 199,
+      "idle_samples": 40
+    },
+    "QuebecParkResident_31": {
+      "path_cm": 5582.2,
+      "moving_samples": 194,
+      "idle_samples": 42
+    },
+    "QuebecParkResident_32": {
+      "path_cm": 3771.8,
+      "moving_samples": 196,
+      "idle_samples": 41
+    },
+    "QuebecParkResident_33": {
+      "path_cm": 7200.0,
+      "moving_samples": 134,
+      "idle_samples": 102
+    },
+    "QuebecParkResident_34": {
+      "path_cm": 6015.3,
+      "moving_samples": 138,
+      "idle_samples": 97
+    },
+    "QuebecParkResident_35": {
+      "path_cm": 4036.0,
+      "moving_samples": 163,
+      "idle_samples": 74
+    },
+    "QuebecParkResident_36": {
+      "path_cm": 4311.9,
+      "moving_samples": 160,
+      "idle_samples": 77
+    },
+    "QuebecParkResident_37": {
+      "path_cm": 3909.4,
+      "moving_samples": 137,
+      "idle_samples": 100
+    },
+    "QuebecParkResident_38": {
+      "path_cm": 3908.3,
+      "moving_samples": 204,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_39": {
+      "path_cm": 4068.4,
+      "moving_samples": 192,
+      "idle_samples": 42
+    },
+    "QuebecParkResident_40": {
+      "path_cm": 3821.7,
+      "moving_samples": 169,
+      "idle_samples": 69
+    },
+    "QuebecParkResident_41": {
+      "path_cm": 3415.9,
+      "moving_samples": 140,
+      "idle_samples": 94
+    },
+    "QuebecParkResident_42": {
+      "path_cm": 3432.4,
+      "moving_samples": 131,
+      "idle_samples": 105
+    },
+    "QuebecParkResident_43": {
+      "path_cm": 3508.4,
+      "moving_samples": 126,
+      "idle_samples": 111
+    },
+    "QuebecParkResident_44": {
+      "path_cm": 7392.1,
+      "moving_samples": 164,
+      "idle_samples": 72
+    },
+    "QuebecParkResident_45": {
+      "path_cm": 7800.0,
+      "moving_samples": 162,
+      "idle_samples": 75
+    },
+    "QuebecParkResident_46": {
+      "path_cm": 5170.7,
+      "moving_samples": 221,
+      "idle_samples": 15
+    },
+    "QuebecParkResident_47": {
+      "path_cm": 5106.0,
+      "moving_samples": 203,
+      "idle_samples": 33
+    },
+    "QuebecParkResident_48": {
+      "path_cm": 4895.8,
+      "moving_samples": 182,
+      "idle_samples": 54
+    },
+    "QuebecParkResident_49": {
+      "path_cm": 5995.2,
+      "moving_samples": 205,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_50": {
+      "path_cm": 3991.8,
+      "moving_samples": 206,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_51": {
+      "path_cm": 4640.3,
+      "moving_samples": 217,
+      "idle_samples": 22
+    },
+    "QuebecParkResident_52": {
+      "path_cm": 4381.1,
+      "moving_samples": 188,
+      "idle_samples": 49
+    },
+    "QuebecParkResident_53": {
+      "path_cm": 3443.7,
+      "moving_samples": 138,
+      "idle_samples": 100
+    },
+    "QuebecParkResident_54": {
+      "path_cm": 5242.3,
+      "moving_samples": 197,
+      "idle_samples": 40
+    },
+    "QuebecParkResident_55": {
+      "path_cm": 9578.2,
+      "moving_samples": 200,
+      "idle_samples": 37
+    },
+    "QuebecParkResident_56": {
+      "path_cm": 9302.0,
+      "moving_samples": 184,
+      "idle_samples": 52
+    },
+    "QuebecParkResident_57": {
+      "path_cm": 4369.4,
+      "moving_samples": 205,
+      "idle_samples": 33
+    },
+    "QuebecParkResident_58": {
+      "path_cm": 4644.3,
+      "moving_samples": 200,
+      "idle_samples": 38
+    },
+    "QuebecParkResident_59": {
+      "path_cm": 3775.2,
+      "moving_samples": 152,
+      "idle_samples": 86
+    },
+    "QuebecParkResident_60": {
+      "path_cm": 4235.7,
+      "moving_samples": 158,
+      "idle_samples": 77
+    },
+    "QuebecParkResident_61": {
+      "path_cm": 5234.6,
+      "moving_samples": 179,
+      "idle_samples": 57
+    },
+    "QuebecParkResident_62": {
+      "path_cm": 4290.5,
+      "moving_samples": 222,
+      "idle_samples": 16
+    },
+    "QuebecParkResident_63": {
+      "path_cm": 4610.2,
+      "moving_samples": 216,
+      "idle_samples": 22
+    },
+    "QuebecParkResident_64": {
+      "path_cm": 4907.5,
+      "moving_samples": 211,
+      "idle_samples": 26
+    },
+    "QuebecParkResident_65": {
+      "path_cm": 5182.3,
+      "moving_samples": 205,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_66": {
+      "path_cm": 9228.8,
+      "moving_samples": 181,
+      "idle_samples": 56
+    },
+    "QuebecParkResident_67": {
+      "path_cm": 8157.7,
+      "moving_samples": 154,
+      "idle_samples": 84
+    },
+    "QuebecParkResident_68": {
+      "path_cm": 3635.3,
+      "moving_samples": 188,
+      "idle_samples": 49
+    },
+    "QuebecParkResident_69": {
+      "path_cm": 3887.8,
+      "moving_samples": 182,
+      "idle_samples": 54
+    },
+    "QuebecParkResident_70": {
+      "path_cm": 5170.7,
+      "moving_samples": 222,
+      "idle_samples": 15
+    },
+    "QuebecParkResident_71": {
+      "path_cm": 5467.9,
+      "moving_samples": 216,
+      "idle_samples": 22
+    },
+    "QuebecParkResident_72": {
+      "path_cm": 5620.8,
+      "moving_samples": 207,
+      "idle_samples": 30
+    },
+    "QuebecParkResident_73": {
+      "path_cm": 5962.0,
+      "moving_samples": 204,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_74": {
+      "path_cm": 3669.8,
+      "moving_samples": 191,
+      "idle_samples": 48
+    },
+    "QuebecParkResident_75": {
+      "path_cm": 4083.8,
+      "moving_samples": 192,
+      "idle_samples": 46
+    },
+    "QuebecParkResident_76": {
+      "path_cm": 3484.8,
+      "moving_samples": 153,
+      "idle_samples": 86
+    },
+    "QuebecParkResident_77": {
+      "path_cm": 6742.1,
+      "moving_samples": 129,
+      "idle_samples": 108
+    },
+    "QuebecParkResident_78": {
+      "path_cm": 10704.9,
+      "moving_samples": 192,
+      "idle_samples": 45
+    },
+    "QuebecParkResident_79": {
+      "path_cm": 5911.9,
+      "moving_samples": 204,
+      "idle_samples": 34
+    },
+    "QuebecParkResident_80": {
+      "path_cm": 4072.1,
+      "moving_samples": 209,
+      "idle_samples": 26
+    },
+    "QuebecParkResident_81": {
+      "path_cm": 3999.4,
+      "moving_samples": 187,
+      "idle_samples": 49
+    },
+    "QuebecParkResident_82": {
+      "path_cm": 4150.8,
+      "moving_samples": 179,
+      "idle_samples": 57
+    },
+    "QuebecParkResident_83": {
+      "path_cm": 4896.7,
+      "moving_samples": 194,
+      "idle_samples": 42
+    },
+    "QuebecParkResident_84": {
+      "path_cm": 2932.3,
+      "moving_samples": 113,
+      "idle_samples": 122
+    },
+    "QuebecParkResident_85": {
+      "path_cm": 5017.8,
+      "moving_samples": 173,
+      "idle_samples": 65
+    },
+    "QuebecParkResident_86": {
+      "path_cm": 4290.5,
+      "moving_samples": 221,
+      "idle_samples": 16
+    },
+    "QuebecParkResident_87": {
+      "path_cm": 4610.2,
+      "moving_samples": 216,
+      "idle_samples": 21
+    },
+    "QuebecParkResident_88": {
+      "path_cm": 9078.9,
+      "moving_samples": 163,
+      "idle_samples": 72
+    },
+    "QuebecParkResident_89": {
+      "path_cm": 7410.2,
+      "moving_samples": 166,
+      "idle_samples": 70
+    },
+    "QuebecParkResident_90": {
+      "path_cm": 4279.8,
+      "moving_samples": 159,
+      "idle_samples": 75
+    },
+    "QuebecParkResident_91": {
+      "path_cm": 5070.1,
+      "moving_samples": 173,
+      "idle_samples": 62
+    },
+    "QuebecParkResident_92": {
+      "path_cm": 3600.2,
+      "moving_samples": 186,
+      "idle_samples": 52
+    },
+    "QuebecParkResident_93": {
+      "path_cm": 3887.8,
+      "moving_samples": 183,
+      "idle_samples": 55
+    },
+    "QuebecParkResident_94": {
+      "path_cm": 4940.4,
+      "moving_samples": 214,
+      "idle_samples": 24
+    },
+    "QuebecParkResident_95": {
+      "path_cm": 5150.7,
+      "moving_samples": 205,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_96": {
+      "path_cm": 4558.6,
+      "moving_samples": 170,
+      "idle_samples": 65
+    },
+    "QuebecParkResident_97": {
+      "path_cm": 5458.3,
+      "moving_samples": 188,
+      "idle_samples": 48
+    },
+    "QuebecParkResident_98": {
+      "path_cm": 2625.2,
+      "moving_samples": 139,
+      "idle_samples": 95
+    },
+    "QuebecParkResident_99": {
+      "path_cm": 7200.0,
+      "moving_samples": 161,
+      "idle_samples": 75
+    },
+    "QuebecParkResident_100": {
+      "path_cm": 6760.8,
+      "moving_samples": 143,
+      "idle_samples": 93
+    },
+    "QuebecParkResident_101": {
+      "path_cm": 3965.7,
+      "moving_samples": 158,
+      "idle_samples": 78
+    },
+    "QuebecParkResident_102": {
+      "path_cm": 5781.3,
+      "moving_samples": 213,
+      "idle_samples": 23
+    },
+    "QuebecParkResident_103": {
+      "path_cm": 5953.9,
+      "moving_samples": 206,
+      "idle_samples": 33
+    },
+    "QuebecParkResident_104": {
+      "path_cm": 3693.0,
+      "moving_samples": 192,
+      "idle_samples": 44
+    },
+    "QuebecParkResident_105": {
+      "path_cm": 4369.4,
+      "moving_samples": 205,
+      "idle_samples": 32
+    },
+    "QuebecParkResident_106": {
+      "path_cm": 4321.3,
+      "moving_samples": 185,
+      "idle_samples": 51
+    },
+    "QuebecParkResident_107": {
+      "path_cm": 4891.0,
+      "moving_samples": 194,
+      "idle_samples": 43
+    },
+    "QuebecParkResident_108": {
+      "path_cm": 4529.2,
+      "moving_samples": 168,
+      "idle_samples": 70
+    },
+    "QuebecParkResident_109": {
+      "path_cm": 4653.9,
+      "moving_samples": 161,
+      "idle_samples": 78
+    }
+  },
+  "starter_queue": {
+    "waiting_cars": [
+      "QuebecCar_29"
+    ],
+    "clearance_fixture": "starter temporarily raised with ticking disabled",
+    "displacements_after_8s_cm": {
+      "QuebecCar_3": 2704.0,
+      "QuebecCar_4": 4702.8,
+      "QuebecCar_5": 2327.3,
+      "QuebecCar_6": 4091.0,
+      "QuebecCar_21": 3105.2,
+      "QuebecCar_25": 4804.0,
+      "QuebecCar_29": 4888.2,
+      "QuebecCar_30": 4169.8,
+      "QuebecCar_33": 4526.9,
+      "QuebecCar_34": 4838.0,
+      "QuebecCar_35": 5145.5,
+      "QuebecCar_36": 4219.7,
+      "QuebecCar_37": 2857.3,
+      "QuebecCar_38": 4769.2,
+      "QuebecCar_39": 4407.7,
+      "QuebecCar_40": 3358.7
+    }
+  },
+  "peer_activity_modes": [
+    0,
+    1,
+    2
+  ],
+  "elapsed_seconds": 74.66
+}

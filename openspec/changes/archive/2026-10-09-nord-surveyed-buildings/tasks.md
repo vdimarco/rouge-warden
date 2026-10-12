@@ -1,0 +1,4 @@
+- [x] Extract and validate licensed source geometry and textures.
+- [x] Import models and remove overlapping generic buildings with a recovery backup.
+- [x] Inspect rendered views and run map/gameplay collision checks.
+- [x] Update provenance and specification with actual coverage and limits.

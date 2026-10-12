@@ -1,0 +1,905 @@
+{
+  "date": "2026-10-11",
+  "scope": "CPU source checks only; native/import/render/performance acceptance is separate",
+  "passed": true,
+  "fixture": {
+    "passed": true,
+    "fronts": 4,
+    "triangles": 22436,
+    "batches": 45,
+    "new_collision": false,
+    "tower_windows": 425,
+    "tower_balconies": 64,
+    "school_windows": 539,
+    "school_walls": 33
+  },
+  "full_survey": {
+    "fronts": 154,
+    "batches": 305,
+    "triangles": 725808,
+    "streets": {
+      "Avenue Papineau": 28,
+      "Avenue du Parc-La Fontaine": 73,
+      "Rue Rachel Est": 45,
+      "Rue Sherbrooke Est": 8
+    },
+    "styles": {
+      "BrickRed": 47,
+      "BrickOchre": 15,
+      "Limestone": 59,
+      "BrickBrown": 33
+    },
+    "height_sources": {
+      "OSM levels × 3.2 m": 69,
+      "3-storey estimate": 85
+    },
+    "new_collision": false,
+    "all_source_hashes_match": true,
+    "all_geometry_hashes_match": true,
+    "survey_landmark": {
+      "osm_id": "355385456",
+      "city_id": "2317003",
+      "address": "1101 Rue Rachel Est",
+      "name": "Le Neuville",
+      "source": "Data/CityBuildings/Geometry/2317003.obj",
+      "survey_triangles": 256,
+      "bounds_cm": [
+        [
+          -35880.544,
+          9654.712,
+          0.0
+        ],
+        [
+          -32676.207,
+          12641.31,
+          5744.392
+        ]
+      ],
+      "height_cm": 5744.392,
+      "storeys": 17,
+      "windows": 425,
+      "balconies": 64,
+      "pose": {
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "footprint_join": {
+        "iou": 0.8854,
+        "osm_coverage": 0.9492,
+        "city_coverage": 0.9295
+      },
+      "collision": false,
+      "retained_osm_collider_height_cm": 960,
+      "limits": "2016 municipal exterior mass and roof profile; window/balcony rhythm and finishes are authored estimates. Ground flattened as in existing survey. Original OSM 9.6 m collider retained; no upper-floor access."
+    },
+    "survey_school": {
+      "osm_id": "27395533",
+      "city_id": "2316935",
+      "address": "3700 Avenue Calixa-Lavallée",
+      "name": "École Le Plateau",
+      "source": "Data/CityBuildings/Geometry/2316935.obj",
+      "survey_triangles": 626,
+      "bounds_cm": [
+        [
+          14882.168,
+          6.574,
+          0.0
+        ],
+        [
+          23272.681,
+          7625.123,
+          2401.72
+        ]
+      ],
+      "height_cm": 2401.7206,
+      "windows": 539,
+      "walls": [
+        {
+          "a": [
+            14882.168,
+            3763.887
+          ],
+          "b": [
+            15594.974,
+            4895.813
+          ],
+          "normal": [
+            -0.8461951363023039,
+            0.5328731474735102
+          ],
+          "width_cm": 1337.6654526121247,
+          "height_cm": 1556.52,
+          "classroom_rows": 3,
+          "window_bays": 5
+        },
+        {
+          "a": [
+            14882.168,
+            3763.887
+          ],
+          "b": [
+            16314.346,
+            2856.058
+          ],
+          "normal": [
+            -0.5353815830918476,
+            -0.8446103009590086
+          ],
+          "width_cm": 1695.66721880356,
+          "height_cm": 1556.52,
+          "classroom_rows": 3,
+          "window_bays": 6
+        },
+        {
+          "a": [
+            15611.756,
+            4885.21
+          ],
+          "b": [
+            16646.819,
+            6528.777
+          ],
+          "normal": [
+            -0.8461807174357346,
+            0.5328960437458187
+          ],
+          "width_cm": 1942.3356809413763,
+          "height_cm": 2087.696,
+          "classroom_rows": 4,
+          "window_bays": 7
+        },
+        {
+          "a": [
+            16314.346,
+            2856.058
+          ],
+          "b": [
+            16597.414,
+            3305.561
+          ],
+          "normal": [
+            0.8461924414292742,
+            -0.5328774268703493
+          ],
+          "width_cm": 531.2065884691198,
+          "height_cm": 1556.52,
+          "classroom_rows": 3,
+          "window_bays": 2
+        },
+        {
+          "a": [
+            16465.165,
+            1004.44
+          ],
+          "b": [
+            17252.174,
+            505.507
+          ],
+          "normal": [
+            -0.5354303706468936,
+            -0.8445793735279888
+          ],
+          "width_cm": 931.8354492988541,
+          "height_cm": 2087.92,
+          "classroom_rows": 4,
+          "window_bays": 3
+        },
+        {
+          "a": [
+            16465.165,
+            1004.44
+          ],
+          "b": [
+            17610.7,
+            2823.497
+          ],
+          "normal": [
+            -0.8461902984867251,
+            0.5328808297799302
+          ],
+          "width_cm": 2149.702027136319,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 8
+        },
+        {
+          "a": [
+            16597.414,
+            3305.561
+          ],
+          "b": [
+            16880.483,
+            3755.063
+          ],
+          "normal": [
+            0.8461910580180619,
+            -0.5328796236771235
+          ],
+          "width_cm": 531.2062751558943,
+          "height_cm": 1556.52,
+          "classroom_rows": 3,
+          "window_bays": 2
+        },
+        {
+          "a": [
+            16646.819,
+            6528.777
+          ],
+          "b": [
+            16992.008,
+            7076.95
+          ],
+          "normal": [
+            -0.846202884110535,
+            0.5328608438635857
+          ],
+          "width_cm": 647.8032754239524,
+          "height_cm": 2087.696,
+          "classroom_rows": 4,
+          "window_bays": 2
+        },
+        {
+          "a": [
+            16880.483,
+            3755.063
+          ],
+          "b": [
+            17140.532,
+            3916.056
+          ],
+          "normal": [
+            0.5263789271862603,
+            -0.8502500955684991
+          ],
+          "width_cm": 305.85000972698936,
+          "height_cm": 1556.52,
+          "classroom_rows": 3,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            16992.008,
+            7076.95
+          ],
+          "b": [
+            17337.197,
+            7625.123
+          ],
+          "normal": [
+            -0.8462028841105375,
+            0.5328608438635817
+          ],
+          "width_cm": 647.8032754239505,
+          "height_cm": 2087.65,
+          "classroom_rows": 4,
+          "window_bays": 2
+        },
+        {
+          "a": [
+            17140.532,
+            3916.056
+          ],
+          "b": [
+            17588.571,
+            4207.53
+          ],
+          "normal": [
+            0.5453153364936184,
+            -0.8382309847439735
+          ],
+          "width_cm": 534.5054145628466,
+          "height_cm": 2087.796,
+          "classroom_rows": 4,
+          "window_bays": 2
+        },
+        {
+          "a": [
+            17252.174,
+            505.507
+          ],
+          "b": [
+            18039.182,
+            6.574
+          ],
+          "normal": [
+            -0.5354308559404862,
+            -0.84457906587059
+          ],
+          "width_cm": 931.8346047196372,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 3
+        },
+        {
+          "a": [
+            17337.197,
+            7625.123
+          ],
+          "b": [
+            18733.917,
+            6739.797
+          ],
+          "normal": [
+            0.535369986275452,
+            0.8446176518374585
+          ],
+          "width_cm": 1653.671335143717,
+          "height_cm": 2087.65,
+          "classroom_rows": 4,
+          "window_bays": 6
+        },
+        {
+          "a": [
+            17610.7,
+            2823.497
+          ],
+          "b": [
+            18442.76,
+            4144.643
+          ],
+          "normal": [
+            -0.84616718386854,
+            0.5329175329673294
+          ],
+          "width_cm": 1561.329752779981,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 5
+        },
+        {
+          "a": [
+            17803.94,
+            4549.593
+          ],
+          "b": [
+            18442.76,
+            4144.643
+          ],
+          "normal": [
+            -0.5353955174995324,
+            -0.8446014680554421
+          ],
+          "width_cm": 756.3567246346128,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 3
+        },
+        {
+          "a": [
+            18039.182,
+            6.574
+          ],
+          "b": [
+            19184.819,
+            1825.629
+          ],
+          "normal": [
+            0.8461686387490867,
+            -0.5329152228990253
+          ],
+          "width_cm": 2149.7546903760895,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 8
+        },
+        {
+          "a": [
+            18418.539,
+            5525.468
+          ],
+          "b": [
+            18651.491,
+            5377.814
+          ],
+          "normal": [
+            0.535356713028961,
+            0.8446260650813627
+          ],
+          "width_cm": 275.8048912184126,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            18418.539,
+            5525.468
+          ],
+          "b": [
+            19055.076,
+            6536.121
+          ],
+          "normal": [
+            0.8461573600814618,
+            -0.5329331308710047
+          ],
+          "width_cm": 1194.4031307636467,
+          "height_cm": 2087.65,
+          "classroom_rows": 4,
+          "window_bays": 4
+        },
+        {
+          "a": [
+            18660.266,
+            5391.645
+          ],
+          "b": [
+            18875.087,
+            5255.494
+          ],
+          "normal": [
+            0.5353262228422633,
+            0.8446453901711862
+          ],
+          "width_cm": 254.33276792816173,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            18875.087,
+            5255.494
+          ],
+          "b": [
+            19089.909,
+            5119.344
+          ],
+          "normal": [
+            0.5353216399202183,
+            0.8446482947553544
+          ],
+          "width_cm": 254.33307725107238,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            19184.819,
+            1825.629
+          ],
+          "b": [
+            19961.344,
+            3058.776
+          ],
+          "normal": [
+            0.8462021734362004,
+            -0.5328619724392524
+          ],
+          "width_cm": 1457.2723147147215,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 5
+        },
+        {
+          "a": [
+            19461.214,
+            4883.956
+          ],
+          "b": [
+            20292.128,
+            4357.26
+          ],
+          "normal": [
+            0.5353788480918403,
+            0.8446120346146236
+          ],
+          "width_cm": 983.7818619043558,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 3
+        },
+        {
+          "a": [
+            20126.72,
+            3080.586
+          ],
+          "b": [
+            20410.837,
+            2900.452
+          ],
+          "normal": [
+            -0.5354619790646498,
+            -0.844559334195158
+          ],
+          "width_cm": 336.4085724903557,
+          "height_cm": 2087.807,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            20292.128,
+            4357.26
+          ],
+          "b": [
+            20640.157,
+            4136.577
+          ],
+          "normal": [
+            0.5355103246950339,
+            0.8445286804751033
+          ],
+          "width_cm": 412.0984971217428,
+          "height_cm": 2087.82,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            20410.837,
+            2900.452
+          ],
+          "b": [
+            20694.954,
+            2720.317
+          ],
+          "normal": [
+            -0.5354640993398839,
+            -0.8445579899084058
+          ],
+          "width_cm": 336.40910795339835,
+          "height_cm": 2087.74,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            20477.49,
+            2375.048
+          ],
+          "b": [
+            20694.954,
+            2720.317
+          ],
+          "normal": [
+            -0.8461528214967915,
+            0.5329403368792973
+          ],
+          "width_cm": 408.0456759444954,
+          "height_cm": 2087.74,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            20477.49,
+            2375.048
+          ],
+          "b": [
+            21805.568,
+            1533.131
+          ],
+          "normal": [
+            -0.5354155660413331,
+            -0.8445887588883947
+          ],
+          "width_cm": 1572.4552168418004,
+          "height_cm": 2087.655,
+          "classroom_rows": 4,
+          "window_bays": 6
+        },
+        {
+          "a": [
+            20640.157,
+            4136.577
+          ],
+          "b": [
+            21087.28,
+            3853.07
+          ],
+          "normal": [
+            0.5354956645478348,
+            0.8445379762038371
+          ],
+          "width_cm": 529.4291229031509,
+          "height_cm": 2087.788,
+          "classroom_rows": 4,
+          "window_bays": 2
+        },
+        {
+          "a": [
+            21297.89,
+            3677.649
+          ],
+          "b": [
+            21944.6,
+            4704.535
+          ],
+          "normal": [
+            -0.8461763064698581,
+            0.5329030478136046
+          ],
+          "width_cm": 1213.5603326971423,
+          "height_cm": 2087.655,
+          "classroom_rows": 4,
+          "window_bays": 4
+        },
+        {
+          "a": [
+            21805.568,
+            1533.131
+          ],
+          "b": [
+            23272.681,
+            3862.715
+          ],
+          "normal": [
+            0.8461774977223512,
+            -0.5329011562647807
+          ],
+          "width_cm": 2753.0677739251178,
+          "height_cm": 2087.555,
+          "classroom_rows": 4,
+          "window_bays": 10
+        },
+        {
+          "a": [
+            21944.6,
+            4704.535
+          ],
+          "b": [
+            22173.356,
+            4559.58
+          ],
+          "normal": [
+            0.5352528866454109,
+            0.8446918653199844
+          ],
+          "width_cm": 270.81591452682494,
+          "height_cm": 2087.638,
+          "classroom_rows": 4,
+          "window_bays": 1
+        },
+        {
+          "a": [
+            22173.356,
+            4559.58
+          ],
+          "b": [
+            22549.854,
+            4320.889
+          ],
+          "normal": [
+            0.5354399033523073,
+            0.8445733300892657
+          ],
+          "width_cm": 445.7848556030135,
+          "height_cm": 2087.61,
+          "classroom_rows": 4,
+          "window_bays": 2
+        },
+        {
+          "a": [
+            22680.614,
+            4237.958
+          ],
+          "b": [
+            23054.115,
+            4001.167
+          ],
+          "normal": [
+            0.5354399493076382,
+            0.84457330095465
+          ],
+          "width_cm": 442.2363335163677,
+          "height_cm": 2087.572,
+          "classroom_rows": 4,
+          "window_bays": 2
+        }
+      ],
+      "pose": {
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "footprint_join": {
+        "iou": 0.9134,
+        "osm_coverage": 0.9547,
+        "city_coverage": 0.9548
+      },
+      "collision": false,
+      "retained_osm_collider_height_cm": 960,
+      "limits": "2016 municipal U-shaped exterior/wing heights and roof profile. Tan masonry, classroom glazing and sills are authored estimates informed by the existing municipal atlas; not a measured elevation. Original 9.6 m OSM collider retained; no interior/upper-floor access."
+    },
+    "total_visual_triangles": 726690
+  },
+  "source_sha256": {
+    "Scripts/plateau_facades.py": "d18dd979d5dfc1eb4cf91b6d7c06ceb1ca2146247a0a591963bd365762fcb193",
+    "Scripts/plateau_perimeter.py": "0ff112eb8ff913002b76844123c90fef28a63fadd911896c63aff77272038050",
+    "Scripts/test_plateau_perimeter.py": "1a0a1463841ab63a1c90b805cca4d44791e854a684f10136f524a94afd7fb8e4",
+    "Data/Plateau/PerimeterGeometry/perimeter.json": "abb1a46217d5ecf7512b91e6d0cbc70179d39e074713d9e299ac758983613e82",
+    "Scripts/upgrade_plateau.py": "2291a1b4f2721b52e7e08d499a43a40b1932db39f5934dda6e4bbf9604dba812",
+    "Data/Plateau/README.md": "9009d5502c877009771b9685854cd24935346a721141e45482ff16cb935abba7",
+    "Data/Plateau/PerimeterGeometry/README.md": "2815258d9b98d705345a3019823141cb18aed39a77fff7dff4737eada9b1413e",
+    "Verification/GraphicsBuildingSources.md": "c064fe07e3e332519247c4daeb61b52d950bcb921bc12fe1aa80d39c621e8164",
+    "Scripts/plateau_tower.py": "d9c1ef4892fd5bef807f19a335ec94828f6521c31ca3bed6ff40abc94f432780",
+    "Scripts/plateau_school.py": "7ba1f84af178a82ab0ff6b1b3c21bd7d705ddd683ee07cf57353ccc96c1b4602"
+  },
+  "existing_facade_fixture_collision_sha256": "b34c0b19ee0e0b140d68a2f8295f62b9657a656907b10071fea0c67a0cf0d4c1",
+  "references": [
+    {
+      "url": "https://montreal.ca/apropos/le-plateau-mont-royal",
+      "accessed": "2026-10-11",
+      "use": "general stairs/greenery/grey-stone character"
+    },
+    {
+      "url": "https://portail-m4s.s3.montreal.ca/pdf/pmr_guide_de_design_mai2023.pdf",
+      "accessed": "2026-10-11",
+      "cover_date": "February2020",
+      "use": "opening rhythm, projections, detailed crowns, masonry and limestone"
+    },
+    {
+      "url": "https://montreal.ca/articles/reglement-durbanisme-du-plateau-mont-royal-20131",
+      "accessed": "2026-10-11",
+      "updated": "2025-06-26",
+      "use": "current architectural-reference index; linked annex portal inaccessible"
+    },
+    {
+      "url": "https://ville.montreal.qc.ca/documents/Adi_Public/CA_Pmr/CA_Pmr_PV_ORDI_2011-05-03_19h00_FR.pdf",
+      "accessed": "2026-10-11",
+      "use": "PDF page 13: 1101 Rachel floors 2–17, anthracite steel and natural anodized aluminum"
+    },
+    {
+      "url": "https://www.irent.com/communities/neuville",
+      "accessed": "2026-10-11",
+      "use": "Owner address/identity, windows and private balconies"
+    },
+    {
+      "url": "https://cdn.theliftsystem.com/clvgroup/files/misc/1595598315_neuville_booklet_digital-en.pdf",
+      "accessed": "2026-10-11",
+      "use": "Owner brochure text, identity/address/private balconies; no photo texture copied"
+    },
+    {
+      "url": "https://le-plateau.cssdm.gouv.qc.ca/ecole/",
+      "accessed": "2026-10-11",
+      "use": "School primary address, park setting"
+    },
+    {
+      "url": "https://www.ville.montreal.qc.ca/pls/portal/docs/PAGE/PES_PUBLICATIONS_FR/PUBLICATIONS/LISTE_TAS.PDF",
+      "accessed": "2026-10-11",
+      "use": "PDF page3: school identity/1930–1931/architects"
+    },
+    {
+      "url": "https://ciusss-centresudmtl.gouv.qc.ca/sites/ciussscsmtl/files/media/document/HNDPlanHopital.pdf",
+      "accessed": "2026-10-11",
+      "use": "Read-only hospital campus/pavilions; no geometry replacement applied"
+    }
+  ],
+  "limitations": [
+    "154 individual facade elevations/finishes/heights remain estimates; Le Neuville and École Le Plateau exterior masses are from2016 survey, detail rhythms estimated",
+    "Legacy triplex PDF could only be read as search-index excerpt, not its drawings",
+    "No Google imagery copied or Street View parity claimed",
+    "Native import/render/performance/physical traversal not established by CPU tests",
+    "Le Neuville original 9.6 m OSM collider is retained with no upper-floor access",
+    "1334 Sherbrooke municipal association has only 0.649 IoU; no automatic identity or height correction applied",
+    "École Le Plateau original9.6 m collider retained; no interior/upper-floor access",
+    "Notre-Dame remains a simplified35.2 m shell; municipal overlay not applied due terrain/footprint conflicts"
+  ],
+  "integration_checks": {
+    "existing_100_building_ids_excluded": true,
+    "all_154_fronts_are_outward_park_street_edges": true,
+    "all_305_batches_nonblocking": true,
+    "full_input_and_geometry_sha256_match": true,
+    "local_document_links_resolve": true,
+    "legacy_integrated_map_guard_test": "PASS",
+    "tower_not_decorated_as_triplex": true,
+    "original_survey_asset_guarded_by_sha256": true,
+    "all_154_opaque_backings_cover_legacy_3cm_window_cards": true,
+    "original_school_survey_assets_guarded_by_sha256": true
+  },
+  "landmark_visual_repair": {
+    "targets": [
+      "27395533",
+      "355385456"
+    ],
+    "removed_by_target_material": {
+      "27395533": {
+        "Cream": 21,
+        "Roof": 1,
+        "Glass": 312
+      },
+      "355385456": {
+        "Roof": 1,
+        "Sage": 11,
+        "Glass": 81
+      }
+    },
+    "collision_changed": false,
+    "visible_copy_triangles": 150253,
+    "removed_triangles": 878,
+    "original_visuals_hidden": 7,
+    "owned_filtered_copies": 4,
+    "other_face_uv_tokens_exact": true,
+    "cpu_test_passed": true
+  },
+  "facade_finish": {
+    "batches": 36,
+    "triangles": 13352,
+    "metal_cornices": 65,
+    "corner_osm_id": "356350796",
+    "corner_edges": 4,
+    "new_collision": false,
+    "cpu_test_passed": true,
+    "corner_osm_ids": [
+      "356350796",
+      "356350765",
+      "345835052"
+    ],
+    "exact_edges": [
+      [
+        "356350796",
+        1
+      ],
+      [
+        "356350796",
+        2
+      ],
+      [
+        "356350765",
+        2
+      ],
+      [
+        "345835052",
+        4
+      ]
+    ],
+    "final_side_repair": {
+      "reason": "Final720 visual QA rejected surviving large flat blue-card planes in Perimeter2 alley and Perimeter4 right neighbor. First surfaces identified by multiple screenshot ray intersections with retained OSM edges.",
+      "added_triangles": 5062,
+      "added_batches": 11,
+      "original_geometry_or_collision_changed": false,
+      "native_gate": "Pending exact fresh-load/render capture after narrow apply"
+    }
+  },
+  "repair_source_sha256": {
+    "Scripts/plateau_landmark_visuals.py": "4459832210eb018aff1cab08f40f78096b0bd645c5e8ca6b7e97c53058c0d3fa",
+    "Scripts/plateau_facade_finish.py": "3a12bcf3dacd4037d0ebbe184b0f878ae97e5206d81caaa0f69b959c69155a42",
+    "Scripts/test_plateau_landmark_visuals.py": "d7c825b458e5e01de488bfc4bc4c376e0475e37278fe0e9301628544de86c54d",
+    "Scripts/test_plateau_facade_finish.py": "9101171bc16b5cfb42c1926f10cb8abdfaabd731e113b112427dfbe0c558ad5c",
+    "Scripts/verify_plateau.py": "44b8e29b07da24e5833d993ca02829ca63057d4bcba77a5d50a7b58c866ada26",
+    "Scripts/test_verify_plateau_background.py": "69d6033078d17cf1f1edfe950c0b19c24717ea05d36ffc38b2a53cbd5ef87e0f",
+    "Scripts/upgrade_plateau.py": "2291a1b4f2721b52e7e08d499a43a40b1932db39f5934dda6e4bbf9604dba812",
+    "Data/Plateau/LandmarkVisualGeometry/visuals.json": "34014983a996c92fa90914f4c2c68ff520ed3fadceacd40ce28b90c64e42ea49",
+    "Data/Plateau/FacadeFinishGeometry/finish.json": "b4290b1a700f936da3572710408191da5561b5a120105ed1750314547475765e",
+    "Scripts/test_plateau_tower_materials.py": "3454339569eb75c182d6e05958e38b78f63a8976af9634373f433669ffa49d1b"
+  },
+  "roof_dependency_repair": {
+    "cause": "Duplicated owned roof parents were not saved as disk packages; saved MI assets referenced those missing packages on a fresh process.",
+    "owned_parents": [
+      "/Game/Plateau/Materials/M_LeNeuvilleRoofParent",
+      "/Game/Plateau/Materials/M_LePlateauSchoolRoofParent"
+    ],
+    "fix": "Save own parent before assigning and saving own roof MI; assert exact parent identity and both disk packages in authoring and native verification.",
+    "mesh_reimport_required": false,
+    "original_city_assets_changed": false,
+    "cpu_dependency_regression": "PASS: new/existing parent-instance persistence, failed saves, missing packages, incorrect parent",
+    "native_recheck": "Required separately after narrow NullRHI asset repair"
+  }
+}

@@ -1,0 +1,5 @@
+- [x] Expand surveyed buildings and prepare park/tree reference data.
+- [x] Build mapped park landmarks, varied trees and furniture.
+- [x] Add original goofy residents and improve the car silhouette/details.
+- [x] Build, run multiplayer/driving checks and inspect rendered park/car/resident views.
+- [x] Save provenance, previews, checks and current specifications.

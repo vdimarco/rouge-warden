@@ -788,3 +788,7 @@ River Rush is an endless three-lane raft runner at `/river-rush/`, with an Actio
 Editable source is in `games/river-rush/`. Run `npm ci --prefix games/river-rush`, `npm test --prefix games/river-rush`, and `npm run build:arcade --prefix games/river-rush` after changes; static output is committed in `public/river-rush/`. Browser regression: `node qa/river-rush/runner.mjs` with the static server running; `ARCADE_URL` selects a deployed origin. `arcade.mjs`, `animation.mjs` and the game’s `tests/browser-check.mjs` invoke the same consolidated regression.
 
 The approved character keeps his face, long hair and modest loincloth in separate riding, jumping and ducking sprites. Generated portrait/landscape jungle environments, projected hazards, wakes, foam, shield and action bursts support readable play. The Higgsfield living title scene has a still fallback for reduced motion, data-saving and video errors. Runner best scores use version 2 in the existing browser-local storage key, so legacy race scores are not treated as runner records. Media provenance and design/verification records are in `games/river-rush/docs/`.
+
+## Standalone Unreal project
+
+[NORD: Parc La Fontaine, Montréal](games/nord-unreal/README.md) is an Unreal Engine 5.8.3 walking/driving co-op project centered on 1334 Rue Sherbrooke Est. Its geographic source, art credits, Linux build instructions, and checks are included with the project.

@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "source": "Data/CharactersNeutral",
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Backups/CrewImport-20261010-010725-275394",
+  "characters": [
+    {
+      "style": 9,
+      "name": "CurlyMetalhead",
+      "materials": 1,
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
+        }
+      ]
+    }
+  ]
+}

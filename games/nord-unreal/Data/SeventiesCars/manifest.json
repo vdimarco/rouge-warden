@@ -1,0 +1,235 @@
+{
+  "profiles": [
+    "fastback coupe",
+    "notchback sedan",
+    "long-roof wagon"
+  ],
+  "materials": {
+    "Paint": {
+      "color": [
+        0.035,
+        0.26,
+        0.24
+      ],
+      "roughness": 0.3,
+      "metallic": 0.45
+    },
+    "Chrome": {
+      "color": [
+        0.65,
+        0.7,
+        0.73
+      ],
+      "roughness": 0.23,
+      "metallic": 0.92
+    },
+    "Ink": {
+      "color": [
+        0.012,
+        0.017,
+        0.021
+      ],
+      "roughness": 0.65,
+      "metallic": 0.1
+    },
+    "Rubber": {
+      "color": [
+        0.022,
+        0.025,
+        0.028
+      ],
+      "roughness": 0.92,
+      "metallic": 0.0
+    },
+    "Glass": {
+      "color": [
+        0.045,
+        0.105,
+        0.14
+      ],
+      "roughness": 0.18,
+      "metallic": 0.42
+    },
+    "Lens": {
+      "color": [
+        0.78,
+        0.73,
+        0.53
+      ],
+      "roughness": 0.22,
+      "metallic": 0.15
+    },
+    "Red": {
+      "color": [
+        0.42,
+        0.018,
+        0.025
+      ],
+      "roughness": 0.28,
+      "metallic": 0.12
+    },
+    "Amber": {
+      "color": [
+        0.7,
+        0.24,
+        0.018
+      ],
+      "roughness": 0.26,
+      "metallic": 0.12
+    },
+    "Cream": {
+      "color": [
+        0.72,
+        0.66,
+        0.48
+      ],
+      "roughness": 0.62,
+      "metallic": 0.05
+    },
+    "Vinyl": {
+      "color": [
+        0.035,
+        0.028,
+        0.022
+      ],
+      "roughness": 0.88,
+      "metallic": 0.0
+    }
+  },
+  "paints": [
+    [
+      0.035,
+      0.26,
+      0.24
+    ],
+    [
+      0.36,
+      0.045,
+      0.055
+    ],
+    [
+      0.54,
+      0.32,
+      0.065
+    ],
+    [
+      0.075,
+      0.15,
+      0.3
+    ]
+  ],
+  "models": [
+    {
+      "file": "Car70Body0.obj",
+      "triangles": 8260,
+      "materials": [
+        "Paint",
+        "Chrome",
+        "Ink",
+        "Amber",
+        "Red",
+        "Glass",
+        "Lens",
+        "Cream"
+      ]
+    },
+    {
+      "file": "Car70Cabin0.obj",
+      "triangles": 424,
+      "materials": [
+        "Glass",
+        "Chrome",
+        "Ink"
+      ]
+    },
+    {
+      "file": "Car70Roof0.obj",
+      "triangles": 452,
+      "materials": [
+        "Paint",
+        "Chrome"
+      ]
+    },
+    {
+      "file": "Car70Body1.obj",
+      "triangles": 8388,
+      "materials": [
+        "Paint",
+        "Chrome",
+        "Ink",
+        "Amber",
+        "Red",
+        "Glass",
+        "Lens",
+        "Cream"
+      ]
+    },
+    {
+      "file": "Car70Cabin1.obj",
+      "triangles": 424,
+      "materials": [
+        "Glass",
+        "Chrome",
+        "Ink"
+      ]
+    },
+    {
+      "file": "Car70Roof1.obj",
+      "triangles": 448,
+      "materials": [
+        "Paint",
+        "Chrome"
+      ]
+    },
+    {
+      "file": "Car70Body2.obj",
+      "triangles": 8368,
+      "materials": [
+        "Paint",
+        "Chrome",
+        "Ink",
+        "Amber",
+        "Red",
+        "Glass",
+        "Lens",
+        "Cream"
+      ]
+    },
+    {
+      "file": "Car70Cabin2.obj",
+      "triangles": 480,
+      "materials": [
+        "Glass",
+        "Chrome",
+        "Ink"
+      ]
+    },
+    {
+      "file": "Car70Roof2.obj",
+      "triangles": 616,
+      "materials": [
+        "Paint",
+        "Chrome"
+      ]
+    },
+    {
+      "file": "Car70Tire.obj",
+      "triangles": 1632,
+      "materials": [
+        "Rubber",
+        "Ink",
+        "Cream"
+      ]
+    },
+    {
+      "file": "Car70Rim.obj",
+      "triangles": 940,
+      "materials": [
+        "Chrome",
+        "Ink"
+      ]
+    }
+  ],
+  "source": "Original procedural artwork. 1970s-inspired, no manufacturer badges or extracted assets.",
+  "units": "centimetres; X forward; pivot and wheel centres match existing QuebecCar"
+}

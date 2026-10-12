@@ -1,0 +1,3613 @@
+{
+  "schema_version": 1,
+  "updated_utc": "2026-10-11T17:29:03.795731+00:00",
+  "baseline_commit": "31e7ed09cce9b695d6ca23626459d4508bcee3cc",
+  "status": "accepted_bounded_environment_polish_and_existing_browser_restored",
+  "passed": true,
+  "final_runtime_acceptance_pending": false,
+  "scope": "Retained tree/material/comic appearance, supported additive perimeter fronts, two survey-derived landmark exteriors, precisely filtered duplicate NoCollision surfaces and bounded cornice/side-skin repairs in the integrated Warden game.",
+  "recovery": {
+    "passed": true,
+    "manifest": {
+      "path": "Saved/Recovery/environment-polish-20261011T145444Z/baseline.json",
+      "sha256": "815deb3bfb3961051884fdd2b1cc5fe0262a78e9b74469d726160b2dbb7eb729",
+      "bytes": 153620
+    },
+    "content_files_copied": 6364,
+    "protected_files_verified": 651,
+    "protected_backup_hashes_match": true,
+    "saved_map_backup_present": true,
+    "host_stopped_normally": true,
+    "note": "Checks backup copies. Current progress/source preservation after all QA remains a separate final gate.",
+    "affected_asset_backups": [
+      {
+        "path": "Saved/Recovery/environment-polish-20261011T145444Z/Content/Maps/LaFontaine.umap",
+        "sha256": "7e638da09f9bf6c329d2244ade75419ab42f57fc3296b495f93eafb681ed2db1",
+        "bytes": 6321762
+      },
+      {
+        "path": "Saved/Recovery/environment-polish-20261011T145444Z/Content/Art/Comic/M_ComicInk.uasset",
+        "sha256": "c01c07db223d1d2b2f094ecf8f506a5a00856c97020d0b9c4cf6191cf6afb81f",
+        "bytes": 21666
+      },
+      {
+        "path": "Saved/Recovery/environment-polish-20261011T145444Z/Content/Art/M_DetailedAutumnLeaves.uasset",
+        "sha256": "2e1dabd83261b08ae6d6dff7369a2de1ce1702558596214e77a78684e1c93714",
+        "bytes": 8661
+      },
+      {
+        "path": "Saved/Recovery/environment-polish-20261011T145444Z/Content/Art/Tree/tree_small_02/StaticMeshes/tree_small_02.uasset",
+        "sha256": "0d8530550d7ee565040905e0e8a55d34f4a5bd9db9915cda2b12c1c0fafd79d9",
+        "bytes": 48132349
+      },
+      {
+        "path": "Saved/Recovery/environment-polish-20261011T145444Z/Content/Art/Tree/tree_small_02_leaves_alpha_1k.uasset",
+        "sha256": "4c9babf34510ef854523fe6d8b901fb81c3de9d45a663bc660f097cbd53dd3e9",
+        "bytes": 255797
+      }
+    ]
+  },
+  "read_only_lifecycle_snapshot": {
+    "at_utc": "2026-10-11T15:34:27.577852+00:00",
+    "gpu": {
+      "index": 0,
+      "name": "NVIDIA GeForce RTX 4090",
+      "total_mib": 24564,
+      "used_mib": 15467,
+      "free_mib": 8599
+    },
+    "unreal_processes": [
+      {
+        "pid": 495381,
+        "name": "UnrealEditor",
+        "owned_gameplay_workspace": true,
+        "nullrhi": false,
+        "script": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/EnvironmentPolish/verify_capture720.py"
+      }
+    ],
+    "browser_service": [
+      "ActiveState=inactive",
+      "SubState=dead"
+    ],
+    "preflight_pass_claimed": false,
+    "note": "Read-only snapshot during root-owned fresh Vulkan verification/capture. The browser service is intentionally stopped. This is not a preflight result or permission to overlap jobs."
+  },
+  "baseline": {
+    "passed": true,
+    "performance_report": {
+      "path": "Saved/Tests/EnvironmentPolish/BaselinePerformance.json",
+      "sha256": "ab3ed02d1f84c3b3d9c2e8fd23c073596e4525558fa74fd3c954ed50929a58da",
+      "bytes": 3517
+    },
+    "hardware": {
+      "platform": "Linux",
+      "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "gpudriver": "610.57",
+      "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+      "shaderplatform": "VULKAN_SM6"
+    },
+    "settings": "Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+    "method": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends",
+    "profiles": [
+      {
+        "scene": "Sherbrooke",
+        "resolution": [
+          1280,
+          720
+        ],
+        "frames": 2398,
+        "sample_seconds": 17.66,
+        "median_ms": 7.34,
+        "p95_ms": 9.09,
+        "p99_ms": 10.21,
+        "average_fps": 135.8,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 6.98,
+        "csv": "Profile(20261011_105500).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/BaselinePerformance/PerformanceSherbrooke1280.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "Pond",
+        "resolution": [
+          1280,
+          720
+        ],
+        "frames": 2398,
+        "sample_seconds": 17.9,
+        "median_ms": 7.43,
+        "p95_ms": 9.2,
+        "p99_ms": 10.14,
+        "average_fps": 133.9,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 7.14,
+        "csv": "Profile(20261011_105529).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/BaselinePerformance/PerformancePond1280.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "NorthPark",
+        "resolution": [
+          1280,
+          720
+        ],
+        "frames": 2398,
+        "sample_seconds": 17.3,
+        "median_ms": 7.23,
+        "p95_ms": 8.87,
+        "p99_ms": 9.84,
+        "average_fps": 138.6,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 6.89,
+        "csv": "Profile(20261011_105558).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/BaselinePerformance/PerformanceNorthPark1280.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "Sherbrooke",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "frames": 2398,
+        "sample_seconds": 20.89,
+        "median_ms": 8.58,
+        "p95_ms": 10.51,
+        "p99_ms": 11.57,
+        "average_fps": 114.8,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 8.22,
+        "csv": "Profile(20261011_105626).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/BaselinePerformance/PerformanceSherbrooke1920.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "Pond",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "frames": 2398,
+        "sample_seconds": 22.06,
+        "median_ms": 9.05,
+        "p95_ms": 11.1,
+        "p99_ms": 12.19,
+        "average_fps": 108.7,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 8.69,
+        "csv": "Profile(20261011_105659).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/BaselinePerformance/PerformancePond1920.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "NorthPark",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "frames": 2398,
+        "sample_seconds": 21.03,
+        "median_ms": 8.63,
+        "p95_ms": 10.55,
+        "p99_ms": 12.81,
+        "average_fps": 114.0,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 8.29,
+        "csv": "Profile(20261011_105733).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/BaselinePerformance/PerformanceNorthPark1920.png",
+        "frame_budget_passed": true
+      }
+    ],
+    "capture_manifests": [
+      {
+        "path": "Saved/Tests/EnvironmentPolish/Before/capture.json",
+        "sha256": "3e3279a9a1eee9b590141115932bc91e3db48572b028dbef76a4d51715820a9d",
+        "bytes": 4654,
+        "captures": 34,
+        "viewport": [
+          1280,
+          720
+        ]
+      },
+      {
+        "path": "Saved/Tests/EnvironmentPolish/Before1080/capture.json",
+        "sha256": "beabc03c2d31f1cd18d753e8d13eae6949603c56bb1a06fc6a187f0d0e39d11d",
+        "bytes": 5343,
+        "captures": 38,
+        "viewport": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "path": "Saved/Tests/EnvironmentPolish/BeforeSchool/capture.json",
+        "sha256": "aa6eae3b18c0f511e01224c193a1d862a37681ce989b690627a1b6fb7c63cfe9",
+        "bytes": 1265,
+        "captures": 8,
+        "viewport": "1280x720 and1920x1080"
+      }
+    ],
+    "accepts_new_assets": false
+  },
+  "cpu": {
+    "passed": true,
+    "aggregate": {
+      "path": "Saved/Tests/EnvironmentPolish/CPU.json",
+      "sha256": "2c221ac8db36032de2378be3fbe29aebb4b5fe71394a7c91fef3dca97777fa30",
+      "bytes": 3224
+    },
+    "checks": 23,
+    "results": [
+      {
+        "script": "test_plateau_trees.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.12
+      },
+      {
+        "script": "test_plateau_perimeter.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.22
+      },
+      {
+        "script": "test_plateau_facades.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.32
+      },
+      {
+        "script": "test_upgrade_plateau_guard.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.02
+      },
+      {
+        "script": "test_plateau_background.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.02
+      },
+      {
+        "script": "test_plateau_batches.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.02
+      },
+      {
+        "script": "test_plateau_cartography.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 1.33
+      },
+      {
+        "script": "test_plateau_context.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 2.2
+      },
+      {
+        "script": "test_plateau_edges.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 4.87
+      },
+      {
+        "script": "test_plateau_ground.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.77
+      },
+      {
+        "script": "test_plateau_landmarks.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.44
+      },
+      {
+        "script": "test_plateau_park.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 5.8
+      },
+      {
+        "script": "test_plateau_streets.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 2.16
+      },
+      {
+        "script": "test_plateau_wayfinding.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 1.33
+      },
+      {
+        "script": "test_verify_plateau_background.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.2
+      },
+      {
+        "script": "test_verify_plateau_context.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 7.75
+      },
+      {
+        "script": "test_verify_plateau_ground.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 2.59
+      },
+      {
+        "script": "test_verify_plateau_landmarks.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.72
+      },
+      {
+        "script": "test_verify_plateau_park.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 8.45
+      },
+      {
+        "script": "test_verify_plateau_wayfinding.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.4
+      },
+      {
+        "script": "test_lafontaine_roads.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.02
+      },
+      {
+        "script": "test_road_widths.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.36
+      },
+      {
+        "script": "test_neighbourhood_details.py",
+        "exit_code": 0,
+        "passed": true,
+        "seconds": 0.03,
+        "initial_failure": "System Python lacks pre-existing Shapely dependency; bundled Python also lacks it. uv unavailable.",
+        "rerun_python": "/home/von/.cache/nord-geo-venv/bin/python",
+        "rerun_log": "Saved/Tests/EnvironmentPolish/cpu-test_neighbourhood_details-geo-rerun.log",
+        "initial_exit_code": 1
+      }
+    ],
+    "initial_dependency_failure_preserved": true,
+    "scope": "Source/geometry/placement guards; not native/rendered acceptance.",
+    "note": "Original 23-suite and later 29-suite passes are historical source snapshots. A temporary fixture failure after the exact visibility exception is retained; final repaired-source rerun remains required."
+  },
+  "candidate": {
+    "provenance": {
+      "path": "Verification/GraphicsBuildingSources.json",
+      "sha256": "cde2759f930863247fab7fbb496fac68a999a886a17db83caad15fc60f76c4ad",
+      "bytes": 21109
+    },
+    "manifest": {
+      "path": "Data/Plateau/PerimeterGeometry/perimeter.json",
+      "sha256": "abb1a46217d5ecf7512b91e6d0cbc70179d39e074713d9e299ac758983613e82",
+      "bytes": 358085
+    },
+    "perimeter_fronts": 154,
+    "perimeter_batches": 305,
+    "decorative_triangles": 725808,
+    "survey_body_triangles": 882,
+    "expected_added_actors": 307,
+    "original_actors_snapshot_count": 2701,
+    "retained_source_guards": [
+      {
+        "path": "Data/LaFontaine/osm.xml",
+        "sha256": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+        "bytes": 13507830,
+        "expected_sha256": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+        "passed": true
+      },
+      {
+        "path": "Data/Plateau/layout.json",
+        "sha256": "819756930647bac5c66eef73dbac02e383b24fa6f8a14ff4de18b9237e6b2765",
+        "bytes": 960345,
+        "expected_sha256": "819756930647bac5c66eef73dbac02e383b24fa6f8a14ff4de18b9237e6b2765",
+        "passed": true
+      },
+      {
+        "path": "Data/CityBuildings/Geometry/2317003.obj",
+        "sha256": "9eb6fd1a86b37db8ed6d39ccc203622670a60dbba823dc160a39fdd7ef235c24",
+        "bytes": 40059,
+        "expected_sha256": "9eb6fd1a86b37db8ed6d39ccc203622670a60dbba823dc160a39fdd7ef235c24",
+        "passed": true
+      },
+      {
+        "path": "Data/CityBuildings/manifest.json",
+        "sha256": "277b4ad324d1d4ee8ca539c7cb61c42eefb2af81ac47172f3940334f57c9b8e7",
+        "bytes": 3761559,
+        "expected_sha256": "277b4ad324d1d4ee8ca539c7cb61c42eefb2af81ac47172f3940334f57c9b8e7",
+        "passed": true
+      },
+      {
+        "path": "Content/CityBuildings/SM_2317003.uasset",
+        "sha256": "8ba0c7bb743c6db44e00366b1c10cc196526bf9be9ffb66490c9ea01e103d471",
+        "bytes": 75593,
+        "expected_sha256": "8ba0c7bb743c6db44e00366b1c10cc196526bf9be9ffb66490c9ea01e103d471",
+        "passed": true
+      },
+      {
+        "path": "Content/CityBuildings/MI_2317003.uasset",
+        "sha256": "885c1bd62c66cbbed1b6c999363d373f9ea01fab6c3ffd5e87c17e07cb6d9238",
+        "bytes": 3322,
+        "expected_sha256": "885c1bd62c66cbbed1b6c999363d373f9ea01fab6c3ffd5e87c17e07cb6d9238",
+        "passed": true
+      },
+      {
+        "path": "Content/CityBuildings/M_CityFacade.uasset",
+        "sha256": "10bfb01e6943df488c67fc4594a3aea5d3fe4ca1179783c01c12dc0be695f984",
+        "bytes": 6467,
+        "expected_sha256": "10bfb01e6943df488c67fc4594a3aea5d3fe4ca1179783c01c12dc0be695f984",
+        "passed": true
+      },
+      {
+        "path": "Data/CityBuildings/Geometry/2316935.obj",
+        "sha256": "11142bda6739371c21ec6648209f01d41112cb2e6e78053c7b151d4b968c4da9",
+        "bytes": 94749,
+        "expected_sha256": "11142bda6739371c21ec6648209f01d41112cb2e6e78053c7b151d4b968c4da9",
+        "passed": true
+      },
+      {
+        "path": "Content/CityBuildings/SM_2316935.uasset",
+        "sha256": "97999d018594d47fafeabf542984c15e7df8832a7058991939d4cca123dec2ff",
+        "bytes": 96350,
+        "expected_sha256": "97999d018594d47fafeabf542984c15e7df8832a7058991939d4cca123dec2ff",
+        "passed": true
+      },
+      {
+        "path": "Content/CityBuildings/MI_2316935.uasset",
+        "sha256": "d5ad7fca7f850b44ffcf9c29efc645a17ce22a357749a5a99b98fc571148ba6a",
+        "bytes": 3322,
+        "expected_sha256": "d5ad7fca7f850b44ffcf9c29efc645a17ce22a357749a5a99b98fc571148ba6a",
+        "passed": true
+      }
+    ],
+    "tree_application": {
+      "report": {
+        "path": "Saved/Tests/TreeGraphicsApplied.json",
+        "sha256": "a05a06a4ca77dc07ded3b3d108480661d58f8cfdd495d736ec7e121a81736a99",
+        "bytes": 1224
+      },
+      "passed": true,
+      "rendered_acceptance_pending": true,
+      "source_geometry_transforms_collision_unchanged": true,
+      "mapped_instances": 4571,
+      "scene_tree_state_sha256": "a1238ffd3dfa3baa5f233acedbc3454b8d9a69b69838e3769674dc73f1cf66d1"
+    },
+    "combined_application": {
+      "passed": true,
+      "status": "applied",
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/Applied-first-pass.json",
+        "sha256": "3b038be136fa005aa07c357e366fa70c589a36fdb190feddbdf99322ad71bb78",
+        "bytes": 19731
+      },
+      "note": "Historical intermediate checkpoint: Application and snapshot assertions only; final rendered/runtime acceptance remains pending. Final347-addition fresh load and both complete normal-exit render sets subsequently passed; see final_gates.native_fresh_load and final_gates.rendered_visual_acceptance.",
+      "original_actors": 2701,
+      "original_actor_state_sha256": "c876fae628df82336432f3100470df884b81328f82b2521f3af7daeeca09cdee",
+      "map_sha256": "cd61e7eca4a08d8bf214b6c62c2c697391b3105960923e9f06f27c6ad5dc943b",
+      "elapsed_seconds": 270.19518635992426,
+      "perimeter_saved_verification": {
+        "passed": true,
+        "batches": 305,
+        "fronts": 154,
+        "survey_landmark": {
+          "passed": true,
+          "height_cm": 5744.392,
+          "collision": false
+        },
+        "survey_school": {
+          "passed": true,
+          "height_cm": 2401.7206,
+          "collision": false
+        },
+        "triangles": 725808,
+        "new_collision": false
+      }
+    }
+  },
+  "failures_and_recovery": [
+    {
+      "failure": "Relative-project startup",
+      "evidence": "Saved/Tests/EnvironmentPolish/capture-before.stdout.log",
+      "observed": "Project file not found: Quebec.uproject; failed /Intermediate/ creation and SIGSEGV.",
+      "recovery_status": "resolved_for_baseline",
+      "recovery": "Absolute project path used for successful baseline 720p/1080p/school captures; failed log retained."
+    },
+    {
+      "failure": "Neighbourhood CPU dependency",
+      "evidence": "Saved/Tests/EnvironmentPolish/cpu-test_neighbourhood_details.py.log",
+      "observed": "System/bundled Python lack pre-existing Shapely; uv unavailable.",
+      "recovery_status": "resolved",
+      "recovery": "Existing /home/von/.cache/nord-geo-venv/bin/python rerun passed; initial failures and successful rerun retained."
+    },
+    {
+      "failure": "Initial leaf graph warnings and bounds assertion",
+      "evidence": "Saved/Tests/EnvironmentPolish/tree-candidate.log",
+      "observed": "Incomplete graph compile warnings (Linear Color instead of Masks; missing Desaturation input), then rounded render-bounds equality assertion. No tree candidate captures accepted.",
+      "recovery_status": "historical_checkpoint_property_checks_passed_render_pending",
+      "recovery": "Final node explicitly uses Masks with TC_MASKS. Source guards compare all raw vertex positions/counts and exact rebuilt source bounds; fresh Vulkan compile/render remains required.",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Final saved foliage alpha/material readbacks, all17 Plateau checks and both clean normal-exit full render sets pass; see final_gates.native_fresh_load and rendered_visual_acceptance. Original graph/bounds failures remain retained."
+    },
+    {
+      "failure": "Nanite bounds representation diagnosis",
+      "evidence": "Saved/Tests/EnvironmentPolish/TreeGeometryDiagnosticFailure.json",
+      "observed": {
+        "geometry_before_after_identical": true,
+        "raw_position_sha256": "0ae600f1573ebfb2fc582232564c9c13f5cf2b1ca2abedd1a5de47e9accbfed8",
+        "vertices": 1777278,
+        "triangles": 2062487,
+        "max_bounds_component_delta_cm": 0.0422515869140625
+      },
+      "recovery_status": "geometry_cause_verified",
+      "recovery": "Rebuild replaces quantized render bounds with cached raw mesh-description bounds. Exact raw geometry and rebuilt bounds remain asserted; changing either is rejected. Original failed diagnostic retained."
+    },
+    {
+      "failure": "Rendered bulk material authoring RHI assertion",
+      "evidence": "Saved/Tests/EnvironmentPolish/apply-capture-candidate.log",
+      "observed": "2026-10-11 15:24:07 UTC: NumRefs >= 0 / RHIResources.h:164 reference underflow, FRHIUniformBufferLayout/FMaterialShaderMap cleanup during MaterialEditingLibrary.RecompileMaterial. Stopped before perimeter OBJ import/map save.",
+      "recovery_status": "historical_checkpoint_offline_authoring_passed_fresh_vulkan_pending",
+      "recovery": "Same graphs/imports completed in a fresh NullRHI authoring process, with all 2,701 original actor states unchanged and both landmark/property verifiers passing. Logs close at 15:31:44 UTC. Separate normal Vulkan fresh load/material compilation/render remains mandatory; runtime quality defaults unchanged.",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Offline authoring completed; subsequent final720/1080 Vulkan renders, clean dependency/shader/fatal guards and current packaged checks pass. Original material RHI authoring assertion logs remain retained."
+    },
+    {
+      "category": "cpu_temporary_fixture",
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-repair-20261011T155916194095Z.json",
+        "sha256": "726538412b6b177dcc3123ad22f99aeb63d7dee1d7eddfc96068dfeb824e5b6f",
+        "bytes": 3222
+      },
+      "description": "New exact visibility branch reads visuals.json under background test temporary root; missing fixture produced FileNotFoundError before original assertions. Building agent assigned update while retaining every old corrupt-property rejection.",
+      "status": "fixed_final_frozen_cpu_audit_passed",
+      "recovery_evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-final-20261011T160812529460Z.json",
+        "sha256": "eb87545fc0cfa5f5d9226a5ebf130e7013b6814d53e6cc0344486c97d45e5895",
+        "bytes": 7021
+      }
+    },
+    {
+      "category": "native_landmark_label_inventory",
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T160903487043Z.json",
+        "sha256": "511cc8cbd7d8f4ed27f4bcd71275ca9013978b2f2e793dedb47815a1bc3adebc",
+        "bytes": 2125
+      },
+      "description": "Strict 2,701 original rows, exact seven visibility changes and 336 approved additions passed. Existing landmark prefix also counted four new Plateau landmark context labels and failed Missing or extra landmark actors before final capture.",
+      "status": "fixed_by_disjoint_four_added_actor_prefix_old_verifier_unchanged",
+      "recovery_cpu": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-namespace-20261011T161514909561Z.json",
+        "sha256": "0ac75fd72ab48ef1b1e6bc2f59798c40baf9e0552593d3ac147a355405080737",
+        "bytes": 3542
+      }
+    },
+    {
+      "category": "missing_owned_roof_material_parents",
+      "status": "historical_checkpoint_explicit_parent_instance_save_and_fresh_render_pending",
+      "description": "Both roof instances referenced missing owned parent packages. The renamed saved-map property/inventory report passed, but LoadErrors in the Vulkan log invalidate rendered evidence. Root canceled only owned PID 2328939 via SIGTERM; process exited 139 during teardown after cancellation. Partial images are retained and rejected.",
+      "parent_assets": [
+        "/Game/Plateau/Materials/M_LeNeuvilleRoofParent",
+        "/Game/Plateau/Materials/M_LePlateauSchoolRoofParent"
+      ],
+      "rejected_capture": {
+        "path": "Saved/Tests/EnvironmentPolish/RejectedRoofParents.json",
+        "sha256": "8569e62b57d74e20d51678d2d910b5dfd187bd2b84469bb35f9c22fac25c54b0",
+        "bytes": 206
+      },
+      "rejected_partial_inventory": {
+        "path": "Saved/Tests/EnvironmentPolish/RejectedRoofParents720/inventory.json",
+        "sha256": "e429eb56d6159ed5e4f39bcd9224a1406c410d190ba5e1f1b4f289cb68ab7884",
+        "bytes": 2590
+      },
+      "partial_png_count": 10,
+      "closed_native_log": {
+        "path": "Saved/Tests/EnvironmentPolish/final720-verified.log",
+        "sha256": "9fcea82ab0a68a779fb0623ccbff05e22e8a8b120d1b353e3536f159bfd50843",
+        "bytes": 425427
+      },
+      "guard_rejection": {
+        "path": "Saved/Tests/EnvironmentPolish/RenderLogGuard-roof-failure.json",
+        "sha256": "76c01dd7bdc906174afe8a941c7f144ef0c77a0d37472e195bd958ee95e864bf",
+        "bytes": 1712
+      },
+      "guard_rejection_note": "Guard failure captured the same dependency errors while this job was still running; final closed-log identity is recorded separately.",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Both owned roof parents and exact MI identity are persisted and fresh-load verified; both final full render logs pass with no missing dependencies. Canceled partial roof-parent capture and exit139 remain rejected evidence."
+    },
+    {
+      "category": "remaining_side_planes",
+      "description": "A clean exit-zero completed42-view720 candidate still showed giant blue panes at Perimeter2/4. Explicitly rejected, retained underPreSideRepair720 with original manifest and42hashes; only two exact further side edges added, collision/source preserved.",
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/PreSideRepair720/inventory.json",
+        "sha256": "5acf646179adad48787380d44de79f639f58a411e58b60f9715795d8a3df6075",
+        "bytes": 11772
+      },
+      "status": "historical_checkpoint_final347_actor_full_matched_views_pending",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Exactly347 approved additions pass fresh saved-property verification; both42-frame matched final resolution sets complete normally0, with independent scoped visual acceptance. The pre-side-repair42-frame candidate remains rejected and retained."
+    },
+    {
+      "category": "straight_reverse_preflight_rejected",
+      "description": "Confirmed dynamic traffic blocker after6gates; both arc and straight full reverse sweep preflights rejected. No maneuver/no trace relaxation/no checkpoint retry; saves restored. Final950cm lookahead QA guidance test pending.",
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-straight-fallback-rejected.json",
+        "sha256": "30f669f2a087c1de7f42b7a562d830eb102794ca5fa3f64cbfcba61d67d73384",
+        "bytes": 18158
+      },
+      "status": "historical_checkpoint_preserved_final_guidance_pending",
+      "historical_checkpoint_state": true,
+      "final_resolution": "Final minimal950cm final-gate guidance passes all7 gates in63.153seconds with traffic/collision active, zero checkpoint retries and saves restored; all32 original assertions remain unchanged. Both traffic stalls and conservative reverse preflight rejections remain retained; unneeded reverse helpers were removed."
+    },
+    {
+      "stage": "final_performance_parent",
+      "passed": false,
+      "observed": "First parent harness ended143 after five reported passes; sixth child completed its3000frameCSV normally, but no aggregate was written.",
+      "cause": "Unknown; no unsupported diagnosis.",
+      "retained": {
+        "path": "Saved/Tests/EnvironmentPolish/InterruptedPerformance/inventory.json",
+        "sha256": "d2af361dc49e23d1d0a04b73d65d991b88077d18665ac74af8bae64e3e51c45f",
+        "bytes": 3357
+      },
+      "recovery": "Unchanged full6-profile managed-unit rerun completed Resultsuccess/ExecMainStatus0; accepted report has six strict passes."
+    },
+    {
+      "stage": "browser_live_runtime_path",
+      "passed": false,
+      "observed": "First public-live command failed before launching browsers because worktreeqa/browser/node_modules did not exist.",
+      "retained": {
+        "path": "Saved/Tests/EnvironmentPolish/browser-live-missing-runtime.stdout.log",
+        "sha256": "5535585f6783e83a7bd1f58fffba3a4d03d81d2ac7a2f4cc170724b835f7d528",
+        "bytes": 1175
+      },
+      "recovery": "Used existing bundled Node/Playwright runtime; no installation or code change. Actual serial desktop/mobile checks exit0."
+    },
+    {
+      "stage": "post_browser_exact_identity",
+      "passed": false,
+      "observed": "Initial strict651 post-live check found native guest CachedClientID25→26; no settings restoration attempted on active client.",
+      "retained": {
+        "path": "Saved/Tests/EnvironmentPolish/PostBrowserFirstCheckFailure.json",
+        "sha256": "74347a3a250e39cca3407c30508e8671dc93fb63d7460fde23cd17c6e0df6cbf",
+        "bytes": 299
+      },
+      "recovery": "Exact650 other identities, byte-specific expected counter increment and unchanged existing saves/no new slots confirmed in PostBrowserAudit; pre-host restoration had already matched all651."
+    }
+  ],
+  "tree_raw_geometry_diagnostic": {
+    "failure": {
+      "path": "Saved/Tests/EnvironmentPolish/TreeGeometryDiagnosticFailure.json",
+      "sha256": "38ae223ebb3833d400fda849b7a5093628fa2acadbcdd318a6279d9e1dc3e9db",
+      "bytes": 1370
+    },
+    "current": {
+      "path": "Saved/Tests/TreeGraphicsGeometry.json",
+      "sha256": "2c384f372bce81c39a4f94f7698b89eeeac7e0fefaf646b7cfe7126f9d7a47aa",
+      "bytes": 1433
+    },
+    "position_sha256": "0ae600f1573ebfb2fc582232564c9c13f5cf2b1ca2abedd1a5de47e9accbfed8",
+    "raw_vertices": 1777278,
+    "raw_triangles": 2062487,
+    "geometry_unchanged": true,
+    "raw_bounds_verified": true
+  },
+  "final_gates": {
+    "native_fresh_load": {
+      "passed": true,
+      "status": "final347_saved_property_and_all17_plateau_checks_pass",
+      "required": "All17 existing checks, exact seven source visibility transitions and all2,701original rows otherwise unchanged; exact manifest-derived347 additions, saved foliage and both roof dependencies, two survey bodies, four filtered copies and36 finish batches.",
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T163947736014Z.json",
+        "sha256": "57ff63858cf923a8a73508e2329971257d41e571a3f9bf3f39a1af8323d54dcd",
+        "bytes": 2735
+      }
+    },
+    "rendered_visual_acceptance": {
+      "passed": true,
+      "status": "both_normal_exit0_42frame_pairs_clean_logs_independent_scoped_acceptance",
+      "required": "Seven scene groups in matched 720p/1080p comic/F2 views, including close/far/backlit or moving foliage and both landmark seams; independent inspection.",
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/FinalVisualAudit.json",
+        "sha256": "d8db5d49ef74ed3771ebcbb31ebc81cef7e4580b7c2df8633916e61059ec854c",
+        "bytes": 35613
+      },
+      "preview_promotion": {
+        "path": "Saved/Tests/EnvironmentPolish/PreviewPromotion.json",
+        "sha256": "8a3a263df6193a36ffca9b97887af07b440c6e24b228c1d7869cb37043c5558b",
+        "bytes": 5343
+      }
+    },
+    "gameplay_save_regression": {
+      "passed": true,
+      "status": "both_hud_story121_collision13_population13_continuous_native_race7_pass",
+      "required": "Existing native HUD/story/interaction/race and save fixtures, production progress isolated and settings restored.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/CompactHUD1280.json",
+          "sha256": "62b5de1766a8f29bce177ca165ede55a07300d4db9a9d600038fc4d4fbff959b",
+          "bytes": 247206
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/CompactHUD1920.json",
+          "sha256": "9205d3eaf466dfbed07faf632d7ed0036b3823b17b960620d5f14ae7c227cbea",
+          "bytes": 246610
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/CarCollision.json",
+          "sha256": "0fe5aa841ecfa9d0634be41c094ade5f532307fb1beffd34c93dc93d60886f63",
+          "bytes": 1260
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/Population.json",
+          "sha256": "0e05908dff4c2695819cd0abc743d6f016dc679e9ecae40bb35e133993a27181",
+          "bytes": 24680
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/RaceDrive-final-minimal.json",
+          "sha256": "bfb12203a8709c756023e3ef14919ba747c47d257ee5de54dfa4f2d028e15943",
+          "bytes": 20960
+        }
+      ]
+    },
+    "fresh_package": {
+      "passed": true,
+      "status": "cook0_errors0_warnings0_separate_host_client_render_and48file_identity_pass",
+      "required": "NullRHI cook, local/browser non-save file identity and existing separate-process package/dependency/render checks. Host and client logs must pass the dependency/shader/fatal guard; original inventory and separate-peer checks remain strict.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/FinalPackageAudit.json",
+          "sha256": "52931976b5554bfd5cd0a205f93ca756278d1e97427622037c0fa49b24823fb7",
+          "bytes": 3650
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/Package.json",
+          "sha256": "38ee1c7726313dcea8a5060f082b52a13a0033727dcd5615ac4af50ab336f8c6",
+          "bytes": 1393
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PackageIdentity.json",
+          "sha256": "8dd3755f2b71943bcda67b1111b5cbca86eecd58b8c9c79bcd13e82475aa4cfb",
+          "bytes": 6227
+        }
+      ]
+    },
+    "final_performance": {
+      "passed": true,
+      "status": "unchanged_managed_six_profile_normal_exit0_all_p95_below16_67ms",
+      "required": "Six current-asset Epic 3 / 100% warmed packaged profiles, every p95 below 16.67 ms. Baseline measurements do not satisfy this gate.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/FinalPerformance.json",
+          "sha256": "8f8d412452a940f33b99bac5317e4d3d9c0ba20e791da8440bba97e69af7ca34",
+          "bytes": 3506
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PerformanceProcess.json",
+          "sha256": "1a780a9f12406f3af63a9d2874a3021cc65516f483150e3fad3655fd8f00eb60",
+          "bytes": 370
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/FinalPerformanceRenderLogs.json",
+          "sha256": "810d45baa6f57ccd547b6d9d8d221c3c86d50a07f2770173a7e2f79007052e13",
+          "bytes": 2010
+        }
+      ],
+      "worst_p95_ms": 15.14
+    },
+    "host_restore_and_browser": {
+      "passed": true,
+      "status": "unchanged12GB_guard_normal_active_lifecycle_real7_mobile_emulated6_pass",
+      "required": "Restore settings/saves, unchanged 12,000 MiB preflight, normal lifecycle start; serial real two-player media/input and mobile emulation with decoded frames.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/BrowserPreflight.json",
+          "sha256": "7625e647c7a4f6b17bc4deb1830198f6d51460ff4188971224c7eaca993adaeb",
+          "bytes": 285
+        },
+        {
+          "path": "Browser/.qa/live-2026-10-11T17-11-31-006Z/summary.json",
+          "sha256": "5e532dbce400cc8482a824c16eab5ac820da7b97faa017c176d8492ee6231721",
+          "bytes": 3764
+        },
+        {
+          "path": "Browser/.qa/mobile-2026-10-11T17-13-02-348Z/summary.json",
+          "sha256": "47cac7cdb4013011cb6fc86d8367fb0a6bde342c97104b668e4ec45bc652099b",
+          "bytes": 19076
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/BrowserVisualAudit.json",
+          "sha256": "2b545c41e01840dd7c4a86b53c6c30fd61b48c89033eb8d53eb22130bbd7d9a6",
+          "bytes": 1924
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PostBrowserAudit.json",
+          "sha256": "0c967a90758fddcf52bdac9df8276546dbd442e47bd7e1a744d49831cde18c4d",
+          "bytes": 1128
+        }
+      ],
+      "live_native_processes_intentionally_running": true,
+      "physical_phone_and_off_LAN_not_tested": true
+    },
+    "final_preservation": {
+      "passed": true,
+      "status": "651_exact_before_host650_plus_only_native_runtime_client_counter_after_live",
+      "required": "Post-QA protected source/data/save identities and package setting restoration compared with recovery baseline.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/Preservation-20261011T170628766469Z.json",
+          "sha256": "483ac10bb858f8cc263cf6f193e703aff8638a3d1a7db5e46fb082dfa346962a",
+          "bytes": 343518
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PostBrowserAudit.json",
+          "sha256": "0c967a90758fddcf52bdac9df8276546dbd442e47bd7e1a744d49831cde18c4d",
+          "bytes": 1128
+        }
+      ],
+      "protected_exact_before_host": 651,
+      "protected_exact_after_live": 650,
+      "expected_post_live_change": {
+        "file": "Builds/Browser/Linux/Quebec/Saved_BrowserGuest/Config/Linux/Engine.ini",
+        "only_change": "CachedClientID incremented25→26 on normal friend startup",
+        "old_sha256": "5d095d35a88cbc0d9fc9c04a6e1e0da4d8dcc61892c6bd9e4d2a5a5006a94e52",
+        "current_sha256": "9b0fb6406cf23ef86e9670b0c7685a44f438a6f5a9c40e427d52f57080742db8",
+        "source_settings_quality_and_progress_unchanged": true
+      },
+      "production_progress_unchanged": true
+    }
+  },
+  "limitations": [
+    "No Street View identity or pixel-perfect property reconstruction is established; no Google imagery is copied.",
+    "All 154 perimeter facade finishes/opening rhythms are estimates. 85 heights retain the untagged three-storey fallback; 69 use tagged storeys at 3.2 m. None has a measured OSM height tag.",
+    "Notre-Dame hospital remains the existing simplified 35.2 m shell. A multi-wing municipal overlay was not applied because footprint/terrain differences could protrude through it.",
+    "1334 Sherbrooke has an uncertain 0.649 IoU municipal association and was not automatically replaced. Espace La Fontaine/Calixa landmarks remain illustrated.",
+    "Existing flat ground, pond banks and simplified terrain remain; this pass does not reconstruct slopes, pond shape or cascade geometry.",
+    "All 4,571 mapped trees retain one frozen tree_small_02 crown/species geometry. Static images alone cannot establish temporal stability or species variety.",
+    "Physical-phone/cellular/off-LAN play, audible quality, other hardware and subjective handling are not established by desktop/emulated checks.",
+    "Some farther legacy background surfaces still use flat repeated blue window cards outside the four precisely approved side-edge repairs; this pass does not claim every surrounding façade is reconstructed.",
+    "Le Neuville and École Le Plateau retain2016 municipal exterior massing and estimated decoration; fresh seams pass in reviewed pairs, but original9.6m gameplay colliders and no-interior/upper-floor-access limits remain.",
+    "Native packaged static-camera averages82.0–102.9fps differ from real observed host/friend decoded25.3/23.9fps; this pass does not claim60fps streaming or eliminate all network latency.",
+    "Packaged NorthPark water remains flat/pale at the reviewed angle, also visible in its baseline; continuous gradients do not establish full reflective-water fidelity.",
+    "The first profile harness interruption cause remains unknown; its outputs are retained and rejected, with normal managed full-suite completion separately required and achieved."
+  ],
+  "primary_evidence": [
+    {
+      "path": "Saved/Recovery/environment-polish-20261011T145444Z/baseline.json",
+      "sha256": "815deb3bfb3961051884fdd2b1cc5fe0262a78e9b74469d726160b2dbb7eb729",
+      "bytes": 153620
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU.json",
+      "sha256": "2c221ac8db36032de2378be3fbe29aebb4b5fe71394a7c91fef3dca97777fa30",
+      "bytes": 3224
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/BaselinePerformance.json",
+      "sha256": "ab3ed02d1f84c3b3d9c2e8fd23c073596e4525558fa74fd3c954ed50929a58da",
+      "bytes": 3517
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Before/capture.json",
+      "sha256": "3e3279a9a1eee9b590141115932bc91e3db48572b028dbef76a4d51715820a9d",
+      "bytes": 4654
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Before1080/capture.json",
+      "sha256": "beabc03c2d31f1cd18d753e8d13eae6949603c56bb1a06fc6a187f0d0e39d11d",
+      "bytes": 5343
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/BeforeSchool/capture.json",
+      "sha256": "aa6eae3b18c0f511e01224c193a1d862a37681ce989b690627a1b6fb7c63cfe9",
+      "bytes": 1265
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/TreeGeometryDiagnosticFailure.json",
+      "sha256": "38ae223ebb3833d400fda849b7a5093628fa2acadbcdd318a6279d9e1dc3e9db",
+      "bytes": 1370
+    },
+    {
+      "path": "Saved/Tests/TreeGraphicsGeometry.json",
+      "sha256": "2c384f372bce81c39a4f94f7698b89eeeac7e0fefaf646b7cfe7126f9d7a47aa",
+      "bytes": 1433
+    },
+    {
+      "path": "Saved/Tests/TreeGraphicsApplied.json",
+      "sha256": "a05a06a4ca77dc07ded3b3d108480661d58f8cfdd495d736ec7e121a81736a99",
+      "bytes": 1224
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/actors-before.json",
+      "sha256": "a2aed5470280930882d019f31ae89825a2351d17eea0ac3f22eb29f4f7d2ac9c",
+      "bytes": 2230337
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/verify_graphics.py",
+      "sha256": "fc5b33b289d447320c16acd142bde611f90b025a7c299a1ce842d306c4e5f46b",
+      "bytes": 7475
+    },
+    {
+      "path": "Verification/GraphicsBuildingSources.json",
+      "sha256": "cde2759f930863247fab7fbb496fac68a999a886a17db83caad15fc60f76c4ad",
+      "bytes": 21109
+    },
+    {
+      "path": "Data/Plateau/PerimeterGeometry/perimeter.json",
+      "sha256": "abb1a46217d5ecf7512b91e6d0cbc70179d39e074713d9e299ac758983613e82",
+      "bytes": 358085
+    },
+    {
+      "path": "Scripts/refine_plateau_trees.py",
+      "sha256": "8dfb00dbc9c85cb8246e6791ebcf5d5f3d5a1cdbfd6d0ba447607819f4f6f4ee",
+      "bytes": 13684
+    },
+    {
+      "path": "Scripts/apply_comic_style.py",
+      "sha256": "af9a104e7ec7cf329644bc6f189f72005a63f74fa28d3a64f2e437a1407919f0",
+      "bytes": 6959
+    },
+    {
+      "path": "Scripts/plateau_perimeter.py",
+      "sha256": "0ff112eb8ff913002b76844123c90fef28a63fadd911896c63aff77272038050",
+      "bytes": 13571
+    },
+    {
+      "path": "Scripts/plateau_tower.py",
+      "sha256": "80ae68246c4fcd415e0f6e914935a0e0f3126c769e98e39eed86d36f36f92f8b",
+      "bytes": 10310
+    },
+    {
+      "path": "Scripts/plateau_school.py",
+      "sha256": "7ba1f84af178a82ab0ff6b1b3c21bd7d705ddd683ee07cf57353ccc96c1b4602",
+      "bytes": 5339
+    },
+    {
+      "path": "Scripts/package_inventory.py",
+      "sha256": "264d8b095f74544bcdde3a6d73766fa56a62984ceca8593be327e7d6890a8c34",
+      "bytes": 4692
+    },
+    {
+      "path": "Scripts/test_package_inventory.py",
+      "sha256": "f7b851f6593988bc12a0d162cc42088786c327a130be88a30c1fbbf961732d23",
+      "bytes": 6555
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Applied-first-pass.json",
+      "sha256": "3b038be136fa005aa07c357e366fa70c589a36fdb190feddbdf99322ad71bb78",
+      "bytes": 19731
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-focus-20261011T154330975023Z.json",
+      "sha256": "d989cb8464908f3e435910b8237fa3d9a852cf4f9a32aa5a65a8d39323481944",
+      "bytes": 5720
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-geography-20261011T154330981973Z.json",
+      "sha256": "9af8541a15371521bbf22aa9887ac795de5cc96d844356f81837e4aa6512460f",
+      "bytes": 11890
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-repair-20261011T155916194095Z.json",
+      "sha256": "726538412b6b177dcc3123ad22f99aeb63d7dee1d7eddfc96068dfeb824e5b6f",
+      "bytes": 3222
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceManeuverCPU.json",
+      "sha256": "57f1daf3bfee227786dca5e14fa8bf2c3c765636eaa212f46d0181e07c503b17",
+      "bytes": 862
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CompactHUD1280.json",
+      "sha256": "62b5de1766a8f29bce177ca165ede55a07300d4db9a9d600038fc4d4fbff959b",
+      "bytes": 247206
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CompactHUD1920.json",
+      "sha256": "9205d3eaf466dfbed07faf632d7ed0036b3823b17b960620d5f14ae7c227cbea",
+      "bytes": 246610
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CarCollision.json",
+      "sha256": "0fe5aa841ecfa9d0634be41c094ade5f532307fb1beffd34c93dc93d60886f63",
+      "bytes": 1260
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Population.json",
+      "sha256": "0e05908dff4c2695819cd0abc743d6f016dc679e9ecae40bb35e133993a27181",
+      "bytes": 24680
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/SaveInventoryAudit-20261011T1557Z.json",
+      "sha256": "2713e734e29d42f4c8287b0e2eff2615f57abf9ee83b5a395e538e9c2f12ced6",
+      "bytes": 2090
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T153311497345Z.json",
+      "sha256": "521a384d64089a57735ec39ed28fbb3ac5ae321fdc81572cb2ea9a3fd477dcea",
+      "bytes": 1407
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceDrive-first-traffic-stall.json",
+      "sha256": "da8841d56b231d96e312182786922d6177de28dde5f669c3a90c3e7ca2e1627b",
+      "bytes": 18345
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Applied-landmarks.json",
+      "sha256": "7ff2abd05b7ce8726b2dfc0409f58a51d32a5165515915bc46efb78bb01d8770",
+      "bytes": 20990
+    },
+    {
+      "path": "Data/Plateau/LandmarkVisualGeometry/visuals.json",
+      "sha256": "08c9be7ffd0a2f7efa0684cb9d00b276e968fcef3bce434d57a7bb89e583cd6c",
+      "bytes": 16180
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Applied.json",
+      "sha256": "19a1cf82f6e3ff9fd20bea91487f337af1c7d88376a6a64863507454d345749a",
+      "bytes": 21280
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-final-20261011T160812529460Z.json",
+      "sha256": "eb87545fc0cfa5f5d9226a5ebf130e7013b6814d53e6cc0344486c97d45e5895",
+      "bytes": 7021
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T160903487043Z.json",
+      "sha256": "511cc8cbd7d8f4ed27f4bcd71275ca9013978b2f2e793dedb47815a1bc3adebc",
+      "bytes": 2125
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceDrive-second-traffic-stall.json",
+      "sha256": "4337d6808553ec2de97789e44a95f41612847a88dac4f4f92118a5d06ba3bbcf",
+      "bytes": 18339
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceDrive-first-maneuver-rejected.json",
+      "sha256": "b60653a1a6e2c6b9433f41aaa1dd9c16cbd8c677c0ff4cb02d65a09ed814b134",
+      "bytes": 18152
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceManeuverCPU.json",
+      "sha256": "4fb14a1a8ebe129bd087d46d3a6063f3fe29b33c1787029a802f4ffae81a6a0e",
+      "bytes": 970
+    },
+    {
+      "path": "Data/Plateau/FacadeFinishGeometry/finish.json",
+      "sha256": "a7a03f41aa43abd34cab1322a8f9ec52b0e7fd8eed5d29dc0b09cf4978aba40f",
+      "bytes": 30866
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-namespace-20261011T161514909561Z.json",
+      "sha256": "0ac75fd72ab48ef1b1e6bc2f59798c40baf9e0552593d3ac147a355405080737",
+      "bytes": 3542
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RejectedRoofParents720/inventory.json",
+      "sha256": "e429eb56d6159ed5e4f39bcd9224a1406c410d190ba5e1f1b4f289cb68ab7884",
+      "bytes": 2590
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RejectedRoofParents.json",
+      "sha256": "8569e62b57d74e20d51678d2d910b5dfd187bd2b84469bb35f9c22fac25c54b0",
+      "bytes": 206
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-delivery-20261011T163413756234Z.json",
+      "sha256": "40e40b35aa3add52516d075638eb32b9308ff4e5656f58e6b062f5969c39a42a",
+      "bytes": 10029
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Applied.json",
+      "sha256": "702ce7b3f23b4ca9948af43f6fdc4171d8a1b64c68445b114e8cf0079dd7b705",
+      "bytes": 21792
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Applied-pre-side-repair.json",
+      "sha256": "d62154ec9e0e8010892f74499ea454ed8345d5dcca746950ce68e4c953eee50d",
+      "bytes": 21790
+    },
+    {
+      "path": "Data/Plateau/FacadeFinishGeometry/finish.json",
+      "sha256": "b4290b1a700f936da3572710408191da5561b5a120105ed1750314547475765e",
+      "bytes": 38450
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T162245058947Z.json",
+      "sha256": "6533300ab5693f9c95e38031b748376c3673348f932c57a9bcee38bba62c8bf4",
+      "bytes": 2734
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RoofMaterialsApplied.json",
+      "sha256": "cdd98f003b52f7989df3576e0274b8549b81775c3520642be21f8c4715ff4b85",
+      "bytes": 426
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PreservationScriptCPU.json",
+      "sha256": "8a84f47897c85c58e1286962284f7e0cbf0ce0e07e62c649649af7dfeaf86481",
+      "bytes": 336
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PreSideRepair720/inventory.json",
+      "sha256": "5acf646179adad48787380d44de79f639f58a411e58b60f9715795d8a3df6075",
+      "bytes": 11772
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PreSideRepairRenderLog.json",
+      "sha256": "a460377f46a41600dff0b923637c3e7401f81574274155a1da56262d8176d3a4",
+      "bytes": 450
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceDrive-straight-fallback-rejected.json",
+      "sha256": "30f669f2a087c1de7f42b7a562d830eb102794ca5fa3f64cbfcba61d67d73384",
+      "bytes": 18158
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-delivery-20261011T163737168047Z.json",
+      "sha256": "699042fd8742e920e370a94f6371c9a196dd270408b113491db6276577e9f2bb",
+      "bytes": 9506
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceDrive-final-lookahead-with-unused-helper.json",
+      "sha256": "c21d022a136ba34e9d09ebdbddfbc4a67fb2c9b0d2a839640d283b8aaaab05d2",
+      "bytes": 21194
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceDrive-final-minimal.json",
+      "sha256": "bfb12203a8709c756023e3ef14919ba747c47d257ee5de54dfa4f2d028e15943",
+      "bytes": 20960
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/RaceFinalRenderLog.json",
+      "sha256": "07871ecf9ad4fbc7ad2c524fa8f1745938cca0d95117890bb18160a31ee20db2",
+      "bytes": 451
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T163947736014Z.json",
+      "sha256": "57ff63858cf923a8a73508e2329971257d41e571a3f9bf3f39a1af8323d54dcd",
+      "bytes": 2735
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/OpenSpecManual-final-scope.json",
+      "sha256": "c0fc2c2fd23a54a36bfe16be74743c04cd51ac1b43a24affa58614422c56e3a2",
+      "bytes": 674
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/FinalVisualAudit.json",
+      "sha256": "d8db5d49ef74ed3771ebcbb31ebc81cef7e4580b7c2df8633916e61059ec854c",
+      "bytes": 35613
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PreviewPromotion.json",
+      "sha256": "8a3a263df6193a36ffca9b97887af07b440c6e24b228c1d7869cb37043c5558b",
+      "bytes": 5343
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/FinalPackageAudit.json",
+      "sha256": "52931976b5554bfd5cd0a205f93ca756278d1e97427622037c0fa49b24823fb7",
+      "bytes": 3650
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/BrowserVisualAudit.json",
+      "sha256": "2b545c41e01840dd7c4a86b53c6c30fd61b48c89033eb8d53eb22130bbd7d9a6",
+      "bytes": 1924
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/FinalRenderLogs.json",
+      "sha256": "f4aa183f7d71d90b4d22585187de2563f980c5f4362c3e1dabf4ad91d6bf7aed",
+      "bytes": 745
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/FinalPerformance.json",
+      "sha256": "8f8d412452a940f33b99bac5317e4d3d9c0ba20e791da8440bba97e69af7ca34",
+      "bytes": 3506
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PerformanceProcess.json",
+      "sha256": "1a780a9f12406f3af63a9d2874a3021cc65516f483150e3fad3655fd8f00eb60",
+      "bytes": 370
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/FinalPerformanceRenderLogs.json",
+      "sha256": "810d45baa6f57ccd547b6d9d8d221c3c86d50a07f2770173a7e2f79007052e13",
+      "bytes": 2010
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Package.json",
+      "sha256": "38ee1c7726313dcea8a5060f082b52a13a0033727dcd5615ac4af50ab336f8c6",
+      "bytes": 1393
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PackageIdentity.json",
+      "sha256": "8dd3755f2b71943bcda67b1111b5cbca86eecd58b8c9c79bcd13e82475aa4cfb",
+      "bytes": 6227
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/BrowserPreflight.json",
+      "sha256": "7625e647c7a4f6b17bc4deb1830198f6d51460ff4188971224c7eaca993adaeb",
+      "bytes": 285
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/Preservation-20261011T170628766469Z.json",
+      "sha256": "483ac10bb858f8cc263cf6f193e703aff8638a3d1a7db5e46fb082dfa346962a",
+      "bytes": 343518
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PostBrowserAudit.json",
+      "sha256": "0c967a90758fddcf52bdac9df8276546dbd442e47bd7e1a744d49831cde18c4d",
+      "bytes": 1128
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PostBrowserFirstCheckFailure.json",
+      "sha256": "74347a3a250e39cca3407c30508e8671dc93fb63d7460fde23cd17c6e0df6cbf",
+      "bytes": 299
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/BuildingsIndependentReview.json",
+      "sha256": "9bde58ea628d9aebef3ddcccff52d7d65ed01e71654b906081992118cd5dc8d8",
+      "bytes": 31710
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/TreeAndGradientVisualReviewFinal.json",
+      "sha256": "492ca5ff7bc3cd39addf6f0843ea3d943c004a4dfa1d9bcee4373dd852a11417",
+      "bytes": 12328
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/OpenSpecManual-final-accepted.json",
+      "sha256": "36b8aeefd781a7a2bfa3d96b4000ce28f2448c26407157e4103048a11a6d76a4",
+      "bytes": 1216
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/InterruptedPerformance/inventory.json",
+      "sha256": "d2af361dc49e23d1d0a04b73d65d991b88077d18665ac74af8bae64e3e51c45f",
+      "bytes": 3357
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/browser-live-missing-runtime.stdout.log",
+      "sha256": "5535585f6783e83a7bd1f58fffba3a4d03d81d2ac7a2f4cc170724b835f7d528",
+      "bytes": 1175
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/browser-live.stdout.log",
+      "sha256": "f537981e261beedbf82864e079f3231eb1078fef922a468bc7f83219c379e597",
+      "bytes": 826
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/browser-mobile.stdout.log",
+      "sha256": "daa80cbcba60b2f779609c89c7fd1a0df2dc51196456a3bc878c693ade7df9e1",
+      "bytes": 473
+    },
+    {
+      "path": "Browser/.qa/live-2026-10-11T17-11-31-006Z/summary.json",
+      "sha256": "5e532dbce400cc8482a824c16eab5ac820da7b97faa017c176d8492ee6231721",
+      "bytes": 3764
+    },
+    {
+      "path": "Browser/.qa/mobile-2026-10-11T17-13-02-348Z/summary.json",
+      "sha256": "47cac7cdb4013011cb6fc86d8367fb0a6bde342c97104b668e4ec45bc652099b",
+      "bytes": 19076
+    }
+  ],
+  "preserved_failed_and_retry_logs": [
+    {
+      "path": "Saved/Tests/EnvironmentPolish/capture-before.stdout.log",
+      "sha256": "55c94da14e549d6032bf753fbd8384eaf52890676028232d3852388476553946",
+      "bytes": 1829
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/tree-candidate.log",
+      "sha256": "5dc990f558917f32eb0326a2913ce4bcaaf66ae5e0e71637208f0a4a14b3135d",
+      "bytes": 405276
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/tree-candidate.stdout.log",
+      "sha256": "9f546a22dd4171987e54d036e8c096fbf5bcf72c54fd09706fd691c80063b7da",
+      "bytes": 408056
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/tree-diagnostic.log",
+      "sha256": "8b0f98555e834aa2355fdafd83f4ddd9c3106eb87ec64338857b799589631e1a",
+      "bytes": 402231
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/tree-diagnostic.stdout.log",
+      "sha256": "cb463eade6dca05d6d487d89a22264692b720873e0dac21130dabfcbf9a678ae",
+      "bytes": 389691
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/apply-capture-candidate.log",
+      "sha256": "bfa487e52134586ec40439c65c682cba9c1caf38672140d7781a29d5df854b11",
+      "bytes": 405040
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/apply-capture-candidate.stdout.log",
+      "sha256": "8513b9cd39619807d4976fb8299b3b88068db233e5bbccd9bb3fcc744e77db1d",
+      "bytes": 423695
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/apply-capture-candidate-CRC.log",
+      "sha256": "96d1f2b84d74eb278ee242583df67162bd1588fabab5ff7aac8c7ce1c435a37d",
+      "bytes": 13444
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/cpu-test_neighbourhood_details.py.log",
+      "sha256": "58a5f78fa7e125081521e7e6548c58a02041ae60a8ae9961492b2335d6bac4d4",
+      "bytes": 247
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/cpu-test_neighbourhood_details-rerun.log",
+      "sha256": "feb267127c38b996af9059e57d921950fd21fdeeec2cefd6d7c514ee81ca8237",
+      "bytes": 45
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/cpu-test_neighbourhood_details-geo-rerun.log",
+      "sha256": "8ea3a04fae1d075d166225a72695de67cdecdb62086cca5e1e2bf691ef0b1ad3",
+      "bytes": 244
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/cpu-audit-repair-20261011T155916194095Z-test_verify_plateau_background.py.log",
+      "sha256": "749ccc7037a020258588ddad1ad64046f374db16585032a131a484e84f260984",
+      "bytes": 1335
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/race-drive-first-traffic-stall.log",
+      "sha256": "d58ce73b906a737345f28c4d86c675d95ba16609c9a7f5264740aa1bbd065bdd",
+      "bytes": 415576
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/SaveInventoryAudit-discovery-failure.json",
+      "sha256": "68e32f5a881978784620d9aed9baa5b3b8e5e0a0743f6c09a80689a66e01f252",
+      "bytes": 1896
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/final720-verified.log",
+      "sha256": "9fcea82ab0a68a779fb0623ccbff05e22e8a8b120d1b353e3536f159bfd50843",
+      "bytes": 425427
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/final720-verified.stdout.log",
+      "sha256": "bc7de7c20d22671bee3ba41d37e8acc4d684259259b16319e009ec7276708a9f",
+      "bytes": 413390
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/race-straight-fallback.log",
+      "sha256": "3d1f770dd4cc33b0bb7f725fc707abc7f3c6c5072f4ef22c87be8a7d7820033c",
+      "bytes": 414243
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/race-straight-fallback.stdout.log",
+      "sha256": "ea41124b0a94513b5116b95acf5ff5bfb3df3c2922afdaad451d8a72ec58079b",
+      "bytes": 402038
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/final720-complete.log",
+      "sha256": "d39185318968997de9bec295a9607164d91590f6095151b6e48fe40b910c90f9",
+      "bytes": 448611
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/final720-complete.stdout.log",
+      "sha256": "1673931ae049cb7ff49d3caffb1fa52eff9055708bceeb158ac30449797fea8f",
+      "bytes": 438321
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/InterruptedPerformance/inventory.json",
+      "sha256": "d2af361dc49e23d1d0a04b73d65d991b88077d18665ac74af8bae64e3e51c45f",
+      "bytes": 3357
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/browser-live-missing-runtime.stdout.log",
+      "sha256": "5535585f6783e83a7bd1f58fffba3a4d03d81d2ac7a2f4cc170724b835f7d528",
+      "bytes": 1175
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/PostBrowserFirstCheckFailure.json",
+      "sha256": "74347a3a250e39cca3407c30508e8671dc93fb63d7460fde23cd17c6e0df6cbf",
+      "bytes": 299
+    }
+  ],
+  "openspec": {
+    "change": "openspec/changes/archive/2026-10-11-nord-environment-polish",
+    "manual_delta_structure": "One ADDED requirement, 10 WHEN/THEN scenarios, proposal/design/tasks/spec present. No CLI validation claimed.",
+    "cli_validation_available": false,
+    "archive_status": "archived_after_all_bounded_acceptance_gates_passed",
+    "latest_manual_scope_validation": {
+      "path": "Saved/Tests/EnvironmentPolish/OpenSpecManual-final-accepted.json",
+      "sha256": "36b8aeefd781a7a2bfa3d96b4000ce28f2448c26407157e4103048a11a6d76a4",
+      "bytes": 1216
+    },
+    "canonical": "openspec/specs/nord-unreal/spec.md"
+  },
+  "qa_scope": "Accepted final bounded environment polish: all seven final gates pass with frozen-source CPU, strict saved-property preservation, matched normal-exit720p/1080p Vulkan review, native race/story/save regression, fresh package identity, six unchanged strict Epic/100% performance profiles, protected-state restoration and real two-player/mobile-emulated browser evidence. Static appearance, one GPU and same-PC browser/emulation evidence do not establish exact-site reconstruction, temporal shimmer, physical-phone/off-LAN, audible quality or subjective handling; explicit visual limits remain.",
+  "offline_authoring_logs": [
+    {
+      "path": "Saved/Tests/EnvironmentPolish/apply-buildings-offline.log",
+      "sha256": "7c1142bd03c891e7e6865537362c1952222edeeb49cd3af9a97be4735720f01d",
+      "bytes": 3810278
+    },
+    {
+      "path": "Saved/Tests/EnvironmentPolish/apply-buildings-offline.stdout.log",
+      "sha256": "0620176a555e411c9fa7931196e45b6d99e3ce0b2528e39841d6c7c1eca291a9",
+      "bytes": 3774755
+    }
+  ],
+  "incremental_cpu_audits": [
+    {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-focus-20261011T154330975023Z.json",
+        "sha256": "d989cb8464908f3e435910b8237fa3d9a852cf4f9a32aa5a65a8d39323481944",
+        "bytes": 5720
+      },
+      "passed": true,
+      "scope": "CPU/source and geometry guards only; no Unreal/GPU/browser launched.",
+      "sources_stable_during_tests": true
+    },
+    {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-geography-20261011T154330981973Z.json",
+        "sha256": "9af8541a15371521bbf22aa9887ac795de5cc96d844356f81837e4aa6512460f",
+        "bytes": 11890
+      },
+      "passed": true,
+      "scope": "CPU/source and geometry guards only; no Unreal/GPU/browser launched.",
+      "sources_stable_during_tests": true
+    },
+    {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-repair-20261011T155916194095Z.json",
+        "sha256": "726538412b6b177dcc3123ad22f99aeb63d7dee1d7eddfc96068dfeb824e5b6f",
+        "bytes": 3222
+      },
+      "passed": false,
+      "scope": "CPU-only frozen landmark visual filtering, cooked inventory, tree shader tests and existing background verifier regression; no engine/runtime starts",
+      "sources_stable_during_tests": true
+    },
+    {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceManeuverCPU.json",
+        "sha256": "57f1daf3bfee227786dca5e14fa8bf2c3c765636eaa212f46d0181e07c503b17",
+        "bytes": 862
+      },
+      "passed": true,
+      "scope": "CPU execution of actual three recovery helpers with fake native API; rendered motion remains unverified",
+      "sources_stable_during_tests": null
+    },
+    {
+      "passed": true,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-delivery-20261011T162441911547Z.json",
+        "sha256": "f0cf7c5cff4de58291cd0ab9a5556532506eeebbf9f7da34d14e9900052f05e9",
+        "bytes": 10952
+      },
+      "scope": "12-suite post-roof snapshot before final side extension; superseded for latest source acceptance"
+    },
+    {
+      "passed": true,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-delivery-20261011T163413756234Z.json",
+        "sha256": "40e40b35aa3add52516d075638eb32b9308ff4e5656f58e6b062f5969c39a42a",
+        "bytes": 10029
+      },
+      "suites": 12,
+      "sources_stable_during_tests": true,
+      "scope": "Historical passing source snapshot before removal of unused reverse helper; superseded by final minimal driver audit.",
+      "baseline_race_assertion_conditions_retained": 32,
+      "protected_source_config_browser_data_git_diff_empty": true
+    }
+  ],
+  "native_progress": {
+    "accepts_final_graphics": false,
+    "note": "Native checks used initial art or intermediate landmark repair. Gameplay source stayed protected; final art acceptance is separate.",
+    "hud": [
+      {
+        "evidence": {
+          "path": "Saved/Tests/EnvironmentPolish/CompactHUD1280.json",
+          "sha256": "62b5de1766a8f29bce177ca165ede55a07300d4db9a9d600038fc4d4fbff959b",
+          "bytes": 247206
+        },
+        "passed": true,
+        "checks": 121,
+        "capture_directory": "Saved/Tests/EnvironmentPolish/CompactHUD1280",
+        "actual_pngs": 21,
+        "dimensions_verified": true,
+        "independent_visual_review": [
+          "HUDQuiet",
+          "HUDDelayedBriefing",
+          "HUDCompletion"
+        ],
+        "restore": {
+          "qa_slot_restored": true,
+          "production_save_hashes_unchanged": true,
+          "editor_play_settings_restored": true,
+          "editor_viewport_realtime_override_released": true
+        }
+      },
+      {
+        "evidence": {
+          "path": "Saved/Tests/EnvironmentPolish/CompactHUD1920.json",
+          "sha256": "9205d3eaf466dfbed07faf632d7ed0036b3823b17b960620d5f14ae7c227cbea",
+          "bytes": 246610
+        },
+        "passed": true,
+        "checks": 121,
+        "capture_directory": "Saved/Tests/EnvironmentPolish/CompactHUD1920",
+        "actual_pngs": 21,
+        "dimensions_verified": true,
+        "independent_visual_review": [],
+        "restore": {
+          "qa_slot_restored": true,
+          "production_save_hashes_unchanged": true,
+          "editor_play_settings_restored": true,
+          "editor_viewport_realtime_override_released": true
+        }
+      }
+    ],
+    "car_collision": {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/CarCollision.json",
+        "sha256": "0fe5aa841ecfa9d0634be41c094ade5f532307fb1beffd34c93dc93d60886f63",
+        "bytes": 1260
+      },
+      "passed": true,
+      "checks": 13,
+      "isolation": "-NordNoCampaign: no campaign actor or production save code spawned"
+    },
+    "population": {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/Population.json",
+        "sha256": "0e05908dff4c2695819cd0abc743d6f016dc679e9ecae40bb35e133993a27181",
+        "bytes": 24680
+      },
+      "passed": true,
+      "checks": 13,
+      "isolation": "-NordNoCampaign: no campaign actor or production save code spawned"
+    },
+    "save_inventory": {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/SaveInventoryAudit-20261011T1557Z.json",
+        "sha256": "2713e734e29d42f4c8287b0e2eff2615f57abf9ee83b5a395e538e9c2f12ced6",
+        "bytes": 2090
+      },
+      "passed": true
+    },
+    "initial_fresh_load": {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T153311497345Z.json",
+        "sha256": "521a384d64089a57735ec39ed28fbb3ac5ae321fdc81572cb2ea9a3fd477dcea",
+        "bytes": 1407
+      },
+      "passed": true,
+      "scope": "Initial 305-batch/two-survey map: 17 Plateau checks, 2,701 originals, 307 additions. Superseded for final art by filtered-copy/gradient and cornice/side repairs."
+    },
+    "continuous_race_first_attempt": {
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-first-traffic-stall.json",
+        "sha256": "da8841d56b231d96e312182786922d6177de28dde5f669c3a90c3e7ca2e1627b",
+        "bytes": 18345
+      },
+      "passed": false,
+      "cause_observed": "Six gates crossed; player stalled against dynamic traffic QuebecCar_32.Collision in final wide turn. New decorative meshes are NoCollision. Traffic-yield mutual block is an inference; no disable/teleport/gate skip accepted.",
+      "retry_status": "Historical reproduced failure; final minimal950cm QA guidance completes7 gates while all32 original assertions remain unchanged."
+    },
+    "continuous_race_driver_fix": {
+      "source": {
+        "path": "Scripts/test_race_drive.py",
+        "sha256": "007cf16be1d45535469f965ba8a2f0391414abd72f71307564824ca8be0e4402",
+        "bytes": 22796
+      },
+      "wrapper": {
+        "path": "Saved/Tests/EnvironmentPolish/test_race_drive.py",
+        "sha256": "6310a01c2606814e346a863eb20a340edc5adda86e07196ca9b0492ac6b75189",
+        "bytes": 23019
+      },
+      "cpu": {
+        "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-delivery-20261011T163737168047Z.json",
+        "sha256": "699042fd8742e920e370a94f6371c9a196dd270408b113491db6276577e9f2bb",
+        "bytes": 9506
+      },
+      "baseline_assertions_retained_exact_order": 32,
+      "native_result_pending": false,
+      "final_gate_lookahead_cm": 950,
+      "only_changes": "Final-gate lookahead branch plus descriptive guidance text; all reverse helpers/state/branches and their new safety test removed. Native movement, traffic, collision, route/gates, save isolation and every threshold unchanged.",
+      "rationale": "The retained baseline pass overshot the same final return leg by about 9 m. Current stationary traffic blocks that outside arc; earlier aim along the unchanged return leg completed seven gates without maneuvers. Final minimal source rerun passed seven gates in 63.153 seconds.",
+      "native_result": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-final-minimal.json",
+        "sha256": "bfb12203a8709c756023e3ef14919ba747c47d257ee5de54dfa4f2d028e15943",
+        "bytes": 20960
+      }
+    },
+    "continuous_race_repeated_failure": {
+      "passed": false,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-second-traffic-stall.json",
+        "sha256": "4337d6808553ec2de97789e44a95f41612847a88dac4f4f92118a5d06ba3bbcf",
+        "bytes": 18339
+      },
+      "note": "Identical forward-only fixture reproduced the same dynamic traffic car and position within 2 cm."
+    },
+    "continuous_race_first_maneuver_preflight_rejection": {
+      "passed": false,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-first-maneuver-rejected.json",
+        "sha256": "b60653a1a6e2c6b9433f41aaa1dd9c16cbd8c677c0ff4cb02d65a09ed814b134",
+        "bytes": 18152
+      },
+      "note": "Historical preferred arc and straight options rejected safely with no maneuvers. Unneeded reverse helpers later removed; final minimal forward guidance passes."
+    },
+    "post_roof_fresh_load": {
+      "passed": true,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T162245058947Z.json",
+        "sha256": "6533300ab5693f9c95e38031b748376c3673348f932c57a9bcee38bba62c8bf4",
+        "bytes": 2734
+      },
+      "approved_added_actors": 336,
+      "scope": "Intermediate336-addition dependency success, superseded by final347-addition fresh load and both accepted normal-exit captures."
+    },
+    "roof_dependency_authoring": {
+      "passed": true,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RoofMaterialsApplied.json",
+        "sha256": "cdd98f003b52f7989df3576e0274b8549b81775c3520642be21f8c4715ff4b85",
+        "bytes": 426
+      },
+      "native_exit_code": 0,
+      "fresh_saved_readback_passed": true
+    },
+    "continuous_race_straight_rejected": {
+      "passed": false,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-straight-fallback-rejected.json",
+        "sha256": "30f669f2a087c1de7f42b7a562d830eb102794ca5fa3f64cbfcba61d67d73384",
+        "bytes": 18158
+      },
+      "scope": "Six gates; both conservative reverse corridors blocked, zero maneuvers, saves restored. Retained failure; no reverse trace relaxation."
+    },
+    "first_guidance_completion": {
+      "passed": true,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-final-lookahead-with-unused-helper.json",
+        "sha256": "c21d022a136ba34e9d09ebdbddfbc4a67fb2c9b0d2a839640d283b8aaaab05d2",
+        "bytes": 21194
+      },
+      "native_exit_code": 0,
+      "gates": 7,
+      "world_seconds": 62.816,
+      "actual_travel_cm": 27141.93,
+      "production_saves_unchanged": true,
+      "qa_save_restored": true,
+      "maneuvers": 0,
+      "scope": "Native guidance completion with unused recovery helper present. Helper removed afterward; final minimal-source rerun required."
+    },
+    "final_minimal_continuous_race": {
+      "passed": true,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceDrive-final-minimal.json",
+        "sha256": "bfb12203a8709c756023e3ef14919ba747c47d257ee5de54dfa4f2d028e15943",
+        "bytes": 20960
+      },
+      "render_log_guard": {
+        "path": "Saved/Tests/EnvironmentPolish/RaceFinalRenderLog.json",
+        "sha256": "07871ecf9ad4fbc7ad2c524fa8f1745938cca0d95117890bb18160a31ee20db2",
+        "bytes": 451
+      },
+      "native_exit_code": 0,
+      "gates": 7,
+      "world_seconds": 63.153,
+      "actual_travel_cm": 27105.94,
+      "production_saves_unchanged": true,
+      "qa_save_restored": true,
+      "checkpoint_retries": 0,
+      "baseline_assertions_retained_exact_order": 32,
+      "driver_source": {
+        "path": "Scripts/test_race_drive.py",
+        "sha256": "007cf16be1d45535469f965ba8a2f0391414abd72f71307564824ca8be0e4402",
+        "bytes": 22796
+      },
+      "scope": "Actual native continuous throttle/steer on authored route; traffic/collision active, no gate skip, checkpoint recovery or relocation during drive. QA-only final lookahead adjustment; gameplay source unchanged."
+    },
+    "final_fresh_load": {
+      "passed": true,
+      "evidence": {
+        "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T163947736014Z.json",
+        "sha256": "57ff63858cf923a8a73508e2329971257d41e571a3f9bf3f39a1af8323d54dcd",
+        "bytes": 2735
+      },
+      "map_sha256": "ed0056d27b3a9496871c538bcbe7e6214b5dbe7d4ae87b88c03015900c3662ce",
+      "original_actors": 2701,
+      "exact_visibility_exceptions": 7,
+      "approved_added_actors": 347,
+      "plateau_checks": 17,
+      "mapped_tree_instances": 4571,
+      "saved_foliage_and_roof_dependencies_verified": true,
+      "rendered_acceptance": true
+    }
+  },
+  "intermediate_landmark_repair": {
+    "evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/Applied-landmarks.json",
+      "sha256": "7ff2abd05b7ce8726b2dfc0409f58a51d32a5165515915bc46efb78bb01d8770",
+      "bytes": 20990
+    },
+    "passed": true,
+    "map_sha256": "c1d9f39e8a47f0bd7b7c53e28084b69e69b29942a321a1663e4130359cbde795",
+    "post_repair_original_actor_state_sha256": "c9c37d2b9fae4b821cf878d4819e7027a71afcb220cd46045a4875eed0234ed1",
+    "manifest": {
+      "path": "Data/Plateau/LandmarkVisualGeometry/visuals.json",
+      "sha256": "08c9be7ffd0a2f7efa0684cb9d00b276e968fcef3bce434d57a7bb89e583cd6c",
+      "bytes": 16180
+    },
+    "original_actors": 2701,
+    "approved_visibility_changes": [
+      "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1181.StaticMeshComponent0",
+      "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1187.StaticMeshComponent0",
+      "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1241.StaticMeshComponent0",
+      "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1299.StaticMeshComponent0",
+      "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1359.StaticMeshComponent0",
+      "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_1360.StaticMeshComponent0",
+      "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_6.StaticMeshComponent0"
+    ],
+    "new_filtered_copies": 4,
+    "total_approved_added_actors": 311,
+    "retained_visual_triangles": 150253,
+    "removed_duplicate_triangles": 878,
+    "native_in_process_verification": {
+      "passed": true,
+      "replacements": 7,
+      "removed_triangles": 878,
+      "collision_changed": false
+    },
+    "final_candidate": false,
+    "note": "Seven original NoCollision sources also receive explicit hidden/shadow/distance-field/indirect-lighting render states; source/collision/material/pose rows remain strict. Final bounded cornice/side-skin addition is in preparation."
+  },
+  "final_asset_application": {
+    "passed": true,
+    "evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/Applied.json",
+      "sha256": "702ce7b3f23b4ca9948af43f6fdc4171d8a1b64c68445b114e8cf0079dd7b705",
+      "bytes": 21792
+    },
+    "map_sha256": "ed0056d27b3a9496871c538bcbe7e6214b5dbe7d4ae87b88c03015900c3662ce",
+    "perimeter_batches": 305,
+    "survey_bodies": 2,
+    "filtered_copies": 4,
+    "finish_batches": 36,
+    "approved_added_actors": 347,
+    "finish_triangles": 13352,
+    "closed_cornices": 65,
+    "confirmed_side_edges": [
+      [
+        "356350796",
+        1
+      ],
+      [
+        "356350796",
+        2
+      ],
+      [
+        "356350765",
+        2
+      ],
+      [
+        "345835052",
+        4
+      ]
+    ],
+    "original_actors": 2701,
+    "exact_original_visibility_transitions": 7,
+    "source_and_old_colliders_preserved": true,
+    "rendered_acceptance": false,
+    "pre_side_repair_application": {
+      "path": "Saved/Tests/EnvironmentPolish/Applied-pre-side-repair.json",
+      "sha256": "d62154ec9e0e8010892f74499ea454ed8345d5dcca746950ce68e4c953eee50d",
+      "bytes": 21790
+    },
+    "final_finish_manifest": {
+      "path": "Data/Plateau/FacadeFinishGeometry/finish.json",
+      "sha256": "b4290b1a700f936da3572710408191da5561b5a120105ed1750314547475765e",
+      "bytes": 38450
+    }
+  },
+  "final_frozen_cpu_audit": {
+    "passed": true,
+    "evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-delivery-20261011T163737168047Z.json",
+      "sha256": "699042fd8742e920e370a94f6371c9a196dd270408b113491db6276577e9f2bb",
+      "bytes": 9506
+    },
+    "suites": 11,
+    "sources_stable_during_tests": true,
+    "baseline_race_assertion_conditions_retained_exact_order": 32,
+    "protected_source_config_browser_data_git_diff_empty": true,
+    "scope": "Final frozen graphics, saved roof dependencies, exact four finish sides, package/log parser and minimal race guidance. No native/GPU/browser process launched."
+  },
+  "namespace_correction": {
+    "passed_cpu": true,
+    "four_added_actor_prefix": "Plateau survey context ",
+    "original_landmark_verifier_unchanged": true,
+    "evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/CPU-Audit-namespace-20261011T161514909561Z.json",
+      "sha256": "0ac75fd72ab48ef1b1e6bc2f59798c40baf9e0552593d3ac147a355405080737",
+      "bytes": 3542
+    },
+    "native_property_check": {
+      "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T161513945761Z.json",
+      "sha256": "33e59dc2399f289f454c83368be245ece6a1037e29bfd709be447b0051e823f6",
+      "bytes": 2734
+    },
+    "native_property_check_passed": true,
+    "rendered_acceptance": false,
+    "note": "Renamed four added actors only; saved properties/inventory passed, but subsequent material dependency warnings reject rendered acceptance."
+  },
+  "render_log_guard": {
+    "source": {
+      "path": "Scripts/render_log_guard.py",
+      "sha256": "fefcc6497b39deee609372ef6cedad98c0f7ad5deec1ddf027ed30d3e1541620",
+      "bytes": 1935
+    },
+    "test": {
+      "path": "Scripts/test_render_log_guard.py",
+      "sha256": "b70fdfed6a9616243a1692ba4c20ccd794b0d63ee64d1eb944d83340c825c412",
+      "bytes": 1426
+    },
+    "cpu_clean_case_passed": true,
+    "cpu_rejected_cases": 10,
+    "package_host_and_client_integrated": true,
+    "requires_clean_process_exit_separately": true
+  },
+  "pre_side_repair_visual_candidate": {
+    "accepted": false,
+    "capture_completed_normally": true,
+    "native_exit_code": 0,
+    "views": 42,
+    "dimensions": [
+      1280,
+      720
+    ],
+    "inventory": {
+      "path": "Saved/Tests/EnvironmentPolish/PreSideRepair720/inventory.json",
+      "sha256": "5acf646179adad48787380d44de79f639f58a411e58b60f9715795d8a3df6075",
+      "bytes": 11772
+    },
+    "capture_manifest_original_path_record": {
+      "path": "Saved/Tests/EnvironmentPolish/PreSideRepair720/capture.json",
+      "sha256": "a2c69745dd6d6e37b1eafdbc6e4de161a4dfa90fb122afbfc8f25e84f9088fd1",
+      "bytes": 5818
+    },
+    "clean_log_guard": {
+      "path": "Saved/Tests/EnvironmentPolish/PreSideRepairRenderLog.json",
+      "sha256": "a460377f46a41600dff0b923637c3e7401f81574274155a1da56262d8176d3a4",
+      "bytes": 450
+    },
+    "reason": "Independent final review found significant broad blue panes at Perimeter2 alley and Perimeter4. Exact two further source footprint edges added to final finish; both complete resolutions must rerun."
+  },
+  "preservation_fixture": {
+    "passed": true,
+    "status": "executed_before_host651_exact_then_independently_audited_after_live",
+    "source": {
+      "path": "Saved/Tests/EnvironmentPolish/restore_preservation.py",
+      "sha256": "ded665cc2910eadbe035ff1da33593440b1c2444cb509f8ffcdf2e2b7e04e3d8",
+      "bytes": 9382
+    },
+    "cpu_guard_checks": {
+      "path": "Saved/Tests/EnvironmentPolish/PreservationScriptCPU.json",
+      "sha256": "8a84f47897c85c58e1286962284f7e0cbf0ce0e07e62c649649af7dfeaf86481",
+      "bytes": 336
+    },
+    "package_screenshots_directory": "Saved/Tests/EnvironmentPolish/PackageScreenshots",
+    "protected_files_required": 651,
+    "production_saves_must_already_match": true,
+    "never_writes_sav_files": true,
+    "requires_no_active_native_job": true,
+    "restores_only_differing_allowlisted_baseline_saved_settings_and_package_output": true,
+    "retains_before_after_hashes_and_changed_originals": true,
+    "evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/Preservation-20261011T170628766469Z.json",
+      "sha256": "483ac10bb858f8cc263cf6f193e703aff8638a3d1a7db5e46fb082dfa346962a",
+      "bytes": 343518
+    },
+    "protected_files_matched_before_host": 651,
+    "restored_paths": [
+      "Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini",
+      "Saved/Config/LinuxEditor/Engine.ini"
+    ],
+    "production_saves_written": false,
+    "post_live_evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/PostBrowserAudit.json",
+      "sha256": "0c967a90758fddcf52bdac9df8276546dbd442e47bd7e1a744d49831cde18c4d",
+      "bytes": 1128
+    }
+  },
+  "delivery_evidence_scaffold": {
+    "passed": true,
+    "package": {
+      "passed": true,
+      "status": "cook0_errors0_warnings0_separate_host_client_render_and48file_identity_pass",
+      "required": "NullRHI cook, local/browser non-save file identity and existing separate-process package/dependency/render checks. Host and client logs must pass the dependency/shader/fatal guard; original inventory and separate-peer checks remain strict.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/FinalPackageAudit.json",
+          "sha256": "52931976b5554bfd5cd0a205f93ca756278d1e97427622037c0fa49b24823fb7",
+          "bytes": 3650
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/Package.json",
+          "sha256": "38ee1c7726313dcea8a5060f082b52a13a0033727dcd5615ac4af50ab336f8c6",
+          "bytes": 1393
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PackageIdentity.json",
+          "sha256": "8dd3755f2b71943bcda67b1111b5cbca86eecd58b8c9c79bcd13e82475aa4cfb",
+          "bytes": 6227
+        }
+      ]
+    },
+    "performance": {
+      "passed": true,
+      "status": "unchanged_managed_six_profile_normal_exit0_all_p95_below16_67ms",
+      "required": "Six current-asset Epic 3 / 100% warmed packaged profiles, every p95 below 16.67 ms. Baseline measurements do not satisfy this gate.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/FinalPerformance.json",
+          "sha256": "8f8d412452a940f33b99bac5317e4d3d9c0ba20e791da8440bba97e69af7ca34",
+          "bytes": 3506
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PerformanceProcess.json",
+          "sha256": "1a780a9f12406f3af63a9d2874a3021cc65516f483150e3fad3655fd8f00eb60",
+          "bytes": 370
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/FinalPerformanceRenderLogs.json",
+          "sha256": "810d45baa6f57ccd547b6d9d8d221c3c86d50a07f2770173a7e2f79007052e13",
+          "bytes": 2010
+        }
+      ],
+      "worst_p95_ms": 15.14
+    },
+    "browser": {
+      "passed": true,
+      "status": "unchanged12GB_guard_normal_active_lifecycle_real7_mobile_emulated6_pass",
+      "required": "Restore settings/saves, unchanged 12,000 MiB preflight, normal lifecycle start; serial real two-player media/input and mobile emulation with decoded frames.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/BrowserPreflight.json",
+          "sha256": "7625e647c7a4f6b17bc4deb1830198f6d51460ff4188971224c7eaca993adaeb",
+          "bytes": 285
+        },
+        {
+          "path": "Browser/.qa/live-2026-10-11T17-11-31-006Z/summary.json",
+          "sha256": "5e532dbce400cc8482a824c16eab5ac820da7b97faa017c176d8492ee6231721",
+          "bytes": 3764
+        },
+        {
+          "path": "Browser/.qa/mobile-2026-10-11T17-13-02-348Z/summary.json",
+          "sha256": "47cac7cdb4013011cb6fc86d8367fb0a6bde342c97104b668e4ec45bc652099b",
+          "bytes": 19076
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/BrowserVisualAudit.json",
+          "sha256": "2b545c41e01840dd7c4a86b53c6c30fd61b48c89033eb8d53eb22130bbd7d9a6",
+          "bytes": 1924
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PostBrowserAudit.json",
+          "sha256": "0c967a90758fddcf52bdac9df8276546dbd442e47bd7e1a744d49831cde18c4d",
+          "bytes": 1128
+        }
+      ],
+      "live_native_processes_intentionally_running": true,
+      "physical_phone_and_off_LAN_not_tested": true
+    },
+    "preservation": {
+      "passed": true,
+      "status": "651_exact_before_host650_plus_only_native_runtime_client_counter_after_live",
+      "required": "Post-QA protected source/data/save identities and package setting restoration compared with recovery baseline.",
+      "evidence": [
+        {
+          "path": "Saved/Tests/EnvironmentPolish/Preservation-20261011T170628766469Z.json",
+          "sha256": "483ac10bb858f8cc263cf6f193e703aff8638a3d1a7db5e46fb082dfa346962a",
+          "bytes": 343518
+        },
+        {
+          "path": "Saved/Tests/EnvironmentPolish/PostBrowserAudit.json",
+          "sha256": "0c967a90758fddcf52bdac9df8276546dbd442e47bd7e1a744d49831cde18c4d",
+          "bytes": 1128
+        }
+      ],
+      "protected_exact_before_host": 651,
+      "protected_exact_after_live": 650,
+      "expected_post_live_change": {
+        "file": "Builds/Browser/Linux/Quebec/Saved_BrowserGuest/Config/Linux/Engine.ini",
+        "only_change": "CachedClientID incremented25→26 on normal friend startup",
+        "old_sha256": "5d095d35a88cbc0d9fc9c04a6e1e0da4d8dcc61892c6bd9e4d2a5a5006a94e52",
+        "current_sha256": "9b0fb6406cf23ef86e9670b0c7685a44f438a6f5a9c40e427d52f57080742db8",
+        "source_settings_quality_and_progress_unchanged": true
+      },
+      "production_progress_unchanged": true
+    }
+  },
+  "delivery_window": {
+    "art_frozen_utc": "2026-10-11T16:34:00Z",
+    "art_completed_within_two_hour_window": true,
+    "qa_continued_after_window": true,
+    "acceptance_utc": "2026-10-11T17:29:03.795731+00:00"
+  },
+  "final_render_acceptance": {
+    "passed": true,
+    "final_accepted": true,
+    "reviewer": "hud_delivery_audit independent CPU/static-image audit",
+    "utc": "2026-10-11T17:26:29.227570+00:00",
+    "final_map_sha256": "ed0056d27b3a9496871c538bcbe7e6214b5dbe7d4ae87b88c03015900c3662ce",
+    "art_frozen_utc": "2026-10-11T16:34:00Z",
+    "qa_continued_after_two_hour_art_window": true,
+    "total_complete_pngs": 84,
+    "own_reviewed_pngs": 36,
+    "resolution_wrappers_have_identical_camera_instructions": true,
+    "render_log_guard": {
+      "path": "Saved/Tests/EnvironmentPolish/FinalRenderLogs.json",
+      "sha256": "f4aa183f7d71d90b4d22585187de2563f980c5f4362c3e1dabf4ad91d6bf7aed",
+      "bytes": 745
+    },
+    "fresh_load": {
+      "path": "Saved/Tests/EnvironmentPolish/GraphicsFreshLoad-20261011T163947736014Z.json",
+      "sha256": "57ff63858cf923a8a73508e2329971257d41e571a3f9bf3f39a1af8323d54dcd",
+      "bytes": 2735
+    },
+    "peer_building_review": {
+      "path": "Saved/Tests/EnvironmentPolish/BuildingsIndependentReview.json",
+      "sha256": "9bde58ea628d9aebef3ddcccff52d7d65ed01e71654b906081992118cd5dc8d8",
+      "bytes": 31710
+    },
+    "peer_tree_review": {
+      "path": "Saved/Tests/EnvironmentPolish/TreeAndGradientVisualReviewFinal.json",
+      "sha256": "492ca5ff7bc3cd39addf6f0843ea3d943c004a4dfa1d9bcee4373dd852a11417",
+      "bytes": 12328
+    },
+    "renders": [
+      {
+        "directory": "Saved/Tests/EnvironmentPolish/Final720",
+        "capture_manifest": {
+          "path": "Saved/Tests/EnvironmentPolish/Final720/capture.json",
+          "sha256": "a2c69745dd6d6e37b1eafdbc6e4de161a4dfa90fb122afbfc8f25e84f9088fd1",
+          "bytes": 5818
+        },
+        "passed": true,
+        "normal_process_exit_code": 0,
+        "process_exit_evidence": "Root observed the owned exec session complete normally with exit_code 0; closed logs independently require normal engine exit and pass the log guard. The auxiliary UnrealTraceServer normal signal15 shutdown is not a capture failure.",
+        "completed_utc": "2026-10-11T16:45:50Z",
+        "viewport": [
+          1280,
+          720
+        ],
+        "png_count": 42,
+        "comic_f2_camera_pairs": 21,
+        "camera_fov": 76,
+        "independent_auditor_reviewed": [
+          "Perimeter2_Comic.png",
+          "Perimeter4_Comic.png",
+          "PlateauCorner_Comic.png",
+          "LaFontaineSouthPond_Comic.png",
+          "LeNeuvilleSkyline_Comic.png",
+          "SchoolParkFront_Comic.png",
+          "PlateauCorner_F2.png",
+          "Perimeter2_F2.png",
+          "Perimeter4_F2.png",
+          "LaFontaineSouthPond_F2.png",
+          "LeNeuvilleFacade_Comic.png",
+          "LeNeuvilleFacade_F2.png",
+          "SchoolSouthWing_Comic.png",
+          "SchoolSouthWing_F2.png",
+          "PlateauExteriorStairs_Comic.png",
+          "PlateauClosurePanet_Comic.png",
+          "PlateauClosurePanet_F2.png",
+          "TheatreVerdureTimber_Comic.png",
+          "LeNeuvilleSkyline_F2.png",
+          "SchoolParkFront_F2.png",
+          "LaFontaineNorthPond_Comic.png",
+          "TheatreVerdureTimber_F2.png"
+        ],
+        "files": [
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LaFontaineNorthPond_Comic.png",
+            "sha256": "fe87be29d89b997569837bdcf102c149c269cfec8d36f48417179e6e338835b3",
+            "bytes": 1234823,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LaFontaineNorthPond_F2.png",
+            "sha256": "1689c0d0a6ff4a2b2bc84fe93ba797e1e05e8d726f99f85e4110490bcad32e23",
+            "bytes": 1183043,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LaFontaineOrientation_Comic.png",
+            "sha256": "68ae2dc70ad28b83fb096aaf3e02a2e55089e871a2e2f0db608cdb5b5a6b4253",
+            "bytes": 1983468,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LaFontaineOrientation_F2.png",
+            "sha256": "b02433c57e31d2fcb17b558a3c3ded2876fdb24958690d7c94c0c9a5d137ca0d",
+            "bytes": 1856302,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LaFontaineSouthPond_Comic.png",
+            "sha256": "54dab94ff44ef5a92ec99e9bc5393281d02c6603c0915d87f17ede8d21a2970f",
+            "bytes": 1302737,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LaFontaineSouthPond_F2.png",
+            "sha256": "ad105fe6be413165b3f8b547f113d1206ec785432cc00dae9d4d632ea6aaeae9",
+            "bytes": 1265825,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LeNeuvilleFacade_Comic.png",
+            "sha256": "d4de913189ca81c03fbc6a77eaa12ad603c1f4f1fbc3f63bb9aa831120064937",
+            "bytes": 1311749,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LeNeuvilleFacade_F2.png",
+            "sha256": "daa42d5eec41a9bea9fa7003a82076019b567e4047219adb1248ae01abb4811c",
+            "bytes": 1217295,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LeNeuvilleSkyline_Comic.png",
+            "sha256": "ceb3c2346a5cc4c8942ad200e18aa7f57fcbfb43d01195470660648c9716d651",
+            "bytes": 1506755,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/LeNeuvilleSkyline_F2.png",
+            "sha256": "b78e1924fcba991d882c2b1e8408b5bbf172d661ebd4cb9b6b55c9816fee9028",
+            "bytes": 1440892,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PanetStreet_Comic.png",
+            "sha256": "ca465cb77496c912ac89c5620424abdc0024c1da61a933eabad0f3e58ad489c2",
+            "bytes": 1919073,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PanetStreet_F2.png",
+            "sha256": "0ae2b7c45094412ac2f322e33e9dd7fcb9bc281c62fad70d36e0cd55ec2acf08",
+            "bytes": 1801250,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PapineauParkFront_Comic.png",
+            "sha256": "8e27a7a1cd8d7b5155129d9098105aece23c440c04bd3ff2e9ad72974b5f6a9e",
+            "bytes": 1942826,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PapineauParkFront_F2.png",
+            "sha256": "cbed1becda45f4d8a4aeb468362b6f28437fc3da14dc49449b3c82484c0a4890",
+            "bytes": 1848634,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/Perimeter2_Comic.png",
+            "sha256": "f8a3226f30553cfbab7c3d00913f3736b8fe450bb9836b346e6a461050a292e0",
+            "bytes": 1820453,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/Perimeter2_F2.png",
+            "sha256": "1929c212c4e5e3c4fd30e43272e988730df34c3f0d4c20099bc4d9befe975e90",
+            "bytes": 1685519,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/Perimeter3_Comic.png",
+            "sha256": "d869af3b9a7dc3156a25ffdae110748ed7360f07fcd8b0db1f434a253cf1603d",
+            "bytes": 1585747,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/Perimeter3_F2.png",
+            "sha256": "9d4f0c49463ffc8f4e7436d2806f22bdb9f2b6ab35e814d193757e5b4a6543a9",
+            "bytes": 1395700,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/Perimeter4_Comic.png",
+            "sha256": "848ea2e7d773ba1492266cd8442115ae5633f55721a21937897259f4956f7f95",
+            "bytes": 1701386,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/Perimeter4_F2.png",
+            "sha256": "d864826169f7051264bd2e8fa6e2e9748b9d938c74058f2feec1331ea8dbc91d",
+            "bytes": 1676558,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlantedRuelle_Comic.png",
+            "sha256": "057840bd09c395bbed33aa152534df667a0c640c089c0cbbf61abe66ab7d97fb",
+            "bytes": 1492490,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlantedRuelle_F2.png",
+            "sha256": "03919de237afa7b541d05a73692e2876ad658ccc650f8a84e11141922595d9ad",
+            "bytes": 1339212,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauClosurePanet_Comic.png",
+            "sha256": "afadbf40a51e8194c2d0d4bbf72d3ab36dbf0949d304584d003730b1f78f0dbc",
+            "bytes": 1773279,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauClosurePanet_F2.png",
+            "sha256": "acc4599b02d7153d9c782b600c5e0dabad19df44ec6291f66614595dd32db0bc",
+            "bytes": 1701332,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauClosureVisitation_Comic.png",
+            "sha256": "83ecac6a80de20933d58c8e8fe885e95a2ba99ad2252471369c978e5462b95d0",
+            "bytes": 1840459,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauClosureVisitation_F2.png",
+            "sha256": "98f582566971a85ac867d736c3d117b1eb2d6b6fa86e39013605ff4f7320141a",
+            "bytes": 1747808,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauCorner_Comic.png",
+            "sha256": "b6dddfb1235c1464124bd81ebf4e394ed53084414b16b0cb360f10f66a00081e",
+            "bytes": 2023616,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauCorner_F2.png",
+            "sha256": "1cc109124e31e2f7f2514fcc08b1e654de278497e7156f2bb6e4c5cfa6aac63e",
+            "bytes": 1972463,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauExteriorStairs_Comic.png",
+            "sha256": "9127926598550849ced668546dbb03e0854bd7818c265e72306eb510d45742ce",
+            "bytes": 1755062,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauExteriorStairs_F2.png",
+            "sha256": "766b4b3dfe273ae0c179b48fc9024e41a535becb7b52a17134bb473da0e85546",
+            "bytes": 1623335,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauParkEntrance_Comic.png",
+            "sha256": "ba128775abafc98edee6ac1b4a83c07569bbd0b2c937e508a0e9af9b50041484",
+            "bytes": 1530442,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauParkEntrance_F2.png",
+            "sha256": "5330aea4b5cc4a81603aba20a13fc1c5c8117a7bac3fe0086c53b40d4af0f050",
+            "bytes": 1519602,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauResidents_Comic.png",
+            "sha256": "ffd2886e3bb84f7563d0a71fd56829f93f211c1fed279e21bdf763db7506e83a",
+            "bytes": 2179714,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/PlateauResidents_F2.png",
+            "sha256": "245b343deb9af22ca7e15c02ec10908a1669c5eedef3bed3fe456b6b06a61315",
+            "bytes": 2073190,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/SchoolParkFront_Comic.png",
+            "sha256": "ae8684347feb794ccb33b7a5a1c5865071e5059a6e0ee48174ed7f65f952d519",
+            "bytes": 2022925,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/SchoolParkFront_F2.png",
+            "sha256": "4e6fb9cf43d59fe5c3ae3ad04ca2313e59adc9fb036f1e5c4c12c0873115a27f",
+            "bytes": 1972380,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/SchoolSouthWing_Comic.png",
+            "sha256": "c092d59af8f44ad722cfcb2fec549f4c7061622e2d09612adf8423ad40d18d9e",
+            "bytes": 1217071,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/SchoolSouthWing_F2.png",
+            "sha256": "5349c969b6b5415e18c70c97b026350876df792b85e9b8380f5758efac7efa06",
+            "bytes": 1176307,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/TheatreVerdureTimber_Comic.png",
+            "sha256": "b156afc74841d40b1a0bcc4309e85772b4f396b32bb6b01d713ecc493d782b37",
+            "bytes": 1855794,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/TheatreVerdureTimber_F2.png",
+            "sha256": "33a0f12e46aa805ca29a6b1b0cae84b202365da010798ec956e1f560486da3c1",
+            "bytes": 1801064,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/TheatreVerdure_Comic.png",
+            "sha256": "4c7261bfa4441735ceadaf2fb768b058cb48dfb83dff1a0c68a561e312c641d4",
+            "bytes": 1858008,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final720/TheatreVerdure_F2.png",
+            "sha256": "e0bd0705b5db6c7642607ac573d93e2b34434964336e8651f7016e83c386c445",
+            "bytes": 1658601,
+            "viewport": [
+              1280,
+              720
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          }
+        ]
+      },
+      {
+        "directory": "Saved/Tests/EnvironmentPolish/Final1080",
+        "capture_manifest": {
+          "path": "Saved/Tests/EnvironmentPolish/Final1080/capture.json",
+          "sha256": "cd2a02ec3eafb59c039d40b11e07d5cfb3cec03f72224bf489fb7da3ee6a7070",
+          "bytes": 5861
+        },
+        "passed": true,
+        "normal_process_exit_code": 0,
+        "process_exit_evidence": "Root observed the owned exec session complete normally with exit_code 0; closed logs independently require normal engine exit and pass the log guard. The auxiliary UnrealTraceServer normal signal15 shutdown is not a capture failure.",
+        "completed_utc": "2026-10-11T16:52:30Z",
+        "viewport": [
+          1920,
+          1080
+        ],
+        "png_count": 42,
+        "comic_f2_camera_pairs": 21,
+        "camera_fov": 76,
+        "independent_auditor_reviewed": [
+          "PlateauCorner_Comic.png",
+          "PlateauCorner_F2.png",
+          "Perimeter4_Comic.png",
+          "Perimeter4_F2.png",
+          "LaFontaineNorthPond_Comic.png",
+          "LaFontaineNorthPond_F2.png",
+          "PlateauClosurePanet_Comic.png",
+          "PlateauClosurePanet_F2.png",
+          "LeNeuvilleSkyline_Comic.png",
+          "LeNeuvilleSkyline_F2.png",
+          "LeNeuvilleFacade_Comic.png",
+          "LeNeuvilleFacade_F2.png",
+          "SchoolParkFront_Comic.png",
+          "SchoolParkFront_F2.png"
+        ],
+        "files": [
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LaFontaineNorthPond_Comic.png",
+            "sha256": "f43ebff3c64b7d23d2e8eb28e8222eb588b2710e11312e1cd437c179d0fade67",
+            "bytes": 2658901,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LaFontaineNorthPond_F2.png",
+            "sha256": "268c63c061cb6340f53f06ed878a4f7f28e6e059e7830d22a46ead7f3179cf22",
+            "bytes": 2556073,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LaFontaineOrientation_Comic.png",
+            "sha256": "21267faa44a32bc01e99a887514c2d036f3c03e514097b973797d58d3f011a30",
+            "bytes": 4227964,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LaFontaineOrientation_F2.png",
+            "sha256": "a23e4f3f451dd38dadb1b1c571bc07eec31689c2b021abd23412c442bb4cc940",
+            "bytes": 3982545,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LaFontaineSouthPond_Comic.png",
+            "sha256": "775cf54dd2d6085e97940856774a964f52dd74ccbc14ddeff892b1edfdc7acab",
+            "bytes": 2817431,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LaFontaineSouthPond_F2.png",
+            "sha256": "b0a58bb9fa3b1bb5929517095df41ba226da3cdf44746af77d8ee4f794a6b028",
+            "bytes": 2722075,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LeNeuvilleFacade_Comic.png",
+            "sha256": "636463b35304188ac23d502ff3d54b1b630c15762c5def133fe11d01e9d82b71",
+            "bytes": 2752465,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LeNeuvilleFacade_F2.png",
+            "sha256": "ef4d07c87d61197c671f0d9e6fc897c8b397209eebd775ff33dc84da1d14f667",
+            "bytes": 2598587,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LeNeuvilleSkyline_Comic.png",
+            "sha256": "df210eb6bbb3f3de96d680d850084ad8b31bcfcece57d823af5751777b767d41",
+            "bytes": 3219102,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/LeNeuvilleSkyline_F2.png",
+            "sha256": "72c5c54d73ceaec5a5584a1b16dc01447dad2957271394789d8ae19978bb7b8a",
+            "bytes": 3118248,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PanetStreet_Comic.png",
+            "sha256": "d120ecc974e4a937932673dbc04455c9a4f2fb233f4cb7cf4c7935a044c462ad",
+            "bytes": 4065550,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PanetStreet_F2.png",
+            "sha256": "a71d0211b74b7550f4d232a3aaf78c94d0954c946bece01c4295748f1c3625d5",
+            "bytes": 3853972,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PapineauParkFront_Comic.png",
+            "sha256": "78a5071878461ed370295cd4989db88c24c2c0083c63b3e2041db057e687b687",
+            "bytes": 4165583,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PapineauParkFront_F2.png",
+            "sha256": "ec2d98c721e834ebdb429a0832191ee056f98d429be211e051d93bee29eafd9b",
+            "bytes": 3991557,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/Perimeter2_Comic.png",
+            "sha256": "a74739a2a260690299b88da764c81ece555028efd356323e568a08444db9a082",
+            "bytes": 3834022,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/Perimeter2_F2.png",
+            "sha256": "3069ce1d345d18c0b2dba7027c1e4a6f482885ee47d68ba84804a6585a96d34f",
+            "bytes": 3623528,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/Perimeter3_Comic.png",
+            "sha256": "0138a38cc5368b7108a2c4190a2184e5c663d01f22733ed5de9255e538ab5e1e",
+            "bytes": 3349130,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/Perimeter3_F2.png",
+            "sha256": "512ade9467d83623ddee3502ae5ee5d34b66264c152611375c44ebe1851a7b71",
+            "bytes": 3016658,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/Perimeter4_Comic.png",
+            "sha256": "c0ff381e2c70cd2230772ee7dcfc585d00b52ba2475e9d59b4f99e6165069111",
+            "bytes": 3702120,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/Perimeter4_F2.png",
+            "sha256": "9b3acc9239b1f3cb22d15c3804d34b6adb17898a6d87f6ec6d7b6221a2c08d09",
+            "bytes": 3661657,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlantedRuelle_Comic.png",
+            "sha256": "3e1056372c49fe33d12152dc7f64a09ea4cffd864d0ef4ef58262d8fbd66d765",
+            "bytes": 3207164,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlantedRuelle_F2.png",
+            "sha256": "1b13252264ceea521154032c535eadbf4dcf0ba25a6a86d6cd55d5bc5750c74c",
+            "bytes": 2918224,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauClosurePanet_Comic.png",
+            "sha256": "770ce179fce4b297480b74ec45d9cc8999da7c53fa581cb86151c9643b3c5089",
+            "bytes": 3913606,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauClosurePanet_F2.png",
+            "sha256": "832f18704c67a1656529b8b9203e187343a43733d6cee9695e74da06cf52f973",
+            "bytes": 3745470,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauClosureVisitation_Comic.png",
+            "sha256": "9fc5d293d2beb9bd02ba9d62a501499afc53d6d8b26007732a9da936e724a02f",
+            "bytes": 4018656,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauClosureVisitation_F2.png",
+            "sha256": "2a5def16aba27965f3fe3668c7b527a02d8c85dc43b85ce36f6a6fe0d93ffa9d",
+            "bytes": 3803104,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauCorner_Comic.png",
+            "sha256": "9c4ab7496c5f4416cf01a4959b073da97641c93539eb5545930fc6d04e9b2c59",
+            "bytes": 4157082,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauCorner_F2.png",
+            "sha256": "b8d813257e5eb0ae8072427d2324a09db21ff97e4bc9ee9e2fd02a87e5cf00e0",
+            "bytes": 4245296,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauExteriorStairs_Comic.png",
+            "sha256": "ee8132974072ae4f702c5e70865d0047618cccf64527a9fea5b3091d47ae0a9d",
+            "bytes": 3696446,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauExteriorStairs_F2.png",
+            "sha256": "639925085a68f7adccfeecd4c4c754633987c7295022cf17b391308a380af666",
+            "bytes": 3469022,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauParkEntrance_Comic.png",
+            "sha256": "9f78747b4bb7d6fa93077329927ffbdcfc7b55381d53bb60c4d649eded6a9b3d",
+            "bytes": 3333801,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauParkEntrance_F2.png",
+            "sha256": "923144bf18b9d34f4d407a3dfbb6b20eb77a352aa2d66f543f3fef6ece299d18",
+            "bytes": 3338625,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauResidents_Comic.png",
+            "sha256": "1b93b229568865f5c410e73c0e8a9b3a240c2e80b7397044db6bcff577548c2c",
+            "bytes": 4666933,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/PlateauResidents_F2.png",
+            "sha256": "bd82ce5eef3569afbe10c182870a811dcc9eae971d89869ac90906030ad56eef",
+            "bytes": 4470972,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/SchoolParkFront_Comic.png",
+            "sha256": "8bfebd860f3705b6998febf934c7b59755d40007003d683550e729c9aad76d5c",
+            "bytes": 4295292,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/SchoolParkFront_F2.png",
+            "sha256": "b5d8ec7822e703ba84a41b685ef677334fa1e59c34630645475582902c8dd64a",
+            "bytes": 4246562,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/SchoolSouthWing_Comic.png",
+            "sha256": "13bcdfc1ae02379b35ead5164fc251818a04ff712dedcf39c5632325691c7025",
+            "bytes": 2673762,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/SchoolSouthWing_F2.png",
+            "sha256": "9ecfb8409f52d970b2e9f2a8e1b2bcff519e4b153c32d257b364ab1776b21c21",
+            "bytes": 2612875,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/TheatreVerdureTimber_Comic.png",
+            "sha256": "d62ee40ca82a0fb5dba1cea4c3aff9db85841272d4c028a0b2fb550b058930af",
+            "bytes": 3980493,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/TheatreVerdureTimber_F2.png",
+            "sha256": "10ad93d117a433b6fb8a1d4d7a0ee10861b5b65ff4530a32f9019ec84826dcea",
+            "bytes": 3864742,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/TheatreVerdure_Comic.png",
+            "sha256": "fdf1c811dea5c341093afbb4659fcc9e945539c2b9127e0b59fddc14601b0e58",
+            "bytes": 3955967,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          },
+          {
+            "path": "Saved/Tests/EnvironmentPolish/Final1080/TheatreVerdure_F2.png",
+            "sha256": "c4264770312c1ac05b0b32f65be12092ca1cf54d8fcfa071cbd5947e3a78d076",
+            "bytes": 3541669,
+            "viewport": [
+              1920,
+              1080
+            ],
+            "png_chunks_crc_and_complete_iend_verified": true
+          }
+        ]
+      }
+    ],
+    "observations": [
+      "Both rejected Perimeter2/4 side card planes are covered by attached backed masonry/window skins; support and ground contact remain coherent.",
+      "Surveyed tower/school silhouettes, roof/wing seams and estimated glazing are coherent without obsolete lower shells in reviewed pairs.",
+      "Near/far foliage retains crown layers and branch cutouts; pond/sky gradients remain smooth while comic surfaces retain ink.",
+      "Existing street/stair, pond/theatre and Panet closure geometry remains readable."
+    ],
+    "limitations": [
+      "Acceptance concerns scoped tree/material, supported façade and two municipal exterior mass corrections; no exact Street View or citywide reconstruction claim.",
+      "Farther legacy masses/side elevations retain repeated flat blue window cards; hospital, uncertain1334 association, flat terrain and single tree species remain explicit limits.",
+      "36 independent auditor static images plus32 building and19 tree editor-image reviews can overlap;84 files passing integrity is not a claim all84 were visually reviewed by each reviewer.",
+      "Static image acceptance does not establish temporal shimmer, physical-phone/off-LAN behavior, audible quality or subjective handling."
+    ],
+    "reference_note": "Final building reviewer froze explicit preserved PackageScreenshots paths after restoration. Same32 final editor image identities and2 accepted cooked image identities remain unchanged."
+  },
+  "final_package": {
+    "evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/FinalPackageAudit.json",
+      "sha256": "52931976b5554bfd5cd0a205f93ca756278d1e97427622037c0fa49b24823fb7",
+      "bytes": 3650
+    },
+    "passed": true,
+    "package": "Linux Development",
+    "separate_process_loopback": true,
+    "port": 7791,
+    "fresh_campaign_on_both_peers": true,
+    "campaign_save_disabled_for_package_startup": true,
+    "native_crew_cycle_calls": 8,
+    "restored_capture_crew_style": 9,
+    "loaded_resident_parts": 66,
+    "loaded_skeletal_crew": 8,
+    "loaded_animation_clips": 32,
+    "plateau": {
+      "mesh_families": {
+        "Meshes": 721,
+        "Context": 742,
+        "Background": 418,
+        "Landmarks": 13,
+        "Park": 284,
+        "Edges": 8,
+        "Wayfinding": 4,
+        "Perimeter": 347
+      },
+      "loaded_meshes": 2537,
+      "pedestrian_actors": 12,
+      "vegetation_actors": 1,
+      "mapped_tree_mesh": "/Game/Art/Tree/tree_small_02/StaticMeshes/tree_small_02.tree_small_02",
+      "civilian_rigs": 6,
+      "tree_instance_count_source": "verified on saved map by verify_plateau.py, not inferred from package log"
+    },
+    "render_logs": {
+      "host": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "client": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      }
+    },
+    "rendered_capture": true,
+    "rendered_capture_count": 7,
+    "viewport": [
+      1600,
+      900
+    ],
+    "elapsed_seconds": 30.72,
+    "skipped": [
+      "external internet",
+      "non-Linux platforms",
+      "latency and reconnect",
+      "full packaged campaign/save flow (covered in native PIE)"
+    ],
+    "build_exit_code": 0,
+    "verify_exit_code": 0,
+    "cook_errors": 0,
+    "cook_warnings": 0,
+    "non_saved_identity": {
+      "path": "Saved/Tests/EnvironmentPolish/PackageIdentity.json",
+      "sha256": "8dd3755f2b71943bcda67b1111b5cbca86eecd58b8c9c79bcd13e82475aa4cfb",
+      "bytes": 6227
+    },
+    "matching_non_saved_files": 48
+  },
+  "final_performance": {
+    "passed": true,
+    "hardware": {
+      "platform": "Linux",
+      "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "gpudriver": "610.57",
+      "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+      "shaderplatform": "VULKAN_SM6"
+    },
+    "settings": "Epic (3), 100% screen percentage, VSync off, uncapped, comic on",
+    "method": "3000 CSV frames per scene; discard first 600 and final 2; screenshot before warmup ends",
+    "limits": [
+      "static camera scenes",
+      "one GPU",
+      "not external multiplayer performance"
+    ],
+    "scenes": [
+      {
+        "scene": "Sherbrooke",
+        "resolution": [
+          1280,
+          720
+        ],
+        "frames": 2398,
+        "sample_seconds": 23.36,
+        "median_ms": 9.48,
+        "p95_ms": 12.9,
+        "p99_ms": 14.79,
+        "average_fps": 102.7,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 8.96,
+        "csv": "Profile(20261011_130202).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/FinalPerformance/PerformanceSherbrooke1280.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "Pond",
+        "resolution": [
+          1280,
+          720
+        ],
+        "frames": 2398,
+        "sample_seconds": 24.37,
+        "median_ms": 9.94,
+        "p95_ms": 13.35,
+        "p99_ms": 14.83,
+        "average_fps": 98.4,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 9.36,
+        "csv": "Profile(20261011_130238).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/FinalPerformance/PerformancePond1280.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "NorthPark",
+        "resolution": [
+          1280,
+          720
+        ],
+        "frames": 2398,
+        "sample_seconds": 23.31,
+        "median_ms": 9.48,
+        "p95_ms": 12.9,
+        "p99_ms": 14.15,
+        "average_fps": 102.9,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 9.0,
+        "csv": "Profile(20261011_130315).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/FinalPerformance/PerformanceNorthPark1280.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "Sherbrooke",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "frames": 2398,
+        "sample_seconds": 28.07,
+        "median_ms": 11.61,
+        "p95_ms": 14.79,
+        "p99_ms": 15.86,
+        "average_fps": 85.4,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 11.15,
+        "csv": "Profile(20261011_130351).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/FinalPerformance/PerformanceSherbrooke1920.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "Pond",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "frames": 2398,
+        "sample_seconds": 29.24,
+        "median_ms": 12.13,
+        "p95_ms": 15.14,
+        "p99_ms": 16.35,
+        "average_fps": 82.0,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 11.73,
+        "csv": "Profile(20261011_130433).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/FinalPerformance/PerformancePond1920.png",
+        "frame_budget_passed": true
+      },
+      {
+        "scene": "NorthPark",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "frames": 2398,
+        "sample_seconds": 27.85,
+        "median_ms": 11.52,
+        "p95_ms": 14.69,
+        "p99_ms": 15.96,
+        "average_fps": 86.1,
+        "over_33ms_percent": 0.0,
+        "median_gpu_ms": 10.98,
+        "csv": "Profile(20261011_130517).csv",
+        "screenshot": "Saved/Tests/EnvironmentPolish/FinalPerformance/PerformanceNorthPark1920.png",
+        "frame_budget_passed": true
+      }
+    ],
+    "process_evidence": {
+      "path": "Saved/Tests/EnvironmentPolish/PerformanceProcess.json",
+      "sha256": "1a780a9f12406f3af63a9d2874a3021cc65516f483150e3fad3655fd8f00eb60",
+      "bytes": 370
+    },
+    "closed_log_guard": {
+      "path": "Saved/Tests/EnvironmentPolish/FinalPerformanceRenderLogs.json",
+      "sha256": "810d45baa6f57ccd547b6d9d8d221c3c86d50a07f2770173a7e2f79007052e13",
+      "bytes": 2010
+    },
+    "interrupted_attempt": {
+      "path": "Saved/Tests/EnvironmentPolish/InterruptedPerformance/inventory.json",
+      "sha256": "d2af361dc49e23d1d0a04b73d65d991b88077d18665ac74af8bae64e3e51c45f",
+      "bytes": 3357
+    },
+    "interrupted_attempt_accepted": false,
+    "interrupted_parent_exit_code": 143,
+    "interruption_cause": "Unknown; six scene outputs retained but missing aggregate rejected. Unchanged full suite rerun under managed one-shot unit completed normally with all six strict checks."
+  },
+  "browser_delivery": {
+    "passed": true,
+    "public_url": "https://nord-montreal.vercel.app/",
+    "network_mode": "ordinary",
+    "desktop_process_exit_code": 0,
+    "mobile_process_exit_code": 0,
+    "desktop_summary": {
+      "path": "Browser/.qa/live-2026-10-11T17-11-31-006Z/summary.json",
+      "sha256": "5e532dbce400cc8482a824c16eab5ac820da7b97faa017c176d8492ee6231721",
+      "bytes": 3764
+    },
+    "mobile_summary": {
+      "path": "Browser/.qa/mobile-2026-10-11T17-13-02-348Z/summary.json",
+      "sha256": "47cac7cdb4013011cb6fc86d8367fb0a6bde342c97104b668e4ec45bc652099b",
+      "bytes": 19076
+    },
+    "desktop_checks": [
+      {
+        "name": "host real stream",
+        "passed": true,
+        "durationMs": 2879
+      },
+      {
+        "name": "friend independent real stream",
+        "passed": true,
+        "durationMs": 2680
+      },
+      {
+        "name": "host native input and Escape release",
+        "passed": true,
+        "durationMs": 2922
+      },
+      {
+        "name": "friend native input and Escape release",
+        "passed": true,
+        "durationMs": 2858
+      },
+      {
+        "name": "occupied host slot rejects a third browser",
+        "passed": true,
+        "durationMs": 414
+      },
+      {
+        "name": "occupied browser reconnects after host frees its slot",
+        "passed": true,
+        "durationMs": 4309
+      },
+      {
+        "name": "original host reconnects and retains Disconnect control",
+        "passed": true,
+        "durationMs": 4746
+      }
+    ],
+    "mobile_checks": [
+      {
+        "name": "real mobile media",
+        "passed": true,
+        "durationMs": 1208
+      },
+      {
+        "name": "portrait controls fit and meet target size",
+        "passed": true,
+        "durationMs": 49
+      },
+      {
+        "name": "simultaneous move, look and jump use the native data channel",
+        "passed": true,
+        "durationMs": 2191
+      },
+      {
+        "name": "landscape controls fit and fullscreen exit works",
+        "passed": true,
+        "durationMs": 4088
+      },
+      {
+        "name": "action buttons support keyboard activation without duplicate touch clicks",
+        "passed": true,
+        "durationMs": 533
+      },
+      {
+        "name": "touch release on disconnect leaves no held native key",
+        "passed": true,
+        "durationMs": 287
+      }
+    ],
+    "desktop_media": {
+      "host": {
+        "currentTime": 1.652,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 45,
+        "framesPerSecond": 26,
+        "videoBytes": 2376914,
+        "audioPackets": 305,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 25.282767797737858
+      },
+      "friend": {
+        "currentTime": 1.632,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 44,
+        "framesPerSecond": 24,
+        "videoBytes": 2209898,
+        "audioPackets": 302,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1504,
+        "observedDecodedFps": 23.93617021276596
+      },
+      "recovered-slot": {
+        "currentTime": 1.622,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 41,
+        "framesPerSecond": 23,
+        "videoBytes": 1379385,
+        "audioPackets": 215,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 23.286759813705924
+      },
+      "host-reconnected": {
+        "currentTime": 1.611,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 37,
+        "framesPerSecond": 24,
+        "videoBytes": 1328505,
+        "audioPackets": 210,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 22.62142381902861
+      },
+      "friend-still-connected": {
+        "currentTime": 16.854,
+        "width": 1280,
+        "height": 720,
+        "readyState": 4,
+        "framesDecoded": 410,
+        "framesPerSecond": 24,
+        "videoBytes": 20135871,
+        "audioPackets": 1076,
+        "codecs": [
+          "video/VP8"
+        ],
+        "sampleDurationMs": 1503,
+        "observedDecodedFps": 23.286759813705924
+      }
+    },
+    "mobile_media": {
+      "initial": {
+        "before": {
+          "currentTime": 0.155,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 7,
+          "videoBytes": 262603,
+          "audioPackets": 142,
+          "codecs": [
+            "video/VP8"
+          ]
+        },
+        "after": {
+          "currentTime": 1.326,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 35,
+          "videoBytes": 1347056,
+          "audioPackets": 203,
+          "codecs": [
+            "video/VP8"
+          ]
+        }
+      },
+      "duringTouch": {
+        "before": {
+          "currentTime": 2.154,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 54,
+          "videoBytes": 2240245,
+          "audioPackets": 245,
+          "codecs": [
+            "video/VP8"
+          ]
+        },
+        "after": {
+          "currentTime": 3.402,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 81,
+          "videoBytes": 3500526,
+          "audioPackets": 304,
+          "codecs": [
+            "video/VP8"
+          ]
+        }
+      },
+      "landscapeFullscreen": {
+        "before": {
+          "currentTime": 3.699,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 90,
+          "videoBytes": 3924665,
+          "audioPackets": 323,
+          "codecs": [
+            "video/VP8"
+          ]
+        },
+        "after": {
+          "currentTime": 4.913,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 120,
+          "videoBytes": 5601882,
+          "audioPackets": 384,
+          "codecs": [
+            "video/VP8"
+          ]
+        }
+      },
+      "narrowLandscape": {
+        "before": {
+          "currentTime": 5.163,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 126,
+          "videoBytes": 5947424,
+          "audioPackets": 396,
+          "codecs": [
+            "video/VP8"
+          ]
+        },
+        "after": {
+          "currentTime": 6.391,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 155,
+          "videoBytes": 7573777,
+          "audioPackets": 455,
+          "codecs": [
+            "video/VP8"
+          ]
+        }
+      },
+      "narrow-landscapeFullscreen": {
+        "before": {
+          "currentTime": 6.391,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 155,
+          "videoBytes": 7573777,
+          "audioPackets": 455,
+          "codecs": [
+            "video/VP8"
+          ]
+        },
+        "after": {
+          "currentTime": 7.539,
+          "width": 1280,
+          "height": 720,
+          "readyState": 4,
+          "framesDecoded": 185,
+          "videoBytes": 9179355,
+          "audioPackets": 517,
+          "codecs": [
+            "video/VP8"
+          ]
+        }
+      }
+    },
+    "preflight": {
+      "passed": true,
+      "utc": "2026-10-11T17:07:55.781039+00:00",
+      "original_guard_threshold_mib": 12000,
+      "observed_used_mib": 8452,
+      "observed_free_mib": 15613,
+      "native_jobs_before_start": 0,
+      "unchanged_helper_check_stdout": "BrowserPreflight.txt",
+      "guard_bypassed": false
+    },
+    "normal_lifecycle_active": true,
+    "post_live_audit": {
+      "passed": true,
+      "utc": "2026-10-11T17:16:45.520063+00:00",
+      "protected_exact_matches": 650,
+      "expected_native_runtime_change": {
+        "file": "Builds/Browser/Linux/Quebec/Saved_BrowserGuest/Config/Linux/Engine.ini",
+        "only_change": "CachedClientID incremented25→26 on normal friend startup",
+        "old_sha256": "5d095d35a88cbc0d9fc9c04a6e1e0da4d8dcc61892c6bd9e4d2a5a5006a94e52",
+        "current_sha256": "9b0fb6406cf23ef86e9670b0c7685a44f438a6f5a9c40e427d52f57080742db8",
+        "source_settings_quality_and_progress_unchanged": true
+      },
+      "existing_live_saves_unchanged": true,
+      "new_live_save_paths": [],
+      "saved_data_written_by_audit": false,
+      "host_service": {
+        "ActiveState": "active",
+        "SubState": "running",
+        "Result": "success"
+      },
+      "running_host_logs": {
+        "host-20261011-170755-1421332.log": {
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        },
+        "friend-20261011-170755-1421332.log": {
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        }
+      },
+      "log_scope": "Snapshot scan of active host/friend logs; processes intentionally remain running."
+    },
+    "visual_review": {
+      "path": "Saved/Tests/EnvironmentPolish/BrowserVisualAudit.json",
+      "sha256": "2b545c41e01840dd7c4a86b53c6c30fd61b48c89033eb8d53eb22130bbd7d9a6",
+      "bytes": 1924
+    },
+    "diagnostics": {
+      "desktop_console_404_count": 4,
+      "mobile_diagnostics": [
+        {
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "location": {
+            "url": "https://nord-montreal.vercel.app/favicon.ico",
+            "line": 0,
+            "column": 0,
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        },
+        {
+          "type": "console",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "location": {
+            "url": "https://nord-montreal.vercel.app/favicon.ico",
+            "line": 0,
+            "column": 0,
+            "lineNumber": 0,
+            "columnNumber": 0
+          }
+        }
+      ],
+      "mobile_404_location": "favicon.ico",
+      "no_runtime_asset_failure_in_native_log_snapshot": true
+    },
+    "limits": [
+      "Input screenshots require visual review; native position/story progress are not asserted.",
+      "Headless playback does not verify audible sound or driving feel.",
+      "Testing from the host PC does not establish external NAT reachability.",
+      "Chromium touch emulation is not a physical iOS or Android device.",
+      "This PC cannot establish a phone carrier or off-LAN media path.",
+      "Decoded video and input packets do not establish audible sound or driving feel.",
+      "Observed initial host/friend decoded rates25.3/23.9fps; no60fps stream claim.",
+      "Post-live host/friend log scan is an active-process snapshot, not a closed-process exit record."
+    ]
+  },
+  "primary_evidence_snapshot_note": "Earlier repeated paths record their hashes at historical checkpoints; final live identities are explicitly referenced in final gates and final acceptance sections. Preserved intermediate Applied-* and failed/candidate manifests remain separate evidence."
+}
