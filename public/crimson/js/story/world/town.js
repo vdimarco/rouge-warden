@@ -36,8 +36,11 @@ const SIGNS = {
   pharmacy: ['PHARMACY', '#f2f0ea', '#3a5a6c'], hardware: ['HARDWARE', '#7a2a1a', '#f4e6cc'],
 };
 const SIGN_KEYS = Object.keys(SIGNS);
-// sign cells: 3 columns of 336 x 60 from y = 528
-const signUV = (key) => { const i = Math.max(0, SIGN_KEYS.indexOf(key)), c = i % 3, r = Math.floor(i / 3); return rect(4 + c * 340, 528 + r * 62, 332, 56); };
+// sign cells: 3 columns of 332 x 52 from y = 528 on a 55 px row pitch, so nine rows (27 signs) end at y = 1020
+const SIGN_W = 332, SIGN_H = 52;
+const signCell = (i) => [4 + (i % 3) * 340, 528 + Math.floor(i / 3) * 55];
+if (signCell(SIGN_KEYS.length - 1)[1] + SIGN_H > ATLAS) console.error(`[town] ${SIGN_KEYS.length} signs overflow the ${ATLAS} px atlas`);
+const signUV = (key) => { const [x, y] = signCell(Math.max(0, SIGN_KEYS.indexOf(key))); return rect(x, y, SIGN_W, SIGN_H); };
 
 /* ------------------------------------------------------------------ geometry builder */
 export class Geo {
@@ -150,13 +153,13 @@ export function paintAtlas(THREE) {
   win(896 + 14, 400 + 14, 84, 84, true, 2);
   // signs
   SIGN_KEYS.forEach((k, i) => {
-    const [text, bg, fg] = SIGNS[k], cx = 4 + (i % 3) * 340, cy = 528 + Math.floor(i / 3) * 62;
-    g.fillStyle = '#2a2420'; g.fillRect(cx, cy, 332, 56);
-    g.fillStyle = bg; g.fillRect(cx + 4, cy + 4, 324, 48);
+    const [text, bg, fg] = SIGNS[k], [cx, cy] = signCell(i);
+    g.fillStyle = '#2a2420'; g.fillRect(cx, cy, SIGN_W, SIGN_H);
+    g.fillStyle = bg; g.fillRect(cx + 4, cy + 4, SIGN_W - 8, SIGN_H - 8);
     g.fillStyle = fg; let size = 30; g.font = `bold ${size}px Georgia, serif`;
     while (g.measureText(text).width > 300 && size > 12) { size -= 1; g.font = `bold ${size}px Georgia, serif`; }
-    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, cx + 166, cy + 30);
-    ge.fillStyle = 'rgb(70,60,50)'; ge.fillRect(cx + 4, cy + 4, 324, 48);
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, cx + SIGN_W / 2, cy + SIGN_H / 2 + 2);
+    ge.fillStyle = 'rgb(70,60,50)'; ge.fillRect(cx + 4, cy + 4, SIGN_W - 8, SIGN_H - 8);
   });
   const map = new THREE.CanvasTexture(c), glow = new THREE.CanvasTexture(e);
   for (const t of [map, glow]) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; }
