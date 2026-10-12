@@ -74,6 +74,7 @@ The player page SHALL present the GTA: NORTH trailer on its title screen without
 - **AND** when the browser blocks sound before a user gesture, the trailer plays muted with a Sound on button, and the first click, tap or key press turns the sound on
 - **AND** the start card and its Connect button stay visible and usable at desktop and phone widths without horizontal scrolling
 - **AND** a visitor who prefers reduced motion or has data saver on sees a still poster in place of the loop
+- **AND** a phone in portrait gets the vertical 9:16 cut of the clip and of the full trailer, and rotating the screen swaps the cut
 
 #### Scenario: Visitor watches the trailer
 - **WHEN** the visitor clicks Watch the trailer

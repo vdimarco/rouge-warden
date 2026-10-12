@@ -76,7 +76,7 @@ try {
     assert.equal(await page.locator('.hero-title').textContent(), 'GTA: NORTH', 'the title screen shows the game title');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
-    assert.equal(await page.locator('#hero-video source').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4', 'the title screen loops a light 15 s trailer clip with sound');
+    assert.equal(await page.locator('#hero-video').getAttribute('src'), width < height ? 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4' : 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4', 'the title screen loops a light 15 s clip, vertical in portrait');
     assert.equal(await page.locator('#hero-video').evaluate(video => video.loop && !video.hasAttribute('muted')), true);
     assert.equal(await page.locator('#connect').isVisible(), true, 'the start card stays reachable under the hero');
     await page.screenshot({ path: `.qa/offline-${width}.png`, fullPage: true });
@@ -84,7 +84,7 @@ try {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.locator('#watch-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'Watch the trailer opens the player');
-  assert.equal(await page.locator('#trailer-video source').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4');
+  assert.equal(await page.locator('#trailer-video').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4');
   await page.screenshot({ path: '.qa/trailer-1280.png' });
   await page.locator('#close-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);
