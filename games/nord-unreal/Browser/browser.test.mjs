@@ -73,7 +73,7 @@ try {
     assert.equal(await page.evaluate(() => window.__nordQaSocketUrls.length), 0, 'query parameters must not establish a connection');
     assert.deepEqual(await page.evaluate(() => ({ level: window.loggerContext.logLevel, stack: window.loggerContext.includeStack })),
       { level: 2, stack: false }, 'offline pages initialize warning-only logging without stack capture');
-    assert.equal(await page.locator('.hero-title').isVisible(), true, 'the title screen shows the game title');
+    assert.equal(await page.locator('.hero-title').textContent(), 'GTA: NORTH', 'the title screen shows the game title');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
     assert.equal(await page.locator('#hero-video source').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4', 'the title screen loops a light 15 s trailer clip with sound');

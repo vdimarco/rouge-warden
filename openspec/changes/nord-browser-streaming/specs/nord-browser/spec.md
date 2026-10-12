@@ -66,11 +66,11 @@ The browser player SHALL provide touch controls on touch-capable devices using t
 - **AND** desktop mouse/keyboard, occupied-slot refusal and reconnect continue working
 
 ### Requirement: Title screen trailer
-The player page SHALL present the GTA: NORD trailer on its title screen without blocking or delaying the connect flow.
+The player page SHALL present the GTA: NORTH trailer on its title screen without blocking or delaying the connect flow.
 
 #### Scenario: Visitor opens the player before connecting
 - **WHEN** the page shows any state other than playing
-- **THEN** a short trailer clip of a few megabytes loops with its sound behind the start card, under the GTA: NORD title and the tagline "EIGHT FRIENDS. TWO CITIES. ZERO CHILL."
+- **THEN** a short trailer clip of a few megabytes loops with its sound behind the start card, under the GTA: NORTH title and the tagline "EIGHT FRIENDS. TWO CITIES. ZERO CHILL."
 - **AND** when the browser blocks sound before a user gesture, the trailer plays muted with a Sound on button, and the first click, tap or key press turns the sound on
 - **AND** the start card and its Connect button stay visible and usable at desktop and phone widths without horizontal scrolling
 - **AND** a visitor who prefers reduced motion or has data saver on sees a still poster in place of the loop
