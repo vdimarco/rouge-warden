@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { copyFile, mkdir, rm } from 'node:fs/promises';
+import { copyFile, cp, mkdir, rm } from 'node:fs/promises';
 import { signallingUrl } from './config.mjs';
 
 const endpoint = process.env.NORD_SIGNALLING_URL || '';
@@ -20,4 +20,5 @@ await build({
   }
 });
 await Promise.all(['index.html', 'styles.css', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
+await cp('trailer', 'dist/trailer', { recursive: true });
 console.log(`NORD browser player built (${endpoint ? 'signalling configured' : 'host offline'}).`);

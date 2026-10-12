@@ -15,11 +15,13 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'styles.css'].includes(file)) {
+  const trailerFiles = ['trailer/hero-loop.mp4', 'trailer/gta-nord-trailer.mp4', 'trailer/hero-poster.jpg'];
+  if (!['index.html', 'player.js', 'styles.css', ...trailerFiles].includes(file)) {
     response.writeHead(404).end();
     return;
   }
-  response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html');
+  response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css'
+    : file.endsWith('.mp4') ? 'video/mp4' : file.endsWith('.jpg') ? 'image/jpeg' : 'text/html');
   response.end(await readFile(`dist/${file}`));
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -73,8 +75,20 @@ try {
     assert.equal(await page.evaluate(() => window.__nordQaSocketUrls.length), 0, 'query parameters must not establish a connection');
     assert.deepEqual(await page.evaluate(() => ({ level: window.loggerContext.logLevel, stack: window.loggerContext.includeStack })),
       { level: 2, stack: false }, 'offline pages initialize warning-only logging without stack capture');
+    assert.equal(await page.locator('.hero-title').isVisible(), true, 'the title screen shows the game title');
+    assert.equal(await page.locator('#watch-trailer').isVisible(), true);
+    assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
+    assert.equal(await page.locator('#connect').isVisible(), true, 'the start card stays reachable under the hero');
     await page.screenshot({ path: `.qa/offline-${width}.png`, fullPage: true });
   }
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.locator('#watch-trailer').click();
+  assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'Watch the trailer opens the player');
+  assert.equal(await page.locator('#trailer-video source').getAttribute('src'), './trailer/gta-nord-trailer.mp4');
+  await page.screenshot({ path: '.qa/trailer-1280.png' });
+  await page.locator('#close-trailer').click();
+  assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);
+  assert.equal(await page.locator('#trailer-video').evaluate(video => video.paused), true, 'closing the trailer stops it');
   build('ws://127.0.0.1:40999');
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${url}/?ss=wss://untrusted.example&AutoConnect=true`);
@@ -113,7 +127,7 @@ try {
   await page.screenshot({ path: '/tmp/nord-browser-slot-reconnect.png', fullPage: true });
   assert.deepEqual(errors, []);
   assert.deepEqual(loggingSpam, [], 'production logging suppresses debug/info and per-packet messages');
-  console.log('Browser UI checks passed: offline, desktop/mobile layout, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No live game asserted.');
+  console.log('Browser UI checks passed: offline, desktop/mobile layout, title-screen trailer, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No live game asserted.');
 } finally {
   await browser.close();
   signalling.close();
