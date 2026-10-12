@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: ASCII sketches stand in the Lab
-The small ASCII scene games (Afterlight, Last Light, Lighthouse Keeper, Echoes Under Ice, Last Train Home, Firefly Courier, Mirage Runner and Orbital Gardener) SHALL stand in the Lab group. ASCII Scenes SHALL hold ASCII Front and Battle Tanks. All Games SHALL leave the sketches out, and the Lab page SHALL list them in an ASCII sketches section.
+The small ASCII scene games (Afterlight, Last Light, Lighthouse Keeper, Echoes Under Ice, Last Train Home, Firefly Courier, Mirage Runner and Orbital Gardener) SHALL stand in the Lab group. ASCII Scenes SHALL hold ASCII Front and Battle Tanks. The Lab page SHALL list them in an ASCII sketches section. All Games SHALL leave them out, and Loon Echo, Take the Plunge and Up the Creek too.
 
 #### Scenario: Lab group
 - **WHEN** the player opens `/#lab`
@@ -13,7 +13,7 @@ The small ASCII scene games (Afterlight, Last Light, Lighthouse Keeper, Echoes U
 
 #### Scenario: All Games
 - **WHEN** a player opens `/` at desktop or phone size
-- **THEN** All Games shows no ASCII sketch tile, and The Lab tile is there
+- **THEN** All Games shows no ASCII sketch tile and no tile for Loon Echo, Take the Plunge or Up the Creek, and The Lab tile is there
 
 #### Scenario: Lab page
 - **WHEN** a player opens `/lab/` at desktop or phone size
