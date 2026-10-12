@@ -19,5 +19,5 @@ await build({
     NORD_DEFAULT_STREAMER_ID: JSON.stringify(process.env.NORD_DEFAULT_STREAMER_ID || 'NordHost')
   }
 });
-await Promise.all(['index.html', 'styles.css', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
+await Promise.all(['index.html', 'styles.css', 'hero.css', 'hero.js', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
 console.log(`NORD browser player built (${endpoint ? 'signalling configured' : 'host offline'}).`);

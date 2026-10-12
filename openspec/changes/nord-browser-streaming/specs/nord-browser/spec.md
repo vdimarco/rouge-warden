@@ -64,3 +64,23 @@ The browser player SHALL provide touch controls on touch-capable devices using t
 - **THEN** all affected touch-held native keys are released and the stick returns to its centre
 - **AND** an offline, connecting or disconnected player cannot send touch gameplay input
 - **AND** desktop mouse/keyboard, occupied-slot refusal and reconnect continue working
+
+### Requirement: Title screen trailer
+The player page SHALL present the GTA: NORTH trailer on its title screen without blocking or delaying the connect flow.
+
+#### Scenario: Visitor opens the player before connecting
+- **WHEN** the page shows any state other than playing
+- **THEN** a short trailer clip of a few megabytes loops with its sound behind the start card, under the GTA: NORTH title and the tagline "EIGHT FRIENDS. TWO CITIES. ZERO CHILL."
+- **AND** when the browser blocks sound before a user gesture, the trailer plays muted with a Sound on button, and the first click, tap or key press turns the sound on
+- **AND** the start card and its Connect button stay visible and usable at desktop and phone widths without horizontal scrolling
+- **AND** a visitor who prefers reduced motion or has data saver on sees a still poster in place of the loop
+
+#### Scenario: Visitor watches the trailer
+- **WHEN** the visitor clicks Watch the trailer
+- **THEN** the full trailer opens in a modal player with sound and controls, and the background trailer pauses
+- **AND** the full trailer downloads only after that click
+- **AND** closing the player stops the trailer and resumes the background trailer
+
+#### Scenario: Game starts playing
+- **WHEN** the stream reaches the playing state
+- **THEN** the background trailer is hidden and paused so its sound and video do not compete with the game

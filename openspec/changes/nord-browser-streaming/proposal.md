@@ -7,3 +7,5 @@ The first rollout supports two independent browser players in the existing co-op
 Temporary hosting requires the PC and processes to stay running. Public signalling needs HTTPS/WSS, and WebRTC media needs a reachable ICE route. Validate actual local browser video/input and report public-network/TURN limits honestly. Do not buy cloud GPU/TURN resources or change router/firewall settings as part of this rollout.
 
 The user has now confirmed phone video loads and requested mobile controls. Extend this player with touch movement/camera/action controls using existing native bindings; preserve the running game and networking services.
+
+The user then asked to show the finished GTA: NORD trailer on the player's title screen. Add a muted trailer loop behind the start card, the GTA: NORD title and tagline, and a button that plays the full trailer with sound. Keep the connect flow, touch controls and streaming behavior unchanged.
