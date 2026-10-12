@@ -43,6 +43,9 @@ footer p { margin: 0; }
 .look-stick { right: max(164px, calc(env(safe-area-inset-right) + 148px)); bottom: max(22px, env(safe-area-inset-bottom)); border-style: dashed; }
 .stick-knob { width: 44px; height: 44px; border: 2px solid var(--yellow); border-radius: 50%; background: #ffe33f80; transform: translate(var(--stick-x, 0px), var(--stick-y, 0px)); }
 .stick-label { position: absolute; bottom: 10px; font-size: 9px; letter-spacing: 1px; font-weight: 900; text-shadow: 0 1px 3px #000; pointer-events: none; }
+/* While a thumb holds the move stick, hide it so it does not cover the game. */
+.move-stick { transition: opacity .15s; }
+.move-stick[data-pressed="true"] { opacity: 0; }
 .look-cross { color: #fffaf099; font-size: 32px; pointer-events: none; }
 .touch-primary { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, 62px); gap: 6px; }
 .touch-primary button:last-child { grid-column: 1 / -1; }
@@ -97,3 +100,27 @@ footer p { margin: 0; }
     min-height: 44px; padding: 2px; font-size: 9px;
   }
 }
+
+/* Phone crew picker: eight crew members in two columns, under the top buttons. */
+.crew-picker { position: absolute; top: 64px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
+#touch-controls .crew-picker button { min-height: 44px; font-size: 11px; text-align: left; }
+
+/* Phones held upright: the game sits at the top, under the small buttons, and the sticks sit in the space below it, clear of the map and mission text. */
+@media (orientation: portrait) and (max-width: 700px) {
+  .touch-input #video { top: 62px; bottom: auto; height: min(calc(100vw * 9 / 16), calc(100% - 62px)); }
+  .touch-input .touch-stick { width: 100px; height: 100px; }
+  .touch-input .move-stick, .touch-input .look-stick { bottom: max(72px, calc(env(safe-area-inset-bottom) + 60px)); }
+}
+
+/* While playing on a touch screen, the play area takes the footer's space too. */
+.touch-input[data-state="playing"] footer { display: none; }
+/* A tall frame from the game fills the play area, and every control sits in its bottom 40%, under the game's HUD. */
+.touch-input.portrait-stream #video { top: 0; bottom: 0; height: auto; }
+.touch-input.portrait-stream #touch-controls button { background: #0b0a1699; }
+.touch-input.portrait-stream .touch-primary { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); grid-template-columns: repeat(3, 1fr); }
+.touch-input.portrait-stream .touch-primary button:last-child { grid-column: auto; }
+.touch-input.portrait-stream .touch-secondary { top: auto; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(64px, calc(env(safe-area-inset-bottom) + 52px)); display: grid; grid-template-columns: repeat(4, 1fr); }
+.touch-input.portrait-stream .move-stick, .touch-input.portrait-stream .look-stick { bottom: max(118px, calc(env(safe-area-inset-bottom) + 106px)); }
+.touch-input.portrait-stream .look-stick { right: max(16px, env(safe-area-inset-right)); }
+.touch-input.portrait-stream .crew-picker { top: auto; bottom: max(118px, calc(env(safe-area-inset-bottom) + 106px)); }
+.touch-input.portrait-stream .touch-exit { top: auto; bottom: max(226px, calc(env(safe-area-inset-bottom) + 214px)); }

@@ -114,7 +114,7 @@ function frameDifference(before, after) {
 
 async function layout(name) {
   const geometry = await page.evaluate(() => {
-    const names = ['[data-stick="move"]', '[data-stick="look"]', ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const names = ['[data-stick="move"]', '[data-stick="look"]', '#crew-toggle', ...['16', '32', '69', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
       visible: !document.querySelector('#touch-controls').hidden,
@@ -146,16 +146,16 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]',
-      ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]', '#crew-toggle',
+      ...['16', '32', '69', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
     const video = document.querySelector('#video video');
     const image = bounds(video);
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
-      ['radar and credits', 0, 480, 280, 240], ['objective', 790, 470, 490, 160],
+      ['radar and credits', 1018, 96, 262, 212], ['objective', 790, 470, 490, 160],
       ['speed', 1040, 620, 240, 100], ['prompt', 400, 620, 640, 100],
-      ['completion', 490, 150, 310, 100], ['movement hint', 280, 620, 340, 40]
+      ['completion', 490, 150, 310, 100], ['movement hint', 22, 620, 340, 40]
     ].map(([name, x, y, width, height]) => ({ name,
       x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
       width: width * image.width / 1280, height: height * image.height / 720 }));
@@ -233,12 +233,19 @@ async function connectFriend() {
   }
   assert.equal(await page.locator('#streamer').inputValue(), 'NordFriend1');
   await page.locator('#play').tap();
+  await page.waitForFunction(() => document.body.dataset.state === 'playing');
+  await streamSettled();
+  return true;
+}
+
+// The page asks the game for a frame shaped like the play area on a phone held upright, else 1280x720.
+async function streamSettled() {
   await page.waitForFunction(() => {
     const video = document.querySelector('#video video');
-    return document.body.dataset.state === 'playing' && video?.readyState > 2 &&
-      video.videoWidth === 1280 && video.videoHeight === 720;
-  });
-  return true;
+    const size = document.body.dataset.streamSize;
+    return size && video?.readyState > 2 && `${video.videoWidth}x${video.videoHeight}` === size;
+  }, null, { timeout: 20000 });
+  report.media.streamSize = await page.evaluate(() => document.body.dataset.streamSize);
 }
 
 try {
@@ -292,6 +299,23 @@ try {
   if (await connectFriend()) {
     await check('real mobile media', () => advancingMedia('initial'));
     await check('portrait controls fit and meet target size', () => layout('portrait'));
+    await check('a phone held upright gets a tall game frame with every control in its bottom 42%', async () => {
+      const geometry = await page.evaluate(() => {
+        const box = selector => document.querySelector(selector).getBoundingClientRect();
+        const video = document.querySelector('#video video');
+        const frame = box('#frame');
+        const controls = ['[data-stick="move"]', '[data-stick="look"]', '#crew-toggle', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
+          .map(selector => ({ selector, top: box(selector).top }));
+        return { portraitStream: document.body.classList.contains('portrait-stream'), width: video.videoWidth, height: video.videoHeight,
+          frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
+      });
+      report.input.portraitStream = geometry;
+      assert.ok(geometry.portraitStream && geometry.height > geometry.width, 'the game must send a tall frame');
+      assert.ok(Math.abs(geometry.video - geometry.frame.height) <= 1, 'the tall frame must fill the play area');
+      for (const control of geometry.controls) {
+        assert.ok(control.top >= geometry.frame.top + geometry.frame.height * .58, `${control.selector} must sit under the game HUD`);
+      }
+    });
     await check('simultaneous move, look and jump use the native data channel', async () => {
       const beforeFrame = await framePixels();
       const since = (await sends()).length;
@@ -332,6 +356,8 @@ try {
     });
     await check('landscape controls fit and fullscreen exit works', async () => {
       await page.setViewportSize({ width: 800, height: 360 });
+      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720');
+      await streamSettled();
       await layout('landscape');
       await page.locator('#fullscreen').tap();
       await page.waitForFunction(() => Boolean(document.fullscreenElement));

@@ -23,6 +23,8 @@ let touchControls;
 let started = false;
 let timeout;
 let muted = false;
+let streamSize = '';
+let resizeTimer;
 
 function status(state, title, detail) {
   document.body.dataset.state = state;
@@ -59,6 +61,30 @@ function setMuted(value) {
   stream.webRtcController.videoPlayer.getVideoElement().muted = muted;
   muteButton.textContent = muted ? 'Unmute' : 'Mute';
   muteButton.setAttribute('aria-pressed', String(muted));
+}
+
+// A phone held upright asks the game for a tall frame shaped like the play area; anything else asks for the standard 1280x720.
+function wantedSize() {
+  const width = frame.clientWidth, height = frame.clientHeight;
+  if (!NORD_PORTRAIT_STREAM || !touchMode || !width || height <= width * 1.05) return [1280, 720];
+  const tall = height / width;
+  // Never more pixels than 1280x720: 720 wide up to 9:16, then 1280 high and narrower.
+  const [w, h] = tall >= 16 / 9 ? [1280 / tall, 1280] : [720, 720 * tall];
+  return [Math.round(w / 2) * 2, Math.round(h / 2) * 2];
+}
+
+function requestStreamSize() {
+  if (document.body.dataset.state !== 'playing') return;
+  if (!NORD_PORTRAIT_STREAM) {
+    // This build leaves the game at its standard 1280x720.
+    document.body.dataset.streamSize = '1280x720';
+    return;
+  }
+  const [width, height] = wantedSize();
+  const size = `${width}x${height}`;
+  if (size === streamSize || !stream.emitCommand({ 'Resolution.Width': width, 'Resolution.Height': height })) return;
+  streamSize = size;
+  document.body.dataset.streamSize = size;
 }
 
 function stopTimeout() {
@@ -158,11 +184,21 @@ if (endpoint) {
     video.addEventListener('playing', () => {
       stopTimeout();
       status('playing', 'You’re in Montréal.', '');
+      setTimeout(requestStreamSize, 500);
+    });
+    // Lay the controls out for the frame the game actually sends: a tall frame puts them all under its HUD.
+    video.addEventListener('resize', () => {
+      document.body.classList.toggle('portrait-stream', video.videoHeight > video.videoWidth * 1.05);
+    });
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(requestStreamSize, 300);
     });
 
     connectButton.addEventListener('click', () => {
       const reconnect = started;
       started = true;
+      streamSize = '';
       disconnectButton.disabled = false;
       status('connecting', 'Connecting to Montréal…', 'Finding the game host and available players.');
       waitForConnection();
@@ -175,6 +211,7 @@ if (endpoint) {
     });
     streamSelect.addEventListener('change', () => {
       if (streamSelect.disabled || !streamSelect.value) return;
+      streamSize = '';
       status('connecting', 'Opening your player…', 'Connecting to the selected player.');
       waitForConnection();
       config.setOptionSettingValue(OptionParameters.StreamerId, streamSelect.value);
