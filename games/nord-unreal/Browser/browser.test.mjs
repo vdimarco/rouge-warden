@@ -135,8 +135,17 @@ try {
   assert.equal(await page.locator('#intro-step').textContent(), '1 / 3', 'Story replays the panels');
   await page.locator('#intro-skip').click();
   assert.equal(await page.locator('#intro-crew').isVisible(), true, 'Skip story goes to the crew choice');
+  assert.equal(await page.locator('#overlay').evaluate(overlay => overlay.inert), true, 'the title screen under the start screen is out of reach');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#intro').isHidden(), true, 'Escape closes the start screen');
+  assert.equal(await page.locator('#overlay').evaluate(overlay => overlay.inert), false);
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'start', 'focus returns to Start');
+  // A crew member chosen in game (Crew button or keys 1-8) is the one the start screen shows next.
+  await page.evaluate(() => { document.body.dataset.crew = '2'; });
+  await page.locator('#start').click();
+  assert.equal(await page.locator('#crew-grid button[data-slot="2"]').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('#crew-play').textContent(), 'Play as BLACK CAP ▶');
+  await page.keyboard.press('Escape');
   assert.equal(await page.locator('#hero-video').isVisible(), true, 'the title trailer returns');
   // The stored crew member is sent once each time a connection starts playing; on phones through the touch key buttons.
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
@@ -164,6 +173,18 @@ try {
   await setState('disconnected');
   await phonePage.waitForTimeout(800);
   assert.deepEqual(await phonePage.evaluate(() => window.__crewClicks), ['56', '56'], 'nothing is sent after the stream stops');
+  // A phone on its side fits the whole crew choice without scrolling.
+  await phonePage.setViewportSize({ width: 667, height: 375 });
+  await phonePage.evaluate(() => localStorage.setItem('gta-north-intro', 'seen'));
+  await phonePage.reload();
+  await phonePage.locator('#start').click();
+  const fits = await phonePage.evaluate(() => {
+    const intro = document.querySelector('#intro').getBoundingClientRect();
+    const play = document.querySelector('#crew-play').getBoundingClientRect();
+    return play.bottom <= intro.bottom && document.querySelector('#intro').scrollTop === 0;
+  });
+  assert.equal(fits, true, 'Play as is on screen on a phone on its side');
+  await phonePage.screenshot({ path: '.qa/crew-667-touch.png' });
   await phone.close();
   build('ws://127.0.0.1:40999');
   await page.setViewportSize({ width: 1280, height: 720 });

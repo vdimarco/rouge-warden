@@ -84,16 +84,29 @@ function preload() {
 
 function open() {
   preload();
+  // The Crew button and keys 1-8 may have changed the crew member since the page loaded.
+  const current = document.body.dataset.crew ?? '';
+  if (/^[0-7]$/.test(current)) choice = Number(current);
   intro.hidden = false;
+  // The title screen underneath stays out of reach and out of screen readers while the start screen is open.
+  element('overlay').inert = true;
   document.body.dataset.intro = 'open';
   syncStatus();
   if (read(SEEN_KEY)) showCrew();
   else showPanel(0);
 }
 
-function close() {
+function close(starting = false) {
   intro.hidden = true;
+  element('overlay').inert = false;
+  // While the stream starts, the title trailer stays off; the next connection state ends that.
+  if (starting) {
+    document.body.dataset.intro = 'starting';
+    return;
+  }
   delete document.body.dataset.intro;
+  const play = element('play');
+  (!play.hidden ? play : document.body.dataset.state === 'selecting' ? element('streamer') : element('start')).focus();
 }
 
 element('start').addEventListener('click', () => {
@@ -113,10 +126,11 @@ playAs.addEventListener('click', () => {
   if (choice < 0) return;
   write(CREW_KEY, String(choice));
   document.body.dataset.crew = String(choice);
-  close();
-  // Still inside the tap, so the stream may start with sound; otherwise the card shows Play with sound when ready.
   const play = element('play');
-  if (document.body.dataset.state === 'ready' && !play.hidden) play.click();
+  const ready = document.body.dataset.state === 'ready' && !play.hidden;
+  close(ready);
+  // Still inside the tap, so the stream may start with sound; otherwise the card shows Play with sound when ready.
+  if (ready) play.click();
 });
 intro.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
@@ -124,5 +138,8 @@ intro.addEventListener('keydown', event => {
     close();
   }
 });
-new MutationObserver(syncStatus).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
+new MutationObserver(() => {
+  syncStatus();
+  if (document.body.dataset.intro === 'starting') delete document.body.dataset.intro;
+}).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
 new MutationObserver(syncStatus).observe(element('status-title'), { childList: true, characterData: true, subtree: true });

@@ -39,5 +39,6 @@
   .intro { padding-top: 8px; padding-bottom: 8px; }
   .intro-panel img { max-height: 42dvh; }
   .crew-hint { display: none; }
-  .crew-face { aspect-ratio: 1; background-position: calc(var(--slot) * 100% / 7) 22%; }
+  .crew-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .crew-face { aspect-ratio: 1; max-height: 22dvh; background-position: calc(var(--slot) * 100% / 7) 22%; }
 }
