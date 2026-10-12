@@ -25,9 +25,11 @@ export const PALETTE = g({
   cactus: 0x4e6650, pricklyPear: 0x5a6e5c, manzanita: 0x7a3a2a, flowerRed: 0xb8402e, flowerCream: 0xe0d8c0,
   // water
   creekDeep: 0x2e4a50, creekWater: 0x3a5a5e, creekShallow: 0x5e7a70, creekFoam: 0xd8dcd8, pool: 0x4a6a70,
-  // buildings and signs (every sign is invented and painted on canvas)
-  adobe: 0xc89a72, stucco: 0xd8c4a8, stuccoWhite: 0xe6ddd0, stuccoRust: 0xb0684a, roofTerracotta: 0xa04a32, roofTin: 0x8a8c90,
-  roofDark: 0x4a4644, wood: 0x7a5a40, woodDark: 0x4a3628, woodPale: 0xb09070, glass: 0x2a3238, window: 0x5a6670, awning: 0x7a2e24,
+  // buildings and signs (every sign is invented and painted on canvas). The town's walls pick one colour of
+  // their style per building (world/town.js STYLE): stucco, adobe, siding (wooden storefronts), block, metalWall.
+  adobe: 0xb87854, adobeDeep: 0xa86b4d, stucco: 0xcca885, stuccoTan: 0xc79975, stuccoClay: 0xbd8c6b, stuccoWhite: 0xe6ddd0, stuccoRust: 0xb0684a,
+  siding: 0x8f6647, sidingDark: 0x7a5740, sidingPale: 0x9e8061, block: 0xa8a194, blockDark: 0x99948a, metalWall: 0xb8bdbd, porch: 0x6b4733,
+  roofTerracotta: 0xa04a32, roofTin: 0x8a8c90, roofDark: 0x5c544f, wood: 0x7a5a40, woodDark: 0x4a3628, woodPale: 0xb09070, glass: 0x2a3238, window: 0x5a6670, awning: 0x7a2e24,
   signCream: 0xece0c4, signRed: 0x9a2a22, signTeal: 0x2a6a6a, signOrange: 0xd87a2a, signBrown: 0x5a3a26, trim: 0x3a2e28,
   neonSignOff: 0x5a5a5a, fence: 0x8a7a68, barbedWire: 0x5a5a58, cairnStone: 0xa89888, tent: 0xd8ccb4,
   // vehicles (all code-built)

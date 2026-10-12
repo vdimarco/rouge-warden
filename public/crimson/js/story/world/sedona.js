@@ -21,7 +21,8 @@ import { PALETTE } from '../look/palette.js';
 const ROOM_LAMP = 60; // the bar's two lamps (W.update)
 
 // Every base colour the world paints with (display sRGB), for LOOK's palette check (palette.mjs). Greens stay
-// bluish (g - b < 0.12) and nothing is yellow-green. (The road and sidewalk paint takes LOOK's PALETTE.)
+// bluish (g - b < 0.12) and nothing is yellow-green. (The road and sidewalk paint and the building walls take
+// LOOK's PALETTE.)
 const srgb = (hex) => [16, 8, 0].map((s) => Math.round(((hex >> s) & 255) / 255 * 1000) / 1000);
 export const WORLD_PALETTE = Object.freeze({
   soilRed: [0.64, 0.31, 0.19], soilDark: [0.54, 0.25, 0.16], scrub: [0.43, 0.4, 0.33], sand: [0.76, 0.62, 0.47], creekStone: [0.42, 0.39, 0.36],
@@ -30,7 +31,7 @@ export const WORLD_PALETTE = Object.freeze({
   parkingLine: srgb(PALETTE.parkingLine), shoulder: srgb(PALETTE.shoulder), sidewalk: srgb(PALETTE.concrete), curb: srgb(PALETTE.curb),
   juniper: [0.3, 0.4, 0.35], cottonwood: [0.36, 0.47, 0.4], agave: [0.4, 0.47, 0.44], pricklyPear: [0.36, 0.44, 0.36], boulder: [0.62, 0.33, 0.22],
   grassStraw: [0.66, 0.55, 0.38], grassBlue: [0.48, 0.5, 0.45], waterDeep: [0.15, 0.3, 0.3], waterShallow: [0.38, 0.47, 0.43],
-  stucco: [0.8, 0.66, 0.52], adobe: [0.72, 0.47, 0.33], wood: [0.56, 0.4, 0.28], block: [0.66, 0.63, 0.58], metal: [0.72, 0.74, 0.74],
+  stucco: srgb(PALETTE.stucco), adobe: srgb(PALETTE.adobe), wood: srgb(PALETTE.siding), block: srgb(PALETTE.block), metal: srgb(PALETTE.metalWall),
   steel: [0.44, 0.47, 0.48], concrete: [0.62, 0.6, 0.56], jeepTangerine: [0.93, 0.46, 0.12], vanWhite: [0.93, 0.93, 0.92], barnRed: [0.46, 0.2, 0.15],
   barWall: [0.42, 0.2, 0.14], poolFelt: [0.12, 0.3, 0.36], windowGlow: [1, 0.48, 0.2], lampShade: [1, 0.76, 0.48],
 });

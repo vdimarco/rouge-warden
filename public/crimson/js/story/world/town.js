@@ -12,6 +12,7 @@ import { staticVehicleGeometry, wheelSpots } from '../vehicles/meshes.js';
 import { BUILDINGS, PLACES, CAIRNS, UPTOWN_OUT, AFRAME, PORCH, up } from './places.js';
 import { at } from './roads.js';
 import { finishFleetLot, FLEET_BAYS } from './fleet-lot.js';
+import { pal, hexRGB } from '../look/palette.js';
 
 const lin = (v) => Math.pow(v, 2.2);
 export const ATLAS = 1024;
@@ -164,11 +165,13 @@ export function paintAtlas(THREE) {
 }
 
 /* ------------------------------------------------------------------ the town */
+// wall colours by style, named in LOOK's palette (sRGB 0..1); each building picks one, seeded
+const rgb = (name) => hexRGB(pal(name));
 const STYLE = {
-  stucco: [[0.8, 0.66, 0.52], [0.78, 0.6, 0.46], [0.74, 0.55, 0.42]], adobe: [[0.72, 0.47, 0.33], [0.66, 0.42, 0.3]], wood: [[0.56, 0.4, 0.28], [0.48, 0.34, 0.25], [0.62, 0.5, 0.38]],
-  block: [[0.66, 0.63, 0.58], [0.6, 0.58, 0.54]], metal: [[0.72, 0.74, 0.74], [0.6, 0.58, 0.54]],
+  stucco: ['stucco', 'stuccoTan', 'stuccoClay'].map(rgb), adobe: ['adobe', 'adobeDeep'].map(rgb), wood: ['siding', 'sidingDark', 'sidingPale'].map(rgb),
+  block: ['block', 'blockDark'].map(rgb), metal: ['metalWall', 'blockDark'].map(rgb),
 };
-const TRIM = [0.42, 0.28, 0.2], ROOF = [0.36, 0.33, 0.31], DARK = [0.14, 0.13, 0.13], WHITE = [1, 1, 1];
+const TRIM = rgb('porch'), ROOF = rgb('roofDark'), DARK = [0.14, 0.13, 0.13], WHITE = [1, 1, 1];
 
 export function* createTown(S, { THREE, group, colliders, height, net, glbBase = '/wild/models/' }) {
   const root = new THREE.Group(); root.name = 'town'; group.add(root);
@@ -187,7 +190,7 @@ export function* createTown(S, { THREE, group, colliders, height, net, glbBase =
     if (++nb % 12 === 0) yield;
     const g = geo(b.district), c = Math.cos(b.yaw), s = Math.sin(b.yaw);
     const fx = b.x + s * b.d / 2, fz = b.z + c * b.d / 2, base = height(fx, fz);
-    const pal = STYLE[b.style] || STYLE.stucco, col = pal[Math.floor(R() * pal.length)];
+    const walls = STYLE[b.style] || STYLE.stucco, col = walls[Math.floor(R() * walls.length)];
     const two = b.h > 6.2, face = b.style === 'adobe' ? UV.adobe : b.style === 'metal' && b.sign !== 'diner' ? UV.garage : b.sign === 'diner' ? UV.diner : b.motel ? UV.motel : b.ranch ? UV.planks : two ? UV.twostory : UV.shop;
     const lp = (lx, lz) => [b.x + lx * c + lz * s, b.z - lx * s + lz * c];
     // the body sits 2 m into the ground so a slope never shows a gap
