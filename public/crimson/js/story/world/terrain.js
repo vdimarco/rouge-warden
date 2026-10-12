@@ -1,5 +1,6 @@
 // js/story/world/terrain.js : the ground. 5 x 5 tiles of 400 m, each at three levels of detail (5, 10 and
-// 20 m cells) chosen by the camera's distance to the tile's bounds (< 200 m, < 600 m, beyond). The worker
+// 20 m cells; the Midgley tile 2.5 or 5, 5 and 10) chosen by the camera's distance to the tile's bounds
+// (< 200 m, < 600 m, beyond, times the tier's lodBias). The worker
 // builds the tiles; at most two are uploaded per frame, and far fine tiles are thrown away. One toon
 // material draws everything: world-space sandstone strata on the rock, triplanar grain, cloud shadows and
 // the roads, lines, lots and sidewalks from the two road masks (C4). It writes alpha 1 (the crimson key needs it).
@@ -195,7 +196,7 @@ export function createTerrain(S, { THREE, group, material, tiles0, request }) {
     g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
     const m = new THREE.Mesh(g, material);
     m.name = `tile${t.i}_${t.j}_${t.lod}`; m.matrixAutoUpdate = false; m.receiveShadow = true; m.castShadow = t.lod === 0; m.visible = false;
-    m.userData.kind = 'terrain';
+    m.userData.kind = 'terrain'; m.userData.fine = t.fine ?? null;
     root.add(m);
     const e = tileOf(t.i, t.j); e.mesh[t.lod] = m; e.box[t.lod] = g.boundingBox; e.asked[t.lod] = false;
   }
@@ -205,8 +206,10 @@ export function createTerrain(S, { THREE, group, material, tiles0, request }) {
   const api = {
     root, tiles: T,
     add(t) { queue.push(t); },
-    // bias < 1 pulls the fine levels closer (lower quality tiers)
-    update(camera, viewDist, bias = 1) {
+    // bias < 1 pulls the fine levels closer (lower quality tiers); fine: the Midgley tile's nearest level at
+    // 2.5 m cells (gen.worker.js buildTile). A level built the other way is asked for again and shows until
+    // its replacement arrives.
+    update(camera, viewDist, bias = 1, fine = true) {
       cam.copy(camera.position);
       // uploads first: at most two a frame, nearest first
       if (queue.length) {
@@ -216,7 +219,8 @@ export function createTerrain(S, { THREE, group, material, tiles0, request }) {
       for (const e of T) {
         const d = e.box[2].distanceToPoint(cam);
         const want = d < 200 * bias ? 0 : d < 600 * bias ? 1 : 2;
-        if (!e.mesh[want] && !e.asked[want]) { e.asked[want] = true; request(e.i, e.j, want); }
+        const stale = e.mesh[want] && e.mesh[want].userData.fine != null && e.mesh[want].userData.fine !== fine;
+        if ((!e.mesh[want] || stale) && !e.asked[want]) { e.asked[want] = true; request(e.i, e.j, want, fine); }
         let show = e.mesh[want] ? want : -1;
         if (show < 0) for (const l of [want - 1, want + 1, want - 2, want + 2]) if (l >= 0 && l <= 2 && e.mesh[l]) { show = l; break; }
         const vis = d < viewDist + 60;

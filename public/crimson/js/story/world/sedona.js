@@ -35,8 +35,9 @@ export const WORLD_PALETTE = Object.freeze({
   barWall: [0.42, 0.2, 0.14], poolFelt: [0.12, 0.3, 0.36], windowGlow: [1, 0.48, 0.2], lampShade: [1, 0.76, 0.48],
 });
 
-// view distance (day, night) and tile LOD bias per tier come from LOOK's quality table (one source for C8)
-const VIEW = QUALITY.map((t) => [t.view.day, t.view.night]), BIAS = QUALITY.map((t) => t.lodBias);
+// view distance (day, night), tile LOD bias and the Midgley tile's detail per tier come from LOOK's quality
+// table (one source for C8)
+const VIEW = QUALITY.map((t) => [t.view.day, t.view.night]), BIAS = QUALITY.map((t) => t.lodBias), FINE = QUALITY.map((t) => t.tileFine);
 const NIGHT_LOOKS = { NIGHT: 1, MEMORY_NIGHT: 1, VORTEX: 1, DEEP_INK: 1, INTERIOR: 1, ARENA: 1, DUSK: 0.55, DAWN: 0.45 };
 
 export function init(S) {
@@ -84,7 +85,7 @@ export function init(S) {
     } else if (m.type === 'tile') { if (parts.terrain) parts.terrain.add(m.tile); }
     else if (m.type === 'error') { console.error('[world] worker error', m.message); }
   }
-  const request = (i, j, lod) => { if (worker) worker.postMessage({ tile: { i, j, lod } }); else if (mainCtx) parts.terrain.add(buildTile(mainCtx, i, j, lod)); };
+  const request = (i, j, lod, fine) => { if (worker) worker.postMessage({ tile: { i, j, lod, fine } }); else if (mainCtx) parts.terrain.add(buildTile(mainCtx, i, j, lod, fine)); };
 
   /* ---------------- assembly, one step per frame */
   function makeSteps() {
@@ -267,12 +268,12 @@ export function init(S) {
     for (const k of ['terrain', 'flora', 'town', 'bridges', 'water']) { const r = parts[k].root || parts[k].mesh; if (r) r.visible = !inside; }
     parts.interiors.root.visible = inside;
     if (!inside) {
-      parts.terrain.update(camera, view, BIAS[q]);
+      parts.terrain.update(camera, view, BIAS[q], FINE[q]);
       parts.flora.update(camera, view, hero, 1 - night * 0.72);
       cull(parts.town.root, camera, view); cull(parts.bridges.root, camera, view);
     }
     if (parts.town.ranch.on !== ranchLights) parts.town.ranch.lights(ranchLights);
-    parts.town.update(night, S.time);
+    parts.town.update(night, S.time, view);
     parts.water.setLight(1 - night * 0.75, S.scene.fog && S.scene.fog.color);
     // inside a room: keep the walker in, and hang the fixed point lights over it (the bar's two lamps at 60:
     // at 14 the room read black, its walls and the people in it lost in the F3 cines)
