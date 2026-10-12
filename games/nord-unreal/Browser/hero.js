@@ -7,6 +7,18 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 // Visitors on data saver or with reduced motion keep the still poster.
 const stillOnly = () => reducedMotion.matches || navigator.connection?.saveData === true;
 let heroActive = true;
+// Phones in portrait get the vertical cut; the page swaps it when the screen rotates.
+const portrait = matchMedia('(orientation: portrait)');
+
+function pickSources() {
+  for (const video of [heroVideo, trailer]) {
+    const src = portrait.matches ? video.dataset.portraitSrc : video.dataset.landscapeSrc;
+    if (video.getAttribute('src') !== src) {
+      video.setAttribute('src', src);
+      video.load();
+    }
+  }
+}
 
 function setSound(on) {
   heroVideo.muted = !on;
@@ -53,10 +65,16 @@ dialog.addEventListener('close', () => {
   setHeroActive(heroActive);
 });
 reducedMotion.addEventListener('change', () => setHeroActive(heroActive));
+portrait.addEventListener('change', () => {
+  pickSources();
+  if (dialog.open) trailer.play().catch(() => {});
+  else setHeroActive(heroActive);
+});
 // Follow the player's state without touching player.js: stop the trailer while the game plays.
 const syncHero = () => {
   const active = document.body.dataset.state !== 'playing';
   if (active !== heroActive) setHeroActive(active);
 };
+pickSources();
 new MutationObserver(syncHero).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
 setHeroActive(document.body.dataset.state !== 'playing');
