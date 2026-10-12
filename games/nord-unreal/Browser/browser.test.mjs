@@ -84,7 +84,7 @@ try {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.locator('#watch-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'Watch the trailer opens the player');
-  assert.equal(await page.locator('#trailer-video source').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a375f7b2-2dd0-4757-8cdf-8bd1b94f1a8f.mp4');
+  assert.equal(await page.locator('#trailer-video source').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4');
   await page.screenshot({ path: '.qa/trailer-1280.png' });
   await page.locator('#close-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);
