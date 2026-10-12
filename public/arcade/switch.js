@@ -273,7 +273,8 @@
       b.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); open(); });
     }
   }
-  function init() { wire(); if (home && !new URLSearchParams(location.search).has("machines")) open(); }
+  // the arcade page opens on All Games, except for ?machines (Old arcade) or a page that asks for its machines (a group in its address)
+  function init() { wire(); if (home && !new URLSearchParams(location.search).has("machines") && !document.documentElement.hasAttribute("data-machines")) open(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.GameSwitch = { open, close, wire, record, count, get isOpen() { return !!box && !box.hidden; }, GAMES, rankGames, validateMetrics, duration };
 })();

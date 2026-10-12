@@ -1,0 +1,13 @@
+# Verification
+
+Browser checks used system Chromium 152 against `public/` served locally with `python3 -m http.server`. Playwright 1.51's own headless shell is not installed, so `qa/arcade/machines.mjs` ran with a test-only preload that points `chromium.launch` at the system browser. `/api/arcade-leaderboard` is a Vercel function and is not served locally, so All Games reports its activity as unavailable.
+
+- `qa/arcade/groups.e2e.mjs` passes all 90 checks at 1280×800, 390×844 and 844×390. `/` opens All Games, and Old arcade closes it on the hall of five group cabinets in order (Cottage, Action, ASCII Scenes, Strategy, Lab). A fresh load of `/#strategy` and a browser-back return from Follow Suit both open Strategy with no All Games over it, and `/#ascii` opens the ten ASCII Scenes machines. The earlier scenarios (keys, clicks, the sign's COTTAGE button, the picker, Escape, Backspace, the back control, browser back, tokens and credits, `/#lab`, no page errors) still pass.
+- `qa/arcade/machines.mjs`, now opened on the machine room (`?machines`). Before, its walk stopped at the first START, because All Games covered the row.
+  - The walk passes: every game in every group gets a token and START, goes to its own address, and Escape returns to the hall.
+  - Twelve static checks fail on `main` too: six ASCII games are listed in `switch.js` with quoted keys (`"url": …`), which the check's `url:` pattern does not match.
+  - In an earlier run of the other parts on this change with a different ASCII Scenes cabinet art, layout passed in the hall and in ASCII Scenes at every size except 375×667. There the software GPU process hangs when the ASCII Scenes row slides from ASCII Front to Battle Tanks; `main`'s single row (`/?machines`) hangs at the same swipe. Saves passed. Backlinks failed only on Tell Me's in-game arcade link, and credits only on a `/crimson/` page error; both also fail on `main`. Tab focus at 390×844 missed 2 of 70 stops, the timing-sensitive result noted in `2026-10-04-arcade-cabinet-groups`. The switcher part stops at `.gsw-row`, which the All Games layout on the home page does not have; that part is unchanged from `main`.
+- `follow-suit/qa/arcade.e2e.mjs` (with `BASE_URL` set to the local server, same run) passes 8 of 9. The ninth, no console errors, sees two 404s for `/api/arcade-leaderboard` after its Arcade button opens `/`, where All Games asks for activity.
+- `qa/arcade/analytics.test.cjs`, `launch-counts.test.cjs`, `room-controls.test.mjs` and `room-logic.test.cjs` pass.
+- `git diff --check`: pass. The OpenSpec CLI is not installed, so the delta was checked against the canonical spec by script and the headings by hand.
+- Not run: a physical phone, sound, and All Games with live PostHog activity.

@@ -136,7 +136,8 @@ async function open(browser, { width, height, store = {}, mobile = width < 800 }
     if (r.request().isNavigationRequest()) { const u = new URL(r.request().url()); moves.push(u.pathname + u.hash); r.abort("aborted"); } else r.continue();
   });
   await page.addInitScript((store) => { try { localStorage.clear(); for (const [k, v] of Object.entries(store)) localStorage.setItem(k, v); } catch (e) { /* storage off */ } }, { "arcade.tokens": "99", "arcade.sound": "false", ...store });
-  await page.goto(BASE);
+  // ?machines is Old arcade: the machines, without All Games over them
+  await page.goto(BASE + "?machines");
   await page.waitForSelector(".cab.on");
   await page.waitForTimeout(600);
   return { ctx, page, errors, moves };

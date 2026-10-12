@@ -13,6 +13,9 @@ The home page SHALL open All Games using shared PostHog aggregates from the last
 #### Scenario: Open the old arcade
 - **WHEN** the visitor selects Old arcade in the header at 1363×936 or 390×844
 - **THEN** All Games closes and the original machines show, and ALL GAMES opens the list again
+#### Scenario: A machine group in the address
+- **WHEN** the visitor opens `/#action` (or another group's id from the `arcade-groups` spec), or comes back to such an address from a game
+- **THEN** All Games stays closed and that group's machines show, and ALL GAMES opens the list
 ### Requirement: Anonymous game analytics
 Each catalog destination SHALL record one view per page visit and one play on the first player interaction. Active time SHALL count only visible, focused, recently interacted time, excluding the switch dialog. Likes SHALL be a one-time anonymous browser action, deduplicated by anonymous visitor in PostHog. The page SHALL explain these definitions. Preview and local traffic SHALL NOT enter production rankings. Analytics failures and disabled storage SHALL NOT block games. No session replay, input text or personal identifiers SHALL be collected.
 #### Scenario: Play and leave

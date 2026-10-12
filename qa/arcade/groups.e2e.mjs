@@ -7,8 +7,6 @@ import path from "path";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
-// ?machines skips the All games board the home page opens on load (public/arcade/switch.js), which covers the row
-const HOME = BASE + "?machines";
 const SHOTS = process.env.SHOTS || "";
 const SIZES = [
   { name: "desktop", width: 1280, height: 800, touch: false },
@@ -43,6 +41,8 @@ const state = (page) => page.evaluate(() => {
 });
 const overlap = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
 const settle = (page) => page.waitForTimeout(600);
+// All Games opens a moment after the page loads, so give it time before deciding it stayed shut
+const boardOpens = (page) => page.waitForSelector(".gsw.scoreboard:not([hidden])", { timeout: 3000 }).then(() => true, () => false);
 
 const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
 for (const size of SIZES) {
@@ -51,10 +51,13 @@ for (const size of SIZES) {
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(HOME);
+  await page.goto(BASE);
+  check(await boardOpens(page), "/ opens All Games");
+  await page.locator(".gsw .machines-link").click();
   await settle(page);
 
   let s = await state(page);
+  check(!(await page.isVisible(".gsw.scoreboard")), "Old arcade closes All Games and shows the hall");
   check(s.groupsVisible === 5 && s.visible.length === 5, "hall shows exactly the five group cabinets: " + s.visible.join(", "));
   check(JSON.stringify(s.visible) === JSON.stringify(["cottage", "action", "ascii", "strategy", "lab"]), "the groups stand in order: Cottage, Action, ASCII Scenes, Strategy, Lab");
   check(s.on === "cottage", "first group is selected");
@@ -96,7 +99,7 @@ for (const size of SIZES) {
   await page.goBack();
   await settle(page);
   s = await state(page);
-  check(s.groupsVisible === 5 && s.on === "strategy" && page.url() === HOME, "browser back returns to the hall");
+  check(s.groupsVisible === 5 && s.on === "strategy" && page.url() === BASE, "browser back returns to the hall");
 
   // the sign's collection buttons open their group
   const nav = page.locator('.section-nav button[data-section="cottage"]');
@@ -128,11 +131,12 @@ for (const size of SIZES) {
   // play a game from a group, then come back to it
   await page.evaluate(() => { localStorage.setItem("arcade.tokens", "3"); sessionStorage.removeItem("arcade.last"); });
   // a hash-only goto would not reload the page (it keeps the group's earlier selection), so reload for a fresh start
-  await page.goto(HOME + "#strategy");
+  await page.goto(BASE + "#strategy");
   await page.reload();
   await settle(page);
   s = await state(page);
   check(s.hash === "#strategy" && s.on === "breakthrough", "/#strategy opens Strategy on its first game");
+  check(!(await boardOpens(page)), "a group link opens no All Games over its group");
   await page.keyboard.press("5");
   await settle(page);
   s = await state(page);
@@ -145,13 +149,18 @@ for (const size of SIZES) {
   await settle(page);
   s = await state(page);
   check(s.hash === "#strategy" && s.on === "follow-suit", "returning from a game reopens its group with it selected (" + s.hash + ", " + s.on + ")");
+  check(!(await boardOpens(page)), "and no All Games opens over it");
 
   // group links
-  await page.goto(HOME + "#lab");
+  await page.goto(BASE + "#lab");
   await settle(page);
   s = await state(page);
   check(s.visible.length === 9 && s.on === "lab", "/#lab opens the Lab with its nine machines");
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, size.name + "-lab.png") });
+  await page.goto(BASE + "#ascii");
+  await settle(page);
+  s = await state(page);
+  check(s.visible.length === 10 && s.on === "afterlight", "/#ascii opens ASCII Scenes with its ten machines");
 
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
   await ctx.close();

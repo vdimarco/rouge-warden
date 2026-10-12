@@ -1,16 +1,16 @@
 # Arcade groups
 
 ## Purpose
-The Cottage Arcade opens on a hall of group cabinets, one per game group. Playing a group cabinet opens a row of that group's machines, with a way back to the hall. The groups are the `GROUPS` table in `public/index.html`: Cottage, Action, ASCII Scenes, Strategy and Lab.
+The Cottage Arcade's machines stand in a hall of group cabinets, one per game group. The home page opens on All Games (see the `arcade-hall` change), and its Old arcade button shows the hall. Playing a group cabinet opens a row of that group's machines, with a way back to the hall. The groups are the `GROUPS` table in `public/index.html`: Cottage, Action, ASCII Scenes, Strategy and Lab.
 
 ## Requirements
 
 ### Requirement: Group cabinets in the arcade hall
-The arcade SHALL open on one group cabinet per group instead of every game machine. Each group cabinet SHALL show the group's name, how many games it holds, the names of those games, and art from them. It SHALL take no token. A machine that no group names SHALL get a group of its own (More), so no machine is out of reach.
+The arcade's machines SHALL open on one group cabinet per group instead of every game machine. Each group cabinet SHALL show the group's name, how many games it holds, the names of those games, and art from them. It SHALL take no token. A machine that no group names SHALL get a group of its own (More), so no machine is out of reach.
 
 #### Scenario: Opening the arcade
-- **WHEN** a player opens the arcade at `/` with no group in the address
-- **THEN** the row shows exactly five group cabinets (Cottage, Action, ASCII Scenes, Strategy, Lab), the first is selected, and no game machine is visible
+- **WHEN** a player opens the arcade at `/` with no group in the address and selects Old arcade in All Games
+- **THEN** All Games closes and the row shows exactly five group cabinets (Cottage, Action, ASCII Scenes, Strategy, Lab), the first is selected, and no game machine is visible
 
 #### Scenario: Choosing a group cabinet
 - **WHEN** the player clicks a group cabinet, presses its Start, presses 1 or Enter with it selected, or presses 5 with it selected
@@ -51,12 +51,12 @@ The player SHALL be able to return from a group to the hall, and the arcade SHAL
 - **THEN** the hall returns instead of leaving the arcade
 
 #### Scenario: Returning from a game
-- **WHEN** the player launches a game from a group and then comes back to the arcade
-- **THEN** the arcade shows that same group with the game they launched selected
+- **WHEN** the player launches a game from a group and then comes back to the arcade with the browser's back button
+- **THEN** the arcade shows that same group with the game they launched selected, and All Games does not open over it
 
 #### Scenario: Group link
 - **WHEN** the player opens `/#strategy` (or another group's id)
-- **THEN** the arcade opens inside that group
+- **THEN** the arcade opens inside that group, and All Games does not open over it
 
 ### Requirement: Machine picker covers every game
 The machine picker SHALL list every game once, under its group, after an entry for the hall. Choosing a game SHALL open its group and select it; choosing the hall entry SHALL return to the hall.

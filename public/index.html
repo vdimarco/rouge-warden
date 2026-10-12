@@ -1381,6 +1381,8 @@ games.forEach(showCredit);
   try { last = sessionStorage.getItem("arcade.last"); } catch (e) { /* storage off */ }
   const lc = games.find((c) => c.dataset.game === last);
   setView(v, { select: lc && groupOf(lc).id === v ? last : 0 });
+  // a group link, or coming back from one of its games, shows that group rather than All Games over it (switch.js opens it after this runs)
+  if (GROUPS.some((g) => g.id === v)) document.documentElement.dataset.machines = "";
 }
 </script>
 </body>
