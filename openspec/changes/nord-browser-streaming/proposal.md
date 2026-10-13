@@ -9,3 +9,5 @@ Temporary hosting requires the PC and processes to stay running. Public signalli
 The user has now confirmed phone video loads and requested mobile controls. Extend this player with touch movement/camera/action controls using existing native bindings; preserve the running game and networking services.
 
 The user then asked to show the finished GTA: NORD trailer on the player's title screen. Add a muted trailer loop behind the start card, the GTA: NORD title and tagline, and a button that plays the full trailer with sound. Keep the connect flow, touch controls and streaming behavior unchanged.
+
+After the menu change the user asked for smaller, more subtle touch buttons with a comic book feel, for the trailer to play full screen, and for the game to go fullscreen by itself. Restyle the touch controls, make the trailer fill the screen, and take the game frame fullscreen on the tap that starts it on touch screens. The tall game on a phone held upright still needs the host to run the rebuilt game.

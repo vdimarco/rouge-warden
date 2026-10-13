@@ -86,11 +86,23 @@ try {
     await page.screenshot({ path: `.qa/offline-${width}.png`, fullPage: true });
   }
   await page.setViewportSize({ width: 1280, height: 720 });
+  // The full trailer plays full screen; leaving fullscreen closes it, and Close leaves fullscreen.
+  const trailerIsFullscreen = () => page.waitForFunction(() => document.fullscreenElement === document.querySelector('#trailer-stage'));
   await page.locator('#watch-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'Watch the trailer opens the player');
+  await trailerIsFullscreen();
   assert.equal(await page.locator('#trailer-video').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4');
+  const trailerBox = await page.locator('#trailer-video').boundingBox();
+  assert.deepEqual([trailerBox.x, trailerBox.y, trailerBox.width, trailerBox.height], [0, 0, 1280, 720], 'the trailer fills the screen');
+  assert.equal(await page.locator('#close-trailer').isVisible(), true, 'Close stays on screen over the trailer');
   await page.screenshot({ path: '.qa/trailer-1280.png' });
+  await page.evaluate(() => document.exitFullscreen());
+  await page.waitForFunction(() => !document.querySelector('#trailer-dialog').open);
+  assert.equal(await page.locator('#trailer-video').evaluate(video => video.paused), true, 'leaving fullscreen stops the trailer');
+  await page.locator('#watch-trailer').click();
+  await trailerIsFullscreen();
   await page.locator('#close-trailer').click();
+  await page.waitForFunction(() => !document.fullscreenElement);
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);
   assert.equal(await page.locator('#trailer-video').evaluate(video => video.paused), true, 'closing the trailer stops it');
   // The header keeps only the title and the menu button; the menu holds the stream buttons.
@@ -116,6 +128,7 @@ try {
     await page.locator('#start').click();
     assert.equal(await page.locator('#intro').isVisible(), true, 'Start opens the start screen');
     assert.equal(await page.locator('body').getAttribute('data-intro'), 'open');
+    assert.equal(await page.evaluate(() => document.fullscreenElement), null, 'a mouse-and-keyboard player stays in the window');
     assert.equal(await page.locator('#hero-video').isHidden(), true, 'the title trailer stops behind the start screen');
     for (const step of ['1 / 3', '2 / 3', '3 / 3']) {
       assert.equal(await page.locator('#intro-step').textContent(), step);
@@ -225,6 +238,8 @@ try {
   await phonePage.evaluate(() => localStorage.setItem('gta-north-intro', 'seen'));
   await phonePage.reload();
   await phonePage.locator('#start').click();
+  // On a touch screen the tap on Start also takes the game frame fullscreen.
+  await phonePage.waitForFunction(() => document.fullscreenElement?.id === 'frame');
   const fits = await phonePage.evaluate(() => {
     const intro = document.querySelector('#intro').getBoundingClientRect();
     const play = document.querySelector('#crew-play').getBoundingClientRect();
@@ -232,6 +247,22 @@ try {
   });
   assert.equal(fits, true, 'Play as is on screen on a phone on its side');
   await phonePage.screenshot({ path: '.qa/crew-667-touch.png' });
+  // A player who left fullscreen gets it back with Play as.
+  await phonePage.evaluate(() => document.exitFullscreen());
+  await phonePage.waitForFunction(() => !document.fullscreenElement);
+  await phonePage.locator('#crew-play').click();
+  await phonePage.waitForFunction(() => document.fullscreenElement?.id === 'frame');
+  // The menu leaves fullscreen in any state; in fullscreen the title screen has its own menu button, clear of Sound on.
+  await phonePage.evaluate(() => { document.querySelector('#hero-sound').hidden = false; });
+  const overlap = await phonePage.evaluate(() => {
+    const [a, b] = ['#hero-sound', '#overlay-menu'].map(id => document.querySelector(id).getBoundingClientRect());
+    return Math.min(a.right, b.right) > Math.max(a.left, b.left) && Math.min(a.bottom, b.bottom) > Math.max(a.top, b.top);
+  });
+  assert.equal(overlap, false, 'Sound on and ☰ Menu do not cover each other in fullscreen');
+  await phonePage.locator('#overlay-menu').click();
+  assert.equal(await phonePage.locator('#fullscreen').textContent(), 'Exit fullscreen');
+  await phonePage.locator('#fullscreen').click();
+  await phonePage.waitForFunction(() => !document.fullscreenElement);
   await phone.close();
   build('ws://127.0.0.1:40999');
   await page.setViewportSize({ width: 1280, height: 720 });

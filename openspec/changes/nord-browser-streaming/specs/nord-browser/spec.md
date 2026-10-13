@@ -78,9 +78,10 @@ The player page SHALL present the GTA: NORTH trailer on its title screen without
 
 #### Scenario: Visitor watches the trailer
 - **WHEN** the visitor clicks Watch the trailer
-- **THEN** the full trailer opens in a modal player with sound and controls, and the background trailer pauses
+- **THEN** the full trailer fills the screen with sound, controls and a Close button, and the background trailer pauses
+- **AND** where the browser allows it the trailer goes fullscreen, and leaving fullscreen (Escape or the back gesture) closes it
 - **AND** the full trailer downloads only after that click
-- **AND** closing the player stops the trailer and resumes the background trailer
+- **AND** closing the player stops the trailer, leaves fullscreen and resumes the background trailer
 
 #### Scenario: Game starts playing
 - **WHEN** the stream reaches the playing state
@@ -170,3 +171,19 @@ The page SHALL keep only the title and a menu button at the top, and SHALL offer
 #### Scenario: Player plays on a touch screen
 - **WHEN** the game is playing on a touch screen
 - **THEN** the header hides, and no button row sits at the top of the game
+
+### Requirement: Touch screens play fullscreen
+On a touch screen the game frame SHALL go fullscreen on the tap that starts the game, where the browser allows it.
+
+#### Scenario: Player starts the game on a phone
+- **WHEN** a player on a touch screen taps Start, Play as or Play with sound
+- **THEN** the game frame, with the start screen, the menu and the touch controls in it, goes fullscreen
+- **AND** a browser without fullscreen for page elements (an iPhone) keeps the page as it is
+
+#### Scenario: Player leaves fullscreen
+- **WHEN** the player taps Exit fullscreen in the menu, or uses Escape or the back gesture
+- **THEN** the page leaves fullscreen and stays out of it until the next Start, Play as or Play with sound, or until the player taps Fullscreen in the menu, which works in every state
+
+#### Scenario: Player uses a computer
+- **WHEN** the browser has no touch screen
+- **THEN** the page stays in its window, and Fullscreen in the menu still works

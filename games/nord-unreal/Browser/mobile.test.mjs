@@ -147,7 +147,7 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]', '#touch-menu',
+    const selectors = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu',
       ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
     const video = document.querySelector('#video video');
     const image = bounds(video);
@@ -312,6 +312,8 @@ try {
   assert.deepEqual(report.logging.context, { level: 2, stack: false }, 'production logger suppresses info/debug and stacks');
 
   if (await connectFriend()) {
+    await check('tapping Play takes the game fullscreen', () =>
+      page.waitForFunction(() => document.fullscreenElement?.id === 'frame', null, { timeout: 5000 }));
     await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));
     await check('portrait controls fit and meet target size', () => layout('portrait'));
@@ -374,33 +376,28 @@ try {
       assert.equal((await sends()).slice(afterCancel).some(record => record.id === 60 && [87, 32].includes(record.bytes[1])), false,
         'cancelled touch must not reassert held movement or jump');
     });
-    await check('landscape controls fit and fullscreen exit works', async () => {
+    await check('landscape controls fit and the menu leaves and enters fullscreen', async () => {
+      // Tapping Play took the game fullscreen; Fullscreen in the menu switches it off and on.
+      const toggleFullscreen = async on => {
+        await openMenu();
+        assert.equal(await page.locator('#fullscreen').textContent(), on ? 'Fullscreen' : 'Exit fullscreen');
+        await page.locator('#fullscreen').tap();
+        await page.waitForFunction(value => Boolean(document.fullscreenElement) === value, on);
+      };
+      await toggleFullscreen(false);
       await page.setViewportSize({ width: 800, height: 360 });
       await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720');
       await streamSettled();
       await layout('landscape');
-      await openMenu();
-      await page.locator('#fullscreen').tap();
-      await page.waitForFunction(() => Boolean(document.fullscreenElement));
-      await page.waitForFunction(() => !document.querySelector('#touch-exit-fullscreen').hidden);
-      assert.equal(await page.locator('#touch-exit-fullscreen').isVisible(), true);
-      const exitBounds = await page.locator('#touch-exit-fullscreen').boundingBox();
-      assert.ok(exitBounds.width >= 44 && exitBounds.height >= 44, 'fullscreen exit must have a >=44 px target');
+      await toggleFullscreen(true);
       await fullscreenClearance('landscape');
-      await page.locator('#touch-exit-fullscreen').tap();
-      await page.waitForFunction(() => !document.fullscreenElement);
-      await page.waitForFunction(() => document.querySelector('#touch-exit-fullscreen').hidden);
-      assert.equal(await page.locator('#touch-exit-fullscreen').isVisible(), false);
+      await toggleFullscreen(false);
       await page.setViewportSize({ width: 667, height: 375 });
       await layout('narrowLandscape');
-      await openMenu();
-      await page.locator('#fullscreen').tap();
-      await page.waitForFunction(() => Boolean(document.fullscreenElement));
-      await page.waitForFunction(() => !document.querySelector('#touch-exit-fullscreen').hidden);
+      await toggleFullscreen(true);
       await advancingMedia('narrowLandscape');
       await fullscreenClearance('narrow-landscape');
-      await page.locator('#touch-exit-fullscreen').tap();
-      await page.waitForFunction(() => !document.fullscreenElement);
+      await toggleFullscreen(false);
     });
     await check('menu game buttons support keyboard activation without duplicate touch clicks', async () => {
       const comic = page.locator('[data-send="113"]'); // Comic view in the menu presses native F2.

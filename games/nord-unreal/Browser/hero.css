@@ -6,10 +6,14 @@
 .hero-tagline { margin: 12px 0 16px; font-size: clamp(13px, 1.6vw, 18px); font-weight: 900; letter-spacing: 2px; }
 #watch-trailer { min-height: 44px; padding: 10px 18px; background: var(--yellow); color: var(--ink); border-color: var(--ink); font-size: 15px; box-shadow: 5px 5px 0 var(--cyan); }
 #watch-trailer:hover { background: var(--paper); color: var(--ink); border-color: var(--ink); }
-#trailer-dialog { width: min(1100px, 94vw); padding: 0; border: 4px solid var(--yellow); background: #000; color: var(--paper); overflow: visible; }
-#trailer-dialog::backdrop { background: #05050be6; }
-#trailer-video { display: block; width: 100%; max-height: 80dvh; background: #000; }
-#close-trailer { position: absolute; top: -48px; right: -4px; background: var(--yellow); color: var(--ink); border-color: var(--yellow); }
+/* The full trailer covers the whole screen, with Close in the top corner. */
+#trailer-dialog { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #000; color: var(--paper); overflow: hidden; }
+#trailer-dialog::backdrop { background: #000; }
+.trailer-stage { position: relative; width: 100%; height: 100%; background: #000; }
+#trailer-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
+#close-trailer { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 1; min-height: 44px; background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 4px 4px 0 #c2185b; }
 @media (max-width: 900px) { #overlay { gap: 14px; } .hero-tagline { margin: 8px 0 12px; letter-spacing: 1px; } }
 .hero-sound { position: absolute; top: 12px; right: 12px; z-index: 2; background: var(--yellow); color: var(--ink); border-color: var(--ink); }
 .touch-input .hero-sound { min-height: 44px; }
+/* In fullscreen the title screen's ☰ Menu takes the top right corner. */
+#frame:fullscreen .hero-sound { right: auto; left: max(12px, env(safe-area-inset-left)); }

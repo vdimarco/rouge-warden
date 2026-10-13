@@ -3,6 +3,7 @@ const heroVideo = document.getElementById('hero-video');
 const soundButton = document.getElementById('hero-sound');
 const dialog = document.getElementById('trailer-dialog');
 const trailer = document.getElementById('trailer-video');
+const stage = document.getElementById('trailer-stage');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 // Visitors on data saver or with reduced motion keep the still poster.
 const stillOnly = () => reducedMotion.matches || navigator.connection?.saveData === true;
@@ -53,16 +54,28 @@ function unlockSound() {
 for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, unlockSound, { once: true, capture: true });
 soundButton.addEventListener('click', () => setSound(true));
 
+// The trailer fills the screen. Where the browser allows it, it also goes fullscreen; leaving fullscreen closes it.
+let trailerFullscreen = false;
 document.getElementById('watch-trailer').addEventListener('click', () => {
   heroVideo.pause();
   soundButton.hidden = true;
   dialog.showModal();
   trailer.play().catch(() => {});
+  // Inside a fullscreen game frame the dialog already covers the screen.
+  if (!document.fullscreenElement && document.fullscreenEnabled) stage.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
 });
 document.getElementById('close-trailer').addEventListener('click', () => dialog.close());
 dialog.addEventListener('close', () => {
   trailer.pause();
+  if (document.fullscreenElement === stage) document.exitFullscreen().catch(() => {});
   setHeroActive(heroActive);
+});
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement === stage) trailerFullscreen = true;
+  else if (trailerFullscreen) {
+    trailerFullscreen = false;
+    if (dialog.open) dialog.close();
+  }
 });
 reducedMotion.addEventListener('change', () => setHeroActive(heroActive));
 portrait.addEventListener('change', () => {

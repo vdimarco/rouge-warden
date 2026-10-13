@@ -27,7 +27,6 @@
       <button id="hero-sound" class="hero-sound" type="button" hidden>🔊 Sound on</button>
       <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
       <div id="touch-controls" aria-label="Touch game controls" hidden>
-        <button id="touch-exit-fullscreen" class="touch-exit" hidden>Exit fullscreen</button>
         <!-- Key senders for the menu's game buttons; touch-controls.js holds a key for a click on them. -->
         <div class="touch-keys" hidden>
           <button data-key="82" tabindex="-1">Recover</button>
@@ -139,10 +138,13 @@
       </section>
     </main>
     <dialog id="trailer-dialog" aria-label="GTA: NORTH trailer">
-      <button id="close-trailer" type="button" aria-label="Close trailer">Close</button>
-      <video id="trailer-video" controls playsinline preload="none" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg"
-        data-landscape-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4"
-        data-portrait-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/b402e7be-c48e-4198-8aae-018f99378ffd.mp4"></video>
+      <!-- Browsers refuse fullscreen for a dialog itself, so this box goes fullscreen. -->
+      <div id="trailer-stage" class="trailer-stage">
+        <button id="close-trailer" type="button" aria-label="Close trailer">Close</button>
+        <video id="trailer-video" controls playsinline preload="none" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg"
+          data-landscape-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4"
+          data-portrait-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/b402e7be-c48e-4198-8aae-018f99378ffd.mp4"></video>
+      </div>
     </dialog>
     <footer>
       <p id="input-note">Keyboard, mouse and touch supported. The host PC must stay online.</p>
