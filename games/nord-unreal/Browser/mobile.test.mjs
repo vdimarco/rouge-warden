@@ -35,6 +35,7 @@ async function check(name, action) {
     console.log(`PASS ${name}`);
   } catch (error) {
     report.checks.push({ name, passed: false, durationMs: Date.now() - started, error: error.message });
+    if (page) report.input.lastStats = await page.evaluate(() => window.__nordQaStats?.slice(-8));
     throw error;
   }
 }
@@ -116,7 +117,9 @@ function frameDifference(before, after) {
 
 async function layout(name) {
   const geometry = await page.evaluate(() => {
-    const names = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
+    const names = [...(document.querySelector('#touch-controls').dataset.driving === 'true'
+      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]'] : ['[data-stick="move"]']),
+      '#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
       visible: !document.querySelector('#touch-controls').hidden,
@@ -128,6 +131,11 @@ async function layout(name) {
       })
     };
   });
+  assert.equal(await page.locator('[data-stick="look"]').count(), 0, 'look pad is removed');
+  const actions = geometry.targets.filter(target => target.selector.startsWith('#touch-'));
+  assert.equal(new Set(actions.map(target => target.y)).size, 2, 'actions occupy two rows');
+  assert.equal(new Set(actions.map(target => target.x)).size, 2, 'actions occupy two columns');
+  for (const target of actions) assert.ok(target.width >= 72 && target.height >= 72, 'large square action targets');
   assert.equal(geometry.visible, true, 'touch controls must be visible while playing');
   assert.equal(geometry.overflowX, false, 'no horizontal overflow');
   for (const target of geometry.targets) {
@@ -136,6 +144,10 @@ async function layout(name) {
     assert.ok(target.x >= 0 && target.y >= 0 && target.x + target.width <= geometry.viewport.width + 1 &&
       target.y + target.height <= geometry.viewport.height + 1,
     `${target.selector} must fit the viewport`);
+  }
+  for (const [index, a] of geometry.targets.entries()) for (const b of geometry.targets.slice(index + 1)) {
+    assert.ok(Math.min(a.x + a.width, b.x + b.width) <= Math.max(a.x, b.x) ||
+      Math.min(a.y + a.height, b.y + b.height) <= Math.max(a.y, b.y), 'touch targets must not overlap');
   }
   report.input[`${name}Layout`] = geometry;
   await page.screenshot({ path: resolve(output, `${name}-playing.png`) });
@@ -148,16 +160,17 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu',
-      ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
+    const selectors = [...(document.querySelector('#touch-controls').dataset.driving === 'true'
+      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]'] : ['[data-stick="move"]']),
+      '#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'];
     const video = document.querySelector('#video video');
     const image = bounds(video);
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
-      ['radar and credits', 1018, 96, 262, 212], ['objective', 790, 470, 490, 160],
-      ['speed digits and units', 1040, 624, 240, 39], ['prompt', 305, 620, 575, 100],
-      ['completion', 490, 150, 310, 100], ['movement hint', 22, 620, 340, 40]
+      ['radar and credits', 1018, 96, 240, 230], ['objective', 540, 22, 460, 170],
+      ['speed digits and units', 674, 624, 164, 74], ['prompt', 240, 620, 539, 100],
+      ['completion', 490, 150, 310, 100]
     ].map(([name, x, y, width, height]) => ({ name,
       x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
       width: width * image.width / 1280, height: height * image.height / 720 }));
@@ -167,15 +180,7 @@ async function fullscreenClearance(name) {
       targets: selectors.map(selector => {
         const element = document.querySelector(selector);
         const target = bounds(element);
-        let ink = target;
-        if (element.closest('.touch-primary')) {
-          const chip = getComputedStyle(element, '::before');
-          // Transparent hit targets may cover old keyboard hints; visible chips must clear the HUD.
-          ink = { x: target.x + parseFloat(chip.left), y: target.y + parseFloat(chip.top),
-            width: target.width - parseFloat(chip.left) - parseFloat(chip.right),
-            height: target.height - parseFloat(chip.top) - parseFloat(chip.bottom) };
-        }
-        return { selector, ...target, ink };
+        return { selector, ...target, ink: target };
       })
     };
   });
@@ -305,12 +310,20 @@ try {
     // send is always called; this test never fabricates a native input packet.
     const nativeSend = RTCDataChannel.prototype.send;
     window.__nordQaSends = [];
+    window.__nordQaStats = [];
+    const dispatch = EventTarget.prototype.dispatchEvent;
+    EventTarget.prototype.dispatchEvent = function (event) {
+      if (event.type === 'statsReceived') window.__nordQaStats.push({
+        fps: event.data?.aggregatedStats?.inboundVideoStats?.framesPerSecond,
+        state: document.body?.dataset.state, size: document.body?.dataset.streamSize });
+      return dispatch.call(this, event);
+    };
     RTCDataChannel.prototype.send = function (data) {
       const result = nativeSend.call(this, data);
       const bytes = data instanceof ArrayBuffer ? new Uint8Array(data)
         : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
       if (bytes?.length && window.__nordQaSends.length < 2000) {
-        window.__nordQaSends.push({ id: bytes[0], bytes: Array.from(bytes.slice(0, 12)),
+        window.__nordQaSends.push({ id: bytes[0], bytes: Array.from(bytes.slice(0, bytes[0] === 51 ? 256 : 12)),
           readyState: this.readyState, label: this.label, at: performance.now() });
       }
       return result;
@@ -328,15 +341,33 @@ try {
   if (await connectFriend()) {
     await check('tapping Play takes the game fullscreen', () =>
       page.waitForFunction(() => document.fullscreenElement?.id === 'frame', null, { timeout: 5000 }));
+    await check('actual native possession arrives on reconnect and restores the matching controls', async () => {
+      await page.waitForFunction(() => ['true', 'false'].includes(document.querySelector('#touch-controls').dataset.driving));
+      const driving = await page.locator('#touch-controls').getAttribute('data-driving');
+      report.input.reconnectedDriving = driving === 'true';
+      if (driving === 'true') {
+        assert.equal(await page.locator('#touch-gas').getAttribute('data-key'), '87');
+        await page.locator('#touch-use').tap();
+        await page.waitForFunction(() => document.querySelector('#touch-controls').dataset.driving === 'false');
+      }
+    });
     await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));
+    await check('phone video uses the smaller frame and 1.5 Mbps ceiling', async () => {
+      const video = await media();
+      assert.ok(video.width * video.height <= 800 * 450, 'phone decoder pixel budget');
+      const commands = (await sends()).filter(packet => packet.id === 51).map(packet =>
+        new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
+      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":1500000')), 'native 1.5 Mbps command');
+      report.input.phoneBudget = { width: video.width, height: video.height, maxBitrate: 1500000 };
+    });
     await check('portrait controls fit and meet target size', () => layout('portrait'));
     await check('a phone held upright gets a tall game frame with every control in its bottom 42%', async () => {
       const geometry = await page.evaluate(() => {
         const box = selector => document.querySelector(selector).getBoundingClientRect();
         const video = document.querySelector('#video video');
         const frame = box('#frame');
-        const controls = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
+        const controls = ['[data-stick="move"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
           .map(selector => ({ selector, top: box(selector).top }));
         return { portraitStream: document.body.classList.contains('portrait-stream'), width: video.videoWidth, height: video.videoHeight,
           frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
@@ -352,13 +383,70 @@ try {
         assert.ok(control.top >= geometry.frame.top + geometry.frame.height * .58, `${control.selector} must sit under the game HUD`);
       }
     });
+    await check('real car possession switches to separate steering and pedals, then restores walking', async () => {
+      // Reach the authored starter car through real walking input if this slot is still on the sidewalk.
+      for (let attempt = 0; attempt < 7; attempt++) {
+        await page.locator('#touch-use').tap();
+        await page.waitForTimeout(750);
+        if (await page.locator('#touch-controls').getAttribute('data-driving') === 'true') break;
+        const towardCar = finger(1, await center('[data-stick="move"]', 38, 0));
+        await touch('touchStart', [towardCar]);
+        await page.waitForTimeout(500);
+        await releaseAllTouches();
+      }
+      await page.waitForFunction(() => document.querySelector('#touch-controls').dataset.driving === 'true');
+      assert.equal(await page.locator('[data-stick="move"]').isHidden(), true);
+      assert.equal(await page.locator('#touch-gas').getAttribute('data-key'), '87');
+      assert.equal(await page.locator('#touch-brake').getAttribute('data-key'), '83');
+      assert.equal(await page.locator('#touch-use b').textContent(), 'Exit');
+      await layout('drivingPortrait');
+      const before = await framePixels();
+      const since = (await sends()).length;
+      const gas = finger(1, await center('#touch-gas'));
+      const left = finger(2, await center('.touch-steering [data-key="65"]'));
+      await touch('touchStart', [gas]);
+      await touch('touchStart', [gas, left]);
+      await waitForPacket(60, 87, since);
+      await waitForPacket(60, 65, since);
+      await page.waitForTimeout(700);
+      const steerReleased = (await sends()).length;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [left] });
+      await waitForPacket(61, 65, steerReleased);
+      assert.equal((await sends()).slice(steerReleased).some(record => record.id === 61 && record.bytes[1] === 87), false,
+        'releasing steering must keep Gas held');
+      const brakeStart = (await sends()).length;
+      const brake = finger(3, await center('#touch-brake'));
+      await touch('touchStart', [gas, brake]);
+      await waitForPacket(61, 87, brakeStart);
+      await waitForPacket(60, 83, brakeStart);
+      await page.waitForTimeout(700);
+      await page.screenshot({ path: resolve(output, 'driving-brake-held.png') });
+      await releaseAllTouches();
+      assert.ok(frameDifference(before, await framePixels()) > 1, 'actual car video changes while driving');
+      await page.setViewportSize({ width: 800, height: 360 });
+      await streamSettled();
+      await layout('drivingLandscape');
+      await fullscreenClearance('driving-landscape');
+      await page.setViewportSize({ width: 667, height: 375 });
+      await streamSettled();
+      await layout('drivingNarrowLandscape');
+      await fullscreenClearance('driving-narrow-landscape');
+      await page.setViewportSize({ width: 360, height: 800 });
+      await streamSettled();
+      await page.locator('#touch-use').tap();
+      await page.waitForFunction(() => document.querySelector('#touch-controls').dataset.driving === 'false');
+      assert.equal(await page.locator('#touch-gas').getAttribute('data-key'), '16');
+      assert.equal(await page.locator('#touch-brake').getAttribute('data-key'), '32');
+      assert.equal(await page.locator('.touch-steering').isHidden(), true);
+      assert.equal(await page.locator('[data-stick="move"]').isVisible(), true);
+    });
     await check('simultaneous move, look and jump use the native data channel', async () => {
       const beforeFrame = await framePixels();
       const since = (await sends()).length;
       const moveStart = finger(1, await center('[data-stick="move"]'));
       const moveForward = finger(1, await center('[data-stick="move"]', 0, -38));
-      const lookStart = finger(2, await center('[data-stick="look"]'));
-      const lookRight = finger(2, await center('[data-stick="look"]', 35, 0));
+      const lookStart = finger(2, await center('#video'));
+      const lookRight = finger(2, await center('#video', 35, 0));
       const jump = finger(3, await center('[data-key="32"]'));
       await touch('touchStart', [moveStart]);
       await touch('touchMove', [moveForward]);
@@ -368,12 +456,15 @@ try {
       await waitForPacket(60, 87, since); // W
       await waitForPacket(74, null, since); // look MouseMove
       await waitForPacket(60, 32, since); // Space
+      assert.equal(await page.locator('[data-key="32"]').getAttribute('data-pressed'), 'true');
+      assert.equal(await page.locator('[data-key="32"]').evaluate(button => getComputedStyle(button).backgroundColor),
+        'rgb(255, 227, 63)', 'held Jump lights its full button face');
       await page.waitForTimeout(550);
       await page.screenshot({ path: resolve(output, 'portrait-three-finger-held.png') });
       const held = (await sends()).slice(since);
       assert.ok(hasKey(held, 60, 87) && hasKey(held, 60, 32));
       assert.ok(held.some(record => record.id === 74 && record.bytes.length >= 9),
-        'look pad must send a real MouseMove packet');
+        'image drag must send a real MouseMove packet');
       const afterFrame = await framePixels();
       const meanRgbDelta = frameDifference(beforeFrame, afterFrame);
       assert.ok(meanRgbDelta > 1, `stream image must change during movement (delta ${meanRgbDelta})`);
@@ -409,6 +500,23 @@ try {
       const delta = frameDifference(before, await framePixels());
       assert.ok(delta > 1, `dragging must change decoded game video (${delta})`);
       report.input.anywhereLook = { meanRgbDelta: delta, packets: (await sends()).slice(since) };
+    });
+    await check('extreme vertical drags reach both camera limits', async () => {
+      const { width, height } = page.viewportSize();
+      for (const [label, direction] of [['up', -1], ['down', 1]]) {
+        const since = (await sends()).length;
+        for (let i = 0; i < 3; i++) {
+          const start = { x: Math.round(width * .5), y: Math.round(height * .5) };
+          await touch('touchStart', [finger(7, start)]);
+          await touch('touchMove', [finger(7, { x: start.x, y: start.y + Math.round(height * .3) * direction })]);
+          await releaseAllTouches();
+          await page.waitForTimeout(100);
+        }
+        await waitForPacket(74, null, since);
+        await page.waitForTimeout(400);
+        await page.screenshot({ path: resolve(output, `portrait-camera-${label}.png`) });
+      }
+      report.input.cameraBounds = 'Extreme input screenshots require visual review; native automation checks projected head/feet bounds.';
     });
     await check('opt-in simulated gyro sends real native look input and turns off', async () => {
       await page.evaluate(() => {
@@ -457,7 +565,7 @@ try {
       };
       await toggleFullscreen(false);
       await page.setViewportSize({ width: 800, height: 360 });
-      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720');
+      await page.waitForFunction(() => ['800x450', '640x360'].includes(document.body.dataset.streamSize));
       await streamSettled();
       await layout('landscape');
       await toggleFullscreen(true);
@@ -493,6 +601,28 @@ try {
       await comic.tap();
       const tapPackets = await assertSinglePulse(touchStart, 'touch tap');
       report.input.comicActivation = { keyboard, touch: tapPackets };
+    });
+    await check('sustained receiver pressure lowers the phone stream', async () => {
+      const alreadyReduced = await page.evaluate(() => document.body.dataset.streamSize === '640x360');
+      await page.evaluate(() => {
+        for (const peer of window.__nordQaPeers) {
+          const original = peer.getStats.bind(peer);
+          peer.getStats = async (...args) => {
+            const stats = await original(...args);
+            return new Map([...stats].map(([id, stat]) => [id,
+              stat.type === 'inbound-rtp' && (stat.kind || stat.mediaType) === 'video'
+                ? { ...stat, framesPerSecond: 10 } : stat]));
+          };
+        }
+      });
+      report.input.adaptiveDebug = await page.evaluate(() => window.__nordQaStats.slice(-8));
+      await page.waitForFunction(() => document.body.dataset.streamSize === '640x360', null, { timeout: 20000 });
+      await streamSettled();
+      await advancingMedia('adaptiveLowFrame');
+      const commands = (await sends()).filter(packet => packet.id === 51).map(packet =>
+        new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
+      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":1000000')), 'adaptive native bandwidth cap');
+      report.input.adaptiveStream = { requested: '640x360', maxBitrate: 1000000, trigger: alreadyReduced ? 'actual receiver pressure before injection' : 'injected low FPS; real resized video' };
     });
     await check('touch release on disconnect leaves no held native key', async () => {
       const moveStart = finger(4, await center('[data-stick="move"]'));

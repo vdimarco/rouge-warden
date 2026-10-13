@@ -27,7 +27,7 @@ QUALITY = ",".join("sg." + name + "Quality 2" for name in (
     "ViewDistance", "AntiAliasing", "Shadow", "GlobalIllumination", "Reflection",
     "PostProcess", "Texture", "Effects", "Foliage")) + (
     ",sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,"
-    "r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 30,MediaIO.EnableExperimentalScheduling 0")
+    "r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 30")
 
 
 # The public host runs the live sky. A QA lifecycle may pin it, for example
@@ -153,21 +153,40 @@ def preflight():
 
 
 def sky_arguments():
-    arguments = os.environ.get("NORD_SKY_ARGS", "").split()
+    arguments = os.environ.get("NORD_SKY_ARGS", "-NordHour=15 -NordFreezeTime").split()
     for argument in arguments:
         require(SKY_ARGUMENT.fullmatch(argument), "NORD_SKY_ARGS accepts only -NordFixedSky, -NordDynamicSky, -NordFreezeTime, "
                 "-NordFreezeWeather, -NordHour=, -NordDayMinutes=, -NordSkySeed= and -NordWeather=; rejected " + repr(argument))
     return arguments
 
 
+def stream_settings():
+    flags = os.environ.get("NORD_STREAM_FLAGS", "idle").split()
+    require(len(flags) == len(set(flags)) and set(flags) <= {"idle", "windowed"},
+            "NORD_STREAM_FLAGS accepts idle and windowed, separated by spaces.")
+    bitrate = os.environ.get("NORD_STREAM_BITRATE", "2000000,100000,12000000")
+    require(re.fullmatch(r"[0-9]+,[0-9]+,[0-9]+", bitrate) is not None,
+            "NORD_STREAM_BITRATE must be start,min,max in bit/s.")
+    start, minimum, maximum = map(int, bitrate.split(","))
+    require(100000 <= minimum <= start <= maximum <= 12000000,
+            "NORD_STREAM_BITRATE requires 100000 <= min <= start <= max <= 12000000.")
+    scheduling = os.environ.get("NORD_STREAM_SCHEDULING", "0")
+    require(scheduling in ("0", "1"), "NORD_STREAM_SCHEDULING must be 0 or 1.")
+    return {"flags": flags, "start_bitrate": start, "min_bitrate": minimum, "max_bitrate": maximum,
+            "scheduling": int(scheduling)}
+
+
 def game_command(friend, log):
+    settings = stream_settings()
     # shortcut: VP8 avoids this PC's stalled H264 capture; retest hardware encoding after UE/driver upgrades.
     arguments = [str(BINARY), "Quebec", "127.0.0.1:7791" if friend else "/Game/Maps/LaFontaine?listen",
                  "-RenderOffscreen", "-ForceRes", "-ResX=1280", "-ResY=720", "-AudioMixer", "-Unattended", "-NoDebugExecBindings",
                  "-PixelStreamingConnectionURL=ws://127.0.0.1:8888", "-PixelStreamingEncoderCodec=VP8",
-                 "-PixelStreamingWebRTCFps=30", "-PixelStreamingWebRTCMaxBitrate=12000000",
-                 "-PixelStreamingWebRTCStartBitrate=8000000", "-PixelStreamingKeyFilter=Tilde", "-PixelStreamingID=" + ("NordFriend1" if friend else "NordHost"),
-                 "-ExecCmds=" + QUALITY, "-abslog=" + str(log)]
+                 "-PixelStreamingWebRTCFps=30", f"-PixelStreamingWebRTCMaxBitrate={settings['max_bitrate']}",
+                 f"-PixelStreamingWebRTCMinBitrate={settings['min_bitrate']}",
+                 f"-PixelStreamingWebRTCStartBitrate={settings['start_bitrate']}", "-PixelStreamingKeyFilter=Tilde", "-PixelStreamingID=" + ("NordFriend1" if friend else "NordHost"),
+                 "-ExecCmds=" + QUALITY + f",MediaIO.EnableExperimentalScheduling {settings['scheduling']}", "-abslog=" + str(log)]
+    arguments += ["-NordStreamFps", "-NordTouchControls"] + [{"idle": "-NordIdleThrottle", "windowed": "-windowed"}[flag] for flag in settings["flags"]]
     arguments += ["-NordNoCampaignSave", "-saveddirsuffix=BrowserGuest"] if friend else ["-port=7791", *sky_arguments()]
     return arguments
 
@@ -179,6 +198,7 @@ def run():
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise RuntimeError("Another browser streaming lifecycle is already running.") from error
+        settings = stream_settings()
         ice_config = preflight()
         stamp = time.strftime("%Y%m%d-%H%M%S", time.gmtime()) + f"-{os.getpid()}"
         ice = OUT / ("ice-" + stamp + ".json")
@@ -186,7 +206,8 @@ def run():
             json.dump(ice_config, handle)
         children = []
         logs = []
-        state = {"launcher_pid": os.getpid(), "phase": "starting", "infrastructure_sha": INFRA_SHA, "children": []}
+        state = {"launcher_pid": os.getpid(), "phase": "starting", "infrastructure_sha": INFRA_SHA,
+                 "stream_settings": settings, "children": []}
         state_path = OUT / "lifecycle.json"
 
         def record():
@@ -315,7 +336,35 @@ def self_check():
     assert all("-NoDebugExecBindings" in command for command in (host, friend))
     assert all("-PixelStreamingKeyFilter=Tilde" in command for command in (host, friend))
     with patch.dict(os.environ, {}, clear=True):
-        assert not any(argument.lower().startswith("-nord") for argument in game_command(False, Path("host.log")))
+        assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-NordHour=15", "-NordFreezeTime"]
+        assert stream_settings() == {"flags": ["idle"], "start_bitrate": 2000000, "min_bitrate": 100000,
+                                     "max_bitrate": 12000000, "scheduling": 0}
+    with patch.dict(os.environ, {"NORD_STREAM_BITRATE": "1000000,300000,4000000", "NORD_STREAM_SCHEDULING": "1"}):
+        for friend_slot in (False, True):
+            command = game_command(friend_slot, Path("test.log"))
+            assert "-PixelStreamingWebRTCStartBitrate=1000000" in command
+            assert "-PixelStreamingWebRTCMinBitrate=300000" in command
+            assert "-PixelStreamingWebRTCMaxBitrate=4000000" in command
+            assert any(argument.endswith("MediaIO.EnableExperimentalScheduling 1") for argument in command)
+    for variable, values in {
+        "NORD_STREAM_FLAGS": ("idle idle", "budget", "idle;quit"),
+        "NORD_STREAM_BITRATE": ("", "1,2", "a,b,c", "300000,1000000,4000000", "1000000,300000,13000000", "1000000,99999,4000000", "1e6,300000,4000000", "1000000,300000,4000000;quit"),
+        "NORD_STREAM_SCHEDULING": ("", "2", "0,quit")
+    }.items():
+        for value in values:
+            with patch.dict(os.environ, {variable: value}):
+                try:
+                    stream_settings()
+                except RuntimeError as error:
+                    assert variable in str(error)
+                else:
+                    raise AssertionError("Invalid stream option must prevent launch: " + variable)
+    for flags in ("", "idle", "windowed", "idle windowed", "windowed idle"):
+        with patch.dict(os.environ, {"NORD_STREAM_FLAGS": flags}):
+            for friend_slot in (False, True):
+                command = game_command(friend_slot, Path("test.log"))
+                assert ("-NordIdleThrottle" in command) == ("idle" in flags)
+                assert ("-windowed" in command) == ("windowed" in flags)
     pinned = "-NordHour=15 -NordWeather=Clear -NordFreezeTime -NordFreezeWeather"
     with patch.dict(os.environ, {"NORD_SKY_ARGS": pinned}):
         assert game_command(False, Path("host.log"))[-4:] == pinned.split()
@@ -348,7 +397,7 @@ def self_check():
             else:
                 raise AssertionError("Occupied ports must be rejected")
     print("Self-check passed: ICE configuration validation, rendered job/GPU memory guards, separate players/save ownership, "
-          "optional pinned host sky, occupied-port rejection.")
+          "validated bitrate/scheduling/idle options, optional pinned host sky, occupied-port rejection.")
 
 
 if __name__ == "__main__":

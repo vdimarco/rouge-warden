@@ -246,22 +246,24 @@ try {
     document.querySelector('.touch-keys').addEventListener('click', event => window.__keyClicks.push(event.target.dataset.key), true);
   });
   assert.equal(await phonePage.locator('header').isHidden(), true, 'the header hides while playing on a phone');
-  // Compact comic chips stay bottom-right inside 44 px touch targets.
-  const chips = await phonePage.evaluate(() => [...document.querySelectorAll('.touch-primary button')].map(button => {
+  // Round game buttons stay separated in two bottom-right rows.
+  const buttons = await phonePage.locator('.touch-primary button').evaluateAll(elements => elements.map(button => {
     const box = button.getBoundingClientRect();
-    const chip = getComputedStyle(button, '::before');
-    return { top: box.top, left: box.left, right: box.right, height: box.height,
-      chip: box.height - parseFloat(chip.top) - parseFloat(chip.bottom) };
+    return { top: box.top, left: box.left, right: box.right, width: box.width, height: box.height,
+      radius: parseFloat(getComputedStyle(button).borderTopLeftRadius), icon: button.querySelector('svg')?.getBoundingClientRect().height,
+      border: parseFloat(getComputedStyle(button).borderTopWidth), background: getComputedStyle(button).backgroundColor };
   }));
-  assert.equal(chips.length, 4);
-  for (const chip of chips) {
-    assert.ok(chip.height >= 44 && chip.chip <= 32, `each button is a 44 px target with a small chip (${chip.height}, ${chip.chip})`);
-    assert.equal(chip.top, chips[0].top, 'the chips sit in one row');
-    assert.ok(chip.chip <= 24, 'the visible chips are compact');
+  assert.equal(buttons.length, 4);
+  assert.equal(new Set(buttons.map(button => button.top)).size, 2, 'two rows');
+  assert.equal(new Set(buttons.map(button => button.left)).size, 2, 'two columns');
+  for (const button of buttons) {
+    assert.ok(button.width >= 88 && button.height >= 88, '88 px portrait thumb targets');
+    assert.ok(button.radius >= 50 && button.icon >= 28, 'round faces with clear action icons');
+    assert.ok(button.border > 0 && button.background !== 'rgba(0, 0, 0, 0)', 'full visible button faces');
   }
-  assert.ok(chips[0].left > 390 / 2 && Math.abs(chips.at(-1).right - (390 - 8)) <= 1, 'the compact row is anchored at the right edge');
-  const menuButton = await phonePage.locator('#touch-menu').boundingBox();
-  assert.ok(menuButton.width >= 44 && menuButton.height >= 44, 'the ☰ button is a >=44 px target');
+  assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons.at(-1).right - (390 - 16)) <= 1, 'bottom-right grid');
+  assert.ok(buttons[1].left - buttons[0].right >= 12 && buttons[2].top - buttons[0].top - buttons[0].height >= 12, '12 px thumb clearance');
+  assert.equal(await phonePage.locator('[data-stick="look"]').count(), 0, 'image drag replaces the look pad');
   await phonePage.locator('#touch-menu').click();
   assert.equal(await phonePage.locator('.menu-game').isVisible(), true);
   await phonePage.screenshot({ path: '.qa/menu-390-playing.png' });
@@ -272,6 +274,8 @@ try {
   await phonePage.locator('#crew-toggle').click();
   assert.equal(await phonePage.locator('#crew-picker').isVisible(), true, 'Crew opens the crew list');
   assert.equal(await phonePage.locator('#menu').isHidden(), true);
+  const crewBounds = await phonePage.locator('#crew-picker').boundingBox();
+  assert.ok(crewBounds.y + crewBounds.height + 16 <= buttons[0].top, 'crew list clears the larger action grid');
   await phonePage.locator('#crew-close').click();
   assert.equal(await phonePage.locator('#crew-picker').isHidden(), true, 'Close shuts the crew list');
   await phonePage.evaluate(() => {

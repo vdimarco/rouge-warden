@@ -47,7 +47,7 @@ The game is a native Unreal neighborhood around Parc La Fontaine and 1334 Sherbr
 
 The campaign is **NORD: One More Tomorrow**, about saving the park from a Boogeyman who traps days inside comic panels. Only two missions are implemented: the chalet worklight/plunger rescue and an ordered seven-gate street race. The remaining six missions are design material in `Design/SaveThePark.md`, not playable content. Mission-boundary saves/reload, encounter recovery and race replay exist; unfinished missions restart at their boundary on reload. Host progression is shared; character choice is connection-local. Faces are static: no facial rig, blinking or lip sync.
 
-Controls: WASD movement/driving; mouse look; Shift sprint; Space jump/handbrake; E contextual interaction/car entry; C crew cycle; F2 per-player comic toggle; R recover; T replay completed race; Esc release browser mouse. The browser has movement/look pads and action buttons. Each browser slot controls a separate native game instance.
+Controls: WASD movement/driving; mouse look; Shift sprint; Space jump/handbrake; E contextual interaction/car entry; C crew cycle; F2 per-player comic toggle; R recover; T replay completed race; Esc release browser mouse. The browser has a movement stick, drag-anywhere/gyro look and larger action buttons in two bottom-right rows. Each browser slot controls a separate native game instance.
 
 ### Accepted graphics changes
 

@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-13",
+  "baseline_commit": "a4f5d279a9159a5678028623d7b5b905d22ad655",
+  "source_sha256": {
+    "Source/Quebec/QuebecGameplay.cpp": "0095e4ff600269ed2b0372f86a7cca76389ef8210d45059226d771c64e544e11",
+    "Scripts/browser_streaming.py": "24c5870585fc5183e64ba747868ef184fffde99a5e73eb001e4abf15a0bfabfb",
+    "Browser/index.html": "9f5072b660fb03fbd8c0c7034213f4d14689a35191356ff3486ec8b9ebb0e216",
+    "Browser/styles.css": "72220ba1e063f181ecf5dd92296864da2dd0b1a4536a512d7794a77378187b3b",
+    "Browser/touch-controls.js": "200a1de36f5f758eaaae174d3d77c2034ca2f6b67b663a66e3d73440c77e2ab2"
+  },
+  "package_inventory": "Saved/BrowserStreaming/camera-touch-20261013/package.json",
+  "package_files": 48,
+  "rollback": "Builds/BrowserPrevious-camera-touch-20261013",
+  "native_automation": {
+    "passed": 20,
+    "exit_code": 0
+  },
+  "editor_build_exit": 0,
+  "cook_exit": 0,
+  "browser_unit_passed": 18,
+  "browser_ui_passed": true,
+  "mobile": {
+    "passed": 11,
+    "path": "Browser/.qa/mobile-2026-10-13T19-24-03-399Z"
+  },
+  "live": {
+    "passed": 7,
+    "path": "Browser/.qa/live-2026-10-13T19-24-31-734Z"
+  },
+  "editor_render": {
+    "assertions_passed": 13,
+    "exit_code": 139,
+    "accepted_as_completed_run": false,
+    "diagnostic_capture_directory": "Saved/Tests/CameraTouch20261013-final",
+    "diagnosis": "Core stack: SNotificationExtendable / FTSTicker callback destruction frees ICU text layout after editor exit. Disabling notifications after startup did not eliminate it. No engine or shutdown code changed."
+  },
+  "preservation": {
+    "map_and_save_hashes_unchanged": true,
+    "runtime_directories_copied_and_verified": 5,
+    "tunnels_preserved": true
+  },
+  "production": {
+    "status": "READY; alias verified; public checks passed",
+    "deployment_id": "dpl_5Yqut2hZGXTUcWdibNLtqaguwERa",
+    "url": "https://nord-montreal.vercel.app/",
+    "static_files_match": 12,
+    "mobile": {
+      "passed": 11,
+      "path": "Browser/.qa/mobile-2026-10-13T19-30-22-275Z"
+    },
+    "live": {
+      "passed": 7,
+      "path": "Browser/.qa/live-2026-10-13T19-30-50-008Z"
+    }
+  },
+  "not_checked": [
+    "Physical phone and gyro sensors",
+    "Carrier network",
+    "Audible sound and driving feel",
+    "Full campaign",
+    "Separate Builds/Linux PC package not refreshed"
+  ],
+  "merge_commit": "0178976b46f8a106b3c5d50937f11a6696a9eab6",
+  "pull_request": "https://github.com/vdimarco/rouge-warden/pull/339",
+  "sampler": {
+    "mode": "10-second ordinary direct image-drag sweep",
+    "decoded_fps": 29.941889096818674,
+    "drops": 0,
+    "freezes": 0,
+    "path": "Saved/BrowserStreaming/samples/2026-10-13T19-26-21-552Z-NordFriend1"
+  },
+  "spec_validation": "Manual artifact, requirement and scenario checks passed; OpenSpec CLI unavailable"
+}

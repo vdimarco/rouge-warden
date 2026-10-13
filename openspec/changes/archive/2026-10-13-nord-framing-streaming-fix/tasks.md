@@ -1,0 +1,5 @@
+- [x] Correct camera framing and regression checks.
+- [x] Measure baseline and improve mobile stream negotiation/encoding.
+- [x] Build, cook, install preserving saves and inspect extreme views.
+- [x] Verify direct/relay and public controls; merge and deploy.
+- [x] Record measured limits and archive completed specification.

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>Slingshot Home · Light Years Home Lab</title>
+<meta name="description" content="Lab prototype B: grab a galaxy, whip round it and let go. Swing home faster than light can age you.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ccircle cx='16' cy='17' r='11' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='17' r='3' fill='%23fff'/%3E%3Cpath d='M9 24 L3 30' stroke='%23f08a2c' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+/* Slingshot Home: black space, white points, thin white rings, bold uppercase captions with the word in orange. */
+:root {
+  --ink: #fff; --accent: #f08a2c; --muted: rgba(255, 255, 255, 0.62);
+  --st: env(safe-area-inset-top, 0px); --sr: env(safe-area-inset-right, 0px);
+  --sb: env(safe-area-inset-bottom, 0px); --sl: env(safe-area-inset-left, 0px);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --shade: 0 1px 1px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: #000; color: var(--ink); overflow: hidden; overscroll-behavior: none; }
+/* no pinch or pan anywhere, so a second finger on a button never cancels the thumb that holds a swing */
+html, body, button, a { touch-action: none; }
+body { font: 15px/1.4 var(--font); -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none; }
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#ov { pointer-events: none; }
+button { font: inherit; color: inherit; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* HUD */
+.hud { position: fixed; inset: 0; pointer-events: none; text-shadow: var(--shade); }
+.speed { position: absolute; top: calc(var(--st) + 12px); left: calc(var(--sl) + 16px); }
+.speed b { display: block; font: 800 22px/1 var(--font); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+.speed b .hot { color: var(--accent); }
+.speed small { display: block; margin-top: 6px; font: 800 11px/1 var(--font); letter-spacing: 0.16em; color: var(--muted); }
+.speed small.on { color: #fff; }
+/* the speed flashes orange when you climb back to a nine, red when a press or a drop costs you speed */
+.speed.up b { animation: up 0.5s ease-out; }
+.speed.down b { animation: down 0.6s ease-out; }
+@keyframes up { 0% { color: var(--accent); transform: scale(1.12); } 100% { color: #fff; transform: scale(1); } }
+@keyframes down { 0% { color: #ff5a3c; transform: translateX(-3px); } 30% { transform: translateX(3px); }
+  100% { color: #fff; transform: none; } }
+.speed b { transform-origin: left center; }
+.clock { position: absolute; top: calc(var(--st) + 12px); right: calc(var(--sr) + 68px); text-align: right; }
+.clock b { display: block; font: 800 22px/1 var(--font); font-variant-numeric: tabular-nums; }
+.clock small { display: block; margin-top: 6px; font: 700 10px/1 var(--font); letter-spacing: 0.16em; color: var(--muted); }
+.clock.ls b { color: var(--accent); }
+.pause { position: fixed; top: calc(var(--st) + 6px); right: calc(var(--sr) + 10px); width: 48px; height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 12px; background: rgba(0, 0, 0, 0.35); cursor: pointer;
+  display: grid; place-items: center; font: 800 16px/1 var(--font); letter-spacing: 0.08em; }
+.pause:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* callouts: caption style, away from the ring you aim at. Portrait: 74 % down, under the orbit. Landscape and
+   desktop: high in the middle, between the speed and the clock, because in flight the ship and the mass you are about
+   to grab fill the lower part of a wide screen */
+.callout { position: fixed; left: 0; right: 0; top: 74%; transform: translateY(-50%); text-align: center; pointer-events: none;
+  padding: 0 calc(var(--sr) + 16px) 0 calc(var(--sl) + 16px); font: 800 34px/1.15 var(--font); letter-spacing: 0.01em;
+  text-transform: uppercase; text-shadow: var(--shade); }
+.callout span { color: #fff; }
+.callout span.now { color: var(--accent); }
+.callout .sub { display: block; margin-top: 6px; font: 800 13px/1.2 var(--font); letter-spacing: 0.16em; color: var(--muted); }
+.callout.pop { animation: pop 0.22s ease-out; }
+.callout.grey span { color: rgba(255, 255, 255, 0.6); }
+.callout.red span { color: #ff5a3c; }
+.callout.hot span { color: var(--accent); }
+.callout.pulse { animation: pulse 0.9s ease-in-out infinite; }
+@keyframes pop { from { transform: translateY(-50%) scale(1.35); opacity: 0.2; } to { transform: translateY(-50%) scale(1); opacity: 1; } }
+@keyframes pulse { 50% { opacity: 0.45; } }
+.big { position: fixed; left: calc(var(--sl) + 16px); top: calc(var(--st) + 52px); text-align: left; pointer-events: none;
+  text-shadow: var(--shade); font: 800 44px/1 var(--font); font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
+  transform-origin: left top; }
+.big .hot { color: var(--accent); }
+.big.go { animation: big 1.3s ease-out forwards; }
+@keyframes big { 0% { transform: scale(1.3); opacity: 0; } 10% { transform: scale(1); opacity: 1; }
+  70% { opacity: 1; transform: scale(1); } 100% { transform: translateY(-36px) scale(0.5); opacity: 0; } }
+@media (orientation: landscape) {
+  .callout { top: calc(var(--st) + 15%); padding: 0 120px; }
+  .big { font-size: 36px; top: calc(var(--st) + 48px); }
+}
+
+/* screens: title, pause, result */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: calc(var(--st) + 24px) calc(var(--sr) + 20px) calc(var(--sb) + 24px) calc(var(--sl) + 20px);
+  text-align: center; text-shadow: var(--shade); }
+.screen.dim { background: rgba(0, 0, 0, 0.58); }
+.eyebrow { font: 800 11px/1.4 var(--font); letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 0; }
+h1 { margin: 0; font: 800 clamp(40px, 5.2vw, 76px)/1.02 var(--font); letter-spacing: 0.01em; text-transform: uppercase; }
+h1 .now { color: var(--accent); }
+.line { margin: 0; max-width: 30ch; font: 600 clamp(15px, 1.3vw, 19px)/1.4 var(--font); color: rgba(255, 255, 255, 0.86); }
+.how { margin: 0; font: 800 13px/1.5 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
+.how span { color: var(--accent); }
+.btn { min-height: 48px; min-width: 140px; padding: 0 22px; border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35); cursor: pointer; font: 800 14px/1 var(--font); letter-spacing: 0.12em;
+  text-transform: uppercase; }
+.btn.go { border-color: var(--accent); background: rgba(240, 138, 44, 0.16); }
+.btn:hover { background: rgba(255, 255, 255, 0.12); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.back { min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; color: var(--muted); font: 600 14px var(--font);
+  text-decoration: none; border-radius: 10px; }
+.back:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.start { animation: pulse 1.4s ease-in-out infinite; }
+.title-top { position: fixed; top: calc(var(--st) + 6px); left: calc(var(--sl) + 8px); }
+
+.vista { position: fixed; left: 0; right: 0; top: 46%; transform: translateY(-50%); text-align: center; pointer-events: none;
+  padding: 0 16px; font: 800 24px/1.3 var(--font); letter-spacing: 0.04em; text-transform: uppercase; color: #000; }
+.vista span.now { color: var(--accent); }
+
+.card { width: min(360px, 100%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.card .rank { font: 800 14px/1 var(--font); letter-spacing: 0.2em; color: var(--accent); }
+.card .homelabel { font: 700 11px/1 var(--font); letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
+.card .home { font: 800 46px/1 var(--font); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.card .best { font: 700 12px/1.2 var(--font); letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
+.card .best.new { color: var(--accent); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 10px; width: 100%; margin: 6px 0 4px; padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.18); border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+.stats div { display: flex; flex-direction: column; gap: 3px; }
+.stats b { font: 800 16px/1 var(--font); font-variant-numeric: tabular-nums; }
+.stats small { font: 700 9px/1 var(--font); letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
+.copied { min-height: 16px; font: 600 12px var(--font); color: var(--muted); }
+.again-how { font: 600 12px var(--font); color: var(--muted); }
+@media (orientation: landscape) and (max-height: 500px) {
+  .callout { font-size: 28px; top: calc(var(--st) + 50px); }
+  .screen { gap: 8px; }
+  h1 { font-size: 34px; }
+  .card { width: min(560px, 100%); gap: 6px; }
+  .card .home { font-size: 34px; }
+  .card .homelabel, #rTitle { display: none; }
+  .card .back { min-height: 32px; }
+  .stats { grid-template-columns: repeat(6, 1fr); padding: 6px 0; }
+}
+@media (min-width: 1000px) and (min-height: 640px) {
+  .big { font-size: 52px; top: calc(var(--st) + 56px); }
+  .card { width: 460px; gap: 12px; }
+  .card .home { font-size: 64px; }
+  .card .rank { font-size: 16px; }
+  .stats b { font-size: 20px; }
+  .stats small { font-size: 10px; }
+  .vista { font-size: 34px; }
+  .speed b, .clock b { font-size: 26px; }
+}
+.debug-note { position: fixed; bottom: calc(var(--sb) + 6px); right: calc(var(--sr) + 10px); font: 600 10px var(--font); color: var(--muted); }
+@media (prefers-reduced-motion: reduce) {
+  .callout.pop, .big.go, .start, .callout.pulse { animation: none; }
+  .big.go { opacity: 1; }
+}
+</style>
+<script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<canvas id="ov" aria-hidden="true"></canvas>
+
+<div class="hud" id="hud" hidden>
+  <div class="speed" id="speedBox"><b id="speed">0.7615c</b><small id="chain">YOUR SPEED</small></div>
+  <div class="clock" id="clockBox"><b id="clock">+0.00 YR</b><small>YOU AGED</small></div>
+</div>
+<button type="button" class="pause" id="pause" aria-label="Pause" hidden>II</button>
+<div class="big" id="big" aria-live="polite"></div>
+<div class="callout" id="callout" aria-live="polite"></div>
+<div class="vista" id="vista" hidden></div>
+
+<section class="screen dim" id="title">
+  <a class="back title-top" href="/light-years-home/lab/">‹ Lab</a>
+  <p class="eyebrow">Lab · B</p>
+  <h1>Slingshot <span class="now">Home</span></h1>
+  <p class="line">Swing star to star, a billion light-years home. Stay young.</p>
+  <p class="how">Hold to <span>grab</span> · let go to <span>fling</span></p>
+  <button type="button" class="btn go start" id="play">Tap to fly</button>
+</section>
+
+<section class="screen dim" id="pausecard" hidden>
+  <p class="eyebrow">Paused</p>
+  <div class="row">
+    <button type="button" class="btn go" id="resume">Go on</button>
+    <button type="button" class="btn" id="restart">Restart</button>
+  </div>
+  <div class="row">
+    <button type="button" class="btn" id="mute">Sound on</button>
+    <button type="button" class="btn" id="camera">Camera: chase</button>
+  </div>
+  <div class="row">
+    <a class="back" href="/light-years-home/lab/">‹ Lab</a>
+    <button type="button" class="back" data-switch>Switch game</button>
+  </div>
+</section>
+
+<section class="screen dim" id="result" hidden>
+  <div class="card">
+    <p class="eyebrow" id="rTitle">The web · home to Coma</p>
+    <div class="rank" id="rRank">NAVIGATOR</div>
+    <div class="homelabel">Home, and you aged</div>
+    <div class="home" id="rHome">+2.40 YR</div>
+    <div class="best" id="rBest">BEST +2.40 YR</div>
+    <div class="stats" id="rStats"></div>
+    <div class="best" id="rEarly" hidden></div>
+    <div class="row">
+      <button type="button" class="btn go" id="again">Again</button>
+      <button type="button" class="btn" id="copy">Copy log</button>
+    </div>
+    <div class="copied" id="copied" aria-live="polite"></div>
+    <div class="again-how" id="againHow">Tap anywhere or press Space to fly again</div>
+    <a class="back" href="/light-years-home/lab/">‹ Lab</a>
+  </div>
+</section>
+
+<script type="module" src="./main.js"></script>
+<script src="/arcade/switch.js"></script>
+<script src="/arcade/analytics.js" data-game="light-years-home"></script>
+</body>
+</html>

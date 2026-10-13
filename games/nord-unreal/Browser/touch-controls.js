@@ -7,6 +7,10 @@ export function setupTouchControls({ root, surface, stream }) {
   const activations = new Map();
   let heldKeys = new Set();
   let enabled = false;
+  let driving = null;
+  const gasButton = document.getElementById('touch-gas');
+  const brakeButton = document.getElementById('touch-brake');
+  const useButton = document.getElementById('touch-use');
   let gyro = false;
   let gyroRequest = 0;
   let motionTime = null;
@@ -22,7 +26,11 @@ export function setupTouchControls({ root, surface, stream }) {
   }
 
   function look(x, y) {
-    sendLook(stream.webRtcController.coordinateConverter.translateSigned(x, y));
+    const delta = stream.webRtcController.coordinateConverter.translateSigned(x, y);
+    const video = stream.webRtcController.videoPlayer.getVideoElement();
+    // Preserve drag gain when performance adaptation changes the encoded frame size.
+    const scale = 1280 / (Math.max(video.videoWidth, video.videoHeight) || 1280);
+    sendLook({ x: delta.x * scale, y: delta.y * scale });
   }
 
   function stopGyro(message = 'Drag anywhere on the game to look.') {
@@ -98,6 +106,7 @@ export function setupTouchControls({ root, surface, stream }) {
 
   function syncKeys() {
     const next = new Set([...activations.keys(), ...[...pointers.values()].flatMap(pointer => pointer.keys)]);
+    if (driving && next.has(83)) next.delete(87);
     for (const key of heldKeys) if (!next.has(key)) send('KeyUp', [key]);
     for (const key of next) if (!heldKeys.has(key)) send('KeyDown', [key, 0]);
     heldKeys = next;
@@ -154,6 +163,32 @@ export function setupTouchControls({ root, surface, stream }) {
     enabled = Boolean(value);
     gyroButton.disabled = !enabled;
     root.hidden = !enabled;
+  }
+
+  function setDriving(value) {
+    if (typeof value !== 'boolean' || value === driving) return;
+    releaseAll();
+    driving = value;
+    root.dataset.driving = String(driving);
+    root.querySelector('[data-stick="move"]').hidden = driving;
+    root.querySelector('.touch-steering').hidden = !driving;
+    for (const [button, key, name, hint, label, icon] of [
+      [gasButton, driving ? 87 : 16, driving ? 'Gas' : 'Sprint', 'Hold', driving ? 'Hold to accelerate' : 'Hold to sprint',
+        driving ? '<path d="M10 28V9l12-5v24ZM10 12h12M10 19h12"/>' : null],
+      [brakeButton, driving ? 83 : 32, driving ? 'Brake' : 'Jump', driving ? 'Reverse' : 'On foot',
+        driving ? 'Hold to brake, then reverse when stopped' : 'Jump on foot',
+        driving ? '<path d="M7 12h18v16H7ZM7 19h18M11 5h10"/>' : null],
+      [useButton, 69, driving ? 'Exit' : 'Use', driving ? 'Car' : 'Interact',
+        driving ? 'Exit car' : 'Interact, enter car, toggle worklight', null]
+    ]) {
+      button.dataset.key = String(key);
+      button.querySelector('b').textContent = name;
+      button.querySelector('span').textContent = hint;
+      button.setAttribute('aria-label', label);
+      const svg = button.querySelector('svg');
+      if (!svg.dataset.walkIcon) svg.dataset.walkIcon = svg.innerHTML;
+      svg.innerHTML = icon || svg.dataset.walkIcon;
+    }
   }
 
   function pointerDown(event) {
@@ -213,5 +248,5 @@ export function setupTouchControls({ root, surface, stream }) {
   window.addEventListener('pagehide', () => { releaseAll(); stopGyro(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   setEnabled(false);
-  return { setEnabled, releaseAll };
+  return { setEnabled, releaseAll, setDriving };
 }

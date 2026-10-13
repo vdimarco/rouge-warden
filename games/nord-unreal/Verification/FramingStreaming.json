@@ -1,0 +1,143 @@
+{
+  "date": "2026-10-13",
+  "baseline_commit": "34a03118fc8cea3d66ecd308b8f10f130c77e646",
+  "source_sha256": {
+    "Source/Quebec/QuebecGameplay.cpp": "0a9920bdc7ffadf20ed7eaf8579ed960fe93c0de1065895fcc05e7011edc13d2",
+    "Scripts/browser_streaming.py": "e3126b0ac5d1550eb04287911f2f514e1a8f3bcbbc2362e518f5aada2516db06",
+    "Browser/player.js": "5b8f186e5f6cc33af9af5343f523a56774894922fc88833bbabd4d046e08ae47",
+    "Browser/config.mjs": "1ec9c2f02d8f52c58abfcad4a5aa98cbcc8a4cdcc74af138b563054be6644db6",
+    "Browser/touch-controls.js": "d19a95d290b25af739b94460bee17bbe2599487e58bfa25aa158d9bab40e8d7e"
+  },
+  "native_automation": {
+    "passed": 20,
+    "exit_code": 0,
+    "log": "Saved/BrowserStreaming/framing-stream-20261013/automation-turning.log"
+  },
+  "browser_unit": {
+    "passed": 22
+  },
+  "browser_ui": {
+    "passed": true,
+    "runner_note": "The first retry used the Choose build setting against a fixture requiring NordHost; rerun with NordHost passed."
+  },
+  "mobile": {
+    "passed": 14,
+    "path": "Browser/.qa/mobile-2026-10-13T20-13-11-063Z"
+  },
+  "package": {
+    "files": 48,
+    "runtime_directories_preserved": 5,
+    "inventory": "Saved/BrowserStreaming/framing-stream-20261013/package-turning.json",
+    "rollback": "Builds/BrowserPrevious-framing-stream-20261013"
+  },
+  "camera": {
+    "orbit_pitch": [
+      -25,
+      -5
+    ],
+    "socket_offset_cm": [
+      0,
+      0,
+      55
+    ],
+    "framing_verified": "native capsule endpoint projections and inspected packaged portrait extreme screenshots",
+    "turning_regression": "Rotating the pawn after its camera update retains camera yaw; arm rotation is absolute."
+  },
+  "mobile_stream": {
+    "base_landscape": [
+      800,
+      450
+    ],
+    "base_bitrate": 1500000,
+    "fallback_landscape": [
+      640,
+      360
+    ],
+    "fallback_bitrate": 1000000,
+    "trigger": "5 samples below 24 FPS or above 120 ms buffer delay; any observed freeze",
+    "startup_bitrate": 2000000,
+    "desktop_landscape": [
+      1280,
+      720
+    ],
+    "desktop_max_bitrate": 12000000,
+    "scene_graphics": "unchanged; encoded mobile image intentionally lighter"
+  },
+  "measurements": {
+    "baseline": {
+      "path": "Saved/BrowserStreaming/samples/2026-10-13T19-38-23-704Z-NordFriend1",
+      "fps": 29.847,
+      "jitter_buffer_ms": 89.016,
+      "freezes": 0,
+      "decode_ms": 1.555
+    },
+    "rejected_960_trial": {
+      "path": "Saved/BrowserStreaming/samples/2026-10-13T19-54-53-811Z-NordFriend1",
+      "fps": 29.685,
+      "jitter_buffer_ms": 204.024,
+      "freezes": 2,
+      "decode_ms": 0.902,
+      "note": "Not accepted as a relay smoothness improvement; informed the tighter profile and pressure detection."
+    },
+    "final_relay": {
+      "path": "Saved/BrowserStreaming/samples/2026-10-13T20-04-38-218Z-NordFriend1",
+      "seconds": 30.204,
+      "fps": 29.963,
+      "frame": [
+        640,
+        360
+      ],
+      "received_mbps": 0.246,
+      "jitter_buffer_ms": 40.925,
+      "freezes": 0,
+      "drops": 0,
+      "decode_ms": 0.327,
+      "longest_frame_gap_ms": 166.6,
+      "mode": "forced TURN/TLS; camera sweep; host-PC Chromium",
+      "scope_note": "Before the final turn-attachment correction; streaming profile and stationary camera-sweep behavior unchanged."
+    }
+  },
+  "h264": {
+    "accepted": false,
+    "reason": "Initial image decoded, then no advancing decoded frames in the 10-second observation; VP8 restored."
+  },
+  "editor_render": {
+    "assertions_passed": 13,
+    "exit_code": 139,
+    "accepted_as_completed_run": false,
+    "path": "Saved/Tests/CameraTouch-20261013-154352",
+    "note": "Before the final socket-centering adjustment; known editor teardown failure. Extra reset attempt reverted."
+  },
+  "production": {
+    "status": "READY; all public files and checks verified",
+    "deployment_id": "dpl_HKiY4iAGxn78FSxUErcbJ95puipM",
+    "url": "https://nord-montreal.vercel.app/",
+    "static_files_match": 12,
+    "initial_propagation_attempt": {
+      "path": "Browser/.qa/mobile-2026-10-13T20-19-27-775Z",
+      "reason": "The immediate alias file comparison still saw the old route. The initial phone-budget assertion failed. All 12 normal alias files then matched and a fresh browser run was started."
+    },
+    "mobile": {
+      "passed": 14,
+      "path": "Browser/.qa/mobile-2026-10-13T20-20-27-184Z"
+    },
+    "live": {
+      "passed": 7,
+      "path": "Browser/.qa/live-2026-10-13T20-20-48-716Z"
+    }
+  },
+  "not_checked": [
+    "Physical phone or carrier path",
+    "Audible sound and subjective driving",
+    "Full campaign",
+    "Separate Builds/Linux PC package refresh"
+  ],
+  "openspec_validation": "Manual; CLI unavailable",
+  "live": {
+    "passed": 7,
+    "path": "Browser/.qa/live-2026-10-13T20-06-54-610Z",
+    "runner_note": "Rerun with production NordHost default after the sampler Choose setting caused the occupied-host fixture to wait."
+  },
+  "merge_commit": "b6ee3f56a221bc41f10e69af1616f1336103f7e6",
+  "pull_request": "https://github.com/vdimarco/rouge-warden/pull/340"
+}

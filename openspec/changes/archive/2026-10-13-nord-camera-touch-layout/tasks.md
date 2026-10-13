@@ -1,0 +1,5 @@
+- [x] Implement native camera bounds and browser HUD reservation.
+- [x] Replace action layout and remove look pad, updating tests and sampler.
+- [x] Build, test camera geometry and inspect rendered camera/HUD.
+- [x] Cook/install preserving saves; verify live browser controls and deploy.
+- [x] Record evidence, validate spec structure and archive completed change.

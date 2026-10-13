@@ -216,6 +216,7 @@ private:
     float CaptureClock = 0.f;
     int32 CaptureStep = 0;
     float CampaignAimElapsed = 0.f;
+    float BrowserStateElapsed = 0.f;
     FString BrowserStreamerId;
     void BindBrowserInputRelease();
     void UnbindBrowserInputRelease();

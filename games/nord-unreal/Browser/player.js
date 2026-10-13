@@ -1,6 +1,6 @@
 import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, TextParameters } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8';
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
-import { signallingUrl } from './config.mjs';
+import { signallingUrl, streamDimensions, receiverLagging } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
 
 Logger.InitLogging(LogLevel.Warning, false);
@@ -25,6 +25,10 @@ let timeout;
 let muted = false;
 let streamSize = '';
 let resizeTimer;
+let mobileEdge = 800;
+let phoneBitrate = 1500;
+let poorFrames = 0;
+let previousVideo;
 
 function status(state, title, detail) {
   document.body.dataset.state = state;
@@ -48,7 +52,7 @@ function updateInput() {
   touchRoot.hidden = !touchMode || !playing;
   touchControls?.setEnabled(touchMode && playing);
   element('input-note').textContent = playing
-    ? (touchMode ? 'Drag anywhere on the game to look · Left stick: move / steer · Gyro look in ☰ Menu.'
+    ? (touchMode ? 'Drag anywhere on the game to look · Move / steer on the left · Gas and Brake in cars · Gyro look in ☰ Menu.'
       : locked ? 'You’re in control. Esc releases the mouse.' : 'Click the game to control it. Esc releases the mouse.')
     : `${touchMode ? 'Touch controls appear when you play.' : 'Keyboard + mouse supported.'} The host PC must stay online.`;
 }
@@ -62,24 +66,13 @@ function setMuted(value) {
   muteButton.setAttribute('aria-pressed', String(muted));
 }
 
-// A phone held upright asks the game for a tall frame shaped like the play area; anything else asks for the standard 1280x720.
+// Smaller phone frames leave more bandwidth and decoder time for smooth playback.
 function wantedSize() {
-  const width = frame.clientWidth, height = frame.clientHeight;
-  if (!NORD_PORTRAIT_STREAM || !touchMode || !width || !height) return [1280, 720];
-  const tall = height / width;
-  // Never more pixels than 1280x720: 720 wide up to 9:16, then 1280 high and narrower.
-  const [w, h] = (tall >= 16 / 9 ? [1280 / tall, 1280] : [720, 720 * tall]).map(value => Math.round(value / 2) * 2);
-  // Only clearly tall frames: the game and the page switch layouts at 1.1, well below this.
-  return h >= w * 1.15 ? [w, h] : [1280, 720];
+  return streamDimensions(touchMode, frame.clientWidth, frame.clientHeight, NORD_PORTRAIT_STREAM, mobileEdge);
 }
 
 function requestStreamSize() {
   if (document.body.dataset.state !== 'playing') return;
-  if (!NORD_PORTRAIT_STREAM) {
-    // This build leaves the game at its standard 1280x720.
-    document.body.dataset.streamSize = '1280x720';
-    return;
-  }
   const [width, height] = wantedSize();
   const size = `${width}x${height}`;
   if (size === streamSize || !stream.emitCommand({ 'Resolution.Width': width, 'Resolution.Height': height })) return;
@@ -136,11 +129,17 @@ if (endpoint) {
         [Flags.TouchInput]: false,
         [Flags.GamepadInput]: false,
         [Flags.MatchViewportResolution]: false,
+        [NumericParameters.WebRTCMaxBitrate]: touchMode ? 1500 : 12000,
         [NumericParameters.MaxReconnectAttempts]: 0
       }
     });
     stream = new PixelStreaming(config, { videoElementParent: videoParent });
     touchControls = setupTouchControls({ root: touchRoot, surface: frame, stream });
+    stream.addResponseEventListener('nord-driving', response => {
+      let state;
+      try { state = JSON.parse(response); } catch { return; }
+      if (typeof state?.nordDriving === 'boolean') touchControls.setDriving(state.nordDriving);
+    });
     connectButton.disabled = false;
     status('idle', 'The city is waiting.', 'Connect to a free player and help save Park La Fontaine.');
 
@@ -169,6 +168,24 @@ if (endpoint) {
       status('connecting', 'Opening your player…', 'Connecting to the game. Keep this page open.');
       waitForConnection();
     });
+    stream.addEventListener('initialSettings', () => {
+      // The SDK imports host defaults before this microtask reapplies the player budget.
+      queueMicrotask(() => config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, touchMode ? phoneBitrate : 12000));
+    });
+    stream.addEventListener('statsReceived', event => {
+      if (!touchMode || document.hidden || document.body.dataset.state !== 'playing' || mobileEdge !== 800) return;
+      const video = event.data.aggregatedStats.inboundVideoStats;
+      poorFrames = video.freezeCount > previousVideo?.freezeCount ? 5
+        : receiverLagging(video, previousVideo) ? poorFrames + 1 : 0;
+      previousVideo = { framesDecoded: video.framesDecoded, timestamp: video.timestamp,
+        jitterBufferDelay: video.jitterBufferDelay, jitterBufferEmittedCount: video.jitterBufferEmittedCount,
+        freezeCount: video.freezeCount };
+      if (poorFrames < 5) return;
+      mobileEdge = 640;
+      phoneBitrate = 1000;
+      config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, phoneBitrate);
+      requestStreamSize();
+    });
     stream.addEventListener('videoInitialized', readyToPlay);
     stream.addEventListener('playStreamRejected', readyToPlay);
     stream.addEventListener('playStreamError', event => fail('The stream couldn’t play.', event.data.message));
@@ -184,6 +201,7 @@ if (endpoint) {
     video.addEventListener('playing', () => {
       stopTimeout();
       status('playing', 'You’re in Montréal.', '');
+      config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, touchMode ? phoneBitrate : 12000);
       setTimeout(requestStreamSize, 500);
     });
     // Lay the controls out for the frame the game actually sends: a tall frame puts them all under its HUD.
@@ -199,6 +217,7 @@ if (endpoint) {
       const reconnect = started;
       started = true;
       streamSize = '';
+      mobileEdge = 800; phoneBitrate = 1500; poorFrames = 0; previousVideo = undefined;
       disconnectButton.disabled = false;
       status('connecting', 'Connecting to Montréal…', 'Finding the game host and available players.');
       waitForConnection();
@@ -212,6 +231,7 @@ if (endpoint) {
     streamSelect.addEventListener('change', () => {
       if (streamSelect.disabled || !streamSelect.value) return;
       streamSize = '';
+      mobileEdge = 800; phoneBitrate = 1500; poorFrames = 0; previousVideo = undefined;
       status('connecting', 'Opening your player…', 'Connecting to the selected player.');
       waitForConnection();
       config.setOptionSettingValue(OptionParameters.StreamerId, streamSelect.value);

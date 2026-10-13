@@ -11,21 +11,26 @@ function fixture() {
     setAttribute: (key, value) => attributes.set(key, value), getAttribute: key => attributes.get(key)
   });
   const gyroStatus = { textContent: '' };
-  document.getElementById = id => id === 'gyro-look' ? gyroButton : gyroStatus;
+  document.getElementById = id => id === 'gyro-look' ? gyroButton : id === 'gyro-status' ? gyroStatus : buttons.get(id);
   Object.assign(window, { isSecureContext: true, DeviceMotionEvent: {}, screen: { orientation: { angle: 0 } } });
-  const root = Object.assign(new EventTarget(), { ownerDocument: document, contains: target => controls.includes(target) });
+  const root = Object.assign(new EventTarget(), { dataset: {}, ownerDocument: document, contains: target => controls.includes(target) });
   const controls = [];
   const messages = [];
   const deltas = [];
+  const video = { videoWidth: 1280, videoHeight: 720 };
   const stream = {
     toStreamerHandlers: new Map(['KeyDown', 'KeyUp', 'MouseMove', 'MouseEnter'].map(name => [name, values => messages.push([name, ...values])])),
     webRtcController: { coordinateConverter: { translateSigned: (x, y) => { deltas.push([x, y]); return { x: x * 100, y: y * 100 }; } },
-      videoPlayer: { getVideoElement: () => ({ videoWidth: 1280, videoHeight: 720 }) } }
+      videoPlayer: { getVideoElement: () => video } }
   };
   function control(dataset) {
     const captures = new Set();
     const styles = new Map();
+    const attributes = new Map();
+    const nodes = new Map(['b', 'span', 'svg'].map(name => [name, { textContent: '', innerHTML: name, dataset: {} }]));
     const target = {
+      setAttribute: (name, value) => attributes.set(name, value), getAttribute: name => attributes.get(name),
+      querySelector: name => nodes.get(name),
       dataset, styles, closest(selector) { return selector.includes('[data-stick]') || selector.includes('[data-key]')
         ? (dataset.stick || dataset.key ? this : null) : null; },
       getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
@@ -46,6 +51,10 @@ function fixture() {
     Object.defineProperties(event, { target: { value: target }, detail: { value: detail } });
     root.dispatchEvent(event);
   }
+  const ui = { move: control({ stick: 'move' }), steering: { hidden: true },
+    gas: control({ key: '16' }), brake: control({ key: '32' }), use: control({ key: '69' }) };
+  const buttons = new Map([['touch-gas', ui.gas], ['touch-brake', ui.brake], ['touch-use', ui.use]]);
+  root.querySelector = selector => selector === '.touch-steering' ? ui.steering : ui.move;
   const surface = Object.assign(new EventTarget(), control({}));
   surface.contains = target => target === surface || controls.includes(target);
   function motion(timeStamp, rotationRate, accelerationIncludingGravity = { x: 0, y: 9.8, z: 0 }) {
@@ -53,7 +62,7 @@ function fixture() {
     Object.defineProperties(event, Object.fromEntries(Object.entries({ timeStamp, rotationRate, accelerationIncludingGravity }).map(([key, value]) => [key, { value }])));
     window.dispatchEvent(event);
   }
-  return { root, surface, gyroButton, gyroStatus, motion, document, window, messages, deltas, control, pointer, click,
+  return { ui, video, root, surface, gyroButton, gyroStatus, motion, document, window, messages, deltas, control, pointer, click,
     ...setupTouchControls({ root, surface, stream }) };
 }
 
@@ -113,7 +122,7 @@ test('a second finger cannot steal a stick and duplicate action holds release on
 
 test('look drag uses Epic video-coordinate normalization and bounded signed protocol deltas', () => {
   const f = fixture();
-  const look = f.control({ stick: 'look' });
+  const look = f.surface;
   f.setEnabled(true);
   f.pointer('pointerdown', look, 1, 80, 40);
   f.pointer('pointermove', look, 1, 90, 35);
@@ -127,7 +136,7 @@ test('look drag uses Epic video-coordinate normalization and bounded signed prot
 test('dragging the game image looks while another finger moves; a second look finger cannot steal it', () => {
   const f = fixture();
   const move = f.control({ stick: 'move' });
-  const look = f.control({ stick: 'look' });
+  const look = f.surface;
   f.setEnabled(true);
   f.pointer('pointerdown', move, 1, 50, 0);
   f.pointer('pointerdown', f.surface, 2, 20, 20);
@@ -290,4 +299,70 @@ test('a permitted sensor that sends no samples stays off with an explanation', a
   assert.equal(f.gyroButton.disabled, false);
   assert.equal(f.gyroButton.getAttribute('aria-pressed'), 'false');
   assert.deepEqual(f.messages, []);
+});
+
+
+test('adaptive video sizes keep the same native drag gain in each orientation', () => {
+  for (const sizes of [[[1280, 720], [800, 450], [640, 360]], [[576, 1280], [360, 800], [288, 640]]]) {
+    const f = fixture();
+    f.setEnabled(true);
+    const gains = [];
+    for (const [width, height] of sizes) {
+      f.video.videoWidth = width; f.video.videoHeight = height;
+      f.pointer('pointerdown', f.surface, 1, 20, 20);
+      f.pointer('pointermove', f.surface, 1, 30, 20);
+      gains.push(f.messages.at(-1)[3] * width);
+      f.pointer('pointerup', f.surface, 1);
+    }
+    assert.deepEqual(gains, [gains[0], gains[0], gains[0]]);
+  }
+});
+
+
+test('actual driving mode separates steering and pedals, prioritizes brake and ignores repeated/invalid state', () => {
+  const f = fixture();
+  f.setEnabled(true);
+  f.pointer('pointerdown', f.ui.gas);
+  f.setDriving(true);
+  assert.deepEqual(f.messages, [['KeyDown', 16, 0], ['KeyUp', 16]]);
+  assert.equal(f.ui.move.hidden, true);
+  assert.equal(f.ui.steering.hidden, false);
+  assert.equal(f.ui.gas.dataset.key, '87');
+  assert.equal(f.ui.brake.dataset.key, '83');
+  assert.equal(f.ui.use.querySelector('b').textContent, 'Exit');
+  const left = f.control({ key: '65' });
+  f.pointer('pointerdown', f.ui.gas);
+  f.pointer('pointerdown', left, 2);
+  f.setDriving(true);
+  f.setDriving('false');
+  assert.deepEqual(f.messages.slice(-2), [['KeyDown', 87, 0], ['KeyDown', 65, 0]]);
+  f.pointer('pointerup', left, 2);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 65]);
+  f.pointer('pointerdown', f.ui.brake, 3);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyDown', 83, 0]]);
+  f.pointer('pointerup', f.ui.brake, 3);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 83], ['KeyDown', 87, 0]]);
+  f.setDriving(false);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 87]);
+  assert.equal(f.ui.move.hidden, false);
+  assert.equal(f.ui.steering.hidden, true);
+  assert.equal(f.ui.gas.dataset.key, '16');
+  assert.equal(f.ui.brake.dataset.key, '32');
+  assert.equal(f.ui.brake.querySelector('svg').innerHTML, 'svg');
+});
+
+test('driving controls release on menu, rotation, blur, cancel and disconnect', () => {
+  for (const reason of ['menu', 'resize', 'blur', 'cancel', 'disconnect']) {
+    const f = fixture();
+    f.setEnabled(true); f.setDriving(true);
+    const right = f.control({ key: '68' });
+    f.pointer('pointerdown', f.ui.gas); f.pointer('pointerdown', right, 2);
+    if (reason === 'menu') f.releaseAll();
+    else if (reason === 'disconnect') f.setEnabled(false);
+    else if (reason === 'cancel') { f.pointer('pointercancel', f.ui.gas); f.pointer('pointercancel', right, 2); }
+    else f.window.dispatchEvent(new Event(reason));
+    assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyUp', 68]], reason);
+    assert.equal(f.ui.gas.dataset.pressed, 'false');
+    assert.equal(right.dataset.pressed, 'false');
+  }
 });
