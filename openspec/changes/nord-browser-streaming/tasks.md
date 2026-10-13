@@ -66,3 +66,10 @@
 - [x] Turn tall frames on: the host ran the rebuilt game (`main` at `8924968c`, after the smoke test fix for the standard-view default), `NORD_PORTRAIT_STREAM` is `1` in the project, and production serves `dpl_7ydHZhL1tsXuJgJdwjJLTgizm4jp`; every served file matches a local build with the flag on. Not checked here: whether the host applies the tall size (this container receives no video).
 - [ ] Host: rebuild and repackage, run the smoke test, then check on a phone held upright that the game honors the resolution request and run `mobile.test.mjs`; deploy the player with the default build after that. If the stream stays 1280x720, do not allow Pixel Streaming commands on the public host; follow `openspec/changes/nord-stream-speed` (game-side size handler).
 - [ ] Confirm the start screen, the tall game and the hidden move stick on a physical phone.
+
+## Mobile camera and compact actions — 2026-10-13
+
+- [x] Enable drag-to-look over the game area, including letterboxing, while preserving stick/button pointer ownership and desktop input.
+- [x] Add opt-in gyro look with consent, missing-data feedback, orientation handling and interruption cleanup.
+- [x] Put compact action chips at bottom-right in all phone layouts, retaining 44 px hit targets and safe-area spacing.
+- [ ] Run input unit checks, responsive browser checks and actual-stream drag/simulated-gyro checks, then release the tested page. Record physical-device limits.

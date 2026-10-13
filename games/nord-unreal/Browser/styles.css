@@ -14,6 +14,7 @@ select { max-width: 240px; }
 main { position: relative; flex: 1; min-height: 440px; background: #05050b; overflow: hidden; }
 #video { position: absolute; inset: 0; width: 100%; height: 100%; outline: none; }
 #video video { object-fit: contain; }
+.touch-input[data-state="playing"] #frame { touch-action: none; }
 #overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 32px; background: #0b0a16d9; }
 [hidden] { display: none !important; }
 .caption { width: min(560px, 100%); background: var(--yellow); color: var(--ink); border: 4px solid var(--ink); padding: 28px 30px; box-shadow: 9px 9px 0 var(--cyan); }
@@ -41,17 +42,18 @@ footer p { margin: 0; }
 #touch-controls button[data-pressed="true"] span { color: var(--ink); }
 /* Sprint, Jump, Use and the menu: a small skewed chip drawn inside a transparent 44 px touch target. */
 #touch-controls .touch-primary button { position: relative; }
-/* The vertical padding matches the chip's inset, so a label that wraps on a very narrow phone grows the chip with it. */
-#touch-controls .touch-primary button { isolation: isolate; background: transparent; border: 0; box-shadow: none; padding: 7px 13px; }
+/* Keep the ink low in the hit target, below landscape speed digits. */
+#touch-controls .touch-primary button { isolation: isolate; background: transparent; border: 0; box-shadow: none; width: 44px; height: 44px; padding: 21px 3px 3px; font-size: 10px; letter-spacing: .02em; }
 #touch-controls .touch-primary button::before {
-  content: ""; position: absolute; z-index: -1; inset: 7px 3px;
+  content: ""; position: absolute; z-index: -1; inset: 20px 3px 0;
   background: var(--ink); border: 1.5px solid var(--paper);
   box-shadow: 0 0 0 2px var(--ink), 2px 2px 0 2px #c2185b;
   transform: skewX(-9deg);
 }
 #touch-controls .touch-primary button[data-pressed="true"] { background: transparent; box-shadow: none; }
 #touch-controls .touch-primary button[data-pressed="true"]::before { background: var(--yellow); box-shadow: 0 0 0 2px var(--ink), 1px 1px 0 2px #c2185b; }
-#touch-controls #touch-menu { padding: 7px 15px; font-size: 15px; letter-spacing: 0; }
+#touch-controls .touch-primary button span { margin-top: 0; font-size: 8px; }
+#touch-controls #touch-menu { padding: 21px 3px 3px; font-size: 13px; letter-spacing: 0; }
 /* Sticks: a paper ring inside an ink ring around a halftone-dot fill. */
 .touch-stick { position: absolute; width: 96px; height: 96px; border: 2px solid var(--paper); border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle, #fffaf03d 0 1.1px, transparent 1.6px) 0 0 / 6px 6px, #0b0a1673;
@@ -68,7 +70,7 @@ footer p { margin: 0; }
 .move-stick[data-pressed="true"] { opacity: 0; }
 .look-cross { color: #fffaf0cc; font: 900 26px/1 Impact, "Arial Black", Arial, sans-serif; text-shadow: 2px 2px 0 var(--ink); pointer-events: none; }
 .look-stick[data-pressed="true"] .look-cross { color: var(--cyan); }
-.touch-primary { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, auto); gap: 6px 8px; }
+.touch-primary { position: absolute; right: max(8px, env(safe-area-inset-right)); bottom: max(4px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 44px); gap: 2px; }
 .touch-input { height: 100dvh; overflow: hidden; }
 .touch-input main { min-height: 0; }
 .touch-input header { gap: 8px; padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); }
@@ -81,8 +83,6 @@ footer p { margin: 0; }
 @media (max-width: 550px) {
   .move-stick, .look-stick { bottom: max(92px, calc(env(safe-area-inset-bottom) + 76px)); }
   .look-stick { right: max(16px, env(safe-area-inset-right)); }
-  .touch-primary { left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); grid-template-columns: repeat(4, auto); justify-content: center; column-gap: 10px; bottom: max(16px, env(safe-area-inset-bottom)); }
-  #touch-controls .touch-primary button span { display: inline; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
   .touch-input footer { display: none; }
@@ -96,11 +96,6 @@ footer p { margin: 0; }
   .touch-input #frame:fullscreen .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: calc(35% + 4px); }
   .touch-input #frame:fullscreen .stick-label { font-size: 7.5px; letter-spacing: .04em; }
   .touch-input #frame:fullscreen .look-stick { right: max(16px, env(safe-area-inset-right)); top: auto; bottom: calc(35% + 4px); }
-  .touch-input #frame:fullscreen .touch-primary {
-    right: auto; left: 42%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
-    grid-template-columns: repeat(4, auto); gap: 6px;
-  }
-  .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 7px 10px; font-size: 10.5px; }
 }
 
 /* Phone crew picker: eight crew members in two columns, opened from the menu. */
@@ -117,10 +112,8 @@ footer p { margin: 0; }
 
 /* While playing on a touch screen, the play area takes the footer's space too. */
 .touch-input[data-state="playing"] footer { display: none; }
-/* A tall frame from the game fills the play area, and every control sits in its bottom 40%, under the game's HUD: one row of buttons with the sticks above it. */
+/* A tall frame fills the play area; sticks stay above the compact bottom-right buttons. */
 .touch-input.portrait-stream #video { top: 0; bottom: 0; height: auto; }
-.touch-input.portrait-stream .touch-primary { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); grid-template-columns: repeat(4, auto); justify-content: center; column-gap: 10px; }
-.touch-input.portrait-stream #touch-controls .touch-primary button span { display: inline; }
 /* The sticks shrink on short phones (down to 76 px) so the controls stay inside the bottom 40% the game keeps clear. */
 .touch-input.portrait-stream #frame { container-type: size; }
 .touch-input.portrait-stream .touch-stick { --stick: clamp(76px, calc(40cqh - 70px), 96px); width: var(--stick); height: var(--stick); }

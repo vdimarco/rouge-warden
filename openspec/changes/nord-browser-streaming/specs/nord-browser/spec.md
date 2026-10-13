@@ -54,17 +54,25 @@ The browser player SHALL provide touch controls on touch-capable devices using t
 
 #### Scenario: Move, look and act on a phone
 - **WHEN** a touch-capable browser plays a connected stream in portrait or landscape
-- **THEN** a left stick moves or steers, a right pad looks around, and clearly labelled buttons provide sprint, jump/handbrake, interact/car, crew, recovery, race replay and comic view
+- **THEN** a left stick moves or steers, dragging anywhere in the game area (including letterboxing) or the right pad looks around, and clearly labelled buttons provide sprint, jump/handbrake, interact/car, crew, recovery, race replay and comic view
 - **AND** simultaneous fingers can move, look and hold an action without capturing the desktop mouse
 - **AND** controls remain within the viewport, have at least 44-pixel touch targets and remain available in fullscreen
 - **AND** action buttons accept keyboard or assistive click activation without duplicating ordinary touch actions
 
 #### Scenario: Controls stay small and read like comic lettering
 - **WHEN** a touch screen is playing
-- **THEN** Sprint, Jump / brake, Use / car and ☰ are small slanted ink chips, about 30 px tall, with a paper outline, Impact capitals and a magenta offset shadow, each drawn inside a 44 px touch target
+- **THEN** Sprint, Jump / brake, Use / car and ☰ are compact slanted ink chips, about 24 px tall, with a paper outline, Impact capitals and a magenta offset shadow, each drawn inside a 44 px touch target
 - **AND** a pressed chip turns yellow and drops into its shadow
-- **AND** on a phone held upright, up to 550 px wide, the chips sit in one centred row instead of a full-width bar, with each label on one line where it fits; on narrower phones a chip grows with its wrapped label
+- **AND** the four actions sit in one compact row at the bottom-right in portrait, landscape and fullscreen, inside safe-area insets
 - **AND** the sticks are 76-96 px rings with a halftone fill and the stick name inside the ring, and the look pad turns cyan only while it is dragged
+
+#### Scenario: Look around using the phone gyroscope
+- **WHEN** a player enables Gyro look in the game menu and grants motion access when their browser requests it
+- **THEN** moving the phone left/right or tilting it changes that player's camera through the existing native look input in either screen orientation
+- **AND** drag-to-look and movement/action touches remain available together
+- **AND** the menu stays open with useful feedback if permission is denied or no valid motion data arrives
+- **AND** gyro stops sending while a menu is open, the page loses focus or is hidden, and disabling or disconnecting removes its motion listener
+- **AND** resuming after interruption or screen rotation establishes a fresh sample instead of jumping the camera
 
 #### Scenario: Release interrupted touch input
 - **WHEN** a held touch is lifted, cancelled or loses capture, or the page loses focus, is hidden, rotates or disconnects

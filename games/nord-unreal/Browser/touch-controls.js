@@ -1,10 +1,100 @@
-export function setupTouchControls({ root, stream }) {
+export function setupTouchControls({ root, surface, stream }) {
   const document = root.ownerDocument;
+  const window = document.defaultView;
+  const gyroButton = document.getElementById('gyro-look');
+  const gyroStatus = document.getElementById('gyro-status');
   const pointers = new Map();
   const activations = new Map();
   let heldKeys = new Set();
   let enabled = false;
+  let gyro = false;
+  let gyroRequest = 0;
+  let motionTime = null;
+  let motionTimeout;
+  let focused = true;
   const send = (name, values) => stream.toStreamerHandlers.get(name)?.(values);
+
+  function sendLook(delta) {
+    if (Number.isFinite(delta.x) && Number.isFinite(delta.y)) {
+      const signed = value => Math.max(-32767, Math.min(32767, Math.round(value)));
+      if (signed(delta.x) || signed(delta.y)) send('MouseMove', [32768, 32768, signed(delta.x), signed(delta.y)]);
+    }
+  }
+
+  function look(x, y) {
+    sendLook(stream.webRtcController.coordinateConverter.translateSigned(x, y));
+  }
+
+  function stopGyro(message = 'Drag anywhere on the game to look.') {
+    gyroRequest++;
+    gyro = false;
+    motionTime = null;
+    clearTimeout(motionTimeout);
+    window.removeEventListener('devicemotion', motion);
+    gyroButton.disabled = !enabled;
+    gyroButton.setAttribute('aria-pressed', 'false');
+    gyroStatus.textContent = message;
+  }
+
+  function motion(event) {
+    if (!gyro || !enabled || !focused || document.hidden) {
+      motionTime = null;
+      return;
+    }
+    const rate = event.rotationRate;
+    if (!rate || ![rate.alpha, rate.beta, rate.gamma, event.timeStamp].every(Number.isFinite)) return;
+    clearTimeout(motionTimeout);
+    if (gyroButton.getAttribute('aria-pressed') !== 'true') {
+      gyroButton.setAttribute('aria-pressed', 'true');
+      gyroStatus.textContent = 'Gyro on. Move your phone to look; dragging still works.';
+      send('MouseEnter', []);
+    }
+    if (root.inert || surface.inert) { motionTime = null; return; }
+    const seconds = motionTime === null ? 0 : (event.timeStamp - motionTime) / 1000;
+    motionTime = event.timeStamp;
+    if (seconds <= 0 || seconds > .1) return;
+    const angle = (window.screen?.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
+    let yaw = rate.beta * Math.sin(angle) + rate.gamma * Math.cos(angle);
+    const gravity = event.accelerationIncludingGravity;
+    if (gravity && [gravity.x, gravity.y, gravity.z].every(Number.isFinite)) {
+      const length = Math.hypot(gravity.x, gravity.y, gravity.z);
+      if (length > 1) yaw = (rate.beta * gravity.x + rate.gamma * gravity.y + rate.alpha * gravity.z) / length;
+    }
+    const pitch = rate.beta * Math.cos(angle) - rate.gamma * Math.sin(angle);
+    // Use native pixels so gyro gain does not change with the phone's CSS size or letterboxing.
+    const pixels = rate => Math.abs(rate) < .3 ? 0 : -Math.max(-10, Math.min(10, rate * seconds)) * 6;
+    const video = stream.webRtcController.videoPlayer.getVideoElement();
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      sendLook({ x: pixels(yaw) * 65534 / video.videoWidth, y: pixels(pitch) * 65534 / video.videoHeight });
+    }
+  }
+
+  gyroButton.addEventListener('click', async () => {
+    if (!enabled || gyroButton.disabled) return;
+    if (gyro) { stopGyro(); return; }
+    if (!window.isSecureContext || !window.DeviceMotionEvent) {
+      stopGyro('Motion controls are unavailable on this device. Drag to look.');
+      return;
+    }
+    const request = ++gyroRequest;
+    gyroButton.disabled = true;
+    gyroStatus.textContent = 'Waiting for motion permission…';
+    try {
+      const permission = window.DeviceMotionEvent.requestPermission
+        ? await window.DeviceMotionEvent.requestPermission() : 'granted';
+      if (!enabled || request !== gyroRequest) return;
+      if (permission !== 'granted') { stopGyro('Motion access denied. Drag to look.'); return; }
+      gyro = true;
+      motionTime = null;
+      gyroStatus.textContent = 'Move your phone to start gyro look…';
+      window.addEventListener('devicemotion', motion, { passive: true });
+      motionTimeout = setTimeout(() => stopGyro('No motion data received. Drag to look.'), 2500);
+    } catch {
+      if (request === gyroRequest && enabled) stopGyro('Motion access could not be enabled. Drag to look.');
+    } finally {
+      if (request === gyroRequest) gyroButton.disabled = !enabled;
+    }
+  });
 
   function syncKeys() {
     const next = new Set([...activations.keys(), ...[...pointers.values()].flatMap(pointer => pointer.keys)]);
@@ -30,11 +120,7 @@ export function setupTouchControls({ root, stream }) {
       pointer.target.style.setProperty('--stick-y', `${y * scale}px`);
       syncKeys();
     } else if (pointer.stick === 'look') {
-      const delta = stream.webRtcController.coordinateConverter.translateSigned(event.clientX - pointer.x, event.clientY - pointer.y);
-      if (Number.isFinite(delta.x) && Number.isFinite(delta.y)) {
-        const signed = value => Math.max(-32767, Math.min(32767, Math.round(value)));
-        send('MouseMove', [32768, 32768, signed(delta.x), signed(delta.y)]);
-      }
+      look(event.clientX - pointer.x, event.clientY - pointer.y);
       pointer.x = event.clientX;
       pointer.y = event.clientY;
     }
@@ -54,6 +140,7 @@ export function setupTouchControls({ root, stream }) {
   }
 
   function releaseAll() {
+    motionTime = null;
     const active = [...activations.values()];
     for (const activation of active) clearTimeout(activation.timer);
     activations.clear();
@@ -63,15 +150,20 @@ export function setupTouchControls({ root, stream }) {
   }
 
   function setEnabled(value) {
-    if (!value) releaseAll();
+    if (!value) { releaseAll(); stopGyro(); }
     enabled = Boolean(value);
+    gyroButton.disabled = !enabled;
     root.hidden = !enabled;
   }
 
-  root.addEventListener('pointerdown', event => {
-    const target = event.target.closest('[data-stick], [data-key]');
-    if (!enabled || event.button !== 0 || !target || !root.contains(target)) return;
-    const stick = target.dataset.stick;
+  function pointerDown(event) {
+    const control = event.target.closest('[data-stick], [data-key]');
+    const target = control && root.contains(control) ? control : surface.contains(event.target) ? surface : null;
+    if (!enabled || event.button !== 0 || !target) return;
+    if (root.inert || surface.inert) return;
+    if (target === surface && (event.pointerType !== 'touch'
+      || event.target.closest('button, select, a, input, textarea, #menu, #intro, #overlay, #crew-picker'))) return;
+    const stick = target === surface ? 'look' : target.dataset.stick;
     if (stick && [...pointers.values()].some(pointer => pointer.stick === stick)) return;
     const key = Number(target.dataset.key);
     if (!stick && (!Number.isInteger(key) || key < 1 || key > 255)) return;
@@ -83,15 +175,17 @@ export function setupTouchControls({ root, stream }) {
     if (stick === 'move') move(pointer, event);
     else if (stick === 'look') send('MouseEnter', []);
     else syncKeys();
-  });
-  root.addEventListener('pointermove', event => {
+  }
+  function pointerMove(event) {
     const pointer = pointers.get(event.pointerId);
     if (!enabled || !pointer) return;
     event.preventDefault();
     move(pointer, event);
-  });
+  }
+  surface.addEventListener('pointerdown', pointerDown);
+  surface.addEventListener('pointermove', pointerMove);
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-    root.addEventListener(type, event => release(event.pointerId));
+    surface.addEventListener(type, event => release(event.pointerId));
   }
   root.addEventListener('click', event => {
     const target = event.target.closest('button[data-key]');
@@ -109,9 +203,14 @@ export function setupTouchControls({ root, stream }) {
     syncKeys();
   });
   root.addEventListener('contextmenu', event => event.preventDefault());
-  document.defaultView.addEventListener('blur', releaseAll);
-  document.defaultView.addEventListener('resize', releaseAll);
-  document.defaultView.addEventListener('pagehide', releaseAll);
+  document.addEventListener('click', event => {
+    if (event.target.closest?.('[data-menu-toggle]')) releaseAll();
+  });
+  window.addEventListener('blur', () => { focused = false; releaseAll(); });
+  window.addEventListener('focus', () => { focused = true; motionTime = null; });
+  window.addEventListener('resize', releaseAll);
+  window.addEventListener('orientationchange', releaseAll);
+  window.addEventListener('pagehide', () => { releaseAll(); stopGyro(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   setEnabled(false);
   return { setEnabled, releaseAll };

@@ -3,6 +3,7 @@ const menu = document.getElementById('menu');
 const frame = document.getElementById('frame');
 const toggles = [...document.querySelectorAll('[data-menu-toggle]')];
 const crewPicker = document.getElementById('crew-picker');
+const gyroButton = document.getElementById('gyro-look');
 let returnFocus = null;
 let blocked = new Map();
 
@@ -46,6 +47,10 @@ for (const button of menu.querySelectorAll('[data-send]')) {
 for (const id of ['mute', 'fullscreen', 'disconnect']) document.getElementById(id).addEventListener('click', () => setMenu(false));
 document.getElementById('crew-toggle').addEventListener('click', () => setMenu(false), { capture: true });
 document.getElementById('streamer').addEventListener('change', () => setMenu(false));
+// Keep permission and missing-sensor feedback visible; close once real motion data arrives.
+new MutationObserver(() => {
+  if (gyroButton.getAttribute('aria-pressed') === 'true') setMenu(false);
+}).observe(gyroButton, { attributes: true, attributeFilter: ['aria-pressed'] });
 // The player list lives in the menu, so open it when the page asks the player to choose; close it when the game starts.
 new MutationObserver(() => {
   const state = document.body.dataset.state;
