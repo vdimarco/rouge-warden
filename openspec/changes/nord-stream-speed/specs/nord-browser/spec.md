@@ -47,7 +47,7 @@ When the host launcher passes the idle flag, a game process with no connected br
 #### Scenario: The host slot has no viewer while the friend plays
 - **WHEN** NordHost has no browser for more than 90 seconds and a player drives and walks in the NordFriend1 slot
 - **THEN** the host's `NORD_STREAM_FPS` rate is at least the flag-off rate minus 2 FPS
-- **AND** the movement and car checks of `live.test.mjs` pass on NordFriend1, and the host log has no warnings or errors that the flag-off run does not have.
+- **AND** the friend-only mode of `live.test.mjs` (`NORD_LIVE_SLOTS=NordFriend1`, which never connects to NordHost) passes its walking and driving checks, and the host log has no warnings or errors that the flag-off run does not have.
 
 #### Scenario: Runs without the flag
 - **WHEN** the game runs in the editor, in automation or smoke tests, in capture runs (`-NordCapture`) or as a native client without the idle flag
