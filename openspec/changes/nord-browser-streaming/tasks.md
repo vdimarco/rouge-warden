@@ -72,4 +72,4 @@
 - [x] Enable drag-to-look over the game area, including letterboxing, while preserving stick/button pointer ownership and desktop input.
 - [x] Add opt-in gyro look with consent, missing-data feedback, orientation handling and interruption cleanup.
 - [x] Put compact action chips at bottom-right in all phone layouts, retaining 44 px hit targets and safe-area spacing.
-- [ ] Run input unit checks, responsive browser checks and actual-stream drag/simulated-gyro checks, then release the tested page. Record physical-device limits.
+- [x] Run input unit checks, responsive browser checks and actual-stream drag/simulated-gyro checks, then release the tested page. 17 unit tests, static Chromium, desktop7/7, local/preview/public mobile11/11 pass. All 12 served files match; production `dpl_EFdBK9W9FxqccgCsoFRyG3289Aq9` is assigned to the existing address. Physical sensor feel and notched-phone checks remain open in [BrowserMobileLook.md](../../../games/nord-unreal/Verification/BrowserMobileLook.md).
