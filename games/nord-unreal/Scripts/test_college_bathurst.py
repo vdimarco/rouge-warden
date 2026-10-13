@@ -14,7 +14,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 from shapely.geometry import LineString, Point, Polygon, box
-from shapely.ops import unary_union
+from shapely.ops import linemerge, unary_union
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'Scripts'))
@@ -84,13 +84,17 @@ def main():
     saved = lf.ORIGIN
     try:
         lf.ORIGIN = cb.ORIGIN
-        for lat, lon in [(43.6530, -79.4135), (43.6595, -79.4015), (43.6564664, -79.4077041), (43.657, -79.41)]:
+        for lat, lon in [(43.6530, -79.4170), (43.6595, -79.4015), (43.6564664, -79.4077041), (43.657, -79.41)]:
             assert cb.xy(lat, lon) == lf.xy(lat, lon), (lat, lon)
     finally:
         lf.ORIGIN = saved
     assert math.hypot(*cb.xy(*nodes[cb.INTERSECTION])) < 1e-6 and data['landmarks']['intersection']['position'] == [0, 0]
     assert data['origin'] == list(cb.ORIGIN) and data['bounds'] == list(cb.BOUNDS)
-    assert 95000 < x1 - x0 < 98000 and 72000 < y1 - y0 < 73000
+    assert 124000 < x1 - x0 < 126000 and 72000 < y1 - y0 < 73000
+    # The OSM snapshot covers the bounds, and the recorded source URL names its box.
+    snapshot = [float(root.find('bounds').get(k)) for k in ('minlon', 'minlat', 'maxlon', 'maxlat')]
+    assert snapshot[0] < cb.BOUNDS[1] and snapshot[1] < cb.BOUNDS[0] and snapshot[2] > cb.BOUNDS[3] and snapshot[3] > cb.BOUNDS[2], snapshot
+    assert data['sources']['osm'].endswith('bbox=' + ','.join(f'{v:.4f}' for v in snapshot)), data['sources']['osm']
 
     # College and Bathurst exist and reach the district edges they cross.
     roads, names = data['roads'], data['road_names']
@@ -100,6 +104,19 @@ def main():
     assert college and bathurst
     assert min(abs(p[0] - x0) for p in college) < 1 and min(abs(p[0] - x1) for p in college) < 1, 'College Street does not reach west and east'
     assert min(abs(p[1] - y0) for p in bathurst) < 1 and min(abs(p[1] - y1) for p in bathurst) < 1, 'Bathurst Street does not reach south and north'
+    # West along College the district takes in Euclid Avenue and three blocks past it to Grace Street. Each crosses College
+    # inside the bounds, in that order going west, and College runs unbroken from Bathurst to the west edge, more than 50 m
+    # past Grace.
+    college_line = unary_union([LineString(r) for r, n in zip(roads, names) if n == 'College Street'])
+    crossings = []
+    for name in ('Euclid Avenue', 'Manning Avenue', 'Clinton Street', 'Grace Street'):
+        street = unary_union([LineString(r) for r, n in zip(roads, names) if n == name])
+        assert street.length >= 30000 and street.intersects(college_line), (name, street.length)
+        crossings.append(street.intersection(college_line).centroid.x)
+    assert 0 > crossings[0] > crossings[1] > crossings[2] > crossings[3] > x0 + 5000, crossings
+    west = linemerge([LineString(r) for r, n in zip(roads, names) if n == 'College Street' and max(p[0] for p in r) <= 0])
+    assert west.geom_type == 'LineString' and abs(max(west.coords[0][0], west.coords[-1][0])) < 1, 'College Street is broken west of Bathurst'
+    assert abs(min(west.coords[0][0], west.coords[-1][0]) - x0) < 1, 'College Street does not reach the west edge'
 
     # Sneaky Dee's: OSM footprint, massing roof height (AVG_HEIGHT, MAX_HEIGHT only below 2.5 m) between 6 and 15 m.
     dees = data['landmarks']['sneaky_dees']
@@ -138,6 +155,10 @@ def main():
         assert abs(b['height'] - max(250., min(10000., height*100))) < .1 and abs(b['massing_area_m2'] - shapes[b['massing_index']].area/10000) < .1
     # Sneaky Dee's shares one 1,987 m² lidar block with five other OSM buildings.
     assert building['massing_field'] == 'AVG_HEIGHT' and building['massing_index'] == 1052 and building['massing_shared'] == 6
+    # The massing file only grows at the end: the 1,198 footprints of the first box (east of -79.4140) come first, so the
+    # first district's massing-only ids, and the wall colours they pick, did not change when the box grew west.
+    lons = [Polygon(f['geometry']['coordinates'][0]).centroid.x for f in massing]
+    assert min(lons[:1198]) >= -79.4140 > max(lons[1198:]), (min(lons[:1198]), max(lons[1198:]))
     # Every massing part inside an OSM footprint keeps its own height: Toronto Western Hospital's towers rise above its podium.
     hospital = next(w for w in root.findall('way') if w.get('id') == HOSPITAL)
     hospital = Polygon([cb.xy(*nodes[n.get('ref')]) for n in hospital.findall('nd')]).buffer(0)

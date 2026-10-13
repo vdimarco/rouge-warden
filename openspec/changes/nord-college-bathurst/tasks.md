@@ -9,6 +9,8 @@
 - [x] Write the editor greybox script `Scripts/create_college_bathurst.py` (checked only against a fake `unreal` module).
 - [x] Ignore the generated blockout geometry in Git.
 - [x] Review the data and scripts independently; fix the confirmed findings (average roof heights, split height parts, zero-height massing parts, parked car off the tracks, ASCII header, test without the ignored geometry, shared-height records).
+- [x] Extend the district west to Euclid Avenue and three blocks past it (to Grace Street): wider OSM and massing snapshots with the first box's footprints first, regenerated layout, header and previews, new street checks.
+- [x] Review the extension independently and fix the confirmed findings (massing-only ids and wall colours stay the same).
 - [x] Validate this change with the OpenSpec CLI.
 
 ## Native checks (user's Unreal host)

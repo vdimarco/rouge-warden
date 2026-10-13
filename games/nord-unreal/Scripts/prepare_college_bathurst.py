@@ -18,7 +18,7 @@ from prepare_lafontaine import ROAD_HIGHWAYS, clip_segment, nearest, road_segmen
 DATA = ROOT/'Data/CollegeBathurst'
 HEADER = ROOT/'Source/Quebec/CollegeBathurstMap.h'
 ORIGIN = (43.6564664, -79.4077041)  # College x Bathurst traffic signal, OSM node 29690663.
-BOUNDS = (43.6530, -79.4135, 43.6595, -79.4015)
+BOUNDS = (43.6530, -79.4170, 43.6595, -79.4015)  # Euclid Avenue and three blocks past it, to Grace Street.
 PATH_HIGHWAYS = ('footway', 'path', 'cycleway', 'pedestrian', 'steps')
 SNEAKY_DEES, INTERSECTION = '678313322', '29690663'
 ATTRIBUTION = ['© OpenStreetMap contributors, ODbL 1.0',
@@ -350,6 +350,7 @@ def build():
     for building in buildings:
         p, height = building['footprint'], building['height']
         landmark = building['id'] == SNEAKY_DEES
+        # A massing-only id holds its feature index; massing.geojson only grows at the end, so the index and colour stay put.
         wall = 'Landmark' if landmark else ('Brick', 'Cream', 'Sage')[int(re.search(r'\d+', building['id']).group()) % 3]
         polygon('Landmark' if landmark else 'Roof', p, height)
         for a, b in zip(p, p[1:] + p[:1]):
@@ -369,7 +370,7 @@ def build():
               'tram_lines': len(trams), 'buildings': len(buildings), 'buildings_by_height_source': dict(sorted(by_source.items())),
               'massing_only': massing_only, 'massing_features': len(massing), 'lamps': len(lamps), 'trees': len(trees), 'places': len(places)}
     data = {'origin': ORIGIN, 'bounds': BOUNDS, 'bounds_cm': [round(v, 3) for v in bounds], 'attribution': ATTRIBUTION,
-            'sources': {'osm': 'https://api.openstreetmap.org/api/0.6/map?bbox=-79.4140,43.6528,-79.4010,43.6598',
+            'sources': {'osm': 'https://api.openstreetmap.org/api/0.6/map?bbox=-79.4185,43.6528,-79.4010,43.6598',
                         'massing': 'https://open.toronto.ca/dataset/3d-massing/ (3D Massing 2025, WGS84)'},
             'spawn': spawn, 'car': [round(car[0], 3), round(car[1], 3), CAR_Z], 'car_yaw': round(yaw, 3),
             'landmarks': {'sneaky_dees': {'osm': 'way/' + SNEAKY_DEES, 'name': "Sneaky Dee's", 'address': '431 College Street',

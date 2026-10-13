@@ -4,15 +4,13 @@ import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
-from shapely.geometry import LineString, Polygon, box as rectangle
-from shapely.geometry.polygon import orient
+from shapely.geometry import LineString
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT/'Data/CollegeBathurst'
 OUT = ROOT/'Preview/CollegeBathurst'
 GROUND, INK, PAPER = (226, 223, 214), (34, 32, 36), (250, 248, 242)
 DEES, SPAWN, CAR, TRAM, LAMP = (226, 34, 120), (24, 150, 84), (36, 92, 200), (150, 28, 34), (246, 196, 40)
-HALF = 30000  # Massing view half-size around the intersection, centimetres.
 
 
 def font(size, bold=False):
@@ -29,13 +27,24 @@ def ramp(height):
     return tuple(int(a[i] + (b[i] - a[i])*f) for i in range(3))
 
 
-def clipped(line, area):
-    part = LineString(line).intersection(area)
-    return [list(g.coords) for g in getattr(part, 'geoms', [part]) if g.geom_type == 'LineString' and not g.is_empty]
-
-
 def shade(color, factor):
     return tuple(max(0, min(255, int(c*factor))) for c in color)
+
+
+def longest(data, name):
+    return max((r for r, n in zip(data['roads'], data['road_names']) if n == name), key=lambda r: LineString(r).length)
+
+
+def street_label(image, text, line, P, size):
+    """Name centred on a side street and turned along it, never upside down."""
+    a, b = P(line[0]), P(line[-1]); m = LineString(line).interpolate(.5, normalized=True)
+    angle = math.degrees(math.atan2(a[1] - b[1], b[0] - a[0]))
+    if angle > 90: angle -= 180
+    if angle <= -90: angle += 180
+    f = font(size, True); w, h = f.getbbox(text)[2:]
+    card = Image.new('RGBA', (w + 8, h + 8)); ImageDraw.Draw(card).text((4, 4), text, font=f, fill=INK, stroke_width=3, stroke_fill=PAPER)
+    card = card.rotate(angle, expand=True, resample=Image.BICUBIC); cx, cy = P((m.x, m.y))
+    image.paste(card, (round(cx - card.width/2), round(cy - card.height/2)), card)
 
 
 def plan(data):
@@ -74,6 +83,8 @@ def plan(data):
         line = max((r for r, n in zip(data['roads'], data['road_names']) if n == name), key=len)
         a, b = P(line[0]), P(line[-1]); m = ((a[0] + b[0])/2, (a[1] + b[1])/2)
         draw.text((m[0] + 14, m[1] + 10), name, font=label, fill=INK, stroke_width=3, stroke_fill=PAPER)
+    # Euclid Avenue, and Grace Street three blocks past it, show how far west the district reaches.
+    for name in ('Euclid Avenue', 'Grace Street'): street_label(image, name, longest(data, name), P, 16)
     # North arrow, 100 m scale bar, height key and attribution.
     nx, ny = width - 56, top + 64
     draw.ellipse([nx - 34, ny - 54, nx + 34, ny + 32], fill=PAPER, outline=INK)
@@ -95,37 +106,27 @@ def plan(data):
 
 
 def massing(data):
-    """Axonometric view from the south-east, looking north-west over the intersection."""
+    """Axonometric view of the whole district from the south-east, looking north-west over the intersection."""
     elevation = math.radians(38); forward, right = (-math.sqrt(.5), math.sqrt(.5)), (math.sqrt(.5), math.sqrt(.5))
     depth = lambda p: p[0]*forward[0] + p[1]*forward[1]
     raw = lambda p, z=0: (p[0]*right[0] + p[1]*right[1], -(depth(p)*math.sin(elevation) + z*math.cos(elevation)))
-    cx, cy = data['landmarks']['intersection']['position']; bounds = data['bounds_cm']
-    x0, y0, x1, y1 = max(bounds[0], cx - HALF), max(bounds[1], cy - HALF), min(bounds[2], cx + HALF), min(bounds[3], cy + HALF)
-    area = rectangle(x0, y0, x1, y1)
+    x0, y0, x1, y1 = data['bounds_cm']
     corners = [raw(p, z) for p in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)] for z in (0, 4000)]
-    width, margin = 2000, 40
+    width, margin = 2400, 40
     s = (width - 2*margin)/(max(c[0] for c in corners) - min(c[0] for c in corners))
     ox, oy = min(c[0] for c in corners), min(c[1] for c in corners)
     height = int((max(c[1] for c in corners) - oy)*s) + 2*margin + 40
     P = lambda p, z=0: ((raw(p, z)[0] - ox)*s + margin, (raw(p, z)[1] - oy)*s + margin + 40)
     image = Image.new('RGB', (width, height), PAPER); draw = ImageDraw.Draw(image)
     draw.polygon([P(c) for c in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]], fill=GROUND)
+    # The layout is already clipped to the bounds, and its footprints are counter-clockwise.
     for line, w in zip(data['roads'], data['road_widths']):
-        for part in clipped(line, area): draw.line([P(p) for p in part], fill=(110, 110, 116), width=max(1, round(w*s*.8)))
-    for track in data['tram_lines']:
-        for part in clipped(track['points'], area): draw.line([P(p) for p in part], fill=TRAM, width=2)
+        draw.line([P(p) for p in line], fill=(110, 110, 116), width=max(1, round(w*s*.8)))
+    for track in data['tram_lines']: draw.line([P(p) for p in track['points']], fill=TRAM, width=2)
     dees_id = data['landmarks']['sneaky_dees']['osm'].split('/')[1]
-    # Footprints are clipped to the square, so the parts of a building on its edge stay together; slivers under about
-    # 2 m wide that the edge cuts off a building outside the square are left out.
-    shown = []
-    for b in data['buildings']:
-        whole = Polygon(b['footprint']); part = whole.intersection(area)
-        for g in getattr(part, 'geoms', [part]):
-            if g.geom_type == 'Polygon' and g.area >= 1 and (g.area > whole.area - 1 or g.area >= 100*g.length/2):
-                shown.append((list(orient(g, 1.0).exterior.coords)[:-1], b))
     # Painter's order: farthest footprints first, each building's camera-facing walls then its roof.
-    for p, b in sorted(shown, key=lambda s: -max(depth(q) for q in s[0])):
-        h = b['height']
+    for b in sorted(data['buildings'], key=lambda b: -max(depth(q) for q in b['footprint'])):
+        p, h = b['footprint'], b['height']
         base = DEES if b['id'] == dees_id else ramp(h)
         walls = []
         for a, c in zip(p, p[1:] + p[:1]):
@@ -145,11 +146,11 @@ def massing(data):
     draw.text((lx - 60, ly - 28), "Sneaky Dee's", font=label, fill=DEES, stroke_width=3, stroke_fill=PAPER)
     for name, along in (('College Street', .2), ('Bathurst Street', .8)):
         line = max((r for r, n in zip(data['roads'], data['road_names']) if n == name), key=len)
-        part = max(clipped(line, area), key=lambda q: LineString(q).length)
-        q = LineString(part).interpolate(along, normalized=True); tx, ty = P((q.x, q.y))
+        q = LineString(line).interpolate(along, normalized=True); tx, ty = P((q.x, q.y))
         draw.text((tx - 80, ty + 14), name, font=label, fill=INK, stroke_width=3, stroke_fill=PAPER)
-    draw.text((20, 14), f'College St x Bathurst St - massing within {HALF/100:.0f} m of the intersection, looking north-west',
-              font=font(24, True), fill=INK)
+    for name in ('Euclid Avenue', 'Grace Street'): street_label(image, name, longest(data, name), P, 17)
+    draw.text((20, 14), f'College St x Bathurst St - massing of the whole district, {(x1 - x0)/100:.0f} x {(y1 - y0)/100:.0f} m, '
+              'looking north-west', font=font(24, True), fill=INK)
     draw.text((20, height - 30), '  ·  '.join(data['attribution']), font=font(15), fill=INK)
     return image
 
