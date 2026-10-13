@@ -17,7 +17,7 @@ The game SHALL keep its camera orbit centered on the controlled character and bo
 - **THEN** the camera retains its bounded orbit and the worklight can still align
 
 ### Requirement: Playable phone action buttons
-The browser SHALL present Sprint, Jump/brake, Use/car and Menu in two bottom-right rows with targets at least 76 by 56 CSS pixels. It SHALL remove the look joystick and retain drag-anywhere, gyro and simultaneous movement/action input.
+The browser SHALL present Sprint, Jump/brake, Use/car and Menu in two bottom-right rows with round targets at least 72 by 72 CSS pixels, growing to 88 by 88 on full-height portrait phones, action icons, 12-pixel gaps and visible pressed feedback. It SHALL remove the look joystick and retain drag-anywhere, gyro and simultaneous movement/action input.
 
 #### Scenario: Phone orientation changes
 - **WHEN** the player uses portrait, landscape or narrow landscape
