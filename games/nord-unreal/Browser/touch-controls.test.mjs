@@ -17,10 +17,11 @@ function fixture() {
   const controls = [];
   const messages = [];
   const deltas = [];
+  const video = { videoWidth: 1280, videoHeight: 720 };
   const stream = {
     toStreamerHandlers: new Map(['KeyDown', 'KeyUp', 'MouseMove', 'MouseEnter'].map(name => [name, values => messages.push([name, ...values])])),
     webRtcController: { coordinateConverter: { translateSigned: (x, y) => { deltas.push([x, y]); return { x: x * 100, y: y * 100 }; } },
-      videoPlayer: { getVideoElement: () => ({ videoWidth: 1280, videoHeight: 720 }) } }
+      videoPlayer: { getVideoElement: () => video } }
   };
   function control(dataset) {
     const captures = new Set();
@@ -53,7 +54,7 @@ function fixture() {
     Object.defineProperties(event, Object.fromEntries(Object.entries({ timeStamp, rotationRate, accelerationIncludingGravity }).map(([key, value]) => [key, { value }])));
     window.dispatchEvent(event);
   }
-  return { root, surface, gyroButton, gyroStatus, motion, document, window, messages, deltas, control, pointer, click,
+  return { video, root, surface, gyroButton, gyroStatus, motion, document, window, messages, deltas, control, pointer, click,
     ...setupTouchControls({ root, surface, stream }) };
 }
 
@@ -290,4 +291,21 @@ test('a permitted sensor that sends no samples stays off with an explanation', a
   assert.equal(f.gyroButton.disabled, false);
   assert.equal(f.gyroButton.getAttribute('aria-pressed'), 'false');
   assert.deepEqual(f.messages, []);
+});
+
+
+test('adaptive video sizes keep the same native drag gain in each orientation', () => {
+  for (const sizes of [[[1280, 720], [800, 450], [640, 360]], [[576, 1280], [360, 800], [288, 640]]]) {
+    const f = fixture();
+    f.setEnabled(true);
+    const gains = [];
+    for (const [width, height] of sizes) {
+      f.video.videoWidth = width; f.video.videoHeight = height;
+      f.pointer('pointerdown', f.surface, 1, 20, 20);
+      f.pointer('pointermove', f.surface, 1, 30, 20);
+      gains.push(f.messages.at(-1)[3] * width);
+      f.pointer('pointerup', f.surface, 1);
+    }
+    assert.deepEqual(gains, [gains[0], gains[0], gains[0]]);
+  }
 });

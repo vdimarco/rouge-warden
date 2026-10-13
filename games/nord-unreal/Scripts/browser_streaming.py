@@ -164,7 +164,7 @@ def stream_settings():
     flags = os.environ.get("NORD_STREAM_FLAGS", "idle").split()
     require(len(flags) == len(set(flags)) and set(flags) <= {"idle", "windowed"},
             "NORD_STREAM_FLAGS accepts idle and windowed, separated by spaces.")
-    bitrate = os.environ.get("NORD_STREAM_BITRATE", "8000000,100000,12000000")
+    bitrate = os.environ.get("NORD_STREAM_BITRATE", "2000000,100000,12000000")
     require(re.fullmatch(r"[0-9]+,[0-9]+,[0-9]+", bitrate) is not None,
             "NORD_STREAM_BITRATE must be start,min,max in bit/s.")
     start, minimum, maximum = map(int, bitrate.split(","))
@@ -337,7 +337,7 @@ def self_check():
     assert all("-PixelStreamingKeyFilter=Tilde" in command for command in (host, friend))
     with patch.dict(os.environ, {}, clear=True):
         assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle"]
-        assert stream_settings() == {"flags": ["idle"], "start_bitrate": 8000000, "min_bitrate": 100000,
+        assert stream_settings() == {"flags": ["idle"], "start_bitrate": 2000000, "min_bitrate": 100000,
                                      "max_bitrate": 12000000, "scheduling": 0}
     with patch.dict(os.environ, {"NORD_STREAM_BITRATE": "1000000,300000,4000000", "NORD_STREAM_SCHEDULING": "1"}):
         for friend_slot in (False, True):

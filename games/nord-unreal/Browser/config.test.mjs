@@ -42,3 +42,38 @@ test('invalid addresses and embedded credentials are rejected', () => {
     assert.throws(() => signallingUrl(value, 'game.vercel.app'));
   }
 });
+
+
+test('phone frames reduce pixels in both orientations without changing desktop', async () => {
+  const { streamDimensions } = await import('./config.mjs');
+  assert.deepEqual(streamDimensions(false, 1280, 720, true), [1280, 720]);
+  assert.deepEqual(streamDimensions(true, 800, 360, true), [800, 450]);
+  assert.deepEqual(streamDimensions(true, 360, 800, true), [360, 800]);
+  assert.deepEqual(streamDimensions(true, 600, 800, true), [450, 600]);
+  assert.deepEqual(streamDimensions(true, 360, 800, false), [800, 450]);
+  assert.deepEqual(streamDimensions(true, 0, 0, true), [800, 450]);
+  assert.deepEqual(streamDimensions(true, 800, 360, true, 640), [640, 360]);
+  assert.deepEqual(streamDimensions(true, 360, 800, true, 640), [288, 640]);
+});
+
+
+test('receiver FPS works without the optional framesPerSecond browser statistic', async () => {
+  const { receiverFps } = await import('./config.mjs');
+  const previous = { framesDecoded: 100, timestamp: 1000 };
+  assert.equal(receiverFps({ framesPerSecond: 30 }, previous), 30);
+  assert.equal(receiverFps({ framesDecoded: 115, timestamp: 2000 }, previous), 15);
+  assert.ok(Number.isNaN(receiverFps({ framesDecoded: 80, timestamp: 2000 }, previous)));
+  assert.ok(Number.isNaN(receiverFps({ framesDecoded: 115, timestamp: 1000 }, previous)));
+  assert.ok(Number.isNaN(receiverFps({}, previous)));
+});
+
+
+test('video-buffer delay triggers adaptation even when reported FPS remains high', async () => {
+  const { receiverLagging } = await import('./config.mjs');
+  const previous = { jitterBufferDelay: 10, jitterBufferEmittedCount: 100 };
+  assert.equal(receiverLagging({ framesPerSecond: 30, jitterBufferDelay: 16, jitterBufferEmittedCount: 130 }, previous), true);
+  assert.equal(receiverLagging({ framesPerSecond: 30, jitterBufferDelay: 12, jitterBufferEmittedCount: 130 }, previous), false);
+  assert.equal(receiverLagging({ framesPerSecond: 15 }, previous), true);
+  assert.equal(receiverLagging({ framesPerSecond: 30 }, undefined), false);
+  assert.equal(receiverLagging({ framesPerSecond: 30, jitterBufferDelay: 16, jitterBufferEmittedCount: 100 }, previous), false);
+});

@@ -22,7 +22,11 @@ export function setupTouchControls({ root, surface, stream }) {
   }
 
   function look(x, y) {
-    sendLook(stream.webRtcController.coordinateConverter.translateSigned(x, y));
+    const delta = stream.webRtcController.coordinateConverter.translateSigned(x, y);
+    const video = stream.webRtcController.videoPlayer.getVideoElement();
+    // Preserve drag gain when performance adaptation changes the encoded frame size.
+    const scale = 1280 / (Math.max(video.videoWidth, video.videoHeight) || 1280);
+    sendLook({ x: delta.x * scale, y: delta.y * scale });
   }
 
   function stopGyro(message = 'Drag anywhere on the game to look.') {

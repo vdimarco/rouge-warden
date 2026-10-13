@@ -35,6 +35,7 @@ async function check(name, action) {
     console.log(`PASS ${name}`);
   } catch (error) {
     report.checks.push({ name, passed: false, durationMs: Date.now() - started, error: error.message });
+    if (page) report.input.lastStats = await page.evaluate(() => window.__nordQaStats?.slice(-8));
     throw error;
   }
 }
@@ -302,12 +303,20 @@ try {
     // send is always called; this test never fabricates a native input packet.
     const nativeSend = RTCDataChannel.prototype.send;
     window.__nordQaSends = [];
+    window.__nordQaStats = [];
+    const dispatch = EventTarget.prototype.dispatchEvent;
+    EventTarget.prototype.dispatchEvent = function (event) {
+      if (event.type === 'statsReceived') window.__nordQaStats.push({
+        fps: event.data?.aggregatedStats?.inboundVideoStats?.framesPerSecond,
+        state: document.body?.dataset.state, size: document.body?.dataset.streamSize });
+      return dispatch.call(this, event);
+    };
     RTCDataChannel.prototype.send = function (data) {
       const result = nativeSend.call(this, data);
       const bytes = data instanceof ArrayBuffer ? new Uint8Array(data)
         : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
       if (bytes?.length && window.__nordQaSends.length < 2000) {
-        window.__nordQaSends.push({ id: bytes[0], bytes: Array.from(bytes.slice(0, 12)),
+        window.__nordQaSends.push({ id: bytes[0], bytes: Array.from(bytes.slice(0, bytes[0] === 51 ? 256 : 12)),
           readyState: this.readyState, label: this.label, at: performance.now() });
       }
       return result;
@@ -327,6 +336,14 @@ try {
       page.waitForFunction(() => document.fullscreenElement?.id === 'frame', null, { timeout: 5000 }));
     await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));
+    await check('phone video uses the smaller frame and 1.5 Mbps ceiling', async () => {
+      const video = await media();
+      assert.ok(video.width * video.height <= 800 * 450, 'phone decoder pixel budget');
+      const commands = (await sends()).filter(packet => packet.id === 51).map(packet =>
+        new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
+      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":1500000')), 'native 1.5 Mbps command');
+      report.input.phoneBudget = { width: video.width, height: video.height, maxBitrate: 1500000 };
+    });
     await check('portrait controls fit and meet target size', () => layout('portrait'));
     await check('a phone held upright gets a tall game frame with every control in its bottom 42%', async () => {
       const geometry = await page.evaluate(() => {
@@ -407,6 +424,23 @@ try {
       assert.ok(delta > 1, `dragging must change decoded game video (${delta})`);
       report.input.anywhereLook = { meanRgbDelta: delta, packets: (await sends()).slice(since) };
     });
+    await check('extreme vertical drags reach both camera limits', async () => {
+      const { width, height } = page.viewportSize();
+      for (const [label, direction] of [['up', -1], ['down', 1]]) {
+        const since = (await sends()).length;
+        for (let i = 0; i < 3; i++) {
+          const start = { x: Math.round(width * .5), y: Math.round(height * .5) };
+          await touch('touchStart', [finger(7, start)]);
+          await touch('touchMove', [finger(7, { x: start.x, y: start.y + Math.round(height * .3) * direction })]);
+          await releaseAllTouches();
+          await page.waitForTimeout(100);
+        }
+        await waitForPacket(74, null, since);
+        await page.waitForTimeout(400);
+        await page.screenshot({ path: resolve(output, `portrait-camera-${label}.png`) });
+      }
+      report.input.cameraBounds = 'Extreme input screenshots require visual review; native automation checks projected head/feet bounds.';
+    });
     await check('opt-in simulated gyro sends real native look input and turns off', async () => {
       await page.evaluate(() => {
         window.DeviceMotionEvent.requestPermission = async () => 'granted';
@@ -454,7 +488,7 @@ try {
       };
       await toggleFullscreen(false);
       await page.setViewportSize({ width: 800, height: 360 });
-      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720');
+      await page.waitForFunction(() => ['800x450', '640x360'].includes(document.body.dataset.streamSize));
       await streamSettled();
       await layout('landscape');
       await toggleFullscreen(true);
@@ -490,6 +524,28 @@ try {
       await comic.tap();
       const tapPackets = await assertSinglePulse(touchStart, 'touch tap');
       report.input.comicActivation = { keyboard, touch: tapPackets };
+    });
+    await check('sustained receiver pressure lowers the phone stream', async () => {
+      const alreadyReduced = await page.evaluate(() => document.body.dataset.streamSize === '640x360');
+      await page.evaluate(() => {
+        for (const peer of window.__nordQaPeers) {
+          const original = peer.getStats.bind(peer);
+          peer.getStats = async (...args) => {
+            const stats = await original(...args);
+            return new Map([...stats].map(([id, stat]) => [id,
+              stat.type === 'inbound-rtp' && (stat.kind || stat.mediaType) === 'video'
+                ? { ...stat, framesPerSecond: 10 } : stat]));
+          };
+        }
+      });
+      report.input.adaptiveDebug = await page.evaluate(() => window.__nordQaStats.slice(-8));
+      await page.waitForFunction(() => document.body.dataset.streamSize === '640x360', null, { timeout: 20000 });
+      await streamSettled();
+      await advancingMedia('adaptiveLowFrame');
+      const commands = (await sends()).filter(packet => packet.id === 51).map(packet =>
+        new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
+      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":1000000')), 'adaptive native bandwidth cap');
+      report.input.adaptiveStream = { requested: '640x360', maxBitrate: 1000000, trigger: alreadyReduced ? 'actual receiver pressure before injection' : 'injected low FPS; real resized video' };
     });
     await check('touch release on disconnect leaves no held native key', async () => {
       const moveStart = finger(4, await center('[data-stick="move"]'));

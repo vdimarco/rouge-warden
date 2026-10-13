@@ -28,14 +28,20 @@ def bounded():
     pawn = pc.get_controlled_pawn()
     arm = pawn.get_component_by_class(u.SpringArmComponent)
     camera = pawn.get_component_by_class(u.CameraComponent)
-    pitch = pc.get_control_rotation().pitch
-    floor = arm.get_world_location().z + arm.get_editor_property('socket_offset').z
-    height = camera.get_world_location().z
-    assert pitch <= 30.01, f'Unclamped pitch {pitch}'
-    assert height >= floor - .1, f'Camera below back height: {height} < {floor}'
+    pitch = camera.get_world_rotation().pitch
+    assert -25.01 <= pitch <= -4.99, f'Camera outside orbit bounds {pitch}'
+    assert abs(arm.get_editor_property('target_offset').z) < .01, 'Orbit must remain centered on the character'
+    points = []
+    if isinstance(pawn, u.QuebecCharacter):
+        width, height = pc.get_viewport_size()
+        for z in (-90, 90):
+            point = u.GameplayStatics.project_world_to_screen(pc, pawn.get_actor_location()+u.Vector(0, 0, z))
+            assert point and 0 <= point.x <= width and 0 <= point.y <= height, f'Body endpoint out of view: {point}'
+            points.append([point.x, point.y])
     qa['REPORT'].setdefault('camera_probes', []).append({'pawn': pawn.get_class().get_name(),
-        'pitch': pitch, 'height_cm': height, 'floor_cm': floor})
+        'pitch': pitch, 'body_screen_endpoints': points})
     return True
+
 
 
 step = qa['step']
