@@ -120,12 +120,10 @@ async function main() {
       };
       video.requestVideoFrameCallback(frame);
     });
-    const stick = values.look ? await page.locator('[data-stick="look"]').boundingBox() : null;
-    if (values.look) {
-      assert.ok(stick, 'The camera pad must be visible for --look');
-      await page.mouse.move(stick.x + stick.width / 2, stick.y + stick.height / 2);
-      await page.mouse.down();
-    }
+    const image = values.look ? await page.locator('#video').boundingBox() : null;
+    const touch = values.look ? await context.newCDPSession(page) : null;
+    const point = () => ({ x: image.x + image.width / 2, y: image.y + image.height / 2, id: 9 });
+    if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
     const started = Date.now();
     do {
       const sample = await page.evaluate(async () => {
@@ -152,11 +150,12 @@ async function main() {
       report.samples.push(sample);
       if (Date.now() - started >= seconds * 1000) break;
       for (let step = 0; step < 10; step++) {
-        if (stick) await page.mouse.move(stick.x + stick.width / 2 + 30 * Math.sin((Date.now() - started) / 250), stick.y + stick.height / 2);
+        if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchMove',
+          touchPoints: [{ ...point(), x: point().x + 30 * Math.sin((Date.now() - started) / 250) }] });
         await page.waitForTimeout(100);
       }
     } while (true);
-    if (stick) await page.mouse.up();
+    if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     report.summary = summarize(report.samples);
     assert.ok(report.summary.decodedFps > 0, 'Video must decode new frames during the sample');
     if (values.relay) assert.equal(report.summary.candidate?.type, 'relay');

@@ -113,7 +113,7 @@ test('a second finger cannot steal a stick and duplicate action holds release on
 
 test('look drag uses Epic video-coordinate normalization and bounded signed protocol deltas', () => {
   const f = fixture();
-  const look = f.control({ stick: 'look' });
+  const look = f.surface;
   f.setEnabled(true);
   f.pointer('pointerdown', look, 1, 80, 40);
   f.pointer('pointermove', look, 1, 90, 35);
@@ -127,7 +127,7 @@ test('look drag uses Epic video-coordinate normalization and bounded signed prot
 test('dragging the game image looks while another finger moves; a second look finger cannot steal it', () => {
   const f = fixture();
   const move = f.control({ stick: 'move' });
-  const look = f.control({ stick: 'look' });
+  const look = f.surface;
   f.setEnabled(true);
   f.pointer('pointerdown', move, 1, 50, 0);
   f.pointer('pointerdown', f.surface, 2, 20, 20);

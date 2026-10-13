@@ -80,6 +80,14 @@ namespace
         return true;
     }
 
+    void KeepCameraAboveBack(USpringArmComponent* Arm)
+    {
+        const FRotator Rotation = Arm->GetTargetRotation();
+        const double OrbitHeight = (-Rotation.Vector() * Arm->TargetArmLength + Rotation.RotateVector(Arm->SocketOffset)).Z;
+        // Raise the orbit origin as we look up, including its collision sweep.
+        Arm->TargetOffset.Z = FMath::Max(0., Arm->SocketOffset.Z - OrbitHeight);
+    }
+
     void ReleasePawnInput(APawn* Pawn)
     {
         if (!Pawn) return;
@@ -259,6 +267,7 @@ void AQuebecCharacter::OnRep_InVehicle()
 void AQuebecCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    KeepCameraAboveBack(CameraArm);
     if (!bInVehicle && CrewIdle)
     {
         const float Speed = GetVelocity().Size2D();
@@ -995,6 +1004,9 @@ void AQuebecCar::Tick(float DeltaSeconds)
         }
         if (!HasAuthority()) ServerSetDrive(Throttle,Steering,bHandbrake);
     }
+    KeepCameraAboveBack(CameraArm);
+    // Position lag must not trail below the raised origin during an upward look.
+    CameraArm->bEnableCameraLag = FMath::IsNearlyZero(CameraArm->TargetOffset.Z);
     UpdateDriveAudio(DeltaSeconds);
     if (!HasAuthority()) return;
     if (bTraffic && !Controller) UpdateTraffic();
@@ -1215,6 +1227,7 @@ void AQuebecGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void AQuebecController::BeginPlay()
 {
     Super::BeginPlay();
+    if (PlayerCameraManager) PlayerCameraManager->ViewPitchMax = 30.f;
     BindBrowserInputRelease();
 }
 
@@ -1633,6 +1646,7 @@ void AQuebecHUD::DrawHUD()
     // A phone held upright streams a tall frame: panels stack at the top and the lower 40% stays clear for the touch controls.
     // The page asks for tall frames at least 1.15 times taller than wide, so this threshold never sits on a rounding edge.
     const bool bPortrait = Canvas->SizeY > Canvas->SizeX * 1.1f;
+    static const bool bTouchControls = FParse::Param(FCommandLine::Get(), TEXT("NordTouchControls"));
     const float Scale = bPortrait ? FMath::Clamp(FMath::Min(Canvas->SizeX / 720.f * 1.3f, Canvas->SizeY / 900.f * 1.15f), .6f, 2.f)
         : FMath::Clamp(FMath::Min(Canvas->SizeY / 720.f, Canvas->SizeX / 1280.f), .6f, 1.5f);
     const float Margin = 22.f * Scale;
@@ -1734,14 +1748,14 @@ void AQuebecHUD::DrawHUD()
     const AQuebecSky* Sky = AQuebecSky::Find(GetWorld());
     const float SkyStep = Sky ? CreditStep * 1.2f : 0.f;
     const float MapBlock = MapHeight + 4.f * Scale + SkyStep + 3.f * CreditStep;
-    // Mission card: bottom right on a wide screen, top left beside the map on a tall one.
+    // Touch controls reserve the lower corners; the mission sits beside the radar.
     const float MissionWidth = bPortrait ? MapX - Margin - 12.f * Scale : 460.f * Scale;
-    const float MissionX = bPortrait ? Margin : Right - MissionWidth;
+    const float MissionX = bPortrait ? Margin : bTouchControls ? MapX - MissionWidth - 18.f * Scale : Right - MissionWidth;
     const TArray<FString> Titles = WrappedLines(Title, MissionWidth - 24.f * Scale, .9f);
     const TArray<FString> Actions = WrappedLines(Action, MissionWidth - 24.f * Scale, 1.15f);
     const TArray<FString> Statuses = WrappedLines(Status, MissionWidth - 24.f * Scale, .9f);
     const float MissionHeight = (20.f + Titles.Num() * 20.f + Actions.Num() * 25.f + Statuses.Num() * 20.f + (bHasObjective ? 20.f : 0.f)) * Scale;
-    const float MissionY = bPortrait ? Margin : Canvas->SizeY - Margin - 78.f * Scale - MissionHeight;
+    const float MissionY = bPortrait || bTouchControls ? Margin : Canvas->SizeY - Margin - 78.f * Scale - MissionHeight;
     const float TopClear = bPortrait ? FMath::Max(MissionY + MissionHeight, MapY + MapBlock) + 12.f * Scale : Margin;
 
     FString Prompt;
@@ -1756,8 +1770,8 @@ void AQuebecHUD::DrawHUD()
             if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
                 Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
     }
-    const float LowerLeft = Margin;
-    const float LowerRight = Right - (!bPortrait && Car ? 190.f * Scale : 0.f);
+    const float LowerLeft = !bPortrait && bTouchControls ? 240.f * Scale : Margin;
+    const float LowerRight = Right - (!bPortrait ? ((bTouchControls ? 420.f : 0.f) + (Car ? 190.f : 0.f)) * Scale : 0.f);
     const float PromptWidth = FMath::Min(480.f * Scale, LowerRight - LowerLeft);
     const TArray<FString> PromptLines = Prompt.IsEmpty() ? TArray<FString>() : WrappedLines(Prompt, PromptWidth - 24.f * Scale, 1.1f);
     const float PromptX = (LowerLeft + LowerRight - PromptWidth) * .5f;
@@ -1897,14 +1911,15 @@ void AQuebecHUD::DrawHUD()
     }
     else if (Car)
     {
-        const float X = Right - 164.f * Scale;
+        const float SpeedRight = Right - (bTouchControls ? 420.f * Scale : 0.f);
+        const float X = SpeedRight - 164.f * Scale;
         const float Y = Canvas->SizeY - Margin - 74.f * Scale;
-        RightText(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, Right - 42.f * Scale, Y, 1.8f);
-        RightText(TEXT("km/h"), Muted, Right, Y + 23.f * Scale, .85f);
+        RightText(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, SpeedRight - 42.f * Scale, Y, 1.8f);
+        RightText(TEXT("km/h"), Muted, SpeedRight, Y + 23.f * Scale, .85f);
         Text(TEXT("W/S Drive   A/D Steer"), Muted, X, Y + 42.f * Scale, .85f);
         Text(Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake"), Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
-    else if (!bPortrait && Now - FirstHUDTime < 10.f)
+    else if (!bPortrait && !bTouchControls && Now - FirstHUDTime < 10.f)
     {
         Text(TEXT("SPACE  Jump   /   SHIFT  Sprint"), Muted, LowerLeft, Canvas->SizeY - Margin - 68.f * Scale, .9f);
     }
@@ -2524,6 +2539,57 @@ bool FQuebecTrafficCircuitTest::RunTest(const FString& Parameters)
         }
     TestTrue(TEXT("Surveyed grid provides enough circulating streets"), Active >= 100);
     TestEqual(TEXT("Every traffic endpoint has an onward road"), DeadEnds, 0);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCameraBoundsTest, "Quebec.Camera.LookBounds", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecCameraBoundsTest::RunTest(const FString& Parameters)
+{
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestNotNull(TEXT("Camera test world"), World)) return false;
+    ON_SCOPE_EXIT { World->DestroyWorld(false); };
+    World->InitializeActorsForPlay(FURL());
+    AQuebecController* Controller = World->SpawnActor<AQuebecController>();
+    AQuebecCharacter* Walker = World->SpawnActor<AQuebecCharacter>();
+    AQuebecCar* Car = World->SpawnActor<AQuebecCar>();
+    if (!TestNotNull(TEXT("Controller"), Controller) || !TestNotNull(TEXT("Walker"), Walker) || !TestNotNull(TEXT("Car"), Car)) return false;
+    Controller->SetAsLocalPlayerController();
+    Controller->DispatchBeginPlay();
+    if (!TestNotNull(TEXT("Camera manager"), Controller->PlayerCameraManager.Get())) return false;
+    TestEqual(TEXT("Upward limit is 30 degrees"), Controller->PlayerCameraManager->ViewPitchMax, 30.f);
+    for (APawn* Pawn : {static_cast<APawn*>(Walker), static_cast<APawn*>(Car)})
+    {
+        Controller->Possess(Pawn);
+        USpringArmComponent* Arm = Pawn->FindComponentByClass<USpringArmComponent>();
+        UCameraComponent* Camera = Pawn->FindComponentByClass<UCameraComponent>();
+        Arm->bDoCollisionTest = false;
+        for (float Pitch : {-60.f, -6.f, 0.f, 10.f, 30.f, 89.f, 270.f})
+        {
+            FRotator View(Pitch, 25.f, 0.f), Delta = FRotator::ZeroRotator;
+            Controller->PlayerCameraManager->ProcessViewRotation(.016f, View, Delta);
+            Controller->SetControlRotation(View);
+            Pawn->Tick(.016f);
+            Arm->TickComponent(.016f, LEVELTICK_All, nullptr);
+            TestTrue(TEXT("Extreme input respects upward limit"), FRotator::NormalizeAxis(View.Pitch) <= 30.f);
+            TestTrue(TEXT("Camera never drops below its neutral back height"),
+                Camera->GetComponentLocation().Z >= Arm->GetComponentLocation().Z + Arm->SocketOffset.Z - .01);
+            if (Pitch == -6.f) TestEqual(TEXT("Default downward view needs no lift"), Arm->TargetOffset.Z, 0.);
+        }
+        Arm->bDoCollisionTest = true;
+        FActorSpawnParameters Spawn;
+        AActor* Wall = World->SpawnActor<AActor>(Spawn);
+        UBoxComponent* Block = NewObject<UBoxComponent>(Wall);
+        Wall->SetRootComponent(Block);
+        Block->SetBoxExtent(FVector(1000., 1000., 1000.));
+        Block->SetCollisionResponseToAllChannels(ECR_Block);
+        Block->RegisterComponent();
+        Controller->SetControlRotation(FRotator(30.f, 25.f, 0.f));
+        Pawn->Tick(.016f);
+        Arm->TickComponent(.016f, LEVELTICK_All, nullptr);
+        TestTrue(TEXT("Collision retraction also stays above back height"),
+            Camera->GetComponentLocation().Z >= Arm->GetComponentLocation().Z + Arm->SocketOffset.Z - .01);
+        Wall->Destroy();
+    }
     return true;
 }
 

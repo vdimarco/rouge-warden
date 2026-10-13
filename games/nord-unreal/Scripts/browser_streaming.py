@@ -186,7 +186,7 @@ def game_command(friend, log):
                  f"-PixelStreamingWebRTCMinBitrate={settings['min_bitrate']}",
                  f"-PixelStreamingWebRTCStartBitrate={settings['start_bitrate']}", "-PixelStreamingKeyFilter=Tilde", "-PixelStreamingID=" + ("NordFriend1" if friend else "NordHost"),
                  "-ExecCmds=" + QUALITY + f",MediaIO.EnableExperimentalScheduling {settings['scheduling']}", "-abslog=" + str(log)]
-    arguments += ["-NordStreamFps"] + [{"idle": "-NordIdleThrottle", "windowed": "-windowed"}[flag] for flag in settings["flags"]]
+    arguments += ["-NordStreamFps", "-NordTouchControls"] + [{"idle": "-NordIdleThrottle", "windowed": "-windowed"}[flag] for flag in settings["flags"]]
     arguments += ["-NordNoCampaignSave", "-saveddirsuffix=BrowserGuest"] if friend else ["-port=7791", *sky_arguments()]
     return arguments
 
@@ -336,7 +336,7 @@ def self_check():
     assert all("-NoDebugExecBindings" in command for command in (host, friend))
     assert all("-PixelStreamingKeyFilter=Tilde" in command for command in (host, friend))
     with patch.dict(os.environ, {}, clear=True):
-        assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordIdleThrottle"]
+        assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle"]
         assert stream_settings() == {"flags": ["idle"], "start_bitrate": 8000000, "min_bitrate": 100000,
                                      "max_bitrate": 12000000, "scheduling": 0}
     with patch.dict(os.environ, {"NORD_STREAM_BITRATE": "1000000,300000,4000000", "NORD_STREAM_SCHEDULING": "1"}):
