@@ -6,6 +6,6 @@ public class Quebec : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicDependencyModuleNames.AddRange(new[] { "Core", "CoreUObject", "Engine", "InputCore", "NetCore" });
-        PrivateDependencyModuleNames.Add("PixelStreaming2");
+        PrivateDependencyModuleNames.AddRange(new[] { "PixelStreaming2", "PixelStreaming2Core" });
     }
 }
