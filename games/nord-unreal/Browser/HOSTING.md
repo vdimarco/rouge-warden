@@ -2,7 +2,7 @@
 
 Vercel hosts the static browser player. The existing Linux GPU PC can run two full Unreal processes and Epic's signalling server. `NordHost` listens for normal Unreal multiplayer; `NordFriend1` joins it. Sharing one stream does not create another character. Each stream accepts one browser subscriber. This is a public two-slot demo without player accounts, slot reservations or automatic game recovery; anyone with the public endpoint can try to occupy a slot. The separate TURN relay uses local credentials described below.
 
-The public player is [nord-montreal.vercel.app](https://nord-montreal.vercel.app/). Production deployment `dpl_FYQAQ4mbiKNSKeQyMQ77hLTZPgyB` is READY, built from merged commit `d45e2e47` ([PR #338](https://github.com/vdimarco/rouge-warden/pull/338)). It uses `wss://officials-soundtrack-engines-institute.trycloudflare.com` through the restored Quick Tunnel to `127.0.0.1:9010`. All twelve served static files match the tested local build. The original signalling Funnel and separate TURN/TLS Funnel are restored. These temporary services have no reboot persistence; a reboot or Quick Tunnel recreation changes the hostname and requires a player endpoint update and deployment.
+The public player is [nord-montreal.vercel.app](https://nord-montreal.vercel.app/). Production deployment `dpl_FYQAQ4mbiKNSKeQyMQ77hLTZPgyB` is READY, built from merged commit `d45e2e47` ([PR #338](https://github.com/vdimarco/rouge-warden/pull/338)). It uses `wss://officials-soundtrack-engines-institute.trycloudflare.com` through the restored Quick Tunnel to `127.0.0.1:9010`. All twelve served static files match the tested local build. The original signalling Funnel and separate TURN/TLS Funnel are restored. These temporary services have no reboot persistence; a reboot or Quick Tunnel recreation changes the hostname and requires a player endpoint update and deployment. The project builds from Git; see [Vercel project and Git builds](#vercel-project-and-git-builds).
 
 **Host PC status — 2026-10-13:** the existing optimized native package and relay were restored after a PC reboot, with idle-world suspension and CPUWeight=400. Both simultaneous local camera-sweep streams sustained about 30 decoded FPS for 60 seconds with no dropped frames or freezes. The production alias passed all seven real-media/input/reconnect checks. The player retains drag-anywhere and gyro controls and clears the landscape action row from the objective. Stream resolution, native quality, codec, scheduling, maps and launch guard are unchanged. Physical-phone/carrier, audible playback and driving acceptance remain open. See [the optimization and delivery record](../Verification/BrowserOptimization.md); earlier hosting/connection checks remain in [BrowserConnection.md](../Verification/BrowserConnection.md) and [BrowserStreaming.md](../Verification/BrowserStreaming.md).
 
@@ -137,11 +137,45 @@ Proceed with a new foreground Funnel only when that command reports **`{}`**. If
 tailscale funnel 9010
 ```
 
-Keep that terminal open for the manual Funnel; the preserved transient Funnel unit runs the same exposure independently of a tool terminal. Use the hostname printed by whichever reviewed tunnel is intended as a `wss://` URL in `NORD_SIGNALLING_URL`, then rebuild and upload the configured static output. The Vercel project uses prebuilt files without Git linkage; changing a Vercel setting or committing source does not rebuild that upload automatically. For a future Git-connected build, set the variable in the intended Vercel environment before redeploying. The endpoint is deployment configuration, not hardcoded player source. Stop only a manual foreground Funnel with **Ctrl-C**, or stop the relevant owned units as documented above. Then inspect Serve status to confirm unrelated state remains unchanged. The lifecycle helper deliberately does not create or remove tunnels.
+Keep that terminal open for the manual Funnel; the preserved transient Funnel unit runs the same exposure independently of a tool terminal. Use the hostname printed by whichever reviewed tunnel is intended as a `wss://` URL in `NORD_SIGNALLING_URL`, then update that variable in the Vercel project and redeploy, as described in [Vercel project and Git builds](#vercel-project-and-git-builds). A change to a Vercel variable does not rebuild an existing deployment. The endpoint is deployment configuration, not hardcoded player source. Stop only a manual foreground Funnel with **Ctrl-C**, or stop the relevant owned units as documented above. Then inspect Serve status to confirm unrelated state remains unchanged. The lifecycle helper deliberately does not create or remove tunnels.
 
 The Cloudflare Quick Tunnel and preserved Tailscale Funnel carry signalling; the separate Tailscale TCP 8443 mapping exposes the optional TURN/TLS relay for WebRTC media. The original public regressions used STUN-only ICE. The new forced-relay test established a local browser media path, but external NAT/firewall behavior and a physical phone on 5G still need direct checks. WSS or a local media connection alone does not establish internet playability. This rollout does not buy hosting or change router/firewall ports.
 
 The pinned signalling dependency audit retains eight runtime findings. The active WebSocket-only launch paths were reviewed and the default static server is disabled, but those findings are not resolved. Upstream control messages still let a subscribed input owner request resolution changes, affecting GPU/resource use even with native console commands disabled. This temporary unauthenticated demo is not a production security acceptance. Audit remediation and any move to permanent hosting require a separate review of the pinned infrastructure and deployed exposure.
+
+## Vercel project and Git builds
+
+The player is the `nord-montreal` project in the `vdimarcos-projects` team. The project settings are:
+
+| Setting | Value |
+| --- | --- |
+| Git repository | `vdimarco/rouge-warden`, production branch `main` |
+| Root directory | `games/nord-unreal/Browser` |
+| Build command and output | From `vercel.json`: `npm run build` into `dist` |
+| Ignored build step | `git diff --quiet HEAD^ HEAD -- .` |
+| Variables (production and preview) | `NORD_SIGNALLING_URL`, `NORD_PORTRAIT_STREAM=0` |
+
+Vercel runs the ignored build step in the root directory. A push builds only when its last commit changes a file in this folder. Other pushes show as **CANCELED** in the deployment list. If one push holds several commits and only an earlier commit changes this folder, Vercel skips that build. A merge commit compares with its first parent, so a pull request merge builds correctly.
+
+A push to `main` makes a production deployment. A push to any other branch makes a preview at `nord-montreal-git-<branch>-vdimarcos-projects.vercel.app`. The build reads `NORD_SIGNALLING_URL` from the project, so a new tunnel hostname needs only a variable change and a redeploy.
+
+**Public alias:** the project has automatic domain assignment turned off (`autoAssignCustomDomains: false`). A new production deployment moves `nord-montreal-vdimarcos-projects.vercel.app`, but it does not move `nord-montreal.vercel.app`. After a production deployment, point the public alias at it:
+
+```bash
+npx vercel alias set <deployment-url> nord-montreal.vercel.app --scope vdimarcos-projects
+```
+
+To deploy by hand from a checkout of `main`, run this in `games/nord-unreal/Browser` with `VERCEL_TOKEN` set. Vercel builds the files on its servers with the project variables:
+
+```bash
+npx vercel link --yes --project nord-montreal --scope vdimarcos-projects --token "$VERCEL_TOKEN"
+rm -f .env.local
+npx vercel deploy --prod --yes --scope vdimarcos-projects --token "$VERCEL_TOKEN"
+```
+
+`vercel link` writes `.env.local` with a short-term OIDC token. Remove it before you deploy, and do not commit `.vercel/` or `.env.local`.
+
+On October 13 at 03:32 UTC a manual deploy of `main` (`676c605a`) made `dpl_3EyZk8DnzTiTw7Vwxu85TzRirLjn`, and the Git connection followed. The first Git production build was `dpl_7TZJDDGuoHcwUVKJbLysQyELN7dK` from `main` `54a86fe8` at 15:12 UTC. Pushes that did not change this folder show as CANCELED, as intended. At 21:50 UTC on October 13 the public alias pointed to `dpl_83UYqQgykYwTYtzvBEThzKm6FCMk`, a manual production deploy of `main` `79b56ad2`. The later Git build `dpl_FwjXP6W2gtNWAWMoEfKPaEa5zxrg` from `ed452c1a` did not move the alias.
 
 ## Acceptance checks
 
