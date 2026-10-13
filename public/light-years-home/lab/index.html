@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>Light Years Home Lab · Cottage Arcade</title>
+<meta name="description" content="Two small prototypes of Light Years Home to play and compare.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%232f7fd6'/%3E%3Ccircle cx='24.5' cy='8' r='2' fill='%23f08a2c'/%3E%3C/svg%3E">
+<style>
+/* The lab chooser: black space, white dots, thin white rings with leader lines and small labels, as in the video. */
+:root {
+  --ink: #fff;
+  --accent: #f08a2c;
+  --muted: rgba(255, 255, 255, 0.62);
+  --ring: rgba(255, 255, 255, 0.8);
+  --st: env(safe-area-inset-top, 0px);
+  --sr: env(safe-area-inset-right, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+  --sl: env(safe-area-inset-left, 0px);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --shade: 0 1px 1px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: #000; color: var(--ink); overflow-x: hidden; overscroll-behavior: none; }
+body {
+  min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+  font: 15px/1.4 var(--font); -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+h1, p { margin: 0; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; opacity: 0; transition: opacity 0.8s; }
+#sky.on { opacity: 1; }
+
+.top {
+  position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: calc(var(--st) + 6px) calc(var(--sr) + 12px) 0 calc(var(--sl) + 12px);
+}
+.top a, .top button {
+  min-height: 44px; min-width: 44px; padding: 0 12px; display: inline-flex; align-items: center;
+  border: 0; border-radius: 10px; background: transparent; color: var(--ink); cursor: pointer;
+  font: 600 14px var(--font); text-decoration: none; text-shadow: var(--shade);
+}
+.top a:hover, .top button:hover { background: rgba(255, 255, 255, 0.1); }
+.info {
+  position: relative; z-index: 1; align-self: flex-start; margin: 4px 0 0 calc(var(--sl) + 16px); padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: rgba(60, 60, 60, 0.75);
+  color: #ececec; font: 500 11px/1.35 var(--font);
+}
+
+main {
+  position: relative; z-index: 1; flex: 1; width: 100%; max-width: 980px; margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: center; gap: 26px;
+  padding: 20px calc(var(--sr) + 16px) calc(var(--sb) + 24px) calc(var(--sl) + 16px);
+}
+.head { text-align: center; text-shadow: var(--shade); }
+.eyebrow { font: 700 11px/1 var(--font); letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+h1 { margin-top: 10px; font: 800 clamp(30px, 8.4vw, 58px)/1.05 var(--font); text-transform: uppercase; letter-spacing: 0.01em; }
+h1 .now { color: var(--accent); }
+.ask { margin-top: 10px; color: var(--muted); font-size: 15px; }
+
+.picks { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+.picks li { min-width: 0; }
+/* a pick is a landmark: a thin ring low left, a diagonal leader with a 10 px flat run, and the label */
+.pick {
+  position: relative; display: block; min-height: 80px; padding: 0 0 0 80px; border-radius: 14px;
+  color: var(--ink); text-decoration: none; text-shadow: var(--shade);
+}
+.pick svg { position: absolute; left: 0; top: 0; width: 78px; height: 80px; overflow: visible; }
+.pick .ring { fill: none; stroke: var(--ring); stroke-width: 1; vector-effect: non-scaling-stroke; transition: stroke 0.15s; }
+.pick .lead { fill: none; stroke: var(--ring); stroke-width: 1; vector-effect: non-scaling-stroke; transition: stroke 0.15s; }
+.pick .dot { fill: #fff; }
+.pick .warm { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; }
+.pick .orange { fill: var(--accent); }
+.label { display: block; padding-top: 1px; font: 800 17px/22px var(--font); letter-spacing: 0.02em; }
+.label .key { color: var(--muted); }
+.label .tag { font-weight: 600; font-size: 15px; letter-spacing: 0; color: rgba(255, 255, 255, 0.86); transition: color 0.15s; }
+.line { display: block; margin-top: 6px; max-width: 380px; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.runs { display: block; margin-top: 6px; color: rgba(255, 255, 255, 0.45); font: 600 11px/1 var(--font); letter-spacing: 0.12em; text-transform: uppercase; }
+.pick:hover .ring, .pick:focus-visible .ring { stroke: #fff; }
+.pick:hover .lead, .pick:focus-visible .lead { stroke: var(--accent); }
+.pick:hover .tag, .pick:focus-visible .tag { color: var(--accent); }
+.pick:active .ring { stroke-width: 2; }
+
+.note { text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 13px; text-shadow: var(--shade); }
+
+/* narrow phones: the tag drops to its own line */
+@media (max-width: 459px) {
+  .label .sep2 { display: none; }
+  .label .tag { display: block; }
+}
+/* room for both picks side by side */
+@media (min-width: 640px) {
+  .picks { grid-template-columns: 1fr 1fr; gap: 28px; }
+  .label .sep2 { display: none; }
+  .label .tag { display: block; }
+}
+/* desktop */
+@media (min-width: 960px) and (min-height: 600px) {
+  main { gap: 44px; }
+  .picks { gap: 56px; }
+  .ask { font-size: 16px; }
+}
+/* phone landscape: short screens */
+@media (max-height: 500px) {
+  .info { display: none; }
+  main { gap: 16px; padding-top: 4px; padding-bottom: calc(var(--sb) + 12px); }
+  h1 { margin-top: 6px; font-size: 30px; }
+  .ask { margin-top: 6px; font-size: 14px; }
+  .line { margin-top: 4px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #sky { transition: none; }
+  .pick .ring, .pick .lead, .label .tag { transition: none; }
+}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<header class="top">
+  <a href="/" aria-label="Back to the arcade">‹ Arcade</a>
+  <button type="button" data-switch>Switch game</button>
+</header>
+<p class="info" aria-hidden="true">every dot is a galaxy</p>
+
+<main>
+  <div class="head">
+    <p class="eyebrow">Lab · two prototypes</p>
+    <h1>Light Years <span class="now">Home</span></h1>
+    <p class="ask">Two ways to fly home. Play both.</p>
+  </div>
+
+  <ul class="picks">
+    <li>
+      <a class="pick" id="pick-a" href="/light-years-home/lab/a/" aria-labelledby="label-a" aria-describedby="line-a">
+        <svg viewBox="0 0 78 80" aria-hidden="true">
+          <path class="lead" d="M48.4 27.6 L64 12 H74"/>
+          <circle class="ring" cx="30" cy="46" r="26"/>
+          <circle class="dot" cx="30" cy="46" r="1.3"/>
+          <circle class="dot" cx="35.5" cy="39.5" r="1" opacity="0.8"/>
+          <circle class="dot" cx="21" cy="40" r="1.1" opacity="0.7"/>
+          <circle class="dot" cx="41" cy="54" r="1.2" opacity="0.6"/>
+          <path class="dot" d="M30 66.5 L34.6 74 L30 72 L25.4 74 Z"/>
+          <path class="warm" d="M30 74.5 V79"/>
+        </svg>
+        <span class="label" id="label-a"><span class="key">A</span> · LIGHT YEARS AHEAD<span class="sep2"> ·</span> <span class="tag">steer and skim</span></span>
+        <span class="line" id="line-a">Steer round a ring while galaxies rush at you. Skim close to go faster.</span>
+        <span class="runs" id="runs-a" hidden></span>
+      </a>
+    </li>
+    <li>
+      <a class="pick" id="pick-b" href="/light-years-home/lab/b/" aria-labelledby="label-b" aria-describedby="line-b">
+        <svg viewBox="0 0 78 80" aria-hidden="true">
+          <path class="lead" d="M48.4 27.6 L64 12 H74"/>
+          <circle class="ring" cx="30" cy="46" r="26"/>
+          <circle cx="30" cy="46" r="11.5" fill="none" stroke="#f08a2c" stroke-width="5" opacity="0.28"/>
+          <circle class="dot" cx="30" cy="46" r="2.6"/>
+          <path d="M30 46 L17.3 58.7" fill="none" stroke="#fff" stroke-width="0.8" opacity="0.7"/>
+          <path d="M17.3 58.7 A18 18 0 0 1 12.6 41" fill="none" stroke="#fff" stroke-width="0.8" opacity="0.35" stroke-dasharray="1.5 2"/>
+          <path class="warm" d="M17.3 58.7 L4 72"/>
+          <circle class="dot" cx="17.3" cy="58.7" r="1.8"/>
+        </svg>
+        <span class="label" id="label-b"><span class="key">B</span> · SLINGSHOT HOME<span class="sep2"> ·</span> <span class="tag">grab, whip, let go</span></span>
+        <span class="line" id="line-b">Hold to grab a galaxy and whip round it. Let go to fling to the next one.</span>
+        <span class="runs" id="runs-b" hidden></span>
+      </a>
+    </li>
+  </ul>
+
+  <p class="note">About 3 minutes each, with sound on.</p>
+</main>
+
+<script>
+// Keys: A or 1 opens A, B or 2 opens B. Runs played on this device show under each pick.
+(() => {
+  const go = (id) => { location.href = document.getElementById('pick-' + id).href; };
+  addEventListener('keydown', (e) => {
+    if (window.GameSwitch?.isOpen || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'a' || k === '1') go('a');
+    else if (k === 'b' || k === '2') go('b');
+  });
+  for (const id of ['a', 'b']) {
+    let n = 0;
+    try {
+      const runs = JSON.parse(localStorage.getItem('lyh-lab-' + id + '-runs') || '[]');
+      n = Array.isArray(runs) ? runs.length : 0;
+    } catch { n = 0; }
+    if (n > 0) {
+      const el = document.getElementById('runs-' + id);
+      el.textContent = n === 1 ? '1 run so far' : (n >= 20 ? '20+' : n) + ' runs so far';
+      el.hidden = false;
+    }
+  }
+})();
+</script>
+<script type="module">
+// The backdrop: a slice of seeded cosmic web, drawn once as white dots. The Coma Cluster sits in the first clear
+// spot, ringed and labelled, and dots fade out behind the text so it stays easy to read.
+import { cosmicWeb } from '/light-years-home/core/gen/web.js';
+
+const canvas = document.getElementById('sky');
+const ctx = canvas.getContext('2d');
+const SPAN = 1400;
+const web = cosmicWeb({
+  seed: 11, count: 12000, box: [SPAN, SPAN, 150], cells: 80,
+  clusters: [{ pos: [0, 0, 0], radius: 16, members: 1000, giants: 2 }],
+});
+// where Coma may go, as shares of the screen, best first
+const SPOTS = [[0.78, 0.84], [0.8, 0.28], [0.2, 0.86], [0.74, 0.18], [0.16, 0.9], [0.86, 0.9], [0.86, 0.5]];
+const LABEL = 'Coma Cluster · 320 Mly';
+const FONT = '11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+
+// the line boxes of every text and button on the page
+function textBoxes() {
+  const out = [];
+  for (const el of document.querySelectorAll('.top a, .top button, .info, .head > *, .label, .line, .runs, .note, .pick svg')) {
+    if (!el.getClientRects().length) continue;
+    if (el.matches('.top a, .top button, .info, svg')) { out.push(el.getBoundingClientRect()); continue; }
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    for (const r of range.getClientRects()) if (r.width && r.height) out.push(r);
+  }
+  return out;
+}
+
+function clear(boxes, x0, y0, x1, y1) {
+  return !boxes.some((r) => x0 < r.right + 10 && x1 > r.left - 10 && y0 < r.bottom + 10 && y1 > r.top - 10);
+}
+
+function draw() {
+  const w = innerWidth, h = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = FONT;
+  const boxes = textBoxes();
+  // the slice is wide enough to cover the screen wherever Coma lands
+  const k = Math.max(w, h) / (SPAN * 0.58);
+  const r = Math.max(14, 16 * k * 1.6), tw = ctx.measureText(LABEL).width;
+  let spot = null;
+  for (const [fx, fy] of SPOTS) {
+    const cx = fx * w, cy = fy * h, ex = cx + r * 0.7071, ey = cy - r * 0.7071;
+    const x1 = ex + 30 + tw, top = ey - 26;
+    if (x1 < w - 8 && cy + r < h - 8 && top > 8 && clear(boxes, cx - r, top, x1, cy + r)) { spot = [cx, cy]; break; }
+  }
+  const ox = spot ? spot[0] : w / 2, oy = spot ? spot[1] : h / 2;
+  const P = web.positions;
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < web.count; i++) {
+    const x = ox + P[i * 3] * k, y = oy - P[i * 3 + 1] * k;
+    if (x < -2 || y < -2 || x > w + 2 || y > h + 2 || (!spot && web.knot[i] >= 0)) continue;
+    // fade a dot that sits behind text: gone inside a line box, back to full 14 px outside it
+    let near = 1;
+    for (const b of boxes) {
+      const dx = Math.max(b.left - x, 0, x - b.right), dy = Math.max(b.top - y, 0, y - b.bottom);
+      near = Math.min(near, Math.hypot(dx, dy) / 14);
+    }
+    if (near <= 0.05) continue;
+    const f = Math.min(2, web.flux[i]);
+    ctx.globalAlpha = Math.min(0.85, 0.16 + 0.3 * f) * near;
+    const s = f > 1.4 ? 1.6 : 1.1;
+    ctx.fillRect(x - s / 2, y - s / 2, s, s);
+  }
+  ctx.globalAlpha = 1;
+  if (!spot) { canvas.classList.add('on'); return; }
+  // Coma: a thin ring, a diagonal leader with a 10 px flat run, and a small label
+  const [cx, cy] = spot, ex = cx + r * 0.7071, ey = cy - r * 0.7071, lx = ex + 16, ly = ey - 16;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.moveTo(ex, ey);
+  ctx.lineTo(lx, ly);
+  ctx.lineTo(lx + 10, ly);
+  ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(LABEL, lx + 14, ly);
+  canvas.classList.add('on');
+}
+
+let timer = 0;
+addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(draw, 150); });
+document.fonts?.ready.then(draw, draw) ?? draw();
+</script>
+<script src="/arcade/switch.js"></script>
+<script src="/arcade/analytics.js" data-game="light-years-home"></script>
+</body>
+</html>
