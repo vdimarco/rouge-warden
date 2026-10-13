@@ -2,7 +2,7 @@
 
 This change is a handoff. A cloud session researched it without Unreal Engine, a GPU or access to the host. Codex on the host PC builds, measures and ships it.
 
-Statements without a label come from Epic's public docs, Epic's public PixelStreamingInfrastructure repository at the pinned revision `e5e243ed`, the installed npm frontend `lib-pixelstreamingfrontend-ue5.8` 0.1.2, or this repository. Statements marked **(check on host)** could not be confirmed, because the PixelStreaming2 engine plugin source is not public. Task 1.2 lists all of them; settle them from the installed engine before writing native code, and write the answers into this file.
+Statements without a label come from Epic's public docs, Epic's public PixelStreamingInfrastructure repository at the pinned revision `e5e243ed`, the installed npm frontend `lib-pixelstreamingfrontend-ue5.8` 0.1.2, or this repository. Statements marked **(check on host)** could not be confirmed, because the PixelStreaming2 engine plugin source is not public. Tasks 1.2 and 1.8 settle them from the installed engine before native code is written; write the answers into this file.
 
 ## Sources
 
@@ -49,9 +49,9 @@ Drop the `NORD_PORTRAIT_STREAM` build flag. A build flag lets the page and the h
 
 ### 4. The game owns frame sizes
 
-- Size requests use the channel from task 1.2. The game installs a handler for it, and also overrides the built-in `Resolution.Width` handler with `SetCommandHandler`, so a crafted request cannot ask for 4096×4096.
+- Size requests use the channel from task 1.2. The game installs a handler for it, and also overrides every built-in resolution handler with `SetCommandHandler`, so a crafted request cannot ask for 4096×4096. The built-in handler's key and the JSON shapes it accepts (flat `Resolution.Width` keys, nested `{Resolution:{Width,Height}}`) are **(check on host)**; task 5.1 sends both shapes at 4096×4096 to confirm the clamp.
 - The handler accepts the flat and the nested JSON shape. It clamps to at most 921,600 pixels (the 1280×720 budget), even numbers, at least 360 on the short side, and applies the size with `FSystemResolution::RequestResolutionChange(W, H, EWindowMode::Windowed)`.
-- That this resizes the PixelStreaming2 stream under `-RenderOffscreen -ForceRes -ResX=1280 -ResY=720 -windowed` on Linux Vulkan is **(check on host)**. Test it in task 1.4 in a private run before building on it.
+- That this resizes the PixelStreaming2 stream under `-RenderOffscreen -ForceRes -ResX=1280 -ResY=720 -windowed` on Linux Vulkan is **(check on host)**. Task 1.8 tests it on the public lifecycle in a maintenance window before native code relies on it.
 - On all-connections-closed, return to 1280×720 so the next visitor does not get a phone's leftover frame.
 - Never enable `-AllowPixelStreamingCommands` on the public host.
 
@@ -86,13 +86,13 @@ Keep unchanged: moon shadows (cost close to the day sun's), height fog, the pond
 ### 7. Bitrate for the relay path
 
 - Keep the 12 Mbps maximum on the host so desktop picture quality does not drop.
-- Lower the start bitrate to the relay throughput measured in task 1.3 (the records suggest about 1.2 Mbps; WebRTC adapts up within seconds on a fast path, which task 1.4 measures). Keep a 0.3 Mbps minimum.
+- Lower the start bitrate to the relay throughput measured in task 1.5 (the records suggest about 1.2 Mbps). WebRTC should adapt up within seconds on a fast path; task 1.7 measures it. Keep a 0.3 Mbps minimum.
 - The legacy flag names `-PixelStreamingWebRTCStartBitrate`, `-PixelStreamingWebRTCMinBitrate` and `-PixelStreamingWebRTCMaxBitrate` are **(check on host)** for PixelStreaming2. An unknown argument gives no warning (the old `-PixelStreamingInputKeyFilter` showed this), so read each value back before comparing.
 - If PixelStreaming2 applies `WebRTC.MaxBitrate` commands **(check on host)**, the page caps a relayed connection (TLS or TCP relay candidate) at 4 Mbps. It must do this after the library finishes handling `initialSettings`: call `stream.config.setNumericSetting(...)` from a `setTimeout(0)` inside the `initialSettings` listener. The game clamps these commands as in decision 4.
 
 ### 8. Page fixes found in review
 
-- After `portrait-stream` toggles, call `stream.webRtcController.resizePlayerStyle()` in the next animation frame, so Epic's input-coordinate converter measures the new video box. Without it the converter scales look-pad deltas by about 3.85 times in the tall frame (page side). How the game turns those deltas into camera rotation is unconfirmed; after the fix, upright look may feel about 2.2 times slower than today's strip, so the user tunes it by feel.
+- After `portrait-stream` toggles, call `stream.webRtcController.resizePlayerStyle()` in the next animation frame, so Epic's input-coordinate converter measures the new video box. Without it the converter keeps the 390×219 strip size, so vertical look-pad deltas are about 3.85 times too large in the tall frame (page side). After the fix, vertical deltas shrink by the strip-to-frame height ratio and horizontal deltas stay the same. How the game turns deltas into camera rotation is unconfirmed; upright look may feel slower than today's strip, so the user checks it by feel and look sensitivity may need tuning.
 - Keep the size asked for (`data-stream-size`) apart from the size received (`data-stream-frame`). Mark `frame-ignored` after about 5 s without a matching aspect. Retry when the send returns false. Clear these on disconnect and slot change.
 - Round requests to a few aspect steps (9:16, 9:18, 9:19.5, 9:20 upright; 16:9, 18:9, 19.5:9, 20:9 sideways) with hysteresis, so toolbar and rotation changes send at most one request each.
 - A sideways phone asks for a frame of its own shape (1280 wide, height from its aspect, at most 21:9) only after the game's message. Show such frames with `contain`. Keep today's landscape fullscreen `fill` when the game has not sent the message, so the black bars do not come back on the old build.
@@ -102,7 +102,7 @@ Keep unchanged: moon shadows (cost close to the day sun's), height fog, the pond
 
 ### 9. Codecs and capture scheduling
 
-- VP8 encoding is probably not the bottleneck: two native encode reports average 8.92 ms (`BrowserPerformance.md`). The `/proc` CPU sample there was taken without active encoding.
+- VP8 encoding is probably not the bottleneck: two native encode reports average 8.92 ms (`BrowserPerformance.md`). The `/proc` CPU sample there added no browser subscriber, so it is not an encoder benchmark; whether a viewer was connected is not recorded.
 - Test `MediaIO.EnableExperimentalScheduling 1` against 0 during the agreed maintenance window. Keep 1 only if no decoded-frame gap exceeds 1 s and native frames keep advancing for 10 minutes on both slots.
 - Retest H264 NVENC and AV1 only by replacing one slot during a maintenance window, never as a third game process (VRAM guard). Whether PixelStreaming2 negotiates several codecs, so VP8 can be a fallback, is **(check on host)**. Test AV1 on a real iPhone and Android phone first. Under H264 the frontend adds `x-google-max-bitrate=100000`, which can override the host cap.
 

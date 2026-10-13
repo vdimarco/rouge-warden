@@ -7,7 +7,7 @@ The browser player SHALL ask the game for a frame shaped like the phone only whe
 - **WHEN** a player on a phone held upright (for example 390×844 or 412×915 CSS pixels) taps Play on a game build that sends the frame message
 - **THEN** within 3 seconds the game picture fills the play area from top to bottom with no black band, and the HUD uses its tall layout
 - **AND** the sticks and the button row sit in the bottom 40% of the screen, as `mobile.test.mjs` checks
-- **AND** in the no-host browser test, the same look-pad drag sends normalized look deltas within 25% of those sent in the 16:9 frame.
+- **AND** in the no-host browser test, after the tall frame arrives, the input converter's player size equals the video box, and a look-pad drag of dx, dy sends normalized deltas within 5% of dx ÷ (half the box width) and dy ÷ (half the box height).
 
 #### Scenario: Phone held upright on an older game build
 - **WHEN** the running game build does not send the frame message
@@ -29,13 +29,14 @@ The browser player SHALL ask the game for a frame shaped like the phone only whe
 
 #### Scenario: Oversized size request
 - **WHEN** any browser asks a slot for a frame larger than 921,600 pixels, an odd size or a side shorter than 360 pixels
-- **THEN** the game limits the frame to at most 921,600 pixels, even dimensions and at least 360 pixels on the short side, as a native automation test checks.
+- **THEN** the game limits the frame to at most 921,600 pixels, even dimensions and at least 360 pixels on the short side, as a native automation test checks
+- **AND** on the host, flat (`Resolution.Width`) and nested (`{Resolution:{Width,Height}}`) 4096×4096 requests both leave the frame at or under 921,600 pixels.
 
 ### Requirement: Idle player slot frees the GPU
 When the host launcher passes the idle flag, a game process with no connected browser SHALL stop drawing the 3D world after a grace period, and SHALL draw it again as soon as a browser connects, without changing the game for the players who are connected. Each check compares the new package with the flag on against the same package with the flag off.
 
 #### Scenario: One player in the session
-- **WHEN** only the NordHost slot has a browser, and 90 seconds have passed since the game started and NordFriend1 lost its last browser
+- **WHEN** only the NordHost slot has a browser, at least 90 seconds after the game started and at least 30 seconds plus one poll interval after NordFriend1 lost its last browser
 - **THEN** the NordFriend1 process logs `NORD_STREAM_IDLE state=sleep`, and its GPU use in `nvidia-smi pmon` is at most 5% SM and at least 70% below its awake value
 - **AND** the connected player's decoded frame rate over 60 seconds is at least the flag-off rate minus 1 FPS.
 
@@ -45,7 +46,8 @@ When the host launcher passes the idle flag, a game process with no connected br
 
 #### Scenario: The host slot has no viewer while the friend plays
 - **WHEN** NordHost has no browser for more than 90 seconds and a player drives and walks in the NordFriend1 slot
-- **THEN** the host's `NORD_STREAM_FPS` log stays within 2 FPS of the flag-off run, and traffic, the car and the campaign behave as in the flag-off run.
+- **THEN** the host's `NORD_STREAM_FPS` log stays within 2 FPS of the flag-off run
+- **AND** the movement and car checks of `live.test.mjs` pass on NordFriend1, and the host log has no warnings or errors that the flag-off run does not have.
 
 #### Scenario: Runs without the flag
 - **WHEN** the game runs in the editor, in automation or smoke tests, in capture runs (`-NordCapture`) or as a native client without the idle flag
