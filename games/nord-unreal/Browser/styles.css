@@ -33,16 +33,20 @@ footer p { margin: 0; }
 #frame:fullscreen { width: 100vw; height: 100dvh; }
 @media (max-width: 900px) { header { padding: 14px; } main { min-height: 420px; } footer { padding: 10px 14px; } .caption { padding: 22px; } #overlay { padding: 20px; } }
 
-#touch-controls { position: absolute; inset: 0; pointer-events: none; user-select: none; -webkit-user-select: none; }
+#touch-controls { --action-size: clamp(72px, 22vh, 88px); position: absolute; inset: 0; pointer-events: none; user-select: none; -webkit-user-select: none; }
 #touch-controls button, .touch-stick { pointer-events: auto; touch-action: none; -webkit-touch-callout: none; }
 /* Ink-and-paper chips: ink fill, thin paper keyline, Impact capitals and a hard magenta offset shadow. */
 #touch-controls button { min-width: 44px; min-height: 44px; border: 1.5px solid var(--paper); border-radius: 0; background: var(--ink); color: var(--paper); padding: 6px 10px; font: 900 11px/1.1 Impact, "Arial Black", Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; box-shadow: 3px 3px 0 #c2185b; }
 #touch-controls button[data-pressed="true"] { background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 1px 1px 0 #c2185b; transform: translate(2px, 2px); }
 #touch-controls button span { display: block; margin-top: 2px; font-size: 8.5px; letter-spacing: .08em; color: var(--cyan); }
 #touch-controls button[data-pressed="true"] span { color: var(--ink); }
-/* Full button faces and two rows keep the actions easy to hit with a thumb. */
-#touch-controls .touch-primary button { width: clamp(76px, 12vw, 88px); height: 56px; padding: 8px; font-size: 14px; letter-spacing: .02em; }
-#touch-controls .touch-primary button span { font-size: 10px; }
+/* Floating game buttons keep full thumb-sized faces without obscuring the world. */
+#touch-controls .touch-primary button { width: var(--action-size); height: var(--action-size); padding: 8px; border: 2px solid #fffaf0b3; border-radius: 50%; background: #0b0a16c9; color: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; letter-spacing: .03em; box-shadow: 0 4px 0 #0009, inset 0 1px 0 #fff3; text-shadow: 0 1px 2px #000; }
+#touch-controls .touch-primary button[data-key="32"] { border-color: var(--cyan); }
+#touch-controls .touch-primary button[data-key="69"] { border-color: var(--yellow); }
+#touch-controls .touch-primary svg { width: 28px; height: 28px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+#touch-controls .touch-primary button span { margin: 0; font: 700 10px/1 Arial, sans-serif; letter-spacing: .02em; color: inherit; }
+#touch-controls .touch-primary button:is(:active, [data-pressed="true"], [aria-expanded="true"]) { background: var(--yellow); color: var(--ink); border-color: var(--paper); box-shadow: 0 1px 0 #0009, inset 0 2px 4px #0004; text-shadow: none; transform: translateY(3px); }
 #touch-controls .touch-primary button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
 /* Sticks: a paper ring inside an ink ring around a halftone-dot fill. */
 .touch-stick { position: absolute; width: 96px; height: 96px; border: 2px solid var(--paper); border-radius: 50%; display: grid; place-items: center;
@@ -56,7 +60,7 @@ footer p { margin: 0; }
 /* While a thumb holds the move stick, hide it so it does not cover the game. */
 .move-stick { transition: opacity .15s; }
 .move-stick[data-pressed="true"] { opacity: 0; }
-.touch-primary { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, auto); gap: 10px; }
+.touch-primary { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, auto); gap: 12px; }
 .touch-input { height: 100dvh; overflow: hidden; }
 .touch-input main { min-height: 0; }
 .touch-input header { gap: 8px; padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); }
@@ -97,4 +101,4 @@ footer p { margin: 0; }
 .touch-input.portrait-stream #frame { container-type: size; }
 .touch-input.portrait-stream .touch-stick { --stick: clamp(76px, calc(40cqh - 70px), 96px); width: var(--stick); height: var(--stick); }
 /* The open crew list sits above the sticks so they cannot take its taps. */
-.touch-input.portrait-stream .crew-picker { top: auto; bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px)); }
+.touch-input.portrait-stream .crew-picker { top: auto; bottom: calc(2 * var(--action-size) + 32px + max(16px, env(safe-area-inset-bottom))); }

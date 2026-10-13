@@ -133,7 +133,7 @@ async function layout(name) {
   const actions = geometry.targets.filter(target => !target.selector.includes('data-stick'));
   assert.equal(new Set(actions.map(target => target.y)).size, 2, 'actions occupy two rows');
   assert.equal(new Set(actions.map(target => target.x)).size, 2, 'actions occupy two columns');
-  for (const target of actions) assert.ok(target.width >= 76 && target.height >= 56, 'large action buttons');
+  for (const target of actions) assert.ok(target.width >= 72 && target.height >= 72, 'large square action targets');
   assert.equal(geometry.visible, true, 'touch controls must be visible while playing');
   assert.equal(geometry.overflowX, false, 'no horizontal overflow');
   for (const target of geometry.targets) {
@@ -382,6 +382,9 @@ try {
       await waitForPacket(60, 87, since); // W
       await waitForPacket(74, null, since); // look MouseMove
       await waitForPacket(60, 32, since); // Space
+      assert.equal(await page.locator('[data-key="32"]').getAttribute('data-pressed'), 'true');
+      assert.equal(await page.locator('[data-key="32"]').evaluate(button => getComputedStyle(button).backgroundColor),
+        'rgb(255, 227, 63)', 'held Jump lights its full button face');
       await page.waitForTimeout(550);
       await page.screenshot({ path: resolve(output, 'portrait-three-finger-held.png') });
       const held = (await sends()).slice(since);
