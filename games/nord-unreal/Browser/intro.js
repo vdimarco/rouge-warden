@@ -106,7 +106,9 @@ function close(starting = false) {
   }
   delete document.body.dataset.intro;
   const play = element('play');
-  (!play.hidden ? play : document.body.dataset.state === 'selecting' ? element('streamer') : element('start')).focus();
+  // The player list lives in the menu: open it when a player still has to be chosen.
+  if (document.body.dataset.state === 'selecting' && element('menu').hidden) element('menu-toggle').click();
+  else (!play.hidden ? play : element('start')).focus();
 }
 
 element('start').addEventListener('click', () => {

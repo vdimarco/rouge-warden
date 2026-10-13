@@ -5,7 +5,6 @@ header { display: flex; justify-content: space-between; align-items: center; gap
 .brand { display: grid; gap: 5px; white-space: nowrap; }
 .brand strong { color: var(--yellow); font-size: 21px; font-weight: 900; letter-spacing: -.6px; }
 .brand span { font-size: 12px; color: #dad4dc; }
-.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
 button, select { min-height: 38px; border: 2px solid var(--paper); border-radius: 0; background: var(--ink); color: var(--paper); font: 700 13px Arial, sans-serif; padding: 8px 11px; }
 button { cursor: pointer; }
 button:hover:enabled { background: var(--yellow); color: var(--ink); border-color: var(--yellow); }
@@ -31,7 +30,7 @@ footer p { margin: 0; }
 .controls { color: #dad4dc; }
 .controls b { color: var(--paper); }
 #frame:fullscreen { width: 100vw; height: 100dvh; }
-@media (max-width: 900px) { header { align-items: flex-start; flex-direction: column; padding: 14px; } main { min-height: 420px; } footer { padding: 10px 14px; } .caption { padding: 22px; } #overlay { padding: 20px; } }
+@media (max-width: 900px) { header { padding: 14px; } main { min-height: 420px; } footer { padding: 10px 14px; } .caption { padding: 22px; } #overlay { padding: 20px; } }
 
 #touch-controls { position: absolute; inset: 0; pointer-events: none; user-select: none; -webkit-user-select: none; }
 #touch-controls button, .touch-stick { pointer-events: auto; touch-action: none; -webkit-touch-callout: none; }
@@ -48,34 +47,27 @@ footer p { margin: 0; }
 .move-stick[data-pressed="true"] { opacity: 0; }
 .look-cross { color: #fffaf099; font-size: 32px; pointer-events: none; }
 .touch-primary { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, 62px); gap: 6px; }
-.touch-primary button:last-child { grid-column: 1 / -1; }
-.touch-secondary { position: absolute; top: 10px; right: max(12px, env(safe-area-inset-right)); display: flex; gap: 6px; }
+#touch-menu { font-size: 18px; }
 .touch-exit { position: absolute; top: 10px; left: max(12px, env(safe-area-inset-left)); }
 .touch-input { height: 100dvh; overflow: hidden; }
 .touch-input main { min-height: 0; }
 .touch-input header { gap: 8px; padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); }
 .touch-input .brand strong { font-size: 16px; }
-.touch-input .brand span, .touch-input .toolbar label, .touch-input footer .controls { display: none; }
-.touch-input .toolbar { gap: 5px; }
-.touch-input .toolbar button, .touch-input select { min-height: 44px; font-size: 11px; padding: 6px; }
+.touch-input .brand span, .touch-input footer .controls { display: none; }
+.touch-input select { min-height: 44px; }
+/* While playing on a touch screen the header hides; the ☰ button next to Sprint, Jump and Use opens the menu. */
+.touch-input[data-state="playing"] header { display: none; }
 .touch-input footer { font-size: 11px; line-height: 1.35; padding: 6px max(10px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
 @media (max-width: 550px) {
-  .touch-input header { align-items: stretch; }
-  .touch-input .toolbar { justify-content: space-between; }
-  .touch-input select { max-width: 126px; }
   .move-stick, .look-stick { bottom: max(92px, calc(env(safe-area-inset-bottom) + 76px)); }
   .look-stick { right: max(16px, env(safe-area-inset-right)); }
-  .touch-primary { left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); grid-template-columns: repeat(3, 1fr); bottom: max(16px, env(safe-area-inset-bottom)); }
-  .touch-primary button:last-child { grid-column: auto; }
+  .touch-primary { left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); grid-template-columns: repeat(4, 1fr); bottom: max(16px, env(safe-area-inset-bottom)); }
 }
 @media (orientation: landscape) and (max-height: 600px) {
-  .touch-input header { flex-direction: row; align-items: center; }
   .touch-input footer { display: none; }
   .touch-input .brand strong { font-size: 14px; }
   .touch-stick { width: 100px; height: 100px; }
-  .touch-secondary { top: 6px; left: max(12px, env(safe-area-inset-left)); right: auto; display: grid; grid-template-columns: repeat(2, 52px); }
   .look-stick { right: max(16px, env(safe-area-inset-right)); bottom: max(140px, calc(env(safe-area-inset-bottom) + 118px)); }
-  #frame:fullscreen .touch-secondary { left: 50%; transform: translateX(-50%); display: flex; }
 
   /* Fill retains every native HUD pixel; wide displays stretch the 16:9 stream. */
   .touch-input #frame:fullscreen #video video { object-fit: fill; }
@@ -83,44 +75,41 @@ footer p { margin: 0; }
   .touch-input #frame:fullscreen .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: calc(35% + 8px); }
   .touch-input #frame:fullscreen .stick-label { font-size: 8px; letter-spacing: 0; white-space: nowrap; }
   .touch-input #frame:fullscreen .look-stick { right: max(16px, env(safe-area-inset-right)); top: auto; bottom: calc(35% + 8px); }
-  .touch-input #frame:fullscreen .touch-secondary {
-    top: max(4px, env(safe-area-inset-top));
-    left: calc(59% - 82px); right: auto; transform: none;
-    display: flex; gap: 4px;
-  }
-  .touch-input #frame:fullscreen .touch-secondary button { width: 52px; min-width: 52px; min-height: 44px; padding: 4px; font-size: 10px; }
   .touch-input #frame:fullscreen .touch-primary {
-    right: auto; left: 42%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
-    grid-template-columns: repeat(3, 72px); gap: 6px;
+    right: auto; left: 38%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(4, 64px); gap: 6px;
   }
   .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 4px; font-size: 11px; }
-  .touch-input #frame:fullscreen .touch-primary button:last-child { grid-column: auto; }
   .touch-input #frame:fullscreen .touch-exit {
     top: max(4px, env(safe-area-inset-top)); left: calc(59% - 138px); width: 52px; min-width: 52px;
     min-height: 44px; padding: 2px; font-size: 9px;
   }
 }
 
-/* Phone crew picker: eight crew members in two columns, under the top buttons. */
-.crew-picker { position: absolute; top: 64px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
+/* Phone crew picker: eight crew members in two columns, opened from the menu. */
+.crew-picker { position: absolute; top: 10px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
 #touch-controls .crew-picker button { min-height: 44px; font-size: 11px; text-align: left; }
+#touch-controls .crew-picker .crew-close { grid-column: 1 / -1; text-align: center; }
 
-/* Phones held upright: the game sits at the top, under the small buttons, and the sticks sit in the space below it, clear of the map and mission text. */
+/* Phones held upright with a 16:9 frame: the game sits at the top and the sticks below it, clear of the map and mission text. */
 @media (orientation: portrait) and (max-width: 700px) {
-  .touch-input #video { top: 62px; bottom: auto; height: min(calc(100vw * 9 / 16), calc(100% - 62px)); }
+  .touch-input #video { top: 0; bottom: auto; height: min(calc(100vw * 9 / 16), 100%); }
   .touch-input .touch-stick { width: 100px; height: 100px; }
   .touch-input .move-stick, .touch-input .look-stick { bottom: max(72px, calc(env(safe-area-inset-bottom) + 60px)); }
 }
 
 /* While playing on a touch screen, the play area takes the footer's space too. */
 .touch-input[data-state="playing"] footer { display: none; }
-/* A tall frame from the game fills the play area, and every control sits in its bottom 40%, under the game's HUD. */
+/* A tall frame from the game fills the play area, and every control sits in its bottom 40%, under the game's HUD: one row of buttons with the sticks above it. */
 .touch-input.portrait-stream #video { top: 0; bottom: 0; height: auto; }
 .touch-input.portrait-stream #touch-controls button { background: #0b0a1699; }
-.touch-input.portrait-stream .touch-primary { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); grid-template-columns: repeat(3, 1fr); }
-.touch-input.portrait-stream .touch-primary button:last-child { grid-column: auto; }
-.touch-input.portrait-stream .touch-secondary { top: auto; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(64px, calc(env(safe-area-inset-bottom) + 52px)); display: grid; grid-template-columns: repeat(4, 1fr); }
-.touch-input.portrait-stream .move-stick, .touch-input.portrait-stream .look-stick { bottom: max(118px, calc(env(safe-area-inset-bottom) + 106px)); }
+.touch-input.portrait-stream .touch-primary { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); grid-template-columns: repeat(4, 1fr); }
+/* The sticks shrink on short phones (down to 64 px) so the controls stay inside the bottom 40% the game keeps clear. */
+.touch-input.portrait-stream #frame { container-type: size; }
+.touch-input.portrait-stream .touch-stick { --stick: clamp(64px, calc(40cqh - 70px), 100px); width: var(--stick); height: var(--stick); }
+.touch-input.portrait-stream .stick-label { font-size: 8px; letter-spacing: 0; white-space: nowrap; }
+.touch-input.portrait-stream .move-stick, .touch-input.portrait-stream .look-stick { bottom: max(66px, calc(env(safe-area-inset-bottom) + 54px)); }
 .touch-input.portrait-stream .look-stick { right: max(16px, env(safe-area-inset-right)); }
-.touch-input.portrait-stream .crew-picker { top: auto; bottom: max(118px, calc(env(safe-area-inset-bottom) + 106px)); }
-.touch-input.portrait-stream .touch-exit { top: auto; bottom: max(226px, calc(env(safe-area-inset-bottom) + 214px)); }
+/* The open crew list sits above the sticks so they cannot take its taps. */
+.touch-input.portrait-stream .crew-picker { top: auto; bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px)); z-index: 1; }
+.touch-input.portrait-stream .touch-exit { top: auto; bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px)); }
