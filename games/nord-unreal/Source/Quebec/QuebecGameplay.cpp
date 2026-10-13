@@ -124,6 +124,7 @@ AQuebecCharacter::AQuebecCharacter()
     CameraArm->TargetArmLength = 420.f;
     CameraArm->SocketOffset = FVector(0., 0., 55.);
     CameraArm->bUsePawnControlRotation = false;
+    CameraArm->SetUsingAbsoluteRotation(true);
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     Camera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
 
@@ -620,6 +621,7 @@ AQuebecCar::AQuebecCar()
     CameraArm->TargetArmLength = 720.f;
     CameraArm->SocketOffset = FVector(0., 0., 80.);
     CameraArm->bUsePawnControlRotation = false;
+    CameraArm->SetUsingAbsoluteRotation(true);
     CameraArm->bEnableCameraLag = true;
     CameraArm->CameraLagSpeed = 7.f;
     CameraArm->CameraLagMaxDistance = 120.f;
@@ -2607,6 +2609,13 @@ bool FQuebecCameraBoundsTest::RunTest(const FString& Parameters)
         Arm->TickComponent(.016f, LEVELTICK_All, nullptr);
         TestTrue(TEXT("Collision retraction cannot turn the camera upward"), Camera->GetComponentRotation().Pitch <= -4.99f);
         Wall->Destroy();
+        Arm->bDoCollisionTest = false;
+        Controller->SetControlRotation(FRotator(-6.f, 25.f, 0.f));
+        Pawn->Tick(.016f);
+        Pawn->SetActorRotation(FRotator(0.f, 120.f, 0.f));
+        Arm->TickComponent(.016f, LEVELTICK_All, nullptr);
+        TestTrue(TEXT("Movement turning cannot kick the camera after its update"),
+            FMath::Abs(FRotator::NormalizeAxis(Camera->GetComponentRotation().Yaw - 25.f)) < .01f);
     }
     return true;
 }

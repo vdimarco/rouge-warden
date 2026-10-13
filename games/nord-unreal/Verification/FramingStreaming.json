@@ -2,7 +2,7 @@
   "date": "2026-10-13",
   "baseline_commit": "34a03118fc8cea3d66ecd308b8f10f130c77e646",
   "source_sha256": {
-    "Source/Quebec/QuebecGameplay.cpp": "8bc729498dce6ed23e658cad5a2c0facd28b5c52fd8a99f3c223012cc77cc4fe",
+    "Source/Quebec/QuebecGameplay.cpp": "0a9920bdc7ffadf20ed7eaf8579ed960fe93c0de1065895fcc05e7011edc13d2",
     "Scripts/browser_streaming.py": "e3126b0ac5d1550eb04287911f2f514e1a8f3bcbbc2362e518f5aada2516db06",
     "Browser/player.js": "5b8f186e5f6cc33af9af5343f523a56774894922fc88833bbabd4d046e08ae47",
     "Browser/config.mjs": "1ec9c2f02d8f52c58abfcad4a5aa98cbcc8a4cdcc74af138b563054be6644db6",
@@ -11,7 +11,7 @@
   "native_automation": {
     "passed": 20,
     "exit_code": 0,
-    "log": "Saved/BrowserStreaming/framing-stream-20261013/automation-centered.log"
+    "log": "Saved/BrowserStreaming/framing-stream-20261013/automation-turning.log"
   },
   "browser_unit": {
     "passed": 22
@@ -40,7 +40,8 @@
       0,
       55
     ],
-    "framing_verified": "native capsule endpoint projections and inspected packaged portrait extreme screenshots"
+    "framing_verified": "native capsule endpoint projections and inspected packaged portrait extreme screenshots",
+    "turning_regression": "Rotating the pawn after its camera update retains camera yaw; arm rotation is absolute."
   },
   "mobile_stream": {
     "base_landscape": [
@@ -92,7 +93,8 @@
       "drops": 0,
       "decode_ms": 0.327,
       "longest_frame_gap_ms": 166.6,
-      "mode": "forced TURN/TLS; camera sweep; host-PC Chromium"
+      "mode": "forced TURN/TLS; camera sweep; host-PC Chromium",
+      "scope_note": "Before the final turn-attachment correction; streaming profile and stationary camera-sweep behavior unchanged."
     }
   },
   "h264": {
