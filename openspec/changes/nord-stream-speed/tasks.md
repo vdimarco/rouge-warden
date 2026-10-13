@@ -2,7 +2,7 @@
 
 Owner: Codex on the host PC. Read `design.md` first; its **(check on host)** items are settled in tasks 1.2 and 1.8.
 
-Order: group 0 first. Group 4 (page) and the page deploy in 5.3 need only groups 0 and 1, because an old game build never sends the frame message. Groups 2 and 3 are needed for 5.1, 5.2 and 5.4.
+Order: group 0 first. Group 4 (page) and the page deploy in 5.3 need only groups 0 and 1, because an old game build never sends the frame message and the page sends no size request or bitrate cap without it. Groups 2 and 3 are needed for 5.1, 5.2 and 5.4. Fetch the branch again before each group; the handoff may receive fixes.
 
 Keep the 12,000 MiB launch guard, the saves, the public tunnel and the TURN relay as they are. Never enable `-AllowPixelStreamingCommands` on the public host. Never stop user applications other than Dota 2 without asking.
 
@@ -77,13 +77,13 @@ Keep the 12,000 MiB launch guard, the saves, the public tunnel and the TURN rela
 - [ ] 4.2 Call `stream.webRtcController.resizePlayerStyle()` in the next animation frame after `portrait-stream` toggles. The feel check is in 5.4.
 - [ ] 4.3 Track asked and received sizes (`data-stream-size`, `data-stream-frame`, `frame-ignored` after 5 s without a matching aspect). Retry when the send returns false. Clear the state on disconnect and slot change.
 - [ ] 4.4 Round requests to aspect steps with hysteresis. After the frame message, ask sideways phones for a frame of their own shape (up to 21:9) and show it with `contain`. Without the message, keep today's landscape fullscreen `fill`.
-- [ ] 4.5 If 1.2 shows bitrate commands are applied, cap relayed connections at 4 Mbps: `stream.config.setNumericSetting(...)` from a `setTimeout(0)` inside the `initialSettings` listener.
+- [ ] 4.5 If 1.2 shows bitrate commands are applied, cap relayed connections at 4 Mbps: `stream.config.setNumericSetting(...)` from a `setTimeout(0)` inside the `initialSettings` listener. Send the cap only after the game's frame message, because only a build with the 2.5 clamp and restore returns the slot to its host values; on an old package the cap would stay for every later visitor.
 - [ ] 4.6 Add the `?stats=1` QA readout from design decision 8, without ICE server URLs or credentials.
 - [ ] 4.7 Tests:
   - Move the sizing rules into a pure module with `node:test` tests, and add the file to the `test` script in `package.json`.
   - Add a no-host test to `browser.test.mjs` with the mechanism from design decision 8, for message present and absent, at 390×844, 412×915 and 844×390, plus a phone without element fullscreen. Include the converter check from the spec.
-  - In `mobile.test.mjs`: compare aspect instead of exact pixels, compute HUD regions from the received frame, change the bottom-area check from `.58` to `.60` (bottom 40%), and replace the two `streamSize === '1280x720'` checks (the landscape wait and the build-flag skip) with waits on the received aspect and a skip decided by the frame message.
-  - In `live.test.mjs`: read `lifecycle.json` for the slot log paths and flags. Wait for `NORD_STREAM_IDLE state=wake` only if the slot's last logged state was sleep. Measure wake time from the video `playing` event to the first frame whose mean pixel difference from the first played frame is above 2%, and require at most 2 s.
+  - In `mobile.test.mjs`: compare aspect instead of exact pixels, compute HUD regions from the received frame, change the bottom-area check from `.58` to `.60` (bottom 40%), and replace the two `streamSize === '1280x720'` checks (the landscape wait and the build-flag skip) with waits on the received aspect and a skip decided by the frame message. In `fullscreenClearance`, expect `object-fit: contain` and a picture that reaches all four edges within the aspect-step tolerance when the frame message arrived; keep the `fill` assertion only when it did not.
+  - In `live.test.mjs`: read `lifecycle.json` for the slot log paths and flags. Only if the slot's last logged state was sleep, measure wake time from the `NORD_STREAM_IDLE state=wake` log time to the first video frame whose world area (outside the HUD panels) is not black; a first played frame that already shows the world counts as 0 s. Require at most 2 s, and start frame-rate sampling at least 2 s after the wake line.
 - [ ] 4.8 Run `npm test` and `NORD_CHROMIUM_PATH=<chromium> node browser.test.mjs` in `games/nord-unreal/Browser`.
 
 ## 5. Ship and check
@@ -92,7 +92,7 @@ Keep the 12,000 MiB launch guard, the saves, the public tunnel and the TURN rela
 - [ ] 5.2 Repeat the 1.5 measurements with each flag on and off, using `NORD_STREAM_FLAGS`. For the night-rain budget scenario, pin both slots with `NORD_SKY_ARGS="-NordHour=22 -NordWeather=Rain -NordFreezeTime -NordFreezeWeather"`, profile with `NORD_STREAM_PROFILE=900`, and take paired streamed screenshots at the spawn for the user to review.
 - [ ] 5.3 Deploy the page:
   - Before any merge to `main`, read the Vercel project's Git settings (production branch, root directory, build command) and environment. On 2026-10-13 the project had `NORD_SIGNALLING_URL` and `NORD_PORTRAIT_STREAM=0` for production and preview. If `NORD_SIGNALLING_URL` does not match the current Quick Tunnel hostname, update it only with the user's approval.
-  - Deploy with the user's approval: merge to `main` if that deploys production. Otherwise run `vercel deploy --prod` from the repository root when the project's root directory is `games/nord-unreal/Browser`, or from that folder when the root directory is empty.
+  - Deploy with the user's approval: merge to `main` if that deploys production, or promote the Git-built preview deployment of the tested commit. Never run the Vercel CLI from the services checkout: its ignored files (`Saved/BrowserStreaming/relay/`, `ice-*.json`, `Builds/`) hold TURN credentials and saves, and the CLI does not read `.gitignore`. If a CLI deploy is needed, export the commit to a clean folder (`git worktree add <tmp> <commit>`), run `vercel link --project nord-montreal` there and check the link, then run `vercel deploy --prod` from that folder's root.
   - Byte-compare the deployed files with a local build. To roll back, promote the previous production deployment.
   - After the new page is live, remove `NORD_PORTRAIT_STREAM` from the project environment. Update `Browser/README.md` and `HOSTING.md`, which still say the project has no Git link.
 - [ ] 5.4 Ask the user to check on a physical phone: upright fills the screen, sideways is not stretched, look speed feels right, and 60 s on mobile data with `?stats=1` meets the relay scenario. Record which phone checks did not run.

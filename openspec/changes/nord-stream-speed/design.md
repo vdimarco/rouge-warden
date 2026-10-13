@@ -88,7 +88,7 @@ Keep unchanged: moon shadows (cost close to the day sun's), height fog, the pond
 - Keep the 12 Mbps maximum on the host so desktop picture quality does not drop.
 - Lower the start bitrate to the relay throughput measured in task 1.5 (the records suggest about 1.2 Mbps). WebRTC should adapt up within seconds on a fast path; task 1.7 measures it. Keep a 0.3 Mbps minimum.
 - The legacy flag names `-PixelStreamingWebRTCStartBitrate`, `-PixelStreamingWebRTCMinBitrate` and `-PixelStreamingWebRTCMaxBitrate` are **(check on host)** for PixelStreaming2. An unknown argument gives no warning (the old `-PixelStreamingInputKeyFilter` showed this), so read each value back before comparing.
-- If PixelStreaming2 applies `WebRTC.MaxBitrate` commands **(check on host)**, the page caps a relayed connection (TLS or TCP relay candidate) at 4 Mbps. It must do this after the library finishes handling `initialSettings`: call `stream.config.setNumericSetting(...)` from a `setTimeout(0)` inside the `initialSettings` listener. The game clamps these commands as in decision 4.
+- If PixelStreaming2 applies `WebRTC.MaxBitrate` commands **(check on host)**, the page caps a relayed connection (TLS or TCP relay candidate) at 4 Mbps, but only after the game's frame message. A command changes the slot's setting, so only a build that restores the host values when the browser leaves may receive it. It must do this after the library finishes handling `initialSettings`: call `stream.config.setNumericSetting(...)` from a `setTimeout(0)` inside the `initialSettings` listener. The game clamps these commands as in decision 4.
 
 ### 8. Page fixes found in review
 

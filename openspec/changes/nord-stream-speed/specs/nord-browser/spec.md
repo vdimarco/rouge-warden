@@ -42,11 +42,11 @@ When the host launcher passes the idle flag, a game process with no connected br
 
 #### Scenario: A friend joins the sleeping slot
 - **WHEN** a browser connects to a sleeping slot and the player taps Play
-- **THEN** the slot logs `NORD_STREAM_IDLE state=wake`, the live world appears within 2 seconds of the video starting, and movement, look and actions work at once.
+- **THEN** the slot logs `NORD_STREAM_IDLE state=wake`, the live world appears within 2 seconds of that log line (a first frame that already shows the world counts as 0 seconds), and movement, look and actions work at once.
 
 #### Scenario: The host slot has no viewer while the friend plays
 - **WHEN** NordHost has no browser for more than 90 seconds and a player drives and walks in the NordFriend1 slot
-- **THEN** the host's `NORD_STREAM_FPS` log stays within 2 FPS of the flag-off run
+- **THEN** the host's `NORD_STREAM_FPS` rate is at least the flag-off rate minus 2 FPS
 - **AND** the movement and car checks of `live.test.mjs` pass on NordFriend1, and the host log has no warnings or errors that the flag-off run does not have.
 
 #### Scenario: Runs without the flag
