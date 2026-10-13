@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>Light Years Ahead · Lab A</title>
+<meta name="description" content="Skim the universe home. Every near miss pulls you closer to light.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ccircle cx='16' cy='14' r='10' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Cpath d='M16 21l-4 5h8z' fill='%23fff'/%3E%3Cpath d='M15 26h2v4h-2z' fill='%23f08a2c'/%3E%3C/svg%3E">
+<script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
+<link rel="modulepreload" href="/vr/lib/three.module.min.js">
+<link rel="modulepreload" href="/vr/lib/three.core.min.js">
+<style>
+/* Lab A: black space, white points, thin white rings, small labels, bold captions with an orange word. */
+:root {
+  --ink: #fff; --accent: #f08a2c; --muted: rgba(255, 255, 255, 0.6); --ring: rgba(255, 255, 255, 0.8);
+  --st: env(safe-area-inset-top, 0px); --sr: env(safe-area-inset-right, 0px);
+  --sb: env(safe-area-inset-bottom, 0px); --sl: env(safe-area-inset-left, 0px);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --shade: 0 1px 1px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: #000; color: var(--ink); overflow: hidden; overscroll-behavior: none; }
+body { font: 15px/1.4 var(--font); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; user-select: none;
+  -webkit-user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#overlay { pointer-events: none; }
+/* Flashes, the hit's red edge, the speed rim and the caught flood: composited layers, only opacity and scale change. */
+#fx { position: fixed; inset: 0; pointer-events: none; --cx: 50%; --cy: 40%; }
+#fx div { position: absolute; inset: 0; opacity: 0; will-change: opacity, transform; transform-origin: var(--cx) var(--cy); }
+#fx-flash { background: radial-gradient(circle at var(--cx) var(--cy), rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 32%); }
+#fx-red { background: radial-gradient(circle at var(--cx) var(--cy), rgba(255, 40, 30, 0) 28%, rgba(255, 40, 30, 0.55) 75%); }
+#fx-rim { background: radial-gradient(circle at var(--cx) var(--cy), rgba(160, 20, 10, 0) 48%, rgba(170, 25, 12, 0.32) 78%); }
+#fx-flood { background: radial-gradient(circle at var(--cx) var(--cy), rgba(255, 255, 255, 0) 18%, rgba(255, 255, 255, 0.97) 70%); }
+#fx-fill { background: rgba(255, 255, 255, 0.9); }
+button, a { font: inherit; color: inherit; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.hud { position: fixed; top: calc(var(--st) + 10px); font-weight: 700; font-variant-numeric: tabular-nums;
+  text-shadow: var(--shade); pointer-events: none; letter-spacing: 0.02em; }
+#speed { left: calc(var(--sl) + 14px); font-size: 17px; }
+#speed small { display: block; font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; }
+#score { right: calc(var(--sr) + 66px); font-size: 17px; text-align: right; }
+#score small { display: block; font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; }
+#pause { position: fixed; top: calc(var(--st) + 6px); right: calc(var(--sr) + 10px); width: 44px; height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 50%; background: rgba(0, 0, 0, 0.35); padding: 0;
+  display: grid; place-items: center; cursor: pointer; touch-action: manipulation; }
+#pause svg { width: 16px; height: 16px; fill: #fff; }
+#progress { position: fixed; left: 0; top: 0; height: 2px; width: 0; background: rgba(255, 255, 255, 0.5);
+  pointer-events: none; }
+
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: calc(var(--st) + 20px) calc(var(--sr) + 20px) calc(var(--sb) + 20px) calc(var(--sl) + 20px);
+  gap: 14px; text-shadow: var(--shade); }
+#title { cursor: pointer; justify-content: flex-end; padding-bottom: calc(var(--sb) + 9vh); }
+#title h1 { font-size: clamp(30px, 8.5vw, 54px); font-weight: 800; letter-spacing: 0.04em; line-height: 1; margin: 0; }
+#title h1 span { color: var(--accent); }
+#title .line { color: var(--muted); font-size: 14px; max-width: 30ch; margin: 0; }
+#title .go { margin-top: 10px; font-weight: 800; letter-spacing: 0.14em; font-size: 15px; animation: pulse 1.6s infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
+.back { position: fixed; top: calc(var(--st) + 14px); left: calc(var(--sl) + 14px); color: var(--muted);
+  text-decoration: none; font-size: 13px; padding: 6px 4px; }
+
+.card { background: rgba(0, 0, 0, 0.86); border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 18px;
+  padding: 20px 22px; min-width: min(320px, 88vw); max-width: 92vw; display: flex; flex-direction: column;
+  align-items: center; gap: 10px; }
+#caught .big { font-size: 22px; font-weight: 800; letter-spacing: 0.05em; color: #111; text-shadow: none; }
+#caught .why { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: #b35a00; text-shadow: none; }
+#caught .card { background: rgba(255, 255, 255, 0.92); color: #111; border: 0; }
+#caught .small { font-size: 12px; letter-spacing: 0.14em; font-weight: 700; color: #555; text-shadow: none; }
+#caught .mercy { color: #b35a00; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; text-shadow: none; }
+#result .rank { font-size: 64px; font-weight: 800; line-height: 1; margin-top: -2px; }
+#result .rankline { font-size: 12px; letter-spacing: 0.16em; font-weight: 800; min-height: 1em; }
+#result .goal { font-size: 12px; letter-spacing: 0.1em; font-weight: 700; color: var(--accent); }
+#result .tapnote { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+#result .score { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+#result .best { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; }
+.stats { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 16px; font-size: 12px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.stats b { display: block; color: #fff; font-size: 15px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.btn { border: 1px solid var(--ring); background: transparent; border-radius: 999px; padding: 10px 18px; min-height: 44px;
+  font-weight: 800; letter-spacing: 0.1em; font-size: 13px; cursor: pointer; touch-action: manipulation; }
+.btn.main { background: #fff; color: #000; }
+.btn.quiet { border-color: rgba(255, 255, 255, 0.35); color: var(--muted); font-weight: 600; }
+.note { background: rgba(120, 120, 120, 0.28); border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #ddd; }
+@media (max-height: 460px) {
+  #result .card { display: grid; grid-template-columns: auto auto; grid-template-areas: 'note note' 'rank stats'
+    'rankline stats' 'goal stats' 'final row' 'best copy'; gap: 4px 26px; padding: 12px 20px; align-items: center;
+    justify-items: center; }
+  #result .goal { grid-area: goal; }
+  #result .tapnote { display: none; }
+  #result .note { grid-area: note; }
+  #result .rank { grid-area: rank; font-size: 46px; }
+  #result .rankline { grid-area: rankline; }
+  #result .score { grid-area: final; font-size: 24px; }
+  #result .best { grid-area: best; }
+  #result .stats { grid-area: stats; }
+  #result .row { grid-area: row; }
+  #result #copy { grid-area: copy; min-height: 34px; padding: 6px 14px; }
+  #title { padding-bottom: calc(var(--sb) + 4vh); }
+}
+</style>
+</head>
+<body>
+<canvas id="view" aria-label="Galaxies streaming past a ship near light speed"></canvas>
+<canvas id="overlay" aria-hidden="true"></canvas>
+<div id="fx" aria-hidden="true"><div id="fx-rim"></div><div id="fx-red"></div><div id="fx-flash"></div><div id="fx-flood"></div><div id="fx-fill"></div></div>
+
+<div id="hudbox" hidden>
+  <div id="progress"></div>
+  <p id="speed" class="hud">0.762c<small>SPEED</small></p>
+  <p id="score" class="hud">0<small>SCORE</small></p>
+  <button id="pause" type="button" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.4" height="12" rx="0.8"/><rect x="9.6" y="2" width="3.4" height="12" rx="0.8"/></svg></button>
+</div>
+
+<section id="title" class="screen" aria-label="Title">
+  <a class="back" href="/light-years-home/lab/">‹ Lab</a>
+  <h1 id="title-name">LIGHT YEARS <span>AHEAD</span></h1>
+  <p class="line">Skim the universe home. Every near miss pulls you closer to light.</p>
+  <p id="go" class="go">TAP TO FLY</p>
+</section>
+
+<section id="caught" class="screen" hidden aria-live="polite">
+  <div class="card">
+    <p class="big">THE BURST CAUGHT YOU</p>
+    <p class="small"><span id="caught-text">AT 0 %</span> · <span id="caught-best">BEST 0 %</span></p>
+    <p id="caught-why" class="why">EVERY GRAZE PULLS YOU AHEAD</p>
+    <p id="caught-mercy" class="mercy" hidden>+2 S HEAD START</p>
+    <p id="caught-go" class="small">TAP TO GO AGAIN</p>
+  </div>
+</section>
+
+<section id="result" class="screen" hidden aria-live="polite">
+  <div class="card">
+    <p class="note">every dot is a galaxy</p>
+    <p id="rank" class="rank">G</p>
+    <p id="rankline" class="rankline"></p>
+    <p id="nextgoal" class="goal"></p>
+    <p id="final" class="score">0</p>
+    <p id="best" class="best">BEST 0</p>
+    <div class="stats">
+      <span>lead left<b id="st-lead">0</b></span>
+      <span>grazes<b id="st-graze">0</b></span>
+      <span>hairlines<b id="st-hair">0</b></span>
+      <span>hits<b id="st-hits">0</b></span>
+      <span>headlight<b id="st-hl">0</b></span>
+      <span>top speed<b id="st-top">0</b></span>
+    </div>
+    <div class="row">
+      <button id="again" class="btn main" type="button">AGAIN</button>
+      <button id="newsky" class="btn" type="button">NEW SKY</button>
+    </div>
+    <p id="result-go" class="tapnote">OR TAP ANYWHERE</p>
+    <button id="copy" class="btn quiet" type="button">Copy log</button>
+  </div>
+</section>
+
+<section id="paused" class="screen" hidden>
+  <div class="card">
+    <p class="score" style="font-size:22px;font-weight:800;letter-spacing:.1em">PAUSED</p>
+    <div class="row">
+      <button id="resume" class="btn main" type="button">RESUME</button>
+      <button id="retry" class="btn" type="button">RESTART</button>
+    </div>
+    <div class="row">
+      <button id="mute" class="btn quiet" type="button">Sound on</button>
+      <button id="copy2" class="btn quiet" type="button">Copy log</button>
+      <a class="btn quiet" href="/light-years-home/lab/" style="text-decoration:none;display:inline-flex;align-items:center">‹ Lab</a>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
