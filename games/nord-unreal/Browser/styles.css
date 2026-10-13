@@ -41,7 +41,8 @@ footer p { margin: 0; }
 #touch-controls button[data-pressed="true"] span { color: var(--ink); }
 /* Sprint, Jump, Use and the menu: a small skewed chip drawn inside a transparent 44 px touch target. */
 #touch-controls .touch-primary button { position: relative; }
-#touch-controls .touch-primary button { isolation: isolate; background: transparent; border: 0; box-shadow: none; padding: 0 13px; }
+/* The vertical padding matches the chip's inset, so a label that wraps on a very narrow phone grows the chip with it. */
+#touch-controls .touch-primary button { isolation: isolate; background: transparent; border: 0; box-shadow: none; padding: 7px 13px; }
 #touch-controls .touch-primary button::before {
   content: ""; position: absolute; z-index: -1; inset: 7px 3px;
   background: var(--ink); border: 1.5px solid var(--paper);
@@ -50,7 +51,7 @@ footer p { margin: 0; }
 }
 #touch-controls .touch-primary button[data-pressed="true"] { background: transparent; box-shadow: none; }
 #touch-controls .touch-primary button[data-pressed="true"]::before { background: var(--yellow); box-shadow: 0 0 0 2px var(--ink), 1px 1px 0 2px #c2185b; }
-#touch-controls #touch-menu { padding: 0 15px; font-size: 15px; letter-spacing: 0; }
+#touch-controls #touch-menu { padding: 7px 15px; font-size: 15px; letter-spacing: 0; }
 /* Sticks: a paper ring inside an ink ring around a halftone-dot fill. */
 .touch-stick { position: absolute; width: 96px; height: 96px; border: 2px solid var(--paper); border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle, #fffaf03d 0 1.1px, transparent 1.6px) 0 0 / 6px 6px, #0b0a1673;
@@ -99,7 +100,7 @@ footer p { margin: 0; }
     right: auto; left: 42%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
     grid-template-columns: repeat(4, auto); gap: 6px;
   }
-  .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 0 10px; font-size: 10.5px; }
+  .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 7px 10px; font-size: 10.5px; }
 }
 
 /* Phone crew picker: eight crew members in two columns, opened from the menu. */

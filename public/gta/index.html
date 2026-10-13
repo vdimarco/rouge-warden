@@ -7,6 +7,7 @@
   <meta name="description" content="NORD / Montréal is a comic-book adventure around Parc La Fontaine. Play the PC-hosted game in your browser with a friend.">
   <title>NORD / Montréal — Save Parc La Fontaine</title>
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <script src="/arcade/quiet.js"></script>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -25,28 +26,13 @@
         <p class="availability">The game streams from a host PC. The player page shows when the host is offline or both slots are occupied.</p>
       </div>
 
-      <section class="feature" aria-labelledby="preview-title">
+      <section class="feature" aria-label="NORD / Montréal trailer">
         <div class="frame">
-          <div class="scene">
-            <span class="issue">N° 01<br>PARC LA FONTAINE</span>
-            <div class="scene-copy">
-              <span class="place">SHERBROOKE EST → THE PARK</span>
-              <h2 id="preview-title">THE CITY<br>IS YOURS.</h2>
-            </div>
-          </div>
-          <div class="trailer" aria-label="Merged-game trailer">
-            <button id="trailer-open" type="button" hidden>WATCH THE TRAILER <span aria-hidden="true">↗</span></button>
-            <p id="trailer-pending">New gameplay trailer being captured from the merged build.</p>
-          </div>
+          <video id="game-trailer" class="trailer-video" src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="NORD / Montréal trailer"></video>
         </div>
-        <p class="frame-caption" id="frame-caption">Actual merged-game footage will appear here after capture.</p>
+        <p class="frame-caption">The NORD / Montréal trailer. Turn the sound on in the player.</p>
       </section>
     </main>
-
-    <dialog id="trailer-dialog" aria-label="NORD / Montréal gameplay trailer">
-      <button id="trailer-close" type="button" aria-label="Close trailer">CLOSE ×</button>
-      <video id="game-trailer" controls playsinline preload="none"></video>
-    </dialog>
 
     <footer class="controls" aria-label="How to play">
       <div><strong>ON FOOT / IN THE CAR</strong><span><b>WASD</b> move & drive <i>·</i> <b>Mouse</b> look <i>·</i> <b>Shift</b> sprint <i>·</i> <b>Space</b> jump & brake</span></div>

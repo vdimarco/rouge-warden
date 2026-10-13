@@ -261,11 +261,12 @@ fullscreenButton.addEventListener('click', async () => {
 document.addEventListener('fullscreenchange', () => {
   fullscreenButton.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
 });
-// Phones and tablets go fullscreen on the tap that starts the game (Start, Play as, Play with sound); the menu leaves it again.
+// Phones and tablets go fullscreen on the tap that starts the game (Play as, Play with sound); the menu leaves it again.
+// Start stays in the window: the start screen covers the title screen's menu button, so the header keeps ☰ Menu in reach.
 let fullscreenPending = false;
 function enterFullscreen() {
   if (!touchMode || fullscreenPending || document.fullscreenElement || !document.fullscreenEnabled) return;
   fullscreenPending = true;
   frame.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}).finally(() => { fullscreenPending = false; });
 }
-for (const id of ['start', 'crew-play', 'play']) element(id).addEventListener('click', enterFullscreen);
+for (const id of ['crew-play', 'play']) element(id).addEventListener('click', enterFullscreen);

@@ -67,15 +67,20 @@ document.getElementById('watch-trailer').addEventListener('click', () => {
 document.getElementById('close-trailer').addEventListener('click', () => dialog.close());
 dialog.addEventListener('close', () => {
   trailer.pause();
-  if (document.fullscreenElement === stage) document.exitFullscreen().catch(() => {});
+  // The video's own fullscreen sits inside the stage, so leave whichever of the two is showing.
+  if (stage.contains(document.fullscreenElement)) document.exitFullscreen().catch(() => {});
   setHeroActive(heroActive);
 });
 document.addEventListener('fullscreenchange', () => {
-  if (document.fullscreenElement === stage) trailerFullscreen = true;
-  else if (trailerFullscreen) {
-    trailerFullscreen = false;
+  const inTrailer = stage.contains(document.fullscreenElement);
+  // Closed before the request finished, or one level of a nested fullscreen left: keep leaving.
+  if (inTrailer && !dialog.open) document.exitFullscreen().catch(() => {});
+  // Leaving fullscreen (Escape or the back gesture) closes the trailer; dropping back to a fullscreen game frame does not.
+  if (trailerFullscreen && !inTrailer && !document.fullscreenElement) {
+    trailer.pause();
     if (dialog.open) dialog.close();
   }
+  trailerFullscreen = inTrailer;
 });
 reducedMotion.addEventListener('change', () => setHeroActive(heroActive));
 portrait.addEventListener('change', () => {

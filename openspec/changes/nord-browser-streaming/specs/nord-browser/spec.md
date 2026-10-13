@@ -63,7 +63,7 @@ The browser player SHALL provide touch controls on touch-capable devices using t
 - **WHEN** a touch screen is playing
 - **THEN** Sprint, Jump / brake, Use / car and ☰ are small slanted ink chips, about 30 px tall, with a paper outline, Impact capitals and a magenta offset shadow, each drawn inside a 44 px touch target
 - **AND** a pressed chip turns yellow and drops into its shadow
-- **AND** on a phone held upright the chips sit in one centred row with one line of text each, instead of a full-width bar
+- **AND** on a phone held upright, up to 550 px wide, the chips sit in one centred row instead of a full-width bar, with each label on one line where it fits; on narrower phones a chip grows with its wrapped label
 - **AND** the sticks are 76-96 px rings with a halftone fill and the stick name inside the ring, and the look pad turns cyan only while it is dragged
 
 #### Scenario: Release interrupted touch input
@@ -86,7 +86,7 @@ The player page SHALL present the GTA: NORTH trailer on its title screen without
 #### Scenario: Visitor watches the trailer
 - **WHEN** the visitor clicks Watch the trailer
 - **THEN** the full trailer fills the screen with sound, controls and a Close button, and the background trailer pauses
-- **AND** where the browser allows it the trailer goes fullscreen, and leaving fullscreen (Escape or the back gesture) closes it
+- **AND** when the page is not already fullscreen and the browser allows it, the trailer goes fullscreen; leaving that fullscreen (Escape or the back gesture) closes it, while the video's own fullscreen keeps it open
 - **AND** the full trailer downloads only after that click
 - **AND** closing the player stops the trailer, leaves fullscreen and resumes the background trailer
 
@@ -183,13 +183,14 @@ The page SHALL keep only the title and a menu button at the top, and SHALL offer
 On a touch screen the game frame SHALL go fullscreen on the tap that starts the game, where the browser allows it.
 
 #### Scenario: Player starts the game on a phone
-- **WHEN** a player on a touch screen taps Start, Play as or Play with sound
-- **THEN** the game frame, with the start screen, the menu and the touch controls in it, goes fullscreen
+- **WHEN** a player on a touch screen taps Play as or Play with sound
+- **THEN** the game frame, with the menu and the touch controls in it, goes fullscreen
+- **AND** Start keeps the page in its window, so ☰ Menu in the header stays in reach over the start screen
 - **AND** a browser without fullscreen for page elements (an iPhone) keeps the page as it is
 
 #### Scenario: Player leaves fullscreen
 - **WHEN** the player taps Exit fullscreen in the menu, or uses Escape or the back gesture
-- **THEN** the page leaves fullscreen and stays out of it until the next Start, Play as or Play with sound, or until the player taps Fullscreen in the menu, which works in every state
+- **THEN** the page leaves fullscreen and stays out of it until the next Play as or Play with sound, or until the player taps Fullscreen in the menu, which works in every state
 
 #### Scenario: Player uses a computer
 - **WHEN** the browser has no touch screen
