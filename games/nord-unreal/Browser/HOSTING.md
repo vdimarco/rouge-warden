@@ -2,7 +2,7 @@
 
 Vercel hosts the static browser player. The existing Linux GPU PC can run two full Unreal processes and Epic's signalling server. `NordHost` listens for normal Unreal multiplayer; `NordFriend1` joins it. Sharing one stream does not create another character. Each stream accepts one browser subscriber. This is a public two-slot demo without player accounts, slot reservations or automatic game recovery; anyone with the public endpoint can try to occupy a slot. The separate TURN relay uses local credentials described below.
 
-The public player is [nord-montreal.vercel.app](https://nord-montreal.vercel.app/). Its latest static deployment `dpl_2q2TYmdCX8BZcPTdHKokxBP5SYmm` is READY and uses `wss://reports-rec-encouraged-taught.trycloudflare.com` through a Cloudflare Quick Tunnel to the unchanged `127.0.0.1:9010` server. Ordinary Chrome passed the seven-check production regression without a DNS override at 00:58:47–00:59:09 UTC on October 11; the preview also passed seven checks at 00:57:59–00:58:19 UTC. The original `wss://omarchy.tail7b97f6.ts.net` Tailscale Funnel remains running and preserved, but is no longer the intended browser endpoint. These are temporary PC-hosted endpoints, not permanent hosting. See [connection diagnosis](../Verification/BrowserConnection.md) and [recorded streaming checks](../Verification/BrowserStreaming.md).
+The public player is [nord-montreal.vercel.app](https://nord-montreal.vercel.app/). On October 13 at 15:11 UTC that alias pointed to deployment `dpl_EFdBK9W9FxqccgCsoFRyG3289Aq9`, built from browser source `eff8752e` (see [mobile look checks](../Verification/BrowserMobileLook.md)). The project is now connected to Git; see [Vercel project and Git builds](#vercel-project-and-git-builds). The player uses `wss://reports-rec-encouraged-taught.trycloudflare.com` through a Cloudflare Quick Tunnel to the unchanged `127.0.0.1:9010` server. Ordinary Chrome passed the seven-check production regression without a DNS override at 00:58:47–00:59:09 UTC on October 11; the preview also passed seven checks at 00:57:59–00:58:19 UTC. The original `wss://omarchy.tail7b97f6.ts.net` Tailscale Funnel remains running and preserved, but is no longer the intended browser endpoint. These are temporary PC-hosted endpoints, not permanent hosting. See [connection diagnosis](../Verification/BrowserConnection.md) and [recorded streaming checks](../Verification/BrowserStreaming.md).
 
 **Host PC status:** the normal demo is restored after the second authorized six-minute trailer capture window. The complete unchanged launch preflight passed with 13,041 MiB free at 02:40:21 UTC on October 11. Both native peers and normal signalling are running; temporary capture signalling is stopped. The original Funnel, Quick Tunnel, TURN/TLS Funnel and named relay container remain running with the same hostname. Ordinary production desktop QA passed 7/7 at 02:41 UTC and mobile Chromium emulation passed 6/6. Source/maps, quality settings and the exact save inventory/hash are unchanged. Short desktop samples measured about 27–30 FPS; physical-phone and sustained performance remain unverified, and other GPU applications remain active. See [capture-window and restoration evidence](../Verification/BrowserPerformance.md#second-coordinated-capture-window). Earlier successful verification follows. After relay activation, seven ordinary public-player checks and seven two-player forced-relay checks passed at01:11–01:12UTC; Android Chromium emulation received real video. The user subsequently confirmed phone video loads and looks good; touch input is verified separately. The earlier 22:29 UTC seven-check public-player regression used a scoped DNS override; ordinary Chrome later failed on the Funnel address with `ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS` at 00:50 UTC on October 11. The replacement Quick Tunnel passed seven local checks at 00:56 UTC and seven ordinary Chrome checks through the production alias at 00:58:47–00:59:09 UTC. The prior normal lifecycle, signalling and two native children remained alive through 12 readings ending 22:30:15 UTC, with at least 2,431 MiB free VRAM. An earlier restart failed with Vulkan out of memory under competing GPU use; its clean shutdown and later recovery are recorded in [BrowserGpuRecovery.md](../Verification/BrowserGpuRecovery.md). The unchanged helper requires **at least 12,000 MiB free VRAM** on NVIDIA adapter 0 before launching two players. This check does not reserve memory or prevent later competing GPU use. The helper does not close other applications.
 
@@ -137,11 +137,45 @@ Proceed with a new foreground Funnel only when that command reports **`{}`**. If
 tailscale funnel 9010
 ```
 
-Keep that terminal open for the manual Funnel; the preserved transient Funnel unit runs the same exposure independently of a tool terminal. Use the hostname printed by whichever reviewed tunnel is intended as a `wss://` URL in `NORD_SIGNALLING_URL`, then rebuild and upload the configured static output. The Vercel project uses prebuilt files without Git linkage; changing a Vercel setting or committing source does not rebuild that upload automatically. For a future Git-connected build, set the variable in the intended Vercel environment before redeploying. The endpoint is deployment configuration, not hardcoded player source. Stop only a manual foreground Funnel with **Ctrl-C**, or stop the relevant owned units as documented above. Then inspect Serve status to confirm unrelated state remains unchanged. The lifecycle helper deliberately does not create or remove tunnels.
+Keep that terminal open for the manual Funnel; the preserved transient Funnel unit runs the same exposure independently of a tool terminal. Use the hostname printed by whichever reviewed tunnel is intended as a `wss://` URL in `NORD_SIGNALLING_URL`, then update that variable in the Vercel project and redeploy, as described in [Vercel project and Git builds](#vercel-project-and-git-builds). A change to a Vercel variable does not rebuild an existing deployment. The endpoint is deployment configuration, not hardcoded player source. Stop only a manual foreground Funnel with **Ctrl-C**, or stop the relevant owned units as documented above. Then inspect Serve status to confirm unrelated state remains unchanged. The lifecycle helper deliberately does not create or remove tunnels.
 
 The Cloudflare Quick Tunnel and preserved Tailscale Funnel carry signalling; the separate Tailscale TCP 8443 mapping exposes the optional TURN/TLS relay for WebRTC media. The original public regressions used STUN-only ICE. The new forced-relay test established a local browser media path, but external NAT/firewall behavior and a physical phone on 5G still need direct checks. WSS or a local media connection alone does not establish internet playability. This rollout does not buy hosting or change router/firewall ports.
 
 The pinned signalling dependency audit retains eight runtime findings. The active WebSocket-only launch paths were reviewed and the default static server is disabled, but those findings are not resolved. Upstream control messages still let a subscribed input owner request resolution changes, affecting GPU/resource use even with native console commands disabled. This temporary unauthenticated demo is not a production security acceptance. Audit remediation and any move to permanent hosting require a separate review of the pinned infrastructure and deployed exposure.
+
+## Vercel project and Git builds
+
+The player is the `nord-montreal` project in the `vdimarcos-projects` team. The project settings are:
+
+| Setting | Value |
+| --- | --- |
+| Git repository | `vdimarco/rouge-warden`, production branch `main` |
+| Root directory | `games/nord-unreal/Browser` |
+| Build command and output | From `vercel.json`: `npm run build` into `dist` |
+| Ignored build step | `git diff --quiet HEAD^ HEAD -- .` |
+| Variables (production and preview) | `NORD_SIGNALLING_URL`, `NORD_PORTRAIT_STREAM=0` |
+
+Vercel runs the ignored build step in the root directory. A push builds only when its last commit changes a file in this folder. Other pushes show as **CANCELED** in the deployment list. If one push holds several commits and only an earlier commit changes this folder, Vercel skips that build. A merge commit compares with its first parent, so a pull request merge builds correctly.
+
+A push to `main` makes a production deployment. A push to any other branch makes a preview at `nord-montreal-git-<branch>-vdimarcos-projects.vercel.app`. The build reads `NORD_SIGNALLING_URL` from the project, so a new tunnel hostname needs only a variable change and a redeploy.
+
+**Public alias:** the project has automatic domain assignment turned off (`autoAssignCustomDomains: false`). A new production deployment moves `nord-montreal-vdimarcos-projects.vercel.app`, but it does not move `nord-montreal.vercel.app`. After a production deployment, point the public alias at it:
+
+```bash
+npx vercel alias set <deployment-url> nord-montreal.vercel.app --scope vdimarcos-projects
+```
+
+To deploy by hand from a checkout of `main`, run this in `games/nord-unreal/Browser` with `VERCEL_TOKEN` set. Vercel builds the files on its servers with the project variables:
+
+```bash
+npx vercel link --yes --project nord-montreal --scope vdimarcos-projects --token "$VERCEL_TOKEN"
+rm -f .env.local
+npx vercel deploy --prod --yes --scope vdimarcos-projects --token "$VERCEL_TOKEN"
+```
+
+`vercel link` writes `.env.local` with a short-term OIDC token. Remove it before you deploy, and do not commit `.vercel/` or `.env.local`.
+
+On October 13 at 03:32 UTC a manual deploy of `main` (`676c605a`) made `dpl_3EyZk8DnzTiTw7Vwxu85TzRirLjn`, and the Git connection followed. The first Git production build was `dpl_7TZJDDGuoHcwUVKJbLysQyELN7dK` from `main` `54a86fe8` at 15:12 UTC. Its player files are the same as those in `dpl_EFdBK9W9FxqccgCsoFRyG3289Aq9`, which the public alias serves. Two later pushes to a branch that did not change this folder were CANCELED, as intended.
 
 ## Acceptance checks
 
