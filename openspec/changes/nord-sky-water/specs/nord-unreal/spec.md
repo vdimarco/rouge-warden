@@ -25,7 +25,7 @@ The game SHALL run a shared clock in which a full day takes 40 real minutes by d
 #### Scenario: Play into the evening
 - **WHEN** a host starts the game without QA flags
 - **THEN** the game starts in the mid-afternoon of a mid-October day
-- **AND** the sun sets in the west after about six real minutes, with a coloured sky and longer shadows
+- **AND** the sun sets in the west after about six real minutes, with a coloured sky and longer shadows when the weather is clear or breezy
 - **AND** street lamps, windows and headlights come on as the light goes, and the scene stays readable at night under moonlight and lamps
 - **AND** the top-right HUD shows the time and weather under the controls line.
 
@@ -48,7 +48,7 @@ The game SHALL move between clear, breezy, overcast, fog, drizzle and rain over 
 #### Scenario: Watch the weather change
 - **WHEN** a session runs for about half an hour without commands
 - **THEN** the weather changes several times, each change blending over one to two minutes
-- **AND** overcast, fog, drizzle or rain hold for at least half of the time.
+- **AND** in most sessions overcast, fog, drizzle or rain hold for at least half of that time, because a session joins the weather chain part-way through instead of always starting clear.
 
 #### Scenario: Walk in gloomy weather
 - **WHEN** the weather is overcast, fog, drizzle or rain
@@ -58,14 +58,20 @@ The game SHALL move between clear, breezy, overcast, fog, drizzle and rain over 
 
 #### Scenario: Choose the weather
 - **WHEN** the host starts with `-NordWeather=Fog` or types `NordWeather rain`
-- **THEN** both players see the requested weather after a short blend.
+- **THEN** both players see the requested weather after a short blend, starting from the look that was showing.
+
+#### Scenario: Guest asks for other weather
+- **WHEN** the friend types `NordWeather clear` or `NordTime 12`
+- **THEN** the sky does not change for either player
+- **AND** the friend sees "Only the host can change the sky".
 
 ### Requirement: Fixed sky for verification
 Existing QA, capture, story, HUD, package and profile runs SHALL keep the authored afternoon look unless they ask for a time or weather.
 
 #### Scenario: Run an existing check
 - **WHEN** the game starts with `-NordCapture`, `-NordCampaignQA`, `-NordNoCampaign`, `-NordNoCampaignSave`, `-NordStoryRenderChecks`, `-NordRenderChecks`, `-NordFixedSky` or CSV profiling
-- **THEN** no sky actor runs, the sun, fog, sky light and exposure keep their saved values, and the HUD has no time line.
+- **THEN** no sky actor runs, the sun, fog, sky light and exposure keep their saved values, and the HUD has no time line
+- **AND** editor capture runs started with `-ExecutePythonScript` are pinned the same way.
 
 #### Scenario: Capture a fixed night or storm
 - **WHEN** such a run also passes `-NordHour=22 -NordWeather=Rain`

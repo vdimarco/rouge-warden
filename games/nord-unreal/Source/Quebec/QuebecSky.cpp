@@ -40,6 +40,7 @@
 #include "Misc/Parse.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundWaveProcedural.h"
+#include "UObject/ConstructorHelpers.h"
 
 namespace
 {
@@ -54,10 +55,11 @@ namespace
     const TCHAR* const SkyQAFlags[] = { TEXT("NordCapture"), TEXT("NordCampaignQA"), TEXT("NordNoCampaign"), TEXT("NordNoCampaignSave"),
         TEXT("NordStoryRenderChecks"), TEXT("NordRenderChecks"), TEXT("NordFixedSky") };
 
+    // Editor Python runs (captures, verification, PIE regressions) count as QA, whatever Nord flags they pass.
     bool SkyQARun()
     {
         const TCHAR* Line = FCommandLine::Get();
-        if (FCString::Stristr(Line, TEXT("csvCaptureFrames"))) return true;
+        if (FCString::Stristr(Line, TEXT("csvCaptureFrames")) || FCString::Stristr(Line, TEXT("ExecutePythonScript"))) return true;
         for (const TCHAR* Flag : SkyQAFlags)
             if (FParse::Param(Line, Flag)) return true;
         return false;
@@ -93,6 +95,9 @@ AQuebecSky::AQuebecSky()
     bAlwaysRelevant = true;
     SetNetUpdateFrequency(1.f);
     SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("SkyRoot")));
+    // A constructor reference, as QuebecCampaign does for its shapes, so the cooker keeps the engine plane.
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(TEXT("/Engine/BasicShapes/Plane.Plane"));
+    RainPlane = PlaneAsset.Object;
 }
 
 bool AQuebecSky::ShouldSpawn()
@@ -161,7 +166,26 @@ QuebecSky::FSegment AQuebecSky::CurrentSegment() const
     Segment.Start = State.Start;
     Segment.Blend = State.Blend;
     Segment.Hold = State.Hold;
+    if (State.FromWeights.Num() == QuebecSky::WeatherCount)
+        for (int32 Weather = 0; Weather < QuebecSky::WeatherCount; ++Weather) Segment.FromWeights[Weather] = State.FromWeights[Weather];
     return Segment;
+}
+
+void AQuebecSky::SetSegment(const QuebecSky::FSegment& Segment)
+{
+    State.From = static_cast<uint8>(Segment.From);
+    State.To = static_cast<uint8>(Segment.To);
+    State.Start = Segment.Start;
+    State.Blend = static_cast<float>(Segment.Blend);
+    State.Hold = static_cast<float>(Segment.Hold);
+    // Only a segment a command turned mid-blend carries start weights; the rest replicate an empty array.
+    State.FromWeights.Reset();
+    for (const float Weight : Segment.FromWeights)
+        if (Weight != 0.f)
+        {
+            State.FromWeights.Append(Segment.FromWeights, QuebecSky::WeatherCount);
+            break;
+        }
 }
 
 void AQuebecSky::SetClock(float NewHour, double Now)
@@ -182,7 +206,8 @@ void AQuebecSky::StartHost()
     FParse::Value(Line, TEXT("NordHour="), StartHour);
     FParse::Value(Line, TEXT("NordDayMinutes="), DayMinutes);
     FParse::Value(Line, TEXT("NordSkySeed="), Seed);
-    if (FParse::Value(Line, TEXT("NordWeather="), WeatherText) && !QuebecSky::ParseWeather(StringCast<ANSICHAR>(*WeatherText).Get(), Weather))
+    const bool bWeatherRequested = FParse::Value(Line, TEXT("NordWeather="), WeatherText);
+    if (bWeatherRequested && !QuebecSky::ParseWeather(StringCast<ANSICHAR>(*WeatherText).Get(), Weather))
         UE_LOG(LogTemp, Warning, TEXT("NORD_SKY unknown weather '%s'; starting CLEAR"), *WeatherText);
     // QA runs that ask for a time or weather hold it for the whole run, so captures and profiles repeat.
     const bool bPinned = SkyQARun() && !FParse::Param(Line, TEXT("NordDynamicSky"));
@@ -192,32 +217,39 @@ void AQuebecSky::StartHost()
     State.bFreezeClock = bPinned || FParse::Param(Line, TEXT("NordFreezeTime"));
     State.bFreezeWeather = bPinned || FParse::Param(Line, TEXT("NordFreezeWeather"));
     State.DayOfYear = 288;
-    State.LatitudeDeg = static_cast<float>(QuebecSky::LatitudeForMap(StringCast<ANSICHAR>(*GetWorld()->GetMapName()).Get()));
+    const FString MapName = GetWorld()->GetMapName();
+    State.LatitudeDeg = static_cast<float>(QuebecSky::LatitudeForMap(StringCast<ANSICHAR>(*MapName).Get()));
+    State.SolarNoonHour = static_cast<float>(QuebecSky::SolarNoonForMap(StringCast<ANSICHAR>(*MapName).Get()));
     SetClock(FMath::IsFinite(StartHour) ? StartHour : 15.f, Now);
-    State.From = State.To = static_cast<uint8>(Weather);
-    State.Start = Now;
-    State.Blend = 0.f;
-    State.Hold = static_cast<float>(QuebecSky::HoldSeconds(Weather, Random));
-    // A session that starts in rain starts with wet streets and full puddles.
-    Wet.Step(QuebecSky::LookFor(Weather).Rain, 3600.f);
+    QuebecSky::FSegment Segment;
+    if (bWeatherRequested || State.bFreezeWeather)
+    {
+        // A requested or held weather starts settled; one that starts in rain starts with wet streets and full puddles.
+        Segment.From = Segment.To = Weather;
+        Segment.Start = Now;
+        Segment.Hold = QuebecSky::HoldSeconds(Weather, Random);
+        Wet.Step(QuebecSky::LookFor(Weather).Rain, 3600.f);
+    }
+    // Otherwise the session joins the running chain at a random point, so its first half hour is as gloomy as any other.
+    else Segment = QuebecSky::JoinChain(Now, Random, Wet);
+    SetSegment(Segment);
     State.Wetness = Wet.Surface;
     State.Puddles = Wet.Puddles;
-    ShownWeather = Weather;
+    ShownWeather = QuebecSky::ShownWeather(Segment, Now);
     bHasState = true;
-    UE_LOG(LogTemp, Display, TEXT("NORD_SKY host hour=%.2f weather=%s seed=%u day_seconds=%.0f freeze_clock=%d freeze_weather=%d latitude=%.3f"),
-        State.FrozenHour, *GetWeatherName(), Seed, State.CycleSeconds, State.bFreezeClock ? 1 : 0, State.bFreezeWeather ? 1 : 0, State.LatitudeDeg);
+    UE_LOG(LogTemp, Display, TEXT("NORD_SKY host hour=%.2f weather=%s->%s seed=%u day_seconds=%.0f freeze_clock=%d freeze_weather=%d latitude=%.3f solar_noon=%.2f"),
+        State.FrozenHour, *FString(QuebecSky::WeatherName(Segment.From)), *FString(QuebecSky::WeatherName(Segment.To)), Seed, State.CycleSeconds,
+        State.bFreezeClock ? 1 : 0, State.bFreezeWeather ? 1 : 0, State.LatitudeDeg, State.SolarNoonHour);
 }
 
 bool AQuebecSky::HostSetWeather(const FString& WeatherName)
 {
     QuebecSky::EWeather Requested = QuebecSky::EWeather::Clear;
     if (!HasAuthority() || !QuebecSky::ParseWeather(StringCast<ANSICHAR>(*WeatherName.TrimStartAndEnd()).Get(), Requested)) return false;
-    // Blend from whichever end of the current blend is showing, so the change does not jump.
-    State.From = static_cast<uint8>(ShownWeather);
-    State.To = static_cast<uint8>(Requested);
-    State.Start = ServerSeconds();
-    State.Blend = SkyCommandBlend;
-    State.Hold = SkyCommandBlend + static_cast<float>(QuebecSky::HoldSeconds(Requested, Random));
+    // Blend from exactly the look showing now, even mid-blend, so the change does not jump.
+    QuebecSky::FSegment Segment = CurrentSegment();
+    QuebecSky::Redirect(Segment, Requested, ServerSeconds(), SkyCommandBlend, Random);
+    SetSegment(Segment);
     ForceNetUpdate();
     UE_LOG(LogTemp, Display, TEXT("NORD_SKY_WEATHER command %s"), *WeatherName);
     return true;
@@ -240,10 +272,11 @@ void AQuebecSky::HostSetFrozen(bool bFrozen)
     // A weather held past its time restarts its hold instead of changing the moment it is released.
     if (!bFrozen && State.bFreezeWeather && Now >= State.Start + State.Hold)
     {
-        State.From = State.To;
-        State.Start = Now;
-        State.Blend = 0.f;
-        State.Hold = static_cast<float>(QuebecSky::HoldSeconds(static_cast<QuebecSky::EWeather>(State.To), Random));
+        QuebecSky::FSegment Settled;
+        Settled.From = Settled.To = CurrentSegment().To;
+        Settled.Start = Now;
+        Settled.Hold = QuebecSky::HoldSeconds(Settled.To, Random);
+        SetSegment(Settled);
     }
     State.bFreezeClock = State.bFreezeWeather = bFrozen;
     ForceNetUpdate();
@@ -260,11 +293,7 @@ void AQuebecSky::Tick(float DeltaSeconds)
         QuebecSky::FSegment Segment = CurrentSegment();
         if (QuebecSky::Advance(Segment, Now, Random))
         {
-            State.From = static_cast<uint8>(Segment.From);
-            State.To = static_cast<uint8>(Segment.To);
-            State.Start = Segment.Start;
-            State.Blend = static_cast<float>(Segment.Blend);
-            State.Hold = static_cast<float>(Segment.Hold);
+            SetSegment(Segment);
             ForceNetUpdate();
             UE_LOG(LogTemp, Display, TEXT("NORD_SKY_WEATHER %s -> %s blend=%.0f hold=%.0f"), *FString(QuebecSky::WeatherName(Segment.From)),
                 *FString(QuebecSky::WeatherName(Segment.To)), State.Blend, State.Hold);
@@ -276,8 +305,8 @@ void AQuebecSky::Tick(float DeltaSeconds)
     Hour = State.bFreezeClock ? State.FrozenHour : static_cast<float>(QuebecSky::HourAtTime(Now, State.CycleOffset, Clock));
     const QuebecSky::FSegment Segment = CurrentSegment();
     Look = QuebecSky::Sample(Segment, Now);
-    ShownWeather = (Segment.Blend > 0. && Now - Segment.Start < .5 * Segment.Blend) ? Segment.From : Segment.To;
-    SunSky = QuebecSky::SunAt(Hour, State.DayOfYear, State.LatitudeDeg);
+    ShownWeather = QuebecSky::ShownWeather(Segment, Now);
+    SunSky = QuebecSky::SunAt(Hour, State.DayOfYear, State.LatitudeDeg, State.SolarNoonHour);
     Lighting = QuebecSky::LightingFor(SunSky, Look);
 
     if (HasAuthority())
@@ -365,7 +394,8 @@ void AQuebecSky::StartPresentation()
     AtmosphereParameters = LoadObject<UMaterialParameterCollection>(nullptr, TEXT("/Game/Art/Atmosphere/MPC_NordAtmosphere.MPC_NordAtmosphere"), {}, LOAD_NoWarn);
     if (!AtmosphereParameters) UE_LOG(LogTemp, Warning, TEXT("NORD_SKY missing /Game/Art/Atmosphere/MPC_NordAtmosphere; materials keep their afternoon defaults"));
 
-    // Moon: atmosphere light 1, so the sky scatters its light after the sun sets.
+    // Moon: atmosphere light 1, so the sky scatters its light after the sun sets. Its disk is dimmed so it does not
+    // glare like a second sun, and it casts shadows only once the sun is off (WriteScene).
     const QuebecSky::FVec3 MoonTint = QuebecSky::FLighting().MoonColor;
     Moon = NewObject<UDirectionalLightComponent>(this, TEXT("Moon"));
     Moon->SetupAttachment(GetRootComponent());
@@ -373,7 +403,8 @@ void AQuebecSky::StartPresentation()
     Moon->SetAtmosphereSunLight(true);
     Moon->SetAtmosphereSunLightIndex(1);
     Moon->SetLightSourceAngle(.5f);
-    Moon->SetCastShadows(true);
+    Moon->SetAtmosphereSunDiskColorScale(FLinearColor(QuebecSky::MoonDiskScale, QuebecSky::MoonDiskScale, QuebecSky::MoonDiskScale));
+    Moon->SetCastShadows(false);
     Moon->SetLightColor(FLinearColor(MoonTint.X, MoonTint.Y, MoonTint.Z));
     Moon->SetIntensity(0.f);
     Moon->SetVisibility(false);
@@ -420,8 +451,9 @@ void AQuebecSky::StartPresentation()
         AddInstanceComponent(Light);
     }
 
-    // Rain: thin upright quads at fixed pivots; M_NordRain wraps them into a box around the camera.
-    UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+    // Rain: thin upright quads at fixed pivots; M_NordRain wraps them into a box around the camera. The material is
+    // loaded by path, so Config/DefaultGame.ini always cooks /Game/Art/Atmosphere.
+    UStaticMesh* Plane = RainPlane;
     UMaterialInterface* Streak = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Art/Atmosphere/M_NordRain.M_NordRain"), {}, LOAD_NoWarn);
     if (Plane && Streak)
     {
@@ -448,7 +480,7 @@ void AQuebecSky::StartPresentation()
         }
         Rain->AddInstances(Streaks, false);
     }
-    else UE_LOG(LogTemp, Warning, TEXT("NORD_SKY missing /Game/Art/Atmosphere/M_NordRain; no rain streaks"));
+    else UE_LOG(LogTemp, Warning, TEXT("NORD_SKY missing %s; no rain streaks"), Plane ? TEXT("/Game/Art/Atmosphere/M_NordRain") : TEXT("/Engine/BasicShapes/Plane"));
 
     RainAudio = NewObject<UAudioComponent>(this, TEXT("RainAudio"));
     RainAudio->bAutoActivate = false;
@@ -494,12 +526,13 @@ void AQuebecSky::TickPresentation(double Now, float DeltaSeconds)
 
 void AQuebecSky::AimLights()
 {
-    // Each sun turn invalidates virtual shadow pages, so the lights turn in steps of at least 0.1 degrees.
-    static const double MinTurnCosine = FMath::Cos(FMath::DegreesToRadians(.1));
+    // Each turn invalidates virtual shadow pages, so the lights turn in steps: 0.1 degrees high in the sky, smaller
+    // near the horizon where the same step would make long shadows jump.
+    const auto MinTurnCosine = [](float Elevation) { return FMath::Cos(FMath::DegreesToRadians(QuebecSky::LightTurnStep(Elevation))); };
     if (UDirectionalLightComponent* Light = SceneRefs.Sun.Get(); Light && Lighting.bSunActive)
     {
         const FVector Travel = -SkyVector(SunSky.ToSun).GetSafeNormal();
-        if (FVector::DotProduct(Travel, LastSunTravel) < MinTurnCosine)
+        if (FVector::DotProduct(Travel, LastSunTravel) < MinTurnCosine(SunSky.Elevation))
         {
             LastSunTravel = Travel;
             Light->SetWorldRotation(Travel.Rotation());
@@ -508,7 +541,7 @@ void AQuebecSky::AimLights()
     if (Moon && Lighting.bMoonActive)
     {
         const FVector Travel = -SkyVector(SunSky.ToMoon).GetSafeNormal();
-        if (FVector::DotProduct(Travel, LastMoonTravel) < MinTurnCosine)
+        if (FVector::DotProduct(Travel, LastMoonTravel) < MinTurnCosine(SunSky.MoonElevation))
         {
             LastMoonTravel = Travel;
             Moon->SetWorldRotation(Travel.Rotation());
@@ -529,6 +562,9 @@ void AQuebecSky::WriteScene(double Now)
     {
         Moon->SetVisibility(Lighting.bMoonActive);
         if (SkyValueChanged(Moon->Intensity, Lighting.MoonLux)) Moon->SetIntensity(Lighting.MoonLux);
+        // One shadowed directional light at a time: the moon takes over the shadows when the sun switches off.
+        const bool bMoonShadows = !Lighting.bSunActive;
+        if ((Moon->CastShadows != 0) != bMoonShadows) Moon->SetCastShadows(bMoonShadows);
     }
     if (USkyLightComponent* Light = Saved.SkyLight.Get())
     {
@@ -572,9 +608,9 @@ void AQuebecSky::WriteScene(double Now)
 
 void AQuebecSky::AssignPools(const FVector& View)
 {
-    const bool bLightsOn = Lighting.bStreetLamps;
+    const bool bLampsOn = Lighting.bStreetLamps;
     LampOrder.Reset();
-    if (bLightsOn)
+    if (bLampsOn)
     {
         for (int32 Index = 0; Index < LampPointCount; ++Index) LampOrder.Add(Index);
         LampOrder.Sort([this, View](int32 A, int32 B) { return FVector::DistSquared(LampPoints[A], View) < FVector::DistSquared(LampPoints[B], View); });
@@ -586,9 +622,9 @@ void AQuebecSky::AssignPools(const FVector& View)
         Lamps[Index]->SetVisibility(bUsed);
     }
 
-    // Headlights go to the nearest driven or traffic cars; parked cars stay dark.
+    // Headlights go to the nearest driven or traffic cars, at night and in fog, drizzle or rain; parked cars stay dark.
     TArray<AQuebecCar*> Cars;
-    if (bLightsOn)
+    if (Lighting.bHeadlights)
         for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
             if (It->Occupant || It->bTraffic) Cars.Add(*It);
     Cars.Sort([View](const AQuebecCar& A, const AQuebecCar& B) { return FVector::DistSquared(A.GetActorLocation(), View) < FVector::DistSquared(B.GetActorLocation(), View); });
@@ -646,7 +682,8 @@ void AQuebecSky::UpdateRainSound(float DeltaSeconds)
     const int32 Frames = FMath::Clamp(3300 - RainWave->GetAvailableAudioByteCount() / 2, 0, 3300);
     if (Frames > 0)
     {
-        TArray<int16> PCM;
+        // At most 3300 frames, so the buffer lives on the stack instead of a heap allocation each frame.
+        TArray<int16, TInlineAllocator<3300>> PCM;
         PCM.SetNumUninitialized(Frames);
         const float Gain = .22f * FMath::Sqrt(RainLevel);
         for (int16& Sample : PCM)

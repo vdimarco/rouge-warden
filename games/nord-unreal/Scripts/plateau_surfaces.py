@@ -1,5 +1,31 @@
 """Shared surface and atmosphere polish for the saved Plateau environment."""
+import plateau_atmosphere
 import plateau_water
+
+
+def rewrap(u):
+    """Put the NordSky wet-ground and night-window wrappers back on the Plateau materials.
+
+    upgrade_plateau.py rebuilds M_Asphalt, M_Concrete, M_ConcreteDark, M_Gravel, M_ParkEarth, M_Glow,
+    M_InteriorWarm and M_Tail from scratch, which removes the wrappers that plateau_atmosphere.py added.
+    Once that pass has made MPC_NordAtmosphere, a regeneration must keep wet streets and lit windows,
+    so the same idempotent builders run again here. The unlit materials it wraps are not rebuilt here.
+    """
+    assets = u.EditorAssetLibrary
+    if not assets.does_asset_exist(plateau_atmosphere.COLLECTION):
+        return None
+    mpc = assets.load_asset(plateau_atmosphere.COLLECTION)
+    wrapped = {}
+    for build, paths in ((plateau_atmosphere.wet_ground, plateau_atmosphere.WET),
+                         (plateau_atmosphere.night_window, plateau_atmosphere.WINDOWS)):
+        for path in paths:
+            mat = assets.load_asset(path)
+            assert isinstance(mat, u.Material), ('Missing Plateau material for the NordSky wrappers', path)
+            wrapped[path] = build(u, mat, mpc)
+            if wrapped[path]:
+                u.MaterialEditingLibrary.recompile_material(mat)
+                assert assets.save_loaded_asset(mat), path
+    return wrapped
 
 
 def apply(u, materials, expression, material):
@@ -83,6 +109,9 @@ def apply(u, materials, expression, material):
             actor.light_component.set_editor_property('intensity', 1.9)
     for mat in (grass, asphalt, water, materials['ParkWood'], materials['AutumnGold'], materials['AutumnRust'], materials['Leaf']):
         u.EditorAssetLibrary.save_loaded_asset(mat)
+    # Every wrapped material is rebuilt by now (the palette and textured ones before this pass, ParkEarth
+    # and Asphalt above), and no later Plateau pass rebuilds them.
+    rewrapped = rewrap(u)
     return {'pond_normal_waves': pond['wave_normals'], 'pond_shore_texture': pond['shore_texture'],
-            'pond_collection': pond['collection'], 'lawn_macro_variation': True,
+            'pond_collection': pond['collection'], 'nord_sky_rewrapped': rewrapped, 'lawn_macro_variation': True,
             'continuous_world_asphalt_uv': True, 'cloud_material': cloud_material.get_path_name(), 'skylight_intensity': 1.9}

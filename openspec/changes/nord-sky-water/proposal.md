@@ -10,6 +10,7 @@ The user asked for better water in Parc La Fontaine, gloomy weather with variety
 - Add one material parameter collection. Pond water, wet road and pavement materials, lit windows and the daylight-calibrated unlit materials read it, so the scene stays readable at night and roads look wet in rain.
 - Show the time and weather as one extra muted line in the top-right HUD block, only when the sky actor runs.
 - Keep every QA, capture, story, profile and package run on the authored afternoon. The sky actor does not spawn under the existing QA flags unless `-NordHour=` or `-NordWeather=` asks for a fixed state.
+- In live play the sun follows the clock. Light levels on a clear afternoon match the saved scene, but the sun direction does not, so lit façades and shadows differ from the accepted screenshots.
 
 ## Out of scope
 

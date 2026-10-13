@@ -159,25 +159,42 @@ namespace
         Expect(Near(HourAtTime(500.0, CycleForHour(9.0), Broken), 9.0, 1e-9), "a zero-length cycle holds at the offset");
     }
 
+    // Sunrise and sunset (elevation -0.833 degrees) to the second, for one place.
+    void RiseAndSet(double LatitudeDeg, double SolarNoonHour, double& OutSunrise, double& OutSunset)
+    {
+        OutSunrise = -1.0;
+        OutSunset = -1.0;
+        float Previous = SunAt(3.0, 288, LatitudeDeg, SolarNoonHour).Elevation;
+        for (int Second = 1; Second <= 20 * 3600; ++Second)
+        {
+            const double Hour = 3.0 + Second / 3600.0;
+            const float Elevation = SunAt(Hour, 288, LatitudeDeg, SolarNoonHour).Elevation;
+            if (Previous < -.833f && Elevation >= -.833f)
+            {
+                OutSunrise = Hour;
+            }
+            if (Previous >= -.833f && Elevation < -.833f)
+            {
+                OutSunset = Hour;
+            }
+            Previous = Elevation;
+        }
+    }
+
+    // NOAA "General Solar Position Calculations": solar noon in local time from the equation of time.
+    double NoaaSolarNoon(int DayOfYear, double LongitudeDeg, double UtcOffsetHours)
+    {
+        const double Year = 2.0 * 3.14159265358979323846 / 365.0 * (DayOfYear - 1);
+        const double EquationMinutes = 229.18 * (.000075 + .001868 * std::cos(Year) - .032077 * std::sin(Year)
+            - .014615 * std::cos(2.0 * Year) - .040849 * std::sin(2.0 * Year));
+        return (720.0 - 4.0 * LongitudeDeg - EquationMinutes) / 60.0 + UtcOffsetHours;
+    }
+
     void SunTests()
     {
         double Sunrise = -1.0;
         double Sunset = -1.0;
-        float Previous = SunAt(3.0).Elevation;
-        for (int Second = 1; Second <= 20 * 3600; ++Second)
-        {
-            const double Hour = 3.0 + Second / 3600.0;
-            const float Elevation = SunAt(Hour).Elevation;
-            if (Previous < -.833f && Elevation >= -.833f)
-            {
-                Sunrise = Hour;
-            }
-            if (Previous >= -.833f && Elevation < -.833f)
-            {
-                Sunset = Hour;
-            }
-            Previous = Elevation;
-        }
+        RiseAndSet(45.525, 12.67, Sunrise, Sunset);
         char RiseText[16];
         char SetText[16];
         Expect(Sunrise >= 6.0 + 55.0 / 60.0 && Sunrise <= 7.0 + 25.0 / 60.0, "Montréal sunrise %s is between 06:55 and 07:25", ClockText(Sunrise, RiseText));
@@ -223,8 +240,23 @@ namespace
         Expect(SunAt(0.5).Elevation < -12.f, "sun is below -12 degrees after midnight");
         Expect(LatitudeForMap("/Game/Maps/CollegeBathurst") == 43.656 && LatitudeForMap("CollegeBathurst") == 43.656, "College and Bathurst uses Toronto latitude");
         Expect(LatitudeForMap("/Game/Maps/LaFontaine") == 45.525 && LatitudeForMap("") == 45.525 && LatitudeForMap(nullptr) == 45.525, "other maps use Montréal latitude");
-        const float TorontoNoon = SunAt(12.67, 288, LatitudeForMap("CollegeBathurst")).Elevation;
-        Expect(Near(TorontoNoon - Noon.Elevation, 45.525 - 43.656, 1e-3), "Toronto noon is %.3f degrees higher", static_cast<double>(TorontoNoon - Noon.Elevation));
+        Expect(SolarNoonForMap("/Game/Maps/CollegeBathurst") == 13.05 && SolarNoonForMap("/Game/Maps/LaFontaine") == 12.67
+            && SolarNoonForMap("") == 12.67 && SolarNoonForMap(nullptr) == 12.67, "College and Bathurst uses Toronto solar noon, other maps Montréal");
+        // Both constants within a minute of NOAA at the map origins, in Eastern daylight time (UTC-4).
+        const double MontrealNoaa = NoaaSolarNoon(288, -73.5699, -4.0);
+        const double TorontoNoaa = NoaaSolarNoon(288, -79.4077041, -4.0);
+        Expect(Near(SolarNoonForMap("LaFontaine"), MontrealNoaa, 1.0 / 60.0) && Near(SolarNoonForMap("CollegeBathurst"), TorontoNoaa, 1.0 / 60.0),
+            "solar noon constants match NOAA (Montréal %.3f, Toronto %.3f)", MontrealNoaa, TorontoNoaa);
+        const FSun TorontoNoon = SunAt(SolarNoonForMap("CollegeBathurst"), 288, LatitudeForMap("CollegeBathurst"), SolarNoonForMap("CollegeBathurst"));
+        Expect(Near(TorontoNoon.Elevation - Noon.Elevation, 45.525 - 43.656, 1e-3), "Toronto noon is %.3f degrees higher", static_cast<double>(TorontoNoon.Elevation - Noon.Elevation));
+        Expect(Near(TorontoNoon.Azimuth, 180.0, .5), "Toronto solar noon azimuth %.3f is south", static_cast<double>(TorontoNoon.Azimuth));
+        double TorontoRise = -1.0;
+        double TorontoSet = -1.0;
+        RiseAndSet(LatitudeForMap("CollegeBathurst"), SolarNoonForMap("CollegeBathurst"), TorontoRise, TorontoSet);
+        // Toronto in mid-October: sunrise about 07:28, sunset about 18:35.
+        Expect(TorontoRise >= 7.0 + 20.0 / 60.0 && TorontoRise <= 7.0 + 40.0 / 60.0, "Toronto sunrise %s is between 07:20 and 07:40", ClockText(TorontoRise, RiseText));
+        Expect(TorontoSet >= 18.0 + 28.0 / 60.0 && TorontoSet <= 18.0 + 45.0 / 60.0, "Toronto sunset %s is between 18:28 and 18:45", ClockText(TorontoSet, SetText));
+        std::printf("Toronto day 288: sunrise %s, sunset %s\n", ClockText(TorontoRise, RiseText), ClockText(TorontoSet, SetText));
     }
 
     void WeatherTests()
@@ -361,6 +393,58 @@ namespace
             Expect(Gloom / Total >= .5, "seed %u: gloomy weather holds %.1f%% of 2000 segments", Seed, 100.0 * Gloom / Total);
             std::printf("seed %u: gloomy share %.1f%% over %.1f hours\n", Seed, 100.0 * Gloom / Total, Total / 3600.0);
         }
+        // The spec scenario as written: a session that runs half an hour from its start without commands.
+        const int Sessions = 4000;
+        double GloomShare = 0.0;
+        int HalfGloomy = 0;
+        int Changes = 0;
+        int Drizzly = 0;
+        bool BlendsInRange = true;
+        bool Joined = true;
+        for (int Session = 0; Session < Sessions; ++Session)
+        {
+            FRandom Host(0x9E3779B9u * static_cast<uint32_t>(Session + 1));
+            FWetness Wet;
+            FSegment Segment = JoinChain(500.0, Host, Wet);
+            Joined = Joined && Segment.Start <= 500.0 && Segment.Start + Segment.Hold > 500.0 && Segment.Hold >= Segment.Blend
+                && Wet.Surface >= 0.f && Wet.Surface <= 1.f && Wet.Puddles >= 0.f && Wet.Puddles <= 1.f;
+            double Gloomed = 0.0;
+            bool Rained = false;
+            for (int Tick = 0; Tick < 1800; ++Tick)
+            {
+                const double Now = 500.0 + Tick;
+                if (Advance(Segment, Now, Host))
+                {
+                    ++Changes;
+                    BlendsInRange = BlendsInRange && Segment.Blend >= 60.0 && Segment.Blend <= 120.0;
+                }
+                const EWeather Shown = ShownWeather(Segment, Now);
+                Gloomed += Gloomy(Shown) ? 1.0 : 0.0;
+                Rained = Rained || Shown == EWeather::Drizzle || Shown == EWeather::Rain;
+            }
+            GloomShare += Gloomed / 1800.0;
+            HalfGloomy += Gloomed >= 900.0 ? 1 : 0;
+            Drizzly += Rained ? 1 : 0;
+        }
+        const double MeanGloom = GloomShare / Sessions;
+        const double HalfShare = static_cast<double>(HalfGloomy) / Sessions;
+        const double MeanChanges = static_cast<double>(Changes) / Sessions;
+        Expect(Joined, "a joined session is inside its segment at the start, with wetness in [0, 1]");
+        Expect(BlendsInRange, "first half hour blends last one to two minutes");
+        Expect(MeanGloom >= .6, "first half hour: gloomy weather shows %.1f%% of the time on average", 100.0 * MeanGloom);
+        Expect(HalfShare >= .7, "first half hour: %.1f%% of sessions are gloomy at least half of the time", 100.0 * HalfShare);
+        Expect(MeanChanges >= 3.0, "first half hour: the weather changes %.2f times on average", MeanChanges);
+        std::printf("first half hour over %d sessions: gloomy %.1f%% of the time, %.1f%% of sessions at least half gloomy, %.2f changes, %.1f%% see drizzle or rain\n",
+            Sessions, 100.0 * MeanGloom, 100.0 * HalfShare, MeanChanges, 100.0 * Drizzly / Sessions);
+        FRandom JoinA(77);
+        FRandom JoinB(77);
+        FWetness WetA;
+        FWetness WetB;
+        const FSegment SameA = JoinChain(10.0, JoinA, WetA);
+        const FSegment SameB = JoinChain(10.0, JoinB, WetB);
+        Expect(SameA.From == SameB.From && SameA.To == SameB.To && SameA.Start == SameB.Start && SameA.Hold == SameB.Hold && WetA.Puddles == WetB.Puddles
+            && JoinA.State == JoinB.State, "the same seed joins the chain at the same point");
+
         FRandom One(1);
         FRandom Two(2);
         int Differences = 0;
@@ -475,8 +559,8 @@ namespace
         // Every design formula at one point between day and night, against hand-computed values.
         const FLighting Mid = LightingFor(SkyWith(1.f, 3.f), LookFor(EWeather::Overcast));
         Expect(Near(Mid.DayFactor, .5, 1e-6) && Near(Mid.NightFactor, .028, 1e-6) && Near(Mid.SunScale, .12, 1e-6) && Near(Mid.MoonLux, .0795661, 1e-5)
-            && Near(Mid.ExposureOffset, -3.853919, 1e-4) && Near(Mid.ExposureScale, std::exp2(-3.853919), 1e-5) && Near(Mid.WindowGlow, 2.65, 1e-5)
-            && !Mid.bStreetLamps && Near(Mid.Saturation, .8458, 1e-5) && Near(Mid.Contrast, .96, 1e-6) && Near(Mid.WhiteTemp, 6200.0, 1e-3)
+            && Near(Mid.ExposureOffset, -3.853919, 1e-4) && Near(Mid.ExposureScale, std::exp2(-3.853919), 1e-5) && Near(Mid.WindowGlow, 1.308, 1e-5)
+            && !Mid.bStreetLamps && !Mid.bHeadlights && Near(Mid.Saturation, .8458, 1e-5) && Near(Mid.Contrast, .96, 1e-6) && Near(Mid.WhiteTemp, 6200.0, 1e-3)
             && Near(Mid.FogBrightness, .4675, 1e-5) && Near(Mid.SkyLuminanceFactor, 6.25, 1e-4) && Mid.bSunActive && Mid.bMoonActive,
             "mid-dusk overcast lighting matches the design formulas (EV %.4f, moon %.5f)", static_cast<double>(Mid.ExposureOffset), static_cast<double>(Mid.MoonLux));
         const FLighting RainNoon = LightingFor(SunAt(12.67), LookFor(EWeather::Rain));
@@ -507,11 +591,73 @@ namespace
                 {
                     Finite = Finite && std::isfinite(Value);
                 }
-                Finite = Finite && Light.ExposureOffset >= -9.f && Light.ExposureOffset <= 0.f && Light.SkyLuminanceFactor >= .5f && Light.SkyLuminanceFactor <= 16.f;
+                Finite = Finite && Light.ExposureOffset >= -9.f && Light.ExposureOffset <= 0.f && Light.SkyLuminanceFactor >= .5f * NightSkyLuminance
+                    && Light.SkyLuminanceFactor <= 16.f && Light.WindowGlow >= 1.f && Light.WindowGlow <= 12.f;
             }
         }
         Expect(Monotonic, "exposure never drops as the sun rises");
         Expect(Finite, "every lighting output is finite and in range for all hours and weathers");
+
+        // Lamps and windows follow the light; headlights also come on by day in fog, drizzle and rain.
+        const FSun Day = SkyWith(30.f, -40.f);
+        const bool DayHeadlights[WeatherCount] = { false, false, false, true, true, true };
+        for (int Index = 0; Index < WeatherCount; ++Index)
+        {
+            const FLighting Light = LightingFor(Day, LookFor(static_cast<EWeather>(Index)));
+            Expect(Light.bHeadlights == DayHeadlights[Index] && !Light.bStreetLamps && Light.WindowGlow == 1.f,
+                "%s by day: headlights %s, street lamps off, windows unlit", WeatherName(static_cast<EWeather>(Index)), DayHeadlights[Index] ? "on" : "off");
+            const FLighting Dark = LightingFor(SkyWith(-15.f, 30.f), LookFor(static_cast<EWeather>(Index)));
+            Expect(Dark.bHeadlights && Dark.bStreetLamps && Near(Dark.WindowGlow, 12.0, 1e-5), "%s at night: headlights, lamps and windows on", WeatherName(static_cast<EWeather>(Index)));
+        }
+
+        // The sky follows one visibility law by day and by night, so a gloomy sky is never brighter than a clear one,
+        // and the moonlit night sky is far darker than the day sky after exposure.
+        const FSun Moonlit = SkyWith(-20.f, 30.f);
+        const FLighting ClearNight = LightingFor(Moonlit, Clear);
+        const double ClearNightSky = static_cast<double>(ClearNight.SkyLuminanceFactor * ClearNight.MoonLux);
+        const double ClearDaySky = static_cast<double>(LightingFor(Day, Clear).SkyLuminanceFactor * LightingFor(Day, Clear).SunScale * AuthoredSunLux);
+        for (int Index = 0; Index < WeatherCount; ++Index)
+        {
+            const FWeatherLook Look = LookFor(static_cast<EWeather>(Index));
+            const FLighting AtNight = LightingFor(Moonlit, Look);
+            const FLighting AtNoon = LightingFor(Day, Look);
+            const double NightSky = static_cast<double>(AtNight.SkyLuminanceFactor * AtNight.MoonLux);
+            const double DaySky = static_cast<double>(AtNoon.SkyLuminanceFactor * AtNoon.SunScale * AuthoredSunLux);
+            Expect(Near(NightSky / ClearNightSky, static_cast<double>(Look.SkyLuminance), 1e-4) && Near(DaySky / ClearDaySky, static_cast<double>(Look.SkyLuminance), 1e-4),
+                "%s sky is %.3f of the clear sky by night and %.3f by day, both its sky luminance %.2f", WeatherName(static_cast<EWeather>(Index)),
+                NightSky / ClearNightSky, DaySky / ClearDaySky, static_cast<double>(Look.SkyLuminance));
+        }
+        const double NightOverDay = ClearNightSky / static_cast<double>(ClearNight.ExposureScale) / ClearDaySky;
+        Expect(NightOverDay <= 1.0 / 16.0 && NightOverDay >= 1.0 / 256.0, "after exposure the clear night sky is %.2f EV below the day sky (4 to 8)", -std::log2(NightOverDay));
+        for (float Elevation : { 8.f, 2.f, -.833f, -2.f, -4.f })
+        {
+            const FSun Sunset = SkyWith(Elevation, -20.f);
+            Expect(Near(LightingFor(Sunset, Clear).SkyLuminanceFactor, 1.0, 1e-6) && Near(LightingFor(Sunset, LookFor(EWeather::Overcast)).SkyLuminanceFactor, .75 / .12, 1e-4),
+                "the sky at %.1f degrees keeps its day luminance, so sunset colours stay", static_cast<double>(Elevation));
+        }
+        // A 0.5 degree moon disk: luminance = illuminance / solid angle, scaled, against the night mid-grey (EV100 3.5).
+        const double DiskSolidAngle = 2.0 * 3.14159265358979323846 * (1.0 - std::cos(.25 * 3.14159265358979323846 / 180.0));
+        const double NightMidGrey = std::exp2(static_cast<double>(AuthoredEV100 + ClearNight.ExposureOffset) - 3.0);
+        const double DiskStops = std::log2(static_cast<double>(ClearNight.MoonLux * MoonDiskScale) / DiskSolidAngle / NightMidGrey);
+        Expect(DiskStops >= 6.0 && DiskStops <= 10.0, "the moon disk is %.1f EV above the night mid-grey (6 to 10, white but not a sun)", DiskStops);
+
+        // Light steps: 0.1 degrees high up, smaller near the horizon so a 10 m shadow tip moves at most 0.5 m per step.
+        Expect(Near(LightTurnStep(30.f), .1, 1e-12) && Near(LightTurnStep(75.f), .1, 1e-12) && Near(LightTurnStep(0.f), .02, 1e-12)
+            && Near(LightTurnStep(-10.f), .02, 1e-12), "light step is 0.1 degrees above 30 and 0.02 at the horizon");
+        double Previous = 0.0;
+        bool Rising = true;
+        bool ShortJumps = true;
+        for (int Tenth = 50; Tenth <= 900; ++Tenth)
+        {
+            const float Elevation = static_cast<float>(Tenth) / 10.f;
+            const double Step = LightTurnStep(Elevation);
+            const double Sine = std::sin(static_cast<double>(Elevation) * 3.14159265358979323846 / 180.0);
+            Rising = Rising && Step >= Previous;
+            ShortJumps = ShortJumps && 1000.0 / (Sine * Sine) * Step * 3.14159265358979323846 / 180.0 <= 50.0;
+            Previous = Step;
+        }
+        Expect(Rising, "the light step never shrinks as the light rises");
+        Expect(ShortJumps, "above 5 degrees a step moves the tip of a 10 m shadow by at most 50 cm");
     }
 
     void SegmentTests()
@@ -544,6 +690,77 @@ namespace
         Expect(SameLook(Sample(Instant, 50.0), LookFor(EWeather::Drizzle)), "a zero blend jumps to the target");
         FSegment Fresh;
         Expect(Advance(Fresh, 0.0, Random) && Fresh.From == EWeather::Clear && Fresh.To != EWeather::Clear, "a default segment advances at once");
+
+        FSegment Shown{ EWeather::Clear, EWeather::Rain, 100.0, 80.0, 300.0 };
+        Expect(ShownWeather(Shown, 50.0) == EWeather::Clear && ShownWeather(Shown, 139.0) == EWeather::Clear && ShownWeather(Shown, 140.0) == EWeather::Rain
+            && ShownWeather(Shown, 500.0) == EWeather::Rain, "the shown weather turns at the middle of the blend");
+
+        // A command at any point of any blend starts exactly from the look that was showing.
+        bool Continuous = true;
+        bool Arrives = true;
+        bool Named = true;
+        double WorstJump = 0.0;
+        FRandom Commands(31);
+        for (int From = 0; From < WeatherCount; ++From)
+        {
+            for (int To = 0; To < WeatherCount; ++To)
+            {
+                for (int Requested = 0; Requested < WeatherCount; ++Requested)
+                {
+                    for (double Fraction : { 0.0, .1, .49, .5, .51, .9, 1.0, 3.0 })
+                    {
+                        FSegment Turned{ static_cast<EWeather>(From), static_cast<EWeather>(To), 1000.0, 90.0, 400.0 };
+                        const double Now = 1000.0 + Fraction * 90.0;
+                        const FWeatherLook Before = Sample(Turned, Now);
+                        Redirect(Turned, static_cast<EWeather>(Requested), Now, 10.0, Commands);
+                        const auto A = Fields(Before);
+                        const auto B = Fields(Sample(Turned, Now));
+                        for (size_t Field = 0; Field < A.size(); ++Field)
+                        {
+                            WorstJump = std::max(WorstJump, std::fabs(static_cast<double>(A[Field]) - static_cast<double>(B[Field])));
+                        }
+                        Continuous = Continuous && SameLook(Before, Sample(Turned, Now), 2e-5);
+                        Arrives = Arrives && SameLook(Sample(Turned, Now + 10.0), LookFor(static_cast<EWeather>(Requested)), 2e-5)
+                            && Turned.Hold >= 10.0 + 150.0 && Turned.Start == Now && Turned.To == static_cast<EWeather>(Requested);
+                        float Weights[WeatherCount];
+                        ShownWeights(Turned, Now, Weights);
+                        int Strongest = 0;
+                        for (int Weather = 1; Weather < WeatherCount; ++Weather)
+                        {
+                            Strongest = Weights[Weather] > Weights[Strongest] ? Weather : Strongest;
+                        }
+                        Named = Named && Weights[static_cast<int>(Turned.From)] >= Weights[Strongest];
+                    }
+                }
+            }
+        }
+        Expect(Continuous, "a command mid-blend does not jump (largest field change %.2g)", WorstJump);
+        Expect(Arrives, "a command reaches the requested look after its blend and holds it");
+        Expect(Named, "a turned segment starts from the weather with the largest share");
+
+        // Two quick commands: the second starts from the three-way mix the first was showing.
+        FSegment Quick{ EWeather::Clear, EWeather::Rain, 0.0, 90.0, 400.0 };
+        Redirect(Quick, EWeather::Fog, 40.0, 10.0, Commands);
+        const FWeatherLook Mixed = Sample(Quick, 45.0);
+        Redirect(Quick, EWeather::Overcast, 45.0, 10.0, Commands);
+        Expect(SameLook(Mixed, Sample(Quick, 45.0), 2e-5), "a second command mid-blend does not jump either");
+        float Shares[WeatherCount];
+        ShownWeights(Quick, 45.0, Shares);
+        Expect(Shares[static_cast<int>(EWeather::Clear)] > 0.f && Shares[static_cast<int>(EWeather::Rain)] > 0.f && Shares[static_cast<int>(EWeather::Fog)] > 0.f
+            && Near(Shares[0] + Shares[1] + Shares[2] + Shares[3] + Shares[4] + Shares[5], 1.0, 1e-5), "the three-way start keeps every share");
+        const double QuickEnd = Quick.Start + Quick.Hold;
+        Expect(Advance(Quick, QuickEnd, Commands) && Quick.From == EWeather::Overcast && SameLook(Sample(Quick, QuickEnd), LookFor(EWeather::Overcast), 0.0)
+            && Quick.FromWeights[0] == 0.f && Quick.FromWeights[1] == 0.f && Quick.FromWeights[2] == 0.f && Quick.FromWeights[3] == 0.f
+            && Quick.FromWeights[4] == 0.f && Quick.FromWeights[5] == 0.f, "the chain continues from the commanded weather alone");
+
+        // Corrupt replicated weights fall back to From.
+        FSegment Corrupt{ EWeather::Fog, EWeather::Rain, 0.0, 10.0, 100.0 };
+        Corrupt.FromWeights[1] = -3.f;
+        Corrupt.FromWeights[2] = std::nanf("");
+        Expect(SameLook(Sample(Corrupt, 0.0), LookFor(EWeather::Fog), 0.0) && ShownWeather(Corrupt, 0.0) == EWeather::Fog, "unusable weights read as From");
+        Corrupt.FromWeights[3] = 3e38f;
+        Corrupt.FromWeights[4] = 3e38f;
+        Expect(SameLook(Sample(Corrupt, 0.0), LookFor(EWeather::Fog), 0.0), "weights that overflow read as From");
     }
 
     void WindTests()
@@ -597,7 +814,11 @@ namespace
             Advance(Segment, Segment.Start + Segment.Hold, Random);
             std::printf(" %s/%.0f", WeatherName(Segment.To), Segment.Hold);
         }
-        std::printf("\n");
+        FRandom JoinRandom(2026);
+        FWetness JoinWet;
+        const FSegment Joined = JoinChain(0.0, JoinRandom, JoinWet);
+        std::printf(" | join %s>%s start %.3f hold %.3f wet %.4f/%.4f\n", WeatherName(Joined.From), WeatherName(Joined.To), Joined.Start, Joined.Hold,
+            static_cast<double>(JoinWet.Surface), static_cast<double>(JoinWet.Puddles));
     }
 }
 

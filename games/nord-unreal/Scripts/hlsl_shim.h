@@ -70,6 +70,7 @@ namespace Hlsl
     inline float frac(float V) { return V - std::floor(V); }
     inline float min(float A, float B) { return A < B ? A : B; }
     inline float max(float A, float B) { return A > B ? A : B; }
+    inline float clamp(float V, float Low, float High) { return min(max(V, Low), High); }
     inline float saturate(float V) { return min(max(V, 0.f), 1.f); }
     inline float lerp(float A, float B, float T) { return A + (B - A) * T; }
     inline float step(float Edge, float V) { return V >= Edge ? 1.f : 0.f; }

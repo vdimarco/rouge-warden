@@ -20,10 +20,13 @@ SIZE = 2048
 PAD_CM = 200.
 NEAR_CM, FAR_CM = 600., 3000.
 SHALLOW, DEEP, FOAM = (.045, .05, .03), (.008, .022, .02), (.35, .36, .33)
+# The depth tint ramps over 0-12 m from the shore, which is 0-.4 of the G channel's 0-30 m.
+DEPTH_RAMP = 1200. / FAR_CM
 # Custom input, collection parameter and the pinned-afternoon value used when no collection exists.
 WEATHER = (('Wind', 'WindStrength', .25), ('WindDirX', 'WindDirX', .94),
            ('WindDirY', 'WindDirY', .34), ('Rain', 'RainIntensity', 0.))
-INPUTS = ('WorldPos', 'CameraPos', 'Time', 'Shore') + tuple(name for name, _, _ in WEATHER)
+# WorldDX and WorldDY are the screen-pixel derivatives the shader uses to fade waves before they alias.
+INPUTS = ('WorldPos', 'WorldDX', 'WorldDY', 'Time', 'Shore') + tuple(name for name, _, _ in WEATHER)
 
 
 def _sha256(path):
@@ -168,8 +171,9 @@ def existing(u, directory=DIRECTORY):
 def author(u, mat, texture=None, manifest=None, mpc=None):
     """Rebuild the pond graph in place: opaque Default Lit with a world-space normal.
 
-    Without the shore texture the pond reads as open water (no foam, deep colour); without the
-    collection the weather inputs are the pinned-afternoon constants.
+    pond_water.hlsl returns the slope, foam and roughness; the depth tint comes from the shore
+    texture's G channel. Without the shore texture the pond reads as open water (no foam, deep
+    colour); without the collection the weather inputs are the pinned-afternoon constants.
     """
     assert (texture is None) == (manifest is None), 'The shore texture needs its manifest'
     library = u.MaterialEditingLibrary
@@ -208,8 +212,16 @@ def author(u, mat, texture=None, manifest=None, mpc=None):
     custom.set_editor_property('inputs', entries)
     world = node(u.MaterialExpressionWorldPosition)
     link(world, '', custom, 'WorldPos')
-    link(node(u.MaterialExpressionCameraPositionWS), '', custom, 'CameraPos')
+    # Camera-relative position has the same screen derivatives as the world position, without large-world types.
+    relative = node(u.MaterialExpressionWorldPosition,
+                    world_position_shader_offset=u.WorldPositionIncludedOffsets.WPT_CAMERA_RELATIVE)
+    for name, cls in (('WorldDX', u.MaterialExpressionDDX), ('WorldDY', u.MaterialExpressionDDY)):
+        derivative = node(cls)
+        link(relative, '', derivative, '')
+        link(derivative, '', custom, name)
     link(node(u.MaterialExpressionTime), '', custom, 'Time')
+    # Open water without the shore texture is deep everywhere.
+    depth = node(u.MaterialExpressionSmoothStep, const_min=0., const_max=DEPTH_RAMP, const_value=1.)
     if texture:
         low, high = manifest['bounds_cm']['min'], manifest['bounds_cm']['max']
         width, height = high[0] - low[0], high[1] - low[1]
@@ -223,6 +235,7 @@ def author(u, mat, texture=None, manifest=None, mpc=None):
                      sampler_type=u.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
         link(uv, '', shore, '')
         link(shore, 'RGBA', custom, 'Shore')
+        link(shore, 'G', depth, 'Value')
     else:
         link(node(u.MaterialExpressionConstant4Vector, constant=u.LinearColor(1, 1, 1, 1)), '', custom, 'Shore')
     weather = {}
@@ -239,7 +252,7 @@ def author(u, mat, texture=None, manifest=None, mpc=None):
     unit = node(u.MaterialExpressionNormalize)
     link(normal, '', unit, '')
     connect(unit, '', u.MaterialProperty.MP_NORMAL)
-    foam, depth = mask(custom, 'b'), mask(custom, 'a')
+    foam = mask(custom, 'b')
     water = node(u.MaterialExpressionLinearInterpolate)
     link(color(SHALLOW), '', water, 'A')
     link(color(DEEP), '', water, 'B')
@@ -249,22 +262,9 @@ def author(u, mat, texture=None, manifest=None, mpc=None):
     link(color(FOAM), '', base, 'B')
     link(foam, '', base, 'Alpha')
     connect(base, '', u.MaterialProperty.MP_BASE_COLOR)
-    # Roughness clamp(.035 + .05 Wind + .08 Rain, .03, .17); the foam band is rough (.45).
-    wind = node(u.MaterialExpressionMultiply, const_b=.05)
-    link(weather['Wind'], '', wind, 'A')
-    rain = node(u.MaterialExpressionMultiply, const_b=.08)
-    link(weather['Rain'], '', rain, 'A')
-    total = node(u.MaterialExpressionAdd)
-    link(wind, '', total, 'A')
-    link(rain, '', total, 'B')
-    offset = node(u.MaterialExpressionAdd, const_b=.035)
-    link(total, '', offset, 'A')
-    smooth = node(u.MaterialExpressionClamp, min_default=.03, max_default=.17)
-    link(offset, '', smooth, '')
-    rough = node(u.MaterialExpressionLinearInterpolate, const_b=.45)
-    link(smooth, '', rough, 'A')
-    link(foam, '', rough, 'Alpha')
-    connect(rough, '', u.MaterialProperty.MP_ROUGHNESS)
+    # The shader widens clamp(.035 + .05 Wind + .08 Rain, .03, .17) by the slope variance of the waves
+    # it fades with distance, at most .17, and blends the foam band toward .3.
+    connect(mask(custom, 'a'), '', u.MaterialProperty.MP_ROUGHNESS)
     connect(node(u.MaterialExpressionConstant, r=.25), '', u.MaterialProperty.MP_SPECULAR)
     connect(node(u.MaterialExpressionConstant, r=0.), '', u.MaterialProperty.MP_METALLIC)
     library.recompile_material(mat)
@@ -273,8 +273,11 @@ def author(u, mat, texture=None, manifest=None, mpc=None):
             'shore_texture': texture.get_path_name() if texture else None,
             'collection': mpc.get_path_name() if mpc else None,
             'blend_mode': 'opaque', 'shading_model': 'default lit', 'tangent_space_normal': False,
-            'wave_normals': 8, 'ring_layers': 4, 'slope_limit': .24, 'specular': .25, 'metallic': 0.,
-            'roughness': 'clamp(.035 + .05 Wind + .08 Rain, .03, .17), foam .45'}
+            'wave_normals': 10, 'ring_layers': 4, 'slope_limit': .24, 'specular': .25, 'metallic': 0.,
+            'screen_frequency_fade': 'each wave and the rings, 1/4 to 1/2 cycle per pixel',
+            'depth_tint': f'smoothstep(0, {DEPTH_RAMP}, shore G)',
+            'roughness': 'clamp(.035 + .05 Wind + .08 Rain, .03, .17) widened by the faded slope variance, '
+                         'at most .17; foam .3'}
 
 
 def apply(u, root=ROOT):

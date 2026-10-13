@@ -2,13 +2,14 @@
 
 ## Data start (this container)
 
-- [ ] Store the OpenStreetMap and Toronto 3D Massing snapshots with attribution in `Data/CollegeBathurst/`.
-- [ ] Write `Scripts/prepare_college_bathurst.py` and generate the layout, blockout geometry and `Source/Quebec/CollegeBathurstMap.h`.
-- [ ] Render `Preview/CollegeBathurst/plan.png` and `massing.png` and inspect them.
-- [ ] Write `Scripts/test_college_bathurst.py` and pass it.
-- [ ] Write the editor greybox script `Scripts/create_college_bathurst.py`.
-- [ ] Ignore the generated blockout geometry in Git.
-- [ ] Validate this change with the OpenSpec CLI.
+- [x] Store the OpenStreetMap and Toronto 3D Massing snapshots with attribution in `Data/CollegeBathurst/`.
+- [x] Write `Scripts/prepare_college_bathurst.py` and generate the layout, blockout geometry and `Source/Quebec/CollegeBathurstMap.h`.
+- [x] Render `Preview/CollegeBathurst/plan.png` and `massing.png` and inspect them.
+- [x] Write `Scripts/test_college_bathurst.py` and pass it.
+- [x] Write the editor greybox script `Scripts/create_college_bathurst.py` (checked only against a fake `unreal` module).
+- [x] Ignore the generated blockout geometry in Git.
+- [x] Review the data and scripts independently; fix the confirmed findings (average roof heights, split height parts, zero-height massing parts, parked car off the tracks, ASCII header, test without the ignored geometry, shared-height records).
+- [x] Validate this change with the OpenSpec CLI.
 
 ## Native checks (user's Unreal host)
 

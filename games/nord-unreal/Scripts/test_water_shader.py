@@ -2,11 +2,16 @@
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 
 SCRIPTS = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS))
+from plateau_atmosphere import RAIN_MAX_OFFSET
+
 SOURCE = SCRIPTS / 'water_shader_test.cpp'
-FLAGS = ['-std=c++20', '-Wall', '-Wextra', '-Werror', '-O1', '-I', str(SCRIPTS)]
+# The streak check uses the displacement limit that plateau_atmosphere authors on M_NordRain.
+FLAGS = ['-std=c++20', '-Wall', '-Wextra', '-Werror', '-O1', '-I', str(SCRIPTS), f'-DNORD_RAIN_MAX_OFFSET={RAIN_MAX_OFFSET!r}']
 compilers = [name for name in ('c++', 'g++', 'clang++') if shutil.which(name)]
 assert compilers, 'no C++ compiler found (c++, g++ or clang++)'
 for body in ('pond_water.hlsl', 'rain_streak.hlsl', 'wet_puddles.hlsl'):

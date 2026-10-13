@@ -25,6 +25,11 @@ PARAMETERS = (('NightFactor', 0.), ('ExposureScale', 1.), ('WindowGlow', 1.), ('
               ('RainIntensity', 0.), ('WindStrength', .25), ('WindDirX', .94), ('WindDirY', .34), ('Gloom', 0.))
 RAIN = '/Game/Art/Atmosphere/M_NordRain'
 RAIN_HLSL = ROOT / 'Scripts/rain_streak.hlsl'
+# rain_streak.hlsl draws a streak up to 1.5 boxes (3000 cm) from its pivot on X and Y, plus about 24 cm of
+# wind slant and the camera's movement since QuebecSky last snapped the component. The material clamps the
+# offset on each axis to this value and pads each instance's culling bounds by it; 0 would cull streaks
+# whose pivot is off screen. Scripts/water_shader_test.cpp checks that the offset stays inside it.
+RAIN_MAX_OFFSET = 3200.
 PUDDLE_HLSL = ROOT / 'Scripts/wet_puddles.hlsl'
 RAIN_INPUTS = ('Pivot', 'WorldPos', 'CameraPos', 'Time', 'Rand', 'Rain', 'Wind', 'WindDirX', 'WindDirY')
 WET = tuple('/Game/Plateau/Materials/M_' + name for name in ('Asphalt', 'Concrete', 'ConcreteDark', 'Gravel', 'ParkEarth'))
@@ -178,6 +183,7 @@ def rain_material(u, mpc):
     mat.set_editor_property('shading_model', u.MaterialShadingModel.MSM_DEFAULT_LIT)
     mat.set_editor_property('two_sided', True)
     mat.set_editor_property('translucency_lighting_mode', u.TranslucencyLightingMode.TLM_VOLUMETRIC_NON_DIRECTIONAL)
+    mat.set_editor_property('max_world_position_offset_displacement', RAIN_MAX_OFFSET)
     streak = g.custom(RAIN_HLSL, RAIN_INPUTS, u.CustomMaterialOutputType.CMOT_FLOAT4, 'NordSky rain streak')
     for name, source in (('Pivot', g.node(u.MaterialExpressionObjectPositionWS)),
                          ('WorldPos', g.node(u.MaterialExpressionWorldPosition)),
@@ -217,7 +223,8 @@ def rain_material(u, mpc):
     g.library.recompile_material(mat)
     assert assets.save_loaded_asset(mat)
     return mat, {'asset': RAIN, 'blend_mode': 'translucent', 'two_sided': True,
-                 'translucency_lighting_mode': 'volumetric non-directional', 'custom_inputs': list(RAIN_INPUTS),
+                 'translucency_lighting_mode': 'volumetric non-directional',
+                 'max_world_position_offset_displacement_cm': RAIN_MAX_OFFSET, 'custom_inputs': list(RAIN_INPUTS),
                  'hlsl_sha256': _sha256(RAIN_HLSL), 'base_color': [.7, .74, .78], 'opacity': 'streak mask x .35 x visible-instance mask'}
 
 
@@ -354,12 +361,19 @@ def _readback(u, mat):
 
 
 def verify(u, root=ROOT, map_sha256=None):
-    """Fresh-load read-backs of everything apply() writes."""
+    """Fresh-load read-backs of everything apply() writes, and the map bytes it must not change."""
     root = Path(root)
-    assets, library, P = u.EditorAssetLibrary, u.MaterialEditingLibrary, u.MaterialProperty
     if map_sha256 is None:
         map_sha256 = json.loads((root / REPORT).read_text())['map_sha256']
     assert _sha256(root / MAP) == map_sha256, 'The map changed after sky and water authoring'
+    return {'passed': True, 'map_sha256': map_sha256} | verify_assets(u, root)
+
+
+def verify_assets(u, root=ROOT):
+    """The asset read-backs alone. verify_plateau.py runs them after a full Plateau regeneration, which
+    saves the map and rebuilds the wet-ground and window materials (plateau_surfaces rewraps them)."""
+    root = Path(root)
+    assets, library, P = u.EditorAssetLibrary, u.MaterialEditingLibrary, u.MaterialProperty
     mpc = assets.load_asset(COLLECTION)
     assert isinstance(mpc, u.MaterialParameterCollection), COLLECTION
     scalars = {str(entry.get_editor_property('parameter_name')): entry.get_editor_property('default_value')
@@ -391,12 +405,21 @@ def verify(u, root=ROOT, map_sha256=None):
         node = library.get_material_property_input_node(water, getattr(P, prop))
         assert isinstance(node, u.MaterialExpressionConstant) and abs(node.get_editor_property('r') - value) < 1e-6, prop
     assert isinstance(library.get_material_property_input_node(water, P.MP_NORMAL), u.MaterialExpressionNormalize)
+    # The shader fades waves by their size on screen, from the pixel derivatives, and owns the roughness.
+    pins = library.get_inputs_for_material_expression(water, customs[0])
+    assert all(any(isinstance(n, cls) for n in pins) for cls in (u.MaterialExpressionDDX, u.MaterialExpressionDDY)), \
+        'Pond shader has no pixel derivatives'
+    rough = library.get_material_property_input_node(water, P.MP_ROUGHNESS)
+    assert (isinstance(rough, u.MaterialExpressionComponentMask) and list(library.get_inputs_for_material_expression(water, rough)) == [customs[0]]
+            and [rough.get_editor_property(c) for c in 'rgba'] == [False, False, False, True]), 'Pond roughness must come from the shader'
     ponds = pond_state(u, root)
 
     rain = assets.load_asset(RAIN)
     assert isinstance(rain, u.Material), RAIN
     assert rain.get_editor_property('blend_mode') == u.BlendMode.BLEND_TRANSLUCENT and rain.get_editor_property('two_sided')
     assert rain.get_editor_property('translucency_lighting_mode') == u.TranslucencyLightingMode.TLM_VOLUMETRIC_NON_DIRECTIONAL
+    displacement = rain.get_editor_property('max_world_position_offset_displacement')
+    assert abs(displacement - RAIN_MAX_OFFSET) < 1e-3, ('Rain offset culling bounds', displacement)
     assert library.has_material_usage(rain, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES)
     offset = _reachable(u, rain, ('MP_WORLD_POSITION_OFFSET',))
     assert any(isinstance(n, u.MaterialExpressionCustom) and n.get_editor_property('code') == RAIN_HLSL.read_text() for n in offset)
@@ -425,8 +448,8 @@ def verify(u, root=ROOT, map_sha256=None):
             assert all(n in used for n in library.get_material_expressions(mat)
                        if str(n.get_editor_property('desc')) == MARKER), (path, 'orphaned NordSky node')
             wrapped[path] = {'readback': _readback(u, mat), 'parameters': sorted(set(expected))}
-    return {'passed': True, 'map_sha256': map_sha256, 'collection': scalars, 'pond_actors': len(ponds),
-            'pond': _readback(u, water), 'rain': _readback(u, rain), 'wrappers': wrapped}
+    return {'passed': True, 'collection': scalars, 'pond_actors': len(ponds), 'pond': _readback(u, water),
+            'rain': _readback(u, rain) | {'max_world_position_offset_displacement': displacement}, 'wrappers': wrapped}
 
 
 def apply(u, root=ROOT):

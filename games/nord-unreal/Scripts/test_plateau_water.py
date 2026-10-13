@@ -59,7 +59,8 @@ class Object:
 
 class Material(Object):
     DEFAULTS = {'blend_mode': 'BLEND_OPAQUE', 'shading_model': 'MSM_DEFAULT_LIT', 'two_sided': False,
-                'tangent_space_normal': True, 'translucency_lighting_mode': 'TLM_VOLUMETRIC_DIRECTIONAL'}
+                'tangent_space_normal': True, 'translucency_lighting_mode': 'TLM_VOLUMETRIC_DIRECTIONAL',
+                'max_world_position_offset_displacement': 0.}
 
     def __init__(self, path=''):
         super().__init__(path)
@@ -94,7 +95,8 @@ class Expression(Object):
     PINS = {'Multiply': ('A', 'B'), 'Add': ('A', 'B'), 'Subtract': ('A', 'B'), 'Divide': ('A', 'B'),
             'LinearInterpolate': ('A', 'B', 'Alpha'), 'AppendVector': ('A', 'B'), 'TextureSample': ('UVs',),
             'ComponentMask': ('Input',), 'Normalize': ('VectorInput',), 'Clamp': ('Input', 'Min', 'Max'),
-            'Abs': ('Input',), 'OneMinus': ('Input',), 'Sine': ('Input',), 'VertexInterpolator': ('VS',)}
+            'Abs': ('Input',), 'OneMinus': ('Input',), 'Sine': ('Input',), 'VertexInterpolator': ('VS',),
+            'DDX': ('Value',), 'DDY': ('Value',), 'SmoothStep': ('Min', 'Max', 'Value')}
     OUTPUTS = {'TextureSample': ('RGB', 'R', 'G', 'B', 'A', 'RGBA'), 'VertexInterpolator': ('PS',)}
     VALUES = {'Multiply': {'const_a': 0., 'const_b': 1.}, 'Add': {'const_a': 0., 'const_b': 1.},
               'Subtract': {'const_a': 1., 'const_b': 1.}, 'LinearInterpolate': {'const_a': 0., 'const_b': 1., 'const_alpha': .5},
@@ -103,7 +105,9 @@ class Expression(Object):
               'ComponentMask': dict.fromkeys('rgba', False), 'Custom': {'code': '', 'inputs': [], 'output_type': 'CMOT_FLOAT3', 'description': 'Custom'},
               'CollectionParameter': {'collection': None, 'parameter_name': 'None'}, 'Sine': {'period': 1.},
               'TextureSample': {'texture': None, 'sampler_type': 'SAMPLERTYPE_COLOR'}, 'VectorParameter': {'parameter_name': 'None'},
-              'TextureCoordinate': {'u_tiling': 1., 'v_tiling': 1., 'coordinate_index': 0}}
+              'TextureCoordinate': {'u_tiling': 1., 'v_tiling': 1., 'coordinate_index': 0},
+              'SmoothStep': {'const_min': 0., 'const_max': 1., 'const_value': 0.},
+              'WorldPosition': {'world_position_shader_offset': 'WPT_DEFAULT'}}
 
     def __init__(self, material):
         super().__init__('', desc='', **self.VALUES.get(self.KIND, {}))
@@ -256,7 +260,8 @@ class FakeUnreal:
         self.LinearColor = lambda r, g, b, a: (r, g, b, a)
         self.AssetImportTask = lambda: SimpleNamespace(imported_object_paths=[], automated=False, replace_existing=False, save=False)
         for enum in ('MaterialProperty', 'BlendMode', 'MaterialShadingModel', 'CustomMaterialOutputType', 'MaterialSamplerType',
-                     'TextureCompressionSettings', 'TextureAddress', 'TranslucencyLightingMode', 'MaterialUsage'):
+                     'TextureCompressionSettings', 'TextureAddress', 'TranslucencyLightingMode', 'MaterialUsage',
+                     'WorldPositionIncludedOffsets'):
             setattr(self, enum, Names())
         self.classes = {}
 
@@ -292,6 +297,10 @@ def evaluate(node, output, values):
         return a + (b - a) * pin('Alpha', 'const_alpha')
     if kind == 'Clamp':
         return min(max(evaluate(*node.links['Input'], values), node.get_editor_property('min_default')), node.get_editor_property('max_default'))
+    if kind == 'SmoothStep':
+        low, high = pin('Min', 'const_min'), pin('Max', 'const_max')
+        x = min(max((pin('Value', 'const_value') - low) / (high - low), 0.), 1.)
+        return x * x * (3 - 2 * x)
     if kind == 'Custom':
         return values['custom'][0]
     if kind == 'ComponentMask':
@@ -447,10 +456,17 @@ def check_author():
         custom = customs[0]
         assert custom.get_editor_property('code') == (ROOT / 'Scripts/pond_water.hlsl').read_text()
         assert custom.get_editor_property('output_type') == 'CMOT_FLOAT4'
-        assert custom.pins() == ('WorldPos', 'CameraPos', 'Time', 'Shore', 'Wind', 'WindDirX', 'WindDirY', 'Rain')
+        assert custom.pins() == ('WorldPos', 'WorldDX', 'WorldDY', 'Time', 'Shore', 'Wind', 'WindDirX', 'WindDirY', 'Rain')
         assert isinstance(input_of(custom, 'WorldPos'), u.MaterialExpressionWorldPosition)
-        assert isinstance(input_of(custom, 'CameraPos'), u.MaterialExpressionCameraPositionWS)
+        assert input_of(custom, 'WorldPos').get_editor_property('world_position_shader_offset') == 'WPT_DEFAULT'
         assert isinstance(input_of(custom, 'Time'), u.MaterialExpressionTime)
+        # The shader sizes each wave on screen from the pixel derivatives of the camera-relative position.
+        derivatives = {pin: input_of(custom, pin) for pin in ('WorldDX', 'WorldDY')}
+        assert isinstance(derivatives['WorldDX'], u.MaterialExpressionDDX) and isinstance(derivatives['WorldDY'], u.MaterialExpressionDDY)
+        relative = {input_of(n, 'Value') for n in derivatives.values()}
+        assert len(relative) == 1 and isinstance(next(iter(relative)), u.MaterialExpressionWorldPosition)
+        assert next(iter(relative)).get_editor_property('world_position_shader_offset') == 'WPT_CAMERA_RELATIVE'
+        assert not any(isinstance(n, u.MaterialExpressionCameraPositionWS) for n in water.expressions)
         shore, output = custom.links['Shore']
         assert isinstance(shore, u.MaterialExpressionTextureSample) and output == 'RGBA'
         assert shore.get_editor_property('texture') is texture and shore.get_editor_property('sampler_type') == 'SAMPLERTYPE_LINEAR_COLOR'
@@ -479,24 +495,25 @@ def check_author():
         assert input_of(slope, 'Input') is custom and [slope.get_editor_property(c) for c in 'rgba'] == [True, True, False, False]
         base = library.get_material_property_input_node(water, 'MP_BASE_COLOR')
         depth_lerp, foam_color, foam = input_of(base, 'A'), input_of(base, 'B'), input_of(base, 'Alpha')
-        assert foam_color.get_editor_property('constant') == (.35, .36, .33, 1) and foam.get_editor_property('b')
+        assert foam_color.get_editor_property('constant') == (.35, .36, .33, 1)
+        assert input_of(foam, 'Input') is custom and [foam.get_editor_property(c) for c in 'rgba'] == [False, False, True, False]
         assert input_of(depth_lerp, 'A').get_editor_property('constant') == (.045, .05, .03, 1)
         assert input_of(depth_lerp, 'B').get_editor_property('constant') == (.008, .022, .02, 1)
-        assert input_of(depth_lerp, 'Alpha').get_editor_property('a')
+        # Depth: smoothstep over 0-12 m from the shore, read from the 0-30 m G channel of the shore texture.
+        depth = input_of(depth_lerp, 'Alpha')
+        assert isinstance(depth, u.MaterialExpressionSmoothStep) and depth.links['Value'] == (shore, 'G')
+        ramp = [evaluate(depth, '', {'source': g / 255}) for g in range(256)]
+        assert ramp[0] == 0. and all(b >= a for a, b in zip(ramp, ramp[1:])), 'Depth must grow away from the shore'
+        assert all(value == 1. for g, value in enumerate(ramp) if g / 255 * 3000 >= 1200), 'Depth must be 1 from 12 m inward'
+        assert 0. < ramp[51] < 1., 'Depth must ramp inside 12 m'
+        # Roughness comes from the shader, which widens it for faded waves; its formula is checked in water_shader_test.cpp.
+        rough = library.get_material_property_input_node(water, 'MP_ROUGHNESS')
+        assert input_of(rough, 'Input') is custom and [rough.get_editor_property(c) for c in 'rgba'] == [False, False, False, True]
         specular = library.get_material_property_input_node(water, 'MP_SPECULAR')
         metallic = library.get_material_property_input_node(water, 'MP_METALLIC')
         assert specular.get_editor_property('r') == .25 and metallic.get_editor_property('r') == 0.
-        rough = library.get_material_property_input_node(water, 'MP_ROUGHNESS')
-        for wind in (0., .25, .55, 1., 1.6):
-            for rain in (0., .3, .9, 1.):
-                for foam_amount in (0., .5, 1.):
-                    values = {'WindStrength': wind, 'RainIntensity': rain, 'WindDirX': .94, 'WindDirY': .34,
-                              'custom': (0, 0, foam_amount, 1)}
-                    expected = min(max(.035 + .05 * wind + .08 * rain, .03), .17)
-                    expected += (.45 - expected) * foam_amount
-                    assert abs(evaluate(rough, '', values) - expected) < 1e-9, (wind, rain, foam_amount)
         assert report['shore_texture'] == texture.get_path_name() and report['collection'] == mpc.get_path_name()
-        assert report['wave_normals'] == 8 and report['specular'] == .25 and report['tangent_space_normal'] is False
+        assert report['wave_normals'] == 10 and report['specular'] == .25 and report['tangent_space_normal'] is False
         count = len(water.expressions)
         plateau_water.author(u, water, texture, manifest, mpc)
         assert len(water.expressions) == count, 'Rebuilding the pond must not accumulate nodes'
@@ -509,8 +526,10 @@ def check_author():
         assert {pin: input_of(custom, pin).get_editor_property('r') for pin in ('Wind', 'WindDirX', 'WindDirY', 'Rain')} == {
             'Wind': .25, 'WindDirX': .94, 'WindDirY': .34, 'Rain': 0.}
         assert not any(isinstance(n, (u.MaterialExpressionTextureSample, u.MaterialExpressionCollectionParameter)) for n in water.expressions)
+        depth = input_of(input_of(library.get_material_property_input_node(water, 'MP_BASE_COLOR'), 'A'), 'Alpha')
+        assert 'Value' not in depth.links and evaluate(depth, '', {}) == 1., 'Without the shore texture the pond is deep water'
         rough = library.get_material_property_input_node(water, 'MP_ROUGHNESS')
-        assert abs(evaluate(rough, '', {'custom': (0, 0, 0, 1)}) - .0475) < 1e-12
+        assert input_of(rough, 'Input') is custom and rough.get_editor_property('a')
         assert fallback['shore_texture'] is None and fallback['collection'] is None
         try:
             plateau_water.author(u, water, texture, None, mpc)
@@ -523,6 +542,7 @@ def check_author():
 
 def check_surfaces():
     """Run plateau_surfaces.apply with upgrade_plateau's own material helpers against the facade."""
+    import plateau_atmosphere as atmosphere
     import plateau_surfaces
     syntax = ast.parse((ROOT / 'Scripts/upgrade_plateau.py').read_text())
     helpers = [n for n in syntax.body if isinstance(n, ast.FunctionDef) and n.name in ('expression', 'material')]
@@ -551,17 +571,44 @@ def check_surfaces():
             scope = {'M': u.MaterialEditingLibrary, 'assets': assets, 'tools': u.tools, 'u': u}
             exec(compile(ast.Module(body=helpers, type_ignores=[]), 'upgrade_plateau.py', 'exec'), scope)
             materials = {'Leaf': scope['material']('Leaf', (.12, .24, .075))}
+            # The palette and textured materials upgrade_plateau.py rebuilds before this pass, wrappers stripped.
+            for name, (color, texture) in regenerated(syntax).items():
+                materials[name] = scope['material'](name, color, texture, emissive=name in ('Glow', 'Tail', 'InteriorWarm'))
             report = plateau_surfaces.apply(u, materials, scope['expression'], scope['material'])
             water = materials['PondWater']
             assert water is assets.store[plateau_water.MATERIAL] and plateau_water.MATERIAL in assets.saves
             custom = [n for n in water.expressions if isinstance(n, u.MaterialExpressionCustom)]
             assert len(custom) == 1 and custom[0].get_editor_property('code') == plateau_water.HLSL.read_text()
             assert water.get_editor_property('tangent_space_normal') is False
-            assert report['pond_normal_waves'] == 8 and len(spawned) == 1
+            assert report['pond_normal_waves'] == 10 and len(spawned) == 1
             assert (report['pond_shore_texture'] is not None) == ready and (report['pond_collection'] is not None) == ready
             assert ready == any(isinstance(n, u.MaterialExpressionTextureSample) for n in water.expressions)
+            # Once MPC_NordAtmosphere exists, a regeneration puts the wet-ground and window wrappers back.
+            if ready:
+                wet = ['MP_BASE_COLOR', 'MP_ROUGHNESS']
+                assert report['nord_sky_rewrapped'] == {path: wet + ['MP_NORMAL'] * (not path.endswith('ConcreteDark'))
+                                                        for path in atmosphere.WET} | {path: ['MP_EMISSIVE_COLOR'] for path in atmosphere.WINDOWS}
+                assert all(path in assets.saves for path in atmosphere.WET + atmosphere.WINDOWS)
+            else:
+                assert report['nord_sky_rewrapped'] is None
+                assert not any(n.get_editor_property('desc') == atmosphere.MARKER for path in atmosphere.WET + atmosphere.WINDOWS
+                               for n in assets.store[path].expressions)
             results[ready] = len(water.expressions)
     return results
+
+
+def regenerated(syntax):
+    """Name -> (colour, texture) of the wrapped materials upgrade_plateau.py rebuilds, read from its source."""
+    import plateau_atmosphere as atmosphere
+    names = {path.rsplit('_', 1)[1] for path in atmosphere.WET + atmosphere.WINDOWS}
+    palette = next(ast.literal_eval(n.value) for n in syntax.body if isinstance(n, ast.Assign) and getattr(n.targets[0], 'id', None) == 'palette')
+    textured = next(ast.literal_eval(n.iter) for n in syntax.body if isinstance(n, ast.For) and isinstance(n.iter, ast.List)
+                    and any(entry.elts[0].value == 'Concrete' for entry in n.iter.elts))
+    found = {name: (color, None) for name, color in palette.items() if name in names}
+    found |= {name: (color, texture) for name, color, texture in textured if name in names}
+    # plateau_surfaces itself rebuilds ParkEarth, and Asphalt a second time.
+    assert set(found) == names - {'ParkEarth'}, sorted(found)
+    return found
 
 
 def main():

@@ -1,4 +1,7 @@
-"""College and Bathurst layout, header and traffic graph checks against the checked-in sources (no Unreal required)."""
+"""College and Bathurst layout, header and traffic graph checks against the checked-in sources (no Unreal required).
+
+The layout, header and blockout groups are rebuilt in memory from the stored snapshots, so the git-ignored Geometry
+folder is not needed, and the checked-in layout and header must match the rebuild."""
 import ast
 import json
 import math
@@ -19,6 +22,7 @@ import prepare_college_bathurst as cb
 import prepare_lafontaine as lf
 
 SNAP = 40.0  # QuebecGameplay.cpp joins road endpoints within FMath::Square(40.f).
+HOSPITAL = '233181462'  # Toronto Western Hospital main block, which holds the 42-63 m towers.
 
 
 def traffic_road_links(segments):
@@ -66,8 +70,12 @@ def header_vectors(text, name):
 
 
 def main():
-    data = json.loads((cb.DATA/'layout.json').read_text())
-    header = cb.HEADER.read_text()
+    layout_text, header = (cb.DATA/'layout.json').read_text(), cb.HEADER.read_text()
+    data = json.loads(layout_text)
+    rebuilt, groups = cb.build()
+    assert cb.compact_json(rebuilt) == layout_text, 'layout.json is stale: run Scripts/prepare_college_bathurst.py'
+    assert cb.header_text(rebuilt) == header, 'CollegeBathurstMap.h is stale: run Scripts/prepare_college_bathurst.py'
+
     root = ET.parse(cb.DATA/'osm.xml').getroot()
     nodes = {e.get('id'): (float(e.get('lat')), float(e.get('lon'))) for e in root.findall('node')}
     x0, y0, x1, y1 = cb.box()
@@ -93,7 +101,7 @@ def main():
     assert min(abs(p[0] - x0) for p in college) < 1 and min(abs(p[0] - x1) for p in college) < 1, 'College Street does not reach west and east'
     assert min(abs(p[1] - y0) for p in bathurst) < 1 and min(abs(p[1] - y1) for p in bathurst) < 1, 'Bathurst Street does not reach south and north'
 
-    # Sneaky Dee's: OSM footprint, massing height between 6 and 15 m.
+    # Sneaky Dee's: OSM footprint, massing roof height (AVG_HEIGHT, MAX_HEIGHT only below 2.5 m) between 6 and 15 m.
     dees = data['landmarks']['sneaky_dees']
     way = next(w for w in root.findall('way') if w.get('id') == cb.SNEAKY_DEES)
     assert lf.tags(way).get('name') == "Sneaky Dee's" and lf.tags(way).get('addr:housenumber') == '431'
@@ -101,23 +109,43 @@ def main():
     footprint = Polygon(dees['footprint'])
     assert footprint.contains(source.centroid) and abs(footprint.area - source.area) < 1e4
     massing = json.loads((cb.DATA/'massing.geojson').read_text())['features']
-    heights = [f['properties']['MAX_HEIGHT']*100 for f in massing
+    heights = [cb.effective(f['properties'])*100 for f in massing
                if (shape := Polygon([cb.xy(lat, lon) for lon, lat in f['geometry']['coordinates'][0]]).buffer(0)).intersects(source)
                and shape.intersection(source).area >= .5*min(shape.area, source.area)]
     assert dees['height_source'] == 'massing' and any(abs(dees['height'] - h) < .1 for h in heights), (dees['height'], heights)
     assert 600 <= dees['height'] <= 1500
     # No measured massing footprint in the bounds is lost: kept footprints cover at least half of each.
+    shapes = [Polygon([cb.xy(lat, lon) for lon, lat in f['geometry']['coordinates'][0]]).buffer(0) for f in massing]
     kept_area = unary_union([Polygon(b['footprint']) for b in data['buildings']]); frame = box(x0, y0, x1, y1)
-    for f in massing:
-        shape = Polygon([cb.xy(lat, lon) for lon, lat in f['geometry']['coordinates'][0]]).buffer(0)
-        if f['properties']['MAX_HEIGHT'] > 0 and shape.area >= 40000 and frame.contains(shape.centroid):
+    for f, shape in zip(massing, shapes):
+        if cb.effective(f['properties']) > 0 and shape.area >= 40000 and frame.contains(shape.centroid):
             assert shape.intersection(kept_area).area >= .5*shape.area, f['properties']
     sources = {b['height_source'] for b in data['buildings']}
     assert sources <= {'massing', 'osm_height', 'osm_levels', 'fallback'} and all(250 <= b['height'] <= 10000 for b in data['buildings'])
+    assert len({b['id'] for b in data['buildings']}) == len(data['buildings'])
+    assert all(Polygon(b['footprint']).is_valid and Polygon(b['footprint']).area >= 40000 for b in data['buildings'] if '/' in b['id'])
     building = next(b for b in data['buildings'] if b['id'] == cb.SNEAKY_DEES)
     assert building['height'] == dees['height'] and building['footprint'] == dees['footprint']
+    # Massing heights name their feature, field and how many buildings share that footprint's height.
+    uses = {}
+    for b in data['buildings']:
+        assert ('massing_index' in b) == (b['height_source'] == 'massing'), b['id']
+        if 'massing_index' in b: uses.setdefault(b['massing_index'], set()).add(b['id'].split('/')[0])
+    for b in data['buildings']:
+        if 'massing_index' not in b: continue
+        p = massing[b['massing_index']]['properties']; height, field = cb.massing_height(p)
+        assert b['massing_field'] == field and b['massing_source'] == p['HEIGHT_SRC'] and b['massing_shared'] == len(uses[b['massing_index']])
+        assert abs(b['height'] - max(250., min(10000., height*100))) < .1 and abs(b['massing_area_m2'] - shapes[b['massing_index']].area/10000) < .1
+    # Sneaky Dee's shares one 1,987 m² lidar block with five other OSM buildings.
+    assert building['massing_field'] == 'AVG_HEIGHT' and building['massing_index'] == 1052 and building['massing_shared'] == 6
+    # Every massing part inside an OSM footprint keeps its own height: Toronto Western Hospital's towers rise above its podium.
+    hospital = next(w for w in root.findall('way') if w.get('id') == HOSPITAL)
+    hospital = Polygon([cb.xy(*nodes[n.get('ref')]) for n in hospital.findall('nd')]).buffer(0)
+    inside = [b for b in data['buildings'] if hospital.contains(Polygon(b['footprint']).representative_point())]
+    assert max(b['height'] for b in inside) >= 4000 and min(b['height'] for b in inside) < 1000, sorted(b['height'] for b in inside)
+    assert abs(sum(Polygon(b['footprint']).area for b in inside) - hospital.intersection(frame).area) < .02*hospital.intersection(frame).area
 
-    # Spawn on the College sidewalk in front of Sneaky Dee's; the car on College facing along it.
+    # Spawn on the College sidewalk in front of Sneaky Dee's; the car parked at the College kerb.
     spawn = Point(data['spawn'][:2])
     college_lines = [LineString(r) for r, n in zip(roads, names) if n == 'College Street']
     to_college = lambda p: min(line.distance(p) for line in college_lines)
@@ -126,11 +154,25 @@ def main():
     nearest = min(range(len(roads)), key=lambda i: LineString(roads[i]).distance(spawn))
     assert names[nearest] == 'College Street' and not footprint.contains(spawn)
     assert not any(Polygon(b['footprint']).contains(spawn) for b in data['buildings'])
-    car = Point(data['car'][:2]); line = min(college_lines, key=lambda l: l.distance(car))
-    assert line.distance(car) < .01 and data['car'][2] == cb.CAR_Z
-    yaw = math.radians(data['car_yaw'])
-    assert any(abs(math.sin(math.atan2(b[1] - a[1], b[0] - a[0]) - yaw)) < 1e-3 and LineString([a, b]).distance(car) < .01
-               for a, b in zip(line.coords, line.coords[1:]))
+    # The car is parked at the spawn-side kerb of College, clear of the streetcar tracks, facing with traffic.
+    extent = re.search(r'AQuebecCar::AQuebecCar\(\).*?Collision->SetBoxExtent\(FVector\(([\d.]+), *([\d.]+),', (ROOT/'Source/Quebec/QuebecGameplay.cpp').read_text(), re.S)
+    assert (float(extent.group(1))*2, float(extent.group(2))*2) == (cb.CAR_LENGTH, cb.CAR_WIDTH), extent.groups()
+    car = Point(data['car'][:2]); yaw = math.radians(data['car_yaw'])
+    width, line = min(((w, LineString(r)) for r, n, w in zip(roads, names, data['road_widths']) if n == 'College Street'),
+                      key=lambda item: item[1].distance(car))
+    assert data['car'][2] == cb.CAR_Z and line.distance(car) <= width/2 + .01, (line.distance(car), width)
+    rails = unary_union([LineString(t['points']) for t in data['tram_lines']])
+    assert all(LineString(t['points']).distance(car) >= 200 for t in data['tram_lines'])
+    forward, right = (math.cos(yaw), math.sin(yaw)), (math.sin(yaw), -math.cos(yaw))
+    body = Polygon([(car.x + forward[0]*i*cb.CAR_LENGTH/2 + right[0]*j*cb.CAR_WIDTH/2, car.y + forward[1]*i*cb.CAR_LENGTH/2 + right[1]*j*cb.CAR_WIDTH/2)
+                    for i, j in ((1, 1), (1, -1), (-1, -1), (-1, 1))])
+    assert body.distance(rails) >= cb.STREETCAR_HALF_WIDTH, body.distance(rails)
+    assert not any(Polygon(b['footprint']).intersects(body) for b in data['buildings'])
+    q = line.interpolate(line.project(car)); a, b = next((a, b) for a, b in zip(line.coords, line.coords[1:]) if LineString([a, b]).distance(q) < .01)
+    assert abs(math.sin(math.atan2(b[1] - a[1], b[0] - a[0]) - yaw)) < 1e-3
+    side = lambda p: (p.x - q.x)*right[0] + (p.y - q.y)*right[1]
+    assert side(car) > 0 and side(spawn) > 0, 'The car and the spawn are not both on the car\'s right, the kerb side'
+    assert car.distance(spawn) <= 2500 and line.project(car) > line.project(spawn) > line.project(Point(0, 0)) - 1
 
     # Road segments: finite, non-degenerate and inside the gameplay bounds.
     segments = [(a, b) for r in roads for a, b in zip(r, r[1:])]
@@ -143,8 +185,8 @@ def main():
     routes = {r for track in data['tram_lines'] for r in track['routes']}
     assert {'506', '511'} <= routes, routes
 
-    # Header arrays match the layout exactly, in the game's segment order.
-    assert cb.ATTRIBUTION[0] in header.split('#pragma')[0] and cb.ATTRIBUTION[1] in header.split('#pragma')[0]
+    # Header arrays match the layout exactly, in the game's segment order; the generated C++ is plain ASCII.
+    assert header.isascii() and header.split('#pragma')[0].splitlines()[1:] == ['// ' + line + '.' for line in cb.HEADER_ATTRIBUTION]
     assert lf.road_segments_text(roads) in header and lf.road_widths_text(roads, data['road_widths']) in header
     assert header_vectors(header, 'Spawn') == [tuple(data['spawn'])]
     assert header_vectors(header, 'CarSpawn') == [tuple(data['car'])]
@@ -185,8 +227,7 @@ def main():
     # The editor script maps every generated OBJ group to an existing Plateau material and blocks only buildings.
     script = (ROOT/'Scripts/create_college_bathurst.py').read_text()
     materials = ast.literal_eval(re.search(r'^MATERIALS=(\{.*?\})$', script, re.M | re.S).group(1))
-    groups = {p.stem for p in (cb.DATA/'Geometry').glob('*.obj')}
-    assert groups == set(materials), (groups, set(materials))
+    assert set(groups) == set(materials), (set(groups), set(materials))
     assert all((ROOT/'Content/Plateau/Materials'/f'M_{m}.uasset').exists() for m in materials.values())
     assert set(ast.literal_eval(re.search(r'^BLOCKING=(\(.*?\))$', script, re.M).group(1))) == {'Brick', 'Cream', 'Sage', 'Roof', 'Landmark'}
     assert "MAP='/Game/Maps/CollegeBathurst'" in script and 'load_level' not in script and "'/Game/Maps/LaFontaine'" not in script

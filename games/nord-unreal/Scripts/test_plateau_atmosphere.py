@@ -181,6 +181,10 @@ def check_first_and_second_run():
         rain = assets.store[atmosphere.RAIN]
         assert (rain.get_editor_property('blend_mode'), rain.get_editor_property('two_sided'),
                 rain.get_editor_property('translucency_lighting_mode')) == ('BLEND_TRANSLUCENT', True, 'TLM_VOLUMETRIC_NON_DIRECTIONAL')
+        # Streaks are drawn up to 1.5 boxes from their pivot; the WPO limit must cover that on each axis.
+        assert rain.get_editor_property('max_world_position_offset_displacement') == atmosphere.RAIN_MAX_OFFSET >= 1.5 * 2000 + 25
+        assert report['rain']['max_world_position_offset_displacement_cm'] == atmosphere.RAIN_MAX_OFFSET
+        assert report['verify']['rain']['max_world_position_offset_displacement'] == atmosphere.RAIN_MAX_OFFSET
         assert 'MATUSAGE_INSTANCED_STATIC_MESHES' in rain.usages
         streak = next(n for n in rain.expressions if type(n).KIND == 'Custom')
         assert streak.get_editor_property('code') == (ROOT / 'Scripts/rain_streak.hlsl').read_text()
@@ -301,13 +305,70 @@ def check_verify_rejects():
     def actor(root, u):
         u.actors[0].static_mesh_component.get_material = lambda index: Material('/Game/Plateau/Materials/M_Other')
 
+    def culling(root, u):
+        u.EditorAssetLibrary.store[atmosphere.RAIN].set_editor_property('max_world_position_offset_displacement', 0.)
+
+    def roughness(root, u):
+        # A pond whose roughness no longer comes from the shader would sparkle far away again.
+        water = u.EditorAssetLibrary.store[plateau_water.MATERIAL]
+        u.MaterialEditingLibrary.connect_material_property(
+            u.MaterialEditingLibrary.create_material_expression(water, u.MaterialExpressionConstant), '', 'MP_ROUGHNESS')
+
+    def derivatives(root, u):
+        water = u.EditorAssetLibrary.store[plateau_water.MATERIAL]
+        custom = next(n for n in water.expressions if type(n).KIND == 'Custom')
+        u.MaterialEditingLibrary.connect_material_expressions(
+            u.MaterialEditingLibrary.create_material_expression(water, u.MaterialExpressionConstant3Vector), '', custom, 'WorldDX')
+
     def map_file(root, u):
         (root / atmosphere.MAP).write_bytes(b'changed later')
 
     for change, words in ((double, 'doubled'), (unwrap, 'not wrapped'), (stray, 'orphaned'), (misplaced, 'unexpected wrapper'),
-                          (default, 'Collection parameter'), (pond, 'Pond shader'), (actor, ''), (map_file, 'map changed')):
+                          (default, 'Collection parameter'), (pond, 'Pond shader'), (actor, ''), (map_file, 'map changed'),
+                          (culling, 'culling bounds'), (roughness, 'roughness'), (derivatives, 'derivatives')):
         corrupt(change, words)
-    return 8
+    return 11
+
+
+def check_regeneration():
+    """A full Plateau regeneration rebuilds the wet-ground and window materials; plateau_surfaces rewraps them."""
+    import ast
+    import plateau_surfaces
+    from types import SimpleNamespace
+    from test_plateau_water import Object, regenerated
+    with tempfile.TemporaryDirectory() as temporary:
+        root, u = scene(temporary)
+        atmosphere.apply(u, root)
+        syntax = ast.parse((ROOT / 'Scripts/upgrade_plateau.py').read_text())
+        helpers = [n for n in syntax.body if isinstance(n, ast.FunctionDef) and n.name in ('expression', 'material')]
+        scope = {'M': u.MaterialEditingLibrary, 'assets': u.EditorAssetLibrary, 'tools': u.tools, 'u': u}
+        exec(compile(ast.Module(body=helpers, type_ignores=[]), 'upgrade_plateau.py', 'exec'), scope)
+        materials = {'Leaf': scope['material']('Leaf', (.12, .24, .075))}
+        for name, (color, texture) in regenerated(syntax).items():
+            materials[name] = scope['material'](name, color, texture, emissive=name in ('Glow', 'Tail', 'InteriorWarm'))
+        # Before plateau_surfaces runs, the rebuilt materials have lost their wrappers and the read-backs say so.
+        rejects(lambda: atmosphere.verify_assets(u, root), 'not wrapped')
+        cloud = Object(material=None, layer_bottom_altitude=0., layer_height=0.)
+        cloud.set_material = lambda mat: cloud.set_editor_property('material', mat)
+        u.VolumetricCloud = type('VolumetricCloud', (), {})
+        u.VolumetricCloudComponent = u.ExponentialHeightFog = u.SkyLight = type('Other', (), {})
+
+        def spawn(cls, location):
+            actor = cls()
+            actor.set_actor_label = actor.set_folder_path = lambda value: None
+            actor.get_component_by_class = lambda component_class: cloud
+            return actor
+        u.get_editor_subsystem = lambda cls: SimpleNamespace(get_all_level_actors=lambda: list(u.actors), spawn_actor_from_class=spawn)
+        report = plateau_surfaces.apply(u, materials, scope['expression'], scope['material'])
+        assert sorted(report['nord_sky_rewrapped']) == sorted(atmosphere.WET + atmosphere.WINDOWS)
+        checked = atmosphere.verify_assets(u, root)
+        assert checked['passed'] and checked['pond_actors'] == 15 and len(checked['wrappers']) == 13
+        assert atmosphere.verify(u, root)['passed']
+        # A second regeneration pass adds nothing.
+        counts = {path: len(u.EditorAssetLibrary.store[path].expressions) for path in atmosphere.WET + atmosphere.WINDOWS}
+        assert not any(plateau_surfaces.rewrap(u).values())
+        assert counts == {path: len(u.EditorAssetLibrary.store[path].expressions) for path in counts}
+        return len(report['nord_sky_rewrapped'])
 
 
 def main():
@@ -315,9 +376,11 @@ def main():
     check_fallbacks()
     check_guards()
     corruptions = check_verify_rejects()
+    rewrapped = check_regeneration()
     print(f'Sky and water authoring checks passed: {backed_up} pre-existing files backed up with SHA-256, '
           f'{nodes} nodes stable on a second run, wrappers on 5 wet / 3 window / 5 unlit materials only; '
-          f'PIE, wrong map, missing pond actors and a written map rejected; {corruptions} verify corruptions rejected')
+          f'PIE, wrong map, missing pond actors and a written map rejected; {corruptions} verify corruptions rejected; '
+          f'a Plateau regeneration rewraps {rewrapped} rebuilt materials')
 
 
 if __name__ == '__main__':

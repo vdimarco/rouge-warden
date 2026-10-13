@@ -2,6 +2,7 @@
 import json
 import math
 from pathlib import Path
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -22,8 +23,31 @@ PATH_HIGHWAYS = ('footway', 'path', 'cycleway', 'pedestrian', 'steps')
 SNEAKY_DEES, INTERSECTION = '678313322', '29690663'
 ATTRIBUTION = ['© OpenStreetMap contributors, ODbL 1.0',
                'Contains information licensed under the Open Government Licence – Toronto']
+# The same lines in ASCII for the generated C++ header.
+HEADER_ATTRIBUTION = ['(c) OpenStreetMap contributors, ODbL 1.0',
+                      'Contains information licensed under the Open Government Licence - Toronto']
 LAMP_Z, SPAWN_Z, CAR_Z = 470, 120, 115
 GAUGE = 149.5  # TTC broad gauge, 1,495 mm.
+MIN_AVG_HEIGHT = 2.5  # m; a lower AVG_HEIGHT is not a roof height, so MAX_HEIGHT is used instead.
+STOREY = 300  # cm; massing parts of one OSM footprint that differ by more than this keep their own heights.
+MIN_PIECE = 40000  # cm², 4 m².
+BUILDING_KEYS = ('id', 'footprint', 'height', 'height_source', 'levels', 'massing_source', 'massing_field', 'massing_index',
+                 'massing_area_m2', 'massing_shared', 'name')
+# Parking: the QuebecCar collision box is 440 x 216 cm (QuebecGameplay.cpp SetBoxExtent(220, 108, 100)) and a
+# TTC Flexity streetcar is 2.54 m wide. The car parks at the kerb, a few metres past the spawn, clear of every track.
+CAR_LENGTH, CAR_WIDTH, STREETCAR_HALF_WIDTH, KERB_GAP, PARK_SHIFT, PARK_SHIFT_MAX = 440, 216, 127, 120, 400, 3000
+
+
+def massing_height(properties):
+    """Height in metres and the field it came from. AVG_HEIGHT is the layer's roof height (its HEIGHT_MSL is
+    SURF_ELEV + AVG_HEIGHT); MAX_HEIGHT, the highest return, also catches signs, parapets and chimneys."""
+    average = properties.get('AVG_HEIGHT')
+    if average is not None and average >= MIN_AVG_HEIGHT: return average, 'AVG_HEIGHT'
+    return properties.get('MAX_HEIGHT') or 0, 'MAX_HEIGHT'
+
+
+def effective(properties):
+    return massing_height(properties)[0]
 
 
 def xy(lat, lon):
@@ -56,12 +80,25 @@ def clip_line(points, bounds):
 
 
 def ring(shape):
-    """Counter-clockwise exterior ring of the largest part, without the closing point."""
-    if shape.geom_type != 'Polygon':
-        shape = max(getattr(shape, 'geoms', []), key=lambda g: g.area if g.geom_type == 'Polygon' else 0, default=None)
-    if shape is None or shape.geom_type != 'Polygon' or shape.is_empty: return None
-    points = list(orient(shape, 1.0).exterior.coords)[:-1]
-    return [[round(x, 3), round(y, 3)] for x, y in points]
+    """Counter-clockwise exterior ring of the largest part, without the closing point; still a simple ring after rounding."""
+    for _ in range(3):
+        if shape.geom_type != 'Polygon':
+            shape = max(getattr(shape, 'geoms', []), key=lambda g: g.area if g.geom_type == 'Polygon' else 0, default=None)
+        if shape is None or shape.geom_type != 'Polygon' or shape.is_empty: return None
+        points = [[round(x, 3), round(y, 3)] for x, y in list(orient(shape, 1.0).exterior.coords)[:-1]]
+        if len(points) >= 3 and Polygon(points).is_valid: return points
+        shape = Polygon(points).buffer(0)  # Overlay slivers can pinch or cross once rounded; drop them.
+    return None
+
+
+def without_holes(shape):
+    """Cut a polygon through each hole of 4 m² or more, so its pieces need no inner rings (ring() and the OBJ faces keep
+    exteriors only). Smaller holes are overlay slivers and are filled."""
+    holes = [Polygon(h) for h in shape.interiors if Polygon(h).area >= MIN_PIECE]
+    if not holes: return [shape]
+    x = holes[0].representative_point().x; x0, y0, x1, y1 = shape.bounds
+    halves = (shape.intersection(rectangle(x0 - 1, y0 - 1, x, y1 + 1)), shape.intersection(rectangle(x, y0 - 1, x1 + 1, y1 + 1)))
+    return [q for half in halves for p in getattr(half, 'geoms', [half]) if p.geom_type == 'Polygon' and not p.is_empty for q in without_holes(p)]
 
 
 def compact_json(data):
@@ -89,10 +126,39 @@ def write_obj(path, name, faces):
             f.write('f ' + ' '.join(f'{index+i}/{index+i}' for i in reversed(range(len(poly)))) + '\n'); index += len(poly)
 
 
+def park(spawn, streets, tracks, corner):
+    """Kerb spot for the first car on the street nearest the spawn, on the spawn side, past the spawn away from the corner.
+    The whole car body stays at least half a streetcar's width from every track; within that, the spot nearest the kerb
+    wins, then the one nearest the spawn. The car faces with traffic, so the kerb is on its right.
+    Returns the centre and yaw in degrees, counter-clockwise from +X."""
+    line, width, one_way = min(streets, key=lambda s: LineString(s[0]).distance(Point(spawn)))
+    centre, rails = LineString(line), unary_union([LineString(t) for t in tracks])
+    ends = [LineString(line[:k + 2]).length for k in range(len(line) - 1)]
+    start = centre.project(Point(spawn)); away = 1 if centre.project(Point(corner)) <= start else -1
+    spots = []
+    for shift in range(PARK_SHIFT, PARK_SHIFT_MAX + 1, 50):
+        s = start + away*shift
+        if not CAR_LENGTH/2 <= s <= centre.length - CAR_LENGTH/2: break
+        a, b = next((a, b) for a, b, end in zip(line, line[1:], ends) if s <= end + 1e-6)
+        length = math.dist(a, b); u = ((b[0] - a[0])/length, (b[1] - a[1])/length)
+        p = centre.interpolate(s); left = 1 if u[0]*(spawn[1] - p.y) - u[1]*(spawn[0] - p.x) > 0 else -1
+        n = (-u[1]*left, u[0]*left)  # Toward the spawn side.
+        spots.append((p, u, n, left))
+    for offset in range(int(width/2 - KERB_GAP), int(width/2) + 1, 5):
+        for p, u, n, left in spots:
+            c = (p.x + n[0]*offset, p.y + n[1]*offset)
+            body = Polygon([(c[0] + u[0]*i*CAR_LENGTH/2 + n[0]*j*CAR_WIDTH/2, c[1] + u[1]*i*CAR_LENGTH/2 + n[1]*j*CAR_WIDTH/2)
+                            for i, j in ((1, 1), (1, -1), (-1, -1), (-1, 1))])
+            if body.distance(rails) >= STREETCAR_HALF_WIDTH:
+                yaw = math.degrees(math.atan2(u[1], u[0])) + (180 if left > 0 and not one_way else 0)
+                return c, (yaw + 180) % 360 - 180
+    raise AssertionError('No kerb spot clear of the streetcar tracks near the spawn')
+
+
 def header_text(data):
     vec = lambda p: 'FVector(' + ','.join(f'{v:.3f}' for v in p) + ')'
     text = ('// Generated by Scripts/prepare_college_bathurst.py from Data/CollegeBathurst.\n'
-            '// ' + ATTRIBUTION[0] + '.\n// ' + ATTRIBUTION[1] + '.\n'
+            '// ' + HEADER_ATTRIBUTION[0] + '.\n// ' + HEADER_ATTRIBUTION[1] + '.\n'
             '#pragma once\nnamespace CollegeBathurst {\n')
     text += 'const FVector Spawn=' + vec(data['spawn']) + ';\nconst FVector CarSpawn=' + vec(data['car']) + ';\n'
     text += 'const FVector SneakyDees=' + vec([*data['landmarks']['sneaky_dees']['centroid'], 0]) + ';\n'
@@ -101,7 +167,8 @@ def header_text(data):
     return text
 
 
-def main():
+def build():
+    """Layout data and blockout faces by material group, from the stored snapshots; writes nothing."""
     root = ET.parse(DATA/'osm.xml').getroot()
     nodes = {e.get('id'): (float(e.get('lat')), float(e.get('lon'))) for e in root.findall('node')}
     node_tags = {e.get('id'): tags(e) for e in root.findall('node') if e.find('tag') is not None}
@@ -167,44 +234,73 @@ def main():
     lamps = [[*(round(v, 3) for v in xy(*nodes[i])), LAMP_Z] for i, t in node_tags.items() if t.get('highway') == 'street_lamp' and inside(nodes[i])]
     trees = [[round(v, 3) for v in xy(*nodes[i])] for i, t in node_tags.items() if t.get('natural') == 'tree' and inside(nodes[i])]
 
-    # Heights: massing MAX_HEIGHT where a footprint matches, then OSM height, levels x 3.2 m, three storeys.
+    # Heights: massing AVG_HEIGHT where a footprint matches (MAX_HEIGHT only when AVG_HEIGHT is under 2.5 m), then OSM
+    # height, levels x 3.2 m, three storeys. Matching massing parts are laid tallest first, so each point of an OSM footprint
+    # takes the tallest part over it; parts more than a storey from the main part's height keep their own heights.
     massing = json.loads((DATA/'massing.geojson').read_text())['features']
     shapes = [Polygon([xy(lat, lon) for lon, lat in f['geometry']['coordinates'][0]]).buffer(0) for f in massing]
     tree = STRtree(shapes); buildings = []
+    def measured(building, i, name=None):
+        height, field = massing_height(massing[i]['properties'])
+        building.update({'height': round(max(250., min(10000., height*100)), 1), 'height_source': 'massing',
+                         'massing_source': massing[i]['properties']['HEIGHT_SRC'], 'massing_field': field, 'massing_index': i,
+                         'massing_area_m2': round(shapes[i].area/10000, 1)})
+        if name: building['name'] = name
+        return building
+    def emit(geometry, record, ids):
+        parts = sorted((q for p in getattr(geometry, 'geoms', [geometry]) if p.geom_type == 'Polygon' for q in without_holes(p)), key=lambda q: -q.area)
+        footprints = [f for f in (ring(q) for q in parts if q.area >= MIN_PIECE) if f and Polygon(f).area >= MIN_PIECE]
+        for k, footprint in enumerate(footprints): buildings.append({**record, 'id': ids(k), 'footprint': footprint})
     for ident, t, shape in osm_buildings:
-        best = None
-        for i in tree.query(shape):
-            overlap = shape.intersection(shapes[i]).area
-            if overlap >= .5*min(shape.area, shapes[i].area) and (best is None or overlap > best[0]): best = (overlap, int(i))
+        area = shape.intersection(frame)
+        parts = sorted((-effective(massing[i]['properties']), i) for i in map(int, tree.query(shape))
+                       if effective(massing[i]['properties']) > 0 and shape.intersection(shapes[i]).area >= .5*min(shape.area, shapes[i].area))
+        pieces, taken = [], Polygon()
+        for _, i in parts:
+            piece = area.intersection(shapes[i]).difference(taken)
+            taken = taken.union(piece); pieces.append((piece.area, i, piece))
         levels = None
         try: levels = int(float(t['building:levels'].split(';')[0]))
         except (KeyError, ValueError): pass
-        source, height, src = 'fallback', 960., None
-        if best and massing[best[1]]['properties']['MAX_HEIGHT'] > 0:
-            source, height = 'massing', massing[best[1]]['properties']['MAX_HEIGHT']*100
-            src = massing[best[1]]['properties']['HEIGHT_SRC']
+        record, separate = {'levels': levels}, []
+        if pieces:
+            main = max(pieces, key=lambda p: p[0])[1]; top = effective(massing[main]['properties'])*100
+            separate = [(i, piece) for size, i, piece in pieces if abs(effective(massing[i]['properties'])*100 - top) > STOREY and size >= MIN_PIECE]
+            measured(record, main, t.get('name'))
         else:
+            source, height = 'fallback', 960.
             try: source, height = 'osm_height', float(t['height'].split()[0])*100
             except (KeyError, ValueError):
                 if levels: source, height = 'osm_levels', float(t['building:levels'].split(';')[0])*320
-        footprint = ring(shape.intersection(frame))
-        if not footprint: continue
-        building = {'id': ident, 'footprint': footprint, 'height': round(max(250., min(10000., height)), 1), 'height_source': source, 'levels': levels}
-        if src: building['massing_source'] = src
-        if t.get('name'): building['name'] = t['name']
-        buildings.append(building)
-    # Keep measured massing that OSM does not map: the part outside OSM footprints, unless they cover most of it.
-    # Footprints with MAX_HEIGHT 0 carry no lidar or model height and are left out.
+            record.update({'height': round(max(250., min(10000., height)), 1), 'height_source': source})
+            if t.get('name'): record['name'] = t['name']
+        if not separate:
+            footprint = ring(area)
+            if footprint: buildings.append({**record, 'id': ident, 'footprint': footprint})
+            continue
+        # Split footprints keep every piece of at least 4 m², cut through any hole so no lower part hides under a filled roof.
+        rest = area.difference(unary_union([piece for _, piece in separate]))
+        emit(rest, record, lambda k: ident if k == 0 else f'{ident}/part-{k}')
+        for i, piece in sorted(separate, key=lambda s: (effective(massing[s[0]]['properties']), s[0])):
+            emit(piece, measured({'levels': None}, i, t.get('name')), lambda k: f'{ident}/massing-{i}' + (f'-{k}' if k else ''))
+    # Keep measured massing that OSM does not map: the part outside kept footprints, unless they cover most of it.
+    # Taller parts go first and each kept part counts as covered, so duplicates and lower tiers are not stacked twice.
     covered = unary_union([Polygon(b['footprint']) for b in buildings])
     massing_only = 0
-    for i, (f, shape) in enumerate(zip(massing, shapes)):
-        height = f['properties']['MAX_HEIGHT']
-        if height <= 0 or not frame.contains(shape.centroid) or shape.intersection(covered).area >= .5*shape.area: continue
+    for i in sorted(range(len(massing)), key=lambda i: (-effective(massing[i]['properties']), i)):
+        shape = shapes[i]
+        if effective(massing[i]['properties']) <= 0 or not frame.contains(shape.centroid) or shape.intersection(covered).area >= .5*shape.area: continue
         footprint = ring(shape.difference(covered).intersection(frame))
-        if not footprint or Polygon(footprint).area < 40000: continue
-        buildings.append({'id': f'massing-{i}', 'footprint': footprint, 'height': round(max(250., min(10000., height*100)), 1),
-                          'height_source': 'massing', 'levels': None, 'massing_source': f['properties']['HEIGHT_SRC']})
-        massing_only += 1
+        if not footprint or Polygon(footprint).area < MIN_PIECE: continue
+        buildings.append(measured({'id': f'massing-{i}', 'footprint': footprint, 'levels': None}, i))
+        covered = covered.union(Polygon(footprint)); massing_only += 1
+    # Several OSM buildings can sit on one massing footprint and then share its height; record how many do.
+    shared = {}
+    for building in buildings:
+        if 'massing_index' in building: shared.setdefault(building['massing_index'], set()).add(building['id'].split('/')[0])
+    for building in buildings:
+        if 'massing_index' in building: building['massing_shared'] = len(shared[building['massing_index']])
+    buildings = [{key: building[key] for key in BUILDING_KEYS if key in building} for building in buildings]
 
     # Sneaky Dee's faces College on its north side; the spawn is on that sidewalk.
     dees = next(b for b in buildings if b['id'] == SNEAKY_DEES)
@@ -230,9 +326,10 @@ def main():
             if best is None or d < best[0]: best = (d, q)
     assert best and best[0] < 2500, 'No College sidewalk in front of Sneaky Dee\'s'
     spawn = [round(best[1][0], 3), round(best[1][1], 3), SPAWN_Z]
-    car, yaw = nearest(spawn[:2], college)
     centroid = dees_shape.centroid
     intersection = [round(v, 3) for v in xy(*nodes[INTERSECTION])]
+    car, yaw = park(spawn[:2], [(r, w, o) for r, n, w, o in zip(roads, names, widths, oneway) if n == 'College Street'],
+                    [track['points'] for track in trams], intersection)
 
     # Blockout geometry for the separate greybox map.
     face('Ground', [(bounds[0], bounds[1], 0), (bounds[2], bounds[1], 0), (bounds[2], bounds[3], 0), (bounds[0], bounds[3], 0)])
@@ -253,7 +350,7 @@ def main():
     for building in buildings:
         p, height = building['footprint'], building['height']
         landmark = building['id'] == SNEAKY_DEES
-        wall = 'Landmark' if landmark else ('Brick', 'Cream', 'Sage')[int(building['id'].removeprefix('massing-')) % 3]
+        wall = 'Landmark' if landmark else ('Brick', 'Cream', 'Sage')[int(re.search(r'\d+', building['id']).group()) % 3]
         polygon('Landmark' if landmark else 'Roof', p, height)
         for a, b in zip(p, p[1:] + p[:1]):
             face(wall, [(a[0], a[1], 0), (b[0], b[1], 0), (b[0], b[1], height), (a[0], a[1], height)])
@@ -286,14 +383,20 @@ def main():
             'roads': roads, 'road_widths': widths, 'road_oneway': oneway, 'road_names': names, 'road_ways': road_ways,
             'paths': paths, 'path_kinds': path_kinds, 'tram_lines': trams, 'lamps': lamps, 'trees': trees, 'buildings': buildings}
     assert college and bathurst and len(lamps) > 0 and len(buildings) > 500 and dees['height_source'] == 'massing'
+    return data, groups
+
+
+def main():
+    data, groups = build()
     (DATA/'layout.json').write_text(compact_json(data))
     out = DATA/'Geometry'; out.mkdir(exist_ok=True)
     for old in out.glob('*.obj'):
         if old.stem not in groups: old.unlink()
     for mat, faces in sorted(groups.items()): write_obj(out/(mat + '.obj'), mat, faces)
     HEADER.write_text(header_text(data))
-    print(json.dumps({**counts, 'spawn': spawn, 'car': data['car'], 'car_yaw': data['car_yaw'],
-                      'sneaky_dees_height_m': dees['height']/100, 'sneaky_dees_area_m2': data['landmarks']['sneaky_dees']['area_m2'],
+    dees = data['landmarks']['sneaky_dees']
+    print(json.dumps({**data['counts'], 'spawn': data['spawn'], 'car': data['car'], 'car_yaw': data['car_yaw'],
+                      'sneaky_dees_height_m': dees['height']/100, 'sneaky_dees_area_m2': dees['area_m2'],
                       'groups': {k: len(v) for k, v in sorted(groups.items())}}, indent=2))
 
 

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 from shapely.geometry import LineString, Polygon, box as rectangle
+from shapely.geometry.polygon import orient
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT/'Data/CollegeBathurst'
@@ -114,10 +115,17 @@ def massing(data):
     for track in data['tram_lines']:
         for part in clipped(track['points'], area): draw.line([P(p) for p in part], fill=TRAM, width=2)
     dees_id = data['landmarks']['sneaky_dees']['osm'].split('/')[1]
-    shown = [b for b in data['buildings'] if area.contains(Polygon(b['footprint']).centroid)]
+    # Footprints are clipped to the square, so the parts of a building on its edge stay together; slivers under about
+    # 2 m wide that the edge cuts off a building outside the square are left out.
+    shown = []
+    for b in data['buildings']:
+        whole = Polygon(b['footprint']); part = whole.intersection(area)
+        for g in getattr(part, 'geoms', [part]):
+            if g.geom_type == 'Polygon' and g.area >= 1 and (g.area > whole.area - 1 or g.area >= 100*g.length/2):
+                shown.append((list(orient(g, 1.0).exterior.coords)[:-1], b))
     # Painter's order: farthest footprints first, each building's camera-facing walls then its roof.
-    for b in sorted(shown, key=lambda b: -max(depth(p) for p in b['footprint'])):
-        p, h = b['footprint'], b['height']
+    for p, b in sorted(shown, key=lambda s: -max(depth(q) for q in s[0])):
+        h = b['height']
         base = DEES if b['id'] == dees_id else ramp(h)
         walls = []
         for a, c in zip(p, p[1:] + p[:1]):

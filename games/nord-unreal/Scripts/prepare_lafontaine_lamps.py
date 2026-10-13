@@ -8,7 +8,9 @@ sys.path.insert(0, str(ROOT/'Scripts'))
 from prepare_lafontaine import DATA, inside, tags, xy
 
 HEADER = ROOT/'Source/Quebec/LaFontaineLamps.h'
-LAMP_Z = 470  # Under the lamp heads, the same height College and Bathurst uses.
+# Under the lamp heads and 15 cm below the bottom of the comic park globe (z 455.5-498.5, build_park_comic.py),
+# so the unshadowed pool light reaches the globe's outside instead of sitting inside it.
+LAMP_Z = 440
 
 
 def lamps():

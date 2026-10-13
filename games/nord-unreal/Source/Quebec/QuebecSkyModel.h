@@ -18,6 +18,11 @@ namespace QuebecSky
     inline constexpr float AuthoredSunLux = 26000.f;
     inline constexpr float AuthoredEV100 = 12.5f;
     inline constexpr float AuthoredSkyLight = 1.9f;
+    // After dusk the moonlit sky shows at this share of its scattered value, so a clear night sky reads dark blue, not dusk.
+    inline constexpr float NightSkyLuminance = .15f;
+    // Scale on the moon disk luminance. A 12 lux moon in a 0.5 degree disk is about 2e5 cd/m2, some 17 EV above the
+    // night mid-grey, and would glare and bloom like a small sun; this keeps it about 9 EV above, a bright white disk.
+    inline constexpr float MoonDiskScale = 1.f / 256.f;
 
     struct FVec3
     {
@@ -159,7 +164,8 @@ namespace QuebecSky
         }
     }
 
-    // Day 288 is mid-October. Solar noon 12.67 is Montréal daylight time with the October equation of time.
+    // Day 288 is mid-October. Solar noon 12.67 is Montréal daylight time with the October equation of time;
+    // SolarNoonForMap gives other maps theirs.
     inline FSun SunAt(double Hour, int DayOfYear = 288, double LatitudeDeg = 45.525, double SolarNoonHour = 12.67)
     {
         const double Year = Detail::FullTurn / 365.0 * (DayOfYear - 1);
@@ -308,6 +314,15 @@ namespace QuebecSky
         return Random.Range(60.0, 120.0);
     }
 
+    // The smallest turn, in degrees, that moves the sun or moon light. Each turn invalidates virtual shadow pages, so
+    // the step is 0.1 degrees with the light 30 degrees or more above the horizon. Lower down it shrinks with the sine
+    // of the elevation, to 0.02 degrees at the horizon, so the tip of a long shadow creeps instead of jumping metres.
+    inline double LightTurnStep(float ElevationDeg)
+    {
+        const double Sine = std::sin(static_cast<double>(ElevationDeg) * Detail::RadiansPerDegree);
+        return .1 * std::clamp(Sine / .5, .2, 1.0);
+    }
+
     // Lagarde's "wet fast, dry slow": the surface follows rain within a minute, puddles lag behind both ways.
     struct FWetness
     {
@@ -339,6 +354,7 @@ namespace QuebecSky
         float ExposureScale = 1.f;
         float WindowGlow = 1.f;
         bool bStreetLamps = false;
+        bool bHeadlights = false;
         float LampCandela = 1500.f;
         float HeadlightCandela = 3500.f;
         float Saturation = 1.f;
@@ -347,24 +363,35 @@ namespace QuebecSky
         float FogBrightness = .75f;
     };
 
-    // Clear weather with the sun above 8 degrees returns the authored scene: every multiplier 1, exposure offset 0.
+    // Clear weather with the sun above 8 degrees gives the authored light levels: every multiplier 1, exposure offset 0.
+    // The sun's direction still follows the clock, so it is not the direction the map was saved with.
     inline FLighting LightingFor(const FSun& Sun, const FWeatherLook& Look)
     {
         FLighting Light;
         Light.DayFactor = Smoothstep(-6.f, 8.f, Sun.Elevation);
         Light.NightFactor = 1.f - Smoothstep(-8.f, 2.f, Sun.Elevation);
+        const float SunVisibility = std::max(Look.SunVisibility, 0.f);
+        // Moonlight keeps more of its strength through cloud than sunlight, so gloomy nights stay readable.
+        const float MoonVisibility = std::sqrt(SunVisibility);
         Light.SunScale = Look.SunVisibility * Smoothstep(-12.f, -2.f, Sun.Elevation);
         Light.bSunActive = Light.SunScale > .001f;
-        Light.MoonLux = 12.f * std::sqrt(std::max(Look.SunVisibility, 0.f)) * Smoothstep(-2.f, 6.f, Sun.MoonElevation) * Light.NightFactor;
+        Light.MoonLux = 12.f * MoonVisibility * Smoothstep(-2.f, 6.f, Sun.MoonElevation) * Light.NightFactor;
         Light.bMoonActive = Light.MoonLux > .01f;
         Light.SkyLightScale = 1.f;
-        // A dim overcast sun still leaves a bright grey sky and soft ambient light.
-        Light.SkyLuminanceFactor = std::clamp(Look.SkyLuminance / std::max(Look.SunVisibility, .05f), .5f, 16.f);
+        // The sky shows the weather's luminance under the light that lights it: the sun until nautical twilight, then
+        // the moon, each dimmed by its own visibility. A dim overcast sun still leaves a bright grey sky and soft
+        // ambient light, and a gloomy night sky is never brighter than a clear one. Below -4 degrees the moonlit
+        // sky darkens to NightSkyLuminance, so sunset colours stay and the night sky reads as night.
+        const float SkyNight = 1.f - Smoothstep(-12.f, -4.f, Sun.Elevation);
+        const float SkyVisibility = Detail::Lerp(SunVisibility, MoonVisibility, SkyNight);
+        Light.SkyLuminanceFactor = std::clamp(Look.SkyLuminance / std::max(SkyVisibility, .05f), .5f, 16.f) * Detail::Lerp(1.f, NightSkyLuminance, SkyNight);
         const float NightOffset = -9.f;
         Light.ExposureOffset = NightOffset + (Look.ExposureOffset - NightOffset) * std::pow(Light.DayFactor, .6f);
         Light.ExposureScale = std::exp2(Light.ExposureOffset);
-        Light.WindowGlow = 1.f + 11.f * std::max(Light.NightFactor, .3f * Look.Gloom);
+        Light.WindowGlow = 1.f + 11.f * Light.NightFactor;
         Light.bStreetLamps = Light.NightFactor + .25f * Look.Gloom > .5f;
+        // Drivers use headlights in fog, drizzle and rain by day as well as at night; overcast alone is not enough.
+        Light.bHeadlights = Light.NightFactor + .75f * Look.Gloom > .5f;
         Light.Saturation = 1.f - .3f * Look.Gloom - .15f * Light.NightFactor;
         Light.Contrast = 1.f - .08f * Look.Gloom;
         Light.WhiteTemp = 6500.f - 600.f * Look.Gloom;
@@ -372,7 +399,9 @@ namespace QuebecSky
         return Light;
     }
 
-    // The replicated weather segment. Every peer samples it from the server clock.
+    // The replicated weather segment. Every peer samples it from the server clock. A segment starts at LookFor(From),
+    // or, when a command turned it mid-blend, at the look that was showing then, kept as a weight per weather.
+    // All-zero weights mean LookFor(From).
     struct FSegment
     {
         EWeather From = EWeather::Clear;
@@ -380,12 +409,95 @@ namespace QuebecSky
         double Start = 0.0;
         double Blend = 0.0;
         double Hold = 0.0;
+        float FromWeights[WeatherCount] = {};
     };
+
+    namespace Detail
+    {
+        // The start weights of a segment, summing to 1. Zero, negative or non-finite weights mean From alone.
+        inline void StartWeights(const FSegment& Segment, float (&OutWeights)[WeatherCount])
+        {
+            float Total = 0.f;
+            for (int Weather = 0; Weather < WeatherCount; ++Weather)
+            {
+                const float Weight = Segment.FromWeights[Weather];
+                OutWeights[Weather] = std::isfinite(Weight) && Weight > 0.f ? Weight : 0.f;
+                Total += OutWeights[Weather];
+            }
+            const bool bUsable = Total > 0.f && std::isfinite(Total);
+            for (float& Weight : OutWeights)
+            {
+                Weight = bUsable ? Weight / Total : 0.f;
+            }
+            if (!bUsable)
+            {
+                OutWeights[Index(Segment.From)] = 1.f;
+            }
+        }
+
+        inline void ClearStart(FSegment& Segment)
+        {
+            for (float& Weight : Segment.FromWeights)
+            {
+                Weight = 0.f;
+            }
+        }
+    }
+
+    inline float BlendAlpha(const FSegment& Segment, double Now)
+    {
+        return Segment.Blend > 0.0 ? Smoothstep(0.f, 1.f, static_cast<float>((Now - Segment.Start) / Segment.Blend)) : 1.f;
+    }
+
+    // The look a segment starts from: the weighted mean of the table rows, built with Mix so each field stays between them.
+    inline FWeatherLook StartLook(const FSegment& Segment)
+    {
+        float Weights[WeatherCount];
+        Detail::StartWeights(Segment, Weights);
+        FWeatherLook Look = LookFor(Segment.From);
+        float Sum = 0.f;
+        for (int Weather = 0; Weather < WeatherCount; ++Weather)
+        {
+            if (Weights[Weather] > 0.f)
+            {
+                Sum += Weights[Weather];
+                Look = Mix(Look, LookFor(static_cast<EWeather>(Weather)), Weights[Weather] / Sum);
+            }
+        }
+        return Look;
+    }
 
     inline FWeatherLook Sample(const FSegment& Segment, double Now)
     {
-        const float Alpha = Segment.Blend > 0.0 ? Smoothstep(0.f, 1.f, static_cast<float>((Now - Segment.Start) / Segment.Blend)) : 1.f;
-        return Mix(LookFor(Segment.From), LookFor(Segment.To), Alpha);
+        return Mix(StartLook(Segment), LookFor(Segment.To), BlendAlpha(Segment, Now));
+    }
+
+    // The share of each weather's look in what the segment shows at Now. The shares sum to 1.
+    inline void ShownWeights(const FSegment& Segment, double Now, float (&OutWeights)[WeatherCount])
+    {
+        Detail::StartWeights(Segment, OutWeights);
+        const float Alpha = BlendAlpha(Segment, Now);
+        for (float& Weight : OutWeights)
+        {
+            Weight *= 1.f - Alpha;
+        }
+        OutWeights[Detail::Index(Segment.To)] += Alpha;
+    }
+
+    // The weather with the largest share of the look, for the HUD. The newer weather wins a tie.
+    inline EWeather ShownWeather(const FSegment& Segment, double Now)
+    {
+        float Weights[WeatherCount];
+        ShownWeights(Segment, Now, Weights);
+        int Strongest = Detail::Index(Segment.To);
+        for (int Weather = 0; Weather < WeatherCount; ++Weather)
+        {
+            if (Weights[Weather] > Weights[Strongest])
+            {
+                Strongest = Weather;
+            }
+        }
+        return static_cast<EWeather>(Strongest);
     }
 
     // Host only. Returns true when a new segment started.
@@ -396,11 +508,61 @@ namespace QuebecSky
             return false;
         }
         Segment.From = Segment.To;
+        Detail::ClearStart(Segment);
         Segment.To = NextWeather(Segment.From, Random);
         Segment.Start = Now;
         Segment.Blend = BlendSeconds(Segment.From, Segment.To, Random);
         Segment.Hold = Segment.Blend + HoldSeconds(Segment.To, Random);
         return true;
+    }
+
+    // Host only: blend toward Requested from exactly the look showing at Now, so a command issued mid-blend does not jump.
+    inline void Redirect(FSegment& Segment, EWeather Requested, double Now, double Blend, FRandom& Random)
+    {
+        float Weights[WeatherCount];
+        ShownWeights(Segment, Now, Weights);
+        int Used = 0;
+        for (float Weight : Weights)
+        {
+            Used += Weight > 0.f ? 1 : 0;
+        }
+        Segment.From = ShownWeather(Segment, Now);
+        for (int Weather = 0; Weather < WeatherCount; ++Weather)
+        {
+            Segment.FromWeights[Weather] = Used > 1 ? Weights[Weather] : 0.f;
+        }
+        Segment.To = Requested;
+        Segment.Start = Now;
+        Segment.Blend = std::max(Blend, 0.0);
+        Segment.Hold = Segment.Blend + HoldSeconds(Requested, Random);
+    }
+
+    // Host only. A session without a requested weather joins the chain at a random point of a long run that started
+    // clear, so its first half hour is as gloomy as any other. The segment is shifted so that point falls at Now; it
+    // may already be blending. OutWet holds the wetness after the last 20 minutes of that run.
+    inline FSegment JoinChain(double Now, FRandom& Random, FWetness& OutWet)
+    {
+        FSegment Segment;
+        Segment.Hold = HoldSeconds(Segment.To, Random);
+        const double Joined = Random.Range(6.0 * 3600.0, 12.0 * 3600.0);
+        FWetness Wet;
+        double Second = Joined - 1200.0;
+        for (;;)
+        {
+            const double End = Segment.Start + Segment.Hold;
+            for (; Second < std::min(End, Joined); Second += 1.0)
+            {
+                Wet.Step(Sample(Segment, Second).Rain, 1.f);
+            }
+            if (End > Joined)
+            {
+                break;
+            }
+            Advance(Segment, End, Random);
+        }
+        Segment.Start += Now - Joined;
+        OutWet = Wet;
+        return Segment;
     }
 
     // Unit (east, north) wind direction with Z = 0. It swings slowly around the authored (.94, .34).
@@ -417,5 +579,12 @@ namespace QuebecSky
     inline double LatitudeForMap(const char* MapName)
     {
         return MapName && std::strstr(MapName, "CollegeBathurst") ? 43.656 : 45.525;
+    }
+
+    // Solar noon in Eastern daylight time on day 288 (NOAA, equation of time +14.4 minutes): Toronto at 79.41 W
+    // is about 23 minutes later than Montréal at 73.57 W.
+    inline double SolarNoonForMap(const char* MapName)
+    {
+        return MapName && std::strstr(MapName, "CollegeBathurst") ? 13.05 : 12.67;
     }
 }

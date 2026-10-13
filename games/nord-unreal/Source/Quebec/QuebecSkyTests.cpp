@@ -68,7 +68,8 @@ bool FQuebecSkyWeatherChainTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecSkyAuthoredDayTest, "Quebec.Sky.AuthoredDay", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FQuebecSkyAuthoredDayTest::RunTest(const FString& Parameters)
 {
-    // The clear afternoon reproduces the saved scene: every multiplier 1 and no exposure offset.
+    // The clear afternoon keeps the saved light levels: every multiplier 1 and no exposure offset. The sun's direction
+    // follows the clock (south-west at 15:00), not the saved north-west sun, so lit facades and shadows differ.
     const QuebecSky::FSun Sun = QuebecSky::SunAt(15.);
     const QuebecSky::FLighting Light = QuebecSky::LightingFor(Sun, QuebecSky::FWeatherLook());
     TestTrue(TEXT("The 15:00 sun is high in the south-west"), Sun.Elevation > 20.f && Sun.Azimuth > 180.f && Sun.Azimuth < 270.f);
@@ -81,11 +82,15 @@ bool FQuebecSkyAuthoredDayTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Contrast"), Light.Contrast, 1.f, 1e-6f);
     TestEqual(TEXT("White temperature"), Light.WhiteTemp, 6500.f, 1e-3f);
     TestFalse(TEXT("Street lamps stay off"), Light.bStreetLamps);
+    TestFalse(TEXT("Headlights stay off"), Light.bHeadlights);
     TestFalse(TEXT("The moon is dark"), Light.bMoonActive);
     // Overcast dims the sun and the exposure but keeps a bright grey sky.
     const QuebecSky::FLighting Grey = QuebecSky::LightingFor(Sun, QuebecSky::LookFor(QuebecSky::EWeather::Overcast));
     TestTrue(TEXT("Overcast is darker and muted"), Grey.SunScale < .2f && Grey.ExposureOffset < -1.f && Grey.Saturation < 1.f);
     TestTrue(TEXT("Overcast sky stays bright"), Grey.SkyLuminanceFactor > 4.f);
+    TestFalse(TEXT("Overcast alone leaves headlights off"), Grey.bHeadlights);
+    const QuebecSky::FLighting Wet = QuebecSky::LightingFor(Sun, QuebecSky::LookFor(QuebecSky::EWeather::Rain));
+    TestTrue(TEXT("Rain turns headlights on by day, not street lamps"), Wet.bHeadlights && !Wet.bStreetLamps);
     return true;
 }
 
@@ -101,6 +106,13 @@ bool FQuebecSkyNightTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Street lamps and windows are on"), Clear.bStreetLamps && Clear.WindowGlow > 11.f);
     const QuebecSky::FLighting Wet = QuebecSky::LightingFor(QuebecSky::SunAt(0.), QuebecSky::LookFor(QuebecSky::EWeather::Rain));
     TestTrue(TEXT("Rain hides most of the moonlight"), Wet.MoonLux < Clear.MoonLux * .5f && Wet.MoonLux > 0.f);
+    TestTrue(TEXT("A rainy night sky is darker than a clear one"), Wet.SkyLuminanceFactor * Wet.MoonLux < Clear.SkyLuminanceFactor * Clear.MoonLux);
+    TestTrue(TEXT("The moonlit night sky is dimmed"), Clear.SkyLuminanceFactor < .5f);
+    // Toronto keeps its own solar noon, about 23 minutes after Montreal's.
+    const double TorontoNoon = QuebecSky::SolarNoonForMap("/Game/Maps/CollegeBathurst");
+    const double TorontoLatitude = QuebecSky::LatitudeForMap("/Game/Maps/CollegeBathurst");
+    TestTrue(TEXT("Toronto sunset is near 18:36"), QuebecSky::SunAt(18.5, 288, TorontoLatitude, TorontoNoon).Elevation > -.833f
+        && QuebecSky::SunAt(18.75, 288, TorontoLatitude, TorontoNoon).Elevation < -.833f);
     // The worklight scale used by AQuebecSky::LightScale: full by day, never below 3% at night.
     TestEqual(TEXT("Night worklight scale"), FMath::Clamp(8.f * Clear.ExposureScale, .03f, 1.f), .03f, 1e-6f);
     return true;
@@ -111,8 +123,8 @@ bool FQuebecSkyLampDataTest::RunTest(const FString& Parameters)
 {
     TestTrue(TEXT("The OSM street lamps are generated"), UE_ARRAY_COUNT(LaFontaine::StreetLamps) > 200);
     bool bUnderHeads = true;
-    for (const FVector& Lamp : LaFontaine::StreetLamps) bUnderHeads &= Lamp.Z == 470.;
-    TestTrue(TEXT("Every lamp light sits at 470 cm under its head"), bUnderHeads);
+    for (const FVector& Lamp : LaFontaine::StreetLamps) bUnderHeads &= Lamp.Z == 440.;
+    TestTrue(TEXT("Every lamp light sits at 440 cm, under its head and below the comic globe"), bUnderHeads);
     return true;
 }
 #endif

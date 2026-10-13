@@ -19,6 +19,8 @@ with tempfile.TemporaryDirectory() as directory:
         assert build.returncode == 0, f"{name} build failed:\n{build.stderr}"
         run = subprocess.run([str(binary)], capture_output=True, text=True)
         assert run.returncode == 0, f"{name} sky model test failed:\n{run.stdout}{run.stderr}"
+        # The spec scenario as written: the first half hour of a session, not only a long run.
+        assert "first half hour over" in run.stdout and "Toronto day 288" in run.stdout, f"{name} skipped the session-start checks"
         table = subprocess.run([str(binary), "--table"], capture_output=True, text=True, check=True).stdout
         tables[name] = table
         print(f"{name} ({version}): {run.stdout.strip().splitlines()[-1]}")

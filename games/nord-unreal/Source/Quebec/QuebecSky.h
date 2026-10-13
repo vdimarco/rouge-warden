@@ -18,6 +18,7 @@ class USkyAtmosphereComponent;
 class USkyLightComponent;
 class USoundWaveProcedural;
 class USpotLightComponent;
+class UStaticMesh;
 class UVolumetricCloudComponent;
 
 /** The host's clock, weather segment and wetness. Every peer samples the clock and weather against the server time. */
@@ -31,6 +32,8 @@ struct FQuebecSkyState
     UPROPERTY() float FrozenHour = 15.f;
     UPROPERTY() uint8 From = 0;
     UPROPERTY() uint8 To = 0;
+    /** Empty, or one share per weather of the look a command turned mid-blend; see QuebecSky::FSegment::FromWeights. */
+    UPROPERTY() TArray<float> FromWeights;
     UPROPERTY() double Start = 0.;
     UPROPERTY() float Blend = 0.f;
     UPROPERTY() float Hold = 0.f;
@@ -39,6 +42,7 @@ struct FQuebecSkyState
     UPROPERTY() float Puddles = 0.f;
     UPROPERTY() int32 DayOfYear = 288;
     UPROPERTY() float LatitudeDeg = 45.525f;
+    UPROPERTY() float SolarNoonHour = 12.67f;
 };
 
 /** The saved scene the sky drives, and its authored values, captured once on each peer. */
@@ -78,7 +82,7 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    /** False under the QA flags unless -NordHour= or -NordWeather= asks for a fixed state; -NordDynamicSky always spawns. */
+    /** False under the QA flags and in editor Python runs unless -NordHour= or -NordWeather= asks for a fixed state; -NordDynamicSky always spawns. */
     static bool ShouldSpawn();
     /** The sky of this world once its state is known, or null. */
     static const AQuebecSky* Find(const UWorld* World);
@@ -107,6 +111,7 @@ private:
     UPROPERTY() TObjectPtr<USoundWaveProcedural> RainWave;
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> CloudInstance;
     UPROPERTY() TObjectPtr<UMaterialParameterCollection> AtmosphereParameters;
+    UPROPERTY() TObjectPtr<UStaticMesh> RainPlane;
 
     FQuebecSkyScene SceneRefs;
     QuebecSky::FRandom Random;
@@ -139,6 +144,7 @@ private:
     void TickPresentation(double Now, float DeltaSeconds);
     void SetClock(float NewHour, double Now);
     QuebecSky::FSegment CurrentSegment() const;
+    void SetSegment(const QuebecSky::FSegment& Segment);
     double ServerSeconds() const;
     bool LocalView(FVector& OutLocation) const;
     void AimLights();

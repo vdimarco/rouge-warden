@@ -1299,8 +1299,8 @@ void AQuebecController::ApplySkyGrading()
     AActor* Target = GetViewTarget();
     if ((!Sky && !bSkyGrading) || !Target) return;
     bSkyGrading = Sky != nullptr;
-    TArray<UCameraComponent*> Cameras;
-    Target->GetComponents(Cameras);
+    // Runs every frame, so the camera list stays on the stack.
+    TInlineComponentArray<UCameraComponent*> Cameras(Target, false);
     for (UCameraComponent* Camera : Cameras)
     {
         FPostProcessSettings& Settings = Camera->PostProcessSettings;
@@ -1333,19 +1333,33 @@ void AQuebecController::NordSkyFreeze(int32 Frozen)
     if (AQuebecSky::Find(GetWorld())) ServerNordSkyFreeze(Frozen != 0);
 }
 
+namespace
+{
+    // On the server only the listen-server host's own controller is local, so a guest's sky command is refused.
+    bool AcceptSkyCommand(AQuebecController* Controller)
+    {
+        if (Controller->IsLocalController()) return true;
+        Controller->ShowInteractionMessage(TEXT("Only the host can change the sky"));
+        return false;
+    }
+}
+
 void AQuebecController::ServerNordWeather_Implementation(const FString& Weather)
 {
+    if (!AcceptSkyCommand(this)) return;
     for (TActorIterator<AQuebecSky> It(GetWorld()); It; ++It)
         if (!It->HostSetWeather(Weather)) ClientInteractionMessage(FString::Printf(TEXT("Unknown weather %s"), *Weather));
 }
 
 void AQuebecController::ServerNordTime_Implementation(float Hours)
 {
+    if (!AcceptSkyCommand(this)) return;
     for (TActorIterator<AQuebecSky> It(GetWorld()); It; ++It) It->HostSetHour(Hours);
 }
 
 void AQuebecController::ServerNordSkyFreeze_Implementation(bool bFrozen)
 {
+    if (!AcceptSkyCommand(this)) return;
     for (TActorIterator<AQuebecSky> It(GetWorld()); It; ++It) It->HostSetFrozen(bFrozen);
 }
 
