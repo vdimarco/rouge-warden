@@ -30,7 +30,7 @@ footer p { margin: 0; }
 .controls { color: #dad4dc; }
 .controls b { color: var(--paper); }
 #frame:fullscreen { width: 100vw; height: 100dvh; }
-@media (max-width: 900px) { header { align-items: flex-start; flex-direction: column; padding: 14px; } main { min-height: 420px; } footer { padding: 10px 14px; } .caption { padding: 22px; } #overlay { padding: 20px; } }
+@media (max-width: 900px) { header { padding: 14px; } main { min-height: 420px; } footer { padding: 10px 14px; } .caption { padding: 22px; } #overlay { padding: 20px; } }
 
 #touch-controls { position: absolute; inset: 0; pointer-events: none; user-select: none; -webkit-user-select: none; }
 #touch-controls button, .touch-stick { pointer-events: auto; touch-action: none; -webkit-touch-callout: none; }
@@ -64,7 +64,6 @@ footer p { margin: 0; }
   .touch-primary { left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); grid-template-columns: repeat(4, 1fr); bottom: max(16px, env(safe-area-inset-bottom)); }
 }
 @media (orientation: landscape) and (max-height: 600px) {
-  .touch-input header { flex-direction: row; align-items: center; }
   .touch-input footer { display: none; }
   .touch-input .brand strong { font-size: 14px; }
   .touch-stick { width: 100px; height: 100px; }
