@@ -96,6 +96,10 @@ footer p { margin: 0; }
   .touch-input #frame:fullscreen .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: calc(35% + 4px); }
   .touch-input #frame:fullscreen .stick-label { font-size: 7.5px; letter-spacing: .04em; }
   .touch-input #frame:fullscreen .look-stick { right: max(16px, env(safe-area-inset-right)); top: auto; bottom: calc(35% + 4px); }
+  .touch-input #frame:fullscreen .touch-primary {
+    right: auto; left: 42%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(4, auto); gap: 6px;
+  }
 }
 
 /* Phone crew picker: eight crew members in two columns, opened from the menu. */
