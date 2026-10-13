@@ -1,0 +1,6 @@
+- [x] Record the decision from `a86a508a` (standard render by default, comic look on F2) in a `nord-unreal` spec delta.
+- [x] Smoke test: both players start in the standard view; the host's F2 turns on only the host's comic view; the car camera keeps the client's standard view and the host's comic view; the client's F2 after leaving the car turns on its comic view. The animation-on-twos check follows each player's own view. The `StandardFoot` render capture moves to the host step, where the client view is still standard.
+- [x] Story slice test: the client's F2 turns its comic view on, then off, with the host's view unchanged and the worklight kept.
+- [x] Park comic capture: view tracking starts in the standard view, so `_F2` shots stay the standard ones.
+- [ ] On the game PC: run `Scripts/smoke_test.py` on the rebuilt editor and confirm it passes; run `Scripts/test_story_slice.py` when the story suite is next run. Not run here: this container has no Unreal Engine. Python syntax checks pass.
+- [ ] Archive into `openspec/specs/nord-unreal/spec.md` once the smoke test passes on the game PC.

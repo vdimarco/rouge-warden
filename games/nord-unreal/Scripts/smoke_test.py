@@ -339,7 +339,9 @@ def comic_weights(client_weight, host_weight):
         comic = [entry for entry in entries if entry.get_editor_property("object").get_path_name() == "/Game/Art/Comic/M_ComicInk.M_ComicInk"]
         if len(comic) != 1 or abs(comic[0].get_editor_property("weight") - expected) > .01:
             return False
-    for side, expected in (("client", 0.0 if client_weight == 0 else 1 / 12), ("server", 1 / 12)):
+    # Each world's characters animate on twos only while that world's local player has the comic view on.
+    for side, weight in (("client", client_weight), ("server", host_weight)):
+        expected = 1 / 12 if weight else 0.0
         assert abs(STATE[side + "_char"].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval() - expected) < .001
     return True
 
@@ -474,7 +476,9 @@ step("native client strafing while sprinting reaches authority", lambda: begin_f
 step("sprint release restores walking speed on both peers", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_char"], "StopSprint"), lambda: speed_equal(450))
 step("client jump moves both authority and owning client", begin_jump, jump_visible)
 step("jump lands on saved-map ground", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_char"], "StopJumping"), lambda: all(not STATE[side + "_char"].get_component_by_class(u.CharacterMovementComponent).is_falling() for side in ("server", "client")))
-step("client disables comic view without affecting host", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_pc"], "ToggleComicStyle"), lambda: comic_weights(0, 1))
+# Players start in the standard view and F2 turns the comic view on, for that player only.
+step("both players start in the standard view", lambda: None, lambda: comic_weights(0, 0))
+step("host enables comic view without affecting client", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["host_pc"], "ToggleComicStyle"), lambda: comic_weights(0, 1))
 step("restore far-interaction fixture", lambda: teleport(u.Vector(*LAYOUT["spawn"])), lambda: teleported(u.Vector(*LAYOUT["spawn"])))
 step("out-of-range client interaction rejected", interact, far_rejected)
 step("starter spawns in its mapped forward driving lane", check_driving_lane,
@@ -524,7 +528,7 @@ step("stop car before placing blocked-exit fixtures", lambda: STATE["client_car"
 step("all blocked car exits preserve driver safely", block_car_exits, blocked_exit)
 step("remove exit barriers", remove_barriers, lambda: True)
 step("client RPC exits car and restores character on both peers", interact, exited)
-step("client restores comic view after exiting", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_pc"], "ToggleComicStyle"), lambda: comic_weights(1, 1))
+step("client enables comic view after exiting", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_pc"], "ToggleComicStyle"), lambda: comic_weights(1, 1))
 step("place available car beside the current objective", place_car_at_objective,
      lambda: teleported(TARGETS[0]) and distance(STATE["client_char"].get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
 step("car interaction takes priority without completing the nearby objective", interact, lambda: entered() and missions_equal(0))
@@ -739,7 +743,7 @@ step("rejoined client exits with completed missions preserved", interact, lambda
 def capture_check(name):
     if "-NordRenderChecks" not in u.SystemLibrary.get_command_line():
         return
-    shots = {"client disables comic view without affecting host": "StandardFoot",
+    shots = {"host enables comic view without affecting client": "StandardFoot",
         "authority teleport replicated to owning client": "CarPrompt",
         "car camera preserves client standard view and host comic view": "StandardCar",
         "place available car beside the current objective": "InteractionPriority",

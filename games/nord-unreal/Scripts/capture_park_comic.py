@@ -192,7 +192,8 @@ def tick(dt):
                 closeups.append(('EnvironmentSandCourts',center-axis*1900+u.Vector(0,0,180),center+axis*250+u.Vector(0,0,130),None))
                 shots.extend(closeups)
                 shots.extend([(name+'_F2',p,target,resident) for name,p,target,resident in closeups])
-                state['comic']=True
+                # The game now starts in the standard view; shots named _F2 stay the standard ones.
+                state['comic']=False
                 assert len(shots)==21
             state.update(phase=2,ready=now)
         elif state['phase']==2:
