@@ -111,5 +111,21 @@ Keep unchanged: moon shadows (cost close to the day sun's), height fog, the pond
 - Every native claim needs the host rebuild and a GPU measurement. Nothing here ran against the engine.
 - If `OnNewConnectionNative` fires only after ICE completes, the first frame after wake can be black for one poll interval. The Play tap mostly hides it.
 - The rebuild adds the sky cost and the throttle saving at the same time. Measure each flag on and off.
+
+## Host implementation, 2026-10-13
+
+The user's current request is mobile performance of the live demo. The first bounded pass implements sustained measurements, validated bitrate/capture-scheduling controls, native FPS telemetry and idle-slot rendering suspension. Tall-frame negotiation, relay-specific browser commands and sky/light reductions remain separate unchecked work below; none is needed to test these changes. Sky assets were already rebuilt and delivered earlier today (`Verification/PCDemoRefresh.md`), so this package does not combine an atmosphere update with the performance change.
+
+Installed UE 5.8.3 facts: `PixelStreaming2PluginSettings.cpp` maps the launch arguments `PixelStreamingWebRTCFps`, `PixelStreamingWebRTCStartBitrate`, `PixelStreamingWebRTCMinBitrate` and `PixelStreamingWebRTCMaxBitrate` to `PixelStreaming2.WebRTC.*`. An isolated NullRHI run of the current package read back 30, 1000000, 300000 and 4000000 respectively, all `LastSetBy: Commandline`, and exited 0. Its log is retained under `Saved/BrowserStreaming/optimization-20261013/bitrate-readback.log`.
+
+`EpicRtcStreamer.cpp` dispatches both `OnNewConnectionNative(FString,FString)` and `OnDataTrackOpenNative(FString,FString)` through `DoOnGameThread`. The idle subsystem therefore wakes directly on those game-thread events and polls connected-player counts every 250 ms. It preserves the original viewport rendering flag and restores it on shutdown. It never changes frame caps, including the listen server's simulation rate. The public launcher retains its GPU guard, VP8 codec, graphics settings and console-command restrictions. The engine's 100 kbps minimum is retained during calibration rather than raising a mobile connection's floor before measuring it.
+
+Sources inspected locally: `Engine/Plugins/Media/PixelStreaming2/Source/PixelStreaming2Settings/Private/PixelStreaming2PluginSettings.cpp`, `PixelStreaming2RTC/Private/EpicRtcStreamer.cpp`, and `PixelStreaming2/Public/PixelStreaming2Delegates.h`. External references checked: [Epic Pixel Streaming reference](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-pixel-streaming-reference) and [Tailscale Funnel limits](https://tailscale.com/docs/features/tailscale-funnel). No new rendering technique or dependency is introduced.
 - Physical phone checks (iPhone Safari has no element fullscreen) can only be done by a person.
 - This change adds requirements to `nord-browser`, which `nord-browser-streaming` (not archived) also adds to. Its requirement "Phone held upright plays a tall game" says a sideways phone gets 1280×720. Archive `nord-browser-streaming` first, then turn the overlapping requirement here into a MODIFIED one before archiving this change.
+
+### Host reboot and public-player follow-up — 2026-10-13
+
+The host reboot removed the transient services and changed the Quick Tunnel on restoration. The release candidate preserves the actually published gyro/drag controls from `eff8752e` (also on latest main `54a86fe8`) and adds only a four-line landscape action-row positioning override. It passes 17 unit, 11 mobile and seven live checks; the endpoint update and deployment await the explicit approval in task 5.3. Intel shell offload was reverted after a black-desktop visual failure; matched locked 120/60 Hz trials established lower power at 60 Hz, not a game-FPS gain, and 120 Hz was restored. Existing background pause controls are reused without new desktop code. No native quality, codec, scheduler or package changes are introduced in this follow-up.
+
+The user approved merging and publishing the tested update on 2026-10-13. Preserve the existing native render quality, 75% internal screen percentage, 30 FPS cap, 1280×720 landscape output and supported tall-phone frames; the rejected bitrate/frame-size experiments remain disabled.

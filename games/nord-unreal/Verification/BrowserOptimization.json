@@ -1,0 +1,508 @@
+{
+  "scope": "Host optimization delivered; physical-phone and full mobile acceptance remain open.",
+  "createdAt": "2026-10-13T15:21:59.630978+00:00",
+  "sourceBaseline": "752189a430c819e1ae68edfd29bc95c300f8267b",
+  "hardware": {
+    "gpu": "RTX 4090",
+    "cpu": "i9-14900K",
+    "secondaryGpu": "Intel UHD 770",
+    "activeDisplayGpu": "RTX 4090"
+  },
+  "settings": {
+    "CPUWeight": 400,
+    "idleThrottle": true,
+    "warmupSeconds": 60,
+    "idleGraceSeconds": 30,
+    "pollSeconds": 0.25,
+    "simulationCapUnchanged": true,
+    "streamFps": 30,
+    "startBitrate": 8000000,
+    "minBitrate": 100000,
+    "maxBitrate": 12000000,
+    "scheduling": 0,
+    "screenPercentage": 75,
+    "codec": "VP8",
+    "freeVramGuardMiB": 12000
+  },
+  "checks": {
+    "editorBuild": true,
+    "gameBuild": true,
+    "cookStageArchive": true,
+    "nativeAutomation": 19,
+    "nativeSmoke": 69,
+    "browserUnitTests": 13,
+    "launcherSelfCheck": true,
+    "publicDesktop": {
+      "path": "games/nord-unreal/Browser/.qa/live-2026-10-13T15-13-31-998Z/summary.json",
+      "passed": true,
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true
+        }
+      ]
+    },
+    "publicMobileEmulation": {
+      "path": "games/nord-unreal/Browser/.qa/mobile-2026-10-13T15-14-29-519Z/summary.json",
+      "passed": false,
+      "checks": [
+        {
+          "name": "tapping Play takes the game fullscreen",
+          "passed": true
+        },
+        {
+          "name": "the game sends the frame the page asks for",
+          "passed": true
+        },
+        {
+          "name": "real mobile media",
+          "passed": true
+        },
+        {
+          "name": "portrait controls fit and meet target size",
+          "passed": true
+        },
+        {
+          "name": "a phone held upright gets a tall game frame with every control in its bottom 42%",
+          "passed": true
+        },
+        {
+          "name": "simultaneous move, look and jump use the native data channel",
+          "passed": true
+        },
+        {
+          "name": "landscape controls fit and the menu leaves and enters fullscreen",
+          "passed": false
+        }
+      ]
+    }
+  },
+  "samples": {
+    "initialDirect": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T14-41-49-818Z-NordFriend1/sample.json",
+      "mode": "ordinary",
+      "cameraSweep": false,
+      "seconds": 60.122,
+      "decodedFps": 21.888826053690828,
+      "receivedMbps": 9.015380060543562,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 66.80000000000291,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8"
+    },
+    "initialRelayStatic": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T14-43-42-201Z-NordFriend1/sample.json",
+      "mode": "forced-relay-scoped-turn-dns",
+      "cameraSweep": false,
+      "seconds": 60.112,
+      "decodedFps": 20.761245674740483,
+      "receivedMbps": 0.3153943305829119,
+      "framesDropped": 0,
+      "freezes": 6,
+      "freezeSeconds": 2.481,
+      "longestFrameGapMs": 899.9000000000015,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "relay",
+        "protocol": "udp",
+        "relayProtocol": "tls"
+      },
+      "codec": "video/VP8"
+    },
+    "initialRelayMoving": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T14-46-54-162Z-NordFriend1/sample.json",
+      "mode": "forced-relay-scoped-turn-dns",
+      "cameraSweep": true,
+      "seconds": 60.094,
+      "decodedFps": 7.787799114720271,
+      "receivedMbps": 0.24039018870436316,
+      "framesDropped": 0,
+      "freezes": 4,
+      "freezeSeconds": 2.076,
+      "longestFrameGapMs": 866.7000000000044,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "relay",
+        "protocol": "udp",
+        "relayProtocol": "tls"
+      },
+      "codec": "video/VP8"
+    },
+    "samePackageIdleOffDirectMoving": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T14-49-56-477Z-NordFriend1/sample.json",
+      "mode": "ordinary",
+      "cameraSweep": true,
+      "seconds": 60.829,
+      "decodedFps": 21.12479245096911,
+      "receivedMbps": 9.830111427115357,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 83.40000000000146,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8"
+    },
+    "samePackageIdleOnDirectMoving": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T14-54-04-959Z-NordFriend1/sample.json",
+      "mode": "ordinary",
+      "cameraSweep": true,
+      "seconds": 60.936,
+      "decodedFps": 30.015097807535774,
+      "receivedMbps": 9.494541683077328,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 66.80000000000291,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8"
+    },
+    "idleOnRelayMoving": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T14-55-35-365Z-NordFriend1/sample.json",
+      "mode": "forced-relay-scoped-turn-dns",
+      "cameraSweep": true,
+      "seconds": 60.281,
+      "decodedFps": 9.356181881521541,
+      "receivedMbps": 0.266932134503409,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 583.3999999999978,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "relay",
+        "protocol": "udp",
+        "relayProtocol": "tls"
+      },
+      "codec": "video/VP8"
+    },
+    "lowerStartupDirectHost": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T15-00-47-549Z-NordHost/sample.json",
+      "mode": "ordinary",
+      "cameraSweep": true,
+      "seconds": 60.253,
+      "decodedFps": 29.9072245365376,
+      "receivedMbps": 9.217426916502083,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 100,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8"
+    },
+    "lowerStartupRelayMoving": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T15-02-13-267Z-NordFriend1/sample.json",
+      "mode": "forced-relay-scoped-turn-dns",
+      "cameraSweep": true,
+      "seconds": 60.012,
+      "decodedFps": 7.631806971938945,
+      "receivedMbps": 0.35619422782110244,
+      "framesDropped": 0,
+      "freezes": 1,
+      "freezeSeconds": 0.265,
+      "longestFrameGapMs": 600,
+      "width": 1280,
+      "height": 720,
+      "candidate": {
+        "type": "relay",
+        "protocol": "udp",
+        "relayProtocol": "tls"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 1.7265938864628823,
+      "jitterBufferMsPerFrame": 225.22707423580786,
+      "packetsLost": 0,
+      "framesReceived": 456,
+      "firstPlayedWorldDelayMs": 5
+    },
+    "smallerFrameExploratory": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/samples/2026-10-13T15-04-41-313Z-NordFriend1/sample.json",
+      "mode": "forced-relay-scoped-turn-dns",
+      "cameraSweep": true,
+      "seconds": 30.362,
+      "decodedFps": 20.848428957249194,
+      "receivedMbps": 0.46994532639483566,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 166.70000000000073,
+      "width": 960,
+      "height": 540,
+      "candidate": {
+        "type": "relay",
+        "protocol": "udp",
+        "relayProtocol": "tls"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 0.88613112164297,
+      "jitterBufferMsPerFrame": 185.22616271721958,
+      "packetsLost": 0,
+      "framesReceived": 634,
+      "firstPlayedWorldDelayMs": 2,
+      "restored1280x720": true
+    }
+  },
+  "nativeFps": {
+    "idle-off": {
+      "host": {
+        "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261013-144906-1861816.log",
+        "samplesAfterFirst15Seconds": 20,
+        "median": 21.912615113414233,
+        "sleepingMedian": null
+      },
+      "friend": {
+        "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261013-144906-1861816.log",
+        "samplesAfterFirst15Seconds": 19,
+        "median": 21.348092508400867,
+        "sleepingMedian": null
+      }
+    },
+    "idle-on": {
+      "host": {
+        "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261013-145157-1873322.log",
+        "samplesAfterFirst15Seconds": 75,
+        "median": 29.998026445628575,
+        "sleepingMedian": 29.998026445628575
+      },
+      "friend": {
+        "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261013-145157-1873322.log",
+        "samplesAfterFirst15Seconds": 74,
+        "median": 29.998026445628575,
+        "sleepingMedian": 29.998026445628575
+      }
+    },
+    "start-1m": {
+      "host": {
+        "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261013-145907-1901303.log",
+        "samplesAfterFirst15Seconds": 131,
+        "median": 29.99210734017364,
+        "sleepingMedian": 29.998026445628575
+      },
+      "friend": {
+        "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261013-145907-1901303.log",
+        "samplesAfterFirst15Seconds": 130,
+        "median": 29.998026445628575,
+        "sleepingMedian": 29.998026445628575
+      }
+    }
+  },
+  "gpuSamples": {
+    "pmon-idle-off": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/optimization-20261013/pmon-idle-off.txt",
+      "perPid": {
+        "1861869": [
+          43,
+          31,
+          44,
+          13,
+          23,
+          33,
+          32,
+          19
+        ],
+        "1862394": [
+          50,
+          38,
+          34,
+          20,
+          26,
+          43,
+          41,
+          19
+        ]
+      },
+      "note": "Missing readings remain null and are not treated as zero."
+    },
+    "pmon-host-asleep-friend-viewed": {
+      "path": "games/nord-unreal/Saved/BrowserStreaming/optimization-20261013/pmon-host-asleep-friend-viewed.txt",
+      "perPid": {
+        "1873448": [
+          3,
+          2,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "1873974": [
+          2,
+          16,
+          9,
+          29,
+          38,
+          35,
+          11,
+          null,
+          null,
+          null
+        ]
+      },
+      "note": "Missing readings remain null and are not treated as zero."
+    }
+  },
+  "limits": [
+    "Live weather, camera and other desktop workloads were not pinned; these are operational observations, not a controlled graphics benchmark.",
+    "Host-PC Chromium touch emulation does not establish physical-phone or carrier performance.",
+    "Mobile suite passed six checks then failed landscape menu/objective clearance.",
+    "Lower start bitrate did not demonstrate a relay improvement and was not retained. The 960x540 experiment was exploratory, restored 1280x720, and was not shipped.",
+    "No GPU/display migration, 60-FPS stream, codec change, sky-quality reduction or full campaign replay is claimed.",
+    "OpenSpec CLI unavailable; larger stream-speed change remains open."
+  ],
+  "rejectedAttempts": [
+    "Browser/.qa/live-2026-10-13T15-11-42-542Z/summary.json: friend slot occupied; repeated after viewer left.",
+    "Sampler attempts at 14:40:56 and 14:44:45: menu-close fixture bug and occupied host; raw attempts retained."
+  ],
+  "preservation": {
+    "maps_and_campaign_saves_unchanged": {
+      "games/nord-unreal/Content/Maps/Quebec.umap": true,
+      "games/nord-unreal/Content/Maps/LaFontaine.umap": true,
+      "games/nord-unreal/Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": true
+    },
+    "package_files_match": 48,
+    "external_units_unchanged": {
+      "nord-browser-public": "ActiveState=active\nExecMainPID=3916930",
+      "nord-browser-funnel": "ActiveState=active\nExecMainPID=159991",
+      "nord-browser-turn-funnel": "ActiveState=active\nExecMainPID=368520"
+    },
+    "runtimeOnlyChangedKeys": [
+      "GameNetDriver StatelessConnectHandlerComponent.cachedclientid"
+    ],
+    "savedFilesCopiedAndVerifiedBeforeStartup": 47
+  },
+  "rollbackPackage": "games/nord-unreal/Builds/BrowserPrevious-optimization-20261013",
+  "sourceHashes": {
+    "games/nord-unreal/Source/Quebec/QuebecStreamIdle.cpp": "36e7342b6e36c9ef386471822acccf64862b1fca357362d40195deea71dc5299",
+    "games/nord-unreal/Source/Quebec/QuebecStreamIdle.h": "18223123773b0fd9a460b903e7cb50a2a725e3de9980b1f6f3fb5c54f8fba800",
+    "games/nord-unreal/Source/Quebec/Quebec.Build.cs": "1b25476ebdfce13a85a7b0c4a9cf11739c7b6f1e98adb45d6385f192df794cce",
+    "games/nord-unreal/Scripts/browser_streaming.py": "2c7c8804030e40a1c097571266f64878c3240944da662f98396d2590bb16f23c"
+  },
+  "finalService": "ActiveState=active\nCPUWeight=400",
+  "followup_2026_10_13": {
+    "status": "native services restored; tested public player staged, awaiting deployment approval",
+    "host_reboot": true,
+    "source_checkout_commit": "752189a430c819e1ae68edfd29bc95c300f8267b",
+    "latest_main_commit": "54a86fe801ee05e251a9bf60d105a3dcc8e3f0f6",
+    "public_player_base": "eff8752ef90e772318346d917b4242eb6b4b8f57",
+    "public_player_product_changes": [
+      "four-line landscape action-row position override in styles.css"
+    ],
+    "public_player_retains": [
+      "drag-anywhere look",
+      "opt-in gyro",
+      "portrait frame support"
+    ],
+    "native_runtime_changes": [
+      "restored idle rendering suspension",
+      "CPUWeight=400 retained"
+    ],
+    "desktop_changes": {
+      "video_wallpaper": "paused in memory; restart resumes it",
+      "covered_background_pause": true,
+      "monitor": "7680x2160 at 120 Hz restored; no persistent display edit"
+    },
+    "desktop_experiments": {
+      "Intel_shell_offload": "rejected: black desktop, fully reverted",
+      "display_sleep": "did not materially reduce background GPU load",
+      "refresh_trial": "unlocked-to-locked observation confounded; matched locked trial measured median power 37.80 W at 120 Hz and 26.21 W at 60 Hz, GPU utilization 24% vs 28%; no FPS benefit accepted"
+    },
+    "candidate_manifest": "/home/von/.local/state/nord-browser-release-20261013/candidate.json",
+    "mobile": {
+      "passed": true,
+      "checks": 11,
+      "report": "/home/von/.local/state/nord-browser-release-20261013/games/nord-unreal/Browser/.qa/mobile-2026-10-13T18-37-28-431Z/summary.json",
+      "limits": [
+        "Chromium emulation",
+        "simulated gyro; physical sensor untested"
+      ]
+    },
+    "live_candidate": {
+      "passed": true,
+      "checks": 7,
+      "report": "/home/von/.local/state/nord-browser-release-20261013/games/nord-unreal/Browser/.qa/live-2026-10-13T18-39-35-430Z/summary.json",
+      "network": "ordinary, new Cloudflare WSS; same PC media path"
+    },
+    "unit_tests": {
+      "candidate": 17,
+      "performance_workspace": 13
+    },
+    "limitations": [
+      "not deployed",
+      "public URL still targets expired tunnel",
+      "physical phone/carrier/audio/driving unverified",
+      "temporary services still do not survive reboot",
+      "no claim of exclusive GPU allocation or sustained performance improvement from the new desktop changes"
+    ],
+    "simultaneous_direct_samples": [
+      {
+        "slot": "NordHost",
+        "seconds": 60.607,
+        "decoded_fps": 30.04603428646856,
+        "frames_dropped": 0,
+        "freezes": 0,
+        "longest_gap_ms": 83.2,
+        "report": "Saved/BrowserStreaming/samples/2026-10-13T18-40-34-280Z-NordHost/sample.json"
+      },
+      {
+        "slot": "NordFriend1",
+        "seconds": 60.617,
+        "decoded_fps": 30.09056865235825,
+        "frames_dropped": 0,
+        "freezes": 0,
+        "longest_gap_ms": 66.8,
+        "report": "Saved/BrowserStreaming/samples/2026-10-13T18-40-34-278Z-NordFriend1/sample.json"
+      }
+    ]
+  }
+}

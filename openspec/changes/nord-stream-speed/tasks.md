@@ -2,6 +2,21 @@
 
 Owner: Codex on the host PC. Read `design.md` first; its **(check on host)** items are settled in tasks 1.2 and 1.8.
 
+## Current bounded performance pass — 2026-10-13
+
+The user confirmed the live demo and authorized testing/restarting it in this session. The larger handoff remains open; the checks below describe this performance pass without claiming the unrelated phone-frame, sky-budget or deployment tasks.
+
+- [x] Inspect the actual service checkout, preserve maps/saves, fetch and fast-forward current `main` without resetting local changes. The old handoff branch was removed remotely; its change is already on `main`.
+- [x] Add a real 60-second direct/relay sampler, including decoded frames, bitrate, drops, freezes and video-frame gaps; cover calculations with a unit test. Retain failed attempts as well as completed samples.
+- [x] Confirm bitrate arguments by engine-source inspection and isolated packaged readback.
+- [x] Add validated bitrate, capture-scheduling and idle/windowed flags; retain launch guards and record the effective settings in the lifecycle report.
+- [x] Implement idle-slot rendering suspension, immediate matching-stream wake and native FPS logs without reducing simulation frame caps.
+- [x] Build editor/game targets, pass all 19 native automation tests and 69 smoke checks, and cook a separate replacement package successfully.
+- [x] Measure flag-off/on native/browser performance, real wake/input and relay behavior using the same package; record live-weather/background-workload limits.
+- [x] Install idle rendering suspension and CPU service priority, restore the ordinary demo, verify public media/input/reconnect and save/tunnel preservation, and record remaining physical-phone limitations. Lower bitrate and frame-size experiments were not retained.
+- [x] Prepare a release candidate based on the actual deployed gyro/drag player; apply the four-line landscape action-row correction and pass 17 unit, 11 mobile and seven live checks through the new WSS route. Keep it separate from the uncommitted native performance checkout.
+- [ ] Publish the approved candidate and verify the actual production alias after the reboot changed its temporary tunnel. Until then, the old public endpoint and landscape menu/objective overlap remain unresolved. Physical-phone, carrier, driving and the larger handoff's acceptance remain open. See `Verification/BrowserOptimization.md`.
+
 Order: group 0 first. Group 4 (page) and the page deploy in 5.3 need only groups 0 and 1, because an old game build never sends the frame message and the page sends no size request or bitrate cap without it. Groups 2 and 3 are needed for 5.1, 5.2 and 5.4. Fetch the branch again before each group; the handoff may receive fixes.
 
 Keep the 12,000 MiB launch guard, the saves, the public tunnel and the TURN relay as they are. Never enable `-AllowPixelStreamingCommands` on the public host. Never stop user applications other than Dota 2 without asking.
