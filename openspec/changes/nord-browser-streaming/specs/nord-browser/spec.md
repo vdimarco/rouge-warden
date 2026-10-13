@@ -59,6 +59,13 @@ The browser player SHALL provide touch controls on touch-capable devices using t
 - **AND** controls remain within the viewport, have at least 44-pixel touch targets and remain available in fullscreen
 - **AND** action buttons accept keyboard or assistive click activation without duplicating ordinary touch actions
 
+#### Scenario: Controls stay small and read like comic lettering
+- **WHEN** a touch screen is playing
+- **THEN** Sprint, Jump / brake, Use / car and ☰ are small slanted ink chips, about 30 px tall, with a paper outline, Impact capitals and a magenta offset shadow, each drawn inside a 44 px touch target
+- **AND** a pressed chip turns yellow and drops into its shadow
+- **AND** on a phone held upright the chips sit in one centred row with one line of text each, instead of a full-width bar
+- **AND** the sticks are 76-96 px rings with a halftone fill and the stick name inside the ring, and the look pad turns cyan only while it is dragged
+
 #### Scenario: Release interrupted touch input
 - **WHEN** a held touch is lifted, cancelled or loses capture, or the page loses focus, is hidden, rotates or disconnects
 - **THEN** all affected touch-held native keys are released and the stick returns to its centre
@@ -78,9 +85,10 @@ The player page SHALL present the GTA: NORTH trailer on its title screen without
 
 #### Scenario: Visitor watches the trailer
 - **WHEN** the visitor clicks Watch the trailer
-- **THEN** the full trailer opens in a modal player with sound and controls, and the background trailer pauses
+- **THEN** the full trailer fills the screen with sound, controls and a Close button, and the background trailer pauses
+- **AND** where the browser allows it the trailer goes fullscreen, and leaving fullscreen (Escape or the back gesture) closes it
 - **AND** the full trailer downloads only after that click
-- **AND** closing the player stops the trailer and resumes the background trailer
+- **AND** closing the player stops the trailer, leaves fullscreen and resumes the background trailer
 
 #### Scenario: Game starts playing
 - **WHEN** the stream reaches the playing state
@@ -137,7 +145,7 @@ On a touch screen in portrait, the game SHALL render a tall frame shaped like th
 #### Scenario: Player holds the phone upright
 - **WHEN** a phone is in portrait while playing
 - **THEN** the page asks the game for a frame of the play area's shape (720 wide up to 9:16, otherwise 1280 high and narrower, never more pixels than 1280x720), and once the game sends it the frame fills the play area
-- **AND** the footer hides, and the touch buttons sit in two rows at the bottom with the sticks above them, all in the bottom 40%; on short phones the sticks shrink (not below 64 px), and the open crew list sits above the sticks
+- **AND** the footer hides, and the touch buttons sit in one row at the bottom with the sticks above them, all in the bottom 40%; on short phones the sticks shrink (not below 76 px), and the open crew list sits above the sticks
 
 #### Scenario: Game draws its HUD on a tall frame
 - **WHEN** the game's frame is taller than it is wide
@@ -150,7 +158,7 @@ On a touch screen in portrait, the game SHALL render a tall frame shaped like th
 
 #### Scenario: The game sends a 16:9 frame to a phone held upright
 - **WHEN** the game build or host does not honor the request
-- **THEN** the 16:9 picture sits at the top of the play area under the small buttons, with the sticks below it
+- **THEN** the 16:9 picture sits at the top of the play area, with the sticks and the button row at the bottom
 
 ### Requirement: One menu for stream and game buttons
 The page SHALL keep only the title and a menu button at the top, and SHALL offer the player slot, sound, fullscreen and disconnect, and while playing on a touch screen the crew, recover, race replay and comic view buttons, in one menu.
@@ -170,3 +178,19 @@ The page SHALL keep only the title and a menu button at the top, and SHALL offer
 #### Scenario: Player plays on a touch screen
 - **WHEN** the game is playing on a touch screen
 - **THEN** the header hides, and no button row sits at the top of the game
+
+### Requirement: Touch screens play fullscreen
+On a touch screen the game frame SHALL go fullscreen on the tap that starts the game, where the browser allows it.
+
+#### Scenario: Player starts the game on a phone
+- **WHEN** a player on a touch screen taps Start, Play as or Play with sound
+- **THEN** the game frame, with the start screen, the menu and the touch controls in it, goes fullscreen
+- **AND** a browser without fullscreen for page elements (an iPhone) keeps the page as it is
+
+#### Scenario: Player leaves fullscreen
+- **WHEN** the player taps Exit fullscreen in the menu, or uses Escape or the back gesture
+- **THEN** the page leaves fullscreen and stays out of it until the next Start, Play as or Play with sound, or until the player taps Fullscreen in the menu, which works in every state
+
+#### Scenario: Player uses a computer
+- **WHEN** the browser has no touch screen
+- **THEN** the page stays in its window, and Fullscreen in the menu still works

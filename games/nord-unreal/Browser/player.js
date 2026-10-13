@@ -35,7 +35,6 @@ function status(state, title, detail) {
   connectButton.hidden = ['connecting', 'ready', 'playing'].includes(state);
   connectButton.textContent = started ? 'Reconnect' : 'Connect';
   playButton.hidden = state !== 'ready';
-  fullscreenButton.disabled = !['ready', 'playing'].includes(state);
   muteButton.disabled = state !== 'playing';
   if (['connecting', 'selecting', 'ready', 'playing'].includes(state)) disconnectButton.disabled = false;
   if (state !== 'playing' && document.pointerLockElement === videoParent) document.exitPointerLock();
@@ -249,6 +248,8 @@ document.addEventListener('keydown', event => {
     document.exitPointerLock();
   }
 }, true);
+// The start screen can go fullscreen too, so the menu can leave it in every state.
+fullscreenButton.disabled = !document.fullscreenEnabled;
 fullscreenButton.addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
@@ -259,6 +260,12 @@ fullscreenButton.addEventListener('click', async () => {
 });
 document.addEventListener('fullscreenchange', () => {
   fullscreenButton.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
-  element('touch-exit-fullscreen').hidden = !document.fullscreenElement;
 });
-element('touch-exit-fullscreen').addEventListener('click', () => fullscreenButton.click());
+// Phones and tablets go fullscreen on the tap that starts the game (Start, Play as, Play with sound); the menu leaves it again.
+let fullscreenPending = false;
+function enterFullscreen() {
+  if (!touchMode || fullscreenPending || document.fullscreenElement || !document.fullscreenEnabled) return;
+  fullscreenPending = true;
+  frame.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}).finally(() => { fullscreenPending = false; });
+}
+for (const id of ['start', 'crew-play', 'play']) element(id).addEventListener('click', enterFullscreen);

@@ -34,21 +34,40 @@ footer p { margin: 0; }
 
 #touch-controls { position: absolute; inset: 0; pointer-events: none; user-select: none; -webkit-user-select: none; }
 #touch-controls button, .touch-stick { pointer-events: auto; touch-action: none; -webkit-touch-callout: none; }
-#touch-controls button { min-width: 44px; min-height: 44px; border: 2px solid #fffaf0bc; border-radius: 12px; background: #0b0a16b8; color: var(--paper); padding: 8px; font-size: 12px; }
-#touch-controls button[data-pressed="true"] { background: var(--yellow); color: var(--ink); border-color: var(--yellow); }
-#touch-controls button span { display: block; font-size: 10px; opacity: .85; }
-.touch-stick { position: absolute; width: 112px; height: 112px; border: 2px solid #fffaf09c; border-radius: 50%; background: #0b0a166e; display: grid; place-items: center; }
+/* Ink-and-paper chips: ink fill, thin paper keyline, Impact capitals and a hard magenta offset shadow. */
+#touch-controls button { min-width: 44px; min-height: 44px; border: 1.5px solid var(--paper); border-radius: 0; background: var(--ink); color: var(--paper); padding: 6px 10px; font: 900 11px/1.1 Impact, "Arial Black", Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; box-shadow: 3px 3px 0 #c2185b; }
+#touch-controls button[data-pressed="true"] { background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 1px 1px 0 #c2185b; transform: translate(2px, 2px); }
+#touch-controls button span { display: block; margin-top: 2px; font-size: 8.5px; letter-spacing: .08em; color: var(--cyan); }
+#touch-controls button[data-pressed="true"] span { color: var(--ink); }
+/* Sprint, Jump, Use and the menu: a small skewed chip drawn inside a transparent 44 px touch target. */
+#touch-controls .touch-primary button { position: relative; }
+#touch-controls .touch-primary button { isolation: isolate; background: transparent; border: 0; box-shadow: none; padding: 0 13px; }
+#touch-controls .touch-primary button::before {
+  content: ""; position: absolute; z-index: -1; inset: 7px 3px;
+  background: var(--ink); border: 1.5px solid var(--paper);
+  box-shadow: 0 0 0 2px var(--ink), 2px 2px 0 2px #c2185b;
+  transform: skewX(-9deg);
+}
+#touch-controls .touch-primary button[data-pressed="true"] { background: transparent; box-shadow: none; }
+#touch-controls .touch-primary button[data-pressed="true"]::before { background: var(--yellow); box-shadow: 0 0 0 2px var(--ink), 1px 1px 0 2px #c2185b; }
+#touch-controls #touch-menu { padding: 0 15px; font-size: 15px; letter-spacing: 0; }
+/* Sticks: a paper ring inside an ink ring around a halftone-dot fill. */
+.touch-stick { position: absolute; width: 96px; height: 96px; border: 2px solid var(--paper); border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle, #fffaf03d 0 1.1px, transparent 1.6px) 0 0 / 6px 6px, #0b0a1673;
+  box-shadow: 0 0 0 2px var(--ink); }
 .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom)); }
-.look-stick { right: max(164px, calc(env(safe-area-inset-right) + 148px)); bottom: max(22px, env(safe-area-inset-bottom)); border-style: dashed; }
-.stick-knob { width: 44px; height: 44px; border: 2px solid var(--yellow); border-radius: 50%; background: #ffe33f80; transform: translate(var(--stick-x, 0px), var(--stick-y, 0px)); }
-.stick-label { position: absolute; bottom: 10px; font-size: 9px; letter-spacing: 1px; font-weight: 900; text-shadow: 0 1px 3px #000; pointer-events: none; }
+.look-stick { right: max(176px, calc(env(safe-area-inset-right) + 160px)); bottom: max(22px, env(safe-area-inset-bottom)); }
+.look-stick[data-pressed="true"] { border-color: var(--cyan); background: radial-gradient(circle, #14d8f852 0 1.1px, transparent 1.6px) 0 0 / 6px 6px, #0b0a1673; }
+.stick-knob { width: 36px; height: 36px; border: 2px solid var(--ink); border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 1.5px var(--paper), 2px 2px 0 1.5px #c2185b; transform: translate(var(--stick-x, 0px), var(--stick-y, 0px)); }
+/* The stick name is a small caption tag inside the bottom of the ring. */
+.stick-label { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); isolation: isolate; padding: 2px 6px 1px; color: var(--paper); font: 900 8px/1 Impact, "Arial Black", Arial, sans-serif; letter-spacing: .08em; white-space: nowrap; pointer-events: none; }
+.stick-label::before { content: ""; position: absolute; z-index: -1; inset: 0; background: var(--ink); border: 1px solid var(--paper); transform: skewX(-9deg); }
 /* While a thumb holds the move stick, hide it so it does not cover the game. */
 .move-stick { transition: opacity .15s; }
 .move-stick[data-pressed="true"] { opacity: 0; }
-.look-cross { color: #fffaf099; font-size: 32px; pointer-events: none; }
-.touch-primary { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, 62px); gap: 6px; }
-#touch-menu { font-size: 18px; }
-.touch-exit { position: absolute; top: 10px; left: max(12px, env(safe-area-inset-left)); }
+.look-cross { color: #fffaf0cc; font: 900 26px/1 Impact, "Arial Black", Arial, sans-serif; text-shadow: 2px 2px 0 var(--ink); pointer-events: none; }
+.look-stick[data-pressed="true"] .look-cross { color: var(--cyan); }
+.touch-primary { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, auto); gap: 6px 8px; }
 .touch-input { height: 100dvh; overflow: hidden; }
 .touch-input main { min-height: 0; }
 .touch-input header { gap: 8px; padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); }
@@ -61,40 +80,37 @@ footer p { margin: 0; }
 @media (max-width: 550px) {
   .move-stick, .look-stick { bottom: max(92px, calc(env(safe-area-inset-bottom) + 76px)); }
   .look-stick { right: max(16px, env(safe-area-inset-right)); }
-  .touch-primary { left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); grid-template-columns: repeat(4, 1fr); bottom: max(16px, env(safe-area-inset-bottom)); }
+  .touch-primary { left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); grid-template-columns: repeat(4, auto); justify-content: center; column-gap: 10px; bottom: max(16px, env(safe-area-inset-bottom)); }
+  #touch-controls .touch-primary button span { display: inline; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
   .touch-input footer { display: none; }
   .touch-input .brand strong { font-size: 14px; }
-  .touch-stick { width: 100px; height: 100px; }
+  .touch-stick { width: 92px; height: 92px; }
   .look-stick { right: max(16px, env(safe-area-inset-right)); bottom: max(140px, calc(env(safe-area-inset-bottom) + 118px)); }
 
   /* Fill retains every native HUD pixel; wide displays stretch the 16:9 stream. */
   .touch-input #frame:fullscreen #video video { object-fit: fill; }
-  .touch-input #frame:fullscreen .touch-stick { width: 72px; height: 72px; }
-  .touch-input #frame:fullscreen .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: calc(35% + 8px); }
-  .touch-input #frame:fullscreen .stick-label { font-size: 8px; letter-spacing: 0; white-space: nowrap; }
-  .touch-input #frame:fullscreen .look-stick { right: max(16px, env(safe-area-inset-right)); top: auto; bottom: calc(35% + 8px); }
+  .touch-input #frame:fullscreen .touch-stick { width: 76px; height: 76px; }
+  .touch-input #frame:fullscreen .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: calc(35% + 4px); }
+  .touch-input #frame:fullscreen .stick-label { font-size: 7.5px; letter-spacing: .04em; }
+  .touch-input #frame:fullscreen .look-stick { right: max(16px, env(safe-area-inset-right)); top: auto; bottom: calc(35% + 4px); }
   .touch-input #frame:fullscreen .touch-primary {
-    right: auto; left: 38%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
-    grid-template-columns: repeat(4, 64px); gap: 6px;
+    right: auto; left: 42%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(4, auto); gap: 6px;
   }
-  .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 4px; font-size: 11px; }
-  .touch-input #frame:fullscreen .touch-exit {
-    top: max(4px, env(safe-area-inset-top)); left: calc(59% - 138px); width: 52px; min-width: 52px;
-    min-height: 44px; padding: 2px; font-size: 9px;
-  }
+  .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 0 10px; font-size: 10.5px; }
 }
 
 /* Phone crew picker: eight crew members in two columns, opened from the menu. */
-.crew-picker { position: absolute; top: 10px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
+.crew-picker { position: absolute; z-index: 1; top: 10px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
 #touch-controls .crew-picker button { min-height: 44px; font-size: 11px; text-align: left; }
 #touch-controls .crew-picker .crew-close { grid-column: 1 / -1; text-align: center; }
 
 /* Phones held upright with a 16:9 frame: the game sits at the top and the sticks below it, clear of the map and mission text. */
 @media (orientation: portrait) and (max-width: 700px) {
   .touch-input #video { top: 0; bottom: auto; height: min(calc(100vw * 9 / 16), 100%); }
-  .touch-input .touch-stick { width: 100px; height: 100px; }
+  .touch-input .touch-stick { width: 96px; height: 96px; }
   .touch-input .move-stick, .touch-input .look-stick { bottom: max(72px, calc(env(safe-area-inset-bottom) + 60px)); }
 }
 
@@ -102,14 +118,12 @@ footer p { margin: 0; }
 .touch-input[data-state="playing"] footer { display: none; }
 /* A tall frame from the game fills the play area, and every control sits in its bottom 40%, under the game's HUD: one row of buttons with the sticks above it. */
 .touch-input.portrait-stream #video { top: 0; bottom: 0; height: auto; }
-.touch-input.portrait-stream #touch-controls button { background: #0b0a1699; }
-.touch-input.portrait-stream .touch-primary { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); grid-template-columns: repeat(4, 1fr); }
-/* The sticks shrink on short phones (down to 64 px) so the controls stay inside the bottom 40% the game keeps clear. */
+.touch-input.portrait-stream .touch-primary { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); grid-template-columns: repeat(4, auto); justify-content: center; column-gap: 10px; }
+.touch-input.portrait-stream #touch-controls .touch-primary button span { display: inline; }
+/* The sticks shrink on short phones (down to 76 px) so the controls stay inside the bottom 40% the game keeps clear. */
 .touch-input.portrait-stream #frame { container-type: size; }
-.touch-input.portrait-stream .touch-stick { --stick: clamp(64px, calc(40cqh - 70px), 100px); width: var(--stick); height: var(--stick); }
-.touch-input.portrait-stream .stick-label { font-size: 8px; letter-spacing: 0; white-space: nowrap; }
+.touch-input.portrait-stream .touch-stick { --stick: clamp(76px, calc(40cqh - 70px), 96px); width: var(--stick); height: var(--stick); }
 .touch-input.portrait-stream .move-stick, .touch-input.portrait-stream .look-stick { bottom: max(66px, calc(env(safe-area-inset-bottom) + 54px)); }
 .touch-input.portrait-stream .look-stick { right: max(16px, env(safe-area-inset-right)); }
 /* The open crew list sits above the sticks so they cannot take its taps. */
-.touch-input.portrait-stream .crew-picker { top: auto; bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px)); z-index: 1; }
-.touch-input.portrait-stream .touch-exit { top: auto; bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px)); }
+.touch-input.portrait-stream .crew-picker { top: auto; bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px)); }
