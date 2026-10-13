@@ -13,3 +13,6 @@
 /* The game buttons send keys through the touch controls, which only run while playing on a touch screen. */
 .menu-game { display: none; }
 .touch-input[data-state="playing"] .menu-game { display: block; }
+/* In fullscreen the header is out of view, so the title screen gets its own menu button. */
+.overlay-menu { display: none; position: absolute; top: 12px; right: 12px; z-index: 1; min-height: 44px; }
+#frame:fullscreen .overlay-menu { display: block; }

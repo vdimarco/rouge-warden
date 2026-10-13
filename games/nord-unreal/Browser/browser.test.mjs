@@ -103,8 +103,11 @@ try {
   for (const id of ['streamer', 'mute', 'fullscreen', 'disconnect']) assert.equal(await page.locator(`#${id}`).isVisible(), true);
   assert.equal(await page.locator('.menu-game').isHidden(), true, 'game buttons show only while playing on a touch screen');
   await page.screenshot({ path: '.qa/menu-1280.png' });
+  assert.equal(await page.locator('#overlay').evaluate(overlay => overlay.inert), true, 'the title screen under the menu is out of reach');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#menu').isHidden(), true, 'Escape closes the menu');
+  assert.equal(await page.locator('#overlay').evaluate(overlay => overlay.inert), false);
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'menu-toggle', 'focus returns to the menu button');
   // Start screen: three story panels, then the crew choice; each layout fits without sideways scrolling.
   for (const [width, height] of [[360, 800], [800, 360], [1280, 720]]) {
     await page.setViewportSize({ width, height });
@@ -210,6 +213,8 @@ try {
   await phonePage.locator('#crew-toggle').click();
   assert.equal(await phonePage.locator('#crew-picker').isVisible(), true, 'Crew opens the crew list');
   assert.equal(await phonePage.locator('#menu').isHidden(), true);
+  await phonePage.locator('#crew-close').click();
+  assert.equal(await phonePage.locator('#crew-picker').isHidden(), true, 'Close shuts the crew list');
   await phonePage.evaluate(() => {
     document.body.dataset.state = 'disconnected';
     document.querySelector('#overlay').hidden = false;

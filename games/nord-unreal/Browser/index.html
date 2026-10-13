@@ -43,6 +43,7 @@
           <button data-key="54">6 · LIME JACKET</button>
           <button data-key="55">7 · SKULL SHIRT</button>
           <button data-key="56">8 · TOPKNOT</button>
+          <button id="crew-close" class="crew-close" type="button">Close</button>
         </div>
         <div class="touch-stick move-stick" data-stick="move" role="group" aria-label="Movement and steering touch stick">
           <span class="stick-knob"></span><span class="stick-label">MOVE / DRIVE</span>
@@ -58,6 +59,8 @@
         </div>
       </div>
       <section id="overlay" aria-labelledby="status-title">
+        <!-- In fullscreen the header is out of view; this button keeps the menu reachable. -->
+        <button id="overlay-menu" class="overlay-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu">☰ Menu</button>
         <div class="hero">
           <p class="hero-title">GTA: NORTH</p>
           <p class="hero-tagline">EIGHT FRIENDS. TWO CITIES. ZERO CHILL.</p>

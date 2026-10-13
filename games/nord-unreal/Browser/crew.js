@@ -40,6 +40,7 @@ function sendChoice() {
 
 toggle.addEventListener('click', () => setOpen(picker.hidden));
 // Close after a choice and keep it for the next connection; touch-controls.js has already sent the key.
+document.getElementById('crew-close').addEventListener('click', () => setOpen(false));
 picker.addEventListener('click', event => {
   const button = event.target.closest('button[data-key]');
   if (!button) return;

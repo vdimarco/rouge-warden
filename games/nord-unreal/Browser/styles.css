@@ -77,8 +77,8 @@ footer p { margin: 0; }
   .touch-input #frame:fullscreen .stick-label { font-size: 8px; letter-spacing: 0; white-space: nowrap; }
   .touch-input #frame:fullscreen .look-stick { right: max(16px, env(safe-area-inset-right)); top: auto; bottom: calc(35% + 8px); }
   .touch-input #frame:fullscreen .touch-primary {
-    right: auto; left: 42%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
-    grid-template-columns: repeat(4, 72px); gap: 6px;
+    right: auto; left: 38%; transform: translateX(-50%); bottom: max(16%, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(4, 64px); gap: 6px;
   }
   .touch-input #frame:fullscreen .touch-primary button { min-height: 44px; padding: 4px; font-size: 11px; }
   .touch-input #frame:fullscreen .touch-exit {
@@ -90,6 +90,7 @@ footer p { margin: 0; }
 /* Phone crew picker: eight crew members in two columns, opened from the menu. */
 .crew-picker { position: absolute; top: 10px; right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(330px, calc(100% - 24px)); padding: 8px; background: #0b0a16e6; border: 2px solid var(--yellow); pointer-events: auto; }
 #touch-controls .crew-picker button { min-height: 44px; font-size: 11px; text-align: left; }
+#touch-controls .crew-picker .crew-close { grid-column: 1 / -1; text-align: center; }
 
 /* Phones held upright with a 16:9 frame: the game sits at the top and the sticks below it, clear of the map and mission text. */
 @media (orientation: portrait) and (max-width: 700px) {
