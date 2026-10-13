@@ -16,8 +16,10 @@ await build({
   target: ['chrome110', 'firefox115', 'safari17'],
   define: {
     NORD_SIGNALLING_URL: JSON.stringify(endpoint),
-    NORD_DEFAULT_STREAMER_ID: JSON.stringify(process.env.NORD_DEFAULT_STREAMER_ID || 'NordHost')
+    NORD_DEFAULT_STREAMER_ID: JSON.stringify(process.env.NORD_DEFAULT_STREAMER_ID || 'NordHost'),
+    // Tall phone frames need the game build with the tall HUD; NORD_PORTRAIT_STREAM=0 keeps 1280x720 for an older game build.
+    NORD_PORTRAIT_STREAM: JSON.stringify(process.env.NORD_PORTRAIT_STREAM !== '0')
   }
 });
-await Promise.all(['index.html', 'styles.css', 'hero.css', 'hero.js', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
+await Promise.all(['index.html', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'THIRD_PARTY_NOTICES.txt'].map(file => copyFile(file, `dist/${file}`)));
 console.log(`NORD browser player built (${endpoint ? 'signalling configured' : 'host offline'}).`);

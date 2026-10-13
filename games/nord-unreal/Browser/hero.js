@@ -70,11 +70,12 @@ portrait.addEventListener('change', () => {
   if (dialog.open) trailer.play().catch(() => {});
   else setHeroActive(heroActive);
 });
-// Follow the player's state without touching player.js: stop the trailer while the game plays.
+// Follow the player's state without touching player.js: stop the trailer while the game plays or the start screen is open.
+const wantHero = () => document.body.dataset.state !== 'playing' && !document.body.dataset.intro;
 const syncHero = () => {
-  const active = document.body.dataset.state !== 'playing';
+  const active = wantHero();
   if (active !== heroActive) setHeroActive(active);
 };
 pickSources();
-new MutationObserver(syncHero).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
-setHeroActive(document.body.dataset.state !== 'playing');
+new MutationObserver(syncHero).observe(document.body, { attributes: true, attributeFilter: ['data-state', 'data-intro'] });
+setHeroActive(wantHero());

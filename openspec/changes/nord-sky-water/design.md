@@ -89,7 +89,7 @@ Namespace `QuebecSky`. All angles in degrees unless a name says otherwise.
   - Rain sound: a procedural 22,050 Hz mono wave of filtered noise, volume from rain intensity, following the car audio pattern.
   - Worklight: `AQuebecSky::LightScale(World)` returns `clamp(8 × ExposureScale, .03, 1)` or 1 when no sky exists. The campaign multiplies its 300,000 cd worklight by it.
 - **Post-process on each local player.** `AQuebecController::PlayerTick` sets overrides on the view-target cameras, next to the comic blendable: auto-exposure min and max brightness = 12.5 + `ExposureOffset`, saturation, contrast and white temperature. When no sky exists, it clears only the overrides it set, so the level volume applies unchanged.
-- **HUD.** One line under the top-right controls line: `"%02d:%02d · %s"` (clock and weather name), muted colour, scale .85, only when a sky exists.
+- **HUD.** One line inside the top-right map panel, under the map and above the map credits: `"%02d:%02d · %s"` (clock and weather name), at 1.15 × the credit size. The panel grows by that line only when a sky exists, so with the sky pinned the HUD layout is unchanged. (The first version sat under the controls line; the merged `main` moved the radar there.)
 
 ## Material authoring (`Scripts/plateau_atmosphere.py`, `Scripts/plateau_water.py`)
 

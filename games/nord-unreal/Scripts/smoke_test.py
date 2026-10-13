@@ -274,6 +274,18 @@ def host_exited():
     return True
 
 
+def host_drive_hides_crew():
+    # The client drops the host's parked character after about 5 s; the replicated worn crew still hides that resident.
+    if elapsed() < 6:
+        return False
+    worn = {STATE[side + "_char"].get_editor_property("CrewStyle") for side in ("host", "client")}
+    for resident in actors(STATE["client"], "ParkResident"):
+        if not resident.actor_has_tag("CityCrowd"):
+            assert resident.get_editor_property("hidden") == (resident.get_editor_property("Style") in worn), \
+                "Client shows a resident wearing a player's crew member"
+    return True
+
+
 def missions_equal(index):
     return mission(STATE["server"]) == mission(STATE["client"]) == index
 
@@ -451,7 +463,9 @@ def crew_ready(style):
 
 step("two connected players in server and client worlds", begin, discover)
 WALK_START = u.Vector(*LAYOUT["car"]) + u.Vector(math.cos(math.radians(LAYOUT["car_yaw"])), math.sin(math.radians(LAYOUT["car_yaw"])), 0) * 1000
-for crew_style in (10, 3, 4, 5, 6, 7, 8, 9):
+step("client joins as a crew member the host is not playing", lambda: None, lambda: crew_ready(10))
+# C cycles the other seven styles and skips 9, which the host wears.
+for crew_style in (3, 4, 5, 6, 7, 8, 10):
     step(f"client selects supplied crew {crew_style}; appearance replicates independently", next_character, lambda style=crew_style: crew_ready(style))
 step("walking fixture reaches owning client", lambda: teleport(WALK_START), lambda: teleported(WALK_START))
 step("native client forward walking reaches authority", lambda: begin_foot_move("MoveForward"), foot_move_replicated)
@@ -520,6 +534,7 @@ step("listen host approaches the empty car",
      lambda: STATE["host_char"].set_actor_location(STATE["server_car"].get_actor_location() + u.Vector(0, -260, 0), False, True),
      lambda: distance(STATE["host_char"].get_actor_location(), STATE["server_car"].get_actor_location()) < 450)
 step("listen host interaction enters car", host_interact, host_entered)
+step("client keeps the driving host's crew member off the residents", lambda: None, host_drive_hides_crew)
 step("listen host interaction exits and restores character", host_interact, host_exited)
 step("teleport to a future objective", lambda: teleport(TARGETS[1]), lambda: teleported(TARGETS[1]))
 step("future mission interaction rejected", interact, reject_wrong_mission)
@@ -554,7 +569,11 @@ def residents_ready():
         else:
             assert sum(c.static_mesh is not None for c in a.get_components_by_class(u.StaticMeshComponent))==6
     if STATE.get('resident_client_world')!=STATE['client']:
-        crew=[a for a in saved if a.get_editor_property('Style')>=3]
+        worn={STATE[side+'_char'].get_editor_property('CrewStyle') for side in ('host','client')}
+        # A resident wearing a player's crew style is hidden and cannot be talked to.
+        for a in saved+ambient:
+            assert a.get_editor_property('hidden')==(a.get_editor_property('Style') in worn),'Player crew must not also walk as a resident'
+        crew=[a for a in saved if a.get_editor_property('Style')>=3 and a.get_editor_property('Style') not in worn]
         STATE['resident']=max(crew,key=lambda a:min(distance(a.get_actor_location(),b.get_actor_location()) for b in server if b!=a))
         STATE['resident_client_world']=STATE['client']
         # Distance culling deliberately skips remote poses; approach before recording a foot pose.
@@ -792,7 +811,7 @@ def tick(delta_seconds):
     STATE["ticking"] = True
     try:
         now = time.monotonic()
-        assert now - STATE["started"] < 110, "Timeout while testing: " + STEPS[max(STATE["step"], 0)][0]
+        assert now - STATE["started"] < 120, "Timeout while testing: " + STEPS[max(STATE["step"], 0)][0]
         if now < STATE.get("capture_until", 0) or (STATE.get("capture_path") and not STATE["capture_path"].exists()):
             return
         if STATE["step"] == -1:

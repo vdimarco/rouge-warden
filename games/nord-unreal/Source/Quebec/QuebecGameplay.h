@@ -69,6 +69,10 @@ public:
     virtual void BeginPlay() override;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=ApplyCrewAppearance) int32 CrewStyle = 9;
     void CycleCrew();
+    // Picks crew style 3-10. Returns false when another player already wears it.
+    bool ChooseCrew(int32 Style);
+    // True when a player character other than Except wears Style.
+    static bool IsCrewTaken(const UWorld* World, int32 Style, const AQuebecCharacter* Except = nullptr);
     virtual void Tick(float DeltaSeconds) override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -172,6 +176,11 @@ public:
     static const FVector MissionLocations[MissionCount];
     static const TCHAR* MissionLabels[MissionCount];
     UPROPERTY(Replicated, BlueprintReadOnly) int32 MissionIndex = 0;
+    // Crew styles 3-10 that a player wears, one bit per style. The server sets it; clients cannot see every player character.
+    UPROPERTY(Replicated) int32 WornCrewMask = 0;
+    AQuebecGameState();
+    virtual void Tick(float DeltaSeconds) override;
+    bool IsCrewWorn(int32 Style) const { return Style >= 3 && Style <= 10 && (WornCrewMask & (1 << Style)) != 0; }
     static bool CanAdvanceMission(int32 Index, const FVector& Position);
     bool AdvanceMissionNear(const FVector& Position);
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -220,6 +229,9 @@ private:
     UFUNCTION(Server, Unreliable) void ServerCampaignAim(float Yaw, float Pitch);
     UFUNCTION() void NextCharacter();
     UFUNCTION(Server, Reliable) void ServerNextCharacter();
+    // Keys 1-8 pick crew styles 3-10 directly.
+    void ChooseCrewKey(int32 Slot);
+    UFUNCTION(Server, Reliable) void ServerChooseCrew(int32 Style);
     UFUNCTION() void ToggleComicStyle();
     void ApplyComicStyle();
     void ApplySkyGrading();

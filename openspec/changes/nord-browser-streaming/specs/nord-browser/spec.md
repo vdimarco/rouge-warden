@@ -85,3 +85,88 @@ The player page SHALL present the GTA: NORTH trailer on its title screen without
 #### Scenario: Game starts playing
 - **WHEN** the stream reaches the playing state
 - **THEN** the background trailer is hidden and paused so its sound and video do not compete with the game
+
+### Requirement: Phone controls do not hide the map
+On a touch screen, the move stick and the game's map SHALL NOT cover each other.
+
+#### Scenario: Player moves with the touch stick
+- **WHEN** a player holds the move stick on a phone
+- **THEN** the stick becomes invisible while held and shows again on release, and movement input continues while it is hidden
+
+#### Scenario: Player looks at the map
+- **WHEN** the game draws its HUD map on any screen
+- **THEN** the map sits in the top-right corner under the name and player count, clear of the lower-left move stick, and the bottom prompts start at the left margin
+
+### Requirement: Each crew member appears once
+A crew member SHALL appear in the game either as one player's character or as residents, never both, and each player SHALL choose their own crew member.
+
+#### Scenario: Player plays a crew member
+- **WHEN** a player wears a crew style, on foot or parked while driving, near the other player or far from them
+- **THEN** every resident with that style is hidden and cannot be talked to on all machines, and reappears once no player wears it
+- **AND** the server shares the worn styles through the game state, because a client does not see a far or parked player character
+
+#### Scenario: Second player joins
+- **WHEN** a player joins while another player wears the default style
+- **THEN** the new player starts as a crew member nobody else is playing
+
+#### Scenario: Player chooses a crew member
+- **WHEN** a player presses 1-8, or taps Crew and picks a name on a phone
+- **THEN** their character becomes that crew member, unless the other player already is, in which case the game says so and nothing changes
+- **AND** C still steps to the next free crew member and skips the one the other player wears
+
+### Requirement: Start screen with story and crew choice
+The title screen SHALL offer Start, which opens a short story and then a crew choice, and connects to the game in the background meanwhile.
+
+#### Scenario: First visit
+- **WHEN** a player taps Start for the first time
+- **THEN** three comic story panels show one after another, with Next and Skip story, then the eight crew members with portraits and names
+- **AND** the title trailer stops behind the start screen, and the start screen shows the connection state
+
+#### Scenario: Player picks a crew member
+- **WHEN** the player picks a crew member and taps Play as that crew member
+- **THEN** the start screen closes, the stream starts at once if the game is ready (otherwise the status card shows Play with sound when it is), and once the stream plays the page presses the matching key 1-8 once for that connection: on a touch screen through the touch key buttons, on a computer once the mouse is captured
+- **AND** the choice is kept for the next visit, which goes straight to the crew choice; Story replays the panels
+
+#### Scenario: Pictures stay light
+- **WHEN** the page loads
+- **THEN** no story or crew picture loads until Start is pressed, about 300 KB in all
+
+### Requirement: Phone held upright plays a tall game
+On a touch screen in portrait, the game SHALL render a tall frame shaped like the play area, with its HUD in the top 60% and every touch control in the bottom 40%.
+
+#### Scenario: Player holds the phone upright
+- **WHEN** a phone is in portrait while playing
+- **THEN** the page asks the game for a frame of the play area's shape (720 wide up to 9:16, otherwise 1280 high and narrower, never more pixels than 1280x720), and once the game sends it the frame fills the play area
+- **AND** the footer hides, and the touch buttons sit in two rows at the bottom with the sticks above them, all in the bottom 40%; on short phones the sticks shrink (not below 64 px), and the open crew list sits above the sticks
+
+#### Scenario: Game draws its HUD on a tall frame
+- **WHEN** the game's frame is taller than it is wide
+- **THEN** the mission card sits top left and the map top right with its credits, the caption and then the action prompt stack under them so the middle of the view stays clear for the player, keyboard hints and the exit-car prompt are left out, and in a car the speed sits at the left just above the bottom 40%
+- **AND** the camera keeps its field of view on the longer side, so the tall view does not stretch
+
+#### Scenario: Player turns the phone sideways or uses a computer
+- **WHEN** the play area is wider than tall, or the browser is on a computer
+- **THEN** the page asks for the standard 1280x720 frame and the existing landscape layout and HUD apply
+
+#### Scenario: The game sends a 16:9 frame to a phone held upright
+- **WHEN** the game build or host does not honor the request
+- **THEN** the 16:9 picture sits at the top of the play area under the small buttons, with the sticks below it
+
+### Requirement: One menu for stream and game buttons
+The page SHALL keep only the title and a menu button at the top, and SHALL offer the player slot, sound, fullscreen and disconnect, and while playing on a touch screen the crew, recover, race replay and comic view buttons, in one menu.
+
+#### Scenario: Player opens the menu
+- **WHEN** a player taps ☰ Menu in the header, or ☰ next to Sprint, Jump and Use while playing on a touch screen
+- **THEN** the menu opens over the game, also in fullscreen, and closes with Close, Escape, a tap outside it or any choice
+
+#### Scenario: Player uses a game button in the menu
+- **WHEN** a player taps Recover, Race replay or Comic view in the menu
+- **THEN** the page presses the matching key once (R, T or F2) for 120 ms, and Crew opens the crew list
+
+#### Scenario: Page asks the player to choose a slot
+- **WHEN** the page is in the selecting state
+- **THEN** the menu opens with the player list, and closes when the game starts playing
+
+#### Scenario: Player plays on a touch screen
+- **WHEN** the game is playing on a touch screen
+- **THEN** the header hides, and no button row sits at the top of the game

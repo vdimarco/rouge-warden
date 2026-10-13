@@ -27,7 +27,7 @@ The game SHALL run a shared clock in which a full day takes 40 real minutes by d
 - **THEN** the game starts in the mid-afternoon of a mid-October day
 - **AND** the sun sets in the west after about six real minutes, with a coloured sky and longer shadows when the weather is clear or breezy
 - **AND** street lamps, windows and headlights come on as the light goes, and the scene stays readable at night under moonlight and lamps
-- **AND** the top-right HUD shows the time and weather under the controls line.
+- **AND** the top-right map panel shows the time and weather under the map, above the map credits.
 
 #### Scenario: Join at night
 - **WHEN** a friend joins a session after dark

@@ -80,8 +80,9 @@ async function advancingMedia(label) {
   const before = await media();
   await page.waitForTimeout(1200);
   const after = await media();
-  assert.equal(after.width, 1280, 'native stream width');
-  assert.equal(after.height, 720, 'native stream height');
+  // The page asks for 1280x720, or for a tall frame on a phone held upright.
+  const wanted = await page.evaluate(() => document.body.dataset.streamSize || '1280x720');
+  assert.equal(`${after.width}x${after.height}`, wanted, 'native stream size');
   assert.ok(after.readyState > 2 && after.currentTime > before.currentTime,
     'the real video element must advance');
   assert.ok(after.framesDecoded > before.framesDecoded && after.videoBytes > before.videoBytes,
@@ -114,7 +115,7 @@ function frameDifference(before, after) {
 
 async function layout(name) {
   const geometry = await page.evaluate(() => {
-    const names = ['[data-stick="move"]', '[data-stick="look"]', ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const names = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
       visible: !document.querySelector('#touch-controls').hidden,
@@ -146,16 +147,16 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]',
-      ...['16', '32', '69', '67', '82', '84', '113'].map(key => `[data-key="${key}"]`)];
+    const selectors = ['#touch-exit-fullscreen', '[data-stick="move"]', '[data-stick="look"]', '#touch-menu',
+      ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
     const video = document.querySelector('#video video');
     const image = bounds(video);
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
-      ['radar and credits', 0, 480, 280, 240], ['objective', 790, 470, 490, 160],
+      ['radar and credits', 1018, 96, 262, 212], ['objective', 790, 470, 490, 160],
       ['speed', 1040, 620, 240, 100], ['prompt', 400, 620, 640, 100],
-      ['completion', 490, 150, 310, 100], ['movement hint', 280, 620, 340, 40]
+      ['completion', 490, 150, 310, 100], ['movement hint', 22, 620, 340, 40]
     ].map(([name, x, y, width, height]) => ({ name,
       x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
       width: width * image.width / 1280, height: height * image.height / 720 }));
@@ -211,11 +212,17 @@ async function releaseAllTouches() {
   await touch('touchCancel', []);
 }
 
+// The player, fullscreen, disconnect and game buttons live in the menu (☰).
+async function openMenu() {
+  if (await page.locator('#menu').isHidden()) await page.locator('[data-menu-toggle]:visible').first().click();
+}
+
 async function connectFriend() {
   await page.locator('#connect').tap();
   await page.waitForFunction(() => [...document.querySelector('#streamer').options]
     .some(option => option.value === 'NordFriend1'));
   if (await page.locator('#streamer').inputValue() !== 'NordFriend1') {
+    await openMenu();
     await page.locator('#streamer').selectOption('NordFriend1');
   }
   try {
@@ -233,12 +240,27 @@ async function connectFriend() {
   }
   assert.equal(await page.locator('#streamer').inputValue(), 'NordFriend1');
   await page.locator('#play').tap();
-  await page.waitForFunction(() => {
-    const video = document.querySelector('#video video');
-    return document.body.dataset.state === 'playing' && video?.readyState > 2 &&
-      video.videoWidth === 1280 && video.videoHeight === 720;
-  });
+  await page.waitForFunction(() => document.body.dataset.state === 'playing');
   return true;
+}
+
+// The page asks the game for a frame shaped like the play area on a phone held upright, else 1280x720.
+async function streamSettled() {
+  try {
+    await page.waitForFunction(() => {
+      const video = document.querySelector('#video video');
+      const size = document.body.dataset.streamSize;
+      return size && video?.readyState > 2 && `${video.videoWidth}x${video.videoHeight}` === size;
+    }, null, { timeout: 20000 });
+  } catch {
+    const state = await page.evaluate(() => {
+      const video = document.querySelector('#video video');
+      return { asked: document.body.dataset.streamSize, got: `${video?.videoWidth}x${video?.videoHeight}` };
+    });
+    throw new Error(`The game did not send the requested frame (asked ${state.asked}, got ${state.got}). ` +
+      'Check that the host accepts Pixel Streaming resolution commands, or build the page with NORD_PORTRAIT_STREAM=0.');
+  }
+  report.media.streamSize = await page.evaluate(() => document.body.dataset.streamSize);
 }
 
 try {
@@ -290,8 +312,30 @@ try {
   assert.deepEqual(report.logging.context, { level: 2, stack: false }, 'production logger suppresses info/debug and stacks');
 
   if (await connectFriend()) {
+    await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));
     await check('portrait controls fit and meet target size', () => layout('portrait'));
+    await check('a phone held upright gets a tall game frame with every control in its bottom 42%', async () => {
+      const geometry = await page.evaluate(() => {
+        const box = selector => document.querySelector(selector).getBoundingClientRect();
+        const video = document.querySelector('#video video');
+        const frame = box('#frame');
+        const controls = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
+          .map(selector => ({ selector, top: box(selector).top }));
+        return { portraitStream: document.body.classList.contains('portrait-stream'), width: video.videoWidth, height: video.videoHeight,
+          frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
+      });
+      report.input.portraitStream = geometry;
+      if (await page.evaluate(() => document.body.dataset.streamSize) === '1280x720') {
+        report.input.portraitStream.note = 'Not requested: this page was built with NORD_PORTRAIT_STREAM=0.';
+        return;
+      }
+      assert.ok(geometry.portraitStream && geometry.height > geometry.width, 'the game must send a tall frame');
+      assert.ok(Math.abs(geometry.video - geometry.frame.height) <= 1, 'the tall frame must fill the play area');
+      for (const control of geometry.controls) {
+        assert.ok(control.top >= geometry.frame.top + geometry.frame.height * .58, `${control.selector} must sit under the game HUD`);
+      }
+    });
     await check('simultaneous move, look and jump use the native data channel', async () => {
       const beforeFrame = await framePixels();
       const since = (await sends()).length;
@@ -332,7 +376,10 @@ try {
     });
     await check('landscape controls fit and fullscreen exit works', async () => {
       await page.setViewportSize({ width: 800, height: 360 });
+      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720');
+      await streamSettled();
       await layout('landscape');
+      await openMenu();
       await page.locator('#fullscreen').tap();
       await page.waitForFunction(() => Boolean(document.fullscreenElement));
       await page.waitForFunction(() => !document.querySelector('#touch-exit-fullscreen').hidden);
@@ -346,6 +393,7 @@ try {
       assert.equal(await page.locator('#touch-exit-fullscreen').isVisible(), false);
       await page.setViewportSize({ width: 667, height: 375 });
       await layout('narrowLandscape');
+      await openMenu();
       await page.locator('#fullscreen').tap();
       await page.waitForFunction(() => Boolean(document.fullscreenElement));
       await page.waitForFunction(() => !document.querySelector('#touch-exit-fullscreen').hidden);
@@ -354,8 +402,8 @@ try {
       await page.locator('#touch-exit-fullscreen').tap();
       await page.waitForFunction(() => !document.fullscreenElement);
     });
-    await check('action buttons support keyboard activation without duplicate touch clicks', async () => {
-      const comic = page.locator('[data-key="113"]'); // Native F2 toggles Comic view.
+    await check('menu game buttons support keyboard activation without duplicate touch clicks', async () => {
+      const comic = page.locator('[data-send="113"]'); // Comic view in the menu presses native F2.
       const activationPackets = async since => (await sends()).slice(since)
         .filter(record => [60, 61].includes(record.id) && record.bytes[1] === 113 && record.readyState === 'open');
       const assertSinglePulse = async (since, label) => {
@@ -368,10 +416,12 @@ try {
         return packets;
       };
       const keyboardStart = (await sends()).length;
+      await openMenu();
       await comic.focus();
       await page.keyboard.press('Enter');
       const keyboard = await assertSinglePulse(keyboardStart, 'keyboard activation');
       const touchStart = (await sends()).length;
+      await openMenu();
       await comic.tap();
       const tapPackets = await assertSinglePulse(touchStart, 'touch tap');
       report.input.comicActivation = { keyboard, touch: tapPackets };
@@ -387,6 +437,7 @@ try {
       await waitForPacket(60, 87, since);
       await waitForPacket(60, 16, since);
       const beforeDisconnect = (await sends()).length;
+      await openMenu();
       await page.locator('#disconnect').click();
       await page.waitForFunction(() => document.body.dataset.state === 'disconnected');
       const after = (await sends()).slice(beforeDisconnect);
@@ -414,7 +465,10 @@ try {
   try {
     if (page) await page.evaluate(() => document.fullscreenElement && document.exitFullscreen());
     if (page && ['playing', 'ready', 'connecting'].includes(await page.locator('body').getAttribute('data-state')) &&
-      await page.locator('#disconnect').isEnabled()) await page.locator('#disconnect').click({ timeout: 1500 });
+      await page.locator('#disconnect').isEnabled()) {
+      await openMenu();
+      await page.locator('#disconnect').click({ timeout: 1500 });
+    }
   } catch (error) { report.cleanupError = error.message; }
   await context?.close();
   await browser?.close();
