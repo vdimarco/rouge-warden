@@ -430,7 +430,7 @@
   },
   "finalService": "ActiveState=active\nCPUWeight=400",
   "followup_2026_10_13": {
-    "status": "native services restored; tested public player staged, awaiting deployment approval",
+    "status": "merged, deployed and verified on the production alias",
     "host_reboot": true,
     "source_checkout_commit": "752189a430c819e1ae68edfd29bc95c300f8267b",
     "latest_main_commit": "54a86fe801ee05e251a9bf60d105a3dcc8e3f0f6",
@@ -475,14 +475,14 @@
     },
     "unit_tests": {
       "candidate": 17,
-      "performance_workspace": 13
+      "performance_workspace": 13,
+      "merged_browser_suite": 18
     },
     "limitations": [
-      "not deployed",
-      "public URL still targets expired tunnel",
       "physical phone/carrier/audio/driving unverified",
       "temporary services still do not survive reboot",
-      "no claim of exclusive GPU allocation or sustained performance improvement from the new desktop changes"
+      "no claim of exclusive GPU allocation or sustained performance improvement from the new desktop changes",
+      "camera-angle behavior is unchanged"
     ],
     "simultaneous_direct_samples": [
       {
@@ -503,6 +503,19 @@
         "longest_gap_ms": 66.8,
         "report": "Saved/BrowserStreaming/samples/2026-10-13T18-40-34-278Z-NordFriend1/sample.json"
       }
-    ]
+    ],
+    "merged_pr": "https://github.com/vdimarco/rouge-warden/pull/338",
+    "merged_commit": "d45e2e47a5518b48ab29de4f468525bbf7217399",
+    "production": {
+      "id": "dpl_FYQAQ4mbiKNSKeQyMQ77hLTZPgyB",
+      "state": "READY",
+      "url": "https://nord-montreal.vercel.app/",
+      "static_files_matched": 12,
+      "live_checks": 7,
+      "live_report": "Browser/.qa/live-2026-10-13T19-01-48-322Z/summary.json",
+      "mobile_checks": 11,
+      "mobile_report": "Browser/.qa/mobile-2026-10-13T19-02-34-114Z/summary.json"
+    },
+    "quality_constraint": "existing native quality, 75% screen percentage, 30 FPS cap, 1280x720 landscape and tall phone frames retained"
   }
 }
