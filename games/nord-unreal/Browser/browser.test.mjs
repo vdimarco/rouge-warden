@@ -247,21 +247,20 @@ try {
   });
   assert.equal(await phonePage.locator('header').isHidden(), true, 'the header hides while playing on a phone');
   // Compact comic chips stay bottom-right inside 44 px touch targets.
-  const chips = await phonePage.evaluate(() => [...document.querySelectorAll('.touch-primary button')].map(button => {
+  const buttons = await phonePage.locator('.touch-primary button').evaluateAll(elements => elements.map(button => {
     const box = button.getBoundingClientRect();
-    const chip = getComputedStyle(button, '::before');
-    return { top: box.top, left: box.left, right: box.right, height: box.height,
-      chip: box.height - parseFloat(chip.top) - parseFloat(chip.bottom) };
+    return { top: box.top, left: box.left, right: box.right, width: box.width, height: box.height,
+      border: parseFloat(getComputedStyle(button).borderTopWidth), background: getComputedStyle(button).backgroundColor };
   }));
-  assert.equal(chips.length, 4);
-  for (const chip of chips) {
-    assert.ok(chip.height >= 44 && chip.chip <= 32, `each button is a 44 px target with a small chip (${chip.height}, ${chip.chip})`);
-    assert.equal(chip.top, chips[0].top, 'the chips sit in one row');
-    assert.ok(chip.chip <= 24, 'the visible chips are compact');
+  assert.equal(buttons.length, 4);
+  assert.equal(new Set(buttons.map(button => button.top)).size, 2, 'two rows');
+  assert.equal(new Set(buttons.map(button => button.left)).size, 2, 'two columns');
+  for (const button of buttons) {
+    assert.ok(button.width >= 76 && button.height >= 56, 'large thumb targets');
+    assert.ok(button.border > 0 && button.background !== 'rgba(0, 0, 0, 0)', 'full visible button faces');
   }
-  assert.ok(chips[0].left > 390 / 2 && Math.abs(chips.at(-1).right - (390 - 8)) <= 1, 'the compact row is anchored at the right edge');
-  const menuButton = await phonePage.locator('#touch-menu').boundingBox();
-  assert.ok(menuButton.width >= 44 && menuButton.height >= 44, 'the ☰ button is a >=44 px target');
+  assert.ok(buttons[0].left > 390 / 2 && Math.abs(buttons.at(-1).right - (390 - 12)) <= 1, 'bottom-right grid');
+  assert.equal(await phonePage.locator('[data-stick="look"]').count(), 0, 'image drag replaces the look pad');
   await phonePage.locator('#touch-menu').click();
   assert.equal(await phonePage.locator('.menu-game').isVisible(), true);
   await phonePage.screenshot({ path: '.qa/menu-390-playing.png' });

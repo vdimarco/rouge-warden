@@ -17,7 +17,7 @@ python3 games/nord-unreal/Scripts/browser_streaming.py self-check
 ps -eo pid,comm,args | rg 'UnrealEditor|/Binaries/Linux/Quebec'
 ```
 
-`Quebec.uproject` already enables `PixelStreaming2`. The streaming package belongs at `games/nord-unreal/Builds/Browser/Linux/Quebec.sh`. When it needs rebuilding, use the existing UE installation:
+`Quebec.uproject` already enables `PixelStreaming2`. The launcher passes `-NordTouchControls` so the native HUD reserves the lower corners for the movement stick and two-row action grid. The streaming package belongs at `games/nord-unreal/Builds/Browser/Linux/Quebec.sh`. When it needs rebuilding, use the existing UE installation:
 
 ```bash
 /home/von/.local/share/Epic/UE_5.8.3/Engine/Build/BatchFiles/RunUAT.sh BuildCookRun \

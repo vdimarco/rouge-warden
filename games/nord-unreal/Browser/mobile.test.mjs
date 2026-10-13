@@ -116,7 +116,7 @@ function frameDifference(before, after) {
 
 async function layout(name) {
   const geometry = await page.evaluate(() => {
-    const names = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
+    const names = ['[data-stick="move"]', '#touch-menu', ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
       visible: !document.querySelector('#touch-controls').hidden,
@@ -128,6 +128,11 @@ async function layout(name) {
       })
     };
   });
+  assert.equal(await page.locator('[data-stick="look"]').count(), 0, 'look pad is removed');
+  const actions = geometry.targets.filter(target => !target.selector.includes('data-stick'));
+  assert.equal(new Set(actions.map(target => target.y)).size, 2, 'actions occupy two rows');
+  assert.equal(new Set(actions.map(target => target.x)).size, 2, 'actions occupy two columns');
+  for (const target of actions) assert.ok(target.width >= 76 && target.height >= 56, 'large action buttons');
   assert.equal(geometry.visible, true, 'touch controls must be visible while playing');
   assert.equal(geometry.overflowX, false, 'no horizontal overflow');
   for (const target of geometry.targets) {
@@ -148,16 +153,16 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu',
+    const selectors = ['[data-stick="move"]', '#touch-menu',
       ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
     const video = document.querySelector('#video video');
     const image = bounds(video);
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
-      ['radar and credits', 1018, 96, 262, 212], ['objective', 790, 470, 490, 160],
-      ['speed digits and units', 1040, 624, 240, 39], ['prompt', 305, 620, 575, 100],
-      ['completion', 490, 150, 310, 100], ['movement hint', 22, 620, 340, 40]
+      ['radar and credits', 1018, 96, 240, 230], ['objective', 540, 22, 460, 170],
+      ['speed digits and units', 674, 624, 164, 74], ['prompt', 240, 620, 539, 100],
+      ['completion', 490, 150, 310, 100]
     ].map(([name, x, y, width, height]) => ({ name,
       x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
       width: width * image.width / 1280, height: height * image.height / 720 }));
@@ -167,15 +172,7 @@ async function fullscreenClearance(name) {
       targets: selectors.map(selector => {
         const element = document.querySelector(selector);
         const target = bounds(element);
-        let ink = target;
-        if (element.closest('.touch-primary')) {
-          const chip = getComputedStyle(element, '::before');
-          // Transparent hit targets may cover old keyboard hints; visible chips must clear the HUD.
-          ink = { x: target.x + parseFloat(chip.left), y: target.y + parseFloat(chip.top),
-            width: target.width - parseFloat(chip.left) - parseFloat(chip.right),
-            height: target.height - parseFloat(chip.top) - parseFloat(chip.bottom) };
-        }
-        return { selector, ...target, ink };
+        return { selector, ...target, ink: target };
       })
     };
   });
@@ -336,7 +333,7 @@ try {
         const box = selector => document.querySelector(selector).getBoundingClientRect();
         const video = document.querySelector('#video video');
         const frame = box('#frame');
-        const controls = ['[data-stick="move"]', '[data-stick="look"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
+        const controls = ['[data-stick="move"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
           .map(selector => ({ selector, top: box(selector).top }));
         return { portraitStream: document.body.classList.contains('portrait-stream'), width: video.videoWidth, height: video.videoHeight,
           frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
@@ -357,8 +354,8 @@ try {
       const since = (await sends()).length;
       const moveStart = finger(1, await center('[data-stick="move"]'));
       const moveForward = finger(1, await center('[data-stick="move"]', 0, -38));
-      const lookStart = finger(2, await center('[data-stick="look"]'));
-      const lookRight = finger(2, await center('[data-stick="look"]', 35, 0));
+      const lookStart = finger(2, await center('#video'));
+      const lookRight = finger(2, await center('#video', 35, 0));
       const jump = finger(3, await center('[data-key="32"]'));
       await touch('touchStart', [moveStart]);
       await touch('touchMove', [moveForward]);
@@ -373,7 +370,7 @@ try {
       const held = (await sends()).slice(since);
       assert.ok(hasKey(held, 60, 87) && hasKey(held, 60, 32));
       assert.ok(held.some(record => record.id === 74 && record.bytes.length >= 9),
-        'look pad must send a real MouseMove packet');
+        'image drag must send a real MouseMove packet');
       const afterFrame = await framePixels();
       const meanRgbDelta = frameDifference(beforeFrame, afterFrame);
       assert.ok(meanRgbDelta > 1, `stream image must change during movement (delta ${meanRgbDelta})`);
