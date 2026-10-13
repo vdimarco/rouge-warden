@@ -153,7 +153,7 @@ def preflight():
 
 
 def sky_arguments():
-    arguments = os.environ.get("NORD_SKY_ARGS", "").split()
+    arguments = os.environ.get("NORD_SKY_ARGS", "-NordHour=15 -NordFreezeTime").split()
     for argument in arguments:
         require(SKY_ARGUMENT.fullmatch(argument), "NORD_SKY_ARGS accepts only -NordFixedSky, -NordDynamicSky, -NordFreezeTime, "
                 "-NordFreezeWeather, -NordHour=, -NordDayMinutes=, -NordSkySeed= and -NordWeather=; rejected " + repr(argument))
@@ -336,7 +336,7 @@ def self_check():
     assert all("-NoDebugExecBindings" in command for command in (host, friend))
     assert all("-PixelStreamingKeyFilter=Tilde" in command for command in (host, friend))
     with patch.dict(os.environ, {}, clear=True):
-        assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle"]
+        assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-NordHour=15", "-NordFreezeTime"]
         assert stream_settings() == {"flags": ["idle"], "start_bitrate": 2000000, "min_bitrate": 100000,
                                      "max_bitrate": 12000000, "scheduling": 0}
     with patch.dict(os.environ, {"NORD_STREAM_BITRATE": "1000000,300000,4000000", "NORD_STREAM_SCHEDULING": "1"}):

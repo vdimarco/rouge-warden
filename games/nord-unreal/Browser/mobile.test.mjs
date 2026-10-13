@@ -117,7 +117,9 @@ function frameDifference(before, after) {
 
 async function layout(name) {
   const geometry = await page.evaluate(() => {
-    const names = ['[data-stick="move"]', '#touch-menu', ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
+    const names = [...(document.querySelector('#touch-controls').dataset.driving === 'true'
+      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]'] : ['[data-stick="move"]']),
+      '#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
       visible: !document.querySelector('#touch-controls').hidden,
@@ -130,7 +132,7 @@ async function layout(name) {
     };
   });
   assert.equal(await page.locator('[data-stick="look"]').count(), 0, 'look pad is removed');
-  const actions = geometry.targets.filter(target => !target.selector.includes('data-stick'));
+  const actions = geometry.targets.filter(target => target.selector.startsWith('#touch-'));
   assert.equal(new Set(actions.map(target => target.y)).size, 2, 'actions occupy two rows');
   assert.equal(new Set(actions.map(target => target.x)).size, 2, 'actions occupy two columns');
   for (const target of actions) assert.ok(target.width >= 72 && target.height >= 72, 'large square action targets');
@@ -143,6 +145,10 @@ async function layout(name) {
       target.y + target.height <= geometry.viewport.height + 1,
     `${target.selector} must fit the viewport`);
   }
+  for (const [index, a] of geometry.targets.entries()) for (const b of geometry.targets.slice(index + 1)) {
+    assert.ok(Math.min(a.x + a.width, b.x + b.width) <= Math.max(a.x, b.x) ||
+      Math.min(a.y + a.height, b.y + b.height) <= Math.max(a.y, b.y), 'touch targets must not overlap');
+  }
   report.input[`${name}Layout`] = geometry;
   await page.screenshot({ path: resolve(output, `${name}-playing.png`) });
 }
@@ -154,8 +160,9 @@ async function fullscreenClearance(name) {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
     };
-    const selectors = ['[data-stick="move"]', '#touch-menu',
-      ...['16', '32', '69'].map(key => `[data-key="${key}"]`)];
+    const selectors = [...(document.querySelector('#touch-controls').dataset.driving === 'true'
+      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]'] : ['[data-stick="move"]']),
+      '#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'];
     const video = document.querySelector('#video video');
     const image = bounds(video);
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
@@ -334,6 +341,16 @@ try {
   if (await connectFriend()) {
     await check('tapping Play takes the game fullscreen', () =>
       page.waitForFunction(() => document.fullscreenElement?.id === 'frame', null, { timeout: 5000 }));
+    await check('actual native possession arrives on reconnect and restores the matching controls', async () => {
+      await page.waitForFunction(() => ['true', 'false'].includes(document.querySelector('#touch-controls').dataset.driving));
+      const driving = await page.locator('#touch-controls').getAttribute('data-driving');
+      report.input.reconnectedDriving = driving === 'true';
+      if (driving === 'true') {
+        assert.equal(await page.locator('#touch-gas').getAttribute('data-key'), '87');
+        await page.locator('#touch-use').tap();
+        await page.waitForFunction(() => document.querySelector('#touch-controls').dataset.driving === 'false');
+      }
+    });
     await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));
     await check('phone video uses the smaller frame and 1.5 Mbps ceiling', async () => {
@@ -365,6 +382,63 @@ try {
       for (const control of geometry.controls) {
         assert.ok(control.top >= geometry.frame.top + geometry.frame.height * .58, `${control.selector} must sit under the game HUD`);
       }
+    });
+    await check('real car possession switches to separate steering and pedals, then restores walking', async () => {
+      // Reach the authored starter car through real walking input if this slot is still on the sidewalk.
+      for (let attempt = 0; attempt < 7; attempt++) {
+        await page.locator('#touch-use').tap();
+        await page.waitForTimeout(750);
+        if (await page.locator('#touch-controls').getAttribute('data-driving') === 'true') break;
+        const towardCar = finger(1, await center('[data-stick="move"]', 38, 0));
+        await touch('touchStart', [towardCar]);
+        await page.waitForTimeout(500);
+        await releaseAllTouches();
+      }
+      await page.waitForFunction(() => document.querySelector('#touch-controls').dataset.driving === 'true');
+      assert.equal(await page.locator('[data-stick="move"]').isHidden(), true);
+      assert.equal(await page.locator('#touch-gas').getAttribute('data-key'), '87');
+      assert.equal(await page.locator('#touch-brake').getAttribute('data-key'), '83');
+      assert.equal(await page.locator('#touch-use b').textContent(), 'Exit');
+      await layout('drivingPortrait');
+      const before = await framePixels();
+      const since = (await sends()).length;
+      const gas = finger(1, await center('#touch-gas'));
+      const left = finger(2, await center('.touch-steering [data-key="65"]'));
+      await touch('touchStart', [gas]);
+      await touch('touchStart', [gas, left]);
+      await waitForPacket(60, 87, since);
+      await waitForPacket(60, 65, since);
+      await page.waitForTimeout(700);
+      const steerReleased = (await sends()).length;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [left] });
+      await waitForPacket(61, 65, steerReleased);
+      assert.equal((await sends()).slice(steerReleased).some(record => record.id === 61 && record.bytes[1] === 87), false,
+        'releasing steering must keep Gas held');
+      const brakeStart = (await sends()).length;
+      const brake = finger(3, await center('#touch-brake'));
+      await touch('touchStart', [gas, brake]);
+      await waitForPacket(61, 87, brakeStart);
+      await waitForPacket(60, 83, brakeStart);
+      await page.waitForTimeout(700);
+      await page.screenshot({ path: resolve(output, 'driving-brake-held.png') });
+      await releaseAllTouches();
+      assert.ok(frameDifference(before, await framePixels()) > 1, 'actual car video changes while driving');
+      await page.setViewportSize({ width: 800, height: 360 });
+      await streamSettled();
+      await layout('drivingLandscape');
+      await fullscreenClearance('driving-landscape');
+      await page.setViewportSize({ width: 667, height: 375 });
+      await streamSettled();
+      await layout('drivingNarrowLandscape');
+      await fullscreenClearance('driving-narrow-landscape');
+      await page.setViewportSize({ width: 360, height: 800 });
+      await streamSettled();
+      await page.locator('#touch-use').tap();
+      await page.waitForFunction(() => document.querySelector('#touch-controls').dataset.driving === 'false');
+      assert.equal(await page.locator('#touch-gas').getAttribute('data-key'), '16');
+      assert.equal(await page.locator('#touch-brake').getAttribute('data-key'), '32');
+      assert.equal(await page.locator('.touch-steering').isHidden(), true);
+      assert.equal(await page.locator('[data-stick="move"]').isVisible(), true);
     });
     await check('simultaneous move, look and jump use the native data channel', async () => {
       const beforeFrame = await framePixels();
