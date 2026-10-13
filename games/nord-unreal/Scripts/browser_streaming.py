@@ -6,6 +6,7 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import socket
@@ -27,6 +28,14 @@ QUALITY = ",".join("sg." + name + "Quality 2" for name in (
     "PostProcess", "Texture", "Effects", "Foliage")) + (
     ",sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,"
     "r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 30,MediaIO.EnableExperimentalScheduling 0")
+
+
+# The public host runs the live sky. A QA lifecycle may pin it, for example
+# NORD_SKY_ARGS="-NordFixedSky" (the authored afternoon) or
+# NORD_SKY_ARGS="-NordHour=15 -NordWeather=Clear -NordFreezeTime -NordFreezeWeather".
+# Only these host flags are accepted; the friend shows the host's replicated sky.
+SKY_ARGUMENT = re.compile(r"-Nord(?:FixedSky|DynamicSky|FreezeTime|FreezeWeather|Hour=\d{1,2}(?:\.\d+)?|DayMinutes=\d{1,3}(?:\.\d+)?"
+                          r"|SkySeed=\d{1,10}|Weather=(?:Clear|Breezy|Overcast|Fog|Drizzle|Rain))", re.IGNORECASE)
 
 
 def require(condition, message):
@@ -143,6 +152,14 @@ def preflight():
     return ice_config
 
 
+def sky_arguments():
+    arguments = os.environ.get("NORD_SKY_ARGS", "").split()
+    for argument in arguments:
+        require(SKY_ARGUMENT.fullmatch(argument), "NORD_SKY_ARGS accepts only -NordFixedSky, -NordDynamicSky, -NordFreezeTime, "
+                "-NordFreezeWeather, -NordHour=, -NordDayMinutes=, -NordSkySeed= and -NordWeather=; rejected " + repr(argument))
+    return arguments
+
+
 def game_command(friend, log):
     # shortcut: VP8 avoids this PC's stalled H264 capture; retest hardware encoding after UE/driver upgrades.
     arguments = [str(BINARY), "Quebec", "127.0.0.1:7791" if friend else "/Game/Maps/LaFontaine?listen",
@@ -151,7 +168,7 @@ def game_command(friend, log):
                  "-PixelStreamingWebRTCFps=30", "-PixelStreamingWebRTCMaxBitrate=12000000",
                  "-PixelStreamingWebRTCStartBitrate=8000000", "-PixelStreamingKeyFilter=Tilde", "-PixelStreamingID=" + ("NordFriend1" if friend else "NordHost"),
                  "-ExecCmds=" + QUALITY, "-abslog=" + str(log)]
-    arguments += ["-NordNoCampaignSave", "-saveddirsuffix=BrowserGuest"] if friend else ["-port=7791"]
+    arguments += ["-NordNoCampaignSave", "-saveddirsuffix=BrowserGuest"] if friend else ["-port=7791", *sky_arguments()]
     return arguments
 
 
@@ -297,6 +314,20 @@ def self_check():
     assert "-NordNoCampaignSave" not in host and "-saveddirsuffix=BrowserGuest" in friend
     assert all("-NoDebugExecBindings" in command for command in (host, friend))
     assert all("-PixelStreamingKeyFilter=Tilde" in command for command in (host, friend))
+    with patch.dict(os.environ, {}, clear=True):
+        assert not any(argument.lower().startswith("-nord") for argument in game_command(False, Path("host.log")))
+    pinned = "-NordHour=15 -NordWeather=Clear -NordFreezeTime -NordFreezeWeather"
+    with patch.dict(os.environ, {"NORD_SKY_ARGS": pinned}):
+        assert game_command(False, Path("host.log"))[-4:] == pinned.split()
+        assert not set(pinned.split()) & set(game_command(True, Path("friend.log")))
+    for rejected in ("-NordHour=15 -ExecCmds=quit", "-NordWeather=Hail", "-NordHour=15;quit", "NordFixedSky", "-NordCapture"):
+        with patch.dict(os.environ, {"NORD_SKY_ARGS": rejected}):
+            try:
+                game_command(False, Path("host.log"))
+            except RuntimeError as error:
+                assert "NORD_SKY_ARGS" in str(error)
+            else:
+                raise AssertionError("Unsupported sky arguments must prevent launch: " + rejected)
     with patch("shutil.which", return_value="/usr/bin/nvidia-smi"):
         with patch("subprocess.check_output", return_value="13000\n"):
             check_gpu_memory()
@@ -316,7 +347,8 @@ def self_check():
                 pass
             else:
                 raise AssertionError("Occupied ports must be rejected")
-    print("Self-check passed: ICE configuration validation, rendered job/GPU memory guards, separate players/save ownership, occupied-port rejection.")
+    print("Self-check passed: ICE configuration validation, rendered job/GPU memory guards, separate players/save ownership, "
+          "optional pinned host sky, occupied-port rejection.")
 
 
 if __name__ == "__main__":

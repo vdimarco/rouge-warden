@@ -1,4 +1,31 @@
 """Shared surface and atmosphere polish for the saved Plateau environment."""
+import plateau_atmosphere
+import plateau_water
+
+
+def rewrap(u):
+    """Put the NordSky wet-ground and night-window wrappers back on the Plateau materials.
+
+    upgrade_plateau.py rebuilds M_Asphalt, M_Concrete, M_ConcreteDark, M_Gravel, M_ParkEarth, M_Glow,
+    M_InteriorWarm and M_Tail from scratch, which removes the wrappers that plateau_atmosphere.py added.
+    Once that pass has made MPC_NordAtmosphere, a regeneration must keep wet streets and lit windows,
+    so the same idempotent builders run again here. The unlit materials it wraps are not rebuilt here.
+    """
+    assets = u.EditorAssetLibrary
+    if not assets.does_asset_exist(plateau_atmosphere.COLLECTION):
+        return None
+    mpc = assets.load_asset(plateau_atmosphere.COLLECTION)
+    wrapped = {}
+    for build, paths in ((plateau_atmosphere.wet_ground, plateau_atmosphere.WET),
+                         (plateau_atmosphere.night_window, plateau_atmosphere.WINDOWS)):
+        for path in paths:
+            mat = assets.load_asset(path)
+            assert isinstance(mat, u.Material), ('Missing Plateau material for the NordSky wrappers', path)
+            wrapped[path] = build(u, mat, mpc)
+            if wrapped[path]:
+                u.MaterialEditingLibrary.recompile_material(mat)
+                assert assets.save_loaded_asset(mat), path
+    return wrapped
 
 
 def apply(u, materials, expression, material):
@@ -6,9 +33,6 @@ def apply(u, materials, expression, material):
 
     def link(source, output, target, name):
         assert library.connect_material_expressions(source, output, target, name)
-
-    def color(mat, value):
-        return expression(mat, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*value, 1))
 
     materials['ParkWood'] = material('ParkWood', (.25, .16, .085), rough=.78)
     materials['AutumnGold'] = material('AutumnGold', (.36, .17, .028), rough=.94)
@@ -55,33 +79,9 @@ def apply(u, materials, expression, material):
     library.recompile_material(asphalt)
 
     water = material('PondWater', (.012, .035, .028), rough=.17, metal=.08)
-    world = expression(water, u.MaterialExpressionWorldPosition)
-    time = expression(water, u.MaterialExpressionTime)
-    normals = []
-    for direction, speed, strength in (((.004, .0015, 0), .055, .012), ((-.0017, .006, 0), -.037, .008)):
-        spatial = expression(water, u.MaterialExpressionDotProduct)
-        link(world, '', spatial, 'A'); link(color(water, direction), '', spatial, 'B')
-        motion = expression(water, u.MaterialExpressionMultiply, const_b=speed)
-        link(time, '', motion, 'A')
-        phase = expression(water, u.MaterialExpressionAdd)
-        link(spatial, '', phase, 'A'); link(motion, '', phase, 'B')
-        wave = expression(water, u.MaterialExpressionSine)
-        link(phase, '', wave, '')
-        amplitude = expression(water, u.MaterialExpressionMultiply, const_b=strength)
-        link(wave, '', amplitude, 'A'); normals.append(amplitude)
-    combined = expression(water, u.MaterialExpressionAppendVector)
-    link(normals[0], '', combined, 'A'); link(normals[1], '', combined, 'B')
-    normal = expression(water, u.MaterialExpressionAppendVector)
-    link(combined, '', normal, 'A')
-    link(expression(water, u.MaterialExpressionConstant, r=1.), '', normal, 'B')
-    assert library.connect_material_property(normal, '', u.MaterialProperty.MP_NORMAL)
-    fresnel = expression(water, u.MaterialExpressionFresnel, exponent=4., base_reflect_fraction=.04)
-    reflected_color = expression(water, u.MaterialExpressionLinearInterpolate)
-    link(color(water, (.012, .035, .028)), '', reflected_color, 'A')
-    link(color(water, (.055, .095, .085)), '', reflected_color, 'B')
-    link(fresnel, '', reflected_color, 'Alpha')
-    assert library.connect_material_property(reflected_color, '', u.MaterialProperty.MP_BASE_COLOR)
-    library.recompile_material(water)
+    # plateau_water owns the pond graph, so a full regeneration keeps the nord-sky-water pond; it uses
+    # the shore texture and MPC_NordAtmosphere once plateau_atmosphere.py has made them.
+    pond = plateau_water.author(u, water, *plateau_water.existing(u))
     materials['PondWater'] = water
 
     editor = u.get_editor_subsystem(u.EditorActorSubsystem)
@@ -109,5 +109,9 @@ def apply(u, materials, expression, material):
             actor.light_component.set_editor_property('intensity', 1.9)
     for mat in (grass, asphalt, water, materials['ParkWood'], materials['AutumnGold'], materials['AutumnRust'], materials['Leaf']):
         u.EditorAssetLibrary.save_loaded_asset(mat)
-    return {'pond_normal_waves': 2, 'lawn_macro_variation': True,
+    # Every wrapped material is rebuilt by now (the palette and textured ones before this pass, ParkEarth
+    # and Asphalt above), and no later Plateau pass rebuilds them.
+    rewrapped = rewrap(u)
+    return {'pond_normal_waves': pond['wave_normals'], 'pond_shore_texture': pond['shore_texture'],
+            'pond_collection': pond['collection'], 'nord_sky_rewrapped': rewrapped, 'lawn_macro_variation': True,
             'continuous_world_asphalt_uv': True, 'cloud_material': cloud_material.get_path_name(), 'skylight_intensity': 1.9}

@@ -1,5 +1,6 @@
 #include "QuebecGameplay.h"
 #include "QuebecCampaign.h"
+#include "QuebecSky.h"
 #include "LaFontaineMap.h"
 
 #include "Animation/AnimInstance.h"
@@ -1318,6 +1319,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
     Super::PlayerTick(DeltaTime);
     if (!IsLocalController()) return;
     ApplyComicStyle();
+    ApplySkyGrading();
     CampaignAimElapsed += DeltaTime;
     if (CampaignAimElapsed >= .1f)
     {
@@ -1357,6 +1359,78 @@ void AQuebecController::ApplyComicStyle()
     // Animation on twos: poses step at 12 per second while movement stays smooth.
     for (TActorIterator<AQuebecCharacter> It(GetWorld()); It; ++It)
         It->GetMesh()->SetComponentTickInterval(bComicStyle ? 1.f / 12.f : 0.f);
+}
+
+void AQuebecController::ApplySkyGrading()
+{
+    // Exposure and grading follow the shared sky on each local view. Without a sky, clear only the
+    // overrides set here, so the level volume applies unchanged.
+    const AQuebecSky* Sky = AQuebecSky::Find(GetWorld());
+    AActor* Target = GetViewTarget();
+    if ((!Sky && !bSkyGrading) || !Target) return;
+    bSkyGrading = Sky != nullptr;
+    // Runs every frame, so the camera list stays on the stack.
+    TInlineComponentArray<UCameraComponent*> Cameras(Target, false);
+    for (UCameraComponent* Camera : Cameras)
+    {
+        FPostProcessSettings& Settings = Camera->PostProcessSettings;
+        Settings.bOverride_AutoExposureMinBrightness = bSkyGrading;
+        Settings.bOverride_AutoExposureMaxBrightness = bSkyGrading;
+        Settings.bOverride_ColorSaturation = bSkyGrading;
+        Settings.bOverride_ColorContrast = bSkyGrading;
+        Settings.bOverride_WhiteTemp = bSkyGrading;
+        if (!Sky) continue;
+        Settings.AutoExposureMinBrightness = Settings.AutoExposureMaxBrightness = QuebecSky::AuthoredEV100 + Sky->GetExposureOffset();
+        const float Saturation = Sky->GetSaturation(), Contrast = Sky->GetContrast();
+        Settings.ColorSaturation = FVector4(Saturation, Saturation, Saturation, 1.f);
+        Settings.ColorContrast = FVector4(Contrast, Contrast, Contrast, 1.f);
+        Settings.WhiteTemp = Sky->GetWhiteTemp();
+    }
+}
+
+void AQuebecController::NordWeather(const FString& Weather)
+{
+    if (AQuebecSky::Find(GetWorld())) ServerNordWeather(Weather);
+}
+
+void AQuebecController::NordTime(float Hours)
+{
+    if (AQuebecSky::Find(GetWorld())) ServerNordTime(Hours);
+}
+
+void AQuebecController::NordSkyFreeze(int32 Frozen)
+{
+    if (AQuebecSky::Find(GetWorld())) ServerNordSkyFreeze(Frozen != 0);
+}
+
+namespace
+{
+    // On the server only the listen-server host's own controller is local, so a guest's sky command is refused.
+    bool AcceptSkyCommand(AQuebecController* Controller)
+    {
+        if (Controller->IsLocalController()) return true;
+        Controller->ShowInteractionMessage(TEXT("Only the host can change the sky"));
+        return false;
+    }
+}
+
+void AQuebecController::ServerNordWeather_Implementation(const FString& Weather)
+{
+    if (!AcceptSkyCommand(this)) return;
+    for (TActorIterator<AQuebecSky> It(GetWorld()); It; ++It)
+        if (!It->HostSetWeather(Weather)) ClientInteractionMessage(FString::Printf(TEXT("Unknown weather %s"), *Weather));
+}
+
+void AQuebecController::ServerNordTime_Implementation(float Hours)
+{
+    if (!AcceptSkyCommand(this)) return;
+    for (TActorIterator<AQuebecSky> It(GetWorld()); It; ++It) It->HostSetHour(Hours);
+}
+
+void AQuebecController::ServerNordSkyFreeze_Implementation(bool bFrozen)
+{
+    if (!AcceptSkyCommand(this)) return;
+    for (TActorIterator<AQuebecSky> It(GetWorld()); It; ++It) It->HostSetFrozen(bFrozen);
 }
 
 void AQuebecController::TickCapture(float DeltaTime)
@@ -1656,7 +1730,10 @@ void AQuebecHUD::DrawHUD()
     const float MapHeight = bPortrait ? MapWidth * .55f : 150.f * Scale;
     const float MapX = Right - MapWidth, MapY = Margin + (bPortrait ? 50.f : 74.f) * Scale;
     const float CreditSize = bPortrait ? .62f : .85f, CreditStep = (bPortrait ? 15.f : 18.f) * Scale;
-    const float MapBlock = MapHeight + 4.f * Scale + 3.f * CreditStep;
+    // The shared sky's clock and weather sit under the map, above the credits, only while a sky runs.
+    const AQuebecSky* Sky = AQuebecSky::Find(GetWorld());
+    const float SkyStep = Sky ? CreditStep * 1.2f : 0.f;
+    const float MapBlock = MapHeight + 4.f * Scale + SkyStep + 3.f * CreditStep;
     // Mission card: bottom right on a wide screen, top left beside the map on a tall one.
     const float MissionWidth = bPortrait ? MapX - Margin - 12.f * Scale : 460.f * Scale;
     const float MissionX = bPortrait ? Margin : Right - MissionWidth;
@@ -1740,9 +1817,15 @@ void AQuebecHUD::DrawHUD()
     }
     DrawLine(MapX, MapY, MapX + MapWidth, MapY, Muted.CopyWithNewOpacity(.6f), Scale);
     DrawLine(MapX, MapY + MapHeight, MapX + MapWidth, MapY + MapHeight, Muted.CopyWithNewOpacity(.6f), Scale);
-    Text(TEXT("© OpenStreetMap contributors / ODbL"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale, CreditSize);
-    Text(TEXT("openstreetmap.org/copyright"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale + CreditStep, CreditSize);
-    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale + 2.f * CreditStep, CreditSize);
+    if (Sky)
+    {
+        const int32 Minutes = FMath::Clamp(FMath::FloorToInt(Sky->GetHour() * 60.f), 0, 24 * 60 - 1);
+        Text(FString::Printf(TEXT("%02d:%02d · %s"), Minutes / 60, Minutes % 60, *Sky->GetWeatherName()), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale, CreditSize * 1.15f);
+    }
+    const float CreditY = MapY + MapHeight + 4.f * Scale + SkyStep;
+    Text(TEXT("© OpenStreetMap contributors / ODbL"), Paper, MapX + 7.f * Scale, CreditY, CreditSize);
+    Text(TEXT("openstreetmap.org/copyright"), Paper, MapX + 7.f * Scale, CreditY + CreditStep, CreditSize);
+    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Paper, MapX + 7.f * Scale, CreditY + 2.f * CreditStep, CreditSize);
     TArray<AQuebecCar*> MapCars;
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
@@ -1906,6 +1989,8 @@ AQuebecGameMode::AQuebecGameMode()
 void AQuebecGameMode::BeginPlay()
 {
     Super::BeginPlay();
+    // Any map can have a sky. QA runs keep the authored afternoon unless they ask for a time or weather.
+    if (AQuebecSky::ShouldSpawn()) GetWorld()->SpawnActor<AQuebecSky>();
     if (!GetWorld()->GetMapName().Contains(TEXT("LaFontaine"))) return;
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
     {

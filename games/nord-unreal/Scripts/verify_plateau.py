@@ -292,6 +292,17 @@ def verify_park(labels):
     REPORT['checks'].append('saved surveyed pond holes/areas, solid mapped benches clear of paths, autumn detail, animated water/cloud material and nonblocking surface overlays')
 
 
+def verify_sky_water():
+    """Once plateau_atmosphere.py has run, a full regeneration must keep its pond, rain and wrappers."""
+    import plateau_atmosphere
+    if not u.EditorAssetLibrary.does_asset_exist(plateau_atmosphere.COLLECTION):
+        REPORT['checks'].append('nord-sky-water not authored: MPC_NordAtmosphere is absent')
+        return
+    # The asset read-backs only: upgrade_plateau.py saves the map, so the authoring map hash no longer applies.
+    REPORT['sky_water'] = plateau_atmosphere.verify_assets(u, ROOT)
+    REPORT['checks'].append('nord-sky-water pond, rain streaks and wet-ground, window and exposure wrappers intact')
+
+
 def run():
     data = json.loads((ROOT / 'Data/Plateau/layout.json').read_text())
     baseline = json.loads((ROOT / 'Data/LaFontaine/layout.json').read_text())
@@ -371,6 +382,7 @@ def run():
     import plateau_facade_finish
     REPORT['facade_finish'] = plateau_facade_finish.verify(u)
     verify_park(labels)
+    verify_sky_water()
     from verify_plateau_context import verify as verify_context
     REPORT['context'] = verify_context(u, labels, ROOT)
     REPORT['checks'].append('saved surrounding OSM context: exact source manifests, local bounds, collision, materials, Nanite and lighting')
