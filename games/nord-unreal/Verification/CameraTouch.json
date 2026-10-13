@@ -40,7 +40,18 @@
     "tunnels_preserved": true
   },
   "production": {
-    "status": "pending"
+    "status": "READY; alias verified; public checks passed",
+    "deployment_id": "dpl_5Yqut2hZGXTUcWdibNLtqaguwERa",
+    "url": "https://nord-montreal.vercel.app/",
+    "static_files_match": 12,
+    "mobile": {
+      "passed": 11,
+      "path": "Browser/.qa/mobile-2026-10-13T19-30-22-275Z"
+    },
+    "live": {
+      "passed": 7,
+      "path": "Browser/.qa/live-2026-10-13T19-30-50-008Z"
+    }
   },
   "not_checked": [
     "Physical phone and gyro sensors",
@@ -48,5 +59,15 @@
     "Audible sound and driving feel",
     "Full campaign",
     "Separate Builds/Linux PC package not refreshed"
-  ]
+  ],
+  "merge_commit": "0178976b46f8a106b3c5d50937f11a6696a9eab6",
+  "pull_request": "https://github.com/vdimarco/rouge-warden/pull/339",
+  "sampler": {
+    "mode": "10-second ordinary direct image-drag sweep",
+    "decoded_fps": 29.941889096818674,
+    "drops": 0,
+    "freezes": 0,
+    "path": "Saved/BrowserStreaming/samples/2026-10-13T19-26-21-552Z-NordFriend1"
+  },
+  "spec_validation": "Manual artifact, requirement and scenario checks passed; OpenSpec CLI unavailable"
 }
