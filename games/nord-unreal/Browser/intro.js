@@ -8,8 +8,9 @@ const PANELS = [
   { image: '56d339bc-0fd1-4ed6-9ae8-4e7d6a1f895f.webp', title: 'NO PLAN. FAST CARS.',
     text: 'Grab a worklight. Find his seams. Break his frames. Save the park tonight. Next stop: Toronto.' }
 ];
-const CREW_SPRITE_FILE = 'e7188ec0-a77a-428c-ad52-dfcec5511aaf.webp';
-const CREW_SPRITE = `url("${CDN}${CREW_SPRITE_FILE}")`;
+// Eight comic portraits, 240x360 each, in crew slot order; it ships with the page.
+const CREW_SPRITE_FILE = './crew-sprite.webp';
+const CREW_SPRITE = `url("${CREW_SPRITE_FILE}")`;
 const CREW_KEY = 'gta-north-crew';
 const SEEN_KEY = 'gta-north-intro';
 
@@ -79,7 +80,7 @@ let preloaded = false;
 function preload() {
   if (preloaded) return;
   preloaded = true;
-  for (const file of [...PANELS.map(({ image: name }) => name), CREW_SPRITE_FILE]) new Image().src = CDN + file;
+  for (const file of PANELS.map(({ image: name }) => CDN + name).concat(CREW_SPRITE_FILE)) new Image().src = file;
 }
 
 function open() {

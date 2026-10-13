@@ -15,11 +15,11 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
-  response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html');
+  response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.webp') ? 'image/webp' : 'text/html');
   response.end(await readFile(`dist/${file}`));
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -136,7 +136,7 @@ try {
       const box = await card.boundingBox();
       assert.ok(box.width >= 44 && box.height >= 44, 'each crew card is a >=44 px target');
     }
-    await page.waitForFunction(() => performance.getEntriesByType('resource').some(entry => entry.name.endsWith('e7188ec0-a77a-428c-ad52-dfcec5511aaf.webp') && entry.responseEnd > 0));
+    await page.waitForFunction(() => performance.getEntriesByType('resource').some(entry => entry.name.endsWith('/crew-sprite.webp') && entry.responseEnd > 0));
     await page.screenshot({ path: `.qa/crew-${width}.png` });
     await page.locator('#crew-play').click();
     assert.equal(await page.locator('#intro').isHidden(), true, 'Play closes the start screen');
