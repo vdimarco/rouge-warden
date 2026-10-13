@@ -17,8 +17,8 @@ small grey info boxes, and bold uppercase captions with the current word in oran
 - In flight you hold to push toward light and let go to ease off. Each zone of space has a speed limit set by real heat:
   gas hitting the ship, and the blueshifted cosmic background. Over the limit the forward shield heats up and cracks.
   You have three panes.
-- Two exact clocks run. About 5 years pass for you and 1,215,266,893 years pass on Earth. Earth's history shows on
-  small cards as you fly.
+- Two exact clocks run. About 7 to 14 years pass for you, depending on how close to the speed limits you fly, and
+  1,215,266,893 years pass on Earth. Earth's history shows on small cards as you fly.
 - The sky shows real aberration, Doppler colour and brightness change.
 - Keyboard and mouse on desktop. Touch on phones, in portrait and landscape. Pause, page lifecycle, mute, saves, reduced
   motion and a graphics error card.

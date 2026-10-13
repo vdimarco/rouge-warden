@@ -167,7 +167,7 @@ test('every referenced object exists and has a source; passes and coaching are w
     }
     for (const c of [...stop.coach, ...stop.lines]) {
       assert.ok(typeof c.text === 'string' && c.text.length);
-      assert.ok(c.at === 'flight' || c.at === 'notch' || c.at === 'radio' || Number.isInteger(c.atZone), c.text);
+      assert.ok(['flight', 'notch', 'hot', 'radio'].includes(c.at) || Number.isInteger(c.atZone), c.text);
       if (Number.isInteger(c.atZone)) assert.ok(c.atZone < zonesFor(STOPS.indexOf(stop)).length);
     }
   }

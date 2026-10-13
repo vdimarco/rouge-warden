@@ -563,9 +563,13 @@ test('the ending: Earth grows in the lower part, the address stills ring each pl
       const p = project('earth', cam);
       assert.ok(p.visible && p.ang >= last, `${name} t ${t}: Earth grows`);
       last = p.ang;
-      if (t >= 2) assert.ok(p.y > LAYOUTS[name].height / 2, `${name} t ${t}: Earth in the lower part`);
+      if (t >= 2) assert.ok(p.y > box.y + box.h / 2, `${name} t ${t}: Earth in the lower part of the free box`);
+      // it ends whole inside the free box, under the date stamp and clear of the caption below the box
+      if (t === 8) {
+        assert.ok(p.y - p.rawR >= box.y + 0.25 * box.h && p.y + p.rawR <= box.y + box.h + 1, `${name}: Earth fits`);
+        assert.ok(2 * p.rawR >= 0.6 * Math.min(box.w, 0.72 * box.h), `${name}: Earth ends big (${p.rawR.toFixed(0)} px)`);
+      }
     }
-    assert.ok(last > 0.25, `${name}: Earth ends big (${((last * 180) / Math.PI).toFixed(1)}° across its radius)`);
     const moon = project('moon', cameraFor({ phase: 'ending', stop: LAST, ending: { beat: 0, t: 0 }, say: {} }, aspect, {},
       box));
     assert.ok(moon.visible, `${name}: the Moon passes at the start of the approach`);

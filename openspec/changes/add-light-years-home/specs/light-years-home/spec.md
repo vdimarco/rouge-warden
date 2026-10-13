@@ -152,7 +152,7 @@ The game SHALL score each find by lock (+1,000, +400 or +100), each first-try sp
 
 #### Scenario: Flight grade
 - **WHEN** a leg ends
-- **THEN** it grades round(500 × clamp(τ_par / τ, 0, 1.6)) points, where τ is the ship time the leg took and τ_par is the ship time at each zone's limit, so a leg flown at par grades 500 and a leg that took twice par grades 250
+- **THEN** it grades round(500 × clamp(τ_par / τ, 0, 1.6)) points, where τ is the ship time the leg took and τ_par is the ship time of the leg flown from rest: the first zone held from a standing start up to its notch and then ridden on it, every other zone at its limit, so a leg flown at par grades 500 and a leg that took twice par grades 250
 
 #### Scenario: Gentle arrival
 - **WHEN** the player keeps the throttle at 0 for the last 1.0 second before the drop-out at Earth
@@ -180,11 +180,13 @@ Losing the third pane SHALL end the journey with a lost ending that offers Try c
 - **WHEN** the last reveal of chapter I, II or III ends
 - **THEN** a chapter card shows its line
 - **AND** at the next chapter start one pane returns (max 3) and progress is saved
+- **AND** the card stays until the player presses Continue; a tap or a key that hurries captions only ends its line
 
 #### Scenario: Lost and retry
 - **GIVEN** one pane left
 - **WHEN** a pane cracks
 - **THEN** the lost ending names the stop and the year on Earth
+- **AND** the lost card and the best save show the score, never below 0
 - **AND** Try chapter again restarts the chapter with 3 panes, the chapter-start score and one more retry
 
 #### Scenario: Continue a saved journey
@@ -235,6 +237,7 @@ The game SHALL offer three settings, saved in the browser, with unknown saved va
 - **WHEN** a scan sits idle for 25 seconds
 - **THEN** the target ring pulses
 - **AND** with Hints off, it does not
+- **AND** no ring pulses while a candidate's card is open
 
 #### Scenario: Bad settings save
 - **GIVEN** the settings save holds unknown values
@@ -257,6 +260,7 @@ Captions SHALL be page text in the reference video's style: bold uppercase white
 - **GIVEN** a first run
 - **WHEN** the first waypoint galaxy is next on leg 1
 - **THEN** the caption "Galaxy ahead. Let go!" plays
+- **AND** for a player who holds from the start of the flight, it comes after "Hold to go faster." and the notch line have played in full
 - **AND** on a later run the first two intro lines are skipped and no coaching shows
 
 #### Scenario: Flight strip

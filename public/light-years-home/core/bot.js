@@ -78,7 +78,7 @@ export function botStep(kind, state) {
     case 'fork':
       return { hold: false, actions: [{ type: 'fork', branch: TUNING[k].fork }] };
     case 'chapter':
-      return { hold: false, actions: [{ type: 'advance' }] };
+      return { hold: false, actions: [{ type: 'continue' }] };
     case 'flight':
       return { hold: flightHold(k, state), actions: [] };
     default:

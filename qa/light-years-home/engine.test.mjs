@@ -9,7 +9,7 @@ import {
   create, start, update, act, drainEvents, jump, legOf, zoneAt, scanOf, etaFor, parShipYears, gradePar,
   standingStartYears, rankFor, resultOf,
   progressOf, aheadAt, TICK, PANES, THROTTLE_UP, THROTTLE_DOWN, HEAT_GAIN, HEAT_MAX_RATE, HEAT_COOL, CRACK_HEAT,
-  CRACK_LOCK, CARRY_PER_WRONG, CARRY_MAX, HINT_AFTER, TEXT, ROUTE_LY, POINTS,
+  CRACK_LOCK, CARRY_PER_WRONG, CARRY_MAX, HINT_AFTER, TEXT, ROUTE_LY, POINTS, CAPTION_TAIL,
 } from '../../public/light-years-home/core/engine.js';
 import { botStep, playJourney } from '../../public/light-years-home/core/bot.js';
 import { STOPS, CHAPTERS, routeLengthLy, candidate } from '../../public/light-years-home/core/route.js';
@@ -78,6 +78,8 @@ function atFlight(stop, opts = {}) {
 
 // The zone index of the first open stretch on leg 1 (the void).
 const VOID_ZONE = legOf({ stop: 0, branch: null }).zones.findIndex((z) => z.kind === 'void');
+// The zone index of the first galaxy on leg 1.
+const GALAXY_ZONE = legOf({ stop: 0, branch: null }).zones.findIndex((z) => z.kind === 'waypoint');
 
 // ---------- scan ----------
 
@@ -146,6 +148,15 @@ test('C8: with hints on, the target ring pulses after 25 s idle; with hints off 
   run(on, 2 * 60);
   assert.equal(on.scan.hint, true);
   assert.equal(scanOf(on).target, ['A', 'B', 'C'].find((k) => on.draw.coma[k] === 'coma'));
+  // no hint while a card is open: it would light the target ring over a decoy's card
+  const decoy = ['A', 'B', 'C'].find((k) => k !== scanOf(on).target);
+  act(on, { type: 'select', letter: decoy });
+  assert.equal(on.scan.hint, false);
+  run(on, Math.round((HINT_AFTER + 5) * 60));
+  assert.equal(on.scan.hint, false, 'a card stayed open past the idle time');
+  act(on, { type: 'close' });
+  run(on, Math.round((HINT_AFTER + 1) * 60));
+  assert.equal(on.scan.hint, true);
   const off = atScan(0, { settings: { hints: false } });
   run(off, Math.round((HINT_AFTER + 5) * 60));
   assert.equal(off.scan.hint, false);
@@ -230,7 +241,7 @@ test('F4: over the notch heat rises at min(1.5, 0.55 ln r) per s; under 0.8 r it
   run(s, 30, { hold: true });
   near(s.flight.heat, Math.min(HEAT_MAX_RATE, HEAT_GAIN * Math.log(r)) * 0.5, 1e-9, 'heat after 0.5 s at x = 1');
   // a galaxy disc at full throttle heats at the 1.5 per s cap
-  const w = atFlight(0, { zone: 1, x: 1 });
+  const w = atFlight(0, { zone: GALAXY_ZONE, x: 1 });
   run(w, 12, { hold: true });
   near(w.flight.heat, HEAT_MAX_RATE * 0.2, 1e-9, 'heat in a galaxy at x = 1');
   // let go: under 0.8 r the Lens cools
@@ -332,12 +343,12 @@ test('F10: the drop-out: x forced to 0, the view eases to rest, input ignored, t
 });
 
 test('a clean crossing of a galaxy scores 50; any heat rise there loses it', () => {
-  const s = atFlight(0, { zone: 1, p: 0.9, x: 0.2 });
-  let ev = until(s, (st) => st.flight.zone === 2).events;
+  const s = atFlight(0, { zone: GALAXY_ZONE, p: 0.9, x: 0.2 });
+  let ev = until(s, (st) => st.flight.zone === GALAXY_ZONE + 1).events;
   assert.deepEqual(ev.find((e) => e.type === 'zone').cleared, { label: 'Spiral galaxy', points: POINTS.clean });
   assert.equal(s.score.clean, POINTS.clean);
-  const h = atFlight(0, { zone: 1, p: 0.9, x: 0.6 });
-  ev = until(h, (st) => st.flight.zone === 2, { input: { hold: true } }).events;
+  const h = atFlight(0, { zone: GALAXY_ZONE, p: 0.9, x: 0.6 });
+  ev = until(h, (st) => st.flight.zone === GALAXY_ZONE + 1, { input: { hold: true } }).events;
   assert.equal(ev.find((e) => e.type === 'zone').cleared, null);
   assert.equal(h.score.clean, 0);
 });
@@ -350,12 +361,41 @@ test('coaching shows on a first run only; lines show every run', () => {
   act(a, { type: 'lock' });
   assert.equal(a.say.current.kind, 'coach');
   assert.equal(a.say.current.text, 'Hold to go faster.');
-  const ev = until(a, (st) => st.flight.zone >= 1, { input: { hold: true } }).events;
+  // a first-time pilot holds from rest, goes just past the notch and rides it until told to let go
+  const ev = [];
+  const sayAt = {};
+  while (a.flight.zone < GALAXY_ZONE) {
+    const z = legOf(a).zones[a.flight.zone];
+    const told = ev.some((e) => e.type === 'say' && /Galaxy ahead/.test(e.item.text));
+    update(a, { hold: !told && a.flight.x < z.notch + 0.02 }, TICK);
+    for (const e of drainEvents(a)) {
+      ev.push(e);
+      if (e.type === 'say') sayAt[e.item.text] = { t: a.t, dur: e.item.dur };
+    }
+  }
   const said = ev.filter((e) => e.type === 'say').map((e) => e.item.text);
   assert.ok(said.includes('Galaxy ahead. Let go!'), said.join(' | '));
   // F7: the warning cuts in as the galaxy comes up, not after the line before it
   const at = ev.findIndex((e) => e.type === 'say' && e.item.text === 'Galaxy ahead. Let go!');
   assert.equal(ev[at - 1].type, 'notchSoon');
+  // and only once the first coaching lines have landed: "Hold to go faster." and the notch line play in full
+  const notch = sayAt['Nothing is faster than light. Not even you.'];
+  assert.ok(notch, said.join(' | '));
+  assert.ok(!said.includes('Too hot! Ease back to the orange mark.'), 'a pilot on the notch got the heat warning');
+  // a first-time pilot who keeps holding past the notch is told to ease off well before the shield cracks
+  const hot = fresh();
+  start(hot, { skipIntro: true });
+  jump(hot, 0, 'scan');
+  act(hot, { type: 'select', letter: scanOf(hot).target });
+  act(hot, { type: 'lock' });
+  drainEvents(hot);
+  const hev = until(hot, (st, e) => e.some((x) => x.type === 'crack'), { input: { hold: true } }).events;
+  const warnAt = hev.findIndex((e) => e.type === 'say' && e.item.text === 'Too hot! Ease back to the orange mark.');
+  const crackAt = hev.findIndex((e) => e.type === 'crack');
+  assert.ok(warnAt >= 0 && warnAt < crackAt, hev.filter((e) => e.type === 'say').map((e) => e.item.text).join(' | '));
+  assert.ok(hev.filter((e, i) => i > warnAt && i < crackAt && e.type === 'say').length === 0, 'the warning was cut');
+  assert.ok(sayAt['Galaxy ahead. Let go!'].t >= notch.t + notch.dur - CAPTION_TAIL - 1e-9,
+    `the warning came ${(sayAt['Galaxy ahead. Let go!'].t - notch.t).toFixed(2)} s into the notch line`);
   // a lock while the clue still plays: the flight coaching starts at once and never comes after the warning
   const q = fresh();
   start(q, { skipIntro: true });
@@ -438,7 +478,11 @@ test('G2: each chapter ends with its card; the next chapter restores a pane and 
   const full = careful[0].counts;
   assert.equal(full.paneRestored || 0, 0);
   assert.equal(full.chapter, 4, 'chapter I start plus three cards');
-  act(s, { type: 'advance' });
+  // a tap only hurries the card's line; the card waits for a deliberate Continue
+  for (let i = 0; i < 3; i++) act(s, { type: 'advance' });
+  assert.equal(s.phase, 'chapter');
+  assert.equal(s.say.current, null);
+  act(s, { type: 'continue' });
   assert.equal(s.phase, 'clue');
   assert.equal(s.stop, 3);
 });
@@ -653,11 +697,11 @@ test('leg 15: let go as told, the approach to Earth takes about 3 s and still ea
   assert.ok(ticks * TICK <= 3.5, `approach ${(ticks * TICK).toFixed(2)} s`);
   until(s, (st) => st.phase === 'ending');
   assert.equal(s.score.gentle, POINTS.gentle);
-  // the careful bot's flights stay short enough: no leg over 20 s of screen time
+  // the careful bot's flights stay short enough: every leg takes 7 to 15 s
   const time = [];
   playJourney('careful', { seed: 1, onTick: (st) => { if (st.phase === 'flight') time[st.stop] = (time[st.stop] || 0) + TICK; } });
   assert.equal(time.length, STOPS.length);
-  time.forEach((t, i) => assert.ok(t >= 7 && t <= 20, `leg ${i + 1}: ${t.toFixed(1)} s`));
+  time.forEach((t, i) => assert.ok(t >= 7 && t <= 15, `leg ${i + 1}: ${t.toFixed(1)} s`));
 });
 
 test('riding the notch pays on every intergalactic leg', () => {
@@ -818,14 +862,14 @@ const ACTIONS = {
   advance: { type: 'advance' }, select: { type: 'select', letter: 'A' }, close: { type: 'close' },
   lock: { type: 'lock' },
   fork: { type: 'fork', branch: 'sheet' }, pause: { type: 'pause' }, resume: { type: 'resume' },
-  retryChapter: { type: 'retryChapter' }, newJourney: { type: 'newJourney', seed: 3 },
+  retryChapter: { type: 'retryChapter' }, newJourney: { type: 'newJourney', seed: 3 }, continue: { type: 'continue' },
 };
 // The actions that fit each phase (advance fits where a caption or beat can be hurried).
 const FITS = {
   title: [],
   intro: ['advance', 'pause'], clue: ['advance', 'select', 'pause'], scan: ['select', 'pause'],
   fork: ['fork', 'advance', 'pause'],
-  flight: ['pause'], reveal: ['advance', 'pause'], chapter: ['advance', 'pause'],
+  flight: ['pause'], reveal: ['advance', 'pause'], chapter: ['advance', 'continue', 'pause'],
   ending: ['advance', 'pause', 'newJourney'],
   lost: ['advance', 'pause', 'retryChapter', 'newJourney'],
 };
@@ -896,9 +940,9 @@ test('ranks, results and the leg helpers', () => {
   near(total, 4.97, 0.01, 'par ship time for the whole route, years');
   near(aheadAt(0), 1215266893, 0.001 * 1215266893, 'route length');
   assert.equal(aheadAt(15), 0);
-  const s = atFlight(0, { zone: 1, p: 0.5, x: 0.2 });
+  const s = atFlight(0, { zone: GALAXY_ZONE, p: 0.5, x: 0.2 });
   const za = zoneAt(s);
-  assert.equal(za.index, 1);
+  assert.equal(za.index, GALAXY_ZONE);
   assert.equal(za.zone.kind, 'waypoint');
   near(za.notchX, 0.333, 0.002, 'notch');
   near(za.nextNotchX, 0.834, 0.002, 'next notch');

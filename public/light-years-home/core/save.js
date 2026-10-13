@@ -95,7 +95,7 @@ export function saveBest(storage, result) {
   return { best, newBest };
 }
 
-// The title's best line: 'BEST 31,250 · HOME IN 4.97 YEARS', 'BEST 6,800 · REACHED VIRGO', or 'No journey home yet'.
+// The title's best line: 'BEST 31,250 · HOME IN 13.59 YEARS', 'BEST 6,800 · REACHED VIRGO', or 'No journey home yet'.
 // stopNames: the 15 landmark names in route order.
 export function bestLine(best, stopNames = []) {
   const b = cleanBest(best);

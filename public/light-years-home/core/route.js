@@ -87,7 +87,8 @@ const FORK_VOID = [
 // from / via / to: the leg's path through object positions. target and decoys: the scan's candidates; has lists the
 // features a candidate shows, needs the features the clue asks for. A run draws 2 decoys, always the trap.
 // coach: first-run hints during the flight; lines: captions every run. Triggers: { at: 'flight' } when the flight
-// starts, { at: 'notch' } when the throttle first reaches the notch, { at: 'radio' } at the first radio signal,
+// starts, { at: 'notch' } when the throttle first reaches the notch, { at: 'hot' } when the shield first heats up,
+// { at: 'radio' } at the first radio signal,
 // { atZone: k } as zone k comes up. passes: labelled rings during the flight; p is the share of the leg's screen time.
 
 export const STOPS = [
@@ -108,20 +109,23 @@ export const STOPS = [
     ],
     reveal: 'The Coma Cluster. A thousand galaxies. Home is 323 million light-years away.',
     scan: { fovMin: 8, fovMax: 75 },
+    // The first flight opens on a long open stretch, so "Hold to go faster." and the notch line play before the
+    // first galaxy: held from rest, "Galaxy ahead. Let go!" comes about 5.8 s in.
     zones: [
-      z('filament', 'filament', 40e6, 1.4, 'Sloan Great Wall', { at: 'start' }),
-      waypoint(1.0),
-      z('void', 'void', 'fill', 3.4, 'Void'),
-      z('filament', 'filament', 30e6, 1.6, 'Coma Supercluster'),
-      waypoint(1.0),
-      z('cluster', 'cluster', 3e6, 1.4, 'Coma Cluster', { at: 'coma' }),
+      z('filament', 'filament', 40e6, 2.6, 'Sloan Great Wall', { at: 'start' }),
+      z('void', 'void', 'fill', 3.8, 'Void'),
+      waypoint(0.9),
+      z('filament', 'filament', 30e6, 0.9, 'Coma Supercluster'),
+      waypoint(0.9),
+      z('cluster', 'cluster', 3e6, 0.6, 'Coma Cluster', { at: 'coma' }),
       z('arrive', 'cluster', 1e6, 1.2, 'Coma Cluster', { at: 'coma' }),
     ],
     branches: null, fork: null, passes: [], spot: null,
     coach: [
       { at: 'flight', text: 'Hold to go faster.' },
       { at: 'notch', text: 'Nothing is faster than light. Not even you.' },
-      { atZone: 1, text: 'Galaxy ahead. Let go!' },
+      { at: 'hot', text: 'Too hot! Ease back to the orange mark.' },
+      { atZone: 2, text: 'Galaxy ahead. Let go!' },
     ],
     lines: [],
   },
@@ -169,19 +173,19 @@ export const STOPS = [
     reveal: 'The Fornax Cluster. Between here and home: a flat sheet of galaxies, and an empty void.',
     scan: { fovMin: 8, fovMax: 100 },
     zones: [
-      z('cluster', 'cluster', 2.5e6, 1.0, 'Virgo Cluster', { at: 'virgo' }),
+      z('cluster', 'cluster', 2.5e6, 0.8, 'Virgo Cluster', { at: 'virgo' }),
       waypoint(0.9),
-      z('void', 'void', 'fill', 2.4, 'Void'),
+      z('void', 'void', 'fill', 1.6, 'Void'),
       z('cluster', 'cluster', 2e6, 0.8, 'Eridanus Cluster', { at: 'eridanus' }),   // centred on the Eridanus Cluster
       waypoint(0.9),
-      z('filament', 'filament', 4e6, 0.6, 'Open space'),
+      z('filament', 'filament', 4e6, 0.5, 'Open space'),
       waypoint(0.9),
-      z('filament', 'filament', 13922082, 1.2, 'Filament'),   // Eridanus → Fornax is 21,926,582 ly
+      z('filament', 'filament', 13922082, 0.9, 'Filament'),   // Eridanus → Fornax is 21,926,582 ly
       z('cluster', 'cluster', 2e6, 0.8, 'Fornax Cluster', { at: 'fornax' }),
       waypoint(0.9),
       z('arrive', 'cluster', 1e6, 1.2, 'Fornax Cluster', { at: 'fornax' }),
     ],
-    branches: null, fork: null, passes: [{ id: 'eridanus', p: 0.41 }], spot: null,
+    branches: null, fork: null, passes: [{ id: 'eridanus', p: 0.36 }], spot: null,
     coach: [], lines: [],
   },
   {
@@ -500,12 +504,12 @@ export const STOPS = [
     reveal: 'Earth.',   // the ending plays from here
     scan: { fovMin: 2, fovMax: 65 },
     zones: [
-      z('wind', 'wind', 'fill', 2.4, 'Kuiper belt', { n: 7e-3 }),
-      z('wind', 'wind', au(7.53), 1.2, "Saturn's orbit", { n: 0.05, at: 'saturn' }),
-      z('wind', 'wind', au(4.28), 1.2, "Jupiter's orbit", { n: 0.2, at: 'jupiter' }),
-      z('belt', 'belt', au(1.29), 1.6, 'Asteroid belt'),
-      z('wind', 'wind', au(1.34), 2.0, 'Solar wind', { n: 2 }),
-      z('wind', 'wind', au(0.27), 1.0, 'Earth', { at: 'earth' }),   // 1.0 s at the notch, 3.3 s let go (rate floor 0.3)
+      z('wind', 'wind', 'fill', 1.5, 'Kuiper belt', { n: 7e-3 }),
+      z('wind', 'wind', au(7.53), 0.9, "Saturn's orbit", { n: 0.05, at: 'saturn' }),
+      z('wind', 'wind', au(4.28), 0.8, "Jupiter's orbit", { n: 0.2, at: 'jupiter' }),
+      z('belt', 'belt', au(1.29), 1.2, 'Asteroid belt'),
+      z('wind', 'wind', au(1.34), 1.1, 'Solar wind', { n: 2 }),
+      z('wind', 'wind', au(0.27), 0.7, 'Earth', { at: 'earth' }),   // 0.7 s at the notch, 2.3 s let go (rate floor 0.3)
       z('arrive', 'wind', au(0.01), 1.2, 'Earth', { at: 'earth' }),
     ],
     branches: null, fork: null, passes: [{ id: 'neptune', p: 0.1 }, { id: 'moon', p: 0.97 }], spot: null,

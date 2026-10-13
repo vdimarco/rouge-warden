@@ -25,7 +25,8 @@ shield, the Lens, is also its telescope. It locks only onto things it can recogn
 in the video's order. The Lens has three panes.
 
 Nothing outruns light. The landmark route is 1,215,266,893 light-years long, so that many years pass on Earth while you
-travel. Your own clock runs slow: about 5 years pass for you. The journey is set up so that you arrive today. When you
+travel. Your own clock runs slow: about 14 years pass for a careful pilot and about 7 for one who rides the speed
+limits. The journey is set up so that you arrive today. When you
 wake, Earth's date is 1.2 billion years before today, and Earth's history plays out on small "On Earth" cards as you fly.
 In the last chapter radio from home reaches you, oldest first.
 
@@ -47,7 +48,7 @@ One stop takes about 30 seconds. There are 15 stops in 4 chapters, plus 2 spots 
 | Reveal | 3 to 4 s | You drop out of light speed. The sky unfolds, a ring and leader draw onto the landmark, its label writes on, and the reveal line plays. | tap hurries |
 | Clue | 3 to 5 s | The next clue. Three unnamed candidates get rings A, B and C (letters seeded per run). Off-screen rings get an edge chevron. | tap hurries |
 | Scan | 5 to 20 s | Look around. Open a candidate's card: a telescope view and 3 short facts. SET COURSE locks it. A wrong lock names the decoy, says why not, greys its ring and adds heat to the next flight. The third lock is always right. | drag, tap |
-| Flight | 7 to 12 s | Hold to push toward light, let go to ease off. Each zone has a speed limit (the notch). Over it heat builds; at full heat a pane cracks. Earth's clock races and "On Earth" cards appear. | hold, release |
+| Flight | 7 to 15 s | Hold to push toward light, let go to ease off. Each zone has a speed limit (the notch). Over it heat builds; at full heat a pane cracks. Earth's clock races and "On Earth" cards appear. | hold, release |
 
 - A spot after Andromeda (Triangulum) and after the Pleiades (Antares) is a short scan with no travel. A first-try find
   scores 300.
@@ -336,14 +337,14 @@ vibration. Gameplay is the same. The word-by-word caption colour still runs, bec
 
 | Key | Shape | Validation |
 |---|---|---|
-| `light-years-home.best.v1` | `{"score":31250,"reached":15,"home":true,"shipYears":4.97,"firstTry":15,"rank":"Navigator","date":"2026-10-13"}` | score safe integer 0..100,000; reached 0..15; home boolean; shipYears finite 0..1,000; rank one of four; date `YYYY-MM-DD` |
+| `light-years-home.best.v1` | `{"score":31250,"reached":15,"home":true,"shipYears":13.59,"firstTry":15,"rank":"Navigator","date":"2026-10-13"}` | score safe integer 0..100,000; reached 0..15; home boolean; shipYears finite 0..1,000; rank one of four; date `YYYY-MM-DD` |
 | `light-years-home.progress.v1` | `{"v":1,"seed":7,"chapter":2,"stop":6,"score":14200,"panes":2,"stats":{...},"branch":"sheet","shown":[...]}` | v 1; chapter 1..3; stop is the chapter's first stop; panes 1..3 |
 | `light-years-home.settings.v1` | `{"thrust":"hold","captions":"normal","hints":true}` | unknown values fall back to defaults |
 | `light-years-home.seen.v1` | `true` | boolean |
 | `arcade.sound` | JSON boolean, shared | as `public/lab/kit/sfx.js` |
 
 `saveBest` keeps the higher score, the higher `reached`, and the lower `shipYears` among runs that reached home. The
-title best line reads `BEST 31,250 · HOME IN 4.97 YEARS`, `BEST 6,800 · REACHED VIRGO`, or `No journey home yet`.
+title best line reads `BEST 31,250 · HOME IN 13.59 YEARS`, `BEST 6,800 · REACHED VIRGO`, or `No journey home yet`.
 
 ## Audio
 
@@ -504,7 +505,7 @@ A person reviews `contact.png` before merge, and the PR links it.
   light-years home at light speed", art `/arcade/light-years-home.webp` and colour `#f08a2c`.
 - `public/index.html`: a cabinet after Last Light with class `extra`, the marquee "LIGHT YEARS HOME / A QUEST AT LIGHT
   SPEED", the default high-score line `CROSS A BILLION LIGHT-YEARS`, and a best line from a valid save
-  (`BEST 31,250 · HOME IN 4.97 YRS` or `BEST 6,800 · STOP 3 OF 15`). `light-years-home` is appended to the Action group.
+  (`BEST 31,250 · HOME IN 13.59 YRS` or `BEST 6,800 · STOP 3 OF 15`). `light-years-home` is appended to the Action group.
 - `arcade-groups` pins the Lab group (17 machines) and the ASCII Scenes group, not the Action group, so this change adds
   no delta to it.
 

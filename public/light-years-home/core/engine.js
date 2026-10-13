@@ -32,6 +32,8 @@ export const NOTCH_SOON = 1.5;             // screen seconds before a zone: warn
 export const RATE_K = 0.35, RATE_MIN = 0.3, RATE_MAX = 1.6;   // zone progress rate: clamp(e^(0.35 (η − η_lim)))
 export const ETA_HEADROOM = 0.8, ETA_FLOOR = 1.6, ETA_SPAN = 4.8;
 export const REVEAL_MIN = 3;               // seconds a reveal stays up unless hurried
+export const COACH_HOT = 0.05, COACH_HOT_RATIO = 1.5;   // heat gained well over the limit (heat ratio above 1.5)
+                                                         // before the first-run 'hot' coaching cuts in
 export const CAPTION_TAIL = 0.12;          // seconds between one caption line and the next
 export const GENTLE_ZERO = 1;              // seconds at zero throttle before the last drop-out
 export const VIEW_EASE = 5;                // per second: the view eases to rest in a drop-out
@@ -407,8 +409,8 @@ function tickSay(state, dt) {
   if (state.say.t >= state.say.current.dur - EPS) nextCaption(state);
 }
 
-// Coaching (first run only) and lines (every run) of the stop being flown. trigger: 'flight', 'notch', 'radio' or
-// a zone index.
+// Coaching (first run only) and lines (every run) of the stop being flown. trigger: 'flight', 'notch', 'radio', 'hot'
+// (the shield first heats up) or a zone index.
 function cue(state, trigger) {
   const f = state.flight;
   if (!f) return;
@@ -419,8 +421,8 @@ function cue(state, trigger) {
   const match = (c) => (typeof trigger === 'number' ? c.atZone === trigger : c.at === trigger);
   const coach = (state.firstRun ? stop.coach : []).filter(match).map((c) => c.text);
   const lines = stop.lines.filter(match).map((c) => c.text);
-  if (typeof trigger === 'number' && coach.length) {
-    // a coaching warning for the zone ahead cuts in at once, in order
+  if ((typeof trigger === 'number' || trigger === 'hot') && coach.length) {
+    // a coaching warning (the zone ahead, or the shield heating up) cuts in at once, in order
     say(state, coach[0], 'coach', { now: true });
     for (const text of coach.slice(1).reverse()) say(state, text, 'coach', { front: true });
   } else {
@@ -471,7 +473,7 @@ function startFlight(state) {
   const leg = legOf(state);
   state.flight = {
     zone: 0, p: 0, x: 0, eta: leg.etaLo, view: 0, heat: clamp(state.heatCarry, 0, 1), lock: 0, ly: 0, ship: 0,
-    earth: 0, clean: true, cracks: 0, zeroT: 0, hot: false, soon: false, cues: [],
+    earth: 0, clean: true, cracks: 0, zeroT: 0, hot: false, soon: false, cues: [], warm: 0,
   };
   state.heatCarry = 0;
   state.scan.open = null;
@@ -721,6 +723,8 @@ function tickFlight(state, hold, dt) {
   if (r > 1) f.heat = Math.min(1, f.heat + Math.min(HEAT_MAX_RATE, HEAT_GAIN * Math.log(r)) * dt);
   else if (r < HEAT_SAFE) f.heat = Math.max(0, f.heat - HEAT_COOL * dt);
   if (f.heat > before) f.clean = false;
+  if (r > COACH_HOT_RATIO) f.warm += f.heat - before;   // only well over the limit, not riding just above it
+  if (f.warm > COACH_HOT) cue(state, 'hot');
   if (f.heat > HEAT_HIGH && !f.hot) {
     f.hot = true;
     emit(state, 'heatHigh', { heat: f.heat });
@@ -794,8 +798,13 @@ export function update(state, input, dt) {
       if (quiet(state)) enterScan(state);
       break;
     case 'scan':
-      state.scan.idle += dt;
-      if (state.settings.hints && state.scan.idle >= HINT_AFTER - EPS) state.scan.hint = true;
+      // no hint while a card is open: it would light the target ring over a decoy's card
+      if (state.scan.open) {
+        state.scan.hint = false;
+      } else {
+        state.scan.idle += dt;
+        if (state.settings.hints && state.scan.idle >= HINT_AFTER - EPS) state.scan.hint = true;
+      }
       break;
     case 'flight':
       tickFlight(state, hold, dt);
@@ -854,9 +863,13 @@ export function act(state, action) {
   if (state.paused) return state;
   const sc = state.scan;
   switch (action.type) {
+    case 'continue':
+      // the chapter card's Continue button: only a deliberate press moves on, never a tap that hurries a caption
+      if (ph === 'chapter') enterClue(state);
+      break;
     case 'advance':
       if (ph === 'title') break;
-      if (ph === 'chapter') { enterClue(state); break; }
+      if (ph === 'chapter') { if (state.say.current) nextCaption(state); break; }
       if (ph === 'ending') {
         if (!state.ending.done) startBeat(state, state.ending.beat + 1);
         break;
@@ -869,6 +882,7 @@ export function act(state, action) {
         if (ph === 'clue') enterScan(state);
         sc.open = action.letter;
         sc.idle = 0;
+        sc.hint = false;
         sc.teach = false;
         emit(state, 'select', { letter: action.letter, id: state.draw[scanEntry(state).id][action.letter] });
       }

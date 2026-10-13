@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Light Years Home · Cottage Arcade</title>
+<meta name="description" content="Wake up a billion light-years from Earth. Read the sky one landmark at a time, ride a hair under light speed and land on Earth today.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%232f7fd6'/%3E%3Ccircle cx='24.5' cy='8' r='2' fill='%23f08a2c'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Light Years Home · Cottage Arcade">
+<meta property="og:description" content="Wake up a billion light-years from Earth. Fly home by the landmarks, a hair under light speed.">
+<meta property="og:url" content="https://arcade.uptick.systems/light-years-home/">
+<meta property="og:image" content="https://arcade.uptick.systems/light-years-home/art/share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://arcade.uptick.systems/light-years-home/art/share.jpg">
+<link rel="stylesheet" href="/light-years-home/style.css">
+<script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
+<link rel="modulepreload" href="/vr/lib/three.module.min.js">
+<link rel="modulepreload" href="/vr/lib/three.core.min.js">
+</head>
+<body>
+<canvas id="view" aria-label="Deep space, seen from a ship a hair under light speed"></canvas>
+<canvas id="overlay" aria-hidden="true"></canvas>
+
+<div id="hud" class="hud" hidden>
+  <header id="top" class="top">
+    <a id="back" class="back" href="/" aria-label="Back to the arcade">‹ Arcade</a>
+    <p id="where" class="where"><span id="chapter-name">I · The Wall</span><span id="stop-count" class="count"> · 1/15</span></p>
+    <p id="clock" class="clock" aria-label="Clocks"><span id="clock-you">YOU 0 D</span><span class="sep" aria-hidden="true"> · </span><span id="clock-earth">EARTH 1.22 BILLION YEARS AGO</span></p>
+    <div class="buttons">
+      <button id="pause-btn" class="icon" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5" y="4" width="3.2" height="12" rx="0.8"/><rect x="11.8" y="4" width="3.2" height="12" rx="0.8"/></svg></button>
+      <button id="sound-btn" class="icon" type="button" aria-label="Sound" aria-pressed="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7.5h3l4-3.5v12l-4-3.5H3z"/><path class="wave" d="M13 7a4 4 0 0 1 0 6M15 5a7 7 0 0 1 0 10" fill="none" stroke-width="1.5"/><path class="cross" d="M13 7.5l5 5M18 7.5l-5 5" fill="none" stroke-width="1.6"/></svg></button>
+    </div>
+  </header>
+  <p id="info" class="info">Every dot is a galaxy</p>
+  <aside id="earth" class="info earth" hidden><b>On Earth</b> <span id="earth-text"></span> <small id="earth-when"></small></aside>
+
+  <div id="stamp" class="stamp" hidden aria-hidden="true"></div>
+
+  <div id="caption" class="caption" aria-hidden="true"></div>
+  <p id="say" class="sr-only" aria-live="polite"></p>
+
+  <p id="hint" class="hint" hidden>Tap a ring</p>
+
+  <nav id="chips" class="chips" aria-label="Candidates" hidden>
+    <button type="button" class="chip" data-letter="A" aria-label="Candidate A">A</button>
+    <button type="button" class="chip" data-letter="B" aria-label="Candidate B">B</button>
+    <button type="button" class="chip" data-letter="C" aria-label="Candidate C">C</button>
+  </nav>
+
+  <div id="panel" class="panel">
+    <section id="card" class="card scan-card" aria-labelledby="card-title" hidden>
+      <div id="lens" class="lens" aria-hidden="true"><span class="lens-empty"></span></div>
+      <div class="card-head">
+        <h2 id="card-title">A · 718 Mly</h2>
+        <button id="card-close" class="close" type="button" aria-label="Close the card">×</button>
+      </div>
+      <ul id="facts" class="facts"><li></li><li></li><li></li></ul>
+      <button id="set-course" class="primary set-course" type="button">Set course</button>
+    </section>
+
+    <section id="fork" class="card fork" aria-labelledby="fork-title" hidden>
+      <h2 id="fork-title" class="fork-prompt">Two ways home</h2>
+      <div class="fork-buttons">
+        <button type="button" class="fork-btn" data-branch="sheet"><b id="fork-sheet">Thread the galaxies</b><small id="fork-sheet-note"></small><kbd>1</kbd></button>
+        <button type="button" class="fork-btn" data-branch="void"><b id="fork-void">Cross the empty dark</b><small id="fork-void-note"></small><kbd>2</kbd></button>
+      </div>
+    </section>
+
+    <section id="chapter-card" class="card chapter-card" aria-labelledby="chapter-title" hidden>
+      <p class="eyebrow" id="chapter-eyebrow">Chapter done</p>
+      <h2 id="chapter-title">II · Neighbours</h2>
+      <p id="chapter-line" class="line"></p>
+      <p id="chapter-panes" class="note"></p>
+      <p id="chapter-score" class="note"></p>
+      <div class="actions"><button id="chapter-go" class="primary" type="button">Continue</button></div>
+    </section>
+
+    <section id="lost-card" class="card lost-card" aria-labelledby="lost-title" hidden>
+      <p class="eyebrow">Shield gone</p>
+      <h2 id="lost-title">The journey ends here</h2>
+      <p id="lost-line" class="note"></p>
+      <div class="actions">
+        <button id="lost-retry" class="primary" type="button">Try chapter again</button>
+        <button id="lost-new" type="button">New journey</button>
+        <button type="button" data-switch>Switch game</button>
+        <a class="button" href="/">Back to the arcade</a>
+      </div>
+    </section>
+
+    <section id="end-card" class="card end-card" aria-labelledby="end-score" hidden>
+      <p class="eyebrow" id="end-eyebrow">Home</p>
+      <h2><span id="end-score">0</span> <span id="end-rank" class="rank">Drifter</span></h2>
+      <p id="end-best" class="badge" hidden>New best</p>
+      <dl id="end-stats" class="stats"></dl>
+      <p id="end-route" class="note"></p>
+      <div class="actions">
+        <button id="end-new" class="primary" type="button">New journey</button>
+        <button type="button" data-switch>Switch game</button>
+        <a class="button" href="/">Back to the arcade</a>
+      </div>
+    </section>
+  </div>
+
+  <section id="strip" class="strip" aria-label="Flight" hidden>
+    <div class="readout">
+      <p id="shortfall" class="shortfall">LIGHT − 0 METRES PER SECOND</p>
+      <p id="rate" class="rate">1 SECOND HERE = 1 SECOND AT HOME</p>
+    </div>
+    <div class="gauges">
+      <div class="throttle-row">
+        <div id="throttle" class="throttle" role="meter" aria-label="Throttle" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="heat"></div>
+          <div class="bar"><div class="fill"></div></div>
+          <div class="tick-wrap notch-wrap"><i class="tick notch"></i></div>
+          <div class="tick-wrap next-wrap" hidden><i class="tick next"></i></div>
+          <span class="hot" hidden>HOT</span>
+        </div>
+        <div id="panes" class="panes" role="img" aria-label="3 panes left"><i></i><i></i><i></i></div>
+      </div>
+      <div id="route" class="route" aria-hidden="true"><div class="segs"></div><div class="you-wrap"><i class="you"></i></div></div>
+    </div>
+  </section>
+</div>
+
+<section id="title" class="screen title-screen">
+  <div class="card title-card">
+    <div class="title-text">
+      <p class="eyebrow">COTTAGE ARCADE</p>
+      <h1>Light Years Home</h1>
+      <p class="lede">Wake up a billion light-years from home. Fly back by the landmarks.</p>
+      <p class="best" id="best-line">No journey home yet</p>
+    </div>
+    <div class="actions">
+      <button id="play" class="primary" type="button">Play</button>
+      <button id="continue" type="button" hidden>Continue</button>
+      <button id="how-btn" type="button">How it works</button>
+      <button type="button" data-switch>Switch game</button>
+      <a class="button" href="/">‹ Back to the arcade</a>
+    </div>
+    <p class="keys desktop">Hold Space to fly · Click or 1 2 3 to choose · Enter to set course · Esc to pause</p>
+    <p class="keys touch">Hold anywhere to fly · Tap a ring to choose · Drag to look around</p>
+  </div>
+</section>
+
+<section id="pause" class="screen" hidden>
+  <div class="card pause-card" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+    <h2 id="pause-title">Paused</h2>
+    <div class="actions">
+      <button id="resume" class="primary" type="button">Resume</button>
+    </div>
+    <div class="settings">
+      <div class="setting"><span>Sound</span><div class="seg">
+        <button type="button" data-set="sound" data-value="on" aria-pressed="true">On</button><button type="button" data-set="sound" data-value="off" aria-pressed="false">Off</button></div></div>
+      <div class="setting"><span>Captions</span><div class="seg">
+        <button type="button" data-set="captions" data-value="normal" aria-pressed="true">Normal</button><button type="button" data-set="captions" data-value="slow" aria-pressed="false">Slow</button></div></div>
+      <div class="setting"><span>Thrust</span><div class="seg">
+        <button type="button" data-set="thrust" data-value="hold" aria-pressed="true">Hold</button><button type="button" data-set="thrust" data-value="toggle" aria-pressed="false">Tap</button></div></div>
+      <div class="setting"><span>Hints</span><div class="seg">
+        <button type="button" data-set="hints" data-value="on" aria-pressed="true">On</button><button type="button" data-set="hints" data-value="off" aria-pressed="false">Off</button></div></div>
+    </div>
+    <div class="actions more">
+      <button id="pause-how" type="button">How it works</button>
+      <button id="restart" type="button">Restart chapter</button>
+      <button type="button" data-switch>Switch game</button>
+      <a class="button" href="/">Back to the arcade</a>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="screen" hidden>
+  <div class="card how-card" role="dialog" aria-modal="true" aria-labelledby="how-title">
+    <div class="how-head">
+      <h2 id="how-title">How it works</h2>
+      <button id="how-close" class="close" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="how-body">
+      <h3>Play</h3>
+      <ul>
+        <li>Each stop gives you a clue. Three rings, A, B and C, mark what you might be looking for. Open a ring's card to read about it, then set course.</li>
+        <li>Right on the first lock scores the most. A wrong lock tells you what you found and warms your shield for the next flight.</li>
+        <li>In flight, hold to push toward light and let go to ease off. The orange notch is the speed limit of the space around you. Above it the shield heats up. At full heat a pane cracks. Lose all three panes and the journey ends.</li>
+        <li>Earth's clock races while you fly. Each chapter you finish gives back one pane and saves your place.</li>
+      </ul>
+      <h3>Real</h3>
+      <ul>
+        <li>Every named object, where it is and how far away it is.</li>
+        <li>The length of the route: 1,215,266,893 light-years.</li>
+        <li>Both clocks, yours and Earth's.</li>
+        <li>How far short of light you fly, down to light − 2.5 nanometres per second.</li>
+        <li>The gas in each zone of space, each with a source.</li>
+        <li>The two things that heat the shield: gas atoms striking it, and the cosmic background bunched up ahead of you.</li>
+        <li>How the sky bends forward, turns blue and brightens ahead as you speed up.</li>
+        <li>The years radio takes to reach you from Earth.</li>
+        <li>The dates of Earth's history on the "On Earth" cards.</li>
+      </ul>
+      <h3>Made up</h3>
+      <ul>
+        <li>The shield's rating: 1 terawatt per square metre.</li>
+        <li>The drive starts and stops at once and needs no fuel.</li>
+        <li>On the long legs between clusters, the autopilot threads unnamed galaxies to keep its lock. A real straight path would almost never meet one.</li>
+        <li>The time-lapse rate on screen.</li>
+        <li>The picture shows the sky as it would look at up to 0.986 of light speed. The ship goes far faster: at its real speed the whole sky would fit inside a dot far smaller than a pixel.</li>
+        <li>The sky between named objects is generated.</li>
+        <li>Time spent choosing a landmark does not count on either clock.</li>
+        <li>The dust in the asteroid belt is an estimate.</li>
+        <li>The expansion of the universe is left out. That changes the numbers by less than 4 %.</li>
+        <li>Everything is drawn where it is now.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="graphics-error" class="screen" role="alert" hidden>
+  <div class="card">
+    <h2>Graphics could not start</h2>
+    <p>This browser could not open 3D graphics for the journey. Try again, or pick another game.</p>
+    <div class="actions">
+      <button id="graphics-retry" class="primary" type="button" onclick="location.reload()">Try again</button>
+      <a class="button" href="/">Back to the arcade</a>
+      <button type="button" data-switch>Switch game</button>
+    </div>
+  </div>
+</section>
+
+<script src="/arcade/switch.js"></script>
+<script type="module" src="/light-years-home/main.js" onerror="document.getElementById('graphics-error').hidden=false"></script>
+<script src="/arcade/analytics.js" data-game="light-years-home"></script>
+</body>
+</html>

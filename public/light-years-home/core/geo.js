@@ -384,6 +384,17 @@ export function legHeading(stopIndex, branch = 'sheet', ly = 0) {
 // ---------- reveals ----------
 
 export const REVEAL_ANGLE = 15;   // an extended landmark is seen this big (angular radius, degrees) at its reveal
+export const MW_REVEAL_TILT = 38;   // degrees out of the disc plane for the Milky Way reveal, at least
+const MW_POLE = [0, 0, 1];          // the Milky Way's disc normal in galactic axes
+
+// dir turned toward or away from the pole so it is at least minDeg out of the plane, on the side it already is.
+function tiltFromPlane(dir, pole, minDeg) {
+  const e = dot(dir, pole);
+  if (Math.abs(e) >= Math.sin(minDeg * D2R)) return dir;
+  const h = unit(sub(dir, mul(pole, e)));
+  const t = minDeg * D2R, side = e < 0 ? -1 : 1;
+  return unit(add(mul(h, Math.cos(t)), mul(pole, side * Math.sin(t))));
+}
 export const REVEAL_FILL = 0.7;   // its ring then spans this share of the free box's shorter side
 const EXTENDED = new Set(['wall', 'cluster', 'supercluster', 'galaxy', 'nebula', 'cluster-open', 'region']);
 
@@ -435,8 +446,11 @@ export function revealPose(stopIndex, aspect, box) {
   const g = legGeom(stopIndex);
   const end = OBJECTS[stop.to].pos;
   const dist = revealDistance(stopIndex);
-  const back = stopIndex === STOPS.length - 1 ? approachDir()
+  let back = stopIndex === STOPS.length - 1 ? approachDir()
     : stop.to === stop.target.id ? mul(g.dirs[g.dirs.length - 1], -1) : unit(sub(end, o.pos));
+  // The Milky Way is seen from the side the route comes in on (the Andromeda line, 15.8° under the disc), raised to
+  // MW_REVEAL_TILT out of the plane so the barred spiral reads as one (the video shows it about 30° to 35° tilted).
+  if (stop.target.id === 'milky-way') back = tiltFromPlane(back, MW_POLE, MW_REVEAL_TILT);
   const pos = add(o.pos, mul(back, dist));
   const fov = isExtended(o) ? 60 : flightFov(vp.aspect);
   const f = framePoint(pos, o.pos, isExtended(o) ? o.radiusLy : 0, vp, fov);
@@ -808,12 +822,28 @@ function approachDir() {
 // A still that frames an object for the ending's address: Earth and the Sun from their sunlit side, the rest from
 // above the galactic plane at the reveal framing distance.
 function stillPose(id, vp) {
+  if (id === 'earth') return earthStill(vp);
   const o = OBJECTS[id];
   let from, dist, radius = 0;
-  if (id === 'earth') { from = approachDir(); dist = 4 * EARTH_R_LY; }
-  else if (id === 'sun') { from = unit(add(unit(OBJECTS.earth.pos), [0, 0, 0.6])); dist = 3 * AU_LY; }
+  if (id === 'sun') { from = unit(add(unit(OBJECTS.earth.pos), [0, 0, 0.6])); dist = 3 * AU_LY; }
   else { from = unit([-0.35, 0.2, 1]); radius = radiusOf(o); dist = radius / Math.sin(REVEAL_ANGLE * D2R); }
   const f = framePoint(add(o.pos, mul(from, dist)), o.pos, radius, vp, 50);
+  return { ...f, velocity: f.basis.fwd, phiView: 0, fade: 1 };
+}
+
+// Earth at the end of the approach, for the date and the clocks, "Home." and the score card: seen from the sunlit
+// approach side, centred in the lower 72 % of the free box (the date stamp sits above it, the caption below the box),
+// its disc filling REVEAL_FILL of that part's shorter side at the flight field of view. As in the video, the caption
+// never covers the planet.
+const EARTH_BOX_TOP = 0.28;
+function earthStill(vp) {
+  const b = vp.box;
+  const low = { ...vp, box: { ...b, y: b.y + EARTH_BOX_TOP * b.h, h: (1 - EARTH_BOX_TOP) * b.h } };
+  const fovY = flightFov(vp.aspect);
+  const want = (REVEAL_FILL * Math.min(low.box.w, low.box.h)) / 2;
+  const ang = Math.atan((want * Math.tan((fovY * D2R) / 2)) / (vp.H / 2));
+  const e = OBJECTS.earth.pos;
+  const f = framePoint(add(e, mul(approachDir(), EARTH_R_LY / Math.sin(ang))), e, 0, low, fovY);
   return { ...f, velocity: f.basis.fwd, phiView: 0, fade: 1 };
 }
 
@@ -835,16 +865,16 @@ export function endingPose(ending, aspect, box, say) {
   }
   if (ENDING[beat] === 'card') return stillPose('earth', vp);
   const e = OBJECTS.earth.pos;
+  const still = earthStill(vp);
   const k = ENDING[beat] === 'approach' ? ease(t / APPROACH) : 1;
-  const d0 = revealDistance(LAST), d1 = 3.2 * EARTH_R_LY;
+  const d0 = revealDistance(LAST), d1 = len(sub(still.pos, e));
   const pos = add(e, mul(approachDir(), d0 * (d1 / d0) ** k));
-  // Aim above Earth so it sits low in the frame; the turn from the reveal's aim takes the first 2 s.
-  const fovY = flightFov(vp.aspect);
-  const low = applyLook(lookBasis(sub(e, pos)), 0, Math.atan(0.3 * Math.tan((fovY * D2R) / 2)) / D2R);
+  // Aim so Earth sits in the lower part of the free box (the line to Earth does not turn as the camera closes in);
+  // the turn from the reveal's aim takes the first 2 s.
   const rv = revealPose(LAST, vp.aspect, vp.box);
   const w = ENDING[beat] === 'approach' ? ease(t / 2) : 1;
-  const basis = quatToBasis(slerp(basisToQuat(rv.basis), basisToQuat(low), w));
-  return { pos, basis, fovY: rv.fovY * (1 - w) + fovY * w, velocity: basis.fwd, phiView: 0, fade: 1 };
+  const basis = quatToBasis(slerp(basisToQuat(rv.basis), basisToQuat(still.basis), w));
+  return { pos, basis, fovY: rv.fovY * (1 - w) + still.fovY * w, velocity: basis.fwd, phiView: 0, fade: 1 };
 }
 
 // Earth and the Moon together for the cabinet art (?keyart=1): seen from just beyond the Moon on its sunlit side, the
