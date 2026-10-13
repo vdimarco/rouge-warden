@@ -59,6 +59,13 @@ The browser player SHALL provide touch controls on touch-capable devices using t
 - **AND** controls remain within the viewport, have at least 44-pixel touch targets and remain available in fullscreen
 - **AND** action buttons accept keyboard or assistive click activation without duplicating ordinary touch actions
 
+#### Scenario: Controls stay small and read like comic lettering
+- **WHEN** a touch screen is playing
+- **THEN** Sprint, Jump / brake, Use / car and ☰ are small slanted ink chips, about 30 px tall, with a paper outline, Impact capitals and a magenta offset shadow, each drawn inside a 44 px touch target
+- **AND** a pressed chip turns yellow and drops into its shadow
+- **AND** on a phone held upright the chips sit in one centred row with one line of text each, instead of a full-width bar
+- **AND** the sticks are 76-96 px rings with a halftone fill and the stick name inside the ring, and the look pad turns cyan only while it is dragged
+
 #### Scenario: Release interrupted touch input
 - **WHEN** a held touch is lifted, cancelled or loses capture, or the page loses focus, is hidden, rotates or disconnects
 - **THEN** all affected touch-held native keys are released and the stick returns to its centre
@@ -138,7 +145,7 @@ On a touch screen in portrait, the game SHALL render a tall frame shaped like th
 #### Scenario: Player holds the phone upright
 - **WHEN** a phone is in portrait while playing
 - **THEN** the page asks the game for a frame of the play area's shape (720 wide up to 9:16, otherwise 1280 high and narrower, never more pixels than 1280x720), and once the game sends it the frame fills the play area
-- **AND** the footer hides, and the touch buttons sit in two rows at the bottom with the sticks above them, all in the bottom 40%; on short phones the sticks shrink (not below 64 px), and the open crew list sits above the sticks
+- **AND** the footer hides, and the touch buttons sit in one row at the bottom with the sticks above them, all in the bottom 40%; on short phones the sticks shrink (not below 76 px), and the open crew list sits above the sticks
 
 #### Scenario: Game draws its HUD on a tall frame
 - **WHEN** the game's frame is taller than it is wide
@@ -151,7 +158,7 @@ On a touch screen in portrait, the game SHALL render a tall frame shaped like th
 
 #### Scenario: The game sends a 16:9 frame to a phone held upright
 - **WHEN** the game build or host does not honor the request
-- **THEN** the 16:9 picture sits at the top of the play area under the small buttons, with the sticks below it
+- **THEN** the 16:9 picture sits at the top of the play area, with the sticks and the button row at the bottom
 
 ### Requirement: One menu for stream and game buttons
 The page SHALL keep only the title and a menu button at the top, and SHALL offer the player slot, sound, fullscreen and disconnect, and while playing on a touch screen the crew, recover, race replay and comic view buttons, in one menu.

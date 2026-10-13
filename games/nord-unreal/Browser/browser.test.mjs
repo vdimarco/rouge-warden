@@ -214,6 +214,20 @@ try {
     document.querySelector('.touch-keys').addEventListener('click', event => window.__keyClicks.push(event.target.dataset.key), true);
   });
   assert.equal(await phonePage.locator('header').isHidden(), true, 'the header hides while playing on a phone');
+  // Small comic chips: one centred row of 44 px touch targets, each drawing a 30 px chip with one line of text.
+  const chips = await phonePage.evaluate(() => [...document.querySelectorAll('.touch-primary button')].map(button => {
+    const box = button.getBoundingClientRect();
+    const chip = getComputedStyle(button, '::before');
+    return { top: box.top, left: box.left, right: box.right, height: box.height,
+      chip: box.height - parseFloat(chip.top) - parseFloat(chip.bottom), oneLine: !button.querySelector('span') || getComputedStyle(button.querySelector('span')).display === 'inline' };
+  }));
+  assert.equal(chips.length, 4);
+  for (const chip of chips) {
+    assert.ok(chip.height >= 44 && chip.chip <= 32, `each button is a 44 px target with a small chip (${chip.height}, ${chip.chip})`);
+    assert.equal(chip.top, chips[0].top, 'the chips sit in one row');
+    assert.equal(chip.oneLine, true, 'each chip has one line of text');
+  }
+  assert.ok(chips[0].left > 16 && chips.at(-1).right < 390 - 16, 'the row is centred, not a full-width bar');
   const menuButton = await phonePage.locator('#touch-menu').boundingBox();
   assert.ok(menuButton.width >= 44 && menuButton.height >= 44, 'the ☰ button is a >=44 px target');
   await phonePage.locator('#touch-menu').click();
