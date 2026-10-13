@@ -129,7 +129,7 @@ The title screen SHALL offer Start, which opens a short story and then a crew ch
 
 #### Scenario: Pictures stay light
 - **WHEN** the page loads
-- **THEN** no story or crew picture loads until Start is pressed, about 300 KB in all
+- **THEN** no story or crew picture loads until Start is pressed, about 370 KB in all
 
 ### Requirement: Phone held upright plays a tall game
 On a touch screen in portrait, the game SHALL render a tall frame shaped like the play area, with its HUD in the top 60% and every touch control in the bottom 40%.

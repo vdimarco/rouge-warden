@@ -75,7 +75,7 @@ function syncStatus() {
     : state === 'idle' ? '' : element('status-title').textContent;
 }
 
-// Fetch every picture as Start is pressed, about 300 KB, so each panel shows at once.
+// Fetch every picture as Start is pressed, about 370 KB, so each panel shows at once.
 let preloaded = false;
 function preload() {
   if (preloaded) return;
