@@ -173,6 +173,65 @@ export function createPointMaterial({
   return material;
 }
 
+// A glow for a star the player must tell apart from others (a scan's candidates): a round sprite at least aMin CSS px
+// across whatever its brightness, growing with the fourth root of its energy above uEref up to uMaxPx, in its true
+// blackbody colour at D·T. Unlike a field star it is tone-mapped by its brightest channel, so a red supergiant stays
+// orange-red to the middle instead of burning white; only a small pinpoint in the middle goes pale. Attributes:
+// position, aTemp, aLum (as createPointMaterial) and aMin (least diameter, CSS px). Uniforms to set: uFade, uExposure,
+// uMaxPx; uEref is the energy drawn at the least size (fainter glows dim a little, never below 60 %).
+export function createGlowMaterial({ lut, shared, exposure = 1, eref = 4, maxPx = 32, near = 1e-7 } = {}) {
+  const rel = shared || createRelativity(lut);
+  if (lut && !shared) rel.uLUT.value = lut;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      ...rel,
+      uExposure: { value: exposure }, uFade: { value: 1 }, uEref: { value: eref }, uMaxPx: { value: maxPx },
+      uNear: { value: near },
+    },
+    vertexShader: /* glsl */ `
+      ${RELATIVITY_GLSL}
+      uniform float uExposure, uFade, uEref, uMaxPx, uNear, uRatio;
+      attribute float aTemp, aLum, aMin;
+      varying vec3 vColor;
+      varying float vAmp;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        float r = length(mv.xyz);
+        float D;
+        vec3 n = lyhAberrate(mv.xyz / max(r, 1e-30), uExpPhi, uExpMinusPhi, D);
+        gl_Position = projectionMatrix * vec4(n * r, 1.0);
+        gl_Position.z = 0.0;
+        float T = max(aTemp, 500.0), T2 = T * D;
+        float E = aLum * pow(max(r, uNear), -2.0) * uExposure * exp(lyhLnY(T2) - lyhLnY(T)) / (D * D);
+        float k = max(E, 1e-9) / uEref;
+        float d = clamp(aMin * pow(max(k, 1.0), 0.25), aMin, max(aMin, uMaxPx));
+        // The true colour, a little more saturated (a glow this size reads as the star's hue, as in photographs).
+        vec3 c = lyhBlackbody(T2);
+        c = pow(c / max(c.r, max(c.g, c.b)), vec3(2.0));
+        vColor = c;
+        vAmp = uFade * mix(0.6, 1.0, smoothstep(-2.0, 0.0, log(k) / 2.3026));
+        gl_PointSize = d * uRatio;
+        if (uFade < 0.002 || aMin <= 0.0 || r <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; }
+      }`,
+    fragmentShader: /* glsl */ `
+      varying vec3 vColor;
+      varying float vAmp;
+      void main() {
+        float r = length(gl_PointCoord - 0.5) * 2.0;           // 0 in the middle, 1 at the sprite's edge
+        if (r > 1.0) discard;
+        float core = exp(-(r * r) / (0.17 * 0.17));
+        float glow = exp(-(r * r) / (0.48 * 0.48)) * (1.0 - r * r);
+        float I = (2.6 * core + 0.9 * glow) * vAmp;
+        vec3 col = vColor * (1.0 - exp(-I)) + (1.0 - vColor) * 0.3 * core * core * vAmp;
+        gl_FragColor = vec4(col, 1.0);
+        #include <colorspace_fragment>
+      }`,
+    blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true,
+  });
+  material.name = 'lyh-glow';
+  return material;
+}
+
 // THREE.Points from typed arrays: positions (Float32Array xyz, layer units), temperature (K), lum (see aLum), and
 // optional size. frustumCulled is off: aberration brings points from behind into view.
 export function createPoints({ positions, temperature, lum, size = null, material }) {

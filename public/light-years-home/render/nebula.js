@@ -18,26 +18,29 @@ export const NEBULA_TIERS = {
 };
 
 // The look of each nebula. Colours are sRGB as you would pick them on screen (converted to linear for the shader).
-// gas: the main light; glow: the bright middle; rim: the colour the gas takes where it thins out; core, fil (bright
-// threads), dust (dark patches), lane (a dark band across: angle in degrees, width, offset), wisp (streaks along
-// stretch), stretch ([x, y] of the noise), scale (noise frequency), bright (overall), opacity (how much the dust hides
-// stars behind), shape: 'cloud' | 'horse', temperature (K: the colour temperature the Doppler tint starts from).
+// gas: the main light; glow: the pale middle; rim: the colour the gas takes where it thins out; core and coreSize (the
+// pale middle, in tile units), fil (bright threads), dust (dark patches), lane (a dark band across: angle in degrees,
+// width, offset), wisp (streaks along stretch), stretch ([x, y] of the cloud), scale (noise frequency), extent (the
+// cloud's size in tile units: its light is gone well before the card's edge), haze (a broad faint glow under the
+// clumps), bright (overall), opacity (how much the dust hides stars behind), spread (the card's half-size in units of
+// the nebula's radius: the cloud reaches past its ring), shape: 'cloud' | 'horse', temperature (K: the colour
+// temperature the Doppler tint starts from).
 export const NEBULAE = {
-  carina: { kind: 'emission', gas: [1.0, 0.28, 0.4], glow: [1.0, 0.84, 0.88], rim: [0.88, 0.24, 0.16], core: 0.9,
-    fil: 0.35, dust: 0.85, lane: [8, 0.16, -0.05], wisp: 0, stretch: [1, 0.85], scale: 1.5, bright: 1.0,
-    opacity: 0.85, temperature: 9000, seed: 5 },
-  'orion-nebula': { kind: 'emission', gas: [0.95, 0.22, 0.78], glow: [1.0, 0.52, 0.9], rim: [0.45, 0.32, 1.0],
-    core: 1.2, fil: 0.75, dust: 0.35, lane: null, wisp: 0, stretch: [1, 1], scale: 1.4, bright: 0.75, opacity: 0.5,
-    temperature: 12000, seed: 3 },
-  pleiades: { kind: 'reflection', gas: [0.25, 0.45, 1.0], glow: [0.6, 0.75, 1.0], rim: [0.2, 0.3, 0.9], core: 0.25,
-    fil: 0.2, dust: 0, lane: null, wisp: 0.9, stretch: [0.35, 1], scale: 1.6, bright: 0.45, opacity: 0.15,
-    temperature: 14000, seed: 9 },
-  'witch-head': { kind: 'reflection', gas: [0.22, 0.4, 1.0], glow: [0.45, 0.6, 1.0], rim: [0.18, 0.28, 0.85],
-    core: 0, fil: 0.35, dust: 0.1, lane: null, wisp: 0.6, stretch: [0.45, 1.3], scale: 1.3, bright: 0.3,
-    opacity: 0.1, temperature: 14000, seed: 7 },
-  horsehead: { kind: 'dark', gas: [0.85, 0.12, 0.2], glow: [1.0, 0.45, 0.45], rim: [0.6, 0.08, 0.15], core: 0,
-    fil: 0.4, dust: 0.3, lane: null, wisp: 0, stretch: [1, 1], scale: 1.6, bright: 0.7, opacity: 0.95,
-    shape: 'horse', temperature: 8000, seed: 11 },
+  carina: { kind: 'emission', gas: [0.95, 0.2, 0.34], glow: [1.0, 0.64, 0.68], rim: [0.75, 0.16, 0.12], core: 0.4,
+    coreSize: 0.18, fil: 0.5, dust: 0.9, lane: [8, 0.1, -0.04], wisp: 0, stretch: [1.15, 0.9], scale: 1.7, extent: 0.5,
+    haze: 0.3, bright: 0.7, opacity: 0.85, spread: 1.5, temperature: 9000, seed: 5 },
+  'orion-nebula': { kind: 'emission', gas: [0.9, 0.24, 0.74], glow: [1.0, 0.58, 0.94], rim: [0.5, 0.22, 0.86],
+    core: 0.9, coreSize: 0.12, fil: 0.75, dust: 0.45, lane: null, wisp: 0, stretch: [1, 0.9], scale: 1.6, extent: 0.5,
+    haze: 0.6, bright: 0.6, opacity: 0.4, spread: 2.4, temperature: 12000, seed: 3 },
+  pleiades: { kind: 'reflection', gas: [0.3, 0.48, 1.0], glow: [0.62, 0.76, 1.0], rim: [0.2, 0.3, 0.9], core: 0.15,
+    coreSize: 0.25, fil: 0.25, dust: 0, lane: null, wisp: 0.9, stretch: [0.6, 1], scale: 1.6, extent: 0.45, haze: 0.3,
+    bright: 0.35, opacity: 0.1, spread: 1.5, temperature: 14000, seed: 9 },
+  'witch-head': { kind: 'reflection', gas: [0.24, 0.42, 1.0], glow: [0.45, 0.6, 1.0], rim: [0.16, 0.26, 0.85],
+    core: 0, coreSize: 0.2, fil: 0.45, dust: 0.1, lane: null, wisp: 0.85, stretch: [0.45, 1.25], scale: 1.4,
+    extent: 0.42, haze: 0.2, bright: 0.32, opacity: 0.08, spread: 1.4, temperature: 14000, seed: 7 },
+  horsehead: { kind: 'dark', gas: [0.88, 0.14, 0.2], glow: [1.0, 0.42, 0.42], rim: [0.6, 0.08, 0.14], core: 0,
+    coreSize: 0.2, fil: 0.45, dust: 0.3, lane: null, wisp: 0, stretch: [1.2, 1], scale: 1.6, extent: 0.55, haze: 0.5,
+    bright: 0.7, opacity: 0.95, spread: 3.2, shape: 'horse', temperature: 8000, seed: 11 },
 };
 
 // Palette defaults by kind, for nebulae not in NEBULAE (render/view.js passes { kind, gas, glow, dust, seed }).
@@ -45,12 +48,15 @@ const BY_KIND = { emission: NEBULAE['orion-nebula'], reflection: NEBULAE.pleiade
 
 const BAKE_VS = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
 
-// One tile: Quilez's warp f(p + 4r), r = fbm(p + 4q), q = fbm(p), on a slice of 3D noise chosen by the layer, so the
-// layers are related slices of one cloud. Light falls to zero at the tile's edge.
+// One tile: a soft cloud with no round edge. Its outline is a domain-warped distance (lobes and bays, not a disc), the
+// gas inside is Quilez's warp f(p + 4r), r = fbm(p + 4q), q = fbm(p), thresholded by that envelope so it breaks into
+// clumps toward the rim, and everything is gone by 0.85 of the tile's half-size. Each layer is another slice of the
+// same 3D noise with its middle a little off centre, so the stacked cards make one irregular cloud.
 const BAKE_FS = /* glsl */ `
   ${GLSL_NOISE}
   uniform vec3 uGas, uGlow, uRim;
-  uniform float uSeed, uLayer, uLayers, uCore, uFil, uDust, uWisp, uScale, uBright, uOpacity, uHorse;
+  uniform float uSeed, uLayer, uLayers, uCore, uCoreSize, uFil, uDust, uWisp, uScale, uExtent, uHaze, uBright;
+  uniform float uOpacity, uHorse;
   uniform vec2 uStretch;
   uniform vec3 uLane;          // angle (radians), half-width, offset; width 0 for none
   varying vec2 vUv;
@@ -65,10 +71,9 @@ const BAKE_FS = /* glsl */ `
     float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
     return mix(b, a, h) - k * h * (1.0 - h);
   }
-  // The Horsehead's outline (Barnard 33), like a chess knight facing left: a dark pillar rising from a cloud bank, a
-  // broad neck leaning back, the head, the snout down to the left, an ear and the mane. Negative inside.
+  // The Horsehead's outline (Barnard 33), like a chess knight facing left: a broad neck leaning back, the head, the
+  // snout down to the left, an ear and the mane, rising from the dark cloud bank below. Negative inside.
   float horse(vec2 p) {
-    float bank = p.y + 0.6 + 0.05 * sin(p.x * 7.0) + 0.03 * sin(p.x * 17.0);
     float neck = sdEllipse(p, vec2(0.04, -0.3), vec2(0.2, 0.36), -0.18);
     float head = sdEllipse(p, vec2(-0.04, 0.1), vec2(0.16, 0.2), 0.25);
     float snout = sdEllipse(p, vec2(-0.21, -0.02), vec2(0.15, 0.085), 0.65);
@@ -77,60 +82,81 @@ const BAKE_FS = /* glsl */ `
     float d = smin(neck, head, 0.08);
     d = smin(d, snout, 0.05);
     d = smin(d, ear, 0.03);
-    d = smin(d, mane, 0.05);
-    return smin(d, bank, 0.1);
+    return smin(d, mane, 0.05);
   }
   void main() {
     vec2 p = vUv * 2.0 - 1.0;
     float zl = uLayer / max(uLayers - 1.0, 1.0);
-    vec3 q3 = vec3(p * uScale / uStretch, uSeed + zl * 1.9);
+    float s = uSeed + uLayer * 3.7;
+    // The first card is centred; the others lean their middle a little off, each its own way.
+    vec2 off = (vec2(hash13(vec3(s, 1.3, 2.9)), hash13(vec3(s, 5.1, 7.7))) - 0.5) * 0.3 * step(0.5, uLayer);
+    vec2 pw = p - off;
+    // The outline: a warped distance at two scales, so the edge has lobes, bays and loose tufts.
+    // (The warp is taken relative to its value at the middle, so the cloud's heart stays where the nebula is.)
+    vec2 w1 = vec2(fbm3(vec3(pw * 1.4, s)), fbm3(vec3(pw * 1.4 + 4.7, s + 1.9)));
+    vec2 w2 = vec2(fbm3(vec3((pw + w1) * 3.1, s + 3.1)), fbm3(vec3((pw + w1) * 3.1 + 2.3, s + 4.4)));
+    vec2 w10 = vec2(fbm3(vec3(0.0, 0.0, s)), fbm3(vec3(4.7, 4.7, s + 1.9)));
+    vec2 w20 = vec2(fbm3(vec3(w10 * 3.1, s + 3.1)), fbm3(vec3(w10 * 3.1 + 2.3, s + 4.4)));
+    vec2 pe = (pw + 0.75 * (w1 - w10) + 0.3 * (w2 - w20)) / uStretch;
+    float rw = length(pe) / uExtent;
+    float edge = 1.0 - smoothstep(0.5, 0.85, length(p));          // nothing reaches the card's edge
+    float env = exp(-2.0 * rw * rw) * edge;
+    // The gas: Quilez's warp, then clumps where the noise beats the falling envelope.
+    vec3 q3 = vec3(pe * uScale, s * 0.37);
     vec3 q = vec3(fbm3(q3), fbm3(q3 + vec3(5.2, 1.3, 2.1)), 0.0);
     vec3 r = vec3(fbm3(q3 + 4.0 * q + vec3(1.7, 9.2, 0.3)), fbm3(q3 + 4.0 * q + vec3(8.3, 2.8, 1.1)), 0.0);
     float f = fbm(q3 + 4.0 * r);
-    float rad = length(p);
-    // An uneven outline, so the cloud is not a disc.
-    float fall = smoothstep(1.0, 0.3, rad + 0.45 * (fbm3(vec3(p * 1.3, uSeed * 0.7 + zl)) - 0.5))
-      * smoothstep(1.0, 0.85, rad) * (0.75 + 0.25 * (1.0 - zl));
-    float gas = pow(clamp(f * 1.5 - 0.32, 0.0, 1.0), 1.7) * fall;
+    // Smoky texture (bright where the warped noise is high) inside clumps that thin out toward the rim.
+    float m = 1.35 * env + 1.2 * (f - 0.5) - 0.38;
+    float tex = pow(clamp(f * 1.8 - 0.45, 0.0, 1.0), 2.0);
+    float gas = tex * smoothstep(-0.15, 0.55, m) * (0.25 + 0.75 * env);
     // Streaks for reflection nebulae: the same noise stretched, so it runs in strands.
     if (uWisp > 0.0) {
-      float s = fbm(vec3(p.x * uScale * 3.5 + 2.0 * r.x, p.y * uScale * 0.9, uSeed * 1.3 + zl));
-      gas = mix(gas, gas * (0.35 + 1.3 * pow(max(s, 0.0), 1.5)), uWisp);
+      float st = fbm(vec3(pe.x * uScale * 4.0 + 2.0 * r.x, pe.y * uScale * 0.8, s * 1.3));
+      gas = mix(gas, gas * (0.2 + 3.2 * sq(max(st, 0.0))), uWisp);
     }
-    // Bright threads: ridged noise of the warped domain.
+    // Bright threads: ridged noise of the warped domain, only where there is gas.
     float rid = 1.0 - abs(2.0 * fbm(q3 * 2.3 + 2.5 * r + 4.0) - 1.0);
-    float fil = pow(max(rid, 0.0), 7.0) * gas * 2.0 * uFil;
-    float core = exp(-rad * rad * 16.0) * (0.5 + 0.9 * f) * uCore * (1.0 - 0.5 * zl);
-    vec3 col = mix(uRim, uGas, smoothstep(0.05, 0.5, gas + 0.25 * (1.0 - rad))) * gas;
-    col += mix(uGas, uGlow, 0.35) * fil + uGlow * core;
+    float fil = sq(sq(rid)) * rid * rid * smoothstep(0.05, 0.45, m) * env * uFil * 1.4;
+    float rc = length(pe) / max(uCoreSize, 1e-3);
+    float core = exp(-rc * rc) * (0.5 + 0.9 * f) * uCore * (1.0 - 0.6 * zl);
+    vec3 col = mix(uRim, uGas, smoothstep(0.08, 0.6, env)) * gas * 1.6;
+    col += uRim * uHaze * env * env * 0.35 + mix(uGas, uGlow, 0.4) * fil + uGlow * core;
     // Dust: dark patches from a second warped noise, and an optional lane across the middle.
-    float d = smoothstep(0.48, 0.72, fbm(q3 * 1.8 + 3.0 * r + 11.0)) * uDust;
+    float d = smoothstep(0.5, 0.74, fbm(q3 * 1.8 + 3.0 * r + 11.0)) * uDust;
     if (uLane.y > 0.0) {
       vec2 a = vec2(cos(uLane.x), sin(uLane.x));
-      float across = dot(p, vec2(-a.y, a.x)) - uLane.z + 0.12 * (fbm3(vec3(p * 3.0, uSeed + 5.0)) - 0.5);
-      float lane = exp(-sq(across / uLane.y)) * smoothstep(0.95, 0.2, abs(dot(p, a)));
-      d = max(d, lane * (0.6 + 0.6 * fbm3(vec3(p * 6.0, uSeed + 9.0))));
+      float across = dot(p, vec2(-a.y, a.x)) - uLane.z + 0.1 * (fbm3(vec3(p * 3.0, s + 5.0)) - 0.5);
+      float lane = exp(-sq(across / uLane.y)) * smoothstep(0.7, 0.15, abs(dot(p, a)));
+      d = max(d, lane * (0.6 + 0.6 * fbm3(vec3(p * 6.0, s + 9.0))));
     }
+    d *= smoothstep(0.02, 0.35, env);
     if (uHorse > 0.5) {
-      // Layer 0 holds the picture: the red curtain (IC 434) above a straight edge, the horse dark against it.
-      // The curtain only on the first card (the others would repeat its straight lower edge at random angles).
-      float curtain = smoothstep(-0.75, -0.1, p.y) * fall * (0.35 + 0.9 * f) * (zl < 0.01 ? 1.0 : 0.0);
-      float edge = exp(-sq((p.x + 0.55 - 0.1 * p.y) / 0.08)) * 0.6;
-      col = uGas * curtain + uGlow * edge * curtain + uGas * gas * 0.35;
-      float h = horse(p + 0.04 * vec2(fbm3(vec3(p * 5.0, uSeed)) - 0.5, fbm3(vec3(p * 5.0, uSeed + 3.0)) - 0.5));
-      float sil = (1.0 - smoothstep(-0.02, 0.03, h)) * (zl < 0.01 ? 1.0 : 0.0);
-      d = max(d * fall, sil);
-    } else {
-      d *= fall;
+      // The red curtain (IC 434) glows above a ragged dark bank; the horse's head rises from the bank into the glow,
+      // dark against it. The first card holds the head and the bank; every card keeps its gas above the bank.
+      float first = 1.0 - step(0.5, uLayer);
+      vec2 hp = p / 0.4 + vec2(0.02, -0.08);
+      float h = horse(hp + 0.05 * vec2(fbm3(vec3(hp * 5.0, s)) - 0.5, fbm3(vec3(hp * 5.0, s + 3.0)) - 0.5));
+      float bankY = -0.2 + 0.08 * (fbm3(vec3(p.x * 3.0, 0.0, uSeed + 2.0)) - 0.5) + 0.03 * sin(p.x * 9.0);
+      float below = smoothstep(0.03, -0.06, p.y - bankY);
+      float bank = below * (1.0 - smoothstep(0.55, 0.85, length(p * vec2(0.75, 1.0))));
+      float body = 1.0 - smoothstep(-0.02, 0.03, h);
+      float sil = max(body, bank) * first;
+      float curtain = smoothstep(bankY - 0.02, bankY + 0.3, p.y) * env * (0.35 + 0.9 * f) * first;
+      float lit = exp(-sq((p.y - bankY - 0.04) / 0.07)) * env * 0.35 * first;
+      col = uGas * (curtain * 0.9 + gas * 0.9) + uGlow * (lit + 0.5 * fil) * (curtain + gas)
+        + uRim * uHaze * env * env * 0.5;
+      col *= (1.0 - below) * (1.0 - 0.97 * sil) * smoothstep(-0.01, 0.12, h);
+      d = max(d * (1.0 - below), sil);
     }
-    col *= 1.0 - 0.92 * clamp(d, 0.0, 1.0);
+    col *= 1.0 - 0.9 * clamp(d, 0.0, 1.0);
     col *= uBright;
-    // Keep the hue: compress by the brightest channel, so a tile peaks near 0.55 and the cards add up to white only
-    // where several bright ones overlap (the core).
+    // Keep the hue: compress by the brightest channel, so a tile peaks near 0.5 and the cards add up to a pale glow
+    // only in the middle, where several bright ones overlap.
     float M = max(col.r, max(col.g, col.b));
-    col *= (1.0 - exp(-M * 1.6)) / max(M, 1e-4) * 0.5;
-    float alpha = clamp(d * uOpacity, 0.0, 1.0);
-    gl_FragColor = vec4(sqrt(clamp(col, 0.0, 1.0)), alpha);
+    col *= (1.0 - exp(-M * 1.8)) / max(M, 1e-4) * 0.4;
+    float alpha = clamp(d * uOpacity, 0.0, 1.0) * edge;
+    gl_FragColor = vec4(sqrt(clamp(col * edge, 0.0, 1.0)), alpha);
   }`;
 
 // The palette for a call: a NEBULAE entry by id (it wins over the colours passed, as the look is tuned here), else
@@ -180,6 +206,8 @@ export function nebulaBaker(renderer, palette, layers = 4, size = 256) {
       uLayer: { value: 0 }, uLayers: { value: L }, uCore: { value: pal.core || 0 }, uFil: { value: pal.fil || 0 },
       uDust: { value: finite(pal.dust) ? pal.dust : 0 }, uWisp: { value: pal.wisp || 0 },
       uScale: { value: pal.scale || 1.5 }, uBright: { value: finite(pal.bright) ? pal.bright : 1 },
+      uCoreSize: { value: finite(pal.coreSize) ? pal.coreSize : 0.15 },
+      uExtent: { value: finite(pal.extent) ? pal.extent : 0.45 }, uHaze: { value: finite(pal.haze) ? pal.haze : 0.25 },
       uOpacity: { value: finite(pal.opacity) ? pal.opacity : 0.5 }, uHorse: { value: pal.shape === 'horse' ? 1 : 0 },
       uStretch: { value: new THREE.Vector2(...(pal.stretch || [1, 1])) },
       uLane: { value: new THREE.Vector3(lane[0] * Math.PI / 180, lane[1], lane[2]) },
@@ -301,11 +329,12 @@ function rng(seed) {
 }
 
 // The nebula: one camera-facing card per baked layer, spread through the nebula's volume, the first card the
-// largest and nearest the middle (render/view.js hides cards past the tier's layer count, the last ones first; the
-// others brighten to keep the total). bakes: from bakeNebula. pos: [x, y, z] (layer units; view.js passes the origin
-// and places the group itself). radius: in the same units (view.js passes 1 and scales the group). opts: { order
-// (renderOrder, default -10: before the stars, so stars shine over the gas) }.
-// Returns a Group. Uniforms view.js feeds: uFade, uDoppler.
+// largest and centred (render/view.js hides cards past the tier's layer count, the last ones first; the others
+// brighten to keep the total). Each card's half-size is the palette's spread (in units of the radius), so the soft
+// cloud reaches past the nebula's ring while its light fades out well inside the card. bakes: from bakeNebula. pos:
+// [x, y, z] (layer units; view.js passes the origin and places the group itself). radius: in the same units (view.js
+// passes 1 and scales the group). opts: { order (renderOrder, default -10: before the stars, so stars shine over the
+// gas) }. Returns a Group (userData.reach: how far the cards reach, in radii). Uniforms view.js feeds: uFade, uDoppler.
 export function createNebula(bakes, pos = [0, 0, 0], radius = 1, opts = {}) {
   const b = bakes && bakes.texture ? bakes : { texture: bakes, layers: 1, cols: 1, rows: 1, palette: {} };
   const pal = b.palette || {};
@@ -315,19 +344,22 @@ export function createNebula(bakes, pos = [0, 0, 0], radius = 1, opts = {}) {
   group.scale.setScalar(finite(radius) && radius > 0 ? radius : 1);
   const rnd = rng(finite(pal.seed) ? pal.seed + 0.37 : 1.37);
   const L = b.layers;
-  const stretch = pal.stretch || [1, 1];
+  const spread = finite(pal.spread) && pal.spread > 0 ? pal.spread : 1.2;
+  let reach = 0;
   for (let i = 0; i < L; i++) {
-    // The first layers sit near the middle; later ones spread out in depth for parallax.
-    const spread = i === 0 ? 0.08 : 0.25 + 0.2 * rnd();
+    // The first card sits at the middle; later ones a little off in depth and to the side, for parallax and lobes.
+    const off = i === 0 ? 0.03 : (0.1 + 0.18 * rnd()) * spread * (pal.shape === 'horse' ? 0.15 : 1);
     const v = [rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1];
     const n = Math.hypot(...v) || 1;
     const tile = [(i % b.cols) / b.cols, Math.floor(i / b.cols) / b.rows, 1 / b.cols, 1 / b.rows];
+    const size = (i === 0 ? 1 : 0.75 + 0.35 * rnd()) * spread;
+    reach = Math.max(reach, size + off);
     const uniforms = artUniforms({
       uMap: { value: b.texture },
       uTile: { value: new THREE.Vector4(...tile) },
-      uSize: { value: (i === 0 ? 1.15 : 0.85 + 0.4 * rnd()) * Math.max(stretch[0], stretch[1], 1) },
+      uSize: { value: size },
       // Streaky nebulae keep their cards nearly aligned (crossed streaks look woven); others turn freely.
-      uRot: { value: pal.shape === 'horse' && i === 0 ? 0
+      uRot: { value: pal.shape === 'horse' ? (i === 0 ? 0 : (rnd() - 0.5) * 0.3)
         : pal.wisp > 0 ? (rnd() - 0.5) * 0.35 : rnd() * Math.PI * 2 },
       uNear: { value: 1 },
       uTemp: { value: finite(pal.temperature) ? pal.temperature : 9000 },
@@ -341,7 +373,7 @@ export function createNebula(bakes, pos = [0, 0, 0], radius = 1, opts = {}) {
     card.name = `nebula-layer-${i}`;
     card.frustumCulled = false;
     card.renderOrder = finite(opts.order) ? opts.order : -10;
-    card.position.set((v[0] / n) * spread, (v[1] / n) * spread, (v[2] / n) * spread);
+    card.position.set((v[0] / n) * off, (v[1] / n) * off, (v[2] / n) * off);
     // Keep the total light when fewer cards show (view.js steps the layer count down on slow devices).
     card.onBeforeRender = () => {
       let shown = 0;
@@ -350,6 +382,6 @@ export function createNebula(bakes, pos = [0, 0, 0], radius = 1, opts = {}) {
     };
     group.add(card);
   }
-  group.userData = { kind: 'nebula', id: pal.id || null, layers: L };
+  group.userData = { kind: 'nebula', id: pal.id || null, layers: L, reach };
   return group;
 }

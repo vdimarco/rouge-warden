@@ -15,7 +15,8 @@ import { hashSeed, mulberry32 } from '../core/rng.js';
 import { cosmicWeb, WEB_COUNTS } from '../core/gen/web.js';
 import { starField, openCluster, STAR_COUNTS, SPECTRAL_MIX } from '../core/gen/stars.js';
 import { galaxyParticles, GALAXY_COUNTS } from '../core/gen/galaxy.js';
-import { createLut, createRelativity, createPointMaterial, createPoints, createHeadlight, LUT_TMAX } from './points.js';
+import { createLut, createRelativity, createPointMaterial, createPoints, createHeadlight, createGlowMaterial, LUT_TMAX }
+  from './points.js';
 import { bakeBandFaces, createSky } from './sky.js';
 
 // ---------- budgets (final.md 2.18) ----------
@@ -52,13 +53,29 @@ const NCP = [-0.4847, 0.7466, 0.4560];            // the north celestial pole in
 
 // Exposure of each point layer: what a magnitude-0 star (or a typical galaxy) gives as sprite energy.
 const STAR_EXPOSURE = 8;
-const GLOW_CANDIDATE = 4, GLOW_SUPERGIANT = 25;   // least point energy of a candidate star in a scan (see lightCandidates)
+const GLOW_CANDIDATE = 4;                         // a candidate star's glow grows past its least size above this energy
 // Galaxies: E = flux · k · (REF · scale / r)^FALLOFF, the scale (Mly from the Sun) capped at SCALE_MAX.
 const WEB_EXPOSURE = 0.35, WEB_FALLOFF = 0.6, WEB_REF = 0.3, WEB_SCALE_MAX = 1000;
 const SKY_EXPOSURE = 1.6;
 const HEADLIGHT = 60;                            // headlight energy per unit of heat ratio r
 const MW_REF_LY = 169000;                       // the Milky Way particles' light is set at the reveal distance
 const SUN_PX = 64;                               // the Sun's glare sprite, CSS px (a star's cap is the tier's)
+// Candidate stars in a scan: a glow at least GLOW_MIN_PX across (red supergiants GLOW_GIANT_PX), larger when brighter.
+const GLOW_MIN_PX = 13, GLOW_GIANT_PX = 20, GLOW_SLOTS = 8;
+const CLUSTER_LIT = 60;                          // brightest members of a candidate open cluster lit in a scan
+const PLANET_FLOOR = 3;                          // least point energy of a planet seen as a dot in the Solar System
+// Galaxy clusters as crowds: galaxies drawn for a rich cluster (Coma, about 1,000 members) at each tier; a poorer one
+// gets fewer, by the square root of its members. On screen a crowd is at least CROWD_SHARE of the short side in radius
+// (between CROWD_MIN and CROWD_MAX CSS px), so a cluster reads as a crowd of small galaxies, not one white dot.
+const CROWD = { high: 520, mid: 400, low: 300 };
+const CROWD_SHARE = 0.045, CROWD_MIN = 24, CROWD_MAX = 44;
+// A nebula's light (about half its cards' reach) is drawn at least this big, CSS px of radius.
+const NEBULA_SHARE = 0.03, NEBULA_MIN = 12, NEBULA_MAX = 15;
+// Core radius (share of the cluster's radius) and sub-clumps of each cluster: Fornax tight, Eridanus loose, Hercules
+// lumpy, Virgo with a second clump around M49.
+const CROWD_SHAPE = { coma: { rc: 0.28 }, virgo: { rc: 0.32, clumps: [[0.45, -0.3, 0.1, 0.3]] }, fornax: { rc: 0.2 },
+  eridanus: { rc: 0.5 }, leo: { rc: 0.32 }, hercules: { rc: 0.34, clumps: [[0.5, 0.2, 0, 0.35], [-0.35, 0.45, 0.1, 0.25]] },
+  centaurus: { rc: 0.3 }, hydra: { rc: 0.32 }, norma: { rc: 0.3 } };
 
 // ---------- what each galaxy impostor looks like (core/gen/galaxy options) ----------
 // tilt: inclination seen from the Sun (0 face-on, 90 edge-on); spin: turns the tilt axis, degrees.
@@ -83,7 +100,7 @@ const NEBULAE = {
   'witch-head': { kind: 'reflection', gas: [0.25, 0.42, 1.0], glow: [0.5, 0.65, 1.0], dust: [0, 0, 0], seed: 7 },
   carina: { kind: 'emission', gas: [1.0, 0.45, 0.35], glow: [1.0, 0.8, 0.6], dust: [0.1, 0.04, 0.02], seed: 5 },
   pleiades: { kind: 'reflection', gas: [0.25, 0.45, 1.0], glow: [0.7, 0.8, 1.0], dust: [0, 0, 0], seed: 9,
-    radiusLy: 12 },
+    radiusLy: 7 },
 };
 // Solar System bodies: the art module's maker, an equivalent temperature for their far-away point, and H, the
 // absolute magnitude (at 1 AU from Sun and viewer) that sets the point's brightness.
@@ -169,6 +186,7 @@ function interleave(parts) {
   const total = parts.reduce((s, p) => s + p.count, 0);
   const positions = new Float32Array(total * 3), temperature = new Float32Array(total), lum = new Float32Array(total);
   const taken = parts.map(() => 0);
+  const part = new Uint8Array(total);                   // which part each point came from
   for (let k = 0; k < total; k++) {
     let best = -1, bestF = Infinity;
     for (let j = 0; j < parts.length; j++) {
@@ -180,8 +198,9 @@ function interleave(parts) {
     positions[k * 3] = p.positions[i * 3]; positions[k * 3 + 1] = p.positions[i * 3 + 1];
     positions[k * 3 + 2] = p.positions[i * 3 + 2];
     temperature[k] = p.temperature[i]; lum[k] = p.lum[i];
+    part[k] = best;
   }
-  return { count: total, positions, temperature, lum };
+  return { count: total, positions, temperature, lum, part };
 }
 
 // Absolute visual magnitude of a star from its radius (Sun = 1) and temperature: L = R² (T / T_sun)⁴, with the share of
@@ -469,12 +488,16 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
     // The far web fills a ball of radius 1,500 Mly around a point 800 Mly out toward the start, so every camera of
     // chapters I and II (scan cameras pull back up to about 1.9 billion ly) sits inside it; its rim fades softly.
     const far = OBJECTS.start.pos.map((v) => (v / len(OBJECTS.start.pos)) * 800);
+    // The galaxies of a cluster drawn as a crowd (buildCrowds) leave the web, so its knot is not drawn twice.
+    const crowded = (list, w, i) => w.knot && w.knot[i] >= 0 && Boolean(CROWD_SHAPE[list[w.knot[i]]?.id]);
+    const farClusters = webClusters(true), nearClusters = webClusters(false);
     job('web-far', chapter, () => gen.run('cosmicWeb', {
       seed: hashSeed(seed, 'web-far'), count: Math.round(nFar * 1.95), centre: far, box: 3000, cells: 300,
-      clusters: webClusters(true),
+      clusters: farClusters,
     }).then((w) => {
       const pts = toPoints(w), keep = [];
       for (let i = 0; i < pts.count && keep.length < nFar; i++) {
+        if (crowded(farClusters, w, i)) continue;
         const r = Math.hypot(pts.positions[i * 3] - far[0], pts.positions[i * 3 + 1] - far[1],
           pts.positions[i * 3 + 2] - far[2]) / 1500;
         if (r > 1) continue;
@@ -492,10 +515,80 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
     }));
     job('web-near', chapter, () => gen.run('cosmicWeb', {
       seed: hashSeed(seed, 'web-near'), count: nNear, centre: [0, 0, 0], box: 320, cells: 80,
-      clusters: webClusters(false), voids: [{ pos: OBJECTS['local-void'].pos.map((v) => v / M), radius: 35 }],
+      clusters: nearClusters, voids: [{ pos: OBJECTS['local-void'].pos.map((v) => v / M), radius: 35 }],
     }).then((w) => {
-      addPoints('cosmic', toPoints(w), { falloff: WEB_FALLOFF, emax: 2, cull: 0.02 }, 'web-near');
+      const pts = toPoints(w);
+      const keep = [];
+      for (let i = 0; i < pts.count; i++) if (!crowded(nearClusters, w, i)) keep.push(i);
+      const out = { count: keep.length, positions: new Float32Array(keep.length * 3),
+        temperature: new Float32Array(keep.length), lum: new Float32Array(keep.length) };
+      keep.forEach((i, k) => {
+        out.positions.set(pts.positions.subarray(i * 3, i * 3 + 3), k * 3);
+        out.temperature[k] = pts.temperature[i];
+        out.lum[k] = pts.lum[i];
+      });
+      addPoints('cosmic', out, { falloff: WEB_FALLOFF, emax: 2, cull: 0.02 }, 'web-near');
     }));
+  }
+
+  // Galaxy clusters as crowds of small galaxy points: a Plummer profile (dense to the middle, cut at the cluster's
+  // radius) with the giant ellipticals first, as slightly larger warm points (Coma's two, NGC 4874 and NGC 4889).
+  // One Points per cluster in its own frame (radius 1), each with its own point material (one shader program);
+  // place() grows a far cluster to a readable size on screen (CROWD_SHARE) and lets it shrink back to its true size as
+  // you close in. A lower point tier draws a prefix (the giants come first).
+  function buildCrowds(chapter) {
+    job('crowds', chapter, () => {
+      const t0 = now();
+      const rich = CROWD[built.tier] || CROWD.mid;
+      for (const [id, shape] of Object.entries(CROWD_SHAPE)) {
+        const o = OBJECTS[id];
+        if (!o) continue;
+        const rnd = mulberry32(hashSeed(seed, 'crowd', id));
+        const n = Math.round(rich * clamp(Math.sqrt((o.members || 300) / 1000), 0.3, 1));
+        const giants = Math.min(o.giants || 0, 3);
+        const positions = new Float32Array(n * 3), temperature = new Float32Array(n), lum = new Float32Array(n);
+        const size = new Float32Array(n);
+        const clumps = [[0, 0, 0, 1], ...(shape.clumps || [])];
+        const wsum = clumps.reduce((s, c) => s + c[3], 0);
+        for (let i = 0; i < n; i++) {
+          let x, y, z;
+          if (i < giants) {
+            // The giants sit near the middle, a little apart (Coma's pair, 7 arcminutes apart on the sky).
+            const a = (i / Math.max(1, giants)) * Math.PI * 2 + rnd();
+            x = 0.07 * Math.cos(a); y = 0.07 * Math.sin(a); z = 0.02 * (rnd() - 0.5);
+            temperature[i] = 4100 + 200 * rnd();
+            lum[i] = 2.6 + 0.6 * rnd();
+            size[i] = 0.09;
+          } else {
+            let u = rnd() * wsum, c = clumps[0];
+            for (const cl of clumps) { if (u < cl[3]) { c = cl; break; } u -= cl[3]; }
+            const sub = c === clumps[0] ? 1 : 0.4;
+            let r;
+            do { r = shape.rc / Math.sqrt(Math.max(1e-6, rnd()) ** (-2 / 3) - 1); } while (r > 1);
+            const cz = 2 * rnd() - 1, ph = 2 * Math.PI * rnd(), s = Math.sqrt(1 - cz * cz);
+            x = c[0] + sub * r * s * Math.cos(ph); y = c[1] + sub * r * s * Math.sin(ph); z = c[2] + sub * r * cz;
+            // Mostly red ellipticals in the middle, a few bluer spirals outside; a log-normal spread of brightness.
+            temperature[i] = 5000 + 900 * rnd() + 1200 * r * rnd();
+            // (fainter in the crowded middle, so the core is a glow with galaxies in it, not a white disc)
+            // A rich cluster has more galaxies, each a little fainter, so its crowd reads denser, not whiter.
+            lum[i] = 0.3 * Math.max(rnd(), 0.002) ** -0.35 * (0.3 + 0.7 * smoothstep(0, 0.6, r)) * (120 / n) ** 0.45;
+            size[i] = 0;
+          }
+          positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z;
+        }
+        // More galaxies at a higher tier means more, fainter ones, not a brighter cluster.
+        const material = createPointMaterial({ shared: rel, maxPx: tierOf().spritePx,
+          exposure: 1.5 * (CROWD.low / rich) ** 0.6, falloff: 0, near: 1, emax: 14, cull: 0.02, sized: true });
+        const pts = createPoints({ positions, temperature, lum, size, material });
+        pts.name = `crowd:${id}`;
+        const radius = o.radiusLy;
+        const p = addProp('cosmic', { id: `crowd:${id}`, pos: o.pos, radiusLy: radius, obj: pts,
+          scale: radius / LAYER_UNITS.cosmic, kind: 'crowd', minPx: 0.5 });
+        Object.assign(p, { count: n, rich, material, near: len(o.pos) / M < 150, cluster: id });
+        applyCrowdTier(p);
+      }
+      slice('crowds', t0);
+    });
   }
 
   // Disc normal of a galaxy for the stand-in: tilted from the line of sight from the Sun by its inclination.
@@ -706,6 +799,14 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       });
       const named = namedStars();
       const field = interleave(parts);
+      // The brightest members of each open cluster (parts 4 to 6), so a candidate cluster can be lit in a scan.
+      st.clusterMembers = new Map();
+      ['pleiades', 'hyades', 'beehive'].forEach((id, j) => {
+        const members = [];
+        for (let k = 0; k < field.count; k++) if (field.part[k] === 4 + j) members.push(k);
+        members.sort((a, b) => field.lum[b] - field.lum[a]);
+        st.clusterMembers.set(id, members.slice(0, CLUSTER_LIT).map((k) => k + named.count));
+      });
       const total = named.count + field.count;
       const positions = new Float32Array(total * 3), temperature = new Float32Array(total), lum = new Float32Array(total);
       positions.set(named.positions); temperature.set(named.temperature); lum.set(named.lum);
@@ -720,6 +821,17 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       st.sunPoint = addPoints('stars', { count: 1, positions: new Float32Array(sun.pos), temperature:
         new Float32Array([sun.T]), lum: new Float32Array([lumOf(sun.absMag)]) },
       { exposure: STAR_EXPOSURE, falloff: 2, near: 1e-9, emax: 5000, cull: 0.01, maxPx: SUN_PX }, 'sun-point');
+      // Glows for the candidate stars of a scan (lightCandidates fills the slots).
+      const material = createGlowMaterial({ shared: rel, exposure: STAR_EXPOSURE, eref: GLOW_CANDIDATE,
+        maxPx: TIERS[q.tier].spritePx });
+      const glowPts = createPoints({ positions: new Float32Array(GLOW_SLOTS * 3), temperature: new Float32Array(GLOW_SLOTS),
+        lum: new Float32Array(GLOW_SLOTS), material });
+      glowPts.geometry.setAttribute('aMin', new THREE.BufferAttribute(new Float32Array(GLOW_SLOTS), 1));
+      glowPts.geometry.setDrawRange(0, 0);
+      glowPts.name = 'glows';
+      glowPts.renderOrder = 5;
+      layers.stars.root.add(glowPts);
+      st.glows = { pts: glowPts, material, count: 0 };
       slice('stars', t0);
     });
   }
@@ -758,9 +870,13 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
             obj = make(bakes, [0, 0, 0], 1);
           } catch (err) { console.warn(`light-years-home: nebula ${id}`, err?.message || err); obj = null; }
         }
-        const p = addProp('stars', { id: `nebula:${id}`, pos: o.pos, radiusLy: radius, obj: obj || standInNebula(pal),
-          scale: radius, kind: 'nebula', minPx: 1.5, art: obj ? 'nebula' : null });
+        // The cards reach past the nebula's radius (its soft cloud spills out of its ring): cull by their reach.
+        const reach = (obj && obj.userData && finite(obj.userData.reach) ? obj.userData.reach : 1) || 1;
+        const p = addProp('stars', { id: `nebula:${id}`, pos: o.pos, radiusLy: radius * reach,
+          obj: obj || standInNebula(pal), scale: radius, kind: 'nebula', minPx: 1.5, art: obj ? 'nebula' : null });
         p.layersAll = p.obj.children.length;
+        p.light = obj ? radius * reach * 0.45 : 0;
+        p.nebula = id;
         applyNebulaTier(p);
         slice(`nebula:${id}`, t0);
       }, true);
@@ -812,7 +928,7 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       const sunObj = make('sun', {});
       addProp('solar', { id: 'sun', pos: sun.pos, radiusLy: sun.radiusKm / KM_PER_LY,
         obj: sunObj || standInBody('#fff6e8', true),
-        scale: sun.radiusKm / KM_PER_AU, kind: 'body', minPx: 1, art: sunObj ? 'planets' : null });
+        scale: sun.radiusKm / KM_PER_AU, kind: 'body', minPx: 0, dotPx: 36, art: sunObj ? 'planets' : null });
       const pos = [], temp = [], lumv = [];
       for (const [id, b] of Object.entries(BODIES)) {
         const o = OBJECTS[id];
@@ -905,7 +1021,13 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
     st.sunPoint = null;
     st.starSet = null;
     st.planetPoints = null;
-    for (const k of ['web-far', 'web-near', 'stars', 'planets', 'mw-particles']) doneKeys.delete(k);
+    for (const k of ['web-far', 'web-near', 'stars', 'planets', 'mw-particles', 'crowds']) doneKeys.delete(k);
+    for (const p of props.filter((x) => x.kind === 'crowd')) dropProp(p);
+    if (st.glows) {
+      st.glows.pts.removeFromParent(); st.glows.pts.geometry.dispose(); st.glows.material.dispose();
+      st.glows = null;
+    }
+    st.sunGlow = false;
     if (st.mwParticles) {
       st.mwParticles.obj.removeFromParent();
       st.mwParticles.obj.traverse((o) => { if (o.isPoints) { o.geometry.dispose(); o.material.dispose(); } });
@@ -947,6 +1069,11 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       if (o.material === mw.material) mw.starsDrawn = n;
     });
   }
+  function applyCrowdTier(p) {
+    const n = Math.max(1, Math.round(p.count * Math.min(1, (CROWD[q.pointTier] || p.rich) / p.rich)));
+    p.obj.geometry.setDrawRange(0, n);
+    p.material.uniforms.uMaxPx.value = TIERS[q.tier].spritePx;
+  }
   function applyNebulaTier(p) {
     const n = TIERS[q.nebulaTier].nebulaLayers;
     p.obj.children.forEach((c, i) => { c.visible = i < Math.max(1, n); });
@@ -955,6 +1082,8 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
     for (const s of pointSets) applyPointTier(s);
     applyGalaxyTier();
     for (const p of props) if (p.kind === 'nebula') applyNebulaTier(p);
+    for (const p of props) if (p.kind === 'crowd') applyCrowdTier(p);
+    if (st.glows) st.glows.material.uniforms.uMaxPx.value = TIERS[q.tier].spritePx;
     for (const s of pointSets) s.material.uniforms.uMaxPx.value = s === st.sunPoint ? SUN_PX : TIERS[q.tier].spritePx;
   }
 
@@ -1078,8 +1207,11 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       // In a narrow view (the Betelgeuse scan is 7.6° tall) the band's clouds would fill the screen as a brown fog
       // over the stars; a telescope view shows the band's stars, not its glow, so the glow fades as the view narrows.
       const fovX = (2 * Math.atan(tanY * camera.aspect)) / D2R;
-      const zoom = 0.15 + 0.85 * smoothstep(5, 35, Math.min(desc.fovY, fovX));
+      const zoom = 0.07 + 0.93 * smoothstep(5, 35, Math.min(desc.fovY, fovX));
       u.uExposure.value = SKY_EXPOSURE * Math.pow(Math.max(1, boost), -0.75) * zoom;
+      // ...and resolves into its stars, a few px apart, over the darker glow (the dust lanes stay empty).
+      u.uCell.value = 6 / pxPerRad;
+      u.uStars.value = 0.9 * smoothstep(30, 14, Math.min(desc.fovY, fovX));
     }
     // Points: layer fades and per-layer exposure. Eye adaptation: ahead, a field of stars brightens like a glow, by
     // Y(D T) / Y(T) (D² more stars per patch of sky, each Y(D T) / Y(T) / D² as bright); the exposure follows a
@@ -1096,9 +1228,16 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       }
       // The dense web around home comes in as the camera closes in (Powers of Ten): from 400 to 125 Mly out.
       if (s.kind === 'web-near') f *= 1 - smoothstep(8.1, 8.6, Math.log10(scale));
-      if (s === st.sunPoint) f *= 1 - smoothstep(0.2, 1, w.solar) * 0.5;
+      // The Sun as a star gives way to its disc and glare (planets.js) inside the Solar System, and to its glow when
+      // it is a scan candidate (lightCandidates).
+      if (s === st.sunPoint) f *= (1 - smoothstep(0.2, 0.9, w.solar)) * (st.sunGlow ? 0 : 1);
       s.material.uniforms.uFade.value = f;
       s.pts.visible = f > 0.002;
+    }
+    if (st.glows) {
+      const f = layers.stars.weight * adaptPts;
+      st.glows.material.uniforms.uFade.value = f;
+      st.glows.pts.visible = st.glows.count > 0 && f > 0.002;
     }
     // Keep all layers together inside the tier's point budget: while the stars layer comes in, draw fewer Milky Way
     // particles (each brighter, so the light holds).
@@ -1113,8 +1252,20 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
     const halfDiag = Math.atan(Math.hypot(tanY * camera.aspect, tanY));
     const visibleBodies = new Set();
     const toView = tmpQ.copy(camera.quaternion).invert();
+    // A crowd is drawn at least this big (CSS px of radius), so a far cluster reads as a crowd of galaxies.
+    const crowdPx = clamp(CROWD_SHARE * Math.min(view.width, view.height), CROWD_MIN, CROWD_MAX);
+    const nebulaPx = clamp(NEBULA_SHARE * Math.min(view.width, view.height), NEBULA_MIN, NEBULA_MAX);
+    // Inside the Solar System the eye is set for the Sun and the sunlit planets: the faint glow of nebulae is gone
+    // (the Pleiades' haze must not sit beside the Earth as a blue blob).
+    const nebulaEye = 1 - smoothstep(0.05, 0.6, w.solar);
     for (const p of props) {
       let f = w[p.layer] * p.fade;
+      if (p.kind === 'nebula') f *= nebulaEye;
+      if (p.kind === 'crowd') {
+        f *= adaptPts;
+        // The clusters of the dense web around home come in with it (web-near), and a candidate always shows.
+        if (p.near && !st.crowdLit?.has(p.id)) f *= 1 - smoothstep(8.1, 8.6, Math.log10(scale));
+      }
       // The Milky Way impostor: in the group layer while the particles are not drawn; with no particles (the low
       // tier) it also stands for them in the galaxy layer, until the camera is inside the disc.
       if (p === st.mwImpostor) {
@@ -1127,7 +1278,17 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       if (!(dist > 0)) continue;
       const n = [d[0] / dist, d[1] / dist, d[2] / dist];
       const seen = phi > 0 ? aberrate(n, v, phi) : { n, D: 1 };
-      const ang = (p.radiusLy >= dist ? Math.PI / 2 : Math.asin(p.radiusLy / dist)) / seen.D;
+      let ang = (p.radiusLy >= dist ? Math.PI / 2 : Math.asin(p.radiusLy / dist)) / seen.D;
+      // A far cluster grows to a readable crowd; a far nebula that is a scan candidate grows to a readable cloud (on
+      // a phone the Horsehead would be a few px).
+      let grow = 1;
+      if (p.kind === 'crowd') grow = Math.max(1, crowdPx / Math.max(ang * pxPerRad, 1e-9));
+      else if (p.kind === 'nebula' && p.light > 0 && st.litIds?.has(p.nebula)) {
+        const lightPx = (p.light >= dist ? Math.PI / 2 : Math.asin(p.light / dist)) / seen.D * pxPerRad;
+        grow = Math.max(1, nebulaPx / Math.max(lightPx, 1e-9));
+      }
+      if (p.kind === 'crowd') p.anchor.scale.setScalar(p.scale * grow);
+      ang = Math.min(Math.PI / 2, ang * grow);
       const rPx = Math.min(ang, 1.5) * pxPerRad;
       const off = Math.acos(clamp(dot(seen.n, fwd), -1, 1));
       const reach = Math.max(ang, p.dotPx / pxPerRad);
@@ -1139,7 +1300,7 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       if (!p.self) {
         const k = dist / LAYER_UNITS[p.layer];
         p.anchor.position.set(seen.n[0] * k, seen.n[1] * k, seen.n[2] * k);
-        p.anchor.scale.setScalar(p.scale / seen.D);
+        p.anchor.scale.setScalar(p.scale / seen.D * grow);
       }
       setFade(p, f);
       const values = { uDoppler: seen.D, uTime: st.time, uPxPerRad: pxPerRad, uRatio: rel.uRatio.value };
@@ -1154,9 +1315,16 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
     // A layer draws while its weight is up, or while it holds the Milky Way impostor standing in for the particles.
     layers.group.extra = Boolean(st.mwImpostor && st.mwImpostor.visible);
     // Planet points stand in for discs too small to draw; they hide when the disc shows.
+    // Each stays a clear dot (at least PLANET_FLOOR of energy), so a planet beside the Sun is not lost in its glare.
     if (st.planetPoints) {
       const a = st.planetPoints.pts.geometry.getAttribute('aLum');
-      st.planetPoints.ids.forEach((id, i) => { a.array[i] = visibleBodies.has(id) ? 0 : st.planetPoints.base[i]; });
+      const posAu = pos.map((x) => x / AU_LY);
+      st.planetPoints.ids.forEach((id, i) => {
+        const o = OBJECTS[id];
+        const r = len(sub(o.pos.map((x) => x / AU_LY), posAu));
+        const floor = PLANET_FLOOR * r * r / STAR_EXPOSURE;
+        a.array[i] = visibleBodies.has(id) ? 0 : Math.max(st.planetPoints.base[i], floor);
+      });
       a.needsUpdate = true;
     }
     // Solar layer: the far plane follows the farthest body, so the depth buffer keeps its precision.
@@ -1215,6 +1383,7 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
       renderer.render(L.scene, camera);
     }
     for (const s of pointSets) if (s.pts.visible && layers[s.layer].weight > 0.002) points += s.drawn ?? s.total;
+    if (st.glows && st.glows.pts.visible && layers.stars.weight > 0.002) points += st.glows.count;
     if (st.mwParticles && st.mwParticles.obj.visible && layers.galaxy.weight > 0.002) points += st.mwParticles.drawn || 0;
     for (const p of props) {
       if (!p.visible || !p.anchor.visible) continue;
@@ -1248,40 +1417,71 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
     st.cam = cam;
     st.time = reduced ? 0 : (now() - st.t0) / 1000;
     if (state && Number.isInteger(state.chapter) && state.chapter > (st.prepared ?? -1)) prepare(state.chapter);
+    lightCandidates(state, cam);
     const placed = place(cam, { width, height, ratio: q.ratio });
     syncFx(state, cam, placed);
-    lightCandidates(state, cam);
     st.placed = placed;
   }
 
-  // In a scan (and the reveal after it) every candidate star shows at least as a clear glow, a red supergiant as a
-  // large one, so a star chosen by its colour or size can be seen and compared (from a scan's vantage point a
-  // candidate can be fainter than the eye sees: Aldebaran from the Orion Nebula is magnitude 7). Only the named
-  // stars at the front of the stars buffer change, and only when the candidates or the camera move.
+  // In a scan (and the reveal after it) every candidate star is drawn as a glow (points.js createGlowMaterial) in its
+  // true colour, at least GLOW_MIN_PX across (a red supergiant GLOW_GIANT_PX) and larger when brighter, so a star
+  // chosen by its colour or size can be seen and compared even when it is faint from the scan's vantage point
+  // (Aldebaran from the Orion Nebula is magnitude 7). The glow stands in for the star's own point, which goes dark.
+  // Only the named stars at the front of the stars buffer change, and only when the candidates or the camera move.
+  // Candidate clusters are noted too (st.crowdLit), so a near one shows even before the near web comes in.
   function lightCandidates(state, cam) {
-    const set = st.starSet;
-    if (!set || !st.namedIndex) return;
     const ph = state && state.phase;
     let ids = [];
     if (ph === 'clue' || ph === 'scan' || ph === 'fork' || ph === 'reveal') {
       const sc = scanOf(state);
       if (sc) ids = ph === 'reveal' ? [sc.entry.target.id] : sc.candidates.map((c) => c.id);
     }
-    const key = `${ids.join(',')}|${cam.pos.map((v) => v.toFixed(1)).join(',')}`;
+    st.crowdLit = new Set(ids.map((id) => `crowd:${id}`));
+    st.litIds = new Set(ids);
+    const set = st.starSet, glows = st.glows;
+    if (!set || !st.namedIndex || !glows) return;
+    const key = ids.length ? `${ids.join(',')}|${cam.pos.map((v) => v.toFixed(1)).join(',')}` : '';
     if (key === set.lightKey) return;
     set.lightKey = key;
     const attr = set.pts.geometry.attributes.aLum;
+    let wide = (set.lit || []).some(([i]) => i >= st.namedIndex.size);   // cluster members to put back
     for (const [i, v] of set.lit || []) attr.array[i] = v;
     set.lit = [];
+    const g = glows.pts.geometry;
+    const gp = g.attributes.position.array, gt = g.attributes.aTemp.array, gl = g.attributes.aLum.array;
+    const gm = g.attributes.aMin.array;
+    let k = 0;
+    st.sunGlow = false;
     for (const id of ids) {
-      const i = st.namedIndex.get(id), o = OBJECTS[id];
-      if (i === undefined || !o) continue;
-      const r = len(sub(o.pos, cam.pos)) / LAYER_UNITS.stars;
-      const floor = (o.radiusSun >= 300 ? GLOW_SUPERGIANT : GLOW_CANDIDATE) * r * r / STAR_EXPOSURE;
-      if (attr.array[i] < floor) { set.lit.push([i, attr.array[i]]); attr.array[i] = floor; }
+      const o = OBJECTS[id];
+      if (!o || k >= GLOW_SLOTS || !finite(o.T) || !finite(o.absMag)) continue;
+      const i = st.namedIndex.get(id);
+      if (id === 'sun') st.sunGlow = true;
+      else if (i === undefined) continue;
+      gp[k * 3] = o.pos[0]; gp[k * 3 + 1] = o.pos[1]; gp[k * 3 + 2] = o.pos[2];
+      gt[k] = o.T;
+      gl[k] = lumOf(o.absMag);
+      gm[k] = o.radiusSun >= 300 ? GLOW_GIANT_PX : GLOW_MIN_PX;
+      k++;
+      if (i !== undefined) { set.lit.push([i, attr.array[i]]); attr.array[i] = 0; }
+    }
+    glows.count = k;
+    g.setDrawRange(0, k);
+    for (const name of ['position', 'aTemp', 'aLum', 'aMin']) g.attributes[name].needsUpdate = true;
+    // A candidate open cluster: its brightest members shine at least as clear dots (brightest first), so the cluster
+    // reads as a group of stars from far away (the Beehive is 400 ly from the Pleiades scan).
+    const sp = set.pts.geometry.attributes.position.array;
+    for (const id of ids) {
+      const members = st.clusterMembers?.get(id);
+      if (!members) continue;
+      members.forEach((i, rank) => {
+        const r = len(sub([sp[i * 3], sp[i * 3 + 1], sp[i * 3 + 2]], cam.pos)) / LAYER_UNITS.stars;
+        const floor = (0.5 + 1.5 * (1 - rank / members.length)) * r * r / STAR_EXPOSURE;
+        if (attr.array[i] < floor) { set.lit.push([i, attr.array[i]]); attr.array[i] = floor; wide = true; }
+      });
     }
     attr.clearUpdateRanges?.();
-    attr.addUpdateRange?.(0, st.namedIndex.size);
+    if (!wide) attr.addUpdateRange?.(0, st.namedIndex.size);
     attr.needsUpdate = true;
   }
 
@@ -1298,9 +1498,10 @@ export function createView(canvas, { tier, reduced = false, seed = 1 } = {}) {
   function prepare(chapter = 0) {
     const c = clamp(Math.round(Number(chapter) || 0), 0, 3);
     st.prepared = Math.max(st.prepared ?? -1, c);
-    const plan = [buildWeb, buildWaypoints, buildGroup, buildStars, buildSky, buildMilkyWay, buildNebulae, buildSolar];
+    const plan = [buildWeb, buildCrowds, buildWaypoints, buildGroup, buildStars, buildSky, buildMilkyWay, buildNebulae,
+      buildSolar];
     // Carina (the last stop of chapter II) is a nebula, so the nebulae come with chapter II.
-    const chapterOf = { buildWeb: 0, buildWaypoints: 0, buildGroup: 1, buildStars: 1, buildSky: 1, buildMilkyWay: 1,
+    const chapterOf = { buildWeb: 0, buildCrowds: 0, buildWaypoints: 0, buildGroup: 1, buildStars: 1, buildSky: 1, buildMilkyWay: 1,
       buildNebulae: 1, buildSolar: 3 };
     for (const fn of plan) {
       const at = chapterOf[fn.name];

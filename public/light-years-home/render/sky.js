@@ -114,8 +114,9 @@ export function bakeBand(renderer, size = 256) {
 // from. Uniforms the view sets each frame: uViewToWorld (camera rotation), uTan (tan of the half field of view, x
 // and y), uBandRot (turns world directions into the Sun's band frame, so the bulge stays toward the Galactic Centre
 // wherever the camera is), uTilt (sine of the band's shift in latitude: below the disc you see it above you),
-// uExposure, uFade, uFine (0..1: grain for narrow views); and the shared relativity
-// uniforms (createRelativity) for e^φ, e^−φ, the direction of motion and the colour table.
+// uExposure, uFade, uFine (0..1: grain for narrow views), uCell (radians: the spacing of the band's resolved stars, a
+// few px) and uStars (their strength: up in narrow views, where the glow dims and the band resolves into stars); and
+// the shared relativity uniforms (createRelativity) for e^φ, e^−φ, the direction of motion and the colour table.
 export function createSky(cube, { shared, lut } = {}) {
   const rel = shared || createRelativity(lut);
   const geo = new THREE.BufferGeometry();
@@ -131,6 +132,8 @@ export function createSky(cube, { shared, lut } = {}) {
       uFade: { value: 1 },
       uFine: { value: 0 },
       uTilt: { value: 0 },
+      uCell: { value: 0.002 },
+      uStars: { value: 0 },
     },
     vertexShader: /* glsl */ `
       varying vec2 vNdc;
@@ -141,8 +144,33 @@ export function createSky(cube, { shared, lut } = {}) {
       uniform samplerCube uSky;
       uniform mat3 uViewToWorld, uBandRot;
       uniform vec2 uTan;
-      uniform float uExposure, uFade, uFine, uTilt;
+      uniform float uExposure, uFade, uFine, uTilt, uCell, uStars;
       varying vec2 vNdc;
+      // The stars the band is made of, as a telescope resolves them: one candidate star per cell of a 3D grid (cell
+      // size uCell) on the unit sphere, the two nearest cells along each axis. A cell's star shines with a chance
+      // that follows the band's brightness and thins where dust lies (so the dark lanes stay dark), with a steep
+      // spread of brightness (many faint, few bright) and a colour near the band's.
+      vec3 bandStars(vec3 dir, float L, float dust, float T, float D) {
+        vec3 q = dir / uCell;
+        vec3 b = floor(q) + step(0.5, fract(q)) - 1.0;
+        float sigma = 0.11;
+        vec3 sum = vec3(0.0);
+        for (int z = 0; z < 2; z++) for (int y = 0; y < 2; y++) for (int x = 0; x < 2; x++) {
+          vec3 c = b + vec3(float(x), float(y), float(z));
+          float h = lyhHash(c);
+          vec3 pos = c + 0.2 + 0.6 * vec3(lyhHash(c + 17.3), lyhHash(c + 31.7), lyhHash(c + 47.1));
+          float rad = length(pos);
+          if (abs(rad - 1.0 / uCell) > 0.5) continue;              // only cells the sphere passes through
+          float chance = clamp(0.55 * L, 0.0, 0.85) * (1.0 - 0.85 * dust);
+          if (h > chance) continue;
+          vec3 dq = q - pos * (length(q) / rad);                   // offset on the sphere, in cells
+          float d2 = dot(dq, dq);
+          float k = lyhHash(c + 5.9);
+          float bright = 0.25 + 3.0 * k * k * k * k * k * k;
+          sum += bright * exp(-0.5 * d2 / (sigma * sigma)) * lyhBlackbody(T * (0.75 + 0.9 * lyhHash(c + 9.1)) * D);
+        }
+        return sum;
+      }
       void main() {
         vec3 seen = normalize(vec3(vNdc * uTan, -1.0));
         float Dinv;
@@ -158,7 +186,9 @@ export function createSky(cube, { shared, lut } = {}) {
           float g = 0.5 * lyhNoise(q) + 0.3 * lyhNoise(q * 2.1 + 7.0) + 0.2 * lyhNoise(q * 4.3 + 3.0);
           L *= mix(1.0, 0.4 + 1.2 * g, uFine);
         }
-        gl_FragColor = vec4(1.0 - exp(-L * lyhBlackbody(T2)), 1.0);
+        vec3 col = 1.0 - exp(-L * lyhBlackbody(T2));
+        if (uStars > 0.002) col += uStars * uFade * bandStars(dir, s.r, s.g, T, D);
+        gl_FragColor = vec4(col, 1.0);
         #include <colorspace_fragment>
       }`,
     blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, transparent: true,

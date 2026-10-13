@@ -87,9 +87,11 @@ const GLOW_VS = /* glsl */ `
   attribute vec2 aCorner;
   uniform float uPxPerRad, uMinPx, uReach;
   varying vec2 vPx;
-  varying float vR, vReach;
+  varying float vR, vReach, vCoreMin;
   void main() {
     vec3 c = (modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    // The least disc: 5 px on a desktop, down to 3 px on a small screen, where planets beside the Sun sit closer.
+    vCoreMin = clamp(uPxPerRad * 0.0064, 3.0, 5.0);
     float scale = length((modelViewMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
     float dist = max(length(c), 1e-30);
     vec3 dir = c / dist;
@@ -107,14 +109,15 @@ const GLOW_FS = /* glsl */ `
   uniform float uFade, uDoppler, uGlow;
   uniform vec3 uHalo;
   varying vec2 vPx;
-  varying float vR, vReach;
+  varying float vR, vReach, vCoreMin;
   void main() {
     float r = length(vPx);
-    float core = max(vR, 3.5);
-    // A white core a few px across (a small Sun still reads as a white disc) and glare that falls off as a power of
-    // the distance, so it is gone well before the card's edge.
-    float inner = exp(-0.5 * (r / core) * (r / core)) * 2.5;
-    float glare = 0.7 * pow(core / (r + core), 2.4);
+    float core = max(vR, vCoreMin);
+    // A flat white disc at least 6 to 10 px across (a far Sun still reads as a white disc, not a smudge) and a warm
+    // glare that is down to a few per cent two disc widths out, so a planet beside the Sun stays a dot of its own.
+    float rc = r / core;
+    float inner = 3.0 * exp(-rc * rc * rc * rc);
+    float glare = 0.22 * exp(-r / (1.6 * core)) + 0.2 * pow(core / (r + core), 3.0);
     vec3 col = (bbRGB(${SUN_T.toFixed(1)}) * inner + uHalo * glare) * uGlow;
     col *= dopplerTint(${SUN_T.toFixed(1)}, uDoppler);
     col = (1.0 - exp(-col)) * (1.0 - smoothstep(0.7, 1.0, r / vReach));
