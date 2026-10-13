@@ -6,19 +6,28 @@ import { setupTouchControls } from './touch-controls.js';
 function fixture() {
   const window = new EventTarget();
   const document = Object.assign(new EventTarget(), { defaultView: window, hidden: false });
+  const attributes = new Map();
+  const gyroButton = Object.assign(new EventTarget(), {
+    setAttribute: (key, value) => attributes.set(key, value), getAttribute: key => attributes.get(key)
+  });
+  const gyroStatus = { textContent: '' };
+  document.getElementById = id => id === 'gyro-look' ? gyroButton : gyroStatus;
+  Object.assign(window, { isSecureContext: true, DeviceMotionEvent: {}, screen: { orientation: { angle: 0 } } });
   const root = Object.assign(new EventTarget(), { ownerDocument: document, contains: target => controls.includes(target) });
   const controls = [];
   const messages = [];
   const deltas = [];
   const stream = {
     toStreamerHandlers: new Map(['KeyDown', 'KeyUp', 'MouseMove', 'MouseEnter'].map(name => [name, values => messages.push([name, ...values])])),
-    webRtcController: { coordinateConverter: { translateSigned: (x, y) => { deltas.push([x, y]); return { x: x * 100, y: y * 100 }; } } }
+    webRtcController: { coordinateConverter: { translateSigned: (x, y) => { deltas.push([x, y]); return { x: x * 100, y: y * 100 }; } },
+      videoPlayer: { getVideoElement: () => ({ videoWidth: 1280, videoHeight: 720 }) } }
   };
   function control(dataset) {
     const captures = new Set();
     const styles = new Map();
     const target = {
-      dataset, styles, closest() { return this; },
+      dataset, styles, closest(selector) { return selector.includes('[data-stick]') || selector.includes('[data-key]')
+        ? (dataset.stick || dataset.key ? this : null) : null; },
       getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
       style: { setProperty: (key, value) => styles.set(key, value) },
       setPointerCapture: id => captures.add(id), hasPointerCapture: id => captures.has(id), releasePointerCapture: id => captures.delete(id)
@@ -28,15 +37,24 @@ function fixture() {
   }
   function pointer(type, target, pointerId = 1, clientX = 50, clientY = 50) {
     const event = new Event(type, { cancelable: true });
-    Object.defineProperties(event, Object.fromEntries(Object.entries({ target, pointerId, clientX, clientY, button: 0 }).map(([key, value]) => [key, { value }])));
-    root.dispatchEvent(event);
+    Object.defineProperties(event, Object.fromEntries(Object.entries({ target, pointerId, clientX, clientY, button: 0, pointerType: 'touch' }).map(([key, value]) => [key, { value }])));
+    surface.dispatchEvent(event);
+    return event;
   }
   function click(target, detail = 0) {
     const event = new Event('click');
     Object.defineProperties(event, { target: { value: target }, detail: { value: detail } });
     root.dispatchEvent(event);
   }
-  return { root, document, window, messages, deltas, control, pointer, click, ...setupTouchControls({ root, stream }) };
+  const surface = Object.assign(new EventTarget(), control({}));
+  surface.contains = target => target === surface || controls.includes(target);
+  function motion(timeStamp, rotationRate, accelerationIncludingGravity = { x: 0, y: 9.8, z: 0 }) {
+    const event = new Event('devicemotion');
+    Object.defineProperties(event, Object.fromEntries(Object.entries({ timeStamp, rotationRate, accelerationIncludingGravity }).map(([key, value]) => [key, { value }])));
+    window.dispatchEvent(event);
+  }
+  return { root, surface, gyroButton, gyroStatus, motion, document, window, messages, deltas, control, pointer, click,
+    ...setupTouchControls({ root, surface, stream }) };
 }
 
 test('touch input stays disabled until actual play and disabling releases held keys', () => {
@@ -106,6 +124,104 @@ test('look drag uses Epic video-coordinate normalization and bounded signed prot
   assert.deepEqual(f.messages, [['MouseEnter'], ['MouseMove', 32768, 32768, 1000, -500], ['MouseMove', 32768, 32768, 32767, -32767]]);
 });
 
+test('dragging the game image looks while another finger moves; a second look finger cannot steal it', () => {
+  const f = fixture();
+  const move = f.control({ stick: 'move' });
+  const look = f.control({ stick: 'look' });
+  f.setEnabled(true);
+  f.pointer('pointerdown', move, 1, 50, 0);
+  f.pointer('pointerdown', f.surface, 2, 20, 20);
+  f.pointer('pointermove', f.surface, 2, 40, 30);
+  f.pointer('pointerdown', look, 3);
+  f.pointer('pointermove', look, 3, 90, 90);
+  assert.deepEqual(f.deltas, [[20, 10]]);
+  assert.deepEqual(f.messages.slice(0, 2), [['KeyDown', 87, 0], ['MouseEnter']]);
+  f.pointer('pointercancel', f.surface, 2);
+  f.pointer('pointermove', f.surface, 2, 80, 60);
+  assert.equal(f.deltas.length, 1);
+  f.setEnabled(false);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 87]);
+});
+
+test('gyro needs an explicit permission click and maps portrait, landscape and flat-phone rotation', async () => {
+  const f = fixture();
+  let requests = 0;
+  f.window.DeviceMotionEvent.requestPermission = async () => { requests++; return 'granted'; };
+  f.setEnabled(true);
+  f.motion(0, { alpha: 0, beta: 0, gamma: 30 });
+  assert.deepEqual(f.messages, []);
+  f.gyroButton.dispatchEvent(new Event('click'));
+  await wait(0);
+  assert.equal(requests, 1);
+  f.motion(0, { alpha: 0, beta: 0, gamma: 30 });
+  assert.equal(f.gyroButton.getAttribute('aria-pressed'), 'true');
+  f.motion(20, { alpha: 0, beta: 0, gamma: 30 });
+  assert.deepEqual(f.messages.at(-1), ['MouseMove', 32768, 32768, -184, 0]);
+  f.window.screen.orientation.angle = 90;
+  f.window.dispatchEvent(new Event('orientationchange'));
+  f.motion(40, { alpha: 0, beta: 30, gamma: 0 }, { x: 9.8, y: 0, z: 0 });
+  assert.equal(f.messages.filter(message => message[0] === 'MouseMove').length, 1, 'rotation rebaselines without a camera jump');
+  f.motion(60, { alpha: 0, beta: 30, gamma: 0 }, { x: 9.8, y: 0, z: 0 });
+  assert.deepEqual(f.messages.at(-1), ['MouseMove', 32768, 32768, -184, 0]);
+  f.motion(80, { alpha: 30, beta: 0, gamma: 0 }, { x: 0, y: 0, z: 9.8 });
+  assert.deepEqual(f.messages.at(-1), ['MouseMove', 32768, 32768, -184, 0], 'a flat phone turns around its vertical axis');
+  f.gyroButton.dispatchEvent(new Event('click'));
+  f.motion(100, { alpha: 30, beta: 0, gamma: 0 });
+  assert.equal(f.messages.filter(message => message[0] === 'MouseMove').length, 3);
+  assert.equal(f.gyroButton.getAttribute('aria-pressed'), 'false');
+});
+
+test('gyro rejects unavailable/denied sensors, malformed rates, stale samples and background/menu input', async () => {
+  const f = fixture();
+  f.setEnabled(true);
+  f.window.DeviceMotionEvent = undefined;
+  f.gyroButton.dispatchEvent(new Event('click'));
+  assert.match(f.gyroStatus.textContent, /unavailable/);
+  f.window.DeviceMotionEvent = { requestPermission: async () => 'denied' };
+  f.gyroButton.dispatchEvent(new Event('click'));
+  await wait(0);
+  assert.match(f.gyroStatus.textContent, /denied/);
+  assert.equal(f.gyroButton.disabled, false);
+  f.window.DeviceMotionEvent.requestPermission = async () => 'granted';
+  f.gyroButton.dispatchEvent(new Event('click'));
+  await wait(0);
+  for (const rotationRate of [null, { alpha: null, beta: 0, gamma: 10 }, { alpha: 0, beta: Infinity, gamma: 10 }]) f.motion(20, rotationRate);
+  f.motion(100, { alpha: 0, beta: 0, gamma: 10 });
+  f.motion(1000, { alpha: 0, beta: 0, gamma: 10 });
+  assert.deepEqual(f.messages, [['MouseEnter']]);
+  f.root.inert = true;
+  f.motion(1020, { alpha: 0, beta: 0, gamma: 10 });
+  f.root.inert = false;
+  f.document.hidden = true;
+  f.motion(1040, { alpha: 0, beta: 0, gamma: 10 });
+  f.document.hidden = false;
+  f.window.dispatchEvent(new Event('blur'));
+  f.motion(1060, { alpha: 0, beta: 0, gamma: 10 });
+  assert.deepEqual(f.messages, [['MouseEnter']]);
+  f.window.dispatchEvent(new Event('focus'));
+  f.motion(1080, { alpha: 0, beta: 0, gamma: 10 });
+  f.motion(1100, { alpha: 0, beta: 0, gamma: 100000 });
+  assert.deepEqual(f.messages.at(-1), ['MouseMove', 32768, 32768, -3072, 0], 'sensor spikes are bounded');
+  f.setEnabled(false);
+  f.motion(1120, { alpha: 0, beta: 0, gamma: 10 });
+  assert.equal(f.messages.filter(message => message[0] === 'MouseMove').length, 1);
+});
+
+test('a permission response cannot enable gyro after disconnect', async () => {
+  const f = fixture();
+  let grant;
+  f.window.DeviceMotionEvent.requestPermission = () => new Promise(resolve => { grant = resolve; });
+  f.setEnabled(true);
+  f.gyroButton.dispatchEvent(new Event('click'));
+  f.setEnabled(false);
+  grant('granted');
+  await wait(0);
+  f.motion(20, { alpha: 0, beta: 0, gamma: 30 });
+  assert.deepEqual(f.messages, []);
+  assert.equal(f.gyroButton.getAttribute('aria-pressed'), 'false');
+  assert.equal(f.gyroButton.disabled, true);
+});
+
 test('blur, resize, pagehide, hidden document and explicit release all prevent stuck movement', () => {
   for (const reason of ['blur', 'resize', 'pagehide', 'hidden', 'explicit']) {
     const f = fixture();
@@ -162,4 +278,16 @@ test('releaseAll cancels a pending assistive activation without delayed duplicat
   assert.equal(action.dataset.pressed, 'false');
   await wait(150);
   assert.deepEqual(f.messages, [['KeyDown', 32, 0], ['KeyUp', 32]]);
+});
+
+test('a permitted sensor that sends no samples stays off with an explanation', async () => {
+  const f = fixture();
+  f.setEnabled(true);
+  f.gyroButton.dispatchEvent(new Event('click'));
+  assert.equal(f.gyroButton.getAttribute('aria-pressed'), 'false');
+  await wait(2600);
+  assert.match(f.gyroStatus.textContent, /No motion data/);
+  assert.equal(f.gyroButton.disabled, false);
+  assert.equal(f.gyroButton.getAttribute('aria-pressed'), 'false');
+  assert.deepEqual(f.messages, []);
 });

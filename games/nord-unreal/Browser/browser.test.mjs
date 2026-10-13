@@ -136,7 +136,7 @@ try {
   await page.evaluate(() => { document.querySelector('#qa-video-fullscreen').remove(); return document.exitFullscreen(); });
   await page.waitForFunction(() => !document.fullscreenElement);
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);
-  assert.equal(await page.locator('#trailer-video').evaluate(video => video.paused), true, 'closing the trailer stops it');
+  await page.waitForFunction(() => document.querySelector('#trailer-video').paused); // dialog close is queued by the browser.
   // The header keeps only the title and the menu button; the menu holds the stream buttons.
   for (const id of ['streamer', 'mute', 'fullscreen', 'disconnect']) {
     assert.equal(await page.locator(`#${id}`).isHidden(), true, `${id} is in the closed menu, not on top`);
@@ -246,20 +246,20 @@ try {
     document.querySelector('.touch-keys').addEventListener('click', event => window.__keyClicks.push(event.target.dataset.key), true);
   });
   assert.equal(await phonePage.locator('header').isHidden(), true, 'the header hides while playing on a phone');
-  // Small comic chips: one centred row of 44 px touch targets, each drawing a 30 px chip with one line of text.
+  // Compact comic chips stay bottom-right inside 44 px touch targets.
   const chips = await phonePage.evaluate(() => [...document.querySelectorAll('.touch-primary button')].map(button => {
     const box = button.getBoundingClientRect();
     const chip = getComputedStyle(button, '::before');
     return { top: box.top, left: box.left, right: box.right, height: box.height,
-      chip: box.height - parseFloat(chip.top) - parseFloat(chip.bottom), oneLine: !button.querySelector('span') || getComputedStyle(button.querySelector('span')).display === 'inline' };
+      chip: box.height - parseFloat(chip.top) - parseFloat(chip.bottom) };
   }));
   assert.equal(chips.length, 4);
   for (const chip of chips) {
     assert.ok(chip.height >= 44 && chip.chip <= 32, `each button is a 44 px target with a small chip (${chip.height}, ${chip.chip})`);
     assert.equal(chip.top, chips[0].top, 'the chips sit in one row');
-    assert.equal(chip.oneLine, true, 'each chip has one line of text');
+    assert.ok(chip.chip <= 24, 'the visible chips are compact');
   }
-  assert.ok(chips[0].left > 16 && chips.at(-1).right < 390 - 16, 'the row is centred, not a full-width bar');
+  assert.ok(chips[0].left > 390 / 2 && Math.abs(chips.at(-1).right - (390 - 8)) <= 1, 'the compact row is anchored at the right edge');
   const menuButton = await phonePage.locator('#touch-menu').boundingBox();
   assert.ok(menuButton.width >= 44 && menuButton.height >= 44, 'the ☰ button is a >=44 px target');
   await phonePage.locator('#touch-menu').click();

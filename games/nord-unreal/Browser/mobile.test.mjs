@@ -18,7 +18,8 @@ const report = {
   logging: { context: null, spam: [] },
   limits: ['Chromium touch emulation is not a physical iOS or Android device.',
     'This PC cannot establish a phone carrier or off-LAN media path.',
-    'Decoded video and input packets do not establish audible sound or driving feel.']
+    'Decoded video and input packets do not establish audible sound or driving feel.',
+    'Gyro samples and permission responses are simulated; physical sensors and calibration are unverified.']
 };
 let browser;
 let context;
@@ -155,7 +156,7 @@ async function fullscreenClearance(name) {
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
       ['radar and credits', 1018, 96, 262, 212], ['objective', 790, 470, 490, 160],
-      ['speed', 1040, 620, 240, 100], ['prompt', 400, 620, 640, 100],
+      ['speed digits and units', 1040, 624, 240, 39], ['prompt', 305, 620, 575, 100],
       ['completion', 490, 150, 310, 100], ['movement hint', 22, 620, 340, 40]
     ].map(([name, x, y, width, height]) => ({ name,
       x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
@@ -163,9 +164,23 @@ async function fullscreenClearance(name) {
     return {
       viewport: { width: innerWidth, height: innerHeight },
       video: bounds(document.querySelector('#video')), image, objectFit: getComputedStyle(video).objectFit, hud,
-      targets: selectors.map(selector => ({ selector, ...bounds(document.querySelector(selector)) }))
+      targets: selectors.map(selector => {
+        const element = document.querySelector(selector);
+        const target = bounds(element);
+        let ink = target;
+        if (element.closest('.touch-primary')) {
+          const chip = getComputedStyle(element, '::before');
+          // Transparent hit targets may cover old keyboard hints; visible chips must clear the HUD.
+          ink = { x: target.x + parseFloat(chip.left), y: target.y + parseFloat(chip.top),
+            width: target.width - parseFloat(chip.left) - parseFloat(chip.right),
+            height: target.height - parseFloat(chip.top) - parseFloat(chip.bottom) };
+        }
+        return { selector, ...target, ink };
+      })
     };
   });
+  report.input[`${name}FullscreenClearance`] = geometry;
+  await page.screenshot({ path: resolve(output, `${name}-fullscreen.png`) });
   const overlap = (a, b) => Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 1 &&
     Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 1;
   assert.equal(await page.evaluate(() => Boolean(document.fullscreenElement)), true);
@@ -181,14 +196,13 @@ async function fullscreenClearance(name) {
     assert.ok(target.x >= 0 && target.y >= 0 && target.x + target.width <= geometry.viewport.width + 1 &&
       target.y + target.height <= geometry.viewport.height + 1, `${target.selector} must fit the viewport`);
     for (const region of geometry.hud) {
-      assert.equal(overlap(target, region), false, `${target.selector} must leave native ${region.name} unobscured`);
+      assert.equal(overlap(target.ink, region), false, `${target.selector} must leave native ${region.name} unobscured`);
     }
     for (const other of geometry.targets.slice(0, index)) {
       assert.equal(overlap(target, other), false, `${target.selector} must not overlap ${other.selector}`);
     }
   }
-  report.input[`${name}FullscreenClearance`] = geometry;
-  await page.screenshot({ path: resolve(output, `${name}-fullscreen.png`) });
+
 }
 
 async function center(selector, dx = 0, dy = 0) {
@@ -375,6 +389,63 @@ try {
       await page.waitForTimeout(200);
       assert.equal((await sends()).slice(afterCancel).some(record => record.id === 60 && [87, 32].includes(record.bytes[1])), false,
         'cancelled touch must not reassert held movement or jump');
+    });
+    await check('drag anywhere changes the real view while another finger moves', async () => {
+      const before = await framePixels();
+      const since = (await sends()).length;
+      const move = finger(1, await center('[data-stick="move"]', 0, -32));
+      const { width, height } = page.viewportSize();
+      for (const x of [width * .15, width * .5, width * .8]) {
+        const start = { x: Math.round(x), y: Math.round(height * .52) };
+        await touch('touchStart', [move, finger(2, start)]);
+        const at = (await sends()).length;
+        await touch('touchMove', [move, finger(2, { x: start.x + 35, y: start.y - 10 })]);
+        await waitForPacket(74, null, at);
+        await releaseAllTouches();
+      }
+      await waitForPacket(60, 87, since);
+      await waitForPacket(61, 87, since);
+      await page.waitForTimeout(500);
+      const delta = frameDifference(before, await framePixels());
+      assert.ok(delta > 1, `dragging must change decoded game video (${delta})`);
+      report.input.anywhereLook = { meanRgbDelta: delta, packets: (await sends()).slice(since) };
+    });
+    await check('opt-in simulated gyro sends real native look input and turns off', async () => {
+      await page.evaluate(() => {
+        window.DeviceMotionEvent.requestPermission = async () => 'granted';
+        window.__motionSample = rate => {
+          const event = new Event('devicemotion');
+          Object.defineProperties(event, {
+            rotationRate: { value: { alpha: 0, beta: 0, gamma: rate } },
+            accelerationIncludingGravity: { value: { x: 0, y: 9.8, z: 0 } }
+          });
+          window.dispatchEvent(event);
+        };
+      });
+      await openMenu();
+      await page.locator('#gyro-look').tap();
+      await page.waitForFunction(() => document.querySelector('#gyro-status').textContent.includes('Move your phone'));
+      assert.equal(await page.locator('#menu').isVisible(), true, 'pending sensors leave feedback visible');
+      const since = (await sends()).length;
+      await page.evaluate(() => window.__motionSample(60));
+      await page.waitForFunction(() => document.querySelector('#menu').hidden);
+      const before = await framePixels();
+      for (let i = 0; i < 12; i++) {
+        await page.waitForTimeout(20);
+        await page.evaluate(() => window.__motionSample(60));
+      }
+      await waitForPacket(74, null, since);
+      await page.waitForTimeout(500);
+      const delta = frameDifference(before, await framePixels());
+      assert.ok(delta > 1, `gyro must change decoded video (${delta})`);
+      await openMenu();
+      await page.locator('#gyro-look').tap();
+      assert.equal(await page.locator('#gyro-look').getAttribute('aria-pressed'), 'false');
+      const after = (await sends()).length;
+      await page.evaluate(() => window.__motionSample(60));
+      assert.equal((await sends()).slice(after).some(packet => packet.id === 74), false);
+      report.input.simulatedGyro = { meanRgbDelta: delta, packets: (await sends()).slice(since, after) };
+      await page.locator('#menu-close').tap();
     });
     await check('landscape controls fit and the menu leaves and enters fullscreen', async () => {
       // Tapping Play took the game fullscreen; Fullscreen in the menu switches it off and on.
