@@ -22,12 +22,12 @@
   },
   "mobile": {
     "passed": 14,
-    "path": "Browser/.qa/mobile-2026-10-13T20-03-13-955Z"
+    "path": "Browser/.qa/mobile-2026-10-13T20-13-11-063Z"
   },
   "package": {
     "files": 48,
     "runtime_directories_preserved": 5,
-    "inventory": "Saved/BrowserStreaming/framing-stream-20261013/package-centered.json",
+    "inventory": "Saved/BrowserStreaming/framing-stream-20261013/package-turning.json",
     "rollback": "Builds/BrowserPrevious-framing-stream-20261013"
   },
   "camera": {
@@ -109,7 +109,22 @@
     "note": "Before the final socket-centering adjustment; known editor teardown failure. Extra reset attempt reverted."
   },
   "production": {
-    "status": "pending"
+    "status": "READY; all public files and checks verified",
+    "deployment_id": "dpl_HKiY4iAGxn78FSxUErcbJ95puipM",
+    "url": "https://nord-montreal.vercel.app/",
+    "static_files_match": 12,
+    "initial_propagation_attempt": {
+      "path": "Browser/.qa/mobile-2026-10-13T20-19-27-775Z",
+      "reason": "The immediate alias file comparison still saw the old route. The initial phone-budget assertion failed. All 12 normal alias files then matched and a fresh browser run was started."
+    },
+    "mobile": {
+      "passed": 14,
+      "path": "Browser/.qa/mobile-2026-10-13T20-20-27-184Z"
+    },
+    "live": {
+      "passed": 7,
+      "path": "Browser/.qa/live-2026-10-13T20-20-48-716Z"
+    }
   },
   "not_checked": [
     "Physical phone or carrier path",
@@ -122,5 +137,7 @@
     "passed": 7,
     "path": "Browser/.qa/live-2026-10-13T20-06-54-610Z",
     "runner_note": "Rerun with production NordHost default after the sampler Choose setting caused the occupied-host fixture to wait."
-  }
+  },
+  "merge_commit": "b6ee3f56a221bc41f10e69af1616f1336103f7e6",
+  "pull_request": "https://github.com/vdimarco/rouge-warden/pull/340"
 }
