@@ -97,11 +97,43 @@ try {
   assert.equal(await page.locator('#close-trailer').isVisible(), true, 'Close stays on screen over the trailer');
   await page.screenshot({ path: '.qa/trailer-1280.png' });
   await page.evaluate(() => document.exitFullscreen());
-  await page.waitForFunction(() => !document.querySelector('#trailer-dialog').open);
-  assert.equal(await page.locator('#trailer-video').evaluate(video => video.paused), true, 'leaving fullscreen stops the trailer');
+  await page.waitForFunction(() => !document.querySelector('#trailer-dialog').open && document.querySelector('#trailer-video').paused);
+  // The video's own fullscreen (double-click, or its controls on another browser) keeps the trailer open,
+  // and Close then leaves both levels of fullscreen.
   await page.locator('#watch-trailer').click();
   await trailerIsFullscreen();
+  assert.equal(await page.locator('#trailer-video').getAttribute('controlslist'), 'nofullscreen', 'the stage is already fullscreen');
+  await page.evaluate(() => {
+    const button = Object.assign(document.createElement('button'), { id: 'qa-video-fullscreen', textContent: 'video fullscreen' });
+    button.style.cssText = 'position:absolute;left:0;bottom:80px;z-index:2';
+    button.onclick = () => document.querySelector('#trailer-video').requestFullscreen();
+    document.querySelector('#trailer-stage').append(button);
+  });
+  await page.locator('#qa-video-fullscreen').click();
+  await page.waitForFunction(() => document.fullscreenElement?.id === 'trailer-video');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'the trailer stays open in the video\'s own fullscreen');
+  await page.evaluate(() => document.exitFullscreen());
+  await trailerIsFullscreen();
+  assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'leaving the video\'s fullscreen returns to the trailer');
   await page.locator('#close-trailer').click();
+  await page.waitForFunction(() => !document.fullscreenElement);
+  // Over a fullscreen game frame the trailer covers the screen without a fullscreen of its own,
+  // and leaving the video's own fullscreen drops back to the trailer, not out of it.
+  await page.locator('#menu-toggle').click();
+  await page.locator('#fullscreen').click();
+  await page.waitForFunction(() => document.fullscreenElement?.id === 'frame');
+  await page.locator('#watch-trailer').click();
+  assert.equal(await page.evaluate(() => document.fullscreenElement?.id), 'frame');
+  await page.locator('#qa-video-fullscreen').click();
+  await page.waitForFunction(() => document.fullscreenElement?.id === 'trailer-video');
+  await page.evaluate(() => document.exitFullscreen());
+  await page.waitForFunction(() => document.fullscreenElement?.id === 'frame');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'the trailer stays open over the fullscreen game frame');
+  await page.locator('#close-trailer').click();
+  assert.equal(await page.evaluate(() => document.fullscreenElement?.id), 'frame', 'Close keeps the game frame fullscreen');
+  await page.evaluate(() => { document.querySelector('#qa-video-fullscreen').remove(); return document.exitFullscreen(); });
   await page.waitForFunction(() => !document.fullscreenElement);
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), false);
   assert.equal(await page.locator('#trailer-video').evaluate(video => video.paused), true, 'closing the trailer stops it');
@@ -252,8 +284,12 @@ try {
   await phonePage.evaluate(() => localStorage.setItem('gta-north-intro', 'seen'));
   await phonePage.reload();
   await phonePage.locator('#start').click();
-  // On a touch screen the tap on Start also takes the game frame fullscreen.
-  await phonePage.waitForFunction(() => document.fullscreenElement?.id === 'frame');
+  // Start keeps the page in its window, so the header's ☰ Menu stays in reach over the start screen.
+  assert.equal(await phonePage.evaluate(() => document.fullscreenElement), null);
+  assert.equal(await phonePage.evaluate(() => {
+    const { left, top, width, height } = document.querySelector('#menu-toggle').getBoundingClientRect();
+    return document.elementFromPoint(left + width / 2, top + height / 2)?.id;
+  }), 'menu-toggle', 'the menu button is reachable while the start screen is open');
   const fits = await phonePage.evaluate(() => {
     const intro = document.querySelector('#intro').getBoundingClientRect();
     const play = document.querySelector('#crew-play').getBoundingClientRect();
@@ -261,9 +297,7 @@ try {
   });
   assert.equal(fits, true, 'Play as is on screen on a phone on its side');
   await phonePage.screenshot({ path: '.qa/crew-667-touch.png' });
-  // A player who left fullscreen gets it back with Play as.
-  await phonePage.evaluate(() => document.exitFullscreen());
-  await phonePage.waitForFunction(() => !document.fullscreenElement);
+  // On a touch screen the tap on Play as takes the game frame fullscreen.
   await phonePage.locator('#crew-play').click();
   await phonePage.waitForFunction(() => document.fullscreenElement?.id === 'frame');
   // The menu leaves fullscreen in any state; in fullscreen the title screen has its own menu button, clear of Sound on.
