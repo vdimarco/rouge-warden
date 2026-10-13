@@ -1,0 +1,9 @@
+- [x] Record the decision from `a86a508a` (standard render by default, comic look on F2) in a `nord-unreal` spec delta.
+- [x] Smoke test: both players start in standard view, then explicitly enable the comic fixture. The client's F2 switches only its view; the car preserves that view, and F2 restores comic view after exiting. Animation-on-twos follows each player's own view, and `StandardFoot` still captures the client in standard view. The PC-tested version also expects the driving crew cycle to wrap from 10 to 3.
+- [x] Story slice test: verify both standard defaults, explicitly enable the comic fixture, then check private F2 switching with the host's view and worklight preserved.
+- [x] Park comic capture: view tracking starts in the standard view, so `_F2` shots stay the standard ones.
+- [x] Player quality capture: F2 turns the comic view on before the 12 Hz animation-on-twos check, and the warm-up asserts the 1/12 s mesh tick interval. Found by a second review; without it the capture fails with no held poses.
+- [x] Package profile: each scene's macro turns the comic view on, so the report's "comic on" label stays true.
+- [x] On the game PC, rebuilt-editor smoke and story suites pass 69 and 120 checks on 2026-10-13; see `games/nord-unreal/Verification/PCDemoRefresh.md`.
+- [ ] Run `Scripts/capture_player_quality.py` and `Scripts/profile_package.py` when those suites are next run. Only Python syntax checks were run for the upstream capture/profiling corrections during PC integration.
+- [ ] Archive after the remaining capture/profiling checks. The canonical standard-default requirement was aligned by the PC delivery.

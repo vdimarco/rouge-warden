@@ -475,6 +475,8 @@ def tick(dt):
             GAMEPLAY.call_method('FinishSpawningActor', (camera, transform, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
             camera.get_component_by_class(u.CameraComponent).set_editor_property('post_process_blend_weight', 1.)
             pc.set_view_target_with_blend(camera, 0)
+            # The game starts in the standard view; F2's comic view brings the animation on twos this capture measures.
+            pc.call_method('ToggleComicStyle')
             u.SystemLibrary.execute_console_command(world, 'showhud', pc)
             layout = json.loads((ROOT / 'Data/ParkComic/layout.json').read_text())
             pitch = max((p for p in layout['pitches'] if p['sport'] == 'soccer'),
@@ -528,6 +530,9 @@ def tick(dt):
         age = clock() - STATE['phase_started']
         if current == 'warm':
             if age > 12:
+                interval = STATE['pawn'].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval()
+                assert abs(interval - 1 / 12) < .001, ('Comic view must be on for animation on twos', interval)
+                REPORT['comic_view'] = True
                 start_style(STYLES[0])
             return
         aim(current in ('face', 'face_three_quarter'), grounded=current == 'descend',
