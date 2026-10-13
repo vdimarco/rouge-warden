@@ -38,6 +38,6 @@ Owner: Codex on the host PC. Read `design.md` first. Work in this order; each gr
 
 - [ ] 5.1 Restart the lifecycle with the rebuilt package and run `live.test.mjs` and `mobile.test.mjs` against it.
 - [ ] 5.2 Repeat the measurements from 1.3 with each new flag on and off, plus the night-rain budget scenario (`NORD_SKY_ARGS="-NordHour=22 -NordWeather=Rain -NordFreezeTime -NordFreezeWeather"`) with paired captures. Record the results against the baseline.
-- [ ] 5.3 Check the current Quick Tunnel hostname, deploy the page to the nord-montreal production project, and confirm every deployed file matches a local build.
+- [ ] 5.3 Check the current Quick Tunnel hostname, deploy the page to the nord-montreal production project, and confirm every deployed file matches a local build. The project is now linked to this repository with root `games/nord-unreal/Browser` (Vercel builds a preview for each branch), so check in the Vercel project settings whether a merge to `main` also deploys production. With the game message from 4.1 in place, an early deploy is safe: an old game build keeps the page at 1280×720.
 - [ ] 5.4 Ask the user to check on a physical phone: upright fills the screen, sideways is not stretched, look speed feels right, play is smooth on mobile data.
 - [ ] 5.5 Update `Browser/HOSTING.md`, close the matching open items in `openspec/changes/nord-browser-streaming/tasks.md` (62, 63, 64), validate with `openspec validate nord-stream-speed --strict`, and archive when every scenario has passed.
