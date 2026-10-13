@@ -40,8 +40,10 @@ try:
                 screenshot = ROOT / "Preview" / ("Performance" + tag + ".png")
                 screenshot.unlink(missing_ok=True)
                 macro = Path(directory) / (tag + ".txt")
+                # The game starts in the standard view; the budget is measured with F2's comic view on, the heavier path.
                 macro.write_text('ke QuebecCharacter K2_SetActorLocation "(X=%s,Y=%s,Z=%s)" false () true\n'
-                                 'ke QuebecController SetControlRotation "(Pitch=-12,Yaw=%s,Roll=0)"\n' % (*position, yaw))
+                                 'ke QuebecController SetControlRotation "(Pitch=-12,Yaw=%s,Roll=0)"\n'
+                                 'ke QuebecController ToggleComicStyle\n' % (*position, yaw))
                 log_path = OUT / (tag + ".log")
                 with (OUT / (tag + ".stdout.log")).open("w") as output:
                     process = subprocess.Popen(["bash", str(RUNNER), "/Game/Maps/LaFontaine", "-RenderOffscreen", "-windowed", "-ForceRes",

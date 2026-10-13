@@ -10,5 +10,7 @@ Commit `a86a508a` ("Make the realistic render the NORD default; comic look stays
 - `Scripts/smoke_test.py` checks that both players start in the standard view, that the host's F2 turns on only the host's comic view, and that the client's F2 after leaving the car turns on the client's. Its animation-on-twos check follows each player's own view.
 - `Scripts/test_story_slice.py` expects F2 to turn the client's comic view on and then off, with the host's view unchanged.
 - `Scripts/capture_park_comic.py` starts its view tracking in the standard view, so shots named `_F2` stay the standard ones.
+- `Scripts/capture_player_quality.py` turns the comic view on before it measures animation on twos (its 12 Hz pose check needs it), and checks that it is on.
+- `Scripts/profile_package.py` turns the comic view on in each scene, so its "comic on" frame budget still measures the heavier comic render.
 
 No game code changes.
