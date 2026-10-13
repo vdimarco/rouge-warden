@@ -1340,6 +1340,14 @@ void AQuebecController::PlayerTick(float DeltaTime)
     }
     Super::PlayerTick(DeltaTime);
     if (!IsLocalController()) return;
+    BrowserStateElapsed += DeltaTime;
+    if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
+    {
+        BrowserStateElapsed = 0.f;
+        if (const TSharedPtr<IPixelStreaming2Streamer> Streamer = IPixelStreaming2Module::Get().FindStreamer(BrowserStreamerId))
+            Streamer->SendAllPlayersMessage(TEXT("Response"), Cast<AQuebecCar>(GetPawn())
+                ? TEXT("{\"nordDriving\":true}") : TEXT("{\"nordDriving\":false}"));
+    }
     ApplyComicStyle();
     ApplySkyGrading();
     CampaignAimElapsed += DeltaTime;

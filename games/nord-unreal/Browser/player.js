@@ -52,7 +52,7 @@ function updateInput() {
   touchRoot.hidden = !touchMode || !playing;
   touchControls?.setEnabled(touchMode && playing);
   element('input-note').textContent = playing
-    ? (touchMode ? 'Drag anywhere on the game to look · Left stick: move / steer · Gyro look in ☰ Menu.'
+    ? (touchMode ? 'Drag anywhere on the game to look · Move / steer on the left · Gas and Brake in cars · Gyro look in ☰ Menu.'
       : locked ? 'You’re in control. Esc releases the mouse.' : 'Click the game to control it. Esc releases the mouse.')
     : `${touchMode ? 'Touch controls appear when you play.' : 'Keyboard + mouse supported.'} The host PC must stay online.`;
 }
@@ -135,6 +135,11 @@ if (endpoint) {
     });
     stream = new PixelStreaming(config, { videoElementParent: videoParent });
     touchControls = setupTouchControls({ root: touchRoot, surface: frame, stream });
+    stream.addResponseEventListener('nord-driving', response => {
+      let state;
+      try { state = JSON.parse(response); } catch { return; }
+      if (typeof state?.nordDriving === 'boolean') touchControls.setDriving(state.nordDriving);
+    });
     connectButton.disabled = false;
     status('idle', 'The city is waiting.', 'Connect to a free player and help save Park La Fontaine.');
 

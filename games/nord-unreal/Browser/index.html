@@ -45,20 +45,24 @@
           <button id="crew-close" class="crew-close" type="button">Close</button>
         </div>
         <div class="touch-stick move-stick" data-stick="move" role="group" aria-label="Movement and steering touch stick">
-          <span class="stick-knob"></span><span class="stick-label">MOVE / DRIVE</span>
+          <span class="stick-knob"></span><span class="stick-label">MOVE</span>
+        </div>
+        <div class="touch-steering" role="group" aria-label="Steering" hidden>
+          <button data-key="65" aria-label="Steer left"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m17 6-10 10 10 10M7 16h20"/></svg>Left</button>
+          <button data-key="68" aria-label="Steer right"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m15 6 10 10-10 10M5 16h20"/></svg>Right</button>
         </div>
         <div class="touch-primary" role="group" aria-label="Game actions">
-          <button data-key="16" aria-label="Hold to sprint">
+          <button id="touch-gas" data-key="16" aria-label="Hold to sprint">
             <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="21" cy="5" r="3"/><path d="m10 13 6-5 5 7 6 1M16 8l-3 11 7 4 2 6M13 19l-5 8H3M11 12l-6 1"/></svg>
-            Sprint<span>Hold</span>
+            <b>Sprint</b><span>Hold</span>
           </button>
-          <button data-key="32" aria-label="Jump on foot or hold handbrake in car">
+          <button id="touch-brake" data-key="32" aria-label="Jump on foot or hold handbrake in car">
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="m9 8 7-6 7 6M16 2v9"/><circle cx="16" cy="16" r="3"/><path d="M16 19v5m-7-6 7 3 7-3m-7 6-5 6m5-6 5 6"/></svg>
-            Jump<span>Brake</span>
+            <b>Jump</b><span>On foot</span>
           </button>
-          <button data-key="69" aria-label="Interact, enter or exit car, toggle worklight">
+          <button id="touch-use" data-key="69" aria-label="Interact, enter or exit car, toggle worklight">
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 17V5a2 2 0 0 1 4 0v10-7a2 2 0 0 1 4 0v8-5a2 2 0 0 1 4 0v6-3a2 2 0 0 1 4 0v9c0 5-3 7-8 7h-2c-3 0-5-1-7-4l-6-8a2.5 2.5 0 0 1 4-3l3 3"/></svg>
-            Use<span>Interact</span>
+            <b>Use</b><span>Interact</span>
           </button>
           <button id="touch-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu" aria-label="Menu">
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 8h20M6 16h20M6 24h20"/></svg>

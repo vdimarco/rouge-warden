@@ -1,0 +1,7 @@
+# Design
+
+Reuse native A/D steering, W gas, S service brake/reverse and E exit. Native local controllers send a tiny read-only driving-state Response every half second; the browser switches only on a boolean from that response, releasing held inputs first. Keep the four large action faces: Gas, Brake/Reverse, Exit and Menu in a car; Sprint, Jump, Use and Menu on foot. Replace the movement stick with separated left/right arrows while driving; place them above the native bottom prompt. No predictive toggle on Use, because Use can also interact with a worklight or resident. Native car physics and camera remain unchanged.
+
+Pin the browser launcher to -NordHour=15 -NordFreezeTime using the existing validated sky arguments; preserve dynamic weather and explicit environment overrides. Rebuild to a separate package, preserve all runtime Saved directories and restart only the owned game service under the existing maintenance authorization. Preserve tunnels/relay. Use Unreal safe iteration for the native package and installed Playwright (Browser plugin unavailable) for frontend checks.
+
+Acceptance: focused key/mode lifecycle tests; native driving/input regression tests; actual packaged enter/drive/brake/reverse/exit and reconnect; portrait, landscape and narrow landscape HUD clearance; inspect daytime images. Physical phone feel remains unverified.
