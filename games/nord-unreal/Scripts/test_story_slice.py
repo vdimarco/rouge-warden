@@ -391,7 +391,7 @@ def unchanged_phase(expected, completed=0):
     return partial_boundary_unchanged(completed)
 
 
-def comic_weights(client_weight, host_weight=1):
+def comic_weights(client_weight, host_weight=0):
     for pc, expected in ((STATE['client_pc'], client_weight), (STATE['host_pc'], host_weight)):
         camera = pc.get_controlled_pawn().get_component_by_class(u.CameraComponent)
         entries = camera.get_editor_property('post_process_settings').get_editor_property(
@@ -985,8 +985,9 @@ step('restore loan car after interaction priority fixture', restore_priority_car
 step('approach worklight with deliberately wrong aim', worklight_fixture, foot_arrived)
 step('native E acquires worklight without completing aim', interact, aiming, 'WorklightAim')
 step('C changes only owning appearance while tool remains usable', remember_appearance, lambda: appearance_preserved() and aiming())
-step('F2 standard view is private and preserves worklight', lambda: native(STATE['client_pc'], 'ToggleComicStyle'), lambda: comic_weights(0) and aiming())
-step('F2 restores comic view with tool preserved', lambda: native(STATE['client_pc'], 'ToggleComicStyle'), lambda: comic_weights(1) and aiming())
+# Players start in the standard view; F2 turns the comic view on and off for that player only.
+step('F2 comic view is private and preserves worklight', lambda: native(STATE['client_pc'], 'ToggleComicStyle'), lambda: comic_weights(1) and aiming())
+step('F2 restores standard view with tool preserved', lambda: native(STATE['client_pc'], 'ToggleComicStyle'), lambda: comic_weights(0) and aiming())
 step('distant host R preserves client worklight ownership and opening phase', recover_distant_host, friend_recovery_preserved_aim)
 step('delay host ownership replication and release worklight on both peers', release_with_authority_delay, worklight_released)
 step('authority keeps native aim alive before delayed ownership reaches client', acquire_before_ownership_replication,
