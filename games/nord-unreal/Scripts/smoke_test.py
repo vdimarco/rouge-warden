@@ -339,8 +339,8 @@ def comic_weights(client_weight, host_weight):
         comic = [entry for entry in entries if entry.get_editor_property("object").get_path_name() == "/Game/Art/Comic/M_ComicInk.M_ComicInk"]
         if len(comic) != 1 or abs(comic[0].get_editor_property("weight") - expected) > .01:
             return False
-    for side, expected in (("client", 0.0 if client_weight == 0 else 1 / 12), ("server", 1 / 12)):
-        assert abs(STATE[side + "_char"].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval() - expected) < .001
+    for side, weight in (("client", client_weight), ("server", host_weight)):
+        assert abs(STATE[side + "_char"].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval() - weight / 12) < .001
     return True
 
 
@@ -462,6 +462,11 @@ def crew_ready(style):
 
 
 step("two connected players in server and client worlds", begin, discover)
+step("both players start in standard view with full-rate animation", lambda: None, lambda: comic_weights(0, 0))
+# Establish the comic baseline used by the existing toggle and capture checks.
+step("both players enable comic view independently",
+     lambda: [u.SystemLibrary.set_timer_for_next_tick(STATE[side + "_pc"], "ToggleComicStyle") for side in ("host", "client")],
+     lambda: comic_weights(1, 1))
 WALK_START = u.Vector(*LAYOUT["car"]) + u.Vector(math.cos(math.radians(LAYOUT["car_yaw"])), math.sin(math.radians(LAYOUT["car_yaw"])), 0) * 1000
 step("client joins as a crew member the host is not playing", lambda: None, lambda: crew_ready(10))
 # C cycles the other seven styles and skips 9, which the host wears.
@@ -486,7 +491,7 @@ step("remove entry barrier", remove_barriers, lambda: True)
 step("client RPC enters car; occupant, visibility and collision replicate", interact, entered)
 step("host cannot steal an occupied car", occupied_attempt, occupied_rejected)
 step("car camera preserves client standard view and host comic view", lambda: None, lambda: comic_weights(0, 1))
-step("client switches avatar while driving and retains occupancy", next_character, lambda: crew_ready(10) and entered())
+step("client switches avatar while driving and retains occupancy", next_character, lambda: crew_ready(3) and entered())
 step("client drive RPC moves authority car", start_drive, drive)
 
 def begin_input_dropout():

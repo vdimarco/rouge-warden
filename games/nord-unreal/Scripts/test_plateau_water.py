@@ -171,6 +171,12 @@ class Library:
         mat.expressions.clear()
         mat.inputs.clear()
 
+    def delete_material_expression(self, mat, node):
+        mat.expressions.remove(node)
+        mat.inputs = {prop: link for prop, link in mat.inputs.items() if link[0] is not node}
+        for other in mat.expressions:
+            other.links = {pin: link for pin, link in other.links.items() if link[0] is not node}
+
     def recompile_material(self, mat):
         mat.compiles += 1
 

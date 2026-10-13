@@ -975,6 +975,11 @@ def unsupported_completion_preserved():
 
 # First session tests invalid actions and tools, then deliberately reloads unfinished M1.
 step('fresh two-player campaign in isolated save slot', begin, lambda: discover() and state_equal(0, 0, 0))
+step('both players start in standard view', lambda: None, lambda: comic_weights(0, 0))
+# Establish the comic baseline used by the existing tool and capture checks.
+step('both players enable comic view independently',
+     lambda: [native(STATE[side+'_pc'], 'ToggleComicStyle') for side in ('host', 'client')],
+     lambda: comic_weights(1, 1))
 step('out-of-range E cannot advance opening', lambda: interact(), lambda: unchanged_phase(0))
 step('fixture approaches future table clamp', lambda: clamp_fixture('FinalClampLocation'), foot_arrived)
 step('future clamp E cannot skip worklight', interact, lambda: unchanged_phase(0))

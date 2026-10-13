@@ -67,6 +67,8 @@ def scene(directory, output_names=True, collection=None):
     material_with(u, '/Game/ParkComic/M_Text', unlit('LinearInterpolate'))
     for name in ('Crew', 'Brawl'):
         material_with(u, '/Game/ParkComic/M_Illustration' + name, unlit('TextureSample'))
+    for style in range(3, 11):
+        material_with(u, f'/Game/ParkComic/Crew/Resident{style}/M_Crew', flat(emissive=True))
     material_with(u, '/Game/Plateau/Materials/M_ParkGrass', textured)
     (root / 'Content/Plateau/Materials/M_Asphalt.uexp').write_bytes(b'bulk asphalt\n')
     if collection:
@@ -109,6 +111,11 @@ def rejects(action, words):
 def check_first_and_second_run():
     with tempfile.TemporaryDirectory() as temporary:
         root, u = scene(temporary)
+        # Reproduce UE 5.8's skipped nodes when DeleteAll mutates its live expression array.
+        def broken_delete_all(mat):
+            for node in mat.expressions:
+                u.MaterialEditingLibrary.delete_material_expression(mat, node)
+        u.MaterialEditingLibrary.delete_all_material_expressions = broken_delete_all
         before = files(root)
         map_bytes = (root / atmosphere.MAP).read_bytes()
         report = atmosphere.apply(u, root)
@@ -123,7 +130,7 @@ def check_first_and_second_run():
         manifest = json.loads((backup / 'manifest.json').read_text())
         touched = {key: value for key, value in before.items() if any(
             key.startswith('Content/' + asset.removeprefix('/Game/') + '.') for asset in atmosphere.TOUCHED)}
-        assert manifest['files'] == touched and len(touched) == 15, manifest['files']
+        assert manifest['files'] == touched and len(touched) == 23, manifest['files']
         assert all(hashlib.sha256((backup / key).read_bytes()).hexdigest() == value for key, value in touched.items())
         assert manifest['absent_before'] == [atmosphere.COLLECTION, plateau_water.TEXTURE, atmosphere.RAIN]
         assert 'Content/Plateau/Materials/M_ParkGrass.uasset' not in manifest['files']
@@ -161,6 +168,13 @@ def check_first_and_second_run():
         assert evaluate(factor, '', defaults) == 1.
         night = evaluate(factor, '', defaults | {'NightFactor': 1., 'ExposureScale': 2. ** -9})
         assert abs(night - 2.5 * 2. ** -9) < 1e-15
+        for style in range(3, 11):
+            mat = assets.store[f'/Game/ParkComic/Crew/Resident{style}/M_Crew']
+            emission = library.get_material_property_input_node(mat, 'MP_EMISSIVE_COLOR')
+            base = library.get_material_property_input_node(mat, 'MP_BASE_COLOR')
+            assert emission.links['A'][0] is base, 'Crew base colour changed'
+            assert evaluate(emission.links['B'][0], '', defaults) == 1.
+            assert abs(evaluate(emission.links['B'][0], '', defaults | {'NightFactor': 1., 'ExposureScale': 2. ** -9}) - night) < 1e-15
         window = library.get_material_property_input_node(assets.store[atmosphere.WINDOWS[0]], 'MP_EMISSIVE_COLOR')
         assert evaluate(window, '', defaults | {'source': .7}) == .7 and evaluate(window, '', defaults | {'source': .7, 'WindowGlow': 12.}) == .7 * 12.
         asphalt = assets.store[atmosphere.WET[0]]
@@ -362,7 +376,7 @@ def check_regeneration():
         report = plateau_surfaces.apply(u, materials, scope['expression'], scope['material'])
         assert sorted(report['nord_sky_rewrapped']) == sorted(atmosphere.WET + atmosphere.WINDOWS)
         checked = atmosphere.verify_assets(u, root)
-        assert checked['passed'] and checked['pond_actors'] == 15 and len(checked['wrappers']) == 13
+        assert checked['passed'] and checked['pond_actors'] == 15 and len(checked['wrappers']) == 21
         assert atmosphere.verify(u, root)['passed']
         # A second regeneration pass adds nothing.
         counts = {path: len(u.EditorAssetLibrary.store[path].expressions) for path in atmosphere.WET + atmosphere.WINDOWS}
@@ -378,7 +392,7 @@ def main():
     corruptions = check_verify_rejects()
     rewrapped = check_regeneration()
     print(f'Sky and water authoring checks passed: {backed_up} pre-existing files backed up with SHA-256, '
-          f'{nodes} nodes stable on a second run, wrappers on 5 wet / 3 window / 5 unlit materials only; '
+          f'{nodes} nodes stable on a second run, wrappers on 5 wet / 3 window / 13 emissive materials only; '
           f'PIE, wrong map, missing pond actors and a written map rejected; {corruptions} verify corruptions rejected; '
           f'a Plateau regeneration rewraps {rewrapped} rebuilt materials')
 

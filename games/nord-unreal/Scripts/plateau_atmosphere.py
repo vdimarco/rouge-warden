@@ -35,7 +35,8 @@ RAIN_INPUTS = ('Pivot', 'WorldPos', 'CameraPos', 'Time', 'Rand', 'Rain', 'Wind',
 WET = tuple('/Game/Plateau/Materials/M_' + name for name in ('Asphalt', 'Concrete', 'ConcreteDark', 'Gravel', 'ParkEarth'))
 WINDOWS = tuple('/Game/Plateau/Materials/M_' + name for name in ('Glow', 'InteriorWarm', 'Tail'))
 UNLIT = ('/Game/Materials/M_Glow', '/Game/ParkComic/M_Paper', '/Game/ParkComic/M_Text',
-         '/Game/ParkComic/M_IllustrationCrew', '/Game/ParkComic/M_IllustrationBrawl')
+         '/Game/ParkComic/M_IllustrationCrew', '/Game/ParkComic/M_IllustrationBrawl') + tuple(
+             f'/Game/ParkComic/Crew/Resident{style}/M_Crew' for style in range(3, 11))
 TOUCHED = (COLLECTION, plateau_water.TEXTURE, plateau_water.MATERIAL, RAIN) + WET + WINDOWS + UNLIT
 MARKER = 'NordSky'
 # Collection parameters each wrapper adds, by property name; verify() expects exactly one of each.
@@ -178,7 +179,7 @@ def rain_material(u, mpc):
            u.AssetToolsHelpers.get_asset_tools().create_asset(name, folder, u.Material, u.MaterialFactoryNew()))
     assert isinstance(mat, u.Material), RAIN
     g = Graph(u, mat, mpc, marker=False)
-    g.library.delete_all_material_expressions(mat)
+    plateau_water.clear_material(u, mat)
     mat.set_editor_property('blend_mode', u.BlendMode.BLEND_TRANSLUCENT)
     mat.set_editor_property('shading_model', u.MaterialShadingModel.MSM_DEFAULT_LIT)
     mat.set_editor_property('two_sided', True)
@@ -292,7 +293,7 @@ def night_window(u, mat, mpc):
 
 
 def exposure(u, mat, mpc):
-    """Emissive x ExposureScale x (1 + 1.5 NightFactor): daylight-calibrated unlit art follows the exposure."""
+    """Daylight-calibrated emission, including lit crew fill, follows the exposure."""
     g = Graph(u, mat, mpc)
     source, output, wrapped = g.current(u.MaterialProperty.MP_EMISSIVE_COLOR)
     assert source is not None, mat.get_path_name()

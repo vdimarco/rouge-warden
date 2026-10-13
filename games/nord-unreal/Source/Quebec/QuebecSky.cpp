@@ -334,7 +334,7 @@ void AQuebecSky::StartPresentation()
     FQuebecSkyScene& Saved = SceneRefs;
     // The saved sun is the directional light marked as atmosphere sun 0, or the first one.
     for (TActorIterator<ADirectionalLight> It(World); It; ++It)
-        if (UDirectionalLightComponent* Light = It->GetComponent(); Light &&
+        if (UDirectionalLightComponent* Light = It->FindComponentByClass<UDirectionalLightComponent>(); Light &&
             (!Saved.Sun.IsValid() || (Light->IsUsedAsAtmosphereSunLight() && Light->GetAtmosphereSunLightIndex() == 0)))
             Saved.Sun = Light;
     if (TActorIterator<ASkyLight> It(World); It) Saved.SkyLight = It->GetLightComponent();

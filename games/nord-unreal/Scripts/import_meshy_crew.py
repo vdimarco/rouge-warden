@@ -5,10 +5,14 @@ Original source bodies remain in Data/CharactersMeshy for recovery.
 """
 import json
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 import unreal as u
 root=Path(u.Paths.project_dir()).resolve()
+sys.path.insert(0, str(root/'Scripts'))
+import plateau_atmosphere
+import plateau_water
 styles={'GreenCap51':3,'Memphis33':4,'BlackCap':5,'WhiteCap':6,'RedJersey':7,'LimeJacket':8,'CurlyMetalhead':9,'Topknot':10}
 command=u.SystemLibrary.get_command_line()
 candidate='-NordNeutralCandidate' in command
@@ -65,7 +69,7 @@ for name,style in styles.items():
     skeleton=mesh.get_editor_property('skeleton');assert skeleton
     u.EditorAssetLibrary.save_loaded_asset(skeleton,only_if_is_dirty=False)
     material=tools.create_asset('M_Crew',folder,u.Material,u.MaterialFactoryNew()) if not u.EditorAssetLibrary.does_asset_exist(folder+'/M_Crew') else u.load_asset(folder+'/M_Crew')
-    materials.delete_all_material_expressions(material)
+    plateau_water.clear_material(u, material)
     for channel,prop in [('base_color',u.MaterialProperty.MP_BASE_COLOR),('normal',u.MaterialProperty.MP_NORMAL),('roughness',u.MaterialProperty.MP_ROUGHNESS),('metallic',u.MaterialProperty.MP_METALLIC)]:
         texture=load_file(source/(channel+'.png'),folder,'T_'+channel)
         texture.set_editor_property('srgb',channel=='base_color')
@@ -101,6 +105,8 @@ for name,style in styles.items():
     fill=materials.create_material_expression(material,u.MaterialExpressionMultiply,-150,400);fill.set_editor_property('const_b',250.)
     assert materials.connect_material_expressions(base,'RGB',fill,'A')
     assert materials.connect_material_property(fill,'',u.MaterialProperty.MP_EMISSIVE_COLOR)
+    if assets.does_asset_exist(plateau_atmosphere.COLLECTION):
+        plateau_atmosphere.exposure(u, material, assets.load_asset(plateau_atmosphere.COLLECTION))
     materials.set_base_material_usage(material,u.MaterialUsage.MATUSAGE_SKELETAL_MESH,True)
     materials.recompile_material(material);u.EditorAssetLibrary.save_loaded_asset(material)
     slots=mesh.get_editor_property('materials');assert slots

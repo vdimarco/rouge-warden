@@ -168,6 +168,12 @@ def existing(u, directory=DIRECTORY):
     return texture, load_manifest(directory) if texture else None, mpc
 
 
+def clear_material(u, mat):
+    # UE 5.8 DeleteAll iterates the array it mutates; delete from its copied read-back instead.
+    for expression in u.MaterialEditingLibrary.get_material_expressions(mat):
+        u.MaterialEditingLibrary.delete_material_expression(mat, expression)
+
+
 def author(u, mat, texture=None, manifest=None, mpc=None):
     """Rebuild the pond graph in place: opaque Default Lit with a world-space normal.
 
@@ -198,7 +204,7 @@ def author(u, mat, texture=None, manifest=None, mpc=None):
     def color(value):
         return node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*value, 1))
 
-    library.delete_all_material_expressions(mat)
+    clear_material(u, mat)
     mat.set_editor_property('blend_mode', u.BlendMode.BLEND_OPAQUE)
     mat.set_editor_property('shading_model', u.MaterialShadingModel.MSM_DEFAULT_LIT)
     mat.set_editor_property('tangent_space_normal', False)

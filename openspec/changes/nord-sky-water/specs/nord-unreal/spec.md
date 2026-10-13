@@ -38,6 +38,11 @@ The game SHALL run a shared clock in which a full day takes 40 real minutes by d
 - **THEN** they are readable and not blown out to white
 - **AND** the worklight still lights a clear pool on the ground.
 
+#### Scenario: Preserve crew colours at night
+- **WHEN** any supplied crew member is viewed after dark in standard or comic view
+- **THEN** their daylight-calibrated emissive fill follows the sky exposure instead of turning the face and clothing white
+- **AND** the source textures, base colour and daytime appearance remain unchanged.
+
 #### Scenario: Set the time
 - **WHEN** the host starts with `-NordHour=21` or types `NordTime 21` in the console
 - **THEN** the clock jumps to 21:00 for both players.

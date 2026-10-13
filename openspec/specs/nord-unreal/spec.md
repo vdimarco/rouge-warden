@@ -39,25 +39,30 @@ The project SHALL identify its OpenStreetMap and CC0 art sources and its current
 - **AND** it makes no claim of Street View-identical fidelity or built interiors
 
 ### Requirement: Comic-book look
-The LaFontaine map SHALL render in an animated comic-book style by default, with ink outlines, flat colour bands, halftone dots, hatching in deep shadow and offset print plates, without using characters, suits or logos from any film.
+The LaFontaine map SHALL start in the realistic render. Each player SHALL be able to enable an animated comic-book style with F2, with ink outlines, flat colour bands, halftone dots, hatching in deep shadow and offset print plates, without using characters, suits or logos from any film.
+
+#### Scenario: Start in standard view
+- **WHEN** a player joins the LaFontaine map
+- **THEN** their comic filter is disabled and character animation updates at full rate
+- **AND** another player's look setting remains independent
 
 #### Scenario: See the comic look on foot
-- **WHEN** a player spawns near 1334 Rue Sherbrooke Est in a 1280 by 720 or larger desktop window
+- **WHEN** a player enables comic view near 1334 Rue Sherbrooke Est in a 1280 by 720 or larger desktop window
 - **THEN** building and tree silhouettes have dark ink outlines
 - **AND** shaded areas show a regular halftone dot pattern
 - **AND** distant objects show red and blue plates offset from each other
 
 #### Scenario: Switch the look
-- **WHEN** the player presses F2
-- **THEN** the view returns to the realistic render for that player only
-- **AND** pressing F2 again restores the comic look
+- **WHEN** the player presses F2 from standard view
+- **THEN** the comic look is enabled for that player only
+- **AND** pressing F2 again restores the realistic render
 
 #### Scenario: Drive with the look
 - **WHEN** the player enters the car
 - **THEN** the car camera keeps the player's current look setting
 
 ### Requirement: Animation on twos
-The walking character SHALL update its pose 12 times a second while its movement and the camera update every frame.
+While comic view is enabled, the walking character SHALL update its pose 12 times a second while its movement and the camera update every frame. Standard view SHALL use full-rate animation.
 
 #### Scenario: Watch the character run
 - **WHEN** the comic look is on and the character runs
