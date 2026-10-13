@@ -10,4 +10,3 @@ On foot, the browser SHALL present Sprint, Jump, Use/car and Menu in two bottom-
 #### Scenario: Multiple fingers
 - **WHEN** one finger moves and another drags the image while a third presses Jump
 - **THEN** all three inputs work and release cleanly
-
