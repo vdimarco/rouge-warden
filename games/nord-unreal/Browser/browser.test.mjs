@@ -38,7 +38,8 @@ signalling.on('connection', socket => {
       socket.send(JSON.stringify({ type: 'streamerList', ids: ['NordHost', 'NordFriend1'] }));
     } else if (message.type === 'subscribe') {
       subscriptions.push(message.streamerId);
-      socket.send(JSON.stringify({ type: 'subscribeFailed', message: 'Occupied UI test slot' }));
+      // Keep a refusal pending long enough to test selector ownership during a subscription.
+      setTimeout(() => { if (socket.readyState === socket.OPEN) socket.send(JSON.stringify({ type: 'subscribeFailed', message: 'Occupied UI test slot' })); }, 500);
     }
   });
 });
@@ -57,10 +58,17 @@ page.on('console', message => {
 await page.addInitScript(() => {
   const NativeWebSocket = window.WebSocket;
   window.__nordQaSocketUrls = [];
+  window.__nordQaSockets = [];
+  const addListener = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function (type, ...args) {
+    if (type === 'videoInitialized') window.__nordQaEvents = this;
+    return addListener.call(this, type, ...args);
+  };
   window.WebSocket = class extends NativeWebSocket {
     constructor(url, protocols) {
       window.__nordQaSocketUrls.push(String(url));
       super(url, protocols);
+      window.__nordQaSockets.push(this);
     }
   };
 });
@@ -268,6 +276,15 @@ try {
   assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons.at(-1).right - (390 - 16)) <= 1, 'bottom-right grid');
   assert.ok(buttons[1].left - buttons[0].right >= 12 && buttons[2].top - buttons[0].top - buttons[0].height >= 12, '12 px thumb clearance');
   assert.equal(await phonePage.locator('[data-stick="look"]').count(), 0, 'image drag replaces the look pad');
+  for (const [width, height] of [[390, 844], [844, 390]]) {
+    await phonePage.setViewportSize({ width, height });
+    await phonePage.locator('.move-stick').evaluate(stick => { stick.dataset.pressed = 'true'; stick.style.setProperty('--stick-y', '-18px'); });
+    await phonePage.waitForTimeout(200);
+    assert.ok(await phonePage.locator('.move-stick').evaluate(stick => Number(getComputedStyle(stick).opacity) >= .5), 'held Move keeps its direction visible');
+    await phonePage.screenshot({ path: `.qa/move-held-${width}.png` });
+    await phonePage.locator('.move-stick').evaluate(stick => { stick.dataset.pressed = 'false'; stick.style.setProperty('--stick-y', '0px'); });
+  }
+  await phonePage.setViewportSize({ width: 390, height: 844 });
   await phonePage.locator('#touch-menu').click();
   assert.equal(await phonePage.locator('.menu-game').isVisible(), true);
   await phonePage.screenshot({ path: '.qa/menu-390-playing.png' });
@@ -353,8 +370,17 @@ try {
   build(`ws://127.0.0.1:${server.address().port}`);
   await page.goto(url);
   await page.locator('#connect').click();
+  await page.waitForFunction(() => document.querySelector('#streamer').options.length > 1);
+  assert.equal(await page.locator('#streamer').isDisabled(), true, 'a pending subscription cannot overlap a second slot selection');
   await page.waitForFunction(() => document.querySelector('#status-title').textContent === 'This player is unavailable.');
   assert.deepEqual(subscriptions, ['NordHost']);
+  await page.evaluate(() => {
+    document.querySelector('#video video').dispatchEvent(new Event('playing'));
+    window.__nordQaEvents.dispatchEvent(new Event('videoInitialized'));
+    window.__nordQaEvents.dispatchEvent(new Event('playStreamRejected'));
+  });
+  assert.equal(await page.locator('body').getAttribute('data-state'), 'error', 'late media cannot revive a refused session');
+  assert.equal(await page.locator('#play').isVisible(), false);
   assert.equal(await page.locator('#streamer').isEnabled(), true, 'occupied-slot refusal keeps the live socket selector usable');
   await openMenu(page);
   await page.locator('#streamer').selectOption('NordFriend1');
@@ -367,6 +393,8 @@ try {
   await page.waitForFunction(() => document.body.dataset.state === 'disconnected');
   assert.equal(await page.locator('#streamer').isDisabled(), true, 'disconnected slots require Reconnect');
   assert.equal(await page.locator('#connect').isVisible(), true);
+  await page.evaluate(() => { document.querySelector('#video video').dispatchEvent(new Event('playing')); window.__nordQaEvents.dispatchEvent(new Event('videoInitialized')); window.__nordQaEvents.dispatchEvent(Object.assign(new Event('subscribeFailed'), { data: { message: 'Late refusal' } })); });
+  assert.equal(await page.locator('body').getAttribute('data-state'), 'disconnected', 'late media cannot revive an explicitly left session');
   await page.locator('#streamer').dispatchEvent('change');
   assert.equal(await page.locator('body').getAttribute('data-state'), 'disconnected', 'a stale change event cannot hide Reconnect');
   assert.deepEqual(subscriptions, ['NordHost', 'NordFriend1']);
@@ -376,17 +404,27 @@ try {
   assert.equal(await page.locator('#streamer').isEnabled(), true, 'a fresh streamer list restores slot selection');
   assert.deepEqual(subscriptions, ['NordHost', 'NordFriend1', 'NordFriend1']);
   await page.screenshot({ path: '/tmp/nord-browser-slot-reconnect.png', fullPage: true });
+  await page.evaluate(() => window.__nordQaEvents.dispatchEvent(new Event('dataChannelError')));
+  await page.waitForFunction(() => window.__nordQaSockets.at(-1).readyState === WebSocket.CLOSED);
+  assert.equal(await page.locator('#status-title').textContent(), 'The controls disconnected.', 'disconnect keeps the specific error');
+  assert.equal(await page.locator('#connect').isVisible(), true);
+  await page.locator('#connect').click();
+  await page.waitForFunction(() => document.querySelector('#status-title').textContent === 'This player is unavailable.');
+  assert.equal(connections, 3, 'control failure recovery opens a fresh socket');
   // Start connects in the background and the start screen reports the connection.
   await page.goto(url);
   await page.locator('#start').click();
   assert.equal(await page.locator('#intro-crew').isVisible(), true);
   await page.waitForFunction(() => document.querySelector('#intro-status').textContent === 'This player is unavailable.');
-  assert.equal(connections, 3, 'Start opens a connection while the player chooses');
+  assert.equal(connections, 4, 'Start opens a connection while the player chooses');
   await page.locator('#crew-play').click();
   assert.equal(await page.locator('#status-title').isVisible(), true, 'closing the start screen shows the connection card');
   assert.deepEqual(errors, []);
   assert.deepEqual(loggingSpam, [], 'production logging suppresses debug/info and per-packet messages');
   console.log('Browser UI checks passed: offline, desktop/mobile layout, title-screen trailer, start screen story and crew choice, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No live game asserted.');
+} catch (error) {
+  console.error({ state: await page.locator('body').getAttribute('data-state').catch(() => null), title: await page.locator('#status-title').textContent().catch(() => null), errors });
+  throw error;
 } finally {
   await browser.close();
   signalling.close();

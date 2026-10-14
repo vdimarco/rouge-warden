@@ -47,6 +47,13 @@ async function newPlayer(name) {
   contexts.push(context);
   // Preserve native WebRTC behavior; retain references only for real receiver statistics.
   await context.addInitScript(() => {
+    const addListener = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function (type, ...args) {
+      if (type === 'videoInitialized') window.__nordQaEvents = this;
+      return addListener.call(this, type, ...args);
+    };
+    window.__nordQaStates = [];
+    new MutationObserver(() => { if (document.body) window.__nordQaStates.push({ state: document.body.dataset.state, title: document.querySelector('#status-title')?.textContent }); }).observe(document, { attributes: true, subtree: true, attributeFilter: ['data-state'] });
     const NativePeerConnection = window.RTCPeerConnection;
     window.__nordQaPeers = [];
     window.RTCPeerConnection = class extends NativePeerConnection {
@@ -174,6 +181,29 @@ try {
     assert.notEqual(await host.locator('#streamer').inputValue(), await friend.locator('#streamer').inputValue());
     await advancingMedia(friend, 'friend');
   });
+  await check('control-channel failure closes its session and late media cannot hide Reconnect', async () => {
+    await host.locator('#video').click();
+    await host.waitForFunction(() => document.pointerLockElement?.id === 'video');
+    await host.keyboard.down('w');
+    try {
+      await host.evaluate(() => {
+        window.__nordQaEvents.dispatchEvent(new Event('dataChannelError'));
+        document.querySelector('#video video').dispatchEvent(new Event('playing'));
+        window.__nordQaEvents.dispatchEvent(new Event('videoInitialized'));
+      });
+      await host.waitForFunction(() => window.__nordQaPeers.every(peer => peer.connectionState === 'closed'), null, { timeout: 3000 });
+      await host.waitForFunction(() => !document.pointerLockElement);
+      assert.equal(await host.locator('body').getAttribute('data-state'), 'error');
+      assert.equal(await host.locator('#status-title').textContent(), 'The controls disconnected.');
+      assert.equal(await host.locator('#connect').isVisible(), true);
+      assert.equal(await host.locator('#play').isVisible(), false);
+      await host.screenshot({ path: resolve(output, 'control-error.png') });
+      await host.keyboard.up('w');
+      await host.locator('#connect').click();
+      await play(host, 'NordHost');
+      await advancingMedia(host, 'control-error-recovered');
+    } finally { await host.keyboard.up('w'); await host.keyboard.press('Escape'); }
+  });
   await check('host native input and Escape release', () => nativeInputs(host, 'host'));
   await check('friend native input and Escape release', () => nativeInputs(friend, 'friend'));
   const occupied = await newPlayer('occupied');
@@ -206,6 +236,9 @@ try {
   assert.ok(report.checks.every(check => check.passed), 'Browser page errors must not be ignored');
   report.passed = true;
 } catch (error) {
+  for (const context of contexts) for (const page of context.pages()) {
+    report.diagnostics.push(await page.evaluate(() => ({ states: window.__nordQaStates, current: document.body.dataset.state, title: document.querySelector('#status-title')?.textContent, peers: window.__nordQaPeers.map(p => p.connectionState) })).catch(e => ({ error: e.message })));
+  }
   report.error = error.stack || error.message;
   process.exitCode = 1;
   console.error(error);

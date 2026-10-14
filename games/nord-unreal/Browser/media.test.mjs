@@ -13,6 +13,21 @@ const report = { passed: false, playerUrl: url.href, checks: [], mp4Requests: []
 const browser = await chromium.launch({ executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--disable-gpu'] });
 try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await context.addInitScript(() => {
+    window.__nordMediaKeys = [];
+    const send = RTCDataChannel.prototype.send;
+    RTCDataChannel.prototype.send = function (data) {
+      const result = send.call(this, data);
+      const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : [];
+      if ([60, 61].includes(bytes[0])) window.__nordMediaKeys.push({ type: bytes[0], key: bytes[1], channel: this.readyState });
+      return result;
+    };
+    const addListener = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function (type, ...args) {
+      if (type === 'videoInitialized') window.__nordMediaEvents = this;
+      return addListener.call(this, type, ...args);
+    };
+  });
   const page = await context.newPage();
   page.on('pageerror', e => report.errors.push(e.message));
   await page.route('**/*.mp4', route => { report.mp4Requests.push(route.request().url()); return route.abort(); });
@@ -41,6 +56,24 @@ try {
   assert.equal(report.mp4Requests.length, beforeRotation, 'game rotation must not request title/trailer clips');
   assert.deepEqual(report.errors, []);
   report.checks.push('no new MP4 requests during real play/rotation; no page errors');
+  await page.waitForFunction(() => ['true', 'false'].includes(document.querySelector('#touch-controls').dataset.driving));
+  const action = await page.locator('#touch-gas').boundingBox();
+  const key = Number(await page.locator('#touch-gas').getAttribute('data-key'));
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: action.x + action.width / 2, y: action.y + action.height / 2, id: 1 }] });
+  await page.waitForFunction(key => window.__nordMediaKeys.some(packet => packet.type === 60 && packet.key === key), key);
+  await page.evaluate(() => {
+    window.__nordMediaEvents.dispatchEvent(new Event('dataChannelError'));
+    document.querySelector('#video video').dispatchEvent(new Event('playing'));
+    window.__nordMediaEvents.dispatchEvent(new Event('videoInitialized'));
+  });
+  await page.waitForFunction(key => window.__nordMediaKeys.some(packet => packet.type === 61 && packet.key === key && packet.channel === 'open'), key);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  assert.equal(await page.locator('#touch-controls').isHidden(), true);
+  assert.equal(await page.locator('#connect').isVisible(), true);
+  assert.equal(await page.locator('body').getAttribute('data-state'), 'error');
+  report.touchFailure = { key, packets: await page.evaluate(() => window.__nordMediaKeys) };
+  report.checks.push('touch control failure sends KeyUp before closing, hides controls and retains Reconnect despite late media');
   report.passed = true;
 } catch (e) { report.error = e.stack; throw e; }
 finally {
