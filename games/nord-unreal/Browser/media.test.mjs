@@ -12,7 +12,7 @@ const report = { passed: false, playerUrl: url.href, checks: [], mp4Requests: []
   limits: ['Host-PC Chromium emulated touch, not a physical phone/carrier.', 'MP4 requests are observed and aborted; trailer audio/playback and bandwidth/FPS gains are not measured.'] };
 const browser = await chromium.launch({ executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--disable-gpu'] });
 try {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });
   await context.addInitScript(() => {
     window.__nordMediaKeys = [];
     const send = RTCDataChannel.prototype.send;
@@ -41,17 +41,27 @@ try {
   await page.locator('#play').click();
   await page.waitForFunction(() => document.body.dataset.state === 'playing' && document.querySelector('#video video')?.readyState > 2);
   const beforeRotation = report.mp4Requests.length;
-  for (const [name, width, height] of [['portrait', 390, 844], ['landscape', 844, 390]]) {
+  for (const [name, width, height] of [['portrait', 390, 844], ['landscape', 844, 390], ['square', 600, 620]]) {
     await page.setViewportSize({ width, height });
-    await page.waitForFunction(tall => {
-      const v = document.querySelector('#video video'); return v.videoWidth > 0 && (v.videoHeight > v.videoWidth) === tall;
-    }, height > width);
+    await page.waitForFunction(() => {
+      const v = document.querySelector('#video video'), area = document.querySelector('#frame').getBoundingClientRect();
+      return v.videoWidth > 0 && Math.abs((v.videoWidth / v.videoHeight) / (area.width / area.height) - 1) < .01;
+    });
+    const shape = await page.locator('#video video').evaluate(v => {
+      const area = document.querySelector('#frame').getBoundingClientRect(), box = v.getBoundingClientRect();
+      return { width: v.videoWidth, height: v.videoHeight, cssWidth: box.width, cssHeight: box.height,
+        areaWidth: area.width, areaHeight: area.height, fit: getComputedStyle(v).objectFit, dpr: devicePixelRatio };
+    });
+    assert.equal(shape.fit, 'contain');
+    assert.ok(shape.width * shape.height <= 1280 * 720, 'high-DPI phones retain the bounded pixel budget');
+    assert.ok(Math.abs(shape.cssWidth - shape.areaWidth) <= 1 && Math.abs(shape.cssHeight - shape.areaHeight) <= 1, 'video fills the play area, including near-square portrait screens');
+    (report.shapes ||= {})[name] = shape;
     const time = await page.locator('#video video').evaluate(v => v.currentTime);
     await page.waitForFunction(t => document.querySelector('#video video').currentTime > t + .5, time);
     assert.equal(await page.locator('#hero-video').getAttribute('src'), null);
     assert.equal(await page.locator('#trailer-video').getAttribute('src'), null);
     await page.screenshot({ path: resolve(output, `${name}.png`) });
-    report.checks.push(`${name}: advancing real video with both page videos unloaded`);
+    report.checks.push(`${name}: shape-matched real video with both page videos unloaded`);
   }
   assert.equal(report.mp4Requests.length, beforeRotation, 'game rotation must not request title/trailer clips');
   assert.deepEqual(report.errors, []);

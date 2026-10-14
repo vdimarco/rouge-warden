@@ -30,3 +30,7 @@ The player SHALL reject late media readiness/play events outside an active conne
 #### Scenario: Reconnect closes the old socket
 - **WHEN** Reconnect intentionally closes the previous socket before opening its replacement
 - **THEN** that old disconnect does not replace the pending connection UI, and the fresh stream reaches Ready and Play normally.
+
+#### Scenario: Leave after reconnecting a closed session
+- **WHEN** a failed closed session reconnects and the player later chooses Disconnect
+- **THEN** its receiving peers close, no delayed retry silently reopens the session, and another viewer can acquire the freed slot.

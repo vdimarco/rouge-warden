@@ -217,6 +217,8 @@ try {
   await check('occupied browser reconnects after host frees its slot', async () => {
     await disconnect(host);
     await host.waitForFunction(() => document.body.dataset.state === 'disconnected');
+    await host.waitForTimeout(3000); // Includes server release and the SDK delayed-retry window.
+    assert.equal(await host.evaluate(() => window.__nordQaPeers.some(peer => peer.connectionState === 'connected')), false, 'Disconnect must not silently reconnect or retain a receiving peer');
     await occupied.locator('#connect').click();
     await play(occupied, 'NordHost');
     await advancingMedia(occupied, 'recovered-slot');

@@ -18,6 +18,7 @@ const fullscreenButton = element('fullscreen');
 const touchRoot = element('touch-controls');
 const touchMode = navigator.maxTouchPoints > 0;
 document.body.classList.toggle('touch-input', touchMode);
+document.body.classList.toggle('viewport-stream', touchMode && NORD_PORTRAIT_STREAM);
 let stream;
 let touchControls;
 let started = false;
@@ -236,7 +237,8 @@ if (endpoint) {
       status('connecting', 'Connecting to Montréal…', 'Finding the game host and available players.');
       waitForConnection();
       try {
-        if (reconnect) stream.reconnect();
+        // SDK reconnect arms a later retry even when the old socket is already closed.
+        if (reconnect && stream.webRtcController.protocol.isConnected()) stream.reconnect();
         else stream.connect();
       } catch {
         fail('The game couldn’t connect.', 'The host may be offline. Try reconnecting.');

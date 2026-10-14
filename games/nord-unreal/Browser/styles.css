@@ -76,8 +76,6 @@ footer p { margin: 0; }
   .touch-input .brand strong { font-size: 14px; }
   .touch-stick { width: 92px; height: 92px; }
 
-  /* Fill retains every native HUD pixel; wide displays stretch the 16:9 stream. */
-  .touch-input #frame:fullscreen #video video { object-fit: fill; }
   .touch-input #frame:fullscreen .touch-stick { width: 76px; height: 76px; }
   .touch-input #frame:fullscreen .move-stick { left: max(16px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom)); }
   .touch-input #frame:fullscreen .stick-label { font-size: 7.5px; letter-spacing: .04em; }
@@ -96,8 +94,8 @@ footer p { margin: 0; }
 
 /* While playing on a touch screen, the play area takes the footer's space too. */
 .touch-input[data-state="playing"] footer { display: none; }
-/* A tall frame fills the play area; movement and actions occupy opposite corners. */
-.touch-input.portrait-stream #video { top: 0; bottom: 0; height: auto; }
+/* Viewport-shaped frames fill the play area, including square tablets. */
+.touch-input.viewport-stream #video { top: 0; bottom: 0; height: auto; }
 /* The sticks shrink on short phones (down to 76 px) so the controls stay inside the bottom 40% the game keeps clear. */
 .touch-input.portrait-stream #frame { container-type: size; }
 .touch-input.portrait-stream .touch-stick { --stick: clamp(76px, calc(40cqh - 70px), 96px); width: var(--stick); height: var(--stick); }

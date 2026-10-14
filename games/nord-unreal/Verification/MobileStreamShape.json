@@ -1,0 +1,496 @@
+{
+  "date": "2026-10-14",
+  "status": "merged, production published and public verified",
+  "source_base": "64e0e72e1306e11aa35c053729ea499ae4ccb000",
+  "changes": [
+    "Even native mobile dimensions match viewport aspect ratio at equal per-profile pixel area.",
+    "CSS contain replaces fullscreen stretching; viewport-shaped frames also fill near-square screens.",
+    "Existing adaptive profiles, bandwidth caps, desktop and legacy sizes retained.",
+    "Reconnect uses ordinary connect for an already CLOSED signalling socket, avoiding the SDK delayed-retry flag leaking into later Disconnect."
+  ],
+  "checks": {
+    "unit": 36,
+    "browser_ui": "passed final after closed-session fix; browser-ui-final.log",
+    "mobile": {
+      "report": "Browser/.qa/mobile-2026-10-14T15-16-20-988Z/summary.json",
+      "checks": [
+        {
+          "name": "tapping Play takes the game fullscreen",
+          "passed": true,
+          "durationMs": 3
+        },
+        {
+          "name": "actual native possession arrives on reconnect and restores the matching controls",
+          "passed": true,
+          "durationMs": 4
+        },
+        {
+          "name": "the game sends the frame the page asks for",
+          "passed": true,
+          "durationMs": 760
+        },
+        {
+          "name": "real mobile media",
+          "passed": true,
+          "durationMs": 1206
+        },
+        {
+          "name": "phone video starts with a balanced frame and 2 Mbps ceiling",
+          "passed": true,
+          "durationMs": 5
+        },
+        {
+          "name": "portrait controls fit and meet target size",
+          "passed": true,
+          "durationMs": 63
+        },
+        {
+          "name": "a phone held upright gets a tall game frame with every control in its bottom 42%",
+          "passed": true,
+          "durationMs": 1
+        },
+        {
+          "name": "double-tap movement sprints and a held Sprint button can drag the real view",
+          "passed": true,
+          "durationMs": 626
+        },
+        {
+          "name": "real car possession switches to separate steering and pedals, then restores walking",
+          "passed": true,
+          "durationMs": 9650
+        },
+        {
+          "name": "simultaneous move, look and jump use the native data channel",
+          "passed": true,
+          "durationMs": 2179
+        },
+        {
+          "name": "drag anywhere changes the real view while another finger moves",
+          "passed": true,
+          "durationMs": 774
+        },
+        {
+          "name": "extreme vertical drags reach both camera limits",
+          "passed": true,
+          "durationMs": 1823
+        },
+        {
+          "name": "opt-in simulated gyro sends real native look input and turns off",
+          "passed": true,
+          "durationMs": 1039
+        },
+        {
+          "name": "landscape controls fit and the menu leaves and enters fullscreen",
+          "passed": true,
+          "durationMs": 5217
+        },
+        {
+          "name": "menu game buttons support keyboard activation without duplicate touch clicks",
+          "passed": true,
+          "durationMs": 736
+        },
+        {
+          "name": "receiver pressure lowers the phone stream and healthy playback restores clarity",
+          "passed": true,
+          "durationMs": 107029
+        },
+        {
+          "name": "touch release on disconnect leaves no held native key",
+          "passed": true,
+          "durationMs": 393
+        }
+      ],
+      "adaptive": {
+        "requested": "960x538",
+        "maxBitrate": 2000000,
+        "trigger": "controlled receiver statistics; real resized video",
+        "constrained": "800x448",
+        "emergency": "640x358",
+        "recovered": "1280x718"
+      }
+    },
+    "high_dpi_media": {
+      "report": "Browser/.qa/media-2026-10-14T15-18-47-190Z/summary.json",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: shape-matched real video with both page videos unloaded",
+        "landscape: shape-matched real video with both page videos unloaded",
+        "square: shape-matched real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors",
+        "touch control failure sends KeyUp before closing, hides controls and retains Reconnect despite late media"
+      ],
+      "shapes": {
+        "portrait": {
+          "width": 488,
+          "height": 1058,
+          "cssWidth": 390,
+          "cssHeight": 844,
+          "areaWidth": 390,
+          "areaHeight": 844,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "landscape": {
+          "width": 1058,
+          "height": 488,
+          "cssWidth": 844,
+          "cssHeight": 390,
+          "areaWidth": 844,
+          "areaHeight": 390,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "square": {
+          "width": 708,
+          "height": 730,
+          "cssWidth": 600,
+          "cssHeight": 620,
+          "areaWidth": 600,
+          "areaHeight": 620,
+          "fit": "contain",
+          "dpr": 3
+        }
+      },
+      "touch_failure": {
+        "key": 16,
+        "packets": [
+          {
+            "type": 60,
+            "key": 16,
+            "channel": "open"
+          },
+          {
+            "type": 61,
+            "key": 16,
+            "channel": "open"
+          }
+        ]
+      },
+      "errors": []
+    },
+    "local_live": {
+      "report": "Browser/.qa/live-2026-10-14T15-21-50-317Z/summary.json",
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2347
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2243
+        },
+        {
+          "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+          "passed": true,
+          "durationMs": 2150
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2833
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2901
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 634
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 7460
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 4907
+        }
+      ]
+    },
+    "high_dpi_media_final": {
+      "report": "Browser/.qa/media-2026-10-14T15-23-01-371Z/summary.json",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: shape-matched real video with both page videos unloaded",
+        "landscape: shape-matched real video with both page videos unloaded",
+        "square: shape-matched real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors",
+        "touch control failure sends KeyUp before closing, hides controls and retains Reconnect despite late media"
+      ],
+      "shapes": {
+        "portrait": {
+          "width": 488,
+          "height": 1058,
+          "cssWidth": 390,
+          "cssHeight": 844,
+          "areaWidth": 390,
+          "areaHeight": 844,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "landscape": {
+          "width": 1058,
+          "height": 488,
+          "cssWidth": 844,
+          "cssHeight": 390,
+          "areaWidth": 844,
+          "areaHeight": 390,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "square": {
+          "width": 708,
+          "height": 730,
+          "cssWidth": 600,
+          "cssHeight": 620,
+          "areaWidth": 600,
+          "areaHeight": 620,
+          "fit": "contain",
+          "dpr": 3
+        }
+      }
+    },
+    "portrait_motion": {
+      "report": "Saved/BrowserStreaming/samples/2026-10-14T15-24-32-419Z-NordHost/sample.json",
+      "summary": {
+        "seconds": 60.14,
+        "decodedFps": 29.93016295310941,
+        "receivedMbps": 2.431491985367476,
+        "framesDropped": 0,
+        "freezes": 0,
+        "freezeSeconds": 0,
+        "longestFrameGapMs": 150.0659999999989,
+        "width": 652,
+        "height": 1412,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 1.6145416666666668,
+        "jitterBufferMsPerFrame": 72.13693392559688,
+        "packetsLost": 0,
+        "framesReceived": 1800
+      },
+      "source_commit": "87f13cd638afc55bb1ada83c2c9b586e70563884"
+    },
+    "public_live": {
+      "report": "Browser/.qa/live-2026-10-14T15-33-56-142Z/summary.json",
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2610
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2601
+        },
+        {
+          "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+          "passed": true,
+          "durationMs": 4380
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2824
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2825
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 649
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 7278
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 4790
+        }
+      ]
+    },
+    "public_media": {
+      "report": "Browser/.qa/media-2026-10-14T15-35-08-595Z/summary.json",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: shape-matched real video with both page videos unloaded",
+        "landscape: shape-matched real video with both page videos unloaded",
+        "square: shape-matched real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors",
+        "touch control failure sends KeyUp before closing, hides controls and retains Reconnect despite late media"
+      ],
+      "shapes": {
+        "portrait": {
+          "width": 488,
+          "height": 1058,
+          "cssWidth": 390,
+          "cssHeight": 844,
+          "areaWidth": 390,
+          "areaHeight": 844,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "landscape": {
+          "width": 1058,
+          "height": 488,
+          "cssWidth": 844,
+          "cssHeight": 390,
+          "areaWidth": 844,
+          "areaHeight": 390,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "square": {
+          "width": 708,
+          "height": 730,
+          "cssWidth": 600,
+          "cssHeight": 620,
+          "areaWidth": 600,
+          "areaHeight": 620,
+          "fit": "contain",
+          "dpr": 3
+        }
+      },
+      "touch_failure": {
+        "key": 16,
+        "packets": [
+          {
+            "type": 60,
+            "key": 16,
+            "channel": "open"
+          },
+          {
+            "type": 61,
+            "key": 16,
+            "channel": "open"
+          }
+        ]
+      }
+    },
+    "visual_review": "Primary agent inspected actual before/after portrait frames, landscape/narrow fullscreen, 3\u00d7-DPR landscape/square and final public portrait captures."
+  },
+  "comparison": {
+    "source_base": "64e0e72e",
+    "before": {
+      "seconds": 60.354,
+      "decodedFps": 29.906882725254334,
+      "receivedMbps": 2.6042301090234283,
+      "framesDropped": 0,
+      "freezes": 1,
+      "freezeSeconds": 0.201,
+      "longestFrameGapMs": 200,
+      "width": 592,
+      "height": 1280,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 1.1493628808864265,
+      "jitterBufferMsPerFrame": 68.0047429362881,
+      "packetsLost": 0,
+      "framesReceived": 1805
+    },
+    "after": {
+      "seconds": 60.368,
+      "decodedFps": 29.93307712695468,
+      "receivedMbps": 2.606216273522396,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 150,
+      "width": 652,
+      "height": 1412,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 1.236661317100166,
+      "jitterBufferMsPerFrame": 69.49743552850028,
+      "packetsLost": 0,
+      "framesReceived": 1808
+    },
+    "pixel_increase_percent": 21.492820945945958,
+    "limits": [
+      "Sequential one-minute host-PC Chromium/direct-UDP observations, not physical phone or cellular.",
+      "Scenes contain moving traffic/foliage; screenshots are not a controlled perceptual-quality metric.",
+      "No material FPS/bandwidth benefit established. Native settings, including 75% screen percentage, are retained."
+    ]
+  },
+  "raw_run": "Saved/MobileStreamShape-20261014",
+  "browser_path": "Browser plugin not available; existing Playwright fixtures used.",
+  "native_changes": false,
+  "limits": [
+    "Sequential one-minute host-PC Chromium/direct-UDP observations, not physical phone or cellular.",
+    "Scenes contain moving traffic/foliage; screenshots are not a controlled perceptual-quality metric.",
+    "No material FPS/bandwidth benefit established. Native settings, including 75% screen percentage, are retained.",
+    "Physical Android/iOS, carrier, audible sound and a new full campaign replay are unverified.",
+    "OpenSpec CLI unavailable; manual structure/scenario checks."
+  ],
+  "rejected_attempts": [
+    {
+      "report": "Browser/.qa/mobile-2026-10-14T15-09-11-259Z/summary.json",
+      "reason": "Recovery fixture timed out after successful pressure/layout/input checks; excluded from acceptance."
+    },
+    {
+      "report": "Browser/.qa/live-2026-10-14T15-19-04-797Z/summary.json",
+      "reason": "After control-error recovery and explicit leave, old viewer had a connected peer and replacement slot was refused. SDK forced-retry flag root cause identified; excluded."
+    },
+    {
+      "report": "Browser/.qa/live-2026-10-14T15-31-53-465Z/summary.json",
+      "reason": "Public WSS HTTP 502 during an external game-service restart; excluded. Local/public HTTP upgrade endpoints later healthy; retry then passed eight checks."
+    },
+    {
+      "report": "Browser/.qa/media-2026-10-14T15-34-48-351Z/summary.json",
+      "reason": "Fresh Chromium navigation failed with ERR_CERT_VERIFIER_CHANGED before any check. HTTPS 200 verified and a fresh browser passed all six checks without bypassing certificate validation."
+    }
+  ],
+  "diagnostic": {
+    "path": "Saved/MobileStreamShape-20261014/diagnostic.json",
+    "instrumented": true,
+    "passed": true,
+    "details": "Isolated same-player recovery uses one controlled FPS wrapper; observes 640\u2192800\u2192960\u21921280 through three healthy transitions. Not the shipped bundle or acceptance run."
+  },
+  "preservation": {
+    "packageFiles": 48,
+    "saves": 17,
+    "packageAndSavesUnchanged": true,
+    "serviceStartPreserved": false,
+    "baselineServiceStart": "Wed 2026-10-14 10:58:17 EDT",
+    "currentServiceStart": "Wed 2026-10-14 11:32:11 EDT",
+    "ownServiceRestart": false,
+    "note": "Two external service restarts observed; this task performed none. All 48 package files and 17 saves unchanged. Final public acceptance ran on the 11:32:11 EDT instance.",
+    "intermediateServiceStart": "Wed 2026-10-14 11:12:51 EDT",
+    "finalServices": "demo, three tunnels and TURN active; 48 package files/17 saves unchanged; no further restart since final public acceptance"
+  },
+  "source_commit": "87f13cd638afc55bb1ada83c2c9b586e70563884",
+  "pull_request": "https://github.com/vdimarco/rouge-warden/pull/354",
+  "static_manifest": "Saved/MobileStreamShape-20261014/candidate-static.json",
+  "previous_production": "dpl_5WNCgRGhXisNMewM2MAfh1FGR6yh",
+  "production": {
+    "id": "dpl_3WK7bKSYUYijDi5HQFBgYgSjzSvd",
+    "url": "https://nord-montreal-d22fny8is-vdimarcos-projects.vercel.app/",
+    "public_alias": "https://nord-montreal.vercel.app/",
+    "merge_commit": "18c821263dd3be0eef6cba53e50f605099cbbc13",
+    "state": "READY",
+    "static_files_matched": 12
+  },
+  "public_alias_propagation": "Initial fetch matched 10/12 files; after propagation all 12 matched before final browser tests."
+}
