@@ -1,6 +1,6 @@
 {
   "date": "2026-10-14",
-  "status": "local accepted, public release pending",
+  "status": "merged, production published and public verified",
   "source_base": "64e0e72e1306e11aa35c053729ea499ae4ccb000",
   "changes": [
     "Even native mobile dimensions match viewport aspect ratio at equal per-profile pixel area.",
@@ -255,7 +255,135 @@
           "dpr": 3
         }
       }
-    }
+    },
+    "portrait_motion": {
+      "report": "Saved/BrowserStreaming/samples/2026-10-14T15-24-32-419Z-NordHost/sample.json",
+      "summary": {
+        "seconds": 60.14,
+        "decodedFps": 29.93016295310941,
+        "receivedMbps": 2.431491985367476,
+        "framesDropped": 0,
+        "freezes": 0,
+        "freezeSeconds": 0,
+        "longestFrameGapMs": 150.0659999999989,
+        "width": 652,
+        "height": 1412,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 1.6145416666666668,
+        "jitterBufferMsPerFrame": 72.13693392559688,
+        "packetsLost": 0,
+        "framesReceived": 1800
+      },
+      "source_commit": "87f13cd638afc55bb1ada83c2c9b586e70563884"
+    },
+    "public_live": {
+      "report": "Browser/.qa/live-2026-10-14T15-33-56-142Z/summary.json",
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2610
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2601
+        },
+        {
+          "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+          "passed": true,
+          "durationMs": 4380
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2824
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2825
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 649
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 7278
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 4790
+        }
+      ]
+    },
+    "public_media": {
+      "report": "Browser/.qa/media-2026-10-14T15-35-08-595Z/summary.json",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: shape-matched real video with both page videos unloaded",
+        "landscape: shape-matched real video with both page videos unloaded",
+        "square: shape-matched real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors",
+        "touch control failure sends KeyUp before closing, hides controls and retains Reconnect despite late media"
+      ],
+      "shapes": {
+        "portrait": {
+          "width": 488,
+          "height": 1058,
+          "cssWidth": 390,
+          "cssHeight": 844,
+          "areaWidth": 390,
+          "areaHeight": 844,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "landscape": {
+          "width": 1058,
+          "height": 488,
+          "cssWidth": 844,
+          "cssHeight": 390,
+          "areaWidth": 844,
+          "areaHeight": 390,
+          "fit": "contain",
+          "dpr": 3
+        },
+        "square": {
+          "width": 708,
+          "height": 730,
+          "cssWidth": 600,
+          "cssHeight": 620,
+          "areaWidth": 600,
+          "areaHeight": 620,
+          "fit": "contain",
+          "dpr": 3
+        }
+      },
+      "touch_failure": {
+        "key": 16,
+        "packets": [
+          {
+            "type": 60,
+            "key": 16,
+            "channel": "open"
+          },
+          {
+            "type": 61,
+            "key": 16,
+            "channel": "open"
+          }
+        ]
+      }
+    },
+    "visual_review": "Primary agent inspected actual before/after portrait frames, landscape/narrow fullscreen, 3\u00d7-DPR landscape/square and final public portrait captures."
   },
   "comparison": {
     "source_base": "64e0e72e",
@@ -324,6 +452,14 @@
     {
       "report": "Browser/.qa/live-2026-10-14T15-19-04-797Z/summary.json",
       "reason": "After control-error recovery and explicit leave, old viewer had a connected peer and replacement slot was refused. SDK forced-retry flag root cause identified; excluded."
+    },
+    {
+      "report": "Browser/.qa/live-2026-10-14T15-31-53-465Z/summary.json",
+      "reason": "Public WSS HTTP 502 during an external game-service restart; excluded. Local/public HTTP upgrade endpoints later healthy; retry then passed eight checks."
+    },
+    {
+      "report": "Browser/.qa/media-2026-10-14T15-34-48-351Z/summary.json",
+      "reason": "Fresh Chromium navigation failed with ERR_CERT_VERIFIER_CHANGED before any check. HTTPS 200 verified and a fresh browser passed all six checks without bypassing certificate validation."
     }
   ],
   "diagnostic": {
@@ -338,8 +474,23 @@
     "packageAndSavesUnchanged": true,
     "serviceStartPreserved": false,
     "baselineServiceStart": "Wed 2026-10-14 10:58:17 EDT",
-    "currentServiceStart": "Wed 2026-10-14 11:12:51 EDT",
+    "currentServiceStart": "Wed 2026-10-14 11:32:11 EDT",
     "ownServiceRestart": false,
-    "note": "Service start changed outside this task during the run; no package/save identity changed. Accepted mobile/live/media checks ran against the new service start."
-  }
+    "note": "Two external service restarts observed; this task performed none. All 48 package files and 17 saves unchanged. Final public acceptance ran on the 11:32:11 EDT instance.",
+    "intermediateServiceStart": "Wed 2026-10-14 11:12:51 EDT",
+    "finalServices": "demo, three tunnels and TURN active; 48 package files/17 saves unchanged; no further restart since final public acceptance"
+  },
+  "source_commit": "87f13cd638afc55bb1ada83c2c9b586e70563884",
+  "pull_request": "https://github.com/vdimarco/rouge-warden/pull/354",
+  "static_manifest": "Saved/MobileStreamShape-20261014/candidate-static.json",
+  "previous_production": "dpl_5WNCgRGhXisNMewM2MAfh1FGR6yh",
+  "production": {
+    "id": "dpl_3WK7bKSYUYijDi5HQFBgYgSjzSvd",
+    "url": "https://nord-montreal-d22fny8is-vdimarcos-projects.vercel.app/",
+    "public_alias": "https://nord-montreal.vercel.app/",
+    "merge_commit": "18c821263dd3be0eef6cba53e50f605099cbbc13",
+    "state": "READY",
+    "static_files_matched": 12
+  },
+  "public_alias_propagation": "Initial fetch matched 10/12 files; after propagation all 12 matched before final browser tests."
 }
