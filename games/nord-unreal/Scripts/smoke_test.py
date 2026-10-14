@@ -97,7 +97,9 @@ def discover():
     if any(len(u.GameplayStatics.get_game_state(world).get_editor_property("PlayerArray")) < 2
            for world in (server, client)):
         return False
-    server_car = min(actors(server, "Car"), key=lambda car: distance(car.get_actor_location(), u.Vector(*LAYOUT["car"])))
+    starters = [car for car in actors(server, "Car") if car.actor_has_tag("StarterCar")]
+    assert len(starters) == 1, "Expected the native curb-parked starter"
+    server_car = starters[0]
     client_car = next((car for car in actors(client, "Car") if car.get_name() == server_car.get_name()), None)
     if not client_car:
         return False
@@ -119,6 +121,48 @@ def far_rejected():
     assert STATE["server_pc"].get_controlled_pawn() == STATE["server_char"], "Far E entered a car"
     assert mission(STATE["server"]) == mission(STATE["client"]) == 0, "Far E advanced a mission"
     return True
+
+
+def prepare_far_interaction():
+    # Curb parking can put cars beside either the spawn or the walking endpoint; inspect nearby road-oriented ground.
+    world, character = STATE["server"], STATE["server_char"]
+    yaw = math.radians(LAYOUT["car_yaw"])
+    forward, right = u.Vector(math.cos(yaw), math.sin(yaw), 0), u.Vector(-math.sin(yaw), math.cos(yaw), 0)
+    gameplay = u.get_default_object(u.load_class(None, "/Script/Engine.GameplayStatics"))
+    for along in (0, 1000, -1000, 2000, -2000, 3000, -3000):
+        for across in (0, 400, -400, 800, -800):
+            point = WALK_START + forward * along + right * across
+            nearest = min(distance(point, car.get_actor_location()) for car in actors(world, "Car"))
+            if nearest <= 650 or min(distance(point, target) for target in TARGETS) <= 600:
+                continue
+            hit = u.SystemLibrary.line_trace_single(world, point + u.Vector(0, 0, 200), point + u.Vector(0, 0, -300),
+                u.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [character], u.DrawDebugTrace.NONE, True)
+            if not hit:
+                continue
+            ground = gameplay.call_method("BreakHitResult", (hit,))
+            if ground[7].z < .7 or not -200 < ground[5].z < 50:
+                continue
+            point = ground[5] + u.Vector(0, 0, 100)
+            if u.SystemLibrary.capsule_trace_single_by_profile(world, point, point + u.Vector(0, 0, .1),
+                    42, 88, "Pawn", False, [character], u.DrawDebugTrace.NONE, True):
+                continue
+            nearest = min(distance(point, car.get_actor_location()) for car in actors(world, "Car"))
+            if nearest <= 650 or min(distance(point, target) for target in TARGETS) <= 600:
+                continue
+            STATE["far_point"] = point
+            REPORT["far_interaction_fixture"] = {"position_cm": [point.x, point.y, point.z], "nearest_car_cm": round(nearest, 1),
+                                                  "ground_z_cm": ground[5].z, "capsule_clear": True}
+            teleport(point)
+            return
+    raise AssertionError("No clear grounded road fixture is outside every car and objective interaction radius")
+
+
+def far_interact():
+    for side in ("server", "client"):
+        point = STATE[side + "_char"].get_actor_location()
+        nearest = min(distance(point, car.get_actor_location()) for car in actors(STATE[side], "Car"))
+        assert nearest > 450, (side, "Far E fixture moved into a car's interaction radius", nearest)
+    interact()
 
 
 def entered():
@@ -153,30 +197,72 @@ def stop_drive():
     STATE["client_car"].enable_input(STATE["client_pc"])
 
 
-def check_driving_lane():
+def check_starter_parking():
     car = STATE["server_car"]
-    STATE["drive_lane"] = u.Vector(*LAYOUT["car"]) + car.get_actor_right_vector() * 145
-    STATE["drive_lane"].z = car.get_actor_location().z
-    assert distance(car.get_actor_location(), STATE["drive_lane"]) < 3, "Starter is not in its mapped forward lane"
-    REPORT["driving_fixture"] = {"right_lane_offset_cm": 145, "production_spawn_verified": True,
-                                 "ambient_traffic_enabled": True}
+    offset, right = car.get_actor_location() - u.Vector(*LAYOUT["car"]), car.get_actor_right_vector()
+    curb_offset = offset.x * right.x + offset.y * right.y
+    assert car.actor_has_tag("StarterCar") and 300 < curb_offset < 2200, "Starter must park beside its actual curb"
+    root = car.root_component
+    assert isinstance(root, u.StaticMeshComponent) and root.get_editor_property("static_mesh").get_name() == f'SM_CarCollision{car.get_editor_property("BodyProfile")}'
+    assert not root.is_visible(), "The fitted car collider must remain hidden"
+    STATE["starter_position"] = car.get_actor_location()
+    REPORT["driving_fixture"] = {"starter_curb_offset_cm": round(curb_offset, 1), "production_spawn_verified": True,
+                                 "ambient_traffic_enabled": True, "full_curb_clearance_covered_by": "population_test.py"}
 
 
-def approach_target_car():
+def prepare_driving_lane():
+    world, car = STATE["server"], STATE["server_car"]
+    ignored = [car, STATE["server_char"]]
+    gameplay = u.get_default_object(u.load_class(None, "/Script/Engine.GameplayStatics"))
+    before = car.get_actor_location()
+    hit = u.SystemLibrary.box_trace_single_by_profile(world, before, before + car.get_actor_forward_vector() * 2000,
+        u.Vector(235, 110, 80), car.get_actor_rotation(), "Pawn", False, ignored, u.DrawDebugTrace.NONE, True)
+    if hit:
+        obstruction = gameplay.call_method("BreakHitResult", (hit,))
+        REPORT["driving_fixture"]["parked_forward_obstruction"] = {
+            "actor": obstruction[9].get_name() if obstruction[9] else None, "distance_cm": round(obstruction[3], 1)}
+    yaw = math.radians(LAYOUT["car_yaw"])
+    forward, right = u.Vector(math.cos(yaw), math.sin(yaw), 0), u.Vector(-math.sin(yaw), math.cos(yaw), 0)
+    rotation = u.Rotator(yaw=LAYOUT["car_yaw"])
+    for along in (0, -500, -1000, -1500):
+        point = u.Vector(*LAYOUT["car"]) + right * 145 + forward * along
+        hit = u.SystemLibrary.line_trace_single(world, point + u.Vector(0, 0, 200), point + u.Vector(0, 0, -300),
+            u.TraceTypeQuery.TRACE_TYPE_QUERY1, True, ignored, u.DrawDebugTrace.NONE, True)
+        if not hit:
+            continue
+        ground = gameplay.call_method("BreakHitResult", (hit,))
+        if ground[7].z < .7 or not -200 < ground[5].z < 50:
+            continue
+        point = ground[5] + u.Vector(0, 0, 102)
+        if u.SystemLibrary.box_trace_single_by_profile(world, point, point + forward * 2000,
+                u.Vector(235, 110, 80), rotation, "Pawn", False, ignored, u.DrawDebugTrace.NONE, True):
+            continue
+        car.set_actor_location_and_rotation(point, rotation, False, True)
+        STATE["drive_lane"] = point
+        REPORT["driving_fixture"].update({"from_cm": [before.x, before.y, before.z], "to_cm": [point.x, point.y, point.z],
+            "forward_sweep_clear_cm": 2000, "right_lane_offset_cm": 145,
+            "scope": "PIE-only occupied car relocation after native curb spawn, entry and occupancy checks"})
+        return
+    raise AssertionError("No clear grounded mapped lane for native drive/brake/steering checks")
+
+
+def approach_target_car(character=None):
     car = STATE["server_car"]
+    character = character or STATE["server_char"]
     right, forward = car.get_actor_right_vector(), car.get_actor_forward_vector()
     for offset in (right * 185, right * -185, forward * 300, forward * -300):
         point = car.get_actor_location() + offset
-        if any(other != car and distance(other.get_actor_location(), point) <= distance(car.get_actor_location(), point) + 10
+        if any(other != car and not other.get_controller() and not other.get_editor_property("Occupant") and
+               distance(other.get_actor_location(), point) <= 450
                for other in actors(STATE["server"], "Car")):
             continue
         if u.SystemLibrary.capsule_trace_single_by_profile(STATE["server"], point, point + u.Vector(0, 0, .1),
-                42, 88, "Pawn", False, [STATE["server_char"]], u.DrawDebugTrace.NONE, True):
+                42, 88, "Pawn", False, [character], u.DrawDebugTrace.NONE, True):
             continue
-        teleport(point)
+        character.set_actor_location(point, False, True)
         STATE["car_approach"] = point
         return
-    raise AssertionError("No clear standing position selects the target car as nearest")
+    raise AssertionError("No clear standing position isolates the target car's interaction range")
 
 
 def drive():
@@ -372,7 +458,10 @@ def foot_move_replicated():
 
 def block_car_view():
     car = STATE["server_car"]
-    STATE["barriers"] = [barrier(car.get_actor_location() + u.Vector(0, 130, 100), (600, 30, 600))]
+    delta = STATE["server_char"].get_actor_location() - car.get_actor_location()
+    wall = barrier(car.get_actor_location() + delta * .5 + u.Vector(0, 0, 100), (600, 30, 600))
+    wall.set_actor_rotation(u.Rotator(yaw=math.degrees(math.atan2(delta.y, delta.x)) + 90), False)
+    STATE["barriers"] = [wall]
     interact()
 
 
@@ -389,7 +478,7 @@ def remove_barriers():
 
 
 def occupied_attempt():
-    STATE["host_char"].set_actor_location(STATE["server_car"].get_actor_location() + u.Vector(0, -260, 0), False, True)
+    approach_target_car(STATE["host_char"])
     host_interact()
 
 
@@ -480,18 +569,21 @@ step("sprint release restores walking speed on both peers", lambda: u.SystemLibr
 step("client jump moves both authority and owning client", begin_jump, jump_visible)
 step("jump lands on saved-map ground", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_char"], "StopJumping"), lambda: all(not STATE[side + "_char"].get_component_by_class(u.CharacterMovementComponent).is_falling() for side in ("server", "client")))
 step("client disables comic view without affecting host", lambda: u.SystemLibrary.set_timer_for_next_tick(STATE["client_pc"], "ToggleComicStyle"), lambda: comic_weights(0, 1))
-step("restore far-interaction fixture", lambda: teleport(u.Vector(*LAYOUT["spawn"])), lambda: teleported(u.Vector(*LAYOUT["spawn"])))
-step("out-of-range client interaction rejected", interact, far_rejected)
-step("starter spawns in its mapped forward driving lane", check_driving_lane,
-     lambda: distance(STATE["client_car"].get_actor_location(), STATE["drive_lane"]) < 120)
-step("authority teleport replicated to owning client", lambda: teleport(STATE["server_car"].get_actor_location() + u.Vector(0, 260, 0)),
-     lambda: distance(STATE["client_pc"].get_controlled_pawn().get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
+step("restore far-interaction fixture", prepare_far_interaction, lambda: teleported(STATE["far_point"]))
+step("out-of-range client interaction rejected", far_interact, far_rejected)
+step("starter spawns beside its mapped raised curb", check_starter_parking,
+     lambda: distance(STATE["client_car"].get_actor_location(), STATE["starter_position"]) < 120)
+step("authority teleport replicated to owning client", approach_target_car,
+     lambda: teleported(STATE["car_approach"]) and distance(STATE["client_char"].get_actor_location(), STATE["client_car"].get_actor_location()) < 450)
 step("wall between player and car rejects entry", block_car_view, blocked_entry)
 step("remove entry barrier", remove_barriers, lambda: True)
 step("client RPC enters car; occupant, visibility and collision replicate", interact, entered)
 step("host cannot steal an occupied car", occupied_attempt, occupied_rejected)
 step("car camera preserves client standard view and host comic view", lambda: None, lambda: comic_weights(0, 1))
 step("client switches avatar while driving and retains occupancy", next_character, lambda: crew_ready(3) and entered())
+step("place occupied car in a clear mapped driving lane", prepare_driving_lane,
+     lambda: entered() and distance(STATE["server_car"].get_actor_location(), STATE["drive_lane"]) < 5 and
+     distance(STATE["client_car"].get_actor_location(), STATE["drive_lane"]) < 120)
 step("client drive RPC moves authority car", start_drive, drive)
 
 def begin_input_dropout():
@@ -536,7 +628,7 @@ step("car interaction takes priority without completing the nearby objective", i
 step("priority-test driver exits with objective progress preserved", interact, lambda: exited() and missions_equal(0))
 step("restore parked car after interaction priority check", restore_priority_fixture, lambda: True)
 step("listen host approaches the empty car",
-     lambda: STATE["host_char"].set_actor_location(STATE["server_car"].get_actor_location() + u.Vector(0, -260, 0), False, True),
+     lambda: approach_target_car(STATE["host_char"]),
      lambda: distance(STATE["host_char"].get_actor_location(), STATE["server_car"].get_actor_location()) < 450)
 step("listen host interaction enters car", host_interact, host_entered)
 step("client keeps the driving host's crew member off the residents", lambda: None, host_drive_hides_crew)
