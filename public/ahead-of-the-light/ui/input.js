@@ -339,34 +339,41 @@ export function bindInput(input, { el = window, tune = TUNE, topDead = tune.TOP_
     return Boolean(r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
   };
   const on = (target, type, fn, o) => { target.addEventListener(type, fn, o); return () => target.removeEventListener(type, fn, o); };
+  // An event's time on the page clock (performance.now()). Most browsers stamp events on that clock; some synthetic
+  // and platform events do not, so a stamp more than a second off is moved by the same offset as its event.
+  const clock = (e) => {
+    const now = performance.now(), ts = e.timeStamp;
+    return Number.isFinite(ts) && Math.abs(ts - now) < 1000 ? 0 : now - (Number.isFinite(ts) ? ts : now);
+  };
   const offs = [];
   offs.push(on(el, 'pointerdown', (e) => {
     if (blocked() || isControl(e.target)) return;
     if (e.pointerType !== 'mouse' && e.clientY < topDead) return;
-    input.pointerDown(e.pointerId, e.clientX, e.clientY, e.timeStamp, { kind: e.pointerType || 'touch',
+    input.pointerDown(e.pointerId, e.clientX, e.clientY, e.timeStamp + clock(e), { kind: e.pointerType || 'touch',
       button: e.button, actionOnly: inButton(e.clientX, e.clientY) });
     try { e.target.setPointerCapture?.(e.pointerId); } catch { /* not capturable */ }
     if (e.cancelable) e.preventDefault();
   }, { passive: false }));
   offs.push(on(el, 'pointermove', (e) => {
+    const off = clock(e);
     const list = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
-    if (list.length) for (const q of list) input.pointerMove(e.pointerId, q.clientX, q.clientY, q.timeStamp);
-    else input.pointerMove(e.pointerId, e.clientX, e.clientY, e.timeStamp);
+    if (list.length) for (const q of list) input.pointerMove(e.pointerId, q.clientX, q.clientY, q.timeStamp + off);
+    else input.pointerMove(e.pointerId, e.clientX, e.clientY, e.timeStamp + off);
   }));
-  offs.push(on(el, 'pointerup', (e) => input.pointerUp(e.pointerId, e.clientX, e.clientY, e.timeStamp)));
-  offs.push(on(el, 'pointercancel', (e) => input.pointerCancel(e.pointerId, e.timeStamp)));
+  offs.push(on(el, 'pointerup', (e) => input.pointerUp(e.pointerId, e.clientX, e.clientY, e.timeStamp + clock(e))));
+  offs.push(on(el, 'pointercancel', (e) => input.pointerCancel(e.pointerId, e.timeStamp + clock(e))));
   offs.push(on(el, 'contextmenu', (e) => e.preventDefault()));
   offs.push(on(window, 'keydown', (e) => {
     if (blocked() || e.metaKey || e.ctrlKey || e.altKey) return;
     if (GAME_KEYS.has(e.code)) {
       if (e.target && isControl(e.target) && e.code === 'Space') return;
       e.preventDefault();
-      if (!e.repeat) input.keyDown(e.code, e.timeStamp);
+      if (!e.repeat) input.keyDown(e.code, e.timeStamp + clock(e));
       return;
     }
     if (onKey) onKey(e.code, e);
   }));
-  offs.push(on(window, 'keyup', (e) => { if (GAME_KEYS.has(e.code)) input.keyUp(e.code, e.timeStamp); }));
+  offs.push(on(window, 'keyup', (e) => { if (GAME_KEYS.has(e.code)) input.keyUp(e.code, e.timeStamp + clock(e)); }));
   return () => { for (const off of offs) off(); };
 }
 

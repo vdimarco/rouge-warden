@@ -10,6 +10,8 @@ const SX = 2;                     // px a degree
 const SY = 10;                    // px a beat
 const ML = 120, MR = 230, MT = 70, MB = 20;
 const ORANGE = '#f08a2c', WHITE = '#ffffff', GREY = '#8a8a96', DIM = '#2a2a36', TEAL = '#5ad1c8';
+const label = (x, y, fill, text) =>
+  `<text x="${f1(x)}" y="${y}" fill="${fill}" font-size="9" text-anchor="middle">${esc(text)}</text>`;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const f1 = (v) => Math.round(v * 10) / 10;
 
@@ -63,7 +65,10 @@ export function stripSvg(leg, traces = [], opts = {}) {
     const sub = opts.sub || 8, h = SY / sub;
     let d = '';
     opts.corridor.forEach((runs, k) => {
-      for (const [a, b] of runs) d += `M${ML + (a + 180) * SX} ${f1(MT + k * h)}h${(b - a + 1) * SX}v${f1(h)}h${-(b - a + 1) * SX}z`;
+      for (const [a, b] of runs) {
+        const w = (b - a + 1) * SX;
+        d += `M${ML + (a + 180) * SX} ${f1(MT + k * h)}h${w}v${f1(h)}h${-w}z`;
+      }
     });
     if (d) add(`<path d="${d}" fill="#1c1c26"/>`);
   }
@@ -127,7 +132,7 @@ export function stripSvg(leg, traces = [], opts = {}) {
               + 'stroke-dasharray="2 2"/>');
           }
         }
-        if (it.name) add(`<text x="${f1(X(it.psi))}" y="${y - 6}" fill="${WHITE}" font-size="9" text-anchor="middle">${esc(it.name)}</text>`);
+        if (it.name) add(label(X(it.psi), y - 6, WHITE, it.name));
         break;
       }
       case 'wall': {
@@ -143,9 +148,9 @@ export function stripSvg(leg, traces = [], opts = {}) {
           }
         }
         for (const g of it.gaps) {
-          if (g.tag) add(`<text x="${f1(X(g.psi))}" y="${y - 5}" fill="${GREY}" font-size="9" text-anchor="middle">${esc(g.tag)}</text>`);
+          if (g.tag) add(label(X(g.psi), y - 5, GREY, g.tag));
         }
-        if (it.preview) add(`<text x="${f1(X(it.gaps[0].psi))}" y="${y + 13}" fill="${ORANGE}" font-size="9" text-anchor="middle">PREVIEW</text>`);
+        if (it.preview) add(label(X(it.gaps[0].psi), y + 13, ORANGE, 'PREVIEW'));
         break;
       }
       case 'gate': {
@@ -163,8 +168,8 @@ export function stripSvg(leg, traces = [], opts = {}) {
             add(`<rect x="${f1(x0)}" y="${y - 5}" width="${f1(x1 - x0)}" height="10" fill="none" stroke="${WHITE}" `
               + 'stroke-dasharray="4 3"/>');
           }
-          add(`<text x="${f1(X(it.dock.psi))}" y="${y + 16}" fill="${WHITE}" font-size="9" text-anchor="middle">DOCK +</text>`);
-          add(`<text x="${f1(X(it.psi))}" y="${y + 16}" fill="${ORANGE}" font-size="9" text-anchor="middle">THREAD</text>`);
+          add(label(X(it.dock.psi), y + 16, WHITE, 'DOCK +'));
+          add(label(X(it.psi), y + 16, ORANGE, 'THREAD'));
         }
         if (it.names && !it.pair) {
           add(`<text x="${f1(X(it.psi))}" y="${y - 8}" fill="${WHITE}" font-size="9" text-anchor="middle">`

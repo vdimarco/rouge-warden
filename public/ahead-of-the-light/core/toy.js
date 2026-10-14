@@ -171,7 +171,9 @@ function remoraStep(game, dt) {
     if (A.phase === 'fall') { want = null; cruise = true; }
   }
   if (!cruise) R.eta = Math.max(T.ETA_MIN, Math.min(T.RIVAL_ETA_MAX, you.eta));
-  if (want !== null) R.dist += clamp((want - ahead) * 2, -0.6, 0.6) * bps * dt;
+  // (it glides up to 0.6 s of lead a second; to come abreast for the slam it may close 1.5 s a second)
+  const rate = A.phase === 'slam' ? 1.5 : 0.6;
+  if (want !== null) R.dist += clamp((want - ahead) * 3, -rate, rate) * bps * dt;
   // after a shove it takes REMORA's reaction (220 ms) to steer back
   const sh = R.shove;
   if (sh && sh.slam && t - sh.t0 < T.SHOVE_S + 0.22) A.intent.target = R.bearing;

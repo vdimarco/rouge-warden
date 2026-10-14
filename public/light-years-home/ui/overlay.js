@@ -433,9 +433,12 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     if (c.edge === 'right') { align = 'right'; x -= 2; } else if (c.edge === 'left') { align = 'left'; x += 2; }
     else y += c.edge === 'top' ? 8 : -8;
     const left = (ax) => (align === 'right' ? ax - w : align === 'left' ? ax : ax - w / 2);
-    // How much of the label a spot would cover (0 is clear).
+    // The spot's x kept inside the screen.
+    const inX = (ax) => (align === 'right' ? clamp(ax, w + 4, W - 4) : align === 'left' ? clamp(ax, 4, W - w - 4)
+      : clamp(ax, w / 2 + 4, W - w / 2 - 4));
+    // How much of the label a spot would cover (0 is clear); off the top or bottom of the screen counts as covered.
     const cover = (ax, ay) => {
-      let a = 0;
+      let a = (Math.max(0, 2 - (ay - hgt / 2)) + Math.max(0, ay + hgt / 2 - (H - 2))) * w * 4;
       for (const r of avoid) {
         const ox = Math.min(left(ax) + w, r[0] + r[2]) - Math.max(left(ax), r[0]);
         const oy = Math.min(ay + hgt / 2, r[1] + r[3]) - Math.max(ay - hgt / 2, r[1]);
@@ -444,17 +447,14 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
       return a;
     };
     // Up or down first, then slid to one side (a chevron by a pedal); else the spot that covers least.
-    let sx = x, sy = y, least = Infinity;
+    let tx = inX(x), sy = y, least = Infinity;
     for (const dx of [0, -(w / 2 + 12), w / 2 + 12]) {
       for (const dy of [0, -18, 18, -34, 34, -50, 50, -66, 66]) {
-        const a = cover(x + dx, y + dy);
-        if (a < least - 0.5) { least = a; sx = x + dx; sy = y + dy; }
+        const ax = inX(x + dx), a = cover(ax, y + dy);
+        if (a < least - 0.5) { least = a; tx = ax; sy = y + dy; }
       }
       if (least === 0) break;
     }
-    let tx = clamp(sx, w / 2 + 4, W - w / 2 - 4);
-    if (align === 'right') tx = Math.max(sx, w + 4);
-    if (align === 'left') tx = Math.min(sx, W - w - 4);
     ctx.font = f;
     ctx.fillStyle = colour;
     ctx.textBaseline = 'middle';
@@ -761,17 +761,23 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
           drawn.chevrons.push({ id: 'home', x: c.x, y: c.y, angle: c.angle, label: rect });
         } else if (!hudBoxes.some((r) => pt.x > r[0] - 6 && pt.x < r[0] + r[2] + 6 && pt.y > r[1] - 6
           && pt.y < r[1] + r[3] + 6)) {
-          // On screen: a marker where Earth lies, its label above or below it, whichever is clear of the HUD.
+          // On screen: a marker where Earth lies, its label above or below it, whichever is clear of the HUD and
+          // inside the screen (slid in from a side edge).
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y + 6); ctx.lineTo(pt.x - 6, pt.y - 4); ctx.lineTo(pt.x + 6, pt.y - 4); ctx.closePath();
           ctx.fillStyle = ORANGE; ctx.fill();
           ctx.font = font(fpx, 700); ctx.textAlign = 'center';
           const lw = measure(label, font(fpx, 700));
-          const hit = (y) => hudBoxes.some((r) => pt.x + lw / 2 > r[0] && pt.x - lw / 2 < r[0] + r[2]
-            && y + fpx / 2 + 2 > r[1] && y - fpx / 2 - 2 < r[1] + r[3]);
-          const ly = !hit(pt.y - 14) ? pt.y - 14 : !hit(pt.y + 18) ? pt.y + 18 : null;
-          if (ly !== null) ctx.fillText(label, pt.x, ly);
-          drawn.chevrons.push({ id: 'home', x: pt.x, y: pt.y, angle: Math.PI / 2, onScreen: true });
+          const lx = clamp(pt.x, lw / 2 + 4, W - lw / 2 - 4);
+          const ok = (y) => y - fpx / 2 >= 2 && y + fpx / 2 <= H - 2 && !hudBoxes.some((r) => lx + lw / 2 > r[0]
+            && lx - lw / 2 < r[0] + r[2] && y + fpx / 2 + 2 > r[1] && y - fpx / 2 - 2 < r[1] + r[3]);
+          const ly = ok(pt.y - 14) ? pt.y - 14 : ok(pt.y + 18) ? pt.y + 18 : null;
+          let rect = null;
+          if (ly !== null) {
+            ctx.fillText(label, lx, ly);
+            rect = [lx - lw / 2, ly - 7, lw, 14];
+          }
+          drawn.chevrons.push({ id: 'home', x: pt.x, y: pt.y, angle: Math.PI / 2, onScreen: true, label: rect });
         }
       }
     }

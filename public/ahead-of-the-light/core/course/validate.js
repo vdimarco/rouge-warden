@@ -349,7 +349,10 @@ export function validateLeg(leg, opts = {}) {
           if (a < 40 || a > limit) continue;
           best = Math.max(best, (T.EXIT_W / 2) / sweepV(a, T));
         }
-        if (best < 0.15) { ok = false; at = w.beat; fail('R8', w.beat, `band at ${e.toFixed(0)}°: GOOD ±${(best * 1000).toFixed(0)} ms`); }
+        if (best < 0.15) {
+          ok = false; at = w.beat;
+          fail('R8', w.beat, `band at ${e.toFixed(0)}°: GOOD ±${(best * 1000).toFixed(0)} ms`);
+        }
       }
     }
     rules.R8 = { ok, beat: at };
@@ -362,7 +365,10 @@ export function validateLeg(leg, opts = {}) {
     leg.sections.forEach((s, i) => {
       if (s.role !== 'signature') return;
       const n = leg.sections[i + 1];
-      if (!n || n.role !== 'breather' || n.b1 - n.b0 < 4) { ok = false; at = s.b1; fail('R9', s.b1, 'no breather after the signature'); }
+      if (!n || n.role !== 'breather' || n.b1 - n.b0 < 4) {
+        ok = false; at = s.b1;
+        fail('R9', s.b1, 'no breather after the signature');
+      }
     });
     rules.R9 = { ok, beat: at };
   }

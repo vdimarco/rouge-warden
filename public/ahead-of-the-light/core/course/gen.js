@@ -280,7 +280,10 @@ function choosePickups(G, draft) {
   items.forEach((it, i) => {
     if (it.kind !== 'pickup') return;
     const key = it.group || `s${i}`;
-    if (!groups.has(key)) { groups.set(key, { key, idx: [], beat: it.beat, must: false, band: !!it.band, patch: false }); slots.push(groups.get(key)); }
+    if (!groups.has(key)) {
+      groups.set(key, { key, idx: [], beat: it.beat, must: false, band: !!it.band, patch: false });
+      slots.push(groups.get(key));
+    }
     const g = groups.get(key);
     g.idx.push(i);
     if (it.must) g.must = true;
@@ -393,7 +396,8 @@ export function hashItems(items) { return hashSeed(JSON.stringify(items)).toStri
 // cond }), its name or id, or null for the leg's first; mods: the build's (gateWell for SLINGSHOT HOME, density);
 // seen: the meta's teaching flags ({ runs, goodWhip, ... }); used: piece ids this run has flown.
 // → { type, name, legNo, lane, seed, beats, items, sections, gate, pickups, wells, labels, rules, noDrag, burnCap,
-//     field, mods, hash, report }, frozen. noDrag and burnCap (null in the VOID) repeat rules' for handle.js. sections: [{ role, id, ids, b0, b1, params, mirror, anchor, exit, attempt }].
+//     field, mods, hash, report }, frozen. noDrag and burnCap (null in the VOID) repeat rules' for handle.js.
+//     sections: [{ role, id, ids, b0, b1, params, mirror, anchor, exit, attempt }].
 export function buildLeg({ runSeed = 1, type = 'web', lane = null, mods = {}, seen = {}, used = new Set(),
   tune = TUNE, validate = true } = {}) {
   const T = tune;
