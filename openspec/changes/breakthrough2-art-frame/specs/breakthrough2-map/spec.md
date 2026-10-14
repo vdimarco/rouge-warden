@@ -28,3 +28,10 @@ The end screen SHALL cover the play controls with an opaque paper panel (`#F3E9D
 #### Scenario: Finish at 390 wide
 - **WHEN** seed 123 reaches 2100 on a 390 by 844 screen
 - **THEN** the ending text sits on the paper panel, the map is dimmed behind it, and an Invest or Hold control cannot be hit
+
+### Requirement: The title loads the opening bands
+The title SHALL request only the painted bands used by the opening meters. The other bands SHALL start loading when play starts, and the map SHALL repaint as they arrive.
+
+#### Scenario: First load
+- **WHEN** the title opens with `?seed=123&fast=1`
+- **THEN** the transfer stays under 500 KB and the later forest, city, and power bands are not requested yet
