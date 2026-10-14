@@ -9,7 +9,7 @@ The browser SHALL support double-tap sprint on movement or Sprint and camera dra
 - **AND** menu, blur, rotation, cancellation, disconnect and entering a car release latched sprint and all touch-held keys; steering remains independent of camera dragging.
 
 ### Requirement: Visible circulating traffic
-The live city SHALL show moving traffic on usable streets near the player and keep it circulating over sustained play, yielding safely to occupied roads and junctions.
+The live city SHALL show moving traffic on usable streets in the starting neighbourhood and on district routes, keeping it circulating over sustained play, yielding safely to occupied roads and junctions.
 
 #### Scenario: Longer session
 - **WHEN** a session runs for several minutes and a player watches the starting street or drives nearby

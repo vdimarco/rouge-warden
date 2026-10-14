@@ -1,6 +1,6 @@
 {
   "date": "2026-10-14",
-  "status": "native installed; final mobile and public verification pending",
+  "status": "merged, native installed, production frontend published and verified",
   "package": {
     "installed": "Builds/Browser/Linux",
     "rollback": "Builds/BrowserPrevious-mobile-ux-20261014",
@@ -145,8 +145,64 @@
     "mobile_browser": {
       "passed": true,
       "checks": 17,
-      "report": "Browser/.qa/mobile-2026-10-14T03-58-05-765Z/summary.json",
-      "scope": "Final native package; local candidate frontend; trusted Chromium touch and emulated phone viewports. Before final small-motion tap tolerance correction; final rerun pending."
+      "report": "Browser/.qa/mobile-2026-10-14T04-06-11-629Z/summary.json",
+      "scope": "Final native package and final frontend including finger-jitter correction; trusted Chromium touch and emulated phone viewports."
+    },
+    "host_startup_log_scan": {
+      "passed": true,
+      "scope": "Rendered log content scan; caller must require clean process exit separately. No processes launched.",
+      "logs": [
+        {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261014-040507-2408502.log",
+          "sha256": "60e886d016ea2573ab7332c5053af769de168c10041e6307876755ec24869822",
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        },
+        {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261014-040507-2408502.log",
+          "sha256": "083524de1fa84f55f1139fe14b63308fc90e528ed59d491e9139d5c9d328e4f9",
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        }
+      ]
+    },
+    "public_live_browser": {
+      "passed": true,
+      "checks": 7,
+      "scope": "Ordinary public URL on host-PC Chromium; two independent real native streams, input/releases, occupied slot refusal and reconnect.",
+      "report": "Browser/.qa/live-2026-10-14T04-11-36-503Z/summary.json"
+    },
+    "visual_review": "Primary agent inspected map and final treading poses in packaged portrait/landscape, plus real-media mobile screenshots; no independent review claimed.",
+    "public_camera_sweep": {
+      "passed": true,
+      "scope": "Final native package and public frontend; host-PC Chromium emulated touch; direct host UDP; 30 FPS native cap and existing production graphics.",
+      "report": "Saved/BrowserStreaming/samples/2026-10-14T04-12-15-796Z-NordHost/sample.json",
+      "summary": {
+        "seconds": 60.281,
+        "decodedFps": 29.92651084089514,
+        "receivedMbps": 2.390379323501601,
+        "framesDropped": 0,
+        "freezes": 0,
+        "freezeSeconds": 0,
+        "longestFrameGapMs": 116.70000000000027,
+        "width": 1280,
+        "height": 720,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 1.6369944567627495,
+        "jitterBufferMsPerFrame": 75.86680044345897,
+        "packetsLost": 0,
+        "framesReceived": 1805
+      }
+    },
+    "post_public_preservation": {
+      "package_files": 48,
+      "existing_saved_game_unchanged": true,
+      "owned_demo_and_three_tunnels_active": true,
+      "turn_container_running": true
     }
   },
   "saved_game_sha256": {
@@ -167,7 +223,14 @@
     "Saved/StreamClarity-20261014/swim-release-render.json": "25207b9f7d94ba73827eb47a4e60f41d965c5b3e36475089f5faac840d00d86f",
     "Saved/StreamClarity-20261014/ux-package.json": "94759bfec68a1b3918109556a2f72e70869dceb51286b18381b8e521739271b3",
     "Browser/.qa/mobile-2026-10-14T03-58-05-765Z/summary.json": "7b986737f8a7af1d64c0090df1a0362cdf7f6ed071f3c92a9bd39e394e24beb0",
-    "Saved/StreamClarity-20261014/ux-unit-jitter.log": "4af7b07e0ef6bfa9b0cd4221e527d38476c9b44b6a827fdd2a00cbadc8f728e7"
+    "Saved/StreamClarity-20261014/ux-unit-jitter.log": "4af7b07e0ef6bfa9b0cd4221e527d38476c9b44b6a827fdd2a00cbadc8f728e7",
+    "Browser/.qa/mobile-2026-10-14T04-06-11-629Z/summary.json": "0763b1212fccf67e6fdd1d2ca067f8e525e64cb088952907b0ed358d7dcf3a35",
+    "Browser/.qa/live-2026-10-14T04-11-36-503Z/summary.json": "7039f38d1c5a756922745465e0f8f66864d8acb504c582c3063b22e583d9a6f9",
+    "Saved/StreamClarity-20261014/hud-ux-landscape.png": "0912ee368e795539688ea9659832514c5d4ec68c8d5cda7f01356f7d7f3c1d12",
+    "Saved/StreamClarity-20261014/hud-ux-portrait.png": "136960f8167f6e951dad9703a87dc40ba07d6d0d31a30dd193d999fc3c4643cb",
+    "Saved/StreamClarity-20261014/hud-swim-release-landscape.png": "318e8cabee6519cc5eb20cfe5ad7197a23ec8782bc8e85c94477f06c789774ce",
+    "Saved/StreamClarity-20261014/hud-swim-release-portrait.png": "37215fe3d9faa45a119d52c74e529ea1c884a67fa8b3115d17e0dbb2e8c3be38",
+    "Saved/BrowserStreaming/samples/2026-10-14T04-12-15-796Z-NordHost/sample.json": "e21956fbc5c8cc64595a7528c97574a0c771e08f51b5cd812c57e7d90c5f690f"
   },
   "limits": [
     "Host-PC Chromium and emulated phone viewports; no physical phone/carrier acceptance.",
@@ -175,5 +238,39 @@
     "Constrained public relay can still require the grainier emergency profile; no relay speedup claimed.",
     "No new full campaign/race replay, audible sound or subjective handling acceptance.",
     "OpenSpec CLI unavailable; structure and scenarios checked manually."
-  ]
+  ],
+  "rejected_attempts": [
+    "Earlier stream minimum-profile experiments retained in Saved/StreamClarity-20261014; 800-pixel forced minimum rejected for relay pacing.",
+    "mobile-2026-10-14T04-03-39-318Z: repeat inherited moved player away from starter car; eight checks passed, car-approach fixture timed out.",
+    "mobile-2026-10-14T04-05-06-587Z: fixture started during service restart before Friend slot registered; final fresh ready run passed all 17.",
+    "Earlier swimming getter/RPC fixture failures and rejected face-up/face-down-idle renders retained separately."
+  ],
+  "release": {
+    "pr": "https://github.com/vdimarco/rouge-warden/pull/351",
+    "tested_source": "8ece65794cfc4393229f76e2ca0027a808c59e48",
+    "merge": "38ad7494bac8ed583b87b8fc897c8d629a61d685",
+    "deployment": "dpl_Gi5bvxeg4CDNYCMN3Mnsm2RyAfox",
+    "target": "production",
+    "status": "READY",
+    "alias": "https://nord-montreal.vercel.app/",
+    "previous_alias_deployment": "dpl_83UYqQgykYwTYtzvBEThzKm6FCMk",
+    "public_static": {
+      "passed": true,
+      "url": "https://nord-montreal.vercel.app/",
+      "sha256": {
+        "index.html": "a77149aaa85359b18463b276b7a444ce3502bff35c84b264f850586cd3c411a2",
+        "player.js": "0c0518ae75c99e6f694253cc1107180f4772ca8e4dde87416400b9fc6170da70",
+        "styles.css": "2d644083e2b258e56dbc904ff7d96af8ed088c7a89e94a73c922f61340356827",
+        "hero.css": "ded2c3e7a326723b06a491f32012c3ba04032baed81cb12535e3d5166c1139a2",
+        "intro.css": "1b84616d34254eb394c3cb8f188ac4082555d9a16045bf0bbb188ac9c867b7d7",
+        "menu.css": "ed827bead795c960a3218f8a0ff02ea3d98f972153aafa7ea725f576dfcaec54",
+        "hero.js": "02aa62d057a9fad653478a188f859bd05b373a6ad230f6a061c2481fee533fcf",
+        "crew.js": "604264033819cb89d657e577f9e14aa944a44cc923299174e13823c0428d2f58",
+        "intro.js": "8c6e0d881cd20155254b0f57ff0cc812019ad9f6df003d0ee5bcf8858ac24db0",
+        "menu.js": "db2b53e4e107bbd1616d2382a6e6df2fbbc0080962f534c3e42993e4697937a4",
+        "crew-sprite.webp": "46a035ecd30bb4cc9c74896bfc85318bed8bc61157712dc4b16e4727f9ea0256",
+        "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+      }
+    }
+  }
 }
