@@ -1,0 +1,9 @@
+# Design
+
+The sequence is the supplied painted film, not a new scene renderer. Nothing in the in-engine cutscenes fits a 15 second authored movie, so those stay as they are. The page uses one HTML video with `<source media>` for the first choice of file, which is the responsive-video pattern in the HTML spec: the portrait source matches `(orientation: portrait)` and the landscape source matches `(orientation: landscape)`. Browsers do not re-select those sources when the phone turns, so `title-intro.js` assigns the matching file if the orientation changes while the clip is up.
+
+The clip is positioned over `#title .logo` only, using the logo's layout box so a rotated `#game` stays consistent. Presses pass through the picture. Only Skip / Play and Unmute take presses, and those sit inside the logo box, above the menu. The title's own buttons are unchanged, so the menu tests that count them still see Go fishing first.
+
+Playback is muted and inline, started from script once the title is showing. There is no `autoplay` attribute, so a reduced-motion load does not start the file before the script can show the poster. `prefers-reduced-motion: reduce` and Calm effects (`html[data-calm="1"]`) keep the poster up until Play or Unmute. Play is the player's opt-in. The poster is a still from four seconds into each film, the cottage and dock.
+
+The sequence hides when the player leaves the title to fish, when it ends, or when they skip. A menu opened from the title pauses it and shows it again when they return. Original art, and any place other than Loon Lake, do not show it: the painted picture is of that lake only.

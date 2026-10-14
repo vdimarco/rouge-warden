@@ -171,3 +171,43 @@ html[data-calm="1"] #rodCue *, html[data-calm="1"] #crankBox::after { animation:
 #game[data-text="large"] #title .best { font-size: calc(12px * var(--ui-scale)); }
 #game[data-text="large"] .tabs.chips button { font-size: calc(13px * var(--ui-scale)); }
 #game[data-text="large"] .warn { font-size: calc(16px * var(--ui-scale)); }
+
+/* Painted title sequence. It sits in the logo's box (title-intro.js), so the menu underneath stays usable.
+   The still shows until the clip is actually playing, and it is the whole intro when motion should stay still. */
+#titleIntro {
+  position: absolute; z-index: 11; display: grid; place-items: center; overflow: hidden; pointer-events: none;
+  container-type: size;
+}
+#titleIntro[hidden] { display: none !important; }
+body:not([data-screen="title"]) #titleIntro,
+body:not([data-art-style="painted"]) #titleIntro,
+body:not([data-place="loon"]) #titleIntro { display: none !important; }
+#titleIntro .stage {
+  position: relative; aspect-ratio: 9 / 16; width: min(100cqw, calc(100cqh * 9 / 16)); max-height: 100%;
+  border-radius: 16px; overflow: hidden; background: #14352c;
+  border: 3px solid rgba(241, 230, 193, 0.92); box-shadow: 0 14px 32px rgba(8, 22, 18, 0.42);
+}
+#titleIntro video, #titleIntro .still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #14352c; }
+#titleIntro video { display: none; }
+#titleIntro.is-playing video { display: block; }
+#titleIntro.is-playing .still { display: none !important; }
+#titleIntro .still-landscape { display: none; }
+#titleIntro .controls {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 2; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+  pointer-events: none;
+}
+#titleIntro .controls button {
+  pointer-events: auto; min-width: 44px; min-height: 44px; padding: 8px 14px; border-radius: 999px;
+  border: 2px solid #b0bb8c; background: rgba(27, 67, 53, 0.94); color: #fff4d8;
+  font: 800 14px/1 var(--body); box-shadow: 0 2px 0 rgba(20, 40, 32, 0.35);
+}
+#titleIntro #titleIntroSound[aria-pressed="true"] { border-color: #f1bb89; color: #ffe7b0; }
+@media (orientation: landscape) {
+  #titleIntro .stage { aspect-ratio: 16 / 9; width: min(100cqw, calc(100cqh * 16 / 9)); }
+  #titleIntro:not(.is-playing) .still-portrait { display: none; }
+  #titleIntro:not(.is-playing) .still-landscape { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #titleIntro:not(.is-playing) video { display: none !important; }
+}
+html[data-calm="1"] #titleIntro:not(.is-playing) video { display: none !important; }
