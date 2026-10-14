@@ -279,6 +279,8 @@ def main():
     header+='const FVector Missions[] = {'+','.join(vec(p) for p in missions)+'};\n'
     header+=road_segments_text(roads)+road_widths_text(roads,road_widths)+'}\n'
     (ROOT/'Source/Quebec/LaFontaineMap.h').write_text(header)
+    from prepare_car_parking import main as update_car_parking
+    update_car_parking()
     print(json.dumps({**counts,'spawn':data['spawn'],'car':data['car'],'yaw':yaw},indent=2))
 
 if __name__=='__main__':

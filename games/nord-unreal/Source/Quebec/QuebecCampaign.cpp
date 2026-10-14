@@ -598,8 +598,8 @@ bool AQuebecCampaign::MoveToSafeCheckpoint(AQuebecController* Controller, const 
         FHitResult Floor;
         if (!GetWorld()->LineTraceSingleByChannel(Floor,Candidate+FVector(0.,0.,500.),Candidate-FVector(0.,0.,500.),ECC_Visibility,Query) || Floor.ImpactNormal.Z<.8f) continue;
         const FVector Destination(Floor.ImpactPoint.X,Floor.ImpactPoint.Y,Floor.ImpactPoint.Z+(Car?102.f:100.f));
-        const FCollisionShape Shape = Car ? FCollisionShape::MakeBox(FVector(220.,108.,98.)) : FCollisionShape::MakeCapsule(42.f,96.f);
-        if (GetWorld()->OverlapBlockingTestByChannel(Destination,Car?Rotation.Quaternion():FQuat::Identity,ECC_Pawn,Shape,Query)) continue;
+        if (Car ? !Car->CanFitAt(Destination,Rotation.Quaternion(),this) :
+            GetWorld()->OverlapBlockingTestByChannel(Destination,FQuat::Identity,ECC_Pawn,FCollisionShape::MakeCapsule(42.f,96.f),Query)) continue;
         if (Car) Car->ResetMotion(); else Character->GetCharacterMovement()->StopMovementImmediately();
         if (!Pawn->SetActorLocationAndRotation(Destination,Rotation,false,nullptr,ETeleportType::TeleportPhysics)) continue;
         if (Car) { Car->ResetMotion(); LastCarPositions.Remove(Car); TrappedUntil.Remove(Car); }
@@ -641,7 +641,7 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
             if (GetWorld()->LineTraceSingleByChannel(Floor,CarPoint+FVector(0.,0.,500.),CarPoint-FVector(0.,0.,500.),ECC_Visibility,Query))
             {
                 const FVector Destination = Floor.ImpactPoint+FVector(0.,0.,102.);
-                if (!GetWorld()->OverlapBlockingTestByChannel(Destination,Rotation.Quaternion(),ECC_Pawn,FCollisionShape::MakeBox(FVector(220.,108.,98.)),Query))
+                if (LoanCar->CanFitAt(Destination,Rotation.Quaternion(),Character))
                 {
                     LoanCar->ResetMotion();
                     LoanCar->SetActorLocationAndRotation(Destination,Rotation,false,nullptr,ETeleportType::TeleportPhysics);
