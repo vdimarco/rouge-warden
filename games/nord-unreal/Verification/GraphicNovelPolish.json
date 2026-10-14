@@ -272,7 +272,7 @@
   },
   "native_log_guard": {
     "passed": true,
-    "scope": "Rendered log content scan; caller must require clean process exit separately. No processes launched.",
+    "scope": "Native headless log content scan; process completion and exit 0 verified separately. No rendered evidence.",
     "logs": [
       {
         "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Polish/Animation/native.log",
