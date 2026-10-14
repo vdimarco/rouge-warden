@@ -175,7 +175,7 @@ export function createRadio(mix) {
   let R0 = null;
   const buffers = new Map();        // tape id → AudioBuffer (or a promise while rendering)
   let station = null, stationId = null, stationGain = 0, stationState = 'off', holdUntil = 0, fadeFrom = 0;
-  let tape = null, lastMode = null, lastSting = -99, lineEndAt = 0, playId = 'fm';
+  let tape = null, lastMode = null, lastSting = -99, playId = 'fm';
   const radio = { update, say, end: endLine, setTape, sting, stop, get tape() { return tape; },
     get state() { return stationState; },
     get rate() { return station ? station.playbackRate.value : 0; }, buffers };
@@ -256,8 +256,7 @@ export function createRadio(mix) {
       }
     }
     squelch(t0 - 0.03, 0.12);
-    lineEndAt = t0 + tm.total;
-    mix.duckTalk(lineEndAt + 0.25);
+    mix.duckTalk(t0 + tm.total + 0.25);
     if (who === 'REDSHIFT' && now - lastSting > STING_GAP) sting();
     mix.count('line');
     return true;
@@ -364,6 +363,7 @@ export function createRadio(mix) {
       else if (mode === 'runup') stationState = 'runup';
       else if (mode === 'punch') { stationState = 'out'; fadeFrom = now; }
       else if (mode === 'drive' && from === 'dropout') { stationState = 'hold'; holdUntil = now + HOLD; }
+      else if (stationState === 'runup') { stationState = 'fade'; fadeFrom = now; }   // a run-up called off
       if (stationState === 'in' && from === 'title') holdUntil = now + HOLD;
     }
     playId = tape || 'fm';

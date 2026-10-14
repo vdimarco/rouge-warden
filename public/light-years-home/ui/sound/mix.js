@@ -324,8 +324,8 @@ export function createMix(opts = {}) {
   /**
    * One pooled one-shot. o: { src: 'osc' | 'noise', wave, f, f2, glide, detune, rate (noise playback),
    *   type (filter type), ff, ff2, fglide, q, peak, att, hold, dur, pan, send }.
-   * The envelope rises over att, holds, then falls (about −50 dB after dur). Returns the end time, or 0 when
-   * nothing started.
+   * The envelope rises over att, holds, then falls (about −50 dB after dur); the source stops at 1.6 × dur, about
+   * −70 dB, so the stop never clicks. Returns the end time, or 0 when nothing started.
    */
   mix.voice = (t, o) => {
     if (!mix.live()) return 0;
@@ -334,7 +334,7 @@ export function createMix(opts = {}) {
     const noise = o.src === 'noise';
     const peak = o.peak ?? 0.2, att = Math.max(0.001, o.att ?? 0.004), hold = o.hold ?? 0;
     const dur = Math.max(0.01, o.dur ?? 0.2);
-    const end = t0 + att + hold + dur * 1.25;
+    const end = t0 + att + hold + dur * 1.6;
     const f = v.f;
     f.type = o.type || (noise ? 'bandpass' : 'lowpass');
     f.frequency.cancelScheduledValues(t0);

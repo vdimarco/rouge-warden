@@ -143,7 +143,7 @@ export function createSfx(mix) {
     },
     driftLost: (t) => max(hiss(t, { type: 'highpass', ff: 5000, ff2: 1200, dur: 0.25, peak: 0.15 }),
       tone(t, { wave: 'triangle', f: n2f(root() + 12), f2: n2f(root() + 5), glide: 0.2, dur: 0.25, peak: 0.07 })),
-    boostStart: (t) => max(thump(t, 0.8), hiss(t, { ff: 300, ff2: 1800, dur: 0.35, att: 0.03, peak: 0.25 })),
+    boostStart: (t) => max(thump(t, 0.6), hiss(t, { ff: 300, ff2: 1800, dur: 0.35, att: 0.03, peak: 0.25 })),
     boostEnd: (t) => hiss(t, { ff: 1800, ff2: 400, dur: 0.35, peak: 0.14 }),
     scrape: (t, e) => {
       const k = e.pebble ? 0.6 : 1, pan = clamp(num(e.side, 0) * 0.5, -1, 1);
