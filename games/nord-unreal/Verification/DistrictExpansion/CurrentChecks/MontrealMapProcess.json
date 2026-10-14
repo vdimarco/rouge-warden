@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "district": "montreal",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "/Game/Maps/LaFontaine",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/CurrentMapMontreal-20261014T160146Z/verify.py",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/CurrentMapMontreal-20261014T160146Z/native.log",
+    "-NordMontrealEastBackup=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Recovery/montreal-east-20261014T150229Z"
+  ],
+  "source_sha256": "b38cf197fbb920caf2e79f9b8ba6f874bc43068183a094db14c108770703cdd4",
+  "started_utc": "2026-10-14T16:01:47.408649+00:00",
+  "exit_code": 0,
+  "native_passed": true,
+  "native_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/CurrentMapMontreal-20261014T160146Z/Native.json",
+  "all_current_content_unchanged": true,
+  "settings_restored": true,
+  "protected_saves_unchanged": true
+}

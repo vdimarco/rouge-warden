@@ -2,6 +2,7 @@
 import json
 import math
 from pathlib import Path
+import shlex
 import sys
 import traceback
 import unreal as u
@@ -413,7 +414,15 @@ def run():
     from plateau_edges import verify as verify_edges
     REPORT['landmarks'] = verify_landmarks(u, labels, ROOT)
     REPORT['wayfinding'] = verify_wayfinding(u, labels, ROOT)
-    REPORT['edges'] = verify_edges(u, labels, ROOT)
+    if 'Plateau east extension collision floor' in labels:
+        from apply_montreal_east_extension import verify as verify_east
+        backups = [argument.split('=', 1)[1] for argument in shlex.split(u.SystemLibrary.get_command_line())
+                   if argument.startswith('-NordMontrealEastBackup=')]
+        assert len(backups) == 1, 'Pass the preserved -NordMontrealEastBackup path for expanded-map verification'
+        # Full Content preservation is sealed by author/fresh receipts; later art additions use their own receipts.
+        REPORT['edges'] = verify_east(u, ROOT, Path(backups[0]), compare_content=False)
+    else:
+        REPORT['edges'] = verify_edges(u, labels, ROOT)
     REPORT['checks'].append('saved theatre envelope, upright French cartography with solid frames, and readable closures at preserved map boundaries')
     for board in json.loads((ROOT/'Data/Plateau/Wayfinding/Geometry/wayfinding.json').read_text())['boards']:
         point, normal = board['position_cm'], board['facing_normal_xy']

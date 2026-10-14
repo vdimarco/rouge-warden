@@ -1,0 +1,32 @@
+{
+  "checked_utc": "2026-10-14T16:00:20.254432+00:00",
+  "source_sha256": {
+    "Scripts/author_crew_locomotion.py": "0f012ed66594dcad70948090db1528460da281dce65fe4e601ec846b69111bea",
+    "Scripts/test_author_crew_locomotion.py": "5b235669dcf6279fb7418d0e5ab50c38907686ab792aa2413a5ae594ae70d8c7",
+    "Source/Quebec/QuebecCrewAnimationTests.cpp": "d474e8bd8cfde1e1161979ccc0d605fa6255230cce51be6aec74e991e4085f84",
+    "Source/Quebec/QuebecGameplay.cpp": "eb48922e852eb14e6992770ad50826de59389c6324dbe7693c2e7ea7f3bb4b87",
+    "Source/Quebec/QuebecGameplay.h": "97555eddb443c2f5fa57e620994d23b986e416ff662c912fe6d39c2446e8001a",
+    "Source/Quebec/QuebecCrewAnimation.cpp": "e7cc2217f9ca1093118bb18d693ffc113fbf036f899f4b624c0ab9a91f9c6773",
+    "Source/Quebec/QuebecCrewAnimation.h": "99ef33e3fb2723474da58bc9cd0a822cca8812eb47028a82486a745077e07e5e"
+  },
+  "source_hash_scope": "Current source/test identity at curation; original native receipts did not record per-source hashes.",
+  "editor_binary_matches_successful_build": true,
+  "editor_binary_sha256": "a86f7bf1e4945c9f0d475f5362e54c5eed0a0620a7de96df4c6242792ec0e4a7",
+  "new_graph_hashes_match_both_native_receipts": true,
+  "new_graph_sha256": {
+    "Content/ParkComic/Crew/Resident10/BS_Locomotion.uasset": "44eae2867d15df26c37018db83ed73c441cb8748e4fb6a378333092cbdca944f",
+    "Content/ParkComic/Crew/Resident3/BS_Locomotion.uasset": "9cd9f8a4424734e5e65e4d9859774e616cee40e094d703112c47b50d76a8a933",
+    "Content/ParkComic/Crew/Resident4/BS_Locomotion.uasset": "c68b2ccb71b94ec1de0bf32c26311e7db0979dbdde55677e600e633035c89c93",
+    "Content/ParkComic/Crew/Resident5/BS_Locomotion.uasset": "2291c891e328de9b091156ba35cd935640a73146e0d72e757128a19768d8c2ea",
+    "Content/ParkComic/Crew/Resident6/BS_Locomotion.uasset": "3d9e69a9728d9e153349f4145b6284734df14d6107037316c93d7d9775b01916",
+    "Content/ParkComic/Crew/Resident7/BS_Locomotion.uasset": "24b5f9a7de7404e181557528f3c9c76eb187583abe44b1add91e9da08077d5fa",
+    "Content/ParkComic/Crew/Resident8/BS_Locomotion.uasset": "29a320aeef9db8b95cf6ed9228a5fcd1e02632f83d5654626d10a3ebbb4eeb14",
+    "Content/ParkComic/Crew/Resident9/BS_Locomotion.uasset": "d7495584c777a1953ea24f074ff29967217017e2c1b499aff96bbd75d88e8b9c"
+  },
+  "cpu_command": [
+    "python",
+    "Scripts/test_author_crew_locomotion.py"
+  ],
+  "cpu_exit_code": 0,
+  "cpu_stdout": "NORD_CREW_LOCOMOTION_CPU_OK eight new graphs only; all-style preflight, saved graph parameters, no-write verification and full retained Content guards"
+}

@@ -1,0 +1,170 @@
+{
+  "passed": true,
+  "scope": "Current saved-map/headless/capture evidence; bounded district checkpoint only",
+  "counts": {
+    "Toronto_map_checks": 20,
+    "Toronto_two_peer_checks": 35,
+    "Montreal_saved_map_top_level_checks": 18,
+    "facade_groups": 8,
+    "east_stills": 6
+  },
+  "east_art_verdict": {
+    "reviewer": "root",
+    "decision": "blockout only; no final art acceptance",
+    "observations": [
+      "Panet:bare paving, blue horizon and barriers",
+      "Visitation:plain brick walls",
+      "FormerEdge:open corridor with visible ground seams"
+    ],
+    "native_guard_scope": "HUD,camera/ground/capsule/viewport/fullquality and unchanged active campaign/population; source-derived fixture relocations, not naturally navigated travel"
+  },
+  "east_population": {
+    "residents": 110,
+    "cars": 47,
+    "traffic_required_by_executed_guard": 16
+  },
+  "historical_supersession": [
+    "Parent TorontoHeadlessCurrent.json is the earlier32-check receipt; this copy proves35.",
+    "Parent NativeAssets.json predates corrected Cladding and Path shadow change; use this current6842file ContentManifest."
+  ],
+  "retained_failed_preparation": {
+    "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T161217Z",
+    "source_capture": "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261014T161217759304Z",
+    "cause": "Root-reported prelaunch assertion expected2 marker occurrences; frozen manager has3. Corrected count guard used final161229window.",
+    "scope": "No native window-status/log exists in failed preparation; directory retained unchanged."
+  },
+  "limits": [
+    "Native source/readback and sampled stills only; no final appearance, fluidity/FPS/audio or physical-input acceptance.",
+    "NoCampaignSave suppresses disk loading and writing; this is not production persistence acceptance.",
+    "No public package/demo promotion or final two-map package acceptance is implied.",
+    "Root reviewed six actual native images; this curation pass checked files/hashes/guards, not image aesthetics."
+  ],
+  "byte_exact_copies": {
+    "TorontoMap.json": {
+      "source": "Saved/Tests/DistrictRuntime/CurrentMapToronto-20261014T160505Z/Native.json",
+      "sha256": "649ad65fc64e643248599534b94bdb286bf7ab17067abd3ffcf48d318f812036",
+      "bytes": 7247,
+      "byte_exact_copy": true
+    },
+    "TorontoMapProcess.json": {
+      "source": "Saved/Tests/DistrictRuntime/CurrentMapToronto-20261014T160505Z/result.json",
+      "sha256": "a79331728a79135d193971d6132b2c02eceaf23b750336eacbdb8cfa4ff23f4c",
+      "bytes": 1146,
+      "byte_exact_copy": true
+    },
+    "TorontoRuntime.json": {
+      "source": "Saved/Tests/DistrictRuntime/RuntimeHeadless-20261014T160528439168Z.json",
+      "sha256": "1761ab15eb981beba7da59bed061b4ba4d3f9a3ca54f68ff3c41497f6e1f6026",
+      "bytes": 26944,
+      "byte_exact_copy": true
+    },
+    "TorontoRuntimeProcess.json": {
+      "source": "Saved/Tests/DistrictRuntime/RuntimeToronto-Boundary35/result.json",
+      "sha256": "3f86a490fa9624bc4625c1281bf327f4bd2ab7483fba024e64c107ef5ddf5d8c",
+      "bytes": 1386,
+      "byte_exact_copy": true
+    },
+    "MontrealMap.json": {
+      "source": "Saved/Tests/DistrictRuntime/CurrentMapMontreal-20261014T160146Z/Native.json",
+      "sha256": "c39243b342c93ec8016b9cb0816325db00a05c02bfa6b7e4062b9e79e71084eb",
+      "bytes": 44852,
+      "byte_exact_copy": true
+    },
+    "MontrealMapProcess.json": {
+      "source": "Saved/Tests/DistrictRuntime/CurrentMapMontreal-20261014T160146Z/result.json",
+      "sha256": "0cebc0f5f243ab911601dd256a215710ff012bc6bad091d511cc822d9853dc2f",
+      "bytes": 1287,
+      "byte_exact_copy": true
+    },
+    "FacadeFresh.json": {
+      "source": "Saved/Tests/DistrictRuntime/SneakyDeesSignFresh.json",
+      "sha256": "64ff0dadf8720605c0977b621ef4e1ecb1bfd0d58eccbbb6bec33dbf507730c6",
+      "bytes": 4213,
+      "byte_exact_copy": true
+    },
+    "FacadeFreshProcess.json": {
+      "source": "Saved/Tests/DistrictRuntime/SignVerify/result.json",
+      "sha256": "6f245bbef21e77c620fc9002094ec57f2877989bcf9c4356202ce43026bb6de2",
+      "bytes": 932,
+      "byte_exact_copy": true
+    },
+    "PathShadowTrial.json": {
+      "source": "Saved/Tests/DistrictRuntime/PathShadowTrial.json",
+      "sha256": "e489c070543713c3f33a67179226f95b370be999555fd05a706d24960fb7a1ff",
+      "bytes": 652,
+      "byte_exact_copy": true
+    },
+    "EastCapture.json": {
+      "source": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/capture.json",
+      "sha256": "fe88d653cff56e679868c9a560376c25d429baa46b4dd87da55411ae7f2e8e88",
+      "bytes": 42042,
+      "byte_exact_copy": true
+    },
+    "EastCapturePreparation.json": {
+      "source": "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261014T161229778669Z/provenance.json",
+      "sha256": "8959fdc614a6db27122a2eca8b3ffd544a44bd4c720a39c66296357c9ba3bd29",
+      "bytes": 3398,
+      "byte_exact_copy": true
+    },
+    "EastCaptureFixture.py": {
+      "source": "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261014T161229778669Z/capture.py",
+      "sha256": "0e1559209ab846be950e6107db58dc662294a468d8fc0fa7ff6a1323b6470390",
+      "bytes": 26065,
+      "byte_exact_copy": true
+    },
+    "EastCaptureSource.py": {
+      "source": "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261014T161229778669Z/source_fixture.py",
+      "sha256": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+      "bytes": 21911,
+      "byte_exact_copy": true
+    },
+    "EastCaptureFactory.py": {
+      "source": "Saved/Tests/DistrictRuntime/prepare_east_capture.py",
+      "sha256": "625b39933866caa7e1d57994f464db185ed3378dcf453d11474a88fcde3b769c",
+      "bytes": 8611,
+      "byte_exact_copy": true
+    },
+    "EastCaptureCPUTest.py": {
+      "source": "Saved/Tests/DistrictRuntime/test_east_capture.py",
+      "sha256": "eb95e08865c5ea6374fd813155db44835c1c9e04208ab1d78a176d25d75eb008",
+      "bytes": 4818,
+      "byte_exact_copy": true
+    },
+    "EastViews/PanetStandard.png": {
+      "source": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/PanetStandard.png",
+      "sha256": "f8c901f0671e2b231d079f25c4fdef4e6b38aa450baf44b384468bbf32f206f5",
+      "bytes": 3062072,
+      "byte_exact_copy": true
+    },
+    "EastViews/PanetComic.png": {
+      "source": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/PanetComic.png",
+      "sha256": "8bcf0da862402d51d0eedd43da3a37142aef0f099d29859c4442f7e37909ed56",
+      "bytes": 3104931,
+      "byte_exact_copy": true
+    },
+    "EastViews/VisitationStandard.png": {
+      "source": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/VisitationStandard.png",
+      "sha256": "51b30220f9cc0a462cab5d055779bf5901b76c85db74d62ae6804544326ada7e",
+      "bytes": 3784673,
+      "byte_exact_copy": true
+    },
+    "EastViews/VisitationComic.png": {
+      "source": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/VisitationComic.png",
+      "sha256": "a6fb7e07b9b593a74e1d8fbc56c76a132e3ebd0f04bec358b49616b9e375f43c",
+      "bytes": 3975636,
+      "byte_exact_copy": true
+    },
+    "EastViews/FormerEdgeStandard.png": {
+      "source": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/FormerEdgeStandard.png",
+      "sha256": "b4ccbad1f9f3a09529f91388f08be0a70e8704b7aab82c27c99bc11411ac9587",
+      "bytes": 3831899,
+      "byte_exact_copy": true
+    },
+    "EastViews/FormerEdgeComic.png": {
+      "source": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/FormerEdgeComic.png",
+      "sha256": "663c33757ac0f48e387264bfa4a8f5eddc4b5930108c2daaa5c8296ddc398e53",
+      "bytes": 4007373,
+      "byte_exact_copy": true
+    }
+  }
+}

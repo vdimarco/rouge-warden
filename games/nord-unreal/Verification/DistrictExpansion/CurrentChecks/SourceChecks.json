@@ -1,0 +1,32 @@
+{
+  "captured_utc": "2026-10-14T16:16:30.354664+00:00",
+  "receipt_source_sha256": {
+    "Scripts/test_college_runtime.py": "06c590b54044f2643e8576648e71116437da2baf4058913377ea650a87b5600d",
+    "Data/CollegeBathurst/layout.json": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+    "Source/Quebec/CollegeBathurstMap.h": "5e011de207a3d4a2430c5cdd723c878f6ed10ee5b47424dbc68c2c1bcb6a997d",
+    "Source/Quebec/QuebecGameplay.cpp": "eb48922e852eb14e6992770ad50826de59389c6324dbe7693c2e7ea7f3bb4b87",
+    "Source/Quebec/QuebecCampaign.cpp": "920249a296d281dbf50b73e0a187449de6b72dc29822228ccff12df1cf327b38",
+    "Source/Quebec/QuebecSwimming.cpp": "eadc6bfa1985b3cfb758f6dd8594ad3f308f01116c5d4573377fd5890cb5e65d",
+    "Content/Maps/CollegeBathurst.umap": "4a01de008dc3d12d547ab0ec6a7023c7b588915030f0268c1147559dabd2ea64",
+    "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261014T161229778669Z/capture.py": "0e1559209ab846be950e6107db58dc662294a468d8fc0fa7ff6a1323b6470390",
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Data/Plateau/EdgesGeometry/edges.json": "9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35",
+    "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Scripts/capture_college_bathurst.py": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+    "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+    "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+    "Content/Maps/LaFontaine.umap": "1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40",
+    "Data/CollegeBathurst/osm.xml": "b4c2b519c1b229622c288a2027a8d4d00d6913787ddb201b5751455a6b2f72dd",
+    "Data/CollegeBathurst/massing.geojson": "07f2d29a7101ecf741ab3d5f28621725ea5f4b3a98dc1233a78d6fcaf7f1a5cb",
+    "Scripts/plateau_mesh.py": "0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217",
+    "Scripts/prepare_sneaky_dees.py": "e84c1b93ba5e17d3f017bbd1c26d8e5f009e9bd57ac2b711113b7f251e6dbd7e",
+    "Scripts/verify_college_bathurst.py": "cd796fed987686825e1284aae20651909ce129ca691b9c05b2ead81db4f5626e",
+    "Scripts/verify_plateau.py": "b38cf197fbb920caf2e79f9b8ba6f874bc43068183a094db14c108770703cdd4"
+  },
+  "all_receipt_sources_match_current": true,
+  "editor_module_sha256": "a86f7bf1e4945c9f0d475f5362e54c5eed0a0620a7de96df4c6242792ec0e4a7",
+  "source_notes": "Verifier receipts pin original scripts; generated wrappers change only their fresh output destination. Runtime and east receipts directly pin their executed source/map dependencies."
+}

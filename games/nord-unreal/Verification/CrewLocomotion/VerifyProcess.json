@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "job": "VerifyCrew",
+  "backup": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Recovery/montreal-east-20261014T150229Z",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "/Engine/Maps/Entry",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/author_crew_locomotion.py",
+    "-NordMontrealEastBackup=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Recovery/montreal-east-20261014T150229Z",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/VerifyCrew/native.log",
+    "-NordCrewLocomotionVerify",
+    "-NordCrewLocomotionReceipt=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/CrewLocomotion/20261014T153356582798Z/Author.json"
+  ],
+  "started_utc": "2026-10-14T15:34:23.937450+00:00",
+  "exit_code": 0,
+  "graph_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/CrewLocomotion/20261014T153434369381Z/Verify.json",
+  "native_passed": true,
+  "changed_existing_content": [],
+  "added_content": [],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "montreal_sources_unchanged": true,
+  "saves_unchanged": true
+}

@@ -1,0 +1,70 @@
+{
+  "passed": false,
+  "phase": "failed",
+  "jobs": [
+    {
+      "name": "PackageBoth",
+      "command": [
+        "/usr/bin/python3",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/verify_district_package.py",
+        "--runner",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+        "--output",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172143Z/Package",
+        "--district",
+        "both",
+        "--rendered-startup"
+      ],
+      "process_exit_code": 1,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172143Z/Package/report.json",
+      "video": null
+    }
+  ],
+  "service_actions": [
+    "stop nord-browser-demo.service",
+    "restore nord-browser-demo.service"
+  ],
+  "restored": true,
+  "live_saves_before_render": {
+    "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+  },
+  "display": ":0",
+  "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172143Z/run_window.py\", line 129, in <module>\n    assert process.returncode == 0, 'Unreal process did not exit cleanly'\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Unreal process did not exit cleanly\n",
+  "global_settings_restored": true,
+  "source_settings_restored": true,
+  "protected_changed": [],
+  "generated_assets_changed": [],
+  "all_content_changed": [],
+  "frozen_source_changed": [],
+  "derivative_changed": [],
+  "stream_helper_unchanged": true,
+  "live_package_changed": [],
+  "live_saves_changed_before_restart": false,
+  "source_savegames_unchanged": true,
+  "restored_main_pid": 1363259,
+  "restored_children": [
+    {
+      "name": "signalling",
+      "pid": 1363264,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261014-172158-1363259.stdout.log"
+    },
+    {
+      "name": "host",
+      "pid": 1363394,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261014-172158-1363259.stdout.log"
+    },
+    {
+      "name": "friend",
+      "pid": 1363794,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261014-172158-1363259.stdout.log"
+    }
+  ],
+  "preserved_units_after": {
+    "nord-browser-public.service": "ActiveState=active\nMainPID=109459",
+    "nord-browser-funnel.service": "ActiveState=active\nMainPID=109441",
+    "nord-browser-turn-funnel.service": "ActiveState=active\nMainPID=109422"
+  },
+  "preserved_units_unchanged": true,
+  "turn_id_after": "9fafd21a38404c082cd6749ba67ad00c98e4045e1c80167e2087a2749cd378f3",
+  "turn_running_after": true
+}

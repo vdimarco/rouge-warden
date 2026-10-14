@@ -1,0 +1,321 @@
+{
+  "version": 1,
+  "name": "Sneaky Dee's original corner facade",
+  "osm": "way/678313322",
+  "height_cm": 751.8,
+  "footprint_cm": [
+    [
+      1498.028,
+      -1043.068
+    ],
+    [
+      1390.105,
+      -1251.237
+    ],
+    [
+      2286.505,
+      -4254.65
+    ],
+    [
+      3066.93,
+      -4023.105
+    ],
+    [
+      2970.283,
+      -3650.183
+    ],
+    [
+      2204.356,
+      -971.824
+    ],
+    [
+      2156.838,
+      -838.24
+    ]
+  ],
+  "edges": [
+    {
+      "index": 6,
+      "a": [
+        2156.838,
+        -838.24
+      ],
+      "b": [
+        1498.028,
+        -1043.068
+      ],
+      "width_cm": 689.9167527202106,
+      "tangent": [
+        -0.9549123099307816,
+        -0.29688799292436674
+      ],
+      "normal": [
+        -0.29688799292436674,
+        0.9549123099307816
+      ],
+      "name": "College"
+    },
+    {
+      "index": 0,
+      "a": [
+        1498.028,
+        -1043.068
+      ],
+      "b": [
+        1390.105,
+        -1251.237
+      ],
+      "width_cm": 234.4817828531676,
+      "tangent": [
+        -0.46026176825677473,
+        -0.8877832532105722
+      ],
+      "normal": [
+        -0.8877832532105722,
+        0.46026176825677473
+      ],
+      "name": "Corner"
+    },
+    {
+      "index": 1,
+      "a": [
+        1390.105,
+        -1251.237
+      ],
+      "b": [
+        2286.505,
+        -4254.65
+      ],
+      "width_cm": 3134.3296904711538,
+      "tangent": [
+        0.28599416415101275,
+        -0.9582313593655571
+      ],
+      "normal": [
+        -0.9582313593655571,
+        -0.28599416415101275
+      ],
+      "name": "Bathurst"
+    }
+  ],
+  "materials": {
+    "Blue": {
+      "material": "SignBlue",
+      "triangles": 216,
+      "bounds_cm": [
+        [
+          1369.024,
+          -4235.456,
+          335.0
+        ],
+        [
+          2261.821,
+          -817.232,
+          704.0
+        ]
+      ]
+    },
+    "Brick": {
+      "material": "BrickRed",
+      "triangles": 132,
+      "bounds_cm": [
+        [
+          1374.773,
+          -4259.226,
+          451.0
+        ],
+        [
+          2278.839,
+          -822.961,
+          751.8
+        ]
+      ]
+    },
+    "Cladding": {
+      "material": "White",
+      "triangles": 306,
+      "bounds_cm": [
+        [
+          1380.523,
+          -4257.51,
+          330.0
+        ],
+        [
+          2284.589,
+          -828.691,
+          751.8
+        ]
+      ]
+    },
+    "Glazing": {
+      "material": "CarGlass",
+      "triangles": 108,
+      "bounds_cm": [
+        [
+          1379.334,
+          -4235.17,
+          22.0
+        ],
+        [
+          2262.779,
+          -854.678,
+          286.0
+        ]
+      ]
+    },
+    "Gold": {
+      "material": "Yellow",
+      "triangles": 216,
+      "bounds_cm": [
+        [
+          1369.024,
+          -4260.942,
+          117.0
+        ],
+        [
+          2267.34,
+          -817.232,
+          659.0
+        ]
+      ]
+    },
+    "Ink": {
+      "material": "InteriorDark",
+      "triangles": 588,
+      "bounds_cm": [
+        [
+          1370.94,
+          -4260.37,
+          2.0
+        ],
+        [
+          2278.839,
+          -819.142,
+          751.8
+        ]
+      ]
+    },
+    "Red": {
+      "material": "SignRed",
+      "triangles": 108,
+      "bounds_cm": [
+        [
+          1426.223,
+          -3921.412,
+          335.0
+        ],
+        [
+          2166.004,
+          -876.61,
+          659.0
+        ]
+      ]
+    },
+    "Stone": {
+      "material": "Limestone",
+      "triangles": 516,
+      "bounds_cm": [
+        [
+          1373.986,
+          -4257.91,
+          0.0
+        ],
+        [
+          2284.589,
+          -827.354,
+          740.9
+        ]
+      ]
+    }
+  },
+  "triangles": 2190,
+  "counts": {
+    "upper_windows": 9,
+    "ground_windows": 7,
+    "estimated_doors": 2,
+    "letter_strokes": 135
+  },
+  "signs": [
+    {
+      "street": "College",
+      "text": "SNEAKY DEE'S",
+      "position_cm": [
+        1820.3076881698153,
+        -917.7361045616613,
+        390
+      ],
+      "width_cm": 538.1984400000001,
+      "height_cm": 62,
+      "original_vector_lettering": true
+    },
+    {
+      "street": "Bathurst",
+      "text": "SNEAKY DEE'S",
+      "position_cm": [
+        1600.1714473752268,
+        -2038.9882399396242,
+        390
+      ],
+      "width_cm": 668.40774,
+      "height_cm": 77,
+      "original_vector_lettering": true
+    },
+    {
+      "street": "Bathurst",
+      "text": "SNEAKY DEE'S",
+      "position_cm": [
+        2030.443447375227,
+        -3480.6264799396245,
+        390
+      ],
+      "width_cm": 668.40774,
+      "height_cm": 77,
+      "original_vector_lettering": true
+    }
+  ],
+  "new_collision": false,
+  "generic_glass_action": "Unchanged; opaque thin skin covers only the three authored landmark faces",
+  "clearances_cm": {
+    "maximum_footprint_projection": 25,
+    "spawn": 135.33322656556288,
+    "sidewalk_centerline": 103.21490364634624,
+    "starter_car_body": 1099.8881814543215,
+    "tram_centerline": 712.6633304731295
+  },
+  "sources": [
+    {
+      "url": "https://www.sneakydees.com/",
+      "use": "431 College; exterior finish reference only, photograph not copied"
+    },
+    {
+      "url": "https://www.toronto.ca/legdocs/mmis/2026/te/bgrd/backgroundfile-286881.pdf",
+      "use": "pages 2–3: existing two-storey venue block and public laneway; proposed tower excluded"
+    },
+    {
+      "url": "https://www.toronto.ca/services-payments/streets-parking-transportation/cycling-in-toronto/cycling-infrastructure-definitions/college-street-upgrades/",
+      "use": "completed cycle tracks and retained Bathurst islands; street geometry is a later layer"
+    }
+  ],
+  "attribution": [
+    "© OpenStreetMap contributors, ODbL 1.0",
+    "Contains information licensed under the Open Government Licence – Toronto"
+  ],
+  "estimates": "Two storeys are sourced. Bay rhythm, doors, cladding courses, floor/parapet/sign dimensions, colours and original lettering are authored estimates. Shared-block lidar height is retained. No interior access or street changes.",
+  "source_sha256": {
+    "Data/CollegeBathurst/layout.json": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+    "Data/CollegeBathurst/osm.xml": "b4c2b519c1b229622c288a2027a8d4d00d6913787ddb201b5751455a6b2f72dd",
+    "Data/CollegeBathurst/massing.geojson": "07f2d29a7101ecf741ab3d5f28621725ea5f4b3a98dc1233a78d6fcaf7f1a5cb",
+    "Scripts/plateau_mesh.py": "0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217",
+    "Scripts/prepare_sneaky_dees.py": "e84c1b93ba5e17d3f017bbd1c26d8e5f009e9bd57ac2b711113b7f251e6dbd7e"
+  },
+  "geometry_sha256": {
+    "Blue": "50ae75cc679a0f37ffdca6fe5bc65547c03a4f0c74e91091319ae833476771fc",
+    "Brick": "eb63c025f85504b08dd56cca649ed48e0c7435eefb099dd46c49895394760869",
+    "Cladding": "981ac8470fc8fed6ed29d0e1c5332393964c799af0b11d7dbeaf9146d48f899a",
+    "Glazing": "a47091cc54fd306b695e180350d328a617064c3bf01c3da25fddd58201c440f3",
+    "Gold": "96b7af5ac0c802abce2f6519d688a8bd84c0751032335c696eb0ee0ea15403ec",
+    "Ink": "9c6ff1a180841d246956f1e80eac96ab6789331ef2eb1407d4c261489d3631ab",
+    "Red": "516293a8a3c0291058a66bc9b84b6a449915792539a5af747b6ec3e3c31cbf0b",
+    "Stone": "e4c2cf32d9cf36d8f8155003a6ad07acc2246c8300500852598029c060ab4028"
+  }
+}

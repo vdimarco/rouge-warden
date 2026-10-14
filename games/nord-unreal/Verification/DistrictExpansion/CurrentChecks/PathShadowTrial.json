@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "candidate_only": true,
+  "backup": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Recovery/toronto-path-shadow-20261014T154624Z",
+  "changed_actor": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_7",
+  "changed_property": "Path.cast_shadow True\u2192False",
+  "all_other_actor_semantics_preserved": true,
+  "all_other_content_preserved": true,
+  "map_before_sha256": "4ba71d0a2a30976904b624c21804595706f772ac9dfb6bc3062e78250b18bfd1",
+  "map_after_sha256": "4a01de008dc3d12d547ab0ec6a7023c7b588915030f0268c1147559dabd2ea64",
+  "geometry_material_collision_unchanged": true
+}

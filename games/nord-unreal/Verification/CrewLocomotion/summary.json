@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "scope": "Saved default playable crew 3\u201310 locomotion graphs and native NullRHI engine tests; no body/rig/clip/material replacement.",
+  "author_native_passed": true,
+  "author_parent_parser_initially_rejected": true,
+  "author_repeated": false,
+  "fresh_readonly_verify_passed": true,
+  "original_content_preserved_during_authoring": 6834,
+  "new_saved_graphs": 8,
+  "editor_build_passed": true,
+  "editor_binary_sha256": "a86f7bf1e4945c9f0d475f5362e54c5eed0a0620a7de96df4c6242792ec0e4a7",
+  "automation": {
+    "total": 30,
+    "plain_successes": 28,
+    "successes_with_fixture_warnings": 2,
+    "failed": 0,
+    "not_run": 0,
+    "warning_tests": [
+      "Quebec.Camera.LookBounds",
+      "Quebec.Driving.FittedHullCurbsAndWalls"
+    ]
+  },
+  "native_motion_proof": [
+    "all eight default selections bind saved own-skeleton graphs and retained own clips",
+    "idle/walk/run transitions and own authored cadence",
+    "actual evaluated foot and head/knee pose output",
+    "jump blend and bent knee",
+    "reapply/switching retains blended playback and carried prop",
+    "native capsule stays fixed in animation fixtures"
+  ],
+  "retained_failures": [
+    {
+      "file": "AuthorParentRejected.json",
+      "reason": "Parent parser looked for a runtime START marker in a successful authoring job; native exit0 and receipt passed. Read-only recovery did not reauthor."
+    },
+    {
+      "file": "RejectedAutomation.json",
+      "reason": "Obsolete ReapplyCrew test assumed SingleNode position APIs after production graphs became available; 30 tests, one failed test with two errors. Updated test checks actual blended pose/phase/reapply; final 30 pass."
+    },
+    {
+      "file": "RejectedBuild.json",
+      "reason": "New test compilation rejected private crew-member access; failed compile receipt retained."
+    },
+    {
+      "file": "RejectedBuildFriend.json",
+      "reason": "Private crew-member access errors remained in the second attempted build; failed compile receipt retained. The later successful build supersedes it."
+    }
+  ],
+  "limits": [
+    "Editor NullRHI native tests; no packaged graph selection or new two-map packaged controls acceptance yet.",
+    "No continuous rendered production-crew motion playback or fluidity acceptance; no packaged 60 FPS claim.",
+    "Existing bodies,rigs,clips,materials and static face/finger limitations remain unchanged.",
+    "Park residents use their separate existing manual SingleNode path; this does not establish NPC clip crossfades.",
+    "The 6,834 preservation statement describes the graph-authoring operation, not later separately authorized district/shader edits."
+  ],
+  "private_baselines_copied": false,
+  "excluded": [
+    "original-content.json",
+    "editor/global INI backups",
+    "service environment/TURN configuration",
+    "production saves",
+    "raw process logs"
+  ]
+}

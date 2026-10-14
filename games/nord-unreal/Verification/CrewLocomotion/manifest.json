@@ -1,0 +1,105 @@
+{
+  "created_utc": "2026-10-14T16:00:20.314947+00:00",
+  "scope": "Curated receipt copies and derived summary; no private baseline or native asset copies.",
+  "files": {
+    "Author.json": {
+      "sha256": "30164f74bd72c06642579317b24da74fb410c2f5759dc7ca009ed263d10468d9",
+      "bytes": 10297,
+      "source": "Saved/Tests/CrewLocomotion/20261014T153356582798Z/Author.json",
+      "source_sha256": "30164f74bd72c06642579317b24da74fb410c2f5759dc7ca009ed263d10468d9",
+      "copy_bytes_identical": true
+    },
+    "AuthorParentRejected.json": {
+      "sha256": "a6a02899c4642611a5d28e209b1fca8ac1ff51f35b411158624cffa133d23dee",
+      "bytes": 1580,
+      "source": "Saved/Tests/DistrictRuntime/AuthorCrew/result.json",
+      "source_sha256": "a6a02899c4642611a5d28e209b1fca8ac1ff51f35b411158624cffa133d23dee",
+      "copy_bytes_identical": true
+    },
+    "AuthorParserRecovery.json": {
+      "sha256": "ff5753d685b0ad332eac4804f0cf225148c10d993f9180b82a0fe491997b0e07",
+      "bytes": 418,
+      "source": "Saved/Tests/DistrictRuntime/AuthorCrewParserRecovery.json",
+      "source_sha256": "ff5753d685b0ad332eac4804f0cf225148c10d993f9180b82a0fe491997b0e07",
+      "copy_bytes_identical": true
+    },
+    "Automation.json": {
+      "sha256": "be81676f5270b97dae45b3073fef7fd4288b9bc16b6e541be15154f8ddc283e8",
+      "bytes": 933,
+      "source": "Saved/Tests/DistrictRuntime/AutomationWithCrewReapply/result.json",
+      "source_sha256": "be81676f5270b97dae45b3073fef7fd4288b9bc16b6e541be15154f8ddc283e8",
+      "copy_bytes_identical": true
+    },
+    "AutomationDetails.json": {
+      "sha256": "fd9f649ad486e344fa9ffd5ac7ee8e2796e8deefc8d3845e2399c8bcbfa3d75b",
+      "bytes": 20989,
+      "source": "Saved/Tests/DistrictRuntime/AutomationWithCrewReapply/Report/index.json",
+      "source_sha256": "fd9f649ad486e344fa9ffd5ac7ee8e2796e8deefc8d3845e2399c8bcbfa3d75b",
+      "copy_bytes_identical": true
+    },
+    "Build.json": {
+      "sha256": "52ac7de6e85cb458461a7b3aa2b05a02d7ed463438aceecd578c92e78bed215f",
+      "bytes": 427,
+      "source": "Saved/Tests/DistrictRuntime/BuildCrewReapply/Build.json",
+      "source_sha256": "52ac7de6e85cb458461a7b3aa2b05a02d7ed463438aceecd578c92e78bed215f",
+      "copy_bytes_identical": true
+    },
+    "README.md": {
+      "sha256": "c5f9a3da57a14ea4ca2b80548c887fd39de3754331964d137ee7228f67b856a0",
+      "bytes": 2788,
+      "derived": true
+    },
+    "RejectedAutomation.json": {
+      "sha256": "92147dbd3e2638610475e9a53f3181843a548f5a53a1f0525259ddd715c64627",
+      "bytes": 840,
+      "source": "Saved/Tests/DistrictRuntime/AutomationWithCrew/result.json",
+      "source_sha256": "92147dbd3e2638610475e9a53f3181843a548f5a53a1f0525259ddd715c64627",
+      "copy_bytes_identical": true
+    },
+    "RejectedAutomationDetails.json": {
+      "sha256": "edbd20394e5e61723e5a4e6ae70f3c2ca00c087df98ec1fc82ef7345dce03f2d",
+      "bytes": 23630,
+      "source": "Saved/Tests/DistrictRuntime/AutomationWithCrew/Report/index.json",
+      "source_sha256": "edbd20394e5e61723e5a4e6ae70f3c2ca00c087df98ec1fc82ef7345dce03f2d",
+      "copy_bytes_identical": true
+    },
+    "RejectedBuild.json": {
+      "sha256": "671060b84ad4646787372f7c9f3e90744d9e7a6acd38695623d2d4f144f3481a",
+      "bytes": 428,
+      "source": "Saved/Tests/DistrictRuntime/BuildCrew/Build.json",
+      "source_sha256": "671060b84ad4646787372f7c9f3e90744d9e7a6acd38695623d2d4f144f3481a",
+      "copy_bytes_identical": true
+    },
+    "RejectedBuildFriend.json": {
+      "sha256": "671060b84ad4646787372f7c9f3e90744d9e7a6acd38695623d2d4f144f3481a",
+      "bytes": 428,
+      "source": "Saved/Tests/DistrictRuntime/BuildCrewFriend/Build.json",
+      "source_sha256": "671060b84ad4646787372f7c9f3e90744d9e7a6acd38695623d2d4f144f3481a",
+      "copy_bytes_identical": true
+    },
+    "SourceChecks.json": {
+      "sha256": "844e6be21f5e615b3ffd809ce7e83407bf40db7a4166d10dd9f2bb0970db110f",
+      "bytes": 2522,
+      "derived": true
+    },
+    "Verify.json": {
+      "sha256": "8e66b7f8f4bf1825f85b01f60df3853d0aaa00bb034e6df361552fb3ea490f9d",
+      "bytes": 10284,
+      "source": "Saved/Tests/CrewLocomotion/20261014T153434369381Z/Verify.json",
+      "source_sha256": "8e66b7f8f4bf1825f85b01f60df3853d0aaa00bb034e6df361552fb3ea490f9d",
+      "copy_bytes_identical": true
+    },
+    "VerifyProcess.json": {
+      "sha256": "b1f031397067c301f44a44945cd3f569a04536fbc5aea5e7b20e8ff2a0754afd",
+      "bytes": 1519,
+      "source": "Saved/Tests/DistrictRuntime/VerifyCrew/result.json",
+      "source_sha256": "b1f031397067c301f44a44945cd3f569a04536fbc5aea5e7b20e8ff2a0754afd",
+      "copy_bytes_identical": true
+    },
+    "summary.json": {
+      "sha256": "1164490ddb4e28afe7312f23ff7d13798cd0539b62e67f980557ab06e43ccc96",
+      "bytes": 2888,
+      "derived": true
+    }
+  }
+}

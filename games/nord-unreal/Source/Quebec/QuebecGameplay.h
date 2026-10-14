@@ -21,6 +21,23 @@ class UTextRenderComponent;
 class UHierarchicalInstancedStaticMeshComponent;
 class APhysicsVolume;
 
+// Two fixed map origins. Unknown/synthetic worlds retain the Montréal defaults.
+namespace QuebecDistrict
+{
+    struct FSettings
+    {
+        FVector PlayerSpawn;
+        FVector CarSpawn;
+        const FVector (*RoadSegments)[2];
+        int32 RoadCount;
+        const TCHAR* City;
+        const TCHAR* SurveyCredit;
+    };
+    QUEBEC_API bool IsTorontoMapName(const FString& MapName);
+    QUEBEC_API bool IsToronto(const UWorld* World);
+    QUEBEC_API const FSettings& ForWorld(const UWorld* World);
+}
+
 UCLASS()
 class QUEBEC_API AQuebecParkInstances : public AActor
 {
@@ -67,7 +84,9 @@ class QUEBEC_API AQuebecCharacter : public ACharacter
 {
     GENERATED_BODY()
     friend class FQuebecCrewAnimationTest;
+    friend class FQuebecSavedCrewLocomotionTest;
     friend class FQuebecGraphicNovelControlsTest;
+    friend class FQuebecDistrictRuntimeTest;
 public:
     AQuebecCharacter();
     virtual void BeginPlay() override;
@@ -294,4 +313,5 @@ class QUEBEC_API AQuebecGameMode : public AGameModeBase
 public:
     AQuebecGameMode();
     virtual void BeginPlay() override;
+    virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 };

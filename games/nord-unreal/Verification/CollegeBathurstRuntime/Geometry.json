@@ -1,0 +1,78 @@
+{
+  "passed": true,
+  "protected_sha256": {
+    "Data/CollegeBathurst/layout.json": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+    "Source/Quebec/CollegeBathurstMap.h": "5e011de207a3d4a2430c5cdd723c878f6ed10ee5b47424dbc68c2c1bcb6a997d",
+    "Data/CollegeBathurst/osm.xml": "b4c2b519c1b229622c288a2027a8d4d00d6913787ddb201b5751455a6b2f72dd",
+    "Data/CollegeBathurst/massing.geojson": "07f2d29a7101ecf741ab3d5f28621725ea5f4b3a98dc1233a78d6fcaf7f1a5cb"
+  },
+  "geometry": {
+    "Brick.obj": {
+      "sha256": "fda3daa256c66a515f6bbca5150245e6b453a6c6c5cab87ab8fbc29568b0c6db",
+      "bytes": 1359648
+    },
+    "Cream.obj": {
+      "sha256": "a88519552778023bb41db1105ab9fca2c62973a078940b0df276db0d7787e59b",
+      "bytes": 1551412
+    },
+    "Glass.obj": {
+      "sha256": "9caabddde5237813f0b01f39b353ca23872200eea3f0c3d4dbe1c4004febcafb",
+      "bytes": 16732490
+    },
+    "Grass.obj": {
+      "sha256": "25c78884da0085c0f7de87d81e196c7fb3abcc3957fb7ee176a7730aebc18461",
+      "bytes": 23935
+    },
+    "Ground.obj": {
+      "sha256": "beb5320f2e8180fb7ad906f66e5357ae2979bcba677f1e4abc60ac8d3e64abef",
+      "bytes": 239
+    },
+    "Landmark.obj": {
+      "sha256": "9321548d318c5efa89872b0a2401cc9bec668e4c1cf24c23ad8cd2fe805212eb",
+      "bytes": 1861
+    },
+    "Marking.obj": {
+      "sha256": "4374b82463e06936515e420ebf62d5815cecb8281ab0550ae5ea711618a42fbc",
+      "bytes": 155683
+    },
+    "Path.obj": {
+      "sha256": "188c3f202a6975780550a740e06d48f5a7e965b30a4717597ffb12ffc699ff6f",
+      "bytes": 316864
+    },
+    "Road.obj": {
+      "sha256": "e28391e267cc05b00eee603ac03a105ead9d244ef29427bbe6ec30d73405c507",
+      "bytes": 206551
+    },
+    "Roof.obj": {
+      "sha256": "9efc6433b90b60ce6e1a52d26e7135a8f248126fe6386443045f25899aefa434",
+      "bytes": 1111890
+    },
+    "Sage.obj": {
+      "sha256": "3f026bae6ac7da80e6cac680fbed69075bec4abf2d5d5883f44dd26870d4197a",
+      "bytes": 1367787
+    },
+    "Tram.obj": {
+      "sha256": "d82f3d359798104ac34bc790a082bb53d824696bc96508ed0f6e7cacfb69669d",
+      "bytes": 88256
+    }
+  },
+  "counts": {
+    "roads": 208,
+    "road_segments": 849,
+    "paths": 369,
+    "tram_lines": 10,
+    "buildings": 1458,
+    "buildings_by_height_source": {
+      "fallback": 26,
+      "massing": 1423,
+      "osm_height": 3,
+      "osm_levels": 6
+    },
+    "massing_only": 57,
+    "massing_features": 1682,
+    "lamps": 40,
+    "trees": 185,
+    "places": 360
+  },
+  "export_precision_cleanup": "Rounding-collapsed/collinear vertices removed before import; source layout/header retained"
+}

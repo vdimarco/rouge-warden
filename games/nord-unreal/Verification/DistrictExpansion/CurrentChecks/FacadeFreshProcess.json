@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "mode": "verify",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "/Game/Maps/CollegeBathurst",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/repair_sneaky_sign.py",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SignVerify/native.log",
+    "-NordSignVerify"
+  ],
+  "started_utc": "2026-10-14T15:42:37.823701+00:00",
+  "exit_code": 0,
+  "native_passed": true,
+  "changed_content": [],
+  "settings_restored": true,
+  "content_inventory_unchanged": true,
+  "only_declared_content_changes": true,
+  "protected_saves_unchanged": true
+}

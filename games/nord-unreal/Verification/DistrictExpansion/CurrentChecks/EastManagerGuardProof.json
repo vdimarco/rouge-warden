@@ -1,0 +1,34 @@
+{
+  "source_window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T161229Z",
+  "raw_window_status_sha256": "04d3256ffe4807d25577849a9d90dd8cdfc51920fb1b076b43146e8d2f9d38a5",
+  "manager_sha256": "c7f21f3072648e71d0a59d6041d56d5a9c6ebcc16007c7b42363ba8062140de6",
+  "jobs_sha256": "b803856720f37a6a1e44c42ee16e5e28117361146025b81b7bd9147cbfece279",
+  "phase": "complete",
+  "passed": true,
+  "restored": true,
+  "native_process_exit": 0,
+  "native_report_sha256": "fe88d653cff56e679868c9a560376c25d429baa46b4dd87da55411ae7f2e8e88",
+  "preservation": {
+    "source_settings_restored": true,
+    "global_settings_restored": true,
+    "stream_helper_unchanged": true,
+    "source_savegames_unchanged": true,
+    "preserved_units_unchanged": true,
+    "all_content_changed": [],
+    "frozen_source_changed": [],
+    "derivative_changed": [],
+    "live_package_changed": [],
+    "live_saves_changed_before_restart": false
+  },
+  "protected_file_counts": {
+    "Content": 6842,
+    "GraphicNovel": 236,
+    "live_package": 48,
+    "capture_sources": 14
+  },
+  "independent_cpu_manager_review": "PASS:prepared fixture byte-equals current frozen factory output; exact one1920job,6capture threshold, LaFontaine/NoCampaignSave/full-quality flags and marker names verified. No native process or service launched by reviewer.",
+  "limits": [
+    "Existing-file hashes and current Content file inventory were independently compared after completion.",
+    "No private baseline, INI, environment, service record or save file is copied."
+  ]
+}

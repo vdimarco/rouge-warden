@@ -1,0 +1,91 @@
+{
+  "source_sha256": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+  "inputs_sha256": {
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Data/Plateau/EdgesGeometry/edges.json": "9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35",
+    "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Scripts/capture_college_bathurst.py": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+    "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+    "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+    "Source/Quebec/QuebecCampaign.cpp": "920249a296d281dbf50b73e0a187449de6b72dc29822228ccff12df1cf327b38",
+    "Source/Quebec/QuebecGameplay.cpp": "eb48922e852eb14e6992770ad50826de59389c6324dbe7693c2e7ea7f3bb4b87",
+    "Content/Maps/LaFontaine.umap": "1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40"
+  },
+  "fixtures": [
+    {
+      "name": "Panet",
+      "point_cm": [
+        71674.55083309732,
+        -26098.562974604924
+      ],
+      "target_cm": [
+        75373.30293126713,
+        -28558.323949252477
+      ],
+      "source": "way/490998043",
+      "node_ids": [
+        "1497705451",
+        "10815396967"
+      ],
+      "derivation": "longest retained street segment midpoint",
+      "road_width_cm": 680,
+      "pitch": -12,
+      "yaw": -33.62488171113105,
+      "context_footprint_sample_clearance_cm": 8146.085232153709
+    },
+    {
+      "name": "Visitation",
+      "point_cm": [
+        60420.852460401,
+        -29134.670399994902
+      ],
+      "target_cm": [
+        63072.53175570845,
+        -30900.20560002219
+      ],
+      "source": "way/19938440",
+      "node_ids": [
+        "11547437024",
+        "2075285157"
+      ],
+      "derivation": "longest retained street segment midpoint",
+      "road_width_cm": 680,
+      "pitch": -12,
+      "yaw": -33.65638180733419,
+      "context_footprint_sample_clearance_cm": 620.8597428037924
+    },
+    {
+      "name": "FormerEdge",
+      "point_cm": [
+        54888.20160134625,
+        -14873.465199956201
+      ],
+      "target_cm": [
+        58710.539102254894,
+        -17399.19993901318
+      ],
+      "source": "way/490998043",
+      "former_exit_cm": [
+        55373.30293126712,
+        -15194.011797595113
+      ],
+      "derivation": "original Panet source node looking through former boundary",
+      "pitch": -12,
+      "yaw": -33.45604059137042,
+      "context_footprint_sample_clearance_cm": 882.9774136286053
+    }
+  ],
+  "capture_count": 6,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "visual_review_pending": true,
+  "cpu_only_preparation": true,
+  "factory_sha256": "625b39933866caa7e1d57994f464db185ed3378dcf453d11474a88fcde3b769c",
+  "capture_sha256": "0e1559209ab846be950e6107db58dc662294a468d8fc0fa7ff6a1323b6470390",
+  "frozen_source_sha256": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8"
+}

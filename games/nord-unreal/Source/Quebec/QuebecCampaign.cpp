@@ -104,6 +104,11 @@ void AQuebecCampaign::SetupRaceRoute()
 void AQuebecCampaign::BeginPlay()
 {
     Super::BeginPlay();
+    if (QuebecDistrict::IsToronto(GetWorld()))
+    {
+        SetActorTickEnabled(false);
+        return;
+    }
     BuildEncounter();
     if (HasAuthority())
     {
@@ -304,6 +309,7 @@ void AQuebecCampaign::BuildEncounter()
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
 {
+    if (QuebecDistrict::IsToronto(GetWorld())) return;
     Super::Tick(DeltaSeconds);
     if (HasAuthority())
     {
@@ -335,7 +341,7 @@ bool AQuebecCampaign::IsAimingLight(const AQuebecController* Controller) const
 
 void AQuebecCampaign::LightAim(AQuebecController* Controller, float Yaw, float Pitch)
 {
-    if (!HasAuthority() || !IsAimingLight(Controller) || !CanReach(Controller,WorklightLocation,LightRadius+60.f) ||
+    if (QuebecDistrict::IsToronto(GetWorld()) || !HasAuthority() || !IsAimingLight(Controller) || !CanReach(Controller,WorklightLocation,LightRadius+60.f) ||
         !FMath::IsFinite(Yaw) || !FMath::IsFinite(Pitch)) return;
     LightYaw = FRotator::NormalizeAxis(Yaw);
     LightPitch = FMath::Clamp(FRotator::NormalizeAxis(Pitch),-55.f,50.f);
@@ -352,7 +358,7 @@ void AQuebecCampaign::StopAiming()
 
 void AQuebecCampaign::ReleaseBrowserInput(AQuebecController* Controller)
 {
-    if (HasAuthority() && IsAimingLight(Controller))
+    if (!QuebecDistrict::IsToronto(GetWorld()) && HasAuthority() && IsAimingLight(Controller))
     {
         StopAiming();
         ForceNetUpdate();
@@ -424,7 +430,7 @@ bool AQuebecCampaign::CarLightAligned() const
 
 bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
 {
-    if (!HasAuthority() || !Controller) return false;
+    if (QuebecDistrict::IsToronto(GetWorld()) || !HasAuthority() || !Controller) return false;
     if (Phase == EQuebecCampaignPhase::AimWorklight && CanReach(Controller,WorklightLocation,LightRadius))
     {
         if (LightOperator && !IsAimingLight(Controller)) Controller->ShowInteractionMessage(TEXT("A friend is aiming. Hold the gold seam in the beam."));
@@ -567,7 +573,7 @@ FString AQuebecCampaign::SaveSlot() const
 
 void AQuebecCampaign::SaveBoundary()
 {
-    if (FParse::Param(FCommandLine::Get(),TEXT("NordNoCampaignSave"))) return;
+    if (QuebecDistrict::IsToronto(GetWorld()) || FParse::Param(FCommandLine::Get(),TEXT("NordNoCampaignSave"))) return;
     if (bSaveBlocked) return;
     UQuebecCampaignSaveGame* Save = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::CreateSaveGameObject(UQuebecCampaignSaveGame::StaticClass()));
     if (Save) { Save->Version=1; Save->CompletedMissions=CompletedMissions; }
@@ -614,7 +620,7 @@ bool AQuebecCampaign::MoveToSafeCheckpoint(AQuebecController* Controller, const 
 
 void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
 {
-    if (!HasAuthority() || !Controller || !Controller->GetPawn()) return;
+    if (QuebecDistrict::IsToronto(GetWorld()) || !HasAuthority() || !Controller || !Controller->GetPawn()) return;
     if (Phase == EQuebecCampaignPhase::Complete) { Controller->ShowInteractionMessage(TEXT("Both scenes are banked. T replays the race.")); return; }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
     {
@@ -667,7 +673,7 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
 
 void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
 {
-    if (!HasAuthority() || !Controller || Phase != EQuebecCampaignPhase::Complete) return;
+    if (QuebecDistrict::IsToronto(GetWorld()) || !HasAuthority() || !Controller || Phase != EQuebecCampaignPhase::Complete) return;
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -754,7 +760,7 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
 
 void AQuebecCampaign::UpdatePresentation()
 {
-    if (!bBuilt) return;
+    if (!bBuilt || QuebecDistrict::IsToronto(GetWorld())) return;
     const bool bTerrace = Phase <= EQuebecCampaignPhase::ReleaseTable;
     const bool bRace = Phase >= EQuebecCampaignPhase::RaceReady;
     const FVector Direction = FRotator(LightPitch,LightYaw,0.f).Vector();

@@ -4,7 +4,6 @@ set -euo pipefail
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 editor="/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor"
 project="$project_dir/Quebec.uproject"
-map="/Game/Maps/LaFontaine"
 mode="${1:-editor}"
 if [[ $# -gt 0 ]]; then shift; fi
 
@@ -12,7 +11,12 @@ fail() { printf '%s\n' "$*" >&2; exit 2; }
 
 case "$mode" in
     editor|play|host)
-        [[ $# -eq 0 ]] || fail "Usage: $0 [editor|play|host|join HOST[:PORT]]"
+        [[ $# -le 1 ]] || fail "Usage: $0 [editor|play|host [montreal|toronto]|join HOST[:PORT]]"
+        case "${1:-montreal}" in
+            montreal) map="/Game/Maps/LaFontaine" ;;
+            toronto) map="/Game/Maps/CollegeBathurst" ;;
+            *) fail "District must be montreal or toronto." ;;
+        esac
         ;;
     join)
         [[ $# -eq 1 ]] || fail "Usage: $0 join HOST[:PORT]"
@@ -38,7 +42,7 @@ case "$mode" in
             address="$host:$port"
         fi
         ;;
-    *) fail "Usage: $0 [editor|play|host|join HOST[:PORT]]" ;;
+    *) fail "Usage: $0 [editor|play|host [montreal|toronto]|join HOST[:PORT]]" ;;
 esac
 
 if [[ "$mode" == editor ]]; then

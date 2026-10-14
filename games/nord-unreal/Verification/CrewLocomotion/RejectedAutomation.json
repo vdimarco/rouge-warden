@@ -1,0 +1,21 @@
+{
+  "passed": false,
+  "started_utc": "2026-10-14T15:37:58.031473+00:00",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "/Engine/Maps/Entry",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-NordNoCampaignSave",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecCmds=Automation RunTests Quebec.;SoftQuit",
+    "-ReportExportPath=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/AutomationWithCrew/Report",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/AutomationWithCrew/native.log"
+  ],
+  "exit_code": 255,
+  "settings_restored": true,
+  "protected_saves_unchanged": true
+}

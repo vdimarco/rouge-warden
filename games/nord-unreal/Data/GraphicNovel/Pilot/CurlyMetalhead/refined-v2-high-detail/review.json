@@ -1,0 +1,111 @@
+{
+  "scope": "Local CPU source study and immutable FBX derivative; not Unreal appearance or final art acceptance",
+  "mask_safe_for_reviewed_central_garment_ledge": true,
+  "meaningful_local_improvement": "Small visible central-rim darkening; conservative partial correction, not a complete collar repair.",
+  "visual_review": "character_audit inspected six actual CPU original/refined/selection images and eight source cross sections; no independent image reviewer available for this study.",
+  "faces": 26,
+  "uv1_corners": 78,
+  "mask_edge_connected_components": 1,
+  "selected_bounds_world_m": [
+    [
+      -0.01836947537958622,
+      -0.07950929552316666,
+      1.4712542295455933
+    ],
+    [
+      0.016751255840063095,
+      -0.07016105204820633,
+      1.4744110107421875
+    ]
+  ],
+  "selected_surface_area_cm2": 2.250725607311538,
+  "minimum_up_normal": 0.7918608784675598,
+  "source_centroid_red_range": [
+    0.08627451211214066,
+    0.8352941870689392
+  ],
+  "texture_target": {
+    "lower_left_px": [
+      982,
+      1016
+    ],
+    "size_px": 64,
+    "center_uv": [
+      0.4951171875,
+      0.51171875
+    ],
+    "rgb_min": 0.07450980693101883,
+    "rgb_max": 0.1764705926179886,
+    "maximum_channel_difference": 0.023529410362243652,
+    "radius_px": 10,
+    "minimum_dark_padding_px": 22
+  },
+  "source_body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+  "derived_body_sha256": "7857db64ade6b6ebd66a779d4ef9589da5206cdca0ed0c0716aee8ad89da93c1",
+  "mask_sha256": "88d3180bc539bf86298710077f7d1f0de7cadd00553f0e5a403f83c00f51614b",
+  "source_hashes_preserved": true,
+  "source_file_count": 27,
+  "binary_preservation_passed": true,
+  "fresh_fbx_reimport_passed": true,
+  "normal_strength": 1,
+  "native_imported": false,
+  "graphics_accepted": false,
+  "image_difference": {
+    "front": {
+      "different_pixels_8bit": 4658,
+      "mean_absolute_rgb_difference_8bit": 0.022154066297743056,
+      "max_rgb_difference_8bit": 83.0,
+      "difference_bbox_px": [
+        [
+          0,
+          0
+        ],
+        [
+          767,
+          766
+        ]
+      ],
+      "scope": "Deterministic CPU image difference; GI/denoising may spread changes slightly beyond direct ledge pixels. Not an acceptance score."
+    },
+    "three-quarter": {
+      "different_pixels_8bit": 5110,
+      "mean_absolute_rgb_difference_8bit": 0.021428991247106483,
+      "max_rgb_difference_8bit": 79.0,
+      "difference_bbox_px": [
+        [
+          0,
+          0
+        ],
+        [
+          724,
+          767
+        ]
+      ],
+      "scope": "Deterministic CPU image difference; GI/denoising may spread changes slightly beyond direct ledge pixels. Not an acceptance score."
+    }
+  },
+  "tests": [
+    {
+      "command": "python3 Scripts/test_refine_high_detail_collar.py",
+      "exit_code": 0,
+      "log": "test-python.log"
+    },
+    {
+      "command": "blender -t 4 --background --factory-startup --python-exit-code 1 --python Scripts/test_refine_high_detail_collar.py",
+      "exit_code": 0,
+      "log": "test-blender.log"
+    },
+    {
+      "command": "python3 -m py_compile Scripts/refine_high_detail_collar.py Scripts/test_refine_high_detail_collar.py",
+      "exit_code": 0
+    }
+  ],
+  "limitations": [
+    "Only the central approximately 3.5 cm of upward garment ledge is remapped; the side/rear chipped rim and front irregular silhouette remain.",
+    "Source geometry is unchanged. Darkening cannot close holes, correct neck silhouette, shoulder skin deformation, shiny hair, rigid hands or native ground-shadow fragments.",
+    "Uniform neutral-dark existing atlas texels replace tiny selected garment albedo islands; local source colour detail is intentionally simplified. All original PNGs remain byte-identical.",
+    "CPU lighting is bright and the local result is subtle. No final native benefit, normal/shader correctness, mip behaviour, temporal stability, co-op or packaged performance is established.",
+    "Raw high-detail one-UV acceptance and all capture/import/runtime guards remain unchanged. Native integration needs a separate explicit derivative mode and source/material readbacks.",
+    "Two early helper failures (Python module path; 2D/3D vector mismatch) are retained under rejected/. Both stopped before mask, render or FBX output; successful current study/export/tests exit 0."
+  ]
+}

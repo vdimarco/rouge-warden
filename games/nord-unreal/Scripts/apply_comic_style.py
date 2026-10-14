@@ -74,7 +74,7 @@ float L2 = dot(Color, float3(0.299, 0.587, 0.114));
 Color = saturate(lerp(L2.xxx, Color, Saturation));
 // Shadows read as violet ink wash, never as black.
 float ShadowAmount = 1.0 - smoothstep(0.04, 0.32, L2);
-Color += float3(0.10, 0.05, 0.19) * ShadowAmount * (Sky ? 0.0 : 1.0);
+Color += float3(0.10, 0.05, 0.19) * ShadowAmount * (Sky ? 0.0 : 1.0) * lerp(1.0, 0.35, NovelCrew);
 L2 = dot(Color, float3(0.299, 0.587, 0.114));
 
 // Ben-Day dots on a 45 degree screen: bigger in shade, absent from the sky.

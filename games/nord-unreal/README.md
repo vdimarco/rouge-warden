@@ -37,6 +37,8 @@ The launcher also supports:
 ./Scripts/launch.sh join 127.0.0.1:7777
 ```
 
+College Street at Bathurst, Toronto is a separate location under development. Its surveyed district extends west past Euclid to Grace Street. Select it explicitly with `./Scripts/launch.sh editor toronto`, `./Scripts/launch.sh play toronto` or `./Scripts/launch.sh host toronto`; the default remains Montréal. Toronto starts in free roam outside the Montréal campaign. Play/host require a rebuilt two-map package when a local package is present. The existing public browser package still opens Montréal. See the [current district work and checks](Verification/DistrictPolishSixHours.md).
+
 The local and browser Linux builds are in `Builds/Linux/` and `Builds/Browser/Linux/` (excluded from Git). The current HUD packages match across [48 non-save files](Verification/CompactHUDPackageIdentity.json), with existing save directories excluded from updates. `Scripts/launch.sh play` prefers the local package whenever `Builds/Linux/Quebec.sh` exists. The [current package check](Verification/CompactHUDPackage.json) passes fresh-campaign startup, seven renders, eight crew cycles and separate-process joining. The preceding integrated browser package reloaded an existing Mission 1 boundary across a full restart; full naturally driven packaged Mission 1–2 progression remains unverified. The [current HUD package profiles](Verification/CompactHUDPerformance.json) pass six warmed Epic static views on the measured RTX 4090. See [Verification](Verification/README.md) and [story-slice status](Verification/StorySlice.md). Share the whole matching packaged directory with friends using Linux. Editor mode starts this project's MCP service on port 8001.
 
 | Control | Action |

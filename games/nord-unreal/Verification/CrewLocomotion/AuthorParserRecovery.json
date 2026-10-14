@@ -1,0 +1,7 @@
+{
+  "native_author_passed": true,
+  "native_receipt": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/CrewLocomotion/20261014T153356582798Z/Author.json",
+  "reason": "Original parent parser incorrectly tried the runtime START marker for an authoring job; original failure retained. Read-only parsed author receipt; no reauthoring.",
+  "characters": 8,
+  "preserved_content_files": 6834
+}

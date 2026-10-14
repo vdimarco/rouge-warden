@@ -1,0 +1,611 @@
+{
+  "passed": true,
+  "run": "20261014T152240754716Z",
+  "mode": "owned standalone authority PIE; headless native callbacks",
+  "checks": [
+    "fresh original Montréal spawn/campaign and real ambient population",
+    "native new floor/outer collision and open former-edge probes",
+    "arrange clear native walking at former Rue Panet edge",
+    "walk through former Rue Panet wall and closures",
+    "arrange clear native walking at former Rue de la Visitation edge",
+    "walk through former Rue de la Visitation wall and closures",
+    "arrange the existing starter in a clear Panet lane with real traffic active",
+    "arrange a clear starter approach isolated from other parked cars",
+    "native interaction enters the original starter",
+    "native throttle drives through the former Panet boundary",
+    "native foot brake slows the car in the extension",
+    "native handbrake stops before exit",
+    "native exit restores the walker on new extension ground",
+    "arrange a grounded approach to the real outer east wall",
+    "actual outer wall contains sustained native walking pressure",
+    "reset the source-derived outer approach for the production jump",
+    "native run-up reaches the running-jump launch window",
+    "actual continuous 400cm outer boundary contains running forward pressure and native JumpZ600",
+    "campaign/progression and ambient inventories remain intact"
+  ],
+  "trace": [
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange clear native walking at former Rue Panet edge",
+      "wall_seconds": 2.1874,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        38793.0165,
+        -7522.8152,
+        116.15
+      ],
+      "target_cm": [
+        54831.0021,
+        -14835.6687,
+        106.0
+      ],
+      "yaw": -33.456040591370424
+    },
+    {
+      "kind": "mapped_walking_setup",
+      "step": "arrange clear native walking at former Rue Panet edge",
+      "wall_seconds": 2.1875,
+      "street": "Rue Panet",
+      "source_way": "way/490998043",
+      "outward": [
+        0.8343,
+        -0.5513,
+        0.0
+      ],
+      "lateral_offset_cm": 0,
+      "start_cm": [
+        54831.0021,
+        -14835.6687,
+        106.0
+      ],
+      "collision_active": true,
+      "containment": false
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange clear native walking at former Rue de la Visitation edge",
+      "wall_seconds": 5.4994,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        55958.2177,
+        -15580.5133,
+        98.15
+      ],
+      "target_cm": [
+        54834.5704,
+        -25388.0543,
+        106.0
+      ],
+      "yaw": -34.02235474815528
+    },
+    {
+      "kind": "mapped_walking_setup",
+      "step": "arrange clear native walking at former Rue de la Visitation edge",
+      "wall_seconds": 5.4995,
+      "street": "Rue de la Visitation",
+      "source_way": "way/19938440",
+      "outward": [
+        0.8288,
+        -0.5595,
+        0.0
+      ],
+      "lateral_offset_cm": 0,
+      "start_cm": [
+        54834.5704,
+        -25388.0543,
+        106.0
+      ],
+      "collision_active": true,
+      "containment": false
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange the existing starter in a clear Panet lane with real traffic active",
+      "wall_seconds": 8.9313,
+      "actor": "QuebecCar_0",
+      "before_cm": [
+        38569.6792,
+        -7473.4286,
+        107.5
+      ],
+      "target_cm": [
+        54285.2083,
+        -14301.2211,
+        108.0
+      ],
+      "yaw": -33.456040591370424
+    },
+    {
+      "kind": "mapped_drive_setup",
+      "step": "arrange the existing starter in a clear Panet lane with real traffic active",
+      "wall_seconds": 8.9314,
+      "street": "Rue Panet",
+      "source_way": "way/490998043",
+      "native_box_sweep_clear_cm": 6399.999999999997,
+      "lateral_offset_cm": 145,
+      "scope": "Existing starter relocated empty from its original curb; native entry/drive/brake/exit follow. Other cars/residents/collision unchanged."
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange a clear starter approach isolated from other parked cars",
+      "wall_seconds": 9.285,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        55969.1342,
+        -26153.7698,
+        98.15
+      ],
+      "target_cm": [
+        54387.1983,
+        -14146.874,
+        106.0
+      ],
+      "yaw": null
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native interaction enters the original starter",
+      "wall_seconds": 9.6388,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native handbrake stops before exit",
+      "wall_seconds": 12.5848,
+      "actor": "QuebecCar_0",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native exit restores the walker on new extension ground",
+      "wall_seconds": 12.9336,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange a grounded approach to the real outer east wall",
+      "wall_seconds": 13.2843,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        57042.7325,
+        -15871.6402,
+        98.15
+      ],
+      "target_cm": [
+        74832.0604,
+        -28198.3844,
+        106.0
+      ],
+      "yaw": -33.624881711131074
+    },
+    {
+      "kind": "mapped_walking_setup",
+      "step": "arrange a grounded approach to the real outer east wall",
+      "wall_seconds": 13.2844,
+      "street": "Rue Panet",
+      "source_way": "way/490998043",
+      "outward": [
+        0.8327,
+        -0.5538,
+        0.0
+      ],
+      "lateral_offset_cm": 0,
+      "start_cm": [
+        74832.0604,
+        -28198.3844,
+        106.0
+      ],
+      "collision_active": true,
+      "containment": true
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "reset the source-derived outer approach for the production jump",
+      "wall_seconds": 16.1469,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        75296.287,
+        -28855.686,
+        98.15
+      ],
+      "target_cm": [
+        74832.0604,
+        -28198.3844,
+        106.0
+      ],
+      "yaw": -33.624881711131074
+    },
+    {
+      "kind": "mapped_walking_setup",
+      "step": "reset the source-derived outer approach for the production jump",
+      "wall_seconds": 16.147,
+      "street": "Rue Panet",
+      "source_way": "way/490998043",
+      "outward": [
+        0.8327,
+        -0.5538,
+        0.0
+      ],
+      "lateral_offset_cm": 0,
+      "start_cm": [
+        74832.0604,
+        -28198.3844,
+        106.0
+      ],
+      "collision_active": true,
+      "containment": true
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "actual continuous 400cm outer boundary contains running forward pressure and native JumpZ600",
+      "wall_seconds": 17.2676,
+      "actor": "QuebecCharacter_0",
+      "method": "Jump"
+    }
+  ],
+  "crossings": {
+    "Rue Panet": {
+      "start_cm": [
+        54831.0021,
+        -14835.6687,
+        98.15
+      ],
+      "end_cm": [
+        55958.2177,
+        -15580.5133,
+        98.15
+      ],
+      "native_distance_cm": 1351.0767907797726,
+      "outward_progress_from_former_edge_cm": 701.076790779772,
+      "scope": "Observed native walking after the logged fixture placement, not a naturally navigated approach"
+    },
+    "Rue de la Visitation": {
+      "start_cm": [
+        54848.6759,
+        -25397.375,
+        98.15
+      ],
+      "end_cm": [
+        55955.1687,
+        -26144.342,
+        98.15
+      ],
+      "native_distance_cm": 1335.0228128122724,
+      "outward_progress_from_former_edge_cm": 701.9288651688568,
+      "scope": "Observed native walking after the logged fixture placement, not a naturally navigated approach"
+    }
+  },
+  "save_inventory_before": {},
+  "fixture_scope": "Only the player and existing unoccupied starter car are relocated. Real ambient traffic, residents and every world collision remain active. Native callbacks cause observed crossings; no mission, velocity, occupancy or collision-state writes.",
+  "limits": [
+    "rendered/HUD/likeness acceptance",
+    "physical keyboard/mouse/touch delivery",
+    "packaged and multiplayer expansion behavior",
+    "performance and audio acceptance",
+    "naturally navigated trip from the original spawn to the extension",
+    "production save/reload (NoCampaignSave suppresses both disk loading and writing)",
+    "native jump containment is checked at the east Panet wall only; other new boundary strips receive static collision probes"
+  ],
+  "source_sha256": {
+    "Scripts/test_montreal_east_runtime.py": "aeab8e4a6e67c02e1e90575b910fc25cc9021eb4b82f42a2239bbc170397feb1",
+    "Data/Plateau/EdgesGeometry/edges.json": "9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Scripts/plateau_context.py": "b5df165d154c2c18697cc7884cd486c5f3e056886398cda220e96b9cfcfbf5be",
+    "Source/Quebec/QuebecGameplay.cpp": "9a6031d37ee11e913e87530c8d1cae7a368b6b8c9306437436a4fded07ceb684",
+    "Source/Quebec/QuebecCampaign.cpp": "920249a296d281dbf50b73e0a187449de6b72dc29822228ccff12df1cf327b38",
+    "Content/Maps/LaFontaine.umap": "1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40"
+  },
+  "campaign_before": {
+    "phase": "<QuebecCampaignPhase.AIM_WORKLIGHT: 0>",
+    "completed": 0,
+    "legacy_mission_index": 0
+  },
+  "campaign_disk_loading_and_writing_suppressed": true,
+  "population": {
+    "residents": 110,
+    "cars": 47,
+    "traffic": 16
+  },
+  "initial_player_cm": [
+    38793.0165,
+    -7522.8152,
+    116.15
+  ],
+  "initial_starter_cm": [
+    38569.6792,
+    -7473.4286,
+    107.5
+  ],
+  "campaign_after": {
+    "phase": "<QuebecCampaignPhase.AIM_WORKLIGHT: 0>",
+    "completed": 0,
+    "legacy_mission_index": 0
+  },
+  "outer_wall": {
+    "actor": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_17",
+    "bounds_origin_cm": [
+      75373.3029,
+      11132.0,
+      100.0
+    ],
+    "bounds_extent_cm": [
+      35.0,
+      57886.4,
+      100.0
+    ],
+    "height_cm": 200.0,
+    "cap_actor": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3027",
+    "cap_bounds_origin_cm": [
+      75373.3029,
+      11132.0,
+      300.0
+    ],
+    "cap_bounds_extent_cm": [
+      35.0,
+      57886.4,
+      100.0
+    ],
+    "continuous_top_z_cm": 400.0
+  },
+  "native_collision_probes": [
+    {
+      "street": "Rue Panet",
+      "along_from_old_edge_cm": -100,
+      "surface": {
+        "actor": "OSM Road",
+        "distance_cm": 9994.0,
+        "point_cm": [
+          55289.872,
+          -15138.8821,
+          6.0
+        ],
+        "mesh": "/Game/LaFontaine/SM_Road.SM_Road"
+      }
+    },
+    {
+      "street": "Rue Panet",
+      "along_from_old_edge_cm": 100,
+      "surface": {
+        "actor": "Plateau context Asphalt_XP005_YM002",
+        "distance_cm": 9994.0,
+        "point_cm": [
+          55456.7338,
+          -15249.1415,
+          6.0
+        ],
+        "mesh": "/Game/Plateau/Context/SM_Asphalt_XP005_YM002.SM_Asphalt_XP005_YM002"
+      },
+      "expected_surface_z_cm": 6.0,
+      "supporting_floor": {
+        "actor": "Plateau east extension collision floor",
+        "distance_cm": 0.09999847412109375,
+        "point_cm": [
+          55456.7336,
+          -15249.1406,
+          0.0
+        ],
+        "mesh": "/Engine/BasicShapes/Cube.Cube"
+      }
+    },
+    {
+      "street": "Rue Panet",
+      "along_from_old_edge_cm": 1200,
+      "surface": {
+        "actor": "Plateau context Asphalt_XP005_YM002",
+        "distance_cm": 9994.0,
+        "point_cm": [
+          56374.4738,
+          -15855.5682,
+          6.0
+        ],
+        "mesh": "/Game/Plateau/Context/SM_Asphalt_XP005_YM002.SM_Asphalt_XP005_YM002"
+      },
+      "expected_surface_z_cm": 6.0,
+      "supporting_floor": {
+        "actor": "Plateau east extension collision floor",
+        "distance_cm": 0.09999847412109375,
+        "point_cm": [
+          56374.4729,
+          -15855.5664,
+          0.0
+        ],
+        "mesh": "/Engine/BasicShapes/Cube.Cube"
+      }
+    },
+    {
+      "street": "Rue de la Visitation",
+      "along_from_old_edge_cm": -100,
+      "surface": {
+        "actor": "OSM Road",
+        "distance_cm": 9994.0,
+        "point_cm": [
+          55290.421,
+          -25695.7883,
+          6.0
+        ],
+        "mesh": "/Game/LaFontaine/SM_Road.SM_Road"
+      }
+    },
+    {
+      "street": "Rue de la Visitation",
+      "along_from_old_edge_cm": 100,
+      "surface": {
+        "actor": "Plateau context Asphalt_XP005_YM003",
+        "distance_cm": 9994.0,
+        "point_cm": [
+          55456.1849,
+          -25807.6915,
+          6.0
+        ],
+        "mesh": "/Game/Plateau/Context/SM_Asphalt_XP005_YM003.SM_Asphalt_XP005_YM003"
+      },
+      "expected_surface_z_cm": 6.0,
+      "supporting_floor": {
+        "actor": "Plateau east extension collision floor",
+        "distance_cm": 0.09999847412109375,
+        "point_cm": [
+          55456.1848,
+          -25807.6914,
+          0.0
+        ],
+        "mesh": "/Engine/BasicShapes/Cube.Cube"
+      }
+    },
+    {
+      "street": "Rue de la Visitation",
+      "along_from_old_edge_cm": 1200,
+      "surface": {
+        "actor": "Plateau context Asphalt_XP005_YM003",
+        "distance_cm": 9994.0,
+        "point_cm": [
+          56367.8861,
+          -26423.1595,
+          6.0
+        ],
+        "mesh": "/Game/Plateau/Context/SM_Asphalt_XP005_YM003.SM_Asphalt_XP005_YM003"
+      },
+      "expected_surface_z_cm": 6.0,
+      "supporting_floor": {
+        "actor": "Plateau east extension collision floor",
+        "distance_cm": 0.09999847412109375,
+        "point_cm": [
+          56367.8859,
+          -26423.1602,
+          0.0
+        ],
+        "mesh": "/Engine/BasicShapes/Cube.Cube"
+      }
+    },
+    {
+      "outer_boundary": "District edge",
+      "actor": "District edge",
+      "distance_cm": 464.9999694824219,
+      "point_cm": [
+        75338.3029,
+        -28558.3242,
+        100.0
+      ],
+      "mesh": "/Engine/BasicShapes/Cube.Cube"
+    },
+    {
+      "outer_boundary": "Plateau east extension south boundary",
+      "actor": "Plateau east extension south boundary",
+      "distance_cm": 464.9999694824219,
+      "point_cm": [
+        65355.8029,
+        -46719.4,
+        200.0
+      ],
+      "mesh": "/Engine/BasicShapes/Cube.Cube"
+    },
+    {
+      "outer_boundary": "Plateau east extension north boundary",
+      "actor": "Plateau east extension north boundary",
+      "distance_cm": 464.9999694824219,
+      "point_cm": [
+        65355.8029,
+        68983.4,
+        200.0
+      ],
+      "mesh": "/Engine/BasicShapes/Cube.Cube"
+    },
+    {
+      "outer_boundary": "Plateau east extension east boundary cap",
+      "actor": "Plateau east extension east boundary cap",
+      "distance_cm": 464.9999694824219,
+      "point_cm": [
+        75338.3029,
+        11132.0,
+        300.0
+      ],
+      "mesh": "/Engine/BasicShapes/Cube.Cube"
+    }
+  ],
+  "native_car_crossing": {
+    "start_cm": [
+      54285.2083,
+      -14301.2211,
+      106.5
+    ],
+    "end_cm": [
+      56207.3831,
+      -15571.3611,
+      106.5
+    ],
+    "distance_cm": 2303.912175700178,
+    "outward_progress_from_old_edge_cm": 903.9121757001778,
+    "speed_cm_per_s": 2327.10888671875
+  },
+  "foot_brake_speed_cm_per_s": 88.01321411132812,
+  "native_exit_cm": [
+    57042.7325,
+    -15871.6402,
+    98.15
+  ],
+  "native_containment": {
+    "walking": {
+      "start_cm": [
+        74832.0604,
+        -28198.3844,
+        98.15
+      ],
+      "end_cm": [
+        75296.287,
+        -28855.686,
+        98.15
+      ],
+      "max_x_cm": 75296.28701004758,
+      "max_z_cm": 98.1500078075851,
+      "airborne_observed": false,
+      "wall_inner_x_cm": 75338.30293126713,
+      "capsule_radius_cm": 42,
+      "window_game_seconds": 2.5042472183704376
+    },
+    "forward_and_jump": {
+      "start_cm": [
+        75077.7708,
+        -28371.6304,
+        98.15
+      ],
+      "end_cm": [
+        75296.3009,
+        -29199.1954,
+        98.15
+      ],
+      "max_x_cm": 75296.30085350637,
+      "max_z_cm": 281.9215198911057,
+      "airborne_observed": true,
+      "airborne_wall_contact_observed": true,
+      "first_airborne_wall_contact_cm": [
+        75278.2408,
+        -28504.9479,
+        278.2354
+      ],
+      "first_airborne_wall_contact_actor": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3027",
+      "wall_inner_x_cm": 75338.30293126713,
+      "capsule_radius_cm": 42,
+      "window_game_seconds": 2.5074727814644575
+    }
+  },
+  "jump_input": {
+    "jump_z_velocity": 600,
+    "jump_max_hold_time": 0.0,
+    "launch_cm": [
+      75077.7708,
+      -28371.6304,
+      98.15
+    ],
+    "native_launch_speed_cm_per_s": 450.00000000032384,
+    "scope": "Native running Jump press once; StopJumping deferred to window end while forward stays held. Native zero max-hold time remains unchanged; not physical keyboard delivery."
+  },
+  "controls_released_before_endplay": true,
+  "pie_worlds_stopped": true,
+  "save_inventory_after": {},
+  "all_save_hashes_unchanged": true,
+  "play_settings_restored": true,
+  "restored_play_net_mode": 0,
+  "elapsed_seconds": 20.26
+}

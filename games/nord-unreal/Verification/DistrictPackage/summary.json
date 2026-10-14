@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "scope": "Both maps: six packaged processes, all eight per-selection bodies/clips/graphs, joins/vehicle controls and14native720p startup stills with actual Epic3/100 readback",
+  "runner": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+  "native_peers": 6,
+  "districts": [
+    "montreal",
+    "toronto"
+  ],
+  "all_eight_per_selection_body_clip_graph_checks": true,
+  "original_cook_parent_settings_guard_failed": true,
+  "separate_exact_settings_recovery": true,
+  "failures_retained": [
+    "RejectedStarter.json",
+    "RejectedCrossProcessNames.json",
+    "RejectedTemporalBodyInventory.json",
+    "RejectedRenderedFrameZeroQuality.json"
+  ],
+  "limits": [
+    "No continuous fluidity/FPS, physical-device input or production save persistence acceptance",
+    "Startup stills are not fixed-pose same-time art comparisons; graph/camera actions and QA markers are visible"
+  ],
+  "rendered_startup_passed": true,
+  "native_startup_stills": 14,
+  "rendered_window_restored": true,
+  "independent_image_review_pending": false,
+  "independent_image_review": "style_review independently viewed all14 actual PNGs: scoped startup/readability pass; no final district/default-body/fluidity acceptance"
+}

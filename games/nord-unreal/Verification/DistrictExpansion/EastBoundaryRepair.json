@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "repair": "Preserve original 200cm east wall; add 200cm upper cap and raise only new north/south strips to400cm",
+  "map_before_sha256": "1e137d9c18137949f926f235f8e2d41c3d248ed36e34af2c7e02cfc7fd4c183e",
+  "map_after_sha256": "1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40",
+  "changed_new_actors": [
+    "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3025",
+    "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3026"
+  ],
+  "added_actor_paths": [
+    "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3027"
+  ],
+  "all_other_actor_states_preserved": true,
+  "all_other_content_preserved": true,
+  "readback": {
+    "passed": true,
+    "original_actor_semantics_preserved_except_declared_changes": true,
+    "original_boundary_actors_retained": 4,
+    "moved_original_east_actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_17",
+    "hidden_old_closure_actors": 10,
+    "new_actor_count": 54,
+    "new_collision_cubes": 4,
+    "road_segments": 143,
+    "closure_sites": 10,
+    "traversal_jump_containment_rendered_acceptance": false
+  }
+}

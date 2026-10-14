@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/refine_high_detail_collar.py", line 272, in <module>
+    if __name__ == '__main__': main()
+                               ~~~~^^
+  File "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/refine_high_detail_collar.py", line 268, in main
+    if args.action == 'study': study(args.no_render)
+                               ~~~~~^^^^^^^^^^^^^^^^
+  File "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/refine_high_detail_collar.py", line 210, in study
+    body, _ = load_body(); mask = make_mask(body)
+                                  ~~~~~~~~~^^^^^^
+  File "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/refine_high_detail_collar.py", line 122, in make_mask
+    centroid = sum(corners, Vector()) / 3
+               ~~~^^^^^^^^^^^^^^^^^^^
+AttributeError: Vector addition: vectors must have the same dimensions for this operation
+FBX version: 7400
+
+Error: script failed, file: 'Scripts/refine_high_detail_collar.py', exiting.
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

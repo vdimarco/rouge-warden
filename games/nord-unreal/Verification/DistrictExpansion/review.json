@@ -1,0 +1,686 @@
+{
+  "version": 2,
+  "reviewer": "independent style_review agent",
+  "reviewed_utc": "2026-10-14",
+  "verdict": "accept glyph handedness repair and readable landmark blockout checkpoint; final district art not accepted",
+  "native_capture_passed": true,
+  "native_art_accepted": false,
+  "hud_pixels_reviewed": true,
+  "images_viewed": 24,
+  "continuous_playback_viewed": false,
+  "window": {
+    "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T154354Z/window-status.json",
+    "sha256": "856b08be6c5a366f858616ebe9651b377f45e83b23f4d65d35f73ecdadc1b188",
+    "passed": true,
+    "restored": true,
+    "protected_content_changed": [],
+    "frozen_source_changed": [],
+    "source_settings_restored": true,
+    "global_settings_restored": true
+  },
+  "reports": [
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/capture.json",
+      "sha256": "3d71f1acd56a801d8b250f59f57c0b15a5f1c4918e210cd2453e39338642232e",
+      "resolution": [
+        1280,
+        720
+      ],
+      "capture_source_sha256": {
+        "Scripts/capture_college_bathurst.py": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+        "Data/CollegeBathurst/layout.json": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+        "Data/CollegeBathurst/SneakyDees/facade.json": "2f054cb949fc0f63da185a99e75ecc290fcba15b3c6b44511d467366b2bb49b3",
+        "Content/Maps/CollegeBathurst.umap": "4ba71d0a2a30976904b624c21804595706f772ac9dfb6bc3062e78250b18bfd1"
+      },
+      "quality": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "sg.ShadingQuality": 3,
+        "sg.LandscapeQuality": 3,
+        "r.ScreenPercentage": 100.0
+      },
+      "viewport_calibration": {
+        "passed": true,
+        "display_pixels": [
+          2048,
+          1280
+        ],
+        "target_viewport_pixels": [
+          1280,
+          720
+        ],
+        "method": "Editor.ResizeMainFrame then one measured chrome compensation",
+        "attempts": [
+          {
+            "requested_root_pixels": [
+              1280,
+              720
+            ],
+            "observed_viewport_pixels": [
+              1280,
+              720
+            ]
+          }
+        ],
+        "native_viewport_cursor_probes": [
+          {
+            "viewport_pixels": [
+              0,
+              0
+            ],
+            "desktop_pixels": [
+              34.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              1279,
+              0
+            ],
+            "desktop_pixels": [
+              1313.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              0,
+              719
+            ],
+            "desktop_pixels": [
+              34.0,
+              805.0
+            ]
+          }
+        ],
+        "cursor_restored_viewport_pixels": [
+          990,
+          554
+        ],
+        "desktop_rectangle": [
+          34.0,
+          86.0,
+          1280,
+          720
+        ]
+      },
+      "process_exit_code": 0
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/capture.json",
+      "sha256": "42fc229281961e43f3bbcbf29ee5ec178810e89956684f3605930a2b52ebeacd",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "capture_source_sha256": {
+        "Scripts/capture_college_bathurst.py": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+        "Data/CollegeBathurst/layout.json": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+        "Data/CollegeBathurst/SneakyDees/facade.json": "2f054cb949fc0f63da185a99e75ecc290fcba15b3c6b44511d467366b2bb49b3",
+        "Content/Maps/CollegeBathurst.umap": "4ba71d0a2a30976904b624c21804595706f772ac9dfb6bc3062e78250b18bfd1"
+      },
+      "quality": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "sg.ShadingQuality": 3,
+        "sg.LandscapeQuality": 3,
+        "r.ScreenPercentage": 100.0
+      },
+      "viewport_calibration": {
+        "passed": true,
+        "display_pixels": [
+          2048,
+          1280
+        ],
+        "target_viewport_pixels": [
+          1920,
+          1080
+        ],
+        "method": "Editor.ResizeMainFrame then one measured chrome compensation",
+        "attempts": [
+          {
+            "requested_root_pixels": [
+              1920,
+              1080
+            ],
+            "observed_viewport_pixels": [
+              1920,
+              1080
+            ]
+          }
+        ],
+        "native_viewport_cursor_probes": [
+          {
+            "viewport_pixels": [
+              0,
+              0
+            ],
+            "desktop_pixels": [
+              34.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              1919,
+              0
+            ],
+            "desktop_pixels": [
+              1953.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              0,
+              1079
+            ],
+            "desktop_pixels": [
+              34.0,
+              1165.0
+            ]
+          }
+        ],
+        "cursor_restored_viewport_pixels": [
+          990,
+          554
+        ],
+        "desktop_rectangle": [
+          34.0,
+          86.0,
+          1920,
+          1080
+        ]
+      },
+      "process_exit_code": 0
+    }
+  ],
+  "images": [
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/CornerStandard.png",
+      "sha256": "8ba5cfb6669fb3b9d18e339ac7420c26f0f7507e6c0285ffb8f05a8339a7c70a",
+      "bytes": 1595513,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "CornerStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/CornerStandard.png",
+      "matched_rejected_sha256": "709b98555e0c4dececcd20b1c05f562285cd5e69abafbe4396d2a70df963683f",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/CornerComic.png",
+      "sha256": "6fc8e8f3aa4faa77dc8da9bad92548f5c8a11912d1526af8ab03c733b88788f9",
+      "bytes": 1631527,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "CornerComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/CornerComic.png",
+      "matched_rejected_sha256": "c1de344e096938b649068ca5a50f465064bb09d7cd9ddf5b8b1f3e5d6ce23b4b",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/CollegeStandard.png",
+      "sha256": "33461c00dbc778d9545b9818159ccb00e98b8d542af409fd9c99e41ad54b5cc0",
+      "bytes": 1598677,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "CollegeStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/CollegeStandard.png",
+      "matched_rejected_sha256": "ebe651ec34d730db4c01a47e1c6e927008c0689dce0e0ae58148b75726c23b1c",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/CollegeComic.png",
+      "sha256": "f449a26ba4f54a61dbc5adb449e3fc63a97a35d9aac1a962fb80ddf6256494bb",
+      "bytes": 1636747,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "CollegeComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/CollegeComic.png",
+      "matched_rejected_sha256": "c574c72d5e1a3e85dcab4b1d3253c5a0208c6830aff4448566bc5aafe8a7d8a4",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/EuclidStandard.png",
+      "sha256": "63295a97e2cb8111e9b8e974b53f52632451a30a5d84d9ffe5e33e3430040b18",
+      "bytes": 1467919,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "EuclidStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/EuclidStandard.png",
+      "matched_rejected_sha256": "ca8b47729b8a14cbc924d60d469689f5365747203dcc33182ab849003ee5775f",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/EuclidComic.png",
+      "sha256": "159967a6a9b353974e492a50660974c1e4f4180b881ca40bc11f5789ab18edf2",
+      "bytes": 1544510,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "EuclidComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/EuclidComic.png",
+      "matched_rejected_sha256": "aec1e25e02a8da762d7db599787a39ab021e3687ef8c31f051899616b834df2b",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/GraceStandard.png",
+      "sha256": "4f6df61f908c3bacd9d95ae431900b15d73a2da5d93ab2742effb07e98c00879",
+      "bytes": 1506737,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "GraceStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/GraceStandard.png",
+      "matched_rejected_sha256": "c571402ef483b9c96ce9d3c894428f230e60f2060114d1403da390a7c0b13dee",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/GraceComic.png",
+      "sha256": "0feecff5167665b0e1b8d6556d366ce08d7da8d24cc2e00939f435f9aa903a89",
+      "bytes": 1597871,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "GraceComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/GraceComic.png",
+      "matched_rejected_sha256": "c51f10791eae62c17c60c26e3e22a912621ef91b70fbeb24de6f38b4ce59d553",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/NorthwestStandard.png",
+      "sha256": "bd3285af1b971e3a9753dbe6124d2646798a9164529a3ec758b0a9a90ba93f24",
+      "bytes": 1314133,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "NorthwestStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/NorthwestStandard.png",
+      "matched_rejected_sha256": "a4cf2f53ded63f38a474ccdf99d005a61d546f1402988313b9177a51dc46ecf1",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/NorthwestComic.png",
+      "sha256": "b072f8651e03dba7acec2a8933b7b75e26466a7c1808eb3328d3fa7be2491120",
+      "bytes": 1362871,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "NorthwestComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/NorthwestComic.png",
+      "matched_rejected_sha256": "7125c5af1e93d7d46e4cef7403ecd41e6d3f3a6c09111b479081c97918098c37",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/BathurstStandard.png",
+      "sha256": "cdeac0de328051fc133788e8500cadf8c7582dacf667b8e9eeaed79ab1f7ad0c",
+      "bytes": 1401897,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "BathurstStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/BathurstStandard.png",
+      "matched_rejected_sha256": "8b0ba23f5c841a7823d70b3304cd953e64ce9b8ce2228b50bcb1cad6387242e2",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T154409621399Z/BathurstComic.png",
+      "sha256": "113fb17636991d2b6b51b6b447a7be1f18de6c16844b908d1f511b478e260114",
+      "bytes": 1433816,
+      "resolution": [
+        1280,
+        720
+      ],
+      "label": "BathurstComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1280-20261014T153105685407Z/BathurstComic.png",
+      "matched_rejected_sha256": "0a171c8a228416be7f630c36cdec49cdfb82997869b5670378af388059171320",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CornerStandard.png",
+      "sha256": "b3bcc0627f4587f5fee93bf8279ab8db57df20fa13d93aeef8d3f129fe91e7fe",
+      "bytes": 3601895,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "CornerStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/CornerStandard.png",
+      "matched_rejected_sha256": "900bfe025c3248740ba2dfc997a76f1cfad36bc9707ad59f397475a1b3c18641",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CornerComic.png",
+      "sha256": "7db5576e7df54740ee2d1bfd9c098d72211b0abbd8e2161e03872eafc9c4cc2e",
+      "bytes": 3700266,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "CornerComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/CornerComic.png",
+      "matched_rejected_sha256": "444a5fb02c921e7794ae7fcfb0138c2c13543397834a4f97f23af36664e179ee",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CollegeStandard.png",
+      "sha256": "b5a1ef6004c1e18a7b75455eb2033ff7aebdd6e6921bb8d427cd1bd26bfaa655",
+      "bytes": 3670991,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "CollegeStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/CollegeStandard.png",
+      "matched_rejected_sha256": "c980075920deab56a1eacbd342df4c1e82a9f26d0c4a9e9ebd3d5df552d5a474",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CollegeComic.png",
+      "sha256": "8f37f2eaabc59d0dfac512e3b141adbf6a76e59d84c3067de5c5620d3366d11c",
+      "bytes": 3768181,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "CollegeComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/CollegeComic.png",
+      "matched_rejected_sha256": "e24f86e925a4814ab80e304ccfbdccc91cfa43883a43702420ecd50c51a4d01b",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/EuclidStandard.png",
+      "sha256": "9b83b7b7928314e3fe3bb7fd388fc12339b2c281eaabc8e2c7d042093a4773bb",
+      "bytes": 3292732,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "EuclidStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/EuclidStandard.png",
+      "matched_rejected_sha256": "f3a53726aee85a1ea02ff07c699b6e23dc2551f36919ab283b69fa236c5f0e69",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/EuclidComic.png",
+      "sha256": "395433990cae9a5b40708f21014bd3912e7b9a3fcf1fad74b0b4ce9f4f0419a8",
+      "bytes": 3481195,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "EuclidComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/EuclidComic.png",
+      "matched_rejected_sha256": "1bcfb53088f0bbea4a01850b1a6bbe5b9420d0244ce0db844802ff78fd77e045",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/GraceStandard.png",
+      "sha256": "108c3c6a23c89ee10dc459f9a90f0d53f332d6812c74d498b6273679f3856596",
+      "bytes": 3397807,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "GraceStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/GraceStandard.png",
+      "matched_rejected_sha256": "defeed75b7a8c4b2e3e9e1b3614370a2dc410bb2d7aa7787328269a2da53ee24",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/GraceComic.png",
+      "sha256": "52cdf8d70b5a4a835cac5f1bc413ecc5ae0fcb5e279d9ea20efae61a98180d84",
+      "bytes": 3619097,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "GraceComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/GraceComic.png",
+      "matched_rejected_sha256": "19c73ae85fdaa4c9fb2fbbedc0f7e50ecff4cdd6a5b0de2e3eb05db03425aed7",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/NorthwestStandard.png",
+      "sha256": "4b954a1c16c9bed996fae39388f582e82e018c8d01f472d45f27e893884975bf",
+      "bytes": 2885552,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "NorthwestStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/NorthwestStandard.png",
+      "matched_rejected_sha256": "be008256e78416f068aaf0796dbc53ca758a638b68345cfc7449fccefa4d8599",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/NorthwestComic.png",
+      "sha256": "f09370f0dcbef4e11cce9715d6ccafc839461e74a2fab18d6ed4c1d60f20d2ed",
+      "bytes": 2987151,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "NorthwestComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/NorthwestComic.png",
+      "matched_rejected_sha256": "e4b49a16c7370dff20605b7dadc244f8cf2dc393efee5bd58075f2d12342354f",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/BathurstStandard.png",
+      "sha256": "5045e1e71cd7c00b97e701eebd65ca3a76ae20b10710dc0d59ff1c6d774345b7",
+      "bytes": 3103132,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "BathurstStandard",
+      "comic_weight": 0.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/BathurstStandard.png",
+      "matched_rejected_sha256": "1a8e2f0f2b86ecfd22196689b8b81ca373fe4619ed8fcd21d774776cd4dd5103",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    },
+    {
+      "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/BathurstComic.png",
+      "sha256": "cf0f0c0ef73b5a0d70a5185f320bc62516629e55b3b7d34177761dd2a9afc377",
+      "bytes": 3191442,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "label": "BathurstComic",
+      "comic_weight": 1.0,
+      "viewed": true,
+      "matched_rejected_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T153141911813Z/BathurstComic.png",
+      "matched_rejected_sha256": "23ba22f151670dec1da93dabb4a00ac8f2e80e5ff4d691137e3174b7dc6e84ae",
+      "hud_pixel_review": "readable; unclipped complete native canvas"
+    }
+  ],
+  "findings": [
+    {
+      "severity": "major",
+      "id": "sidewalk_strip_seams",
+      "views": [
+        "CornerStandard",
+        "CornerComic",
+        "EuclidStandard",
+        "EuclidComic",
+        "GraceStandard",
+        "GraceComic",
+        "NorthwestStandard",
+        "NorthwestComic"
+      ],
+      "resolutions": [
+        "1280x720",
+        "1920x1080"
+      ],
+      "observation": "Black triangular slivers, dark strip ends and angular pavement transitions interrupt the sidewalk. Standard shows them already; Comic makes edge lines stronger. Source creates independent 230cm Path rectangles at z5cm with Road z6cm and continuous Ground z0cm, plus a full hidden collision slab. This supports an overlay/strip-edge and shadow problem, not evidence of a hole through the ground. Coplanar Path intersections can also overlap. No temporal flicker conclusion from stills.",
+      "action": "Bounded Toronto Path cast-shadow=false comparison only. Keep geometry/material/collision fixed and reject if visible strip geometry remains bad."
+    },
+    {
+      "severity": "limitation",
+      "id": "unfinished_corridor",
+      "views": [
+        "CollegeStandard",
+        "CollegeComic",
+        "EuclidStandard",
+        "EuclidComic",
+        "GraceStandard",
+        "GraceComic"
+      ],
+      "observation": "Long, empty streets with generic flat window cards and repeated brick/stone shells. No visible street poles, traffic signal fixtures, crossings or corner nameplates in these six views. Grace exposes an abrupt open distant horizon. Retained-shell district massing is visible; finished College Street art fidelity is not established.",
+      "action": "Keep this as a playable blockout checkpoint. First bounded original street detail should be source-positioned street-name/pole/corner cues, after pavement review; platforms/cycle-track rebuild remains separate."
+    },
+    {
+      "severity": "limitation",
+      "id": "comic_trim_clutter",
+      "views": [
+        "NorthwestComic",
+        "BathurstComic",
+        "CornerComic"
+      ],
+      "observation": "Comic ink/halftone produces conspicuous black dot chains and broken thick lines on thin window dividers, cladding courses and parapet edges. More pixels do not remove the pattern at1080. Standard retains cleaner modular surfaces. No continuous playback was viewed, so temporal stability is untested.",
+      "action": "Retain as known refinement need. Do not call this final graphic-novel environmental quality."
+    },
+    {
+      "severity": "limitation",
+      "id": "corner_crop",
+      "views": [
+        "CornerStandard",
+        "CornerComic"
+      ],
+      "observation": "Close Corner camera crops the fascia top and upper storey in both resolutions. Northwest and Bathurst expose the complete two-storey silhouette and coloured bays.",
+      "action": "Use Northwest for establishment and Bathurst for long-face/type comparison; Corner is a ground-door/cladding detail only."
+    }
+  ],
+  "positive_observations": [
+    "Two-storey venue with stone lower floor, white upper cladding, dark frames, bright coloured bays and wrap fascia is clearly visible in Northwest/Bathurst; geographic corner/massing is consistent with the retained source footprint.",
+    "Native Toronto/free-roam objective, controls, minimap and OSM/City attribution are readable without clipping or Slate editor chrome in all24 images. Native report observes actual QuebecHUD and F2 weight0/1.",
+    "All six camera positions are reproducible source fixtures, with identical camera settings in Standard/Comic; native player idle pose varies between shots and therefore body shading is not a pose-matched comparison.",
+    "Grounding and prop are present in all stills; no whole-mesh disappearance, magenta fallback or obvious unloaded-texture checkerboard is seen.",
+    "Glyph handedness repair removes the initial mirrored-sign blocker without visible change to facade bounds, colours, bay rhythm or HUD."
+  ],
+  "source_comparison": {
+    "venue": "https://www.sneakydees.com/",
+    "existing_site": "https://www.toronto.ca/legdocs/mmis/2026/te/bgrd/backgroundfile-286881.pdf",
+    "reviewed_local_notes": "Data/CollegeBathurst/SneakyDees/README.md",
+    "facts": "431 College, southeast College/Bathurst corner, existing two-storey block. White/stone/brick/coloured-window treatment is illustrative; original sign text is not copied venue art. Shared-block lidar height, bay spacing, doors, colours and sign dimensions remain estimates.",
+    "new_external_lookup": false
+  },
+  "limits": [
+    "Single-player immersive native stills, not two-peer rendered acceptance.",
+    "Camera and authority placements are fixtures, not a naturally navigated corridor or physical-input test.",
+    "No continuous motion, FPS, audio, packaged-build or final character-art acceptance.",
+    "Source SaveGames inventory is empty before/after; window separately preserves live demo save hashes.",
+    "No photographic survey equivalence or final street-furniture/cycle-track/platform fidelity."
+  ],
+  "correction_study": "Saved/Tests/DistrictRuntime/SignHandednessCPU-20261014T153622Z/proof.json",
+  "glyph_repair_accepted": true,
+  "rejected_history": {
+    "json": "Verification/DistrictExpansion/RejectedMirroredReview.json",
+    "sha256": "3d518ecbf917a8b877a39d86fe6300286a7f24dad7c1815f92f4e507a6b197e8",
+    "markdown": "Verification/DistrictExpansion/RejectedMirroredReview.md"
+  },
+  "resolved_findings": [
+    {
+      "id": "mirrored_venue_letters",
+      "decision": "specific glyph reading-basis correction accepted",
+      "observation": "All three fascia signs now read SNEAKY DEE’S from left to right, including asymmetric E/S forms, in both modes and both resolutions. Bathurst is clearly legible at720; Northwest front lettering readable, long-side signs foreshortened. No reversed or missing letter surfaces are visible. The unchanged Corner camera still crops the sign top and upper storey.",
+      "geometry_limits": "Only glyph positions changed; retained same normals/fascia/footprint/materials. Fresh native saved readback validates90 College and180 Bathurst outward sign triangles."
+    }
+  ],
+  "sign_fresh_readback": {
+    "path": "Saved/Tests/DistrictRuntime/SneakyDeesSignFresh.json",
+    "sha256": "64ff0dadf8720605c0977b621ef4e1ecb1bfd0d58eccbbb6bec33dbf507730c6",
+    "passed": true,
+    "front_normals": [
+      {
+        "street": "College",
+        "outward_sign_triangles": 90,
+        "minimum_normal_dot": 0.9999999759699987
+      },
+      {
+        "street": "Bathurst",
+        "outward_sign_triangles": 180,
+        "minimum_normal_dot": 0.9999999878027258
+      }
+    ]
+  },
+  "path_shadow_comparison": "Verification/DistrictExpansion/PathShadowReview.json"
+}

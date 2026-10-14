@@ -1,0 +1,17 @@
+/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/refine_high_detail_collar.py:174: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world = bpy.data.worlds.new('CPU_CollarStudyWorld'); scene.world.use_nodes = True
+/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/refine_high_detail_collar.py:144: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes = True
+00:06.710  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v2-high-detail/CPU-original-front.png'
+00:12.075  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v2-high-detail/CPU-original-three-quarter.png'
+00:17.345  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v2-high-detail/CPU-refined-front.png'
+00:22.693  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v2-high-detail/CPU-refined-three-quarter.png'
+/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/refine_high_detail_collar.py:192: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  debug = bpy.data.materials.new('CPU_Only_GarmentSelection'); debug.use_nodes = True
+00:27.926  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v2-high-detail/CPU-selection-front.png'
+00:33.239  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v2-high-detail/CPU-selection-three-quarter.png'
+FBX version: 7400
+NORD_HIGH_DETAIL_COLLAR_STUDY 88d3180bc539bf86298710077f7d1f0de7cadd00553f0e5a403f83c00f51614b 26
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit
