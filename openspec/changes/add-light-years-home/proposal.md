@@ -1,5 +1,7 @@
 # Light Years Home
 
+> Superseded by `light-years-v3`, which replaces this game at `/light-years-home/`; this change stays unarchived for its history.
+
 ## Why
 
 The user asked: "can we turn this into a game? traveling at the speed of light. on some kind of quest."
