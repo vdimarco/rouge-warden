@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-14T17:11:13.095371+00:00",
+  "files": {
+    "CookParentSettingsRejected.json": "bfc9c80a26b0cbdbd883742c96b5ba217eaa6ba36f0dee12d5f6827a538d7469",
+    "CookPreservationRecovery.json": "209c2dda03ea1ecddf6802f7b3596cb1541d579b360f469e2f75c2bd1226f027",
+    "Headless.json": "21c980f8485ed7a31a05d3d7774ded514fdead5b3c1afbbcc84bb65e96f44643",
+    "HeadlessProcess.json": "b34762b4800d10f5cc9d92f7c7b9b109bb87d2b7c5c1944a07ccb5fd5b9f882e",
+    "RejectedStarter.json": "58fcfdaad19e5057493222c03821e644f8132a49bab38684e96ae2644d0c76c1",
+    "RejectedCrossProcessNames.json": "90f5d6c4368376bfb7268a562868d1aede9cce29dce159341ea44a191c9dbb91",
+    "RejectedTemporalBodyInventory.json": "68bf970e78349911eb448152e8726b8627735e1037553ca88d61c8b656ead036",
+    "RejectedRenderedFrameZeroQuality.json": "921d1928a7cebd932b4d3b3539025b014464cdc7779a60023c191a85681ce386",
+    "summary.json": "e52370fe6130a1f2dfb287c30f4f5c3a9b0368cb838514a6e362a3b655930e2a",
+    "README.md": "a864270e782a0697d034fd6302c4d7fc75703773a0d0baf1c51e3323427d7bbe"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "initial_parent_settings_guard_passed": false,
+  "native_cook_exit_code": 0,
+  "native_build_preserved_content_and_saves": true,
+  "seven_settings_exactly_restored_after_guard_failure": true,
+  "current_only_difference_was_live_demo_recent_project_timestamp": true,
+  "scope": "Read-only recovery of successfully built isolated archive; original failed guard result retained. Later native verification ran and restored its own settings before this recovery.",
+  "ini_sha256": [
+    {
+      "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini",
+      "saved_sha256": "7985cd32d2acae5b7eff6c308bbd3dd3f3fb828c1e67c29398bfd7efa94ea579",
+      "observed_before_sha256": "7985cd32d2acae5b7eff6c308bbd3dd3f3fb828c1e67c29398bfd7efa94ea579",
+      "restored_sha256": "7985cd32d2acae5b7eff6c308bbd3dd3f3fb828c1e67c29398bfd7efa94ea579"
+    },
+    {
+      "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/Editor.ini",
+      "saved_sha256": "75089a65f4b4bd0a2bebac44635c605287ff3abe740540832fac55c11dc9bb98",
+      "observed_before_sha256": "75089a65f4b4bd0a2bebac44635c605287ff3abe740540832fac55c11dc9bb98",
+      "restored_sha256": "75089a65f4b4bd0a2bebac44635c605287ff3abe740540832fac55c11dc9bb98"
+    },
+    {
+      "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini",
+      "saved_sha256": "afe77cf6d85536e6b54189243ef8c45a760aee97e11b5a85b1228ee5b86f7919",
+      "observed_before_sha256": "afe77cf6d85536e6b54189243ef8c45a760aee97e11b5a85b1228ee5b86f7919",
+      "restored_sha256": "afe77cf6d85536e6b54189243ef8c45a760aee97e11b5a85b1228ee5b86f7919"
+    },
+    {
+      "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/EditorSettings.ini",
+      "saved_sha256": "d38f60c0361dbc84067f6104c223afaed64f26ffee82c3894cc67ff210dff2f5",
+      "observed_before_sha256": "da1d52290f22a2df30d5322c49e6550538449b67a18e9e6a700320958b7c0a36",
+      "restored_sha256": "d38f60c0361dbc84067f6104c223afaed64f26ffee82c3894cc67ff210dff2f5"
+    },
+    {
+      "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/Game.ini",
+      "saved_sha256": "8f2bc2e9867af13c10e1a08d3de8f0ed486c3870801a44886a4ec98400e48eb8",
+      "observed_before_sha256": "8f2bc2e9867af13c10e1a08d3de8f0ed486c3870801a44886a4ec98400e48eb8",
+      "restored_sha256": "8f2bc2e9867af13c10e1a08d3de8f0ed486c3870801a44886a4ec98400e48eb8"
+    },
+    {
+      "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/GameUserSettings.ini",
+      "saved_sha256": "8a1d3712713839cd6d2c7dc0679ce593f179288999835ba1d198fe9fa8990f1f",
+      "observed_before_sha256": "8a1d3712713839cd6d2c7dc0679ce593f179288999835ba1d198fe9fa8990f1f",
+      "restored_sha256": "8a1d3712713839cd6d2c7dc0679ce593f179288999835ba1d198fe9fa8990f1f"
+    },
+    {
+      "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/Manifest.ini",
+      "saved_sha256": "e706d6c7c899d8d28e83512d7f29946334086c4a6eaf56f790bf0010e7df1e9c",
+      "observed_before_sha256": "e706d6c7c899d8d28e83512d7f29946334086c4a6eaf56f790bf0010e7df1e9c",
+      "restored_sha256": "e706d6c7c899d8d28e83512d7f29946334086c4a6eaf56f790bf0010e7df1e9c"
+    }
+  ],
+  "runner": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+  "utc": "2026-10-14T16:06:41.277130+00:00"
+}

@@ -1,0 +1,340 @@
+{
+  "version": 1,
+  "reviewer": "independent style_review agent",
+  "decision": "retain rendered east-strip blockout checkpoint; reject finished environmental art acceptance",
+  "final_environment_art_accepted": false,
+  "continuous_playback_viewed": false,
+  "images_viewed": 6,
+  "report": {
+    "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/capture.json",
+    "sha256": "fe88d653cff56e679868c9a560376c25d429baa46b4dd87da55411ae7f2e8e88",
+    "passed": true,
+    "resolution": [
+      1920,
+      1080
+    ],
+    "source_sha256": {
+      "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261014T161229778669Z/capture.py": "0e1559209ab846be950e6107db58dc662294a468d8fc0fa7ff6a1323b6470390",
+      "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+      "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+      "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+      "Data/Plateau/EdgesGeometry/edges.json": "9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35",
+      "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+      "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+      "Scripts/capture_college_bathurst.py": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+      "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+      "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+      "Source/Quebec/QuebecCampaign.cpp": "920249a296d281dbf50b73e0a187449de6b72dc29822228ccff12df1cf327b38",
+      "Source/Quebec/QuebecGameplay.cpp": "eb48922e852eb14e6992770ad50826de59389c6324dbe7693c2e7ea7f3bb4b87",
+      "Content/Maps/LaFontaine.umap": "1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40"
+    },
+    "quality": {
+      "sg.ViewDistanceQuality": 3,
+      "sg.AntiAliasingQuality": 3,
+      "sg.ShadowQuality": 3,
+      "sg.GlobalIlluminationQuality": 3,
+      "sg.ReflectionQuality": 3,
+      "sg.PostProcessQuality": 3,
+      "sg.TextureQuality": 3,
+      "sg.EffectsQuality": 3,
+      "sg.FoliageQuality": 3,
+      "sg.ShadingQuality": 3,
+      "sg.LandscapeQuality": 3,
+      "r.ScreenPercentage": 100.0
+    },
+    "viewport_calibration": {
+      "passed": true,
+      "display_pixels": [
+        2048,
+        1280
+      ],
+      "target_viewport_pixels": [
+        1920,
+        1080
+      ],
+      "method": "Editor.ResizeMainFrame then one measured chrome compensation",
+      "attempts": [
+        {
+          "requested_root_pixels": [
+            1920,
+            1080
+          ],
+          "observed_viewport_pixels": [
+            1920,
+            1080
+          ]
+        }
+      ],
+      "native_viewport_cursor_probes": [
+        {
+          "viewport_pixels": [
+            0,
+            0
+          ],
+          "desktop_pixels": [
+            34.0,
+            86.0
+          ]
+        },
+        {
+          "viewport_pixels": [
+            1919,
+            0
+          ],
+          "desktop_pixels": [
+            1953.0,
+            86.0
+          ]
+        },
+        {
+          "viewport_pixels": [
+            0,
+            1079
+          ],
+          "desktop_pixels": [
+            34.0,
+            1165.0
+          ]
+        }
+      ],
+      "cursor_restored_viewport_pixels": [
+        990,
+        554
+      ],
+      "desktop_rectangle": [
+        34.0,
+        86.0,
+        1920,
+        1080
+      ]
+    }
+  },
+  "window": {
+    "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T161229Z/window-status.json",
+    "sha256": "04d3256ffe4807d25577849a9d90dd8cdfc51920fb1b076b43146e8d2f9d38a5",
+    "passed": true,
+    "restored": true,
+    "native_exit_codes": [
+      0
+    ],
+    "all_content_changed": [],
+    "frozen_source_changed": []
+  },
+  "images": [
+    {
+      "label": "PanetStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/PanetStandard.png",
+      "sha256": "f8c901f0671e2b231d079f25c4fdef4e6b38aa450baf44b384468bbf32f206f5",
+      "bytes": 3062072,
+      "fixture": {
+        "name": "Panet",
+        "point_cm": [
+          71674.55083309732,
+          -26098.562974604924
+        ],
+        "target_cm": [
+          75373.30293126713,
+          -28558.323949252477
+        ],
+        "source": "way/490998043",
+        "node_ids": [
+          "1497705451",
+          "10815396967"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.62488171113105,
+        "context_footprint_sample_clearance_cm": 8146.085232153709
+      },
+      "comic_weight": 0.0,
+      "independently_viewed": true
+    },
+    {
+      "label": "PanetComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/PanetComic.png",
+      "sha256": "8bcf0da862402d51d0eedd43da3a37142aef0f099d29859c4442f7e37909ed56",
+      "bytes": 3104931,
+      "fixture": {
+        "name": "Panet",
+        "point_cm": [
+          71674.55083309732,
+          -26098.562974604924
+        ],
+        "target_cm": [
+          75373.30293126713,
+          -28558.323949252477
+        ],
+        "source": "way/490998043",
+        "node_ids": [
+          "1497705451",
+          "10815396967"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.62488171113105,
+        "context_footprint_sample_clearance_cm": 8146.085232153709
+      },
+      "comic_weight": 1.0,
+      "independently_viewed": true
+    },
+    {
+      "label": "VisitationStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/VisitationStandard.png",
+      "sha256": "51b30220f9cc0a462cab5d055779bf5901b76c85db74d62ae6804544326ada7e",
+      "bytes": 3784673,
+      "fixture": {
+        "name": "Visitation",
+        "point_cm": [
+          60420.852460401,
+          -29134.670399994902
+        ],
+        "target_cm": [
+          63072.53175570845,
+          -30900.20560002219
+        ],
+        "source": "way/19938440",
+        "node_ids": [
+          "11547437024",
+          "2075285157"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.65638180733419,
+        "context_footprint_sample_clearance_cm": 620.8597428037924
+      },
+      "comic_weight": 0.0,
+      "independently_viewed": true
+    },
+    {
+      "label": "VisitationComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/VisitationComic.png",
+      "sha256": "a6fb7e07b9b593a74e1d8fbc56c76a132e3ebd0f04bec358b49616b9e375f43c",
+      "bytes": 3975636,
+      "fixture": {
+        "name": "Visitation",
+        "point_cm": [
+          60420.852460401,
+          -29134.670399994902
+        ],
+        "target_cm": [
+          63072.53175570845,
+          -30900.20560002219
+        ],
+        "source": "way/19938440",
+        "node_ids": [
+          "11547437024",
+          "2075285157"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.65638180733419,
+        "context_footprint_sample_clearance_cm": 620.8597428037924
+      },
+      "comic_weight": 1.0,
+      "independently_viewed": true
+    },
+    {
+      "label": "FormerEdgeStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/FormerEdgeStandard.png",
+      "sha256": "b4ccbad1f9f3a09529f91388f08be0a70e8704b7aab82c27c99bc11411ac9587",
+      "bytes": 3831899,
+      "fixture": {
+        "name": "FormerEdge",
+        "point_cm": [
+          54888.20160134625,
+          -14873.465199956201
+        ],
+        "target_cm": [
+          58710.539102254894,
+          -17399.19993901318
+        ],
+        "source": "way/490998043",
+        "former_exit_cm": [
+          55373.30293126712,
+          -15194.011797595113
+        ],
+        "derivation": "original Panet source node looking through former boundary",
+        "pitch": -12,
+        "yaw": -33.45604059137042,
+        "context_footprint_sample_clearance_cm": 882.9774136286053
+      },
+      "comic_weight": 0.0,
+      "independently_viewed": true
+    },
+    {
+      "label": "FormerEdgeComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/FormerEdgeComic.png",
+      "sha256": "663c33757ac0f48e387264bfa4a8f5eddc4b5930108c2daaa5c8296ddc398e53",
+      "bytes": 4007373,
+      "fixture": {
+        "name": "FormerEdge",
+        "point_cm": [
+          54888.20160134625,
+          -14873.465199956201
+        ],
+        "target_cm": [
+          58710.539102254894,
+          -17399.19993901318
+        ],
+        "source": "way/490998043",
+        "former_exit_cm": [
+          55373.30293126712,
+          -15194.011797595113
+        ],
+        "derivation": "original Panet source node looking through former boundary",
+        "pitch": -12,
+        "yaw": -33.45604059137042,
+        "context_footprint_sample_clearance_cm": 882.9774136286053
+      },
+      "comic_weight": 1.0,
+      "independently_viewed": true
+    }
+  ],
+  "findings": [
+    {
+      "views": [
+        "PanetStandard",
+        "PanetComic"
+      ],
+      "observation": "Almost entirely empty tan planar ground around a narrow asphalt strip, with an abrupt blue horizon and small distant orange/white barricade. Road and barricade render, but the view does not read as a finished Montreal street.",
+      "severity": "major art limitation"
+    },
+    {
+      "views": [
+        "VisitationStandard",
+        "VisitationComic"
+      ],
+      "observation": "Blank brick block faces define the road, without visible ground-floor doors/window detail or street furniture on the shown faces. The road terminates into empty tan ground and blue horizon.",
+      "severity": "major art limitation"
+    },
+    {
+      "views": [
+        "FormerEdgeStandard",
+        "FormerEdgeComic"
+      ],
+      "observation": "Road visibly continues through the former boundary corridor between generic brick/window shells, with a distant barricade. Angular overlapping pavement/crossing joins and absence of curb/furniture detailing remain. Pixels alone do not establish collision traversal.",
+      "severity": "blockout checkpoint with limitations"
+    },
+    {
+      "views": "all6",
+      "observation": "Native Montreal HUD, controls, minimap and OSM/City attribution are readable/unclipped; player/prop/ground shadow remain visible without editor chrome. Campaign objective remains active hundreds of metres away. Dialogue banner is transient and absent in later shots, preventing a static UI pixel comparison.",
+      "severity": "positive with fixture limitation"
+    },
+    {
+      "views": "allComic",
+      "observation": "Ink contours and violet shadow hue are visible. The filter does not add missing architectural content; this is blockout appearance, not completed graphic-novel environment quality.",
+      "severity": "art limitation"
+    }
+  ],
+  "limits": [
+    "Single-player source-derived authority camera stills; no physical-input or naturally navigated trip acceptance.",
+    "No720 east comparison, continuous motion/FPS/audio or packaged appearance/performance review.",
+    "Original default character remains distinct from the private high-detail colour candidate.",
+    "Toronto location/landmark acceptance does not transfer to this Montreal strip.",
+    "Native traversal/boundary receipts are separate from this six-image appearance review."
+  ]
+}

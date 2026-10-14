@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "reviewer": "independent style_review agent",
+  "decision": "no blocking issue found in bounded Toronto boundary checks",
+  "source_sha256": {
+    "Scripts/verify_college_bathurst.py": "cd796fed987686825e1284aae20651909ce129ca691b9c05b2ead81db4f5626e",
+    "Scripts/test_college_runtime.py": "06c590b54044f2643e8576648e71116437da2baf4058913377ea650a87b5600d",
+    "Scripts/test_verify_college_bathurst.py": "c98d182d05c622d5b4160d25505070d1fc0cee14fd52b54a422440fb9bd6e79a",
+    "Scripts/create_college_bathurst.py": "80911df3adb208d4c91e5b1d4507872f82d4d066fc65519e63d7005c2ed8bcb9"
+  },
+  "cpu_check": {
+    "command": "/home/von/.cache/nord-geo-venv/bin/python Scripts/test_verify_college_bathurst.py",
+    "exit_code": 0,
+    "result": "COLLEGE_BOUNDARY_CPU_OK"
+  },
+  "native_existing_evidence": {
+    "receipts": [
+      {
+        "path": "Saved/Tests/DistrictRuntime/CurrentMapToronto-20261014T160505Z/result.json",
+        "sha256": "a79331728a79135d193971d6132b2c02eceaf23b750336eacbdb8cfa4ff23f4c"
+      },
+      {
+        "path": "Saved/Tests/DistrictRuntime/CurrentMapToronto-20261014T160505Z/Native.json",
+        "sha256": "649ad65fc64e643248599534b94bdb286bf7ab17067abd3ffcf48d318f812036"
+      },
+      {
+        "path": "Saved/Tests/DistrictRuntime/RuntimeToronto-Boundary35/result.json",
+        "sha256": "3f86a490fa9624bc4625c1281bf327f4bd2ab7483fba024e64c107ef5ddf5d8c"
+      },
+      {
+        "path": "Saved/Tests/DistrictRuntime/RuntimeHeadless-20261014T160528439168Z.json",
+        "sha256": "1761ab15eb981beba7da59bed061b4ba4d3f9a3ca54f68ff3c41497f6e1f6026"
+      }
+    ],
+    "fresh_geometry_checks": 20,
+    "runtime_checks": 35,
+    "process_exit_codes": [
+      0,
+      0
+    ],
+    "new_engine_jobs_by_reviewer": 0,
+    "source_current_in_receipts": true,
+    "readback_content_unchanged": true,
+    "runtime_content_unchanged": true,
+    "settings_restored": true,
+    "saves_preserved": true,
+    "boundary_fixture": {
+      "street": "Bathurst Street",
+      "source_road_index": 134,
+      "source_endpoint_cm": [
+        -9875.515,
+        33770.035
+      ],
+      "side": "north",
+      "normal": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "wall": "/Game/Maps/UEDPIE_0_CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_16",
+      "wall_height_cm": 300.0,
+      "start_cm": [
+        -9875.515,
+        33120.035,
+        106.0
+      ],
+      "lateral_offset_cm": 0.0,
+      "clear_native_runup_cm": 500,
+      "scope": "Authority host relocated to a grounded surveyed boundary approach. Native run/jump follow with real collision; remote player stays at the original district spawn."
+    },
+    "native_boundary_jump": {
+      "launch_cm": [
+        -9875.515,
+        33421.2109,
+        97.15
+      ],
+      "end_cm": [
+        -9875.515,
+        33693.03,
+        97.15
+      ],
+      "max_outward_from_inner_cm": -42.00502842039714,
+      "max_z_cm": 280.79506293743606,
+      "airborne": true,
+      "airborne_wall_contact": true,
+      "first_airborne_wall_contact_cm": [
+        -9875.515,
+        33676.2151,
+        279.3998
+      ],
+      "capsule_radius_cm": 42,
+      "window_game_seconds": 2.5000407388433814,
+      "jump_z_velocity": 600,
+      "jump_max_hold_time": 0.0
+    }
+  },
+  "reasoning": [
+    "Creator two loops author four70cm-thick walls centred at150cm with height300cm. boundary_specs derives identical extents from source layout bounds.",
+    "Readback requires exactly four walls, one match per source side, exact engine Cube, origin/extent/scale/rotation, enabled BlockAll QueryAndPhysics, and retained hidden-actor/visible-component state.",
+    "The outward ray ignores every actor except the chosen cube; exact hit actor, inner face and inward normal prevent a nearby building from masquerading as a district boundary.",
+    "Runtime candidates derive only broad>=900cm surveyed road endpoints on source bounds. Ground/swept clear approach arranged by authority; subsequent run/jump use native callbacks with real collision.",
+    "Run-up window requires300\u2013350cm from wall centre and speed>=400cm/s, then JumpZ600/hold0. Continued input and samples require<=5cm capsule-plane tolerance, actual airborne height/contact against the exact chosen wall.",
+    "CPU negative cases reject missing/duplicate/moved/scaled/rotated/disabled/wrong mesh/profile/visibility walls, wrong native actor/face/normal, missed launch window, insufficient speed, escape, absent airborne/contact and low jump."
+  ],
+  "limits": [
+    "Runtime running jump covers one source-derived boundary with the authority host; no all-edge or remote jump-replication acceptance.",
+    "CPU source tests and native receipts do not establish physical keyboard/touch delivery, external network behavior, render/FPS or handling enjoyment.",
+    "The full naturally navigated College/Bathurst-to-Grace route and save-file read interception remain outside this suite.",
+    "No final Toronto art acceptance.",
+    "The original32-check AST-preservation claim is supplied by the parent/owner; this independent review evaluates the new boundary logic and current35 registrations, not a separate old-source AST reconstruction."
+  ]
+}

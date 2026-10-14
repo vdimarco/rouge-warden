@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "command": [
+    "/usr/bin/python3",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/verify_district_package.py",
+    "--runner",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+    "--output",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/Package-20261014T164535Z",
+    "--district",
+    "both"
+  ],
+  "started_utc": "2026-10-14T16:45:35.881843+00:00",
+  "exit_code": 0,
+  "native_passed": true,
+  "native_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/Package-20261014T164535Z/report.json",
+  "all_content_unchanged": true,
+  "settings_restored": true,
+  "protected_saves_unchanged": true
+}
