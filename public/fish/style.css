@@ -193,8 +193,8 @@ body:not([data-place="loon"]) #titleIntro { display: none !important; }
 #titleIntro.is-playing .still { display: none !important; }
 #titleIntro .still-landscape { display: none; }
 #titleIntro .controls {
-  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 2; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
-  pointer-events: none;
+  position: absolute; top: 8px; right: 8px; z-index: 2; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px;
+  max-width: calc(100% - 16px); pointer-events: none;
 }
 #titleIntro .controls button {
   pointer-events: auto; min-width: 44px; min-height: 44px; padding: 8px 14px; border-radius: 999px;

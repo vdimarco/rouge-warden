@@ -13,10 +13,13 @@
   var reduce = matchMedia("(prefers-reduced-motion: reduce)");
   var landscape = matchMedia("(orientation: landscape)");
   var MENUS = { settings: 1, help: 1, journal: 1, places: 1, about: 1, privacy: 1 };
-  var dismissed = false, sawTitle = false, optedIn = false, soundOn = false, starting = false, playGen = 0;
+  var dismissed = false, sawTitle = false, optedIn = false, soundOn = false, starting = false, playGen = 0, wasAsking = false;
 
+  function askingStill() {
+    return reduce.matches || document.documentElement.dataset.calm === "1";
+  }
   function holdStill() {
-    return !optedIn && (reduce.matches || document.documentElement.dataset.calm === "1");
+    return !optedIn && askingStill();
   }
   function clipSrc() {
     return landscape.matches ? "clips/title-landscape.mp4" : "clips/title-portrait.mp4";
@@ -58,9 +61,18 @@
     if (!video.paused) video.pause();
     root.classList.remove("is-playing");
   }
+  // Put the decoded film down. The source tags would load it again, so their addresses go too.
+  function dropClip() {
+    stop();
+    var sources = video.querySelectorAll("source");
+    for (var i = 0; i < sources.length; i++) sources[i].removeAttribute("src");
+    video.removeAttribute("src");
+    video.removeAttribute("data-clip");
+    video.load();
+  }
   function dismiss() {
     dismissed = true;
-    stop();
+    dropClip();
     root.hidden = true;
   }
   function startPlay() {
@@ -83,6 +95,9 @@
     });
   }
   function sync() {
+    var asking = askingStill();
+    if (asking && !wasAsking) optedIn = false;
+    wasAsking = asking;
     var screen = document.body.dataset.screen || "";
     if (screen === "title") sawTitle = true;
     else if (sawTitle && !MENUS[screen]) dismissed = true;
@@ -112,7 +127,9 @@
   sound.addEventListener("click", function () {
     soundOn = !soundOn;
     paintSound();
-    if (soundOn) { optedIn = true; startPlay(); }
+    if (!soundOn || root.hidden) return;
+    if (holdStill() || video.paused || video.ended) optedIn = true;
+    startPlay();
   });
   video.addEventListener("ended", dismiss);
   video.addEventListener("playing", function () {
