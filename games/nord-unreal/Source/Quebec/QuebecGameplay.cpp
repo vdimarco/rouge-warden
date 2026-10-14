@@ -19,7 +19,7 @@
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
-#include "Engine/ScopedMovementUpdate.h"
+#include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
@@ -587,8 +587,19 @@ AQuebecCar::AQuebecCar()
     SetNetUpdateFrequency(30.f);
     Collision = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision"));
     Collision->SetBoxExtent(FVector(220., 108., 100.));
-    Collision->SetCollisionProfileName(TEXT("Pawn"));
-    RootComponent = Collision;
+    Collision->SetCollisionProfileName(TEXT("NoCollision"));
+    Hull = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VehicleHull"));
+    Hull->SetCollisionProfileName(TEXT("Pawn"));
+    Hull->SetVisibility(false);
+    RootComponent = Hull;
+    Collision->SetupAttachment(Hull);
+    for (int32 Profile = 0; Profile < 3; ++Profile)
+    {
+        const FString Path = FString::Printf(TEXT("/Game/ParkComic/SM_CarCollision%d.SM_CarCollision%d"),Profile,Profile);
+        ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(*Path);
+        CollisionMeshes.Add(Mesh.Object);
+    }
+    Hull->SetStaticMesh(CollisionMeshes[0]);
 
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
@@ -653,8 +664,22 @@ void AQuebecCar::BeginPlay()
     Super::BeginPlay();
     SetActorTickInterval(bTraffic ? .05f : .1f);
     SetNetCullDistanceSquared(FMath::Square(24000.f));
+    // Saved levels can serialize the former box root; migrate only this car's attachments.
+    const FTransform Transform = GetActorTransform();
+    Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    if (RootComponent != Hull)
+    {
+        Hull->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+        SetRootComponent(Hull);
+        SetActorTransform(Transform);
+        TArray<USceneComponent*> Children = Collision->GetAttachChildren();
+        for (USceneComponent* Child : Children)
+            if (Child != Hull) Child->AttachToComponent(Hull,FAttachmentTransformRules::KeepRelativeTransform);
+        Collision->AttachToComponent(Hull,FAttachmentTransformRules::KeepRelativeTransform);
+    }
+    Collision->SetRelativeTransform(FTransform::Identity);
     GetComponents(Parts);
-    Parts.RemoveAll([](const UStaticMeshComponent* Part) { return Part->IsEditorOnly(); });
+    Parts.RemoveAll([this](const UStaticMeshComponent* Part) { return Part == Hull || Part->IsEditorOnly(); });
     for (UStaticMeshComponent* Part : Parts)
     {
         Part->SetCullDistance(20000.f);
@@ -741,6 +766,7 @@ void AQuebecCar::ResetMotion()
     if (!HasAuthority()) return;
     StopInput();
     Speed = LateralSpeed = VerticalSpeed = SteeringState = WheelSteering = VisualSteering = 0.f;
+    bGrounded = false;
     LastDriveInputTime = GetWorld()->GetTimeSeconds();
     ForceNetUpdate();
 }
@@ -748,6 +774,9 @@ void AQuebecCar::ResetMotion()
 void AQuebecCar::ApplyPaint()
 {
     const int32 Profile = FMath::Clamp(BodyProfile,0,2);
+    Hull->SetStaticMesh(CollisionMeshes[Profile]);
+    Hull->SetCollisionProfileName(TEXT("Pawn"));
+    Hull->SetVisibility(false);
     const FString BodyPath = FString::Printf(TEXT("/Game/ParkComic/SM_Car70Body%d.SM_Car70Body%d"),Profile,Profile);
     if (UStaticMesh* BodyMesh = LoadObject<UStaticMesh>(nullptr,*BodyPath))
     {
@@ -911,8 +940,10 @@ void AQuebecCar::UpdateTraffic()
     {
         for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
             if (*It != this && It->bTraffic && It->bJunctionReserved &&
+                !(It->bJunctionEntered && FVector::DistSquared2D(It->GetActorLocation(),It->TrafficJunction)>FMath::Square(1100.f)) &&
                 FVector::DistSquared2D(Junction,It->TrafficJunction) < FMath::Square(1600.f))
             { bWaitForJunction = true; break; }
+
         if (!bWaitForJunction)
         {
             TrafficJunction = Junction;
@@ -963,7 +994,7 @@ void AQuebecCar::UpdateTraffic()
     {
         if (!GetWorld()->SweepSingleByChannel(Ahead, GetActorLocation(),
             GetActorLocation() + GetActorForwardVector() * (450.f + FMath::Abs(Speed) * .8f), GetActorQuat(), ECC_Pawn,
-            FCollisionShape::MakeBox(FVector(220.,108.,70.)), Query)) break;
+            FCollisionShape::MakeBox(FVector(235.,110.,80.)), Query)) break;
         const AQuebecCar* Other = Cast<AQuebecCar>(Ahead.GetActor());
         // Give crossing traffic a stable priority; following cars always yield.
         // The actual movement sweep still blocks every car, including priority traffic.
@@ -1078,7 +1109,7 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         else Speed = FMath::FInterpConstantTo(Speed,0.f,Step,170.f+FMath::Square(Speed)*.000035f);
         Speed = FMath::Clamp(Speed,-950.f,3000.f);
     }
-    const FVector Momentum = GetActorForwardVector()*Speed+GetActorRightVector()*LateralSpeed;
+    const FVector Momentum = GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed;
     if (FMath::Abs(Speed)>15.f)
     {
         float Turn = Steering*140.f*FMath::Clamp(Speed/300.f,-1.f,1.f)*Step;
@@ -1090,14 +1121,12 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
             Turn = FMath::Clamp(YawRate,-110.f,110.f)*Step;
         }
         const FQuat Rotation = (GetActorRotation()+FRotator(0.,Turn,0.)).Quaternion();
-        FCollisionQueryParams Query(SCENE_QUERY_STAT(CarSteering),false,this);
-        if (!GetWorld()->OverlapBlockingTestByChannel(GetActorLocation(),Rotation,ECC_Pawn,
-            FCollisionShape::MakeBox(Collision->GetScaledBoxExtent()-FVector(1.)),Query)) SetActorRotation(Rotation);
+        if (CanFitAt(GetActorLocation(),Rotation)) SetActorRotation(Rotation);
     }
     if (!bTraffic)
     {
-        Speed = FVector::DotProduct(Momentum,GetActorForwardVector());
-        LateralSpeed = FVector::DotProduct(Momentum,GetActorRightVector());
+        Speed = FVector::DotProduct(Momentum,GetActorForwardVector().GetSafeNormal2D());
+        LateralSpeed = FVector::DotProduct(Momentum,GetActorRightVector().GetSafeNormal2D());
         const bool bCounterSteering = Steering*LateralSpeed>50.f;
         const float Grip = bHandbrake && !bFailsafe ? 1.15f : (bCounterSteering ? 11.f : 8.f);
         LateralSpeed = FMath::FInterpTo(LateralSpeed,0.f,Step,Grip);
@@ -1106,42 +1135,99 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
             LateralSpeed = FMath::FInterpConstantTo(LateralSpeed,0.f,Step,3600.f);
         if (FMath::Abs(Speed)<1.f && FMath::Abs(Throttle)<.01f) Speed=0.f;
     }
-    MoveWithCollision(Step,(GetActorForwardVector()*Speed+GetActorRightVector()*LateralSpeed)*Step);
+    MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
+}
+
+bool AQuebecCar::CanFitAt(const FVector& Point, const FQuat& Rotation, const AActor* Ignore) const
+{
+    TArray<FOverlapResult> Hits;
+    FComponentQueryParams Query(SCENE_QUERY_STAT(CarHullFit),this);
+    if (Ignore) Query.AddIgnoredActor(Ignore);
+    if (Occupant) Query.AddIgnoredActor(Occupant);
+    Hull->ComponentOverlapMulti(Hits,GetWorld(),Point,Rotation,ECC_Pawn,Query);
+    for (const FOverlapResult& Hit : Hits) if (Hit.bBlockingHit) return false;
+    return true;
+}
+
+bool AQuebecCar::WheelSupport(const FVector& Point, FRotator& Rotation, double& Height, bool& bTooHigh) const
+{
+    bTooHigh = false;
+    double Ground[4];
+    const FQuat Yaw = FRotator(0.,Rotation.Yaw,0.).Quaternion();
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(CarWheelGround),true,this);
+    for (int32 I = 0; I < 4; ++I)
+    {
+        const FVector Foot = Point+Yaw.RotateVector(FVector(I < 2 ? 155. : -155.,I%2 ? 95. : -95.,-100.));
+        FHitResult Hit;
+        if (!GetWorld()->LineTraceSingleByObjectType(Hit,Foot+FVector(0.,0.,80.),Foot-FVector(0.,0.,250.),
+            FCollisionObjectQueryParams(ECC_WorldStatic),Query) || Hit.ImpactNormal.Z < .65f) return false;
+        Ground[I] = Hit.ImpactPoint.Z;
+        if (Ground[I]-Foot.Z>22.) { bTooHigh = true; return false; }
+    }
+    Rotation.Pitch = FMath::RadiansToDegrees(FMath::Atan2((Ground[0]+Ground[1]-Ground[2]-Ground[3])*.5,310.));
+    Rotation.Roll = -FMath::RadiansToDegrees(FMath::Atan2((Ground[1]+Ground[3]-Ground[0]-Ground[2])*.5,190.));
+    if (FMath::Abs(Rotation.Pitch)>15. || FMath::Abs(Rotation.Roll)>15.) return false;
+    Height = -DBL_MAX;
+    for (int32 I = 0; I < 4; ++I)
+        Height = FMath::Max(Height,Ground[I]-Rotation.RotateVector(FVector(I < 2 ? 155. : -155.,I%2 ? 95. : -95.,-100.)).Z);
+    return true;
 }
 
 void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
 {
-    // shortcut: the car uses an arcade box sweep, upgrade to Chaos Vehicles for suspension and tire physics.
+    // shortcut: wheel-supported arcade motion; use Chaos Vehicles for jumps and tire-force simulation.
+    if (Travel.IsNearlyZero() && bGrounded && GroundedTransform.Equals(GetActorTransform(),.01)) return;
+    const FVector Before = GetActorLocation();
     FHitResult Hit;
-    AddActorWorldOffset(Travel, true, &Hit);
-    bool bSteppedUp = false;
-    if (Hit.IsValidBlockingHit() && FMath::IsNearlyZero(VerticalSpeed) && !Travel.IsNearlyZero())
+    AddActorWorldOffset(Travel,true,&Hit);
+    if (Hit.bBlockingHit)
     {
-        constexpr float CurbHeight = 30.f;
-        const double StartZ = GetActorLocation().Z;
-        FScopedMovementUpdate CurbMove(Collision);
-        FHitResult CurbHit;
-        AddActorWorldOffset(FVector(0., 0., CurbHeight), true, &CurbHit);
-        if (!CurbHit.bBlockingHit)
-        {
-            AddActorWorldOffset(Travel * (1.f - Hit.Time), true, &CurbHit);
-            if (!CurbHit.bBlockingHit)
-            {
-                AddActorWorldOffset(FVector(0., 0., -CurbHeight - 2.f), true, &CurbHit);
-                bSteppedUp = CurbHit.IsValidBlockingHit() && CurbHit.ImpactNormal.Z >= .7f &&
-                    GetActorLocation().Z - StartZ <= CurbHeight;
-            }
-        }
-        if (!bSteppedUp) CurbMove.RevertMove();
+        const FVector Normal = Hit.Normal.GetSafeNormal2D();
+        FVector Velocity = GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed;
+        Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity,Normal));
+        Speed = FVector::DotProduct(Velocity,GetActorForwardVector().GetSafeNormal2D());
+        LateralSpeed = FVector::DotProduct(Velocity,GetActorRightVector().GetSafeNormal2D());
+        AddActorWorldOffset(FVector::VectorPlaneProject(Travel*(1.-Hit.Time),Normal),true);
     }
-    if (Hit.bBlockingHit && !bSteppedUp) { Speed *= .1f; LateralSpeed *= .1f; }
-    VerticalSpeed -= 980.f * Step;
-    AddActorWorldOffset(FVector(0., 0., VerticalSpeed * Step), true, &Hit);
+    FRotator SupportRotation = GetActorRotation();
+    double SupportZ;
+    bool bTooHigh;
+    bGrounded = WheelSupport(GetActorLocation(),SupportRotation,SupportZ,bTooHigh) && SupportZ <= Before.Z+22.;
+    if (bTooHigh)
+    {
+        SetActorLocation(Before);
+        Speed = LateralSpeed = 0.f;
+        bGrounded = WheelSupport(Before,SupportRotation,SupportZ,bTooHigh);
+    }
+    if (bGrounded && SupportZ >= GetActorLocation().Z-4.)
+    {
+        FVector Supported = GetActorLocation(); Supported.Z = SupportZ+.5;
+        if (CanFitAt(Supported,SupportRotation.Quaternion()))
+        {
+            SetActorLocationAndRotation(Supported,SupportRotation,false,nullptr,ETeleportType::TeleportPhysics);
+            VerticalSpeed = 0.f;
+            GroundedTransform = GetActorTransform();
+            return;
+        }
+        bGrounded = false;
+    }
+    VerticalSpeed -= 980.f*Step;
+    FVector Falling = GetActorLocation(); Falling.Z += VerticalSpeed*Step;
+    if (bGrounded && Falling.Z <= SupportZ+.5)
+    {
+        Falling.Z = SupportZ+.5;
+        SetActorRotation(SupportRotation);
+        VerticalSpeed = 0.f;
+    }
+    else bGrounded = false;
+    SetActorLocation(Falling,true,&Hit);
     if (Hit.bBlockingHit) VerticalSpeed = 0.f;
+    if (bGrounded) GroundedTransform = GetActorTransform();
     if (GetActorLocation().Z < -1500.)
     {
         SetActorLocation(LaFontaine::CarSpawn);
         Speed = LateralSpeed = VerticalSpeed = 0.f;
+        bGrounded = false;
     }
 }
 
@@ -2041,6 +2127,20 @@ void AQuebecGameMode::BeginPlay()
     // Any map can have a sky. QA runs keep the authored afternoon unless they ask for a time or weather.
     if (AQuebecSky::ShouldSpawn()) GetWorld()->SpawnActor<AQuebecSky>();
     if (!GetWorld()->GetMapName().Contains(TEXT("LaFontaine"))) return;
+    TArray<AActor*> RoadSurfaces;
+    for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
+    {
+        UStaticMeshComponent* Surface = It->GetStaticMeshComponent();
+        const UStaticMesh* Mesh = Surface->GetStaticMesh();
+        if (Mesh && (Mesh->GetName() == TEXT("SM_Road") || Mesh->GetName().StartsWith(TEXT("SM_Asphalt"))))
+        {
+            RoadSurfaces.Add(*It);
+            Surface->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+            Surface->SetCollisionObjectType(ECC_WorldStatic);
+            Surface->SetCollisionResponseToAllChannels(ECR_Ignore);
+            Surface->SetCollisionResponseToChannel(ECC_Visibility,ECR_Block);
+        }
+    }
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
     {
         GetWorld()->SpawnActor<AQuebecCampaign>();
@@ -2050,6 +2150,8 @@ void AQuebecGameMode::BeginPlay()
                 It->SetActorHiddenInGame(true);
     }
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
+    static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingDirections));
+    static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingSides));
 
     // Runtime population stays bounded and uses the surveyed streets and existing park paths.
     constexpr int32 ParkedGoal = 32, TrafficGoal = 16, ParkCrowdGoal = 64, StreetCrowdGoal = 32;
@@ -2077,36 +2179,100 @@ void AQuebecGameMode::BeginPlay()
     FRandomStream Random(7493);
     for (int32 I = DistrictRoads.Num()-1; I > 0; --I) DistrictRoads.Swap(I,Random.RandRange(0,I));
 
-    const auto Ground = [this](FVector& Point)
+    const auto Ground = [this,&RoadSurfaces](FVector& Point, bool bRoadSurface = false)
     {
         FHitResult Hit;
-        FCollisionQueryParams Query(SCENE_QUERY_STAT(PopulationFloor),false);
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(PopulationFloor),bRoadSurface);
+        if (!bRoadSurface) Query.AddIgnoredActors(RoadSurfaces);
         if (!GetWorld()->LineTraceSingleByChannel(Hit,Point+FVector(0.,0.,500.),Point-FVector(0.,0.,1000.),ECC_Visibility,Query) ||
             !Hit.IsValidBlockingHit() || Hit.ImpactNormal.Z < .7f || Hit.ImpactPoint.Z > 50.f || Hit.ImpactPoint.Z < -200.f) return false;
+        if (bRoadSurface)
+        {
+            const UStaticMeshComponent* Surface = Cast<UStaticMeshComponent>(Hit.GetComponent());
+            const UStaticMesh* Mesh = Surface ? Surface->GetStaticMesh() : nullptr;
+            if (!Mesh || (Mesh->GetName()!=TEXT("SM_Road") && !Mesh->GetName().StartsWith(TEXT("SM_Asphalt")))) return false;
+        }
         Point.Z = Hit.ImpactPoint.Z;
         return true;
     };
-    // Keep the saved geographic anchor while giving the first driver a clear
-    // lane: a centered starter otherwise blocks both opposing traffic lanes.
+    const auto CurbParking = [this,&Ground](const FVector& Center, const FVector& Direction, const FVector& Right, float Side, float Width, FVector& Point, FVector& ParkingDirection)
+    {
+        double Edges[3];
+        int32 Index = 0;
+        double Nearest = DBL_MAX, Farthest = 0.;
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(ParkingCurb),true);
+        for (float Along : {-235.f,0.f,235.f})
+        {
+            double Edge = 0.;
+            for (double Lateral = Width*.5-100.; Lateral <= Width*.5+1000.; Lateral += 20.)
+            {
+                FVector Sample = Center+Direction*Along+Right*(Side*Lateral);
+                Sample.Z = 0.;
+                FHitResult Hit;
+                if (!GetWorld()->LineTraceSingleByChannel(Hit,Sample+FVector(0.,0.,45.),Sample-FVector(0.,0.,30.),ECC_Visibility,Query)) continue;
+                const UStaticMeshComponent* Component = Cast<UStaticMeshComponent>(Hit.GetComponent());
+                const UStaticMesh* Mesh = Component ? Component->GetStaticMesh() : nullptr;
+                if (Mesh && Mesh->GetName().StartsWith(TEXT("SM_Concrete_Collision")) && Hit.ImpactPoint.Z>=17. && Hit.ImpactPoint.Z<=25.)
+                { Edge = Lateral; break; }
+            }
+            if (Edge == 0.) return false;
+            Edges[Index++] = Edge;
+            Nearest = FMath::Min(Nearest,Edge);
+            Farthest = FMath::Max(Farthest,Edge);
+        }
+        if (Farthest-Nearest>100. || Nearest<540. || FMath::Abs(Edges[1]-(Edges[0]+Edges[2])*.5)>20.) return false;
+        ParkingDirection = (Direction*470.+Right*(Side*(Edges[2]-Edges[0]))).GetSafeNormal2D();
+        const FVector CurbRight = FVector::CrossProduct(FVector::UpVector,ParkingDirection);
+        // Leave 30 cm for the body, including the 20 cm curb sampling tolerance.
+        Point = Center+Right*(Side*Edges[1])-CurbRight*(Side*140.);
+        const double InnerEdge = FMath::Abs(FVector::DotProduct(Point-Center,Right))-
+            FMath::Abs(FVector::DotProduct(ParkingDirection,Right))*235.-FMath::Abs(FVector::DotProduct(ParkingDirection,Direction))*110.;
+        if (InnerEdge<280.) return false;
+        return Ground(Point,true) && Point.Z<=12.f;
+    };
+    // Preserve the starter's block and heading, using its actual raised curb.
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
         if (FVector::DistSquared2D(It->GetActorLocation(),LaFontaine::CarSpawn) < FMath::Square(300.f))
         {
             AQuebecCar* Starter = *It;
-            FVector Point = LaFontaine::CarSpawn+Starter->GetActorRightVector()*145.f;
-            if (Ground(Point))
+            Starter->Tags.AddUnique(TEXT("StarterCar"));
+            int32 Nearest = INDEX_NONE;
+            double Distance = DBL_MAX;
+            for (int32 Road : NearRoads)
             {
-                Point.Z += 102.f;
-                FCollisionQueryParams Query(SCENE_QUERY_STAT(StarterDrivingLane),false,Starter);
-                FHitResult Hit;
-                if (!GetWorld()->SweepSingleByChannel(Hit,Starter->GetActorLocation(),Point,Starter->GetActorQuat(),ECC_Pawn,
-                    FCollisionShape::MakeBox(FVector(225.,113.,98.)),Query))
-                {
-                    Starter->SetActorLocation(Point,false,nullptr,ETeleportType::TeleportPhysics);
-                    Starter->ForceNetUpdate();
-                    UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION starter_right_lane_offset_cm=145"));
-                }
-                else UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION starter driving lane is obstructed"));
+                const FVector Point = FMath::ClosestPointOnSegment(LaFontaine::CarSpawn,LaFontaine::RoadSegments[Road][0],LaFontaine::RoadSegments[Road][1]);
+                const double Candidate = FVector::DistSquared2D(Point,LaFontaine::CarSpawn);
+                if (Candidate<Distance) { Nearest=Road; Distance=Candidate; }
             }
+            bool bParked = false;
+            if (Nearest != INDEX_NONE)
+            {
+                const FVector Direction = (LaFontaine::RoadSegments[Nearest][1]-LaFontaine::RoadSegments[Nearest][0]).GetSafeNormal2D();
+                const FVector Right = FVector::CrossProduct(FVector::UpVector,Direction);
+                const float Preferred = FVector::DotProduct(MansionSpawn-LaFontaine::CarSpawn,Right)>=0. ? 1.f : -1.f;
+                for (float Offset : {0.f,600.f,-600.f,1200.f,-1200.f})
+                {
+                    const FVector Center = LaFontaine::CarSpawn+Direction*Offset;
+                    const double Along = FVector::DotProduct(Center-LaFontaine::RoadSegments[Nearest][0],Direction);
+                    if (Along<1470. || Along>FVector::Dist2D(LaFontaine::RoadSegments[Nearest][0],LaFontaine::RoadSegments[Nearest][1])-1470.) continue;
+                    for (float Side : {Preferred,-Preferred})
+                    {
+                        if (!(LaFontaine::RoadParkingSides[Nearest] & (Side<0.f ? 1 : 2))) continue;
+                        FVector Point, CurbDirection;
+                        if (!CurbParking(Center,Direction,Right,Side,LaFontaine::RoadSegmentWidths[Nearest],Point,CurbDirection)) continue;
+                        Point.Z += 102.f;
+                        const FQuat Facing = (CurbDirection*(LaFontaine::RoadParkingDirections[Nearest] ? LaFontaine::RoadParkingDirections[Nearest] : Side)).Rotation().Quaternion();
+                        if (!Starter->CanFitAt(Point,Facing)) continue;
+                        Starter->SetActorLocationAndRotation(Point,Facing,false,nullptr,ETeleportType::TeleportPhysics);
+                        Starter->ForceNetUpdate();
+                        bParked = true;
+                        UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION starter_curb_offset_cm=%.0f"),FVector::Dist2D(Point,LaFontaine::CarSpawn));
+                        break;
+                    }
+                    if (bParked) break;
+                }
+            }
+            if (!bParked) UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION no valid starter curb space"));
             break;
         }
     if (FParse::Param(FCommandLine::Get(),TEXT("NordNoAmbient"))) return;
@@ -2119,10 +2285,10 @@ void AQuebecGameMode::BeginPlay()
         AQuebecCar* Car = *It;
         const FVector Original = Car->GetActorLocation();
         if (Car->Occupant || Car->GetController() || Car->ActorHasTag(TEXT("CampaignLoan")) ||
-            FVector::DistSquared2D(Original,LaFontaine::CarSpawn) < FMath::Square(300.f)) continue;
+            Car->ActorHasTag(TEXT("StarterCar"))) continue;
         TArray<int32> ParkingRoads;
         for (int32 I : NearRoads)
-            if (LaFontaine::RoadSegmentWidths[I] >= 1200.f) ParkingRoads.Add(I);
+            if (LaFontaine::RoadSegmentWidths[I] >= 600.f && FVector::Dist2D(LaFontaine::RoadSegments[I][0],LaFontaine::RoadSegments[I][1])>=2940.f) ParkingRoads.Add(I);
         ParkingRoads.Sort([Original](int32 A, int32 B)
         {
             const FVector PointA = FMath::ClosestPointOnSegment(Original,LaFontaine::RoadSegments[A][0],LaFontaine::RoadSegments[A][1]);
@@ -2135,18 +2301,22 @@ void AQuebecGameMode::BeginPlay()
             const FVector Start = LaFontaine::RoadSegments[Road][0], End = LaFontaine::RoadSegments[Road][1];
             const FVector Direction = (End-Start).GetSafeNormal2D();
             const FVector Right = FVector::CrossProduct(FVector::UpVector,Direction);
-            const float Along = FMath::Clamp(float(FVector::DotProduct(Original-Start,Direction)),400.f,float((End-Start).Size2D()-400.f));
+            const float Along = FMath::Clamp(float(FVector::DotProduct(Original-Start,Direction)),1470.f,float((End-Start).Size2D()-1470.f));
             const FVector RoadPoint = Start+Direction*Along;
-            const FRotator Facing = (Direction*(FVector::DotProduct(Car->GetActorForwardVector(),Direction) >= 0. ? 1. : -1.)).Rotation();
             const float PreferredSide = FVector::DotProduct(Original-RoadPoint,Right) >= 0. ? 1.f : -1.f;
             for (int32 Attempt = 0; Attempt < 2; ++Attempt)
             {
-                FVector Point = RoadPoint+Right*(PreferredSide*(Attempt ? -470.f : 470.f));
-                if (!Ground(Point)) continue;
+                const float Side = PreferredSide*(Attempt ? -1.f : 1.f);
+                if (!(LaFontaine::RoadParkingSides[Road] & (Side<0.f ? 1 : 2))) continue;
+                FVector Point, CurbDirection;
+                if (!CurbParking(RoadPoint,Direction,Right,Side,LaFontaine::RoadSegmentWidths[Road],Point,CurbDirection)) continue;
+                const FRotator Facing = (CurbDirection*(LaFontaine::RoadParkingDirections[Road] ? LaFontaine::RoadParkingDirections[Road] : Side)).Rotation();
                 Point.Z += 102.f;
-                FCollisionQueryParams Query(SCENE_QUERY_STAT(AuthoredCarParking),false,Car);
-                if (GetWorld()->OverlapBlockingTestByChannel(Point,Facing.Quaternion(),ECC_Pawn,
-                    FCollisionShape::MakeBox(FVector(225.,113.,98.)),Query)) continue;
+                if (!Car->CanFitAt(Point,Facing.Quaternion())) continue;
+                bool bClose = false;
+                for (TActorIterator<AQuebecCar> Other(GetWorld()); Other; ++Other)
+                    if (*Other != Car && FVector::DistSquared2D(Point,Other->GetActorLocation())<FMath::Square(600.f)) bClose = true;
+                if (bClose) continue;
                 Car->SetActorLocationAndRotation(Point,Facing,false,nullptr,ETeleportType::TeleportPhysics);
                 Car->ForceNetUpdate();
                 FarthestParkingMove = FMath::Max(FarthestParkingMove,float(FVector::Dist2D(Point,Original)));
@@ -2159,11 +2329,12 @@ void AQuebecGameMode::BeginPlay()
     }
     UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION authored_cars_reparked=%d max_repark_distance_cm=%.0f"),Reparked,FarthestParkingMove);
     // A mapped street can run through an estimated building or a surveyed tree.
-    // Validate both complete lanes against this world's static collision, then
+    // Validate both complete lanes against fixed geometry and idle cars, then
     // prune branches again so a removed corridor cannot lead traffic into a dead end.
     TArray<bool> TrafficRoads = ClosedTrafficRoads();
     FCollisionObjectQueryParams StaticObjects;
     StaticObjects.AddObjectTypesToQuery(ECC_WorldStatic);
+    StaticObjects.AddObjectTypesToQuery(ECC_Pawn);
     FCollisionQueryParams LaneQuery(SCENE_QUERY_STAT(TrafficLaneClearance),false);
     int32 BlockedRoads = 0, CirculatingRoads = 0;
     for (int32 I = 0; I < TrafficRoads.Num(); ++I)
@@ -2177,7 +2348,7 @@ void AQuebecGameMode::BeginPlay()
                 FHitResult Hit;
                 const FVector Offset = Right*(Side*145.)+FVector(0.,0.,102.);
                 if (GetWorld()->SweepSingleByObjectType(Hit,Start+Offset,End+Offset,Direction.Rotation().Quaternion(),
-                    StaticObjects,FCollisionShape::MakeBox(FVector(220.,108.,70.)),LaneQuery))
+                    StaticObjects,FCollisionShape::MakeBox(FVector(235.,110.,80.)),LaneQuery))
                 {
                     TrafficRoads[I] = false;
                     ++BlockedRoads;
@@ -2188,14 +2359,14 @@ void AQuebecGameMode::BeginPlay()
     PruneTrafficBranches(TrafficRoads);
     for (bool bAllowed : TrafficRoads) if (bAllowed) ++CirculatingRoads;
     UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION static_blocked_roads=%d circulating_roads=%d"),BlockedRoads,CirculatingRoads);
-    const auto ClearCar = [this,&Ground](FVector& Point, const FQuat& Rotation)
+    const auto ClearCar = [this,&Ground](FVector& Point, const FQuat& Rotation, bool bParking = false)
     {
-        if (FVector::DistSquared2D(Point,LaFontaine::CarSpawn) < FMath::Square(3500.f) || !Ground(Point)) return false;
+        if (FVector::DistSquared2D(Point,LaFontaine::CarSpawn) < FMath::Square(bParking ? 600.f : 3500.f) || !Ground(Point,true)) return false;
         Point.Z += 102.f;
         FCollisionQueryParams Query(SCENE_QUERY_STAT(PopulationCar),false);
-        if (GetWorld()->OverlapBlockingTestByChannel(Point,Rotation,ECC_Pawn,FCollisionShape::MakeBox(FVector(225.,113.,98.)),Query)) return false;
+        if (GetWorld()->OverlapBlockingTestByChannel(Point,Rotation,ECC_Pawn,FCollisionShape::MakeBox(FVector(235.,113.,98.)),Query)) return false;
         for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
-            if (FVector::DistSquared2D(Point,It->GetActorLocation()) < FMath::Square(650.f)) return false;
+            if (FVector::DistSquared2D(Point,It->GetActorLocation()) < FMath::Square(600.f)) return false;
         return true;
     };
     const auto SpawnCar = [this,&TrafficRoads](const FVector& Point, const FRotator& Rotation, int32 Style, int32 Road, bool bForward)
@@ -2364,11 +2535,13 @@ void AQuebecGameMode::BeginPlay()
             for (int32 Side : {-1,1})
             {
                 const FRotator Facing = (Direction*Side).Rotation();
-                if (LaFontaine::RoadSegmentWidths[Road] >= 1200.f)
-                    for (float Alpha : {.25f,.5f,.75f})
+                if (LaFontaine::RoadSegmentWidths[Road] >= 600.f && Parked < ParkedLimit && (LaFontaine::RoadParkingSides[Road] & (Side<0 ? 1 : 2)))
+                    for (float Along = 1470.f; Along <= (End-Start).Size2D()-1470.f && Parked < ParkedLimit; Along += 200.f)
                     {
-                        FVector Parking = FMath::Lerp(Start,End,Alpha)+Right*(Side*470.);
-                        if (Parked < ParkedLimit && ClearCar(Parking,Facing.Quaternion()) && SpawnCar(Parking,Facing,Parked,INDEX_NONE,true)) ++Parked;
+                        FVector Parking, CurbDirection;
+                        if (!CurbParking(Start+Direction*Along,Direction,Right,Side,LaFontaine::RoadSegmentWidths[Road],Parking,CurbDirection)) continue;
+                        const FRotator ParkFacing = (CurbDirection*(LaFontaine::RoadParkingDirections[Road] ? LaFontaine::RoadParkingDirections[Road] : Side)).Rotation();
+                        if (Parked < ParkedLimit && Ground(Parking,true) && Parking.Z<=12.f && ClearCar(Parking,ParkFacing.Quaternion(),true) && SpawnCar(Parking,ParkFacing,Parked,INDEX_NONE,true)) ++Parked;
                     }
                 FVector Moving = FMath::Lerp(Start,End,Side > 0 ? .65 : .35)+Right*(Side*145.);
                 if (Traffic < TrafficLimit && TrafficRoads[Road] && ClearCar(Moving,Facing.Quaternion()) && SpawnCar(Moving,Facing,Traffic+1,Road,Side > 0)) ++Traffic;
@@ -2581,6 +2754,11 @@ bool FQuebecTrafficBlockedApproachTest::RunTest(const FString& Parameters)
     Blocked->Tick(.05f);
     TestTrue(TEXT("Player stops a car already inside the junction"),Crossing->bHandbrake);
     TestTrue(TEXT("Occupied junction retains priority while its owner is stopped"),Blocked->bHandbrake);
+    // A cleared holder must release priority even when its own actor ticks later.
+    Obstacle->SetActorLocation(FVector(100000.,100000.,102.));
+    Crossing->SetActorLocation(Junction+DirectionB*1600.f);
+    Blocked->Tick(.05f);
+    TestFalse(TEXT("A cleared reservation cannot starve an earlier-ticking car"),Blocked->bHandbrake);
     return true;
 }
 
@@ -2617,7 +2795,7 @@ bool FQuebecCameraBoundsTest::RunTest(const FString& Parameters)
     World->InitializeActorsForPlay(FURL());
     AQuebecController* Controller = World->SpawnActor<AQuebecController>();
     AQuebecCharacter* Walker = World->SpawnActor<AQuebecCharacter>();
-    AQuebecCar* Car = World->SpawnActor<AQuebecCar>();
+    AQuebecCar* Car = World->SpawnActor<AQuebecCar>(FVector(5000.,5000.,102.),FRotator::ZeroRotator);
     if (!TestNotNull(TEXT("Controller"), Controller) || !TestNotNull(TEXT("Walker"), Walker) || !TestNotNull(TEXT("Car"), Car)) return false;
     Controller->SetAsLocalPlayerController();
     Controller->DispatchBeginPlay();

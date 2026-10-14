@@ -224,3 +224,8 @@ Do not use the absent `qa/browser/node_modules` path on this checkout or silentl
 4. **Story / promotion:** six later missions remain design only. Current trailer/title page belong to the prior release; coordinate the separate trailer task before replacing them with new footage.
 
 Do not describe these as already finished. Prioritize the user's next request, keep the high graphics/QA bar, and report explicit evidence and remaining limits.
+
+
+## 2026-10-13 — curb parking and fitted collision
+
+See `Verification/CurbParking.md/json`. The installed `Builds/Browser/Linux` now uses actual concrete curb queries, bounded qualified parking (19–20 added), three fitted convex car proxies, four-wheel ground support, glancing collision response and fitted checkpoint clearance. Initial corridor validation avoids idle mission cars; stale cleared junction reservations no longer starve earlier-ticking traffic. Original Content files/map, art, stream settings, mobile production UI, camera limits, 15:00 clock and five runtime Saved directories are preserved. Tests: native 21, collision PIE 13, two-player city 14, browser unit 24/page, public mobile 16 and public desktop peers 7 passed. Current host `host-20261014-005051-1631030.log`; rollback `Builds/BrowserPrevious-curb-parking-20261013`. Physical-phone/carrier performance and full campaign replay remain unverified. Keep original decorative street-car art and mission car positions.

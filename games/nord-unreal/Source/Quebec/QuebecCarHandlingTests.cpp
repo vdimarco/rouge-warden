@@ -61,6 +61,18 @@ namespace
             for (float Elapsed = 0.f; Elapsed < Seconds-UE_SMALL_NUMBER; Elapsed += Step)
                 Car->Tick(FMath::Min(Step,Seconds-Elapsed));
         }
+        UBoxComponent* Obstacle(FVector Center, FVector Extent) const
+        {
+            AActor* Actor = World->SpawnActor<AActor>();
+            UBoxComponent* Box = NewObject<UBoxComponent>(Actor);
+            Actor->SetRootComponent(Box);
+            Box->SetBoxExtent(Extent);
+            Box->SetCollisionProfileName(TEXT("BlockAll"));
+            Box->SetCollisionObjectType(ECC_WorldStatic);
+            Box->RegisterComponent();
+            Actor->SetActorLocation(Center);
+            return Box;
+        }
         void Reset() const
         {
             Car->ResetMotion();
@@ -186,6 +198,71 @@ bool FQuebecCarFrameRateTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("30 and 120 Hz reach similar speed"),FMath::Abs(Fixture.Car->Speed-Speed30) < 50.f);
     TestTrue(TEXT("30 and 120 Hz follow similar physical path"),FVector::Dist2D(Fixture.Car->GetActorLocation(),Position30) < 80.f);
     TestTrue(TEXT("30 and 120 Hz maintain similar steering response"),FMath::Abs(FMath::FindDeltaAngleDegrees(Fixture.Car->GetActorRotation().Yaw,Yaw30)) < 2.f);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCarContactTest,"Quebec.Driving.FittedHullCurbsAndWalls",EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecCarContactTest::RunTest(const FString& Parameters)
+{
+    FDrivingWorld Fixture;
+    if (!TestTrue(TEXT("Possessed authority fixture"),Fixture.Ready())) return false;
+    AQuebecCar* Car = Fixture.Car;
+    Fixture.Advance(.2f);
+    TestTrue(TEXT("Wheels settle on ground, not chassis"),FMath::IsNearlyEqual(Car->GetActorLocation().Z,100.5,1.));
+    UBoxComponent* Probe = Fixture.Obstacle(FVector(200.,0.,150.),FVector(5.,50.,5.));
+    for (int32 Profile=0; Profile<3; ++Profile)
+    {
+        Car->BodyProfile = Profile;
+        Car->ProcessEvent(Car->FindFunctionChecked(TEXT("ApplyPaint")),nullptr);
+        Probe->GetOwner()->SetActorLocation(FVector(200.,0.,150.));
+        TestTrue(TEXT("Each profile leaves empty hood space passable"),Car->CanFitAt(Car->GetActorLocation(),FQuat::Identity));
+        Probe->GetOwner()->SetActorLocation(FVector(0.,0.,150.));
+        TestFalse(TEXT("Each profile blocks its cabin"),Car->CanFitAt(Car->GetActorLocation(),FQuat::Identity));
+    }
+    Car->BodyProfile = 0;
+    Car->ProcessEvent(Car->FindFunctionChecked(TEXT("ApplyPaint")),nullptr);
+    Probe->GetOwner()->SetActorLocation(FVector(200.,0.,150.));
+    TestTrue(TEXT("Empty space above hood is passable"),Car->CanFitAt(Car->GetActorLocation(),FQuat::Identity));
+    Probe->GetOwner()->SetActorLocation(FVector(0.,0.,150.));
+    TestFalse(TEXT("Cabin blocks at its visible height"),Car->CanFitAt(Car->GetActorLocation(),FQuat::Identity));
+    TestTrue(TEXT("Checkpoint clearance retains its explicit ignored actor"),Car->CanFitAt(Car->GetActorLocation(),FQuat::Identity,Probe->GetOwner()));
+    Probe->GetOwner()->SetActorLocation(FVector(231.,0.,51.));
+    TestFalse(TEXT("Front bumper is included in fitted hull"),Car->CanFitAt(Car->GetActorLocation(),FQuat::Identity));
+    Probe->GetOwner()->Destroy();
+
+    UBoxComponent* Curb = Fixture.Obstacle(FVector(2400.,0.,9.),FVector(2000.,1000.,9.));
+    Fixture.Input(TEXT("MoveForward"),.3f);
+    for (int32 Frame=0; Frame<360 && Car->GetActorLocation().X<300.; ++Frame) Car->Tick(1.f/120.f);
+    AddInfo(FString::Printf(TEXT("Curb front wheels position=%s rotation=%s"),*Car->GetActorLocation().ToString(),*Car->GetActorRotation().ToString()));
+    TestTrue(TEXT("Front wheels climb while rear wheels remain on road"),Car->GetActorRotation().Pitch>2.f && Car->GetActorRotation().Pitch<6.f);
+    Fixture.Advance(1.5f);
+    TestTrue(TEXT("Ordinary curb is traversable and all wheels reach sidewalk"),Car->GetActorLocation().X>900. && FMath::IsNearlyEqual(Car->GetActorLocation().Z,118.5,1.));
+    Curb->GetOwner()->Destroy();
+    Fixture.Reset();
+    Curb = Fixture.Obstacle(FVector(2400.,0.,15.),FVector(2000.,1000.,15.));
+    Fixture.Input(TEXT("MoveForward"),1.f); Fixture.Advance(2.f);
+    TestTrue(TEXT("A 30 cm step stops wheels instead of teleporting the car"),Car->GetActorLocation().X<245. && Car->GetActorLocation().Z<102.);
+    Curb->GetOwner()->Destroy();
+
+    Fixture.Reset();
+    UBoxComponent* Wall = Fixture.Obstacle(FVector(450.,0.,250.),FVector(50.,5000.,250.));
+    Fixture.Input(TEXT("MoveForward"),1.f); Fixture.Advance(2.f);
+    TestTrue(TEXT("Wall stops fitted bumper without tunnelling"),Car->GetActorLocation().X<175. && Car->GetActorLocation().X>140.);
+    TestTrue(TEXT("Tall wall cannot be climbed"),Car->GetActorLocation().Z<102.);
+    Fixture.Reset(); Car->SetActorRotation(FRotator(0.,40.,0.));
+    Fixture.Input(TEXT("MoveForward"),1.f); Fixture.Advance(2.f);
+    AddInfo(FString::Printf(TEXT("Glancing wall position=%s speed=%.2f lateral=%.2f"),*Car->GetActorLocation().ToString(),Car->Speed,Car->LateralSpeed));
+    TestTrue(TEXT("Glancing contact moves along wall"),Car->GetActorLocation().Y>300.);
+    TestTrue(TEXT("Glancing contact stays outside wall"),Car->GetActorLocation().X<180.);
+    Wall->GetOwner()->Destroy();
+
+    Fixture.Reset();
+    FActorSpawnParameters Spawn; Spawn.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AQuebecCar* Parked = Fixture.World->SpawnActor<AQuebecCar>(FVector(700.,0.,100.5),FRotator::ZeroRotator,Spawn);
+    Fixture.Input(TEXT("MoveForward"),1.f); Fixture.Advance(2.f);
+    TestTrue(TEXT("Parked car stops driving bumper"),Car->GetActorLocation().X>200. && Car->GetActorLocation().X<260.);
+    TestTrue(TEXT("Parked-car contact leaves no overlap"),Car->CanFitAt(Car->GetActorLocation(),Car->GetActorQuat()));
+    Parked->Destroy();
     return true;
 }
 #endif

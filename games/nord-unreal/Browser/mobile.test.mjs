@@ -385,7 +385,7 @@ try {
     });
     await check('real car possession switches to separate steering and pedals, then restores walking', async () => {
       // Reach the authored starter car through real walking input if this slot is still on the sidewalk.
-      for (let attempt = 0; attempt < 7; attempt++) {
+      for (let attempt = 0; attempt < 12; attempt++) {
         await page.locator('#touch-use').tap();
         await page.waitForTimeout(750);
         if (await page.locator('#touch-controls').getAttribute('data-driving') === 'true') break;

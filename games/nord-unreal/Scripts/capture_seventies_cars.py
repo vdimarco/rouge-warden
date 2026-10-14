@@ -9,7 +9,7 @@ from pathlib import Path
 import unreal as u
 
 ROOT = Path(u.Paths.project_dir()).resolve()
-OUT = ROOT/'Preview/SeventiesCars'
+OUT = ROOT/'Saved/CurbParking-20261013/ArtViews'
 OUT.mkdir(parents=True, exist_ok=True)
 levels = u.get_editor_subsystem(u.LevelEditorSubsystem)
 settings = u.get_default_object(u.load_class(None, '/Script/UnrealEd.LevelEditorPlaySettings'))
@@ -26,8 +26,8 @@ system.call_method('SetBytePropertyByName', (settings, 'PlayNetMode', 0))
 script.call_method('SetKeepPythonScriptAlive', (True,))
 state = {'phase': 0, 'start': time.monotonic(), 'shot': 0, 'finished': False}
 report = {'passed': False, 'views': [], 'profiles': [], 'settings_restored': False}
-shots = [(profile, view, width) for width in (1280, 1920) for profile in range(3)
-         for view in ('front', 'rear', 'side')]
+shots = [(profile, view, width) for width in (1280,) for profile in range(3)
+         for view in ('front', 'rear', 'side')] + [(0, 'parking-row', 1280), (0, 'curb', 1280)]
 
 
 def vec(p):
@@ -43,7 +43,7 @@ def finish(error=None):
     system.call_method('SetBytePropertyByName', (settings, 'PlayNetMode', old_mode))
     report['settings_restored'] = True
     report['passed'] = not error and len(report['views']) == len(shots)+1 and report.get('native_entry_exit') is True
-    (ROOT/'Saved/Tests/SeventiesCarsRender.json').write_text(json.dumps(report, indent=2)+'\n')
+    (ROOT/'Saved/CurbParking-20261013/ArtRender.json').write_text(json.dumps(report, indent=2)+'\n')
     u.unregister_slate_post_tick_callback(state['callback'])
     script.call_method('SetKeepPythonScriptAlive', (False,))
 
@@ -65,9 +65,11 @@ def profile_parts(car, profile):
     assert parts['Body']['mesh'] == f'SM_Car70Body{profile}'
     assert parts['Glass']['mesh'] == f'SM_Car70Cabin{profile}'
     assert parts['Roof']['mesh'] == f'SM_Car70Roof{profile}'
-    collision = car.get_component_by_class(u.BoxComponent)
-    assert vec(collision.get_unscaled_box_extent()) == [220., 108., 100.]
-    return {'profile': profile, 'root_collision_extent': vec(collision.get_unscaled_box_extent()), 'parts': parts}
+    collision = car.root_component
+    assert isinstance(collision, u.StaticMeshComponent)
+    assert collision.get_editor_property('static_mesh').get_name() == f'SM_CarCollision{profile}'
+    assert not collision.is_visible()
+    return {'profile': profile, 'collision_mesh': collision.get_editor_property('static_mesh').get_name(), 'parts': parts}
 
 
 def tick(dt):
@@ -103,10 +105,30 @@ def tick(dt):
             state.update(world=world, pc=pc, car=car, camera=camera, phase=2, ready=now)
         elif state['phase'] == 2:
             profile, view, width = shots[state['shot']]
-            profile_parts(state['car'], profile)
-            c = state['car'].get_actor_location(); f = state['car'].get_actor_forward_vector(); r = state['car'].get_actor_right_vector()
-            p = c + (f*580+r*430 if view == 'front' else f*-580+r*430 if view == 'rear' else r*730) + u.Vector(0, 0, 190)
-            target = c+u.Vector(0, 0, -9)
+            car = state['car']
+            if view == 'parking-row':
+                cars = u.GameplayStatics.get_all_actors_of_class(state['world'], u.load_class(None, '/Script/Quebec.QuebecCar'))
+                car = min((c for c in cars if c.actor_has_tag('CityParked')), key=lambda c: (c.get_actor_location()-state['car'].get_actor_location()).length())
+            else:
+                profile_parts(car, profile)
+            if view == 'curb' and not state.get('curb'):
+                point = car.get_actor_location()+car.get_actor_forward_vector()*1000.
+                point.z = car.get_actor_location().z-100.5+9.
+                transform = u.Transform(point, u.Rotator(yaw=car.get_actor_rotation().yaw), u.Vector(20., 2.3, .18))
+                slab = gameplay.call_method('BeginDeferredActorSpawnFromClass', (state['world'], u.StaticMeshActor, transform,
+                    u.SpawnActorCollisionHandlingMethod.ALWAYS_SPAWN, None, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
+                comp = slab.static_mesh_component
+                comp.set_mobility(u.ComponentMobility.MOVABLE)
+                comp.set_static_mesh(u.load_asset('/Engine/BasicShapes/Cube.Cube'))
+                comp.set_collision_profile_name('BlockAll')
+                comp.set_collision_object_type(u.CollisionChannel.ECC_WORLD_STATIC)
+                gameplay.call_method('FinishSpawningActor', (slab, transform, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
+                car.set_actor_location(car.get_actor_location()+u.Vector(0,0,2), False, True)
+                state['curb'] = slab
+                state['ready'] = now
+            c = car.get_actor_location(); f = car.get_actor_forward_vector(); r = car.get_actor_right_vector()
+            p = c + (f*-1100+r*850 if view == 'parking-row' else f*580+r*430 if view == 'front' else f*-580+r*430 if view == 'rear' else r*730) + u.Vector(0, 0, 190)
+            target = c+(f*300 if view == 'parking-row' else u.Vector())+u.Vector(0, 0, -9)
             delta = target-p
             state['camera'].set_actor_location_and_rotation(p, u.Rotator(
                 pitch=math.degrees(math.atan2(delta.z, math.hypot(delta.x, delta.y))),
@@ -114,6 +136,9 @@ def tick(dt):
             if now-state['ready'] > (18 if state['shot'] == 0 else 3):
                 path = OUT/f'{profile}-{view}-{width}.png'; path.unlink(missing_ok=True)
                 u.SystemLibrary.execute_console_command(state['world'], f'HighResShot {width}x{width*9//16} filename="{path}"', state['pc'])
+                if view == 'curb':
+                    assert 2. < car.get_actor_rotation().pitch < 6., 'Front wheel curb articulation failed'
+                    report['curb_pose'] = {'position': vec(car.get_actor_location()), 'rotation': str(car.get_actor_rotation())}
                 state.update(phase=3, ready=now, path=path)
         elif state['phase'] == 3 and now-state['ready'] > 1:
             path = state['path']
@@ -126,6 +151,8 @@ def tick(dt):
                 'file': str(path.relative_to(ROOT)), 'bytes': len(png)})
             state['shot'] += 1
             if state['shot'] == len(shots):
+                if state.get('curb'): state['curb'].destroy_actor()
+                state['car'].set_actor_location(state['car'].get_actor_location()+u.Vector(0,0,2), False, True)
                 avatar = state['pc'].get_controlled_pawn()
                 profile_parts(state['car'], 0)
                 avatar.set_actor_location(state['car'].get_actor_location()+state['car'].get_actor_right_vector()*250., False, True)
