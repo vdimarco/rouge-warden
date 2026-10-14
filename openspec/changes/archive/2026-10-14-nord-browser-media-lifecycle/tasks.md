@@ -4,4 +4,4 @@
 - [x] Reproduce unnecessary loads and late-play fallback; implement guarded lifecycle and regressions.
 - [x] Run unit, existing UI and focused Chromium request/lifecycle checks; inspect layouts.
 - [x] Build and verify real stream against the unchanged native package.
-- [ ] Merge/publish tested frontend, verify public deployment/preservation, record evidence and archive.
+- [x] Merge/publish tested frontend, verify public deployment/preservation, record evidence and archive.
